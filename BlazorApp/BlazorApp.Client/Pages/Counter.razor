@@ -1,0 +1,32 @@
+@page "/workspace"
+@using BlazorApp.Client.Services
+@inject WorkspaceOverviewService WorkspaceOverview
+
+<PageTitle>Workspace</PageTitle>
+
+<h1>Project responsibilities</h1>
+
+<p>Each non-example project now has a clear ownership boundary.</p>
+
+@foreach (var project in projects)
+{
+    <section class="card mb-3">
+        <div class="card-body">
+            <h2 class="h4">@project.Name</h2>
+            <p>@project.Purpose</p>
+            <p><strong>Allowed dependencies:</strong> @string.Join(", ", project.AllowedDependencies)</p>
+            <p><strong>Consumed by:</strong> @string.Join(", ", project.Consumers)</p>
+            <p><strong>Includes:</strong> @string.Join(", ", project.Includes)</p>
+            <p class="mb-0"><strong>Excludes:</strong> @string.Join(", ", project.Excludes)</p>
+        </div>
+    </section>
+}
+
+@code {
+    private IReadOnlyList<ProjectSummary> projects = [];
+
+    protected override void OnInitialized()
+    {
+        projects = WorkspaceOverview.GetProjects();
+    }
+}

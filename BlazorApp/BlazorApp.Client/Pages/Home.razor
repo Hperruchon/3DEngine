@@ -1,0 +1,64 @@
+@page "/"
+@using BlazorApp.Client.Services
+@using ThreeDEngine.Core.Models
+@inject WorkspaceOverviewService WorkspaceOverview
+
+<PageTitle>Home</PageTitle>
+
+<h1>3DEngine workspace</h1>
+
+<p>This Blazor client now acts as the editor and architecture dashboard for the solution.</p>
+
+<div class="row g-4 mt-1">
+    <div class="col-md-4">
+        <div class="card h-100">
+            <div class="card-body">
+                <h2 class="h5">Projects</h2>
+                <p class="display-6 mb-0">@projects.Count</p>
+                <p class="text-body-secondary mb-0">Non-example projects organized around shared core plus hosts.</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card h-100">
+            <div class="card-body">
+                <h2 class="h5">Scene entities</h2>
+                <p class="display-6 mb-0">@scene.Entities.Count</p>
+                <p class="text-body-secondary mb-0">Sample scene content coming from <code>3DEngine.Core</code>.</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card h-100">
+            <div class="card-body">
+                <h2 class="h5">Launch targets</h2>
+                <p class="display-6 mb-0">@launchTargets.Count</p>
+                <p class="text-body-secondary mb-0">Desktop runtime and web editor are documented separately.</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<section class="mt-4">
+    <h2 class="h4">Current scene snapshot</h2>
+    <p class="mb-2"><strong>@scene.Name</strong></p>
+    <ul>
+        @foreach (var entity in scene.Entities)
+        {
+            <li>@entity.Name (@entity.MeshId / @entity.MaterialId)</li>
+        }
+    </ul>
+</section>
+
+@code {
+    private Scene scene = null!;
+    private IReadOnlyList<ProjectSummary> projects = [];
+    private IReadOnlyList<LaunchTarget> launchTargets = [];
+
+    protected override void OnInitialized()
+    {
+        scene = WorkspaceOverview.GetScene();
+        projects = WorkspaceOverview.GetProjects();
+        launchTargets = WorkspaceOverview.GetLaunchTargets();
+    }
+}

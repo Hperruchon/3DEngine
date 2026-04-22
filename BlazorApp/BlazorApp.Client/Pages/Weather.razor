@@ -1,0 +1,42 @@
+@page "/architecture"
+@using BlazorApp.Client.Services
+@inject WorkspaceOverviewService WorkspaceOverview
+
+<PageTitle>Architecture</PageTitle>
+
+<h1>Architecture flow</h1>
+
+<p>The web host reads shared engine data from <code>3DEngine.Core</code> and presents it without depending on the native renderer.</p>
+
+<table class="table">
+    <thead>
+        <tr>
+            <th>Launch target</th>
+            <th>Project</th>
+            <th>Description</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var target in launchTargets)
+        {
+            <tr>
+                <td>@target.Name</td>
+                <td><code>@target.ProjectPath</code></td>
+                <td>@target.Description</td>
+            </tr>
+        }
+    </tbody>
+</table>
+
+<div class="alert alert-secondary" role="alert">
+    Dependency rule: <strong>3DEngine.Core</strong> is shared; <strong>3DEngine</strong> stays native-only; <strong>BlazorApp</strong> and <strong>BlazorApp.Client</strong> remain editor/web-host focused.
+</div>
+
+@code {
+    private IReadOnlyList<LaunchTarget> launchTargets = [];
+
+    protected override void OnInitialized()
+    {
+        launchTargets = WorkspaceOverview.GetLaunchTargets();
+    }
+}
