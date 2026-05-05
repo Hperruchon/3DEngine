@@ -9,6 +9,7 @@ You are working in a multi-project 3D Engine solution.
 3. `tasks/` — sized work units. Read only the active task (Status: Active or Ready).
 4. `docs/diagnostics.md` — diagnostic code registry. Append-only.
 5. `docs/open-questions.md` — deferred decisions. Read only if one blocks your task.
+6. `docs/roadmap.md` — strategic phase plan. Read only when no Ready TASK exists in `tasks/`.
 
 Find the minimum information. Do not read all ADRs or all tasks.
 
