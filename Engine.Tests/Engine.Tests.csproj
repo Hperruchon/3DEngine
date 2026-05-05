@@ -23,6 +23,7 @@
   <ItemGroup>
     <ProjectReference Include="..\Engine.Contracts\Engine.Contracts.csproj" />
     <ProjectReference Include="..\Engine.Core\Engine.Core.csproj" />
+    <ProjectReference Include="..\Engine.Cli\Engine.Cli.csproj" />
   </ItemGroup>
 
 </Project>

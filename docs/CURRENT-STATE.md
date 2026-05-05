@@ -18,3 +18,7 @@ In-memory, in-process Engine Runtime. No transport, no clients, no persistence, 
 **Deferred:** HTTP/WS transport, CLI, concrete geometry backend, persistence, idempotency cache, schema endpoints, undo/redo. See V1 scope clamps in [CLAUDE.md](../CLAUDE.md).
 
 **Pending decisions:** ADR-0009 (fate of `3DEngine.Core`).
+
+## v0.2 — Engine.Cli (P1, TASK-0002)
+
+In-process CLI per ADRs 0002, 0008. Verbs `apply` and `query`; JSON output to stdout. Only `NoOp` registered; query registry empty. Exit codes `0` Applied, `1` Rejected/Cancelled, `2` invalid usage. `dotnet build` + `dotnet test` green.
