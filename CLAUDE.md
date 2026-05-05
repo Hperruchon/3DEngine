@@ -6,8 +6,9 @@ You are working in a multi-project 3D Engine solution.
 
 1. `docs/adr/README.md` — index of architectural decisions. Find the one relevant ADR; do not read all.
 2. `docs/CURRENT-STATE.md` — what is built today. Authoritative for "does X exist yet."
-3. `tasks/` — sized work units. Read only the active task.
+3. `tasks/` — sized work units. Read only the active task (Status: Active or Ready).
 4. `docs/diagnostics.md` — diagnostic code registry. Append-only.
+5. `docs/open-questions.md` — deferred decisions. Read only if one blocks your task.
 
 Find the minimum information. Do not read all ADRs or all tasks.
 
@@ -49,7 +50,6 @@ All persistent state changes go through commands. Queries must not mutate.
 ## V1 scope clamps (until-when)
 
 - **No HTTP/WS transport** — until ADR + sized TASK introduce it.
-- **No CLI** — until P1 sized TASK introduces `Engine.Cli`.
 - **No concrete geometry backend** — until ADR-0009 + sized TASK.
 - **No persistence** — in-memory only until persistence ADR + TASK.
 - **No idempotency cache, no schema endpoints** — deferred to transport task.
