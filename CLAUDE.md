@@ -75,6 +75,26 @@ Any `E-`/`W-`/`I-` code added to code must land in `docs/diagnostics.md` in the 
 
 The gate runs: `dotnet build`, `dotnet test`, dependency direction check, diagnostic codes registered, replay determinism fixture.
 
+## Workflow
+
+A session opens by reading CLAUDE.md and the last CURRENT-STATE entry, then advances the next Ready TASK.
+
+A session closes only when:
+
+- CURRENT-STATE.md has a new entry (or an existing entry updated)
+- The TASK file's Status reflects reality
+- Build + test green
+- Any new diagnostic codes registered
+- Open questions captured in a file, not chat history
+
+Reevaluate the plan when:
+
+- 3 milestones have shipped since the last reevaluation
+- A session reads >5 files to orient itself
+- An ADR and the code disagree
+- Same question is asked twice
+- A boundary rule is being pressed
+
 ## Anti-patterns
 
 - Putting business logic in `BlazorApp/` or `3DEngine/`.
