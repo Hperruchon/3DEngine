@@ -1,0 +1,17 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(dotnet --version)",
+      "Bash(dotnet --list-sdks)",
+      "Bash(dotnet new *)",
+      "Bash(dotnet sln *)",
+      "Bash(dotnet build *)",
+      "Bash(dotnet test *)",
+      "Bash(grep -E \"^\\(bin|obj|\\\\\\\\*\\\\\\\\*/bin|\\\\\\\\*\\\\\\\\*/obj\\)\" .gitignore)",
+      "Bash(git check-ignore *)",
+      "Bash(git add *)",
+      "Bash(dotnet run *)",
+      "Bash(echo \"exit=$?\")"
+    ]
+  }
+}
