@@ -10,10 +10,9 @@ When the V1 Pending list is empty, advance to V1.x. When V2 Pending is empty, as
 
 - P0 — Engine Runtime spine. v0.1, TASK-0001.
 - P1 — Engine.Cli scaffold. v0.2, TASK-0002.
+- P2 — Diagnostics registry CI gate. v0.3, TASK-0003.
 
 ## Pending — V1
-
-- **P2 — Diagnostics registry CI gate.** Scanner over `Engine.*/**/*.cs` that fails on `E-`/`W-`/`I-` literals not registered in `docs/diagnostics.md`. No new ADR. Small, mechanical.
 
 - **P3 — ADR-0009 + sized TASK for `3DEngine.Core` fate.** Decide: deprecate / fold into Document / keep as desktop-host-only render model. Listed in `docs/CURRENT-STATE.md` as the only Pending decision. ADR first; migration TASK only if folding follows.
 
