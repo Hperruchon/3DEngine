@@ -1,0 +1,13 @@
+# See: https://docs.github.com/en/repositories/managing-your-repositories-settings-and-features/customizing-your-repository/about-code-owners
+#
+# Single-owner repository today. Entries below document architectural-surface
+# ownership; they do not enforce a separate reviewer (GitHub does not require
+# one when the only listed owner is the PR author).
+
+* @Hperruchon
+
+# Structurally significant surfaces. Touching these implies a decision that
+# should be visible in the PR description (linked ADR or TASK).
+/Engine.Contracts/ @Hperruchon
+/docs/adr/         @Hperruchon
+/CLAUDE.md         @Hperruchon

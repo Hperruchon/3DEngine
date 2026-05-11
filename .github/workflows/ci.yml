@@ -1,0 +1,83 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  build-and-test:
+    name: Build + test
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.x
+          include-prerelease: true
+
+      - name: Restore + build
+        run: dotnet build
+
+      - name: Test
+        run: dotnet test --no-build
+
+  headless-smoke:
+    name: Headless smoke (CLI process)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.x
+          include-prerelease: true
+
+      - name: Build CLI
+        run: dotnet build Engine.Cli
+
+      - name: Run NoOp through the CLI binary
+        run: |
+          set -e
+          output=$(dotnet run --no-build --project Engine.Cli -- apply NoOp --param echo=hello)
+          echo "--- CLI output ---"
+          echo "$output"
+          echo "--- /CLI output ---"
+          echo "$output" | grep -q '"status": "Applied"' \
+            || { echo "FAIL: status is not Applied"; exit 1; }
+          echo "$output" | grep -q '"echo": "hello"' \
+            || { echo "FAIL: echo output missing"; exit 1; }
+
+  contract-gate:
+    name: Contract-touched-needs-ADR
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Fetch base ref
+        run: git fetch --no-tags --depth=1 origin "${{ github.base_ref }}"
+
+      - name: Check contracts vs ADRs
+        run: |
+          set -e
+          base="origin/${{ github.base_ref }}"
+          contracts_changed=$(git diff --name-only "$base"...HEAD -- 'Engine.Contracts/**' | wc -l)
+          adrs_changed=$(git diff --name-only "$base"...HEAD -- 'docs/adr/**' | wc -l)
+          echo "Engine.Contracts files changed: $contracts_changed"
+          echo "docs/adr files changed:         $adrs_changed"
+          if [ "$contracts_changed" -gt 0 ] && [ "$adrs_changed" -eq 0 ]; then
+            echo ""
+            echo "FAIL: Engine.Contracts was modified but no ADR was added or updated."
+            echo "Per CLAUDE.md \"When unsure — stop and ask\": changing public shape"
+            echo "of Engine.Contracts requires an ADR in the same PR."
+            exit 1
+          fi

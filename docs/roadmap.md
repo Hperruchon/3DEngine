@@ -13,10 +13,11 @@ When the V1 Pending list is empty, advance to V1.x. When V2 Pending is empty, as
 - P2 — Diagnostics registry CI gate. v0.3, TASK-0003.
 - P3 — `3DEngine.Core` peer render kernel (ADR-0009). v0.4, TASK-0004.
 - P4 — Replay determinism CI gate. v0.5, TASK-0005.
+- P5 — Workflow gates. v0.6, TASK-0006.
 
 ## Pending — V1
 
-- **P5 — Workflow gates.** PR template, CODEOWNERS, contract-touched-needs-ADR check, headless-smoke job. Process discipline only; no `Engine.*` code changes.
+_None. V1 is complete; advance to V1.x._
 
 ## Pending — V1.x (after V1 ships)
 
