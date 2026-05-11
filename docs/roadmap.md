@@ -12,10 +12,9 @@ When the V1 Pending list is empty, advance to V1.x. When V2 Pending is empty, as
 - P1 — Engine.Cli scaffold. v0.2, TASK-0002.
 - P2 — Diagnostics registry CI gate. v0.3, TASK-0003.
 - P3 — `3DEngine.Core` peer render kernel (ADR-0009). v0.4, TASK-0004.
+- P4 — Replay determinism CI gate. v0.5, TASK-0005.
 
 ## Pending — V1
-
-- **P4 — Replay determinism CI gate.** Hand-authored command-log fixture replayed via `Replay(...)`; assert Document equality. Catches non-determinism (`DateTime.Now`, unseeded GUIDs, ordering on hash buckets) at PR time.
 
 - **P5 — Workflow gates.** PR template, CODEOWNERS, contract-touched-needs-ADR check, headless-smoke job. Process discipline only; no `Engine.*` code changes.
 

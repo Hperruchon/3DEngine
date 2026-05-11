@@ -28,3 +28,7 @@ Test-time gate enforcing CLAUDE.md's diagnostic-codes rule. Scans `Engine.Contra
 ## v0.4 — `3DEngine.Core` peer render kernel (P3, TASK-0004, ADR-0009)
 
 `3DEngine.Core` is now part of the authority diagram as a peer render kernel to `Engine.Core`. The two kernels are mutually unreferenceable; render-capable hosts reference both and own the projection (events → render state). No code, csproj, or test changes — documentation only. CLAUDE.md, the ADR index, and the roadmap updated accordingly. `dotnet build` + `dotnet test` green (31 tests).
+
+## v0.5 — Replay determinism CI gate (P4, TASK-0005)
+
+Test-time gate completing CLAUDE.md's gate list (build, test, dependency direction, diagnostic codes registered, **replay determinism fixture**). A hand-authored fixture (three `NoOpCommand`s with stable `CommandId` GUIDs) is replayed via `Replay.ReplayLog`; the resulting `Document.Version`, `Document.Log`, and event sequence (`Seq`/`Kind`/`CauseCommandId`) are asserted against a hand-authored snapshot. A second test runs the replay twice and asserts the two runs match each other. Both modulo `Timestamp`/`DocumentId` per ADR-0005. No production code changes; no new diagnostic codes. `dotnet build` + `dotnet test` green (33 tests).
