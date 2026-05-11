@@ -2,7 +2,7 @@
 
 ## Status
 
-Ready
+Done — shipped in commit `e2cbf04`. See `docs/CURRENT-STATE.md` v0.9.
 
 ## Context
 
