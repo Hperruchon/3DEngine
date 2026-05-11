@@ -2,7 +2,7 @@
 
 ## Status
 
-Ready
+Done — shipped in commit `ab2f9f3`. See `docs/CURRENT-STATE.md` v0.8.
 
 ## Context
 
