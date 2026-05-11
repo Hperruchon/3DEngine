@@ -5,6 +5,7 @@ using Engine.Contracts.Handlers;
 namespace Engine.Core;
 
 // Per ADR-0006: serial execution per Document, atomic commit-at-end.
+// Per ADR-0006 §7: duplicate CommandId returns the cached CommandResult.
 // Per ADR-0008 §2: every Apply returns a structured CommandResult.
 // Per ADR-0005: events have monotonic Seq; Document.Version mirrors last emitted Seq.
 public sealed class CommandBus
@@ -12,14 +13,20 @@ public sealed class CommandBus
     private readonly Document _document;
     private readonly CommandRegistry _registry;
     private readonly IEventSink _events;
+    private readonly IdempotencyCache _idempotency;
     private readonly SemaphoreSlim _serial = new(1, 1);
     private long _nextSeq = 1;
 
-    public CommandBus(Document document, CommandRegistry registry, IEventSink events)
+    public CommandBus(
+        Document document,
+        CommandRegistry registry,
+        IEventSink events,
+        IdempotencyCache? idempotency = null)
     {
         _document = document ?? throw new ArgumentNullException(nameof(document));
         _registry = registry ?? throw new ArgumentNullException(nameof(registry));
         _events = events ?? throw new ArgumentNullException(nameof(events));
+        _idempotency = idempotency ?? new IdempotencyCache();
     }
 
     public Document Document => _document;
@@ -32,74 +39,84 @@ public sealed class CommandBus
         await _serial.WaitAsync(ct).ConfigureAwait(false);
         try
         {
-            // 1. Lookup
-            if (!_registry.TryFind(command.Name, command.SchemaVersion, out var handler))
-            {
-                var error = new ErrorDetail(
-                    DiagnosticCodes.CommandUnknown,
-                    $"No handler registered for '{command.Name}'@{command.SchemaVersion}.");
-                return await Reject(command, error, stopwatch, ct).ConfigureAwait(false);
-            }
+            if (_idempotency.TryGet(command.CommandId, out var cached))
+                return cached;
 
-            // 2. Optimistic version check
-            if (command.ExpectedDocumentVersion is { } expected && expected != _document.Version)
-            {
-                var error = new ErrorDetail(
-                    DiagnosticCodes.CommandVersionStale,
-                    $"Expected document version {expected} but document is at {_document.Version}.");
-                return await Reject(command, error, stopwatch, ct).ConfigureAwait(false);
-            }
-
-            // 3. Run handler. No mutation of Document until commit-at-end.
-            CommandHandlerResult handlerResult;
-            try
-            {
-                handlerResult = await handler.Handle(command, _document, ct).ConfigureAwait(false);
-            }
-            catch (OperationCanceledException)
-            {
-                return await Cancel(command, stopwatch, ct).ConfigureAwait(false);
-            }
-
-            if (!handlerResult.IsSuccess)
-            {
-                return await Reject(command, handlerResult.Error!, stopwatch, ct, handlerResult.Diagnostics)
-                    .ConfigureAwait(false);
-            }
-
-            // 4. Commit: append log, emit applied event, advance version.
-            var seq = _nextSeq++;
-            _document.AppendCommand(command);
-            await _events.Append(
-                new EventRecord(
-                    Seq: seq,
-                    Timestamp: DateTime.UtcNow,
-                    DocumentId: _document.DocumentId,
-                    CauseCommandId: command.CommandId,
-                    Kind: "command.applied",
-                    Payload: new Dictionary<string, object?>
-                    {
-                        ["name"] = command.Name,
-                        ["schemaVersion"] = command.SchemaVersion,
-                    }),
-                ct).ConfigureAwait(false);
-            _document.AdvanceVersion(seq);
-
-            return new CommandResult(
-                CommandId: command.CommandId,
-                CommandName: command.Name,
-                Status: CommandStatus.Applied,
-                AppliedAtSeq: seq,
-                DocumentVersion: _document.Version,
-                Outputs: handlerResult.Outputs,
-                Diagnostics: handlerResult.Diagnostics,
-                Error: null,
-                DurationMs: stopwatch.ElapsedMilliseconds);
+            var result = await ApplyOnce(command, stopwatch, ct).ConfigureAwait(false);
+            _idempotency.Store(command.CommandId, result);
+            return result;
         }
         finally
         {
             _serial.Release();
         }
+    }
+
+    private async Task<CommandResult> ApplyOnce(Command command, Stopwatch stopwatch, CancellationToken ct)
+    {
+        // 1. Lookup
+        if (!_registry.TryFind(command.Name, command.SchemaVersion, out var handler))
+        {
+            var error = new ErrorDetail(
+                DiagnosticCodes.CommandUnknown,
+                $"No handler registered for '{command.Name}'@{command.SchemaVersion}.");
+            return await Reject(command, error, stopwatch, ct).ConfigureAwait(false);
+        }
+
+        // 2. Optimistic version check
+        if (command.ExpectedDocumentVersion is { } expected && expected != _document.Version)
+        {
+            var error = new ErrorDetail(
+                DiagnosticCodes.CommandVersionStale,
+                $"Expected document version {expected} but document is at {_document.Version}.");
+            return await Reject(command, error, stopwatch, ct).ConfigureAwait(false);
+        }
+
+        // 3. Run handler. No mutation of Document until commit-at-end.
+        CommandHandlerResult handlerResult;
+        try
+        {
+            handlerResult = await handler.Handle(command, _document, ct).ConfigureAwait(false);
+        }
+        catch (OperationCanceledException)
+        {
+            return await Cancel(command, stopwatch, ct).ConfigureAwait(false);
+        }
+
+        if (!handlerResult.IsSuccess)
+        {
+            return await Reject(command, handlerResult.Error!, stopwatch, ct, handlerResult.Diagnostics)
+                .ConfigureAwait(false);
+        }
+
+        // 4. Commit: append log, emit applied event, advance version.
+        var seq = _nextSeq++;
+        _document.AppendCommand(command);
+        await _events.Append(
+            new EventRecord(
+                Seq: seq,
+                Timestamp: DateTime.UtcNow,
+                DocumentId: _document.DocumentId,
+                CauseCommandId: command.CommandId,
+                Kind: "command.applied",
+                Payload: new Dictionary<string, object?>
+                {
+                    ["name"] = command.Name,
+                    ["schemaVersion"] = command.SchemaVersion,
+                }),
+            ct).ConfigureAwait(false);
+        _document.AdvanceVersion(seq);
+
+        return new CommandResult(
+            CommandId: command.CommandId,
+            CommandName: command.Name,
+            Status: CommandStatus.Applied,
+            AppliedAtSeq: seq,
+            DocumentVersion: _document.Version,
+            Outputs: handlerResult.Outputs,
+            Diagnostics: handlerResult.Diagnostics,
+            Error: null,
+            DurationMs: stopwatch.ElapsedMilliseconds);
     }
 
     private async Task<CommandResult> Reject(
