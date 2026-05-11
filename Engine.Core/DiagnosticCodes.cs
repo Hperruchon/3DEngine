@@ -8,4 +8,5 @@ public static class DiagnosticCodes
     public const string CommandVersionStale = "E-CMD-VERSION-STALE";
     public const string CommandBusBusy = "E-CMD-BUS-BUSY";
     public const string QueryUnknown = "E-QRY-UNKNOWN";
+    public const string ApiBadRequest = "E-API-BAD-REQUEST";
 }

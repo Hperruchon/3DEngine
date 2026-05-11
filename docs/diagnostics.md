@@ -5,7 +5,7 @@ All `E-`/`W-`/`I-` codes used in `Engine.*` code MUST appear here. Append-only. 
 ## Conventions
 
 - **Severity prefix:** `E-` error · `W-` warning · `I-` info
-- **Subsystem token:** `CMD` (command bus), `QRY` (query bus), `GEOM` (geometry), `IO` (persistence/transport), `VAL` (validation). Add new tokens as subsystems land.
+- **Subsystem token:** `CMD` (command bus), `QRY` (query bus), `API` (HTTP transport), `GEOM` (geometry), `IO` (persistence/transport), `VAL` (validation). Add new tokens as subsystems land.
 - **Format:** `<severity>-<subsystem>-<short-tag>` — short, kebab-style, stable.
 
 ## Active codes
@@ -16,6 +16,7 @@ All `E-`/`W-`/`I-` codes used in `Engine.*` code MUST appear here. Append-only. 
 | `E-CMD-VERSION-STALE` | Error | Submitted command's `ExpectedDocumentVersion` does not match the Document's current `Version`. | `CommandBus.Apply` optimistic check. |
 | `E-CMD-BUS-BUSY` | Error | Inbound command queue is full; submission rejected without enqueueing. | Reserved for the transport task; not raised in P0 (no inbound queue yet). |
 | `E-QRY-UNKNOWN` | Error | Query name + schema version is not registered in `QueryRegistry`. | `QueryBus.Query` when no handler matches. |
+| `E-API-BAD-REQUEST` | Error | HTTP request body was malformed, missing a required field, or wrong content-type. Never reaches the bus. | `Engine.Api.Http` endpoints, returned with HTTP `400` or `415`. |
 
 ## Reserved namespaces
 

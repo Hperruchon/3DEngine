@@ -36,3 +36,7 @@ Test-time gate completing CLAUDE.md's gate list (build, test, dependency directi
 ## v0.6 — Workflow gates (P5, TASK-0006)
 
 `.github/` introduced: PR template, CODEOWNERS, and `workflows/ci.yml`. The workflow runs three jobs on push to `main` and on pull_request: **build-and-test** (`dotnet build` + `dotnet test`), **headless-smoke** (spawns the CLI binary and asserts NoOp's JSON output at process scope), and **contract-gate** (PR-only; fails when `Engine.Contracts/**` changes without a corresponding `docs/adr/**` change). No `Engine.*` code, test, or contract changes. V1 Pending is empty; the engine advances to V1.x.
+
+## v0.7 — Engine.Api.Http scaffold (P6.1, TASK-0007)
+
+First V1.x phase. New project `Engine.Api.Http` (ASP.NET Core minimal API) hosts `POST /commands` and `POST /queries` against an in-process engine, mirroring the CLI's dispatch and JSON shape. One command registered (`NoOp`); query registry empty. Transport errors (malformed body, missing required fields, wrong content-type, wrong method, unknown route) return `400`/`404`/`405`/`415` with an `E-API-BAD-REQUEST` envelope; engine verdicts always return `200` with the `CommandResult`/`QueryResult` JSON. New diagnostic code `E-API-BAD-REQUEST` registered in `docs/diagnostics.md`; new `API` subsystem token. References only `Engine.Core` and `Engine.Contracts` (authority diagram holds). No WebSocket, no idempotency cache, no schema endpoints — those are P6.2/P6.3/P6.4. `dotnet build` + `dotnet test` green (44 tests).
