@@ -11,6 +11,13 @@ var app = builder.Build();
 app.MapPost("/commands", CommandsEndpoint.Handle);
 app.MapPost("/queries", QueriesEndpoint.Handle);
 
+app.MapGet("/schema/commands", SchemaCommandsEndpoint.Index);
+app.MapGet("/schema/commands/{name}@{version:int}", SchemaCommandsEndpoint.Item);
+app.MapGet("/schema/queries", SchemaQueriesEndpoint.Index);
+app.MapGet("/schema/queries/{name}@{version:int}", SchemaQueriesEndpoint.Item);
+app.MapGet("/schema/events", SchemaEventsEndpoint.Handle);
+app.MapGet("/schema/diagnostics", SchemaDiagnosticsEndpoint.Handle);
+
 app.Run();
 
 // Marker so Engine.Tests can use WebApplicationFactory<Program>.

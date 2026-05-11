@@ -14,6 +14,8 @@ namespace Engine.Api.Http;
 internal sealed class EngineHost
 {
     public Document Document { get; }
+    public CommandRegistry CommandRegistry { get; }
+    public QueryRegistry QueryRegistry { get; }
     public CommandBus CommandBus { get; }
     public QueryBus QueryBus { get; }
     public InMemoryEventSink Events { get; }
@@ -21,10 +23,11 @@ internal sealed class EngineHost
     public EngineHost()
     {
         Document = new Document();
-        var commandRegistry = new CommandRegistry();
-        commandRegistry.Register(new NoOpCommandHandler());
+        CommandRegistry = new CommandRegistry();
+        CommandRegistry.Register(new NoOpCommandHandler());
+        QueryRegistry = new QueryRegistry();
         Events = new InMemoryEventSink();
-        CommandBus = new CommandBus(Document, commandRegistry, Events);
-        QueryBus = new QueryBus(Document, new QueryRegistry());
+        CommandBus = new CommandBus(Document, CommandRegistry, Events);
+        QueryBus = new QueryBus(Document, QueryRegistry);
     }
 }

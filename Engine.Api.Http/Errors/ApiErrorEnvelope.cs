@@ -15,6 +15,12 @@ internal sealed record ApiErrorEnvelope(ApiErrorBody Error)
             new ApiErrorEnvelope(new ApiErrorBody(DiagnosticCodes.ApiBadRequest, message)),
             ApiJson.Options,
             statusCode: StatusCodes.Status400BadRequest);
+
+    public static IResult NotFound(string message)
+        => Results.Json(
+            new ApiErrorEnvelope(new ApiErrorBody(DiagnosticCodes.ApiBadRequest, message)),
+            ApiJson.Options,
+            statusCode: StatusCodes.Status404NotFound);
 }
 
 internal sealed record ApiErrorBody(string Code, string Message);

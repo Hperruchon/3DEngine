@@ -27,4 +27,7 @@ public sealed class QueryRegistry
     }
 
     public int Count => _handlers.Count;
+
+    public IReadOnlyCollection<(string Name, int SchemaVersion)> Registered
+        => _handlers.Keys.ToArray();
 }
