@@ -21,6 +21,7 @@ This index is the entry point for ADRs. Find the relevant decision; do not read 
 | [0006](0006-command-execution-model.md) | Command execution model | Accepted | Contracts, runtime | — | 0008 |
 | [0007](0007-ui-ephemeral-state-boundary.md) | UI ephemeral state boundary | Accepted | Boundary, clients | — | — |
 | [0008](0008-command-query-event-triad.md) | Command / Query / Event triad and structured results | Accepted | Contracts | 0006 (extended `CommandResult` shape) | — |
+| [0009](0009-3dengine-core-peer-render-kernel.md) | `3DEngine.Core` is a peer render kernel | Accepted | Boundary, clients | — | — |
 
 ## Topics
 
@@ -40,4 +41,4 @@ This index is the entry point for ADRs. Find the relevant decision; do not read 
 
 ## Pending
 
-- **ADR-0009** — fate of `3DEngine.Core` (pre-architecture POCOs). Required before any code in `Engine.*` references it or migrates into it.
+_None._

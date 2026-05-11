@@ -17,8 +17,6 @@ In-memory, in-process Engine Runtime. No transport, no clients, no persistence, 
 
 **Deferred:** HTTP/WS transport, CLI, concrete geometry backend, persistence, idempotency cache, schema endpoints, undo/redo. See V1 scope clamps in [CLAUDE.md](../CLAUDE.md).
 
-**Pending decisions:** ADR-0009 (fate of `3DEngine.Core`).
-
 ## v0.2 — Engine.Cli (P1, TASK-0002)
 
 In-process CLI per ADRs 0002, 0008. Verbs `apply` and `query`; JSON output to stdout. Only `NoOp` registered; query registry empty. Exit codes `0` Applied, `1` Rejected/Cancelled, `2` invalid usage. `dotnet build` + `dotnet test` green.
@@ -26,3 +24,7 @@ In-process CLI per ADRs 0002, 0008. Verbs `apply` and `query`; JSON output to st
 ## v0.3 — Diagnostics registry CI gate (P2, TASK-0003)
 
 Test-time gate enforcing CLAUDE.md's diagnostic-codes rule. Scans `Engine.Contracts/`, `Engine.Core/`, `Engine.Cli/` `.cs` sources for tokens matching `<E|W|I>-<SUBSYSTEM>-<tag>` and fails `dotnet test` if any are absent from `docs/diagnostics.md`. Implements the third gate in CLAUDE.md's gate list (after build and test). No production code changes; no new diagnostic codes. `dotnet build` + `dotnet test` green (31 tests).
+
+## v0.4 — `3DEngine.Core` peer render kernel (P3, TASK-0004, ADR-0009)
+
+`3DEngine.Core` is now part of the authority diagram as a peer render kernel to `Engine.Core`. The two kernels are mutually unreferenceable; render-capable hosts reference both and own the projection (events → render state). No code, csproj, or test changes — documentation only. CLAUDE.md, the ADR index, and the roadmap updated accordingly. `dotnet build` + `dotnet test` green (31 tests).

@@ -16,25 +16,34 @@ Find the minimum information. Do not read all ADRs or all tasks.
 ## Authority diagram
 
 ```
-Engine.Contracts → defines truth
-Engine.Core      → enforces truth
-Clients          → consume truth (CLI, UI, HTTP, agents)
+Engine.Contracts             3DEngine.Core
+(design truth)               (render-side scene kernel)
+     │                              │
+     ▼                              │
+Engine.Core                         │
+(CommandBus, Document,              │
+ events, queries)                   │
+     │                              │
+     └──────────────┬───────────────┘
+                    ▼
+                 Clients
+    Engine.Cli, Engine.Api.Http, 3DEngine, BlazorApp, …
 ```
 
-Direction is one-way. No client may be a dependency.
+Two kernels. `Engine.*` is the authority for design truth (commands/queries/events on the Document). `3DEngine.Core` is the render-side scene kernel for hosts that draw. They do not reference each other. Hosts that render wire them: subscribe to `Engine.Core` events and project them into `3DEngine.Core` state. See ADR-0009.
 
 ## Dependency rules
 
 - `Engine.Contracts` has zero project references.
 - `Engine.Core` references only `Engine.Contracts`.
-- Clients (`Engine.Cli`, `Engine.Api.Http`, `BlazorApp`, etc.) reference only `Engine.Core` and `Engine.Contracts`. They do not reference each other.
+- `3DEngine.Core` has zero project references. (Peer kernel; see ADR-0009.)
+- `Engine.*` projects (`Engine.Contracts`, `Engine.Core`, `Engine.Cli`, future `Engine.Api.Http`) MUST NOT reference `3DEngine.Core`. `3DEngine.Core` MUST NOT reference any `Engine.*` project.
+- Clients (`Engine.Cli`, `Engine.Api.Http`, `BlazorApp`, etc.) reference only `Engine.Core` and `Engine.Contracts`. They do not reference each other. Render-capable clients (`3DEngine`, `BlazorApp.Client`) additionally reference `3DEngine.Core`.
 - `Engine.Tests` may reference any `Engine.*` project. Test projects are *verifiers of authority*, not clients — client rules do not apply.
-- `3DEngine.Core` is **pre-architecture** and outside the authority graph. Do not reference it from any `Engine.*` project. Do not migrate code into it. Its fate is decided by ADR-0009 (pending).
 
 ## Do not touch
 
 - `3DEngine/` — Vulkan/SDL3 desktop host
-- `3DEngine.Core/` — pre-architecture POCOs
 - `BlazorApp/`, `BlazorApp.Client/` — placeholder shell
 - `Vortice.Vulkan.Sample/`, `Vortice.Vulkan.SampleFramework/` — sample code
 
@@ -51,7 +60,7 @@ All persistent state changes go through commands. Queries must not mutate.
 ## V1 scope clamps (until-when)
 
 - **No HTTP/WS transport** — until ADR + sized TASK introduce it.
-- **No concrete geometry backend** — until ADR-0009 + sized TASK.
+- **No concrete geometry backend** — until an ADR + sized TASK introduces one (target: P7 Manifold backend wiring).
 - **No persistence** — in-memory only until persistence ADR + TASK.
 - **No idempotency cache, no schema endpoints** — deferred to transport task.
 

@@ -11,10 +11,9 @@ When the V1 Pending list is empty, advance to V1.x. When V2 Pending is empty, as
 - P0 — Engine Runtime spine. v0.1, TASK-0001.
 - P1 — Engine.Cli scaffold. v0.2, TASK-0002.
 - P2 — Diagnostics registry CI gate. v0.3, TASK-0003.
+- P3 — `3DEngine.Core` peer render kernel (ADR-0009). v0.4, TASK-0004.
 
 ## Pending — V1
-
-- **P3 — ADR-0009 + sized TASK for `3DEngine.Core` fate.** Decide: deprecate / fold into Document / keep as desktop-host-only render model. Listed in `docs/CURRENT-STATE.md` as the only Pending decision. ADR first; migration TASK only if folding follows.
 
 - **P4 — Replay determinism CI gate.** Hand-authored command-log fixture replayed via `Replay(...)`; assert Document equality. Catches non-determinism (`DateTime.Now`, unseeded GUIDs, ordering on hash buckets) at PR time.
 
