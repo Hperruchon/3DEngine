@@ -2,7 +2,7 @@
 
 ## Status
 
-Ready
+Done — shipped in commit `e544bea`. See `docs/CURRENT-STATE.md` v0.10.
 
 ## Context
 
