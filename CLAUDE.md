@@ -63,10 +63,8 @@ All persistent state changes go through commands. Queries must not mutate.
 
 ## V1 scope clamps (until-when)
 
-- **No WebSocket transport** — until P6.3 (`subscription.reset` snapshot format may require a new ADR first).
 - **No concrete geometry backend** — until an ADR + sized TASK introduces one (target: P7 Manifold backend wiring).
 - **No persistence** — in-memory only until persistence ADR + TASK.
-- **No schema endpoints** — until P6.4.
 
 Do not add any of these unless an ADR + TASK explicitly introduces them.
 

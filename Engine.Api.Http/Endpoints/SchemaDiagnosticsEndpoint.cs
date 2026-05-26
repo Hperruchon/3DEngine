@@ -15,11 +15,13 @@ internal static class SchemaDiagnosticsEndpoint
 {
     public static readonly IReadOnlyList<DiagnosticCodeEntry> Codes = new DiagnosticCodeEntry[]
     {
-        new(DiagnosticCodes.CommandUnknown,      "Error", "CMD"),
-        new(DiagnosticCodes.CommandVersionStale, "Error", "CMD"),
-        new(DiagnosticCodes.CommandBusBusy,      "Error", "CMD"),
-        new(DiagnosticCodes.QueryUnknown,        "Error", "QRY"),
-        new(DiagnosticCodes.ApiBadRequest,       "Error", "API"),
+        new(DiagnosticCodes.CommandUnknown,        "Error",   "CMD"),
+        new(DiagnosticCodes.CommandVersionStale,   "Error",   "CMD"),
+        new(DiagnosticCodes.CommandBusBusy,        "Error",   "CMD"),
+        new(DiagnosticCodes.QueryUnknown,          "Error",   "QRY"),
+        new(DiagnosticCodes.ApiBadRequest,         "Error",   "API"),
+        new(DiagnosticCodes.ApiWsInvalidSubscribe, "Error",   "API"),
+        new(DiagnosticCodes.ApiWsLagged,           "Warning", "API"),
     };
 
     public static IResult Handle() => Results.Json(Codes, ApiJson.Options);
