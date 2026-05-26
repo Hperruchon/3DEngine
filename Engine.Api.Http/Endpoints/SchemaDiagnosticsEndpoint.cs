@@ -22,6 +22,9 @@ internal static class SchemaDiagnosticsEndpoint
         new(DiagnosticCodes.ApiBadRequest,         "Error",   "API"),
         new(DiagnosticCodes.ApiWsInvalidSubscribe, "Error",   "API"),
         new(DiagnosticCodes.ApiWsLagged,           "Warning", "API"),
+        new(DiagnosticCodes.GeomCapMissing,        "Error",   "GEOM"),
+        new(DiagnosticCodes.GeomInvalidParam,      "Error",   "GEOM"),
+        new(DiagnosticCodes.GeomBodyNotFound,      "Error",   "GEOM"),
     };
 
     public static IResult Handle() => Results.Json(Codes, ApiJson.Options);

@@ -8,14 +8,14 @@ namespace Engine.Api.Http.Endpoints;
 // GET /schema/queries
 // GET /schema/queries/{name}@{version}
 //
-// Per ADR-0008 §9 and TASK-0009 §4–5. Registry is empty in V1.x;
-// index returns [] and per-item always returns 404.
+// Per ADR-0008 §9, TASK-0009 §4–5, and ADR-0013 §3. Pure projection from
+// QueryRegistry handlers; no per-query knowledge here.
 internal static class SchemaQueriesEndpoint
 {
     public static IResult Index(EngineHost host)
     {
-        var entries = host.QueryRegistry.Registered
-            .Select(r => new QuerySchemaIndexEntry(r.Name, r.SchemaVersion))
+        var entries = host.QueryRegistry.Handlers
+            .Select(h => new QuerySchemaIndexEntry(h.QueryName, h.SchemaVersion))
             .OrderBy(e => e.Name, StringComparer.Ordinal)
             .ToArray();
         return Results.Json(entries, ApiJson.Options);
@@ -23,15 +23,16 @@ internal static class SchemaQueriesEndpoint
 
     public static IResult Item(string name, int version, EngineHost host)
     {
-        if (!host.QueryRegistry.Registered.Contains((name, version)))
+        if (!host.QueryRegistry.TryFind(name, version, out var handler))
         {
             return ApiErrorEnvelope.NotFound(
                 $"No schema entry for query '{name}'@{version}.");
         }
 
-        // No concrete queries today. When the first lands, switch on (name, version).
-        return Results.Problem(
-            $"Schema entry missing for registered query '{name}'@{version}.",
-            statusCode: StatusCodes.Status500InternalServerError);
+        return Results.Json(new QuerySchemaItem(
+            Name: handler.QueryName,
+            SchemaVersion: handler.SchemaVersion,
+            Parameters: handler.Parameters,
+            Result: handler.Result), ApiJson.Options);
     }
 }

@@ -63,7 +63,6 @@ All persistent state changes go through commands. Queries must not mutate.
 
 ## V1 scope clamps (until-when)
 
-- **No concrete geometry backend** — until an ADR + sized TASK introduces one (target: P7 Manifold backend wiring).
 - **No persistence** — in-memory only until persistence ADR + TASK.
 
 Do not add any of these unless an ADR + TASK explicitly introduces them.

@@ -2,7 +2,9 @@ using System.Text.Json;
 using Engine.Api.Http.Errors;
 using Engine.Api.Http.Json;
 using Engine.Contracts;
+using Engine.Contracts.Geometry;
 using Engine.Core;
+using Engine.Core.Queries;
 using Microsoft.AspNetCore.Http;
 
 namespace Engine.Api.Http.Endpoints;
@@ -16,10 +18,8 @@ namespace Engine.Api.Http.Endpoints;
 //     "parameters": object      // required, may be {}
 //   }
 //
-// Query registry is empty (TASK-0001 / TASK-0002 / TASK-0007). Every name
-// produces a Rejected QueryResult<object> with E-QRY-UNKNOWN. Same rationale
-// as Engine.Cli/Cli.cs §Query: Query is abstract, sentinels are forbidden,
-// the API surfaces the existing diagnostic without dispatching.
+// Response: HTTP 200 with QueryResult JSON when the engine answers.
+// HTTP 4xx only for transport-level problems.
 internal static class QueriesEndpoint
 {
     public static async Task<IResult> Handle(HttpContext context, EngineHost host)
@@ -48,6 +48,27 @@ internal static class QueriesEndpoint
         if (body.SchemaVersion is null)
             return ApiErrorEnvelope.BadRequest("Required field missing: schemaVersion.");
 
+        if (body.Name == "GetBoundingBox")
+        {
+            if (body.Parameters is null
+                || !body.Parameters.TryGetValue("bodyId", out var idElement))
+            {
+                return ApiErrorEnvelope.BadRequest("GetBoundingBox requires parameters.bodyId.");
+            }
+            if (idElement.ValueKind != JsonValueKind.String
+                || !Guid.TryParse(idElement.GetString(), out var bodyId))
+            {
+                return ApiErrorEnvelope.BadRequest("GetBoundingBox parameter 'bodyId' must be a GUID string.");
+            }
+
+            var typed = await host.QueryBus
+                .Query<Aabb>(new GetBoundingBoxQuery { BodyId = bodyId }, context.RequestAborted)
+                .ConfigureAwait(false);
+            return Results.Json(typed, ApiJson.Options);
+        }
+
+        // Unknown query — same rationale as CommandsEndpoint's unknown branch:
+        // surface the existing E-QRY-UNKNOWN diagnostic directly.
         var result = new QueryResult<object>(
             QueryName: body.Name,
             AsOfDocumentVersion: host.Document.Version,

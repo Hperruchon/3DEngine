@@ -16,6 +16,12 @@ public sealed class Document
     private readonly List<Command> _log = new();
     public IReadOnlyList<Command> Log => _log;
 
+    // Body projection per ADR-0012 §3. The Document holds handles + minimum
+    // metadata; the backend owns the geometry data (ADR-0001 §3).
+    // Mutation goes only through CommandBus's commit section.
+    private readonly Dictionary<Guid, BodyRecord> _bodies = new();
+    public IReadOnlyCollection<BodyRecord> Bodies => _bodies.Values;
+
     public Document(Guid? projectId = null, int schemaVersion = 1)
     {
         DocumentId = Guid.NewGuid();
@@ -27,6 +33,8 @@ public sealed class Document
     }
 
     internal void AppendCommand(Command command) => _log.Add(command);
+
+    internal void AddBody(BodyRecord body) => _bodies[body.Handle.Id] = body;
 
     internal void AdvanceVersion(long newSeq)
     {

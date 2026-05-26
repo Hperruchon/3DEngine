@@ -23,10 +23,15 @@ public class SchemaEndpointTests : IClassFixture<WebApplicationFactory<Program>>
         var body = await ReadJsonAsync(response);
 
         Assert.Equal(JsonValueKind.Array, body.ValueKind);
-        Assert.Single(body.EnumerateArray());
-        var noop = body.EnumerateArray().First();
-        Assert.Equal("NoOp", noop.GetProperty("name").GetString());
-        Assert.Equal(1, noop.GetProperty("schemaVersion").GetInt32());
+        var names = body.EnumerateArray()
+            .Select(e => e.GetProperty("name").GetString())
+            .ToList();
+        Assert.Contains("NoOp", names);
+        Assert.Contains("CreateBox", names);
+        foreach (var entry in body.EnumerateArray())
+        {
+            Assert.Equal(1, entry.GetProperty("schemaVersion").GetInt32());
+        }
     }
 
     [Fact]
@@ -62,7 +67,7 @@ public class SchemaEndpointTests : IClassFixture<WebApplicationFactory<Program>>
     }
 
     [Fact]
-    public async Task Schema_Queries_Index_Is_Empty_Today()
+    public async Task Schema_Queries_Index_Lists_Registered_Queries()
     {
         var client = _factory.CreateClient();
         var response = await client.GetAsync("/schema/queries");
@@ -70,7 +75,10 @@ public class SchemaEndpointTests : IClassFixture<WebApplicationFactory<Program>>
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         var body = await ReadJsonAsync(response);
         Assert.Equal(JsonValueKind.Array, body.ValueKind);
-        Assert.Empty(body.EnumerateArray());
+        var names = body.EnumerateArray()
+            .Select(e => e.GetProperty("name").GetString())
+            .ToList();
+        Assert.Contains("GetBoundingBox", names);
     }
 
     [Fact]
