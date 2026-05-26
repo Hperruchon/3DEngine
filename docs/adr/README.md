@@ -22,6 +22,7 @@ This index is the entry point for ADRs. Find the relevant decision; do not read 
 | [0007](0007-ui-ephemeral-state-boundary.md) | UI ephemeral state boundary | Accepted | Boundary, clients | — | — |
 | [0008](0008-command-query-event-triad.md) | Command / Query / Event triad and structured results | Accepted | Contracts | 0006 (extended `CommandResult` shape) | — |
 | [0009](0009-3dengine-core-peer-render-kernel.md) | `3DEngine.Core` is a peer render kernel | Accepted | Boundary, clients | — | — |
+| [0010](0010-subscription-reset-snapshot-format.md) | `subscription.reset` snapshot format | Accepted | Contracts, observability | — | — |
 
 ## Topics
 
