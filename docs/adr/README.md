@@ -24,15 +24,17 @@ This index is the entry point for ADRs. Find the relevant decision; do not read 
 | [0009](0009-3dengine-core-peer-render-kernel.md) | `3DEngine.Core` is a peer render kernel | Accepted | Boundary, clients | — | — |
 | [0010](0010-subscription-reset-snapshot-format.md) | `subscription.reset` snapshot format | Accepted | Contracts, observability | — | — |
 | [0011](0011-server-default-deployment-topology.md) | Server-default deployment, embed for offline | Accepted | Clients, deployment | — | — |
+| [0012](0012-geometry-backend-wiring.md) | Geometry backend wiring (V1) | Accepted | Boundary, geometry, contracts | — | — |
+| [0013](0013-command-query-schema-declaration.md) | Command/query schema declaration | Accepted | Contracts, observability | — | — |
 
 ## Topics
 
-- **Contracts** — 0005, 0006, 0008. Read these before changing `Engine.Contracts/**`.
-- **Boundary** — 0001, 0004, 0007. Read these before changing project references or adding clients.
+- **Contracts** — 0005, 0006, 0008, 0012, 0013. Read these before changing `Engine.Contracts/**`.
+- **Boundary** — 0001, 0004, 0007, 0012. Read these before changing project references or adding clients.
 - **Workflow** — 0002. Read before adding a client or skipping CLI.
 - **Clients** — 0002, 0003, 0007. Read before changing UI/CLI/host code.
-- **Geometry** — 0001. Read before adding a capability or backend.
-- **Observability** — 0005. Read before changing event ordering, retention, or subscription.
+- **Geometry** — 0001, 0012. Read before adding a capability or backend.
+- **Observability** — 0005, 0010, 0013. Read before changing event ordering, retention, subscription, or schema endpoints.
 
 ## Adding an ADR
 
