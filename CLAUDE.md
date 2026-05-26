@@ -32,6 +32,10 @@ Engine.Core                         │
 
 Two kernels. `Engine.*` is the authority for design truth (commands/queries/events on the Document). `3DEngine.Core` is the render-side scene kernel for hosts that draw. They do not reference each other. Hosts that render wire them: subscribe to `Engine.Core` events and project them into `3DEngine.Core` state. See ADR-0009.
 
+## Deployment topology
+
+`engine-api-http` is the canonical deployment — its own process, lifecycle independent of any client. UIs, AI agents, and remote clients reach it through the HTTP/WebSocket surface. Embedded mode (engine hosted in-process by the client) is a strict subset for solo-offline use: exactly one client, no observers, no persistence between invocations. `Engine.Cli` is the canonical embedded host. Engine code is topology-agnostic; the kernel knows nothing about HTTP or processes. See ADR-0011.
+
 ## Dependency rules
 
 - `Engine.Contracts` has zero project references.
