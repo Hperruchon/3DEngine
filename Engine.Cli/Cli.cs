@@ -2,7 +2,7 @@ using System.Globalization;
 using Engine.Contracts;
 using Engine.Core;
 using Engine.Core.Commands;
-using Engine.Core.Geometry;
+using Engine.Core.Hosting;
 using Engine.Core.Queries;
 
 namespace Engine.Cli;
@@ -203,16 +203,13 @@ public static class Cli
 
     private static (CommandBus Commands, QueryBus Queries) BuildEngine()
     {
-        var document = new Document();
-        var commandRegistry = new CommandRegistry();
-        commandRegistry.Register(new NoOpCommandHandler());
-        commandRegistry.Register(new CreateBoxCommandHandler());
-        var queryRegistry = new QueryRegistry();
-        queryRegistry.Register(new GetBoundingBoxQueryHandler());
-        var sink = new InMemoryEventSink();
-        var backend = new InProcessMeshBackend();
-        var commandBus = new CommandBus(document, commandRegistry, sink, backend);
-        var queryBus = new QueryBus(document, queryRegistry, backend);
+        // Per TASK-0013: default engine wiring (Document, registries, sink,
+        // InProcessMeshBackend) comes from EngineHosting.CreateDefault.
+        // The CLI uses Events directly — no broadcasting layer (that is
+        // the HTTP host's concern per TASK-0010).
+        var kit = EngineHosting.CreateDefault();
+        var commandBus = new CommandBus(kit.Document, kit.CommandRegistry, kit.Events, kit.Backend);
+        var queryBus = new QueryBus(kit.Document, kit.QueryRegistry, kit.Backend);
         return (commandBus, queryBus);
     }
 }

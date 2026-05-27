@@ -1,9 +1,8 @@
 using Engine.Api.Http.WebSockets;
 using Engine.Contracts;
 using Engine.Core;
-using Engine.Core.Commands;
 using Engine.Core.Geometry;
-using Engine.Core.Queries;
+using Engine.Core.Hosting;
 
 namespace Engine.Api.Http;
 
@@ -16,8 +15,11 @@ namespace Engine.Api.Http;
 // Engine.Core stays untouched; the broadcaster + decorator live entirely in
 // Engine.Api.Http.
 //
-// Per ADR-0012 §7 and TASK-0011: the V1.x first geometry backend is the
-// in-process managed stub. CommandBus + QueryBus both receive it.
+// Default wiring (Document, registries with V1.x handlers, in-memory event
+// sink, InProcessMeshBackend per ADR-0012 §7) comes from
+// EngineHosting.CreateDefault (TASK-0013). The host's sole responsibility
+// here is to wrap the kit's Events in BroadcastingEventSink before
+// constructing CommandBus.
 internal sealed class EngineHost
 {
     public Document Document { get; }
@@ -30,16 +32,14 @@ internal sealed class EngineHost
 
     public EngineHost(EventBroadcaster broadcaster)
     {
-        Document = new Document();
-        CommandRegistry = new CommandRegistry();
-        CommandRegistry.Register(new NoOpCommandHandler());
-        CommandRegistry.Register(new CreateBoxCommandHandler());
-        QueryRegistry = new QueryRegistry();
-        QueryRegistry.Register(new GetBoundingBoxQueryHandler());
-        Events = new InMemoryEventSink();
-        Backend = new InProcessMeshBackend();
-        var broadcastingSink = new BroadcastingEventSink(Events, broadcaster);
-        CommandBus = new CommandBus(Document, CommandRegistry, broadcastingSink, Backend);
-        QueryBus = new QueryBus(Document, QueryRegistry, Backend);
+        var kit = EngineHosting.CreateDefault();
+        Document = kit.Document;
+        CommandRegistry = kit.CommandRegistry;
+        QueryRegistry = kit.QueryRegistry;
+        Events = kit.Events;
+        Backend = kit.Backend;
+        var broadcastingSink = new BroadcastingEventSink(kit.Events, broadcaster);
+        CommandBus = new CommandBus(kit.Document, kit.CommandRegistry, broadcastingSink, kit.Backend);
+        QueryBus = new QueryBus(kit.Document, kit.QueryRegistry, kit.Backend);
     }
 }
