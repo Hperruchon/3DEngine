@@ -26,6 +26,7 @@ This index is the entry point for ADRs. Find the relevant decision; do not read 
 | [0011](0011-server-default-deployment-topology.md) | Server-default deployment, embed for offline | Accepted | Clients, deployment | — | — |
 | [0012](0012-geometry-backend-wiring.md) | Geometry backend wiring (V1) | Accepted | Boundary, geometry, contracts | — | — |
 | [0013](0013-command-query-schema-declaration.md) | Command/query schema declaration | Accepted | Contracts, observability | — | — |
+| [0014](0014-command-log-persistence.md) | Command-log persistence for `engine-api-http` | Accepted | Persistence, deployment | — | — |
 
 ## Topics
 
@@ -35,6 +36,8 @@ This index is the entry point for ADRs. Find the relevant decision; do not read 
 - **Clients** — 0002, 0003, 0007. Read before changing UI/CLI/host code.
 - **Geometry** — 0001, 0012. Read before adding a capability or backend.
 - **Observability** — 0005, 0010, 0013. Read before changing event ordering, retention, subscription, or schema endpoints.
+- **Persistence** — 0014. Read before changing what is durable on disk or how startup recovers state.
+- **Deployment** — 0011, 0014. Read before changing how `engine-api-http` is hosted or what its lifecycle owns.
 
 ## Adding an ADR
 

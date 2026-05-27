@@ -29,7 +29,8 @@ _None. V1 is complete; advance to V1.x._
 P6 is complete. P7a (geometry slice with managed stub backend) is shipped. Remaining:
 
 - **P7b — Manifold backend (swap-in).** Replace the in-process managed stub with a real Manifold-backed `IGeometryBackend` behind the same capability interfaces. Needs a follow-on ADR for the native-interop posture (binding choice, native lifecycle, threading) before sizing.
+- **P8a — Command-log persistence for `engine-api-http` (ADR-0014).** Durable append-only command log; fsync inside the commit section; replay-from-genesis on startup. `Engine.Cli` stays ephemeral. No snapshots/compaction in V1.x.
 
 ## Pending — V2
 
-- **P8 — Persistence, multi-Document, undo/redo.** Per ADR-deferred items.
+- **P8b — Multi-Document and undo/redo.** Remaining portions of the original P8 not covered by P8a (ADR-0014). Per ADR-deferred items.
