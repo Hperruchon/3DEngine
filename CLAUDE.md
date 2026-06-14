@@ -5,12 +5,15 @@ You are working in a multi-project 3D Engine solution.
 ## Navigation
 
 1. `docs/CHARTER.md` — what this engine is for and what is out of bounds. Read first if unsure whether a request is in scope; it carries the agent scope test.
-2. `docs/adr/README.md` — index of architectural decisions. Find the one relevant ADR; do not read all.
-3. `docs/CURRENT-STATE.md` — what is built today. Authoritative for "does X exist yet."
-4. `tasks/` — sized work units. Read only the active task (Status: Active or Ready).
-5. `docs/diagnostics.md` — diagnostic code registry. Append-only.
-6. `docs/open-questions.md` — deferred decisions. Read only if one blocks your task.
-7. `docs/roadmap.md` — strategic phase plan. Read only when no Ready TASK exists in `tasks/`.
+2. `docs/INDEX.md` — one-page repo map. Paths + one-line purpose for every area. Read to find *where* something lives.
+3. `docs/adr/README.md` — index of architectural decisions. Find the one relevant ADR; do not read all.
+4. `docs/CURRENT-STATE.md` — what is built today. Authoritative for "does X exist yet."
+5. `tasks/` — sized work units. Read only the active task (Status: Active or Ready).
+6. `docs/glossary.md` — canonical vocabulary. One line per term + pointer to its defining file/ADR.
+7. `docs/conventions.md` — file/naming/grammar conventions that keep grep cheap.
+8. `docs/diagnostics.md` — diagnostic code registry. Append-only.
+9. `docs/open-questions.md` — deferred decisions. Read only if one blocks your task.
+10. `docs/roadmap.md` — strategic phase plan. Read only when no Ready TASK exists in `tasks/`.
 
 Find the minimum information. Do not read all ADRs or all tasks.
 

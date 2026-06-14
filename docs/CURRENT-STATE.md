@@ -60,3 +60,13 @@ First concrete geometry command and the wiring posture for all future geometry. 
 ## v0.12 — Charter (governance, docs-only)
 
 `docs/CHARTER.md` adds the missing "why" layer above the ADRs: mission (anchored on "we do not build a 3D app…"), target consumers (AI agents first-class), V1 definition-of-success stated as realized properties (points here for the ledger, does not re-enumerate), V1.x/V2 direction (points to roadmap), the Non-goals (deferred) vs Anti-objectives (refused-forever) split, and an agent-first scope test (refuse → defer → proceed → stop-and-ask). Promoted to CLAUDE.md navigation entry #1 with the read-order rule "charter says whether to act · CLAUDE.md says where · ADR says how · CURRENT-STATE says what exists." No phase, no TASK, no code/test/contract change; no new diagnostic codes. Authored via a 4-phase multi-agent workflow (gather → draft → 3 adversarial critique lenses → reconcile); the critique caught and removed a false "founding manifesto" provenance claim. Build + test unaffected.
+
+## v0.13 — Navigation infrastructure (governance, docs-only)
+
+Finishes the navigation layer the P1 experiment deferred. Three new docs, each scoped to **point, not duplicate** — they hold navigation and naming only, deferring *why* to the ADRs, *what exists* to this file, and *boundaries* to CLAUDE.md:
+
+- `docs/INDEX.md` — one-page repo map (paths + one-line purpose for every area); links to `architecture/engine-runtime-boundaries.md` as the canonical boundary diagram rather than redrawing it.
+- `docs/glossary.md` — canonical vocabulary, one line per term + a pointer to its defining file/ADR. Terms verified against `Engine.Contracts/` source (Command, Query, EventRecord, CommandResult, Outputs, Diagnostic, ErrorDetail, Document, Version, Seq, BodyHandle, Body, IGeometryBackend, capability/`TryGet<T>`, Replay, projection, design truth, the two kernels).
+- `docs/conventions.md` — file/naming/grammar conventions derived from what the code already does (file-per-command, `*Command`/`*Handler`/`*Query` suffixes, diagnostic-code grammar, event-`Kind` grammar with control-frame carve-outs, the contract-change trigger checklist, and the inline file-header→ADR citation), each annotated CI-enforced vs convention-only.
+
+Promoted to CLAUDE.md navigation: `INDEX.md` as #2 (the *where* map), `glossary.md`/`conventions.md` adjacent to `diagnostics.md` as the reference cluster (#6–8). No phase, no TASK, no code/test/contract change; no new diagnostic codes. Applied the CHARTER scope test: additive governance work, touches no `Engine.Contracts` shape. Build + test unaffected (docs-only).
