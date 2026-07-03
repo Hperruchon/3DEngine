@@ -34,10 +34,14 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - { os: windows-latest, rid: win-x64 }
-          - { os: ubuntu-latest,  rid: linux-x64 }
-          - { os: macos-latest,   rid: osx-arm64 }
+          # win-x64 (dev machine) and linux-x64 (CI) are required; osx-arm64 is
+          # best-effort (continue-on-error below) so a mac build failure still lets
+          # the pack job ship a win+linux NuGet. osx is a fast-follow (TASK-0012 Scope out).
+          - { os: windows-latest, rid: win-x64,   optional: false }
+          - { os: ubuntu-latest,  rid: linux-x64, optional: false }
+          - { os: macos-latest,   rid: osx-arm64, optional: true }
     runs-on: ${{ matrix.os }}
+    continue-on-error: ${{ matrix.optional }}
     steps:
       - name: Checkout Manifold @ ${{ inputs.manifold_ref }}
         uses: actions/checkout@v4
