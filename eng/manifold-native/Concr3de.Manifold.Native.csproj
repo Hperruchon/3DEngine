@@ -1,0 +1,30 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    Packaging-only project (ADR-0014 §5 / TASK-0012 §6). Produces a multi-RID NuGet
+    carrying the native Manifold (manifoldc) payload under runtimes/<rid>/native/.
+    Deliberately NOT part of 3DEngine.sln, so the CI build/test gate ignores it; the
+    build-manifold-native workflow drops the built native libs into
+    ./runtimes/<rid>/native/ and runs `dotnet pack` on this project.
+  -->
+  <PropertyGroup>
+    <TargetFramework>netstandard2.0</TargetFramework>
+    <IncludeBuildOutput>false</IncludeBuildOutput>
+    <IncludeSymbols>false</IncludeSymbols>
+    <SuppressDependenciesWhenPacking>true</SuppressDependenciesWhenPacking>
+    <!-- Native-assets-only package: no lib/, no dependencies. -->
+    <NoWarn>$(NoWarn);NU5128</NoWarn>
+    <PackageId>Concr3de.Manifold.Native</PackageId>
+    <Authors>Concr3de</Authors>
+    <Description>Native Manifold (manifoldc) payload for Engine.Geometry.Manifold, built serial (MANIFOLD_PAR=NONE) per ADR-0014 §3. Version tracks the pinned Manifold commit.</Description>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- Preserve the runtimes/<rid>/native/ tree in the package. -->
+    <None Include="runtimes/**">
+      <Pack>true</Pack>
+      <PackagePath>runtimes/%(RecursiveDir)%(Filename)%(Extension)</PackagePath>
+    </None>
+  </ItemGroup>
+
+</Project>

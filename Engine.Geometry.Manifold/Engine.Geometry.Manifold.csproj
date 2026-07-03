@@ -1,0 +1,22 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <!-- [LibraryImport] source-generation needs unsafe (ADR-0014 §1 anticipated this). -->
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <!--
+      RID-agnostic per ADR-0014 §5: NO RuntimeIdentifier(s) here. The native
+      `manifoldc` payload is consumed via runtimes/<rid>/native at publish/run.
+      References only Engine.Contracts (ADR-0014 §4) — native deps stay out of
+      Engine.Core.
+    -->
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Engine.Contracts\Engine.Contracts.csproj" />
+  </ItemGroup>
+
+</Project>
