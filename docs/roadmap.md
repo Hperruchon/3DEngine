@@ -28,7 +28,7 @@ _None. V1 is complete; advance to V1.x._
 
 P6 is complete. P7a (geometry slice with managed stub backend) is shipped. Remaining:
 
-- **P7b — Manifold backend (swap-in).** Replace the in-process managed stub with a real Manifold-backed `IGeometryBackend` behind the same capability interfaces. Needs a follow-on ADR for the native-interop posture (binding choice, native lifecycle, threading) before sizing.
+- **P7b — Manifold backend (swap-in).** Replace the in-process managed stub with a real Manifold-backed `IGeometryBackend` behind the same capability interfaces. Native-interop posture settled by ADR-0014 (Accepted 2026-07-03); sized as TASK-0012 (Ready).
 
 ## Pending — V2
 
