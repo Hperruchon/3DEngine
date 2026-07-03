@@ -113,11 +113,12 @@ jobs:
       - name: Checkout (this repo, for the packaging project)
         uses: actions/checkout@v4
 
-      - name: Set up .NET
+      # Install exactly the SDK the repo pins (global.json is version-locked with
+      # rollForward: disable), so `dotnet pack` from the repo root resolves it.
+      - name: Set up .NET (pinned by global.json)
         uses: actions/setup-dotnet@v4
         with:
-          dotnet-version: 10.x
-          include-prerelease: true
+          global-json-file: global.json
 
       - name: Download native artifacts
         uses: actions/download-artifact@v4
