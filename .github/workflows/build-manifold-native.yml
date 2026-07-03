@@ -1,0 +1,154 @@
+name: Build Manifold native
+
+# Builds the pinned Manifold C API (manifoldc) from source for each supported RID,
+# serial (MANIFOLD_PAR=NONE, no TBB) per ADR-0014 §3, then packs a single multi-RID
+# NuGet (runtimes/<rid>/native/) per ADR-0014 §5 / TASK-0012 §6.
+#
+# Manual-only (workflow_dispatch): rerun when bumping the pinned Manifold version.
+# Does NOT run on push and does NOT touch the build-and-test gate in ci.yml.
+#
+# DRAFT — not yet executed. Confirm before the first real run:
+#   1. Default `manifold_ref` v3.5.2 is a confirmed double-precision release (TASK-0012 §2); bump when upgrading.
+#   2. The native libs land where the "Stage native libs" step looks (adjust the find).
+#   3. The package id / feed (TASK-0012 §6). Publish step is left disabled.
+
+on:
+  workflow_dispatch:
+    inputs:
+      manifold_ref:
+        description: "Manifold git ref (tag or SHA). MUST be a double-precision release (TASK-0012 §2)."
+        required: true
+        default: "v3.5.2"
+      package_version:
+        description: "NuGet package version to produce (tracks the Manifold ref)."
+        required: true
+        default: "3.5.2"
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: manifoldc (${{ matrix.rid }})
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { os: windows-latest, rid: win-x64 }
+          - { os: ubuntu-latest,  rid: linux-x64 }
+          - { os: macos-latest,   rid: osx-arm64 }
+    runs-on: ${{ matrix.os }}
+    steps:
+      - name: Checkout Manifold @ ${{ inputs.manifold_ref }}
+        uses: actions/checkout@v4
+        with:
+          repository: elalish/manifold
+          ref: ${{ inputs.manifold_ref }}
+          submodules: recursive
+
+      # -A x64 selects the VS generator platform; Windows only.
+      - name: Configure (Windows / MSVC)
+        if: runner.os == 'Windows'
+        shell: bash
+        run: >
+          cmake -B build -A x64
+          -DBUILD_SHARED_LIBS=ON
+          -DMANIFOLD_CBIND=ON
+          -DMANIFOLD_PAR=NONE
+          -DMANIFOLD_EXPORT=OFF
+          -DMANIFOLD_CROSS_SECTION=OFF
+          -DMANIFOLD_TEST=OFF
+
+      # Single-config generators need CMAKE_BUILD_TYPE at configure time.
+      - name: Configure (Linux / macOS)
+        if: runner.os != 'Windows'
+        shell: bash
+        run: >
+          cmake -B build
+          -DCMAKE_BUILD_TYPE=Release
+          -DBUILD_SHARED_LIBS=ON
+          -DMANIFOLD_CBIND=ON
+          -DMANIFOLD_PAR=NONE
+          -DMANIFOLD_EXPORT=OFF
+          -DMANIFOLD_CROSS_SECTION=OFF
+          -DMANIFOLD_TEST=OFF
+
+      - name: Build
+        shell: bash
+        run: cmake --build build --config Release --parallel
+
+      # A shared build emits manifoldc + the core manifold lib as a pair — ship both.
+      - name: Stage native libs
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p staging
+          find build -type f \( \
+            -name 'manifoldc.dll'  -o -name 'libmanifoldc.so*' -o -name 'libmanifoldc.dylib' -o \
+            -name 'manifold.dll'   -o -name 'libmanifold.so*'  -o -name 'libmanifold.dylib' \
+          \) -exec cp -v {} staging/ \;
+          echo '--- staged ---'; ls -la staging
+          test -n "$(ls -A staging)" || { echo 'ERROR: no native libs under build/'; find build -type f -name '*manifold*'; exit 1; }
+
+      - name: Upload native-${{ matrix.rid }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: native-${{ matrix.rid }}
+          path: staging/
+          if-no-files-found: error
+
+  pack:
+    name: Pack multi-RID NuGet
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout (this repo, for the packaging project)
+        uses: actions/checkout@v4
+
+      - name: Set up .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.x
+          include-prerelease: true
+
+      - name: Download native artifacts
+        uses: actions/download-artifact@v4
+        with:
+          pattern: native-*
+          path: dl
+
+      - name: Lay out runtimes/<rid>/native
+        shell: bash
+        run: |
+          set -euo pipefail
+          base=eng/manifold-native
+          rm -rf "$base/runtimes"
+          for d in dl/native-*; do
+            rid="${d##*/native-}"
+            mkdir -p "$base/runtimes/$rid/native"
+            cp -v "$d"/* "$base/runtimes/$rid/native/"
+          done
+          echo '--- package layout ---'; find "$base/runtimes" -type f
+
+      - name: Pack
+        shell: bash
+        run: >
+          dotnet pack eng/manifold-native/Concr3de.Manifold.Native.csproj
+          -c Release
+          -p:Version=${{ inputs.package_version }}
+          -o nupkg
+
+      - name: Upload nupkg
+        uses: actions/upload-artifact@v4
+        with:
+          name: Concr3de.Manifold.Native.${{ inputs.package_version }}
+          path: nupkg/*.nupkg
+          if-no-files-found: error
+
+      # Publish is intentionally disabled until the feed is chosen (TASK-0012 §6).
+      # - name: Push to feed
+      #   shell: bash
+      #   env:
+      #     FEED_URL: ${{ vars.MANIFOLD_NUGET_FEED }}
+      #     API_KEY: ${{ secrets.MANIFOLD_NUGET_API_KEY }}
+      #   run: dotnet nuget push nupkg/*.nupkg --source "$FEED_URL" --api-key "$API_KEY" --skip-duplicate

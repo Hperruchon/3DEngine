@@ -1,6 +1,8 @@
 using System.Diagnostics;
 using Engine.Contracts;
+using Engine.Contracts.Geometry;
 using Engine.Contracts.Handlers;
+using Engine.Core.Geometry;
 
 namespace Engine.Core;
 
@@ -8,12 +10,14 @@ namespace Engine.Core;
 // Per ADR-0006 §7: duplicate CommandId returns the cached CommandResult.
 // Per ADR-0008 §2: every Apply returns a structured CommandResult.
 // Per ADR-0005: events have monotonic Seq; Document.Version mirrors last emitted Seq.
+// Per ADR-0012 §2: bus owns the active backend and passes it to every Handle call.
 public sealed class CommandBus
 {
     private readonly Document _document;
     private readonly CommandRegistry _registry;
     private readonly IEventSink _events;
     private readonly IdempotencyCache _idempotency;
+    private readonly IGeometryBackend _backend;
     private readonly SemaphoreSlim _serial = new(1, 1);
     private long _nextSeq = 1;
 
@@ -21,11 +25,13 @@ public sealed class CommandBus
         Document document,
         CommandRegistry registry,
         IEventSink events,
+        IGeometryBackend? backend = null,
         IdempotencyCache? idempotency = null)
     {
         _document = document ?? throw new ArgumentNullException(nameof(document));
         _registry = registry ?? throw new ArgumentNullException(nameof(registry));
         _events = events ?? throw new ArgumentNullException(nameof(events));
+        _backend = backend ?? NullGeometryBackend.Instance;
         _idempotency = idempotency ?? new IdempotencyCache();
     }
 
@@ -76,7 +82,7 @@ public sealed class CommandBus
         CommandHandlerResult handlerResult;
         try
         {
-            handlerResult = await handler.Handle(command, _document, ct).ConfigureAwait(false);
+            handlerResult = await handler.Handle(command, _document, _backend, ct).ConfigureAwait(false);
         }
         catch (OperationCanceledException)
         {
@@ -89,12 +95,14 @@ public sealed class CommandBus
                 .ConfigureAwait(false);
         }
 
-        // 4. Commit: append log, emit applied event, advance version.
-        var seq = _nextSeq++;
+        // 4. Commit: append log, emit applied event, register bodies + emit
+        // body.created events, advance version. All events for a single commit
+        // share consecutive Seqs; Version advances once to the highest emitted.
+        var appliedSeq = _nextSeq++;
         _document.AppendCommand(command);
         await _events.Append(
             new EventRecord(
-                Seq: seq,
+                Seq: appliedSeq,
                 Timestamp: DateTime.UtcNow,
                 DocumentId: _document.DocumentId,
                 CauseCommandId: command.CommandId,
@@ -105,13 +113,35 @@ public sealed class CommandBus
                     ["schemaVersion"] = command.SchemaVersion,
                 }),
             ct).ConfigureAwait(false);
-        _document.AdvanceVersion(seq);
+
+        var lastSeq = appliedSeq;
+        foreach (var body in handlerResult.CreatedBodies)
+        {
+            _document.AddBody(body);
+            var bodySeq = _nextSeq++;
+            await _events.Append(
+                new EventRecord(
+                    Seq: bodySeq,
+                    Timestamp: DateTime.UtcNow,
+                    DocumentId: _document.DocumentId,
+                    CauseCommandId: command.CommandId,
+                    Kind: "body.created",
+                    Payload: new Dictionary<string, object?>
+                    {
+                        ["bodyId"] = body.Handle.Id,
+                        ["kind"] = body.Kind,
+                    }),
+                ct).ConfigureAwait(false);
+            lastSeq = bodySeq;
+        }
+
+        _document.AdvanceVersion(lastSeq);
 
         return new CommandResult(
             CommandId: command.CommandId,
             CommandName: command.Name,
             Status: CommandStatus.Applied,
-            AppliedAtSeq: seq,
+            AppliedAtSeq: appliedSeq,
             DocumentVersion: _document.Version,
             Outputs: handlerResult.Outputs,
             Diagnostics: handlerResult.Diagnostics,

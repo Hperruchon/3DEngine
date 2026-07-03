@@ -30,4 +30,9 @@ public sealed class QueryRegistry
 
     public IReadOnlyCollection<(string Name, int SchemaVersion)> Registered
         => _handlers.Keys.ToArray();
+
+    // Per ADR-0013 §3: schema endpoints project from the handler's declared
+    // Parameters/Result. The endpoint needs the actual handler instance,
+    // not just the (name, version) tuple.
+    public IReadOnlyCollection<IQueryHandler> Handlers => _handlers.Values.ToArray();
 }

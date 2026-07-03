@@ -19,6 +19,9 @@ All `E-`/`W-`/`I-` codes used in `Engine.*` code MUST appear here. Append-only. 
 | `E-API-BAD-REQUEST` | Error | HTTP request body was malformed, missing a required field, or wrong content-type. Never reaches the bus. | `Engine.Api.Http` endpoints, returned with HTTP `400` or `415`. |
 | `E-API-WS-INVALID-SUBSCRIBE` | Error | WebSocket subscribe frame is malformed, missing, or wrong shape. The connection is closed before any subscription is established. | `Engine.Api.Http` `/events`, WebSocket close status `1003` with this reason. |
 | `W-API-WS-LAGGED` | Warning | A WebSocket subscriber's outbound queue overflowed (per ADR-0005 §6). The engine disconnects that subscriber; other subscribers are unaffected. | `Engine.Api.Http` `/events`, WebSocket close status `1008` with reason `subscriber.lagged`. |
+| `E-GEOM-CAP-MISSING` | Error | The active geometry backend does not implement a capability interface (`IMeshOps`, `IGeometryQuery`, etc.) that the handler requested. No silent fallbacks (ADR-0001 §4). | `Engine.Core` command/query handlers when `backend.TryGet<T>()` returns null. |
+| `E-GEOM-INVALID-PARAM` | Error | Geometry command rejected because a parameter is out of range (e.g. zero or negative box size). | `Engine.Core` geometry command handlers on parameter validation. |
+| `E-GEOM-BODY-NOT-FOUND` | Error | A geometry query referenced a `bodyId` that is not present in `Document.Bodies`. | `Engine.Core` geometry query handlers (e.g. `GetBoundingBox`). |
 
 ## Reserved namespaces
 

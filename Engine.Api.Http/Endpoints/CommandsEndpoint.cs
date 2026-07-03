@@ -50,26 +50,29 @@ internal static class CommandsEndpoint
             return ApiErrorEnvelope.BadRequest("Required field missing: schemaVersion.");
 
         var commandId = body.CommandId ?? Guid.NewGuid();
-        CommandResult result;
+        Command? command;
+        IResult? parameterError;
 
-        if (body.Name == "NoOp")
+        switch (body.Name)
         {
-            if (body.Parameters is null
-                || !body.Parameters.TryGetValue("echo", out var echoElement))
-            {
-                return ApiErrorEnvelope.BadRequest("NoOp requires parameters.echo.");
-            }
+            case "NoOp":
+                command = BuildNoOp(body, commandId, out parameterError);
+                break;
+            case "CreateBox":
+                command = BuildCreateBox(body, commandId, out parameterError);
+                break;
+            default:
+                command = null;
+                parameterError = null;
+                break;
+        }
 
-            if (echoElement.ValueKind != JsonValueKind.String)
-                return ApiErrorEnvelope.BadRequest("NoOp parameter 'echo' must be a string.");
+        if (parameterError is not null)
+            return parameterError;
 
-            var echo = echoElement.GetString()!;
-            var command = new NoOpCommand
-            {
-                CommandId = commandId,
-                ExpectedDocumentVersion = body.ExpectedDocumentVersion,
-                Echo = echo,
-            };
+        CommandResult result;
+        if (command is not null)
+        {
             result = await host.CommandBus.Apply(command, context.RequestAborted).ConfigureAwait(false);
         }
         else
@@ -92,6 +95,79 @@ internal static class CommandsEndpoint
         }
 
         return Results.Json(result, ApiJson.Options);
+    }
+
+    private static Command? BuildNoOp(CommandRequest body, Guid commandId, out IResult? error)
+    {
+        if (body.Parameters is null
+            || !body.Parameters.TryGetValue("echo", out var echoElement))
+        {
+            error = ApiErrorEnvelope.BadRequest("NoOp requires parameters.echo.");
+            return null;
+        }
+
+        if (echoElement.ValueKind != JsonValueKind.String)
+        {
+            error = ApiErrorEnvelope.BadRequest("NoOp parameter 'echo' must be a string.");
+            return null;
+        }
+
+        error = null;
+        return new NoOpCommand
+        {
+            CommandId = commandId,
+            ExpectedDocumentVersion = body.ExpectedDocumentVersion,
+            Echo = echoElement.GetString()!,
+        };
+    }
+
+    private static Command? BuildCreateBox(CommandRequest body, Guid commandId, out IResult? error)
+    {
+        if (body.Parameters is null)
+        {
+            error = ApiErrorEnvelope.BadRequest("CreateBox requires parameters.sizeX, sizeY, sizeZ.");
+            return null;
+        }
+
+        if (!TryReadDouble(body.Parameters, "sizeX", out var sx, out error)) return null;
+        if (!TryReadDouble(body.Parameters, "sizeY", out var sy, out error)) return null;
+        if (!TryReadDouble(body.Parameters, "sizeZ", out var sz, out error)) return null;
+
+        error = null;
+        return new CreateBoxCommand
+        {
+            CommandId = commandId,
+            ExpectedDocumentVersion = body.ExpectedDocumentVersion,
+            SizeX = sx,
+            SizeY = sy,
+            SizeZ = sz,
+        };
+    }
+
+    private static bool TryReadDouble(
+        Dictionary<string, JsonElement> parameters,
+        string key,
+        out double value,
+        out IResult? error)
+    {
+        value = 0;
+        if (!parameters.TryGetValue(key, out var element))
+        {
+            error = ApiErrorEnvelope.BadRequest($"Required parameter missing: {key}.");
+            return false;
+        }
+        if (element.ValueKind != JsonValueKind.Number)
+        {
+            error = ApiErrorEnvelope.BadRequest($"Parameter '{key}' must be a number.");
+            return false;
+        }
+        if (!element.TryGetDouble(out value))
+        {
+            error = ApiErrorEnvelope.BadRequest($"Parameter '{key}' is not a valid number.");
+            return false;
+        }
+        error = null;
+        return true;
     }
 
     internal sealed record CommandRequest(

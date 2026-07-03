@@ -74,6 +74,7 @@ public class EventsEndpointWireShapeTests : IClassFixture<WebApplicationFactory<
 
         // Snapshot per ADR-0010 §2: documentId, projectId, schemaVersion,
         // version, createdAt, updatedAt — and notably NOT a `log` field.
+        // Extended per ADR-0012 §6: bodies array (possibly empty).
         var snapshot = reset.GetProperty("snapshot");
         Assert.Equal(host.Document.DocumentId, snapshot.GetProperty("documentId").GetGuid());
         Assert.True(snapshot.TryGetProperty("projectId", out _));
@@ -82,6 +83,49 @@ public class EventsEndpointWireShapeTests : IClassFixture<WebApplicationFactory<
         Assert.True(snapshot.TryGetProperty("createdAt", out _));
         Assert.True(snapshot.TryGetProperty("updatedAt", out _));
         Assert.False(snapshot.TryGetProperty("log", out _), "snapshot must not include the command log (ADR-0010 §2).");
+        Assert.True(snapshot.TryGetProperty("bodies", out var bodies)
+            && bodies.ValueKind == JsonValueKind.Array,
+            "snapshot must include a bodies array (ADR-0012 §6).");
+        Assert.Empty(bodies.EnumerateArray());
+
+        await socket.CloseAsync(WebSocketCloseStatus.NormalClosure, "done", CancellationToken.None);
+    }
+
+    [Fact]
+    public async Task Subscription_Reset_After_CreateBox_Has_Bodies_Array_With_Created_Body()
+    {
+        using var factory = _baseFactory.WithWebHostBuilder(_ => { });
+        var http = factory.CreateClient();
+        var host = factory.Services.GetRequiredService<EngineHost>();
+
+        // Apply a CreateBox first so the Document has a body in its projection.
+        var apply = await http.PostAsJsonAsync("/commands", new
+        {
+            name = "CreateBox",
+            schemaVersion = 1,
+            parameters = new { sizeX = 2.0, sizeY = 4.0, sizeZ = 8.0 },
+        });
+        apply.EnsureSuccessStatusCode();
+        var applyBody = JsonDocument.Parse(await apply.Content.ReadAsStringAsync()).RootElement;
+        var bodyId = applyBody.GetProperty("outputs").GetProperty("bodyId").GetGuid();
+
+        // Now subscribe with a null cursor → reset with snapshot.
+        using var socket = await WebSocketTestClient.ConnectAsync(factory);
+        await WebSocketTestClient.SendJsonAsync(socket, new
+        {
+            documentId = (Guid?)null,
+            lastSeenSeq = (long?)null,
+        });
+
+        var reset = await WebSocketTestClient.ReceiveJsonAsync(socket);
+        Assert.Equal("subscription.reset", reset.GetProperty("kind").GetString());
+
+        var bodies = reset.GetProperty("snapshot").GetProperty("bodies");
+        Assert.Equal(JsonValueKind.Array, bodies.ValueKind);
+        var entries = bodies.EnumerateArray().ToArray();
+        Assert.Single(entries);
+        Assert.Equal(bodyId, entries[0].GetProperty("handle").GetGuid());
+        Assert.Equal("Box", entries[0].GetProperty("kind").GetString());
 
         await socket.CloseAsync(WebSocketCloseStatus.NormalClosure, "done", CancellationToken.None);
     }

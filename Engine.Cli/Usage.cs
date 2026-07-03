@@ -17,12 +17,13 @@ Exit codes:
   1  Rejected or Cancelled (commands), or query rejected
   2  Invalid usage
 
-Registered commands: NoOp
-Registered queries:  (none)
+Registered commands: NoOp, CreateBox
+Registered queries:  GetBoundingBox
 
 Examples:
   engine apply NoOp --param echo=hello
-  engine query GetEntity --param id=42
+  engine apply CreateBox --param sizeX=10 --param sizeY=20 --param sizeZ=30
+  engine query GetBoundingBox --param bodyId=<guid>
 
 """;
 }

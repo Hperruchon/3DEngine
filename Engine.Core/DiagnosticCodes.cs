@@ -11,4 +11,7 @@ public static class DiagnosticCodes
     public const string ApiBadRequest = "E-API-BAD-REQUEST";
     public const string ApiWsInvalidSubscribe = "E-API-WS-INVALID-SUBSCRIBE";
     public const string ApiWsLagged = "W-API-WS-LAGGED";
+    public const string GeomCapMissing = "E-GEOM-CAP-MISSING";
+    public const string GeomInvalidParam = "E-GEOM-INVALID-PARAM";
+    public const string GeomBodyNotFound = "E-GEOM-BODY-NOT-FOUND";
 }

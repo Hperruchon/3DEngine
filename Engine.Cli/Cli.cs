@@ -1,6 +1,9 @@
+using System.Globalization;
 using Engine.Contracts;
 using Engine.Core;
 using Engine.Core.Commands;
+using Engine.Core.Geometry;
+using Engine.Core.Queries;
 
 namespace Engine.Cli;
 
@@ -36,7 +39,7 @@ public static class Cli
         {
             "help" => Help(stdout),
             "apply" => await Apply(rest, stdout, stderr, ct).ConfigureAwait(false),
-            "query" => Query(rest, stdout, stderr),
+            "query" => await Query(rest, stdout, stderr, ct).ConfigureAwait(false),
             _ => InvalidUsage(stderr, $"Unknown verb: {verb}"),
         };
     }
@@ -75,14 +78,32 @@ public static class Cli
             return InvalidUsage(stderr, ex.Message);
         }
 
-        CommandResult result;
-        if (name == "NoOp")
+        Command? command;
+        switch (name)
         {
-            if (!parameters.TryGetValue("echo", out var echo))
-                return InvalidUsage(stderr, "NoOp requires --param echo=<value>.");
+            case "NoOp":
+                if (!parameters.TryGetValue("echo", out var echo))
+                    return InvalidUsage(stderr, "NoOp requires --param echo=<value>.");
+                command = new NoOpCommand { Echo = echo };
+                break;
 
+            case "CreateBox":
+                if (!TryParseRequiredDouble(parameters, "sizeX", stderr, out var sx)) return ExitInvalidUsage;
+                if (!TryParseRequiredDouble(parameters, "sizeY", stderr, out var sy)) return ExitInvalidUsage;
+                if (!TryParseRequiredDouble(parameters, "sizeZ", stderr, out var sz)) return ExitInvalidUsage;
+                command = new CreateBoxCommand { SizeX = sx, SizeY = sy, SizeZ = sz };
+                break;
+
+            default:
+                command = null;
+                break;
+        }
+
+        CommandResult result;
+        if (command is not null)
+        {
             var (bus, _) = BuildEngine();
-            result = await bus.Apply(new NoOpCommand { Echo = echo }, ct).ConfigureAwait(false);
+            result = await bus.Apply(command, ct).ConfigureAwait(false);
         }
         else
         {
@@ -107,24 +128,45 @@ public static class Cli
         return result.Status == CommandStatus.Applied ? ExitApplied : ExitRejected;
     }
 
-    private static int Query(string[] args, TextWriter stdout, TextWriter stderr)
+    private static async Task<int> Query(
+        string[] args,
+        TextWriter stdout,
+        TextWriter stderr,
+        CancellationToken ct)
     {
         if (args.Length == 0)
             return InvalidUsage(stderr, "query requires a query name.");
 
         var name = args[0];
+        Dictionary<string, string> parameters;
         try
         {
-            ArgParser.ParseParams(args[1..]);
+            parameters = ArgParser.ParseParams(args[1..]);
         }
         catch (ArgParseException ex)
         {
             return InvalidUsage(stderr, ex.Message);
         }
 
-        // Query registry is empty in P1. Same rationale as Apply for the
-        // unknown branch: Query is abstract; without a sentinel we cannot
-        // submit through QueryBus. We produce the Rejected result directly.
+        // GetBoundingBox is the only registered query. Without a preceding
+        // CreateBox in this process the Document has no bodies — the query
+        // returns a structured "body not found" rejection.
+        if (name == "GetBoundingBox")
+        {
+            if (!parameters.TryGetValue("bodyId", out var idStr))
+                return InvalidUsage(stderr, "GetBoundingBox requires --param bodyId=<guid>.");
+            if (!Guid.TryParse(idStr, out var bodyId))
+                return InvalidUsage(stderr, $"--param bodyId='{idStr}' is not a valid GUID.");
+
+            var (_, queryBus) = BuildEngine();
+            var typed = await queryBus.Query<Engine.Contracts.Geometry.Aabb>(
+                new GetBoundingBoxQuery { BodyId = bodyId }, ct).ConfigureAwait(false);
+            JsonRenderer.WriteQueryResult(typed, stdout);
+            return typed.Error is null ? ExitApplied : ExitRejected;
+        }
+
+        // Unknown query: produce the Rejected result directly (same rationale
+        // as Apply's unknown branch).
         var result = new QueryResult<object>(
             QueryName: name,
             AsOfDocumentVersion: 0,
@@ -139,14 +181,38 @@ public static class Cli
         return ExitRejected;
     }
 
+    private static bool TryParseRequiredDouble(
+        Dictionary<string, string> parameters,
+        string key,
+        TextWriter stderr,
+        out double value)
+    {
+        if (!parameters.TryGetValue(key, out var raw))
+        {
+            InvalidUsage(stderr, $"CreateBox requires --param {key}=<number>.");
+            value = 0;
+            return false;
+        }
+        if (!double.TryParse(raw, NumberStyles.Float, CultureInfo.InvariantCulture, out value))
+        {
+            InvalidUsage(stderr, $"--param {key}='{raw}' is not a valid number.");
+            return false;
+        }
+        return true;
+    }
+
     private static (CommandBus Commands, QueryBus Queries) BuildEngine()
     {
         var document = new Document();
         var commandRegistry = new CommandRegistry();
         commandRegistry.Register(new NoOpCommandHandler());
+        commandRegistry.Register(new CreateBoxCommandHandler());
+        var queryRegistry = new QueryRegistry();
+        queryRegistry.Register(new GetBoundingBoxQueryHandler());
         var sink = new InMemoryEventSink();
-        var commandBus = new CommandBus(document, commandRegistry, sink);
-        var queryBus = new QueryBus(document, new QueryRegistry());
+        var backend = new InProcessMeshBackend();
+        var commandBus = new CommandBus(document, commandRegistry, sink, backend);
+        var queryBus = new QueryBus(document, queryRegistry, backend);
         return (commandBus, queryBus);
     }
 }

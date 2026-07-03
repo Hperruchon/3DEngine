@@ -29,14 +29,18 @@ internal sealed record HeartbeatMessage(string Kind)
     public static HeartbeatMessage Instance { get; } = new("heartbeat");
 }
 
-// Snapshot DTO per ADR-0010 §2. V1.x scope: Document metadata only.
+// Snapshot DTO per ADR-0010 §2 + extension from ADR-0012 §6.
+// V1.x scope: Document metadata + the body projection list.
 internal sealed record SnapshotMessage(
     Guid DocumentId,
     Guid? ProjectId,
     int SchemaVersion,
     long Version,
     DateTime CreatedAt,
-    DateTime UpdatedAt);
+    DateTime UpdatedAt,
+    IReadOnlyList<SnapshotBodyEntry> Bodies);
+
+internal sealed record SnapshotBodyEntry(Guid Handle, string Kind);
 
 internal static class SnapshotProjector
 {
@@ -46,5 +50,8 @@ internal static class SnapshotProjector
         SchemaVersion: doc.SchemaVersion,
         Version: doc.Version,
         CreatedAt: doc.CreatedAt,
-        UpdatedAt: doc.UpdatedAt);
+        UpdatedAt: doc.UpdatedAt,
+        Bodies: doc.Bodies
+            .Select(b => new SnapshotBodyEntry(b.Handle.Id, b.Kind))
+            .ToArray());
 }
