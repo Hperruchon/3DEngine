@@ -46,18 +46,20 @@ jobs:
           ref: ${{ inputs.manifold_ref }}
           submodules: recursive
 
-      # -A x64 selects the VS generator platform; Windows only.
+      # CROSS_SECTION must stay ON: MANIFOLD_CBIND is a cmake_dependent_option forced
+      # OFF when cross-section is OFF (v3.5.2), which would silently drop manifoldc.
+      # PAR=OFF is the serial (no-TBB) backend per ADR-0014 §3. -A x64 = VS platform.
       - name: Configure (Windows / MSVC)
         if: runner.os == 'Windows'
         shell: bash
         run: >
           cmake -B build -A x64
           -DBUILD_SHARED_LIBS=ON
+          -DMANIFOLD_CROSS_SECTION=ON
           -DMANIFOLD_CBIND=ON
-          -DMANIFOLD_PAR=NONE
-          -DMANIFOLD_EXPORT=OFF
-          -DMANIFOLD_CROSS_SECTION=OFF
+          -DMANIFOLD_PAR=OFF
           -DMANIFOLD_TEST=OFF
+          -DMANIFOLD_DOWNLOADS=ON
 
       # Single-config generators need CMAKE_BUILD_TYPE at configure time.
       - name: Configure (Linux / macOS)
@@ -67,28 +69,30 @@ jobs:
           cmake -B build
           -DCMAKE_BUILD_TYPE=Release
           -DBUILD_SHARED_LIBS=ON
+          -DMANIFOLD_CROSS_SECTION=ON
           -DMANIFOLD_CBIND=ON
-          -DMANIFOLD_PAR=NONE
-          -DMANIFOLD_EXPORT=OFF
-          -DMANIFOLD_CROSS_SECTION=OFF
+          -DMANIFOLD_PAR=OFF
           -DMANIFOLD_TEST=OFF
+          -DMANIFOLD_DOWNLOADS=ON
 
       - name: Build
         shell: bash
         run: cmake --build build --config Release --parallel
 
-      # A shared build emits manifoldc + the core manifold lib as a pair — ship both.
+      # A shared build emits manifoldc + core manifold (+ Clipper2 from cross-section) — ship all.
       - name: Stage native libs
         shell: bash
         run: |
           set -euo pipefail
           mkdir -p staging
           find build -type f \( \
-            -name 'manifoldc.dll'  -o -name 'libmanifoldc.so*' -o -name 'libmanifoldc.dylib' -o \
-            -name 'manifold.dll'   -o -name 'libmanifold.so*'  -o -name 'libmanifold.dylib' \
+            -iname 'manifoldc.dll'  -o -iname 'libmanifoldc.so*' -o -iname 'libmanifoldc.dylib' -o \
+            -iname 'manifold.dll'   -o -iname 'libmanifold.so*'  -o -iname 'libmanifold.dylib'  -o \
+            -iname 'clipper2*.dll'   -o -iname 'libclipper2*.so*' -o -iname 'libclipper2*.dylib' \
           \) -exec cp -v {} staging/ \;
           echo '--- staged ---'; ls -la staging
-          test -n "$(ls -A staging)" || { echo 'ERROR: no native libs under build/'; find build -type f -name '*manifold*'; exit 1; }
+          # Guard requires manifoldc specifically (not just the core lib) — that is the payload.
+          ls staging | grep -qi 'manifoldc' || { echo 'ERROR: manifoldc not built. All shared libs under build/:'; find build -type f \( -name '*.so*' -o -name '*.dll' -o -name '*.dylib' \) -print; exit 1; }
 
       - name: Upload native-${{ matrix.rid }}
         uses: actions/upload-artifact@v4
