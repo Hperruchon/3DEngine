@@ -14,13 +14,12 @@ namespace Engine.Geometry.Manifold;
 // Lifecycle (ADR-0014 §2): owns native handles; Dispose() releases them. Native object
 // + its caller-allocated buffer are owned as a unit by ManifoldSolidHandle.
 //
-// SKELETON STATUS — this compiles against the contract surface and encodes the verified
-// binding + ownership findings, but is deliberately incomplete:
-//   * not host-wired yet (TASK-0012 §4);
-//   * native failures throw plain exceptions instead of E-GEOM-* codes (TASK-0012 §5);
-//   * requires a pinned double-precision manifoldc artifact at runtime (TASK-0012 §6).
-// It mirrors InProcessMeshBackend's exception contract (InvalidOperationException on
-// duplicate, KeyNotFoundException on missing) so the existing handlers behave the same.
+// Host-wired in P7b: the CLI and HTTP hosts select this backend when the native
+// manifoldc library is loadable (IsNativeAvailable), else fall back to the managed
+// InProcessMeshBackend so the engine runs on any platform. Native failures still throw
+// plain exceptions rather than E-GEOM-* codes (TASK-0012 §5, pending). It mirrors
+// InProcessMeshBackend's exception contract (InvalidOperationException on duplicate,
+// KeyNotFoundException on missing) so the existing handlers behave the same.
 public sealed class ManifoldGeometryBackend : IGeometryBackend, IMeshOps, IGeometryQuery, IDisposable
 {
     private readonly Dictionary<Guid, ManifoldSolidHandle> _solids = new();
@@ -30,6 +29,28 @@ public sealed class ManifoldGeometryBackend : IGeometryBackend, IMeshOps, IGeome
         => BackendCapabilities.Mesh | BackendCapabilities.Query;
 
     public T? TryGet<T>() where T : class => this as T;
+
+    // Whether the native manifoldc library can be loaded on this platform/RID. Hosts use
+    // this to select Manifold when the payload is present and fall back to the managed
+    // stub otherwise, so the engine runs everywhere. The canonical replay gate stays on
+    // the stub, so this platform-dependent selection does not affect core determinism.
+    public static bool IsNativeAvailable()
+    {
+        try
+        {
+            if (NativeLibrary.TryLoad(
+                    "manifoldc", typeof(ManifoldGeometryBackend).Assembly, null, out var handle))
+            {
+                NativeLibrary.Free(handle);
+                return true;
+            }
+        }
+        catch
+        {
+            // Treat any probe failure as "unavailable".
+        }
+        return false;
+    }
 
     // IMeshOps. Builds a native, origin-centered Manifold cube and stores it under the
     // handle. Throws on duplicate (mirrors the stub) — the bus derives handles from

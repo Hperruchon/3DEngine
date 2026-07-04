@@ -1,9 +1,11 @@
 using System.Globalization;
 using Engine.Contracts;
+using Engine.Contracts.Geometry;
 using Engine.Core;
 using Engine.Core.Commands;
 using Engine.Core.Geometry;
 using Engine.Core.Queries;
+using Engine.Geometry.Manifold;
 
 namespace Engine.Cli;
 
@@ -210,7 +212,12 @@ public static class Cli
         var queryRegistry = new QueryRegistry();
         queryRegistry.Register(new GetBoundingBoxQueryHandler());
         var sink = new InMemoryEventSink();
-        var backend = new InProcessMeshBackend();
+        // Native Manifold when its library is loadable, else the managed stub so the
+        // CLI runs on any platform (ADR-0014 §4). The one-shot process reclaims the
+        // native backend on exit.
+        IGeometryBackend backend = ManifoldGeometryBackend.IsNativeAvailable()
+            ? new ManifoldGeometryBackend()
+            : new InProcessMeshBackend();
         var commandBus = new CommandBus(document, commandRegistry, sink, backend);
         var queryBus = new QueryBus(document, queryRegistry, backend);
         return (commandBus, queryBus);
