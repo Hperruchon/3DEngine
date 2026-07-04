@@ -17,6 +17,8 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Engine.Contracts\Engine.Contracts.csproj" />
+    <!-- Native Manifold payload: runtimes/<rid>/native/manifoldc (ADR-0014 §5). -->
+    <PackageReference Include="Engine.Geometry.Manifold.Native" Version="3.5.2" />
   </ItemGroup>
 
 </Project>

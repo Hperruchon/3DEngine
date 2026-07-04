@@ -1,0 +1,4 @@
+# Track the vendored native package here (local NuGet feed) despite the repo-wide
+# *.nupkg ignore. Interim bootstrap per TASK-0012 §6 — drop once a real feed
+# (e.g. GitHub Packages) is wired and remove this folder.
+!*.nupkg
