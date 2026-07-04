@@ -83,11 +83,11 @@ Per ADR-0014 Consequences; house rule = same PR as the code that raises them:
 
 - **Build recipe.** Clone `elalish/manifold` at the pinned tag (**v3.5.2** — latest release as of 2026-06-27, confirmed double-precision; the workflow default) and configure:
   ```
-  cmake -DMANIFOLD_CBIND=ON -DMANIFOLD_PAR=NONE -DMANIFOLD_EXPORT=OFF \
-        -DMANIFOLD_CROSS_SECTION=OFF -DBUILD_SHARED_LIBS=ON -A x64 -B build
+  cmake -DMANIFOLD_CROSS_SECTION=ON -DMANIFOLD_CBIND=ON -DMANIFOLD_PAR=OFF \
+        -DMANIFOLD_TEST=OFF -DBUILD_SHARED_LIBS=ON -B build   # add -A x64 on Windows
   cmake --build build --config Release
   ```
-  `MANIFOLD_PAR=NONE` satisfies ADR-0014 §3 (most-serial) **and** drops the TBB dependency — no `tbb12.dll` to ship. `MANIFOLD_EXPORT=OFF` avoids the assimp dependency (a known build-breaker per #1087). Output lands under `build/bindings/c/Release/manifoldc.dll` (path varies by version). A 3.x shared build may emit `manifold.dll` + `manifoldc.dll` as a pair — vendor whatever set the build produces into `runtimes/win-x64/native/`. Record the exact commit + SHA256. Pin `bindings/c/include/manifold/manifoldc.h` alongside the binary as the binding's source of truth.
+  Flags verified against v3.5.2's `CMakeLists.txt`. **`MANIFOLD_CROSS_SECTION=ON` is mandatory** — `MANIFOLD_CBIND` is a `cmake_dependent_option` forced OFF when cross-section is OFF, so disabling cross-section silently drops the `manifoldc` target (this sank the first CI run). `MANIFOLD_PAR=OFF` (a boolean in v3.5.2; default) is the serial, no-TBB backend per ADR-0014 §3. `MANIFOLD_TEST=OFF` skips the test suite. There is no `MANIFOLD_EXPORT` in v3.5.2 (assimp isn't pulled by default). Cross-section pulls Clipper2 (small, auto-fetched via `MANIFOLD_DOWNLOADS=ON`); a shared build emits `manifoldc` + core `manifold` (+ Clipper2) — vendor whatever set the build produces into `runtimes/<rid>/native/`. Record the exact commit + SHA256. Pin `bindings/c/include/manifold/manifoldc.h` as the binding's source of truth.
 - **Prototype-only shortcut (NOT the pinned artifact): the `ManifoldNET` 1.0.7-alpha nupkg** already contains `runtimes/win-x64/native/manifoldc.dll` (1.5 MB) + `tbb12.dll`. Handy to validate the P/Invoke surface in an afternoon, but it is win-x64 only, **single-precision (`float`)**, and a **TBB/parallel** build (violates ADR-0014 §3's most-serial mandate) with alpha/opaque provenance — do not ship it as production. Its DLL is what §2's export names were verified against.
 
 **Distribute — a multi-RID NuGet built by a CI matrix (the "usable from any machine" decision).** The idiomatic .NET path and the repo's own precedent (Vortice.Vulkan, Alimer.Bindings.SDL are consumed this way):
@@ -101,7 +101,7 @@ Per ADR-0014 Consequences; house rule = same PR as the code that raises them:
 
 **Deployment.** For the server itself, a container image with the linux-x64 native baked in makes "any machine runs the engine" = "any machine runs the container."
 
-**Pipeline status (2026-07-03).** The build+pack pipeline is drafted: `.github/workflows/build-manifold-native.yml` (manual `workflow_dispatch`; per-RID matrix build → multi-RID NuGet pack) plus the packaging project `eng/manifold-native/Concr3de.Manifold.Native.csproj`. The **pack half is verified locally** (produces `runtimes/<rid>/native/…` correctly). The **build half is unverified** — it needs a runner/toolchain; confirm the `manifold_ref` tag is a real double-precision release and adjust the "Stage native libs" `find` if the output paths differ. Publish-to-feed is left disabled pending the feed choice.
+**Pipeline status (2026-07-03).** The build+pack pipeline is `.github/workflows/build-manifold-native.yml` (manual `workflow_dispatch`; per-RID matrix build → multi-RID NuGet pack) plus the packaging project `eng/manifold-native/Concr3de.Manifold.Native.csproj`. Pack half verified locally. CI results (v3.5.2): **win-x64 ✅ and linux-x64 ✅ build clean** — those cover the dev machine and the ubuntu CI runner. **osx-arm64 ❌** fails at build (Apple clang/arm64; log not yet captured) and is marked `continue-on-error` so the pack job still ships a win+linux NuGet; the osx fix is a fast-follow. First run also caught two CMake-flag bugs (see the Build recipe). Publish-to-feed stays disabled pending the feed choice.
 
 ### 7. Tests (in `Engine.Tests/` unless noted)
 
