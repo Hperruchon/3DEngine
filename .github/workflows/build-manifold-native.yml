@@ -142,7 +142,7 @@ jobs:
       - name: Pack
         shell: bash
         run: >
-          dotnet pack eng/manifold-native/Concr3de.Manifold.Native.csproj
+          dotnet pack eng/manifold-native/Engine.Geometry.Manifold.Native.csproj
           -c Release
           -p:Version=${{ inputs.package_version }}
           -o nupkg
@@ -150,7 +150,7 @@ jobs:
       - name: Upload nupkg
         uses: actions/upload-artifact@v4
         with:
-          name: Concr3de.Manifold.Native.${{ inputs.package_version }}
+          name: Engine.Geometry.Manifold.Native.${{ inputs.package_version }}
           path: nupkg/*.nupkg
           if-no-files-found: error
 

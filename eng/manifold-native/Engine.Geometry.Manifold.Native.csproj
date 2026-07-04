@@ -14,9 +14,9 @@
     <SuppressDependenciesWhenPacking>true</SuppressDependenciesWhenPacking>
     <!-- Native-assets-only package: no lib/, no dependencies. -->
     <NoWarn>$(NoWarn);NU5128</NoWarn>
-    <PackageId>Concr3de.Manifold.Native</PackageId>
-    <Authors>Concr3de</Authors>
-    <Description>Native Manifold (manifoldc) payload for Engine.Geometry.Manifold, built serial (MANIFOLD_PAR=NONE) per ADR-0014 §3. Version tracks the pinned Manifold commit.</Description>
+    <PackageId>Engine.Geometry.Manifold.Native</PackageId>
+    <Authors>3DEngine</Authors>
+    <Description>Native Manifold (manifoldc) payload for Engine.Geometry.Manifold, built serial (MANIFOLD_PAR=OFF) per ADR-0014 §3. Version tracks the pinned Manifold commit.</Description>
   </PropertyGroup>
 
   <ItemGroup>
