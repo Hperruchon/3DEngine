@@ -26,6 +26,7 @@
     <ProjectReference Include="..\Engine.Core\Engine.Core.csproj" />
     <ProjectReference Include="..\Engine.Cli\Engine.Cli.csproj" />
     <ProjectReference Include="..\Engine.Api.Http\Engine.Api.Http.csproj" />
+    <ProjectReference Include="..\Engine.Geometry.Manifold\Engine.Geometry.Manifold.csproj" />
   </ItemGroup>
 
 </Project>
