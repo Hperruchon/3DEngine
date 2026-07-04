@@ -14,4 +14,6 @@ public static class DiagnosticCodes
     public const string GeomCapMissing = "E-GEOM-CAP-MISSING";
     public const string GeomInvalidParam = "E-GEOM-INVALID-PARAM";
     public const string GeomBodyNotFound = "E-GEOM-BODY-NOT-FOUND";
+    public const string GeomNativeOp = "E-GEOM-NATIVE-OP";
+    public const string GeomBackendInit = "E-GEOM-BACKEND-INIT";
 }

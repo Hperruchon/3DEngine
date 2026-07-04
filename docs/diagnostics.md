@@ -22,6 +22,8 @@ All `E-`/`W-`/`I-` codes used in `Engine.*` code MUST appear here. Append-only. 
 | `E-GEOM-CAP-MISSING` | Error | The active geometry backend does not implement a capability interface (`IMeshOps`, `IGeometryQuery`, etc.) that the handler requested. No silent fallbacks (ADR-0001 §4). | `Engine.Core` command/query handlers when `backend.TryGet<T>()` returns null. |
 | `E-GEOM-INVALID-PARAM` | Error | Geometry command rejected because a parameter is out of range (e.g. zero or negative box size). | `Engine.Core` geometry command handlers on parameter validation. |
 | `E-GEOM-BODY-NOT-FOUND` | Error | A geometry query referenced a `bodyId` that is not present in `Document.Bodies`. | `Engine.Core` geometry query handlers (e.g. `GetBoundingBox`). |
+| `E-GEOM-NATIVE-OP` | Error | A geometry backend operation failed or returned a degenerate result (e.g. a native Manifold FFI failure). | `Engine.Core` geometry command handlers, wrapping the backend call (P7b). |
+| `E-GEOM-BACKEND-INIT` | Error | The native geometry backend failed to initialise (native lib not found / load / version mismatch). Reserved: the host's native-availability fallback (ADR-0014 §4) selects the managed stub instead of surfacing this, so it is not raised in V1.x. | `Engine.Geometry.Manifold` backend init (reserved, not raised). |
 
 ## Reserved namespaces
 

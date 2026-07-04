@@ -52,7 +52,19 @@ public sealed class CreateBoxCommandHandler : ICommandHandler
         // ADR-0012 §4: handle is deterministic from CommandId. Replay against
         // a fresh backend produces identical state.
         var handle = new BodyHandle(create.CommandId);
-        mesh.CreateBox(handle, new BoxParameters(create.SizeX, create.SizeY, create.SizeZ));
+        try
+        {
+            mesh.CreateBox(handle, new BoxParameters(create.SizeX, create.SizeY, create.SizeZ));
+        }
+        catch (Exception ex)
+        {
+            // Size and capability are validated above, so a throw here is a backend/native
+            // fault (e.g. a Manifold FFI failure), surfaced structurally rather than crashing.
+            return Task.FromResult(CommandHandlerResult.Failure(
+                new ErrorDetail(
+                    DiagnosticCodes.GeomNativeOp,
+                    $"Geometry backend failed to create the box: {ex.Message}")));
+        }
 
         var outputs = new Outputs(new Dictionary<string, object?>
         {
