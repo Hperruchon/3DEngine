@@ -95,6 +95,15 @@ jobs:
             -iname 'clipper2*.dll'   -o -iname 'libclipper2*.so*' -o -iname 'libclipper2*.dylib' \
           \) -exec cp -v {} staging/ \;
           echo '--- staged ---'; ls -la staging
+          # Linux/macOS emit versioned files (libX.so.3.5.2). .NET loads libX.so and
+          # inter-lib SONAME deps may want libX.so.<major> — create both as copies
+          # (symlinks don't survive the artifact zip). No-op on Windows (no *.so.*).
+          shopt -s nullglob
+          for f in staging/*.so.*; do
+            stem="${f%.so.*}"; major="$(printf '%s' "${f#*.so.}" | cut -d. -f1)"
+            cp -f "$f" "$stem.so"
+            cp -f "$f" "$stem.so.$major"
+          done
           # Guard requires manifoldc specifically (not just the core lib) — that is the payload.
           ls staging | grep -qi 'manifoldc' || { echo 'ERROR: manifoldc not built. All shared libs under build/:'; find build -type f \( -name '*.so*' -o -name '*.dll' -o -name '*.dylib' \) -print; exit 1; }
 

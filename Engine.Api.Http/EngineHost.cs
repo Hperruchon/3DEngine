@@ -1,9 +1,11 @@
 using Engine.Api.Http.WebSockets;
 using Engine.Contracts;
+using Engine.Contracts.Geometry;
 using Engine.Core;
 using Engine.Core.Commands;
 using Engine.Core.Geometry;
 using Engine.Core.Queries;
+using Engine.Geometry.Manifold;
 
 namespace Engine.Api.Http;
 
@@ -16,9 +18,10 @@ namespace Engine.Api.Http;
 // Engine.Core stays untouched; the broadcaster + decorator live entirely in
 // Engine.Api.Http.
 //
-// Per ADR-0012 §7 and TASK-0011: the V1.x first geometry backend is the
-// in-process managed stub. CommandBus + QueryBus both receive it.
-internal sealed class EngineHost
+// Per ADR-0014 §4: the host selects the native Manifold backend when its native
+// library is loadable, else falls back to the managed InProcessMeshBackend so the
+// host runs on any platform. CommandBus + QueryBus both receive the chosen backend.
+internal sealed class EngineHost : IDisposable
 {
     public Document Document { get; }
     public CommandRegistry CommandRegistry { get; }
@@ -26,7 +29,7 @@ internal sealed class EngineHost
     public CommandBus CommandBus { get; }
     public QueryBus QueryBus { get; }
     public InMemoryEventSink Events { get; }
-    public InProcessMeshBackend Backend { get; }
+    public IGeometryBackend Backend { get; }
 
     public EngineHost(EventBroadcaster broadcaster)
     {
@@ -37,9 +40,13 @@ internal sealed class EngineHost
         QueryRegistry = new QueryRegistry();
         QueryRegistry.Register(new GetBoundingBoxQueryHandler());
         Events = new InMemoryEventSink();
-        Backend = new InProcessMeshBackend();
+        Backend = ManifoldGeometryBackend.IsNativeAvailable()
+            ? new ManifoldGeometryBackend()
+            : new InProcessMeshBackend();
         var broadcastingSink = new BroadcastingEventSink(Events, broadcaster);
         CommandBus = new CommandBus(Document, CommandRegistry, broadcastingSink, Backend);
         QueryBus = new QueryBus(Document, QueryRegistry, Backend);
     }
+
+    public void Dispose() => (Backend as IDisposable)?.Dispose();
 }
