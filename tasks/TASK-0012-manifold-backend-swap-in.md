@@ -101,7 +101,7 @@ Per ADR-0014 Consequences; house rule = same PR as the code that raises them:
 
 **Deployment.** For the server itself, a container image with the linux-x64 native baked in makes "any machine runs the engine" = "any machine runs the container."
 
-**Pipeline status (2026-07-03).** The build+pack pipeline is `.github/workflows/build-manifold-native.yml` (manual `workflow_dispatch`; per-RID matrix build → multi-RID NuGet pack) plus the packaging project `eng/manifold-native/Concr3de.Manifold.Native.csproj`. Pack half verified locally. CI results (v3.5.2): **win-x64 ✅ and linux-x64 ✅ build clean** — those cover the dev machine and the ubuntu CI runner. **osx-arm64 ❌** fails at build (Apple clang/arm64; log not yet captured) and is marked `continue-on-error` so the pack job still ships a win+linux NuGet; the osx fix is a fast-follow. First run also caught two CMake-flag bugs (see the Build recipe). Publish-to-feed stays disabled pending the feed choice.
+**Pipeline status (2026-07-03).** The build+pack pipeline is `.github/workflows/build-manifold-native.yml` (manual `workflow_dispatch`; per-RID matrix build → multi-RID NuGet pack) plus the packaging project `eng/manifold-native/Engine.Geometry.Manifold.Native.csproj`. Pack half verified locally. CI results (v3.5.2): **win-x64 ✅ and linux-x64 ✅ build clean** — those cover the dev machine and the ubuntu CI runner. **osx-arm64 ❌** fails at build (Apple clang/arm64; log not yet captured) and is marked `continue-on-error` so the pack job still ships a win+linux NuGet; the osx fix is a fast-follow. First run also caught two CMake-flag bugs (see the Build recipe). Publish-to-feed stays disabled pending the feed choice.
 
 ### 7. Tests (in `Engine.Tests/` unless noted)
 
@@ -182,7 +182,7 @@ Per ADR-0014 Consequences; house rule = same PR as the code that raises them:
 - `Engine.Tests/ReplayDeterminism/ManifoldReplayRoundTripTests.cs`
 - `runtimes/win-x64/native/manifoldc.<ext>` (vendored/pinned native payload; per the distribution approach chosen in §6)
 - `.github/workflows/build-manifold-native.yml` — per-RID matrix build + multi-RID NuGet pack (already drafted; manual-only).
-- `eng/manifold-native/Concr3de.Manifold.Native.csproj` (+ `_Package.cs`) — the packaging project (already created; pack verified locally).
+- `eng/manifold-native/Engine.Geometry.Manifold.Native.csproj` (+ `_Package.cs`) — the packaging project (already created; pack verified locally).
 - `tasks/TASK-0012-manifold-backend-swap-in.md` (this file)
 
 **Modified:**
