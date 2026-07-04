@@ -90,20 +90,27 @@ jobs:
           set -euo pipefail
           mkdir -p staging
           find build -type f \( \
-            -iname 'manifoldc.dll'  -o -iname 'libmanifoldc.so*' -o -iname 'libmanifoldc.dylib' -o \
-            -iname 'manifold.dll'   -o -iname 'libmanifold.so*'  -o -iname 'libmanifold.dylib'  -o \
+            -iname 'manifoldc.dll'  -o -iname 'libmanifoldc.so*' -o -iname 'libmanifoldc*.dylib' -o \
+            -iname 'manifold.dll'   -o -iname 'libmanifold.so*'  -o -iname 'libmanifold*.dylib'  -o \
             -iname 'clipper2*.dll'   -o -iname 'libclipper2*.so*' -o -iname 'libclipper2*.dylib' \
           \) -exec cp -v {} staging/ \;
-          echo '--- staged ---'; ls -la staging
-          # Linux/macOS emit versioned files (libX.so.3.5.2). .NET loads libX.so and
-          # inter-lib SONAME deps may want libX.so.<major> — create both as copies
-          # (symlinks don't survive the artifact zip). No-op on Windows (no *.so.*).
+          echo '--- staged (raw) ---'; ls -la staging
+          # The build emits versioned files; .NET loads the UNVERSIONED name (libX.so /
+          # libX.dylib) and inter-lib deps use libX.so.<major> / libX.<major>.dylib. Create
+          # those aliases as copies (symlinks don't survive the artifact zip). No-op on Windows.
           shopt -s nullglob
-          for f in staging/*.so.*; do
+          for f in staging/*.so.*; do                      # Linux: libX.so.3.5.2
             stem="${f%.so.*}"; major="$(printf '%s' "${f#*.so.}" | cut -d. -f1)"
             cp -f "$f" "$stem.so"
             cp -f "$f" "$stem.so.$major"
           done
+          for f in staging/lib*.*.dylib; do                # macOS: libX.3.5.2.dylib
+            b="$(basename "$f")"; name="${b%%.*}"
+            ver="${b#*.}"; ver="${ver%.dylib}"; major="$(printf '%s' "$ver" | cut -d. -f1)"
+            cp -f "$f" "staging/$name.dylib"
+            cp -f "$f" "staging/$name.$major.dylib"
+          done
+          echo '--- staged (with aliases) ---'; ls -la staging
           # Guard requires manifoldc specifically (not just the core lib) — that is the payload.
           ls staging | grep -qi 'manifoldc' || { echo 'ERROR: manifoldc not built. All shared libs under build/:'; find build -type f \( -name '*.so*' -o -name '*.dll' -o -name '*.dylib' \) -print; exit 1; }
 
