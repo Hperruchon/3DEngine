@@ -34,12 +34,12 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          # win-x64 (dev machine) and linux-x64 (CI) are required; osx-arm64 is
-          # best-effort (continue-on-error below) so a mac build failure still lets
-          # the pack job ship a win+linux NuGet. osx is a fast-follow (TASK-0012 Scope out).
+          # All three RIDs are required now that macOS dylib staging is fixed. The
+          # optional flag + continue-on-error below are retained (unused) so a RID can be
+          # made best-effort again without reworking the job.
           - { os: windows-latest, rid: win-x64,   optional: false }
           - { os: ubuntu-latest,  rid: linux-x64, optional: false }
-          - { os: macos-latest,   rid: osx-arm64, optional: true }
+          - { os: macos-latest,   rid: osx-arm64, optional: false }
     runs-on: ${{ matrix.os }}
     continue-on-error: ${{ matrix.optional }}
     steps:
