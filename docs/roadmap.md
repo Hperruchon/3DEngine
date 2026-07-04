@@ -19,6 +19,7 @@ When the V1 Pending list is empty, advance to V1.x. When V2 Pending is empty, as
 - P6.4 — Schema endpoints. v0.9, TASK-0009.
 - P6.3 — WebSocket event stream + reconnect (ADRs 0010 & 0011). v0.10, TASK-0010.
 - P7a — First geometry slice: `CreateBox` end-to-end (ADRs 0012 & 0013). v0.11, TASK-0011.
+- P7b — Manifold backend (swap-in) (ADR-0014). v0.14, TASK-0012.
 
 ## Pending — V1
 
@@ -26,9 +27,7 @@ _None. V1 is complete; advance to V1.x._
 
 ## Pending — V1.x (after V1 ships)
 
-P6 is complete. P7a (geometry slice with managed stub backend) is shipped. Remaining:
-
-- **P7b — Manifold backend (swap-in).** Replace the in-process managed stub with a real Manifold-backed `IGeometryBackend` behind the same capability interfaces. Native-interop posture settled by ADR-0014 (Accepted 2026-07-03); sized as TASK-0012 (Ready).
+_None. P6, P7a, and P7b are shipped; V1.x is complete. Advance to V2._
 
 ## Pending — V2
 

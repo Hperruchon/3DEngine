@@ -2,7 +2,7 @@
 
 ## Status
 
-Ready — ADR-0014 accepted 2026-07-03. Not started. Prerequisite for implementation: a pinned, checksummed native `manifoldc` artifact (see §6 and Notes).
+Done — shipped in v0.14 (P7b). The native Manifold backend is host-wired behind the v0.11 capability surface, with a native-availability fallback to the managed stub. See `docs/CURRENT-STATE.md` v0.14.
 
 ## Context
 
