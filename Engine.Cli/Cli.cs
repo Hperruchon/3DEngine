@@ -96,6 +96,20 @@ public static class Cli
                 command = new CreateBoxCommand { SizeX = sx, SizeY = sy, SizeZ = sz };
                 break;
 
+            case "Translate":
+                if (!TryParseRequiredGuid(parameters, "bodyId", stderr, out var tBody)) return ExitInvalidUsage;
+                if (!TryParseRequiredDouble(parameters, "dx", stderr, out var dx)) return ExitInvalidUsage;
+                if (!TryParseRequiredDouble(parameters, "dy", stderr, out var dy)) return ExitInvalidUsage;
+                if (!TryParseRequiredDouble(parameters, "dz", stderr, out var dz)) return ExitInvalidUsage;
+                command = new TranslateCommand { BodyId = tBody, Dx = dx, Dy = dy, Dz = dz };
+                break;
+
+            case "Subtract":
+                if (!TryParseRequiredGuid(parameters, "minuendBodyId", stderr, out var minuend)) return ExitInvalidUsage;
+                if (!TryParseRequiredGuid(parameters, "subtrahendBodyId", stderr, out var subtrahend)) return ExitInvalidUsage;
+                command = new SubtractCommand { MinuendBodyId = minuend, SubtrahendBodyId = subtrahend };
+                break;
+
             default:
                 command = null;
                 break;
@@ -191,7 +205,7 @@ public static class Cli
     {
         if (!parameters.TryGetValue(key, out var raw))
         {
-            InvalidUsage(stderr, $"CreateBox requires --param {key}=<number>.");
+            InvalidUsage(stderr, $"--param {key}=<number> is required.");
             value = 0;
             return false;
         }
@@ -203,12 +217,34 @@ public static class Cli
         return true;
     }
 
+    private static bool TryParseRequiredGuid(
+        Dictionary<string, string> parameters,
+        string key,
+        TextWriter stderr,
+        out Guid value)
+    {
+        if (!parameters.TryGetValue(key, out var raw))
+        {
+            InvalidUsage(stderr, $"--param {key}=<guid> is required.");
+            value = Guid.Empty;
+            return false;
+        }
+        if (!Guid.TryParse(raw, out value))
+        {
+            InvalidUsage(stderr, $"--param {key}='{raw}' is not a valid GUID.");
+            return false;
+        }
+        return true;
+    }
+
     private static (CommandBus Commands, QueryBus Queries) BuildEngine()
     {
         var document = new Document();
         var commandRegistry = new CommandRegistry();
         commandRegistry.Register(new NoOpCommandHandler());
         commandRegistry.Register(new CreateBoxCommandHandler());
+        commandRegistry.Register(new TranslateCommandHandler());
+        commandRegistry.Register(new SubtractCommandHandler());
         var queryRegistry = new QueryRegistry();
         queryRegistry.Register(new GetBoundingBoxQueryHandler());
         var sink = new InMemoryEventSink();

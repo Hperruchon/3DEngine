@@ -36,7 +36,7 @@ Canonical vocabulary. One line per term + a pointer to where it is **defined** (
 | **BodyHandle** | Opaque identity for a geometry body (`Guid Id`). Deterministic from `CommandId` for single-body creates, so replay is byte-stable. | `Engine.Contracts/BodyHandle.cs` · ADR-0001, ADR-0012 |
 | **Body** | Document-side body projection (`BodyRecord` = `Handle` + `Kind`): handles + minimum metadata only; the backend owns the geometry data. | `Engine.Contracts/BodyRecord.cs` · ADR-0012 §3 |
 | **IGeometryBackend** | The only kernel type a handler sees. Exposes `Capabilities` flags + `TryGet<T>()`; backends are caches, swapped by replay. | `Engine.Contracts/Geometry/IGeometryBackend.cs` · ADR-0001, ADR-0012 |
-| **capability (`TryGet<T>`)** | A typed geometry interface negotiated at runtime via `IGeometryBackend.TryGet<T>()` (e.g. `IMeshOps`, `IGeometryQuery`; reserved `IBRepOps`/`IFeatureIdMap`); declared by `BackendCapabilities`. Returns null, never silently falls back. | `Engine.Contracts/Geometry/` · ADR-0001 §1, ADR-0012 §1 |
+| **capability (`TryGet<T>`)** | A typed geometry interface negotiated at runtime via `IGeometryBackend.TryGet<T>()` (e.g. `IMeshOps`, `IGeometryQuery`, `ITransformOps`, `IBooleanOps`; reserved `IBRepOps`/`IFeatureIdMap`); declared by `BackendCapabilities`. Returns null, never silently falls back. | `Engine.Contracts/Geometry/` · ADR-0001 §1, ADR-0012 §1 (Amendment 1) |
 
 ## Concepts
 

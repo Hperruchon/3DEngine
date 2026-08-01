@@ -20,6 +20,7 @@ When the V1 Pending list is empty, advance to V1.x. When V2 Pending is empty, as
 - P6.3 — WebSocket event stream + reconnect (ADRs 0010 & 0011). v0.10, TASK-0010.
 - P7a — First geometry slice: `CreateBox` end-to-end (ADRs 0012 & 0013). v0.11, TASK-0011.
 - P7b — Manifold backend (swap-in) (ADR-0014). v0.14, TASK-0012.
+- P7c — First real Manifold operations: Translate + Subtract (ADR-0012 Amendment 1). v0.15, TASK-0013.
 
 ## Pending — V1
 
@@ -27,7 +28,7 @@ _None. V1 is complete; advance to V1.x._
 
 ## Pending — V1.x (after V1 ships)
 
-_None. P6, P7a, and P7b are shipped; V1.x is complete. Advance to V2._
+_None. P6, P7a, P7b, and P7c are shipped; V1.x is complete. Advance to V2._
 
 ## Pending — V2
 
