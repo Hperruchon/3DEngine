@@ -45,6 +45,23 @@ public class InProcessMeshBackendTests
         Assert.Null(backend.TryGet<IFeatureIdMap>());
     }
 
+    // The managed stub honestly lacks transform + boolean capabilities (P7c):
+    // it stores only box dimensions and cannot represent a moved or carved solid,
+    // so callers get a clean E-GEOM-CAP-MISSING rather than a fake result.
+    [Fact]
+    public void TryGet_Returns_Null_For_Transform_Ops()
+    {
+        var backend = new InProcessMeshBackend();
+        Assert.Null(backend.TryGet<ITransformOps>());
+    }
+
+    [Fact]
+    public void TryGet_Returns_Null_For_Boolean_Ops()
+    {
+        var backend = new InProcessMeshBackend();
+        Assert.Null(backend.TryGet<IBooleanOps>());
+    }
+
     [Fact]
     public void CreateBox_Stores_Body_Under_Given_Handle()
     {

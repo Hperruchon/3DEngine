@@ -109,7 +109,7 @@ public class SchemaEndpointGateTests : IClassFixture<WebApplicationFactory<Progr
         var source = FindSource("Engine.Api.Http", "Endpoints", "SchemaCommandsEndpoint.cs");
         var text = File.ReadAllText(source);
 
-        var registeredNames = new[] { "NoOp", "CreateBox" };
+        var registeredNames = new[] { "NoOp", "CreateBox", "Translate", "Subtract" };
         foreach (var name in registeredNames)
         {
             var literal = $"\"{name}\"";

@@ -37,6 +37,8 @@ internal sealed class EngineHost : IDisposable
         CommandRegistry = new CommandRegistry();
         CommandRegistry.Register(new NoOpCommandHandler());
         CommandRegistry.Register(new CreateBoxCommandHandler());
+        CommandRegistry.Register(new TranslateCommandHandler());
+        CommandRegistry.Register(new SubtractCommandHandler());
         QueryRegistry = new QueryRegistry();
         QueryRegistry.Register(new GetBoundingBoxQueryHandler());
         Events = new InMemoryEventSink();

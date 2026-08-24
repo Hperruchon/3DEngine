@@ -189,3 +189,86 @@ This is *not* the Manifold backend — it is the wiring slice. A follow-on TASK 
 - **Backend hot-swap.** Today's "swap by replay" is cold (build a new bus + replay). Hot-swap (running engine accepts a new backend mid-session) is plausible but unmotivated — defer until a real workload asks.
 - **Concurrent backends.** A future workload may want mesh and B-Rep simultaneously. `IGeometryBackend.TryGet<T>()` accommodates it; the question is whether the bus passes a single backend or a catalog. Defer until V2 motivates it.
 - **Tessellation-for-clients.** Render-capable clients (`3DEngine`, `BlazorApp.Client`) eventually need triangulated previews. Whether that lives on `IGeometryQuery.Tessellate(handle)` or `IMeshOps.Tessellate(handle)` is open; ADR-0001 §Open challenges flagged it. Decided when the first client actually consumes it.
+
+## Amendment 1 — Translate + Subtract capabilities (P7c, TASK-0013)
+
+Accepted — 2026-07-05. Extends the capability surface with the first operations
+that require a real kernel. §1 anticipated this: "Subsequent V1 capability additions
+(translate, boolean, …) extend `IMeshOps` / `IGeometryQuery` under their own sized
+TASK and an amendment to this ADR." This is that amendment. Nothing in §§2–7 is
+reopened; the wiring (handler-to-backend access, deterministic handles, the
+`Document.Bodies` projection, `body.created`) is reused unchanged.
+
+### A1.1 Two new capability interfaces, not extensions of `IMeshOps`
+
+```csharp
+public interface ITransformOps
+{
+    void Translate(BodyHandle result, BodyHandle source, double dx, double dy, double dz);
+}
+
+public interface IBooleanOps
+{
+    void Subtract(BodyHandle result, BodyHandle minuend, BodyHandle subtrahend);
+}
+```
+
+`BackendCapabilities` gains `Transform = 1 << 2` and `Booleans = 1 << 3`.
+
+Rather than adding these methods to `IMeshOps` (as §1's wording literally suggested),
+they are their own capability interfaces. Rationale: the managed `InProcessMeshBackend`
+stores only box dimensions and genuinely cannot represent a translated or boolean
+solid. Separate interfaces let it honestly *not* implement them — a handler calling
+`backend.TryGet<IBooleanOps>()` on the stub gets null and returns a clean
+`E-GEOM-CAP-MISSING`. Folding these onto `IMeshOps` would force the stub to claim a
+capability it cannot honor, which is the "no silent fallback / no lowest-common-
+denominator geometry" anti-objective (ADR-0001 §4; CHARTER). These are Manifold **mesh**
+booleans — distinct from the reserved BRep `ExactBooleans` (ADR-0001 §1).
+
+### A1.2 Native-only; the managed stub is unchanged
+
+Only `ManifoldGeometryBackend` implements the two interfaces (via `manifold_translate`
+and `manifold_difference`). `InProcessMeshBackend` is untouched, preserving §7's
+"no transforms in V1" posture. On a host that fell back to the stub (a RID with no
+native payload), Translate and Subtract reject with `E-GEOM-CAP-MISSING`; the engine
+still runs everywhere.
+
+### A1.3 New commands, each producing a new body
+
+`Translate { bodyId, dx, dy, dz }` and `Subtract { minuendBodyId, subtrahendBodyId }`
+each produce **one new body** and leave their operand(s) intact (non-destructive). The
+new body's handle is `new BodyHandle(command.CommandId)` (§4), it flows through
+`CommandHandlerResult.CreatedBodies`, and the bus emits the existing `body.created`
+event — **no new event kind**. The result's `BodyRecord.Kind` is `"Solid"` (a general
+manifold solid; extends the §3 discriminator additively).
+
+### A1.4 No new diagnostic codes
+
+Every failure reuses an existing `GEOM` code: unknown operand → `E-GEOM-BODY-NOT-FOUND`;
+backend lacks the capability → `E-GEOM-CAP-MISSING`; native failure or a degenerate
+(empty) difference where the subtrahend contains the minuend → `E-GEOM-NATIVE-OP`
+(whose registered meaning already covers "returned a degenerate result").
+
+### A1.5 Handler check order
+
+Handlers validate in the order: **operand exists in `Document.Bodies` → backend
+capability present → run the op.** Operand existence is backend-independent (mirrors
+`GetBoundingBox`), so a bad reference reports `E-GEOM-BODY-NOT-FOUND` identically on any
+backend, which keeps the one-shot CLI and cross-platform tests deterministic.
+
+### A1.6 Determinism unchanged
+
+Result handles are pure functions of `CommandId`, so replay is stable. The canonical
+replay-determinism gate stays on the managed stub and box-only (§Consequences); the
+native path gets its own pinned/gated round-trip test that replays a
+create → create → translate → subtract sequence twice and asserts identical state
+(ADR-0014 §Open challenges keeps cross-platform native reproducibility out of the core
+gate).
+
+### A1.7 Validation rules (in addition to §Validation rules)
+
+1. `InProcessMeshBackend` does not implement `ITransformOps`/`IBooleanOps`; `TryGet<T>()`
+   returns null for both. CI: `InProcessMeshBackendTests`.
+2. Translate/Subtract results are new bodies with handle `== CommandId` and `Kind ==
+   "Solid"`; operands remain in `Document.Bodies`. CI: native backend + replay tests.
+3. No new diagnostic code is introduced by this amendment.

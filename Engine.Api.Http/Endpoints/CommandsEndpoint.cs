@@ -61,6 +61,12 @@ internal static class CommandsEndpoint
             case "CreateBox":
                 command = BuildCreateBox(body, commandId, out parameterError);
                 break;
+            case "Translate":
+                command = BuildTranslate(body, commandId, out parameterError);
+                break;
+            case "Subtract":
+                command = BuildSubtract(body, commandId, out parameterError);
+                break;
             default:
                 command = null;
                 parameterError = null;
@@ -142,6 +148,73 @@ internal static class CommandsEndpoint
             SizeY = sy,
             SizeZ = sz,
         };
+    }
+
+    private static Command? BuildTranslate(CommandRequest body, Guid commandId, out IResult? error)
+    {
+        if (body.Parameters is null)
+        {
+            error = ApiErrorEnvelope.BadRequest("Translate requires parameters.bodyId, dx, dy, dz.");
+            return null;
+        }
+
+        if (!TryReadGuid(body.Parameters, "bodyId", out var bodyId, out error)) return null;
+        if (!TryReadDouble(body.Parameters, "dx", out var dx, out error)) return null;
+        if (!TryReadDouble(body.Parameters, "dy", out var dy, out error)) return null;
+        if (!TryReadDouble(body.Parameters, "dz", out var dz, out error)) return null;
+
+        error = null;
+        return new TranslateCommand
+        {
+            CommandId = commandId,
+            ExpectedDocumentVersion = body.ExpectedDocumentVersion,
+            BodyId = bodyId,
+            Dx = dx,
+            Dy = dy,
+            Dz = dz,
+        };
+    }
+
+    private static Command? BuildSubtract(CommandRequest body, Guid commandId, out IResult? error)
+    {
+        if (body.Parameters is null)
+        {
+            error = ApiErrorEnvelope.BadRequest("Subtract requires parameters.minuendBodyId, subtrahendBodyId.");
+            return null;
+        }
+
+        if (!TryReadGuid(body.Parameters, "minuendBodyId", out var minuend, out error)) return null;
+        if (!TryReadGuid(body.Parameters, "subtrahendBodyId", out var subtrahend, out error)) return null;
+
+        error = null;
+        return new SubtractCommand
+        {
+            CommandId = commandId,
+            ExpectedDocumentVersion = body.ExpectedDocumentVersion,
+            MinuendBodyId = minuend,
+            SubtrahendBodyId = subtrahend,
+        };
+    }
+
+    private static bool TryReadGuid(
+        Dictionary<string, JsonElement> parameters,
+        string key,
+        out Guid value,
+        out IResult? error)
+    {
+        value = Guid.Empty;
+        if (!parameters.TryGetValue(key, out var element))
+        {
+            error = ApiErrorEnvelope.BadRequest($"Required parameter missing: {key}.");
+            return false;
+        }
+        if (element.ValueKind != JsonValueKind.String || !Guid.TryParse(element.GetString(), out value))
+        {
+            error = ApiErrorEnvelope.BadRequest($"Parameter '{key}' must be a GUID string.");
+            return false;
+        }
+        error = null;
+        return true;
     }
 
     private static bool TryReadDouble(
