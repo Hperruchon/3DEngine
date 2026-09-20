@@ -1,14 +1,37 @@
 name: CI
 
+# The gate. CLAUDE.md, section "Test discipline", names its checks: dotnet build,
+# dotnet test, the dependency direction check, the diagnostic code register check
+# and the replay determinism fixture. The last three are tests inside
+# Engine.Tests, therefore `dotnet test` runs each one.
+#
+# The gate runs on three operating systems. Register entry R-0002 recorded the
+# reason: each job used ubuntu-latest, a person verified the native geometry path
+# on win-x64 by hand only, and the desktop host ran on Windows only.
+
 on:
   push:
     branches: [main]
   pull_request:
 
 jobs:
-  build-and-test:
-    name: Build + test
-    runs-on: ubuntu-latest
+  gate:
+    name: Gate on ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+
+    strategy:
+      # Each runner must report. A failure on one operating system must not hide
+      # the result on the other two.
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+
+    defaults:
+      run:
+        # One shell on three operating systems, so each script below has one
+        # form. The Windows runner supplies bash.
+        shell: bash
+
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -18,41 +41,50 @@ jobs:
         with:
           global-json-file: global.json
 
-      - name: Restore + build
+      - name: Report the runner
+        run: |
+          echo "runner:  ${{ matrix.os }}"
+          echo "machine: $(uname -sm)"
+          dotnet --version
+
+      - name: Build
         run: dotnet build
 
+      # The native Manifold payload carries one runtime identifier, win-x64. The
+      # tests for the native backend therefore run on the Windows runner and skip
+      # on the other two. ADR-0014 section 4 makes the managed backend the
+      # fallback, so each other test runs everywhere.
       - name: Test
         run: dotnet test --no-build
 
-  headless-smoke:
-    name: Headless smoke (CLI process)
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Set up .NET
-        uses: actions/setup-dotnet@v4
-        with:
-          global-json-file: global.json
-
-      - name: Build CLI
-        run: dotnet build Engine.Cli
-
-      - name: Run NoOp through the CLI binary
+      - name: Smoke test the command-line host with NoOp
         run: |
           set -e
           output=$(dotnet run --no-build --project Engine.Cli -- apply NoOp --param echo=hello)
-          echo "--- CLI output ---"
           echo "$output"
-          echo "--- /CLI output ---"
           echo "$output" | grep -q '"status": "Applied"' \
             || { echo "FAIL: status is not Applied"; exit 1; }
           echo "$output" | grep -q '"echo": "hello"' \
             || { echo "FAIL: echo output missing"; exit 1; }
 
+      # This step is the one that register entry R-0002 asked for. It drives the
+      # geometry backend through a process boundary on each operating system. On
+      # the Windows runner it drives the native path.
+      - name: Smoke test the geometry path with CreateBox
+        run: |
+          set -e
+          output=$(dotnet run --no-build --project Engine.Cli -- \
+            apply CreateBox --param sizeX=2 --param sizeY=3 --param sizeZ=4)
+          echo "$output"
+          echo "$output" | grep -q '"status": "Applied"' \
+            || { echo "FAIL: CreateBox did not apply"; exit 1; }
+          echo "$output" | grep -q '"bodyId"' \
+            || { echo "FAIL: no body identifier in the outputs"; exit 1; }
+
   contract-gate:
     name: Contract-touched-needs-ADR
+    # This job compares two git trees. Its result does not depend on the
+    # operating system, therefore one runner is enough.
     if: github.event_name == 'pull_request'
     runs-on: ubuntu-latest
     steps:
@@ -75,7 +107,7 @@ jobs:
           if [ "$contracts_changed" -gt 0 ] && [ "$adrs_changed" -eq 0 ]; then
             echo ""
             echo "FAIL: Engine.Contracts was modified but no ADR was added or updated."
-            echo "Per CLAUDE.md \"When unsure — stop and ask\": changing public shape"
-            echo "of Engine.Contracts requires an ADR in the same PR."
+            echo "Per CLAUDE.md \"Stop and ask\": a change to the public shape of"
+            echo "Engine.Contracts requires an ADR in the same pull request."
             exit 1
           fi

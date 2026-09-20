@@ -79,10 +79,13 @@ Exit: state the condition that closes this entry.
 - opened: 2026-08-25
 - due: 2026-09-24
 - extended: no
-- refs: `.github/workflows/ci.yml:11,29,57`
+- refs: `.github/workflows/ci.yml` (the three line numbers 11, 29 and 57 applied before v0.20)
 Each job uses `ubuntu-latest`. A person verified the native geometry path on win-x64 by hand only.
 The desktop host ran on Windows only. The project requires continuous verification on three
 operating systems.
+Progress 2026-09-20, TASK-0020: the workflow now uses a matrix of three runners and a smoke test
+for CreateBox. The entry stays open until continuous integration reports a pass on each runner. A
+local computer must not run the gate, therefore this session cannot close the entry.
 Exit: the build, the tests and the headless smoke test pass on three runners.
 
 ### R-0005 · The native package has no licence notices
