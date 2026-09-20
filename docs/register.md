@@ -149,30 +149,6 @@ the need for `E-GEOM-BACKEND-INIT`. Reserved codes are correct. An unlimited qua
 codes makes the register unreliable.
 Exit: a source emits each code. Or: each code becomes permanently reserved and gives a reason.
 
-### R-0012 · A branch contains duplicate identifiers
-- class: risk
-- opened: 2026-08-25
-- due: 2026-09-24
-- extended: no
-- refs: branch `claude/happy-booth-1cef3f`
-This branch contains a different ADR-0014, a different TASK-0012, a different TASK-0013 and a
-different version v0.12. The main branch uses the same identifiers for different work. The branch
-also contains a working engine hosting factory that nobody merged. The reference "ADR-0014" is
-therefore not clear.
-Exit: a person keeps the useful work and gives it new numbers. Or: a person records that the
-project abandons the branch.
-
-### R-0013 · The renderer proposal exists only in a stash
-- class: risk
-- opened: 2026-08-25
-- due: 2026-10-20
-- extended: 2026-09-20 (milestone P0.5 salvages the branch and the stash together)
-- refs: `stash@{0}`, file `docs/proposals/render-host-direction.md`
-A large analysis of options exists in a stash. No commit contains it. The analysis disappears if a
-person removes the stash.
-Exit: a commit contains the file in `docs/proposals/`. Or: a person removes the analysis by
-decision.
-
 ### R-0014 · The `.claude` directory is not in `.gitignore`
 - class: question
 - opened: 2026-05-06
@@ -293,3 +269,36 @@ Closed 2026-09-20 - resolved - TASK-0017, v0.19
 Note on the exit. The exit line asked for a tool that generates the index. The work used a test
 that compares the index against the front matter instead. The protection is the same: drift fails
 the build. The cost is much lower. TASK-0017, section Scope (out), records this decision.
+
+### R-0012 · A branch contains duplicate identifiers
+- class: risk
+- opened: 2026-08-25
+- due: 2026-09-24
+- extended: no
+- refs: branch `claude/happy-booth-1cef3f`
+This branch contains a different ADR-0014, a different TASK-0012, a different TASK-0013 and a
+different version v0.12. The main branch uses the same identifiers for different work. The branch
+also contains a working engine hosting factory that nobody merged. The reference "ADR-0014" is
+therefore not clear.
+Exit: a person keeps the useful work and gives it new numbers. Or: a person records that the
+project abandons the branch.
+Closed 2026-09-20 - resolved - TASK-0018, v0.20
+The project keeps the useful work and gives it new numbers. The hosting factory is merged, in an
+adapted form. The persistence record is ADR-0015. The persistence task is TASK-0019. The duplicate
+v0.12 label is recorded in the v0.20 ledger entry. The branch itself stays, because the owner
+decides when to remove it.
+
+### R-0013 · The renderer proposal exists only in a stash
+- class: risk
+- opened: 2026-08-25
+- due: 2026-10-20
+- extended: 2026-09-20 (milestone P0.5 salvages the branch and the stash together)
+- refs: `stash@{0}`, file `docs/proposals/render-host-direction.md`
+A large analysis of options exists in a stash. No commit contains it. The analysis disappears if a
+person removes the stash.
+Exit: a commit contains the file in `docs/proposals/`. Or: a person removes the analysis by
+decision.
+Closed 2026-09-20 - resolved - TASK-0018, v0.20
+A commit holds `docs/proposals/render-host-direction.md`. The file came from the third parent of
+the stash commit, where git keeps an untracked file. A header note records that two statements in
+the analysis are out of date.

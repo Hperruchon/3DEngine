@@ -185,20 +185,20 @@ public static class Cli
     // CLI, the HTTP host and the canonical replay gate use one set.
     private static Engine BuildEngine()
     {
-        var document = new Document();
-        var commandRegistry = new CommandRegistry();
-        var queryRegistry = new QueryRegistry();
-        HandlerCatalog.RegisterAll(commandRegistry, queryRegistry);
-        var sink = new InMemoryEventSink();
         // Native Manifold when its library is loadable, else the managed stub so the
-        // CLI runs on any platform (ADR-0014 §4). The one-shot process reclaims the
-        // native backend on exit.
+        // CLI runs on any platform (ADR-0014 section 4). The one-shot process reclaims
+        // the native backend on exit. This choice stays here, because only a
+        // composition root may name Engine.Geometry.Manifold.
         IGeometryBackend backend = ManifoldGeometryBackend.IsNativeAvailable()
             ? new ManifoldGeometryBackend()
             : new InProcessMeshBackend();
-        var commandBus = new CommandBus(document, commandRegistry, sink, backend);
-        var queryBus = new QueryBus(document, queryRegistry, backend);
-        return new Engine(commandBus, queryBus, commandRegistry, queryRegistry);
+
+        var kit = EngineHosting.CreateDefault(backend);
+        return new Engine(
+            kit.CreateCommandBus(),
+            kit.CreateQueryBus(),
+            kit.CommandRegistry,
+            kit.QueryRegistry);
     }
 
     // The CLI dispatches by name only. It has no argument for a schema

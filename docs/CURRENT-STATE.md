@@ -276,3 +276,66 @@ became register entry R-0017 with a limit of 2027-03-19.
 Closed: R-0004, R-0006. Opened: R-0017. Open entries: 13 of 20.
 
 New diagnostic codes: none. A gate is a test and a test does not emit a code.
+
+## v0.20 — The unmerged branch is salvaged (P0.5, TASK-0018)
+
+Branch `claude/happy-booth-1cef3f` held four identifiers that the main branch uses for different
+work, and it held a working engine hosting factory that nobody merged. Register entry R-0012 recorded
+that condition since 2026-08-25. Each identifier now names one thing.
+
+**The engine hosting factory.** `Engine.Core/Hosting/EngineHosting.cs` gives `EngineKit` and
+`EngineHosting.CreateDefault(backend)`. `Engine.Cli/Cli.BuildEngine` and
+`Engine.Api.Http/EngineHost` both use it.
+
+The factory is not the branch version. Three rules arrived after the branch and each one changed the
+design. First, the factory takes `IGeometryBackend` as a parameter and does not construct one. ADR-0014
+section 4 permits a reference to `Engine.Geometry.Manifold` only at the composition root of a host, and
+`CLAUDE.md` permits `Engine.Core` to reference only `Engine.Contracts`; a factory that selected the
+native backend would break both rules and the dependency direction gate of v0.19 would fail. Each host
+therefore keeps its own three lines of backend selection, and that duplication is correct. Second, the
+branch methods `RegisterDefaultCommands` and `RegisterDefaultQueries` are not salvaged, because
+`HandlerCatalog` is the one list of handlers per ADR-0016 and a second registration surface is the
+defect that register entry R-0003 recorded. Third, a verbatim merge would have removed `Translate` and
+`Subtract` from each host, because the branch registered two handlers and the catalog holds four.
+
+The kit gives `CreateCommandBus(sink)`, `CreateCommandBus()` and `CreateQueryBus()`. The reason that
+the branch gave for not returning a bus still holds: the HTTP host wraps the sink in
+`BroadcastingEventSink` before the bus sees it, and the command-line host uses the sink directly.
+
+**ADR-0015 — command-log persistence.** The branch record is re-filed with the identifier 0015 and the
+status `Proposed`. The design text is unchanged. The status is not `Accepted`, because no code
+implements the design, no task is ready, and the clamp in `CLAUDE.md` still forbids persistence. An
+accepted record with no implementation is the drift that the gates of v0.19 exist to prevent.
+`docs/roadmap.md` phase P8a already said "ADR-0015" before this task ran.
+
+**TASK-0019 — command-log persistence.** The branch task is re-filed with the number 0019 and the
+status `Deferred`. Two conditions unblock it: the owner accepts ADR-0015, and `CLAUDE.md` drops the
+clamp.
+
+**The duplicate version label.** The branch also used the label v0.12 for the hosting factory. The
+main line gives v0.12 to the charter. The branch label is void. This entry, v0.20, is the first ledger
+entry for the hosting factory. The branch note that said "from this point forward, TASK numbers no
+longer track CURRENT-STATE version numbers" is correct and stays true on the main line.
+
+**The renderer proposal.** `docs/proposals/render-host-direction.md` existed only as an untracked file
+inside `stash@{0}`, and no commit held it. Register entry R-0013 recorded the risk that the analysis
+would disappear. A commit now holds it, with a header note that marks two statements as out of date:
+the founding line that the v0.17 charter replaced, and the open decisions that roadmap track R settles
+in part.
+
+**One gate refinement.** The unenforced budget in `Engine.Tests/Governance/AdrGateTests.cs` now counts
+a record in force only. A record with the status `Proposed`, `Withdrawn` or `Rejected` describes work
+that nobody built or nobody will build, therefore enforcement cannot exist. The budget still bounds
+each accepted decision at two.
+
+New tests: 8. `dotnet test` gives 181 passed, zero failed, zero skipped, up from 173. `dotnet build`
+gives zero errors.
+
+Not done, and why: the branch task for the hosting factory is not re-filed as its own file. Its work
+lands under TASK-0018, and a second file would give two records of one change. The branch and the
+stash both stay, because a commit now holds each useful part and the owner decides when to remove
+either one.
+
+Closed: R-0012, R-0013. Open entries: 11 of 20.
+
+New diagnostic codes: none.

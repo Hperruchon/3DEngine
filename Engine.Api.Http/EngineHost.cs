@@ -34,19 +34,24 @@ internal sealed class EngineHost : IDisposable
 
     public EngineHost(EventBroadcaster broadcaster)
     {
-        Document = new Document();
-        // Every registered handler comes from HandlerCatalog per ADR-0016, so
-        // this host, the CLI and the canonical replay gate use one set.
-        CommandRegistry = new CommandRegistry();
-        QueryRegistry = new QueryRegistry();
-        HandlerCatalog.RegisterAll(CommandRegistry, QueryRegistry);
-        Events = new InMemoryEventSink();
+        // Per ADR-0014 section 4 the host selects the backend at its composition
+        // root, because only a composition root may name Engine.Geometry.Manifold.
         Backend = ManifoldGeometryBackend.IsNativeAvailable()
             ? new ManifoldGeometryBackend()
             : new InProcessMeshBackend();
-        var broadcastingSink = new BroadcastingEventSink(Events, broadcaster);
-        CommandBus = new CommandBus(Document, CommandRegistry, broadcastingSink, Backend);
-        QueryBus = new QueryBus(Document, QueryRegistry, Backend);
+
+        // One composition point for every other part, shared with the CLI.
+        // Each registered handler comes from HandlerCatalog per ADR-0016.
+        var kit = EngineHosting.CreateDefault(Backend);
+        Document = kit.Document;
+        CommandRegistry = kit.CommandRegistry;
+        QueryRegistry = kit.QueryRegistry;
+        Events = kit.Events;
+
+        // The bus must see the decorated sink, so that every committed event
+        // reaches each WebSocket subscriber (TASK-0010 section 2).
+        CommandBus = kit.CreateCommandBus(new BroadcastingEventSink(Events, broadcaster));
+        QueryBus = kit.CreateQueryBus();
     }
 
     public void Dispose() => (Backend as IDisposable)?.Dispose();

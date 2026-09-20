@@ -148,10 +148,17 @@ public class AdrGateTests
         Assert.True(problems.Count == 0, string.Join("\n  ", problems));
     }
 
+    // A record that is not in force cannot be enforced. A proposal describes work
+    // that nobody built, and a withdrawn or rejected record describes work that
+    // nobody will build. The budget counts a record in force only. Without this
+    // distinction a proposal would consume the budget of an accepted decision.
+    private static readonly string[] NotInForce = ["Proposed", "Withdrawn", "Rejected"];
+
     [Fact]
     public void The_Count_Of_Unenforced_Adrs_Does_Not_Grow()
     {
         var unenforced = Parse()
+            .Where(a => !NotInForce.Contains(a.Status))
             .Where(a => a.EnforcedBy.StartsWith("UNENFORCED", StringComparison.Ordinal))
             .Select(a => a.Id)
             .ToArray();
@@ -159,7 +166,8 @@ public class AdrGateTests
         Assert.True(
             unenforced.Length <= UnenforcedBudget,
             $"The count of unenforced ADRs is {unenforced.Length} and the budget is {UnenforcedBudget}. "
-            + "An ADR with no enforcement decays without a signal. Give it a test, or lower the budget "
+            + "An ADR in force with no enforcement decays without a signal. Give it a test, or lower "
+            + "the budget "
             + $"when you enforce one. Unenforced: {string.Join(", ", unenforced)}");
     }
 
