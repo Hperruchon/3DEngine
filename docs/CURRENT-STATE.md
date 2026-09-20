@@ -82,3 +82,27 @@ The native payload ships as a multi-RID NuGet (`Engine.Geometry.Manifold.Native`
 Adds the first geometry operations that require a real kernel — a boolean **Subtract** (box A minus box B → a carved solid) and a **Translate** (move a body off the origin) — behind two new capability interfaces `ITransformOps` and `IBooleanOps` (new `BackendCapabilities.Transform`/`.Booleans`). Both are implemented **only** by the native `ManifoldGeometryBackend` (via `manifold_translate` / `manifold_difference`, extending the P7b `manifoldc` binding); the managed `InProcessMeshBackend` is untouched and honestly reports `E-GEOM-CAP-MISSING`, since it stores box dimensions only and cannot represent a moved or carved solid. Translate exists to make the cut observable: with origin-centered boxes a non-empty `A − B` keeps A's bounding box, so moving B off-center first lets `GetBoundingBox` witness the trim — no new query.
 
 Each op produces a **new** body (handle = `CommandId`, ADR-0012 §4), leaves its operands intact, and reuses the existing `body.created` event (no new event kind); the result's `Kind` is `"Solid"`. Handlers validate operand existence in `Document.Bodies` → capability → backend op, so a bad reference reports `E-GEOM-BODY-NOT-FOUND` on any backend and the one-shot CLI stays deterministic; a fully-consumed difference (subtrahend ⊇ minuend) rejects as a degenerate `E-GEOM-NATIVE-OP`. **No new diagnostic codes** — the existing `GEOM` codes cover every path. Wired through the CLI (`apply Translate` / `apply Subtract`) and HTTP (`POST /commands`), with `/schema/commands` auto-projecting both. The canonical replay-determinism gate stays stub-backed and unchanged; a separate native-gated round-trip replays create → create → translate → subtract twice and asserts identical state. `Engine.Contracts` change is confined to the two interfaces + two flags (gated by the ADR amendment). Verified on win-x64: the full solution builds + tests green with the native path exercised (a 10-cube minus an off-center 10-cube trims maxX from 5 to 0).
+
+## v0.16 — A released SDK pin (P0.1, TASK-0014)
+
+`global.json` pinned the SDK version `10.0.300-preview.0.26177.108` and set `rollForward` to
+`disable`. No public feed supplies that preview SDK. Therefore each computer without that exact
+build failed at SDK resolution, and the solution did not build. TASK-0006 recorded the risk at its
+line 102 and predicted this outcome.
+
+`global.json` now pins the released version `10.0.300`, sets `rollForward` to `latestFeature`, and
+sets `allowPrerelease` to `false`. The policy accepts each SDK with the major version 10 and the
+minor version 0, and it selects the highest one. A computer with 10.0.300 or with 10.0.400 builds
+the solution.
+
+Two documentation files gave the SDK version `10.0.200-preview.0.26103.119`, which no file pinned.
+Each file now gives "10.0.300 or higher" and points to `global.json`. Rule 10 in `CLAUDE.md` permits
+this change to `3DEngine/` and to `BlazorApp/`, because this task gave that scope.
+
+`.github/workflows/ci.yml` needed no change. It installs the SDK from `global.json` already.
+
+Verified on win-x64: the resolved SDK is 10.0.400. `dotnet build` passes with zero warnings and zero
+errors. `dotnet test` passes 134 tests and skips none. No code changed, no contract changed, and no
+diagnostic code was added.
+
+Register entry R-0001 is closed.
