@@ -25,22 +25,26 @@ The canonical boundary diagram is **[architecture/engine-runtime-boundaries.md](
 
 | Path | Purpose |
 |---|---|
-| `docs/CHARTER.md` | Mission, target consumers, non-goals vs anti-objectives, the agent scope test. Read first if unsure whether to act. |
+| `docs/CHARTER.md` | Mission, target consumers, non-goals against anti-objectives, the kernel boundary, the agent scope test. Read first if you do not know whether to act. |
 | `docs/INDEX.md` | This map. |
+| `docs/working-agreement.md` | How to behave. Scope, the record, accuracy, decisions, time, parallel agents. |
+| `docs/templates.md` | The forms for a register entry, an ADR, a task and a commit. |
+| `docs/register.md` | Known problems, questions and temporary mechanisms. Each entry has a date and a time limit. Replaces `open-questions.md`. |
 | `docs/glossary.md` | Canonical vocabulary — each term one line + a pointer to its defining file/ADR. |
 | `docs/conventions.md` | File/naming/grammar conventions that make grep cheap. |
 | `docs/adr/` | Architectural decisions (the *why*). Start at [adr/README.md](adr/README.md); read only the one that applies. |
-| `docs/architecture/` | Boundary view — [engine-runtime-boundaries.md](architecture/engine-runtime-boundaries.md) is the canonical diagram. |
+| `docs/architecture/` | Boundary view. **`engine-runtime-boundaries.md` is not current — see register entry R-0010.** |
 | `docs/CURRENT-STATE.md` | What is built today. Authoritative for "does X exist yet." |
 | `docs/diagnostics.md` | Diagnostic code registry. Append-only. |
-| `docs/open-questions.md` | Deferred decisions. Read only if one blocks your task. |
-| `docs/roadmap.md` | Strategic phase plan. Read when no Ready TASK exists. |
+| `docs/roadmap.md` | The tracks and the phases. Read when no task has the status Ready. |
 | `tasks/` | Sized work units. Read only the active task (Status: Active or Ready). |
 | `.github/` | PR template, CODEOWNERS, and `workflows/ci.yml` (build+test, headless smoke, contract-gate). |
 
-## Not part of the engine spine — do not modify
+## Not part of the engine spine
 
-Per [CLAUDE.md](../CLAUDE.md) "Do not touch":
+Per [CLAUDE.md](../CLAUDE.md) "Projects outside the engine spine": do not change these projects
+unless a task gives you that scope. Track R changes `3DEngine/`, and each such change needs a task
+that declares it.
 
 | Path | What it is |
 |---|---|

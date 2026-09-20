@@ -106,3 +106,59 @@ errors. `dotnet test` passes 134 tests and skips none. No code changed, no contr
 diagnostic code was added.
 
 Register entry R-0001 is closed.
+
+## v0.17 — The charter and each operational rule (P0.2, TASK-0015)
+
+A review of five steps examined the twenty objectives, the anti-objectives, the deferred non-goals
+and the operational rules. The owner approved each result. This entry records the change to the
+documents. No code changed.
+
+**`docs/CHARTER.md` is replaced.** The mission is now "We do not build one application. We build the
+parts that many applications use." The previous sentence, "We do not build a 3D app", had a correct
+intent and incorrect words, and it blocked the renderer objective.
+
+Two anti-objectives are amended, because each one blocked approved work. "A command lands completely
+or it does not land" now states that it does not apply to a rebuild, therefore a feature tree can
+hold a failed feature. "No needless future-proofing" now uses the cost test: add a property now if a
+later change must rewrite the log or migrate each document.
+
+Two anti-objectives gain a rule. Anti-objective 2 states that an interactive tool sends provisional
+commands to the log and never uses a separate buffer. Anti-objective 10 states that a command records
+the backend that performed the operation, therefore a replay never selects a backend.
+
+Six anti-objectives are new. Four give the refused rungs of kernel ambition, by name and with a
+measurement: no fillet on an edge chain, no general NURBS surface, no shape healing, and no general
+surface intersector. One refuses a solver for fluid dynamics, a mesh generator and an engine for
+molecular dynamics. One states that a replay gives the same result on each supported platform.
+
+The charter gains a section for the kernel boundary. The owned kernel gives identity, and Manifold
+gives geometry. The feature boundary is closed: five surfaces, three curves, seven topology types,
+six operations, and one global tolerance.
+
+The deferred list has one item on each line. Six items are promoted and are absent from the list:
+persistence, undo and redo, B-Rep operations, fillet as a later rung, feature identifiers, and
+tessellated meshes for a client. One item was obsolete and is removed, because v0.14 shipped the
+native Manifold backend.
+
+**`CLAUDE.md`** loses the persistence clamp. It gains nine operational rules: six for determinism and
+three for the kernel. The rules forbid a transcendental function in the command path, a rotation
+stored as an angle, `Math.FusedMultiplyAdd`, four APIs whose guarantee covers one process, a 32-bit
+x86 runtime identifier, a tessellation in the Document, a tolerance on an entity, a general surface
+intersector, and a solver result in the log. One rule is marked inactive until milestone P0.3,
+because a person cannot obey it today. One reevaluation condition is added: report to the owner when
+evidence shows that an objective needs a change.
+
+**`docs/INDEX.md`** now agrees with `CLAUDE.md` about the projects outside the engine spine. The form
+is conditional: do not change them unless a task gives that scope. The reference to a section named
+"Do not touch" is repaired, because that section was renamed. The three new documents are in the map.
+The entry for `engine-runtime-boundaries.md` records that the file is not current.
+
+**`docs/roadmap.md`** is replaced. It now holds four tracks: foundations, the platform, the renderer
+and the kernel, plus machine vision. Each approved objective has a track. This change repairs the
+scope test in the charter, which treats the absence of a track as a stop signal.
+
+`docs/register.md`, `docs/working-agreement.md` and `docs/templates.md` change from `Proposed` to
+`Accepted`.
+
+Verified: `dotnet build` passes with zero warnings and zero errors. `dotnet test` passes 134 tests
+and skips none. No contract changed, and no diagnostic code was added.
