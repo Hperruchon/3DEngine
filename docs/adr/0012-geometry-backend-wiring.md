@@ -1,3 +1,20 @@
+---
+id: 0012
+title: Geometry backend wiring
+status: Accepted
+topic: Boundary, geometry, contracts
+date: 2026-05-27
+supersedes: []
+superseded-by: []
+amends: []
+amended-by: []
+affects:
+  - Engine.Contracts/Geometry/**
+  - Engine.Core/Commands/**
+enforced-by: Engine.Tests/Commands/CreateBoxCommandTests.cs
+notes: Carries in-file Amendment 1, accepted 2026-07-05: ITransformOps and IBooleanOps.
+---
+
 # ADR 0012 — Geometry backend wiring (V1)
 
 ## Status

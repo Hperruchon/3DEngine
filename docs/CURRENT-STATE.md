@@ -216,3 +216,63 @@ sample framework and predate this task. `dotnet test` gives 151 passed, zero fai
 from 134. The command-line host applies `NoOp` and `CreateBox` through the new path.
 
 New diagnostic codes: none. The existing codes cover each path.
+
+## v0.19 — Each governance rule becomes mechanical (P0.4, TASK-0017)
+
+Four rules that existed only as text now fail a build. `docs/working-agreement.md` section 6.2 gives
+the reason: a rule in text only is a rule that an agent will break.
+
+**The register gate.** `Engine.Tests/Governance/RegisterGateTests.cs` reads `docs/register.md`. A
+passed `due` date fails the build. A second extension fails the build. More than 20 open entries fails
+the build. Each entry must declare a valid class and two dates. A `due` date must not be later than
+the lifetime of its class; an earlier date is a deliberate tightening and stays permitted.
+
+**The marker gate.** `Engine.Tests/Governance/MarkerGateTests.cs` reads live code and live
+configuration. A word such as `TODO`, `interim` or `DRAFT` must cite an `R-nnnn` on its line or just
+above it. The gate does not read an ADR, a closed task or the ledger, because each one is immutable or
+append-only and the working agreement forbids a change to it. A gate that demanded such a change would
+set two rules against each other.
+
+**The ADR gate.** `Engine.Tests/Governance/AdrGateTests.cs` reads the front matter of each record.
+Each ADR from 0001 to 0014 received front matter with `id`, `title`, `status`, `topic`, `date`,
+`supersedes`, `superseded-by`, `amends`, `amended-by`, `affects` and `enforced-by`. The decision text
+of each record is unchanged. A supersession field and an amendment field must be reciprocal. A status
+must agree with those fields. The count of records with no enforcement must not grow past two.
+`docs/adr/README.md` is regenerated from the front matter and a test holds the two in agreement.
+
+**The dependency direction gate.** `Engine.Tests/Governance/DependencyDirectionGateTests.cs` reads
+each project file in the working tree. It verifies each rule in `CLAUDE.md`, section "Dependency
+rules": no reference from `Engine.Contracts`, only `Engine.Contracts` from `Engine.Core`, no reference
+from `3DEngine.Core`, no reference to the render kernel from an `Engine.*` project, the permitted set
+for a client, no reference between two clients, and no cycle. It needs no build, therefore it also
+catches a reference that compiles. Register entry R-0004 recorded this gap since 2026-08-25.
+
+**The amendment graph is now reciprocal.** ADR-0011 amends ADR-0004. ADR-0008 amends ADR-0006.
+ADR-0016 amends ADR-0013. Each of the three amended records carries the status `Amended`. Register
+entry R-0006 recorded the drift.
+
+**Each gate was verified by injection.** A test that cannot fail is worth nothing, therefore each of
+the four gates ran against a deliberate violation and each one failed as designed. The register gate
+reported an overdue entry. The marker gate reported a `TODO` with no identifier in `CommandBus.cs`.
+The ADR gate reported a one-way amendment. The dependency gate reported a reference from
+`Engine.Core` to `3DEngine.Core`, named by two tests. Each violation was then removed.
+
+**The first injection found a defect in the gate itself.** The dependency gate passed while the
+violation existed. The cause: the repository holds three git worktrees under `.claude/worktrees/`,
+and each one is a full copy of every project file pinned to an older commit. The graph is keyed by
+project name, therefore a stale copy silently shadowed the real project and the gate reported a broken
+rule as satisfied. The gate now excludes that directory, and a further test fails when one project
+name appears more than once. This evidence is recorded on register entry R-0014, which asks whether
+`.gitignore` must contain the directory.
+
+New tests: 22. `dotnet test` gives 173 passed, zero failed, zero skipped, up from 151. `dotnet build`
+on the solution gives zero errors and the same two warnings in the vendored sample framework.
+
+Not done, and why: no tool generates the ADR index. A test that compares the index against the front
+matter gives the same protection at a much lower cost. No check verifies the `writes` block of a task
+file; that work needs a step in continuous integration and a decision about a local hook, therefore it
+became register entry R-0017 with a limit of 2027-03-19.
+
+Closed: R-0004, R-0006. Opened: R-0017. Open entries: 13 of 20.
+
+New diagnostic codes: none. A gate is a test and a test does not emit a code.

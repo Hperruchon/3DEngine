@@ -1,3 +1,19 @@
+---
+id: 0004
+title: Engine Runtime is the authoritative controller
+status: Amended
+topic: Boundary, authority
+date: 2026-04-28
+supersedes: []
+superseded-by: []
+amends: []
+amended-by: ['0011']
+affects:
+  - Engine.Core/**
+enforced-by: Engine.Tests/Governance/DependencyDirectionGateTests.cs
+notes: ADR-0011 amends the deployment default. Both records apply.
+---
+
 # ADR 0004 — Engine Runtime is the Authoritative Application Controller
 
 ## Status

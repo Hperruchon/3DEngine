@@ -30,6 +30,7 @@ Therefore each approved objective must have a track here.
 - P0.1 — A released SDK pin. v0.16, TASK-0014.
 - P0.2 — The charter and each operational rule. v0.17, TASK-0015.
 - P0.3 — Handler-declared construction. One handler catalog. v0.18, TASK-0016, ADR-0016.
+- P0.4 — Each governance rule becomes mechanical. Four gates. v0.19, TASK-0017.
 
 ## Track 0 — Foundations
 
@@ -40,9 +41,10 @@ This track removes each condition that blocks other work.
 | P0.1 | A released SDK pin | 1–2 | **Shipped, v0.16** |
 | P0.2 | The charter and each operational rule | 3–4 | **Shipped, v0.17** |
 | P0.3 | Remove both dispatch switch statements. One handler catalog. | 3–5 | **Shipped, v0.18** |
-| P0.4 | Make each governance rule mechanical. ADR front matter, the write-set check, the register gate, the dependency direction gate. | 4–6 | Pending |
+| P0.4 | Make each governance rule mechanical. ADR front matter, the register gate, the marker gate, the dependency direction gate. | 4–6 | **Shipped, v0.19** |
 | P0.5 | Salvage the unmerged branch. Renumber. Merge the hosting factory. | 2–3 | Pending |
 | P0.6 | A gate on Windows, Linux and macOS. | 2–3 | Pending |
+| P0.7 | The write-set check. Compare each changed file against the write set of the active task. | 1–2 | Pending. R-0017 |
 
 ## Track P — The platform
 

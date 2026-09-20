@@ -1,3 +1,19 @@
+---
+id: 0011
+title: Server-default deployment, embed for offline
+status: Accepted
+topic: Clients, deployment
+date: 2026-05-12
+supersedes: []
+superseded-by: []
+amends: ['0004']
+amended-by: []
+affects:
+  - Engine.Api.Http/**
+  - Engine.Cli/**
+enforced-by: Engine.Tests/Http/HttpCreateBoxScenarioTests.cs
+---
+
 # ADR 0011 — Server-default deployment, embed for offline
 
 ## Status

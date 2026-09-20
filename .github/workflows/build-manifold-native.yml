@@ -7,7 +7,8 @@ name: Build Manifold native
 # Manual-only (workflow_dispatch): rerun when bumping the pinned Manifold version.
 # Does NOT run on push and does NOT touch the build-and-test gate in ci.yml.
 #
-# DRAFT — not yet executed. Confirm before the first real run:
+# This workflow has executed. The repository holds its output in nuget/.
+# Confirm each item before a rerun:
 #   1. Default `manifold_ref` v3.5.2 is a confirmed double-precision release (TASK-0012 §2); bump when upgrading.
 #   2. The native libs land where the "Stage native libs" step looks (adjust the find).
 #   3. The package id / feed (TASK-0012 §6). Publish step is left disabled.

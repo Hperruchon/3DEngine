@@ -2,9 +2,12 @@
 id: 0016
 title: Handler-declared command and query construction
 status: Accepted
+topic: Contracts, clients
 date: 2026-09-20
 supersedes: []
 superseded-by: []
+amends: ['0013']
+amended-by: []
 affects:
   - Engine.Contracts/Handlers/**
   - Engine.Core/Hosting/**

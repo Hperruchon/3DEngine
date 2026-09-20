@@ -1,3 +1,19 @@
+---
+id: 0006
+title: Command execution model
+status: Amended
+topic: Contracts, runtime
+date: 2026-04-28
+supersedes: []
+superseded-by: []
+amends: []
+amended-by: ['0008']
+affects:
+  - Engine.Core/CommandBus.cs
+enforced-by: Engine.Tests/CommandBusTests.cs
+notes: ADR-0008 extended the CommandResult shape.
+---
+
 # ADR 0006 — Command Execution Model
 
 ## Status

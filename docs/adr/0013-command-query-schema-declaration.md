@@ -1,3 +1,20 @@
+---
+id: 0013
+title: Command and query schema declaration
+status: Amended
+topic: Contracts, observability
+date: 2026-05-27
+supersedes: []
+superseded-by: []
+amends: []
+amended-by: ['0016']
+affects:
+  - Engine.Contracts/Handlers/**
+  - Engine.Api.Http/Endpoints/Schema**
+enforced-by: Engine.Tests/Http/SchemaEndpointGateTests.cs
+notes: ADR-0016 adds the construction step that reads the declaration.
+---
+
 # ADR 0013 — Command/query schema declaration
 
 ## Status

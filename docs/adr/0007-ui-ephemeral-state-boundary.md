@@ -1,3 +1,20 @@
+---
+id: 0007
+title: UI ephemeral state boundary
+status: Accepted
+topic: Boundary, clients
+date: 2026-04-28
+supersedes: []
+superseded-by: []
+amends: []
+amended-by: []
+affects:
+  - 3DEngine/**
+  - BlazorApp/**
+enforced-by: UNENFORCED (accepted risk)
+notes: No render host wires the projection yet.
+---
+
 # ADR 0007 — UI Ephemeral State Boundary
 
 ## Status

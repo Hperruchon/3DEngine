@@ -1,3 +1,18 @@
+---
+id: 0002
+title: Headless-first; CLI as canonical client
+status: Accepted
+topic: Workflow, clients
+date: 2026-04-28
+supersedes: []
+superseded-by: []
+amends: []
+amended-by: []
+affects:
+  - Engine.Cli/**
+enforced-by: Engine.Tests/Cli/**
+---
+
 # ADR 0002 — Headless-First, CLI as Canonical Client
 
 ## Status
