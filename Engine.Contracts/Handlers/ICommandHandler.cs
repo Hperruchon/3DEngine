@@ -24,7 +24,21 @@ public interface ICommandHandler
         Document document,
         IGeometryBackend backend,
         CancellationToken ct);
+
+    // Per ADR-0016: the handler builds its own command from bound parameters.
+    // The host finds the handler, binds the raw values against Parameters
+    // above, then calls this. No host holds the name of a command.
+    // ParameterBinder has already checked each required field and each type,
+    // so an implementation reads the values directly.
+    Command Create(CommandInput input);
 }
+
+// Per ADR-0016. A record, not three loose arguments, so a later field adds
+// no second contract change.
+public sealed record CommandInput(
+    IReadOnlyDictionary<string, object?> Parameters,
+    Guid CommandId,
+    long? ExpectedDocumentVersion);
 
 public sealed record CommandHandlerResult(
     Outputs Outputs,

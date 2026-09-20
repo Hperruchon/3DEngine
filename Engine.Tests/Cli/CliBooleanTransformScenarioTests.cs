@@ -98,6 +98,8 @@ public class CliBooleanTransformScenarioTests
             stdout, stderr);
 
         Assert.Equal(2, exit);
-        Assert.Contains("not a valid GUID", stderr.ToString());
+        // Per ADR-0016: the binder names the field and the rejected value.
+        Assert.Contains("bodyId", stderr.ToString());
+        Assert.Contains("not-a-guid", stderr.ToString());
     }
 }

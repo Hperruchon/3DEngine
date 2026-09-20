@@ -162,3 +162,57 @@ scope test in the charter, which treats the absence of a track as a stop signal.
 
 Verified: `dotnet build` passes with zero warnings and zero errors. `dotnet test` passes 134 tests
 and skips none. No contract changed, and no diagnostic code was added.
+
+## v0.18 — Handler-declared construction (P0.3, TASK-0016, ADR-0016)
+
+Each host held a switch statement on the command name, and each case held parameter parsing written
+by hand. A new command changed about ten files, and two of them were central. Therefore two agents
+that added two commands collided each time. Registration was duplicated across seven positions, and
+register entry R-0003 recorded the consequence: the canonical replay determinism gate registered two
+handlers while each host registered five.
+
+ADR-0013 already made each handler the source of truth for its schema. Nothing consumed that
+declaration to build a command. ADR-0016 adds the step that reads it.
+
+**`Engine.Contracts` change, gated by ADR-0016.** `ICommandHandler` gains `Command Create(CommandInput)`
+and `IQueryHandler` gains `Query Create(QueryInput)`. Each input type is a record that carries the
+bound parameters, the identifier and the optional expected version. A record avoids a second contract
+change when a field arrives later.
+
+**`Engine.Core/Hosting/ParameterBinder.cs`** converts raw values into typed values against the
+declared `FieldSchema`. It reports a missing required field, an incorrect type and an unknown field,
+each with the field name. Each parse uses the invariant culture, therefore a machine with a comma
+decimal separator produces the same number. The types `object` and `array` stay deferred and fail
+with a message that names the declared type.
+
+**`Engine.Core/Hosting/HandlerCatalog.cs`** holds one explicit list of each handler. The list is not
+a scan of the assembly, because replay determinism needs a fixed set and a fixed order. Each host and
+each replay gate call `HandlerCatalog.RegisterAll`. Register entry R-0003 is closed at its source.
+
+Both switch statements are removed. `Engine.Cli/Cli.cs`, `Engine.Api.Http/Endpoints/CommandsEndpoint.cs`
+and `Engine.Api.Http/Endpoints/QueriesEndpoint.cs` now follow the same three steps: find the handler,
+bind, then call `Create`. `Engine.Cli/Usage.cs` generates the command list and each example from the
+handler declarations, therefore no file in `Engine.Cli` names a command. The HTTP surface converts a
+`JsonElement` to a neutral value and keeps a number as a double, so no number passes through a
+string; `Engine.Core` therefore needs no reference to `System.Text.Json`.
+
+**The rule becomes active.** `CLAUDE.md` marked one anti-pattern inactive in v0.17, because a person
+could not obey it. `Engine.Tests/Hosting/DispatchSurfaceGateTests.cs` now enforces it: a quoted
+command name in a host file fails the gate and the failure names the file and the line. A deliberate
+violation was injected and the gate failed as designed, then the violation was removed.
+
+New tests: 17. `ParameterBinderTests` covers each declared type, an unknown field, a value that is
+already typed, and the invariant culture in both directions under the `fr-FR` culture.
+`DispatchSurfaceGateTests` covers the host surface, the catalog, the stable order, and a round trip
+from each declared schema through `Create`.
+
+Three CLI tests changed their assertion. Each one asserted the exact wording of a message that a
+hand-written parser produced. The binder produces a generic message, therefore each test now asserts
+that the message names the field and the rejected value. The behaviour contract did not change: the
+exit code is 2 and the usage text appears.
+
+Verified: `dotnet build` on the solution gives zero errors. Two warnings remain in the vendored
+sample framework and predate this task. `dotnet test` gives 151 passed, zero failed, zero skipped, up
+from 134. The command-line host applies `NoOp` and `CreateBox` through the new path.
+
+New diagnostic codes: none. The existing codes cover each path.

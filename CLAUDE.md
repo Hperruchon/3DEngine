@@ -240,10 +240,6 @@ Do not do these things:
 - Do not put a host projection in the design boundary. A host may hold the projection from events to
   render state, because ADR-0009 requires it. A host may not decide what the design truth is.
 
-### Inactive until milestone P0.3
-
-- Do not add a command that changes a file outside `Engine.Core/Commands/` and the handler manifest.
-
-  A person cannot obey this rule today. Two dispatch switch statements hold each command name, and
-  milestone P0.3 removes them. Register entry R-0003 holds this item. The rule becomes active, and a
-  test enforces it, when P0.3 lands.
+- Do not add a command that changes a file outside `Engine.Core/Commands/` and
+  `Engine.Core/Hosting/HandlerCatalog.cs`. A host must not hold the name of a command. See
+  ADR-0016. `Engine.Tests/Hosting/DispatchSurfaceGateTests.cs` enforces this rule.

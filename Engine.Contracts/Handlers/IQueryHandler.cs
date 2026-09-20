@@ -25,7 +25,15 @@ public interface IQueryHandler
         Document document,
         IGeometryBackend backend,
         CancellationToken ct);
+
+    // Per ADR-0016. Symmetric to ICommandHandler.Create.
+    Query Create(QueryInput input);
 }
+
+// Per ADR-0016.
+public sealed record QueryInput(
+    IReadOnlyDictionary<string, object?> Parameters,
+    Guid QueryId);
 
 public sealed record QueryHandlerResult(
     object? Result,

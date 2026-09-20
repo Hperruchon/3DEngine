@@ -2,6 +2,7 @@ using Engine.Api.Http.WebSockets;
 using Engine.Contracts;
 using Engine.Contracts.Geometry;
 using Engine.Core;
+using Engine.Core.Hosting;
 using Engine.Core.Commands;
 using Engine.Core.Geometry;
 using Engine.Core.Queries;
@@ -34,13 +35,11 @@ internal sealed class EngineHost : IDisposable
     public EngineHost(EventBroadcaster broadcaster)
     {
         Document = new Document();
+        // Every registered handler comes from HandlerCatalog per ADR-0016, so
+        // this host, the CLI and the canonical replay gate use one set.
         CommandRegistry = new CommandRegistry();
-        CommandRegistry.Register(new NoOpCommandHandler());
-        CommandRegistry.Register(new CreateBoxCommandHandler());
-        CommandRegistry.Register(new TranslateCommandHandler());
-        CommandRegistry.Register(new SubtractCommandHandler());
         QueryRegistry = new QueryRegistry();
-        QueryRegistry.Register(new GetBoundingBoxQueryHandler());
+        HandlerCatalog.RegisterAll(CommandRegistry, QueryRegistry);
         Events = new InMemoryEventSink();
         Backend = ManifoldGeometryBackend.IsNativeAvailable()
             ? new ManifoldGeometryBackend()

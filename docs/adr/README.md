@@ -27,6 +27,7 @@ This index is the entry point for ADRs. Find the relevant decision; do not read 
 | [0012](0012-geometry-backend-wiring.md) | Geometry backend wiring (V1) | Accepted | Boundary, geometry, contracts | — | — |
 | [0013](0013-command-query-schema-declaration.md) | Command/query schema declaration | Accepted | Contracts, observability | — | — |
 | [0014](0014-manifold-native-interop.md) | Manifold backend native-interop posture | Accepted | Boundary, geometry, native-interop | — | — |
+| [0016](0016-handler-declared-construction.md) | Handler-declared command and query construction | Accepted | Contracts, clients | — | — |
 
 ## Topics
 
@@ -46,4 +47,5 @@ This index is the entry point for ADRs. Find the relevant decision; do not read 
 
 ## Pending
 
-_None._
+- **0015** is reserved for command-log persistence. That document exists on the branch
+  `claude/happy-booth-1cef3f`. Milestone P0.5 merges it. The gap in the numbers is intentional.

@@ -22,6 +22,14 @@ public sealed class NoOpCommandHandler : ICommandHandler
             ["echo"] = new("string"),
         };
 
+    // Per ADR-0016.
+    public Command Create(CommandInput input) => new NoOpCommand
+    {
+        CommandId = input.CommandId,
+        ExpectedDocumentVersion = input.ExpectedDocumentVersion,
+        Echo = (string)input.Parameters["echo"]!,
+    };
+
     public Task<CommandHandlerResult> Handle(
         Command command,
         Document document,

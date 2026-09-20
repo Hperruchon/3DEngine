@@ -25,6 +25,17 @@ public sealed class TranslateCommandHandler : ICommandHandler
             ["bodyId"] = new("guid"),
         };
 
+    // Per ADR-0016.
+    public Command Create(CommandInput input) => new TranslateCommand
+    {
+        CommandId = input.CommandId,
+        ExpectedDocumentVersion = input.ExpectedDocumentVersion,
+        BodyId = (Guid)input.Parameters["bodyId"]!,
+        Dx = (double)input.Parameters["dx"]!,
+        Dy = (double)input.Parameters["dy"]!,
+        Dz = (double)input.Parameters["dz"]!,
+    };
+
     public Task<CommandHandlerResult> Handle(
         Command command,
         Document document,

@@ -64,7 +64,9 @@ public class CliCreateBoxScenarioTests
             stdout, stderr);
 
         Assert.Equal(2, exit);
-        Assert.Contains("not a valid number", stderr.ToString());
+        // Per ADR-0016: the binder names the field and the rejected value.
+        Assert.Contains("sizeX", stderr.ToString());
+        Assert.Contains("abc", stderr.ToString());
     }
 
     [Fact]

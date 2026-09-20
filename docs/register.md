@@ -85,16 +85,6 @@ The desktop host ran on Windows only. The project requires continuous verificati
 operating systems.
 Exit: the build, the tests and the headless smoke test pass on three runners.
 
-### R-0003 · The replay determinism gate uses a different set of handlers
-- class: risk
-- opened: 2026-08-26
-- due: 2026-09-25
-- extended: no
-- refs: `Engine.Tests/ReplayDeterminism/`, `Engine.Cli/Cli.cs:240-260`, `Engine.Api.Http/EngineHost.cs:36-50`
-Seven positions in the solution register handlers. Therefore the determinism gate does not use the
-set of handlers that the hosts use. The architecture depends on this one test.
-Exit: the hosts and the tests use one handler catalog.
-
 ### R-0004 · The dependency direction gate does not exist
 - class: debt
 - opened: 2026-08-25
@@ -270,4 +260,16 @@ that SDK. A computer with only release SDKs cannot build the solution.
 Exit: `global.json` gives a release version and uses `latestFeature`. Running.md agrees with
 `global.json`.
 Closed 2026-09-20 - resolved - TASK-0014, v0.16
+
+### R-0003 · The replay determinism gate uses a different set of handlers
+- class: risk
+- opened: 2026-08-26
+- due: 2026-09-25
+- extended: no
+- refs: `Engine.Tests/ReplayDeterminism/`, `Engine.Cli/Cli.cs:240-260`, `Engine.Api.Http/EngineHost.cs:36-50`
+Seven positions in the solution register handlers. Therefore the determinism gate does not use the
+set of handlers that the hosts use. The architecture depends on this one test.
+Exit: the hosts and the tests use one handler catalog.
+Closed 2026-09-20 - resolved - TASK-0016, ADR-0016, v0.18
+
 
