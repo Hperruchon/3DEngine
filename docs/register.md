@@ -37,8 +37,9 @@ bootstrap. `ArgParser.cs` says that a later task replaces it. The native build w
      not a failure.
    - **Extend** — give a new date, one time only. Give the reason. The gate refuses a second
      extension. Then you must use one of the three exits above.
-4. A new entry has a cost. The maximum quantity of open entries is **20**. You cannot add entry 21
-   until you close an entry. Growth is the failure condition. This limit controls growth.
+4. A new entry has a cost. The maximum quantity of open entries is **15**. You cannot add entry 16
+   until you close an entry. Growth is the failure condition. This limit controls growth. The limit
+   was 20 until 2026-09-21. See the closed entry R-0016.
 5. A temporary thing must have an entry. These words in tracked source or documentation must have a
    register identifier, for example `R-0007`: `TODO`, `HACK`, `interim`, `temporary`, `for now`,
    `bootstrap`, `DRAFT`. The gate fails if an identifier is absent. This rule finds the compromise
@@ -176,19 +177,6 @@ The tool `jq` reads it correctly. A person who reads the raw output sees noise.
 `UnsafeRelaxedJsonEscaping` corrects this, but it escapes fewer characters.
 Exit: the CLI uses the different encoder. Or: accept the output.
 
-### R-0016 · Reduce the maximum quantity of open entries from 20 to 12
-- class: question
-- opened: 2026-08-27
-- due: 2026-11-25
-- extended: no
-- refs: this file, rule 4
-The limit is 20 to hold the entries from the architecture investigation. The limit controls growth.
-A limit of 20 is too high to have an effect.
-Exit: the limit becomes 12 after a person examines each imported entry. Or: 20 becomes the
-permanent limit.
-
----
-
 ### R-0017 - No check verifies the write set of a task
 - class: debt
 - opened: 2026-09-20
@@ -305,3 +293,21 @@ Closed 2026-09-20 - resolved - TASK-0018, v0.20
 A commit holds `docs/proposals/render-host-direction.md`. The file came from the third parent of
 the stash commit, where git keeps an untracked file. A header note records that two statements in
 the analysis are out of date.
+
+### R-0016 · Reduce the maximum quantity of open entries from 20 to 12
+- class: question
+- opened: 2026-08-27
+- due: 2026-11-25
+- extended: no
+- refs: this file, rule 4
+The limit is 20 to hold the entries from the architecture investigation. The limit controls growth.
+A limit of 20 is too high to have an effect.
+Exit: the limit becomes 12 after a person examines each imported entry. Or: 20 becomes the
+permanent limit.
+
+---
+Closed 2026-09-21 - decided - the limit becomes 15
+The owner chose 15 and not the 12 that this entry proposed. The register held 11 open entries on
+that date. A limit of 12 gives one free slot, therefore the next new problem would force an exit
+on an old one immediately. A limit of 15 gives four free slots. The limit has an effect and it
+does not stop work. Rule 4 and `Engine.Tests/Governance/RegisterGateTests.cs` both give 15.

@@ -13,8 +13,13 @@ namespace Engine.Tests.Governance;
 // no enforcement decays without a signal, and a hand-maintained index drifts.
 public class AdrGateTests
 {
+    // The set agrees with docs/templates.md, section "Field rules", and with the
+    // legend in docs/adr/README.md. Superseded was absent until TASK-0021, and
+    // A_Status_Agrees_With_Its_Supersession_And_Amendment_Fields already required
+    // that value, therefore the first superseded record would have failed one test
+    // whichever document was right.
     private static readonly string[] ValidStatuses =
-        ["Accepted", "Amended", "Proposed", "Withdrawn", "Rejected"];
+        ["Accepted", "Amended", "Superseded", "Proposed", "Withdrawn", "Rejected"];
 
     private sealed record Adr(
         string File,

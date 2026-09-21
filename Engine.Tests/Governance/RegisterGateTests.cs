@@ -20,7 +20,10 @@ public class RegisterGateTests
         string Extended,
         int Line);
 
-    private const int OpenLimit = 20;
+    // Register rule 4. The limit was 20 to hold the entries from the architecture
+    // investigation. Register entry R-0016 asked whether 20 is too high to have an
+    // effect. The owner chose 15 on 2026-09-21; see TASK-0021.
+    private const int OpenLimit = 15;
 
     private static readonly string[] ValidClasses = ["risk", "question", "debt", "interim"];
 

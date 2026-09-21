@@ -25,15 +25,18 @@ This record was accepted on branch `claude/happy-booth-1cef3f`, which nobody mer
 identifier 0014, and the main branch gives that identifier to the Manifold native-interop record.
 The design text below is unchanged. Only the identifier, the status and this note changed.
 
-The status is `Proposed` and not `Accepted`, for three reasons:
+The status is `Proposed` and not `Accepted`, for two reasons:
 
-- `CLAUDE.md`, section "Scope clamps", still forbids persistence. The clamp lifts when an ADR and a
-  task introduce persistence. No task is ready.
 - No code implements this design. An accepted record with no implementation is the drift that the
   gates of v0.19 exist to prevent.
 - `docs/roadmap.md` gives this work the identifier P8a, and P8a is pending.
 
-The owner can accept this record with one word. Nothing in the design needs a change first.
+The owner examined this question on 2026-09-21 and kept the status `Proposed`. See TASK-0021.
+
+Correction, 2026-09-21. The first version of this note gave a third reason. It said that `CLAUDE.md`,
+section "Scope clamps", still forbids persistence. That statement was false. Milestone v0.17 removed
+the persistence clamp. `CLAUDE.md` now says "No clamp is active" and "Persistence arrives with
+ADR-0015 and its task". The two reasons above are the true ones.
 
 ## Context
 

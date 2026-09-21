@@ -339,3 +339,49 @@ either one.
 Closed: R-0012, R-0013. Open entries: 11 of 20.
 
 New diagnostic codes: none.
+
+## v0.21 — Three governance corrections (P0.8, TASK-0021)
+
+The owner decided three items on 2026-09-21. Each one came out of the review of v0.19 and v0.20.
+
+**One status vocabulary.** Three documents gave a different set of values for the ADR `status` field.
+`CLAUDE.md`, section "Stop and ask", forbids an agent from correcting either side of a disagreement,
+so the v0.20 report gave each side and stopped. The set is now `Proposed`, `Accepted`, `Amended`,
+`Superseded`, `Withdrawn` and `Rejected`. `docs/templates.md` gained `Amended` and `Superseded`, and
+it lost `Superseded-by-NNNN`, because the number belongs in the field `superseded-by`.
+
+The gate also contradicted itself. `ValidStatuses` did not contain `Superseded`, and one test required
+that value. The first superseded record would have failed one test whichever document was right. The
+gate now accepts the value. This part was a defect and not a preference.
+
+**The register limit is 15.** Register entry R-0016 asked whether a limit of 20 open entries is too
+high to have an effect. The register held 11 open entries. A limit of 12, which the entry proposed,
+gives one free slot, therefore the next new problem would force an exit on an old one immediately. A
+limit of 15 gives four free slots. Rule 4 in `docs/register.md` and `RegisterGateTests.OpenLimit` both
+give 15. R-0016 is closed with the exit `decided`.
+
+**A correction to the v0.20 entry.** Working agreement rule 3.2 forbids a change to a past entry,
+therefore this entry gives the correction.
+
+The v0.20 entry, ADR-0015, TASK-0018 and TASK-0019 each stated that the clamp in `CLAUDE.md` forbids
+persistence, and each used that statement to support the status `Proposed` on ADR-0015. The statement
+was false. Milestone v0.17 removed the persistence clamp, in TASK-0015, four days earlier.
+`CLAUDE.md`, section "Scope clamps", says "No clamp is active" and "Persistence arrives with ADR-0015
+and its task".
+
+The cause: the agent read the copy of `CLAUDE.md` that arrived in its context at the start of the
+session, and not the file. The agent then changed that file itself and kept citing the old copy.
+
+The conclusion does not change. Two true reasons remain for the status `Proposed`: no code implements
+the design, and roadmap phase P8a is pending. The owner examined the question on 2026-09-21 and kept
+the status. ADR-0015 and TASK-0019 each carry a correction note. TASK-0018 is closed, therefore its
+text stays and a correction block follows it.
+
+No gate can catch this class of error, because the wrong statement was about a file and it appeared in
+prose. The defence is the habit of reading a file before citing it.
+
+Tests: 181. No new test. `dotnet build` gives zero errors.
+
+Closed: R-0016. Open entries: 10 of 15.
+
+New diagnostic codes: none.

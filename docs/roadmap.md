@@ -46,6 +46,7 @@ This track removes each condition that blocks other work.
 | P0.5 | Salvage the unmerged branch. Renumber. Merge the hosting factory. | 2–3 | **Shipped, v0.20** |
 | P0.6 | A gate on Windows, Linux and macOS. | 2–3 | Pending |
 | P0.7 | The write-set check. Compare each changed file against the write set of the active task. | 1–2 | Pending. R-0017 |
+| P0.8 | Correct the status vocabulary, the register limit and one false statement. | 1 | **Shipped, v0.21** |
 
 ## Track P — The platform
 

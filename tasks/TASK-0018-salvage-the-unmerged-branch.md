@@ -147,3 +147,23 @@ is an abstraction for a requirement that does not exist, which `CLAUDE.md` forbi
 here: the value is one named composition point, and TASK-0019 attaches persistence to exactly that
 point. If the owner rejects that reasoning, the correct action is to delete
 `Engine.Core/Hosting/EngineHosting.cs` and inline the five lines again. Nothing else depends on it.
+
+## Correction, 2026-09-21 (TASK-0021)
+
+This task is closed, therefore the text above stays as written. This block gives the correction.
+
+The Outcome block and the Method block each give a reason that was false. Both said that the clamp in
+`CLAUDE.md` forbids persistence, and that this fact supports the status `Proposed` on ADR-0015. No
+such clamp exists. Milestone v0.17 removed it, in TASK-0015, four days before this task ran.
+`CLAUDE.md`, section "Scope clamps", now says "No clamp is active" and "Persistence arrives with
+ADR-0015 and its task".
+
+The cause: the agent read the copy of `CLAUDE.md` that was in its context at the start of the session,
+and not the file.
+
+The conclusion does not change. Two true reasons remain: no code implements the design, and roadmap
+phase P8a is pending. The owner examined the question on 2026-09-21 and kept the status `Proposed`.
+
+The lesson is general, and it is the same lesson as the dependency gate defect in TASK-0017. A
+statement about the repository must come from the repository. `CLAUDE.md` is a file that changes, and
+a copy of it is not the file.

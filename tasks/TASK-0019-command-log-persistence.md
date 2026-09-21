@@ -25,13 +25,12 @@ This task came from branch `claude/happy-booth-1cef3f`, which nobody merged. It 
 0012, and the main branch gives that number to the Manifold backend task. The scope text below is
 unchanged. Only the number, the status and this note changed.
 
-The status is `Deferred` and not `Ready`, because ADR-0015 has the status `Proposed`. Two conditions
-unblock this task:
+The status is `Deferred` and not `Ready`, because ADR-0015 has the status `Proposed`. One condition
+unblocks this task: the owner accepts ADR-0015. `docs/roadmap.md` gives this work the identifier P8a.
 
-- The owner accepts ADR-0015.
-- `CLAUDE.md` drops the clamp in section "Scope clamps" that forbids persistence.
-
-`docs/roadmap.md` gives this work the identifier P8a.
+Correction, 2026-09-21. The first version of this note gave a second condition. It said that
+`CLAUDE.md` must drop a clamp that forbids persistence. No such clamp exists. Milestone v0.17 removed
+it. `CLAUDE.md` now says "Persistence arrives with ADR-0015 and its task".
 
 ## Context
 
