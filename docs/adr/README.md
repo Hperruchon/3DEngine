@@ -25,8 +25,9 @@ This index is the entry point for ADRs. Find the relevant decision; do not read 
 | [0010](0010-subscription-reset-snapshot-format.md) | `subscription.reset` snapshot format | Accepted | Contracts, observability | — | — |
 | [0011](0011-server-default-deployment-topology.md) | Server-default deployment, embed for offline | Accepted | Clients, deployment | — | — |
 | [0012](0012-geometry-backend-wiring.md) | Geometry backend wiring (V1) | Accepted | Boundary, geometry, contracts | — | — |
-| [0013](0013-command-query-schema-declaration.md) | Command/query schema declaration | Accepted | Contracts, observability | — | — |
+| [0013](0013-command-query-schema-declaration.md) | Command/query schema declaration | Accepted | Contracts, observability | — | 0015 |
 | [0014](0014-command-log-persistence.md) | Command-log persistence for `engine-api-http` | Accepted | Persistence, deployment | — | — |
+| [0015](0015-handler-owned-command-construction.md) | Handler-owned command construction | Proposed | Contracts | 0013 (extends to construction) | — |
 
 ## Topics
 
@@ -48,4 +49,4 @@ This index is the entry point for ADRs. Find the relevant decision; do not read 
 
 ## Pending
 
-_None._
+- [0015](0015-handler-owned-command-construction.md) — Handler-owned command construction (amends 0013). Awaiting acceptance.
