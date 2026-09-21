@@ -385,3 +385,63 @@ Tests: 181. No new test. `dotnet build` gives zero errors.
 Closed: R-0016. Open entries: 10 of 15.
 
 New diagnostic codes: none.
+
+## v0.22 — The write set of a task becomes mechanical (P0.7, TASK-0022)
+
+Register entry R-0017 recorded the last rule in `docs/templates.md` that had no check. Each task file
+declares a `writes` block with a create list, a modify list and a forbid list. Nothing read that
+block. An agent could change a file that the task forbids, and no check found the error.
+
+**One implementation, two modes.** `Engine.Tests/Governance/WriteSetGateTests.cs` is a test and not a
+script. Each static check always runs, therefore `dotnet test` covers it on a local computer and on
+each of the three runners. The dynamic check runs when the environment variable `WRITE_SET_FILES`
+gives a list of changed paths, one per line. The new job `write-set-gate` sets that variable from
+`git diff --name-only`. The logic that continuous integration uses is the logic that the test suite
+covers.
+
+**Seven checks.** A changed path must not match a forbid pattern. A changed path must appear in a
+create list or a modify list. A change must touch a task file, because `CLAUDE.md`, section
+"Anti-patterns", forbids work outside the scope of the active task. A task must not both write and
+forbid the same path. A declared path must use the forward slash and must not start with one. A task
+with the status `Done` must have created each exact path in its create list. The count of task files
+with no front matter must not grow past 13.
+
+**A forbid beats a permit.** A change can touch more than one task file. The gate takes the union of
+each create list and each modify list, and it refuses a path that matches any forbid pattern of any of
+those tasks. A forbid records a boundary and a permit records an intention, therefore the strict
+reading is the safe one. Only a task that the same change touches can govern that change, so a task
+from an older change cannot authorise a file today.
+
+**Each check was verified by injection.** The dynamic check ran four times. A legitimate change
+passed. A change to `Engine.Contracts/Handlers/ICommandHandler.cs` reported the forbid pattern
+`Engine.Contracts/**` and named TASK-0021 as its owner. A change to `docs/CHARTER.md` reported that no
+list names it. A change with no task file reported that no write set governs it. The three static
+checks each failed on a deliberate violation, and each message named the task and the path.
+
+**The hook is refused, not deferred.** `docs/templates.md` described a hook before each commit and
+said that the write set is only a recommendation without it. A hook needs an installation step on each
+computer, and a person passes it with one flag. The gate runs where nobody can pass it. That row now
+describes the gate.
+
+**Task files 0001 to 0013 are exempt.** Each one predates `docs/templates.md` and carries no front
+matter. The budget of 13 fails when the count grows, in the same way as the budget for an unenforced
+ADR. A new task must declare its write set.
+
+New tests: 6. `dotnet test` gives 187 passed, zero failed, zero skipped, up from 181. `dotnet build`
+gives zero errors.
+
+Not done, and why: the gate reads the tasks that a change touches and not a status. A change that
+touches a task with the status `Deferred` would use that write set. No such change exists today, and a
+stricter rule needs evidence before it earns its cost.
+
+Closed: R-0017. Open entries: 9 of 15. Track 0 now has one pending phase, P0.6, which needs a pull
+request before continuous integration can report.
+
+New diagnostic codes: none.
+
+**The gate found a defect on its first live use.** The first run reported
+`Engine.Api.Http/Properties/` as a change with no declaration. The file is `launchSettings.json`. The
+SDK generates it when a person runs the web host, and it carries random port numbers. It was untracked
+and absent from `.gitignore`, therefore it would appear in `git status` after each run and it would
+give a false difference on each computer. The stash from TASK-0018 holds an older copy with different
+ports, which confirms the behaviour. `.gitignore` now names it.

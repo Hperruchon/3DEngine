@@ -32,6 +32,8 @@ Therefore each approved objective must have a track here.
 - P0.3 — Handler-declared construction. One handler catalog. v0.18, TASK-0016, ADR-0016.
 - P0.4 — Each governance rule becomes mechanical. Four gates. v0.19, TASK-0017.
 - P0.5 — The unmerged branch is salvaged. Each identifier names one thing. v0.20, TASK-0018.
+- P0.8 — Three governance corrections. One status set, one limit, one false statement. v0.21, TASK-0021.
+- P0.7 — The write set of a task becomes mechanical. v0.22, TASK-0022.
 
 ## Track 0 — Foundations
 
@@ -45,7 +47,7 @@ This track removes each condition that blocks other work.
 | P0.4 | Make each governance rule mechanical. ADR front matter, the register gate, the marker gate, the dependency direction gate. | 4–6 | **Shipped, v0.19** |
 | P0.5 | Salvage the unmerged branch. Renumber. Merge the hosting factory. | 2–3 | **Shipped, v0.20** |
 | P0.6 | A gate on Windows, Linux and macOS. | 2–3 | Pending |
-| P0.7 | The write-set check. Compare each changed file against the write set of the active task. | 1–2 | Pending. R-0017 |
+| P0.7 | The write-set check. Compare each changed file against the write set of the active task. | 1–2 | **Shipped, v0.22** |
 | P0.8 | Correct the status vocabulary, the register limit and one false statement. | 1 | **Shipped, v0.21** |
 
 ## Track P — The platform

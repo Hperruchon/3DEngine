@@ -364,3 +364,7 @@ FodyWeavers.xsd
 
 # Graphify knowledge-graph output - regenerable, host-specific paths
 graphify-out/
+# The SDK generates this file when a person runs the web host, and it carries
+# random port numbers. It must not enter the repository. TASK-0022 found it,
+# because the write-set gate reported it as a change with no declaration.
+**/Properties/launchSettings.json

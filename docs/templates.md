@@ -171,7 +171,7 @@ to write incorrectly. It is necessary for each change that an agent made.
 |---|---|
 | `depends-on` | Give task identifiers. A tool reads this field to find the tasks that it can start now. |
 | `governed-by` | Give ADR identifiers. This list must equal the intersection of `affects` and `writes`. A gate can verify this. Therefore an absent ADR causes an error and not an assumption. |
-| `writes` | This field is the write-set. A hook before each commit fails if the change touches a path outside the set. Without this hook the write-set is only a recommendation. |
+| `writes` | This field is the write-set. `Engine.Tests/Governance/WriteSetGateTests.cs` reads it. Continuous integration gives the list of changed paths in the variable `WRITE_SET_FILES`, and the gate fails if a changed path is outside the set or inside the forbid list. A hook before each commit does not exist; the gate is the protection. |
 | `forbid` | Give the paths that this task must not touch. This field is inexpensive, and it stops the most frequent increase of scope. |
 
 Before you start two agents, compare their `writes` fields. If the sets intersect, do not start the

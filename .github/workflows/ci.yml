@@ -111,3 +111,35 @@ jobs:
             echo "Engine.Contracts requires an ADR in the same pull request."
             exit 1
           fi
+
+  write-set-gate:
+    name: Write set of the active task
+    # The comparison needs the base branch, therefore it needs a pull request.
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          global-json-file: global.json
+
+      - name: Fetch base ref
+        run: git fetch --no-tags --depth=1 origin "${{ github.base_ref }}"
+
+      # The gate is a test, therefore one implementation serves this job and
+      # `dotnet test` on a local computer. Register entry R-0017 gives the
+      # reason for the gate.
+      - name: Check each changed path against the write set
+        run: |
+          set -e
+          files=$(git diff --name-only "origin/${{ github.base_ref }}"...HEAD)
+          echo "--- changed files ---"
+          echo "$files"
+          echo "--- /changed files ---"
+          WRITE_SET_FILES="$files" dotnet test Engine.Tests/Engine.Tests.csproj \
+            --filter "FullyQualifiedName~WriteSetGate"

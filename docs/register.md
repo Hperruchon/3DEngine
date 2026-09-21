@@ -177,18 +177,6 @@ The tool `jq` reads it correctly. A person who reads the raw output sees noise.
 `UnsafeRelaxedJsonEscaping` corrects this, but it escapes fewer characters.
 Exit: the CLI uses the different encoder. Or: accept the output.
 
-### R-0017 - No check verifies the write set of a task
-- class: debt
-- opened: 2026-09-20
-- due: 2027-03-19
-- extended: no
-- refs: `docs/templates.md`, `tasks/TASK-0017-mechanical-governance.md:9-47`
-Each task file declares a `writes` block with create, modify and forbid lists. Nothing reads that
-block. An agent can change a forbidden file, and no check finds the error. The declaration is a
-wish and not a rule.
-Exit: a step in continuous integration compares the changed files against the write set of the
-active task. A decision exists about a local hook.
-
 ## Accepted compromises
 
 These are conditions that the project keeps permanently and by decision. They do not age.
@@ -311,3 +299,20 @@ The owner chose 15 and not the 12 that this entry proposed. The register held 11
 that date. A limit of 12 gives one free slot, therefore the next new problem would force an exit
 on an old one immediately. A limit of 15 gives four free slots. The limit has an effect and it
 does not stop work. Rule 4 and `Engine.Tests/Governance/RegisterGateTests.cs` both give 15.
+
+### R-0017 - No check verifies the write set of a task
+- class: debt
+- opened: 2026-09-20
+- due: 2027-03-19
+- extended: no
+- refs: `docs/templates.md`, `tasks/TASK-0017-mechanical-governance.md:9-47`
+Each task file declares a `writes` block with create, modify and forbid lists. Nothing reads that
+block. An agent can change a forbidden file, and no check finds the error. The declaration is a
+wish and not a rule.
+Exit: a step in continuous integration compares the changed files against the write set of the
+active task. A decision exists about a local hook.
+Closed 2026-09-21 - resolved - TASK-0022, v0.22
+`Engine.Tests/Governance/WriteSetGateTests.cs` reads the block. The job `write-set-gate` gives it
+the list of changed paths. The hook before each commit is refused and not deferred: a person passes
+a hook with one flag, and a hook needs an installation step on each computer. TASK-0022 records the
+decision.
