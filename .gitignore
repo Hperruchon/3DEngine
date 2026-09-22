@@ -368,3 +368,10 @@ graphify-out/
 # random port numbers. It must not enter the repository. TASK-0022 found it,
 # because the write-set gate reported it as a change with no declaration.
 **/Properties/launchSettings.json
+
+# Claude Code session data: settings, transcripts and git worktrees. It is
+# host-specific and regenerable. A worktree under it holds a full copy of each
+# project file, and a stale copy once shadowed the real one and made the
+# dependency direction gate report a broken rule as satisfied. Register entry
+# R-0014 recorded the question and TASK-0023 decided it.
+.claude/

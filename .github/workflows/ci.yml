@@ -10,8 +10,15 @@ name: CI
 # on win-x64 by hand only, and the desktop host ran on Windows only.
 
 on:
+  # Each push runs the gate, on each branch. A pull request is therefore not a
+  # condition for a report. Before TASK-0023 this trigger named the main branch
+  # only, so the gate could not report on a branch and a person had to open a
+  # pull request by hand.
+  #
+  # A branch with an open pull request runs the gate two times. That cost is
+  # accepted: the repository is public, therefore a run is free, and an automatic
+  # report is worth more than a saved minute.
   push:
-    branches: [main]
   pull_request:
 
 jobs:

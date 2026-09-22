@@ -445,3 +445,53 @@ SDK generates it when a person runs the web host, and it carries random port num
 and absent from `.gitignore`, therefore it would appear in `git status` after each run and it would
 give a false difference on each computer. The stash from TASK-0018 holds an older copy with different
 ports, which confirms the behaviour. `.gitignore` now names it.
+
+## v0.23 — The repository is clean and the gate needs no person (P0.9, TASK-0023)
+
+The owner gave three instructions: direct the work and do not do it by hand, clean the branches, and
+close each entry that a decision can close.
+
+**The gate no longer needs a person.** `.github/workflows/ci.yml` ran on a push to the main branch
+only. The gate therefore gave no report on a branch, and a person had to open a pull request by hand
+before register entry R-0002 could close. The trigger is now `push` with no branch filter, plus
+`pull_request` for the two jobs that need a base reference.
+
+**Twelve local branches became two.** Ten were fully merged, and `git branch -d` deleted each one,
+because that command refuses an unmerged branch and therefore gives the check. Two held unique commits
+and each one received a tag first: `archive/happy-booth-1cef3f`, which TASK-0018 salvaged into v0.20,
+and `archive/p7b-integrate-package`, whose one commit reached the main branch as `831ebbc`.
+
+**Three worktrees became zero.** Each one lived under `.claude/worktrees/` and held a full copy of
+every project file, pinned between 31 and 51 commits behind the main branch. A stale copy of this kind
+made the dependency direction gate report a broken rule as satisfied in v0.19. The filter in that gate
+stays as a second defence.
+
+**Two stashes became zero.** Neither held a change to a tracked file. Each held untracked files only,
+and each of those files is accounted for: the renderer proposal entered a commit in v0.20,
+`launchSettings.json` entered `.gitignore` in v0.22, and `.claude/settings.local.json` enters
+`.gitignore` here. The tags `archive/stash-0` and `archive/stash-1` preserve both.
+
+**The cleanup found an uncommitted draft ADR.** The worktree `happy-booth-1cef3f` refused removal,
+because it held `docs/adr/0015-handler-owned-command-construction.md` with the status `Proposed`. Its
+decision is the decision that ADR-0016 carries, which shipped in v0.18 and which a gate enforces, so
+no new record is needed. A commit in that worktree captured the draft and
+`archive/happy-booth-1cef3f` points at it.
+
+The draft gave one thing that the repository did not hold. It names
+`Engine.Core/Persistence/CommandCodec.cs` as a third position that would dispatch on a command name,
+and it states that the persistence work must use handler-owned construction from the first day.
+TASK-0019 now carries that constraint.
+
+**R-0014 is decided.** `.gitignore` contains `.claude/`. The directory holds settings, a transcript
+and a worktree; each one is host-specific and regenerable, and nothing under it was ever tracked.
+
+**R-0009 was closed in fact and open in the register.** TASK-0017 corrected the false `DRAFT` header
+and its Outcome says that the entry is resolved. Nobody moved the entry. The register and the
+repository now agree. This was a bookkeeping defect of the agent, and the register is the instrument
+that must not carry one.
+
+Tests: 187, unchanged. No code changed. `dotnet build` gives zero errors.
+
+Closed: R-0009, R-0014. Open entries: 7 of 15.
+
+New diagnostic codes: none.

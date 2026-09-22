@@ -120,16 +120,6 @@ The parser reads `--param k=v` pairs. The file says that the wire-format task re
 JSON input.
 Exit: JSON input dispatch exists. Or: accept the parser permanently.
 
-### R-0009 · The native build workflow says DRAFT
-- class: debt
-- opened: 2026-08-25
-- due: 2026-10-24
-- extended: no
-- refs: `.github/workflows/build-manifold-native.yml:10`
-The header says "DRAFT — not yet executed". The workflow ran successfully on the main branch, and
-the repository contains its output. This comment gives incorrect information to the next reader.
-Exit: the header agrees with the facts.
-
 ### R-0010 · The boundary document is not correct but the index calls it canonical
 - class: debt
 - opened: 2026-08-25
@@ -152,19 +142,6 @@ No inbound queue exists, therefore no code emits `E-CMD-BUS-BUSY`. The fallback 
 the need for `E-GEOM-BACKEND-INIT`. Reserved codes are correct. An unlimited quantity of reserved
 codes makes the register unreliable.
 Exit: a source emits each code. Or: each code becomes permanently reserved and gives a reason.
-
-### R-0014 · The `.claude` directory is not in `.gitignore`
-- class: question
-- opened: 2026-05-06
-- due: 2026-10-20
-- extended: 2026-08-25 (imported from open-questions.md; the original lifetime had already passed)
-- refs: this entry replaces OQ-0001
-`git status` shows session metadata after each run.
-Evidence 2026-09-20: the dependency direction gate must exclude this directory, because a worktree
-under it holds a full copy of each project file. A stale copy shadowed the real one and the gate
-reported a broken rule as satisfied.
-Exit: `.gitignore` contains the directory. Or: the repository holds the directory by decision. Or:
-accept the condition.
 
 ### R-0015 · The CLI escapes each apostrophe in JSON output
 - class: question
@@ -316,3 +293,35 @@ Closed 2026-09-21 - resolved - TASK-0022, v0.22
 the list of changed paths. The hook before each commit is refused and not deferred: a person passes
 a hook with one flag, and a hook needs an installation step on each computer. TASK-0022 records the
 decision.
+
+### R-0009 · The native build workflow says DRAFT
+- class: debt
+- opened: 2026-08-25
+- due: 2026-10-24
+- extended: no
+- refs: `.github/workflows/build-manifold-native.yml:10`
+The header says "DRAFT — not yet executed". The workflow ran successfully on the main branch, and
+the repository contains its output. This comment gives incorrect information to the next reader.
+Exit: the header agrees with the facts.
+Closed 2026-09-22 - resolved - TASK-0017, v0.19; the entry moved here by TASK-0023
+The marker gate of v0.19 found the false header and TASK-0017 corrected it. The Outcome of
+TASK-0017 states that this entry is resolved, and nobody moved the entry. The register and the
+repository now agree.
+
+### R-0014 · The `.claude` directory is not in `.gitignore`
+- class: question
+- opened: 2026-05-06
+- due: 2026-10-20
+- extended: 2026-08-25 (imported from open-questions.md; the original lifetime had already passed)
+- refs: this entry replaces OQ-0001
+`git status` shows session metadata after each run.
+Evidence 2026-09-20: the dependency direction gate must exclude this directory, because a worktree
+under it holds a full copy of each project file. A stale copy shadowed the real one and the gate
+reported a broken rule as satisfied.
+Exit: `.gitignore` contains the directory. Or: the repository holds the directory by decision. Or:
+accept the condition.
+Closed 2026-09-22 - decided - `.gitignore` contains the directory - TASK-0023, v0.23
+The directory holds settings, a transcript and a git worktree. Each one is host-specific and
+regenerable. Nothing under it was ever tracked. A worktree under it held a full copy of each
+project file and made the dependency direction gate report a broken rule as satisfied. The gate
+keeps its filter as a second defence.

@@ -28,6 +28,11 @@ unchanged. Only the number, the status and this note changed.
 The status is `Deferred` and not `Ready`, because ADR-0015 has the status `Proposed`. One condition
 unblocks this task: the owner accepts ADR-0015. `docs/roadmap.md` gives this work the identifier P8a.
 
+Constraint from TASK-0023. `Engine.Core/Persistence/CommandCodec.cs` must build each typed command
+with `handler.Create` per ADR-0016. It must not dispatch on a command name. Three positions carried
+such a switch before v0.18 and the codec would have been a fourth. An uncommitted draft ADR in the
+abandoned branch named this risk, and `archive/happy-booth-1cef3f` preserves that draft.
+
 Correction, 2026-09-21. The first version of this note gave a second condition. It said that
 `CLAUDE.md` must drop a clamp that forbids persistence. No such clamp exists. Milestone v0.17 removed
 it. `CLAUDE.md` now says "Persistence arrives with ADR-0015 and its task".
