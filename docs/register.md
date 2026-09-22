@@ -75,17 +75,6 @@ Exit: state the condition that closes this entry.
 
 ## Open
 
-### R-0005 · The native package has no licence notices
-- class: risk
-- opened: 2026-08-25
-- due: 2026-09-24
-- extended: no
-- refs: `nuget/Engine.Geometry.Manifold.Native.3.5.2.nupkg`, `ADR-0014 §5`
-The repository contains a binary file of 4.4 MB. Its nuspec file has no licence element. The
-repository has no third-party notices file. ADR-0014 and TASK-0012 do not give a licence. ADR-0014
-§5 also requires a checksum, but no checksum exists.
-Exit: a file `THIRD-PARTY-NOTICES.md` lists each component and its licence. Checksums exist.
-
 ### R-0007 · Native packages come from a local folder feed
 - class: interim
 - opened: 2026-07-04
@@ -139,6 +128,21 @@ Exit: a source emits each code. Or: each code becomes permanently reserved and g
 The tool `jq` reads it correctly. A person who reads the raw output sees noise.
 `UnsafeRelaxedJsonEscaping` corrects this, but it escapes fewer characters.
 Exit: the CLI uses the different encoder. Or: accept the output.
+
+### R-0018 - The native package records the commit of the wrong repository
+- class: debt
+- opened: 2026-09-22
+- due: 2027-03-21
+- extended: no
+- refs: the nuspec inside `nuget/Engine.Geometry.Manifold.Native.3.5.2.nupkg`, `THIRD-PARTY-NOTICES.md` section 3, `ADR-0014 §5`
+The nuspec holds `<repository type="git" commit="718eab0684178e4fdf7ef419cc4ff26484008705" />`. That
+commit is not a Manifold commit. It is a commit in this repository, dated 2026-07-04, with the
+subject "Merge pull request #8 from Hperruchon/p7b-finish". The description in the same nuspec says
+"Version tracks the pinned Manifold commit", therefore the package gives incorrect information about
+the origin of its binary. A reader cannot tell which source produced the payload.
+Exit: a new build records the Manifold commit. The packing step in
+`.github/workflows/build-manifold-native.yml` reads the commit of the Manifold checkout and not the
+commit of this repository.
 
 ## Accepted compromises
 
@@ -329,3 +333,19 @@ Closed 2026-09-22 - resolved - TASK-0020, v0.24
 Run 35786216373 reports a pass on ubuntu-latest, on windows-latest and on macos-latest. Each job
 runs the build, each test, the smoke test for NoOp and the smoke test for CreateBox. The trigger
 change of v0.23 made the report automatic: a push gives it and a person opens nothing.
+
+### R-0005 · The native package has no licence notices
+- class: risk
+- opened: 2026-08-25
+- due: 2026-09-24
+- extended: no
+- refs: `nuget/Engine.Geometry.Manifold.Native.3.5.2.nupkg`, `ADR-0014 §5`
+The repository contains a binary file of 4.4 MB. Its nuspec file has no licence element. The
+repository has no third-party notices file. ADR-0014 and TASK-0012 do not give a licence. ADR-0014
+§5 also requires a checksum, but no checksum exists.
+Exit: a file `THIRD-PARTY-NOTICES.md` lists each component and its licence. Checksums exist.
+Closed 2026-09-22 - resolved - TASK-0024, v0.25
+`THIRD-PARTY-NOTICES.md` names Manifold under the Apache License 2.0 and Clipper2 under the Boost
+Software License 1.0, and it gives a SHA-256 value for the package and for each of the six distinct
+native binaries. `Engine.Tests/Governance/NativePackageGateTests.cs` compares each value against
+the file in both directions, therefore a checksum is a rule and not a decoration.

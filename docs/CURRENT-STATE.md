@@ -524,3 +524,40 @@ Tests: 187 on this computer. No code changed. Open entries: 6 of 15.
 Track 0 is complete: P0.1 to P0.9 are shipped.
 
 New diagnostic codes: none.
+
+## v0.25 — A licence notice and a verified checksum for the native payload (P0.10, TASK-0024)
+
+Register entry R-0005 recorded that the repository holds a binary of 4.4 MB with no licence element
+and no checksum, against ADR-0014 section 5. Its limit was 2026-09-24.
+
+**Two components, not one.** `THIRD-PARTY-NOTICES.md` names Manifold under the Apache License 2.0,
+and Clipper2 under the Boost Software License 1.0. The first reading found Manifold only. The package
+ships no separate Clipper2 binary, therefore the code is compiled into the Manifold library. The
+evidence is a search of the raw bytes: the name Clipper appears in `libmanifold.so.3.5.2`, in
+`manifold.dll` and in `libmanifold.3.5.2.dylib`. The build sets `MANIFOLD_CROSS_SECTION=ON` and
+`cmake/manifoldDeps.cmake` fetches Clipper2 at commit `46f6391`, which agrees.
+
+**The checksums are a rule and not a decoration.**
+`Engine.Tests/Governance/NativePackageGateTests.cs` reads each SHA-256 value from the notices and
+compares it against the file, in both directions. A change to a binary that does not change the
+notices fails the build, and a binary inside the package that no value records fails too. Both
+directions were verified by injection.
+
+**The package names the wrong repository.** Its nuspec holds
+`<repository type="git" commit="718eab0684178e4fdf7ef419cc4ff26484008705" />`. That commit is not a
+Manifold commit. It is a commit in this repository, dated 2026-07-04, with the subject "Merge pull
+request #8 from Hperruchon/p7b-finish", while the description in the same nuspec says "Version tracks
+the pinned Manifold commit". The package therefore gives incorrect information about the origin of its
+own binary. Register entry R-0018 holds the defect, because a correction needs a new build. The
+notices give the commit that the tag `v3.5.2` names and state that a reader must not use the nuspec.
+
+**A note on method.** A first attempt to look inside the binaries used `strings`, which this computer
+does not have. The command returned nothing, and the absence read as "no Clipper2 inside". A check of
+the total count caught the error, and `grep` on the raw bytes gave the true answer. A tool that is
+absent returns an empty result, and an empty result is not evidence.
+
+New tests: 4. `dotnet test` gives 191 passed, up from 187. `dotnet build` gives zero errors.
+
+Closed: R-0005. Opened: R-0018. Open entries: 6 of 15.
+
+New diagnostic codes: none.
