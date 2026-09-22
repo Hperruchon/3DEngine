@@ -98,12 +98,12 @@ The desktop host draws through a first-party project that uses `Vortice.Vulkan` 
 
 ## Acceptance criteria
 
-- [ ] `3DEngine.Vulkan/3DEngine.Vulkan.csproj` is the only project file that names `Vortice.Vulkan`,
+- [x] `3DEngine.Vulkan/3DEngine.Vulkan.csproj` is the only project file that names `Vortice.Vulkan`,
       and it names 3.2.3.
-- [ ] No project named `Vortice.Vulkan.Sample` or `Vortice.Vulkan.SampleFramework` exists.
-- [ ] `dotnet build` gives zero errors and zero warnings.
+- [x] No project named `Vortice.Vulkan.Sample` or `Vortice.Vulkan.SampleFramework` exists.
+- [x] `dotnet build` gives zero errors and zero warnings.
 - [ ] `dotnet test` passes, and each new gate check failed once on an injected violation.
-- [ ] On this computer the host shows a green window with the validation layer active, and the
+- [x] On this computer the host shows a green window with the validation layer active, and the
       console gives no validation message.
 - [ ] When the window closes, the host releases each Vulkan object, the console gives no validation
       message, and the exit code is 0.

@@ -19,13 +19,22 @@ internal ref struct SwapChainSupportDetails
 
 internal static class Utils
 {
-    public static SwapChainSupportDetails QuerySwapChainSupport(VkPhysicalDevice physicalDevice, VkSurfaceKHR surface)
+    public static SwapChainSupportDetails QuerySwapChainSupport(VkInstanceApi api, VkPhysicalDevice physicalDevice, VkSurfaceKHR surface)
     {
         SwapChainSupportDetails details = new SwapChainSupportDetails();
-        vkGetPhysicalDeviceSurfaceCapabilitiesKHR(physicalDevice, surface, out details.Capabilities).CheckResult();
+        api.vkGetPhysicalDeviceSurfaceCapabilitiesKHR(physicalDevice, surface, out details.Capabilities).CheckResult();
 
-        details.Formats = vkGetPhysicalDeviceSurfaceFormatsKHR(physicalDevice, surface);
-        details.PresentModes = vkGetPhysicalDeviceSurfacePresentModesKHR(physicalDevice, surface);
+        // 3.x returns no span. Ask for the count, then fill an array of that size.
+        api.vkGetPhysicalDeviceSurfaceFormatsKHR(physicalDevice, surface, out uint formatCount).CheckResult();
+        VkSurfaceFormatKHR[] formats = new VkSurfaceFormatKHR[formatCount];
+        api.vkGetPhysicalDeviceSurfaceFormatsKHR(physicalDevice, surface, formats).CheckResult();
+        details.Formats = formats;
+
+        api.vkGetPhysicalDeviceSurfacePresentModesKHR(physicalDevice, surface, out uint presentModeCount).CheckResult();
+        VkPresentModeKHR[] presentModes = new VkPresentModeKHR[presentModeCount];
+        api.vkGetPhysicalDeviceSurfacePresentModesKHR(physicalDevice, surface, presentModes).CheckResult();
+        details.PresentModes = presentModes;
+
         return details;
     }
 }

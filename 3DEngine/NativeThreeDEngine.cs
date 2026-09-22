@@ -2,7 +2,6 @@ using ThreeDEngine.Core.Abstractions;
 using ThreeDEngine.Core.Models;
 using ThreeDEngine.Vulkan;
 using Vortice.Vulkan;
-using static Vortice.Vulkan.Vulkan;
 
 namespace ThreeDEngine.Desktop;
 
@@ -58,8 +57,8 @@ public sealed unsafe class NativeThreeDEngine : IThreeDEngine
                 pClearValues = &clearValue
             };
 
-            vkCmdBeginRenderPass(commandBuffer, &renderPassInfo, VkSubpassContents.Inline);
-            vkCmdEndRenderPass(commandBuffer);
+            _graphicsDevice.DeviceApi.vkCmdBeginRenderPass(commandBuffer, &renderPassInfo, VkSubpassContents.Inline);
+            _graphicsDevice.DeviceApi.vkCmdEndRenderPass(commandBuffer);
         });
     }
 
