@@ -561,3 +561,37 @@ New tests: 4. `dotnet test` gives 191 passed, up from 187. `dotnet build` gives 
 Closed: R-0005. Opened: R-0018. Open entries: 6 of 15.
 
 New diagnostic codes: none.
+
+## v0.26 — Each open question is decided (P0.11, TASK-0025)
+
+Four entries held a question and not a piece of work. The register now holds two open entries, from
+sixteen at the start of this branch.
+
+**R-0008 — the command-line parser is accepted permanently.** The convention `--param k=v` is normal.
+ADR-0016 gave type coercion and validation to `ParameterBinder`, therefore `ArgParser` splits text and
+makes no decision about a value. JSON input on the command line would copy the HTTP surface. The
+comment that promised a replacement is replaced by the decision. The entry is the first in the section
+"Accepted compromises".
+
+**R-0010 — the boundary document is archived.** It is at
+`docs/archive/engine-runtime-boundaries.md` with a header that forbids its use, and `docs/INDEX.md`
+points at the section "Authority diagram" in `CLAUDE.md`. A rewrite was refused: each part that is
+still correct lives in that section and in the ADRs, therefore a rewrite would give a second place for
+one decision, which is the condition that made the document wrong.
+
+**R-0011 — a limit, and not only an answer.** The entry names quantity as the risk, so an answer about
+two codes would return as the same question at the third. `docs/diagnostics.md` gains a section that
+names each reserved code with its reason, as an addition, because `CLAUDE.md` permits an addition to
+that file and nothing else. `Engine.Tests/Governance/DiagnosticsReserveGateTests.cs` bounds the
+quantity at two and was verified by injection.
+
+**R-0015 — the command line uses the relaxed encoder.** `Engine.Cli/JsonRenderer.cs` uses
+`JavaScriptEncoder.UnsafeRelaxedJsonEscaping`, therefore the output shows `it's here <&>` and not a
+line of Unicode escapes. `Engine.Api.Http` keeps the default encoder, because a browser client can put
+a response into a page. No test asserted the escaped form.
+
+New tests: 3. `dotnet test` gives 194 passed, up from 191. `dotnet build` gives zero errors.
+
+Closed: R-0010, R-0011, R-0015. Accepted: R-0008. Open entries: 2 of 15, which are R-0007 and R-0018.
+
+New diagnostic codes: none. The two reserved codes are unchanged and now carry a permanent reason.

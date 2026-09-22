@@ -1,5 +1,15 @@
 # Engine Runtime Boundaries
 
+> **Archived 2026-09-22 by TASK-0025. Do not use this document.** Register entry R-0010 recorded
+> that it is not correct. Nobody changed it after ADR-0004, therefore it is older than ADR-0009 to
+> ADR-0016. It gives a `project.json` format that never existed, it says that Manifold is the V1
+> backend although phase P7a shipped a managed substitute, and it lists gates that nobody had built.
+>
+> The current boundary view is the section "Authority diagram" in `CLAUDE.md`. For a decision, read
+> the one relevant record in `docs/adr/README.md`. For what exists today, read
+> `docs/CURRENT-STATE.md`.
+
+
 This document is the one-page map of the system. It collapses ADRs 0001–0004 into the boundary view a contributor (human or AI agent) needs before touching code.
 
 ## The diagram

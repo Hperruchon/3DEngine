@@ -85,50 +85,6 @@ The configuration calls this feed an interim bootstrap. The publish step in the 
 inactive. A person commits each package by hand.
 Exit: a real feed exists. Or: accept this mechanism permanently and give the reason.
 
-### R-0008 · The CLI argument parser is a placeholder
-- class: interim
-- opened: 2026-05-11
-- due: 2027-05-11
-- extended: no
-- refs: `Engine.Cli/ArgParser.cs:3-5`
-The parser reads `--param k=v` pairs. The file says that the wire-format task replaces it with
-JSON input.
-Exit: JSON input dispatch exists. Or: accept the parser permanently.
-
-### R-0010 · The boundary document is not correct but the index calls it canonical
-- class: debt
-- opened: 2026-08-25
-- due: 2026-10-24
-- extended: no
-- refs: `docs/architecture/engine-runtime-boundaries.md`, `docs/INDEX.md:5`
-Nobody changed this document after the first ADR. It is older than ADR-0009 to ADR-0014. It gives a
-`project.json` format that never existed. It says that Manifold is the V1 backend, but phase P7a
-shipped a managed substitute. It lists CI gates that nobody built.
-Exit: a person rewrites the document. Or: the document moves to an archive and `INDEX.md` points
-to a different document.
-
-### R-0011 · Two diagnostic codes have no source that emits them
-- class: question
-- opened: 2026-08-25
-- due: 2026-11-23
-- extended: no
-- refs: `docs/diagnostics.md:17,26`
-No inbound queue exists, therefore no code emits `E-CMD-BUS-BUSY`. The fallback backend removes
-the need for `E-GEOM-BACKEND-INIT`. Reserved codes are correct. An unlimited quantity of reserved
-codes makes the register unreliable.
-Exit: a source emits each code. Or: each code becomes permanently reserved and gives a reason.
-
-### R-0015 · The CLI escapes each apostrophe in JSON output
-- class: question
-- opened: 2026-05-06
-- due: 2026-10-20
-- extended: 2026-08-25 (imported from open-questions.md; the original lifetime had already passed)
-- refs: this entry replaces OQ-0002
-`JavaScriptEncoder.Default` writes each apostrophe as a Unicode escape. The output is correct JSON.
-The tool `jq` reads it correctly. A person who reads the raw output sees noise.
-`UnsafeRelaxedJsonEscaping` corrects this, but it escapes fewer characters.
-Exit: the CLI uses the different encoder. Or: accept the output.
-
 ### R-0018 - The native package records the commit of the wrong repository
 - class: debt
 - opened: 2026-09-22
@@ -148,7 +104,22 @@ commit of this repository.
 
 These are conditions that the project keeps permanently and by decision. They do not age.
 
-_No entries._
+### R-0008 · The CLI argument parser is a placeholder
+- class: interim
+- opened: 2026-05-11
+- due: 2027-05-11
+- extended: no
+- refs: `Engine.Cli/ArgParser.cs:3-5`
+The parser reads `--param k=v` pairs. The file says that the wire-format task replaces it with
+JSON input.
+Exit: JSON input dispatch exists. Or: accept the parser permanently.
+Accepted 2026-09-22 - TASK-0025, v0.26
+The project keeps the parser. The convention `--param k=v` is normal for a command line. ADR-0016
+gave type coercion and validation to `ParameterBinder`, therefore the parser splits text and makes
+no decision about a value. JSON input on the command line would copy the HTTP surface and give
+nothing that the HTTP surface does not give. The comment in `Engine.Cli/ArgParser.cs` no longer
+says that a later task replaces the file.
+
 
 ---
 
@@ -349,3 +320,53 @@ Closed 2026-09-22 - resolved - TASK-0024, v0.25
 Software License 1.0, and it gives a SHA-256 value for the package and for each of the six distinct
 native binaries. `Engine.Tests/Governance/NativePackageGateTests.cs` compares each value against
 the file in both directions, therefore a checksum is a rule and not a decoration.
+
+### R-0010 · The boundary document is not correct but the index calls it canonical
+- class: debt
+- opened: 2026-08-25
+- due: 2026-10-24
+- extended: no
+- refs: `docs/architecture/engine-runtime-boundaries.md`, `docs/INDEX.md:5`
+Nobody changed this document after the first ADR. It is older than ADR-0009 to ADR-0014. It gives a
+`project.json` format that never existed. It says that Manifold is the V1 backend, but phase P7a
+shipped a managed substitute. It lists CI gates that nobody built.
+Exit: a person rewrites the document. Or: the document moves to an archive and `INDEX.md` points
+to a different document.
+Closed 2026-09-22 - decided - the document moves to an archive - TASK-0025, v0.26
+The document is at `docs/archive/engine-runtime-boundaries.md` with a header that forbids its use.
+`docs/INDEX.md` now points at the section "Authority diagram" in `CLAUDE.md`. A rewrite was the
+other exit and it was refused: the content that is correct lives in that section and in the ADRs,
+therefore a rewrite would give a second place for one decision.
+
+### R-0011 · Two diagnostic codes have no source that emits them
+- class: question
+- opened: 2026-08-25
+- due: 2026-11-23
+- extended: no
+- refs: `docs/diagnostics.md:17,26`
+No inbound queue exists, therefore no code emits `E-CMD-BUS-BUSY`. The fallback backend removes
+the need for `E-GEOM-BACKEND-INIT`. Reserved codes are correct. An unlimited quantity of reserved
+codes makes the register unreliable.
+Exit: a source emits each code. Or: each code becomes permanently reserved and gives a reason.
+Closed 2026-09-22 - decided - each code is reserved permanently - TASK-0025, v0.26
+`docs/diagnostics.md` gains a section "Permanently reserved codes" that names each code and gives
+the reason. The section is an addition, because CLAUDE.md permits an addition to that file and
+nothing else. `Engine.Tests/Governance/DiagnosticsReserveGateTests.cs` bounds the quantity at two.
+The entry asked about two codes. The answer is a limit, because a decision about two codes returns
+as the same question at the third one.
+
+### R-0015 · The CLI escapes each apostrophe in JSON output
+- class: question
+- opened: 2026-05-06
+- due: 2026-10-20
+- extended: 2026-08-25 (imported from open-questions.md; the original lifetime had already passed)
+- refs: this entry replaces OQ-0002
+`JavaScriptEncoder.Default` writes each apostrophe as a Unicode escape. The output is correct JSON.
+The tool `jq` reads it correctly. A person who reads the raw output sees noise.
+`UnsafeRelaxedJsonEscaping` corrects this, but it escapes fewer characters.
+Exit: the CLI uses the different encoder. Or: accept the output.
+Closed 2026-09-22 - decided - the command line uses the relaxed encoder - TASK-0025, v0.26
+`Engine.Cli/JsonRenderer.cs` uses `JavaScriptEncoder.UnsafeRelaxedJsonEscaping`. A person reads that
+output in a terminal. The word Unsafe names one risk: a page that writes JSON into HTML with no
+further encoding. `Engine.Api.Http` keeps the default encoder for that reason, because a browser
+client can put a response into a page.

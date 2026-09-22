@@ -188,9 +188,15 @@ public class WriteSetGateTests
         if (string.IsNullOrWhiteSpace(raw))
             return null;
 
+        // A rename can arrive as "old -> new", which `git status --porcelain`
+        // writes and which a person pastes. Both sides are a change and the
+        // write set must cover both, therefore the gate splits the arrow.
+        // `git diff --name-only` gives one path per line and passes through.
         var files = raw
             .Split(['\n', '\r'], StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
-            .Select(line => line.Replace('\\', '/'))
+            .SelectMany(line => line.Split(" -> ", StringSplitOptions.TrimEntries))
+            .Where(path => path.Length > 0)
+            .Select(path => path.Replace('\\', '/'))
             .ToHashSet(StringComparer.Ordinal);
 
         return files.Count == 0 ? null : files;

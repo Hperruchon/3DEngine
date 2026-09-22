@@ -2,7 +2,7 @@
 
 One-page map of where things live. Paths + one-line purpose. This page **points**; it does not explain. For *why*, read the relevant ADR; for *what exists today*, read [CURRENT-STATE.md](CURRENT-STATE.md); for *boundaries and rules*, read [CLAUDE.md](../CLAUDE.md).
 
-The canonical boundary diagram is **[architecture/engine-runtime-boundaries.md](architecture/engine-runtime-boundaries.md)** — it is not redrawn here. The authority/two-kernel diagram lives in [CLAUDE.md](../CLAUDE.md) "Authority diagram".
+The canonical boundary diagram is the section "Authority diagram" in [CLAUDE.md](../CLAUDE.md). An older one-page map is archived at [archive/engine-runtime-boundaries.md](archive/engine-runtime-boundaries.md); it is not correct and it must not be used. Register entry R-0010 recorded that condition and TASK-0025 closed it.
 
 ## Engine spine (the projects you change)
 
