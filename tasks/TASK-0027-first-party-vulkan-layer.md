@@ -103,12 +103,14 @@ The desktop host draws through a first-party project that uses `Vortice.Vulkan` 
       and it names 3.2.3.
 - [x] No project named `Vortice.Vulkan.Sample` or `Vortice.Vulkan.SampleFramework` exists.
 - [x] `dotnet build` gives zero errors and zero warnings.
-- [ ] `dotnet test` passes, and each new gate check failed once on an injected violation.
+- [x] `dotnet test` passes, and each new gate check failed once on an injected violation.
 - [x] On this computer the host shows a green window with the validation layer active, and the
       console gives no validation message.
 - [x] When the window closes, the host releases each Vulkan object, the console gives no validation
       message, and the exit code is 0.
-- [ ] Continuous integration passes on `ubuntu-latest`, `windows-latest` and `macos-latest`.
+- [x] Continuous integration passes on `ubuntu-latest`, `windows-latest` and `macos-latest`.
+      Run `35791921631` on commit `90985e5`: build, test and both smoke tests pass on each runner,
+      and the write-set job passes each commit.
 
 **A correction.** Commit `885ba75` ticked "zero warnings" from an incremental build. A clean build
 of that commit gives one warning: CS9191 at `3DEngine.Vulkan/Swapchain.cs:85`. The 3.x parameter for
