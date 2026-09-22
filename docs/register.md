@@ -75,20 +75,6 @@ Exit: state the condition that closes this entry.
 
 ## Open
 
-### R-0002 · CI never ran on Windows or on macOS
-- class: risk
-- opened: 2026-08-25
-- due: 2026-09-24
-- extended: no
-- refs: `.github/workflows/ci.yml` (the three line numbers 11, 29 and 57 applied before v0.20)
-Each job uses `ubuntu-latest`. A person verified the native geometry path on win-x64 by hand only.
-The desktop host ran on Windows only. The project requires continuous verification on three
-operating systems.
-Progress 2026-09-20, TASK-0020: the workflow now uses a matrix of three runners and a smoke test
-for CreateBox. The entry stays open until continuous integration reports a pass on each runner. A
-local computer must not run the gate, therefore this session cannot close the entry.
-Exit: the build, the tests and the headless smoke test pass on three runners.
-
 ### R-0005 · The native package has no licence notices
 - class: risk
 - opened: 2026-08-25
@@ -325,3 +311,21 @@ The directory holds settings, a transcript and a git worktree. Each one is host-
 regenerable. Nothing under it was ever tracked. A worktree under it held a full copy of each
 project file and made the dependency direction gate report a broken rule as satisfied. The gate
 keeps its filter as a second defence.
+
+### R-0002 · CI never ran on Windows or on macOS
+- class: risk
+- opened: 2026-08-25
+- due: 2026-09-24
+- extended: no
+- refs: `.github/workflows/ci.yml` (the three line numbers 11, 29 and 57 applied before v0.20)
+Each job uses `ubuntu-latest`. A person verified the native geometry path on win-x64 by hand only.
+The desktop host ran on Windows only. The project requires continuous verification on three
+operating systems.
+Progress 2026-09-20, TASK-0020: the workflow now uses a matrix of three runners and a smoke test
+for CreateBox. The entry stays open until continuous integration reports a pass on each runner. A
+local computer must not run the gate, therefore this session cannot close the entry.
+Exit: the build, the tests and the headless smoke test pass on three runners.
+Closed 2026-09-22 - resolved - TASK-0020, v0.24
+Run 35786216373 reports a pass on ubuntu-latest, on windows-latest and on macos-latest. Each job
+runs the build, each test, the smoke test for NoOp and the smoke test for CreateBox. The trigger
+change of v0.23 made the report automatic: a push gives it and a person opens nothing.

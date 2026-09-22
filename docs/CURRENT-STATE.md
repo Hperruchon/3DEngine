@@ -495,3 +495,32 @@ Tests: 187, unchanged. No code changed. `dotnet build` gives zero errors.
 Closed: R-0009, R-0014. Open entries: 7 of 15.
 
 New diagnostic codes: none.
+
+## v0.24 — The gate passes on three operating systems (P0.6, TASK-0020). Track 0 is complete
+
+Run `35786216373` reports a pass on `ubuntu-latest`, on `windows-latest` and on `macos-latest`. Each
+job runs `dotnet build`, `dotnet test`, the smoke test for `NoOp` and the smoke test for `CreateBox`.
+Register entry R-0002 recorded this gap since 2026-08-25 and it is closed.
+
+The report is automatic. The trigger change of v0.23 means that a push gives it, and a person opens
+nothing. This milestone waited four days for one action by a person, which was the condition that
+v0.23 removed.
+
+**A correction.** TASK-0020 stated that the native Manifold payload carries the runtime identifier
+`win-x64` only, and that the native tests therefore run on the Windows runner and skip on the other
+two. The package holds three sets of binaries: `linux-x64`, `osx-arm64` and `win-x64`. Each runner has
+a payload, therefore the native backend is expected to run on each runner. The comment in
+`.github/workflows/ci.yml` is corrected and the task carries the correction.
+
+The result does not change, because each job passed. The split between a test that ran and a test that
+skipped is not observable from outside, because the log endpoint needs a token.
+
+This is the third statement in three days that described the repository without reading it. The other
+two were the dependency gate that trusted a project name, and a note that cited a scope clamp which a
+previous milestone had removed. No gate catches this class, because each wrong statement sat in prose.
+
+Tests: 187 on this computer. No code changed. Open entries: 6 of 15.
+
+Track 0 is complete: P0.1 to P0.9 are shipped.
+
+New diagnostic codes: none.

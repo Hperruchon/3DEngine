@@ -35,6 +35,7 @@ Therefore each approved objective must have a track here.
 - P0.8 — Three governance corrections. One status set, one limit, one false statement. v0.21, TASK-0021.
 - P0.7 — The write set of a task becomes mechanical. v0.22, TASK-0022.
 - P0.9 — The repository is clean. The gate runs on each push. v0.23, TASK-0023.
+- P0.6 — The gate passes on Windows, Linux and macOS. v0.24, TASK-0020. Track 0 is complete.
 
 ## Track 0 — Foundations
 
@@ -47,7 +48,7 @@ This track removes each condition that blocks other work.
 | P0.3 | Remove both dispatch switch statements. One handler catalog. | 3–5 | **Shipped, v0.18** |
 | P0.4 | Make each governance rule mechanical. ADR front matter, the register gate, the marker gate, the dependency direction gate. | 4–6 | **Shipped, v0.19** |
 | P0.5 | Salvage the unmerged branch. Renumber. Merge the hosting factory. | 2–3 | **Shipped, v0.20** |
-| P0.6 | A gate on Windows, Linux and macOS. | 2–3 | Pending |
+| P0.6 | A gate on Windows, Linux and macOS. | 2–3 | **Shipped, v0.24** |
 | P0.7 | The write-set check. Compare each changed file against the write set of the active task. | 1–2 | **Shipped, v0.22** |
 | P0.8 | Correct the status vocabulary, the register limit and one false statement. | 1 | **Shipped, v0.21** |
 | P0.9 | Clean each branch, worktree and stash. Run the gate on each push. | 1 | **Shipped, v0.23** |

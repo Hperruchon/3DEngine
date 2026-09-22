@@ -57,10 +57,14 @@ jobs:
       - name: Build
         run: dotnet build
 
-      # The native Manifold payload carries one runtime identifier, win-x64. The
-      # tests for the native backend therefore run on the Windows runner and skip
-      # on the other two. ADR-0014 section 4 makes the managed backend the
-      # fallback, so each other test runs everywhere.
+      # The native Manifold payload carries three runtime identifiers: linux-x64,
+      # osx-arm64 and win-x64. Each runner therefore has a payload, and the tests
+      # for the native backend are expected to run on each one. They skip when the
+      # library does not load, because ADR-0014 section 4 makes the managed backend
+      # the fallback.
+      #
+      # TASK-0020 first stated that the payload carries win-x64 only. That
+      # statement was false. The package holds the three sets of binaries.
       - name: Test
         run: dotnet test --no-build
 

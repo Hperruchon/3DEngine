@@ -1,7 +1,7 @@
 ---
 id: 0020
 title: Run the gate on Windows, Linux and macOS
-status: Active
+status: Done
 phase: P0.6
 opened: 2026-09-20
 depends-on: [0018]
@@ -64,8 +64,8 @@ The build, the tests and each smoke test pass on `ubuntu-latest`, `windows-lates
 - [x] `fail-fast` is false, therefore each runner reports.
 - [x] One shell serves the three operating systems.
 - [x] A step drives `CreateBox` through the command-line binary.
-- [ ] Continuous integration reports a pass on each of the three runners.
-- [ ] Register entry R-0002 is closed.
+- [x] Continuous integration reports a pass on each of the three runners.
+- [x] Register entry R-0002 is closed.
 
 ## Notes for the implementer
 
@@ -78,3 +78,43 @@ Two results are expected and correct:
 - The Windows runner runs the tests for the native Manifold backend. The other two runners skip them,
   because the payload carries the runtime identifier win-x64 only.
 - The count of passed tests therefore differs between Windows and the other two runners.
+
+## Outcome
+
+Shipped as v0.24. Track 0 is complete.
+
+Run `35786216373` reports a pass on `ubuntu-latest`, on `windows-latest` and on `macos-latest`. Each
+job runs the build, each test, the smoke test for `NoOp` and the smoke test for `CreateBox`. Register
+entry R-0002 is closed.
+
+This task waited four days for one action by a person, and TASK-0023 removed that wait. The workflow
+triggered on a push to the main branch only, therefore a branch gave no report and a person had to
+open a pull request by hand. The trigger now names each branch. The push of v0.23 gave the first
+automatic report.
+
+**One statement in this task was false.** The "Notes for the implementer" block says that the native
+Manifold payload carries the runtime identifier win-x64 only, and that the native tests therefore run
+on the Windows runner and skip on the other two. TASK-0024 opened the package and found three sets of
+binaries: `linux-x64`, `osx-arm64` and `win-x64`. Each runner has a payload. The comment in
+`.github/workflows/ci.yml` is corrected.
+
+The correction does not change the result, because each job passed. It does change the expectation:
+the native backend is expected to run on each runner, and not on one.
+
+The split between a test that ran and a test that skipped is not observable from outside. The log
+endpoint of the workflow needs a token, and this session has none. The evidence for the correction is
+the content of the package and not the log.
+
+## Method
+
+**Mechanical.** The matrix. The join of the build job and the smoke job. The shell.
+
+**Judgement.** One shell for three operating systems, because a second form of each script would
+drift. The `CreateBox` step, because register entry R-0002 named the native geometry path as the risk
+and a unit test alone does not cross a process boundary.
+
+**Weakest.** This task stated a fact about a binary package without opening the package. That is the
+third error of this kind in three days: the dependency gate trusted a project name without checking
+for a duplicate, a note cited a clamp that a previous milestone had removed, and this task described a
+payload that it never read. Each one was a statement about the repository that did not come from the
+repository. No gate catches this class, because each wrong statement sat in prose.
