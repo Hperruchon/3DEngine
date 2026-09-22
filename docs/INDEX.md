@@ -20,6 +20,7 @@ The canonical boundary diagram is the section "Authority diagram" in [CLAUDE.md]
 | `Engine.Api.Http/` | Canonical deployment process — `POST /commands`, `POST /queries`, `GET /events` (WebSocket), `GET /schema/*`. References `Engine.Core` + `Engine.Contracts`, plus `Engine.Geometry.Manifold` as a host composition root (ADR-0014 §4). (ADR-0011.) |
 | `Engine.Tests/` | Verifier of authority — unit tests plus the CI gates (diagnostics registered, schema parity, replay determinism). May reference any `Engine.*`. |
 | `3DEngine.Core/` | Peer **render** kernel (POCO scene: `Scene`, `Entity`, `Camera`, `Light`, materials). Not design truth. Mutually unreferenceable with `Engine.*`. (ADR-0009.) |
+| `3DEngine.Vulkan/` | First-party **Vulkan layer** — `GraphicsDevice`, `Swapchain`, and the SDL `Window` that owns the surface. References no `Engine.*` project. Holds the only pin of `Vortice.Vulkan` and `Alimer.Bindings.SDL`. Only a host that draws references it. (ADR-0017.) |
 
 ## Docs and process
 
@@ -48,6 +49,5 @@ that declares it.
 
 | Path | What it is |
 |---|---|
-| `3DEngine/` | Vulkan/SDL3 desktop host. |
+| `3DEngine/` | Vulkan/SDL3 desktop host. Draws through `3DEngine.Vulkan`. |
 | `BlazorApp/`, `BlazorApp.Client/` | Placeholder shell. |
-| `Vortice.Vulkan.Sample/`, `Vortice.Vulkan.SampleFramework/` | Sample code. |

@@ -100,6 +100,10 @@ Engine code knows nothing about HTTP and nothing about processes. See ADR-0011.
 - `3DEngine.Core` must not reference an `Engine.*` project.
 - A client references only `Engine.Core` and `Engine.Contracts`. Clients do not reference each
   other. A client that draws also references `3DEngine.Core`.
+- `3DEngine.Vulkan` is the first-party Vulkan layer. It references no `Engine.*` project. It may
+  reference `3DEngine.Core`. Only a host that draws with Vulkan references it. See ADR-0017.
+- `3DEngine.Vulkan/3DEngine.Vulkan.csproj` holds the only pin of `Vortice.Vulkan` and of
+  `Alimer.Bindings.SDL`. A host receives both bindings through its project reference.
 - A host that uses the native geometry backend also references `Engine.Geometry.Manifold`. This
   reference is permitted only at the composition root of the host. See ADR-0014 §4.
 - `Engine.Tests` can reference each `Engine.*` project. A test project verifies authority. It is
@@ -107,9 +111,8 @@ Engine code knows nothing about HTTP and nothing about processes. See ADR-0011.
 
 ## Projects outside the engine spine
 
-- `3DEngine/` — the Vulkan desktop host. It uses SDL3.
+- `3DEngine/` — the Vulkan desktop host. It draws through `3DEngine.Vulkan`, which uses SDL3.
 - `BlazorApp/` and `BlazorApp.Client/` — a placeholder web shell.
-- `Vortice.Vulkan.Sample/` and `Vortice.Vulkan.SampleFramework/` — sample code.
 
 Do not change these projects unless a task gives you that scope.
 

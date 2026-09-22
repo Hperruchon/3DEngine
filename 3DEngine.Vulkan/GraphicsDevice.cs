@@ -1,5 +1,7 @@
 ﻿// Copyright (c) Amer Koleci and Contributors.
-// Licensed under the MIT License (MIT). See LICENSE in the repository root for more information.
+// Licensed under the MIT License (MIT). See THIRD-PARTY-NOTICES.md, section 4.
+// This file comes from the Vortice.Vulkan sample framework. TASK-0027 moved it
+// into this project and changed it. ADR-0017 gives the rules for this project.
 
 using System;
 using System.Collections.Generic;
@@ -7,10 +9,11 @@ using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Text;
+using Vortice.Vulkan;
 using static SDL3.SDL3;
 using static Vortice.Vulkan.Vulkan;
 
-namespace Vortice.Vulkan;
+namespace ThreeDEngine.Vulkan;
 
 public unsafe sealed class GraphicsDevice : IDisposable
 {
@@ -158,12 +161,7 @@ public unsafe sealed class GraphicsDevice : IDisposable
             }
         }
 
-        vkGetPhysicalDeviceProperties(PhysicalDevice, out VkPhysicalDeviceProperties properties);
-
         var queueFamilies = FindQueueFamilies(PhysicalDevice, surface);
-        var availableDeviceExtensions = vkEnumerateDeviceExtensionProperties(PhysicalDevice);
-
-        //var supportPresent = vkGetPhysicalDeviceWin32PresentationSupportKHR(PhysicalDevice, queueFamilies.graphicsFamily);
 
         HashSet<uint> uniqueQueueFamilies = new();
         uniqueQueueFamilies.Add(queueFamilies.graphicsFamily);
@@ -188,72 +186,10 @@ public unsafe sealed class GraphicsDevice : IDisposable
             VK_KHR_SWAPCHAIN_EXTENSION_NAME
         };
 
-        const bool useNewFeatures = false;
-        VkPhysicalDeviceFeatures2 deviceFeatures2 = new();
-#if TODO
-        if (useNewFeatures)
-        {
-            VkPhysicalDeviceVulkan11Features features_1_1 = new();
-            VkPhysicalDeviceVulkan12Features features_1_2 = new();
-
-            deviceFeatures2.pNext = &features_1_1;
-            features_1_1.pNext = &features_1_2;
-
-            void** features_chain = &features_1_2.pNext;
-
-            VkPhysicalDevice8BitStorageFeatures storage_8bit_features = default;
-            if (properties.apiVersion <= VkVersion.Version_1_2)
-            {
-                if (CheckDeviceExtensionSupport(VK_KHR_8BIT_STORAGE_EXTENSION_NAME, availableDeviceExtensions))
-                {
-                    enabledExtensions.Add(VK_KHR_8BIT_STORAGE_EXTENSION_NAME);
-                    //storage_8bit_features.sType = VkStructureType.PhysicalDevice8bitStorageFeatures;
-                    *features_chain = &storage_8bit_features;
-                    features_chain = &storage_8bit_features.pNext;
-                }
-            }
-
-            if (CheckDeviceExtensionSupport(VK_KHR_SPIRV_1_4_EXTENSION_NAME, availableDeviceExtensions))
-            {
-                // Required by VK_KHR_spirv_1_4
-                enabledExtensions.Add(VK_KHR_SHADER_FLOAT_CONTROLS_EXTENSION_NAME);
-
-                // Required for VK_KHR_ray_tracing_pipeline
-                enabledExtensions.Add(VK_KHR_SPIRV_1_4_EXTENSION_NAME);
-            }
-
-            if (CheckDeviceExtensionSupport(VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME, availableDeviceExtensions))
-            {
-                // Required by VK_KHR_acceleration_structure
-                enabledExtensions.Add(VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME);
-            }
-
-            if (CheckDeviceExtensionSupport(VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME, availableDeviceExtensions))
-            {
-                // Required by VK_KHR_acceleration_structure
-                enabledExtensions.Add(VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME);
-            }
-
-            VkPhysicalDeviceAccelerationStructureFeaturesKHR acceleration_structure_features = new();
-            if (CheckDeviceExtensionSupport(VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME, availableDeviceExtensions))
-            {
-                // Required by VK_KHR_acceleration_structure
-                enabledExtensions.Add(VK_KHR_DEFERRED_HOST_OPERATIONS_EXTENSION_NAME);
-
-                enabledExtensions.Add(VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME);
-                *features_chain = &acceleration_structure_features;
-                features_chain = &acceleration_structure_features.pNext;
-            }
-
-            vkGetPhysicalDeviceFeatures2(PhysicalDevice, &deviceFeatures2);
-        } 
-#endif
-
         using var deviceExtensionNames = new VkStringArray(enabledExtensions);
 
         VkDeviceCreateInfo deviceCreateInfo = new()
         {
-            pNext = useNewFeatures ? &deviceFeatures2 : default,
             queueCreateInfoCount = queueCount,
             pQueueCreateInfos = queueCreateInfos,
             enabledExtensionCount = deviceExtensionNames.Length,
@@ -417,67 +353,6 @@ public unsafe sealed class GraphicsDevice : IDisposable
         }
     }
 
-    public uint GetMemoryTypeIndex(uint typeBits, VkMemoryPropertyFlags properties)
-    {
-        vkGetPhysicalDeviceMemoryProperties(PhysicalDevice, out VkPhysicalDeviceMemoryProperties deviceMemoryProperties);
-
-        // Iterate over all memory types available for the device used in this example
-        for (int i = 0; i < deviceMemoryProperties.memoryTypeCount; i++)
-        {
-            if ((typeBits & 1) == 1)
-            {
-                if ((deviceMemoryProperties.memoryTypes[i].propertyFlags & properties) == properties)
-                {
-                    return (uint)i;
-                }
-            }
-            typeBits >>= 1;
-        }
-
-        throw new Exception("Could not find a suitable memory type!");
-    }
-
-    public VkCommandBuffer GetCommandBuffer(bool begin = true)
-    {
-        vkAllocateCommandBuffer(VkDevice,
-            _perFrame[_frameIndex].PrimaryCommandPool,
-            out VkCommandBuffer commandBuffer).CheckResult();
-
-        // If requested, also start the new command buffer
-        if (begin)
-        {
-            VkCommandBufferBeginInfo beginInfo = new()
-            {
-                flags = VkCommandBufferUsageFlags.OneTimeSubmit
-            };
-            vkBeginCommandBuffer(commandBuffer, &beginInfo).CheckResult();
-        }
-
-        return commandBuffer;
-    }
-
-    public void FlushCommandBuffer(VkCommandBuffer commandBuffer)
-    {
-        vkEndCommandBuffer(commandBuffer).CheckResult();
-
-        VkSubmitInfo submitInfo = new()
-        {
-            commandBufferCount = 1,
-            pCommandBuffers = &commandBuffer
-        };
-
-        // Create fence to ensure that the command buffer has finished executing
-        vkCreateFence(VkDevice, out VkFence fence);
-
-        // Submit to the queue
-        vkQueueSubmit(GraphicsQueue, 1, &submitInfo, fence).CheckResult();
-
-        // Wait for the fence to signal that command buffer has finished executing
-        vkWaitForFences(VkDevice, 1, &fence, true, ulong.MaxValue).CheckResult();
-
-        vkDestroyFence(VkDevice, fence);
-    }
-
     private VkResult AcquireNextImage(out uint imageIndex)
     {
         VkSemaphore acquireSemaphore;
@@ -530,23 +405,7 @@ public unsafe sealed class GraphicsDevice : IDisposable
 
     public static implicit operator VkDevice(GraphicsDevice device) => device.VkDevice;
 
-    public VkResult CreateShaderModule(ReadOnlySpan<byte> data, out VkShaderModule module)
-    {
-        return vkCreateShaderModule(VkDevice, data, null, out module);
-    }
-
     #region Private Methods
-    private static bool CheckDeviceExtensionSupport(VkUtf8ReadOnlyString extensionName, ReadOnlySpan<VkExtensionProperties> availableDeviceExtensions)
-    {
-        foreach (VkExtensionProperties property in availableDeviceExtensions)
-        {
-            if (extensionName == property.extensionName)
-                return true;
-        }
-
-        return false;
-    }
-
     private static void GetOptimalValidationLayers(
         HashSet<VkUtf8String> availableLayers,
         List<VkUtf8String> instanceLayers)
@@ -738,8 +597,6 @@ public unsafe sealed class GraphicsDevice : IDisposable
             VkVersion version = vkEnumerateInstanceVersion();
             if (version < VkVersion.Version_1_1)
                 return false;
-
-            // TODO: Enumerate physical devices and try to create instance.
 
             return true;
         }

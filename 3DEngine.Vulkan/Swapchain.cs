@@ -1,10 +1,13 @@
 ﻿// Copyright (c) Amer Koleci and Contributors.
-// Licensed under the MIT License (MIT). See LICENSE in the repository root for more information.
+// Licensed under the MIT License (MIT). See THIRD-PARTY-NOTICES.md, section 4.
+// This file comes from the Vortice.Vulkan sample framework. TASK-0027 moved it
+// into this project and changed it. ADR-0017 gives the rules for this project.
 
 using System; 
+using Vortice.Vulkan;
 using static Vortice.Vulkan.Vulkan;
 
-namespace Vortice.Vulkan;
+namespace ThreeDEngine.Vulkan;
 
 public sealed unsafe class Swapchain : IDisposable
 {

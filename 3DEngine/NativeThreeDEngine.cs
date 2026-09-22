@@ -1,5 +1,6 @@
 using ThreeDEngine.Core.Abstractions;
 using ThreeDEngine.Core.Models;
+using ThreeDEngine.Vulkan;
 using Vortice.Vulkan;
 using static Vortice.Vulkan.Vulkan;
 

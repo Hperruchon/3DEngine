@@ -1,6 +1,6 @@
 using SDL3;
 using ThreeDEngine.Core.Services;
-using Vortice.Vulkan;
+using ThreeDEngine.Vulkan;
 using static SDL3.SDL3;
 
 namespace ThreeDEngine.Desktop;
