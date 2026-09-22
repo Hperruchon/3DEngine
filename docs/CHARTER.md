@@ -42,6 +42,59 @@ Each domain keeps its own model. The platform does not put CAD, electrical diagr
 biological data in one geometry structure. A domain object gives its own data, and it gives one or
 more visual representations. The visual representation is derived. It is never the authority.
 
+## The twenty objectives
+
+The owner confirmed each objective on 2026-09-20, in step 1 of the review that TASK-0015 records.
+No file held the list until TASK-0029 recorded it. A document cites an objective by its number.
+`Engine.Tests/Governance/ObjectiveReferenceGateTests.cs` fails when a cited number does not exist.
+
+A change to an objective needs a decision from the owner. See `CLAUDE.md`, section "Workflow".
+
+### The purpose
+
+1. This is a personal project. It is separate from work for an employer. It is separate from each
+   3D-printing application.
+2. The project builds a platform for engineering work and scientific work. The platform is
+   extensible.
+3. The solution gives each tool that a 3D application needs. The solution is not one 3D
+   application. A "3D app" is one product. This platform is the set of parts.
+4. Each domain keeps its own model. The project does not put CAD, electrical diagrams, chemistry and
+   biological data in one geometry structure.
+
+### The first objective
+
+5. The first objective is a cross-platform 3D engine with a Vulkan renderer. A person must be able
+   to understand it. It becomes the foundation for the platform.
+6. The first demonstration creates a box, moves a second box, subtracts it, and shows the cut solid
+   in the viewport.
+7. Vulkan is a technical direction and a learning objective. Both apply at the same time.
+
+### The hard requirements
+
+8. Windows, Linux and macOS each work. A gate verifies each one continuously.
+9. Each operation works by touch. Each operation also works by mouse and keyboard. Neither method is
+   secondary.
+10. Learning and usefulness are both objectives. One does not have priority.
+11. Editable parametric CAD is an objective, not an option.
+12. Time is irregular and limited. Each milestone must end in one session. A person must be able to
+    continue it after three weeks.
+
+### The long-term directions
+
+13. Scenes become very large.
+14. Materials, chemistry and DNA are directions. They have no dataset and no workflow now.
+15. Machine vision comes before materials, chemistry and DNA.
+16. Simulation is a long-term ambition. Examples are airflow over a car and molecular data.
+
+### The shape of the work
+
+17. The engine keeps its current shape. The command log, the event stream and replay determinism
+    stay.
+18. 2D drawing, electrical schematics and technical drawing stay directions. They have no date.
+19. C# and the .NET platform are the default for the engine. Another language is acceptable when
+    learning that language is also a goal.
+20. The project stays open source.
+
 ## Target consumers
 
 No consumer holds business logic. Each consumer turns input into commands and observes events.

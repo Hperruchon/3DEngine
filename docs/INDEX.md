@@ -26,7 +26,7 @@ The canonical boundary diagram is the section "Authority diagram" in [CLAUDE.md]
 
 | Path | Purpose |
 |---|---|
-| `docs/CHARTER.md` | Mission, target consumers, non-goals against anti-objectives, the kernel boundary, the agent scope test. Read first if you do not know whether to act. |
+| `docs/CHARTER.md` | Mission, the twenty objectives, target consumers, non-goals against anti-objectives, the kernel boundary, the agent scope test. Read first if you do not know whether to act. |
 | `docs/INDEX.md` | This map. |
 | `docs/working-agreement.md` | How to behave. Scope, the record, accuracy, decisions, time, parallel agents. |
 | `docs/templates.md` | The forms for a register entry, an ADR, a task and a commit. |

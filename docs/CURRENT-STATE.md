@@ -700,3 +700,25 @@ warnings on a clean build.
 Opened: R-0019. Open entries: 3 of 15.
 
 New diagnostic codes: none.
+
+## v0.29 — The twenty objectives are in the charter (governance, TASK-0029)
+
+The owner asked for a check of each rule against the objectives. The repository held no list of
+objectives. `CLAUDE.md` cited "Objective 11" and `docs/roadmap.md` cited "Objective 15", and no file
+defined either number. The owner confirmed the twenty objectives on 2026-09-20, but the list lived
+only in the transcript of that session.
+
+**The list.** `docs/CHARTER.md` now holds the section "The twenty objectives", in five groups, with
+the two refinements of the owner for objectives 18 and 19. Objective 1 says "separate from work for
+an employer" and does not name a product of the employer, because the repository is public.
+
+**The gate.** `Engine.Tests/Governance/ObjectiveReferenceGateTests.cs` fails when the list is not
+numbered from 1 to 20, and when a document cites an objective or an anti-objective that does not
+exist. Four violations were injected, and each one failed with the file and the line.
+
+**Two terms.** The glossary defines objective and anti-objective.
+
+New tests: 3. The test list holds 201, up from 198. `dotnet build` gives zero errors and zero
+warnings on a clean build.
+
+Open entries: 3 of 15. New diagnostic codes: none.

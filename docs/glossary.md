@@ -45,5 +45,7 @@ Canonical vocabulary. One line per term + a pointer to where it is **defined** (
 | **Replay** | Reconstructing an equivalent `Document` (+ backend state) by re-applying a log on a fresh backend. Equivalence holds modulo `Timestamp`/`DocumentId`. | `Engine.Core/Replay.cs` · ADR-0005, ADR-0012 §2 |
 | **projection** | Any state regenerable from the log — `Document.Bodies`, the event stream, render scene, snapshots. Losing a projection is recovery, not data loss. | concept · [CHARTER.md](CHARTER.md) · ADR-0012 §3 |
 | **design truth** | The authoritative, ordered, replayable command log (the `Document`) that every other piece of state is downstream of. Owned by `Engine.*`. | concept · [CHARTER.md](CHARTER.md) · ADR-0004 |
+| **objective** | A result that the project must achieve. There are twenty, and each one has a number. Only the owner changes one. | [CHARTER.md](CHARTER.md) "The twenty objectives" |
+| **anti-objective** | A thing that the project refuses at each version. Each one protects an objective. Example: anti-objective 1, "no second source of truth", protects objective 17. | [CHARTER.md](CHARTER.md) "Anti-objectives" |
 | **the two kernels** | `Engine.*` (design truth) and `3DEngine.Core` (render state) — peers that never reference each other; render hosts own the projection from events. | [CLAUDE.md](../CLAUDE.md) "Authority diagram" · ADR-0009 |
 | **Vulkan layer** | `3DEngine.Vulkan` — the first-party GPU code. It draws render state and never sees design truth; only a host that draws references it. | `3DEngine.Vulkan/` · ADR-0017 |
