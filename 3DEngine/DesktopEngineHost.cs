@@ -13,7 +13,7 @@ internal static class DesktopEngineHost
         {
             var scene = SampleSceneFactory.CreateDefault();
             var window = new Window("3DEngine Desktop", 1280, 720);
-            var engine = new NativeThreeDEngine(window);
+            using var engine = new NativeThreeDEngine(window);
 
             engine.Initialize();
             engine.LoadScene(scene);

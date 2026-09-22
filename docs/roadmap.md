@@ -39,6 +39,7 @@ Therefore each approved objective must have a track here.
 - P0.10 — A licence notice and a verified checksum for the native payload. v0.25, TASK-0024.
 - P0.11 — Each open question is decided. Two entries remain open. v0.26, TASK-0025.
 - P0.12 — The write-set gate runs in the pipeline and its forbid rule is correct. v0.27, TASK-0026. Track 0 is complete.
+- R1 — The Vulkan code is first-party and uses Vortice.Vulkan 3.2.3. v0.28, TASK-0027, ADR-0017.
 
 ## Track 0 — Foundations
 
@@ -75,7 +76,7 @@ The first objective. Each phase ends with something that a person can observe.
 
 | Phase | Content | Evenings | Status |
 |---|---|---|---|
-| R1 | Upgrade the Vulkan binding. Move the Vulkan code into a first-party project. | 2–4 | Pending |
+| R1 | Upgrade the Vulkan binding. Move the Vulkan code into a first-party project. | 2–4 | **Shipped, v0.28** |
 | R2 | A tessellation capability. A mesh leaves the geometry backend. | 4–6 | Pending |
 | R3 | A pipeline. A triangle, then an indexed mesh. | 4–6 | Pending |
 | R4 | A camera with depth. Flat scene arrays. Each draw through an indirect interface. | 5–7 | Pending |

@@ -50,8 +50,8 @@ change the two kernels.
 3. Only a host that draws with Vulkan references `3DEngine.Vulkan`. Today that host is `3DEngine`. No
    `Engine.*` project, no render kernel and no web client references it.
 4. `3DEngine.Vulkan/3DEngine.Vulkan.csproj` holds the only pin of `Vortice.Vulkan` and the only pin of
-   `Alimer.Bindings.SDL`. A host receives each binding through its project reference. An upgrade
-   therefore changes one line.
+   `Alimer.Bindings.SDL`. A host receives each binding through its project reference. The version
+   of each binding therefore has one answer, in one line.
 5. The vendored projects `Vortice.Vulkan.Sample` and `Vortice.Vulkan.SampleFramework` are removed.
    Each type and each method that moved has a caller in the host. A method with no caller did not
    move, because no test and no run can show that it is correct. A later phase adds each method when
@@ -65,7 +65,7 @@ change the two kernels.
 binding version has one answer. The two build warnings of the sample code are gone. The licence of the
 derived code is correct.
 
-**Bad:** The project owns about 600 lines that another author wrote, and it must keep them. The
+**Bad:** The project owns 1,080 lines, and another author wrote most of them. It must keep them. The
 maintained samples of the binding stay upstream. A reader who wants the old sample reads the history
 of this repository, or the upstream repository. The removed helpers for a shader module, a memory
 type and a one-time command buffer return in phase R3, and that phase writes them again.

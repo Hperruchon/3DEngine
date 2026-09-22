@@ -1,7 +1,7 @@
 ---
 id: 0027
 title: The Vulkan code is first-party and uses Vortice.Vulkan 3.2.3
-status: Active
+status: Done
 phase: R1
 opened: 2026-09-23
 depends-on: [0026]
@@ -34,6 +34,7 @@ writes:
     - docs/adr/README.md
     - docs/roadmap.md
     - docs/CURRENT-STATE.md
+    - docs/register.md
   forbid:
     - Engine.Contracts/**
     - Engine.Core/**
@@ -105,7 +106,7 @@ The desktop host draws through a first-party project that uses `Vortice.Vulkan` 
 - [ ] `dotnet test` passes, and each new gate check failed once on an injected violation.
 - [x] On this computer the host shows a green window with the validation layer active, and the
       console gives no validation message.
-- [ ] When the window closes, the host releases each Vulkan object, the console gives no validation
+- [x] When the window closes, the host releases each Vulkan object, the console gives no validation
       message, and the exit code is 0.
 - [ ] Continuous integration passes on `ubuntu-latest`, `windows-latest` and `macos-latest`.
 
@@ -126,3 +127,68 @@ Three commits, in this order, so that each diff has one topic:
 1. The move. The pin stays at 1.9.8, therefore the host behaves as before.
 2. The upgrade. The diff shows each change that 3.x needs, and nothing else.
 3. The teardown, which is a change of behaviour, and the close of this task.
+
+The branch has four commits. The correction above needed its own commit between 2 and 3.
+
+## Outcome
+
+Status: Done · v0.28 · commits `65ab50a`, `885ba75`, `f602022`, and the commit that carries this
+block.
+
+**One first-party project.** `3DEngine.Vulkan` holds `GraphicsDevice`, `Swapchain`, `Window`, `Log`
+and `Utils`. `git mv` kept the history of each file. `Vortice.Vulkan.Sample` and
+`Vortice.Vulkan.SampleFramework` are gone. Five members and one block did not move, because nothing
+called them or they never compiled: `GetMemoryTypeIndex`, `GetCommandBuffer`, `FlushCommandBuffer`,
+`CreateShaderModule`, `CheckDeviceExtensionSupport`, and the block `#if TODO`. The implicit
+conversion to `VkDevice` moved, because `Swapchain` called it. The port removed its last caller, and
+the conversion went with it. The types `Application` and `VertexPositionColor` had no caller in the
+host.
+
+**The binding is 3.2.3, with one pin.** The host names no Vulkan package and no SDL package. The
+build output holds `Vortice.Vulkan.dll` with the product version `3.2.3+ef01519`, which is the commit
+that the nuspec names.
+
+**The host releases each Vulkan object at exit.** The window closes with the exit code 0 and no
+validation message.
+
+**The validation layer can speak.** A silent layer proves nothing until it reports a defect, therefore
+two defects were injected and removed:
+
+- A render pass that does not end gives `VUID-vkEndCommandBuffer-commandBuffer-00060`.
+- A device that is not destroyed gives `VUID-vkDestroyInstance-instance-00629` at the close.
+
+**The gates.** The dependency direction gate reads the host now. It adds three checks: the Vulkan
+layer references at most the render kernel, only a host that draws references the Vulkan layer, and
+each binding has one pin. A headless client can no longer reference the render kernel, which ADR-0009
+section 2 already forbade. The marker gate reads `3DEngine.Core`, `3DEngine.Vulkan` and `3DEngine`.
+Seven violations were injected, and each one failed with a message that names the project and the
+rule: the host to the sample framework, the command line to the render kernel, the Vulkan layer to
+`Engine.Contracts`, the web client to the Vulkan layer, a second pin in the host, a `TODO` in the
+Vulkan layer, and the word "temporary" in the host.
+
+**The licence.** `THIRD-PARTY-NOTICES.md`, section 4, gives the MIT licence of the sample author, and
+each derived file points to it.
+
+**Found in passing.** Six statements in five documents describe a repository state that no longer
+exists. Working agreement rule 2.2 forbids the correction of an adjacent file under this task,
+therefore register entry R-0019 holds them, with a limit of 30 days.
+
+## Method
+
+**Mechanical.** The move with `git mv`. The port of each call to `VkInstanceApi` or `VkDeviceApi`,
+from a reflection listing of each overload in the 3.2.3 assembly, and not from memory. The two-call
+pattern for each function that returned a span in 1.9.8.
+
+**Judgement.** Remove the sample projects instead of keeping them on the old binding: two pins of one
+binding give two answers to one question. Move only what has a caller, because nothing can show that
+a method with no caller is correct. Mark ADR-0017 `Accepted`, as ADR-0016 was, because the code and
+the gate land with it; the owner can change the status. Keep `BlazorApp` out of the role table of the
+gate, because `BlazorApp` references `BlazorApp.Client` and a rule for the web shell needs a decision
+that R1 does not own.
+
+**Weakest.** The port runs on one computer with one GPU. The runners build the code on Linux and
+macOS, but no runner has a GPU, so no runner creates a device. macOS needs MoltenVK, and nothing here
+tests it. The resize path is still absent: `RenderFrame` does not create the swapchain again after
+`ErrorOutOfDateKHR`, and the sample did not either. The window is not resizable, so a resize cannot
+cause it. A minimized window can, and this task did not test that. Phase R3 or R4 must add the
+recreation of the swapchain before it makes the window resizable.
