@@ -1,94 +1,228 @@
 # Charter
 
+This document uses Simplified Technical English (ASD-STE100). See `CLAUDE.md`, section "Language".
+
+It replaces the charter of 2026-06-13. That charter gave the mission as "We do not build a 3D app".
+That sentence had a correct intent and incorrect words. This document gives the intent.
+
 ## Mission
 
-We do not build a 3D app. We build a deterministic, observable, command-driven system that happens to operate on 3D data.
+We do not build one application. We build the parts that many applications use.
 
-The engine is the sole authority over **design truth**: an ordered, replayable command log (the Document) from which every other piece of state — geometry caches, render scene, event stream, snapshots — is a regenerable *projection*. Losing a projection is recovery, not data loss. Design intent is authoritative; everything drawn, cached, or streamed is downstream of it.
+Each part is deterministic and observable. Each change to design truth uses a command.
 
-Three commitments make this load-bearing:
+The engine is the only authority over **design truth**. Design truth is an ordered command log that
+a replay can reproduce. Each other state is a projection of that log: a geometry cache, a render
+scene, an event stream, a snapshot. The loss of a projection is a recovery, not a loss of data.
 
-- **One surface for every consumer.** Humans, scripts, services, and AI agents all drive the engine through the identical command/query/event triad. No consumer is privileged; headless control can never erode. (CLAUDE.md "Triad vocabulary"; ADR-0002, ADR-0004, ADR-0008.)
-- **Two peer kernels, never fused.** Design truth (`Engine.*`) and render state (`3DEngine.Core`) are peers that never reference each other; render hosts own the projection from events. The design boundary stays uncontaminated by cameras, lights, and materials. (CLAUDE.md authority diagram; ADR-0009.)
-- **Self-describing and capability-negotiated.** The surface publishes its own schema so dynamic and AI clients build against the engine at runtime; geometry sits behind opaque handles and capability interfaces, so backends swap by replay without touching client contracts. (ADR-0008, ADR-0012, ADR-0013.)
+Three commitments make the mission operate:
+
+- **One surface for each consumer.** A person, a script, a service and an agent each use the same
+  commands, the same queries and the same event stream. No consumer has a privilege. Control without
+  a user interface can never decay.
+- **Two kernels, never joined.** Design truth lives in `Engine.*`. Render state lives in
+  `3DEngine.Core`. They are peers. A host that draws owns the projection from one to the other.
+  Therefore a camera, a light and a material never enter the design boundary.
+- **The surface describes itself.** The engine publishes its own schema, therefore a dynamic client
+  builds against the engine while it runs. Geometry sits behind opaque handles and capability
+  interfaces, therefore a backend changes by replay and no client contract changes.
+
+## The long objective
+
+The platform serves engineering work and scientific work. It is extensible.
+
+The first objective is a 3D engine with a Vulkan renderer, on Windows, Linux and macOS. A person
+must be able to understand it. Vulkan is a technical direction and a learning objective at the same
+time.
+
+Editable parametric CAD is an objective. Each operation works by touch and by mouse. Neither method
+is secondary.
+
+Each domain keeps its own model. The platform does not put CAD, electrical diagrams, chemistry and
+biological data in one geometry structure. A domain object gives its own data, and it gives one or
+more visual representations. The visual representation is derived. It is never the authority.
 
 ## Target consumers
 
-No consumer owns business logic; each translates input to commands and observes events.
+No consumer holds business logic. Each consumer turns input into commands and observes events.
 
-- **AI / automation agents** — first-class. Discover the surface via `GET /schema/*` at runtime, submit commands, subscribe to the cursor-replayable event stream. Driveable with no human-UI dependency. (ADR-0003, ADR-0008.)
-- **Engine.Cli** — canonical embedded host and canonical test client; single-client, ephemeral, JSON in/out. "If it does not work headlessly here, it is not implemented." (ADR-0002, ADR-0011.)
-- **Engine.Api.Http** — canonical deployment process, lifecycle independent of any client; the surface UIs, services, and agents reach. Localhost-only in V1.x. (ADR-0011.)
-- **Render-capable hosts** (3DEngine desktop; future BlazorApp.Client) — reference both kernels and project Engine events into `3DEngine.Core`, owning only ephemeral UI state (camera, selection, hover). This is the designed posture (ADR-0009); no host wires the projection yet in V1.
-- **Internal command/query handlers** — reach geometry only through `IGeometryBackend.TryGet<T>()`; read only their parameters, the current Document, and the active backend. (ADR-0001, ADR-0012.)
-- **Contributors (human or AI agent) extending the engine** — the reader of this charter. Act via the scope test in "How an agent uses this charter"; orient via CLAUDE.md. (CLAUDE.md; engine-runtime-boundaries.md.)
+- **Agents and automation** — first class. An agent reads the schema while the engine runs, sends
+  commands, and subscribes to the event stream. It needs no human interface.
+- **`Engine.Cli`** — the approved embedded host and the approved test client. One client, no state
+  between invocations, JSON in and JSON out. If a capability does not work here, it is not built.
+- **`Engine.Api.Http`** — the approved deployment process. Its lifecycle is independent of each
+  client. It binds to localhost only.
+- **Hosts that draw** — the desktop host now, and other hosts later. Each one references both
+  kernels and projects events into render state. Each one owns ephemeral state only: the camera, the
+  selection, the hover.
+- **Command handlers and query handlers** — they reach geometry only through a capability. They read
+  their parameters, the current Document and the active backend.
+- **Contributors, human and agent** — the reader of this charter. Use the scope test below. Read
+  `CLAUDE.md` for position and `docs/working-agreement.md` for behaviour.
 
-## Definition of success — V1 (realized)
+## What exists
 
-V1 is shipped (P0..P7a, v0.1..v0.11). The success criteria below hold today; the authoritative feature ledger is **CURRENT-STATE.md** — do not re-enumerate it here. V1 succeeds because the *properties* hold, not because a feature list is long:
+V1 and V1.x are complete. `docs/CURRENT-STATE.md` is the authority for the question "does X exist".
+Do not repeat that list here.
 
-- Mutation has exactly one authoritative path, so design truth stays single-sourced and replayable; reads can never become a second mutation path. (how: ADR-0004, ADR-0006, ADR-0008.)
-- Replay is deterministic — every projection is regenerable from the log, which is what makes losing a projection recovery, not loss. (how: ADR-0001, ADR-0005, ADR-0012; CI-guarded per CLAUDE.md gate list.)
-- The event stream is a faithful, recoverable observation surface, so any consumer can rebuild state and no slow consumer can stall the authority. (how: ADR-0005, ADR-0010.)
-- The surface is self-describing, so dynamic and AI clients build against it at runtime. Commands and queries are pure projections of handler-declared schemas; event kinds are hand-encoded in V1 (registry-driven schema is a V1.x non-goal) — `/schema/events` is authoritative for the kind list but maintained by hand, not generated, and may drift. (how: ADR-0008, ADR-0013.)
-- A first geometry capability proves the opaque-handle / capability abstraction holds end-to-end and headlessly. (how: ADR-0012; what shipped: CURRENT-STATE.)
-- Architectural authority is self-enforcing rather than convention-only — CI gates the boundary rules (the gate list lives in CLAUDE.md "Test discipline").
+The properties below hold today:
 
-## Direction — V1.x and V2 (sketch, not committed)
+- Mutation has one authoritative path. A read can never become a second path.
+- A replay is deterministic. Each projection is reproducible from the log.
+- The event stream is a faithful record. A slow consumer cannot stop the authority.
+- The surface describes itself. A command schema and a query schema are projections of the
+  declaration in each handler.
+- A geometry capability proves the opaque-handle design from end to end, without a user interface.
+- Continuous integration holds each boundary rule, therefore the rules are not conventions only.
 
-Seams left deliberately open, not promises. Each arrives only via its own ADR + TASK. Source of truth is **roadmap.md**.
+## Direction
 
-- **A real geometry backend:** swap the managed stub for a Manifold-backed `IGeometryBackend` behind the same capability interfaces — gated on a native-interop ADR (binding, lifecycle, threading).
-- **Persistence and history:** lift the in-memory clamp; multi-Document per runtime; undo/redo on the log.
-- **Additive capabilities only:** B-Rep / feature-id ops (reserved `IBRepOps`, `IFeatureIdMap`); registry-driven event schema; tessellated-preview protocol; auth for non-localhost; client codegen; reserved `X-` plugin diagnostics. All are capability-shaped extensions, never contract rewrites.
+The roadmap holds each track and each phase. `docs/roadmap.md` is the authority. The tracks are:
 
-## Non-goals (V1) vs Anti-objectives (forever)
+- **Track P — the platform.** Persistence, the container model, undo and redo, the feature list.
+- **Track R — the renderer.** A tessellation capability, then a Vulkan pipeline, then geometry from
+  the engine, then an editor.
+- **Track K — the kernel.** A feature graph over Manifold, then an owned analytic geometry kernel
+  with a closed feature boundary.
+- **Track V — machine vision.** The first domain extension.
 
-These two lists are categorically different and must not be conflated:
+## The kernel boundary
 
-- A **non-goal** is something the system MAY eventually do via a future ADR + TASK. It is *deferred*.
-- An **anti-objective** is something the system will NEVER do, at any version. It is *refused*.
+The project owns a geometry kernel. Its purpose is **identity**, not computation.
 
-The Non-goals list is **illustrative, not exhaustive**: a deferred feature need not appear here to be deferred. If a request is clearly future-shaped but unlisted, treat it as a non-goal requiring its own ADR + TASK.
+Manifold computes each boolean, each transform and each mesh. The owned kernel holds the topology
+and gives each face, each edge and each vertex a stable identity with its provenance. A kernel that
+reports provenance is a kernel that can support a parametric feature. Manifold cannot report
+provenance, therefore Manifold supports geometry and not identity.
 
-### Non-goals (V1) — deferred
+The feature boundary is closed. A change needs an ADR.
 
-Do not build these under a V1 task; each *may* arrive through a future ADR + TASK.
+- **Surfaces, five:** plane, cylinder, cone, sphere, torus. Each one is analytic and exact.
+- **Curves, three:** line, circle, ellipse. A fourth type records an approximate intersection, and
+  it declares that it is approximate.
+- **Topology, seven:** vertex, edge, coedge, loop, face, shell, solid.
+- **Operations, six:** extrude a sketch, revolve a sketch, boolean, transform, flat chamfer, section
+  by a plane.
+- **Tolerance:** one global length value and one chord value for tessellation.
 
-- Persistence, multi-Document, undo/redo. (CLAUDE.md V1 scope clamps; roadmap V2/P8.)
-- Native/Manifold geometry; managed stub only. No B-Rep ops, fillet/chamfer, exact booleans, feature-IDs, or **a custom geometry kernel**. (roadmap P7b; ADR-0012, ADR-0001.)
-- Saved views, multi-client presence / live collaboration, event filtering, persistent journal. (ADR-0003, ADR-0005, ADR-0007.)
-- Blazor as primary editor; tessellated-preview meshes for clients. Blazor is WASM-only; Blazor Server interactivity is paused. No non-localhost bind, no auth design. (ADR-0003, ADR-0011.)
-- Registry-driven event schema; flat schema only, hand-encoded event kinds. (ADR-0013.)
+A pair of surfaces with a closed formula computes exactly. Each other pair refuses, and the
+operation falls back to Manifold. A kernel that can refuse is a kernel that one person finishes.
 
-### Anti-objectives — forever
+## Non-goals — deferred
 
-Refused at every version, V1 through V5. The headline, restated from the Mission:
+A non-goal is work that the project may do later. It arrives with its own ADR and its own task. One
+item is on each line, therefore each item has its own state.
 
-> **We do not build a 3D app. We build a deterministic, observable, command-driven system that happens to operate on 3D data.**
+Do not build one of these under a current task.
 
-Everything below follows from it:
+- Multi-Document in one runtime.
+- Exact booleans with exact arithmetic.
+- Saved views.
+- Presence of many clients, and live collaboration.
+- Event filtering.
+- A bind to an address other than localhost.
+- An authentication design.
+- An event schema from a registry.
+- 2D drawing, technical drawing and electrical schematics.
+- Materials, chemistry and biological data.
+- Simulation and analysis.
+- Assemblies. These arrive after the reference model operates.
+- Mesh shaders, and culling on the graphics processor.
+- A renderer that uses WebGPU, for a web client.
 
-- **No second source of truth.** No client owns Document state or maintains a drifting parallel copy treated as authoritative. *Test:* a second source of truth is any client-held state that, if it diverged from the Document, would be treated as correct; a read-only projection that is discarded and regenerated is **not** one. (ADR-0003, ADR-0004, ADR-0007.)
-- **Never bypass the CommandBus; no business logic in clients.** (CLAUDE.md "Anti-patterns" / "Triad vocabulary"; ADR-0004, ADR-0002.)
-- **Never human-only-operable.** The system stays fully driveable by automation through commands, queries, and the stream.
-- **No partial command application.** A command lands fully or not at all — the strongest, non-negotiable invariant. (ADR-0006.)
-- **No privileged client lane** — a slow subscriber must never be able to stall the authority. (how: ADR-0005, ADR-0006.)
-- **Queries never mutate, log, replay, or stream.** (CLAUDE.md "Triad vocabulary"; ADR-0008.)
-- **The two kernels never reference each other, and the kernel stays topology-agnostic.** (CLAUDE.md "Dependency rules" / "Deployment topology"; ADR-0009, ADR-0011.)
-- **No lowest-common-denominator geometry.** Reject a universal Body type, automatic mesh↔B-Rep conversion, geometry POCOs on the wire, and silent fallback when a capability is missing. *Test:* if a proposed type forces unlike geometries into one shape or leaks `Mesh`/`Solid` across the contract, it trips this; a typed capability fetched via `TryGet<T>()` does not. (ADR-0001, ADR-0012.)
-- **No schema drift, no unregistered diagnostics, no needless future-proofing.** (ADR-0008, ADR-0013.)
+This list is an example, not a complete list. If a request is clearly later work and it is absent
+here, treat it as a non-goal.
+
+## Anti-objectives — refused at each version
+
+An anti-objective is work that the project refuses at each version. These two lists are different,
+and you must not join them.
+
+### The log
+
+1. **No second source of truth.** No client owns Document state, and no client keeps a parallel copy
+   that it treats as correct. *Test:* a second source of truth is client state that, after a
+   difference appears, the client treats as correct. A read-only projection that the client discards
+   and builds again is not one.
+2. **Never bypass the CommandBus. No business logic in a client.** No state that can enter the saved
+   document arrives by a path other than a command on the log. An interactive tool sends provisional
+   commands to the same log, and one final command when the person completes the action. An
+   interactive tool must not use a separate buffer. Do not implement "save" as "write the memory to a
+   file". Implement it as "write the log, and write an optional checkpoint that the log produces".
+3. **A query never changes state, never writes to the log, never replays and never streams.**
+4. **A command lands completely, or it does not land.** This rule applies to the log and to the
+   Document. **It does not apply to a rebuild.** A rebuild is a projection. A feature in a rebuild is
+   correct, failed, suppressed, or has an unresolved reference. A failed feature stays in the feature
+   list, and the features after it continue to evaluate. An error is a fact about a rebuild,
+   therefore an error lives in the cache and never in the log.
+5. **Nothing enters the log that a replay cannot reproduce.** A result, a field dataset, the output
+   of a solver, the output of an inference and derived geometry each stay outside the log. The log
+   records that a job produced an artifact. A replay rebuilds the reference, never the bytes.
+
+### The boundaries
+
+6. **The two kernels never reference each other, and the kernel knows nothing about topology.**
+7. **Never human-only-operable.** Automation drives each capability through commands, queries and
+   the stream. This rule also gives the test for touch: record a session by touch, record the same
+   session by mouse, and compare the two logs.
+8. **No privileged client lane.** A slow subscriber can never stop the authority.
+
+### Geometry
+
+9. **No lowest-common-denominator geometry.** Refuse a universal body type, an automatic conversion
+   between a mesh and a B-Rep, a geometry object on the wire, and a silent fallback when a capability
+   is absent. *Test:* a type that forces unlike geometries into one shape trips this rule. A typed
+   capability does not.
+10. **A command records the backend that performed the operation.** A replay uses the recorded
+    backend. Capability negotiation never selects a backend during a replay.
+
+### The kernel boundary
+
+Each refusal below is a measured wall, not a preference. The measurements are in the sizing research.
+
+11. **No fillet and no chamfer on an edge chain.** A fillet creates tangency, and tangency is where
+    the arithmetic stops converging. SolveSpace refused this for seventeen years. OCCT spends 96,234
+    lines on it.
+12. **No general NURBS surface.** No knot vector, and no arbitrary degree.
+13. **No shape healing, and no tolerance on an entity.** A tolerance for each entity starts shape
+    healing, and shape healing is 93,110 lines in OCCT.
+14. **No general surface intersector, and no exact STEP import.** Each imported file is invalid, and
+    an exact import needs shape healing.
+
+### What we do not write
+
+15. **No solver for fluid dynamics. No mesh generator. No engine for molecular dynamics.** Each one
+    is the work of many hundreds of people, and each one exists as free software. A small program
+    that teaches you a method is correct. A program that the engine depends on is not.
+
+### Determinism
+
+16. **A replay gives the same result on each supported platform.** The platforms are Windows, Linux
+    and macOS, on x64 and arm64. `CLAUDE.md` holds the operational rules that keep this property.
 
 ## How an agent uses this charter
 
-Before acting on any request, run this scope test **in order**. Order is load-bearing: classify by what the request *does* (its effect on design truth and the projection model), never by the noun the user used — a request called a "command" may still be a non-goal (undo) or an anti-objective (a command mutating a client-owned copy).
+Before you act on a request, use this test in order. The order is important. Classify the request by
+its effect on design truth, not by the word that the person used.
 
-1. **Anti-objective check (refuse).** Does the request require anything in *Anti-objectives*? If yes → **refuse**, cite the specific anti-objective and its ADR, and propose the in-bounds alternative (route it through a command/query/event). This holds even if a TASK seems to ask for it — escalate per CLAUDE.md "When unsure — stop and ask." (Examples are the Anti-objectives list above; the underlying rules live in CLAUDE.md.)
+1. **Anti-objective — refuse.** Does the request need something in the list above? If yes, refuse
+   it. Give the number of the anti-objective and its reason. Then propose the correct alternative,
+   which routes the work through a command, a query or an event.
+2. **Non-goal — defer.** Is the request later work, in the list or absent from it? If yes, do not
+   build it. Point to `docs/roadmap.md`. The request needs its own ADR and its own task. If the
+   person wants it now, the product is an ADR proposal and not code.
+3. **Already exists, then in scope — proceed.** First confirm in `docs/CURRENT-STATE.md` that the
+   thing is absent. Then proceed only if each condition holds: the request extends the surface and
+   removes nothing; it breaks no anti-objective and crosses into no non-goal; and it advances a
+   current task or an approved ADR. A request in the shape of a command is not sufficient. The
+   project must have decided to do the work.
+4. **If none of these apply — stop and ask.** Stop if the request changes the public shape of
+   `Engine.Contracts`, replay determinism, event order or the authority boundary. Stop if two ADRs
+   disagree. Stop if steps 1 to 3 do not apply.
 
-2. **Non-goal check (defer).** Is it a *deferred* future capability — listed in *Non-goals (V1)* or, since that list is illustrative, clearly future-shaped but unlisted? If yes → **do not build it** under a V1 task. Point to **roadmap.md** and note it needs its own ADR + TASK. If the user wants it now, the deliverable is an ADR proposal, not an implementation.
+   The roadmap holds a track for each approved objective. Therefore the absence of a track is a stop
+   signal. In that condition the product is a roadmap entry and an ADR, not code.
 
-3. **Already-exists check, then in-scope (proceed).** First confirm against **CURRENT-STATE.md** that the thing does not already exist — if it does, the request is satisfied, or it is a *modification* of existing shape, which is a contract change → go to step 4. Otherwise, proceed only if **all** hold: it extends the realized surface additively (a new command/query/event, a new capability behind `TryGet<T>()`, or a schema-declared handler); it violates no anti-objective and crosses into no non-goal; **and** it advances a current active TASK or an accepted ADR. Shaped-as-a-command is necessary but not sufficient — the work must be something the project has actually decided to do. If so → **proceed**, within the active TASK's scope (CLAUDE.md "Anti-patterns"); confirm it is reachable headlessly (CLI/HTTP), schema-declared, and any new diagnostic code is registered in the same change.
-
-4. **Otherwise — stop and ask (default).** If the request touches the public shape of `Engine.Contracts`, replay determinism, event ordering, or the authority boundary; if two ADRs appear to conflict; **or if it fits none of steps 1–3** — a capability the mission and roadmap never anticipated — then it is out-of-scope-by-default. Absence from the roadmap is a STOP signal, not a green light. **Stop and ask** before writing code; the deliverable is an ADR proposal or an escalation per CLAUDE.md "When unsure," not an implementation.
-
-Rule of thumb: **the charter says whether to act; CLAUDE.md says where; the relevant ADR says how; CURRENT-STATE says what already exists.** Read in that order, and read only the one ADR that applies.
+Rule of thumb: **the charter says if you can act. `CLAUDE.md` says where. The relevant ADR says how.
+`CURRENT-STATE.md` says what exists. `docs/working-agreement.md` says how to behave.** Read in that
+order, and read only the one ADR that applies.

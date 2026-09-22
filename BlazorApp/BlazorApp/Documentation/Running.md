@@ -4,7 +4,7 @@
 This guide covers the web/editor host located in the `BlazorApp` project.
 
 ## Requirements
-- .NET SDK `10.0.200-preview.0.26103.119` as pinned by the root `global.json`
+- .NET SDK 10.0.300 or higher, as pinned by the root `global.json`
 - ASP.NET Core support from the installed .NET 10 SDK
 
 ## Build

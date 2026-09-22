@@ -1,3 +1,18 @@
+---
+id: 0008
+title: Command, query and event triad with structured results
+status: Accepted
+topic: Contracts
+date: 2026-04-28
+supersedes: []
+superseded-by: []
+amends: ['0006']
+amended-by: []
+affects:
+  - Engine.Contracts/**
+enforced-by: Engine.Tests/Http/SchemaEndpointGateTests.cs
+---
+
 # ADR 0008 — Command, Query, Event Triad and Structured Results
 
 ## Status

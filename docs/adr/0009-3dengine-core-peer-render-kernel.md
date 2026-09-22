@@ -1,3 +1,18 @@
+---
+id: 0009
+title: 3DEngine.Core is a peer render kernel
+status: Accepted
+topic: Boundary, clients
+date: 2026-05-11
+supersedes: []
+superseded-by: []
+amends: []
+amended-by: []
+affects:
+  - 3DEngine.Core/**
+enforced-by: Engine.Tests/Governance/DependencyDirectionGateTests.cs
+---
+
 # ADR 0009 — `3DEngine.Core` is a peer render kernel
 
 ## Status

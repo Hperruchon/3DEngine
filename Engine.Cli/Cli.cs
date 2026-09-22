@@ -1,10 +1,9 @@
-using System.Globalization;
 using Engine.Contracts;
 using Engine.Contracts.Geometry;
+using Engine.Contracts.Handlers;
 using Engine.Core;
-using Engine.Core.Commands;
 using Engine.Core.Geometry;
-using Engine.Core.Queries;
+using Engine.Core.Hosting;
 using Engine.Geometry.Manifold;
 
 namespace Engine.Cli;
@@ -80,65 +79,29 @@ public static class Cli
             return InvalidUsage(stderr, ex.Message);
         }
 
-        Command? command;
-        switch (name)
-        {
-            case "NoOp":
-                if (!parameters.TryGetValue("echo", out var echo))
-                    return InvalidUsage(stderr, "NoOp requires --param echo=<value>.");
-                command = new NoOpCommand { Echo = echo };
-                break;
+        // Per ADR-0016: find the handler, bind the parameters, then let the
+        // handler build its command. No command name appears in this file.
+        var engine = BuildEngine();
 
-            case "CreateBox":
-                if (!TryParseRequiredDouble(parameters, "sizeX", stderr, out var sx)) return ExitInvalidUsage;
-                if (!TryParseRequiredDouble(parameters, "sizeY", stderr, out var sy)) return ExitInvalidUsage;
-                if (!TryParseRequiredDouble(parameters, "sizeZ", stderr, out var sz)) return ExitInvalidUsage;
-                command = new CreateBoxCommand { SizeX = sx, SizeY = sy, SizeZ = sz };
-                break;
-
-            case "Translate":
-                if (!TryParseRequiredGuid(parameters, "bodyId", stderr, out var tBody)) return ExitInvalidUsage;
-                if (!TryParseRequiredDouble(parameters, "dx", stderr, out var dx)) return ExitInvalidUsage;
-                if (!TryParseRequiredDouble(parameters, "dy", stderr, out var dy)) return ExitInvalidUsage;
-                if (!TryParseRequiredDouble(parameters, "dz", stderr, out var dz)) return ExitInvalidUsage;
-                command = new TranslateCommand { BodyId = tBody, Dx = dx, Dy = dy, Dz = dz };
-                break;
-
-            case "Subtract":
-                if (!TryParseRequiredGuid(parameters, "minuendBodyId", stderr, out var minuend)) return ExitInvalidUsage;
-                if (!TryParseRequiredGuid(parameters, "subtrahendBodyId", stderr, out var subtrahend)) return ExitInvalidUsage;
-                command = new SubtractCommand { MinuendBodyId = minuend, SubtrahendBodyId = subtrahend };
-                break;
-
-            default:
-                command = null;
-                break;
-        }
-
-        CommandResult result;
-        if (command is not null)
-        {
-            var (bus, _) = BuildEngine();
-            result = await bus.Apply(command, ct).ConfigureAwait(false);
-        }
-        else
+        if (!engine.Commands.TryFind(name, DefaultSchemaVersion, out var handler))
         {
             // No sentinel command: produce the Rejected result client-side.
             // CommandBus.Apply requires a concrete Command; constructing one
             // for an unknown name would itself be the sentinel we are forbidden.
-            result = new CommandResult(
-                CommandId: Guid.NewGuid(),
-                CommandName: name,
-                Status: CommandStatus.Rejected,
-                AppliedAtSeq: null,
-                DocumentVersion: 0,
-                Outputs: Outputs.Empty,
-                Diagnostics: Array.Empty<Diagnostic>(),
-                Error: new ErrorDetail(
-                    DiagnosticCodes.CommandUnknown,
-                    $"No handler registered for command '{name}'."),
-                DurationMs: 0);
+            JsonRenderer.WriteCommandResult(
+                UnknownCommand(name),
+                stdout);
+            return ExitRejected;
         }
+
+        var bound = ParameterBinder.Bind(handler.Parameters, AsRaw(parameters));
+        if (!bound.IsSuccess)
+            return InvalidUsage(stderr, bound.FirstMessage);
+
+        var command = handler.Create(
+            new CommandInput(bound.Values!, Guid.NewGuid(), ExpectedDocumentVersion: null));
+
+        var result = await engine.CommandBus.Apply(command, ct).ConfigureAwait(false);
 
         JsonRenderer.WriteCommandResult(result, stdout);
         return result.Status == CommandStatus.Applied ? ExitApplied : ExitRejected;
@@ -164,98 +127,88 @@ public static class Cli
             return InvalidUsage(stderr, ex.Message);
         }
 
-        // GetBoundingBox is the only registered query. Without a preceding
-        // CreateBox in this process the Document has no bodies — the query
-        // returns a structured "body not found" rejection.
-        if (name == "GetBoundingBox")
-        {
-            if (!parameters.TryGetValue("bodyId", out var idStr))
-                return InvalidUsage(stderr, "GetBoundingBox requires --param bodyId=<guid>.");
-            if (!Guid.TryParse(idStr, out var bodyId))
-                return InvalidUsage(stderr, $"--param bodyId='{idStr}' is not a valid GUID.");
+        // Per ADR-0016: same three steps as Apply. No query name appears here.
+        var engine = BuildEngine();
 
-            var (_, queryBus) = BuildEngine();
-            var typed = await queryBus.Query<Engine.Contracts.Geometry.Aabb>(
-                new GetBoundingBoxQuery { BodyId = bodyId }, ct).ConfigureAwait(false);
-            JsonRenderer.WriteQueryResult(typed, stdout);
-            return typed.Error is null ? ExitApplied : ExitRejected;
+        if (!engine.Queries.TryFind(name, DefaultSchemaVersion, out var handler))
+        {
+            var unknown = new QueryResult<object>(
+                QueryName: name,
+                AsOfDocumentVersion: 0,
+                Result: null,
+                Diagnostics: Array.Empty<Diagnostic>(),
+                Error: new ErrorDetail(
+                    DiagnosticCodes.QueryUnknown,
+                    $"No handler registered for query '{name}'."),
+                DurationMs: 0);
+            JsonRenderer.WriteQueryResult(unknown, stdout);
+            return ExitRejected;
         }
 
-        // Unknown query: produce the Rejected result directly (same rationale
-        // as Apply's unknown branch).
-        var result = new QueryResult<object>(
-            QueryName: name,
-            AsOfDocumentVersion: 0,
-            Result: null,
-            Diagnostics: Array.Empty<Diagnostic>(),
-            Error: new ErrorDetail(
-                DiagnosticCodes.QueryUnknown,
-                $"No handler registered for query '{name}'."),
-            DurationMs: 0);
+        var bound = ParameterBinder.Bind(handler.Parameters, AsRaw(parameters));
+        if (!bound.IsSuccess)
+            return InvalidUsage(stderr, bound.FirstMessage);
 
-        JsonRenderer.WriteQueryResult(result, stdout);
-        return ExitRejected;
+        var query = handler.Create(new QueryInput(bound.Values!, Guid.NewGuid()));
+
+        // The CLI renders one concrete result type. GetBoundingBox is the only
+        // registered query, and its result is an Aabb. A second query type
+        // needs a typed render path; see ADR-0016 "Next".
+        var typed = await engine.QueryBus.Query<Aabb>(query, ct).ConfigureAwait(false);
+        JsonRenderer.WriteQueryResult(typed, stdout);
+        return typed.Error is null ? ExitApplied : ExitRejected;
+
     }
 
-    private static bool TryParseRequiredDouble(
-        Dictionary<string, string> parameters,
-        string key,
-        TextWriter stderr,
-        out double value)
+    private static IReadOnlyDictionary<string, object?> AsRaw(Dictionary<string, string> parameters)
     {
-        if (!parameters.TryGetValue(key, out var raw))
-        {
-            InvalidUsage(stderr, $"--param {key}=<number> is required.");
-            value = 0;
-            return false;
-        }
-        if (!double.TryParse(raw, NumberStyles.Float, CultureInfo.InvariantCulture, out value))
-        {
-            InvalidUsage(stderr, $"--param {key}='{raw}' is not a valid number.");
-            return false;
-        }
-        return true;
+        var raw = new Dictionary<string, object?>(StringComparer.Ordinal);
+        foreach (var (key, value) in parameters)
+            raw[key] = value;
+        return raw;
     }
 
-    private static bool TryParseRequiredGuid(
-        Dictionary<string, string> parameters,
-        string key,
-        TextWriter stderr,
-        out Guid value)
-    {
-        if (!parameters.TryGetValue(key, out var raw))
-        {
-            InvalidUsage(stderr, $"--param {key}=<guid> is required.");
-            value = Guid.Empty;
-            return false;
-        }
-        if (!Guid.TryParse(raw, out value))
-        {
-            InvalidUsage(stderr, $"--param {key}='{raw}' is not a valid GUID.");
-            return false;
-        }
-        return true;
-    }
+    private static CommandResult UnknownCommand(string name) => new(
+        CommandId: Guid.NewGuid(),
+        CommandName: name,
+        Status: CommandStatus.Rejected,
+        AppliedAtSeq: null,
+        DocumentVersion: 0,
+        Outputs: Outputs.Empty,
+        Diagnostics: Array.Empty<Diagnostic>(),
+        Error: new ErrorDetail(
+            DiagnosticCodes.CommandUnknown,
+            $"No handler registered for command '{name}'."),
+        DurationMs: 0);
 
-    private static (CommandBus Commands, QueryBus Queries) BuildEngine()
+    // Every registered handler comes from HandlerCatalog per ADR-0016, so the
+    // CLI, the HTTP host and the canonical replay gate use one set.
+    private static Engine BuildEngine()
     {
-        var document = new Document();
-        var commandRegistry = new CommandRegistry();
-        commandRegistry.Register(new NoOpCommandHandler());
-        commandRegistry.Register(new CreateBoxCommandHandler());
-        commandRegistry.Register(new TranslateCommandHandler());
-        commandRegistry.Register(new SubtractCommandHandler());
-        var queryRegistry = new QueryRegistry();
-        queryRegistry.Register(new GetBoundingBoxQueryHandler());
-        var sink = new InMemoryEventSink();
         // Native Manifold when its library is loadable, else the managed stub so the
-        // CLI runs on any platform (ADR-0014 §4). The one-shot process reclaims the
-        // native backend on exit.
+        // CLI runs on any platform (ADR-0014 section 4). The one-shot process reclaims
+        // the native backend on exit. This choice stays here, because only a
+        // composition root may name Engine.Geometry.Manifold.
         IGeometryBackend backend = ManifoldGeometryBackend.IsNativeAvailable()
             ? new ManifoldGeometryBackend()
             : new InProcessMeshBackend();
-        var commandBus = new CommandBus(document, commandRegistry, sink, backend);
-        var queryBus = new QueryBus(document, queryRegistry, backend);
-        return (commandBus, queryBus);
+
+        var kit = EngineHosting.CreateDefault(backend);
+        return new Engine(
+            kit.CreateCommandBus(),
+            kit.CreateQueryBus(),
+            kit.CommandRegistry,
+            kit.QueryRegistry);
     }
+
+    // The CLI dispatches by name only. It has no argument for a schema
+    // version, therefore it asks for version 1. A second version of a command
+    // needs a CLI argument; see ADR-0016 "Next".
+    private const int DefaultSchemaVersion = 1;
+
+    private sealed record Engine(
+        CommandBus CommandBus,
+        QueryBus QueryBus,
+        CommandRegistry Commands,
+        QueryRegistry Queries);
 }

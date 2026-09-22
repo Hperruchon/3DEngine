@@ -1,3 +1,18 @@
+---
+id: 0010
+title: subscription.reset snapshot format
+status: Accepted
+topic: Contracts, observability
+date: 2026-05-12
+supersedes: []
+superseded-by: []
+amends: []
+amended-by: []
+affects:
+  - Engine.Api.Http/WebSockets/**
+enforced-by: Engine.Tests/Http/EventsEndpointWireShapeTests.cs
+---
+
 # ADR 0010 — `subscription.reset` snapshot format
 
 ## Status

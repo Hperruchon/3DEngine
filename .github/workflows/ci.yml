@@ -1,14 +1,44 @@
 name: CI
 
+# The gate. CLAUDE.md, section "Test discipline", names its checks: dotnet build,
+# dotnet test, the dependency direction check, the diagnostic code register check
+# and the replay determinism fixture. The last three are tests inside
+# Engine.Tests, therefore `dotnet test` runs each one.
+#
+# The gate runs on three operating systems. Register entry R-0002 recorded the
+# reason: each job used ubuntu-latest, a person verified the native geometry path
+# on win-x64 by hand only, and the desktop host ran on Windows only.
+
 on:
+  # Each push runs the gate, on each branch. A pull request is therefore not a
+  # condition for a report. Before TASK-0023 this trigger named the main branch
+  # only, so the gate could not report on a branch and a person had to open a
+  # pull request by hand.
+  #
+  # A branch with an open pull request runs the gate two times. That cost is
+  # accepted: the repository is public, therefore a run is free, and an automatic
+  # report is worth more than a saved minute.
   push:
-    branches: [main]
   pull_request:
 
 jobs:
-  build-and-test:
-    name: Build + test
-    runs-on: ubuntu-latest
+  gate:
+    name: Gate on ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+
+    strategy:
+      # Each runner must report. A failure on one operating system must not hide
+      # the result on the other two.
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+
+    defaults:
+      run:
+        # One shell on three operating systems, so each script below has one
+        # form. The Windows runner supplies bash.
+        shell: bash
+
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -18,41 +48,54 @@ jobs:
         with:
           global-json-file: global.json
 
-      - name: Restore + build
+      - name: Report the runner
+        run: |
+          echo "runner:  ${{ matrix.os }}"
+          echo "machine: $(uname -sm)"
+          dotnet --version
+
+      - name: Build
         run: dotnet build
 
+      # The native Manifold payload carries three runtime identifiers: linux-x64,
+      # osx-arm64 and win-x64. Each runner therefore has a payload, and the tests
+      # for the native backend are expected to run on each one. They skip when the
+      # library does not load, because ADR-0014 section 4 makes the managed backend
+      # the fallback.
+      #
+      # TASK-0020 first stated that the payload carries win-x64 only. That
+      # statement was false. The package holds the three sets of binaries.
       - name: Test
         run: dotnet test --no-build
 
-  headless-smoke:
-    name: Headless smoke (CLI process)
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Set up .NET
-        uses: actions/setup-dotnet@v4
-        with:
-          global-json-file: global.json
-
-      - name: Build CLI
-        run: dotnet build Engine.Cli
-
-      - name: Run NoOp through the CLI binary
+      - name: Smoke test the command-line host with NoOp
         run: |
           set -e
           output=$(dotnet run --no-build --project Engine.Cli -- apply NoOp --param echo=hello)
-          echo "--- CLI output ---"
           echo "$output"
-          echo "--- /CLI output ---"
           echo "$output" | grep -q '"status": "Applied"' \
             || { echo "FAIL: status is not Applied"; exit 1; }
           echo "$output" | grep -q '"echo": "hello"' \
             || { echo "FAIL: echo output missing"; exit 1; }
 
+      # This step is the one that register entry R-0002 asked for. It drives the
+      # geometry backend through a process boundary on each operating system. On
+      # the Windows runner it drives the native path.
+      - name: Smoke test the geometry path with CreateBox
+        run: |
+          set -e
+          output=$(dotnet run --no-build --project Engine.Cli -- \
+            apply CreateBox --param sizeX=2 --param sizeY=3 --param sizeZ=4)
+          echo "$output"
+          echo "$output" | grep -q '"status": "Applied"' \
+            || { echo "FAIL: CreateBox did not apply"; exit 1; }
+          echo "$output" | grep -q '"bodyId"' \
+            || { echo "FAIL: no body identifier in the outputs"; exit 1; }
+
   contract-gate:
     name: Contract-touched-needs-ADR
+    # This job compares two git trees. Its result does not depend on the
+    # operating system, therefore one runner is enough.
     if: github.event_name == 'pull_request'
     runs-on: ubuntu-latest
     steps:
@@ -75,7 +118,73 @@ jobs:
           if [ "$contracts_changed" -gt 0 ] && [ "$adrs_changed" -eq 0 ]; then
             echo ""
             echo "FAIL: Engine.Contracts was modified but no ADR was added or updated."
-            echo "Per CLAUDE.md \"When unsure — stop and ask\": changing public shape"
-            echo "of Engine.Contracts requires an ADR in the same PR."
+            echo "Per CLAUDE.md \"Stop and ask\": a change to the public shape of"
+            echo "Engine.Contracts requires an ADR in the same pull request."
             exit 1
           fi
+
+  write-set-gate:
+    name: Write set of the active task
+    # This job runs on a push and on a pull request. It needs no base reference,
+    # because it reads one commit at a time. TASK-0026 made that change: the job
+    # was a condition on a pull request, therefore it reported skipped on each
+    # run and the gate of v0.22 never ran in the pipeline.
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          global-json-file: global.json
+
+      - name: Build the tests
+        run: dotnet build Engine.Tests/Engine.Tests.csproj
+
+      # One commit at a time, and not the whole branch. A task governs the commit
+      # that carries it, therefore a diff across many tasks cannot say which task
+      # made which change. TASK-0026 measured that: the whole-branch diff of this
+      # branch reported 19 files against the write set and each report was false.
+      - name: Check each commit against the write set of its task
+        env:
+          PUSH_BEFORE: ${{ github.event.before }}
+        run: |
+          set -e
+          cutoff=$(grep -v '^#' eng/write-set-cutoff.txt | tr -d '[:space:]')
+          echo "cut-off commit: $cutoff"
+
+          # A push gives the previous tip. A new branch gives zeros, and a pull
+          # request gives no value, so both fall back to the cut-off.
+          before="$PUSH_BEFORE"
+          if [ -z "$before" ] || [ "$before" = "0000000000000000000000000000000000000000" ]; then
+            before="$cutoff"
+          elif ! git cat-file -e "$before" 2>/dev/null; then
+            before="$cutoff"
+          fi
+          echo "range: $before..HEAD"
+
+          failed=0
+          for commit in $(git rev-list --reverse "$before"..HEAD); do
+            subject=$(git log -1 --format='%h %s' "$commit")
+
+            if git merge-base --is-ancestor "$commit" "$cutoff" 2>/dev/null; then
+              echo "skip  $subject  (grandfathered)"
+              continue
+            fi
+
+            echo "check $subject"
+            files=$(git diff-tree --no-commit-id --name-only -r "$commit")
+
+            if WRITE_SET_FILES="$files" dotnet test Engine.Tests/Engine.Tests.csproj \
+                 --no-build --filter 'FullyQualifiedName~WriteSetGate'; then
+              echo "  pass"
+            else
+              echo "  FAIL $subject"
+              failed=1
+            fi
+          done
+
+          exit $failed

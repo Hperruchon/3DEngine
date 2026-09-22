@@ -16,17 +16,19 @@ This index is the entry point for ADRs. Find the relevant decision; do not read 
 | [0001](0001-kernel-abstraction-capabilities.md) | Geometry kernel abstraction by capabilities | Accepted | Boundary, geometry | — | — |
 | [0002](0002-headless-first-cli-as-canonical-client.md) | Headless-first; CLI as canonical client | Accepted | Workflow, clients | — | — |
 | [0003](0003-blazor-as-thin-viewer.md) | Blazor as thin viewer | Accepted | Clients | — | — |
-| [0004](0004-engine-runtime-is-authority.md) | Engine Runtime is the authoritative controller | Accepted | Boundary, authority | — | — |
+| [0004](0004-engine-runtime-is-authority.md) | Engine Runtime is the authoritative controller | Amended | Boundary, authority | — | 0011 |
 | [0005](0005-event-stream-and-replay.md) | Event stream and replay protocol | Accepted | Contracts, observability | — | — |
-| [0006](0006-command-execution-model.md) | Command execution model | Accepted | Contracts, runtime | — | 0008 |
+| [0006](0006-command-execution-model.md) | Command execution model | Amended | Contracts, runtime | — | 0008 |
 | [0007](0007-ui-ephemeral-state-boundary.md) | UI ephemeral state boundary | Accepted | Boundary, clients | — | — |
-| [0008](0008-command-query-event-triad.md) | Command / Query / Event triad and structured results | Accepted | Contracts | 0006 (extended `CommandResult` shape) | — |
-| [0009](0009-3dengine-core-peer-render-kernel.md) | `3DEngine.Core` is a peer render kernel | Accepted | Boundary, clients | — | — |
-| [0010](0010-subscription-reset-snapshot-format.md) | `subscription.reset` snapshot format | Accepted | Contracts, observability | — | — |
-| [0011](0011-server-default-deployment-topology.md) | Server-default deployment, embed for offline | Accepted | Clients, deployment | — | — |
-| [0012](0012-geometry-backend-wiring.md) | Geometry backend wiring (V1) | Accepted | Boundary, geometry, contracts | — | — |
-| [0013](0013-command-query-schema-declaration.md) | Command/query schema declaration | Accepted | Contracts, observability | — | — |
+| [0008](0008-command-query-event-triad.md) | Command, query and event triad with structured results | Accepted | Contracts | 0006 | — |
+| [0009](0009-3dengine-core-peer-render-kernel.md) | 3DEngine.Core is a peer render kernel | Accepted | Boundary, clients | — | — |
+| [0010](0010-subscription-reset-snapshot-format.md) | subscription.reset snapshot format | Accepted | Contracts, observability | — | — |
+| [0011](0011-server-default-deployment-topology.md) | Server-default deployment, embed for offline | Accepted | Clients, deployment | 0004 | — |
+| [0012](0012-geometry-backend-wiring.md) | Geometry backend wiring | Accepted | Boundary, geometry, contracts | — | — |
+| [0013](0013-command-query-schema-declaration.md) | Command and query schema declaration | Amended | Contracts, observability | — | 0016 |
 | [0014](0014-manifold-native-interop.md) | Manifold backend native-interop posture | Accepted | Boundary, geometry, native-interop | — | — |
+| [0015](0015-command-log-persistence.md) | Command-log persistence for engine-api-http | Proposed | Persistence, runtime, deployment | — | — |
+| [0016](0016-handler-declared-construction.md) | Handler-declared command and query construction | Accepted | Contracts, clients | 0013 | — |
 
 ## Topics
 
@@ -46,4 +48,5 @@ This index is the entry point for ADRs. Find the relevant decision; do not read 
 
 ## Pending
 
-_None._
+- **0015** is reserved for command-log persistence. That document exists on the branch
+  `claude/happy-booth-1cef3f`. Milestone P0.5 merges it. The gap in the numbers is intentional.

@@ -1,3 +1,18 @@
+---
+id: 0001
+title: Geometry kernel abstraction by capabilities
+status: Accepted
+topic: Boundary, geometry
+date: 2026-04-28
+supersedes: []
+superseded-by: []
+amends: []
+amended-by: []
+affects:
+  - Engine.Contracts/Geometry/**
+enforced-by: Engine.Tests/Geometry/InProcessMeshBackendTests.cs
+---
+
 # ADR 0001 — Geometry Kernel Abstraction by Capabilities
 
 ## Status

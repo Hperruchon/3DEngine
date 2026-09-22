@@ -1,8 +1,15 @@
 namespace Engine.Cli;
 
-// Hand-rolled --param k=v parser. Per TASK-0002: the wire-format task
-// will replace this with JSON input dispatch; until then, generic
-// --param keeps the CLI usable for any command we register.
+// The --param k=v parser for the command line. It splits each pair and
+// nothing else.
+//
+// TASK-0002 said that a wire-format task would replace this with JSON input.
+// TASK-0025 refused that plan and the project keeps this parser. Three
+// reasons. The convention --param k=v is normal for a command line. ADR-0016
+// gave type coercion and validation to ParameterBinder, therefore this file
+// splits text and makes no decision about a value. JSON input on the command
+// line would copy the HTTP surface and give nothing that the HTTP surface does
+// not already give. See the accepted compromise R-0008 in docs/register.md.
 internal static class ArgParser
 {
     public static Dictionary<string, string> ParseParams(string[] args)

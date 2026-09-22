@@ -1,5 +1,6 @@
 using Engine.Contracts;
 using Engine.Core;
+using Engine.Core.Hosting;
 using Engine.Core.Commands;
 using Engine.Geometry.Manifold;
 using Engine.Tests.Geometry;
@@ -14,13 +15,14 @@ namespace Engine.Tests.ReplayDeterminism;
 // Skipped when native manifoldc is unavailable on the runner.
 public class ManifoldReplayRoundTripTests
 {
+    // Per ADR-0016 the gate uses HandlerCatalog, therefore it exercises the
+    // same handler set as Engine.Cli and Engine.Api.Http. Register entry
+    // R-0003 recorded the previous divergence: this gate registered two
+    // handlers and each host registered five.
     private static CommandRegistry NewRegistry()
     {
         var registry = new CommandRegistry();
-        registry.Register(new NoOpCommandHandler());
-        registry.Register(new CreateBoxCommandHandler());
-        registry.Register(new TranslateCommandHandler());
-        registry.Register(new SubtractCommandHandler());
+        HandlerCatalog.RegisterAll(registry, new QueryRegistry());
         return registry;
     }
 

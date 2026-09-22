@@ -1,8 +1,14 @@
+using System.Text;
+using Engine.Core.Hosting;
+
 namespace Engine.Cli;
 
+// Per ADR-0016: the command list and each example come from the handler
+// declarations, not from a list that a person keeps by hand. A new command
+// therefore changes no file in Engine.Cli.
 internal static class Usage
 {
-    public const string Text =
+    private const string Header =
 """
 Usage:
   engine apply <command-name> [--param k=v ...]   Apply a command, print CommandResult JSON.
@@ -17,15 +23,51 @@ Exit codes:
   1  Rejected or Cancelled (commands), or query rejected
   2  Invalid usage
 
-Registered commands: NoOp, CreateBox, Translate, Subtract
-Registered queries:  GetBoundingBox
-
-Examples:
-  engine apply NoOp --param echo=hello
-  engine apply CreateBox --param sizeX=10 --param sizeY=20 --param sizeZ=30
-  engine apply Translate --param bodyId=<guid> --param dx=5 --param dy=0 --param dz=0
-  engine apply Subtract --param minuendBodyId=<guid> --param subtrahendBodyId=<guid>
-  engine query GetBoundingBox --param bodyId=<guid>
-
 """;
+
+    public static string Text => Build();
+
+    private static string Build()
+    {
+        var commands = HandlerCatalog.CommandHandlers();
+        var queries = HandlerCatalog.QueryHandlers();
+
+        var sb = new StringBuilder(Header);
+
+        sb.Append("Registered commands: ")
+          .AppendJoin(", ", commands.Select(h => h.CommandName))
+          .AppendLine();
+        sb.Append("Registered queries:  ")
+          .AppendJoin(", ", queries.Select(h => h.QueryName))
+          .AppendLine();
+
+        sb.AppendLine().AppendLine("Examples:");
+        foreach (var handler in commands)
+            sb.Append("  engine apply ").AppendLine(Example(handler.CommandName, handler.Parameters));
+        foreach (var handler in queries)
+            sb.Append("  engine query ").AppendLine(Example(handler.QueryName, handler.Parameters));
+
+        sb.AppendLine();
+        return sb.ToString();
+    }
+
+    private static string Example(
+        string name,
+        IReadOnlyDictionary<string, Contracts.Schema.FieldSchema> parameters)
+    {
+        var sb = new StringBuilder(name);
+        foreach (var (field, schema) in parameters)
+            sb.Append(" --param ").Append(field).Append('=').Append(Placeholder(schema.Type));
+        return sb.ToString();
+    }
+
+    private static string Placeholder(string type) => type switch
+    {
+        "number" => "<number>",
+        "integer" => "<integer>",
+        "boolean" => "<true|false>",
+        "guid" => "<guid>",
+        "datetime" => "<iso-8601>",
+        _ => "<value>",
+    };
 }

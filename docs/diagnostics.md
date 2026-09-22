@@ -36,3 +36,23 @@ All `E-`/`W-`/`I-` codes used in `Engine.*` code MUST appear here. Append-only. 
 3. Same PR as the code that raises it.
 
 Removing a code is forbidden. Mark obsolete in this file if no longer raised.
+
+## Permanently reserved codes
+
+This section is append-only, like the rest of this file. CLAUDE.md permits an addition to this file
+and nothing else, therefore the rows above are unchanged.
+
+A reserved code is a code that the registry holds and that no source raises. Register entry R-0011
+recorded the risk: an unlimited quantity of reserved codes makes the registry unreliable, because a
+reader cannot tell a live code from a placeholder.
+
+`Engine.Tests/Governance/DiagnosticsReserveGateTests.cs` reads this table. The quantity of reserved
+codes must not grow past two. A new reserved code needs a decision that lowers or raises that number.
+
+| Code | The reason that no source raises it |
+|---|---|
+| `E-CMD-BUS-BUSY` | No inbound queue exists. ADR-0006 gives a serial bus with no queue, therefore nothing can be full. The code stays because it is shipped and codes are stable. |
+| `E-GEOM-BACKEND-INIT` | ADR-0014 section 4 makes the host select the managed backend when the native library does not load. A failure to initialise therefore becomes a fallback and never a diagnostic. |
+
+TASK-0025 decided this on 2026-09-22 and closed R-0011. Each code above is reserved permanently, and
+not until a later phase. A later phase that raises one of them must state that it does so.

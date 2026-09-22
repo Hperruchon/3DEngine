@@ -27,6 +27,13 @@ public sealed class GetBoundingBoxQueryHandler : IQueryHandler
             ["maxZ"] = new("number"),
         };
 
+    // Per ADR-0016.
+    public Query Create(QueryInput input) => new GetBoundingBoxQuery
+    {
+        QueryId = input.QueryId,
+        BodyId = (Guid)input.Parameters["bodyId"]!,
+    };
+
     public Task<QueryHandlerResult> Handle(
         Query query,
         Document document,

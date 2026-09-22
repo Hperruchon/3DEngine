@@ -1,3 +1,18 @@
+---
+id: 0014
+title: Manifold backend native-interop posture
+status: Accepted
+topic: Boundary, geometry, native-interop
+date: 2026-07-03
+supersedes: []
+superseded-by: []
+amends: []
+amended-by: []
+affects:
+  - Engine.Geometry.Manifold/**
+enforced-by: Engine.Tests/Geometry/ManifoldGeometryBackendTests.cs
+---
+
 # ADR 0014 — Manifold backend native-interop posture
 
 ## Status

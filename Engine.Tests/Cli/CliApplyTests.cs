@@ -58,7 +58,9 @@ public class CliApplyTests
 
         Assert.Equal(2, exit);
         Assert.Equal(string.Empty, stdout.ToString());
-        Assert.Contains("NoOp requires --param echo", stderr.ToString());
+        // Per ADR-0016 the message comes from ParameterBinder, not from a
+        // per-command string. The contract is that it names the missing field.
+        Assert.Contains("echo", stderr.ToString());
         Assert.Contains("Usage:", stderr.ToString());
     }
 

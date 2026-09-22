@@ -1,3 +1,19 @@
+---
+id: 0003
+title: Blazor as thin viewer
+status: Accepted
+topic: Clients
+date: 2026-04-28
+supersedes: []
+superseded-by: []
+amends: []
+amended-by: []
+affects:
+  - BlazorApp/**
+enforced-by: UNENFORCED (accepted risk)
+notes: The two-page viewer is not built. See docs/CHARTER.md, non-goals.
+---
+
 # ADR 0003 — Blazor as Thin Viewer
 
 ## Status

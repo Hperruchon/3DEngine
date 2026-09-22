@@ -1,3 +1,19 @@
+---
+id: 0005
+title: Event stream and replay protocol
+status: Accepted
+topic: Contracts, observability
+date: 2026-04-28
+supersedes: []
+superseded-by: []
+amends: []
+amended-by: []
+affects:
+  - Engine.Core/InMemoryEventSink.cs
+  - Engine.Api.Http/WebSockets/**
+enforced-by: Engine.Tests/ReplayDeterminism/ReplayDeterminismGateTests.cs
+---
+
 # ADR 0005 — Event Stream and Replay Protocol
 
 ## Status

@@ -4,7 +4,7 @@
 This guide covers the native desktop host located in the `3DEngine` project.
 
 ## Requirements
-- .NET SDK `10.0.200-preview.0.26103.119` as pinned by the root `global.json`
+- .NET SDK 10.0.300 or higher, as pinned by the root `global.json`
 - A Vulkan-capable machine and drivers
 - Native SDL runtime assets restored through NuGet packages during build
 

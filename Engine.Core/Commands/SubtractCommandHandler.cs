@@ -23,6 +23,15 @@ public sealed class SubtractCommandHandler : ICommandHandler
             ["bodyId"] = new("guid"),
         };
 
+    // Per ADR-0016.
+    public Command Create(CommandInput input) => new SubtractCommand
+    {
+        CommandId = input.CommandId,
+        ExpectedDocumentVersion = input.ExpectedDocumentVersion,
+        MinuendBodyId = (Guid)input.Parameters["minuendBodyId"]!,
+        SubtrahendBodyId = (Guid)input.Parameters["subtrahendBodyId"]!,
+    };
+
     public Task<CommandHandlerResult> Handle(
         Command command,
         Document document,

@@ -24,6 +24,16 @@ public sealed class CreateBoxCommandHandler : ICommandHandler
             ["bodyId"] = new("guid"),
         };
 
+    // Per ADR-0016.
+    public Command Create(CommandInput input) => new CreateBoxCommand
+    {
+        CommandId = input.CommandId,
+        ExpectedDocumentVersion = input.ExpectedDocumentVersion,
+        SizeX = (double)input.Parameters["sizeX"]!,
+        SizeY = (double)input.Parameters["sizeY"]!,
+        SizeZ = (double)input.Parameters["sizeZ"]!,
+    };
+
     public Task<CommandHandlerResult> Handle(
         Command command,
         Document document,

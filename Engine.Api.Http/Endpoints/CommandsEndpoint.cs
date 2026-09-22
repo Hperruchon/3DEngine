@@ -2,8 +2,9 @@ using System.Text.Json;
 using Engine.Api.Http.Errors;
 using Engine.Api.Http.Json;
 using Engine.Contracts;
+using Engine.Contracts.Handlers;
 using Engine.Core;
-using Engine.Core.Commands;
+using Engine.Core.Hosting;
 using Microsoft.AspNetCore.Http;
 
 namespace Engine.Api.Http.Endpoints;
@@ -50,43 +51,15 @@ internal static class CommandsEndpoint
             return ApiErrorEnvelope.BadRequest("Required field missing: schemaVersion.");
 
         var commandId = body.CommandId ?? Guid.NewGuid();
-        Command? command;
-        IResult? parameterError;
 
-        switch (body.Name)
+        // Per ADR-0016: find the handler, bind, then let the handler build its
+        // command. No command name appears in this file.
+        if (!host.CommandRegistry.TryFind(body.Name, body.SchemaVersion.Value, out var handler))
         {
-            case "NoOp":
-                command = BuildNoOp(body, commandId, out parameterError);
-                break;
-            case "CreateBox":
-                command = BuildCreateBox(body, commandId, out parameterError);
-                break;
-            case "Translate":
-                command = BuildTranslate(body, commandId, out parameterError);
-                break;
-            case "Subtract":
-                command = BuildSubtract(body, commandId, out parameterError);
-                break;
-            default:
-                command = null;
-                parameterError = null;
-                break;
-        }
-
-        if (parameterError is not null)
-            return parameterError;
-
-        CommandResult result;
-        if (command is not null)
-        {
-            result = await host.CommandBus.Apply(command, context.RequestAborted).ConfigureAwait(false);
-        }
-        else
-        {
-            // Same rationale as Engine.Cli/Cli.cs §Apply: Command is abstract
-            // and sentinels are forbidden, so the API surfaces the existing
+            // Same rationale as Engine.Cli/Cli.cs: Command is abstract and
+            // sentinels are forbidden, so the API surfaces the existing
             // E-CMD-UNKNOWN diagnostic directly without dispatching.
-            result = new CommandResult(
+            var unknown = new CommandResult(
                 CommandId: commandId,
                 CommandName: body.Name,
                 Status: CommandStatus.Rejected,
@@ -96,151 +69,26 @@ internal static class CommandsEndpoint
                 Diagnostics: Array.Empty<Diagnostic>(),
                 Error: new ErrorDetail(
                     DiagnosticCodes.CommandUnknown,
-                    $"No handler registered for command '{body.Name}'."),
+                    $"No handler registered for command '{body.Name}'@{body.SchemaVersion}."),
                 DurationMs: 0);
+            return Results.Json(unknown, ApiJson.Options);
         }
+
+        var bound = ParameterBinder.Bind(
+            handler.Parameters,
+            JsonParameters.AsRaw(body.Parameters));
+
+        if (!bound.IsSuccess)
+            return ApiErrorEnvelope.BadRequest(bound.FirstMessage);
+
+        var command = handler.Create(
+            new CommandInput(bound.Values!, commandId, body.ExpectedDocumentVersion));
+
+        var result = await host.CommandBus
+            .Apply(command, context.RequestAborted)
+            .ConfigureAwait(false);
 
         return Results.Json(result, ApiJson.Options);
-    }
-
-    private static Command? BuildNoOp(CommandRequest body, Guid commandId, out IResult? error)
-    {
-        if (body.Parameters is null
-            || !body.Parameters.TryGetValue("echo", out var echoElement))
-        {
-            error = ApiErrorEnvelope.BadRequest("NoOp requires parameters.echo.");
-            return null;
-        }
-
-        if (echoElement.ValueKind != JsonValueKind.String)
-        {
-            error = ApiErrorEnvelope.BadRequest("NoOp parameter 'echo' must be a string.");
-            return null;
-        }
-
-        error = null;
-        return new NoOpCommand
-        {
-            CommandId = commandId,
-            ExpectedDocumentVersion = body.ExpectedDocumentVersion,
-            Echo = echoElement.GetString()!,
-        };
-    }
-
-    private static Command? BuildCreateBox(CommandRequest body, Guid commandId, out IResult? error)
-    {
-        if (body.Parameters is null)
-        {
-            error = ApiErrorEnvelope.BadRequest("CreateBox requires parameters.sizeX, sizeY, sizeZ.");
-            return null;
-        }
-
-        if (!TryReadDouble(body.Parameters, "sizeX", out var sx, out error)) return null;
-        if (!TryReadDouble(body.Parameters, "sizeY", out var sy, out error)) return null;
-        if (!TryReadDouble(body.Parameters, "sizeZ", out var sz, out error)) return null;
-
-        error = null;
-        return new CreateBoxCommand
-        {
-            CommandId = commandId,
-            ExpectedDocumentVersion = body.ExpectedDocumentVersion,
-            SizeX = sx,
-            SizeY = sy,
-            SizeZ = sz,
-        };
-    }
-
-    private static Command? BuildTranslate(CommandRequest body, Guid commandId, out IResult? error)
-    {
-        if (body.Parameters is null)
-        {
-            error = ApiErrorEnvelope.BadRequest("Translate requires parameters.bodyId, dx, dy, dz.");
-            return null;
-        }
-
-        if (!TryReadGuid(body.Parameters, "bodyId", out var bodyId, out error)) return null;
-        if (!TryReadDouble(body.Parameters, "dx", out var dx, out error)) return null;
-        if (!TryReadDouble(body.Parameters, "dy", out var dy, out error)) return null;
-        if (!TryReadDouble(body.Parameters, "dz", out var dz, out error)) return null;
-
-        error = null;
-        return new TranslateCommand
-        {
-            CommandId = commandId,
-            ExpectedDocumentVersion = body.ExpectedDocumentVersion,
-            BodyId = bodyId,
-            Dx = dx,
-            Dy = dy,
-            Dz = dz,
-        };
-    }
-
-    private static Command? BuildSubtract(CommandRequest body, Guid commandId, out IResult? error)
-    {
-        if (body.Parameters is null)
-        {
-            error = ApiErrorEnvelope.BadRequest("Subtract requires parameters.minuendBodyId, subtrahendBodyId.");
-            return null;
-        }
-
-        if (!TryReadGuid(body.Parameters, "minuendBodyId", out var minuend, out error)) return null;
-        if (!TryReadGuid(body.Parameters, "subtrahendBodyId", out var subtrahend, out error)) return null;
-
-        error = null;
-        return new SubtractCommand
-        {
-            CommandId = commandId,
-            ExpectedDocumentVersion = body.ExpectedDocumentVersion,
-            MinuendBodyId = minuend,
-            SubtrahendBodyId = subtrahend,
-        };
-    }
-
-    private static bool TryReadGuid(
-        Dictionary<string, JsonElement> parameters,
-        string key,
-        out Guid value,
-        out IResult? error)
-    {
-        value = Guid.Empty;
-        if (!parameters.TryGetValue(key, out var element))
-        {
-            error = ApiErrorEnvelope.BadRequest($"Required parameter missing: {key}.");
-            return false;
-        }
-        if (element.ValueKind != JsonValueKind.String || !Guid.TryParse(element.GetString(), out value))
-        {
-            error = ApiErrorEnvelope.BadRequest($"Parameter '{key}' must be a GUID string.");
-            return false;
-        }
-        error = null;
-        return true;
-    }
-
-    private static bool TryReadDouble(
-        Dictionary<string, JsonElement> parameters,
-        string key,
-        out double value,
-        out IResult? error)
-    {
-        value = 0;
-        if (!parameters.TryGetValue(key, out var element))
-        {
-            error = ApiErrorEnvelope.BadRequest($"Required parameter missing: {key}.");
-            return false;
-        }
-        if (element.ValueKind != JsonValueKind.Number)
-        {
-            error = ApiErrorEnvelope.BadRequest($"Parameter '{key}' must be a number.");
-            return false;
-        }
-        if (!element.TryGetDouble(out value))
-        {
-            error = ApiErrorEnvelope.BadRequest($"Parameter '{key}' is not a valid number.");
-            return false;
-        }
-        error = null;
-        return true;
     }
 
     internal sealed record CommandRequest(
