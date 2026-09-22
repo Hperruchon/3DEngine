@@ -46,3 +46,4 @@ Canonical vocabulary. One line per term + a pointer to where it is **defined** (
 | **projection** | Any state regenerable from the log — `Document.Bodies`, the event stream, render scene, snapshots. Losing a projection is recovery, not data loss. | concept · [CHARTER.md](CHARTER.md) · ADR-0012 §3 |
 | **design truth** | The authoritative, ordered, replayable command log (the `Document`) that every other piece of state is downstream of. Owned by `Engine.*`. | concept · [CHARTER.md](CHARTER.md) · ADR-0004 |
 | **the two kernels** | `Engine.*` (design truth) and `3DEngine.Core` (render state) — peers that never reference each other; render hosts own the projection from events. | [CLAUDE.md](../CLAUDE.md) "Authority diagram" · ADR-0009 |
+| **Vulkan layer** | `3DEngine.Vulkan` — the first-party GPU code. It draws render state and never sees design truth; only a host that draws references it. | `3DEngine.Vulkan/` · ADR-0017 |

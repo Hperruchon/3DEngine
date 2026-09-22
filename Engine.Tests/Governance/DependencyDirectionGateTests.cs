@@ -116,24 +116,38 @@ public class DependencyDirectionGateTests
         Assert.True(offences.Length == 0, string.Join("\n  ", offences));
     }
 
+    // The render side. A host that draws references it and a headless client
+    // does not. ADR-0009 gives 3DEngine.Core and ADR-0017 gives 3DEngine.Vulkan.
+    private static readonly string[] RenderSide = ["3DEngine.Core", "3DEngine.Vulkan"];
+
+    private static readonly string[] HeadlessClients = ["Engine.Cli", "Engine.Api.Http"];
+
+    // TASK-0027 added the desktop host. Before that task the gate did not read
+    // it, and the host referenced the vendored sample framework with no report.
+    private static readonly string[] HostsThatDraw = ["3DEngine"];
+
     [Fact]
     public void A_Client_References_Only_The_Permitted_Projects()
     {
-        // A client may reference Engine.Core, Engine.Contracts, the render kernel
-        // when it draws, and Engine.Geometry.Manifold at a composition root per
-        // ADR-0014 §4. Engine.Tests is a verifier of authority and not a client.
-        string[] clients = ["Engine.Cli", "Engine.Api.Http"];
-        string[] permitted =
-            ["Engine.Contracts", "Engine.Core", "Engine.Geometry.Manifold", "3DEngine.Core"];
+        // A client may reference Engine.Core, Engine.Contracts, and
+        // Engine.Geometry.Manifold at a composition root per ADR-0014 §4. A host
+        // that draws may also reference the render side. ADR-0009 §2 forbids the
+        // render kernel to a client that does not draw. Engine.Tests is a
+        // verifier of authority and not a client.
+        string[] permitted = ["Engine.Contracts", "Engine.Core", "Engine.Geometry.Manifold"];
+        string[] clients = [.. HeadlessClients, .. HostsThatDraw];
 
         var graph = Graph();
         var offences = new List<string>();
 
         foreach (var client in clients)
         {
+            Assert.True(graph.ContainsKey(client), $"{client}.csproj was not found.");
+            var draws = HostsThatDraw.Contains(client);
+
             foreach (var target in graph[client])
             {
-                if (!permitted.Contains(target))
+                if (!permitted.Contains(target) && !(draws && RenderSide.Contains(target)))
                     offences.Add($"{client} references {target}, which is not permitted");
 
                 if (clients.Contains(target))
@@ -142,6 +156,60 @@ public class DependencyDirectionGateTests
         }
 
         Assert.True(offences.Count == 0, string.Join("\n  ", offences));
+    }
+
+    [Fact]
+    public void The_Vulkan_Layer_References_At_Most_The_Render_Kernel()
+    {
+        // ADR-0017 rule 2. The Vulkan layer draws render state and never sees
+        // design truth. A host projects each event into render state (ADR-0009 §4).
+        var graph = Graph();
+        Assert.True(graph.ContainsKey("3DEngine.Vulkan"), "3DEngine.Vulkan.csproj was not found.");
+
+        var offences = graph["3DEngine.Vulkan"]
+            .Where(t => t != "3DEngine.Core")
+            .Select(t => $"3DEngine.Vulkan references {t}; it may reference 3DEngine.Core only")
+            .ToArray();
+
+        Assert.True(offences.Length == 0, string.Join("\n  ", offences));
+    }
+
+    [Fact]
+    public void Only_A_Host_That_Draws_References_The_Vulkan_Layer()
+    {
+        // ADR-0017 rule 3. This test also covers each Engine.* project and the
+        // render kernel, because neither one is a host that draws.
+        var offences = Graph()
+            .Where(p => p.Value.Contains("3DEngine.Vulkan"))
+            .Where(p => !HostsThatDraw.Contains(p.Key))
+            .Select(p => $"{p.Key} references 3DEngine.Vulkan, and it is not a host that draws")
+            .ToArray();
+
+        Assert.True(offences.Length == 0, string.Join("\n  ", offences));
+    }
+
+    private static readonly Regex PackageReference = new(
+        @"PackageReference\s+Include\s*=\s*""([^""]+)""",
+        RegexOptions.Compiled);
+
+    [Theory]
+    [InlineData("Vortice.Vulkan")]
+    [InlineData("Alimer.Bindings.SDL")]
+    public void Each_Binding_Has_One_Pin_In_The_Vulkan_Layer(string package)
+    {
+        // ADR-0017 rule 4. Before TASK-0027 three project files pinned the Vulkan
+        // binding, therefore "which version does the repository use" had three
+        // answers. A host receives each binding through its project reference.
+        var pins = ProjectFiles()
+            .Where(f => PackageReference.Matches(File.ReadAllText(f))
+                .Any(m => string.Equals(m.Groups[1].Value, package, StringComparison.OrdinalIgnoreCase)))
+            .Select(RepositoryFiles.Relative)
+            .ToArray();
+
+        Assert.True(
+            pins.SequenceEqual(["3DEngine.Vulkan/3DEngine.Vulkan.csproj"]),
+            $"{package} must have one pin, in 3DEngine.Vulkan/3DEngine.Vulkan.csproj. "
+            + $"Pins found: {(pins.Length == 0 ? "none" : string.Join(", ", pins))}");
     }
 
     [Fact]

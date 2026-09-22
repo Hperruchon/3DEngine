@@ -63,10 +63,14 @@ public class MarkerGateTests
     private static IEnumerable<string> LiveFiles()
     {
         // Source in each engine project, except the files that define the rules.
+        // TASK-0027 added the render side, because first-party render code is
+        // live code too. The vendored sample code held two markers and no gate
+        // read it.
         foreach (var project in new[]
                  {
                      "Engine.Contracts", "Engine.Core", "Engine.Cli",
                      "Engine.Api.Http", "Engine.Geometry.Manifold", "Engine.Tests",
+                     "3DEngine.Core", "3DEngine.Vulkan", "3DEngine",
                  })
         {
             var directory = RepositoryFiles.Path(project);

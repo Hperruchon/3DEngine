@@ -1,5 +1,7 @@
 ﻿// Copyright (c) Amer Koleci and Contributors.
-// Licensed under the MIT License (MIT). See LICENSE in the repository root for more information.
+// Licensed under the MIT License (MIT). See THIRD-PARTY-NOTICES.md, section 4.
+// This file comes from the Vortice.Vulkan sample framework. TASK-0027 moved it
+// into this project and changed it. ADR-0017 gives the rules for this project.
 
 using System;
 using System.Collections.Generic;
@@ -7,15 +9,22 @@ using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Text;
+using Vortice.Vulkan;
 using static SDL3.SDL3;
 using static Vortice.Vulkan.Vulkan;
 
-namespace Vortice.Vulkan;
+namespace ThreeDEngine.Vulkan;
 
 public unsafe sealed class GraphicsDevice : IDisposable
 {
     public readonly bool DebugUtils;
     public readonly VkInstance VkInstance;
+
+    // Vortice.Vulkan 3.x has no global function for an instance or a device.
+    // Each table below holds the functions of one handle, and each function
+    // takes that handle implicitly.
+    public readonly VkInstanceApi InstanceApi;
+    public readonly VkDeviceApi DeviceApi;
 
     private readonly VkDebugUtilsMessengerEXT _debugMessenger = VkDebugUtilsMessengerEXT.Null;
     public readonly VkPhysicalDevice PhysicalDevice;
@@ -102,11 +111,11 @@ public unsafe sealed class GraphicsDevice : IDisposable
             throw new InvalidOperationException($"Failed to create vulkan instance: {result}");
         }
 
-        vkLoadInstanceOnly(VkInstance);
+        InstanceApi = GetApi(VkInstance);
 
         if (instanceLayers.Count > 0)
         {
-            vkCreateDebugUtilsMessengerEXT(VkInstance, &debugUtilsCreateInfo, null, out _debugMessenger).CheckResult();
+            InstanceApi.vkCreateDebugUtilsMessengerEXT(&debugUtilsCreateInfo, null, out _debugMessenger).CheckResult();
         }
 
         Log.Info($"Created VkInstance with version: {appInfo.apiVersion.Major}.{appInfo.apiVersion.Minor}.{appInfo.apiVersion.Patch}");
@@ -127,7 +136,7 @@ public unsafe sealed class GraphicsDevice : IDisposable
 
         // Find physical device, setup queue's and create device.
         uint physicalDevicesCount = 0;
-        vkEnumeratePhysicalDevices(VkInstance, &physicalDevicesCount, null).CheckResult();
+        InstanceApi.vkEnumeratePhysicalDevices(&physicalDevicesCount, null).CheckResult();
 
         if (physicalDevicesCount == 0)
         {
@@ -135,16 +144,16 @@ public unsafe sealed class GraphicsDevice : IDisposable
         }
 
         VkPhysicalDevice* physicalDevices = stackalloc VkPhysicalDevice[(int)physicalDevicesCount];
-        vkEnumeratePhysicalDevices(VkInstance, &physicalDevicesCount, physicalDevices).CheckResult();
+        InstanceApi.vkEnumeratePhysicalDevices(&physicalDevicesCount, physicalDevices).CheckResult();
 
         for (int i = 0; i < physicalDevicesCount; i++)
         {
             VkPhysicalDevice physicalDevice = physicalDevices[i];
 
-            if (IsDeviceSuitable(physicalDevice, surface) == false)
+            if (IsDeviceSuitable(InstanceApi, physicalDevice, surface) == false)
                 continue;
 
-            vkGetPhysicalDeviceProperties(physicalDevice, out VkPhysicalDeviceProperties checkProperties);
+            InstanceApi.vkGetPhysicalDeviceProperties(physicalDevice, out VkPhysicalDeviceProperties checkProperties);
             bool discrete = checkProperties.deviceType == VkPhysicalDeviceType.DiscreteGpu;
 
             if (discrete || PhysicalDevice.IsNull)
@@ -158,12 +167,7 @@ public unsafe sealed class GraphicsDevice : IDisposable
             }
         }
 
-        vkGetPhysicalDeviceProperties(PhysicalDevice, out VkPhysicalDeviceProperties properties);
-
-        var queueFamilies = FindQueueFamilies(PhysicalDevice, surface);
-        var availableDeviceExtensions = vkEnumerateDeviceExtensionProperties(PhysicalDevice);
-
-        //var supportPresent = vkGetPhysicalDeviceWin32PresentationSupportKHR(PhysicalDevice, queueFamilies.graphicsFamily);
+        var queueFamilies = FindQueueFamilies(InstanceApi, PhysicalDevice, surface);
 
         HashSet<uint> uniqueQueueFamilies = new();
         uniqueQueueFamilies.Add(queueFamilies.graphicsFamily);
@@ -188,72 +192,10 @@ public unsafe sealed class GraphicsDevice : IDisposable
             VK_KHR_SWAPCHAIN_EXTENSION_NAME
         };
 
-        const bool useNewFeatures = false;
-        VkPhysicalDeviceFeatures2 deviceFeatures2 = new();
-#if TODO
-        if (useNewFeatures)
-        {
-            VkPhysicalDeviceVulkan11Features features_1_1 = new();
-            VkPhysicalDeviceVulkan12Features features_1_2 = new();
-
-            deviceFeatures2.pNext = &features_1_1;
-            features_1_1.pNext = &features_1_2;
-
-            void** features_chain = &features_1_2.pNext;
-
-            VkPhysicalDevice8BitStorageFeatures storage_8bit_features = default;
-            if (properties.apiVersion <= VkVersion.Version_1_2)
-            {
-                if (CheckDeviceExtensionSupport(VK_KHR_8BIT_STORAGE_EXTENSION_NAME, availableDeviceExtensions))
-                {
-                    enabledExtensions.Add(VK_KHR_8BIT_STORAGE_EXTENSION_NAME);
-                    //storage_8bit_features.sType = VkStructureType.PhysicalDevice8bitStorageFeatures;
-                    *features_chain = &storage_8bit_features;
-                    features_chain = &storage_8bit_features.pNext;
-                }
-            }
-
-            if (CheckDeviceExtensionSupport(VK_KHR_SPIRV_1_4_EXTENSION_NAME, availableDeviceExtensions))
-            {
-                // Required by VK_KHR_spirv_1_4
-                enabledExtensions.Add(VK_KHR_SHADER_FLOAT_CONTROLS_EXTENSION_NAME);
-
-                // Required for VK_KHR_ray_tracing_pipeline
-                enabledExtensions.Add(VK_KHR_SPIRV_1_4_EXTENSION_NAME);
-            }
-
-            if (CheckDeviceExtensionSupport(VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME, availableDeviceExtensions))
-            {
-                // Required by VK_KHR_acceleration_structure
-                enabledExtensions.Add(VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME);
-            }
-
-            if (CheckDeviceExtensionSupport(VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME, availableDeviceExtensions))
-            {
-                // Required by VK_KHR_acceleration_structure
-                enabledExtensions.Add(VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME);
-            }
-
-            VkPhysicalDeviceAccelerationStructureFeaturesKHR acceleration_structure_features = new();
-            if (CheckDeviceExtensionSupport(VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME, availableDeviceExtensions))
-            {
-                // Required by VK_KHR_acceleration_structure
-                enabledExtensions.Add(VK_KHR_DEFERRED_HOST_OPERATIONS_EXTENSION_NAME);
-
-                enabledExtensions.Add(VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME);
-                *features_chain = &acceleration_structure_features;
-                features_chain = &acceleration_structure_features.pNext;
-            }
-
-            vkGetPhysicalDeviceFeatures2(PhysicalDevice, &deviceFeatures2);
-        } 
-#endif
-
         using var deviceExtensionNames = new VkStringArray(enabledExtensions);
 
         VkDeviceCreateInfo deviceCreateInfo = new()
         {
-            pNext = useNewFeatures ? &deviceFeatures2 : default,
             queueCreateInfoCount = queueCount,
             pQueueCreateInfos = queueCreateInfos,
             enabledExtensionCount = deviceExtensionNames.Length,
@@ -261,30 +203,30 @@ public unsafe sealed class GraphicsDevice : IDisposable
             pEnabledFeatures = null,
         };
 
-        result = vkCreateDevice(PhysicalDevice, &deviceCreateInfo, null, out VkDevice);
+        result = InstanceApi.vkCreateDevice(PhysicalDevice, &deviceCreateInfo, null, out VkDevice);
         if (result != VkResult.Success)
             throw new Exception($"Failed to create Vulkan Logical Device, {result}");
 
-        vkLoadDevice(VkDevice);
+        DeviceApi = GetApi(VkInstance, VkDevice);
 
-        vkGetDeviceQueue(VkDevice, queueFamilies.graphicsFamily, 0, out GraphicsQueue);
-        vkGetDeviceQueue(VkDevice, queueFamilies.presentFamily, 0, out PresentQueue);
+        DeviceApi.vkGetDeviceQueue(queueFamilies.graphicsFamily, 0, out GraphicsQueue);
+        DeviceApi.vkGetDeviceQueue(queueFamilies.presentFamily, 0, out PresentQueue);
 
         // Create swap chain
         Swapchain = new Swapchain(this, surface, window);
         _perFrame = new PerFrame[Swapchain.ImageCount];
         for (int i = 0; i < _perFrame.Length; i++)
         {
-            vkCreateFence(VkDevice, VkFenceCreateFlags.Signaled, out _perFrame[i].QueueSubmitFence).CheckResult();
+            DeviceApi.vkCreateFence(VkFenceCreateFlags.Signaled, out _perFrame[i].QueueSubmitFence).CheckResult();
 
             VkCommandPoolCreateInfo poolCreateInfo = new()
             {
                 flags = VkCommandPoolCreateFlags.Transient,
                 queueFamilyIndex = queueFamilies.graphicsFamily,
             };
-            vkCreateCommandPool(VkDevice, &poolCreateInfo, null, out _perFrame[i].PrimaryCommandPool).CheckResult();
+            DeviceApi.vkCreateCommandPool(&poolCreateInfo, null, out _perFrame[i].PrimaryCommandPool).CheckResult();
 
-            vkAllocateCommandBuffer(VkDevice, _perFrame[i].PrimaryCommandPool, out _perFrame[i].PrimaryCommandBuffer).CheckResult();
+            DeviceApi.vkAllocateCommandBuffer(_perFrame[i].PrimaryCommandPool, out _perFrame[i].PrimaryCommandBuffer).CheckResult();
         }
     }
 
@@ -297,55 +239,55 @@ public unsafe sealed class GraphicsDevice : IDisposable
 
         for (var i = 0; i < _perFrame.Length; i++)
         {
-            vkDestroyFence(VkDevice, _perFrame[i].QueueSubmitFence);
+            DeviceApi.vkDestroyFence(_perFrame[i].QueueSubmitFence);
 
             if (_perFrame[i].PrimaryCommandBuffer != IntPtr.Zero)
             {
-                vkFreeCommandBuffers(VkDevice, _perFrame[i].PrimaryCommandPool, _perFrame[i].PrimaryCommandBuffer);
+                DeviceApi.vkFreeCommandBuffers(_perFrame[i].PrimaryCommandPool, _perFrame[i].PrimaryCommandBuffer);
 
                 _perFrame[i].PrimaryCommandBuffer = IntPtr.Zero;
             }
 
-            vkDestroyCommandPool(VkDevice, _perFrame[i].PrimaryCommandPool);
+            DeviceApi.vkDestroyCommandPool(_perFrame[i].PrimaryCommandPool);
 
             if (_perFrame[i].SwapchainAcquireSemaphore != VkSemaphore.Null)
             {
-                vkDestroySemaphore(VkDevice, _perFrame[i].SwapchainAcquireSemaphore);
+                DeviceApi.vkDestroySemaphore(_perFrame[i].SwapchainAcquireSemaphore);
                 _perFrame[i].SwapchainAcquireSemaphore = VkSemaphore.Null;
             }
 
             if (_perFrame[i].SwapchainReleaseSemaphore != VkSemaphore.Null)
             {
-                vkDestroySemaphore(VkDevice, _perFrame[i].SwapchainReleaseSemaphore);
+                DeviceApi.vkDestroySemaphore(_perFrame[i].SwapchainReleaseSemaphore);
                 _perFrame[i].SwapchainReleaseSemaphore = VkSemaphore.Null;
             }
         }
 
         foreach (VkSemaphore semaphore in _recycledSemaphores)
         {
-            vkDestroySemaphore(VkDevice, semaphore);
+            DeviceApi.vkDestroySemaphore(semaphore);
         }
         _recycledSemaphores.Clear();
 
         if (VkDevice.IsNotNull)
         {
-            vkDestroyDevice(VkDevice);
+            DeviceApi.vkDestroyDevice();
         }
 
         if (_debugMessenger != VkDebugUtilsMessengerEXT.Null)
         {
-            vkDestroyDebugUtilsMessengerEXT(VkInstance, _debugMessenger);
+            InstanceApi.vkDestroyDebugUtilsMessengerEXT(_debugMessenger);
         }
 
         if (VkInstance != VkInstance.Null)
         {
-            vkDestroyInstance(VkInstance);
+            InstanceApi.vkDestroyInstance();
         }
     }
 
     public void WaitIdle()
     {
-        vkDeviceWaitIdle(VkDevice).CheckResult();
+        DeviceApi.vkDeviceWaitIdle().CheckResult();
     }
 
     public void RenderFrame(
@@ -363,7 +305,7 @@ public unsafe sealed class GraphicsDevice : IDisposable
 
         if (result != VkResult.Success)
         {
-            vkDeviceWaitIdle(VkDevice);
+            DeviceApi.vkDeviceWaitIdle();
             return;
         }
 
@@ -374,16 +316,16 @@ public unsafe sealed class GraphicsDevice : IDisposable
         {
             flags = VkCommandBufferUsageFlags.OneTimeSubmit
         };
-        vkBeginCommandBuffer(cmd, &beginInfo).CheckResult();
+        DeviceApi.vkBeginCommandBuffer(cmd, &beginInfo).CheckResult();
 
         draw(cmd, Swapchain.Framebuffers[_frameIndex], Swapchain.Extent);
 
         // Complete the command buffer.
-        vkEndCommandBuffer(cmd).CheckResult();
+        DeviceApi.vkEndCommandBuffer(cmd).CheckResult();
 
         if (_perFrame[_frameIndex].SwapchainReleaseSemaphore == VkSemaphore.Null)
         {
-            vkCreateSemaphore(VkDevice, out _perFrame[_frameIndex].SwapchainReleaseSemaphore).CheckResult();
+            DeviceApi.vkCreateSemaphore(out _perFrame[_frameIndex].SwapchainReleaseSemaphore).CheckResult();
         }
 
         VkPipelineStageFlags wait_stage = VkPipelineStageFlags.ColorAttachmentOutput;
@@ -402,7 +344,7 @@ public unsafe sealed class GraphicsDevice : IDisposable
         };
 
         // Submit command buffer to graphics queue
-        vkQueueSubmit(GraphicsQueue, submitInfo, _perFrame[_frameIndex].QueueSubmitFence);
+        DeviceApi.vkQueueSubmit(GraphicsQueue, submitInfo, _perFrame[_frameIndex].QueueSubmitFence);
 
         result = PresentImage(_frameIndex);
 
@@ -417,73 +359,12 @@ public unsafe sealed class GraphicsDevice : IDisposable
         }
     }
 
-    public uint GetMemoryTypeIndex(uint typeBits, VkMemoryPropertyFlags properties)
-    {
-        vkGetPhysicalDeviceMemoryProperties(PhysicalDevice, out VkPhysicalDeviceMemoryProperties deviceMemoryProperties);
-
-        // Iterate over all memory types available for the device used in this example
-        for (int i = 0; i < deviceMemoryProperties.memoryTypeCount; i++)
-        {
-            if ((typeBits & 1) == 1)
-            {
-                if ((deviceMemoryProperties.memoryTypes[i].propertyFlags & properties) == properties)
-                {
-                    return (uint)i;
-                }
-            }
-            typeBits >>= 1;
-        }
-
-        throw new Exception("Could not find a suitable memory type!");
-    }
-
-    public VkCommandBuffer GetCommandBuffer(bool begin = true)
-    {
-        vkAllocateCommandBuffer(VkDevice,
-            _perFrame[_frameIndex].PrimaryCommandPool,
-            out VkCommandBuffer commandBuffer).CheckResult();
-
-        // If requested, also start the new command buffer
-        if (begin)
-        {
-            VkCommandBufferBeginInfo beginInfo = new()
-            {
-                flags = VkCommandBufferUsageFlags.OneTimeSubmit
-            };
-            vkBeginCommandBuffer(commandBuffer, &beginInfo).CheckResult();
-        }
-
-        return commandBuffer;
-    }
-
-    public void FlushCommandBuffer(VkCommandBuffer commandBuffer)
-    {
-        vkEndCommandBuffer(commandBuffer).CheckResult();
-
-        VkSubmitInfo submitInfo = new()
-        {
-            commandBufferCount = 1,
-            pCommandBuffers = &commandBuffer
-        };
-
-        // Create fence to ensure that the command buffer has finished executing
-        vkCreateFence(VkDevice, out VkFence fence);
-
-        // Submit to the queue
-        vkQueueSubmit(GraphicsQueue, 1, &submitInfo, fence).CheckResult();
-
-        // Wait for the fence to signal that command buffer has finished executing
-        vkWaitForFences(VkDevice, 1, &fence, true, ulong.MaxValue).CheckResult();
-
-        vkDestroyFence(VkDevice, fence);
-    }
-
     private VkResult AcquireNextImage(out uint imageIndex)
     {
         VkSemaphore acquireSemaphore;
         if (_recycledSemaphores.Count == 0)
         {
-            vkCreateSemaphore(VkDevice, out acquireSemaphore).CheckResult();
+            DeviceApi.vkCreateSemaphore(out acquireSemaphore).CheckResult();
         }
         else
         {
@@ -491,7 +372,7 @@ public unsafe sealed class GraphicsDevice : IDisposable
             _recycledSemaphores.RemoveAt(_recycledSemaphores.Count - 1);
         }
 
-        VkResult result = vkAcquireNextImageKHR(VkDevice, Swapchain.Handle, ulong.MaxValue, acquireSemaphore, VkFence.Null, out imageIndex);
+        VkResult result = DeviceApi.vkAcquireNextImageKHR(Swapchain.Handle, ulong.MaxValue, acquireSemaphore, VkFence.Null, out imageIndex);
 
         if (result != VkResult.Success)
         {
@@ -501,13 +382,13 @@ public unsafe sealed class GraphicsDevice : IDisposable
 
         if (_perFrame[imageIndex].QueueSubmitFence != VkFence.Null)
         {
-            vkWaitForFences(VkDevice, _perFrame[imageIndex].QueueSubmitFence, true, ulong.MaxValue);
-            vkResetFences(VkDevice, _perFrame[imageIndex].QueueSubmitFence);
+            DeviceApi.vkWaitForFences(_perFrame[imageIndex].QueueSubmitFence, true, ulong.MaxValue);
+            DeviceApi.vkResetFences(_perFrame[imageIndex].QueueSubmitFence);
         }
 
         if (_perFrame[imageIndex].PrimaryCommandPool != VkCommandPool.Null)
         {
-            vkResetCommandPool(VkDevice, _perFrame[imageIndex].PrimaryCommandPool, VkCommandPoolResetFlags.None);
+            DeviceApi.vkResetCommandPool(_perFrame[imageIndex].PrimaryCommandPool, VkCommandPoolResetFlags.None);
         }
 
         // Recycle the old semaphore back into the semaphore manager.
@@ -525,28 +406,10 @@ public unsafe sealed class GraphicsDevice : IDisposable
 
     private VkResult PresentImage(uint imageIndex)
     {
-        return vkQueuePresentKHR(PresentQueue, _perFrame[imageIndex].SwapchainReleaseSemaphore, Swapchain.Handle, imageIndex);
-    }
-
-    public static implicit operator VkDevice(GraphicsDevice device) => device.VkDevice;
-
-    public VkResult CreateShaderModule(ReadOnlySpan<byte> data, out VkShaderModule module)
-    {
-        return vkCreateShaderModule(VkDevice, data, null, out module);
+        return DeviceApi.vkQueuePresentKHR(PresentQueue, _perFrame[imageIndex].SwapchainReleaseSemaphore, Swapchain.Handle, imageIndex);
     }
 
     #region Private Methods
-    private static bool CheckDeviceExtensionSupport(VkUtf8ReadOnlyString extensionName, ReadOnlySpan<VkExtensionProperties> availableDeviceExtensions)
-    {
-        foreach (VkExtensionProperties property in availableDeviceExtensions)
-        {
-            if (extensionName == property.extensionName)
-                return true;
-        }
-
-        return false;
-    }
-
     private static void GetOptimalValidationLayers(
         HashSet<VkUtf8String> availableLayers,
         List<VkUtf8String> instanceLayers)
@@ -631,16 +494,16 @@ public unsafe sealed class GraphicsDevice : IDisposable
         return true;
     }
 
-    private static bool IsDeviceSuitable(VkPhysicalDevice physicalDevice, VkSurfaceKHR surface)
+    private static bool IsDeviceSuitable(VkInstanceApi api, VkPhysicalDevice physicalDevice, VkSurfaceKHR surface)
     {
-        var checkQueueFamilies = FindQueueFamilies(physicalDevice, surface);
+        var checkQueueFamilies = FindQueueFamilies(api, physicalDevice, surface);
         if (checkQueueFamilies.graphicsFamily == VK_QUEUE_FAMILY_IGNORED)
             return false;
 
         if (checkQueueFamilies.presentFamily == VK_QUEUE_FAMILY_IGNORED)
             return false;
 
-        SwapChainSupportDetails swapChainSupport = Utils.QuerySwapChainSupport(physicalDevice, surface);
+        SwapChainSupportDetails swapChainSupport = Utils.QuerySwapChainSupport(api, physicalDevice, surface);
         return !swapChainSupport.Formats.IsEmpty && !swapChainSupport.PresentModes.IsEmpty;
     }
 
@@ -682,9 +545,12 @@ public unsafe sealed class GraphicsDevice : IDisposable
     }
 
     static (uint graphicsFamily, uint presentFamily) FindQueueFamilies(
-        VkPhysicalDevice device, VkSurfaceKHR surface)
+        VkInstanceApi api, VkPhysicalDevice device, VkSurfaceKHR surface)
     {
-        ReadOnlySpan<VkQueueFamilyProperties> queueFamilies = vkGetPhysicalDeviceQueueFamilyProperties(device);
+        // 3.x returns no span. Ask for the count, then fill an array of that size.
+        api.vkGetPhysicalDeviceQueueFamilyProperties(device, out uint queueFamilyCount);
+        VkQueueFamilyProperties[] queueFamilies = new VkQueueFamilyProperties[queueFamilyCount];
+        api.vkGetPhysicalDeviceQueueFamilyProperties(device, queueFamilies);
 
         uint graphicsFamily = VK_QUEUE_FAMILY_IGNORED;
         uint presentFamily = VK_QUEUE_FAMILY_IGNORED;
@@ -696,7 +562,7 @@ public unsafe sealed class GraphicsDevice : IDisposable
                 graphicsFamily = i;
             }
 
-            vkGetPhysicalDeviceSurfaceSupportKHR(device, i, surface, out VkBool32 presentSupport);
+            api.vkGetPhysicalDeviceSurfaceSupportKHR(device, i, surface, out VkBool32 presentSupport);
             if (presentSupport)
             {
                 presentFamily = i;
@@ -738,8 +604,6 @@ public unsafe sealed class GraphicsDevice : IDisposable
             VkVersion version = vkEnumerateInstanceVersion();
             if (version < VkVersion.Version_1_1)
                 return false;
-
-            // TODO: Enumerate physical devices and try to create instance.
 
             return true;
         }

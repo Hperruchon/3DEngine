@@ -9,14 +9,13 @@
     <AllowUnsafeBlocks>True</AllowUnsafeBlocks>
   </PropertyGroup>
 
-  <ItemGroup>
-    <PackageReference Include="Alimer.Bindings.SDL" Version="3.9.2" />
-    <PackageReference Include="Vortice.Vulkan" Version="1.9.8" />
-  </ItemGroup>
-
+  <!--
+    The host names no package for Vulkan or for SDL. It receives both bindings
+    through 3DEngine.Vulkan, which holds the only pin of each one (ADR-0017).
+  -->
   <ItemGroup>
     <ProjectReference Include="..\3DEngine.Core\3DEngine.Core.csproj" />
-    <ProjectReference Include="..\Vortice.Vulkan.SampleFramework\Vortice.Vulkan.SampleFramework.csproj" />
+    <ProjectReference Include="..\3DEngine.Vulkan\3DEngine.Vulkan.csproj" />
   </ItemGroup>
 
 </Project>

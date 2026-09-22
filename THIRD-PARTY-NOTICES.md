@@ -6,7 +6,7 @@ one. Register entry R-0005 required it. ADR-0014 section 5 requires a checksum f
 `Engine.Tests/Governance/NativePackageGateTests.cs` compares each checksum below against the file.
 A change to the binary that does not change this file fails the build.
 
-Written 2026-09-22 by TASK-0024.
+Written 2026-09-22 by TASK-0024. Section 4 added 2026-09-23 by TASK-0027.
 
 ## 1 The native geometry payload
 
@@ -94,3 +94,49 @@ The version 3.5.2 in the package identifies the source, and section 1.1 gives th
 
 Register entry R-0018 holds this defect. A correction needs a new build, because the nuspec lives
 inside the package.
+
+## 4 Source code from the Vortice.Vulkan samples
+
+`3DEngine.Vulkan/` holds five source files that come from the sample framework of the Vortice.Vulkan
+binding: `GraphicsDevice.cs`, `Swapchain.cs`, `Window.cs`, `Log.cs` and `Utils.cs`. TASK-0027 moved
+them into a first-party project and changed them. ADR-0017 gives the rules. Each file keeps the
+copyright line of its author.
+
+Before TASK-0027 the same code sat in `Vortice.Vulkan.SampleFramework/` and
+`Vortice.Vulkan.Sample/`. Each file said "See LICENSE in the repository root". That file is the
+licence of this repository, therefore the notice for the sample author was absent.
+
+| Item | Value |
+|---|---|
+| Component | The sample framework of Vortice.Vulkan |
+| Source | https://github.com/amerkoleci/Vortice.Vulkan |
+| Commit | Not recorded. Commit `939e23f` of this repository, dated 2024-10-12, added the files and names no source commit. |
+| Licence | MIT License |
+| Licence text | Below. It is a copy of `LICENSE` at commit `ef01519051c1ea9ab92cf6f381ab7ca897ab293f`, which the nuspec of `Vortice.Vulkan` 3.2.3 names. |
+
+The NuGet packages `Vortice.Vulkan` and `Alimer.Bindings.SDL` are not in this list. The repository
+does not hold them. A restore downloads each one.
+
+```
+The MIT License (MIT)
+
+Copyright (c) Amer Koleci and Contributors
+
+Permission is hereby granted, free of charge, to any person obtaining a
+copy of this software and associated documentation files (the "Software"),
+to deal in the Software without restriction, including without limitation
+the rights to use, copy, modify, merge, publish, distribute, sublicense,
+and/or sell copies of the Software, and to permit persons to whom the
+Software is furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in
+all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL
+THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
+DEALINGS IN THE SOFTWARE.
+```

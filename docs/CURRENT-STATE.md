@@ -639,3 +639,64 @@ with no task file fails.
 Tests: 194, unchanged. `dotnet build` gives zero errors. Open entries: 2 of 15.
 
 New diagnostic codes: none.
+
+## v0.28 — The Vulkan code is first-party and uses Vortice.Vulkan 3.2.3 (R1, TASK-0027, ADR-0017)
+
+Roadmap phase R1 is the first of the six phases that end at the first objective of the owner: create
+a box, subtract a second box, and observe the cut.
+
+**Two facts came first.** Three project files pinned `Vortice.Vulkan` 1.9.8, and nuget.org lists
+3.2.3 as the highest version. The desktop host built and ran on this computer before any change: a
+green window, the layer `VK_LAYER_KHRONOS_validation` active, and no validation message.
+
+**One first-party project.** `3DEngine.Vulkan` holds the device, the swapchain and the SDL window
+that owns the surface. The host referenced the vendored sample framework before, which `CLAUDE.md`
+does not permit, and the dependency direction gate did not read the host. ADR-0017 gives the rules.
+`Vortice.Vulkan.Sample` and `Vortice.Vulkan.SampleFramework` are removed. Each type and each method
+that moved has a caller in the host. The two build warnings of the sample code are gone with it.
+
+**The binding is 3.2.3, with one pin.** `3DEngine.Vulkan/3DEngine.Vulkan.csproj` holds the only pin of
+`Vortice.Vulkan` and of `Alimer.Bindings.SDL`. Version 3.x removes each global Vulkan function: an
+instance function lives on `VkInstanceApi` and a device function on `VkDeviceApi`. Commit `885ba75`
+holds the port and nothing else.
+
+**The host releases each Vulkan object at exit.** It released nothing before. The window closes with
+the exit code 0 and no validation message.
+
+**The validation layer was made to speak.** Its silence is evidence only if it can report. A render
+pass that does not end gave `VUID-vkEndCommandBuffer-commandBuffer-00060`. A device that is not
+destroyed gave `VUID-vkDestroyInstance-instance-00629` at the close. Each defect was removed.
+
+**The gates.** `Engine.Tests/Governance/DependencyDirectionGateTests.cs` reads the host now, and it
+adds three checks: the Vulkan layer references at most the render kernel, only a host that draws
+references it, and each binding has one pin. A headless client can no longer reference the render
+kernel, which ADR-0009 section 2 already forbade. `MarkerGateTests.cs` reads the render side. Seven
+violations were injected, and each one failed with a message that names the project and the rule.
+
+**The licence.** Each sample file said "See LICENSE in the repository root", which is the licence of
+this repository. `THIRD-PARTY-NOTICES.md`, section 4, now gives the MIT licence of the sample author.
+
+**Three statements of this milestone were false when first written, and each one is corrected.**
+
+- The notice said that the first commit of the repository added the sample code. The root commit is
+  `f758d1e`. The commit that added the files is `939e23f`, and both carry the subject "Initial
+  commit".
+- ADR-0017 said that the project owns about 600 lines. The count is 1,080. The record was corrected
+  before the first push, when no person had read it. The decision did not change.
+- Commit `885ba75` ticked "zero warnings". A clean build of it gives CS9191. The build that compiled
+  the port ran behind a filter that failed, and the next build compiled nothing. Commit `f602022`
+  removes the warning. A clean build is now the method for a warning count.
+
+**Found in passing.** Six statements in five documents describe a repository state that no longer
+exists. Register entry R-0019 holds them, with a limit of 30 days.
+
+Not done, and why: no runner has a GPU, so the runners build the Vulkan code and never run it. macOS
+needs MoltenVK, and nothing tests it. The swapchain is not created again after
+`ErrorOutOfDateKHR`; the window is not resizable, and a minimized window was not tested.
+
+New tests: 4. The test list holds 198, up from 194. `dotnet build` gives zero errors and zero
+warnings on a clean build.
+
+Opened: R-0019. Open entries: 3 of 15.
+
+New diagnostic codes: none.

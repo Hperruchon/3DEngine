@@ -100,6 +100,21 @@ Exit: a new build records the Manifold commit. The packing step in
 `.github/workflows/build-manifold-native.yml` reads the commit of the Manifold checkout and not the
 commit of this repository.
 
+### R-0019 · Five documents describe a repository state that no longer exists
+- class: debt
+- opened: 2026-09-23
+- due: 2026-10-23
+- extended: no
+- refs: `docs/adr/README.md:7-10`, `docs/adr/README.md:51-54`, `docs/INDEX.md:37`, `docs/conventions.md:61`, `docs/templates.md:231-236`, `Engine.Tests/Governance/AdrGateTests.cs:17`, TASK-0027
+TASK-0027 found six statements that were true once. The ADR index says that ADR-0015 exists only on
+a branch that TASK-0023 deleted, and its legend gives four statuses of six, while a comment in the ADR
+gate says that the legend agrees with the gate. `docs/INDEX.md` names `docs/architecture/`, which does
+not exist. `docs/conventions.md` links to that directory and cites a `CLAUDE.md` section by an old
+name. `docs/templates.md` says that two gates exist; eleven gate classes exist. An agent reads these
+files first, therefore the limit is 30 days and not 180.
+Exit: each statement agrees with the repository, and a gate fails when `docs/INDEX.md` names a path
+that does not exist.
+
 ## Accepted compromises
 
 These are conditions that the project keeps permanently and by decision. They do not age.

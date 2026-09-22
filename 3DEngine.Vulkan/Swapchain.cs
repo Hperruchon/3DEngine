@@ -1,10 +1,13 @@
 ﻿// Copyright (c) Amer Koleci and Contributors.
-// Licensed under the MIT License (MIT). See LICENSE in the repository root for more information.
+// Licensed under the MIT License (MIT). See THIRD-PARTY-NOTICES.md, section 4.
+// This file comes from the Vortice.Vulkan sample framework. TASK-0027 moved it
+// into this project and changed it. ADR-0017 gives the rules for this project.
 
 using System; 
+using Vortice.Vulkan;
 using static Vortice.Vulkan.Vulkan;
 
-namespace Vortice.Vulkan;
+namespace ThreeDEngine.Vulkan;
 
 public sealed unsafe class Swapchain : IDisposable
 {
@@ -25,7 +28,7 @@ public sealed unsafe class Swapchain : IDisposable
         _surface = surface;
         Window = window;
 
-        SwapChainSupportDetails swapChainSupport = Utils.QuerySwapChainSupport(device.PhysicalDevice, surface);
+        SwapChainSupportDetails swapChainSupport = Utils.QuerySwapChainSupport(device.InstanceApi, device.PhysicalDevice, surface);
 
         VkSurfaceFormatKHR surfaceFormat = ChooseSwapSurfaceFormat(swapChainSupport.Formats);
         VkPresentModeKHR presentMode = ChooseSwapPresentMode(swapChainSupport.PresentModes);
@@ -57,8 +60,11 @@ public sealed unsafe class Swapchain : IDisposable
             oldSwapchain = VkSwapchainKHR.Null
         };
 
-        vkCreateSwapchainKHR(device.VkDevice, &createInfo, null, out Handle).CheckResult();
-        ReadOnlySpan<VkImage> swapChainImages = vkGetSwapchainImagesKHR(device.VkDevice, Handle);
+        device.DeviceApi.vkCreateSwapchainKHR(&createInfo, null, out Handle).CheckResult();
+        // 3.x returns no span. Ask for the count, then fill an array of that size.
+        device.DeviceApi.vkGetSwapchainImagesKHR(Handle, out uint swapChainImageCount).CheckResult();
+        VkImage[] swapChainImages = new VkImage[swapChainImageCount];
+        device.DeviceApi.vkGetSwapchainImagesKHR(Handle, swapChainImages).CheckResult();
         _swapChainImageViews = new VkImageView[swapChainImages.Length];
         Framebuffers = new VkFramebuffer[swapChainImages.Length];
 
@@ -72,8 +78,8 @@ public sealed unsafe class Swapchain : IDisposable
                 new VkImageSubresourceRange(VkImageAspectFlags.Color, 0, 1, 0, 1)
                 );
 
-            vkCreateImageView(Device.VkDevice, &viewCreateInfo, null, out _swapChainImageViews[i]).CheckResult();
-            vkCreateFramebuffer(Device.VkDevice, RenderPass, new[] { _swapChainImageViews[i] }, Extent, 1u, out Framebuffers[i]);
+            Device.DeviceApi.vkCreateImageView(&viewCreateInfo, null, out _swapChainImageViews[i]).CheckResult();
+            Device.DeviceApi.vkCreateFramebuffer(RenderPass, new[] { _swapChainImageViews[i] }, Extent, 1u, out Framebuffers[i]);
         }
     }
 
@@ -81,24 +87,24 @@ public sealed unsafe class Swapchain : IDisposable
     {
         for (int i = 0; i < _swapChainImageViews.Length; i++)
         {
-            vkDestroyImageView(Device, _swapChainImageViews[i]);
+            Device.DeviceApi.vkDestroyImageView(_swapChainImageViews[i]);
         }
 
         for (int i = 0; i < Framebuffers.Length; i++)
         {
-            vkDestroyFramebuffer(Device, Framebuffers[i]);
+            Device.DeviceApi.vkDestroyFramebuffer(Framebuffers[i]);
         }
 
-        vkDestroyRenderPass(Device, RenderPass);
+        Device.DeviceApi.vkDestroyRenderPass(RenderPass);
 
         if (Handle != VkSwapchainKHR.Null)
         {
-            vkDestroySwapchainKHR(Device, Handle);
+            Device.DeviceApi.vkDestroySwapchainKHR(Handle);
         }
 
         if (_surface != VkSurfaceKHR.Null)
         {
-            vkDestroySurfaceKHR(Device.VkInstance, _surface);
+            Device.InstanceApi.vkDestroySurfaceKHR(_surface);
         }
     }
 
@@ -157,7 +163,7 @@ public sealed unsafe class Swapchain : IDisposable
                 pDependencies = dependenciesPtr
             };
 
-            vkCreateRenderPass(Device, &createInfo, null, out RenderPass).CheckResult();
+            Device.DeviceApi.vkCreateRenderPass(&createInfo, null, out RenderPass).CheckResult();
         }
     }
 

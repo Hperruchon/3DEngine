@@ -1,0 +1,23 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    The first-party Vulkan layer. ADR-0017 gives the rules:
+    - It references no Engine.* project. Only a host that draws references it.
+    - This file holds the only pin of the Vulkan binding and of the SDL binding.
+      A host receives both through its reference to this project.
+  -->
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <RootNamespace>ThreeDEngine.Vulkan</RootNamespace>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Alimer.Bindings.SDL" Version="3.9.2" />
+    <PackageReference Include="Vortice.Vulkan" Version="3.2.3" />
+  </ItemGroup>
+
+</Project>

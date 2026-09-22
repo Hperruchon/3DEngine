@@ -29,15 +29,17 @@ This index is the entry point for ADRs. Find the relevant decision; do not read 
 | [0014](0014-manifold-native-interop.md) | Manifold backend native-interop posture | Accepted | Boundary, geometry, native-interop | — | — |
 | [0015](0015-command-log-persistence.md) | Command-log persistence for engine-api-http | Proposed | Persistence, runtime, deployment | — | — |
 | [0016](0016-handler-declared-construction.md) | Handler-declared command and query construction | Accepted | Contracts, clients | 0013 | — |
+| [0017](0017-first-party-vulkan-layer.md) | The first-party Vulkan layer | Accepted | Boundary, rendering | — | — |
 
 ## Topics
 
 - **Contracts** — 0005, 0006, 0008, 0012, 0013. Read these before changing `Engine.Contracts/**`.
-- **Boundary** — 0001, 0004, 0007, 0012, 0014. Read these before changing project references or adding clients.
+- **Boundary** — 0001, 0004, 0007, 0012, 0014, 0017. Read these before changing project references or adding clients.
 - **Workflow** — 0002. Read before adding a client or skipping CLI.
 - **Clients** — 0002, 0003, 0007. Read before changing UI/CLI/host code.
 - **Geometry** — 0001, 0012, 0014. Read before adding a capability or backend.
 - **Observability** — 0005, 0010, 0013. Read before changing event ordering, retention, subscription, or schema endpoints.
+- **Rendering** — 0009, 0017. Read these before changing `3DEngine.Core`, `3DEngine.Vulkan` or `3DEngine`.
 
 ## Adding an ADR
 
