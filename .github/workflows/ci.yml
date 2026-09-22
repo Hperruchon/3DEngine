@@ -125,8 +125,10 @@ jobs:
 
   write-set-gate:
     name: Write set of the active task
-    # The comparison needs the base branch, therefore it needs a pull request.
-    if: github.event_name == 'pull_request'
+    # This job runs on a push and on a pull request. It needs no base reference,
+    # because it reads one commit at a time. TASK-0026 made that change: the job
+    # was a condition on a pull request, therefore it reported skipped on each
+    # run and the gate of v0.22 never ran in the pipeline.
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -139,18 +141,50 @@ jobs:
         with:
           global-json-file: global.json
 
-      - name: Fetch base ref
-        run: git fetch --no-tags --depth=1 origin "${{ github.base_ref }}"
+      - name: Build the tests
+        run: dotnet build Engine.Tests/Engine.Tests.csproj
 
-      # The gate is a test, therefore one implementation serves this job and
-      # `dotnet test` on a local computer. Register entry R-0017 gives the
-      # reason for the gate.
-      - name: Check each changed path against the write set
+      # One commit at a time, and not the whole branch. A task governs the commit
+      # that carries it, therefore a diff across many tasks cannot say which task
+      # made which change. TASK-0026 measured that: the whole-branch diff of this
+      # branch reported 19 files against the write set and each report was false.
+      - name: Check each commit against the write set of its task
+        env:
+          PUSH_BEFORE: ${{ github.event.before }}
         run: |
           set -e
-          files=$(git diff --name-only "origin/${{ github.base_ref }}"...HEAD)
-          echo "--- changed files ---"
-          echo "$files"
-          echo "--- /changed files ---"
-          WRITE_SET_FILES="$files" dotnet test Engine.Tests/Engine.Tests.csproj \
-            --filter "FullyQualifiedName~WriteSetGate"
+          cutoff=$(grep -v '^#' eng/write-set-cutoff.txt | tr -d '[:space:]')
+          echo "cut-off commit: $cutoff"
+
+          # A push gives the previous tip. A new branch gives zeros, and a pull
+          # request gives no value, so both fall back to the cut-off.
+          before="$PUSH_BEFORE"
+          if [ -z "$before" ] || [ "$before" = "0000000000000000000000000000000000000000" ]; then
+            before="$cutoff"
+          elif ! git cat-file -e "$before" 2>/dev/null; then
+            before="$cutoff"
+          fi
+          echo "range: $before..HEAD"
+
+          failed=0
+          for commit in $(git rev-list --reverse "$before"..HEAD); do
+            subject=$(git log -1 --format='%h %s' "$commit")
+
+            if git merge-base --is-ancestor "$commit" "$cutoff" 2>/dev/null; then
+              echo "skip  $subject  (grandfathered)"
+              continue
+            fi
+
+            echo "check $subject"
+            files=$(git diff-tree --no-commit-id --name-only -r "$commit")
+
+            if WRITE_SET_FILES="$files" dotnet test Engine.Tests/Engine.Tests.csproj \
+                 --no-build --filter 'FullyQualifiedName~WriteSetGate'; then
+              echo "  pass"
+            else
+              echo "  FAIL $subject"
+              failed=1
+            fi
+          done
+
+          exit $failed

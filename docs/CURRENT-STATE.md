@@ -595,3 +595,47 @@ New tests: 3. `dotnet test` gives 194 passed, up from 191. `dotnet build` gives 
 Closed: R-0010, R-0011, R-0015. Accepted: R-0008. Open entries: 2 of 15, which are R-0007 and R-0018.
 
 New diagnostic codes: none. The two reserved codes are unchanged and now carry a permanent reason.
+
+## v0.27 — The write-set gate runs in the pipeline and its rule is corrected (P0.12, TASK-0026)
+
+Two jobs reported `skipped` on each run, because each one had the condition
+`github.event_name == 'pull_request'` and v0.23 made a push the normal trigger. The write-set gate of
+v0.22 therefore never ran in the pipeline. It ran on a local computer only, by hand, one change at a
+time.
+
+A measurement of what a pull request would report found a defect in the gate itself.
+
+**The forbid rule was wrong.** TASK-0022 wrote that a forbid beats a permit, and beats a permit from
+another task, and it called the strict reading the safe one. A forbid binds the task that declares it.
+`Engine.Cli/**` in the forbid list of the persistence task says that the persistence work must stay
+out of the command line. It does not say that nobody may touch the command line. The rule only looked
+correct because each change that tested it carried one task.
+
+The measurement: the whole-branch difference reported 19 files and each report was false, because the
+forbid list of TASK-0014, which pinned the SDK, blocked each file that TASK-0016 created. One commit
+failed for the same reason: TASK-0018 modified `Engine.Cli/Cli.cs` and declared it, and the forbid
+list of the deferred TASK-0019 blocked that declaration.
+
+A permit now beats a forbid. A forbid blocks a file only when no task in the change permits it, and it
+then gives the better message, because it names the boundary that an author wrote. On this branch 12
+of 13 commits pass, from 11 of 13 before.
+
+**The gate reads one commit at a time.** A task governs the commit that carries it. A difference
+across many tasks cannot say which task made which change, therefore it can only compare against the
+union of each write set, and the union is not the rule.
+
+**The job runs on a push.** It needs no base reference now. The contract gate keeps its condition,
+because it compares two trees and a pull request is the correct condition for that.
+
+**History is grandfathered by one named commit.** `eng/write-set-cutoff.txt` holds the tip at the
+moment the gate was turned on. The gate skips each commit behind it. One commit needs this:
+`ecb1f9a`, "gitignore: ignore graphify-out", which opened the branch and touches no task file. The
+exemption names one commit and covers nothing after it.
+
+Each case was verified by injection: a file that one task forbids and another permits passes; a file
+that a task forbids and no task permits fails and names the task; a file in no list fails; a change
+with no task file fails.
+
+Tests: 194, unchanged. `dotnet build` gives zero errors. Open entries: 2 of 15.
+
+New diagnostic codes: none.

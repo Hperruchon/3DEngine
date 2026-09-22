@@ -1,0 +1,13 @@
+# The write-set gate applies to each commit after this one.
+#
+# TASK-0026 turned the gate on for a push. Each commit that existed at that
+# moment is grandfathered, therefore nothing that a person already pushed can
+# fail. One commit on this branch touches no task file, ecb1f9a "gitignore:
+# ignore graphify-out", and it would fail for ever without this line.
+#
+# The exemption is explicit and bounded. It names one commit and it covers the
+# history behind that commit and nothing after it. Do not move this value to
+# make a gate pass; that action is the one that register rule 6 forbids.
+#
+# .github/workflows/ci.yml reads the value below.
+0609f13070d6917ee80f3aa14ecb553972b5efcf

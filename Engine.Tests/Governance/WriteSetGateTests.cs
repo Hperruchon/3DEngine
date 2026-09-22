@@ -159,17 +159,28 @@ public class WriteSetGateTests
 
         foreach (var file in changed)
         {
-            // A forbid beats a permit, and it beats a permit from another task.
-            // The strict reading is the safe one.
-            var blocked = refused.FirstOrDefault(r => r.Rule.IsMatch(file));
-            if (blocked.Rule is not null)
-            {
-                problems.Add($"{file} matches the forbid pattern '{blocked.pattern}' of {blocked.Id}");
+            // A permit beats a forbid. A forbid binds the task that declares it
+            // and no other task, because "Engine.Cli/** forbidden" on the
+            // persistence task means that the persistence work must stay out of
+            // the command line, and not that nobody may touch it.
+            //
+            // TASK-0022 had the opposite rule and called the strict reading the
+            // safe one. That was wrong, and it only looked right because every
+            // change tested against it carried one task. TASK-0026 corrected it
+            // after the v0.20 commit failed: TASK-0018 modified
+            // Engine.Cli/Cli.cs and declared it, and the forbid list of the
+            // deferred TASK-0019 blocked that declaration.
+            if (permitted.Any(rule => rule.IsMatch(file)))
                 continue;
-            }
 
-            if (!permitted.Any(rule => rule.IsMatch(file)))
-                problems.Add($"{file} is in no create list and in no modify list");
+            // The file is in no list. A forbid that matches it gives the better
+            // message, because it names the boundary that the author wrote.
+            var blocked = refused.FirstOrDefault(r => r.Rule.IsMatch(file));
+
+            problems.Add(blocked.Rule is not null
+                ? $"{file} matches the forbid pattern '{blocked.pattern}' of {blocked.Id}, "
+                    + "and no task in this change permits it"
+                : $"{file} is in no create list and in no modify list");
         }
 
         Assert.True(

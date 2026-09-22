@@ -37,7 +37,8 @@ Therefore each approved objective must have a track here.
 - P0.9 — The repository is clean. The gate runs on each push. v0.23, TASK-0023.
 - P0.6 — The gate passes on Windows, Linux and macOS. v0.24, TASK-0020.
 - P0.10 — A licence notice and a verified checksum for the native payload. v0.25, TASK-0024.
-- P0.11 — Each open question is decided. Two entries remain open. v0.26, TASK-0025. Track 0 is complete.
+- P0.11 — Each open question is decided. Two entries remain open. v0.26, TASK-0025.
+- P0.12 — The write-set gate runs in the pipeline and its forbid rule is correct. v0.27, TASK-0026. Track 0 is complete.
 
 ## Track 0 — Foundations
 
@@ -56,6 +57,7 @@ This track removes each condition that blocks other work.
 | P0.9 | Clean each branch, worktree and stash. Run the gate on each push. | 1 | **Shipped, v0.23** |
 | P0.10 | A licence notice and a verified checksum for the native payload. | 1 | **Shipped, v0.25** |
 | P0.11 | Decide each open question that does not need new work. | 1 | **Shipped, v0.26** |
+| P0.12 | Correct the forbid rule. Run the write-set gate on each commit. | 1 | **Shipped, v0.27** |
 
 ## Track P — The platform
 
