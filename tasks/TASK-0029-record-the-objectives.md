@@ -73,9 +73,16 @@ names no objective.
 - [x] `docs/CHARTER.md` numbers each objective from 1 to 20.
 - [x] Each objective citation in `CLAUDE.md`, `docs/**` and `tasks/**` resolves. The archive is
       excluded, because its header forbids its use.
-- [x] Each check failed on an injected violation: a citation of objective 21, a list with no
-      objective 13, a citation of anti-objective 17, and a citation of anti-objective 25. The last
-      injection proves that the objective check ignores the word "anti-objective".
+- [x] Each check failed on an injected violation: a citation of a twenty-first objective, a list
+      with no thirteenth objective, and two citations of an anti-objective that does not exist (the
+      numbers 17 and 25). The last injection proves that the objective check ignores the word
+      "anti-objective".
+
+**A correction.** Commit `1efa7b8` failed its own gate. The criterion above first described each
+injection in the words of a real citation, and the gate reported three missing numbers in this file.
+The commit reached the remote because the command chain tested the exit code of `tail` and not the
+exit code of `dotnet test`. The next commit corrects the words. Each later chain tests the exit code
+of the test run.
 - [x] The glossary defines objective and anti-objective.
 
 ## Outcome
