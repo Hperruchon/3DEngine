@@ -68,9 +68,6 @@ public sealed unsafe class Swapchain : IDisposable
         _swapChainImageViews = new VkImageView[swapChainImages.Length];
         Framebuffers = new VkFramebuffer[swapChainImages.Length];
 
-        // The 3.x overload takes the extent by reference, and a property has no address.
-        VkExtent2D extent = Extent;
-
         for (int i = 0; i < swapChainImages.Length; i++)
         {
             var viewCreateInfo = new VkImageViewCreateInfo(
@@ -82,7 +79,7 @@ public sealed unsafe class Swapchain : IDisposable
                 );
 
             Device.DeviceApi.vkCreateImageView(&viewCreateInfo, null, out _swapChainImageViews[i]).CheckResult();
-            Device.DeviceApi.vkCreateFramebuffer(RenderPass, new[] { _swapChainImageViews[i] }, ref extent, 1u, out Framebuffers[i]);
+            Device.DeviceApi.vkCreateFramebuffer(RenderPass, new[] { _swapChainImageViews[i] }, Extent, 1u, out Framebuffers[i]);
         }
     }
 

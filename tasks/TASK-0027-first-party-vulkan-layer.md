@@ -109,6 +109,16 @@ The desktop host draws through a first-party project that uses `Vortice.Vulkan` 
       message, and the exit code is 0.
 - [ ] Continuous integration passes on `ubuntu-latest`, `windows-latest` and `macos-latest`.
 
+**A correction.** Commit `885ba75` ticked "zero warnings" from an incremental build. A clean build
+of that commit gives one warning: CS9191 at `3DEngine.Vulkan/Swapchain.cs:85`. The 3.x parameter for
+the extent is `in` and not `ref`, therefore the port passed a local by `ref` with no need. The next
+commit passes the property directly.
+
+The cause of the false tick: the build that compiled the port ran behind a `sed` filter that failed,
+so its output was lost. The next build found the project up to date, compiled nothing, and reported
+zero warnings. A clean build (`--no-incremental`) of each commit is now the method for a warning
+count.
+
 ## Notes for the implementer
 
 Three commits, in this order, so that each diff has one topic:
