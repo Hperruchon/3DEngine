@@ -722,3 +722,18 @@ New tests: 3. The test list holds 201, up from 198. `dotnet build` gives zero er
 warnings on a clean build.
 
 Open entries: 3 of 15. New diagnostic codes: none.
+
+## v0.30 — The codebase review of 2026-09-23 is in the repository (governance, TASK-0030)
+
+The owner asked for a review of the code and then asked where to store it.
+`docs/reviews/2026-09-23-codebase-review.md` holds it: the architecture with four diagrams, the
+patterns, the defects in order of importance, the next task, the research with its sources, and a
+recommended approach. `docs/INDEX.md` names the folder and states the rule: a review is a dated
+record, and `CURRENT-STATE.md` stays the authority for what exists.
+
+The review found two defects that change design truth. A replay can rebuild a different Document
+after one rejected command, because `Document.Version` counts rejected events and the log does not
+hold them. And queries run with no lock in the HTTP host. The review records each finding. It does
+not act on one.
+
+No code changed. Tests: 201, unchanged. Open entries: 3 of 15. New diagnostic codes: none.
