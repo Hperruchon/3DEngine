@@ -737,3 +737,19 @@ hold them. And queries run with no lock in the HTTP host. The review records eac
 not act on one.
 
 No code changed. Tests: 201, unchanged. Open entries: 3 of 15. New diagnostic codes: none.
+
+## v0.31 — The codebase review is periodic (governance, TASK-0031)
+
+The owner asked for a dated review that repeats, so that the evolution of the code stays visible.
+
+Each review in `docs/reviews/` now has four fields: `date`, `commit`, `ledger` and `previous`. It
+also has twelve measures with a method for each, and findings with stable identifiers. Each later
+review must give the state of each earlier finding. `docs/templates.md`, section 7, gives the form.
+
+`Engine.Tests/Governance/CodebaseReviewGateTests.cs` fails the build when a field or a measure is
+absent, when a finding of the previous review has no state, or when more than six milestones follow
+the last review. The period counts milestones and not days, because objective 12 says that time is
+irregular. The next review must come before ledger entry v0.35. Four violations were injected, and
+each one failed. A complete second review passed as the positive control.
+
+New tests: 5. The test list holds 206, up from 201. Open entries: 3 of 15. New diagnostic codes: none.

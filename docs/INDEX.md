@@ -34,7 +34,7 @@ The canonical boundary diagram is the section "Authority diagram" in [CLAUDE.md]
 | `docs/glossary.md` | Canonical vocabulary — each term one line + a pointer to its defining file/ADR. |
 | `docs/conventions.md` | File/naming/grammar conventions that make grep cheap. |
 | `docs/adr/` | Architectural decisions (the *why*). Start at [adr/README.md](adr/README.md); read only the one that applies. |
-| `docs/reviews/` | Dated reviews of the code, one file for each review. A review is a record and not the authority: `CURRENT-STATE.md` says what exists. A task, a register entry or an ADR closes a finding; an edit to the review does not. |
+| `docs/reviews/` | Dated reviews of the code, one file for each review. A review is a record and not the authority: `CURRENT-STATE.md` says what exists. A task, a register entry or an ADR closes a finding; an edit to the review does not. A review is due before the seventh milestone after the last one ([templates.md](templates.md) section 7). |
 | `docs/architecture/` | Boundary view. **`engine-runtime-boundaries.md` is not current — see register entry R-0010.** |
 | `docs/CURRENT-STATE.md` | What is built today. Authoritative for "does X exist yet." |
 | `docs/diagnostics.md` | Diagnostic code registry. Append-only. |

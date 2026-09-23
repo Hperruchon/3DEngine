@@ -1,6 +1,17 @@
+---
+date: 2026-09-23
+commit: 01a42a1
+ledger: v0.28
+previous: none
+---
+
 # Codebase review — 2026-09-23
 
 This document uses Simplified Technical English (ASD-STE100). See `CLAUDE.md`, section "Language".
+
+This is the first codebase review. The next review must come before ledger entry v0.35: the build
+fails when a seventh milestone follows v0.28. `Engine.Tests/Governance/CodebaseReviewGateTests.cs`
+holds that rule, and `docs/templates.md`, section 7, gives the form.
 
 **Status: a dated record.** This review describes the code at one commit. `docs/CURRENT-STATE.md` is
 the authority for what exists. A finding here is closed by a task, a register entry or an ADR, and
@@ -40,6 +51,45 @@ this review uses. A finding that I did not check again says "reported by a revie
   R2 must change the hosts, which ADR-0018 and TASK-0028 exclude. **[Observed]**
 - **Continuous integration cannot see three losses.** A loss of the native path, a difference
   between platforms, and a skipped native test all give a green run. **[Observed]**
+
+## Measures
+
+Each review repeats these measures at its commit, so that two reviews show how the code changes. The
+values are for `01a42a1`. A source line is a line of a `.cs` or `.razor` file that git tracks.
+
+| Measure | Value | Method |
+|---|---|---|
+| Projects in the solution | 11 | `Project(` lines in `3DEngine.sln`. The packing project in `eng/` is outside it. |
+| Production source lines | 5,292 | Each project except `Engine.Tests`. |
+| Test source lines | 5,153 | `Engine.Tests`, 46 files. |
+| Tests | 198 | The ledger entry v0.28 and the test list. |
+| Gate classes | 11 | Test classes whose name ends in `GateTests`. |
+| Build warnings (clean build) | 0 | `dotnet build --no-incremental`. |
+| Open register entries | 3 | Section "Open" of `docs/register.md`. |
+| ADRs | 17 | `docs/adr/0001` to `0017`. |
+| Findings: critical | 2 | E1, E2. |
+| Findings: high | 6 | E3, E4, V1, V2, V3, T1. |
+| Findings: medium | 5 | E5, E6, V4, T2, G1. |
+| Findings: low | 2 | C1, P1. |
+
+Source lines for each project:
+
+| Project | Files | Lines |
+|---|---|---|
+| `Engine.Contracts` | 24 | 397 |
+| `Engine.Core` | 24 | 1,343 |
+| `Engine.Cli` | 5 | 397 |
+| `Engine.Api.Http` | 18 | 1,060 |
+| `Engine.Geometry.Manifold` | 4 | 273 |
+| `3DEngine.Core` | 13 | 221 |
+| `3DEngine.Vulkan` | 5 | 1,080 |
+| `3DEngine` | 3 | 140 |
+| `BlazorApp` (both projects) | 13 | 381 |
+| `Engine.Tests` | 46 | 5,153 |
+
+The first review has no previous review, therefore it has no section "Findings of the previous
+review". The next review must give the state of each finding below by its identifier: fixed, open or
+worse.
 
 ## 1 Current architecture
 
