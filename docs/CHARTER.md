@@ -198,9 +198,9 @@ and you must not join them.
    difference appears, the client treats as correct. A read-only projection that the client discards
    and builds again is not one.
 2. **Never bypass the CommandBus. No business logic in a client.** No state that can enter the saved
-   document arrives by a path other than a command on the log. An interactive tool sends provisional
-   commands to the same log, and one final command when the person completes the action. An
-   interactive tool must not use a separate buffer. Do not implement "save" as "write the memory to a
+   document arrives by a path other than a command on the log. An interactive tool keeps its preview
+   in the client, and it sends one command when the person releases the control (ADR-0007). A preview
+   never enters the log or the Document. Do not implement "save" as "write the memory to a
    file". Implement it as "write the log, and write an optional checkpoint that the log produces".
 3. **A query never changes state, never writes to the log, never replays and never streams.**
 4. **A command lands completely, or it does not land.** This rule applies to the log and to the

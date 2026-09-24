@@ -753,3 +753,34 @@ irregular. The next review must come before ledger entry v0.35. Four violations 
 each one failed. A complete second review passed as the positive control.
 
 New tests: 5. The test list holds 206, up from 201. Open entries: 3 of 15. New diagnostic codes: none.
+
+## v0.32 — The decisions of 2026-09-25 (governance, TASK-0032)
+
+The owner answered the nine questions of the architecture challenge. This milestone records each
+answer, and it changes no code.
+
+- **Three new ADRs, accepted on the decision of the owner.** ADR-0019: the desktop host owns the
+  session and serves the HTTP and WebSocket surface as a library, and `engine-api-http` becomes a
+  small program around the same library. ADR-0020: the version counts applied commands, and the reset
+  snapshot gains `seq` for the cursor. ADR-0021: an operation consumes its operands, and the Document
+  holds the live bodies only.
+- **ADR-0018 is accepted** after two corrections: both hosts call `Query<object>`, and
+  `FieldSchema.Items` waits. It amends ADR-0012 only.
+- **Five ADRs are now `Amended`:** ADR-0006, ADR-0008 and ADR-0010 by ADR-0020, ADR-0011 by ADR-0019,
+  and ADR-0012 by ADR-0018 and ADR-0021. ADR-0005 does not change, because it does not define the
+  version.
+- **Anti-objective 2** keeps the drag rule of ADR-0007: the preview stays in the client, and one
+  command goes to the log on release.
+- **Six ready tasks.** TASK-0034 (one serial boundary), TASK-0035 (the version), TASK-0036 (a host
+  refuses to start without the native backend), TASK-0028 (R2, now `Ready`), TASK-0037 (operand
+  consumption) and TASK-0038 (the hybrid topology). The roadmap gives their order.
+- **A gap in the write-set gate.** A commit that touches a task file gets all its permits. Register
+  entry R-0026 records the risk, which an injection found.
+- **The architecture challenge** is in `docs/reviews/2026-09-23-architecture-challenge.md`, with the
+  answers of the owner in its last section.
+
+Nothing new exists in the code. `CLAUDE.md` gives the hybrid topology as the target, not as the
+state.
+
+New tests: 0. The test list holds 206. Open entries: 10 of 15. New diagnostic codes: none. The next
+codebase review must come before ledger entry v0.35.

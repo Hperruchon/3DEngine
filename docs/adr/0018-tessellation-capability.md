@@ -1,18 +1,19 @@
 ---
 id: 0018
 title: The tessellation capability
-status: Proposed
+status: Accepted
 topic: Geometry, contracts, rendering
 date: 2026-09-23
 supersedes: []
 superseded-by: []
-amends: []
+amends: ['0012']
 amended-by: []
 affects:
   - Engine.Contracts/Geometry/**
-  - Engine.Contracts/Schema/**
   - Engine.Core/Queries/**
   - Engine.Geometry.Manifold/**
+  - Engine.Cli/Cli.cs
+  - Engine.Api.Http/Endpoints/QueriesEndpoint.cs
 enforced-by: Engine.Tests/Queries/GetTessellationQueryTests.cs (TASK-0028 creates it)
 ---
 
@@ -43,13 +44,19 @@ Five facts limit the choice:
    `manifold_meshgl64_vert_properties` and `manifold_meshgl64_tri_verts`, in each of the seven native
    libraries for `linux-x64`, `osx-arm64` and `win-x64`. A name that does not exist was absent, which
    proves that the search can fail. R2 therefore needs no new native build.
-4. ADR-0013 §2 defers the item type of an array, and it names the moment to add it: "When the first
-   command needs nested schema ... this ADR amends to add an optional `Items` and `Properties` to
-   `FieldSchema`." A result with an array of numbers is that moment. `SchemaQueriesEndpoint` gives
-   each `FieldSchema` of a handler as it is, therefore a new field needs no endpoint code.
-5. The change adds a type, an interface and a flag to `Engine.Contracts/Geometry/`, and a field to
-   `Engine.Contracts/Schema/FieldSchema.cs`. `CLAUDE.md`, section "Stop and ask", gives that decision
-   to the owner. This record is the proposal.
+4. Both hosts fix the result type of a query to `Aabb` (`Engine.Cli/Cli.cs:157`,
+   `Engine.Api.Http/Endpoints/QueriesEndpoint.cs:81`). The bus casts the result of the handler to
+   that type, therefore a `Tessellation` result fails in each host. On 2026-09-23 a probe called the
+   bus with the type `object` and wrote the result with the options of `ApiJson`. The JSON held the
+   real fields of each record. The correction is one type argument in each host.
+5. The change adds a type, an interface and a flag to `Engine.Contracts/Geometry/`. `CLAUDE.md`,
+   section "Stop and ask", gives that decision to the owner.
+
+The first draft of this record, of 2026-09-23, had two errors. It said that the hosts were generic
+already, and fact 4 disproves that. It also added the field `Items` to `FieldSchema`. That field adds
+`"items": null` to each field in `/schema`, and R2 does not need it. The architecture challenge of
+2026-09-23 (`docs/reviews/2026-09-23-architecture-challenge.md`) found both errors. This text
+corrects them. The owner accepted the corrected record on 2026-09-25.
 
 ## Decision
 
@@ -77,17 +84,21 @@ Five facts limit the choice:
    Parameter: `bodyId` (guid, required). Result: `vertexCount` (integer), `triangleCount` (integer),
    `positions` (array of number) and `indices` (array of integer). The errors are
    `E-GEOM-CAP-MISSING` and `E-GEOM-BODY-NOT-FOUND`, which exist. No new diagnostic code.
-7. **The item type of an array.** `FieldSchema` gains the optional field `Items`, which names the
-   type of each item of an array. It uses the same vocabulary as `Type`. `Properties` stays
-   deferred, because no field holds an object. This amends ADR-0013 §2 in the way that §2 planned.
+7. **Generic results in the hosts.** `Engine.Cli` and `Engine.Api.Http` call `Query<object>`, and
+   they write the result as JSON. A caller in the same process keeps the typed call
+   `Query<Tessellation>`. Each later query then needs no change to a host. The schema gives
+   `positions` and `indices` the type `array`. The item type of an array waits: ADR-0013 §2 gives the
+   moment to add it, and no client needs it now.
 8. **One backend.** `ManifoldGeometryBackend` implements the capability. The managed
    `InProcessMeshBackend` does not, for the reason that ADR-0012 Amendment 1 gives for a transform
    and a boolean: the managed backend holds box sizes only, and a second implementation of the same
    output is a second place for one rule.
-9. **Winding, measured.** The tessellation is wound counter-clockwise when seen from outside the body.
-   The header of Manifold 3.5.2 does not state this plainly. TASK-0028 must measure it: the signed
-   volume of the triangles of a 2 × 3 × 4 box must be +24. If the measurement gives −24, the task
-   stops, and a new record decides where the winding changes.
+9. **Winding.** The tessellation is wound counter-clockwise when seen from outside the body. The
+   Manifold documentation of `MeshGLP` states this: the triangle indices are "in CCW (from the
+   outside) order". glTF 2.0 uses the same rule. That page shows version 3.0 and not 3.5.2, therefore
+   TASK-0028 also measures it: the signed volume of the triangles of a 2 × 3 × 4 box must be +24, and
+   it must equal `manifold_volume`. If the measurement gives −24, the task stops, and a new record
+   decides where the winding changes.
 
 ## Consequences
 
@@ -95,14 +106,13 @@ Five facts limit the choice:
 triangles from the same query. The capability is typed, as anti-objective 9 requires. No native
 rebuild is needed.
 
-**Bad:** `Engine.Contracts` grows by one type, one interface, one flag and one schema field. Each
-field in `/schema` now also gives `"items": null` when it is not an array, because
-`Engine.Api.Http/Json/ApiJson.cs` writes a null value. A JSON
-array of doubles is large: a finely carved body can give megabytes, and a later version must change
+**Bad:** `Engine.Contracts` grows by one type, one interface and one flag. The schema says `array`
+for `positions` and `indices`, and it does not say the type of an item. A JSON array of doubles is
+large: a finely carved body can give megabytes, and a later version must change
 the form. A host with no native payload shows no geometry, because the managed backend refuses. When
 the owned kernel arrives (track K), it needs a tolerance parameter, and that is version 2 of the
 query.
 
-**Next:** TASK-0028. On acceptance, this record amends ADR-0012 and ADR-0013: the field `amends` gets
-`0012` and `0013`, ADR-0012 gets `amended-by: ['0018']` and the status `Amended`, ADR-0013 adds
-`0018` to `amended-by`, and TASK-0028 gets the status `Ready`.
+**Next:** TASK-0028. It waits for TASK-0034 (queries in series with commands) and TASK-0036 (a native
+test that cannot skip in the pipeline). This record closes the open challenge of ADR-0012, therefore
+it amends ADR-0012. It does not amend ADR-0013.

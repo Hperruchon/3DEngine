@@ -114,6 +114,101 @@ name. `docs/templates.md` says that two gates exist; eleven gate classes exist. 
 files first, therefore the limit is 30 days and not 180.
 Exit: each statement agrees with the repository, and a gate fails when `docs/INDEX.md` names a path
 that does not exist.
+Progress 2026-09-25: TASK-0032 corrected the two statements in `docs/adr/README.md`. The legend now
+gives the six statuses, and the section about ADR-0015 on a branch is gone.
+
+### R-0020 · The platform list needs a study before objective 8 changes
+- class: question
+- opened: 2026-09-25
+- due: 2026-12-24
+- extended: no
+- refs: `docs/CHARTER.md` objective 8 and anti-objective 16, `docs/reviews/2026-09-23-architecture-challenge.md` concern 4, R-0007
+Objective 8 names Windows, Linux and macOS. Anti-objective 16 names x64 and arm64 for each. The
+Manifold package covers `win-x64`, `linux-x64` and `osx-arm64` only. On 2026-09-25 the owner asked
+for each platform, Android included, and added: "maybe we should check how to make it as simple as
+possible". Android is not in the twenty objectives. A study must give the cost of each platform: the
+native build, the runner, the Vulkan path, and the test from one computer.
+Exit: the owner decides the platform list from the study, and objective 8 and anti-objective 16 agree
+with it.
+
+### R-0021 · The project has no decision on how to show the application
+- class: question
+- opened: 2026-09-25
+- due: 2026-12-24
+- extended: no
+- refs: ADR-0003, ADR-0019, TASK-0033
+On 2026-09-25 the owner said: "a browser client is not the main idea, we may need to rethink how to
+show the app". TASK-0033 removes the Blazor pair, and the desktop window is then the only client that
+draws. The means to show the application to a person is open: the desktop window only, a user
+interface toolkit in the window, a remote view, or a recorded demonstration.
+Exit: the owner decides, and a task or an ADR records the decision.
+
+### R-0022 · Three Vulkan defects block the first render on Linux and on macOS
+- class: debt
+- opened: 2026-09-25
+- due: 2027-03-24
+- extended: no
+- refs: `3DEngine.Vulkan/GraphicsDevice.cs:377-379`, `3DEngine.Vulkan/Swapchain.cs:174`, `docs/reviews/2026-09-23-codebase-review.md` findings V1, V2 and V3
+V1: the host treats `VK_SUBOPTIMAL_KHR` as a failure and gives a semaphore back to the pool while its
+signal is pending. V2: the special extent value `0xFFFFFFFF` passes the size check, and the fallback
+reads the window size in logical units. V3: the instance and the device set no portability flag, so
+a current loader on macOS does not list MoltenVK. The host only clears the screen today, therefore no
+defect shows now.
+Exit: each defect is corrected, with the check that the review gives for it, before the first render
+phase that runs on Linux or on macOS.
+
+### R-0023 · No gate compares the native output of one platform with another
+- class: debt
+- opened: 2026-09-25
+- due: 2027-03-24
+- extended: no
+- refs: `Engine.Tests/ReplayDeterminism/ReplayDeterminismGateTests.cs`, `docs/reviews/2026-09-23-codebase-review.md` finding T1, anti-objective 16
+The replay gate runs on the managed backend, and it compares no geometry value. Each runner compares
+only with its own constants. A difference in the Manifold output between Windows, Linux and macOS
+therefore passes. Anti-objective 16 requires the same result on each platform. The cost becomes real
+when a saved document moves between platforms.
+Exit: the repository holds a baseline of exact native outputs, such as the bits of a bounding box and
+a hash of a mesh, and each runner compares its output with that baseline.
+
+### R-0024 · The render projection may need to read `Engine.Contracts`
+- class: question
+- opened: 2026-09-25
+- due: 2026-12-24
+- extended: no
+- refs: ADR-0009 §2 and §4, ADR-0021, `docs/roadmap.md` phase R5, `docs/reviews/2026-09-23-architecture-challenge.md` concern 1
+ADR-0009 §2 forbids a reference in each direction between the two kernels, and ADR-0009 §4 puts the
+projection from events to render state in the host. The desktop host needs a graphics processor, so
+a runner with none cannot test a projection that lives there. The architecture challenge recommends
+this: a projection with no graphics code may read `Engine.Contracts`, and design truth never reads
+render state. The owner did not decide it.
+Exit: the owner decides before phase R5 starts, and ADR-0009 is amended or kept.
+
+### R-0025 · ADR-0015 describes the durability of a server and not a document file
+- class: question
+- opened: 2026-09-25
+- due: 2026-12-24
+- extended: no
+- refs: ADR-0015 §5, ADR-0019, `CLAUDE.md` section "Scope clamps", objective 11, `docs/reviews/2026-09-23-architecture-challenge.md` concern 7
+`CLAUDE.md` connects objective 11 to "a document that a person saves and opens". ADR-0015 has the
+status `Proposed`, and its §5 limits persistence to one log file for each `engine-api-http` process,
+with no open and no save by a person. Under ADR-0019 the desktop owns the session, therefore that
+scope misses the product. The architecture challenge recommends a rewrite around a document file. The
+owner did not decide it.
+Exit: the owner accepts a rewritten ADR-0015, or refuses the rewrite and gives the reason.
+
+### R-0026 · A commit that touches a task file gets all the permits of that task
+- class: risk
+- opened: 2026-09-25
+- due: 2026-10-25
+- extended: no
+- refs: `Engine.Tests/Governance/WriteSetGateTests.cs` (the test `Every_Changed_File_Is_Inside_The_Write_Set_Of_A_Changed_Task`), TASK-0032
+The write-set gate lets each task file that a commit touches govern that commit. On 2026-09-25 the
+change list of TASK-0032 received `Engine.Core/CommandBus.cs` as an injection, and the gate passed.
+The reason: TASK-0034, TASK-0035 and TASK-0037 are new in the same commit, and each one permits that
+file. A commit that plans work can therefore also change code, and no check sees it. A second
+injection, a file that no task permits, failed as it must.
+Exit: the gate limits the permits of a commit to the task that does the work of the commit. Or: the
+owner accepts the risk and gives the reason.
 
 ## Accepted compromises
 

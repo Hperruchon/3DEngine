@@ -59,12 +59,17 @@ This track removes each condition that blocks other work.
 | P0.10 | A licence notice and a verified checksum for the native payload. | 1 | **Shipped, v0.25** |
 | P0.11 | Decide each open question that does not need new work. | 1 | **Shipped, v0.26** |
 | P0.12 | Correct the forbid rule. Run the write-set gate on each commit. | 1 | **Shipped, v0.27** |
+| P0.13 | One serial boundary for commands, queries and snapshots. TASK-0034. | 2–3 | Pending |
+| P0.14 | The version counts applied commands. ADR-0020, TASK-0035. | 1–2 | Pending |
+| P0.15 | A host refuses to start without the native backend. TASK-0036. | 1–2 | Pending |
+| P0.16 | An operation consumes its operands. ADR-0021, TASK-0037. | 2–3 | Pending |
+| P0.17 | The desktop host owns a session and serves the surface. ADR-0019, TASK-0038. | 3–5 | Pending |
 
 ## Track P — The platform
 
 | Phase | Content | Evenings | Status |
 |---|---|---|---|
-| P8a | Persistence. A command log on disk. ADR-0015. | 3–5 | Pending |
+| P8a | Persistence. A command log on disk. ADR-0015. Register entry R-0025 asks if the scope becomes a document file. | 3–5 | Pending |
 | P8b | The container model. One document holds one part. An assembly holds references at a fixed version. | 5–8 | Pending |
 | P8c | Undo and redo. Add the inverse command. | 3–5 | Pending |
 | P8d | The three layers. Log, ordered feature list, regeneration cache. | 5–8 | Pending |
@@ -80,8 +85,8 @@ The first objective. Each phase ends with something that a person can observe.
 | R2 | A tessellation capability. A mesh leaves the geometry backend. | 4–6 | Pending |
 | R3 | A pipeline. A triangle, then an indexed mesh. | 4–6 | Pending |
 | R4 | A camera with depth. Flat scene arrays. Each draw through an indirect interface. | 5–7 | Pending |
-| R5 | Geometry from the engine. Subscribe to events, fetch a mesh, draw it. | 6–8 | Pending |
-| R6 | Observe a cut. A view filter for the latest result. A headless image test. | 4–6 | Pending |
+| R5 | Geometry from the engine. Subscribe to events, fetch a mesh, draw it. Subtract a double-precision origin before the narrowing to float. Choose `frontFace` together with the viewport flip. | 6–8 | Pending |
+| R6 | Observe a cut. The live body set of ADR-0021 gives the result. A headless image test. | 4–6 | Pending |
 | R7 | Device-tagged pointer samples. The intent layer and the parity test. | 4–7 | Pending |
 | R8 | Selection, name and visibility as commands. | 4–6 | Pending |
 | R9 | A transform gizmo at a constant screen size. | 5–8 | Pending |
@@ -119,7 +124,10 @@ The first domain extension. Objective 15 puts it before materials, chemistry and
 
 The tracks are not strictly sequential, but three rules hold:
 
-1. Track 0 comes first. Each phase in it removes a condition that blocks other work.
+1. Track 0 comes first. Each phase in it removes a condition that blocks other work. Two exceptions
+   are on record: P0.16 and P0.17 must be done before R5, and R2 can start before them. P0.13 and
+   P0.15 must be done before R2, because the tests of R2 need a serial read and a native backend
+   that surely ran.
 2. R2 blocks each later phase in track R. No mesh leaves the geometry backend today.
 3. K4 needs K0, K1 and K2. Do not start K4 before the reference model exists.
 

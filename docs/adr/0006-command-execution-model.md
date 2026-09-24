@@ -7,11 +7,11 @@ date: 2026-04-28
 supersedes: []
 superseded-by: []
 amends: []
-amended-by: ['0008']
+amended-by: ['0008', '0020']
 affects:
   - Engine.Core/CommandBus.cs
 enforced-by: Engine.Tests/CommandBusTests.cs
-notes: ADR-0008 extended the CommandResult shape.
+notes: ADR-0008 extended the CommandResult shape. ADR-0020 changed the meaning of the version.
 ---
 
 # ADR 0006 — Command Execution Model

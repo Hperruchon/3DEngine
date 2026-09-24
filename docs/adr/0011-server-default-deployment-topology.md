@@ -1,13 +1,13 @@
 ---
 id: 0011
 title: Server-default deployment, embed for offline
-status: Accepted
+status: Amended
 topic: Clients, deployment
 date: 2026-05-12
 supersedes: []
 superseded-by: []
 amends: ['0004']
-amended-by: []
+amended-by: ['0019']
 affects:
   - Engine.Api.Http/**
   - Engine.Cli/**

@@ -80,16 +80,26 @@ ADR-0009.
 
 ## Deployment topology
 
-`engine-api-http` is the approved deployment. It runs in its own process. Its lifecycle is
-independent of each client. User interfaces, agents and remote clients use its HTTP interface and
-its WebSocket interface.
+**The target is the hybrid topology of ADR-0019. TASK-0038 builds it. Until then, the text below
+"Today" describes the code.**
 
-Embedded mode is a subset of this topology. In embedded mode the client hosts the engine in its
-own process. Embedded mode permits exactly one client. It permits no observers. It keeps no state
-between invocations. Use embedded mode for offline work by one person. `Engine.Cli` is the
-approved embedded host.
+The target:
 
-Engine code knows nothing about HTTP and nothing about processes. See ADR-0011.
+- The desktop host owns the session of the open document in its own process. It sends typed
+  commands and queries to the same buses as each other client. It has no privileged lane.
+- The desktop host also mounts the HTTP and WebSocket surface, as a library, on the loopback
+  address. An agent then works live on the document that the person has open.
+- `engine-api-http` is a small program around the same library. It serves headless work, and its
+  lifecycle is independent of each client.
+
+Today: `engine-api-http` is the only host with the HTTP and WebSocket surface. It runs in its own
+process. The desktop host has no path to the engine.
+
+Embedded mode stays. In embedded mode the client hosts the engine in its own process. Embedded mode
+permits exactly one client. It permits no observers. It keeps no state between invocations.
+`Engine.Cli` is the approved embedded host.
+
+Engine code knows nothing about HTTP and nothing about processes. See ADR-0011 and ADR-0019.
 
 ## Dependency rules
 

@@ -1,13 +1,13 @@
 ---
 id: 0012
 title: Geometry backend wiring
-status: Accepted
+status: Amended
 topic: Boundary, geometry, contracts
 date: 2026-05-27
 supersedes: []
 superseded-by: []
 amends: []
-amended-by: []
+amended-by: ['0018', '0021']
 affects:
   - Engine.Contracts/Geometry/**
   - Engine.Core/Commands/**
