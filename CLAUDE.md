@@ -209,6 +209,9 @@ A session starts in this order:
 2. Read the last entry in CURRENT-STATE.md.
 3. Advance the next task that has the status `Ready`.
 
+A codebase review is due before the seventh milestone after the last review. The build fails when
+it is late. `docs/templates.md`, section 7, gives the form, and `docs/reviews/` holds each review.
+
 A session ends only in these conditions:
 
 - CURRENT-STATE.md has a new entry, or you updated an entry.

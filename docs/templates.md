@@ -232,5 +232,68 @@ This table shows the purpose of each field. It also shows which checks do not ex
 | Diagnostic register | source files and `diagnostics.md` | A code exists in one position only. Check both directions. |
 | Schema parity | handlers and the `/schema` output | The output is different from the declaration |
 | Replay determinism | the fixture | The replay result is different, except for the timestamp and the document identifier |
+| Codebase review | `docs/reviews/*.md` and the ledger | A field or a measure is absent, a finding of the previous review has no state, or more than six milestones follow the last review |
 
 Ten of these twelve gates are small scripts that read text. Two gates exist today.
+
+---
+
+## 7 Codebase review
+
+A codebase review describes the code at one commit. Each review is one file in `docs/reviews/`, with
+the name `YYYY-MM-DD-codebase-review.md`. Do not change an earlier review to agree with the code. Write
+the next one. `Engine.Tests/Governance/CodebaseReviewGateTests.cs` reads this form.
+
+**When.** A review is due before the seventh milestone after the ledger version that the last review
+examined. The gate counts ledger entries in `docs/CURRENT-STATE.md`, not days, because objective 12
+says that time is irregular.
+
+```markdown
+---
+date: YYYY-MM-DD
+commit: <the hash of the commit that the review examines>
+ledger: v0.nn
+previous: <the file name of the previous review, or none>
+---
+
+# Codebase review — YYYY-MM-DD
+
+## Summary
+## Measures
+| Measure | Value | Method |
+|---|---|---|
+| Projects in the solution | | |
+| Production source lines | | |
+| Test source lines | | |
+| Tests | | |
+| Gate classes | | |
+| Build warnings (clean build) | | |
+| Open register entries | | |
+| ADRs | | |
+| Findings: critical | | |
+| Findings: high | | |
+| Findings: medium | | |
+| Findings: low | | |
+
+## Findings of the previous review
+<One line for each identifier of the previous review: fixed, open or worse, with the evidence.>
+
+## 1 Current architecture
+## 2 Patterns in use
+## 3 Review of the code
+#### E1 · Critical · <one line> · Confirmed
+## 4 The next planned task
+## 5 Research for that task
+## 6 Recommended approach
+## Questions for the owner
+```
+
+### Rules
+
+| Item | Rule |
+|---|---|
+| Identifier | Each finding has a heading `#### <letter><number> · <severity> · <title> · <state>`. An identifier stays with its finding in each later review. A new finding gets a new number. |
+| Measures | Use the same method as the previous review, so that the values compare. Give the method in the third column. |
+| Previous findings | The gate fails when a finding of the previous review has no line. "Open" is a correct answer. |
+| Labels | Mark each statement **[Observed]**, **[Inferred]** or **[Recommended]**. |
+| Closing a finding | A task, a register entry or an ADR closes a finding. The next review records the result. |

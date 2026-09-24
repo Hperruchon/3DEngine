@@ -700,3 +700,56 @@ warnings on a clean build.
 Opened: R-0019. Open entries: 3 of 15.
 
 New diagnostic codes: none.
+
+## v0.29 — The twenty objectives are in the charter (governance, TASK-0029)
+
+The owner asked for a check of each rule against the objectives. The repository held no list of
+objectives. `CLAUDE.md` cited "Objective 11" and `docs/roadmap.md` cited "Objective 15", and no file
+defined either number. The owner confirmed the twenty objectives on 2026-09-20, but the list lived
+only in the transcript of that session.
+
+**The list.** `docs/CHARTER.md` now holds the section "The twenty objectives", in five groups, with
+the two refinements of the owner for objectives 18 and 19. Objective 1 says "separate from work for
+an employer" and does not name a product of the employer, because the repository is public.
+
+**The gate.** `Engine.Tests/Governance/ObjectiveReferenceGateTests.cs` fails when the list is not
+numbered from 1 to 20, and when a document cites an objective or an anti-objective that does not
+exist. Four violations were injected, and each one failed with the file and the line.
+
+**Two terms.** The glossary defines objective and anti-objective.
+
+New tests: 3. The test list holds 201, up from 198. `dotnet build` gives zero errors and zero
+warnings on a clean build.
+
+Open entries: 3 of 15. New diagnostic codes: none.
+
+## v0.30 — The codebase review of 2026-09-23 is in the repository (governance, TASK-0030)
+
+The owner asked for a review of the code and then asked where to store it.
+`docs/reviews/2026-09-23-codebase-review.md` holds it: the architecture with four diagrams, the
+patterns, the defects in order of importance, the next task, the research with its sources, and a
+recommended approach. `docs/INDEX.md` names the folder and states the rule: a review is a dated
+record, and `CURRENT-STATE.md` stays the authority for what exists.
+
+The review found two defects that change design truth. A replay can rebuild a different Document
+after one rejected command, because `Document.Version` counts rejected events and the log does not
+hold them. And queries run with no lock in the HTTP host. The review records each finding. It does
+not act on one.
+
+No code changed. Tests: 201, unchanged. Open entries: 3 of 15. New diagnostic codes: none.
+
+## v0.31 — The codebase review is periodic (governance, TASK-0031)
+
+The owner asked for a dated review that repeats, so that the evolution of the code stays visible.
+
+Each review in `docs/reviews/` now has four fields: `date`, `commit`, `ledger` and `previous`. It
+also has twelve measures with a method for each, and findings with stable identifiers. Each later
+review must give the state of each earlier finding. `docs/templates.md`, section 7, gives the form.
+
+`Engine.Tests/Governance/CodebaseReviewGateTests.cs` fails the build when a field or a measure is
+absent, when a finding of the previous review has no state, or when more than six milestones follow
+the last review. The period counts milestones and not days, because objective 12 says that time is
+irregular. The next review must come before ledger entry v0.35. Four violations were injected, and
+each one failed. A complete second review passed as the positive control.
+
+New tests: 5. The test list holds 206, up from 201. Open entries: 3 of 15. New diagnostic codes: none.

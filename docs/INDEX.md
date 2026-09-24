@@ -26,7 +26,7 @@ The canonical boundary diagram is the section "Authority diagram" in [CLAUDE.md]
 
 | Path | Purpose |
 |---|---|
-| `docs/CHARTER.md` | Mission, target consumers, non-goals against anti-objectives, the kernel boundary, the agent scope test. Read first if you do not know whether to act. |
+| `docs/CHARTER.md` | Mission, the twenty objectives, target consumers, non-goals against anti-objectives, the kernel boundary, the agent scope test. Read first if you do not know whether to act. |
 | `docs/INDEX.md` | This map. |
 | `docs/working-agreement.md` | How to behave. Scope, the record, accuracy, decisions, time, parallel agents. |
 | `docs/templates.md` | The forms for a register entry, an ADR, a task and a commit. |
@@ -34,6 +34,7 @@ The canonical boundary diagram is the section "Authority diagram" in [CLAUDE.md]
 | `docs/glossary.md` | Canonical vocabulary — each term one line + a pointer to its defining file/ADR. |
 | `docs/conventions.md` | File/naming/grammar conventions that make grep cheap. |
 | `docs/adr/` | Architectural decisions (the *why*). Start at [adr/README.md](adr/README.md); read only the one that applies. |
+| `docs/reviews/` | Dated reviews of the code, one file for each review. A review is a record and not the authority: `CURRENT-STATE.md` says what exists. A task, a register entry or an ADR closes a finding; an edit to the review does not. A review is due before the seventh milestone after the last one ([templates.md](templates.md) section 7). |
 | `docs/architecture/` | Boundary view. **`engine-runtime-boundaries.md` is not current — see register entry R-0010.** |
 | `docs/CURRENT-STATE.md` | What is built today. Authoritative for "does X exist yet." |
 | `docs/diagnostics.md` | Diagnostic code registry. Append-only. |
