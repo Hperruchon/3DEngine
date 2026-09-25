@@ -37,7 +37,7 @@ public class AdrGateTests
     // The count of ADRs with no enforcement, at the moment this gate was built.
     // The gate fails when the count grows. It does not fail on the present count,
     // because two records describe work that is deliberately not built.
-    private const int UnenforcedBudget = 2;
+    private const int UnenforcedBudget = 1;
 
     [Fact]
     public void Every_Adr_Has_Front_Matter_With_Each_Required_Field()

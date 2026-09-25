@@ -1,7 +1,7 @@
 # 3DEngine.Core Architecture
 
 ## Purpose
-`3DEngine.Core` is the shared engine/domain library for the solution. It defines the contracts, scene model, and resource descriptors that can be consumed by both the desktop runtime and the Blazor tooling without bringing native rendering dependencies into shared code.
+`3DEngine.Core` is the shared engine/domain library for the solution. It defines the contracts, scene model, and resource descriptors that the desktop runtime consumes without bringing native rendering dependencies into shared code.
 
 ## What Belongs Here
 - Engine lifecycle contracts such as `IThreeDEngine`
@@ -13,9 +13,8 @@
 - SDL window management
 - Vulkan device setup or render loop code
 - ASP.NET Core host configuration
-- Blazor-specific components, pages, or UI state
 
 ## Dependency Rules
 - `3DEngine.Core` may depend on the .NET base class library and other platform-neutral packages.
-- `3DEngine.Core` must not depend on `3DEngine`, `BlazorApp`, or `BlazorApp.Client`.
-- `3DEngine`, `BlazorApp`, and `BlazorApp.Client` are expected to depend on this project when they need shared engine contracts or data models.
+- `3DEngine.Core` must not depend on `3DEngine`.
+- `3DEngine` is expected to depend on this project when it needs shared engine contracts or data models.

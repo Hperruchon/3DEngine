@@ -98,7 +98,7 @@ We use <...>.
 
 | Field | Rule |
 |---|---|
-| `status` | Use one value: `Proposed`, `Accepted`, `Amended`, `Superseded`, `Withdrawn` or `Rejected`. `Amended` means that a later ADR changes one part; both records apply. `Superseded` means that a later ADR replaces this one; this record does not apply. Do not write the number in the status. The fields `amended-by` and `superseded-by` give the number. `Withdrawn` means that the author changed the proposal. `Rejected` means that the project examined the proposal and refused it. |
+| `status` | Use one value: `Proposed`, `Accepted`, `Amended`, `Superseded`, `Withdrawn` or `Rejected`. `Amended` means that a later ADR changes one part; both records apply. `Superseded` means that a later ADR replaces this one; this record does not apply. Do not write the number in the status. The fields `amended-by` and `superseded-by` give the number. `Withdrawn` means that the author changed the proposal, or that the owner took back an accepted record that no later record replaces. `Rejected` means that the project examined the proposal and refused it. |
 | `amends` and `amended-by` | These fields are reciprocal, in the same way. A record with `amended-by` set must carry the status `Amended`. |
 | `supersedes` and `superseded-by` | These fields are reciprocal. If ADR-0011 supersedes ADR-0004, then ADR-0004 must give ADR-0011 in `superseded-by`. The gate fails if one field is absent. This check finds the error in register entry R-0006. |
 | `affects` | Give path patterns. A gate compares these patterns with the write-set of a task. The result is the list of ADRs that the agent must read. This field lets the project hold more than 40 ADRs. |

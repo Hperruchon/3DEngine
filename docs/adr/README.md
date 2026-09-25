@@ -8,7 +8,7 @@ This index is the entry point for ADRs. Find the relevant decision; do not read 
 - **Amended** — modified by a later ADR; both apply, see "Amended by".
 - **Superseded** — replaced by a later ADR; do not apply.
 - **Proposed** — not yet accepted; informational.
-- **Withdrawn** — the author or the owner took the proposal back; do not apply.
+- **Withdrawn** — the author took a proposal back, or the owner took back a decision that no later ADR replaces; do not apply.
 - **Rejected** — the project examined the proposal and refused it; do not apply.
 
 ## Index
@@ -17,7 +17,7 @@ This index is the entry point for ADRs. Find the relevant decision; do not read 
 |---|---|---|---|---|---|
 | [0001](0001-kernel-abstraction-capabilities.md) | Geometry kernel abstraction by capabilities | Accepted | Boundary, geometry | — | — |
 | [0002](0002-headless-first-cli-as-canonical-client.md) | Headless-first; CLI as canonical client | Accepted | Workflow, clients | — | — |
-| [0003](0003-blazor-as-thin-viewer.md) | Blazor as thin viewer | Accepted | Clients | — | — |
+| [0003](0003-blazor-as-thin-viewer.md) | Blazor as thin viewer | Withdrawn | Clients | — | — |
 | [0004](0004-engine-runtime-is-authority.md) | Engine Runtime is the authoritative controller | Amended | Boundary, authority | — | 0011 |
 | [0005](0005-event-stream-and-replay.md) | Event stream and replay protocol | Accepted | Contracts, observability | — | — |
 | [0006](0006-command-execution-model.md) | Command execution model | Amended | Contracts, runtime | — | 0008, 0020 |
@@ -42,7 +42,7 @@ This index is the entry point for ADRs. Find the relevant decision; do not read 
 - **Contracts** — 0005, 0006, 0008, 0012, 0013, 0018, 0020, 0021. Read these before changing `Engine.Contracts/**`.
 - **Boundary** — 0001, 0004, 0007, 0012, 0014, 0017. Read these before changing project references or adding clients.
 - **Workflow** — 0002. Read before adding a client or skipping CLI.
-- **Clients** — 0002, 0003, 0007, 0011, 0019. Read before changing UI/CLI/host code.
+- **Clients** — 0002, 0007, 0011, 0019. Read before changing UI/CLI/host code.
 - **Deployment** — 0011, 0019. Read these before changing where a session runs or which transport a host uses.
 - **Geometry** — 0001, 0012, 0014, 0018, 0021. Read before adding a capability or backend.
 - **Observability** — 0005, 0010, 0013, 0020, 0021. Read before changing event ordering, retention, subscription, or schema endpoints.

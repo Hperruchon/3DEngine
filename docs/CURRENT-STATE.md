@@ -784,3 +784,21 @@ state.
 
 New tests: 0. The test list holds 206. Open entries: 10 of 15. New diagnostic codes: none. The next
 codebase review must come before ledger entry v0.35.
+
+## v0.33 — The web shell is removed (governance, TASK-0033)
+
+The owner said on 2026-09-25 that a browser client is not the main idea. `BlazorApp` and
+`BlazorApp.Client` were a template that made no call to the engine, so this milestone deletes them.
+
+- The solution holds no Blazor project. The two entries in `3DEngine.sln` are gone.
+- ADR-0003 has the status `Withdrawn`, with the reason in its field `notes`. The legend and
+  `docs/templates.md` now permit the owner to withdraw an accepted record that no later record
+  replaces.
+- The budget of unenforced ADRs falls from 2 to 1, because ADR-0003 was one of the two.
+- `CLAUDE.md`, `docs/INDEX.md`, the pull request template and the notes of `3DEngine.Core` name no
+  Blazor project.
+
+Register entry R-0021 holds the open question of how to show the application.
+
+New tests: 0. The test list holds 206. Open entries: 10 of 15. New diagnostic codes: none. The next
+codebase review must come before ledger entry v0.35.

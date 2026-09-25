@@ -51,4 +51,3 @@ that declares it.
 | Path | What it is |
 |---|---|
 | `3DEngine/` | Vulkan/SDL3 desktop host. Draws through `3DEngine.Vulkan`. |
-| `BlazorApp/`, `BlazorApp.Client/` | Placeholder shell. |

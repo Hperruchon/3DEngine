@@ -12,7 +12,7 @@
 
 - [ ] `Engine.Contracts/**` unchanged — or — a new/updated ADR in this PR explains the change.
 - [ ] No new `E-`/`W-`/`I-` diagnostic codes — or — `docs/diagnostics.md` updated in the same PR.
-- [ ] No changes under `3DEngine/`, `BlazorApp/`, `Vortice.Vulkan.*` outside their stated purpose. (`3DEngine.Core/` is a peer render kernel per ADR-0009 and may be modified within its render-side scope.)
+- [ ] No changes under `3DEngine/`, `Vortice.Vulkan.*` outside their stated purpose. (`3DEngine.Core/` is a peer render kernel per ADR-0009 and may be modified within its render-side scope.)
 - [ ] Dependency direction holds: `Engine.Contracts` ← `Engine.Core` ← clients; `Engine.*` does not reference `3DEngine.Core` and vice versa.
 
 ## Verification

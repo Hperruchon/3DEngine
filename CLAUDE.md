@@ -65,7 +65,7 @@ Engine.Core                         │
      └──────────────┬───────────────┘
                     ▼
                  Clients
-    Engine.Cli, Engine.Api.Http, 3DEngine, BlazorApp, …
+    Engine.Cli, Engine.Api.Http, 3DEngine, …
 ```
 
 The solution has two kernels:
@@ -122,7 +122,6 @@ Engine code knows nothing about HTTP and nothing about processes. See ADR-0011 a
 ## Projects outside the engine spine
 
 - `3DEngine/` — the Vulkan desktop host. It draws through `3DEngine.Vulkan`, which uses SDL3.
-- `BlazorApp/` and `BlazorApp.Client/` — a placeholder web shell.
 
 Do not change these projects unless a task gives you that scope.
 
@@ -244,7 +243,7 @@ Examine the plan again in these conditions:
 
 Do not do these things:
 
-- Do not put business logic in `BlazorApp/` or in `3DEngine/`.
+- Do not put business logic in `3DEngine/`.
 - Do not bypass the `CommandBus` to change the Document.
 - Do not treat a `3DEngine.Core` object as the authority for scene state.
 - Do not add a diagnostic code without a register entry.
