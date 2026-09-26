@@ -6,8 +6,8 @@ This document holds each track and each phase. A phase here is a candidate. When
 it becomes a task in `tasks/`. The `status` field in the task file is the authority for the question
 "did this phase ship". This document is the menu. It is not the ledger.
 
-When a phase ships, move its line from "Pending" to "Shipped". Give the version and the task
-identifier.
+When a phase ships, add its line to "Shipped". Give the version and the task identifier. A phase
+that is not in "Shipped" is pending.
 
 The scope test in `docs/CHARTER.md` uses this document. The absence of a track is a stop signal.
 Therefore each approved objective must have a track here.
@@ -45,80 +45,80 @@ Therefore each approved objective must have a track here.
 
 This track removes each condition that blocks other work.
 
-| Phase | Content | Evenings | Status |
-|---|---|---|---|
-| P0.1 | A released SDK pin | 1–2 | **Shipped, v0.16** |
-| P0.2 | The charter and each operational rule | 3–4 | **Shipped, v0.17** |
-| P0.3 | Remove both dispatch switch statements. One handler catalog. | 3–5 | **Shipped, v0.18** |
-| P0.4 | Make each governance rule mechanical. ADR front matter, the register gate, the marker gate, the dependency direction gate. | 4–6 | **Shipped, v0.19** |
-| P0.5 | Salvage the unmerged branch. Renumber. Merge the hosting factory. | 2–3 | **Shipped, v0.20** |
-| P0.6 | A gate on Windows, Linux and macOS. | 2–3 | **Shipped, v0.24** |
-| P0.7 | The write-set check. Compare each changed file against the write set of the active task. | 1–2 | **Shipped, v0.22** |
-| P0.8 | Correct the status vocabulary, the register limit and one false statement. | 1 | **Shipped, v0.21** |
-| P0.9 | Clean each branch, worktree and stash. Run the gate on each push. | 1 | **Shipped, v0.23** |
-| P0.10 | A licence notice and a verified checksum for the native payload. | 1 | **Shipped, v0.25** |
-| P0.11 | Decide each open question that does not need new work. | 1 | **Shipped, v0.26** |
-| P0.12 | Correct the forbid rule. Run the write-set gate on each commit. | 1 | **Shipped, v0.27** |
-| P0.13 | One serial boundary for commands, queries and snapshots. TASK-0034. | 2–3 | Pending |
-| P0.14 | The version counts applied commands. ADR-0020, TASK-0035. | 1–2 | Pending |
-| P0.15 | A host refuses to start without the native backend. TASK-0036. | 1–2 | Pending |
-| P0.16 | An operation consumes its operands. ADR-0021, TASK-0037. | 2–3 | Pending |
-| P0.17 | The desktop host owns a session and serves the surface. ADR-0019, TASK-0038. | 3–5 | Pending |
+| Phase | Content | Evenings |
+|---|---|---|
+| P0.1 | A released SDK pin | 1–2 |
+| P0.2 | The charter and each operational rule | 3–4 |
+| P0.3 | Remove both dispatch switch statements. One handler catalog. | 3–5 |
+| P0.4 | Make each governance rule mechanical. ADR front matter, the register gate, the marker gate, the dependency direction gate. | 4–6 |
+| P0.5 | Salvage the unmerged branch. Renumber. Merge the hosting factory. | 2–3 |
+| P0.6 | A gate on Windows, Linux and macOS. | 2–3 |
+| P0.7 | The write-set check. Compare each changed file against the write set of the active task. | 1–2 |
+| P0.8 | Correct the status vocabulary, the register limit and one false statement. | 1 |
+| P0.9 | Clean each branch, worktree and stash. Run the gate on each push. | 1 |
+| P0.10 | A licence notice and a verified checksum for the native payload. | 1 |
+| P0.11 | Decide each open question that does not need new work. | 1 |
+| P0.12 | Correct the forbid rule. Run the write-set gate on each commit. | 1 |
+| P0.13 | One serial boundary for commands, queries and snapshots. TASK-0034. | 2–3 |
+| P0.14 | The version counts applied commands. ADR-0020, TASK-0035. | 1–2 |
+| P0.15 | A host refuses to start without the native backend. TASK-0036. | 1–2 |
+| P0.16 | An operation consumes its operands. ADR-0021, TASK-0037. | 2–3 |
+| P0.17 | The desktop host owns a session and serves the surface. ADR-0019, TASK-0038. | 3–5 |
 
 ## Track P — The platform
 
-| Phase | Content | Evenings | Status |
-|---|---|---|---|
-| P8a | Persistence. A command log on disk. ADR-0015. Register entry R-0025 asks if the scope becomes a document file. | 3–5 | Pending |
-| P8b | The container model. One document holds one part. An assembly holds references at a fixed version. | 5–8 | Pending |
-| P8c | Undo and redo. Add the inverse command. | 3–5 | Pending |
-| P8d | The three layers. Log, ordered feature list, regeneration cache. | 5–8 | Pending |
-| P8e | Units and dimension on each number. | 2–3 | Pending |
+| Phase | Content | Evenings |
+|---|---|---|
+| P8a | Persistence. A command log on disk. ADR-0015. Register entry R-0025 asks if the scope becomes a document file. | 3–5 |
+| P8b | The container model. One document holds one part. An assembly holds references at a fixed version. | 5–8 |
+| P8c | Undo and redo. Add the inverse command. | 3–5 |
+| P8d | The three layers. Log, ordered feature list, regeneration cache. | 5–8 |
+| P8e | Units and dimension on each number. | 2–3 |
 
 ## Track R — The renderer
 
 The first objective. Each phase ends with something that a person can observe.
 
-| Phase | Content | Evenings | Status |
-|---|---|---|---|
-| R1 | Upgrade the Vulkan binding. Move the Vulkan code into a first-party project. | 2–4 | **Shipped, v0.28** |
-| R2 | A tessellation capability. A mesh leaves the geometry backend. | 4–6 | Pending |
-| R3 | A pipeline. A triangle, then an indexed mesh. | 4–6 | Pending |
-| R4 | A camera with depth. Flat scene arrays. Each draw through an indirect interface. | 5–7 | Pending |
-| R5 | Geometry from the engine. Subscribe to events, fetch a mesh, draw it. Subtract a double-precision origin before the narrowing to float. Choose `frontFace` together with the viewport flip. | 6–8 | Pending |
-| R6 | Observe a cut. The live body set of ADR-0021 gives the result. A headless image test. | 4–6 | Pending |
-| R7 | Device-tagged pointer samples. The intent layer and the parity test. | 4–7 | Pending |
-| R8 | Selection, name and visibility as commands. | 4–6 | Pending |
-| R9 | A transform gizmo at a constant screen size. | 5–8 | Pending |
-| R10 | A numeric pad and an expression evaluator. Each drag has a numeric equivalent. | 3–5 | Pending |
-| R11 | Escalated selection and a snap engine. | 4–6 | Pending |
+| Phase | Content | Evenings |
+|---|---|---|
+| R1 | Upgrade the Vulkan binding. Move the Vulkan code into a first-party project. | 2–4 |
+| R2 | A tessellation capability. A mesh leaves the geometry backend. TASK-0028. | 4–6 |
+| R3 | A pipeline. A triangle, then an indexed mesh. | 4–6 |
+| R4 | A camera with depth. Flat scene arrays. Each draw through an indirect interface. | 5–7 |
+| R5 | Geometry from the engine. Subscribe to events, fetch a mesh, draw it. Subtract a double-precision origin before the narrowing to float. Choose `frontFace` together with the viewport flip. | 6–8 |
+| R6 | Observe a cut. The live body set of ADR-0021 gives the result. A headless image test. | 4–6 |
+| R7 | Device-tagged pointer samples. The intent layer and the parity test. | 4–7 |
+| R8 | Selection, name and visibility as commands. | 4–6 |
+| R9 | A transform gizmo at a constant screen size. | 5–8 |
+| R10 | A numeric pad and an expression evaluator. Each drag has a numeric equivalent. | 3–5 |
+| R11 | Escalated selection and a snap engine. | 4–6 |
 
 ## Track K — The kernel
 
 The owned kernel gives identity. Manifold gives geometry. `docs/CHARTER.md` holds the closed feature
 boundary and each refused rung.
 
-| Phase | Content | Evenings | Status |
-|---|---|---|---|
-| K0 | A feature graph over Manifold. No B-Rep. Deferred-query references. | 12–20 | Pending |
-| K1 | Exact predicates. A deterministic arithmetic layer. | 4–8 | Pending |
-| K2 | A 2D sketch model. Five entities and fourteen constraints. A sketch attaches to a datum. | 6–10 | Pending |
-| K3 | A constraint solver. Write it. | 12–20 | Pending |
-| K4 | Planar faces only, with a boolean. Provenance inside the kernel. | 35–55 | Pending |
-| K5 | Add the cylinder, the cone, the sphere and the torus. | 55–85 | Pending |
-| K6 | STEP export for the analytic subset. | 6–12 | Pending |
-| K7 | General extrude and revolve of a simple curve. **Optional.** Year two. | 40–65 | Pending |
+| Phase | Content | Evenings |
+|---|---|---|
+| K0 | A feature graph over Manifold. No B-Rep. Deferred-query references. | 12–20 |
+| K1 | Exact predicates. A deterministic arithmetic layer. | 4–8 |
+| K2 | A 2D sketch model. Five entities and fourteen constraints. A sketch attaches to a datum. | 6–10 |
+| K3 | A constraint solver. Write it. | 12–20 |
+| K4 | Planar faces only, with a boolean. Provenance inside the kernel. | 35–55 |
+| K5 | Add the cylinder, the cone, the sphere and the torus. | 55–85 |
+| K6 | STEP export for the analytic subset. | 6–12 |
+| K7 | General extrude and revolve of a simple curve. **Optional.** Year two. | 40–65 |
 
 ## Track V — Machine vision
 
 The first domain extension. Objective 15 puts it before materials, chemistry and biological data.
 
-| Phase | Content | Evenings | Status |
-|---|---|---|---|
-| V0 | A verification spike. The vision library on three platforms. | 1 | Pending |
-| V1 | A content-addressed asset store. A textured quad. | 2–3 | Pending |
-| V2 | Place an image on a datum. Calibrate it to real units. | 2–3 | Pending |
-| V3 | A contour proposal becomes an editable sketch. Propose and accept. | 3–5 | Pending |
+| Phase | Content | Evenings |
+|---|---|---|
+| V0 | A verification spike. The vision library on three platforms. | 1 |
+| V1 | A content-addressed asset store. A textured quad. | 2–3 |
+| V2 | Place an image on a datum. Calibrate it to real units. | 2–3 |
+| V3 | A contour proposal becomes an editable sketch. Propose and accept. | 3–5 |
 
 ## Order
 
@@ -130,6 +130,9 @@ The tracks are not strictly sequential, but three rules hold:
    that surely ran.
 2. R2 blocks each later phase in track R. No mesh leaves the geometry backend today.
 3. K4 needs K0, K1 and K2. Do not start K4 before the reference model exists.
+
+The field `depends-on` of each task file holds the same order. `TaskGovernanceGateTests` verifies
+that each dependency names a task.
 
 Phase R6 gives the first objective that the owner named: create a box, subtract a second box, and
 observe the cut. Track 0 and phases R1 to R6 give it in 25 to 35 evenings.

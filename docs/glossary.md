@@ -1,12 +1,15 @@
 # Glossary
 
-Canonical vocabulary. One line per term + a pointer to where it is **defined** (file) and **decided** (ADR). Definitions here are nominal only — the *why* and the *rules* live in the linked ADR; the *current shape* lives in the code. Names listed are locked to what exists in `Engine.Contracts/` and `Engine.Core/` today; do not rename without an ADR (see [conventions.md](conventions.md) "Contract-change triggers").
+Canonical vocabulary. One line per term + a pointer to where it is **defined** (file) and **decided** (ADR). Definitions here are nominal only — the *why* and the *rules* live in the linked ADR; the *current shape* lives in the code. Names listed are locked to what exists in `Engine.Contracts/` and `Engine.Core/` today; do not rename without an ADR (see [templates.md](templates.md), section 1).
 
 ## Triad
 
+Each change to persistent state must use a command. A query must not change state. An event is an
+observation of a change, and it appears only in the event stream.
+
 | Term | Meaning | Defined / decided |
 |---|---|---|
-| **Command** | The only mutator. Serializable, versioned (`SchemaVersion`), replayable; carries `CommandId` and optional `ExpectedDocumentVersion`. | `Engine.Contracts/Command.cs` · ADR-0006, ADR-0008 |
+| **Command** | The only mutator. Serializable, versioned (`SchemaVersion`), replayable; carries `CommandId` and optional `ExpectedDocumentVersion`. The engine records it in the log and can replay it. | `Engine.Contracts/Command.cs` · ADR-0006, ADR-0008 |
 | **Query** | A read. Never logged, replayed, or streamed. Carries `QueryId` + `SchemaVersion`. | `Engine.Contracts/Query.cs` · ADR-0008 |
 | **Event** | An observation of what happened, derived from commands; surfaces only via the event stream. The record type is `EventRecord`. | concept · ADR-0005 |
 
@@ -26,7 +29,7 @@ Canonical vocabulary. One line per term + a pointer to where it is **defined** (
 | Term | Meaning | Defined / decided |
 |---|---|---|
 | **Document** | The design-truth aggregate: ordered command `Log` + materialized projections (`Bodies`) + metadata. Mutated only inside `CommandBus`'s commit section. | `Engine.Contracts/Document.cs` · ADR-0004 |
-| **Version** | `Document.Version` — runtime observation counter mirroring the **last emitted `Seq`** across all events (applied, rejected, cancelled), not a successful-mutation count. | `Engine.Contracts/Document.cs` · ADR-0005 |
+| **Version** | `Document.Version` — today a runtime observation counter that mirrors the **last emitted `Seq`** across all events. ADR-0020 (accepted) makes it the count of applied commands; TASK-0035 changes the code. | `Engine.Contracts/Document.cs` · ADR-0005, ADR-0020 |
 | **Seq** | Monotonic per-Document event sequence number on `EventRecord`; the cursor for replay/reconnect. | `Engine.Contracts/EventRecord.cs` · ADR-0005 |
 
 ## Geometry
@@ -49,3 +52,5 @@ Canonical vocabulary. One line per term + a pointer to where it is **defined** (
 | **anti-objective** | A thing that the project refuses at each version. Each one protects an objective. Example: anti-objective 1, "no second source of truth", protects objective 17. | [CHARTER.md](CHARTER.md) "Anti-objectives" |
 | **the two kernels** | `Engine.*` (design truth) and `3DEngine.Core` (render state) — peers that never reference each other; render hosts own the projection from events. | [CLAUDE.md](../CLAUDE.md) "Authority diagram" · ADR-0009 |
 | **Vulkan layer** | `3DEngine.Vulkan` — the first-party GPU code. It draws render state and never sees design truth; only a host that draws references it. | `3DEngine.Vulkan/` · ADR-0017 |
+| **V1** | The label of the first six milestones, v0.1 to v0.6: the engine spine, the command-line host and the first gates. ADR-0001 to ADR-0015 use it. | [CURRENT-STATE.md](CURRENT-STATE.md) v0.6 |
+| **V1.x** | The label of the milestones v0.7 to v0.15: the HTTP surface, the first geometry slice and the Manifold backend. | [CURRENT-STATE.md](CURRENT-STATE.md) v0.14 |

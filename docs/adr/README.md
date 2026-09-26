@@ -1,11 +1,12 @@
 # Architectural Decision Records
 
-This index is the entry point for ADRs. Find the relevant decision; do not read all.
+This index is the entry point for ADRs. Read the ones that the field `governed-by` of your task
+names. Do not read all of them.
 
 ## Status legend
 
-- **Accepted** — in force.
-- **Amended** — modified by a later ADR; both apply, see "Amended by".
+- **Accepted** — in force. The text agrees with the code.
+- **Amended** — a later ADR gives the reason for a change, see "Amended by". This record holds the current decision.
 - **Superseded** — replaced by a later ADR; do not apply.
 - **Proposed** — not yet accepted; informational.
 - **Withdrawn** — the author took a proposal back, or the owner took back a decision that no later ADR replaces; do not apply.
@@ -50,8 +51,14 @@ This index is the entry point for ADRs. Find the relevant decision; do not read 
 
 ## Adding an ADR
 
-1. Copy the most recent ADR as a template.
-2. Number sequentially. Status `Proposed` until accepted.
-3. If amending an earlier ADR, add the entry in its "Amended by" column above.
-4. Update this index in the same PR.
+1. Use the form in `docs/templates.md`, section 1.
+2. Number sequentially. The status is `Proposed` until the owner accepts the record.
+3. If the record amends an earlier ADR, add the entry in its "Amended by" column above, and change
+   the text of the earlier ADR in the same commit (`docs/templates.md`, section 1, "An ADR agrees
+   with the code").
+4. Update this index in the same commit. `AdrGateTests` fails when a row and a record disagree.
 
+## Archived
+
+No record is archived yet. A withdrawn or superseded record moves to `docs/adr/archive/`, and its
+number stays in this list so that the number is never used again.
