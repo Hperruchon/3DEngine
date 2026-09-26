@@ -1,7 +1,7 @@
 ---
 id: 0039
 title: The rules are fewer, each one has one home, and ten more have a gate
-status: Ready
+status: Done
 phase: governance
 opened: 2026-09-26
 depends-on: [0033]
@@ -105,18 +105,18 @@ Each rule has one home, each stale statement is gone, and ten rules that were te
 
 ## Acceptance criteria
 
-- [ ] `docs/working-agreement.md`, `docs/conventions.md` and `docs/open-questions.md` do not exist.
-- [ ] `CLAUDE.md` has at most 150 lines and holds the six determinism rules unchanged. The first
+- [x] `docs/working-agreement.md`, `docs/conventions.md` and `docs/open-questions.md` do not exist.
+- [x] `CLAUDE.md` has at most 150 lines and holds the six determinism rules unchanged. The first
       estimate was 130; the diagram and the six rules, which stay, take forty lines.
-- [ ] Each new gate failed on an injected violation before its commit, and the task records the
+- [x] Each new gate failed on an injected violation before its commit, and the task records the
       injection.
-- [ ] Each corrected gate catches a violation that the old list missed, and the task records it.
-- [ ] `WRITE_SET_TASK=TASK-0032` with the change list of v0.32 plus `Engine.Core/CommandBus.cs`
+- [x] Each corrected gate catches a violation that the old list missed, and the task records it.
+- [x] `WRITE_SET_TASK=TASK-0032` with the change list of v0.32 plus `Engine.Core/CommandBus.cs`
       fails, which is the case of R-0026.
-- [ ] No path in `docs/INDEX.md` is absent. Each `*GateTests.cs` class has a row in
+- [x] No path in `docs/INDEX.md` is absent. Each `*GateTests.cs` class has a row in
       `docs/templates.md`.
-- [ ] `dotnet build 3DEngine.sln --no-incremental` gives zero warnings. `dotnet test` passes.
-- [ ] The measures of review section 5 are repeated in the ledger entry with the same method.
+- [x] `dotnet build 3DEngine.sln --no-incremental` gives zero warnings. `dotnet test` passes.
+- [x] The measures of review section 5 are repeated in the ledger entry with the same method.
 
 ## Notes for the implementer
 
@@ -124,6 +124,33 @@ Make the changes in small commits, one topic in each commit. Before each commit,
 tests with `set -o pipefail`, and run the write-set check with `WRITE_SET_FILES` set from
 `git diff --cached --name-only --no-renames` and `WRITE_SET_TASK=TASK-0039`. When you change a gate,
 inject a violation that the gate catches today, then show what catches it after the change.
+
+## Outcome
+
+Status: Done · v0.34 · the commit that carries this block.
+
+## Method
+
+**Mechanical.** The move of each rule to its one home, as section 2 of the review lists it; the
+deletion of the three files; the archive; the corrected statements; the gate table; the scans that
+replace five fixed lists.
+
+**Judgement.** Five decisions. The trailer of a commit is a line of the exact form `TASK-nnnn`, because
+a prose line of the v0.27 message starts with an identifier and the first form of the rule failed on
+it. Two pointer lines of `docs/CHARTER.md` named the deleted working agreement; the task moved the
+charter from `forbid` to `modify` for those two lines after the gate refused the commit, and the
+objectives did not change. `CLAUDE.md` has 150 lines and not 120, because the diagram and the six
+determinism rules, which stay unchanged, take forty lines. The determinism gate scans each
+transcendental function of `System.Math`, because rule 1 forbids the class and names examples. The
+`governed-by` gate reads a Ready or Active task only, because nine closed tasks predate ADR-0018 to
+ADR-0021 and a closed task is a record.
+
+**Weakest.** `RepositoryFiles.PatternsIntersect` tests one pattern against a sample of the other. Two
+patterns with a star on each side can intersect and still not match the sample; the gate then
+reports a false "extra" ADR. Each of the six Ready tasks agrees with the rule today, so no such pair
+exists. The contract gate on a push to a new branch compares against the cut-off, so a range that
+holds both a contract change and an unrelated ADR change passes; the write-set gate and the ADR
+gate see each commit, and the pull request run compares against the base.
 
 ## Progress
 
@@ -136,3 +163,4 @@ inject a violation that the gate catches today, then show what catches it after 
 - 2026-09-26: docs/templates.md absorbs the working agreement and the conventions; docs/INDEX.md is the one map; docs/open-questions.md is gone; the rationale of the working agreement is in docs/archive/. Two pointer lines of docs/CHARTER.md named the deleted file and now point at CLAUDE.md; the write set of this task moved the charter from forbid to modify for those two lines, and the gate had refused the commit before that change. The path gate: injected a row in INDEX.md with a path that does not exist, and the gate table without MarkerGateTests. Each one failed.
 - 2026-09-26: one status vocabulary (the roadmap loses its Status column, Active goes), V1 and V1.x defined in the glossary, the diagnostics registry says do not remove and do not change the meaning, the ADR index points at the form, the pull request template has five lines.
 - 2026-09-26: CLAUDE.md is a position file of 150 lines. The determinism rules are unchanged.
+- 2026-09-26: closed. Register entries R-0019 and R-0026 are closed, TASK-0040 is Ready, and ledger entry v0.34 records the work.

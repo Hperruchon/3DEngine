@@ -100,23 +100,6 @@ Exit: a new build records the Manifold commit. The packing step in
 `.github/workflows/build-manifold-native.yml` reads the commit of the Manifold checkout and not the
 commit of this repository.
 
-### R-0019 · Five documents describe a repository state that no longer exists
-- class: debt
-- opened: 2026-09-23
-- due: 2026-10-23
-- extended: no
-- refs: `docs/adr/README.md:7-10`, `docs/adr/README.md:51-54`, `docs/INDEX.md:37`, `docs/conventions.md:61`, `docs/templates.md:231-236`, `Engine.Tests/Governance/AdrGateTests.cs:17`, TASK-0027
-TASK-0027 found six statements that were true once. The ADR index says that ADR-0015 exists only on
-a branch that TASK-0023 deleted, and its legend gives four statuses of six, while a comment in the ADR
-gate says that the legend agrees with the gate. `docs/INDEX.md` names `docs/architecture/`, which does
-not exist. `docs/conventions.md` links to that directory and cites a `CLAUDE.md` section by an old
-name. `docs/templates.md` says that two gates exist; eleven gate classes exist. An agent reads these
-files first, therefore the limit is 30 days and not 180.
-Exit: each statement agrees with the repository, and a gate fails when `docs/INDEX.md` names a path
-that does not exist.
-Progress 2026-09-25: TASK-0032 corrected the two statements in `docs/adr/README.md`. The legend now
-gives the six statuses, and the section about ADR-0015 on a branch is gone.
-
 ### R-0020 · The platform list needs a study before objective 8 changes
 - class: question
 - opened: 2026-09-25
@@ -195,20 +178,6 @@ with no open and no save by a person. Under ADR-0019 the desktop owns the sessio
 scope misses the product. The architecture challenge recommends a rewrite around a document file. The
 owner did not decide it.
 Exit: the owner accepts a rewritten ADR-0015, or refuses the rewrite and gives the reason.
-
-### R-0026 · A commit that touches a task file gets all the permits of that task
-- class: risk
-- opened: 2026-09-25
-- due: 2026-10-25
-- extended: no
-- refs: `Engine.Tests/Governance/WriteSetGateTests.cs` (the test `Every_Changed_File_Is_Inside_The_Write_Set_Of_A_Changed_Task`), TASK-0032
-The write-set gate lets each task file that a commit touches govern that commit. On 2026-09-25 the
-change list of TASK-0032 received `Engine.Core/CommandBus.cs` as an injection, and the gate passed.
-The reason: TASK-0034, TASK-0035 and TASK-0037 are new in the same commit, and each one permits that
-file. A commit that plans work can therefore also change code, and no check sees it. A second
-injection, a file that no task permits, failed as it must.
-Exit: the gate limits the permits of a commit to the task that does the work of the commit. Or: the
-owner accepts the risk and gives the reason.
 
 ## Accepted compromises
 
@@ -480,3 +449,43 @@ Closed 2026-09-22 - decided - the command line uses the relaxed encoder - TASK-0
 output in a terminal. The word Unsafe names one risk: a page that writes JSON into HTML with no
 further encoding. `Engine.Api.Http` keeps the default encoder for that reason, because a browser
 client can put a response into a page.
+
+### R-0019 · Five documents describe a repository state that no longer exists
+- class: debt
+- opened: 2026-09-23
+- due: 2026-10-23
+- extended: no
+- refs: `docs/adr/README.md:7-10`, `docs/adr/README.md:51-54`, `docs/INDEX.md:37`, `docs/conventions.md:61`, `docs/templates.md:231-236`, `Engine.Tests/Governance/AdrGateTests.cs:17`, TASK-0027
+TASK-0027 found six statements that were true once. The ADR index says that ADR-0015 exists only on
+a branch that TASK-0023 deleted, and its legend gives four statuses of six, while a comment in the ADR
+gate says that the legend agrees with the gate. `docs/INDEX.md` names `docs/architecture/`, which does
+not exist. `docs/conventions.md` links to that directory and cites a `CLAUDE.md` section by an old
+name. `docs/templates.md` says that two gates exist; eleven gate classes exist. An agent reads these
+files first, therefore the limit is 30 days and not 180.
+Exit: each statement agrees with the repository, and a gate fails when `docs/INDEX.md` names a path
+that does not exist.
+Progress 2026-09-25: TASK-0032 corrected the two statements in `docs/adr/README.md`. The legend now
+gives the six statuses, and the section about ADR-0015 on a branch is gone.
+Closed 2026-09-26 - resolved - TASK-0039, v0.34
+Each of the fourteen statements that the rules review of 2026-09-25 lists in section 3.5 is
+corrected or removed. `Engine.Tests/Governance/DocumentPathGateTests.cs` fails when `docs/INDEX.md`
+names a path that does not exist, and when a gate class has no row in the gate table.
+
+### R-0026 · A commit that touches a task file gets all the permits of that task
+- class: risk
+- opened: 2026-09-25
+- due: 2026-10-25
+- extended: no
+- refs: `Engine.Tests/Governance/WriteSetGateTests.cs` (the test `Every_Changed_File_Is_Inside_The_Write_Set_Of_A_Changed_Task`), TASK-0032
+The write-set gate lets each task file that a commit touches govern that commit. On 2026-09-25 the
+change list of TASK-0032 received `Engine.Core/CommandBus.cs` as an injection, and the gate passed.
+The reason: TASK-0034, TASK-0035 and TASK-0037 are new in the same commit, and each one permits that
+file. A commit that plans work can therefore also change code, and no check sees it. A second
+injection, a file that no task permits, failed as it must.
+Exit: the gate limits the permits of a commit to the task that does the work of the commit. Or: the
+owner accepts the risk and gives the reason.
+Closed 2026-09-26 - resolved - TASK-0039, v0.34
+The write-set gate reads the task that the commit trailer names, and only that task governs the
+commit. A commit with no trailer that touches several task files fails. The injection of this
+entry, the change list of v0.32 plus `Engine.Core/CommandBus.cs`, fails with TASK-0032 named and
+fails with no task named.
