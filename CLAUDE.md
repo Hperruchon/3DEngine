@@ -1,6 +1,8 @@
 # CLAUDE.md
 
-You work in a 3D Engine solution. The solution contains many projects.
+You work in a 3D Engine solution. This file gives your position and the rules that each session
+must know. `docs/INDEX.md` gives the purpose of each file. `docs/CHARTER.md` gives the mission,
+the objectives and the scope test.
 
 ## Language
 
@@ -20,36 +22,33 @@ same language. The rules are:
 - Use a maximum of three words in a noun cluster.
 - Define an abbreviation at its first use.
 
-See `docs/working-agreement.md` for the behaviour rules.
+Write for a reader who is not you. The owner reads the work three months later.
 
-## Navigation
+## Workflow
 
-1. `docs/CHARTER.md` — the purpose of this engine and its limits. Read this file first if you do
-   not know if a request is in scope. It contains the agent scope test.
-2. `docs/INDEX.md` — the repository map. It gives a path and a purpose for each area. Read this
-   file to find where a thing is.
-3. `docs/adr/README.md` — the index of architecture decisions. Find the one relevant Architecture
-   Decision Record (ADR). Do not read all of them.
-4. `docs/CURRENT-STATE.md` — what exists today. This file is the authority for the question
-   "does X exist".
-5. `tasks/` — units of work. Read only the active task. An active task has the status `Active` or
-   `Ready`.
-6. `docs/glossary.md` — the approved terms. Each term has one line and a pointer to its source.
-7. `docs/conventions.md` — the rules for files, names and grammar.
-8. `docs/templates.md` — the forms to fill in for a register entry, an ADR, a task and a commit.
-9. `docs/diagnostics.md` — the register of diagnostic codes. Add to this file only.
-10. `docs/register.md` — known problems, questions and temporary mechanisms. Each entry has a
-    date and a time limit.
-11. `docs/roadmap.md` — the phase plan. Read this file only if no task has the status `Ready`.
+A session starts in this order:
 
-Find the minimum information. Do not read all ADRs. Do not read all tasks.
+1. Read this file.
+2. Read the last entry in `docs/CURRENT-STATE.md`. It is the authority for "does X exist".
+3. Take the first task in `docs/roadmap.md` order whose status is `Ready` and whose `depends-on`
+   tasks are `Done`.
+4. Read the ADRs in `governed-by` of that task. Do not read the other ADRs.
+5. Read `docs/CHARTER.md` when you do not know if a request is in scope. It holds the scope test.
 
-Use this read order when you scope work:
+The charter says if you can act. This file says where. The relevant ADR says how. The ledger says
+what exists. Find the minimum information.
 
-1. CHARTER tells you if you can act.
-2. CLAUDE.md tells you where to work.
-3. The relevant ADR tells you how to work.
-4. CURRENT-STATE tells you what exists.
+A session ends only in these conditions:
+
+- `docs/CURRENT-STATE.md` has a new entry. An entry is permanent. To correct one, add a new entry.
+- The status in the task file agrees with the work.
+- The build passes and the tests pass.
+- You registered each new diagnostic code.
+- You put each open question in `docs/register.md` with a date and a time limit.
+
+A codebase review is due before the seventh milestone after the last review. The build fails when
+it is late. `docs/templates.md`, section 7, gives the form. When evidence shows that an objective or
+the roadmap needs a change, report it to the owner. Do not change an objective without the owner.
 
 ## Authority diagram
 
@@ -68,83 +67,15 @@ Engine.Core                         │
     Engine.Cli, Engine.Api.Http, 3DEngine, …
 ```
 
-The solution has two kernels:
+`Engine.*` is the authority for design truth: the commands, the queries and the events that
+operate on the Document. `3DEngine.Core` is the render-side scene kernel. The two kernels do not
+reference each other. A host that draws subscribes to `Engine.Core` events and projects them into
+`3DEngine.Core` state (ADR-0009). `Engine.Tests/Governance/DependencyDirectionGateTests.cs` holds
+each dependency rule.
 
-- `Engine.*` is the authority for design truth. It holds the commands, the queries and the events
-  that operate on the Document.
-- `3DEngine.Core` is the render-side scene kernel. Hosts that draw use it.
-
-The two kernels do not reference each other. A host that draws connects them. The host subscribes
-to `Engine.Core` events. Then the host projects the events into `3DEngine.Core` state. See
-ADR-0009.
-
-## Deployment topology
-
-**The target is the hybrid topology of ADR-0019. TASK-0038 builds it. Until then, the text below
-"Today" describes the code.**
-
-The target:
-
-- The desktop host owns the session of the open document in its own process. It sends typed
-  commands and queries to the same buses as each other client. It has no privileged lane.
-- The desktop host also mounts the HTTP and WebSocket surface, as a library, on the loopback
-  address. An agent then works live on the document that the person has open.
-- `engine-api-http` is a small program around the same library. It serves headless work, and its
-  lifecycle is independent of each client.
-
-Today: `engine-api-http` is the only host with the HTTP and WebSocket surface. It runs in its own
-process. The desktop host has no path to the engine.
-
-Embedded mode stays. In embedded mode the client hosts the engine in its own process. Embedded mode
-permits exactly one client. It permits no observers. It keeps no state between invocations.
-`Engine.Cli` is the approved embedded host.
-
-Engine code knows nothing about HTTP and nothing about processes. See ADR-0011 and ADR-0019.
-
-## Dependency rules
-
-- `Engine.Contracts` has no project references.
-- `Engine.Core` references only `Engine.Contracts`.
-- `3DEngine.Core` has no project references. It is a peer kernel. See ADR-0009.
-- An `Engine.*` project must not reference `3DEngine.Core`.
-- `3DEngine.Core` must not reference an `Engine.*` project.
-- A client references only `Engine.Core` and `Engine.Contracts`. Clients do not reference each
-  other. A client that draws also references `3DEngine.Core`.
-- `3DEngine.Vulkan` is the first-party Vulkan layer. It references no `Engine.*` project. It may
-  reference `3DEngine.Core`. Only a host that draws with Vulkan references it. See ADR-0017.
-- `3DEngine.Vulkan/3DEngine.Vulkan.csproj` holds the only pin of `Vortice.Vulkan` and of
-  `Alimer.Bindings.SDL`. A host receives both bindings through its project reference.
-- A host that uses the native geometry backend also references `Engine.Geometry.Manifold`. This
-  reference is permitted only at the composition root of the host. See ADR-0014 §4.
-- `Engine.Tests` can reference each `Engine.*` project. A test project verifies authority. It is
-  not a client. The client rules do not apply to it.
-
-## Projects outside the engine spine
-
-- `3DEngine/` — the Vulkan desktop host. It draws through `3DEngine.Vulkan`, which uses SDL3.
-
-Do not change these projects unless a task gives you that scope.
-
-## Triad vocabulary
-
-- **Command** — a command changes state. The engine records it in the log. The engine can replay
-  it. It appears in the event stream.
-- **Query** — a query reads state. The engine does not record it. The engine does not replay it.
-  It does not appear in the event stream.
-- **Event** — an event is an observation of a change. A command causes it. It appears only in the
-  event stream.
-
-Each change to persistent state must use a command. A query must not change state.
-
-## Scope clamps
-
-_No clamp is active._
-
-The persistence clamp is removed. Objective 11 needs a document that a person saves and opens.
-Persistence arrives with ADR-0015 and its task. Until then the register holds the item.
-
-Do not add a capability from the non-goal list in `docs/CHARTER.md` unless an ADR and a task
-introduce it.
+The target topology is the hybrid topology of ADR-0019, which TASK-0038 builds. Today
+`engine-api-http` is the only host with the HTTP and WebSocket surface, and the desktop host has no
+path to the engine. Engine code knows nothing about HTTP and nothing about processes.
 
 ## Determinism rules
 
@@ -168,93 +99,52 @@ only those operations and comparisons is safe.
    preference.
 6. Do not put a tessellation in the Document. A tessellation is presentation. See ADR-0007.
 
-## Geometry kernel rules
-
-`docs/CHARTER.md` gives the closed feature boundary and the four refused rungs.
-
-7. Do not give a tolerance value to an entity. Use one global length tolerance and one chord
-   tolerance.
-8. Do not write a general surface intersector. A pair of surfaces with a closed formula computes
-   exactly. Each other pair refuses and falls back to Manifold.
-9. Do not put a result, a field dataset or the output of a solver in the log. The log records that a
-   job produced an artifact. A replay rebuilds the reference, never the bytes.
+`Engine.Tests/Governance/DeterminismCallGateTests.cs` scans for the calls of rules 1, 3 and 4 and
+for the runtime identifier of rule 5. Rules 2 and 6 need judgement.
 
 ## Diagnostic codes
 
-You must add each new `E-`, `W-` or `I-` code to `docs/diagnostics.md` in the same change. There
-is no exception. Codes are stable. Add codes only. Each code has a namespace.
+Add each new `E-`, `W-` or `I-` code to `docs/diagnostics.md` in the same change. Do not remove a
+code. Do not change the meaning of a code. Each code has a namespace.
+`Engine.Tests/Diagnostics/DiagnosticsRegistryGateTests.cs` reads each `Engine.*` project.
 
 ## Stop and ask
 
 Stop work and ask a question in these conditions:
 
-- You must change the public shape of `Engine.Contracts/**`. Examples are a new required field, a
-  new name, a removed field, a new meaning for a field, and a new event kind.
-- You must add a diagnostic code, but you cannot add a register entry for it.
+- You must change the public shape of `Engine.Contracts/**`: a new required field, a new name, a
+  removed field, a new meaning for a field, a new event kind. A change needs an ADR in the same
+  commit.
+- You must add a diagnostic code, but you cannot register it in `docs/diagnostics.md`.
 - An ADR is not clear about replay determinism, event order or serial commit.
 - The change crosses the authority boundary. An example is a client that reads internal state.
-- The documentation and the code disagree. Report both. Do not correct either one.
+- A decision and the code disagree. Report both. The owner says which one is correct. Then the same
+  task corrects the other.
 
-## Test discipline
+A false statement about the repository is not a decision. Examples are a path that does not exist
+and a count that is wrong. Correct it in the task that finds it, and say so in the ledger entry.
 
-- While you work, run only the tests for the file that you changed.
-- Before you report that work is complete, give the work to the gate. Do not run the gate on your
-  computer. The gate is the work of continuous integration (CI).
-- Do not report that work is complete if only the narrow tests passed.
+## Tests
 
-The gate runs these checks:
+While you work, run the tests for the file that you changed. Before each commit, run `dotnet test`
+and the write-set check of `docs/templates.md`, section 2. Continuous integration on three
+operating systems is the proof, and `.github/workflows/ci.yml` lists its jobs. Report a local
+result as local. Do not report that work is complete before the gate reports green.
 
-1. `dotnet build`
-2. `dotnet test`
-3. The dependency direction check
-4. The diagnostic code register check
-5. The replay determinism fixture
+## Rules with no other home
 
-## Workflow
-
-A session starts in this order:
-
-1. Read CLAUDE.md.
-2. Read the last entry in CURRENT-STATE.md.
-3. Advance the next task that has the status `Ready`.
-
-A codebase review is due before the seventh milestone after the last review. The build fails when
-it is late. `docs/templates.md`, section 7, gives the form, and `docs/reviews/` holds each review.
-
-A session ends only in these conditions:
-
-- CURRENT-STATE.md has a new entry, or you updated an entry.
-- The status in the task file agrees with the work.
-- The build passes and the tests pass.
-- You registered each new diagnostic code.
-- You put each open question in `docs/register.md` with a date and a time limit.
-
-Examine the plan again in these conditions:
-
-- Three milestones shipped after the last examination.
-- A session read more than five files to find its position.
-- An ADR and the code disagree.
-- A person asks the same question two times.
-- A boundary rule is under pressure.
-- **Evidence shows that an objective or the roadmap needs a change. Report this to the owner. Do not
-  change an objective without a decision from the owner.**
-
-## Anti-patterns
-
-Do not do these things:
-
-- Do not put business logic in `3DEngine/`.
-- Do not bypass the `CommandBus` to change the Document.
-- Do not treat a `3DEngine.Core` object as the authority for scene state.
-- Do not add a diagnostic code without a register entry.
-- Do not add an abstraction for a requirement that does not exist, **if a later change can add it at
-  a low cost**. Add a property now if a later change must rewrite the log, rewrite each command
-  payload, or migrate each saved document. Give the reason in an ADR. Examples are the unit on a
-  number, the precision of a coordinate, and the version of the command semantics.
-- Do not do work outside the scope of the active task.
-- Do not put a host projection in the design boundary. A host may hold the projection from events to
-  render state, because ADR-0009 requires it. A host may not decide what the design truth is.
-
+- The quality limit for work by an agent is higher than for work by a person. If the owner cannot
+  understand the work well enough to keep it, the work failed.
+- Do not improve a thing that nobody asked you to improve. If you find a different problem, add a
+  register entry.
+- Report what you did not verify. Read a file before you cite it. A path, a line number and an
+  identifier are things that a person can check.
+- Do not do work outside the write set of the active task. `WriteSetGateTests` enforces it.
+- Do not add an abstraction for a requirement that does not exist, if a later change can add it at
+  a low cost. Add a property now if a later change must rewrite the log, rewrite each command
+  payload, or migrate each saved document. Give the reason in an ADR.
 - Do not add a command that changes a file outside `Engine.Core/Commands/` and
-  `Engine.Core/Hosting/HandlerCatalog.cs`. A host must not hold the name of a command. See
-  ADR-0016. `Engine.Tests/Hosting/DispatchSurfaceGateTests.cs` enforces this rule.
+  `Engine.Core/Hosting/HandlerCatalog.cs`. `DispatchSurfaceGateTests` enforces it (ADR-0016).
+- A rule in text only is a rule that an agent will break. Prefer a compile error, then a test, then
+  a step in continuous integration, then text. `docs/templates.md`, section 6, gives the rule for
+  rules.
