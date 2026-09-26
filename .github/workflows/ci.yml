@@ -1,9 +1,9 @@
 name: CI
 
-# The gate. CLAUDE.md, section "Test discipline", names its checks: dotnet build,
-# dotnet test, the dependency direction check, the diagnostic code register check
-# and the replay determinism fixture. The last three are tests inside
-# Engine.Tests, therefore `dotnet test` runs each one.
+# The gate. CLAUDE.md, section "Tests", names it as the proof. The build, the
+# tests and two smoke tests run on three operating systems. The gate classes
+# inside Engine.Tests run with `dotnet test`; docs/templates.md, section
+# "What each gate reads", lists each one.
 #
 # The gate runs on three operating systems. Register entry R-0002 recorded the
 # reason: each job used ubuntu-latest, a person verified the native geometry path
@@ -96,7 +96,12 @@ jobs:
     name: Contract-touched-needs-ADR
     # This job compares two git trees. Its result does not depend on the
     # operating system, therefore one runner is enough.
-    if: github.event_name == 'pull_request'
+    #
+    # It runs on a push and on a pull request. Until TASK-0039 it ran on a pull
+    # request only, and the owner merges into main locally, therefore the gate
+    # never checked a merge into main (codebase review finding G1). On a push
+    # the range starts at the previous tip; a new branch falls back to the
+    # cut-off commit of the write-set gate.
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -104,27 +109,41 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Fetch base ref
-        run: git fetch --no-tags --depth=1 origin "${{ github.base_ref }}"
-
       - name: Check contracts vs ADRs
+        env:
+          PUSH_BEFORE: ${{ github.event.before }}
+          EVENT_NAME: ${{ github.event_name }}
+          BASE_REF: ${{ github.base_ref }}
         run: |
           set -e
-          base="origin/${{ github.base_ref }}"
-          contracts_changed=$(git diff --name-only "$base"...HEAD -- 'Engine.Contracts/**' | wc -l)
-          adrs_changed=$(git diff --name-only "$base"...HEAD -- 'docs/adr/**' | wc -l)
+          if [ "$EVENT_NAME" = "pull_request" ]; then
+            git fetch --no-tags --depth=1 origin "$BASE_REF"
+            range="origin/$BASE_REF...HEAD"
+          else
+            cutoff=$(grep -v '^#' eng/write-set-cutoff.txt | tr -d '[:space:]')
+            before="$PUSH_BEFORE"
+            if [ -z "$before" ] || [ "$before" = "0000000000000000000000000000000000000000" ]; then
+              before="$cutoff"
+            elif ! git cat-file -e "$before" 2>/dev/null; then
+              before="$cutoff"
+            fi
+            range="$before..HEAD"
+          fi
+          echo "range: $range"
+          contracts_changed=$(git diff --name-only "$range" -- 'Engine.Contracts/**' | wc -l)
+          adrs_changed=$(git diff --name-only "$range" -- 'docs/adr/**' | wc -l)
           echo "Engine.Contracts files changed: $contracts_changed"
           echo "docs/adr files changed:         $adrs_changed"
           if [ "$contracts_changed" -gt 0 ] && [ "$adrs_changed" -eq 0 ]; then
             echo ""
             echo "FAIL: Engine.Contracts was modified but no ADR was added or updated."
             echo "Per CLAUDE.md \"Stop and ask\": a change to the public shape of"
-            echo "Engine.Contracts requires an ADR in the same pull request."
+            echo "Engine.Contracts requires an ADR in the same commit."
             exit 1
           fi
 
   write-set-gate:
-    name: Write set of the active task
+    name: Write set of the governing task
     # This job runs on a push and on a pull request. It needs no base reference,
     # because it reads one commit at a time. TASK-0026 made that change: the job
     # was a condition on a pull request, therefore it reported skipped on each
@@ -148,6 +167,14 @@ jobs:
       # that carries it, therefore a diff across many tasks cannot say which task
       # made which change. TASK-0026 measured that: the whole-branch diff of this
       # branch reported 19 files against the write set and each report was false.
+      #
+      # The commit message names the governing task: the trailer line of the form
+      # TASK-nnnn, optionally followed by ' · ADR-nnnn'. A prose line that starts
+      # with an identifier is not a trailer; the v0.27 message has one. TASK-0039 added that rule, because register entry R-0026
+      # recorded that a commit received the permits of each task file that it
+      # touched. When the message names no task, the gate accepts the one task
+      # file that the commit touches, and it refuses a commit that touches
+      # several and names none.
       - name: Check each commit against the write set of its task
         env:
           PUSH_BEFORE: ${{ github.event.before }}
@@ -175,10 +202,11 @@ jobs:
               continue
             fi
 
-            echo "check $subject"
             files=$(git diff-tree --no-commit-id --name-only -r "$commit")
+            task=$(git log -1 --format=%B "$commit" | grep -E '^TASK-[0-9]{4}( · (ADR|TASK)-[0-9]{4})*[[:space:]]*$' | head -1 | grep -o -E '^TASK-[0-9]{4}' || true)
+            echo "check $subject  (task: ${task:-none named})"
 
-            if WRITE_SET_FILES="$files" dotnet test Engine.Tests/Engine.Tests.csproj \
+            if WRITE_SET_FILES="$files" WRITE_SET_TASK="$task" dotnet test Engine.Tests/Engine.Tests.csproj \
                  --no-build --filter 'FullyQualifiedName~WriteSetGate'; then
               echo "  pass"
             else
