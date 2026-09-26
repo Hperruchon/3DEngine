@@ -26,6 +26,7 @@ writes:
     - docs/roadmap.md
     - docs/CURRENT-STATE.md
     - docs/adr/README.md
+    - docs/CHARTER.md
     - docs/working-agreement.md
     - docs/conventions.md
     - docs/open-questions.md
@@ -48,7 +49,6 @@ writes:
     - 3DEngine/**
     - 3DEngine.Core/**
     - 3DEngine.Vulkan/**
-    - docs/CHARTER.md
     - docs/adr/0*.md
     - nuget/**
 ---
@@ -98,14 +98,16 @@ Each rule has one home, each stale statement is gone, and ten rules that were te
 ## Scope (out)
 
 - No change to the text of an ADR. The folds of review section 4.7 are TASK-0040.
-- No change to `docs/CHARTER.md`. The label `V1` gets its definition in the glossary.
+- No change to the objectives, the anti-objectives or the non-goals of `docs/CHARTER.md`. Two
+  pointer lines that name a deleted file change. The label `V1` gets its definition in the glossary.
 - No change to engine code, to `Engine.Contracts`, or to a host. The gates are tests.
 - No start of TASK-0028 or TASK-0034 to TASK-0038.
 
 ## Acceptance criteria
 
 - [ ] `docs/working-agreement.md`, `docs/conventions.md` and `docs/open-questions.md` do not exist.
-- [ ] `CLAUDE.md` has at most 130 lines and holds the six determinism rules unchanged.
+- [ ] `CLAUDE.md` has at most 150 lines and holds the six determinism rules unchanged. The first
+      estimate was 130; the diagram and the six rules, which stay, take forty lines.
 - [ ] Each new gate failed on an injected violation before its commit, and the task records the
       injection.
 - [ ] Each corrected gate catches a violation that the old list missed, and the task records it.
@@ -131,3 +133,4 @@ inject a violation that the gate catches today, then show what catches it after 
 - 2026-09-26: the determinism call gate. Injected: Math.Pow in Engine.Core, win-x86 in Engine.Cli.csproj. Each one failed.
 - 2026-09-26: five gates read a scan instead of a fixed list. Injected: a new host file with "CreateBox", a new code in Engine.Api.Http, a project in no class, a TODO in that project, a quoted query name in the schema endpoint. The old lists passed the first four; each scan fails all five.
 - 2026-09-26: the write-set gate reads the task that the commit trailer names, and the contract gate runs on each push. Injected the case of R-0026: the change list of v0.32 plus Engine.Core/CommandBus.cs failed with TASK-0032 named, and failed again with no task named. Each commit after the cut-off passes the rule. A prose line of the v0.27 message that starts with an identifier made the first form of the rule fail; the trailer form corrects it.
+- 2026-09-26: docs/templates.md absorbs the working agreement and the conventions; docs/INDEX.md is the one map; docs/open-questions.md is gone; the rationale of the working agreement is in docs/archive/. Two pointer lines of docs/CHARTER.md named the deleted file and now point at CLAUDE.md; the write set of this task moved the charter from forbid to modify for those two lines, and the gate had refused the commit before that change. The path gate: injected a row in INDEX.md with a path that does not exist, and the gate table without MarkerGateTests. Each one failed.

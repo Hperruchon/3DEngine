@@ -41,9 +41,9 @@ bootstrap. `ArgParser.cs` says that a later task replaces it. The native build w
    until you close an entry. Growth is the failure condition. This limit controls growth. The limit
    was 20 until 2026-09-21. See the closed entry R-0016.
 5. A temporary thing must have an entry. These words in tracked source or documentation must have a
-   register identifier, for example `R-0007`: `TODO`, `HACK`, `interim`, `temporary`, `for now`,
-   `bootstrap`, `DRAFT`. The gate fails if an identifier is absent. This rule finds the compromise
-   that becomes permanent.
+   register identifier, for example `R-0007`: `TODO`, `FIXME`, `HACK`, `XXX`, `DRAFT`, `interim`,
+   `temporary`, `for now`, `bootstrap`. The gate fails if an identifier is absent. This rule finds
+   the compromise that becomes permanent.
 6. Do not close an entry to make the gate pass. Use one of the four exits above. Deletion of an
    entry destroys the register.
 

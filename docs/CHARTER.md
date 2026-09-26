@@ -111,7 +111,7 @@ No consumer holds business logic. Each consumer turns input into commands and ob
 - **Command handlers and query handlers** — they reach geometry only through a capability. They read
   their parameters, the current Document and the active backend.
 - **Contributors, human and agent** — the reader of this charter. Use the scope test below. Read
-  `CLAUDE.md` for position and `docs/working-agreement.md` for behaviour.
+  `CLAUDE.md` for position and for the rules.
 
 ## What exists
 
@@ -277,5 +277,5 @@ its effect on design truth, not by the word that the person used.
    signal. In that condition the product is a roadmap entry and an ADR, not code.
 
 Rule of thumb: **the charter says if you can act. `CLAUDE.md` says where. The relevant ADR says how.
-`CURRENT-STATE.md` says what exists. `docs/working-agreement.md` says how to behave.** Read in that
+`CURRENT-STATE.md` says what exists.** Read in that
 order, and read only the one ADR that applies.

@@ -1,5 +1,11 @@
 # Working agreement
 
+> **Archived 2026-09-26 by TASK-0039. This document is a record and not a rule.** The rules review
+> of 2026-09-25 (`docs/reviews/2026-09-25-rules-review.md`, section 2.3) moved each live rule to
+> `CLAUDE.md` or to `docs/templates.md`, and removed each rule that repeated a gate or another
+> file. The text below is the document as TASK-0015 accepted it on 2026-09-20. It stays because its
+> reasons, from the Blender, FreeCAD and Ondsel projects, explain the rules that remain.
+
 **Status: Accepted** — 2026-09-20, TASK-0015.
 
 This document tells you how to behave in this repository. `CLAUDE.md` tells you where things are
