@@ -14,12 +14,11 @@ internal static class DiagnosticsScanner
         @"`(?<code>[EWI]-[A-Z][A-Z0-9]*-[A-Z][A-Z0-9-]*[A-Z0-9])`",
         RegexOptions.Compiled);
 
-    public static readonly string[] EngineSourceProjects =
-    {
-        "Engine.Contracts",
-        "Engine.Core",
-        "Engine.Cli",
-    };
+    // The test project holds sample codes in its own tests and is not a source
+    // of diagnostics. Each other Engine.* project is. Until TASK-0039 the list
+    // named three projects, and Engine.Api.Http and Engine.Geometry.Manifold,
+    // which both raise codes, were not read (codebase review finding T2).
+    private static readonly string[] ExcludedProjects = ["Engine.Tests"];
 
     public static string FindRepoRoot(string startDirectory)
     {
@@ -49,13 +48,18 @@ internal static class DiagnosticsScanner
         return codes;
     }
 
+    public static IEnumerable<string> EngineSourceProjects(string repoRoot)
+        => Directory.EnumerateDirectories(repoRoot, "Engine.*")
+            .Select(Path.GetFileName)
+            .Where(name => name is not null && !ExcludedProjects.Contains(name))
+            .Select(name => name!)
+            .OrderBy(name => name, StringComparer.Ordinal);
+
     public static IEnumerable<string> EnumerateEngineSources(string repoRoot)
     {
-        foreach (var project in EngineSourceProjects)
+        foreach (var project in EngineSourceProjects(repoRoot))
         {
             var projectDir = Path.Combine(repoRoot, project);
-            if (!Directory.Exists(projectDir))
-                continue;
 
             foreach (var file in Directory.EnumerateFiles(projectDir, "*.cs", SearchOption.AllDirectories))
             {

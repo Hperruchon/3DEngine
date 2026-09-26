@@ -14,9 +14,9 @@ namespace Engine.Tests.Governance;
 // SCOPE. The gate reads live code and live configuration. It does not read
 // history and it does not read a definition, for two reasons:
 //
-//   - An ADR and a closed task are immutable, and a ledger entry is append-only.
-//     The working agreement forbids a change to each one. A gate that demanded
-//     such a change would set two rules against each other.
+//   - An ADR and a closed task are records, and a ledger entry is append-only.
+//     A gate that demanded a change to one would set two rules against each
+//     other.
 //   - A document that defines the rule must name the words in order to define
 //     them. A match there is a definition, not a declaration of impermanence.
 public class MarkerGateTests
@@ -62,20 +62,23 @@ public class MarkerGateTests
 
     private static IEnumerable<string> LiveFiles()
     {
-        // Source in each engine project, except the files that define the rules.
-        // TASK-0027 added the render side, because first-party render code is
-        // live code too. The vendored sample code held two markers and no gate
-        // read it.
-        foreach (var project in new[]
-                 {
-                     "Engine.Contracts", "Engine.Core", "Engine.Cli",
-                     "Engine.Api.Http", "Engine.Geometry.Manifold", "Engine.Tests",
-                     "3DEngine.Core", "3DEngine.Vulkan", "3DEngine",
-                 })
+        // Source in each project that has a project file, except the files
+        // that define the rules. Until TASK-0039 the gate named nine projects,
+        // and a tenth project was not read (rules review finding F22). The
+        // project files give the list, in the same way as the dependency gate.
+        var projectDirectories = Directory
+            .EnumerateFiles(RepositoryFiles.Root, "*.csproj", SearchOption.AllDirectories)
+            .Select(RepositoryFiles.Relative)
+            .Where(relative => !relative.Contains("/obj/", StringComparison.Ordinal)
+                && !relative.Contains("/bin/", StringComparison.Ordinal)
+                && !relative.StartsWith(".claude/", StringComparison.Ordinal))
+            .Select(relative => System.IO.Path.GetDirectoryName(relative)!.Replace('\\', '/'))
+            .Distinct(StringComparer.Ordinal)
+            .OrderBy(directory => directory, StringComparer.Ordinal);
+
+        foreach (var projectDirectory in projectDirectories)
         {
-            var directory = RepositoryFiles.Path(project);
-            if (!Directory.Exists(directory))
-                continue;
+            var directory = RepositoryFiles.Path(projectDirectory.Split('/'));
 
             foreach (var file in Directory.EnumerateFiles(directory, "*.cs", SearchOption.AllDirectories))
             {
