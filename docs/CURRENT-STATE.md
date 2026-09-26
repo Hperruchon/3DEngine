@@ -890,3 +890,12 @@ codes: none.
 
 **The next ledger entry, v0.35, must be a codebase review.** Six milestones follow v0.28, which the
 last review examined, and the limit of `CodebaseReviewGateTests` is six.
+
+**Added on 2026-09-26, after the push and before the merge, in the same milestone (TASK-0041).** The
+rules that earlier sessions broke, and that the owner then put in the prompt of each session, were
+not in `CLAUDE.md`: read a file before you cite it, prove a gate by injection, `set -o pipefail`, an
+absent tool is not evidence, Node.js and not Python, a clean build for a warning count, and the
+commit trailer. One section "Method" now holds them, with the write-set command, and it absorbs the
+sections "Tests" and "Rules with no other home". `CLAUDE.md` has 165 lines. This paragraph is in the
+entry v0.34 and not in a new entry, because the branch is unmerged and the next entry must be the
+codebase review.

@@ -124,27 +124,42 @@ Stop work and ask a question in these conditions:
 A false statement about the repository is not a decision. Examples are a path that does not exist
 and a count that is wrong. Correct it in the task that finds it, and say so in the ledger entry.
 
-## Tests
+## Method
 
-While you work, run the tests for the file that you changed. Before each commit, run `dotnet test`
-and the write-set check of `docs/templates.md`, section 2. Continuous integration on three
-operating systems is the proof, and `.github/workflows/ci.yml` lists its jobs. Report a local
-result as local. Do not report that work is complete before the gate reports green.
+Each rule here came from an error in an earlier session.
 
-## Rules with no other home
+- Read a file before you cite it. A statement in a prompt, or a copy of a file in your context, is
+  a lead and not evidence. Report what you did not verify.
+- While you work, run the tests for the file that you changed. Before each commit, run
+  `dotnet test` and the write-set check:
 
-- The quality limit for work by an agent is higher than for work by a person. If the owner cannot
-  understand the work well enough to keep it, the work failed.
-- Do not improve a thing that nobody asked you to improve. If you find a different problem, add a
-  register entry.
-- Report what you did not verify. Read a file before you cite it. A path, a line number and an
-  identifier are things that a person can check.
-- Do not do work outside the write set of the active task. `WriteSetGateTests` enforces it.
+  ```bash
+  set -o pipefail
+  WRITE_SET_TASK=TASK-nnnn WRITE_SET_FILES="$(git diff --cached --name-only --no-renames)" \
+    dotnet test Engine.Tests/Engine.Tests.csproj --no-build --filter 'FullyQualifiedName~Governance'
+  ```
+
+  Continuous integration on three operating systems is the proof. `.github/workflows/ci.yml` lists
+  its jobs. Report a local result as local. Do not report that work is complete before the gate is
+  green.
+- Run a command chain with `set -o pipefail`. A chain that ends in `tail` reports the exit code of
+  `tail`.
+- Count warnings with a clean build: `dotnet build 3DEngine.sln --no-incremental`.
+- An absent tool gives an empty result, and an empty result is not evidence. Write a script in
+  Node.js. The computer of the owner has no Python.
+- When you change a gate, first inject a violation that no other rule permits and watch the gate
+  fail. Then show what catches the violation after the change.
+- End each commit message with the trailer line `TASK-nnnn`. The write-set gate reads it. Put one
+  topic in one commit. `docs/templates.md`, section 3, gives the form.
+- Do not do work outside the write set of the active task. Do not improve a thing that nobody asked
+  you to improve; if you find a different problem, add a register entry.
 - Do not add an abstraction for a requirement that does not exist, if a later change can add it at
   a low cost. Add a property now if a later change must rewrite the log, rewrite each command
   payload, or migrate each saved document. Give the reason in an ADR.
 - Do not add a command that changes a file outside `Engine.Core/Commands/` and
   `Engine.Core/Hosting/HandlerCatalog.cs`. `DispatchSurfaceGateTests` enforces it (ADR-0016).
+- The quality limit for work by an agent is higher than for work by a person. If the owner cannot
+  understand the work well enough to keep it, the work failed.
 - A rule in text only is a rule that an agent will break. Prefer a compile error, then a test, then
   a step in continuous integration, then text. `docs/templates.md`, section 6, gives the rule for
   rules.
