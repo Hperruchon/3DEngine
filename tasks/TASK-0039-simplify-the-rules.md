@@ -126,3 +126,4 @@ inject a violation that the gate catches today, then show what catches it after 
 ## Progress
 
 - 2026-09-26: the task and the review are in the repository.
+- 2026-09-26: the enforced-by gate. Injected: ADR-0001 named a missing file, ADR-0018 named a Done task. Each one failed.
