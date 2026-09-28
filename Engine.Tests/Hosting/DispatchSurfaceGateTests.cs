@@ -9,18 +9,13 @@ namespace Engine.Tests.Hosting;
 // change a central file". That rule was inactive until this test existed,
 // because two dispatch switch statements held each command name.
 //
-// The rule is now mechanical: if a person adds a command name to a host, this
-// test fails.
+// The rule is mechanical: if a person adds a command name to a host, this
+// test fails. Until TASK-0039 the gate read a fixed list of five files, and a
+// new host file was not read (codebase review finding T2). It now reads each
+// source file of each host project.
 public class DispatchSurfaceGateTests
 {
-    private static readonly string[] HostFilesThatMustNotNameACommand =
-    [
-        "Engine.Cli/Cli.cs",
-        "Engine.Cli/Usage.cs",
-        "Engine.Api.Http/Endpoints/CommandsEndpoint.cs",
-        "Engine.Api.Http/Endpoints/QueriesEndpoint.cs",
-        "Engine.Api.Http/EngineHost.cs",
-    ];
+    private static readonly string[] HostProjects = ["Engine.Cli", "Engine.Api.Http"];
 
     [Fact]
     public void No_Host_File_Contains_A_Registered_Command_Or_Query_Name()
@@ -31,25 +26,35 @@ public class DispatchSurfaceGateTests
             .ToArray();
 
         var offences = new List<string>();
+        var filesRead = 0;
 
-        foreach (var relative in HostFilesThatMustNotNameACommand)
+        foreach (var project in HostProjects)
         {
-            var path = Path.Combine(root, relative.Replace('/', Path.DirectorySeparatorChar));
-            Assert.True(File.Exists(path), $"Host file not found: {relative}");
+            var directory = Path.Combine(root, project);
+            Assert.True(Directory.Exists(directory), $"Host project not found: {project}");
 
-            var lines = File.ReadAllLines(path);
-            for (var i = 0; i < lines.Length; i++)
+            foreach (var path in Directory.EnumerateFiles(directory, "*.cs", SearchOption.AllDirectories))
             {
-                foreach (var name in names)
+                var relative = Path.GetRelativePath(root, path).Replace('\\', '/');
+                if (relative.Contains("/obj/", StringComparison.Ordinal) || relative.Contains("/bin/", StringComparison.Ordinal))
+                    continue;
+
+                filesRead++;
+                var lines = File.ReadAllLines(path);
+                for (var i = 0; i < lines.Length; i++)
                 {
-                    // A quoted name is a dispatch decision. A bare mention in a
-                    // comment is prose and is permitted.
-                    if (lines[i].Contains($"\"{name}\"", StringComparison.Ordinal))
-                        offences.Add($"{relative}:{i + 1} names \"{name}\"");
+                    foreach (var name in names)
+                    {
+                        // A quoted name is a dispatch decision. A bare mention in a
+                        // comment is prose and is permitted.
+                        if (lines[i].Contains($"\"{name}\"", StringComparison.Ordinal))
+                            offences.Add($"{relative}:{i + 1} names \"{name}\"");
+                    }
                 }
             }
         }
 
+        Assert.True(filesRead > 0, "No host source file was read.");
         Assert.True(
             offences.Count == 0,
             "Per ADR-0016 a host must not name a command or a query. Adding a command must change "

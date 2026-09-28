@@ -4,6 +4,7 @@ using System.Text.Json;
 using Engine.Api.Http;
 using Engine.Contracts.Schema;
 using Engine.Core;
+using Engine.Core.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 
 namespace Engine.Tests.Http;
@@ -16,7 +17,9 @@ namespace Engine.Tests.Http;
 // compare endpoint output against handler declarations. The diagnostics
 // gate uses reflection over Engine.Core/DiagnosticCodes.cs to assert every
 // constant appears in /schema/diagnostics. The source-content gate
-// asserts SchemaCommandsEndpoint contains no per-command branching.
+// asserts SchemaCommandsEndpoint contains no per-command branching. Its
+// list of names comes from HandlerCatalog; until TASK-0039 it was a literal
+// list that a new command did not enter (rules review finding F22).
 public class SchemaEndpointGateTests : IClassFixture<WebApplicationFactory<Program>>
 {
     private readonly WebApplicationFactory<Program> _factory;
@@ -109,7 +112,8 @@ public class SchemaEndpointGateTests : IClassFixture<WebApplicationFactory<Progr
         var source = FindSource("Engine.Api.Http", "Endpoints", "SchemaCommandsEndpoint.cs");
         var text = File.ReadAllText(source);
 
-        var registeredNames = new[] { "NoOp", "CreateBox", "Translate", "Subtract" };
+        var registeredNames = HandlerCatalog.CommandHandlers().Select(h => h.CommandName).ToArray();
+        Assert.NotEmpty(registeredNames);
         foreach (var name in registeredNames)
         {
             var literal = $"\"{name}\"";
@@ -126,7 +130,8 @@ public class SchemaEndpointGateTests : IClassFixture<WebApplicationFactory<Progr
         var source = FindSource("Engine.Api.Http", "Endpoints", "SchemaQueriesEndpoint.cs");
         var text = File.ReadAllText(source);
 
-        var registeredNames = new[] { "GetBoundingBox" };
+        var registeredNames = HandlerCatalog.QueryHandlers().Select(h => h.QueryName).ToArray();
+        Assert.NotEmpty(registeredNames);
         foreach (var name in registeredNames)
         {
             var literal = $"\"{name}\"";

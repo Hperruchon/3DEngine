@@ -4,8 +4,8 @@ using Xunit;
 namespace Engine.Tests.Governance;
 
 // The gate that CLAUDE.md has listed for months with no check behind it.
-// Register entry R-0004 recorded that gap. The working agreement calls such a
-// rule a wish rather than a rule.
+// Register entry R-0004 recorded that gap. The working agreement of 2026-09-20
+// called such a rule a wish rather than a rule.
 //
 // The gate reads each project file in the working tree. It needs no build and
 // no reflection, therefore it also catches a reference that compiles.
@@ -15,8 +15,8 @@ public class DependencyDirectionGateTests
         @"ProjectReference\s+Include\s*=\s*""([^""]+)""",
         RegexOptions.Compiled);
 
-    // The enumeration must skip a git worktree. The repository holds three of
-    // them under .claude/worktrees/, and each one is a full copy pinned to an
+    // The enumeration must skip a git worktree. The repository held three of
+    // them under .claude/worktrees/, and each one was a full copy pinned to an
     // older commit. Without this filter a stale copy shadows the real project
     // file, and the gate then reports a rule as satisfied when it is broken.
     // An injection test found this defect.
@@ -116,8 +116,13 @@ public class DependencyDirectionGateTests
         Assert.True(offences.Length == 0, string.Join("\n  ", offences));
     }
 
-    // The render side. A host that draws references it and a headless client
-    // does not. ADR-0009 gives 3DEngine.Core and ADR-0017 gives 3DEngine.Vulkan.
+    // Each project in the repository has one class. The design-truth kernel
+    // and its backend, the render side, the clients, the verifier and the
+    // packaging project. A project outside each class is a project that no
+    // rule reads, which is how the vendored sample framework escaped the gate
+    // before TASK-0027.
+    private static readonly string[] Kernel = ["Engine.Contracts", "Engine.Core", "Engine.Geometry.Manifold"];
+
     private static readonly string[] RenderSide = ["3DEngine.Core", "3DEngine.Vulkan"];
 
     private static readonly string[] HeadlessClients = ["Engine.Cli", "Engine.Api.Http"];
@@ -125,6 +130,31 @@ public class DependencyDirectionGateTests
     // TASK-0027 added the desktop host. Before that task the gate did not read
     // it, and the host referenced the vendored sample framework with no report.
     private static readonly string[] HostsThatDraw = ["3DEngine"];
+
+    private static readonly string[] Verifiers = ["Engine.Tests"];
+
+    // eng/manifold-native packs the native payload. It holds no code.
+    private static readonly string[] Packaging = ["Engine.Geometry.Manifold.Native"];
+
+    [Fact]
+    public void Each_Project_Is_In_One_Class()
+    {
+        // A new project must enter one of the lists above before the gate can
+        // apply a rule to it. Until TASK-0039 an unlisted project passed each
+        // test, because no test read it (rules review finding F22).
+        string[] classified = [.. Kernel, .. RenderSide, .. HeadlessClients, .. HostsThatDraw, .. Verifiers, .. Packaging];
+
+        var unclassified = Graph().Keys
+            .Where(p => !classified.Contains(p))
+            .Select(p => $"{p} is in no class of DependencyDirectionGateTests")
+            .ToArray();
+
+        Assert.True(
+            unclassified.Length == 0,
+            "Each project must be a kernel, a render-side project, a headless client, a host that "
+            + "draws, a verifier or a packaging project, so that the dependency rules apply to it. "
+            + "Add it to one list.\n  " + string.Join("\n  ", unclassified));
+    }
 
     [Fact]
     public void A_Client_References_Only_The_Permitted_Projects()

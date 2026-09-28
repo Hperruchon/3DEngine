@@ -1,6 +1,6 @@
 # Diagnostic code registry
 
-All `E-`/`W-`/`I-` codes used in `Engine.*` code MUST appear here. Append-only. Codes are stable: once shipped, a code does not change meaning. Per ADR-0008 §4.
+All `E-`/`W-`/`I-` codes used in `Engine.*` code MUST appear here. A code is never removed and never changes meaning. A row may move between the two tables, and its text may change to say where the code is raised. Per ADR-0008 §4.
 
 ## Conventions
 
@@ -27,20 +27,17 @@ All `E-`/`W-`/`I-` codes used in `Engine.*` code MUST appear here. Append-only. 
 
 ## Reserved namespaces
 
-- `X-…` — plugin-defined codes (V2, not used yet).
+- `X-…` — plugin-defined codes (reserved, not used).
 
 ## Adding a code
 
 1. Add the row above. Pick a stable, namespaced code.
 2. Reference the code from `Engine.Core/DiagnosticCodes.cs` constants.
-3. Same PR as the code that raises it.
+3. Same change as the code that raises it. `Engine.Tests/Diagnostics/DiagnosticsRegistryGateTests.cs` reads each `Engine.*` project and fails when a code in the source has no row here.
 
-Removing a code is forbidden. Mark obsolete in this file if no longer raised.
+Removing a code is forbidden. A code that no source raises stays in the table above and gets a row in the table below, with its reason.
 
 ## Permanently reserved codes
-
-This section is append-only, like the rest of this file. CLAUDE.md permits an addition to this file
-and nothing else, therefore the rows above are unchanged.
 
 A reserved code is a code that the registry holds and that no source raises. Register entry R-0011
 recorded the risk: an unlimited quantity of reserved codes makes the registry unreliable, because a
@@ -48,6 +45,8 @@ reader cannot tell a live code from a placeholder.
 
 `Engine.Tests/Governance/DiagnosticsReserveGateTests.cs` reads this table. The quantity of reserved
 codes must not grow past two. A new reserved code needs a decision that lowers or raises that number.
+When a task raises a reserved code, the task removes its row from this table and corrects the column
+"Where raised" above.
 
 | Code | The reason that no source raises it |
 |---|---|

@@ -1,10 +1,12 @@
+using System.Text;
+using System.Text.RegularExpressions;
 using Engine.Tests.Diagnostics;
 
 namespace Engine.Tests.Governance;
 
 // Shared helpers for each governance gate. A gate reads a document in the
-// repository, therefore each gate needs the repository root and a small
-// front-matter reader.
+// repository, therefore each gate needs the repository root, a small
+// front-matter reader, the task files and the path patterns of a write set.
 internal static class RepositoryFiles
 {
     public static string Root => DiagnosticsScanner.FindRepoRoot(AppContext.BaseDirectory);
@@ -13,43 +15,6 @@ internal static class RepositoryFiles
         => System.IO.Path.Combine(new[] { Root }.Concat(parts).ToArray());
 
     public static string Read(params string[] parts) => File.ReadAllText(Path(parts));
-
-    // Each tracked text file that a governance rule applies to. The gate reads
-    // the working tree, not git, so it needs no process and no repository state.
-    public static IEnumerable<string> TrackedTextFiles()
-    {
-        string[] roots =
-        [
-            "Engine.Contracts", "Engine.Core", "Engine.Cli", "Engine.Api.Http",
-            "Engine.Geometry.Manifold", "Engine.Tests", "docs", "tasks", "eng",
-        ];
-
-        string[] extensions = [".cs", ".md", ".csproj", ".json", ".yml"];
-
-        foreach (var relative in roots)
-        {
-            var directory = Path(relative);
-            if (!Directory.Exists(directory))
-                continue;
-
-            foreach (var file in Directory.EnumerateFiles(directory, "*", SearchOption.AllDirectories))
-            {
-                if (file.Contains($"{System.IO.Path.DirectorySeparatorChar}obj{System.IO.Path.DirectorySeparatorChar}")
-                    || file.Contains($"{System.IO.Path.DirectorySeparatorChar}bin{System.IO.Path.DirectorySeparatorChar}"))
-                    continue;
-
-                if (extensions.Contains(System.IO.Path.GetExtension(file)))
-                    yield return file;
-            }
-        }
-
-        foreach (var name in new[] { "CLAUDE.md", "global.json", "nuget.config" })
-        {
-            var file = Path(name);
-            if (File.Exists(file))
-                yield return file;
-        }
-    }
 
     public static string Relative(string absolute)
         => System.IO.Path.GetRelativePath(Root, absolute).Replace('\\', '/');
@@ -124,4 +89,134 @@ internal static class RepositoryFiles
             .Where(item => item.Length > 0)
             .ToArray();
     }
+
+    // One task file with front matter. Task files 0001 to 0013 carry none and
+    // are not returned; WriteSetGateTests bounds their count.
+    public sealed record TaskRecord(
+        string File,
+        string Id,
+        string Status,
+        Dictionary<string, string> Fields,
+        IReadOnlyList<string> Create,
+        IReadOnlyList<string> Modify,
+        IReadOnlyList<string> Forbid)
+    {
+        public IEnumerable<string> Written => Create.Concat(Modify);
+    }
+
+    public static IEnumerable<string> TaskFiles()
+        => Directory.EnumerateFiles(Path("tasks"), "TASK-*.md").OrderBy(f => f, StringComparer.Ordinal);
+
+    public static List<TaskRecord> Tasks()
+    {
+        var tasks = new List<TaskRecord>();
+
+        foreach (var file in TaskFiles())
+        {
+            var text = File.ReadAllText(file);
+            var fields = ReadFrontMatter(text);
+            if (fields is null)
+                continue;
+
+            var (create, modify, forbid) = ReadWrites(text);
+
+            tasks.Add(new TaskRecord(
+                file,
+                fields.TryGetValue("id", out var id) ? $"TASK-{id}" : System.IO.Path.GetFileName(file),
+                fields.TryGetValue("status", out var status) ? status : string.Empty,
+                fields,
+                create,
+                modify,
+                forbid));
+        }
+
+        return tasks;
+    }
+
+    // ReadFrontMatter is flat, and the writes block has two levels. This reader
+    // handles that one shape and nothing else, in the same spirit: it is not a
+    // YAML parser.
+    public static (List<string> Create, List<string> Modify, List<string> Forbid) ReadWrites(string text)
+    {
+        List<string> create = [], modify = [], forbid = [];
+        List<string>? current = null;
+        var inWrites = false;
+
+        foreach (var raw in text.Split('\n').Skip(1))
+        {
+            var line = raw.TrimEnd('\r');
+
+            if (line.StartsWith("---", StringComparison.Ordinal))
+                break;
+
+            if (line.StartsWith("writes:", StringComparison.Ordinal))
+            {
+                inWrites = true;
+                continue;
+            }
+
+            if (!inWrites)
+                continue;
+
+            // A key at the left margin ends the block.
+            if (line.Length > 0 && !char.IsWhiteSpace(line[0]))
+                break;
+
+            var trimmed = line.Trim();
+
+            if (trimmed is "create:" or "modify:" or "forbid:")
+            {
+                current = trimmed switch
+                {
+                    "create:" => create,
+                    "modify:" => modify,
+                    _ => forbid,
+                };
+                continue;
+            }
+
+            if (current is not null && trimmed.StartsWith("- ", StringComparison.Ordinal))
+                current.Add(trimmed[2..].Trim().Trim('\'', '"'));
+        }
+
+        return (create, modify, forbid);
+    }
+
+    // A path pattern, in the form that docs/templates.md uses. Two stars match
+    // each character. One star matches each character except the separator.
+    public static Regex PathPattern(string pattern)
+    {
+        var expression = new StringBuilder("^");
+
+        for (var i = 0; i < pattern.Length; i++)
+        {
+            if (pattern[i] == '*')
+            {
+                if (i + 1 < pattern.Length && pattern[i + 1] == '*')
+                {
+                    expression.Append(".*");
+                    i++;
+                }
+                else
+                {
+                    expression.Append("[^/]*");
+                }
+
+                continue;
+            }
+
+            expression.Append(Regex.Escape(pattern[i].ToString()));
+        }
+
+        return new Regex(expression.Append('$').ToString(), RegexOptions.Compiled);
+    }
+
+    // Two patterns intersect when one of them matches a sample path of the
+    // other. A sample replaces each star with a name. This is enough for the
+    // shapes that a write set and an affects field use.
+    public static bool PatternsIntersect(string first, string second)
+        => PathPattern(first).IsMatch(Sample(second)) || PathPattern(second).IsMatch(Sample(first));
+
+    private static string Sample(string pattern)
+        => pattern.Replace("**", "x/x", StringComparison.Ordinal).Replace("*", "x", StringComparison.Ordinal);
 }

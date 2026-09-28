@@ -1,13 +1,13 @@
 ---
 id: 0008
 title: Command, query and event triad with structured results
-status: Accepted
+status: Amended
 topic: Contracts
 date: 2026-04-28
 supersedes: []
 superseded-by: []
 amends: ['0006']
-amended-by: []
+amended-by: ['0020']
 affects:
   - Engine.Contracts/**
 enforced-by: Engine.Tests/Http/SchemaEndpointGateTests.cs

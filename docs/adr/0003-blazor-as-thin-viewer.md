@@ -1,7 +1,7 @@
 ---
 id: 0003
 title: Blazor as thin viewer
-status: Accepted
+status: Withdrawn
 topic: Clients
 date: 2026-04-28
 supersedes: []
@@ -11,7 +11,7 @@ amended-by: []
 affects:
   - BlazorApp/**
 enforced-by: UNENFORCED (accepted risk)
-notes: The two-page viewer is not built. See docs/CHARTER.md, non-goals.
+notes: Withdrawn 2026-09-25 by the owner. The two-page viewer was never built, and TASK-0033 removed the Blazor projects. Register entry R-0021 holds how to show the application.
 ---
 
 # ADR 0003 — Blazor as Thin Viewer

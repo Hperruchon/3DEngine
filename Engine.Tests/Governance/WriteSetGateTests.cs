@@ -1,5 +1,3 @@
-using System.Text;
-using System.Text.RegularExpressions;
 using Xunit;
 
 namespace Engine.Tests.Governance;
@@ -15,12 +13,12 @@ namespace Engine.Tests.Governance;
 //     the declaration is well formed and that it agrees with the working tree.
 //   - The dynamic test runs when the environment variable WRITE_SET_FILES gives
 //     a list of changed paths, one per line. Continuous integration sets that
-//     variable from `git diff --name-only`. The test then verifies that each
-//     changed file is inside the write set of a task that the same change
-//     touches.
+//     variable from `git diff-tree`, and it sets WRITE_SET_TASK from the
+//     trailer line of the commit message, of the form TASK-nnnn. The test then
+//     verifies that each changed file is inside the write set of that task.
 //
-// One implementation serves both. A person can run the dynamic part locally by
-// setting the variable, and the logic that continuous integration uses is the
+// One implementation serves both. A person runs the dynamic part locally by
+// setting both variables, and the logic that continuous integration uses is the
 // logic that `dotnet test` covers.
 public class WriteSetGateTests
 {
@@ -30,21 +28,10 @@ public class WriteSetGateTests
     // write set.
     private const int TasksWithoutFrontMatterBudget = 13;
 
-    private sealed record TaskWriteSet(
-        string File,
-        string Id,
-        string Status,
-        IReadOnlyList<string> Create,
-        IReadOnlyList<string> Modify,
-        IReadOnlyList<string> Forbid)
-    {
-        public IEnumerable<string> Written => Create.Concat(Modify);
-    }
-
     [Fact]
     public void The_Count_Of_Tasks_Without_A_Write_Set_Does_Not_Grow()
     {
-        var bare = TaskFiles()
+        var bare = RepositoryFiles.TaskFiles()
             .Where(f => RepositoryFiles.ReadFrontMatter(File.ReadAllText(f)) is null)
             .Select(RepositoryFiles.Relative)
             .ToArray();
@@ -53,13 +40,13 @@ public class WriteSetGateTests
             bare.Length <= TasksWithoutFrontMatterBudget,
             $"The count of task files with no front matter is {bare.Length} and the budget is "
             + $"{TasksWithoutFrontMatterBudget}. A new task must declare a write set. See "
-            + $"docs/templates.md, section 3. Files:\n  {string.Join("\n  ", bare)}");
+            + $"docs/templates.md, section 2. Files:\n  {string.Join("\n  ", bare)}");
     }
 
     [Fact]
     public void Every_Task_With_Front_Matter_Declares_A_Write_Set()
     {
-        var problems = Parse()
+        var problems = RepositoryFiles.Tasks()
             .Where(t => t.Create.Count == 0 && t.Modify.Count == 0)
             .Select(t => $"{t.Id}: the writes block names no file to create and no file to modify")
             .ToArray();
@@ -74,9 +61,9 @@ public class WriteSetGateTests
         // must refuse it, otherwise the forbid list means nothing.
         var problems = new List<string>();
 
-        foreach (var task in Parse())
+        foreach (var task in RepositoryFiles.Tasks())
         {
-            var forbidden = task.Forbid.Select(ToRegex).ToArray();
+            var forbidden = task.Forbid.Select(RepositoryFiles.PathPattern).ToArray();
 
             foreach (var path in task.Written)
             {
@@ -93,7 +80,7 @@ public class WriteSetGateTests
     {
         var problems = new List<string>();
 
-        foreach (var task in Parse())
+        foreach (var task in RepositoryFiles.Tasks())
         {
             foreach (var path in task.Written.Concat(task.Forbid))
             {
@@ -116,7 +103,7 @@ public class WriteSetGateTests
         // A pattern is skipped, because a pattern names a set and not a file.
         var problems = new List<string>();
 
-        foreach (var task in Parse().Where(t => t.Status == "Done"))
+        foreach (var task in RepositoryFiles.Tasks().Where(t => t.Status == "Done"))
         {
             foreach (var path in task.Create.Where(p => !p.Contains('*')))
             {
@@ -132,63 +119,81 @@ public class WriteSetGateTests
     }
 
     [Fact]
-    public void Every_Changed_File_Is_Inside_The_Write_Set_Of_A_Changed_Task()
+    public void Every_Changed_File_Is_Inside_The_Write_Set_Of_The_Governing_Task()
     {
         var changed = ChangedFiles();
         if (changed is null)
             return; // Continuous integration supplies the list. See the class comment.
 
-        // Only a task that this change touches can govern this change. A task
-        // from an older change must not authorise a file today.
-        var governing = Parse()
-            .Where(t => changed.Contains(RepositoryFiles.Relative(t.File), StringComparer.Ordinal))
-            .ToArray();
+        var governing = GoverningTask(changed);
 
-        Assert.True(
-            governing.Length > 0,
-            "This change touches no task file, therefore no write set governs it. CLAUDE.md, section "
-            + "\"Anti-patterns\", says: do not do work outside the scope of the active task. Add the "
-            + "task file to the change.\n  Changed files:\n  " + string.Join("\n  ", changed));
-
-        var permitted = governing.SelectMany(t => t.Written).Select(ToRegex).ToArray();
-        var refused = governing
-            .SelectMany(t => t.Forbid.Select(pattern => (t.Id, Rule: ToRegex(pattern), pattern)))
-            .ToArray();
+        var permitted = governing.Written.Select(RepositoryFiles.PathPattern).ToArray();
+        var refused = governing.Forbid.Select(pattern => (Rule: RepositoryFiles.PathPattern(pattern), pattern)).ToArray();
 
         var problems = new List<string>();
 
         foreach (var file in changed)
         {
-            // A permit beats a forbid. A forbid binds the task that declares it
-            // and no other task, because "Engine.Cli/** forbidden" on the
-            // persistence task means that the persistence work must stay out of
-            // the command line, and not that nobody may touch it.
-            //
-            // TASK-0022 had the opposite rule and called the strict reading the
-            // safe one. That was wrong, and it only looked right because every
-            // change tested against it carried one task. TASK-0026 corrected it
-            // after the v0.20 commit failed: TASK-0018 modified
-            // Engine.Cli/Cli.cs and declared it, and the forbid list of the
-            // deferred TASK-0019 blocked that declaration.
+            // A permit beats a forbid inside one task, because a task that both
+            // permits and forbids a path is refused by a static test above. A
+            // forbid gives the better message when a file is in no list,
+            // because it names the boundary that the author wrote.
             if (permitted.Any(rule => rule.IsMatch(file)))
                 continue;
 
-            // The file is in no list. A forbid that matches it gives the better
-            // message, because it names the boundary that the author wrote.
             var blocked = refused.FirstOrDefault(r => r.Rule.IsMatch(file));
 
             problems.Add(blocked.Rule is not null
-                ? $"{file} matches the forbid pattern '{blocked.pattern}' of {blocked.Id}, "
-                    + "and no task in this change permits it"
-                : $"{file} is in no create list and in no modify list");
+                ? $"{file} matches the forbid pattern '{blocked.pattern}' of {governing.Id}"
+                : $"{file} is in no create list and in no modify list of {governing.Id}");
         }
 
         Assert.True(
             problems.Count == 0,
-            "Register entry R-0017: the writes block of a task must govern each changed file. Add the "
-            + "path to the create list or the modify list, or do not change the file. Governing "
-            + $"tasks: {string.Join(", ", governing.Select(t => t.Id))}. Problems:\n  "
-            + string.Join("\n  ", problems));
+            "Register entry R-0017: the writes block of the governing task must cover each changed "
+            + "file. Add the path to the create list or the modify list, or do not change the file. "
+            + $"Governing task: {governing.Id}. Problems:\n  " + string.Join("\n  ", problems));
+    }
+
+    // The task that governs a change. The commit message names it, as a trailer
+    // line of the form TASK-nnnn, and continuous integration passes the name
+    // in WRITE_SET_TASK. When no name is given, the one task file that the
+    // change touches governs it. A change that touches several task files and
+    // names none is refused: register entry R-0026 recorded that such a change
+    // received the permits of each task, so a commit that planned three tasks
+    // could also change Engine.Core/CommandBus.cs with no report.
+    private static RepositoryFiles.TaskRecord GoverningTask(HashSet<string> changed)
+    {
+        var tasks = RepositoryFiles.Tasks();
+        var named = Environment.GetEnvironmentVariable("WRITE_SET_TASK")?.Trim();
+
+        if (!string.IsNullOrEmpty(named))
+        {
+            var task = tasks.FirstOrDefault(t => t.Id == named);
+            Assert.True(
+                task is not null,
+                $"The commit names {named}, and no task file with a write set has that identifier. "
+                + "Name a task with front matter, or correct the identifier.");
+            return task!;
+        }
+
+        var touched = tasks
+            .Where(t => changed.Contains(RepositoryFiles.Relative(t.File), StringComparer.Ordinal))
+            .ToArray();
+
+        Assert.True(
+            touched.Length > 0,
+            "This change names no task and touches no task file, therefore no write set governs it. "
+            + "Name the task in the commit message, as a trailer line of the form TASK-nnnn, or add the "
+            + "task file to the change.\n  Changed files:\n  " + string.Join("\n  ", changed));
+
+        Assert.True(
+            touched.Length == 1,
+            "This change touches several task files and names none. Only one task governs a commit. "
+            + "Name it in the commit message, as a trailer line of the form TASK-nnnn. Touched: "
+            + string.Join(", ", touched.Select(t => t.Id)));
+
+        return touched[0];
     }
 
     // The list of changed paths, one per line, relative to the repository root
@@ -211,111 +216,5 @@ public class WriteSetGateTests
             .ToHashSet(StringComparer.Ordinal);
 
         return files.Count == 0 ? null : files;
-    }
-
-    // A path pattern, in the form that docs/templates.md uses. Two stars match
-    // each character. One star matches each character except the separator.
-    private static Regex ToRegex(string pattern)
-    {
-        var expression = new StringBuilder("^");
-
-        for (var i = 0; i < pattern.Length; i++)
-        {
-            if (pattern[i] == '*')
-            {
-                if (i + 1 < pattern.Length && pattern[i + 1] == '*')
-                {
-                    expression.Append(".*");
-                    i++;
-                }
-                else
-                {
-                    expression.Append("[^/]*");
-                }
-
-                continue;
-            }
-
-            expression.Append(Regex.Escape(pattern[i].ToString()));
-        }
-
-        return new Regex(expression.Append('$').ToString(), RegexOptions.Compiled);
-    }
-
-    private static IEnumerable<string> TaskFiles()
-        => Directory.EnumerateFiles(RepositoryFiles.Path("tasks"), "TASK-*.md").OrderBy(f => f, StringComparer.Ordinal);
-
-    private static List<TaskWriteSet> Parse()
-    {
-        var tasks = new List<TaskWriteSet>();
-
-        foreach (var file in TaskFiles())
-        {
-            var text = File.ReadAllText(file);
-            var fields = RepositoryFiles.ReadFrontMatter(text);
-            if (fields is null)
-                continue;
-
-            var (create, modify, forbid) = ReadWrites(text);
-
-            tasks.Add(new TaskWriteSet(
-                file,
-                fields.TryGetValue("id", out var id) ? $"TASK-{id}" : Path.GetFileName(file),
-                fields.TryGetValue("status", out var status) ? status : string.Empty,
-                create,
-                modify,
-                forbid));
-        }
-
-        return tasks;
-    }
-
-    // RepositoryFiles.ReadFrontMatter is flat, and the writes block has two
-    // levels. This reader handles that one shape and nothing else, in the same
-    // spirit: it is not a YAML parser.
-    private static (List<string> Create, List<string> Modify, List<string> Forbid) ReadWrites(string text)
-    {
-        List<string> create = [], modify = [], forbid = [];
-        List<string>? current = null;
-        var inWrites = false;
-
-        foreach (var raw in text.Split('\n').Skip(1))
-        {
-            var line = raw.TrimEnd('\r');
-
-            if (line.StartsWith("---", StringComparison.Ordinal))
-                break;
-
-            if (line.StartsWith("writes:", StringComparison.Ordinal))
-            {
-                inWrites = true;
-                continue;
-            }
-
-            if (!inWrites)
-                continue;
-
-            // A key at the left margin ends the block.
-            if (line.Length > 0 && !char.IsWhiteSpace(line[0]))
-                break;
-
-            var trimmed = line.Trim();
-
-            if (trimmed is "create:" or "modify:" or "forbid:")
-            {
-                current = trimmed switch
-                {
-                    "create:" => create,
-                    "modify:" => modify,
-                    _ => forbid,
-                };
-                continue;
-            }
-
-            if (current is not null && trimmed.StartsWith("- ", StringComparison.Ordinal))
-                current.Add(trimmed[2..].Trim().Trim('\'', '"'));
-        }
-
-        return (create, modify, forbid);
     }
 }

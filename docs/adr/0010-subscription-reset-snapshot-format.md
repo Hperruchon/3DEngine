@@ -1,13 +1,13 @@
 ---
 id: 0010
 title: subscription.reset snapshot format
-status: Accepted
+status: Amended
 topic: Contracts, observability
 date: 2026-05-12
 supersedes: []
 superseded-by: []
 amends: []
-amended-by: []
+amended-by: ['0020']
 affects:
   - Engine.Api.Http/WebSockets/**
 enforced-by: Engine.Tests/Http/EventsEndpointWireShapeTests.cs

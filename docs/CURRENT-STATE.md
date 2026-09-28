@@ -753,3 +753,149 @@ irregular. The next review must come before ledger entry v0.35. Four violations 
 each one failed. A complete second review passed as the positive control.
 
 New tests: 5. The test list holds 206, up from 201. Open entries: 3 of 15. New diagnostic codes: none.
+
+## v0.32 — The decisions of 2026-09-25 (governance, TASK-0032)
+
+The owner answered the nine questions of the architecture challenge. This milestone records each
+answer, and it changes no code.
+
+- **Three new ADRs, accepted on the decision of the owner.** ADR-0019: the desktop host owns the
+  session and serves the HTTP and WebSocket surface as a library, and `engine-api-http` becomes a
+  small program around the same library. ADR-0020: the version counts applied commands, and the reset
+  snapshot gains `seq` for the cursor. ADR-0021: an operation consumes its operands, and the Document
+  holds the live bodies only.
+- **ADR-0018 is accepted** after two corrections: both hosts call `Query<object>`, and
+  `FieldSchema.Items` waits. It amends ADR-0012 only.
+- **Five ADRs are now `Amended`:** ADR-0006, ADR-0008 and ADR-0010 by ADR-0020, ADR-0011 by ADR-0019,
+  and ADR-0012 by ADR-0018 and ADR-0021. ADR-0005 does not change, because it does not define the
+  version.
+- **Anti-objective 2** keeps the drag rule of ADR-0007: the preview stays in the client, and one
+  command goes to the log on release.
+- **Six ready tasks.** TASK-0034 (one serial boundary), TASK-0035 (the version), TASK-0036 (a host
+  refuses to start without the native backend), TASK-0028 (R2, now `Ready`), TASK-0037 (operand
+  consumption) and TASK-0038 (the hybrid topology). The roadmap gives their order.
+- **A gap in the write-set gate.** A commit that touches a task file gets all its permits. Register
+  entry R-0026 records the risk, which an injection found.
+- **The architecture challenge** is in `docs/reviews/2026-09-23-architecture-challenge.md`, with the
+  answers of the owner in its last section.
+
+Nothing new exists in the code. `CLAUDE.md` gives the hybrid topology as the target, not as the
+state.
+
+New tests: 0. The test list holds 206. Open entries: 10 of 15. New diagnostic codes: none. The next
+codebase review must come before ledger entry v0.35.
+
+## v0.33 — The web shell is removed (governance, TASK-0033)
+
+The owner said on 2026-09-25 that a browser client is not the main idea. `BlazorApp` and
+`BlazorApp.Client` were a template that made no call to the engine, so this milestone deletes them.
+
+- The solution holds no Blazor project. The two entries in `3DEngine.sln` are gone.
+- ADR-0003 has the status `Withdrawn`, with the reason in its field `notes`. The legend and
+  `docs/templates.md` now permit the owner to withdraw an accepted record that no later record
+  replaces.
+- The budget of unenforced ADRs falls from 2 to 1, because ADR-0003 was one of the two.
+- `CLAUDE.md`, `docs/INDEX.md`, the pull request template and the notes of `3DEngine.Core` name no
+  Blazor project.
+
+Register entry R-0021 holds the open question of how to show the application.
+
+New tests: 0. The test list holds 206. Open entries: 10 of 15. New diagnostic codes: none. The next
+codebase review must come before ledger entry v0.35.
+
+## v0.34 — The rules are fewer, each one has one home, and ten more have a gate (governance, TASK-0039)
+
+The rules review of 2026-09-25, `docs/reviews/2026-09-25-rules-review.md`, examined each rule and
+the organization of the repository. It found 124 rules in thirteen files, seventy of them in text
+only, fourteen statements about a repository that no longer existed, five rules that the practice
+contradicted, and eighteen files that a session read to find its position. The owner agreed with
+the proposal on 2026-09-26 and gave four directions: show the organization, change the rules that
+contradict the practice, clean each statement that does not need to exist, and keep each ADR in
+agreement with the code. This milestone does the first three. TASK-0040 holds the fourth.
+
+**Three files are gone.** `docs/working-agreement.md`, `docs/conventions.md` and
+`docs/open-questions.md`. Each live rule moved to `CLAUDE.md` or to `docs/templates.md`, and each
+rule that repeated a gate or another file went. The rationale of the working agreement, with its
+reasons from the Blender, FreeCAD and Ondsel projects, is in `docs/archive/`. `CLAUDE.md` is a
+position file of 150 lines. The six determinism rules are unchanged. Section 4.0 of the review
+gives one home for each topic that lived in two or more places.
+
+**Five rules changed, and each one keeps its purpose.** A session runs the tests before each commit,
+and the gate on three operating systems is the proof. A false statement about the repository is an
+error that the task corrects; a decision that the code contradicts is a question for the owner. A
+diagnostic code is never removed and never changes meaning, and a row may move. An accepted ADR
+agrees with the code, with a section "History" and the acceptance of the owner for each change to a
+Decision (`docs/templates.md`, section 1). Each push is green, and the owner merges when convenient.
+
+**Four new gates.** `AdrEnforcementExistsGateTests` fails when an ADR in force names an `enforced-by`
+file that does not exist, unless a Ready task creates it. `TaskGovernanceGateTests` fails when
+`governed-by` of a Ready task differs from the ADRs whose `affects` intersect its write set, or when
+`depends-on` names no task. `DeterminismCallGateTests` fails when a source in the log path calls a
+transcendental function, `FusedMultiplyAdd` or a function whose guarantee covers one process, or when
+a project file names a 32-bit runtime identifier. `DocumentPathGateTests` fails when a path in
+`docs/INDEX.md` does not exist or a gate class has no row in the gate table.
+
+**Two gates changed.** The write-set gate reads the task that the commit trailer names, a line of the
+form `TASK-nnnn`, and only that task governs the commit; a commit with no trailer that touches several
+task files fails. This closes register entry R-0026. The contract gate runs on each push, against the
+previous tip, and not on a pull request only; it had never checked a merge into `main`.
+
+**Five gates read a scan instead of a fixed list.** The dispatch gate reads each host source. The
+diagnostics scanner reads each `Engine.*` project, and `Engine.Api.Http` raises three codes that it
+did not read before. The schema gate reads `HandlerCatalog`. The dependency gate fails on a project
+that is in no class. The marker gate reads each project that has a project file.
+
+**Sixteen injections, and each one failed.** An ADR with a missing file and an ADR with a closed task;
+a Ready task with an extra ADR, a missing ADR and an absent dependency; `Math.Pow` in `Engine.Core`
+and `win-x86` in a project file; a host file with a quoted command name, a code in `Engine.Api.Http`,
+a project in no class, a `TODO` in that project, and a quoted query name in the schema endpoint; the
+change list of v0.32 plus `Engine.Core/CommandBus.cs`, with TASK-0032 named and with no task named;
+a path that does not exist in the map, and the gate table without one class. The old fixed lists
+passed four of the five scan injections. Each commit after the cut-off passes the trailer rule; a
+prose line of the v0.27 message that starts with an identifier made the first form of the rule fail,
+and the trailer form corrected it.
+
+**Fourteen stale statements are corrected or removed.** Register entry R-0019 is closed. Two pointer
+lines of `docs/CHARTER.md` named the deleted working agreement and now point at `CLAUDE.md`; no
+objective, anti-objective or non-goal changed. The task moved the charter from `forbid` to `modify`
+for those two lines after the write-set gate refused the commit.
+
+**One status vocabulary.** A task is `Ready`, `Active`, `Done` or `Deferred`. The roadmap loses its
+Status column and keeps the Shipped list. The glossary defines `V1` and `V1.x`, which fifteen ADRs
+and the charter use.
+
+**The measures**, with the method of the review, section 1, so that the next review can repeat them:
+
+| Measure | Before | After | Method |
+|---|---|---|---|
+| Rule files | 13 | 10 | The files with rules, without the ledger and the three CI files. |
+| Lines in the rule files and the CI files | 2,971 | 2,688 | `wc -l` on the same sixteen files, before this entry. |
+| Sentences with "must" | 52 | 40 | `grep -o -w -i must` on the rule files. |
+| Sentences with "do not" | 80 | 46 | `grep -o -i -E '\bdo not\b'` on the rule files. |
+| Rules in the inventory | 124 | 93 | Section 2 of the review, less the rows marked deleted. |
+| Rules that a gate enforces in full | 30 | 30 | Ten deleted rows had a gate; ten rows gained one. |
+| Rules in text only | 70 | 48 | The rows with `none` that stay. Twelve are the charter's. |
+| Files that a session reads to find its position | 18 | 17 | The method of the review, section 1, for TASK-0034. |
+| Gate classes | 13 | 17 | Test classes whose name ends in `GateTests`. |
+| Open register entries | 10 of 15 | 8 of 15 | Section "Open" of `docs/register.md`. |
+
+**Not done, and why.** The folds of the seven amended ADRs are TASK-0040, because each one changes a
+Decision that the owner accepts. `CLAUDE.md` has 150 lines and not the 120 of the estimate, because
+the diagram and the six determinism rules take forty lines that stay. A gate for a contraction in a
+document was offered and not asked for.
+
+New tests: 8. The test list holds 214, up from 206. `dotnet build 3DEngine.sln --no-incremental`
+gives zero errors and zero warnings. Closed: R-0019, R-0026. Open entries: 8 of 15. New diagnostic
+codes: none.
+
+**The next ledger entry, v0.35, must be a codebase review.** Six milestones follow v0.28, which the
+last review examined, and the limit of `CodebaseReviewGateTests` is six.
+
+**Added on 2026-09-26, after the push and before the merge, in the same milestone (TASK-0041).** The
+rules that earlier sessions broke, and that the owner then put in the prompt of each session, were
+not in `CLAUDE.md`: read a file before you cite it, prove a gate by injection, `set -o pipefail`, an
+absent tool is not evidence, Node.js and not Python, a clean build for a warning count, and the
+commit trailer. One section "Method" now holds them, with the write-set command, and it absorbs the
+sections "Tests" and "Rules with no other home". `CLAUDE.md` has 165 lines. This paragraph is in the
+entry v0.34 and not in a new entry, because the branch is unmerged and the next entry must be the
+codebase review.

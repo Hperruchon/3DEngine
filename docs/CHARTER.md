@@ -111,7 +111,7 @@ No consumer holds business logic. Each consumer turns input into commands and ob
 - **Command handlers and query handlers** — they reach geometry only through a capability. They read
   their parameters, the current Document and the active backend.
 - **Contributors, human and agent** — the reader of this charter. Use the scope test below. Read
-  `CLAUDE.md` for position and `docs/working-agreement.md` for behaviour.
+  `CLAUDE.md` for position and for the rules.
 
 ## What exists
 
@@ -198,9 +198,9 @@ and you must not join them.
    difference appears, the client treats as correct. A read-only projection that the client discards
    and builds again is not one.
 2. **Never bypass the CommandBus. No business logic in a client.** No state that can enter the saved
-   document arrives by a path other than a command on the log. An interactive tool sends provisional
-   commands to the same log, and one final command when the person completes the action. An
-   interactive tool must not use a separate buffer. Do not implement "save" as "write the memory to a
+   document arrives by a path other than a command on the log. An interactive tool keeps its preview
+   in the client, and it sends one command when the person releases the control (ADR-0007). A preview
+   never enters the log or the Document. Do not implement "save" as "write the memory to a
    file". Implement it as "write the log, and write an optional checkpoint that the log produces".
 3. **A query never changes state, never writes to the log, never replays and never streams.**
 4. **A command lands completely, or it does not land.** This rule applies to the log and to the
@@ -277,5 +277,5 @@ its effect on design truth, not by the word that the person used.
    signal. In that condition the product is a roadmap entry and an ADR, not code.
 
 Rule of thumb: **the charter says if you can act. `CLAUDE.md` says where. The relevant ADR says how.
-`CURRENT-STATE.md` says what exists. `docs/working-agreement.md` says how to behave.** Read in that
+`CURRENT-STATE.md` says what exists.** Read in that
 order, and read only the one ADR that applies.
