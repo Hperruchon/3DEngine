@@ -128,6 +128,12 @@ internal sealed class Subscriber : IAsyncDisposable
                     // channel is already full a real event will trip the lag
                     // path on its own.
                     _outbound.Writer.TryWrite(HeartbeatMessage.Instance);
+
+                    // One frame in each interval (ADR-0005 §5.4). The pump moves the
+                    // time of the last send after it sends, and until then the loop
+                    // must not write again. Finding E8 of the codebase review of
+                    // 2026-09-30: without this line the loop wrote 1,025 frames.
+                    Interlocked.Exchange(ref _lastSendTicks, DateTime.UtcNow.Ticks);
                 }
             }
         }

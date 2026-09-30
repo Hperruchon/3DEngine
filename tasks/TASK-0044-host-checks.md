@@ -80,3 +80,4 @@ Host, and sends one heartbeat in each interval.
 Read ADR-0005 §5 for the heartbeat and ADR-0019 for the loopback surface that the desktop host
 mounts later. The origin list must accept the origin that the desktop host will use, so keep the
 list in `SubscriberOptions` and not in a literal.
+- 2026-09-30: the heartbeat loop waits one interval; the test counted a burst before the change.
