@@ -111,3 +111,4 @@ foreign name, and not with the IPv6 literal.
 - 2026-09-30: the run of the review on the real host: one idle subscriber for 36 seconds gives 1 heartbeat frame at second 30; a foreign Origin gets 403; a foreign Host gets 400; the host refuses http://0.0.0.0 with exit code 1.
 - 2026-09-30: closed. R-0029 is closed, and ledger entry v0.37 records the work.
 - 2026-09-30: a correction before the merge. The ledger entry said 15 new tests and 232; the count is 16 and 233, because the test on the real host came last.
+- 2026-09-30: a correction after the merge. The run on main failed on Ubuntu in the test step, with no log to read. The heartbeat test now measures the gap between three frames; with the wait line removed it fails with gaps of 0 ms. The tests that spawn the real host share one collection with it. Ledger entry v0.38.

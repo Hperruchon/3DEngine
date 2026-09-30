@@ -1022,3 +1022,25 @@ Host filter is not tested with the IPv6 literal.
 New tests: 16. The test list holds 233, up from 217. `dotnet build 3DEngine.sln --no-incremental`
 gives zero errors and zero warnings. Closed: R-0029. Open entries: 12 of 15. New diagnostic codes:
 none. The next codebase review must come before ledger entry v0.41.
+
+## v0.38 — The heartbeat test measures the gap between frames (TASK-0044, correction)
+
+The merge of v0.37 into `main` gave a red run: the Ubuntu job failed in its test step, while the
+same content passed on the three runners of the branch minutes before, and the suite passed six
+times in a row on this computer. The log of the job needs a sign-in, so the failed test has no name
+here. The test step ran its normal eight seconds, so one test failed and the suite did not stop.
+
+The first form of the heartbeat test counted the frames of one second and expected three to eleven.
+A loaded runner can make that count low. The test now takes the moment of three consecutive
+heartbeat frames and requires that each gap is at least the interval: a slow runner makes each gap
+longer and never shorter, and the defect of finding E8 makes each gap close to zero. With the wait
+line removed for one run, the test fails with the gaps that it saw. The two tests that spawn the real
+host share one collection with the heartbeat test, so that a process start does not run beside a
+measurement of time.
+
+Not done, and why: the name of the failed test on Ubuntu stays unknown, because the log needs a
+sign-in that this computer does not have. If the next run on Ubuntu fails again, the log names it.
+
+New tests: 0. The test list holds 233. `dotnet build 3DEngine.sln --no-incremental` gives zero
+errors and zero warnings. Open entries: 12 of 15. New diagnostic codes: none. The next codebase
+review must come before ledger entry v0.41.
