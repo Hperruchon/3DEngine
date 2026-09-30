@@ -1,10 +1,12 @@
 namespace Engine.Tests.Governance;
 
-// The gate for two task fields in docs/templates.md. The field governed-by
+// The gate for three task fields in docs/templates.md. The field governed-by
 // must equal the set of ADRs in force whose affects patterns intersect the
 // write set of the task, so that an absent ADR is an error and not an
-// assumption. The field depends-on must name a task that exists. Until this
-// gate, "a gate can verify this" was a sentence in the template.
+// assumption. The field depends-on must name a task that exists. The field
+// status must come from the set, and the identifier must match the file name;
+// until TASK-0043 a status such as "ready" turned two checks off (codebase
+// review of 2026-09-30, finding T5).
 //
 // Only a Ready or Active task is checked for governed-by. A closed task is a
 // record. The rules review of 2026-09-25 found nine closed tasks that differ
@@ -15,7 +17,32 @@ public class TaskGovernanceGateTests
 
     private static readonly string[] OpenStatuses = ["Ready", "Active"];
 
+    private static readonly string[] Statuses = ["Ready", "Active", "Done", "Deferred"];
+
     private sealed record Adr(string Id, IReadOnlyList<string> Affects);
+
+    [Fact]
+    public void Each_Task_Has_A_Status_From_The_Set_And_An_Identifier_That_Matches_Its_File_Name()
+    {
+        var problems = new List<string>();
+
+        foreach (var task in RepositoryFiles.Tasks())
+        {
+            var name = Path.GetFileName(task.File);
+
+            if (!Statuses.Contains(task.Status))
+                problems.Add($"{name}: status '{task.Status}' is not one of {string.Join(", ", Statuses)}");
+
+            if (task.Id != name[..9])
+                problems.Add($"{name}: front matter says {task.Id}");
+        }
+
+        Assert.True(
+            problems.Count == 0,
+            "docs/templates.md, section 2: a task has one of four statuses, and its identifier is in "
+            + "its file name. A value outside the set would turn the other checks off.\n  "
+            + string.Join("\n  ", problems));
+    }
 
     [Fact]
     public void Each_Open_Task_Lists_Exactly_The_Adrs_Whose_Affects_Intersect_Its_Write_Set()

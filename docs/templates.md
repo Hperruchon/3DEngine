@@ -138,7 +138,7 @@ writes:
 | `status` | Use one value: `Ready`, `Active`, `Done` or `Deferred`. The task file is the authority for the question "did this phase ship". |
 | `depends-on` | Give task identifiers. `TaskGovernanceGateTests` fails when an identifier names no task. A session takes the first Ready task in roadmap order whose dependencies are Done. |
 | `governed-by` | Give ADR identifiers. This list must equal the set of ADRs in force whose `affects` patterns intersect `writes`. `TaskGovernanceGateTests` verifies it for a Ready or Active task. Therefore an absent ADR causes an error and not an assumption. |
-| `writes` | This field is the write set. `Engine.Tests/Governance/WriteSetGateTests.cs` reads it. Continuous integration gives the list of changed paths in the variable `WRITE_SET_FILES` and the governing task in `WRITE_SET_TASK`, and the gate fails if a changed path is outside the set. |
+| `writes` | This field is the write set. `Engine.Tests/Governance/WriteSetGateTests.cs` reads it. Continuous integration gives the list of changed paths in the variable `WRITE_SET_FILES` and the governing task in `WRITE_SET_TASK`, and the gate fails if a changed path is outside the set. A gate file, under `Engine.Tests/Governance/`, under `Engine.Tests/Diagnostics/` or with a name that ends in `GateTests.cs`, must be named exactly; a pattern does not permit it. |
 | `forbid` | Give the paths that this task must not touch. This field is inexpensive, and it stops the most frequent increase of scope. A forbid binds the task that declares it. |
 
 Before you start two agents, compare their `writes` fields. If the sets intersect, do not start the
@@ -184,7 +184,8 @@ TASK-0014 · ADR-0013
 Put one topic in one commit. A refactor and a change of behaviour must not share a commit.
 
 The trailer line of the message, of the form `TASK-nnnn` or `TASK-nnnn · ADR-nnnn`, names the task
-that governs the commit.
+that governs the commit. The commit also changes the file of that task, with one line under
+"Progress" at least, so that a closed task cannot lend its permits to a later commit.
 The write-set gate reads it. If the message names no task, the one task file that the commit
 touches governs it. A commit that touches several task files and names none fails.
 
@@ -252,12 +253,12 @@ that made it necessary.
 |---|---|---|
 | `AdrGateTests` | the ADR front matter and the index | a field is absent, a status is outside the set, a supersession or an amendment is not reciprocal, the index disagrees, or the count of unenforced ADRs grows |
 | `AdrEnforcementExistsGateTests` | `enforced-by` of each ADR in force | the file is absent and no Ready task creates it |
-| `TaskGovernanceGateTests` | `governed-by`, `depends-on` and `writes` of each task | `governed-by` differs from the intersection rule on an open task, or `depends-on` names no task |
-| `WriteSetGateTests` | the `writes` block of each task and the change list | a changed path is outside the write set of the governing task, a task forbids what it writes, or the count of tasks without front matter grows |
-| `DependencyDirectionGateTests` | each project file | a reference breaks the authority diagram, a project is in no class, or a binding has two pins |
-| `DeterminismCallGateTests` | each source in the log path and each project file | a forbidden function is called, or a 32-bit runtime identifier exists |
-| `RegisterGateTests` | the open entries of `docs/register.md` | a `due` date passed, a second extension exists, the count is above 15, or a class or a date is invalid |
-| `MarkerGateTests` | each source, each configuration file and each workflow | a marker word has no register identifier |
+| `TaskGovernanceGateTests` | `status`, `governed-by`, `depends-on` and `writes` of each task | a status is outside the set, an identifier differs from the file name, `governed-by` differs from the intersection rule on an open task, or `depends-on` names no task |
+| `WriteSetGateTests` | the `writes` block of each task, the change list and the cut-off file | a changed path is outside the write set of the governing task, a gate file is not named exactly, the named task is not changed, a task forbids what it writes, the cut-off moved, or the count of tasks without front matter grows |
+| `DependencyDirectionGateTests` | each project file, read as XML | a reference breaks the authority diagram, a project is in no class, or a binding has two pins |
+| `DeterminismCallGateTests` | each source in the log path, with its comments removed, and each project file | a forbidden function is called on `Math`, `MathF`, `double`, `float` or `Half`, `System.Math` is imported statically, or a 32-bit runtime identifier exists |
+| `RegisterGateTests` | the open entries of `docs/register.md` | a `due` date passed, a second extension exists, the count is above 15, a class or a date is invalid, or the parser found fewer entries than the section holds |
+| `MarkerGateTests` | each source, each configuration file, each workflow and the register | a marker word has no register identifier, or names one that is not in the register |
 | `DiagnosticsRegistryGateTests` | each `Engine.*` source and `docs/diagnostics.md` | a code in the source is absent from the registry |
 | `DiagnosticsReserveGateTests` | the reserved table of `docs/diagnostics.md` | more than two codes are reserved, or a reserved code has no reason |
 | `NativePackageGateTests` | `THIRD-PARTY-NOTICES.md` and the native package | a checksum differs, or a binary has no checksum |
@@ -271,7 +272,8 @@ that made it necessary.
 `.github/workflows/ci.yml` runs three jobs. `gate` builds, tests and runs two smoke tests on
 Windows, Linux and macOS. `contract-gate` fails a push that changes `Engine.Contracts/**` with no
 change under `docs/adr/`. `write-set-gate` runs `WriteSetGateTests` for each commit after the
-cut-off in `eng/write-set-cutoff.txt`.
+cut-off in `eng/write-set-cutoff.txt`, and it checks a merge commit on the changes that the merge made
+itself.
 
 ---
 

@@ -10,6 +10,11 @@ namespace Engine.Tests.Governance;
 // Without this gate the register is the instrument that docs/register.md itself
 // warns about: the Blender design document of the year 2000 listed problems
 // that took eleven years to correct.
+//
+// The parser skips a code block, because the entry form sits in one. An open
+// fence therefore hid each entry and each test passed on an empty list
+// (codebase review of 2026-09-30, finding T5). The parser now proves that it
+// found each heading of the section.
 public class RegisterGateTests
 {
     private sealed record Entry(
@@ -34,6 +39,26 @@ public class RegisterGateTests
         ["debt"] = 180,
         ["interim"] = 365,
     };
+
+    private static readonly Regex EntryHeading = new(@"^### R-\d{4}", RegexOptions.Compiled | RegexOptions.Multiline);
+
+    [Fact]
+    public void The_Parser_Finds_Each_Entry_Of_The_Open_Section()
+    {
+        var text = RepositoryFiles.Read("docs", "register.md").Replace("\r", string.Empty);
+        var start = text.IndexOf("\n## Open", StringComparison.Ordinal);
+        Assert.True(start >= 0, "docs/register.md has no section \"## Open\".");
+
+        var end = text.IndexOf("\n## ", start + 1, StringComparison.Ordinal);
+        var section = end < 0 ? text[start..] : text[start..end];
+        var headings = EntryHeading.Matches(section).Count;
+        var parsed = ParseOpen().Count;
+
+        Assert.True(
+            headings == parsed,
+            $"The section \"Open\" holds {headings} entry headings and the parser found {parsed}. An "
+            + "open code fence hides an entry from each test below. Close the fence.");
+    }
 
     [Fact]
     public void No_Open_Entry_Is_Past_Its_Due_Date()
