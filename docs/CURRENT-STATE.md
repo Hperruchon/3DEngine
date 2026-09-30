@@ -986,3 +986,39 @@ R-0031 stays open for them, with its limit of 2026-12-24.
 New tests: 3. The test list holds 217, up from 214. `dotnet build 3DEngine.sln --no-incremental`
 gives zero errors and zero warnings. Open entries: 13 of 15. New diagnostic codes: none. The next
 codebase review must come before ledger entry v0.41.
+
+## v0.37 — The host binds to a loopback address only, checks the Origin and the Host, and sends one heartbeat in each interval (TASK-0044)
+
+Findings E8 and E15 of the codebase review of 2026-09-30, and question Q5, which the owner answered
+yes. This is the first change to host code since v0.28.
+
+**One heartbeat in each interval.** The loop wrote a frame and started again with no wait, so one
+idle subscriber received 1,025 frames at second 30. The loop now moves the time of the last send
+when it writes a frame (`Engine.Api.Http/WebSockets/Subscriber.cs`). The run of the review on the
+real host, one idle subscriber for 36 seconds, gives 1 heartbeat frame at second 30.
+Register entry R-0029 is closed.
+
+**A loopback address only.** `engine-api-http` refuses to start on an address whose host is not a
+loopback address, with exit code 1 and a message, before it builds the application. The framework
+default, with no address given, is localhost and passes. `docs/CHARTER.md` said this for months,
+and no source checked it.
+
+**A foreign Origin gets 403.** A WebSocket upgrade with an Origin header that names a host outside
+the list in `SubscriberOptions` is refused before the upgrade. The list holds the three loopback
+names. A request with no Origin header passes, because a script and an agent send none. The value
+"null" is refused.
+
+**A foreign Host gets 400.** The host filtering middleware of the framework accepts the same three
+names. A page that resolves its own name to the loopback address cannot post a command.
+
+**Each test failed first.** `Engine.Tests/Http/HeartbeatTests.cs` counted a burst.
+`Engine.Tests/Http/HostGuardTests.cs` saw 101 for the foreign Origin, 200 for the foreign Host, and a
+process that ran on 0.0.0.0 until the test stopped it. After the change each one passes, and a run
+on the real host gives 403, 400, and a refusal with exit code 1.
+
+Not done, and why: the close frame after a cancelled token (finding E17) stays in R-0028, and the
+Host filter is not tested with the IPv6 literal.
+
+New tests: 16. The test list holds 233, up from 217. `dotnet build 3DEngine.sln --no-incremental`
+gives zero errors and zero warnings. Closed: R-0029. Open entries: 12 of 15. New diagnostic codes:
+none. The next codebase review must come before ledger entry v0.41.
