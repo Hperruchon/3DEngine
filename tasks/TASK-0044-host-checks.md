@@ -81,3 +81,4 @@ Read ADR-0005 §5 for the heartbeat and ADR-0019 for the loopback surface that t
 mounts later. The origin list must accept the origin that the desktop host will use, so keep the
 list in `SubscriberOptions` and not in a literal.
 - 2026-09-30: the heartbeat loop waits one interval; the test counted a burst before the change.
+- 2026-09-30: the loopback guard, the Origin check and the Host filter. The first form of the Origin check ran before the WebSocket middleware, passed the in-process test and let a foreign Origin through on Kestrel; a run on the real host found it, and a test now spawns the real host.
