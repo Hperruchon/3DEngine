@@ -95,3 +95,4 @@ show that it fails; then remove the violation. The review gives each injection i
 
 - 2026-09-30: the task is open.
 - 2026-09-30: three decisions of the owner are in their files: TASK-0034 (Q1), docs/diagnostics.md (Q3), TASK-0044 (Q5).
+- 2026-09-30: the dependency gate reads XML. Injected two paths in one Include: passed before, fails now.
