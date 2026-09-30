@@ -57,7 +57,7 @@ again says "reported by a review agent".
 - **Three new findings are about events.** An idle subscriber receives 1,025 heartbeat frames and
   not one. A subscriber that connects during a commit can lose an event or receive it two times. A
   replay that rejects a command reports nothing. **[Observed]**, the first and the third in a run.
-- **The gates have holes, and TASK-0039 wrote several of them.** Seven injected violations pass
+- **The gates have holes, and TASK-0039 wrote several of them.** Eight injected violations pass
   their gate. One of them is a reference from `Engine.Core` to `3DEngine.Core`, which is the rule
   that the two kernels never reference each other. **[Observed]**
 - **The test project is larger than the production code.** The production code holds 4,915 lines and

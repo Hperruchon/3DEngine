@@ -108,3 +108,4 @@ at high and E10 at low with good reasons.
 - 2026-09-30: the roadmap gives 32 to 48 evenings for the ten phases that remain, which is the sum of its column "Evenings".
 - 2026-09-30: four review agents reported forty numbered findings and a list of smaller ones. A run or a read on disk checked each one that the review gives as observed. Two programs outside the repository ran against Engine.Core, the HTTP host ran on the loopback address, and eight violations were injected and removed.
 - 2026-09-30: closed. The review, five register entries and ledger entry v0.35 are in the repository.
+- 2026-09-30: a correction after the push. The summary of the review said that seven injected violations pass their gate. The count is eight, as the method paragraph, the ledger and register entry R-0031 say.
