@@ -1019,6 +1019,6 @@ on the real host gives 403, 400, and a refusal with exit code 1.
 Not done, and why: the close frame after a cancelled token (finding E17) stays in R-0028, and the
 Host filter is not tested with the IPv6 literal.
 
-New tests: 15. The test list holds 232, up from 217. `dotnet build 3DEngine.sln --no-incremental`
+New tests: 16. The test list holds 233, up from 217. `dotnet build 3DEngine.sln --no-incremental`
 gives zero errors and zero warnings. Closed: R-0029. Open entries: 12 of 15. New diagnostic codes:
 none. The next codebase review must come before ledger entry v0.41.
