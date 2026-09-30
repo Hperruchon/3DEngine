@@ -1,7 +1,7 @@
 ---
 id: 0043
 title: Each injected violation of the second review fails its gate
-status: Ready
+status: Done
 phase: governance
 opened: 2026-09-30
 depends-on: [0042]
@@ -80,16 +80,38 @@ Each violation that the review injected fails its gate, and the three decisions 
 
 ## Acceptance criteria
 
-- [ ] Each of the eight injected violations of the review fails its gate, and the task records each
+- [x] Each of the eight injected violations of the review fails its gate, and the task records each
       run.
-- [ ] Each commit after the cut-off passes the write-set rule, with the same replay as TASK-0039.
-- [ ] A merge with a change of its own is refused, shown on a local merge that is then removed.
-- [ ] `dotnet build 3DEngine.sln --no-incremental` gives zero warnings. `dotnet test` passes.
+- [x] Each commit after the cut-off passes the write-set rule, with the same replay as TASK-0039.
+- [x] A merge with a change of its own is refused, shown on a local merge that is then removed.
+- [x] `dotnet build 3DEngine.sln --no-incremental` gives zero warnings. `dotnet test` passes.
 
 ## Notes for the implementer
 
 Inject each violation before the change and show that the gate passes; then change the gate and
 show that it fails; then remove the violation. The review gives each injection in section 3.
+
+## Outcome
+
+Status: Done · v0.36 · the commit that carries this block.
+
+## Method
+
+**Mechanical.** The XML reader for the project files, the combined diff for a merge commit, the
+comment removal in the determinism gate, the register lookup in the marker gate, the status set, the
+parser cross-check in the register gate, and `shell: bash` in the two small jobs.
+
+**Judgement.** Three rules that the templates did not state before: a commit changes the file of the
+task that it names, a gate file is named exactly, and the cut-off is held in a test. Each one was
+checked against every commit after the cut-off before it became a rule, and each commit passes. The
+static forbid test applies the intersection rule to an open task only, because a closed task is a
+record. The determinism gate refuses a static import of `System.Math` as a whole, because a bare
+name after that import has no form that a scan can see.
+
+**Weakest.** The determinism gate reads text, so a string literal that holds `Math.Pow(` fails
+falsely, and a call through a method group or through `Matrix4x4.CreateRotationZ` passes. The
+compiled assembly is the place for that gate, and register entry R-0031 keeps the item. The merge
+rule ran in a throwaway clone and not on the runner.
 
 ## Progress
 
@@ -99,3 +121,4 @@ show that it fails; then remove the violation. The review gives each injection i
 - 2026-09-30: the write-set gate checks a merge on its own changes, requires the named task in the change, requires an exact name for a gate file, and holds the cut-off; the two small jobs use bash with pipefail. Injected: a gate file under TASK-0038, a named task not changed, a moved cut-off; each one fails. A merge with its own change, in a throwaway clone, lists the change under diff-tree --cc and nothing under the plain form.
 - 2026-09-30: the determinism gate reads sources without comments and refuses double.Pow, a static import and a call over two lines; the marker gate reads the register. Injected: the three forms and R-9999, each one fails; a comment that names a function passes.
 - 2026-09-30: the task gate refuses a status outside the set; the register gate proves its parser. Injected: status ready, an open fence; each one fails. The gate table describes each tightened gate.
+- 2026-09-30: closed. Ledger entry v0.36 records the work.
