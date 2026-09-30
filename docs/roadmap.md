@@ -135,7 +135,9 @@ The field `depends-on` of each task file holds the same order. `TaskGovernanceGa
 that each dependency names a task.
 
 Phase R6 gives the first objective that the owner named: create a box, subtract a second box, and
-observe the cut. Track 0 and phases R1 to R6 give it in 25 to 35 evenings.
+observe the cut. The ten phases that remain, P0.13 to P0.17 and R2 to R6, give it in 32 to 48
+evenings. That number is the sum of the column "Evenings" for those phases: 9 to 15 for Track 0 and
+23 to 33 for track R. Correct it when a phase ships or an estimate changes.
 
 ## Not on a track
 

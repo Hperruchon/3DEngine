@@ -179,6 +179,73 @@ scope misses the product. The architecture challenge recommends a rewrite around
 owner did not decide it.
 Exit: the owner accepts a rewritten ADR-0015, or refuses the rewrite and gives the reason.
 
+### R-0027 · Six findings of the first codebase review have no task
+- class: debt
+- opened: 2026-09-30
+- due: 2027-03-29
+- extended: no
+- refs: `docs/reviews/2026-09-23-codebase-review.md` findings E5, E6, V4, T2, C1 and P1, `docs/reviews/2026-09-30-codebase-review.md` finding E12
+No task and no register entry named these findings until the second review. E5 is one line, and the
+new finding E12 must be corrected with it: the binder refuses a whole number for a number field, so
+the correction of E5 alone makes each HTTP request with a whole value fail. The open part of T2 is the
+absent test for a backend that throws through the command bus.
+Exit: each finding has a task, or it is corrected, or the owner accepts it and gives the reason.
+
+### R-0028 · Nine new findings in the engine and the hosts have no task
+- class: debt
+- opened: 2026-09-30
+- due: 2027-03-29
+- extended: no
+- refs: `docs/reviews/2026-09-30-codebase-review.md` findings E7, E9, E10, E11, E13, E14, E15, E16 and E17, TASK-0034, TASK-0038
+A replay discards each result (E7). A subscriber that connects during a commit can lose an event or
+receive it two times (E9). A second bus starts the sequence again (E10). A value that is not finite
+enters the log (E11). A failed query returns a box of zeros (E13). The Manifold wrapper frees a caller
+buffer with the C++ `delete` (E14). The host has no bind rule, no Origin check and no Host check
+(E15). The request envelope ignores an unknown member (E16). TASK-0034 closes E9 and E10 when it adds
+the tests that the review gives. E15 must be corrected before TASK-0038 ships, because the desktop
+host then serves the surface while a person has a document open.
+Exit: each finding has a task, or it is corrected, or the owner accepts it and gives the reason.
+
+### R-0029 · An idle subscriber receives 1,025 heartbeat frames and not one
+- class: risk
+- opened: 2026-09-30
+- due: 2026-10-30
+- extended: no
+- refs: `Engine.Api.Http/WebSockets/Subscriber.cs:117-132`, `docs/reviews/2026-09-30-codebase-review.md` finding E8
+The heartbeat loop writes a frame and starts again with no wait. A run on the real host gave 1,025
+heartbeat frames at second 30 for one idle subscriber. While the channel is full of heartbeat frames,
+the next event does not fit and the host disconnects the subscriber as lagged. No test waits for a
+heartbeat.
+Exit: the loop waits one interval after each frame, and a test with a short interval counts the
+frames.
+
+### R-0030 · The Vulkan layer continues with a null device and gives unpinned memory to Vulkan
+- class: debt
+- opened: 2026-09-30
+- due: 2027-03-29
+- extended: no
+- refs: `3DEngine.Vulkan/GraphicsDevice.cs:149-170`, `3DEngine.Vulkan/GraphicsDevice.cs:636-639`, `docs/reviews/2026-09-30-codebase-review.md` findings V5, V6 and V7, R-0022
+When no device is suitable, the host calls Vulkan with a null handle, and the process stops in native
+code with no message (V5). Byte arrays and pointers from a `fixed` block go to Vulkan with no pin
+(V6). Six smaller findings are in V7. The host only clears the screen on one computer today, therefore
+no run shows a failure.
+Exit: each finding is corrected before the first render phase that runs on a second computer. This is
+the condition of R-0022 too.
+
+### R-0031 · A gate can pass while its rule is broken
+- class: debt
+- opened: 2026-09-30
+- due: 2026-12-24
+- extended: no
+- refs: `docs/reviews/2026-09-30-codebase-review.md` findings T3, T4, T5, T6 and T7, TASK-0039
+Eight injected violations passed their gate on 2026-09-30. Examples: a reference from `Engine.Core` to
+`3DEngine.Core` inside an `Include` with two paths, `double.Pow` in `Engine.Core`, a task with the
+status `ready`, a register with an open code fence, and a change inside a merge commit. TASK-0039
+tested that each gate can fail. It did not test the forms that a gate cannot see. The limit is
+earlier than the class permits, because the code tasks start before that date and each one relies on
+the gates.
+Exit: each injected violation of the second review fails its gate.
+
 ## Accepted compromises
 
 These are conditions that the project keeps permanently and by decision. They do not age.
