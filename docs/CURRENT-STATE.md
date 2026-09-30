@@ -899,3 +899,47 @@ commit trailer. One section "Method" now holds them, with the write-set command,
 sections "Tests" and "Rules with no other home". `CLAUDE.md` has 165 lines. This paragraph is in the
 entry v0.34 and not in a new entry, because the branch is unmerged and the next entry must be the
 codebase review.
+
+## v0.35 — The codebase review of 2026-09-30 (governance, TASK-0042)
+
+`docs/reviews/2026-09-30-codebase-review.md` is the second codebase review. It examines `main` at
+`14e2c73`, the merge of v0.32 to v0.34. The review changes no code.
+
+**No production source changed after the first review.** The difference between the two reviewed
+commits in the eight production projects is one documentation file. Each engine finding and each
+Vulkan finding of the first review is open. One earlier finding is fixed: the contract gate ran on a
+push to `main`, in run 36443245386, where each of the five jobs gave a success.
+
+**Thirty-three findings are open: two critical, twelve high, fourteen medium and five low.** Nineteen
+are new. Four review agents read the code in parallel, and a run or a reading on disk checked each
+finding that the review gives as observed.
+
+- The query defect is a measured failure. With commands on one task and reads on four tasks, about
+  4,500 queries and about 4,000 snapshot copies threw an exception in each of three runs.
+- An idle subscriber receives 1,025 heartbeat frames at second 30, and not one frame.
+- A replay that rejects a command returns an empty Document and reports nothing.
+- A subscriber that connects during a commit can lose an event or receive it two times.
+- The host accepts a WebSocket upgrade with a foreign Origin, and no source checks the bind address.
+- Eight injected violations pass their gate. One of them is a reference from `Engine.Core` to
+  `3DEngine.Core`. TASK-0039 wrote or changed nine of the gates two days before.
+
+**Five register entries are new.** R-0027 holds six findings of the first review that had no owner.
+R-0028 holds the new engine and host findings. R-0029 holds the heartbeat loop, with a limit of 30
+days. R-0030 holds the Vulkan findings. R-0031 holds the holes in the gates.
+
+**The roadmap is corrected.** It said that the path to the first objective takes 25 to 35 evenings.
+The sum of its column "Evenings" for the ten phases that remain is 32 to 48. The sentence predates
+the five phases that v0.32 added.
+
+**The next task is TASK-0034.** The review gives the research and an approach in seven steps. It
+recommends one change beyond the task text: the commit changes the Document first and publishes the
+events second, so that a sink that fails cannot leave a partial commit. The owner decides that in
+question Q1 of the review.
+
+Not done, and why: no finding is corrected, because a review records and a task corrects. Two host
+findings and six small findings are given as reported by a review agent and not checked. The
+heartbeat and the handshake findings were not run on a second computer.
+
+New tests: 0. The test list holds 214. `dotnet build 3DEngine.sln --no-incremental` gives zero errors
+and zero warnings. Opened: R-0027, R-0028, R-0029, R-0030, R-0031. Open entries: 13 of 15. New
+diagnostic codes: none. The next codebase review must come before ledger entry v0.41.

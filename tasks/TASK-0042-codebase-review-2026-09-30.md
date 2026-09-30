@@ -1,7 +1,7 @@
 ---
 id: 0042
 title: The codebase review of 2026-09-30 is a record, and the roadmap gives the true estimate
-status: Ready
+status: Done
 phase: governance
 opened: 2026-09-30
 depends-on: [0041]
@@ -68,13 +68,13 @@ roadmap gives an estimate that agrees with its own table.
 
 ## Acceptance criteria
 
-- [ ] `CodebaseReviewGateTests` passes with two reviews in `docs/reviews/`.
-- [ ] Each finding of the first review has one line with its state and the evidence.
-- [ ] Each statement in the review that names a file and a line was read on disk in this session. A
+- [x] `CodebaseReviewGateTests` passes with two reviews in `docs/reviews/`.
+- [x] Each finding of the first review has one line with its state and the evidence.
+- [x] Each statement in the review that names a file and a line was read on disk in this session. A
       statement that a review agent reported and that was not checked again says so.
-- [ ] The estimate in `docs/roadmap.md` equals the sum of its column "Evenings" for the phases that
+- [x] The estimate in `docs/roadmap.md` equals the sum of its column "Evenings" for the phases that
       are not in the list "Shipped".
-- [ ] `dotnet build 3DEngine.sln --no-incremental` gives zero warnings. `dotnet test` passes.
+- [x] `dotnet build 3DEngine.sln --no-incremental` gives zero warnings. `dotnet test` passes.
 
 ## Notes for the implementer
 
@@ -82,7 +82,29 @@ Four review agents read the code in parallel: the engine kernel, the two hosts, 
 Vulkan layer with the desktop host. Check each of their findings on disk before the review uses it
 with the label [Observed].
 
+## Outcome
+
+Status: Done · v0.35 · the commit that carries this block.
+
+## Method
+
+**Mechanical.** The twelve measures with the method of the first review. The state of each of the
+fifteen earlier findings, from a read of each cited line at the reviewed commit. The roadmap sum.
+
+**Judgement.** The severity of each new finding. The grouping: the small findings of one area share
+one identifier (E17, V7, T7), as E6 and V4 do in the first review. Five register entries and not
+nineteen, so that the register stays at 13 of 15. The heartbeat has its own entry with the class
+`risk`, because each idle subscriber meets it. The limit of R-0031 is earlier than its class permits.
+
+**Weakest.** Three groups. First, the findings that a run did not test: E9 (the handshake), V5 and V6
+(the Vulkan layer), and T6 (the default shell of a job) come from the code and from a review agent,
+and the behaviour of the loader, of the binding and of the runner was not run. Second, the lines that
+say "reported by a review agent, not checked". Third, the severities: a second reviewer can put E15
+at high and E10 at low with good reasons.
+
 ## Progress
 
 - 2026-09-30: the task is open.
 - 2026-09-30: the roadmap gives 32 to 48 evenings for the ten phases that remain, which is the sum of its column "Evenings".
+- 2026-09-30: four review agents reported forty numbered findings and a list of smaller ones. A run or a read on disk checked each one that the review gives as observed. Two programs outside the repository ran against Engine.Core, the HTTP host ran on the loopback address, and eight violations were injected and removed.
+- 2026-09-30: closed. The review, five register entries and ledger entry v0.35 are in the repository.
