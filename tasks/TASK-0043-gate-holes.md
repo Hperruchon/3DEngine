@@ -96,3 +96,4 @@ show that it fails; then remove the violation. The review gives each injection i
 - 2026-09-30: the task is open.
 - 2026-09-30: three decisions of the owner are in their files: TASK-0034 (Q1), docs/diagnostics.md (Q3), TASK-0044 (Q5).
 - 2026-09-30: the dependency gate reads XML. Injected two paths in one Include: passed before, fails now.
+- 2026-09-30: the write-set gate checks a merge on its own changes, requires the named task in the change, requires an exact name for a gate file, and holds the cut-off; the two small jobs use bash with pipefail. Injected: a gate file under TASK-0038, a named task not changed, a moved cut-off; each one fails. A merge with its own change, in a throwaway clone, lists the change under diff-tree --cc and nothing under the plain form.
