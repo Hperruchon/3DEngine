@@ -1,6 +1,6 @@
 name: CI
 
-# The gate. CLAUDE.md, section "Tests", names it as the proof. The build, the
+# The gate. CLAUDE.md, section "Method", names it as the proof. The build, the
 # tests and two smoke tests run on three operating systems. The gate classes
 # inside Engine.Tests run with `dotnet test`; docs/templates.md, section
 # "What each gate reads", lists each one.
@@ -8,6 +8,11 @@ name: CI
 # The gate runs on three operating systems. Register entry R-0002 recorded the
 # reason: each job used ubuntu-latest, a person verified the native geometry path
 # on win-x64 by hand only, and the desktop host ran on Windows only.
+#
+# Each job sets `shell: bash`, which gives `pipefail`. Until TASK-0043 the two
+# small jobs used the default shell, and a failed git command inside a pipeline
+# or a command substitution gave a count of zero and a pass (codebase review of
+# 2026-09-30, finding T6).
 
 on:
   # Each push runs the gate, on each branch. A pull request is therefore not a
@@ -103,6 +108,9 @@ jobs:
     # the range starts at the previous tip; a new branch falls back to the
     # cut-off commit of the write-set gate.
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        shell: bash
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -121,6 +129,7 @@ jobs:
             range="origin/$BASE_REF...HEAD"
           else
             cutoff=$(grep -v '^#' eng/write-set-cutoff.txt | tr -d '[:space:]')
+            [ -n "$cutoff" ] || { echo "FAIL: eng/write-set-cutoff.txt gives no commit"; exit 1; }
             before="$PUSH_BEFORE"
             if [ -z "$before" ] || [ "$before" = "0000000000000000000000000000000000000000" ]; then
               before="$cutoff"
@@ -130,8 +139,11 @@ jobs:
             range="$before..HEAD"
           fi
           echo "range: $range"
-          contracts_changed=$(git diff --name-only "$range" -- 'Engine.Contracts/**' | wc -l)
-          adrs_changed=$(git diff --name-only "$range" -- 'docs/adr/**' | wc -l)
+
+          # Each git command is tested. A failed diff must not read as "no change".
+          changed=$(git diff --name-only "$range") || { echo "FAIL: git diff on $range"; exit 1; }
+          contracts_changed=$(printf '%s\n' "$changed" | grep -c '^Engine\.Contracts/' || true)
+          adrs_changed=$(printf '%s\n' "$changed" | grep -c '^docs/adr/' || true)
           echo "Engine.Contracts files changed: $contracts_changed"
           echo "docs/adr files changed:         $adrs_changed"
           if [ "$contracts_changed" -gt 0 ] && [ "$adrs_changed" -eq 0 ]; then
@@ -149,6 +161,9 @@ jobs:
     # was a condition on a pull request, therefore it reported skipped on each
     # run and the gate of v0.22 never ran in the pipeline.
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        shell: bash
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -170,17 +185,24 @@ jobs:
       #
       # The commit message names the governing task: the trailer line of the form
       # TASK-nnnn, optionally followed by ' · ADR-nnnn'. A prose line that starts
-      # with an identifier is not a trailer; the v0.27 message has one. TASK-0039 added that rule, because register entry R-0026
-      # recorded that a commit received the permits of each task file that it
-      # touched. When the message names no task, the gate accepts the one task
-      # file that the commit touches, and it refuses a commit that touches
-      # several and names none.
+      # with an identifier is not a trailer; the v0.27 message has one. TASK-0039
+      # added that rule, because register entry R-0026 recorded that a commit
+      # received the permits of each task file that it touched. When the message
+      # names no task, the gate accepts the one task file that the commit
+      # touches, and it refuses a commit that touches several and names none.
+      #
+      # A merge commit is checked on the changes that the merge made itself,
+      # which `git diff-tree --cc` lists. A clean merge lists nothing and passes;
+      # a merge with its own change needs a governing task like any commit. Until
+      # TASK-0043 a merge commit gave an empty list and was never examined
+      # (codebase review of 2026-09-30, finding T3).
       - name: Check each commit against the write set of its task
         env:
           PUSH_BEFORE: ${{ github.event.before }}
         run: |
           set -e
           cutoff=$(grep -v '^#' eng/write-set-cutoff.txt | tr -d '[:space:]')
+          [ -n "$cutoff" ] || { echo "FAIL: eng/write-set-cutoff.txt gives no commit"; exit 1; }
           echo "cut-off commit: $cutoff"
 
           # A push gives the previous tip. A new branch gives zeros, and a pull
@@ -193,8 +215,11 @@ jobs:
           fi
           echo "range: $before..HEAD"
 
+          commits=$(git rev-list --reverse "$before"..HEAD) || { echo "FAIL: git rev-list on $before..HEAD"; exit 1; }
+          [ -n "$commits" ] || { echo "no commit in the range"; exit 0; }
+
           failed=0
-          for commit in $(git rev-list --reverse "$before"..HEAD); do
+          for commit in $commits; do
             subject=$(git log -1 --format='%h %s' "$commit")
 
             if git merge-base --is-ancestor "$commit" "$cutoff" 2>/dev/null; then
@@ -202,7 +227,18 @@ jobs:
               continue
             fi
 
-            files=$(git diff-tree --no-commit-id --name-only -r "$commit")
+            parents=$(git rev-list --parents -n 1 "$commit" | wc -w)
+            if [ "$parents" -gt 2 ]; then
+              files=$(git diff-tree --cc --no-commit-id --name-only -r "$commit")
+              if [ -z "$files" ]; then
+                echo "pass  $subject  (a merge with no change of its own)"
+                continue
+              fi
+              echo "check $subject  (a merge with changes of its own)"
+            else
+              files=$(git diff-tree --no-commit-id --name-only -r "$commit")
+            fi
+
             task=$(git log -1 --format=%B "$commit" | grep -E '^TASK-[0-9]{4}( · (ADR|TASK)-[0-9]{4})*[[:space:]]*$' | head -1 | grep -o -E '^TASK-[0-9]{4}' || true)
             echo "check $subject  (task: ${task:-none named})"
 

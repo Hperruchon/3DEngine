@@ -86,6 +86,15 @@ A command, a query and a snapshot never overlap, so that a reader never sees a p
    command before the commit and never inside it.
 5. **The comment** in `ManifoldGeometryBackend.cs:13-14` agrees with the code.
 6. A glossary term: document session.
+7. **The commit changes the Document first and publishes second.** The owner decided this on
+   2026-09-30 (question Q1 of `docs/reviews/2026-09-30-codebase-review.md`). The commit computes
+   each sequence number, appends the command, adds each body, advances the version and stores the
+   result in the idempotency cache. Then it appends the events with `CancellationToken.None`. A
+   sink that throws then loses an event, which a subscriber recovers with a reset, and never a part
+   of the Document. A test with a sink that throws shows it.
+8. **Three tests for the findings E9 and E10 of the same review.** The first live sequence number
+   after a reset equals the snapshot version plus one. A second bus on the Document of a session is
+   refused or continues the sequence. `AdvanceVersion` refuses a lower value.
 
 ## Scope (out)
 

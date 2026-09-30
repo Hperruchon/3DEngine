@@ -20,6 +20,12 @@ namespace Engine.Tests.Governance;
 // One implementation serves both. A person runs the dynamic part locally by
 // setting both variables, and the logic that continuous integration uses is the
 // logic that `dotnet test` covers.
+//
+// Three rules came from the codebase review of 2026-09-30, finding T3. A commit
+// that names a task also changes the file of that task, so a closed task cannot
+// lend its permits to a later commit. A gate file must be named exactly, so a
+// pattern such as Engine.Tests/** does not permit a change to a gate. The
+// cut-off commit is held here, so a commit cannot move it.
 public class WriteSetGateTests
 {
     // Task files 0001 to 0013 predate docs/templates.md and carry no front
@@ -27,6 +33,26 @@ public class WriteSetGateTests
     // way as the budget for an unenforced ADR. A new task must declare its
     // write set.
     private const int TasksWithoutFrontMatterBudget = 13;
+
+    // TASK-0026 turned the gate on at this commit. eng/write-set-cutoff.txt
+    // gives the same value to the workflow. The two must agree, so that a
+    // commit cannot move the cut-off past itself.
+    private const string CutOff = "0609f13070d6917ee80f3aa14ecb553972b5efcf";
+
+    [Fact]
+    public void The_Cut_Off_Commit_Is_The_One_That_Turned_The_Gate_On()
+    {
+        var value = RepositoryFiles.Read("eng", "write-set-cutoff.txt")
+            .Split('\n')
+            .Select(l => l.Trim())
+            .Where(l => l.Length > 0 && !l.StartsWith('#'))
+            .ToArray();
+
+        Assert.True(
+            value.SequenceEqual([CutOff]),
+            $"eng/write-set-cutoff.txt must hold the one commit {CutOff}. A commit that moves the "
+            + "cut-off exempts itself and each commit before it. Found: " + string.Join(", ", value));
+    }
 
     [Fact]
     public void The_Count_Of_Tasks_Without_A_Write_Set_Does_Not_Grow()
@@ -58,17 +84,28 @@ public class WriteSetGateTests
     public void No_Task_Forbids_A_Path_That_It_Also_Writes()
     {
         // A declaration that contradicts itself gives no protection. The gate
-        // must refuse it, otherwise the forbid list means nothing.
+        // must refuse it, otherwise the forbid list means nothing. Two patterns
+        // intersect when one matches a sample of the other, so a wide permit
+        // over a narrow forbid is refused too.
         var problems = new List<string>();
 
         foreach (var task in RepositoryFiles.Tasks())
         {
-            var forbidden = task.Forbid.Select(RepositoryFiles.PathPattern).ToArray();
+            // An open task must not permit what it forbids, in any form. A closed
+            // task is a record and keeps the older, literal rule.
+            var open = task.Status is "Ready" or "Active";
 
             foreach (var path in task.Written)
             {
-                if (forbidden.Any(rule => rule.IsMatch(path)))
-                    problems.Add($"{task.Id}: the block writes '{path}' and also forbids it");
+                foreach (var forbid in task.Forbid)
+                {
+                    var conflict = open
+                        ? RepositoryFiles.PatternsIntersect(forbid, path)
+                        : RepositoryFiles.PathPattern(forbid).IsMatch(path);
+
+                    if (conflict)
+                        problems.Add($"{task.Id}: the block writes '{path}' and forbids '{forbid}', which intersect");
+                }
             }
         }
 
@@ -134,6 +171,15 @@ public class WriteSetGateTests
 
         foreach (var file in changed)
         {
+            // A gate file is named exactly or not at all. A pattern that covers
+            // the tests must not let a task change the gate that reads it.
+            if (IsGateFile(file))
+            {
+                if (!governing.Written.Contains(file, StringComparer.Ordinal))
+                    problems.Add($"{file} is a gate file, and {governing.Id} does not name it exactly; a pattern does not permit a gate file");
+                continue;
+            }
+
             // A permit beats a forbid inside one task, because a task that both
             // permits and forbids a path is refused by a static test above. A
             // forbid gives the better message when a file is in no list,
@@ -155,13 +201,22 @@ public class WriteSetGateTests
             + $"Governing task: {governing.Id}. Problems:\n  " + string.Join("\n  ", problems));
     }
 
+    // A file under Engine.Tests/Governance/, or a test class whose name ends
+    // in GateTests, or the shared helpers of the gates.
+    private static bool IsGateFile(string file)
+        => file.StartsWith("Engine.Tests/Governance/", StringComparison.Ordinal)
+        || (file.StartsWith("Engine.Tests/", StringComparison.Ordinal) && file.EndsWith("GateTests.cs", StringComparison.Ordinal))
+        || file.StartsWith("Engine.Tests/Diagnostics/", StringComparison.Ordinal);
+
     // The task that governs a change. The commit message names it, as a trailer
     // line of the form TASK-nnnn, and continuous integration passes the name
-    // in WRITE_SET_TASK. When no name is given, the one task file that the
-    // change touches governs it. A change that touches several task files and
-    // names none is refused: register entry R-0026 recorded that such a change
-    // received the permits of each task, so a commit that planned three tasks
-    // could also change Engine.Core/CommandBus.cs with no report.
+    // in WRITE_SET_TASK. The commit also changes the file of that task, so a
+    // closed task cannot lend its permits to a later commit. When no name is
+    // given, the one task file that the change touches governs it. A change
+    // that touches several task files and names none is refused: register
+    // entry R-0026 recorded that such a change received the permits of each
+    // task, so a commit that planned three tasks could also change
+    // Engine.Core/CommandBus.cs with no report.
     private static RepositoryFiles.TaskRecord GoverningTask(HashSet<string> changed)
     {
         var tasks = RepositoryFiles.Tasks();
@@ -174,7 +229,14 @@ public class WriteSetGateTests
                 task is not null,
                 $"The commit names {named}, and no task file with a write set has that identifier. "
                 + "Name a task with front matter, or correct the identifier.");
-            return task!;
+
+            Assert.True(
+                changed.Contains(RepositoryFiles.Relative(task!.File), StringComparer.Ordinal),
+                $"The commit names {named} and does not change its file. A commit records its progress "
+                + "in the task that governs it, with one line under \"Progress\" at least, so that a "
+                + "closed task cannot lend its permits to a later commit.");
+
+            return task;
         }
 
         var touched = tasks

@@ -245,6 +245,8 @@ tested that each gate can fail. It did not test the forms that a gate cannot see
 earlier than the class permits, because the code tasks start before that date and each one relies on
 the gates.
 Exit: each injected violation of the second review fails its gate.
+Progress 2026-09-30: TASK-0043 closed the holes of T3, T4 and T6, and the status and the fence parts of
+T5. The `affects` parser, the reserve heading, the codebase review gate and the findings of T7 stay.
 
 ## Accepted compromises
 

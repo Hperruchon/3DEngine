@@ -943,3 +943,46 @@ heartbeat and the handshake findings were not run on a second computer.
 New tests: 0. The test list holds 214. `dotnet build 3DEngine.sln --no-incremental` gives zero errors
 and zero warnings. Opened: R-0027, R-0028, R-0029, R-0030, R-0031. Open entries: 13 of 15. New
 diagnostic codes: none. The next codebase review must come before ledger entry v0.41.
+
+## v0.36 — Each injected violation of the second review fails its gate (governance, TASK-0043)
+
+The codebase review of 2026-09-30 injected eight violations that passed their gate, findings T3 to
+T6. The owner answered yes to its five questions. This milestone closes the gate holes and records
+the three decisions that need a file. No engine code changed.
+
+**The gates.** The dependency gate reads each project file as XML and takes each path of each
+`Include`; a reference from `Engine.Core` to `3DEngine.Core` inside an `Include` with two paths now
+fails. The write-set gate checks a merge commit on the changes that the merge made itself, requires
+that a commit changes the file of the task that it names, requires that a gate file is named exactly
+and not by a pattern, and holds the cut-off commit in a test. The determinism gate reads each source
+with its comments removed, so a call with the parenthesis on the next line is seen and a comment
+that names a function is not; it also refuses the same functions on `double`, `float` and `Half`,
+and a static import of `System.Math`. The marker gate refuses an identifier that is not in the
+register. The task gate refuses a status outside the set and an identifier that differs from the
+file name. The register gate compares the entries that it parsed with the headings of the section,
+so an open code fence cannot hide an entry. The two small jobs of the workflow use `bash` with
+`pipefail`, and each git command is tested.
+
+**Each injection was repeated.** Two paths in one `Include`; `double.Pow`, a static import and a
+call with the parenthesis on the next line; a marker with an identifier that no register holds; a
+status `ready`; a register with an open fence; a gate file changed under a task that permits
+`Engine.Tests/**`; a commit that names a task and does not change it; a moved cut-off. Each one
+passed before the change and fails after it. A comment that names a function passes, as the
+control. A merge with a change of its own, made in a throwaway clone, lists that change under
+`git diff-tree --cc` and nothing under the plain form. Each commit after the cut-off still passes
+the write-set rule.
+
+**The decisions.** TASK-0034 gains the commit order, change the Document first and publish second,
+and three tests for the findings E9 and E10 (question Q1). `docs/diagnostics.md` gives the close
+status 1007 for an invalid subscribe frame; the code sent it from the start, and TASK-0010 said 1003
+(question Q3). TASK-0044 opens for the heartbeat loop and the three host checks, before TASK-0038
+mounts the surface in the desktop host (question Q5). Register entry R-0027 stays as it is (question
+Q2), and the gate work comes before TASK-0034 (question Q4).
+
+Not done, and why: the parts of finding T5 that need a new parser, an `affects` value with quotes,
+the reserve table heading and the codebase review gate, and the low findings of T7. Register entry
+R-0031 stays open for them, with its limit of 2026-12-24.
+
+New tests: 3. The test list holds 217, up from 214. `dotnet build 3DEngine.sln --no-incremental`
+gives zero errors and zero warnings. Open entries: 13 of 15. New diagnostic codes: none. The next
+codebase review must come before ledger entry v0.41.

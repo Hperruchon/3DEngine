@@ -1,4 +1,4 @@
-using System.Text.RegularExpressions;
+using System.Xml.Linq;
 using Xunit;
 
 namespace Engine.Tests.Governance;
@@ -7,14 +7,14 @@ namespace Engine.Tests.Governance;
 // Register entry R-0004 recorded that gap. The working agreement of 2026-09-20
 // called such a rule a wish rather than a rule.
 //
-// The gate reads each project file in the working tree. It needs no build and
-// no reflection, therefore it also catches a reference that compiles.
+// The gate reads each project file in the working tree as XML. It needs no
+// build and no reflection, therefore it also catches a reference that compiles.
+// Until TASK-0043 it read each file with one regular expression, which kept the
+// last path of an Include with two paths and needed one attribute order; a
+// reference from Engine.Core to 3DEngine.Core passed that way (codebase review
+// of 2026-09-30, finding T4).
 public class DependencyDirectionGateTests
 {
-    private static readonly Regex ProjectReference = new(
-        @"ProjectReference\s+Include\s*=\s*""([^""]+)""",
-        RegexOptions.Compiled);
-
     // The enumeration must skip a git worktree. The repository held three of
     // them under .claude/worktrees/, and each one was a full copy pinned to an
     // older commit. Without this filter a stale copy shadows the real project
@@ -31,6 +31,25 @@ public class DependencyDirectionGateTests
             .Where(f => !IsOutOfScope(RepositoryFiles.Relative(f)))
             .OrderBy(f => f, StringComparer.Ordinal)
             .ToList();
+
+    // Each value of the attribute Include on each item with the given name, one
+    // path at a time. An Include may hold several paths with a semicolon, and
+    // an attribute may come in any order; XML reading handles both, and it
+    // ignores a comment.
+    private static IEnumerable<string> Includes(string file, string itemName)
+    {
+        var document = XDocument.Load(file);
+
+        foreach (var item in document.Descendants().Where(e => e.Name.LocalName == itemName))
+        {
+            var include = item.Attribute("Include")?.Value;
+            if (include is null)
+                continue;
+
+            foreach (var part in include.Split(';', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
+                yield return part;
+        }
+    }
 
     [Fact]
     public void Each_Project_Name_Appears_Exactly_Once()
@@ -58,10 +77,8 @@ public class DependencyDirectionGateTests
         foreach (var file in ProjectFiles())
         {
             var project = Path.GetFileNameWithoutExtension(file);
-            var targets = ProjectReference
-                .Matches(File.ReadAllText(file))
-                .Select(m => Path.GetFileNameWithoutExtension(
-                    m.Groups[1].Value.Replace('\\', '/')))
+            var targets = Includes(file, "ProjectReference")
+                .Select(path => Path.GetFileNameWithoutExtension(path.Replace('\\', '/')))
                 .ToList();
 
             graph[project] = targets;
@@ -218,10 +235,6 @@ public class DependencyDirectionGateTests
         Assert.True(offences.Length == 0, string.Join("\n  ", offences));
     }
 
-    private static readonly Regex PackageReference = new(
-        @"PackageReference\s+Include\s*=\s*""([^""]+)""",
-        RegexOptions.Compiled);
-
     [Theory]
     [InlineData("Vortice.Vulkan")]
     [InlineData("Alimer.Bindings.SDL")]
@@ -231,8 +244,8 @@ public class DependencyDirectionGateTests
         // binding, therefore "which version does the repository use" had three
         // answers. A host receives each binding through its project reference.
         var pins = ProjectFiles()
-            .Where(f => PackageReference.Matches(File.ReadAllText(f))
-                .Any(m => string.Equals(m.Groups[1].Value, package, StringComparison.OrdinalIgnoreCase)))
+            .Where(f => Includes(f, "PackageReference")
+                .Any(name => string.Equals(name, package, StringComparison.OrdinalIgnoreCase)))
             .Select(RepositoryFiles.Relative)
             .ToArray();
 

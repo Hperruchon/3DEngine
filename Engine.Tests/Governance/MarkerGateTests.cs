@@ -19,6 +19,9 @@ namespace Engine.Tests.Governance;
 //     other.
 //   - A document that defines the rule must name the words in order to define
 //     them. A match there is a definition, not a declaration of impermanence.
+//
+// The identifier must be an entry of docs/register.md. Until TASK-0043 any
+// four digits passed (codebase review of 2026-09-30, finding T4).
 public class MarkerGateTests
 {
     private static readonly Regex Marker = new(
@@ -31,6 +34,10 @@ public class MarkerGateTests
     public void Every_Impermanence_Marker_In_Live_Code_Carries_A_Register_Identifier()
     {
         var offences = new List<string>();
+        var known = RegisterId.Matches(RepositoryFiles.Read("docs", "register.md"))
+            .Select(m => m.Value)
+            .ToHashSet(StringComparer.Ordinal);
+        Assert.True(known.Count > 0, "docs/register.md holds no entry identifier.");
 
         foreach (var file in LiveFiles())
         {
@@ -46,9 +53,12 @@ public class MarkerGateTests
                 // The identifier may sit on the same line or just above it, so a
                 // comment can introduce a block and cite the entry once.
                 var window = string.Join("\n", lines.Skip(Math.Max(0, i - 2)).Take(3));
+                var cited = RegisterId.Matches(window).Select(m => m.Value).ToArray();
 
-                if (!RegisterId.IsMatch(window))
+                if (cited.Length == 0)
                     offences.Add($"{relative}:{i + 1} says '{match.Value}' with no R-nnnn");
+                else if (!cited.Any(known.Contains))
+                    offences.Add($"{relative}:{i + 1} says '{match.Value}' and cites {string.Join(", ", cited)}, which is not in docs/register.md");
             }
         }
 
