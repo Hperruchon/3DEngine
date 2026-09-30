@@ -17,6 +17,9 @@ namespace Engine.Tests.Http;
 // agree on when a request is a WebSocket request. An Origin check placed
 // before the WebSocket middleware passed the in-process test and let a foreign
 // Origin through on Kestrel. Only a run on the real host sees that.
+// The two tests that spawn the real host share one collection with the heartbeat
+// test, so that a process start does not run beside a measurement of time.
+[Collection("real host")]
 public class HostGuardTests : IClassFixture<WebApplicationFactory<Program>>
 {
     private readonly WebApplicationFactory<Program> _factory;
