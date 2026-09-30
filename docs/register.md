@@ -205,19 +205,8 @@ buffer with the C++ `delete` (E14). The host has no bind rule, no Origin check a
 the tests that the review gives. E15 must be corrected before TASK-0038 ships, because the desktop
 host then serves the surface while a person has a document open.
 Exit: each finding has a task, or it is corrected, or the owner accepts it and gives the reason.
-
-### R-0029 · An idle subscriber receives 1,025 heartbeat frames and not one
-- class: risk
-- opened: 2026-09-30
-- due: 2026-10-30
-- extended: no
-- refs: `Engine.Api.Http/WebSockets/Subscriber.cs:117-132`, `docs/reviews/2026-09-30-codebase-review.md` finding E8
-The heartbeat loop writes a frame and starts again with no wait. A run on the real host gave 1,025
-heartbeat frames at second 30 for one idle subscriber. While the channel is full of heartbeat frames,
-the next event does not fit and the host disconnects the subscriber as lagged. No test waits for a
-heartbeat.
-Exit: the loop waits one interval after each frame, and a test with a short interval counts the
-frames.
+Progress 2026-09-30: TASK-0044 corrected E15. The host refuses an address that is not a loopback
+address, a foreign Origin gets 403, and a foreign Host gets 400. The other findings stay.
 
 ### R-0030 · The Vulkan layer continues with a null device and gives unpinned memory to Vulkan
 - class: debt
@@ -558,3 +547,20 @@ The write-set gate reads the task that the commit trailer names, and only that t
 commit. A commit with no trailer that touches several task files fails. The injection of this
 entry, the change list of v0.32 plus `Engine.Core/CommandBus.cs`, fails with TASK-0032 named and
 fails with no task named.
+
+### R-0029 · An idle subscriber receives 1,025 heartbeat frames and not one
+- class: risk
+- opened: 2026-09-30
+- due: 2026-10-30
+- extended: no
+- refs: `Engine.Api.Http/WebSockets/Subscriber.cs:117-132`, `docs/reviews/2026-09-30-codebase-review.md` finding E8
+The heartbeat loop writes a frame and starts again with no wait. A run on the real host gave 1,025
+heartbeat frames at second 30 for one idle subscriber. While the channel is full of heartbeat frames,
+the next event does not fit and the host disconnects the subscriber as lagged. No test waits for a
+heartbeat.
+Exit: the loop waits one interval after each frame, and a test with a short interval counts the
+frames.
+Closed 2026-09-30 - resolved - TASK-0044, v0.37
+The loop moves the time of the last send when it writes a frame, so it waits one interval before
+the next one. The run of the review, one idle subscriber for 36 seconds, gives 1 heartbeat frame
+at second 30. A test with an interval of 100 ms counts at most eleven frames in one second.

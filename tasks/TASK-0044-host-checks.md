@@ -1,7 +1,7 @@
 ---
 id: 0044
 title: The host binds to a loopback address only, checks the Origin and the Host, and sends one heartbeat in each interval
-status: Ready
+status: Done
 phase: governance
 opened: 2026-09-30
 depends-on: [0043]
@@ -69,10 +69,10 @@ Host, and sends one heartbeat in each interval.
 
 ## Acceptance criteria
 
-- [ ] The four tests above pass, and each one failed on the code before the change.
-- [ ] The run of the review, one idle subscriber for 36 seconds, gives one heartbeat frame at
+- [x] The four tests above pass, and each one failed on the code before the change.
+- [x] The run of the review, one idle subscriber for 36 seconds, gives one heartbeat frame at
       second 30 and one more at second 60 at most.
-- [ ] `dotnet build 3DEngine.sln --no-incremental` gives zero warnings. `dotnet test` passes on the
+- [x] `dotnet build 3DEngine.sln --no-incremental` gives zero warnings. `dotnet test` passes on the
       three runners.
 
 ## Notes for the implementer
@@ -82,3 +82,31 @@ mounts later. The origin list must accept the origin that the desktop host will 
 list in `SubscriberOptions` and not in a literal.
 - 2026-09-30: the heartbeat loop waits one interval; the test counted a burst before the change.
 - 2026-09-30: the loopback guard, the Origin check and the Host filter. The first form of the Origin check ran before the WebSocket middleware, passed the in-process test and let a foreign Origin through on Kestrel; a run on the real host found it, and a test now spawns the real host.
+
+## Outcome
+
+Status: Done · v0.37 · the commit that carries this block.
+
+## Method
+
+**Mechanical.** One line in the heartbeat loop. The list of permitted origin hosts in
+`SubscriberOptions`. The loopback guard, the Origin check and the Host filter in `Program.cs`.
+
+**Judgement.** The Origin check is a middleware with a list of hosts, and not the origin list of the
+framework, because that list needs an exact origin with a port and the port of the host is not fixed.
+A request with no Origin header passes, because a script and an agent send none, and the charter puts
+them first. The value "null" is refused. The Host filter is the middleware of the framework with the
+same three loopback names. A refusal of the address is an exit code and a message, so a script sees
+it. Each of the four tests failed on the code before the change: the heartbeat count, the foreign
+Origin, the foreign Host, and the process that ran on 0.0.0.0 until the test stopped it.
+
+**Weakest.** The heartbeat test counts frames in one second, so a slow runner can give a count below
+three and fail falsely; the upper limit is the assertion that matters. The process test spawns
+`dotnet` and takes thirty seconds when it fails. The Host filter was tested with `localhost` and a
+foreign name, and not with the IPv6 literal.
+
+## Progress
+
+- 2026-09-30: the four tests written first; each behaviour test failed on the code of today.
+- 2026-09-30: the run of the review on the real host: one idle subscriber for 36 seconds gives 1 heartbeat frame at second 30; a foreign Origin gets 403; a foreign Host gets 400; the host refuses http://0.0.0.0 with exit code 1.
+- 2026-09-30: closed. R-0029 is closed, and ledger entry v0.37 records the work.
