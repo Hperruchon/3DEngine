@@ -118,7 +118,7 @@ A command, a query and a snapshot never overlap, so that a reader never sees a p
       in the same order as a commit. A test runs subscriptions and commands in parallel for at least
       one second with no timeout.
 - [x] A clean build (`--no-incremental`) gives zero errors and zero warnings.
-- [ ] Continuous integration passes on `ubuntu-latest`, `windows-latest` and `macos-latest`.
+- [x] Continuous integration passes on `ubuntu-latest`, `windows-latest` and `macos-latest`.
 
 ## Notes for the implementer
 
@@ -194,3 +194,5 @@ caller that builds two buses on one Document, as no caller does today, now fails
 - 2026-10-01: the first pipeline run on 4545f75 failed in the test step on Windows only. The log needs
   a sign-in. Here the suite passed 62 runs, at full load, with a small thread pool and on two cores.
   Register entry R-0032 asks for the name of a failed test in a public annotation.
+- 2026-10-01: the pipeline run 36922482476 on 07fd866 passed on Ubuntu, Windows and macOS. The test
+  step on Windows took 18 s, inside the range of 11 to 18 s of the five runs before it.
