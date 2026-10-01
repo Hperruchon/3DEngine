@@ -207,6 +207,11 @@ host then serves the surface while a person has a document open.
 Exit: each finding has a task, or it is corrected, or the owner accepts it and gives the reason.
 Progress 2026-09-30: TASK-0044 corrected E15. The host refuses an address that is not a loopback
 address, a foreign Origin gets 403, and a foreign Host gets 400. The other findings stay.
+Progress 2026-10-01: TASK-0034 corrected E9 and E10, and their tests pass. The first live `seq` after
+a reset equals the snapshot version plus one, a second bus on one Document is refused, and the bus
+refuses to move the version back. `Document.AdvanceVersion` still accepts a lower value, because
+`Engine.Contracts` was outside that task; TASK-0035 modifies the file. E7, E11, E13, E14, E16 and
+E17 stay.
 
 ### R-0030 · The Vulkan layer continues with a null device and gives unpinned memory to Vulkan
 - class: debt
@@ -236,6 +241,19 @@ the gates.
 Exit: each injected violation of the second review fails its gate.
 Progress 2026-09-30: TASK-0043 closed the holes of T3, T4 and T6, and the status and the fence parts of
 T5. The `affects` parser, the reserve heading, the codebase review gate and the findings of T7 stay.
+
+### R-0032 · A failed test in the pipeline has no name that a person without a sign-in can read
+- class: risk
+- opened: 2026-10-01
+- due: 2026-10-31
+- extended: no
+- refs: `.github/workflows/ci.yml` step "Test", TASK-0044, TASK-0034
+The log of a job needs admin rights: the endpoint of the job log answered 403 on 2026-10-01. The
+annotations of a check run are public. Two runs failed in the test step with no name: Ubuntu on
+2026-09-30 (v0.38) and Windows on 2026-10-01 (run 36920665584). In each case the suite passed many
+times on this computer, so the session could only guess the test.
+Exit: the step "Test" writes the name and the message of each failed test as a public annotation, and
+an injected failure shows it.
 
 ## Accepted compromises
 

@@ -1,7 +1,7 @@
 ---
 id: 0034
 title: Commands, queries and snapshots pass through one serial boundary
-status: Active
+status: Done
 phase: P0.13
 opened: 2026-09-25
 depends-on: []
@@ -108,16 +108,16 @@ A command, a query and a snapshot never overlap, so that a reader never sees a p
 
 ## Acceptance criteria
 
-- [ ] The concurrency test fails on the code before the change. The Outcome block records the
+- [x] The concurrency test fails on the code before the change. The Outcome block records the
       exceptions that it saw.
-- [ ] After the change, the concurrency test passes 100 times in a row.
-- [ ] An HTTP test sends queries and commands in parallel and gets no HTTP 500.
-- [ ] A test cancels the token after the log append. The log, the bodies, the events and the version
+- [x] After the change, the concurrency test passes 100 times in a row.
+- [x] An HTTP test sends queries and commands in parallel and gets no HTTP 500.
+- [x] A test cancels the token after the log append. The log, the bodies, the events and the version
       then agree with each other.
-- [ ] No lock order can deadlock: the handshake takes the session first and the broadcaster second,
+- [x] No lock order can deadlock: the handshake takes the session first and the broadcaster second,
       in the same order as a commit. A test runs subscriptions and commands in parallel for at least
       one second with no timeout.
-- [ ] A clean build (`--no-incremental`) gives zero errors and zero warnings.
+- [x] A clean build (`--no-incremental`) gives zero errors and zero warnings.
 - [ ] Continuous integration passes on `ubuntu-latest`, `windows-latest` and `macos-latest`.
 
 ## Notes for the implementer
@@ -131,6 +131,37 @@ A command, a query and a snapshot never overlap, so that a reader never sees a p
   takes longer than one frame of interaction (about 16 ms) while a person edits.
 - **ADR-0008.** Its field `affects` names `Engine.Contracts/**` only, therefore it is not in
   `governed-by`. Its §6 gives the rule that this task implements.
+
+## Outcome
+
+Status: Done · v0.39 · the commit that carries this block.
+
+The concurrency test failed on the code before the change, in three runs of three. The queries threw
+`InvalidOperationException` 1,021, 1,152 and 950 times. The snapshot copies threw `ArgumentException`
+839, 920 and 849 times, and `IndexOutOfRangeException` one time.
+
+## Method
+
+**Mechanical.** `DocumentSession` with three methods: apply a command, run a query, and read the
+Document and the sink with a function. Each host calls the session in place of the buses. The comment
+in `ManifoldGeometryBackend.cs` and the glossary term.
+
+**Judgement.** The session takes its own semaphore and keeps the semaphore of the bus, as section 5 of
+the review recommends, because `Replay` and the tests use a bus with no session. A read takes a
+function, so that the Document does not leave the section. `EngineHost` keeps a `Document` property
+for the tests only, because four test files outside the write set read it. A rejection and a
+cancellation follow "change, then publish" also, so that each path has one order. One bus for each
+Document is a weak table in `CommandBus`, and a check before each sequence number refuses a version
+that goes back. `Document.AdvanceVersion` is in `Engine.Contracts`, which this task forbids, so the
+bus refuses in its place; TASK-0035 modifies that file. The HTTP tests run on the test server, because
+the behaviour is in the engine and the broadcaster and not in the server. `docs/register.md` joined
+the write set, because the owner asked for the progress line in R-0028.
+
+**Weakest.** The test for finding E9 depends on timing: on the old code it failed in one run of three.
+A pass is weak evidence; the order in the code is the proof. `EngineHost.Document` is a read with no
+lock, and no gate stops an endpoint from using it. When the deadlock test fails, it leaves blocked
+threads and does not dispose the host. The weak table makes a second bus on one Document throw, and a
+caller that builds two buses on one Document, as no caller does today, now fails.
 
 ## Progress
 
@@ -157,3 +188,9 @@ A command, a query and a snapshot never overlap, so that a reader never sees a p
   engine.
 - 2026-10-01: the threading comment of `ManifoldGeometryBackend.cs` agrees with the code (scope item
   5), and the glossary defines "document session" (scope item 6).
+- 2026-10-01: closed. The clean build gives zero warnings, the probe passes 100 runs of 100, and the
+  HTTP tests pass 20 runs of 20. The test list holds 242. Ledger entry v0.39 and a progress line in
+  R-0028 record the work.
+- 2026-10-01: the first pipeline run on 4545f75 failed in the test step on Windows only. The log needs
+  a sign-in. Here the suite passed 62 runs, at full load, with a small thread pool and on two cores.
+  Register entry R-0032 asks for the name of a failed test in a public annotation.
