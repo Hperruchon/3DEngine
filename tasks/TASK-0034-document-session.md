@@ -139,3 +139,9 @@ A command, a query and a snapshot never overlap, so that a reader never sees a p
   `ArgumentException`; one copy threw `IndexOutOfRangeException`. With `DocumentSession` it passed
   100 runs of 100, each run in its own process. `docs/register.md` joins the write set, because the
   owner asked for a progress line in R-0028; TASK-0044 permitted the same file.
+- 2026-10-01: both hosts use the session, and the WebSocket handshake reads inside it: the session
+  first, the broadcaster second. `Engine.Tests/Http/HttpConcurrencyTests.cs` adds three tests. On the
+  code before the change, three runs gave 190, 201 and 209 answers with HTTP 500 in parallel; the
+  first live `seq` after a reset was the snapshot version plus two in one run of three (finding E9);
+  and in each run the server closed a WebSocket before its first message. With the opposite lock
+  order injected into the handshake, the deadlock test stopped at its limit of 11 s with 0 commands.
