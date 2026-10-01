@@ -1,7 +1,7 @@
 ---
 id: 0034
 title: Commands, queries and snapshots pass through one serial boundary
-status: Ready
+status: Active
 phase: P0.13
 opened: 2026-09-25
 depends-on: []
@@ -29,6 +29,7 @@ writes:
     - Engine.Tests/Hosting/EngineHostingTests.cs
     - docs/glossary.md
     - docs/CURRENT-STATE.md
+    - docs/register.md
   forbid:
     - Engine.Contracts/**
     - Engine.Core/Commands/**
@@ -130,3 +131,11 @@ A command, a query and a snapshot never overlap, so that a reader never sees a p
   takes longer than one frame of interaction (about 16 ms) while a person edits.
 - **ADR-0008.** Its field `affects` names `Engine.Contracts/**` only, therefore it is not in
   `governed-by`. Its §6 gives the rule that this task implements.
+
+## Progress
+
+- 2026-10-01: the probe test first. On the code of today it failed in three runs of three: 1,021,
+  1,152 and 950 queries threw `InvalidOperationException`; 839, 920 and 849 snapshot copies threw
+  `ArgumentException`; one copy threw `IndexOutOfRangeException`. With `DocumentSession` it passed
+  100 runs of 100, each run in its own process. `docs/register.md` joins the write set, because the
+  owner asked for a progress line in R-0028; TASK-0044 permitted the same file.
