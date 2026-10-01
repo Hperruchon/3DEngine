@@ -10,8 +10,10 @@ namespace Engine.Geometry.Manifold;
 // P7c (ADR-0012 Amendment 1) adds transform (Translate) and boolean (Subtract) ops that
 // the managed stub deliberately does not implement — real solids the stub can't represent.
 //
-// Threading (ADR-0014 §3): single-threaded from the engine's view. Every call runs
-// inside CommandBus's serial commit section, so no internal lock is taken.
+// Threading (ADR-0014 §3): single-threaded from the engine's view. Each call from a
+// command and each call from a query runs inside the serial section of the
+// DocumentSession of the host (TASK-0034), so no internal lock is taken. A caller
+// that uses a bus with no session must keep its calls in series itself.
 //
 // Lifecycle (ADR-0014 §2): owns native handles; Dispose() releases them. Native object
 // + its caller-allocated buffer are owned as a unit by ManifoldSolidHandle.

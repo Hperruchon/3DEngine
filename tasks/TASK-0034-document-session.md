@@ -155,3 +155,5 @@ A command, a query and a snapshot never overlap, so that a reader never sees a p
 - 2026-10-01: `QueryBusTests` asserted on a new sink that no bus received, which proved nothing (step 5
   of section 6 of the review). A new test runs two queries through a session and reads the sink of the
   engine.
+- 2026-10-01: the threading comment of `ManifoldGeometryBackend.cs` agrees with the code (scope item
+  5), and the glossary defines "document session" (scope item 6).
