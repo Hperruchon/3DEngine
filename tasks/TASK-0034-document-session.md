@@ -152,3 +152,6 @@ A command, a query and a snapshot never overlap, so that a reader never sees a p
   threw `OperationCanceledException` out of `Apply`, the sink test failed at the version, and the two
   tests for finding E10 saw no exception. `AdvanceVersion` itself is in `Engine.Contracts`, which this
   task forbids; TASK-0035 modifies that file.
+- 2026-10-01: `QueryBusTests` asserted on a new sink that no bus received, which proved nothing (step 5
+  of section 6 of the review). A new test runs two queries through a session and reads the sink of the
+  engine.
