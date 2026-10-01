@@ -145,3 +145,10 @@ A command, a query and a snapshot never overlap, so that a reader never sees a p
   first live `seq` after a reset was the snapshot version plus two in one run of three (finding E9);
   and in each run the server closed a WebSocket before its first message. With the opposite lock
   order injected into the handshake, the deadlock test stopped at its limit of 11 s with 0 commands.
+- 2026-10-01: the commit changes the Document first and publishes second, with
+  `CancellationToken.None` (scope items 4 and 7). The rejection and the cancellation follow the same
+  order. A second bus on one Document is refused at construction, and the bus refuses to move the
+  version back. Four new tests in `CommandBusTests.cs` failed on the old bus: the cancellation test
+  threw `OperationCanceledException` out of `Apply`, the sink test failed at the version, and the two
+  tests for finding E10 saw no exception. `AdvanceVersion` itself is in `Engine.Contracts`, which this
+  task forbids; TASK-0035 modifies that file.

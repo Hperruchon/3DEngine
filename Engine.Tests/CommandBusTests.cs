@@ -1,6 +1,8 @@
 using Engine.Contracts;
 using Engine.Core;
 using Engine.Core.Commands;
+using Engine.Core.Geometry;
+using Engine.Core.Hosting;
 
 namespace Engine.Tests;
 
@@ -137,5 +139,136 @@ public class CommandBusTests
             Assert.Equal(i + 1, events[i].Seq);
 
         Assert.Equal(events[^1].Seq, doc.Version);
+    }
+
+    // TASK-0034, scope item 4 (finding E4). The sink stands for a host sink that
+    // obeys the token. It cancels the token when it receives the first event of
+    // the commit, which comes after the log append. Before the change the bus gave
+    // the token of the caller to each append: the second append threw, and the log
+    // held the command while the version and the events did not.
+    [Fact]
+    public async Task A_Cancellation_After_The_Log_Append_Leaves_Log_Bodies_Events_And_Version_In_Agreement()
+    {
+        using var cts = new CancellationTokenSource();
+        var sink = new ObservingSink(record =>
+        {
+            if (record.Kind == "command.applied")
+                cts.Cancel();
+        });
+        var (doc, bus) = NewBusWithCreateBox(sink);
+
+        var result = await bus.Apply(new CreateBoxCommand { SizeX = 1, SizeY = 2, SizeZ = 3 }, cts.Token);
+
+        Assert.True(cts.IsCancellationRequested);
+        Assert.Equal(CommandStatus.Applied, result.Status);
+        Assert.Single(doc.Log);
+        Assert.Single(doc.Bodies);
+        Assert.Equal(["command.applied", "body.created"], sink.Records.Select(r => r.Kind));
+        Assert.Equal(sink.Records[^1].Seq, doc.Version);
+        Assert.Equal(doc.Version, result.DocumentVersion);
+    }
+
+    // TASK-0034, scope item 7: change, then publish. A sink that throws loses an
+    // event and never a part of the Document. The cache holds the result, so a
+    // retry with the same CommandId does not run the handler a second time.
+    // Before the change the version stayed at 0 and the cache was empty, and a
+    // retry made the backend throw for a duplicate body.
+    [Fact]
+    public async Task A_Sink_That_Throws_Loses_An_Event_And_Never_A_Part_Of_The_Document()
+    {
+        var sink = new ObservingSink(record =>
+        {
+            if (record.Kind == "body.created")
+                throw new InvalidOperationException("The sink failed.");
+        });
+        var (doc, bus) = NewBusWithCreateBox(sink);
+        var command = new CreateBoxCommand { SizeX = 1, SizeY = 2, SizeZ = 3 };
+
+        await Assert.ThrowsAsync<InvalidOperationException>(() => bus.Apply(command));
+
+        Assert.Single(doc.Log);
+        Assert.Single(doc.Bodies);
+        Assert.Equal(2, doc.Version);
+        Assert.Equal(["command.applied", "body.created"], sink.Records.Select(r => r.Kind));
+
+        sink.ActionEnabled = false;
+        var retry = await bus.Apply(command);
+        Assert.Equal(CommandStatus.Applied, retry.Status);
+        Assert.Equal(1, retry.AppliedAtSeq);
+        Assert.Single(doc.Log);
+
+        var next = await bus.Apply(new CreateBoxCommand { SizeX = 1, SizeY = 2, SizeZ = 3 });
+        Assert.Equal(3, next.AppliedAtSeq);
+        Assert.Equal(4, doc.Version);
+    }
+
+    // TASK-0034, scope item 8 (finding E10). The sequence counter belongs to the
+    // bus, so a second bus on one Document started the sequence at 1 again.
+    [Fact]
+    public async Task A_Second_Bus_On_The_Document_Of_A_Session_Is_Refused()
+    {
+        var kit = EngineHosting.CreateDefault(new InProcessMeshBackend());
+        var session = new DocumentSession(kit);
+        var first = await session.Apply(new CreateBoxCommand { SizeX = 1, SizeY = 2, SizeZ = 3 });
+
+        // A reference that leaves the session on purpose. Only a test does this.
+        var document = await session.Read((d, _) => d);
+
+        Assert.Throws<InvalidOperationException>(
+            () => new CommandBus(document, kit.CommandRegistry, new InMemoryEventSink(), kit.Backend));
+
+        var second = await session.Apply(new CreateBoxCommand { SizeX = 1, SizeY = 2, SizeZ = 3 });
+        Assert.Equal(first.AppliedAtSeq + 2, second.AppliedAtSeq);
+        Assert.Equal(["command.applied", "body.created", "command.applied", "body.created"],
+            kit.Events.Snapshot().Select(r => r.Kind));
+    }
+
+    // TASK-0034, scope item 8 (finding E10). Document.AdvanceVersion accepts a
+    // lower value, and Engine.Contracts is outside this task, therefore the bus,
+    // the one caller, refuses to move the version back. TASK-0035 changes
+    // AdvanceVersion. Before the change the bus moved the version from 10 to 2.
+    [Fact]
+    public async Task The_Bus_Refuses_To_Move_The_Version_Back()
+    {
+        var (doc, _, sink, bus) = NewBusWithNoOp();
+        await bus.Apply(new NoOpCommand { Echo = "first" });
+
+        doc.AdvanceVersion(10); // A writer outside the bus.
+
+        await Assert.ThrowsAsync<InvalidOperationException>(() => bus.Apply(new NoOpCommand { Echo = "second" }));
+
+        Assert.Equal(10, doc.Version);
+        Assert.Single(doc.Log);
+        Assert.Single(sink.Snapshot());
+    }
+
+    private static (Document doc, CommandBus bus) NewBusWithCreateBox(IEventSink sink)
+    {
+        var doc = new Document();
+        var reg = new CommandRegistry();
+        reg.Register(new CreateBoxCommandHandler());
+        return (doc, new CommandBus(doc, reg, sink, new InProcessMeshBackend()));
+    }
+
+    // Keeps each event, and then calls the action. A token that is already
+    // cancelled makes it throw first, as a host sink that obeys the token does.
+    private sealed class ObservingSink(Action<EventRecord> afterAppend) : IEventSink
+    {
+        public List<EventRecord> Records { get; } = [];
+
+        public bool ActionEnabled { get; set; } = true;
+
+        public Task Append(EventRecord record, CancellationToken ct = default)
+        {
+            ct.ThrowIfCancellationRequested();
+            Records.Add(record);
+            if (ActionEnabled)
+                afterAppend(record);
+            return Task.CompletedTask;
+        }
+
+        public IReadOnlyList<EventRecord> Snapshot() => Records;
+
+        public int Count => Records.Count;
     }
 }

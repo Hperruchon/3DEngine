@@ -31,7 +31,7 @@ public sealed class DocumentSession
 
     // The sink is the decorated sink when a host decorates one, and the sink of
     // the kit when a host does not. The session builds the one command bus of
-    // the Document.
+    // the Document; a second bus on the same Document is refused (CommandBus).
     public DocumentSession(EngineKit kit, IEventSink? events = null)
     {
         ArgumentNullException.ThrowIfNull(kit);
