@@ -42,7 +42,7 @@ function decode(text) {
 
 function element(xml, name) {
   const match = new RegExp(`<${name}>([\\s\\S]*?)</${name}>`).exec(xml);
-  return match ? decode(match[1]).trim() : "";
+  return match ? decode(match[1]).replace(/\r\n?/g, "\n").trim() : "";
 }
 
 function failedTests(file) {

@@ -242,19 +242,6 @@ Exit: each injected violation of the second review fails its gate.
 Progress 2026-09-30: TASK-0043 closed the holes of T3, T4 and T6, and the status and the fence parts of
 T5. The `affects` parser, the reserve heading, the codebase review gate and the findings of T7 stay.
 
-### R-0032 · A failed test in the pipeline has no name that a person without a sign-in can read
-- class: risk
-- opened: 2026-10-01
-- due: 2026-10-31
-- extended: no
-- refs: `.github/workflows/ci.yml` step "Test", TASK-0044, TASK-0034
-The log of a job needs admin rights: the endpoint of the job log answered 403 on 2026-10-01. The
-annotations of a check run are public. Two runs failed in the test step with no name: Ubuntu on
-2026-09-30 (v0.38) and Windows on 2026-10-01 (run 36920665584). In each case the suite passed many
-times on this computer, so the session could only guess the test.
-Exit: the step "Test" writes the name and the message of each failed test as a public annotation, and
-an injected failure shows it.
-
 ## Accepted compromises
 
 These are conditions that the project keeps permanently and by decision. They do not age.
@@ -582,3 +569,21 @@ Closed 2026-09-30 - resolved - TASK-0044, v0.37
 The loop moves the time of the last send when it writes a frame, so it waits one interval before
 the next one. The run of the review, one idle subscriber for 36 seconds, gives 1 heartbeat frame
 at second 30. A test with an interval of 100 ms counts at most eleven frames in one second.
+
+### R-0032 · A failed test in the pipeline has no name that a person without a sign-in can read
+- class: risk
+- opened: 2026-10-01
+- due: 2026-10-31
+- extended: no
+- refs: `.github/workflows/ci.yml` step "Test", TASK-0044, TASK-0034
+The log of a job needs admin rights: the endpoint of the job log answered 403 on 2026-10-01. The
+annotations of a check run are public. Two runs failed in the test step with no name: Ubuntu on
+2026-09-30 (v0.38) and Windows on 2026-10-01 (run 36920665584). In each case the suite passed many
+times on this computer, so the session could only guess the test.
+Exit: the step "Test" writes the name and the message of each failed test as a public annotation, and
+an injected failure shows it.
+Closed 2026-10-03 - resolved - TASK-0045, v0.40
+The step "Test" writes a .trx file, and `eng/report-failed-tests.js` writes each failed test as a
+public annotation. On the branch `r0032-injection-2026-10-03`, run 37102594075, an injected failure
+gave an annotation with its name on each of the three runners. The check-run API returned it with no
+sign-in. On Windows the same run also named a real failure, which TASK-0034 then corrected.

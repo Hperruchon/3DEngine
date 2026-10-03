@@ -1088,3 +1088,34 @@ test in a public annotation.
 New tests: 9. The test list holds 242, up from 233. `dotnet build 3DEngine.sln --no-incremental`
 gives zero errors and zero warnings. Open entries: 13 of 15, with the new entry R-0032. New diagnostic
 codes: none. The next codebase review must come before ledger entry v0.41.
+## v0.40 — A failed test in the pipeline has a public name, and two tests of v0.39 tolerate a slow runner (TASK-0045, TASK-0034 correction)
+
+Register entry R-0032. The log of a job needs admin rights, and the annotations of a check run are
+public. Two red runs, on Ubuntu for v0.38 and on Windows for v0.39, had no test name that a reader
+without a sign-in could see.
+
+**The name of each failed test.** The step "Test" of the pipeline writes a `.trx` file. When
+`dotnet test` fails, `eng/report-failed-tests.js` writes the name, the message and six lines of the
+stack of each failed test as an annotation, with a maximum of ten. On the branch
+`r0032-injection-2026-10-03`, which is never merged, an injected failure gave its name on each of
+the three runners through the check-run API with no sign-in. The first form of the script found no
+failed test, because its pattern read past the empty element of a passed test; the injection on this
+computer found that.
+
+**The failure of v0.39 has a name.** The same run on Windows named a real failure:
+`HttpConcurrencyTests.Queries_And_Commands_In_Parallel_Get_No_Http_500`, with
+`TaskCanceledException`. It did not repeat here. Its four readers turned in a loop with no await
+until the first body existed, which can starve the server on a runner with few cores. The readers now
+start after the first command; this cause is inferred and not observed. On one core here, the E9 test
+of v0.39 failed 3 times: the client stopped reading after its measurement, its queue filled, and the
+server disconnected it as a slow subscriber, as ADR-0005 §6 requires. Its close then found a closed
+socket. The close after a measurement now accepts that. The full suite on one core failed 1 time in
+25 runs before the change and 0 times in 40 runs after it. The HTTP tests alone on one core
+passed 80 runs of 80 after it.
+
+Not done, and why: the cause of the Ubuntu failure of v0.38 stays unknown, because its log needs a
+sign-in. The branch `r0032-injection-2026-10-03` stays on the server until the owner deletes it.
+
+New tests: 0. The test list holds 242. `dotnet build 3DEngine.sln --no-incremental` gives zero errors
+and zero warnings. Closed: R-0032. Open entries: 12 of 15. New diagnostic codes: none. The next
+codebase review must come before ledger entry v0.41.
