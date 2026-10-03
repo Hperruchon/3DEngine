@@ -52,6 +52,7 @@ it is not correct and it must not be used.
 | `.github/workflows/ci.yml` | The gate: build, test and two smoke tests on three operating systems; the contract gate; the write-set gate. |
 | `.github/PULL_REQUEST_TEMPLATE.md` and `.github/CODEOWNERS` | The pull request form, and the owner of each surface. |
 | `eng/write-set-cutoff.txt` | The commit after which the write-set gate applies. |
+| `eng/report-failed-tests.js` | Writes the name and the message of each failed test as a public annotation when the step "Test" of the pipeline fails (TASK-0045). |
 | `eng/manifold-native/` | The packaging project for the native Manifold payload. |
 | `nuget/` | The local package feed for the native payload (register entry R-0007). |
 | `THIRD-PARTY-NOTICES.md` | Each third-party component, its licence and its checksum. `NativePackageGateTests` reads the checksums. |
