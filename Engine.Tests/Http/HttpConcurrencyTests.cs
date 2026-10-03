@@ -35,17 +35,25 @@ public class HttpConcurrencyTests : IClassFixture<WebApplicationFactory<Program>
         var http = factory.CreateClient();
 
         var statuses = new ConcurrentDictionary<int, int>();
-        object? newest = null; // A boxed Guid, because Volatile needs a reference type.
         var done = 0;
+
+        // The first body exists before a reader starts. In the first form of the
+        // test each reader turned in a loop with no await until that body existed.
+        // Four such loops held four threads of the pool, which can starve the
+        // server on a runner with few cores (TASK-0045).
+        var firstId = Guid.NewGuid();
+        using (var first = await PostCreateBox(http, firstId))
+            statuses.AddOrUpdate((int)first.StatusCode, 1, (_, n) => n + 1);
+        object newest = firstId; // A boxed Guid, because Volatile needs a reference type.
 
         var writer = Task.Run(async () =>
         {
             try
             {
-                for (var i = 0; i < commandCount; i++)
+                for (var i = 1; i < commandCount; i++)
                 {
                     var commandId = Guid.NewGuid();
-                    var response = await PostCreateBox(http, commandId);
+                    using var response = await PostCreateBox(http, commandId);
                     statuses.AddOrUpdate((int)response.StatusCode, 1, (_, n) => n + 1);
                     Volatile.Write(ref newest, (object)commandId);
                 }
@@ -60,11 +68,10 @@ public class HttpConcurrencyTests : IClassFixture<WebApplicationFactory<Program>
         {
             while (Volatile.Read(ref done) == 0)
             {
-                if (Volatile.Read(ref newest) is not Guid bodyId)
-                    continue;
+                var bodyId = (Guid)Volatile.Read(ref newest);
 
                 using var cts = new CancellationTokenSource(OperationLimit);
-                var response = await http.PostAsJsonAsync("/queries", new
+                using var response = await http.PostAsJsonAsync("/queries", new
                 {
                     name = "GetBoundingBox",
                     schemaVersion = 1,
@@ -116,7 +123,7 @@ public class HttpConcurrencyTests : IClassFixture<WebApplicationFactory<Program>
                 if (firstSeq != version + 1)
                     mismatches.Add($"subscriber {i}: snapshot version {version}, first live seq {firstSeq}");
 
-                await socket.CloseAsync(WebSocketCloseStatus.NormalClosure, "done", CancellationToken.None);
+                await CloseAfterTheMeasurement(socket);
             }
         }
         finally
@@ -150,7 +157,7 @@ public class HttpConcurrencyTests : IClassFixture<WebApplicationFactory<Program>
         {
             while (clock.Elapsed < TimeSpan.FromSeconds(1))
             {
-                var response = await PostCreateBox(http, Guid.NewGuid());
+                using var response = await PostCreateBox(http, Guid.NewGuid());
                 response.EnsureSuccessStatusCode();
                 Interlocked.Increment(ref commands);
             }
@@ -165,7 +172,7 @@ public class HttpConcurrencyTests : IClassFixture<WebApplicationFactory<Program>
                 await WebSocketTestClient.SendJsonAsync(socket, new { }, cts.Token);
                 var first = await WebSocketTestClient.ReceiveJsonAsync(socket, cts.Token);
                 Assert.Equal("subscription.reset", first.GetProperty("kind").GetString());
-                await socket.CloseAsync(WebSocketCloseStatus.NormalClosure, "done", CancellationToken.None);
+                await CloseAfterTheMeasurement(socket);
                 Interlocked.Increment(ref subscriptions);
             }
         }));
@@ -194,6 +201,24 @@ public class HttpConcurrencyTests : IClassFixture<WebApplicationFactory<Program>
             commandId,
             parameters = new { sizeX = 1.0, sizeY = 2.0, sizeZ = 3.0 },
         }, cts.Token);
+    }
+
+    // The client stops reading after its measurement while commands continue.
+    // On a slow runner its queue of 1,024 events can fill before it closes, and
+    // the server then disconnects it as a slow subscriber (ADR-0005 §6), which is
+    // correct. A run on one core showed it: the pump ended with lagged=True, and
+    // the close of the client found a closed socket. The measurement is complete
+    // at this point, so the close is cleanup only (TASK-0045).
+    private static async Task CloseAfterTheMeasurement(WebSocket socket)
+    {
+        try
+        {
+            await socket.CloseAsync(WebSocketCloseStatus.NormalClosure, "done", CancellationToken.None);
+        }
+        catch (Exception ex) when (ex is IOException or WebSocketException or ObjectDisposedException)
+        {
+            // The server closed first.
+        }
     }
 
     // The first message with a seq, so that a heartbeat does not count.

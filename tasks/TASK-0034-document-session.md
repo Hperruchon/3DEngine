@@ -196,3 +196,13 @@ caller that builds two buses on one Document, as no caller does today, now fails
   Register entry R-0032 asks for the name of a failed test in a public annotation.
 - 2026-10-01: the pipeline run 36922482476 on 07fd866 passed on Ubuntu, Windows and macOS. The test
   step on Windows took 18 s, inside the range of 11 to 18 s of the five runs before it.
+- 2026-10-03: a correction of two tests after the close. The annotations of TASK-0045 named the failed
+  test of a Windows run: `Queries_And_Commands_In_Parallel_Get_No_Http_500`, with
+  `TaskCanceledException`. That failure did not repeat here. Its readers turned in a loop with no
+  await until the first body existed, which can starve the server on a runner with few cores; the
+  readers now start after the first command. On one core here, the E9 test failed 3 times, at run 4
+  and run 75 of two loops of the HTTP tests and at run 25 of a loop of the full suite. The client
+  stopped reading after its measurement, its queue filled, and the server disconnected it as a slow
+  subscriber, which is correct (ADR-0005 §6). Its close then found a closed socket. The close after
+  the measurement now accepts that. The full suite on one core: 1 failure in 25 runs before, 0 in 40
+  runs after. The HTTP tests alone on one core: 80 runs of 80 after.
