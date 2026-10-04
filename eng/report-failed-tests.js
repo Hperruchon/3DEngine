@@ -67,13 +67,15 @@ function failedTests(file) {
 }
 
 // The reason that the test platform gives for a run that it stopped, for
-// example "Test host process crashed" after a hang limit.
+// example "Test host process crashed" after a hang limit. Only the outcome
+// Error: a Warning holds the output of the test framework, for example a
+// skipped test, which run 37189044285 showed as a misleading reason.
 function runReasons(file) {
   const xml = fs.readFileSync(file, "utf8");
   const reasons = [];
-  const pattern = /<RunInfo\b[^>]*\boutcome="(Error|Warning)"[^>]*>([\s\S]*?)<\/RunInfo>/g;
+  const pattern = /<RunInfo\b[^>]*\boutcome="Error"[^>]*>([\s\S]*?)<\/RunInfo>/g;
   for (let match; (match = pattern.exec(xml)) !== null; ) {
-    const text = element(match[2], "Text");
+    const text = element(match[1], "Text");
     if (text) reasons.push(text);
   }
   return reasons;

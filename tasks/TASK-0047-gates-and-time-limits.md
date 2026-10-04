@@ -130,3 +130,8 @@ A hang stops with a name, and no file outside the exact write set of a task can 
   names the test with the reason of the run. The script also reads the outcomes `Error`, `Timeout`
   and `Aborted` (a part of T13). Each job has `timeout-minutes`, and the step "Test" stops a test
   after 2 minutes. The full suite passes with the same options.
+- 2026-10-04: the proof in the pipeline. Run 37189044285 on the branch `t8-hang-injection-2026-10-04`,
+  which is never merged, stopped the injected hang after about 130 s on each runner, and a public
+  annotation named `InjectedHangTests.Injected_Hang_For_T8` on each one. On Linux and macOS the reason
+  began with a warning of xUnit about an unrelated skipped test, so the script now reads only a
+  `RunInfo` with the outcome `Error`. Run 37189037894 on this branch passed on the three runners.
