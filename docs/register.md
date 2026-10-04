@@ -268,6 +268,8 @@ from a handler is cached (E22). The bind guard reads one source of addresses (E2
 small findings. E20 and E23 must be corrected before TASK-0038 ships, because the desktop host then
 serves the surface while a person has a document open.
 Exit: each finding has a task, or it is corrected, or the owner accepts it and gives the reason.
+Progress 2026-10-04: the owner answered question Q4 of the review: a sink must not throw, by
+contract, and a test holds each sink to it. That is the correction of E18. TASK-0047 records it.
 
 ### R-0034 · The pipeline can hang for six hours, and three tests depend on timing
 - class: risk

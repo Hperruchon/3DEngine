@@ -4,7 +4,7 @@ title: The document version counts applied commands, and a replay rebuilds it
 status: Ready
 phase: P0.14
 opened: 2026-09-25
-depends-on: [0034]
+depends-on: [0034, 0047]
 governed-by: [0004, 0005, 0006, 0008, 0010, 0011, 0019, 0020, 0021]
 writes:
   create:
@@ -66,6 +66,11 @@ A replay of the log gives the same version and the same bodies as the Document t
    `Engine.Core/CommandBus.cs:12` and `Engine.Contracts/Document.cs:11-13`.
 6. The field `enforced-by` of ADR-0020 loses the text "(TASK-0035 creates it)".
 7. A glossary term, or a correction of one: document version.
+8. **The replay reports a divergence.** `Replay.ReplayLog` stops at the first result that is not
+   `Applied` and names the command and the error, and it does not pass through the idempotency
+   cache. These are finding E7 and the replay part of finding E17 of
+   `docs/reviews/2026-10-04-codebase-review.md`. The owner decided this on 2026-10-04 (question Q1
+   of that review): a replay that hides a rejection cannot prove the goal of this task.
 
 ## Scope (out)
 
@@ -86,6 +91,12 @@ A replay of the log gives the same version and the same bodies as the Document t
 - [ ] Continuous integration passes on `ubuntu-latest`, `windows-latest` and `macos-latest`.
 
 ## Notes for the implementer
+
+- **What TASK-0034 left.** Section 5 of the codebase review of 2026-10-04 lists each place: the three
+  calls of `AdvanceVersion` in `Engine.Core/CommandBus.cs`, the check in `TakeSeqs`, which couples
+  the two counters and must go, `Document.AdvanceVersion`, which must refuse a lower value (the rest
+  of finding E10), the E9 test in `Engine.Tests/Http/HttpConcurrencyTests.cs`, which must read the
+  new field `seq`, and four assertions in `Engine.Tests/CommandBusTests.cs`.
 
 - **The contract gate.** This task changes `Engine.Contracts/Document.cs`. The pipeline job
   "Contract-touched-needs-ADR" wants an ADR change in the same pull request. Scope item 6 gives it.
