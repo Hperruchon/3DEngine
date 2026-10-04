@@ -83,7 +83,13 @@ public class DeterminismCallGateTests
     {
         var offences = new List<string>();
 
-        foreach (var file in Directory.EnumerateFiles(RepositoryFiles.Root, "*.csproj", SearchOption.AllDirectories))
+        // Each MSBuild file and not each project file only: a Directory.Build.props
+        // with the identifier passed until TASK-0047 (codebase review of
+        // 2026-10-04, finding T9).
+        var files = new[] { "*.csproj", "*.props", "*.targets" }
+            .SelectMany(pattern => Directory.EnumerateFiles(RepositoryFiles.Root, pattern, SearchOption.AllDirectories));
+
+        foreach (var file in files)
         {
             var relative = RepositoryFiles.Relative(file);
             if (relative.Contains("/obj/", StringComparison.Ordinal)

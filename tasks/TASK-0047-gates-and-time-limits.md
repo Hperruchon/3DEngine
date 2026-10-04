@@ -110,3 +110,10 @@ A hang stops with a name, and no file outside the exact write set of a task can 
 ## Progress
 
 - 2026-10-04: the task is open, with the answers of the owner to Q1 to Q4.
+- 2026-10-04: T9. Before the change, three injections passed: the project file of the tests under
+  TASK-0035, a `Directory.Build.props` in `Engine.Core` with a reference to `3DEngine.Core` and the
+  identifier `win-x86`, and an imported props file with the same reference. After the change each one
+  fails, with the gate file, the reference or the identifier in the message. TASK-0038 names the
+  workflow exactly and keeps its permit. The first form of the injection script wrote the props file
+  with `printf`, which read `\3` as a control character; the gate then failed on invalid XML, which
+  proves nothing, and a heredoc replaced it.

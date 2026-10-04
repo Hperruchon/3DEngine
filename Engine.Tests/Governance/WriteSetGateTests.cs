@@ -202,11 +202,25 @@ public class WriteSetGateTests
     }
 
     // A file under Engine.Tests/Governance/, or a test class whose name ends
-    // in GateTests, or the shared helpers of the gates.
+    // in GateTests, or the shared helpers of the gates. Also each file that can
+    // turn a gate off without a change to a gate: the project file of the
+    // tests, which can remove a gate from the compilation; a Directory.Build or
+    // Directory.Packages file, which MSBuild reads for each project below it;
+    // the cut-off of this gate; and each workflow (codebase review of
+    // 2026-10-04, finding T9).
     private static bool IsGateFile(string file)
-        => file.StartsWith("Engine.Tests/Governance/", StringComparison.Ordinal)
-        || (file.StartsWith("Engine.Tests/", StringComparison.Ordinal) && file.EndsWith("GateTests.cs", StringComparison.Ordinal))
-        || file.StartsWith("Engine.Tests/Diagnostics/", StringComparison.Ordinal);
+    {
+        var name = file[(file.LastIndexOf('/') + 1)..];
+
+        return file.StartsWith("Engine.Tests/Governance/", StringComparison.Ordinal)
+            || (file.StartsWith("Engine.Tests/", StringComparison.Ordinal) && file.EndsWith("GateTests.cs", StringComparison.Ordinal))
+            || file.StartsWith("Engine.Tests/Diagnostics/", StringComparison.Ordinal)
+            || file == "Engine.Tests/Engine.Tests.csproj"
+            || name.StartsWith("Directory.Build.", StringComparison.Ordinal)
+            || name == "Directory.Packages.props"
+            || file == "eng/write-set-cutoff.txt"
+            || file.StartsWith(".github/workflows/", StringComparison.Ordinal);
+    }
 
     // The task that governs a change. The commit message names it, as a trailer
     // line of the form TASK-nnnn, and continuous integration passes the name
