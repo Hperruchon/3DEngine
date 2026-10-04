@@ -1157,3 +1157,34 @@ the rule for a sink that throws.
 New tests: 0. The test list holds 242. `dotnet build 3DEngine.sln --no-incremental` gives zero errors
 and zero warnings. New register entries: R-0033, R-0034. Open entries: 14 of 15. New diagnostic codes:
 none. The next codebase review must come before ledger entry v0.47.
+## v0.42 — A hang stops with a name, no file outside the exact write set can turn a gate off, and a closed task governs no commit (governance, TASK-0047)
+
+The owner answered "yes to all" to the four questions of the codebase review of 2026-10-04. This
+task does the governance part: findings T8 and T9 and question Q3. TASK-0035 records Q1, register
+entry R-0033 records Q4, and TASK-0035 now depends on this task, as Q2 asked.
+
+**A hang stops with a name (T8).** Each job has `timeout-minutes`, and the step "Test" stops a test
+after two minutes with `--blame-hang-timeout`. A test that hangs gives no result in the `.trx`
+file, so `eng/report-failed-tests.js` now reads the sequence file of the blame collector, where the
+test has `Completed="False"`. On a branch that is never merged, an injected hang stopped after about
+130 seconds on each runner, and a public annotation named it.
+
+**No file outside the exact write set can turn a gate off (T9).** The project file of the tests, each
+`Directory.Build` and `Directory.Packages` file, the cut-off and each workflow are gate files. The
+dependency gate reads each `Directory.Build` file above a project and each file that a project
+imports, and the x86 gate reads each `.csproj`, `.props` and `.targets` file. Three injections
+passed before the change and fail after it.
+
+**A closed task governs no commit (Q3).** The gate reads the governing task at the commit, which the
+workflow now gives in `WRITE_SET_COMMIT`, and refuses a task that is `Done` before the commit and
+after it. A correction reopens the task with the status `Active`. Each commit up to `67c564f` keeps
+the earlier rule, because three earlier commits changed a task that was `Done`; a replay of the 51
+commits after the cut-off passes. `docs/templates.md`, section 3, gives the rule.
+
+Not done, and why: the other gate findings of the review stay in R-0031 and R-0034. Two injection
+scripts of this task were wrong first: one wrote a control character into a props file, and one lost
+a backslash in a heredoc. Each was found before its result entered a record.
+
+New tests: 0. The test list holds 242. `dotnet build 3DEngine.sln --no-incremental` gives zero errors
+and zero warnings. Open entries: 14 of 15. New diagnostic codes: none. The next codebase review must
+come before ledger entry v0.47.

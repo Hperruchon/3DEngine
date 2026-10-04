@@ -1,7 +1,7 @@
 ---
 id: 0047
 title: The pipeline stops a hang, a project file cannot remove a gate, and a closed task governs no commit
-status: Active
+status: Done
 phase: governance
 opened: 2026-10-04
 depends-on: [0046]
@@ -90,13 +90,13 @@ A hang stops with a name, and no file outside the exact write set of a task can 
 
 ## Acceptance criteria
 
-- [ ] A test that hangs, injected on this computer, stops at the hang limit, and the script names it.
-- [ ] Each new gate rule fails on an injected violation before its change, and the violation fails
+- [x] A test that hangs, injected on this computer, stops at the hang limit, and the script names it.
+- [x] Each new gate rule fails on an injected violation before its change, and the violation fails
       after it.
-- [ ] A commit that names a `Done` task and does not change its status fails the gate. A commit that
+- [x] A commit that names a `Done` task and does not change its status fails the gate. A commit that
       closes a task, and a commit that reopens one, pass.
-- [ ] `dotnet build 3DEngine.sln --no-incremental` gives zero warnings. `dotnet test` passes.
-- [ ] Continuous integration passes on `ubuntu-latest`, `windows-latest` and `macos-latest`.
+- [x] `dotnet build 3DEngine.sln --no-incremental` gives zero warnings. `dotnet test` passes.
+- [x] Continuous integration passes on `ubuntu-latest`, `windows-latest` and `macos-latest`.
 
 ## Notes for the implementer
 
@@ -106,6 +106,28 @@ A hang stops with a name, and no file outside the exact write set of a task can 
   `HEAD`.
 - MSBuild reads the first `Directory.Build.props` above a project. The gate reads each one up to the
   root, which is stricter and simpler.
+
+## Outcome
+
+Status: Done · v0.42 · the commit that carries this block.
+
+## Method
+
+**Mechanical.** The time limits and the hang limit in the workflow. The list of gate files. The file
+list of the x86 gate. The records of the four answers.
+
+**Judgement.** The hang limit is two minutes, because the slowest test has its own limit of 30
+seconds. The dependency gate reads each `Directory.Build` file up to the root, which is stricter than
+MSBuild and needs no build. The rule for a closed task applies after `67c564f` only, because the
+workflow replays each commit after the cut-off and three earlier commits broke the new rule; the
+alternative, a failed replay on each new branch, makes the owner the bottleneck. The gate reads the
+task file at the commit for the permits too, because the status and the permits must come from one
+text.
+
+**Weakest.** The gate code itself still runs at the tip for each commit (the rest of T11). An import
+whose path holds an MSBuild property is not followed. The rule for a closed task depends on `git` in
+the test process; with no `git`, the gate reads the working tree and has no "before", so the rule
+does not apply. The reason text of a stopped run is in the language of the runner.
 
 ## Progress
 
@@ -135,3 +157,4 @@ A hang stops with a name, and no file outside the exact write set of a task can 
   annotation named `InjectedHangTests.Injected_Hang_For_T8` on each one. On Linux and macOS the reason
   began with a warning of xUnit about an unrelated skipped test, so the script now reads only a
   `RunInfo` with the outcome `Error`. Run 37189037894 on this branch passed on the three runners.
+- 2026-10-04: closed. R-0031 and R-0034 have a progress line, and ledger entry v0.42 records the work.
