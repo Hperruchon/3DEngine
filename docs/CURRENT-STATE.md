@@ -1119,3 +1119,41 @@ sign-in. The branch `r0032-injection-2026-10-03` stays on the server until the o
 New tests: 0. The test list holds 242. `dotnet build 3DEngine.sln --no-incremental` gives zero errors
 and zero warnings. Closed: R-0032. Open entries: 12 of 15. New diagnostic codes: none. The next
 codebase review must come before ledger entry v0.41.
+## v0.41 — The codebase review of 2026-10-04 (governance, TASK-0046)
+
+The third codebase review, `docs/reviews/2026-10-04-codebase-review.md`. It examines `main` at
+`ae5c521`, the merge of v0.39 and v0.40. The gate permitted six milestones after v0.34, and v0.40
+was the sixth, so this entry had to be the review. On 2026-10-04 the owner chose the review and not a
+change of the rule.
+
+**What it found.** Forty findings are open: one critical, eleven high, twenty-one medium and seven
+low. Six earlier findings are fixed: E2, E4, E8, E9, E15 and T6. Thirteen findings are new. The most
+important new ones:
+
+- E23: the bind guard reads the key `urls` only. An address given through `Kestrel:Endpoints`
+  passes with no refusal. A run on this computer shows it.
+- T8: the pipeline has no time limit, so a test that hangs holds a runner for six hours and gives no
+  name.
+- T9: the project file of the tests is not a gate file, so a task that permits `Engine.Tests/**` can
+  remove each gate, and a `Directory.Build.props` file gets past the dependency gate and the x86
+  gate. Runs on this computer show both.
+- E18 to E21: the session of TASK-0034 has three latent defects, a reference that can leave it, a
+  call back that blocks it, and a sink that leaves a gap, and a handler that fails after it changed
+  the backend leaves an orphan solid.
+
+**Method.** No file changed in `3DEngine/`, `3DEngine.Vulkan/`, `3DEngine.Core/` or
+`Engine.Contracts/` after the last review, so three review agents read the code, and not four. I read
+each cited line on disk, and I repeated the runs of E23 and T9. The first draft cited three lines
+wrongly and said that two red runs had the shape of T12; the review corrects both before this entry.
+
+**Owners.** R-0033 holds E18 to E24, and R-0034 holds T8, T12 and two parts of T13. R-0031 now also
+holds T9, T10, T11 and the other parts of T13. R-0027 and R-0028 have a progress line. The roadmap
+lists P0.13 as shipped, and the estimate is 30 to 45 evenings for the nine phases that remain.
+
+**Questions for the owner.** Four, each with a recommendation: add the replay findings E7 and E17 to
+TASK-0035; correct T8 and T9 before TASK-0035; refuse a commit that names a task that is `Done`; and
+the rule for a sink that throws.
+
+New tests: 0. The test list holds 242. `dotnet build 3DEngine.sln --no-incremental` gives zero errors
+and zero warnings. New register entries: R-0033, R-0034. Open entries: 14 of 15. New diagnostic codes:
+none. The next codebase review must come before ledger entry v0.47.

@@ -190,6 +190,9 @@ new finding E12 must be corrected with it: the binder refuses a whole number for
 the correction of E5 alone makes each HTTP request with a whole value fail. The open part of T2 is the
 absent test for a backend that throws through the command bus.
 Exit: each finding has a task, or it is corrected, or the owner accepts it and gives the reason.
+Progress 2026-10-04: the third codebase review finds one part of C1 corrected: `Engine.Api.Http/Program.cs`
+no longer cites the removed clamp. E5, E6, E12, V4, the open part of T2 and the other parts of C1
+stay. P1 costs more, because the snapshot now also holds the session.
 
 ### R-0028 · Nine new findings in the engine and the hosts have no task
 - class: debt
@@ -212,6 +215,10 @@ a reset equals the snapshot version plus one, a second bus on one Document is re
 refuses to move the version back. `Document.AdvanceVersion` still accepts a lower value, because
 `Engine.Contracts` was outside that task; TASK-0035 modifies the file. E7, E11, E13, E14, E16 and
 E17 stay.
+Progress 2026-10-04: the third codebase review confirms E9 fixed and E10 fixed in part. Two parts
+of E17 are corrected: the close status, which `docs/diagnostics.md` now gives as 1007, and the
+subscriber that the handshake leaves, which a `finally` now disposes. E7, E11, E13, E14, E16 and
+eleven parts of E17 stay.
 
 ### R-0030 · The Vulkan layer continues with a null device and gives unpinned memory to Vulkan
 - class: debt
@@ -238,9 +245,42 @@ status `ready`, a register with an open code fence, and a change inside a merge 
 tested that each gate can fail. It did not test the forms that a gate cannot see. The limit is
 earlier than the class permits, because the code tasks start before that date and each one relies on
 the gates.
-Exit: each injected violation of the second review fails its gate.
+Exit: each injected violation of the second review and of the third review fails its gate.
 Progress 2026-09-30: TASK-0043 closed the holes of T3, T4 and T6, and the status and the fence parts of
 T5. The `affects` parser, the reserve heading, the codebase review gate and the findings of T7 stay.
+Progress 2026-10-04: the third codebase review finds T3 open in one part of three (a commit can name
+a task that is `Done`) and T4 open in three parts of four (four forms pass the determinism gate, a
+closed identifier passes the marker gate, and the dispatch gate reads two projects by name). The line
+of 2026-09-30 said that TASK-0043 closed the holes of T3 and T4; it closed some of them. The review
+adds T9 (the project file of the tests and a props file get past the gates), T10, T11 and two parts
+of T13 to this entry, and the exit now names the injections of the third review too.
+
+### R-0033 · Seven findings of the third codebase review in the engine and the hosts have no task
+- class: debt
+- opened: 2026-10-04
+- due: 2027-04-02
+- extended: no
+- refs: `docs/reviews/2026-10-04-codebase-review.md` findings E18 to E24, TASK-0038
+A sink that throws leaves a gap in the sequence, and nothing sends a reset (E18). A reference to the
+Document or to the sink can leave the session (E19). A call back into the session blocks every client
+(E20). A handler that fails after it changed the backend leaves an orphan solid (E21). A cancellation
+from a handler is cached (E22). The bind guard reads one source of addresses (E23). E24 holds nine
+small findings. E20 and E23 must be corrected before TASK-0038 ships, because the desktop host then
+serves the surface while a person has a document open.
+Exit: each finding has a task, or it is corrected, or the owner accepts it and gives the reason.
+
+### R-0034 · The pipeline can hang for six hours, and three tests depend on timing
+- class: risk
+- opened: 2026-10-04
+- due: 2026-11-03
+- extended: no
+- refs: `.github/workflows/ci.yml`, `docs/reviews/2026-10-04-codebase-review.md` findings T8, T12 and T13
+No job has a time limit, and `dotnet test` has no limit for a hang, so a test that hangs holds a
+runner for 360 minutes and gives no annotation (T8). The heartbeat test measures a gap on the client,
+the collection "real host" runs beside the concurrency tests, and the deadlock test can skip its work
+on a slow runner (T12). The Windows run of 2026-10-01 failed in a test of this kind.
+Exit: each job has a time limit, `dotnet test` stops a hang and names the test, and each test of T12
+is corrected or the owner accepts it.
 
 ## Accepted compromises
 
