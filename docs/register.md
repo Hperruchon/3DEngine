@@ -254,6 +254,12 @@ closed identifier passes the marker gate, and the dispatch gate reads two projec
 of 2026-09-30 said that TASK-0043 closed the holes of T3 and T4; it closed some of them. The review
 adds T9 (the project file of the tests and a props file get past the gates), T10, T11 and two parts
 of T13 to this entry, and the exit now names the injections of the third review too.
+Progress 2026-10-04: TASK-0047 corrected T9: the project file of the tests, each `Directory.Build`
+file, the cut-off and each workflow are gate files, and the dependency gate and the x86 gate read each
+file that MSBuild reads. It corrected the open part of T3: a task that is `Done` before a commit and
+after it governs nothing. It corrected the part of T11 for the task file, which the gate now reads at
+the commit. Each change failed on an injection first. T4 (three parts), T5, T7, T10, the rest of T11
+and two parts of T13 stay.
 
 ### R-0033 · Seven findings of the third codebase review in the engine and the hosts have no task
 - class: debt
@@ -268,6 +274,8 @@ from a handler is cached (E22). The bind guard reads one source of addresses (E2
 small findings. E20 and E23 must be corrected before TASK-0038 ships, because the desktop host then
 serves the surface while a person has a document open.
 Exit: each finding has a task, or it is corrected, or the owner accepts it and gives the reason.
+Progress 2026-10-04: the owner answered question Q4 of the review: a sink must not throw, by
+contract, and a test holds each sink to it. That is the correction of E18. TASK-0047 records it.
 
 ### R-0034 · The pipeline can hang for six hours, and three tests depend on timing
 - class: risk
@@ -281,6 +289,10 @@ the collection "real host" runs beside the concurrency tests, and the deadlock t
 on a slow runner (T12). The Windows run of 2026-10-01 failed in a test of this kind.
 Exit: each job has a time limit, `dotnet test` stops a hang and names the test, and each test of T12
 is corrected or the owner accepts it.
+Progress 2026-10-04: TASK-0047 corrected T8. Each job has a time limit, the step "Test" stops a test
+after two minutes, and the report script names the test that did not complete. Run 37189044285 on a
+branch that is never merged stopped an injected hang after about 130 s on each runner and named it.
+The script also reads a stopped run, which is a part of T13. T12 and the other part of T13 stay.
 
 ## Accepted compromises
 

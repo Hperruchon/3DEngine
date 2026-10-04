@@ -70,6 +70,55 @@ public class DependencyDirectionGateTests
             + string.Join("\n  ", duplicates));
     }
 
+    // The files that MSBuild reads for one project: the project file, each file
+    // that it imports, and each Directory.Build.props and Directory.Build.targets
+    // in its directory and above it, up to the root of the repository. A
+    // reference in any of them is a reference of the project. Until TASK-0047
+    // the gate read the project file only, and a Directory.Build.props with a
+    // reference to 3DEngine.Core passed (codebase review of 2026-10-04, finding
+    // T9). MSBuild reads the first Directory.Build file above a project; the gate
+    // reads each one, which is stricter. An import whose path holds a property,
+    // such as $(MSBuildThisFileDirectory), is not followed.
+    private static IEnumerable<string> FilesThatMsBuildReads(string projectFile)
+    {
+        var root = Path.GetFullPath(RepositoryFiles.Root).TrimEnd(Path.DirectorySeparatorChar);
+        var queue = new Queue<string>();
+        queue.Enqueue(Path.GetFullPath(projectFile));
+
+        for (var directory = Path.GetDirectoryName(Path.GetFullPath(projectFile));
+             directory is not null && directory.StartsWith(root, StringComparison.OrdinalIgnoreCase);
+             directory = Path.GetDirectoryName(directory))
+        {
+            foreach (var name in new[] { "Directory.Build.props", "Directory.Build.targets" })
+            {
+                var candidate = Path.Combine(directory, name);
+                if (File.Exists(candidate))
+                    queue.Enqueue(candidate);
+            }
+        }
+
+        var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        while (queue.Count > 0)
+        {
+            var file = queue.Dequeue();
+            if (!seen.Add(file))
+                continue;
+
+            yield return file;
+
+            foreach (var import in XDocument.Load(file).Descendants().Where(e => e.Name.LocalName == "Import"))
+            {
+                var path = import.Attribute("Project")?.Value;
+                if (string.IsNullOrWhiteSpace(path) || path.Contains("$(", StringComparison.Ordinal))
+                    continue;
+
+                var imported = Path.GetFullPath(Path.Combine(Path.GetDirectoryName(file)!, path.Replace('\\', '/')));
+                if (File.Exists(imported))
+                    queue.Enqueue(imported);
+            }
+        }
+    }
+
     private static Dictionary<string, List<string>> Graph()
     {
         var graph = new Dictionary<string, List<string>>(StringComparer.Ordinal);
@@ -77,7 +126,8 @@ public class DependencyDirectionGateTests
         foreach (var file in ProjectFiles())
         {
             var project = Path.GetFileNameWithoutExtension(file);
-            var targets = Includes(file, "ProjectReference")
+            var targets = FilesThatMsBuildReads(file)
+                .SelectMany(source => Includes(source, "ProjectReference"))
                 .Select(path => Path.GetFileNameWithoutExtension(path.Replace('\\', '/')))
                 .ToList();
 

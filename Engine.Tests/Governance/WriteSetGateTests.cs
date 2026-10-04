@@ -26,6 +26,11 @@ namespace Engine.Tests.Governance;
 // lend its permits to a later commit. A gate file must be named exactly, so a
 // pattern such as Engine.Tests/** does not permit a change to a gate. The
 // cut-off commit is held here, so a commit cannot move it.
+//
+// TASK-0047 added two rules from the review of 2026-10-04: the gate reads the
+// governing task at the commit, which continuous integration gives in
+// WRITE_SET_COMMIT, and a task that is Done before and after the commit
+// governs nothing.
 public class WriteSetGateTests
 {
     // Task files 0001 to 0013 predate docs/templates.md and carry no front
@@ -202,11 +207,25 @@ public class WriteSetGateTests
     }
 
     // A file under Engine.Tests/Governance/, or a test class whose name ends
-    // in GateTests, or the shared helpers of the gates.
+    // in GateTests, or the shared helpers of the gates. Also each file that can
+    // turn a gate off without a change to a gate: the project file of the
+    // tests, which can remove a gate from the compilation; a Directory.Build or
+    // Directory.Packages file, which MSBuild reads for each project below it;
+    // the cut-off of this gate; and each workflow (codebase review of
+    // 2026-10-04, finding T9).
     private static bool IsGateFile(string file)
-        => file.StartsWith("Engine.Tests/Governance/", StringComparison.Ordinal)
-        || (file.StartsWith("Engine.Tests/", StringComparison.Ordinal) && file.EndsWith("GateTests.cs", StringComparison.Ordinal))
-        || file.StartsWith("Engine.Tests/Diagnostics/", StringComparison.Ordinal);
+    {
+        var name = file[(file.LastIndexOf('/') + 1)..];
+
+        return file.StartsWith("Engine.Tests/Governance/", StringComparison.Ordinal)
+            || (file.StartsWith("Engine.Tests/", StringComparison.Ordinal) && file.EndsWith("GateTests.cs", StringComparison.Ordinal))
+            || file.StartsWith("Engine.Tests/Diagnostics/", StringComparison.Ordinal)
+            || file == "Engine.Tests/Engine.Tests.csproj"
+            || name.StartsWith("Directory.Build.", StringComparison.Ordinal)
+            || name == "Directory.Packages.props"
+            || file == "eng/write-set-cutoff.txt"
+            || file.StartsWith(".github/workflows/", StringComparison.Ordinal);
+    }
 
     // The task that governs a change. The commit message names it, as a trailer
     // line of the form TASK-nnnn, and continuous integration passes the name
@@ -236,7 +255,7 @@ public class WriteSetGateTests
                 + "in the task that governs it, with one line under \"Progress\" at least, so that a "
                 + "closed task cannot lend its permits to a later commit.");
 
-            return task;
+            return AtTheCommit(task);
         }
 
         var touched = tasks
@@ -255,7 +274,88 @@ public class WriteSetGateTests
             + "Name it in the commit message, as a trailer line of the form TASK-nnnn. Touched: "
             + string.Join(", ", touched.Select(t => t.Id)));
 
-        return touched[0];
+        return AtTheCommit(touched[0]);
+    }
+
+    // The two rules below apply to each commit after this one, the merge of the
+    // codebase review of 2026-10-04. The workflow replays each commit after the
+    // cut-off on a new branch, and three earlier commits changed a task that was
+    // already Done: f2d96a4, 7a37bc7 and 4715b88. They keep the earlier rule.
+    private const string CommitRulesFrom = "67c564ff65d0fcd8490d7be01183d31d28513e27";
+
+    // The governing task as the commit saw it, and not as the tip of the branch
+    // sees it (codebase review of 2026-10-04, finding T11, the part for the
+    // task file). Continuous integration gives the hash in WRITE_SET_COMMIT. On
+    // this computer before a commit there is no hash, and the gate reads the
+    // index and HEAD.
+    //
+    // A task that is Done before the commit and after it governs nothing: a
+    // correction reopens the task with the status Active and closes it again
+    // (question Q3 of the same review, which the owner accepted). Until
+    // TASK-0047 a progress line was enough, and commit 4715b88 changed a test
+    // under a task that was Done.
+    private static RepositoryFiles.TaskRecord AtTheCommit(RepositoryFiles.TaskRecord tip)
+    {
+        var path = RepositoryFiles.Relative(tip.File);
+        var commit = Environment.GetEnvironmentVariable("WRITE_SET_COMMIT")?.Trim();
+
+        string? after, before;
+        if (!string.IsNullOrEmpty(commit))
+        {
+            if (Git("merge-base", "--is-ancestor", commit, CommitRulesFrom) is not null)
+                return tip;
+
+            after = Git("show", $"{commit}:{path}");
+            before = Git("show", $"{commit}^:{path}");
+            Assert.True(after is not null, $"The gate cannot read {path} at the commit {commit}.");
+        }
+        else
+        {
+            after = Git("show", $":{path}") ?? File.ReadAllText(tip.File);
+            before = Git("show", $"HEAD:{path}");
+        }
+
+        var task = RepositoryFiles.ParseTask(tip.File, after!) ?? tip;
+        var statusBefore = before is null ? null : RepositoryFiles.ParseTask(tip.File, before)?.Status;
+
+        Assert.False(
+            statusBefore == "Done" && task.Status == "Done",
+            $"{task.Id} is Done before this commit and after it, therefore it governs no change. To "
+            + "correct the work of a closed task, set its status to Active in the commit that changes "
+            + "the work, and to Done again when the correction is complete. See docs/templates.md, "
+            + "section 3.");
+
+        return task;
+    }
+
+    // The standard output of a git command in the root of the repository, or
+    // null when git fails or is absent. Null is "not known", and each caller
+    // above decides what that means.
+    private static string? Git(params string[] arguments)
+    {
+        var start = new System.Diagnostics.ProcessStartInfo("git")
+        {
+            WorkingDirectory = RepositoryFiles.Root,
+            RedirectStandardOutput = true,
+            RedirectStandardError = true,
+            UseShellExecute = false,
+            StandardOutputEncoding = System.Text.Encoding.UTF8,
+        };
+        foreach (var argument in arguments)
+            start.ArgumentList.Add(argument);
+
+        try
+        {
+            using var process = System.Diagnostics.Process.Start(start)!;
+            var output = process.StandardOutput.ReadToEnd();
+            process.StandardError.ReadToEnd();
+            process.WaitForExit();
+            return process.ExitCode == 0 ? output : null;
+        }
+        catch (System.ComponentModel.Win32Exception)
+        {
+            return null;
+        }
     }
 
     // The list of changed paths, one per line, relative to the repository root

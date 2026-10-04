@@ -18,13 +18,13 @@ const MaxAnnotations = 10;
 const MaxMessageLength = 2000;
 const StackLines = 6;
 
-function trxFiles(directory) {
+function filesIn(directory, test) {
   if (!fs.existsSync(directory)) return [];
   const found = [];
   for (const entry of fs.readdirSync(directory, { withFileTypes: true })) {
     const full = path.join(directory, entry.name);
-    if (entry.isDirectory()) found.push(...trxFiles(full));
-    else if (entry.name.endsWith(".trx")) found.push(full);
+    if (entry.isDirectory()) found.push(...filesIn(full, test));
+    else if (test(entry.name)) found.push(full);
   }
   return found;
 }
@@ -54,7 +54,7 @@ function failedTests(file) {
   const pattern = /<UnitTestResult\b([^>]*?)(?:\/>|>([\s\S]*?)<\/UnitTestResult>)/g;
   for (let match; (match = pattern.exec(xml)) !== null; ) {
     const attributes = match[1];
-    if (!/\boutcome="Failed"/.test(attributes)) continue;
+    if (!/\boutcome="(Failed|Error|Timeout|Aborted)"/.test(attributes)) continue;
     const name = /\btestName="([^"]*)"/.exec(attributes);
     const body = match[2] || "";
     results.push({
@@ -64,6 +64,36 @@ function failedTests(file) {
     });
   }
   return results;
+}
+
+// The reason that the test platform gives for a run that it stopped, for
+// example "Test host process crashed" after a hang limit. Only the outcome
+// Error: a Warning holds the output of the test framework, for example a
+// skipped test, which run 37189044285 showed as a misleading reason.
+function runReasons(file) {
+  const xml = fs.readFileSync(file, "utf8");
+  const reasons = [];
+  const pattern = /<RunInfo\b[^>]*\boutcome="Error"[^>]*>([\s\S]*?)<\/RunInfo>/g;
+  for (let match; (match = pattern.exec(xml)) !== null; ) {
+    const text = element(match[1], "Text");
+    if (text) reasons.push(text);
+  }
+  return reasons;
+}
+
+// A test that hangs gives no result in the .trx file. With --blame-hang-timeout
+// the test platform stops it and writes a sequence file, where the test that
+// did not complete has Completed="False" (TASK-0047, finding T8).
+function incompleteTests(file) {
+  const xml = fs.readFileSync(file, "utf8");
+  const names = [];
+  const pattern = /<Test\b([^>]*)\/?>/g;
+  for (let match; (match = pattern.exec(xml)) !== null; ) {
+    if (!/\bCompleted="False"/.test(match[1])) continue;
+    const name = /\bName="([^"]*)"/.exec(match[1]);
+    if (name) names.push(decode(name[1]));
+  }
+  return names;
 }
 
 // The escape rules of a workflow command: a property also escapes ':' and ','.
@@ -82,8 +112,19 @@ function annotate(title, body) {
 
 const directory = process.argv[2];
 const runner = process.env.RUNNER_OS || "this computer";
-const files = directory ? trxFiles(directory) : [];
+const files = directory ? filesIn(directory, name => name.endsWith(".trx")) : [];
+const sequences = directory ? filesIn(directory, name => /^Sequence_.*\.xml$/.test(name)) : [];
+const reasons = [...new Set(files.flatMap(runReasons))];
 const failures = files.flatMap(failedTests);
+for (const name of new Set(sequences.flatMap(incompleteTests))) {
+  if (failures.some(f => f.name === name)) continue;
+  failures.push({
+    name,
+    message: "The test did not complete. The test platform stopped the run: " +
+      (reasons.length > 0 ? reasons.join(" ") : "no reason was written."),
+    stack: "",
+  });
+}
 
 if (failures.length === 0) {
   // A crash of the test host or a failed build gives no failed result. Say so,
@@ -91,7 +132,8 @@ if (failures.length === 0) {
   annotate(
     `Test step failed on ${runner}`,
     `The test step failed, and no .trx file in '${directory}' names a failed test. ` +
-      `Files read: ${files.length}. The test host can have stopped before it wrote a result.`);
+      `Files read: ${files.length}. The test host can have stopped before it wrote a result.` +
+      (reasons.length > 0 ? ` Reason: ${reasons.join(" ")}` : ""));
 } else {
   const shown = failures.length > MaxAnnotations ? failures.slice(0, MaxAnnotations - 1) : failures;
   for (const failure of shown) {
