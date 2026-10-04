@@ -123,3 +123,10 @@ A hang stops with a name, and no file outside the exact write set of a task can 
   the same form fails, and the real commit `4715b88` passes, because each commit up to `67c564f`
   keeps the earlier rule. A replay of the 51 commits after the cut-off, with the loop of the workflow
   and `WRITE_SET_COMMIT`, gives no failure.
+- 2026-10-04: T8. An injected test that waits for ever, run with a hang limit of 20 s on this computer,
+  stopped after 24 s with exit code 1. The `.trx` file then holds no result for it and says only that
+  the test host crashed, so the script reported "no failed test". The blame collector writes a
+  sequence file where the test has `Completed="False"`; the script now reads it, and the annotation
+  names the test with the reason of the run. The script also reads the outcomes `Error`, `Timeout`
+  and `Aborted` (a part of T13). Each job has `timeout-minutes`, and the step "Test" stops a test
+  after 2 minutes. The full suite passes with the same options.

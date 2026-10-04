@@ -30,6 +30,9 @@ jobs:
   gate:
     name: Gate on ${{ matrix.os }}
     runs-on: ${{ matrix.os }}
+    # Each job has a time limit, so that a hang ends with a red run and not
+    # after 360 minutes (TASK-0047, finding T8). A run takes about four minutes.
+    timeout-minutes: 20
 
     strategy:
       # Each runner must report. A failure on one operating system must not hide
@@ -76,10 +79,17 @@ jobs:
       # log of a job needs admin rights, and an annotation is public, so a person
       # with no sign-in can read which test failed (register entry R-0032,
       # TASK-0045). The step still fails with the exit code 1.
+      #
+      # A test that runs longer than two minutes is a hang: the slowest test
+      # today has its own limit of 30 seconds. The test platform stops it and
+      # writes a sequence file that names it, and the script reads that file.
+      # Without the limit a hang held the runner for 360 minutes, and the step
+      # never reached the script (codebase review of 2026-10-04, finding T8).
       - name: Test
         run: |
           results="$RUNNER_TEMP/test-results"
           dotnet test --no-build --logger trx --results-directory "$results" \
+              --blame-hang-timeout 2m --blame-hang-dump-type none \
             || { node eng/report-failed-tests.js "$results"; exit 1; }
 
       - name: Smoke test the command-line host with NoOp
@@ -107,6 +117,7 @@ jobs:
             || { echo "FAIL: no body identifier in the outputs"; exit 1; }
 
   contract-gate:
+    timeout-minutes: 10
     name: Contract-touched-needs-ADR
     # This job compares two git trees. Its result does not depend on the
     # operating system, therefore one runner is enough.
@@ -164,6 +175,8 @@ jobs:
           fi
 
   write-set-gate:
+    # One run of the gate for each commit after the cut-off on a new branch.
+    timeout-minutes: 30
     name: Write set of the governing task
     # This job runs on a push and on a pull request. It needs no base reference,
     # because it reads one commit at a time. TASK-0026 made that change: the job
