@@ -14,6 +14,14 @@ namespace Engine.Api.Http.WebSockets;
 // While the lock is held, OnEvent (called from BroadcastingEventSink.Append)
 // is blocked, so no live event slips into the subscriber's channel before
 // the handshake's replays.
+//
+// The lock alone is not sufficient. A commit changes the Document and appends
+// its events in more than one step. A handshake between two steps saw a version
+// and a ring that did not agree, and lost or repeated an event (finding E9 of
+// the codebase review of 2026-09-30). The caller must therefore call AttachAndPrime
+// inside DocumentSession.Read. In the session no commit runs, and the order of
+// the locks is the order of a commit: the session first, this lock second
+// (TASK-0034).
 internal sealed class EventBroadcaster
 {
     private readonly object _lock = new();

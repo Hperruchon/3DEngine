@@ -1,7 +1,7 @@
 ---
 id: 0034
 title: Commands, queries and snapshots pass through one serial boundary
-status: Ready
+status: Done
 phase: P0.13
 opened: 2026-09-25
 depends-on: []
@@ -29,6 +29,7 @@ writes:
     - Engine.Tests/Hosting/EngineHostingTests.cs
     - docs/glossary.md
     - docs/CURRENT-STATE.md
+    - docs/register.md
   forbid:
     - Engine.Contracts/**
     - Engine.Core/Commands/**
@@ -107,17 +108,17 @@ A command, a query and a snapshot never overlap, so that a reader never sees a p
 
 ## Acceptance criteria
 
-- [ ] The concurrency test fails on the code before the change. The Outcome block records the
+- [x] The concurrency test fails on the code before the change. The Outcome block records the
       exceptions that it saw.
-- [ ] After the change, the concurrency test passes 100 times in a row.
-- [ ] An HTTP test sends queries and commands in parallel and gets no HTTP 500.
-- [ ] A test cancels the token after the log append. The log, the bodies, the events and the version
+- [x] After the change, the concurrency test passes 100 times in a row.
+- [x] An HTTP test sends queries and commands in parallel and gets no HTTP 500.
+- [x] A test cancels the token after the log append. The log, the bodies, the events and the version
       then agree with each other.
-- [ ] No lock order can deadlock: the handshake takes the session first and the broadcaster second,
+- [x] No lock order can deadlock: the handshake takes the session first and the broadcaster second,
       in the same order as a commit. A test runs subscriptions and commands in parallel for at least
       one second with no timeout.
-- [ ] A clean build (`--no-incremental`) gives zero errors and zero warnings.
-- [ ] Continuous integration passes on `ubuntu-latest`, `windows-latest` and `macos-latest`.
+- [x] A clean build (`--no-incremental`) gives zero errors and zero warnings.
+- [x] Continuous integration passes on `ubuntu-latest`, `windows-latest` and `macos-latest`.
 
 ## Notes for the implementer
 
@@ -130,3 +131,78 @@ A command, a query and a snapshot never overlap, so that a reader never sees a p
   takes longer than one frame of interaction (about 16 ms) while a person edits.
 - **ADR-0008.** Its field `affects` names `Engine.Contracts/**` only, therefore it is not in
   `governed-by`. Its §6 gives the rule that this task implements.
+
+## Outcome
+
+Status: Done · v0.39 · the commit that carries this block.
+
+The concurrency test failed on the code before the change, in three runs of three. The queries threw
+`InvalidOperationException` 1,021, 1,152 and 950 times. The snapshot copies threw `ArgumentException`
+839, 920 and 849 times, and `IndexOutOfRangeException` one time.
+
+## Method
+
+**Mechanical.** `DocumentSession` with three methods: apply a command, run a query, and read the
+Document and the sink with a function. Each host calls the session in place of the buses. The comment
+in `ManifoldGeometryBackend.cs` and the glossary term.
+
+**Judgement.** The session takes its own semaphore and keeps the semaphore of the bus, as section 5 of
+the review recommends, because `Replay` and the tests use a bus with no session. A read takes a
+function, so that the Document does not leave the section. `EngineHost` keeps a `Document` property
+for the tests only, because four test files outside the write set read it. A rejection and a
+cancellation follow "change, then publish" also, so that each path has one order. One bus for each
+Document is a weak table in `CommandBus`, and a check before each sequence number refuses a version
+that goes back. `Document.AdvanceVersion` is in `Engine.Contracts`, which this task forbids, so the
+bus refuses in its place; TASK-0035 modifies that file. The HTTP tests run on the test server, because
+the behaviour is in the engine and the broadcaster and not in the server. `docs/register.md` joined
+the write set, because the owner asked for the progress line in R-0028.
+
+**Weakest.** The test for finding E9 depends on timing: on the old code it failed in one run of three.
+A pass is weak evidence; the order in the code is the proof. `EngineHost.Document` is a read with no
+lock, and no gate stops an endpoint from using it. When the deadlock test fails, it leaves blocked
+threads and does not dispose the host. The weak table makes a second bus on one Document throw, and a
+caller that builds two buses on one Document, as no caller does today, now fails.
+
+## Progress
+
+- 2026-10-01: the probe test first. On the code of today it failed in three runs of three: 1,021,
+  1,152 and 950 queries threw `InvalidOperationException`; 839, 920 and 849 snapshot copies threw
+  `ArgumentException`; one copy threw `IndexOutOfRangeException`. With `DocumentSession` it passed
+  100 runs of 100, each run in its own process. `docs/register.md` joins the write set, because the
+  owner asked for a progress line in R-0028; TASK-0044 permitted the same file.
+- 2026-10-01: both hosts use the session, and the WebSocket handshake reads inside it: the session
+  first, the broadcaster second. `Engine.Tests/Http/HttpConcurrencyTests.cs` adds three tests. On the
+  code before the change, three runs gave 190, 201 and 209 answers with HTTP 500 in parallel; the
+  first live `seq` after a reset was the snapshot version plus two in one run of three (finding E9);
+  and in each run the server closed a WebSocket before its first message. With the opposite lock
+  order injected into the handshake, the deadlock test stopped at its limit of 11 s with 0 commands.
+- 2026-10-01: the commit changes the Document first and publishes second, with
+  `CancellationToken.None` (scope items 4 and 7). The rejection and the cancellation follow the same
+  order. A second bus on one Document is refused at construction, and the bus refuses to move the
+  version back. Four new tests in `CommandBusTests.cs` failed on the old bus: the cancellation test
+  threw `OperationCanceledException` out of `Apply`, the sink test failed at the version, and the two
+  tests for finding E10 saw no exception. `AdvanceVersion` itself is in `Engine.Contracts`, which this
+  task forbids; TASK-0035 modifies that file.
+- 2026-10-01: `QueryBusTests` asserted on a new sink that no bus received, which proved nothing (step 5
+  of section 6 of the review). A new test runs two queries through a session and reads the sink of the
+  engine.
+- 2026-10-01: the threading comment of `ManifoldGeometryBackend.cs` agrees with the code (scope item
+  5), and the glossary defines "document session" (scope item 6).
+- 2026-10-01: closed. The clean build gives zero warnings, the probe passes 100 runs of 100, and the
+  HTTP tests pass 20 runs of 20. The test list holds 242. Ledger entry v0.39 and a progress line in
+  R-0028 record the work.
+- 2026-10-01: the first pipeline run on 4545f75 failed in the test step on Windows only. The log needs
+  a sign-in. Here the suite passed 62 runs, at full load, with a small thread pool and on two cores.
+  Register entry R-0032 asks for the name of a failed test in a public annotation.
+- 2026-10-01: the pipeline run 36922482476 on 07fd866 passed on Ubuntu, Windows and macOS. The test
+  step on Windows took 18 s, inside the range of 11 to 18 s of the five runs before it.
+- 2026-10-03: a correction of two tests after the close. The annotations of TASK-0045 named the failed
+  test of a Windows run: `Queries_And_Commands_In_Parallel_Get_No_Http_500`, with
+  `TaskCanceledException`. That failure did not repeat here. Its readers turned in a loop with no
+  await until the first body existed, which can starve the server on a runner with few cores; the
+  readers now start after the first command. On one core here, the E9 test failed 3 times, at run 4
+  and run 75 of two loops of the HTTP tests and at run 25 of a loop of the full suite. The client
+  stopped reading after its measurement, its queue filled, and the server disconnected it as a slow
+  subscriber, which is correct (ADR-0005 §6). Its close then found a closed socket. The close after
+  the measurement now accepts that. The full suite on one core: 1 failure in 25 runs before, 0 in 40
+  runs after. The HTTP tests alone on one core: 80 runs of 80 after.

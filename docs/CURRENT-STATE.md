@@ -1044,3 +1044,78 @@ sign-in that this computer does not have. If the next run on Ubuntu fails again,
 New tests: 0. The test list holds 233. `dotnet build 3DEngine.sln --no-incremental` gives zero
 errors and zero warnings. Open entries: 12 of 15. New diagnostic codes: none. The next codebase
 review must come before ledger entry v0.41.
+## v0.39 — Commands, queries and reads of the Document pass through one serial boundary (TASK-0034)
+
+Finding E2 of the codebase review of 2026-09-23, findings E4, E9 and E10 of the review of 2026-09-30,
+and question Q1, which the owner answered yes. This is the first code task since 2026-09-23.
+
+**One document session.** `Engine.Core/DocumentSession.cs` owns the Document, its backend, its
+command bus, its query bus and its event sink. A command, a query and a read of the Document enter one
+serial section. The probe of the review is the first test, with 5,000 commands and four readers. On
+the code before the session, three runs gave 1,021, 1,152 and 950 queries that threw
+`InvalidOperationException`, and 839, 920 and 849 snapshot copies that threw `ArgumentException`.
+With the session, the test passes 100 runs of 100.
+
+**Both hosts use it.** The command line and the HTTP host send each command, each query and each
+read of the Document through the session. The registries do not change after start, and a host reads
+them with no lock.
+The WebSocket handshake enters the session first and the broadcaster second, the same order as a
+commit. On the code before the change, three runs gave 190, 201 and 209 answers with HTTP 500, and
+in one run of three the first live `seq` after a reset was the snapshot version plus two. With the
+opposite lock order injected into the handshake, the deadlock test stops at its limit of 11 s.
+
+**Change, then publish.** The commit computes each sequence number, appends the command, adds each
+body, advances the version and stores the result in the cache. Then it appends the events with
+`CancellationToken.None`. A rejection and a cancellation use the same order. A cancellation after
+the log append and a sink that throws now leave the log, the bodies and the version in agreement. The
+sink loses an event, which a subscriber recovers with a reset, and a retry gets the cached result.
+
+**One bus for each Document.** The bus refuses a second bus on the same Document, and it refuses to
+move the version back.
+
+Not done, and why: scope item 8 asks that `Document.AdvanceVersion` refuses a lower value. That
+method is in `Engine.Contracts/Document.cs`, which the task forbids, and TASK-0035 modifies that file.
+The bus, the one caller, refuses in its place. `docs/INDEX.md` lists the parts of `Engine.Core` and
+does not name the session yet; the file was outside the write set. `docs/register.md` joined the
+write set of the task, because the owner asked for the progress line in R-0028.
+
+The first run of the pipeline on the code commits, 4545f75, failed in the test step on Windows, and
+passed on Ubuntu and macOS. The log needs a sign-in, so the failed test has no name here. Here the
+suite passed 30 runs, 10 runs at full load on each core, 12 runs with a smaller thread pool and 10
+runs on two cores by affinity, with no failure. Register entry R-0032 asks for the name of a failed
+test in a public annotation.
+
+New tests: 9. The test list holds 242, up from 233. `dotnet build 3DEngine.sln --no-incremental`
+gives zero errors and zero warnings. Open entries: 13 of 15, with the new entry R-0032. New diagnostic
+codes: none. The next codebase review must come before ledger entry v0.41.
+## v0.40 — A failed test in the pipeline has a public name, and two tests of v0.39 tolerate a slow runner (TASK-0045, TASK-0034 correction)
+
+Register entry R-0032. The log of a job needs admin rights, and the annotations of a check run are
+public. Two red runs, on Ubuntu for v0.38 and on Windows for v0.39, had no test name that a reader
+without a sign-in could see.
+
+**The name of each failed test.** The step "Test" of the pipeline writes a `.trx` file. When
+`dotnet test` fails, `eng/report-failed-tests.js` writes the name, the message and six lines of the
+stack of each failed test as an annotation, with a maximum of ten. On the branch
+`r0032-injection-2026-10-03`, which is never merged, an injected failure gave its name on each of
+the three runners through the check-run API with no sign-in. The first form of the script found no
+failed test, because its pattern read past the empty element of a passed test; the injection on this
+computer found that.
+
+**The failure of v0.39 has a name.** The same run on Windows named a real failure:
+`HttpConcurrencyTests.Queries_And_Commands_In_Parallel_Get_No_Http_500`, with
+`TaskCanceledException`. It did not repeat here. Its four readers turned in a loop with no await
+until the first body existed, which can starve the server on a runner with few cores. The readers now
+start after the first command; this cause is inferred and not observed. On one core here, the E9 test
+of v0.39 failed 3 times: the client stopped reading after its measurement, its queue filled, and the
+server disconnected it as a slow subscriber, as ADR-0005 §6 requires. Its close then found a closed
+socket. The close after a measurement now accepts that. The full suite on one core failed 1 time in
+25 runs before the change and 0 times in 40 runs after it. The HTTP tests alone on one core
+passed 80 runs of 80 after it.
+
+Not done, and why: the cause of the Ubuntu failure of v0.38 stays unknown, because its log needs a
+sign-in. The branch `r0032-injection-2026-10-03` stays on the server until the owner deletes it.
+
+New tests: 0. The test list holds 242. `dotnet build 3DEngine.sln --no-incremental` gives zero errors
+and zero warnings. Closed: R-0032. Open entries: 12 of 15. New diagnostic codes: none. The next
+codebase review must come before ledger entry v0.41.

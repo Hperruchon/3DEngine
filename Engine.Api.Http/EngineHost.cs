@@ -22,15 +22,20 @@ namespace Engine.Api.Http;
 // Per ADR-0014 §4: the host selects the native Manifold backend when its native
 // library is loadable, else falls back to the managed InProcessMeshBackend so the
 // host runs on any platform. CommandBus + QueryBus both receive the chosen backend.
+//
+// Each endpoint reaches the engine through Session (TASK-0034): commands,
+// queries and the WebSocket handshake enter one serial section.
 internal sealed class EngineHost : IDisposable
 {
-    public Document Document { get; }
+    public DocumentSession Session { get; }
     public CommandRegistry CommandRegistry { get; }
     public QueryRegistry QueryRegistry { get; }
-    public CommandBus CommandBus { get; }
-    public QueryBus QueryBus { get; }
-    public InMemoryEventSink Events { get; }
     public IGeometryBackend Backend { get; }
+
+    // For the tests only. A read of the Document here has no lock, therefore an
+    // endpoint must read through Session.Read. The identifier does not change,
+    // and a test reads the version only when no command runs.
+    public Document Document { get; }
 
     public EngineHost(EventBroadcaster broadcaster)
     {
@@ -46,12 +51,10 @@ internal sealed class EngineHost : IDisposable
         Document = kit.Document;
         CommandRegistry = kit.CommandRegistry;
         QueryRegistry = kit.QueryRegistry;
-        Events = kit.Events;
 
         // The bus must see the decorated sink, so that every committed event
         // reaches each WebSocket subscriber (TASK-0010 section 2).
-        CommandBus = kit.CreateCommandBus(new BroadcastingEventSink(Events, broadcaster));
-        QueryBus = kit.CreateQueryBus();
+        Session = new DocumentSession(kit, new BroadcastingEventSink(kit.Events, broadcaster));
     }
 
     public void Dispose() => (Backend as IDisposable)?.Dispose();

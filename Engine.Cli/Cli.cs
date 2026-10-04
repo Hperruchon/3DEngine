@@ -81,9 +81,9 @@ public static class Cli
 
         // Per ADR-0016: find the handler, bind the parameters, then let the
         // handler build its command. No command name appears in this file.
-        var engine = BuildEngine();
+        var session = BuildSession();
 
-        if (!engine.Commands.TryFind(name, DefaultSchemaVersion, out var handler))
+        if (!session.CommandRegistry.TryFind(name, DefaultSchemaVersion, out var handler))
         {
             // No sentinel command: produce the Rejected result client-side.
             // CommandBus.Apply requires a concrete Command; constructing one
@@ -101,7 +101,7 @@ public static class Cli
         var command = handler.Create(
             new CommandInput(bound.Values!, Guid.NewGuid(), ExpectedDocumentVersion: null));
 
-        var result = await engine.CommandBus.Apply(command, ct).ConfigureAwait(false);
+        var result = await session.Apply(command, ct).ConfigureAwait(false);
 
         JsonRenderer.WriteCommandResult(result, stdout);
         return result.Status == CommandStatus.Applied ? ExitApplied : ExitRejected;
@@ -128,9 +128,9 @@ public static class Cli
         }
 
         // Per ADR-0016: same three steps as Apply. No query name appears here.
-        var engine = BuildEngine();
+        var session = BuildSession();
 
-        if (!engine.Queries.TryFind(name, DefaultSchemaVersion, out var handler))
+        if (!session.QueryRegistry.TryFind(name, DefaultSchemaVersion, out var handler))
         {
             var unknown = new QueryResult<object>(
                 QueryName: name,
@@ -154,7 +154,7 @@ public static class Cli
         // The CLI renders one concrete result type. GetBoundingBox is the only
         // registered query, and its result is an Aabb. A second query type
         // needs a typed render path; see ADR-0016 "Next".
-        var typed = await engine.QueryBus.Query<Aabb>(query, ct).ConfigureAwait(false);
+        var typed = await session.Query<Aabb>(query, ct).ConfigureAwait(false);
         JsonRenderer.WriteQueryResult(typed, stdout);
         return typed.Error is null ? ExitApplied : ExitRejected;
 
@@ -182,8 +182,10 @@ public static class Cli
         DurationMs: 0);
 
     // Every registered handler comes from HandlerCatalog per ADR-0016, so the
-    // CLI, the HTTP host and the canonical replay gate use one set.
-    private static Engine BuildEngine()
+    // CLI, the HTTP host and the canonical replay gate use one set. The CLI has
+    // one caller and one command, and it still uses the session, so that each
+    // host reaches the engine in the same way (TASK-0034).
+    private static DocumentSession BuildSession()
     {
         // Native Manifold when its library is loadable, else the managed stub so the
         // CLI runs on any platform (ADR-0014 section 4). The one-shot process reclaims
@@ -193,22 +195,11 @@ public static class Cli
             ? new ManifoldGeometryBackend()
             : new InProcessMeshBackend();
 
-        var kit = EngineHosting.CreateDefault(backend);
-        return new Engine(
-            kit.CreateCommandBus(),
-            kit.CreateQueryBus(),
-            kit.CommandRegistry,
-            kit.QueryRegistry);
+        return new DocumentSession(EngineHosting.CreateDefault(backend));
     }
 
     // The CLI dispatches by name only. It has no argument for a schema
     // version, therefore it asks for version 1. A second version of a command
     // needs a CLI argument; see ADR-0016 "Next".
     private const int DefaultSchemaVersion = 1;
-
-    private sealed record Engine(
-        CommandBus CommandBus,
-        QueryBus QueryBus,
-        CommandRegistry Commands,
-        QueryRegistry Queries);
 }

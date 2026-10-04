@@ -31,6 +31,7 @@ observation of a change, and it appears only in the event stream.
 | **Document** | The design-truth aggregate: ordered command `Log` + materialized projections (`Bodies`) + metadata. Mutated only inside `CommandBus`'s commit section. | `Engine.Contracts/Document.cs` · ADR-0004 |
 | **Version** | `Document.Version` — today a runtime observation counter that mirrors the **last emitted `Seq`** across all events. ADR-0020 (accepted) makes it the count of applied commands; TASK-0035 changes the code. | `Engine.Contracts/Document.cs` · ADR-0005, ADR-0020 |
 | **Seq** | Monotonic per-Document event sequence number on `EventRecord`; the cursor for replay/reconnect. | `Engine.Contracts/EventRecord.cs` · ADR-0005 |
+| **document session** | The one serial boundary of one `Document`. It owns the Document, its backend, its command bus, its query bus and its event sink. A command, a query and a read of the Document enter one serial section, so a reader never sees a commit in the middle. Each host uses it. | `Engine.Core/DocumentSession.cs` · ADR-0008 §6, ADR-0014 §3 · TASK-0034 |
 
 ## Geometry
 

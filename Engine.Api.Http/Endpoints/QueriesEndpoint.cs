@@ -54,9 +54,12 @@ internal static class QueriesEndpoint
         if (!host.QueryRegistry.TryFind(body.Name, body.SchemaVersion.Value, out var handler))
         {
             // Unknown query — surface the existing E-QRY-UNKNOWN diagnostic.
+            var version = await host.Session
+                .Read((document, _) => document.Version, context.RequestAborted)
+                .ConfigureAwait(false);
             var unknown = new QueryResult<object>(
                 QueryName: body.Name,
-                AsOfDocumentVersion: host.Document.Version,
+                AsOfDocumentVersion: version,
                 Result: null,
                 Diagnostics: Array.Empty<Diagnostic>(),
                 Error: new ErrorDetail(
@@ -77,7 +80,7 @@ internal static class QueriesEndpoint
 
         // One concrete result type today. GetBoundingBox is the only registered
         // query and its result is an Aabb. See ADR-0016 "Next".
-        var result = await host.QueryBus
+        var result = await host.Session
             .Query<Aabb>(query, context.RequestAborted)
             .ConfigureAwait(false);
 

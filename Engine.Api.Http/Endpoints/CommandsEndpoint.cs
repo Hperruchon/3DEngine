@@ -59,12 +59,15 @@ internal static class CommandsEndpoint
             // Same rationale as Engine.Cli/Cli.cs: Command is abstract and
             // sentinels are forbidden, so the API surfaces the existing
             // E-CMD-UNKNOWN diagnostic directly without dispatching.
+            var version = await host.Session
+                .Read((document, _) => document.Version, context.RequestAborted)
+                .ConfigureAwait(false);
             var unknown = new CommandResult(
                 CommandId: commandId,
                 CommandName: body.Name,
                 Status: CommandStatus.Rejected,
                 AppliedAtSeq: null,
-                DocumentVersion: host.Document.Version,
+                DocumentVersion: version,
                 Outputs: Outputs.Empty,
                 Diagnostics: Array.Empty<Diagnostic>(),
                 Error: new ErrorDetail(
@@ -84,7 +87,7 @@ internal static class CommandsEndpoint
         var command = handler.Create(
             new CommandInput(bound.Values!, commandId, body.ExpectedDocumentVersion));
 
-        var result = await host.CommandBus
+        var result = await host.Session
             .Apply(command, context.RequestAborted)
             .ConfigureAwait(false);
 

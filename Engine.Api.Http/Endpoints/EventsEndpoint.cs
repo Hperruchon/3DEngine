@@ -14,7 +14,8 @@ namespace Engine.Api.Http.Endpoints;
 //   1. Accept the WebSocket upgrade. Non-WS request → 400 with E-API-BAD-REQUEST.
 //   2. Read one client text frame as a SubscribeRequest. Malformed → close
 //      with status 1003 + reason "E-API-WS-INVALID-SUBSCRIBE".
-//   3. AttachAndPrime on the broadcaster: under the broadcaster's lock, decide
+//   3. In a read of the document session (TASK-0034), AttachAndPrime on the
+//      broadcaster: under the broadcaster's lock, decide
 //      resume vs reset, enqueue initial response + any replay, then add to the
 //      subscriber list. This guarantees live events emitted between snapshot
 //      and attach can't slip past the replay.
@@ -58,11 +59,27 @@ internal static class EventsEndpoint
             channelCapacity: options.ChannelCapacity,
             heartbeatInterval: options.HeartbeatInterval,
             pumpDelay: options.PumpDelay);
-        broadcaster.AttachAndPrime(subscriber, host.Document, host.Events, subscribeRequest);
 
         try
         {
+            // The session first, the broadcaster second: the same order as a
+            // commit, which holds the session when its sink takes the lock of the
+            // broadcaster (TASK-0034). In the session no commit runs, so the
+            // snapshot, the ring and the version agree, and the first live event
+            // follows the last event that the handshake gives (finding E9).
+            await host.Session.Read(
+                (document, events) =>
+                {
+                    broadcaster.AttachAndPrime(subscriber, document, events, subscribeRequest);
+                    return true;
+                },
+                context.RequestAborted).ConfigureAwait(false);
+
             await subscriber.RunCompleted.ConfigureAwait(false);
+        }
+        catch (OperationCanceledException) when (context.RequestAborted.IsCancellationRequested)
+        {
+            // The client left while the handshake waited for the session.
         }
         finally
         {
