@@ -185,7 +185,10 @@ Put one topic in one commit. A refactor and a change of behaviour must not share
 
 The trailer line of the message, of the form `TASK-nnnn` or `TASK-nnnn · ADR-nnnn`, names the task
 that governs the commit. The commit also changes the file of that task, with one line under
-"Progress" at least, so that a closed task cannot lend its permits to a later commit.
+"Progress" at least, so that a closed task cannot lend its permits to a later commit. A task that is
+`Done` before the commit and after it governs nothing: to correct the work of a closed task, set its
+status to `Active` in the commit that changes the work, and to `Done` again when the correction is
+complete. The gate reads the task file at the commit, and not at the tip of the branch (TASK-0047).
 The write-set gate reads it. If the message names no task, the one task file that the commit
 touches governs it. A commit that touches several task files and names none fails.
 

@@ -113,24 +113,32 @@ internal static class RepositoryFiles
 
         foreach (var file in TaskFiles())
         {
-            var text = File.ReadAllText(file);
-            var fields = ReadFrontMatter(text);
-            if (fields is null)
-                continue;
-
-            var (create, modify, forbid) = ReadWrites(text);
-
-            tasks.Add(new TaskRecord(
-                file,
-                fields.TryGetValue("id", out var id) ? $"TASK-{id}" : System.IO.Path.GetFileName(file),
-                fields.TryGetValue("status", out var status) ? status : string.Empty,
-                fields,
-                create,
-                modify,
-                forbid));
+            var task = ParseTask(file, File.ReadAllText(file));
+            if (task is not null)
+                tasks.Add(task);
         }
 
         return tasks;
+    }
+
+    // One task from its text, which can come from the working tree or from a
+    // commit. Null for a file with no front matter.
+    public static TaskRecord? ParseTask(string file, string text)
+    {
+        var fields = ReadFrontMatter(text);
+        if (fields is null)
+            return null;
+
+        var (create, modify, forbid) = ReadWrites(text);
+
+        return new TaskRecord(
+            file,
+            fields.TryGetValue("id", out var id) ? $"TASK-{id}" : System.IO.Path.GetFileName(file),
+            fields.TryGetValue("status", out var status) ? status : string.Empty,
+            fields,
+            create,
+            modify,
+            forbid);
     }
 
     // ReadFrontMatter is flat, and the writes block has two levels. This reader

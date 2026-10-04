@@ -202,7 +202,10 @@ jobs:
       #
       # A merge commit is checked on the changes that the merge made itself,
       # which `git diff-tree --cc` lists. A clean merge lists nothing and passes;
-      # a merge with its own change needs a governing task like any commit. Until
+      # a merge with its own change needs a governing task like any commit. Since
+      # TASK-0047 the gate also receives the hash of the commit, so that it reads
+      # the task file at that commit and refuses a task that is Done before the
+      # commit and after it. Until
       # TASK-0043 a merge commit gave an empty list and was never examined
       # (codebase review of 2026-09-30, finding T3).
       - name: Check each commit against the write set of its task
@@ -251,7 +254,7 @@ jobs:
             task=$(git log -1 --format=%B "$commit" | grep -E '^TASK-[0-9]{4}( · (ADR|TASK)-[0-9]{4})*[[:space:]]*$' | head -1 | grep -o -E '^TASK-[0-9]{4}' || true)
             echo "check $subject  (task: ${task:-none named})"
 
-            if WRITE_SET_FILES="$files" WRITE_SET_TASK="$task" dotnet test Engine.Tests/Engine.Tests.csproj \
+            if WRITE_SET_COMMIT="$commit" WRITE_SET_FILES="$files" WRITE_SET_TASK="$task" dotnet test Engine.Tests/Engine.Tests.csproj \
                  --no-build --filter 'FullyQualifiedName~WriteSetGate'; then
               echo "  pass"
             else

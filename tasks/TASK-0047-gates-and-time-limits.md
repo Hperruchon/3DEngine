@@ -117,3 +117,9 @@ A hang stops with a name, and no file outside the exact write set of a task can 
   workflow exactly and keeps its permit. The first form of the injection script wrote the props file
   with `printf`, which read `\3` as a control character; the gate then failed on invalid XML, which
   proves nothing, and a heredoc replaced it.
+- 2026-10-04: Q3. Before the change, a staged progress line in TASK-0034, which is `Done`, with a change
+  to a test passed the gate. After it, the gate refuses it with the rule in the message, and a commit
+  that closes a task or reopens one passes. In the mode of the pipeline, a temporary local commit of
+  the same form fails, and the real commit `4715b88` passes, because each commit up to `67c564f`
+  keeps the earlier rule. A replay of the 51 commits after the cut-off, with the loop of the workflow
+  and `WRITE_SET_COMMIT`, gives no failure.
