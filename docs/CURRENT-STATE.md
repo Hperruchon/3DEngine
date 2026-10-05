@@ -1188,3 +1188,34 @@ a backslash in a heredoc. Each was found before its result entered a record.
 New tests: 0. The test list holds 242. `dotnet build 3DEngine.sln --no-incremental` gives zero errors
 and zero warnings. Open entries: 14 of 15. New diagnostic codes: none. The next codebase review must
 come before ledger entry v0.47.
+## v0.43 — The document version counts applied commands, and a replay rebuilds it (TASK-0035)
+
+ADR-0020, finding E1 of the codebase review of 2026-09-23, and findings E7, E10 and the replay part of
+E17 of the review of 2026-10-04, which the owner added to the task (question Q1).
+
+**The version is the count of the log.** `Document.Version` equals the count of entries in
+`Document.Log`, by construction. `Document.AdvanceVersion` is gone, so no code can set the version,
+higher or lower, which closes finding E10. A rejection and a cancellation do not change it, and their
+event still takes the next `Seq`. The bus keeps `Seq` alone, and no code computes one counter from
+the other.
+
+**The reset snapshot gives the cursor.** The snapshot of a `subscription.reset` gains the field
+`seq`, the highest `Seq` at the reset, and a client continues from `seq + 1`. The E9 test of v0.39
+reads it, and the reset test holds a rejection, so its snapshot gives version 5 and seq 6.
+
+**A replay reports a divergence.** `Replay.ReplayLog` stops at the first result that is not
+`Applied` with a `ReplayDivergenceException`, which names the entry, the command and the error. It
+applies each entry with no idempotency cache.
+
+**Each test failed first.** On the code before the change: the replay fixture, where `Beta` now
+states the version 2, gave version 5 where 4 is expected; a live session with a rejection gave
+version 4, and its replay gave 2 with the box lost; a rejected command reported version 2 where 1 is
+expected; a replay of a rejection threw nothing; and a log with one `CommandId` two times replayed to
+one entry.
+
+Not done, and why: the backend argument of `ReplayLog` stays optional; finding E7 recommended to make
+it necessary, and question Q1 did not include that part. The other findings of R-0028 stay.
+
+New tests: 4. The test list holds 246, up from 242. `dotnet build 3DEngine.sln --no-incremental`
+gives zero errors and zero warnings. Open entries: 14 of 15. New diagnostic codes: none. The next
+codebase review must come before ledger entry v0.47.
