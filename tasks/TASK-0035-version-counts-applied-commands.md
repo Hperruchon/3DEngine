@@ -117,3 +117,6 @@ A replay of the log gives the same version and the same bodies as the Document t
   check. The reset snapshot gives `seq`, and the E9 test reads it. The reset test now holds a
   rejection, so the snapshot gives version 5 and seq 6. Seven assertions of the old meaning in
   `CommandBusTests.cs` changed, with the E9 test and the reset test; none was deleted. The bus also gains a replay form with no cache, which the next commit uses.
+- 2026-10-05: scope item 8. The replay stops at the first result that is not `Applied` with a
+  `ReplayDivergenceException`, which names the entry, the command and the error, and it applies each
+  entry with no idempotency cache. The two tests of E7 and E17, which failed before, now pass.
