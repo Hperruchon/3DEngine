@@ -120,3 +120,5 @@ A replay of the log gives the same version and the same bodies as the Document t
 - 2026-10-05: scope item 8. The replay stops at the first result that is not `Applied` with a
   `ReplayDivergenceException`, which names the entry, the command and the error, and it applies each
   entry with no idempotency cache. The two tests of E7 and E17, which failed before, now pass.
+- 2026-10-05: scope item 7. The glossary term "document version" replaces the row that gave the old
+  meaning, and the row "Seq" names the field `seq` of the reset snapshot.
