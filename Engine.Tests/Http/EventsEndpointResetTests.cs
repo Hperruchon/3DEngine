@@ -46,6 +46,17 @@ public class EventsEndpointResetTests : IClassFixture<WebApplicationFactory<Prog
             r.EnsureSuccessStatusCode();
         }
 
+        // A rejection takes a Seq and does not change the version (ADR-0020), so
+        // the snapshot gives two different numbers: version 5 and seq 6.
+        var rejected = await http.PostAsJsonAsync("/commands", new
+        {
+            name = "NoOp",
+            schemaVersion = 1,
+            parameters = new { echo = "stale" },
+            expectedDocumentVersion = 999L,
+        });
+        rejected.EnsureSuccessStatusCode();
+
         var host = factory.Services.GetRequiredService<EngineHost>();
         var docId = host.Document.DocumentId;
 
@@ -64,7 +75,8 @@ public class EventsEndpointResetTests : IClassFixture<WebApplicationFactory<Prog
 
         var snapshot = msg.GetProperty("snapshot");
         Assert.Equal(docId, snapshot.GetProperty("documentId").GetGuid());
-        Assert.Equal(host.Document.Version, snapshot.GetProperty("version").GetInt64());
+        Assert.Equal(5, snapshot.GetProperty("version").GetInt64());
+        Assert.Equal(6, snapshot.GetProperty("seq").GetInt64());
 
         await socket.CloseAsync(WebSocketCloseStatus.NormalClosure, "done", CancellationToken.None);
     }

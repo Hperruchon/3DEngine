@@ -88,12 +88,13 @@ public class HttpConcurrencyTests : IClassFixture<WebApplicationFactory<Program>
     }
 
     // Finding E9 of the codebase review of 2026-09-30. A subscriber that attached
-    // during a commit received a snapshot whose version did not agree with the
-    // ring, and then lost an event or received it two times. Each subscriber here
-    // asks for a reset while commands run, and its first live event must carry
-    // the snapshot version plus one.
+    // during a commit received a snapshot that did not agree with the ring, and
+    // then lost an event or received it two times. Each subscriber here asks for
+    // a reset while commands run, and its first live event must carry the seq of
+    // the snapshot plus one. Until TASK-0035 the snapshot gave no seq, and the
+    // version was the last Seq (ADR-0020).
     [Fact]
-    public async Task The_First_Live_Seq_After_A_Reset_Is_The_Snapshot_Version_Plus_One()
+    public async Task The_First_Live_Seq_After_A_Reset_Is_The_Snapshot_Seq_Plus_One()
     {
         const int subscriberCount = 100;
         using var factory = _baseFactory.WithWebHostBuilder(_ => { });
@@ -117,11 +118,11 @@ public class HttpConcurrencyTests : IClassFixture<WebApplicationFactory<Program>
 
                 var reset = await WebSocketTestClient.ReceiveJsonAsync(socket, cts.Token);
                 Assert.Equal("subscription.reset", reset.GetProperty("kind").GetString());
-                var version = reset.GetProperty("snapshot").GetProperty("version").GetInt64();
+                var seq = reset.GetProperty("snapshot").GetProperty("seq").GetInt64();
 
                 var firstSeq = await FirstLiveSeq(socket, cts.Token);
-                if (firstSeq != version + 1)
-                    mismatches.Add($"subscriber {i}: snapshot version {version}, first live seq {firstSeq}");
+                if (firstSeq != seq + 1)
+                    mismatches.Add($"subscriber {i}: snapshot seq {seq}, first live seq {firstSeq}");
 
                 await CloseAfterTheMeasurement(socket);
             }

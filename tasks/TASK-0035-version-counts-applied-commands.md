@@ -1,7 +1,7 @@
 ---
 id: 0035
 title: The document version counts applied commands, and a replay rebuilds it
-status: Ready
+status: Active
 phase: P0.14
 opened: 2026-09-25
 depends-on: [0034, 0047]
@@ -20,6 +20,8 @@ writes:
     - docs/adr/0020-document-version-meaning.md
     - docs/glossary.md
     - docs/CURRENT-STATE.md
+    - docs/register.md
+    - docs/roadmap.md
   forbid:
     - Engine.Contracts/Handlers/**
     - Engine.Contracts/Geometry/**
@@ -102,3 +104,16 @@ A replay of the log gives the same version and the same bodies as the Document t
   "Contract-touched-needs-ADR" wants an ADR change in the same pull request. Scope item 6 gives it.
 - **Tests that assert a version.** Some tests assert the old value after a rejection. Correct each one
   to the meaning of ADR-0020. Do not delete one.
+
+## Progress
+- 2026-10-05: the tests first. The fixture gives `Beta` the expected version 2, and
+  `ReplayVersionTests.cs` runs a live session with a rejection and then a command with an expected
+  version. On the code before the change: the fixture replay gave version 5 where 4 is expected; the
+  live session gave version 4 and its replay gave 2, with the box lost; a rejected command reported
+  version 2 where 1 is expected; the replay of a rejection threw nothing; and a log with one
+  `CommandId` two times replayed to 1 entry.
+- 2026-10-05: the version is the count of the log. `Document.AdvanceVersion` is gone, so no code can
+  set the version, and finding E10 is closed. The bus keeps `Seq` alone, and `TakeSeqs` lost its
+  check. The reset snapshot gives `seq`, and the E9 test reads it. The reset test now holds a
+  rejection, so the snapshot gives version 5 and seq 6. Seven assertions of the old meaning in
+  `CommandBusTests.cs` changed, with the E9 test and the reset test; none was deleted. The bus also gains a replay form with no cache, which the next commit uses.

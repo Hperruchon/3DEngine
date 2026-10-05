@@ -10,7 +10,9 @@ namespace Engine.Core;
 // Per ADR-0006: serial execution per Document, atomic commit-at-end.
 // Per ADR-0006 §7: duplicate CommandId returns the cached CommandResult.
 // Per ADR-0008 §2: every Apply returns a structured CommandResult.
-// Per ADR-0005: events have monotonic Seq; Document.Version mirrors last emitted Seq.
+// Per ADR-0005: events have monotonic Seq. Per ADR-0020: Document.Version counts applied
+// commands. The bus keeps Seq; the Document keeps the version; neither is computed
+// from the other.
 // Per ADR-0012 §2: bus owns the active backend and passes it to every Handle call.
 //
 // DocumentSession puts commands, queries and reads of one Document in one serial
@@ -27,7 +29,7 @@ public sealed class CommandBus
     private readonly Document _document;
     private readonly CommandRegistry _registry;
     private readonly IEventSink _events;
-    private readonly IdempotencyCache _idempotency;
+    private readonly IdempotencyCache? _idempotency;
     private readonly IGeometryBackend _backend;
     private readonly SemaphoreSlim _serial = new(1, 1);
     private long _nextSeq = 1;
@@ -38,12 +40,34 @@ public sealed class CommandBus
         IEventSink events,
         IGeometryBackend? backend = null,
         IdempotencyCache? idempotency = null)
+        : this(document, registry, events, backend, idempotency ?? new IdempotencyCache(), deduplicate: true)
+    {
+    }
+
+    // A replay applies each entry of a log one time. The cache protects against a
+    // transport that sends a command again (ADR-0006 §7); a log is not a
+    // transport, and a live cache of 1,024 results can let one CommandId enter
+    // the log two times (finding E17 of the codebase review of 2026-10-04).
+    internal static CommandBus ForReplay(
+        Document document,
+        CommandRegistry registry,
+        IEventSink events,
+        IGeometryBackend? backend)
+        => new(document, registry, events, backend, idempotency: null, deduplicate: false);
+
+    private CommandBus(
+        Document document,
+        CommandRegistry registry,
+        IEventSink events,
+        IGeometryBackend? backend,
+        IdempotencyCache? idempotency,
+        bool deduplicate)
     {
         _document = document ?? throw new ArgumentNullException(nameof(document));
         _registry = registry ?? throw new ArgumentNullException(nameof(registry));
         _events = events ?? throw new ArgumentNullException(nameof(events));
         _backend = backend ?? NullGeometryBackend.Instance;
-        _idempotency = idempotency ?? new IdempotencyCache();
+        _idempotency = deduplicate ? idempotency : null;
 
         if (!BusOfDocument.TryAdd(_document, this))
             throw new InvalidOperationException(
@@ -60,7 +84,7 @@ public sealed class CommandBus
         await _serial.WaitAsync(ct).ConfigureAwait(false);
         try
         {
-            if (_idempotency.TryGet(command.CommandId, out var cached))
+            if (_idempotency is not null && _idempotency.TryGet(command.CommandId, out var cached))
                 return cached;
 
             // Change, then publish (TASK-0034, scope item 7; the owner accepted it on
@@ -71,7 +95,7 @@ public sealed class CommandBus
             // which a subscriber recovers with a reset, and never a part of the
             // Document. A retry with the same CommandId gets the cached result.
             var (result, events) = await Decide(command, stopwatch, ct).ConfigureAwait(false);
-            _idempotency.Store(command.CommandId, result);
+            _idempotency?.Store(command.CommandId, result);
 
             foreach (var record in events)
                 await _events.Append(record, CancellationToken.None).ConfigureAwait(false);
@@ -125,10 +149,10 @@ public sealed class CommandBus
         return Commit(command, handlerResult, stopwatch);
     }
 
-    // 4. Commit: compute each Seq, append the log, register the bodies, advance
-    // the version. All events of one commit share consecutive Seqs; the version
-    // advances once to the highest. Nothing here awaits, therefore nothing here
-    // stops in the middle.
+    // 4. Commit: compute each Seq, append the log, register the bodies. The log
+    // append adds one to the version (ADR-0020). All events of one commit share
+    // consecutive Seqs. Nothing here awaits, therefore nothing here stops in the
+    // middle.
     private (CommandResult, IReadOnlyList<EventRecord>) Commit(
         Command command,
         CommandHandlerResult handlerResult,
@@ -158,8 +182,6 @@ public sealed class CommandBus
             }));
         }
 
-        _document.AdvanceVersion(lastSeq);
-
         var result = new CommandResult(
             CommandId: command.CommandId,
             CommandName: command.Name,
@@ -179,8 +201,8 @@ public sealed class CommandBus
         Stopwatch stopwatch,
         IReadOnlyList<Diagnostic>? diagnostics = null)
     {
+        // A rejection does not change the version (ADR-0020) and takes the next Seq.
         var seq = TakeSeqs(1);
-        _document.AdvanceVersion(seq);
 
         var record = Event(seq, command, "command.rejected", new Dictionary<string, object?>
         {
@@ -205,7 +227,6 @@ public sealed class CommandBus
     private (CommandResult, IReadOnlyList<EventRecord>) Cancel(Command command, Stopwatch stopwatch)
     {
         var seq = TakeSeqs(1);
-        _document.AdvanceVersion(seq);
 
         var record = Event(seq, command, "command.cancelled", new Dictionary<string, object?>
         {
@@ -226,20 +247,12 @@ public sealed class CommandBus
         return (result, [record]);
     }
 
-    // Takes count consecutive Seqs and gives the first. The version follows the
-    // last Seq, therefore a Seq at or below the version would move the version
-    // back. The constructor refuses a second bus, so only a writer outside the bus
-    // can cause that. Document.AdvanceVersion accepts a lower value (finding E10),
-    // and Engine.Contracts is outside TASK-0034, therefore the bus refuses here,
-    // before any change. TASK-0035 changes AdvanceVersion.
+    // Takes count consecutive Seqs and gives the first. Until TASK-0035 this
+    // method also refused a Seq at or below the version, which coupled the two
+    // counters; ADR-0020 §2 separates them, and the version can no longer go back.
     private long TakeSeqs(int count)
     {
         var first = _nextSeq;
-        if (first <= _document.Version)
-            throw new InvalidOperationException(
-                $"The next sequence number {first} is not above the document version {_document.Version}. " +
-                "Only the bus of the Document may advance the version.");
-
         _nextSeq += count;
         return first;
     }

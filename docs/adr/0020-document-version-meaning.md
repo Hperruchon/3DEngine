@@ -13,7 +13,7 @@ affects:
   - Engine.Core/CommandBus.cs
   - Engine.Core/Replay.cs
   - Engine.Api.Http/WebSockets/**
-enforced-by: Engine.Tests/ReplayDeterminism/ReplayVersionTests.cs (TASK-0035 creates it)
+enforced-by: Engine.Tests/ReplayDeterminism/ReplayVersionTests.cs
 ---
 
 # ADR-0020 — The meaning of the document version

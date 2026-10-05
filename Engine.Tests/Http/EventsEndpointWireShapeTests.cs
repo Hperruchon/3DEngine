@@ -80,6 +80,7 @@ public class EventsEndpointWireShapeTests : IClassFixture<WebApplicationFactory<
         Assert.True(snapshot.TryGetProperty("projectId", out _));
         Assert.True(snapshot.TryGetProperty("schemaVersion", out var sv) && sv.ValueKind == JsonValueKind.Number);
         Assert.True(snapshot.TryGetProperty("version", out var v) && v.ValueKind == JsonValueKind.Number);
+        Assert.True(snapshot.TryGetProperty("seq", out var q) && q.ValueKind == JsonValueKind.Number);
         Assert.True(snapshot.TryGetProperty("createdAt", out _));
         Assert.True(snapshot.TryGetProperty("updatedAt", out _));
         Assert.False(snapshot.TryGetProperty("log", out _), "snapshot must not include the command log (ADR-0010 §2).");

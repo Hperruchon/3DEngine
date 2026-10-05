@@ -31,11 +31,17 @@ internal sealed record HeartbeatMessage(string Kind)
 
 // Snapshot DTO per ADR-0010 §2 + extension from ADR-0012 §6.
 // V1.x scope: Document metadata + the body projection list.
+//
+// Version is the count of applied commands, and Seq is the highest event
+// sequence number at the moment of the reset. A client continues the stream
+// from Seq + 1 (ADR-0020 item 4, which replaces validation rule 2 of ADR-0010).
+// Before TASK-0035 the two were one value, and a client used the version.
 internal sealed record SnapshotMessage(
     Guid DocumentId,
     Guid? ProjectId,
     int SchemaVersion,
     long Version,
+    long Seq,
     DateTime CreatedAt,
     DateTime UpdatedAt,
     IReadOnlyList<SnapshotBodyEntry> Bodies);
@@ -44,11 +50,12 @@ internal sealed record SnapshotBodyEntry(Guid Handle, string Kind);
 
 internal static class SnapshotProjector
 {
-    public static SnapshotMessage Project(Document doc) => new(
+    public static SnapshotMessage Project(Document doc, long seq) => new(
         DocumentId: doc.DocumentId,
         ProjectId: doc.ProjectId,
         SchemaVersion: doc.SchemaVersion,
         Version: doc.Version,
+        Seq: seq,
         CreatedAt: doc.CreatedAt,
         UpdatedAt: doc.UpdatedAt,
         Bodies: doc.Bodies

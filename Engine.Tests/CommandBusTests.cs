@@ -34,8 +34,8 @@ public class CommandBusTests
 
         Assert.Equal(CommandStatus.Applied, result.Status);
         Assert.Null(result.Error);
-        Assert.NotNull(result.AppliedAtSeq);
-        Assert.Equal(result.AppliedAtSeq, doc.Version);
+        Assert.Equal(1, result.AppliedAtSeq);
+        Assert.Equal(1, doc.Version);
 
         Assert.True(result.Outputs.TryGet<string>("echo", out var echo));
         Assert.Equal("hi", echo);
@@ -66,11 +66,10 @@ public class CommandBusTests
         Assert.Equal(DiagnosticCodes.CommandUnknown, result.Error!.Code);
         Assert.Null(result.AppliedAtSeq);
 
-        // Document log + materialized state are unchanged on rejection.
-        // Document.Version is a runtime observation version (mirrors last emitted Seq),
-        // not a successful-mutation counter — so it advances even on rejection.
+        // A rejection changes neither the log nor the version (ADR-0020). Its event
+        // still takes the next Seq.
         Assert.Empty(doc.Log);
-        Assert.True(doc.Version > versionBefore);
+        Assert.Equal(versionBefore, doc.Version);
 
         var events = sink.Snapshot();
         Assert.Single(events);
@@ -138,7 +137,7 @@ public class CommandBusTests
         for (var i = 0; i < N; i++)
             Assert.Equal(i + 1, events[i].Seq);
 
-        Assert.Equal(events[^1].Seq, doc.Version);
+        Assert.Equal(N, doc.Version);
     }
 
     // TASK-0034, scope item 4 (finding E4). The sink stands for a host sink that
@@ -164,7 +163,8 @@ public class CommandBusTests
         Assert.Single(doc.Log);
         Assert.Single(doc.Bodies);
         Assert.Equal(["command.applied", "body.created"], sink.Records.Select(r => r.Kind));
-        Assert.Equal(sink.Records[^1].Seq, doc.Version);
+        Assert.Equal(2, sink.Records[^1].Seq);
+        Assert.Equal(1, doc.Version);
         Assert.Equal(doc.Version, result.DocumentVersion);
     }
 
@@ -188,7 +188,7 @@ public class CommandBusTests
 
         Assert.Single(doc.Log);
         Assert.Single(doc.Bodies);
-        Assert.Equal(2, doc.Version);
+        Assert.Equal(1, doc.Version);
         Assert.Equal(["command.applied", "body.created"], sink.Records.Select(r => r.Kind));
 
         sink.ActionEnabled = false;
@@ -199,7 +199,7 @@ public class CommandBusTests
 
         var next = await bus.Apply(new CreateBoxCommand { SizeX = 1, SizeY = 2, SizeZ = 3 });
         Assert.Equal(3, next.AppliedAtSeq);
-        Assert.Equal(4, doc.Version);
+        Assert.Equal(2, doc.Version);
     }
 
     // TASK-0034, scope item 8 (finding E10). The sequence counter belongs to the
@@ -223,23 +223,28 @@ public class CommandBusTests
             kit.Events.Snapshot().Select(r => r.Kind));
     }
 
-    // TASK-0034, scope item 8 (finding E10). Document.AdvanceVersion accepts a
-    // lower value, and Engine.Contracts is outside this task, therefore the bus,
-    // the one caller, refuses to move the version back. TASK-0035 changes
-    // AdvanceVersion. Before the change the bus moved the version from 10 to 2.
+    // TASK-0034, scope item 8 (finding E10), and TASK-0035. In TASK-0034 the
+    // bus refused to move the version back, because Document.AdvanceVersion
+    // accepted a lower value. TASK-0035 removed AdvanceVersion: the version is
+    // the count of the log (ADR-0020), so no code can move it back. The test
+    // keeps its purpose: after each result the version equals the count of the
+    // log, and it never goes down.
     [Fact]
-    public async Task The_Bus_Refuses_To_Move_The_Version_Back()
+    public async Task The_Version_Is_The_Count_Of_The_Log_And_Never_Goes_Back()
     {
         var (doc, _, sink, bus) = NewBusWithNoOp();
+        var versions = new List<long>();
+
         await bus.Apply(new NoOpCommand { Echo = "first" });
+        versions.Add(doc.Version);
+        await bus.Apply(new NoOpCommand { Echo = "stale", ExpectedDocumentVersion = 99 });
+        versions.Add(doc.Version);
+        await bus.Apply(new NoOpCommand { Echo = "second" });
+        versions.Add(doc.Version);
 
-        doc.AdvanceVersion(10); // A writer outside the bus.
-
-        await Assert.ThrowsAsync<InvalidOperationException>(() => bus.Apply(new NoOpCommand { Echo = "second" }));
-
-        Assert.Equal(10, doc.Version);
-        Assert.Single(doc.Log);
-        Assert.Single(sink.Snapshot());
+        Assert.Equal([1L, 1L, 2L], versions);
+        Assert.Equal(doc.Log.Count, doc.Version);
+        Assert.Equal([1L, 2L, 3L], sink.Snapshot().Select(e => e.Seq));
     }
 
     private static (Document doc, CommandBus bus) NewBusWithCreateBox(IEventSink sink)
