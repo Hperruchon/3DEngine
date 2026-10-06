@@ -193,6 +193,9 @@ Exit: each finding has a task, or it is corrected, or the owner accepts it and g
 Progress 2026-10-04: the third codebase review finds one part of C1 corrected: `Engine.Api.Http/Program.cs`
 no longer cites the removed clamp. E5, E6, E12, V4, the open part of T2 and the other parts of C1
 stay. P1 costs more, because the snapshot now also holds the session.
+Progress 2026-10-06: TASK-0036 corrected the comment of `Engine.Api.Http/EngineHost.cs` that cited the
+removed clamp, which is the last comment part of C1 (also listed in E24 of R-0033). The empty markers
+and the flags that nothing reads stay.
 
 ### R-0028 · Nine new findings in the engine and the hosts have no task
 - class: debt
@@ -296,6 +299,21 @@ Progress 2026-10-04: TASK-0047 corrected T8. Each job has a time limit, the step
 after two minutes, and the report script names the test that did not complete. Run 37189044285 on a
 branch that is never merged stopped an injected hang after about 130 s on each runner and named it.
 The script also reads a stopped run, which is a part of T13. T12 and the other part of T13 stay.
+
+### R-0035 · The native package names a build folder as the search path of its dependency on Linux and macOS
+- class: debt
+- opened: 2026-10-06
+- due: 2027-04-04
+- extended: no
+- refs: `.github/workflows/build-manifold-native.yml`, `nuget/Engine.Geometry.Manifold.Native.3.5.2.nupkg`, `Engine.Geometry.Manifold/ManifoldGeometryBackend.cs`, TASK-0036
+`libmanifoldc` stores `/home/runner/work/3DEngine/3DEngine/build/src` on Linux and
+`/Users/runner/work/3DEngine/3DEngine/build/src` on macOS as the search path of `libmanifold`, and
+not `$ORIGIN` or `@loader_path`. On another computer the system loader does not find the dependency,
+so the native backend never loaded on the Linux and macOS runners: the native tests skipped and the
+hosts took the managed backend. TASK-0036 found it, and it loads the dependency first by its full
+path as a workaround. The rebuild needs a manual run of the build workflow, which needs a sign-in.
+Exit: the build workflow sets `$ORIGIN` and `@loader_path`, the repository holds the rebuilt package
+with its checksum, and the workaround in `ManifoldGeometryBackend.TryLoadNative` is removed.
 
 ## Accepted compromises
 

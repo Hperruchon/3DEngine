@@ -13,8 +13,9 @@ namespace Engine.Core.Hosting;
 // Engine.Geometry.Manifold only at the composition root of a host, and
 // CLAUDE.md permits Engine.Core to reference only Engine.Contracts. A factory
 // that selected the native backend would break both rules, and the dependency
-// direction gate of v0.19 would fail. Each host therefore keeps its own three
-// lines of backend selection, and that duplication is correct.
+// direction gate of v0.19 would fail. Each host therefore keeps its own backend
+// selection, and that duplication is correct. Since TASK-0036 a host requires the
+// native backend and stops with E-GEOM-BACKEND-INIT when its library does not load.
 //
 // The factory does not construct a bus either. The original branch gave the
 // reason and it still holds: the HTTP host wraps the event sink in
@@ -44,9 +45,9 @@ public static class EngineHosting
 // The kit holds the parts. A host composes a bus from them.
 //
 // The branch version exposed the concrete backend type. This version exposes
-// IGeometryBackend, because ADR-0014 section 4 gives each host two
-// implementations to choose between, therefore the choice is polymorphic and the
-// kit must carry it as such.
+// IGeometryBackend, because two implementations exist: the native backend, which
+// each host requires, and the managed backend, which the tests and the canonical
+// replay gate use (ADR-0014 section 4). The kit must carry either one.
 public sealed record EngineKit(
     Document Document,
     CommandRegistry CommandRegistry,

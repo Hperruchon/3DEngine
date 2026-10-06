@@ -12,10 +12,11 @@ namespace Engine.Tests.Governance;
 // question at the next code. A budget makes the answer mechanical.
 public class DiagnosticsReserveGateTests
 {
-    // The quantity at the moment of the decision, on 2026-09-22. A new reserved
-    // code needs a decision that raises this number, and that decision leaves a
-    // record in this file.
-    private const int ReservedBudget = 2;
+    // The quantity at the moment of the decision, on 2026-09-22, was two.
+    // TASK-0036 raised E-GEOM-BACKEND-INIT and lowered the budget to one. A new
+    // reserved code needs a decision that raises this number, and that decision
+    // leaves a record in this file.
+    private const int ReservedBudget = 1;
 
     private static readonly Regex Row = new(
         @"^\|\s*`([EWI]-[A-Z0-9-]+)`\s*\|\s*(.+?)\s*\|",

@@ -22,6 +22,7 @@ Exit codes:
   0  Applied
   1  Rejected or Cancelled (commands), or query rejected
   2  Invalid usage
+  3  The native geometry backend did not load (E-GEOM-BACKEND-INIT)
 
 """;
 

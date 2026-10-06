@@ -4,15 +4,41 @@ using Engine.Geometry.Manifold;
 
 namespace Engine.Tests.Geometry;
 
-// A [Fact] that is skipped when the native manifoldc library is not loadable on the
-// runner (e.g. a RID without the payload). xunit v2 has no Assert.Skip, so a derived
-// FactAttribute sets Skip at discovery time.
+// A [Fact] that is skipped when the native manifoldc library is not loadable on a
+// computer of a person (e.g. a RID without the payload). xunit v2 has no Assert.Skip,
+// so a derived FactAttribute sets Skip at discovery time.
+//
+// In continuous integration it never skips. GitHub Actions sets CI to true on each
+// runner, and a runner that lost the library must give a red run and not a green
+// one with skipped tests (finding T1 of the codebase review of 2026-09-23,
+// TASK-0036). The test then fails when it builds the backend.
 public sealed class NativeManifoldFactAttribute : FactAttribute
 {
     public NativeManifoldFactAttribute()
     {
-        if (!ManifoldGeometryBackend.IsNativeAvailable())
-            Skip = "Native manifoldc is not available on this runner.";
+        Skip = SkipReason(ManifoldGeometryBackend.IsNativeAvailable(), Environment.GetEnvironmentVariable("CI"));
+    }
+
+    internal static string? SkipReason(bool nativeAvailable, string? ci)
+        => nativeAvailable || string.Equals(ci, "true", StringComparison.OrdinalIgnoreCase)
+            ? null
+            : "Native manifoldc is not available on this computer, and CI is not true.";
+}
+
+// The rule of the attribute above (TASK-0036). With CI=true and the library
+// hidden from the output folder, 7 of the 13 native tests failed and none skipped;
+// before the change all 13 skipped and the run passed.
+public class NativeManifoldFactAttributeTests
+{
+    [Theory]
+    [InlineData(true, null, false)]
+    [InlineData(false, null, true)]
+    [InlineData(false, "true", false)]
+    [InlineData(false, "TRUE", false)]
+    [InlineData(false, "false", true)]
+    public void A_Native_Test_Skips_Only_Outside_Continuous_Integration(bool available, string? ci, bool skips)
+    {
+        Assert.Equal(skips, NativeManifoldFactAttribute.SkipReason(available, ci) is not null);
     }
 }
 

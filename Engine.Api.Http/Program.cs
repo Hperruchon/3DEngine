@@ -23,6 +23,7 @@ if (refusal is not null)
 // EventBroadcaster registered first; EngineHost depends on it for its
 // BroadcastingEventSink wiring (TASK-0010).
 builder.Services.AddSingleton<EventBroadcaster>();
+builder.Services.AddSingleton(HostBackendOptions.Native);
 builder.Services.AddSingleton<EngineHost>();
 builder.Services.AddSingleton(SubscriberOptions.Default);
 
@@ -36,6 +37,19 @@ builder.Services.Configure<HostFilteringOptions>(options =>
 });
 
 var app = builder.Build();
+
+// The engine is built at the start and not at the first request, so that a host
+// with no native backend stops before it serves anything, with exit code 3, the
+// same code as the command line (TASK-0036).
+try
+{
+    app.Services.GetRequiredService<EngineHost>();
+}
+catch (BackendUnavailableException ex)
+{
+    Console.Error.WriteLine(ex.Message);
+    return 3;
+}
 
 app.UseHostFiltering();
 app.UseWebSockets();
@@ -75,6 +89,7 @@ app.MapGet("/schema/queries", SchemaQueriesEndpoint.Index);
 app.MapGet("/schema/queries/{name}@{version:int}", SchemaQueriesEndpoint.Item);
 app.MapGet("/schema/events", SchemaEventsEndpoint.Handle);
 app.MapGet("/schema/diagnostics", SchemaDiagnosticsEndpoint.Handle);
+app.MapGet("/schema/backend", SchemaBackendEndpoint.Handle);
 
 app.MapGet("/events", EventsEndpoint.Handle);
 

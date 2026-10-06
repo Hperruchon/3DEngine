@@ -16,16 +16,20 @@ public static class Cli
     internal const int ExitApplied = 0;
     internal const int ExitRejected = 1;
     internal const int ExitInvalidUsage = 2;
+    internal const int ExitBackendUnavailable = 3;
 
     public static int Run(string[] args, TextWriter stdout, TextWriter stderr)
-        => RunAsync(args, stdout, stderr, CancellationToken.None).GetAwaiter().GetResult();
+        => RunAsync(args, stdout, stderr, CancellationToken.None, BackendOptions.Native).GetAwaiter().GetResult();
 
     internal static async Task<int> RunAsync(
         string[] args,
         TextWriter stdout,
         TextWriter stderr,
-        CancellationToken ct)
+        CancellationToken ct,
+        BackendOptions? backend = null)
     {
+        backend ??= BackendOptions.Native;
+
         ArgumentNullException.ThrowIfNull(args);
         ArgumentNullException.ThrowIfNull(stdout);
         ArgumentNullException.ThrowIfNull(stderr);
@@ -39,8 +43,8 @@ public static class Cli
         return verb switch
         {
             "help" => Help(stdout),
-            "apply" => await Apply(rest, stdout, stderr, ct).ConfigureAwait(false),
-            "query" => await Query(rest, stdout, stderr, ct).ConfigureAwait(false),
+            "apply" => await Apply(rest, stdout, stderr, ct, backend).ConfigureAwait(false),
+            "query" => await Query(rest, stdout, stderr, ct, backend).ConfigureAwait(false),
             _ => InvalidUsage(stderr, $"Unknown verb: {verb}"),
         };
     }
@@ -63,7 +67,8 @@ public static class Cli
         string[] args,
         TextWriter stdout,
         TextWriter stderr,
-        CancellationToken ct)
+        CancellationToken ct,
+        BackendOptions backend)
     {
         if (args.Length == 0)
             return InvalidUsage(stderr, "apply requires a command name.");
@@ -81,7 +86,9 @@ public static class Cli
 
         // Per ADR-0016: find the handler, bind the parameters, then let the
         // handler build its command. No command name appears in this file.
-        var session = BuildSession();
+        var session = BuildSession(backend, stderr);
+        if (session is null)
+            return ExitBackendUnavailable;
 
         if (!session.CommandRegistry.TryFind(name, DefaultSchemaVersion, out var handler))
         {
@@ -111,7 +118,8 @@ public static class Cli
         string[] args,
         TextWriter stdout,
         TextWriter stderr,
-        CancellationToken ct)
+        CancellationToken ct,
+        BackendOptions backend)
     {
         if (args.Length == 0)
             return InvalidUsage(stderr, "query requires a query name.");
@@ -128,7 +136,9 @@ public static class Cli
         }
 
         // Per ADR-0016: same three steps as Apply. No query name appears here.
-        var session = BuildSession();
+        var session = BuildSession(backend, stderr);
+        if (session is null)
+            return ExitBackendUnavailable;
 
         if (!session.QueryRegistry.TryFind(name, DefaultSchemaVersion, out var handler))
         {
@@ -185,15 +195,29 @@ public static class Cli
     // CLI, the HTTP host and the canonical replay gate use one set. The CLI has
     // one caller and one command, and it still uses the session, so that each
     // host reaches the engine in the same way (TASK-0034).
-    private static DocumentSession BuildSession()
+    //
+    // The CLI requires the native backend (TASK-0036). When its library does not
+    // load, the CLI writes E-GEOM-BACKEND-INIT and stops before the command, with
+    // the exit code 3. Until TASK-0036 it took the managed backend with no message,
+    // which holds boxes only, and anti-objective 9 refuses that silent fallback.
+    // The one-shot process reclaims the native backend on exit. This choice stays
+    // here, because only a composition root may name Engine.Geometry.Manifold.
+    private static DocumentSession? BuildSession(BackendOptions options, TextWriter stderr)
     {
-        // Native Manifold when its library is loadable, else the managed stub so the
-        // CLI runs on any platform (ADR-0014 section 4). The one-shot process reclaims
-        // the native backend on exit. This choice stays here, because only a
-        // composition root may name Engine.Geometry.Manifold.
-        IGeometryBackend backend = ManifoldGeometryBackend.IsNativeAvailable()
-            ? new ManifoldGeometryBackend()
-            : new InProcessMeshBackend();
+        IGeometryBackend backend;
+        if (options.UseManagedBackend)
+        {
+            backend = new InProcessMeshBackend();
+        }
+        else if (options.IsNativeAvailable())
+        {
+            backend = new ManifoldGeometryBackend();
+        }
+        else
+        {
+            stderr.WriteLine($"{DiagnosticCodes.GeomBackendInit}: {ManifoldGeometryBackend.UnavailableReason()}");
+            return null;
+        }
 
         return new DocumentSession(EngineHosting.CreateDefault(backend));
     }
@@ -202,4 +226,15 @@ public static class Cli
     // version, therefore it asks for version 1. A second version of a command
     // needs a CLI argument; see ADR-0016 "Next".
     private const int DefaultSchemaVersion = 1;
+}
+
+// The backend of the command line. A person has one choice: the native backend,
+// or a stop with E-GEOM-BACKEND-INIT. A test can select the managed backend, and a
+// test can replace the probe to show the stop (TASK-0036). Neither choice is in the
+// usage text, and neither has an argument.
+internal sealed record BackendOptions(bool UseManagedBackend, Func<bool> IsNativeAvailable)
+{
+    public static BackendOptions Native { get; } = new(false, ManifoldGeometryBackend.IsNativeAvailable);
+
+    public static BackendOptions ManagedForTests { get; } = new(true, () => false);
 }
