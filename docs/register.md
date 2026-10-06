@@ -314,6 +314,8 @@ hosts took the managed backend. TASK-0036 found it, and it loads the dependency 
 path as a workaround. The rebuild needs a manual run of the build workflow, which needs a sign-in.
 Exit: the build workflow sets `$ORIGIN` and `@loader_path`, the repository holds the rebuilt package
 with its checksum, and the workaround in `ManifoldGeometryBackend.TryLoadNative` is removed.
+Progress 2026-10-06: TASK-0048 holds the rebuild, with the status `Ready`. It also removes the two manual
+steps of a rebuild, if the owner answers yes to its question Q1.
 
 ## Accepted compromises
 
