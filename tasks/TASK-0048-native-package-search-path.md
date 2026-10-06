@@ -160,3 +160,9 @@ The rebuilt package loads on each runner with no workaround, and the next rebuil
   packaging project, with one dummy file, reproduced it in a minute: an empty `RepositoryBranch` does
   not stop the SDK, which asks git for the branch. `-p:EnableSourceControlManagerQueries=false` gives a
   repository element with the Manifold address and commit only. The pack step uses it now.
+- 2026-10-07: run 37538228336 passed, and git fetched the package from its branch. Its nuspec records
+  the Manifold address and commit `11235e6b…` and no branch. It replaces 3.5.2 in `nuget/`, the project
+  file references 3.5.2.1, and `THIRD-PARTY-NOTICES.md` gives its checksums; on macOS each copy is signed
+  under its own name, so the notices give one row for each distinct file. The two new gate tests, which
+  failed on 3.5.2 (the build path in six files, and the commit `718eab0`), pass. 260 tests pass, and the
+  test output uses the new `manifoldc.dll`.

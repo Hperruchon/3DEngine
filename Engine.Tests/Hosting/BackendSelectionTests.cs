@@ -93,7 +93,9 @@ public class BackendSelectionTests : IClassFixture<WebApplicationFactory<Program
     }
 
     // The version that /schema/backend gives must be the version of the native
-    // package that the project file pins, so that the answer cannot drift.
+    // package that the project file pins, so that the answer cannot drift. The
+    // package can add a fourth part for a rebuild of the same source (3.5.2.1,
+    // TASK-0048); the first three parts are the Manifold version.
     [Fact]
     public void The_Native_Version_Is_The_Version_Of_The_Pinned_Package()
     {
@@ -105,6 +107,6 @@ public class BackendSelectionTests : IClassFixture<WebApplicationFactory<Program
             .Single(e => e.Attribute("Include")?.Value == "Engine.Geometry.Manifold.Native")
             .Attribute("Version")!.Value;
 
-        Assert.Equal(ManifoldGeometryBackend.NativeVersion, pinned);
+        Assert.Equal(ManifoldGeometryBackend.NativeVersion, string.Join('.', pinned.Split('.').Take(3)));
     }
 }
