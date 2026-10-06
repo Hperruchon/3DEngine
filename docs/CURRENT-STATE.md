@@ -1219,3 +1219,50 @@ it necessary, and question Q1 did not include that part. The other findings of R
 New tests: 4. The test list holds 246, up from 242. `dotnet build 3DEngine.sln --no-incremental`
 gives zero errors and zero warnings. Open entries: 14 of 15. New diagnostic codes: none. The next
 codebase review must come before ledger entry v0.47.
+## v0.44 — A host refuses to start without the native backend, and a native test cannot skip in the pipeline (TASK-0036)
+
+Findings E3 and T1 of the codebase review of 2026-09-23, and anti-objective 9, which refuses a silent
+fallback when a capability is absent.
+
+**Each host requires the native backend.** When the library `manifoldc` does not load, `Engine.Cli`
+writes `E-GEOM-BACKEND-INIT` with a sentence that names the library, Manifold 3.5.2 and the platform,
+and stops with exit code 3 before the command. `engine-api-http` builds its engine at the start, writes
+the same, and stops with exit code 3 before it listens. Until now each host took the managed backend
+with no message, and that backend holds boxes only. A test selects the managed backend with an option
+record, `BackendOptions` for the command line and `HostBackendOptions` in the service container of
+the HTTP host. No argument and no setting does.
+
+**The active backend in /schema.** `GET /schema/backend` gives the name and the version of the
+backend that the host composed, `manifold` and `3.5.2`. A test holds the version equal to the
+package that the project file pins.
+
+**A native test cannot skip in the pipeline.** GitHub Actions sets `CI` to `true` on each runner,
+and with that value the attribute of the native tests no longer skips. A smoke test applies two
+boxes, `Translate` and `Subtract` on the native backend through a session.
+
+**Each result was seen before and after.** With the native library hidden from the output folders,
+before the change: the command line applied a box with exit code 0, the HTTP host listened, and with
+`CI=true` the 13 native tests skipped and the run passed. After it: exit code 3 with the message for
+each host, and with `CI=true` 7 native tests failed and none skipped.
+
+**The native backend had never loaded on Linux and macOS.** The first pipeline run of this task was red
+on both: the hosts stopped with `E-GEOM-BACKEND-INIT`. The package stores the build folder of a
+runner, such as `/home/runner/work/3DEngine/3DEngine/build/src`, as the search path of `libmanifold`
+in `libmanifoldc`, and not `$ORIGIN` or `@loader_path`, so the system loader did not find the
+dependency. Until now the native tests skipped there, the hosts took the managed backend, and each run
+was green. The backend now loads the dependency first by its full path, and the run after it was green
+on the three runners with no native test skipped. Register entry R-0035 holds the rebuild of the
+package, which is the correct end state.
+
+**The registry.** `E-GEOM-BACKEND-INIT` moved from the reserved codes to the raised codes of
+`docs/diagnostics.md`, with the same name and meaning. The reserve holds one code, and the budget of
+`DiagnosticsReserveGateTests` is one; with the reserved row put back, the gate failed. The three places
+that read ADR-0014 as a rule for a fallback agree with the code, and the comment of `EngineHost.cs`
+that cited the clamp removed in v0.17 is corrected (a part of finding C1).
+
+Not done, and why: a platform with no payload, such as `win-arm64`, `linux-arm64` or `osx-x64`, now
+cannot start a host. That is the honest result until register entry R-0020 decides the platforms.
+
+New tests: 12. The test list holds 258, up from 246. `dotnet build 3DEngine.sln --no-incremental`
+gives zero errors and zero warnings. New register entry: R-0035. Open entries: 15 of 15, the limit.
+New diagnostic codes: none; one code moved from reserved to raised. The next codebase review must come before ledger entry v0.47.

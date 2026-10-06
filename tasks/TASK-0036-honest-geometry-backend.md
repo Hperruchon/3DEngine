@@ -1,7 +1,7 @@
 ---
 id: 0036
 title: A host refuses to start without the native backend, and a native test cannot skip in the pipeline
-status: Active
+status: Done
 phase: P0.15
 opened: 2026-09-25
 depends-on: [0034]
@@ -105,16 +105,16 @@ native tests ran.
 
 ## Acceptance criteria
 
-- [ ] With the native library hidden from the output folder, `Engine.Cli` and `Engine.Api.Http` each
+- [x] With the native library hidden from the output folder, `Engine.Cli` and `Engine.Api.Http` each
       stop with the message of scope item 1 and a non-zero exit code.
-- [ ] With `CI=true` and the library hidden, a native test fails. Verified by injection, and the
+- [x] With `CI=true` and the library hidden, a native test fails. Verified by injection, and the
       Outcome block records the result.
-- [ ] `GET /schema/backend` gives the name and the version of the active backend.
-- [ ] The smoke test of scope item 5 passes on each runner.
-- [ ] The refusal gives `E-GEOM-BACKEND-INIT`, and `DiagnosticsReserveGateTests` passes with the
+- [x] `GET /schema/backend` gives the name and the version of the active backend.
+- [x] The smoke test of scope item 5 passes on each runner.
+- [x] The refusal gives `E-GEOM-BACKEND-INIT`, and `DiagnosticsReserveGateTests` passes with the
       code in the raised list.
-- [ ] A clean build (`--no-incremental`) gives zero errors and zero warnings.
-- [ ] Continuous integration passes on `ubuntu-latest`, `windows-latest` and `macos-latest`.
+- [x] A clean build (`--no-incremental`) gives zero errors and zero warnings.
+- [x] Continuous integration passes on `ubuntu-latest`, `windows-latest` and `macos-latest`.
 
 ## Notes for the implementer
 
@@ -127,6 +127,40 @@ native tests ran.
 - **The reserve.** `docs/diagnostics.md` says that a later phase that raises a reserved code "must
   state that it does so". This task states it. The reserve then holds one code, so lower the budget
   in `DiagnosticsReserveGateTests` to one in the same commit.
+
+## Outcome
+
+Status: Done · v0.44 · the commit that carries this block.
+
+With `CI=true` and the native library hidden from the output folder of the tests, 7 of the 13 native
+tests failed and none skipped. Before the change all 13 skipped, and the run passed.
+
+## Method
+
+**Mechanical.** The option records, the exit code 3 in the usage text, the endpoint, the version
+constant, the move of the code in `docs/diagnostics.md`, the budget of the reserve, and the comments.
+
+**Judgement.** A test selects the managed backend with an option record and not with a setting or an
+argument, so that a person cannot select it. The HTTP host builds its engine in `Program.cs` at the
+start, because the host built it at the first request, and a host that waits for a request does not
+"stop before its first command". Both hosts use exit code 3, so that a script reads one meaning. The
+version comes from a constant that a test holds equal to the pinned package, because manifoldc exports no version
+function: a search of the raw bytes of the win-x64 library on 2026-10-06 found 294 `manifold_`
+symbols and none with "version", while the controls `manifold_cube` and `manifold_volume` were found. The attribute reads `CI` and not a variable of its own,
+because GitHub sets `CI` on each runner and a person sets it nowhere.
+
+**Judgement, later.** The first run showed that the native library never loaded on Linux and macOS.
+The backend loads the dependency first by its full path, in place of a rebuild of the package, because
+the rebuild needs a manual run of the build workflow with a sign-in, and this task excludes a native
+build. R-0035 holds the rebuild.
+
+**Weakest.** The workaround relies on the loader of each system: Linux finds a loaded library by its
+name, and macOS by its install name. The run of 2026-10-06 shows both, and a change of the runner image
+can break it before R-0035 is closed. The test of the HTTP stop builds `EngineHost` directly: `WebApplicationFactory` stops
+`Program.cs` at its build and never runs the check that follows it, so only the run on the real
+program shows that part. Six of the 13 native tests pass with the library hidden, because they do not
+call into it; they prove nothing about the library. A runner on which `CI` is not `true` would skip
+again.
 
 ## Progress
 
@@ -155,3 +189,7 @@ native tests ran.
   same under `/Users/runner` on macOS). So the native backend never loaded on those runners, and the
   skip hid it. The backend now loads the dependency first by its full path, and register entry R-0035
   holds the rebuild of the package, which is the correct end state.
+- 2026-10-06: the run after the loader change, 37527244390, was green on the three runners with `CI`
+  set to `true`, so the native tests ran on Linux and macOS for the first time.
+- 2026-10-06: closed. R-0027 has a progress line, R-0035 is new, the roadmap lists P0.15 as shipped,
+  and ledger entry v0.44 records the work.

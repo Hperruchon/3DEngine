@@ -193,6 +193,9 @@ Exit: each finding has a task, or it is corrected, or the owner accepts it and g
 Progress 2026-10-04: the third codebase review finds one part of C1 corrected: `Engine.Api.Http/Program.cs`
 no longer cites the removed clamp. E5, E6, E12, V4, the open part of T2 and the other parts of C1
 stay. P1 costs more, because the snapshot now also holds the session.
+Progress 2026-10-06: TASK-0036 corrected the comment of `Engine.Api.Http/EngineHost.cs` that cited the
+removed clamp, which is the last comment part of C1 (also listed in E24 of R-0033). The empty markers
+and the flags that nothing reads stay.
 
 ### R-0028 · Nine new findings in the engine and the hosts have no task
 - class: debt
