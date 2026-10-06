@@ -127,3 +127,6 @@ The rebuilt package loads on each runner with no workaround, and the next rebuil
   Linux and on macOS, Windows built, and the pack job did not run. The public annotation said only
   "exit code 1", so the check now writes each failure as an `::error` line. The second form adds the
   flags of scope item 1.
+- 2026-10-06: a correction. The line above says that the check writes each failure as an `::error`
+  line. Commit `fc0102e` did not hold that change: the script that made it failed, and the next
+  command of the shell ran anyway. This commit adds the `::error` lines.

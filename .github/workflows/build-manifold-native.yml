@@ -167,7 +167,8 @@ jobs:
       # path of libmanifold in libmanifoldc, so the library loaded on no other
       # computer (register entry R-0035, TASK-0048). This step fails on that form:
       # no path of the build machine, a relative search path, and a dependency that
-      # the system tool resolves inside the staging folder.
+      # the system tool resolves inside the staging folder. Each failure is also an
+      # ::error line, so that a person with no sign-in reads it in the annotations.
       - name: Check that the libraries find each other in their own folder
         if: runner.os != 'Windows'
         shell: bash
@@ -176,21 +177,21 @@ jobs:
           failed=0
           for f in staging/*; do
             if grep -a -q -E '/(home|Users)/runner/' "$f"; then
-              echo "FAIL: $f holds a path of the build machine:"
-              grep -a -o -E '/(home|Users)/runner/[^[:cntrl:]]*' "$f" | sort -u | head -5
+              path=$(grep -a -o -E '/(home|Users)/runner/[^[:cntrl:]]*' "$f" | sort -u | head -1)
+              echo "::error title=Native build ($RUNNER_OS)::$f holds the path of the build machine $path"
               failed=1
             fi
           done
           if [ "$RUNNER_OS" = "Linux" ]; then
             readelf -d staging/libmanifoldc.so | grep -E 'RPATH|RUNPATH' || true
             readelf -d staging/libmanifoldc.so | grep -E 'RPATH|RUNPATH' | grep -q 'ORIGIN' \
-              || { echo "FAIL: libmanifoldc.so has no search path with \$ORIGIN"; failed=1; }
+              || { echo "::error title=Native build ($RUNNER_OS)::libmanifoldc.so has no search path with \$ORIGIN"; failed=1; }
             ldd staging/libmanifoldc.so | tee /dev/stderr | grep 'libmanifold.so' | grep -q "$PWD/staging/" \
-              || { echo "FAIL: ldd does not resolve libmanifold inside staging/"; failed=1; }
+              || { echo "::error title=Native build ($RUNNER_OS)::ldd does not resolve libmanifold inside staging/"; failed=1; }
           else
             otool -l staging/libmanifoldc.dylib | grep -A2 LC_RPATH || true
             otool -l staging/libmanifoldc.dylib | grep -A2 LC_RPATH | grep -q '@loader_path' \
-              || { echo "FAIL: libmanifoldc.dylib has no LC_RPATH with @loader_path"; failed=1; }
+              || { echo "::error title=Native build ($RUNNER_OS)::libmanifoldc.dylib has no LC_RPATH with @loader_path"; failed=1; }
             otool -L staging/libmanifoldc.dylib
           fi
           exit $failed
