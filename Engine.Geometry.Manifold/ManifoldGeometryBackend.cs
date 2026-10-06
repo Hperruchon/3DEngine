@@ -51,18 +51,64 @@ public sealed class ManifoldGeometryBackend
     {
         try
         {
-            if (NativeLibrary.TryLoad(
-                    NativeLibraryName, typeof(ManifoldGeometryBackend).Assembly, null, out var handle))
-            {
-                NativeLibrary.Free(handle);
-                return true;
-            }
+            return TryLoadNative(out _);
         }
         catch
         {
             // Treat any probe failure as "unavailable".
+            return false;
         }
-        return false;
+    }
+
+    // Each P/Invoke of this assembly that names manifoldc goes through TryLoadNative.
+    static ManifoldGeometryBackend()
+    {
+        NativeLibrary.SetDllImportResolver(
+            typeof(ManifoldGeometryBackend).Assembly,
+            (name, _, _) => name == NativeLibraryName && TryLoadNative(out var handle) ? handle : 0);
+    }
+
+    // The package of 2026-09 stores, in libmanifoldc on Linux and on macOS, the search
+    // path of the build machine for its dependency libmanifold
+    // (/home/runner/work/3DEngine/3DEngine/build/src), and not $ORIGIN or @loader_path.
+    // On another computer the system loader therefore does not find libmanifold, and
+    // libmanifoldc does not load. Until TASK-0036 the hosts then took the managed
+    // backend and the native tests skipped, so no run showed it. This method loads the
+    // dependency first by its full path, so that the loader finds it among the loaded
+    // libraries by its name. A rebuild of the package with $ORIGIN and @loader_path is
+    // the correct end state (register entry R-0035). Windows searches the folder of
+    // the library and needs no help.
+    private static bool TryLoadNative(out nint handle)
+    {
+        var (library, dependency) =
+            OperatingSystem.IsWindows() ? ("manifoldc.dll", "manifold.dll")
+            : OperatingSystem.IsMacOS() ? ("libmanifoldc.dylib", "libmanifold.3.dylib")
+            : ("libmanifoldc.so", "libmanifold.so.3");
+
+        foreach (var directory in NativeDirectories())
+        {
+            var path = Path.Combine(directory, library);
+            if (!File.Exists(path))
+                continue;
+
+            var dependencyPath = Path.Combine(directory, dependency);
+            if (File.Exists(dependencyPath))
+                NativeLibrary.TryLoad(dependencyPath, out _);
+
+            if (NativeLibrary.TryLoad(path, out handle))
+                return true;
+        }
+
+        return NativeLibrary.TryLoad(
+            NativeLibraryName, typeof(ManifoldGeometryBackend).Assembly, null, out handle);
+    }
+
+    // The folder of a published program, and the folder of the package for this
+    // platform under a program that a build or a test runs.
+    private static IEnumerable<string> NativeDirectories()
+    {
+        yield return AppContext.BaseDirectory;
+        yield return Path.Combine(AppContext.BaseDirectory, "runtimes", RuntimeInformation.RuntimeIdentifier, "native");
     }
 
     // The sentence that a host gives when the native library does not load: the library,

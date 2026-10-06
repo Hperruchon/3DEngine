@@ -148,3 +148,10 @@ native tests ran.
   gate is one: with the reserved row put back, the gate failed with "2 and the budget is 1". The three
   places that read ADR-0014 as a rule for a fallback agree with the code. The comment of
   `EngineHost.cs` that cited the removed clamp of v0.17 is corrected too (a part of finding C1).
+- 2026-10-06: the first pipeline run, 37526197179, was green on Windows and red on Linux and macOS:
+  the native library did not load there. The hosts stopped with `E-GEOM-BACKEND-INIT`, and the native
+  tests failed. The cause is in the package: `libmanifoldc` stores the build folder of the runner as
+  the search path of `libmanifold` (`/home/runner/work/3DEngine/3DEngine/build/src` on Linux, the
+  same under `/Users/runner` on macOS). So the native backend never loaded on those runners, and the
+  skip hid it. The backend now loads the dependency first by its full path, and register entry R-0035
+  holds the rebuild of the package, which is the correct end state.
