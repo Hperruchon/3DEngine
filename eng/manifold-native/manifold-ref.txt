@@ -1,0 +1,12 @@
+# The pin of the native Manifold build (TASK-0048).
+#
+# .github/workflows/build-manifold-native.yml reads this file. A push that changes
+# it, or that changes the workflow, starts a rebuild, and the pack job pushes the
+# package to the branch native-package/<package_version>. Then copy the package
+# into nuget/ and record its checksums in THIRD-PARTY-NOTICES.md.
+#
+# manifold_ref must be a double-precision release of Manifold (TASK-0012 section 2).
+# package_version must be new for each rebuild, because each computer keeps an
+# extracted package in its NuGet cache by its version.
+manifold_ref=v3.5.2
+package_version=3.5.2.1

@@ -1,7 +1,7 @@
 ---
 id: 0048
 title: The native package finds its own dependency on each platform, and a commit rebuilds it with no manual step
-status: Ready
+status: Active
 phase: governance
 opened: 2026-10-06
 depends-on: [0036]
@@ -118,3 +118,8 @@ The rebuilt package loads on each runner with no workaround, and the next rebuil
 ## Progress
 
 - 2026-10-06: the task is open, prepared on the request of the owner. Question Q1 waits for an answer.
+- 2026-10-06: the owner answered yes to question Q1: the pack job may push the package to a branch.
+- 2026-10-06: the first form of the workflow: the pin file, a push trigger on the pin file and on the
+  workflow, a job that reads the pin, the check of scope item 2, and the push of the package to its
+  branch. The flags of scope item 1 are absent on purpose, so that the check must fail on Linux and
+  macOS on this push.

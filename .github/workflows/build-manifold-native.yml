@@ -4,33 +4,70 @@ name: Build Manifold native
 # serial (MANIFOLD_PAR=NONE, no TBB) per ADR-0014 §3, then packs a single multi-RID
 # NuGet (runtimes/<rid>/native/) per ADR-0014 §5 / TASK-0012 §6.
 #
-# Manual-only (workflow_dispatch): rerun when bumping the pinned Manifold version.
-# Does NOT run on push and does NOT touch the build-and-test gate in ci.yml.
+# Since TASK-0048 a rebuild needs no manual step. A push that changes
+# eng/manifold-native/manifold-ref.txt, or this file, starts the workflow, and the
+# pin file gives the Manifold ref and the package version. The pack job pushes the
+# package to the branch native-package/<version>, so a session fetches it with git
+# and no sign-in. Then copy it into nuget/ and record its checksums in
+# THIRD-PARTY-NOTICES.md. workflow_dispatch stays, and its inputs replace the pin.
 #
-# This workflow has executed. The repository holds its output in nuget/.
-# Confirm each item before a rerun:
-#   1. Default `manifold_ref` v3.5.2 is a confirmed double-precision release (TASK-0012 §2); bump when upgrading.
-#   2. The native libs land where the "Stage native libs" step looks (adjust the find).
-#   3. The package id / feed (TASK-0012 §6). Publish step is left disabled.
+# The workflow does NOT touch the build-and-test gate in ci.yml. Publish to a feed
+# stays disabled (TASK-0012 §6).
 
 on:
+  push:
+    paths:
+      - eng/manifold-native/manifold-ref.txt
+      - .github/workflows/build-manifold-native.yml
   workflow_dispatch:
     inputs:
       manifold_ref:
-        description: "Manifold git ref (tag or SHA). MUST be a double-precision release (TASK-0012 §2)."
-        required: true
-        default: "v3.5.2"
+        description: "Manifold git ref (tag or SHA). Empty: the pin file. MUST be a double-precision release (TASK-0012 §2)."
+        required: false
+        default: ""
       package_version:
-        description: "NuGet package version to produce (tracks the Manifold ref)."
-        required: true
-        default: "3.5.2"
+        description: "NuGet package version to produce. Empty: the pin file."
+        required: false
+        default: ""
 
+# Each job reads only, except the pack job, which pushes the package to a branch
+# (the owner accepted question Q1 of TASK-0048 on 2026-10-06). The build jobs
+# compile third-party source and keep read access only.
 permissions:
   contents: read
 
 jobs:
+  pin:
+    name: Read the pin
+    runs-on: ubuntu-latest
+    outputs:
+      manifold_ref: ${{ steps.pin.outputs.manifold_ref }}
+      package_version: ${{ steps.pin.outputs.package_version }}
+    steps:
+      - name: Checkout (this repo, for the pin file)
+        uses: actions/checkout@v4
+
+      - name: Read eng/manifold-native/manifold-ref.txt
+        id: pin
+        shell: bash
+        env:
+          INPUT_REF: ${{ inputs.manifold_ref }}
+          INPUT_VERSION: ${{ inputs.package_version }}
+        run: |
+          set -euo pipefail
+          file=eng/manifold-native/manifold-ref.txt
+          ref=$(grep -E '^manifold_ref=' "$file" | head -1 | cut -d= -f2- | tr -d '[:space:]')
+          version=$(grep -E '^package_version=' "$file" | head -1 | cut -d= -f2- | tr -d '[:space:]')
+          [ -n "${INPUT_REF:-}" ] && ref="$INPUT_REF"
+          [ -n "${INPUT_VERSION:-}" ] && version="$INPUT_VERSION"
+          [ -n "$ref" ] && [ -n "$version" ] || { echo "FAIL: the pin file gives no manifold_ref or no package_version"; exit 1; }
+          echo "manifold_ref=$ref" >> "$GITHUB_OUTPUT"
+          echo "package_version=$version" >> "$GITHUB_OUTPUT"
+          echo "manifold_ref=$ref package_version=$version"
+
   build:
     name: manifoldc (${{ matrix.rid }})
+    needs: pin
     strategy:
       fail-fast: false
       matrix:
@@ -44,11 +81,11 @@ jobs:
     runs-on: ${{ matrix.os }}
     continue-on-error: ${{ matrix.optional }}
     steps:
-      - name: Checkout Manifold @ ${{ inputs.manifold_ref }}
+      - name: Checkout Manifold @ ${{ needs.pin.outputs.manifold_ref }}
         uses: actions/checkout@v4
         with:
           repository: elalish/manifold
-          ref: ${{ inputs.manifold_ref }}
+          ref: ${{ needs.pin.outputs.manifold_ref }}
           submodules: recursive
 
       # CROSS_SECTION must stay ON: MANIFOLD_CBIND is a cmake_dependent_option forced
@@ -115,6 +152,38 @@ jobs:
           # Guard requires manifoldc specifically (not just the core lib) — that is the payload.
           ls staging | grep -qi 'manifoldc' || { echo 'ERROR: manifoldc not built. All shared libs under build/:'; find build -type f \( -name '*.so*' -o -name '*.dll' -o -name '*.dylib' \) -print; exit 1; }
 
+      # The package of 2026-09 stored the build folder of the runner as the search
+      # path of libmanifold in libmanifoldc, so the library loaded on no other
+      # computer (register entry R-0035, TASK-0048). This step fails on that form:
+      # no path of the build machine, a relative search path, and a dependency that
+      # the system tool resolves inside the staging folder.
+      - name: Check that the libraries find each other in their own folder
+        if: runner.os != 'Windows'
+        shell: bash
+        run: |
+          set -euo pipefail
+          failed=0
+          for f in staging/*; do
+            if grep -a -q -E '/(home|Users)/runner/' "$f"; then
+              echo "FAIL: $f holds a path of the build machine:"
+              grep -a -o -E '/(home|Users)/runner/[^[:cntrl:]]*' "$f" | sort -u | head -5
+              failed=1
+            fi
+          done
+          if [ "$RUNNER_OS" = "Linux" ]; then
+            readelf -d staging/libmanifoldc.so | grep -E 'RPATH|RUNPATH' || true
+            readelf -d staging/libmanifoldc.so | grep -E 'RPATH|RUNPATH' | grep -q 'ORIGIN' \
+              || { echo "FAIL: libmanifoldc.so has no search path with \$ORIGIN"; failed=1; }
+            ldd staging/libmanifoldc.so | tee /dev/stderr | grep 'libmanifold.so' | grep -q "$PWD/staging/" \
+              || { echo "FAIL: ldd does not resolve libmanifold inside staging/"; failed=1; }
+          else
+            otool -l staging/libmanifoldc.dylib | grep -A2 LC_RPATH || true
+            otool -l staging/libmanifoldc.dylib | grep -A2 LC_RPATH | grep -q '@loader_path' \
+              || { echo "FAIL: libmanifoldc.dylib has no LC_RPATH with @loader_path"; failed=1; }
+            otool -L staging/libmanifoldc.dylib
+          fi
+          exit $failed
+
       - name: Upload native-${{ matrix.rid }}
         uses: actions/upload-artifact@v4
         with:
@@ -124,8 +193,10 @@ jobs:
 
   pack:
     name: Pack multi-RID NuGet
-    needs: build
+    needs: [pin, build]
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     steps:
       - name: Checkout (this repo, for the packaging project)
         uses: actions/checkout@v4
@@ -161,15 +232,37 @@ jobs:
         run: >
           dotnet pack eng/manifold-native/Engine.Geometry.Manifold.Native.csproj
           -c Release
-          -p:Version=${{ inputs.package_version }}
+          -p:Version=${{ needs.pin.outputs.package_version }}
           -o nupkg
 
       - name: Upload nupkg
         uses: actions/upload-artifact@v4
         with:
-          name: Engine.Geometry.Manifold.Native.${{ inputs.package_version }}
+          name: Engine.Geometry.Manifold.Native.${{ needs.pin.outputs.package_version }}
           path: nupkg/*.nupkg
           if-no-files-found: error
+
+      # A branch with one commit that holds only the package, so that a session
+      # fetches it with git and no sign-in (TASK-0048). A push with the token of
+      # the workflow starts no other workflow, so ci.yml does not run on it.
+      - name: Push the package to native-package/<version>
+        shell: bash
+        env:
+          VERSION: ${{ needs.pin.outputs.package_version }}
+          SOURCE_SHA: ${{ github.sha }}
+        run: |
+          set -euo pipefail
+          branch="native-package/$VERSION"
+          mkdir out && cp nupkg/*.nupkg out/
+          git checkout --orphan "$branch"
+          git rm -rf --quiet .
+          git clean -fdx --quiet --exclude=out
+          mv out/*.nupkg . && rmdir out
+          git add ./*.nupkg
+          git -c user.name="github-actions[bot]" -c user.email="41898282+github-actions[bot]@users.noreply.github.com" \
+            commit --quiet -m "The native package $VERSION, built from $SOURCE_SHA"
+          git push --force origin "HEAD:refs/heads/$branch"
+          echo "pushed $branch"
 
       # Publish is intentionally disabled until the feed is chosen (TASK-0012 §6).
       # - name: Push to feed
