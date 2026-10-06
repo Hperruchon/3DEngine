@@ -138,3 +138,13 @@ native tests ran.
 - 2026-10-06: scope items 4 and 5. With `CI=true` the attribute no longer skips: with the library
   hidden, 7 of the 13 native tests failed and none skipped. A smoke test applies `CreateBox` two
   times, `Translate` and `Subtract` on the native backend through a session.
+- 2026-10-06: scope items 1, 2, 3 and 6. Each host requires the native backend. With the library
+  hidden, `engine apply CreateBox` writes `E-GEOM-BACKEND-INIT` and a sentence that names the library
+  `manifoldc`, Manifold 3.5.2 and the platform `win-x64`, and stops with exit code 3; `engine-api-http`
+  writes the same and stops with exit code 3 before it listens. A test selects the managed backend
+  with an option record (`BackendOptions`, `HostBackendOptions`), and no argument does.
+  `GET /schema/backend` gives `manifold` and `3.5.2`, and a test holds the version equal to the
+  pinned package. The code moved from the reserve to the raised codes, and the budget of the reserve
+  gate is one: with the reserved row put back, the gate failed with "2 and the budget is 1". The three
+  places that read ADR-0014 as a rule for a fallback agree with the code. The comment of
+  `EngineHost.cs` that cited the removed clamp of v0.17 is corrected too (a part of finding C1).

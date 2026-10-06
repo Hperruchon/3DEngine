@@ -18,9 +18,11 @@ namespace Engine.Geometry.Manifold;
 // Lifecycle (ADR-0014 §2): owns native handles; Dispose() releases them. Native object
 // + its caller-allocated buffer are owned as a unit by ManifoldSolidHandle.
 //
-// Host-wired in P7b: the CLI and HTTP hosts select this backend when the native
-// manifoldc library is loadable (IsNativeAvailable), else fall back to the managed
-// InProcessMeshBackend so the engine runs on any platform. Native failures still throw
+// Host-wired in P7b. Since TASK-0036 each host requires this backend: when the native
+// library does not load, the host stops with E-GEOM-BACKEND-INIT and the sentence of
+// UnavailableReason, and it does not take the managed backend, which holds boxes only
+// (anti-objective 9 refuses a silent fallback). Only a test selects the managed backend,
+// with an explicit option of the host. Native failures still throw
 // plain exceptions rather than E-GEOM-* codes (TASK-0012 §5, pending). It mirrors
 // InProcessMeshBackend's exception contract (InvalidOperationException on duplicate,
 // KeyNotFoundException on missing) so the existing handlers behave the same.
@@ -36,16 +38,21 @@ public sealed class ManifoldGeometryBackend
 
     public T? TryGet<T>() where T : class => this as T;
 
-    // Whether the native manifoldc library can be loaded on this platform/RID. Hosts use
-    // this to select Manifold when the payload is present and fall back to the managed
-    // stub otherwise, so the engine runs everywhere. The canonical replay gate stays on
-    // the stub, so this platform-dependent selection does not affect core determinism.
+    // The name of the native library and the version of Manifold that it is built from.
+    // The version is the version of the package Engine.Geometry.Manifold.Native in the
+    // project file, and a test holds the two equal. /schema/backend gives both.
+    public const string NativeLibraryName = "manifoldc";
+    public const string NativeVersion = "3.5.2";
+
+    // Whether the native library can be loaded on this platform. A host that cannot load
+    // it stops (TASK-0036). The canonical replay gate stays on the managed backend, so
+    // this platform-dependent check does not affect core determinism.
     public static bool IsNativeAvailable()
     {
         try
         {
             if (NativeLibrary.TryLoad(
-                    "manifoldc", typeof(ManifoldGeometryBackend).Assembly, null, out var handle))
+                    NativeLibraryName, typeof(ManifoldGeometryBackend).Assembly, null, out var handle))
             {
                 NativeLibrary.Free(handle);
                 return true;
@@ -57,6 +64,15 @@ public sealed class ManifoldGeometryBackend
         }
         return false;
     }
+
+    // The sentence that a host gives when the native library does not load: the library,
+    // the platform and the platforms that have a payload (register entry R-0020 holds the
+    // others). The host adds the code E-GEOM-BACKEND-INIT.
+    public static string UnavailableReason()
+        => $"The native geometry library '{NativeLibraryName}' (Manifold {NativeVersion}) did not load "
+         + $"on the platform {RuntimeInformation.RuntimeIdentifier}. The native package holds the "
+         + "platforms win-x64, linux-x64 and osx-arm64. The managed backend holds boxes only and "
+         + "cannot move or cut a solid, therefore the host does not start with it.";
 
     // IMeshOps. Builds a native, origin-centered Manifold cube and stores it under the
     // handle. Throws on duplicate (mirrors the stub) — the bus derives handles from
