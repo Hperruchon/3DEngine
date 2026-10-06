@@ -1,7 +1,7 @@
 ---
 id: 0036
 title: A host refuses to start without the native backend, and a native test cannot skip in the pipeline
-status: Ready
+status: Active
 phase: P0.15
 opened: 2026-09-25
 depends-on: [0034]
@@ -19,9 +19,12 @@ writes:
     - Engine.Core/Hosting/EngineHosting.cs
     - Engine.Geometry.Manifold/ManifoldGeometryBackend.cs
     - Engine.Tests/**
+    - Engine.Tests/Governance/DiagnosticsReserveGateTests.cs
     - docs/diagnostics.md
     - docs/glossary.md
     - docs/CURRENT-STATE.md
+    - docs/register.md
+    - docs/roadmap.md
   forbid:
     - Engine.Contracts/**
     - Engine.Core/Commands/**
@@ -124,3 +127,14 @@ native tests ran.
 - **The reserve.** `docs/diagnostics.md` says that a later phase that raises a reserved code "must
   state that it does so". This task states it. The reserve then holds one code, so lower the budget
   in `DiagnosticsReserveGateTests` to one in the same commit.
+
+## Progress
+
+- 2026-10-06: the state before the change, with the native library hidden from the three output
+  folders. `engine apply CreateBox` gave `Applied` and exit code 0 with the managed backend and no
+  message. `engine-api-http` started and listened. With `CI=true` the 13 native tests skipped, and
+  the run passed. The gate file `DiagnosticsReserveGateTests.cs` joins the write set by its exact
+  name (TASK-0047), with `docs/register.md` and `docs/roadmap.md` for the close.
+- 2026-10-06: scope items 4 and 5. With `CI=true` the attribute no longer skips: with the library
+  hidden, 7 of the 13 native tests failed and none skipped. A smoke test applies `CreateBox` two
+  times, `Translate` and `Subtract` on the native backend through a session.
