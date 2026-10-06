@@ -81,6 +81,10 @@ The rebuilt package loads on each runner with no workaround, and the next rebuil
 6. **The records of the binary.** The new package replaces the old one in `nuget/`, and
    `THIRD-PARTY-NOTICES.md` gives each new checksum. `NativePackageGateTests` reads the new file name,
    and a new test fails when a native binary of the package holds `/home/runner/` or `/Users/runner/`.
+8. **The source commit (R-0018).** The pin job resolves the Manifold reference to its commit, the build
+   jobs check out that commit, and the pack step records it in the nuspec with the Manifold
+   repository. A gate test holds the nuspec commit equal to the commit of `THIRD-PARTY-NOTICES.md`,
+   section 1.1. Register entry R-0018 asks for exactly this rebuild, so one rebuild closes two entries.
 7. **No workaround.** `TryLoadNative` loses the load of the dependency, and its comment and R-0035
    close. The pipeline then passes on the three runners with `CI` equal to `true`.
 
@@ -135,3 +139,6 @@ The rebuilt package loads on each runner with no workaround, and the next rebuil
   `readelf`, `ldd` or `otool` into `grep -q` can break and read as a failure. Each tool now writes into
   a variable first. The first run is not affected: its failure came from the build path, which a
   check with no pipe found.
+- 2026-10-06: scope item 8 joins the task. Register entry R-0018 asks the next build to record the
+  Manifold commit and not a commit of this repository, and the rebuild of this task is that build.
+  The tag `v3.5.2` resolves to `11235e6b8ebea2dbed8aec4285685aafd3d95667`, the commit of the notices.

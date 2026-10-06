@@ -43,6 +43,7 @@ jobs:
     outputs:
       manifold_ref: ${{ steps.pin.outputs.manifold_ref }}
       package_version: ${{ steps.pin.outputs.package_version }}
+      manifold_commit: ${{ steps.pin.outputs.manifold_commit }}
     steps:
       - name: Checkout (this repo, for the pin file)
         uses: actions/checkout@v4
@@ -61,6 +62,18 @@ jobs:
           [ -n "${INPUT_REF:-}" ] && ref="$INPUT_REF"
           [ -n "${INPUT_VERSION:-}" ] && version="$INPUT_VERSION"
           [ -n "$ref" ] && [ -n "$version" ] || { echo "FAIL: the pin file gives no manifold_ref or no package_version"; exit 1; }
+          # The exact commit of the reference. The build jobs check it out, and the
+          # pack step records it in the nuspec (register entry R-0018: the package
+          # of 2026-09 recorded a commit of this repository).
+          if [[ "$ref" =~ ^[0-9a-f]{40}$ ]]; then
+            commit="$ref"
+          else
+            remote=$(git ls-remote https://github.com/elalish/manifold "refs/tags/$ref" "refs/tags/$ref^{}" "refs/heads/$ref")
+            commit=$(grep -F "refs/tags/$ref^{}" <<<"$remote" | cut -f1 || true)
+            [ -n "$commit" ] || commit=$(head -1 <<<"$remote" | cut -f1)
+          fi
+          [ -n "$commit" ] || { echo "::error title=Native build::the reference $ref names no Manifold commit"; exit 1; }
+          echo "manifold_commit=$commit" >> "$GITHUB_OUTPUT"
           echo "manifold_ref=$ref" >> "$GITHUB_OUTPUT"
           echo "package_version=$version" >> "$GITHUB_OUTPUT"
           echo "manifold_ref=$ref package_version=$version"
@@ -85,7 +98,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: elalish/manifold
-          ref: ${{ needs.pin.outputs.manifold_ref }}
+          ref: ${{ needs.pin.outputs.manifold_commit }}
           submodules: recursive
 
       # CROSS_SECTION must stay ON: MANIFOLD_CBIND is a cmake_dependent_option forced
@@ -255,6 +268,10 @@ jobs:
           dotnet pack eng/manifold-native/Engine.Geometry.Manifold.Native.csproj
           -c Release
           -p:Version=${{ needs.pin.outputs.package_version }}
+          -p:RepositoryType=git
+          -p:RepositoryUrl=https://github.com/elalish/manifold
+          -p:RepositoryCommit=${{ needs.pin.outputs.manifold_commit }}
+          -p:PublishRepositoryUrl=true
           -o nupkg
 
       - name: Upload nupkg
@@ -272,6 +289,7 @@ jobs:
         env:
           VERSION: ${{ needs.pin.outputs.package_version }}
           SOURCE_SHA: ${{ github.sha }}
+          MANIFOLD_COMMIT: ${{ needs.pin.outputs.manifold_commit }}
         run: |
           set -euo pipefail
           branch="native-package/$VERSION"
@@ -282,7 +300,7 @@ jobs:
           mv out/*.nupkg . && rmdir out
           git add ./*.nupkg
           git -c user.name="github-actions[bot]" -c user.email="41898282+github-actions[bot]@users.noreply.github.com" \
-            commit --quiet -m "The native package $VERSION, built from $SOURCE_SHA"
+            commit --quiet -m "The native package $VERSION, Manifold $MANIFOLD_COMMIT, built by $SOURCE_SHA"
           git push --force origin "HEAD:refs/heads/$branch"
           echo "pushed $branch"
 
