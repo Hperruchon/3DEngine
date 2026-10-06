@@ -62,9 +62,9 @@ The rebuilt package loads on each runner with no workaround, and the next rebuil
 
 ## Scope (in)
 
-1. **The search path.** The configure step gives `-DCMAKE_BUILD_WITH_INSTALL_RPATH=ON` and
-   `-DCMAKE_INSTALL_RPATH='$ORIGIN'` on Linux, and `-DCMAKE_BUILD_WITH_INSTALL_RPATH=ON` and
-   `-DCMAKE_INSTALL_RPATH=@loader_path` on macOS.
+1. **The search path.** The configure step gives `-DCMAKE_BUILD_RPATH_USE_ORIGIN=ON` and
+   `-DCMAKE_BUILD_RPATH='$ORIGIN'` on Linux, and the same with `@loader_path` on macOS. The first plan
+   used the install flags, and Manifold's own `CMakeLists.txt` overrides those.
 2. **A check in the build job.** After the build, the job fails when `libmanifoldc` holds a path of the
    build machine, or when it does not hold `$ORIGIN` or `@loader_path`. It also asks the system tool
    (`ldd` on Linux, `otool -L` on macOS) to resolve the dependency in the staging folder.
@@ -142,3 +142,9 @@ The rebuilt package loads on each runner with no workaround, and the next rebuil
 - 2026-10-06: scope item 8 joins the task. Register entry R-0018 asks the next build to record the
   Manifold commit and not a commit of this repository, and the rebuild of this task is that build.
   The tag `v3.5.2` resolves to `11235e6b8ebea2dbed8aec4285685aafd3d95667`, the commit of the notices.
+- 2026-10-06: run 37529508917 of the flags commit failed its check on Linux and macOS, and the
+  annotations now gave each reason in public: the `RUNPATH` and the `LC_RPATH` were still the build
+  folder. Manifold's `CMakeLists.txt` at v3.5.2, lines 255-259, sets `CMAKE_BUILD_WITH_INSTALL_RPATH` to
+  `FALSE` and `CMAKE_INSTALL_RPATH` to an absolute folder as normal variables, which hide the flags of
+  the same name. The configure step now gives `CMAKE_BUILD_RPATH_USE_ORIGIN` and `CMAKE_BUILD_RPATH`,
+  which Manifold does not set.

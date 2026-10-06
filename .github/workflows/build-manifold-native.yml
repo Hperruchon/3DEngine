@@ -123,6 +123,14 @@ jobs:
       # folder of the runner as that search path, and it loaded on no other
       # computer (register entry R-0035, TASK-0048). The single quotes keep
       # $ORIGIN a literal text for CMake.
+      #
+      # Manifold's own CMakeLists.txt (v3.5.2, lines 255-259) sets
+      # CMAKE_BUILD_WITH_INSTALL_RPATH to FALSE and CMAKE_INSTALL_RPATH to an
+      # absolute folder as normal variables, which hide a flag of the same name on
+      # the command line; run 37529508917 showed it. It does not set
+      # CMAKE_BUILD_RPATH_USE_ORIGIN or CMAKE_BUILD_RPATH, so those two flags act:
+      # each search path of the build tree becomes relative to the library, and
+      # the extra entry finds the dependency in the same folder after staging.
       - name: Configure (Linux / macOS)
         if: runner.os != 'Windows'
         shell: bash
@@ -138,8 +146,8 @@ jobs:
             -DMANIFOLD_PAR=OFF \
             -DMANIFOLD_TEST=OFF \
             -DMANIFOLD_DOWNLOADS=ON \
-            -DCMAKE_BUILD_WITH_INSTALL_RPATH=ON \
-            "-DCMAKE_INSTALL_RPATH=$search_path"
+            -DCMAKE_BUILD_RPATH_USE_ORIGIN=ON \
+            "-DCMAKE_BUILD_RPATH=$search_path"
 
       - name: Build
         shell: bash
