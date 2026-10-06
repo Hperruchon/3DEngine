@@ -184,6 +184,27 @@ jobs:
           # Guard requires manifoldc specifically (not just the core lib) — that is the payload.
           ls staging | grep -qi 'manifoldc' || { echo 'ERROR: manifoldc not built. All shared libs under build/:'; find build -type f \( -name '*.so*' -o -name '*.dll' -o -name '*.dylib' \) -print; exit 1; }
 
+      # On macOS, CMAKE_BUILD_RPATH_USE_ORIGIN does not act, so each library keeps an
+      # absolute LC_RPATH of the build folder next to @loader_path; run 37532724996
+      # showed it, while Linux passed. This step removes each absolute entry with
+      # install_name_tool and signs the library again, because on arm64 a changed
+      # library with no valid signature does not load.
+      - name: Remove the absolute search paths (macOS)
+        if: runner.os == 'macOS'
+        shell: bash
+        run: |
+          set -euo pipefail
+          for f in staging/*.dylib; do
+            commands=$(otool -l "$f")
+            paths=$(awk '/cmd LC_RPATH/ { getline; getline; print $2 }' <<<"$commands")
+            for p in $paths; do
+              case "$p" in
+                /*) echo "$f: delete $p"; install_name_tool -delete_rpath "$p" "$f" ;;
+              esac
+            done
+            codesign --force --sign - "$f"
+          done
+
       # The package of 2026-09 stored the build folder of the runner as the search
       # path of libmanifold in libmanifoldc, so the library loaded on no other
       # computer (register entry R-0035, TASK-0048). This step fails on that form:

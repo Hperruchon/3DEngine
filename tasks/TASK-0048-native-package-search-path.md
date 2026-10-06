@@ -148,3 +148,6 @@ The rebuilt package loads on each runner with no workaround, and the next rebuil
   `FALSE` and `CMAKE_INSTALL_RPATH` to an absolute folder as normal variables, which hide the flags of
   the same name. The configure step now gives `CMAKE_BUILD_RPATH_USE_ORIGIN` and `CMAKE_BUILD_RPATH`,
   which Manifold does not set.
+- 2026-10-06: run 37532724996: Linux passed each check, and macOS still held the build folder, with
+  `@loader_path` now present. `CMAKE_BUILD_RPATH_USE_ORIGIN` does not act on macOS, so a step after the
+  staging removes each absolute `LC_RPATH` with `install_name_tool` and signs the library again.
