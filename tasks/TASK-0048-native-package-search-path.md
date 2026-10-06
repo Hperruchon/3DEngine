@@ -156,3 +156,7 @@ The rebuilt package loads on each runner with no workaround, and the next rebuil
   address, and also `branch="refs/heads/native-rebuild-task-2026-10-06"`, a branch of this repository.
   No computer has restored 3.5.2.1 yet, so the pack step now gives an empty `RepositoryBranch`, and
   the same version is built again.
+- 2026-10-07: run 37536428788 passed, and its nuspec still named the branch. A local pack of the
+  packaging project, with one dummy file, reproduced it in a minute: an empty `RepositoryBranch` does
+  not stop the SDK, which asks git for the branch. `-p:EnableSourceControlManagerQueries=false` gives a
+  repository element with the Manifold address and commit only. The pack step uses it now.

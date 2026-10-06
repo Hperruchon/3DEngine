@@ -291,6 +291,10 @@ jobs:
           done
           echo '--- package layout ---'; find "$base/runtimes" -type f
 
+      # The SDK asks git for the commit and the branch of this repository and writes
+      # them into the nuspec (register entry R-0018). With no query to git, the nuspec
+      # holds only the Manifold address and commit that the step gives. A local pack
+      # on 2026-10-07 showed that an empty RepositoryBranch alone does not stop it.
       - name: Pack
         shell: bash
         run: >
@@ -300,7 +304,7 @@ jobs:
           -p:RepositoryType=git
           -p:RepositoryUrl=https://github.com/elalish/manifold
           -p:RepositoryCommit=${{ needs.pin.outputs.manifold_commit }}
-          -p:RepositoryBranch=
+          -p:EnableSourceControlManagerQueries=false
           -p:PublishRepositoryUrl=true
           -o nupkg
 
