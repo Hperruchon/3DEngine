@@ -24,9 +24,17 @@ internal static class ReplayDeterminismFixture
     {
         new NoOpCommand     { CommandId = AlphaCommandId, Echo = "alpha" },
         new CreateBoxCommand{ CommandId = DeltaCommandId, SizeX = 2.0, SizeY = 4.0, SizeZ = 8.0 },
-        new NoOpCommand     { CommandId = BetaCommandId,  Echo = "beta" },
+        // Beta states the version that it saw: two commands are in the log
+        // before it. ADR-0020 makes the version the count of applied commands,
+        // so a replay gives the same answer to that check (TASK-0035). With the
+        // old meaning the version was 3 here, and the replay rejected Beta.
+        new NoOpCommand     { CommandId = BetaCommandId,  Echo = "beta", ExpectedDocumentVersion = 2 },
         new NoOpCommand     { CommandId = GammaCommandId, Echo = "gamma" },
     };
+
+    // The version counts applied commands (ADR-0020): four. Seq counts
+    // events and is a separate counter.
+    public const long ExpectedDocumentVersion = 4;
 
     // Seqs:
     // 1: alpha command.applied
@@ -34,7 +42,6 @@ internal static class ReplayDeterminismFixture
     // 3: delta body.created
     // 4: beta  command.applied
     // 5: gamma command.applied
-    public const long ExpectedDocumentVersion = 5;
 
     public static IReadOnlyList<ExpectedEvent> ExpectedEvents { get; } = new[]
     {

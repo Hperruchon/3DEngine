@@ -219,6 +219,9 @@ Progress 2026-10-04: the third codebase review confirms E9 fixed and E10 fixed i
 of E17 are corrected: the close status, which `docs/diagnostics.md` now gives as 1007, and the
 subscriber that the handshake leaves, which a `finally` now disposes. E7, E11, E13, E14, E16 and
 eleven parts of E17 stay.
+Progress 2026-10-05: TASK-0035 corrected E7 (a replay stops at a divergence and names it), closed E10
+(the version is the count of the log, and no code can set it), and corrected the replay part of E17 (a
+replay applies each entry with no cache). E11, E13, E14, E16 and ten parts of E17 stay.
 
 ### R-0030 · The Vulkan layer continues with a null device and gives unpinned memory to Vulkan
 - class: debt

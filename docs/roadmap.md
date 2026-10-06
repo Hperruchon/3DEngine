@@ -41,6 +41,7 @@ Therefore each approved objective must have a track here.
 - P0.12 — The write-set gate runs in the pipeline and its forbid rule is correct. v0.27, TASK-0026. Track 0 is complete.
 - R1 — The Vulkan code is first-party and uses Vortice.Vulkan 3.2.3. v0.28, TASK-0027, ADR-0017.
 - P0.13 — One serial boundary for commands, queries and snapshots. v0.39, TASK-0034.
+- P0.14 — The version counts applied commands, and a replay rebuilds it. v0.43, TASK-0035, ADR-0020.
 
 ## Track 0 — Foundations
 
@@ -136,8 +137,8 @@ The field `depends-on` of each task file holds the same order. `TaskGovernanceGa
 that each dependency names a task.
 
 Phase R6 gives the first objective that the owner named: create a box, subtract a second box, and
-observe the cut. The nine phases that remain, P0.14 to P0.17 and R2 to R6, give it in 30 to 45
-evenings. That number is the sum of the column "Evenings" for those phases: 7 to 12 for Track 0 and
+observe the cut. The eight phases that remain, P0.15 to P0.17 and R2 to R6, give it in 29 to 43
+evenings. That number is the sum of the column "Evenings" for those phases: 6 to 10 for Track 0 and
 23 to 33 for track R. Correct it when a phase ships or an estimate changes.
 
 ## Not on a track

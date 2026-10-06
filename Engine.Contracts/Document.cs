@@ -8,12 +8,16 @@ public sealed class Document
     public DateTime CreatedAt { get; }
     public DateTime UpdatedAt { get; private set; }
 
-    // Runtime observation version — mirrors the last emitted Seq across ALL events
-    // (applied + rejected + cancelled), not a successful-mutation counter. Per TASK-0001 §Notes.
-    // "Document unchanged" on rejection refers to log + materialized state, not Version.
-    public long Version { get; private set; }
-
     private readonly List<Command> _log = new();
+
+    // The version counts applied commands: it is the count of entries in Log
+    // (ADR-0020). A rejected command and a cancelled command do not change it,
+    // so a replay of the log rebuilds it. Seq, the identity of an event, is a
+    // separate counter that the command bus keeps (ADR-0005), and no code
+    // computes one from the other. The version cannot go back, because no code
+    // can set it (finding E10 of the codebase review of 2026-09-30).
+    public long Version => _log.Count;
+
     public IReadOnlyList<Command> Log => _log;
 
     // Body projection per ADR-0012 §3. The Document holds handles + minimum
@@ -29,16 +33,13 @@ public sealed class Document
         SchemaVersion = schemaVersion;
         CreatedAt = DateTime.UtcNow;
         UpdatedAt = CreatedAt;
-        Version = 0;
     }
 
-    internal void AppendCommand(Command command) => _log.Add(command);
-
-    internal void AddBody(BodyRecord body) => _bodies[body.Handle.Id] = body;
-
-    internal void AdvanceVersion(long newSeq)
+    internal void AppendCommand(Command command)
     {
-        Version = newSeq;
+        _log.Add(command);
         UpdatedAt = DateTime.UtcNow;
     }
+
+    internal void AddBody(BodyRecord body) => _bodies[body.Handle.Id] = body;
 }

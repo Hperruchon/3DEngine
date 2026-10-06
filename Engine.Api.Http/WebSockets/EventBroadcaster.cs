@@ -75,7 +75,7 @@ internal sealed class EventBroadcaster
             }
 
             // Reset path: send a snapshot, drop any client-side derived state.
-            var snapshot = SnapshotProjector.Project(document);
+            var snapshot = SnapshotProjector.Project(document, latestSeq);
             subscriber.EnqueueDuringHandshake(
                 SubscriptionResetMessage.Create(currentDocId, snapshot));
             _subscribers.Add(subscriber);
