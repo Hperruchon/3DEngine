@@ -175,23 +175,33 @@ jobs:
         run: |
           set -euo pipefail
           failed=0
+          # Each tool writes into a variable first, and grep reads the variable. A
+          # pipe into grep -q can close before the tool ends, and with pipefail the
+          # broken pipe then reads as a failed check.
           for f in staging/*; do
             if grep -a -q -E '/(home|Users)/runner/' "$f"; then
-              path=$(grep -a -o -E '/(home|Users)/runner/[^[:cntrl:]]*' "$f" | sort -u | head -1)
-              echo "::error title=Native build ($RUNNER_OS)::$f holds the path of the build machine $path"
+              found=$(grep -a -o -E '/(home|Users)/runner/[^[:cntrl:]]*' "$f" || true)
+              echo "::error title=Native build ($RUNNER_OS)::$f holds the path of the build machine ${found%%$'\n'*}"
               failed=1
             fi
           done
           if [ "$RUNNER_OS" = "Linux" ]; then
-            readelf -d staging/libmanifoldc.so | grep -E 'RPATH|RUNPATH' || true
-            readelf -d staging/libmanifoldc.so | grep -E 'RPATH|RUNPATH' | grep -q 'ORIGIN' \
-              || { echo "::error title=Native build ($RUNNER_OS)::libmanifoldc.so has no search path with \$ORIGIN"; failed=1; }
-            ldd staging/libmanifoldc.so | tee /dev/stderr | grep 'libmanifold.so' | grep -q "$PWD/staging/" \
-              || { echo "::error title=Native build ($RUNNER_OS)::ldd does not resolve libmanifold inside staging/"; failed=1; }
+            dynamic=$(readelf -d staging/libmanifoldc.so)
+            search=$(grep -E 'RPATH|RUNPATH' <<<"$dynamic" || true)
+            echo "search path: $search"
+            grep -q 'ORIGIN' <<<"$search" \
+              || { echo "::error title=Native build ($RUNNER_OS)::libmanifoldc.so has no search path with \$ORIGIN: $search"; failed=1; }
+            resolved=$(ldd staging/libmanifoldc.so || true)
+            echo "$resolved"
+            dependency=$(grep 'libmanifold.so' <<<"$resolved" || true)
+            grep -q "$PWD/staging/" <<<"$dependency" \
+              || { echo "::error title=Native build ($RUNNER_OS)::ldd does not resolve libmanifold inside staging/: $dependency"; failed=1; }
           else
-            otool -l staging/libmanifoldc.dylib | grep -A2 LC_RPATH || true
-            otool -l staging/libmanifoldc.dylib | grep -A2 LC_RPATH | grep -q '@loader_path' \
-              || { echo "::error title=Native build ($RUNNER_OS)::libmanifoldc.dylib has no LC_RPATH with @loader_path"; failed=1; }
+            commands=$(otool -l staging/libmanifoldc.dylib)
+            search=$(grep -A2 LC_RPATH <<<"$commands" || true)
+            echo "$search"
+            grep -q '@loader_path' <<<"$search" \
+              || { echo "::error title=Native build ($RUNNER_OS)::libmanifoldc.dylib has no LC_RPATH with @loader_path: ${search//$'\n'/ }"; failed=1; }
             otool -L staging/libmanifoldc.dylib
           fi
           exit $failed

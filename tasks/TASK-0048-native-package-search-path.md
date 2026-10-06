@@ -130,3 +130,8 @@ The rebuilt package loads on each runner with no workaround, and the next rebuil
 - 2026-10-06: a correction. The line above says that the check writes each failure as an `::error`
   line. Commit `fc0102e` did not hold that change: the script that made it failed, and the next
   command of the shell ran anyway. This commit adds the `::error` lines.
+- 2026-10-06: run 37529057135 of the flags commit failed, and the API limit of 60 requests an hour hid
+  the failed job until 21:15 UTC. The check had a defect of its own: with `pipefail`, a pipe from
+  `readelf`, `ldd` or `otool` into `grep -q` can break and read as a failure. Each tool now writes into
+  a variable first. The first run is not affected: its failure came from the build path, which a
+  check with no pipe found.
