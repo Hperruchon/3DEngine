@@ -54,5 +54,6 @@ it is not correct and it must not be used.
 | `eng/write-set-cutoff.txt` | The commit after which the write-set gate applies. |
 | `eng/report-failed-tests.js` | Writes the name and the message of each failed test as a public annotation when the step "Test" of the pipeline fails (TASK-0045). |
 | `eng/manifold-native/` | The packaging project for the native Manifold payload. |
+| `eng/manifold-native/manifold-ref.txt` | The pin of the native build: the Manifold reference and the package version. A push that changes it starts `.github/workflows/build-manifold-native.yml`, which pushes the package to the branch native-package/<version> (TASK-0048). |
 | `nuget/` | The local package feed for the native payload (register entry R-0007). |
 | `THIRD-PARTY-NOTICES.md` | Each third-party component, its licence and its checksum. `NativePackageGateTests` reads the checksums. |

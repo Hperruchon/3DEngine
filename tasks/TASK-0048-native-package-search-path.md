@@ -1,7 +1,7 @@
 ---
 id: 0048
 title: The native package finds its own dependency on each platform, and a commit rebuilds it with no manual step
-status: Active
+status: Done
 phase: governance
 opened: 2026-10-06
 depends-on: [0036]
@@ -96,14 +96,14 @@ The rebuilt package loads on each runner with no workaround, and the next rebuil
 
 ## Acceptance criteria
 
-- [ ] The build job fails on the package of 2026-09: an injection that removes the flags of item 1
+- [x] The build job fails on the package of 2026-09: an injection that removes the flags of item 1
       gives a red build job that names the path of the build machine.
-- [ ] A push of `manifold-ref.txt` starts the workflow, and the package arrives on its branch with no
+- [x] A push of `manifold-ref.txt` starts the workflow, and the package arrives on its branch with no
       manual step.
-- [ ] The new gate test fails on the package of 2026-09 and passes on the new package.
-- [ ] With the workaround removed, the pipeline passes on `ubuntu-latest`, `windows-latest` and
+- [x] The new gate test fails on the package of 2026-09 and passes on the new package.
+- [x] With the workaround removed, the pipeline passes on `ubuntu-latest`, `windows-latest` and
       `macos-latest`, and no native test skips.
-- [ ] `dotnet build 3DEngine.sln --no-incremental` gives zero warnings. `dotnet test` passes.
+- [x] `dotnet build 3DEngine.sln --no-incremental` gives zero warnings. `dotnet test` passes.
 
 ## Notes for the implementer
 
@@ -118,6 +118,26 @@ The rebuilt package loads on each runner with no workaround, and the next rebuil
 - **The cache.** The new version `3.5.2.1` avoids the old extracted package in
   `~/.nuget/packages/engine.geometry.manifold.native/3.5.2/` on each computer.
 - **The marker gate.** `nuget.config` says "interim bootstrap" with R-0007. Do not change it here.
+
+## Outcome
+
+Status: Done · v0.45 · the commit that carries this block.
+
+## Method
+
+**Mechanical.** The pin file, the triggers, the pin job, the check, the push of the package, the new
+version, the checksums, the two gate tests, and the removal of the workaround.
+
+**Judgement.** The build flags of the build tree and not the install flags, because Manifold's own
+`CMakeLists.txt` sets the install variables. A step after the staging on macOS, because CMake gives no
+relative build path there. A rebuild of the same version 3.5.2.1 after the first defect of the nuspec,
+because no computer had restored it. A local pack to find the flag that stops the query to git, which
+saved a cycle of 15 minutes. Scope item 8 joined the task, because R-0018 asked for exactly this build.
+
+**Weakest.** The check reads text in the binaries; a build path in a string of the source, such as a
+file name of an assertion, would fail it falsely. The macOS step relies on `install_name_tool` and an
+ad-hoc signature, and only the pipeline on a macOS runner tests a load. The push trigger runs on any
+branch that changes the workflow, so an edit of a comment in the workflow starts a build of 15 minutes.
 
 ## Progress
 
@@ -169,3 +189,5 @@ The rebuilt package loads on each runner with no workaround, and the next rebuil
 - 2026-10-07: scope item 7. `TryLoadNative`, the resolver and the load of the dependency are gone, and
   `IsNativeAvailable` loads the library by name again. The pipeline on Linux and macOS, where `CI` is
   `true` and no native test skips, is the proof for the package alone.
+- 2026-10-07: run 37540059266 passed on the three runners with the workaround removed. Closed. R-0018 and
+  R-0035 are closed, and ledger entry v0.45 records the work.
