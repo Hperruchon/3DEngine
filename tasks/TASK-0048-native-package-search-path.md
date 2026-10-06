@@ -166,3 +166,6 @@ The rebuilt package loads on each runner with no workaround, and the next rebuil
   under its own name, so the notices give one row for each distinct file. The two new gate tests, which
   failed on 3.5.2 (the build path in six files, and the commit `718eab0`), pass. 260 tests pass, and the
   test output uses the new `manifoldc.dll`.
+- 2026-10-07: scope item 7. `TryLoadNative`, the resolver and the load of the dependency are gone, and
+  `IsNativeAvailable` loads the library by name again. The pipeline on Linux and macOS, where `CI` is
+  `true` and no native test skips, is the proof for the package alone.
