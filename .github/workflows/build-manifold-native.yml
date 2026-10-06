@@ -300,6 +300,7 @@ jobs:
           -p:RepositoryType=git
           -p:RepositoryUrl=https://github.com/elalish/manifold
           -p:RepositoryCommit=${{ needs.pin.outputs.manifold_commit }}
+          -p:RepositoryBranch=
           -p:PublishRepositoryUrl=true
           -o nupkg
 
