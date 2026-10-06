@@ -104,18 +104,29 @@ jobs:
           -DMANIFOLD_DOWNLOADS=ON
 
       # Single-config generators need CMAKE_BUILD_TYPE at configure time.
+      #
+      # Each library finds its dependency in its own folder: $ORIGIN on Linux and
+      # @loader_path on macOS. Without these flags libmanifoldc stored the build
+      # folder of the runner as that search path, and it loaded on no other
+      # computer (register entry R-0035, TASK-0048). The single quotes keep
+      # $ORIGIN a literal text for CMake.
       - name: Configure (Linux / macOS)
         if: runner.os != 'Windows'
         shell: bash
-        run: >
-          cmake -B build
-          -DCMAKE_BUILD_TYPE=Release
-          -DBUILD_SHARED_LIBS=ON
-          -DMANIFOLD_CROSS_SECTION=ON
-          -DMANIFOLD_CBIND=ON
-          -DMANIFOLD_PAR=OFF
-          -DMANIFOLD_TEST=OFF
-          -DMANIFOLD_DOWNLOADS=ON
+        run: |
+          set -euo pipefail
+          search_path='$ORIGIN'
+          if [ "$RUNNER_OS" = "macOS" ]; then search_path='@loader_path'; fi
+          cmake -B build \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DBUILD_SHARED_LIBS=ON \
+            -DMANIFOLD_CROSS_SECTION=ON \
+            -DMANIFOLD_CBIND=ON \
+            -DMANIFOLD_PAR=OFF \
+            -DMANIFOLD_TEST=OFF \
+            -DMANIFOLD_DOWNLOADS=ON \
+            -DCMAKE_BUILD_WITH_INSTALL_RPATH=ON \
+            "-DCMAKE_INSTALL_RPATH=$search_path"
 
       - name: Build
         shell: bash

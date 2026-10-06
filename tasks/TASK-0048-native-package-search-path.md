@@ -123,3 +123,7 @@ The rebuilt package loads on each runner with no workaround, and the next rebuil
   workflow, a job that reads the pin, the check of scope item 2, and the push of the package to its
   branch. The flags of scope item 1 are absent on purpose, so that the check must fail on Linux and
   macOS on this push.
+- 2026-10-06: run 37528596155 of the first form started on the push, by itself. The check failed on
+  Linux and on macOS, Windows built, and the pack job did not run. The public annotation said only
+  "exit code 1", so the check now writes each failure as an `::error` line. The second form adds the
+  flags of scope item 1.
