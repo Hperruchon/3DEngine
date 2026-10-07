@@ -1266,3 +1266,35 @@ cannot start a host. That is the honest result until register entry R-0020 decid
 New tests: 12. The test list holds 258, up from 246. `dotnet build 3DEngine.sln --no-incremental`
 gives zero errors and zero warnings. New register entry: R-0035. Open entries: 15 of 15, the limit.
 New diagnostic codes: none; one code moved from reserved to raised. The next codebase review must come before ledger entry v0.47.
+## v0.45 — The native package finds its own dependency on each platform, names its source, and a commit rebuilds it (governance, TASK-0048)
+
+Register entries R-0035 and R-0018, and the decision of the owner of 2026-10-06 that the pack job may
+push the package to a branch (question Q1 of TASK-0048).
+
+**The package 3.5.2.1.** It replaces 3.5.2, from the same Manifold source, `v3.5.2`. On Linux and
+macOS each library now finds its dependency in its own folder: the build gives `$ORIGIN` and
+`@loader_path`, and on macOS a step removes the absolute search path and signs the library again.
+The nuspec records the Manifold address and commit `11235e6b…`, and no commit or branch of this
+repository. The workaround of TASK-0036 is removed, and the pipeline passed on the three runners with
+no native test skipped.
+
+**A rebuild needs no manual step.** A push that changes `eng/manifold-native/manifold-ref.txt` or the
+workflow starts the build, and the pack job pushes the package to `native-package/<version>`, where git
+fetches it with no sign-in. Only the pack job can write; the jobs that compile the third-party source
+read only. A check in the build job fails on a path of a build machine, and it writes each failure as
+a public annotation.
+
+**Each step failed first, or was found.** The first form, with no flag, failed its check on Linux and
+macOS as planned. The install flags then had no effect, because Manifold's own `CMakeLists.txt` sets
+those variables; the build flags of the build tree worked on Linux, and macOS needed the step after
+the staging. The first package also named a branch of this repository; a local pack of one minute found
+the flag that stops it. Two gate tests failed on 3.5.2 and pass on 3.5.2.1.
+
+**On the way.** The polls of this evening used up the API limit of 60 requests an hour once. The rule
+is now: the first check at the normal end of a run, then every 3 minutes. The owner decided that a
+local build of the native libraries is for development and test, and the official package comes from
+GitHub; a later task makes the shared build script and the local build.
+
+New tests: 2. The test list holds 260, up from 258. `dotnet build 3DEngine.sln --no-incremental` gives
+zero errors and zero warnings. Closed: R-0018, R-0035. Open entries: 13 of 15. New diagnostic codes:
+none. The next codebase review must come before ledger entry v0.47.

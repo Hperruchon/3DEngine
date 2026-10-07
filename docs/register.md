@@ -85,21 +85,6 @@ The configuration calls this feed an interim bootstrap. The publish step in the 
 inactive. A person commits each package by hand.
 Exit: a real feed exists. Or: accept this mechanism permanently and give the reason.
 
-### R-0018 - The native package records the commit of the wrong repository
-- class: debt
-- opened: 2026-09-22
-- due: 2027-03-21
-- extended: no
-- refs: the nuspec inside `nuget/Engine.Geometry.Manifold.Native.3.5.2.nupkg`, `THIRD-PARTY-NOTICES.md` section 3, `ADR-0014 §5`
-The nuspec holds `<repository type="git" commit="718eab0684178e4fdf7ef419cc4ff26484008705" />`. That
-commit is not a Manifold commit. It is a commit in this repository, dated 2026-07-04, with the
-subject "Merge pull request #8 from Hperruchon/p7b-finish". The description in the same nuspec says
-"Version tracks the pinned Manifold commit", therefore the package gives incorrect information about
-the origin of its binary. A reader cannot tell which source produced the payload.
-Exit: a new build records the Manifold commit. The packing step in
-`.github/workflows/build-manifold-native.yml` reads the commit of the Manifold checkout and not the
-commit of this repository.
-
 ### R-0020 · The platform list needs a study before objective 8 changes
 - class: question
 - opened: 2026-09-25
@@ -299,21 +284,6 @@ Progress 2026-10-04: TASK-0047 corrected T8. Each job has a time limit, the step
 after two minutes, and the report script names the test that did not complete. Run 37189044285 on a
 branch that is never merged stopped an injected hang after about 130 s on each runner and named it.
 The script also reads a stopped run, which is a part of T13. T12 and the other part of T13 stay.
-
-### R-0035 · The native package names a build folder as the search path of its dependency on Linux and macOS
-- class: debt
-- opened: 2026-10-06
-- due: 2027-04-04
-- extended: no
-- refs: `.github/workflows/build-manifold-native.yml`, `nuget/Engine.Geometry.Manifold.Native.3.5.2.nupkg`, `Engine.Geometry.Manifold/ManifoldGeometryBackend.cs`, TASK-0036
-`libmanifoldc` stores `/home/runner/work/3DEngine/3DEngine/build/src` on Linux and
-`/Users/runner/work/3DEngine/3DEngine/build/src` on macOS as the search path of `libmanifold`, and
-not `$ORIGIN` or `@loader_path`. On another computer the system loader does not find the dependency,
-so the native backend never loaded on the Linux and macOS runners: the native tests skipped and the
-hosts took the managed backend. TASK-0036 found it, and it loads the dependency first by its full
-path as a workaround. The rebuild needs a manual run of the build workflow, which needs a sign-in.
-Exit: the build workflow sets `$ORIGIN` and `@loader_path`, the repository holds the rebuilt package
-with its checksum, and the workaround in `ManifoldGeometryBackend.TryLoadNative` is removed.
 
 ## Accepted compromises
 
@@ -660,3 +630,46 @@ The step "Test" writes a .trx file, and `eng/report-failed-tests.js` writes each
 public annotation. On the branch `r0032-injection-2026-10-03`, run 37102594075, an injected failure
 gave an annotation with its name on each of the three runners. The check-run API returned it with no
 sign-in. On Windows the same run also named a real failure, which TASK-0034 then corrected.
+
+### R-0018 - The native package records the commit of the wrong repository
+- class: debt
+- opened: 2026-09-22
+- due: 2027-03-21
+- extended: no
+- refs: the nuspec inside `nuget/Engine.Geometry.Manifold.Native.3.5.2.nupkg`, `THIRD-PARTY-NOTICES.md` section 3, `ADR-0014 §5`
+The nuspec holds `<repository type="git" commit="718eab0684178e4fdf7ef419cc4ff26484008705" />`. That
+commit is not a Manifold commit. It is a commit in this repository, dated 2026-07-04, with the
+subject "Merge pull request #8 from Hperruchon/p7b-finish". The description in the same nuspec says
+"Version tracks the pinned Manifold commit", therefore the package gives incorrect information about
+the origin of its binary. A reader cannot tell which source produced the payload.
+Exit: a new build records the Manifold commit. The packing step in
+`.github/workflows/build-manifold-native.yml` reads the commit of the Manifold checkout and not the
+commit of this repository.
+Closed 2026-10-07 - resolved - TASK-0048, v0.45
+The pin job resolves the Manifold reference to its commit, the build checks it out, and the pack step
+records it with the Manifold address and no query to git. The nuspec of
+`nuget/Engine.Geometry.Manifold.Native.3.5.2.1.nupkg` holds `commit="11235e6b8ebea2dbed8aec4285685aafd3d95667"`
+and no branch, and `NativePackageGateTests` holds it equal to the commit of the notices.
+
+### R-0035 · The native package names a build folder as the search path of its dependency on Linux and macOS
+- class: debt
+- opened: 2026-10-06
+- due: 2027-04-04
+- extended: no
+- refs: `.github/workflows/build-manifold-native.yml`, `nuget/Engine.Geometry.Manifold.Native.3.5.2.nupkg`, `Engine.Geometry.Manifold/ManifoldGeometryBackend.cs`, TASK-0036
+`libmanifoldc` stores `/home/runner/work/3DEngine/3DEngine/build/src` on Linux and
+`/Users/runner/work/3DEngine/3DEngine/build/src` on macOS as the search path of `libmanifold`, and
+not `$ORIGIN` or `@loader_path`. On another computer the system loader does not find the dependency,
+so the native backend never loaded on the Linux and macOS runners: the native tests skipped and the
+hosts took the managed backend. TASK-0036 found it, and it loads the dependency first by its full
+path as a workaround. The rebuild needs a manual run of the build workflow, which needs a sign-in.
+Exit: the build workflow sets `$ORIGIN` and `@loader_path`, the repository holds the rebuilt package
+with its checksum, and the workaround in `ManifoldGeometryBackend.TryLoadNative` is removed.
+Progress 2026-10-06: TASK-0048 holds the rebuild, with the status `Ready`. It also removes the two manual
+steps of a rebuild, if the owner answers yes to its question Q1.
+Closed 2026-10-07 - resolved - TASK-0048, v0.45
+The build gives the search paths `$ORIGIN` and `@loader_path`, a step on macOS removes the absolute
+entry, and a check in the build job fails on a path of the build machine. The package 3.5.2.1 replaced
+3.5.2, the workaround in `ManifoldGeometryBackend` is removed, and run 37540059266 passed on the three runners
+with no native test skipped. A push of the pin file or of the workflow starts a rebuild, and the
+package arrives on a branch that git fetches with no sign-in.
