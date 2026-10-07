@@ -26,6 +26,7 @@ internal static class SchemaEventsEndpoint
         new("subscription.resume"),
         new("subscription.reset"),
         new("body.created"),
+        new("body.consumed"), // ADR-0021 item 6, TASK-0037
     };
 
     public static IResult Handle() => Results.Json(Kinds, ApiJson.Options);

@@ -113,6 +113,21 @@ public class SchemaEndpointTests : IClassFixture<WebApplicationFactory<Program>>
         Assert.Contains("subscription.reset", kinds);
     }
 
+    // ADR-0012 §5 and ADR-0021 item 6: the two kinds of body event that the bus
+    // emits. Before TASK-0037 the list had no body.consumed.
+    [Fact]
+    public async Task Schema_Events_Lists_Each_Body_Event_Kind()
+    {
+        var client = _factory.CreateClient();
+        var response = await client.GetAsync("/schema/events");
+
+        var body = await ReadJsonAsync(response);
+        var kinds = body.EnumerateArray().Select(e => e.GetProperty("kind").GetString()).ToList();
+
+        Assert.Contains("body.created", kinds);
+        Assert.Contains("body.consumed", kinds);
+    }
+
     [Fact]
     public async Task Schema_Diagnostics_Lists_All_Registered_Codes()
     {

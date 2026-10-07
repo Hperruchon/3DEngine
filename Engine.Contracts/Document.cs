@@ -22,7 +22,9 @@ public sealed class Document
 
     // Body projection per ADR-0012 §3. The Document holds handles + minimum
     // metadata; the backend owns the geometry data (ADR-0001 §3).
-    // Mutation goes only through CommandBus's commit section.
+    // Mutation goes only through CommandBus's commit section. Since ADR-0021 the
+    // collection holds the live bodies only: a command that consumes a body
+    // removes it, and a consumed body never becomes live again.
     private readonly Dictionary<Guid, BodyRecord> _bodies = new();
     public IReadOnlyCollection<BodyRecord> Bodies => _bodies.Values;
 
@@ -42,4 +44,8 @@ public sealed class Document
     }
 
     internal void AddBody(BodyRecord body) => _bodies[body.Handle.Id] = body;
+
+    internal bool HasBody(BodyHandle handle) => _bodies.ContainsKey(handle.Id);
+
+    internal void RemoveBody(BodyHandle handle) => _bodies.Remove(handle.Id);
 }

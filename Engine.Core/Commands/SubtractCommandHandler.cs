@@ -40,9 +40,10 @@ public sealed class SubtractCommandHandler : ICommandHandler
     {
         var subtract = (SubtractCommand)command;
 
-        // 1. Both operands must exist in the Document projection (backend-independent,
+        // 1. Both operands must be live in the Document projection (backend-independent,
         // mirrors GetBoundingBox). Precedes the capability check so a bad reference is
-        // reported the same way on any backend.
+        // reported the same way on any backend. A consumed body is not live
+        // (ADR-0021 item 4).
         if (!document.Bodies.Any(b => b.Handle.Id == subtract.MinuendBodyId))
         {
             return Task.FromResult(CommandHandlerResult.Failure(
@@ -58,6 +59,17 @@ public sealed class SubtractCommandHandler : ICommandHandler
                     $"No body with id '{subtract.SubtrahendBodyId}' exists in the Document.")));
         }
 
+        // A subtract consumes both operands, and ADR-0021 item 2 permits a handle one
+        // time in the consumed list. A body minus itself is therefore refused before
+        // the backend, and the body stays live (TASK-0037).
+        if (subtract.MinuendBodyId == subtract.SubtrahendBodyId)
+        {
+            return Task.FromResult(CommandHandlerResult.Failure(
+                new ErrorDetail(
+                    DiagnosticCodes.GeomInvalidParam,
+                    $"The minuend and the subtrahend are the same body '{subtract.MinuendBodyId}'. Give two different bodies.")));
+        }
+
         // 2. Backend must support booleans (the managed stub does not).
         var boolean = backend.TryGet<IBooleanOps>();
         if (boolean is null)
@@ -68,8 +80,9 @@ public sealed class SubtractCommandHandler : ICommandHandler
                     "Active backend does not implement IBooleanOps; cannot subtract bodies.")));
         }
 
-        // 3. Run the op. New body handle is deterministic from CommandId (ADR-0012 §4);
-        // both operands are left intact.
+        // 3. Run the op. New body handle is deterministic from CommandId (ADR-0012 §4).
+        // The commit consumes both operands (ADR-0021 item 3). The backend keeps
+        // their geometry until the session ends (ADR-0021, "Consequences").
         var handle = new BodyHandle(subtract.CommandId);
         try
         {
@@ -96,6 +109,7 @@ public sealed class SubtractCommandHandler : ICommandHandler
 
         return Task.FromResult(CommandHandlerResult.Success(
             outputs,
-            createdBodies: new[] { new BodyRecord(handle, "Solid") }));
+            createdBodies: new[] { new BodyRecord(handle, "Solid") },
+            consumedBodies: new[] { new BodyHandle(subtract.MinuendBodyId), new BodyHandle(subtract.SubtrahendBodyId) }));
     }
 }

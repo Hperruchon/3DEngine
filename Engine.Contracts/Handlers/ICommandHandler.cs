@@ -48,15 +48,26 @@ public sealed record CommandHandlerResult(
 {
     public bool IsSuccess => Error is null;
 
+    // ADR-0021 item 2: the live bodies that the command consumes. The commit
+    // removes each one from Document.Bodies and emits body.consumed. A handler
+    // consumes only a live body, and it gives each handle one time; the bus
+    // refuses a list that breaks the rule. Empty by default, so a handler that
+    // gives no list consumes nothing.
+    public IReadOnlyList<BodyHandle> ConsumedBodies { get; init; } = Array.Empty<BodyHandle>();
+
     public static CommandHandlerResult Success(
         Outputs outputs,
         IReadOnlyList<Diagnostic>? diagnostics = null,
-        IReadOnlyList<BodyRecord>? createdBodies = null)
+        IReadOnlyList<BodyRecord>? createdBodies = null,
+        IReadOnlyList<BodyHandle>? consumedBodies = null)
         => new(
             outputs,
             diagnostics ?? Array.Empty<Diagnostic>(),
             null,
-            createdBodies ?? Array.Empty<BodyRecord>());
+            createdBodies ?? Array.Empty<BodyRecord>())
+        {
+            ConsumedBodies = consumedBodies ?? Array.Empty<BodyHandle>(),
+        };
 
     public static CommandHandlerResult Failure(
         ErrorDetail error,

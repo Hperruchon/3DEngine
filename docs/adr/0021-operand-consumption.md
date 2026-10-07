@@ -15,7 +15,7 @@ affects:
   - Engine.Core/Commands/**
   - Engine.Api.Http/Endpoints/SchemaEventsEndpoint.cs
   - Engine.Api.Http/WebSockets/WireMessage.cs
-enforced-by: Engine.Tests/Commands/OperandConsumptionTests.cs (TASK-0037 creates it)
+enforced-by: Engine.Tests/Commands/OperandConsumptionTests.cs
 ---
 
 # ADR-0021 — Operand consumption and the live body set

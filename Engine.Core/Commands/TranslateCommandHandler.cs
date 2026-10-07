@@ -44,9 +44,10 @@ public sealed class TranslateCommandHandler : ICommandHandler
     {
         var translate = (TranslateCommand)command;
 
-        // 1. Operand must exist in the Document projection (backend-independent,
+        // 1. Operand must be live in the Document projection (backend-independent,
         // mirrors GetBoundingBox). This precedes the capability check so a bad
-        // reference is reported the same way on any backend.
+        // reference is reported the same way on any backend. A consumed body is
+        // not live (ADR-0021 item 4).
         if (!document.Bodies.Any(b => b.Handle.Id == translate.BodyId))
         {
             return Task.FromResult(CommandHandlerResult.Failure(
@@ -65,8 +66,8 @@ public sealed class TranslateCommandHandler : ICommandHandler
                     "Active backend does not implement ITransformOps; cannot translate a body.")));
         }
 
-        // 3. Run the op. New body handle is deterministic from CommandId (ADR-0012 §4);
-        // the source body is left intact.
+        // 3. Run the op. New body handle is deterministic from CommandId (ADR-0012 §4).
+        // The commit consumes the source body (ADR-0021 item 3).
         var handle = new BodyHandle(translate.CommandId);
         try
         {
@@ -92,6 +93,7 @@ public sealed class TranslateCommandHandler : ICommandHandler
 
         return Task.FromResult(CommandHandlerResult.Success(
             outputs,
-            createdBodies: new[] { new BodyRecord(handle, "Solid") }));
+            createdBodies: new[] { new BodyRecord(handle, "Solid") },
+            consumedBodies: new[] { new BodyHandle(translate.BodyId) }));
     }
 }
