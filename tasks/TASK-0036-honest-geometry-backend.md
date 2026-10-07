@@ -156,9 +156,10 @@ build. R-0035 holds the rebuild.
 
 **Weakest.** The workaround relies on the loader of each system: Linux finds a loaded library by its
 name, and macOS by its install name. The run of 2026-10-06 shows both, and a change of the runner image
-can break it before R-0035 is closed. The test of the HTTP stop builds `EngineHost` directly: `WebApplicationFactory` stops
-`Program.cs` at its build and never runs the check that follows it, so only the run on the real
-program shows that part. Six of the 13 native tests pass with the library hidden, because they do not
+can break it before R-0035 is closed. The test of the HTTP stop builds `EngineHost` directly, and only
+the run on the real program shows the exit code 3. (Corrected 2026-10-08, TASK-0050: this line said
+that `WebApplicationFactory` stops `Program.cs` at its build. That is false. An injection after the
+start check failed 46 of 59 HTTP tests, so the factory runs the check in each test.) Six of the 13 native tests pass with the library hidden, because they do not
 call into it; they prove nothing about the library. A runner on which `CI` is not `true` would skip
 again.
 

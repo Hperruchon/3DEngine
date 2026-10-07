@@ -1325,3 +1325,35 @@ Ubuntu distribution in WSL. Both are installs of the owner.
 New tests: 0. The test list holds 260. `dotnet build 3DEngine.sln --no-incremental` gives zero errors
 and zero warnings. Open entries: 13 of 15. New diagnostic codes: none. The next codebase review must come
 before ledger entry v0.47.
+
+## v0.47 — The codebase review of 2026-10-08 (governance, TASK-0050)
+
+The fourth codebase review, `docs/reviews/2026-10-08-codebase-review.md`. It examines `main` at
+`9ad025b`, the merge of v0.46. The gate permitted six milestones after v0.40, and v0.46 was the sixth,
+so this entry had to be the review. The owner put it second in the order of the night.
+
+**What it found.** Fifty-five findings are open: no critical, seven high, twenty-seven medium and
+twenty-one low. Seven earlier findings are fixed: E1, E3, E7, E10, T3, T8 and T9. Twenty-seven findings
+are new, and TASK-0049 corrected five of them before its merge (T18 to T22). The most important new
+ones:
+
+- T14: a module initializer in any test file can clear the variable that the write-set gate reads, so
+  a commit can judge itself. Question Q1 of the review asks the owner where the check must run.
+- E25: a replayed Document can never get a command bus, so the load path of TASK-0019 cannot continue
+  live after a replay.
+- E27 and E28: after a divergence the backend keeps its bodies, and a handler exception escapes the
+  replay raw.
+
+**Corrections of the repository.** Three statements were false, and this task corrects them.
+`THIRD-PARTY-NOTICES.md` named the package 3.5.2, which `nuget/` no longer holds. TASK-0036 said that
+`WebApplicationFactory` stops `Program.cs` at its build; an injection after the start check failed 46
+of 59 HTTP tests, so the factory runs that code. TASK-0038 lost the permit for
+`Engine.Tests/Engine.Tests.csproj` when TASK-0047 made it a gate file (T15); its write set names the
+file again.
+
+**Owners.** R-0036 holds E25 to E39. R-0031 holds T14, T16, T17, T23, T25 and the comment part of T24.
+R-0031 and R-0033 have a progress line. The next task corrects E20 and E23, before TASK-0037.
+
+New tests: 0. The test list holds 260. `dotnet build 3DEngine.sln --no-incremental` gives zero errors
+and zero warnings. Open entries: 14 of 15. New diagnostic codes: none. The next codebase review must
+come before ledger entry v0.53.

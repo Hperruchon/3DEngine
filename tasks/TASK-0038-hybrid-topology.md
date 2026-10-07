@@ -16,6 +16,7 @@ writes:
     - 3DEngine/**
     - 3DEngine.sln
     - Engine.Tests/**
+    - Engine.Tests/Engine.Tests.csproj
     - .github/workflows/ci.yml
     - CLAUDE.md
     - docs/INDEX.md
