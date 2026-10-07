@@ -38,10 +38,22 @@ $sourceDir = (Resolve-Path $Source).Path
 $build = Join-Path $sourceDir 'build'
 New-Item -ItemType Directory -Force -Path $Staging | Out-Null
 $stagingDir = (Resolve-Path $Staging).Path
+# The libraries of an earlier build go first, so that a stale file cannot stay.
+Get-ChildItem -Path $stagingDir -File -Filter '*.dll' | Remove-Item -Force
 
+# The exit code decides, and a line on the error output does not. With the preference
+# 'Stop', Windows PowerShell 5.1 stopped at the first CMake warning when the output was
+# redirected to a file (codebase review of 2026-10-08, finding T22).
 function Invoke-Checked {
     param([string]$Program, [string[]]$Arguments)
-    & $Program @Arguments
+    $previous = $ErrorActionPreference
+    $ErrorActionPreference = 'Continue'
+    try {
+        & $Program @Arguments 2>&1 | ForEach-Object { "$_" }
+    }
+    finally {
+        $ErrorActionPreference = $previous
+    }
     if ($LASTEXITCODE -ne 0) { throw "$Program failed with exit code $LASTEXITCODE" }
 }
 

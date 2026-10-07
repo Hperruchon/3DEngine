@@ -23,6 +23,10 @@ set -euo pipefail
 source_dir=$(cd "$1" && pwd)
 mkdir -p "$2"
 staging=$(cd "$2" && pwd)
+# A second build into the same folder found its own aliases from the first build, and cp then
+# refused to copy a file onto itself (codebase review of 2026-10-08, finding T21). The files at
+# the top of the staging folder go first; a folder inside it is not touched.
+find "$staging" -mindepth 1 -maxdepth 1 -type f -delete
 build="$source_dir/build"
 
 case "$(uname -s)" in
@@ -69,7 +73,7 @@ for f in "$staging"/lib*.*.dylib; do                # macOS: libX.3.5.2.dylib
   cp -f "$f" "$staging/$name.$major.dylib"
 done
 ls -la "$staging"
-ls "$staging" | grep -qi 'manifoldc' || { echo "::error title=Native build ($os)::manifoldc was not built"; exit 1; }
+compgen -G "$staging/libmanifoldc*" > /dev/null || { echo "::error title=Native build ($os)::manifoldc was not built"; exit 1; }
 
 if [ "$os" = macOS ]; then
   echo "--- remove the absolute search paths ---"

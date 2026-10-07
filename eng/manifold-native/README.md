@@ -20,8 +20,10 @@ Its libraries go into `artifacts/`, which git ignores. A local build never repla
 `nuget/`.
 
 **The official package comes from the workflow.** It builds Windows, Linux and macOS in a clean,
-public environment, and it pushes the package to the branch `native-package/<version>`. A version is
-immutable: the workflow does not overwrite a branch that exists. Copy the package into `nuget/`,
+public environment. A run on `main` pushes the package to the branch `native-package/<version>`; a run
+on another branch builds and checks, and pushes nothing. A version is immutable: the workflow does not
+overwrite a branch that exists. So a new package needs two merges: the change of the pin, which makes
+the build on `main` publish the package, and then the package in `nuget/`. Copy the package into `nuget/`,
 record its checksums in `THIRD-PARTY-NOTICES.md`, and change the version in
 `Engine.Geometry.Manifold/Engine.Geometry.Manifold.csproj`.
 

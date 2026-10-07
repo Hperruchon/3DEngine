@@ -95,3 +95,11 @@ The pipeline and this computer build the native libraries with one recipe.
   computer has no Windows SDK (no folder `Windows Kits/10/Lib`). Its install is an action of the owner.
   A clean build of the solution restores the library of the package after a local test: an overwritten
   `manifoldc.dll` had the checksum of the package again.
+- 2026-10-08: run 37694784464 built and checked with the scripts on the three runners, and the pack job
+  found `native-package/3.5.2.1` and pushed nothing. The review agents of the night found five defects
+  in this new code, and this task corrects them: a second build into one staging folder failed (T21);
+  `build.ps1` stopped at a CMake warning in PowerShell 5.1 with a redirected output (T22); a push of
+  any branch could claim a version, and a tag push started a run (T18); the pack job kept its token on
+  disk (T19); the pin values reached the scripts unchecked (T20). Only `main` now publishes a package.
+  Each correction was tested here: the staging line, the PowerShell function under redirection, and the
+  two patterns.
