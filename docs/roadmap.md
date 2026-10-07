@@ -43,6 +43,7 @@ Therefore each approved objective must have a track here.
 - P0.13 — One serial boundary for commands, queries and snapshots. v0.39, TASK-0034.
 - P0.14 — The version counts applied commands, and a replay rebuilds it. v0.43, TASK-0035, ADR-0020.
 - P0.15 — A host refuses to start without the native backend. v0.44, TASK-0036.
+- P0.16 — An operation consumes its operands, and the Document holds the live bodies only. v0.49, TASK-0037, ADR-0021.
 
 ## Track 0 — Foundations
 
@@ -138,8 +139,8 @@ The field `depends-on` of each task file holds the same order. `TaskGovernanceGa
 that each dependency names a task.
 
 Phase R6 gives the first objective that the owner named: create a box, subtract a second box, and
-observe the cut. The seven phases that remain, P0.16, P0.17 and R2 to R6, give it in 28 to 41
-evenings. That number is the sum of the column "Evenings" for those phases: 5 to 8 for Track 0 and
+observe the cut. The six phases that remain, P0.17 and R2 to R6, give it in 26 to 38
+evenings. That number is the sum of the column "Evenings" for those phases: 3 to 5 for Track 0 and
 23 to 33 for track R. Correct it when a phase ships or an estimate changes.
 
 ## Not on a track

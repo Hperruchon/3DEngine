@@ -1386,3 +1386,33 @@ TASK-0038 now depends on TASK-0051. R-0033 has a progress line.
 New tests: 13. The test list holds 273. `dotnet build 3DEngine.sln --no-incremental` gives zero errors
 and zero warnings. Open entries: 14 of 15. New diagnostic codes: none. The next codebase review must
 come before ledger entry v0.53.
+
+## v0.49 — An operation consumes its operands, and the Document holds the live bodies only (P0.16, TASK-0037)
+
+ADR-0021, which the owner decided on 2026-09-25. Before this entry each operation added a body and
+kept its operands, so the first demonstration left four bodies in the Document and the person saw one
+solid.
+
+**The contract.** `CommandHandlerResult` has `ConsumedBodies`, empty by default. `Translate` consumes
+its source body, and `Subtract` consumes both operands. The bus removes each consumed body in the
+commit and emits `body.consumed` after each `body.created`, so a subscriber that draws between two
+events never sees fewer bodies than the result has. `/schema/events` lists the new kind. The bus
+refuses a consumed list with a body that is not live or a body two times, before the commit.
+
+**What a client sees.** After `CreateBox` A, `CreateBox` B, `Translate` B and `Subtract`, the Document
+and the reset snapshot hold one body: the cut solid. A command on a consumed body gets
+`E-GEOM-BODY-NOT-FOUND`, and the backend gets no call. A subtract of a body from itself gets
+`E-GEOM-INVALID-PARAM`, and the body stays. A replay gives the same live set.
+
+**Proof.** The contract field came first and alone, and 9 of 9 new tests failed on the old behaviour.
+Two native tests asserted the old state; each one now asserts ADR-0021, and no test was deleted.
+
+**Open.** TASK-0037 asked for the payload field of `body.consumed` in `/schema/events`. No entry of the
+endpoint has payload fields, and ADR-0021 asks for the kind only. R-0037 asks the owner.
+
+The roadmap lists P0.16 as shipped: the six phases that remain give the first objective in 26 to 38
+evenings. A glossary term: live body.
+
+New tests: 10. The test list holds 283. `dotnet build 3DEngine.sln --no-incremental` gives zero errors
+and zero warnings. Open entries: 15 of 15. New diagnostic codes: none. The next codebase review must
+come before ledger entry v0.53.

@@ -65,8 +65,8 @@ public class ManifoldReplayRoundTripTests
     [NativeManifoldFact]
     public async Task Two_Native_Replays_Of_Translate_And_Subtract_Produce_Identical_State()
     {
-        // A - (B moved off-center): four bodies, the last two produced by the new
-        // native ops. Handles are deterministic from CommandId (ADR-0012 §4), so
+        // A - (B moved off-center): four commands, the last two native ops, and
+        // one live body at the end (ADR-0021). Handles are deterministic from CommandId (ADR-0012 §4), so
         // two fresh native backends must reconstruct identical observable state.
         var a = new CreateBoxCommand { SizeX = 10, SizeY = 10, SizeZ = 10 };
         var b = new CreateBoxCommand { SizeX = 10, SizeY = 10, SizeZ = 10 };
@@ -92,10 +92,12 @@ public class ManifoldReplayRoundTripTests
             Assert.Equal(e1[i].CauseCommandId, e2[i].CauseCommandId);
         }
 
-        // Four bodies: A (Box), B (Box), B translated (Solid), A - B' (Solid).
-        Assert.Equal(4, first.Document.Bodies.Count);
-        Assert.Equal(first.Document.Bodies.Count, second.Document.Bodies.Count);
-        Assert.Contains(first.Document.Bodies, x => x.Handle.Id == diff.CommandId && x.Kind == "Solid");
-        Assert.Contains(second.Document.Bodies, x => x.Handle.Id == diff.CommandId && x.Kind == "Solid");
+        // One live body: A - B' (Solid). The translate consumed B, and the subtract
+        // consumed A and B' (ADR-0021). Before TASK-0037 the Document held four.
+        var only1 = Assert.Single(first.Document.Bodies);
+        var only2 = Assert.Single(second.Document.Bodies);
+        Assert.Equal(diff.CommandId, only1.Handle.Id);
+        Assert.Equal("Solid", only1.Kind);
+        Assert.Equal(only1, only2);
     }
 }

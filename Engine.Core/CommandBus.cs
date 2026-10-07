@@ -146,20 +146,41 @@ public sealed class CommandBus
         if (!handlerResult.IsSuccess)
             return Reject(command, handlerResult.Error!, stopwatch, handlerResult.Diagnostics);
 
+        RefuseWrongConsumedList(command, handlerResult.ConsumedBodies);
         return Commit(command, handlerResult, stopwatch);
     }
 
-    // 4. Commit: compute each Seq, append the log, register the bodies. The log
-    // append adds one to the version (ADR-0020). All events of one commit share
-    // consecutive Seqs. Nothing here awaits, therefore nothing here stops in the
-    // middle.
+    // ADR-0021 item 2: a handler consumes only a live body, and it gives each
+    // handle one time. A list that breaks the rule is a defect in the handler,
+    // not a rejection of the command, so the bus throws. It throws before the
+    // commit, so the Document does not change.
+    private void RefuseWrongConsumedList(Command command, IReadOnlyList<BodyHandle> consumed)
+    {
+        var seen = new HashSet<Guid>();
+        foreach (var handle in consumed)
+        {
+            if (!_document.HasBody(handle) || !seen.Add(handle.Id))
+                throw new InvalidOperationException(
+                    $"The handler of '{command.Name}'@{command.SchemaVersion} consumes body {handle.Id}, which is "
+                    + "not live or is in its list two times. ADR-0021 item 2 permits a live body, one time.");
+        }
+    }
+
+    // 4. Commit: compute each Seq, append the log, register the created bodies,
+    // remove the consumed bodies. The log append adds one to the version
+    // (ADR-0020). All events of one commit share consecutive Seqs, in the order
+    // of ADR-0021 item 5: command.applied, each body.created, each body.consumed.
+    // A subscriber that draws between two events therefore never sees fewer
+    // bodies than the result has. Nothing here awaits, therefore nothing here
+    // stops in the middle.
     private (CommandResult, IReadOnlyList<EventRecord>) Commit(
         Command command,
         CommandHandlerResult handlerResult,
         Stopwatch stopwatch)
     {
-        var appliedSeq = TakeSeqs(1 + handlerResult.CreatedBodies.Count);
-        var events = new List<EventRecord>(1 + handlerResult.CreatedBodies.Count)
+        var count = 1 + handlerResult.CreatedBodies.Count + handlerResult.ConsumedBodies.Count;
+        var appliedSeq = TakeSeqs(count);
+        var events = new List<EventRecord>(count)
         {
             Event(appliedSeq, command, "command.applied", new Dictionary<string, object?>
             {
@@ -179,6 +200,16 @@ public sealed class CommandBus
             {
                 ["bodyId"] = body.Handle.Id,
                 ["kind"] = body.Kind,
+            }));
+        }
+
+        foreach (var handle in handlerResult.ConsumedBodies)
+        {
+            _document.RemoveBody(handle);
+            lastSeq++;
+            events.Add(Event(lastSeq, command, "body.consumed", new Dictionary<string, object?>
+            {
+                ["bodyId"] = handle.Id,
             }));
         }
 

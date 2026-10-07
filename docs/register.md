@@ -311,6 +311,19 @@ and its output is lost. Twenty later runs passed, thirteen with `--blame-crash`,
 crash dump. The cause is not known. TASK-0051 added two tests that start the real host. A second abort
 must be read with `--blame-crash`, and it adds a part to T12.
 
+### R-0037 · `/schema/events` gives the name of each event kind and not its payload fields
+- class: question
+- opened: 2026-10-08
+- due: 2027-01-06
+- extended: no
+- refs: `Engine.Api.Http/Schema/SchemaTypes.cs:28`, ADR-0021 item 6, ADR-0008 §9, TASK-0037
+TASK-0037 asks that `/schema/events` list `body.consumed` "with its payload field `bodyId`". Each entry
+of the endpoint holds the kind only, and ADR-0021 item 6 says only that the endpoint lists the kind.
+TASK-0037 followed the ADR. An agent or a client that reads the schema cannot learn the payload of any
+event kind, and must read the ADRs.
+Exit: the owner decides if each entry gives its payload fields. A yes needs an amendment of ADR-0008
+§9 and a task; a no closes this entry with the reason.
+
 ## Accepted compromises
 
 These are conditions that the project keeps permanently and by decision. They do not age.

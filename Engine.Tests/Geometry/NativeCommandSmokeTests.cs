@@ -29,16 +29,20 @@ public class NativeCommandSmokeTests
         var translate = await session.Apply(moved);
         Assert.Equal(CommandStatus.Applied, translate.Status);
 
-        var cut = new SubtractCommand { MinuendBodyId = big.CommandId, SubtrahendBodyId = moved.CommandId };
-        var subtract = await session.Apply(cut);
-        Assert.Equal(CommandStatus.Applied, subtract.Status);
-
         // The moved box spans 0 to 1 on x: the cube of size 1 is centred on the
-        // origin, and Translate moves it by 0.5.
+        // origin, and Translate moves it by 0.5. The query comes before the
+        // subtract, because the subtract consumes the moved box (ADR-0021).
         var box = await session.Query<Aabb>(new GetBoundingBoxQuery { BodyId = moved.CommandId });
         Assert.Null(box.Error);
         Assert.Equal(0.0, box.Result.MinX, 9);
         Assert.Equal(1.0, box.Result.MaxX, 9);
+
+        var cut = new SubtractCommand { MinuendBodyId = big.CommandId, SubtrahendBodyId = moved.CommandId };
+        var subtract = await session.Apply(cut);
+        Assert.Equal(CommandStatus.Applied, subtract.Status);
+
+        var consumed = await session.Query<Aabb>(new GetBoundingBoxQuery { BodyId = moved.CommandId });
+        Assert.Equal("E-GEOM-BODY-NOT-FOUND", consumed.Error?.Code);
 
         var result = await session.Query<Aabb>(new GetBoundingBoxQuery { BodyId = cut.CommandId });
         Assert.Null(result.Error);
