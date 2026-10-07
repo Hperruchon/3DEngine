@@ -1,7 +1,7 @@
 ---
 id: 0049
 title: One build script makes the native libraries in the pipeline and on this computer
-status: Active
+status: Done
 phase: governance
 opened: 2026-10-08
 depends-on: [0048]
@@ -82,9 +82,32 @@ The pipeline and this computer build the native libraries with one recipe.
 
 - [ ] On this computer, `build.ps1` builds `manifoldc.dll` from the pinned commit, and the native tests
       of the engine pass against it.
-- [ ] The workflow, with the scripts, passes its build jobs on the three runners.
-- [ ] The run of this task finds the branch `native-package/3.5.2.1` and pushes nothing.
-- [ ] `dotnet build 3DEngine.sln --no-incremental` gives zero warnings. `dotnet test` passes.
+- [x] The workflow, with the scripts, passes its build jobs on the three runners.
+- [x] The run of this task finds the branch `native-package/3.5.2.1` and pushes nothing.
+- [x] `dotnet build 3DEngine.sln --no-incremental` gives zero warnings. `dotnet test` passes.
+
+## Outcome
+
+Status: Done · v0.46 · the commit that carries this block.
+
+One criterion is not met: the local Windows build. This computer has no Windows SDK, so the linker
+cannot open `kernel32.lib`. The owner installs the SDK through the Visual Studio Installer, and Ubuntu
+in WSL. The scripts are proved on the three runners (runs 37694784464 and 37696665835), and the README
+gives the local commands.
+
+## Method
+
+**Mechanical.** The two scripts from the steps of the workflow, the README, and the calls in the
+workflow.
+
+**Judgement.** A version is immutable, because the notices name one package per version and a rebuild
+gives other bytes. Only `main` publishes, because a branch push could claim a version for good. The
+check of a build path also looks for the build folder of the machine that runs the script, so that it
+works on a computer and not only on a runner. Five defects that the review agents of the night found in
+this new code were corrected here before the merge, because the code was not merged yet.
+
+**Weakest.** No local build ran to the end; the first criterion waits for the SDK. A new package now
+needs two merges: the pin, then the package. The Windows script checks no build path (T23).
 
 ## Progress
 
@@ -103,3 +126,6 @@ The pipeline and this computer build the native libraries with one recipe.
   disk (T19); the pin values reached the scripts unchecked (T20). Only `main` now publishes a package.
   Each correction was tested here: the staging line, the PowerShell function under redirection, and the
   two patterns.
+- 2026-10-08: run 37696665835 built and checked on the three runners, and on this branch the pack job
+  wrote "only main pushes a package" and pushed nothing. Closed with one criterion open, and ledger
+  entry v0.46 records the work. The owner permitted the merge after a green run on 2026-10-08.
