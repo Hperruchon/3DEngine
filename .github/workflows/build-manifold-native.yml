@@ -5,11 +5,17 @@ name: Build Manifold native
 # NuGet (runtimes/<rid>/native/) per ADR-0014 §5 / TASK-0012 §6.
 #
 # Since TASK-0048 a rebuild needs no manual step. A push that changes
-# eng/manifold-native/manifold-ref.txt, or this file, starts the workflow, and the
+# eng/manifold-native/manifold-ref.txt, a build script, or this file, starts the
+# workflow, and the
 # pin file gives the Manifold ref and the package version. The pack job pushes the
 # package to the branch native-package/<version>, so a session fetches it with git
 # and no sign-in. Then copy it into nuget/ and record its checksums in
 # THIRD-PARTY-NOTICES.md. workflow_dispatch stays, and its inputs replace the pin.
+#
+# A version is immutable: when the branch of the version exists, the pack job
+# pushes nothing (TASK-0049). A change to a script or to this file then rebuilds
+# and checks, and the package that the notices name stays as it is. A new
+# package needs a new package_version in the pin file.
 #
 # The workflow does NOT touch the build-and-test gate in ci.yml. Publish to a feed
 # stays disabled (TASK-0012 §6).
@@ -18,6 +24,8 @@ on:
   push:
     paths:
       - eng/manifold-native/manifold-ref.txt
+      - eng/manifold-native/build.sh
+      - eng/manifold-native/build.ps1
       - .github/workflows/build-manifold-native.yml
   workflow_dispatch:
     inputs:
@@ -94,159 +102,31 @@ jobs:
     runs-on: ${{ matrix.os }}
     continue-on-error: ${{ matrix.optional }}
     steps:
+      # The scripts of this repository hold the recipe, and the pipeline and a
+      # local build call the same ones (TASK-0049). eng/manifold-native/README.md
+      # gives the local commands.
+      - name: Checkout (this repo, for the build scripts)
+        uses: actions/checkout@v4
+        with:
+          path: engine
+
       - name: Checkout Manifold @ ${{ needs.pin.outputs.manifold_ref }}
         uses: actions/checkout@v4
         with:
           repository: elalish/manifold
           ref: ${{ needs.pin.outputs.manifold_commit }}
           submodules: recursive
+          path: manifold
 
-      # CROSS_SECTION must stay ON: MANIFOLD_CBIND is a cmake_dependent_option forced
-      # OFF when cross-section is OFF (v3.5.2), which would silently drop manifoldc.
-      # PAR=OFF is the serial (no-TBB) backend per ADR-0014 §3. -A x64 = VS platform.
-      - name: Configure (Windows / MSVC)
+      - name: Build, stage and check (Windows)
         if: runner.os == 'Windows'
-        shell: bash
-        run: >
-          cmake -B build -A x64
-          -DBUILD_SHARED_LIBS=ON
-          -DMANIFOLD_CROSS_SECTION=ON
-          -DMANIFOLD_CBIND=ON
-          -DMANIFOLD_PAR=OFF
-          -DMANIFOLD_TEST=OFF
-          -DMANIFOLD_DOWNLOADS=ON
+        shell: pwsh
+        run: ./engine/eng/manifold-native/build.ps1 -Source manifold -Staging staging
 
-      # Single-config generators need CMAKE_BUILD_TYPE at configure time.
-      #
-      # Each library finds its dependency in its own folder: $ORIGIN on Linux and
-      # @loader_path on macOS. Without these flags libmanifoldc stored the build
-      # folder of the runner as that search path, and it loaded on no other
-      # computer (register entry R-0035, TASK-0048). The single quotes keep
-      # $ORIGIN a literal text for CMake.
-      #
-      # Manifold's own CMakeLists.txt (v3.5.2, lines 255-259) sets
-      # CMAKE_BUILD_WITH_INSTALL_RPATH to FALSE and CMAKE_INSTALL_RPATH to an
-      # absolute folder as normal variables, which hide a flag of the same name on
-      # the command line; run 37529508917 showed it. It does not set
-      # CMAKE_BUILD_RPATH_USE_ORIGIN or CMAKE_BUILD_RPATH, so those two flags act:
-      # each search path of the build tree becomes relative to the library, and
-      # the extra entry finds the dependency in the same folder after staging.
-      - name: Configure (Linux / macOS)
+      - name: Build, stage and check (Linux / macOS)
         if: runner.os != 'Windows'
         shell: bash
-        run: |
-          set -euo pipefail
-          search_path='$ORIGIN'
-          if [ "$RUNNER_OS" = "macOS" ]; then search_path='@loader_path'; fi
-          cmake -B build \
-            -DCMAKE_BUILD_TYPE=Release \
-            -DBUILD_SHARED_LIBS=ON \
-            -DMANIFOLD_CROSS_SECTION=ON \
-            -DMANIFOLD_CBIND=ON \
-            -DMANIFOLD_PAR=OFF \
-            -DMANIFOLD_TEST=OFF \
-            -DMANIFOLD_DOWNLOADS=ON \
-            -DCMAKE_BUILD_RPATH_USE_ORIGIN=ON \
-            "-DCMAKE_BUILD_RPATH=$search_path"
-
-      - name: Build
-        shell: bash
-        run: cmake --build build --config Release --parallel
-
-      # A shared build emits manifoldc + core manifold (+ Clipper2 from cross-section) — ship all.
-      - name: Stage native libs
-        shell: bash
-        run: |
-          set -euo pipefail
-          mkdir -p staging
-          find build -type f \( \
-            -iname 'manifoldc.dll'  -o -iname 'libmanifoldc.so*' -o -iname 'libmanifoldc*.dylib' -o \
-            -iname 'manifold.dll'   -o -iname 'libmanifold.so*'  -o -iname 'libmanifold*.dylib'  -o \
-            -iname 'clipper2*.dll'   -o -iname 'libclipper2*.so*' -o -iname 'libclipper2*.dylib' \
-          \) -exec cp -v {} staging/ \;
-          echo '--- staged (raw) ---'; ls -la staging
-          # The build emits versioned files; .NET loads the UNVERSIONED name (libX.so /
-          # libX.dylib) and inter-lib deps use libX.so.<major> / libX.<major>.dylib. Create
-          # those aliases as copies (symlinks don't survive the artifact zip). No-op on Windows.
-          shopt -s nullglob
-          for f in staging/*.so.*; do                      # Linux: libX.so.3.5.2
-            stem="${f%.so.*}"; major="$(printf '%s' "${f#*.so.}" | cut -d. -f1)"
-            cp -f "$f" "$stem.so"
-            cp -f "$f" "$stem.so.$major"
-          done
-          for f in staging/lib*.*.dylib; do                # macOS: libX.3.5.2.dylib
-            b="$(basename "$f")"; name="${b%%.*}"
-            ver="${b#*.}"; ver="${ver%.dylib}"; major="$(printf '%s' "$ver" | cut -d. -f1)"
-            cp -f "$f" "staging/$name.dylib"
-            cp -f "$f" "staging/$name.$major.dylib"
-          done
-          echo '--- staged (with aliases) ---'; ls -la staging
-          # Guard requires manifoldc specifically (not just the core lib) — that is the payload.
-          ls staging | grep -qi 'manifoldc' || { echo 'ERROR: manifoldc not built. All shared libs under build/:'; find build -type f \( -name '*.so*' -o -name '*.dll' -o -name '*.dylib' \) -print; exit 1; }
-
-      # On macOS, CMAKE_BUILD_RPATH_USE_ORIGIN does not act, so each library keeps an
-      # absolute LC_RPATH of the build folder next to @loader_path; run 37532724996
-      # showed it, while Linux passed. This step removes each absolute entry with
-      # install_name_tool and signs the library again, because on arm64 a changed
-      # library with no valid signature does not load.
-      - name: Remove the absolute search paths (macOS)
-        if: runner.os == 'macOS'
-        shell: bash
-        run: |
-          set -euo pipefail
-          for f in staging/*.dylib; do
-            commands=$(otool -l "$f")
-            paths=$(awk '/cmd LC_RPATH/ { getline; getline; print $2 }' <<<"$commands")
-            for p in $paths; do
-              case "$p" in
-                /*) echo "$f: delete $p"; install_name_tool -delete_rpath "$p" "$f" ;;
-              esac
-            done
-            codesign --force --sign - "$f"
-          done
-
-      # The package of 2026-09 stored the build folder of the runner as the search
-      # path of libmanifold in libmanifoldc, so the library loaded on no other
-      # computer (register entry R-0035, TASK-0048). This step fails on that form:
-      # no path of the build machine, a relative search path, and a dependency that
-      # the system tool resolves inside the staging folder. Each failure is also an
-      # ::error line, so that a person with no sign-in reads it in the annotations.
-      - name: Check that the libraries find each other in their own folder
-        if: runner.os != 'Windows'
-        shell: bash
-        run: |
-          set -euo pipefail
-          failed=0
-          # Each tool writes into a variable first, and grep reads the variable. A
-          # pipe into grep -q can close before the tool ends, and with pipefail the
-          # broken pipe then reads as a failed check.
-          for f in staging/*; do
-            if grep -a -q -E '/(home|Users)/runner/' "$f"; then
-              found=$(grep -a -o -E '/(home|Users)/runner/[^[:cntrl:]]*' "$f" || true)
-              echo "::error title=Native build ($RUNNER_OS)::$f holds the path of the build machine ${found%%$'\n'*}"
-              failed=1
-            fi
-          done
-          if [ "$RUNNER_OS" = "Linux" ]; then
-            dynamic=$(readelf -d staging/libmanifoldc.so)
-            search=$(grep -E 'RPATH|RUNPATH' <<<"$dynamic" || true)
-            echo "search path: $search"
-            grep -q 'ORIGIN' <<<"$search" \
-              || { echo "::error title=Native build ($RUNNER_OS)::libmanifoldc.so has no search path with \$ORIGIN: $search"; failed=1; }
-            resolved=$(ldd staging/libmanifoldc.so || true)
-            echo "$resolved"
-            dependency=$(grep 'libmanifold.so' <<<"$resolved" || true)
-            grep -q "$PWD/staging/" <<<"$dependency" \
-              || { echo "::error title=Native build ($RUNNER_OS)::ldd does not resolve libmanifold inside staging/: $dependency"; failed=1; }
-          else
-            commands=$(otool -l staging/libmanifoldc.dylib)
-            search=$(grep -A2 LC_RPATH <<<"$commands" || true)
-            echo "$search"
-            grep -q '@loader_path' <<<"$search" \
-              || { echo "::error title=Native build ($RUNNER_OS)::libmanifoldc.dylib has no LC_RPATH with @loader_path: ${search//$'\n'/ }"; failed=1; }
-            otool -L staging/libmanifoldc.dylib
-          fi
-          exit $failed
+        run: bash engine/eng/manifold-native/build.sh manifold staging
 
       - name: Upload native-${{ matrix.rid }}
         uses: actions/upload-artifact@v4
@@ -327,6 +207,10 @@ jobs:
         run: |
           set -euo pipefail
           branch="native-package/$VERSION"
+          if git ls-remote --exit-code --heads origin "$branch" > /dev/null; then
+            echo "::notice title=Native package::$branch exists, and a version is immutable, so nothing is pushed. Give a new package_version in eng/manifold-native/manifold-ref.txt for a new package."
+            exit 0
+          fi
           mkdir out && cp nupkg/*.nupkg out/
           git checkout --orphan "$branch"
           git rm -rf --quiet .
@@ -335,7 +219,7 @@ jobs:
           git add ./*.nupkg
           git -c user.name="github-actions[bot]" -c user.email="41898282+github-actions[bot]@users.noreply.github.com" \
             commit --quiet -m "The native package $VERSION, Manifold $MANIFOLD_COMMIT, built by $SOURCE_SHA"
-          git push --force origin "HEAD:refs/heads/$branch"
+          git push origin "HEAD:refs/heads/$branch"
           echo "pushed $branch"
 
       # Publish is intentionally disabled until the feed is chosen (TASK-0012 §6).

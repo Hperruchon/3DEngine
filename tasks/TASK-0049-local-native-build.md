@@ -1,0 +1,97 @@
+---
+id: 0049
+title: One build script makes the native libraries in the pipeline and on this computer
+status: Active
+phase: governance
+opened: 2026-10-08
+depends-on: [0048]
+governed-by: []
+writes:
+  create:
+    - tasks/TASK-0049-local-native-build.md
+    - eng/manifold-native/build.sh
+    - eng/manifold-native/build.ps1
+    - eng/manifold-native/README.md
+  modify:
+    - .github/workflows/build-manifold-native.yml
+    - docs/INDEX.md
+    - docs/CURRENT-STATE.md
+  forbid:
+    - Engine.Contracts/**
+    - Engine.Core/**
+    - Engine.Cli/**
+    - Engine.Api.Http/**
+    - Engine.Geometry.Manifold/**
+    - Engine.Tests/**
+    - nuget/**
+    - 3DEngine/**
+    - 3DEngine.Core/**
+    - 3DEngine.Vulkan/**
+    - docs/adr/**
+    - CLAUDE.md
+---
+
+# TASK-0049 — One build script makes the native libraries in the pipeline and on this computer
+
+This task uses Simplified Technical English (ASD-STE100). See `CLAUDE.md`, section "Language".
+
+## Context
+
+On 2026-10-06 the owner decided that a local build of the native libraries is for development and
+test, and that it is welcome because it makes the use of GitHub "surgical": test here first, push only
+a tested change. The official package in `nuget/` still comes from the workflow
+`build-manifold-native.yml`, because macOS cannot be built on this computer and a runner gives a clean,
+public build. TASK-0048 needed five builds on GitHub; a local pack of one minute found the cause of the
+last one.
+
+Today the recipe of the build lives only in the workflow. A local build that copies it can drift from
+it. This computer has CMake and the x64 compiler in Visual Studio 18 Insiders. WSL is installed, and it
+has no Linux distribution yet.
+
+On 2026-10-08 the owner permitted the merge of each task of the night after a green run on the three
+runners.
+
+## Goal
+
+The pipeline and this computer build the native libraries with one recipe.
+
+## Scope (in)
+
+1. **`eng/manifold-native/build.sh`** builds Linux and macOS: configure with the search-path flags of
+   TASK-0048, build, stage the libraries with their aliases, remove the absolute search path on macOS,
+   and run the check of TASK-0048.
+2. **`eng/manifold-native/build.ps1`** builds Windows: configure with the Visual Studio generator,
+   build, and stage. It finds CMake on the path, or through `vswhere` in Visual Studio.
+3. **The workflow calls the two scripts** and keeps no copy of their steps. Its result does not
+   change: the build jobs pass on the three runners.
+4. **An immutable version.** The pack job does not overwrite a branch `native-package/<version>` that
+   exists. It writes a notice and pushes nothing. A change to the workflow then rebuilds and checks,
+   and does not replace the package that `THIRD-PARTY-NOTICES.md` names.
+5. **`eng/manifold-native/README.md`** gives the local commands: a clone of the pinned Manifold commit
+   into `artifacts/`, the build into `artifacts/native/<platform>/`, and a test of the engine against
+   those libraries.
+
+## Scope (out)
+
+- No change to `nuget/` or to the package version.
+- No Linux build on this computer until the owner installs a distribution (`wsl --install -d Ubuntu`).
+  The script is ready for it.
+- No local build of macOS.
+
+## Acceptance criteria
+
+- [ ] On this computer, `build.ps1` builds `manifoldc.dll` from the pinned commit, and the native tests
+      of the engine pass against it.
+- [ ] The workflow, with the scripts, passes its build jobs on the three runners.
+- [ ] The run of this task finds the branch `native-package/3.5.2.1` and pushes nothing.
+- [ ] `dotnet build 3DEngine.sln --no-incremental` gives zero warnings. `dotnet test` passes.
+
+## Progress
+
+- 2026-10-08: the task is open, the first task of the night.
+- 2026-10-08: the two scripts, the README, and the workflow that calls them. A local run of
+  `build.ps1` on the pinned commit found CMake in Visual Studio 18 and failed at the configure step:
+  the linker cannot open `kernel32.lib`, and MSBuild says that `WindowsSDKDir` is not defined. This
+  computer has no Windows SDK (no folder `Windows Kits/10/Lib`). Its install is an action of the owner.
+  A clean build of the solution restores the library of the package after a local test: an overwritten
+  `manifoldc.dll` had the checksum of the package again.
