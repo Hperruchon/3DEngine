@@ -4,7 +4,7 @@ title: The desktop host owns a document session and serves the HTTP and WebSocke
 status: Ready
 phase: P0.17
 opened: 2026-09-25
-depends-on: [0034, 0036]
+depends-on: [0034, 0036, 0051]
 governed-by: [0005, 0007, 0010, 0011, 0013, 0016, 0017, 0018, 0019, 0020, 0021]
 writes:
   create:

@@ -4,6 +4,7 @@ using System.Net.Http.Json;
 using System.Net.WebSockets;
 using System.Text.RegularExpressions;
 using Microsoft.AspNetCore.Mvc.Testing;
+using Microsoft.Extensions.Configuration;
 
 namespace Engine.Tests.Http;
 
@@ -43,6 +44,46 @@ public class HostGuardTests : IClassFixture<WebApplicationFactory<Program>>
         Assert.Contains("loopback", refusal, StringComparison.Ordinal);
     }
 
+    // The form in which Kestrel reports an address that it bound on each
+    // interface. The check after the start reads this form (TASK-0051).
+    [Theory]
+    [InlineData("http://[::]:5000")]
+    [InlineData("http://0.0.0.0:5000")]
+    public void A_Bound_Address_On_Each_Interface_Is_Refused(string bound)
+    {
+        Assert.NotNull(Program.LoopbackRefusal(bound));
+    }
+
+    // Finding E23 of the review of 2026-10-04: the guard read the key "urls" only.
+    // Kestrel also reads each endpoint URL and the two port keys (TASK-0051).
+    [Theory]
+    [InlineData("Kestrel:Endpoints:E1:Url", "http://192.0.2.1:5880")]
+    [InlineData("Kestrel:Endpoints:E1:Url", "http://0.0.0.0:5880")]
+    [InlineData("http_ports", "5880")]
+    [InlineData("https_ports", "5881")]
+    [InlineData("urls", "http://192.0.2.1:5880")]
+    public void Each_Source_Of_A_Foreign_Address_In_The_Configuration_Is_Refused(string key, string value)
+    {
+        var configuration = Configuration((key, value));
+
+        var refusal = Program.ConfigurationRefusal(configuration);
+
+        Assert.NotNull(refusal);
+        Assert.Contains("loopback", refusal, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void Loopback_Addresses_In_Each_Source_Are_Accepted()
+    {
+        var configuration = Configuration(
+            ("urls", "http://127.0.0.1:5187"),
+            ("Kestrel:Endpoints:E1:Url", "http://localhost:5188"),
+            ("Kestrel:Endpoints:E2:Url", "http://[::1]:5189"));
+
+        Assert.Null(Program.ConfigurationRefusal(configuration));
+        Assert.Null(Program.ConfigurationRefusal(Configuration()));
+    }
+
     [Theory]
     [InlineData(null)]
     [InlineData("http://localhost:5187")]
@@ -69,6 +110,35 @@ public class HostGuardTests : IClassFixture<WebApplicationFactory<Program>>
         {
             process.Kill(entireProcessTree: true);
             Assert.Fail("The host did not exit within 30 seconds. It bound to 0.0.0.0 and ran.");
+        }
+
+        Assert.Equal(1, process.ExitCode);
+        Assert.Contains("loopback", await errorText, StringComparison.Ordinal);
+        GC.KeepAlive(outputText);
+    }
+
+    // Before TASK-0051 the host gave no refusal for these two sources. It tried to
+    // bind the endpoint address, and it bound each interface for the port key.
+    // 192.0.2.1 is a documentation address (RFC 5737), so no computer holds it,
+    // and the run before the correction bound nothing.
+    [Theory]
+    [InlineData("--Kestrel:Endpoints:E1:Url=http://192.0.2.1:5880", null)]
+    [InlineData("", "5880")]
+    public async Task The_Process_Refuses_A_Foreign_Address_From_Each_Source(string arguments, string? httpPorts)
+    {
+        using var process = StartHost(arguments, httpPorts);
+        var errorText = process.StandardError.ReadToEndAsync();
+        var outputText = process.StandardOutput.ReadToEndAsync();
+
+        using var limit = new CancellationTokenSource(TimeSpan.FromSeconds(30));
+        try
+        {
+            await process.WaitForExitAsync(limit.Token);
+        }
+        catch (OperationCanceledException)
+        {
+            process.Kill(entireProcessTree: true);
+            Assert.Fail("The host did not exit within 30 seconds. It bound the address and ran.");
         }
 
         Assert.Equal(1, process.ExitCode);
@@ -152,22 +222,34 @@ public class HostGuardTests : IClassFixture<WebApplicationFactory<Program>>
 
     // The host binary and its runtime configuration are in the test output,
     // because Engine.Tests references Engine.Api.Http.
-    private static Process StartHost(string urls)
+    private static Process StartHost(string urls) => StartHost($"--urls {urls}", httpPorts: null);
+
+    // Each variable that gives an address is removed first, so that only the
+    // arguments and the given port value reach the host.
+    private static Process StartHost(string arguments, string? httpPorts)
     {
         var dll = Path.Combine(AppContext.BaseDirectory, "engine-api-http.dll");
         Assert.True(File.Exists(dll), $"{dll} is absent.");
 
-        var start = new ProcessStartInfo("dotnet", $"\"{dll}\" --urls {urls}")
+        var start = new ProcessStartInfo("dotnet", $"\"{dll}\" {arguments}")
         {
             RedirectStandardError = true,
             RedirectStandardOutput = true,
             UseShellExecute = false,
             WorkingDirectory = AppContext.BaseDirectory,
         };
-        start.Environment.Remove("ASPNETCORE_URLS");
+        foreach (var name in new[] { "ASPNETCORE_URLS", "DOTNET_URLS", "ASPNETCORE_HTTP_PORTS", "ASPNETCORE_HTTPS_PORTS", "DOTNET_HTTP_PORTS", "DOTNET_HTTPS_PORTS" })
+            start.Environment.Remove(name);
+        if (httpPorts is not null)
+            start.Environment["ASPNETCORE_HTTP_PORTS"] = httpPorts;
 
         return Process.Start(start)!;
     }
+
+    private static IConfiguration Configuration(params (string Key, string Value)[] values)
+        => new ConfigurationBuilder()
+            .AddInMemoryCollection(values.Select(v => new KeyValuePair<string, string?>(v.Key, v.Value)))
+            .Build();
 
     // The address that the host reports on its standard output, within 30 seconds.
     private static async Task<string> ListeningAddressAsync(Process process)

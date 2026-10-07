@@ -3,16 +3,23 @@ using Engine.Api.Http;
 using Engine.Api.Http.Endpoints;
 using Engine.Api.Http.WebSockets;
 using Microsoft.AspNetCore.HostFiltering;
+using Microsoft.AspNetCore.Hosting.Server;
+using Microsoft.AspNetCore.Hosting.Server.Features;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // The host binds to a loopback address only. docs/CHARTER.md, target consumers,
 // says so for Engine.Api.Http, and ADR-0019 §5 says so for the desktop host that
-// mounts the same surface later. The address comes from `--urls` or from the
-// variable ASPNETCORE_URLS, which the configuration exposes as "urls"; the
-// framework default, with no value, is localhost. A refusal is an exit code and
-// a message, not an exception (TASK-0044).
-var refusal = Program.LoopbackRefusal(builder.Configuration["urls"]);
+// mounts the same surface later. The framework default, with no value, is
+// localhost. A refusal is an exit code and a message, not an exception
+// (TASK-0044).
+//
+// Kestrel reads addresses from four keys of the configuration, and TASK-0044
+// checked one of them (finding E23 of the review of 2026-10-04). Each key is
+// checked before the start, so the host never binds a foreign address from
+// them. A second check after the start reads the addresses that the server
+// bound, for a source that this list does not know (TASK-0051).
+var refusal = Program.ConfigurationRefusal(builder.Configuration);
 if (refusal is not null)
 {
     Console.Error.WriteLine(refusal);
@@ -93,7 +100,18 @@ app.MapGet("/schema/backend", SchemaBackendEndpoint.Handle);
 
 app.MapGet("/events", EventsEndpoint.Handle);
 
-app.Run();
+await app.StartAsync();
+
+var bound = app.Services.GetRequiredService<IServer>().Features.Get<IServerAddressesFeature>()?.Addresses;
+var boundRefusal = Program.LoopbackRefusal(bound is null ? null : string.Join(';', bound));
+if (boundRefusal is not null)
+{
+    Console.Error.WriteLine(boundRefusal);
+    await app.StopAsync();
+    return 1;
+}
+
+await app.WaitForShutdownAsync();
 return 0;
 
 // Marker so Engine.Tests can use WebApplicationFactory<Program>. The two
@@ -119,6 +137,26 @@ public partial class Program
         }
 
         return null;
+    }
+
+    // Null when each address that the configuration gives to Kestrel is a
+    // loopback address. The keys are "urls" (from --urls, ASPNETCORE_URLS or
+    // DOTNET_URLS), each Kestrel:Endpoints:<name>:Url, and "http_ports" and
+    // "https_ports" (from ASPNETCORE_HTTP_PORTS and ASPNETCORE_HTTPS_PORTS). A
+    // port key binds each interface, so a value in it is always refused.
+    internal static string? ConfigurationRefusal(IConfiguration configuration)
+    {
+        foreach (var key in new[] { "http_ports", "https_ports" })
+        {
+            if (!string.IsNullOrWhiteSpace(configuration[key]))
+                return $"engine-api-http binds to a loopback address only, and the setting '{key}' "
+                    + $"(ASPNETCORE_{key.ToUpperInvariant()}) binds each interface. Remove it, and use "
+                    + "--urls http://127.0.0.1:<port>. See ADR-0019 section 5.";
+        }
+
+        var endpoints = configuration.GetSection("Kestrel:Endpoints").GetChildren().Select(endpoint => endpoint["Url"]);
+        var urls = new[] { configuration["urls"] }.Concat(endpoints).Where(url => !string.IsNullOrWhiteSpace(url));
+        return LoopbackRefusal(string.Join(';', urls));
     }
 
     // An Origin header names a permitted host, compared without case. The value

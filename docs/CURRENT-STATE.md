@@ -1357,3 +1357,32 @@ R-0031 and R-0033 have a progress line. The next task corrects E20 and E23, befo
 New tests: 0. The test list holds 260. `dotnet build 3DEngine.sln --no-incremental` gives zero errors
 and zero warnings. Open entries: 14 of 15. New diagnostic codes: none. The next codebase review must
 come before ledger entry v0.53.
+
+## v0.48 — A call back into the session fails at once, and the HTTP host refuses a foreign address from each source (governance, TASK-0051)
+
+Two defects of the review of 2026-10-04 that TASK-0038 must not ship with. The owner put their
+correction before TASK-0037 on 2026-10-08.
+
+**E20.** A sink or a read function that called `DocumentSession` waited for the section that its own
+flow held, and each other client waited behind it. Now the flow that holds the section carries a
+token, and the session refuses a call with the token of the current holder:
+`InvalidOperationException`, at once. The other callers wait as before.
+
+**E23.** The HTTP host checked the key `urls` only. It now also checks each
+`Kestrel:Endpoints:<name>:Url` and the port keys of `ASPNETCORE_HTTP_PORTS` and
+`ASPNETCORE_HTTPS_PORTS` before the start, so it never binds a foreign address from a known source.
+After the start it reads the addresses that the server bound, and it stops with exit code 1 when one
+is not a loopback address.
+
+**Proof.** Each new test that tests a defect failed first: 8 of the 12 that ran. Before the correction
+the host with a `Kestrel:Endpoints` address died with an unhandled exception when it tried to bind. An
+injection proved the check after the start, which no test reaches without a bind on each interface.
+
+**Not explained.** One local run of the full suite ended with "test run aborted", and its output is
+lost. Twenty later runs passed, and no run made a crash dump. R-0034 has a progress line.
+
+TASK-0038 now depends on TASK-0051. R-0033 has a progress line.
+
+New tests: 13. The test list holds 273. `dotnet build 3DEngine.sln --no-incremental` gives zero errors
+and zero warnings. Open entries: 14 of 15. New diagnostic codes: none. The next codebase review must
+come before ledger entry v0.53.
