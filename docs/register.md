@@ -274,6 +274,9 @@ contract, and a test holds each sink to it. That is the correction of E18. TASK-
 Progress 2026-10-08: the fourth codebase review finds each of E18 to E23 open, and E24 open in seven
 parts of nine (TASK-0035 and TASK-0036 corrected two). The order of the owner of 2026-10-08 puts the
 corrections of E20 and E23 in the next task, before TASK-0037.
+Progress 2026-10-08: TASK-0051 corrected E20 (a call back into the session throws at once) and E23
+(the HTTP host checks each source of an address before the start and the bound addresses after it).
+TASK-0038 now depends on TASK-0051. E18, E19, E21, E22 and seven parts of E24 stay.
 
 ### R-0036 · Fifteen findings of the fourth codebase review in the engine and the hosts have no task
 - class: debt
@@ -303,6 +306,10 @@ Progress 2026-10-04: TASK-0047 corrected T8. Each job has a time limit, the step
 after two minutes, and the report script names the test that did not complete. Run 37189044285 on a
 branch that is never merged stopped an injected hang after about 130 s on each runner and named it.
 The script also reads a stopped run, which is a part of T13. T12 and the other part of T13 stay.
+Progress 2026-10-08: during TASK-0051 one local run of the full suite ended with "test run aborted",
+and its output is lost. Twenty later runs passed, thirteen with `--blame-crash`, and no run made a
+crash dump. The cause is not known. TASK-0051 added two tests that start the real host. A second abort
+must be read with `--blame-crash`, and it adds a part to T12.
 
 ## Accepted compromises
 

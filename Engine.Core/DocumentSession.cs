@@ -57,27 +57,31 @@ public sealed class DocumentSession
     // the bus starts the commit, it does not stop (ADR-0006 section 4).
     public async Task<CommandResult> Apply(Command command, CancellationToken ct = default)
     {
+        RefuseReentry();
         await _serial.WaitAsync(ct).ConfigureAwait(false);
+        Hold();
         try
         {
             return await _commands.Apply(command, ct).ConfigureAwait(false);
         }
         finally
         {
-            _serial.Release();
+            Release();
         }
     }
 
     public async Task<QueryResult<T>> Query<T>(Query query, CancellationToken ct = default)
     {
+        RefuseReentry();
         await _serial.WaitAsync(ct).ConfigureAwait(false);
+        Hold();
         try
         {
             return await _queries.Query<T>(query, ct).ConfigureAwait(false);
         }
         finally
         {
-            _serial.Release();
+            Release();
         }
     }
 
@@ -88,14 +92,52 @@ public sealed class DocumentSession
     {
         ArgumentNullException.ThrowIfNull(read);
 
+        RefuseReentry();
         await _serial.WaitAsync(ct).ConfigureAwait(false);
+        Hold();
         try
         {
             return read(_document, _events);
         }
         finally
         {
-            _serial.Release();
+            Release();
         }
+    }
+
+    // A call into the session from code that runs inside the section, an event
+    // sink or a read function, waited for the section that its own flow holds,
+    // and each other client waited behind it (finding E20 of the review of
+    // 2026-10-04, TASK-0051). The flow that holds the section carries a token in
+    // an AsyncLocal, and the session refuses a call that carries the token of the
+    // current holder. A task that code inside the section starts inherits the
+    // token, so it is refused too while the section is held. After the section
+    // ends the token is stale, and the task waits like each other caller.
+    private readonly AsyncLocal<object?> _flow = new();
+    private object? _holder;
+
+    private void RefuseReentry()
+    {
+        var token = _flow.Value;
+        if (token is not null && ReferenceEquals(token, Volatile.Read(ref _holder)))
+            throw new InvalidOperationException(
+                "A call entered the DocumentSession from inside its own serial section: from an event sink, "
+                + "from a read function, or from a task that one of them started. The call would wait for "
+                + "itself. Make the call after the section ends.");
+    }
+
+    // Not async, so that the value of the AsyncLocal stays in the caller and
+    // reaches the code that the caller runs in the section.
+    private void Hold()
+    {
+        var token = new object();
+        Volatile.Write(ref _holder, token);
+        _flow.Value = token;
+    }
+
+    private void Release()
+    {
+        Volatile.Write(ref _holder, null);
+        _serial.Release();
     }
 }
