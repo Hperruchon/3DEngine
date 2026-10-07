@@ -251,6 +251,10 @@ file that MSBuild reads. It corrected the open part of T3: a task that is `Done`
 after it governs nothing. It corrected the part of T11 for the task file, which the gate now reads at
 the commit. Each change failed on an injection first. T4 (three parts), T5, T7, T10, the rest of T11
 and two parts of T13 stay.
+Progress 2026-10-08: the fourth codebase review adds T14, T16, T17, T23, T25 and the comment part of
+T24. The worst is T14: a module initializer in a test file can clear the variable that the write-set
+gate reads, so the commit judges itself. Question Q1 of that review asks where the check must run.
+T15 is corrected in the review (the write set of TASK-0038), and TASK-0049 corrected T18 to T22.
 
 ### R-0033 · Seven findings of the third codebase review in the engine and the hosts have no task
 - class: debt
@@ -267,6 +271,21 @@ serves the surface while a person has a document open.
 Exit: each finding has a task, or it is corrected, or the owner accepts it and gives the reason.
 Progress 2026-10-04: the owner answered question Q4 of the review: a sink must not throw, by
 contract, and a test holds each sink to it. That is the correction of E18. TASK-0047 records it.
+Progress 2026-10-08: the fourth codebase review finds each of E18 to E23 open, and E24 open in seven
+parts of nine (TASK-0035 and TASK-0036 corrected two). The order of the owner of 2026-10-08 puts the
+corrections of E20 and E23 in the next task, before TASK-0037.
+
+### R-0036 · Fifteen findings of the fourth codebase review in the engine and the hosts have no task
+- class: debt
+- opened: 2026-10-08
+- due: 2027-04-06
+- extended: no
+- refs: `docs/reviews/2026-10-08-codebase-review.md` findings E25 to E39, TASK-0019
+A replayed Document can never get a command bus, so a load path cannot continue live (E25). After a
+divergence the backend keeps its bodies, and a handler exception escapes the replay raw (E27, E28).
+The version can go back through a cast of the log (E26). E29 to E39 are smaller defects in the replay,
+the queries, `/schema/backend`, the exit codes and the backend selection.
+Exit: each finding has a task, or it is corrected, or the owner accepts it and gives the reason.
 
 ### R-0034 · The pipeline can hang for six hours, and three tests depend on timing
 - class: risk

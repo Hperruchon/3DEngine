@@ -13,7 +13,7 @@ Written 2026-09-22 by TASK-0024. Section 4 added 2026-09-23 by TASK-0027.
 The repository holds one binary artifact:
 
 ```
-nuget/Engine.Geometry.Manifold.Native.3.5.2.nupkg
+nuget/Engine.Geometry.Manifold.Native.3.5.2.1.nupkg
 ```
 
 The package holds the native library for three runtime identifiers: `linux-x64`, `osx-arm64` and
