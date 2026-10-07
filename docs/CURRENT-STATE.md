@@ -1298,3 +1298,30 @@ GitHub; a later task makes the shared build script and the local build.
 New tests: 2. The test list holds 260, up from 258. `dotnet build 3DEngine.sln --no-incremental` gives
 zero errors and zero warnings. Closed: R-0018, R-0035. Open entries: 13 of 15. New diagnostic codes:
 none. The next codebase review must come before ledger entry v0.47.
+## v0.46 — One build script makes the native libraries in the pipeline and on this computer (governance, TASK-0049)
+
+The owner decided on 2026-10-06 that a local build of the native libraries is for development and test,
+and that the official package comes from GitHub. On 2026-10-08 the owner permitted the merge of each
+task of the night after a green run on the three runners.
+
+**One recipe.** `eng/manifold-native/build.sh` builds, stages and checks Linux and macOS, and
+`build.ps1` builds Windows. The workflow calls the two scripts and keeps no copy of their steps, and
+`eng/manifold-native/README.md` gives the local commands. Run 37696665835 built and checked with them
+on the three runners.
+
+**A version is immutable, and only main publishes.** The pack job pushes nothing when the branch of a
+version exists, and nothing from a branch other than `main`. A tag push starts no run. The token of the
+workflow stays off the disk, and the pin values pass strict forms before they reach a script.
+
+**Found on the way.** A local run on this computer stopped at the link: the Windows SDK is absent, so
+`kernel32.lib` cannot be found. The review agents of the night found five defects in the new code
+before its merge, and this task corrected them: a second build into one staging folder, a stop of
+PowerShell 5.1 at a CMake warning, a branch that could claim a version, the token on disk, and unchecked
+pin values.
+
+Not done, and why: the local Windows build waits for the Windows SDK, and the local Linux build for an
+Ubuntu distribution in WSL. Both are installs of the owner.
+
+New tests: 0. The test list holds 260. `dotnet build 3DEngine.sln --no-incremental` gives zero errors
+and zero warnings. Open entries: 13 of 15. New diagnostic codes: none. The next codebase review must come
+before ledger entry v0.47.
