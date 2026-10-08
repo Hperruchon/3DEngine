@@ -203,13 +203,28 @@ public class DependencyDirectionGateTests
     // eng/manifold-native packs the native payload. It holds no code.
     private static readonly string[] Packaging = ["Engine.Geometry.Manifold.Native"];
 
+    // eng/write-set-check judges the write set of each commit. The pipeline
+    // builds it from main, alone (TASK-0053).
+    private static readonly string[] Judges = ["WriteSetCheck"];
+
+    [Fact]
+    public void The_Judge_Of_The_Write_Set_Has_No_Project_Reference()
+    {
+        // The pipeline builds the judge from a checkout of main and nothing else.
+        // A reference to a project would make the judge depend on code that the
+        // judged commit can change, and would slow each run.
+        var graph = Graph();
+        Assert.True(graph.ContainsKey("WriteSetCheck"), "eng/write-set-check/WriteSetCheck.csproj was not found.");
+        Assert.Empty(graph["WriteSetCheck"]);
+    }
+
     [Fact]
     public void Each_Project_Is_In_One_Class()
     {
         // A new project must enter one of the lists above before the gate can
         // apply a rule to it. Until TASK-0039 an unlisted project passed each
         // test, because no test read it (rules review finding F22).
-        string[] classified = [.. Kernel, .. RenderSide, .. HeadlessClients, .. HostsThatDraw, .. Verifiers, .. Packaging];
+        string[] classified = [.. Kernel, .. RenderSide, .. HeadlessClients, .. HostsThatDraw, .. Verifiers, .. Packaging, .. Judges];
 
         var unclassified = Graph().Keys
             .Where(p => !classified.Contains(p))

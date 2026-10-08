@@ -197,83 +197,39 @@ jobs:
         with:
           global-json-file: global.json
 
-      - name: Build the tests
-        run: dotnet build Engine.Tests/Engine.Tests.csproj
+      # The judge comes from main, and not from the commit that it judges
+      # (TASK-0053). Until that task the judge was a test in Engine.Tests, built
+      # from the judged commit, and a file under Engine.Tests/ could switch it off
+      # for its own commit (codebase review of 2026-10-08, finding T14). A push to
+      # main uses the judge of the tip before the push. When that commit holds no
+      # judge, which is true only for the first runs of TASK-0053, the judge of
+      # the commit under judgment runs, and a notice says so.
+      - name: Build the judge from main
+        env:
+          REF: ${{ github.ref }}
+          PUSH_BEFORE: ${{ github.event.before }}
+        run: |
+          set -euo pipefail
+          judge_ref=origin/main
+          if [ "$REF" = refs/heads/main ] && [ -n "$PUSH_BEFORE" ] && git cat-file -e "$PUSH_BEFORE^{commit}" 2>/dev/null; then
+            judge_ref="$PUSH_BEFORE"
+          fi
+          git worktree add --detach "$RUNNER_TEMP/judge" "$judge_ref"
+          source="$RUNNER_TEMP/judge"
+          if [ ! -f "$source/eng/write-set-check/WriteSetCheck.csproj" ]; then
+            echo "::notice title=Write set::$judge_ref holds no judge, so the judge of the commit under judgment runs."
+            source=.
+          fi
+          echo "judge from $(git -C "$source" rev-parse HEAD)"
+          dotnet build "$source/eng/write-set-check/WriteSetCheck.csproj" -c Release -o "$RUNNER_TEMP/judge-bin"
 
       # One commit at a time, and not the whole branch. A task governs the commit
       # that carries it, therefore a diff across many tasks cannot say which task
-      # made which change. TASK-0026 measured that: the whole-branch diff of this
-      # branch reported 19 files against the write set and each report was false.
-      #
-      # The commit message names the governing task: the trailer line of the form
-      # TASK-nnnn, optionally followed by ' · ADR-nnnn'. A prose line that starts
-      # with an identifier is not a trailer; the v0.27 message has one. TASK-0039
-      # added that rule, because register entry R-0026 recorded that a commit
-      # received the permits of each task file that it touched. When the message
-      # names no task, the gate accepts the one task file that the commit
-      # touches, and it refuses a commit that touches several and names none.
-      #
-      # A merge commit is checked on the changes that the merge made itself,
-      # which `git diff-tree --cc` lists. A clean merge lists nothing and passes;
-      # a merge with its own change needs a governing task like any commit. Since
-      # TASK-0047 the gate also receives the hash of the commit, so that it reads
-      # the task file at that commit and refuses a task that is Done before the
-      # commit and after it. Until
-      # TASK-0043 a merge commit gave an empty list and was never examined
-      # (codebase review of 2026-09-30, finding T3).
+      # made which change (TASK-0026). The judge gives the range from the previous
+      # tip of the push, or from the cut-off for a new branch or a pull request,
+      # and it judges a merge on the changes that the merge made itself.
+      # eng/write-set-check/Program.cs holds the steps, and Judge.cs the rules.
       - name: Check each commit against the write set of its task
         env:
           PUSH_BEFORE: ${{ github.event.before }}
-        run: |
-          set -e
-          cutoff=$(grep -v '^#' eng/write-set-cutoff.txt | tr -d '[:space:]')
-          [ -n "$cutoff" ] || { echo "FAIL: eng/write-set-cutoff.txt gives no commit"; exit 1; }
-          echo "cut-off commit: $cutoff"
-
-          # A push gives the previous tip. A new branch gives zeros, and a pull
-          # request gives no value, so both fall back to the cut-off.
-          before="$PUSH_BEFORE"
-          if [ -z "$before" ] || [ "$before" = "0000000000000000000000000000000000000000" ]; then
-            before="$cutoff"
-          elif ! git cat-file -e "$before" 2>/dev/null; then
-            before="$cutoff"
-          fi
-          echo "range: $before..HEAD"
-
-          commits=$(git rev-list --reverse "$before"..HEAD) || { echo "FAIL: git rev-list on $before..HEAD"; exit 1; }
-          [ -n "$commits" ] || { echo "no commit in the range"; exit 0; }
-
-          failed=0
-          for commit in $commits; do
-            subject=$(git log -1 --format='%h %s' "$commit")
-
-            if git merge-base --is-ancestor "$commit" "$cutoff" 2>/dev/null; then
-              echo "skip  $subject  (grandfathered)"
-              continue
-            fi
-
-            parents=$(git rev-list --parents -n 1 "$commit" | wc -w)
-            if [ "$parents" -gt 2 ]; then
-              files=$(git diff-tree --cc --no-commit-id --name-only -r "$commit")
-              if [ -z "$files" ]; then
-                echo "pass  $subject  (a merge with no change of its own)"
-                continue
-              fi
-              echo "check $subject  (a merge with changes of its own)"
-            else
-              files=$(git diff-tree --no-commit-id --name-only -r "$commit")
-            fi
-
-            task=$(git log -1 --format=%B "$commit" | grep -E '^TASK-[0-9]{4}( · (ADR|TASK)-[0-9]{4})*[[:space:]]*$' | head -1 | grep -o -E '^TASK-[0-9]{4}' || true)
-            echo "check $subject  (task: ${task:-none named})"
-
-            if WRITE_SET_COMMIT="$commit" WRITE_SET_FILES="$files" WRITE_SET_TASK="$task" dotnet test Engine.Tests/Engine.Tests.csproj \
-                 --no-build --filter 'FullyQualifiedName~WriteSetGate'; then
-              echo "  pass"
-            else
-              echo "  FAIL $subject"
-              failed=1
-            fi
-          done
-
-          exit $failed
+        run: dotnet "$RUNNER_TEMP/judge-bin/write-set-check.dll" --range "$PUSH_BEFORE"

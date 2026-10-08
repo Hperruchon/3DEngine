@@ -1,36 +1,19 @@
+using WriteSetCheck;
 using Xunit;
 
 namespace Engine.Tests.Governance;
 
-// The gate for the `writes` block of a task file. Register entry R-0017
+// The static gate for the `writes` block of a task file. Register entry R-0017
 // recorded the gap: each task declares a create list, a modify list and a forbid
-// list, and nothing read that block. An agent could change a forbidden file and
-// no check found the error. The declaration was a wish and not a rule.
+// list, and nothing read that block.
 //
-// The gate has two parts.
-//
-//   - Each static test always runs. It reads every task file and verifies that
-//     the declaration is well formed and that it agrees with the working tree.
-//   - The dynamic test runs when the environment variable WRITE_SET_FILES gives
-//     a list of changed paths, one per line. Continuous integration sets that
-//     variable from `git diff-tree`, and it sets WRITE_SET_TASK from the
-//     trailer line of the commit message, of the form TASK-nnnn. The test then
-//     verifies that each changed file is inside the write set of that task.
-//
-// One implementation serves both. A person runs the dynamic part locally by
-// setting both variables, and the logic that continuous integration uses is the
-// logic that `dotnet test` covers.
-//
-// Three rules came from the codebase review of 2026-09-30, finding T3. A commit
-// that names a task also changes the file of that task, so a closed task cannot
-// lend its permits to a later commit. A gate file must be named exactly, so a
-// pattern such as Engine.Tests/** does not permit a change to a gate. The
-// cut-off commit is held here, so a commit cannot move it.
-//
-// TASK-0047 added two rules from the review of 2026-10-04: the gate reads the
-// governing task at the commit, which continuous integration gives in
-// WRITE_SET_COMMIT, and a task that is Done before and after the commit
-// governs nothing.
+// Each test here reads every task file and verifies that the declaration is well
+// formed and that it agrees with the working tree. The judge of each change, the
+// rule that each changed file is inside the write set of its task, is the program
+// eng/write-set-check, which the pipeline builds from main (TASK-0053). Until
+// that task the judge was a test in this class, and a file under Engine.Tests/
+// could switch it off for its own commit (codebase review of 2026-10-08, finding
+// T14). WriteSetJudgeTests tests the rules of the judge.
 public class WriteSetGateTests
 {
     // Task files 0001 to 0013 predate docs/templates.md and carry no front
@@ -38,11 +21,6 @@ public class WriteSetGateTests
     // way as the budget for an unenforced ADR. A new task must declare its
     // write set.
     private const int TasksWithoutFrontMatterBudget = 13;
-
-    // TASK-0026 turned the gate on at this commit. eng/write-set-cutoff.txt
-    // gives the same value to the workflow. The two must agree, so that a
-    // commit cannot move the cut-off past itself.
-    private const string CutOff = "0609f13070d6917ee80f3aa14ecb553972b5efcf";
 
     [Fact]
     public void The_Cut_Off_Commit_Is_The_One_That_Turned_The_Gate_On()
@@ -54,8 +32,8 @@ public class WriteSetGateTests
             .ToArray();
 
         Assert.True(
-            value.SequenceEqual([CutOff]),
-            $"eng/write-set-cutoff.txt must hold the one commit {CutOff}. A commit that moves the "
+            value.SequenceEqual([Judge.CutOff]),
+            $"eng/write-set-cutoff.txt must hold the one commit {Judge.CutOff}. A commit that moves the "
             + "cut-off exempts itself and each commit before it. Found: " + string.Join(", ", value));
     }
 
@@ -158,225 +136,5 @@ public class WriteSetGateTests
             problems.Count == 0,
             "A task with the status Done names a file that it did not create. Correct the write set "
             + "or the status.\n  " + string.Join("\n  ", problems));
-    }
-
-    [Fact]
-    public void Every_Changed_File_Is_Inside_The_Write_Set_Of_The_Governing_Task()
-    {
-        var changed = ChangedFiles();
-        if (changed is null)
-            return; // Continuous integration supplies the list. See the class comment.
-
-        var governing = GoverningTask(changed);
-
-        var permitted = governing.Written.Select(RepositoryFiles.PathPattern).ToArray();
-        var refused = governing.Forbid.Select(pattern => (Rule: RepositoryFiles.PathPattern(pattern), pattern)).ToArray();
-
-        var problems = new List<string>();
-
-        foreach (var file in changed)
-        {
-            // A gate file is named exactly or not at all. A pattern that covers
-            // the tests must not let a task change the gate that reads it.
-            if (IsGateFile(file))
-            {
-                if (!governing.Written.Contains(file, StringComparer.Ordinal))
-                    problems.Add($"{file} is a gate file, and {governing.Id} does not name it exactly; a pattern does not permit a gate file");
-                continue;
-            }
-
-            // A permit beats a forbid inside one task, because a task that both
-            // permits and forbids a path is refused by a static test above. A
-            // forbid gives the better message when a file is in no list,
-            // because it names the boundary that the author wrote.
-            if (permitted.Any(rule => rule.IsMatch(file)))
-                continue;
-
-            var blocked = refused.FirstOrDefault(r => r.Rule.IsMatch(file));
-
-            problems.Add(blocked.Rule is not null
-                ? $"{file} matches the forbid pattern '{blocked.pattern}' of {governing.Id}"
-                : $"{file} is in no create list and in no modify list of {governing.Id}");
-        }
-
-        Assert.True(
-            problems.Count == 0,
-            "Register entry R-0017: the writes block of the governing task must cover each changed "
-            + "file. Add the path to the create list or the modify list, or do not change the file. "
-            + $"Governing task: {governing.Id}. Problems:\n  " + string.Join("\n  ", problems));
-    }
-
-    // A file under Engine.Tests/Governance/, or a test class whose name ends
-    // in GateTests, or the shared helpers of the gates. Also each file that can
-    // turn a gate off without a change to a gate: the project file of the
-    // tests, which can remove a gate from the compilation; a Directory.Build or
-    // Directory.Packages file, which MSBuild reads for each project below it;
-    // the cut-off of this gate; and each workflow (codebase review of
-    // 2026-10-04, finding T9).
-    private static bool IsGateFile(string file)
-    {
-        var name = file[(file.LastIndexOf('/') + 1)..];
-
-        return file.StartsWith("Engine.Tests/Governance/", StringComparison.Ordinal)
-            || (file.StartsWith("Engine.Tests/", StringComparison.Ordinal) && file.EndsWith("GateTests.cs", StringComparison.Ordinal))
-            || file.StartsWith("Engine.Tests/Diagnostics/", StringComparison.Ordinal)
-            || file == "Engine.Tests/Engine.Tests.csproj"
-            || name.StartsWith("Directory.Build.", StringComparison.Ordinal)
-            || name == "Directory.Packages.props"
-            || file == "eng/write-set-cutoff.txt"
-            || file.StartsWith(".github/workflows/", StringComparison.Ordinal);
-    }
-
-    // The task that governs a change. The commit message names it, as a trailer
-    // line of the form TASK-nnnn, and continuous integration passes the name
-    // in WRITE_SET_TASK. The commit also changes the file of that task, so a
-    // closed task cannot lend its permits to a later commit. When no name is
-    // given, the one task file that the change touches governs it. A change
-    // that touches several task files and names none is refused: register
-    // entry R-0026 recorded that such a change received the permits of each
-    // task, so a commit that planned three tasks could also change
-    // Engine.Core/CommandBus.cs with no report.
-    private static RepositoryFiles.TaskRecord GoverningTask(HashSet<string> changed)
-    {
-        var tasks = RepositoryFiles.Tasks();
-        var named = Environment.GetEnvironmentVariable("WRITE_SET_TASK")?.Trim();
-
-        if (!string.IsNullOrEmpty(named))
-        {
-            var task = tasks.FirstOrDefault(t => t.Id == named);
-            Assert.True(
-                task is not null,
-                $"The commit names {named}, and no task file with a write set has that identifier. "
-                + "Name a task with front matter, or correct the identifier.");
-
-            Assert.True(
-                changed.Contains(RepositoryFiles.Relative(task!.File), StringComparer.Ordinal),
-                $"The commit names {named} and does not change its file. A commit records its progress "
-                + "in the task that governs it, with one line under \"Progress\" at least, so that a "
-                + "closed task cannot lend its permits to a later commit.");
-
-            return AtTheCommit(task);
-        }
-
-        var touched = tasks
-            .Where(t => changed.Contains(RepositoryFiles.Relative(t.File), StringComparer.Ordinal))
-            .ToArray();
-
-        Assert.True(
-            touched.Length > 0,
-            "This change names no task and touches no task file, therefore no write set governs it. "
-            + "Name the task in the commit message, as a trailer line of the form TASK-nnnn, or add the "
-            + "task file to the change.\n  Changed files:\n  " + string.Join("\n  ", changed));
-
-        Assert.True(
-            touched.Length == 1,
-            "This change touches several task files and names none. Only one task governs a commit. "
-            + "Name it in the commit message, as a trailer line of the form TASK-nnnn. Touched: "
-            + string.Join(", ", touched.Select(t => t.Id)));
-
-        return AtTheCommit(touched[0]);
-    }
-
-    // The two rules below apply to each commit after this one, the merge of the
-    // codebase review of 2026-10-04. The workflow replays each commit after the
-    // cut-off on a new branch, and three earlier commits changed a task that was
-    // already Done: f2d96a4, 7a37bc7 and 4715b88. They keep the earlier rule.
-    private const string CommitRulesFrom = "67c564ff65d0fcd8490d7be01183d31d28513e27";
-
-    // The governing task as the commit saw it, and not as the tip of the branch
-    // sees it (codebase review of 2026-10-04, finding T11, the part for the
-    // task file). Continuous integration gives the hash in WRITE_SET_COMMIT. On
-    // this computer before a commit there is no hash, and the gate reads the
-    // index and HEAD.
-    //
-    // A task that is Done before the commit and after it governs nothing: a
-    // correction reopens the task with the status Active and closes it again
-    // (question Q3 of the same review, which the owner accepted). Until
-    // TASK-0047 a progress line was enough, and commit 4715b88 changed a test
-    // under a task that was Done.
-    private static RepositoryFiles.TaskRecord AtTheCommit(RepositoryFiles.TaskRecord tip)
-    {
-        var path = RepositoryFiles.Relative(tip.File);
-        var commit = Environment.GetEnvironmentVariable("WRITE_SET_COMMIT")?.Trim();
-
-        string? after, before;
-        if (!string.IsNullOrEmpty(commit))
-        {
-            if (Git("merge-base", "--is-ancestor", commit, CommitRulesFrom) is not null)
-                return tip;
-
-            after = Git("show", $"{commit}:{path}");
-            before = Git("show", $"{commit}^:{path}");
-            Assert.True(after is not null, $"The gate cannot read {path} at the commit {commit}.");
-        }
-        else
-        {
-            after = Git("show", $":{path}") ?? File.ReadAllText(tip.File);
-            before = Git("show", $"HEAD:{path}");
-        }
-
-        var task = RepositoryFiles.ParseTask(tip.File, after!) ?? tip;
-        var statusBefore = before is null ? null : RepositoryFiles.ParseTask(tip.File, before)?.Status;
-
-        Assert.False(
-            statusBefore == "Done" && task.Status == "Done",
-            $"{task.Id} is Done before this commit and after it, therefore it governs no change. To "
-            + "correct the work of a closed task, set its status to Active in the commit that changes "
-            + "the work, and to Done again when the correction is complete. See docs/templates.md, "
-            + "section 3.");
-
-        return task;
-    }
-
-    // The standard output of a git command in the root of the repository, or
-    // null when git fails or is absent. Null is "not known", and each caller
-    // above decides what that means.
-    private static string? Git(params string[] arguments)
-    {
-        var start = new System.Diagnostics.ProcessStartInfo("git")
-        {
-            WorkingDirectory = RepositoryFiles.Root,
-            RedirectStandardOutput = true,
-            RedirectStandardError = true,
-            UseShellExecute = false,
-            StandardOutputEncoding = System.Text.Encoding.UTF8,
-        };
-        foreach (var argument in arguments)
-            start.ArgumentList.Add(argument);
-
-        try
-        {
-            using var process = System.Diagnostics.Process.Start(start)!;
-            var output = process.StandardOutput.ReadToEnd();
-            process.StandardError.ReadToEnd();
-            process.WaitForExit();
-            return process.ExitCode == 0 ? output : null;
-        }
-        catch (System.ComponentModel.Win32Exception)
-        {
-            return null;
-        }
-    }
-
-    // The list of changed paths, one per line, relative to the repository root
-    // and with the forward slash. Null when the variable is absent.
-    private static HashSet<string>? ChangedFiles()
-    {
-        var raw = Environment.GetEnvironmentVariable("WRITE_SET_FILES");
-        if (string.IsNullOrWhiteSpace(raw))
-            return null;
-
-        // A rename can arrive as "old -> new", which `git status --porcelain`
-        // writes and which a person pastes. Both sides are a change and the
-        // write set must cover both, therefore the gate splits the arrow.
-        // `git diff --name-only` gives one path per line and passes through.
-        var files = raw
-            .Split(['\n', '\r'], StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
-            .SelectMany(line => line.Split(" -> ", StringSplitOptions.TrimEntries))
-            .Where(path => path.Length > 0)
-            .Select(path => path.Replace('\\', '/'))
-            .ToHashSet(StringComparer.Ordinal);
-
-        return files.Count == 0 ? null : files;
     }
 }

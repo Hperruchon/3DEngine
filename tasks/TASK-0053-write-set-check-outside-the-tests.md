@@ -1,7 +1,7 @@
 ---
 id: 0053
 title: The write-set check runs as a program that the pipeline builds from main
-status: Ready
+status: Active
 phase: P0.17
 opened: 2026-10-08
 depends-on: [0052]
@@ -9,11 +9,17 @@ governed-by: []
 writes:
   create:
     - tasks/TASK-0053-write-set-check-outside-the-tests.md
-    - eng/write-set-check/**
+    - eng/write-set-check/WriteSetCheck.csproj
+    - eng/write-set-check/Program.cs
+    - eng/write-set-check/Judge.cs
+    - eng/write-set-check/TaskFiles.cs
+    - Engine.Tests/Governance/WriteSetJudgeTests.cs
   modify:
     - .github/workflows/ci.yml
+    - Engine.Tests/Engine.Tests.csproj
     - Engine.Tests/Governance/WriteSetGateTests.cs
     - Engine.Tests/Governance/RepositoryFiles.cs
+    - Engine.Tests/Governance/DependencyDirectionGateTests.cs
     - CLAUDE.md
     - docs/templates.md
     - docs/INDEX.md
@@ -87,3 +93,9 @@ A commit on a branch cannot change the code that judges its write set.
   Node.js and no Python. A small C# console project can link the parser file and avoid a second copy.
   Choose one, and give the reason in the Method block.
 - **The order.** TASK-0038 depends on this task, because TASK-0038 permits `Engine.Tests/**`.
+
+## Progress
+
+- 2026-10-09: the judge `eng/write-set-check` holds the rules, and the pipeline builds it from `main`.
+  The replay of the 103 commits after the cut-off passes, and each of eight rules fails on its own
+  injection into `Judge.cs`.
