@@ -255,6 +255,9 @@ Progress 2026-10-08: the fourth codebase review adds T14, T16, T17, T23, T25 and
 T24. The worst is T14: a module initializer in a test file can clear the variable that the write-set
 gate reads, so the commit judges itself. Question Q1 of that review asks where the check must run.
 T15 is corrected in the review (the write set of TASK-0038), and TASK-0049 corrected T18 to T22.
+Progress 2026-10-08: the owner answered Q1 of the fourth review with option A: the dynamic write-set
+check runs as a program in `eng/` that the pipeline builds from `main`, outside the test assembly.
+TASK-0053 holds it, and TASK-0038 depends on it, because TASK-0038 permits `Engine.Tests/**`.
 
 ### R-0033 · Seven findings of the third codebase review in the engine and the hosts have no task
 - class: debt
@@ -310,19 +313,6 @@ Progress 2026-10-08: during TASK-0051 one local run of the full suite ended with
 and its output is lost. Twenty later runs passed, thirteen with `--blame-crash`, and no run made a
 crash dump. The cause is not known. TASK-0051 added two tests that start the real host. A second abort
 must be read with `--blame-crash`, and it adds a part to T12.
-
-### R-0037 · `/schema/events` gives the name of each event kind and not its payload fields
-- class: question
-- opened: 2026-10-08
-- due: 2027-01-06
-- extended: no
-- refs: `Engine.Api.Http/Schema/SchemaTypes.cs:28`, ADR-0021 item 6, ADR-0008 §9, TASK-0037
-TASK-0037 asks that `/schema/events` list `body.consumed` "with its payload field `bodyId`". Each entry
-of the endpoint holds the kind only, and ADR-0021 item 6 says only that the endpoint lists the kind.
-TASK-0037 followed the ADR. An agent or a client that reads the schema cannot learn the payload of any
-event kind, and must read the ADRs.
-Exit: the owner decides if each entry gives its payload fields. A yes needs an amendment of ADR-0008
-§9 and a task; a no closes this entry with the reason.
 
 ## Accepted compromises
 
@@ -712,3 +702,21 @@ entry, and a check in the build job fails on a path of the build machine. The pa
 3.5.2, the workaround in `ManifoldGeometryBackend` is removed, and run 37540059266 passed on the three runners
 with no native test skipped. A push of the pin file or of the workflow starts a rebuild, and the
 package arrives on a branch that git fetches with no sign-in.
+
+### R-0037 · `/schema/events` gives the name of each event kind and not its payload fields
+- class: question
+- opened: 2026-10-08
+- due: 2027-01-06
+- extended: no
+- refs: `Engine.Api.Http/Schema/SchemaTypes.cs:28`, ADR-0021 item 6, ADR-0008 §9, TASK-0037
+TASK-0037 asks that `/schema/events` list `body.consumed` "with its payload field `bodyId`". Each entry
+of the endpoint holds the kind only, and ADR-0021 item 6 says only that the endpoint lists the kind.
+TASK-0037 followed the ADR. An agent or a client that reads the schema cannot learn the payload of any
+event kind, and must read the ADRs.
+Exit: the owner decides if each entry gives its payload fields. A yes needs an amendment of ADR-0008
+§9 and a task; a no closes this entry with the reason.
+Closed 2026-10-08 · decided · ADR-0008
+The entry was a decision and not a question. ADR-0008 §9 already says that `/schema/events` gives
+the event kinds and their payload schemas, so the code disagrees with the ADR. The exit line above is
+false: no amendment is needed. On 2026-10-08 the owner confirmed the payload fields. TASK-0055 corrects
+the code, after TASK-0054.

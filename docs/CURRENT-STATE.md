@@ -1416,3 +1416,29 @@ evenings. A glossary term: live body.
 New tests: 10. The test list holds 283. `dotnet build 3DEngine.sln --no-incremental` gives zero errors
 and zero warnings. Open entries: 15 of 15. New diagnostic codes: none. The next codebase review must
 come before ledger entry v0.53.
+
+## v0.50 — The decisions of the owner of 2026-10-08 (governance, TASK-0052)
+
+After v0.49 the owner followed three recommendations of the agent.
+
+**The payload fields of the events.** `/schema/events` will give the payload fields of each kind.
+ADR-0008 §9 already decides this, so R-0037 closed with the outcome "decided": the code disagrees with
+the ADR, and it was never an open question. TASK-0055 corrects the code. The recommendation said that
+an amendment of ADR-0008 was necessary, which was false; the closed entry says so.
+
+**The judge of the write set.** The answer to Q1 of the review of 2026-10-08 is option A: the dynamic
+write-set check moves out of the test assembly into a program in `eng/` that the pipeline builds from
+`main` (finding T14). TASK-0053 holds it, and R-0031 records the answer.
+
+**TASK-0038 in two.** TASK-0038 now makes the surface a library and `engine-api-http` its program, and
+it moves the address checks of TASK-0051 into the library. TASK-0054 mounts the surface in the desktop
+host and changes `CLAUDE.md` and the dependency gate. The first version of TASK-0038 named two sections
+of `CLAUDE.md` that do not exist; the new versions name the section "Authority diagram".
+
+**The order.** P0.17 is TASK-0053, P0.18 is TASK-0038, P0.19 is TASK-0054, and P0.20 is TASK-0055. The
+field `depends-on` holds the same chain. R5 needs P0.17 to P0.19, and the eight phases that remain give
+the first objective in 27 to 39 evenings.
+
+New tests: 0. The test list holds 283. `dotnet build 3DEngine.sln --no-incremental` gives zero errors
+and zero warnings. Closed: R-0037. Open entries: 14 of 15. New diagnostic codes: none. The next codebase
+review must come before ledger entry v0.53.
