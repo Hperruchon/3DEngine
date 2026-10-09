@@ -317,34 +317,6 @@ The version can go back through a cast of the log (E26). E29 to E39 are smaller 
 the queries, `/schema/backend`, the exit codes and the backend selection.
 Exit: each finding has a task, or it is corrected, or the owner accepts it and gives the reason.
 
-### R-0034 · The pipeline can hang for six hours, and three tests depend on timing
-- class: risk
-- opened: 2026-10-04
-- due: 2026-11-03
-- extended: no
-- refs: `.github/workflows/ci.yml`, `docs/reviews/2026-10-04-codebase-review.md` findings T8, T12 and T13
-No job has a time limit, and `dotnet test` has no limit for a hang, so a test that hangs holds a
-runner for 360 minutes and gives no annotation (T8). The heartbeat test measures a gap on the client,
-the collection "real host" runs beside the concurrency tests, and the deadlock test can skip its work
-on a slow runner (T12). The Windows run of 2026-10-01 failed in a test of this kind.
-Exit: each job has a time limit, `dotnet test` stops a hang and names the test, and each test of T12
-is corrected or the owner accepts it.
-Progress 2026-10-04: TASK-0047 corrected T8. Each job has a time limit, the step "Test" stops a test
-after two minutes, and the report script names the test that did not complete. Run 37189044285 on a
-branch that is never merged stopped an injected hang after about 130 s on each runner and named it.
-The script also reads a stopped run, which is a part of T13. T12 and the other part of T13 stay.
-Progress 2026-10-08: during TASK-0051 one local run of the full suite ended with "test run aborted",
-and its output is lost. Twenty later runs passed, thirteen with `--blame-crash`, and no run made a
-crash dump. The cause is not known. TASK-0051 added two tests that start the real host. A second abort
-must be read with `--blame-crash`, and it adds a part to T12.
-Progress 2026-10-09: the heartbeat test of T12 failed again, on Windows in run 37963719832: heartbeat 3
-came 0 ms after heartbeat 2, and the interval is 100 ms. The commits of that run did not touch the
-code of the test or of the host. The limit of this entry is 2026-11-03.
-Progress 2026-10-10: two tests of T12 failed in one run, 37997004258, of a commit that changed two
-documents only: the heartbeat test on Windows (heartbeat 2 came 1 ms after heartbeat 1), and on macOS
-the deadlock test of `HttpConcurrencyTests` ("No command completed"). T12 failed in three of the last
-four runs, so each merge now depends on a run without it.
-
 ## Accepted compromises
 
 These are conditions that the project keeps permanently and by decision. They do not age.
@@ -751,3 +723,38 @@ The entry was a decision and not a question. ADR-0008 §9 already says that `/sc
 the event kinds and their payload schemas, so the code disagrees with the ADR. The exit line above is
 false: no amendment is needed. On 2026-10-08 the owner confirmed the payload fields. TASK-0055 corrects
 the code, after TASK-0054.
+
+### R-0034 · The pipeline can hang for six hours, and three tests depend on timing
+- class: risk
+- opened: 2026-10-04
+- due: 2026-11-03
+- extended: no
+- refs: `.github/workflows/ci.yml`, `docs/reviews/2026-10-04-codebase-review.md` findings T8, T12 and T13
+No job has a time limit, and `dotnet test` has no limit for a hang, so a test that hangs holds a
+runner for 360 minutes and gives no annotation (T8). The heartbeat test measures a gap on the client,
+the collection "real host" runs beside the concurrency tests, and the deadlock test can skip its work
+on a slow runner (T12). The Windows run of 2026-10-01 failed in a test of this kind.
+Exit: each job has a time limit, `dotnet test` stops a hang and names the test, and each test of T12
+is corrected or the owner accepts it.
+Progress 2026-10-04: TASK-0047 corrected T8. Each job has a time limit, the step "Test" stops a test
+after two minutes, and the report script names the test that did not complete. Run 37189044285 on a
+branch that is never merged stopped an injected hang after about 130 s on each runner and named it.
+The script also reads a stopped run, which is a part of T13. T12 and the other part of T13 stay.
+Progress 2026-10-08: during TASK-0051 one local run of the full suite ended with "test run aborted",
+and its output is lost. Twenty later runs passed, thirteen with `--blame-crash`, and no run made a
+crash dump. The cause is not known. TASK-0051 added two tests that start the real host. A second abort
+must be read with `--blame-crash`, and it adds a part to T12.
+Progress 2026-10-09: the heartbeat test of T12 failed again, on Windows in run 37963719832: heartbeat 3
+came 0 ms after heartbeat 2, and the interval is 100 ms. The commits of that run did not touch the
+code of the test or of the host. The limit of this entry is 2026-11-03.
+Progress 2026-10-10: two tests of T12 failed in one run, 37997004258, of a commit that changed two
+documents only: the heartbeat test on Windows (heartbeat 2 came 1 ms after heartbeat 1), and on macOS
+the deadlock test of `HttpConcurrencyTests` ("No command completed"). T12 failed in three of the last
+four runs, so each merge now depends on a run without it.
+Closed 2026-10-10 · resolved · TASK-0059, v0.55
+Each part of the exit is met. TASK-0047 gave each job a time limit and a stop for a hang that names
+the test. TASK-0059 corrected the three tests of T12: the heartbeat test counts the frames, the
+deadlock test starts its clock after the host is up, and the collection "real host" runs alone. An
+injected slow runner failed the old tests and passed the new ones. The abort of one local run of
+2026-10-08 did not come back in at least 26 later runs; a second abort gets a new entry. The parts of T13 that
+this entry held stay with R-0031.
