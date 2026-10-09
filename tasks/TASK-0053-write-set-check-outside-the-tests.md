@@ -79,14 +79,13 @@ A commit on a branch cannot change the code that judges its write set.
 
 - [x] The injection of the review fails the gate: a file under `Engine.Tests/` with a module
       initializer that clears `WRITE_SET_FILES`, in a commit that also changes a forbidden path. The
-      Outcome block records the run. A local run of the pipeline steps; the pipeline run follows the
-      merge, because `main` holds no judge before it.
+      Outcome block records the run: run 37963719832 on a branch that was never merged.
 - [x] A commit on a branch that changes the program is judged by the program of `main`. A run on a
-      branch that is never merged shows it. A local run, as for the criterion above.
+      branch that is never merged shows it: the same run 37963719832.
 - [x] Each rule of today fails on its own injection, as before the move.
 - [x] `dotnet build 3DEngine.sln --no-incremental` gives zero warnings. `dotnet test` passes.
-- [ ] Continuous integration passes on `ubuntu-latest`, `windows-latest` and `macos-latest`. The
-      merge records the run.
+- [x] Continuous integration passes on `ubuntu-latest`, `windows-latest` and `macos-latest`: run
+      37851135097 on the branch of the task, and run 37963223561 on `main` after the merge.
 
 ## Notes for the implementer
 
@@ -112,6 +111,18 @@ clears `WRITE_SET_FILES` and `WRITE_SET_TASK`, and a change to `Engine.Core/Comm
 which TASK-0038 forbids. Commit 2 changed `Judge.cs` to pass each change, under TASK-0053, and changed
 `Engine.Contracts/Document.cs`, which TASK-0053 forbids. The judge built from the commit of `main`
 failed both commits on the forbidden path. The judge built from the injected commit passed both.
+
+The pipeline run on 2026-10-09: run 37963719832 on the branch `inject-t14-never-merge`, which held the
+same two commits on top of `main` at `8ba98e3`. Commit 2 changed `Program.cs` this time, so that it
+reports a pass for each change, and the tests of the rules stayed green. The job built the judge from
+`main` and failed both commits on the forbidden path: `db87959` (the attack of the review, under
+TASK-0038) and `3cf6016` (the judge that passes each change, under TASK-0053). The judge of `3cf6016`
+passed both in a local run. The branch is deleted.
+
+Two more results of that run. The job "Contract-touched-needs-ADR" passed, although `3cf6016` changed
+`Engine.Contracts/Document.cs` with no ADR: on the first push of a branch it compares the range from
+the cut-off commit, and some ADR changed in that range. R-0031 records it. The Windows gate failed in
+`HeartbeatTests` on time: heartbeat 3 came 0 ms after heartbeat 2. R-0034 records it.
 
 ## Method
 
@@ -145,3 +156,5 @@ of the commit, and a notice says so.
   injection into `Judge.cs`.
 - 2026-10-09: closed. The local run of the pipeline steps failed both injected commits with the judge
   of `main` and passed both with the judge of the injected commit.
+- 2026-10-09: reopened to record the pipeline run on a branch that is never merged.
+- 2026-10-09: closed again. Run 37963719832 is the pipeline proof.

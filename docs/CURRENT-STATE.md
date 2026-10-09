@@ -1469,3 +1469,27 @@ before it.
 New tests: 20, and the dynamic test of `WriteSetGateTests` left. The test list holds 302. `dotnet build 3DEngine.sln --no-incremental` gives zero errors
 and zero warnings. Open entries: 14 of 15. New diagnostic codes: none. The next codebase review must
 come before ledger entry v0.53.
+
+## v0.52 — The pipeline proves the judge of the write set from main (governance, TASK-0053)
+
+The owner permitted the merge of TASK-0053 on 2026-10-09, and v0.51 is on `main` at `8ba98e3`. Run
+37963223561 on `main` is green on the three runners.
+
+**The proof in the pipeline.** Run 37963719832 on the branch `inject-t14-never-merge`, which was never
+merged and is deleted. It held two commits on top of `main`: the attack of finding T14 under TASK-0038,
+and a judge that reports a pass for each change under TASK-0053. Each commit also changed a path that
+its task forbids. The job built the judge from `main` and failed both commits. The judge of the second
+commit passed both in a local run. This was the open part of criteria 1 and 2 of TASK-0053.
+
+**Found on the way.** The job "Contract-touched-needs-ADR" passed a commit that changed
+`Engine.Contracts/Document.cs` with no ADR. On the first push of a branch it compares the range from the
+cut-off commit, and some ADR changed in that range. A push to `main` is not affected. R-0031 records it.
+The Windows gate of the same run failed in the heartbeat test on time, which is T12; R-0034 records it,
+and its limit is 2026-11-03.
+
+TASK-0053 was reopened in one commit and closed in the next, because a task that is Done before and
+after a commit governs nothing.
+
+New tests: 0. The test list holds 302. `dotnet build 3DEngine.sln --no-incremental` gives zero errors
+and zero warnings. Open entries: 14 of 15. New diagnostic codes: none. The next ledger entry must be a
+codebase review: v0.52 is the sixth milestone after v0.46.

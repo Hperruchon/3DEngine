@@ -262,6 +262,11 @@ Progress 2026-10-09: TASK-0053 corrected T14. The judge `eng/write-set-check` ru
 `main`, and a local run of the pipeline steps failed the injection of the review and a commit that
 changed the judge. The workflow still comes from the judged commit, so a task that names
 `.github/workflows/ci.yml` exactly can change the job; a branch protection on GitHub closes that.
+Progress 2026-10-09: run 37963719832 on a branch that was never merged proved the judge in the pipeline.
+The same run found a new hole: the job "Contract-touched-needs-ADR" passed a commit that changed
+`Engine.Contracts/Document.cs` with no ADR. On the first push of a branch the job compares the range
+from the cut-off commit, and an ADR changed somewhere in that range, so the job passes each new
+branch. A later push and a push to `main` compare from the previous tip and are not affected.
 
 ### R-0033 · Seven findings of the third codebase review in the engine and the hosts have no task
 - class: debt
@@ -317,6 +322,9 @@ Progress 2026-10-08: during TASK-0051 one local run of the full suite ended with
 and its output is lost. Twenty later runs passed, thirteen with `--blame-crash`, and no run made a
 crash dump. The cause is not known. TASK-0051 added two tests that start the real host. A second abort
 must be read with `--blame-crash`, and it adds a part to T12.
+Progress 2026-10-09: the heartbeat test of T12 failed again, on Windows in run 37963719832: heartbeat 3
+came 0 ms after heartbeat 2, and the interval is 100 ms. The commits of that run did not touch the
+code of the test or of the host. The limit of this entry is 2026-11-03.
 
 ## Accepted compromises
 
