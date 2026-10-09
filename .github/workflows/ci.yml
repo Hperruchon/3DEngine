@@ -116,72 +116,16 @@ jobs:
           echo "$output" | grep -q '"bodyId"' \
             || { echo "FAIL: no body identifier in the outputs"; exit 1; }
 
-  contract-gate:
-    timeout-minutes: 10
-    name: Contract-touched-needs-ADR
-    # This job compares two git trees. Its result does not depend on the
-    # operating system, therefore one runner is enough.
-    #
-    # It runs on a push and on a pull request. Until TASK-0039 it ran on a pull
-    # request only, and the owner merges into main locally, therefore the gate
-    # never checked a merge into main (codebase review finding G1). On a push
-    # the range starts at the previous tip; a new branch falls back to the
-    # cut-off commit of the write-set gate.
-    runs-on: ubuntu-latest
-    defaults:
-      run:
-        shell: bash
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-
-      - name: Check contracts vs ADRs
-        env:
-          PUSH_BEFORE: ${{ github.event.before }}
-          EVENT_NAME: ${{ github.event_name }}
-          BASE_REF: ${{ github.base_ref }}
-        run: |
-          set -e
-          if [ "$EVENT_NAME" = "pull_request" ]; then
-            git fetch --no-tags --depth=1 origin "$BASE_REF"
-            range="origin/$BASE_REF...HEAD"
-          else
-            cutoff=$(grep -v '^#' eng/write-set-cutoff.txt | tr -d '[:space:]')
-            [ -n "$cutoff" ] || { echo "FAIL: eng/write-set-cutoff.txt gives no commit"; exit 1; }
-            before="$PUSH_BEFORE"
-            if [ -z "$before" ] || [ "$before" = "0000000000000000000000000000000000000000" ]; then
-              before="$cutoff"
-            elif ! git cat-file -e "$before" 2>/dev/null; then
-              before="$cutoff"
-            fi
-            range="$before..HEAD"
-          fi
-          echo "range: $range"
-
-          # Each git command is tested. A failed diff must not read as "no change".
-          changed=$(git diff --name-only "$range") || { echo "FAIL: git diff on $range"; exit 1; }
-          contracts_changed=$(printf '%s\n' "$changed" | grep -c '^Engine\.Contracts/' || true)
-          adrs_changed=$(printf '%s\n' "$changed" | grep -c '^docs/adr/' || true)
-          echo "Engine.Contracts files changed: $contracts_changed"
-          echo "docs/adr files changed:         $adrs_changed"
-          if [ "$contracts_changed" -gt 0 ] && [ "$adrs_changed" -eq 0 ]; then
-            echo ""
-            echo "FAIL: Engine.Contracts was modified but no ADR was added or updated."
-            echo "Per CLAUDE.md \"Stop and ask\": a change to the public shape of"
-            echo "Engine.Contracts requires an ADR in the same commit."
-            exit 1
-          fi
-
   write-set-gate:
-    # One run of the gate for each commit after the cut-off on a new branch.
     timeout-minutes: 30
     name: Write set of the governing task
-    # This job runs on a push and on a pull request. It needs no base reference,
-    # because it reads one commit at a time. TASK-0026 made that change: the job
-    # was a condition on a pull request, therefore it reported skipped on each
-    # run and the gate of v0.22 never ran in the pipeline.
+    # This job runs on a push and on a pull request, and it reads one commit at a
+    # time. TASK-0026 made it run on each push: as a condition on a pull request it
+    # reported skipped on each run, and the gate of v0.22 never ran. Since
+    # TASK-0057 it also holds the contract rule, which the job
+    # "Contract-touched-needs-ADR" checked on a range of commits until then. For a
+    # pull request the judge reads the commits after the merge base with main;
+    # the push of the branch judges each of them.
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -198,12 +142,11 @@ jobs:
           global-json-file: global.json
 
       # The judge comes from main, and not from the commit that it judges
-      # (TASK-0053). Until that task the judge was a test in Engine.Tests, built
-      # from the judged commit, and a file under Engine.Tests/ could switch it off
-      # for its own commit (codebase review of 2026-10-08, finding T14). A push to
-      # main uses the judge of the tip before the push. When that commit holds no
-      # judge, which is true only for the first runs of TASK-0053, the judge of
-      # the commit under judgment runs, and a notice says so.
+      # (TASK-0053). A push to main uses the judge of the tip before the push. The
+      # job fails when that tip is not known, for example after a force push, or
+      # when the base holds no judge (TASK-0057, finding T28 of the codebase review
+      # of 2026-10-09). Until TASK-0057 the job then ran the judge of the judged
+      # commit.
       - name: Build the judge from main
         env:
           REF: ${{ github.ref }}
@@ -211,25 +154,48 @@ jobs:
         run: |
           set -euo pipefail
           judge_ref=origin/main
-          if [ "$REF" = refs/heads/main ] && [ -n "$PUSH_BEFORE" ] && git cat-file -e "$PUSH_BEFORE^{commit}" 2>/dev/null; then
+          if [ "$REF" = refs/heads/main ]; then
+            if [ -z "$PUSH_BEFORE" ] || ! git cat-file -e "$PUSH_BEFORE^{commit}" 2>/dev/null; then
+              echo "::error title=Write set::the tip of main before this push, '$PUSH_BEFORE', is not known, so no judge can be built from it"
+              exit 1
+            fi
             judge_ref="$PUSH_BEFORE"
           fi
           git worktree add --detach "$RUNNER_TEMP/judge" "$judge_ref"
-          source="$RUNNER_TEMP/judge"
-          if [ ! -f "$source/eng/write-set-check/WriteSetCheck.csproj" ]; then
-            echo "::notice title=Write set::$judge_ref holds no judge, so the judge of the commit under judgment runs."
-            source=.
+          if [ ! -f "$RUNNER_TEMP/judge/eng/write-set-check/WriteSetCheck.csproj" ]; then
+            echo "::error title=Write set::$judge_ref holds no judge"
+            exit 1
           fi
-          echo "judge from $(git -C "$source" rev-parse HEAD)"
-          dotnet build "$source/eng/write-set-check/WriteSetCheck.csproj" -c Release -o "$RUNNER_TEMP/judge-bin"
+          echo "judge from $(git -C "$RUNNER_TEMP/judge" rev-parse HEAD)"
+          dotnet build "$RUNNER_TEMP/judge/eng/write-set-check/WriteSetCheck.csproj" -c Release -o "$RUNNER_TEMP/judge-bin"
 
       # One commit at a time, and not the whole branch. A task governs the commit
-      # that carries it, therefore a diff across many tasks cannot say which task
-      # made which change (TASK-0026). The judge gives the range from the previous
-      # tip of the push, or from the cut-off for a new branch or a pull request,
-      # and it judges a merge on the changes that the merge made itself.
-      # eng/write-set-check/Program.cs holds the steps, and Judge.cs the rules.
+      # that carries it (TASK-0026). On main the judge reads each commit of the
+      # push. On a branch it reads each commit after the merge base with main, so
+      # a green later push cannot hide a red earlier one (finding T32). The judge
+      # also holds the contract rule: a commit that changes Engine.Contracts/
+      # changes docs/adr/ too (finding T26). eng/write-set-check/Judge.cs holds the
+      # rules and the steps.
+      #
+      # A judge of main from before TASK-0057 knows only --range and answers the
+      # new arguments with exit code 2. The step then runs that form and gives a
+      # notice, so that the branch of TASK-0057 and its merge can be judged.
       - name: Check each commit against the write set of its task
         env:
+          REF: ${{ github.ref }}
           PUSH_BEFORE: ${{ github.event.before }}
-        run: dotnet "$RUNNER_TEMP/judge-bin/write-set-check.dll" --range "$PUSH_BEFORE"
+        run: |
+          set -uo pipefail
+          judge="$RUNNER_TEMP/judge-bin/write-set-check.dll"
+          if [ "$REF" = refs/heads/main ]; then
+            dotnet "$judge" --range "$PUSH_BEFORE" --strict
+          else
+            dotnet "$judge" --merge-base origin/main
+          fi
+          status=$?
+          if [ "$status" -eq 2 ]; then
+            echo "::notice title=Write set::the judge of main knows only --range, so it judges the commits of this push"
+            dotnet "$judge" --range "$PUSH_BEFORE"
+            status=$?
+          fi
+          exit "$status"

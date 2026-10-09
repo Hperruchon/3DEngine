@@ -134,13 +134,12 @@ Each rule here came from an error in an earlier session.
   `dotnet test` and the write-set check:
 
   ```bash
-  set -o pipefail
-  dotnet run --project eng/write-set-check -- --staged --task TASK-nnnn
-  dotnet test Engine.Tests/Engine.Tests.csproj --no-build --filter 'FullyQualifiedName~Governance'
+  dotnet run --project eng/write-set-check -- --staged --task TASK-nnnn &&
+    dotnet test Engine.Tests/Engine.Tests.csproj --no-build --filter 'FullyQualifiedName~Governance'
   ```
 
-  The first command judges the staged change against the write set of the task. The pipeline runs
-  the same judge, built from `main`. Continuous integration on three operating systems is the proof. `.github/workflows/ci.yml` lists
+  The first command judges the staged change against the write set of the task, and `&&` stops the
+  block at its failure. The pipeline runs the same judge, built from `main`. Continuous integration on three operating systems is the proof. `.github/workflows/ci.yml` lists
   its jobs. Report a local result as local. Do not report that work is complete before the gate is
   green.
 - Run a command chain with `set -o pipefail`. A chain that ends in `tail` reports the exit code of

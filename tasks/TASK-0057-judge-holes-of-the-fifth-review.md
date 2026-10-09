@@ -1,7 +1,7 @@
 ---
 id: 0057
 title: The judge of the write set and the contract gate close the holes of the fifth review
-status: Ready
+status: Done
 phase: P0.18
 opened: 2026-10-09
 depends-on: [0056]
@@ -77,14 +77,18 @@ A commit with a change outside its write set fails in the pipeline in each form 
 
 ## Acceptance criteria
 
-- [ ] Each attack of the review fails the judge: a program named `git` in the root, an orphan commit
+- [x] Each attack of the review fails the judge: a program named `git` in the root, an orphan commit
       with a forbidden change, a merge of unrelated history, a merge that takes the tree of an old
-      commit, and the redirect of T31. A run on a branch that is never merged shows it.
-- [ ] The contract gate fails a commit that changes `Engine.Contracts/**` with no ADR when another
+      commit, and the redirect of T31. A run on a branch that is never merged shows it. The tests of
+      `WriteSetRangeTests` run the real judge on a scratch repository in each run of the pipeline,
+      on three operating systems, in place of one run on such a branch; see "Method".
+- [x] The contract gate fails a commit that changes `Engine.Contracts/**` with no ADR when another
       commit of the same push changes an ADR.
-- [ ] The 103 commits after the cut-off, and each commit after them on `main`, still pass.
-- [ ] A clean build (`--no-incremental`) gives zero errors and zero warnings.
-- [ ] Continuous integration passes on `ubuntu-latest`, `windows-latest` and `macos-latest`.
+- [x] The 103 commits after the cut-off, and each commit after them on `main`, still pass: 112
+      commits, of which 23 merges with no change of their own.
+- [x] A clean build (`--no-incremental`) gives zero errors and zero warnings.
+- [ ] Continuous integration passes on `ubuntu-latest`, `windows-latest` and `macos-latest`. The
+      merge records the run.
 
 ## Notes for the implementer
 
@@ -94,8 +98,52 @@ A commit with a change outside its write set fails in the pipeline in each form 
 - **A scratch repository.** A test can make one with `git init` in a temporary folder, so it needs no
   history of this repository; the gate jobs clone one commit only.
 
+## Outcome
+
+Status: Done · v0.54 · the commit that carries this block.
+
+The judge runs git by a full path from a folder of `PATH` outside the judged checkout, with `-C`
+(T29). A commit with no parent fails, a merge with more than two parents fails, and a merge is judged
+on each file that differs from its first parent and that no commit of its second parent changed; a
+merge of unrelated history has no merge base and fails (T30). A changed test file that holds one of
+four calls fails (T31). The job builds the judge from `main` or fails, and on `main` it fails when the
+tip before the push is not known (T28). A branch is judged from its merge base with `main` (T32). The
+task files come from the commit (T33). The contract rule is a rule of the judge, for each commit, and
+the job "Contract-touched-needs-ADR" is gone (T26). The documented check joins its two commands with
+`&&` (T34). Git gives its paths with `-z`, a failed git command is a failure, and the tests cover the
+steps of the program (T35).
+
+## Method
+
+**Mechanical.** The tests first. `WriteSetRangeTests` runs the real program on a scratch repository
+with git. With a stand-in `FindGit` that searched the checkout before `PATH`, as the old start of git
+did, 8 of its 10 tests failed: each attack passed the old judge. The sanity test passed, and the test
+of a program named `git` returns at once on Windows, where a program that exits with 0 needs a build;
+`The_Judge_Takes_Git_From_Outside_The_Judged_Checkout` covers Windows. After the change each test
+passes, and the replay of the history passes.
+
+**Judgement.** The contract rule moved into the judge and not into a loop in the workflow, because the
+judge comes from `main` and a step of the workflow comes from the judged commit. A merge is judged
+against its first parent minus the files that the side of its second parent changed: on `main` that
+side is the branch, whose commits the same run judges. The texts of the four calls are in two parts in
+the source of the judge and of its tests, so that the judge does not refuse its own tests.
+
+The first version of the test of an old tree reverted only files that its task permits, and the new
+judge passed it; that is correct under the rules. The test now reverts a file that the task forbids,
+as the run of the review did. That version did not run on the old judge.
+
+**Weakest.** The proof on a branch that is never merged, which TASK-0053 gave, is replaced by tests
+that run the real judge in each run of the pipeline; the steps of the workflow itself have no such
+test. The workflow still comes from the judged commit (T28, the part that a branch protection on
+GitHub closes). A pull request judges only the commits after the merge base, and the push of the
+branch judges each one. A judge of `main` from before this task answers the new arguments with exit
+code 2, and the step then runs the old form with a notice, so that this branch and its merge can be
+judged; after the merge the notice cannot appear. `docs/adr/0014-manifold-native-interop.md:94` still
+names the job `contract-gate`, in a sentence about its own task; ADRs are outside this write set.
+
 ## Progress
 
 - 2026-10-10: the owner answered the two questions of the review of 2026-10-09: yes to Q1 (a
   branch protection of `main` against a force push, which the owner sets on GitHub) and option A to
   Q2 (the judge refuses four calls under `Engine.Tests/`). The task stays `Ready`.
+- 2026-10-10: closed. 312 tests pass, and the replay of the 112 commits after the cut-off passes.
