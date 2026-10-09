@@ -150,23 +150,30 @@ public class HttpConcurrencyTests : IClassFixture<WebApplicationFactory<Program>
     {
         var factory = _baseFactory.WithWebHostBuilder(_ => { });
         var http = factory.CreateClient();
+
+        // The clock starts after the host is up, and each loop runs at least one
+        // time (finding T12 of the codebase review of 2026-10-04). Until TASK-0059
+        // the clock started before the host; on a slow runner the start took more
+        // than one second, no loop ran, and the test reported "No command
+        // completed" (macOS, run 37997004258).
         var clock = Stopwatch.StartNew();
         var commands = 0;
         var subscriptions = 0;
 
         var writers = Enumerable.Range(0, 2).Select(writer => Task.Run(async () =>
         {
-            while (clock.Elapsed < TimeSpan.FromSeconds(1))
+            do
             {
                 using var response = await PostCreateBox(http, Guid.NewGuid());
                 response.EnsureSuccessStatusCode();
                 Interlocked.Increment(ref commands);
             }
+            while (clock.Elapsed < TimeSpan.FromSeconds(1));
         }));
 
         var subscribers = Enumerable.Range(0, 4).Select(subscriber => Task.Run(async () =>
         {
-            while (clock.Elapsed < TimeSpan.FromSeconds(1))
+            do
             {
                 using var cts = new CancellationTokenSource(OperationLimit);
                 using var socket = await WebSocketTestClient.ConnectAsync(factory, cts.Token);
@@ -176,6 +183,7 @@ public class HttpConcurrencyTests : IClassFixture<WebApplicationFactory<Program>
                 await CloseAfterTheMeasurement(socket);
                 Interlocked.Increment(ref subscriptions);
             }
+            while (clock.Elapsed < TimeSpan.FromSeconds(1));
         }));
 
         var all = Task.WhenAll(writers.Concat(subscribers));

@@ -1555,3 +1555,26 @@ New tests: 10, and one test of `WriteSetJudgeTests` changed its subject from the
 the paths of `-z`. The test list holds 312. `dotnet build 3DEngine.sln --no-incremental` gives zero
 errors and zero warnings. Open entries: 14 of 15. New diagnostic codes: none. The next codebase review
 must come before ledger entry v0.59.
+
+## v0.55 — The three tests of finding T12 no longer depend on the speed of the runner (governance, TASK-0059)
+
+Finding T12 of the codebase review of 2026-10-04, register entry R-0034. The tests failed in four of the
+last six runs, the last one on `main` after the merge of v0.54 (run 37998763776, the heartbeat test on
+Windows). The owner chose this task on 2026-10-10.
+
+**The changes.** The heartbeat test counts the frames that arrive in at least one second against the
+time since before the connection; slowness can only lower the count, and the defect of finding E8 gave
+6,368 frames in 1,026 ms against a most of 12. The deadlock test starts its clock after the host is up,
+and each loop runs at least one time. The collection "real host" has a definition with parallel runs
+off, so its tests run alone.
+
+**Proof.** Injected waits that copy a slow runner gave the two messages of the pipeline with the old
+tests, and the new tests passed with the same waits. The inverted order of the locks still fails the
+deadlock test. Five full local runs passed.
+
+**Closed.** R-0034: each part of its exit is met. The abort of one local run of 2026-10-08 did not come
+back; a second one gets a new entry.
+
+New tests: 0; two tests changed their method. The test list holds 312. `dotnet build 3DEngine.sln
+--no-incremental` gives zero errors and zero warnings. Open entries: 13 of 15. New diagnostic codes:
+none. The next codebase review must come before ledger entry v0.59.

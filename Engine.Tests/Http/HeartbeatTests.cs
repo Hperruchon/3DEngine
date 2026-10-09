@@ -12,11 +12,17 @@ namespace Engine.Tests.Http;
 // subscriber received 1,025 heartbeat frames at second 30, because the loop
 // wrote a frame and started again with no wait. Register entry R-0029.
 //
-// The test measures the gap between consecutive heartbeat frames, and not the
-// count of frames in a fixed second. A loaded runner makes each gap longer and
-// never shorter, so the test cannot fail for slowness; the defect makes each
-// gap close to zero, so the test cannot pass with the defect. The first form
-// of this test counted frames in one second and failed once on Ubuntu.
+// The test counts the heartbeat frames that arrive in at least one second, and
+// compares the count with the time that passed since before the connection. The
+// server sends at most one frame in each interval, so the count cannot pass that
+// time divided by the interval, plus a margin. A slow runner or a late client
+// only makes the count smaller. The defect sent thousands of frames in a second.
+//
+// The first form counted the frames in one fixed second and failed once on
+// Ubuntu. The second form measured the gap between two frames on the client;
+// a late client read two frames that waited in the queue with a gap of about
+// zero, and it failed on Windows in runs 37963719832 and 37997004258 (finding
+// T12 of the codebase review of 2026-10-04, TASK-0059).
 [Collection("real host")]
 public class HeartbeatTests : IClassFixture<WebApplicationFactory<Program>>
 {
@@ -43,35 +49,31 @@ public class HeartbeatTests : IClassFixture<WebApplicationFactory<Program>>
             });
         });
 
+        // The clock starts before the connection, so the server cannot have sent
+        // a frame before it.
+        var clock = Stopwatch.StartNew();
         using var socket = await WebSocketTestClient.ConnectAsync(factory);
         await WebSocketTestClient.SendJsonAsync(socket, new { });
 
         var initial = await WebSocketTestClient.ReceiveJsonAsync(socket);
         Assert.Equal("subscription.reset", initial.GetProperty("kind").GetString());
 
-        // Three heartbeat frames, with the moment of each one.
-        var moments = new List<TimeSpan>();
-        var clock = Stopwatch.StartNew();
+        // At least one second and at least one heartbeat. A host that sends no
+        // heartbeat fails at the limit.
+        var heartbeats = 0;
         using var limit = new CancellationTokenSource(TimeSpan.FromSeconds(15));
-
-        while (moments.Count < 3)
+        while (clock.Elapsed < TimeSpan.FromSeconds(1) || heartbeats == 0)
         {
             var frame = await WebSocketTestClient.ReceiveJsonAsync(socket, limit.Token);
             if (frame.GetProperty("kind").GetString() == "heartbeat")
-                moments.Add(clock.Elapsed);
+                heartbeats++;
         }
 
-        // Each gap is at least the interval, less the one millisecond of
-        // tolerance that the loop itself gives. With the defect the frames
-        // arrive together and the gaps are close to zero.
-        var least = interval - TimeSpan.FromMilliseconds(5);
-        for (var i = 1; i < moments.Count; i++)
-        {
-            var gap = moments[i] - moments[i - 1];
-            Assert.True(
-                gap >= least,
-                $"Heartbeat {i + 1} came {gap.TotalMilliseconds:F0} ms after heartbeat {i}; the interval is "
-                + $"{interval.TotalMilliseconds:F0} ms. Moments: {string.Join(", ", moments.Select(m => m.TotalMilliseconds.ToString("F0")))} ms.");
-        }
+        var elapsed = clock.Elapsed;
+        var most = (int)(elapsed.Ticks / interval.Ticks) + 2;
+        Assert.True(
+            heartbeats <= most,
+            $"{heartbeats} heartbeat frames came in {elapsed.TotalMilliseconds:F0} ms; with one frame in each "
+            + $"{interval.TotalMilliseconds:F0} ms the most is {most}.");
     }
 }
