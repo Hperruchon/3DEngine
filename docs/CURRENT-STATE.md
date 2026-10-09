@@ -1493,3 +1493,36 @@ after a commit governs nothing.
 New tests: 0. The test list holds 302. `dotnet build 3DEngine.sln --no-incremental` gives zero errors
 and zero warnings. Open entries: 14 of 15. New diagnostic codes: none. The next ledger entry must be a
 codebase review: v0.52 is the sixth milestone after v0.46.
+
+## v0.53 — The codebase review of 2026-10-09 (governance, TASK-0056)
+
+The fifth codebase review, `docs/reviews/2026-10-09-codebase-review.md`. It examines `main` at `f9521de`,
+the merge of v0.52. The gate permitted six milestones after v0.46, and v0.52 was the sixth, so this
+entry had to be the review. The owner said "go with the review" on 2026-10-09.
+
+**What it found.** Sixty-eight findings are open: no critical, nine high, twenty-nine medium and thirty
+low. Four earlier findings are fixed: E20, E23, T11 and T14. Eighteen findings are new. The most
+important:
+
+- T29 (high): a program named `git` in the judged checkout replaces git for the judge of TASK-0053.
+- T30 (high): a root commit, a merge of unrelated history, and a merge that takes the tree of an old
+  commit each pass any change, because the judge reads a merge with `--cc`. The old workflow had the
+  same steps.
+- T31 (high): a test file can point the other gates of `Engine.Tests` at a clean copy, the attack class
+  of T14.
+- E40 and E41 (medium): an address with a user part, and a change to `appsettings.json` after the
+  start, each make the HTTP host bind a foreign address.
+- T26 (medium): the contract gate checks a range and not a commit. My progress line on R-0031 of
+  2026-10-09 said that a later push was not affected; that was false, and a new line corrects it.
+
+**Owners.** TASK-0057 holds the judge and the pipeline (T26, T28 to T35), and TASK-0058 holds the guards
+of TASK-0051 and TASK-0037 (E40 to E45, E47, T27). TASK-0055 holds E46. The roadmap lists P0.17 as
+shipped, which TASK-0053 did not record, and puts the two tasks before TASK-0038 as P0.18 and P0.19. The
+nine phases that remain give the first objective in 28 to 41 evenings.
+
+**Questions for the owner.** Q1: a branch protection on GitHub that refuses a force push to `main`.
+Q2: how the judge closes T31. The review gives a recommendation for each.
+
+New tests: 0. The test list holds 302. `dotnet build 3DEngine.sln --no-incremental` gives zero errors
+and zero warnings. Open entries: 14 of 15. New diagnostic codes: none. The next codebase review must
+come before ledger entry v0.59.

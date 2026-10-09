@@ -267,6 +267,12 @@ The same run found a new hole: the job "Contract-touched-needs-ADR" passed a com
 `Engine.Contracts/Document.cs` with no ADR. On the first push of a branch the job compares the range
 from the cut-off commit, and an ADR changed somewhere in that range, so the job passes each new
 branch. A later push and a push to `main` compare from the previous tip and are not affected.
+Progress 2026-10-09: the codebase review of 2026-10-09 corrects the line above: a later push and a push
+to `main` are affected too, because the job checks a range and not each commit; one ADR change in the
+range lets a contract change with no ADR pass (T26). The review adds T26 to T35, three of them high:
+a program named `git` in the checkout replaces git for the judge (T29), a root commit or a merge
+carries any change past the judge (T30), and the attack class of T14 is open for the other gates
+(T31). TASK-0057 holds T26 and T28 to T35, and TASK-0058 holds T27.
 
 ### R-0033 · Seven findings of the third codebase review in the engine and the hosts have no task
 - class: debt

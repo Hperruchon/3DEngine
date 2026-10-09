@@ -44,6 +44,7 @@ Therefore each approved objective must have a track here.
 - P0.14 — The version counts applied commands, and a replay rebuilds it. v0.43, TASK-0035, ADR-0020.
 - P0.15 — A host refuses to start without the native backend. v0.44, TASK-0036.
 - P0.16 — An operation consumes its operands, and the Document holds the live bodies only. v0.49, TASK-0037, ADR-0021.
+- P0.17 — The judge of the write set runs from a build of main. v0.51 and v0.52, TASK-0053.
 
 ## Track 0 — Foundations
 
@@ -68,9 +69,11 @@ This track removes each condition that blocks other work.
 | P0.15 | A host refuses to start without the native backend. TASK-0036. | 1–2 |
 | P0.16 | An operation consumes its operands. ADR-0021, TASK-0037. | 2–3 |
 | P0.17 | The write-set check runs outside the test assembly. TASK-0053. | 1 |
-| P0.18 | The surface is a library, and `engine-api-http` is its program. ADR-0019, TASK-0038. | 2–3 |
-| P0.19 | The desktop host owns a session and serves the surface. ADR-0019, TASK-0054. | 1–2 |
-| P0.20 | `/schema/events` gives the payload fields of each kind. ADR-0008 §9, TASK-0055. | 1 |
+| P0.18 | The judge and the contract gate close the holes of the fifth review. TASK-0057. | 1–2 |
+| P0.19 | The address guard, the session guard and the consumed list close their gaps. TASK-0058. | 1 |
+| P0.20 | The surface is a library, and `engine-api-http` is its program. ADR-0019, TASK-0038. | 2–3 |
+| P0.21 | The desktop host owns a session and serves the surface. ADR-0019, TASK-0054. | 1–2 |
+| P0.22 | `/schema/events` gives the payload fields of each kind. ADR-0008 §9, TASK-0055. | 1 |
 
 ## Track P — The platform
 
@@ -132,7 +135,7 @@ The first domain extension. Objective 15 puts it before materials, chemistry and
 The tracks are not strictly sequential, but three rules hold:
 
 1. Track 0 comes first. Each phase in it removes a condition that blocks other work. Two exceptions
-   are on record: P0.17 to P0.19 must be done before R5, and R2 can start before them. P0.20 is not
+   are on record: P0.18 to P0.21 must be done before R5, and R2 can start before them. P0.22 is not
    needed for R5. P0.13 and
    P0.15 must be done before R2, because the tests of R2 need a serial read and a native backend
    that surely ran.
@@ -143,8 +146,8 @@ The field `depends-on` of each task file holds the same order. `TaskGovernanceGa
 that each dependency names a task.
 
 Phase R6 gives the first objective that the owner named: create a box, subtract a second box, and
-observe the cut. The eight phases that remain, P0.17 to P0.19 and R2 to R6, give it in 27 to 39
-evenings. That number is the sum of the column "Evenings" for those phases: 4 to 6 for Track 0 and
+observe the cut. The nine phases that remain, P0.18 to P0.21 and R2 to R6, give it in 28 to 41
+evenings. That number is the sum of the column "Evenings" for those phases: 5 to 8 for Track 0 and
 23 to 33 for track R. Correct it when a phase ships or an estimate changes.
 
 ## Not on a track
