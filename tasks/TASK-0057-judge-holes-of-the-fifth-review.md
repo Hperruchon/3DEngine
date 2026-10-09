@@ -1,7 +1,7 @@
 ---
 id: 0057
 title: The judge of the write set and the contract gate close the holes of the fifth review
-status: Active
+status: Done
 phase: P0.18
 opened: 2026-10-09
 depends-on: [0056]
@@ -151,3 +151,4 @@ names the job `contract-gate`, in a sentence about its own task; ADRs are outsid
   with `bash -e`, so the step stopped at the answer of the old judge before its fallback. The step now
   catches each exit code with `|| status=$?`; a local run under `bash -eo pipefail` with a fake judge
   gave the right exit code for four cases.
+- 2026-10-10: closed again.
