@@ -273,6 +273,9 @@ range lets a contract change with no ADR pass (T26). The review adds T26 to T35,
 a program named `git` in the checkout replaces git for the judge (T29), a root commit or a merge
 carries any change past the judge (T30), and the attack class of T14 is open for the other gates
 (T31). TASK-0057 holds T26 and T28 to T35, and TASK-0058 holds T27.
+Progress 2026-10-10: the owner answered the questions of that review. Q1, yes: the owner protects
+`main` on GitHub against a force push, which closes one path of T28 when it is set. Q2, option A: the
+judge refuses four calls under `Engine.Tests/` (T31), in TASK-0057.
 
 ### R-0033 · Seven findings of the third codebase review in the engine and the hosts have no task
 - class: debt

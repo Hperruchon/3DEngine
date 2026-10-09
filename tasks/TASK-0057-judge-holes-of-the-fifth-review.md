@@ -59,8 +59,8 @@ A commit with a change outside its write set fails in the pipeline in each form 
 2. A commit with no parent after the cut-off fails. A merge is judged against its first parent; a file
    that a judged commit of the same run changed passes (T30).
 3. The judge refuses a module initializer, `AppContext.SetData`, `Environment.SetEnvironmentVariable`
-   and `Directory.SetCurrentDirectory` in a changed file under `Engine.Tests/` (T31), unless the owner
-   answers question Q2 of the review with option B.
+   and `Directory.SetCurrentDirectory` in a changed file under `Engine.Tests/` (T31). The owner chose
+   this option, option A of question Q2 of the review, on 2026-10-10.
 4. The job fails when the base holds no judge, or when the previous tip of `main` is not known (T28).
 5. On a branch, the range starts at the merge base with `main` (T32). The judge finds a task by its
    identifier at the commit (T33).
@@ -72,7 +72,8 @@ A commit with a change outside its write set fails in the pipeline in each form 
 ## Scope (out)
 
 - No new rule of the write set. The holes close; the rules stay.
-- No branch protection. That is a setting of the owner (question Q1 of the review).
+- No branch protection. That is a setting of the owner. On 2026-10-10 the owner answered yes to
+  question Q1 of the review: the owner protects `main` on GitHub against a force push.
 
 ## Acceptance criteria
 
@@ -92,3 +93,9 @@ A commit with a change outside its write set fails in the pipeline in each form 
   merge, as for TASK-0053.
 - **A scratch repository.** A test can make one with `git init` in a temporary folder, so it needs no
   history of this repository; the gate jobs clone one commit only.
+
+## Progress
+
+- 2026-10-10: the owner answered the two questions of the review of 2026-10-09: yes to Q1 (a
+  branch protection of `main` against a force push, which the owner sets on GitHub) and option A to
+  Q2 (the judge refuses four calls under `Engine.Tests/`). The task stays `Ready`.
