@@ -138,7 +138,7 @@ writes:
 | `status` | Use one value: `Ready`, `Active`, `Done` or `Deferred`. The task file is the authority for the question "did this phase ship". |
 | `depends-on` | Give task identifiers. `TaskGovernanceGateTests` fails when an identifier names no task. A session takes the first Ready task in roadmap order whose dependencies are Done. |
 | `governed-by` | Give ADR identifiers. This list must equal the set of ADRs in force whose `affects` patterns intersect `writes`. `TaskGovernanceGateTests` verifies it for a Ready or Active task. Therefore an absent ADR causes an error and not an assumption. |
-| `writes` | This field is the write set. `Engine.Tests/Governance/WriteSetGateTests.cs` reads it. Continuous integration gives the list of changed paths in the variable `WRITE_SET_FILES` and the governing task in `WRITE_SET_TASK`, and the gate fails if a changed path is outside the set. A gate file, under `Engine.Tests/Governance/`, under `Engine.Tests/Diagnostics/` or with a name that ends in `GateTests.cs`, must be named exactly; a pattern does not permit it. |
+| `writes` | This field is the write set. The judge `eng/write-set-check` reads it for each commit, and the pipeline builds that judge from `main`, so a branch cannot change its own judge (TASK-0053). The judge fails if a changed path is outside the set. `Engine.Tests/Governance/WriteSetGateTests.cs` checks the form of each write set. A gate file must be named exactly; a pattern does not permit it. A gate file is a file under `Engine.Tests/Governance/`, under `Engine.Tests/Diagnostics/` or under `eng/write-set-check/`, a file with a name that ends in `GateTests.cs`, the project file of the tests, a `Directory.Build` or `Directory.Packages` file, `eng/write-set-cutoff.txt`, or a workflow. |
 | `forbid` | Give the paths that this task must not touch. This field is inexpensive, and it stops the most frequent increase of scope. A forbid binds the task that declares it. |
 
 Before you start two agents, compare their `writes` fields. If the sets intersect, do not start the
@@ -148,8 +148,8 @@ agents together.
 
 ```bash
 set -o pipefail
-WRITE_SET_TASK=TASK-0014 WRITE_SET_FILES="$(git diff --cached --name-only --no-renames)" \
-  dotnet test Engine.Tests/Engine.Tests.csproj --no-build --filter 'FullyQualifiedName~Governance'
+dotnet run --project eng/write-set-check -- --staged --task TASK-0014
+dotnet test Engine.Tests/Engine.Tests.csproj --no-build --filter 'FullyQualifiedName~Governance'
 ```
 
 ### To close a task
@@ -257,8 +257,9 @@ that made it necessary.
 | `AdrGateTests` | the ADR front matter and the index | a field is absent, a status is outside the set, a supersession or an amendment is not reciprocal, the index disagrees, or the count of unenforced ADRs grows |
 | `AdrEnforcementExistsGateTests` | `enforced-by` of each ADR in force | the file is absent and no Ready task creates it |
 | `TaskGovernanceGateTests` | `status`, `governed-by`, `depends-on` and `writes` of each task | a status is outside the set, an identifier differs from the file name, `governed-by` differs from the intersection rule on an open task, or `depends-on` names no task |
-| `WriteSetGateTests` | the `writes` block of each task, the change list and the cut-off file | a changed path is outside the write set of the governing task, a gate file is not named exactly, the named task is not changed, a task forbids what it writes, the cut-off moved, or the count of tasks without front matter grows |
-| `DependencyDirectionGateTests` | each project file, read as XML | a reference breaks the authority diagram, a project is in no class, or a binding has two pins |
+| `WriteSetGateTests` | the `writes` block of each task and the cut-off file | a task forbids what it writes, a path has a backslash, a Done task names a file that is absent, the cut-off moved, or the count of tasks without front matter grows |
+| `eng/write-set-check` (a program, not a test; `WriteSetJudgeTests` tests its rules) | each commit, its changed paths and its governing task | a changed path is outside the write set of the governing task, a gate file is not named exactly, the named task is not changed, or the task is Done before and after the commit |
+| `DependencyDirectionGateTests` | each project file, read as XML | a reference breaks the authority diagram, a project is in no class, the judge of the write set references a project, or a binding has two pins |
 | `DeterminismCallGateTests` | each source in the log path, with its comments removed, and each project file | a forbidden function is called on `Math`, `MathF`, `double`, `float` or `Half`, `System.Math` is imported statically, or a 32-bit runtime identifier exists |
 | `RegisterGateTests` | the open entries of `docs/register.md` | a `due` date passed, a second extension exists, the count is above 15, a class or a date is invalid, or the parser found fewer entries than the section holds |
 | `MarkerGateTests` | each source, each configuration file, each workflow and the register | a marker word has no register identifier, or names one that is not in the register |
@@ -274,9 +275,9 @@ that made it necessary.
 
 `.github/workflows/ci.yml` runs three jobs. `gate` builds, tests and runs two smoke tests on
 Windows, Linux and macOS. `contract-gate` fails a push that changes `Engine.Contracts/**` with no
-change under `docs/adr/`. `write-set-gate` runs `WriteSetGateTests` for each commit after the
-cut-off in `eng/write-set-cutoff.txt`, and it checks a merge commit on the changes that the merge made
-itself.
+change under `docs/adr/`. `write-set-gate` builds the judge `eng/write-set-check` from `main` and runs
+it for each commit after the cut-off in `eng/write-set-cutoff.txt`, and it checks a merge commit on the
+changes that the merge made itself.
 
 ---
 

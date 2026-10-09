@@ -1442,3 +1442,30 @@ the first objective in 27 to 39 evenings.
 New tests: 0. The test list holds 283. `dotnet build 3DEngine.sln --no-incremental` gives zero errors
 and zero warnings. Closed: R-0037. Open entries: 14 of 15. New diagnostic codes: none. The next codebase
 review must come before ledger entry v0.53.
+
+## v0.51 — The judge of the write set is a program that the pipeline builds from main (P0.17, TASK-0053)
+
+Finding T14 of the review of 2026-10-08 (high): the pipeline ran the write-set check as a test from the
+build of the commit that it judged, so a file under `Engine.Tests/` could clear the variable that the
+test read and switch the check off for its own commit. The owner chose option A on 2026-10-08.
+
+**The change.** The rules moved, with no change, into the program `eng/write-set-check`. The job "Write
+set of the governing task" builds it from `main`, or from the tip before the push for a push to `main`,
+and runs it on each commit of the push. The steps of the range, the cut-off and the merge rule moved
+from the workflow into the program too. The program holds the reader of the task files, and the gates
+of `Engine.Tests` use the same reader. Before a commit a person runs
+`dotnet run --project eng/write-set-check -- --staged --task TASK-nnnn`.
+
+**Proof.** The 103 commits after the cut-off pass the new judge, as they passed the old gate. Each of
+eight rules failed on its own injection. A local run of the pipeline steps put two injected commits on
+top of the first commit of the task: the attack of the review, and a commit that changed the judge to
+pass all. The judge built from the base failed both, and the judge of the injected commit passed both.
+The same run on a branch in the pipeline can only come after the merge, because `main` holds no judge
+before it.
+
+**Weakest.** GitHub runs the workflow of the pushed commit, so a task that names
+`.github/workflows/ci.yml` exactly can still change the job. A branch protection on GitHub closes that.
+
+New tests: 20, and the dynamic test of `WriteSetGateTests` left. The test list holds 302. `dotnet build 3DEngine.sln --no-incremental` gives zero errors
+and zero warnings. Open entries: 14 of 15. New diagnostic codes: none. The next codebase review must
+come before ledger entry v0.53.

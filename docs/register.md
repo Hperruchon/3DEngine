@@ -258,6 +258,10 @@ T15 is corrected in the review (the write set of TASK-0038), and TASK-0049 corre
 Progress 2026-10-08: the owner answered Q1 of the fourth review with option A: the dynamic write-set
 check runs as a program in `eng/` that the pipeline builds from `main`, outside the test assembly.
 TASK-0053 holds it, and TASK-0038 depends on it, because TASK-0038 permits `Engine.Tests/**`.
+Progress 2026-10-09: TASK-0053 corrected T14. The judge `eng/write-set-check` runs from a build of
+`main`, and a local run of the pipeline steps failed the injection of the review and a commit that
+changed the judge. The workflow still comes from the judged commit, so a task that names
+`.github/workflows/ci.yml` exactly can change the job; a branch protection on GitHub closes that.
 
 ### R-0033 · Seven findings of the third codebase review in the engine and the hosts have no task
 - class: debt
