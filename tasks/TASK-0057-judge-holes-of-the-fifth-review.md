@@ -1,7 +1,7 @@
 ---
 id: 0057
 title: The judge of the write set and the contract gate close the holes of the fifth review
-status: Done
+status: Active
 phase: P0.18
 opened: 2026-10-09
 depends-on: [0056]
@@ -147,3 +147,7 @@ names the job `contract-gate`, in a sentence about its own task; ADRs are outsid
   branch protection of `main` against a force push, which the owner sets on GitHub) and option A to
   Q2 (the judge refuses four calls under `Engine.Tests/`). The task stays `Ready`.
 - 2026-10-10: closed. 312 tests pass, and the replay of the 112 commits after the cut-off passes.
+- 2026-10-10: reopened. Run 37997961652 failed in the write-set job with exit code 2: GitHub runs a step
+  with `bash -e`, so the step stopped at the answer of the old judge before its fallback. The step now
+  catches each exit code with `|| status=$?`; a local run under `bash -eo pipefail` with a fake judge
+  gave the right exit code for four cases.

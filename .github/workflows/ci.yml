@@ -185,17 +185,19 @@ jobs:
           REF: ${{ github.ref }}
           PUSH_BEFORE: ${{ github.event.before }}
         run: |
+          # The shell of a step stops at the first failed command (bash -e), so each
+          # exit code is caught with `|| status=$?` and read after the command.
           set -uo pipefail
           judge="$RUNNER_TEMP/judge-bin/write-set-check.dll"
+          status=0
           if [ "$REF" = refs/heads/main ]; then
-            dotnet "$judge" --range "$PUSH_BEFORE" --strict
+            dotnet "$judge" --range "$PUSH_BEFORE" --strict || status=$?
           else
-            dotnet "$judge" --merge-base origin/main
+            dotnet "$judge" --merge-base origin/main || status=$?
           fi
-          status=$?
           if [ "$status" -eq 2 ]; then
             echo "::notice title=Write set::the judge of main knows only --range, so it judges the commits of this push"
-            dotnet "$judge" --range "$PUSH_BEFORE"
-            status=$?
+            status=0
+            dotnet "$judge" --range "$PUSH_BEFORE" || status=$?
           fi
           exit "$status"
