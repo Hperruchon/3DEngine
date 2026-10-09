@@ -2,9 +2,9 @@
 id: 0038
 title: The HTTP and WebSocket surface is a library, and engine-api-http is its program
 status: Ready
-phase: P0.18
+phase: P0.20
 opened: 2026-09-25
-depends-on: [0034, 0036, 0051, 0053]
+depends-on: [0034, 0036, 0051, 0053, 0058]
 governed-by: [0005, 0010, 0011, 0013, 0016, 0018, 0019, 0020, 0021]
 writes:
   create:

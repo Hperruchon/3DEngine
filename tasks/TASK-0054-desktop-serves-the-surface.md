@@ -2,7 +2,7 @@
 id: 0054
 title: The desktop host owns a document session and serves the HTTP and WebSocket surface
 status: Ready
-phase: P0.19
+phase: P0.21
 opened: 2026-10-08
 depends-on: [0038]
 governed-by: [0007, 0017, 0019]

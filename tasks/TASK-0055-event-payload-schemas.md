@@ -2,7 +2,7 @@
 id: 0055
 title: /schema/events gives the payload fields of each event kind
 status: Ready
-phase: P0.20
+phase: P0.22
 opened: 2026-10-08
 depends-on: [0054]
 governed-by: [0011, 0013, 0016, 0019, 0021]
