@@ -1526,3 +1526,32 @@ Q2: how the judge closes T31. The review gives a recommendation for each.
 New tests: 0. The test list holds 302. `dotnet build 3DEngine.sln --no-incremental` gives zero errors
 and zero warnings. Open entries: 14 of 15. New diagnostic codes: none. The next codebase review must
 come before ledger entry v0.59.
+
+## v0.54 — The judge of the write set and the contract rule close the holes of the fifth review (P0.18, TASK-0057)
+
+The codebase review of 2026-10-09 found three high holes in the judge of TASK-0053 and five medium or
+low defects in it and in the pipeline. On 2026-10-10 the owner answered its questions: yes to a branch
+protection of `main` against a force push, which the owner sets on GitHub, and option A for T31.
+
+**The judge.** It runs git by a full path from a folder of `PATH` outside the judged checkout (T29). A
+commit with no parent fails, and a merge is judged on each file that differs from its first parent and
+that no commit of its second parent changed; a merge of unrelated history fails (T30). A changed test
+file that holds one of four calls that can redirect a gate fails (T31). The task files come from the
+commit (T33). It reads the paths of git with `-z`, and a failed git command is a failure (T35).
+
+**The pipeline.** The judge comes from `main`, or the job fails; on `main` an unknown tip before the push
+fails (T28). A branch is judged from its merge base with `main` (T32). The contract rule is now a rule of
+the judge for each commit, and the job "Contract-touched-needs-ADR", which checked a range, is gone
+(T26). The documented check before a commit joins its two commands with `&&` (T34).
+
+**Proof.** `WriteSetRangeTests` runs the real judge on scratch repositories with git, so each run of the
+pipeline repeats the attacks of the review on three operating systems. Eight of its ten tests failed on
+the old behaviour. The replay of the 112 commits after the cut-off passes.
+
+**T12.** Two timing tests failed in the run of the answers commit, which changed documents only: three
+failures in four runs. R-0034 records it, and its limit is 2026-11-03.
+
+New tests: 10, and one test of `WriteSetJudgeTests` changed its subject from the arrow of a rename to
+the paths of `-z`. The test list holds 312. `dotnet build 3DEngine.sln --no-incremental` gives zero
+errors and zero warnings. Open entries: 14 of 15. New diagnostic codes: none. The next codebase review
+must come before ledger entry v0.59.

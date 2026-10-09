@@ -85,9 +85,9 @@ a Ready task implements is the one exception, until that task closes.
    `docs/adr/archive/`. `docs/adr/README.md` lists the number under "Archived", so that the number
    is never used again.
 
-A change to the public shape of `Engine.Contracts/**` needs an ADR in the same commit. The job
-`contract-gate` in `.github/workflows/ci.yml` fails a push that changes `Engine.Contracts/**` with
-no change under `docs/adr/`. Read the rejected decisions and the closed register entries before you
+A change to the public shape of `Engine.Contracts/**` needs an ADR in the same commit. The judge
+`eng/write-set-check` fails a commit that changes `Engine.Contracts/**` with no change under
+`docs/adr/` (TASK-0057). Read the rejected decisions and the closed register entries before you
 propose a decision. Do not propose a decision that the project refused.
 
 ---
@@ -147,9 +147,8 @@ agents together.
 ### The write-set check before a commit
 
 ```bash
-set -o pipefail
-dotnet run --project eng/write-set-check -- --staged --task TASK-0014
-dotnet test Engine.Tests/Engine.Tests.csproj --no-build --filter 'FullyQualifiedName~Governance'
+dotnet run --project eng/write-set-check -- --staged --task TASK-0014 &&
+  dotnet test Engine.Tests/Engine.Tests.csproj --no-build --filter 'FullyQualifiedName~Governance'
 ```
 
 ### To close a task
@@ -258,7 +257,7 @@ that made it necessary.
 | `AdrEnforcementExistsGateTests` | `enforced-by` of each ADR in force | the file is absent and no Ready task creates it |
 | `TaskGovernanceGateTests` | `status`, `governed-by`, `depends-on` and `writes` of each task | a status is outside the set, an identifier differs from the file name, `governed-by` differs from the intersection rule on an open task, or `depends-on` names no task |
 | `WriteSetGateTests` | the `writes` block of each task and the cut-off file | a task forbids what it writes, a path has a backslash, a Done task names a file that is absent, the cut-off moved, or the count of tasks without front matter grows |
-| `eng/write-set-check` (a program, not a test; `WriteSetJudgeTests` tests its rules) | each commit, its changed paths and its governing task | a changed path is outside the write set of the governing task, a gate file is not named exactly, the named task is not changed, or the task is Done before and after the commit |
+| `eng/write-set-check` (a program, not a test; `WriteSetJudgeTests` and `WriteSetRangeTests` test it) | each commit, its changed paths, its governing task at the commit, and the text of each changed test file | a changed path is outside the write set of the governing task, a gate file is not named exactly, the named task is not changed, the task is Done before and after the commit, a commit has no parent, a merge changes a file that no commit of its second parent changed and its task does not permit, a contract change has no ADR in the same commit, or a test file holds one of four calls that can redirect a gate |
 | `DependencyDirectionGateTests` | each project file, read as XML | a reference breaks the authority diagram, a project is in no class, the judge of the write set references a project, or a binding has two pins |
 | `DeterminismCallGateTests` | each source in the log path, with its comments removed, and each project file | a forbidden function is called on `Math`, `MathF`, `double`, `float` or `Half`, `System.Math` is imported statically, or a 32-bit runtime identifier exists |
 | `RegisterGateTests` | the open entries of `docs/register.md` | a `due` date passed, a second extension exists, the count is above 15, a class or a date is invalid, or the parser found fewer entries than the section holds |
@@ -273,11 +272,13 @@ that made it necessary.
 | `SchemaEndpointGateTests` | the `/schema` endpoints and the handlers | the output differs from the declaration, or an endpoint names a command |
 | `ReplayDeterminismGateTests` | the fixture | the replay result differs, except for the timestamp and the document identifier |
 
-`.github/workflows/ci.yml` runs three jobs. `gate` builds, tests and runs two smoke tests on
-Windows, Linux and macOS. `contract-gate` fails a push that changes `Engine.Contracts/**` with no
-change under `docs/adr/`. `write-set-gate` builds the judge `eng/write-set-check` from `main` and runs
-it for each commit after the cut-off in `eng/write-set-cutoff.txt`, and it checks a merge commit on the
-changes that the merge made itself.
+`.github/workflows/ci.yml` runs two jobs. `gate` builds, tests and runs two smoke tests on Windows,
+Linux and macOS. `write-set-gate` builds the judge `eng/write-set-check` from `main`. On `main` it
+judges each commit of the push, and on a branch each commit after the merge base with `main`. It
+judges a merge on each file that differs from its first parent and that no commit of its second
+parent changed, and it fails a commit with no parent. The judge also fails a commit that changes
+`Engine.Contracts/**` with no change under `docs/adr/` (TASK-0057; until then the job `contract-gate`
+checked that rule on a range of commits).
 
 ---
 

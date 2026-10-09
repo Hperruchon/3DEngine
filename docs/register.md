@@ -273,6 +273,15 @@ range lets a contract change with no ADR pass (T26). The review adds T26 to T35,
 a program named `git` in the checkout replaces git for the judge (T29), a root commit or a merge
 carries any change past the judge (T30), and the attack class of T14 is open for the other gates
 (T31). TASK-0057 holds T26 and T28 to T35, and TASK-0058 holds T27.
+Progress 2026-10-10: the owner answered the questions of that review. Q1, yes: the owner protects
+`main` on GitHub against a force push, which closes one path of T28 when it is set. Q2, option A: the
+judge refuses four calls under `Engine.Tests/` (T31), in TASK-0057.
+Progress 2026-10-10: TASK-0057 corrected T26, T29 to T35 and the parts of T28 in the code: the judge
+runs git by a full path, fails a commit with no parent, judges a merge against its first parent,
+refuses the four calls, holds the contract rule for each commit, and comes from `main` or the job
+fails. Tests run the real judge on scratch repositories. The workflow still comes from the judged
+commit; the branch protection of the owner closes the force push. T4, T5, T7, T10, T13, T16, T17,
+T23, T24 and T25 stay.
 
 ### R-0033 · Seven findings of the third codebase review in the engine and the hosts have no task
 - class: debt
@@ -331,6 +340,10 @@ must be read with `--blame-crash`, and it adds a part to T12.
 Progress 2026-10-09: the heartbeat test of T12 failed again, on Windows in run 37963719832: heartbeat 3
 came 0 ms after heartbeat 2, and the interval is 100 ms. The commits of that run did not touch the
 code of the test or of the host. The limit of this entry is 2026-11-03.
+Progress 2026-10-10: two tests of T12 failed in one run, 37997004258, of a commit that changed two
+documents only: the heartbeat test on Windows (heartbeat 2 came 1 ms after heartbeat 1), and on macOS
+the deadlock test of `HttpConcurrencyTests` ("No command completed"). T12 failed in three of the last
+four runs, so each merge now depends on a run without it.
 
 ## Accepted compromises
 

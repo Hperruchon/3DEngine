@@ -79,19 +79,22 @@ public class WriteSetJudgeTests
         Assert.Equal(expected, Judge.TrailerTask(message));
     }
 
+    // Git quotes a path with a space or a character outside ASCII in its normal
+    // output, and the judge read the quoted form as the name (finding T35 of the
+    // review of 2026-10-09). With -z git gives each path as it is.
     [Fact]
-    public void A_Rename_Arrow_And_A_Backslash_Give_Two_Paths_With_The_Forward_Slash()
+    public void A_List_Of_Git_With_Nul_Characters_Gives_Each_Path_As_It_Is()
     {
-        var files = Judge.ParseChangedFiles("docs\\a.md -> docs/b.md\n\nEngine.Core/c.cs\r\n");
+        var files = Judge.ParseGitPaths("docs/a b.md\0docs/café.md\0Engine.Core/c.cs\0");
 
-        Assert.Equal(["Engine.Core/c.cs", "docs/a.md", "docs/b.md"], files.Order(StringComparer.Ordinal));
+        Assert.Equal(["Engine.Core/c.cs", "docs/a b.md", "docs/café.md"], files.Order(StringComparer.Ordinal));
     }
 
     [Fact]
     public void A_Task_That_Is_Done_Before_And_After_The_Commit_Governs_Nothing()
     {
         var file = TaskFile("TASK-0049");
-        var judge = new Judge(RepositoryFiles.Root, FakeGit(before: File.ReadAllText(file), after: File.ReadAllText(file)));
+        var judge = new Judge(FakeGit(before: File.ReadAllText(file), after: File.ReadAllText(file)));
 
         var problems = judge.Check("abc1234", [RepositoryFiles.Relative(file)], "TASK-0049");
 
@@ -102,7 +105,7 @@ public class WriteSetJudgeTests
     public void A_Commit_Before_The_Rules_Of_TASK_0047_Keeps_The_Earlier_Rule()
     {
         var file = TaskFile("TASK-0049");
-        var judge = new Judge(RepositoryFiles.Root, FakeGit(File.ReadAllText(file), File.ReadAllText(file), beforeTheRules: true));
+        var judge = new Judge(FakeGit(File.ReadAllText(file), File.ReadAllText(file), beforeTheRules: true));
 
         Assert.Empty(judge.Check("abc1234", [RepositoryFiles.Relative(file)], "TASK-0049"));
     }
@@ -112,7 +115,7 @@ public class WriteSetJudgeTests
     {
         var file = TaskFile("TASK-0049");
         var closed = File.ReadAllText(file);
-        var judge = new Judge(RepositoryFiles.Root, FakeGit(before: closed.Replace("status: Done", "status: Active"), after: closed));
+        var judge = new Judge(FakeGit(before: closed.Replace("status: Done", "status: Active"), after: closed));
 
         Assert.Empty(judge.Check("abc1234", [RepositoryFiles.Relative(file), "eng/manifold-native/build.sh"], "TASK-0049"));
     }
@@ -120,19 +123,19 @@ public class WriteSetJudgeTests
     [Fact]
     public void A_Named_Task_Must_Exist_And_The_Commit_Must_Change_Its_File()
     {
-        var judge = new Judge(RepositoryFiles.Root, FakeGit(null, null));
+        var judge = new Judge(FakeGit(null, null));
 
         var unknown = judge.Check("abc1234", ["docs/roadmap.md"], "TASK-9998");
         var untouched = judge.Check("abc1234", ["docs/roadmap.md"], "TASK-0049");
 
-        Assert.Contains("no task file with a write set has that identifier", Assert.Single(unknown), StringComparison.Ordinal);
+        Assert.Contains("no task file with that identifier", Assert.Single(unknown), StringComparison.Ordinal);
         Assert.Contains("does not change its file", Assert.Single(untouched), StringComparison.Ordinal);
     }
 
     [Fact]
     public void With_No_Name_Exactly_One_Task_File_Must_Be_Touched()
     {
-        var judge = new Judge(RepositoryFiles.Root, FakeGit(null, null));
+        var judge = new Judge(FakeGit(null, null));
 
         var none = judge.Check("abc1234", ["docs/roadmap.md"], null);
         var two = judge.Check("abc1234", [RepositoryFiles.Relative(TaskFile("TASK-0048")), RepositoryFiles.Relative(TaskFile("TASK-0049"))], null);
@@ -144,12 +147,15 @@ public class WriteSetJudgeTests
     private static string TaskFile(string id)
         => RepositoryFiles.TaskFiles().Single(f => Path.GetFileName(f).StartsWith(id + "-", StringComparison.Ordinal));
 
-    // A git that answers the two questions of the judge: is the commit before
-    // the rules of TASK-0047, and what is the task file after and before the
-    // commit. Each other question gets no answer.
+    // A git that answers the three questions of the judge: which task files the
+    // commit holds (the files of the working tree), is the commit before the
+    // rules of TASK-0047, and what is the task file after and before the commit.
+    // Each other question gets no answer.
     private static Func<string[], string?> FakeGit(string? before, string? after, bool beforeTheRules = false)
         => arguments => arguments switch
         {
+            ["ls-tree", "-r", "-z", "--name-only", _, "--", "tasks"]
+                => string.Concat(RepositoryFiles.TaskFiles().Select(f => RepositoryFiles.Relative(f) + "\0")),
             ["merge-base", "--is-ancestor", _, Judge.CommitRulesFrom] => beforeTheRules ? string.Empty : null,
             ["show", var spec] when spec.Contains("^:", StringComparison.Ordinal) => before,
             ["show", _] => after,
