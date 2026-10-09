@@ -1,7 +1,7 @@
 ---
 id: 0053
 title: The write-set check runs as a program that the pipeline builds from main
-status: Done
+status: Active
 phase: P0.17
 opened: 2026-10-08
 depends-on: [0052]
@@ -145,3 +145,4 @@ of the commit, and a notice says so.
   injection into `Judge.cs`.
 - 2026-10-09: closed. The local run of the pipeline steps failed both injected commits with the judge
   of `main` and passed both with the judge of the injected commit.
+- 2026-10-09: reopened to record the pipeline run on a branch that is never merged.
