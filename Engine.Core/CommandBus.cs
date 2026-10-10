@@ -34,6 +34,11 @@ public sealed class CommandBus
     private readonly SemaphoreSlim _serial = new(1, 1);
     private long _nextSeq = 1;
 
+    // Each handle that a commit of this bus created, live or consumed. One bus
+    // serves one Document from its first command, so the set is complete
+    // (TASK-0058).
+    private readonly HashSet<Guid> _createdHandles = [];
+
     public CommandBus(
         Document document,
         CommandRegistry registry,
@@ -146,23 +151,37 @@ public sealed class CommandBus
         if (!handlerResult.IsSuccess)
             return Reject(command, handlerResult.Error!, stopwatch, handlerResult.Diagnostics);
 
-        RefuseWrongConsumedList(command, handlerResult.ConsumedBodies);
+        RefuseWrongBodyLists(command, handlerResult);
         return Commit(command, handlerResult, stopwatch);
     }
 
     // ADR-0021 item 2: a handler consumes only a live body, and it gives each
-    // handle one time. A list that breaks the rule is a defect in the handler,
-    // not a rejection of the command, so the bus throws. It throws before the
-    // commit, so the Document does not change.
-    private void RefuseWrongConsumedList(Command command, IReadOnlyList<BodyHandle> consumed)
+    // handle one time. ADR-0021 item 1: a consumed body never becomes live again,
+    // so a handler creates only a handle that this bus never created. A list that
+    // breaks a rule is a defect in the handler or the backend, not a rejection of
+    // the command, so the bus throws. It throws before the commit, so the
+    // Document does not change. Until TASK-0058 the bus checked the consumed list
+    // only, and a command that created and consumed its own handle was applied
+    // with no live body (finding E44 of the codebase review of 2026-10-09).
+    private void RefuseWrongBodyLists(Command command, CommandHandlerResult result)
     {
-        var seen = new HashSet<Guid>();
-        foreach (var handle in consumed)
+        var consumed = new HashSet<Guid>();
+        foreach (var handle in result.ConsumedBodies)
         {
-            if (!_document.HasBody(handle) || !seen.Add(handle.Id))
+            if (!_document.HasBody(handle) || !consumed.Add(handle.Id))
                 throw new InvalidOperationException(
                     $"The handler of '{command.Name}'@{command.SchemaVersion} consumes body {handle.Id}, which is "
                     + "not live or is in its list two times. ADR-0021 item 2 permits a live body, one time.");
+        }
+
+        var created = new HashSet<Guid>();
+        foreach (var body in result.CreatedBodies)
+        {
+            if (_createdHandles.Contains(body.Handle.Id) || consumed.Contains(body.Handle.Id) || !created.Add(body.Handle.Id))
+                throw new InvalidOperationException(
+                    $"The handler of '{command.Name}'@{command.SchemaVersion} creates body {body.Handle.Id}, which "
+                    + "this bus created before, which the same command consumes, or which is in its list two times. "
+                    + "ADR-0021 item 1: a consumed body never becomes live again.");
         }
     }
 
@@ -195,6 +214,7 @@ public sealed class CommandBus
         foreach (var body in handlerResult.CreatedBodies)
         {
             _document.AddBody(body);
+            _createdHandles.Add(body.Handle.Id);
             lastSeq++;
             events.Add(Event(lastSeq, command, "body.created", new Dictionary<string, object?>
             {

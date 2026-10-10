@@ -1,7 +1,7 @@
 ---
 id: 0058
 title: The address guard, the session guard and the consumed list close the gaps of the fifth review
-status: Ready
+status: Done
 phase: P0.19
 opened: 2026-10-09
 depends-on: [0057]
@@ -76,9 +76,48 @@ consumed list that overlaps the created list.
 
 ## Acceptance criteria
 
-- [ ] Each new test fails before its correction.
-- [ ] The host exits with code 1 for `http://evil@localhost:5000`, and binds no new endpoint when
+- [x] Each new test fails before its correction.
+- [x] The host exits with code 1 for `http://evil@localhost:5000`, and binds no new endpoint when
       `appsettings.json` changes after the start.
-- [ ] The bus throws before the commit for the run of E44, and the Document does not change.
-- [ ] A clean build (`--no-incremental`) gives zero errors and zero warnings.
-- [ ] Continuous integration passes on `ubuntu-latest`, `windows-latest` and `macos-latest`.
+- [x] The bus throws before the commit for the run of E44, and the Document does not change.
+- [x] A clean build (`--no-incremental`) gives zero errors and zero warnings.
+- [ ] Continuous integration passes on `ubuntu-latest`, `windows-latest` and `macos-latest`. The
+      merge records the run.
+
+## Outcome
+
+Status: Done · v0.56 · the commit that carries this block.
+
+The start check reads each address with `BindingAddress.Parse`, the parser of Kestrel, so the check
+and the bind read the same host; an address with a user part is refused (E40). The endpoint
+configuration does not reload after the start (E41). The bus refuses a created handle that it created
+before, live or consumed, a created handle that the same command consumes, and a created handle two
+times (E44); with that rule the comment at `Engine.Contracts/Document.cs:27` is true. The comment of
+the session gives the two limits of the check of a call back and the rule for a sink (E42, E43). The
+texts of E45 and the glossary term of E47 agree with the code. The process test of a port key asserts
+that no address was bound (T27).
+
+## Method
+
+**Mechanical.** The tests first. Six new tests of a defect failed on the old code: the three cases of
+E44 gave no exception, the two forms of E40 gave no refusal, and the host started a new endpoint after
+a change of `appsettings.json` (E41). The assertion of T27 cannot fail while the start check is in
+place, so a probe test that was never committed started the host on 127.0.0.1 with an injected check
+after the start that read the address as foreign: the host exited with code 1 and the loopback
+message, and the new assertion failed on "Now listening on". The probe and the injection are removed.
+
+**Judgement.** The parser of Kestrel and not a second check with `System.Uri`, because a check that
+reads an address in another way than the bind is the defect itself. The bus keeps a set of each handle
+that it created, because ADR-0021 item 1 says that a consumed body never becomes live again, and the
+Document holds the live bodies only; the set needs no change to `Engine.Contracts`. One bus serves one
+Document from its first command, so the set is complete.
+
+**Weakest.** The test of E41 sees the log line of Kestrel; a later version of Kestrel that starts an
+endpoint with no log line would pass it. The set of created handles grows with each created body for
+the life of the bus, as the log does. A flow with no execution context still escapes the check of a
+call back; the comment gives the rule, and no code holds it.
+
+## Progress
+
+- 2026-10-10: the task is open, after TASK-0059.
+- 2026-10-10: closed. 318 tests pass in three full local runs.
