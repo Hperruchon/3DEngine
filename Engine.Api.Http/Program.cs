@@ -16,9 +16,12 @@ var builder = WebApplication.CreateBuilder(args);
 //
 // Kestrel reads addresses from four keys of the configuration, and TASK-0044
 // checked one of them (finding E23 of the review of 2026-10-04). Each key is
-// checked before the start, so the host never binds a foreign address from
-// them. A second check after the start reads the addresses that the server
-// bound, for a source that this list does not know (TASK-0051).
+// checked before the start with the parser of Kestrel (TASK-0051, TASK-0058). A
+// second check after the start reads the addresses that the server bound, for a
+// source that this list does not know; a foreign address from such a source is
+// bound until that check stops the host. The endpoint configuration does not
+// reload after the start, so a later change of appsettings.json starts no
+// endpoint that no check reads (finding E41 of the review of 2026-10-09).
 var refusal = Program.ConfigurationRefusal(builder.Configuration);
 if (refusal is not null)
 {
@@ -29,6 +32,12 @@ if (refusal is not null)
 // One engine per host process. Restart resets state until phase P8a.
 // EventBroadcaster registered first; EngineHost depends on it for its
 // BroadcastingEventSink wiring (TASK-0010).
+// The default of the framework reloads Kestrel:Endpoints when a configuration
+// file changes, and starts each new endpoint with no check (finding E41). This
+// loader replaces it with one that does not reload.
+builder.WebHost.ConfigureKestrel((context, options) =>
+    options.Configure(context.Configuration.GetSection("Kestrel"), reloadOnChange: false));
+
 builder.Services.AddSingleton<EventBroadcaster>();
 builder.Services.AddSingleton(HostBackendOptions.Native);
 builder.Services.AddSingleton<EngineHost>();
@@ -128,7 +137,11 @@ public partial class Program
 
         foreach (var url in urls.Split(';', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
         {
-            if (Uri.TryCreate(url, UriKind.Absolute, out var uri) && IsLoopbackHost(uri.Host))
+            // The parser of Kestrel itself, so that this check and the bind read
+            // the same host. System.Uri read "http://evil@localhost:5000" as
+            // localhost, and Kestrel read the host "evil@localhost" and bound each
+            // interface (finding E40 of the review of 2026-10-09, TASK-0058).
+            if (TryParseBindingAddress(url, out var address) && !address.IsUnixPipe && IsLoopbackHost(address.Host))
                 continue;
 
             return $"engine-api-http binds to a loopback address only, and '{url}' is not one. "
@@ -150,7 +163,7 @@ public partial class Program
         {
             if (!string.IsNullOrWhiteSpace(configuration[key]))
                 return $"engine-api-http binds to a loopback address only, and the setting '{key}' "
-                    + $"(ASPNETCORE_{key.ToUpperInvariant()}) binds each interface. Remove it, and use "
+                    + $"(from ASPNETCORE_{key.ToUpperInvariant()}, DOTNET_{key.ToUpperInvariant()} or --{key}) binds each interface. Remove it, and use "
                     + "--urls http://127.0.0.1:<port>. See ADR-0019 section 5.";
         }
 
@@ -164,6 +177,20 @@ public partial class Program
     internal static bool OriginIsPermitted(string origin, IReadOnlyList<string> permittedHosts)
         => Uri.TryCreate(origin, UriKind.Absolute, out var uri)
         && permittedHosts.Any(host => string.Equals(host, uri.Host, StringComparison.OrdinalIgnoreCase));
+
+    private static bool TryParseBindingAddress(string url, out BindingAddress address)
+    {
+        try
+        {
+            address = BindingAddress.Parse(url);
+            return true;
+        }
+        catch (FormatException)
+        {
+            address = null!;
+            return false;
+        }
+    }
 
     private static bool IsLoopbackHost(string host)
         => string.Equals(host, "localhost", StringComparison.OrdinalIgnoreCase)

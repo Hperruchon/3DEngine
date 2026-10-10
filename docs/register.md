@@ -282,6 +282,8 @@ refuses the four calls, holds the contract rule for each commit, and comes from 
 fails. Tests run the real judge on scratch repositories. The workflow still comes from the judged
 commit; the branch protection of the owner closes the force push. T4, T5, T7, T10, T13, T16, T17,
 T23, T24 and T25 stay.
+Progress 2026-10-10: TASK-0058 corrected T27: the process test of a port key asserts that no address
+was bound, and an injected bind before the refusal failed it.
 
 ### R-0033 · Seven findings of the third codebase review in the engine and the hosts have no task
 - class: debt

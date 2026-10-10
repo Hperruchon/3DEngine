@@ -1578,3 +1578,29 @@ back; a second one gets a new entry.
 New tests: 0; two tests changed their method. The test list holds 312. `dotnet build 3DEngine.sln
 --no-incremental` gives zero errors and zero warnings. Open entries: 13 of 15. New diagnostic codes:
 none. The next codebase review must come before ledger entry v0.59.
+
+## v0.56 — The address guard, the session guard and the consumed list close the gaps of the fifth review (P0.19, TASK-0058)
+
+The codebase review of 2026-10-09 found gaps in the guards of TASK-0051 and TASK-0037. TASK-0038 moves
+the address checks into a library, so this task came first.
+
+**The HTTP host.** The start check reads each address with `BindingAddress.Parse`, the parser of
+Kestrel, so the check and the bind read the same host. `http://evil@localhost:5000` passed the check
+with `System.Uri`, and Kestrel then bound each interface; it is now refused (E40). The endpoint
+configuration no longer reloads after the start, so a change of `appsettings.json` starts no endpoint
+that no check reads (E41).
+
+**The bus.** It refuses a created handle that it created before, live or consumed, and a created handle
+that the same command consumes (E44). A command that created and consumed its own handle was applied
+with no live body. With the rule, a consumed body never becomes live again, as ADR-0021 item 1 says.
+
+**Texts.** The comment of the session gives the two limits of the check of a call back and the rule
+for a sink (E42, E43). The message of a port key names each source, and the glossary says that the
+order of `Document.Bodies` is not history (E45, E47).
+
+**Proof.** Six new tests of a defect failed on the old code. The assertion of T27 failed on a probe
+that bound 127.0.0.1 before an injected refusal; the probe was never committed.
+
+New tests: 6, and one assertion more in the process test of the addresses. The test list holds 318.
+`dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open entries: 13 of
+15. New diagnostic codes: none. The next codebase review must come before ledger entry v0.59.

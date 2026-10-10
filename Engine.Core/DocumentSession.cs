@@ -113,6 +113,17 @@ public sealed class DocumentSession
     // current holder. A task that code inside the section starts inherits the
     // token, so it is refused too while the section is held. After the section
     // ends the token is stale, and the task waits like each other caller.
+    //
+    // Two limits (findings E42 and E43 of the review of 2026-10-09, TASK-0058):
+    //   - A task that a sink starts and does not wait for is refused or accepted
+    //     by timing: refused while the section is held, accepted after. Such a
+    //     task cannot wait for itself, so a refusal of it is a false alarm. Start
+    //     detached work inside ExecutionContext.SuppressFlow, so that it carries
+    //     no token and waits like each other caller.
+    //   - A flow that carries no execution context, for example a dedicated
+    //     thread, carries no token, so the session does not see its call back.
+    //     If the sink waits for such a flow, the call waits for ever.
+    // The rule for a sink therefore is: do not wait for work on another thread.
     private readonly AsyncLocal<object?> _flow = new();
     private object? _holder;
 

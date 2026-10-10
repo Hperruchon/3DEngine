@@ -36,6 +36,11 @@ public class HostGuardTests : IClassFixture<WebApplicationFactory<Program>>
     [InlineData("http://+:5000")]
     [InlineData("http://192.168.1.10:5000")]
     [InlineData("http://127.0.0.1:5000;http://0.0.0.0:5001")]
+    // Finding E40 of the review of 2026-10-09: System.Uri reads the host of these
+    // two as loopback, and Kestrel reads "evil@localhost" as a host name, which
+    // binds each interface (TASK-0058).
+    [InlineData("http://evil@localhost:5000")]
+    [InlineData("http://x@127.0.0.1:5000")]
     public void An_Address_That_Is_Not_Loopback_Is_Refused_With_A_Message(string urls)
     {
         var refusal = Program.LoopbackRefusal(urls);
@@ -143,7 +148,58 @@ public class HostGuardTests : IClassFixture<WebApplicationFactory<Program>>
 
         Assert.Equal(1, process.ExitCode);
         Assert.Contains("loopback", await errorText, StringComparison.Ordinal);
-        GC.KeepAlive(outputText);
+
+        // The refusal came before a bind. Without the check before the start, the
+        // check after it also gives exit code 1, after a bind on each interface
+        // (finding T27 of the review of 2026-10-09, TASK-0058).
+        Assert.DoesNotContain("Now listening on", await outputText, StringComparison.Ordinal);
+    }
+
+    // Finding E41 of the review of 2026-10-09: the host reloaded
+    // Kestrel:Endpoints when appsettings.json changed after the start, and started
+    // the new endpoints with no check. The new endpoint here is a loopback
+    // address, so the run before the correction bound nothing foreign.
+    [Fact]
+    public async Task A_Change_Of_The_Configuration_File_After_The_Start_Starts_No_Endpoint()
+    {
+        var folder = Directory.CreateTempSubdirectory("engine-api-http-").FullName;
+        using var process = StartHost("--urls http://127.0.0.1:0", httpPorts: null, folder);
+        try
+        {
+            await ListeningAddressAsync(process);
+
+            var lines = new List<string>();
+            _ = Task.Run(async () =>
+            {
+                string? line;
+                while ((line = await process.StandardOutput.ReadLineAsync()) is not null)
+                    lock (lines) lines.Add(line);
+            });
+
+            File.WriteAllText(
+                Path.Combine(folder, "appsettings.json"),
+                """{ "Kestrel": { "Endpoints": { "E1": { "Url": "http://127.0.0.1:0" } } } }""");
+            await Task.Delay(TimeSpan.FromSeconds(5));
+
+            lock (lines)
+            {
+                Assert.DoesNotContain(lines, line =>
+                    line.Contains("Config changed", StringComparison.Ordinal)
+                    || line.Contains("Now listening on", StringComparison.Ordinal));
+            }
+        }
+        finally
+        {
+            process.Kill(entireProcessTree: true);
+            try
+            {
+                Directory.Delete(folder, recursive: true);
+            }
+            catch (IOException)
+            {
+                // A file that the stopped process still held stays in the folder of Path.GetTempPath.
+            }
+        }
     }
 
     [Fact]
@@ -226,17 +282,19 @@ public class HostGuardTests : IClassFixture<WebApplicationFactory<Program>>
 
     // Each variable that gives an address is removed first, so that only the
     // arguments and the given port value reach the host.
-    private static Process StartHost(string arguments, string? httpPorts)
+    private static Process StartHost(string arguments, string? httpPorts, string? workingDirectory = null)
     {
         var dll = Path.Combine(AppContext.BaseDirectory, "engine-api-http.dll");
         Assert.True(File.Exists(dll), $"{dll} is absent.");
 
+        // The working directory is the content root of the host, where it reads
+        // appsettings.json.
         var start = new ProcessStartInfo("dotnet", $"\"{dll}\" {arguments}")
         {
             RedirectStandardError = true,
             RedirectStandardOutput = true,
             UseShellExecute = false,
-            WorkingDirectory = AppContext.BaseDirectory,
+            WorkingDirectory = workingDirectory ?? AppContext.BaseDirectory,
         };
         foreach (var name in new[] { "ASPNETCORE_URLS", "DOTNET_URLS", "ASPNETCORE_HTTP_PORTS", "ASPNETCORE_HTTPS_PORTS", "DOTNET_HTTP_PORTS", "DOTNET_HTTPS_PORTS" })
             start.Environment.Remove(name);
