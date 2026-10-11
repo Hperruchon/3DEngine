@@ -177,9 +177,9 @@ jobs:
       # changes docs/adr/ too (finding T26). eng/write-set-check/Judge.cs holds the
       # rules and the steps.
       #
-      # A judge of main from before TASK-0057 knows only --range and answers the
-      # new arguments with exit code 2. The step then runs that form and gives a
-      # notice, so that the branch of TASK-0057 and its merge can be judged.
+      # Until TASK-0061 the step ran the old form `--range` when the judge answered
+      # exit code 2, for the first runs of TASK-0057. The judge of main knows each
+      # form now, and that fallback could only judge fewer commits (finding T39).
       - name: Check each commit against the write set of its task
         env:
           REF: ${{ github.ref }}
@@ -194,10 +194,5 @@ jobs:
             dotnet "$judge" --range "$PUSH_BEFORE" --strict || status=$?
           else
             dotnet "$judge" --merge-base origin/main || status=$?
-          fi
-          if [ "$status" -eq 2 ]; then
-            echo "::notice title=Write set::the judge of main knows only --range, so it judges the commits of this push"
-            status=0
-            dotnet "$judge" --range "$PUSH_BEFORE" || status=$?
           fi
           exit "$status"

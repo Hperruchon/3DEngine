@@ -144,6 +144,67 @@ public class WriteSetJudgeTests
         Assert.Contains("touches several task files and names none", Assert.Single(two), StringComparison.Ordinal);
     }
 
+    // Finding T40 of the codebase review of 2026-10-11: a failed read of the task
+    // file before the commit gave null, which the judge took for a task that did
+    // not exist, so the rule for a task that is Done did not apply (TASK-0061).
+    [Fact]
+    public void A_Failed_Read_Of_The_Task_Before_The_Commit_Is_A_Failure()
+    {
+        var file = TaskFile("TASK-0049");
+        var after = File.ReadAllText(file);
+        Func<string[], string?> git = arguments => arguments switch
+        {
+            ["ls-tree", "-r", "-z", "--name-only", _, "--", "tasks"]
+                => string.Concat(RepositoryFiles.TaskFiles().Select(f => RepositoryFiles.Relative(f) + "\0")),
+            ["ls-tree", "-z", "--name-only", var tree, "--", _] when tree.EndsWith('^') => null,
+            ["show", _] => after,
+            _ => null,
+        };
+
+        var problems = new Judge(git).Check("abc1234", [RepositoryFiles.Relative(file)], "TASK-0049");
+
+        Assert.Contains("cannot read", Assert.Single(problems), StringComparison.Ordinal);
+    }
+
+    // The same finding: a folder of PATH outside the checkout can be a link into it.
+    // On Windows the test makes a junction, which needs no special right; on Linux
+    // and macOS it makes a symbolic link.
+    [Fact]
+    public void A_Link_Into_The_Checkout_Does_Not_Give_Git()
+    {
+        var root = Directory.CreateTempSubdirectory("judge-root-").FullName;
+        var link = Path.Combine(Path.GetTempPath(), "judge-link-" + Guid.NewGuid().ToString("N"));
+        try
+        {
+            File.WriteAllText(Path.Combine(root, OperatingSystem.IsWindows() ? "git.exe" : "git"), "not a program");
+            if (OperatingSystem.IsWindows())
+            {
+                using var mklink = System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo("cmd.exe", $"/c mklink /J \"{link}\" \"{root}\"")
+                {
+                    RedirectStandardOutput = true,
+                    UseShellExecute = false,
+                })!;
+                mklink.StandardOutput.ReadToEnd();
+                mklink.WaitForExit();
+                Assert.True(mklink.ExitCode == 0, "mklink /J failed");
+            }
+            else
+            {
+                Directory.CreateSymbolicLink(link, root);
+            }
+
+            var git = Judge.FindGit(root, link);
+
+            Assert.Null(git);
+        }
+        finally
+        {
+            if (Directory.Exists(link))
+                Directory.Delete(link);
+            Directory.Delete(root, recursive: true);
+        }
+    }
+
     private static string TaskFile(string id)
         => RepositoryFiles.TaskFiles().Single(f => Path.GetFileName(f).StartsWith(id + "-", StringComparison.Ordinal));
 
@@ -156,6 +217,8 @@ public class WriteSetJudgeTests
         {
             ["ls-tree", "-r", "-z", "--name-only", _, "--", "tasks"]
                 => string.Concat(RepositoryFiles.TaskFiles().Select(f => RepositoryFiles.Relative(f) + "\0")),
+            ["ls-tree", "-z", "--name-only", var tree, "--", var path]
+                => (tree.EndsWith('^') ? before : after) is null ? string.Empty : path + "\0",
             ["merge-base", "--is-ancestor", _, Judge.CommitRulesFrom] => beforeTheRules ? string.Empty : null,
             ["show", var spec] when spec.Contains("^:", StringComparison.Ordinal) => before,
             ["show", _] => after,

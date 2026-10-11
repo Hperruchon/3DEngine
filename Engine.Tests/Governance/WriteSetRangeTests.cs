@@ -143,6 +143,99 @@ public class WriteSetRangeTests
         Assert.Contains("Engine.Core/b.cs", branch.Output, StringComparison.Ordinal);
     }
 
+    // Finding T36 of the codebase review of 2026-10-11: the judge of TASK-0057 read
+    // a merge on its own change minus the files that the side of its second parent
+    // changed. In a merge of main into a branch that side is main, so an edit of a
+    // file of main inside the merge was not judged. The old judge, which read a merge
+    // with --cc, failed it (TASK-0061).
+    [Fact]
+    public void A_Merge_Of_Main_Into_A_Branch_That_Rewrites_A_File_Of_Main_Fails()
+    {
+        using var repo = ScratchRepository.WithTask();
+        repo.Git("checkout", "-qb", "work");
+        repo.CommitUnderTask("Work on the branch", ("src/a.txt", "a"));
+        repo.Git("checkout", "-q", "main");
+        repo.AddCoreTask();
+        repo.Git("checkout", "-q", "work");
+        repo.Git("merge", "-q", "--no-commit", "--no-ff", "main");
+        repo.Write("Engine.Core/x.cs", "EVIL");
+        repo.Git("add", "-A");
+        repo.Git("commit", "-qm", "Merge main into work");
+
+        var (exit, output) = repo.Judge("--merge-base", "main");
+
+        Assert.Equal(1, exit);
+        Assert.Contains("Merge main into work", output, StringComparison.Ordinal);
+        Assert.Contains("Engine.Core/x.cs", output, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void A_Merge_That_Changes_Again_A_File_Of_Its_Second_Parent_Meets_Each_Rule()
+    {
+        using var repo = ScratchRepository.WithTask();
+        var start = repo.Head;
+        repo.Git("checkout", "-qb", "work");
+        repo.CommitUnderTask("A test, a contract and an ADR",
+            ("Engine.Tests/Foo.cs", "class Foo { }"),
+            ("Engine.Contracts/C.cs", "class C { }"),
+            ("docs/adr/0001-a.md", "a"));
+        repo.Git("checkout", "-q", "main");
+        repo.Git("merge", "-q", "--no-commit", "--no-ff", "work");
+        repo.Write("Engine.Tests/Foo.cs", "[" + Initializer + "] class Foo { }");
+        repo.Write("Engine.Contracts/C.cs", "class C { int Field; }");
+        repo.CommitUnderTask("Merge work");
+
+        var (exit, output) = repo.Judge("--range", start);
+
+        Assert.Equal(1, exit);
+        Assert.Contains(Initializer, output, StringComparison.Ordinal);
+        Assert.Contains("Engine.Contracts/ and no file under docs/adr/", output, StringComparison.Ordinal);
+    }
+
+    // The test above of an orphan commit also fails on the commit with no parent, so
+    // it cannot see the loss of the rule for a merge of unrelated history (finding
+    // T37). Here the merge names its task, changes its task file, and brings only a
+    // permitted file, so only that rule can fail it.
+    [Fact]
+    public void A_Merge_Of_Unrelated_History_Fails_By_Itself()
+    {
+        using var repo = ScratchRepository.WithTask();
+        var start = repo.Head;
+        repo.Git("checkout", "-q", "--orphan", "orphan");
+        repo.Git("rm", "-rq", "--cached", ".");
+        repo.Write("src/o.txt", "o");
+        repo.Git("add", "src/o.txt");
+        repo.Git("commit", "-qm", "An orphan commit");
+        repo.Git("checkout", "-qf", "main");
+        repo.Git("merge", "-q", "--no-commit", "--allow-unrelated-histories", "orphan");
+        repo.CommitUnderTask("Merge unrelated history");
+
+        var (exit, output) = repo.Judge("--range", start);
+
+        Assert.Equal(1, exit);
+        Assert.Contains(
+            output.Split('\n'),
+            line => line.StartsWith("FAIL  ", StringComparison.Ordinal) && line.Contains("Merge unrelated history", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public void The_Staged_Change_Is_Judged_Before_A_Commit()
+    {
+        using var repo = ScratchRepository.WithTask();
+        repo.Write("src/a.txt", "a");
+        repo.AppendProgress();
+        repo.Git("add", "-A");
+
+        var permitted = repo.Judge("--staged", "--task", "TASK-0001");
+        repo.Write("Engine.Core/b.cs", "b");
+        repo.Git("add", "-A");
+        var forbidden = repo.Judge("--staged", "--task", "TASK-0001");
+
+        Assert.Equal(0, permitted.Exit);
+        Assert.Equal(1, forbidden.Exit);
+        Assert.Contains("Engine.Core/b.cs matches the forbid pattern", forbidden.Output, StringComparison.Ordinal);
+    }
+
     [Fact]
     public void An_Unknown_Previous_Tip_Fails_When_The_Range_Is_Strict()
     {
@@ -254,9 +347,35 @@ public class WriteSetRangeTests
         {
             foreach (var (path, text) in files)
                 Write(path, text);
-            File.AppendAllText(Path.Combine(Root, _taskFile), $"- step {++_progress}\n");
+            AppendProgress();
             Git("add", "-A");
             Git("commit", "-qm", $"{subject}\n\nTASK-0001");
+        }
+
+        public void AppendProgress() => File.AppendAllText(Path.Combine(Root, _taskFile), $"- step {++_progress}\n");
+
+        // A second task, TASK-0002, which permits Engine.Core/**, and one commit
+        // under it that changes Engine.Core/x.cs.
+        public void AddCoreTask()
+        {
+            Write("tasks/TASK-0002-core.md", """
+                ---
+                id: 0002
+                title: A change of the core
+                status: Active
+                writes:
+                  create:
+                    - tasks/TASK-0002-core.md
+                  modify:
+                    - Engine.Core/**
+                ---
+
+                # TASK-0002
+
+                """);
+            Write("Engine.Core/x.cs", "the version of main");
+            Git("add", "-A");
+            Git("commit", "-qm", "A change of the core\n\nTASK-0002");
         }
 
         public void RenameTaskFile(string newPath)
