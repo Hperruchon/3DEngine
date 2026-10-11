@@ -267,9 +267,10 @@ public class DependencyDirectionGateTests
         // A client may reference Engine.Core, Engine.Contracts, and
         // Engine.Geometry.Manifold at a composition root per ADR-0014 §4. A host
         // that draws may also reference the render side. ADR-0009 §2 forbids the
-        // render kernel to a client that does not draw. A headless client may also
-        // reference the surface library (ADR-0019 item 4, TASK-0038); the desktop
-        // host gets that permit in TASK-0054. Engine.Tests is a
+        // render kernel to a client that does not draw. Each client may also
+        // reference the surface library and mount it on its session: the program
+        // engine-api-http (ADR-0019 item 4, TASK-0038) and the desktop host
+        // (ADR-0019 item 3, TASK-0054). Engine.Tests is a
         // verifier of authority and not a client.
         string[] permitted = ["Engine.Contracts", "Engine.Core", "Engine.Geometry.Manifold"];
         string[] clients = [.. HeadlessClients, .. HostsThatDraw];
@@ -284,7 +285,7 @@ public class DependencyDirectionGateTests
 
             foreach (var target in graph[client])
             {
-                if (!permitted.Contains(target) && !(draws && RenderSide.Contains(target)) && !(!draws && Surfaces.Contains(target)))
+                if (!permitted.Contains(target) && !(draws && RenderSide.Contains(target)) && !Surfaces.Contains(target))
                     offences.Add($"{client} references {target}, which is not permitted");
 
                 if (clients.Contains(target))

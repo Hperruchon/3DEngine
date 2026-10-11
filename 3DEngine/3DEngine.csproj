@@ -18,4 +18,19 @@
     <ProjectReference Include="..\3DEngine.Vulkan\3DEngine.Vulkan.csproj" />
   </ItemGroup>
 
+  <!--
+    The desktop owns a document session and mounts the surface library on it (ADR-0019,
+    TASK-0054). It is a composition root, so it may name the native backend (ADR-0014 §4).
+  -->
+  <ItemGroup>
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Engine.Api.Http\Engine.Api.Http.csproj" />
+    <ProjectReference Include="..\Engine.Contracts\Engine.Contracts.csproj" />
+    <ProjectReference Include="..\Engine.Core\Engine.Core.csproj" />
+    <ProjectReference Include="..\Engine.Geometry.Manifold\Engine.Geometry.Manifold.csproj" />
+  </ItemGroup>
+
 </Project>

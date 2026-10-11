@@ -64,7 +64,7 @@ Engine.Core                         │
      └──────────────┬───────────────┘
                     ▼
                  Clients
-    Engine.Cli, Engine.Api.Http, 3DEngine, …
+    Engine.Cli, Engine.Api.Http.Server, 3DEngine, …
 ```
 
 `Engine.*` is the authority for design truth: the commands, the queries and the events that
@@ -73,9 +73,12 @@ reference each other. A host that draws subscribes to `Engine.Core` events and p
 `3DEngine.Core` state (ADR-0009). `Engine.Tests/Governance/DependencyDirectionGateTests.cs` holds
 each dependency rule.
 
-The target topology is the hybrid topology of ADR-0019, which TASK-0038 builds. Today
-`engine-api-http` is the only host with the HTTP and WebSocket surface, and the desktop host has no
-path to the engine. Engine code knows nothing about HTTP and nothing about processes.
+The topology is the hybrid topology of ADR-0019 (TASK-0038, TASK-0054). `Engine.Api.Http` is the
+surface library: a host mounts the HTTP and WebSocket surface on a document session that it owns. Two
+hosts mount it: the program `engine-api-http` (`Engine.Api.Http.Server`) and the desktop host
+`3DEngine`, on 127.0.0.1 only. The surface library references `Engine.Core` and `Engine.Contracts`
+only, and each client may reference it. Engine code knows nothing about HTTP and nothing about
+processes.
 
 ## Determinism rules
 

@@ -1635,3 +1635,26 @@ New tests: 3, and two tests changed the name of a call. The test list holds 321.
 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Projects in the solution: 10. Open
 entries: 13 of 15. New diagnostic codes: none. The next codebase review must come before ledger entry
 v0.59.
+
+## v0.58 — The desktop host owns a document session and serves the HTTP and WebSocket surface (P0.21, TASK-0054)
+
+ADR-0019, the hybrid topology. With TASK-0038 the surface became a library; now the desktop host mounts
+it on its own session, so an agent sends a command over HTTP to the document that the person has open.
+
+**The desktop.** It composes a session with the native backend, mounts the surface on 127.0.0.1 at the
+port of the setting `port` (5180 by default), and writes the address before the window opens. The
+surface stops with the window. The desktop stops before the window with exit code 1 for an address that
+is not loopback, 2 for an invalid port, and 3 when the native library does not load.
+
+**The run.** On Windows on 2026-10-11 the desktop wrote `3DEngine serves the document at
+http://127.0.0.1:5180`, created its Vulkan instance, loaded its scene, and answered
+`GET /schema/commands` with status 200 and the four commands. The log shows the window steps; no
+screenshot was taken.
+
+**The rules.** `CLAUDE.md`, section "Authority diagram", names the two hosts of the surface library.
+`DependencyDirectionGateTests` lets each client reference the surface library; an injected reference
+from the library to `3DEngine` failed three of its rules.
+
+New tests: 0. The test list holds 321. `dotnet build 3DEngine.sln --no-incremental` gives zero errors
+and zero warnings. Open entries: 13 of 15. New diagnostic codes: none. The next ledger entry must be a
+codebase review: v0.58 is the sixth milestone after v0.52.
