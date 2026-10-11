@@ -1,7 +1,7 @@
 ---
 id: 0061
 title: The judge of the write set judges each change of a merge, and its tests hold each rule
-status: Done
+status: Active
 phase: P0.23
 opened: 2026-10-11
 depends-on: [0060]
@@ -111,6 +111,9 @@ steps of the workflow itself.
 - 2026-10-11: closed. The judge reads each change of a merge, and each rule fails a test when it is
   removed.
 - 2026-10-11: reopened. Run 38167055691 failed on macOS in the test of a link: RealPath did not resolve
-  the target of a link again, and the folder of temporary files of macOS is under /var, a link to
+  the target of a link again, and the folder of Path.GetTempPath of macOS is under /var, a link to
   /private/var. RealPath now resolves each target again from its root.
 - 2026-10-11: closed again.
+- 2026-10-11: reopened. Run 38167418801 failed in the marker gate on the three runners: the comment of
+  RealPath held a marker word with no register identifier. I ran only the tests of the judge before
+  that commit, and not the full suite.

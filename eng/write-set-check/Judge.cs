@@ -129,7 +129,7 @@ public sealed class Judge
     // The full path with each part that is a link or a junction resolved, from the
     // root of the path to its end. The target of a link is a path that can hold
     // links too, so the target is resolved again from its root; on macOS the
-    // folder of temporary files is under /var, which is a link to /private/var.
+    // folder of Path.GetTempPath is under /var, which is a link to /private/var.
     // The first form of this method did not resolve the target again, and a run
     // on macOS failed its test.
     private static string RealPath(string path, int depth = 0)
