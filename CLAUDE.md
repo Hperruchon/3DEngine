@@ -138,11 +138,12 @@ Each rule here came from an error in an earlier session.
 
   ```bash
   dotnet run --project eng/write-set-check -- --staged --task TASK-nnnn &&
-    dotnet test Engine.Tests/Engine.Tests.csproj --no-build --filter 'FullyQualifiedName~Governance'
+    dotnet run --project eng/repo-gates -- --root .
   ```
 
   The first command judges the staged change against the write set of the task, and `&&` stops the
-  block at its failure. The pipeline runs the same judge, built from `main`. Continuous integration on three operating systems is the proof. `.github/workflows/ci.yml` lists
+  block at its failure. The second command runs each gate that reads only files of the repository.
+  The pipeline runs the same two programs, built from `main` (TASK-0053, TASK-0064). Continuous integration on three operating systems is the proof. `.github/workflows/ci.yml` lists
   its jobs. Report a local result as local. Do not report that work is complete before the gate is
   green.
 - Run a command chain with `set -o pipefail`. A chain that ends in `tail` reports the exit code of

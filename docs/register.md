@@ -298,6 +298,14 @@ Progress 2026-10-11: TASK-0061 corrected T36, T37, T39 and T40. A merge is judge
 differs from each parent and on each file that differs from its first parent and that no commit of
 its second parent changed; the two forms of T36 failed the old rule and fail the new one. T31 stays
 with TASK-0064.
+Progress 2026-10-12: TASK-0064 corrected T31 for the fourteen gate classes that read only files of the
+repository. The program `eng/repo-gates` compiles them from a build of `main` and reads the judged
+checkout as data. The escaped attribute and `AppDomain.SetData` of the review passed the marker gate
+as a test and failed it from the program. When the judged commits change a source of the program, its
+gates come from the judged commit, with the condition of R-0038. `DispatchSurfaceGateTests`,
+`SchemaEndpointGateTests` and `ReplayDeterminismGateTests` run engine code, so they stay in the test
+process, and the attack class still reaches them; the four-text refusal of the judge stays as their
+second line. T4, T5, T7, T10, T13, T16, T17, T23, T24 and T25 stay.
 
 ### R-0033 · Seven findings of the third codebase review in the engine and the hosts have no task
 - class: debt

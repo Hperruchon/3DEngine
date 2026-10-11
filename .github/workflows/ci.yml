@@ -3,7 +3,9 @@ name: CI
 # The gate. CLAUDE.md, section "Method", names it as the proof. The build, the
 # tests and two smoke tests run on three operating systems. The gate classes
 # inside Engine.Tests run with `dotnet test`; docs/templates.md, section
-# "What each gate reads", lists each one.
+# "What each gate reads", lists each one. The gates that read only files of the
+# repository also run in the job "Write set of the governing task", from a build
+# of main (TASK-0064); that run is the one that decides.
 #
 # The gate runs on three operating systems. Register entry R-0002 recorded the
 # reason: each job used ubuntu-latest, a person verified the native geometry path
@@ -168,6 +170,9 @@ jobs:
           fi
           echo "judge from $(git -C "$RUNNER_TEMP/judge" rev-parse HEAD)"
           dotnet build "$RUNNER_TEMP/judge/eng/write-set-check/WriteSetCheck.csproj" -c Release -o "$RUNNER_TEMP/judge-bin"
+          if [ -f "$RUNNER_TEMP/judge/eng/repo-gates/RepoGates.csproj" ]; then
+            dotnet build "$RUNNER_TEMP/judge/eng/repo-gates/RepoGates.csproj" -c Release -o "$RUNNER_TEMP/gates-main"
+          fi
 
       # One commit at a time, and not the whole branch. A task governs the commit
       # that carries it (TASK-0026). On main the judge reads each commit of the
@@ -196,3 +201,41 @@ jobs:
             dotnet "$judge" --merge-base origin/main || status=$?
           fi
           exit "$status"
+
+      # The gates that read only files of the repository (TASK-0064). Until that
+      # task they ran only inside the test process of the judged commit, and a file
+      # of that commit could change what a gate read (finding T31 of the codebase
+      # review of 2026-10-11). The program eng/repo-gates compiles the gate files
+      # of the build and reads the checkout of the judged commit as data.
+      #
+      # The gates come from main. When the judged commits change a source of the
+      # gate program, the gates of the judged commit run instead, so that a task
+      # can change a rule and the files that the rule reads in one branch. Such a
+      # source is a gate file: the judge above requires that its task names it
+      # exactly, and the diff shows the change. This is the condition of register
+      # entry R-0038 for the workflow file.
+      - name: Run the repository gates
+        env:
+          REF: ${{ github.ref }}
+          PUSH_BEFORE: ${{ github.event.before }}
+        run: |
+          set -euo pipefail
+          if [ "$REF" = refs/heads/main ]; then
+            base="$PUSH_BEFORE"
+          else
+            base=$(git merge-base origin/main HEAD)
+          fi
+          changed=$(git diff --name-only "$base" HEAD)
+          sources='^(eng/repo-gates/|eng/write-set-check/|Engine\.Tests/Governance/|Engine\.Tests/Diagnostics/)|(^|/)Directory\.(Build\.|Packages\.)'
+          if grep -Eq "$sources" <<<"$changed"; then
+            echo "::notice title=Repository gates::the judged commits change a source of the gate program, so its gates come from the judged commit"
+            dotnet build eng/repo-gates/RepoGates.csproj -c Release -o "$RUNNER_TEMP/gates-own"
+            gates="$RUNNER_TEMP/gates-own/repo-gates.dll"
+          else
+            gates="$RUNNER_TEMP/gates-main/repo-gates.dll"
+            if [ ! -f "$gates" ]; then
+              echo "::error title=Repository gates::the base of the judge holds no gate program"
+              exit 1
+            fi
+          fi
+          dotnet "$gates" --root "$GITHUB_WORKSPACE"

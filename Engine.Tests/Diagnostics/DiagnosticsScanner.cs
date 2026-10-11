@@ -20,8 +20,15 @@ internal static class DiagnosticsScanner
     // which both raise codes, were not read (codebase review finding T2).
     private static readonly string[] ExcludedProjects = ["Engine.Tests"];
 
+    // The program repo-gates sets the root from its argument --root, because it
+    // runs outside the checkout (TASK-0064). In the test process it stays null.
+    public static string? FixedRoot { get; set; }
+
     public static string FindRepoRoot(string startDirectory)
     {
+        if (FixedRoot is not null)
+            return FixedRoot;
+
         var current = new DirectoryInfo(startDirectory);
         for (var depth = 0; depth < 10 && current is not null; depth++)
         {

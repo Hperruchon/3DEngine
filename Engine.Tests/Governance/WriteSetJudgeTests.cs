@@ -60,6 +60,8 @@ public class WriteSetJudgeTests
     [Theory]
     [InlineData("eng/write-set-check/Program.cs")]
     [InlineData("eng/write-set-check/WriteSetCheck.csproj")]
+    [InlineData("eng/repo-gates/Program.cs")]
+    [InlineData("eng/repo-gates/RepoGates.csproj")]
     [InlineData("eng/write-set-cutoff.txt")]
     [InlineData("Directory.Build.props")]
     [InlineData("Engine.Core/Directory.Packages.props")]
