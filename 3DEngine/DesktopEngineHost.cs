@@ -9,7 +9,8 @@ internal static class DesktopEngineHost
 {
     // The surface starts before the window, so that an agent can reach the
     // document as soon as the window shows, and it stops when the window closes
-    // (ADR-0019 item 6). The exit code is 0, or a code of DesktopSurface.
+    // (ADR-0019 item 6). When the surface stops first, for example at Ctrl+C, the
+    // window closes too. The exit code is 0, or a code of DesktopSurface.
     public static int Run(string[] args)
     {
         var (surface, exitCode, message) = DesktopSurface.Start(args);
@@ -36,7 +37,7 @@ internal static class DesktopEngineHost
                 bool running = true;
                 DateTime lastFrame = DateTime.UtcNow;
 
-                while (running)
+                while (running && !surface.Stopping.IsCancellationRequested)
                 {
                     while (SDL_PollEvent(out SDL_Event sdlEvent))
                     {

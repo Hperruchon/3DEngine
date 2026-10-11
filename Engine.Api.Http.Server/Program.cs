@@ -1,4 +1,5 @@
 using Engine.Api.Http;
+using Microsoft.AspNetCore.Connections;
 
 // The program engine-api-http (ADR-0019 item 4, TASK-0038). It serves headless
 // work: continuous integration, scripts, and a shared server later. It composes
@@ -12,7 +13,8 @@ using Engine.Api.Http;
 // library, so each host uses the same checks (EngineSurface).
 //
 // Exit codes: 1 for an address that is not loopback, before or after the start;
-// 3 when the native backend does not load (TASK-0036); 0 at a normal stop.
+// 3 when the native backend does not load (TASK-0036); 4 when the address is in
+// use (TASK-0062); 0 at a normal stop.
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -43,7 +45,18 @@ catch (BackendUnavailableException ex)
 
 app.MapEngineSurface();
 
-await app.StartAsync();
+// Before TASK-0062 a port in use ended the host with an exception and the exit
+// code of a crash (finding E51 of the review of 2026-10-11).
+try
+{
+    await app.StartAsync();
+}
+catch (IOException ex) when (ex.InnerException is AddressInUseException)
+{
+    Console.Error.WriteLine($"The address is in use: {ex.Message}");
+    await app.DisposeAsync();
+    return 4;
+}
 
 var boundRefusal = app.BoundAddressRefusal();
 if (boundRefusal is not null)

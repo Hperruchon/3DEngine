@@ -8,8 +8,8 @@ namespace Engine.Api.Http;
 
 // The document session that the surface serves, and what the surface needs to
 // serve it. A host composes it and mounts the surface on it (ADR-0019 items 1 and
-// 3, TASK-0038): engine-api-http in its program, and later the desktop host in
-// its own process. The host owns the session, so a host can also send typed
+// 3, TASK-0038): engine-api-http in its program, and the desktop host in its own
+// process (TASK-0054). The host owns the session, so a host can also send typed
 // commands and queries to it; each one goes through the same bus as a command
 // over HTTP (ADR-0019 item 2).
 //
@@ -54,7 +54,10 @@ public sealed class EngineHost : IDisposable
 
     public QueryRegistry QueryRegistry { get; }
 
-    public IGeometryBackend Backend { get; }
+    // Internal, so that a host reaches the backend through the bus only (ADR-0019
+    // item 2). It was public until TASK-0062 (finding E56 of the review of
+    // 2026-10-11).
+    internal IGeometryBackend Backend { get; }
 
     internal EventBroadcaster Broadcaster { get; }
 

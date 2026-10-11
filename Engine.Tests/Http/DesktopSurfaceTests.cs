@@ -14,10 +14,10 @@ namespace Engine.Tests.Http;
 
 // ADR-0019, the hybrid topology: a host owns a document session, mounts the HTTP
 // and WebSocket surface on it, and an agent works live on that session. This test
-// is the host, as the desktop host will be (TASK-0054): it composes the session,
-// mounts the surface library on a real Kestrel at 127.0.0.1, and also sends typed
-// calls to the same session. TASK-0038 made the surface a library; before it, only
-// the program engine-api-http could serve the surface.
+// is the host, in the steps of the desktop host (TASK-0054): it composes the
+// session, mounts the surface library on a real Kestrel at 127.0.0.1, and also
+// sends typed calls to the same session. TASK-0038 made the surface a library;
+// before it, only the program engine-api-http could serve the surface.
 [Collection("real host")]
 public class DesktopSurfaceTests
 {
@@ -75,6 +75,27 @@ public class DesktopSurfaceTests
 
         Assert.Equal("body.created", kind);
         Assert.Equal(box.CommandId, frame.GetProperty("payload").GetProperty("bodyId").GetGuid());
+    }
+
+    // Finding E49 of the codebase review of 2026-10-11: the stop of a host waited for
+    // each open /events WebSocket until the time limit of the host, 31.0 s in a run
+    // of a review agent. The host now ends each subscriber when it stops (TASK-0062).
+    [Fact]
+    public async Task A_Host_With_A_Subscriber_Stops_At_Once()
+    {
+        var host = new EngineHost(new InProcessMeshBackend(), "managed", "test");
+        await using var app = await StartSurface(host);
+        using var limit = new CancellationTokenSource(Limit);
+        using var socket = new ClientWebSocket();
+        await socket.ConnectAsync(new Uri(app.Urls.First().Replace("http://", "ws://") + "/events"), limit.Token);
+        await WebSocketTestClient.SendJsonAsync(socket, new { }, limit.Token);
+        var reset = await WebSocketTestClient.ReceiveJsonAsync(socket, limit.Token);
+        Assert.Equal("subscription.reset", reset.GetProperty("kind").GetString());
+
+        var clock = System.Diagnostics.Stopwatch.StartNew();
+        await app.StopAsync();
+
+        Assert.True(clock.Elapsed < TimeSpan.FromSeconds(5), $"The host took {clock.Elapsed.TotalSeconds:F1} s to stop.");
     }
 
     // The steps of a host that mounts the surface, in the order of EngineSurface.

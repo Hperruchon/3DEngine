@@ -1,4 +1,5 @@
 using System.Net;
+using System.Net.Sockets;
 using Engine.Api.Http.Endpoints;
 using Engine.Api.Http.WebSockets;
 using Microsoft.AspNetCore.Builder;
@@ -135,7 +136,7 @@ public static class EngineSurface
             if (TryParseBindingAddress(url, out var address) && !address.IsUnixPipe && IsLoopbackHost(address.Host))
                 continue;
 
-            return $"engine-api-http binds to a loopback address only, and '{url}' is not one. "
+            return $"The surface binds to a loopback address only, and '{url}' is not one. "
                 + "Use http://127.0.0.1:<port> or http://localhost:<port>. See docs/CHARTER.md, "
                 + "section \"Target consumers\", and ADR-0019 section 5.";
         }
@@ -157,9 +158,9 @@ public static class EngineSurface
         foreach (var key in new[] { "http_ports", "https_ports" })
         {
             if (!string.IsNullOrWhiteSpace(configuration[key]))
-                return $"engine-api-http binds to a loopback address only, and the setting '{key}' "
-                    + $"(from ASPNETCORE_{key.ToUpperInvariant()}, DOTNET_{key.ToUpperInvariant()} or --{key}) binds each interface. Remove it, and use "
-                    + "--urls http://127.0.0.1:<port>. See ADR-0019 section 5.";
+                return $"The surface binds to a loopback address only, and the setting '{key}' "
+                    + $"(from ASPNETCORE_{key.ToUpperInvariant()}, DOTNET_{key.ToUpperInvariant()} or --{key}) binds each interface. Remove it, and "
+                    + "give a loopback address such as http://127.0.0.1:<port>. See ADR-0019 section 5.";
         }
 
         var endpoints = configuration.GetSection("Kestrel:Endpoints").GetChildren().Select(endpoint => endpoint["Url"]);
@@ -187,7 +188,26 @@ public static class EngineSurface
         }
     }
 
+    // A host in brackets is one pair around an IPv6 address. A host with no
+    // brackets is localhost or an IPv4 address. Kestrel reads each other form as a
+    // host name and binds each interface. The check removed each bracket at the
+    // two ends before it read the address, so it passed "[127.0.0.1]" and
+    // "[[::1]]" (finding E48 of the review of 2026-10-11, TASK-0062).
     private static bool IsLoopbackHost(string host)
-        => string.Equals(host, "localhost", StringComparison.OrdinalIgnoreCase)
-        || (IPAddress.TryParse(host.Trim('[', ']'), out var address) && IPAddress.IsLoopback(address));
+    {
+        if (host.Length > 2 && host[0] == '[' && host[^1] == ']')
+        {
+            var inside = host[1..^1];
+            return inside.IndexOfAny(['[', ']']) < 0
+                && IPAddress.TryParse(inside, out var v6)
+                && v6.AddressFamily == AddressFamily.InterNetworkV6
+                && IPAddress.IsLoopback(v6);
+        }
+
+        if (host.IndexOfAny(['[', ']', ':']) >= 0)
+            return false;
+
+        return string.Equals(host, "localhost", StringComparison.OrdinalIgnoreCase)
+            || (IPAddress.TryParse(host, out var v4) && v4.AddressFamily == AddressFamily.InterNetwork && IPAddress.IsLoopback(v4));
+    }
 }

@@ -42,6 +42,16 @@ public class HostGuardTests : IClassFixture<WebApplicationFactory<Program>>
     // binds each interface (TASK-0058).
     [InlineData("http://evil@localhost:5000")]
     [InlineData("http://x@127.0.0.1:5000")]
+    // Finding E48 of the review of 2026-10-11: the check removed each bracket
+    // before it read the address, and Kestrel read these forms as a host name, which
+    // binds each interface (TASK-0062).
+    [InlineData("http://[127.0.0.1]:5000")]
+    [InlineData("http://[[::1]]:5000")]
+    [InlineData("http://[::1:5000")]
+    [InlineData("http://127.0.0.1]:5000")]
+    [InlineData("http://]127.0.0.1[:5000")]
+    [InlineData("http://[127.0.0.1:5000")]
+    [InlineData("http://[[127.0.0.1]]:5000")]
     public void An_Address_That_Is_Not_Loopback_Is_Refused_With_A_Message(string urls)
     {
         var refusal = EngineSurface.LoopbackRefusal(urls);
@@ -154,6 +164,41 @@ public class HostGuardTests : IClassFixture<WebApplicationFactory<Program>>
         // check after it also gives exit code 1, after a bind on each interface
         // (finding T27 of the review of 2026-10-09, TASK-0058).
         Assert.DoesNotContain("Now listening on", await outputText, StringComparison.Ordinal);
+    }
+
+    // Finding E51 of the review of 2026-10-11: a port in use ended a host with an
+    // exception and the exit code of a crash. The host now stops with the
+    // documented code 4 (TASK-0062).
+    [Fact]
+    public async Task A_Second_Host_On_A_Port_In_Use_Stops_With_Exit_Code_4()
+    {
+        using var first = StartHost("http://127.0.0.1:0");
+        try
+        {
+            var address = await ListeningAddressAsync(first);
+
+            using var second = StartHost(address);
+            var errorText = second.StandardError.ReadToEndAsync();
+            var outputText = second.StandardOutput.ReadToEndAsync();
+            using var limit = new CancellationTokenSource(TimeSpan.FromSeconds(30));
+            try
+            {
+                await second.WaitForExitAsync(limit.Token);
+            }
+            catch (OperationCanceledException)
+            {
+                second.Kill(entireProcessTree: true);
+                Assert.Fail("The second host did not exit within 30 seconds.");
+            }
+
+            Assert.Equal(4, second.ExitCode);
+            Assert.Contains("in use", await errorText, StringComparison.Ordinal);
+            GC.KeepAlive(outputText);
+        }
+        finally
+        {
+            first.Kill(entireProcessTree: true);
+        }
     }
 
     // Finding E41 of the review of 2026-10-09: the host reloaded

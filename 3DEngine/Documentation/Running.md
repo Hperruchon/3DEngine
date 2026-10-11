@@ -24,7 +24,8 @@ dotnet build .\3DEngine.sln
 dotnet run --project .\3DEngine\3DEngine.csproj
 ```
 
-To serve the surface on another port, give the setting `port`. The value 0 takes a free port.
+To serve the surface on another port, give `--port` or the variable `Desktop__Port`. The value 0
+takes a free port. The variable `PORT` has no effect.
 
 ```powershell
 dotnet run --project .\3DEngine\3DEngine.csproj -- --port 5181
@@ -43,4 +44,6 @@ dotnet run --project .\3DEngine\3DEngine.csproj -- --port 5181
 - The Vulkan code lives in `3DEngine.Vulkan`. See ADR-0017.
 - If Vulkan initialization fails, check GPU driver support and the presence of the Vulkan runtime on the machine.
 - The desktop stops before the window with exit code 1 for an address that is not loopback, 2 for a
-  port that is not a number from 0 to 65535, and 3 when the native geometry library does not load.
+  port that is not a number from 0 to 65535, 3 when the native geometry library does not load, and 4
+  when another process holds the port.
+- Ctrl+C in the console stops the surface and closes the window.

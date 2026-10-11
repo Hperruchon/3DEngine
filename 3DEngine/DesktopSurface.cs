@@ -3,8 +3,10 @@ using Engine.Api.Http;
 using Engine.Core;
 using Engine.Geometry.Manifold;
 using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.Connections;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace ThreeDEngine.Desktop;
 
@@ -14,11 +16,13 @@ namespace ThreeDEngine.Desktop;
 // with typed calls through Host.Session. No call of the desktop has a privileged
 // lane: each change is a command on the same bus (ADR-0019 item 2).
 //
-// The surface listens on 127.0.0.1 only, at the port of the setting "port"
-// (--port, or the variable port), 5180 by default; 0 takes a free port. The checks
-// of the surface library refuse each other source of an address before the start
-// and each bound address that is not loopback after it (TASK-0044, TASK-0051,
-// TASK-0058). The surface stops with the desktop (ADR-0019 item 6).
+// The surface listens on 127.0.0.1 only, at the port of the setting "Desktop:Port"
+// (--port, or the variable Desktop__Port), 5180 by default; 0 takes a free port.
+// The key has a prefix, because tools often set a variable PORT, which the
+// framework reads as the key "port" (finding E54 of the review of 2026-10-11).
+// The checks of the surface library refuse each other source of an address before
+// the start and each bound address that is not loopback after it (TASK-0044,
+// TASK-0051, TASK-0058). The surface stops with the desktop (ADR-0019 item 6).
 //
 // The desktop is a composition root, so it chooses the native backend here
 // (ADR-0014 section 4). As each host does, it stops when the native library does
@@ -31,6 +35,9 @@ internal sealed class DesktopSurface : IDisposable
     public const int ExitAddressRefused = 1;
     public const int ExitSettingInvalid = 2;
     public const int ExitBackendUnavailable = 3;
+    public const int ExitAddressInUse = 4;
+
+    public const string PortSetting = "Desktop:Port";
 
     private readonly WebApplication _app;
 
@@ -47,30 +54,48 @@ internal sealed class DesktopSurface : IDisposable
     // The address that an agent uses, for example http://127.0.0.1:5180.
     public string Address { get; }
 
+    // Cancelled when the surface stops, for example at Ctrl+C in the console. The
+    // window then closes too (finding E50 of the review of 2026-10-11).
+    public CancellationToken Stopping => _app.Lifetime.ApplicationStopping;
+
     // The surface, or null with an exit code and a message.
     public static (DesktopSurface? Surface, int ExitCode, string? Message) Start(string[] args)
     {
         var builder = WebApplication.CreateBuilder(args);
+        builder.Configuration.AddCommandLine(args, new Dictionary<string, string> { ["--port"] = PortSetting });
 
         var refusal = EngineSurface.ConfigurationRefusal(builder.Configuration);
         if (refusal is not null)
             return (null, ExitAddressRefused, refusal);
 
-        var setting = builder.Configuration["port"] ?? DefaultPort.ToString(CultureInfo.InvariantCulture);
+        var setting = builder.Configuration[PortSetting] ?? DefaultPort.ToString(CultureInfo.InvariantCulture);
         if (!int.TryParse(setting, NumberStyles.None, CultureInfo.InvariantCulture, out var port) || port > 65535)
-            return (null, ExitSettingInvalid, $"The setting 'port' must be a number from 0 to 65535, and '{setting}' is not.");
+            return (null, ExitSettingInvalid, $"The setting '{PortSetting}' (--port) must be a number from 0 to 65535, and '{setting}' is not.");
 
         builder.WebHost.UseUrls($"http://127.0.0.1:{port}");
 
         if (!ManifoldGeometryBackend.IsNativeAvailable())
             return (null, ExitBackendUnavailable, $"{DiagnosticCodes.GeomBackendInit}: {ManifoldGeometryBackend.UnavailableReason()}");
 
-        var host = new EngineHost(new ManifoldGeometryBackend(), "manifold", ManifoldGeometryBackend.NativeVersion);
-        builder.AddEngineSurface(_ => host);
+        builder.AddEngineSurface(_ => new EngineHost(new ManifoldGeometryBackend(), "manifold", ManifoldGeometryBackend.NativeVersion));
 
         var app = builder.Build();
+
+        // The container makes the session here, so it owns it, and the disposal of
+        // the app disposes the backend. Before TASK-0062 the desktop made the
+        // session itself, and nothing disposed it (finding E52 of the review of
+        // 2026-10-11).
+        var host = app.Services.GetRequiredService<EngineHost>();
         app.MapEngineSurface();
-        app.StartAsync().GetAwaiter().GetResult();
+        try
+        {
+            app.StartAsync().GetAwaiter().GetResult();
+        }
+        catch (IOException ex) when (ex.InnerException is AddressInUseException)
+        {
+            app.DisposeAsync().AsTask().GetAwaiter().GetResult();
+            return (null, ExitAddressInUse, $"The address is in use. Give another port with --port. {ex.Message}");
+        }
 
         var boundRefusal = app.BoundAddressRefusal();
         if (boundRefusal is not null)

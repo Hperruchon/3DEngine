@@ -5,6 +5,8 @@ using Engine.Api.Http.Errors;
 using Engine.Api.Http.Json;
 using Engine.Api.Http.WebSockets;
 using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
 
 namespace Engine.Api.Http.Endpoints;
 
@@ -19,7 +21,8 @@ namespace Engine.Api.Http.Endpoints;
 //      resume vs reset, enqueue initial response + any replay, then add to the
 //      subscriber list. This guarantees live events emitted between snapshot
 //      and attach can't slip past the replay.
-//   4. Await the subscriber's pump completion (client close, or lag detected).
+//   4. Await the subscriber's pump completion (client close, lag detected, or
+//      the stop of the host; TASK-0062).
 //   5. Detach from the broadcaster, dispose the subscriber.
 internal static class EventsEndpoint
 {
@@ -38,10 +41,16 @@ internal static class EventsEndpoint
 
         using var webSocket = await context.WebSockets.AcceptWebSocketAsync().ConfigureAwait(false);
 
+        // The stop of the host ends the connection. Without it the stop waited for
+        // each open socket until the time limit of the host (finding E49 of the
+        // review of 2026-10-11, TASK-0062).
+        var stopping = context.RequestServices.GetRequiredService<IHostApplicationLifetime>().ApplicationStopping;
+        using var ending = CancellationTokenSource.CreateLinkedTokenSource(context.RequestAborted, stopping);
+
         SubscribeRequest? subscribeRequest;
         try
         {
-            subscribeRequest = await ReadSubscribeAsync(webSocket, context.RequestAborted).ConfigureAwait(false);
+            subscribeRequest = await ReadSubscribeAsync(webSocket, ending.Token).ConfigureAwait(false);
         }
         catch (OperationCanceledException)
         {
@@ -75,7 +84,8 @@ internal static class EventsEndpoint
                 },
                 context.RequestAborted).ConfigureAwait(false);
 
-            await subscriber.RunCompleted.ConfigureAwait(false);
+            using (stopping.Register(subscriber.Stop))
+                await subscriber.RunCompleted.ConfigureAwait(false);
         }
         catch (OperationCanceledException) when (context.RequestAborted.IsCancellationRequested)
         {
