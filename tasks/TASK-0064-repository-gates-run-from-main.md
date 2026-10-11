@@ -1,7 +1,7 @@
 ---
 id: 0064
 title: The gates that read the repository run as a program that the pipeline builds from main
-status: Ready
+status: Active
 phase: P0.25
 opened: 2026-10-11
 depends-on: [0062]
@@ -9,8 +9,16 @@ governed-by: []
 writes:
   create:
     - tasks/TASK-0064-repository-gates-run-from-main.md
+    - eng/repo-gates/RepoGates.csproj
+    - eng/repo-gates/Program.cs
   modify:
     - .github/workflows/ci.yml
+    - 3DEngine.sln
+    - eng/write-set-check/Judge.cs
+    - Engine.Tests/Governance/RepositoryFiles.cs
+    - Engine.Tests/Governance/DependencyDirectionGateTests.cs
+    - Engine.Tests/Governance/WriteSetJudgeTests.cs
+    - Engine.Tests/Diagnostics/DiagnosticsScanner.cs
     - CLAUDE.md
     - docs/templates.md
     - docs/INDEX.md
@@ -78,3 +86,11 @@ change it or what it reads.
   file, which the write set must name exactly. Name each file that the task creates, moves or removes in
   the first commit of the task, before the work.
 - **The size.** About 3 to 4 evenings. If it does not fit one session, split it by gate.
+
+## Progress
+
+- 2026-10-12: the task is open, in the order of the owner of 2026-10-12. The gate files keep their
+  paths, because ADR-0004, ADR-0009 and ADR-0017 name `Engine.Tests/Governance/DependencyDirectionGateTests.cs`
+  in `enforced-by`, and this task forbids `docs/adr/**`. The program `eng/repo-gates` compiles those
+  files from a checkout of `main` and runs each check of them. This commit names each file of the
+  work exactly.
