@@ -30,7 +30,7 @@ it is not correct and it must not be used.
 | `Engine.Tests/Governance/` | The gates that read the documents ([templates.md](templates.md), section 5). |
 | `3DEngine.Core/` | Peer **render** kernel (`Scene`, `Entity`, `Camera`, `Light`, materials). Not design truth. Never referenced by, and never references, an `Engine.*` project (ADR-0009). |
 | `3DEngine.Vulkan/` | First-party **Vulkan layer**: `GraphicsDevice`, `Swapchain`, and the SDL `Window` that owns the surface. Holds the only pin of `Vortice.Vulkan` and `Alimer.Bindings.SDL`. Only a host that draws references it (ADR-0017). |
-| `3DEngine/` | The Vulkan desktop host. Draws through `3DEngine.Vulkan`, which uses SDL3. Change it only when a task gives that scope. Track R changes it. |
+| `3DEngine/` | The Vulkan desktop host. Draws through `3DEngine.Vulkan`, which uses SDL3. It owns a document session and serves the surface library on 127.0.0.1, port 5180 by default, so that an agent works on the document that the person has open (ADR-0019, TASK-0054). Change it only when a task gives that scope. Track R changes it. |
 
 ## Docs and process
 
