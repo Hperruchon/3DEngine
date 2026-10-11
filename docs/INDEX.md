@@ -24,7 +24,8 @@ it is not correct and it must not be used.
 | `Engine.Core/Hosting/` | `HandlerCatalog`, the one list of handlers, and `ParameterBinder` (ADR-0016). |
 | `Engine.Geometry.Manifold/` | Native geometry backend: `ManifoldGeometryBackend` over the `manifoldc` C API. References only `Engine.Contracts`; wired in at a host composition root (ADR-0014). |
 | `Engine.Cli/` | The approved embedded host and the approved test client. `apply` and `query` verbs, JSON in and out, exit codes (ADR-0002, ADR-0011). |
-| `Engine.Api.Http/` | The approved deployment process: `POST /commands`, `POST /queries`, `GET /events` (WebSocket), `GET /schema/*` (ADR-0011, ADR-0019). |
+| `Engine.Api.Http/` | The HTTP and WebSocket surface as a library: `POST /commands`, `POST /queries`, `GET /events` (WebSocket), `GET /schema/*`. A host mounts it on a document session that it owns, through `Engine.Api.Http/EngineSurface.cs`, which also holds the address checks of each host. It references `Engine.Core` and `Engine.Contracts` only (ADR-0011, ADR-0019, TASK-0038). |
+| `Engine.Api.Http.Server/` | The program `engine-api-http`, the approved deployment process. It chooses the geometry backend, composes one session and mounts the surface library (ADR-0019 item 4, TASK-0038). |
 | `Engine.Tests/` | The verifier of authority: unit tests and the gates. It may reference any `Engine.*` project. |
 | `Engine.Tests/Governance/` | The gates that read the documents ([templates.md](templates.md), section 5). |
 | `3DEngine.Core/` | Peer **render** kernel (`Scene`, `Entity`, `Camera`, `Light`, materials). Not design truth. Never referenced by, and never references, an `Engine.*` project (ADR-0009). |

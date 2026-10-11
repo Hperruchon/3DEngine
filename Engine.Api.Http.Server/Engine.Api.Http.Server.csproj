@@ -1,0 +1,28 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <!-- The program engine-api-http (ADR-0019 item 4, TASK-0038). It chooses the geometry
+       backend, composes one document session, and mounts the surface library
+       Engine.Api.Http on it. The assembly name did not change in the move. -->
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <AssemblyName>engine-api-http</AssemblyName>
+    <RootNamespace>Engine.Api.Http.Server</RootNamespace>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <LangVersion>latest</LangVersion>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Engine.Api.Http\Engine.Api.Http.csproj" />
+    <ProjectReference Include="..\Engine.Contracts\Engine.Contracts.csproj" />
+    <ProjectReference Include="..\Engine.Core\Engine.Core.csproj" />
+    <!-- Host composition root: native geometry backend (ADR-0014 §4). -->
+    <ProjectReference Include="..\Engine.Geometry.Manifold\Engine.Geometry.Manifold.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="Engine.Tests" />
+  </ItemGroup>
+
+</Project>

@@ -1604,3 +1604,34 @@ that bound 127.0.0.1 before an injected refusal; the probe was never committed.
 New tests: 6, and one assertion more in the process test of the addresses. The test list holds 318.
 `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open entries: 13 of
 15. New diagnostic codes: none. The next codebase review must come before ledger entry v0.59.
+
+## v0.57 — The HTTP and WebSocket surface is a library, and engine-api-http is its program (P0.20, TASK-0038)
+
+ADR-0019, the hybrid topology, which the owner decided on 2026-09-25. Before this entry only the
+program `engine-api-http` could serve the surface, and no other host could mount it on its own session.
+
+**The library.** `Engine.Api.Http` is a class library. A host composes an `EngineHost` with the backend
+of its choice, and calls `EngineSurface`: the address check before the build, `AddEngineSurface` with
+its session, `MapEngineSurface`, and the check of the bound addresses after the start. The address
+checks of TASK-0044, TASK-0051 and TASK-0058 live in the library, so each host uses the same checks.
+The library references `Engine.Core` and `Engine.Contracts` only.
+
+**The program.** `Engine.Api.Http.Server` is the program `engine-api-http`. It chooses the native
+backend, composes the session, mounts the library, and keeps exit codes 1 and 3. Each existing HTTP
+test passes with no change to its meaning.
+
+**Proof.** `DesktopSurfaceTests` is the host that the desktop will be: it mounts the surface on its own
+session on a real Kestrel at 127.0.0.1. A command over HTTP changes the session that the test reads
+with a typed query, and a WebSocket subscriber receives `body.created` for a typed call of the test.
+Two injections failed the tests: a session with the plain sink, and a second session behind the
+surface. The dependency gate has a class "surface library" with the rule of ADR-0019 item 3, and the
+dispatch gate reads the new program; an injection proved each one.
+
+**Corrected.** ADR-0019 item 3 said that the project referenced only `Engine.Core` and
+`Engine.Contracts` "as the project does today", which was false: it also referenced the native
+backend as the composition root.
+
+New tests: 3, and two tests changed the name of a call. The test list holds 321. `dotnet build
+3DEngine.sln --no-incremental` gives zero errors and zero warnings. Projects in the solution: 10. Open
+entries: 13 of 15. New diagnostic codes: none. The next codebase review must come before ledger entry
+v0.59.

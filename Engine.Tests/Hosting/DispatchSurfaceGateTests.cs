@@ -15,7 +15,9 @@ namespace Engine.Tests.Hosting;
 // source file of each host project.
 public class DispatchSurfaceGateTests
 {
-    private static readonly string[] HostProjects = ["Engine.Cli", "Engine.Api.Http"];
+    // TASK-0038 moved the program engine-api-http into its own project; the
+    // surface library and the program are each a host source.
+    private static readonly string[] HostProjects = ["Engine.Cli", "Engine.Api.Http", "Engine.Api.Http.Server"];
 
     [Fact]
     public void No_Host_File_Contains_A_Registered_Command_Or_Query_Name()

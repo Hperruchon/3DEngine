@@ -63,7 +63,7 @@ public class BackendSelectionTests : IClassFixture<WebApplicationFactory<Program
     public void The_Http_Host_Refuses_To_Build_Its_Engine_When_The_Library_Does_Not_Load()
     {
         var error = Assert.Throws<BackendUnavailableException>(
-            () => new EngineHost(new EventBroadcaster(), new HostBackendOptions(false, () => false)));
+            () => ServerEngine.Create(new HostBackendOptions(false, () => false)));
 
         Assert.StartsWith(DiagnosticCodes.GeomBackendInit + ":", error.Message);
         Assert.Contains(ManifoldGeometryBackend.NativeLibraryName, error.Message);

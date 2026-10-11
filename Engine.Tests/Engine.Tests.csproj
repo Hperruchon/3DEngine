@@ -26,6 +26,8 @@
     <ProjectReference Include="..\Engine.Core\Engine.Core.csproj" />
     <ProjectReference Include="..\Engine.Cli\Engine.Cli.csproj" />
     <ProjectReference Include="..\Engine.Api.Http\Engine.Api.Http.csproj" />
+    <!-- The program engine-api-http, for WebApplicationFactory<Program> and the process tests (TASK-0038). -->
+    <ProjectReference Include="..\Engine.Api.Http.Server\Engine.Api.Http.Server.csproj" />
     <ProjectReference Include="..\Engine.Geometry.Manifold\Engine.Geometry.Manifold.csproj" />
     <!-- The judge of the write set (TASK-0053): the gates read the task files with its reader. -->
     <ProjectReference Include="..\eng\write-set-check\WriteSetCheck.csproj" />
