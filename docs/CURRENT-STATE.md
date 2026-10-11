@@ -1693,3 +1693,25 @@ hole of the workflow file, or require a review of `.github/workflows/**` on GitH
 New tests: 0. The test list holds 321. `dotnet build 3DEngine.sln --no-incremental` gives zero errors
 and zero warnings. Open entries: 13 of 15. New diagnostic codes: none. The next codebase review must
 come before ledger entry v0.65.
+
+## v0.60 — The decisions of the owner of 2026-10-11 (governance, TASK-0063)
+
+On 2026-10-11 the owner answered the two questions of the codebase review of 2026-10-11.
+
+**Q1, yes: the gates leave the test assembly.** The text rule of option A for T31 has six bypasses, so
+the gates that read only files of the repository move into a program that the pipeline builds from
+`main`, as the judge of the write set already does. TASK-0064 holds it as P0.25, after TASK-0061 and
+TASK-0062. The gates that run engine code stay tests.
+
+**Q2, option A: the workflow file.** A commit that names `.github/workflows/ci.yml` exactly can change
+the job that judges it, because GitHub runs the workflow of the pushed commit. The project accepts the
+condition: the exact permit and the diff show each such change, and a required review would need pull
+requests. Register entry R-0038 holds it under "Accepted compromises".
+
+**The order.** P0.23 (TASK-0061), P0.24 (TASK-0062) and P0.25 (TASK-0064) come before R2 and before
+TASK-0055, which now depends on TASK-0064. The eight phases that remain give the first objective in 28
+to 41 evenings.
+
+New tests: 0. The test list holds 321. `dotnet build 3DEngine.sln --no-incremental` gives zero errors
+and zero warnings. Open entries: 13 of 15, and one more accepted compromise. New diagnostic codes: none.
+The next codebase review must come before ledger entry v0.65.

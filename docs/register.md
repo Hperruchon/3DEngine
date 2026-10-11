@@ -291,6 +291,9 @@ of the same run (T38); question Q2 of that review gives the options. The review 
 again (six bypasses of the four texts), a lost rule of the judge for a merge (T36), tests that do not
 hold each rule (T37), and two smaller gaps (T39, T40). TASK-0061 holds T36 to T40; question Q1 holds
 T31.
+Progress 2026-10-11: the owner answered Q1 and Q2 of that review. Q1, yes: TASK-0064 moves the gates
+that read the repository into a program that the pipeline builds from `main` (T31). Q2, option A: the
+condition of the workflow file is accepted, in entry R-0038 under "Accepted compromises" (T28, T38).
 
 ### R-0033 · Seven findings of the third codebase review in the engine and the hosts have no task
 - class: debt
@@ -345,6 +348,22 @@ gave type coercion and validation to `ParameterBinder`, therefore the parser spl
 no decision about a value. JSON input on the command line would copy the HTTP surface and give
 nothing that the HTTP surface does not give. The comment in `Engine.Cli/ArgParser.cs` no longer
 says that a later task replaces the file.
+
+### R-0038 · A commit that names the workflow file exactly can change the job that judges it
+- class: risk
+- opened: 2026-10-11
+- due: 2026-11-10
+- extended: no
+- refs: `.github/workflows/ci.yml`, `docs/reviews/2026-10-11-codebase-review.md` findings T28 and T38, TASK-0063
+GitHub runs the workflow of the pushed commit. The judge comes from `main`, but the job that builds and
+runs it comes from the judged commit, so a commit can change that job. A protection against a force
+push does not change that.
+Exit: a required review of `.github/workflows/**` on GitHub, or the owner accepts the condition.
+Accepted 2026-10-11 · the owner answered question Q2 of the review of 2026-10-11 with option A
+The project keeps the condition. A workflow file is a gate file, so only a task that names
+`.github/workflows/ci.yml` exactly may change it, and the diff of each such commit shows the change of
+the job. A required review needs pull requests, which changes how the owner merges, for a risk that
+needs a deliberate act.
 
 
 ---

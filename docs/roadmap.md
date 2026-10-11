@@ -80,6 +80,7 @@ This track removes each condition that blocks other work.
 | P0.22 | `/schema/events` gives the payload fields of each kind. ADR-0008 §9, TASK-0055. | 1 |
 | P0.23 | The judge judges each change of a merge, and its tests hold each rule. TASK-0061. | 1–2 |
 | P0.24 | The hosts refuse each bracket form, stop well, and own their session. TASK-0062. | 1–2 |
+| P0.25 | The gates that read the repository run from a build of main. TASK-0064. | 3–4 |
 
 ## Track P — The platform
 
@@ -141,7 +142,7 @@ The first domain extension. Objective 15 puts it before materials, chemistry and
 The tracks are not strictly sequential, but three rules hold:
 
 1. Track 0 comes first. Each phase in it removes a condition that blocks other work. Two exceptions
-   are on record: P0.23 and P0.24 must be done before R2 and before P0.22, which R5 does not need. P0.13 and
+   are on record: P0.23 to P0.25 must be done before R2 and before P0.22, which R5 does not need. P0.13 and
    P0.15 must be done before R2, because the tests of R2 need a serial read and a native backend
    that surely ran.
 2. R2 blocks each later phase in track R. No mesh leaves the geometry backend today.
@@ -151,8 +152,8 @@ The field `depends-on` of each task file holds the same order. `TaskGovernanceGa
 that each dependency names a task.
 
 Phase R6 gives the first objective that the owner named: create a box, subtract a second box, and
-observe the cut. The seven phases that remain, P0.23, P0.24 and R2 to R6, give it in 25 to 37
-evenings. That number is the sum of the column "Evenings" for those phases: 2 to 4 for Track 0 and
+observe the cut. The eight phases that remain, P0.23 to P0.25 and R2 to R6, give it in 28 to 41
+evenings. That number is the sum of the column "Evenings" for those phases: 5 to 8 for Track 0 and
 23 to 33 for track R. Correct it when a phase ships or an estimate changes.
 
 ## Not on a track
