@@ -180,6 +180,22 @@ internal sealed class Subscriber : IAsyncDisposable
         }
     }
 
+    // Ends the subscriber: the pump stops and closes the socket, and RunCompleted
+    // completes. The host calls it when it stops; before TASK-0062 the stop of a
+    // host waited for each open socket until its time limit (finding E49 of the
+    // review of 2026-10-11). A call after DisposeAsync does nothing.
+    public void Stop()
+    {
+        _outbound.Writer.TryComplete();
+        try
+        {
+            _cts.Cancel();
+        }
+        catch (ObjectDisposedException)
+        {
+        }
+    }
+
     public async ValueTask DisposeAsync()
     {
         _cts.Cancel();

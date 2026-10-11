@@ -82,8 +82,9 @@ network listener, and a defect in the surface can stop the program of the person
 desktop ends the live session of each agent. Several people cannot share one live document in this
 mode. They need `engine-api-http`, and a record for authentication must come first.
 
-**Next:** TASK-0038 splits the surface and mounts it in the desktop host. `CLAUDE.md`, section
-"Deployment topology", describes this record as the target until TASK-0038 is done. The dependency
-rules in `CLAUDE.md` and `DependencyDirectionGateTests` change in TASK-0038: the desktop host may
-reference the surface library, and the library is not a client. Register entry R-0021 holds the open
-question of how to show the application to the person.
+**Next:** TASK-0038 split the surface into a library and a program. TASK-0054 mounted the library in
+the desktop host. The dependency rules in `CLAUDE.md` and `DependencyDirectionGateTests` changed in
+TASK-0038: the desktop host may reference the surface library, and the library is not a client.
+Register entry R-0021 holds the open question of how to show the application to the person.
+TASK-0062 corrected this paragraph. It said that TASK-0038 mounts the surface in the desktop, and it
+named a section of `CLAUDE.md` that does not exist (finding E57 of the review of 2026-10-11).

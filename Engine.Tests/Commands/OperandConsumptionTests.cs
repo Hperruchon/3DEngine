@@ -174,24 +174,28 @@ public class OperandConsumptionTests
     // body that is not live or that is in the list two times, and nothing else. A
     // review agent applied a command that created and consumed its own handle:
     // Applied, and no live body. ADR-0021 item 1 says that a consumed body never
-    // becomes live again (TASK-0058).
+    // becomes live again (TASK-0058). Finding E53 of the review of 2026-10-11: no
+    // test gave one handle two times in the created list (TASK-0062).
     [Theory]
     [InlineData("creates and consumes one handle")]
     [InlineData("creates a live handle")]
     [InlineData("creates a consumed handle")]
+    [InlineData("creates one handle two times")]
     public async Task The_Bus_Refuses_A_Created_Handle_That_Is_Live_Consumed_Or_Consumed_Before(string fault)
     {
         var kit = EngineHosting.CreateDefault(new RecordingBackend());
         var box = new CreateBoxCommand { SizeX = 1, SizeY = 1, SizeZ = 1 };
         var other = new CreateBoxCommand { SizeX = 1, SizeY = 1, SizeZ = 1 };
         var move = new TranslateCommand { BodyId = other.CommandId, Dx = 1, Dy = 0, Dz = 0 };
+        var fresh = new BodyHandle(Guid.NewGuid());
         var (created, consumed) = fault switch
         {
-            "creates and consumes one handle" => (box.CommandId, new[] { new BodyHandle(box.CommandId) }),
-            "creates a live handle" => (box.CommandId, Array.Empty<BodyHandle>()),
-            _ => (other.CommandId, Array.Empty<BodyHandle>()),
+            "creates and consumes one handle" => (new[] { new BodyHandle(box.CommandId) }, new[] { new BodyHandle(box.CommandId) }),
+            "creates a live handle" => (new[] { new BodyHandle(box.CommandId) }, Array.Empty<BodyHandle>()),
+            "creates a consumed handle" => (new[] { new BodyHandle(other.CommandId) }, Array.Empty<BodyHandle>()),
+            _ => (new[] { fresh, fresh }, Array.Empty<BodyHandle>()),
         };
-        kit.CommandRegistry.Register(new ListsHandler(new BodyHandle(created), consumed));
+        kit.CommandRegistry.Register(new ListsHandler(created, consumed));
         var session = new DocumentSession(kit);
         foreach (var command in new Command[] { box, other, move })
             Assert.Equal(CommandStatus.Applied, (await session.Apply(command)).Status);
@@ -276,9 +280,9 @@ public class OperandConsumptionTests
         public override int SchemaVersion => 1;
     }
 
-    // A handler that gives a fixed created body and a fixed consumed list, and
+    // A handler that gives a fixed created list and a fixed consumed list, and
     // calls no backend.
-    private sealed class ListsHandler(BodyHandle created, IReadOnlyList<BodyHandle> consumed) : ICommandHandler
+    private sealed class ListsHandler(IReadOnlyList<BodyHandle> created, IReadOnlyList<BodyHandle> consumed) : ICommandHandler
     {
         public string CommandName => "TestLists";
         public int SchemaVersion => 1;
@@ -288,7 +292,7 @@ public class OperandConsumptionTests
         public Task<CommandHandlerResult> Handle(Command command, Document document, IGeometryBackend backend, CancellationToken ct)
             => Task.FromResult(CommandHandlerResult.Success(
                 Engine.Contracts.Outputs.Empty,
-                createdBodies: [new BodyRecord(created, "Solid")],
+                createdBodies: created.Select(handle => new BodyRecord(handle, "Solid")).ToArray(),
                 consumedBodies: consumed));
 
         public Command Create(CommandInput input) => new ListsCommand();

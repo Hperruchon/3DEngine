@@ -177,7 +177,11 @@ public sealed class CommandBus
         var created = new HashSet<Guid>();
         foreach (var body in result.CreatedBodies)
         {
-            if (_createdHandles.Contains(body.Handle.Id) || consumed.Contains(body.Handle.Id) || !created.Add(body.Handle.Id))
+            // A handle that the same command consumes is live, so this bus created
+            // it before; the first clause covers it. TASK-0062 removed a clause that
+            // tested it again and never decided (finding E53 of the review of
+            // 2026-10-11).
+            if (_createdHandles.Contains(body.Handle.Id) || !created.Add(body.Handle.Id))
                 throw new InvalidOperationException(
                     $"The handler of '{command.Name}'@{command.SchemaVersion} creates body {body.Handle.Id}, which "
                     + "this bus created before, which the same command consumes, or which is in its list two times. "

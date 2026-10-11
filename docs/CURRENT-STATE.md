@@ -1736,3 +1736,34 @@ junction fails when the links are not resolved. The 128 commits after the cut-of
 New tests: 6. The test list holds 327. `dotnet build 3DEngine.sln --no-incremental` gives zero errors
 and zero warnings. Open entries: 13 of 15. New diagnostic codes: none. The next codebase review must
 come before ledger entry v0.65.
+
+## v0.62 — The hosts of the surface refuse each bracket form, stop well, and own their session (P0.24, TASK-0062)
+
+The codebase review of 2026-10-11 found ten gaps in the hosts of the surface, E48 to E57. Seven forms
+with brackets passed the address check, and Kestrel bound each interface for them (E48). A subscriber
+held the stop of a host for 31.0 s (E49).
+
+**The change.**
+
+- The address check accepts brackets only as one pair around an IPv6 loopback address (E48).
+- The `/events` endpoint ends its subscriber when the host stops (E49). The window loop of the desktop
+  ends when the surface stops (E50).
+- A port in use gives the new exit code 4 in `engine-api-http` and in the desktop (E51).
+- The container of the desktop makes the session, so the disposal of the app disposes the backend
+  (E52).
+- The bus lost a clause that never decided, and a test gives one handle two times (E53).
+- The port of the desktop is the setting `Desktop:Port`, from `--port`; the variable `PORT` has no
+  effect (E54).
+- The refusal messages name the surface (E55). `EngineHost.Backend` is internal (E56).
+- ADR-0019, `EngineHost` and `DesktopSurfaceTests` no longer describe the desktop surface as work to
+  come (E57). This corrects false statements about the repository, not a decision.
+
+**Proof.** The seven forms of E48, the port in use and the stop with a subscriber failed on v0.61, and
+pass now. The new case of E53 fails when its clause is removed. A run of the desktop executable on a
+held port, with `PORT=abc`, stopped before the window with exit code 4. No test calls the desktop
+surface, and E50 is not observed; register entry R-0039 holds the gap.
+
+New tests: 10. The test list holds 337. `dotnet build 3DEngine.sln --no-incremental` gives zero errors
+and zero warnings. Open entries: 14 of 15. New diagnostic codes: none. New exit code: 4, in
+`3DEngine/Documentation/Running.md` and in the header of `Engine.Api.Http.Server/Program.cs`. The next
+codebase review must come before ledger entry v0.65.

@@ -333,6 +333,17 @@ The version can go back through a cast of the log (E26). E29 to E39 are smaller 
 the queries, `/schema/backend`, the exit codes and the backend selection.
 Exit: each finding has a task, or it is corrected, or the owner accepts it and gives the reason.
 
+### R-0039 · No test calls the surface of the desktop host
+- class: debt
+- opened: 2026-10-11
+- due: 2027-04-09
+- extended: no
+- refs: `3DEngine/DesktopSurface.cs`, `3DEngine/DesktopEngineHost.cs`, TASK-0062, findings E50, E52 and E54 of `docs/reviews/2026-10-11-codebase-review.md`
+`DesktopSurface` is internal to the desktop program, and no test project references that program. The
+port setting, the disposal of the session and the end of the window loop at a stop have no automatic
+test. TASK-0062 corrected the three by reading and by one run of the executable before its window.
+Exit: a test calls `DesktopSurface`, or the owner accepts the gap and gives the reason.
+
 ## Accepted compromises
 
 These are conditions that the project keeps permanently and by decision. They do not age.
