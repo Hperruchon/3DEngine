@@ -148,3 +148,5 @@ A client reads the triangles of a body from the query `GetTessellation`.
   contract and the query share one commit: ADR-0018 names `Engine.Tests/Queries/GetTessellationQueryTests.cs`
   in `enforced-by`, and the contract rule needs an ADR change in the commit that changes
   `Engine.Contracts`, so the test must exist in that commit.
+- 2026-10-12: the backend. The winding measures +24 for the 2 × 3 × 4 box, as ADR-0018 item 9 states.
+  A reversed winding injected into the backend failed both volume tests with −24 and −4.

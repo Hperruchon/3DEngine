@@ -1,7 +1,12 @@
+using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using Engine.Contracts;
 using Engine.Contracts.Geometry;
 using Engine.Geometry.Manifold.Native;
+
+// The tests read the volume of a solid to measure the winding of a tessellation
+// (ADR-0018 item 9, TASK-0028).
+[assembly: InternalsVisibleTo("Engine.Tests")]
 
 namespace Engine.Geometry.Manifold;
 
@@ -9,6 +14,7 @@ namespace Engine.Geometry.Manifold;
 // P7b shipped the mesh + query surface (parity with the managed InProcessMeshBackend);
 // P7c (ADR-0012 Amendment 1) adds transform (Translate) and boolean (Subtract) ops that
 // the managed stub deliberately does not implement — real solids the stub can't represent.
+// R2 (ADR-0018, TASK-0028) adds the tessellation, which the stub does not implement either.
 //
 // Threading (ADR-0014 §3): single-threaded from the engine's view. Each call from a
 // command and each call from a query runs inside the serial section of the
@@ -27,14 +33,15 @@ namespace Engine.Geometry.Manifold;
 // InProcessMeshBackend's exception contract (InvalidOperationException on duplicate,
 // KeyNotFoundException on missing) so the existing handlers behave the same.
 public sealed class ManifoldGeometryBackend
-    : IGeometryBackend, IMeshOps, IGeometryQuery, ITransformOps, IBooleanOps, IDisposable
+    : IGeometryBackend, IMeshOps, IGeometryQuery, ITransformOps, IBooleanOps, ITessellationOps, IDisposable
 {
     private readonly Dictionary<Guid, ManifoldSolidHandle> _solids = new();
     private bool _disposed;
 
     public BackendCapabilities Capabilities
         => BackendCapabilities.Mesh | BackendCapabilities.Query
-         | BackendCapabilities.Transform | BackendCapabilities.Booleans;
+         | BackendCapabilities.Transform | BackendCapabilities.Booleans
+         | BackendCapabilities.Tessellation;
 
     public T? TryGet<T>() where T : class => this as T;
 
@@ -197,6 +204,100 @@ public sealed class ManifoldGeometryBackend
         finally
         {
             ManifoldNative.manifold_delete_box(box); // frees `boxBuffer`
+        }
+    }
+
+    // ITessellationOps (ADR-0018). The triangles of the body from MeshGL64, in double
+    // precision. Throws if the handle is unknown to this backend, as GetBoundingBox does.
+    public Tessellation Tessellate(BodyHandle handle)
+    {
+        ObjectDisposedException.ThrowIf(_disposed, this);
+        if (!_solids.TryGetValue(handle.Id, out var solid))
+            throw new KeyNotFoundException(
+                $"Backend has no body under handle '{handle.Id}'.");
+
+        nint meshBuffer = Marshal.AllocHGlobal((nint)ManifoldNative.manifold_meshgl64_size());
+        // `solid` is rooted in _solids for the call, so its raw handle stays alive.
+        nint mesh = ManifoldNative.manifold_get_meshgl64(meshBuffer, solid.DangerousGetHandle());
+        try
+        {
+            return ReadMesh(mesh, handle);
+        }
+        finally
+        {
+            // The destructor in place, then the allocator that gave the buffer frees it
+            // (see manifold_destruct_meshgl64).
+            ManifoldNative.manifold_destruct_meshgl64(mesh);
+            Marshal.FreeHGlobal(meshBuffer);
+        }
+    }
+
+    // Each vertex holds numProp values, and the first three are x, y and z (MeshGLP of
+    // Manifold). The stride is read and never assumed to be 3. Each index is 64-bit in
+    // MeshGL64, and the wire form holds 32 bits (ADR-0018 item 2), so an index that
+    // does not fit, or that names no vertex, is a failure and not a silent wrap.
+    private static unsafe Tessellation ReadMesh(nint mesh, BodyHandle handle)
+    {
+        var stride = checked((int)ManifoldNative.manifold_meshgl64_num_prop(mesh));
+        var vertexCount = checked((int)ManifoldNative.manifold_meshgl64_num_vert(mesh));
+        var propertyLength = checked((int)ManifoldNative.manifold_meshgl64_vert_properties_length(mesh));
+        var indexLength = checked((int)ManifoldNative.manifold_meshgl64_tri_length(mesh));
+
+        if (stride < 3 || propertyLength != checked(vertexCount * stride) || indexLength % 3 != 0)
+            throw new ManifoldNativeException(
+                $"The mesh of handle '{handle.Id}' has {stride} properties for each vertex, {vertexCount} vertices, "
+                + $"{propertyLength} property values and {indexLength} indices, which do not agree.");
+
+        var properties = new double[propertyLength];
+        var triVerts = new ulong[indexLength];
+        fixed (double* target = properties)
+            ManifoldNative.manifold_meshgl64_vert_properties((nint)target, mesh);
+        fixed (ulong* target = triVerts)
+            ManifoldNative.manifold_meshgl64_tri_verts((nint)target, mesh);
+
+        var positions = new double[vertexCount * 3];
+        for (var vertex = 0; vertex < vertexCount; vertex++)
+        {
+            positions[3 * vertex] = properties[stride * vertex];
+            positions[3 * vertex + 1] = properties[stride * vertex + 1];
+            positions[3 * vertex + 2] = properties[stride * vertex + 2];
+        }
+
+        var indices = new uint[indexLength];
+        for (var i = 0; i < indexLength; i++)
+        {
+            if (triVerts[i] >= (ulong)vertexCount)
+                throw new ManifoldNativeException(
+                    $"Index {i} of the mesh of handle '{handle.Id}' is {triVerts[i]}, and the mesh has {vertexCount} vertices.");
+            indices[i] = (uint)triVerts[i];
+        }
+
+        return new Tessellation(positions, indices);
+    }
+
+    // For the tests only: the volume that Manifold computes for the body, which the
+    // signed volume of its tessellation must equal (ADR-0018 item 9).
+    internal double Volume(BodyHandle handle)
+    {
+        ObjectDisposedException.ThrowIf(_disposed, this);
+        return ManifoldNative.manifold_volume(_solids[handle.Id].DangerousGetHandle());
+    }
+
+    // For the tests only: the length of the merge vectors of the mesh of the body. The
+    // task records it for a box (TASK-0028, notes for the implementer).
+    internal int MergeLength(BodyHandle handle)
+    {
+        ObjectDisposedException.ThrowIf(_disposed, this);
+        nint meshBuffer = Marshal.AllocHGlobal((nint)ManifoldNative.manifold_meshgl64_size());
+        nint mesh = ManifoldNative.manifold_get_meshgl64(meshBuffer, _solids[handle.Id].DangerousGetHandle());
+        try
+        {
+            return checked((int)ManifoldNative.manifold_meshgl64_merge_length(mesh));
+        }
+        finally
+        {
+            ManifoldNative.manifold_destruct_meshgl64(mesh);
+            Marshal.FreeHGlobal(meshBuffer);
         }
     }
 
