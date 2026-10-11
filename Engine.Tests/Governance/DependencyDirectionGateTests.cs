@@ -192,7 +192,30 @@ public class DependencyDirectionGateTests
 
     private static readonly string[] RenderSide = ["3DEngine.Core", "3DEngine.Vulkan"];
 
-    private static readonly string[] HeadlessClients = ["Engine.Cli", "Engine.Api.Http"];
+    // TASK-0038 split Engine.Api.Http into the surface library and the program
+    // engine-api-http, Engine.Api.Http.Server.
+    private static readonly string[] HeadlessClients = ["Engine.Cli", "Engine.Api.Http.Server"];
+
+    // The HTTP and WebSocket surface as a library that a host mounts on its
+    // session (ADR-0019 item 3, TASK-0038). It is not a client: a client
+    // references it.
+    private static readonly string[] Surfaces = ["Engine.Api.Http"];
+
+    [Fact]
+    public void The_Surface_Library_References_Only_Engine_Core_And_Engine_Contracts()
+    {
+        // ADR-0019 item 3. The library cannot name the native backend or the
+        // render side; the host that mounts it chooses the backend.
+        var graph = Graph();
+        Assert.True(graph.ContainsKey("Engine.Api.Http"), "Engine.Api.Http.csproj was not found.");
+
+        var offences = graph["Engine.Api.Http"]
+            .Where(t => t is not ("Engine.Core" or "Engine.Contracts"))
+            .Select(t => $"Engine.Api.Http references {t}; ADR-0019 item 3 permits Engine.Core and Engine.Contracts only")
+            .ToArray();
+
+        Assert.True(offences.Length == 0, string.Join("\n  ", offences));
+    }
 
     // TASK-0027 added the desktop host. Before that task the gate did not read
     // it, and the host referenced the vendored sample framework with no report.
@@ -224,7 +247,7 @@ public class DependencyDirectionGateTests
         // A new project must enter one of the lists above before the gate can
         // apply a rule to it. Until TASK-0039 an unlisted project passed each
         // test, because no test read it (rules review finding F22).
-        string[] classified = [.. Kernel, .. RenderSide, .. HeadlessClients, .. HostsThatDraw, .. Verifiers, .. Packaging, .. Judges];
+        string[] classified = [.. Kernel, .. RenderSide, .. HeadlessClients, .. Surfaces, .. HostsThatDraw, .. Verifiers, .. Packaging, .. Judges];
 
         var unclassified = Graph().Keys
             .Where(p => !classified.Contains(p))
@@ -233,7 +256,7 @@ public class DependencyDirectionGateTests
 
         Assert.True(
             unclassified.Length == 0,
-            "Each project must be a kernel, a render-side project, a headless client, a host that "
+            "Each project must be a kernel, a render-side project, a headless client, a surface library, a host that "
             + "draws, a verifier or a packaging project, so that the dependency rules apply to it. "
             + "Add it to one list.\n  " + string.Join("\n  ", unclassified));
     }
@@ -244,7 +267,9 @@ public class DependencyDirectionGateTests
         // A client may reference Engine.Core, Engine.Contracts, and
         // Engine.Geometry.Manifold at a composition root per ADR-0014 §4. A host
         // that draws may also reference the render side. ADR-0009 §2 forbids the
-        // render kernel to a client that does not draw. Engine.Tests is a
+        // render kernel to a client that does not draw. A headless client may also
+        // reference the surface library (ADR-0019 item 4, TASK-0038); the desktop
+        // host gets that permit in TASK-0054. Engine.Tests is a
         // verifier of authority and not a client.
         string[] permitted = ["Engine.Contracts", "Engine.Core", "Engine.Geometry.Manifold"];
         string[] clients = [.. HeadlessClients, .. HostsThatDraw];
@@ -259,7 +284,7 @@ public class DependencyDirectionGateTests
 
             foreach (var target in graph[client])
             {
-                if (!permitted.Contains(target) && !(draws && RenderSide.Contains(target)))
+                if (!permitted.Contains(target) && !(draws && RenderSide.Contains(target)) && !(!draws && Surfaces.Contains(target)))
                     offences.Add($"{client} references {target}, which is not permitted");
 
                 if (clients.Contains(target))

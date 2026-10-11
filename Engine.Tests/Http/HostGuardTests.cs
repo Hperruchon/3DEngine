@@ -3,6 +3,7 @@ using System.Net;
 using System.Net.Http.Json;
 using System.Net.WebSockets;
 using System.Text.RegularExpressions;
+using Engine.Api.Http;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Extensions.Configuration;
 
@@ -43,7 +44,7 @@ public class HostGuardTests : IClassFixture<WebApplicationFactory<Program>>
     [InlineData("http://x@127.0.0.1:5000")]
     public void An_Address_That_Is_Not_Loopback_Is_Refused_With_A_Message(string urls)
     {
-        var refusal = Program.LoopbackRefusal(urls);
+        var refusal = EngineSurface.LoopbackRefusal(urls);
 
         Assert.NotNull(refusal);
         Assert.Contains("loopback", refusal, StringComparison.Ordinal);
@@ -56,7 +57,7 @@ public class HostGuardTests : IClassFixture<WebApplicationFactory<Program>>
     [InlineData("http://0.0.0.0:5000")]
     public void A_Bound_Address_On_Each_Interface_Is_Refused(string bound)
     {
-        Assert.NotNull(Program.LoopbackRefusal(bound));
+        Assert.NotNull(EngineSurface.LoopbackRefusal(bound));
     }
 
     // Finding E23 of the review of 2026-10-04: the guard read the key "urls" only.
@@ -71,7 +72,7 @@ public class HostGuardTests : IClassFixture<WebApplicationFactory<Program>>
     {
         var configuration = Configuration((key, value));
 
-        var refusal = Program.ConfigurationRefusal(configuration);
+        var refusal = EngineSurface.ConfigurationRefusal(configuration);
 
         Assert.NotNull(refusal);
         Assert.Contains("loopback", refusal, StringComparison.Ordinal);
@@ -85,8 +86,8 @@ public class HostGuardTests : IClassFixture<WebApplicationFactory<Program>>
             ("Kestrel:Endpoints:E1:Url", "http://localhost:5188"),
             ("Kestrel:Endpoints:E2:Url", "http://[::1]:5189"));
 
-        Assert.Null(Program.ConfigurationRefusal(configuration));
-        Assert.Null(Program.ConfigurationRefusal(Configuration()));
+        Assert.Null(EngineSurface.ConfigurationRefusal(configuration));
+        Assert.Null(EngineSurface.ConfigurationRefusal(Configuration()));
     }
 
     [Theory]
@@ -96,7 +97,7 @@ public class HostGuardTests : IClassFixture<WebApplicationFactory<Program>>
     [InlineData("https://LOCALHOST:5188")]
     public void A_Loopback_Address_Is_Accepted(string? urls)
     {
-        Assert.Null(Program.LoopbackRefusal(urls));
+        Assert.Null(EngineSurface.LoopbackRefusal(urls));
     }
 
     [Fact]

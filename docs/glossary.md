@@ -32,6 +32,7 @@ observation of a change, and it appears only in the event stream.
 | **document version** | `Document.Version`: the count of applied commands, which is the count of entries in `Document.Log`. A rejected or cancelled command does not change it, so a replay of the log rebuilds it. A command states it in `ExpectedDocumentVersion`. It is not `Seq`: no code computes one from the other. | `Engine.Contracts/Document.cs` · ADR-0020, TASK-0035 |
 | **Seq** | Monotonic per-Document event sequence number on `EventRecord`; the cursor for replay/reconnect. Each event takes one, a rejection too. The reset snapshot gives the highest one as `seq`, and a client continues from `seq + 1`. | `Engine.Contracts/EventRecord.cs` · ADR-0005, ADR-0020 |
 | **document session** | The one serial boundary of one `Document`. It owns the Document, its backend, its command bus, its query bus and its event sink. A command, a query and a read of the Document enter one serial section, so a reader never sees a commit in the middle. Each host uses it. | `Engine.Core/DocumentSession.cs` · ADR-0008 §6, ADR-0014 §3 · TASK-0034 |
+| **surface library** | `Engine.Api.Http`: the HTTP and WebSocket surface that a host mounts on a document session that the host owns, with `AddEngineSurface` and `MapEngineSurface`. Each host gets the same endpoints and the same address checks. The program `engine-api-http` and, later, the desktop host are hosts of it. | `Engine.Api.Http/EngineSurface.cs` · ADR-0019 item 3 · TASK-0038 |
 
 ## Geometry
 

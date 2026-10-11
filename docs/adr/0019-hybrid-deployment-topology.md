@@ -11,7 +11,7 @@ amended-by: []
 affects:
   - Engine.Api.Http/**
   - 3DEngine/**
-enforced-by: Engine.Tests/Http/DesktopSurfaceTests.cs (TASK-0038 creates it)
+enforced-by: Engine.Tests/Http/DesktopSurfaceTests.cs
 ---
 
 # ADR-0019 — The hybrid deployment topology
@@ -54,8 +54,11 @@ Two facts make the hybrid possible with no new rule for authority:
    command, no query and no event that the surface does not give to each other client.
 3. **One surface library.** The HTTP and WebSocket surface of `Engine.Api.Http` becomes a library
    that a host mounts on a session. The desktop host mounts it, so that an agent works live on the
-   document that the person sees. The library references only `Engine.Core` and `Engine.Contracts`,
-   as the project does today.
+   document that the person sees. The library references only `Engine.Core` and `Engine.Contracts`.
+   (Corrected 2026-10-11, TASK-0038: this item said "as the project does today", which was false;
+   the project also referenced `Engine.Geometry.Manifold`, because it was the composition root. The
+   program `Engine.Api.Http.Server` now holds that reference, and `DependencyDirectionGateTests`
+   holds the rule.)
 4. **The server stays.** `engine-api-http` becomes a small program that creates a session and mounts
    the same library. It serves headless work: continuous integration, scripts, and a shared server
    later. Its lifecycle stays independent of each client.

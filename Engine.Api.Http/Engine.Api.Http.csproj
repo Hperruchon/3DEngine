@@ -1,8 +1,11 @@
-<Project Sdk="Microsoft.NET.Sdk.Web">
+<Project Sdk="Microsoft.NET.Sdk">
 
+  <!-- The HTTP and WebSocket surface as a library (ADR-0019 item 3, TASK-0038). A host
+       mounts it on a document session that the host owns. The library references
+       Engine.Core and Engine.Contracts only; the host chooses the geometry backend.
+       The program engine-api-http is Engine.Api.Http.Server. -->
   <PropertyGroup>
     <TargetFramework>net10.0</TargetFramework>
-    <AssemblyName>engine-api-http</AssemblyName>
     <RootNamespace>Engine.Api.Http</RootNamespace>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
@@ -11,10 +14,12 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="..\Engine.Contracts\Engine.Contracts.csproj" />
     <ProjectReference Include="..\Engine.Core\Engine.Core.csproj" />
-    <!-- Host composition root: native geometry backend (ADR-0014 §4). -->
-    <ProjectReference Include="..\Engine.Geometry.Manifold\Engine.Geometry.Manifold.csproj" />
   </ItemGroup>
 
   <ItemGroup>
