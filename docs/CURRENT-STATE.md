@@ -1767,3 +1767,33 @@ New tests: 10. The test list holds 337. `dotnet build 3DEngine.sln --no-incremen
 and zero warnings. Open entries: 14 of 15. New diagnostic codes: none. New exit code: 4, in
 `3DEngine/Documentation/Running.md` and in the header of `Engine.Api.Http.Server/Program.cs`. The next
 codebase review must come before ledger entry v0.65.
+
+## v0.63 — The gates that read the repository run as a program that the pipeline builds from main (P0.25, TASK-0064)
+
+Finding T31 of the codebase review of 2026-10-11 (high): a file of the judged commit could change what
+a gate of `Engine.Tests` read before the gate ran. Two forms of the review moved
+`AppContext.BaseDirectory` from a test file and passed the four-text refusal of TASK-0057. On
+2026-10-11 the owner chose option B: the gates leave the test process.
+
+**The change.**
+
+- The new program `eng/repo-gates` compiles the fourteen gate classes that read only files of the
+  repository, with their helpers. It runs each check on the checkout that `--root` gives.
+- The job "Write set of the governing task" builds it from the same checkout of `main` as the judge,
+  and runs it on the judged checkout. When the judged commits change a source of the program, the job
+  builds it from the judged commit instead, with the condition of R-0038.
+- The gate files keep their paths, because three ADRs name one of them in `enforced-by`. `Engine.Tests`
+  still runs them as tests, but the run of the program decides.
+- The judge counts `eng/repo-gates/` as gate files. `RepoGates` is in the class of judges of
+  `DependencyDirectionGateTests`. The solution holds both programs.
+- `CLAUDE.md`, section "Method", gives the new local command. So does `docs/templates.md`, section 5.
+  The task named section 6, which holds the rule for rules.
+
+**Proof.** One injection for each of the fourteen gate classes, in the data of the checkout, failed its
+own gate from the program. The attack of the review, with the escaped attribute and
+`AppDomain.SetData`, passed the marker gate as a test and failed it from the program. The three gates
+that run engine code stay tests, and the attack class still reaches them; R-0031 records it.
+
+New tests: 2. The test list holds 339. The program runs 65 checks in 70 runs. `dotnet build
+3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open entries: 14 of 15. New
+diagnostic codes: none. The next codebase review must come before ledger entry v0.65.

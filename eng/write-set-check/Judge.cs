@@ -44,6 +44,9 @@ public sealed class Judge
     // at another folder or switch off a check before the gate runs (codebase
     // review of 2026-10-09, finding T31; the owner chose this option on
     // 2026-10-10). Each text is in two parts, so that this file does not hold it.
+    // Since TASK-0064 the gates that read only files run in eng/repo-gates, out of
+    // reach of a test file. The refusal stays as a second line for the gates
+    // that run engine code and so stay tests; it does not stop each form.
     public static readonly IReadOnlyList<string> RedirectingCalls =
     [
         "Module" + "Initializer",
@@ -74,7 +77,8 @@ public sealed class Judge
     // which can remove a gate from the compilation; a Directory.Build or
     // Directory.Packages file, which MSBuild reads for each project below it;
     // the cut-off of this gate; each workflow (codebase review of 2026-10-04,
-    // finding T9); and each file of this program (TASK-0053).
+    // finding T9); each file of this program (TASK-0053); and each file of the
+    // program that runs the gates from a build of main (TASK-0064).
     public static bool IsGateFile(string file)
     {
         var name = file[(file.LastIndexOf('/') + 1)..];
@@ -87,6 +91,7 @@ public sealed class Judge
             || name == "Directory.Packages.props"
             || file == "eng/write-set-cutoff.txt"
             || file.StartsWith("eng/write-set-check/", StringComparison.Ordinal)
+            || file.StartsWith("eng/repo-gates/", StringComparison.Ordinal)
             || file.StartsWith(".github/workflows/", StringComparison.Ordinal);
     }
 

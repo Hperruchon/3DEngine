@@ -251,6 +251,11 @@ A gate is a test class whose name ends in `GateTests`. `DocumentPathGateTests` f
 class has no row here. Each class comment gives the rule that the class enforces and the incident
 that made it necessary.
 
+Each gate class here reads only files of the repository, except `DispatchSurfaceGateTests`,
+`SchemaEndpointGateTests` and `ReplayDeterminismGateTests`, which run engine code. The program
+`eng/repo-gates` runs each class that reads only files, from a build of `main`. `Engine.Tests` also runs
+each class as a test, but the run of the program decides (TASK-0064).
+
 | Gate | It reads | It fails when |
 |---|---|---|
 | `AdrGateTests` | the ADR front matter and the index | a field is absent, a status is outside the set, a supersession or an amendment is not reciprocal, the index disagrees, or the count of unenforced ADRs grows |
@@ -258,6 +263,7 @@ that made it necessary.
 | `TaskGovernanceGateTests` | `status`, `governed-by`, `depends-on` and `writes` of each task | a status is outside the set, an identifier differs from the file name, `governed-by` differs from the intersection rule on an open task, or `depends-on` names no task |
 | `WriteSetGateTests` | the `writes` block of each task and the cut-off file | a task forbids what it writes, a path has a backslash, a Done task names a file that is absent, the cut-off moved, or the count of tasks without front matter grows |
 | `eng/write-set-check` (a program, not a test; `WriteSetJudgeTests` and `WriteSetRangeTests` test it) | each commit, its changed paths, its governing task at the commit, and the text of each changed test file | a changed path is outside the write set of the governing task, a gate file is not named exactly, the named task is not changed, the task is Done before and after the commit, a commit has no parent, a merge changes a file that its task does not permit, in an edit of the merge or against its first parent, a contract change has no ADR in the same commit, or a test file holds one of four calls that can redirect a gate |
+| `eng/repo-gates` (a program, not a test) | the gate files of its own build, and the checkout that `--root` gives | a check of a gate class fails, or the build holds no check |
 | `DependencyDirectionGateTests` | each project file, read as XML | a reference breaks the authority diagram, a project is in no class, the judge of the write set references a project, or a binding has two pins |
 | `DeterminismCallGateTests` | each source in the log path, with its comments removed, and each project file | a forbidden function is called on `Math`, `MathF`, `double`, `float` or `Half`, `System.Math` is imported statically, or a 32-bit runtime identifier exists |
 | `RegisterGateTests` | the open entries of `docs/register.md` | a `due` date passed, a second extension exists, the count is above 15, a class or a date is invalid, or the parser found fewer entries than the section holds |
@@ -280,6 +286,16 @@ first parent and that no commit of its second parent changed (TASK-0057, TASK-00
 commit with no parent and a merge of unrelated history. The judge also fails a commit that changes
 `Engine.Contracts/**` with no change under `docs/adr/` (TASK-0057; until then the job `contract-gate`
 checked that rule on a range of commits).
+
+The job `write-set-gate` then runs `eng/repo-gates` from the same checkout of `main` on the judged
+checkout (TASK-0064). When the judged commits change a source of that program, the job builds the
+program from the judged commit instead. Such a source is a gate file, which its task must name exactly.
+Before a commit, run the judge and the program on the local checkout:
+
+```bash
+dotnet run --project eng/write-set-check -- --staged --task TASK-nnnn &&
+  dotnet run --project eng/repo-gates -- --root .
+```
 
 ---
 

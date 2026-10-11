@@ -1,0 +1,47 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- The gates that read only files of the repository, as a program (TASK-0064).
+       The pipeline builds it from a checkout of main and runs it on the checkout
+       of the judged commit, so a file of that commit cannot change a gate or what
+       a gate reads (finding T31 of the codebase review of 2026-10-11).
+
+       The gate files keep their paths under Engine.Tests: three ADRs name one of
+       them in enforced-by, and Engine.Tests still runs them as tests on a local
+       computer. This project compiles the same files. A gate that runs engine code
+       stays a test only: SchemaEndpointGateTests, ReplayDeterminismGateTests and
+       DispatchSurfaceGateTests. -->
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <LangVersion>latest</LangVersion>
+    <IsPackable>false</IsPackable>
+    <AssemblyName>repo-gates</AssemblyName>
+    <RootNamespace>RepoGates</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Include="..\..\Engine.Tests\Governance\*GateTests.cs" Link="Gates\%(Filename)%(Extension)" />
+    <Compile Include="..\..\Engine.Tests\Governance\RepositoryFiles.cs" Link="Gates\RepositoryFiles.cs" />
+    <Compile Include="..\..\Engine.Tests\Diagnostics\DiagnosticsRegistryGateTests.cs" Link="Gates\DiagnosticsRegistryGateTests.cs" />
+    <Compile Include="..\..\Engine.Tests\Diagnostics\DiagnosticsScanner.cs" Link="Gates\DiagnosticsScanner.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- The attributes and Assert of xUnit, with no test platform. -->
+    <PackageReference Include="xunit.assert" Version="2.9.3" />
+    <PackageReference Include="xunit.extensibility.core" Version="2.9.3" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Using Include="Xunit" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- The reader of the task files, from the same checkout of main. -->
+    <ProjectReference Include="..\write-set-check\WriteSetCheck.csproj" />
+  </ItemGroup>
+
+</Project>

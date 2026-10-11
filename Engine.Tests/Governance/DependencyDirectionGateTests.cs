@@ -227,8 +227,9 @@ public class DependencyDirectionGateTests
     private static readonly string[] Packaging = ["Engine.Geometry.Manifold.Native"];
 
     // eng/write-set-check judges the write set of each commit. The pipeline
-    // builds it from main, alone (TASK-0053).
-    private static readonly string[] Judges = ["WriteSetCheck"];
+    // builds it from main, alone (TASK-0053). eng/repo-gates runs the gates that
+    // read only files of the repository, also from a build of main (TASK-0064).
+    private static readonly string[] Judges = ["WriteSetCheck", "RepoGates"];
 
     [Fact]
     public void The_Judge_Of_The_Write_Set_Has_No_Project_Reference()
