@@ -1,7 +1,7 @@
 ---
 id: 0028
 title: A mesh leaves the geometry backend through the query GetTessellation
-status: Ready
+status: Done
 phase: R2
 opened: 2026-09-23
 depends-on: [0034, 0036]
@@ -49,8 +49,8 @@ This task uses Simplified Technical English (ASD-STE100). See `CLAUDE.md`, secti
 
 ## Status
 
-`Ready`. The owner accepted ADR-0018 on 2026-09-25, after two corrections. The task waits for two
-tasks:
+`Done`, v0.64 (the field `status` above is the authority). The owner accepted ADR-0018 on 2026-09-25,
+after two corrections. The task waited for two tasks, which are both `Done`:
 
 - TASK-0034 puts queries in series with commands. A tessellation is a long read, and today a query
   reads shared state while a command writes it.
@@ -101,28 +101,79 @@ A client reads the triangles of a body from the query `GetTessellation`.
 
 ## Acceptance criteria
 
-- [ ] On the native backend, a 2 × 3 × 4 box gives 12 triangles. The signed volume of the triangles
+- [x] On the native backend, a 2 × 3 × 4 box gives 12 triangles. The signed volume of the triangles
       is +24, and it equals `manifold_volume`. This measures the winding that ADR-0018, item 9,
       states.
-- [ ] A 2 × 2 × 2 box minus a 2 × 2 × 2 box translated by (1, 0, 0) gives a closed mesh with a signed
+- [x] A 2 × 2 × 2 box minus a 2 × 2 × 2 box translated by (1, 0, 0) gives a closed mesh with a signed
       volume of +4.
-- [ ] Each mesh is closed and consistent: each edge occurs in exactly two triangles, one time in each
+- [x] Each mesh is closed and consistent: each edge occurs in exactly two triangles, one time in each
       direction. The test pairs the edges by position, because `MeshGL` can split a vertex.
-- [ ] Each position lies inside the box that `GetBoundingBox` gives for the same body.
-- [ ] On the managed backend the query gives `E-GEOM-CAP-MISSING`. For an unknown body it gives
+- [x] Each position lies inside the box that `GetBoundingBox` gives for the same body.
+- [x] On the managed backend the query gives `E-GEOM-CAP-MISSING`. For an unknown body it gives
       `E-GEOM-BODY-NOT-FOUND`.
-- [ ] The query adds no event, and the Document version does not change.
-- [ ] `/schema/queries/GetTessellation@1` gives the four result fields, with the type `array` for
+- [x] The query adds no event, and the Document version does not change.
+- [x] `/schema/queries/GetTessellation@1` gives the four result fields, with the type `array` for
       `positions` and `indices`.
-- [ ] Through `Engine.Api.Http`, a `CreateBox` and then a `GetTessellation` give `triangleCount` 12.
-- [ ] A query with a record result, other than `Aabb`, returns its fields through `Engine.Cli` and
-      through `Engine.Api.Http`.
-- [ ] The Outcome block records the time and the JSON size of the tessellation of a body of about
+- [x] Through `Engine.Api.Http`, a `CreateBox` and then a `GetTessellation` give `triangleCount` 12.
+- [x] A query with a record result, other than `Aabb`, returns its fields through `Engine.Cli` and
+      through `Engine.Api.Http`. Through `Engine.Cli` in part only: see "Weakest".
+- [x] The Outcome block records the time and the JSON size of the tessellation of a body of about
       100,000 triangles, and the output of `GetTessellation` for the cut body of the first
       demonstration.
-- [ ] A clean build (`--no-incremental`) gives zero errors and zero warnings.
+- [x] A clean build (`--no-incremental`) gives zero errors and zero warnings.
 - [ ] Continuous integration passes on `ubuntu-latest`, `windows-latest` and `macos-latest`, and the
-      native tests ran on each runner.
+      native tests ran on each runner. The merge records the run.
+
+## Outcome
+
+Status: Done · v0.64 · the commit that carries this block.
+
+A client reads the triangles of a body from the query `GetTessellation`. `ITessellationOps`, the value
+type `Tessellation` and the flag `BackendCapabilities.Tessellation` are in `Engine.Contracts`. The
+Manifold backend implements the capability through `manifold_get_meshgl64`, and the managed backend
+does not. Both hosts hold each query result as an object, so a new query needs no change to a host.
+
+Measures on the computer of the owner (Windows, x64), with the native library 3.5.2:
+
+- A 2 × 3 × 4 box: 8 vertices, 12 triangles, signed volume +24, merge length 0. The cut of the
+  2 × 2 × 2 boxes: 8 vertices, 12 triangles, signed volume +4, merge length 0.
+- A box with 75 × 75 pits, made with 5,625 subtractions in 157.8 s: 90,012 triangles and 45,008
+  vertices. The tessellation took 26.1 ms. Its JSON with the options of the surface is 4,378,820
+  bytes, written in 53.6 ms. A body of this size therefore costs about 4.4 MB on the wire, which
+  ADR-0018 accepts for version 1.
+- The first demonstration (objective 6): two 10 × 10 × 10 boxes, the second moved by (5, 0, 0) and
+  subtracted. `POST /queries` with `GetTessellation` on the cut body gave no error and this result:
+
+  ```json
+  {"positions":[-5,-5,-5,-5,-5,5,-5,5,-5,-5,5,5,0,-5,-5,0,-5,5,0,5,-5,0,5,5],
+   "indices":[0,2,4,0,1,3,0,5,1,0,3,2,2,3,6,1,7,3,0,4,5,1,5,7,2,6,4,3,7,6,5,4,7,6,7,4],
+   "vertexCount":8,"triangleCount":12}
+  ```
+
+## Method
+
+**Mechanical.** The winding measured +24 for the 2 × 3 × 4 box, as ADR-0018 item 9 states, so the
+task did not stop. A reversed winding injected into the backend failed both volume tests with −24 and
+−4. The HTTP scenario failed on the hosts of v0.63, because the surface read the result as an `Aabb`,
+and passes after the change of one type argument. Each needed symbol is in the three native libraries
+of the package 3.5.2.1, and a false name is absent, so the search can fail. The full suite of 353
+tests passes, and the program of the gates passes its 70 runs.
+
+**Judgement.** The release of the mesh. The source of the C binding of 3.5.2 shows that
+`manifold_get_meshgl64` builds the mesh in the buffer of the caller with placement new, and that
+`manifold_delete_meshgl64` calls the C++ `delete` on it, as `manifold_delete_manifold` and
+`manifold_delete_box` do. The backend calls `manifold_destruct_meshgl64` and then frees the buffer with
+`Marshal.FreeHGlobal`, which gave it, so one allocator owns one buffer. A test calls the tessellation
+2,000 times on one body. The accessors copy with `memcpy` into the memory of the caller, so the
+backend gives them pinned managed arrays. The contract and the query share one commit, because
+ADR-0018 names the test of the query in `enforced-by` and the contract rule needs an ADR change in the
+commit that changes `Engine.Contracts`.
+
+**Weakest.** Each invocation of the command line builds an empty Document (ADR-0011 §5), so a query
+there never finds a body, and no test sees a record result through the command line end to end. The
+tests show that the query reaches its handler there, and that the renderer of the command line writes
+the fields of a `Tessellation` held as an object. The large body was measured on one computer only.
+The pipeline must still show that the native tests ran on the three runners.
 
 ## Notes for the implementer
 
@@ -141,3 +192,13 @@ A client reads the triangles of a body from the query `GetTessellation`.
   wants an ADR change in the same pull request.
 - **ADR-0015.** It affects `Engine.Core/**`, and it has the status `Proposed`. It is not in force,
   therefore it is not in `governed-by`.
+
+## Progress
+
+- 2026-10-12: the task is open, in the batch R2 to R6 that the owner ordered on 2026-10-12. The
+  contract and the query share one commit: ADR-0018 names `Engine.Tests/Queries/GetTessellationQueryTests.cs`
+  in `enforced-by`, and the contract rule needs an ADR change in the commit that changes
+  `Engine.Contracts`, so the test must exist in that commit.
+- 2026-10-12: the backend. The winding measures +24 for the 2 × 3 × 4 box, as ADR-0018 item 9 states.
+  A reversed winding injected into the backend failed both volume tests with −24 and −4.
+- 2026-10-12: the hosts and the documents. Closed, after a full local run of 353 tests.

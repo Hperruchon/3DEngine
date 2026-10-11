@@ -1797,3 +1797,33 @@ that run engine code stay tests, and the attack class still reaches them; R-0031
 New tests: 2. The test list holds 339. The program runs 65 checks in 70 runs. `dotnet build
 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open entries: 14 of 15. New
 diagnostic codes: none. The next codebase review must come before ledger entry v0.65.
+
+## v0.64 — A mesh leaves the geometry backend through the query GetTessellation (R2, TASK-0028)
+
+Roadmap phase R2, the first task of the batch R2 to R6 that the owner ordered on 2026-10-12. Until
+this task no capability gave a triangle, and R3 to R6 had nothing to draw.
+
+**The change.**
+
+- `Engine.Contracts` has the interface `ITessellationOps`, the value type `Tessellation` and the flag
+  `BackendCapabilities.Tessellation` (ADR-0018 items 1 and 2).
+- `Engine.Core` has the query `GetTessellation`, version 1, in the handler catalog. Its errors are
+  `E-GEOM-CAP-MISSING` and `E-GEOM-BODY-NOT-FOUND`, which exist.
+- `ManifoldGeometryBackend` gives the triangles through `manifold_get_meshgl64`, in double precision,
+  wound counter-clockwise when seen from outside. The managed backend does not implement it.
+- `Engine.Cli` and `Engine.Api.Http` hold each query result as an object (ADR-0018 item 7).
+- ADR-0018 names its test with no task marker. The glossary has the term "tessellation".
+- The roadmap records P0.23 to P0.25 and R2 as shipped, and the first objective now needs R3 to R6:
+  19 to 27 evenings. Two statements were false: the glossary said that the desktop host is a later
+  host of the surface, and the roadmap missed P0.23 to P0.25.
+
+**Proof.** The 2 × 3 × 4 box gives 12 triangles with a signed volume of +24, equal to
+`manifold_volume`; a reversed winding injected into the backend failed with −24. The cut of two
+2 × 2 × 2 boxes gives a closed mesh of +4. The HTTP scenario failed on v0.63 and passes. A body of
+90,012 triangles took 26.1 ms to tessellate and 4,378,820 bytes of JSON. The first demonstration gives
+8 vertices and 12 triangles for the cut body. The command line cannot show a record result end to
+end, because each invocation has an empty Document; the task records it in "Weakest".
+
+New tests: 14. The test list holds 353. `dotnet build 3DEngine.sln --no-incremental` gives zero errors
+and zero warnings. Open entries: 14 of 15. New diagnostic codes: none. The next codebase review must
+come before ledger entry v0.65, so it comes next, before R3.

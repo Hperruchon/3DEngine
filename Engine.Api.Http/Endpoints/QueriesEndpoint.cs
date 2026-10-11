@@ -2,7 +2,6 @@ using System.Text.Json;
 using Engine.Api.Http.Errors;
 using Engine.Api.Http.Json;
 using Engine.Contracts;
-using Engine.Contracts.Geometry;
 using Engine.Contracts.Handlers;
 using Engine.Core;
 using Engine.Core.Hosting;
@@ -78,10 +77,11 @@ internal static class QueriesEndpoint
 
         var query = handler.Create(new QueryInput(bound.Values!, Guid.NewGuid()));
 
-        // One concrete result type today. GetBoundingBox is the only registered
-        // query and its result is an Aabb. See ADR-0016 "Next".
+        // Each result is held as an object and written with its fields, so a new
+        // query needs no change here (ADR-0018 item 7, TASK-0028). Until TASK-0028
+        // the surface read each result as an Aabb.
         var result = await host.Session
-            .Query<Aabb>(query, context.RequestAborted)
+            .Query<object>(query, context.RequestAborted)
             .ConfigureAwait(false);
 
         return Results.Json(result, ApiJson.Options);

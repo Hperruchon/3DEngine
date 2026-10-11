@@ -50,12 +50,13 @@ public class ManifoldGeometryBackendTests
     private static ManifoldGeometryBackend NewBackend() => new();
 
     [NativeManifoldFact]
-    public void Capabilities_Include_Mesh_Query_Transform_Booleans()
+    public void Capabilities_Include_Mesh_Query_Transform_Booleans_Tessellation()
     {
         using var backend = NewBackend();
         Assert.Equal(
             BackendCapabilities.Mesh | BackendCapabilities.Query
-                | BackendCapabilities.Transform | BackendCapabilities.Booleans,
+                | BackendCapabilities.Transform | BackendCapabilities.Booleans
+                | BackendCapabilities.Tessellation,
             backend.Capabilities);
     }
 

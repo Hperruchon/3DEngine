@@ -32,6 +32,7 @@ public static class HandlerCatalog
     public static IReadOnlyList<IQueryHandler> QueryHandlers() =>
     [
         new GetBoundingBoxQueryHandler(),
+        new GetTessellationQueryHandler(),
     ];
 
     public static void RegisterAll(CommandRegistry commands, QueryRegistry queries)

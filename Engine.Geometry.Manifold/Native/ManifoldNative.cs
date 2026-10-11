@@ -43,6 +43,31 @@ internal static partial class ManifoldNative
     // everything). Used to reject a degenerate boolean result.
     [LibraryImport(Lib)] internal static partial int manifold_is_empty(nint manifold);
 
+    // The tessellation (ADR-0018, TASK-0028). manifold_get_meshgl64 builds a MeshGL64
+    // in the caller `mem` with placement new and returns `mem`. Each accessor below
+    // with a `mem` argument copies its vector into `mem` with memcpy (copy_data in
+    // bindings/c/conv.h of Manifold 3.5.2), so the caller gives a buffer of
+    // length x element size, and a pinned managed array is such a buffer.
+    [LibraryImport(Lib)] internal static partial nuint manifold_meshgl64_size();
+    [LibraryImport(Lib)] internal static partial nint manifold_get_meshgl64(nint mem, nint manifold);
+    [LibraryImport(Lib)] internal static partial nuint manifold_meshgl64_num_prop(nint mesh);
+    [LibraryImport(Lib)] internal static partial nuint manifold_meshgl64_num_vert(nint mesh);
+    [LibraryImport(Lib)] internal static partial nuint manifold_meshgl64_num_tri(nint mesh);
+    [LibraryImport(Lib)] internal static partial nuint manifold_meshgl64_vert_properties_length(nint mesh);
+    [LibraryImport(Lib)] internal static partial nuint manifold_meshgl64_tri_length(nint mesh);
+    [LibraryImport(Lib)] internal static partial nuint manifold_meshgl64_merge_length(nint mesh);
+    [LibraryImport(Lib)] internal static partial nint manifold_meshgl64_vert_properties(nint mem, nint mesh);
+    [LibraryImport(Lib)] internal static partial nint manifold_meshgl64_tri_verts(nint mem, nint mesh);
+
+    // Runs the destructor of the MeshGL64 in place and does not free `mem`. The caller
+    // then frees `mem` with the allocator that gave it. manifold_delete_meshgl64 would
+    // call the C++ delete on a buffer that Marshal.AllocHGlobal gave (manifoldc.cpp of
+    // 3.5.2, line 1075); this pair keeps one allocator for one buffer.
+    [LibraryImport(Lib)] internal static partial void manifold_destruct_meshgl64(nint mesh);
+
+    // The volume of a solid, for the test of the winding (ADR-0018 item 9).
+    [LibraryImport(Lib)] internal static partial double manifold_volume(nint manifold);
+
     // VERIFIED (TASK-0012 §2): manifold_delete_* frees the caller `mem` buffer itself.
     // Call these ONLY to release — never also Marshal.FreeHGlobal the buffer, that
     // double-frees and crashes the process.

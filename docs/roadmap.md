@@ -49,6 +49,10 @@ Therefore each approved objective must have a track here.
 - P0.19 — The guards close the gaps of the fifth review. v0.56, TASK-0058.
 - P0.20 — The surface is a library, and `engine-api-http` is its program. v0.57, TASK-0038, ADR-0019.
 - P0.21 — The desktop host owns a session and serves the surface. v0.58, TASK-0054, ADR-0019.
+- P0.23 — The judge judges each change of a merge, and its tests hold each rule. v0.61, TASK-0061.
+- P0.24 — The hosts refuse each bracket form, stop well, and own their session. v0.62, TASK-0062.
+- P0.25 — The gates that read the repository run from a build of main. v0.63, TASK-0064.
+- R2 — A mesh leaves the geometry backend through the query `GetTessellation`. v0.64, TASK-0028, ADR-0018.
 
 ## Track 0 — Foundations
 
@@ -152,9 +156,9 @@ The field `depends-on` of each task file holds the same order. `TaskGovernanceGa
 that each dependency names a task.
 
 Phase R6 gives the first objective that the owner named: create a box, subtract a second box, and
-observe the cut. The eight phases that remain, P0.23 to P0.25 and R2 to R6, give it in 28 to 41
-evenings. That number is the sum of the column "Evenings" for those phases: 5 to 8 for Track 0 and
-23 to 33 for track R. Correct it when a phase ships or an estimate changes.
+observe the cut. The four phases that remain, R3 to R6, give it in 19 to 27 evenings. That number is
+the sum of the column "Evenings" for those phases. Correct it when a phase ships or an estimate
+changes.
 
 ## Not on a track
 
