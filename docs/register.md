@@ -294,6 +294,10 @@ T31.
 Progress 2026-10-11: the owner answered Q1 and Q2 of that review. Q1, yes: TASK-0064 moves the gates
 that read the repository into a program that the pipeline builds from `main` (T31). Q2, option A: the
 condition of the workflow file is accepted, in entry R-0038 under "Accepted compromises" (T28, T38).
+Progress 2026-10-11: TASK-0061 corrected T36, T37, T39 and T40. A merge is judged on each file that
+differs from each parent and on each file that differs from its first parent and that no commit of
+its second parent changed; the two forms of T36 failed the old rule and fail the new one. T31 stays
+with TASK-0064.
 
 ### R-0033 · Seven findings of the third codebase review in the engine and the hosts have no task
 - class: debt

@@ -98,8 +98,10 @@ public sealed class Judge
     public static string? FindGit(string root, string? pathVariable)
     {
         var name = OperatingSystem.IsWindows() ? "git.exe" : "git";
-        var inside = Path.GetFullPath(root).TrimEnd(Path.DirectorySeparatorChar) + Path.DirectorySeparatorChar;
-        var comparison = OperatingSystem.IsWindows() ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal;
+        var inside = RealPath(root).TrimEnd(Path.DirectorySeparatorChar) + Path.DirectorySeparatorChar;
+
+        // Windows and macOS compare names with no regard to case by default.
+        var comparison = OperatingSystem.IsLinux() ? StringComparison.Ordinal : StringComparison.OrdinalIgnoreCase;
 
         foreach (var folder in (pathVariable ?? string.Empty).Split(Path.PathSeparator))
         {
@@ -107,16 +109,49 @@ public sealed class Judge
             if (trimmed.Length == 0 || !Path.IsPathFullyQualified(trimmed))
                 continue;
 
-            var full = Path.GetFullPath(trimmed).TrimEnd(Path.DirectorySeparatorChar) + Path.DirectorySeparatorChar;
-            if (full.StartsWith(inside, comparison))
+            var candidate = Path.Combine(trimmed, name);
+            if (!File.Exists(candidate))
                 continue;
 
-            var candidate = Path.Combine(full, name);
-            if (File.Exists(candidate))
-                return candidate;
+            // The real place of the file, with each link and junction on its path
+            // resolved. A folder of PATH outside the checkout can be a link into it
+            // (finding T40 of the codebase review of 2026-10-11, TASK-0061).
+            var real = RealPath(candidate);
+            if (real.StartsWith(inside, comparison))
+                continue;
+
+            return real;
         }
 
         return null;
+    }
+
+    // The full path with each part that is a link or a junction resolved, from the
+    // root of the path to its end. The target of a link is a path that can hold
+    // links too, so the target is resolved again from its root; on macOS the
+    // folder of Path.GetTempPath is under /var, which is a link to /private/var.
+    // The first form of this method did not resolve the target again, and a run
+    // on macOS failed its test.
+    private static string RealPath(string path, int depth = 0)
+    {
+        if (depth > 32)
+            throw new IOException($"The path {path} holds more than 32 links in a chain.");
+
+        var full = Path.GetFullPath(path);
+        var current = Path.GetPathRoot(full)!;
+        foreach (var part in full[current.Length..].Split(Path.DirectorySeparatorChar, StringSplitOptions.RemoveEmptyEntries))
+        {
+            current = Path.Combine(current, part);
+            FileSystemInfo info = Directory.Exists(current) ? new DirectoryInfo(current) : new FileInfo(current);
+            if (info.LinkTarget is null)
+                continue;
+
+            var target = info.ResolveLinkTarget(returnFinalTarget: true)?.FullName;
+            if (target is not null)
+                current = RealPath(target, depth + 1);
+        }
+
+        return current;
     }
 
     // The governing task that the commit message names, or null.
@@ -134,11 +169,14 @@ public sealed class Judge
 
     // Each commit after the base up to HEAD, one at a time. A commit before the
     // cut-off is not judged. A commit with no parent fails, because it can carry
-    // any tree. A merge is judged on each file that differs from its first
-    // parent and that no commit on the side of its second parent changed: that is
-    // the change that the merge made itself (finding T30). Until TASK-0057 a
-    // merge was read with `git diff-tree --cc`, which hides each file that equals
-    // one parent, so a merge that took the tree of an old commit passed.
+    // any tree. A merge is judged on the union of two sets, which together are the
+    // change that the merge made itself:
+    //   - each file that differs from each parent (`git diff-tree --cc`): an edit
+    //     inside the merge (finding T36 of the review of 2026-10-11, TASK-0061);
+    //   - each file that differs from its first parent and that no commit on the
+    //     side of its second parent changed: a merge that takes the tree of an old
+    //     commit (finding T30 of the review of 2026-10-09, TASK-0057).
+    // Each set alone misses the case of the other one.
     //
     // A strict range fails when the base is not known; without it, an unknown
     // base falls back to the cut-off. Exit code 0 or 1.
@@ -206,8 +244,21 @@ public sealed class Judge
                     continue;
                 }
 
+                // Each file that differs from each parent: an edit inside the merge,
+                // for example a resolution of a conflict. Until TASK-0061 this set was
+                // missing, and a merge of main into a branch could rewrite a file that
+                // main changed with no judgement (finding T36 of the codebase review
+                // of 2026-10-11). The old judge of TASK-0047 read this set only.
+                var each = _git(["diff-tree", "--cc", "--no-commit-id", "--name-only", "-r", "-z", commit]);
+                if (each is null)
+                {
+                    failed |= Fail(output, subject, "git cannot list the files that the merge changed against each parent");
+                    continue;
+                }
+
                 var mergeOwn = ParseGitPaths(own);
                 mergeOwn.ExceptWith(ParseGitPaths(brought));
+                mergeOwn.UnionWith(ParseGitPaths(each));
                 if (mergeOwn.Count == 0)
                 {
                     output.WriteLine($"pass  {subject}  (a merge with no change of its own)");
@@ -328,7 +379,14 @@ public sealed class Judge
     {
         foreach (var file in changed.Where(f => f.StartsWith("Engine.Tests/", StringComparison.Ordinal)).OrderBy(f => f, StringComparer.Ordinal))
         {
-            var text = _git(["show", $"{Spec(commit)}{file}"]);
+            var (read, text) = ReadFile(commit, file);
+            if (!read)
+            {
+                yield return $"git cannot read {file}, so the judge cannot look for a call that redirects a gate.";
+                continue;
+            }
+
+            // A deleted file holds nothing.
             if (text is null)
                 continue;
 
@@ -411,7 +469,13 @@ public sealed class Judge
         if (commit is not null && _git(["merge-base", "--is-ancestor", commit, CommitRulesFrom]) is not null)
             return (task, null);
 
-        var before = _git(["show", commit is null ? $"HEAD:{path}" : $"{commit}^:{path}"]);
+        // A failed read is a failure and not a task that did not exist before the
+        // commit, which would skip the rule (finding T40 of the review of
+        // 2026-10-11, TASK-0061).
+        var (read, before) = ReadFile(commit is null ? "HEAD" : $"{commit}^", path);
+        if (!read)
+            return (null, $"git cannot read {path} before the commit, so the judge cannot apply the rule for a task that is Done.");
+
         var statusBefore = before is null ? null : TaskFiles.ParseTask(path, before)?.Status;
 
         if (statusBefore == "Done" && task.Status == "Done")
@@ -424,6 +488,24 @@ public sealed class Judge
     }
 
     private static string Spec(string? commit) => commit is null ? ":" : $"{commit}:";
+
+    // The text of a file in a tree, for example a commit, HEAD or the parent of a
+    // commit, or in the index when the tree is null. Read is false when git fails;
+    // the text is null when the tree does not hold the file.
+    private (bool Read, string? Text) ReadFile(string? tree, string path)
+    {
+        var listing = tree is null
+            ? _git(["ls-files", "-z", "--", path])
+            : _git(["ls-tree", "-z", "--name-only", tree, "--", path]);
+        if (listing is null)
+            return (false, null);
+
+        if (!ParseGitPaths(listing).Contains(path))
+            return (true, null);
+
+        var text = _git(["show", tree is null ? $":{path}" : $"{tree}:{path}"]);
+        return text is null ? (false, null) : (true, text);
+    }
 
     private static int Fail(TextWriter output, string what, string problem)
         => Report(output, what, [problem]);

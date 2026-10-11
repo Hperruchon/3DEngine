@@ -1715,3 +1715,24 @@ to 41 evenings.
 New tests: 0. The test list holds 321. `dotnet build 3DEngine.sln --no-incremental` gives zero errors
 and zero warnings. Open entries: 13 of 15, and one more accepted compromise. New diagnostic codes: none.
 The next codebase review must come before ledger entry v0.65.
+
+## v0.61 — The judge of the write set judges each change of a merge, and its tests hold each rule (P0.23, TASK-0061)
+
+Finding T36 of the codebase review of 2026-10-11 (high): the judge of TASK-0057 read a merge on its own
+change minus the files that the side of its second parent changed, so a merge of `main` into a branch
+could rewrite any file that `main` changed. The old judge read a merge with `--cc`, and it failed that
+merge; TASK-0057 lost the rule.
+
+**The change.** A merge is judged on the union of each file that differs from each parent (`--cc`) and
+each file that differs from its first parent and that no commit of its second parent changed. Each set
+alone misses the case of the other one. `FindGit` resolves links and junctions before it compares the
+place of git with the checkout, and a failed read of a file that a rule needs fails the change (T40).
+The fallback for exit code 2 left the workflow (T39).
+
+**Proof.** The two forms of T36 failed on the old rule and fail on the new one. A new test of a merge of
+unrelated history fails when its refusal is removed, which the older test did not (T37). A test of a
+junction fails when the links are not resolved. The 128 commits after the cut-off pass.
+
+New tests: 6. The test list holds 327. `dotnet build 3DEngine.sln --no-incremental` gives zero errors
+and zero warnings. Open entries: 13 of 15. New diagnostic codes: none. The next codebase review must
+come before ledger entry v0.65.

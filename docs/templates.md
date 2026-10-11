@@ -257,7 +257,7 @@ that made it necessary.
 | `AdrEnforcementExistsGateTests` | `enforced-by` of each ADR in force | the file is absent and no Ready task creates it |
 | `TaskGovernanceGateTests` | `status`, `governed-by`, `depends-on` and `writes` of each task | a status is outside the set, an identifier differs from the file name, `governed-by` differs from the intersection rule on an open task, or `depends-on` names no task |
 | `WriteSetGateTests` | the `writes` block of each task and the cut-off file | a task forbids what it writes, a path has a backslash, a Done task names a file that is absent, the cut-off moved, or the count of tasks without front matter grows |
-| `eng/write-set-check` (a program, not a test; `WriteSetJudgeTests` and `WriteSetRangeTests` test it) | each commit, its changed paths, its governing task at the commit, and the text of each changed test file | a changed path is outside the write set of the governing task, a gate file is not named exactly, the named task is not changed, the task is Done before and after the commit, a commit has no parent, a merge changes a file that no commit of its second parent changed and its task does not permit, a contract change has no ADR in the same commit, or a test file holds one of four calls that can redirect a gate |
+| `eng/write-set-check` (a program, not a test; `WriteSetJudgeTests` and `WriteSetRangeTests` test it) | each commit, its changed paths, its governing task at the commit, and the text of each changed test file | a changed path is outside the write set of the governing task, a gate file is not named exactly, the named task is not changed, the task is Done before and after the commit, a commit has no parent, a merge changes a file that its task does not permit, in an edit of the merge or against its first parent, a contract change has no ADR in the same commit, or a test file holds one of four calls that can redirect a gate |
 | `DependencyDirectionGateTests` | each project file, read as XML | a reference breaks the authority diagram, a project is in no class, the judge of the write set references a project, or a binding has two pins |
 | `DeterminismCallGateTests` | each source in the log path, with its comments removed, and each project file | a forbidden function is called on `Math`, `MathF`, `double`, `float` or `Half`, `System.Math` is imported statically, or a 32-bit runtime identifier exists |
 | `RegisterGateTests` | the open entries of `docs/register.md` | a `due` date passed, a second extension exists, the count is above 15, a class or a date is invalid, or the parser found fewer entries than the section holds |
@@ -275,8 +275,9 @@ that made it necessary.
 `.github/workflows/ci.yml` runs two jobs. `gate` builds, tests and runs two smoke tests on Windows,
 Linux and macOS. `write-set-gate` builds the judge `eng/write-set-check` from `main`. On `main` it
 judges each commit of the push, and on a branch each commit after the merge base with `main`. It
-judges a merge on each file that differs from its first parent and that no commit of its second
-parent changed, and it fails a commit with no parent. The judge also fails a commit that changes
+judges a merge on each file that differs from each parent, and on each file that differs from its
+first parent and that no commit of its second parent changed (TASK-0057, TASK-0061). It fails a
+commit with no parent and a merge of unrelated history. The judge also fails a commit that changes
 `Engine.Contracts/**` with no change under `docs/adr/` (TASK-0057; until then the job `contract-gate`
 checked that rule on a range of commits).
 
