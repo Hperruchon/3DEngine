@@ -1827,3 +1827,31 @@ end, because each invocation has an empty Document; the task records it in "Weak
 New tests: 14. The test list holds 353. `dotnet build 3DEngine.sln --no-incremental` gives zero errors
 and zero warnings. Open entries: 14 of 15. New diagnostic codes: none. The next codebase review must
 come before ledger entry v0.65, so it comes next, before R3.
+
+## v0.65 — The codebase review of 2026-10-12 (governance, TASK-0065)
+
+The seventh codebase review, `docs/reviews/2026-10-12-codebase-review.md`, examines `main` at `4a4450d`,
+the merge of v0.64. The review of 2026-10-11 examined v0.58, and v0.64 was the sixth entry after it, so
+this entry had to be the review.
+
+**The result.**
+
+- Thirteen findings of the last review are fixed (E48, E52 to E56, T36, T38 to T40 in full, and E49 to
+  E51 for the case that they named), and four in part (E13, E57, T31, T37).
+- Ten findings are new. Three are high: a `global.json` of the judged checkout chooses the SDK that
+  builds the judge and the gates of `main` (T41); a merge can undo a change of `main` with no judgement
+  (T42); files that are not gate files switch the gates to the judged commit and control its packages
+  (T44). T41 is a defect of my own step of TASK-0064.
+- The tessellation of TASK-0028 holds under 200,000 calls, extreme sizes and 16 parallel tasks.
+- Sixty-four findings are open: no critical, ten high, twenty-eight medium and twenty-six low.
+
+**The tasks.** TASK-0066 (P0.26) holds T41 to T47, and TASK-0067 (P0.27) holds E58 to E60. The register
+stays at 14 of 15.
+
+**Questions for the owner.** Q1: must TASK-0066 come before R3 (recommended: yes)? Q2: four decisions
+for R3: how the SPIR-V is made, render pass or dynamic rendering, where the tests of the render side
+live (ADR-0009 line 68 and the dependency gate disagree), and which platform R3 shows.
+
+New tests: none. The test list holds 353. `dotnet build 3DEngine.sln --no-incremental` gives zero errors
+and zero warnings. Open entries: 14 of 15. New diagnostic codes: none. The next codebase review must
+come before ledger entry v0.71.
