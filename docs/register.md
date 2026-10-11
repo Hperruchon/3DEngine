@@ -306,6 +306,12 @@ gates come from the judged commit, with the condition of R-0038. `DispatchSurfac
 `SchemaEndpointGateTests` and `ReplayDeterminismGateTests` run engine code, so they stay in the test
 process, and the attack class still reaches them; the four-text refusal of the judge stays as their
 second line. T4, T5, T7, T10, T13, T16, T17, T23, T24 and T25 stay.
+Progress 2026-10-12: the codebase review of 2026-10-12 finds that the checks from `main` still take
+inputs of the build from the judged checkout: a `global.json` chooses the SDK that builds the judge and
+the gates (T41), and files that are not gate files switch the gates to the judged commit and control its
+packages (T44). A merge can undo a change of `main` with no judgement (T42). T41 is a defect of the step
+of TASK-0064. The review also adds T43, T45, T46 and T47, and finds T31 fixed in part. TASK-0066 holds
+T41 to T47.
 
 ### R-0033 · Seven findings of the third codebase review in the engine and the hosts have no task
 - class: debt

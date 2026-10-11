@@ -85,6 +85,8 @@ This track removes each condition that blocks other work.
 | P0.23 | The judge judges each change of a merge, and its tests hold each rule. TASK-0061. | 1–2 |
 | P0.24 | The hosts refuse each bracket form, stop well, and own their session. TASK-0062. | 1–2 |
 | P0.25 | The gates that read the repository run from a build of main. TASK-0064. | 3–4 |
+| P0.26 | The checks from main take no input of the build from the judged checkout, and the judge reads each change of a merge. TASK-0066. | 2–3 |
+| P0.27 | The hosts stop within a short limit, give a code for each failure of the start, and write compact JSON. TASK-0067. | 1 |
 
 ## Track P — The platform
 
@@ -148,7 +150,8 @@ The tracks are not strictly sequential, but three rules hold:
 1. Track 0 comes first. Each phase in it removes a condition that blocks other work. Two exceptions
    are on record: P0.23 to P0.25 must be done before R2 and before P0.22, which R5 does not need. P0.13 and
    P0.15 must be done before R2, because the tests of R2 need a serial read and a native backend
-   that surely ran.
+   that surely ran. The codebase review of 2026-10-12 recommends P0.26 before R3 (question Q1); the
+   owner decides. P0.27 holds three low findings and has no place in the order.
 2. R2 blocks each later phase in track R. No mesh leaves the geometry backend today.
 3. K4 needs K0, K1 and K2. Do not start K4 before the reference model exists.
 
