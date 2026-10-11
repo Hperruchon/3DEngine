@@ -1658,3 +1658,38 @@ from the library to `3DEngine` failed three of its rules.
 New tests: 0. The test list holds 321. `dotnet build 3DEngine.sln --no-incremental` gives zero errors
 and zero warnings. Open entries: 13 of 15. New diagnostic codes: none. The next ledger entry must be a
 codebase review: v0.58 is the sixth milestone after v0.52.
+
+## v0.59 — The codebase review of 2026-10-11 (governance, TASK-0060)
+
+The sixth codebase review, `docs/reviews/2026-10-11-codebase-review.md`. It examines `main` at `de35f51`,
+the merge of v0.58. The gate permitted six milestones after v0.52, and v0.58 was the sixth, so this
+entry had to be the review. The owner said "merge, then go with the review" on 2026-10-11.
+
+**What it found.** Sixty-seven findings are open: no critical, eight high, twenty-nine medium and thirty
+low. Sixteen earlier findings are fixed, and four more in part. Fifteen findings are new. The most
+important:
+
+- T36 (high): the judge of TASK-0057 lost one rule of the old judge. A merge of `main` into a branch can
+  rewrite any file that `main` changed; the old judge failed that merge, and the new one passes it.
+- T31 (high) is open again: the four texts of option A have six bypasses, and two ran in a test process.
+  Question Q1 asks the owner for option B.
+- E48 (medium): seven forms with brackets pass the address check before the start of each host, and
+  Kestrel binds each interface for them.
+- E49, E50 (medium): a subscriber holds the stop of a host for 30 s, and Ctrl+C stops the surface of the
+  desktop and leaves the window.
+
+**My own errors.** The last review gave T31 the state "Fixed", and a line on R-0031 said that a branch
+protection closes the hole of the workflow file. Both were false; this review and a new progress line
+correct them.
+
+**Owners and order.** TASK-0061 holds the judge and the pipeline, and TASK-0062 holds the hosts. The
+roadmap gives them P0.23 and P0.24 before R2, and TASK-0055 now depends on TASK-0062. The roadmap also
+lists P0.18 to P0.21 as shipped, which their tasks did not record. The seven phases that remain give the
+first objective in 25 to 37 evenings.
+
+**Questions for the owner.** Q1: move the repository gates out of the test assembly (T31). Q2: accept the
+hole of the workflow file, or require a review of `.github/workflows/**` on GitHub (T28, T38).
+
+New tests: 0. The test list holds 321. `dotnet build 3DEngine.sln --no-incremental` gives zero errors
+and zero warnings. Open entries: 13 of 15. New diagnostic codes: none. The next codebase review must
+come before ledger entry v0.65.
