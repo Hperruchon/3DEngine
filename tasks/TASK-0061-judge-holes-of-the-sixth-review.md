@@ -1,7 +1,7 @@
 ---
 id: 0061
 title: The judge of the write set judges each change of a merge, and its tests hold each rule
-status: Active
+status: Done
 phase: P0.23
 opened: 2026-10-11
 depends-on: [0060]
@@ -117,3 +117,4 @@ steps of the workflow itself.
 - 2026-10-11: reopened. Run 38167418801 failed in the marker gate on the three runners: the comment of
   RealPath held a marker word with no register identifier. I ran only the tests of the judge before
   that commit, and not the full suite.
+- 2026-10-11: closed again, after a full local run of 327 tests.
