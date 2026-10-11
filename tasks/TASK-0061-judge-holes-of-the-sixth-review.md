@@ -1,7 +1,7 @@
 ---
 id: 0061
 title: The judge of the write set judges each change of a merge, and its tests hold each rule
-status: Done
+status: Active
 phase: P0.23
 opened: 2026-10-11
 depends-on: [0060]
@@ -110,3 +110,6 @@ steps of the workflow itself.
 - 2026-10-11: the task is open, in the order of the owner of 2026-10-11.
 - 2026-10-11: closed. The judge reads each change of a merge, and each rule fails a test when it is
   removed.
+- 2026-10-11: reopened. Run 37167055691 failed on macOS in the test of a link: RealPath did not resolve
+  the target of a link again, and the folder of temporary files of macOS is under /var, a link to
+  /private/var. RealPath now resolves each target again from its root.

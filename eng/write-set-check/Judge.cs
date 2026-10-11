@@ -127,17 +127,28 @@ public sealed class Judge
     }
 
     // The full path with each part that is a link or a junction resolved, from the
-    // root of the path to its end.
-    private static string RealPath(string path)
+    // root of the path to its end. The target of a link is a path that can hold
+    // links too, so the target is resolved again from its root; on macOS the
+    // folder of temporary files is under /var, which is a link to /private/var.
+    // The first form of this method did not resolve the target again, and a run
+    // on macOS failed its test.
+    private static string RealPath(string path, int depth = 0)
     {
+        if (depth > 32)
+            throw new IOException($"The path {path} holds more than 32 links in a chain.");
+
         var full = Path.GetFullPath(path);
         var current = Path.GetPathRoot(full)!;
         foreach (var part in full[current.Length..].Split(Path.DirectorySeparatorChar, StringSplitOptions.RemoveEmptyEntries))
         {
             current = Path.Combine(current, part);
             FileSystemInfo info = Directory.Exists(current) ? new DirectoryInfo(current) : new FileInfo(current);
-            if (info.LinkTarget is not null)
-                current = Path.GetFullPath(info.ResolveLinkTarget(returnFinalTarget: true)?.FullName ?? current);
+            if (info.LinkTarget is null)
+                continue;
+
+            var target = info.ResolveLinkTarget(returnFinalTarget: true)?.FullName;
+            if (target is not null)
+                current = RealPath(target, depth + 1);
         }
 
         return current;
