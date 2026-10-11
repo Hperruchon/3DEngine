@@ -284,6 +284,13 @@ commit; the branch protection of the owner closes the force push. T4, T5, T7, T1
 T23, T24 and T25 stay.
 Progress 2026-10-10: TASK-0058 corrected T27: the process test of a port key asserts that no address
 was bound, and an injected bind before the refusal failed it.
+Progress 2026-10-11: the codebase review of 2026-10-11 corrects the line of 2026-10-09 that says a
+branch protection on GitHub closes the case of a task that changes `.github/workflows/ci.yml`. It does
+not: a protection against a force push leaves a commit that edits the workflow free to change the job
+of the same run (T38); question Q2 of that review gives the options. The review also finds T31 open
+again (six bypasses of the four texts), a lost rule of the judge for a merge (T36), tests that do not
+hold each rule (T37), and two smaller gaps (T39, T40). TASK-0061 holds T36 to T40; question Q1 holds
+T31.
 
 ### R-0033 · Seven findings of the third codebase review in the engine and the hosts have no task
 - class: debt
