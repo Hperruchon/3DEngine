@@ -6,7 +6,7 @@ namespace Engine.Contracts.Geometry;
 // IGeometryBackend.TryGet<T>().
 //
 // V1 ships Mesh + Query. Transform + Booleans land in ADR-0012 (Amendment 1,
-// P7c). BRep, ExactBooleans (exact/BRep booleans, distinct from the mesh
+// P7c). Tessellation lands in ADR-0018 (TASK-0028). BRep, ExactBooleans (exact/BRep booleans, distinct from the mesh
 // Booleans here), FaceIds, Offset, Fillet are reserved per ADR-0001 §1.
 [Flags]
 public enum BackendCapabilities
@@ -16,4 +16,5 @@ public enum BackendCapabilities
     Query     = 1 << 1,
     Transform = 1 << 2,
     Booleans  = 1 << 3,
+    Tessellation = 1 << 4,
 }

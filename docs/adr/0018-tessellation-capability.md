@@ -14,7 +14,7 @@ affects:
   - Engine.Geometry.Manifold/**
   - Engine.Cli/Cli.cs
   - Engine.Api.Http/Endpoints/QueriesEndpoint.cs
-enforced-by: Engine.Tests/Queries/GetTessellationQueryTests.cs (TASK-0028 creates it)
+enforced-by: Engine.Tests/Queries/GetTessellationQueryTests.cs
 ---
 
 # ADR-0018 — The tessellation capability
