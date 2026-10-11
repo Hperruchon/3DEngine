@@ -161,10 +161,10 @@ public static class Cli
 
         var query = handler.Create(new QueryInput(bound.Values!, Guid.NewGuid()));
 
-        // The CLI renders one concrete result type. GetBoundingBox is the only
-        // registered query, and its result is an Aabb. A second query type
-        // needs a typed render path; see ADR-0016 "Next".
-        var typed = await session.Query<Aabb>(query, ct).ConfigureAwait(false);
+        // The CLI holds each result as an object and writes its fields as JSON,
+        // so a new query needs no change here (ADR-0018 item 7, TASK-0028).
+        // Until TASK-0028 the CLI read each result as an Aabb.
+        var typed = await session.Query<object>(query, ct).ConfigureAwait(false);
         JsonRenderer.WriteQueryResult(typed, stdout);
         return typed.Error is null ? ExitApplied : ExitRejected;
 
