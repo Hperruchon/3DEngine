@@ -1932,3 +1932,31 @@ New tests: 16 (15 in `3DEngine.Tests`, 1 in the dependency gate). The test list 
 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open entries: 14 of 15. New diagnostic
 codes: none. The first objective now needs R4 to R6: 15 to 21 evenings. The next codebase review must
 come before ledger entry v0.71.
+
+## v0.69 — An orbit camera, reversed depth, and a draw list over the scene graph (R4, TASK-0070)
+
+Roadmap phase R4, in the batch R2 to R6. The owner answered four questions on R4 on 2026-10-12, and
+ADR-0023 records the answers: reversed depth, an orbit camera that the mouse moves now, the scene graph
+`Scene` and `Entity`, and a draw list with direct draws.
+
+**The change.**
+
+- The render pass has a depth attachment of `D32_SFLOAT`, cleared to 0, and the pipeline keeps the
+  greater depth.
+- The `Camera` of `3DEngine.Core` is an orbit camera: a target in double precision, a distance, a yaw
+  and a pitch, a view with the eye at the origin, and a reversed perspective projection.
+- `IDrawList`, `DrawList` and `SceneWalker` in `3DEngine.Core`: at each frame the walk of the graph gives
+  one record for each entity with a mesh, with its model-view matrix relative to the eye.
+- `DrawListExecutor`, `GpuMesh` and `DepthBuffer` in `3DEngine.Vulkan`, which now references
+  `3DEngine.Core`, as ADR-0017 item 2 permits.
+- The desktop draws two overlapping copies of the cut body; a left drag orbits and the wheel zooms.
+- The roadmap line of R4 and the glossary say what the owner decided.
+
+**Proof.** The owner accepted two pictures: the first view, and the view after a drag that a script sent.
+Neither run gave a validation message. An injected standard projection failed two of the eleven new
+tests.
+
+New tests: 11. The test list holds 396 (370 in `Engine.Tests`, 26 in `3DEngine.Tests`). `dotnet build
+3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open entries: 14 of 15. New diagnostic
+codes: none. The first objective now needs R5 and R6: 10 to 14 evenings. The next codebase review must
+come before ledger entry v0.71, so it comes after R5.

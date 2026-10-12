@@ -51,6 +51,27 @@ public class PipelineStateTests
         (double X, double Y, double Z) Point(uint index) => (positions[3 * index], positions[3 * index + 1], positions[3 * index + 2]);
     }
 
+    // Reversed depth is one choice of three parts (ADR-0023 item 1): the clear gives
+    // the depth of the far plane, the projection gives a nearer point a greater
+    // depth, and the pipeline keeps the greater depth. A change of one part alone
+    // shows the far body over the near one.
+    [Fact]
+    public void The_Clear_The_Projection_And_The_Comparison_Agree_So_That_A_Nearer_Fragment_Wins()
+    {
+        var camera = new ThreeDEngine.Core.Models.Camera { NearPlane = 0.1f, FarPlane = 1000f };
+        var projection = camera.Projection(1f);
+        float Depth(float z)
+        {
+            var clip = System.Numerics.Vector4.Transform(new System.Numerics.Vector4(0, 0, z, 1), projection);
+            return clip.Z / clip.W;
+        }
+
+        Assert.Equal(VkFormat.D32Sfloat, DepthBuffer.Format);
+        Assert.Equal(DepthBuffer.ClearDepth, Depth(-camera.FarPlane), 5);
+        Assert.Equal(VkCompareOp.Greater, RenderPipeline.DepthCompare);
+        Assert.True(Depth(-5f) > Depth(-50f));
+    }
+
     [Fact]
     public void A_Counter_Clockwise_Triangle_Is_The_Front_Face_And_The_Back_Face_Is_Culled()
     {

@@ -1,28 +1,23 @@
 #version 450
 
-// The indexed mesh of roadmap phase R3 (TASK-0069, ADR-0022). Each position arrives
-// as three 32-bit floats, centred on the origin and scaled into the unit sphere
-// (MeshVertex.Narrow). One fixed rotation shows three faces of a box; R4 brings a
-// camera and depth. The push constant gives the width of the extent divided by its
-// height, so that a square stays a square.
+// The mesh shader of the renderer (TASK-0069, TASK-0070). Each position arrives as
+// three 32-bit floats, relative to the origin of its mesh (MeshVertex.Narrow). The
+// push constant gives the model-view matrix of the draw, relative to the eye
+// (ADR-0023 item 2), and the reversed perspective projection (ADR-0023 item 1).
 
 layout(location = 0) in vec3 position;
 
-layout(push_constant) uniform Frame
+layout(push_constant) uniform Draw
 {
-    float aspect;
-} frame;
+    mat4 modelView;
+    mat4 projection;
+} draw;
 
 layout(location = 0) out vec3 viewPosition;
 
-// A rotation of 25 degrees about x after -35 degrees about y, in columns.
-const mat3 view = mat3(
-    vec3(0.819152, -0.242404, 0.519837),
-    vec3(0.000000, 0.906308, 0.422618),
-    vec3(-0.573576, -0.346189, 0.742404));
-
 void main()
 {
-    viewPosition = view * position;
-    gl_Position = vec4(viewPosition.x * 0.8 / frame.aspect, viewPosition.y * 0.8, 0.5, 1.0);
+    vec4 inView = draw.modelView * vec4(position, 1.0);
+    viewPosition = inView.xyz;
+    gl_Position = draw.projection * inView;
 }

@@ -26,4 +26,10 @@
     <PackageReference Include="Vortice.Vulkan" Version="3.2.3" />
   </ItemGroup>
 
+  <ItemGroup>
+    <!-- The draw list of the render kernel (ADR-0023 item 4). ADR-0017 item 2 permits
+         this reference and no other project reference. -->
+    <ProjectReference Include="../3DEngine.Core/3DEngine.Core.csproj" />
+  </ItemGroup>
+
 </Project>

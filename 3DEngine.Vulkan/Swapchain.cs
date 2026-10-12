@@ -22,6 +22,9 @@ public sealed unsafe class Swapchain : IDisposable
     public VkExtent2D Extent { get; }
     public VkFramebuffer[] Framebuffers { get; }
 
+    // The depth image of the render pass (ADR-0023 item 1, TASK-0070).
+    public DepthBuffer Depth { get; }
+
     public Swapchain(GraphicsDevice device, VkSurfaceKHR surface, Window window)
     {
         Device = device;
@@ -33,6 +36,7 @@ public sealed unsafe class Swapchain : IDisposable
         VkSurfaceFormatKHR surfaceFormat = ChooseSwapSurfaceFormat(swapChainSupport.Formats);
         VkPresentModeKHR presentMode = ChooseSwapPresentMode(swapChainSupport.PresentModes);
         Extent = ChooseSwapExtent(swapChainSupport.Capabilities);
+        Depth = new DepthBuffer(device, Extent);
 
         CreateRenderPass(surfaceFormat.format);
 
@@ -79,7 +83,7 @@ public sealed unsafe class Swapchain : IDisposable
                 );
 
             Device.DeviceApi.vkCreateImageView(&viewCreateInfo, null, out _swapChainImageViews[i]).CheckResult();
-            Device.DeviceApi.vkCreateFramebuffer(RenderPass, new[] { _swapChainImageViews[i] }, Extent, 1u, out Framebuffers[i]);
+            Device.DeviceApi.vkCreateFramebuffer(RenderPass, new[] { _swapChainImageViews[i], Depth.View }, Extent, 1u, out Framebuffers[i]);
         }
     }
 
@@ -96,6 +100,7 @@ public sealed unsafe class Swapchain : IDisposable
         }
 
         Device.DeviceApi.vkDestroyRenderPass(RenderPass);
+        Depth.Dispose();
 
         if (Handle != VkSwapchainKHR.Null)
         {
@@ -118,13 +123,27 @@ public sealed unsafe class Swapchain : IDisposable
             VkImageLayout.Undefined, VkImageLayout.PresentSrcKHR
         );
 
+        // The depth attachment (ADR-0023 item 1): cleared at the start of the pass, and
+        // not stored, because no later pass reads it.
+        VkAttachmentDescription* attachments = stackalloc VkAttachmentDescription[2];
+        attachments[0] = attachment;
+        attachments[1] = new VkAttachmentDescription(
+            DepthBuffer.Format,
+            VkSampleCountFlags.Count1,
+            VkAttachmentLoadOp.Clear, VkAttachmentStoreOp.DontCare,
+            VkAttachmentLoadOp.DontCare, VkAttachmentStoreOp.DontCare,
+            VkImageLayout.Undefined, VkImageLayout.DepthStencilAttachmentOptimal
+        );
+
         VkAttachmentReference colorAttachmentRef = new VkAttachmentReference(0, VkImageLayout.ColorAttachmentOptimal);
+        VkAttachmentReference depthAttachmentRef = new VkAttachmentReference(1, VkImageLayout.DepthStencilAttachmentOptimal);
 
         VkSubpassDescription subpass = new VkSubpassDescription
         {
             pipelineBindPoint = VkPipelineBindPoint.Graphics,
             colorAttachmentCount = 1,
-            pColorAttachments = &colorAttachmentRef
+            pColorAttachments = &colorAttachmentRef,
+            pDepthStencilAttachment = &depthAttachmentRef
         };
 
         VkSubpassDependency[] dependencies = new VkSubpassDependency[2];
@@ -133,10 +152,10 @@ public sealed unsafe class Swapchain : IDisposable
         {
             srcSubpass = VK_SUBPASS_EXTERNAL,
             dstSubpass = 0,
-            srcStageMask = VkPipelineStageFlags.BottomOfPipe,
-            dstStageMask = VkPipelineStageFlags.ColorAttachmentOutput,
-            srcAccessMask = VkAccessFlags.MemoryRead,
-            dstAccessMask = VkAccessFlags.ColorAttachmentRead | VkAccessFlags.ColorAttachmentWrite,
+            srcStageMask = VkPipelineStageFlags.BottomOfPipe | VkPipelineStageFlags.LateFragmentTests,
+            dstStageMask = VkPipelineStageFlags.ColorAttachmentOutput | VkPipelineStageFlags.EarlyFragmentTests,
+            srcAccessMask = VkAccessFlags.MemoryRead | VkAccessFlags.DepthStencilAttachmentWrite,
+            dstAccessMask = VkAccessFlags.ColorAttachmentRead | VkAccessFlags.ColorAttachmentWrite | VkAccessFlags.DepthStencilAttachmentWrite,
             dependencyFlags = VkDependencyFlags.ByRegion
         };
 
@@ -155,8 +174,8 @@ public sealed unsafe class Swapchain : IDisposable
         {
             VkRenderPassCreateInfo createInfo = new()
             {
-                attachmentCount = 1,
-                pAttachments = &attachment,
+                attachmentCount = 2,
+                pAttachments = attachments,
                 subpassCount = 1,
                 pSubpasses = &subpass,
                 dependencyCount = 2,

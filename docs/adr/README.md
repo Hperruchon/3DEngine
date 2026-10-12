@@ -38,6 +38,7 @@ names. Do not read all of them.
 | [0020](0020-document-version-meaning.md) | The meaning of the document version | Accepted | Contracts, runtime, observability | 0006, 0008, 0010 | — |
 | [0021](0021-operand-consumption.md) | Operand consumption and the live body set | Accepted | Contracts, geometry, observability | 0012 | — |
 | [0022](0022-first-render-pipeline.md) | The first render pipeline | Accepted | Rendering, boundary | 0009, 0017 | — |
+| [0023](0023-camera-depth-and-draw-list.md) | The camera, the depth and the draw list of the renderer | Accepted | Rendering | — | — |
 
 ## Topics
 
@@ -48,7 +49,7 @@ names. Do not read all of them.
 - **Deployment** — 0011, 0019. Read these before changing where a session runs or which transport a host uses.
 - **Geometry** — 0001, 0012, 0014, 0018, 0021. Read before adding a capability or backend.
 - **Observability** — 0005, 0010, 0013, 0020, 0021. Read before changing event ordering, retention, subscription, or schema endpoints.
-- **Rendering** — 0009, 0017, 0018, 0022. Read these before changing `3DEngine.Core`, `3DEngine.Vulkan` or `3DEngine`.
+- **Rendering** — 0009, 0017, 0018, 0022, 0023. Read these before changing `3DEngine.Core`, `3DEngine.Vulkan` or `3DEngine`.
 
 ## Adding an ADR
 

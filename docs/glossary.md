@@ -45,6 +45,14 @@ observation of a change, and it appears only in the event stream.
 | **capability (`TryGet<T>`)** | A typed geometry interface negotiated at runtime via `IGeometryBackend.TryGet<T>()` (e.g. `IMeshOps`, `IGeometryQuery`, `ITransformOps`, `IBooleanOps`, `ITessellationOps`; reserved `IBRepOps`/`IFeatureIdMap`); declared by `BackendCapabilities`. Returns null, never silently falls back. | `Engine.Contracts/Geometry/` · ADR-0001 §1, ADR-0012 §1 (Amendment 1) |
 | **tessellation** | The triangles of a body: `Positions` (x, y and z of each vertex, double precision) and `Indices` (three for each triangle, counter-clockwise when seen from outside). A presentation output of the query `GetTessellation`; it never enters a command, an event, the Document or the log. Only the native backend gives it. | `Engine.Contracts/Geometry/Tessellation.cs` · ADR-0018 · TASK-0028 |
 
+## Rendering
+
+| Term | Meaning | Defined / decided |
+|---|---|---|
+| **draw list** | The draws of one frame: one record for each entity that has a mesh, with the mesh and its model-view matrix relative to the eye. The host fills it from the scene graph, and the Vulkan layer executes it with one direct draw for each record. | `3DEngine.Core/Rendering/DrawList.cs` · ADR-0023 · TASK-0070 |
+| **reversed depth** | The near plane gets depth 1 and the far plane depth 0, the depth buffer is cleared to 0, and a fragment with a greater depth wins. A float holds the most precision near 0, which this gives to the far range. | `3DEngine.Core/Models/Camera.cs` · ADR-0023 |
+| **relative to the eye** | Each position is moved by minus the eye of the camera in double precision before it is narrowed to float, so a body far from the origin of the engine keeps its detail. | `3DEngine.Core/Rendering/SceneWalker.cs` · ADR-0023 |
+
 ## Concepts
 
 | Term | Meaning | Defined / decided |

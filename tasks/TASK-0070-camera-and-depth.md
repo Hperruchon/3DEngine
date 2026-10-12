@@ -1,0 +1,122 @@
+---
+id: 0070
+title: The desktop draws a scene with depth through an orbit camera and a draw list
+status: Done
+phase: R4
+opened: 2026-10-12
+depends-on: [0069]
+governed-by: [0007, 0009, 0017, 0019, 0022, 0023]
+writes:
+  create:
+    - tasks/TASK-0070-camera-and-depth.md
+    - docs/adr/0023-camera-depth-and-draw-list.md
+  modify:
+    - 3DEngine.Core/**
+    - 3DEngine.Vulkan/**
+    - 3DEngine/**
+    - 3DEngine.Tests/**
+    - docs/adr/README.md
+    - docs/INDEX.md
+    - docs/glossary.md
+    - docs/roadmap.md
+    - docs/register.md
+    - docs/CURRENT-STATE.md
+  forbid:
+    - Engine.Contracts/**
+    - Engine.Core/**
+    - Engine.Cli/**
+    - Engine.Api.Http/**
+    - Engine.Api.Http.Server/**
+    - Engine.Geometry.Manifold/**
+    - Engine.Tests/**
+    - eng/**
+---
+
+# TASK-0070 — The desktop draws a scene with depth through an orbit camera and a draw list
+
+This task uses Simplified Technical English (ASD-STE100). See `CLAUDE.md`, section "Language".
+
+## Context
+
+Roadmap phase R4: "A camera with depth." R3 (TASK-0069) draws one mesh with a fixed view and no depth
+buffer. On 2026-10-12 the owner answered four questions on R4; ADR-0023 records the answers: reversed
+depth, an orbit camera with the mouse now, the object graph `Scene` and `Entity`, and a draw list with
+direct draws.
+
+## Goal
+
+The desktop draws a scene of several entities with a depth buffer, through an orbit camera that the
+mouse moves, and each draw goes through the draw list.
+
+## Scope (in)
+
+1. ADR-0023 and its index row; the roadmap line of R4 says what the owner decided.
+2. A depth attachment of `D32_SFLOAT` in the render pass, cleared to 0, and a pipeline that keeps the
+   greater depth.
+3. The orbit camera of `3DEngine.Core`, with a reversed perspective projection, and the matrices of each
+   model relative to the eye in double precision.
+4. `IDrawList` in `3DEngine.Core`, the walk of the scene that fills it, and its executor in
+   `3DEngine.Vulkan` with one direct indexed draw for each record.
+5. The desktop: a scene with two overlapping copies of the cut body of the first demonstration; a left
+   drag orbits and the wheel zooms.
+6. Tests with no GPU: the projection, the orbit, the relative matrices, and the walk of the scene.
+
+## Scope (out)
+
+- No geometry from the engine (R5), no image test (R6), no input layer (R7).
+- No indirect draw and no flat array (ADR-0023 items 3 and 4).
+
+## Acceptance criteria
+
+- [x] A picture of the window shows the two bodies with the correct overlap, and a second picture after
+      an orbit shows them from another side. The owner accepts the pictures (2026-10-12).
+- [x] A run of the desktop gives no validation message.
+- [x] Each new test fails before its correction, or an injection shows that it can fail. An injected
+      standard projection failed two tests.
+- [x] A clean build (`--no-incremental`) gives zero errors and zero warnings.
+- [ ] Continuous integration passes on `ubuntu-latest`, `windows-latest` and `macos-latest`. The
+      merge records the run.
+
+## Outcome
+
+Status: Done · v0.69 · the commit that carries this block.
+
+The desktop draws a scene of two overlapping copies of the cut body with reversed depth, through an
+orbit camera that a left drag of the mouse turns and the wheel zooms. At each frame `SceneWalker` walks
+the scene graph into a draw list of model-view matrices relative to the eye, and `DrawListExecutor`
+draws each record with one direct indexed draw. ADR-0023 records the four answers of the owner.
+
+## Method
+
+**Mechanical.** Two pictures of the window, the second after a drag of the mouse that a script sent
+(`SetCursorPos` and `mouse_event` of Windows on the window of the desktop only), with no validation
+message in either run. Eleven new tests with no GPU: the eye, the yaw, the limits of the pitch and the
+zoom, the view, the reversed projection, the walk of the graph and its children, the matrix relative to
+the eye, and the agreement of the clear, the projection and the comparison. An injected standard
+projection failed two of them.
+
+**Judgement.** The matrices are relative to the eye: the position of each entity is moved by minus the
+eye in double precision, and only the result is narrowed. The positions of the entities are still floats
+in `Transform`, so a body far from the origin of the scene loses detail before the walk; R5 must place
+the bodies of the engine with double precision. The Vulkan layer references `3DEngine.Core` for the draw
+list, which ADR-0017 item 2 permits.
+
+**Weakest.** The wheel zoom was not tried in the window; a test holds its limits. No test draws a frame;
+R6 adds an image test. The depth image is not made again when the extent changes, because the window
+cannot change its size today (V2 of the reviews).
+
+## Notes for the implementer
+
+- **The pictures.** The owner told me to run the desktop and show a picture of the window
+  (TASK-0069). An orbit for the second picture can come from a drag of the mouse that a script sends.
+- **The size.** About 5 to 7 evenings.
+
+## Progress
+
+- 2026-10-12: the task is open, with ADR-0023, after the answers of the owner on R4.
+- 2026-10-12: the work. The depth image and the depth state, the orbit camera with its reversed
+  projection, `IDrawList` and `SceneWalker` in `3DEngine.Core`, `DrawListExecutor` and `GpuMesh` in
+  `3DEngine.Vulkan`, and a scene of two copies of the cut body in the desktop. Two pictures: the first
+  view, and the view after a drag that a script sent; no validation message. An injected standard
+  projection failed two tests.
+- 2026-10-12: the owner accepted both pictures. Closed, after a full local run of 396 tests.
