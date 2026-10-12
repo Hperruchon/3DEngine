@@ -32,6 +32,15 @@ public class MeshVertexTests
     }
 
     [Fact]
+    public void The_Centre_Is_The_Middle_Of_The_Box_Of_The_Positions()
+    {
+        var centre = MeshVertex.Centre([-5, -5, -5, 0, 5, 5, -5, 5, -5]);
+
+        Assert.Equal((-2.5, 0.0, 0.0), centre);
+        Assert.Throws<ArgumentException>(() => MeshVertex.Centre([]));
+    }
+
+    [Fact]
     public void A_List_Of_Positions_That_Is_Not_A_Multiple_Of_Three_Is_Refused()
     {
         Assert.Throws<ArgumentException>(() => MeshVertex.Narrow([1, 2], (0, 0, 0), 1));

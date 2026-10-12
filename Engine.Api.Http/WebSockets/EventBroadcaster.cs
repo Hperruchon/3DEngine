@@ -26,6 +26,7 @@ internal sealed class EventBroadcaster
 {
     private readonly object _lock = new();
     private readonly List<Subscriber> _subscribers = new();
+    private readonly List<Action<EventRecord>> _listeners = new();
 
     public int SubscriberCount
     {
@@ -87,10 +88,26 @@ internal sealed class EventBroadcaster
         lock (_lock) _subscribers.Remove(subscriber);
     }
 
+    // An action of the host that owns the session (ADR-0024 item 1, TASK-0071). It
+    // receives each later event, inside the commit, until the result is disposed.
+    // A caller that also reads the session calls this inside DocumentSession.Read,
+    // so that no commit falls between the read and the first event.
+    public IDisposable Listen(Action<EventRecord> action)
+    {
+        ArgumentNullException.ThrowIfNull(action);
+        lock (_lock) _listeners.Add(action);
+        return new Listening(this, action);
+    }
+
     public void OnEvent(EventRecord record)
     {
         Subscriber[] snapshot;
-        lock (_lock) snapshot = _subscribers.ToArray();
+        Action<EventRecord>[] listeners;
+        lock (_lock)
+        {
+            snapshot = _subscribers.ToArray();
+            listeners = _listeners.ToArray();
+        }
 
         foreach (var subscriber in snapshot)
         {
@@ -98,5 +115,29 @@ internal sealed class EventBroadcaster
             // and will drain + close on its own. Other subscribers continue.
             subscriber.TryEnqueue(record);
         }
+
+        // An action that throws is a defect of its host. It is removed, and the
+        // commit and each other action continue (ADR-0024 item 1).
+        foreach (var listener in listeners)
+        {
+            try
+            {
+                listener(record);
+            }
+            catch (Exception)
+            {
+                Unlisten(listener);
+            }
+        }
+    }
+
+    private void Unlisten(Action<EventRecord> action)
+    {
+        lock (_lock) _listeners.Remove(action);
+    }
+
+    private sealed class Listening(EventBroadcaster broadcaster, Action<EventRecord> action) : IDisposable
+    {
+        public void Dispose() => broadcaster.Unlisten(action);
     }
 }

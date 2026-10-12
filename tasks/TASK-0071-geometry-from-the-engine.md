@@ -83,3 +83,8 @@ and it goes when a command consumes it.
 ## Progress
 
 - 2026-10-12: the task is open, with ADR-0024, after the answers of the owner on R5.
+- 2026-10-12: the work. `EngineHost.Subscribe` and the actions of the broadcaster, `Entity.Origin` and
+  the walk in double precision, `MeshVertex.Centre`, and `SessionBodies` in the desktop, which replaces
+  the fixed mesh. Three pictures while a script sent the first demonstration over HTTP: the empty
+  window, the two boxes, and the cut body; no validation message. An injected rethrow in the
+  broadcaster and an injected float origin each failed their test.

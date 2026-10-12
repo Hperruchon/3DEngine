@@ -66,5 +66,13 @@ public sealed class EngineHost : IDisposable
     // and a test reads the version only when no command runs.
     internal Document Document { get; }
 
+    // Gives each later event of the session to the action, after its commit and in
+    // the order of the commits: the same events that /events gives (ADR-0024 item 1,
+    // ADR-0019 item 2). The action runs inside the commit, so it must not call the
+    // session and must not block; a host puts the event in a queue. An action that
+    // throws is removed. To read the live bodies and subscribe with no gap, call this
+    // inside Session.Read. Dispose the result to stop.
+    public IDisposable Subscribe(Action<EventRecord> action) => Broadcaster.Listen(action);
+
     public void Dispose() => (Backend as IDisposable)?.Dispose();
 }

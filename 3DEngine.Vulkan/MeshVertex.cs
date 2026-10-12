@@ -25,6 +25,25 @@ public static class MeshVertex
         offset = 0,
     };
 
+    // The centre of the box of the positions, in double precision; a host narrows a
+    // mesh around it and places the mesh at it (ADR-0024 item 2).
+    public static (double X, double Y, double Z) Centre(ReadOnlySpan<double> positions)
+    {
+        if (positions.Length == 0 || positions.Length % 3 != 0)
+            throw new ArgumentException("A mesh has at least one position of three values.", nameof(positions));
+
+        double minX = double.MaxValue, minY = double.MaxValue, minZ = double.MaxValue;
+        double maxX = double.MinValue, maxY = double.MinValue, maxZ = double.MinValue;
+        for (var i = 0; i < positions.Length; i += 3)
+        {
+            (minX, maxX) = (Math.Min(minX, positions[i]), Math.Max(maxX, positions[i]));
+            (minY, maxY) = (Math.Min(minY, positions[i + 1]), Math.Max(maxY, positions[i + 1]));
+            (minZ, maxZ) = (Math.Min(minZ, positions[i + 2]), Math.Max(maxZ, positions[i + 2]));
+        }
+
+        return ((minX + maxX) / 2, (minY + maxY) / 2, (minZ + maxZ) / 2);
+    }
+
     // Each position minus the origin, times the scale, narrowed to float. The
     // subtraction is in double precision, before the narrowing, so a body far from
     // the origin of the engine keeps its detail (roadmap phase R5).
