@@ -23,6 +23,34 @@ public class PipelineStateTests
         Assert.Equal(1f, viewport.maxDepth);
     }
 
+    // The other half of the choice: the triangles that the engine gives face out of
+    // the body. With y up, the screen area of a triangle has the sign of the z part
+    // of its normal, so the culling keeps each face that points to the viewer. The
+    // mesh is the cut body of the first demonstration, as GetTessellation gave it
+    // (TASK-0028) and as the desktop draws it; a box looks the same from inside, so
+    // a picture of the window cannot show this.
+    [Fact]
+    public void Each_Triangle_Of_The_First_Demonstration_Faces_Out_Of_The_Body()
+    {
+        double[] positions = [-5, -5, -5, -5, -5, 5, -5, 5, -5, -5, 5, 5, 0, -5, -5, 0, -5, 5, 0, 5, -5, 0, 5, 5];
+        uint[] indices = [0, 2, 4, 0, 1, 3, 0, 5, 1, 0, 3, 2, 2, 3, 6, 1, 7, 3, 0, 4, 5, 1, 5, 7, 2, 6, 4, 3, 7, 6, 5, 4, 7, 6, 7, 4];
+        (double X, double Y, double Z) centre = (-2.5, 0, 0);
+
+        for (var t = 0; t < indices.Length; t += 3)
+        {
+            var (a, b, c) = (Point(indices[t]), Point(indices[t + 1]), Point(indices[t + 2]));
+            var (ux, uy, uz) = (b.X - a.X, b.Y - a.Y, b.Z - a.Z);
+            var (vx, vy, vz) = (c.X - a.X, c.Y - a.Y, c.Z - a.Z);
+            var normal = (X: uy * vz - uz * vy, Y: uz * vx - ux * vz, Z: ux * vy - uy * vx);
+            var outward = (a.X + b.X + c.X) / 3 - centre.X;
+            var dot = normal.X * outward + normal.Y * ((a.Y + b.Y + c.Y) / 3 - centre.Y) + normal.Z * ((a.Z + b.Z + c.Z) / 3 - centre.Z);
+
+            Assert.True(dot > 0, $"Triangle {t / 3} faces into the body.");
+        }
+
+        (double X, double Y, double Z) Point(uint index) => (positions[3 * index], positions[3 * index + 1], positions[3 * index + 2]);
+    }
+
     [Fact]
     public void A_Counter_Clockwise_Triangle_Is_The_Front_Face_And_The_Back_Face_Is_Culled()
     {

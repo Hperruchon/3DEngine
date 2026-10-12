@@ -297,6 +297,21 @@ public unsafe sealed class GraphicsDevice : IDisposable
         return module;
     }
 
+    // The index of a memory type of this device that the bits permit and that has
+    // each wanted property (MemoryTypes.Find).
+    public uint FindMemoryType(uint permittedTypeBits, VkMemoryPropertyFlags wanted)
+    {
+        InstanceApi.vkGetPhysicalDeviceMemoryProperties(PhysicalDevice, out VkPhysicalDeviceMemoryProperties properties);
+        var typeProperties = new VkMemoryPropertyFlags[properties.memoryTypeCount];
+        for (var index = 0; index < typeProperties.Length; index++)
+            typeProperties[index] = properties.memoryTypes[index].propertyFlags;
+
+        var found = MemoryTypes.Find(permittedTypeBits, typeProperties, wanted);
+        return found >= 0
+            ? (uint)found
+            : throw new InvalidOperationException($"No memory type of the device has the properties {wanted}.");
+    }
+
     public void WaitIdle()
     {
         DeviceApi.vkDeviceWaitIdle().CheckResult();

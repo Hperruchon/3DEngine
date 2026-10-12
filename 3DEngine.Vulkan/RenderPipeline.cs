@@ -2,9 +2,10 @@ using Vortice.Vulkan;
 
 namespace ThreeDEngine.Vulkan;
 
-// A graphics pipeline in subpass 0 of the render pass of the swapchain (ADR-0022
-// item 2, roadmap phase R3). The fixed state below is the same for each pipeline of
-// R3, and a test reads it with no GPU.
+// The graphics pipeline of a mesh, in subpass 0 of the render pass of the swapchain
+// (ADR-0022 item 2, roadmap phase R3). It reads one MeshVertex for each vertex, and
+// one push constant for the vertex shader: the width of the extent divided by its
+// height. A test reads the fixed state below with no GPU.
 //
 // The viewport has a negative height, so y points up in clip space, as in the
 // space of the engine. A triangle that is counter-clockwise when seen from outside
@@ -16,6 +17,7 @@ public sealed unsafe class RenderPipeline : IDisposable
     public const VkPrimitiveTopology Topology = VkPrimitiveTopology.TriangleList;
     public const VkCullModeFlags CullMode = VkCullModeFlags.Back;
     public const VkFrontFace FrontFace = VkFrontFace.CounterClockwise;
+    public const uint PushConstantSize = sizeof(float);
 
     private readonly GraphicsDevice _device;
 
@@ -27,7 +29,8 @@ public sealed unsafe class RenderPipeline : IDisposable
         VkShaderModule fragment = device.CreateShaderModule(ShaderLibrary.Load(fragmentShader));
         try
         {
-            VkPipelineLayoutCreateInfo layoutInfo = new();
+            VkPushConstantRange pushConstant = new() { stageFlags = VkShaderStageFlags.Vertex, offset = 0, size = PushConstantSize };
+            VkPipelineLayoutCreateInfo layoutInfo = new() { pushConstantRangeCount = 1, pPushConstantRanges = &pushConstant };
             device.DeviceApi.vkCreatePipelineLayout(&layoutInfo, null, out VkPipelineLayout layout).CheckResult();
             Layout = layout;
 
@@ -37,7 +40,15 @@ public sealed unsafe class RenderPipeline : IDisposable
                 stages[0] = new VkPipelineShaderStageCreateInfo { stage = VkShaderStageFlags.Vertex, module = vertex, pName = main };
                 stages[1] = new VkPipelineShaderStageCreateInfo { stage = VkShaderStageFlags.Fragment, module = fragment, pName = main };
 
-                VkPipelineVertexInputStateCreateInfo vertexInput = new();
+                VkVertexInputBindingDescription binding = MeshVertex.Binding;
+                VkVertexInputAttributeDescription position = MeshVertex.Position;
+                VkPipelineVertexInputStateCreateInfo vertexInput = new()
+                {
+                    vertexBindingDescriptionCount = 1,
+                    pVertexBindingDescriptions = &binding,
+                    vertexAttributeDescriptionCount = 1,
+                    pVertexAttributeDescriptions = &position,
+                };
                 VkPipelineInputAssemblyStateCreateInfo inputAssembly = new() { topology = Topology };
                 VkPipelineViewportStateCreateInfo viewportState = new() { viewportCount = 1, scissorCount = 1 };
                 VkPipelineRasterizationStateCreateInfo rasterization = new()
@@ -97,12 +108,15 @@ public sealed unsafe class RenderPipeline : IDisposable
         maxDepth = 1,
     };
 
-    // Binds the pipeline and sets the viewport and the scissor of the extent.
+    // Binds the pipeline, sets the viewport and the scissor of the extent, and gives
+    // the aspect of the extent to the vertex shader.
     public void Bind(VkCommandBuffer commandBuffer, VkExtent2D extent)
     {
         _device.DeviceApi.vkCmdBindPipeline(commandBuffer, VkPipelineBindPoint.Graphics, Handle);
         _device.DeviceApi.vkCmdSetViewport(commandBuffer, 0, Viewport(extent));
         _device.DeviceApi.vkCmdSetScissor(commandBuffer, 0, new VkRect2D(0, 0, extent.width, extent.height));
+        float aspect = (float)extent.width / extent.height;
+        _device.DeviceApi.vkCmdPushConstants(commandBuffer, Layout, VkShaderStageFlags.Vertex, 0, PushConstantSize, &aspect);
     }
 
     // The caller waits until the device is idle before it disposes a pipeline.

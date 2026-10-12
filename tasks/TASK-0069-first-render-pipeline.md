@@ -106,3 +106,11 @@ The desktop window shows a triangle, and then an indexed mesh, through a pipelin
   `3DEngine.Vulkan/Shaders/compile.js` with shaderc v2023.8 of the Vulkan SDK 1.3.290; `ShaderLibrary`,
   `RenderPipeline` and the helper of a shader module; the desktop draws the triangle. A change of
   `triangle.frag` with no new compile failed `ShaderSourceTests`. The owner must look at the window.
+- 2026-10-12: on the order of the owner ("Screenshot and show in conv"), I ran the desktop, captured
+  its window and sent the picture: the triangle, with no validation message. The note above that an
+  agent must not open the window no longer applies to the checks of this task.
+- 2026-10-12: the indexed mesh. The mesh shaders replace the triangle shaders, which no code calls now.
+  `MeshVertex` narrows each position to float after the subtraction of the origin, `GpuBuffer` holds
+  the vertices and the indices, `MemoryTypes` chooses the memory, and the desktop draws the cut body
+  of the first demonstration. No helper of a one-time command buffer: memory visible to the host needs
+  none, and no code would call it. A reversed triangle failed the new test of the winding.
