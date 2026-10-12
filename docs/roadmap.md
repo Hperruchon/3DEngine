@@ -109,7 +109,7 @@ The first objective. Each phase ends with something that a person can observe.
 | R1 | Upgrade the Vulkan binding. Move the Vulkan code into a first-party project. | 2–4 |
 | R2 | A tessellation capability. A mesh leaves the geometry backend. TASK-0028. | 4–6 |
 | R3 | A pipeline. A triangle, then an indexed mesh. TASK-0069. | 4–6 |
-| R4 | A camera with depth. Flat scene arrays. Each draw through an indirect interface. | 5–7 |
+| R4 | A camera with depth. An orbit camera, reversed depth, and a draw list over the scene graph (ADR-0023). TASK-0070. | 5–7 |
 | R5 | Geometry from the engine. Subscribe to events, fetch a mesh, draw it. Subtract a double-precision origin before the narrowing to float. Choose `frontFace` together with the viewport flip. | 6–8 |
 | R6 | Observe a cut. The live body set of ADR-0021 gives the result. A headless image test. | 4–6 |
 | R7 | Device-tagged pointer samples. The intent layer and the parity test. | 4–7 |
