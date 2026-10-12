@@ -77,19 +77,26 @@ public class DependencyDirectionGateTests
     // the gate read the project file only, and a Directory.Build.props with a
     // reference to 3DEngine.Core passed (codebase review of 2026-10-04, finding
     // T9). MSBuild reads the first Directory.Build file above a project; the gate
-    // reads each one, which is stricter. An import whose path holds a property,
-    // such as $(MSBuildThisFileDirectory), is not followed.
+    // reads each one, which is stricter. It also reads Directory.Packages.props
+    // and the file <project>.user, which MSBuild imports for each project. An
+    // import that the gate cannot resolve to one file is refused by
+    // Each_Import_Names_One_File_That_The_Gate_Reads; until TASK-0066 the gate
+    // skipped it, and a wildcard import and a .csproj.user file each carried a
+    // reference that MSBuild saw and the gate did not (findings T16 and T46 of the
+    // codebase reviews of 2026-10-04 and 2026-10-12).
     private static IEnumerable<string> FilesThatMsBuildReads(string projectFile)
     {
         var root = Path.GetFullPath(RepositoryFiles.Root).TrimEnd(Path.DirectorySeparatorChar);
         var queue = new Queue<string>();
         queue.Enqueue(Path.GetFullPath(projectFile));
+        if (File.Exists(Path.GetFullPath(projectFile) + ".user"))
+            queue.Enqueue(Path.GetFullPath(projectFile) + ".user");
 
         for (var directory = Path.GetDirectoryName(Path.GetFullPath(projectFile));
              directory is not null && directory.StartsWith(root, StringComparison.OrdinalIgnoreCase);
              directory = Path.GetDirectoryName(directory))
         {
-            foreach (var name in new[] { "Directory.Build.props", "Directory.Build.targets" })
+            foreach (var name in new[] { "Directory.Build.props", "Directory.Build.targets", "Directory.Packages.props" })
             {
                 var candidate = Path.Combine(directory, name);
                 if (File.Exists(candidate))
@@ -106,17 +113,48 @@ public class DependencyDirectionGateTests
 
             yield return file;
 
-            foreach (var import in XDocument.Load(file).Descendants().Where(e => e.Name.LocalName == "Import"))
+            foreach (var (_, imported) in Imports(file))
             {
-                var path = import.Attribute("Project")?.Value;
-                if (string.IsNullOrWhiteSpace(path) || path.Contains("$(", StringComparison.Ordinal))
-                    continue;
-
-                var imported = Path.GetFullPath(Path.Combine(Path.GetDirectoryName(file)!, path.Replace('\\', '/')));
-                if (File.Exists(imported))
+                if (imported is not null)
                     queue.Enqueue(imported);
             }
         }
+    }
+
+    // Each import of one MSBuild file, with the file that it names, or null when
+    // the gate cannot resolve it to one file that exists: a property such as
+    // $(MSBuildThisFileDirectory), a wildcard, or an absent file.
+    private static IEnumerable<(string Path, string? File)> Imports(string file)
+    {
+        foreach (var import in XDocument.Load(file).Descendants().Where(e => e.Name.LocalName == "Import"))
+        {
+            var path = import.Attribute("Project")?.Value ?? string.Empty;
+            if (path.Contains("$(", StringComparison.Ordinal) || path.IndexOfAny(['*', '?']) >= 0 || path.Trim().Length == 0)
+            {
+                yield return (path, null);
+                continue;
+            }
+
+            var imported = Path.GetFullPath(Path.Combine(Path.GetDirectoryName(file)!, path.Replace('\\', '/')));
+            yield return (path, File.Exists(imported) ? imported : null);
+        }
+    }
+
+    [Fact]
+    public void Each_Import_Names_One_File_That_The_Gate_Reads()
+    {
+        var offences = ProjectFiles()
+            .SelectMany(FilesThatMsBuildReads)
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .SelectMany(file => Imports(file)
+                .Where(import => import.File is null)
+                .Select(import => $"{RepositoryFiles.Relative(file)} imports '{import.Path}', which the gate cannot resolve to one file"))
+            .ToArray();
+
+        Assert.True(
+            offences.Length == 0,
+            "An import that the gate cannot read can carry a reference that breaks the authority diagram. "
+            + "Name one file by a path with no property and no wildcard.\n  " + string.Join("\n  ", offences));
     }
 
     private static Dictionary<string, List<string>> Graph()

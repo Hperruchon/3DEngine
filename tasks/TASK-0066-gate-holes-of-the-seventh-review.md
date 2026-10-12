@@ -108,3 +108,6 @@ each file where it differs from the automatic merge of its parents.
   The judge of `main` does not know the question of the switch, so the step takes the gates of the
   judged commit for a base up to `29ed267`, the tip of `main` before this task, and fails for each
   other base with no answer.
+- 2026-10-12: T45 to T47. The determinism gate binds each name of its list with Roslyn, the dependency
+  gate reads the `.user` file and refuses an import that it cannot resolve, and the runner fails on a
+  form that it cannot run and on a skip. Each form of the review failed from the program.

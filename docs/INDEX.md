@@ -53,7 +53,7 @@ it is not correct and it must not be used.
 | `.github/workflows/ci.yml` | The gate: build, test and two smoke tests on three operating systems; the contract gate; the write-set gate. |
 | `.github/PULL_REQUEST_TEMPLATE.md` and `.github/CODEOWNERS` | The pull request form, and the owner of each surface. |
 | `eng/write-set-cutoff.txt` | The commit after which the write-set gate applies. |
-| `eng/write-set-check/` | The judge of the write set of each commit. The pipeline builds it from `main`, and a person runs it with `--staged` before a commit (TASK-0053). `eng/write-set-check/Judge.cs` holds the rules, and `eng/write-set-check/TaskFiles.cs` reads the task files for the judge and for the gates. |
+| `eng/write-set-check/` | The judge of the write set of each commit. The pipeline builds it from `main`, and a person runs it with `--staged` before a commit (TASK-0053). With `--gate-sources` it tells the pipeline whether the gates come from `main` or from the judged commit (TASK-0066). `eng/write-set-check/Judge.cs` holds the rules, and `eng/write-set-check/TaskFiles.cs` reads the task files for the judge and for the gates. |
 | `eng/repo-gates/` | The program that runs each gate class that reads only files of the repository. The pipeline builds it from `main` and runs it on the judged checkout, and a person runs it with `--root .` before a commit (TASK-0064). The gate files stay under `Engine.Tests/`, which also runs them as tests. |
 | `eng/report-failed-tests.js` | Writes the name and the message of each failed test as a public annotation when the step "Test" of the pipeline fails (TASK-0045). |
 | `eng/manifold-native/` | The packaging project for the native Manifold payload. |

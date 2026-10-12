@@ -1,5 +1,6 @@
 using System.Reflection;
 using Engine.Tests.Diagnostics;
+using Xunit.Sdk;
 
 // The program repo-gates (TASK-0064). It runs each check of the gates that read
 // only files of the repository: each public method with [Fact], and each row of
@@ -30,12 +31,19 @@ if (!File.Exists(Path.Combine(root, "3DEngine.sln")))
 
 DiagnosticsScanner.FixedRoot = root;
 
+// Each method with [Fact] or [Theory] in each type of the build, of each form,
+// so that a form that this runner cannot run fails and is never left out. Until
+// TASK-0066 the runner read the public instance methods of public classes only,
+// and a static check, a check in a nested or an internal class, an inherited
+// check and a row of [MemberData] did not run (finding T47 of the codebase review
+// of 2026-10-12).
+const BindingFlags Each = BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance
+    | BindingFlags.Static | BindingFlags.DeclaredOnly;
 var checks = typeof(DiagnosticsScanner).Assembly.GetTypes()
-    .Where(type => type.IsPublic && type.IsClass && !type.IsAbstract)
-    .SelectMany(type => type.GetMethods(BindingFlags.Public | BindingFlags.Instance | BindingFlags.DeclaredOnly)
+    .SelectMany(type => type.GetMethods(Each)
         .Where(method => method.GetCustomAttribute<FactAttribute>() is not null)
         .Select(method => (Type: type, Method: method)))
-    .OrderBy(check => check.Type.Name, StringComparer.Ordinal)
+    .OrderBy(check => check.Type.FullName, StringComparer.Ordinal)
     .ThenBy(check => check.Method.Name, StringComparer.Ordinal)
     .ToList();
 
@@ -54,9 +62,18 @@ foreach (var (type, method) in checks)
     var fact = method.GetCustomAttribute<FactAttribute>()!;
     var name = $"{type.Name}.{method.Name}";
 
-    if (fact.Skip is not null)
+    // A check that the runner cannot run fails, and a skip fails: the program is
+    // the run that decides, so each check runs or the run is red.
+    var refusal = fact.Skip is not null ? $"it is skipped ({fact.Skip})"
+        : !type.IsPublic || type.IsAbstract || type.ContainsGenericParameters ? "its class is not a public, top-level, concrete class"
+        : !method.IsPublic || method.IsStatic || method.ContainsGenericParameters ? "it is not a public instance method"
+        : method.ReturnType != typeof(void) && method.ReturnType != typeof(Task) && method.ReturnType != typeof(ValueTask) ? "it returns neither void, Task nor ValueTask"
+        : fact is TheoryAttribute && method.GetCustomAttributes<DataAttribute>().Any(data => data is not InlineDataAttribute) ? "a row source other than [InlineData] gives its rows"
+        : null;
+    if (refusal is not null)
     {
-        Console.WriteLine($"skip  {name}: {fact.Skip}");
+        Console.WriteLine($"FAIL  {name}: the runner cannot run it, because {refusal}");
+        failures++;
         continue;
     }
 
@@ -81,6 +98,8 @@ foreach (var (type, method) in checks)
             var result = method.Invoke(Activator.CreateInstance(type), row);
             if (result is Task task)
                 await task;
+            else if (result is ValueTask valueTask)
+                await valueTask;
             Console.WriteLine($"pass  {label}");
         }
         catch (Exception exception)

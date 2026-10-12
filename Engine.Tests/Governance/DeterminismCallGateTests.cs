@@ -1,4 +1,7 @@
 using System.Text.RegularExpressions;
+using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CSharp;
+using Microsoft.CodeAnalysis.CSharp.Syntax;
 
 namespace Engine.Tests.Governance;
 
@@ -13,11 +16,16 @@ namespace Engine.Tests.Governance;
 // runtime identifier. The names below are the rule; CLAUDE.md gives the
 // reason for each one.
 //
-// The gate reads each source as one text with its comments removed, so a call
-// with the parenthesis on the next line is seen and a comment that names a
-// function is not. It refuses the same functions on double, float and Half,
-// and it refuses a static import of System.Math, because a bare name after
-// that import has no form that a scan can see (codebase review of
+// The gate compiles the sources of the log path with the C# compiler (Roslyn),
+// with no build and no run, and binds each name of the list below. A name that
+// binds to a method of the framework (a namespace System, System.Numerics or
+// System.Runtime.Intrinsics) is an offence, whatever its form: Math.Sin,
+// Double.Sin, an alias of System.Math, a method group, a static import or a
+// generic method of an interface of System.Numerics. A name of the list that
+// does not bind to a symbol is also an offence, because the gate cannot see what
+// it calls. Until TASK-0066 the gate matched a call as text, and eight forms
+// that compile passed it (finding T45 of the codebase review of 2026-10-12). It
+// still refuses a static import of System.Math as text (codebase review of
 // 2026-09-30, finding T4).
 public class DeterminismCallGateTests
 {
@@ -26,14 +34,18 @@ public class DeterminismCallGateTests
     private static readonly string[] LogPathProjects =
         ["Engine.Contracts", "Engine.Core", "Engine.Geometry.Manifold"];
 
-    private const string ForbiddenNames =
-        "Sin|Cos|Tan|Asin|Acos|Atan|Atan2|Sinh|Cosh|Tanh|Asinh|Acosh|Atanh|SinCos"
-        + "|Exp|Log|Log2|Log10|Pow|Cbrt|FusedMultiplyAdd";
-
-    private static readonly Regex ForbiddenCall = new(
-        @"\b(Math|MathF|double|float|Half)\.(" + ForbiddenNames + @")\s*\("
-        + @"|\b(MultiplyAddEstimate|MinNative|MaxNative|ShuffleNative|ConvertToIntegerNative)\s*\(",
-        RegexOptions.Compiled);
+    // Rule 1: each transcendental function, and each function whose result is an
+    // estimate or is not one correctly rounded result. Rule 3: FusedMultiplyAdd.
+    // Rule 4: the five functions whose guarantee covers one process only.
+    private static readonly HashSet<string> ForbiddenMethods = new(StringComparer.Ordinal)
+    {
+        "Sin", "Cos", "Tan", "Asin", "Acos", "Atan", "Atan2", "Sinh", "Cosh", "Tanh", "Asinh", "Acosh",
+        "Atanh", "SinCos", "SinPi", "CosPi", "TanPi", "AsinPi", "AcosPi", "AtanPi", "Atan2Pi", "SinCosPi",
+        "Exp", "Exp2", "Exp10", "ExpM1", "Exp2M1", "Exp10M1", "Log", "Log2", "Log10", "LogP1", "Log2P1",
+        "Log10P1", "Pow", "Cbrt", "Hypot", "RootN", "ReciprocalEstimate", "ReciprocalSqrtEstimate",
+        "FusedMultiplyAdd",
+        "MultiplyAddEstimate", "MinNative", "MaxNative", "ShuffleNative", "ConvertToIntegerNative",
+    };
 
     private static readonly Regex StaticImport = new(
         @"\busing\s+static\s+(global::)?System\.(Math|MathF)\s*;", RegexOptions.Compiled);
@@ -49,6 +61,8 @@ public class DeterminismCallGateTests
     public void No_Source_In_The_Log_Path_Calls_A_Function_That_The_Determinism_Rules_Forbid()
     {
         var offences = new List<string>();
+        var trees = new List<SyntaxTree>();
+        var options = new CSharpParseOptions(LanguageVersion.Preview);
 
         foreach (var project in LogPathProjects)
         {
@@ -61,13 +75,51 @@ public class DeterminismCallGateTests
                 if (relative.Contains("/obj/", StringComparison.Ordinal) || relative.Contains("/bin/", StringComparison.Ordinal))
                     continue;
 
-                var text = WithoutComments(File.ReadAllText(file).Replace("\r", string.Empty));
+                var source = File.ReadAllText(file);
+                trees.Add(CSharpSyntaxTree.ParseText(source, options, path: relative));
 
+                var text = WithoutComments(source.Replace("\r", string.Empty));
                 foreach (Match match in StaticImport.Matches(text))
                     offences.Add($"{relative}:{LineOf(text, match.Index)} imports System.{match.Groups[2].Value} statically");
+            }
+        }
 
-                foreach (Match match in ForbiddenCall.Matches(text))
-                    offences.Add($"{relative}:{LineOf(text, match.Index)} calls {match.Value.TrimEnd('(', ' ', '\n')}");
+        // The global usings that the SDK writes for a project with
+        // ImplicitUsings, which each project of the log path enables. Without
+        // them, Math and Double do not bind.
+        trees.Add(CSharpSyntaxTree.ParseText(
+            "global using System; global using System.Collections.Generic; global using System.IO; "
+            + "global using System.Linq; global using System.Net.Http; global using System.Threading; "
+            + "global using System.Threading.Tasks;",
+            options,
+            path: "ImplicitUsings.g.cs"));
+
+        // One compilation of the three projects, with the assemblies of the
+        // framework that runs the gate. It does not need to succeed: an error, for
+        // example a method that a source generator completes, does not stop the
+        // binding of the other names.
+        var compilation = CSharpCompilation.Create(
+            "LogPath",
+            trees,
+            FrameworkReferences(),
+            new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary, allowUnsafe: true));
+
+        foreach (var tree in trees)
+        {
+            var model = compilation.GetSemanticModel(tree);
+            foreach (var name in tree.GetRoot().DescendantNodes().OfType<SimpleNameSyntax>())
+            {
+                if (!ForbiddenMethods.Contains(name.Identifier.ValueText))
+                    continue;
+
+                var info = model.GetSymbolInfo(name);
+                ISymbol[] symbols = info.Symbol is { } symbol ? [symbol] : [.. info.CandidateSymbols];
+                var line = tree.GetLineSpan(name.Span).StartLinePosition.Line + 1;
+
+                if (symbols.Length == 0)
+                    offences.Add($"{tree.FilePath}:{line} names {name.Identifier.ValueText}, which the gate cannot bind");
+                else if (symbols.OfType<IMethodSymbol>().FirstOrDefault(IsFrameworkMethod) is { } method)
+                    offences.Add($"{tree.FilePath}:{line} calls {method.ContainingType.ToDisplayString()}.{method.Name}");
             }
         }
 
@@ -112,6 +164,21 @@ public class DeterminismCallGateTests
             "CLAUDE.md, determinism rule 5: do not ship a 32-bit x86 runtime identifier. Offences:\n  "
             + string.Join("\n  ", offences));
     }
+
+    private static bool IsFrameworkMethod(IMethodSymbol method)
+    {
+        var space = method.ContainingNamespace?.ToDisplayString() ?? string.Empty;
+        return space is "System" or "System.Numerics" || space.StartsWith("System.Runtime.Intrinsics", StringComparison.Ordinal);
+    }
+
+    // The assemblies of the framework that runs the gate, from the list of the
+    // host. A source of the judged checkout cannot change this list.
+    private static IEnumerable<MetadataReference> FrameworkReferences()
+        => ((string)AppContext.GetData("TRUSTED_PLATFORM_ASSEMBLIES")!)
+            .Split(Path.PathSeparator, StringSplitOptions.RemoveEmptyEntries)
+            .Where(path => Path.GetFileName(path) is var name
+                && (name.StartsWith("System.", StringComparison.Ordinal) || name is "mscorlib.dll" or "netstandard.dll"))
+            .Select(path => MetadataReference.CreateFromFile(path));
 
     // Each comment becomes blank, and each line break stays, so that a line
     // number in a report is the line number in the file.
