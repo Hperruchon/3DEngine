@@ -66,9 +66,26 @@ public class WriteSetJudgeTests
     [InlineData("Directory.Build.props")]
     [InlineData("Engine.Core/Directory.Packages.props")]
     [InlineData("Engine.Tests/Diagnostics/DiagnosticsScanner.cs")]
+    // Findings T41 and T44 of the codebase review of 2026-10-12: each input of a
+    // build (TASK-0066).
+    [InlineData("global.json")]
+    [InlineData("tools/global.json")]
+    [InlineData("nuget.config")]
+    [InlineData("NuGet.Config")]
+    [InlineData("nuget/Engine.Geometry.Manifold.Native.3.5.2.1.nupkg")]
     public void Each_File_That_Can_Change_A_Judgement_Is_A_Gate_File(string file)
     {
         Assert.True(Judge.IsGateFile(file));
+    }
+
+    [Theory]
+    [InlineData("docs/Directory.Packages.txt")]
+    [InlineData("docs/global.json.md")]
+    [InlineData("Engine.Core/Directory.cs")]
+    public void A_Name_Like_An_Input_Of_A_Build_Is_Not_A_Gate_File(string file)
+    {
+        Assert.False(Judge.IsGateFile(file));
+        Assert.False(Judge.IsGateProgramSource(file));
     }
 
     [Theory]

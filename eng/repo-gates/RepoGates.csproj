@@ -33,6 +33,8 @@
     <!-- The attributes and Assert of xUnit, with no test platform. -->
     <PackageReference Include="xunit.assert" Version="2.9.3" />
     <PackageReference Include="xunit.extensibility.core" Version="2.9.3" />
+    <!-- The C# compiler, which DeterminismCallGateTests uses to bind each call (TASK-0066). -->
+    <PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="5.0.0" />
   </ItemGroup>
 
   <ItemGroup>

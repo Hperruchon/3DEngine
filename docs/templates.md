@@ -262,10 +262,10 @@ each class as a test, but the run of the program decides (TASK-0064).
 | `AdrEnforcementExistsGateTests` | `enforced-by` of each ADR in force | the file is absent and no Ready task creates it |
 | `TaskGovernanceGateTests` | `status`, `governed-by`, `depends-on` and `writes` of each task | a status is outside the set, an identifier differs from the file name, `governed-by` differs from the intersection rule on an open task, or `depends-on` names no task |
 | `WriteSetGateTests` | the `writes` block of each task and the cut-off file | a task forbids what it writes, a path has a backslash, a Done task names a file that is absent, the cut-off moved, or the count of tasks without front matter grows |
-| `eng/write-set-check` (a program, not a test; `WriteSetJudgeTests` and `WriteSetRangeTests` test it) | each commit, its changed paths, its governing task at the commit, and the text of each changed test file | a changed path is outside the write set of the governing task, a gate file is not named exactly, the named task is not changed, the task is Done before and after the commit, a commit has no parent, a merge changes a file that its task does not permit, in an edit of the merge or against its first parent, a contract change has no ADR in the same commit, or a test file holds one of four calls that can redirect a gate |
-| `eng/repo-gates` (a program, not a test) | the gate files of its own build, and the checkout that `--root` gives | a check of a gate class fails, or the build holds no check |
-| `DependencyDirectionGateTests` | each project file, read as XML | a reference breaks the authority diagram, a project is in no class, the judge of the write set references a project, or a binding has two pins |
-| `DeterminismCallGateTests` | each source in the log path, with its comments removed, and each project file | a forbidden function is called on `Math`, `MathF`, `double`, `float` or `Half`, `System.Math` is imported statically, or a 32-bit runtime identifier exists |
+| `eng/write-set-check` (a program, not a test; `WriteSetJudgeTests` and `WriteSetRangeTests` test it) | each commit, its changed paths, its governing task at the commit, and the text of each changed test file | a changed path is outside the write set of the governing task, a gate file is not named exactly, the named task is not changed, the task is Done before and after the commit, a commit has no parent, a merge differs from the automatic merge of its parents in a file that its task does not permit, a contract change has no ADR in the same commit, or a test file holds one of four calls that can redirect a gate |
+| `eng/repo-gates` (a program, not a test) | the gate files of its own build, and the checkout that `--root` gives | a check of a gate class fails, a check has a form that the program cannot run or is skipped, or the build holds no check |
+| `DependencyDirectionGateTests` | each project file and each file that MSBuild reads for it (the `.user` file, each Directory file, each import), read as XML | a reference breaks the authority diagram, a project is in no class, the judge of the write set references a project, a binding has two pins, or an import does not name one file that exists |
+| `DeterminismCallGateTests` | each source in the log path, compiled with Roslyn and with no build, and each project file | a name of the forbidden list binds to a method of the framework, or does not bind, `System.Math` is imported statically, or a 32-bit runtime identifier exists |
 | `RegisterGateTests` | the open entries of `docs/register.md` | a `due` date passed, a second extension exists, the count is above 15, a class or a date is invalid, or the parser found fewer entries than the section holds |
 | `MarkerGateTests` | each source, each configuration file, each workflow and the register | a marker word has no register identifier, or names one that is not in the register |
 | `DiagnosticsRegistryGateTests` | each `Engine.*` source and `docs/diagnostics.md` | a code in the source is absent from the registry |
@@ -281,15 +281,18 @@ each class as a test, but the run of the program decides (TASK-0064).
 `.github/workflows/ci.yml` runs two jobs. `gate` builds, tests and runs two smoke tests on Windows,
 Linux and macOS. `write-set-gate` builds the judge `eng/write-set-check` from `main`. On `main` it
 judges each commit of the push, and on a branch each commit after the merge base with `main`. It
-judges a merge on each file that differs from each parent, and on each file that differs from its
-first parent and that no commit of its second parent changed (TASK-0057, TASK-0061). It fails a
+judges a merge on each file where it differs from the automatic merge of its parents
+(`git merge-tree`), and on each file with a conflict (TASK-0066). It fails a
 commit with no parent and a merge of unrelated history. The judge also fails a commit that changes
 `Engine.Contracts/**` with no change under `docs/adr/` (TASK-0057; until then the job `contract-gate`
 checked that rule on a range of commits).
 
 The job `write-set-gate` then runs `eng/repo-gates` from the same checkout of `main` on the judged
 checkout (TASK-0064). When the judged commits change a source of that program, the job builds the
-program from the judged commit instead. Such a source is a gate file, which its task must name exactly.
+program from the judged commit instead. Such a source is a gate file, which its task must name exactly;
+the judge of `main` gives the answer with `--gate-sources`, from `Judge.IsGateProgramSource`. Each
+build of a program of `main` runs in `$RUNNER_TEMP` and not in the judged checkout, because the
+`dotnet` command reads `global.json` of the current folder to choose the SDK (TASK-0066).
 Before a commit, run the judge and the program on the local checkout:
 
 ```bash

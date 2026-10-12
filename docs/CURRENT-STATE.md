@@ -1874,3 +1874,32 @@ them as ADR-0022.
 New tests: none. The test list holds 353. `dotnet build 3DEngine.sln --no-incremental` gives zero errors
 and zero warnings. Open entries: 14 of 15. New diagnostic codes: none. The next codebase review must
 come before ledger entry v0.71.
+
+## v0.67 — The checks from main take no input of the build from the judged checkout, and the judge reads each change of a merge (P0.26, TASK-0066)
+
+The codebase review of 2026-10-12 found three high holes in the checks that run from `main`, and the
+owner put their task before R3 (question Q1, option A).
+
+**The change.**
+
+- T41: each build of the judge and of the gates of `main` runs in `$RUNNER_TEMP`, so a `global.json` of
+  the judged checkout cannot choose their SDK. This was a defect of my own step of TASK-0064.
+- T44: `global.json`, each NuGet configuration and `nuget/` are gate files. The judge of `main` answers
+  the switch of the gates with `--gate-sources`, from the list that the gate files share; the regular
+  expression of the workflow is gone.
+- T42, T43: a merge is judged on each file where it differs from the automatic merge of its parents
+  (`git merge-tree`), and on each file with a conflict.
+- T45: the determinism gate binds each name of its list with Roslyn, with no build.
+- T46: the dependency gate reads the `.user` file of a project, and refuses an import that it cannot
+  resolve to one file. This also closes the part of T16 that skipped an import with a property.
+- T47: the runner of the gates fails on each form that it cannot run and on a skip.
+
+**Proof.** The 15 new test cases of the judge failed on the judge of `main` and pass now. Each form of
+the review failed its check from the program: the planted `global.json` (a local run), nine calls, a
+wildcard import, a `.csproj.user` file, and seven probe forms of the runner. Run 38209275659 showed the
+bootstrap of the switch in the pipeline: the judge of `29ed267` gave no answer, and the step took the
+gates of the judged commit, as the comment of the step says.
+
+New tests: 16. The test list holds 369. The program runs 66 checks in 71 runs. `dotnet build
+3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open entries: 14 of 15. New
+diagnostic codes: none. The next codebase review must come before ledger entry v0.71.
