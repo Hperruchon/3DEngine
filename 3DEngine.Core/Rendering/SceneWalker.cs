@@ -6,6 +6,8 @@ namespace ThreeDEngine.Core.Rendering;
 /// <summary>
 /// The walk of the scene graph at each frame (ADR-0023 item 3). Each entity that has a
 /// mesh gives one record of the draw list. A child is placed relative to its parent.
+/// The positions are added in double precision, origin and offset, and only the
+/// position relative to the eye is narrowed to float (ADR-0023 item 2, ADR-0024 item 2).
 /// </summary>
 public static class SceneWalker
 {
@@ -37,7 +39,9 @@ public static class SceneWalker
     {
         var local = entity.Transform;
         var turn = Matrix4x4.CreateScale(local.Scale) * Matrix4x4.CreateFromQuaternion(local.Rotation) * parentTurn;
-        var offset = Vector3.Transform(local.Position, parentTurn);
+        var offset = Turn(
+            (entity.Origin.X + local.Position.X, entity.Origin.Y + local.Position.Y, entity.Origin.Z + local.Position.Z),
+            parentTurn);
         var position = (parentPosition.X + offset.X, parentPosition.Y + offset.Y, parentPosition.Z + offset.Z);
 
         if (entity.MeshId is { } meshId)
@@ -49,4 +53,11 @@ public static class SceneWalker
         foreach (var child in entity.Children)
             Walk(child, turn, position, eye, view, list);
     }
+
+    // A point in double precision turned by a matrix of row vectors, with no
+    // translation; the elements of the matrix are floats.
+    private static (double X, double Y, double Z) Turn((double X, double Y, double Z) point, Matrix4x4 m)
+        => (point.X * m.M11 + point.Y * m.M21 + point.Z * m.M31,
+            point.X * m.M12 + point.Y * m.M22 + point.Z * m.M32,
+            point.X * m.M13 + point.Y * m.M23 + point.Z * m.M33);
 }

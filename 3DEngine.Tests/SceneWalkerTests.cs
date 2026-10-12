@@ -39,6 +39,24 @@ public class SceneWalkerTests
         Assert.Equal(new Vector3(0, 0, -10), origin);
     }
 
+    // ADR-0024 item 2: a float holds no fraction at 1e9, so an origin in a float
+    // Transform would put this body at the eye. The origin in double precision keeps
+    // the quarter.
+    [Fact]
+    public void An_Origin_Far_From_The_Scene_Origin_Keeps_Its_Detail()
+    {
+        var scene = new Scene();
+        scene.Entities.Add(new Entity { MeshId = "body", Origin = (1e9 + 0.25, 0, 0) });
+        var camera = new Camera { Target = (1e9, 0, 0), Distance = 10 };
+        var list = new DrawList();
+
+        SceneWalker.Fill(scene, camera, list);
+        var origin = Vector3.Transform(Vector3.Zero, list.Records.Single().ModelView);
+
+        Assert.Equal(new Vector3(0.25f, 0, -10), origin);
+        Assert.Equal(1e9f, (float)(1e9 + 0.25));
+    }
+
     [Fact]
     public void A_Child_Is_Placed_And_Turned_By_Its_Parent()
     {

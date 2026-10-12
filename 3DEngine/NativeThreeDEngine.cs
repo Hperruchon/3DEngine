@@ -1,3 +1,4 @@
+using Engine.Api.Http;
 using SDL3;
 using ThreeDEngine.Core.Abstractions;
 using ThreeDEngine.Core.Models;
@@ -7,8 +8,9 @@ using Vortice.Vulkan;
 
 namespace ThreeDEngine.Desktop;
 
-// The render loop of the desktop (roadmap phases R3 and R4). At each frame it walks
-// the scene into a draw list, relative to the eye of the camera, and the Vulkan layer
+// The render loop of the desktop (roadmap phases R3 to R5). At each frame it brings
+// the live bodies of the session into the scene (SessionBodies, ADR-0024), walks the
+// scene into a draw list relative to the eye of the camera, and the Vulkan layer
 // executes the list (ADR-0023). A left drag of the mouse orbits the camera, and the
 // wheel zooms it; R7 replaces this reading of the mouse with the intent layer.
 public sealed unsafe class NativeThreeDEngine : IThreeDEngine, IDisposable
@@ -18,15 +20,18 @@ public sealed unsafe class NativeThreeDEngine : IThreeDEngine, IDisposable
     private const double ZoomPerStep = 0.9;
 
     private readonly Window _window;
+    private readonly EngineHost _host;
+    private SessionBodies? _bodies;
     private readonly DrawList _drawList = new();
     private readonly Dictionary<string, GpuMesh> _meshes = new(StringComparer.Ordinal);
     private GraphicsDevice? _graphicsDevice;
     private RenderPipeline? _meshPipeline;
     private DrawListExecutor? _executor;
 
-    public NativeThreeDEngine(Window window)
+    public NativeThreeDEngine(Window window, EngineHost host)
     {
         _window = window;
+        _host = host;
     }
 
     public string Name => "3DEngine Desktop Runtime";
@@ -40,13 +45,7 @@ public sealed unsafe class NativeThreeDEngine : IThreeDEngine, IDisposable
         _graphicsDevice = new GraphicsDevice(Name, enableValidation: true, _window);
         _meshPipeline = new RenderPipeline(_graphicsDevice, "mesh.vert", "mesh.frag");
         _executor = new DrawListExecutor(_graphicsDevice, _meshPipeline);
-
-        // The cut body of the first demonstration (TASK-0069), relative to the centre
-        // of its box; the entities of the scene place it.
-        _meshes[DemonstrationMesh.MeshId] = new GpuMesh(
-            _graphicsDevice,
-            MeshVertex.Narrow(DemonstrationMesh.Positions, DemonstrationMesh.Centre(), 1.0),
-            DemonstrationMesh.Indices);
+        _bodies = new SessionBodies(_host);
     }
 
     public void Update(TimeSpan deltaTime)
@@ -65,11 +64,12 @@ public sealed unsafe class NativeThreeDEngine : IThreeDEngine, IDisposable
 
     public void Render()
     {
-        if (_graphicsDevice is null || _executor is null || CurrentScene is null)
+        if (_graphicsDevice is null || _executor is null || _bodies is null || CurrentScene is null)
         {
             throw new InvalidOperationException("Graphics device is not initialized.");
         }
 
+        _bodies.Apply(CurrentScene, _meshes, _graphicsDevice);
         _drawList.Clear();
         SceneWalker.Fill(CurrentScene, Camera, _drawList);
 
@@ -113,6 +113,8 @@ public sealed unsafe class NativeThreeDEngine : IThreeDEngine, IDisposable
     public void Dispose()
     {
         // The GPU must be idle before a pipeline or a buffer goes.
+        _bodies?.Dispose();
+        _bodies = null;
         _graphicsDevice?.WaitIdle();
         foreach (var mesh in _meshes.Values)
             mesh.Dispose();

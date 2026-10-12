@@ -1,13 +1,13 @@
 ---
 id: 0019
 title: The hybrid deployment topology
-status: Accepted
+status: Amended
 topic: Clients, deployment
 date: 2026-09-25
 supersedes: []
 superseded-by: []
 amends: ['0011']
-amended-by: []
+amended-by: ['0024']
 affects:
   - Engine.Api.Http/**
   - 3DEngine/**
@@ -51,7 +51,9 @@ Two facts make the hybrid possible with no new rule for authority:
    query bus that each other client uses, and it gets typed results. TASK-0034 builds the session.
 2. **No privileged lane.** Each change from the desktop is a command. It goes through the same
    validation, the same log and the same events as a command from an agent. The desktop gets no
-   command, no query and no event that the surface does not give to each other client.
+   command, no query and no event that the surface does not give to each other client. It receives
+   the events of its session in its own process through `EngineHost.Subscribe`, the same events that
+   `/events` gives (ADR-0024).
 3. **One surface library.** The HTTP and WebSocket surface of `Engine.Api.Http` becomes a library
    that a host mounts on a session. The desktop host mounts it, so that an agent works live on the
    document that the person sees. The library references only `Engine.Core` and `Engine.Contracts`.
@@ -88,3 +90,8 @@ TASK-0038: the desktop host may reference the surface library, and the library i
 Register entry R-0021 holds the open question of how to show the application to the person.
 TASK-0062 corrected this paragraph. It said that TASK-0038 mounts the surface in the desktop, and it
 named a section of `CLAUDE.md` that does not exist (finding E57 of the review of 2026-10-11).
+
+## History
+
+- 2026-10-12 · TASK-0071 · ADR-0024 amends item 2: a host receives the events of its session through
+  `EngineHost.Subscribe`.
