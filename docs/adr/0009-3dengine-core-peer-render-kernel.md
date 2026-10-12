@@ -1,13 +1,13 @@
 ---
 id: 0009
 title: 3DEngine.Core is a peer render kernel
-status: Accepted
+status: Amended
 topic: Boundary, clients
 date: 2026-05-11
 supersedes: []
 superseded-by: []
 amends: []
-amended-by: []
+amended-by: ['0022']
 affects:
   - 3DEngine.Core/**
 enforced-by: Engine.Tests/Governance/DependencyDirectionGateTests.cs
@@ -65,7 +65,7 @@ Both kernels are independent of each other. Clients reference whichever they nee
 - `3DEngine.Core` MUST NOT reference any `Engine.*` project.
 - A client that renders (today: `3DEngine`, `BlazorApp.Client`) MAY reference `3DEngine.Core`.
 - A client that does not render (today: `Engine.Cli`) MUST NOT reference `3DEngine.Core` — there is no reason for it to.
-- `Engine.Tests` may reference `3DEngine.Core` only if a future test verifies kernel-level behaviour in it; ordinarily it does not.
+- `Engine.Tests` MUST NOT reference `3DEngine.Core`. The test project `3DEngine.Tests` MAY reference it, and `3DEngine.Vulkan`, and nothing else (ADR-0022).
 
 ### 3. Design truth vs render state
 
@@ -128,3 +128,8 @@ Mechanical enforcement of these rules is out of phase scope — the dependency-d
 - **Shared projection library.** When a second rendering host actually arrives, the projection logic likely wants to be shared between `3DEngine` and `BlazorApp.Client`. That suggests a host-side shared library; size it then.
 - **Selection / hover state.** Per ADR 0007, UI ephemeral state stays in the client. But "selection in 3D space" feels like it could live in `3DEngine.Core` (so multiple host UIs reuse the type). Today, each host owns its selection. Decide later.
 - **Asset pipeline.** `MeshDefinition`, `MaterialDefinition`, `TextureDefinition` are skeletal. A real asset pipeline (streaming, hashing, deduplication, references) is its own design effort, separate from this ADR.
+
+## History
+
+- 2026-10-12 · TASK-0069 · ADR-0022 amends §2: the tests of the render side live in `3DEngine.Tests`,
+  and `Engine.Tests` references no project of the render side, as the dependency gate already said.

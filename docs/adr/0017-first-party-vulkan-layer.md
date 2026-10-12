@@ -1,13 +1,13 @@
 ---
 id: 0017
 title: The first-party Vulkan layer
-status: Accepted
+status: Amended
 topic: Boundary, rendering
 date: 2026-09-23
 supersedes: []
 superseded-by: []
 amends: []
-amended-by: []
+amended-by: ['0022']
 affects:
   - 3DEngine.Vulkan/**
   - 3DEngine/3DEngine.csproj
@@ -48,7 +48,8 @@ change the two kernels.
 2. `3DEngine.Vulkan` references no `Engine.*` project. It may reference `3DEngine.Core` and nothing
    else. It draws render state and it never sees design truth.
 3. Only a host that draws with Vulkan references `3DEngine.Vulkan`. Today that host is `3DEngine`. No
-   `Engine.*` project, no render kernel and no web client references it.
+   `Engine.*` project, no render kernel and no web client references it. The test project
+   `3DEngine.Tests` also references it, with no GPU (ADR-0022).
 4. `3DEngine.Vulkan/3DEngine.Vulkan.csproj` holds the only pin of `Vortice.Vulkan` and the only pin of
    `Alimer.Bindings.SDL`. A host receives each binding through its project reference. The version
    of each binding therefore has one answer, in one line.
@@ -58,6 +59,8 @@ change the two kernels.
    it needs one.
 6. Each file that comes from the sample code keeps the copyright line of its author.
    `THIRD-PARTY-NOTICES.md`, section 4, gives the licence text.
+7. Each shader has its GLSL source and its compiled SPIR-V in `3DEngine.Vulkan/Shaders/`, with a lock
+   file of hashes that a test checks. The pipeline draws in the render pass of the swapchain (ADR-0022).
 
 ## Consequences
 
@@ -72,3 +75,8 @@ type and a one-time command buffer return in phase R3, and that phase writes the
 
 **Next:** TASK-0027 applies this decision. Phase R3 adds the pipeline and the first vertex type to
 this project.
+
+## History
+
+- 2026-10-12 · TASK-0069 · ADR-0022 amends items 3 and 7: the test project `3DEngine.Tests`, the
+  shaders with their lock file, and the render pass of the first pipeline.
