@@ -1986,3 +1986,35 @@ New tests: 6. The test list holds 402 (374 in `Engine.Tests`, 28 in `3DEngine.Te
 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open entries: 14 of 15. New diagnostic
 codes: none. The first objective now needs R6: 4 to 6 evenings. The next ledger entry must be the codebase
 review.
+
+## v0.71 — The codebase review of 2026-10-13 (governance, TASK-0072)
+
+The eighth codebase review, `docs/reviews/2026-10-13-codebase-review.md`, examines `main` at `2cc08b6`, the
+merge of v0.70. The review of 2026-10-12 examined v0.64, and v0.70 was the sixth entry after it, so this
+entry had to be the review. I wrote it on 2026-10-12; it carries the date 2026-10-13, because the review gate
+permits one review for each date (T53).
+
+**The result.**
+
+- Five findings of the last review are fixed in full (T16, T28, T41, T42, T43), and four for the forms that
+  they named (T44 to T47).
+- Twenty findings are new. One is high: four kinds of file that are not gate files can take `Engine.Tests`
+  out of the step "Test" with a green run (T48); I ran the probe again.
+- The render side of R3 to R5 is sound in its core: the depth image with three frames in flight ran clean
+  under synchronization validation. The new render findings are two medium (V8: no swapchain is made again;
+  V9: no check of the version of the device) and six low.
+- The subscription of R5 delivered each event in order under 8 threads; it has five small gaps (E61 to E65).
+- Seventy-four findings are open: no critical, eight high, twenty-eight medium and thirty-eight low.
+- Two corrections of earlier texts: T13 (the reviews of 2026-10-11 and 2026-10-12 misread
+  `eng/report-failed-tests.js`) and the progress line of R-0031 of 2026-10-12 (T24 was fixed).
+
+**The tasks.** TASK-0073 (P0.28) holds T48 to T53, and TASK-0074 (P0.29) holds E61 to E65 and V8 to V15. The
+register stays at 14 of 15.
+
+**Questions for the owner.** Q1: must TASK-0073 come before R6 (recommended: yes)? Q2: six decisions for R6:
+the demonstration, where the image test lives, which runners run it, how the images compare, the frame of
+the camera, and how the demonstration runs again. Q3: the estimate of R6, 6 to 8 evenings in place of 4 to 6.
+
+New tests: none. The test list holds 402. `dotnet build 3DEngine.sln --no-incremental` gives zero errors and
+zero warnings. Open entries: 14 of 15. New diagnostic codes: none. The next codebase review must come before
+ledger entry v0.77.

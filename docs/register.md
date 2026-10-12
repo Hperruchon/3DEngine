@@ -318,6 +318,11 @@ a gate file, the judge answers the switch of the gates, a merge is judged agains
 of its parents, the determinism gate binds each call with Roslyn, the dependency gate refuses an import
 that it cannot resolve, and the runner fails on a form that it cannot run. T4, T5, T7, T10, T13, T17,
 T23, T24 and T25 stay.
+Progress 2026-10-12: the codebase review of 2026-10-13 corrects the line above: T24 was fixed, and the
+line listed it as open. It finds that four kinds of file that are not gate files can take `Engine.Tests`
+out of the step "Test" with a green run (T48, high), that the determinism gate and the dependency gate miss
+forms that MSBuild evaluates (T49, T50), that a rename carries a change into a gate file through a clean
+merge (T51), and two small gaps (T52, T53). TASK-0073 holds T48 to T53.
 
 ### R-0033 · Seven findings of the third codebase review in the engine and the hosts have no task
 - class: debt
