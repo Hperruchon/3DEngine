@@ -15,6 +15,12 @@
     <IsPackable>false</IsPackable>
   </PropertyGroup>
 
+  <!-- The compiled shaders (ADR-0022). Shaders/compile.js makes each .spv file and
+       Shaders/shaders.lock; ShaderLibrary reads each one as a resource. -->
+  <ItemGroup>
+    <EmbeddedResource Include="Shaders/*.spv" LogicalName="Shaders/%(Filename)%(Extension)" />
+  </ItemGroup>
+
   <ItemGroup>
     <PackageReference Include="Alimer.Bindings.SDL" Version="3.9.2" />
     <PackageReference Include="Vortice.Vulkan" Version="3.2.3" />

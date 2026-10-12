@@ -102,3 +102,7 @@ The desktop window shows a triangle, and then an indexed mesh, through a pipelin
 - 2026-10-12: the task is open, in the batch R2 to R6, after TASK-0066 (question Q1 of the review). ADR-0022
   records the four decisions of the owner and amends ADR-0009 and ADR-0017. The dependency gate has the
   class of `3DEngine.Tests`, and an injected reference from it to `Engine.Core` failed the new rule.
+- 2026-10-12: the triangle. Two shaders with their SPIR-V and `shaders.lock`, made by
+  `3DEngine.Vulkan/Shaders/compile.js` with shaderc v2023.8 of the Vulkan SDK 1.3.290; `ShaderLibrary`,
+  `RenderPipeline` and the helper of a shader module; the desktop draws the triangle. A change of
+  `triangle.frag` with no new compile failed `ShaderSourceTests`. The owner must look at the window.

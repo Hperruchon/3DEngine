@@ -9,6 +9,7 @@ public sealed unsafe class NativeThreeDEngine : IThreeDEngine, IDisposable
 {
     private readonly Window _window;
     private GraphicsDevice? _graphicsDevice;
+    private RenderPipeline? _trianglePipeline;
 
     public NativeThreeDEngine(Window window)
     {
@@ -22,6 +23,10 @@ public sealed unsafe class NativeThreeDEngine : IThreeDEngine, IDisposable
     public void Initialize()
     {
         _graphicsDevice = new GraphicsDevice(Name, enableValidation: true, _window);
+
+        // The first draw of roadmap phase R3 (TASK-0069): one triangle with no
+        // vertex input. The owner looks at it in the window (ADR-0022 item 4).
+        _trianglePipeline = new RenderPipeline(_graphicsDevice, "triangle.vert", "triangle.frag");
     }
 
     public void Update(TimeSpan deltaTime)
@@ -31,7 +36,7 @@ public sealed unsafe class NativeThreeDEngine : IThreeDEngine, IDisposable
 
     public void Render()
     {
-        if (_graphicsDevice is null)
+        if (_graphicsDevice is null || _trianglePipeline is null)
         {
             throw new InvalidOperationException("Graphics device is not initialized.");
         }
@@ -58,6 +63,8 @@ public sealed unsafe class NativeThreeDEngine : IThreeDEngine, IDisposable
             };
 
             _graphicsDevice.DeviceApi.vkCmdBeginRenderPass(commandBuffer, &renderPassInfo, VkSubpassContents.Inline);
+            _trianglePipeline.Bind(commandBuffer, extent);
+            _graphicsDevice.DeviceApi.vkCmdDraw(commandBuffer, 3, 1, 0, 0);
             _graphicsDevice.DeviceApi.vkCmdEndRenderPass(commandBuffer);
         });
     }
@@ -72,6 +79,10 @@ public sealed unsafe class NativeThreeDEngine : IThreeDEngine, IDisposable
     // each Vulkan object. The validation layer now also checks the teardown.
     public void Dispose()
     {
+        // The GPU must be idle before a pipeline goes.
+        _graphicsDevice?.WaitIdle();
+        _trianglePipeline?.Dispose();
+        _trianglePipeline = null;
         _graphicsDevice?.Dispose();
         _graphicsDevice = null;
     }
