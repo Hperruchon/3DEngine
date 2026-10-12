@@ -1960,3 +1960,29 @@ New tests: 11. The test list holds 396 (370 in `Engine.Tests`, 26 in `3DEngine.T
 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open entries: 14 of 15. New diagnostic
 codes: none. The first objective now needs R5 and R6: 10 to 14 evenings. The next codebase review must
 come before ledger entry v0.71, so it comes after R5.
+
+## v0.70 — The desktop draws each live body of its session, from the events and GetTessellation (R5, TASK-0071)
+
+Roadmap phase R5, in the batch R2 to R6. The owner answered two questions on R5 on 2026-10-12, and
+ADR-0024 records the answers: a public subscription on `EngineHost`, and an origin in double precision on
+`Entity`. ADR-0024 amends ADR-0019 and ADR-0023.
+
+**The change.**
+
+- `EngineHost.Subscribe` gives a host the events of its session in its process, after each commit and
+  in the order of the commits; an action that throws is removed and the commit continues.
+- `Entity.Origin` holds three doubles, and `SceneWalker` adds the origins and the positions in double
+  precision before it narrows the position relative to the eye.
+- `SessionBodies` of the desktop reads the live bodies and subscribes in one read of the session, fetches
+  the mesh of each new body with `GetTessellation`, narrows it around the centre of its box, and removes
+  each consumed body. The fixed mesh of the first demonstration is gone, and the window starts empty.
+
+**Proof.** The owner accepted three pictures while a script sent the first demonstration over HTTP to
+the running desktop: the empty window, the two boxes after the translate, and the cut body after the
+subtraction. No run gave a validation message. An injected rethrow in the broadcaster and an injected
+float origin each failed their new test.
+
+New tests: 6. The test list holds 402 (374 in `Engine.Tests`, 28 in `3DEngine.Tests`). `dotnet build
+3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open entries: 14 of 15. New diagnostic
+codes: none. The first objective now needs R6: 4 to 6 evenings. The next ledger entry must be the codebase
+review.

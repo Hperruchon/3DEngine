@@ -56,6 +56,7 @@ Therefore each approved objective must have a track here.
 - P0.26 — The checks from main take no input of the build from the judged checkout. v0.67, TASK-0066.
 - R3 — The desktop draws an indexed mesh through the first pipeline. v0.68, TASK-0069, ADR-0022.
 - R4 — An orbit camera, reversed depth, and a draw list over the scene graph. v0.69, TASK-0070, ADR-0023.
+- R5 — The desktop draws each live body of its session, from the events and GetTessellation. v0.70, TASK-0071, ADR-0024.
 
 ## Track 0 — Foundations
 
@@ -162,9 +163,8 @@ The field `depends-on` of each task file holds the same order. `TaskGovernanceGa
 that each dependency names a task.
 
 Phase R6 gives the first objective that the owner named: create a box, subtract a second box, and
-observe the cut. The two phases that remain, R5 and R6, give it in 10 to 14 evenings. That number is
-the sum of the column "Evenings" for those phases. Correct it when a phase ships or an estimate
-changes.
+observe the cut. The phase that remains, R6, gives it in 4 to 6 evenings. That number is the sum of
+the column "Evenings" for that phase. Correct it when a phase ships or an estimate changes.
 
 ## Not on a track
 

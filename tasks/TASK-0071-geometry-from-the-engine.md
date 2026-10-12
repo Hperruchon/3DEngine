@@ -1,7 +1,7 @@
 ---
 id: 0071
 title: The desktop draws each live body of its session, from the events and the query GetTessellation
-status: Active
+status: Done
 phase: R5
 opened: 2026-10-12
 depends-on: [0070]
@@ -67,12 +67,41 @@ and it goes when a command consumes it.
 
 ## Acceptance criteria
 
-- [ ] Pictures of the window while a script sends the commands of the first demonstration over HTTP:
-      the bodies appear, and after the subtraction only the cut body remains. The owner accepts them.
-- [ ] A run of the desktop gives no validation message.
-- [ ] Each new test fails before its correction, or an injection shows that it can fail.
-- [ ] A clean build (`--no-incremental`) gives zero errors and zero warnings.
-- [ ] Continuous integration passes on `ubuntu-latest`, `windows-latest` and `macos-latest`.
+- [x] Pictures of the window while a script sends the commands of the first demonstration over HTTP:
+      the bodies appear, and after the subtraction only the cut body remains. The owner accepted them on
+      2026-10-12.
+- [x] A run of the desktop gives no validation message.
+- [x] Each new test fails before its correction, or an injection shows that it can fail.
+- [x] A clean build (`--no-incremental`) gives zero errors and zero warnings.
+- [ ] Continuous integration passes on `ubuntu-latest`, `windows-latest` and `macos-latest`. The
+      merge records the run.
+
+## Outcome
+
+Status: Done · v0.70 · the commit that carries this block.
+
+The desktop draws each live body of the session that it owns. `EngineHost.Subscribe` gives it the
+events of the session in its process, in the order of the commits. `SessionBodies` reads the live bodies
+and subscribes in one read of the session, fetches the mesh of each new body with `GetTessellation`,
+narrows it around the centre of its box, and places it with an `Entity.Origin` in double precision; a
+consumed body leaves the scene. ADR-0024 records the two answers of the owner and amends ADR-0019 and
+ADR-0023.
+
+## Method
+
+**Mechanical.** Three pictures while a script sent the first demonstration over HTTP to the running
+desktop: the empty window, the two boxes after the translate, and the cut body after the subtraction;
+no validation message. Six new tests: four of the subscription in `Engine.Tests`, and the origin and
+the centre in `3DEngine.Tests`. An injected rethrow in the broadcaster failed the test of a failing
+action, and an injected float origin failed the test of the origin far from the scene.
+
+**Judgement.** The action of a subscription runs inside the commit, so `SessionBodies` only puts the
+body in a queue, and the render loop calls the query outside the commit. A consumed body waits for the
+GPU to be idle before its buffers go, because a frame in flight can read them; a consumption is rare, so
+the wait costs little. A body with no triangle gets no mesh, because a buffer of size 0 is not valid.
+
+**Weakest.** No test calls `SessionBodies`: no test project references the desktop (R-0039). The
+pictures are its evidence. The rule that an action must not block is text and a comment.
 
 ## Notes for the implementer
 
@@ -88,3 +117,4 @@ and it goes when a command consumes it.
   the fixed mesh. Three pictures while a script sent the first demonstration over HTTP: the empty
   window, the two boxes, and the cut body; no validation message. An injected rethrow in the
   broadcaster and an injected float origin each failed their test.
+- 2026-10-12: the owner accepted the pictures. Closed, after a full local run of 402 tests.
