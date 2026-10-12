@@ -312,6 +312,12 @@ the gates (T41), and files that are not gate files switch the gates to the judge
 packages (T44). A merge can undo a change of `main` with no judgement (T42). T41 is a defect of the step
 of TASK-0064. The review also adds T43, T45, T46 and T47, and finds T31 fixed in part. TASK-0066 holds
 T41 to T47.
+Progress 2026-10-12: TASK-0066 corrected T41 to T47, and the part of T16 that skipped an import with a
+property. Each build of a program of `main` runs outside the judged checkout, each input of a build is
+a gate file, the judge answers the switch of the gates, a merge is judged against the automatic merge
+of its parents, the determinism gate binds each call with Roslyn, the dependency gate refuses an import
+that it cannot resolve, and the runner fails on a form that it cannot run. T4, T5, T7, T10, T13, T17,
+T23, T24 and T25 stay.
 
 ### R-0033 · Seven findings of the third codebase review in the engine and the hosts have no task
 - class: debt
