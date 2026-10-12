@@ -1,7 +1,7 @@
 ---
 id: 0070
 title: The desktop draws a scene with depth through an orbit camera and a draw list
-status: Active
+status: Done
 phase: R4
 opened: 2026-10-12
 depends-on: [0069]
@@ -68,12 +68,42 @@ mouse moves, and each draw goes through the draw list.
 
 ## Acceptance criteria
 
-- [ ] A picture of the window shows the two bodies with the correct overlap, and a second picture after
-      an orbit shows them from another side. The owner accepts the pictures.
-- [ ] A run of the desktop gives no validation message.
-- [ ] Each new test fails before its correction, or an injection shows that it can fail.
-- [ ] A clean build (`--no-incremental`) gives zero errors and zero warnings.
-- [ ] Continuous integration passes on `ubuntu-latest`, `windows-latest` and `macos-latest`.
+- [x] A picture of the window shows the two bodies with the correct overlap, and a second picture after
+      an orbit shows them from another side. The owner accepts the pictures (2026-10-12).
+- [x] A run of the desktop gives no validation message.
+- [x] Each new test fails before its correction, or an injection shows that it can fail. An injected
+      standard projection failed two tests.
+- [x] A clean build (`--no-incremental`) gives zero errors and zero warnings.
+- [ ] Continuous integration passes on `ubuntu-latest`, `windows-latest` and `macos-latest`. The
+      merge records the run.
+
+## Outcome
+
+Status: Done · v0.69 · the commit that carries this block.
+
+The desktop draws a scene of two overlapping copies of the cut body with reversed depth, through an
+orbit camera that a left drag of the mouse turns and the wheel zooms. At each frame `SceneWalker` walks
+the scene graph into a draw list of model-view matrices relative to the eye, and `DrawListExecutor`
+draws each record with one direct indexed draw. ADR-0023 records the four answers of the owner.
+
+## Method
+
+**Mechanical.** Two pictures of the window, the second after a drag of the mouse that a script sent
+(`SetCursorPos` and `mouse_event` of Windows on the window of the desktop only), with no validation
+message in either run. Eleven new tests with no GPU: the eye, the yaw, the limits of the pitch and the
+zoom, the view, the reversed projection, the walk of the graph and its children, the matrix relative to
+the eye, and the agreement of the clear, the projection and the comparison. An injected standard
+projection failed two of them.
+
+**Judgement.** The matrices are relative to the eye: the position of each entity is moved by minus the
+eye in double precision, and only the result is narrowed. The positions of the entities are still floats
+in `Transform`, so a body far from the origin of the scene loses detail before the walk; R5 must place
+the bodies of the engine with double precision. The Vulkan layer references `3DEngine.Core` for the draw
+list, which ADR-0017 item 2 permits.
+
+**Weakest.** The wheel zoom was not tried in the window; a test holds its limits. No test draws a frame;
+R6 adds an image test. The depth image is not made again when the extent changes, because the window
+cannot change its size today (V2 of the reviews).
 
 ## Notes for the implementer
 
@@ -89,3 +119,4 @@ mouse moves, and each draw goes through the draw list.
   `3DEngine.Vulkan`, and a scene of two copies of the cut body in the desktop. Two pictures: the first
   view, and the view after a drag that a script sent; no validation message. An injected standard
   projection failed two tests.
+- 2026-10-12: the owner accepted both pictures. Closed, after a full local run of 396 tests.
