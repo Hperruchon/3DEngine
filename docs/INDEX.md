@@ -29,7 +29,9 @@ it is not correct and it must not be used.
 | `Engine.Tests/` | The verifier of authority: unit tests and the gates. It may reference any `Engine.*` project. |
 | `Engine.Tests/Governance/` | The gates that read the documents ([templates.md](templates.md), section 5). |
 | `3DEngine.Core/` | Peer **render** kernel (`Scene`, `Entity`, `Camera`, `Light`, materials). Not design truth. Never referenced by, and never references, an `Engine.*` project (ADR-0009). |
-| `3DEngine.Vulkan/` | First-party **Vulkan layer**: `GraphicsDevice`, `Swapchain`, and the SDL `Window` that owns the surface. Holds the only pin of `Vortice.Vulkan` and `Alimer.Bindings.SDL`. Only a host that draws references it (ADR-0017). |
+| `3DEngine.Vulkan/` | First-party **Vulkan layer**: `GraphicsDevice`, `Swapchain`, the SDL `Window` that owns the surface, and the first pipeline (`RenderPipeline`, `MeshVertex`, `GpuBuffer`). Holds the only pin of `Vortice.Vulkan` and `Alimer.Bindings.SDL`. Only a host that draws, and `3DEngine.Tests`, reference it (ADR-0017, ADR-0022). |
+| `3DEngine.Vulkan/Shaders/` | The GLSL source, the SPIR-V and `shaders.lock` of each shader. `node 3DEngine.Vulkan/Shaders/compile.js` compiles each one with the Vulkan SDK; run it after each change of a shader (ADR-0022). |
+| `3DEngine.Tests/` | The tests of the render side, with no GPU. It may reference `3DEngine.Core` and `3DEngine.Vulkan` only (ADR-0022). |
 | `3DEngine/` | The Vulkan desktop host. Draws through `3DEngine.Vulkan`, which uses SDL3. It owns a document session and serves the surface library on 127.0.0.1, port 5180 by default, so that an agent works on the document that the person has open (ADR-0019, TASK-0054). Change it only when a task gives that scope. Track R changes it. |
 
 ## Docs and process

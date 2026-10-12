@@ -1,0 +1,32 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- The tests of the render side, with no GPU (ADR-0022, TASK-0069). This
+       project may reference 3DEngine.Core and 3DEngine.Vulkan and nothing else;
+       DependencyDirectionGateTests holds the rule. No test creates a Vulkan
+       object, so each runner of the pipeline runs these tests. -->
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <LangVersion>latest</LangVersion>
+    <IsPackable>false</IsPackable>
+    <RootNamespace>ThreeDEngine.Tests</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.14.1" />
+    <PackageReference Include="xunit" Version="2.9.3" />
+    <PackageReference Include="xunit.runner.visualstudio" Version="3.1.4" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Using Include="Xunit" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\3DEngine.Core\3DEngine.Core.csproj" />
+    <ProjectReference Include="..\3DEngine.Vulkan\3DEngine.Vulkan.csproj" />
+  </ItemGroup>
+
+</Project>

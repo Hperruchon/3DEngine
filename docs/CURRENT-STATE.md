@@ -1903,3 +1903,32 @@ gates of the judged commit, as the comment of the step says.
 New tests: 16. The test list holds 369. The program runs 66 checks in 71 runs. `dotnet build
 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open entries: 14 of 15. New
 diagnostic codes: none. The next codebase review must come before ledger entry v0.71.
+
+## v0.68 — The desktop draws an indexed mesh through the first pipeline (R3, TASK-0069)
+
+Roadmap phase R3, in the batch R2 to R6 that the owner ordered on 2026-10-12. Until this task the
+desktop cleared its window and drew nothing.
+
+**The change.**
+
+- ADR-0022 records the four answers of the owner to question Q2 of the codebase review of 2026-10-12,
+  and amends ADR-0009 and ADR-0017: the GLSL source and the SPIR-V of each shader with a lock of hashes,
+  the render pass that exists, the test project `3DEngine.Tests`, and the computer of the owner as the
+  platform of R3.
+- `3DEngine.Vulkan` has the first pipeline: `ShaderLibrary` (the embedded SPIR-V), `RenderPipeline`
+  (y up, counter-clockwise front faces, culled back faces, one push constant), `MeshVertex` (one position
+  of three floats, narrowed after the subtraction of the origin in double precision), `GpuBuffer` and
+  `MemoryTypes`. `Shaders/compile.js` compiles each shader and writes `shaders.lock`.
+- The desktop draws the cut body of the first demonstration, as `GetTessellation` gave it in TASK-0028.
+- The new project `3DEngine.Tests` (15 tests, no GPU) has its own class in the dependency gate: it may
+  reference the render side only, and `Engine.Tests` references none of it.
+
+**Proof.** The owner accepted two pictures of the window, which I took on the order of the owner: the
+triangle, and then the mesh. Each run of the desktop gave no validation message. A shader change with no
+new compile, a reference from the render tests to `Engine.Core` and a reversed triangle each failed a
+test.
+
+New tests: 16 (15 in `3DEngine.Tests`, 1 in the dependency gate). The test list holds 385. `dotnet build
+3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open entries: 14 of 15. New diagnostic
+codes: none. The first objective now needs R4 to R6: 15 to 21 evenings. The next codebase review must
+come before ledger entry v0.71.

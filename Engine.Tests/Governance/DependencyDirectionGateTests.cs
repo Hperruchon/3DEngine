@@ -261,6 +261,10 @@ public class DependencyDirectionGateTests
 
     private static readonly string[] Verifiers = ["Engine.Tests"];
 
+    // The tests of the render side, with no GPU (ADR-0022, TASK-0069). They may
+    // reference the render side only; Engine.Tests references none of it.
+    private static readonly string[] RenderVerifiers = ["3DEngine.Tests"];
+
     // eng/manifold-native packs the native payload. It holds no code.
     private static readonly string[] Packaging = ["Engine.Geometry.Manifold.Native"];
 
@@ -286,7 +290,7 @@ public class DependencyDirectionGateTests
         // A new project must enter one of the lists above before the gate can
         // apply a rule to it. Until TASK-0039 an unlisted project passed each
         // test, because no test read it (rules review finding F22).
-        string[] classified = [.. Kernel, .. RenderSide, .. HeadlessClients, .. Surfaces, .. HostsThatDraw, .. Verifiers, .. Packaging, .. Judges];
+        string[] classified = [.. Kernel, .. RenderSide, .. HeadlessClients, .. Surfaces, .. HostsThatDraw, .. Verifiers, .. RenderVerifiers, .. Packaging, .. Judges];
 
         var unclassified = Graph().Keys
             .Where(p => !classified.Contains(p))
@@ -296,7 +300,7 @@ public class DependencyDirectionGateTests
         Assert.True(
             unclassified.Length == 0,
             "Each project must be a kernel, a render-side project, a headless client, a surface library, a host that "
-            + "draws, a verifier or a packaging project, so that the dependency rules apply to it. "
+            + "draws, a verifier, a verifier of the render side or a packaging project, so that the dependency rules apply to it. "
             + "Add it to one list.\n  " + string.Join("\n  ", unclassified));
     }
 
@@ -352,13 +356,31 @@ public class DependencyDirectionGateTests
     }
 
     [Fact]
+    public void A_Verifier_Of_The_Render_Side_References_Only_The_Render_Side()
+    {
+        // ADR-0022 item 3: the tests of the render side reference 3DEngine.Core
+        // and 3DEngine.Vulkan, and nothing else.
+        string[] permitted = ["3DEngine.Core", "3DEngine.Vulkan"];
+        var graph = Graph();
+        var offences = RenderVerifiers
+            .Where(graph.ContainsKey)
+            .SelectMany(verifier => graph[verifier]
+                .Where(target => !permitted.Contains(target))
+                .Select(target => $"{verifier} references {target}, which is not the render side"))
+            .ToArray();
+
+        Assert.True(offences.Length == 0, string.Join("\n  ", offences));
+    }
+
+    [Fact]
     public void Only_A_Host_That_Draws_References_The_Vulkan_Layer()
     {
-        // ADR-0017 rule 3. This test also covers each Engine.* project and the
+        // ADR-0017 rule 3, and ADR-0022 item 3 for the tests of the render side.
+        // This test also covers each Engine.* project and the
         // render kernel, because neither one is a host that draws.
         var offences = Graph()
             .Where(p => p.Value.Contains("3DEngine.Vulkan"))
-            .Where(p => !HostsThatDraw.Contains(p.Key))
+            .Where(p => !HostsThatDraw.Contains(p.Key) && !RenderVerifiers.Contains(p.Key))
             .Select(p => $"{p.Key} references 3DEngine.Vulkan, and it is not a host that draws")
             .ToArray();
 

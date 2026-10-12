@@ -1,0 +1,7 @@
+# The lock of the shaders of 3DEngine.Vulkan (ADR-0022). compile.js writes this file;
+# do not change it by hand. Each line: the shader, the SHA-256 of its source with LF
+# line ends, and the SHA-256 of its SPIR-V.
+# compiler: shaderc v2023.8 v2024.1-9-g3ac03b8
+# command: glslc --target-env=vulkan1.3 -O -o <shader>.spv <shader>
+mesh.frag 35a87682a308093a86dcac0d8712f3bb623b4d55d02b19b702c72056a153d053 f22813a700b05d8d3fa06d47ad1a284d0007d2b6b07b716ab0e20ccd4f2bb2fd
+mesh.vert 9ed34e8989eecf4120623161264ee967c1c50f626a5970edf138b47027a73885 19bf89b9390ae2c2d7fcb6fd31a561aa541ca649658e438ed4622818a656b439

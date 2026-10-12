@@ -24,7 +24,7 @@ names. Do not read all of them.
 | [0006](0006-command-execution-model.md) | Command execution model | Amended | Contracts, runtime | — | 0008, 0020 |
 | [0007](0007-ui-ephemeral-state-boundary.md) | UI ephemeral state boundary | Accepted | Boundary, clients | — | — |
 | [0008](0008-command-query-event-triad.md) | Command, query and event triad with structured results | Amended | Contracts | 0006 | 0020 |
-| [0009](0009-3dengine-core-peer-render-kernel.md) | 3DEngine.Core is a peer render kernel | Accepted | Boundary, clients | — | — |
+| [0009](0009-3dengine-core-peer-render-kernel.md) | 3DEngine.Core is a peer render kernel | Amended | Boundary, clients | — | 0022 |
 | [0010](0010-subscription-reset-snapshot-format.md) | subscription.reset snapshot format | Amended | Contracts, observability | — | 0020 |
 | [0011](0011-server-default-deployment-topology.md) | Server-default deployment, embed for offline | Amended | Clients, deployment | 0004 | 0019 |
 | [0012](0012-geometry-backend-wiring.md) | Geometry backend wiring | Amended | Boundary, geometry, contracts | — | 0018, 0021 |
@@ -32,22 +32,23 @@ names. Do not read all of them.
 | [0014](0014-manifold-native-interop.md) | Manifold backend native-interop posture | Accepted | Boundary, geometry, native-interop | — | — |
 | [0015](0015-command-log-persistence.md) | Command-log persistence for engine-api-http | Proposed | Persistence, runtime, deployment | — | — |
 | [0016](0016-handler-declared-construction.md) | Handler-declared command and query construction | Accepted | Contracts, clients | 0013 | — |
-| [0017](0017-first-party-vulkan-layer.md) | The first-party Vulkan layer | Accepted | Boundary, rendering | — | — |
+| [0017](0017-first-party-vulkan-layer.md) | The first-party Vulkan layer | Amended | Boundary, rendering | — | 0022 |
 | [0018](0018-tessellation-capability.md) | The tessellation capability | Accepted | Geometry, contracts, rendering | 0012 | — |
 | [0019](0019-hybrid-deployment-topology.md) | The hybrid deployment topology | Accepted | Clients, deployment | 0011 | — |
 | [0020](0020-document-version-meaning.md) | The meaning of the document version | Accepted | Contracts, runtime, observability | 0006, 0008, 0010 | — |
 | [0021](0021-operand-consumption.md) | Operand consumption and the live body set | Accepted | Contracts, geometry, observability | 0012 | — |
+| [0022](0022-first-render-pipeline.md) | The first render pipeline | Accepted | Rendering, boundary | 0009, 0017 | — |
 
 ## Topics
 
 - **Contracts** — 0005, 0006, 0008, 0012, 0013, 0018, 0020, 0021. Read these before changing `Engine.Contracts/**`.
-- **Boundary** — 0001, 0004, 0007, 0012, 0014, 0017. Read these before changing project references or adding clients.
+- **Boundary** — 0001, 0004, 0007, 0012, 0014, 0017, 0022. Read these before changing project references or adding clients.
 - **Workflow** — 0002. Read before adding a client or skipping CLI.
 - **Clients** — 0002, 0007, 0011, 0019. Read before changing UI/CLI/host code.
 - **Deployment** — 0011, 0019. Read these before changing where a session runs or which transport a host uses.
 - **Geometry** — 0001, 0012, 0014, 0018, 0021. Read before adding a capability or backend.
 - **Observability** — 0005, 0010, 0013, 0020, 0021. Read before changing event ordering, retention, subscription, or schema endpoints.
-- **Rendering** — 0009, 0017, 0018. Read these before changing `3DEngine.Core`, `3DEngine.Vulkan` or `3DEngine`.
+- **Rendering** — 0009, 0017, 0018, 0022. Read these before changing `3DEngine.Core`, `3DEngine.Vulkan` or `3DEngine`.
 
 ## Adding an ADR
 

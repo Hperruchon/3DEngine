@@ -1,0 +1,128 @@
+using Vortice.Vulkan;
+
+namespace ThreeDEngine.Vulkan;
+
+// The graphics pipeline of a mesh, in subpass 0 of the render pass of the swapchain
+// (ADR-0022 item 2, roadmap phase R3). It reads one MeshVertex for each vertex, and
+// one push constant for the vertex shader: the width of the extent divided by its
+// height. A test reads the fixed state below with no GPU.
+//
+// The viewport has a negative height, so y points up in clip space, as in the
+// space of the engine. A triangle that is counter-clockwise when seen from outside
+// a body (ADR-0018 item 9) is then counter-clockwise on the screen, and it is the
+// front face; the pipeline culls each back face. A negative height is core in
+// Vulkan 1.1, and the instance asks for 1.3.
+public sealed unsafe class RenderPipeline : IDisposable
+{
+    public const VkPrimitiveTopology Topology = VkPrimitiveTopology.TriangleList;
+    public const VkCullModeFlags CullMode = VkCullModeFlags.Back;
+    public const VkFrontFace FrontFace = VkFrontFace.CounterClockwise;
+    public const uint PushConstantSize = sizeof(float);
+
+    private readonly GraphicsDevice _device;
+
+    public RenderPipeline(GraphicsDevice device, string vertexShader, string fragmentShader)
+    {
+        _device = device;
+
+        VkShaderModule vertex = device.CreateShaderModule(ShaderLibrary.Load(vertexShader));
+        VkShaderModule fragment = device.CreateShaderModule(ShaderLibrary.Load(fragmentShader));
+        try
+        {
+            VkPushConstantRange pushConstant = new() { stageFlags = VkShaderStageFlags.Vertex, offset = 0, size = PushConstantSize };
+            VkPipelineLayoutCreateInfo layoutInfo = new() { pushConstantRangeCount = 1, pPushConstantRanges = &pushConstant };
+            device.DeviceApi.vkCreatePipelineLayout(&layoutInfo, null, out VkPipelineLayout layout).CheckResult();
+            Layout = layout;
+
+            fixed (byte* main = "main"u8)
+            {
+                VkPipelineShaderStageCreateInfo* stages = stackalloc VkPipelineShaderStageCreateInfo[2];
+                stages[0] = new VkPipelineShaderStageCreateInfo { stage = VkShaderStageFlags.Vertex, module = vertex, pName = main };
+                stages[1] = new VkPipelineShaderStageCreateInfo { stage = VkShaderStageFlags.Fragment, module = fragment, pName = main };
+
+                VkVertexInputBindingDescription binding = MeshVertex.Binding;
+                VkVertexInputAttributeDescription position = MeshVertex.Position;
+                VkPipelineVertexInputStateCreateInfo vertexInput = new()
+                {
+                    vertexBindingDescriptionCount = 1,
+                    pVertexBindingDescriptions = &binding,
+                    vertexAttributeDescriptionCount = 1,
+                    pVertexAttributeDescriptions = &position,
+                };
+                VkPipelineInputAssemblyStateCreateInfo inputAssembly = new() { topology = Topology };
+                VkPipelineViewportStateCreateInfo viewportState = new() { viewportCount = 1, scissorCount = 1 };
+                VkPipelineRasterizationStateCreateInfo rasterization = new()
+                {
+                    polygonMode = VkPolygonMode.Fill,
+                    cullMode = CullMode,
+                    frontFace = FrontFace,
+                    lineWidth = 1.0f,
+                };
+                VkPipelineMultisampleStateCreateInfo multisample = new() { rasterizationSamples = VkSampleCountFlags.Count1 };
+                VkPipelineColorBlendAttachmentState blendAttachment = new() { colorWriteMask = VkColorComponentFlags.All };
+                VkPipelineColorBlendStateCreateInfo colorBlend = new() { attachmentCount = 1, pAttachments = &blendAttachment };
+                VkDynamicState* dynamicStates = stackalloc VkDynamicState[] { VkDynamicState.Viewport, VkDynamicState.Scissor };
+                VkPipelineDynamicStateCreateInfo dynamicState = new() { dynamicStateCount = 2, pDynamicStates = dynamicStates };
+
+                VkGraphicsPipelineCreateInfo pipelineInfo = new()
+                {
+                    stageCount = 2,
+                    pStages = stages,
+                    pVertexInputState = &vertexInput,
+                    pInputAssemblyState = &inputAssembly,
+                    pViewportState = &viewportState,
+                    pRasterizationState = &rasterization,
+                    pMultisampleState = &multisample,
+                    pColorBlendState = &colorBlend,
+                    pDynamicState = &dynamicState,
+                    layout = Layout,
+                    renderPass = device.Swapchain.RenderPass,
+                    subpass = 0,
+                };
+
+                VkPipeline pipeline;
+                device.DeviceApi.vkCreateGraphicsPipelines(VkPipelineCache.Null, 1, &pipelineInfo, &pipeline).CheckResult();
+                Handle = pipeline;
+            }
+        }
+        finally
+        {
+            device.DeviceApi.vkDestroyShaderModule(vertex);
+            device.DeviceApi.vkDestroyShaderModule(fragment);
+        }
+    }
+
+    public VkPipeline Handle { get; }
+
+    public VkPipelineLayout Layout { get; }
+
+    // The viewport of the whole extent, with y up: it starts at the bottom edge and
+    // has a negative height.
+    public static VkViewport Viewport(VkExtent2D extent) => new()
+    {
+        x = 0,
+        y = extent.height,
+        width = extent.width,
+        height = -(float)extent.height,
+        minDepth = 0,
+        maxDepth = 1,
+    };
+
+    // Binds the pipeline, sets the viewport and the scissor of the extent, and gives
+    // the aspect of the extent to the vertex shader.
+    public void Bind(VkCommandBuffer commandBuffer, VkExtent2D extent)
+    {
+        _device.DeviceApi.vkCmdBindPipeline(commandBuffer, VkPipelineBindPoint.Graphics, Handle);
+        _device.DeviceApi.vkCmdSetViewport(commandBuffer, 0, Viewport(extent));
+        _device.DeviceApi.vkCmdSetScissor(commandBuffer, 0, new VkRect2D(0, 0, extent.width, extent.height));
+        float aspect = (float)extent.width / extent.height;
+        _device.DeviceApi.vkCmdPushConstants(commandBuffer, Layout, VkShaderStageFlags.Vertex, 0, PushConstantSize, &aspect);
+    }
+
+    // The caller waits until the device is idle before it disposes a pipeline.
+    public void Dispose()
+    {
+        _device.DeviceApi.vkDestroyPipeline(Handle);
+        _device.DeviceApi.vkDestroyPipelineLayout(Layout);
+    }
+}
