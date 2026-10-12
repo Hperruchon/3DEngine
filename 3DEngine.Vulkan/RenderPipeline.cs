@@ -1,11 +1,14 @@
+using System.Numerics;
 using Vortice.Vulkan;
 
 namespace ThreeDEngine.Vulkan;
 
 // The graphics pipeline of a mesh, in subpass 0 of the render pass of the swapchain
 // (ADR-0022 item 2, roadmap phase R3). It reads one MeshVertex for each vertex, and
-// one push constant for the vertex shader: the width of the extent divided by its
-// height. A test reads the fixed state below with no GPU.
+// one push constant for the vertex shader: the model-view matrix of the draw and the
+// projection (TASK-0070). It tests the depth and keeps the greater depth, which the
+// reversed projection gives to a nearer fragment (ADR-0023 item 1). A test reads the
+// fixed state below with no GPU.
 //
 // The viewport has a negative height, so y points up in clip space, as in the
 // space of the engine. A triangle that is counter-clockwise when seen from outside
@@ -17,7 +20,8 @@ public sealed unsafe class RenderPipeline : IDisposable
     public const VkPrimitiveTopology Topology = VkPrimitiveTopology.TriangleList;
     public const VkCullModeFlags CullMode = VkCullModeFlags.Back;
     public const VkFrontFace FrontFace = VkFrontFace.CounterClockwise;
-    public const uint PushConstantSize = sizeof(float);
+    public const VkCompareOp DepthCompare = VkCompareOp.Greater;
+    public const uint PushConstantSize = 2 * 16 * sizeof(float);
 
     private readonly GraphicsDevice _device;
 
@@ -59,6 +63,12 @@ public sealed unsafe class RenderPipeline : IDisposable
                     lineWidth = 1.0f,
                 };
                 VkPipelineMultisampleStateCreateInfo multisample = new() { rasterizationSamples = VkSampleCountFlags.Count1 };
+                VkPipelineDepthStencilStateCreateInfo depthStencil = new()
+                {
+                    depthTestEnable = true,
+                    depthWriteEnable = true,
+                    depthCompareOp = DepthCompare,
+                };
                 VkPipelineColorBlendAttachmentState blendAttachment = new() { colorWriteMask = VkColorComponentFlags.All };
                 VkPipelineColorBlendStateCreateInfo colorBlend = new() { attachmentCount = 1, pAttachments = &blendAttachment };
                 VkDynamicState* dynamicStates = stackalloc VkDynamicState[] { VkDynamicState.Viewport, VkDynamicState.Scissor };
@@ -73,6 +83,7 @@ public sealed unsafe class RenderPipeline : IDisposable
                     pViewportState = &viewportState,
                     pRasterizationState = &rasterization,
                     pMultisampleState = &multisample,
+                    pDepthStencilState = &depthStencil,
                     pColorBlendState = &colorBlend,
                     pDynamicState = &dynamicState,
                     layout = Layout,
@@ -108,15 +119,23 @@ public sealed unsafe class RenderPipeline : IDisposable
         maxDepth = 1,
     };
 
-    // Binds the pipeline, sets the viewport and the scissor of the extent, and gives
-    // the aspect of the extent to the vertex shader.
+    // Binds the pipeline, and sets the viewport and the scissor of the extent.
     public void Bind(VkCommandBuffer commandBuffer, VkExtent2D extent)
     {
         _device.DeviceApi.vkCmdBindPipeline(commandBuffer, VkPipelineBindPoint.Graphics, Handle);
         _device.DeviceApi.vkCmdSetViewport(commandBuffer, 0, Viewport(extent));
         _device.DeviceApi.vkCmdSetScissor(commandBuffer, 0, new VkRect2D(0, 0, extent.width, extent.height));
-        float aspect = (float)extent.width / extent.height;
-        _device.DeviceApi.vkCmdPushConstants(commandBuffer, Layout, VkShaderStageFlags.Vertex, 0, PushConstantSize, &aspect);
+    }
+
+    // Gives the matrices of one draw to the vertex shader. A matrix of System.Numerics
+    // acts on row vectors; the shader reads its bytes as a column-major matrix, which
+    // is the transpose, and that acts on column vectors in the same way.
+    public void Push(VkCommandBuffer commandBuffer, Matrix4x4 modelView, Matrix4x4 projection)
+    {
+        Matrix4x4* matrices = stackalloc Matrix4x4[2];
+        matrices[0] = modelView;
+        matrices[1] = projection;
+        _device.DeviceApi.vkCmdPushConstants(commandBuffer, Layout, VkShaderStageFlags.Vertex, 0, PushConstantSize, matrices);
     }
 
     // The caller waits until the device is idle before it disposes a pipeline.

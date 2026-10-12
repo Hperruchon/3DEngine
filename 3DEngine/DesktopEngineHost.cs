@@ -1,5 +1,4 @@
 using SDL3;
-using ThreeDEngine.Core.Services;
 using ThreeDEngine.Vulkan;
 using static SDL3.SDL3;
 
@@ -26,7 +25,7 @@ internal static class DesktopEngineHost
 
             try
             {
-                var scene = SampleSceneFactory.CreateDefault();
+                var scene = DemonstrationMesh.CreateScene();
                 var window = new Window("3DEngine Desktop", 1280, 720);
                 using var engine = new NativeThreeDEngine(window);
 
@@ -52,6 +51,8 @@ internal static class DesktopEngineHost
                             running = false;
                             break;
                         }
+
+                        engine.HandleEvent(sdlEvent);
                     }
 
                     DateTime now = DateTime.UtcNow;

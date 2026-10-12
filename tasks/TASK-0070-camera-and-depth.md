@@ -84,3 +84,8 @@ mouse moves, and each draw goes through the draw list.
 ## Progress
 
 - 2026-10-12: the task is open, with ADR-0023, after the answers of the owner on R4.
+- 2026-10-12: the work. The depth image and the depth state, the orbit camera with its reversed
+  projection, `IDrawList` and `SceneWalker` in `3DEngine.Core`, `DrawListExecutor` and `GpuMesh` in
+  `3DEngine.Vulkan`, and a scene of two copies of the cut body in the desktop. Two pictures: the first
+  view, and the view after a drag that a script sent; no validation message. An injected standard
+  projection failed two tests.
