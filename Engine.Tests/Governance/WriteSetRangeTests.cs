@@ -282,6 +282,75 @@ public class WriteSetRangeTests
         Assert.Contains("Engine.Core/b.cs", output, StringComparison.Ordinal);
     }
 
+    // Finding T42 of the codebase review of 2026-10-12: a merge that takes the side
+    // version of a file that both sides changed drops the change of main, and the
+    // judge of TASK-0061 saw no change of its own in it (TASK-0066).
+    [Fact]
+    public void A_Merge_That_Takes_One_Side_Of_A_File_That_Both_Sides_Changed_Fails()
+    {
+        using var repo = ScratchRepository.WithTask();
+        repo.CommitUnderTask("Base", ("src/x.txt", "1\n2\n3\n4\n5\n6\n"));
+        var start = repo.Head;
+        repo.Git("checkout", "-qb", "work");
+        repo.CommitUnderTask("Line 1 on the branch", ("src/x.txt", "ONE\n2\n3\n4\n5\n6\n"));
+        repo.Git("checkout", "-q", "main");
+        repo.CommitUnderOtherTask("A fix of line 6 on main", ("src/x.txt", "1\n2\n3\n4\n5\nFIX\n"));
+        repo.Git("merge", "-q", "--no-commit", "--no-ff", "work");
+        repo.Git("checkout", "work", "--", "src/x.txt");
+        repo.Git("commit", "-qm", "Merge work");
+
+        var (exit, output) = repo.Judge("--range", start);
+
+        Assert.Equal(1, exit);
+        Assert.Contains("FAIL", output, StringComparison.Ordinal);
+        Assert.Contains("Merge work", output, StringComparison.Ordinal);
+    }
+
+    // Finding T43 of the same review: a clean merge after main moved has no change
+    // of its own, and the judge of TASK-0061 asked the task that it names to change
+    // its file (TASK-0066).
+    [Fact]
+    public void A_Clean_Merge_After_Main_Moved_Passes()
+    {
+        using var repo = ScratchRepository.WithTask();
+        repo.CommitUnderTask("Base", ("src/log.txt", "top\n\n\n\n\n\nbottom\n"));
+        var start = repo.Head;
+        repo.Git("checkout", "-qb", "work");
+        repo.CommitUnderTask("An entry of the branch", ("src/log.txt", "top\n\n\n\n\n\nbottom\nbranch\n"));
+        repo.Git("checkout", "-q", "main");
+        repo.CommitUnderOtherTask("An entry of main", ("src/log.txt", "main\ntop\n\n\n\n\n\nbottom\n"));
+        repo.Git("merge", "-q", "--no-ff", "-m", "Merge work\n\nTASK-0001", "work");
+
+        var (exit, output) = repo.Judge("--range", start);
+
+        Assert.True(exit == 0, output);
+        Assert.Contains("a merge with no change of its own", output, StringComparison.Ordinal);
+    }
+
+    // Finding T44 of the same review: the workflow chose the gates of the judged
+    // commit with its own regular expression, which matched files that are not gate
+    // files. The judge now gives the answer from the list that the gate files share
+    // (TASK-0066).
+    [Theory]
+    [InlineData("docs/Directory.Packages.txt", "main")]
+    [InlineData("docs/register.md", "main")]
+    [InlineData("global.json", "judged")]
+    [InlineData("NuGet.Config", "judged")]
+    [InlineData("eng/repo-gates/Program.cs", "judged")]
+    public void The_Gates_Come_From_The_Judged_Commit_Only_When_A_Source_Of_Their_Program_Changed(string file, string answer)
+    {
+        using var repo = ScratchRepository.WithTask();
+        var start = repo.Head;
+        repo.Write(file, "changed");
+        repo.Git("add", "-A");
+        repo.Git("commit", "-qm", "A change");
+
+        var (exit, output) = repo.Judge("--gate-sources", start);
+
+        Assert.Equal(0, exit);
+        Assert.Equal(answer, output.Split('\n').Select(line => line.Trim()).First(line => line is "main" or "judged"));
+    }
+
     // A scratch repository with one task, TASK-0001, which permits src/**,
     // Engine.Tests/**, Engine.Contracts/** and docs/adr/**, and forbids
     // Engine.Core/**. Each commit under the task adds a progress line to the
@@ -350,6 +419,32 @@ public class WriteSetRangeTests
             AppendProgress();
             Git("add", "-A");
             Git("commit", "-qm", $"{subject}\n\nTASK-0001");
+        }
+
+        // A third task, TASK-0003, which permits src/**, and one commit under it.
+        // It lets main change a file of src/ with no change to the file of
+        // TASK-0001, as a second task of the real repository does.
+        public void CommitUnderOtherTask(string subject, params (string Path, string Text)[] files)
+        {
+            Write("tasks/TASK-0003-other.md", """
+                ---
+                id: 0003
+                title: Another task
+                status: Active
+                writes:
+                  create:
+                    - tasks/TASK-0003-other.md
+                  modify:
+                    - src/**
+                ---
+
+                # TASK-0003
+
+                """);
+            foreach (var (path, text) in files)
+                Write(path, text);
+            Git("add", "-A");
+            Git("commit", "-qm", $"{subject}\n\nTASK-0003");
         }
 
         public void AppendProgress() => File.AppendAllText(Path.Combine(Root, _taskFile), $"- step {++_progress}\n");

@@ -11,9 +11,13 @@ using WriteSetCheck;
 //   write-set-check --merge-base <reference>    each commit after the point where
 //                                               HEAD left <reference>, for a branch
 //   write-set-check --staged --task TASK-nnnn   the staged change, before a commit
+//   write-set-check --gate-sources <base>       prints "judged" when a commit after
+//                                               <base> changes a source of the gate
+//                                               program, and "main" when none does
 //
-// Exit code 0: each change is inside its write set. 1: a change is outside it,
-// or git failed. 2: the arguments are wrong.
+// Exit code 0: each change is inside its write set, or the answer of
+// --gate-sources is printed. 1: a change is outside it, or git failed. 2: the
+// arguments are wrong.
 
 var root = Directory.GetCurrentDirectory();
 var gitPath = Judge.FindGit(root, Environment.GetEnvironmentVariable("PATH"));
@@ -47,7 +51,23 @@ if (args is ["--staged", "--task", var task])
     return Judge.Report(Console.Out, "the staged change", judge.Check(null, Judge.ParseGitPaths(staged), task));
 }
 
-Console.Error.WriteLine("usage: write-set-check --range <commit> [--strict] | --merge-base <reference> | --staged --task TASK-nnnn");
+// The switch of the step "Run the repository gates" of the pipeline. The list
+// of the sources is Judge.IsGateProgramSource, which the gate files share; until
+// TASK-0066 the workflow held its own list (finding T44 of the codebase review
+// of 2026-10-12). Each changed source is printed on the error output.
+if (args is ["--gate-sources", var gateBase])
+{
+    var changed = Git(["diff", "--name-only", "-z", "--no-renames", gateBase, "HEAD"]);
+    if (changed is null)
+        return Judge.Report(Console.Out, $"the files changed after {gateBase}", ["git cannot list them"]);
+    var sources = Judge.ParseGitPaths(changed).Where(Judge.IsGateProgramSource).Order(StringComparer.Ordinal).ToList();
+    foreach (var source in sources)
+        Console.Error.WriteLine($"a source of the gate program changed: {source}");
+    Console.WriteLine(sources.Count > 0 ? "judged" : "main");
+    return 0;
+}
+
+Console.Error.WriteLine("usage: write-set-check --range <commit> [--strict] | --merge-base <reference> | --staged --task TASK-nnnn | --gate-sources <commit>");
 return 2;
 
 // The standard output of git on the judged repository, or null when git fails.
@@ -74,7 +94,11 @@ string? Git(string[] arguments)
         var output = process.StandardOutput.ReadToEndAsync();
         process.StandardError.ReadToEnd();
         process.WaitForExit();
-        return process.ExitCode == 0 ? output.Result : null;
+
+        // git merge-tree ends with exit code 1 when the automatic merge has a
+        // conflict, and its output is still complete (TASK-0066).
+        var complete = process.ExitCode == 0 || (process.ExitCode == 1 && arguments is ["merge-tree", ..]);
+        return complete ? output.Result : null;
     }
     catch (System.ComponentModel.Win32Exception)
     {

@@ -102,3 +102,9 @@ each file where it differs from the automatic merge of its parents.
   review, option A). This commit names each file of the work exactly: the program of the judge gets a
   mode for the switch of the gates (T44), and the determinism gate needs a C# parser in both projects
   that compile it (T45).
+- 2026-10-12: T41 to T44. The builds of `main` run in the folder of the runner, each input of a build is
+  a gate file, the judge gives the switch of the gates from that one list, and a merge is judged
+  against the automatic merge of its parents. The 14 new test cases failed on the judge of `main`.
+  The judge of `main` does not know the question of the switch, so the step takes the gates of the
+  judged commit for a base up to `29ed267`, the tip of `main` before this task, and fails for each
+  other base with no answer.

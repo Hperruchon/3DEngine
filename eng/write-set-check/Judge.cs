@@ -77,23 +77,53 @@ public sealed class Judge
     // which can remove a gate from the compilation; a Directory.Build or
     // Directory.Packages file, which MSBuild reads for each project below it;
     // the cut-off of this gate; each workflow (codebase review of 2026-10-04,
-    // finding T9); each file of this program (TASK-0053); and each file of the
-    // program that runs the gates from a build of main (TASK-0064).
+    // finding T9); each file of this program (TASK-0053); each file of the
+    // program that runs the gates from a build of main (TASK-0064); and each
+    // input of a build (IsBuildInput).
     public static bool IsGateFile(string file)
     {
-        var name = file[(file.LastIndexOf('/') + 1)..];
-
         return file.StartsWith("Engine.Tests/Governance/", StringComparison.Ordinal)
             || (file.StartsWith("Engine.Tests/", StringComparison.Ordinal) && file.EndsWith("GateTests.cs", StringComparison.Ordinal))
             || file.StartsWith("Engine.Tests/Diagnostics/", StringComparison.Ordinal)
             || file == "Engine.Tests/Engine.Tests.csproj"
-            || name.StartsWith("Directory.Build.", StringComparison.Ordinal)
-            || name == "Directory.Packages.props"
+            || IsBuildInput(file)
             || file == "eng/write-set-cutoff.txt"
             || file.StartsWith("eng/write-set-check/", StringComparison.Ordinal)
             || file.StartsWith("eng/repo-gates/", StringComparison.Ordinal)
             || file.StartsWith(".github/workflows/", StringComparison.Ordinal);
     }
+
+    // A file that the .NET SDK, MSBuild or NuGet reads for each project below it,
+    // with no reference in a project file: global.json chooses the SDK, a NuGet
+    // configuration chooses the packages, nuget/ holds packages, and a
+    // Directory.Build or Directory.Packages file adds to each project. Before
+    // TASK-0066 only the Directory files were gate files, and a global.json or a
+    // nuget.config of the judged commit could replace the SDK or the packages of
+    // a build (findings T41 and T44 of the codebase review of 2026-10-12).
+    public static bool IsBuildInput(string file)
+    {
+        var name = file[(file.LastIndexOf('/') + 1)..];
+
+        return name == "global.json"
+            || string.Equals(name, "nuget.config", StringComparison.OrdinalIgnoreCase)
+            || file.StartsWith("nuget/", StringComparison.Ordinal)
+            || name.StartsWith("Directory.Build.", StringComparison.Ordinal)
+            || name == "Directory.Packages.props";
+    }
+
+    // A file that the program eng/repo-gates compiles or that its build reads.
+    // When a judged commit changes one, the pipeline builds the gates from the
+    // judged commit and not from main, so that a task can change a rule and the
+    // files that it reads in one branch; such a file is a gate file, which its
+    // task names exactly (TASK-0064, register entry R-0038). Until TASK-0066 the
+    // workflow held its own list as a regular expression, which matched files
+    // that are not gate files (finding T44 of the codebase review of 2026-10-12).
+    public static bool IsGateProgramSource(string file)
+        => file.StartsWith("eng/repo-gates/", StringComparison.Ordinal)
+        || file.StartsWith("eng/write-set-check/", StringComparison.Ordinal)
+        || file.StartsWith("Engine.Tests/Governance/", StringComparison.Ordinal)
+        || file.StartsWith("Engine.Tests/Diagnostics/", StringComparison.Ordinal)
+        || IsBuildInput(file);
 
     // The full path of git from the folders of PATH, never from the judged
     // checkout or from a relative folder (codebase review of 2026-10-09, finding
@@ -174,14 +204,15 @@ public sealed class Judge
 
     // Each commit after the base up to HEAD, one at a time. A commit before the
     // cut-off is not judged. A commit with no parent fails, because it can carry
-    // any tree. A merge is judged on the union of two sets, which together are the
-    // change that the merge made itself:
-    //   - each file that differs from each parent (`git diff-tree --cc`): an edit
-    //     inside the merge (finding T36 of the review of 2026-10-11, TASK-0061);
-    //   - each file that differs from its first parent and that no commit on the
-    //     side of its second parent changed: a merge that takes the tree of an old
-    //     commit (finding T30 of the review of 2026-10-09, TASK-0057).
-    // Each set alone misses the case of the other one.
+    // any tree. A merge is judged on each file where it differs from the automatic
+    // merge of its two parents (`git merge-tree`), and on each file with a
+    // conflict: that is the change that the merge made itself. An edit inside the
+    // merge (T36), a merge that takes the tree of an old commit (T30) and a merge
+    // that takes one side of a file that both sides changed (T42) each differ
+    // from the automatic merge; a clean merge after main moved does not (T43).
+    // Until TASK-0066 the judge read the union of the --cc set and the files of
+    // the first parent that the second parent did not bring, which missed T42
+    // and failed T43 (codebase review of 2026-10-12).
     //
     // A strict range fails when the base is not known; without it, an unknown
     // base falls back to the cut-off. Exit code 0 or 1.
@@ -241,29 +272,25 @@ public sealed class Judge
             string? files;
             if (count == 2)
             {
-                var own = _git(["diff", "--name-only", "-z", "--no-renames", $"{commit}^1", commit]);
-                var brought = _git(["diff", "--name-only", "-z", "--no-renames", $"{commit}^1...{commit}^2"]);
-                if (own is null || brought is null)
+                // The tree of the automatic merge, then each file with a conflict,
+                // each one ended by NUL. Git refuses two parents with no merge base.
+                var automatic = _git(["merge-tree", "--write-tree", "--name-only", "--no-messages", "-z", $"{commit}^1", $"{commit}^2"]);
+                if (automatic is null)
                 {
                     failed |= Fail(output, subject, "the two parents of the merge have no merge base, or git failed; a merge of unrelated history is refused");
                     continue;
                 }
 
-                // Each file that differs from each parent: an edit inside the merge,
-                // for example a resolution of a conflict. Until TASK-0061 this set was
-                // missing, and a merge of main into a branch could rewrite a file that
-                // main changed with no judgement (finding T36 of the codebase review
-                // of 2026-10-11). The old judge of TASK-0047 read this set only.
-                var each = _git(["diff-tree", "--cc", "--no-commit-id", "--name-only", "-r", "-z", commit]);
-                if (each is null)
+                var parts = automatic.Split('\0', StringSplitOptions.RemoveEmptyEntries);
+                var differs = parts.Length == 0 ? null : _git(["diff", "--name-only", "-z", "--no-renames", parts[0], commit]);
+                if (differs is null)
                 {
-                    failed |= Fail(output, subject, "git cannot list the files that the merge changed against each parent");
+                    failed |= Fail(output, subject, "git cannot compare the merge with the automatic merge of its parents");
                     continue;
                 }
 
-                var mergeOwn = ParseGitPaths(own);
-                mergeOwn.ExceptWith(ParseGitPaths(brought));
-                mergeOwn.UnionWith(ParseGitPaths(each));
+                var mergeOwn = ParseGitPaths(differs);
+                mergeOwn.UnionWith(parts.Skip(1));
                 if (mergeOwn.Count == 0)
                 {
                     output.WriteLine($"pass  {subject}  (a merge with no change of its own)");

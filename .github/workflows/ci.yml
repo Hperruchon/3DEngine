@@ -169,6 +169,12 @@ jobs:
             exit 1
           fi
           echo "judge from $(git -C "$RUNNER_TEMP/judge" rev-parse HEAD)"
+          # Each build runs in $RUNNER_TEMP and not in the judged checkout.
+          # The dotnet command reads global.json of the current folder to choose
+          # the SDK, and a global.json of the judged commit could name an SDK in
+          # the checkout that writes any program (finding T41 of the codebase
+          # review of 2026-10-12, TASK-0066).
+          cd "$RUNNER_TEMP"
           dotnet build "$RUNNER_TEMP/judge/eng/write-set-check/WriteSetCheck.csproj" -c Release -o "$RUNNER_TEMP/judge-bin"
           if [ -f "$RUNNER_TEMP/judge/eng/repo-gates/RepoGates.csproj" ]; then
             dotnet build "$RUNNER_TEMP/judge/eng/repo-gates/RepoGates.csproj" -c Release -o "$RUNNER_TEMP/gates-main"
@@ -214,6 +220,13 @@ jobs:
       # source is a gate file: the judge above requires that its task names it
       # exactly, and the diff shows the change. This is the condition of register
       # entry R-0038 for the workflow file.
+      #
+      # The judge of main gives the answer, from the list that the gate files share
+      # (Judge.IsGateProgramSource). Until TASK-0066 this step held its own regular
+      # expression, which matched files that are not gate files (finding T44). The
+      # judge of a base up to 29ed267, the tip of main before TASK-0066, does not
+      # know the question; only for such a base do the gates come from the judged
+      # commit with no answer.
       - name: Run the repository gates
         env:
           REF: ${{ github.ref }}
@@ -225,9 +238,16 @@ jobs:
           else
             base=$(git merge-base origin/main HEAD)
           fi
-          changed=$(git diff --name-only "$base" HEAD)
-          sources='^(eng/repo-gates/|eng/write-set-check/|Engine\.Tests/Governance/|Engine\.Tests/Diagnostics/)|(^|/)Directory\.(Build\.|Packages\.)'
-          if grep -Eq "$sources" <<<"$changed"; then
+          status=0
+          answer=$(dotnet "$RUNNER_TEMP/judge-bin/write-set-check.dll" --gate-sources "$base") || status=$?
+          if [ "$status" -eq 2 ] && git merge-base --is-ancestor "$base" 29ed267144f622af792b16147e2bd60cbfe8c671; then
+            echo "::notice title=Repository gates::the judge of $base precedes TASK-0066 and gives no answer, so the gates come from the judged commit"
+            answer=judged
+          elif [ "$status" -ne 0 ] || { [ "$answer" != judged ] && [ "$answer" != main ]; }; then
+            echo "::error title=Repository gates::the judge of main gave no answer on the sources of the gate program (exit code $status)"
+            exit 1
+          fi
+          if [ "$answer" = judged ]; then
             echo "::notice title=Repository gates::the judged commits change a source of the gate program, so its gates come from the judged commit"
             dotnet build eng/repo-gates/RepoGates.csproj -c Release -o "$RUNNER_TEMP/gates-own"
             gates="$RUNNER_TEMP/gates-own/repo-gates.dll"
