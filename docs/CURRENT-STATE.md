@@ -1855,3 +1855,22 @@ live (ADR-0009 line 68 and the dependency gate disagree), and which platform R3 
 New tests: none. The test list holds 353. `dotnet build 3DEngine.sln --no-incremental` gives zero errors
 and zero warnings. Open entries: 14 of 15. New diagnostic codes: none. The next codebase review must
 come before ledger entry v0.71.
+
+## v0.66 — The decisions of the owner of 2026-10-12 (governance, TASK-0068)
+
+On 2026-10-12 the owner answered the two questions of the codebase review of 2026-10-12 with "A to all,
+then continue the batch".
+
+**Q1, option A: TASK-0066 first.** P0.26 must be done before R3, because each task of the batch relies
+on the checks that T41, T42 and T44 can defeat. The first objective now needs P0.26 and R3 to R6: 21 to
+30 evenings.
+
+**Q2, option A for each decision of R3.** The GLSL source and the SPIR-V are both in the repository,
+with a test of a hash of the source; the pipeline uses the render pass that exists; a new test project
+`3DEngine.Tests`, with no GPU, may reference the render side, and ADR-0009 will name it; R3 shows its
+result on the computer of the owner. TASK-0069 holds R3 and these decisions, and its first commit writes
+them as ADR-0022.
+
+New tests: none. The test list holds 353. `dotnet build 3DEngine.sln --no-incremental` gives zero errors
+and zero warnings. Open entries: 14 of 15. New diagnostic codes: none. The next codebase review must
+come before ledger entry v0.71.

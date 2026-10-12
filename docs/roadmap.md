@@ -106,7 +106,7 @@ The first objective. Each phase ends with something that a person can observe.
 |---|---|---|
 | R1 | Upgrade the Vulkan binding. Move the Vulkan code into a first-party project. | 2–4 |
 | R2 | A tessellation capability. A mesh leaves the geometry backend. TASK-0028. | 4–6 |
-| R3 | A pipeline. A triangle, then an indexed mesh. | 4–6 |
+| R3 | A pipeline. A triangle, then an indexed mesh. TASK-0069. | 4–6 |
 | R4 | A camera with depth. Flat scene arrays. Each draw through an indirect interface. | 5–7 |
 | R5 | Geometry from the engine. Subscribe to events, fetch a mesh, draw it. Subtract a double-precision origin before the narrowing to float. Choose `frontFace` together with the viewport flip. | 6–8 |
 | R6 | Observe a cut. The live body set of ADR-0021 gives the result. A headless image test. | 4–6 |
@@ -150,8 +150,8 @@ The tracks are not strictly sequential, but three rules hold:
 1. Track 0 comes first. Each phase in it removes a condition that blocks other work. Two exceptions
    are on record: P0.23 to P0.25 must be done before R2 and before P0.22, which R5 does not need. P0.13 and
    P0.15 must be done before R2, because the tests of R2 need a serial read and a native backend
-   that surely ran. The codebase review of 2026-10-12 recommends P0.26 before R3 (question Q1); the
-   owner decides. P0.27 holds three low findings and has no place in the order.
+   that surely ran. P0.26 must be done before R3: the owner answered question Q1 of the codebase
+   review of 2026-10-12 on 2026-10-12. P0.27 holds three low findings and has no place in the order.
 2. R2 blocks each later phase in track R. No mesh leaves the geometry backend today.
 3. K4 needs K0, K1 and K2. Do not start K4 before the reference model exists.
 
@@ -159,9 +159,9 @@ The field `depends-on` of each task file holds the same order. `TaskGovernanceGa
 that each dependency names a task.
 
 Phase R6 gives the first objective that the owner named: create a box, subtract a second box, and
-observe the cut. The four phases that remain, R3 to R6, give it in 19 to 27 evenings. That number is
-the sum of the column "Evenings" for those phases. Correct it when a phase ships or an estimate
-changes.
+observe the cut. The five phases that remain, P0.26 and R3 to R6, give it in 21 to 30 evenings. That
+number is the sum of the column "Evenings" for those phases: 2 to 3 for Track 0 and 19 to 27 for track
+R. Correct it when a phase ships or an estimate changes.
 
 ## Not on a track
 
