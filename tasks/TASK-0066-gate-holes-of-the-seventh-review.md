@@ -1,7 +1,7 @@
 ---
 id: 0066
 title: The checks from main take no input of the build from the judged checkout, and the judge reads each change of a merge
-status: Ready
+status: Active
 phase: P0.26
 opened: 2026-10-12
 depends-on: [0065]
@@ -12,12 +12,16 @@ writes:
   modify:
     - .github/workflows/ci.yml
     - eng/write-set-check/Judge.cs
+    - eng/write-set-check/Program.cs
     - eng/repo-gates/Program.cs
+    - eng/repo-gates/RepoGates.csproj
+    - Engine.Tests/Engine.Tests.csproj
     - Engine.Tests/Governance/DeterminismCallGateTests.cs
     - Engine.Tests/Governance/DependencyDirectionGateTests.cs
     - Engine.Tests/Governance/WriteSetJudgeTests.cs
     - Engine.Tests/Governance/WriteSetRangeTests.cs
     - docs/templates.md
+    - docs/INDEX.md
     - docs/register.md
     - docs/CURRENT-STATE.md
   forbid:
@@ -91,3 +95,10 @@ each file where it differs from the automatic merge of its parents.
   commit of the task, before the work.
 - **The scripts.** The review agent kept the two merges as shell scripts; the review gives their steps.
 - **The size.** About 2 to 3 evenings. T41 first: it is a few lines.
+
+## Progress
+
+- 2026-10-12: the task is open, first in the order of the owner of 2026-10-12 (question Q1 of the
+  review, option A). This commit names each file of the work exactly: the program of the judge gets a
+  mode for the switch of the gates (T44), and the determinism gate needs a C# parser in both projects
+  that compile it (T45).
