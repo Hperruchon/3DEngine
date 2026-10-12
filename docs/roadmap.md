@@ -91,6 +91,8 @@ This track removes each condition that blocks other work.
 | P0.25 | The gates that read the repository run from a build of main. TASK-0064. | 3–4 |
 | P0.26 | The checks from main take no input of the build from the judged checkout, and the judge reads each change of a merge. TASK-0066. | 2–3 |
 | P0.27 | The hosts stop within a short limit, give a code for each failure of the start, and write compact JSON. TASK-0067. | 1 |
+| P0.28 | The test step cannot be emptied by a file that is not a gate file, and the gates see what MSBuild evaluates. TASK-0073. | 2–3 |
+| P0.29 | The subscription reports and isolates its failures, and the renderer survives a resize, an old device and a bad camera. TASK-0074. | 2–3 |
 
 ## Track P — The platform
 
@@ -155,7 +157,9 @@ The tracks are not strictly sequential, but three rules hold:
    are on record: P0.23 to P0.25 must be done before R2 and before P0.22, which R5 does not need. P0.13 and
    P0.15 must be done before R2, because the tests of R2 need a serial read and a native backend
    that surely ran. P0.26 must be done before R3: the owner answered question Q1 of the codebase
-   review of 2026-10-12 on 2026-10-12. P0.27 holds three low findings and has no place in the order.
+   review of 2026-10-12 on 2026-10-12. P0.27 holds three low findings and has no place in the order. The
+   codebase review of 2026-10-13 recommends P0.28 before R6 (question Q1); the owner decides. P0.29 comes
+   after R6, except the parts that R6 takes.
 2. R2 blocks each later phase in track R. No mesh leaves the geometry backend today.
 3. K4 needs K0, K1 and K2. Do not start K4 before the reference model exists.
 
