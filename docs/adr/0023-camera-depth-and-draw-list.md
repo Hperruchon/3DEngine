@@ -1,13 +1,13 @@
 ---
 id: 0023
 title: The camera, the depth and the draw list of the renderer
-status: Accepted
+status: Amended
 topic: Rendering
 date: 2026-10-12
 supersedes: []
 superseded-by: []
 amends: []
-amended-by: []
+amended-by: ['0024']
 affects:
   - 3DEngine.Core/**
   - 3DEngine.Vulkan/**
@@ -43,8 +43,8 @@ object graph (3B), and a code layer (4B), with the note that indirect draws coul
 2. **Camera.** The camera of `3DEngine.Core` is an orbit camera: a target in double precision, a
    distance, a yaw and a pitch, which are render state (ADR-0009 §3). A left drag of the mouse orbits it
    and the wheel zooms it. The renderer computes each model matrix relative to the eye in double
-   precision, and only then narrows it to float. R7 replaces the reading of the mouse with the intent
-   layer.
+   precision, and only then narrows it to float. Each entity has an origin in double precision
+   (ADR-0024). R7 replaces the reading of the mouse with the intent layer.
 3. **Scene.** The renderer walks the object graph `Scene` and `Entity` at each frame. No flat array
    exists for it.
 4. **Draws.** The host fills a draw list (`IDrawList` of `3DEngine.Core`) with one record for each
@@ -67,3 +67,4 @@ host is replaced in R7. The roadmap line of R4 no longer names flat arrays or in
 ## History
 
 - 2026-10-12 · TASK-0070 · The record is written with the answers of the owner on R4.
+- 2026-10-12 · TASK-0071 · ADR-0024 amends item 2: each entity has an origin in double precision.

@@ -5,7 +5,7 @@ status: Ready
 phase: P0.27
 opened: 2026-10-12
 depends-on: [0065]
-governed-by: [0005, 0007, 0010, 0011, 0013, 0016, 0017, 0018, 0019, 0020, 0021]
+governed-by: [0005, 0007, 0010, 0011, 0013, 0016, 0017, 0018, 0019, 0020, 0021, 0024]
 writes:
   create:
     - tasks/TASK-0067-host-gaps-of-the-seventh-review.md
