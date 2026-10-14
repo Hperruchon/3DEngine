@@ -95,3 +95,7 @@ git evaluate.
   tests and failed.
 - 2026-10-14: T51. The judge runs `git merge-tree` with `-X no-renames` (git 2.55 here). The new range
   test of a rename on the branch and an edit of the old path on `main` failed on the judge of `main`.
+- 2026-10-14: T52 and T53. The runner refuses an `async void` check; a probe failed with that reason,
+  and the runner of `main` crashed on it. The review gate reads a name with a suffix after the date and
+  orders the reviews by their ledger versions; a second review of 2026-10-13 with a suffix passed, and the
+  same review with no `commit` failed, so the gate reads it. The gate of `main` ignored that file.

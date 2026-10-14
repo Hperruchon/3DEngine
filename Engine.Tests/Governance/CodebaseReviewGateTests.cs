@@ -21,8 +21,11 @@ public class CodebaseReviewGateTests
     // CLAUDE.md uses three, and a review costs more, therefore six.
     private const int ReviewInterval = 6;
 
+    // A suffix after the date, for example 2026-10-13-b, permits a second review on
+    // one day. Until TASK-0073 the name held a date only, and a second review on one
+    // day needed a false date (finding T53 of the review of 2026-10-13).
     private static readonly Regex ReviewName = new(
-        @"^(\d{4}-\d{2}-\d{2})-codebase-review\.md$", RegexOptions.Compiled);
+        @"^(\d{4}-\d{2}-\d{2})(?:-[a-z0-9]+)?-codebase-review\.md$", RegexOptions.Compiled);
 
     private static readonly Regex LedgerHeading = new(
         @"^## v(\d+)\.(\d+)\b", RegexOptions.Compiled | RegexOptions.Multiline);
@@ -127,7 +130,10 @@ public class CodebaseReviewGateTests
                 continue;
             }
 
-            if (previous.Date >= review.Date)
+            // The order of two reviews is the order of the ledger versions that they
+            // examine; the dates may be equal (T53).
+            var (previousLedger, ledger) = (ParseVersion(previous.Fields.GetValueOrDefault("ledger", string.Empty)), ParseVersion(review.Fields.GetValueOrDefault("ledger", string.Empty)));
+            if (previous.Date > review.Date || previousLedger is null || ledger is null || previousLedger.Value.CompareTo(ledger.Value) >= 0)
                 problems.Add($"{review.Name}: the previous review {previousName} is not earlier");
 
             var states = Section(review.Text, "## Findings of the previous review");
@@ -154,7 +160,7 @@ public class CodebaseReviewGateTests
     [Fact]
     public void A_Review_Is_Not_Overdue()
     {
-        var latest = Reviews().OrderBy(r => r.Date).LastOrDefault();
+        var latest = Reviews().OrderBy(r => ParseVersion(r.Fields.GetValueOrDefault("ledger", string.Empty)) ?? (0, 0)).LastOrDefault();
         Assert.NotNull(latest);
 
         var reviewed = ParseVersion(latest!.Fields.GetValueOrDefault("ledger", string.Empty));
