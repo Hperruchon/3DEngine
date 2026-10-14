@@ -122,3 +122,9 @@ result on a runner of the pipeline.
   in its `pNext`; the features now chain on the instance only. The dependency gate has the class of the
   image verifier; a reference from it to `Engine.Cli` failed the new check. R-0040 holds the skip on
   Windows and macOS.
+- 2026-10-14: the injections of the image test, on this computer. A box with no cut (box B moved by
+  (50, 5, 5)) failed on the counts (8 vertices, not 14); with the counts removed, it failed on the shade
+  of two faces of the notch. A cull mode of the front faces failed on the shade of one face of the notch.
+  A render pass with no dependency for the copy failed with `SYNC-HAZARD-READ-AFTER-WRITE` on
+  `vkCmdCopyImageToBuffer`. The pipeline installs lavapipe and the validation layers on Ubuntu, and keeps
+  the picture when a test fails.

@@ -70,6 +70,17 @@ jobs:
       - name: Build
         run: dotnet build
 
+      # The image test of 3DEngine.ImageTests needs a Vulkan device (ADR-0025 item 4,
+      # TASK-0076). On Ubuntu, mesa-vulkan-drivers gives lavapipe, a Vulkan driver on
+      # the CPU, and vulkan-validationlayers gives the layer that checks the
+      # synchronization; the test must run there. The images of Windows and macOS give
+      # no usable device, so the test skips there (R-0040).
+      - name: Install lavapipe and the validation layers
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends libvulkan1 mesa-vulkan-drivers vulkan-validationlayers
+
       # The native Manifold payload carries three runtime identifiers: linux-x64,
       # osx-arm64 and win-x64. Each runner therefore has a payload, and the tests
       # for the native backend are expected to run on each one. They skip when the
@@ -91,11 +102,24 @@ jobs:
       # Without the limit a hang held the runner for 360 minutes, and the step
       # never reached the script (codebase review of 2026-10-04, finding T8).
       - name: Test
+        env:
+          # The image test writes its picture here (ADR-0025 item 5).
+          IMAGE_TEST_OUTPUT: ${{ runner.temp }}/pictures
         run: |
           results="$RUNNER_TEMP/test-results"
           dotnet test --no-build --logger trx --results-directory "$results" \
               --blame-hang-timeout 2m --blame-hang-dump-type none \
             || { node eng/report-failed-tests.js "$results"; exit 1; }
+
+      # When a test fails, the run keeps the picture of the image test, so that a
+      # person can look at it (ADR-0025 item 5).
+      - name: Keep the picture of the image test
+        if: failure() && runner.os == 'Linux'
+        uses: actions/upload-artifact@v4
+        with:
+          name: image-test-picture
+          path: ${{ runner.temp }}/pictures
+          if-no-files-found: ignore
 
       # A run with fewer tests than the floor of eng/test-floor.txt fails. Until
       # TASK-0073 a file that is not a gate file could take a test project out of the
