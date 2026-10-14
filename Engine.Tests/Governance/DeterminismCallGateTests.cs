@@ -1,4 +1,5 @@
 using System.Text.RegularExpressions;
+using System.Xml.Linq;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
@@ -27,6 +28,12 @@ namespace Engine.Tests.Governance;
 // that compile passed it (finding T45 of the codebase review of 2026-10-12). It
 // still refuses a static import of System.Math as text (codebase review of
 // 2026-09-30, finding T4).
+//
+// Finding T49 of the codebase review of 2026-10-13 showed five more forms that
+// compile and passed the gate: code that a preprocessor condition hid, a file in
+// a folder obj/ below the root of a project, a Compile item from outside the
+// project, a creator of System.Numerics that calls a transcendental function, and
+// reflection on Math. Since TASK-0073 the gate refuses each one.
 public class DeterminismCallGateTests
 {
     // The projects whose code writes to the log or computes what the log
@@ -45,6 +52,17 @@ public class DeterminismCallGateTests
         "Log10P1", "Pow", "Cbrt", "Hypot", "RootN", "ReciprocalEstimate", "ReciprocalSqrtEstimate",
         "FusedMultiplyAdd",
         "MultiplyAddEstimate", "MinNative", "MaxNative", "ShuffleNative", "ConvertToIntegerNative",
+
+        // The members of System.Numerics that call a transcendental function
+        // inside the framework (T49).
+        "CreateRotation", "CreateRotationX", "CreateRotationY", "CreateRotationZ", "CreateFromAxisAngle",
+        "CreateFromYawPitchRoll", "CreateSkew", "CreatePerspectiveFieldOfView",
+        "CreatePerspectiveFieldOfViewLeftHanded", "Slerp", "FromPolarCoordinates", "Phase",
+
+        // Reflection, which calls a method that the source does not name (T49).
+        "GetMethod", "GetMethods", "GetMember", "GetMembers", "FindMembers", "GetRuntimeMethod",
+        "GetRuntimeMethods", "GetDeclaredMethod", "GetDeclaredMethods", "InvokeMember", "CreateDelegate",
+        "GetMethodFromHandle", "Call",
     };
 
     private static readonly Regex StaticImport = new(
@@ -60,9 +78,7 @@ public class DeterminismCallGateTests
     [Fact]
     public void No_Source_In_The_Log_Path_Calls_A_Function_That_The_Determinism_Rules_Forbid()
     {
-        var offences = new List<string>();
-        var trees = new List<SyntaxTree>();
-        var options = new CSharpParseOptions(LanguageVersion.Preview);
+        var sources = new List<(string Path, string Source)>();
 
         foreach (var project in LogPathProjects)
         {
@@ -72,16 +88,78 @@ public class DeterminismCallGateTests
             foreach (var file in Directory.EnumerateFiles(directory, "*.cs", SearchOption.AllDirectories))
             {
                 var relative = RepositoryFiles.Relative(file);
-                if (relative.Contains("/obj/", StringComparison.Ordinal) || relative.Contains("/bin/", StringComparison.Ordinal))
-                    continue;
-
-                var source = File.ReadAllText(file);
-                trees.Add(CSharpSyntaxTree.ParseText(source, options, path: relative));
-
-                var text = WithoutComments(source.Replace("\r", string.Empty));
-                foreach (Match match in StaticImport.Matches(text))
-                    offences.Add($"{relative}:{LineOf(text, match.Index)} imports System.{match.Groups[2].Value} statically");
+                if (IsCompiled(project, relative))
+                    sources.Add((relative, File.ReadAllText(file)));
             }
+        }
+
+        var offences = CallOffences(sources);
+
+        Assert.True(
+            offences.Count == 0,
+            "CLAUDE.md, section \"Determinism rules\": a replay must give the same result on each "
+            + "platform, and these functions do not. Use +, -, *, / and sqrt, or record the number "
+            + "that the client computed. Offences:\n  " + string.Join("\n  ", offences));
+    }
+
+    // The forms of finding T49 that a source holds. Each one passed the gate of
+    // main and must be an offence (TASK-0073).
+    [Theory]
+    [InlineData("internal static class H\n{\n#if NET\n    internal static double F(double x) => Math.Sin(x);\n#endif\n}\n", "Probe.cs:4 holds code that a preprocessor condition hides")]
+    [InlineData("using System.Numerics;\ninternal static class C { internal static Matrix4x4 R() => Matrix4x4.CreateRotationZ(1f); }", "calls System.Numerics.Matrix4x4.CreateRotationZ")]
+    [InlineData("using System.Numerics;\ninternal static class C { internal static Complex P() => Complex.FromPolarCoordinates(1, 2); }", "calls System.Numerics.Complex.FromPolarCoordinates")]
+    [InlineData("using System.Numerics;\ninternal static class C { internal static double A() => new Complex(1, 1).Phase; }", "calls System.Numerics.Complex.Phase")]
+    [InlineData("internal static class R { internal static object? S() => typeof(Math).GetMethod(\"Sin\")!.Invoke(null, [1.0]); }", "calls System.Type.GetMethod")]
+    [InlineData("using System.Linq.Expressions;\ninternal static class R { internal static Expression E() => Expression.Call(typeof(Math), \"Cos\", null, Expression.Constant(1.0)); }", "calls System.Linq.Expressions.Expression.Call")]
+    public void Each_Form_Of_Finding_T49_In_A_Source_Is_An_Offence(string source, string expected)
+    {
+        var offences = CallOffences([("Probe.cs", source)]);
+
+        Assert.True(
+            offences.Any(o => o.Contains(expected, StringComparison.Ordinal)),
+            $"Expected an offence with '{expected}'. Offences:\n  " + string.Join("\n  ", offences));
+    }
+
+    // MSBuild leaves out the folders obj/ and bin/ at the root of the project
+    // only. Until TASK-0073 the gate skipped such a folder at each depth, and a
+    // file Geometry/obj/Trig.cs compiled with no check (T49).
+    [Fact]
+    public void A_Folder_Obj_Below_The_Root_Of_A_Project_Is_Read()
+    {
+        Assert.True(IsCompiled("Engine.Core", "Engine.Core/Geometry/obj/Trig.cs"));
+        Assert.True(IsCompiled("Engine.Core", "Engine.Core/Geometry/bin/Trig.cs"));
+        Assert.False(IsCompiled("Engine.Core", "Engine.Core/obj/Debug/Engine.Core.AssemblyInfo.cs"));
+        Assert.False(IsCompiled("Engine.Core", "Engine.Core/bin/Trig.cs"));
+    }
+
+    private static bool IsCompiled(string project, string relative)
+        => !relative.StartsWith($"{project}/obj/", StringComparison.Ordinal)
+        && !relative.StartsWith($"{project}/bin/", StringComparison.Ordinal);
+
+    // Each offence of the sources: a static import of Math, code that a
+    // preprocessor condition hides, and a name of the list that binds to a member
+    // of the framework or binds to nothing.
+    private static List<string> CallOffences(IEnumerable<(string Path, string Source)> sources)
+    {
+        var offences = new List<string>();
+        var trees = new List<SyntaxTree>();
+        var options = new CSharpParseOptions(LanguageVersion.Preview);
+
+        foreach (var (relative, source) in sources)
+        {
+            var tree = CSharpSyntaxTree.ParseText(source, options, path: relative);
+            trees.Add(tree);
+
+            // The gate parses with no preprocessor symbol, and the build defines
+            // several. Code that a condition leaves out of the parse is code that
+            // the gate cannot read; until TASK-0073 a call inside #if NET passed
+            // (T49).
+            foreach (var hidden in tree.GetRoot().DescendantTrivia().Where(t => t.IsKind(SyntaxKind.DisabledTextTrivia)))
+                offences.Add($"{relative}:{tree.GetLineSpan(hidden.Span).StartLinePosition.Line + 1} holds code that a preprocessor condition hides from the gate");
+
+            var text = WithoutComments(source.Replace("\r", string.Empty));
+            foreach (Match match in StaticImport.Matches(text))
+                offences.Add($"{relative}:{LineOf(text, match.Index)} imports System.{match.Groups[2].Value} statically");
         }
 
         // The global usings that the SDK writes for a project with
@@ -118,16 +196,63 @@ public class DeterminismCallGateTests
 
                 if (symbols.Length == 0)
                     offences.Add($"{tree.FilePath}:{line} names {name.Identifier.ValueText}, which the gate cannot bind");
-                else if (symbols.OfType<IMethodSymbol>().FirstOrDefault(IsFrameworkMethod) is { } method)
-                    offences.Add($"{tree.FilePath}:{line} calls {method.ContainingType.ToDisplayString()}.{method.Name}");
+                else if (symbols.Where(s => s is IMethodSymbol or IPropertySymbol).FirstOrDefault(IsFrameworkMember) is { } member)
+                    offences.Add($"{tree.FilePath}:{line} calls {member.ContainingType.ToDisplayString()}.{member.Name}");
             }
+        }
+
+        return offences;
+    }
+
+    // A Compile item adds a source that the gate does not read, and an Analyzer
+    // item adds a source generator whose output the gate does not see. Each file
+    // that MSBuild reads for a project of the log path must hold neither. Until
+    // TASK-0073 a Compile Include of a file outside the project passed (T49).
+    [Fact]
+    public void No_File_That_MsBuild_Reads_For_The_Log_Path_Adds_A_Source()
+    {
+        var offences = new List<string>();
+
+        foreach (var project in LogPathProjects)
+        {
+            var projectFile = RepositoryFiles.Path(project, $"{project}.csproj");
+            Assert.True(File.Exists(projectFile), $"{project}.csproj was not found.");
+
+            foreach (var file in DependencyDirectionGateTests.FilesThatMsBuildReads(projectFile))
+                offences.AddRange(SourceItemOffences(RepositoryFiles.Relative(file), XDocument.Load(file)));
         }
 
         Assert.True(
             offences.Count == 0,
-            "CLAUDE.md, section \"Determinism rules\": a replay must give the same result on each "
-            + "platform, and these functions do not. Use +, -, *, / and sqrt, or record the number "
-            + "that the client computed. Offences:\n  " + string.Join("\n  ", offences));
+            "CLAUDE.md, section \"Determinism rules\": the gate reads the files *.cs in the folder of each "
+            + "project of the log path, and nothing else. Put the source in that folder. Offences:\n  "
+            + string.Join("\n  ", offences));
+    }
+
+    // The form of finding T49 that a project file holds (TASK-0073).
+    [Theory]
+    [InlineData("<Project><ItemGroup><Compile Include=\"..\\docs\\Outside.cs\" /></ItemGroup></Project>", "adds the item Compile")]
+    [InlineData("<Project><ItemGroup><Analyzer Include=\"..\\docs\\Generator.dll\" /></ItemGroup></Project>", "adds the item Analyzer")]
+    [InlineData("<Project><Target Name=\"T\"><CreateItem Include=\"x.cs\"><Output TaskParameter=\"Include\" ItemName=\"Compile\" /></CreateItem></Target></Project>", "makes Compile items")]
+    public void Each_Form_Of_Finding_T49_In_A_Project_File_Is_An_Offence(string project, string expected)
+    {
+        var offences = SourceItemOffences("Probe.csproj", XDocument.Parse(project));
+
+        Assert.True(
+            offences.Any(o => o.Contains(expected, StringComparison.Ordinal)),
+            $"Expected an offence with '{expected}'. Offences:\n  " + string.Join("\n  ", offences));
+    }
+
+    private static IEnumerable<string> SourceItemOffences(string relative, XDocument document)
+    {
+        foreach (var element in document.Descendants())
+        {
+            var name = element.Name.LocalName;
+            if (name is "Compile" or "Analyzer" && element.Attribute("Include") is not null)
+                yield return $"{relative} adds the item {name} {element.Attribute("Include")!.Value}";
+            else if (name == "Output" && element.Attribute("ItemName")?.Value is "Compile" or "Analyzer")
+                yield return $"{relative} makes {element.Attribute("ItemName")!.Value} items in a task";
+        }
     }
 
     [Fact]
@@ -165,10 +290,13 @@ public class DeterminismCallGateTests
             + string.Join("\n  ", offences));
     }
 
-    private static bool IsFrameworkMethod(IMethodSymbol method)
+    // A member of each namespace of the framework. Until TASK-0073 the list held
+    // System, System.Numerics and System.Runtime.Intrinsics; reflection and
+    // System.Linq.Expressions are in other namespaces (T49).
+    private static bool IsFrameworkMember(ISymbol member)
     {
-        var space = method.ContainingNamespace?.ToDisplayString() ?? string.Empty;
-        return space is "System" or "System.Numerics" || space.StartsWith("System.Runtime.Intrinsics", StringComparison.Ordinal);
+        var space = member.ContainingNamespace?.ToDisplayString() ?? string.Empty;
+        return space == "System" || space.StartsWith("System.", StringComparison.Ordinal);
     }
 
     // The assemblies of the framework that runs the gate, from the list of the

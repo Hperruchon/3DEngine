@@ -88,6 +88,8 @@ public sealed class Judge
             || file == "Engine.Tests/Engine.Tests.csproj"
             || IsBuildInput(file)
             || file == "eng/write-set-cutoff.txt"
+            || file == "eng/count-tests.js"
+            || file == "eng/test-floor.txt"
             || file.StartsWith("eng/write-set-check/", StringComparison.Ordinal)
             || file.StartsWith("eng/repo-gates/", StringComparison.Ordinal)
             || file.StartsWith(".github/workflows/", StringComparison.Ordinal);
@@ -99,7 +101,11 @@ public sealed class Judge
     // Directory.Build or Directory.Packages file adds to each project. Before
     // TASK-0066 only the Directory files were gate files, and a global.json or a
     // nuget.config of the judged commit could replace the SDK or the packages of
-    // a build (findings T41 and T44 of the codebase review of 2026-10-12).
+    // a build (findings T41 and T44 of the codebase review of 2026-10-12). The solution
+    // file, a Directory.Solution file, a file that MSBuild imports before or after a
+    // solution, and the .user file of a project each decide which projects a run builds
+    // and tests; until TASK-0073 none was a gate file, and each one could take
+    // Engine.Tests out of the step "Test" (finding T48 of the review of 2026-10-13).
     public static bool IsBuildInput(string file)
     {
         var name = file[(file.LastIndexOf('/') + 1)..];
@@ -107,8 +113,14 @@ public sealed class Judge
         return name == "global.json"
             || string.Equals(name, "nuget.config", StringComparison.OrdinalIgnoreCase)
             || file.StartsWith("nuget/", StringComparison.Ordinal)
-            || name.StartsWith("Directory.Build.", StringComparison.Ordinal)
-            || name == "Directory.Packages.props";
+            || name.StartsWith("Directory.Build.", StringComparison.OrdinalIgnoreCase)
+            || string.Equals(name, "Directory.Packages.props", StringComparison.OrdinalIgnoreCase)
+            || name.StartsWith("Directory.Solution.", StringComparison.OrdinalIgnoreCase)
+            || name.EndsWith(".sln", StringComparison.OrdinalIgnoreCase)
+            || name.EndsWith(".slnx", StringComparison.OrdinalIgnoreCase)
+            || name.EndsWith(".slnf", StringComparison.OrdinalIgnoreCase)
+            || name.EndsWith(".sln.targets", StringComparison.OrdinalIgnoreCase)
+            || name.EndsWith(".user", StringComparison.OrdinalIgnoreCase);
     }
 
     // A file that the program eng/repo-gates compiles or that its build reads.
@@ -274,7 +286,12 @@ public sealed class Judge
             {
                 // The tree of the automatic merge, then each file with a conflict,
                 // each one ended by NUL. Git refuses two parents with no merge base.
-                var automatic = _git(["merge-tree", "--write-tree", "--name-only", "--no-messages", "-z", $"{commit}^1", $"{commit}^2"]);
+                // With the detection of renames, a rename in one parent carried a
+                // change of the other parent into a new path, a gate file too, and the
+                // merge equalled the automatic merge (finding T51 of the codebase
+                // review of 2026-10-13, TASK-0073). With no renames, that change is a
+                // conflict, and the judge reads the merge.
+                var automatic = _git(["merge-tree", "--write-tree", "--name-only", "--no-messages", "-z", "-X", "no-renames", $"{commit}^1", $"{commit}^2"]);
                 if (automatic is null)
                 {
                     failed |= Fail(output, subject, "the two parents of the merge have no merge base, or git failed; a merge of unrelated history is refused");

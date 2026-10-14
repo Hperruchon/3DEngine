@@ -73,9 +73,44 @@ public class WriteSetJudgeTests
     [InlineData("nuget.config")]
     [InlineData("NuGet.Config")]
     [InlineData("nuget/Engine.Geometry.Manifold.Native.3.5.2.1.nupkg")]
+    // Finding T48 of the codebase review of 2026-10-13: each file that decides which
+    // projects a run tests (TASK-0073).
+    [InlineData("3DEngine.sln")]
+    [InlineData("Directory.Solution.targets")]
+    [InlineData("Directory.Solution.props")]
+    [InlineData("after.3DEngine.sln.targets")]
+    [InlineData("before.3DEngine.sln.targets")]
+    [InlineData("Engine.Tests/Engine.Tests.csproj.user")]
+    [InlineData("directory.build.props")]
+    [InlineData("eng/count-tests.js")]
+    [InlineData("eng/test-floor.txt")]
     public void Each_File_That_Can_Change_A_Judgement_Is_A_Gate_File(string file)
     {
         Assert.True(Judge.IsGateFile(file));
+    }
+
+    // The second line of T48: the step "Test" fails when fewer tests ran than the
+    // floor, or when no result exists (TASK-0073).
+    [Theory]
+    [InlineData(7, 0)]
+    [InlineData(8, 1)]
+    public void The_Count_Of_The_Tests_Fails_Below_The_Floor(int floor, int expectedExit)
+    {
+        var folder = Directory.CreateTempSubdirectory("count-tests-").FullName;
+        try
+        {
+            File.WriteAllText(Path.Combine(folder, "a.trx"), "<TestRun><ResultSummary><Counters total=\"3\" executed=\"3\" passed=\"3\" /></ResultSummary></TestRun>");
+            Directory.CreateDirectory(Path.Combine(folder, "b"));
+            File.WriteAllText(Path.Combine(folder, "b", "b.trx"), "<TestRun><Counters total=\"4\" executed=\"4\" passed=\"4\" /></TestRun>");
+            File.WriteAllText(Path.Combine(folder, "floor.txt"), $"# a comment\n{floor}\n");
+
+            Assert.Equal(expectedExit, RunCount(folder, Path.Combine(folder, "floor.txt")));
+            Assert.Equal(1, RunCount(Path.Combine(folder, "absent"), Path.Combine(folder, "floor.txt")));
+        }
+        finally
+        {
+            Directory.Delete(folder, recursive: true);
+        }
     }
 
     [Theory]
@@ -222,6 +257,24 @@ public class WriteSetJudgeTests
                 Directory.Delete(link);
             Directory.Delete(root, recursive: true);
         }
+    }
+
+    private static int RunCount(string folder, string floorFile)
+    {
+        var start = new System.Diagnostics.ProcessStartInfo("node")
+        {
+            RedirectStandardOutput = true,
+            RedirectStandardError = true,
+            UseShellExecute = false,
+        };
+        start.ArgumentList.Add(RepositoryFiles.Path("eng", "count-tests.js"));
+        start.ArgumentList.Add(folder);
+        start.ArgumentList.Add(floorFile);
+        using var process = System.Diagnostics.Process.Start(start)!;
+        process.StandardOutput.ReadToEnd();
+        process.StandardError.ReadToEnd();
+        process.WaitForExit();
+        return process.ExitCode;
     }
 
     private static string TaskFile(string id)

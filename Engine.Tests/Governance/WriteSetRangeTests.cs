@@ -306,6 +306,29 @@ public class WriteSetRangeTests
         Assert.Contains("Merge work", output, StringComparison.Ordinal);
     }
 
+    // Finding T51 of the codebase review of 2026-10-13: a rename on the branch and an
+    // edit of the old path on main gave a merge that put the edit of main into the new
+    // path with no judgement (TASK-0073).
+    [Fact]
+    public void A_Merge_That_Carries_An_Edit_Into_A_Renamed_File_Is_Judged()
+    {
+        using var repo = ScratchRepository.WithTask();
+        repo.CommitUnderTask("Base", ("src/a.txt", "1\n2\n3\n4\n5\n"));
+        var start = repo.Head;
+        repo.Git("checkout", "-qb", "work");
+        Directory.CreateDirectory(Path.Combine(repo.Root, "Engine.Tests"));
+        repo.Git("mv", "src/a.txt", "Engine.Tests/a.txt");
+        repo.CommitUnderTask("Move the file");
+        repo.Git("checkout", "-q", "main");
+        repo.CommitUnderOtherTask("An edit of the old path on main", ("src/a.txt", "1\n2\n3\n4\nEVIL\n"));
+        repo.Git("merge", "-q", "--no-ff", "-m", "Merge work", "work");
+
+        var (exit, output) = repo.Judge("--range", start);
+
+        Assert.Equal(1, exit);
+        Assert.Contains("Merge work", output, StringComparison.Ordinal);
+    }
+
     // Finding T43 of the same review: a clean merge after main moved has no change
     // of its own, and the judge of TASK-0061 asked the task that it names to change
     // its file (TASK-0066).

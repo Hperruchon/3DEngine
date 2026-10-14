@@ -68,6 +68,7 @@ foreach (var (type, method) in checks)
         : !type.IsPublic || type.IsAbstract || type.ContainsGenericParameters ? "its class is not a public, top-level, concrete class"
         : !method.IsPublic || method.IsStatic || method.ContainsGenericParameters ? "it is not a public instance method"
         : method.ReturnType != typeof(void) && method.ReturnType != typeof(Task) && method.ReturnType != typeof(ValueTask) ? "it returns neither void, Task nor ValueTask"
+        : method.ReturnType == typeof(void) && method.GetCustomAttribute<System.Runtime.CompilerServices.AsyncStateMachineAttribute>() is not null ? "it is async void, so its end is not awaited (finding T52 of the review of 2026-10-13)"
         : fact is TheoryAttribute && method.GetCustomAttributes<DataAttribute>().Any(data => data is not InlineDataAttribute) ? "a row source other than [InlineData] gives its rows"
         : null;
     if (refusal is not null)

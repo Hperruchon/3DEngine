@@ -21,8 +21,11 @@ public class CodebaseReviewGateTests
     // CLAUDE.md uses three, and a review costs more, therefore six.
     private const int ReviewInterval = 6;
 
+    // A suffix after the date, for example 2026-10-13-b, permits a second review on
+    // one day. Until TASK-0073 the name held a date only, and a second review on one
+    // day needed a false date (finding T53 of the review of 2026-10-13).
     private static readonly Regex ReviewName = new(
-        @"^(\d{4}-\d{2}-\d{2})-codebase-review\.md$", RegexOptions.Compiled);
+        @"^(\d{4}-\d{2}-\d{2})(?:-[a-z0-9]+)?-codebase-review\.md$", RegexOptions.Compiled);
 
     private static readonly Regex LedgerHeading = new(
         @"^## v(\d+)\.(\d+)\b", RegexOptions.Compiled | RegexOptions.Multiline);
@@ -111,7 +114,48 @@ public class CodebaseReviewGateTests
     [Fact]
     public void Each_Review_Gives_The_State_Of_Each_Finding_Of_The_Previous_Review()
     {
-        var reviews = Reviews();
+        var problems = PreviousReviewProblems(Reviews());
+
+        Assert.True(
+            problems.Count == 0,
+            "A review must say what happened to each finding of the review before it: fixed, open, or "
+            + "worse.\n  " + string.Join("\n  ", problems));
+    }
+
+    // Finding T53 of the codebase review of 2026-10-13: a second review on one day
+    // needed a false date. Each review below passed or failed the gate of main
+    // against the rule (TASK-0073).
+    [Theory]
+    [InlineData("2026-10-13-b-codebase-review.md", "v0.72", true)]
+    [InlineData("2026-10-13-b-codebase-review.md", "v0.71", false)]
+    [InlineData("2026-10-12-codebase-review.md", "v0.72", false)]
+    public void A_Second_Review_On_One_Day_Is_Read_And_Ordered_By_Its_Ledger(string name, string ledger, bool accepted)
+    {
+        var folder = Directory.CreateTempSubdirectory("reviews-").FullName;
+        try
+        {
+            File.WriteAllText(
+                Path.Combine(folder, "2026-10-13-codebase-review.md"),
+                "---\ndate: 2026-10-13\ncommit: afc1d92\nledger: v0.71\nprevious: none\n---\n\n#### T1 · Low · A finding\n");
+            File.WriteAllText(
+                Path.Combine(folder, name),
+                $"---\ndate: {name[..10]}\ncommit: afc1d92\nledger: {ledger}\nprevious: 2026-10-13-codebase-review.md\n---\n\n"
+                + "## Findings of the previous review\n\n- **T1** — Open.\n");
+
+            var reviews = Reviews(folder);
+            var problems = PreviousReviewProblems(reviews);
+
+            Assert.Equal(2, reviews.Count);
+            Assert.True(accepted == (problems.Count == 0), string.Join("\n  ", problems));
+        }
+        finally
+        {
+            Directory.Delete(folder, recursive: true);
+        }
+    }
+
+    private static List<string> PreviousReviewProblems(List<Review> reviews)
+    {
         var byName = reviews.ToDictionary(r => r.Name, StringComparer.Ordinal);
         var problems = new List<string>();
 
@@ -127,7 +171,10 @@ public class CodebaseReviewGateTests
                 continue;
             }
 
-            if (previous.Date >= review.Date)
+            // The order of two reviews is the order of the ledger versions that they
+            // examine; the dates may be equal (T53).
+            var (previousLedger, ledger) = (ParseVersion(previous.Fields.GetValueOrDefault("ledger", string.Empty)), ParseVersion(review.Fields.GetValueOrDefault("ledger", string.Empty)));
+            if (previous.Date > review.Date || previousLedger is null || ledger is null || previousLedger.Value.CompareTo(ledger.Value) >= 0)
                 problems.Add($"{review.Name}: the previous review {previousName} is not earlier");
 
             var states = Section(review.Text, "## Findings of the previous review");
@@ -145,16 +192,13 @@ public class CodebaseReviewGateTests
             }
         }
 
-        Assert.True(
-            problems.Count == 0,
-            "A review must say what happened to each finding of the review before it: fixed, open, or "
-            + "worse.\n  " + string.Join("\n  ", problems));
+        return problems;
     }
 
     [Fact]
     public void A_Review_Is_Not_Overdue()
     {
-        var latest = Reviews().OrderBy(r => r.Date).LastOrDefault();
+        var latest = Reviews().OrderBy(r => ParseVersion(r.Fields.GetValueOrDefault("ledger", string.Empty)) ?? (0, 0)).LastOrDefault();
         Assert.NotNull(latest);
 
         var reviewed = ParseVersion(latest!.Fields.GetValueOrDefault("ledger", string.Empty));
@@ -175,9 +219,10 @@ public class CodebaseReviewGateTests
             + "section 7.");
     }
 
-    private static List<Review> Reviews()
+    private static List<Review> Reviews() => Reviews(RepositoryFiles.Path("docs", "reviews"));
+
+    private static List<Review> Reviews(string directory)
     {
-        var directory = RepositoryFiles.Path("docs", "reviews");
         if (!Directory.Exists(directory))
             return [];
 
