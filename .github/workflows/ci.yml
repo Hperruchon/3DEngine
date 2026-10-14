@@ -63,6 +63,9 @@ jobs:
           echo "runner:  ${{ matrix.os }}"
           echo "machine: $(uname -sm)"
           dotnet --version
+          # The judge runs git merge-tree with -X no-renames (TASK-0073); the range
+          # tests fail on a git that refuses it, and this line shows the version.
+          git --version
 
       - name: Build
         run: dotnet build

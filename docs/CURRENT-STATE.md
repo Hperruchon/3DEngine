@@ -2038,3 +2038,34 @@ demonstration. TASK-0076 holds R6 and writes these decisions as ADR-0025 in its 
 New tests: none. The test list holds 402. `dotnet build 3DEngine.sln --no-incremental` gives zero errors and
 zero warnings. Open entries: 14 of 15. New diagnostic codes: none. The next codebase review must come before
 ledger entry v0.77.
+
+## v0.73 — No file outside the gate files can empty the step "Test", and the gates see what MSBuild evaluates (P0.28, TASK-0073)
+
+The codebase review of 2026-10-13 found six gaps in the checks of the pipeline, and the owner put their
+task before R6 (question Q1, option A).
+
+**The change.**
+
+- T48: the solution file, `Directory.Solution.*`, `*.sln.targets` and each `.user` file are gate files,
+  and the names of the Directory files are compared with no regard to case. The new step "Count the tests"
+  runs `eng/count-tests.js` and fails when fewer tests ran than `eng/test-floor.txt` (437).
+- T51: the judge runs `git merge-tree` with `-X no-renames`, so a rename cannot carry a change into a gate
+  file through a clean merge. The step "Report the runner" shows the version of git.
+- T49: the determinism gate refuses code that a preprocessor condition hides, reads a folder `obj/` below
+  the root of a project, refuses a `Compile` or `Analyzer` item in each file that MSBuild reads for the log
+  path, and forbids the creators of `System.Numerics` that call a transcendental function, `Complex.Phase`
+  and reflection.
+- T50: the dependency gate refuses an `Include` that MSBuild computes, a `Reference` item, each property
+  that imports a file, an SDK outside the two of the repository, and each extension file in `obj/` that
+  NuGet did not write.
+- T52, T53: the runner refuses an `async void` check, and the review gate permits a suffix after the date
+  and orders the reviews by their ledger versions.
+
+**Proof.** Each form of the review failed its new check, and passed the check of `main`. MSBuild listed
+the three references of T50. The forms of T49, T50 and T53 are 21 test cases; with the logic of `main` put
+back, 20 failed, and the 21st is a guard that `main` also keeps. T52 is a recorded probe and not a test.
+
+New tests: 35. The test list holds 437 (409 in `Engine.Tests`, 28 in `3DEngine.Tests`). The program runs
+75 checks in 95 runs. `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings.
+Open entries: 14 of 15. New diagnostic codes: none. The next codebase review must come before ledger entry
+v0.77.

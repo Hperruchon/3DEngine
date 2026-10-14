@@ -323,6 +323,11 @@ line listed it as open. It finds that four kinds of file that are not gate files
 out of the step "Test" with a green run (T48, high), that the determinism gate and the dependency gate miss
 forms that MSBuild evaluates (T49, T50), that a rename carries a change into a gate file through a clean
 merge (T51), and two small gaps (T52, T53). TASK-0073 holds T48 to T53.
+Progress 2026-10-14: TASK-0073 corrected T48 to T53. Each input of a build that chooses the projects of a
+run is a gate file, and the step "Test" fails below a floor of executed tests. The judge reads a merge with
+no detection of renames. The determinism gate and the dependency gate refuse each form of the review, and
+21 test cases hold those forms. The runner refuses an `async void` check, and two reviews may share a
+date. T4, T5, T7, T10, T13, T17, T23 and T25 stay.
 
 ### R-0033 · Seven findings of the third codebase review in the engine and the hosts have no task
 - class: debt
