@@ -1,13 +1,13 @@
 ---
 id: 0022
 title: The first render pipeline
-status: Accepted
+status: Amended
 topic: Rendering, boundary
 date: 2026-10-12
 supersedes: []
 superseded-by: []
 amends: ['0009', '0017']
-amended-by: []
+amended-by: ['0025']
 affects:
   - 3DEngine.Vulkan/Shaders/**
   - 3DEngine.Tests/**
@@ -42,11 +42,14 @@ The owner answered question Q2 of that review on 2026-10-12 with option A for ea
    LF line ends, the SHA-256 of the SPIR-V, and the command and the version of the compiler. A test of
    `3DEngine.Tests` fails when a source or a SPIR-V file differs from its line, or when a SPIR-V file
    has no SPIR-V header. Nothing compiles a shader in the pipeline.
-2. **Render pass.** The pipeline draws in subpass 0 of the render pass of the swapchain. It does not use
-   dynamic rendering.
+2. **Render pass.** The pipeline draws in subpass 0 of the render pass of its target: the swapchain of
+   the window, or the offscreen target of ADR-0025. It does not use dynamic rendering. (Amended
+   2026-10-14, ADR-0025: the render pass of the swapchain only.)
 3. **Tests of the render side.** A test project `3DEngine.Tests` may reference `3DEngine.Core` and
    `3DEngine.Vulkan`, and nothing else. Its tests create no Vulkan object and need no GPU.
-   `Engine.Tests` references no project of the render side. The dependency gate holds both rules.
+   `Engine.Tests` references no project of the render side. The image test of ADR-0025 lives in
+   `3DEngine.ImageTests`, which creates a Vulkan device with no window. The dependency gate holds each
+   rule. (Amended 2026-10-14, ADR-0025: no test created a Vulkan object.)
 4. **Platform of R3.** The owner sees the result of R3 in the desktop window on the computer of the
    owner (Windows, x64). The defects of R-0022 and R-0030 wait for a run on Linux or macOS.
 
@@ -67,3 +70,5 @@ sees a forgotten compile only. No test shows a frame, so the owner looks at each
 
 - 2026-10-12 · TASK-0069 · The record is written with the answer of the owner to question Q2 of the
   codebase review of 2026-10-12.
+- 2026-10-14 · TASK-0076 · ADR-0025 amends items 2 and 3: the pipeline takes the render pass of its
+  target, and the image test of `3DEngine.ImageTests` creates a Vulkan device with no window.

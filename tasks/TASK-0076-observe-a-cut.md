@@ -1,11 +1,11 @@
 ---
 id: 0076
 title: A person observes the cut of the first demonstration, and an image test with no window holds it
-status: Ready
+status: Active
 phase: R6
 opened: 2026-10-14
 depends-on: [0073]
-governed-by: [0007, 0009, 0017, 0019, 0022, 0023, 0024]
+governed-by: [0007, 0009, 0017, 0019, 0022, 0023, 0024, 0025]
 writes:
   create:
     - tasks/TASK-0076-observe-a-cut.md
@@ -20,6 +20,8 @@ writes:
     - 3DEngine.sln
     - .github/workflows/ci.yml
     - Engine.Tests/Governance/DependencyDirectionGateTests.cs
+    - docs/adr/0009-3dengine-core-peer-render-kernel.md
+    - docs/adr/0017-first-party-vulkan-layer.md
     - docs/adr/0022-first-render-pipeline.md
     - docs/adr/README.md
     - docs/INDEX.md
@@ -93,3 +95,10 @@ result on a runner of the pipeline.
 - **The write set.** `Engine.Tests/Governance/DependencyDirectionGateTests.cs` and `.github/workflows/ci.yml`
   are gate files, named exactly.
 - **The size.** About 6 to 8 evenings.
+
+## Progress
+
+- 2026-10-14: the task is active, after TASK-0073 (v0.73). ADR-0025 records the six decisions of the owner
+  and the split of the device. It amends ADR-0022 items 2 and 3, as the scope says, and also ADR-0017
+  items 1, 3 and 7 and ADR-0009 section 2, which state the same rules; the write set now names those two
+  records. The task is governed by ADR-0025 too, whose `affects` intersects the write set.
