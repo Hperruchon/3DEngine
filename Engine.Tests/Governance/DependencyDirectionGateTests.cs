@@ -84,7 +84,7 @@ public class DependencyDirectionGateTests
     // skipped it, and a wildcard import and a .csproj.user file each carried a
     // reference that MSBuild saw and the gate did not (findings T16 and T46 of the
     // codebase reviews of 2026-10-04 and 2026-10-12).
-    private static IEnumerable<string> FilesThatMsBuildReads(string projectFile)
+    internal static IEnumerable<string> FilesThatMsBuildReads(string projectFile)
     {
         var root = Path.GetFullPath(RepositoryFiles.Root).TrimEnd(Path.DirectorySeparatorChar);
         var queue = new Queue<string>();

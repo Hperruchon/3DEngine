@@ -99,3 +99,8 @@ git evaluate.
   and the runner of `main` crashed on it. The review gate reads a name with a suffix after the date and
   orders the reviews by their ledger versions; a second review of 2026-10-13 with a suffix passed, and the
   same review with no `commit` failed, so the gate reads it. The gate of `main` ignored that file.
+- 2026-10-14: T49. The determinism gate refuses code that a preprocessor condition hides, reads a folder
+  `obj/` below the root of a project, refuses a `Compile` or `Analyzer` item in each file that MSBuild
+  reads for the log path, and forbids the creators of `System.Numerics` that call a transcendental
+  function, `Complex.Phase` and reflection. The five forms of the review failed the new gate and passed
+  the gate of `main`.
