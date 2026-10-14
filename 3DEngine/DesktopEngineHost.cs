@@ -1,5 +1,4 @@
 using SDL3;
-using ThreeDEngine.Core.Models;
 using ThreeDEngine.Vulkan;
 using static SDL3.SDL3;
 
@@ -26,10 +25,7 @@ internal static class DesktopEngineHost
 
             try
             {
-                // The scene starts with its camera only; SessionBodies brings each live
-                // body of the session into it (roadmap phase R5).
-                var scene = new Scene { Name = "Session" };
-                scene.Cameras.Add(new Camera { Name = "Orbit camera", Distance = 40, YawDegrees = 30, PitchDegrees = 20 });
+                var scene = SessionScene.Create();
                 var window = new Window("3DEngine Desktop", 1280, 720);
                 using var engine = new NativeThreeDEngine(window, surface.Host);
 

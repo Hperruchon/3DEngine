@@ -109,3 +109,9 @@ result on a runner of the pipeline.
   throws with a message, and a device must have the swapchain extension to present. V6: each name goes to
   Vulkan from native memory (`NativeStrings`). The desktop drew the cut of the probes after the split,
   with no `[WARN]` and no `[ERROR]` line in its log.
+- 2026-10-14: D5 and D6. `Camera.Frame` puts the box of the live bodies inside the smaller half angle of
+  the field of view, and keeps the yaw and the pitch; `SessionBodies.Apply` reports a change and keeps the
+  box of each body. `SceneRenderer` holds the draw of the scene into one target, for the window and for
+  the image test; `SessionScene` gives the scene at the start. `scripts/first-demonstration.js` sends the
+  four commands with the offset (5, 5, 5). A run of the desktop with the script showed the framed notch,
+  with no `[WARN]` and no `[ERROR]` line in its log.
