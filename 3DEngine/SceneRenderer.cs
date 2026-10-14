@@ -14,8 +14,8 @@ namespace ThreeDEngine.Desktop;
 // what the person sees (TASK-0076).
 internal sealed unsafe class SceneRenderer : IDisposable
 {
-    // The colour of the clear.
-    public static readonly VkClearColorValue Background = new(0.0f, 1.0f, 0.0f, 1.0f);
+    // The colour of the clear: red, green and blue from 0 to 1.
+    public static readonly (float R, float G, float B) Background = (0.0f, 1.0f, 0.0f);
 
     private readonly GraphicsDevice _device;
     private readonly VkRenderPass _renderPass;
@@ -53,7 +53,7 @@ internal sealed unsafe class SceneRenderer : IDisposable
 
         // The colour, and the depth of the far plane of the reversed projection.
         VkClearValue* clearValues = stackalloc VkClearValue[2];
-        clearValues[0] = new VkClearValue { color = Background };
+        clearValues[0] = new VkClearValue { color = new VkClearColorValue(Background.R, Background.G, Background.B, 1.0f) };
         clearValues[1] = new VkClearValue { depthStencil = new VkClearDepthStencilValue(DepthBuffer.ClearDepth, 0) };
 
         VkRenderPassBeginInfo renderPassInfo = new()

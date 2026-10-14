@@ -384,6 +384,11 @@ public class DependencyDirectionGateTests
     // reference the render side only; Engine.Tests references none of it.
     private static readonly string[] RenderVerifiers = ["3DEngine.Tests"];
 
+    // The image test of the first demonstration, with a Vulkan device and no window
+    // (ADR-0025 item 3, TASK-0076). It may reference the projects that a host that
+    // draws references, and that host.
+    private static readonly string[] ImageVerifiers = ["3DEngine.ImageTests"];
+
     // eng/manifold-native packs the native payload. It holds no code.
     private static readonly string[] Packaging = ["Engine.Geometry.Manifold.Native"];
 
@@ -409,7 +414,7 @@ public class DependencyDirectionGateTests
         // A new project must enter one of the lists above before the gate can
         // apply a rule to it. Until TASK-0039 an unlisted project passed each
         // test, because no test read it (rules review finding F22).
-        string[] classified = [.. Kernel, .. RenderSide, .. HeadlessClients, .. Surfaces, .. HostsThatDraw, .. Verifiers, .. RenderVerifiers, .. Packaging, .. Judges];
+        string[] classified = [.. Kernel, .. RenderSide, .. HeadlessClients, .. Surfaces, .. HostsThatDraw, .. Verifiers, .. RenderVerifiers, .. ImageVerifiers, .. Packaging, .. Judges];
 
         var unclassified = Graph().Keys
             .Where(p => !classified.Contains(p))
@@ -419,7 +424,7 @@ public class DependencyDirectionGateTests
         Assert.True(
             unclassified.Length == 0,
             "Each project must be a kernel, a render-side project, a headless client, a surface library, a host that "
-            + "draws, a verifier, a verifier of the render side or a packaging project, so that the dependency rules apply to it. "
+            + "draws, a verifier, a verifier of the render side, an image verifier or a packaging project, so that the dependency rules apply to it. "
             + "Add it to one list.\n  " + string.Join("\n  ", unclassified));
     }
 
@@ -492,14 +497,34 @@ public class DependencyDirectionGateTests
     }
 
     [Fact]
+    public void An_Image_Verifier_References_Only_A_Host_That_Draws_And_The_Projects_Of_That_Host()
+    {
+        // ADR-0025 item 3: the projects that a client may reference, the render side,
+        // the surface library, and the host that draws.
+        string[] permitted = [.. Kernel, .. RenderSide, .. Surfaces, .. HostsThatDraw];
+        var graph = Graph();
+        var offences = ImageVerifiers
+            .Select(verifier => graph.ContainsKey(verifier) ? null : $"{verifier}.csproj was not found")
+            .OfType<string>()
+            .Concat(ImageVerifiers
+                .Where(graph.ContainsKey)
+                .SelectMany(verifier => graph[verifier]
+                    .Where(target => !permitted.Contains(target))
+                    .Select(target => $"{verifier} references {target}, which is not a host that draws or a project of one")))
+            .ToArray();
+
+        Assert.True(offences.Length == 0, string.Join("\n  ", offences));
+    }
+
+    [Fact]
     public void Only_A_Host_That_Draws_References_The_Vulkan_Layer()
     {
-        // ADR-0017 rule 3, and ADR-0022 item 3 for the tests of the render side.
-        // This test also covers each Engine.* project and the
-        // render kernel, because neither one is a host that draws.
+        // ADR-0017 rule 3, ADR-0022 item 3 for the tests of the render side, and
+        // ADR-0025 item 3 for the image test. This test also covers each Engine.*
+        // project and the render kernel, because neither one is a host that draws.
         var offences = Graph()
             .Where(p => p.Value.Contains("3DEngine.Vulkan"))
-            .Where(p => !HostsThatDraw.Contains(p.Key) && !RenderVerifiers.Contains(p.Key))
+            .Where(p => !HostsThatDraw.Contains(p.Key) && !RenderVerifiers.Contains(p.Key) && !ImageVerifiers.Contains(p.Key))
             .Select(p => $"{p.Key} references 3DEngine.Vulkan, and it is not a host that draws")
             .ToArray();
 

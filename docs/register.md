@@ -374,6 +374,19 @@ port setting, the disposal of the session and the end of the window loop at a st
 test. TASK-0062 corrected the three by reading and by one run of the executable before its window.
 Exit: a test calls `DesktopSurface`, or the owner accepts the gap and gives the reason.
 
+### R-0040 · The image test does not run on the Windows and macOS runners
+- class: interim
+- opened: 2026-10-14
+- due: 2027-10-14
+- extended: no
+- refs: `3DEngine.ImageTests/VulkanImageFactAttribute.cs`, ADR-0025 item 4, TASK-0076, R-0022
+The images of `windows-latest` and `macos-latest` give no usable Vulkan device, so the image test skips
+there by decision of the owner (question Q2 of the codebase review of 2026-10-13, D3). A defect of the
+Vulkan layer that only Windows or macOS shows passes the pipeline. The computer of the owner runs the test
+on Windows with a GPU, and no computer runs it on macOS.
+Exit: a runner of Windows or macOS gives a Vulkan device and the pipeline requires the test there, or the
+owner accepts Ubuntu alone and moves this entry to the accepted compromises.
+
 ## Accepted compromises
 
 These are conditions that the project keeps permanently and by decision. They do not age.

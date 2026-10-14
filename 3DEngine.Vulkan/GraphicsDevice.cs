@@ -113,9 +113,15 @@ public unsafe sealed class GraphicsDevice : IDisposable
             debugUtilsCreateInfo.messageSeverity = VkDebugUtilsMessageSeverityFlagsEXT.Error | VkDebugUtilsMessageSeverityFlagsEXT.Warning;
             debugUtilsCreateInfo.messageType = VkDebugUtilsMessageTypeFlagsEXT.Validation | VkDebugUtilsMessageTypeFlagsEXT.Performance;
             debugUtilsCreateInfo.pfnUserCallback = &DebugMessengerCallback;
-            if (synchronization)
-                debugUtilsCreateInfo.pNext = &validationFeatures;
+
+            // The instance reads both structures; the messenger below reads the
+            // structure of the messenger alone, whose pNext must stay null.
             instanceCreateInfo.pNext = &debugUtilsCreateInfo;
+            if (synchronization)
+            {
+                validationFeatures.pNext = &debugUtilsCreateInfo;
+                instanceCreateInfo.pNext = &validationFeatures;
+            }
         }
 
         VkResult result = vkCreateInstance(&instanceCreateInfo, null, out VkInstance);

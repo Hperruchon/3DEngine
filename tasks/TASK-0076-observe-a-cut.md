@@ -115,3 +115,10 @@ result on a runner of the pipeline.
   the image test; `SessionScene` gives the scene at the start. `scripts/first-demonstration.js` sends the
   four commands with the offset (5, 5, 5). A run of the desktop with the script showed the framed notch,
   with no `[WARN]` and no `[ERROR]` line in its log.
+- 2026-10-14: D2 and D4. `3DEngine.ImageTests` sends the four commands to a session, draws the live
+  bodies with `SceneRenderer` into an `OffscreenTarget` of a device with no window, writes the picture as
+  a PNG file, and compares it by structure. The validation layer checks the synchronization. The first run
+  showed a validation message that the count missed: the structure of the messenger carried the features
+  in its `pNext`; the features now chain on the instance only. The dependency gate has the class of the
+  image verifier; a reference from it to `Engine.Cli` failed the new check. R-0040 holds the skip on
+  Windows and macOS.
