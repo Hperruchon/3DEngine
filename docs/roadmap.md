@@ -115,7 +115,7 @@ The first objective. Each phase ends with something that a person can observe.
 | R3 | A pipeline. A triangle, then an indexed mesh. TASK-0069. | 4–6 |
 | R4 | A camera with depth. An orbit camera, reversed depth, and a draw list over the scene graph (ADR-0023). TASK-0070. | 5–7 |
 | R5 | Geometry from the engine. Subscribe to events, fetch a mesh, draw it. Subtract a double-precision origin before the narrowing to float. Choose `frontFace` together with the viewport flip. TASK-0071. | 6–8 |
-| R6 | Observe a cut. The live body set of ADR-0021 gives the result. A headless image test. | 4–6 |
+| R6 | Observe a cut. The live body set of ADR-0021 gives the result. A headless image test. TASK-0076. | 6–8 |
 | R7 | Device-tagged pointer samples. The intent layer and the parity test. | 4–7 |
 | R8 | Selection, name and visibility as commands. | 4–6 |
 | R9 | A transform gizmo at a constant screen size. | 5–8 |
@@ -158,7 +158,7 @@ The tracks are not strictly sequential, but three rules hold:
    P0.15 must be done before R2, because the tests of R2 need a serial read and a native backend
    that surely ran. P0.26 must be done before R3: the owner answered question Q1 of the codebase
    review of 2026-10-12 on 2026-10-12. P0.27 holds three low findings and has no place in the order. The
-   codebase review of 2026-10-13 recommends P0.28 before R6 (question Q1); the owner decides. P0.29 comes
+   codebase review of 2026-10-13 put P0.28 before R6 (question Q1, answered by the owner on 2026-10-14). P0.29 comes
    after R6, except the parts that R6 takes.
 2. R2 blocks each later phase in track R. No mesh leaves the geometry backend today.
 3. K4 needs K0, K1 and K2. Do not start K4 before the reference model exists.
@@ -167,8 +167,8 @@ The field `depends-on` of each task file holds the same order. `TaskGovernanceGa
 that each dependency names a task.
 
 Phase R6 gives the first objective that the owner named: create a box, subtract a second box, and
-observe the cut. The phase that remains, R6, gives it in 4 to 6 evenings. That number is the sum of
-the column "Evenings" for that phase. Correct it when a phase ships or an estimate changes.
+observe the cut. P0.28 and R6 give it in 8 to 11 evenings. That number is the sum of
+the column "Evenings" for those phases. Correct it when a phase ships or an estimate changes.
 
 ## Not on a track
 

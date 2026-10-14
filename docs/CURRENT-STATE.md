@@ -2018,3 +2018,23 @@ the camera, and how the demonstration runs again. Q3: the estimate of R6, 6 to 8
 New tests: none. The test list holds 402. `dotnet build 3DEngine.sln --no-incremental` gives zero errors and
 zero warnings. Open entries: 14 of 15. New diagnostic codes: none. The next codebase review must come before
 ledger entry v0.77.
+
+## v0.72 — The decisions of the owner of 2026-10-14 (governance, TASK-0075)
+
+On 2026-10-14 the owner answered the three questions of the codebase review of 2026-10-13 with "A to all,
+then continue the batch".
+
+**Q1, option A: TASK-0073 first.** P0.28 comes before R6, because T48 lets a commit stop each functional
+test with a green run.
+
+**Q2, option A for each decision of R6.** The demonstration moves the second box by (5, 5, 5); a new project
+`3DEngine.ImageTests` holds an image test with no window; the pipeline installs lavapipe on Ubuntu and
+requires the test there, and it skips on Windows and macOS with a reason in the register; the image is
+compared by structure; the camera frames the live bodies; a script in the repository runs the
+demonstration. TASK-0076 holds R6 and writes these decisions as ADR-0025 in its first commit.
+
+**Q3, option A.** R6 needs 6 to 8 evenings. The first objective now needs P0.28 and R6: 8 to 11 evenings.
+
+New tests: none. The test list holds 402. `dotnet build 3DEngine.sln --no-incremental` gives zero errors and
+zero warnings. Open entries: 14 of 15. New diagnostic codes: none. The next codebase review must come before
+ledger entry v0.77.
