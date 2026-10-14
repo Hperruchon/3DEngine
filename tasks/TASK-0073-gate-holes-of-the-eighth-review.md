@@ -109,3 +109,8 @@ git evaluate.
   the repository uses, an `Sdk` element, and each file `obj/*.props` or `obj/*.targets` that NuGet did not
   write. `dotnet msbuild -getItem:ProjectReference` listed the three references of the review, and the new
   check refused each one while the 18 other checks passed them.
+- 2026-10-14: the injections of T49, T50 and T53 are tests now. Each gate gives its rule as a function of
+  a text, a folder or a list of reviews, and 21 new cases read the forms of the review. With the logic of
+  `main` put back into those functions, 20 cases failed; the 21st is a review with an earlier date, which
+  `main` also refuses. T52 has no test: the runner is a program that `Engine.Tests` does not reference, and
+  a probe needs a second build of it. Its probe is recorded above.

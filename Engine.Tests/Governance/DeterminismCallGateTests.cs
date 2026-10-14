@@ -78,9 +78,7 @@ public class DeterminismCallGateTests
     [Fact]
     public void No_Source_In_The_Log_Path_Calls_A_Function_That_The_Determinism_Rules_Forbid()
     {
-        var offences = new List<string>();
-        var trees = new List<SyntaxTree>();
-        var options = new CSharpParseOptions(LanguageVersion.Preview);
+        var sources = new List<(string Path, string Source)>();
 
         foreach (var project in LogPathProjects)
         {
@@ -89,29 +87,79 @@ public class DeterminismCallGateTests
 
             foreach (var file in Directory.EnumerateFiles(directory, "*.cs", SearchOption.AllDirectories))
             {
-                // MSBuild leaves out the folders obj/ and bin/ at the root of the
-                // project only. Until TASK-0073 the gate skipped such a folder at
-                // each depth, and a file Geometry/obj/Trig.cs compiled with no
-                // check (T49).
                 var relative = RepositoryFiles.Relative(file);
-                if (relative.StartsWith($"{project}/obj/", StringComparison.Ordinal) || relative.StartsWith($"{project}/bin/", StringComparison.Ordinal))
-                    continue;
-
-                var source = File.ReadAllText(file);
-                var tree = CSharpSyntaxTree.ParseText(source, options, path: relative);
-                trees.Add(tree);
-
-                // The gate parses with no preprocessor symbol, and the build
-                // defines several. Code that a condition leaves out of the parse
-                // is code that the gate cannot read; until TASK-0073 a call inside
-                // #if NET passed (T49).
-                foreach (var hidden in tree.GetRoot().DescendantTrivia().Where(t => t.IsKind(SyntaxKind.DisabledTextTrivia)))
-                    offences.Add($"{relative}:{tree.GetLineSpan(hidden.Span).StartLinePosition.Line + 1} holds code that a preprocessor condition hides from the gate");
-
-                var text = WithoutComments(source.Replace("\r", string.Empty));
-                foreach (Match match in StaticImport.Matches(text))
-                    offences.Add($"{relative}:{LineOf(text, match.Index)} imports System.{match.Groups[2].Value} statically");
+                if (IsCompiled(project, relative))
+                    sources.Add((relative, File.ReadAllText(file)));
             }
+        }
+
+        var offences = CallOffences(sources);
+
+        Assert.True(
+            offences.Count == 0,
+            "CLAUDE.md, section \"Determinism rules\": a replay must give the same result on each "
+            + "platform, and these functions do not. Use +, -, *, / and sqrt, or record the number "
+            + "that the client computed. Offences:\n  " + string.Join("\n  ", offences));
+    }
+
+    // The forms of finding T49 that a source holds. Each one passed the gate of
+    // main and must be an offence (TASK-0073).
+    [Theory]
+    [InlineData("internal static class H\n{\n#if NET\n    internal static double F(double x) => Math.Sin(x);\n#endif\n}\n", "Probe.cs:4 holds code that a preprocessor condition hides")]
+    [InlineData("using System.Numerics;\ninternal static class C { internal static Matrix4x4 R() => Matrix4x4.CreateRotationZ(1f); }", "calls System.Numerics.Matrix4x4.CreateRotationZ")]
+    [InlineData("using System.Numerics;\ninternal static class C { internal static Complex P() => Complex.FromPolarCoordinates(1, 2); }", "calls System.Numerics.Complex.FromPolarCoordinates")]
+    [InlineData("using System.Numerics;\ninternal static class C { internal static double A() => new Complex(1, 1).Phase; }", "calls System.Numerics.Complex.Phase")]
+    [InlineData("internal static class R { internal static object? S() => typeof(Math).GetMethod(\"Sin\")!.Invoke(null, [1.0]); }", "calls System.Type.GetMethod")]
+    [InlineData("using System.Linq.Expressions;\ninternal static class R { internal static Expression E() => Expression.Call(typeof(Math), \"Cos\", null, Expression.Constant(1.0)); }", "calls System.Linq.Expressions.Expression.Call")]
+    public void Each_Form_Of_Finding_T49_In_A_Source_Is_An_Offence(string source, string expected)
+    {
+        var offences = CallOffences([("Probe.cs", source)]);
+
+        Assert.True(
+            offences.Any(o => o.Contains(expected, StringComparison.Ordinal)),
+            $"Expected an offence with '{expected}'. Offences:\n  " + string.Join("\n  ", offences));
+    }
+
+    // MSBuild leaves out the folders obj/ and bin/ at the root of the project
+    // only. Until TASK-0073 the gate skipped such a folder at each depth, and a
+    // file Geometry/obj/Trig.cs compiled with no check (T49).
+    [Fact]
+    public void A_Folder_Obj_Below_The_Root_Of_A_Project_Is_Read()
+    {
+        Assert.True(IsCompiled("Engine.Core", "Engine.Core/Geometry/obj/Trig.cs"));
+        Assert.True(IsCompiled("Engine.Core", "Engine.Core/Geometry/bin/Trig.cs"));
+        Assert.False(IsCompiled("Engine.Core", "Engine.Core/obj/Debug/Engine.Core.AssemblyInfo.cs"));
+        Assert.False(IsCompiled("Engine.Core", "Engine.Core/bin/Trig.cs"));
+    }
+
+    private static bool IsCompiled(string project, string relative)
+        => !relative.StartsWith($"{project}/obj/", StringComparison.Ordinal)
+        && !relative.StartsWith($"{project}/bin/", StringComparison.Ordinal);
+
+    // Each offence of the sources: a static import of Math, code that a
+    // preprocessor condition hides, and a name of the list that binds to a member
+    // of the framework or binds to nothing.
+    private static List<string> CallOffences(IEnumerable<(string Path, string Source)> sources)
+    {
+        var offences = new List<string>();
+        var trees = new List<SyntaxTree>();
+        var options = new CSharpParseOptions(LanguageVersion.Preview);
+
+        foreach (var (relative, source) in sources)
+        {
+            var tree = CSharpSyntaxTree.ParseText(source, options, path: relative);
+            trees.Add(tree);
+
+            // The gate parses with no preprocessor symbol, and the build defines
+            // several. Code that a condition leaves out of the parse is code that
+            // the gate cannot read; until TASK-0073 a call inside #if NET passed
+            // (T49).
+            foreach (var hidden in tree.GetRoot().DescendantTrivia().Where(t => t.IsKind(SyntaxKind.DisabledTextTrivia)))
+                offences.Add($"{relative}:{tree.GetLineSpan(hidden.Span).StartLinePosition.Line + 1} holds code that a preprocessor condition hides from the gate");
+
+            var text = WithoutComments(source.Replace("\r", string.Empty));
+            foreach (Match match in StaticImport.Matches(text))
+                offences.Add($"{relative}:{LineOf(text, match.Index)} imports System.{match.Groups[2].Value} statically");
         }
 
         // The global usings that the SDK writes for a project with
@@ -153,11 +201,7 @@ public class DeterminismCallGateTests
             }
         }
 
-        Assert.True(
-            offences.Count == 0,
-            "CLAUDE.md, section \"Determinism rules\": a replay must give the same result on each "
-            + "platform, and these functions do not. Use +, -, *, / and sqrt, or record the number "
-            + "that the client computed. Offences:\n  " + string.Join("\n  ", offences));
+        return offences;
     }
 
     // A Compile item adds a source that the gate does not read, and an Analyzer
@@ -175,16 +219,7 @@ public class DeterminismCallGateTests
             Assert.True(File.Exists(projectFile), $"{project}.csproj was not found.");
 
             foreach (var file in DependencyDirectionGateTests.FilesThatMsBuildReads(projectFile))
-            {
-                foreach (var element in XDocument.Load(file).Descendants())
-                {
-                    var name = element.Name.LocalName;
-                    if (name is "Compile" or "Analyzer" && element.Attribute("Include") is not null)
-                        offences.Add($"{RepositoryFiles.Relative(file)} adds the item {name} {element.Attribute("Include")!.Value}");
-                    else if (name == "Output" && element.Attribute("ItemName")?.Value is "Compile" or "Analyzer")
-                        offences.Add($"{RepositoryFiles.Relative(file)} makes {element.Attribute("ItemName")!.Value} items in a task");
-                }
-            }
+                offences.AddRange(SourceItemOffences(RepositoryFiles.Relative(file), XDocument.Load(file)));
         }
 
         Assert.True(
@@ -192,6 +227,32 @@ public class DeterminismCallGateTests
             "CLAUDE.md, section \"Determinism rules\": the gate reads the files *.cs in the folder of each "
             + "project of the log path, and nothing else. Put the source in that folder. Offences:\n  "
             + string.Join("\n  ", offences));
+    }
+
+    // The form of finding T49 that a project file holds (TASK-0073).
+    [Theory]
+    [InlineData("<Project><ItemGroup><Compile Include=\"..\\docs\\Outside.cs\" /></ItemGroup></Project>", "adds the item Compile")]
+    [InlineData("<Project><ItemGroup><Analyzer Include=\"..\\docs\\Generator.dll\" /></ItemGroup></Project>", "adds the item Analyzer")]
+    [InlineData("<Project><Target Name=\"T\"><CreateItem Include=\"x.cs\"><Output TaskParameter=\"Include\" ItemName=\"Compile\" /></CreateItem></Target></Project>", "makes Compile items")]
+    public void Each_Form_Of_Finding_T49_In_A_Project_File_Is_An_Offence(string project, string expected)
+    {
+        var offences = SourceItemOffences("Probe.csproj", XDocument.Parse(project));
+
+        Assert.True(
+            offences.Any(o => o.Contains(expected, StringComparison.Ordinal)),
+            $"Expected an offence with '{expected}'. Offences:\n  " + string.Join("\n  ", offences));
+    }
+
+    private static IEnumerable<string> SourceItemOffences(string relative, XDocument document)
+    {
+        foreach (var element in document.Descendants())
+        {
+            var name = element.Name.LocalName;
+            if (name is "Compile" or "Analyzer" && element.Attribute("Include") is not null)
+                yield return $"{relative} adds the item {name} {element.Attribute("Include")!.Value}";
+            else if (name == "Output" && element.Attribute("ItemName")?.Value is "Compile" or "Analyzer")
+                yield return $"{relative} makes {element.Attribute("ItemName")!.Value} items in a task";
+        }
     }
 
     [Fact]

@@ -181,58 +181,99 @@ public class DependencyDirectionGateTests
         var offences = new List<string>();
 
         foreach (var file in ProjectFiles().SelectMany(FilesThatMsBuildReads).Distinct(StringComparer.OrdinalIgnoreCase))
-        {
-            var relative = RepositoryFiles.Relative(file);
-            var document = XDocument.Load(file);
+            offences.AddRange(ReferenceOffences(RepositoryFiles.Relative(file), XDocument.Load(file)));
 
-            if (document.Root?.Attribute("Sdk")?.Value is { } sdks)
-            {
-                foreach (var sdk in sdks.Split(';', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
-                {
-                    if (!PermittedSdks.Contains(sdk.Split('/')[0]))
-                        offences.Add($"{relative} names the SDK {sdk}");
-                }
-            }
-
-            foreach (var element in document.Descendants())
-            {
-                var name = element.Name.LocalName;
-                var include = element.Attribute("Include")?.Value;
-
-                if (include is not null && (include.Contains("$(", StringComparison.Ordinal) || include.Contains("@(", StringComparison.Ordinal) || include.Contains("%(", StringComparison.Ordinal)))
-                    offences.Add($"{relative} has the item {name} '{include}', whose value MSBuild computes");
-                else if (name == "Reference" && include is not null)
-                    offences.Add($"{relative} references the assembly {include}, which the graph does not read");
-                else if (ImportProperty.IsMatch(name))
-                    offences.Add($"{relative} sets the property {name}, which imports a file that the gate does not read");
-                else if (name == "Sdk" || (name == "Import" && element.Attribute("Sdk") is not null))
-                    offences.Add($"{relative} imports an SDK with the element {name}");
-            }
-        }
-
-        // MSBuild imports each file obj/<project file>.*.props and .targets.
-        // NuGet writes the two files .nuget.g.props and .nuget.g.targets at each
-        // restore; each other such file is refused.
         foreach (var projectFile in ProjectFiles())
-        {
-            var obj = Path.Combine(Path.GetDirectoryName(projectFile)!, "obj");
-            if (!Directory.Exists(obj))
-                continue;
-
-            foreach (var file in Directory.EnumerateFiles(obj))
-            {
-                var fileName = Path.GetFileName(file);
-                if ((fileName.EndsWith(".props", StringComparison.OrdinalIgnoreCase) || fileName.EndsWith(".targets", StringComparison.OrdinalIgnoreCase))
-                    && !fileName.Contains(".nuget.g.", StringComparison.OrdinalIgnoreCase))
-                    offences.Add($"{RepositoryFiles.Relative(file)} is a file that MSBuild imports from obj/");
-            }
-        }
+            offences.AddRange(ExtensionFileOffences(Path.Combine(Path.GetDirectoryName(projectFile)!, "obj")));
 
         Assert.True(
             offences.Count == 0,
             "A reference that the gate cannot read as text can break the authority diagram. Name each "
             + "project by a path with no property, and set no property that imports a file.\n  "
             + string.Join("\n  ", offences));
+    }
+
+    // The forms of finding T50, and the forms of the same kind that TASK-0073 adds.
+    // Each one passed the gate of main.
+    [Theory]
+    [InlineData("<Project><PropertyGroup><RenderKernel>..\\3DEngine.Core\\3DEngine.Core.csproj</RenderKernel></PropertyGroup><ItemGroup><ProjectReference Include=\"$(RenderKernel)\" /></ItemGroup></Project>", "whose value MSBuild computes")]
+    [InlineData("<Project><PropertyGroup><CustomAfterMicrosoftCommonTargets>..\\docs\\x.targets</CustomAfterMicrosoftCommonTargets></PropertyGroup></Project>", "sets the property CustomAfterMicrosoftCommonTargets")]
+    [InlineData("<Project><PropertyGroup><DirectoryBuildPropsPath>..\\docs\\x.props</DirectoryBuildPropsPath></PropertyGroup></Project>", "sets the property DirectoryBuildPropsPath")]
+    [InlineData("<Project><ItemGroup><Reference Include=\"3DEngine.Core\" /></ItemGroup></Project>", "references the assembly 3DEngine.Core")]
+    [InlineData("<Project Sdk=\"Evil.Sdk/1.0\" />", "names the SDK Evil.Sdk/1.0")]
+    [InlineData("<Project><Sdk Name=\"Other.Sdk\" /></Project>", "imports an SDK with the element Sdk")]
+    [InlineData("<Project><Import Project=\"Sdk.targets\" Sdk=\"Third.Sdk\" /></Project>", "imports an SDK with the element Import")]
+    public void Each_Form_Of_Finding_T50_Is_An_Offence(string project, string expected)
+    {
+        var offences = ReferenceOffences("Probe.csproj", XDocument.Parse(project)).ToList();
+
+        Assert.True(
+            offences.Any(o => o.Contains(expected, StringComparison.Ordinal)),
+            $"Expected an offence with '{expected}'. Offences:\n  " + string.Join("\n  ", offences));
+    }
+
+    // The third form of finding T50: an extension file in obj/ (TASK-0073).
+    [Fact]
+    public void An_Extension_File_In_Obj_Is_An_Offence()
+    {
+        var obj = Directory.CreateTempSubdirectory("obj-").FullName;
+        try
+        {
+            File.WriteAllText(Path.Combine(obj, "Probe.csproj.nuget.g.props"), "<Project />");
+            File.WriteAllText(Path.Combine(obj, "Probe.csproj.nuget.g.targets"), "<Project />");
+            Assert.Empty(ExtensionFileOffences(obj));
+
+            File.WriteAllText(Path.Combine(obj, "Probe.csproj.probe.props"), "<Project />");
+            Assert.Single(ExtensionFileOffences(obj));
+        }
+        finally
+        {
+            Directory.Delete(obj, recursive: true);
+        }
+    }
+
+    private static IEnumerable<string> ReferenceOffences(string relative, XDocument document)
+    {
+        if (document.Root?.Attribute("Sdk")?.Value is { } sdks)
+        {
+            foreach (var sdk in sdks.Split(';', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
+            {
+                if (!PermittedSdks.Contains(sdk.Split('/')[0]))
+                    yield return $"{relative} names the SDK {sdk}";
+            }
+        }
+
+        foreach (var element in document.Descendants())
+        {
+            var name = element.Name.LocalName;
+            var include = element.Attribute("Include")?.Value;
+
+            if (include is not null && (include.Contains("$(", StringComparison.Ordinal) || include.Contains("@(", StringComparison.Ordinal) || include.Contains("%(", StringComparison.Ordinal)))
+                yield return $"{relative} has the item {name} '{include}', whose value MSBuild computes";
+            else if (name == "Reference" && include is not null)
+                yield return $"{relative} references the assembly {include}, which the graph does not read";
+            else if (ImportProperty.IsMatch(name))
+                yield return $"{relative} sets the property {name}, which imports a file that the gate does not read";
+            else if (name == "Sdk" || (name == "Import" && element.Attribute("Sdk") is not null))
+                yield return $"{relative} imports an SDK with the element {name}";
+        }
+    }
+
+    // MSBuild imports each file obj/<project file>.*.props and .targets. NuGet
+    // writes the two files .nuget.g.props and .nuget.g.targets at each restore;
+    // each other such file is an offence.
+    private static IEnumerable<string> ExtensionFileOffences(string obj)
+    {
+        if (!Directory.Exists(obj))
+            yield break;
+
+        foreach (var file in Directory.EnumerateFiles(obj))
+        {
+            var fileName = Path.GetFileName(file);
+            if ((fileName.EndsWith(".props", StringComparison.OrdinalIgnoreCase) || fileName.EndsWith(".targets", StringComparison.OrdinalIgnoreCase))
+                && !fileName.Contains(".nuget.g.", StringComparison.OrdinalIgnoreCase))
+                yield return $"{RepositoryFiles.Relative(file)} is a file that MSBuild imports from obj/";
+        }
     }
 
     private static Dictionary<string, List<string>> Graph()
