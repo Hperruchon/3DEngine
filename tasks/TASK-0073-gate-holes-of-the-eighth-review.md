@@ -104,3 +104,8 @@ git evaluate.
   reads for the log path, and forbids the creators of `System.Numerics` that call a transcendental
   function, `Complex.Phase` and reflection. The five forms of the review failed the new gate and passed
   the gate of `main`.
+- 2026-10-14: T50. The dependency gate refuses an `Include` with `$(`, `@(` or `%(`, a `Reference` item,
+  each property that imports a file or moves the Directory files or `obj/`, an SDK other than the two that
+  the repository uses, an `Sdk` element, and each file `obj/*.props` or `obj/*.targets` that NuGet did not
+  write. `dotnet msbuild -getItem:ProjectReference` listed the three references of the review, and the new
+  check refused each one while the 18 other checks passed them.

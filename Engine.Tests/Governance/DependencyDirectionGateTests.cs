@@ -1,3 +1,4 @@
+using System.Text.RegularExpressions;
 using System.Xml.Linq;
 using Xunit;
 
@@ -155,6 +156,83 @@ public class DependencyDirectionGateTests
             offences.Length == 0,
             "An import that the gate cannot read can carry a reference that breaks the authority diagram. "
             + "Name one file by a path with no property and no wildcard.\n  " + string.Join("\n  ", offences));
+    }
+
+    // The properties that tell MSBuild to import a file that no Import element
+    // names, or to read the Directory files or the extension files from another
+    // place.
+    private static readonly Regex ImportProperty = new(
+        @"^(Custom(Before|After)\w*|DirectoryBuild\w*Path|DirectoryPackagesPropsPath|Import(DirectoryBuild|DirectoryPackages|ProjectExtension|ByWildcard|UserLocationsByWildcard)\w*|MSBuildProjectExtensionsPath|BaseIntermediateOutputPath|MSBuildUserExtensionsPath)$",
+        RegexOptions.Compiled);
+
+    // The SDKs that a project of the repository may name. An SDK is a set of
+    // files that MSBuild imports, and a package can be an SDK.
+    private static readonly string[] PermittedSdks = ["Microsoft.NET.Sdk", "Microsoft.NET.Sdk.Web"];
+
+    // The graph reads each Include of a ProjectReference as text. MSBuild
+    // evaluates it. Until TASK-0073 a reference through a property, a reference
+    // from a file that a property imports, and a reference from an extension file
+    // in obj/ each passed the gate while MSBuild listed it (finding T50 of the
+    // codebase review of 2026-10-13). Each form that the gate cannot read as text
+    // is refused here.
+    [Fact]
+    public void Each_File_That_MsBuild_Reads_Names_Its_References_As_Text()
+    {
+        var offences = new List<string>();
+
+        foreach (var file in ProjectFiles().SelectMany(FilesThatMsBuildReads).Distinct(StringComparer.OrdinalIgnoreCase))
+        {
+            var relative = RepositoryFiles.Relative(file);
+            var document = XDocument.Load(file);
+
+            if (document.Root?.Attribute("Sdk")?.Value is { } sdks)
+            {
+                foreach (var sdk in sdks.Split(';', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
+                {
+                    if (!PermittedSdks.Contains(sdk.Split('/')[0]))
+                        offences.Add($"{relative} names the SDK {sdk}");
+                }
+            }
+
+            foreach (var element in document.Descendants())
+            {
+                var name = element.Name.LocalName;
+                var include = element.Attribute("Include")?.Value;
+
+                if (include is not null && (include.Contains("$(", StringComparison.Ordinal) || include.Contains("@(", StringComparison.Ordinal) || include.Contains("%(", StringComparison.Ordinal)))
+                    offences.Add($"{relative} has the item {name} '{include}', whose value MSBuild computes");
+                else if (name == "Reference" && include is not null)
+                    offences.Add($"{relative} references the assembly {include}, which the graph does not read");
+                else if (ImportProperty.IsMatch(name))
+                    offences.Add($"{relative} sets the property {name}, which imports a file that the gate does not read");
+                else if (name == "Sdk" || (name == "Import" && element.Attribute("Sdk") is not null))
+                    offences.Add($"{relative} imports an SDK with the element {name}");
+            }
+        }
+
+        // MSBuild imports each file obj/<project file>.*.props and .targets.
+        // NuGet writes the two files .nuget.g.props and .nuget.g.targets at each
+        // restore; each other such file is refused.
+        foreach (var projectFile in ProjectFiles())
+        {
+            var obj = Path.Combine(Path.GetDirectoryName(projectFile)!, "obj");
+            if (!Directory.Exists(obj))
+                continue;
+
+            foreach (var file in Directory.EnumerateFiles(obj))
+            {
+                var fileName = Path.GetFileName(file);
+                if ((fileName.EndsWith(".props", StringComparison.OrdinalIgnoreCase) || fileName.EndsWith(".targets", StringComparison.OrdinalIgnoreCase))
+                    && !fileName.Contains(".nuget.g.", StringComparison.OrdinalIgnoreCase))
+                    offences.Add($"{RepositoryFiles.Relative(file)} is a file that MSBuild imports from obj/");
+            }
+        }
+
+        Assert.True(
+            offences.Count == 0,
+            "A reference that the gate cannot read as text can break the authority diagram. Name each "
+            + "project by a path with no property, and set no property that imports a file.\n  "
+            + string.Join("\n  ", offences));
     }
 
     private static Dictionary<string, List<string>> Graph()
