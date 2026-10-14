@@ -1,7 +1,7 @@
 ---
 id: 0073
 title: The test step cannot be emptied by a file that is not a gate file, and the gates see what MSBuild evaluates
-status: Ready
+status: Active
 phase: P0.28
 opened: 2026-10-12
 depends-on: [0072]
@@ -9,6 +9,8 @@ governed-by: []
 writes:
   create:
     - tasks/TASK-0073-gate-holes-of-the-eighth-review.md
+    - eng/count-tests.js
+    - eng/test-floor.txt
   modify:
     - .github/workflows/ci.yml
     - eng/write-set-check/Judge.cs
@@ -80,3 +82,9 @@ git evaluate.
 - **The write set.** Each file of the judge, of the gate program, of `Engine.Tests/Governance/` and the
   workflow is a gate file, which the write set must name exactly. Name each new file in the first commit.
 - **The size.** About 2 to 3 evenings. T48 first.
+
+## Progress
+
+- 2026-10-14: the task is open, first in the order of the owner of 2026-10-14 (question Q1 of the review,
+  option A). This commit names the two new files of T48 exactly: a script that counts the tests of a run,
+  and the floor that it compares with.
