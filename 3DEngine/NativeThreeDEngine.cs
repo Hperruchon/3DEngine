@@ -43,7 +43,7 @@ public sealed unsafe class NativeThreeDEngine : IThreeDEngine, IDisposable
     public void Initialize()
     {
         _graphicsDevice = new GraphicsDevice(Name, enableValidation: true, _window);
-        _meshPipeline = new RenderPipeline(_graphicsDevice, "mesh.vert", "mesh.frag");
+        _meshPipeline = new RenderPipeline(_graphicsDevice, _graphicsDevice.Presenter!.RenderPass, "mesh.vert", "mesh.frag");
         _executor = new DrawListExecutor(_graphicsDevice, _meshPipeline);
         _bodies = new SessionBodies(_host);
     }
@@ -73,7 +73,7 @@ public sealed unsafe class NativeThreeDEngine : IThreeDEngine, IDisposable
         _drawList.Clear();
         SceneWalker.Fill(CurrentScene, Camera, _drawList);
 
-        _graphicsDevice.RenderFrame((commandBuffer, framebuffer, extent) =>
+        _graphicsDevice.Presenter!.RenderFrame((commandBuffer, framebuffer, extent) =>
         {
             // The colour, and the depth of the far plane of the reversed projection.
             VkClearValue* clearValues = stackalloc VkClearValue[2];
@@ -83,7 +83,7 @@ public sealed unsafe class NativeThreeDEngine : IThreeDEngine, IDisposable
             VkRenderPassBeginInfo renderPassInfo = new()
             {
                 sType = VkStructureType.RenderPassBeginInfo,
-                renderPass = _graphicsDevice.Swapchain.RenderPass,
+                renderPass = _graphicsDevice.Presenter.RenderPass,
                 framebuffer = framebuffer,
                 renderArea = new VkRect2D
                 {

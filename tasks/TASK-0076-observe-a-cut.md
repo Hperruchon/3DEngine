@@ -102,3 +102,10 @@ result on a runner of the pipeline.
   and the split of the device. It amends ADR-0022 items 2 and 3, as the scope says, and also ADR-0017
   items 1, 3 and 7 and ADR-0009 section 2, which state the same rules; the write set now names those two
   records. The task is governed by ADR-0025 too, whose `affects` intersects the write set.
+- 2026-10-14: the split of the device. `GraphicsDevice` is the core and takes a window or none;
+  `Presenter` holds the swapchain and the resources of each frame; `OffscreenTarget` holds a colour image,
+  a depth image, its render pass and a copy to host memory; `RenderPasses` makes the render pass of each
+  target; `RenderPipeline` takes the render pass of its target. V5: with no suitable device the core
+  throws with a message, and a device must have the swapchain extension to present. V6: each name goes to
+  Vulkan from native memory (`NativeStrings`). The desktop drew the cut of the probes after the split,
+  with no `[WARN]` and no `[ERROR]` line in its log.

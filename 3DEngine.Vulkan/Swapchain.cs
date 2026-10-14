@@ -38,7 +38,7 @@ public sealed unsafe class Swapchain : IDisposable
         Extent = ChooseSwapExtent(swapChainSupport.Capabilities);
         Depth = new DepthBuffer(device, Extent);
 
-        CreateRenderPass(surfaceFormat.format);
+        RenderPass = RenderPasses.Create(device, surfaceFormat.format, VkImageLayout.PresentSrcKHR);
 
         uint imageCount = swapChainSupport.Capabilities.minImageCount + 1;
         if (swapChainSupport.Capabilities.maxImageCount > 0 &&
@@ -112,81 +112,6 @@ public sealed unsafe class Swapchain : IDisposable
             Device.InstanceApi.vkDestroySurfaceKHR(_surface);
         }
     }
-
-    private void CreateRenderPass(VkFormat colorFormat)
-    {
-        VkAttachmentDescription attachment = new VkAttachmentDescription(
-            colorFormat,
-            VkSampleCountFlags.Count1,
-            VkAttachmentLoadOp.Clear, VkAttachmentStoreOp.Store,
-            VkAttachmentLoadOp.DontCare, VkAttachmentStoreOp.DontCare,
-            VkImageLayout.Undefined, VkImageLayout.PresentSrcKHR
-        );
-
-        // The depth attachment (ADR-0023 item 1): cleared at the start of the pass, and
-        // not stored, because no later pass reads it.
-        VkAttachmentDescription* attachments = stackalloc VkAttachmentDescription[2];
-        attachments[0] = attachment;
-        attachments[1] = new VkAttachmentDescription(
-            DepthBuffer.Format,
-            VkSampleCountFlags.Count1,
-            VkAttachmentLoadOp.Clear, VkAttachmentStoreOp.DontCare,
-            VkAttachmentLoadOp.DontCare, VkAttachmentStoreOp.DontCare,
-            VkImageLayout.Undefined, VkImageLayout.DepthStencilAttachmentOptimal
-        );
-
-        VkAttachmentReference colorAttachmentRef = new VkAttachmentReference(0, VkImageLayout.ColorAttachmentOptimal);
-        VkAttachmentReference depthAttachmentRef = new VkAttachmentReference(1, VkImageLayout.DepthStencilAttachmentOptimal);
-
-        VkSubpassDescription subpass = new VkSubpassDescription
-        {
-            pipelineBindPoint = VkPipelineBindPoint.Graphics,
-            colorAttachmentCount = 1,
-            pColorAttachments = &colorAttachmentRef,
-            pDepthStencilAttachment = &depthAttachmentRef
-        };
-
-        VkSubpassDependency[] dependencies = new VkSubpassDependency[2];
-
-        dependencies[0] = new VkSubpassDependency
-        {
-            srcSubpass = VK_SUBPASS_EXTERNAL,
-            dstSubpass = 0,
-            srcStageMask = VkPipelineStageFlags.BottomOfPipe | VkPipelineStageFlags.LateFragmentTests,
-            dstStageMask = VkPipelineStageFlags.ColorAttachmentOutput | VkPipelineStageFlags.EarlyFragmentTests,
-            srcAccessMask = VkAccessFlags.MemoryRead | VkAccessFlags.DepthStencilAttachmentWrite,
-            dstAccessMask = VkAccessFlags.ColorAttachmentRead | VkAccessFlags.ColorAttachmentWrite | VkAccessFlags.DepthStencilAttachmentWrite,
-            dependencyFlags = VkDependencyFlags.ByRegion
-        };
-
-        dependencies[1] = new VkSubpassDependency
-        {
-            srcSubpass = 0,
-            dstSubpass = VK_SUBPASS_EXTERNAL,
-            srcStageMask = VkPipelineStageFlags.ColorAttachmentOutput,
-            dstStageMask = VkPipelineStageFlags.BottomOfPipe,
-            srcAccessMask = VkAccessFlags.ColorAttachmentRead | VkAccessFlags.ColorAttachmentWrite,
-            dstAccessMask = VkAccessFlags.MemoryRead,
-            dependencyFlags = VkDependencyFlags.ByRegion
-        };
-
-        fixed (VkSubpassDependency* dependenciesPtr = &dependencies[0])
-        {
-            VkRenderPassCreateInfo createInfo = new()
-            {
-                attachmentCount = 2,
-                pAttachments = attachments,
-                subpassCount = 1,
-                pSubpasses = &subpass,
-                dependencyCount = 2,
-                pDependencies = dependenciesPtr
-            };
-
-            Device.DeviceApi.vkCreateRenderPass(&createInfo, null, out RenderPass).CheckResult();
-        }
-    }
-
-
 
     private VkExtent2D ChooseSwapExtent(VkSurfaceCapabilitiesKHR capabilities)
     {

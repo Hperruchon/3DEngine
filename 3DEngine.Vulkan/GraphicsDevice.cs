@@ -1,4 +1,4 @@
-﻿// Copyright (c) Amer Koleci and Contributors.
+// Copyright (c) Amer Koleci and Contributors.
 // Licensed under the MIT License (MIT). See THIRD-PARTY-NOTICES.md, section 4.
 // This file comes from the Vortice.Vulkan sample framework. TASK-0027 moved it
 // into this project and changed it. ADR-0017 gives the rules for this project.
@@ -6,17 +6,29 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
-using System.Text;
 using Vortice.Vulkan;
 using static SDL3.SDL3;
 using static Vortice.Vulkan.Vulkan;
 
 namespace ThreeDEngine.Vulkan;
 
+// The core of the device: the instance, the physical device, the device and the
+// graphics queue (ADR-0025 item 2). With a window, it also holds the presentation to
+// that window (Presenter). With no window, it makes no SDL call and needs no present
+// support, so a runner with no display can draw into an OffscreenTarget. Until
+// TASK-0076 the device took a window and always built the swapchain.
 public unsafe sealed class GraphicsDevice : IDisposable
 {
+    private const string SwapchainExtension = "VK_KHR_swapchain";
+    private const string DebugUtilsExtension = "VK_EXT_debug_utils";
+    private const string SwapchainColorSpaceExtension = "VK_EXT_swapchain_colorspace";
+    private const string ValidationFeaturesExtension = "VK_EXT_validation_features";
+
+    // Each message of the validation layer since the start of the process. A test
+    // fails when the count grows (ADR-0025 item 5).
+    private static int s_validationMessages;
+
     public readonly bool DebugUtils;
     public readonly VkInstance VkInstance;
 
@@ -29,79 +41,80 @@ public unsafe sealed class GraphicsDevice : IDisposable
     private readonly VkDebugUtilsMessengerEXT _debugMessenger = VkDebugUtilsMessengerEXT.Null;
     public readonly VkPhysicalDevice PhysicalDevice;
     public readonly VkDevice VkDevice;
+    public readonly uint GraphicsFamily;
     public readonly VkQueue GraphicsQueue;
-    public readonly VkQueue PresentQueue;
-    public readonly Swapchain Swapchain;
-    private PerFrame[] _perFrame;
-    private uint _frameIndex;
+    private readonly VkCommandPool _submitPool;
 
-    private readonly List<VkSemaphore> _recycledSemaphores = new();
-
-    public GraphicsDevice(string applicationName, bool enableValidation, Window window)
+    // A device with no window: enableValidation turns the validation layer on, and
+    // synchronizationValidation also turns on its checks of synchronization.
+    public GraphicsDevice(string applicationName, bool enableValidation, Window? window, bool synchronizationValidation = false)
     {
-        HashSet<VkUtf8String> availableInstanceLayers = new(EnumerateInstanceLayers());
-        HashSet<VkUtf8String> availableInstanceExtensions = new(GetInstanceExtensions());
+        string[] availableInstanceLayers = EnumerateInstanceLayers();
+        string[] availableInstanceExtensions = GetInstanceExtensions(null);
 
-        List<VkUtf8String> instanceExtensions = [];
-        foreach (string sdlExt in SDL_Vulkan_GetInstanceExtensions())
+        List<string> instanceExtensions = [];
+        if (window is not null)
+            instanceExtensions.AddRange(SDL_Vulkan_GetInstanceExtensions());
+
+        List<string> instanceLayers = enableValidation ? GetOptimalValidationLayers(availableInstanceLayers) : [];
+        ValidationEnabled = instanceLayers.Count > 0;
+
+        if (availableInstanceExtensions.Contains(DebugUtilsExtension))
         {
-            ReadOnlySpan<byte> sdlExtSpan = Encoding.UTF8.GetBytes(sdlExt);
-            instanceExtensions.Add(sdlExtSpan);
+            DebugUtils = true;
+            instanceExtensions.Add(DebugUtilsExtension);
         }
 
-        List<VkUtf8String> instanceLayers = [];
+        if (window is not null && availableInstanceExtensions.Contains(SwapchainColorSpaceExtension))
+            instanceExtensions.Add(SwapchainColorSpaceExtension);
 
-        if (enableValidation)
-        {
-            // Determine the optimal validation layers to enable that are necessary for useful debugging
-            GetOptimalValidationLayers(availableInstanceLayers, instanceLayers);
-        }
+        // The validation layer gives the extension of its features. Without it the
+        // layer cannot turn on its checks of synchronization.
+        var synchronization = synchronizationValidation && ValidationEnabled
+            && instanceLayers.Any(layer => GetInstanceExtensions(layer).Contains(ValidationFeaturesExtension));
+        if (synchronizationValidation && ValidationEnabled && !synchronization)
+            throw new InvalidOperationException($"The validation layer does not give {ValidationFeaturesExtension}, so it cannot check the synchronization.");
+        if (synchronization)
+            instanceExtensions.Add(ValidationFeaturesExtension);
+        SynchronizationValidationEnabled = synchronization;
 
-        // Check if VK_EXT_debug_utils is supported, which supersedes VK_EXT_Debug_Report
-        foreach (VkUtf8String availableExtension in availableInstanceExtensions)
-        {
-            if (availableExtension == VK_EXT_DEBUG_UTILS_EXTENSION_NAME)
-            {
-                DebugUtils = true;
-                instanceExtensions.Add(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
-            }
-            else if (availableExtension == VK_EXT_SWAPCHAIN_COLOR_SPACE_EXTENSION_NAME)
-            {
-                instanceExtensions.Add(VK_EXT_SWAPCHAIN_COLOR_SPACE_EXTENSION_NAME);
-            }
-        }
-
-        VkUtf8ReadOnlyString pApplicationName = Encoding.UTF8.GetBytes(applicationName);
-        VkUtf8ReadOnlyString pEngineName = "Vortice"u8;
+        using var names = new NativeStrings([applicationName, "3DEngine"]);
+        using var layerNames = new NativeStrings(instanceLayers);
+        using var extensionNames = new NativeStrings(instanceExtensions);
 
         VkApplicationInfo appInfo = new()
         {
-            pApplicationName = pApplicationName,
+            pApplicationName = names.Pointers[0],
             applicationVersion = new VkVersion(1, 0, 0),
-            pEngineName = pEngineName,
+            pEngineName = names.Pointers[1],
             engineVersion = new VkVersion(1, 0, 0),
             apiVersion = VkVersion.Version_1_3
         };
 
-        using VkStringArray vkLayerNames = new(instanceLayers);
-        using VkStringArray vkInstanceExtensions = new(instanceExtensions);
-
         VkInstanceCreateInfo instanceCreateInfo = new()
         {
             pApplicationInfo = &appInfo,
-            enabledLayerCount = vkLayerNames.Length,
-            ppEnabledLayerNames = vkLayerNames,
-            enabledExtensionCount = vkInstanceExtensions.Length,
-            ppEnabledExtensionNames = vkInstanceExtensions
+            enabledLayerCount = layerNames.Count,
+            ppEnabledLayerNames = layerNames.Pointers,
+            enabledExtensionCount = extensionNames.Count,
+            ppEnabledExtensionNames = extensionNames.Pointers
         };
 
         VkDebugUtilsMessengerCreateInfoEXT debugUtilsCreateInfo = new();
+        VkValidationFeatureEnableEXT enabledFeature = VkValidationFeatureEnableEXT.SynchronizationValidation;
+        VkValidationFeaturesEXT validationFeatures = new()
+        {
+            enabledValidationFeatureCount = 1,
+            pEnabledValidationFeatures = &enabledFeature,
+        };
 
-        if (instanceLayers.Count > 0)
+        if (ValidationEnabled)
         {
             debugUtilsCreateInfo.messageSeverity = VkDebugUtilsMessageSeverityFlagsEXT.Error | VkDebugUtilsMessageSeverityFlagsEXT.Warning;
             debugUtilsCreateInfo.messageType = VkDebugUtilsMessageTypeFlagsEXT.Validation | VkDebugUtilsMessageTypeFlagsEXT.Performance;
             debugUtilsCreateInfo.pfnUserCallback = &DebugMessengerCallback;
+            if (synchronization)
+                debugUtilsCreateInfo.pNext = &validationFeatures;
             instanceCreateInfo.pNext = &debugUtilsCreateInfo;
         }
 
@@ -113,37 +126,29 @@ public unsafe sealed class GraphicsDevice : IDisposable
 
         InstanceApi = GetApi(VkInstance);
 
-        if (instanceLayers.Count > 0)
+        if (ValidationEnabled)
         {
             InstanceApi.vkCreateDebugUtilsMessengerEXT(&debugUtilsCreateInfo, null, out _debugMessenger).CheckResult();
         }
 
         Log.Info($"Created VkInstance with version: {appInfo.apiVersion.Major}.{appInfo.apiVersion.Minor}.{appInfo.apiVersion.Patch}");
-        if (instanceLayers.Count > 0)
+        foreach (var layer in instanceLayers)
         {
-            foreach (var layer in instanceLayers)
-            {
-                Log.Info($"Instance layer '{layer}'");
-            }
+            Log.Info($"Instance layer '{layer}'");
         }
 
-        foreach (VkUtf8String extension in instanceExtensions)
+        foreach (var extension in instanceExtensions)
         {
             Log.Info($"Instance extension '{extension}'");
         }
 
-        VkSurfaceKHR surface = window.CreateSurface(VkInstance);
+        VkSurfaceKHR surface = window is null ? VkSurfaceKHR.Null : window.CreateSurface(VkInstance);
 
         // Find physical device, setup queue's and create device.
         uint physicalDevicesCount = 0;
         InstanceApi.vkEnumeratePhysicalDevices(&physicalDevicesCount, null).CheckResult();
 
-        if (physicalDevicesCount == 0)
-        {
-            throw new Exception("Vulkan: Failed to find GPUs with Vulkan support");
-        }
-
-        VkPhysicalDevice* physicalDevices = stackalloc VkPhysicalDevice[(int)physicalDevicesCount];
+        VkPhysicalDevice* physicalDevices = stackalloc VkPhysicalDevice[(int)Math.Max(1, physicalDevicesCount)];
         InstanceApi.vkEnumeratePhysicalDevices(&physicalDevicesCount, physicalDevices).CheckResult();
 
         for (int i = 0; i < physicalDevicesCount; i++)
@@ -167,11 +172,28 @@ public unsafe sealed class GraphicsDevice : IDisposable
             }
         }
 
-        var queueFamilies = FindQueueFamilies(InstanceApi, PhysicalDevice, surface);
+        // Until TASK-0076 the loop could end with no device, and the next call gave a
+        // null handle to Vulkan; the process stopped in native code with no message
+        // (R-0030, finding V5).
+        if (PhysicalDevice.IsNull)
+        {
+            if (surface != VkSurfaceKHR.Null)
+                InstanceApi.vkDestroySurfaceKHR(surface);
+            Dispose();
+            throw new InvalidOperationException(window is null
+                ? $"No Vulkan device of the {physicalDevicesCount} found has a graphics queue."
+                : $"No Vulkan device of the {physicalDevicesCount} found can draw and present to the window with {SwapchainExtension}.");
+        }
 
-        HashSet<uint> uniqueQueueFamilies = new();
-        uniqueQueueFamilies.Add(queueFamilies.graphicsFamily);
-        uniqueQueueFamilies.Add(queueFamilies.presentFamily);
+        InstanceApi.vkGetPhysicalDeviceProperties(PhysicalDevice, out VkPhysicalDeviceProperties properties);
+        Log.Info($"Vulkan device '{NativeStrings.Read(properties.deviceName)}'");
+
+        var queueFamilies = FindQueueFamilies(InstanceApi, PhysicalDevice, surface);
+        GraphicsFamily = queueFamilies.graphicsFamily;
+
+        HashSet<uint> uniqueQueueFamilies = [queueFamilies.graphicsFamily];
+        if (window is not null)
+            uniqueQueueFamilies.Add(queueFamilies.presentFamily);
 
         float priority = 1.0f;
         uint queueCount = 0;
@@ -187,19 +209,14 @@ public unsafe sealed class GraphicsDevice : IDisposable
             };
         }
 
-        List<VkUtf8String> enabledExtensions = new()
-        {
-            VK_KHR_SWAPCHAIN_EXTENSION_NAME
-        };
-
-        using var deviceExtensionNames = new VkStringArray(enabledExtensions);
+        using var deviceExtensionNames = new NativeStrings(window is null ? [] : [SwapchainExtension]);
 
         VkDeviceCreateInfo deviceCreateInfo = new()
         {
             queueCreateInfoCount = queueCount,
             pQueueCreateInfos = queueCreateInfos,
-            enabledExtensionCount = deviceExtensionNames.Length,
-            ppEnabledExtensionNames = deviceExtensionNames,
+            enabledExtensionCount = deviceExtensionNames.Count,
+            ppEnabledExtensionNames = deviceExtensionNames.Pointers,
             pEnabledFeatures = null,
         };
 
@@ -210,67 +227,45 @@ public unsafe sealed class GraphicsDevice : IDisposable
         DeviceApi = GetApi(VkInstance, VkDevice);
 
         DeviceApi.vkGetDeviceQueue(queueFamilies.graphicsFamily, 0, out GraphicsQueue);
-        DeviceApi.vkGetDeviceQueue(queueFamilies.presentFamily, 0, out PresentQueue);
 
-        // Create swap chain
-        Swapchain = new Swapchain(this, surface, window);
-        _perFrame = new PerFrame[Swapchain.ImageCount];
-        for (int i = 0; i < _perFrame.Length; i++)
+        VkCommandPoolCreateInfo submitPoolInfo = new()
         {
-            DeviceApi.vkCreateFence(VkFenceCreateFlags.Signaled, out _perFrame[i].QueueSubmitFence).CheckResult();
+            flags = VkCommandPoolCreateFlags.Transient,
+            queueFamilyIndex = GraphicsFamily,
+        };
+        DeviceApi.vkCreateCommandPool(&submitPoolInfo, null, out _submitPool).CheckResult();
 
-            VkCommandPoolCreateInfo poolCreateInfo = new()
-            {
-                flags = VkCommandPoolCreateFlags.Transient,
-                queueFamilyIndex = queueFamilies.graphicsFamily,
-            };
-            DeviceApi.vkCreateCommandPool(&poolCreateInfo, null, out _perFrame[i].PrimaryCommandPool).CheckResult();
-
-            DeviceApi.vkAllocateCommandBuffer(_perFrame[i].PrimaryCommandPool, out _perFrame[i].PrimaryCommandBuffer).CheckResult();
+        if (window is not null)
+        {
+            DeviceApi.vkGetDeviceQueue(queueFamilies.presentFamily, 0, out VkQueue presentQueue);
+            Presenter = new Presenter(this, surface, window, presentQueue);
         }
     }
 
+    // The presentation to the window, or null for a device with no window.
+    public Presenter? Presenter { get; }
+
+    // True when the validation layer is on.
+    public bool ValidationEnabled { get; }
+
+    // True when the validation layer also checks the synchronization.
+    public bool SynchronizationValidationEnabled { get; }
+
+    // The count of the messages of the validation layer in this process.
+    public static int ValidationMessageCount => Volatile.Read(ref s_validationMessages);
+
     public void Dispose()
     {
-        // Don't release anything until the GPU is completely idle.
-        WaitIdle();
-
-        Swapchain.Dispose();
-
-        for (var i = 0; i < _perFrame.Length; i++)
-        {
-            DeviceApi.vkDestroyFence(_perFrame[i].QueueSubmitFence);
-
-            if (_perFrame[i].PrimaryCommandBuffer != IntPtr.Zero)
-            {
-                DeviceApi.vkFreeCommandBuffers(_perFrame[i].PrimaryCommandPool, _perFrame[i].PrimaryCommandBuffer);
-
-                _perFrame[i].PrimaryCommandBuffer = IntPtr.Zero;
-            }
-
-            DeviceApi.vkDestroyCommandPool(_perFrame[i].PrimaryCommandPool);
-
-            if (_perFrame[i].SwapchainAcquireSemaphore != VkSemaphore.Null)
-            {
-                DeviceApi.vkDestroySemaphore(_perFrame[i].SwapchainAcquireSemaphore);
-                _perFrame[i].SwapchainAcquireSemaphore = VkSemaphore.Null;
-            }
-
-            if (_perFrame[i].SwapchainReleaseSemaphore != VkSemaphore.Null)
-            {
-                DeviceApi.vkDestroySemaphore(_perFrame[i].SwapchainReleaseSemaphore);
-                _perFrame[i].SwapchainReleaseSemaphore = VkSemaphore.Null;
-            }
-        }
-
-        foreach (VkSemaphore semaphore in _recycledSemaphores)
-        {
-            DeviceApi.vkDestroySemaphore(semaphore);
-        }
-        _recycledSemaphores.Clear();
-
         if (VkDevice.IsNotNull)
         {
+            // Don't release anything until the GPU is completely idle.
+            WaitIdle();
+
+            Presenter?.Dispose();
+
+            if (_submitPool != VkCommandPool.Null)
+                DeviceApi.vkDestroyCommandPool(_submitPool);
+
             DeviceApi.vkDestroyDevice();
         }
 
@@ -317,217 +312,77 @@ public unsafe sealed class GraphicsDevice : IDisposable
         DeviceApi.vkDeviceWaitIdle().CheckResult();
     }
 
-    public void RenderFrame(
-        Action<VkCommandBuffer, VkFramebuffer, VkExtent2D> draw,
-        [CallerMemberName] string? frameName = null)
+    // Records one command buffer, submits it to the graphics queue, and waits until
+    // the device ends it (TASK-0076, for the offscreen target).
+    public void Submit(Action<VkCommandBuffer> record)
     {
-        VkResult result = AcquireNextImage(out _frameIndex);
-
-        // Handle outdated error in acquire.
-        if (result == VkResult.SuboptimalKHR || result == VkResult.ErrorOutOfDateKHR)
+        DeviceApi.vkAllocateCommandBuffer(_submitPool, out VkCommandBuffer cmd).CheckResult();
+        DeviceApi.vkCreateFence(VkFenceCreateFlags.None, out VkFence fence).CheckResult();
+        try
         {
-            //Resize(context.swapchain_dimensions.width, context.swapchain_dimensions.height);
-            result = AcquireNextImage(out _frameIndex);
+            VkCommandBufferBeginInfo beginInfo = new() { flags = VkCommandBufferUsageFlags.OneTimeSubmit };
+            DeviceApi.vkBeginCommandBuffer(cmd, &beginInfo).CheckResult();
+            record(cmd);
+            DeviceApi.vkEndCommandBuffer(cmd).CheckResult();
+
+            VkSubmitInfo submitInfo = new()
+            {
+                commandBufferCount = 1u,
+                pCommandBuffers = &cmd,
+            };
+            DeviceApi.vkQueueSubmit(GraphicsQueue, submitInfo, fence).CheckResult();
+            DeviceApi.vkWaitForFences(fence, true, ulong.MaxValue).CheckResult();
         }
-
-        if (result != VkResult.Success)
+        finally
         {
-            DeviceApi.vkDeviceWaitIdle();
-            return;
+            DeviceApi.vkDestroyFence(fence);
+            DeviceApi.vkFreeCommandBuffers(_submitPool, cmd);
         }
-
-        // Begin command recording
-        VkCommandBuffer cmd = _perFrame[_frameIndex].PrimaryCommandBuffer;
-
-        VkCommandBufferBeginInfo beginInfo = new()
-        {
-            flags = VkCommandBufferUsageFlags.OneTimeSubmit
-        };
-        DeviceApi.vkBeginCommandBuffer(cmd, &beginInfo).CheckResult();
-
-        draw(cmd, Swapchain.Framebuffers[_frameIndex], Swapchain.Extent);
-
-        // Complete the command buffer.
-        DeviceApi.vkEndCommandBuffer(cmd).CheckResult();
-
-        if (_perFrame[_frameIndex].SwapchainReleaseSemaphore == VkSemaphore.Null)
-        {
-            DeviceApi.vkCreateSemaphore(out _perFrame[_frameIndex].SwapchainReleaseSemaphore).CheckResult();
-        }
-
-        VkPipelineStageFlags wait_stage = VkPipelineStageFlags.ColorAttachmentOutput;
-        VkSemaphore waitSemaphore = _perFrame[_frameIndex].SwapchainAcquireSemaphore;
-        VkSemaphore signalSemaphore = _perFrame[_frameIndex].SwapchainReleaseSemaphore;
-
-        VkSubmitInfo submitInfo = new()
-        {
-            commandBufferCount = 1u,
-            pCommandBuffers = &cmd,
-            waitSemaphoreCount = 1u,
-            pWaitSemaphores = &waitSemaphore,
-            pWaitDstStageMask = &wait_stage,
-            signalSemaphoreCount = 1u,
-            pSignalSemaphores = &signalSemaphore
-        };
-
-        // Submit command buffer to graphics queue
-        DeviceApi.vkQueueSubmit(GraphicsQueue, submitInfo, _perFrame[_frameIndex].QueueSubmitFence);
-
-        result = PresentImage(_frameIndex);
-
-        // Handle Outdated error in present.
-        if (result == VkResult.SuboptimalKHR || result == VkResult.ErrorOutOfDateKHR)
-        {
-            //Resize(context.swapchain_dimensions.width, context.swapchain_dimensions.height);
-        }
-        else if (result != VkResult.Success)
-        {
-            Log.Error("Failed to present swapchain image.");
-        }
-    }
-
-    private VkResult AcquireNextImage(out uint imageIndex)
-    {
-        VkSemaphore acquireSemaphore;
-        if (_recycledSemaphores.Count == 0)
-        {
-            DeviceApi.vkCreateSemaphore(out acquireSemaphore).CheckResult();
-        }
-        else
-        {
-            acquireSemaphore = _recycledSemaphores[_recycledSemaphores.Count - 1];
-            _recycledSemaphores.RemoveAt(_recycledSemaphores.Count - 1);
-        }
-
-        VkResult result = DeviceApi.vkAcquireNextImageKHR(Swapchain.Handle, ulong.MaxValue, acquireSemaphore, VkFence.Null, out imageIndex);
-
-        if (result != VkResult.Success)
-        {
-            _recycledSemaphores.Add(acquireSemaphore);
-            return result;
-        }
-
-        if (_perFrame[imageIndex].QueueSubmitFence != VkFence.Null)
-        {
-            DeviceApi.vkWaitForFences(_perFrame[imageIndex].QueueSubmitFence, true, ulong.MaxValue);
-            DeviceApi.vkResetFences(_perFrame[imageIndex].QueueSubmitFence);
-        }
-
-        if (_perFrame[imageIndex].PrimaryCommandPool != VkCommandPool.Null)
-        {
-            DeviceApi.vkResetCommandPool(_perFrame[imageIndex].PrimaryCommandPool, VkCommandPoolResetFlags.None);
-        }
-
-        // Recycle the old semaphore back into the semaphore manager.
-        VkSemaphore oldSemaphore = _perFrame[imageIndex].SwapchainAcquireSemaphore;
-
-        if (oldSemaphore != VkSemaphore.Null)
-        {
-            _recycledSemaphores.Add(oldSemaphore);
-        }
-
-        _perFrame[imageIndex].SwapchainAcquireSemaphore = acquireSemaphore;
-
-        return VkResult.Success;
-    }
-
-    private VkResult PresentImage(uint imageIndex)
-    {
-        return DeviceApi.vkQueuePresentKHR(PresentQueue, _perFrame[imageIndex].SwapchainReleaseSemaphore, Swapchain.Handle, imageIndex);
     }
 
     #region Private Methods
-    private static void GetOptimalValidationLayers(
-        HashSet<VkUtf8String> availableLayers,
-        List<VkUtf8String> instanceLayers)
+    private static List<string> GetOptimalValidationLayers(string[] availableLayers)
     {
-        // The preferred validation layer is "VK_LAYER_KHRONOS_validation"
-        List<VkUtf8String> validationLayers =
+        // The preferred validation layer is "VK_LAYER_KHRONOS_validation". Otherwise
+        // the LunarG meta layer, then the layers that compose it, then its core layer.
+        string[][] candidates =
         [
-            "VK_LAYER_KHRONOS_validation"u8
+            ["VK_LAYER_KHRONOS_validation"],
+            ["VK_LAYER_LUNARG_standard_validation"],
+            [
+                "VK_LAYER_GOOGLE_threading",
+                "VK_LAYER_LUNARG_parameter_validation",
+                "VK_LAYER_LUNARG_object_tracker",
+                "VK_LAYER_LUNARG_core_validation",
+                "VK_LAYER_GOOGLE_unique_objects",
+            ],
+            ["VK_LAYER_LUNARG_core_validation"],
         ];
 
-        if (ValidateLayers(availableLayers, validationLayers))
+        foreach (var layers in candidates)
         {
-            instanceLayers.AddRange(validationLayers);
-            return;
+            if (layers.All(availableLayers.Contains))
+                return [.. layers];
         }
 
-        // Otherwise we fallback to using the LunarG meta layer
-        validationLayers =
-        [
-            "VK_LAYER_LUNARG_standard_validation"u8
-        ];
-
-        if (ValidateLayers(availableLayers, validationLayers))
-        {
-            instanceLayers.AddRange(validationLayers);
-            return;
-        }
-
-        // Otherwise we attempt to enable the individual layers that compose the LunarG meta layer since it doesn't exist
-        validationLayers = new()
-        {
-            "VK_LAYER_GOOGLE_threading"u8,
-            "VK_LAYER_LUNARG_parameter_validation"u8,
-            "VK_LAYER_LUNARG_object_tracker"u8,
-            "VK_LAYER_LUNARG_core_validation"u8,
-            "VK_LAYER_GOOGLE_unique_objects"u8,
-        };
-
-        if (ValidateLayers(availableLayers, validationLayers))
-        {
-            instanceLayers.AddRange(validationLayers);
-            return;
-        }
-
-        // Otherwise as a last resort we fallback to attempting to enable the LunarG core layer
-        validationLayers = new()
-        {
-            "VK_LAYER_LUNARG_core_validation"u8
-        };
-
-        if (ValidateLayers(availableLayers, validationLayers))
-        {
-            instanceLayers.AddRange(validationLayers);
-            return;
-        }
+        return [];
     }
 
-    private static bool ValidateLayers(
-        HashSet<VkUtf8String> availableLayers,
-        List<VkUtf8String> required
-        )
-    {
-        foreach (VkUtf8String layer in required)
-        {
-            bool found = false;
-            foreach (VkUtf8String availableLayer in availableLayers)
-            {
-                if (availableLayer == layer)
-                {
-                    found = true;
-                    break;
-                }
-            }
-
-            if (!found)
-            {
-                //Log.Warn("Validation Layer '{}' not found", layer);
-                return false;
-            }
-        }
-
-        return true;
-    }
-
+    // With a surface, a device must also present to it and have the extension of
+    // the swapchain (R-0030, finding V5). With no surface, a graphics queue is enough.
     private static bool IsDeviceSuitable(VkInstanceApi api, VkPhysicalDevice physicalDevice, VkSurfaceKHR surface)
     {
         var checkQueueFamilies = FindQueueFamilies(api, physicalDevice, surface);
         if (checkQueueFamilies.graphicsFamily == VK_QUEUE_FAMILY_IGNORED)
             return false;
 
+        if (surface == VkSurfaceKHR.Null)
+            return true;
+
         if (checkQueueFamilies.presentFamily == VK_QUEUE_FAMILY_IGNORED)
+            return false;
+
+        if (!GetDeviceExtensions(api, physicalDevice).Contains(SwapchainExtension))
             return false;
 
         SwapChainSupportDetails swapChainSupport = Utils.QuerySwapChainSupport(api, physicalDevice, surface);
@@ -540,7 +395,9 @@ public unsafe sealed class GraphicsDevice : IDisposable
         VkDebugUtilsMessengerCallbackDataEXT* pCallbackData,
         void* userData)
     {
-        VkUtf8String message = new VkUtf8String(pCallbackData->pMessage)!;
+        Interlocked.Increment(ref s_validationMessages);
+
+        string message = NativeStrings.Read(pCallbackData->pMessage);
         if (messageTypes == VkDebugUtilsMessageTypeFlagsEXT.Validation)
         {
             if (messageSeverity == VkDebugUtilsMessageSeverityFlagsEXT.Error)
@@ -571,6 +428,8 @@ public unsafe sealed class GraphicsDevice : IDisposable
         return VK_FALSE;
     }
 
+    // The graphics family, and the family that presents to the surface. With no
+    // surface, the present family is VK_QUEUE_FAMILY_IGNORED.
     static (uint graphicsFamily, uint presentFamily) FindQueueFamilies(
         VkInstanceApi api, VkPhysicalDevice device, VkSurfaceKHR surface)
     {
@@ -589,14 +448,17 @@ public unsafe sealed class GraphicsDevice : IDisposable
                 graphicsFamily = i;
             }
 
-            api.vkGetPhysicalDeviceSurfaceSupportKHR(device, i, surface, out VkBool32 presentSupport);
-            if (presentSupport)
+            if (surface != VkSurfaceKHR.Null)
             {
-                presentFamily = i;
+                api.vkGetPhysicalDeviceSurfaceSupportKHR(device, i, surface, out VkBool32 presentSupport);
+                if (presentSupport)
+                {
+                    presentFamily = i;
+                }
             }
 
             if (graphicsFamily != VK_QUEUE_FAMILY_IGNORED
-                && presentFamily != VK_QUEUE_FAMILY_IGNORED)
+                && (surface == VkSurfaceKHR.Null || presentFamily != VK_QUEUE_FAMILY_IGNORED))
             {
                 break;
             }
@@ -640,7 +502,7 @@ public unsafe sealed class GraphicsDevice : IDisposable
         }
     }
 
-    private unsafe static VkUtf8String[] EnumerateInstanceLayers()
+    private static string[] EnumerateInstanceLayers()
     {
         if (!IsSupported())
         {
@@ -657,53 +519,66 @@ public unsafe sealed class GraphicsDevice : IDisposable
         VkLayerProperties[] props = new VkLayerProperties[(int)count];
         vkEnumerateInstanceLayerProperties(props).CheckResult();
 
-        VkUtf8String[] resultExt = new VkUtf8String[count];
+        string[] layers = new string[count];
         for (int i = 0; i < count; i++)
         {
             fixed (byte* pLayerName = props[i].layerName)
             {
-                resultExt[i] = new VkUtf8String(pLayerName);
+                layers[i] = NativeStrings.Read(pLayerName);
             }
         }
 
-        return resultExt;
+        return layers;
     }
 
-    private static VkUtf8String[] GetInstanceExtensions()
+    // The instance extensions of the implementation, or of one layer.
+    private static string[] GetInstanceExtensions(string? layer)
     {
+        if (!IsSupported())
+        {
+            return [];
+        }
+
+        using var layerName = new NativeStrings(layer is null ? [] : [layer]);
+        byte* pLayerName = layer is null ? null : layerName.First;
+
         uint count = 0;
-        VkResult result = vkEnumerateInstanceExtensionProperties(&count, null);
-        if (result != VkResult.Success)
+        VkResult result = vkEnumerateInstanceExtensionProperties(pLayerName, &count, null);
+        if (result != VkResult.Success || count == 0)
         {
             return [];
         }
 
-        if (count == 0)
-        {
-            return [];
-        }
+        VkExtensionProperties* props = stackalloc VkExtensionProperties[(int)count];
+        vkEnumerateInstanceExtensionProperties(pLayerName, &count, props).CheckResult();
 
-        VkExtensionProperties[] props = new VkExtensionProperties[(int)count];
-        vkEnumerateInstanceExtensionProperties(props);
-
-        VkUtf8String[] extensions = new VkUtf8String[count];
+        string[] extensions = new string[count];
         for (int i = 0; i < count; i++)
         {
-            fixed (byte* pExtensionName = props[i].extensionName)
-            {
-                extensions[i] = new VkUtf8String(pExtensionName);
-            }
+            extensions[i] = NativeStrings.Read(props[i].extensionName);
         }
 
         return extensions;
     }
 
-    private struct PerFrame
+    private static string[] GetDeviceExtensions(VkInstanceApi api, VkPhysicalDevice physicalDevice)
     {
-        public VkFence QueueSubmitFence;
-        public VkCommandPool PrimaryCommandPool;
-        public VkCommandBuffer PrimaryCommandBuffer;
-        public VkSemaphore SwapchainAcquireSemaphore;
-        public VkSemaphore SwapchainReleaseSemaphore;
+        uint count = 0;
+        api.vkEnumerateDeviceExtensionProperties(physicalDevice, null, &count, null).CheckResult();
+        if (count == 0)
+            return [];
+
+        var props = new VkExtensionProperties[count];
+        string[] extensions = new string[count];
+        fixed (VkExtensionProperties* pProps = props)
+        {
+            api.vkEnumerateDeviceExtensionProperties(physicalDevice, null, &count, pProps).CheckResult();
+            for (int i = 0; i < count; i++)
+            {
+                extensions[i] = NativeStrings.Read(pProps[i].extensionName);
+            }
+        }
+
+        return extensions;
     }
 }
