@@ -94,6 +94,13 @@ jobs:
               --blame-hang-timeout 2m --blame-hang-dump-type none \
             || { node eng/report-failed-tests.js "$results"; exit 1; }
 
+      # A run with fewer tests than the floor of eng/test-floor.txt fails. Until
+      # TASK-0073 a file that is not a gate file could take a test project out of the
+      # step above, and the step passed with no test (finding T48 of the codebase
+      # review of 2026-10-13). Both files are gate files.
+      - name: Count the tests
+        run: node eng/count-tests.js "$RUNNER_TEMP/test-results" eng/test-floor.txt
+
       - name: Smoke test the command-line host with NoOp
         run: |
           set -e

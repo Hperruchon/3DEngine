@@ -88,3 +88,8 @@ git evaluate.
 - 2026-10-14: the task is open, first in the order of the owner of 2026-10-14 (question Q1 of the review,
   option A). This commit names the two new files of T48 exactly: a script that counts the tests of a run,
   and the floor that it compares with.
+- 2026-10-14: T48. The solution file, `Directory.Solution.*`, `*.sln.targets` and each `.user` file are
+  build inputs, so gate files, and the names of the Directory files are compared with no regard to case.
+  `eng/count-tests.js` fails the step when fewer tests ran than `eng/test-floor.txt` (413). The nine new
+  cases failed on the judge of `main`, and a run that a `Directory.Solution.targets` emptied counted 0
+  tests and failed.
