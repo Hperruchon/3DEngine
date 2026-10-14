@@ -286,7 +286,12 @@ public sealed class Judge
             {
                 // The tree of the automatic merge, then each file with a conflict,
                 // each one ended by NUL. Git refuses two parents with no merge base.
-                var automatic = _git(["merge-tree", "--write-tree", "--name-only", "--no-messages", "-z", $"{commit}^1", $"{commit}^2"]);
+                // With the detection of renames, a rename in one parent carried a
+                // change of the other parent into a new path, a gate file too, and the
+                // merge equalled the automatic merge (finding T51 of the codebase
+                // review of 2026-10-13, TASK-0073). With no renames, that change is a
+                // conflict, and the judge reads the merge.
+                var automatic = _git(["merge-tree", "--write-tree", "--name-only", "--no-messages", "-z", "-X", "no-renames", $"{commit}^1", $"{commit}^2"]);
                 if (automatic is null)
                 {
                     failed |= Fail(output, subject, "the two parents of the merge have no merge base, or git failed; a merge of unrelated history is refused");

@@ -93,3 +93,5 @@ git evaluate.
   `eng/count-tests.js` fails the step when fewer tests ran than `eng/test-floor.txt` (413). The nine new
   cases failed on the judge of `main`, and a run that a `Directory.Solution.targets` emptied counted 0
   tests and failed.
+- 2026-10-14: T51. The judge runs `git merge-tree` with `-X no-renames` (git 2.55 here). The new range
+  test of a rename on the branch and an edit of the old path on `main` failed on the judge of `main`.
