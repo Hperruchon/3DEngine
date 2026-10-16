@@ -223,6 +223,9 @@ code with no message (V5). Byte arrays and pointers from a `fixed` block go to V
 no run shows a failure.
 Exit: each finding is corrected before the first render phase that runs on a second computer. This is
 the condition of R-0022 too.
+Progress 2026-10-16: TASK-0076 corrected V5 and V6 in the split of the device. With no suitable device the
+core throws with a message, and a device that presents must have the swapchain extension; each name
+goes to Vulkan from native memory. The findings of V7 stay.
 
 ### R-0031 · A gate can pass while its rule is broken
 - class: debt
@@ -373,6 +376,8 @@ Exit: each finding has a task, or it is corrected, or the owner accepts it and g
 port setting, the disposal of the session and the end of the window loop at a stop have no automatic
 test. TASK-0062 corrected the three by reading and by one run of the executable before its window.
 Exit: a test calls `DesktopSurface`, or the owner accepts the gap and gives the reason.
+Progress 2026-10-16: TASK-0076 gave the program a test project, `3DEngine.ImageTests`, which tests
+`SessionBodies` and `SceneRenderer` through the image test. No test calls `DesktopSurface` yet.
 
 ### R-0040 · The image test does not run on the Windows and macOS runners
 - class: interim

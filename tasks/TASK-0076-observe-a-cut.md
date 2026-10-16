@@ -1,7 +1,7 @@
 ---
 id: 0076
 title: A person observes the cut of the first demonstration, and an image test with no window holds it
-status: Active
+status: Done
 phase: R6
 opened: 2026-10-14
 depends-on: [0073]
@@ -82,12 +82,47 @@ result on a runner of the pipeline.
 
 ## Acceptance criteria
 
-- [ ] A picture of the window after the script shows the notch of the cut. The owner accepts it.
-- [ ] The image test passes on the Ubuntu runner with lavapipe, and fails on an injected box with no cut and
-      on an injected wrong cull mode.
-- [ ] A run of the desktop gives no validation message.
-- [ ] A clean build (`--no-incremental`) gives zero errors and zero warnings.
-- [ ] Continuous integration passes on `ubuntu-latest`, `windows-latest` and `macos-latest`.
+- [x] A picture of the window after the script shows the notch of the cut. The owner accepts it
+      (2026-10-16).
+- [x] The image test passes on the Ubuntu runner with lavapipe (run 38516827182), and fails on an injected
+      box with no cut and on an injected wrong cull mode (on this computer).
+- [x] A run of the desktop gives no validation message.
+- [x] A clean build (`--no-incremental`) gives zero errors and zero warnings.
+- [ ] Continuous integration passes on `ubuntu-latest`, `windows-latest` and `macos-latest`. The
+      merge records the run.
+
+## Outcome
+
+Status: Done · v0.74 · the commit that carries this block.
+
+A person sees the cut of the first demonstration in the window: `scripts/first-demonstration.js` sends the
+four commands, and the camera frames the body with its notch. A Vulkan device can exist with no window,
+and `3DEngine.ImageTests` draws the same frame into an offscreen target with the renderer of the desktop,
+and compares the picture by structure, with synchronization validation on. The pipeline runs it on
+Ubuntu with lavapipe. ADR-0025 records the decisions, and the first objective is complete.
+
+## Method
+
+**Mechanical.** The desktop drew the cut after the split of the device and after the frame of the camera,
+with no `[WARN]` and no `[ERROR]` line; the owner accepted the picture. The image test failed on a box
+with no cut (on the counts, and with the counts removed on the shade of the notch), on a cull mode of the
+front faces (on the shade of the notch), and on a render pass with no dependency for the copy
+(`SYNC-HAZARD-READ-AFTER-WRITE`). A reference from the image test to `Engine.Cli` failed the new rule of
+the dependency gate. Run 38516827182 passed on the three runners; on Ubuntu with CI the test cannot skip,
+so it ran with lavapipe.
+
+**Judgement.** The comparison checks the structure that the demonstration must show and not each pixel:
+the counts of the cut body, the silhouette that the CPU projects, and one shade on each face of the notch.
+A GPU and lavapipe give the same structure, and no picture is stored. The renderer moved into one class
+for the window and the test, so the test draws what the person sees. The amendment also covers ADR-0017
+and ADR-0009, which stated the rules that ADR-0022 item 3 changes; the write set named them in its first
+commit.
+
+**Weakest.** The test does not run on Windows or macOS in the pipeline (R-0040). The check of the shade
+reads one pixel on each face, so a defect of the shading inside a face passes. The first run of the test
+showed a message of the validation layer that the count missed, because the layer printed it before the
+messenger existed; the cause is corrected, and a message in that interval would still pass. The frame of
+the camera resets the zoom of the person at each change of a body.
 
 ## Notes for the implementer
 
@@ -128,3 +163,5 @@ result on a runner of the pipeline.
   A render pass with no dependency for the copy failed with `SYNC-HAZARD-READ-AFTER-WRITE` on
   `vkCmdCopyImageToBuffer`. The pipeline installs lavapipe and the validation layers on Ubuntu, and keeps
   the picture when a test fails.
+- 2026-10-16: the owner accepted the picture of the window. Closed, after a clean build and a full local
+  run of 447 tests (410 in `Engine.Tests`, 30 in `3DEngine.Tests`, 7 in `3DEngine.ImageTests`).

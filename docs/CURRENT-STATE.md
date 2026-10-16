@@ -2069,3 +2069,36 @@ New tests: 35. The test list holds 437 (409 in `Engine.Tests`, 28 in `3DEngine.T
 75 checks in 95 runs. `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings.
 Open entries: 14 of 15. New diagnostic codes: none. The next codebase review must come before ledger entry
 v0.77.
+
+## v0.74 — A person observes the cut of the first demonstration, and an image test with no window holds it (R6, TASK-0076)
+
+Roadmap phase R6 completes the first objective of `docs/CHARTER.md`: create a box, subtract a second box,
+and observe the cut. ADR-0025 records the six decisions of the owner of 2026-10-14 (question Q2 of the
+codebase review of 2026-10-13, option A for each), and amends ADR-0022 items 2 and 3, ADR-0017 items 1, 3
+and 7, and ADR-0009 section 2.
+
+**The change.**
+
+- The device: `GraphicsDevice` is the core and takes a window or none; `Presenter` holds the
+  presentation to a window; `OffscreenTarget` draws into an image and copies it to host memory;
+  `RenderPipeline` takes the render pass of its target. R-0030 V5 and V6 are corrected on that path.
+- The desktop: `SceneRenderer` draws the scene of the session into one target, for the window and for the
+  image test, and the camera frames the live bodies at each change (D5).
+- `scripts/first-demonstration.js` sends the four commands with the offset (5, 5, 5) (D1, D6).
+- `3DEngine.ImageTests` (D2) draws the demonstration with no window and compares the picture by structure
+  (D4), with synchronization validation on. The pipeline installs lavapipe and the validation layers on
+  Ubuntu and keeps the picture of a failed run; the test skips on Windows and macOS (D3, R-0040). The
+  dependency gate has the class of the image verifier.
+
+**Proof.** The owner accepted the picture of the window after the script on 2026-10-16. The image test
+failed on an injected box with no cut, a wrong cull mode and a missing dependency of the render pass, and
+run 38516827182 passed on the three runners with the test on lavapipe.
+
+**Correction.** The done list of `docs/roadmap.md` had no line for P0.28: TASK-0073 could not change that
+file. This task adds it.
+
+New tests: 10 (2 cases of the camera, 7 in `3DEngine.ImageTests`, 1 rule of the dependency gate). The
+test list holds 447 (410 in `Engine.Tests`, 30 in `3DEngine.Tests`, 7 in `3DEngine.ImageTests`); the
+Windows and macOS runners skip the image test. `dotnet build 3DEngine.sln --no-incremental` gives zero
+errors and zero warnings. Open entries: 15 of 15. New diagnostic codes: none. The next codebase review
+must come before ledger entry v0.77.
