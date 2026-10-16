@@ -25,6 +25,10 @@ public unsafe sealed class GraphicsDevice : IDisposable
     private const string SwapchainColorSpaceExtension = "VK_EXT_swapchain_colorspace";
     private const string ValidationFeaturesExtension = "VK_EXT_validation_features";
 
+    // The version that the shaders need: compile.js compiles them for Vulkan 1.3, which
+    // gives SPIR-V 1.6 (finding V9 of the codebase review of 2026-10-13, TASK-0074).
+    public static readonly VkVersion RequiredApiVersion = VkVersion.Version_1_3;
+
     // Each message of the validation layer since the start of the process. A test
     // fails when the count grows (ADR-0025 item 5).
     private static int s_validationMessages;
@@ -157,14 +161,18 @@ public unsafe sealed class GraphicsDevice : IDisposable
         VkPhysicalDevice* physicalDevices = stackalloc VkPhysicalDevice[(int)Math.Max(1, physicalDevicesCount)];
         InstanceApi.vkEnumeratePhysicalDevices(&physicalDevicesCount, physicalDevices).CheckResult();
 
+        List<string> refusals = [];
         for (int i = 0; i < physicalDevicesCount; i++)
         {
             VkPhysicalDevice physicalDevice = physicalDevices[i];
 
-            if (IsDeviceSuitable(InstanceApi, physicalDevice, surface) == false)
-                continue;
-
             InstanceApi.vkGetPhysicalDeviceProperties(physicalDevice, out VkPhysicalDeviceProperties checkProperties);
+            if (Refusal(InstanceApi, physicalDevice, surface, checkProperties) is { } refusal)
+            {
+                refusals.Add($"'{NativeStrings.Read(checkProperties.deviceName)}' {refusal}");
+                continue;
+            }
+
             bool discrete = checkProperties.deviceType == VkPhysicalDeviceType.DiscreteGpu;
 
             if (discrete || PhysicalDevice.IsNull)
@@ -186,9 +194,9 @@ public unsafe sealed class GraphicsDevice : IDisposable
             if (surface != VkSurfaceKHR.Null)
                 InstanceApi.vkDestroySurfaceKHR(surface);
             Dispose();
-            throw new InvalidOperationException(window is null
-                ? $"No Vulkan device of the {physicalDevicesCount} found has a graphics queue."
-                : $"No Vulkan device of the {physicalDevicesCount} found can draw and present to the window with {SwapchainExtension}.");
+            throw new InvalidOperationException(
+                $"No Vulkan device of the {physicalDevicesCount} found can draw{(window is null ? "" : " and present to the window")}."
+                + (refusals.Count == 0 ? "" : " " + string.Join("; ", refusals) + "."));
         }
 
         InstanceApi.vkGetPhysicalDeviceProperties(PhysicalDevice, out VkPhysicalDeviceProperties properties);
@@ -374,25 +382,37 @@ public unsafe sealed class GraphicsDevice : IDisposable
         return [];
     }
 
-    // With a surface, a device must also present to it and have the extension of
-    // the swapchain (R-0030, finding V5). With no surface, a graphics queue is enough.
-    private static bool IsDeviceSuitable(VkInstanceApi api, VkPhysicalDevice physicalDevice, VkSurfaceKHR surface)
+    // The reason that a device cannot serve, or null. Each device needs a graphics
+    // queue, the version of the shaders, and the depth format as an attachment of an
+    // optimal image (V9). With a surface, a device must also present to it and have the
+    // extension of the swapchain (R-0030, finding V5).
+    private static string? Refusal(VkInstanceApi api, VkPhysicalDevice physicalDevice, VkSurfaceKHR surface, VkPhysicalDeviceProperties properties)
     {
         var checkQueueFamilies = FindQueueFamilies(api, physicalDevice, surface);
         if (checkQueueFamilies.graphicsFamily == VK_QUEUE_FAMILY_IGNORED)
-            return false;
+            return "has no graphics queue";
+
+        VkVersion version = properties.apiVersion;
+        if (version < RequiredApiVersion)
+            return $"gives Vulkan {version.Major}.{version.Minor}, and the shaders need {RequiredApiVersion.Major}.{RequiredApiVersion.Minor}";
+
+        api.vkGetPhysicalDeviceFormatProperties(physicalDevice, DepthBuffer.Format, out VkFormatProperties depth);
+        if ((depth.optimalTilingFeatures & VkFormatFeatureFlags.DepthStencilAttachment) == 0)
+            return $"has no depth attachment of the format {DepthBuffer.Format}";
 
         if (surface == VkSurfaceKHR.Null)
-            return true;
+            return null;
 
         if (checkQueueFamilies.presentFamily == VK_QUEUE_FAMILY_IGNORED)
-            return false;
+            return "cannot present to the window";
 
         if (!GetDeviceExtensions(api, physicalDevice).Contains(SwapchainExtension))
-            return false;
+            return $"has no {SwapchainExtension}";
 
         SwapChainSupportDetails swapChainSupport = Utils.QuerySwapChainSupport(api, physicalDevice, surface);
-        return !swapChainSupport.Formats.IsEmpty && !swapChainSupport.PresentModes.IsEmpty;
+        return swapChainSupport.Formats.IsEmpty || swapChainSupport.PresentModes.IsEmpty
+            ? "gives no format or no present mode for the window"
+            : null;
     }
 
     [UnmanagedCallersOnly]

@@ -9,36 +9,37 @@ using static Vortice.Vulkan.Vulkan;
 
 namespace ThreeDEngine.Vulkan;
 
+// One swapchain of a surface, with its framebuffers and its depth image. The Presenter
+// owns the surface and the render pass, and makes a new swapchain when the window
+// changes (TASK-0074); a swapchain therefore destroys neither of the two.
 public sealed unsafe class Swapchain : IDisposable
 {
     public readonly GraphicsDevice Device;
     public readonly Window Window;
     private readonly VkImageView[] _swapChainImageViews;
-    private readonly VkSurfaceKHR _surface;
 
     public VkSwapchainKHR Handle;
     public int ImageCount => _swapChainImageViews.Length;
-    public VkRenderPass RenderPass;
+    public readonly VkRenderPass RenderPass;
     public VkExtent2D Extent { get; }
     public VkFramebuffer[] Framebuffers { get; }
 
     // The depth image of the render pass (ADR-0023 item 1, TASK-0070).
     public DepthBuffer Depth { get; }
 
-    public Swapchain(GraphicsDevice device, VkSurfaceKHR surface, Window window)
+    // The old swapchain, when not null, goes to the driver so that it can reuse its
+    // images; the caller disposes it after this one exists.
+    public Swapchain(GraphicsDevice device, VkSurfaceKHR surface, Window window, VkRenderPass renderPass, VkSurfaceFormatKHR surfaceFormat, VkSwapchainKHR oldSwapchain)
     {
         Device = device;
-        _surface = surface;
         Window = window;
+        RenderPass = renderPass;
 
         SwapChainSupportDetails swapChainSupport = Utils.QuerySwapChainSupport(device.InstanceApi, device.PhysicalDevice, surface);
 
-        VkSurfaceFormatKHR surfaceFormat = ChooseSwapSurfaceFormat(swapChainSupport.Formats);
         VkPresentModeKHR presentMode = ChooseSwapPresentMode(swapChainSupport.PresentModes);
         Extent = ChooseSwapExtent(swapChainSupport.Capabilities);
         Depth = new DepthBuffer(device, Extent);
-
-        RenderPass = RenderPasses.Create(device, surfaceFormat.format, VkImageLayout.PresentSrcKHR);
 
         uint imageCount = swapChainSupport.Capabilities.minImageCount + 1;
         if (swapChainSupport.Capabilities.maxImageCount > 0 &&
@@ -61,7 +62,7 @@ public sealed unsafe class Swapchain : IDisposable
             compositeAlpha = VkCompositeAlphaFlagsKHR.Opaque,
             presentMode = presentMode,
             clipped = true,
-            oldSwapchain = VkSwapchainKHR.Null
+            oldSwapchain = oldSwapchain
         };
 
         device.DeviceApi.vkCreateSwapchainKHR(&createInfo, null, out Handle).CheckResult();
@@ -99,17 +100,11 @@ public sealed unsafe class Swapchain : IDisposable
             Device.DeviceApi.vkDestroyFramebuffer(Framebuffers[i]);
         }
 
-        Device.DeviceApi.vkDestroyRenderPass(RenderPass);
         Depth.Dispose();
 
         if (Handle != VkSwapchainKHR.Null)
         {
             Device.DeviceApi.vkDestroySwapchainKHR(Handle);
-        }
-
-        if (_surface != VkSurfaceKHR.Null)
-        {
-            Device.InstanceApi.vkDestroySurfaceKHR(_surface);
         }
     }
 
@@ -132,7 +127,7 @@ public sealed unsafe class Swapchain : IDisposable
         }
     }
 
-    private static VkSurfaceFormatKHR ChooseSwapSurfaceFormat(ReadOnlySpan<VkSurfaceFormatKHR> availableFormats)
+    internal static VkSurfaceFormatKHR ChooseSwapSurfaceFormat(ReadOnlySpan<VkSurfaceFormatKHR> availableFormats)
     {
         // If the surface format list only includes one entry with VK_FORMAT_UNDEFINED,
         // there is no preferred format, so we assume VK_FORMAT_B8G8R8A8_UNORM

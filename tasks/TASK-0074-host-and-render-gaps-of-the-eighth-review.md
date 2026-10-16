@@ -92,3 +92,10 @@ resize or a minimise, refuses a device that it cannot use with a message, and ch
   payload is read-only. The three tests of E62, E63 and E64 each failed with the old rule put back. E61
   and E65 have no automatic test: `SessionBodies` needs a GPU device, and `3DEngine.ImageTests` is outside
   this write set.
+- 2026-10-16: V8 and V9. The presenter owns the surface and the render pass, skips a frame while the
+  surface has no area, and makes the swapchain, its framebuffers and its depth image again when the extent
+  changes or an acquire or a present gives OUT_OF_DATE or SUBOPTIMAL. A device must give Vulkan 1.3 and a
+  depth attachment of `D32_SFLOAT`, and the message of a refusal names each device and its reason. On this
+  computer a minimise and a restore kept the scene, but the driver kept the swapchain valid, so the new
+  path did not run; an injected remake every 60 frames ran it 634 times with no validation message, and
+  the scene stayed. An injected required version 1.9 refused both devices with their reasons.
