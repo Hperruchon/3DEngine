@@ -37,6 +37,17 @@ const shaders = fs.readdirSync(folder).filter(name => /\.(vert|frag)$/.test(name
 for (const shader of shaders) {
   const source = path.join(folder, shader);
   const spirv = source + '.spv';
+
+  // glslc refuses a source that starts with a byte order mark, and the test reads a
+  // source as .NET does, with no mark. The script removes a mark from the file first,
+  // so the compile and the two hashes agree (finding V14 of the codebase review of
+  // 2026-10-13, TASK-0074).
+  const raw = fs.readFileSync(source);
+  if (raw.length >= 3 && raw[0] === 0xEF && raw[1] === 0xBB && raw[2] === 0xBF) {
+    fs.writeFileSync(source, raw.subarray(3));
+    console.log(`removed the byte order mark of ${shader}`);
+  }
+
   execFileSync(exe('glslc'), [...arguments_, '-o', spirv, source], { stdio: 'inherit' });
   execFileSync(exe('spirv-val'), ['--target-env', 'vulkan1.3', spirv], { stdio: 'inherit' });
   const text = fs.readFileSync(source, 'utf8').split('\r\n').join('\n');

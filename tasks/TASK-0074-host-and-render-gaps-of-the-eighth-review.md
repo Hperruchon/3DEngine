@@ -99,3 +99,13 @@ resize or a minimise, refuses a device that it cannot use with a message, and ch
   computer a minimise and a restore kept the scene, but the driver kept the swapchain valid, so the new
   path did not run; an injected remake every 60 frames ran it 634 times with no validation message, and
   the scene stayed. An injected required version 1.9 refused both devices with their reasons.
+- 2026-10-16: V10, V11, V13, V14 and V15. A transform refuses a negative or infinite scale. The camera
+  checks its field of view, its near and far planes and the aspect, and a zoom between close planes no
+  longer throws. A test reads the push constant block of `mesh.vert` from the SPIR-V (two column-major
+  matrices at offsets 0 and 64; member 0 multiplies the position, member 1 its result), and
+  `RenderPipeline.WritePushConstants` writes the model-view matrix first. With the old rules put back,
+  6 of the new cases failed; a shader that swapped the two matrices failed the SPIR-V test. `glslc`
+  refuses a source with a byte order mark, so `compile.js` now removes the mark from the file before
+  the compile; a source with a mark then compiled to the same SPIR-V and the same hashes. V15, measured
+  with a probe that is not committed: 7,194 frames each second (no frame limit with the Mailbox mode),
+  and `Update` took 13 ms in 3.4 s, 7.6 ms at most. Nothing is slow at this size, so nothing changes.

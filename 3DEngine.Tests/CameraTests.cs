@@ -130,4 +130,32 @@ public class CameraTests
         // touches the narrower edge.
         Assert.InRange(largest, 0.5f, 1f);
     }
+
+    // Finding V11 of the codebase review of 2026-10-13 (TASK-0074): each parameter of the
+    // camera is checked, and a zoom between close planes does not throw.
+    [Fact]
+    public void The_Camera_Refuses_A_Parameter_That_Draws_Nothing()
+    {
+        var camera = new Camera();
+
+        Assert.Throws<ArgumentOutOfRangeException>(() => camera.NearPlane = 0f);
+        Assert.Throws<ArgumentOutOfRangeException>(() => camera.FarPlane = float.PositiveInfinity);
+        Assert.Throws<ArgumentOutOfRangeException>(() => camera.FieldOfViewDegrees = 0f);
+        Assert.Throws<ArgumentOutOfRangeException>(() => camera.FieldOfViewDegrees = 180f);
+        Assert.Throws<ArgumentOutOfRangeException>(() => camera.Projection(0f));
+
+        camera.NearPlane = 10f;
+        camera.FarPlane = 5f;
+        Assert.Throws<InvalidOperationException>(() => camera.Projection(1f));
+    }
+
+    [Fact]
+    public void A_Zoom_Between_Close_Planes_Keeps_The_Eye_At_Two_Times_The_Near_Plane()
+    {
+        var camera = new Camera { NearPlane = 1f, FarPlane = 3f, Distance = 2 };
+
+        camera.Zoom(0.5);
+
+        Assert.Equal(2.0, camera.Distance);
+    }
 }

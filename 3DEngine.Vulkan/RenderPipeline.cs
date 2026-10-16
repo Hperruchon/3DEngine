@@ -1,4 +1,5 @@
 using System.Numerics;
+using System.Runtime.InteropServices;
 using Vortice.Vulkan;
 
 namespace ThreeDEngine.Vulkan;
@@ -133,10 +134,19 @@ public sealed unsafe class RenderPipeline : IDisposable
     // is the transpose, and that acts on column vectors in the same way.
     public void Push(VkCommandBuffer commandBuffer, Matrix4x4 modelView, Matrix4x4 projection)
     {
-        Matrix4x4* matrices = stackalloc Matrix4x4[2];
-        matrices[0] = modelView;
-        matrices[1] = projection;
-        _device.DeviceApi.vkCmdPushConstants(commandBuffer, Layout, VkShaderStageFlags.Vertex, 0, PushConstantSize, matrices);
+        byte* block = stackalloc byte[(int)PushConstantSize];
+        WritePushConstants(new Span<byte>(block, (int)PushConstantSize), modelView, projection);
+        _device.DeviceApi.vkCmdPushConstants(commandBuffer, Layout, VkShaderStageFlags.Vertex, 0, PushConstantSize, block);
+    }
+
+    // The bytes of the push constant block of one draw: the model-view matrix at offset
+    // 0 and the projection at offset 64, as the block Draw of mesh.vert declares them. A
+    // test reads the same block from the SPIR-V (finding V13 of the codebase review of
+    // 2026-10-13, TASK-0074).
+    public static void WritePushConstants(Span<byte> block, Matrix4x4 modelView, Matrix4x4 projection)
+    {
+        MemoryMarshal.Write(block[..64], in modelView);
+        MemoryMarshal.Write(block[64..(int)PushConstantSize], in projection);
     }
 
     // The caller waits until the device is idle before it disposes a pipeline.
