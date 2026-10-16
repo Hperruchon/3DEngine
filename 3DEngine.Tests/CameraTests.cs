@@ -98,4 +98,36 @@ public class CameraTests
         Assert.Equal(1f, projection.M22, 5);
         Assert.Equal(0.5f, projection.M11, 5);
     }
+
+    // ADR-0025 item 6 (TASK-0076): each corner of a framed box is in the picture, for a
+    // wide picture and for a tall one, and the yaw and the pitch do not change.
+    [Theory]
+    [InlineData(16f / 9f)]
+    [InlineData(9f / 16f)]
+    public void A_Framed_Box_Is_Inside_The_Picture(float aspect)
+    {
+        var camera = new Camera { YawDegrees = 30, PitchDegrees = 20, Distance = 500 };
+        (double X, double Y, double Z) min = (95, -5, -5), max = (105, 5, 5);
+
+        camera.Frame(min, max, aspect);
+
+        Assert.Equal((100.0, 0.0, 0.0), camera.Target);
+        Assert.Equal(30, camera.YawDegrees);
+        Assert.Equal(20, camera.PitchDegrees);
+
+        var eye = camera.Eye();
+        var viewProjection = camera.View() * camera.Projection(aspect);
+        var largest = 0f;
+        foreach (var x in new[] { min.X, max.X })
+        foreach (var y in new[] { min.Y, max.Y })
+        foreach (var z in new[] { min.Z, max.Z })
+        {
+            var clip = Vector4.Transform(new Vector4((float)(x - eye.X), (float)(y - eye.Y), (float)(z - eye.Z), 1f), viewProjection);
+            largest = Math.Max(largest, Math.Max(Math.Abs(clip.X / clip.W), Math.Abs(clip.Y / clip.W)));
+        }
+
+        // Inside the picture, and not much smaller than it: the sphere around the box
+        // touches the narrower edge.
+        Assert.InRange(largest, 0.5f, 1f);
+    }
 }

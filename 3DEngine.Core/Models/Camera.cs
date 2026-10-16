@@ -52,6 +52,27 @@ public sealed class Camera : Entity
         Distance = Math.Clamp(Distance * factor, NearPlane * 2.0, FarPlane / 2.0);
     }
 
+    /// <summary>
+    /// Frames a box (ADR-0025 item 6): the target goes to the centre of the box, and the
+    /// distance puts the sphere around the box inside the smaller half angle of the field
+    /// of view, for the aspect of the picture. The yaw and the pitch do not change.
+    /// </summary>
+    public void Frame((double X, double Y, double Z) min, (double X, double Y, double Z) max, float aspect)
+    {
+        if (aspect <= 0)
+            throw new ArgumentOutOfRangeException(nameof(aspect), "An aspect is positive.");
+
+        Target = ((min.X + max.X) / 2.0, (min.Y + max.Y) / 2.0, (min.Z + max.Z) / 2.0);
+
+        var (dx, dy, dz) = (max.X - min.X, max.Y - min.Y, max.Z - min.Z);
+        var radius = Math.Sqrt(dx * dx + dy * dy + dz * dz) / 2.0;
+        var halfVertical = FieldOfViewDegrees * Math.PI / 360.0;
+        var halfHorizontal = Math.Atan(Math.Tan(halfVertical) * aspect);
+        var half = Math.Min(halfVertical, halfHorizontal);
+
+        Distance = Math.Clamp(radius / Math.Sin(half), NearPlane * 2.0, FarPlane / 2.0);
+    }
+
     /// <summary>The position of the eye, in double precision.</summary>
     public (double X, double Y, double Z) Eye()
     {

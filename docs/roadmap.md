@@ -57,6 +57,8 @@ Therefore each approved objective must have a track here.
 - R3 — The desktop draws an indexed mesh through the first pipeline. v0.68, TASK-0069, ADR-0022.
 - R4 — An orbit camera, reversed depth, and a draw list over the scene graph. v0.69, TASK-0070, ADR-0023.
 - R5 — The desktop draws each live body of its session, from the events and GetTessellation. v0.70, TASK-0071, ADR-0024.
+- P0.28 — No file outside the gate files can empty the step "Test", and the gates see what MSBuild evaluates. v0.73, TASK-0073.
+- R6 — A person observes the cut of the first demonstration, and an image test with no window holds it. v0.74, TASK-0076, ADR-0025. The first objective is complete.
 
 ## Track 0 — Foundations
 
@@ -166,9 +168,8 @@ The tracks are not strictly sequential, but three rules hold:
 The field `depends-on` of each task file holds the same order. `TaskGovernanceGateTests` verifies
 that each dependency names a task.
 
-Phase R6 gives the first objective that the owner named: create a box, subtract a second box, and
-observe the cut. P0.28 and R6 give it in 8 to 11 evenings. That number is the sum of
-the column "Evenings" for those phases. Correct it when a phase ships or an estimate changes.
+Phase R6 gave the first objective that the owner named: create a box, subtract a second box, and
+observe the cut. P0.28 and R6 shipped it at v0.74, on 2026-10-16. The next objective has no estimate yet.
 
 ## Not on a track
 

@@ -3,8 +3,9 @@ using Vortice.Vulkan;
 
 namespace ThreeDEngine.Vulkan;
 
-// The graphics pipeline of a mesh, in subpass 0 of the render pass of the swapchain
-// (ADR-0022 item 2, roadmap phase R3). It reads one MeshVertex for each vertex, and
+// The graphics pipeline of a mesh, in subpass 0 of the render pass of its target:
+// the swapchain or the offscreen target (ADR-0022 item 2, ADR-0025 item 2, roadmap
+// phase R3). It reads one MeshVertex for each vertex, and
 // one push constant for the vertex shader: the model-view matrix of the draw and the
 // projection (TASK-0070). It tests the depth and keeps the greater depth, which the
 // reversed projection gives to a nearer fragment (ADR-0023 item 1). A test reads the
@@ -25,7 +26,7 @@ public sealed unsafe class RenderPipeline : IDisposable
 
     private readonly GraphicsDevice _device;
 
-    public RenderPipeline(GraphicsDevice device, string vertexShader, string fragmentShader)
+    public RenderPipeline(GraphicsDevice device, VkRenderPass renderPass, string vertexShader, string fragmentShader)
     {
         _device = device;
 
@@ -87,7 +88,7 @@ public sealed unsafe class RenderPipeline : IDisposable
                     pColorBlendState = &colorBlend,
                     pDynamicState = &dynamicState,
                     layout = Layout,
-                    renderPass = device.Swapchain.RenderPass,
+                    renderPass = renderPass,
                     subpass = 0,
                 };
 

@@ -7,7 +7,7 @@ date: 2026-05-11
 supersedes: []
 superseded-by: []
 amends: []
-amended-by: ['0022']
+amended-by: ['0022', '0025']
 affects:
   - 3DEngine.Core/**
 enforced-by: Engine.Tests/Governance/DependencyDirectionGateTests.cs
@@ -66,6 +66,7 @@ Both kernels are independent of each other. Clients reference whichever they nee
 - A client that renders (today: `3DEngine`, `BlazorApp.Client`) MAY reference `3DEngine.Core`.
 - A client that does not render (today: `Engine.Cli`) MUST NOT reference `3DEngine.Core` — there is no reason for it to.
 - `Engine.Tests` MUST NOT reference `3DEngine.Core`. The test project `3DEngine.Tests` MAY reference it, and `3DEngine.Vulkan`, and nothing else (ADR-0022).
+- The image test project `3DEngine.ImageTests` MAY reference it, and each project that a host that draws references, and that host (ADR-0025).
 
 ### 3. Design truth vs render state
 
@@ -133,3 +134,5 @@ Mechanical enforcement of these rules is out of phase scope — the dependency-d
 
 - 2026-10-12 · TASK-0069 · ADR-0022 amends §2: the tests of the render side live in `3DEngine.Tests`,
   and `Engine.Tests` references no project of the render side, as the dependency gate already said.
+- 2026-10-14 · TASK-0076 · ADR-0025 amends §2: the image test project `3DEngine.ImageTests` may reference
+  the render kernel, the projects of a host that draws, and that host.

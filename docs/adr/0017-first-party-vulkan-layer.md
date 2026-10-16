@@ -7,7 +7,7 @@ date: 2026-09-23
 supersedes: []
 superseded-by: []
 amends: []
-amended-by: ['0022']
+amended-by: ['0022', '0025']
 affects:
   - 3DEngine.Vulkan/**
   - 3DEngine/3DEngine.csproj
@@ -43,13 +43,15 @@ change the two kernels.
 ## Decision
 
 1. The Vulkan code lives in `3DEngine.Vulkan`, with the namespace `ThreeDEngine.Vulkan`. It holds the
-   device, the swapchain, and the SDL window that owns the Vulkan surface. The host keeps the event
+   device, the presentation to a window with its swapchain, the offscreen target, and the SDL window that
+   owns the Vulkan surface. A device can exist with no window (ADR-0025). The host keeps the event
    loop and the projection of events into render state.
 2. `3DEngine.Vulkan` references no `Engine.*` project. It may reference `3DEngine.Core` and nothing
    else. It draws render state and it never sees design truth.
 3. Only a host that draws with Vulkan references `3DEngine.Vulkan`. Today that host is `3DEngine`. No
    `Engine.*` project, no render kernel and no web client references it. The test project
-   `3DEngine.Tests` also references it, with no GPU (ADR-0022).
+   `3DEngine.Tests` also references it, with no GPU (ADR-0022), and the image test project
+   `3DEngine.ImageTests` references it with a device and no window (ADR-0025).
 4. `3DEngine.Vulkan/3DEngine.Vulkan.csproj` holds the only pin of `Vortice.Vulkan` and the only pin of
    `Alimer.Bindings.SDL`. A host receives each binding through its project reference. The version
    of each binding therefore has one answer, in one line.
@@ -60,7 +62,8 @@ change the two kernels.
 6. Each file that comes from the sample code keeps the copyright line of its author.
    `THIRD-PARTY-NOTICES.md`, section 4, gives the licence text.
 7. Each shader has its GLSL source and its compiled SPIR-V in `3DEngine.Vulkan/Shaders/`, with a lock
-   file of hashes that a test checks. The pipeline draws in the render pass of the swapchain (ADR-0022).
+   file of hashes that a test checks. The pipeline draws in the render pass of its target, the swapchain or the offscreen target (ADR-0022,
+   ADR-0025).
 
 ## Consequences
 
@@ -80,3 +83,5 @@ this project.
 
 - 2026-10-12 · TASK-0069 · ADR-0022 amends items 3 and 7: the test project `3DEngine.Tests`, the
   shaders with their lock file, and the render pass of the first pipeline.
+- 2026-10-14 · TASK-0076 · ADR-0025 amends items 1, 3 and 7: a device with no window, the offscreen
+  target, and the image test project `3DEngine.ImageTests`.

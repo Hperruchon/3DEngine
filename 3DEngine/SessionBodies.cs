@@ -20,6 +20,9 @@ internal sealed class SessionBodies : IDisposable
     private readonly ConcurrentQueue<(bool Created, Guid BodyId)> _changes = new();
     private readonly IDisposable _subscription;
 
+    // The box of each live body that has a mesh, by the identifier of its mesh.
+    private readonly Dictionary<string, ((double X, double Y, double Z) Min, (double X, double Y, double Z) Max)> _boxes = new(StringComparer.Ordinal);
+
     public SessionBodies(EngineHost host)
     {
         _host = host;
@@ -45,9 +48,11 @@ internal sealed class SessionBodies : IDisposable
 
     // On the render loop: one entity and one mesh for each live body. The mesh is
     // narrowed around the centre of its box, and that centre is the origin of the
-    // entity, in double precision (ADR-0024 item 2).
-    public void Apply(Scene scene, IDictionary<string, GpuMesh> meshes, GraphicsDevice device)
+    // entity, in double precision (ADR-0024 item 2). It returns true when a body came
+    // or went, so that the host can frame the bodies again (ADR-0025 item 6).
+    public bool Apply(Scene scene, IDictionary<string, GpuMesh> meshes, GraphicsDevice device)
     {
+        var changed = false;
         while (_changes.TryDequeue(out var change))
         {
             var meshId = change.BodyId.ToString();
@@ -68,9 +73,13 @@ internal sealed class SessionBodies : IDisposable
                 var centre = MeshVertex.Centre(tessellation.Positions);
                 meshes[meshId] = new GpuMesh(device, MeshVertex.Narrow(tessellation.Positions, centre, 1.0), tessellation.Indices);
                 scene.Entities.Add(new Entity { Name = $"Body {change.BodyId}", MeshId = meshId, Origin = centre });
+                _boxes[meshId] = Box(tessellation.Positions);
+                changed = true;
             }
             else if (meshes.Remove(meshId, out var mesh))
             {
+                _boxes.Remove(meshId);
+                changed = true;
                 var entity = scene.Entities.FirstOrDefault(candidate => candidate.MeshId == meshId);
                 if (entity is not null)
                     scene.Entities.Remove(entity);
@@ -80,6 +89,36 @@ internal sealed class SessionBodies : IDisposable
                 mesh.Dispose();
             }
         }
+
+        return changed;
+    }
+
+    // The box around each live body that has a mesh, or null when none has one.
+    public ((double X, double Y, double Z) Min, (double X, double Y, double Z) Max)? Bounds
+    {
+        get
+        {
+            if (_boxes.Count == 0)
+                return null;
+
+            var boxes = _boxes.Values;
+            return (
+                (boxes.Min(b => b.Min.X), boxes.Min(b => b.Min.Y), boxes.Min(b => b.Min.Z)),
+                (boxes.Max(b => b.Max.X), boxes.Max(b => b.Max.Y), boxes.Max(b => b.Max.Z)));
+        }
+    }
+
+    private static ((double X, double Y, double Z) Min, (double X, double Y, double Z) Max) Box(double[] positions)
+    {
+        (double X, double Y, double Z) min = (double.MaxValue, double.MaxValue, double.MaxValue);
+        (double X, double Y, double Z) max = (double.MinValue, double.MinValue, double.MinValue);
+        for (var index = 0; index + 2 < positions.Length; index += 3)
+        {
+            min = (Math.Min(min.X, positions[index]), Math.Min(min.Y, positions[index + 1]), Math.Min(min.Z, positions[index + 2]));
+            max = (Math.Max(max.X, positions[index]), Math.Max(max.Y, positions[index + 1]), Math.Max(max.Z, positions[index + 2]));
+        }
+
+        return (min, max);
     }
 
     public void Dispose() => _subscription.Dispose();

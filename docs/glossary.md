@@ -52,6 +52,9 @@ observation of a change, and it appears only in the event stream.
 | **draw list** | The draws of one frame: one record for each entity that has a mesh, with the mesh and its model-view matrix relative to the eye. The host fills it from the scene graph, and the Vulkan layer executes it with one direct draw for each record. | `3DEngine.Core/Rendering/DrawList.cs` · ADR-0023 · TASK-0070 |
 | **reversed depth** | The near plane gets depth 1 and the far plane depth 0, the depth buffer is cleared to 0, and a fragment with a greater depth wins. A float holds the most precision near 0, which this gives to the far range. | `3DEngine.Core/Models/Camera.cs` · ADR-0023 |
 | **body origin** | The `Origin` of an `Entity` in double precision: the centre of the box of the mesh of a body, around which the host narrows the mesh to float (ADR-0024 item 2). | `3DEngine.Core/Models/Entity.cs` · ADR-0024 · TASK-0071 |
+| **offscreen target** | A colour image and a depth image with their own render pass, and a copy of the colour to memory that the host reads. A device with no window draws into it. | `3DEngine.Vulkan/OffscreenTarget.cs` · ADR-0025 · TASK-0076 |
+| **presenter** | The presentation of a device to a window: the swapchain, the resources of each frame, the acquire and the present. A device with no window has none. | `3DEngine.Vulkan/Presenter.cs` · ADR-0025 · TASK-0076 |
+| **image test** | A test that draws a scene into an offscreen target and compares the picture by structure, with no reference picture. | `3DEngine.ImageTests/` · ADR-0025 · TASK-0076 |
 | **relative to the eye** | Each position is moved by minus the eye of the camera in double precision before it is narrowed to float, so a body far from the origin of the engine keeps its detail. | `3DEngine.Core/Rendering/SceneWalker.cs` · ADR-0023 |
 
 ## Concepts

@@ -1,0 +1,40 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- The image test of the first demonstration (ADR-0025, TASK-0076). It drives a
+       session, the live body set, the tessellation and an offscreen frame of a Vulkan
+       device with no window, and compares the picture by structure. It may reference
+       the projects that a host that draws references, and the host 3DEngine, whose
+       internals it reads; DependencyDirectionGateTests holds the rule. The pipeline
+       runs it on ubuntu-latest with lavapipe, and skips it on Windows and macOS. -->
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <LangVersion>latest</LangVersion>
+    <IsPackable>false</IsPackable>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <RootNamespace>ThreeDEngine.ImageTests</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.14.1" />
+    <PackageReference Include="xunit" Version="2.9.3" />
+    <PackageReference Include="xunit.runner.visualstudio" Version="3.1.4" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Using Include="Xunit" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\3DEngine\3DEngine.csproj" />
+    <ProjectReference Include="..\3DEngine.Core\3DEngine.Core.csproj" />
+    <ProjectReference Include="..\3DEngine.Vulkan\3DEngine.Vulkan.csproj" />
+    <ProjectReference Include="..\Engine.Api.Http\Engine.Api.Http.csproj" />
+    <ProjectReference Include="..\Engine.Contracts\Engine.Contracts.csproj" />
+    <ProjectReference Include="..\Engine.Core\Engine.Core.csproj" />
+    <ProjectReference Include="..\Engine.Geometry.Manifold\Engine.Geometry.Manifold.csproj" />
+  </ItemGroup>
+
+</Project>

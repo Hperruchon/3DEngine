@@ -26,6 +26,12 @@
     <FrameworkReference Include="Microsoft.AspNetCore.App" />
   </ItemGroup>
 
+  <!-- The image test reads the renderer and the projection of the bodies of the host
+       (ADR-0025 item 3, TASK-0076). -->
+  <ItemGroup>
+    <InternalsVisibleTo Include="3DEngine.ImageTests" />
+  </ItemGroup>
+
   <ItemGroup>
     <ProjectReference Include="..\Engine.Api.Http\Engine.Api.Http.csproj" />
     <ProjectReference Include="..\Engine.Contracts\Engine.Contracts.csproj" />
