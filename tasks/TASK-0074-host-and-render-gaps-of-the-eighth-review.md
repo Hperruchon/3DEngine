@@ -1,17 +1,19 @@
 ---
 id: 0074
 title: The subscription reports and isolates its failures, and the renderer survives a resize, an old device and a bad camera
-status: Ready
+status: Active
 phase: P0.29
 opened: 2026-10-12
 depends-on: [0072]
-governed-by: [0004, 0005, 0006, 0007, 0009, 0010, 0011, 0017, 0019, 0020, 0021, 0022, 0023, 0024]
+governed-by: [0004, 0005, 0006, 0007, 0009, 0010, 0011, 0013, 0016, 0017, 0019, 0020, 0021, 0022, 0023, 0024]
 writes:
   create:
     - tasks/TASK-0074-host-and-render-gaps-of-the-eighth-review.md
   modify:
     - Engine.Api.Http/EngineHost.cs
     - Engine.Api.Http/WebSockets/EventBroadcaster.cs
+    - Engine.Api.Http/Endpoints/SchemaDiagnosticsEndpoint.cs
+    - Engine.Core/DiagnosticCodes.cs
     - Engine.Core/CommandBus.cs
     - Engine.Tests/Http/EngineHostSubscriptionTests.cs
     - 3DEngine/**
@@ -75,3 +77,11 @@ resize or a minimise, refuses a device that it cannot use with a message, and ch
 
 - **The diagnostic code.** E62 needs a new `W-` code, registered in `docs/diagnostics.md` in the same commit.
 - **The size.** About 2 to 3 evenings.
+
+## Progress
+
+- 2026-10-16: the task is active, first in the order of the owner of 2026-10-16. The write set now names
+  `Engine.Core/DiagnosticCodes.cs` and `Engine.Api.Http/Endpoints/SchemaDiagnosticsEndpoint.cs`: the new
+  `W-` code of E62 needs a constant and a row of `/schema/diagnostics` (`docs/diagnostics.md`, "Adding a
+  code"), and the task file named neither. TASK-0076 already did V12 (the camera frames the bodies) and the
+  synchronization part of V13. The two files bring ADR-0013 and ADR-0016 into `governed-by`.
