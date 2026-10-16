@@ -70,8 +70,10 @@ public sealed class EngineHost : IDisposable
     // the order of the commits: the same events that /events gives (ADR-0024 item 1,
     // ADR-0019 item 2). The action runs inside the commit, so it must not call the
     // session and must not block; a host puts the event in a queue. An action that
-    // throws is removed. To read the live bodies and subscribe with no gap, call this
-    // inside Session.Read. Dispose the result to stop.
+    // throws is removed, with the warning W-API-SUBSCRIPTION-REMOVED on the error
+    // output. The payload of each event is read-only. To read the live bodies and
+    // subscribe with no gap, call this inside Session.Read. Dispose the result to stop;
+    // an event of a commit in progress can still arrive after Dispose returns.
     public IDisposable Subscribe(Action<EventRecord> action) => Broadcaster.Listen(action);
 
     public void Dispose() => (Backend as IDisposable)?.Dispose();

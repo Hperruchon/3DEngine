@@ -85,3 +85,10 @@ resize or a minimise, refuses a device that it cannot use with a message, and ch
   `W-` code of E62 needs a constant and a row of `/schema/diagnostics` (`docs/diagnostics.md`, "Adding a
   code"), and the task file named neither. TASK-0076 already did V12 (the camera frames the bodies) and the
   synchronization part of V13. The two files bring ADR-0013 and ADR-0016 into `governed-by`.
+- 2026-10-16: E61 to E65. `SessionBodies` puts the live bodies in the queue inside the read, before the
+  subscription, gives no warning for a body that a command consumed before the frame, and writes a
+  warning for a failure of one body and continues. The broadcaster keeps one entry for each subscription,
+  removes it once, and reports a removed action with the new code `W-API-SUBSCRIPTION-REMOVED`. Each
+  payload is read-only. The three tests of E62, E63 and E64 each failed with the old rule put back. E61
+  and E65 have no automatic test: `SessionBodies` needs a GPU device, and `3DEngine.ImageTests` is outside
+  this write set.
