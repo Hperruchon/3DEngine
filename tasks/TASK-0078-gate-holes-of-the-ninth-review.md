@@ -1,7 +1,7 @@
 ---
 id: 0078
 title: No file outside the gate files can empty a test project, and the gates read MSBuild names as MSBuild does
-status: Ready
+status: Active
 phase: P0.30
 opened: 2026-10-17
 depends-on: [0077]
@@ -89,3 +89,9 @@ compiler as they evaluate.
   remove a named new file that the work does not need before the close.
 - **The order.** Question Q1 of the review asks whether this task comes before R7.
 - **The size.** About 2 to 3 evenings.
+
+## Progress
+
+- 2026-10-17: the task is active, first in the order of the owner of 2026-10-17 (question Q1 of the review,
+  option A). Item 4 of the scope takes its second form: an exact count for each test project makes a skip
+  of the image test on Ubuntu fail the run, so the file of the attribute needs no new rule of its own.
