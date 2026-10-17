@@ -18,11 +18,40 @@ public sealed class Camera : Entity
     public const double MinimumPitchDegrees = -89.0;
     public const double MaximumPitchDegrees = 89.0;
 
-    public float FieldOfViewDegrees { get; set; } = 60.0f;
+    // Each parameter is checked when it is set (finding V11 of the codebase review of
+    // 2026-10-13, TASK-0074). Until then a near plane of 0 gave depth 0 to each point,
+    // so nothing was drawn, with no message. The far plane must also be beyond the near
+    // plane; Projection checks that pair, because a caller can set the two in each order.
+    private float _fieldOfViewDegrees = 60.0f;
+    private float _nearPlane = 0.1f;
+    private float _farPlane = 1000.0f;
 
-    public float NearPlane { get; set; } = 0.1f;
+    /// <summary>The vertical field of view, greater than 0 and less than 180 degrees.</summary>
+    public float FieldOfViewDegrees
+    {
+        get => _fieldOfViewDegrees;
+        set => _fieldOfViewDegrees = float.IsFinite(value) && value > 0 && value < 180
+            ? value
+            : throw new ArgumentOutOfRangeException(nameof(FieldOfViewDegrees), value, "A field of view is greater than 0 and less than 180 degrees.");
+    }
 
-    public float FarPlane { get; set; } = 1000.0f;
+    /// <summary>The distance of the near plane, finite and greater than 0.</summary>
+    public float NearPlane
+    {
+        get => _nearPlane;
+        set => _nearPlane = float.IsFinite(value) && value > 0
+            ? value
+            : throw new ArgumentOutOfRangeException(nameof(NearPlane), value, "A near plane is finite and greater than 0.");
+    }
+
+    /// <summary>The distance of the far plane, finite and greater than 0.</summary>
+    public float FarPlane
+    {
+        get => _farPlane;
+        set => _farPlane = float.IsFinite(value) && value > 0
+            ? value
+            : throw new ArgumentOutOfRangeException(nameof(FarPlane), value, "A far plane is finite and greater than 0.");
+    }
 
     /// <summary>The point that the camera looks at, in the space of the scene.</summary>
     public (double X, double Y, double Z) Target { get; set; }
@@ -49,7 +78,7 @@ public sealed class Camera : Entity
         if (factor <= 0)
             throw new ArgumentOutOfRangeException(nameof(factor), "A zoom factor is positive.");
 
-        Distance = Math.Clamp(Distance * factor, NearPlane * 2.0, FarPlane / 2.0);
+        Distance = ClampDistance(Distance * factor);
     }
 
     /// <summary>
@@ -70,8 +99,14 @@ public sealed class Camera : Entity
         var halfHorizontal = Math.Atan(Math.Tan(halfVertical) * aspect);
         var half = Math.Min(halfVertical, halfHorizontal);
 
-        Distance = Math.Clamp(radius / Math.Sin(half), NearPlane * 2.0, FarPlane / 2.0);
+        Distance = ClampDistance(radius / Math.Sin(half));
     }
+
+    // Keeps the eye between two times the near plane and half the far plane. When the
+    // two planes are close, the lower limit wins; until TASK-0074 Math.Clamp threw
+    // there, and the throw in the event loop ended the desktop (V11).
+    private double ClampDistance(double distance)
+        => Math.Max(NearPlane * 2.0, Math.Min(distance, FarPlane / 2.0));
 
     /// <summary>The position of the eye, in double precision.</summary>
     public (double X, double Y, double Z) Eye()
@@ -103,6 +138,11 @@ public sealed class Camera : Entity
     /// </summary>
     public Matrix4x4 Projection(float aspect)
     {
+        if (!float.IsFinite(aspect) || aspect <= 0)
+            throw new ArgumentOutOfRangeException(nameof(aspect), aspect, "An aspect is finite and greater than 0.");
+        if (FarPlane <= NearPlane)
+            throw new InvalidOperationException($"The far plane ({FarPlane}) must be beyond the near plane ({NearPlane}).");
+
         var yScale = 1.0f / MathF.Tan(FieldOfViewDegrees * MathF.PI / 360.0f);
         var near = NearPlane;
         var far = FarPlane;

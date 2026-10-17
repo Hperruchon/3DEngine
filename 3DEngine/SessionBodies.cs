@@ -2,6 +2,7 @@ using System.Collections.Concurrent;
 using Engine.Api.Http;
 using Engine.Contracts;
 using Engine.Contracts.Geometry;
+using Engine.Core;
 using Engine.Core.Queries;
 using ThreeDEngine.Core.Models;
 using ThreeDEngine.Vulkan;
@@ -27,12 +28,15 @@ internal sealed class SessionBodies : IDisposable
     {
         _host = host;
 
-        var (live, subscription) = host.Session.Read((document, _) =>
-            (document.Bodies.Select(body => body.Handle.Id).ToArray(), host.Subscribe(OnEvent)))
-            .GetAwaiter().GetResult();
-        _subscription = subscription;
-        foreach (var bodyId in live)
-            _changes.Enqueue((true, bodyId));
+        // The live bodies enter the queue inside the read, before the subscription, so
+        // each later event comes after them. Until TASK-0074 they entered after the
+        // read, behind newer events (finding E61 of the codebase review of 2026-10-13).
+        _subscription = host.Session.Read((document, _) =>
+        {
+            foreach (var body in document.Bodies)
+                _changes.Enqueue((true, body.Handle.Id));
+            return host.Subscribe(OnEvent);
+        }).GetAwaiter().GetResult();
     }
 
     // Inside the commit: no call of the session, and no wait.
@@ -50,47 +54,70 @@ internal sealed class SessionBodies : IDisposable
     // narrowed around the centre of its box, and that centre is the origin of the
     // entity, in double precision (ADR-0024 item 2). It returns true when a body came
     // or went, so that the host can frame the bodies again (ADR-0025 item 6).
+    //
+    // A failure of one body is written as a warning, and the next body continues.
+    // Until TASK-0074 a throw ended the window and the session (E65).
     public bool Apply(Scene scene, IDictionary<string, GpuMesh> meshes, GraphicsDevice device)
     {
         var changed = false;
         while (_changes.TryDequeue(out var change))
         {
-            var meshId = change.BodyId.ToString();
-            if (change.Created)
+            try
             {
-                var result = _host.Session.Query<Tessellation>(new GetTessellationQuery { BodyId = change.BodyId })
-                    .GetAwaiter().GetResult();
-                if (result.Error is { } error)
-                {
-                    Console.WriteLine($"[WARN] No mesh for body {change.BodyId}: {error.Code} {error.Message}");
-                    continue;
-                }
-
-                var tessellation = result.Result!;
-                if (tessellation.TriangleCount == 0)
-                    continue;
-
-                var centre = MeshVertex.Centre(tessellation.Positions);
-                meshes[meshId] = new GpuMesh(device, MeshVertex.Narrow(tessellation.Positions, centre, 1.0), tessellation.Indices);
-                scene.Entities.Add(new Entity { Name = $"Body {change.BodyId}", MeshId = meshId, Origin = centre });
-                _boxes[meshId] = Box(tessellation.Positions);
-                changed = true;
+                changed |= ApplyOne(change, scene, meshes, device);
             }
-            else if (meshes.Remove(meshId, out var mesh))
+            catch (Exception exception)
             {
-                _boxes.Remove(meshId);
-                changed = true;
-                var entity = scene.Entities.FirstOrDefault(candidate => candidate.MeshId == meshId);
-                if (entity is not null)
-                    scene.Entities.Remove(entity);
-
-                // A frame in flight can still read the buffers of the mesh.
-                device.WaitIdle();
-                mesh.Dispose();
+                Console.WriteLine($"[WARN] The body {change.BodyId} was not {(change.Created ? "drawn" : "removed")}: {exception.GetType().Name}: {exception.Message}");
             }
         }
 
         return changed;
+    }
+
+    // One change of the queue. It returns true when the scene changed.
+    private bool ApplyOne((bool Created, Guid BodyId) change, Scene scene, IDictionary<string, GpuMesh> meshes, GraphicsDevice device)
+    {
+        var meshId = change.BodyId.ToString();
+        if (!change.Created)
+        {
+            if (!meshes.Remove(meshId, out var mesh))
+                return false;
+
+            _boxes.Remove(meshId);
+            var entity = scene.Entities.FirstOrDefault(candidate => candidate.MeshId == meshId);
+            if (entity is not null)
+                scene.Entities.Remove(entity);
+
+            // A frame in flight can still read the buffers of the mesh.
+            device.WaitIdle();
+            mesh.Dispose();
+            return true;
+        }
+
+        var result = _host.Session.Query<Tessellation>(new GetTessellationQuery { BodyId = change.BodyId })
+            .GetAwaiter().GetResult();
+
+        // A command can consume a body before the next frame; its consumption follows
+        // in the queue, so the missing body is not a defect (E61).
+        if (result.Error is { Code: DiagnosticCodes.GeomBodyNotFound })
+            return false;
+
+        if (result.Error is { } error)
+        {
+            Console.WriteLine($"[WARN] No mesh for body {change.BodyId}: {error.Code} {error.Message}");
+            return false;
+        }
+
+        var tessellation = result.Result!;
+        if (tessellation.TriangleCount == 0)
+            return false;
+
+        var centre = MeshVertex.Centre(tessellation.Positions);
+        meshes[meshId] = new GpuMesh(device, MeshVertex.Narrow(tessellation.Positions, centre, 1.0), tessellation.Indices);
+        scene.Entities.Add(new Entity { Name = $"Body {change.BodyId}", MeshId = meshId, Origin = centre });
+        _boxes[meshId] = Box(tessellation.Positions);
+        return true;
     }
 
     // The box around each live body that has a mesh, or null when none has one.

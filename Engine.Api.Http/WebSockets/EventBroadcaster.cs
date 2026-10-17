@@ -26,7 +26,7 @@ internal sealed class EventBroadcaster
 {
     private readonly object _lock = new();
     private readonly List<Subscriber> _subscribers = new();
-    private readonly List<Action<EventRecord>> _listeners = new();
+    private readonly List<Listener> _listeners = new();
 
     public int SubscriberCount
     {
@@ -88,21 +88,33 @@ internal sealed class EventBroadcaster
         lock (_lock) _subscribers.Remove(subscriber);
     }
 
+    // An a    // The report of an action that a throw removed (finding E62 of the codebase review
+    // of 2026-10-13, TASK-0074). The default writes one line with the code to the error
+    // output; a test replaces it. Until TASK-0074 the removal wrote nothing, and a host
+    // stopped following its session with no message.
+    internal Action<string> Report { get; set; } = message => Console.Error.WriteLine(message);
+
     // An action of the host that owns the session (ADR-0024 item 1, TASK-0071). It
-    // receives each later event, inside the commit, until the result is disposed.
-    // A caller that also reads the session calls this inside DocumentSession.Read,
-    // so that no commit falls between the read and the first event.
+    // receives each later event, inside the commit, until the result is disposed. An
+    // event of a commit that is in progress when Dispose returns can still arrive. A
+    // caller that also reads the session calls this inside DocumentSession.Read, so
+    // that no commit falls between the read and the first event.
+    //
+    // Each call gives one entry, and its disposal removes that entry once. Until
+    // TASK-0074 the disposal removed the first entry with an equal delegate, so one
+    // method subscribed two times lost the events of its second subscription (E64).
     public IDisposable Listen(Action<EventRecord> action)
     {
         ArgumentNullException.ThrowIfNull(action);
-        lock (_lock) _listeners.Add(action);
-        return new Listening(this, action);
+        var listener = new Listener(this, action);
+        lock (_lock) _listeners.Add(listener);
+        return listener;
     }
 
     public void OnEvent(EventRecord record)
     {
         Subscriber[] snapshot;
-        Action<EventRecord>[] listeners;
+        Listener[] listeners;
         lock (_lock)
         {
             snapshot = _subscribers.ToArray();
@@ -116,28 +128,36 @@ internal sealed class EventBroadcaster
             subscriber.TryEnqueue(record);
         }
 
-        // An action that throws is a defect of its host. It is removed, and the
-        // commit and each other action continue (ADR-0024 item 1).
+        // An action that throws is a defect of its host. It is removed and reported,
+        // and the commit and each other action continue (ADR-0024 item 1).
         foreach (var listener in listeners)
         {
             try
             {
-                listener(record);
+                listener.Action(record);
             }
-            catch (Exception)
+            catch (Exception exception)
             {
-                Unlisten(listener);
+                if (Remove(listener))
+                {
+                    Report($"{DiagnosticCodes.ApiSubscriptionRemoved}: the action of a subscription threw "
+                        + $"{exception.GetType().Name} at the event {record.Seq} ({record.Kind}), and it receives no later "
+                        + $"event: {exception.Message}");
+                }
             }
         }
     }
 
-    private void Unlisten(Action<EventRecord> action)
+    private bool Remove(Listener listener)
     {
-        lock (_lock) _listeners.Remove(action);
+        lock (_lock) return _listeners.Remove(listener);
     }
 
-    private sealed class Listening(EventBroadcaster broadcaster, Action<EventRecord> action) : IDisposable
+    // One subscription. The list compares entries by reference.
+    private sealed class Listener(EventBroadcaster broadcaster, Action<EventRecord> action) : IDisposable
     {
-        public void Dispose() => broadcaster.Unlisten(action);
+        public Action<EventRecord> Action => action;
+
+        public void Dispose() => broadcaster.Remove(this);
     }
 }

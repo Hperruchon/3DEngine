@@ -1,17 +1,19 @@
 ---
 id: 0074
 title: The subscription reports and isolates its failures, and the renderer survives a resize, an old device and a bad camera
-status: Ready
+status: Done
 phase: P0.29
 opened: 2026-10-12
 depends-on: [0072]
-governed-by: [0004, 0005, 0006, 0007, 0009, 0010, 0011, 0017, 0019, 0020, 0021, 0022, 0023, 0024]
+governed-by: [0004, 0005, 0006, 0007, 0009, 0010, 0011, 0013, 0016, 0017, 0019, 0020, 0021, 0022, 0023, 0024]
 writes:
   create:
     - tasks/TASK-0074-host-and-render-gaps-of-the-eighth-review.md
   modify:
     - Engine.Api.Http/EngineHost.cs
     - Engine.Api.Http/WebSockets/EventBroadcaster.cs
+    - Engine.Api.Http/Endpoints/SchemaDiagnosticsEndpoint.cs
+    - Engine.Core/DiagnosticCodes.cs
     - Engine.Core/CommandBus.cs
     - Engine.Tests/Http/EngineHostSubscriptionTests.cs
     - 3DEngine/**
@@ -20,6 +22,7 @@ writes:
     - 3DEngine.Tests/**
     - docs/diagnostics.md
     - docs/register.md
+    - docs/roadmap.md
     - docs/CURRENT-STATE.md
   forbid:
     - Engine.Contracts/**
@@ -66,12 +69,81 @@ resize or a minimise, refuses a device that it cannot use with a message, and ch
 
 ## Acceptance criteria
 
-- [ ] Each new test fails before its correction, or an injection shows that it can fail.
-- [ ] A picture of the window after a minimise and a restore shows the scene. The owner accepts it.
-- [ ] A clean build (`--no-incremental`) gives zero errors and zero warnings.
-- [ ] Continuous integration passes on `ubuntu-latest`, `windows-latest` and `macos-latest`.
+- [x] Each new test fails before its correction, or an injection shows that it can fail. E61 and E65
+      have no automatic test (see "Weakest").
+- [x] A picture of the window after a minimise and a restore shows the scene. The owner accepts it
+      (2026-10-17).
+- [x] A clean build (`--no-incremental`) gives zero errors and zero warnings.
+- [ ] Continuous integration passes on `ubuntu-latest`, `windows-latest` and `macos-latest`. The
+      merge records the run.
+
+## Outcome
+
+Status: Done · v0.75 · the commit that carries this block.
+
+A failure of a subscription is reported with `W-API-SUBSCRIPTION-REMOVED` and touches no other
+subscriber; each payload is read-only, and each subscription is one entry. The desktop keeps the order of
+the live bodies, isolates the failure of one body, keeps drawing after a minimise, makes its swapchain
+again when the window changes, and refuses a device below Vulkan 1.3 or with no depth format with a
+message. A transform refuses a negative scale, the camera checks its parameters, a test holds the push
+constant block between the shader and the pipeline, and `compile.js` removes a byte order mark.
+
+## Method
+
+**Mechanical.** The new tests of E62, E63 and E64 each failed with the old rule put back in the new code,
+and 6 new cases of V10, V11 and V13 failed the same way. A shader that swapped the two matrices failed
+the test of the SPIR-V. A required version of 1.9 refused both devices of this computer with their
+reasons. A forced remake of the swapchain every 60 frames ran 634 times with no validation message. A
+source with a byte order mark compiled to the same SPIR-V and hashes. Run 38971865880 passed on the
+three runners, so lavapipe gives Vulkan 1.3. The owner accepted the picture after a minimise and a
+restore.
+
+**Judgement.** The camera checks each plane when it is set, and the pair of planes when it projects,
+because a caller can set the two in each order. The render pass moved from the swapchain to the
+presenter, so a new swapchain keeps each pipeline valid. V15 changes nothing: the measure shows no slow
+part at this size.
+
+**Weakest.** E61 and E65 have no automatic test: `SessionBodies` needs a GPU device, and the image test
+project was outside this write set. On this computer a minimise did not make the swapchain out of date,
+so only the injection ran the new path. The loop has no frame limit (7,194 frames each second), which
+keeps one core and the GPU busy.
 
 ## Notes for the implementer
 
 - **The diagnostic code.** E62 needs a new `W-` code, registered in `docs/diagnostics.md` in the same commit.
 - **The size.** About 2 to 3 evenings.
+
+## Progress
+
+- 2026-10-16: the task is active, first in the order of the owner of 2026-10-16. The write set now names
+  `Engine.Core/DiagnosticCodes.cs` and `Engine.Api.Http/Endpoints/SchemaDiagnosticsEndpoint.cs`: the new
+  `W-` code of E62 needs a constant and a row of `/schema/diagnostics` (`docs/diagnostics.md`, "Adding a
+  code"), and the task file named neither. TASK-0076 already did V12 (the camera frames the bodies) and the
+  synchronization part of V13. The two files bring ADR-0013 and ADR-0016 into `governed-by`.
+- 2026-10-16: E61 to E65. `SessionBodies` puts the live bodies in the queue inside the read, before the
+  subscription, gives no warning for a body that a command consumed before the frame, and writes a
+  warning for a failure of one body and continues. The broadcaster keeps one entry for each subscription,
+  removes it once, and reports a removed action with the new code `W-API-SUBSCRIPTION-REMOVED`. Each
+  payload is read-only. The three tests of E62, E63 and E64 each failed with the old rule put back. E61
+  and E65 have no automatic test: `SessionBodies` needs a GPU device, and `3DEngine.ImageTests` is outside
+  this write set.
+- 2026-10-16: V8 and V9. The presenter owns the surface and the render pass, skips a frame while the
+  surface has no area, and makes the swapchain, its framebuffers and its depth image again when the extent
+  changes or an acquire or a present gives OUT_OF_DATE or SUBOPTIMAL. A device must give Vulkan 1.3 and a
+  depth attachment of `D32_SFLOAT`, and the message of a refusal names each device and its reason. On this
+  computer a minimise and a restore kept the scene, but the driver kept the swapchain valid, so the new
+  path did not run; an injected remake every 60 frames ran it 634 times with no validation message, and
+  the scene stayed. An injected required version 1.9 refused both devices with their reasons.
+- 2026-10-16: V10, V11, V13, V14 and V15. A transform refuses a negative or infinite scale. The camera
+  checks its field of view, its near and far planes and the aspect, and a zoom between close planes no
+  longer throws. A test reads the push constant block of `mesh.vert` from the SPIR-V (two column-major
+  matrices at offsets 0 and 64; member 0 multiplies the position, member 1 its result), and
+  `RenderPipeline.WritePushConstants` writes the model-view matrix first. With the old rules put back,
+  6 of the new cases failed; a shader that swapped the two matrices failed the SPIR-V test. `glslc`
+  refuses a source with a byte order mark, so `compile.js` now removes the mark from the file before
+  the compile; a source with a mark then compiled to the same SPIR-V and the same hashes. V15, measured
+  with a probe that is not committed: 7,194 frames each second (no frame limit with the Mailbox mode),
+  and `Update` took 13 ms in 3.4 s, 7.6 ms at most. Nothing is slow at this size, so nothing changes.
+- 2026-10-17: the owner accepted the picture. Closed, after a clean build and a full local run of 459
+  tests (413 in `Engine.Tests`, 39 in `3DEngine.Tests`, 7 in `3DEngine.ImageTests`). The write set now
+  names `docs/roadmap.md`, for the line of P0.29 in the done list.

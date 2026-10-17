@@ -59,6 +59,7 @@ Therefore each approved objective must have a track here.
 - R5 — The desktop draws each live body of its session, from the events and GetTessellation. v0.70, TASK-0071, ADR-0024.
 - P0.28 — No file outside the gate files can empty the step "Test", and the gates see what MSBuild evaluates. v0.73, TASK-0073.
 - R6 — A person observes the cut of the first demonstration, and an image test with no window holds it. v0.74, TASK-0076, ADR-0025. The first objective is complete.
+- P0.29 — The subscription reports and isolates its failures, and the renderer survives a resize, an old device and a bad camera. v0.75, TASK-0074.
 
 ## Track 0 — Foundations
 

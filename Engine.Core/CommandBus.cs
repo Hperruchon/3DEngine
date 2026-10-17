@@ -1,3 +1,4 @@
+using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using Engine.Contracts;
@@ -312,11 +313,15 @@ public sealed class CommandBus
         return first;
     }
 
+    // The payload is read-only. The broadcaster gives one record to each subscriber, to
+    // each action of the host and to the ring of /events; until TASK-0074 an action could
+    // change the value that the ring kept (finding E63 of the codebase review of
+    // 2026-10-13).
     private EventRecord Event(long seq, Command command, string kind, Dictionary<string, object?> payload) => new(
         Seq: seq,
         Timestamp: DateTime.UtcNow,
         DocumentId: _document.DocumentId,
         CauseCommandId: command.CommandId,
         Kind: kind,
-        Payload: payload);
+        Payload: new ReadOnlyDictionary<string, object?>(payload));
 }

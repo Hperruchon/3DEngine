@@ -1,5 +1,6 @@
 using Engine.Api.Http;
 using Engine.Contracts;
+using Engine.Core;
 using Engine.Core.Commands;
 using Engine.Core.Geometry;
 
@@ -56,6 +57,68 @@ public class EngineHostSubscriptionTests
         Assert.Equal(CommandStatus.Applied, second.Status);
         Assert.Equal(1, failures);
         Assert.Equal(4, other.Count);
+    }
+
+    // Finding E62 of the codebase review of 2026-10-13 (TASK-0074): the removal of an
+    // action is reported once, with its registered code.
+    [Fact]
+    public async Task The_Removal_Of_An_Action_Is_Reported_With_Its_Code()
+    {
+        using var host = new EngineHost(new InProcessMeshBackend(), "managed", "test");
+        var reports = new List<string>();
+        host.Broadcaster.Report = reports.Add;
+        using var failing = host.Subscribe(_ => throw new InvalidOperationException("a defect of the host"));
+
+        await host.Session.Apply(new CreateBoxCommand { SizeX = 1, SizeY = 1, SizeZ = 1 });
+        await host.Session.Apply(new CreateBoxCommand { SizeX = 1, SizeY = 1, SizeZ = 1 });
+
+        var report = Assert.Single(reports);
+        Assert.StartsWith(DiagnosticCodes.ApiSubscriptionRemoved + ":", report, StringComparison.Ordinal);
+        Assert.Contains("a defect of the host", report, StringComparison.Ordinal);
+    }
+
+    // Finding E63 (TASK-0074): an action cannot change the payload that the ring of
+    // /events keeps.
+    [Fact]
+    public async Task An_Action_Cannot_Change_A_Payload()
+    {
+        using var host = new EngineHost(new InProcessMeshBackend(), "managed", "test");
+        EventRecord? created = null;
+        using var subscription = host.Subscribe(record =>
+        {
+            if (record.Kind == "body.created")
+                created = record;
+        });
+
+        await host.Session.Apply(new CreateBoxCommand { SizeX = 1, SizeY = 1, SizeZ = 1 });
+
+        var payload = Assert.IsAssignableFrom<IDictionary<string, object?>>(created!.Payload);
+        Assert.True(payload.IsReadOnly);
+        Assert.Throws<NotSupportedException>(() => payload["bodyId"] = Guid.Empty);
+    }
+
+    // Finding E64 (TASK-0074): one method subscribed two times is two subscriptions,
+    // and the disposal of the first one, even two times, leaves the second one.
+    [Fact]
+    public async Task Each_Subscription_Is_One_Entry_That_Its_Disposal_Removes_Once()
+    {
+        using var host = new EngineHost(new InProcessMeshBackend(), "managed", "test");
+        var counter = new Counter();
+        var first = host.Subscribe(counter.Count);
+        using var second = host.Subscribe(counter.Count);
+
+        first.Dispose();
+        first.Dispose();
+        await host.Session.Apply(new CreateBoxCommand { SizeX = 1, SizeY = 1, SizeZ = 1 });
+
+        Assert.Equal(2, counter.Events);
+    }
+
+    private sealed class Counter
+    {
+        public int Events { get; private set; }
+
+        public void Count(EventRecord record) => Events++;
     }
 
     // The way of ADR-0024: read the live bodies and subscribe in one read of the
