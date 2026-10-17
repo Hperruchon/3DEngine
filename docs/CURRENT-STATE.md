@@ -2157,3 +2157,30 @@ New tests: 2. The test list holds 461 (415 in `Engine.Tests`, 39 in `3DEngine.Te
 `3DEngine.ImageTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero
 warnings. Open entries: 15 of 15. New diagnostic codes: none. The next codebase review must come before
 ledger entry v0.77, so it is the next milestone.
+
+## v0.77 — The codebase review of 2026-10-17 (governance, TASK-0077)
+
+The review of 2026-10-13 examined v0.70, and v0.76 was the sixth entry after it, so this entry is the ninth
+codebase review: `docs/reviews/2026-10-17-codebase-review.md`, at `main` `2b8e928`. The gate put it before
+TASK-0055 and TASK-0040, which the order of the owner of 2026-10-16 had put first.
+
+**The state.** The first objective is complete, and each fix of the period held for the forms that it named:
+T48 to T53, E58 to E65, and V5, V6 and V8 to V14. The measures: 8,664 production lines in 127 files, 461 tests,
+0 warnings, and open findings 0 critical, 7 high, 26 medium and 41 low.
+
+**The new findings.** Twenty-four. Two are high: two files that are not gate files can leave no test in
+`Engine.Tests` with a green run (T54; I ran its first half), and the gates read MSBuild names with case
+(T55). One medium of the hosts: a stop can free the geometry backend under a running command (E66). E69 is
+a broken comment line from my edit script of TASK-0074.
+
+**The tasks.** TASK-0078 (P0.30) holds T54 to T61, and TASK-0079 (P0.31) holds E66 to E71 and V16 to V24.
+V25, the preview SDL with no Linux arm64, goes with decision D7. The register stays at 15 of 15.
+
+**Questions for the owner.** Q1: must TASK-0078 come before R7 (recommended: yes)? Q2: eight decisions for
+R7: touch hardware, pen, location, gestures, parity, keyboard alone, the version of SDL, and the synthetic
+mouse events of a touch. Q3: selection as a command (the roadmap row of R8) or as a state of the client
+(ADR-0007); the two records disagree. Q4: the estimate of R7, 5 to 7 evenings.
+
+New tests: none. The test list holds 461. `dotnet build 3DEngine.sln --no-incremental` gives zero errors and
+zero warnings. Open entries: 15 of 15. New diagnostic codes: none. The next codebase review must come before
+ledger entry v0.83.

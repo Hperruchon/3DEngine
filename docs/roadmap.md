@@ -97,6 +97,8 @@ This track removes each condition that blocks other work.
 | P0.27 | The hosts stop within a short limit, give a code for each failure of the start, and write compact JSON. TASK-0067. | 1 |
 | P0.28 | The test step cannot be emptied by a file that is not a gate file, and the gates see what MSBuild evaluates. TASK-0073. | 2–3 |
 | P0.29 | The subscription reports and isolates its failures, and the renderer survives a resize, an old device and a bad camera. TASK-0074. | 2–3 |
+| P0.30 | No file outside the gate files can empty a test project, and the gates read MSBuild names as MSBuild does. TASK-0078. | 2–3 |
+| P0.31 | A stop waits for a running command, and the present path is checked for hazards. TASK-0079. | 2 |
 
 ## Track P — The platform
 
@@ -163,7 +165,8 @@ The tracks are not strictly sequential, but three rules hold:
    that surely ran. P0.26 must be done before R3: the owner answered question Q1 of the codebase
    review of 2026-10-12 on 2026-10-12. P0.27 holds three low findings and has no place in the order. The
    codebase review of 2026-10-13 put P0.28 before R6 (question Q1, answered by the owner on 2026-10-14). P0.29 comes
-   after R6, except the parts that R6 takes.
+   after R6, except the parts that R6 takes. The codebase review of 2026-10-17 asks the owner whether P0.30
+   comes before R7 (question Q1); P0.31 has no place in the order.
 2. R2 blocks each later phase in track R. No mesh leaves the geometry backend today.
 3. K4 needs K0, K1 and K2. Do not start K4 before the reference model exists.
 

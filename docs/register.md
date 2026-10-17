@@ -331,6 +331,10 @@ run is a gate file, and the step "Test" fails below a floor of executed tests. T
 no detection of renames. The determinism gate and the dependency gate refuse each form of the review, and
 21 test cases hold those forms. The runner refuses an `async void` check, and two reviews may share a
 date. T4, T5, T7, T10, T13, T17, T23 and T25 stay.
+Progress 2026-10-17: the codebase review of 2026-10-17 finds the fixes of T48 to T53 held for their forms,
+and new forms: two files that are not gate files can leave no test in `Engine.Tests` with a green run
+(T54, high), the gates read MSBuild names with case (T55, high), and T56 to T61. T31 is worse through T54.
+TASK-0078 holds T54 to T61.
 
 ### R-0033 · Seven findings of the third codebase review in the engine and the hosts have no task
 - class: debt
