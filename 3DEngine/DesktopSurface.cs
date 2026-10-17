@@ -36,6 +36,7 @@ internal sealed class DesktopSurface : IDisposable
     public const int ExitSettingInvalid = 2;
     public const int ExitBackendUnavailable = 3;
     public const int ExitAddressInUse = 4;
+    public const int ExitStartFailed = 5;
 
     public const string PortSetting = "Desktop:Port";
 
@@ -95,6 +96,14 @@ internal sealed class DesktopSurface : IDisposable
         {
             app.DisposeAsync().AsTask().GetAwaiter().GetResult();
             return (null, ExitAddressInUse, $"The address is in use. Give another port with --port. {ex.Message}");
+        }
+        // Until TASK-0067 each other failure of the start, for example a port that the
+        // system refuses, ended the desktop with an unhandled exception (finding E59
+        // of the codebase review of 2026-10-12).
+        catch (Exception ex)
+        {
+            app.DisposeAsync().AsTask().GetAwaiter().GetResult();
+            return (null, ExitStartFailed, $"The surface did not start: {ex.Message}");
         }
 
         var boundRefusal = app.BoundAddressRefusal();

@@ -322,6 +322,34 @@ public class HostGuardTests : IClassFixture<WebApplicationFactory<Program>>
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
     }
 
+    // Finding E59 of the codebase review of 2026-10-12: a failure of the start other
+    // than a port in use ended the host with an unhandled exception and the exit code
+    // of a crash. A Kestrel endpoint named localhost with port 0 is such a failure on
+    // each operating system; the host now stops with the documented code 5 (TASK-0067).
+    [Fact]
+    public async Task A_Host_Whose_Start_Fails_Stops_With_Exit_Code_5()
+    {
+        using var process = StartHost("--Kestrel:Endpoints:Http:Url=http://localhost:0", httpPorts: null);
+        var errorText = process.StandardError.ReadToEndAsync();
+        var outputText = process.StandardOutput.ReadToEndAsync();
+        using var limit = new CancellationTokenSource(TimeSpan.FromSeconds(30));
+        try
+        {
+            await process.WaitForExitAsync(limit.Token);
+        }
+        catch (OperationCanceledException)
+        {
+            process.Kill(entireProcessTree: true);
+            Assert.Fail("The host did not exit within 30 seconds.");
+        }
+
+        Assert.Equal(5, process.ExitCode);
+        var error = await errorText;
+        Assert.Contains("The host did not start", error, StringComparison.Ordinal);
+        Assert.DoesNotContain("Unhandled exception", error, StringComparison.Ordinal);
+        GC.KeepAlive(outputText);
+    }
+
     // The host binary and its runtime configuration are in the test output,
     // because Engine.Tests references Engine.Api.Http.
     private static Process StartHost(string urls) => StartHost($"--urls {urls}", httpPorts: null);

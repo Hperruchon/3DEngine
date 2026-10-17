@@ -1,7 +1,7 @@
 ---
 id: 0067
 title: The hosts stop within a short limit, give a code for each failure of the start, and write compact JSON
-status: Ready
+status: Active
 phase: P0.27
 opened: 2026-10-12
 depends-on: [0065]
@@ -62,3 +62,13 @@ writes compact JSON.
 ## Notes for the implementer
 
 - **The size.** About 1 evening.
+
+## Progress
+
+- 2026-10-17: the task is active, second in the order of the owner of 2026-10-16. E58: the surface
+  library sets a stop limit of 2 s for each host. E59: each other failure of the start gives exit code 5
+  and a message in both hosts, and the app is disposed; the desktop also catches a failure before its
+  surface starts. E60: the HTTP API writes compact JSON. The three tests each failed with the old rule put
+  back: the stop took 30.0 s, the server crashed with -532462766, and the tessellation held line breaks.
+  The desktop has no test of its own for E59 (R-0039); a run with an endpoint `localhost` on port 0
+  stopped with exit code 5 and the message.

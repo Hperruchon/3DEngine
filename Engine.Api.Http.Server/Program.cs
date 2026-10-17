@@ -14,7 +14,8 @@ using Microsoft.AspNetCore.Connections;
 //
 // Exit codes: 1 for an address that is not loopback, before or after the start;
 // 3 when the native backend does not load (TASK-0036); 4 when the address is in
-// use (TASK-0062); 0 at a normal stop.
+// use (TASK-0062); 5 when the start fails for another reason, for example a port
+// that the system refuses (TASK-0067); 0 at a normal stop.
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -56,6 +57,14 @@ catch (IOException ex) when (ex.InnerException is AddressInUseException)
     Console.Error.WriteLine($"The address is in use: {ex.Message}");
     await app.DisposeAsync();
     return 4;
+}
+// Until TASK-0067 each other failure of the start ended the host with an unhandled
+// exception and the exit code of a crash (finding E59 of the review of 2026-10-12).
+catch (Exception ex)
+{
+    Console.Error.WriteLine($"The host did not start: {ex.Message}");
+    await app.DisposeAsync();
+    return 5;
 }
 
 var boundRefusal = app.BoundAddressRefusal();
