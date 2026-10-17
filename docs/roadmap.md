@@ -99,6 +99,7 @@ This track removes each condition that blocks other work.
 | P0.29 | The subscription reports and isolates its failures, and the renderer survives a resize, an old device and a bad camera. TASK-0074. | 2–3 |
 | P0.30 | No file outside the gate files can empty a test project, and the gates read MSBuild names as MSBuild does. TASK-0078. | 2–3 |
 | P0.31 | A stop waits for a running command, and the present path is checked for hazards. TASK-0079. | 2 |
+| P0.32 | The desktop uses a binding with SDL 3.2 or later. TASK-0081. | 1–2 |
 
 ## Track P — The platform
 
@@ -122,8 +123,8 @@ The first objective. Each phase ends with something that a person can observe.
 | R4 | A camera with depth. An orbit camera, reversed depth, and a draw list over the scene graph (ADR-0023). TASK-0070. | 5–7 |
 | R5 | Geometry from the engine. Subscribe to events, fetch a mesh, draw it. Subtract a double-precision origin before the narrowing to float. Choose `frontFace` together with the viewport flip. TASK-0071. | 6–8 |
 | R6 | Observe a cut. The live body set of ADR-0021 gives the result. A headless image test. TASK-0076. | 6–8 |
-| R7 | Device-tagged pointer samples. The intent layer and the parity test. | 4–7 |
-| R8 | Selection, name and visibility as commands. | 4–6 |
+| R7 | Device-tagged pointer samples. The intent layer and the parity test. TASK-0082. | 5–7 |
+| R8 | Name and visibility as commands. The selection stays a state of the client (ADR-0007; the owner, 2026-10-17). | 4–6 |
 | R9 | A transform gizmo at a constant screen size. | 5–8 |
 | R10 | A numeric pad and an expression evaluator. Each drag has a numeric equivalent. | 3–5 |
 | R11 | Escalated selection and a snap engine. | 4–6 |
@@ -165,8 +166,9 @@ The tracks are not strictly sequential, but three rules hold:
    that surely ran. P0.26 must be done before R3: the owner answered question Q1 of the codebase
    review of 2026-10-12 on 2026-10-12. P0.27 holds three low findings and has no place in the order. The
    codebase review of 2026-10-13 put P0.28 before R6 (question Q1, answered by the owner on 2026-10-14). P0.29 comes
-   after R6, except the parts that R6 takes. The codebase review of 2026-10-17 asks the owner whether P0.30
-   comes before R7 (question Q1); P0.31 has no place in the order.
+   after R6, except the parts that R6 takes. P0.30 and P0.32 come before R7 (the owner answered
+   questions Q1 and Q2, D7, of the codebase review of 2026-10-17 on 2026-10-17); P0.31 has no place in the
+   order.
 2. R2 blocks each later phase in track R. No mesh leaves the geometry backend today.
 3. K4 needs K0, K1 and K2. Do not start K4 before the reference model exists.
 
