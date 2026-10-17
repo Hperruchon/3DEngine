@@ -2102,3 +2102,33 @@ test list holds 447 (410 in `Engine.Tests`, 30 in `3DEngine.Tests`, 7 in `3DEngi
 Windows and macOS runners skip the image test. `dotnet build 3DEngine.sln --no-incremental` gives zero
 errors and zero warnings. Open entries: 15 of 15. New diagnostic codes: none. The next codebase review
 must come before ledger entry v0.77.
+
+## v0.75 — The subscription reports and isolates its failures, and the renderer survives a resize, an old device and a bad camera (P0.29, TASK-0074)
+
+The codebase review of 2026-10-13 found five low gaps in the subscription of R5 (E61 to E65) and eight in
+the render side (V8 to V15). TASK-0076 already did V12 and the synchronization part of V13. The owner put
+this task first in the order of 2026-10-16.
+
+**The change.**
+
+- E61 to E65: `SessionBodies` puts the live bodies in the queue inside the read and isolates the failure
+  of one body. The broadcaster keeps one entry for each subscription and reports a removed action with
+  the new code `W-API-SUBSCRIPTION-REMOVED`. Each payload is read-only.
+- V8, V9: the presenter skips a frame while the window has no area and makes the swapchain again when
+  the window changes; it owns the surface and the render pass. A device must give Vulkan 1.3 and the
+  depth format, and a refusal names each device and its reason.
+- V10, V11, V13, V14: a transform refuses a negative scale; the camera checks its parameters; a test
+  reads the push constant block from the SPIR-V; `compile.js` removes a byte order mark, which `glslc`
+  refuses. V15 is measured, and nothing changes.
+
+**Proof.** Each new test failed with its old rule put back. A forced remake of the swapchain ran 634 times
+with no validation message. Run 38971865880 passed on the three runners. The owner accepted the picture of
+the window after a minimise and a restore on 2026-10-17.
+
+**Correction.** The task file named neither `Engine.Core/DiagnosticCodes.cs` nor the endpoint
+`/schema/diagnostics`, which a new code needs, nor `docs/roadmap.md`; the task added each one.
+
+New tests: 12 (3 in `Engine.Tests`, 9 in `3DEngine.Tests`). The test list holds 459 (413 in
+`Engine.Tests`, 39 in `3DEngine.Tests`, 7 in `3DEngine.ImageTests`). `dotnet build 3DEngine.sln
+--no-incremental` gives zero errors and zero warnings. Open entries: 15 of 15. New diagnostic codes:
+`W-API-SUBSCRIPTION-REMOVED`. The next codebase review must come before ledger entry v0.77.

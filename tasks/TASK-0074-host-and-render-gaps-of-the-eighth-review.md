@@ -1,7 +1,7 @@
 ---
 id: 0074
 title: The subscription reports and isolates its failures, and the renderer survives a resize, an old device and a bad camera
-status: Active
+status: Done
 phase: P0.29
 opened: 2026-10-12
 depends-on: [0072]
@@ -22,6 +22,7 @@ writes:
     - 3DEngine.Tests/**
     - docs/diagnostics.md
     - docs/register.md
+    - docs/roadmap.md
     - docs/CURRENT-STATE.md
   forbid:
     - Engine.Contracts/**
@@ -68,10 +69,44 @@ resize or a minimise, refuses a device that it cannot use with a message, and ch
 
 ## Acceptance criteria
 
-- [ ] Each new test fails before its correction, or an injection shows that it can fail.
-- [ ] A picture of the window after a minimise and a restore shows the scene. The owner accepts it.
-- [ ] A clean build (`--no-incremental`) gives zero errors and zero warnings.
-- [ ] Continuous integration passes on `ubuntu-latest`, `windows-latest` and `macos-latest`.
+- [x] Each new test fails before its correction, or an injection shows that it can fail. E61 and E65
+      have no automatic test (see "Weakest").
+- [x] A picture of the window after a minimise and a restore shows the scene. The owner accepts it
+      (2026-10-17).
+- [x] A clean build (`--no-incremental`) gives zero errors and zero warnings.
+- [ ] Continuous integration passes on `ubuntu-latest`, `windows-latest` and `macos-latest`. The
+      merge records the run.
+
+## Outcome
+
+Status: Done · v0.75 · the commit that carries this block.
+
+A failure of a subscription is reported with `W-API-SUBSCRIPTION-REMOVED` and touches no other
+subscriber; each payload is read-only, and each subscription is one entry. The desktop keeps the order of
+the live bodies, isolates the failure of one body, keeps drawing after a minimise, makes its swapchain
+again when the window changes, and refuses a device below Vulkan 1.3 or with no depth format with a
+message. A transform refuses a negative scale, the camera checks its parameters, a test holds the push
+constant block between the shader and the pipeline, and `compile.js` removes a byte order mark.
+
+## Method
+
+**Mechanical.** The new tests of E62, E63 and E64 each failed with the old rule put back in the new code,
+and 6 new cases of V10, V11 and V13 failed the same way. A shader that swapped the two matrices failed
+the test of the SPIR-V. A required version of 1.9 refused both devices of this computer with their
+reasons. A forced remake of the swapchain every 60 frames ran 634 times with no validation message. A
+source with a byte order mark compiled to the same SPIR-V and hashes. Run 38971865880 passed on the
+three runners, so lavapipe gives Vulkan 1.3. The owner accepted the picture after a minimise and a
+restore.
+
+**Judgement.** The camera checks each plane when it is set, and the pair of planes when it projects,
+because a caller can set the two in each order. The render pass moved from the swapchain to the
+presenter, so a new swapchain keeps each pipeline valid. V15 changes nothing: the measure shows no slow
+part at this size.
+
+**Weakest.** E61 and E65 have no automatic test: `SessionBodies` needs a GPU device, and the image test
+project was outside this write set. On this computer a minimise did not make the swapchain out of date,
+so only the injection ran the new path. The loop has no frame limit (7,194 frames each second), which
+keeps one core and the GPU busy.
 
 ## Notes for the implementer
 
@@ -109,3 +144,6 @@ resize or a minimise, refuses a device that it cannot use with a message, and ch
   the compile; a source with a mark then compiled to the same SPIR-V and the same hashes. V15, measured
   with a probe that is not committed: 7,194 frames each second (no frame limit with the Mailbox mode),
   and `Update` took 13 ms in 3.4 s, 7.6 ms at most. Nothing is slow at this size, so nothing changes.
+- 2026-10-17: the owner accepted the picture. Closed, after a clean build and a full local run of 459
+  tests (413 in `Engine.Tests`, 39 in `3DEngine.Tests`, 7 in `3DEngine.ImageTests`). The write set now
+  names `docs/roadmap.md`, for the line of P0.29 in the done list.
