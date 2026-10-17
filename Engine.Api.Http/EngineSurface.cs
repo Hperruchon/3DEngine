@@ -27,6 +27,11 @@ namespace Engine.Api.Http;
 //   4. BoundAddressRefusal after the start; a refusal stops the host.
 public static class EngineSurface
 {
+    // The longest wait of a stop for an open request. The default of the framework is
+    // 30 s, and a local client that sent part of a request held the stop of a host for
+    // that time (finding E58 of the codebase review of 2026-10-12, TASK-0067).
+    public static readonly TimeSpan ShutdownTimeout = TimeSpan.FromSeconds(2);
+
     // Before the build. The host composes its session in the given function, and
     // the surface serves it. The function runs one time, when the first service
     // asks for the session.
@@ -40,6 +45,8 @@ public static class EngineSurface
         // (finding E41 of the review of 2026-10-09). This loader does not reload.
         builder.WebHost.ConfigureKestrel((context, options) =>
             options.Configure(context.Configuration.GetSection("Kestrel"), reloadOnChange: false));
+
+        builder.Services.Configure<Microsoft.Extensions.Hosting.HostOptions>(options => options.ShutdownTimeout = ShutdownTimeout);
 
         builder.Services.AddSingleton(session);
         builder.Services.AddSingleton(services => services.GetRequiredService<EngineHost>().Broadcaster);

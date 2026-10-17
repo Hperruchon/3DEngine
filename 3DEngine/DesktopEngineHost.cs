@@ -12,7 +12,20 @@ internal static class DesktopEngineHost
     // window closes too. The exit code is 0, or a code of DesktopSurface.
     public static int Run(string[] args)
     {
-        var (surface, exitCode, message) = DesktopSurface.Start(args);
+        // A failure before the start of the surface, for example a configuration that
+        // the framework cannot read, gives the code of a failed start (TASK-0067).
+        DesktopSurface? surface;
+        int exitCode;
+        string? message;
+        try
+        {
+            (surface, exitCode, message) = DesktopSurface.Start(args);
+        }
+        catch (Exception ex)
+        {
+            (surface, exitCode, message) = (null, DesktopSurface.ExitStartFailed, $"The surface did not start: {ex.Message}");
+        }
+
         if (surface is null)
         {
             Console.Error.WriteLine(message);

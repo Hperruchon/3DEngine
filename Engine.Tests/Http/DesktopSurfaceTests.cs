@@ -98,6 +98,27 @@ public class DesktopSurfaceTests
         Assert.True(clock.Elapsed < TimeSpan.FromSeconds(5), $"The host took {clock.Elapsed.TotalSeconds:F1} s to stop.");
     }
 
+    // Finding E58 of the codebase review of 2026-10-12: a client that sent part of a
+    // request held the stop of a host for 30 s, the default limit of the framework. The
+    // surface now sets a limit of 2 s (TASK-0067).
+    [Fact]
+    public async Task A_Host_With_A_Partial_Request_Stops_Within_5_Seconds()
+    {
+        var host = new EngineHost(new InProcessMeshBackend(), "managed", "test");
+        await using var app = await StartSurface(host);
+        var address = new Uri(app.Urls.First());
+        using var client = new System.Net.Sockets.TcpClient();
+        await client.ConnectAsync(address.Host, address.Port);
+        var partial = System.Text.Encoding.ASCII.GetBytes("POST /commands HTTP/1.1\r\nHost: 127.0.0.1\r\nContent-Length: 100\r\n\r\n{");
+        await client.GetStream().WriteAsync(partial);
+        await Task.Delay(200);
+
+        var clock = System.Diagnostics.Stopwatch.StartNew();
+        await app.StopAsync();
+
+        Assert.True(clock.Elapsed < TimeSpan.FromSeconds(5), $"The host took {clock.Elapsed.TotalSeconds:F1} s to stop.");
+    }
+
     // The steps of a host that mounts the surface, in the order of EngineSurface.
     private static async Task<WebApplication> StartSurface(EngineHost host)
     {

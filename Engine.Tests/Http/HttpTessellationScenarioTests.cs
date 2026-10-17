@@ -30,7 +30,13 @@ public class HttpTessellationScenarioTests(WebApplicationFactory<Program> factor
             parameters = new { bodyId },
         });
         response.EnsureSuccessStatusCode();
-        var root = JsonDocument.Parse(await response.Content.ReadAsStringAsync()).RootElement;
+        var text = await response.Content.ReadAsStringAsync();
+        var root = JsonDocument.Parse(text).RootElement;
+
+        // Compact JSON: no line break and no indent (finding E60 of the codebase review
+        // of 2026-10-12, TASK-0067).
+        Assert.DoesNotContain('\n', text);
+        Assert.DoesNotContain("  ", text, StringComparison.Ordinal);
 
         Assert.Equal(JsonValueKind.Null, root.GetProperty("error").ValueKind);
         var result = root.GetProperty("result");

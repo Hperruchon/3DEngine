@@ -2132,3 +2132,28 @@ New tests: 12 (3 in `Engine.Tests`, 9 in `3DEngine.Tests`). The test list holds 
 `Engine.Tests`, 39 in `3DEngine.Tests`, 7 in `3DEngine.ImageTests`). `dotnet build 3DEngine.sln
 --no-incremental` gives zero errors and zero warnings. Open entries: 15 of 15. New diagnostic codes:
 `W-API-SUBSCRIPTION-REMOVED`. The next codebase review must come before ledger entry v0.77.
+
+## v0.76 — The hosts stop within a short limit, give a code for each failure of the start, and write compact JSON (P0.27, TASK-0067)
+
+The codebase review of 2026-10-12 found three low gaps in the hosts of the surface (E58 to E60). The owner
+put this task second in the order of 2026-10-16.
+
+**The change.**
+
+- E58: the surface library sets a stop limit of 2 s, so an open request no longer holds the stop of a host
+  for 30 s.
+- E59: each failure of the start other than codes 1 to 4 gives exit code 5 and a message in
+  `engine-api-http` and in the desktop, and the app is disposed. This also ends the open part of E36
+  (R-0036). `3DEngine/Documentation/Running.md` gives the code.
+- E60: the HTTP API writes compact JSON; the command line keeps its indented output.
+
+**Proof.** With the old rules put back, the partial request held the stop for 30.0 s, the server crashed
+with the exit code -532462766, and the tessellation held line breaks; each new check failed. The desktop
+stopped with code 5 for the same endpoint.
+
+**Correction.** The task file did not name `docs/roadmap.md`; the task added it for the line of P0.27.
+
+New tests: 2. The test list holds 461 (415 in `Engine.Tests`, 39 in `3DEngine.Tests`, 7 in
+`3DEngine.ImageTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero
+warnings. Open entries: 15 of 15. New diagnostic codes: none. The next codebase review must come before
+ledger entry v0.77, so it is the next milestone.
