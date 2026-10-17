@@ -62,9 +62,13 @@ public class CodebaseReviewGateTests
     public void Each_Review_Declares_Its_Date_Commit_Ledger_And_Previous_Review()
     {
         var problems = new List<string>();
+        var versions = LedgerVersions(RepositoryFiles.Read("docs", "CURRENT-STATE.md"));
 
         foreach (var review in Reviews())
         {
+            if (review.Fields.TryGetValue("ledger", out var declared) && LedgerRefusal(declared, versions) is { } refusal)
+                problems.Add($"{review.Name}: {refusal}");
+
             foreach (var key in new[] { "date", "commit", "ledger", "previous" })
             {
                 if (!review.Fields.TryGetValue(key, out var value) || value.Length == 0)
@@ -242,6 +246,30 @@ public class CodebaseReviewGateTests
 
         return reviews;
     }
+
+    // Finding T61 of the codebase review of 2026-10-17: the gate took the declared
+    // version of a review and did not check it, so a review that declared v0.99
+    // silenced the rule of an overdue review. A declared version must have an entry in
+    // the ledger (TASK-0078).
+    [Theory]
+    [InlineData("v0.2", true)]
+    [InlineData("v0.3", false)]
+    [InlineData("v0.99", false)]
+    public void The_Ledger_Version_Of_A_Review_Must_Have_An_Entry(string declared, bool accepted)
+    {
+        var versions = LedgerVersions("# Ledger\n\n## v0.1 — The start\n\n## v0.2 — A review (TASK-0001)\n");
+
+        Assert.Equal(accepted, LedgerRefusal(declared, versions) is null);
+    }
+
+    private static HashSet<(int Major, int Minor)> LedgerVersions(string ledger)
+        => [.. LedgerHeading.Matches(ledger.Replace("\r", string.Empty, StringComparison.Ordinal))
+            .Select(m => (int.Parse(m.Groups[1].Value, CultureInfo.InvariantCulture), int.Parse(m.Groups[2].Value, CultureInfo.InvariantCulture)))];
+
+    private static string? LedgerRefusal(string declared, IReadOnlySet<(int Major, int Minor)> versions)
+        => ParseVersion(declared) is { } version && !versions.Contains(version)
+            ? $"'ledger' gives {declared}, and docs/CURRENT-STATE.md has no entry with that version"
+            : null;
 
     private static (int Major, int Minor)? ParseVersion(string text)
     {

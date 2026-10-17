@@ -121,3 +121,5 @@ compiler as they evaluate.
   program that `Engine.Tests` does not reference, as for T52.
 - 2026-10-17: T60. The workflow gives each job a token that reads the repository only, no checkout keeps
   the token, and the step of lavapipe writes the version of each package to the log. CI is the proof.
+- 2026-10-17: T61. The review gate requires that the declared `ledger` version of each review has an entry in
+  `docs/CURRENT-STATE.md`. Three cases hold it; with the old rule, the two versions with no entry passed.
