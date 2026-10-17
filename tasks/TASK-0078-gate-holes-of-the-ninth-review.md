@@ -95,3 +95,7 @@ compiler as they evaluate.
 - 2026-10-17: the task is active, first in the order of the owner of 2026-10-17 (question Q1 of the review,
   option A). Item 4 of the scope takes its second form: an exact count for each test project makes a skip
   of the image test on Ubuntu fail the run, so the file of the attribute needs no new rule of its own.
+- 2026-10-17: T54, first line. `TestAttributeGateTests` refuses a type, a nested type, a delegate or an alias
+  with a name that a test finds through `Xunit`, and a namespace named `Xunit`, in each test project. The
+  shadow file of the review failed it from the gate program, which passed that file before; the eight forms
+  are test cases.
