@@ -2233,3 +2233,23 @@ New tests: 34 in `Engine.Tests`. The test list holds 495 (449 in `Engine.Tests`,
 `3DEngine.ImageTests`). The gate program runs 81 checks in 123 runs. `dotnet build 3DEngine.sln
 --no-incremental` gives zero errors and zero warnings. Open entries: 15 of 15. New diagnostic codes: none. The
 next codebase review must come before ledger entry v0.83.
+
+## v0.80 — `/schema/events` gives the payload fields of each event kind (P0.22, TASK-0055)
+
+ADR-0008 §9 asks for the payload schema of each event kind, and the endpoint gave the kind only (finding E46).
+
+**The change.** Each entry of `/schema/events` gains `payload`: the fields that a message of its kind carries,
+in the form of the fields of `/schema/commands`. `command.applied` and `command.cancelled` carry `name` and
+`schemaVersion`; `command.rejected` also `errorCode`; `body.created` carries `bodyId` (guid) and `kind`;
+`body.consumed` carries `bodyId`; `subscription.resume` carries `fromSeq`; `subscription.reset` carries
+`documentId` and `snapshot`; the other kinds carry none. The field `kind` of each entry does not change.
+
+**Proof.** A test compares each payload that the bus emits in a scenario of each outcome with its entry; with a
+field removed from an entry, it named the field.
+
+**Correction.** The task file named neither `eng/test-floor.txt` nor `docs/roadmap.md`; the task added both.
+Since TASK-0078 each task that adds tests must name `eng/test-floor.txt` in its write set.
+
+New tests: 3. The test list holds 498 (452 in `Engine.Tests`, 39 in `3DEngine.Tests`, 7 in
+`3DEngine.ImageTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
+entries: 15 of 15. New diagnostic codes: none. The next codebase review must come before ledger entry v0.83.

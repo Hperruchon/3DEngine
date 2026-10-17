@@ -25,6 +25,7 @@ internal sealed record QuerySchemaItem(
     IReadOnlyDictionary<string, FieldSchema> Parameters,
     IReadOnlyDictionary<string, FieldSchema> Result);
 
-internal sealed record EventKindEntry(string Kind);
+// The kind of an event, and the fields that a message of that kind carries (TASK-0055).
+internal sealed record EventKindEntry(string Kind, IReadOnlyDictionary<string, FieldSchema> Payload);
 
 internal sealed record DiagnosticCodeEntry(string Code, string Severity, string Subsystem);
