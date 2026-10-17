@@ -2207,3 +2207,29 @@ command.
 New tests: none. The test list holds 461. `dotnet build 3DEngine.sln --no-incremental` gives zero errors and
 zero warnings. Open entries: 15 of 15. New diagnostic codes: none. The next codebase review must come before
 ledger entry v0.83.
+
+## v0.79 — No file outside the gate files can empty a test project, and the gates read MSBuild names as MSBuild does (P0.30, TASK-0078)
+
+The codebase review of 2026-10-17 found eight gaps in the checks of the pipeline, two of them high, and the owner
+put their task before R7 (question Q1, option A).
+
+**The change.**
+
+- T54: `TestAttributeGateTests` refuses a type, a nested type, a delegate or an alias with a name that a test
+  finds through `Xunit`, such as `FactAttribute` or `Assert`, in each test project.
+- T54, T58: `eng/count-tests.js` requires the exact count of each test project of `eng/test-floor.txt`, with
+  a value for one platform where needed, and one result file for each project and no other.
+- T55, T56: the dependency gate and the determinism gate read MSBuild names with no regard to case, and a
+  project reference with a wildcard is refused.
+- T57: the determinism gate binds each name of the log path and refuses a member that ends in `Native`, an
+  intrinsic of one platform, reflection other than a name, and a native import outside the Manifold binding.
+- T59, T60, T61: the runner fails an async lambda that returns void; the workflow reads the repository only and
+  logs the versions of lavapipe; a review must declare a ledger version that exists.
+
+**Proof.** Each form of the review failed its new check and passed the check of `main`; the cases of the new
+tests each failed with the old rule. Runs 39028617456 and 39029140388 passed on the three runners.
+
+New tests: 34 in `Engine.Tests`. The test list holds 495 (449 in `Engine.Tests`, 39 in `3DEngine.Tests`, 7 in
+`3DEngine.ImageTests`). The gate program runs 81 checks in 123 runs. `dotnet build 3DEngine.sln
+--no-incremental` gives zero errors and zero warnings. Open entries: 15 of 15. New diagnostic codes: none. The
+next codebase review must come before ledger entry v0.83.

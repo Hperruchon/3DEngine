@@ -335,6 +335,12 @@ Progress 2026-10-17: the codebase review of 2026-10-17 finds the fixes of T48 to
 and new forms: two files that are not gate files can leave no test in `Engine.Tests` with a green run
 (T54, high), the gates read MSBuild names with case (T55, high), and T56 to T61. T31 is worse through T54.
 TASK-0078 holds T54 to T61.
+Progress 2026-10-17: TASK-0078 corrected T54 to T61. A gate refuses a shadow of an attribute or of `Assert` of
+xUnit, each test project has an exact count with one result file, the gates read MSBuild names with no regard
+to case and refuse a wildcard reference, the determinism gate binds each name of the log path, the runner fails
+an async lambda that returns void, the workflow reads the repository only, and the review gate checks the
+declared ledger version. T31 stays open in part: the three gates that run engine code stay in the test process.
+T4, T5, T7, T10, T13, T17, T23 and T25 stay.
 
 ### R-0033 · Seven findings of the third codebase review in the engine and the hosts have no task
 - class: debt

@@ -1,7 +1,7 @@
 ---
 id: 0078
 title: No file outside the gate files can empty a test project, and the gates read MSBuild names as MSBuild does
-status: Active
+status: Done
 phase: P0.30
 opened: 2026-10-17
 depends-on: [0077]
@@ -76,11 +76,42 @@ compiler as they evaluate.
 
 ## Acceptance criteria
 
-- [ ] Each form of the review fails its check, and each injection of the review is in a test where a test
-      can hold it.
-- [ ] Each new test fails before its correction.
-- [ ] A clean build (`--no-incremental`) gives zero errors and zero warnings.
-- [ ] Continuous integration passes on `ubuntu-latest`, `windows-latest` and `macos-latest`.
+- [x] Each form of the review fails its check, and each injection of the review is in a test where a test
+      can hold it. T59 and T60 have no test (see "Weakest").
+- [x] Each new test fails before its correction.
+- [x] A clean build (`--no-incremental`) gives zero errors and zero warnings.
+- [ ] Continuous integration passes on `ubuntu-latest`, `windows-latest` and `macos-latest`. The
+      merge records the run.
+
+## Outcome
+
+Status: Done · v0.79 · the commit that carries this block.
+
+No file outside the gate files can take a test out of the pipeline with a green run: a gate refuses a shadow
+of the names of xUnit, and each test project must execute its exact count, with one result file. The gates
+read MSBuild names with no regard to case and refuse a wildcard reference; the determinism gate binds each
+name of the log path. The runner fails an async lambda that returns void, the workflow reads the repository
+only and logs the versions of lavapipe, and a review must declare a ledger version that exists.
+
+## Method
+
+**Mechanical.** Each correction met the form of the review first. The shadow file failed the new gate from the
+gate program, which passed it before. A real folder of results with one project removed and a forged result
+passed the count of `main` (1,439 against 437) and failed the new count three times. The new cases of T55 to
+T57 and T61 each failed with the old rule put back into the new code (8, 6 and 2 cases). The async lambda of
+T59 passed the runner of `main` and failed the new runner. Run 39028617456 proved the exact counts on the
+three runners, and run 39029140388 the workflow with a read-only token.
+
+**Judgement.** An exact count and not a floor: a floor has slack, and the review used it; an exact count asks
+each task that adds tests to write the new number, which the judge then shows. The determinism gate permits the
+name of a type or a member through reflection, because `Engine.Core/QueryBus.cs` reads one and it calls no
+code. The file of the attribute of the image test needs no rule of its own, because a skip on Ubuntu changes
+the exact count.
+
+**Weakest.** A test of one project can still overwrite the result file of another project that the runner
+already wrote, if it finds its name; the count then reads a forged number for that project. T59 and T60 have no
+test: the runner is a program that `Engine.Tests` does not reference, and the workflow runs only in the
+pipeline. The three gates that run engine code stay in the test process (T31).
 
 ## Notes for the implementer
 
@@ -123,3 +154,5 @@ compiler as they evaluate.
   the token, and the step of lavapipe writes the version of each package to the log. CI is the proof.
 - 2026-10-17: T61. The review gate requires that the declared `ledger` version of each review has an entry in
   `docs/CURRENT-STATE.md`. Three cases hold it; with the old rule, the two versions with no entry passed.
+- 2026-10-17: closed, after a clean build and a full local run of 495 tests (449 in `Engine.Tests`, 39 in
+  `3DEngine.Tests`, 7 in `3DEngine.ImageTests`) and 123 runs of 81 checks of the gate program.

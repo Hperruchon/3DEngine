@@ -61,6 +61,7 @@ Therefore each approved objective must have a track here.
 - R6 — A person observes the cut of the first demonstration, and an image test with no window holds it. v0.74, TASK-0076, ADR-0025. The first objective is complete.
 - P0.29 — The subscription reports and isolates its failures, and the renderer survives a resize, an old device and a bad camera. v0.75, TASK-0074.
 - P0.27 — The hosts stop within a short limit, give a code for each failure of the start, and write compact JSON. v0.76, TASK-0067.
+- P0.30 — No file outside the gate files can empty a test project, and the gates read MSBuild names as MSBuild does. v0.79, TASK-0078.
 
 ## Track 0 — Foundations
 
