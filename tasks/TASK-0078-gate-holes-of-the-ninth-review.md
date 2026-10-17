@@ -105,3 +105,8 @@ compiler as they evaluate.
   (1,439 against 437) and failed the new script for each of the three reasons. Nine test cases hold the
   rules. A skip of the image test on Ubuntu now lowers its exact count and fails the run, so its attribute
   file needs no rule of its own.
+- 2026-10-17: T55 and T56. The dependency gate and the determinism gate read the names of MSBuild elements
+  and attributes with no regard to case, the properties that import a file in each case, and the element
+  of a runtime identifier in each case; a project reference with a wildcard is refused. Eight new cases
+  hold the lower-case forms of the review and the wildcard; with names compared with case and no wildcard
+  check, each of the eight failed.

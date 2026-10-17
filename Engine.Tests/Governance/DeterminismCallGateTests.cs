@@ -73,7 +73,7 @@ public class DeterminismCallGateTests
     private static readonly Regex LineComment = new(@"//[^\n]*", RegexOptions.Compiled);
 
     private static readonly Regex RuntimeIdentifier = new(
-        @"<RuntimeIdentifiers?(\s[^>]*)?>(?<value>[^<]*)</RuntimeIdentifiers?>", RegexOptions.Compiled);
+        @"<RuntimeIdentifiers?(\s[^>]*)?>(?<value>[^<]*)</RuntimeIdentifiers?>", RegexOptions.Compiled | RegexOptions.IgnoreCase);
 
     [Fact]
     public void No_Source_In_The_Log_Path_Calls_A_Function_That_The_Determinism_Rules_Forbid()
@@ -234,6 +234,9 @@ public class DeterminismCallGateTests
     [InlineData("<Project><ItemGroup><Compile Include=\"..\\docs\\Outside.cs\" /></ItemGroup></Project>", "adds the item Compile")]
     [InlineData("<Project><ItemGroup><Analyzer Include=\"..\\docs\\Generator.dll\" /></ItemGroup></Project>", "adds the item Analyzer")]
     [InlineData("<Project><Target Name=\"T\"><CreateItem Include=\"x.cs\"><Output TaskParameter=\"Include\" ItemName=\"Compile\" /></CreateItem></Target></Project>", "makes Compile items")]
+    // Finding T55 of the codebase review of 2026-10-17: the same forms in lower case (TASK-0078).
+    [InlineData("<Project><itemgroup><compile include=\"..\\docs\\Outside.cs\" /></itemgroup></Project>", "adds the item compile")]
+    [InlineData("<Project><Target Name=\"T\"><CreateItem Include=\"x.cs\"><output TaskParameter=\"Include\" itemname=\"compile\" /></CreateItem></Target></Project>", "makes compile items")]
     public void Each_Form_Of_Finding_T49_In_A_Project_File_Is_An_Offence(string project, string expected)
     {
         var offences = SourceItemOffences("Probe.csproj", XDocument.Parse(project));
@@ -247,11 +250,15 @@ public class DeterminismCallGateTests
     {
         foreach (var element in document.Descendants())
         {
+            // With no regard to case, as MSBuild reads names (finding T55, TASK-0078).
             var name = element.Name.LocalName;
-            if (name is "Compile" or "Analyzer" && element.Attribute("Include") is not null)
-                yield return $"{relative} adds the item {name} {element.Attribute("Include")!.Value}";
-            else if (name == "Output" && element.Attribute("ItemName")?.Value is "Compile" or "Analyzer")
-                yield return $"{relative} makes {element.Attribute("ItemName")!.Value} items in a task";
+            var include = DependencyDirectionGateTests.Value(element, "Include");
+            var itemName = DependencyDirectionGateTests.Value(element, "ItemName");
+            if ((DependencyDirectionGateTests.Is(element, "Compile") || DependencyDirectionGateTests.Is(element, "Analyzer")) && include is not null)
+                yield return $"{relative} adds the item {name} {include}";
+            else if (DependencyDirectionGateTests.Is(element, "Output")
+                && (string.Equals(itemName, "Compile", StringComparison.OrdinalIgnoreCase) || string.Equals(itemName, "Analyzer", StringComparison.OrdinalIgnoreCase)))
+                yield return $"{relative} makes {itemName} items in a task";
         }
     }
 

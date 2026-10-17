@@ -41,9 +41,9 @@ public class DependencyDirectionGateTests
     {
         var document = XDocument.Load(file);
 
-        foreach (var item in document.Descendants().Where(e => e.Name.LocalName == itemName))
+        foreach (var item in document.Descendants().Where(e => Is(e, itemName)))
         {
-            var include = item.Attribute("Include")?.Value;
+            var include = Value(item, "Include");
             if (include is null)
                 continue;
 
@@ -70,6 +70,17 @@ public class DependencyDirectionGateTests
             + "trustworthy. Exclude the copy or give it its own name. Duplicates:\n  "
             + string.Join("\n  ", duplicates));
     }
+
+    // MSBuild reads the name of an element and of an attribute with no regard to case,
+    // so each gate that reads an MSBuild file does the same. Until TASK-0078 the gates
+    // compared names with case, and a lower-case projectreference, compile item or
+    // property that imports a file passed each gate while MSBuild used it (finding T55
+    // of the codebase review of 2026-10-17).
+    internal static bool Is(XElement element, string name)
+        => string.Equals(element.Name.LocalName, name, StringComparison.OrdinalIgnoreCase);
+
+    internal static string? Value(XElement element, string attribute)
+        => element.Attributes().FirstOrDefault(a => string.Equals(a.Name.LocalName, attribute, StringComparison.OrdinalIgnoreCase))?.Value;
 
     // The files that MSBuild reads for one project: the project file, each file
     // that it imports, and each Directory.Build.props and Directory.Build.targets
@@ -127,9 +138,9 @@ public class DependencyDirectionGateTests
     // $(MSBuildThisFileDirectory), a wildcard, or an absent file.
     private static IEnumerable<(string Path, string? File)> Imports(string file)
     {
-        foreach (var import in XDocument.Load(file).Descendants().Where(e => e.Name.LocalName == "Import"))
+        foreach (var import in XDocument.Load(file).Descendants().Where(e => Is(e, "Import")))
         {
-            var path = import.Attribute("Project")?.Value ?? string.Empty;
+            var path = Value(import, "Project") ?? string.Empty;
             if (path.Contains("$(", StringComparison.Ordinal) || path.IndexOfAny(['*', '?']) >= 0 || path.Trim().Length == 0)
             {
                 yield return (path, null);
@@ -163,7 +174,7 @@ public class DependencyDirectionGateTests
     // place.
     private static readonly Regex ImportProperty = new(
         @"^(Custom(Before|After)\w*|DirectoryBuild\w*Path|DirectoryPackagesPropsPath|Import(DirectoryBuild|DirectoryPackages|ProjectExtension|ByWildcard|UserLocationsByWildcard)\w*|MSBuildProjectExtensionsPath|BaseIntermediateOutputPath|MSBuildUserExtensionsPath)$",
-        RegexOptions.Compiled);
+        RegexOptions.Compiled | RegexOptions.IgnoreCase);
 
     // The SDKs that a project of the repository may name. An SDK is a set of
     // files that MSBuild imports, and a package can be an SDK.
@@ -201,6 +212,14 @@ public class DependencyDirectionGateTests
     [InlineData("<Project><PropertyGroup><DirectoryBuildPropsPath>..\\docs\\x.props</DirectoryBuildPropsPath></PropertyGroup></Project>", "sets the property DirectoryBuildPropsPath")]
     [InlineData("<Project><ItemGroup><Reference Include=\"3DEngine.Core\" /></ItemGroup></Project>", "references the assembly 3DEngine.Core")]
     [InlineData("<Project Sdk=\"Evil.Sdk/1.0\" />", "names the SDK Evil.Sdk/1.0")]
+    // Finding T55 of the codebase review of 2026-10-17: the same forms in lower case,
+    // which MSBuild reads (TASK-0078).
+    [InlineData("<Project><itemgroup><projectreference include=\"$(RenderKernel)\" /></itemgroup></Project>", "whose value MSBuild computes")]
+    [InlineData("<Project><propertygroup><customaftermicrosoftcommontargets>x.targets</customaftermicrosoftcommontargets></propertygroup></Project>", "sets the property customaftermicrosoftcommontargets")]
+    [InlineData("<Project><itemgroup><reference include=\"3DEngine.Core\" /></itemgroup></Project>", "references the assembly 3DEngine.Core")]
+    [InlineData("<Project sdk=\"Evil.Sdk\" />", "names the SDK Evil.Sdk")]
+    // Finding T56: a wildcard in a project reference (TASK-0078).
+    [InlineData("<Project><ItemGroup><ProjectReference Include=\"..\\3DEngine.Vulkan\\3DEngine.Vulka?.csproj\" /></ItemGroup></Project>", "with a wildcard")]
     [InlineData("<Project><Sdk Name=\"Other.Sdk\" /></Project>", "imports an SDK with the element Sdk")]
     [InlineData("<Project><Import Project=\"Sdk.targets\" Sdk=\"Third.Sdk\" /></Project>", "imports an SDK with the element Import")]
     public void Each_Form_Of_Finding_T50_Is_An_Offence(string project, string expected)
@@ -213,6 +232,25 @@ public class DependencyDirectionGateTests
     }
 
     // The third form of finding T50: an extension file in obj/ (TASK-0073).
+    [Fact]
+    public void A_Lower_Case_Project_Reference_Enters_The_Graph()
+    {
+        // Finding T55: the graph read only the element ProjectReference with this case,
+        // and a reference from Engine.Cli to the render kernel in lower case passed each
+        // rule (TASK-0078).
+        var file = Path.Combine(Directory.CreateTempSubdirectory("reference-").FullName, "Probe.csproj");
+        try
+        {
+            File.WriteAllText(file, "<Project><ItemGroup><projectreference include=\"..\\3DEngine.Core\\3DEngine.Core.csproj\" /></ItemGroup></Project>");
+
+            Assert.Equal([@"..\3DEngine.Core\3DEngine.Core.csproj"], Includes(file, "ProjectReference"));
+        }
+        finally
+        {
+            Directory.Delete(Path.GetDirectoryName(file)!, recursive: true);
+        }
+    }
+
     [Fact]
     public void An_Extension_File_In_Obj_Is_An_Offence()
     {
@@ -234,7 +272,7 @@ public class DependencyDirectionGateTests
 
     private static IEnumerable<string> ReferenceOffences(string relative, XDocument document)
     {
-        if (document.Root?.Attribute("Sdk")?.Value is { } sdks)
+        if (document.Root is { } root && Value(root, "Sdk") is { } sdks)
         {
             foreach (var sdk in sdks.Split(';', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
             {
@@ -246,15 +284,17 @@ public class DependencyDirectionGateTests
         foreach (var element in document.Descendants())
         {
             var name = element.Name.LocalName;
-            var include = element.Attribute("Include")?.Value;
+            var include = Value(element, "Include");
 
             if (include is not null && (include.Contains("$(", StringComparison.Ordinal) || include.Contains("@(", StringComparison.Ordinal) || include.Contains("%(", StringComparison.Ordinal)))
                 yield return $"{relative} has the item {name} '{include}', whose value MSBuild computes";
-            else if (name == "Reference" && include is not null)
+            else if (include is not null && Is(element, "ProjectReference") && include.IndexOfAny(['*', '?']) >= 0)
+                yield return $"{relative} has the item {name} '{include}' with a wildcard, which the graph cannot read";
+            else if (Is(element, "Reference") && include is not null)
                 yield return $"{relative} references the assembly {include}, which the graph does not read";
             else if (ImportProperty.IsMatch(name))
                 yield return $"{relative} sets the property {name}, which imports a file that the gate does not read";
-            else if (name == "Sdk" || (name == "Import" && element.Attribute("Sdk") is not null))
+            else if (Is(element, "Sdk") || (Is(element, "Import") && Value(element, "Sdk") is not null))
                 yield return $"{relative} imports an SDK with the element {name}";
         }
     }
