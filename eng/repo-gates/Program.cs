@@ -57,6 +57,22 @@ if (checks.Count == 0)
 var failures = 0;
 var runs = 0;
 
+// An async lambda or local function that returns void runs on after its call, so a
+// check that calls one ends before it and passes. The compiler makes each one a hidden
+// method with AsyncStateMachineAttribute, so the runner fails each such method of the
+// build. Until TASK-0078 the runner refused an async void check only, and a check that
+// called an async lambda passed (finding T59 of the codebase review of 2026-10-17).
+foreach (var (type, method) in typeof(DiagnosticsScanner).Assembly.GetTypes()
+    .SelectMany(type => type.GetMethods(Each).Select(method => (Type: type, Method: method)))
+    .Where(found => found.Method.ReturnType == typeof(void)
+        && found.Method.GetCustomAttribute<FactAttribute>() is null
+        && found.Method.GetCustomAttribute<System.Runtime.CompilerServices.AsyncStateMachineAttribute>() is not null)
+    .OrderBy(found => $"{found.Type.FullName}.{found.Method.Name}", StringComparer.Ordinal))
+{
+    Console.WriteLine($"FAIL  {type.FullName}.{method.Name}: an async method or lambda that returns void, whose end no check awaits");
+    failures++;
+}
+
 foreach (var (type, method) in checks)
 {
     var fact = method.GetCustomAttribute<FactAttribute>()!;

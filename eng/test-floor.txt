@@ -1,4 +1,9 @@
-# The least count of tests that the step "Test" of the pipeline must execute
-# (eng/count-tests.js, TASK-0073). A task that adds tests may raise it; a task that
-# removes tests lowers it in the same commit. This file is a gate file.
-437
+# The exact count of executed tests for each test project of the step "Test" of the
+# pipeline (eng/count-tests.js, TASK-0073, TASK-0078). Each line: the name of the test
+# assembly, its count, and an optional count for one platform (linux, windows or
+# macos). A task that adds or removes tests sets the new count in the same commit.
+# This file is a gate file.
+Engine.Tests 449
+3DEngine.Tests 39
+# The image test runs on Ubuntu only (ADR-0025 item 4, R-0040).
+3DEngine.ImageTests 6 linux=7
