@@ -1,0 +1,84 @@
+---
+id: 0079
+title: A stop waits for a running command, and the present path is checked for hazards
+status: Ready
+phase: P0.31
+opened: 2026-10-17
+depends-on: [0077]
+governed-by: [0004, 0005, 0007, 0009, 0010, 0011, 0013, 0016, 0017, 0018, 0019, 0020, 0021, 0022, 0023, 0024, 0025]
+writes:
+  create:
+    - tasks/TASK-0079-host-and-render-gaps-of-the-ninth-review.md
+  modify:
+    - Engine.Api.Http/**
+    - Engine.Api.Http.Server/**
+    - Engine.Core/DocumentSession.cs
+    - Engine.Tests/Http/**
+    - 3DEngine/**
+    - 3DEngine.Core/**
+    - 3DEngine.Vulkan/**
+    - 3DEngine.Tests/**
+    - 3DEngine.ImageTests/**
+    - docs/register.md
+    - docs/roadmap.md
+    - docs/CURRENT-STATE.md
+  forbid:
+    - Engine.Contracts/**
+    - Engine.Core/Commands/**
+    - Engine.Core/Queries/**
+    - Engine.Cli/**
+    - Engine.Geometry.Manifold/**
+    - eng/**
+    - docs/adr/**
+---
+
+# TASK-0079 — A stop waits for a running command, and the present path is checked for hazards
+
+This task uses Simplified Technical English (ASD-STE100). See `CLAUDE.md`, section "Language".
+
+## Context
+
+The codebase review of 2026-10-17 found gaps in the hosts and in the render side. Each finding gives its
+evidence in `docs/reviews/2026-10-17-codebase-review.md`.
+
+- E66 (medium): a stop frees the geometry backend while a command still runs.
+- E67 to E71 (low): the report of a removed action inside the commit, a crash of the server for a
+  configuration file, a broken comment line, the comment of the stop limit, and two start paths with no
+  disposal.
+- V16 to V24 (low): the present path under synchronization validation, the message of a failed image test,
+  a failed remake of the swapchain, a failed submit, the composite alpha, the messenger with no debug
+  utils, the values of the camera, a minimised window, and the comment of the push constant test.
+- V25 goes with decision D7 of question Q2 of the review (the version of SDL), and not with this task.
+
+## Goal
+
+A stop of a host never frees the backend under a running command, each start path ends in a documented
+code with the app disposed, and the present path of the desktop has run once under synchronization
+validation.
+
+## Scope (in)
+
+1. E66: before the backend goes, the session refuses new commands and waits until its serial section is
+   free; a test with a slow backend holds it.
+2. E67, E68, E70, E71: the report cannot throw or block into a commit; the server gives code 5 for a
+   configuration file that it cannot read; the comment gives the measured wait; each early return disposes
+   the app. E69: the broken comment line goes.
+3. V16: a switch runs the desktop with synchronization validation; the owner runs it once with a minimise,
+   a restore and the demonstration.
+4. V17 to V24: the image test gives the text of each message; a failed remake keeps the old state; a
+   failed submit is reported and each wait has a limit; the composite alpha comes from the surface; the
+   messenger needs debug utils; the camera refuses a distance of 0 and NaN and reports a box that the far
+   plane cannot hold; a minimised window waits for an event; the comment of the push constant test agrees
+   with the test.
+
+## Acceptance criteria
+
+- [ ] Each new test fails before its correction, or an injection shows that it can fail.
+- [ ] A run of the desktop with synchronization validation, a minimise, a restore and the demonstration
+      gives no validation message. The owner accepts the picture and the log.
+- [ ] A clean build (`--no-incremental`) gives zero errors and zero warnings.
+- [ ] Continuous integration passes on `ubuntu-latest`, `windows-latest` and `macos-latest`.
+
+## Notes for the implementer
+
+- **The size.** About 2 evenings.
