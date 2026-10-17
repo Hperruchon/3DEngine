@@ -91,21 +91,46 @@ public class WriteSetJudgeTests
 
     // The second line of T48: the step "Test" fails when fewer tests ran than the
     // floor, or when no result exists (TASK-0073).
+    // Since TASK-0078 each test project has an exact count, and the folder holds one
+    // result file for each project and no other. A project that leaves the run while
+    // another one grows, and a result file that a test writes, each passed the one
+    // floor of TASK-0073 (findings T54 and T58 of the codebase review of 2026-10-17).
     [Theory]
-    [InlineData(7, 0)]
-    [InlineData(8, 1)]
-    public void The_Count_Of_The_Tests_Fails_Below_The_Floor(int floor, int expectedExit)
+    [InlineData("exact", "windows", 0)]
+    [InlineData("the count of one platform", "linux", 0)]
+    [InlineData("one test fewer", "windows", 1)]
+    [InlineData("one test more", "windows", 1)]
+    [InlineData("a project left the run", "windows", 1)]
+    [InlineData("a second result of one project", "windows", 1)]
+    [InlineData("a result of another assembly", "windows", 1)]
+    [InlineData("a result of two assemblies", "windows", 1)]
+    [InlineData("no folder", "windows", 1)]
+    public void The_Count_Of_The_Tests_Is_Exact_For_Each_Project(string scenario, string platform, int expectedExit)
     {
+        static string Trx(string assembly, int executed, string? second = null)
+            => $"<TestRun><TestDefinitions><UnitTest storage=\"c:/work/{assembly}.dll\" />"
+            + (second is null ? "" : $"<UnitTest storage=\"c:/work/{second}.dll\" />")
+            + $"</TestDefinitions><ResultSummary><Counters total=\"{executed}\" executed=\"{executed}\" passed=\"{executed}\" /></ResultSummary></TestRun>";
+
         var folder = Directory.CreateTempSubdirectory("count-tests-").FullName;
         try
         {
-            File.WriteAllText(Path.Combine(folder, "a.trx"), "<TestRun><ResultSummary><Counters total=\"3\" executed=\"3\" passed=\"3\" /></ResultSummary></TestRun>");
-            Directory.CreateDirectory(Path.Combine(folder, "b"));
-            File.WriteAllText(Path.Combine(folder, "b", "b.trx"), "<TestRun><Counters total=\"4\" executed=\"4\" passed=\"4\" /></TestRun>");
-            File.WriteAllText(Path.Combine(folder, "floor.txt"), $"# a comment\n{floor}\n");
+            var results = Path.Combine(folder, "results");
+            Directory.CreateDirectory(Path.Combine(results, "b"));
+            File.WriteAllText(Path.Combine(folder, "counts.txt"), "# a comment\nA.Tests 3\nB.Tests 4 linux=5\n");
 
-            Assert.Equal(expectedExit, RunCount(folder, Path.Combine(folder, "floor.txt")));
-            Assert.Equal(1, RunCount(Path.Combine(folder, "absent"), Path.Combine(folder, "floor.txt")));
+            if (scenario != "a project left the run")
+                File.WriteAllText(Path.Combine(results, "a.trx"), Trx("A.Tests", scenario switch { "one test fewer" => 2, "one test more" => 4, _ => 3 }));
+            File.WriteAllText(Path.Combine(results, "b", "b.trx"), Trx("B.Tests", platform == "linux" ? 5 : 4));
+            if (scenario == "a second result of one project")
+                File.WriteAllText(Path.Combine(results, "a2.trx"), Trx("A.Tests", 3));
+            if (scenario == "a result of another assembly")
+                File.WriteAllText(Path.Combine(results, "extra.trx"), Trx("Forged.Tests", 1000));
+            if (scenario == "a result of two assemblies")
+                File.WriteAllText(Path.Combine(results, "two.trx"), Trx("A.Tests", 3, "B.Tests"));
+
+            var folderToRead = scenario == "no folder" ? Path.Combine(folder, "absent") : results;
+            Assert.Equal(expectedExit, RunCount(folderToRead, Path.Combine(folder, "counts.txt"), platform));
         }
         finally
         {
@@ -259,7 +284,7 @@ public class WriteSetJudgeTests
         }
     }
 
-    private static int RunCount(string folder, string floorFile)
+    private static int RunCount(string folder, string countFile, string platform)
     {
         var start = new System.Diagnostics.ProcessStartInfo("node")
         {
@@ -269,7 +294,8 @@ public class WriteSetJudgeTests
         };
         start.ArgumentList.Add(RepositoryFiles.Path("eng", "count-tests.js"));
         start.ArgumentList.Add(folder);
-        start.ArgumentList.Add(floorFile);
+        start.ArgumentList.Add(countFile);
+        start.ArgumentList.Add(platform);
         using var process = System.Diagnostics.Process.Start(start)!;
         process.StandardOutput.ReadToEnd();
         process.StandardError.ReadToEnd();

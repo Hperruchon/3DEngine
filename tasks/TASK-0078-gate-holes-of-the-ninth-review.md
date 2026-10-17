@@ -99,3 +99,9 @@ compiler as they evaluate.
   with a name that a test finds through `Xunit`, and a namespace named `Xunit`, in each test project. The
   shadow file of the review failed it from the gate program, which passed that file before; the eight forms
   are test cases.
+- 2026-10-17: T54, second line, and T58. `eng/count-tests.js` checks an exact count for each test project,
+  with an optional value for one platform, and requires one result file for each project and no other. A
+  real result folder with one project removed and a forged result of 1,000 tests passed the script of `main`
+  (1,439 against 437) and failed the new script for each of the three reasons. Nine test cases hold the
+  rules. A skip of the image test on Ubuntu now lowers its exact count and fails the run, so its attribute
+  file needs no rule of its own.

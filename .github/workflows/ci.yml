@@ -121,10 +121,13 @@ jobs:
           path: ${{ runner.temp }}/pictures
           if-no-files-found: ignore
 
-      # A run with fewer tests than the floor of eng/test-floor.txt fails. Until
-      # TASK-0073 a file that is not a gate file could take a test project out of the
-      # step above, and the step passed with no test (finding T48 of the codebase
-      # review of 2026-10-13). Both files are gate files.
+      # Each test project must execute its exact count of eng/test-floor.txt, with one
+      # result file and no other. Until TASK-0073 a file that is not a gate file could
+      # take a test project out of the step above, and the step passed with no test
+      # (finding T48 of the codebase review of 2026-10-13); the one floor of TASK-0073
+      # missed a project that left the run while another one grew, and a result file
+      # that a test wrote (findings T54 and T58 of the review of 2026-10-17, TASK-0078).
+      # Both files are gate files.
       - name: Count the tests
         run: node eng/count-tests.js "$RUNNER_TEMP/test-results" eng/test-floor.txt
 
