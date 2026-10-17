@@ -115,3 +115,7 @@ compiler as they evaluate.
   or a member, which `Engine.Core/QueryBus.cs` reads), and a native import outside the Manifold binding are
   offences. The six forms of the review are test cases; with only the names of the list bound, each of the
   six failed.
+- 2026-10-17: T59. The gate runner fails each async method or lambda of the build that returns void, so a
+  check that calls one cannot pass before its end. The probe of the review (an async lambda that fails
+  after 30 s) passed the runner of `main` and failed the new runner. No test holds it; the runner is a
+  program that `Engine.Tests` does not reference, as for T52.
