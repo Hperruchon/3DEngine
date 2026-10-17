@@ -2184,3 +2184,26 @@ mouse events of a touch. Q3: selection as a command (the roadmap row of R8) or a
 New tests: none. The test list holds 461. `dotnet build 3DEngine.sln --no-incremental` gives zero errors and
 zero warnings. Open entries: 15 of 15. New diagnostic codes: none. The next codebase review must come before
 ledger entry v0.83.
+
+## v0.78 — The decisions of the owner of 2026-10-17 (governance, TASK-0080)
+
+On 2026-10-17 the owner answered the four questions of the codebase review of 2026-10-17.
+
+**Q1, option A: TASK-0078 first.** P0.30 comes before R7.
+
+**Q2, the decisions of R7.** D1 A: synthetic scripts, and the touch path stays unverified until a check on a
+touch screen. D2 B: a pen takes the path of one finger. D3 A: the intent layer in a folder of
+`3DEngine.Core`, the translator of SDL events in `3DEngine.Vulkan`. D4 A with a change: the map of the
+review is the default, and the action of each gesture is a setting of the client. D5 A: the parity of intents
+and a coverage check. D6 B: the keyboard alone moves the camera. D7 B: a task before R7 moves to SDL 3.2 or
+later (P0.32, TASK-0081). D8 C: the hint off, and the synthetic mouse events of a touch dropped. TASK-0082
+holds R7 and writes these decisions as an ADR in its first commit.
+
+**Q3, option A.** The selection is a state of the client, as ADR-0007 says; the row of R8 no longer makes it a
+command.
+
+**Q4, option A.** R7 needs 5 to 7 evenings, and the upgrade of SDL 1 to 2 more.
+
+New tests: none. The test list holds 461. `dotnet build 3DEngine.sln --no-incremental` gives zero errors and
+zero warnings. Open entries: 15 of 15. New diagnostic codes: none. The next codebase review must come before
+ledger entry v0.83.
