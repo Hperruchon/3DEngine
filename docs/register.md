@@ -365,6 +365,8 @@ divergence the backend keeps its bodies, and a handler exception escapes the rep
 The version can go back through a cast of the log (E26). E29 to E39 are smaller defects in the replay,
 the queries, `/schema/backend`, the exit codes and the backend selection.
 Exit: each finding has a task, or it is corrected, or the owner accepts it and gives the reason.
+Progress 2026-10-17: TASK-0067 corrected the open part of E36: each failure of the start of a host has a
+documented exit code (5 for each failure other than codes 1 to 4), and no failure of the start crashes.
 
 ### R-0039 · No test calls the surface of the desktop host
 - class: debt
