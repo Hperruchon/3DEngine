@@ -110,6 +110,13 @@ public class DeterminismCallGateTests
     [InlineData("using System.Numerics;\ninternal static class C { internal static Complex P() => Complex.FromPolarCoordinates(1, 2); }", "calls System.Numerics.Complex.FromPolarCoordinates")]
     [InlineData("using System.Numerics;\ninternal static class C { internal static double A() => new Complex(1, 1).Phase; }", "calls System.Numerics.Complex.Phase")]
     [InlineData("internal static class R { internal static object? S() => typeof(Math).GetMethod(\"Sin\")!.Invoke(null, [1.0]); }", "calls System.Type.GetMethod")]
+    // The six forms of finding T57 of the codebase review of 2026-10-17 (TASK-0078).
+    [InlineData("using System.Runtime.Intrinsics;\nusing System.Runtime.Intrinsics.X86;\ninternal static class I { internal static Vector128<float> S(Vector128<float> v) => Sse.ReciprocalSqrt(v); }", "an intrinsic of one platform")]
+    [InlineData("using System.Runtime.Intrinsics;\nusing System.Runtime.Intrinsics.X86;\ninternal static class I { internal static Vector128<float> F(Vector128<float> a) => Fma.MultiplyAdd(a, a, a); }", "an intrinsic of one platform")]
+    [InlineData("using System.Runtime.Intrinsics;\ninternal static class I { internal static Vector128<int> C(Vector128<float> v) => Vector128.ConvertToInt32Native(v); }", "whose result can differ between processes")]
+    [InlineData("internal static class I { internal static double C(double x) => double.ClampNative(x, 0, 1); }", "whose result can differ between processes")]
+    [InlineData("using System.Reflection;\ninternal static class R { internal static object? S() => typeof(Math).GetTypeInfo().DeclaredMethods.First(m => m.Name == \"Sin\").Invoke(null, [1.0]); }", "which is reflection")]
+    [InlineData("using System.Runtime.InteropServices;\ninternal static class N { [DllImport(\"libm\", EntryPoint = \"sin\")] internal static extern double Sine(double x); }", "imports native code outside the Manifold binding")]
     [InlineData("using System.Linq.Expressions;\ninternal static class R { internal static Expression E() => Expression.Call(typeof(Math), \"Cos\", null, Expression.Constant(1.0)); }", "calls System.Linq.Expressions.Expression.Call")]
     public void Each_Form_Of_Finding_T49_In_A_Source_Is_An_Offence(string source, string expected)
     {
@@ -185,19 +192,46 @@ public class DeterminismCallGateTests
         foreach (var tree in trees)
         {
             var model = compilation.GetSemanticModel(tree);
+            var binding = tree.FilePath.StartsWith("Engine.Geometry.Manifold/", StringComparison.Ordinal);
             foreach (var name in tree.GetRoot().DescendantNodes().OfType<SimpleNameSyntax>())
             {
-                if (!ForbiddenMethods.Contains(name.Identifier.ValueText))
-                    continue;
-
+                var text = name.Identifier.ValueText;
                 var info = model.GetSymbolInfo(name);
                 ISymbol[] symbols = info.Symbol is { } symbol ? [symbol] : [.. info.CandidateSymbols];
                 var line = tree.GetLineSpan(name.Span).StartLinePosition.Line + 1;
 
-                if (symbols.Length == 0)
-                    offences.Add($"{tree.FilePath}:{line} names {name.Identifier.ValueText}, which the gate cannot bind");
-                else if (symbols.Where(s => s is IMethodSymbol or IPropertySymbol).FirstOrDefault(IsFrameworkMember) is { } member)
-                    offences.Add($"{tree.FilePath}:{line} calls {member.ContainingType.ToDisplayString()}.{member.Name}");
+                if (ForbiddenMethods.Contains(text))
+                {
+                    if (symbols.Length == 0)
+                        offences.Add($"{tree.FilePath}:{line} names {text}, which the gate cannot bind");
+                    else if (symbols.Where(s => s is IMethodSymbol or IPropertySymbol).FirstOrDefault(IsFrameworkMember) is { } member)
+                        offences.Add($"{tree.FilePath}:{line} calls {member.ContainingType.ToDisplayString()}.{member.Name}");
+                    continue;
+                }
+
+                // Since TASK-0078 the gate also binds each other name (finding T57 of the
+                // codebase review of 2026-10-17): a member of the framework whose name
+                // ends in Native gives a result that can differ between processes, an
+                // intrinsic of one platform gives a result of that platform, reflection
+                // calls a method that the source does not name, and a native import
+                // calls code that the gate cannot read. The Manifold binding of the log
+                // path imports its library by design (ADR-0014), so the last rule leaves
+                // it out.
+                if (symbols.FirstOrDefault(s => s is IMethodSymbol or IPropertySymbol or IFieldSymbol or INamedTypeSymbol && IsFrameworkMember(s)) is not { } used)
+                    continue;
+
+                var space = used.ContainingNamespace?.ToDisplayString() ?? string.Empty;
+                var owner = used is INamedTypeSymbol type ? type.ToDisplayString() : $"{used.ContainingType?.ToDisplayString()}.{used.Name}";
+                if (text.EndsWith("Native", StringComparison.Ordinal) && used is IMethodSymbol or IPropertySymbol)
+                    offences.Add($"{tree.FilePath}:{line} calls {owner}, whose result can differ between processes");
+                else if (PlatformIntrinsics.Any(prefix => space == prefix || space.StartsWith(prefix + ".", StringComparison.Ordinal)))
+                    offences.Add($"{tree.FilePath}:{line} uses {owner}, an intrinsic of one platform");
+                // The name of a type or of a member calls no code, so it stays permitted.
+                else if ((space == "System.Reflection" || space.StartsWith("System.Reflection.", StringComparison.Ordinal))
+                    && used is not IPropertySymbol { Name: "Name" or "FullName" or "Namespace" })
+                    offences.Add($"{tree.FilePath}:{line} uses {owner}, which is reflection");
+                else if (!binding && used is INamedTypeSymbol { Name: "DllImportAttribute" or "LibraryImportAttribute" or "NativeLibrary" } or IMethodSymbol { ContainingType.Name: "DllImportAttribute" or "LibraryImportAttribute" or "NativeLibrary" } or IPropertySymbol { ContainingType.Name: "NativeLibrary" })
+                    offences.Add($"{tree.FilePath}:{line} uses {owner}, which imports native code outside the Manifold binding");
             }
         }
 
@@ -300,6 +334,10 @@ public class DeterminismCallGateTests
     // A member of each namespace of the framework. Until TASK-0073 the list held
     // System, System.Numerics and System.Runtime.Intrinsics; reflection and
     // System.Linq.Expressions are in other namespaces (T49).
+    // The namespaces of the intrinsics of one platform (T57, TASK-0078).
+    private static readonly string[] PlatformIntrinsics =
+        ["System.Runtime.Intrinsics.X86", "System.Runtime.Intrinsics.Arm", "System.Runtime.Intrinsics.Wasm"];
+
     private static bool IsFrameworkMember(ISymbol member)
     {
         var space = member.ContainingNamespace?.ToDisplayString() ?? string.Empty;

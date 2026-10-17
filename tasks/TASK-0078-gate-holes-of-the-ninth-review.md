@@ -110,3 +110,8 @@ compiler as they evaluate.
   of a runtime identifier in each case; a project reference with a wildcard is refused. Eight new cases
   hold the lower-case forms of the review and the wildcard; with names compared with case and no wildcard
   check, each of the eight failed.
+- 2026-10-17: T57. The determinism gate binds each name of the log path: a member of the framework whose
+  name ends in `Native`, a member of the intrinsics of one platform, reflection (except the name of a type
+  or a member, which `Engine.Core/QueryBus.cs` reads), and a native import outside the Manifold binding are
+  offences. The six forms of the review are test cases; with only the names of the list bound, each of the
+  six failed.
