@@ -119,3 +119,5 @@ compiler as they evaluate.
   check that calls one cannot pass before its end. The probe of the review (an async lambda that fails
   after 30 s) passed the runner of `main` and failed the new runner. No test holds it; the runner is a
   program that `Engine.Tests` does not reference, as for T52.
+- 2026-10-17: T60. The workflow gives each job a token that reads the repository only, no checkout keeps
+  the token, and the step of lavapipe writes the version of each package to the log. CI is the proof.
