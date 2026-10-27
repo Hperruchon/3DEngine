@@ -323,9 +323,18 @@ the name `YYYY-MM-DD-codebase-review.md`. A second review on one day adds a suff
 letters or digits after the date, for example `YYYY-MM-DD-b-codebase-review.md` (TASK-0073). Do not change an earlier review to agree with the code. Write
 the next one. `Engine.Tests/Governance/CodebaseReviewGateTests.cs` reads this form.
 
-**When.** A review is due before the seventh milestone after the ledger version that the last review
-examined. The gate counts ledger entries in `docs/CURRENT-STATE.md`, not days, because objective 12
-says that time is irregular.
+**When.** A review is due when more than four product milestones, or more than twelve ledger entries of any
+kind, follow the ledger version that the last review examined (the owner, 2026-10-27, TASK-0083). A product
+milestone is a ledger entry whose task has a phase of track R, K, P or V, for example R7, K0, P8a or V1; a
+phase of track 0 (P0.nn) and a governance entry do not count. The gate reads the phase from the task file that
+the heading names, and counts it only when the row of that phase in `docs/roadmap.md` names the same task. An
+entry with no task counts toward the limit of twelve only. The gate counts ledger entries in
+`docs/CURRENT-STATE.md`, not days, because objective 12 says that time is irregular.
+
+**The order of the findings.** A critical or high finding goes into a task that comes before the next product
+phase. A medium or low finding goes into a task that comes after it. The review asks no question about this
+order. The answers of the owner to the questions of a review go into the first commit of the next task, not
+into a separate ledger entry.
 
 ```markdown
 ---

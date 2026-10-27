@@ -46,8 +46,9 @@ A session ends only in these conditions:
 - You registered each new diagnostic code.
 - You put each open question in `docs/register.md` with a date and a time limit.
 
-A codebase review is due before the seventh milestone after the last review. The build fails when
-it is late. `docs/templates.md`, section 7, gives the form. When evidence shows that an objective or
+A codebase review is due when more than four product milestones (tracks R, K, P and V) or more than
+twelve ledger entries of any kind follow the last review. The build fails when it is late.
+`docs/templates.md`, section 7, gives the form and the order of its findings. When evidence shows that an objective or
 the roadmap needs a change, report it to the owner. Do not change an objective without the owner.
 
 ## Authority diagram
