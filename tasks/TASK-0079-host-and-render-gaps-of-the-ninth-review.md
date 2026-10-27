@@ -117,3 +117,7 @@ validation.
 - 2026-10-27: V22. The camera refuses a distance that is 0, negative, NaN or infinite, a zoom of NaN and an
   aspect of NaN. `Frame` returns false when the sphere around the box is not between the planes, and the
   renderer of the desktop writes a warning. Seven new tests; the old checks failed each one.
+- 2026-10-27: a0494b6 does not build: `SceneRenderer` called `Log.Warn`, which is internal to
+  `3DEngine.Vulkan`. My command chain committed after a failed run of the tests. The next commit writes the
+  warning with `Console.WriteLine("[WARN] ...")`, as `SessionBodies` does, and the full suite passes. The
+  commits after it run the tests in a script that stops before the commit at a failure.

@@ -44,7 +44,7 @@ internal sealed unsafe class SceneRenderer : IDisposable
         if (_bodies.Apply(scene, _meshes, _device) && _bodies.Bounds is { } box
             && !camera.Frame(box.Min, box.Max, aspect))
         {
-            Log.Warn($"The bodies do not fit between the near plane ({camera.NearPlane}) and the far plane ({camera.FarPlane}) of the camera, so a part of them is not drawn.");
+            Console.WriteLine($"[WARN] The bodies do not fit between the near plane ({camera.NearPlane}) and the far plane ({camera.FarPlane}) of the camera, so a part of them is not drawn.");
         }
     }
 
