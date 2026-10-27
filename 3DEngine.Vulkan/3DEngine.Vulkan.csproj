@@ -22,7 +22,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Alimer.Bindings.SDL" Version="3.9.2" />
+    <PackageReference Include="Alimer.Bindings.SDL" Version="3.9.8" />
     <PackageReference Include="Vortice.Vulkan" Version="3.2.3" />
   </ItemGroup>
 

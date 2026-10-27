@@ -63,6 +63,8 @@ Therefore each approved objective must have a track here.
 - P0.27 — The hosts stop within a short limit, give a code for each failure of the start, and write compact JSON. v0.76, TASK-0067.
 - P0.30 — No file outside the gate files can empty a test project, and the gates read MSBuild names as MSBuild does. v0.79, TASK-0078.
 - P0.22 — `/schema/events` gives the payload fields of each event kind. v0.80, TASK-0055.
+- P0.33 — A codebase review follows the product milestones. v0.81, TASK-0083.
+- P0.32 — The desktop uses a binding with SDL 3.2 or later. v0.82, TASK-0081.
 
 ## Track 0 — Foundations
 
