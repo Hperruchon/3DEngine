@@ -30,6 +30,15 @@ public sealed unsafe class Presenter : IDisposable
     private PerFrame[] _perFrame;
     private uint _frameIndex;
 
+    // The longest wait for an image or for the end of a frame, in nanoseconds (finding
+    // V19 of the codebase review of 2026-10-17, TASK-0079). Until TASK-0079 each wait had
+    // no limit, and a submit that failed left a fence that no work signals, so the next
+    // acquire of that image waited for ever.
+    private const ulong FrameWaitLimitNs = 5_000_000_000;
+
+    // True after a remake of the swapchain failed; the next frame tries again (V18).
+    private bool _remakeFailed;
+
     internal Presenter(GraphicsDevice device, VkSurfaceKHR surface, Window window, VkQueue presentQueue)
     {
         _device = device;
@@ -77,8 +86,12 @@ public sealed unsafe class Presenter : IDisposable
         if (extent.width == 0 || extent.height == 0)
             return;
 
-        if (extent.width != Swapchain.Extent.width || extent.height != Swapchain.Extent.height)
+        if (_remakeFailed || extent.width != Swapchain.Extent.width || extent.height != Swapchain.Extent.height)
+        {
             Recreate(extent);
+            if (_remakeFailed)
+                return;
+        }
 
         VkResult result = AcquireNextImage(out _frameIndex);
         if (result == VkResult.ErrorOutOfDateKHR)
@@ -127,8 +140,11 @@ public sealed unsafe class Presenter : IDisposable
             pSignalSemaphores = &signalSemaphore
         };
 
-        // Submit command buffer to graphics queue
-        api.vkQueueSubmit(_device.GraphicsQueue, submitInfo, _perFrame[_frameIndex].QueueSubmitFence);
+        // Submit command buffer to graphics queue. A failed submit signals neither the
+        // semaphore nor the fence of the frame, so the presenter cannot go on (V19).
+        VkResult submitted = api.vkQueueSubmit(_device.GraphicsQueue, submitInfo, _perFrame[_frameIndex].QueueSubmitFence);
+        if (submitted != VkResult.Success)
+            throw new InvalidOperationException($"The submit of the frame of swapchain image {_frameIndex} failed: {submitted}.");
 
         result = PresentImage(_frameIndex);
 
@@ -154,15 +170,35 @@ public sealed unsafe class Presenter : IDisposable
     // Makes the swapchain, its framebuffers, its depth image and the resources of each
     // frame again, with the same render pass. A surface with no area keeps the old
     // swapchain until the next frame.
+    //
+    // The new swapchain comes first (finding V18 of the codebase review of 2026-10-17,
+    // TASK-0079). When it fails, the old swapchain and the resources of each frame stay,
+    // so the presenter can still be disposed, and the next frame tries again. The driver
+    // retires the old swapchain even when the creation fails, so the presenter draws no
+    // frame until a remake succeeds. Until TASK-0079 the resources of the frames went
+    // first, and a failure left a retired swapchain and no frames.
     private void Recreate(VkExtent2D extent)
     {
         if (extent.width == 0 || extent.height == 0)
             return;
 
         _device.WaitIdle();
-        DestroyPerFrame();
         var old = Swapchain;
-        Swapchain = new Swapchain(_device, _surface, _window, RenderPass, _format, old.Handle);
+        Swapchain created;
+        try
+        {
+            created = new Swapchain(_device, _surface, _window, RenderPass, _format, old.Handle);
+        }
+        catch (Exception ex)
+        {
+            _remakeFailed = true;
+            Log.Error($"The swapchain was not made again with the extent {extent.width} x {extent.height}: {ex.Message} The next frame tries again.");
+            return;
+        }
+
+        _remakeFailed = false;
+        DestroyPerFrame();
+        Swapchain = created;
         old.Dispose();
         _perFrame = CreatePerFrame(Swapchain.ImageCount);
         Recreations++;
@@ -239,7 +275,7 @@ public sealed unsafe class Presenter : IDisposable
             _recycledSemaphores.RemoveAt(_recycledSemaphores.Count - 1);
         }
 
-        VkResult result = api.vkAcquireNextImageKHR(Swapchain.Handle, ulong.MaxValue, acquireSemaphore, VkFence.Null, out imageIndex);
+        VkResult result = api.vkAcquireNextImageKHR(Swapchain.Handle, FrameWaitLimitNs, acquireSemaphore, VkFence.Null, out imageIndex);
 
         if (result != VkResult.Success && result != VkResult.SuboptimalKHR)
         {
@@ -249,7 +285,9 @@ public sealed unsafe class Presenter : IDisposable
 
         if (_perFrame[imageIndex].QueueSubmitFence != VkFence.Null)
         {
-            api.vkWaitForFences(_perFrame[imageIndex].QueueSubmitFence, true, ulong.MaxValue);
+            VkResult waited = api.vkWaitForFences(_perFrame[imageIndex].QueueSubmitFence, true, FrameWaitLimitNs);
+            if (waited != VkResult.Success)
+                throw new InvalidOperationException($"The last frame of swapchain image {imageIndex} did not end within {FrameWaitLimitNs / 1_000_000_000} s: {waited}.");
             api.vkResetFences(_perFrame[imageIndex].QueueSubmitFence);
         }
 

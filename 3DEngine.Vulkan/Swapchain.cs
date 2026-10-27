@@ -59,7 +59,7 @@ public sealed unsafe class Swapchain : IDisposable
             imageUsage = VkImageUsageFlags.ColorAttachment,
             imageSharingMode = VkSharingMode.Exclusive,
             preTransform = swapChainSupport.Capabilities.currentTransform,
-            compositeAlpha = VkCompositeAlphaFlagsKHR.Opaque,
+            compositeAlpha = ChooseCompositeAlpha(swapChainSupport.Capabilities.supportedCompositeAlpha),
             presentMode = presentMode,
             clipped = true,
             oldSwapchain = oldSwapchain
@@ -147,6 +147,30 @@ public sealed unsafe class Swapchain : IDisposable
         }
 
         return availableFormats[0];
+    }
+
+    // The composite alpha of the swapchain: opaque when the surface gives it, else the
+    // first mode that the surface gives in this order (finding V20 of the codebase review
+    // of 2026-10-17, TASK-0079). Until TASK-0079 the swapchain asked for opaque and did
+    // not read the modes of the surface, and some surfaces on Linux do not give opaque
+    // (register entry R-0022).
+    public static VkCompositeAlphaFlagsKHR ChooseCompositeAlpha(VkCompositeAlphaFlagsKHR supported)
+    {
+        VkCompositeAlphaFlagsKHR[] order =
+        [
+            VkCompositeAlphaFlagsKHR.Opaque,
+            VkCompositeAlphaFlagsKHR.Inherit,
+            VkCompositeAlphaFlagsKHR.PreMultiplied,
+            VkCompositeAlphaFlagsKHR.PostMultiplied,
+        ];
+
+        foreach (var mode in order)
+        {
+            if ((supported & mode) != 0)
+                return mode;
+        }
+
+        throw new InvalidOperationException($"The surface gives no composite alpha mode (supportedCompositeAlpha = {supported}).");
     }
 
     private static VkPresentModeKHR ChooseSwapPresentMode(ReadOnlySpan<VkPresentModeKHR> availablePresentModes)

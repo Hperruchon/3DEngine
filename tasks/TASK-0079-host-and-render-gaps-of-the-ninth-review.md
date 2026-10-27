@@ -109,3 +109,8 @@ validation.
   with the text of VUID-VkViewport-width-01770; before, the assertion gave a count only. The device
   reads debug utils from the implementation and from the enabled layers, and it makes the messenger only
   when debug utils is present. V21 has no test: each computer and runner of the project has debug utils.
+- 2026-10-27: V18, V19 and V20. A remake makes the new swapchain first, keeps the old state when it fails,
+  and tries again at the next frame. A failed submit throws with its result, and the acquire and the wait
+  for a frame have a limit of 5 s. The composite alpha comes from the modes of the surface; five tests
+  hold the choice, and the old choice of opaque failed four of them. The desktop run of V16 checks V18 and
+  V19.
