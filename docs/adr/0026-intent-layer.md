@@ -1,13 +1,13 @@
 ---
 id: 0026
 title: Device-tagged pointer samples, an intent layer, and a parity test of touch and mouse
-status: Accepted
+status: Amended
 topic: Rendering, clients
 date: 2026-10-27
 supersedes: []
 superseded-by: []
 amends: ['0023']
-amended-by: []
+amended-by: ['0027']
 affects:
   - 3DEngine.Core/Input/**
 enforced-by: 3DEngine.Tests/IntentParityTests.cs (TASK-0082 creates it)
@@ -40,7 +40,9 @@ order that puts R7 after the move to SDL 3.2 (TASK-0081).
    pointer, the position in pixels of the window, the pressure, the buttons, the modifier keys, the time and
    the phase (down, move, up or cancel). A wheel sample and a key sample are their own records. The host
    collects the samples of one frame into one input frame. A pen takes the path of one finger; the kind Pen
-   stays in the record.
+   stays in the record. A text sample records the text that the keyboard gives, and the keys of text editing
+   are keys of a key sample too (ADR-0027 item 5). The host gives each sample to the user interface first,
+   and a gesture that starts over a panel does not reach the state machine (ADR-0027 item 4).
 2. **Intents.** A pure state machine in `3DEngine.Core/Input/` turns the frames into intents with no kind of
    device: orbit, pan, zoom, select and cancel. It reads no clock and no device of its own, so a test gives it
    any sequence.
@@ -74,3 +76,5 @@ command, and the comparison of logs of anti-objective 7 starts with R8.
 ## History
 
 - 2026-10-27 · TASK-0082 · The record is written with the decisions D1 to D8 of the owner of 2026-10-17.
+- 2026-10-27 · TASK-0084 · ADR-0027 amends item 1: the text sample, the keys of text editing, and the user
+  interface that takes a sample before the state machine.

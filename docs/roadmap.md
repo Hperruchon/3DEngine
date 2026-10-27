@@ -112,11 +112,11 @@ This track removes each condition that blocks other work.
 
 | Phase | Content | Evenings |
 |---|---|---|
-| P8a | Persistence. A command log on disk. ADR-0015. Register entry R-0025 asks if the scope becomes a document file. | 3–5 |
+| P8a | The document file. The command log in JSON Lines, which the desktop opens and saves. Each applied command goes into the file before its result, with fsync; "Save" chooses a name only. The header records one length unit for the document, by default the millimetre, and each number stays a double in that unit. Each log entry records the backend of its command, and the bus writes it (anti-objective 10, KD3). ADR-0015 is written again (KD4, register entry R-0025). | 3–5 |
 | P8b | The container model. One document holds one part. An assembly holds references at a fixed version. | 5–8 |
 | P8c | Undo and redo. Add the inverse command. | 3–5 |
 | P8d | The three layers. Log, ordered feature list, regeneration cache. | 5–8 |
-| P8e | Units and dimension on each number. | 2–3 |
+| P8e | The unit in the numeric pad. The header of P8a holds the length unit of the document (KD4). | 1 |
 
 ## Track R — The renderer
 
@@ -131,8 +131,10 @@ The first objective. Each phase ends with something that a person can observe.
 | R5 | Geometry from the engine. Subscribe to events, fetch a mesh, draw it. Subtract a double-precision origin before the narrowing to float. Choose `frontFace` together with the viewport flip. TASK-0071. | 6–8 |
 | R6 | Observe a cut. The live body set of ADR-0021 gives the result. A headless image test. TASK-0076. | 6–8 |
 | R7 | Device-tagged pointer samples. The intent layer and the parity test. TASK-0082. | 5–7 |
-| R8 | Name and visibility as commands. The selection stays a state of the client (ADR-0007; the owner, 2026-10-17). | 4–6 |
-| R9 | A transform gizmo at a constant screen size. | 5–8 |
+| R7b | Text and panels. Dear ImGui through ImGui.NET, a first-party 2D renderer, and the input of the intent layer (ADR-0027). TASK-0084. | 4–6 |
+| R8a | Name and visibility in the engine. The commands `RenameBody` and `SetBodyVisibility`, the query `GetBodyInfo`, the event kind `body.changed`, and an ADR. | 3–4 |
+| R8b | Name and visibility in the desktop. The pick of one body, a highlight, the gestures, and the text field of R7b. The selection stays a state of the client (ADR-0007). The camera frames the bodies only when the set goes from empty to not empty (KD6). | 4–5 |
+| R9 | A transform gizmo at a constant screen size. After the milestone "CAD on one part" (KD2). | 5–8 |
 | R10 | A numeric pad and an expression evaluator. Each drag has a numeric equivalent. | 3–5 |
 | R11 | Escalated selection and a snap engine. | 4–6 |
 
@@ -143,10 +145,13 @@ boundary and each refused rung.
 
 | Phase | Content | Evenings |
 |---|---|---|
-| K0 | A feature graph over Manifold. No B-Rep. Deferred-query references. | 12–20 |
+| K0a | Extrude a closed profile of line segments over Manifold. No arc, because an arc needs a sine and a cosine (determinism rule 1). The first commit checks that the native package exports the extrude function (KD5). | 3–5 |
+| K0b | The extrude references its sketch, and a rebuild makes the solid again after an edit of the sketch. An ADR resolves the conflict with ADR-0021 (KD5). | 6–10 |
+| K0 | A feature graph over Manifold. No B-Rep. Deferred-query references. The rest after K0b. | 12–20 |
 | K1 | Exact predicates. A deterministic arithmetic layer. | 4–8 |
 | K2 | A 2D sketch model. Five entities and fourteen constraints. A sketch attaches to a datum. | 6–10 |
-| K3 | A constraint solver. Write it. | 12–20 |
+| K3a | A constraint solver for five constraints: coincident, horizontal, vertical, distance and fixed. It uses only `+ - * / sqrt`, and its output stays outside the log (KD5). | 8–12 |
+| K3 | The rest of the constraint solver, after K3a. Write it. | 4–8 |
 | K4 | Planar faces only, with a boolean. Provenance inside the kernel. | 35–55 |
 | K5 | Add the cylinder, the cone, the sphere and the torus. | 55–85 |
 | K6 | STEP export for the analytic subset. | 6–12 |
@@ -178,12 +183,18 @@ The tracks are not strictly sequential, but three rules hold:
    2026-10-27: P0.33, P0.32, R7, TASK-0040, then P0.31, whose findings are medium or low.
 2. R2 blocks each later phase in track R. No mesh leaves the geometry backend today.
 3. K4 needs K0, K1 and K2. Do not start K4 before the reference model exists.
+4. The path to the milestone "CAD on one part" (the owner, 2026-10-27, KD2): R7b, R8a, R8b, the codebase
+   review when its gate makes it due, P8a, P8c, R10, K2, K3a, K0a, then K0b. R9 comes after the milestone.
+   `docs/proposals/2026-10-27-path-to-cad-decision-sheet.md` gives the analysis. A slice of a phase has a
+   letter after its number (K0a, K0b, K3a), so that the review gate reads it as a phase of its track.
 
 The field `depends-on` of each task file holds the same order. `TaskGovernanceGateTests` verifies
 that each dependency names a task.
 
 Phase R6 gave the first objective that the owner named: create a box, subtract a second box, and
-observe the cut. P0.28 and R6 shipped it at v0.74, on 2026-10-16. The next objective has no estimate yet.
+observe the cut. P0.28 and R6 shipped it at v0.74, on 2026-10-16. The next milestone is "CAD on one part": a
+sketch with constraints, an extrude, and a solid that follows an edit of the sketch. The decision sheet of
+2026-10-27 estimates 43 to 67 evenings and two codebase reviews.
 
 ## Not on a track
 
