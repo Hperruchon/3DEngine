@@ -122,3 +122,9 @@ way, and a gesture outside the panel still moves the camera.
   gives, and `InputKey` gains Backspace, Delete, Home, End, Enter, Escape and Tab. `SdlInput` translates the
   text input of SDL and keeps the Control keys; the window turns on the text input. Three new tests; each one
   failed with its injection (no text case, no Control state, an editing key that zooms).
+- 2026-10-28: the renderer of the user interface (ADR-0027 item 3). `3DEngine.Vulkan/Ui/` holds the neutral
+  draw data, the first sampled texture, the first descriptor set and the first 2D pipeline; the shaders
+  `ui.vert` and `ui.frag` are compiled with their lines in `shaders.lock`. One pair of buffers for each slot,
+  because the presenter waits for the fence of an image before it reuses it. Five tests with no GPU; a
+  transform with no shift, a scissor with no scale and a wrong offset of the colour each failed one. The draw
+  itself waits for the image test of the next step.
