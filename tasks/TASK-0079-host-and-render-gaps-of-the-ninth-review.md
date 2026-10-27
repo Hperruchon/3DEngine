@@ -94,3 +94,8 @@ validation.
   free, and `EngineHost.Dispose` calls it before it frees the backend. `EngineHostStopTests` holds it with a
   backend whose `CreateBox` waits: a disposal with no close failed the test ("The backend was freed while
   the command still ran in it"). Close has no time limit, because a commit does not stop.
+- 2026-10-27: E67 and E69. The report of a removed action runs on the thread pool, out of the commit, and
+  a report that throws is lost. Two new tests: a report that throws, and a report that blocks. A report in
+  the commit failed both. The first version of the blocking test passed under that injection, because a
+  commit with no real wait ends before `Apply` returns its task; the test now starts `Apply` on the
+  thread pool. The broken comment line of the broadcaster goes.

@@ -65,16 +65,70 @@ public class EngineHostSubscriptionTests
     public async Task The_Removal_Of_An_Action_Is_Reported_With_Its_Code()
     {
         using var host = new EngineHost(new InProcessMeshBackend(), "managed", "test");
-        var reports = new List<string>();
-        host.Broadcaster.Report = reports.Add;
+        var reports = new System.Collections.Concurrent.ConcurrentQueue<string>();
+        var reported = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        host.Broadcaster.Report = message =>
+        {
+            reports.Enqueue(message);
+            reported.TrySetResult();
+        };
         using var failing = host.Subscribe(_ => throw new InvalidOperationException("a defect of the host"));
 
         await host.Session.Apply(new CreateBoxCommand { SizeX = 1, SizeY = 1, SizeZ = 1 });
         await host.Session.Apply(new CreateBoxCommand { SizeX = 1, SizeY = 1, SizeZ = 1 });
+        await reported.Task.WaitAsync(Limit);
+        await Task.Delay(100);
 
         var report = Assert.Single(reports);
         Assert.StartsWith(DiagnosticCodes.ApiSubscriptionRemoved + ":", report, StringComparison.Ordinal);
         Assert.Contains("a defect of the host", report, StringComparison.Ordinal);
+    }
+
+    private static readonly TimeSpan Limit = TimeSpan.FromSeconds(30);
+
+    // Finding E67 of the codebase review of 2026-10-17 (TASK-0079): the report ran
+    // inside the commit. A report that threw made Apply throw after the Document held
+    // the body, and the other actions missed the later events of that commit.
+    [Fact]
+    public async Task A_Report_That_Throws_Does_Not_Stop_The_Commit()
+    {
+        using var host = new EngineHost(new InProcessMeshBackend(), "managed", "test");
+        host.Broadcaster.Report = _ => throw new InvalidOperationException("a defect of the report");
+        using var failing = host.Subscribe(_ => throw new InvalidOperationException("a defect of the host"));
+        var other = new List<string>();
+        using var good = host.Subscribe(record => other.Add(record.Kind));
+
+        var result = await host.Session.Apply(new CreateBoxCommand { SizeX = 1, SizeY = 1, SizeZ = 1 });
+
+        Assert.Equal(CommandStatus.Applied, result.Status);
+        Assert.Equal(["command.applied", "body.created"], other);
+    }
+
+    // E67: a report that blocked held the serial section for its whole wait.
+    [Fact]
+    public async Task A_Report_That_Blocks_Does_Not_Hold_The_Session()
+    {
+        using var host = new EngineHost(new InProcessMeshBackend(), "managed", "test");
+        using var release = new ManualResetEventSlim();
+        host.Broadcaster.Report = _ => release.Wait(Limit);
+        using var failing = host.Subscribe(_ => throw new InvalidOperationException("a defect of the host"));
+
+        try
+        {
+            // On the thread pool: a commit with no real wait runs to its end before
+            // Apply returns its task, so a report that blocked the commit would also
+            // block this line and pass the limit below.
+            var apply = Task.Run(() => host.Session.Apply(new CreateBoxCommand { SizeX = 1, SizeY = 1, SizeZ = 1 }));
+            var read = await apply.WaitAsync(TimeSpan.FromSeconds(5))
+                .ContinueWith(_ => host.Session.Read((document, _) => document.Version)).Unwrap()
+                .WaitAsync(TimeSpan.FromSeconds(5));
+
+            Assert.Equal(1, read);
+        }
+        finally
+        {
+            release.Set();
+        }
     }
 
     // Finding E63 (TASK-0074): an action cannot change the payload that the ring of
