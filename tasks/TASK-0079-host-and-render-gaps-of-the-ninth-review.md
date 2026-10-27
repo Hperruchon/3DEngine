@@ -104,3 +104,8 @@ validation.
   code. The comment of the stop limit gives the measured wait: three runs gave 3.01 s to 3.02 s, as the
   review measured. Each early return of the two hosts disposes the app. E71 has no test: the review found
   it by reading, and the two paths have no failure that a test can cause on purpose.
+- 2026-10-27: V17 and V21. The device keeps the text of the first 100 messages of the validation layer,
+  and the image test gives each one in its assertion. An injected viewport of width 0 failed the test
+  with the text of VUID-VkViewport-width-01770; before, the assertion gave a count only. The device
+  reads debug utils from the implementation and from the enabled layers, and it makes the messenger only
+  when debug utils is present. V21 has no test: each computer and runner of the project has debug utils.

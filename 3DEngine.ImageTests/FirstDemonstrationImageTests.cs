@@ -73,8 +73,12 @@ public class FirstDemonstrationImageTests
 
         if (VulkanImageFactAttribute.InContinuousIntegration)
             Assert.True(synchronizationChecked, "In continuous integration the validation layer must check the synchronization.");
+        // The assertion gives the text of each message, so that the annotation of the
+        // pipeline shows it to a person with no sign-in (finding V17 of the codebase
+        // review of 2026-10-17, TASK-0079). Until TASK-0079 it gave a count only.
         Assert.True(GraphicsDevice.ValidationMessageCount == messagesBefore,
-            $"The validation layer gave {GraphicsDevice.ValidationMessageCount - messagesBefore} messages; the log of the test gives each one.");
+            $"The validation layer gave {GraphicsDevice.ValidationMessageCount - messagesBefore} messages:\n"
+            + string.Join("\n", GraphicsDevice.ValidationMessages.Skip(messagesBefore)));
 
         Assert.Equal(14, tessellation.VertexCount);
         Assert.Equal(24, tessellation.TriangleCount);

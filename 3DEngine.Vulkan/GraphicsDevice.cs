@@ -33,6 +33,13 @@ public unsafe sealed class GraphicsDevice : IDisposable
     // fails when the count grows (ADR-0025 item 5).
     private static int s_validationMessages;
 
+    // The text of the first messages, so that a test that fails gives them (finding V17
+    // of the codebase review of 2026-10-17, TASK-0079). Until TASK-0079 the callback
+    // wrote each message to the console only, and a failed image test gave a count.
+    // The limit keeps the memory of a long run small; the count goes on after it.
+    private const int KeptMessageLimit = 100;
+    private static readonly System.Collections.Concurrent.ConcurrentQueue<string> s_keptMessages = new();
+
     public readonly bool DebugUtils;
     public readonly VkInstance VkInstance;
 
@@ -63,10 +70,19 @@ public unsafe sealed class GraphicsDevice : IDisposable
         List<string> instanceLayers = enableValidation ? GetOptimalValidationLayers(availableInstanceLayers) : [];
         ValidationEnabled = instanceLayers.Count > 0;
 
-        if (availableInstanceExtensions.Contains(DebugUtilsExtension))
+        // The implementation or an enabled layer can give debug utils; the validation
+        // layer usually gives it. The messenger needs it (finding V21 of the codebase
+        // review of 2026-10-17, TASK-0079). Until TASK-0079 the code read the
+        // implementation only, and it made the messenger whenever the layer was on.
+        if (availableInstanceExtensions.Contains(DebugUtilsExtension)
+            || instanceLayers.Any(layer => GetInstanceExtensions(layer).Contains(DebugUtilsExtension)))
         {
             DebugUtils = true;
             instanceExtensions.Add(DebugUtilsExtension);
+        }
+        else if (ValidationEnabled)
+        {
+            Log.Warn($"No {DebugUtilsExtension}: the validation layer writes its messages itself, and no count or text of them is kept.");
         }
 
         if (window is not null && availableInstanceExtensions.Contains(SwapchainColorSpaceExtension))
@@ -112,7 +128,7 @@ public unsafe sealed class GraphicsDevice : IDisposable
             pEnabledValidationFeatures = &enabledFeature,
         };
 
-        if (ValidationEnabled)
+        if (ValidationEnabled && DebugUtils)
         {
             debugUtilsCreateInfo.messageSeverity = VkDebugUtilsMessageSeverityFlagsEXT.Error | VkDebugUtilsMessageSeverityFlagsEXT.Warning;
             debugUtilsCreateInfo.messageType = VkDebugUtilsMessageTypeFlagsEXT.Validation | VkDebugUtilsMessageTypeFlagsEXT.Performance;
@@ -136,7 +152,7 @@ public unsafe sealed class GraphicsDevice : IDisposable
 
         InstanceApi = GetApi(VkInstance);
 
-        if (ValidationEnabled)
+        if (ValidationEnabled && DebugUtils)
         {
             InstanceApi.vkCreateDebugUtilsMessengerEXT(&debugUtilsCreateInfo, null, out _debugMessenger).CheckResult();
         }
@@ -267,6 +283,10 @@ public unsafe sealed class GraphicsDevice : IDisposable
 
     // The count of the messages of the validation layer in this process.
     public static int ValidationMessageCount => Volatile.Read(ref s_validationMessages);
+
+    // The text of the first messages of the validation layer in this process, in their
+    // order, with their severity: at most KeptMessageLimit.
+    public static IReadOnlyList<string> ValidationMessages => [.. s_keptMessages];
 
     public void Dispose()
     {
@@ -421,9 +441,11 @@ public unsafe sealed class GraphicsDevice : IDisposable
         VkDebugUtilsMessengerCallbackDataEXT* pCallbackData,
         void* userData)
     {
-        Interlocked.Increment(ref s_validationMessages);
+        var number = Interlocked.Increment(ref s_validationMessages);
 
         string message = NativeStrings.Read(pCallbackData->pMessage);
+        if (number <= KeptMessageLimit)
+            s_keptMessages.Enqueue($"{messageSeverity} {messageTypes}: {message}");
         if (messageTypes == VkDebugUtilsMessageTypeFlagsEXT.Validation)
         {
             if (messageSeverity == VkDebugUtilsMessageSeverityFlagsEXT.Error)
