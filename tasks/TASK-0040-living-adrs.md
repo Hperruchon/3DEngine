@@ -126,3 +126,8 @@ which no code reads now. Since TASK-0053 the program `eng/write-set-check` is th
   and 8 hold the parts of ADR-0011 that stayed in force, and `affects` gains `Engine.Cli/**`.
   `docs/INDEX.md` names ADR-0019, and `CLAUDE.md` named no ADR-0011 already. TASK-0079 loses 0011 in
   `governed-by`. This changes a section "Decision": the owner accepts it with the summary.
+- 2026-10-27: ADR-0012 folds its in-file "Amendment 1" into items 1, 2, 3, 4 and 7, the consequences
+  and the validation rules, and gains "History". The scope said "sections 1 and 6"; the amendment
+  touched more sections, and item 6 (the snapshot) did not change. Where Amendment 1 said that the
+  operands stay, the text now names ADR-0021, which consumes them. This changes a section
+  "Decision": the owner accepts it with the summary.
