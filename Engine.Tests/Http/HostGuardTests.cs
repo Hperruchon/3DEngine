@@ -350,6 +350,46 @@ public class HostGuardTests : IClassFixture<WebApplicationFactory<Program>>
         GC.KeepAlive(outputText);
     }
 
+    // Finding E68 of the codebase review of 2026-10-17: a configuration file that the
+    // framework cannot read ended the host with an unhandled exception and the exit code
+    // of a crash. The host now stops with the documented code 5 (TASK-0079).
+    [Fact]
+    public async Task A_Host_With_A_Configuration_File_That_It_Cannot_Read_Stops_With_Exit_Code_5()
+    {
+        var folder = Directory.CreateTempSubdirectory("engine-api-http-").FullName;
+        File.WriteAllText(Path.Combine(folder, "appsettings.json"), "{ this is not json");
+        using var process = StartHost("--urls http://127.0.0.1:0", httpPorts: null, folder);
+        var errorText = process.StandardError.ReadToEndAsync();
+        var outputText = process.StandardOutput.ReadToEndAsync();
+        using var limit = new CancellationTokenSource(TimeSpan.FromSeconds(30));
+        try
+        {
+            await process.WaitForExitAsync(limit.Token);
+        }
+        catch (OperationCanceledException)
+        {
+            process.Kill(entireProcessTree: true);
+            Assert.Fail("The host did not exit within 30 seconds.");
+        }
+        finally
+        {
+            try
+            {
+                Directory.Delete(folder, recursive: true);
+            }
+            catch (IOException)
+            {
+                // A file that the stopped process still held stays in the folder of Path.GetTempPath.
+            }
+        }
+
+        var error = await errorText;
+        Assert.True(process.ExitCode == 5, $"The exit code is {process.ExitCode}. The error output: {error}");
+        Assert.Contains("The host did not start", error, StringComparison.Ordinal);
+        Assert.DoesNotContain("Unhandled exception", error, StringComparison.Ordinal);
+        GC.KeepAlive(outputText);
+    }
+
     // The host binary and its runtime configuration are in the test output,
     // because Engine.Tests references Engine.Api.Http.
     private static Process StartHost(string urls) => StartHost($"--urls {urls}", httpPorts: null);

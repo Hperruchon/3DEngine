@@ -27,9 +27,14 @@ namespace Engine.Api.Http;
 //   4. BoundAddressRefusal after the start; a refusal stops the host.
 public static class EngineSurface
 {
-    // The longest wait of a stop for an open request. The default of the framework is
-    // 30 s, and a local client that sent part of a request held the stop of a host for
-    // that time (finding E58 of the codebase review of 2026-10-12, TASK-0067).
+    // The limit that the framework gives to the wait of a stop for an open request. The
+    // default of the framework is 30 s, and a local client that sent part of a request
+    // held the stop of a host for that time (finding E58 of the codebase review of
+    // 2026-10-12, TASK-0067). The stop takes longer than this limit: a review agent
+    // measured 3.01 s for a request that a slow command held (finding E70 of the review
+    // of 2026-10-17), three runs of EngineHostStopTests gave 3.01 s to 3.02 s on
+    // 2026-10-27, and DesktopSurfaceTests permits 5 s. The disposal that follows the
+    // stop also waits for a command that still runs (DocumentSession.Close, TASK-0079).
     public static readonly TimeSpan ShutdownTimeout = TimeSpan.FromSeconds(2);
 
     // Before the build. The host composes its session in the given function, and

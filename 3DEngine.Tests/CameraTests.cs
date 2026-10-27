@@ -109,7 +109,7 @@ public class CameraTests
         var camera = new Camera { YawDegrees = 30, PitchDegrees = 20, Distance = 500 };
         (double X, double Y, double Z) min = (95, -5, -5), max = (105, 5, 5);
 
-        camera.Frame(min, max, aspect);
+        Assert.True(camera.Frame(min, max, aspect));
 
         Assert.Equal((100.0, 0.0, 0.0), camera.Target);
         Assert.Equal(30, camera.YawDegrees);
@@ -147,6 +147,43 @@ public class CameraTests
         camera.NearPlane = 10f;
         camera.FarPlane = 5f;
         Assert.Throws<InvalidOperationException>(() => camera.Projection(1f));
+    }
+
+    // Finding V22 of the codebase review of 2026-10-17 (TASK-0079): a distance of 0 gave a
+    // view of NaN, and an aspect of NaN passed the check of Frame and gave a distance of NaN.
+    [Theory]
+    [InlineData(0.0)]
+    [InlineData(-1.0)]
+    [InlineData(double.NaN)]
+    [InlineData(double.PositiveInfinity)]
+    public void The_Camera_Refuses_A_Distance_That_Draws_Nothing(double distance)
+    {
+        var camera = new Camera();
+
+        Assert.Throws<ArgumentOutOfRangeException>(() => camera.Distance = distance);
+        Assert.Equal(10.0, camera.Distance);
+    }
+
+    [Fact]
+    public void The_Camera_Refuses_A_Zoom_Or_An_Aspect_Of_NaN()
+    {
+        var camera = new Camera();
+
+        Assert.Throws<ArgumentOutOfRangeException>(() => camera.Zoom(double.NaN));
+        Assert.Throws<ArgumentOutOfRangeException>(() => camera.Frame((0, 0, 0), (1, 1, 1), float.NaN));
+        Assert.True(double.IsFinite(camera.Distance));
+    }
+
+    // V22: with a near plane of 1 and a far plane of 1.5 the distance was 2, beyond the far
+    // plane; a box of 3,000 units put the eye inside the body. Frame now says so.
+    [Theory]
+    [InlineData(1f, 1.5f, 1.0)]
+    [InlineData(0.1f, 1000f, 3000.0)]
+    public void Frame_Reports_A_Box_That_The_Planes_Cannot_Hold(float near, float far, double size)
+    {
+        var camera = new Camera { NearPlane = near, FarPlane = far };
+
+        Assert.False(camera.Frame((0, 0, 0), (size, size, size), 16f / 9f));
     }
 
     [Fact]

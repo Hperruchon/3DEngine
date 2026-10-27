@@ -2357,3 +2357,35 @@ New tests: 1. The test list holds 523 (461 in `Engine.Tests`, 55 in `3DEngine.Te
 `3DEngine.ImageTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings.
 Open entries: 15 of 15. New diagnostic codes: none. Since the review of v0.76, 1 product milestone and 8
 entries followed it.
+
+## v0.85 — A stop waits for a running command, and the present path is checked for hazards (P0.31, TASK-0079)
+
+TASK-0079 corrects the findings E66 to E71 and V16 to V24 of the codebase review of 2026-10-17.
+
+**The change.**
+
+- E66: `DocumentSession.Close` refuses each later call and waits until the serial section is free, and
+  `EngineHost.Dispose` calls it before it frees the backend.
+- E67, E69: the report of a removed action runs on the thread pool, out of the commit. The broken comment
+  line of the broadcaster goes.
+- E68, E70, E71: `engine-api-http` gives code 5 for a configuration file that it cannot read. Each early
+  return of the two hosts disposes the app. The comment of the stop limit gives the measured 3.01 s.
+- V16: the setting `Desktop:SynchronizationValidation` turns on the checks of synchronization.
+- V17, V21: a failed image test gives the text of each validation message. The messenger needs debug utils.
+- V18, V19, V20: a remake makes the new swapchain first and keeps the old state on a failure. A failed
+  submit throws, and each wait for a frame has a limit of 5 s. The composite alpha comes from the surface.
+- V22: the camera refuses a distance of 0 and NaN, and `Frame` reports a box that the planes cannot hold.
+- V23, V24: a minimised desktop waits for an event. The comment of the push constant test says what it holds.
+
+**Proof.** 17 new tests, and each one failed with its old rule put back. The desktop ran the
+demonstration, a minimise and a restore under synchronization validation with no message, and a forced
+remake every 60 frames ran 228 times with no message. The owner accepted the pictures and the log on
+2026-10-27.
+
+**What stays.** E71, V19 and V21 have no test. Commit a0494b6 does not build, and ada1542 corrects it. A
+minimise does not remake the swapchain on Windows here, so the check forced the remakes.
+
+New tests: 17. The test list holds 540 (466 in `Engine.Tests`, 67 in `3DEngine.Tests`, 7 in
+`3DEngine.ImageTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings.
+Open entries: 15 of 15. New diagnostic codes: none. Since the review of v0.76, 1 product milestone and 9
+entries followed it.

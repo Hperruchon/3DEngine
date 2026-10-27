@@ -27,6 +27,11 @@ namespace ThreeDEngine.Desktop;
 // The desktop is a composition root, so it chooses the native backend here
 // (ADR-0014 section 4). As each host does, it stops when the native library does
 // not load (TASK-0036).
+//
+// The setting "Desktop:SynchronizationValidation" (true or false, false by default)
+// also turns on the checks of synchronization of the validation layer, for a check of
+// the present path by a person (finding V16 of the codebase review of 2026-10-17,
+// TASK-0079). Give it as --Desktop:SynchronizationValidation=true.
 internal sealed class DesktopSurface : IDisposable
 {
     public const int DefaultPort = 5180;
@@ -40,14 +45,20 @@ internal sealed class DesktopSurface : IDisposable
 
     public const string PortSetting = "Desktop:Port";
 
+    public const string SynchronizationValidationSetting = "Desktop:SynchronizationValidation";
+
     private readonly WebApplication _app;
 
-    private DesktopSurface(WebApplication app, EngineHost host, string address)
+    private DesktopSurface(WebApplication app, EngineHost host, string address, bool synchronizationValidation)
     {
         _app = app;
         Host = host;
         Address = address;
+        SynchronizationValidation = synchronizationValidation;
     }
+
+    // True when the validation layer must also check the synchronization (V16).
+    public bool SynchronizationValidation { get; }
 
     // The session of the document that the desktop holds.
     public EngineHost Host { get; }
@@ -75,6 +86,10 @@ internal sealed class DesktopSurface : IDisposable
 
         builder.WebHost.UseUrls($"http://127.0.0.1:{port}");
 
+        var synchronizationSetting = builder.Configuration[SynchronizationValidationSetting] ?? "false";
+        if (!bool.TryParse(synchronizationSetting, out var synchronizationValidation))
+            return (null, ExitSettingInvalid, $"The setting '{SynchronizationValidationSetting}' must be true or false, and '{synchronizationSetting}' is not.");
+
         if (!ManifoldGeometryBackend.IsNativeAvailable())
             return (null, ExitBackendUnavailable, $"{DiagnosticCodes.GeomBackendInit}: {ManifoldGeometryBackend.UnavailableReason()}");
 
@@ -85,11 +100,15 @@ internal sealed class DesktopSurface : IDisposable
         // The container makes the session here, so it owns it, and the disposal of
         // the app disposes the backend. Before TASK-0062 the desktop made the
         // session itself, and nothing disposed it (finding E52 of the review of
-        // 2026-10-11).
-        var host = app.Services.GetRequiredService<EngineHost>();
-        app.MapEngineSurface();
+        // 2026-10-11). The session resolves inside the try, so that a throw there also
+        // disposes the app; until TASK-0079 it resolved before the try, and the outer
+        // catch of the desktop gave code 5 with the app not disposed (finding E71 of the
+        // codebase review of 2026-10-17).
+        EngineHost host;
         try
         {
+            host = app.Services.GetRequiredService<EngineHost>();
+            app.MapEngineSurface();
             app.StartAsync().GetAwaiter().GetResult();
         }
         catch (IOException ex) when (ex.InnerException is AddressInUseException)
@@ -114,7 +133,7 @@ internal sealed class DesktopSurface : IDisposable
             return (null, ExitAddressRefused, boundRefusal);
         }
 
-        return (new DesktopSurface(app, host, app.Urls.First()), 0, null);
+        return (new DesktopSurface(app, host, app.Urls.First(), synchronizationValidation), 0, null);
     }
 
     public void Dispose()

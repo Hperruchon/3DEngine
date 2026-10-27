@@ -1,7 +1,7 @@
 ---
 id: 0079
 title: A stop waits for a running command, and the present path is checked for hazards
-status: Ready
+status: Done
 phase: P0.31
 opened: 2026-10-17
 depends-on: [0040]
@@ -22,13 +22,15 @@ writes:
     - docs/register.md
     - docs/roadmap.md
     - docs/CURRENT-STATE.md
+    - eng/test-floor.txt
   forbid:
     - Engine.Contracts/**
     - Engine.Core/Commands/**
     - Engine.Core/Queries/**
     - Engine.Cli/**
     - Engine.Geometry.Manifold/**
-    - eng/**
+    - eng/write-set-check/**
+    - eng/repo-gates/**
     - docs/adr/**
 ---
 
@@ -73,12 +75,90 @@ validation.
 
 ## Acceptance criteria
 
-- [ ] Each new test fails before its correction, or an injection shows that it can fail.
-- [ ] A run of the desktop with synchronization validation, a minimise, a restore and the demonstration
-      gives no validation message. The owner accepts the picture and the log.
-- [ ] A clean build (`--no-incremental`) gives zero errors and zero warnings.
-- [ ] Continuous integration passes on `ubuntu-latest`, `windows-latest` and `macos-latest`.
+- [x] Each new test fails before its correction, or an injection shows that it can fail. E71, V19 and V21
+      have no test; "Weakest" gives the reason.
+- [x] A run of the desktop with synchronization validation, a minimise, a restore and the demonstration
+      gives no validation message. The owner accepted the pictures and the log on 2026-10-27.
+- [x] A clean build (`--no-incremental`) gives zero errors and zero warnings.
+- [ ] Continuous integration passes on `ubuntu-latest`, `windows-latest` and `macos-latest`. The merge
+      records the run.
+
+## Outcome
+
+Status: Done · v0.85 · the commit that carries this block.
+
+A stop of a host frees the backend only after the running command ends, and each start path of the two
+hosts ends in a documented code with the app disposed. The report of a removed action runs out of the
+commit. On the render side the presenter survives a failed remake, no wait has no limit, the composite
+alpha comes from the surface, the camera refuses values that draw nothing, a failed image test gives the
+text of each validation message, and a minimised desktop waits. The present path ran under the checks of
+synchronization, with no message.
+
+## Method
+
+**Mechanical.** 17 new tests: 5 in `Engine.Tests` and 12 in `3DEngine.Tests`. Each one failed with its
+old rule put back. The first version of the test of a blocking report could not fail, because a commit
+with no real wait ends before `Apply` returns; the injection found it. Three runs measured the stop
+limit at 3.01 s to 3.02 s. A minimised desktop used 4.86 s of processor time in 5 s with the old loop and
+0.00 s to 0.02 s with the new one. With the desktop under synchronization validation, the demonstration,
+a minimise and a restore gave no validation message. A temporary remake every 60 frames ran 228 times
+with no message, and its first remake failed on purpose and recovered.
+
+**Judgement.** `DocumentSession.Close` has no time limit: a commit does not stop, and a backend freed
+under a native call can corrupt memory, so a command that never ends holds the stop. The report of a
+removed action runs on the thread pool and a throw in it is lost, because it is the last channel for
+that message. A failed submit throws, because it signals no fence and no semaphore. `Camera.Frame`
+returns false and the desktop writes a warning, and the camera does not move the planes itself.
+
+**Weakest.** E71 has no test: no test can make the two paths fail on purpose. V21 has no test: each
+computer and runner has debug utils. V19 has no injection of a failed submit. A minimise and a restore do
+not remake the swapchain on this computer, and the window cannot change size, so the remakes of the
+check were forced. Commit a0494b6 does not build; ada1542 corrects it.
 
 ## Notes for the implementer
 
 - **The size.** About 2 evenings.
+
+## Progress
+
+- 2026-10-27: opened after TASK-0040 (v0.84). Since TASK-0078 a task that adds tests sets the exact count
+  in `eng/test-floor.txt`, so the write set names that file, and the forbid of `eng/**` becomes the two
+  programs of `eng/`, as in TASK-0082.
+- 2026-10-27: E66. `DocumentSession.Close` refuses each later call and waits until the serial section is
+  free, and `EngineHost.Dispose` calls it before it frees the backend. `EngineHostStopTests` holds it with a
+  backend whose `CreateBox` waits: a disposal with no close failed the test ("The backend was freed while
+  the command still ran in it"). Close has no time limit, because a commit does not stop.
+- 2026-10-27: E67 and E69. The report of a removed action runs on the thread pool, out of the commit, and
+  a report that throws is lost. Two new tests: a report that throws, and a report that blocks. A report in
+  the commit failed both. The first version of the blocking test passed under that injection, because a
+  commit with no real wait ends before `Apply` returns its task; the test now starts `Apply` on the
+  thread pool. The broken comment line of the broadcaster goes.
+- 2026-10-27: E68, E70 and E71. `engine-api-http` gives code 5 for a configuration file that it cannot
+  read; a process test holds it, and the old program failed it with an unhandled exception and a crash
+  code. The comment of the stop limit gives the measured wait: three runs gave 3.01 s to 3.02 s, as the
+  review measured. Each early return of the two hosts disposes the app. E71 has no test: the review found
+  it by reading, and the two paths have no failure that a test can cause on purpose.
+- 2026-10-27: V17 and V21. The device keeps the text of the first 100 messages of the validation layer,
+  and the image test gives each one in its assertion. An injected viewport of width 0 failed the test
+  with the text of VUID-VkViewport-width-01770; before, the assertion gave a count only. The device
+  reads debug utils from the implementation and from the enabled layers, and it makes the messenger only
+  when debug utils is present. V21 has no test: each computer and runner of the project has debug utils.
+- 2026-10-27: V18, V19 and V20. A remake makes the new swapchain first, keeps the old state when it fails,
+  and tries again at the next frame. A failed submit throws with its result, and the acquire and the wait
+  for a frame have a limit of 5 s. The composite alpha comes from the modes of the surface; five tests
+  hold the choice, and the old choice of opaque failed four of them. The desktop run of V16 checks V18 and
+  V19.
+- 2026-10-27: V22. The camera refuses a distance that is 0, negative, NaN or infinite, a zoom of NaN and an
+  aspect of NaN. `Frame` returns false when the sphere around the box is not between the planes, and the
+  renderer of the desktop writes a warning. Seven new tests; the old checks failed each one.
+- 2026-10-27: a0494b6 does not build: `SceneRenderer` called `Log.Warn`, which is internal to
+  `3DEngine.Vulkan`. My command chain committed after a failed run of the tests. The next commit writes the
+  warning with `Console.WriteLine("[WARN] ...")`, as `SessionBodies` does, and the full suite passes. The
+  commits after it run the tests in a script that stops before the commit at a failure.
+- 2026-10-27: V16, V23 and V24. The setting `Desktop:SynchronizationValidation` turns on the checks of
+  synchronization in the desktop, and the desktop writes the state of both checks at the start. While
+  the window has no area, the loop waits up to 100 ms for an event. The comment of the push constant test
+  now says what it holds: a swap of the arguments of the call in `Push` passed the 67 unit tests and
+  failed the image test in a run on 2026-10-27.
+- 2026-10-27: the owner accepted the pictures and the log of the check. Closed, after a clean build and a
+  full local run of 540 tests (466 in `Engine.Tests`, 67 in `3DEngine.Tests`, 7 in `3DEngine.ImageTests`).

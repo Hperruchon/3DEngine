@@ -41,8 +41,11 @@ internal sealed unsafe class SceneRenderer : IDisposable
     // frames the bodies for the aspect of the target.
     public void Update(Scene scene, Camera camera, float aspect)
     {
-        if (_bodies.Apply(scene, _meshes, _device) && _bodies.Bounds is { } box)
-            camera.Frame(box.Min, box.Max, aspect);
+        if (_bodies.Apply(scene, _meshes, _device) && _bodies.Bounds is { } box
+            && !camera.Frame(box.Min, box.Max, aspect))
+        {
+            Console.WriteLine($"[WARN] The bodies do not fit between the near plane ({camera.NearPlane}) and the far plane ({camera.FarPlane}) of the camera, so a part of them is not drawn.");
+        }
     }
 
     // Records the render pass of one frame: the clear, then each draw of the scene.

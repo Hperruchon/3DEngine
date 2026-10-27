@@ -5,8 +5,10 @@ using ThreeDEngine.Vulkan;
 namespace ThreeDEngine.Tests;
 
 // The interface between mesh.vert and RenderPipeline (finding V13 of the codebase review
-// of 2026-10-13, TASK-0074). Until this test, a swap of the two matrices in Push, or a
-// new member in the block of the shader, passed each test. The compiler strips the
+// of 2026-10-13, TASK-0074). Until this test, a swap of the two matrices in
+// WritePushConstants, or a new member in the block of the shader, passed each test. A swap
+// of the two arguments of the call in Push still passes these tests; the image test fails
+// on it (finding V24 of the codebase review of 2026-10-17, TASK-0079). The compiler strips the
 // names, so the test reads the structure of the SPIR-V: the block of the push constant
 // holds two column-major 4 x 4 matrices at offsets 0 and 64, member 0 multiplies the
 // position first, and member 1 multiplies that result. RenderPipeline writes the

@@ -15,11 +15,26 @@ using Microsoft.AspNetCore.Connections;
 // Exit codes: 1 for an address that is not loopback, before or after the start;
 // 3 when the native backend does not load (TASK-0036); 4 when the address is in
 // use (TASK-0062); 5 when the start fails for another reason, for example a port
-// that the system refuses (TASK-0067); 0 at a normal stop.
+// that the system refuses (TASK-0067), or a configuration that the framework cannot
+// read (TASK-0079); 0 at a normal stop.
 
-var builder = WebApplication.CreateBuilder(args);
+// Until TASK-0079 a configuration file that the framework cannot read, for example
+// an appsettings.json with an error, ended the host with an unhandled exception and
+// the exit code of a crash (finding E68 of the codebase review of 2026-10-17). The
+// desktop gave 5 for the same file.
+WebApplicationBuilder builder;
+string? refusal;
+try
+{
+    builder = WebApplication.CreateBuilder(args);
+    refusal = EngineSurface.ConfigurationRefusal(builder.Configuration);
+}
+catch (Exception ex)
+{
+    Console.Error.WriteLine($"The host did not start: {ex.Message}");
+    return 5;
+}
 
-var refusal = EngineSurface.ConfigurationRefusal(builder.Configuration);
 if (refusal is not null)
 {
     Console.Error.WriteLine(refusal);
@@ -29,7 +44,16 @@ if (refusal is not null)
 builder.Services.AddSingleton(HostBackendOptions.Native);
 builder.AddEngineSurface(services => ServerEngine.Create(services.GetRequiredService<HostBackendOptions>()));
 
-var app = builder.Build();
+WebApplication app;
+try
+{
+    app = builder.Build();
+}
+catch (Exception ex)
+{
+    Console.Error.WriteLine($"The host did not start: {ex.Message}");
+    return 5;
+}
 
 // The engine is built at the start and not at the first request, so that a host
 // with no native backend stops before it serves anything, with exit code 3, the
@@ -41,6 +65,7 @@ try
 catch (BackendUnavailableException ex)
 {
     Console.Error.WriteLine(ex.Message);
+    await app.DisposeAsync();
     return 3;
 }
 
@@ -72,6 +97,8 @@ if (boundRefusal is not null)
 {
     Console.Error.WriteLine(boundRefusal);
     await app.StopAsync();
+    // Until TASK-0079 this path returned with the app not disposed (finding E71).
+    await app.DisposeAsync();
     return 1;
 }
 

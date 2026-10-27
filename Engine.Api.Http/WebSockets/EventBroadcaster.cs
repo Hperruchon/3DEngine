@@ -88,10 +88,11 @@ internal sealed class EventBroadcaster
         lock (_lock) _subscribers.Remove(subscriber);
     }
 
-    // An a    // The report of an action that a throw removed (finding E62 of the codebase review
+    // The report of an action that a throw removed (finding E62 of the codebase review
     // of 2026-10-13, TASK-0074). The default writes one line with the code to the error
     // output; a test replaces it. Until TASK-0074 the removal wrote nothing, and a host
-    // stopped following its session with no message.
+    // stopped following its session with no message. The report runs after the commit,
+    // on the thread pool (Announce).
     internal Action<string> Report { get; set; } = message => Console.Error.WriteLine(message);
 
     // An action of the host that owns the session (ADR-0024 item 1, TASK-0071). It
@@ -140,11 +141,37 @@ internal sealed class EventBroadcaster
             {
                 if (Remove(listener))
                 {
-                    Report($"{DiagnosticCodes.ApiSubscriptionRemoved}: the action of a subscription threw "
+                    Announce($"{DiagnosticCodes.ApiSubscriptionRemoved}: the action of a subscription threw "
                         + $"{exception.GetType().Name} at the event {record.Seq} ({record.Kind}), and it receives no later "
                         + $"event: {exception.Message}");
                 }
             }
+        }
+    }
+
+    // The report runs on the thread pool, out of the commit, and a report that throws
+    // is lost (finding E67 of the codebase review of 2026-10-17, TASK-0079). Until
+    // TASK-0079 the report ran inside the commit: a report that threw stopped the
+    // commit after the Document held its change, so each later action and the ring
+    // missed the later events of that commit, and a report that blocked held the
+    // serial section. The flow of the commit does not reach the report, so a report
+    // that calls the session waits like each other caller.
+    private void Announce(string message)
+    {
+        var report = Report;
+        using (ExecutionContext.SuppressFlow())
+        {
+            ThreadPool.QueueUserWorkItem(_ =>
+            {
+                try
+                {
+                    report(message);
+                }
+                catch (Exception)
+                {
+                    // The report is the last channel for this message; no other exists.
+                }
+            });
         }
     }
 
