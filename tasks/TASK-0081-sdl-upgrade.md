@@ -1,7 +1,7 @@
 ---
 id: 0081
 title: The desktop uses a binding with SDL 3.2 or later
-status: Ready
+status: Active
 phase: P0.32
 opened: 2026-10-17
 depends-on: [0083]
@@ -68,3 +68,12 @@ The desktop runs on a binding whose native SDL is 3.2 or later, with no change o
 
 - **The order.** After TASK-0078 and before TASK-0082 (R7).
 - **The size.** About 1 to 2 evenings.
+
+## Progress
+
+- 2026-10-27: the task is active, second in the order of the owner of 2026-10-27. The newest version of
+  `Alimer.Bindings.SDL` is 3.9.8 (2025-04-04); its native `SDL3.dll` is version 3.2.10, and its runtimes are
+  `linux-x64`, `osx`, `win-arm64` and `win-x64`, still with no `linux-arm64`. The one pin in
+  `3DEngine.Vulkan/3DEngine.Vulkan.csproj` moved to 3.9.8; the solution built with no change of a call and no
+  warning, and the 506 tests passed. The desktop loaded SDL 3.2.10 and drew the first demonstration, before and
+  after a minimise, with no `[WARN]` and no `[ERROR]` line.
