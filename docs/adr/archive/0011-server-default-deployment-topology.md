@@ -1,13 +1,13 @@
 ---
 id: 0011
 title: Server-default deployment, embed for offline
-status: Amended
+status: Superseded
 topic: Clients, deployment
 date: 2026-05-12
 supersedes: []
-superseded-by: []
+superseded-by: ['0019']
 amends: []
-amended-by: ['0019']
+amended-by: []
 affects:
   - Engine.Api.Http/**
   - Engine.Cli/**
@@ -18,7 +18,7 @@ enforced-by: Engine.Tests/Http/HttpCreateBoxScenarioTests.cs
 
 ## Status
 
-Accepted — 2026-05-12
+Accepted — 2026-05-12. Superseded by ADR-0019 on 2026-10-27 (TASK-0040). Do not apply this record.
 
 ## Context
 

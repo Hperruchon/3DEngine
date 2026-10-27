@@ -122,3 +122,7 @@ which no code reads now. Since TASK-0053 the program `eng/write-set-check` is th
 - 2026-10-27: ADR-0004 folds the deployment shapes of ADR-0011 and ADR-0019 into item 4, and items 2
   and 5 lose Blazor. Its status is Accepted, and ADR-0011 no longer amends it. This changes a section
   "Decision": the owner accepts it with the summary of the four folds.
+- 2026-10-27: ADR-0019 supersedes ADR-0011, and ADR-0011 is in `docs/adr/archive/`. ADR-0019 items 7
+  and 8 hold the parts of ADR-0011 that stayed in force, and `affects` gains `Engine.Cli/**`.
+  `docs/INDEX.md` names ADR-0019, and `CLAUDE.md` named no ADR-0011 already. TASK-0079 loses 0011 in
+  `governed-by`. This changes a section "Decision": the owner accepts it with the summary.

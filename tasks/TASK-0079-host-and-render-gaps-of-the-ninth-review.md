@@ -5,7 +5,7 @@ status: Ready
 phase: P0.31
 opened: 2026-10-17
 depends-on: [0040]
-governed-by: [0004, 0005, 0007, 0009, 0010, 0011, 0013, 0016, 0017, 0018, 0019, 0020, 0021, 0022, 0023, 0024, 0025, 0026]
+governed-by: [0004, 0005, 0007, 0009, 0010, 0013, 0016, 0017, 0018, 0019, 0020, 0021, 0022, 0023, 0024, 0025, 0026]
 writes:
   create:
     - tasks/TASK-0079-host-and-render-gaps-of-the-ninth-review.md
