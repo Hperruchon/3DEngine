@@ -4,7 +4,7 @@ title: Each ADR in force holds its current decision in one text, and the archive
 status: Ready
 phase: governance
 opened: 2026-09-26
-depends-on: [0039]
+depends-on: [0082]
 governed-by: []
 writes:
   create:

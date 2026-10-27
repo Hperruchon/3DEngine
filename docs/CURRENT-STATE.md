@@ -2253,3 +2253,27 @@ Since TASK-0078 each task that adds tests must name `eng/test-floor.txt` in its 
 New tests: 3. The test list holds 498 (452 in `Engine.Tests`, 39 in `3DEngine.Tests`, 7 in
 `3DEngine.ImageTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
 entries: 15 of 15. New diagnostic codes: none. The next codebase review must come before ledger entry v0.83.
+
+## v0.81 — A codebase review follows the product milestones (P0.33, TASK-0083)
+
+On 2026-10-27 the owner decided how a review becomes due (decisions D1 to D5 of that date) and set the order of
+the next tasks.
+
+**The change.** A review is due when more than four product milestones, or more than twelve entries of any
+kind, follow the ledger version of the last review. A product milestone is an entry whose task has a phase of
+track R, K, P or V, read from its task file, and whose roadmap row names that task. Track 0 and governance
+entries count toward the limit of twelve only. A critical or high finding goes into a task before the next
+product phase, a medium or low finding after it, and the answers of the owner to a review go into the first
+commit of the next task. `CLAUDE.md`, section "Workflow", `docs/templates.md`, section 7, and
+`CodebaseReviewGateTests` give the rule.
+
+**The order.** P0.32 (TASK-0081), R7 (TASK-0082), TASK-0040, then P0.31 (TASK-0079). On TASK-0040 the owner
+chose its option A: the mechanical part, and one summary of the four folds for one acceptance.
+
+**Proof.** Three probe ledgers failed the gate of `main`; with the new gate, 7 governance entries passed, 5
+product entries failed and 13 entries failed. Eight test cases hold the rule.
+
+New tests: 8. The test list holds 506 (460 in `Engine.Tests`, 39 in `3DEngine.Tests`, 7 in
+`3DEngine.ImageTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
+entries: 15 of 15. New diagnostic codes: none. Since the review of v0.76, 0 product milestones and 5 entries
+followed it.

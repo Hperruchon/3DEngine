@@ -4,7 +4,7 @@ title: The desktop uses a binding with SDL 3.2 or later
 status: Ready
 phase: P0.32
 opened: 2026-10-17
-depends-on: [0080]
+depends-on: [0083]
 governed-by: [0007, 0017, 0019, 0022, 0023, 0025]
 writes:
   create:

@@ -16,11 +16,6 @@ namespace Engine.Tests.Governance;
 // docs/templates.md, section 7, gives the form that this gate reads.
 public class CodebaseReviewGateTests
 {
-    // A review is due when more than this quantity of milestones follows the
-    // ledger version that the last review examined. The plan examination in
-    // CLAUDE.md uses three, and a review costs more, therefore six.
-    private const int ReviewInterval = 6;
-
     // A suffix after the date, for example 2026-10-13-b, permits a second review on
     // one day. Until TASK-0073 the name held a date only, and a second review on one
     // day needed a false date (finding T53 of the review of 2026-10-13).
@@ -199,6 +194,16 @@ public class CodebaseReviewGateTests
         return problems;
     }
 
+    // The decision of the owner of 2026-10-27 (TASK-0083): a review is due when more than
+    // four product milestones, or more than twelve entries of any kind, follow the ledger
+    // version of the last review. A product milestone is an entry whose task has a phase
+    // of track R, K, P or V; the phase comes from the task file that the heading names,
+    // and counts only when the row of that phase in docs/roadmap.md names the same task.
+    // Until TASK-0083 each entry counted, with a limit of six, and the review and the record
+    // of the answers of the owner used two of the six.
+    private const int ProductMilestoneLimit = 4;
+    private const int EntryLimit = 12;
+
     [Fact]
     public void A_Review_Is_Not_Overdue()
     {
@@ -208,19 +213,100 @@ public class CodebaseReviewGateTests
         var reviewed = ParseVersion(latest!.Fields.GetValueOrDefault("ledger", string.Empty));
         Assert.True(reviewed is not null, $"{latest.Name}: 'ledger' is absent or not a version");
 
-        var ledger = RepositoryFiles.Read("docs", "CURRENT-STATE.md");
-        var after = LedgerHeading.Matches(ledger)
-            .Select(m => (Major: int.Parse(m.Groups[1].Value), Minor: int.Parse(m.Groups[2].Value)))
-            .Where(v => v.CompareTo(reviewed!.Value) > 0)
-            .Distinct()
-            .ToList();
+        var (product, entries) = MilestonesAfter(
+            reviewed!.Value,
+            RepositoryFiles.Read("docs", "CURRENT-STATE.md"),
+            PhaseOfTask,
+            RepositoryFiles.Read("docs", "roadmap.md"));
 
         Assert.True(
-            after.Count <= ReviewInterval,
+            product <= ProductMilestoneLimit && entries <= EntryLimit,
             $"A codebase review is due. The last review, {latest.Name}, examined "
-            + $"v{reviewed!.Value.Major}.{reviewed.Value.Minor:00}, and {after.Count} milestones followed it. "
-            + $"The limit is {ReviewInterval}. Write the next review with the form in docs/templates.md, "
-            + "section 7.");
+            + $"v{reviewed.Value.Major}.{reviewed.Value.Minor:00}, and {product} product milestones and {entries} entries "
+            + $"of any kind followed it. The limits are {ProductMilestoneLimit} and {EntryLimit}. Write the next review "
+            + "with the form in docs/templates.md, section 7.");
+    }
+
+    // The cases of the method of the decision of 2026-10-27. The ledger starts at the
+    // reviewed version v0.10; TASK-0001 is governance, TASK-0002 is R7 and its row names
+    // it, TASK-0003 is R8 and its row names another task, TASK-0004 is P0.33 (track 0).
+    [Theory]
+    [InlineData("seven governance entries", false)]
+    [InlineData("four product entries", false)]
+    [InlineData("five product entries", true)]
+    [InlineData("twelve track 0 entries", false)]
+    [InlineData("thirteen track 0 entries", true)]
+    [InlineData("five product entries under governance headings", true)]
+    [InlineData("five entries of a phase whose row names another task", false)]
+    [InlineData("thirteen entries with no task", true)]
+    public void A_Review_Follows_The_Product_Milestones(string scenario, bool overdue)
+    {
+        var (count, heading) = scenario switch
+        {
+            "seven governance entries" => (7, "(governance, TASK-0001)"),
+            "four product entries" => (4, "(R7, TASK-0002)"),
+            "five product entries" => (5, "(R7, TASK-0002)"),
+            "twelve track 0 entries" => (12, "(P0.33, TASK-0004)"),
+            "thirteen track 0 entries" => (13, "(P0.33, TASK-0004)"),
+            "five product entries under governance headings" => (5, "(governance, TASK-0002)"),
+            "five entries of a phase whose row names another task" => (5, "(R8, TASK-0003)"),
+            "thirteen entries with no task" => (13, "(governance)"),
+            _ => throw new ArgumentException(scenario),
+        };
+
+        var ledger = "# Ledger\n\n## v0.9 — Before\n\n## v0.10 — The review (governance, TASK-0001)\n"
+            + string.Concat(Enumerable.Range(11, count).Select(minor => $"\n## v0.{minor} — An entry {heading}\n"));
+        var phases = new Dictionary<string, string> { ["0001"] = "governance", ["0002"] = "R7", ["0003"] = "R8", ["0004"] = "P0.33" };
+        var roadmap = "| R7 | The intent layer. TASK-0002. | 5–7 |\n| R8 | Name and visibility. TASK-0009. | 4–6 |\n| P0.33 | The review rule. TASK-0004. | 1 |\n";
+
+        var (product, entries) = MilestonesAfter((0, 10), ledger, id => phases.GetValueOrDefault(id), roadmap);
+
+        Assert.Equal(overdue, product > ProductMilestoneLimit || entries > EntryLimit);
+    }
+
+    // A ledger heading and the task that it names, for example
+    // "## v0.79 — A title (P0.30, TASK-0078)".
+    private static readonly Regex LedgerEntry = new(
+        @"^## v(\d+)\.(\d+)\b(?<rest>[^\n]*)$", RegexOptions.Compiled | RegexOptions.Multiline);
+
+    // A phase of track R, K, P or V; a phase of track 0 starts with P0.
+    private static readonly Regex ProductPhase = new(
+        @"^(?:[RKV]\d+|P(?!0\.)\d+)(?:[a-z]|\.\d+)?$", RegexOptions.Compiled);
+
+    // The count of product milestones and the count of entries after the reviewed version.
+    private static (int Product, int Entries) MilestonesAfter(
+        (int Major, int Minor) reviewed, string ledger, Func<string, string?> phaseOfTask, string roadmap)
+    {
+        var (product, entries) = (0, 0);
+        var seen = new HashSet<(int, int)>();
+        roadmap = roadmap.Replace("\r", string.Empty, StringComparison.Ordinal);
+
+        foreach (Match entry in LedgerEntry.Matches(ledger.Replace("\r", string.Empty, StringComparison.Ordinal)))
+        {
+            var version = (int.Parse(entry.Groups[1].Value, CultureInfo.InvariantCulture), int.Parse(entry.Groups[2].Value, CultureInfo.InvariantCulture));
+            if (version.CompareTo(reviewed) <= 0 || !seen.Add(version))
+                continue;
+
+            entries++;
+            var tasks = Regex.Matches(entry.Groups["rest"].Value, @"TASK-(\d{4})");
+            if (tasks.Count == 0)
+                continue;
+
+            var task = tasks[^1].Groups[1].Value;
+            if (phaseOfTask(task) is { } phase
+                && ProductPhase.IsMatch(phase)
+                && roadmap.Split('\n').Any(row => row.StartsWith($"| {phase} |", StringComparison.Ordinal) && row.Contains($"TASK-{task}", StringComparison.Ordinal)))
+                product++;
+        }
+
+        return (product, entries);
+    }
+
+    // The field 'phase' of the task file tasks/TASK-<id>-*.md, or null.
+    private static string? PhaseOfTask(string id)
+    {
+        var file = Directory.EnumerateFiles(RepositoryFiles.Path("tasks"), $"TASK-{id}-*.md").FirstOrDefault();
+        return file is null ? null : RepositoryFiles.ReadFrontMatter(File.ReadAllText(file).Replace("\r", string.Empty, StringComparison.Ordinal))?.GetValueOrDefault("phase");
     }
 
     private static List<Review> Reviews() => Reviews(RepositoryFiles.Path("docs", "reviews"));

@@ -102,6 +102,7 @@ This track removes each condition that blocks other work.
 | P0.30 | No file outside the gate files can empty a test project, and the gates read MSBuild names as MSBuild does. TASK-0078. | 2–3 |
 | P0.31 | A stop waits for a running command, and the present path is checked for hazards. TASK-0079. | 2 |
 | P0.32 | The desktop uses a binding with SDL 3.2 or later. TASK-0081. | 1–2 |
+| P0.33 | A codebase review follows the product milestones. TASK-0083. | 1 |
 
 ## Track P — The platform
 
@@ -169,8 +170,8 @@ The tracks are not strictly sequential, but three rules hold:
    review of 2026-10-12 on 2026-10-12. P0.27 holds three low findings and has no place in the order. The
    codebase review of 2026-10-13 put P0.28 before R6 (question Q1, answered by the owner on 2026-10-14). P0.29 comes
    after R6, except the parts that R6 takes. P0.30 and P0.32 come before R7 (the owner answered
-   questions Q1 and Q2, D7, of the codebase review of 2026-10-17 on 2026-10-17); P0.31 has no place in the
-   order.
+   questions Q1 and Q2, D7, of the codebase review of 2026-10-17 on 2026-10-17). The order of the owner of
+   2026-10-27: P0.33, P0.32, R7, TASK-0040, then P0.31, whose findings are medium or low.
 2. R2 blocks each later phase in track R. No mesh leaves the geometry backend today.
 3. K4 needs K0, K1 and K2. Do not start K4 before the reference model exists.
 
