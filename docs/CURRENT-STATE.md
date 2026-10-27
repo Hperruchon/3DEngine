@@ -2277,3 +2277,24 @@ New tests: 8. The test list holds 506 (460 in `Engine.Tests`, 39 in `3DEngine.Te
 `3DEngine.ImageTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
 entries: 15 of 15. New diagnostic codes: none. Since the review of v0.76, 0 product milestones and 5 entries
 followed it.
+
+## v0.82 — The desktop uses a binding with SDL 3.2 or later (P0.32, TASK-0081)
+
+The codebase review of 2026-10-17 found that the native SDL of the binding was the 3.1.3 preview (finding V25),
+and the owner chose a move to SDL 3.2 or later before R7 (decision D7 of 2026-10-17).
+
+**The change.** The one pin of `Alimer.Bindings.SDL` in `3DEngine.Vulkan/3DEngine.Vulkan.csproj` moves from 3.9.2
+to 3.9.8, the newest version, whose native SDL is 3.2.10. No call changed.
+
+**Proof.** The file version of `SDL3.dll` in the output of the desktop is 3.2.10. Run 40572683824 passed on the
+three runners, and the owner accepted the picture of the window after the first demonstration, a minimise and a
+restore.
+
+**What stays.** The package has no `linux-arm64` runtime, so the desktop cannot run on Linux on arm64 (V25, open in
+part). No runner opens a window (R-0022).
+
+**Correction.** The line of P0.33 in the done list of `docs/roadmap.md` is new here: TASK-0083 did not add it.
+
+New tests: none. The test list holds 506. `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero
+warnings. Open entries: 15 of 15. New diagnostic codes: none. Since the review of v0.76, 0 product milestones and
+6 entries followed it.
