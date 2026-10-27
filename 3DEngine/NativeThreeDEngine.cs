@@ -23,12 +23,18 @@ public sealed class NativeThreeDEngine : IThreeDEngine, IDisposable
     private GraphicsDevice? _graphicsDevice;
     private SceneRenderer? _renderer;
 
-    public NativeThreeDEngine(Window window, EngineHost host, IntentSettings? settings = null)
+    public NativeThreeDEngine(Window window, EngineHost host, IntentSettings? settings = null, bool synchronizationValidation = false)
     {
         _window = window;
         _host = host;
         _intents = new IntentMachine(settings);
+        _synchronizationValidation = synchronizationValidation;
     }
+
+    // The validation layer also checks the synchronization (finding V16 of the codebase
+    // review of 2026-10-17, TASK-0079). Until TASK-0079 the desktop turned on the core
+    // checks only, so the present path never ran under the checks of synchronization.
+    private readonly bool _synchronizationValidation;
 
     // The point of the last select intent, in pixels of the window: a state of the client
     // that R7 keeps and draws nothing for (ADR-0026 item 6).
@@ -42,7 +48,8 @@ public sealed class NativeThreeDEngine : IThreeDEngine, IDisposable
 
     public void Initialize()
     {
-        _graphicsDevice = new GraphicsDevice(Name, enableValidation: true, _window);
+        _graphicsDevice = new GraphicsDevice(Name, enableValidation: true, _window, _synchronizationValidation);
+        Console.WriteLine($"Validation: {(_graphicsDevice.ValidationEnabled ? "on" : "off")}; synchronization validation: {(_graphicsDevice.SynchronizationValidationEnabled ? "on" : "off")}.");
         _renderer = new SceneRenderer(_graphicsDevice, _graphicsDevice.Presenter!.RenderPass, _host);
     }
 

@@ -27,6 +27,11 @@ namespace ThreeDEngine.Desktop;
 // The desktop is a composition root, so it chooses the native backend here
 // (ADR-0014 section 4). As each host does, it stops when the native library does
 // not load (TASK-0036).
+//
+// The setting "Desktop:SynchronizationValidation" (true or false, false by default)
+// also turns on the checks of synchronization of the validation layer, for a check of
+// the present path by a person (finding V16 of the codebase review of 2026-10-17,
+// TASK-0079). Give it as --Desktop:SynchronizationValidation=true.
 internal sealed class DesktopSurface : IDisposable
 {
     public const int DefaultPort = 5180;
@@ -40,14 +45,20 @@ internal sealed class DesktopSurface : IDisposable
 
     public const string PortSetting = "Desktop:Port";
 
+    public const string SynchronizationValidationSetting = "Desktop:SynchronizationValidation";
+
     private readonly WebApplication _app;
 
-    private DesktopSurface(WebApplication app, EngineHost host, string address)
+    private DesktopSurface(WebApplication app, EngineHost host, string address, bool synchronizationValidation)
     {
         _app = app;
         Host = host;
         Address = address;
+        SynchronizationValidation = synchronizationValidation;
     }
+
+    // True when the validation layer must also check the synchronization (V16).
+    public bool SynchronizationValidation { get; }
 
     // The session of the document that the desktop holds.
     public EngineHost Host { get; }
@@ -74,6 +85,10 @@ internal sealed class DesktopSurface : IDisposable
             return (null, ExitSettingInvalid, $"The setting '{PortSetting}' (--port) must be a number from 0 to 65535, and '{setting}' is not.");
 
         builder.WebHost.UseUrls($"http://127.0.0.1:{port}");
+
+        var synchronizationSetting = builder.Configuration[SynchronizationValidationSetting] ?? "false";
+        if (!bool.TryParse(synchronizationSetting, out var synchronizationValidation))
+            return (null, ExitSettingInvalid, $"The setting '{SynchronizationValidationSetting}' must be true or false, and '{synchronizationSetting}' is not.");
 
         if (!ManifoldGeometryBackend.IsNativeAvailable())
             return (null, ExitBackendUnavailable, $"{DiagnosticCodes.GeomBackendInit}: {ManifoldGeometryBackend.UnavailableReason()}");
@@ -118,7 +133,7 @@ internal sealed class DesktopSurface : IDisposable
             return (null, ExitAddressRefused, boundRefusal);
         }
 
-        return (new DesktopSurface(app, host, app.Urls.First()), 0, null);
+        return (new DesktopSurface(app, host, app.Urls.First(), synchronizationValidation), 0, null);
     }
 
     public void Dispose()

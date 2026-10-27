@@ -92,6 +92,27 @@ public sealed unsafe class Window
         _ = SDL_ShowWindow(_window);
     }
 
+    // True while the window is minimised or has no area, so that a frame draws nothing
+    // (finding V23 of the codebase review of 2026-10-17, TASK-0079).
+    public bool HasNoArea
+    {
+        get
+        {
+            if ((SDL_GetWindowFlags(_window) & SDL_WindowFlags.Minimized) != 0)
+                return true;
+
+            var extent = Extent;
+            return extent.width == 0 || extent.height == 0;
+        }
+    }
+
+    // Waits until an event arrives or the limit passes. The event stays in the queue for
+    // the next poll.
+    public static void WaitForEvent(int limitMilliseconds)
+    {
+        _ = SDL_WaitEventTimeout(null, limitMilliseconds);
+    }
+
     public VkSurfaceKHR CreateSurface(VkInstance instance)
     {
         VkSurfaceKHR surface;

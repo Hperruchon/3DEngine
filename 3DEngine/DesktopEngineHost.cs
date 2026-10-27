@@ -40,7 +40,7 @@ internal static class DesktopEngineHost
             {
                 var scene = SessionScene.Create();
                 var window = new Window("3DEngine Desktop", 1280, 720);
-                using var engine = new NativeThreeDEngine(window, surface.Host);
+                using var engine = new NativeThreeDEngine(window, surface.Host, synchronizationValidation: surface.SynchronizationValidation);
 
                 engine.Initialize();
                 engine.LoadScene(scene);
@@ -51,6 +51,14 @@ internal static class DesktopEngineHost
 
                 while (running && !surface.Stopping.IsCancellationRequested)
                 {
+                    // A frame draws nothing while the window has no area, so the loop
+                    // waits for an event, at most 100 ms so that a stop of the surface
+                    // still closes the window. Until TASK-0079 the loop polled again at
+                    // once, and a minimised window took one processor core (finding V23
+                    // of the codebase review of 2026-10-17).
+                    if (window.HasNoArea)
+                        Window.WaitForEvent(100);
+
                     while (SDL_PollEvent(out SDL_Event sdlEvent))
                     {
                         if (sdlEvent.type == SDL_EventType.Quit)

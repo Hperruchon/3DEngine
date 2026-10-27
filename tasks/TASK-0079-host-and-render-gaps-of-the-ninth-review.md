@@ -121,3 +121,8 @@ validation.
   `3DEngine.Vulkan`. My command chain committed after a failed run of the tests. The next commit writes the
   warning with `Console.WriteLine("[WARN] ...")`, as `SessionBodies` does, and the full suite passes. The
   commits after it run the tests in a script that stops before the commit at a failure.
+- 2026-10-27: V16, V23 and V24. The setting `Desktop:SynchronizationValidation` turns on the checks of
+  synchronization in the desktop, and the desktop writes the state of both checks at the start. While
+  the window has no area, the loop waits up to 100 ms for an event. The comment of the push constant test
+  now says what it holds: a swap of the arguments of the call in `Push` passed the 67 unit tests and
+  failed the image test in a run on 2026-10-27.
