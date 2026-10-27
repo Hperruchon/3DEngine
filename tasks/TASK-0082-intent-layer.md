@@ -1,11 +1,11 @@
 ---
 id: 0082
 title: Touch and mouse give the same intents, and a parity test holds it
-status: Ready
+status: Active
 phase: R7
 opened: 2026-10-17
 depends-on: [0078, 0081]
-governed-by: [0007, 0009, 0017, 0019, 0022, 0023, 0024]
+governed-by: [0007, 0009, 0017, 0019, 0022, 0023, 0024, 0026]
 writes:
   create:
     - tasks/TASK-0082-intent-layer.md
@@ -16,6 +16,9 @@ writes:
     - 3DEngine/**
     - 3DEngine.Tests/**
     - docs/adr/README.md
+    - docs/adr/0023-camera-depth-and-draw-list.md
+    - eng/test-floor.txt
+    - tasks/TASK-0079-host-and-render-gaps-of-the-ninth-review.md
     - docs/INDEX.md
     - docs/glossary.md
     - docs/register.md
@@ -28,7 +31,8 @@ writes:
     - Engine.Api.Http/**
     - Engine.Api.Http.Server/**
     - Engine.Geometry.Manifold/**
-    - eng/**
+    - eng/write-set-check/**
+    - eng/repo-gates/**
 ---
 
 # TASK-0082 — Touch and mouse give the same intents, and a parity test holds it
@@ -92,3 +96,11 @@ and keyboard give the same intents.
   a register entry with a date for a check on a touch screen; the register holds 15 of 15 entries, so the
   task first closes one, or asks the owner.
 - **The size.** About 5 to 7 evenings.
+
+## Progress
+
+- 2026-10-27: the task is active, third in the order of the owner of 2026-10-27, after TASK-0081 (SDL 3.2.10).
+  ADR-0026 records the decisions D1 to D8 and the selection of Q3, and amends ADR-0023 item 2. The write set now
+  names `eng/test-floor.txt`, whose exact count each task that adds tests changes since TASK-0078, so the
+  forbid of `eng/**` becomes the two programs of `eng/`; it also names `docs/adr/0023-camera-depth-and-draw-list.md`
+  and `tasks/TASK-0079-host-and-render-gaps-of-the-ninth-review.md`, whose `governed-by` gains ADR-0026.
