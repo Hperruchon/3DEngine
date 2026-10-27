@@ -1,7 +1,7 @@
 ---
 id: 0040
 title: Each ADR in force holds its current decision in one text, and the archive holds the rest
-status: Active
+status: Done
 phase: governance
 opened: 2026-09-26
 depends-on: [0082]
@@ -95,13 +95,40 @@ each ADR, so that the owner reads one change at a time.
 
 ## Acceptance criteria
 
-- [ ] `docs/adr/` holds no record with the status `Withdrawn` or `Superseded`.
-- [ ] No ADR in force has the status `Amended` because of ADR-0011 or ADR-0016.
-- [ ] Each folded ADR has a section "History" with one line for each fold.
-- [ ] `AdrGateTests` passes, and an injected index row for an archived number with a file in
+- [x] `docs/adr/` holds no record with the status `Withdrawn` or `Superseded`. A new test holds it.
+- [x] No ADR in force has the status `Amended` because of ADR-0011 or ADR-0016.
+- [x] Each folded ADR has a section "History" with one line for each fold.
+- [x] `AdrGateTests` passes, and an injected index row for an archived number with a file in
       `docs/adr/` fails.
-- [ ] The owner accepted each change to a "Decision" section, and the task names the commit of each
-      acceptance.
+- [x] The owner accepted each change to a "Decision" section on 2026-10-27, as one summary of the four
+      folds (owner answer Q1 A). The commits: 781470a (ADR-0004), 0fae423 (ADR-0019 and ADR-0011),
+      35ef439 (ADR-0012) and 26084ee (ADR-0013 and ADR-0016).
+
+## Outcome
+
+Status: Done · v0.84 · the commit that carries this block.
+
+Each ADR in force that this task names gives its current decision in its own text. ADR-0003 and
+ADR-0011 are in `docs/adr/archive/`, and the index lists their numbers under "Archived". ADR-0004,
+ADR-0012, ADR-0013 and ADR-0019 hold the folds, each with a line in "History".
+
+## Method
+
+**Mechanical.** `AdrGateTests` reads the list of archived numbers and not the archive. One new test
+refuses a withdrawn or superseded record in `docs/adr/`. Three injections failed: an archived row for
+0007, whose file is in `docs/adr/`; `amends` that names 0099; and, before the move, ADR-0003 with the
+status Withdrawn. The old gate failed on the new list. Run 40585801792 passed on the three runners.
+
+**Judgement.** ADR-0019 had to hold the three parts of ADR-0011 that stayed in force before ADR-0011
+could leave `docs/adr/`; items 7 and 8 hold them. The fold of ADR-0012 names ADR-0021 where Amendment
+1 said that the operands stay, because that sentence is false since TASK-0037. ADR-0016 stays in force:
+ADR-0013 holds the steps, and ADR-0016 holds the reasons and the refused methods.
+
+**Weakest.** Comments in five test files and in `Engine.Api.Http/Endpoints/JsonParameters.cs` cite
+ADR-0011 §1 or §5, which is now in the archive. The folds of ADR-0006, 0008 and 0010 (TASK-0035) and of
+ADR-0012 by ADR-0018 and ADR-0021 (TASK-0028, TASK-0037) waited for tasks that are Done, and nobody did
+them. ADR-0008 still names Blazor and ADR-0003. These paths are outside the write set, and the register
+is at its limit, so the ledger holds them and the next codebase review carries them.
 
 ## Notes for the implementer
 
@@ -134,3 +161,5 @@ which no code reads now. Since TASK-0053 the program `eng/write-set-check` is th
 - 2026-10-27: ADR-0013 item 7 holds the construction step of ADR-0016, and the code samples of item 1
   show `Create`. ADR-0013 is Accepted, and ADR-0016 no longer amends it; ADR-0016 stays in force for
   its reasons. This changes a section "Decision": the owner accepts it with the summary.
+- 2026-10-27: the owner accepted the four folds. Closed, after a clean build and a full local run of
+  523 tests (461 in `Engine.Tests`, 55 in `3DEngine.Tests`, 7 in `3DEngine.ImageTests`).

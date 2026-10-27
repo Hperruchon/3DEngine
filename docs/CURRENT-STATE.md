@@ -2326,3 +2326,34 @@ New tests: 16. The test list holds 522 (460 in `Engine.Tests`, 55 in `3DEngine.T
 `3DEngine.ImageTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
 entries: 15 of 15. New diagnostic codes: none. Since the review of v0.76, 1 product milestone and 7 entries
 followed it.
+
+## v0.84 — Each ADR in force holds its current decision in one text, and the archive holds the rest (TASK-0040)
+
+The owner decided on 2026-09-26 that an ADR is updated with the code, and that an ADR that nobody needs
+is cleaned. Until this entry a reader needed two or three records for one decision of deployment.
+
+**The change.**
+
+- ADR-0003 (withdrawn) and ADR-0011 (superseded by ADR-0019) are in `docs/adr/archive/`. The index lists
+  their numbers under "Archived".
+- ADR-0004 item 4 gives the three deployment shapes of ADR-0019, and items 2 and 5 no longer name Blazor.
+- ADR-0019 items 7 and 8 hold embedded mode and the rule that engine code knows nothing about topology,
+  from ADR-0011. Its `affects` gains `Engine.Cli/**`.
+- ADR-0012 holds its in-file Amendment 1 in its own sections. ADR-0013 item 7 holds the construction
+  step of ADR-0016.
+- ADR-0007 no longer lists `BlazorApp/**`. TASK-0079 no longer lists ADR-0011.
+
+**Proof.** `AdrGateTests` refuses a withdrawn or superseded record in `docs/adr/`, an archived number
+with a file in `docs/adr/`, and a reference to a number that is neither present nor archived. Three
+injections each failed a test. Run 40585801792 passed on the three runners. The owner accepted the four
+changes of "Decision" on 2026-10-27.
+
+**What stays.** Comments in five test files and in `Engine.Api.Http/Endpoints/JsonParameters.cs` cite
+the archived ADR-0011. The folds of ADR-0006, 0008, 0010 and of ADR-0012 by ADR-0018 and ADR-0021 waited
+for tasks that are Done, and are not done. ADR-0008 still names Blazor. The register is at its limit, so
+the next codebase review carries these three items.
+
+New tests: 1. The test list holds 523 (461 in `Engine.Tests`, 55 in `3DEngine.Tests`, 7 in
+`3DEngine.ImageTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings.
+Open entries: 15 of 15. New diagnostic codes: none. Since the review of v0.76, 1 product milestone and 8
+entries followed it.
