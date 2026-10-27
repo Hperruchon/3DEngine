@@ -1,7 +1,7 @@
 ---
 id: 0079
 title: A stop waits for a running command, and the present path is checked for hazards
-status: Active
+status: Done
 phase: P0.31
 opened: 2026-10-17
 depends-on: [0040]
@@ -75,11 +75,45 @@ validation.
 
 ## Acceptance criteria
 
-- [ ] Each new test fails before its correction, or an injection shows that it can fail.
-- [ ] A run of the desktop with synchronization validation, a minimise, a restore and the demonstration
-      gives no validation message. The owner accepts the picture and the log.
-- [ ] A clean build (`--no-incremental`) gives zero errors and zero warnings.
-- [ ] Continuous integration passes on `ubuntu-latest`, `windows-latest` and `macos-latest`.
+- [x] Each new test fails before its correction, or an injection shows that it can fail. E71, V19 and V21
+      have no test; "Weakest" gives the reason.
+- [x] A run of the desktop with synchronization validation, a minimise, a restore and the demonstration
+      gives no validation message. The owner accepted the pictures and the log on 2026-10-27.
+- [x] A clean build (`--no-incremental`) gives zero errors and zero warnings.
+- [ ] Continuous integration passes on `ubuntu-latest`, `windows-latest` and `macos-latest`. The merge
+      records the run.
+
+## Outcome
+
+Status: Done · v0.85 · the commit that carries this block.
+
+A stop of a host frees the backend only after the running command ends, and each start path of the two
+hosts ends in a documented code with the app disposed. The report of a removed action runs out of the
+commit. On the render side the presenter survives a failed remake, no wait has no limit, the composite
+alpha comes from the surface, the camera refuses values that draw nothing, a failed image test gives the
+text of each validation message, and a minimised desktop waits. The present path ran under the checks of
+synchronization, with no message.
+
+## Method
+
+**Mechanical.** 17 new tests: 5 in `Engine.Tests` and 12 in `3DEngine.Tests`. Each one failed with its
+old rule put back. The first version of the test of a blocking report could not fail, because a commit
+with no real wait ends before `Apply` returns; the injection found it. Three runs measured the stop
+limit at 3.01 s to 3.02 s. A minimised desktop used 4.86 s of processor time in 5 s with the old loop and
+0.00 s to 0.02 s with the new one. With the desktop under synchronization validation, the demonstration,
+a minimise and a restore gave no validation message. A temporary remake every 60 frames ran 228 times
+with no message, and its first remake failed on purpose and recovered.
+
+**Judgement.** `DocumentSession.Close` has no time limit: a commit does not stop, and a backend freed
+under a native call can corrupt memory, so a command that never ends holds the stop. The report of a
+removed action runs on the thread pool and a throw in it is lost, because it is the last channel for
+that message. A failed submit throws, because it signals no fence and no semaphore. `Camera.Frame`
+returns false and the desktop writes a warning, and the camera does not move the planes itself.
+
+**Weakest.** E71 has no test: no test can make the two paths fail on purpose. V21 has no test: each
+computer and runner has debug utils. V19 has no injection of a failed submit. A minimise and a restore do
+not remake the swapchain on this computer, and the window cannot change size, so the remakes of the
+check were forced. Commit a0494b6 does not build; ada1542 corrects it.
 
 ## Notes for the implementer
 
@@ -126,3 +160,5 @@ validation.
   the window has no area, the loop waits up to 100 ms for an event. The comment of the push constant test
   now says what it holds: a swap of the arguments of the call in `Push` passed the 67 unit tests and
   failed the image test in a run on 2026-10-27.
+- 2026-10-27: the owner accepted the pictures and the log of the check. Closed, after a clean build and a
+  full local run of 540 tests (466 in `Engine.Tests`, 67 in `3DEngine.Tests`, 7 in `3DEngine.ImageTests`).
