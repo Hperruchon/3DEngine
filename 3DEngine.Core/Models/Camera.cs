@@ -82,6 +82,35 @@ public sealed class Camera : Entity
     }
 
     /// <summary>
+    /// Moves the target, and the eye with it, in the plane of the view (ADR-0026, TASK-0082):
+    /// a pointer that moves by these pixels of a picture of this height moves the scene with
+    /// it, at the depth of the target. The yaw, the pitch and the distance do not change.
+    /// </summary>
+    public void Pan(double dxPixels, double dyPixels, double pictureHeight)
+    {
+        if (!(pictureHeight > 0))
+            throw new ArgumentOutOfRangeException(nameof(pictureHeight), "A picture height is positive.");
+
+        // The size of one pixel at the depth of the target.
+        var scale = 2.0 * Distance * Math.Tan(FieldOfViewDegrees * Math.PI / 360.0) / pictureHeight;
+
+        var yaw = YawDegrees * Math.PI / 180.0;
+        var pitch = PitchDegrees * Math.PI / 180.0;
+
+        // The right and up directions of the view, from the eye toward the target.
+        (double X, double Y, double Z) right = (Math.Cos(yaw), 0.0, -Math.Sin(yaw));
+        (double X, double Y, double Z) up = (-Math.Sin(pitch) * Math.Sin(yaw), Math.Cos(pitch), -Math.Sin(pitch) * Math.Cos(yaw));
+
+        // A drag to the right moves the scene to the right, so the target moves to the left;
+        // a drag down (y down on the screen) moves the target up.
+        var (mx, my) = (-dxPixels * scale, dyPixels * scale);
+        Target = (
+            Target.X + right.X * mx + up.X * my,
+            Target.Y + right.Y * mx + up.Y * my,
+            Target.Z + right.Z * mx + up.Z * my);
+    }
+
+    /// <summary>
     /// Frames a box (ADR-0025 item 6): the target goes to the centre of the box, and the
     /// distance puts the sphere around the box inside the smaller half angle of the field
     /// of view, for the aspect of the picture. The yaw and the pitch do not change.

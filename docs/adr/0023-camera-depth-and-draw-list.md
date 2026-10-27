@@ -7,7 +7,7 @@ date: 2026-10-12
 supersedes: []
 superseded-by: []
 amends: []
-amended-by: ['0024']
+amended-by: ['0024', '0026']
 affects:
   - 3DEngine.Core/**
   - 3DEngine.Vulkan/**
@@ -41,8 +41,9 @@ object graph (3B), and a code layer (4B), with the note that indirect draws coul
    fragment whose depth is greater (reversed depth). A float holds the most precision near 0, which
    reversed depth gives to the far range.
 2. **Camera.** The camera of `3DEngine.Core` is an orbit camera: a target in double precision, a
-   distance, a yaw and a pitch, which are render state (ADR-0009 §3). A left drag of the mouse orbits it
-   and the wheel zooms it. The renderer computes each model matrix relative to the eye in double
+   distance, a yaw and a pitch, which are render state (ADR-0009 §3). The intent layer of ADR-0026 moves it
+   from touch, mouse and keyboard. (Amended 2026-10-27, ADR-0026: a left drag of the mouse orbited it and the
+   wheel zoomed it, read in the host.) The renderer computes each model matrix relative to the eye in double
    precision, and only then narrows it to float. Each entity has an origin in double precision
    (ADR-0024). R7 replaces the reading of the mouse with the intent layer.
 3. **Scene.** The renderer walks the object graph `Scene` and `Entity` at each frame. No flat array
@@ -68,3 +69,5 @@ host is replaced in R7. The roadmap line of R4 no longer names flat arrays or in
 
 - 2026-10-12 · TASK-0070 · The record is written with the answers of the owner on R4.
 - 2026-10-12 · TASK-0071 · ADR-0024 amends item 2: each entity has an origin in double precision.
+- 2026-10-27 · TASK-0082 · ADR-0026 amends item 2: the intent layer moves the camera from touch, mouse and
+  keyboard.

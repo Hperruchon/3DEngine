@@ -1,31 +1,38 @@
 using Engine.Api.Http;
 using SDL3;
 using ThreeDEngine.Core.Abstractions;
+using ThreeDEngine.Core.Input;
 using ThreeDEngine.Core.Models;
 using ThreeDEngine.Vulkan;
 
 namespace ThreeDEngine.Desktop;
 
-// The render loop of the desktop (roadmap phases R3 to R6). At each frame the scene
+// The render loop of the desktop (roadmap phases R3 to R7). At each frame the scene
 // renderer brings the live bodies of the session into the scene and draws it into the
-// swapchain of the window (SceneRenderer). A left drag of the mouse orbits the camera,
-// and the wheel zooms it; R7 replaces this reading of the mouse with the intent layer.
+// swapchain of the window (SceneRenderer). SdlInput turns each event of the window into
+// samples, and the intent layer turns the samples of a frame into intents, which move the
+// camera and keep the point of a selection (ADR-0026). Until R7 the host read a left drag
+// and the wheel itself.
 public sealed class NativeThreeDEngine : IThreeDEngine, IDisposable
 {
-    // Degrees of orbit for each pixel of a drag, and the zoom of one step of the wheel.
-    private const double OrbitDegreesPerPixel = 0.3;
-    private const double ZoomPerStep = 0.9;
+    private readonly SdlInput _input = new();
+    private readonly IntentMachine _intents;
 
     private readonly Window _window;
     private readonly EngineHost _host;
     private GraphicsDevice? _graphicsDevice;
     private SceneRenderer? _renderer;
 
-    public NativeThreeDEngine(Window window, EngineHost host)
+    public NativeThreeDEngine(Window window, EngineHost host, IntentSettings? settings = null)
     {
         _window = window;
         _host = host;
+        _intents = new IntentMachine(settings);
     }
+
+    // The point of the last select intent, in pixels of the window: a state of the client
+    // that R7 keeps and draws nothing for (ADR-0026 item 6).
+    public (double X, double Y)? Selection { get; private set; }
 
     public string Name => "3DEngine Desktop Runtime";
 
@@ -44,13 +51,34 @@ public sealed class NativeThreeDEngine : IThreeDEngine, IDisposable
         _ = deltaTime;
     }
 
-    // One event of the window: a left drag orbits the camera, and the wheel zooms it.
+    // One event of the window becomes samples of the next frame.
     public void HandleEvent(in SDL_Event sdlEvent)
     {
-        if (sdlEvent.type == SDL_EventType.MouseMotion && (sdlEvent.motion.state & SDL_MouseButtonFlags.Left) != 0)
-            Camera.Orbit(-sdlEvent.motion.xrel * OrbitDegreesPerPixel, sdlEvent.motion.yrel * OrbitDegreesPerPixel);
-        else if (sdlEvent.type == SDL_EventType.MouseWheel)
-            Camera.Zoom(Math.Pow(ZoomPerStep, sdlEvent.wheel.y));
+        var size = _window.Extent;
+        _input.Translate(sdlEvent, size.width, size.height);
+    }
+
+    // The intents of the samples of one frame, applied to the camera and the selection.
+    private void ApplyIntents()
+    {
+        foreach (var intent in _intents.Step(_input.TakeFrame()))
+        {
+            switch (intent)
+            {
+                case OrbitIntent orbit:
+                    Camera.Orbit(orbit.YawDegrees, orbit.PitchDegrees);
+                    break;
+                case PanIntent pan:
+                    Camera.Pan(pan.DxPixels, pan.DyPixels, Math.Max(1, _window.Extent.height));
+                    break;
+                case ZoomIntent zoom:
+                    Camera.Zoom(zoom.Factor);
+                    break;
+                case SelectIntent select:
+                    Selection = (select.X, select.Y);
+                    break;
+            }
+        }
     }
 
     public void Render()
@@ -60,6 +88,7 @@ public sealed class NativeThreeDEngine : IThreeDEngine, IDisposable
             throw new InvalidOperationException("Graphics device is not initialized.");
         }
 
+        ApplyIntents();
         var extent = presenter.Swapchain.Extent;
         var scene = CurrentScene;
         _renderer.Update(scene, Camera, (float)extent.width / extent.height);

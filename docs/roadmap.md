@@ -65,6 +65,7 @@ Therefore each approved objective must have a track here.
 - P0.22 — `/schema/events` gives the payload fields of each event kind. v0.80, TASK-0055.
 - P0.33 — A codebase review follows the product milestones. v0.81, TASK-0083.
 - P0.32 — The desktop uses a binding with SDL 3.2 or later. v0.82, TASK-0081.
+- R7 — Touch, mouse and keyboard give the same intents, and a parity test holds it. v0.83, TASK-0082, ADR-0026.
 
 ## Track 0 — Foundations
 

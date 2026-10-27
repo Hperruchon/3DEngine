@@ -2298,3 +2298,31 @@ part). No runner opens a window (R-0022).
 New tests: none. The test list holds 506. `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero
 warnings. Open entries: 15 of 15. New diagnostic codes: none. Since the review of v0.76, 0 product milestones and
 6 entries followed it.
+
+## v0.83 — Touch, mouse and keyboard give the same intents, and a parity test holds it (R7, TASK-0082)
+
+Roadmap phase R7 serves objective 9 of `docs/CHARTER.md`: each operation works by touch, and by mouse and
+keyboard. ADR-0026 records the decisions D1 to D8 of the owner of 2026-10-17, and amends ADR-0023 item 2.
+
+**The change.**
+
+- `3DEngine.Core/Input/`: the samples (touch, pen, mouse, wheel, key, focus lost), the intents (orbit, pan, zoom,
+  select, cancel), the settings with the map of gestures as a setting of the client, and `IntentMachine`. A pen
+  takes the path of one finger, and a pair of fingers moves once for each frame.
+- `Camera.Pan` moves the target in the plane of the view.
+- `3DEngine.Vulkan/SdlInput.cs` translates SDL events and drops each mouse event of `SDL_TOUCH_MOUSEID`; the
+  window turns `SDL_HINT_TOUCH_MOUSE_EVENTS` off.
+- The desktop applies the intents to the camera and keeps the point of a selection, which draws nothing yet.
+
+**Proof.** The parity test: a touch script and a mouse script give the same intents for each kind, and a
+coverage check fails for a kind with no touch script. Four injections each failed a test. Run 40579390160
+passed on the three runners, and the owner accepted the pictures of the window after the mouse and after the
+keyboard on 2026-10-27.
+
+**What stays.** The touch path is unverified on a real touch screen: no computer of the project has one. The owner
+chose on 2026-10-27 that this ledger and TASK-0082 hold it, and that the next codebase review carries it.
+
+New tests: 16. The test list holds 522 (460 in `Engine.Tests`, 55 in `3DEngine.Tests`, 7 in
+`3DEngine.ImageTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
+entries: 15 of 15. New diagnostic codes: none. Since the review of v0.76, 1 product milestone and 7 entries
+followed it.

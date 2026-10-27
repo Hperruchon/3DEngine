@@ -57,6 +57,14 @@ public sealed unsafe class Window
             }
         }
 
+        // A touch gives touch samples only: SDL makes no mouse event from it (ADR-0026 item 4,
+        // decision D8). SdlInput also drops such an event, so neither line alone holds the rule.
+        fixed (byte* name = SDL_HINT_TOUCH_MOUSE_EVENTS)
+        fixed (byte* off = "0"u8)
+        {
+            _ = SDL_SetHint(name, off);
+        }
+
         _window = SDL_CreateWindow(title, width, height, sdl_flags);
         if (_window.IsNull)
         {
