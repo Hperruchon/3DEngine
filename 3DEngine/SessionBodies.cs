@@ -18,8 +18,12 @@ namespace ThreeDEngine.Desktop;
 internal sealed class SessionBodies : IDisposable
 {
     private readonly EngineHost _host;
-    private readonly ConcurrentQueue<(bool Created, Guid BodyId)> _changes = new();
+    private readonly ConcurrentQueue<(bool Created, Guid BodyId, string Kind)> _changes = new();
     private readonly IDisposable _subscription;
+
+    // Each live body with its kind, in the order of its creation, for the panel of the user
+    // interface (ADR-0027 item 7, TASK-0084). It holds a body also when its mesh failed.
+    private readonly List<(Guid Id, string Kind)> _live = new();
 
     // The box of each live body that has a mesh, by the identifier of its mesh.
     private readonly Dictionary<string, ((double X, double Y, double Z) Min, (double X, double Y, double Z) Max)> _boxes = new(StringComparer.Ordinal);
@@ -34,7 +38,7 @@ internal sealed class SessionBodies : IDisposable
         _subscription = host.Session.Read((document, _) =>
         {
             foreach (var body in document.Bodies)
-                _changes.Enqueue((true, body.Handle.Id));
+                _changes.Enqueue((true, body.Handle.Id, body.Kind));
             return host.Subscribe(OnEvent);
         }).GetAwaiter().GetResult();
     }
@@ -47,7 +51,7 @@ internal sealed class SessionBodies : IDisposable
             || payload.GetValueOrDefault("bodyId") is not Guid bodyId)
             return;
 
-        _changes.Enqueue((record.Kind == "body.created", bodyId));
+        _changes.Enqueue((record.Kind == "body.created", bodyId, payload.GetValueOrDefault("kind") as string ?? string.Empty));
     }
 
     // On the render loop: one entity and one mesh for each live body. The mesh is
@@ -62,6 +66,11 @@ internal sealed class SessionBodies : IDisposable
         var changed = false;
         while (_changes.TryDequeue(out var change))
         {
+            if (change.Created)
+                _live.Add((change.BodyId, change.Kind));
+            else
+                _live.RemoveAll(body => body.Id == change.BodyId);
+
             try
             {
                 changed |= ApplyOne(change, scene, meshes, device);
@@ -76,7 +85,7 @@ internal sealed class SessionBodies : IDisposable
     }
 
     // One change of the queue. It returns true when the scene changed.
-    private bool ApplyOne((bool Created, Guid BodyId) change, Scene scene, IDictionary<string, GpuMesh> meshes, GraphicsDevice device)
+    private bool ApplyOne((bool Created, Guid BodyId, string Kind) change, Scene scene, IDictionary<string, GpuMesh> meshes, GraphicsDevice device)
     {
         var meshId = change.BodyId.ToString();
         if (!change.Created)
@@ -119,6 +128,9 @@ internal sealed class SessionBodies : IDisposable
         _boxes[meshId] = Box(tessellation.Positions);
         return true;
     }
+
+    // Each live body with its kind, as the last call of Apply left them.
+    public IReadOnlyList<(Guid Id, string Kind)> Live => _live;
 
     // The box around each live body that has a mesh, or null when none has one.
     public ((double X, double Y, double Z) Min, (double X, double Y, double Z) Max)? Bounds
