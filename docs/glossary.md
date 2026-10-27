@@ -55,6 +55,9 @@ observation of a change, and it appears only in the event stream.
 | **offscreen target** | A colour image and a depth image with their own render pass, and a copy of the colour to memory that the host reads. A device with no window draws into it. | `3DEngine.Vulkan/OffscreenTarget.cs` · ADR-0025 · TASK-0076 |
 | **presenter** | The presentation of a device to a window: the swapchain, the resources of each frame, the acquire and the present. A device with no window has none. | `3DEngine.Vulkan/Presenter.cs` · ADR-0025 · TASK-0076 |
 | **image test** | A test that draws a scene into an offscreen target and compares the picture by structure, with no reference picture. | `3DEngine.ImageTests/` · ADR-0025 · TASK-0076 |
+| **intent** | What the person asks for, with no kind of device: orbit, pan, zoom, select or cancel. The intent layer gives it from the samples of touch, pen, mouse and keyboard. | `3DEngine.Core/Input/Intents.cs` · ADR-0026 · TASK-0082 |
+| **sample** | One record of input with its kind of device, its device, its pointer, its position, its time and its phase; a wheel and a key have their own samples. The host collects the samples of one frame. | `3DEngine.Core/Input/InputSamples.cs` · ADR-0026 |
+| **map of gestures** | The setting of the client that gives each gesture (a drag, a pinch, a tap, a key) its action. | `3DEngine.Core/Input/Intents.cs` · ADR-0026 |
 | **relative to the eye** | Each position is moved by minus the eye of the camera in double precision before it is narrowed to float, so a body far from the origin of the engine keeps its detail. | `3DEngine.Core/Rendering/SceneWalker.cs` · ADR-0023 |
 
 ## Concepts

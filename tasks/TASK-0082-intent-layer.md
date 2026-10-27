@@ -1,7 +1,7 @@
 ---
 id: 0082
 title: Touch and mouse give the same intents, and a parity test holds it
-status: Active
+status: Done
 phase: R7
 opened: 2026-10-17
 depends-on: [0078, 0081]
@@ -82,13 +82,43 @@ and keyboard give the same intents.
 
 ## Acceptance criteria
 
-- [ ] For each kind of intent, a touch script and a mouse script give the same intents; the coverage check
+- [x] For each kind of intent, a touch script and a mouse script give the same intents; the coverage check
       fails on an injected kind of intent with no touch script.
-- [ ] A finger sequence with its synthetic mouse events gives one orbit, not two.
-- [ ] A changed setting of the map moves an action to another gesture, and a test holds it.
-- [ ] A picture of the window after an orbit, a pan and a zoom by mouse and by keyboard. The owner accepts it.
-- [ ] A clean build (`--no-incremental`) gives zero errors and zero warnings.
-- [ ] Continuous integration passes on `ubuntu-latest`, `windows-latest` and `macos-latest`.
+- [x] A finger sequence with its synthetic mouse events gives one orbit, not two.
+- [x] A changed setting of the map moves an action to another gesture, and a test holds it.
+- [x] A picture of the window after an orbit, a pan and a zoom by mouse and by keyboard. The owner accepts it
+      (2026-10-27).
+- [x] A clean build (`--no-incremental`) gives zero errors and zero warnings.
+- [ ] Continuous integration passes on `ubuntu-latest`, `windows-latest` and `macos-latest`. The
+      merge records the run.
+
+## Outcome
+
+Status: Done · v0.83 · the commit that carries this block.
+
+The camera of the desktop moves from intents. `3DEngine.Core/Input/` turns the samples of touch, pen, mouse
+and keyboard into orbit, pan, zoom, select and cancel, from a map of gestures that is a setting of the client.
+`SdlInput` translates the events of SDL and drops the synthetic mouse events of a touch. A test with no window
+and no GPU proves that touch and mouse give the same intents, and that each kind of intent has a touch path.
+
+## Method
+
+**Mechanical.** Sixteen new tests. Four injections each failed a test: a kind of intent with no scripts, a
+one-finger drag mapped to pan, an inverted pinch, and a translation that kept the synthetic mouse events. Run
+40579390160 passed on the three runners. The owner accepted three pictures of the window: after the
+demonstration, after a left drag, a middle drag and two steps of the wheel, and after the arrow keys, Shift and
+the arrow keys, and the plus key of the pad.
+
+**Judgement.** A pair of contacts moves once for each frame: each finger has its own samples, and a pair that
+moved one finger at a time gave a false pinch in a pan. A gesture of motion gives orbit, pan or zoom, a gesture
+of scale gives zoom, and a gesture of a point gives select, so the settings refuse a map that a gesture cannot
+give. The translation keeps Shift from the key events and makes no call of SDL, so a test gives it events that
+it builds.
+
+**Weakest.** The touch path is unverified on a real screen: no computer of the project has one, and the scripts
+are synthetic (decision D1). On 2026-10-27 the owner chose that the ledger and this task hold that, and that the
+next codebase review carries it, because the register is at its limit. The selection draws nothing yet. The
+intents write no command, so the comparison of logs of anti-objective 7 starts with R8.
 
 ## Notes for the implementer
 
@@ -113,3 +143,6 @@ and keyboard give the same intents.
   with no scripts (the coverage check), a one-finger drag mapped to pan (the parity of orbit and cancel), an
   inverted pinch (the parity of zoom), and a translation that keeps the synthetic mouse events (the double
   count).
+- 2026-10-27: the owner accepted the pictures, and chose option A for the note of the unverified touch path:
+  the ledger and this task hold it, and the next review carries it. Closed, after a clean build and a full local
+  run of 522 tests (460 in `Engine.Tests`, 55 in `3DEngine.Tests`, 7 in `3DEngine.ImageTests`).
