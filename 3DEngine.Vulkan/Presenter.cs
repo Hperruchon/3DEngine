@@ -58,6 +58,11 @@ public sealed unsafe class Presenter : IDisposable
     // change when the swapchain is made again.
     public VkRenderPass RenderPass { get; }
 
+    // The swapchain image of the frame that RenderFrame draws now. A resource that the CPU
+    // writes at each frame can keep one copy for each image: the presenter waits for the fence
+    // of an image before it gives the image again (the user interface, TASK-0084).
+    public int CurrentImage => (int)_frameIndex;
+
     // How many times the swapchain was made again.
     public int Recreations { get; private set; }
 

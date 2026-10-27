@@ -128,3 +128,16 @@ way, and a gesture outside the panel still moves the camera.
   because the presenter waits for the fence of an image before it reuses it. Five tests with no GPU; a
   transform with no shift, a scissor with no scale and a wrong offset of the colour each failed one. The draw
   itself waits for the image test of the next step.
+- 2026-10-28: the panel (ADR-0027 items 1, 2, 4, 6, 7 and 8). `3DEngine/Ui/` holds the router of the samples,
+  the conversion of the draw data, and `DesktopUi` with the default font at 26 pixels and controls of 44
+  pixels. The desktop routes each frame through it and draws the panel after the scene; `SessionBodies` keeps
+  the kind of each live body. 6 tests of the router, 10 tests of the panel with the library and no GPU, and
+  an image test of the panel. Injections failed them: each gesture to the intents (8 tests), keys to the
+  intents while typing (2), a touch with no button (2), a frame padding of 4 (1), and a renderer that draws
+  nothing (the image test). The first run of the panel tests waited for ever: `NewFrame` refuses a font atlas
+  that is not built, and the native check stopped the process in a dialog. The constructor now builds the
+  atlas. The first size of the panel now fits a display of 480 pixels.
+- 2026-10-28: the first full run of the suite blocked. Dear ImGui keeps one current context for the whole
+  process, and xunit ran `DesktopUiTests` and `PanelImageTests` at the same time. The two classes now share the
+  collection "Dear ImGui". With the collection removed from one class, two runs crashed the test host and a
+  third blocked until its limit; with it, the 24 tests of `3DEngine.ImageTests` pass in 0.6 s.

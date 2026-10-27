@@ -19,6 +19,14 @@
   </ItemGroup>
 
   <!--
+    The library of the user interface (ADR-0027 item 1, TASK-0084). This line is its only
+    pin, and only the files in Ui/ name its namespace; UiLibraryGateTests holds both rules.
+  -->
+  <ItemGroup>
+    <PackageReference Include="ImGui.NET" Version="1.91.6.1" />
+  </ItemGroup>
+
+  <!--
     The desktop owns a document session and mounts the surface library on it (ADR-0019,
     TASK-0054). It is a composition root, so it may name the native backend (ADR-0014 §4).
   -->
