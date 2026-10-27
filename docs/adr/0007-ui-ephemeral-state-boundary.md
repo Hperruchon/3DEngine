@@ -10,7 +10,6 @@ amends: []
 amended-by: []
 affects:
   - 3DEngine/**
-  - BlazorApp/**
 enforced-by: UNENFORCED (accepted risk)
 notes: No render host wires the projection yet.
 ---
@@ -113,3 +112,8 @@ User-settings persistence (theme, last-opened project, recent files, panel layou
 - **Selection that is a query result.** "Select all bolts touching face F" is a query against the Document; the *result* is ephemeral selection state, but the query itself must run somewhere. V1: the engine exposes selection queries as read APIs; clients call them and store the result. Future: the queries themselves may need command form for replayability of test scenarios.
 - **Named views as Document content.** The first feature that crosses the boundary "feels like UI but is shared" — V1 ships without saved views. When added, they are a clean test of the boundary.
 - **Settings sync across machines.** Out of scope. If ever in scope, settings become a separate document, not part of the project Document.
+
+## History
+
+- 2026-10-27 · TASK-0040 · `affects` loses `BlazorApp/**`. TASK-0033 removed the Blazor projects, and
+  no tracked file is under that path.

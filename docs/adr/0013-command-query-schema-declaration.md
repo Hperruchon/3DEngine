@@ -1,18 +1,17 @@
 ---
 id: 0013
 title: Command and query schema declaration
-status: Amended
+status: Accepted
 topic: Contracts, observability
 date: 2026-05-27
 supersedes: []
 superseded-by: []
 amends: []
-amended-by: ['0016']
+amended-by: []
 affects:
   - Engine.Contracts/Handlers/**
   - Engine.Api.Http/Endpoints/Schema**
 enforced-by: Engine.Tests/Http/SchemaEndpointGateTests.cs
-notes: ADR-0016 adds the construction step that reads the declaration.
 ---
 
 # ADR 0013 — Command/query schema declaration
@@ -48,6 +47,7 @@ public interface ICommandHandler
     IReadOnlyDictionary<string, FieldSchema> Parameters { get; }
     IReadOnlyDictionary<string, FieldSchema> Outputs { get; }
     Task<CommandHandlerResult> Handle(Command command, Document document, IGeometryBackend backend, CancellationToken ct);
+    Command Create(CommandInput input);   // §7
 }
 
 public interface IQueryHandler
@@ -57,6 +57,7 @@ public interface IQueryHandler
     IReadOnlyDictionary<string, FieldSchema> Parameters { get; }
     IReadOnlyDictionary<string, FieldSchema> Result { get; }
     // ...Handle signature TBD when first query lands.
+    Query Create(QueryInput input);       // §7
 }
 ```
 
@@ -106,6 +107,24 @@ Registry `QueryRegistry` is empty in V1. When the first query handler ships, it 
 
 Event payload schemas (`/schema/events`) remain hand-encoded for V1.x. Per TASK-0009 §Notes, "will become registry-driven when an event registry lands." That event registry is its own concern (likely tied to whoever ships persistence). This ADR addresses commands and queries only.
 
+### 7. Construction reads the declaration (ADR-0016)
+
+Each host builds a command or a query from the declaration of its handler, in three steps: it finds
+the handler in the registry, it binds the raw parameters, and it calls `Create`. No host holds the
+name of a command or of a query.
+
+- `ICommandHandler.Create(CommandInput)` and `IQueryHandler.Create(QueryInput)` build the typed
+  command or query. `CommandInput` and `QueryInput` are records in `Engine.Contracts`.
+- `Engine.Core/Hosting/ParameterBinder.cs` converts raw values into typed values from the
+  `FieldSchema` declaration of the handler, with the invariant culture. It reports a missing
+  required field and an incorrect type as a failure with the field name. One binder serves each
+  host, so two hosts cannot validate the same command in two ways.
+- `Engine.Core/Hosting/HandlerCatalog.cs` is the one list of handlers. Each host and the canonical
+  replay gate call `HandlerCatalog.RegisterAll`.
+
+ADR-0016 gives the reasons and the methods that the project refused. `DispatchSurfaceGateTests`
+holds the rule that a host names no command.
+
 ## Consequences
 
 - **`Engine.Contracts` evolves.** `FieldSchema` moves in; `ICommandHandler` grows two members; `IQueryHandler` grows two members. Gated by this ADR per CLAUDE.md.
@@ -138,3 +157,8 @@ Event payload schemas (`/schema/events`) remain hand-encoded for V1.x. Per TASK-
 - **Schema versioning across `SchemaVersion` bumps.** When `CreateBox@2` ships alongside `CreateBox@1`, do both schemas live in their handlers (one handler per version) or in one handler with both shapes? Likely one handler per version (already how the registry keys are shaped). Confirm when the first `@2` arrives.
 - **Cross-language client codegen.** Once the schema is reliably handler-declared, codegen (TypeScript clients, Python SDK, AI-agent tool definitions) becomes mechanical. Not in scope but unblocked by this ADR.
 - **Default values.** `FieldSchema(Type, Required)` has no `Default`. The first command with an optional-with-default parameter forces an additive amendment.
+
+## History
+
+- 2026-10-27 · TASK-0040 · Item 7 holds the construction step of ADR-0016 (2026-09-20): `Create` on
+  each handler, `ParameterBinder` and `HandlerCatalog`. ADR-0016 no longer amends this record.

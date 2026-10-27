@@ -12,7 +12,6 @@ affects:
   - Engine.Contracts/Geometry/**
   - Engine.Core/Commands/**
 enforced-by: Engine.Tests/Commands/CreateBoxCommandTests.cs
-notes: Carries in-file Amendment 1, accepted 2026-07-05: ITransformOps and IBooleanOps.
 ---
 
 # ADR 0012 — Geometry backend wiring (V1)
@@ -50,6 +49,8 @@ public enum BackendCapabilities
     None        = 0,
     Mesh        = 1 << 0,
     Query       = 1 << 1,
+    Transform   = 1 << 2,
+    Booleans    = 1 << 3,
     // BRep, ExactBooleans, FaceIds, Offset, Fillet reserved per ADR-0001.
 }
 ```
@@ -76,8 +77,26 @@ Notes:
 
 - `BoxParameters` and `Aabb` are POCO value types in `Engine.Contracts.Geometry`. They are NOT generic geometry POCOs (rejected by ADR-0001 §Non-goals); they are command-input and query-output value types.
 - `IMeshOps.CreateBox` takes a pre-computed `BodyHandle` and is responsible for storing the body under it. The handler chooses the handle; see §4.
-- Subsequent V1 capability additions (translate, boolean, tessellate-export, raycast, …) extend `IMeshOps` / `IGeometryQuery` under their own sized TASK and an amendment to this ADR.
+- A later capability gets its own interface when a backend can be unable to honour it, under its own task and a change to this ADR.
 - `IBRepOps` and `IFeatureIdMap` remain reserved markers per ADR-0001 §1.
+
+Two more capability interfaces hold the operations that need a real kernel:
+
+```csharp
+public interface ITransformOps
+{
+    void Translate(BodyHandle result, BodyHandle source, double dx, double dy, double dz);
+}
+
+public interface IBooleanOps
+{
+    void Subtract(BodyHandle result, BodyHandle minuend, BodyHandle subtrahend);
+}
+```
+
+- They are their own interfaces, not members of `IMeshOps`. The managed stub of §7 stores box dimensions only, and it cannot represent a translated solid or a boolean solid. Because the interfaces are separate, the stub does not implement them: a handler gets null from `TryGet<T>()` and returns `E-GEOM-CAP-MISSING`. A stub that claimed the capability would be a silent fallback (ADR-0001 §4).
+- These are the mesh booleans of Manifold. They are not the reserved B-Rep `ExactBooleans` (ADR-0001 §1).
+- Only `ManifoldGeometryBackend` implements them, with `manifold_translate` and `manifold_difference`.
 
 ### 2. Handler-to-backend access
 
@@ -96,6 +115,8 @@ This is a breaking change to `Engine.Contracts`. Existing handlers (`NoOpCommand
 - `CommandBus` constructor gains a non-optional `IGeometryBackend backend` parameter. There is always a backend — even if it is an empty `NullGeometryBackend` whose `Capabilities = None` and `TryGet<T>()` always returns null. This avoids null-checking inside handlers.
 - A handler that needs `IMeshOps` calls `backend.TryGet<IMeshOps>()` and fails fast with a structured `ErrorDetail` (`E-GEOM-CAP-MISSING`) if null. No silent fallbacks (ADR-0001 §4).
 - `Replay.ReplayLog(log, document, registry, sink, backend)` likewise takes the backend as a parameter. Replay against a fresh backend means passing a fresh backend instance.
+- A handler checks in this order: each operand is in `Document.Bodies`, then the backend has the capability, then the handler runs the operation. The check of an operand does not depend on the backend, so a bad reference gives `E-GEOM-BODY-NOT-FOUND` on each backend, and the one-shot command line and the tests on each platform stay deterministic.
+- `Translate` and `Subtract` add no diagnostic code. An unknown operand gives `E-GEOM-BODY-NOT-FOUND`, a missing capability gives `E-GEOM-CAP-MISSING`, and a native failure or an empty difference (the subtrahend contains the minuend) gives `E-GEOM-NATIVE-OP`.
 
 Rationale: backends are caches. Constructor injection on handlers binds each handler instance to a specific backend at registration time; cache recovery via replay would require rebuilding the registry. Handle-parameter injection structurally aligns with ADR-0001's "switching backends is performed by replaying the command log against the new backend." It also makes the bus the single source of truth for "which backend is active" — no per-handler routing logic.
 
@@ -117,7 +138,7 @@ public sealed class Document
 public sealed record BodyRecord(BodyHandle Handle, string Kind);
 ```
 
-- `Kind` is a string discriminator (V1: `"Box"`); extends additively as new primitives land.
+- `Kind` is a string discriminator; extends additively as new primitives land. `"Box"` is a box from `CreateBox`. `"Solid"` is a general manifold solid, the result of `Translate` and `Subtract`.
 - The Document holds the *handle list and minimum metadata*; the backend owns the *geometry data*. This matches ADR-0001 §3.
 - Future fields (name, parent, hidden flag, etc.) extend `BodyRecord` additively under their own sized TASK.
 
@@ -129,7 +150,7 @@ Body handles are computed by the handler, deterministically from inputs that sur
 BodyHandle handle = new BodyHandle(command.CommandId);
 ```
 
-For commands that create exactly one body (V1's `CreateBox`), the handle Guid equals the command Guid. For commands that create N bodies in a single commit (future), the handler derives stable child Guids via a versioned scheme (e.g. `Guid.Create(commandId, ordinal)` per RFC 4122 §4.3) — out of scope for V1, sized when the first such command lands.
+For commands that create exactly one body (`CreateBox`, `Translate` and `Subtract`), the handle Guid equals the command Guid. `Translate` and `Subtract` each create one new body and emit the existing `body.created`; no new event kind. ADR-0021 decides what happens to their operands. For commands that create N bodies in a single commit (future), the handler derives stable child Guids via a versioned scheme (e.g. `Guid.Create(commandId, ordinal)` per RFC 4122 §4.3) — out of scope for V1, sized when the first such command lands.
 
 Rationale: `Guid.NewGuid()` is non-deterministic across replay. `CommandId` is supplied by the client (or generated once at submission) and persisted in the command log. Replay against a new backend produces identical handles, identical Document state, and identical events — preserving ADR-0005's replay invariants.
 
@@ -169,6 +190,8 @@ The first sized TASK ships an in-process managed backend:
 - Computes AABB from `BoxParameters` directly (axis-aligned, no transforms in V1).
 - No native interop. No threading concerns beyond the bus's serial section.
 
+- Does not implement `ITransformOps` or `IBooleanOps` (§1). On a host that uses the stub, for example a runtime identifier with no native payload, `Translate` and `Subtract` fail with `E-GEOM-CAP-MISSING`, and the engine still runs.
+
 This is *not* the Manifold backend — it is the wiring slice. A follow-on TASK swaps Manifold in behind the same capability interfaces. Until then, V1.x has a working `CreateBox` round-trip and the project ships value.
 
 ## Consequences
@@ -176,7 +199,7 @@ This is *not* the Manifold backend — it is the wiring slice. A follow-on TASK 
 - **`Engine.Contracts` evolves.** Capability interfaces gain methods; `ICommandHandler.Handle` gains a parameter; `Document` gains `Bodies`; `BodyRecord`, `BoxParameters`, `Aabb`, `BackendCapabilities` are new public types. All gated by this ADR per CLAUDE.md.
 - **`CommandBus` and `Replay` evolve.** Both take a backend parameter. Existing call sites in `Engine.Cli`, `Engine.Api.Http`, and tests update to pass one (the V1.x first slice wires the stub; the NoOp-only paths get a `NullGeometryBackend`).
 - **`NoOpCommandHandler` updates.** Adds the new parameter, ignores it. No behavioural change.
-- **Replay determinism gate continues to hold.** Body handles are functions of `CommandId`; replay produces byte-identical events and Document state (modulo `Timestamp`/`DocumentId`).
+- **Replay determinism gate continues to hold.** Body handles are functions of `CommandId`; replay produces byte-identical events and Document state (modulo `Timestamp`/`DocumentId`). The canonical gate stays on the managed stub. `ManifoldReplayRoundTripTests` replays create, create, translate and subtract twice on the native backend and compares the state (ADR-0014 keeps the reproducibility of the native library across platforms out of the canonical gate).
 - **Snapshot grows.** ADR-0010 §3 anticipated this; the snapshot-shape gate test in P6.3 updates to permit the new `bodies` array.
 - **Manifold deferred.** The decision to use Manifold (vs. alternatives), the wrapper choice, native lifecycle, threading, build/distribution — all become a follow-on ADR sized when the stub backend has shipped. The V1.x slice does not block on it.
 - **One backend per process for V1.x.** Per ADR-0011, `engine-api-http` is one process; one backend per process is the V1 deployment. Multi-backend (mesh + B-Rep concurrent) is V2 territory; the capability dispatch in `IGeometryBackend.TryGet<T>()` already allows it without further ADR change.
@@ -199,6 +222,8 @@ This is *not* the Manifold backend — it is the wiring slice. A follow-on TASK 
 4. `CommandHandlerResult` extends to carry zero-or-more body additions (e.g. `IReadOnlyList<BodyRecord> CreatedBodies`); the bus appends them to `Document.Bodies` inside the serial commit section. CI: `Document.Bodies` is never mutated outside `CommandBus.Apply`'s commit step.
 5. The `subscription.reset` snapshot includes `bodies` (possibly empty) at all times once this ADR ships. CI: WebSocket snapshot gate test asserts the field is present.
 6. Capability-missing failures use `E-GEOM-CAP-MISSING` (new diagnostic code; registered in `docs/diagnostics.md`, `DiagnosticCodes.cs`, and `/schema/diagnostics` in the same change).
+7. `InProcessMeshBackend` does not implement `ITransformOps` or `IBooleanOps`; `TryGet<T>()` returns null for both. CI: `InProcessMeshBackendTests`.
+8. The result of `Translate` and of `Subtract` is a new body with the handle `== CommandId` and the kind `"Solid"`. CI: the native backend tests and the replay tests.
 
 ## Open challenges
 
@@ -207,85 +232,11 @@ This is *not* the Manifold backend — it is the wiring slice. A follow-on TASK 
 - **Concurrent backends.** A future workload may want mesh and B-Rep simultaneously. `IGeometryBackend.TryGet<T>()` accommodates it; the question is whether the bus passes a single backend or a catalog. Defer until V2 motivates it.
 - **Tessellation-for-clients.** Render-capable clients (`3DEngine`, `BlazorApp.Client`) eventually need triangulated previews. Whether that lives on `IGeometryQuery.Tessellate(handle)` or `IMeshOps.Tessellate(handle)` is open; ADR-0001 §Open challenges flagged it. Decided when the first client actually consumes it.
 
-## Amendment 1 — Translate + Subtract capabilities (P7c, TASK-0013)
+## History
 
-Accepted — 2026-07-05. Extends the capability surface with the first operations
-that require a real kernel. §1 anticipated this: "Subsequent V1 capability additions
-(translate, boolean, …) extend `IMeshOps` / `IGeometryQuery` under their own sized
-TASK and an amendment to this ADR." This is that amendment. Nothing in §§2–7 is
-reopened; the wiring (handler-to-backend access, deterministic handles, the
-`Document.Bodies` projection, `body.created`) is reused unchanged.
-
-### A1.1 Two new capability interfaces, not extensions of `IMeshOps`
-
-```csharp
-public interface ITransformOps
-{
-    void Translate(BodyHandle result, BodyHandle source, double dx, double dy, double dz);
-}
-
-public interface IBooleanOps
-{
-    void Subtract(BodyHandle result, BodyHandle minuend, BodyHandle subtrahend);
-}
-```
-
-`BackendCapabilities` gains `Transform = 1 << 2` and `Booleans = 1 << 3`.
-
-Rather than adding these methods to `IMeshOps` (as §1's wording literally suggested),
-they are their own capability interfaces. Rationale: the managed `InProcessMeshBackend`
-stores only box dimensions and genuinely cannot represent a translated or boolean
-solid. Separate interfaces let it honestly *not* implement them — a handler calling
-`backend.TryGet<IBooleanOps>()` on the stub gets null and returns a clean
-`E-GEOM-CAP-MISSING`. Folding these onto `IMeshOps` would force the stub to claim a
-capability it cannot honor, which is the "no silent fallback / no lowest-common-
-denominator geometry" anti-objective (ADR-0001 §4; CHARTER). These are Manifold **mesh**
-booleans — distinct from the reserved BRep `ExactBooleans` (ADR-0001 §1).
-
-### A1.2 Native-only; the managed stub is unchanged
-
-Only `ManifoldGeometryBackend` implements the two interfaces (via `manifold_translate`
-and `manifold_difference`). `InProcessMeshBackend` is untouched, preserving §7's
-"no transforms in V1" posture. On a host that fell back to the stub (a RID with no
-native payload), Translate and Subtract reject with `E-GEOM-CAP-MISSING`; the engine
-still runs everywhere.
-
-### A1.3 New commands, each producing a new body
-
-`Translate { bodyId, dx, dy, dz }` and `Subtract { minuendBodyId, subtrahendBodyId }`
-each produce **one new body** and leave their operand(s) intact (non-destructive). The
-new body's handle is `new BodyHandle(command.CommandId)` (§4), it flows through
-`CommandHandlerResult.CreatedBodies`, and the bus emits the existing `body.created`
-event — **no new event kind**. The result's `BodyRecord.Kind` is `"Solid"` (a general
-manifold solid; extends the §3 discriminator additively).
-
-### A1.4 No new diagnostic codes
-
-Every failure reuses an existing `GEOM` code: unknown operand → `E-GEOM-BODY-NOT-FOUND`;
-backend lacks the capability → `E-GEOM-CAP-MISSING`; native failure or a degenerate
-(empty) difference where the subtrahend contains the minuend → `E-GEOM-NATIVE-OP`
-(whose registered meaning already covers "returned a degenerate result").
-
-### A1.5 Handler check order
-
-Handlers validate in the order: **operand exists in `Document.Bodies` → backend
-capability present → run the op.** Operand existence is backend-independent (mirrors
-`GetBoundingBox`), so a bad reference reports `E-GEOM-BODY-NOT-FOUND` identically on any
-backend, which keeps the one-shot CLI and cross-platform tests deterministic.
-
-### A1.6 Determinism unchanged
-
-Result handles are pure functions of `CommandId`, so replay is stable. The canonical
-replay-determinism gate stays on the managed stub and box-only (§Consequences); the
-native path gets its own pinned/gated round-trip test that replays a
-create → create → translate → subtract sequence twice and asserts identical state
-(ADR-0014 §Open challenges keeps cross-platform native reproducibility out of the core
-gate).
-
-### A1.7 Validation rules (in addition to §Validation rules)
-
-1. `InProcessMeshBackend` does not implement `ITransformOps`/`IBooleanOps`; `TryGet<T>()`
-   returns null for both. CI: `InProcessMeshBackendTests`.
-2. Translate/Subtract results are new bodies with handle `== CommandId` and `Kind ==
-   "Solid"`; operands remain in `Document.Bodies`. CI: native backend + replay tests.
-3. No new diagnostic code is introduced by this amendment.
+- 2026-07-05 · TASK-0013 · An in-file "Amendment 1" adds `ITransformOps`, `IBooleanOps`, the commands
+  `Translate` and `Subtract`, and the kind `"Solid"`.
+- 2026-10-27 · TASK-0040 · Amendment 1 folds into items 1, 2, 3, 4 and 7, the consequences and the
+  validation rules, and its section goes. Item 1 no longer says that a later capability extends
+  `IMeshOps`, because Amendment 1 chose separate interfaces. ADR-0018 and ADR-0021 still amend this
+  record; their folds wait.

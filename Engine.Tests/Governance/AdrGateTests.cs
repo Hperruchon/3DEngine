@@ -34,6 +34,14 @@ public class AdrGateTests
         string Affects,
         string EnforcedBy);
 
+    // The heading of the list of archived numbers in docs/adr/README.md. A
+    // withdrawn or superseded record moves to docs/adr/archive/, and its number
+    // stays in that list (docs/templates.md, section 1, rule 4). The gate does not
+    // read the archive: an archived record is history, and no rule applies to its
+    // text. Until TASK-0040 the gate had no archive, therefore a withdrawn record
+    // stayed in the index and a reader had to skip it.
+    private const string ArchivedHeading = "## Archived";
+
     // The count of ADRs with no enforcement, at the moment this gate was built.
     // The gate fails when the count grows. It does not fail on the present count,
     // because two records describe work that is deliberately not built.
@@ -100,6 +108,7 @@ public class AdrGateTests
     {
         // This check is the one that would have caught register entry R-0006.
         var byId = Parse().ToDictionary(a => a.Id, StringComparer.Ordinal);
+        var archived = IndexRows().Archived.Select(RowId).ToHashSet(StringComparer.Ordinal);
         var problems = new List<string>();
 
         foreach (var adr in byId.Values)
@@ -121,7 +130,10 @@ public class AdrGateTests
             {
                 if (!byId.TryGetValue(to, out var target))
                 {
-                    problems.Add($"{from}: {field} names {to}, which does not exist");
+                    // An archived record is not read, therefore its side of the
+                    // pair is not checked. ADR-0019 supersedes the archived ADR-0011.
+                    if (!archived.Contains(to))
+                        problems.Add($"{from}: {field} names {to}, which is not in docs/adr/ and is not archived");
                     continue;
                 }
 
@@ -182,12 +194,12 @@ public class AdrGateTests
         // docs/templates.md says that a generated index is the correct end state.
         // A tool does not exist yet, therefore this test verifies agreement. The
         // protection is the same: drift fails the build.
-        var index = RepositoryFiles.Read("docs", "adr", "README.md");
+        var (inForce, archived) = IndexRows();
         var problems = new List<string>();
 
         foreach (var adr in Parse())
         {
-            var row = index.Split('\n')
+            var row = inForce
                 .FirstOrDefault(l => l.StartsWith($"| [{adr.Id}]", StringComparison.Ordinal));
 
             if (row is null)
@@ -200,15 +212,54 @@ public class AdrGateTests
                 problems.Add($"{adr.Id}: the index row does not give the status {adr.Status}");
         }
 
-        foreach (var row in index.Split('\n').Where(l => l.StartsWith("| [0", StringComparison.Ordinal)))
+        foreach (var id in inForce.Select(RowId))
         {
-            var id = Regex.Match(row, @"\[(\d{4})\]").Groups[1].Value;
             if (Parse().All(a => a.Id != id))
                 problems.Add($"the index has a row for {id}, which has no file");
         }
 
+        foreach (var id in archived.Select(RowId))
+        {
+            if (Parse().Any(a => a.Id == id))
+                problems.Add($"{id}: the index lists it under \"Archived\", but its file is still in docs/adr/; move the file to docs/adr/archive/");
+
+            if (inForce.Any(l => RowId(l) == id))
+                problems.Add($"{id}: the index lists it in force and under \"Archived\"");
+        }
+
         Assert.True(problems.Count == 0, string.Join("\n  ", problems));
     }
+
+    // docs/templates.md, section 1, rule 4: a record that no decision needs
+    // leaves docs/adr/, so that each record a reader opens there is in force or
+    // proposed. Until TASK-0040 the rule was text only, and ADR-0003 stayed in
+    // docs/adr/ with the status Withdrawn.
+    [Fact]
+    public void No_Record_In_The_Adr_Directory_Is_Withdrawn_Or_Superseded()
+    {
+        var problems = Parse()
+            .Where(a => a.Status is "Withdrawn" or "Superseded")
+            .Select(a => $"{a.Id}: the status is {a.Status}; move the file to docs/adr/archive/ and list "
+                + "the number under \"Archived\" in docs/adr/README.md")
+            .ToArray();
+
+        Assert.True(problems.Length == 0, string.Join("\n  ", problems));
+    }
+
+    // The rows of the index in docs/adr/README.md: the rows above the heading
+    // "Archived" are the records in docs/adr/, and the rows below it are the
+    // archived numbers.
+    private static (string[] InForce, string[] Archived) IndexRows()
+    {
+        var lines = RepositoryFiles.Read("docs", "adr", "README.md").Replace("\r", string.Empty).Split('\n');
+        var heading = Array.FindIndex(lines, l => l.TrimEnd() == ArchivedHeading);
+        var end = heading < 0 ? lines.Length : heading;
+
+        static bool IsRow(string line) => line.StartsWith("| [0", StringComparison.Ordinal);
+        return (lines[..end].Where(IsRow).ToArray(), lines[end..].Where(IsRow).ToArray());
+    }
+
+    private static string RowId(string row) => Regex.Match(row, @"\[(\d{4})\]").Groups[1].Value;
 
     private static IEnumerable<string> AdrFiles()
         => Directory.EnumerateFiles(RepositoryFiles.Path("docs", "adr"), "0*.md").OrderBy(f => f);
