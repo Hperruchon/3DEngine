@@ -85,11 +85,15 @@ internal sealed class DesktopSurface : IDisposable
         // The container makes the session here, so it owns it, and the disposal of
         // the app disposes the backend. Before TASK-0062 the desktop made the
         // session itself, and nothing disposed it (finding E52 of the review of
-        // 2026-10-11).
-        var host = app.Services.GetRequiredService<EngineHost>();
-        app.MapEngineSurface();
+        // 2026-10-11). The session resolves inside the try, so that a throw there also
+        // disposes the app; until TASK-0079 it resolved before the try, and the outer
+        // catch of the desktop gave code 5 with the app not disposed (finding E71 of the
+        // codebase review of 2026-10-17).
+        EngineHost host;
         try
         {
+            host = app.Services.GetRequiredService<EngineHost>();
+            app.MapEngineSurface();
             app.StartAsync().GetAwaiter().GetResult();
         }
         catch (IOException ex) when (ex.InnerException is AddressInUseException)

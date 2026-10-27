@@ -99,3 +99,8 @@ validation.
   the commit failed both. The first version of the blocking test passed under that injection, because a
   commit with no real wait ends before `Apply` returns its task; the test now starts `Apply` on the
   thread pool. The broken comment line of the broadcaster goes.
+- 2026-10-27: E68, E70 and E71. `engine-api-http` gives code 5 for a configuration file that it cannot
+  read; a process test holds it, and the old program failed it with an unhandled exception and a crash
+  code. The comment of the stop limit gives the measured wait: three runs gave 3.01 s to 3.02 s, as the
+  review measured. Each early return of the two hosts disposes the app. E71 has no test: the review found
+  it by reading, and the two paths have no failure that a test can cause on purpose.
