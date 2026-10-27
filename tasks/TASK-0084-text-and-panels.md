@@ -113,3 +113,8 @@ way, and a gesture outside the panel still moves the camera.
 
 - 2026-10-27: opened after TASK-0079 (v0.85). The first commit holds ADR-0027, the amendment of ADR-0026, the
   close of R-0021, the roadmap rows and the rule of KD2, and the copy of the decision sheet.
+- 2026-10-27: `UiLibraryGateTests` holds ADR-0027 items 1 and 8. An injected line with the namespace in
+  `3DEngine/NativeThreeDEngine.cs` and an injected pin in `3DEngine.Vulkan/3DEngine.Vulkan.csproj` each failed
+  the scan of the repository. The first version found its own file; the scan now leaves out the file of the
+  gate, and the functions that find an offence keep no exception. A pin with another case and a global using
+  in a project file are offences too.
