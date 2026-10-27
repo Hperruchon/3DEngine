@@ -6,7 +6,7 @@ topic: Contracts, clients
 date: 2026-09-20
 supersedes: []
 superseded-by: []
-amends: ['0013']
+amends: []
 amended-by: []
 affects:
   - Engine.Contracts/Handlers/**
@@ -125,3 +125,8 @@ and call `Create`. No host holds the name of a command.
 - Register entry R-0003 closes with this ADR and its task.
 - The `Parameters` vocabulary needs `object` and `array` when a command needs a nested value. That
   work needs its own ADR.
+
+## History
+
+- 2026-10-27 · TASK-0040 · ADR-0013 item 7 now holds the construction step, so this record no longer
+  amends ADR-0013. This record keeps the context, the reasons and the methods that the project refused.

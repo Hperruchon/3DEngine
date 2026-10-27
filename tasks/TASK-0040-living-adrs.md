@@ -131,3 +131,6 @@ which no code reads now. Since TASK-0053 the program `eng/write-set-check` is th
   touched more sections, and item 6 (the snapshot) did not change. Where Amendment 1 said that the
   operands stay, the text now names ADR-0021, which consumes them. This changes a section
   "Decision": the owner accepts it with the summary.
+- 2026-10-27: ADR-0013 item 7 holds the construction step of ADR-0016, and the code samples of item 1
+  show `Create`. ADR-0013 is Accepted, and ADR-0016 no longer amends it; ADR-0016 stays in force for
+  its reasons. This changes a section "Decision": the owner accepts it with the summary.
