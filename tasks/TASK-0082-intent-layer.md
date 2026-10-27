@@ -104,3 +104,12 @@ and keyboard give the same intents.
   names `eng/test-floor.txt`, whose exact count each task that adds tests changes since TASK-0078, so the
   forbid of `eng/**` becomes the two programs of `eng/`; it also names `docs/adr/0023-camera-depth-and-draw-list.md`
   and `tasks/TASK-0079-host-and-render-gaps-of-the-ninth-review.md`, whose `governed-by` gains ADR-0026.
+- 2026-10-27: the intent layer. `3DEngine.Core/Input/` holds the samples, the intents, the settings with the
+  default map of D4, and `IntentMachine`; a pair of contacts moves once for each frame, so two fingers that
+  move together pan and do not pinch. `Camera.Pan` moves the target in the plane of the view. `SdlInput` in
+  `3DEngine.Vulkan` translates SDL events, keeps Shift from the key events, and drops each mouse event of
+  `SDL_TOUCH_MOUSEID`; the window turns `SDL_HINT_TOUCH_MOUSE_EVENTS` off. The host applies the intents to the
+  camera and keeps the point of a selection. Sixteen new tests; four injections each failed: a kind of intent
+  with no scripts (the coverage check), a one-finger drag mapped to pan (the parity of orbit and cancel), an
+  inverted pinch (the parity of zoom), and a translation that keeps the synthetic mouse events (the double
+  count).

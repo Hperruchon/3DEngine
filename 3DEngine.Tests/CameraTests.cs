@@ -158,4 +158,28 @@ public class CameraTests
 
         Assert.Equal(2.0, camera.Distance);
     }
+
+    // ADR-0026 (TASK-0082): a pan moves the target and the eye together, in the plane of
+    // the view. A drag to the right moves the scene to the right, so the target moves to the
+    // left; the distance, the yaw and the pitch do not change.
+    [Fact]
+    public void A_Pan_Moves_The_Target_In_The_Plane_Of_The_View()
+    {
+        var camera = new Camera { Target = (1, 2, 3), Distance = 10, YawDegrees = 0, PitchDegrees = 0, FieldOfViewDegrees = 90f };
+        var eyeBefore = camera.Eye();
+
+        camera.Pan(50, 0, 100);
+
+        // One pixel is 2 * 10 * tan(45 degrees) / 100 = 0.2 at the depth of the target.
+        Assert.Equal(1 - 10, camera.Target.X, 9);
+        Assert.Equal(2, camera.Target.Y, 9);
+        Assert.Equal(3, camera.Target.Z, 9);
+        var eyeAfter = camera.Eye();
+        Assert.Equal(eyeBefore.X - 10, eyeAfter.X, 9);
+        Assert.Equal(eyeBefore.Z, eyeAfter.Z, 9);
+        Assert.Equal((10.0, 0.0, 0.0), (camera.Distance, camera.YawDegrees, camera.PitchDegrees));
+
+        camera.Pan(0, 50, 100);
+        Assert.Equal(2 + 10, camera.Target.Y, 9);
+    }
 }
