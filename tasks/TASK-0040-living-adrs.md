@@ -116,3 +116,4 @@ which no code reads now. Since TASK-0053 the program `eng/write-set-check` is th
   `amends` when ADR-0013 folds it. TASK-0079 loses ADR-0011 in `governed-by` when ADR-0011 leaves
   `docs/adr/`. `eng/test-floor.txt` holds the new count of the gate. `docs/templates.md`,
   section "What each gate reads", gives the new refusals of `AdrGateTests`.
+- 2026-10-27: ADR-0003 is in `docs/adr/archive/` (9c2814e). The gate fails before the move on the\n  withdrawn record, and fails on an injected archived row for 0007 and on `amends` that names 0099.\n  The old gate fails on the new list. ADR-0007 loses `BlazorApp/**`.
