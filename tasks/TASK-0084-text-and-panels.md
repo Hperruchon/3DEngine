@@ -141,3 +141,7 @@ way, and a gesture outside the panel still moves the camera.
   process, and xunit ran `DesktopUiTests` and `PanelImageTests` at the same time. The two classes now share the
   collection "Dear ImGui". With the collection removed from one class, two runs crashed the test host and a
   third blocked until its limit; with it, the 24 tests of `3DEngine.ImageTests` pass in 0.6 s.
+- 2026-10-28: `THIRD-PARTY-NOTICES.md` section 5 gives the licence texts of ImGui.NET, cimgui and Dear ImGui at
+  the tags of the versions in use, and names the default font ProggyClean (MIT, by Tristan Grimmer). The
+  repository does not hold the package, but the output of the desktop holds its native library.
+  `docs/INDEX.md` names the two folders `Ui/`, and the glossary defines "panel".
