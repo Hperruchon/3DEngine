@@ -41,7 +41,9 @@ public enum KeyModifiers
     Alt = 4,
 }
 
-// The keys that the default map of gestures reads (ADR-0026 item 3).
+// The keys that the default map of gestures reads (ADR-0026 item 3), and the keys of text
+// editing that a text field of the user interface reads (ADR-0027 item 5). The state machine
+// of intents reads none of the keys of text editing.
 public enum InputKey
 {
     ArrowLeft,
@@ -50,6 +52,13 @@ public enum InputKey
     ArrowDown,
     Plus,
     Minus,
+    Backspace,
+    Delete,
+    Home,
+    End,
+    Enter,
+    Escape,
+    Tab,
 }
 
 // One sample, at a time in nanoseconds of one clock of the host.
@@ -74,6 +83,11 @@ public sealed record WheelSample(double Steps, ulong TimestampNs) : InputSample(
 
 // A key that goes down (also when it repeats) or up.
 public sealed record KeySample(InputKey Key, bool Down, KeyModifiers Modifiers, ulong TimestampNs) : InputSample(TimestampNs);
+
+// The text that the keyboard gives, in UTF-16, for example one character or the result of a
+// composition (ADR-0027 item 5). It is apart from the key sample of the same press: a text
+// field reads the text, and the state machine of intents reads the key.
+public sealed record TextSample(string Text, ulong TimestampNs) : InputSample(TimestampNs);
 
 // The window lost the focus, so each pointer that is down is lost.
 public sealed record FocusLostSample(ulong TimestampNs) : InputSample(TimestampNs);

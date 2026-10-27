@@ -118,3 +118,7 @@ way, and a gesture outside the panel still moves the camera.
   the scan of the repository. The first version found its own file; the scan now leaves out the file of the
   gate, and the functions that find an offence keep no exception. A pin with another case and a global using
   in a project file are offences too.
+- 2026-10-28: the input of a text field (ADR-0027 item 5). `TextSample` holds the text that the keyboard
+  gives, and `InputKey` gains Backspace, Delete, Home, End, Enter, Escape and Tab. `SdlInput` translates the
+  text input of SDL and keeps the Control keys; the window turns on the text input. Three new tests; each one
+  failed with its injection (no text case, no Control state, an editing key that zooms).
