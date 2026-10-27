@@ -114,3 +114,6 @@ validation.
   for a frame have a limit of 5 s. The composite alpha comes from the modes of the surface; five tests
   hold the choice, and the old choice of opaque failed four of them. The desktop run of V16 checks V18 and
   V19.
+- 2026-10-27: V22. The camera refuses a distance that is 0, negative, NaN or infinite, a zoom of NaN and an
+  aspect of NaN. `Frame` returns false when the sphere around the box is not between the planes, and the
+  renderer of the desktop writes a warning. Seven new tests; the old checks failed each one.

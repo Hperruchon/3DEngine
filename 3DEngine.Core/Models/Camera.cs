@@ -25,6 +25,7 @@ public sealed class Camera : Entity
     private float _fieldOfViewDegrees = 60.0f;
     private float _nearPlane = 0.1f;
     private float _farPlane = 1000.0f;
+    private double _distance = 10.0;
 
     /// <summary>The vertical field of view, greater than 0 and less than 180 degrees.</summary>
     public float FieldOfViewDegrees
@@ -56,8 +57,18 @@ public sealed class Camera : Entity
     /// <summary>The point that the camera looks at, in the space of the scene.</summary>
     public (double X, double Y, double Z) Target { get; set; }
 
-    /// <summary>The distance from the eye to the target.</summary>
-    public double Distance { get; set; } = 10.0;
+    /// <summary>The distance from the eye to the target, finite and greater than 0.</summary>
+    /// <remarks>
+    /// Finding V22 of the codebase review of 2026-10-17 (TASK-0079): a distance of 0 put
+    /// the eye on the target, and the view had no direction and gave NaN.
+    /// </remarks>
+    public double Distance
+    {
+        get => _distance;
+        set => _distance = double.IsFinite(value) && value > 0
+            ? value
+            : throw new ArgumentOutOfRangeException(nameof(Distance), value, "A distance is finite and greater than 0.");
+    }
 
     /// <summary>The turn about the y axis; 0 puts the eye on the positive z side of the target.</summary>
     public double YawDegrees { get; set; }
@@ -75,8 +86,8 @@ public sealed class Camera : Entity
     /// <summary>Multiplies the distance by the factor, and keeps the eye between the near plane and the far plane.</summary>
     public void Zoom(double factor)
     {
-        if (factor <= 0)
-            throw new ArgumentOutOfRangeException(nameof(factor), "A zoom factor is positive.");
+        if (!(double.IsFinite(factor) && factor > 0))
+            throw new ArgumentOutOfRangeException(nameof(factor), factor, "A zoom factor is finite and positive.");
 
         Distance = ClampDistance(Distance * factor);
     }
@@ -115,10 +126,18 @@ public sealed class Camera : Entity
     /// distance puts the sphere around the box inside the smaller half angle of the field
     /// of view, for the aspect of the picture. The yaw and the pitch do not change.
     /// </summary>
-    public void Frame((double X, double Y, double Z) min, (double X, double Y, double Z) max, float aspect)
+    /// <returns>
+    /// False when the sphere around the box is not between the near plane and the far
+    /// plane at that distance, so that a part of the box is not drawn. The caller reports
+    /// it (finding V22 of the codebase review of 2026-10-17, TASK-0079). Until TASK-0079 a
+    /// box of 3,000 units gave a distance clamped to 500, with the eye inside the body, and
+    /// nothing said so.
+    /// </returns>
+    public bool Frame((double X, double Y, double Z) min, (double X, double Y, double Z) max, float aspect)
     {
-        if (aspect <= 0)
-            throw new ArgumentOutOfRangeException(nameof(aspect), "An aspect is positive.");
+        // NaN passed the old check "aspect <= 0" and gave a distance of NaN (V22).
+        if (!(float.IsFinite(aspect) && aspect > 0))
+            throw new ArgumentOutOfRangeException(nameof(aspect), aspect, "An aspect is finite and positive.");
 
         Target = ((min.X + max.X) / 2.0, (min.Y + max.Y) / 2.0, (min.Z + max.Z) / 2.0);
 
@@ -129,6 +148,7 @@ public sealed class Camera : Entity
         var half = Math.Min(halfVertical, halfHorizontal);
 
         Distance = ClampDistance(radius / Math.Sin(half));
+        return Distance - radius >= NearPlane && Distance + radius <= FarPlane;
     }
 
     // Keeps the eye between two times the near plane and half the far plane. When the
