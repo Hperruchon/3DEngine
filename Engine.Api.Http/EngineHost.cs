@@ -76,5 +76,12 @@ public sealed class EngineHost : IDisposable
     // an event of a commit in progress can still arrive after Dispose returns.
     public IDisposable Subscribe(Action<EventRecord> action) => Broadcaster.Listen(action);
 
-    public void Dispose() => (Backend as IDisposable)?.Dispose();
+    // The session closes first and waits for a command that still runs, so the
+    // backend is never freed under it (finding E66 of the codebase review of
+    // 2026-10-17, TASK-0079). The container of a host calls this after the stop.
+    public void Dispose()
+    {
+        Session.Close();
+        (Backend as IDisposable)?.Dispose();
+    }
 }

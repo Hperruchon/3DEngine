@@ -58,6 +58,7 @@ public sealed class DocumentSession
     public async Task<CommandResult> Apply(Command command, CancellationToken ct = default)
     {
         RefuseReentry();
+        RefuseClosed();
         await _serial.WaitAsync(ct).ConfigureAwait(false);
         Hold();
         try
@@ -73,6 +74,7 @@ public sealed class DocumentSession
     public async Task<QueryResult<T>> Query<T>(Query query, CancellationToken ct = default)
     {
         RefuseReentry();
+        RefuseClosed();
         await _serial.WaitAsync(ct).ConfigureAwait(false);
         Hold();
         try
@@ -93,6 +95,7 @@ public sealed class DocumentSession
         ArgumentNullException.ThrowIfNull(read);
 
         RefuseReentry();
+        RefuseClosed();
         await _serial.WaitAsync(ct).ConfigureAwait(false);
         Hold();
         try
@@ -137,10 +140,45 @@ public sealed class DocumentSession
                 + "itself. Make the call after the section ends.");
     }
 
+    // The end of the session (finding E66 of the codebase review of 2026-10-17,
+    // TASK-0079). A host calls this before it frees the backend. The session refuses
+    // each later call, and Close returns when the serial section is free, so that no
+    // command, query or read still runs on the backend. Until TASK-0079 the stop of a
+    // host ended its wait for an open request after about 3 s, and the backend was
+    // freed under a command that still ran.
+    //
+    // Close has no time limit. A commit does not stop (ADR-0006 section 4), and a
+    // backend that is freed under a native call can corrupt memory, so a command that
+    // never ends holds the stop of its host. A caller that waits for the section when
+    // Close starts gets the section after it, sees the flag and is refused.
+    public void Close()
+    {
+        RefuseReentry();
+        Volatile.Write(ref _closed, true);
+        _serial.Wait();
+        _serial.Release();
+    }
+
+    private bool _closed;
+
+    private void RefuseClosed()
+    {
+        if (Volatile.Read(ref _closed))
+            throw new InvalidOperationException(
+                "The DocumentSession is closed: its host stopped, and its backend is freed or about to be freed.");
+    }
+
     // Not async, so that the value of the AsyncLocal stays in the caller and
-    // reaches the code that the caller runs in the section.
+    // reaches the code that the caller runs in the section. A caller that waited
+    // for the section while Close ran leaves it at once.
     private void Hold()
     {
+        if (Volatile.Read(ref _closed))
+        {
+            _serial.Release();
+            RefuseClosed();
+        }
+
         var token = new object();
         Volatile.Write(ref _holder, token);
         _flow.Value = token;

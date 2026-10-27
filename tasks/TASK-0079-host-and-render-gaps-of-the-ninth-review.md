@@ -1,7 +1,7 @@
 ---
 id: 0079
 title: A stop waits for a running command, and the present path is checked for hazards
-status: Ready
+status: Active
 phase: P0.31
 opened: 2026-10-17
 depends-on: [0040]
@@ -22,13 +22,15 @@ writes:
     - docs/register.md
     - docs/roadmap.md
     - docs/CURRENT-STATE.md
+    - eng/test-floor.txt
   forbid:
     - Engine.Contracts/**
     - Engine.Core/Commands/**
     - Engine.Core/Queries/**
     - Engine.Cli/**
     - Engine.Geometry.Manifold/**
-    - eng/**
+    - eng/write-set-check/**
+    - eng/repo-gates/**
     - docs/adr/**
 ---
 
@@ -82,3 +84,13 @@ validation.
 ## Notes for the implementer
 
 - **The size.** About 2 evenings.
+
+## Progress
+
+- 2026-10-27: opened after TASK-0040 (v0.84). Since TASK-0078 a task that adds tests sets the exact count
+  in `eng/test-floor.txt`, so the write set names that file, and the forbid of `eng/**` becomes the two
+  programs of `eng/`, as in TASK-0082.
+- 2026-10-27: E66. `DocumentSession.Close` refuses each later call and waits until the serial section is
+  free, and `EngineHost.Dispose` calls it before it frees the backend. `EngineHostStopTests` holds it with a
+  backend whose `CreateBox` waits: a disposal with no close failed the test ("The backend was freed while
+  the command still ran in it"). Close has no time limit, because a commit does not stop.
