@@ -7,9 +7,9 @@ names. Do not read all of them.
 
 - **Accepted** — in force. The text agrees with the code.
 - **Amended** — a later ADR gives the reason for a change, see "Amended by". This record holds the current decision.
-- **Superseded** — replaced by a later ADR; do not apply.
+- **Superseded** — replaced by a later ADR; do not apply. The record is in the archive.
 - **Proposed** — not yet accepted; informational.
-- **Withdrawn** — the author took a proposal back, or the owner took back a decision that no later ADR replaces; do not apply.
+- **Withdrawn** — the author took a proposal back, or the owner took back a decision that no later ADR replaces; do not apply. The record is in the archive.
 - **Rejected** — the project examined the proposal and refused it; do not apply.
 
 ## Index
@@ -18,7 +18,6 @@ names. Do not read all of them.
 |---|---|---|---|---|---|
 | [0001](0001-kernel-abstraction-capabilities.md) | Geometry kernel abstraction by capabilities | Accepted | Boundary, geometry | — | — |
 | [0002](0002-headless-first-cli-as-canonical-client.md) | Headless-first; CLI as canonical client | Accepted | Workflow, clients | — | — |
-| [0003](0003-blazor-as-thin-viewer.md) | Blazor as thin viewer | Withdrawn | Clients | — | — |
 | [0004](0004-engine-runtime-is-authority.md) | Engine Runtime is the authoritative controller | Amended | Boundary, authority | — | 0011 |
 | [0005](0005-event-stream-and-replay.md) | Event stream and replay protocol | Accepted | Contracts, observability | — | — |
 | [0006](0006-command-execution-model.md) | Command execution model | Amended | Contracts, runtime | — | 0008, 0020 |
@@ -65,5 +64,11 @@ names. Do not read all of them.
 
 ## Archived
 
-No record is archived yet. A withdrawn or superseded record moves to `docs/adr/archive/`, and its
-number stays in this list so that the number is never used again.
+A withdrawn or superseded record moves to `docs/adr/archive/`, and its number stays in this list so
+that the number is never used again. Do not apply an archived record. `AdrGateTests` fails when a
+number in this list still has a file in `docs/adr/`, and when a record in `docs/adr/` is withdrawn or
+superseded.
+
+| # | Title | Status | Replaced by | Archived |
+|---|---|---|---|---|
+| [0003](archive/0003-blazor-as-thin-viewer.md) | Blazor as thin viewer | Withdrawn | — | 2026-10-27, TASK-0040 |

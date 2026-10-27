@@ -258,7 +258,7 @@ each class as a test, but the run of the program decides (TASK-0064).
 
 | Gate | It reads | It fails when |
 |---|---|---|
-| `AdrGateTests` | the ADR front matter and the index | a field is absent, a status is outside the set, a supersession or an amendment is not reciprocal, the index disagrees, or the count of unenforced ADRs grows |
+| `AdrGateTests` | the ADR front matter in `docs/adr/` and the index, not `docs/adr/archive/` | a field is absent, a status is outside the set, a supersession or an amendment is not reciprocal or names a number that is neither in `docs/adr/` nor archived, the index disagrees, an archived number still has a file in `docs/adr/`, a record in `docs/adr/` is withdrawn or superseded, or the count of unenforced ADRs grows |
 | `AdrEnforcementExistsGateTests` | `enforced-by` of each ADR in force | the file is absent and no Ready task creates it |
 | `TaskGovernanceGateTests` | `status`, `governed-by`, `depends-on` and `writes` of each task | a status is outside the set, an identifier differs from the file name, `governed-by` differs from the intersection rule on an open task, or `depends-on` names no task |
 | `WriteSetGateTests` | the `writes` block of each task and the cut-off file | a task forbids what it writes, a path has a backslash, a Done task names a file that is absent, the cut-off moved, or the count of tasks without front matter grows |

@@ -1,7 +1,7 @@
 ---
 id: 0040
 title: Each ADR in force holds its current decision in one text, and the archive holds the rest
-status: Ready
+status: Active
 phase: governance
 opened: 2026-09-26
 depends-on: [0082]
@@ -16,6 +16,7 @@ writes:
     - docs/adr/0011-server-default-deployment-topology.md
     - docs/adr/0012-geometry-backend-wiring.md
     - docs/adr/0013-command-query-schema-declaration.md
+    - docs/adr/0016-handler-declared-construction.md
     - docs/adr/0019-hybrid-deployment-topology.md
     - docs/adr/0003-blazor-as-thin-viewer.md
     - docs/adr/README.md
@@ -23,6 +24,9 @@ writes:
     - CLAUDE.md
     - docs/CURRENT-STATE.md
     - Engine.Tests/Governance/AdrGateTests.cs
+    - eng/test-floor.txt
+    - docs/templates.md
+    - tasks/TASK-0079-host-and-render-gaps-of-the-ninth-review.md
   forbid:
     - Engine.Contracts/**
     - Engine.Core/**
@@ -102,4 +106,13 @@ each ADR, so that the owner reads one change at a time.
 ## Notes for the implementer
 
 Read `docs/templates.md`, section 1, before you start. Make one commit for each ADR. Run the
-governance tests and the write-set check before each commit, with `WRITE_SET_TASK=TASK-0040`.
+governance tests, the write-set check and the repository gates before each commit, as `CLAUDE.md`,
+section "Method", gives them. (Corrected 2026-10-27: this note named the variable `WRITE_SET_TASK`,
+which no code reads now. Since TASK-0053 the program `eng/write-set-check` is the check.)
+
+## Progress
+
+- 2026-10-27: opened after TASK-0082 (v0.83). Four files join the write set. ADR-0016 loses
+  `amends` when ADR-0013 folds it. TASK-0079 loses ADR-0011 in `governed-by` when ADR-0011 leaves
+  `docs/adr/`. `eng/test-floor.txt` holds the new count of the gate. `docs/templates.md`,
+  section "What each gate reads", gives the new refusals of `AdrGateTests`.
