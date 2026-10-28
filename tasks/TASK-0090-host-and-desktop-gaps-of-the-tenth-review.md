@@ -101,3 +101,7 @@ and the desktop sends the command that a person asks for.
 - 2026-10-28: opened by the codebase review of 2026-10-28 (TASK-0087).
 - 2026-10-28: the task is active. After P8f (v0.92) the owner put P0.36 and then P0.35 before P8c, because V26 can
   put a wrong rename into the document file; the roadmap records the order.
+- 2026-10-28: V26. A press that starts outside the panel while a text field is active drops the focus of Dear
+  ImGui in the next frame, and the keys of the same frame go to the scene. The two probes of the review are tests,
+  and both failed before the fix (the key went to the field; Rename gave the second body the text "X"). An
+  injection that keeps the focus failed both.
