@@ -63,6 +63,12 @@ public sealed record CommandHandlerResult(
     // that breaks the rule. Empty by default.
     public IReadOnlyList<BodyRecord> ChangedBodies { get; init; } = Array.Empty<BodyRecord>();
 
+    // ADR-0031 item 7: Undo or Redo asks the bus to reverse the last step, or to apply
+    // again the last undone step. The bus computes the bodies from its history, so a
+    // result with a move gives no list of bodies; the bus refuses one that does. None
+    // by default: the command is a step.
+    public HistoryMove History { get; init; } = HistoryMove.None;
+
     public static CommandHandlerResult Success(
         Outputs outputs,
         IReadOnlyList<Diagnostic>? diagnostics = null,
@@ -87,4 +93,12 @@ public sealed record CommandHandlerResult(
             diagnostics ?? Array.Empty<Diagnostic>(),
             error,
             Array.Empty<BodyRecord>());
+}
+
+// ADR-0031 item 7: the move in the history of the Document that a result asks for.
+public enum HistoryMove
+{
+    None,
+    Undo,
+    Redo,
 }
