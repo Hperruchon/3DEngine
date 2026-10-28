@@ -68,6 +68,7 @@ Therefore each approved objective must have a track here.
 - R7 — Touch, mouse and keyboard give the same intents, and a parity test holds it. v0.83, TASK-0082, ADR-0026.
 - P0.31 — A stop waits for a running command, and the present path is checked for hazards. v0.85, TASK-0079.
 - R7b — Text and panels: Dear ImGui through ImGui.NET, drawn by a first-party renderer. v0.86, TASK-0084, ADR-0027.
+- R8a — A body has a name and a visibility that commands change. v0.87, TASK-0085, ADR-0028.
 
 ## Track 0 — Foundations
 
@@ -133,7 +134,7 @@ The first objective. Each phase ends with something that a person can observe.
 | R6 | Observe a cut. The live body set of ADR-0021 gives the result. A headless image test. TASK-0076. | 6–8 |
 | R7 | Device-tagged pointer samples. The intent layer and the parity test. TASK-0082. | 5–7 |
 | R7b | Text and panels. Dear ImGui through ImGui.NET, a first-party 2D renderer, and the input of the intent layer (ADR-0027). TASK-0084. | 4–6 |
-| R8a | Name and visibility in the engine. The commands `RenameBody` and `SetBodyVisibility`, the query `GetBodyInfo`, the event kind `body.changed`, and an ADR. | 3–4 |
+| R8a | Name and visibility in the engine. The commands `RenameBody` and `SetBodyVisibility`, the query `GetBodyInfo`, the event kind `body.changed`, and ADR-0028. TASK-0085. | 3–4 |
 | R8b | Name and visibility in the desktop. The pick of one body, a highlight, the gestures, and the text field of R7b. The selection stays a state of the client (ADR-0007). The camera frames the bodies only when the set goes from empty to not empty (KD6). | 4–5 |
 | R9 | A transform gizmo at a constant screen size. After the milestone "CAD on one part" (KD2). | 5–8 |
 | R10 | A numeric pad and an expression evaluator. Each drag has a numeric equivalent. | 3–5 |

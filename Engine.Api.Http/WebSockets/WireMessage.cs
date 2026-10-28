@@ -46,7 +46,8 @@ internal sealed record SnapshotMessage(
     DateTime UpdatedAt,
     IReadOnlyList<SnapshotBodyEntry> Bodies);
 
-internal sealed record SnapshotBodyEntry(Guid Handle, string Kind);
+// ADR-0012 §6 and ADR-0028 item 7: each live body with its kind, its name and its visibility.
+internal sealed record SnapshotBodyEntry(Guid Handle, string Kind, string? Name, bool Visible);
 
 internal static class SnapshotProjector
 {
@@ -59,6 +60,6 @@ internal static class SnapshotProjector
         CreatedAt: doc.CreatedAt,
         UpdatedAt: doc.UpdatedAt,
         Bodies: doc.Bodies
-            .Select(b => new SnapshotBodyEntry(b.Handle.Id, b.Kind))
+            .Select(b => new SnapshotBodyEntry(b.Handle.Id, b.Kind, b.Name, b.Visible))
             .ToArray());
 }

@@ -1,13 +1,13 @@
 ---
 id: 0021
 title: Operand consumption and the live body set
-status: Accepted
+status: Amended
 topic: Contracts, geometry, observability
 date: 2026-09-25
 supersedes: []
 superseded-by: []
 amends: ['0012']
-amended-by: []
+amended-by: ['0028']
 affects:
   - Engine.Contracts/Document.cs
   - Engine.Contracts/Handlers/ICommandHandler.cs
@@ -59,8 +59,9 @@ ask", gives both to the owner. This record holds the decision.
    exists. No new diagnostic code.
 5. **The commit.** The bus removes each consumed body from `Document.Bodies` in the commit section,
    with the other changes of the commit. The events of one commit come in this order:
-   `command.applied`, then each `body.created`, then each `body.consumed`. A subscriber that draws
-   between two events therefore never sees fewer bodies than the result has.
+   `command.applied`, then each `body.created`, then each `body.consumed`, then each `body.changed`
+   (ADR-0028 item 7). A subscriber that draws between two events therefore never sees fewer bodies than
+   the result has.
 6. **The new event kind `body.consumed`.** Its payload is `bodyId`. The cause of the event is the
    command that consumed the body. `/schema/events` lists the kind.
 7. **The snapshot.** The reset snapshot of ADR-0010, extended by ADR-0012, lists the live bodies
@@ -82,3 +83,8 @@ mode, which no task plans.
 **Next:** TASK-0037 implements the decision. The projection from events to render state (roadmap
 phase R5) reads `body.created` and `body.consumed`. Register entry R-0024 holds the open question
 of the reference direction between the render projection and `Engine.Contracts` (ADR-0009 §2).
+
+## History
+
+- 2026-10-28 · TASK-0085 · ADR-0028 amends item 5: each `body.changed` of a commit comes after each
+  `body.consumed`.
