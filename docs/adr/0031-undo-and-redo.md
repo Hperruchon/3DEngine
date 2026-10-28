@@ -81,9 +81,11 @@ undo therefore needs no call of the backend and no replay. It changes only the l
    other command makes a body live again. Item 5 of ADR-0021 gets the order of item 5 above.
 10. **This record amends ADR-0006.** The open challenge "undo as a cut of the log and a replay" closes. An undo
     appends a command.
-11. **The desktop.** The panel gets the buttons Undo and Redo. The keys Ctrl+Z, Ctrl+Y and Ctrl+Shift+Z give the
-    same commands when no text field has the focus. A rejection shows in the status line of the panel. The
-    projection of the desktop treats `body.removed` as `body.consumed`: the body leaves the scene and the selection.
+11. **The desktop.** The panel gets the buttons Undo and Redo, for touch and for the mouse. A rejection shows in
+    the status line of the panel. The projection of the desktop treats `body.removed` as `body.consumed`: the body
+    leaves the scene and the selection. The keys Ctrl+Z, Ctrl+Y and Ctrl+Shift+Z are not part of this record: a
+    key of the desktop is an intent, and each intent needs a touch gesture (ADR-0026 items 2 and 5). Register
+    entry R-0041 holds them.
 
 ## Consequences
 
@@ -102,9 +104,10 @@ replay gives the same history on each platform, because the history depends only
 - One shared history means that a person can undo the step of an agent. Q2 accepts this.
 - The history is in memory and has no limit. A step holds some body records only, so the cost is small.
 
-**Next:** TASK-0093 implements this record. A limit to the depth of the history and the free of an unreachable body
+**Next:** TASK-0093 implements this record. Register entry R-0041 holds the keys of item 11. A limit to the depth of the history and the free of an unreachable body
 are not planned. A register entry records them when a measure shows a need.
 
 ## History
 
 - 2026-10-28 · TASK-0093 · Proposed, and accepted by the owner on the same day.
+- 2026-10-28 · TASK-0093 · The owner chose A: item 11 gives the buttons only, and R-0041 holds the keys.

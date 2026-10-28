@@ -2640,3 +2640,30 @@ New tests: 16. The test list holds 754 (607 in `Engine.Tests`, 94 in `3DEngine.T
 `3DEngine.ImageTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
 entries: 13 of 15. New diagnostic codes: none. Since the review of v0.88, 2 product milestones and 6 entries
 followed it.
+
+## v0.95 — Undo and redo as commands of the log (P8c, TASK-0093)
+
+The owner answered Q1 B, Q2 A, Q3 A and Q4 A and accepted ADR-0031 on 2026-10-28.
+
+**The change.**
+
+- `Undo` and `Redo` are commands with no parameter. The log and the document file hold them, each adds one to the
+  version, and the output `commandId` names the step. An open rebuilds the history from the file.
+- The command bus records the body records that each step created, consumed and changed, and makes the lists of
+  an undo and a redo itself. No backend call: no backend changes or frees a body. A new step clears the redo list.
+- The contract gains `HistoryMove` and `CommandHandlerResult.History`, and the event kind `body.removed`. ADR-0031
+  amends ADR-0006 (the open challenge of undo closes) and ADR-0021 items 1 and 5.
+- New codes: `E-CMD-NOTHING-TO-UNDO` and `E-CMD-NOTHING-TO-REDO`.
+- The desktop panel has the buttons Undo and Redo, and its projection removes a body at `body.removed`.
+
+**Proof.** 13 injections: 12 were caught at once, and a schema with no `body.removed` failed after the payload test
+applied undos. The visual check passed: a cut, an undo, and a redo whose picture is the picture of the cut. CI run
+40720390838 passed on the three runners.
+
+**What stays.** The keys Ctrl+Z, Ctrl+Y and Ctrl+Shift+Z are register entry R-0041. The history has no limit, and
+the backend keeps each body that an undo removes.
+
+New tests: 16. The test list holds 770 (620 in `Engine.Tests`, 94 in `3DEngine.Tests`, 56 in
+`3DEngine.ImageTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
+entries: 14 of 15. New diagnostic codes: 2. Since the review of v0.88, 3 product milestones and 7 entries
+followed it.
