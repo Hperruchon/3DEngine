@@ -2445,3 +2445,31 @@ New tests: 32. The test list holds 606 (507 in `Engine.Tests`, 75 in `3DEngine.T
 `3DEngine.ImageTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
 entries: 14 of 15. New diagnostic codes: `E-VAL-BODY-NAME-INVALID`. Since the review of v0.76, 3 product milestones
 and 11 entries followed it.
+
+## v0.88 — The desktop selects, hides, shows and renames a body (R8b, TASK-0086)
+
+The owner decided the defaults R8-Q6 to R8-Q8 and KD6 on 2026-10-27, and accepted the four pictures and the log on
+2026-10-28. ADR-0029 amends ADR-0025 item 6, ADR-0026 items 2 and 3, and ADR-0027 item 7. No shape of
+`Engine.Contracts` changes.
+
+**The change.**
+
+- The gestures long press (500 ms), right click, H, tap of two fingers, and Shift and H, with the intents
+  `HideIntent` and `ShowAllIntent`.
+- `3DEngine.Core/Picking/Picker.cs` gives the ray of a pixel and the nearest visible body that it hits.
+- `BodyActions` keeps the selection, a state of the client, and sends `SetBodyVisibility` and `RenameBody` to the
+  session. A hidden body leaves the scene, the pick and the framed box, and it cannot stay selected.
+- A second pipeline (`highlight.frag`) draws the selected body again in one colour.
+- The camera frames the bodies only when the visible set goes from empty to not empty (KD6).
+- The panel rows select, and the selected body has a name field, Rename, and Hide or Show, beside Show all.
+
+**Proof.** 30 new tests, and twelve injections each failed their tests. A touch script and a mouse script give the
+same command log. The visual check ran under synchronization validation with no validation message and exit code 0.
+
+**What stays.** No test with no GPU reads `SessionBodies`. The touch path has synthetic samples only, because no
+computer of the project has a touch screen.
+
+New tests: 30. The test list holds 636 (507 in `Engine.Tests`, 89 in `3DEngine.Tests`, 40 in
+`3DEngine.ImageTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
+entries: 14 of 15. New diagnostic codes: none. Since the review of v0.76, 4 product milestones and 12 entries
+followed it.

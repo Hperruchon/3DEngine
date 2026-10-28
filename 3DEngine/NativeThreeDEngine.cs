@@ -4,6 +4,7 @@ using SDL3;
 using ThreeDEngine.Core.Abstractions;
 using ThreeDEngine.Core.Input;
 using ThreeDEngine.Core.Models;
+using ThreeDEngine.Core.Picking;
 using ThreeDEngine.Desktop.Ui;
 using ThreeDEngine.Vulkan;
 
@@ -44,9 +45,11 @@ public sealed class NativeThreeDEngine : IThreeDEngine, IDisposable
     // checks only, so the present path never ran under the checks of synchronization.
     private readonly bool _synchronizationValidation;
 
-    // The point of the last select intent, in pixels of the window: a state of the client
-    // that R7 keeps and draws nothing for (ADR-0026 item 6).
-    public (double X, double Y)? Selection { get; private set; }
+    // The selected body, a state of the client (ADR-0007, ADR-0029 item 1). Until R8b the
+    // desktop kept the point of the last select intent and drew nothing for it.
+    public Guid? Selection => _actions?.Selection;
+
+    private BodyActions? _actions;
 
     public string Name => "3DEngine Desktop Runtime";
 
@@ -64,6 +67,7 @@ public sealed class NativeThreeDEngine : IThreeDEngine, IDisposable
         _ui = new DesktopUi(_address);
         var (width, height, rgba) = _ui.FontAtlas();
         _ui.SetFontTexture(_uiRenderer.CreateTexture(width, height, rgba));
+        _actions = new BodyActions(_host.Session);
     }
 
     public void Update(TimeSpan deltaTime)
@@ -84,6 +88,10 @@ public sealed class NativeThreeDEngine : IThreeDEngine, IDisposable
         var frame = _input.TakeFrame();
         foreach (var intent in _intents.Step(_ui is null ? frame : _ui.Route(frame)))
         {
+            // A select, a hide and a show all go to the selection and to the session (ADR-0029).
+            if (_actions is not null && _renderer is not null && _actions.Apply(intent, Pick, _renderer.LiveBodies))
+                continue;
+
             switch (intent)
             {
                 case OrbitIntent orbit:
@@ -95,8 +103,41 @@ public sealed class NativeThreeDEngine : IThreeDEngine, IDisposable
                 case ZoomIntent zoom:
                     Camera.Zoom(zoom.Factor);
                     break;
-                case SelectIntent select:
-                    Selection = (select.X, select.Y);
+            }
+        }
+    }
+
+    // The nearest visible body under a point of the window, or null (ADR-0029 item 1).
+    private Guid? Pick(double x, double y)
+    {
+        var window = _window.Extent;
+        if (_renderer is null || window.width == 0 || window.height == 0)
+            return null;
+
+        return Picker.Nearest(Picker.RayThrough(Camera, x, y, window.width, window.height), _renderer.PickBodies)?.Id;
+    }
+
+    // The actions of the controls of the panel, as commands or as a change of the selection.
+    private void ApplyPanel(IReadOnlyList<LiveBody> live)
+    {
+        if (_ui is null || _actions is null)
+            return;
+
+        foreach (var action in _ui.TakeActions())
+        {
+            switch (action)
+            {
+                case SelectBodyAction select:
+                    _actions.Select(select.Body);
+                    break;
+                case RenameBodyAction rename:
+                    _actions.Rename(rename.Body, rename.Name);
+                    break;
+                case SetVisibleAction visible:
+                    _actions.SetVisible(visible.Body, visible.Visible);
+                    break;
+                case ShowAllAction:
+                    _actions.ShowAll(live);
                     break;
             }
         }
@@ -120,12 +161,15 @@ public sealed class NativeThreeDEngine : IThreeDEngine, IDisposable
         var scale = window.width > 0 && window.height > 0
             ? new Vector2((float)extent.width / window.width, (float)extent.height / window.height)
             : Vector2.One;
-        var panel = _ui.Frame((float)_delta.TotalSeconds, display, scale, _renderer.LiveBodies);
+        _actions?.Forget(_renderer.LiveBodies);
+        var panel = _ui.Frame((float)_delta.TotalSeconds, display, scale, _renderer.LiveBodies, Selection);
+        ApplyPanel(_renderer.LiveBodies);
 
         var ui = _uiRenderer;
+        var selected = Selection;
         presenter.RenderFrame((commandBuffer, framebuffer, frameExtent) =>
             _renderer.Record(commandBuffer, framebuffer, frameExtent, scene, Camera,
-                overlay => ui.Record(overlay, frameExtent, panel, presenter.CurrentImage)));
+                overlay => ui.Record(overlay, frameExtent, panel, presenter.CurrentImage), selected));
     }
 
     // The scene gives the camera when it holds one; else the camera keeps its state.

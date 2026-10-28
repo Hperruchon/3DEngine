@@ -7,7 +7,7 @@ date: 2026-10-27
 supersedes: []
 superseded-by: []
 amends: ['0023']
-amended-by: ['0027']
+amended-by: ['0027', '0029']
 affects:
   - 3DEngine.Core/Input/**
 enforced-by: 3DEngine.Tests/IntentParityTests.cs (TASK-0082 creates it)
@@ -44,12 +44,14 @@ order that puts R7 after the move to SDL 3.2 (TASK-0081).
    are keys of a key sample too (ADR-0027 item 5). The host gives each sample to the user interface first,
    and a gesture that starts over a panel does not reach the state machine (ADR-0027 item 4).
 2. **Intents.** A pure state machine in `3DEngine.Core/Input/` turns the frames into intents with no kind of
-   device: orbit, pan, zoom, select and cancel. It reads no clock and no device of its own, so a test gives it
-   any sequence.
+   device: orbit, pan, zoom, select, hide, show all and cancel (hide and show all: ADR-0029 item 5). It reads no
+   clock and no device of its own, so a test gives it any sequence.
 3. **The map (D4, D6).** A setting of the client maps each gesture to an action. The default: one finger or a
    left drag orbits; two fingers, a middle drag, or Shift and a left drag pan; a pinch or the wheel zooms; a
    tap or a click selects; the arrow keys orbit, Shift and the arrow keys pan, and the keys plus and minus
-   zoom. The setting is a user setting, which ADR-0007 permits; it needs no command.
+   zoom; a long press or a right click hides the body at the point, H hides the selection, and a tap of two
+   fingers or Shift and H shows each hidden body (ADR-0029 item 4). The setting is a user setting, which
+   ADR-0007 permits; it needs no command.
 4. **The translation (D3, D8).** The translation of SDL events into samples lives in `3DEngine.Vulkan`, beside
    `Window`. The window turns the hint `SDL_HINT_TOUCH_MOUSE_EVENTS` off, and the translation also drops each
    mouse event whose device is `SDL_TOUCH_MOUSEID`.
@@ -78,3 +80,4 @@ command, and the comparison of logs of anti-objective 7 starts with R8.
 - 2026-10-27 · TASK-0082 · The record is written with the decisions D1 to D8 of the owner of 2026-10-17.
 - 2026-10-27 · TASK-0084 · ADR-0027 amends item 1: the text sample, the keys of text editing, and the user
   interface that takes a sample before the state machine.
+- 2026-10-28 · TASK-0086 · ADR-0029 amends items 2 and 3: the intents hide and show all, and their gestures.

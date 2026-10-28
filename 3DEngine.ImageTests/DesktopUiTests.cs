@@ -1,5 +1,6 @@
 using System.Numerics;
 using ThreeDEngine.Core.Input;
+using ThreeDEngine.Desktop;
 using ThreeDEngine.Desktop.Ui;
 
 namespace ThreeDEngine.ImageTests;
@@ -16,16 +17,19 @@ public class DesktopUiTests
 {
     private static readonly Vector2 Display = new(1280, 720);
 
-    private static readonly (Guid Id, string Kind)[] Bodies =
+    private static readonly LiveBody[] Bodies =
     [
-        (Guid.Parse("11111111-0000-0000-0000-000000000000"), "Box"),
-        (Guid.Parse("22222222-0000-0000-0000-000000000000"), "Solid"),
+        new(Guid.Parse("11111111-0000-0000-0000-000000000000"), "Box", null, true),
+        new(Guid.Parse("22222222-0000-0000-0000-000000000000"), "Solid", null, true),
     ];
 
-    private static IReadOnlyList<InputSample> Step(DesktopUi ui, params InputSample[] frame)
+    private static IReadOnlyList<InputSample> Step(DesktopUi ui, params InputSample[] frame) => StepWith(ui, null, frame);
+
+    // One frame with this selection (ADR-0029 item 7).
+    private static IReadOnlyList<InputSample> StepWith(DesktopUi ui, Guid? selection, params InputSample[] frame)
     {
         var intents = ui.Route(frame);
-        ui.Frame(1f / 60f, Display, Vector2.One, Bodies);
+        ui.Frame(1f / 60f, Display, Vector2.One, Bodies, selection);
         return intents;
     }
 
@@ -48,19 +52,19 @@ public class DesktopUiTests
         return ((rectangle.X + rectangle.Z) / 2, (rectangle.Y + rectangle.W) / 2);
     }
 
-    private static void Tap(DesktopUi ui, DeviceKind kind, (double X, double Y) at)
+    private static void Tap(DesktopUi ui, DeviceKind kind, (double X, double Y) at, Guid? selection = null)
     {
-        Step(ui, Pointer(kind, at, PointerPhase.Down));
-        Step(ui, Pointer(kind, at, PointerPhase.Up));
-        Step(ui);
-        Step(ui);
+        StepWith(ui, selection, Pointer(kind, at, PointerPhase.Down));
+        StepWith(ui, selection, Pointer(kind, at, PointerPhase.Up));
+        StepWith(ui, selection);
+        StepWith(ui, selection);
     }
 
-    private static void Type(DesktopUi ui, string text)
+    private static void Type(DesktopUi ui, string text, string field = DesktopUi.FilterLabel, Guid? selection = null)
     {
-        Tap(ui, DeviceKind.Mouse, Centre(ui, DesktopUi.FilterLabel));
-        Step(ui, new TextSample(text, 0));
-        Step(ui);
+        Tap(ui, DeviceKind.Mouse, Centre(ui, field), selection);
+        StepWith(ui, selection, new TextSample(text, 0));
+        StepWith(ui, selection);
     }
 
     // ADR-0027 item 6.
@@ -161,6 +165,67 @@ public class DesktopUiTests
         Assert.All(data.Commands, command => Assert.True(command.FirstIndex + command.IndexCount <= data.Indices.Length));
         Assert.True(data.Indices.Max() < data.Vertices.Length);
         Assert.Equal(Display, data.DisplaySize);
+    }
+
+    // ADR-0029 item 7: a row gives the name, or the kind and a short identifier, and "hidden".
+    [Fact]
+    public void A_Row_Gives_The_Name_Or_The_Kind_And_The_Word_Hidden()
+    {
+        var id = Guid.Parse("33333333-0000-0000-0000-000000000000");
+
+        Assert.Equal("Box  33333333", DesktopUi.RowText(new LiveBody(id, "Box", null, true)));
+        Assert.Equal("Plate", DesktopUi.RowText(new LiveBody(id, "Box", "Plate", true)));
+        Assert.Equal("Plate  (hidden)", DesktopUi.RowText(new LiveBody(id, "Box", "Plate", false)));
+    }
+
+    // A tap of a finger and a click of the mouse on a row select its body.
+    [Theory]
+    [InlineData(DeviceKind.Mouse)]
+    [InlineData(DeviceKind.Touch)]
+    public void A_Tap_On_A_Row_Selects_Its_Body(DeviceKind kind)
+    {
+        using var ui = Opened();
+
+        Tap(ui, kind, Centre(ui, DesktopUi.RowText(Bodies[1])));
+
+        Assert.Equal(new SelectBodyAction(Bodies[1].Id), Assert.Single(ui.TakeActions()));
+    }
+
+    // The controls of the selected body give a rename, a hide and a show all, and the panel
+    // changes nothing itself.
+    [Fact]
+    public void The_Controls_Of_The_Selected_Body_Give_A_Rename_A_Hide_And_A_Show_All()
+    {
+        using var ui = Opened();
+        var selected = Bodies[0].Id;
+        StepWith(ui, selected);
+        StepWith(ui, selected);
+
+        Type(ui, "Plate", DesktopUi.NameLabel, selected);
+        Tap(ui, DeviceKind.Touch, Centre(ui, DesktopUi.RenameLabel), selected);
+        Tap(ui, DeviceKind.Mouse, Centre(ui, DesktopUi.HideLabel), selected);
+        Tap(ui, DeviceKind.Mouse, Centre(ui, DesktopUi.ShowAllLabel), selected);
+
+        Assert.Equal(
+            [new RenameBodyAction(selected, "Plate"), new SetVisibleAction(selected, false), new ShowAllAction()],
+            ui.TakeActions());
+        Assert.Empty(ui.TakeActions());
+    }
+
+    // ADR-0027 item 6 for the controls of ADR-0029 item 7.
+    [Fact]
+    public void Each_Row_And_Each_Control_Of_The_Selection_Is_At_Least_44_Pixels_High()
+    {
+        using var ui = Opened();
+        var selected = Bodies[0].Id;
+        StepWith(ui, selected);
+        StepWith(ui, selected);
+
+        foreach (var label in new[] { DesktopUi.RowText(Bodies[0]), DesktopUi.NameLabel, DesktopUi.RenameLabel, DesktopUi.HideLabel, DesktopUi.ShowAllLabel })
+        {
+            var rectangle = ui.ItemRectangle(label) ?? throw new InvalidOperationException($"The panel has no control {label}.");
+            Assert.True(rectangle.W - rectangle.Y >= DesktopUi.MinimumControlHeight, $"{label} is {rectangle.W - rectangle.Y} pixels high.");
+        }
     }
 
     [Fact]
