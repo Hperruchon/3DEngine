@@ -1,13 +1,13 @@
 ---
 id: 0029
 title: The selection, the hide gestures and the frame of the camera in the desktop
-status: Accepted
+status: Amended
 topic: Rendering, clients
 date: 2026-10-28
 supersedes: []
 superseded-by: []
 amends: ['0025', '0026', '0027']
-amended-by: []
+amended-by: ['0034']
 affects:
   - 3DEngine.Core/Input/**
   - 3DEngine.Core/Picking/**
@@ -38,7 +38,8 @@ selection and no pick (ADR-0009, ADR-0028 item 4).
    that the camera frames. The engine still holds it (ADR-0028 item 4).
 4. **The gestures (R8-Q7).** A long press of a finger or a pen, or a right click, hides the body under the
    point. The key H hides the selected body. A tap of two fingers, or Shift and H, shows each hidden body. Each
-   gesture is a setting of the map of ADR-0026 item 3. A long press is a press with no motion that lasts at
+   gesture is a setting of the map of ADR-0026 item 3. In the mode `Sketch` of the intent layer these gestures, and
+   the gestures of a show all, give nothing (ADR-0034 item 1). A long press is a press with no motion that lasts at
    least the setting `LongPressNanoseconds`, 500 ms by default; the state machine decides it at the release,
    so it still reads no clock.
 5. **The intents.** `HideIntent` names a point of the window or, with no point, the selection;
@@ -72,3 +73,5 @@ that framed it leaves the camera where it is.
 
 - 2026-10-28 · TASK-0086 · The record is written with the defaults R8-Q6 and R8-Q7 and decision KD6 of the
   owner of 2026-10-27.
+- 2026-10-28 · TASK-0101 · ADR-0034 amends item 4: the gestures of a hide and of a show all give nothing in the
+  mode `Sketch` of the intent layer.

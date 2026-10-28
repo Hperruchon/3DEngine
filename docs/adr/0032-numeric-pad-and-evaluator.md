@@ -1,13 +1,13 @@
 ---
 id: 0032
 title: The numeric pad, the expression evaluator and the keys of undo and redo
-status: Accepted
+status: Amended
 topic: Clients, rendering
 date: 2026-10-28
 supersedes: []
 superseded-by: []
 amends: ['0026', '0031']
-amended-by: []
+amended-by: ['0034']
 affects:
   - 3DEngine.Core/Numeric/**
   - 3DEngine.Core/Input/**
@@ -70,17 +70,18 @@ The decision sheet does not answer three questions. On 2026-10-28 the owner answ
    double. The log never holds the text, so a replay never evaluates. This agrees with ADR-0007: the text is a
    state of the client, as the filter of the panel is. The determinism rules of `CLAUDE.md` bind the code that
    writes the log, and the evaluator is not that code.
-3. **The pad state machine (R10-Q2).** `3DEngine.Core/Numeric/NumericPad.cs` holds three fields, each with a name,
+3. **The pad state machine (R10-Q2).** `3DEngine.Core/Numeric/NumericPad.cs` holds one, two or three fields (ADR-0034
+   item 7), each with a name,
    a text and the unit, and the active field. Its inputs are: append a text, delete the last character, clear the
    field, go to the next field, apply and cancel. A button appends the text of its label (`7`, `+`, `pi`,
    `sqrt(`), and a typed character appends the same text, so a tap, a click and the keyboard give the same states.
-   The machine accepts only the characters of the grammar. Apply evaluates the three fields and gives three
-   numbers, or the error of the first field that fails.
+   The machine accepts only the characters of the grammar. Apply evaluates each field and gives one number for
+   each, or the error of the first field that fails.
 4. **The two pads (R10-Q6, Q2 A).** The panel gets the buttons "New box" and "Move". "New box" opens the pad with
    the fields `x`, `y` and `z`, each with the text `10`, and its apply sends `CreateBox`. "Move" shows only while a
    body is selected. It opens the pad with the fields `dx`, `dy` and `dz`, each with the text `0`, and its apply
-   sends `Translate` for the selected body. After a move, the new body is the selection (Q3 A). Sketch dimensions
-   come with K2.
+   sends `Translate` for the selected body. After a move, the new body is the selection (Q3 A). The pads of a
+   sketch are in ADR-0034 items 7 and 8.
 5. **The display (R10-Q1).** The pad is a second window of the R7b user interface. It shows the three fields, the
    value of the active field or its error, and the buttons `7 8 9 ( )`, `4 5 6 * pi`, `1 2 3 - sqrt(`, `0 . + /`
    and Delete, Clear, Next, Apply and Cancel. Each control is at least 44 pixels high (ADR-0027 item 6).
@@ -120,3 +121,5 @@ R-0041 closes.
 ## History
 
 - 2026-10-28 · TASK-0094 · Proposed, and accepted by the owner on the same day with Q1 A, Q2 A and Q3 A.
+- 2026-10-28 · TASK-0101 · ADR-0034 amends items 3 and 4: a pad of one, two or three fields, and the pads of a
+  sketch.

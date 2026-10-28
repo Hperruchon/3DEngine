@@ -1,11 +1,11 @@
 ---
 id: 0101
 title: The desktop draws a sketch of lines and adds its constraints, by touch and by mouse
-status: Ready
+status: Active
 phase: K2b
 opened: 2026-10-28
 depends-on: [0100]
-governed-by: [0007, 0009, 0017, 0019, 0022, 0023, 0025, 0026, 0027, 0029, 0030, 0031, 0032]
+governed-by: [0007, 0009, 0017, 0019, 0022, 0023, 0025, 0026, 0027, 0029, 0030, 0031, 0032, 0034]
 writes:
   create:
     - tasks/TASK-0101-sketch-tools.md
@@ -24,6 +24,7 @@ writes:
     - docs/adr/0032-numeric-pad-and-evaluator.md
     - docs/adr/0033-sketch-model.md
     - docs/adr/README.md
+    - tasks/TASK-0099-document-file-and-pad-gaps.md
     - docs/glossary.md
     - eng/test-floor.txt
     - docs/register.md
@@ -76,7 +77,7 @@ mouse, and the log holds the same commands for both.
 
 ## Acceptance criteria
 
-- [ ] The owner accepts ADR-0034 before the code.
+- [x] The owner accepts ADR-0034 before the code.
 - [ ] A touch script and a mouse script give the same intents for each new intent kind, and a check fails when a
       kind has no touch script.
 - [ ] A touch script and a mouse script that draw one closed profile give the same commands in the log.
@@ -100,3 +101,6 @@ mouse, and the log holds the same commands for both.
 ## Progress
 
 - 2026-10-28: opened with ADR-0034 as Proposed. The work waits for the answers of the owner.
+- 2026-10-28: the owner accepted ADR-0034 with Q1 to Q6 A. The record amends ADR-0026, ADR-0029 and ADR-0032, and
+  their text changes in this commit. ADR-0034 also governs TASK-0099, which writes the pad, so its `governed-by`
+  names 0034.
