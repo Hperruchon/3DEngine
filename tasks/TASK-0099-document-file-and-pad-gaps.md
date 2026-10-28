@@ -1,10 +1,10 @@
 ---
 id: 0099
 title: The document file keeps each complete line and each held file, and the pad applies to the current selection
-status: Ready
+status: Active
 phase: P0.40
 opened: 2026-10-28
-depends-on: [0098]
+depends-on: [0101]
 governed-by: [0004, 0007, 0009, 0015, 0016, 0017, 0019, 0022, 0023, 0024, 0025, 0026, 0027, 0029, 0030, 0031, 0032, 0034]
 writes:
   create:
@@ -102,3 +102,5 @@ person sees.
 ## Progress
 
 - 2026-10-28: opened by the second codebase review of 2026-10-28 (TASK-0095).
+- 2026-10-28: the owner decided to do P0.40 now, after K2b and before K3a and P0.39. `depends-on` names TASK-0101
+  (K2b, Done) and not TASK-0098 (P0.39), and the status is Active. `roadmap.md`, "Order", rule 1, says so.
