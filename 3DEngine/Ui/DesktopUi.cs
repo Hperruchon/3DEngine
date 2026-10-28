@@ -13,7 +13,10 @@ namespace ThreeDEngine.Desktop.Ui;
 //
 // The panel shows the address of the document and the live bodies that the desktop holds from
 // the events of its session (ADR-0024), with a text field that filters them. The filter is a
-// state of the client (ADR-0007). The panel reads no state of the engine.
+// state of the client (ADR-0007). The panel reads no state of the engine. A row selects its
+// body, and the selected body has a name field and the buttons Rename and Hide or Show, beside
+// Show all (ADR-0029 item 7). The panel changes nothing itself: each press of a control gives
+// a PanelAction, which the host applies as a command or as a change of the selection.
 //
 // Dear ImGui keeps one current context for the whole process, not one for each thread, so each
 // public method makes this context current first, and only one thread may use the library at a
@@ -30,6 +33,11 @@ internal sealed unsafe class DesktopUi : IDisposable
     public const string PanelName = "Document";
     public const string FilterLabel = "Filter";
     public const string ClearLabel = "Clear";
+    public const string NameLabel = "Name";
+    public const string RenameLabel = "Rename";
+    public const string HideLabel = "Hide";
+    public const string ShowLabel = "Show";
+    public const string ShowAllLabel = "Show all";
 
     private readonly IntPtr _context;
     private readonly string _address;
@@ -39,6 +47,11 @@ internal sealed unsafe class DesktopUi : IDisposable
     private readonly List<string> _shown = new();
     private readonly (uint Width, uint Height, byte[] Rgba) _atlas;
     private string _filter = string.Empty;
+    private readonly List<PanelAction> _actions = new();
+
+    // The text of the name field, and the body that it was filled for.
+    private string _name = string.Empty;
+    private Guid? _nameFor;
     private bool _textActive;
 
     public DesktopUi(string address)
@@ -169,7 +182,20 @@ internal sealed unsafe class DesktopUi : IDisposable
 
     // One frame of the user interface for a display of this size in pixels of the window,
     // and the pixels of the target for one pixel of the display.
-    public UiDrawData Frame(float deltaSeconds, Vector2 displaySize, Vector2 framebufferScale, IReadOnlyList<(Guid Id, string Kind)> bodies)
+    // The actions of the controls of the last frames, in their order; the call empties the list.
+    public IReadOnlyList<PanelAction> TakeActions()
+    {
+        var actions = _actions.ToArray();
+        _actions.Clear();
+        return actions;
+    }
+
+    // The text of a row: the name of the body, or its kind and a short identifier, and the word
+    // "hidden" for a hidden body (ADR-0029 item 7).
+    public static string RowText(LiveBody body)
+        => (body.Name ?? $"{body.Kind}  {body.Id.ToString()[..8]}") + (body.Visible ? string.Empty : "  (hidden)");
+
+    public UiDrawData Frame(float deltaSeconds, Vector2 displaySize, Vector2 framebufferScale, IReadOnlyList<LiveBody> bodies, Guid? selection = null)
     {
         ArgumentNullException.ThrowIfNull(bodies);
         ImGui.SetCurrentContext(_context);
@@ -183,14 +209,14 @@ internal sealed unsafe class DesktopUi : IDisposable
         _shown.Clear();
 
         ImGui.NewFrame();
-        Panel(bodies, displaySize);
+        Panel(bodies, selection, displaySize);
         ImGui.Render();
 
         _textActive = io.WantTextInput;
         return UiDrawDataConverter.Convert(ImGui.GetDrawData());
     }
 
-    private void Panel(IReadOnlyList<(Guid Id, string Kind)> bodies, Vector2 displaySize)
+    private void Panel(IReadOnlyList<LiveBody> bodies, Guid? selection, Vector2 displaySize)
     {
         ImGui.SetNextWindowPos(new Vector2(16f, 16f), ImGuiCond.FirstUseEver);
         // The first size fits inside a small display too.
@@ -209,21 +235,54 @@ internal sealed unsafe class DesktopUi : IDisposable
             Item(ClearLabel);
 
             ImGui.Separator();
-            foreach (var (id, kind) in bodies)
+            foreach (var body in bodies)
             {
-                var row = $"{kind}  {id.ToString()[..8]}";
+                var row = RowText(body);
                 if (_filter.Length > 0 && !row.Contains(_filter, StringComparison.OrdinalIgnoreCase))
                     continue;
 
-                ImGui.TextUnformatted(row);
+                // The identifier after ## keeps two rows with one text apart.
+                if (ImGui.Selectable($"{row}##{body.Id}", selection == body.Id, ImGuiSelectableFlags.None, new Vector2(0f, MinimumControlHeight)))
+                    _actions.Add(new SelectBodyAction(body.Id));
+                Item(row);
                 _shown.Add(row);
             }
+
+            ImGui.Separator();
+            if (bodies.FirstOrDefault(body => body.Id == selection) is { } selected)
+                Selected(selected);
+
+            if (ImGui.Button(ShowAllLabel))
+                _actions.Add(new ShowAllAction());
+            Item(ShowAllLabel);
         }
 
         var position = ImGui.GetWindowPos();
         var size = ImGui.GetWindowSize();
         _panels.Add(new Vector4(position.X, position.Y, position.X + size.X, position.Y + size.Y));
         ImGui.End();
+    }
+
+    // The controls of the selected body. The name field starts with the name of the body each
+    // time another body is selected.
+    private void Selected(LiveBody body)
+    {
+        if (_nameFor != body.Id)
+            (_name, _nameFor) = (body.Name ?? string.Empty, body.Id);
+
+        ImGui.SetNextItemWidth(220f);
+        ImGui.InputText(NameLabel, ref _name, 128);
+        Item(NameLabel);
+        ImGui.SameLine();
+        if (ImGui.Button(RenameLabel))
+            _actions.Add(new RenameBodyAction(body.Id, _name));
+        Item(RenameLabel);
+
+        var visibility = body.Visible ? HideLabel : ShowLabel;
+        if (ImGui.Button(visibility))
+            _actions.Add(new SetVisibleAction(body.Id, !body.Visible));
+        Item(visibility);
+        ImGui.SameLine();
     }
 
     private void Item(string label)
