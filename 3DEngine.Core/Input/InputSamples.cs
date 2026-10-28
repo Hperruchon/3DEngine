@@ -62,6 +62,10 @@ public enum InputKey
 
     // The key H: hide, and with Shift show all (ADR-0029 item 4).
     H,
+
+    // With Control: Z undoes, and Y, or Shift and Z, redoes (ADR-0032 item 9).
+    Z,
+    Y,
 }
 
 // One sample, at a time in nanoseconds of one clock of the host.

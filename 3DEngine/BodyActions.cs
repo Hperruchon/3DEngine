@@ -6,7 +6,8 @@ using ThreeDEngine.Core.Input;
 namespace ThreeDEngine.Desktop;
 
 // The selection of the desktop and the commands of a hide, a show all and a rename
-// (ADR-0029 items 1, 5 and 6, TASK-0086). The selection is a state of the client (ADR-0007):
+// (ADR-0029 items 1, 5 and 6, TASK-0086), an undo and a redo (ADR-0031), and a new box and a
+// move from the pad (ADR-0032). The selection is a state of the client (ADR-0007):
 // one body or none. Each change of a body is a command of the session, the same command that
 // an agent sends (ADR-0019 item 2), so the log records each one. The desktop calls this on
 // its render loop, outside each commit.
@@ -67,13 +68,27 @@ internal sealed class BodyActions(DocumentSession session)
     // ADR-0031 item 11: an Undo or a Redo of the shared history. It returns null when the
     // session applied it, or the rejection for the line of the panel. Forget then drops a
     // selected body that the move removed.
-    public string? Undo() => Move(new UndoCommand());
+    public string? Undo() => Rejection(session.Apply(new UndoCommand()).GetAwaiter().GetResult());
 
-    public string? Redo() => Move(new RedoCommand());
+    public string? Redo() => Rejection(session.Apply(new RedoCommand()).GetAwaiter().GetResult());
 
-    private string? Move(Command command)
+    // ADR-0032 item 4: a box of the sizes of the pad. It returns null when the session applied
+    // it, or the rejection for the pad.
+    public string? CreateBox(double x, double y, double z)
+        => Rejection(session.Apply(new CreateBoxCommand { SizeX = x, SizeY = y, SizeZ = z }).GetAwaiter().GetResult());
+
+    // ADR-0032 item 4 (Q3 A): a move by the offsets of the pad. Translate consumes the body and
+    // makes a new one, and the new body becomes the selection.
+    public string? Move(Guid body, double dx, double dy, double dz)
     {
-        var result = session.Apply(command).GetAwaiter().GetResult();
+        var result = session.Apply(new TranslateCommand { BodyId = body, Dx = dx, Dy = dy, Dz = dz }).GetAwaiter().GetResult();
+        if (result.Status == CommandStatus.Applied && result.Outputs.TryGet<Guid>("bodyId", out var moved))
+            Selection = moved;
+        return Rejection(result);
+    }
+
+    private static string? Rejection(CommandResult result)
+    {
         Report(result);
         return result.Status == CommandStatus.Applied ? null : $"{result.Error?.Code}: {result.Error?.Message}";
     }

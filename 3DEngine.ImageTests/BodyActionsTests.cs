@@ -2,6 +2,7 @@ using Engine.Api.Http;
 using Engine.Contracts;
 using Engine.Core.Commands;
 using Engine.Core.Geometry;
+using Engine.Geometry.Manifold;
 using ThreeDEngine.Core.Input;
 using ThreeDEngine.Desktop;
 
@@ -131,6 +132,40 @@ public class BodyActionsTests
         actions.Rename(A, "Plate");
 
         Assert.Equal("Plate", (await Live(host)).Single(body => body.Id == A).Name);
+    }
+
+    // ADR-0032 item 4 (TASK-0094): the numbers of the pad become a CreateBox and a Translate, and the
+    // new body of a move is the selection (Q3 A). The native backend runs Translate.
+    [Fact]
+    public async Task The_Pad_Creates_A_Box_And_Moves_The_Selected_Body()
+    {
+        using var host = new EngineHost(new ManifoldGeometryBackend(), "manifold", ManifoldGeometryBackend.NativeVersion);
+        var actions = new BodyActions(host.Session);
+
+        Assert.Null(actions.CreateBox(40, 30, 2 * Math.PI));
+        var box = Assert.Single(await Live(host)).Id;
+        actions.Select(box);
+        Assert.Null(actions.Move(box, 5, 0, -2));
+
+        var moved = Assert.Single(await Live(host)).Id;
+        Assert.NotEqual(box, moved);
+        Assert.Equal(moved, actions.Selection);
+        var (create, translate) = await host.Session.Read((document, _) => ((CreateBoxCommand)document.Log[0].Command, (TranslateCommand)document.Log[1].Command));
+        Assert.Equal((40.0, 30.0, 2 * Math.PI), (create.SizeX, create.SizeY, create.SizeZ));
+        Assert.Equal((box, 5.0, 0.0, -2.0), (translate.BodyId, translate.Dx, translate.Dy, translate.Dz));
+    }
+
+    // ADR-0032 item 8: a rejection gives its code for the pad, and the selection stays.
+    [Fact]
+    public async Task A_Rejected_Pad_Command_Gives_Its_Code()
+    {
+        using var host = await TwoBoxes();
+        var actions = new BodyActions(host.Session);
+        actions.Select(A);
+
+        Assert.StartsWith("E-GEOM-INVALID-PARAM: ", actions.CreateBox(0, 1, 1), StringComparison.Ordinal);
+        Assert.StartsWith("E-GEOM-CAP-MISSING: ", actions.Move(A, 1, 0, 0), StringComparison.Ordinal);
+        Assert.Equal(A, actions.Selection);
     }
 
     // ADR-0031 item 11 (TASK-0093): an undo and a redo are commands of the session; an applied

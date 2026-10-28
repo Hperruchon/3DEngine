@@ -2667,3 +2667,30 @@ New tests: 16. The test list holds 770 (620 in `Engine.Tests`, 94 in `3DEngine.T
 `3DEngine.ImageTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
 entries: 14 of 15. New diagnostic codes: 2. Since the review of v0.88, 3 product milestones and 7 entries
 followed it.
+
+## v0.96 — The numeric pad, the evaluator and the keys of undo and redo (R10, TASK-0094)
+
+The owner accepted ADR-0032 with Q1 A, Q2 A and Q3 A on 2026-10-28, and put the keys of R-0041 into this phase.
+
+**The change.**
+
+- `3DEngine.Core/Numeric/Expression.cs` evaluates numbers, `+ - * /`, a unary minus, parentheses, `pi` and
+  `sqrt`, with the invariant culture. A command records the result number only, so a replay never evaluates.
+- `NumericPad` holds three fields; a button and a typed character append the same text. The panel opens a pad
+  for a new box and for a move of the selected body, and the moved body becomes the selection.
+- While the pad is open it takes each key. Tab, Enter, Escape and Backspace edit it.
+- `InputKey` gains Z and Y from the key code. `UndoIntent` and `RedoIntent` come from Control and Z, Control and
+  Y, Control, Shift and Z, and the taps of three and four fingers. R-0041 closes.
+- ADR-0032 amends ADR-0026 items 2 and 3 and ADR-0031 item 11.
+
+**Proof.** 16 injections: 15 were caught at once, and the 16th after its test selected another field first. The
+visual check passed: a box of 40, 30 and 2π mm, a move of 20 and -5 mm, then Ctrl+Z and Ctrl+Y. CI run
+40741567326 passed on the three runners.
+
+**What stays.** The drags of the camera have no numeric equivalent; the gizmo of R9 brings the first drag that
+changes the document. No touch screen exists, so the taps of three and four fingers have synthetic proof only.
+
+New tests: 59. The test list holds 829 (620 in `Engine.Tests`, 144 in `3DEngine.Tests`, 65 in
+`3DEngine.ImageTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
+entries: 13 of 15. New diagnostic codes: none. Since the review of v0.88, 4 product milestones and 8 entries
+followed it.
