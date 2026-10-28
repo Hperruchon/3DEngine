@@ -2527,3 +2527,34 @@ New tests: 26. The test list holds 662 (533 in `Engine.Tests`, 89 in `3DEngine.T
 `3DEngine.ImageTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
 entries: 14 of 15. New diagnostic codes: none. Since the review of v0.88, 0 product milestones and 2 entries
 followed it.
+
+## v0.91 — The document file in the engine and the server (P8a, TASK-0091)
+
+The owner decided KD3 and KD4 on 2026-10-27, answered Q1 to Q8 of the codebase review of 2026-10-28 on 2026-10-28,
+accepted the contract of ADR-0015 on 2026-10-28, and chose on 2026-10-28 that a server with no `--file` keeps the
+document in memory. ADR-0015 is written again, and it amends ADR-0010 §2 and ADR-0012 §1.
+
+**The change.**
+
+- `Engine.Contracts` gains `BackendIdentity` and `LogEntry`. `Document.Log` holds entries, `Document.LengthUnit` is
+  the millimetre, and `IGeometryBackend.Identity` has no default. The bus writes the identity of its backend into
+  each entry, a replay of entries refuses another backend, and the snapshot gives `lengthUnit`.
+- `Engine.Core/Persistence/`: an encoder for each handler, the codec of a line, the journal with one write and one
+  flush to disk for each line, the open, and `DocumentSession.SaveAs`. The bus writes the entry after the handler
+  and before the commit; a failed write rejects the command, and the session refuses each later command.
+- `engine-api-http --file` opens or makes the file, and stops with exit code 6 when it does not open. With no
+  `--file`, the server says that the document is in memory only.
+- Seven codes of the namespace `IO`.
+
+**Proof.** 31 new tests and fifteen injections. A process test kills the server after its results, and a second
+server opens the file to the same renamed body. The full scene of each command opens again on the native backend
+with the same version, log and bodies. A command with a file took 0.07 to 0.08 ms on this computer.
+
+**What stays.** The desktop has no file until P8f. A failed write leaves the body of the handler in the backend. On
+Linux and macOS the lock of the file is advisory.
+
+New tests: 31. The test list holds 693 (564 in `Engine.Tests`, 89 in `3DEngine.Tests`, 40 in
+`3DEngine.ImageTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
+entries: 13 of 15; R-0025 is closed. New diagnostic codes: `E-IO-BACKEND-MISMATCH`, `E-IO-NOT-ENCODABLE`,
+`E-IO-WRITE-FAILED`, `E-IO-LOAD-FAILED`, `E-IO-SAVE-FAILED`, `W-IO-TRUNCATED`, `W-IO-BACKEND-VERSION`. Since the
+review of v0.88, 1 product milestone and 3 entries followed it.

@@ -435,6 +435,26 @@ public class HostGuardTests : IClassFixture<WebApplicationFactory<Program>>
         }
     }
 
+    // ADR-0015 item 10: with no --file the document is in memory only, and the host
+    // says so before it serves a request (the owner, 2026-10-28).
+    [Fact]
+    public async Task A_Host_With_No_File_Says_That_The_Document_Is_In_Memory_Only()
+    {
+        using var process = StartHost("--urls http://127.0.0.1:0", httpPorts: null);
+        var errorText = process.StandardError.ReadToEndAsync();
+        try
+        {
+            await ListeningAddressAsync(process);
+        }
+        finally
+        {
+            process.Kill(entireProcessTree: true);
+            await process.WaitForExitAsync();
+        }
+
+        Assert.Contains("has no document file", await errorText, StringComparison.Ordinal);
+    }
+
     [Fact]
     public async Task A_Host_Whose_File_Does_Not_Open_Stops_With_Exit_Code_6()
     {

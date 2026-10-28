@@ -20,7 +20,8 @@ using Microsoft.AspNetCore.Connections;
 //
 // The argument --file names the document file (ADR-0015 item 10). The host opens it,
 // or makes it when it does not exist, before it serves a request, and each applied
-// command goes into it before its result.
+// command goes into it before its result. With no --file the document is in memory
+// only, and the host says so on its error output.
 
 // Until TASK-0079 a configuration file that the framework cannot read, for example
 // an appsettings.json with an error, ended the host with an unhandled exception and
@@ -67,8 +68,13 @@ catch (Exception ex)
 // same code as the command line (TASK-0036).
 try
 {
-    foreach (var warning in app.Services.GetRequiredService<EngineHost>().OpenWarnings)
+    var host = app.Services.GetRequiredService<EngineHost>();
+    foreach (var warning in host.OpenWarnings)
         Console.Error.WriteLine($"{warning.Code}: {warning.Message}");
+
+    // ADR-0015 item 10: with no --file the document stays in memory only.
+    if (host.Session.FilePath is null)
+        Console.Error.WriteLine("engine-api-http has no document file: the document is in memory only, and a stop loses it. Give --file to keep it (ADR-0015 item 10).");
 }
 catch (BackendUnavailableException ex)
 {
