@@ -324,6 +324,10 @@ holds T63 to T67. T4, T5, T7, T10, T13, T17, T23 and T25 stay.
 Progress 2026-10-28: TASK-0088 corrected T62. The gate refuses in each test project each point where a file can
 give xUnit a framework, a runner, a sink, an order or a discoverer, and a product type with a name of xUnit where
 a test sees it. T31 stays open in part: the three gates that run engine code stay in the test process.
+Progress 2026-10-28: TASK-0089 corrected T63 to T67. A reference must name a project that the dependency gate reads,
+the gate of the UI library reads names, XML and imports, an archived ADR needs its file and its status, a product
+task with no roadmap row is a problem, and the runner refuses a discarded task. T4, T5, T7, T10, T13, T17, T23 and T25
+stay, and T31 stays open in part.
 
 ### R-0033 · Seven findings of the third codebase review in the engine and the hosts have no task
 - class: debt

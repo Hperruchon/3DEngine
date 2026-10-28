@@ -2615,3 +2615,28 @@ New tests: 19. The test list holds 738 (591 in `Engine.Tests`, 94 in `3DEngine.T
 `3DEngine.ImageTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
 entries: 13 of 15. New diagnostic codes: none. Since the review of v0.88, 2 product milestones and 5 entries
 followed it.
+
+## v0.94 — The gates of the review of 2026-10-28 (P0.35, TASK-0089)
+
+The owner put P0.35 after P0.36 and before P8c on 2026-10-28.
+
+**The change.**
+
+- T63: each project reference must resolve to a project that the dependency gate reads, so a reference into `bin/`,
+  `obj/` or outside the repository is refused.
+- T64: the gate of the UI library reads the tokens of the compiler, each project file as XML and each file that
+  MSBuild reads for a project; a string that names `cimgui` outside `3DEngine/Ui/` is an offence.
+- T65: an archived ADR needs its file in `docs/adr/archive/` with the status Withdrawn or Superseded.
+- T66: a product task after the last review whose roadmap row does not name it is a problem; the rule D3 stays.
+- T67: the gate runner reads each gate file and refuses a discard of a call and a `Task.Run` as a statement.
+
+**Proof.** 16 new tests. The form of each finding failed the gate program after its correction and had passed it
+before.
+
+**What stays.** The runner has no test of its own. T31 stays open in part: the three gates that run engine code stay
+in the test process.
+
+New tests: 16. The test list holds 754 (607 in `Engine.Tests`, 94 in `3DEngine.Tests`, 53 in
+`3DEngine.ImageTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
+entries: 13 of 15. New diagnostic codes: none. Since the review of v0.88, 2 product milestones and 6 entries
+followed it.

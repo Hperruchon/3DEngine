@@ -227,6 +227,8 @@ public class AdrGateTests
                 problems.Add($"{id}: the index lists it in force and under \"Archived\"");
         }
 
+        problems.AddRange(ArchiveProblems(archived, ArchivedStatus));
+
         Assert.True(problems.Count == 0, string.Join("\n  ", problems));
     }
 
@@ -263,6 +265,50 @@ public class AdrGateTests
 
     private static IEnumerable<string> AdrFiles()
         => Directory.EnumerateFiles(RepositoryFiles.Path("docs", "adr"), "0*.md").OrderBy(f => f);
+
+    // Finding T65 of the codebase review of 2026-10-28 (TASK-0089): an archived number must
+    // have its file in docs/adr/archive/, with the status Withdrawn or Superseded, and the row
+    // must give that status. Until TASK-0089 a deleted record with its row moved under
+    // "Archived" passed the gate. The function is pure, so a test gives it each form.
+    internal static IEnumerable<string> ArchiveProblems(IEnumerable<string> archivedRows, Func<string, string?> statusOfArchiveFile)
+    {
+        foreach (var row in archivedRows)
+        {
+            var id = RowId(row);
+            var status = statusOfArchiveFile(id);
+            if (status is null)
+                yield return $"{id}: the index lists it under \"Archived\", and docs/adr/archive/ has no file of it";
+            else if (status is not ("Withdrawn" or "Superseded"))
+                yield return $"{id}: its file in docs/adr/archive/ has the status {status}; an archived record is Withdrawn or Superseded";
+            else if (!row.Contains($"| {status} |", StringComparison.Ordinal))
+                yield return $"{id}: the row under \"Archived\" does not give the status {status} of its file";
+        }
+    }
+
+    // The status of the file of a number in docs/adr/archive/, or null when it has none.
+    private static string? ArchivedStatus(string id)
+    {
+        var folder = RepositoryFiles.Path("docs", "adr", "archive");
+        var file = Directory.Exists(folder) ? Directory.EnumerateFiles(folder, $"{id}-*.md").FirstOrDefault() : null;
+        return file is null ? null : RepositoryFiles.ReadFrontMatter(File.ReadAllText(file))?.GetValueOrDefault("status") ?? string.Empty;
+    }
+
+    [Theory]
+    [InlineData("| [0042](archive/0042-x.md) | X | Withdrawn | — | today |", null, "has no file of it")]
+    [InlineData("| [0042](archive/0042-x.md) | X | Withdrawn | — | today |", "Accepted", "has the status Accepted")]
+    [InlineData("| [0042](archive/0042-x.md) | X | Withdrawn | — | today |", "Superseded", "does not give the status Superseded")]
+    public void Each_Form_Of_Finding_T65_Is_A_Problem(string row, string? status, string expected)
+    {
+        var problems = ArchiveProblems([row], _ => status).ToList();
+
+        Assert.Contains(problems, problem => problem.Contains(expected, StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public void An_Archived_Record_With_Its_File_And_Its_Status_Is_No_Problem()
+    {
+        Assert.Empty(ArchiveProblems(["| [0042](archive/0042-x.md) | X | Withdrawn | — | today |"], _ => "Withdrawn"));
+    }
 
     private static List<Adr> Parse()
     {
