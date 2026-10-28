@@ -25,6 +25,18 @@ internal static class SchemaEventsEndpoint
 
     private static readonly IReadOnlyDictionary<string, FieldSchema> None = Fields();
 
+    // The fields of a body: Required false means that the value can be null, as the name
+    // of a body with no name (ADR-0028 items 1 and 7).
+    private static IReadOnlyDictionary<string, FieldSchema> BodyFields(params (string Name, string Type)[] fields)
+    {
+        var result = new Dictionary<string, FieldSchema>(Fields(fields), StringComparer.Ordinal)
+        {
+            ["name"] = new FieldSchema("string", Required: false),
+            ["visible"] = new FieldSchema("boolean", Required: true),
+        };
+        return result;
+    }
+
     // The payload of a command event: the name and the version of the command (ADR-0006).
     private static readonly IReadOnlyDictionary<string, FieldSchema> CommandFields = Fields(("name", "string"), ("schemaVersion", "integer"));
 
@@ -42,8 +54,9 @@ internal static class SchemaEventsEndpoint
         new("heartbeat", None),
         new("subscription.resume", Fields(("fromSeq", "integer"))),
         new("subscription.reset", Fields(("documentId", "guid"), ("snapshot", "object"))),
-        new("body.created", Fields(("bodyId", "guid"), ("kind", "string"))), // ADR-0012 §5
+        new("body.created", BodyFields(("bodyId", "guid"), ("kind", "string"))), // ADR-0012 §5, ADR-0028 item 7
         new("body.consumed", Fields(("bodyId", "guid"))), // ADR-0021 item 6, TASK-0037
+        new("body.changed", BodyFields(("bodyId", "guid"))), // ADR-0028 item 7, TASK-0085
     };
 
     public static IResult Handle() => Results.Json(Kinds, ApiJson.Options);

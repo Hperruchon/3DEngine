@@ -27,9 +27,7 @@ public class DispatchSurfaceGateTests
             .Concat(HandlerCatalog.QueryHandlers().Select(h => h.QueryName))
             .ToArray();
 
-        var offences = new List<string>();
-        var filesRead = 0;
-
+        var files = new List<(string Relative, string[] Lines)>();
         foreach (var project in HostProjects)
         {
             var directory = Path.Combine(root, project);
@@ -41,27 +39,55 @@ public class DispatchSurfaceGateTests
                 if (relative.Contains("/obj/", StringComparison.Ordinal) || relative.Contains("/bin/", StringComparison.Ordinal))
                     continue;
 
-                filesRead++;
-                var lines = File.ReadAllLines(path);
-                for (var i = 0; i < lines.Length; i++)
-                {
-                    foreach (var name in names)
-                    {
-                        // A quoted name is a dispatch decision. A bare mention in a
-                        // comment is prose and is permitted.
-                        if (lines[i].Contains($"\"{name}\"", StringComparison.Ordinal))
-                            offences.Add($"{relative}:{i + 1} names \"{name}\"");
-                    }
-                }
+                files.Add((relative, File.ReadAllLines(path)));
             }
         }
 
-        Assert.True(filesRead > 0, "No host source file was read.");
+        Assert.True(files.Count > 0, "No host source file was read.");
+        var offences = Offences(files, names);
         Assert.True(
             offences.Count == 0,
             "Per ADR-0016 a host must not name a command or a query. Adding a command must change "
             + "only its own files and HandlerCatalog. Offences:\n  "
             + string.Join("\n  ", offences));
+    }
+
+    // ADR-0028 item 9 (TASK-0085): the commands of R8a change central files of the engine one
+    // time, and that exception does not reach the hosts. A host file that names RenameBody is an
+    // offence, and the names of the gate come from the catalog, so they hold the new commands.
+    [Fact]
+    public void A_Host_File_That_Names_A_New_Command_Is_An_Offence()
+    {
+        var names = HandlerCatalog.CommandHandlers().Select(h => h.CommandName)
+            .Concat(HandlerCatalog.QueryHandlers().Select(h => h.QueryName))
+            .ToArray();
+        Assert.Contains("RenameBody", names);
+        Assert.Contains("SetBodyVisibility", names);
+        Assert.Contains("GetBodyInfo", names);
+
+        string[] injected = ["// RenameBody in a comment is prose.", "if (request.Name == \"RenameBody\") Rename(request);"];
+        var offence = Assert.Single(Offences([("Engine.Api.Http/Endpoints/Injected.cs", injected)], names));
+
+        Assert.Equal("Engine.Api.Http/Endpoints/Injected.cs:2 names \"RenameBody\"", offence);
+    }
+
+    // A quoted name is a dispatch decision. A bare mention in a comment is prose and is permitted.
+    private static List<string> Offences(IEnumerable<(string Relative, string[] Lines)> files, IReadOnlyList<string> names)
+    {
+        var offences = new List<string>();
+        foreach (var (relative, lines) in files)
+        {
+            for (var i = 0; i < lines.Length; i++)
+            {
+                foreach (var name in names)
+                {
+                    if (lines[i].Contains($"\"{name}\"", StringComparison.Ordinal))
+                        offences.Add($"{relative}:{i + 1} names \"{name}\"");
+                }
+            }
+        }
+
+        return offences;
     }
 
     [Fact]

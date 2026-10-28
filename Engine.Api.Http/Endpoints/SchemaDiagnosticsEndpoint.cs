@@ -28,6 +28,7 @@ internal static class SchemaDiagnosticsEndpoint
         new(DiagnosticCodes.GeomBodyNotFound,      "Error",   "GEOM"),
         new(DiagnosticCodes.GeomNativeOp,          "Error",   "GEOM"),
         new(DiagnosticCodes.GeomBackendInit,       "Error",   "GEOM"),
+        new(DiagnosticCodes.ValBodyNameInvalid,    "Error",   "VAL"), // ADR-0028 item 3, TASK-0085
     };
 
     public static IResult Handle() => Results.Json(Codes, ApiJson.Options);

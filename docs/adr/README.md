@@ -25,7 +25,7 @@ names. Do not read all of them.
 | [0008](0008-command-query-event-triad.md) | Command, query and event triad with structured results | Amended | Contracts | 0006 | 0020 |
 | [0009](0009-3dengine-core-peer-render-kernel.md) | 3DEngine.Core is a peer render kernel | Amended | Boundary, clients | — | 0022, 0025 |
 | [0010](0010-subscription-reset-snapshot-format.md) | subscription.reset snapshot format | Amended | Contracts, observability | — | 0020 |
-| [0012](0012-geometry-backend-wiring.md) | Geometry backend wiring | Amended | Boundary, geometry, contracts | — | 0018, 0021 |
+| [0012](0012-geometry-backend-wiring.md) | Geometry backend wiring | Amended | Boundary, geometry, contracts | — | 0018, 0021, 0028 |
 | [0013](0013-command-query-schema-declaration.md) | Command and query schema declaration | Accepted | Contracts, observability | — | — |
 | [0014](0014-manifold-native-interop.md) | Manifold backend native-interop posture | Accepted | Boundary, geometry, native-interop | — | — |
 | [0015](0015-command-log-persistence.md) | Command-log persistence for engine-api-http | Proposed | Persistence, runtime, deployment | — | — |
@@ -34,22 +34,23 @@ names. Do not read all of them.
 | [0018](0018-tessellation-capability.md) | The tessellation capability | Accepted | Geometry, contracts, rendering | 0012 | — |
 | [0019](0019-hybrid-deployment-topology.md) | The hybrid deployment topology | Amended | Clients, deployment | — | 0024 |
 | [0020](0020-document-version-meaning.md) | The meaning of the document version | Accepted | Contracts, runtime, observability | 0006, 0008, 0010 | — |
-| [0021](0021-operand-consumption.md) | Operand consumption and the live body set | Accepted | Contracts, geometry, observability | 0012 | — |
+| [0021](0021-operand-consumption.md) | Operand consumption and the live body set | Amended | Contracts, geometry, observability | 0012 | 0028 |
 | [0022](0022-first-render-pipeline.md) | The first render pipeline | Amended | Rendering, boundary | 0009, 0017 | 0025 |
 | [0023](0023-camera-depth-and-draw-list.md) | The camera, the depth and the draw list of the renderer | Amended | Rendering | — | 0024, 0026 |
 | [0024](0024-in-process-events-and-body-origin.md) | The events of a session in its host, and the origin of a body in double precision | Accepted | Rendering, clients | 0019, 0023 | — |
 | [0025](0025-observe-a-cut.md) | The first demonstration, a device with no window, and an image test | Accepted | Rendering, boundary | 0009, 0017, 0022 | — |
 | [0026](0026-intent-layer.md) | Device-tagged pointer samples, an intent layer, and a parity test of touch and mouse | Amended | Rendering, clients | 0023 | 0027 |
 | [0027](0027-text-and-panels.md) | Text and panels through Dear ImGui, drawn by a first-party renderer | Accepted | Rendering, clients | 0026 | — |
+| [0028](0028-body-name-and-visibility.md) | The name and the visibility of a body | Accepted | Contracts, geometry | 0012, 0021 | — |
 
 ## Topics
 
-- **Contracts** — 0005, 0006, 0008, 0012, 0013, 0018, 0020, 0021. Read these before changing `Engine.Contracts/**`.
+- **Contracts** — 0005, 0006, 0008, 0012, 0013, 0018, 0020, 0021, 0028. Read these before changing `Engine.Contracts/**`.
 - **Boundary** — 0001, 0004, 0007, 0012, 0014, 0017, 0022, 0025. Read these before changing project references or adding clients.
 - **Workflow** — 0002. Read before adding a client or skipping CLI.
 - **Clients** — 0002, 0007, 0019, 0024, 0026, 0027. Read before changing UI/CLI/host code.
 - **Deployment** — 0004, 0019. Read these before changing where a session runs or which transport a host uses.
-- **Geometry** — 0001, 0012, 0014, 0018, 0021. Read before adding a capability or backend.
+- **Geometry** — 0001, 0012, 0014, 0018, 0021, 0028. Read before adding a capability or backend.
 - **Observability** — 0005, 0010, 0013, 0020, 0021. Read before changing event ordering, retention, subscription, or schema endpoints.
 - **Rendering** — 0009, 0017, 0018, 0022, 0023, 0024, 0025, 0026, 0027. Read these before changing `3DEngine.Core`, `3DEngine.Vulkan` or `3DEngine`.
 

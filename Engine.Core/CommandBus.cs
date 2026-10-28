@@ -188,12 +188,27 @@ public sealed class CommandBus
                     + "this bus created before, which the same command consumes, or which is in its list two times. "
                     + "ADR-0021 item 1: a consumed body never becomes live again.");
         }
+
+        // ADR-0028 item 6: a changed body is live, the same command neither creates
+        // nor consumes it, it is in the list one time, and its kind does not change.
+        var changed = new HashSet<Guid>();
+        foreach (var body in result.ChangedBodies)
+        {
+            var live = _document.Bodies.FirstOrDefault(candidate => candidate.Handle.Id == body.Handle.Id);
+            if (live is null || consumed.Contains(body.Handle.Id) || created.Contains(body.Handle.Id)
+                || !changed.Add(body.Handle.Id) || live.Kind != body.Kind)
+                throw new InvalidOperationException(
+                    $"The handler of '{command.Name}'@{command.SchemaVersion} changes body {body.Handle.Id}, which is "
+                    + "not live, which the same command creates or consumes, which is in its list two times, or whose "
+                    + "kind it changes. ADR-0028 item 6 permits a change of a live body, one time, with the same kind.");
+        }
     }
 
     // 4. Commit: compute each Seq, append the log, register the created bodies,
     // remove the consumed bodies. The log append adds one to the version
     // (ADR-0020). All events of one commit share consecutive Seqs, in the order
-    // of ADR-0021 item 5: command.applied, each body.created, each body.consumed.
+    // of ADR-0021 item 5 and ADR-0028 item 7: command.applied, each body.created,
+    // each body.consumed, each body.changed.
     // A subscriber that draws between two events therefore never sees fewer
     // bodies than the result has. Nothing here awaits, therefore nothing here
     // stops in the middle.
@@ -202,7 +217,7 @@ public sealed class CommandBus
         CommandHandlerResult handlerResult,
         Stopwatch stopwatch)
     {
-        var count = 1 + handlerResult.CreatedBodies.Count + handlerResult.ConsumedBodies.Count;
+        var count = 1 + handlerResult.CreatedBodies.Count + handlerResult.ConsumedBodies.Count + handlerResult.ChangedBodies.Count;
         var appliedSeq = TakeSeqs(count);
         var events = new List<EventRecord>(count)
         {
@@ -225,6 +240,8 @@ public sealed class CommandBus
             {
                 ["bodyId"] = body.Handle.Id,
                 ["kind"] = body.Kind,
+                ["name"] = body.Name,
+                ["visible"] = body.Visible,
             }));
         }
 
@@ -235,6 +252,18 @@ public sealed class CommandBus
             events.Add(Event(lastSeq, command, "body.consumed", new Dictionary<string, object?>
             {
                 ["bodyId"] = handle.Id,
+            }));
+        }
+
+        foreach (var body in handlerResult.ChangedBodies)
+        {
+            _document.ReplaceBody(body);
+            lastSeq++;
+            events.Add(Event(lastSeq, command, "body.changed", new Dictionary<string, object?>
+            {
+                ["bodyId"] = body.Handle.Id,
+                ["name"] = body.Name,
+                ["visible"] = body.Visible,
             }));
         }
 
