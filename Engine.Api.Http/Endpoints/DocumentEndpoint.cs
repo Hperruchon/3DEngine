@@ -66,6 +66,12 @@ internal static class DocumentEndpoint
         {
             return (null, ApiErrorEnvelope.BadRequest($"Malformed JSON: {ex.Message}"));
         }
+        // A name that is not well-formed UTF-16 gave HTTP 500 until TASK-0099; this is the
+        // form of E73 in these routes (finding E80 of the second codebase review of 2026-10-28).
+        catch (InvalidOperationException)
+        {
+            return (null, ApiErrorEnvelope.BadRequest("The field name is not well-formed UTF-16 text."));
+        }
 
         if (name is null)
             return (null, ApiErrorEnvelope.BadRequest("Required field missing: name, a JSON string."));
