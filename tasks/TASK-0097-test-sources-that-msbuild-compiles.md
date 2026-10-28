@@ -1,7 +1,7 @@
 ---
 id: 0097
 title: The test framework gate reads each source and each alias that MSBuild compiles into a test project
-status: Ready
+status: Active
 phase: P0.38
 opened: 2026-10-28
 depends-on: [0096]
@@ -85,3 +85,5 @@ No file outside the gate files can change the result of a test in a test project
 ## Progress
 
 - 2026-10-28: opened by the second codebase review of 2026-10-28 (TASK-0095).
+- 2026-10-28: the gate reads each source that MSBuild compiles and the project file of each test project, and the
+  judge names the project file of each test project as a gate file. The forms of T68 and T69 fail the gate program.
