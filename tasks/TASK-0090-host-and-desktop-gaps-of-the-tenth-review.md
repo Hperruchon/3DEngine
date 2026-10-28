@@ -123,3 +123,8 @@ and the desktop sends the command that a person asks for.
   running command before the backend goes (E66), and each other exception of the composition gives exit code 5
   with the app disposed. No test: no test stops the server with a signal on each runner, and none can make the
   composition throw; the full run of the process tests passes.
+- 2026-10-28: V28. An image test renders the first demonstration without and with the selection and requires the
+  tint on at least 99 % of the pixels of the body; a highlight with the depth test Never failed it (0 of 24,820
+  pixels). `mesh.vert` declares `invariant gl_Position`, compiled with shaderc v2023.8, and the lock changes for
+  `mesh.vert` only. The test passed on the GPU of this computer before the invariant too, so the invariant is a
+  rule for other drivers; lavapipe runs the test in the pipeline.
