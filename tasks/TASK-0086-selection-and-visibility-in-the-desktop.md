@@ -1,7 +1,7 @@
 ---
 id: 0086
 title: The desktop selects, hides, shows and renames a body, and the camera stays where it is
-status: Active
+status: Done
 phase: R8b
 opened: 2026-10-28
 depends-on: [0085]
@@ -70,12 +70,38 @@ is a command of the session, and the camera frames the bodies only when the firs
 
 ## Acceptance criteria
 
-- [ ] Each new test fails before its correction, or an injection shows that it can fail.
-- [ ] A touch script and a mouse script give the same command log.
-- [ ] A picture of the desktop with a selected body and its highlight, a renamed body, and a hidden body. The
-      owner accepts it.
-- [ ] A clean build (`--no-incremental`) gives zero errors and zero warnings.
-- [ ] Continuous integration passes on `ubuntu-latest`, `windows-latest` and `macos-latest`.
+- [x] Each new test fails before its correction, or an injection shows that it can fail.
+- [x] A touch script and a mouse script give the same command log.
+- [x] A picture of the desktop with a selected body and its highlight, a renamed body, and a hidden body. The
+      owner accepts it. The owner accepted four pictures and the log on 2026-10-28.
+- [x] A clean build (`--no-incremental`) gives zero errors and zero warnings.
+- [ ] Continuous integration passes on `ubuntu-latest`, `windows-latest` and `macos-latest`. The merge
+      records the run.
+
+## Outcome
+
+Status: Done · v0.88 · the commit that carries this block.
+
+A person selects a body by a tap or a click, and a highlight shows it. A long press, a right click or H hides
+a body; a tap of two fingers or Shift and H shows each body. The panel renames the selected body. Each change
+is a command of the session, and the camera frames the bodies only when the first visible body comes.
+
+## Method
+
+**Mechanical.** 30 new tests: 14 in `3DEngine.Tests` (six of the gestures, eight of the pick) and 16 in
+`3DEngine.ImageTests`. Twelve injections each failed their tests, four for each of the three code commits. A
+touch script and a mouse script give the same command log. The visual check ran under synchronization
+validation with no validation message, and the owner accepted its four pictures.
+
+**Judgement.** The selection stays in `BodyActions`, a state of the client (ADR-0007), and only the hide, the
+show and the rename go to the session. A hidden body leaves the scene, the pick and the framed box, and it
+cannot stay selected. The pick computes in double precision on the render side, where a transcendental
+function is permitted, because no pick writes to the log. A hide at a point hides the body at that point, not
+the selection.
+
+**Weakest.** No test with no GPU reads `SessionBodies`; the visual check reads it. No computer of the project
+has a touch screen, so the touch path is proven by synthetic samples only. A rename sends one command for each
+press of Rename, not for each key, so ADR-0028 item 2 does not fill the log from the desktop.
 
 ## Notes for the implementer
 
@@ -104,3 +130,5 @@ is a command of the session, and the camera frames the bodies only when the firs
   16 new tests, with the comparison of the logs of a touch script and a mouse script. Four injections each
   failed their tests (a hide at a point that hides the selection, a frame at each change, a row with no action,
   a hidden body that stays selected). No test with no GPU reads `SessionBodies`; the visual check reads it.
+- 2026-10-28: closed after the acceptance of the owner, a clean build and a full local run of 636 tests (507 in
+  `Engine.Tests`, 89 in `3DEngine.Tests`, 40 in `3DEngine.ImageTests`).
