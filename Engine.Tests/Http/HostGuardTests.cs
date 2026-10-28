@@ -455,6 +455,46 @@ public class HostGuardTests : IClassFixture<WebApplicationFactory<Program>>
         Assert.Contains("has no document file", await errorText, StringComparison.Ordinal);
     }
 
+    // E77 of the second codebase review of 2026-10-28: a save moves the file of --file, and a
+    // start again with the same --file made an empty document with no message. A start that
+    // makes the file now says so; a start that opens it says nothing (ADR-0015 item 10).
+    [Fact]
+    public async Task A_Host_That_Makes_The_File_Of_File_Says_So()
+    {
+        var folder = Directory.CreateTempSubdirectory("engine-api-http-file-").FullName;
+        var path = Path.Combine(folder, "work.3de");
+        try
+        {
+            var made = await ErrorOutputOfAStart($"--urls http://127.0.0.1:0 --file \"{path}\"");
+            var opened = await ErrorOutputOfAStart($"--urls http://127.0.0.1:0 --file \"{path}\"");
+
+            Assert.Contains("did not exist, so the host made a new empty document file", made, StringComparison.Ordinal);
+            Assert.DoesNotContain("did not exist", opened, StringComparison.Ordinal);
+        }
+        finally
+        {
+            await DeleteFolder(folder);
+        }
+    }
+
+    // The error output of a host from its start until it listens; the host is then killed.
+    private static async Task<string> ErrorOutputOfAStart(string arguments)
+    {
+        using var process = StartHost(arguments, httpPorts: null);
+        var errorText = process.StandardError.ReadToEndAsync();
+        try
+        {
+            await ListeningAddressAsync(process);
+        }
+        finally
+        {
+            process.Kill(entireProcessTree: true);
+            await process.WaitForExitAsync();
+        }
+
+        return await errorText;
+    }
+
     // A --file that names a folder gave exit code 5 until TASK-0099 (finding E82 of the
     // second codebase review of 2026-10-28).
     [Theory]

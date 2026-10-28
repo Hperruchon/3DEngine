@@ -144,6 +144,8 @@ internal sealed class DesktopSurface : IDisposable
 
         foreach (var warning in host.OpenWarnings)
             Console.Error.WriteLine($"{warning.Code}: {warning.Message}");
+        if (host.NewFileMessage is { } made)
+            Console.Error.WriteLine(made);
 
         try
         {

@@ -25,6 +25,12 @@ public sealed class DocumentEndpointTests : IDisposable
 
     private string Documents => Path.Combine(_folder, "documents");
 
+    // A name whose file name, with .3de, has 255 characters, and one character more (E81).
+    private const string LongestName =
+        "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        + "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa";
+    private const string LongName = LongestName + "b";
+
     private static async Task<WebApplication> StartSurface(EngineHost host, DocumentFolder folder)
     {
         var builder = WebApplication.CreateBuilder();
@@ -107,6 +113,24 @@ public sealed class DocumentEndpointTests : IDisposable
     [InlineData("..")]
     [InlineData("")]
     [InlineData("pla\nte")]
+    // E81 of the second codebase review of 2026-10-28: the rules of a file name of Windows, on
+    // each operating system.
+    [InlineData("CON")]
+    [InlineData("nul")]
+    [InlineData("com1.3de")]
+    [InlineData("LPT9.part")]
+    [InlineData("Aux .old")]
+    [InlineData("a ")]
+    [InlineData("a.")]
+    [InlineData("a .3de")]
+    [InlineData(".3de")]
+    [InlineData("a*b")]
+    [InlineData("a?b")]
+    [InlineData("a<b")]
+    [InlineData("a>b")]
+    [InlineData("a|b")]
+    [InlineData("a\"b")]
+    [InlineData(LongName)]
     public async Task A_Name_That_Is_Not_A_Plain_File_Name_Is_Refused(string name)
     {
         var host = new EngineHost(new InProcessMeshBackend(), "managed", "test", new DocumentFileOptions(null, Path.Combine(_folder, "unsaved")));
@@ -130,6 +154,10 @@ public sealed class DocumentEndpointTests : IDisposable
     [InlineData("plate.3de", "plate.3de")]
     [InlineData("plate.3DE", "plate.3DE")]
     [InlineData("a b.c", "a b.c.3de")]
+    [InlineData("CONSOLE", "CONSOLE.3de")]
+    [InlineData("com10", "com10.3de")]
+    [InlineData("nul-plate", "nul-plate.3de")]
+    [InlineData(LongestName, LongestName + ".3de")]
     public void A_Plain_Name_Resolves_In_The_Folder_With_The_Extension(string name, string file)
     {
         var folder = new DocumentFolder(Documents);
@@ -147,6 +175,21 @@ public sealed class DocumentEndpointTests : IDisposable
 
         Assert.Equal(Path.Combine(Path.GetFullPath(Documents), "plate.3de"), folder.Resolve("plate", out var refusal));
         Assert.Null(refusal);
+    }
+
+    // E85: engine-api-http with no --file refused a save with HTTP 409, and an open with 501.
+    [Fact]
+    public async Task A_Save_On_A_Host_With_No_File_Is_Not_Supported()
+    {
+        var host = new EngineHost(new InProcessMeshBackend(), "managed", "test");
+        await using var app = await StartSurface(host, new DocumentFolder(Documents));
+        using var http = new HttpClient { BaseAddress = new Uri(app.Urls.First()) };
+
+        var (status, body) = await Post(http, "/document/save", new { name = "plate" });
+
+        Assert.Equal(HttpStatusCode.NotImplemented, status);
+        Assert.Equal(DiagnosticCodes.ApiNotSupported, body.GetProperty("error").GetProperty("code").GetString());
+        Assert.False(File.Exists(Path.Combine(Documents, "plate.3de")));
     }
 
     // E80: a name with a lone surrogate gave HTTP 500 with no body.

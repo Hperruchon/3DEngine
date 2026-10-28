@@ -159,9 +159,13 @@ public static class DocumentFile
             {
                 entry = EntryCodec.ReadEntry(lines[index].Text, session.CommandRegistry);
             }
-            catch (DocumentFileException) when (index == lines.Count - 1 && torn is null)
+            catch (DocumentFileException) when (index == lines.Count - 1 && torn is null && !EntryCodec.IsJson(lines[index].Text))
             {
-                // A last line that does not parse is a torn line too (ADR-0015 item 8).
+                // A last line that is not JSON is a torn line too (ADR-0015 item 8). A complete
+                // line that is JSON is not a torn write, because Append writes a line and its line
+                // feed in one call, so each other failure refuses the open and the file keeps the
+                // line. Until TASK-0099 the open cut it, for example a command of a newer engine
+                // (finding E76 of the second codebase review of 2026-10-28).
                 torn = lines[index].Text;
                 validLength = lines[index - 1].End;
                 break;
