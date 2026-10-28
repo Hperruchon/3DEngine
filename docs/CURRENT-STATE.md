@@ -2770,3 +2770,38 @@ of `bin/` waits for TASK-0098.
 New tests: 20. The test list holds 851 (642 in `Engine.Tests`, 144 in `3DEngine.Tests`, 65 in `3DEngine.ImageTests`).
 `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open entries: 13 of 15. New
 diagnostic codes: none. Since the review of v0.96, 0 product milestones and 2 entries followed it.
+
+## v0.100 — The engine holds a sketch, and the desktop draws it (K2a, TASK-0100)
+
+The owner accepted ADR-0033 on 2026-10-28 with no change, and accepted the picture of the visual check on 2026-10-28.
+
+**The change.**
+
+- `Engine.Contracts/Sketch/`: `SketchRecord` with its points, lines, circles, arcs and constraints, and the three
+  origin planes with fixed identifiers (`Datums`). `Document.Sketches`, and `CreatedSketches` and `ChangedSketches`
+  on `CommandHandlerResult`. ADR-0033 amends ADR-0012, ADR-0021 and ADR-0031.
+- Seven commands: `CreateSketch`, `AddSketchPoint`, `AddSketchLine`, `AddSketchConstraint`,
+  `SetSketchConstraintValue`, `MoveSketchPoint` and `DeleteSketchItem`, for the constraint kinds coincident,
+  horizontal, vertical, distance and fixed. The query `GetSketch` gives the residual of each constraint, computed
+  with `+ - * / sqrt` only.
+- The events `sketch.created`, `sketch.changed` and `sketch.removed` after the body events of a commit, and
+  `sketches` in the snapshot. Each step of the history records the sketch before and after, so undo and redo hold
+  sketches, also after an open of the file.
+- Six codes of the new namespace `SKETCH`.
+- The desktop draws each live sketch in yellow over the scene, read only (`SessionSketches`, `SketchOverlay`).
+
+**Proof.** 19 new tests and 11 injections, each caught. The replay gate holds a sketch with the bits of each
+position. The visual check ran the desktop on 127.0.0.1 with a box, a rectangle on XY and a line on XZ made over
+HTTP. CI run 40764792495 passed on the three runners.
+
+**What stays.** The tools of the desktop are K2b. The circle, the arc and nine kinds of constraint wait for phase K2.
+One of four captures of the desktop showed no sketch, and the cause is not known.
+
+**A correction.** v0.98 and v0.99 gave 1 and 2 entries since the review of v0.96; the review entry v0.97 counts too,
+so the counts were 2 and 3.
+
+New tests: 19. The test list holds 870 (653 in `Engine.Tests`, 144 in `3DEngine.Tests`, 73 in `3DEngine.ImageTests`).
+`dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open entries: 13 of 15. New
+diagnostic codes: `E-SKETCH-NOT-FOUND`, `E-SKETCH-DATUM-NOT-FOUND`, `E-SKETCH-ITEM-NOT-FOUND`,
+`E-SKETCH-LINE-INVALID`, `E-SKETCH-CONSTRAINT-INVALID`, `E-SKETCH-NAME-INVALID`. Since the review of v0.96, 1 product
+milestone and 4 entries followed it.
