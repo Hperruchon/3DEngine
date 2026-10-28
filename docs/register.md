@@ -397,6 +397,16 @@ Vulkan layer that only Windows or macOS shows passes the pipeline. The computer 
 on Windows with a GPU, and no computer runs it on macOS.
 Exit: a runner of Windows or macOS gives a Vulkan device and the pipeline requires the test there, or the
 owner accepts Ubuntu alone and moves this entry to the accepted compromises.
+### R-0043 · The first click into the desktop window can reach the panel at a wrong place
+- class: risk
+- opened: 2026-10-28
+- due: 2026-11-27
+- extended: no
+- refs: `3DEngine/Ui/UiInputRouter.cs`, `3DEngine.Vulkan/SdlInput.cs`, TASK-0101
+In the visual check of K2b, a synthetic click into a window without the focus, with no motion before it, dragged
+the panel once and turned the camera once. Clicks within one frame of a new pad also hit other keys. A hand moves
+the mouse before a click, so a person may never see it, but a wrong button of a pad gives a wrong number.
+Exit: a test of the order of the samples of a focus click explains it, and a change or a recorded reason closes it.
 
 ## Accepted compromises
 

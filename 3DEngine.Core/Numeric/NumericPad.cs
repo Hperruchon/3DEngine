@@ -3,14 +3,16 @@ namespace ThreeDEngine.Core.Numeric;
 // One field of the pad: its name, for example "dx", and the text of its expression.
 public sealed record PadField(string Name, string Text);
 
-// The state machine of the numeric pad (ADR-0032 item 3, TASK-0094). It holds three fields and
-// the active field. A button appends the text of its label, and a typed character appends the
+// The state machine of the numeric pad (ADR-0032 item 3, TASK-0094). It holds one, two or three
+// fields (ADR-0034 item 7) and the active field. A button appends the text of its label, and a typed character appends the
 // same text, so a tap, a click and the keyboard give the same states. The pad is a state of the
 // client (ADR-0007): it gives numbers, and the host makes the command.
 public sealed class NumericPad
 {
     // The characters of the grammar of Expression; the pad drops each other character.
     public const string Characters = "0123456789.+-*/() pisqrt";
+
+    public const int MaximumFields = 3;
 
     private readonly string[] _texts;
     private readonly string[] _names;
@@ -19,8 +21,8 @@ public sealed class NumericPad
     {
         ArgumentNullException.ThrowIfNull(title);
         ArgumentNullException.ThrowIfNull(unit);
-        if (fields is not { Length: 3 })
-            throw new ArgumentException("A pad has three fields.", nameof(fields));
+        if (fields is not { Length: >= 1 and <= MaximumFields })
+            throw new ArgumentException("A pad has one, two or three fields.", nameof(fields));
 
         Title = title;
         Unit = unit;
@@ -75,7 +77,7 @@ public sealed class NumericPad
         Active = field;
     }
 
-    // The three numbers, or null with the error of the first field that fails in Message. A
+    // One number for each field, or null with the error of the first field that fails in Message. A
     // field that fails becomes the active field, so the next text corrects it.
     public double[]? Apply()
     {

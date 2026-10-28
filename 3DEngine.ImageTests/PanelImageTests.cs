@@ -79,7 +79,9 @@ public class PanelImageTests
             }
         }
 
-        Assert.True(dark > inside * 0.7, $"The picture {picture}: {dark} of {inside} pixels of the panel are dark.");
+        // The buttons are blue and not dark: since the line of a new sketch (TASK-0101) about 70 %
+        // of the panel is dark, so the limit is 60 %. A panel that is absent gives no dark pixel.
+        Assert.True(dark > inside * 0.6, $"The picture {picture}: {dark} of {inside} pixels of the panel are dark.");
         Assert.True(bright > 100, $"The picture {picture}: {bright} pixels of the panel are bright; the text is absent.");
 
         var clear = SceneRenderer.Background;

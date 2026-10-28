@@ -70,6 +70,27 @@ public static class Picker
         return nearest;
     }
 
+    // ADR-0034 item 2: the position (x, y) in the frame of a plane where the ray meets it, or null
+    // when the ray is parallel to the plane or meets it behind its origin. The plane goes through
+    // origin and has the axes u and v, of length 1 and at a right angle; its normal is u × v. It
+    // uses + - * / only. The position is a number of a command, as a value of the pad is: the log
+    // never holds the ray.
+    public static (double X, double Y)? OnPlane(Ray ray, (double X, double Y, double Z) origin, (double X, double Y, double Z) u, (double X, double Y, double Z) v)
+    {
+        const double Parallel = 1e-9;
+        var normal = Cross(u, v);
+        var facing = Dot(ray.Direction, normal);
+        if (Math.Abs(facing) < Parallel)
+            return null;
+
+        var t = Dot(Minus(origin, ray.Origin), normal) / facing;
+        if (!(t > 0))
+            return null;
+
+        var offset = Minus((ray.Origin.X + t * ray.Direction.X, ray.Origin.Y + t * ray.Direction.Y, ray.Origin.Z + t * ray.Direction.Z), origin);
+        return (Dot(offset, u), Dot(offset, v));
+    }
+
     // The distance along the ray to a triangle, or null: the method of Möller and Trumbore.
     private static double? Hit(Ray ray, (double X, double Y, double Z) a, (double X, double Y, double Z) b, (double X, double Y, double Z) c)
     {

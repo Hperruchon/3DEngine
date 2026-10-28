@@ -2805,3 +2805,38 @@ New tests: 19. The test list holds 870 (653 in `Engine.Tests`, 144 in `3DEngine.
 diagnostic codes: `E-SKETCH-NOT-FOUND`, `E-SKETCH-DATUM-NOT-FOUND`, `E-SKETCH-ITEM-NOT-FOUND`,
 `E-SKETCH-LINE-INVALID`, `E-SKETCH-CONSTRAINT-INVALID`, `E-SKETCH-NAME-INVALID`. Since the review of v0.96, 1 product
 milestone and 4 entries followed it.
+
+## v0.101 — The desktop draws a sketch of lines and adds its constraints, by touch and by mouse (K2b, TASK-0101)
+
+The owner accepted ADR-0034 on 2026-10-28 with Q1 to Q6 A, and accepted the picture of the visual check on 2026-10-28.
+
+**The change.**
+
+- The intent layer has the mode `Sketch` (`IntentMode`), with a second map of the settings: a tap or a click gives
+  `SketchPointIntent`, and the gestures of a hide and of a show all give nothing. ADR-0034 amends ADR-0026, ADR-0029
+  and ADR-0032.
+- `Picker.OnPlane` gives the position of a ray on the plane of a datum with `+ - * /` only. `SketchGrid` rounds a tap
+  to a step of 1, 2 or 5 × 10ᵏ mm of at least 8 pixels. `SketchCamera` turns the camera to the plane of a new active
+  sketch.
+- `SketchTool` in `3DEngine.Core/Sketching/`: the tool Line makes a chain that closes on its first point, and the
+  tool Select picks a point or a line, two items at most. `SketchActions` sends the commands of K2a.
+- The panel gets the buttons of a new sketch on XY, XZ and YZ. The window "Sketch" lists each point, line and
+  constraint with its residual, and gives the buttons of the five kinds that fit the selection, Move point, Value and
+  Delete. The pad holds one to three fields and gives the next point of a chain.
+- The overlay draws the active sketch in yellow with labels, a selected item in white, the first point of an open
+  chain with a ring, and each other sketch in grey.
+
+**Proof.** 58 new test cases and 17 injections, each caught. A touch script and a mouse script that draw one closed
+rectangle give the same log. The visual check ran the desktop on 127.0.0.1 with real clicks: a rectangle of five
+clicks on XY, and the five kinds from the window. It found two faults of display, which the last commit of the task
+corrects. CI run 40775886063 passed on the three runners.
+
+**What stays.** The solver is K3a: a constraint shows its residual, and no point moves. A tap that adds a point and a
+line gives two steps of undo. A drag of a point and a snap to a grid wait for R11. The first click into the window can
+reach the panel at a wrong place (R-0043).
+
+**A correction.** None.
+
+New tests: 58. The test list holds 928 (653 in `Engine.Tests`, 185 in `3DEngine.Tests`, 90 in `3DEngine.ImageTests`).
+`dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open entries: 14 of 15. New
+diagnostic codes: none. Since the review of v0.96, 2 product milestones and 5 entries followed it.

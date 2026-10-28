@@ -7,7 +7,7 @@ date: 2026-10-27
 supersedes: []
 superseded-by: []
 amends: ['0023']
-amended-by: ['0027', '0029', '0032']
+amended-by: ['0027', '0029', '0032', '0034']
 affects:
   - 3DEngine.Core/Input/**
 enforced-by: 3DEngine.Tests/IntentParityTests.cs (TASK-0082 creates it)
@@ -45,15 +45,17 @@ order that puts R7 after the move to SDL 3.2 (TASK-0081).
    and a gesture that starts over a panel does not reach the state machine (ADR-0027 item 4).
 2. **Intents.** A pure state machine in `3DEngine.Core/Input/` turns the frames into intents with no kind of
    device: orbit, pan, zoom, select, hide, show all, undo, redo and cancel (hide and show all: ADR-0029 item 5;
-   undo and redo: ADR-0032 item 9). It reads no clock and no device of its own, so a test gives it any
+   undo and redo: ADR-0032 item 9). The host sets a mode, `Scene` or `Sketch`; in the mode `Sketch`
+   a gesture of a point gives a point of the sketch (ADR-0034 item 1). It reads no clock and no device of its own, so a test gives it any
    sequence.
 3. **The map (D4, D6).** A setting of the client maps each gesture to an action. The default: one finger or a
    left drag orbits; two fingers, a middle drag, or Shift and a left drag pan; a pinch or the wheel zooms; a
    tap or a click selects; the arrow keys orbit, Shift and the arrow keys pan, and the keys plus and minus
    zoom; a long press or a right click hides the body at the point, H hides the selection, and a tap of two
    fingers or Shift and H shows each hidden body (ADR-0029 item 4); a tap of three fingers or Control and Z
-   undoes, and a tap of four fingers, Control and Y, or Control, Shift and Z redoes (ADR-0032 item 9). The
-   setting is a user setting, which ADR-0007 permits; it needs no command.
+   undoes, and a tap of four fingers, Control and Y, or Control, Shift and Z redoes (ADR-0032 item 9). A
+   second map applies in the mode `Sketch`: a tap or a click gives a point of the sketch, and the gestures of a
+   hide and of a show all give nothing (ADR-0034 item 1). The setting is a user setting, which ADR-0007 permits; it needs no command.
 4. **The translation (D3, D8).** The translation of SDL events into samples lives in `3DEngine.Vulkan`, beside
    `Window`. The window turns the hint `SDL_HINT_TOUCH_MOUSE_EVENTS` off, and the translation also drops each
    mouse event whose device is `SDL_TOUCH_MOUSEID`.
@@ -84,3 +86,5 @@ command, and the comparison of logs of anti-objective 7 starts with R8.
   interface that takes a sample before the state machine.
 - 2026-10-28 · TASK-0086 · ADR-0029 amends items 2 and 3: the intents hide and show all, and their gestures.
 - 2026-10-28 · TASK-0094 · ADR-0032 amends items 2 and 3: the intents undo and redo, and their gestures.
+- 2026-10-28 · TASK-0101 · ADR-0034 amends items 2 and 3: the mode `Sketch`, its map, and the intent of a point
+  of the sketch.
