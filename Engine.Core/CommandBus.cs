@@ -92,7 +92,17 @@ public sealed class CommandBus
     // The session sets it, in its serial section or before its first command.
     internal Persistence.DocumentJournal? Journal { get; set; }
 
-    public async Task<CommandResult> Apply(Command command, CancellationToken ct = default)
+    public Task<CommandResult> Apply(Command command, CancellationToken ct = default)
+        => Apply(command, lookUp: true, ct);
+
+    // ADR-0015 item 8: an open applies each entry of the file one time. The file can
+    // hold one CommandId two times (E17), and a look-up in the cache skipped the
+    // second entry with no error (finding E75 of the second codebase review of
+    // 2026-10-28). The result still goes into the cache, as in a live session.
+    internal Task<CommandResult> ApplyEntry(Command command, CancellationToken ct = default)
+        => Apply(command, lookUp: false, ct);
+
+    private async Task<CommandResult> Apply(Command command, bool lookUp, CancellationToken ct)
     {
         if (command is null) throw new ArgumentNullException(nameof(command));
 
@@ -100,7 +110,7 @@ public sealed class CommandBus
         await _serial.WaitAsync(ct).ConfigureAwait(false);
         try
         {
-            if (_idempotency is not null && _idempotency.TryGet(command.CommandId, out var cached))
+            if (lookUp && _idempotency is not null && _idempotency.TryGet(command.CommandId, out var cached))
                 return cached;
 
             // Change, then publish (TASK-0034, scope item 7; the owner accepted it on

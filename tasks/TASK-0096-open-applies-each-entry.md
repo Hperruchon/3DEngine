@@ -72,7 +72,7 @@ An open gives the Document that wrote the file, or it refuses the file with `E-I
 ## Acceptance criteria
 
 - [ ] The probe of E75 fails before the correction and passes after it.
-- [ ] An injection that removes the check of the version fails a test.
+- [ ] An injection that brings back the look-up in the cache fails a test, through the check of the version.
 - [ ] The replay gate passes.
 - [ ] A clean build (`--no-incremental`) gives zero errors and zero warnings.
 - [ ] Continuous integration passes on `ubuntu-latest`, `windows-latest` and `macos-latest`.
@@ -92,3 +92,5 @@ An open gives the Document that wrote the file, or it refuses the file with `E-I
 - 2026-10-28: the owner answered the questions of the second codebase review of 2026-10-28, A to each. This first
   commit records the answers: the roadmap rows K2a, K2b, K2 and K0a hold Q1 to Q9, TASK-0098 holds Q10, and register
   entry R-0042 closes.
+- 2026-10-28: the open applies each entry with no look-up in the cache, refuses a session that has a command, and
+  checks the version of each result. Two new tests; ADR-0015 item 8 says so.
