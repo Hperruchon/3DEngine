@@ -87,15 +87,20 @@ answered its questions Q1 to Q8 on 2026-10-28, with option A for each.
      two times. Each result goes into the cache, so the cache fills as in a live session.
    - The Document gets a new identifier (Q1, ADR-0005 §1), so an old cursor of a subscriber cannot resume on another
      replay. This decides item 6 of ADR-0020.
-   - A last line that is not complete or does not parse is cut off with `W-IO-TRUNCATED`. A bad line before it, an
-     entry that is not applied, or a version that does not agree refuses the open with `E-IO-LOAD-FAILED`.
+   - A tail with no line feed, or a last line that is not JSON, is a torn line: the open cuts it off with
+     `W-IO-TRUNCATED`. `Append` writes a line and its line feed in one call, so a complete line that is JSON is not a
+     torn write. Each other failure refuses the open with `E-IO-LOAD-FAILED`, and the file does not change: a bad
+     line before the last line, a last line that is JSON and does not bind, an entry that is not applied, or a
+     version that does not agree.
 9. **A document with no name (Q4).** It writes from its first command into a file in the folder of unsaved
    documents, `<local application data>/3DEngine/unsaved/<document identifier>.3de`, which the host can set.
    `DocumentSession.SaveAs` moves the file to a new name in the serial section, and later entries go there. The
    target must not exist. A failure gives `E-IO-SAVE-FAILED`, and the file stays where it was. P8f gives the save
    to the desktop and to an agent.
 10. **The hosts.** `engine-api-http` opens the file that `--file` names, and makes it with a header when it does not
-    exist. With no `--file`, it keeps the document in memory only and writes one line that says so at its start; the
+    exist. A start that makes the file writes one line on the error output that says so, because a save moves the
+    file (item 9) and a script that starts again with the same `--file` then gets an empty document. With no
+    `--file`, it keeps the document in memory only and writes one line that says so at its start; the
     folder of unsaved documents is for the desktop (P8f). A file that cannot open stops the start
     with exit code 6. The desktop opens a file in P8f (Q5). The command line has no file, because each run is a
     one-shot session (ADR-0019 item 7). A test that makes an `EngineHost` gets no file unless it gives one.
@@ -151,3 +156,6 @@ Register entry R-0025 closes with P8a.
 - 2026-10-28 · TASK-0096 · Item 8: the open applies each entry with no look-up in the idempotency cache, refuses a
   session that has a command, and checks the version of each result. The open skipped an entry whose command
   identifier the cache held (finding E75 of the second codebase review of 2026-10-28).
+- 2026-10-29 · TASK-0099 · Item 8: only a tail with no line feed, or a last line that is not JSON, is a torn line;
+  a complete last line that does not bind refuses the open and the file does not change (finding E76, the answer
+  Q3 A of the owner). Item 10: a start that makes the file of `--file` says so on the error output (finding E77, Q1 A).

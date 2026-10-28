@@ -111,3 +111,5 @@ person sees.
   share of a read.
 - 2026-10-28: V35, V36, V38 and V39 are corrected, with 10 new test cases. Five injections each failed a test. V39 is
   confirmed by reading only; its test holds the release of each object that exists.
+- 2026-10-29: the owner answered Q1 to Q7 with A. ADR-0015 items 8 and 10, ADR-0030 items 2, 4 and 5, and ADR-0032
+  items 4 and 6 record the answers. Q5 A adds the code `E-API-OPEN-PENDING`, which the commit of V37 registers.
