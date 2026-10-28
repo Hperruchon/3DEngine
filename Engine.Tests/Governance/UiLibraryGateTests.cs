@@ -1,4 +1,7 @@
 using System.Text.RegularExpressions;
+using System.Xml.Linq;
+using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CSharp;
 using Xunit;
 
 namespace Engine.Tests.Governance;
@@ -67,6 +70,29 @@ public class UiLibraryGateTests
         Assert.True(offences.Any(o => o.StartsWith(path, StringComparison.Ordinal)), "Expected an offence for " + path);
     }
 
+    // The forms of finding T64 of the codebase review of 2026-10-28 (TASK-0089); each one
+    // compiled and passed the gate of main.
+    [Theory]
+    [InlineData("3DEngine/NativeThreeDEngine.cs", "using ImGu\\u0069NET;\ninternal static class C { }", "with an escape")]
+    [InlineData("3DEngine/NativeThreeDEngine.cs", "internal static class C { [System.Runtime.InteropServices.DllImport(\"cimgui\")] static extern void igNewFrame(); }", "native library cimgui")]
+    [InlineData("3DEngine/NativeThreeDEngine.cs", "internal static class C { static nint L() => System.Runtime.InteropServices.NativeLibrary.Load(\"CIMGUI.dll\"); }", "native library cimgui")]
+    public void Each_Form_Of_Finding_T64_In_A_Source_Is_An_Offence(string path, string text, string expected)
+    {
+        var offences = NamespaceOffences([(path, text)]);
+
+        Assert.True(
+            offences.Any(o => o.Contains(expected, StringComparison.Ordinal)),
+            $"Expected an offence with '{expected}'. Offences:\n  " + string.Join("\n  ", offences));
+    }
+
+    [Theory]
+    [InlineData("3DEngine.Vulkan/3DEngine.Vulkan.csproj", "<Project><ItemGroup><PackageReference Include='ImGui.NET' Version='1.91.6.1' /></ItemGroup></Project>")]
+    [InlineData("3DEngine.Vulkan/ui-packages.xml", "<Project><ItemGroup><packagereference update=\" imgui.net \" /></ItemGroup></Project>")]
+    public void Each_Form_Of_Finding_T64_In_A_Project_File_Is_An_Offence(string path, string text)
+    {
+        Assert.Contains(PackageOffences([(path, text)]), offence => offence.StartsWith(path, StringComparison.Ordinal));
+    }
+
     [Fact]
     public void The_Ui_Folder_And_The_Project_Of_The_Host_Are_Not_Offences()
     {
@@ -87,6 +113,21 @@ public class UiLibraryGateTests
                 if (Namespace.IsMatch(lines[i]))
                     yield return $"{path}:{i + 1} names the namespace ImGuiNET outside {UiFolder}";
             }
+
+            if (!path.EndsWith(".cs", StringComparison.Ordinal))
+                continue;
+
+            // Finding T64 of the codebase review of 2026-10-28 (TASK-0089): the text misses
+            // an escaped name and a native import. The tokens of the compiler give the value of
+            // each name with each escape resolved, and each string literal.
+            foreach (var token in CSharpSyntaxTree.ParseText(text).GetRoot().DescendantTokens())
+            {
+                var line = token.GetLocation().GetLineSpan().StartLinePosition.Line + 1;
+                if (token.IsKind(SyntaxKind.IdentifierToken) && token.ValueText == "ImGuiNET" && token.Text != "ImGuiNET")
+                    yield return $"{path}:{line} names the namespace ImGuiNET with an escape outside {UiFolder}";
+                if (token.IsKind(SyntaxKind.StringLiteralToken) && token.ValueText.Contains("cimgui", StringComparison.OrdinalIgnoreCase))
+                    yield return $"{path}:{line} names the native library cimgui outside {UiFolder}";
+            }
         }
     }
 
@@ -97,7 +138,7 @@ public class UiLibraryGateTests
             if (path == PinningProject)
                 continue;
 
-            if (PackageReference.IsMatch(text))
+            if (PackageReference.IsMatch(text) || PinsByXml(text))
                 yield return $"{path} pins the package ImGui.NET; only {PinningProject} may";
         }
     }
@@ -118,7 +159,13 @@ public class UiLibraryGateTests
                 .Where(IsProjectFile)
                 .Where(file => !InBuildOutput(directory, file)))
             .Concat(Directory.EnumerateFiles(RepositoryFiles.Root, "Directory.*", SearchOption.TopDirectoryOnly))
-            .Distinct()
+            // Finding T64: a file that a project imports with another extension, for example
+            // ui-packages.xml, is a file that MSBuild reads too.
+            .Concat(Directory.EnumerateFiles(RepositoryFiles.Root, "*.csproj", SearchOption.AllDirectories)
+                .Where(file => !RepositoryFiles.Relative(file).Split('/').Any(part => part is "bin" or "obj" or ".git" or ".claude"))
+                .SelectMany(DependencyDirectionGateTests.FilesThatMsBuildReads))
+            .Select(Path.GetFullPath)
+            .Distinct(StringComparer.OrdinalIgnoreCase)
             .Select(file => (RepositoryFiles.Relative(file), File.ReadAllText(file)));
 
     private static IEnumerable<string> ProjectDirectories()
@@ -126,6 +173,27 @@ public class UiLibraryGateTests
             .Where(file => !RepositoryFiles.Relative(file).Split('/').Any(part => part is "bin" or "obj" or ".git"))
             .Select(file => Path.GetDirectoryName(file)!)
             .Distinct();
+
+    // Finding T64: an attribute in single quotes passed the text of PackageReference. The XML
+    // reader reads each quote, and names with no regard to case, as MSBuild does.
+    private static bool PinsByXml(string text)
+    {
+        XDocument document;
+        try
+        {
+            document = XDocument.Parse(text);
+        }
+        catch (System.Xml.XmlException)
+        {
+            return false;
+        }
+
+        return document.Descendants()
+            .Where(element => DependencyDirectionGateTests.Is(element, "PackageReference"))
+            .Any(element => new[] { "Include", "Update" }
+                .Select(attribute => DependencyDirectionGateTests.Value(element, attribute))
+                .Any(value => value is not null && value.Split(';').Any(part => string.Equals(part.Trim(), "ImGui.NET", StringComparison.OrdinalIgnoreCase))));
+    }
 
     private static bool IsProjectFile(string file)
         => file.EndsWith(".csproj", StringComparison.Ordinal)
