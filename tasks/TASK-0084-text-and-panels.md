@@ -1,0 +1,183 @@
+---
+id: 0084
+title: The desktop shows text and a panel, drawn by a first-party renderer
+status: Done
+phase: R7b
+opened: 2026-10-27
+depends-on: [0079, 0082]
+governed-by: [0007, 0009, 0017, 0019, 0022, 0023, 0024, 0025, 0026, 0027]
+writes:
+  create:
+    - tasks/TASK-0084-text-and-panels.md
+    - docs/adr/0027-text-and-panels.md
+    - docs/proposals/2026-10-27-path-to-cad-decision-sheet.md
+    - Engine.Tests/Governance/UiLibraryGateTests.cs
+  modify:
+    - 3DEngine/**
+    - 3DEngine.Core/**
+    - 3DEngine.Vulkan/**
+    - 3DEngine.Tests/**
+    - 3DEngine.ImageTests/**
+    - docs/adr/0026-intent-layer.md
+    - docs/adr/README.md
+    - docs/templates.md
+    - docs/INDEX.md
+    - docs/glossary.md
+    - docs/register.md
+    - docs/roadmap.md
+    - docs/CURRENT-STATE.md
+    - THIRD-PARTY-NOTICES.md
+    - eng/test-floor.txt
+  forbid:
+    - Engine.Contracts/**
+    - Engine.Core/**
+    - Engine.Cli/**
+    - Engine.Api.Http/**
+    - Engine.Api.Http.Server/**
+    - Engine.Geometry.Manifold/**
+    - eng/write-set-check/**
+    - eng/repo-gates/**
+---
+
+# TASK-0084 — The desktop shows text and a panel, drawn by a first-party renderer
+
+This task uses Simplified Technical English (ASD-STE100). See `CLAUDE.md`, section "Language".
+
+## Context
+
+The application draws no text, and phase R8 needs a text field for the name of a body. On 2026-10-27 the
+owner decided the path to the milestone "CAD on one part" (decisions KD1 to KD6 of the decision sheet of
+that date, now `docs/proposals/2026-10-27-path-to-cad-decision-sheet.md`):
+
+1. (KD1) Text and panels come from the core of Dear ImGui through a binding of cimgui. A first-party Vulkan
+   renderer draws its data, with the first texture, descriptor set and 2D pipeline. The input comes from
+   `SdlInput` through the intent layer. No backend of the library: ADR-0017 item 4 permits one SDL pin. The
+   code of the user interface lives in one host folder.
+2. (KD2) The order: R7b (this task), R8a, R8b, the codebase review when its gate makes it due, P8a, P8c, R10,
+   K2, K3a, K0a, K0b. R9 comes after the milestone. This task changes the roadmap in its first commit.
+3. The owner chose the binding ImGui.NET on 2026-10-27, because it has no question about a licence. A check
+   on that date ran it on .NET 10 with no window and no GPU (ADR-0027, context item 4).
+4. The defaults of the sheet for R7b: one host folder that alone references the library; a first-party
+   renderer; the input from `SdlInput` through the intent layer; touch targets of at least 44 points; a
+   test of the state of the panel with no GPU, an image test on lavapipe, and a picture that the owner
+   accepts.
+
+## Goal
+
+The desktop shows a panel with text and a text field over the scene, a finger and a mouse use it in the same
+way, and a gesture outside the panel still moves the camera.
+
+## Scope (in)
+
+1. ADR-0027 records the decision. It amends ADR-0026 item 1. Register entry R-0021 closes. The roadmap gets
+   the rows and the rule of KD2.
+2. `3DEngine.Vulkan/Ui/`: the sampled texture with its upload and its partial update, the descriptor set,
+   the 2D pipeline and its shaders, and a renderer of neutral 2D draw data.
+3. `3DEngine.Core/Input/`: the text sample and the keys of text editing. `3DEngine.Vulkan/SdlInput.cs`
+   translates the text input and those keys; the window turns on the text input of SDL.
+4. `3DEngine/Ui/`: the context of the library, the routing of the samples between the panel and the
+   `IntentMachine`, the conversion of the draw data, the font, the sizes, and the first panel (ADR-0027
+   item 7). The host draws the panel after the scene.
+5. Tests: the state of the panel with no GPU (a touch tap and a mouse click give the same action, typed text
+   reaches the text field, a gesture over the panel does not reach the camera, a gesture outside it does),
+   the conversion of the draw data, an image test of the panel on lavapipe, and `UiLibraryGateTests`.
+6. `THIRD-PARTY-NOTICES.md` gives the licence texts of ImGui.NET, cimgui and Dear ImGui with its font.
+
+## Scope (out)
+
+- The rename and the visibility of a body: R8a and R8b.
+- A second font file, a theme, or a layout that a person saves.
+- The package of the desktop. When it exists, it leaves out the win-x86 library of the binding (ADR-0027,
+  "Bad").
+
+## Acceptance criteria
+
+- [x] Each new test fails before its correction, or an injection shows that it can fail.
+- [x] `UiLibraryGateTests` fails on an injected use of the namespace `ImGuiNET` outside `3DEngine/Ui/`, and on
+      an injected pin of the package in another project.
+- [x] The image test of the panel passes on lavapipe with no validation message (run 40603870213).
+- [x] A picture of the desktop with the panel, a typed filter, and the camera moved by a drag outside the
+      panel. The owner accepted it on 2026-10-28.
+- [x] A clean build (`--no-incremental`) gives zero errors and zero warnings.
+- [ ] Continuous integration passes on `ubuntu-latest`, `windows-latest` and `macos-latest`. The merge
+      records the run.
+
+## Outcome
+
+Status: Done · v0.86 · the commit that carries this block.
+
+The desktop shows a panel with text, a text field and a button over the scene. Dear ImGui gives the draw
+data through ImGui.NET, and a first-party renderer draws it with the first sampled texture, descriptor set
+and 2D pipeline of the project. A gesture that starts over the panel belongs to it, and each other gesture
+moves the camera; a finger, a pen and a mouse give the panel the same action. Only `3DEngine/Ui/` names the
+library, and a gate holds it.
+
+## Method
+
+**Mechanical.** 34 new tests, with each theory case counted: 9 in `Engine.Tests` (the gate), 8 in
+`3DEngine.Tests` (the input and the renderer), and 17 in `3DEngine.ImageTests`: 16 that run on each runner
+(the router and the panel) and the image test of the panel, which runs on Ubuntu with lavapipe. Each one
+failed under an injection. Run 40603870213 passed on the three runners, so the native cimgui of the package ran on Windows,
+on Linux and on macOS arm64. The desktop under synchronization validation gave no validation message, and
+the owner accepted three pictures: the panel with two bodies, a typed filter, and an orbit after a drag
+outside the panel.
+
+**Judgement.** The renderer keeps one pair of buffers for each swapchain image, because the presenter waits
+for the fence of an image before it reuses it. The router decides the owner of a gesture at its start, from
+the panels of the last frame, so it needs no library and a test reads it alone. The tests of the panel live
+in `3DEngine.ImageTests`, the only verifier that may reference the host. The panel reads the live bodies
+that the desktop holds from the events, and no state of the engine.
+
+**Weakest.** A failed check inside the native library stops the whole process; on this computer it waited
+in a dialog, and a run of the tests blocked. Two causes came up and are corrected: a frame before the font
+atlas was built, and two test classes that used the library at the same time (Dear ImGui keeps one context
+for the process). A future defect of the same kind crashes the desktop and not one panel. The default font
+is a bitmap font and looks coarse at 26 pixels. The touch path is proven by synthetic samples only. Commit
+a0494b6 of TASK-0079 is not related; this task has no commit that does not build.
+
+## Notes for the implementer
+
+- **The protocol of the font.** Dear ImGui 1.91 builds the font atlas once: read it with
+  `GetTexDataAsRGBA32`, upload it, and set its texture identifier.
+- **Touch.** No computer of the project has a touch screen; the touch path of the panel is proven by
+  synthetic samples only, as in R7.
+- **The size.** About 4 to 6 evenings.
+
+## Progress
+
+- 2026-10-27: opened after TASK-0079 (v0.85). The first commit holds ADR-0027, the amendment of ADR-0026, the
+  close of R-0021, the roadmap rows and the rule of KD2, and the copy of the decision sheet.
+- 2026-10-27: `UiLibraryGateTests` holds ADR-0027 items 1 and 8. An injected line with the namespace in
+  `3DEngine/NativeThreeDEngine.cs` and an injected pin in `3DEngine.Vulkan/3DEngine.Vulkan.csproj` each failed
+  the scan of the repository. The first version found its own file; the scan now leaves out the file of the
+  gate, and the functions that find an offence keep no exception. A pin with another case and a global using
+  in a project file are offences too.
+- 2026-10-28: the input of a text field (ADR-0027 item 5). `TextSample` holds the text that the keyboard
+  gives, and `InputKey` gains Backspace, Delete, Home, End, Enter, Escape and Tab. `SdlInput` translates the
+  text input of SDL and keeps the Control keys; the window turns on the text input. Three new tests; each one
+  failed with its injection (no text case, no Control state, an editing key that zooms).
+- 2026-10-28: the renderer of the user interface (ADR-0027 item 3). `3DEngine.Vulkan/Ui/` holds the neutral
+  draw data, the first sampled texture, the first descriptor set and the first 2D pipeline; the shaders
+  `ui.vert` and `ui.frag` are compiled with their lines in `shaders.lock`. One pair of buffers for each slot,
+  because the presenter waits for the fence of an image before it reuses it. Five tests with no GPU; a
+  transform with no shift, a scissor with no scale and a wrong offset of the colour each failed one. The draw
+  itself waits for the image test of the next step.
+- 2026-10-28: the panel (ADR-0027 items 1, 2, 4, 6, 7 and 8). `3DEngine/Ui/` holds the router of the samples,
+  the conversion of the draw data, and `DesktopUi` with the default font at 26 pixels and controls of 44
+  pixels. The desktop routes each frame through it and draws the panel after the scene; `SessionBodies` keeps
+  the kind of each live body. 6 tests of the router, 10 tests of the panel with the library and no GPU, and
+  an image test of the panel. Injections failed them: each gesture to the intents (8 tests), keys to the
+  intents while typing (2), a touch with no button (2), a frame padding of 4 (1), and a renderer that draws
+  nothing (the image test). The first run of the panel tests waited for ever: `NewFrame` refuses a font atlas
+  that is not built, and the native check stopped the process in a dialog. The constructor now builds the
+  atlas. The first size of the panel now fits a display of 480 pixels.
+- 2026-10-28: the first full run of the suite blocked. Dear ImGui keeps one current context for the whole
+  process, and xunit ran `DesktopUiTests` and `PanelImageTests` at the same time. The two classes now share the
+  collection "Dear ImGui". With the collection removed from one class, two runs crashed the test host and a
+  third blocked until its limit; with it, the 24 tests of `3DEngine.ImageTests` pass in 0.6 s.
+- 2026-10-28: `THIRD-PARTY-NOTICES.md` section 5 gives the licence texts of ImGui.NET, cimgui and Dear ImGui at
+  the tags of the versions in use, and names the default font ProggyClean (MIT, by Tristan Grimmer). The
+  repository does not hold the package, but the output of the desktop holds its native library.
+  `docs/INDEX.md` names the two folders `Ui/`, and the glossary defines "panel".
+- 2026-10-28: the owner accepted the pictures. Closed, after a clean build and a full local run of 574 tests
+  (475 in `Engine.Tests`, 75 in `3DEngine.Tests`, 24 in `3DEngine.ImageTests`).

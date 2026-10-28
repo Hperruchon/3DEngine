@@ -99,18 +99,6 @@ native build, the runner, the Vulkan path, and the test from one computer.
 Exit: the owner decides the platform list from the study, and objective 8 and anti-objective 16 agree
 with it.
 
-### R-0021 · The project has no decision on how to show the application
-- class: question
-- opened: 2026-09-25
-- due: 2026-12-24
-- extended: no
-- refs: ADR-0003, ADR-0019, TASK-0033
-On 2026-09-25 the owner said: "a browser client is not the main idea, we may need to rethink how to
-show the app". TASK-0033 removes the Blazor pair, and the desktop window is then the only client that
-draws. The means to show the application to a person is open: the desktop window only, a user
-interface toolkit in the window, a remote view, or a recorded demonstration.
-Exit: the owner decides, and a task or an ADR records the decision.
-
 ### R-0022 · Three Vulkan defects block the first render on Linux and on macOS
 - class: debt
 - opened: 2026-09-25
@@ -454,6 +442,20 @@ Closed YYYY-MM-DD · resolved · commit <hash>
 Closed YYYY-MM-DD · decided  · ADR-nnnn
 Closed YYYY-MM-DD · accepted · the reason to keep the condition
 ```
+
+### R-0021 · The project has no decision on how to show the application
+- class: question
+- opened: 2026-09-25
+- due: 2026-12-24
+- extended: no
+- refs: ADR-0003, ADR-0019, TASK-0033
+On 2026-09-25 the owner said: "a browser client is not the main idea, we may need to rethink how to
+show the app". TASK-0033 removes the Blazor pair, and the desktop window is then the only client that
+draws. The means to show the application to a person is open: the desktop window only, a user
+interface toolkit in the window, a remote view, or a recorded demonstration.
+Exit: the owner decides, and a task or an ADR records the decision.
+Closed 2026-10-27 · decided · ADR-0027. The owner chose decision KD1 of the decision sheet of 2026-10-27: text and
+panels through Dear ImGui in the desktop window, drawn by a first-party renderer. TASK-0084 builds it.
 
 ### R-0001 · The preview SDK version prevents a build on a new computer
 - class: risk

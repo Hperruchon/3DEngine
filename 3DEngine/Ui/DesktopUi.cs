@@ -1,0 +1,281 @@
+using System.Numerics;
+using System.Runtime.InteropServices;
+using ImGuiNET;
+using ThreeDEngine.Core.Input;
+using ThreeDEngine.Vulkan;
+
+namespace ThreeDEngine.Desktop.Ui;
+
+// The user interface of the desktop (ADR-0027, TASK-0084): one context of Dear ImGui, its
+// font, its sizes, and the first panel. It sees no SDL, no Vulkan and no window (ADR-0027
+// item 2): the host gives it the samples of a frame and the size of the display, and it gives
+// back the samples for the state machine of intents and the neutral draw data of the frame.
+//
+// The panel shows the address of the document and the live bodies that the desktop holds from
+// the events of its session (ADR-0024), with a text field that filters them. The filter is a
+// state of the client (ADR-0007). The panel reads no state of the engine.
+//
+// Dear ImGui keeps one current context for the whole process, not one for each thread, so each
+// public method makes this context current first, and only one thread may use the library at a
+// time. The desktop has one user interface on its render loop; the tests of the library run in
+// one collection, one after the other (TASK-0084).
+internal sealed unsafe class DesktopUi : IDisposable
+{
+    // A control is at least 44 pixels high at a display scale of 1, so that a finger can hit
+    // it (ADR-0027 item 6): the font size plus two times the vertical frame padding.
+    public const float FontSize = 26f;
+    public const float FramePaddingY = 9f;
+    public const float MinimumControlHeight = 44f;
+
+    public const string PanelName = "Document";
+    public const string FilterLabel = "Filter";
+    public const string ClearLabel = "Clear";
+
+    private readonly IntPtr _context;
+    private readonly string _address;
+    private readonly UiInputRouter _router = new();
+    private readonly List<Vector4> _panels = new();
+    private readonly Dictionary<string, Vector4> _items = new(StringComparer.Ordinal);
+    private readonly List<string> _shown = new();
+    private readonly (uint Width, uint Height, byte[] Rgba) _atlas;
+    private string _filter = string.Empty;
+    private bool _textActive;
+
+    public DesktopUi(string address)
+    {
+        if (!UiDrawDataConverter.VertexLayoutAgrees)
+            throw new InvalidOperationException("The vertex of Dear ImGui does not have the layout of UiVertex.");
+
+        _address = address;
+        _context = ImGui.CreateContext();
+        ImGui.SetCurrentContext(_context);
+
+        var io = ImGui.GetIO();
+
+        // No file: the layout of a panel is not a setting that the desktop saves.
+        io.NativePtr->IniFilename = null;
+        io.NativePtr->LogFilename = null;
+        io.BackendFlags |= ImGuiBackendFlags.RendererHasVtxOffset;
+
+        ImFontConfigPtr font = ImGuiNative.ImFontConfig_ImFontConfig();
+        font.SizePixels = FontSize;
+        io.Fonts.AddFontDefault(font);
+        font.Destroy();
+
+        var style = ImGui.GetStyle();
+        style.FramePadding = new Vector2(12f, FramePaddingY);
+        style.ItemSpacing = new Vector2(12f, 10f);
+        style.WindowPadding = new Vector2(14f, 14f);
+        style.ScrollbarSize = 24f;
+        style.GrabMinSize = 24f;
+        style.WindowRounding = 6f;
+        style.FrameRounding = 4f;
+
+        // The atlas is built here: NewFrame refuses a font atlas that is not built, and the
+        // native library stops the process on a failed check (TASK-0084).
+        _atlas = BuildAtlas(io);
+    }
+
+    // The filter of the panel, as the person typed it.
+    public string Filter => _filter;
+
+    // The rows of bodies that the last frame showed, in their order.
+    public IReadOnlyList<string> ShownBodies => _shown;
+
+    // The height of one control: the font size plus two times the frame padding.
+    public float ControlHeight
+    {
+        get
+        {
+            ImGui.SetCurrentContext(_context);
+            return ImGui.GetFontSize() + 2 * ImGui.GetStyle().FramePadding.Y;
+        }
+    }
+
+    // The rectangle (left, top, right, bottom) of a control of the last frame, or null.
+    public Vector4? ItemRectangle(string label) => _items.TryGetValue(label, out var rectangle) ? rectangle : null;
+
+    // The rectangles (left, top, right, bottom) of the panels of the last frame.
+    public IReadOnlyList<Vector4> PanelRectangles => _panels;
+
+    // True when a point of the display is over a panel of the last frame.
+    public bool OverPanel(double x, double y)
+        => _panels.Any(panel => x >= panel.X && x < panel.Z && y >= panel.Y && y < panel.W);
+
+    // The font atlas as RGBA pixels, for the renderer to upload. It is built once.
+    public (uint Width, uint Height, byte[] Rgba) FontAtlas() => _atlas;
+
+    private static (uint Width, uint Height, byte[] Rgba) BuildAtlas(ImGuiIOPtr io)
+    {
+        io.Fonts.GetTexDataAsRGBA32(out IntPtr pixels, out int width, out int height, out int bytesPerPixel);
+        var rgba = new byte[width * height * bytesPerPixel];
+        Marshal.Copy(pixels, rgba, 0, rgba.Length);
+        return ((uint)width, (uint)height, rgba);
+    }
+
+    // The identifier of the texture of the font atlas, as the renderer gave it.
+    public void SetFontTexture(ulong texture)
+    {
+        ImGui.SetCurrentContext(_context);
+        ImGui.GetIO().Fonts.SetTexID((IntPtr)texture);
+    }
+
+    // Gives the samples of the panel to the library, and returns the samples for the state
+    // machine of intents (ADR-0027 item 4).
+    public IReadOnlyList<InputSample> Route(IEnumerable<InputSample> frame)
+    {
+        ImGui.SetCurrentContext(_context);
+        var (panel, intents) = _router.Route(frame, OverPanel, _textActive);
+        var io = ImGui.GetIO();
+
+        foreach (var sample in panel)
+        {
+            switch (sample)
+            {
+                case PointerSample pointer:
+                    io.AddMouseSourceEvent(pointer.Kind switch
+                    {
+                        DeviceKind.Touch => ImGuiMouseSource.TouchScreen,
+                        DeviceKind.Pen => ImGuiMouseSource.Pen,
+                        _ => ImGuiMouseSource.Mouse,
+                    });
+                    io.AddMousePosEvent((float)pointer.X, (float)pointer.Y);
+                    Buttons(io, pointer);
+                    break;
+
+                case WheelSample wheel:
+                    io.AddMouseWheelEvent(0f, (float)wheel.Steps);
+                    break;
+
+                case KeySample key:
+                    io.AddKeyEvent(ImGuiKey.ModShift, (key.Modifiers & KeyModifiers.Shift) != 0);
+                    io.AddKeyEvent(ImGuiKey.ModCtrl, (key.Modifiers & KeyModifiers.Control) != 0);
+                    if (Key(key.Key) is { } imguiKey)
+                        io.AddKeyEvent(imguiKey, key.Down);
+                    break;
+
+                case TextSample text:
+                    io.AddInputCharactersUTF8(text.Text);
+                    break;
+
+                case FocusLostSample:
+                    io.AddFocusEvent(false);
+                    break;
+            }
+        }
+
+        return intents;
+    }
+
+    // One frame of the user interface for a display of this size in pixels of the window,
+    // and the pixels of the target for one pixel of the display.
+    public UiDrawData Frame(float deltaSeconds, Vector2 displaySize, Vector2 framebufferScale, IReadOnlyList<(Guid Id, string Kind)> bodies)
+    {
+        ArgumentNullException.ThrowIfNull(bodies);
+        ImGui.SetCurrentContext(_context);
+        var io = ImGui.GetIO();
+        io.DisplaySize = displaySize;
+        io.DisplayFramebufferScale = framebufferScale;
+        io.DeltaTime = deltaSeconds > 0 ? deltaSeconds : 1f / 60f;
+
+        _panels.Clear();
+        _items.Clear();
+        _shown.Clear();
+
+        ImGui.NewFrame();
+        Panel(bodies, displaySize);
+        ImGui.Render();
+
+        _textActive = io.WantTextInput;
+        return UiDrawDataConverter.Convert(ImGui.GetDrawData());
+    }
+
+    private void Panel(IReadOnlyList<(Guid Id, string Kind)> bodies, Vector2 displaySize)
+    {
+        ImGui.SetNextWindowPos(new Vector2(16f, 16f), ImGuiCond.FirstUseEver);
+        // The first size fits inside a small display too.
+        ImGui.SetNextWindowSize(new Vector2(460f, Math.Clamp(displaySize.Y - 32f, 200f, 560f)), ImGuiCond.FirstUseEver);
+        if (ImGui.Begin(PanelName))
+        {
+            ImGui.TextUnformatted(_address);
+            ImGui.TextUnformatted(bodies.Count == 1 ? "1 live body" : $"{bodies.Count} live bodies");
+
+            ImGui.SetNextItemWidth(220f);
+            ImGui.InputText(FilterLabel, ref _filter, 64);
+            Item(FilterLabel);
+            ImGui.SameLine();
+            if (ImGui.Button(ClearLabel))
+                _filter = string.Empty;
+            Item(ClearLabel);
+
+            ImGui.Separator();
+            foreach (var (id, kind) in bodies)
+            {
+                var row = $"{kind}  {id.ToString()[..8]}";
+                if (_filter.Length > 0 && !row.Contains(_filter, StringComparison.OrdinalIgnoreCase))
+                    continue;
+
+                ImGui.TextUnformatted(row);
+                _shown.Add(row);
+            }
+        }
+
+        var position = ImGui.GetWindowPos();
+        var size = ImGui.GetWindowSize();
+        _panels.Add(new Vector4(position.X, position.Y, position.X + size.X, position.Y + size.Y));
+        ImGui.End();
+    }
+
+    private void Item(string label)
+    {
+        var min = ImGui.GetItemRectMin();
+        var max = ImGui.GetItemRectMax();
+        _items[label] = new Vector4(min.X, min.Y, max.X, max.Y);
+    }
+
+    // The button of a mouse sample, or the one button of a finger or a pen.
+    private static void Buttons(ImGuiIOPtr io, PointerSample sample)
+    {
+        if (sample.Phase == PointerPhase.Cancel)
+        {
+            for (var button = 0; button < 3; button++)
+                io.AddMouseButtonEvent(button, false);
+            return;
+        }
+
+        if (sample.Phase is not (PointerPhase.Down or PointerPhase.Up))
+            return;
+
+        var down = sample.Phase == PointerPhase.Down;
+        if (sample.Kind != DeviceKind.Mouse)
+        {
+            io.AddMouseButtonEvent(0, down);
+            return;
+        }
+
+        if ((sample.Buttons & PointerButtons.Left) != 0)
+            io.AddMouseButtonEvent(0, down);
+        if ((sample.Buttons & PointerButtons.Right) != 0)
+            io.AddMouseButtonEvent(1, down);
+        if ((sample.Buttons & PointerButtons.Middle) != 0)
+            io.AddMouseButtonEvent(2, down);
+    }
+
+    private static ImGuiKey? Key(InputKey key) => key switch
+    {
+        InputKey.ArrowLeft => ImGuiKey.LeftArrow,
+        InputKey.ArrowRight => ImGuiKey.RightArrow,
+        InputKey.ArrowUp => ImGuiKey.UpArrow,
+        InputKey.ArrowDown => ImGuiKey.DownArrow,
+        InputKey.Backspace => ImGuiKey.Backspace,
+        InputKey.Delete => ImGuiKey.Delete,
+        InputKey.Home => ImGuiKey.Home,
+        InputKey.End => ImGuiKey.End,
+        InputKey.Enter => ImGuiKey.Enter,
+        InputKey.Escape => ImGuiKey.Escape,
+        InputKey.Tab => ImGuiKey.Tab,
+        _ => null,
+    };
+
+    public void Dispose() => ImGui.DestroyContext(_context);
+}

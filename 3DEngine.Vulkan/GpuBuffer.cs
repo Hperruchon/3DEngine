@@ -56,6 +56,20 @@ public sealed unsafe class GpuBuffer : IDisposable
 
     public ulong Size { get; }
 
+    // Copies the data to the start of the buffer, for a buffer that the CPU writes again
+    // at each frame (the user interface, TASK-0084). The caller first waits until the
+    // device ended each read of the buffer.
+    public void Write(ReadOnlySpan<byte> data)
+    {
+        if ((ulong)data.Length > Size)
+            throw new ArgumentException($"The data ({data.Length} bytes) is larger than the buffer ({Size} bytes).", nameof(data));
+
+        void* mapped;
+        _device.DeviceApi.vkMapMemory(_memory, 0, Size, 0, &mapped).CheckResult();
+        data.CopyTo(new Span<byte>(mapped, data.Length));
+        _device.DeviceApi.vkUnmapMemory(_memory);
+    }
+
     // The caller waits until the device is idle before it disposes a buffer.
     public void Dispose()
     {

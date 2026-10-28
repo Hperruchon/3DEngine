@@ -73,6 +73,9 @@ public sealed unsafe class Window
 
         _ = SDL_SetWindowPosition(_window, SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED);
         Id = SDL_GetWindowID(_window);
+
+        // The text input of SDL gives the text events of a text field (ADR-0027 item 5).
+        _ = SDL_StartTextInput(_window);
     }
 
     public string Title { get; }
