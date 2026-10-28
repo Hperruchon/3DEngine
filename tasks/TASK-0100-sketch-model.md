@@ -1,7 +1,7 @@
 ---
 id: 0100
 title: The engine holds a sketch of points, lines and five constraints on an origin plane
-status: Active
+status: Done
 phase: K2a
 opened: 2026-10-28
 depends-on: [0097]
@@ -89,15 +89,36 @@ a person sees it in the desktop.
 
 ## Acceptance criteria
 
-- [ ] The owner accepts ADR-0033 before a change of `Engine.Contracts`.
-- [ ] Each command and the query work over HTTP and in a replay; the replay gate holds a sketch.
-- [ ] An undo and a redo of each sketch command give the record before and after, and their events.
-- [ ] An open of a document file with sketch commands gives the same sketches.
-- [ ] A host that names `CreateSketch` fails `DispatchSurfaceGateTests` (an injection test).
-- [ ] The residual of each kind 1 to 5 is zero for a satisfied constraint and not zero otherwise.
-- [ ] The visual check: the owner accepts a picture of a sketch drawn over the scene.
-- [ ] A clean build (`--no-incremental`) gives zero errors and zero warnings.
-- [ ] Continuous integration passes on `ubuntu-latest`, `windows-latest` and `macos-latest`.
+- [x] The owner accepts ADR-0033 before a change of `Engine.Contracts`.
+- [x] Each command and the query work over HTTP and in a replay; the replay gate holds a sketch.
+- [x] An undo and a redo of each sketch command give the record before and after, and their events.
+- [x] An open of a document file with sketch commands gives the same sketches.
+- [x] A host that names `CreateSketch` fails `DispatchSurfaceGateTests` (an injection test).
+- [x] The residual of each kind 1 to 5 is zero for a satisfied constraint and not zero otherwise.
+- [x] The visual check: the owner accepts a picture of a sketch drawn over the scene.
+- [x] A clean build (`--no-incremental`) gives zero errors and zero warnings.
+- [x] Continuous integration passes on `ubuntu-latest`, `windows-latest` and `macos-latest`.
+
+## Outcome
+
+Status: Done · v0.100 · the commit that carries this block.
+
+## Method
+
+**Mechanical.** The records, the collection and the two lists of the contract; the bus with an `Effect` for each
+commit; seven commands and a query in the form of the existing ones, each with its encoder; the codes in the
+registry, in `/schema/diagnostics` and in `docs/diagnostics.md`; the replay fixture and the sample command of each
+handler for the file.
+
+**Judgement.** The origin of the frame is the first point of each sketch, with the identifier of the sketch, so a
+constraint can name it as any point. A sketch name has the rules of a body name and its own code,
+`E-SKETCH-NAME-INVALID`, because ADR-0033 gave the rules and no code. A position that is not finite gives the
+existing `E-GEOM-INVALID-PARAM`. The desktop draws the sketch on the background list of the UI layer, with the
+inverse of the ray of a pick, so no new pipeline is needed (Q9).
+
+**Weakest.** One of four captures of the desktop showed no sketch, and the next three showed it; a log line showed
+that the overlay had the lines, and the cause of the first capture is not known. The circle, the arc and the kinds
+6 to 14 have records and no command. A tool that adds many items gives many steps of undo.
 
 ## Notes for the implementer
 
@@ -117,3 +138,4 @@ a person sees it in the desktop.
 - 2026-10-28: the desktop draws each live sketch over the scene, read only (`SessionSketches`, `SketchOverlay`, the
   background list of the panel). Eight new tests; five injections each failed a test. The visual check ran on this
   computer: a box, a rectangle on XY and a line on XZ.
+- 2026-10-28: the owner accepted the picture. Closed at v0.100. CI run 40764792495 passed on the three runners.

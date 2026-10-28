@@ -19,7 +19,7 @@ affects:
   - Engine.Core/Queries/**
   - Engine.Api.Http/Endpoints/SchemaEventsEndpoint.cs
   - Engine.Api.Http/WebSockets/WireMessage.cs
-enforced-by: Engine.Tests/Sketch/SketchModelTests.cs (TASK-0100 creates it)
+enforced-by: Engine.Tests/Sketch/SketchModelTests.cs
 ---
 
 # ADR-0033 — The sketch model in the engine
