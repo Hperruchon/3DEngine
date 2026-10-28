@@ -41,6 +41,7 @@ public sealed class EngineHost : IDisposable
 
         // One composition point for every other part, shared with the CLI.
         // Each registered handler comes from HandlerCatalog per ADR-0016.
+        _unsavedFolder = file?.Path is null && file?.UnsavedFolder is { } unsaved ? Path.GetFullPath(unsaved) : null;
         var opens = file?.Path is { } existing && File.Exists(existing);
         EngineKit kit;
         try
@@ -78,6 +79,15 @@ public sealed class EngineHost : IDisposable
             throw;
         }
     }
+
+    private readonly string? _unsavedFolder;
+
+    // ADR-0030 item 4: the name of the document file, or null for a host with no file
+    // and for a document that is still in the folder of unsaved documents.
+    public string? FileName
+        => Session.FilePath is { } path && !string.Equals(Path.GetDirectoryName(Path.GetFullPath(path)), _unsavedFolder, StringComparison.Ordinal)
+            ? Path.GetFileName(path)
+            : null;
 
     // The warnings of the open of the file (W-IO-TRUNCATED, W-IO-BACKEND-VERSION),
     // which the host writes on its error output.

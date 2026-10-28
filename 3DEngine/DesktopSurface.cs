@@ -1,6 +1,7 @@
 using System.Globalization;
 using Engine.Api.Http;
 using Engine.Core;
+using Engine.Core.Persistence;
 using Engine.Geometry.Manifold;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Connections;
@@ -32,6 +33,11 @@ namespace ThreeDEngine.Desktop;
 // also turns on the checks of synchronization of the validation layer, for a check of
 // the present path by a person (finding V16 of the codebase review of 2026-10-17,
 // TASK-0079). Give it as --Desktop:SynchronizationValidation=true.
+//
+// The document file (ADR-0030, TASK-0092): --file names it, and the desktop opens it,
+// or makes it when it does not exist, before the window. With no --file the desktop
+// writes into the folder of unsaved documents ("Desktop:UnsavedFolder") from its first
+// command. A save and an open by name use the document folder ("Desktop:DocumentFolder").
 internal sealed class DesktopSurface : IDisposable
 {
     public const int DefaultPort = 5180;
@@ -42,6 +48,13 @@ internal sealed class DesktopSurface : IDisposable
     public const int ExitBackendUnavailable = 3;
     public const int ExitAddressInUse = 4;
     public const int ExitStartFailed = 5;
+    public const int ExitFileNotOpened = 6;
+
+    public const string FileSetting = "file";
+
+    public const string UnsavedFolderSetting = "Desktop:UnsavedFolder";
+
+    public const string DocumentFolderSetting = "Desktop:DocumentFolder";
 
     public const string PortSetting = "Desktop:Port";
 
@@ -49,9 +62,10 @@ internal sealed class DesktopSurface : IDisposable
 
     private readonly WebApplication _app;
 
-    private DesktopSurface(WebApplication app, EngineHost host, string address, bool synchronizationValidation)
+    private DesktopSurface(WebApplication app, EngineHost host, string address, bool synchronizationValidation, DesktopDocument document)
     {
         _app = app;
+        Document = document;
         Host = host;
         Address = address;
         SynchronizationValidation = synchronizationValidation;
@@ -59,6 +73,8 @@ internal sealed class DesktopSurface : IDisposable
 
     // True when the validation layer must also check the synchronization (V16).
     public bool SynchronizationValidation { get; }
+
+    public DesktopDocument Document { get; }
 
     // The session of the document that the desktop holds.
     public EngineHost Host { get; }
@@ -93,7 +109,12 @@ internal sealed class DesktopSurface : IDisposable
         if (!ManifoldGeometryBackend.IsNativeAvailable())
             return (null, ExitBackendUnavailable, $"{DiagnosticCodes.GeomBackendInit}: {ManifoldGeometryBackend.UnavailableReason()}");
 
-        builder.AddEngineSurface(_ => new EngineHost(new ManifoldGeometryBackend(), "manifold", ManifoldGeometryBackend.NativeVersion));
+        var document = new DesktopDocument(builder.Configuration[DocumentFolderSetting] is { Length: > 0 } documents ? documents : DocumentFolder.Default);
+        var file = new DocumentFileOptions(
+            builder.Configuration[FileSetting] is { Length: > 0 } named ? named : null,
+            builder.Configuration[UnsavedFolderSetting] is { Length: > 0 } unsaved ? unsaved : DocumentFile.DefaultUnsavedFolder);
+        builder.Services.AddSingleton(document.Folder);
+        builder.AddEngineSurface(_ => new EngineHost(new ManifoldGeometryBackend(), "manifold", ManifoldGeometryBackend.NativeVersion, file));
 
         var app = builder.Build();
 
@@ -108,6 +129,24 @@ internal sealed class DesktopSurface : IDisposable
         try
         {
             host = app.Services.GetRequiredService<EngineHost>();
+        }
+        catch (IOException ex)
+        {
+            // ADR-0030 item 1: a DocumentFileException gives its code in its message.
+            app.DisposeAsync().AsTask().GetAwaiter().GetResult();
+            return (null, ExitFileNotOpened, $"The document file did not open: {ex.Message}");
+        }
+        catch (Exception ex)
+        {
+            app.DisposeAsync().AsTask().GetAwaiter().GetResult();
+            return (null, ExitStartFailed, $"The surface did not start: {ex.Message}");
+        }
+
+        foreach (var warning in host.OpenWarnings)
+            Console.Error.WriteLine($"{warning.Code}: {warning.Message}");
+
+        try
+        {
             app.MapEngineSurface();
             app.StartAsync().GetAwaiter().GetResult();
         }
@@ -133,7 +172,7 @@ internal sealed class DesktopSurface : IDisposable
             return (null, ExitAddressRefused, boundRefusal);
         }
 
-        return (new DesktopSurface(app, host, app.Urls.First(), synchronizationValidation), 0, null);
+        return (new DesktopSurface(app, host, app.Urls.First(), synchronizationValidation, document), 0, null);
     }
 
     public void Dispose()

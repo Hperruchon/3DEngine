@@ -3,7 +3,7 @@
 # assembly, its count, and an optional count for one platform (linux, windows or
 # macos). A task that adds or removes tests sets the new count in the same commit.
 # This file is a gate file.
-Engine.Tests 564
+Engine.Tests 582
 3DEngine.Tests 89
 # The image test runs on Ubuntu only (ADR-0025 item 4, R-0040).
-3DEngine.ImageTests 38 linux=40
+3DEngine.ImageTests 46 linux=48
