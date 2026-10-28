@@ -1,10 +1,12 @@
 using System.Numerics;
 using Engine.Api.Http;
+using Engine.Contracts.Sketch;
 using SDL3;
 using ThreeDEngine.Core.Abstractions;
 using ThreeDEngine.Core.Input;
 using ThreeDEngine.Core.Models;
 using ThreeDEngine.Core.Picking;
+using ThreeDEngine.Core.Sketching;
 using ThreeDEngine.Desktop.Ui;
 using ThreeDEngine.Vulkan;
 
@@ -37,6 +39,9 @@ public sealed class NativeThreeDEngine : IThreeDEngine, IDisposable
 
     // ADR-0033 item 13: the live sketches, which the panel draws over the scene.
     private SessionSketches? _sketches;
+
+    // ADR-0034: the active sketch, its tool, and the commands of the sketch mode.
+    private SketchActions? _sketchActions;
     private TimeSpan _delta;
 
     internal NativeThreeDEngine(Window window, EngineHost host, IntentSettings? settings = null, bool synchronizationValidation = false, string address = "", DesktopDocument? document = null)
@@ -78,6 +83,7 @@ public sealed class NativeThreeDEngine : IThreeDEngine, IDisposable
         _ui.SetFontTexture(_uiRenderer.CreateTexture(width, height, rgba));
         _actions = new BodyActions(_host.Session);
         _sketches = new SessionSketches(_host);
+        _sketchActions = new SketchActions(_host.Session);
     }
 
     public void Update(TimeSpan deltaTime)
@@ -96,6 +102,9 @@ public sealed class NativeThreeDEngine : IThreeDEngine, IDisposable
     private void ApplyIntents()
     {
         var frame = _input.TakeFrame();
+
+        // ADR-0034 item 1: the intent layer is in the mode Sketch while a sketch is active.
+        _intents.Mode = _sketchActions?.Active is null ? IntentMode.Scene : IntentMode.Sketch;
         foreach (var intent in _intents.Step(_ui is null ? frame : _ui.Route(frame)))
         {
             // A select, a hide and a show all go to the selection and to the session (ADR-0029).
@@ -120,6 +129,11 @@ public sealed class NativeThreeDEngine : IThreeDEngine, IDisposable
                     break;
                 case RedoIntent when _actions is not null:
                     _documentMessage = _actions.Redo();
+                    break;
+
+                // ADR-0034 items 2 to 4: a tap or a click of the mode Sketch goes to the active tool.
+                case SketchPointIntent point when _sketchActions is not null:
+                    _sketchActions.Tap(Camera, point.X, point.Y, _window.Extent.width, _window.Extent.height);
                     break;
             }
         }
@@ -175,8 +189,74 @@ public sealed class NativeThreeDEngine : IThreeDEngine, IDisposable
                 case MoveBodyAction move:
                     _ui.EndPad(_actions.Move(move.Body, move.Dx, move.Dy, move.Dz));
                     break;
+                default:
+                    ApplySketch(action);
+                    break;
             }
         }
+    }
+
+    // ADR-0034 items 4 to 8: the actions of the window of the sketch and of its pads.
+    private void ApplySketch(PanelAction action)
+    {
+        if (_ui is null || _sketchActions is not { } sketch)
+            return;
+
+        switch (action)
+        {
+            case NewSketchAction create:
+                if (sketch.Create(create.Datum) is not null)
+                    Face(create.Datum);
+                break;
+            case EditSketchAction edit:
+                sketch.Edit(edit.Sketch);
+                if (_sketches?.Live.FirstOrDefault(live => live.SketchId == edit.Sketch) is { } info)
+                    Face(info.DatumId);
+                break;
+            case FinishSketchAction:
+                sketch.Finish();
+                break;
+            case SketchToolAction tool:
+                sketch.Tool.Kind = tool.Kind;
+                break;
+            case EndChainAction:
+                sketch.Tool.End();
+                break;
+            case CloseChainAction:
+                sketch.Close();
+                break;
+            case NextPointAction next:
+                // The pad stays open for the next point of the chain.
+                var rejection = sketch.Next(next.A, next.B);
+                _ui.EndPad(rejection);
+                if (rejection is null && sketch.Tool.Last is not null)
+                    _ui.OpenNextPointPad(chainOpen: true);
+                break;
+            case ToggleSketchItemAction toggle:
+                sketch.Tool.Toggle(toggle.Item);
+                break;
+            case AddConstraintAction constraint:
+                var refused = sketch.AddConstraint(constraint.Kind, constraint.Items, constraint.Values);
+                if (constraint.Values.Count > 0)
+                    _ui.EndPad(refused);
+                break;
+            case SetConstraintValueAction value:
+                _ui.EndPad(sketch.SetValue(value.Constraint, value.Values));
+                break;
+            case MoveSketchPointAction move:
+                _ui.EndPad(sketch.MovePoint(move.Point, move.X, move.Y));
+                break;
+            case DeleteSketchItemsAction delete:
+                sketch.Delete(delete.Items);
+                break;
+        }
+    }
+
+    // ADR-0034 item 6 (Q4 A): the camera looks along the normal of the datum of a new active sketch.
+    private void Face(Guid datum)
+    {
+        if (Datums.Find(datum) is { } plane)
+            SketchCamera.Face(Camera, (plane.Normal.X, plane.Normal.Y, plane.Normal.Z));
     }
 
     // A save in the serial section of the session, on the render loop (ADR-0030 item 3).
@@ -224,8 +304,24 @@ public sealed class NativeThreeDEngine : IThreeDEngine, IDisposable
             : Vector2.One;
         _actions?.Forget(_renderer.LiveBodies);
         _sketches?.Apply();
-        var sketches = _sketches is null ? null : SketchOverlay.Of(_sketches.Live, Camera, window.width, window.height);
-        var panel = _ui.Frame((float)_delta.TotalSeconds, display, scale, _renderer.LiveBodies, Selection, _document is null ? null : new DocumentLine(_host.FileName, _documentMessage), sketches);
+        SketchOverlay.Strokes? sketches = null;
+        SketchPanel? sketchPanel = null;
+        if (_sketches is not null && _sketchActions is { } sketchActions)
+        {
+            sketchActions.Follow(_sketches.Live);
+            var tool = sketchActions.Tool;
+            var focus = sketchActions.Active is { } active ? new SketchOverlay.Focus(active, [.. tool.Selection], tool.First) : null;
+            sketches = SketchOverlay.Of(_sketches.Live, Camera, window.width, window.height, focus);
+            sketchPanel = new SketchPanel(
+                _sketches.Live,
+                _sketches.Live.FirstOrDefault(sketch => sketch.SketchId == sketchActions.Active),
+                tool.Kind,
+                tool.Last is not null,
+                tool.Selection,
+                sketchActions.Message);
+        }
+
+        var panel = _ui.Frame((float)_delta.TotalSeconds, display, scale, _renderer.LiveBodies, Selection, _document is null ? null : new DocumentLine(_host.FileName, _documentMessage), sketches, sketchPanel);
         ApplyPanel(_renderer.LiveBodies);
 
         var ui = _uiRenderer;

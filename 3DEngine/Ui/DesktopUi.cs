@@ -1,9 +1,12 @@
 using System.Numerics;
 using System.Runtime.InteropServices;
 using System.Globalization;
+using Engine.Contracts.Sketch;
+using Engine.Core.Queries;
 using ImGuiNET;
 using ThreeDEngine.Core.Input;
 using ThreeDEngine.Core.Numeric;
+using ThreeDEngine.Core.Sketching;
 using ThreeDEngine.Vulkan;
 
 namespace ThreeDEngine.Desktop.Ui;
@@ -48,6 +51,33 @@ internal sealed unsafe class DesktopUi : IDisposable
     public const string NewBoxLabel = "New box";
     public const string MoveLabel = "Move";
 
+    // ADR-0034 items 6 and 8: the buttons of a new sketch in the panel, and the window of the
+    // sketch with its controls. A row of the window has the label of its item (SketchText).
+    public const string SketchLineLabel = "Sketch on";
+    public static readonly (string Label, Guid Datum)[] NewSketchButtons =
+        [("Sketch XY", Datums.XY.Id), ("Sketch XZ", Datums.XZ.Id), ("Sketch YZ", Datums.YZ.Id)];
+
+    public const string SketchName = "Sketch";
+    public const string LineToolLabel = "Line";
+    public const string SelectToolLabel = "Select";
+    public const string FinishLabel = "Finish";
+    public const string NextPointLabel = "Next point";
+    public const string EndLabel = "End";
+    public const string CloseLabel = "Close";
+    public const string DeleteLabel = "Delete";
+    public const string MovePointLabel = "Move point";
+    public const string ValueLabel = "Value";
+    public const string EditLabel = "Edit";
+
+    // The five kinds of K2a (ADR-0033 item 3) and their buttons.
+    public static readonly (string Label, string Kind)[] ConstraintButtons =
+        [("Coincident", "coincident"), ("Horizontal", "horizontal"), ("Vertical", "vertical"), ("Distance", "distance"), ("Fixed", "fixed")];
+
+    // The key of the rectangle of a control of the window of the sketch, for ItemRectangle.
+    public static string SketchItem(string label) => $"{SketchName} {label}";
+
+    private const float SketchWidth = 420f;
+
     // ADR-0032 item 5: the window of the pad and its buttons, row by row.
     public const string PadName = "Pad";
     public static readonly string[][] PadRows =
@@ -87,9 +117,11 @@ internal sealed unsafe class DesktopUi : IDisposable
     // the field.
     private bool _dropFocus;
 
-    // ADR-0032 items 3 and 4: the open pad, and the body of a move, or null for a new box.
+    // ADR-0032 items 3 and 4, ADR-0034 items 7 and 8: the open pad, the action that its numbers
+    // give, and where it opens: beside the panel, or to the left of the window of the sketch.
     private NumericPad? _pad;
-    private Guid? _padBody;
+    private Func<double[], PanelAction>? _padApply;
+    private bool _padBySketch;
 
     public DesktopUi(string address)
     {
@@ -140,10 +172,22 @@ internal sealed unsafe class DesktopUi : IDisposable
     public void EndPad(string? rejection)
     {
         if (rejection is null)
-            (_pad, _padBody) = (null, null);
+            (_pad, _padApply) = (null, null);
         else
             _pad?.Fail(rejection);
     }
+
+    // ADR-0034 item 7: the pad of the next point of a chain, an offset from the last point while a
+    // chain is open, else a position. The host opens it again after each apply, so a person types
+    // each point of a chain in one pad.
+    public void OpenNextPointPad(bool chainOpen)
+    {
+        var (a, b) = chainOpen ? ("dx", "dy") : ("x", "y");
+        OpenPad(new NumericPad(NextPointLabel, Unit, new(a, "0"), new(b, "0")), values => new NextPointAction(values[0], values[1]), bySketch: true);
+    }
+
+    private void OpenPad(NumericPad pad, Func<double[], PanelAction> apply, bool bySketch = false)
+        => (_pad, _padApply, _padBySketch) = (pad, apply, bySketch);
 
     // The rows of bodies that the last frame showed, in their order.
     public IReadOnlyList<string> ShownBodies => _shown;
@@ -268,7 +312,14 @@ internal sealed unsafe class DesktopUi : IDisposable
     private const float SketchLineWidth = 2f;
     private const float SketchPointRadius = 4f;
 
-    public UiDrawData Frame(float deltaSeconds, Vector2 displaySize, Vector2 framebufferScale, IReadOnlyList<LiveBody> bodies, Guid? selection = null, DocumentLine? document = null, SketchOverlay.Strokes? sketches = null)
+    // ADR-0034 item 9: a selected item in white and wider, and each sketch that is not active in grey.
+    internal const uint SelectedColour = 0xFFFFFFFF;
+    internal const uint OtherSketchColour = 0xFF909090;
+    private const float SelectedLineWidth = 4f;
+    private const float SelectedPointRadius = 7f;
+    private const float RingRadius = 12f;
+
+    public UiDrawData Frame(float deltaSeconds, Vector2 displaySize, Vector2 framebufferScale, IReadOnlyList<LiveBody> bodies, Guid? selection = null, DocumentLine? document = null, SketchOverlay.Strokes? sketches = null, SketchPanel? sketchPanel = null)
     {
         ArgumentNullException.ThrowIfNull(bodies);
         ImGui.SetCurrentContext(_context);
@@ -291,8 +342,10 @@ internal sealed unsafe class DesktopUi : IDisposable
         if (sketches is not null)
             Sketches(sketches);
         Panel(bodies, selection, displaySize, document);
+        if (sketchPanel is { } shown && (shown.Active is not null || shown.Live.Count > 0))
+            SketchWindow(shown, displaySize);
         if (_pad is { } pad)
-            PadWindow(pad);
+            PadWindow(pad, displaySize);
         ImGui.Render();
 
         _textActive = io.WantTextInput;
@@ -304,18 +357,30 @@ internal sealed unsafe class DesktopUi : IDisposable
     private static void Sketches(SketchOverlay.Strokes sketches)
     {
         var list = ImGui.GetBackgroundDrawList();
-        foreach (var (a, b) in sketches.Lines)
-            list.AddLine(a, b, SketchColour, SketchLineWidth);
+        foreach (var line in sketches.Lines)
+            list.AddLine(line.A, line.B, Colour(line.Mark), line.Mark == SketchOverlay.Mark.Selected ? SelectedLineWidth : SketchLineWidth);
         foreach (var point in sketches.Points)
-            list.AddCircleFilled(point, SketchPointRadius, SketchColour);
+            list.AddCircleFilled(point.At, point.Mark == SketchOverlay.Mark.Selected ? SelectedPointRadius : SketchPointRadius, Colour(point.Mark));
+        foreach (var ring in sketches.Rings)
+            list.AddCircle(ring, RingRadius, SketchColour, 0, SketchLineWidth);
+        foreach (var label in sketches.Labels)
+            list.AddText(label.At, SketchColour, label.Text);
     }
+
+    private static uint Colour(SketchOverlay.Mark mark) => mark switch
+    {
+        SketchOverlay.Mark.Selected => SelectedColour,
+        SketchOverlay.Mark.Other => OtherSketchColour,
+        _ => SketchColour,
+    };
 
     private void Panel(IReadOnlyList<LiveBody> bodies, Guid? selection, Vector2 displaySize, DocumentLine? document)
     {
         ImGui.SetNextWindowPos(new Vector2(16f, 16f), ImGuiCond.FirstUseEver);
         // The first size fits inside a small display too. Since the line of Undo and Redo (TASK-0093)
-        // the panel is 640 pixels high at most, so that two bodies and Show all fit with no scroll bar.
-        ImGui.SetNextWindowSize(new Vector2(460f, Math.Clamp(displaySize.Y - 32f, 200f, 640f)), ImGuiCond.FirstUseEver);
+        // and the line of a new sketch (TASK-0101) the panel is 700 pixels high at most, so that two
+        // bodies and Show all fit with no scroll bar.
+        ImGui.SetNextWindowSize(new Vector2(460f, Math.Clamp(displaySize.Y - 32f, 200f, 700f)), ImGuiCond.FirstUseEver);
         if (ImGui.Begin(PanelName))
         {
             ImGui.TextUnformatted(_address);
@@ -332,8 +397,19 @@ internal sealed unsafe class DesktopUi : IDisposable
             Item(RedoLabel);
             ImGui.SameLine();
             if (ImGui.Button(NewBoxLabel))
-                (_pad, _padBody) = (new NumericPad(NewBoxLabel, Unit, new("x", "10"), new("y", "10"), new("z", "10")), null);
+                OpenPad(new NumericPad(NewBoxLabel, Unit, new("x", "10"), new("y", "10"), new("z", "10")), values => new CreateBoxAction(values[0], values[1], values[2]));
             Item(NewBoxLabel);
+
+            // ADR-0034 item 6: a new sketch on each origin plane.
+            ImGui.AlignTextToFramePadding();
+            ImGui.TextUnformatted(SketchLineLabel);
+            foreach (var (label, datum) in NewSketchButtons)
+            {
+                ImGui.SameLine();
+                if (ImGui.Button($"{label[^2..]}##{label}"))
+                    _actions.Add(new NewSketchAction(datum));
+                Item(label);
+            }
 
             ImGui.TextUnformatted(bodies.Count == 1 ? "1 live body" : $"{bodies.Count} live bodies");
 
@@ -397,16 +473,192 @@ internal sealed unsafe class DesktopUi : IDisposable
 
         // ADR-0032 item 4: a move of the selected body by the offsets of the pad.
         if (ImGui.Button(MoveLabel))
-            (_pad, _padBody) = (new NumericPad(MoveLabel, Unit, new("dx", "0"), new("dy", "0"), new("dz", "0")), body.Id);
+            OpenPad(new NumericPad(MoveLabel, Unit, new("dx", "0"), new("dy", "0"), new("dz", "0")), values => new MoveBodyAction(body.Id, values[0], values[1], values[2]));
         Item(MoveLabel);
         ImGui.SameLine();
     }
 
+    // ADR-0034 item 8: the window of the sketch. With no active sketch it lists each live sketch
+    // with Edit. With an active sketch it gives the tools, the buttons of the selection and a row
+    // for each point, line and constraint; a row selects as a tap of the tool Select does.
+    private void SketchWindow(SketchPanel panel, Vector2 displaySize)
+    {
+        ImGui.SetNextWindowPos(new Vector2(Math.Max(16f, displaySize.X - SketchWidth - 16f), 16f), ImGuiCond.FirstUseEver);
+        ImGui.SetNextWindowSize(new Vector2(SketchWidth, Math.Clamp(displaySize.Y - 32f, 200f, 700f)), ImGuiCond.FirstUseEver);
+        if (ImGui.Begin(SketchName))
+        {
+            if (panel.Active is { } sketch)
+                ActiveSketch(panel, sketch);
+            else
+                LiveSketches(panel.Live);
+        }
+
+        var position = ImGui.GetWindowPos();
+        var size = ImGui.GetWindowSize();
+        _panels.Add(new Vector4(position.X, position.Y, position.X + size.X, position.Y + size.Y));
+        ImGui.End();
+    }
+
+    private void LiveSketches(IReadOnlyCollection<SketchInfo> live)
+    {
+        ImGui.TextUnformatted(live.Count == 1 ? "1 live sketch" : $"{live.Count} live sketches");
+        foreach (var sketch in live)
+        {
+            var label = $"{EditLabel} {SketchTitle(sketch)}";
+            if (ImGui.Button($"{label}##{sketch.SketchId}"))
+                _actions.Add(new EditSketchAction(sketch.SketchId));
+            Item(SketchItem(label));
+        }
+    }
+
+    // The name of a sketch, or its short identifier, and its datum.
+    public static string SketchTitle(SketchInfo sketch)
+        => $"{sketch.Name ?? sketch.SketchId.ToString()[..8]} on {Datums.Find(sketch.DatumId)?.Name ?? "?"}";
+
+    private void ActiveSketch(SketchPanel panel, SketchInfo sketch)
+    {
+        ImGui.TextUnformatted(SketchTitle(sketch));
+        ToolButton(LineToolLabel, SketchToolKind.Line, panel.Tool);
+        ImGui.SameLine();
+        ToolButton(SelectToolLabel, SketchToolKind.Select, panel.Tool);
+        ImGui.SameLine();
+        SketchButton(FinishLabel, new FinishSketchAction());
+
+        if (panel.Tool == SketchToolKind.Line)
+        {
+            if (ImGui.Button(NextPointLabel))
+                OpenNextPointPad(panel.ChainOpen);
+            Item(SketchItem(NextPointLabel));
+            if (panel.ChainOpen)
+            {
+                ImGui.SameLine();
+                SketchButton(EndLabel, new EndChainAction());
+                ImGui.SameLine();
+                SketchButton(CloseLabel, new CloseChainAction());
+            }
+        }
+
+        SelectionButtons(sketch, panel.Selection);
+        if (panel.Message is { } message)
+            ImGui.TextWrapped(message);
+
+        ImGui.Separator();
+        foreach (var (id, text) in SketchText.Rows(sketch))
+        {
+            if (ImGui.Selectable($"{text}##{id}", panel.Selection.Contains(id), ImGuiSelectableFlags.None, new Vector2(0f, MinimumControlHeight)))
+                _actions.Add(new ToggleSketchItemAction(id));
+            Item(SketchItem(text.Split(' ')[0]));
+        }
+    }
+
+    // The active tool has the colour of a pressed button.
+    private void ToolButton(string label, SketchToolKind kind, SketchToolKind active)
+    {
+        var pushed = kind == active;
+        if (pushed)
+            ImGui.PushStyleColor(ImGuiCol.Button, ImGui.GetStyle().Colors[(int)ImGuiCol.ButtonActive]);
+        SketchButton(label, new SketchToolAction(kind));
+        if (pushed)
+            ImGui.PopStyleColor();
+    }
+
+    private void SketchButton(string label, PanelAction action)
+    {
+        if (ImGui.Button(label))
+            _actions.Add(action);
+        Item(SketchItem(label));
+    }
+
+    // ADR-0034 item 8: the buttons of the kinds that fit the selection, Move point, Value and
+    // Delete. A kind with a value opens the pad with the current value. The items of a constraint
+    // go in the order of its kind: the points first.
+    private void SelectionButtons(SketchInfo sketch, IReadOnlyList<Guid> selection)
+    {
+        if (selection.Count == 0)
+            return;
+
+        var points = sketch.Points.ToDictionary(point => point.Id);
+        var lines = sketch.Lines.Select(line => line.Id).ToHashSet();
+        var constraint = selection.Count == 1 ? sketch.Constraints.FirstOrDefault(item => item.Id == selection[0]) : null;
+        Guid[] items = [.. selection.OrderBy(item => points.ContainsKey(item) ? 0 : 1)];
+        var shape = string.Concat(items.Select(item => points.ContainsKey(item) ? "P" : lines.Contains(item) ? "L" : "C"));
+
+        var first = true;
+        void Flow(string label, Action press)
+        {
+            // A button goes on the line of the last one when it fits in the window.
+            var width = ImGui.CalcTextSize(label).X + 2 * ImGui.GetStyle().FramePadding.X;
+            if (!first && ImGui.GetItemRectMax().X + ImGui.GetStyle().ItemSpacing.X + width <= ImGui.GetWindowPos().X + ImGui.GetWindowWidth() - ImGui.GetStyle().WindowPadding.X)
+                ImGui.SameLine();
+            first = false;
+            if (ImGui.Button(label))
+                press();
+            Item(SketchItem(label));
+        }
+
+        foreach (var (label, kind) in ConstraintButtons)
+        {
+            var fits = (kind, shape) switch
+            {
+                ("coincident", "PP") => true,
+                ("horizontal" or "vertical", "L") => true,
+                ("distance", "PP" or "PL" or "L") => true,
+                ("fixed", "P") => true,
+                _ => false,
+            };
+            if (!fits)
+                continue;
+
+            Flow(label, () =>
+            {
+                switch (kind)
+                {
+                    case "distance":
+                        var length = SketchText.Distance(sketch, items) ?? 0;
+                        OpenPad(new NumericPad(label, Unit, new PadField("length", SketchText.Number(length))), values => new AddConstraintAction(kind, items, values), bySketch: true);
+                        break;
+                    case "fixed":
+                        var at = points[items[0]];
+                        OpenPad(new NumericPad(label, Unit, new("x", SketchText.Number(at.X)), new("y", SketchText.Number(at.Y))), values => new AddConstraintAction(kind, items, values), bySketch: true);
+                        break;
+                    default:
+                        _actions.Add(new AddConstraintAction(kind, items, []));
+                        break;
+                }
+            });
+        }
+
+        if (shape == "P")
+        {
+            var point = points[items[0]];
+            Flow(MovePointLabel, () => OpenPad(
+                new NumericPad(MovePointLabel, Unit, new("x", SketchText.Number(point.X)), new("y", SketchText.Number(point.Y))),
+                values => new MoveSketchPointAction(point.Id, values[0], values[1]),
+                bySketch: true));
+        }
+
+        if (constraint is { Values.Count: > 0 })
+        {
+            string[] names = constraint.Values.Count == 1 ? ["length"] : ["x", "y"];
+            Flow(ValueLabel, () => OpenPad(
+                new NumericPad(ValueLabel, Unit, [.. constraint.Values.Select((value, index) => new PadField(names[index], SketchText.Number(value)))]),
+                values => new SetConstraintValueAction(constraint.Id, values),
+                bySketch: true));
+        }
+
+        Flow(DeleteLabel, () => _actions.Add(new DeleteSketchItemsAction([.. selection])));
+    }
+
     // ADR-0032 item 5: the window of the pad. A row selects its field; the line under the fields
     // gives the value of the active field, or its error, and the message of the last apply.
-    private void PadWindow(NumericPad pad)
+    private void PadWindow(NumericPad pad, Vector2 displaySize)
     {
-        ImGui.SetNextWindowPos(new Vector2(492f, 16f), ImGuiCond.FirstUseEver);
+        // A pad of the sketch opens to the left of the window of the sketch, so that End and Close
+        // stay visible (ADR-0034 item 8).
+        if (_padBySketch)
+            ImGui.SetNextWindowPos(new Vector2(Math.Max(16f, displaySize.X - SketchWidth - 32f - 620f), 16f), ImGuiCond.Appearing);
+        else
+            ImGui.SetNextWindowPos(new Vector2(492f, 16f), ImGuiCond.Appearing);
         ImGui.SetNextWindowSize(new Vector2(620f, 600f), ImGuiCond.FirstUseEver);
         if (ImGui.Begin(PadName))
         {
@@ -453,7 +705,7 @@ internal sealed unsafe class DesktopUi : IDisposable
             case "Clear": pad.Clear(); break;
             case "Next": pad.Next(); break;
             case "Apply": ApplyPad(pad); break;
-            case "Cancel": (_pad, _padBody) = (null, null); break;
+            case "Cancel": (_pad, _padApply) = (null, null); break;
             default: pad.Append(label); break;
         }
     }
@@ -474,11 +726,8 @@ internal sealed unsafe class DesktopUi : IDisposable
     // The numbers of an apply go to the host, and the pad stays open until EndPad.
     private void ApplyPad(NumericPad pad)
     {
-        if (pad.Apply() is not { } values)
-            return;
-        _actions.Add(_padBody is { } body
-            ? new MoveBodyAction(body, values[0], values[1], values[2])
-            : new CreateBoxAction(values[0], values[1], values[2]));
+        if (pad.Apply() is { } values && _padApply is { } apply)
+            _actions.Add(apply(values));
     }
 
     // ADR-0030 item 3: the name of the file, a name field, Save as and Open.

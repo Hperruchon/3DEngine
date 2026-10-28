@@ -48,14 +48,21 @@ public class IntentParityTests
         [typeof(RedoIntent)] = (
             [[Touch(1, 100, 100, PointerPhase.Down, 0), Touch(2, 200, 100, PointerPhase.Down, 0), Touch(3, 300, 100, PointerPhase.Down, 0), Touch(4, 400, 100, PointerPhase.Down, 0)], [Touch(1, 100, 100, PointerPhase.Up, 120), Touch(2, 200, 100, PointerPhase.Up, 120), Touch(3, 300, 100, PointerPhase.Up, 120), Touch(4, 400, 100, PointerPhase.Up, 120)]],
             [[new KeySample(InputKey.Y, true, KeyModifiers.Control, 10 * Ms)]]),
+        // ADR-0034 item 1: in the mode Sketch, a tap and a click give a point of the sketch.
+        [typeof(SketchPointIntent)] = (
+            [[Touch(1, 120, 80, PointerPhase.Down, 0)], [Touch(1, 120, 80, PointerPhase.Up, 100)]],
+            [[Mouse(120, 80, PointerButtons.Left, PointerPhase.Down, 0)], [Mouse(120, 80, PointerButtons.Left, PointerPhase.Up, 100)]]),
         [typeof(CancelIntent)] = (
             [[Touch(1, 100, 100, PointerPhase.Down, 0)], [Touch(1, 120, 100, PointerPhase.Move, 10)], [Touch(1, 120, 100, PointerPhase.Cancel, 20)]],
             [[Mouse(100, 100, PointerButtons.Left, PointerPhase.Down, 0)], [Mouse(120, 100, PointerButtons.Left, PointerPhase.Move, 10)], [new FocusLostSample(20 * Ms)]]),
     };
 
-    private static List<Intent> Run(InputSample[][] script, IntentSettings? settings = null)
+    // The mode of the machine for the script of a kind; the other kinds run in the mode Scene.
+    private static readonly Dictionary<Type, IntentMode> Modes = new() { [typeof(SketchPointIntent)] = IntentMode.Sketch };
+
+    private static List<Intent> Run(InputSample[][] script, IntentSettings? settings = null, IntentMode mode = IntentMode.Scene)
     {
-        var machine = new IntentMachine(settings);
+        var machine = new IntentMachine(settings) { Mode = mode };
         return [.. script.SelectMany(frame => machine.Step(frame))];
     }
 
@@ -69,12 +76,14 @@ public class IntentParityTests
     [InlineData(nameof(CancelIntent))]
     [InlineData(nameof(UndoIntent))]
     [InlineData(nameof(RedoIntent))]
+    [InlineData(nameof(SketchPointIntent))]
     public void A_Touch_Script_And_A_Mouse_Script_Give_The_Same_Intents(string kind)
     {
-        var (touch, mouse) = Scripts.Single(script => script.Key.Name == kind).Value;
+        var (type, (touch, mouse)) = Scripts.Single(script => script.Key.Name == kind);
+        var mode = Modes.GetValueOrDefault(type, IntentMode.Scene);
 
-        var fromTouch = Run(touch);
-        var fromMouse = Run(mouse);
+        var fromTouch = Run(touch, mode: mode);
+        var fromMouse = Run(mouse, mode: mode);
 
         Assert.Contains(fromTouch, intent => intent.GetType().Name == kind);
         Assert.Equal(fromMouse.Count, fromTouch.Count);
@@ -247,6 +256,52 @@ public class IntentParityTests
         Assert.Throws<ArgumentException>(() => new IntentSettings { Map = wrong }.Validated());
     }
 
+    // ADR-0034 item 1: in the mode Sketch a tap or a click gives a point of the sketch and no
+    // selection; a long press, a right click, a tap of two fingers, H and Shift and H give
+    // nothing; the drags, the wheel and the keys of undo still work.
+    [Fact]
+    public void The_Mode_Sketch_Gives_Points_And_No_Hide()
+    {
+        static List<Intent> InSketch(InputSample[][] script) => Run(script, mode: IntentMode.Sketch);
+
+        Assert.Empty(InSketch(Scripts[typeof(HideIntent)].Touch));
+        Assert.Empty(InSketch(Scripts[typeof(HideIntent)].Mouse));
+        Assert.Empty(InSketch(Scripts[typeof(ShowAllIntent)].Touch));
+        Assert.Empty(InSketch(Scripts[typeof(ShowAllIntent)].Mouse));
+        Assert.Empty(InSketch([[new KeySample(InputKey.H, true, KeyModifiers.None, 0)]]));
+        Assert.DoesNotContain(InSketch(Scripts[typeof(SelectIntent)].Touch), intent => intent is SelectIntent);
+        Assert.All(InSketch(Scripts[typeof(OrbitIntent)].Mouse), intent => Assert.IsType<OrbitIntent>(intent));
+        Assert.All(InSketch(Scripts[typeof(ZoomIntent)].Mouse), intent => Assert.IsType<ZoomIntent>(intent));
+        Assert.IsType<UndoIntent>(Assert.Single(InSketch(Scripts[typeof(UndoIntent)].Touch)));
+        Assert.Empty(Run(Scripts[typeof(SketchPointIntent)].Mouse).OfType<SketchPointIntent>());
+    }
+
+    // A change of the mode ends the gesture in progress, so a press in one mode does not give a
+    // point in the other.
+    [Fact]
+    public void A_Change_Of_The_Mode_Ends_The_Gesture_In_Progress()
+    {
+        var machine = new IntentMachine();
+        machine.Step([Mouse(120, 80, PointerButtons.Left, PointerPhase.Down, 0)]);
+        machine.Mode = IntentMode.Sketch;
+
+        Assert.Empty(machine.Step([Mouse(120, 80, PointerButtons.Left, PointerPhase.Up, 100)]));
+    }
+
+    // The map of the mode Sketch is a setting, and it refuses a point of a sketch for a gesture
+    // with no point.
+    [Fact]
+    public void The_Map_Of_The_Mode_Sketch_Is_A_Setting()
+    {
+        var map = new Dictionary<Gesture, IntentAction>(IntentSettings.Default.SketchMap) { [Gesture.LongPress] = IntentAction.SketchPoint };
+        var settings = new IntentSettings { SketchMap = map }.Validated();
+
+        Assert.IsType<SketchPointIntent>(Assert.Single(Run(Scripts[typeof(HideIntent)].Touch, settings, IntentMode.Sketch)));
+
+        var wrong = new Dictionary<Gesture, IntentAction>(IntentSettings.Default.SketchMap) { [Gesture.HKey] = IntentAction.SketchPoint };
+        Assert.Throws<ArgumentException>(() => new IntentSettings { SketchMap = wrong }.Validated());
+    }
+
     private static bool Same(Intent a, Intent b) => (a, b) switch
     {
         (OrbitIntent x, OrbitIntent y) => Near(x.YawDegrees, y.YawDegrees) && Near(x.PitchDegrees, y.PitchDegrees),
@@ -258,6 +313,7 @@ public class IntentParityTests
         (CancelIntent, CancelIntent) => true,
         (UndoIntent, UndoIntent) => true,
         (RedoIntent, RedoIntent) => true,
+        (SketchPointIntent x, SketchPointIntent y) => Near(x.X, y.X) && Near(x.Y, y.Y),
         _ => false,
     };
 
