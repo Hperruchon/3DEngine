@@ -21,6 +21,17 @@ internal static class DocumentEndpoint
 
     public static async Task<IResult> Save(HttpRequest request, EngineHost host, DocumentFolder folder, CancellationToken ct)
     {
+        // ADR-0030 item 4: a host with no document file refuses a save, as it refuses an open.
+        // Until TASK-0099 it gave HTTP 409 with E-IO-SAVE-FAILED (finding E85 of the second
+        // codebase review of 2026-10-28).
+        if (host.Session.FilePath is null)
+            return Failure(
+                DiagnosticCodes.ApiNotSupported,
+                "This host has no document file, so it does not save; start it with --file (ADR-0030 item 4).",
+                StatusCodes.Status501NotImplemented);
+        if (folder.OpenAccepted)
+            return OpenPending();
+
         var (path, refused) = await Target(request, folder, ct);
         if (refused is not null)
             return refused;
@@ -33,21 +44,30 @@ internal static class DocumentEndpoint
 
     public static async Task<IResult> Open(HttpRequest request, DocumentFolder folder, CancellationToken ct)
     {
-        if (folder.Reopen is not { } reopen)
+        if (folder.Reopen is null)
             return Failure(
                 DiagnosticCodes.ApiNotSupported,
                 "This host does not open a file over HTTP; start it with --file (ADR-0030 item 4).",
                 StatusCodes.Status501NotImplemented);
+        if (folder.OpenAccepted)
+            return OpenPending();
 
         var (path, refused) = await Target(request, folder, ct);
         if (refused is not null)
             return refused;
 
-        var error = await reopen(path!, ct);
+        var error = await folder.Open(path!, ct);
         return error is null
             ? Results.Json(new DocumentState(Path.GetFileName(path!), null, null), ApiJson.Options, statusCode: StatusCodes.Status202Accepted)
             : Failure(error.Code, error.Message, StatusCodes.Status409Conflict);
     }
+
+    // ADR-0030 item 4: the reply to a command, a save or an open after an accepted open (V37).
+    internal static IResult OpenPending()
+        => Failure(
+            DiagnosticCodes.ApiOpenPending,
+            "This host accepted an open and starts again with the new file, so it refuses each command, save and open. Connect again after the start.",
+            StatusCodes.Status503ServiceUnavailable);
 
     // The path in the document folder of the name in the body, or the reply of a refusal.
     private static async Task<(string? Path, IResult? Refused)> Target(HttpRequest request, DocumentFolder folder, CancellationToken ct)
@@ -65,6 +85,12 @@ internal static class DocumentEndpoint
         catch (JsonException ex)
         {
             return (null, ApiErrorEnvelope.BadRequest($"Malformed JSON: {ex.Message}"));
+        }
+        // A name that is not well-formed UTF-16 gave HTTP 500 until TASK-0099; this is the
+        // form of E73 in these routes (finding E80 of the second codebase review of 2026-10-28).
+        catch (InvalidOperationException)
+        {
+            return (null, ApiErrorEnvelope.BadRequest("The field name is not well-formed UTF-16 text."));
         }
 
         if (name is null)

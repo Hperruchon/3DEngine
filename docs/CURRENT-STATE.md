@@ -2840,3 +2840,43 @@ reach the panel at a wrong place (R-0043).
 New tests: 58. The test list holds 928 (653 in `Engine.Tests`, 185 in `3DEngine.Tests`, 90 in `3DEngine.ImageTests`).
 `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open entries: 14 of 15. New
 diagnostic codes: none. Since the review of v0.96, 2 product milestones and 5 entries followed it.
+
+## v0.102 — The document file keeps each complete line and each held file, and the pad applies to the current selection (P0.40, TASK-0099)
+
+The owner put P0.40 before K3a and before P0.39 on 2026-10-28, and answered the questions Q1 to Q7 of TASK-0099 on
+2026-10-29 with A to each.
+
+**The change.** Findings E76 to E85 and V31 to V39 of the second codebase review of 2026-10-28.
+
+- The open of a document file: only a tail with no line feed, or a last line that is not JSON, is a torn line (E76).
+  The reader refuses a number that is not finite (E78). The open holds the file with the access and the share of the
+  journal before it applies an entry (E83). A file of `--file` that cannot be made, and an exception of a handler
+  during an open, give `E-IO-LOAD-FAILED` (E82). A failed first open and a failed open after a move break the
+  journal, and a failed cut says that the file can keep the line (E84).
+- The hosts: a start that makes the file of `--file` says so on the error output (E77). A document folder with a
+  final separator works (E79). A name that is not well-formed text gives HTTP 400 (E80). A name follows the rules of
+  a file name of Windows on each operating system (E81). A save on a host with no file gives HTTP 501 (E85).
+- The open in the desktop: the check holds the file as a journal does, except the file that the desktop holds (V31).
+  After an accepted open, each command, save and open gets HTTP 503 and `E-API-OPEN-PENDING` (V37).
+- The pad: it closes when the selection that it names changes (V32), the text fields are disabled while it is open
+  (V33), a second apply waits for the end of the pad (V34), and it stays inside a tablet display (V35).
+- A tap of two fingers counts the most contacts down at one time (V36). The yaw and the target of the camera refuse a
+  value that is not finite (V38). One `try` covers the constructor of the swapchain (V39).
+- ADR-0015 items 8 and 10, ADR-0030 items 2, 4 and 5, and ADR-0032 items 4 and 6 record the answers of the owner.
+
+**Proof.** 51 new test cases and 3 changed. 35 injections, each caught by a test; one more injection showed a
+redundant check, which went out. The visual check ran the desktop on 127.0.0.1: the New box pad opened inside the window, the
+file name and the filter were disabled, and the log held no warning with validation on. CI run 40786895807 passed on the three runners.
+
+**What stays.** The lock of a file is real on Windows only: on Linux and macOS .NET takes no lock for a write with the
+share of a read, so the tests of E83 and V31 assert on Windows only. ADR-0015 item 13 calls that lock "advisory"; no run
+verified the behaviour of .NET on Linux and macOS. A file that changes in the few milliseconds between
+the check and the start of the new program can still stop the desktop (ADR-0030, Consequences). V39 is confirmed by
+reading only. The branch `p040-file-and-pad-gaps` on origin holds a commit that the write-set check refuses;
+`main` takes the branch `p040-file-and-pad-gaps-2`, which holds the same work with no such commit. The synthetic clicks of the visual check hit a wrong place two times before they worked (R-0043).
+
+**A correction.** None.
+
+New tests: 51. The test list holds 979 (689 in `Engine.Tests`, 190 in `3DEngine.Tests`, 100 in `3DEngine.ImageTests`).
+`dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open entries: 14 of 15. New
+diagnostic code: `E-API-OPEN-PENDING`. Since the review of v0.96, 2 product milestones and 6 entries followed it.

@@ -72,6 +72,10 @@ try
     foreach (var warning in host.OpenWarnings)
         Console.Error.WriteLine($"{warning.Code}: {warning.Message}");
 
+    // ADR-0015 item 10: a start that made the file of --file says so (E77).
+    if (host.NewFileMessage is { } made)
+        Console.Error.WriteLine(made);
+
     // ADR-0015 item 10: with no --file the document stays in memory only.
     if (host.Session.FilePath is null)
         Console.Error.WriteLine("engine-api-http has no document file: the document is in memory only, and a stop loses it. Give --file to keep it (ADR-0015 item 10).");

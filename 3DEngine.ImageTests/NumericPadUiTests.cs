@@ -143,6 +143,135 @@ public sealed class NumericPadUiTests
         Assert.StartsWith("x: ", ui.Pad!.Message, StringComparison.Ordinal);
     }
 
+    // V35 of the second codebase review of 2026-10-28: the pad stays inside a tablet display, so a
+    // person with touch only reaches Apply. Apply, Cancel, Delete and the fields were outside it.
+    [Theory]
+    [InlineData(768f, 1024f, false)]
+    [InlineData(1024f, 768f, false)]
+    [InlineData(768f, 1024f, true)]
+    [InlineData(1024f, 768f, true)]
+    [InlineData(1280f, 720f, true)]
+    public void The_Pad_Stays_Inside_The_Display(float width, float height, bool bySketch)
+    {
+        var display = new Vector2(width, height);
+        using var ui = new DesktopUi("http://127.0.0.1:5180");
+        void Draw() => ui.Frame(1f / 60f, display, Vector2.One, [Body]);
+        Draw();
+        if (bySketch)
+            ui.OpenNextPointPad(chainOpen: true);
+        else
+        {
+            var at = ui.ItemRectangle(DesktopUi.NewBoxLabel) ?? throw new InvalidOperationException("The panel has no New box.");
+            var (x, y) = ((at.X + at.Z) / 2, (at.Y + at.W) / 2);
+            ui.Route([new PointerSample(DeviceKind.Touch, 1, 3, x, y, 1, PointerButtons.None, KeyModifiers.None, PointerPhase.Down, 0)]);
+            Draw();
+            ui.Route([new PointerSample(DeviceKind.Touch, 1, 3, x, y, 1, PointerButtons.None, KeyModifiers.None, PointerPhase.Up, 0)]);
+            Draw();
+        }
+
+        Draw();
+        Draw();
+
+        Assert.NotNull(ui.Pad);
+        var items = DesktopUi.PadRows.SelectMany(row => row).Concat(ui.Pad!.Fields.Select(field => field.Name)).Select(DesktopUi.PadItem);
+        foreach (var item in items)
+        {
+            var rectangle = ui.ItemRectangle(item) ?? throw new InvalidOperationException($"The pad has no control {item}.");
+            Assert.True(rectangle.X >= 0 && rectangle.Y >= 0 && rectangle.Z <= width && rectangle.W <= height, $"{item} is at {rectangle} on a display of {width} x {height}.");
+        }
+    }
+
+    // V32 of the second codebase review of 2026-10-28: the Move pad moved the body that was
+    // selected when it opened. It closes when the selection changes or its body leaves the list.
+    [Fact]
+    public void The_Move_Pad_Closes_When_The_Selection_Changes()
+    {
+        var other = new LiveBody(Guid.Parse("33333333-0000-0000-0000-000000000000"), "Box", null, true);
+        using var ui = new DesktopUi("http://127.0.0.1:5180");
+        void Draw(Guid? selection, params LiveBody[] bodies) => ui.Frame(1f / 60f, Display, Vector2.One, bodies, selection);
+        Draw(Body.Id, Body, other);
+        Draw(Body.Id, Body, other);
+        var at = Centre(ui, DesktopUi.MoveLabel);
+        ui.Route([new PointerSample(DeviceKind.Mouse, 1, 0, at.X, at.Y, 1, PointerButtons.Left, KeyModifiers.None, PointerPhase.Down, 0)]);
+        Draw(Body.Id, Body, other);
+        ui.Route([new PointerSample(DeviceKind.Mouse, 1, 0, at.X, at.Y, 1, PointerButtons.Left, KeyModifiers.None, PointerPhase.Up, 0)]);
+        Draw(Body.Id, Body, other);
+        Assert.NotNull(ui.Pad);
+
+        Draw(Body.Id, Body, other);
+        Assert.NotNull(ui.Pad);
+        Draw(other.Id, Body, other);
+        Assert.Null(ui.Pad);
+        Assert.Empty(ui.TakeActions());
+
+        // A body that leaves the list ends the pad too, also when the host keeps its selection.
+        Draw(other.Id, Body, other);
+        at = Centre(ui, DesktopUi.MoveLabel);
+        ui.Route([new PointerSample(DeviceKind.Touch, 1, 3, at.X, at.Y, 1, PointerButtons.None, KeyModifiers.None, PointerPhase.Down, 0)]);
+        Draw(other.Id, Body, other);
+        ui.Route([new PointerSample(DeviceKind.Touch, 1, 3, at.X, at.Y, 1, PointerButtons.None, KeyModifiers.None, PointerPhase.Up, 0)]);
+        Draw(other.Id, Body, other);
+        Assert.NotNull(ui.Pad);
+        Draw(other.Id, Body);
+        Assert.Null(ui.Pad);
+
+        // New box names no selection, so it stays open.
+        Tap(ui, DeviceKind.Mouse, DesktopUi.NewBoxLabel, Body.Id);
+        Assert.NotNull(ui.Pad);
+        Step(ui, null);
+        Assert.NotNull(ui.Pad);
+    }
+
+    // V34: two presses of Enter in one frame gave two CreateBoxAction. The pad ignores a second
+    // apply until the host ends it, and a rejection lets the person apply again.
+    [Fact]
+    public void A_Second_Apply_Before_The_End_Of_The_Pad_Gives_Nothing()
+    {
+        using var ui = WithNewBoxPad();
+        var enter = new KeySample(InputKey.Enter, true, KeyModifiers.None, 0);
+
+        Step(ui, null, enter, enter);
+        Tap(ui, DeviceKind.Touch, DesktopUi.PadItem("Apply"));
+        Assert.Single(ui.TakeActions());
+
+        ui.EndPad("E-GEOM-INVALID-PARAM: no");
+        Step(ui, null, enter, enter);
+        Assert.Single(ui.TakeActions());
+    }
+
+    // V33: while the pad is open, the text fields of the panel are disabled. A press on the file
+    // name field made it active, so it kept the keys after the pad closed.
+    [Fact]
+    public void The_Text_Fields_Are_Disabled_While_The_Pad_Is_Open()
+    {
+        using var ui = new DesktopUi("http://127.0.0.1:5180");
+        var line = new DocumentLine("plate.3de", null);
+        void Draw(params InputSample[] frame)
+        {
+            ui.Route(frame);
+            ui.Frame(1f / 60f, Display, Vector2.One, [Body], null, line);
+        }
+
+        Draw();
+        Draw();
+        var box = Centre(ui, DesktopUi.NewBoxLabel);
+        Draw(new PointerSample(DeviceKind.Mouse, 1, 0, box.X, box.Y, 1, PointerButtons.Left, KeyModifiers.None, PointerPhase.Down, 0));
+        Draw(new PointerSample(DeviceKind.Mouse, 1, 0, box.X, box.Y, 1, PointerButtons.Left, KeyModifiers.None, PointerPhase.Up, 0));
+        Draw();
+        Assert.NotNull(ui.Pad);
+
+        var field = Centre(ui, DesktopUi.FileNameLabel);
+        Draw(new PointerSample(DeviceKind.Mouse, 1, 0, field.X, field.Y, 1, PointerButtons.Left, KeyModifiers.None, PointerPhase.Down, 0));
+        Draw(new PointerSample(DeviceKind.Mouse, 1, 0, field.X, field.Y, 1, PointerButtons.Left, KeyModifiers.None, PointerPhase.Up, 0));
+        Draw();
+        Draw(new KeySample(InputKey.Escape, true, KeyModifiers.None, 0));
+        Draw();
+        Assert.Null(ui.Pad);
+
+        var key = new KeySample(InputKey.H, true, KeyModifiers.None, 0);
+        Assert.Equal([key], ui.Route([key]));
+    }
+
     // ADR-0027 item 6 for the controls of ADR-0032 items 4 and 5.
     [Fact]
     public void Each_Control_Of_The_Pad_Is_At_Least_44_Pixels_High()

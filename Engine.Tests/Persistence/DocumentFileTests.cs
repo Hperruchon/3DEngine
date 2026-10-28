@@ -238,10 +238,11 @@ public sealed class DocumentFileTests : IDisposable
     }
 
     // ADR-0015 item 8: a torn last line is cut off with a warning, and the file then
-    // takes the next entry at the right place.
+    // takes the next entry at the right place. A torn line is a tail with no line feed, or
+    // a complete last line that is not JSON.
     [Theory]
     [InlineData("{\"version\":2,\"backend\"")]
-    [InlineData("{\"version\":2}\n")]
+    [InlineData("{\"version\":2,\"backend\"\n")]
     public async Task A_Torn_Last_Line_Is_Cut_Off_With_A_Warning(string tail)
     {
         var path = FileNamed("torn");
@@ -263,6 +264,36 @@ public sealed class DocumentFileTests : IDisposable
         Assert.Equal(2, (await State(third)).Version);
         third.Close();
         Assert.True(new FileInfo(path).Length > length);
+    }
+
+    // E76 of the second codebase review of 2026-10-28: a complete last line that is JSON and
+    // does not bind refuses the open, and the file keeps it. The open cut it, so a file of a
+    // newer engine lost its last command when an older engine opened it.
+    [Theory]
+    [InlineData("\"name\":\"NoOp\"", "\"name\":\"Fillet\"")]
+    [InlineData("\"schemaVersion\":1", "\"schemaVersion\":99")]
+    [InlineData("\"echo\":\"two\"", "\"echo\":2")]
+    [InlineData("\"backend\":", "\"engine\":")]
+    public async Task A_Complete_Last_Line_That_Does_Not_Bind_Refuses_The_Open_And_Stays(string from, string to)
+    {
+        var path = FileNamed("newer");
+        var first = NewSession();
+        DocumentFile.Create(first, path);
+        await first.Apply(new NoOpCommand { Echo = "one" });
+        await first.Apply(new NoOpCommand { Echo = "two" });
+        first.Close();
+        var lines = File.ReadAllText(path).Split('\n');
+        var last = lines.Length - 2;
+        Assert.Contains(from, lines[last], StringComparison.Ordinal);
+        lines[last] = lines[last].Replace(from, to, StringComparison.Ordinal);
+        File.WriteAllText(path, string.Join("\n", lines));
+        var bytes = File.ReadAllBytes(path);
+
+        var second = NewSession();
+        var error = await Assert.ThrowsAsync<DocumentFileException>(() => DocumentFile.Open(second, path));
+
+        Assert.Equal(DiagnosticCodes.IoLoadFailed, error.Code);
+        Assert.Equal(bytes, File.ReadAllBytes(path));
     }
 
     [Fact]
@@ -458,6 +489,163 @@ public sealed class DocumentFileTests : IDisposable
         Assert.Equal(DiagnosticCodes.IoLoadFailed, refusal.Code);
         Assert.Equal(1, version);
         Assert.Equal(2, File.ReadAllLines(path).Length);
+    }
+
+    // E78 of the second codebase review of 2026-10-28: the writer refuses a number that
+    // is not finite, so the reader refuses it too. 1e400 read as an infinity.
+    [Fact]
+    public async Task A_Number_That_Is_Not_Finite_Refuses_The_Open()
+    {
+        var path = FileNamed("infinite");
+        var first = NewSession();
+        DocumentFile.Create(first, path);
+        await first.Apply(new CreateBoxCommand { SizeX = 2, SizeY = 3, SizeZ = 4 });
+        await first.Apply(new NoOpCommand { Echo = "after" });
+        first.Close();
+        var text = File.ReadAllText(path);
+        Assert.Contains("\"sizeX\":2", text, StringComparison.Ordinal);
+        File.WriteAllText(path, text.Replace("\"sizeX\":2", "\"sizeX\":1e400", StringComparison.Ordinal));
+
+        var second = NewSession();
+        var error = await Assert.ThrowsAsync<DocumentFileException>(() => DocumentFile.Open(second, path));
+
+        Assert.Equal(DiagnosticCodes.IoLoadFailed, error.Code);
+        Assert.Equal(0, (await State(second)).Version);
+    }
+
+    // E82: each failure of the file and of an open gives a DocumentFileException with its
+    // code. A path of a folder gave an UnauthorizedAccessException or a plain IOException.
+    [Fact]
+    public void A_File_That_Cannot_Be_Made_Gives_The_Code_Of_An_Open()
+    {
+        var error = Assert.Throws<DocumentFileException>(() => DocumentFile.Create(NewSession(), _folder));
+
+        Assert.Equal(DiagnosticCodes.IoLoadFailed, error.Code);
+    }
+
+    // E82, and E28 of the review of 2026-10-08 for an open: an exception of a handler left
+    // the open with no code.
+    [Fact]
+    public async Task An_Exception_Of_A_Handler_During_An_Open_Gives_The_Code_Of_An_Open()
+    {
+        var path = FileNamed("throws");
+        var first = NewSession();
+        DocumentFile.Create(first, path);
+        await first.Apply(new CreateBoxCommand { SizeX = 1, SizeY = 1, SizeZ = 1 });
+        first.Close();
+
+        var error = await Assert.ThrowsAsync<DocumentFileException>(() => DocumentFile.Open(NewSession(new ThrowingBackend()), path));
+
+        Assert.Equal(DiagnosticCodes.IoLoadFailed, error.Code);
+        Assert.Contains(nameof(InvalidCastException), error.Message, StringComparison.Ordinal);
+    }
+
+    // E83: an open holds the file before the entries apply. A file that another session
+    // holds applied each entry, and then failed with no code. On Linux and macOS .NET takes
+    // no lock for a write with the share of a read, so only Windows refuses the hold
+    // (ADR-0015 item 13: the lock is advisory there).
+    [Fact]
+    public async Task An_Open_Of_A_File_That_Another_Session_Holds_Applies_No_Entry()
+    {
+        if (!OperatingSystem.IsWindows())
+            return;
+
+        var path = FileNamed("held");
+        var holder = NewSession();
+        DocumentFile.Create(holder, path);
+        await holder.Apply(new NoOpCommand { Echo = "one" });
+        try
+        {
+            var second = NewSession();
+            var error = await Assert.ThrowsAsync<DocumentFileException>(() => DocumentFile.Open(second, path));
+
+            Assert.Equal(DiagnosticCodes.IoLoadFailed, error.Code);
+            Assert.Equal(0, (await State(second)).Version);
+        }
+        finally
+        {
+            holder.Close();
+        }
+    }
+
+    // E84: a failure of the first open of a document with no name breaks the journal, as a
+    // failed write does. The journal stayed whole and wrote again at the next command.
+    [Fact]
+    public async Task A_Failed_First_Open_Breaks_The_Journal()
+    {
+        var blocker = Path.Combine(_folder, "unsaved");
+        File.WriteAllText(blocker, "a file where the folder must be");
+        var session = NewSession();
+        DocumentFile.Unsaved(session, blocker);
+
+        var first = await session.Apply(new NoOpCommand { Echo = "one" });
+        File.Delete(blocker);
+        var second = await session.Apply(new NoOpCommand { Echo = "two" });
+        session.Close();
+
+        Assert.Equal(DiagnosticCodes.IoWriteFailed, first.Error!.Code);
+        Assert.Equal(DiagnosticCodes.IoWriteFailed, second.Error!.Code);
+        Assert.False(Directory.Exists(blocker));
+    }
+
+    // E84: when the file does not open again after a move, the journal is broken. It had no
+    // stream and was whole, so a later save made a file with a header only.
+    [Fact]
+    public async Task A_Failed_Open_After_A_Move_Breaks_The_Journal()
+    {
+        var path = FileNamed("before");
+        File.WriteAllText(path, EntryCodec.Header(Document.Millimetre) + "\n");
+        var opens = 0;
+        Stream FailOnce(string file, FileMode mode)
+            => opens++ == 0
+                ? throw new IOException("The disk went away.")
+                : new FileStream(file, mode, FileAccess.ReadWrite, FileShare.Read);
+        var session = NewSession();
+        session.Attach(DocumentJournal.ForTest(path, Document.Millimetre, new MemoryStream(), FailOnce));
+
+        var move = await session.SaveAs(FileNamed("after"));
+        var save = await session.SaveAs(FileNamed("third"));
+        var command = await session.Apply(new NoOpCommand { Echo = "one" });
+        session.Close();
+
+        Assert.Equal(DiagnosticCodes.IoSaveFailed, move!.Code);
+        Assert.Equal(DiagnosticCodes.IoWriteFailed, command.Error!.Code);
+        Assert.Equal(DiagnosticCodes.IoSaveFailed, save!.Code);
+        Assert.False(File.Exists(FileNamed("third")));
+    }
+
+    // E84: when the flush and the cut both fail, the file can keep the complete line of a
+    // command that its client saw rejected. The rejection says so.
+    [Fact]
+    public async Task A_Failed_Cut_Says_That_The_File_Can_Keep_The_Line()
+    {
+        var session = NewSession();
+        session.Attach(DocumentJournal.ForTest(FileNamed("cut"), Document.Millimetre, new CutFailingStream()));
+
+        var result = await session.Apply(new NoOpCommand { Echo = "one" });
+        session.Close();
+
+        Assert.Equal(DiagnosticCodes.IoWriteFailed, result.Error!.Code);
+        Assert.Contains("can keep the line of this command", result.Error.Message, StringComparison.Ordinal);
+    }
+
+    // A stream that takes each write and fails each flush and each cut.
+    private sealed class CutFailingStream : MemoryStream
+    {
+        public override void Flush() => throw new IOException("The flush failed.");
+
+        public override void SetLength(long value) => throw new IOException("The cut failed.");
+    }
+
+    // A backend whose look-up of an operation throws, as a defect of a handler does. Its
+    // identity is the identity of the managed backend, so an open reaches the handler.
+    private sealed class ThrowingBackend : IGeometryBackend
+    {
+        public BackendIdentity Identity { get; } = new InProcessMeshBackend().Identity;
+
+        public BackendCapabilities Capabilities => BackendCapabilities.Mesh;
+
+        public T? TryGet<T>() where T : class => throw new InvalidCastException("The backend is broken.");
     }
 
     // A stream that fails each write, for a write that fails.

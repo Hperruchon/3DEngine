@@ -81,6 +81,8 @@ internal sealed unsafe class DesktopUi : IDisposable
 
     // ADR-0032 item 5: the window of the pad and its buttons, row by row.
     public const string PadName = "Pad";
+    private const float PadWidth = 620f;
+    private const float PadHeight = 600f;
     public static readonly string[][] PadRows =
     [
         ["7", "8", "9", "(", ")"],
@@ -123,6 +125,20 @@ internal sealed unsafe class DesktopUi : IDisposable
     private NumericPad? _pad;
     private Func<double[], PanelAction>? _padApply;
     private bool _padBySketch;
+
+    // ADR-0032 item 4: the selection that the open pad names, as a key, or null for a pad that
+    // names none. The pad closes when the key of the frame differs. Until TASK-0099 the Move pad
+    // moved the body that was selected when it opened (finding V32 of the second codebase review
+    // of 2026-10-28).
+    private enum PadScope { None, Body, Sketch }
+    private PadScope _padScope;
+    private string? _padKey;
+    private string _bodyKey = string.Empty;
+    private string _sketchKey = string.Empty;
+
+    // ADR-0032 item 4: true after an apply, until the host ends the pad, so a second Enter in one
+    // frame gives no second command (V34).
+    private bool _padApplied;
 
     public DesktopUi(string address)
     {
@@ -172,8 +188,9 @@ internal sealed unsafe class DesktopUi : IDisposable
     // rejection stays in the pad (ADR-0032 item 8).
     public void EndPad(string? rejection)
     {
+        _padApplied = false;
         if (rejection is null)
-            (_pad, _padApply) = (null, null);
+            ClosePad();
         else
             _pad?.Fail(rejection);
     }
@@ -187,8 +204,37 @@ internal sealed unsafe class DesktopUi : IDisposable
         OpenPad(new NumericPad(NextPointLabel, Unit, new(a, "0"), new(b, "0")), values => new NextPointAction(values[0], values[1]), bySketch: true);
     }
 
-    private void OpenPad(NumericPad pad, Func<double[], PanelAction> apply, bool bySketch = false)
-        => (_pad, _padApply, _padBySketch) = (pad, apply, bySketch);
+    private void OpenPad(NumericPad pad, Func<double[], PanelAction> apply, bool bySketch = false, PadScope scope = PadScope.None)
+    {
+        (_pad, _padApply, _padBySketch, _padApplied) = (pad, apply, bySketch, false);
+        (_padScope, _padKey) = (scope, scope switch
+        {
+            PadScope.Body => _bodyKey,
+            PadScope.Sketch => _sketchKey,
+            _ => null,
+        });
+    }
+
+    private void ClosePad() => (_pad, _padApply, _padScope, _padKey, _padApplied) = (null, null, PadScope.None, null, false);
+
+    // V32: the keys of the selection of this frame, and the end of a pad whose selection changed.
+    // A selected body that left the list has the key of no selection.
+    private void FollowSelection(IReadOnlyList<LiveBody> bodies, Guid? selection, SketchPanel? sketchPanel)
+    {
+        _bodyKey = selection is { } id && bodies.Any(body => body.Id == id) ? id.ToString() : string.Empty;
+        _sketchKey = sketchPanel?.Active is { } active
+            ? active.SketchId + ":" + string.Join(",", sketchPanel.Selection.Order())
+            : string.Empty;
+
+        var current = _padScope switch
+        {
+            PadScope.Body => _bodyKey,
+            PadScope.Sketch => _sketchKey,
+            _ => null,
+        };
+        if (_pad is not null && _padKey is not null && current != _padKey)
+            ClosePad();
+    }
 
     // The rows of bodies that the last frame showed, in their order.
     public IReadOnlyList<string> ShownBodies => _shown;
@@ -332,6 +378,7 @@ internal sealed unsafe class DesktopUi : IDisposable
         _panels.Clear();
         _items.Clear();
         _shown.Clear();
+        FollowSelection(bodies, selection, sketchPanel);
 
         ImGui.NewFrame();
         if (_dropFocus)
@@ -415,7 +462,7 @@ internal sealed unsafe class DesktopUi : IDisposable
             ImGui.TextUnformatted(bodies.Count == 1 ? "1 live body" : $"{bodies.Count} live bodies");
 
             ImGui.SetNextItemWidth(220f);
-            ImGui.InputText(FilterLabel, ref _filter, 64);
+            TextField(FilterLabel, ref _filter, 64);
             Item(FilterLabel);
             ImGui.SameLine();
             if (ImGui.Button(ClearLabel))
@@ -459,7 +506,7 @@ internal sealed unsafe class DesktopUi : IDisposable
             (_name, _nameFor) = (body.Name ?? string.Empty, body.Id);
 
         ImGui.SetNextItemWidth(220f);
-        ImGui.InputText(NameLabel, ref _name, 128);
+        TextField(NameLabel, ref _name, 128);
         Item(NameLabel);
         ImGui.SameLine();
         if (ImGui.Button(RenameLabel))
@@ -474,7 +521,7 @@ internal sealed unsafe class DesktopUi : IDisposable
 
         // ADR-0032 item 4: a move of the selected body by the offsets of the pad.
         if (ImGui.Button(MoveLabel))
-            OpenPad(new NumericPad(MoveLabel, Unit, new("dx", "0"), new("dy", "0"), new("dz", "0")), values => new MoveBodyAction(body.Id, values[0], values[1], values[2]));
+            OpenPad(new NumericPad(MoveLabel, Unit, new("dx", "0"), new("dy", "0"), new("dz", "0")), values => new MoveBodyAction(body.Id, values[0], values[1], values[2]), scope: PadScope.Body);
         Item(MoveLabel);
         ImGui.SameLine();
     }
@@ -618,11 +665,11 @@ internal sealed unsafe class DesktopUi : IDisposable
                 {
                     case "distance":
                         var length = SketchText.Distance(sketch, items) ?? 0;
-                        OpenPad(new NumericPad(label, Unit, new PadField("length", SketchText.Number(length))), values => new AddConstraintAction(kind, items, values), bySketch: true);
+                        OpenPad(new NumericPad(label, Unit, new PadField("length", SketchText.Number(length))), values => new AddConstraintAction(kind, items, values), bySketch: true, scope: PadScope.Sketch);
                         break;
                     case "fixed":
                         var at = points[items[0]];
-                        OpenPad(new NumericPad(label, Unit, new("x", SketchText.Number(at.X)), new("y", SketchText.Number(at.Y))), values => new AddConstraintAction(kind, items, values), bySketch: true);
+                        OpenPad(new NumericPad(label, Unit, new("x", SketchText.Number(at.X)), new("y", SketchText.Number(at.Y))), values => new AddConstraintAction(kind, items, values), bySketch: true, scope: PadScope.Sketch);
                         break;
                     default:
                         _actions.Add(new AddConstraintAction(kind, items, []));
@@ -637,7 +684,8 @@ internal sealed unsafe class DesktopUi : IDisposable
             Flow(MovePointLabel, () => OpenPad(
                 new NumericPad(MovePointLabel, Unit, new("x", SketchText.Number(point.X)), new("y", SketchText.Number(point.Y))),
                 values => new MoveSketchPointAction(point.Id, values[0], values[1]),
-                bySketch: true));
+                bySketch: true,
+                scope: PadScope.Sketch));
         }
 
         if (constraint is { Values.Count: > 0 })
@@ -646,7 +694,8 @@ internal sealed unsafe class DesktopUi : IDisposable
             Flow(ValueLabel, () => OpenPad(
                 new NumericPad(ValueLabel, Unit, [.. constraint.Values.Select((value, index) => new PadField(names[index], SketchText.Number(value)))]),
                 values => new SetConstraintValueAction(constraint.Id, values),
-                bySketch: true));
+                bySketch: true,
+                scope: PadScope.Sketch));
         }
 
         Flow(DeleteLabel, () => _actions.Add(new DeleteSketchItemsAction([.. selection])));
@@ -657,12 +706,15 @@ internal sealed unsafe class DesktopUi : IDisposable
     private void PadWindow(NumericPad pad, Vector2 displaySize)
     {
         // A pad of the sketch opens to the left of the window of the sketch, so that End and Close
-        // stay visible (ADR-0034 item 8).
-        if (_padBySketch)
-            ImGui.SetNextWindowPos(new Vector2(Math.Max(16f, displaySize.X - SketchWidth - 32f - 620f), 16f), ImGuiCond.Appearing);
-        else
-            ImGui.SetNextWindowPos(new Vector2(492f, 16f), ImGuiCond.Appearing);
-        ImGui.SetNextWindowSize(new Vector2(620f, 600f), ImGuiCond.FirstUseEver);
+        // stay visible (ADR-0034 item 8). The place and the size come from the display, as for the
+        // panel, so the pad stays inside a tablet display. Until TASK-0099 Apply was outside the
+        // display at 768 x 1024 and at 1024 x 768 (finding V35 of the second codebase review of
+        // 2026-10-28).
+        var width = Math.Min(PadWidth, displaySize.X - 32f);
+        var preferred = _padBySketch ? displaySize.X - SketchWidth - 32f - width : 492f;
+        var x = Math.Clamp(preferred, 16f, Math.Max(16f, displaySize.X - width - 16f));
+        ImGui.SetNextWindowPos(new Vector2(x, 16f), ImGuiCond.Appearing);
+        ImGui.SetNextWindowSize(new Vector2(width, Math.Clamp(displaySize.Y - 32f, 200f, PadHeight)), ImGuiCond.Appearing);
         if (ImGui.Begin(PadName))
         {
             ImGui.TextUnformatted(pad.Title);
@@ -708,7 +760,7 @@ internal sealed unsafe class DesktopUi : IDisposable
             case "Clear": pad.Clear(); break;
             case "Next": pad.Next(); break;
             case "Apply": ApplyPad(pad); break;
-            case "Cancel": (_pad, _padApply) = (null, null); break;
+            case "Cancel": ClosePad(); break;
             default: pad.Append(label); break;
         }
     }
@@ -726,11 +778,17 @@ internal sealed unsafe class DesktopUi : IDisposable
         }
     }
 
-    // The numbers of an apply go to the host, and the pad stays open until EndPad.
+    // The numbers of an apply go to the host, and the pad stays open until EndPad. A second
+    // apply before EndPad does nothing (V34): two presses of Enter in one frame gave two boxes.
     private void ApplyPad(NumericPad pad)
     {
+        if (_padApplied)
+            return;
         if (pad.Apply() is { } values && _padApply is { } apply)
+        {
             _actions.Add(apply(values));
+            _padApplied = true;
+        }
     }
 
     // ADR-0030 item 3: the name of the file, a name field, Save as and Open.
@@ -738,7 +796,7 @@ internal sealed unsafe class DesktopUi : IDisposable
     {
         ImGui.TextUnformatted(document.FileName is { } name ? $"File: {name}" : "File: unsaved");
         ImGui.SetNextItemWidth(200f);
-        ImGui.InputText(FileNameLabel, ref _fileName, 128);
+        TextField(FileNameLabel, ref _fileName, 128);
         Item(FileNameLabel);
         // The buttons have their own line, so that they stay inside the panel.
         if (ImGui.Button(SaveAsLabel))
@@ -751,6 +809,17 @@ internal sealed unsafe class DesktopUi : IDisposable
         if (document.Message is { } message)
             ImGui.TextUnformatted(message);
         ImGui.Separator();
+    }
+
+    // ADR-0032 item 6: a text field of the panel is disabled while the pad is open, so it does not
+    // take the keys of the pad. Until TASK-0099 a press on the file name field gave the typed name
+    // to the pad, and Save as had an empty name (finding V33 of the second codebase review of
+    // 2026-10-28).
+    private void TextField(string label, ref string text, uint length)
+    {
+        ImGui.BeginDisabled(_pad is not null);
+        ImGui.InputText(label, ref text, length);
+        ImGui.EndDisabled();
     }
 
     private void Item(string label)
