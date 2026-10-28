@@ -106,3 +106,7 @@ Each gate of the review binds what the compiler or MSBuild binds, and checks eac
   tests. A probe with `shim/bin/Engine.Contracts.csproj` and a reference to it from `Engine.Core` failed the new
   check in the gate program. The determinism gate needs no change: the call of the shim cannot reach the log path
   when the reference is refused.
+- 2026-10-28: T64. The gate of the UI library reads the tokens of the compiler, so an escaped name of `ImGuiNET`
+  and a string that names `cimgui` outside `3DEngine/Ui/` are offences; it reads each project file as XML, in any
+  quote and case; and it reads each file that MSBuild reads for a project, imports too. Five test cases. The import
+  of `ui-packages.xml` into `3DEngine.Vulkan` failed the gate program, and three injections each failed the cases.
