@@ -79,3 +79,11 @@ No file outside the gate files can change the result of a test in a test project
   to Q8. The roadmap holds the answers in the rows of P8a and of a new slice P8f, which Q8 makes: the review gate
   reads a slice as a number and one letter, so "P8a1" would not count, and P8b to P8e exist. Q2 and Q3 change the
   public shape of `Engine.Contracts`; the owner accepted that, and the ADR comes with P8a.
+- 2026-10-28: the gate. `TestAttributeGateTests` refuses in each test project the attributes that give xUnit a
+  framework, an order or a discoverer, each type that derives from a type of that runner surface, the namespace
+  `Xunit.Sdk` in a using directive or a dotted name, an alias of `Xunit` or of such a type, and an extern alias.
+  It also refuses a type with a name of xUnit in a product project, in the global namespace or in a namespace
+  that a test namespace sees. 26 new tests. The file of T62 failed the gate program with six offences, which
+  passed it before the change, and a type `Engine.Assert` in `Engine.Core` failed it. Four injections each
+  failed their cases (no attribute check: 5, no base type check: 3, no check of `Xunit.Sdk`: 5, no product
+  namespace seen: 4).
