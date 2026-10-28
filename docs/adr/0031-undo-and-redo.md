@@ -1,13 +1,13 @@
 ---
 id: 0031
 title: Undo and redo as commands of the log
-status: Accepted
+status: Amended
 topic: Contracts, runtime
 date: 2026-10-28
 supersedes: []
 superseded-by: []
 amends: ['0006', '0021']
-amended-by: []
+amended-by: ['0032']
 affects:
   - Engine.Contracts/Handlers/ICommandHandler.cs
   - Engine.Core/CommandBus.cs
