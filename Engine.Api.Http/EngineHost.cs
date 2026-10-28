@@ -3,6 +3,7 @@ using Engine.Contracts;
 using Engine.Contracts.Geometry;
 using Engine.Core;
 using Engine.Core.Hosting;
+using Engine.Core.Persistence;
 
 namespace Engine.Api.Http;
 
@@ -24,7 +25,12 @@ namespace Engine.Api.Http;
 // enter one serial section.
 public sealed class EngineHost : IDisposable
 {
-    public EngineHost(IGeometryBackend backend, string backendName, string backendVersion)
+    // ADR-0015 item 10: a host with a file opens it, or makes it when it does not
+    // exist, before its surface serves a request; a host with an unsaved folder
+    // writes there from the first command. A host with no file keeps the document in
+    // memory only, as each test that makes a host. A file that does not open throws
+    // a DocumentFileException, and the backend is freed.
+    public EngineHost(IGeometryBackend backend, string backendName, string backendVersion, DocumentFileOptions? file = null)
     {
         ArgumentNullException.ThrowIfNull(backend);
 
@@ -35,12 +41,47 @@ public sealed class EngineHost : IDisposable
 
         // One composition point for every other part, shared with the CLI.
         // Each registered handler comes from HandlerCatalog per ADR-0016.
-        var kit = EngineHosting.CreateDefault(Backend);
+        var opens = file?.Path is { } existing && File.Exists(existing);
+        EngineKit kit;
+        try
+        {
+            kit = EngineHosting.CreateDefault(Backend, opens ? DocumentFile.ReadLengthUnit(file!.Path!) : Document.Millimetre);
+        }
+        catch
+        {
+            (Backend as IDisposable)?.Dispose();
+            throw;
+        }
+
         Document = kit.Document;
         CommandRegistry = kit.CommandRegistry;
         QueryRegistry = kit.QueryRegistry;
         Session = new DocumentSession(kit, new BroadcastingEventSink(kit.Events, Broadcaster));
+
+        try
+        {
+            if (file?.Path is { } path)
+            {
+                if (opens)
+                    OpenWarnings = DocumentFile.Open(Session, path).GetAwaiter().GetResult();
+                else
+                    DocumentFile.Create(Session, path);
+            }
+            else if (file?.UnsavedFolder is { } folder)
+            {
+                DocumentFile.Unsaved(Session, folder);
+            }
+        }
+        catch
+        {
+            Dispose();
+            throw;
+        }
     }
+
+    // The warnings of the open of the file (W-IO-TRUNCATED, W-IO-BACKEND-VERSION),
+    // which the host writes on its error output.
+    public IReadOnlyList<Diagnostic> OpenWarnings { get; } = Array.Empty<Diagnostic>();
 
     public DocumentSession Session { get; }
 
@@ -85,3 +126,8 @@ public sealed class EngineHost : IDisposable
         (Backend as IDisposable)?.Dispose();
     }
 }
+
+// ADR-0015 item 10: the document file of a host. Path names the file, which the host
+// opens, or makes when it does not exist. With no path, UnsavedFolder is the folder of
+// unsaved documents, and with neither the host has no file.
+public sealed record DocumentFileOptions(string? Path, string? UnsavedFolder = null);

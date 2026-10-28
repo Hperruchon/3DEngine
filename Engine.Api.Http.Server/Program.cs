@@ -16,7 +16,11 @@ using Microsoft.AspNetCore.Connections;
 // 3 when the native backend does not load (TASK-0036); 4 when the address is in
 // use (TASK-0062); 5 when the start fails for another reason, for example a port
 // that the system refuses (TASK-0067), or a configuration that the framework cannot
-// read (TASK-0079); 0 at a normal stop.
+// read (TASK-0079); 6 when the document file does not open (TASK-0091); 0 at a normal stop.
+//
+// The argument --file names the document file (ADR-0015 item 10). The host opens it,
+// or makes it when it does not exist, before it serves a request, and each applied
+// command goes into it before its result.
 
 // Until TASK-0079 a configuration file that the framework cannot read, for example
 // an appsettings.json with an error, ended the host with an unhandled exception and
@@ -42,7 +46,10 @@ if (refusal is not null)
 }
 
 builder.Services.AddSingleton(HostBackendOptions.Native);
-builder.AddEngineSurface(services => ServerEngine.Create(services.GetRequiredService<HostBackendOptions>()));
+builder.Services.AddSingleton(new DocumentFileOptions(builder.Configuration["file"]));
+builder.AddEngineSurface(services => ServerEngine.Create(
+    services.GetRequiredService<HostBackendOptions>(),
+    services.GetRequiredService<DocumentFileOptions>()));
 
 WebApplication app;
 try
@@ -60,13 +67,21 @@ catch (Exception ex)
 // same code as the command line (TASK-0036).
 try
 {
-    app.Services.GetRequiredService<EngineHost>();
+    foreach (var warning in app.Services.GetRequiredService<EngineHost>().OpenWarnings)
+        Console.Error.WriteLine($"{warning.Code}: {warning.Message}");
 }
 catch (BackendUnavailableException ex)
 {
     Console.Error.WriteLine(ex.Message);
     await app.DisposeAsync();
     return 3;
+}
+catch (IOException ex)
+{
+    // A DocumentFileException gives its code in its message (ADR-0015 item 8).
+    Console.Error.WriteLine($"The document file did not open: {ex.Message}");
+    await app.DisposeAsync();
+    return 6;
 }
 
 app.MapEngineSurface();
