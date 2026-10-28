@@ -78,15 +78,15 @@ mouse, and the log holds the same commands for both.
 ## Acceptance criteria
 
 - [x] The owner accepts ADR-0034 before the code.
-- [ ] A touch script and a mouse script give the same intents for each new intent kind, and a check fails when a
+- [x] A touch script and a mouse script give the same intents for each new intent kind, and a check fails when a
       kind has no touch script.
-- [ ] A touch script and a mouse script that draw one closed profile give the same commands in the log.
-- [ ] The ray to a plane gives the position of a pixel in the frame of each of the three datums, and no position for
+- [x] A touch script and a mouse script that draw one closed profile give the same commands in the log.
+- [x] The ray to a plane gives the position of a pixel in the frame of each of the three datums, and no position for
       a ray parallel to the plane.
-- [ ] Each of the five kinds of constraint can be added from the window of the sketch, and its residual shows.
-- [ ] Each new test fails under an injection that breaks its rule.
+- [x] Each of the five kinds of constraint can be added from the window of the sketch, and its residual shows.
+- [x] Each new test fails under an injection that breaks its rule.
 - [ ] The visual check: the owner accepts a picture of a profile drawn in the desktop with its constraints.
-- [ ] A clean build (`--no-incremental`) gives zero errors and zero warnings.
+- [x] A clean build (`--no-incremental`) gives zero errors and zero warnings.
 - [ ] Continuous integration passes on `ubuntu-latest`, `windows-latest` and `macos-latest`.
 
 ## Notes for the implementer
@@ -104,3 +104,7 @@ mouse, and the log holds the same commands for both.
 - 2026-10-28: the owner accepted ADR-0034 with Q1 to Q6 A. The record amends ADR-0026, ADR-0029 and ADR-0032, and
   their text changes in this commit. ADR-0034 also governs TASK-0099, which writes the pad, so its `governed-by`
   names 0034.
+- 2026-10-28: the mode Sketch and its intent, the ray to a plane, the step of a tap, the turn of the camera, the
+  tools Line and Select, a pad of one to three fields, `SketchActions`, the window of the sketch and its drawing.
+  57 new test cases; 17 injections each failed a test. The panel image test counts 60 % dark pixels, not 70 %: the
+  line of a new sketch adds three buttons.

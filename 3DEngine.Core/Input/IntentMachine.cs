@@ -15,10 +15,12 @@ namespace ThreeDEngine.Core.Input;
 // with no point. The
 // settings give the action of each gesture. A press moves first by more than the slop, and
 // the first motion then gives the whole distance from the press, so a touch and a mouse on
-// one path give the same intents.
+// one path give the same intents. In the mode Sketch, a tap or a click gives a point of the
+// sketch, and the gestures of a hide and of a show all give nothing (ADR-0034 item 1).
 public sealed class IntentMachine
 {
     private readonly IntentSettings _settings;
+    private IntentMode _mode;
 
     // The touch and pen contacts that are down, in the order of their press.
     private readonly List<Contact> _contacts = new();
@@ -38,6 +40,20 @@ public sealed class IntentMachine
     public IntentMachine(IntentSettings? settings = null)
     {
         _settings = (settings ?? IntentSettings.Default).Validated();
+    }
+
+    // The mode, which the host sets. A change of the mode ends the gesture in progress, as a
+    // lost pointer does, so no gesture starts in one mode and ends in the other.
+    public IntentMode Mode
+    {
+        get => _mode;
+        set
+        {
+            if (value == _mode)
+                return;
+            _mode = value;
+            Lose([]);
+        }
     }
 
     public IReadOnlyList<Intent> Step(IEnumerable<InputSample> frame)
@@ -235,7 +251,7 @@ public sealed class IntentMachine
         if (dx == 0 && dy == 0)
             return;
 
-        switch (_settings.ActionOf(gesture))
+        switch (_settings.ActionOf(gesture, _mode))
         {
             case IntentAction.Orbit:
                 intents.Add(new OrbitIntent(-dx * _settings.OrbitDegreesPerPixel, dy * _settings.OrbitDegreesPerPixel));
@@ -252,19 +268,22 @@ public sealed class IntentMachine
 
     private void Scale(Gesture gesture, double factor, List<Intent> intents)
     {
-        if (factor > 0 && factor != 1 && _settings.ActionOf(gesture) == IntentAction.Zoom)
+        if (factor > 0 && factor != 1 && _settings.ActionOf(gesture, _mode) == IntentAction.Zoom)
             intents.Add(new ZoomIntent(factor));
     }
 
     private void Point(Gesture gesture, double x, double y, List<Intent> intents)
     {
-        switch (_settings.ActionOf(gesture))
+        switch (_settings.ActionOf(gesture, _mode))
         {
             case IntentAction.Select:
                 intents.Add(new SelectIntent(x, y));
                 break;
             case IntentAction.Hide:
                 intents.Add(new HideIntent(x, y));
+                break;
+            case IntentAction.SketchPoint:
+                intents.Add(new SketchPointIntent(x, y));
                 break;
         }
     }
@@ -273,7 +292,7 @@ public sealed class IntentMachine
     // or redo (ADR-0032 item 9).
     private void NoPoint(Gesture gesture, List<Intent> intents)
     {
-        switch (_settings.ActionOf(gesture))
+        switch (_settings.ActionOf(gesture, _mode))
         {
             case IntentAction.Hide:
                 intents.Add(new HideIntent(null, null));

@@ -3,7 +3,8 @@ using ThreeDEngine.Core.Numeric;
 namespace ThreeDEngine.Tests;
 
 // The state machine of the pad (ADR-0032 item 3, TASK-0094): the fields, the active field, the
-// edits, and an apply that gives three numbers or the error of the first field that fails.
+// edits, and an apply that gives one number for each field or the error of the first field that
+// fails. A pad has one, two or three fields (ADR-0034 item 7).
 public class NumericPadTests
 {
     private static NumericPad Box() => new("New box", "mm", new("x", "10"), new("y", "10"), new("z", "10"));
@@ -105,11 +106,29 @@ public class NumericPadTests
     }
 
     [Fact]
-    public void A_Pad_Has_Three_Fields_And_Selects_Only_One_Of_Them()
+    public void A_Pad_Has_One_To_Three_Fields_And_Selects_Only_One_Of_Them()
     {
-        Assert.Throws<ArgumentException>(() => new NumericPad("Move", "mm", new PadField("dx", "0")));
+        Assert.Throws<ArgumentException>(() => new NumericPad("Move", "mm"));
+        Assert.Throws<ArgumentException>(() => new NumericPad("Move", "mm", new("a", "0"), new("b", "0"), new("c", "0"), new("d", "0")));
         var pad = Box();
         Assert.Throws<ArgumentOutOfRangeException>(() => pad.Select(3));
         Assert.Throws<ArgumentOutOfRangeException>(() => pad.Select(-1));
+    }
+
+    // ADR-0034 item 7: a pad of one field for a length, and of two fields for a point.
+    [Fact]
+    public void A_Pad_Of_One_Or_Two_Fields_Gives_One_Number_For_Each()
+    {
+        var length = new NumericPad("Distance", "mm", new PadField("length", "40/2"));
+        var point = new NumericPad("Next point", "mm", new PadField("dx", "0"), new PadField("dy", "0"));
+        point.Append("5");
+        point.Next();
+        point.Append("-3");
+        point.Next();
+
+        Assert.Equal([20.0], length.Apply()!);
+        Assert.Equal([5.0, -3.0], point.Apply()!);
+        Assert.Equal(0, point.Active);
+        Assert.Throws<ArgumentOutOfRangeException>(() => point.Select(2));
     }
 }

@@ -31,6 +31,18 @@ public sealed record UndoIntent : Intent;
 
 public sealed record RedoIntent : Intent;
 
+// A point of the active sketch at this point of the window, in pixels (ADR-0034 item 1). Only the
+// mode Sketch gives it; the host gives it to the active tool.
+public sealed record SketchPointIntent(double X, double Y) : Intent;
+
+// The mode of the intent layer, which the host sets (ADR-0034 item 1). In the mode Sketch the
+// entries of IntentSettings.SketchMap replace the entries of IntentSettings.Map.
+public enum IntentMode
+{
+    Scene,
+    Sketch,
+}
+
 // A gesture that the IntentMachine recognises (ADR-0026 item 3).
 public enum Gesture
 {
@@ -77,6 +89,9 @@ public enum IntentAction
     ShowAll,
     Undo,
     Redo,
+
+    // ADR-0034 item 1: a point of the active sketch.
+    SketchPoint,
 }
 
 // The settings of the intent layer: the map from each gesture to an action, and the
@@ -86,7 +101,8 @@ public enum IntentAction
 // nothing; a gesture of a point (a tap, a click, a long press, a right click) gives select,
 // hide or nothing; a gesture with no point (a tap of two, three or four fingers, H, Shift and
 // H, and the keys of undo and redo) gives hide of the selection, show all, undo, redo or
-// nothing (ADR-0029 item 4, ADR-0032 item 9).
+// nothing (ADR-0029 item 4, ADR-0032 item 9). A gesture of a point can also give a point of a
+// sketch (ADR-0034 item 1).
 public sealed record IntentSettings
 {
     public static IntentSettings Default { get; } = new();
@@ -117,6 +133,20 @@ public sealed record IntentSettings
         [Gesture.ControlShiftZKey] = IntentAction.Redo,
     };
 
+    // ADR-0034 item 1: the entries that replace the entries of Map in the mode Sketch. A tap or a
+    // click gives a point of the sketch, and the gestures of a hide and of a show all give
+    // nothing, so a gesture never hides a body during a sketch.
+    public IReadOnlyDictionary<Gesture, IntentAction> SketchMap { get; init; } = new Dictionary<Gesture, IntentAction>
+    {
+        [Gesture.Tap] = IntentAction.SketchPoint,
+        [Gesture.Click] = IntentAction.SketchPoint,
+        [Gesture.LongPress] = IntentAction.None,
+        [Gesture.RightClick] = IntentAction.None,
+        [Gesture.TwoFingerTap] = IntentAction.None,
+        [Gesture.HKey] = IntentAction.None,
+        [Gesture.ShiftHKey] = IntentAction.None,
+    };
+
     // The degrees of orbit for each pixel of a drag.
     public double OrbitDegreesPerPixel { get; init; } = 0.3;
 
@@ -141,16 +171,20 @@ public sealed record IntentSettings
 
     public IntentAction ActionOf(Gesture gesture) => Map.TryGetValue(gesture, out var action) ? action : IntentAction.None;
 
-    // Throws when the map gives a gesture an action that it cannot give.
+    // The action of a gesture in a mode: in the mode Sketch, an entry of SketchMap wins.
+    public IntentAction ActionOf(Gesture gesture, IntentMode mode)
+        => mode == IntentMode.Sketch && SketchMap.TryGetValue(gesture, out var action) ? action : ActionOf(gesture);
+
+    // Throws when a map gives a gesture an action that it cannot give.
     public IntentSettings Validated()
     {
-        foreach (var (gesture, action) in Map)
+        foreach (var (gesture, action) in Map.Concat(SketchMap))
         {
             var permitted = gesture switch
             {
                 Gesture.Pinch or Gesture.Wheel or Gesture.PlusMinusKeys => action is IntentAction.None or IntentAction.Zoom,
                 Gesture.Tap or Gesture.Click or Gesture.LongPress or Gesture.RightClick
-                    => action is IntentAction.None or IntentAction.Select or IntentAction.Hide,
+                    => action is IntentAction.None or IntentAction.Select or IntentAction.Hide or IntentAction.SketchPoint,
                 Gesture.TwoFingerTap or Gesture.HKey or Gesture.ShiftHKey or Gesture.ThreeFingerTap or Gesture.FourFingerTap
                     or Gesture.ControlZKey or Gesture.ControlYKey or Gesture.ControlShiftZKey
                     => action is IntentAction.None or IntentAction.Hide or IntentAction.ShowAll or IntentAction.Undo or IntentAction.Redo,

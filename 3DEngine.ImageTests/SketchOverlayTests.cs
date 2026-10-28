@@ -46,7 +46,7 @@ public class SketchOverlayTests
 
         var strokes = SketchOverlay.Of([Sketch(Datums.XY.Id, hit)], camera, Display.X, Display.Y);
 
-        var point = Assert.Single(strokes.Points);
+        var point = Assert.Single(strokes.Points).At;
         Assert.Equal(x, point.X, 2);
         Assert.Equal(y, point.Y, 2);
     }
@@ -56,9 +56,9 @@ public class SketchOverlayTests
     public void Each_Datum_Places_The_Points_Of_A_Sketch_In_Its_Plane()
     {
         var camera = Camera();
-        var onXz = SketchOverlay.Of([Sketch(Datums.XZ.Id, (4, 7))], camera, Display.X, Display.Y).Points.Single();
-        var onYz = SketchOverlay.Of([Sketch(Datums.YZ.Id, (4, 7))], camera, Display.X, Display.Y).Points.Single();
-        var asXz = SketchOverlay.Of([Sketch(Datums.XY.Id, (4, 0))], camera, Display.X, Display.Y).Points.Single();
+        var onXz = SketchOverlay.Of([Sketch(Datums.XZ.Id, (4, 7))], camera, Display.X, Display.Y).Points.Single().At;
+        var onYz = SketchOverlay.Of([Sketch(Datums.YZ.Id, (4, 7))], camera, Display.X, Display.Y).Points.Single().At;
+        var asXz = SketchOverlay.Of([Sketch(Datums.XY.Id, (4, 0))], camera, Display.X, Display.Y).Points.Single().At;
 
         var ray = Picker.RayThrough(camera, onXz.X, onXz.Y, Display.X, Display.Y);
         var t = (7 - ray.Origin.Z) / ray.Direction.Z;
@@ -78,7 +78,7 @@ public class SketchOverlayTests
         var crossing = SketchOverlay.Of([Sketch(Datums.XZ.Id, (0, 0), (0, 20))], camera, Display.X, Display.Y);
         var behind = SketchOverlay.Of([Sketch(Datums.XZ.Id, (1, 12), (-1, 15))], camera, Display.X, Display.Y);
 
-        var (a, b) = Assert.Single(crossing.Lines);
+        var (a, b, _) = Assert.Single(crossing.Lines);
         Assert.True(float.IsFinite(a.X) && float.IsFinite(b.X) && float.IsFinite(a.Y) && float.IsFinite(b.Y));
         Assert.Single(crossing.Points);
         Assert.Empty(behind.Lines);
@@ -131,12 +131,52 @@ public class SketchOverlayTests
     public void The_Panel_Draws_The_Strokes_Of_A_Sketch()
     {
         using var ui = new DesktopUi("http://127.0.0.1:5180");
-        var strokes = new SketchOverlay.Strokes([(new Vector2(700, 300), new Vector2(900, 500))], [new Vector2(700, 300), new Vector2(900, 500)]);
+        var strokes = new SketchOverlay.Strokes(
+            [new(new Vector2(700, 300), new Vector2(900, 500), SketchOverlay.Mark.Active)],
+            [new(new Vector2(700, 300), SketchOverlay.Mark.Active), new(new Vector2(900, 500), SketchOverlay.Mark.Active)],
+            [],
+            []);
 
         var without = ui.Frame(1f / 60f, Display, Vector2.One, []);
         var with = ui.Frame(1f / 60f, Display, Vector2.One, [], null, null, strokes);
 
         Assert.DoesNotContain(without.Vertices, vertex => vertex.Colour == DesktopUi.SketchColour);
         Assert.Contains(with.Vertices, vertex => vertex.Colour == DesktopUi.SketchColour && vertex.Position.X >= 690 && vertex.Position.X <= 910);
+    }
+
+    // ADR-0034 item 9: with a focus, the active sketch has its labels, its selected items in white,
+    // and the ring of the first point of an open chain; another sketch is grey and has no label.
+    [Fact]
+    public void The_Active_Sketch_Has_Labels_A_Selection_And_A_Ring()
+    {
+        var camera = Camera();
+        var active = Sketch(Datums.XY.Id, (0, 0), (10, 0), (10, 5));
+        var other = Sketch(Datums.XZ.Id, (3, 3), (6, 3));
+        var selected = active.Lines[0].Id;
+        var start = active.Points[1].Id;
+
+        var strokes = SketchOverlay.Of([active, other], camera, Display.X, Display.Y, new SketchOverlay.Focus(active.SketchId, [selected], start));
+
+        Assert.Equal([SketchOverlay.Mark.Selected, SketchOverlay.Mark.Active, SketchOverlay.Mark.Other], strokes.Lines.Select(line => line.Mark));
+        Assert.Equal(3, strokes.Points.Count(point => point.Mark == SketchOverlay.Mark.Active));
+        Assert.Equal(2, strokes.Points.Count(point => point.Mark == SketchOverlay.Mark.Other));
+        Assert.Equal(["L1", "L2", "P1", "P2", "P3"], strokes.Labels.Select(label => label.Text).Order());
+        Assert.Equal(strokes.Points[1].At, Assert.Single(strokes.Rings));
+    }
+
+    // ADR-0034 item 4: the picture of the tool gives the pixel of each point that the overlay
+    // draws, and no pixel with no camera.
+    [Fact]
+    public void The_Picture_Of_The_Tool_Agrees_With_The_Overlay()
+    {
+        var camera = Camera();
+        var sketch = Sketch(Datums.YZ.Id, (2, 1), (8, -4));
+
+        var picture = SketchOverlay.Picture(sketch, camera, Display.X, Display.Y);
+        var strokes = SketchOverlay.Of([sketch], camera, Display.X, Display.Y);
+
+        Assert.Equal(strokes.Points.Select(point => ((double?)point.At.X, (double?)point.At.Y)), picture.Points.Select(point => (point.PixelX, point.PixelY)));
+        Assert.Equal(sketch.Lines.Select(line => line.Id), picture.Lines.Select(line => line.Id));
+        Assert.All(SketchOverlay.Picture(sketch).Points, point => Assert.Null(point.PixelX));
     }
 }
