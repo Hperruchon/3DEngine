@@ -48,4 +48,13 @@ public sealed class Document
     internal bool HasBody(BodyHandle handle) => _bodies.ContainsKey(handle.Id);
 
     internal void RemoveBody(BodyHandle handle) => _bodies.Remove(handle.Id);
+
+    // ADR-0028 item 6: the bus replaces the record of a live body that a command
+    // changed. The body keeps its place in the collection.
+    internal void ReplaceBody(BodyRecord body)
+    {
+        if (!_bodies.ContainsKey(body.Handle.Id))
+            throw new InvalidOperationException($"No live body {body.Handle.Id} to replace.");
+        _bodies[body.Handle.Id] = body;
+    }
 }

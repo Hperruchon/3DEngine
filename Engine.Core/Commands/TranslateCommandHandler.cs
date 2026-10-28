@@ -48,7 +48,8 @@ public sealed class TranslateCommandHandler : ICommandHandler
         // mirrors GetBoundingBox). This precedes the capability check so a bad
         // reference is reported the same way on any backend. A consumed body is
         // not live (ADR-0021 item 4).
-        if (!document.Bodies.Any(b => b.Handle.Id == translate.BodyId))
+        var source = document.Bodies.FirstOrDefault(b => b.Handle.Id == translate.BodyId);
+        if (source is null)
         {
             return Task.FromResult(CommandHandlerResult.Failure(
                 new ErrorDetail(
@@ -93,7 +94,7 @@ public sealed class TranslateCommandHandler : ICommandHandler
 
         return Task.FromResult(CommandHandlerResult.Success(
             outputs,
-            createdBodies: new[] { new BodyRecord(handle, "Solid") },
+            createdBodies: new[] { new BodyRecord(handle, "Solid", source.Name, source.Visible) },
             consumedBodies: new[] { new BodyHandle(translate.BodyId) }));
     }
 }

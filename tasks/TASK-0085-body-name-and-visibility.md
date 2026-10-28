@@ -21,11 +21,13 @@ writes:
     - Engine.Core/Hosting/HandlerCatalog.cs
     - Engine.Api.Http/WebSockets/**
     - Engine.Api.Http/Endpoints/SchemaEventsEndpoint.cs
+    - Engine.Api.Http/Endpoints/SchemaDiagnosticsEndpoint.cs
     - Engine.Tests/Commands/**
     - Engine.Tests/Queries/**
     - Engine.Tests/Cli/**
     - Engine.Tests/Http/**
     - Engine.Tests/ReplayDeterminism/**
+    - Engine.Tests/ReplayDeterminism/ReplayDeterminismGateTests.cs
     - Engine.Tests/Hosting/DispatchSurfaceGateTests.cs
     - docs/adr/0012-geometry-backend-wiring.md
     - docs/adr/0021-operand-consumption.md
@@ -97,3 +99,12 @@ snapshot give, and that a replay rebuilds.
 
 - 2026-10-28: opened after TASK-0084 (v0.86). The first commit holds ADR-0028, which the owner accepted, and the
   text changes of ADR-0012 §3 and ADR-0021 item 5.
+- 2026-10-28: the contract and the code of ADR-0028. `BodyRecord` gains `Name` and `Visible`,
+  `CommandHandlerResult` gains `ChangedBodies`, and the bus checks the list and gives `body.changed` after each
+  `body.consumed`. `RenameBody`, `SetBodyVisibility`, `GetBodyInfo` and `E-VAL-BODY-NAME-INVALID` exist;
+  `Translate` and `Subtract` pass on the name and the visibility; `body.created`, the snapshot and the two
+  schema endpoints give them. A field of an event payload with `Required: false` can be null. 32 new tests;
+  six injections each failed their tests (no check of the changed list, the wrong order, no check of a name,
+  a trimmed name, a Translate that loses the name, a snapshot that loses it). The replay fixture renames and
+  hides the box. An injected host file that names "RenameBody" fails `DispatchSurfaceGateTests`.
+  `SchemaDiagnosticsEndpoint.cs` and `ReplayDeterminismGateTests.cs` joined the write set.

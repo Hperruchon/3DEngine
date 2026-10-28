@@ -44,7 +44,8 @@ public sealed class SubtractCommandHandler : ICommandHandler
         // mirrors GetBoundingBox). Precedes the capability check so a bad reference is
         // reported the same way on any backend. A consumed body is not live
         // (ADR-0021 item 4).
-        if (!document.Bodies.Any(b => b.Handle.Id == subtract.MinuendBodyId))
+        var minuend = document.Bodies.FirstOrDefault(b => b.Handle.Id == subtract.MinuendBodyId);
+        if (minuend is null)
         {
             return Task.FromResult(CommandHandlerResult.Failure(
                 new ErrorDetail(
@@ -109,7 +110,8 @@ public sealed class SubtractCommandHandler : ICommandHandler
 
         return Task.FromResult(CommandHandlerResult.Success(
             outputs,
-            createdBodies: new[] { new BodyRecord(handle, "Solid") },
+            // The result takes the name and the visibility of the minuend (ADR-0028 item 5).
+            createdBodies: new[] { new BodyRecord(handle, "Solid", minuend.Name, minuend.Visible) },
             consumedBodies: new[] { new BodyHandle(subtract.MinuendBodyId), new BodyHandle(subtract.SubtrahendBodyId) }));
     }
 }

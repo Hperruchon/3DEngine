@@ -43,11 +43,18 @@ public class EventPayloadSchemaTests(WebApplicationFactory<Program> factory)
         var second = await host.Session.Apply(new CreateBoxCommand { SizeX = 1, SizeY = 1, SizeZ = 1 });
         Assert.True(first.Outputs.TryGet<Guid>("bodyId", out var minuend));
         Assert.True(second.Outputs.TryGet<Guid>("bodyId", out var subtrahend));
-        Assert.Equal(CommandStatus.Applied, (await host.Session.Apply(new SubtractCommand { MinuendBodyId = minuend, SubtrahendBodyId = subtrahend })).Status);
+        // A name, so that body.created of the cut carries a string, and a cleared name, so
+        // that body.changed carries a null (ADR-0028, TASK-0085).
+        Assert.Equal(CommandStatus.Applied, (await host.Session.Apply(new RenameBodyCommand { BodyId = minuend, NewName = "A" })).Status);
+        var cut = await host.Session.Apply(new SubtractCommand { MinuendBodyId = minuend, SubtrahendBodyId = subtrahend });
+        Assert.Equal(CommandStatus.Applied, cut.Status);
+        Assert.True(cut.Outputs.TryGet<Guid>("bodyId", out var result));
+        Assert.Equal(CommandStatus.Applied, (await host.Session.Apply(new SetBodyVisibilityCommand { BodyId = result, Visible = false })).Status);
+        Assert.Equal(CommandStatus.Applied, (await host.Session.Apply(new RenameBodyCommand { BodyId = result, NewName = "" })).Status);
         await host.Session.Apply(new CreateBoxCommand { SizeX = 0, SizeY = 1, SizeZ = 1 });
 
         Assert.Equal(
-            ["body.consumed", "body.created", "command.applied", "command.rejected"],
+            ["body.changed", "body.consumed", "body.created", "command.applied", "command.rejected"],
             records.Select(record => record.Kind).Distinct().Order(StringComparer.Ordinal));
         var problems = records.SelectMany(PayloadProblems).ToList();
         Assert.True(problems.Count == 0, string.Join("\n  ", problems));
@@ -78,12 +85,23 @@ public class EventPayloadSchemaTests(WebApplicationFactory<Program> factory)
         {
             if (!entry.Payload.TryGetValue(name, out var field))
                 yield return $"{record.Kind} carries the field '{name}', which its entry does not list";
-            else if (TypeOf(value) != field.Type)
+            else if (TypeOf(value) != field.Type && !(value is null && !field.Required))
                 yield return $"{record.Kind} carries '{name}' as {TypeOf(value)}, and its entry gives {field.Type}";
         }
 
         foreach (var name in entry.Payload.Keys.Where(name => !payload.ContainsKey(name)))
             yield return $"{record.Kind} lacks the field '{name}' of its entry";
+    }
+
+    // A null passes only a field whose entry is not required (ADR-0028 item 7).
+    [Fact]
+    public void A_Null_In_A_Required_Field_Is_A_Problem()
+    {
+        var record = new EventRecord(1, DateTime.UtcNow, Guid.NewGuid(), Guid.NewGuid(), "body.changed",
+            new Dictionary<string, object?> { ["bodyId"] = Guid.NewGuid(), ["name"] = null, ["visible"] = null });
+
+        var problem = Assert.Single(PayloadProblems(record));
+        Assert.Contains("'visible' as null", problem, StringComparison.Ordinal);
     }
 
     private static string TypeOf(object? value) => value switch

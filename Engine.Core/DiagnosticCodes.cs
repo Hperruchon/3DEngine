@@ -17,4 +17,7 @@ public static class DiagnosticCodes
     public const string GeomBodyNotFound = "E-GEOM-BODY-NOT-FOUND";
     public const string GeomNativeOp = "E-GEOM-NATIVE-OP";
     public const string GeomBackendInit = "E-GEOM-BACKEND-INIT";
+
+    // ADR-0028 item 3: a name of a body that breaks the rules of a name.
+    public const string ValBodyNameInvalid = "E-VAL-BODY-NAME-INVALID";
 }
