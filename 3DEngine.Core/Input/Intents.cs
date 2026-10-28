@@ -26,6 +26,11 @@ public sealed record ShowAllIntent : Intent;
 // Stop the gesture in progress: a pointer was lost.
 public sealed record CancelIntent : Intent;
 
+// Undo the last step of the document, or redo the last undone step (ADR-0032 item 9).
+public sealed record UndoIntent : Intent;
+
+public sealed record RedoIntent : Intent;
+
 // A gesture that the IntentMachine recognises (ADR-0026 item 3).
 public enum Gesture
 {
@@ -50,6 +55,14 @@ public enum Gesture
     TwoFingerTap,
     HKey,
     ShiftHKey,
+
+    // ADR-0032 item 9 (Q1 A): a tap of three fingers, a tap of four fingers, Control and Z,
+    // Control and Y, and Control, Shift and Z.
+    ThreeFingerTap,
+    FourFingerTap,
+    ControlZKey,
+    ControlYKey,
+    ControlShiftZKey,
 }
 
 // The action that a gesture gives.
@@ -62,6 +75,8 @@ public enum IntentAction
     Select,
     Hide,
     ShowAll,
+    Undo,
+    Redo,
 }
 
 // The settings of the intent layer: the map from each gesture to an action, and the
@@ -69,8 +84,9 @@ public enum IntentAction
 // item 3, decision D4). A gesture of motion (a drag or the arrow keys) gives orbit, pan,
 // zoom or nothing; a gesture of scale (a pinch, the wheel, plus and minus) gives zoom or
 // nothing; a gesture of a point (a tap, a click, a long press, a right click) gives select,
-// hide or nothing; a gesture with no point (a tap of two fingers, H, Shift and H) gives hide
-// of the selection, show all or nothing (ADR-0029 item 4).
+// hide or nothing; a gesture with no point (a tap of two, three or four fingers, H, Shift and
+// H, and the keys of undo and redo) gives hide of the selection, show all, undo, redo or
+// nothing (ADR-0029 item 4, ADR-0032 item 9).
 public sealed record IntentSettings
 {
     public static IntentSettings Default { get; } = new();
@@ -94,6 +110,11 @@ public sealed record IntentSettings
         [Gesture.HKey] = IntentAction.Hide,
         [Gesture.TwoFingerTap] = IntentAction.ShowAll,
         [Gesture.ShiftHKey] = IntentAction.ShowAll,
+        [Gesture.ThreeFingerTap] = IntentAction.Undo,
+        [Gesture.ControlZKey] = IntentAction.Undo,
+        [Gesture.FourFingerTap] = IntentAction.Redo,
+        [Gesture.ControlYKey] = IntentAction.Redo,
+        [Gesture.ControlShiftZKey] = IntentAction.Redo,
     };
 
     // The degrees of orbit for each pixel of a drag.
@@ -130,8 +151,9 @@ public sealed record IntentSettings
                 Gesture.Pinch or Gesture.Wheel or Gesture.PlusMinusKeys => action is IntentAction.None or IntentAction.Zoom,
                 Gesture.Tap or Gesture.Click or Gesture.LongPress or Gesture.RightClick
                     => action is IntentAction.None or IntentAction.Select or IntentAction.Hide,
-                Gesture.TwoFingerTap or Gesture.HKey or Gesture.ShiftHKey
-                    => action is IntentAction.None or IntentAction.Hide or IntentAction.ShowAll,
+                Gesture.TwoFingerTap or Gesture.HKey or Gesture.ShiftHKey or Gesture.ThreeFingerTap or Gesture.FourFingerTap
+                    or Gesture.ControlZKey or Gesture.ControlYKey or Gesture.ControlShiftZKey
+                    => action is IntentAction.None or IntentAction.Hide or IntentAction.ShowAll or IntentAction.Undo or IntentAction.Redo,
                 _ => action is IntentAction.None or IntentAction.Orbit or IntentAction.Pan or IntentAction.Zoom,
             };
             if (!permitted)

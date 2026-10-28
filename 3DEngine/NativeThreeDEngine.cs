@@ -109,6 +109,14 @@ public sealed class NativeThreeDEngine : IThreeDEngine, IDisposable
                 case ZoomIntent zoom:
                     Camera.Zoom(zoom.Factor);
                     break;
+
+                // ADR-0032 item 9: the keys and the taps of undo and redo act as the buttons.
+                case UndoIntent when _actions is not null:
+                    _documentMessage = _actions.Undo();
+                    break;
+                case RedoIntent when _actions is not null:
+                    _documentMessage = _actions.Redo();
+                    break;
             }
         }
     }
@@ -156,6 +164,12 @@ public sealed class NativeThreeDEngine : IThreeDEngine, IDisposable
                     break;
                 case RedoAction:
                     _documentMessage = _actions.Redo();
+                    break;
+                case CreateBoxAction box:
+                    _ui.EndPad(_actions.CreateBox(box.X, box.Y, box.Z));
+                    break;
+                case MoveBodyAction move:
+                    _ui.EndPad(_actions.Move(move.Body, move.Dx, move.Dy, move.Dz));
                     break;
             }
         }

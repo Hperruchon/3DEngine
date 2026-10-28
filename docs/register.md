@@ -391,18 +391,6 @@ on Windows with a GPU, and no computer runs it on macOS.
 Exit: a runner of Windows or macOS gives a Vulkan device and the pipeline requires the test there, or the
 owner accepts Ubuntu alone and moves this entry to the accepted compromises.
 
-### R-0041 · The desktop has no key for an undo or a redo
-- class: question
-- opened: 2026-10-28
-- due: 2027-01-26
-- extended: no
-- refs: ADR-0031 item 11, ADR-0026 items 2 and 5, `3DEngine.Core/Input/InputSamples.cs`, TASK-0093
-The desktop gives an undo and a redo through two buttons only. Ctrl+Z, Ctrl+Y and Ctrl+Shift+Z need the keys Z
-and Y in the input layer and two new intents, and each intent needs a touch gesture and a parity script. No
-computer of the project has a touch screen. A person who uses the keyboard expects these keys in a CAD program.
-Exit: a task adds the two intents with their keys and touch gestures and amends ADR-0026, or the owner accepts the
-buttons alone and moves this entry to the accepted compromises.
-
 ## Accepted compromises
 
 These are conditions that the project keeps permanently and by decision. They do not age.
@@ -453,6 +441,21 @@ Closed YYYY-MM-DD · resolved · commit <hash>
 Closed YYYY-MM-DD · decided  · ADR-nnnn
 Closed YYYY-MM-DD · accepted · the reason to keep the condition
 ```
+
+### R-0041 · The desktop has no key for an undo or a redo
+- class: question
+- opened: 2026-10-28
+- due: 2027-01-26
+- extended: no
+- refs: ADR-0031 item 11, ADR-0026 items 2 and 5, `3DEngine.Core/Input/InputSamples.cs`, TASK-0093
+The desktop gives an undo and a redo through two buttons only. Ctrl+Z, Ctrl+Y and Ctrl+Shift+Z need the keys Z
+and Y in the input layer and two new intents, and each intent needs a touch gesture and a parity script. No
+computer of the project has a touch screen. A person who uses the keyboard expects these keys in a CAD program.
+Exit: a task adds the two intents with their keys and touch gestures and amends ADR-0026, or the owner accepts the
+buttons alone and moves this entry to the accepted compromises.
+Closed 2026-10-28 · resolved · TASK-0094. ADR-0032 item 9 gives Control and Z, Control and Y, and Control, Shift
+and Z, with a tap of three fingers and a tap of four fingers, through the intent layer. Z and Y come from the key
+code, so the letter of the layout counts.
 
 ### R-0025 · ADR-0015 describes the durability of a server and not a document file
 - class: question

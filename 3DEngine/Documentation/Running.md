@@ -56,7 +56,13 @@ Undo reverses the last command that changed the document, and Redo applies it ag
 document has one history, so an undo can reverse a command of an agent. A new command after an undo
 clears the redo list. The history is in the file, so an undo works after an open. An agent sends
 `POST /commands {"name": "Undo"}` and `{"name": "Redo"}`. When nothing is left to undo or to redo,
-the panel shows the code.
+the panel shows the code. The keys are Ctrl+Z, and Ctrl+Y or Ctrl+Shift+Z; on a touch screen, a tap of
+three fingers undoes and a tap of four fingers redoes (ADR-0032).
+
+New box opens the pad with the sizes x, y and z, and Move opens it with the offsets dx, dy and dz of
+the selected body (ADR-0032). Each value is in millimetres. Tap a field, then tap the buttons or type:
+for example `2*pi` or `sqrt(2)*10`. Tab goes to the next field, Enter applies, Escape cancels. While
+the pad is open it takes each key. After a move, the moved body is selected.
 
 ## What To Expect
 - The line `3DEngine serves the document at http://127.0.0.1:5180`. An agent sends commands and

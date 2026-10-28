@@ -10,7 +10,9 @@ namespace ThreeDEngine.Core.Input;
 // end of the frame or before a sample of another kind; two contacts that move together in
 // one frame then pan and do not pinch. Mouse: a left drag, a middle drag, and a left drag with
 // Shift are three gestures, a short press with no motion clicks, and the wheel turns.
-// Keyboard: the arrow keys move, with or without Shift, and plus and minus scale. The
+// Keyboard: the arrow keys move, with or without Shift, and plus and minus scale; H hides, and
+// Control with Z or Y undoes or redoes. A still tap of two, three or four fingers is a gesture
+// with no point. The
 // settings give the action of each gesture. A press moves first by more than the slop, and
 // the first motion then gives the whole distance from the press, so a touch and a mouse on
 // one path give the same intents.
@@ -126,9 +128,9 @@ public sealed class IntentMachine
                         Point(Gesture.Tap, contact.DownX, contact.DownY, intents);
                     else if (!_twoContactsSeen && !contact.Moved && held >= _settings.LongPressNanoseconds)
                         Point(Gesture.LongPress, contact.DownX, contact.DownY, intents);
-                    else if (_twoContactsSeen && _gestureContacts == 2 && _gestureStill
-                        && sample.TimestampNs - _gestureDownNs <= _settings.TapMaxNanoseconds)
-                        NoPoint(Gesture.TwoFingerTap, intents);
+                    else if (_twoContactsSeen && _gestureStill && sample.TimestampNs - _gestureDownNs <= _settings.TapMaxNanoseconds
+                        && _gestureContacts switch { 2 => Gesture.TwoFingerTap, 3 => Gesture.ThreeFingerTap, 4 => Gesture.FourFingerTap, _ => (Gesture?)null } is { } tap)
+                        NoPoint(tap, intents);
                     _twoContactsSeen = false;
                 }
                 else
@@ -210,6 +212,10 @@ public sealed class IntentMachine
             case InputKey.Plus: Scale(Gesture.PlusMinusKeys, _settings.ZoomPerStep, intents); break;
             case InputKey.Minus: Scale(Gesture.PlusMinusKeys, 1 / _settings.ZoomPerStep, intents); break;
             case InputKey.H: NoPoint((key.Modifiers & KeyModifiers.Shift) != 0 ? Gesture.ShiftHKey : Gesture.HKey, intents); break;
+            case InputKey.Z when (key.Modifiers & KeyModifiers.Control) != 0:
+                NoPoint((key.Modifiers & KeyModifiers.Shift) != 0 ? Gesture.ControlShiftZKey : Gesture.ControlZKey, intents);
+                break;
+            case InputKey.Y when (key.Modifiers & KeyModifiers.Control) != 0: NoPoint(Gesture.ControlYKey, intents); break;
         }
     }
 
@@ -263,7 +269,8 @@ public sealed class IntentMachine
         }
     }
 
-    // A gesture with no point: hide the selection, or show each hidden body (ADR-0029 item 4).
+    // A gesture with no point: hide the selection, show each hidden body (ADR-0029 item 4), undo
+    // or redo (ADR-0032 item 9).
     private void NoPoint(Gesture gesture, List<Intent> intents)
     {
         switch (_settings.ActionOf(gesture))
@@ -273,6 +280,12 @@ public sealed class IntentMachine
                 break;
             case IntentAction.ShowAll:
                 intents.Add(new ShowAllIntent());
+                break;
+            case IntentAction.Undo:
+                intents.Add(new UndoIntent());
+                break;
+            case IntentAction.Redo:
+                intents.Add(new RedoIntent());
                 break;
         }
     }

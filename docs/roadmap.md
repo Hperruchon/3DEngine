@@ -76,6 +76,7 @@ Therefore each approved objective must have a track here.
 - P0.36 — A name is a JSON string of well-formed text, the server disposes at each stop, and the desktop ends a text field at a click on the scene. v0.93, TASK-0090.
 - P0.35 — The gates bind the names that the compiler and MSBuild bind, and the archive and the review counter check their links. v0.94, TASK-0089.
 - P8c — Undo and redo as commands of the log, with one history for the document. v0.95, TASK-0093, ADR-0031.
+- R10 — A numeric pad and an expression evaluator for a new box and a move, and the keys of undo and redo. v0.96, TASK-0094, ADR-0032.
 
 ## Track 0 — Foundations
 
@@ -148,7 +149,7 @@ The first objective. Each phase ends with something that a person can observe.
 | R8a | Name and visibility in the engine. The commands `RenameBody` and `SetBodyVisibility`, the query `GetBodyInfo`, the event kind `body.changed`, and ADR-0028. TASK-0085. | 3–4 |
 | R8b | Name and visibility in the desktop. The pick of one body, a highlight, the gestures, and the text field of R7b. The selection stays a state of the client (ADR-0007). The camera frames the bodies only when the set goes from empty to not empty (KD6). TASK-0086. | 4–5 |
 | R9 | A transform gizmo at a constant screen size. After the milestone "CAD on one part" (KD2). | 5–8 |
-| R10 | A numeric pad and an expression evaluator. Each drag has a numeric equivalent. | 3–5 |
+| R10 | A numeric pad and an expression evaluator. The pad gives the sizes of a new box and the offsets of a move; the drags of the camera have no numeric equivalent. The keys of undo and redo (R-0041). ADR-0032, TASK-0094. | 3–5 |
 | R11 | Escalated selection and a snap engine. | 4–6 |
 
 ## Track K — The kernel
