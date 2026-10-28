@@ -74,6 +74,13 @@ public static class DocumentFile
     {
         ArgumentNullException.ThrowIfNull(session);
 
+        // The versions of the entries count from 1, so the session must be new. An open
+        // into a session with commands wrote a file that did not open again (finding
+        // E75 of the second codebase review of 2026-10-28).
+        var start = await session.Read((document, _) => document.Version, ct).ConfigureAwait(false);
+        if (start != 0)
+            throw DocumentFileException.Load($"An open needs a new session, and this session is at the version {start}.");
+
         var diagnostics = new List<Diagnostic>();
         var lines = Lines(path, out var torn);
         if (lines.Count == 0)
@@ -118,12 +125,19 @@ public static class DocumentFile
                     $"The entry of version {entry.Version} records the version {entry.Backend.Version} of the backend '{backend.Name}', and this host has the version {backend.Version}. The open continues."));
             }
 
-            var result = await session.Apply(entry.Command, ct).ConfigureAwait(false);
+            // ADR-0015 item 8: each entry must be applied and give the version of the
+            // entry. The open does not look in the idempotency cache, so an entry whose
+            // CommandId came before is applied again, as the live session applied it (E75).
+            var result = await session.ApplyEntry(entry.Command, ct).ConfigureAwait(false);
             if (result.Status != CommandStatus.Applied)
                 throw DocumentFileException.Load(
                     $"The entry of version {entry.Version} ({entry.Command.Name}) gave {result.Status}"
                     + (result.Error is { } error ? $", with {error.Code}: {error.Message}" : string.Empty)
                     + ". Each entry was applied one time, so an open must apply it too.");
+            if (result.DocumentVersion != entry.Version)
+                throw DocumentFileException.Load(
+                    $"The entry of version {entry.Version} ({entry.Command.Name}) gave the version {result.DocumentVersion}. "
+                    + "Each entry gives the version of the entry, so the Document after the open differs from the file.");
         }
 
         if (torn is not null)

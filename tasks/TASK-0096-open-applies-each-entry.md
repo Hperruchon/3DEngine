@@ -1,7 +1,7 @@
 ---
 id: 0096
 title: An open applies each entry of the document file and gives its version, or refuses the file
-status: Ready
+status: Done
 phase: P0.37
 opened: 2026-10-28
 depends-on: [0095]
@@ -19,6 +19,7 @@ writes:
     - docs/adr/0015-command-log-persistence.md
     - docs/adr/README.md
     - eng/test-floor.txt
+    - tasks/TASK-0098-gate-forms-of-the-eleventh-review.md
     - docs/register.md
     - docs/roadmap.md
     - docs/CURRENT-STATE.md
@@ -70,11 +71,28 @@ An open gives the Document that wrote the file, or it refuses the file with `E-I
 
 ## Acceptance criteria
 
-- [ ] The probe of E75 fails before the correction and passes after it.
-- [ ] An injection that removes the check of the version fails a test.
-- [ ] The replay gate passes.
-- [ ] A clean build (`--no-incremental`) gives zero errors and zero warnings.
-- [ ] Continuous integration passes on `ubuntu-latest`, `windows-latest` and `macos-latest`.
+- [x] The probe of E75 fails before the correction and passes after it.
+- [x] An injection that brings back the look-up in the cache fails a test, through the check of the version.
+- [x] The replay gate passes.
+- [x] A clean build (`--no-incremental`) gives zero errors and zero warnings.
+- [x] Continuous integration passes on `ubuntu-latest`, `windows-latest` and `macos-latest`.
+
+## Outcome
+
+Status: Done · v0.98 · the commit that carries this block.
+
+## Method
+
+**Mechanical.** The bus and the session gain an internal `ApplyEntry` with no look-up in the cache; the open uses it
+and checks the version of each result and the version of the session before the first entry. The probe of the review
+is a test.
+
+**Judgement.** The open still stores each result in the cache, so a client that sends the last command again after
+an open gets its result, as ADR-0015 item 8 says ("the cache fills as in a live session"). The check of the version
+stays as a guard: after the fix no input reaches it, and the injection that brings back the look-up shows that it
+refuses the file. E17 (the live bus applies an identifier again after the cache forgot it) stays in R-0028.
+
+**Weakest.** No test reaches the check of the version with the code as it is; only the injection shows it.
 
 ## Notes for the implementer
 
@@ -88,3 +106,9 @@ An open gives the Document that wrote the file, or it refuses the file with `E-I
 ## Progress
 
 - 2026-10-28: opened by the second codebase review of 2026-10-28 (TASK-0095).
+- 2026-10-28: the owner answered the questions of the second codebase review of 2026-10-28, A to each. This first
+  commit records the answers: the roadmap rows K2a, K2b, K2 and K0a hold Q1 to Q9, TASK-0098 holds Q10, and register
+  entry R-0042 closes.
+- 2026-10-28: the open applies each entry with no look-up in the cache, refuses a session that has a command, and
+  checks the version of each result. Two new tests; ADR-0015 item 8 says so.
+- 2026-10-28: closed at v0.98. CI run 40758728721 passed on the three runners.

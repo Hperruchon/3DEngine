@@ -392,6 +392,67 @@ public sealed class DocumentFileTests : IDisposable
         Assert.Equal(3, File.ReadAllLines(path).Length);
     }
 
+    // Finding E75 of the second codebase review of 2026-10-28: the live bus applies a
+    // CommandId again after the cache forgot it (E17), so the file holds it two times.
+    // The open looked in the cache, skipped the second entry with no error, and gave
+    // another Document; the next command then made the file impossible to open.
+    [Fact]
+    public async Task An_Open_Applies_An_Entry_Whose_CommandId_Came_Before()
+    {
+        var path = FileNamed("again");
+        var live = NewSession();
+        DocumentFile.Create(live, path);
+        var box = await live.Apply(new CreateBoxCommand { SizeX = 1, SizeY = 1, SizeZ = 1 });
+        var body = (Guid)box.Outputs.Values["bodyId"]!;
+        var hide = new SetBodyVisibilityCommand { BodyId = body, Visible = false };
+        await live.Apply(hide);
+        await live.Apply(new SetBodyVisibilityCommand { BodyId = body, Visible = true });
+        for (var index = 0; index < IdempotencyCache.DefaultCapacity; index++)
+            await live.Apply(new RedoCommand());
+        var again = await live.Apply(hide with { });
+        var expected = await State(live);
+        live.Close();
+
+        var opened = NewSession();
+        await DocumentFile.Open(opened, path);
+        var actual = await State(opened);
+        var next = await opened.Apply(new NoOpCommand { Echo = "next" });
+        opened.Close();
+        var third = NewSession();
+        await DocumentFile.Open(third, path);
+        var reopened = await State(third);
+        third.Close();
+
+        Assert.Equal((CommandStatus.Applied, 4L), (again.Status, again.DocumentVersion));
+        Assert.Contains(expected.Bodies, text => text.StartsWith(body.ToString(), StringComparison.Ordinal) && text.EndsWith(" False", StringComparison.Ordinal));
+        AssertSameState(expected, actual);
+        Assert.Equal(5, next.DocumentVersion);
+        Assert.Equal(5, reopened.Version);
+    }
+
+    // ADR-0015 item 8: the versions of the entries count from 1, so an open needs a new
+    // session. An open into a session with a command wrote a file that did not open
+    // again (E75).
+    [Fact]
+    public async Task An_Open_Refuses_A_Session_That_Has_A_Command()
+    {
+        var path = FileNamed("source");
+        var writer = NewSession();
+        DocumentFile.Create(writer, path);
+        await writer.Apply(new NoOpCommand { Echo = "one" });
+        writer.Close();
+        var session = NewSession();
+        await session.Apply(new NoOpCommand { Echo = "before" });
+
+        var refusal = await Assert.ThrowsAsync<DocumentFileException>(() => DocumentFile.Open(session, path));
+        var version = await session.Read((document, _) => document.Version);
+        session.Close();
+
+        Assert.Equal(DiagnosticCodes.IoLoadFailed, refusal.Code);
+        Assert.Equal(1, version);
+        Assert.Equal(2, File.ReadAllLines(path).Length);
+    }
+
     // A stream that fails each write, for a write that fails.
     private sealed class FailingStream : MemoryStream
     {

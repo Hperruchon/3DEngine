@@ -77,11 +77,15 @@ Each form of the review fails the gate program.
    byte in a `.cs` file.
 8. `DispatchSurfaceGateTests` and `DependencyDirectionGateTests` skip `bin/` and `obj/` at the root of a project
    only, with the rule of T68 (TASK-0097).
+9. T78, by the answer A of the owner to Q10 (2026-10-28): the measures of a codebase review gain three rows, the
+   lines of the rule files, the count of "must" and the count of "do not", with the method of
+   `docs/reviews/2026-09-25-rules-review.md`, section 1. `CodebaseReviewGateTests` requires the rows in a review
+   after this task, and `docs/templates.md`, sections 6 and 7, say so. The inventory of the rules stays a separate
+   review when the owner asks for it.
 
 ## Scope (out)
 
 - T76: the record of the review closes it.
-- T78: the owner decides the rule (question Q10 of the review).
 - The three gates that run engine code stay in the test process (T31, register entry R-0031).
 
 ## Acceptance criteria
