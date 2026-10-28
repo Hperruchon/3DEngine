@@ -72,6 +72,7 @@ Therefore each approved objective must have a track here.
 - R8b — The desktop selects, hides, shows and renames a body, and the camera stays where it is. v0.88, TASK-0086, ADR-0029.
 - P0.34 — No file outside the gate files can replace the test framework of a test project. v0.90, TASK-0088.
 - P8a — The document file in the engine and the server. v0.91, TASK-0091, ADR-0015.
+- P8f — The document file in the desktop and for an agent. v0.92, TASK-0092, ADR-0030.
 
 ## Track 0 — Foundations
 
@@ -125,7 +126,7 @@ This track removes each condition that blocks other work.
 | P8c | Undo and redo. Add the inverse command. | 3–5 |
 | P8d | The three layers. Log, ordered feature list, regeneration cache. | 5–8 |
 | P8e | The unit in the numeric pad. The header of P8a holds the length unit of the document (KD4). | 1 |
-| P8f | The document file in the desktop and for an agent. The desktop opens the file that its command line names, and an open in the window starts the program again (Q5). "Save" moves the file to the name typed in the panel. HTTP save and open on the loopback address, in one folder (Q6, ADR-0002). | 2–3 |
+| P8f | The document file in the desktop and for an agent. The desktop opens the file that its command line names, and an open in the window starts the program again (Q5). "Save" moves the file to the name typed in the panel. HTTP save and open on the loopback address, in one folder (Q6, ADR-0002). ADR-0030, TASK-0092. | 2–3 |
 
 ## Track R — The renderer
 

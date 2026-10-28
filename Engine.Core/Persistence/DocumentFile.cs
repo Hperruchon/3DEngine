@@ -41,7 +41,36 @@ public static class DocumentFile
     // Applies each entry of the file through the bus of the session, with no write,
     // then the session writes each later command to the file. The session must be
     // new, with the unit of the header. It gives the warnings of the open.
-    public static async Task<IReadOnlyList<Diagnostic>> Open(DocumentSession session, string path, CancellationToken ct = default)
+    public static Task<IReadOnlyList<Diagnostic>> Open(DocumentSession session, string path, CancellationToken ct = default)
+        => Load(session, path, attach: true, ct);
+
+    // ADR-0030 item 5: opens the file in a scratch session on the given backend, with
+    // no write and no lock of the file, and gives null or the error of the open. A
+    // host calls this before it starts again with the file, so that a file that does
+    // not open leaves the person with the window.
+    public static async Task<ErrorDetail?> Check(string path, Engine.Contracts.Geometry.IGeometryBackend backend, CancellationToken ct = default)
+    {
+        ArgumentNullException.ThrowIfNull(backend);
+        try
+        {
+            var session = new DocumentSession(Hosting.EngineHosting.CreateDefault(backend, ReadLengthUnit(path)));
+            try
+            {
+                await Load(session, path, attach: false, ct).ConfigureAwait(false);
+                return null;
+            }
+            finally
+            {
+                session.Close();
+            }
+        }
+        catch (DocumentFileException ex)
+        {
+            return new ErrorDetail(ex.Code, ex.Message);
+        }
+    }
+
+    private static async Task<IReadOnlyList<Diagnostic>> Load(DocumentSession session, string path, bool attach, CancellationToken ct)
     {
         ArgumentNullException.ThrowIfNull(session);
 
@@ -103,7 +132,8 @@ public static class DocumentFile
                 DiagnosticCodes.IoTruncated,
                 $"The last line of {path} is not complete or does not parse, and the open cut it off ({Encoding.UTF8.GetByteCount(torn)} bytes)."));
 
-        session.Attach(DocumentJournal.Resume(path, unit, validLength));
+        if (attach)
+            session.Attach(DocumentJournal.Resume(path, unit, validLength));
         return diagnostics;
     }
 
@@ -114,7 +144,11 @@ public static class DocumentFile
         byte[] bytes;
         try
         {
-            bytes = File.ReadAllBytes(path);
+            // The reader shares the write access, so a check reads a file that a
+            // session of this process holds open (ADR-0030 item 5).
+            using var stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
+            bytes = new byte[stream.Length];
+            stream.ReadExactly(bytes);
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
         {

@@ -43,14 +43,15 @@ names. Do not read all of them.
 | [0027](0027-text-and-panels.md) | Text and panels through Dear ImGui, drawn by a first-party renderer | Amended | Rendering, clients | 0026 | 0029 |
 | [0028](0028-body-name-and-visibility.md) | The name and the visibility of a body | Accepted | Contracts, geometry | 0012, 0021 | — |
 | [0029](0029-selection-and-hide-gestures.md) | The selection, the hide gestures and the frame of the camera in the desktop | Accepted | Rendering, clients | 0025, 0026, 0027 | — |
+| [0030](0030-document-file-in-the-desktop.md) | The document file in the desktop and for an agent | Accepted | Persistence, deployment | — | — |
 
 ## Topics
 
 - **Contracts** — 0005, 0006, 0008, 0012, 0013, 0015, 0018, 0020, 0021, 0028. Read these before changing `Engine.Contracts/**`.
 - **Boundary** — 0001, 0004, 0007, 0012, 0014, 0017, 0022, 0025. Read these before changing project references or adding clients.
 - **Workflow** — 0002. Read before adding a client or skipping CLI.
-- **Clients** — 0002, 0007, 0019, 0024, 0026, 0027, 0029. Read before changing UI/CLI/host code.
-- **Deployment** — 0004, 0019. Read these before changing where a session runs or which transport a host uses.
+- **Clients** — 0002, 0007, 0019, 0024, 0026, 0027, 0029, 0030. Read before changing UI/CLI/host code.
+- **Deployment** — 0004, 0019, 0030. Read these before changing where a session runs or which transport a host uses.
 - **Geometry** — 0001, 0012, 0014, 0018, 0021, 0028. Read before adding a capability or backend.
 - **Observability** — 0005, 0010, 0013, 0020, 0021. Read before changing event ordering, retention, subscription, or schema endpoints.
 - **Rendering** — 0009, 0017, 0018, 0022, 0023, 0024, 0025, 0026, 0027, 0029. Read these before changing `3DEngine.Core`, `3DEngine.Vulkan` or `3DEngine`.

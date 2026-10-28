@@ -12,6 +12,10 @@ public static class DiagnosticCodes
     public const string ApiWsInvalidSubscribe = "E-API-WS-INVALID-SUBSCRIBE";
     public const string ApiWsLagged = "W-API-WS-LAGGED";
     public const string ApiSubscriptionRemoved = "W-API-SUBSCRIPTION-REMOVED";
+
+    // ADR-0030 item 4: a route that this host does not serve, for example an open
+    // over HTTP in engine-api-http.
+    public const string ApiNotSupported = "E-API-NOT-SUPPORTED";
     public const string GeomCapMissing = "E-GEOM-CAP-MISSING";
     public const string GeomInvalidParam = "E-GEOM-INVALID-PARAM";
     public const string GeomBodyNotFound = "E-GEOM-BODY-NOT-FOUND";
