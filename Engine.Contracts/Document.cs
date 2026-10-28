@@ -36,6 +36,12 @@ public sealed class Document
     private readonly Dictionary<Guid, BodyRecord> _bodies = new();
     public IReadOnlyCollection<BodyRecord> Bodies => _bodies.Values;
 
+    // ADR-0033 item 4: one record for each live sketch. Mutation goes only through the
+    // commit section of the CommandBus, as for a body. An Undo of the step that created
+    // a sketch removes it, and a Redo makes it live again.
+    private readonly Dictionary<Guid, Sketch.SketchRecord> _sketches = new();
+    public IReadOnlyCollection<Sketch.SketchRecord> Sketches => _sketches.Values;
+
     public Document(Guid? projectId = null, int schemaVersion = 1, string lengthUnit = Millimetre)
     {
         if (lengthUnit != Millimetre)
@@ -68,5 +74,19 @@ public sealed class Document
         if (!_bodies.ContainsKey(body.Handle.Id))
             throw new InvalidOperationException($"No live body {body.Handle.Id} to replace.");
         _bodies[body.Handle.Id] = body;
+    }
+
+    internal void AddSketch(Sketch.SketchRecord sketch) => _sketches[sketch.Id] = sketch;
+
+    internal bool HasSketch(Guid id) => _sketches.ContainsKey(id);
+
+    internal void RemoveSketch(Guid id) => _sketches.Remove(id);
+
+    // ADR-0033 item 4: an edit gives a new record with the same identifier.
+    internal void ReplaceSketch(Sketch.SketchRecord sketch)
+    {
+        if (!_sketches.ContainsKey(sketch.Id))
+            throw new InvalidOperationException($"No live sketch {sketch.Id} to replace.");
+        _sketches[sketch.Id] = sketch;
     }
 }

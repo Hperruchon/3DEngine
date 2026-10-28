@@ -59,8 +59,21 @@ public class EventPayloadSchemaTests(WebApplicationFactory<Program> factory)
         foreach (var move in new Command[] { new UndoCommand(), new UndoCommand(), new UndoCommand(), new RedoCommand() })
             Assert.Equal(CommandStatus.Applied, (await host.Session.Apply(move)).Status);
 
+        // A sketch with a name and one with none, a point, then two undos and a redo, so that
+        // each sketch event comes (ADR-0033 item 9, TASK-0100).
+        var named = await host.Session.Apply(new CreateSketchCommand { DatumId = Engine.Contracts.Sketch.Datums.XY.Id, SketchName = "S" });
+        Assert.True(named.Outputs.TryGet<Guid>("sketchId", out var sketch));
+        foreach (var step in new Command[]
+        {
+            new AddSketchPointCommand { SketchId = sketch, X = 1, Y = 2 },
+            new CreateSketchCommand { DatumId = Engine.Contracts.Sketch.Datums.YZ.Id },
+            new UndoCommand(), new UndoCommand(), new RedoCommand(),
+        })
+            Assert.Equal(CommandStatus.Applied, (await host.Session.Apply(step)).Status);
+
         Assert.Equal(
-            ["body.changed", "body.consumed", "body.created", "body.removed", "command.applied", "command.rejected"],
+            ["body.changed", "body.consumed", "body.created", "body.removed", "command.applied", "command.rejected",
+                "sketch.changed", "sketch.created", "sketch.removed"],
             records.Select(record => record.Kind).Distinct().Order(StringComparer.Ordinal));
         var problems = records.SelectMany(PayloadProblems).ToList();
         Assert.True(problems.Count == 0, string.Join("\n  ", problems));

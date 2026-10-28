@@ -45,10 +45,14 @@ internal sealed record SnapshotMessage(
     DateTime CreatedAt,
     DateTime UpdatedAt,
     string LengthUnit,
-    IReadOnlyList<SnapshotBodyEntry> Bodies);
+    IReadOnlyList<SnapshotBodyEntry> Bodies,
+    IReadOnlyList<SnapshotSketchEntry> Sketches);
 
 // ADR-0012 §6 and ADR-0028 item 7: each live body with its kind, its name and its visibility.
 internal sealed record SnapshotBodyEntry(Guid Handle, string Kind, string? Name, bool Visible);
+
+// ADR-0033 item 9, which amends ADR-0012 §6: each live sketch with its datum and its name.
+internal sealed record SnapshotSketchEntry(Guid SketchId, Guid DatumId, string? Name);
 
 internal static class SnapshotProjector
 {
@@ -64,5 +68,8 @@ internal static class SnapshotProjector
         LengthUnit: doc.LengthUnit,
         Bodies: doc.Bodies
             .Select(b => new SnapshotBodyEntry(b.Handle.Id, b.Kind, b.Name, b.Visible))
+            .ToArray(),
+        Sketches: doc.Sketches
+            .Select(s => new SnapshotSketchEntry(s.Id, s.DatumId, s.Name))
             .ToArray());
 }

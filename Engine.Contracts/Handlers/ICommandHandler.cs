@@ -69,12 +69,23 @@ public sealed record CommandHandlerResult(
     // by default: the command is a step.
     public HistoryMove History { get; init; } = HistoryMove.None;
 
+    // ADR-0033 item 8: the record of each sketch that the command creates, and the new
+    // record of each live sketch that it changes. The commit adds or replaces each one
+    // and emits sketch.created or sketch.changed after the body events. A handler
+    // changes only a live sketch, gives each one time, and keeps its identifier and its
+    // datum; the bus refuses a list that breaks the rule. Empty by default.
+    public IReadOnlyList<Sketch.SketchRecord> CreatedSketches { get; init; } = Array.Empty<Sketch.SketchRecord>();
+
+    public IReadOnlyList<Sketch.SketchRecord> ChangedSketches { get; init; } = Array.Empty<Sketch.SketchRecord>();
+
     public static CommandHandlerResult Success(
         Outputs outputs,
         IReadOnlyList<Diagnostic>? diagnostics = null,
         IReadOnlyList<BodyRecord>? createdBodies = null,
         IReadOnlyList<BodyHandle>? consumedBodies = null,
-        IReadOnlyList<BodyRecord>? changedBodies = null)
+        IReadOnlyList<BodyRecord>? changedBodies = null,
+        IReadOnlyList<Sketch.SketchRecord>? createdSketches = null,
+        IReadOnlyList<Sketch.SketchRecord>? changedSketches = null)
         => new(
             outputs,
             diagnostics ?? Array.Empty<Diagnostic>(),
@@ -83,6 +94,8 @@ public sealed record CommandHandlerResult(
         {
             ConsumedBodies = consumedBodies ?? Array.Empty<BodyHandle>(),
             ChangedBodies = changedBodies ?? Array.Empty<BodyRecord>(),
+            CreatedSketches = createdSketches ?? Array.Empty<Sketch.SketchRecord>(),
+            ChangedSketches = changedSketches ?? Array.Empty<Sketch.SketchRecord>(),
         };
 
     public static CommandHandlerResult Failure(

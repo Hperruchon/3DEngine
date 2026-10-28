@@ -4,12 +4,15 @@ namespace Engine.Core;
 
 // ADR-0031 item 3: the effect of one step on the live body set. Created holds each
 // record that the step made, Consumed each record that it removed, as it was before
-// the step, and Changed each record that it replaced, before and after.
+// the step, and Changed each record that it replaced, before and after. ADR-0033 item 10:
+// CreatedSketches and ChangedSketches do the same for the sketches of the step.
 internal sealed record Step(
     Guid CommandId,
     IReadOnlyList<BodyRecord> Created,
     IReadOnlyList<BodyRecord> Consumed,
-    IReadOnlyList<(BodyRecord Before, BodyRecord After)> Changed);
+    IReadOnlyList<(BodyRecord Before, BodyRecord After)> Changed,
+    IReadOnlyList<Engine.Contracts.Sketch.SketchRecord> CreatedSketches,
+    IReadOnlyList<(Engine.Contracts.Sketch.SketchRecord Before, Engine.Contracts.Sketch.SketchRecord After)> ChangedSketches);
 
 // ADR-0031 item 2: one history for the Document. The command bus owns it and changes
 // it only in its commit, so a rejected Undo or Redo leaves it as it was. The history

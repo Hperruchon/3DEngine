@@ -4,6 +4,7 @@ using System.Runtime.CompilerServices;
 using Engine.Contracts;
 using Engine.Contracts.Geometry;
 using Engine.Contracts.Handlers;
+using Engine.Contracts.Sketch;
 using Engine.Core.Geometry;
 
 namespace Engine.Core;
@@ -44,6 +45,10 @@ public sealed class CommandBus
     // one Document from its first command, so the history is complete, as the set
     // above is.
     private readonly StepHistory _history = new();
+
+    // ADR-0033 item 5: each sketch identifier that a commit of this bus created, as the
+    // set of handles above does for the bodies.
+    private readonly HashSet<Guid> _createdSketches = [];
 
     public CommandBus(
         Document document,
@@ -183,18 +188,25 @@ public sealed class CommandBus
             return Move(command, handler, handlerResult, stopwatch);
 
         RefuseWrongBodyLists(command, handlerResult);
+        RefuseWrongSketchLists(command, handlerResult);
 
         if (Journal is { } journal && Write(journal, command, handler, handlerResult, stopwatch) is { } refused)
             return refused;
 
-        // ADR-0031 item 3: the records before the commit, so that an Undo can give them back.
+        // ADR-0031 item 3 and ADR-0033 item 10: the records before the commit, so that an
+        // Undo can give them back.
         var step = new Step(
             command.CommandId,
             handlerResult.CreatedBodies,
             handlerResult.ConsumedBodies.Select(LiveRecord).ToList(),
-            handlerResult.ChangedBodies.Select(body => (LiveRecord(body.Handle), body)).ToList());
+            handlerResult.ChangedBodies.Select(body => (LiveRecord(body.Handle), body)).ToList(),
+            handlerResult.CreatedSketches,
+            handlerResult.ChangedSketches.Select(sketch => (LiveSketch(sketch.Id), sketch)).ToList());
         var committed = Commit(
-            command, handlerResult.CreatedBodies, handlerResult.ConsumedBodies, [], handlerResult.ChangedBodies,
+            command,
+            new Effect(
+                handlerResult.CreatedBodies, handlerResult.ConsumedBodies, [], handlerResult.ChangedBodies,
+                handlerResult.CreatedSketches, [], handlerResult.ChangedSketches),
             handlerResult.Outputs, handlerResult.Diagnostics, stopwatch);
         _history.Record(step);
         return committed;
@@ -202,6 +214,9 @@ public sealed class CommandBus
 
     private BodyRecord LiveRecord(BodyHandle handle)
         => _document.Bodies.First(body => body.Handle.Id == handle.Id);
+
+    private SketchRecord LiveSketch(Guid id)
+        => _document.Sketches.First(sketch => sketch.Id == id);
 
     // ADR-0031 items 4, 7 and 8: an Undo or a Redo. The bus makes the lists from the
     // step, so RefuseWrongBodyLists does not judge them: a reversal makes a consumed body
@@ -214,10 +229,11 @@ public sealed class CommandBus
         Stopwatch stopwatch)
     {
         if (handlerResult.History is not (HistoryMove.Undo or HistoryMove.Redo)
-            || handlerResult.CreatedBodies.Count + handlerResult.ConsumedBodies.Count + handlerResult.ChangedBodies.Count > 0)
+            || handlerResult.CreatedBodies.Count + handlerResult.ConsumedBodies.Count + handlerResult.ChangedBodies.Count
+                + handlerResult.CreatedSketches.Count + handlerResult.ChangedSketches.Count > 0)
             throw new InvalidOperationException(
                 $"The handler of '{command.Name}'@{command.SchemaVersion} gives the move {handlerResult.History} and a list of "
-                + "bodies, or a move that does not exist. ADR-0031 item 7: the bus computes the bodies of a move.");
+                + "bodies or sketches, or a move that does not exist. ADR-0031 item 7: the bus computes the changes of a move.");
 
         var undo = handlerResult.History == HistoryMove.Undo;
         if ((undo ? _history.NextUndo : _history.NextRedo) is not { } step)
@@ -233,15 +249,24 @@ public sealed class CommandBus
         if (undo)
         {
             var reversed = Commit(
-                command, step.Consumed, [], step.Created.Select(body => body.Handle).ToList(),
-                step.Changed.Select(change => change.Before).ToList(), outputs, handlerResult.Diagnostics, stopwatch);
+                command,
+                new Effect(
+                    step.Consumed, [], step.Created.Select(body => body.Handle).ToList(),
+                    step.Changed.Select(change => change.Before).ToList(),
+                    [], step.CreatedSketches.Select(sketch => sketch.Id).ToList(),
+                    step.ChangedSketches.Select(change => change.Before).ToList()),
+                outputs, handlerResult.Diagnostics, stopwatch);
             _history.Undone();
             return reversed;
         }
 
         var applied = Commit(
-            command, step.Created, step.Consumed.Select(body => body.Handle).ToList(), [],
-            step.Changed.Select(change => change.After).ToList(), outputs, handlerResult.Diagnostics, stopwatch);
+            command,
+            new Effect(
+                step.Created, step.Consumed.Select(body => body.Handle).ToList(), [],
+                step.Changed.Select(change => change.After).ToList(),
+                step.CreatedSketches, [], step.ChangedSketches.Select(change => change.After).ToList()),
+            outputs, handlerResult.Diagnostics, stopwatch);
         _history.Redone();
         return applied;
     }
@@ -326,25 +351,63 @@ public sealed class CommandBus
         }
     }
 
+    // ADR-0033 items 5 and 8: a created sketch has an identifier that this bus never
+    // gave a sketch, and a changed sketch is live, not created by the same command, in
+    // its list one time, with the same identifier and the same datum. A list that
+    // breaks a rule is a defect of the handler, so the bus throws before the commit.
+    private void RefuseWrongSketchLists(Command command, CommandHandlerResult result)
+    {
+        var created = new HashSet<Guid>();
+        foreach (var sketch in result.CreatedSketches)
+        {
+            if (_createdSketches.Contains(sketch.Id) || !created.Add(sketch.Id))
+                throw new InvalidOperationException(
+                    $"The handler of '{command.Name}'@{command.SchemaVersion} creates sketch {sketch.Id}, which this bus "
+                    + "created before or which is in its list two times. ADR-0033 item 5: an identifier is given one time.");
+        }
+
+        var changed = new HashSet<Guid>();
+        foreach (var sketch in result.ChangedSketches)
+        {
+            var live = _document.Sketches.FirstOrDefault(candidate => candidate.Id == sketch.Id);
+            if (live is null || created.Contains(sketch.Id) || !changed.Add(sketch.Id) || live.DatumId != sketch.DatumId)
+                throw new InvalidOperationException(
+                    $"The handler of '{command.Name}'@{command.SchemaVersion} changes sketch {sketch.Id}, which is not "
+                    + "live, which the same command creates, which is in its list two times, or whose datum it changes. "
+                    + "ADR-0033 item 8 permits a change of a live sketch, one time, on the same datum.");
+        }
+    }
+
+    // The changes of one commit to the live bodies and the live sketches. Only an Undo
+    // removes a body or a sketch.
+    private sealed record Effect(
+        IReadOnlyList<BodyRecord> Created,
+        IReadOnlyList<BodyHandle> Consumed,
+        IReadOnlyList<BodyHandle> Removed,
+        IReadOnlyList<BodyRecord> Changed,
+        IReadOnlyList<SketchRecord> CreatedSketches,
+        IReadOnlyList<Guid> RemovedSketches,
+        IReadOnlyList<SketchRecord> ChangedSketches);
+
     // 4. Commit: compute each Seq, append the log, register the created bodies,
-    // remove the consumed and the removed bodies. The log append adds one to the
-    // version (ADR-0020). All events of one commit share consecutive Seqs, in the
-    // order of ADR-0031 item 5: command.applied, each body.created, each
-    // body.consumed, each body.removed, each body.changed. Only an Undo removes.
+    // remove the consumed and the removed bodies, then the same for the sketches. The
+    // log append adds one to the version (ADR-0020). All events of one commit share
+    // consecutive Seqs, in the order of ADR-0031 item 5 and ADR-0033 item 9:
+    // command.applied, each body.created, each body.consumed, each body.removed, each
+    // body.changed, each sketch.created, each sketch.removed, each sketch.changed.
     // A subscriber that draws between two events therefore never sees fewer
     // bodies than the result has. Nothing here awaits, therefore nothing here
     // stops in the middle.
     private (CommandResult, IReadOnlyList<EventRecord>) Commit(
         Command command,
-        IReadOnlyList<BodyRecord> created,
-        IReadOnlyList<BodyHandle> consumed,
-        IReadOnlyList<BodyHandle> removed,
-        IReadOnlyList<BodyRecord> changed,
+        Effect effect,
         Outputs outputs,
         IReadOnlyList<Diagnostic> diagnostics,
         Stopwatch stopwatch)
     {
-        var count = 1 + created.Count + consumed.Count + removed.Count + changed.Count;
+        var (created, consumed, removed, changed) = (effect.Created, effect.Consumed, effect.Removed, effect.Changed);
+        var count = 1 + created.Count + consumed.Count + removed.Count + changed.Count
+            + effect.CreatedSketches.Count + effect.RemovedSketches.Count + effect.ChangedSketches.Count;
         var appliedSeq = TakeSeqs(count);
         var events = new List<EventRecord>(count)
         {
@@ -402,6 +465,40 @@ public sealed class CommandBus
                 ["bodyId"] = body.Handle.Id,
                 ["name"] = body.Name,
                 ["visible"] = body.Visible,
+            }));
+        }
+
+        // ADR-0033 item 9: a client reads the content of a sketch with GetSketch.
+        foreach (var sketch in effect.CreatedSketches)
+        {
+            _document.AddSketch(sketch);
+            _createdSketches.Add(sketch.Id);
+            lastSeq++;
+            events.Add(Event(lastSeq, command, "sketch.created", new Dictionary<string, object?>
+            {
+                ["sketchId"] = sketch.Id,
+                ["datumId"] = sketch.DatumId,
+                ["name"] = sketch.Name,
+            }));
+        }
+
+        foreach (var id in effect.RemovedSketches)
+        {
+            _document.RemoveSketch(id);
+            lastSeq++;
+            events.Add(Event(lastSeq, command, "sketch.removed", new Dictionary<string, object?>
+            {
+                ["sketchId"] = id,
+            }));
+        }
+
+        foreach (var sketch in effect.ChangedSketches)
+        {
+            _document.ReplaceSketch(sketch);
+            lastSeq++;
+            events.Add(Event(lastSeq, command, "sketch.changed", new Dictionary<string, object?>
+            {
+                ["sketchId"] = sketch.Id,
             }));
         }
 
