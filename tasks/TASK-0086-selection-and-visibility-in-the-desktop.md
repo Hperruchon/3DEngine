@@ -96,3 +96,11 @@ is a command of the session, and the camera frames the bodies only when the firs
   and the nearest visible body that it hits (Möller and Trumbore, in double precision). Eight tests; a point that
   the camera projects lies on the ray of its pixel, within 1e-4. Four injections each failed (y not flipped, a
   hidden body picked, the first hit and not the nearest, a hit behind the origin).
+- 2026-10-28: the desktop (ADR-0029 items 1 to 3 and 6 to 8). `BodyActions` keeps the selection and sends
+  `SetBodyVisibility` and `RenameBody` to the session; `SessionBodies` reads `body.changed`, keeps the triangles
+  of each body for the pick, and keeps a hidden body out of the scene and out of the framed box; the highlight
+  pipeline (`highlight.frag`) draws the selected body again; the camera frames only when the first visible body
+  comes; the panel rows select, and the selected body has a name field, Rename, Hide or Show, beside Show all.
+  16 new tests, with the comparison of the logs of a touch script and a mouse script. Four injections each
+  failed their tests (a hide at a point that hides the selection, a frame at each change, a row with no action,
+  a hidden body that stays selected). No test with no GPU reads `SessionBodies`; the visual check reads it.

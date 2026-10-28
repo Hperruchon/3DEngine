@@ -22,7 +22,7 @@ public class PickingTests
             positions.AddRange([x, y, z]);
 
         // The corners are numbered by the bits x, y, z (4, 2, 1).
-        int[] faces = [0, 1, 3, 0, 3, 2, 4, 6, 7, 4, 7, 5, 0, 4, 5, 0, 5, 1, 2, 3, 7, 2, 7, 6, 0, 2, 6, 0, 6, 4, 1, 5, 7, 1, 7, 3];
+        uint[] faces = [0, 1, 3, 0, 3, 2, 4, 6, 7, 4, 7, 5, 0, 4, 5, 0, 5, 1, 2, 3, 7, 2, 7, 6, 0, 2, 6, 0, 6, 4, 1, 5, 7, 1, 7, 3];
         return new PickBody(id, [.. positions], faces, visible);
     }
 

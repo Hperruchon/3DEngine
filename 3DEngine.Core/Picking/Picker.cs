@@ -8,7 +8,7 @@ public readonly record struct Ray((double X, double Y, double Z) Origin, (double
 // The triangles of one body, as the desktop holds them for a pick: the positions of the
 // tessellation in double precision, three values for each vertex, and three indices for each
 // triangle. A hidden body is not picked (ADR-0029 item 3).
-public sealed record PickBody(Guid Id, double[] Positions, int[] Indices, bool Visible);
+public sealed record PickBody(Guid Id, double[] Positions, uint[] Indices, bool Visible);
 
 // The body that a ray hits first, and the distance from the origin of the ray to the hit.
 public readonly record struct PickHit(Guid Id, double Distance);
@@ -96,7 +96,7 @@ public static class Picker
         return t > Epsilon ? t : null;
     }
 
-    private static (double X, double Y, double Z) Vertex(PickBody body, int index)
+    private static (double X, double Y, double Z) Vertex(PickBody body, uint index)
         => (body.Positions[3 * index], body.Positions[3 * index + 1], body.Positions[3 * index + 2]);
 
     private static (double X, double Y, double Z) Minus((double X, double Y, double Z) a, (double X, double Y, double Z) b)
