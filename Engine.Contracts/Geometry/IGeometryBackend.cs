@@ -11,4 +11,8 @@ public interface IGeometryBackend
     // Returns the capability interface implementation if this backend
     // implements it, or null. No silent fallbacks (ADR-0001 §4).
     T? TryGet<T>() where T : class;
+
+    // ADR-0015 item 5: the name and the version that each log entry records. No
+    // default, so each backend states its own name.
+    BackendIdentity Identity { get; }
 }

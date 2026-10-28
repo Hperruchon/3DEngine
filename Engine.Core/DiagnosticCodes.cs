@@ -20,4 +20,7 @@ public static class DiagnosticCodes
 
     // ADR-0028 item 3: a name of a body that breaks the rules of a name.
     public const string ValBodyNameInvalid = "E-VAL-BODY-NAME-INVALID";
+
+    // ADR-0015 item 6: a log entry of another backend than the backend of the replay.
+    public const string IoBackendMismatch = "E-IO-BACKEND-MISMATCH";
 }

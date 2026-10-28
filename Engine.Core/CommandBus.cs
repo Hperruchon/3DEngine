@@ -228,7 +228,7 @@ public sealed class CommandBus
             }),
         };
 
-        _document.AppendCommand(command);
+        _document.AppendCommand(new LogEntry(command, _backend.Identity));
 
         var lastSeq = appliedSeq;
         foreach (var body in handlerResult.CreatedBodies)

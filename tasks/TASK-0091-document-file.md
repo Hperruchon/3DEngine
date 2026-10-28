@@ -5,7 +5,7 @@ status: Active
 phase: P8a
 opened: 2026-10-28
 depends-on: [0088]
-governed-by: [0001, 0004, 0005, 0006, 0007, 0008, 0010, 0012, 0014, 0015, 0016, 0018, 0019, 0020, 0021, 0024, 0025, 0028, 0029]
+governed-by: [0001, 0004, 0005, 0006, 0007, 0008, 0010, 0012, 0013, 0014, 0015, 0016, 0018, 0019, 0020, 0021, 0024, 0025, 0028, 0029]
 writes:
   create:
     - tasks/TASK-0091-document-file.md
@@ -25,6 +25,7 @@ writes:
     - Engine.Geometry.Manifold/ManifoldGeometryBackend.cs
     - Engine.Api.Http/EngineHost.cs
     - Engine.Api.Http/WebSockets/WireMessage.cs
+    - Engine.Api.Http/Endpoints/SchemaDiagnosticsEndpoint.cs
     - Engine.Api.Http.Server/**
     - Engine.Tests/Cli/**
     - Engine.Tests/Commands/**
@@ -115,3 +116,10 @@ rebuilds the same Document with the backend that each entry records.
 
 - 2026-10-28: opened after TASK-0088 (v0.90). The first commit holds ADR-0015, accepted by the owner, and the text
   changes of ADR-0010 and ADR-0012 that it amends.
+- 2026-10-28: the contract (ADR-0015 items 5 to 7). `BackendIdentity` and `LogEntry` in `Engine.Contracts`;
+  `Document.Log` holds entries, `Document.LengthUnit` is the millimetre and refuses another unit, and
+  `IGeometryBackend.Identity` has no default: `null`, `managed`, `manifold` with its native version, and `test`
+  for the test backends. The bus writes the identity of its backend into each entry, `Replay.ReplayLog` of entries
+  refuses another backend with `E-IO-BACKEND-MISMATCH`, and the snapshot gives `lengthUnit`. Five new tests; three
+  injections each failed one (the bus records another backend, the replay checks no name, the replay checks the
+  version too). `SchemaDiagnosticsEndpoint.cs` joined the write set.

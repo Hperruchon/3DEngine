@@ -31,7 +31,7 @@ public class ReplayTests
 
         Assert.Equal(originalDoc.Log.Count, replay.Document.Log.Count);
         for (var i = 0; i < originalDoc.Log.Count; i++)
-            Assert.Equal(originalDoc.Log[i].CommandId, replay.Document.Log[i].CommandId);
+            Assert.Equal(originalDoc.Log[i].Command.CommandId, replay.Document.Log[i].Command.CommandId);
 
         Assert.Equal(originalDoc.Version, replay.Document.Version);
     }

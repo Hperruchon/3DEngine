@@ -11,6 +11,9 @@ public sealed class NullGeometryBackend : IGeometryBackend
 {
     public static NullGeometryBackend Instance { get; } = new();
 
+    // ADR-0015 item 5: a backend with no capability has its own name in a log.
+    public BackendIdentity Identity { get; } = new("null", "1");
+
     public BackendCapabilities Capabilities => BackendCapabilities.None;
 
     public T? TryGet<T>() where T : class => null;
