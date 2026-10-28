@@ -1,7 +1,7 @@
 ---
 id: 0101
 title: The desktop draws a sketch of lines and adds its constraints, by touch and by mouse
-status: Active
+status: Done
 phase: K2b
 opened: 2026-10-28
 depends-on: [0100]
@@ -85,9 +85,32 @@ mouse, and the log holds the same commands for both.
       a ray parallel to the plane.
 - [x] Each of the five kinds of constraint can be added from the window of the sketch, and its residual shows.
 - [x] Each new test fails under an injection that breaks its rule.
-- [ ] The visual check: the owner accepts a picture of a profile drawn in the desktop with its constraints.
+- [x] The visual check: the owner accepts a picture of a profile drawn in the desktop with its constraints.
 - [x] A clean build (`--no-incremental`) gives zero errors and zero warnings.
-- [ ] Continuous integration passes on `ubuntu-latest`, `windows-latest` and `macos-latest`.
+- [x] Continuous integration passes on `ubuntu-latest`, `windows-latest` and `macos-latest`.
+
+## Outcome
+
+Status: Done · v0.101 · the commit that carries this block.
+
+## Method
+
+**Mechanical.** The intent and its scripts in the parity test, the second map of the settings, the ray to a plane,
+the pad of one to three fields, the actions of the panel, and the commands of `SketchActions` in the form of
+`BodyActions`.
+
+**Judgement.** The tool calls an editor that the host gives (`ISketchEditor`), so the state machine stays in
+`3DEngine.Core` with no reference to a command, and a test gives it a fake editor. `SketchActions` reads the record
+of the active sketch with `GetSketch` at each tap, so two taps of one frame see each other. A rounded position is
+a mantissa over a power of 10, so that 0.3 is the double nearest to 0.3. The origin has the label O. A tap on the
+first point of a chain of one line only ends the chain, because a line back would draw that line again. A pad of
+the sketch opens to the left of the window of the sketch, and each pad now takes its place each time it opens.
+
+**Weakest.** The first click into the window, before any motion of the mouse, reached Dear ImGui at a wrong place
+two times in the visual check (R-0043). The line of buttons that stops before the scroll bar has no test; the
+picture of the owner shows it. The panel image test counts 60 % dark pixels, not 70 %. No touch screen exists, so
+the touch path is proven by synthetic samples only.
+
 
 ## Notes for the implementer
 
@@ -112,3 +135,4 @@ mouse, and the log holds the same commands for both.
   kinds from the window. It showed two faults of display: a row of a constraint was cut, and a button went under
   the scroll bar. The window of the sketch is now 480 pixels wide, and a line of buttons stops before the scroll
   bar. The log held no warning with synchronization validation on.
+- 2026-10-28: the owner accepted the picture. Closed at v0.101. CI run 40775886063 passed on the three runners.

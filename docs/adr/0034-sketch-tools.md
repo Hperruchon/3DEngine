@@ -16,7 +16,7 @@ affects:
   - 3DEngine/Ui/**
   - 3DEngine/SketchActions.cs
   - 3DEngine/SketchOverlay.cs
-enforced-by: 3DEngine.Tests/SketchToolTests.cs (TASK-0101 creates it)
+enforced-by: 3DEngine.Tests/SketchToolTests.cs
 ---
 
 # ADR-0034 — The sketch tools of the desktop
@@ -208,3 +208,5 @@ engine does not change. The tool is a pure state machine, so a test reads it wit
 
 - 2026-10-28 · TASK-0101 · Proposed, with the questions Q1 to Q6 for the owner.
 - 2026-10-28 · TASK-0101 · The owner accepted the record on 2026-10-28 with Q1 to Q6 A, and no change.
+- 2026-10-28 · TASK-0101 · The window of the sketch is 480 pixels wide, and the origin has the label O; the points
+  are P1, P2 and onward. A tap on the first point of a chain of one line ends the chain and adds no line.
