@@ -124,3 +124,6 @@ person sees.
   `E-API-OPEN-PENDING`, which `docs/diagnostics.md` registers. The write set gains `Engine.Core/DiagnosticCodes.cs`
   `Engine.Api.Http/Endpoints/CommandsEndpoint.cs` and `SchemaDiagnosticsEndpoint.cs`, so `governed-by` gains ADR-0013. One new test case and two changed; four injections each
   failed a test.
+- 2026-10-29: V32, V33 and V34 are corrected, with 4 new test cases. A pad that names a selection closes when the
+  selection changes, the text fields are disabled while the pad is open, and a second apply waits for the end of the
+  pad. Six injections each failed a test.

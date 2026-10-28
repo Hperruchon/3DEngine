@@ -207,4 +207,25 @@ public sealed class SketchWindowUiTests
         ui.OpenNextPointPad(chainOpen: true);
         Assert.Equal(["dx", "dy"], ui.Pad!.Fields.Select(field => field.Name));
     }
+
+    // V32 of the second codebase review of 2026-10-28: a pad of a sketch that names a selection
+    // closes when the selection changes, and the pad of the next point, which names none, stays.
+    [Fact]
+    public void A_Pad_Of_The_Selection_Closes_When_The_Selection_Changes()
+    {
+        var both = Panel(A, B);
+        using var ui = Opened(both);
+        Tap(ui, DeviceKind.Touch, DesktopUi.SketchItem("Distance"), both);
+        Assert.NotNull(ui.Pad);
+
+        Step(ui, Panel(A, B));
+        Assert.NotNull(ui.Pad);
+        Step(ui, Panel(A));
+        Assert.Null(ui.Pad);
+
+        ui.OpenNextPointPad(chainOpen: false);
+        Step(ui, Panel(B));
+        Step(ui, Panel());
+        Assert.NotNull(ui.Pad);
+    }
 }
