@@ -101,3 +101,8 @@ Each gate of the review binds what the compiler or MSBuild binds, and checks eac
   it. A product task after the last review whose row does not name it is now a problem of the gate
   (`UnnamedProductTasks`), so a milestone cannot become an entry with no trace. The phase still comes from the task
   file. Two tests; the form of the review (the row of P8a with no TASK-0091) failed the gate program.
+- 2026-10-28: T63. Each project reference must resolve, from the folder of its project, to a project file that the
+  dependency gate reads, so a reference into `bin/` or `obj/`, outside the repository or to no file is refused. Five
+  tests. A probe with `shim/bin/Engine.Contracts.csproj` and a reference to it from `Engine.Core` failed the new
+  check in the gate program. The determinism gate needs no change: the call of the shim cannot reach the log path
+  when the reference is refused.
