@@ -334,6 +334,9 @@ new forms: a test framework of xUnit in a file that is not a gate file makes eac
 count (T62, high), a project under a `bin/` folder hides from the dependency and determinism gates (T63), the gate
 of the UI library reads text (T64), and T65 to T67. T31 is worse through T62. TASK-0088 holds T62, and TASK-0089
 holds T63 to T67. T4, T5, T7, T10, T13, T17, T23 and T25 stay.
+Progress 2026-10-28: TASK-0088 corrected T62. The gate refuses in each test project each point where a file can
+give xUnit a framework, a runner, a sink, an order or a discoverer, and a product type with a name of xUnit where
+a test sees it. T31 stays open in part: the three gates that run engine code stay in the test process.
 
 ### R-0033 · Seven findings of the third codebase review in the engine and the hosts have no task
 - class: debt
