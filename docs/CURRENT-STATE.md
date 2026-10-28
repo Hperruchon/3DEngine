@@ -2420,3 +2420,28 @@ New tests: 34. The test list holds 574 (475 in `Engine.Tests`, 75 in `3DEngine.T
 `3DEngine.ImageTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
 entries: 14 of 15. New diagnostic codes: none. Since the review of v0.76, 2 product milestones and 10 entries
 followed it.
+
+## v0.87 — A body has a name and a visibility that commands change (R8a, TASK-0085)
+
+The owner decided the defaults R8-Q1 to R8-Q8 on 2026-10-27 and accepted the contract of ADR-0028 on 2026-10-28,
+because it changes the public shape of `Engine.Contracts`. ADR-0028 amends ADR-0012 §3 and §6 and ADR-0021 item 5.
+
+**The change.**
+
+- `BodyRecord` gains `Name` and `Visible`; `CommandHandlerResult` gains `ChangedBodies`. The bus refuses a
+  wrong list and gives `body.changed { bodyId, name, visible }` after each `body.consumed` of a commit.
+- The commands `RenameBody` and `SetBodyVisibility` and the query `GetBodyInfo`. A name has 1 to 128 UTF-16 units
+  and no control character, and an empty name clears it; a refused name gives `E-VAL-BODY-NAME-INVALID`.
+- `Translate` and `Subtract` give their result the name and the visibility of the source and of the minuend.
+- `body.created`, the snapshot, `/schema/events` and `/schema/diagnostics` give the new fields and the new code.
+
+**Proof.** 32 new tests, and six injections each failed their tests. The replay fixture renames and hides its box,
+and two replays give the same names and visibilities. An injected host file that names "RenameBody" fails
+`DispatchSurfaceGateTests`, so the exception of ADR-0028 item 9 does not reach the hosts.
+
+**What stays.** The desktop does not show the name or the visibility yet; R8b does.
+
+New tests: 32. The test list holds 606 (507 in `Engine.Tests`, 75 in `3DEngine.Tests`, 24 in
+`3DEngine.ImageTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
+entries: 14 of 15. New diagnostic codes: `E-VAL-BODY-NAME-INVALID`. Since the review of v0.76, 3 product milestones
+and 11 entries followed it.

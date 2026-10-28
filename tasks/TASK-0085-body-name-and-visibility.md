@@ -1,7 +1,7 @@
 ---
 id: 0085
 title: A body has a name and a visibility in the engine
-status: Active
+status: Done
 phase: R8a
 opened: 2026-10-28
 depends-on: [0084]
@@ -84,11 +84,37 @@ snapshot give, and that a replay rebuilds.
 
 ## Acceptance criteria
 
-- [ ] Each new test fails before its correction, or an injection shows that it can fail.
-- [ ] A replay of a log with a rename and a hide gives the same names, visibilities and events.
-- [ ] The code `E-VAL-BODY-NAME-INVALID` is in `docs/diagnostics.md`.
-- [ ] A clean build (`--no-incremental`) gives zero errors and zero warnings.
-- [ ] Continuous integration passes on `ubuntu-latest`, `windows-latest` and `macos-latest`.
+- [x] Each new test fails before its correction, or an injection shows that it can fail.
+- [x] A replay of a log with a rename and a hide gives the same names, visibilities and events.
+- [x] The code `E-VAL-BODY-NAME-INVALID` is in `docs/diagnostics.md`.
+- [x] A clean build (`--no-incremental`) gives zero errors and zero warnings.
+- [ ] Continuous integration passes on `ubuntu-latest`, `windows-latest` and `macos-latest`. The merge
+      records the run.
+
+## Outcome
+
+Status: Done · v0.87 · the commit that carries this block.
+
+Each body has a name and a visibility in the engine. `RenameBody` and `SetBodyVisibility` change them,
+`GetBodyInfo` reads them, `body.changed` and the snapshot give them, `Translate` and `Subtract` pass them
+on, and a replay rebuilds them. A hidden body is a body for each query and command.
+
+## Method
+
+**Mechanical.** 32 new tests, with each theory case counted. Six injections each failed their tests: the
+bus with no check of the changed list (5 cases), `body.changed` before `body.consumed` (1), no check of a
+name (5), a trimmed name (1), a `Translate` that loses the name (1), and a snapshot that loses it (1). An
+injected host file that names "RenameBody" failed `DispatchSurfaceGateTests`. The replay fixture renames and
+hides its box, and the replay gate compares the name and the visibility.
+
+**Judgement.** The command record calls its field `NewName`, because `Command.Name` is the name of the
+command. The rule of a name comes before the search for the body, so the command line, whose Document is
+always empty, still reports a refused name. The query returns `BodyInfo`, a record of `Engine.Core`, and no
+new type enters `Engine.Contracts`. A field of an event payload with `Required: false` can be null, and a
+test holds that a null in a required field is a problem.
+
+**Weakest.** A command that sets the value that the body has is applied and gives an event (ADR-0028 item
+2), so a client that renames on each key press fills the log. The desktop shows nothing yet; R8b does.
 
 ## Notes for the implementer
 
@@ -108,3 +134,5 @@ snapshot give, and that a replay rebuilds.
   a trimmed name, a Translate that loses the name, a snapshot that loses it). The replay fixture renames and
   hides the box. An injected host file that names "RenameBody" fails `DispatchSurfaceGateTests`.
   `SchemaDiagnosticsEndpoint.cs` and `ReplayDeterminismGateTests.cs` joined the write set.
+- 2026-10-28: closed after a clean build and a full local run of 606 tests (507 in `Engine.Tests`, 75 in
+  `3DEngine.Tests`, 24 in `3DEngine.ImageTests`).
