@@ -109,3 +109,5 @@ person sees.
 - 2026-10-28: E78, E79, E80, E82, E83 and E84 are corrected, with 10 new test cases. Nine injections each failed a
   test. The test of E83 asserts on Windows only, because .NET takes no lock on Linux and macOS for a write with the
   share of a read.
+- 2026-10-28: V35, V36, V38 and V39 are corrected, with 10 new test cases. Five injections each failed a test. V39 is
+  confirmed by reading only; its test holds the release of each object that exists.

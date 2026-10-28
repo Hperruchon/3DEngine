@@ -66,56 +66,82 @@ public sealed unsafe class Swapchain : IDisposable
         };
 
         // The depth image exists before the swapchain, so a failed creation frees it
-        // (finding V18 of the codebase review of 2026-10-28, TASK-0090).
+        // (finding V18 of the codebase review of 2026-10-28, TASK-0090). One try covers the
+        // whole constructor: until TASK-0099 a throw after the swapchain existed leaked the
+        // handle, the depth image and the views (finding V39 of the second codebase review
+        // of 2026-10-28). The driver retired the old swapchain at the creation, so the retry
+        // of the Presenter with no old swapchain stays correct.
+        _swapChainImageViews = [];
+        Framebuffers = [];
         try
         {
             device.DeviceApi.vkCreateSwapchainKHR(&createInfo, null, out Handle).CheckResult();
+
+            // 3.x returns no span. Ask for the count, then fill an array of that size.
+            device.DeviceApi.vkGetSwapchainImagesKHR(Handle, out uint swapChainImageCount).CheckResult();
+            VkImage[] swapChainImages = new VkImage[swapChainImageCount];
+            device.DeviceApi.vkGetSwapchainImagesKHR(Handle, swapChainImages).CheckResult();
+            _swapChainImageViews = new VkImageView[swapChainImages.Length];
+            Framebuffers = new VkFramebuffer[swapChainImages.Length];
+
+            for (int i = 0; i < swapChainImages.Length; i++)
+            {
+                var viewCreateInfo = new VkImageViewCreateInfo(
+                    swapChainImages[i],
+                    VkImageViewType.Image2D,
+                    surfaceFormat.format,
+                    VkComponentMapping.Rgba,
+                    new VkImageSubresourceRange(VkImageAspectFlags.Color, 0, 1, 0, 1)
+                    );
+
+                Device.DeviceApi.vkCreateImageView(&viewCreateInfo, null, out _swapChainImageViews[i]).CheckResult();
+                Device.DeviceApi.vkCreateFramebuffer(RenderPass, new[] { _swapChainImageViews[i], Depth.View }, Extent, 1u, out Framebuffers[i]).CheckResult();
+            }
         }
         catch
         {
-            Depth.Dispose();
+            Dispose();
             throw;
-        }
-        // 3.x returns no span. Ask for the count, then fill an array of that size.
-        device.DeviceApi.vkGetSwapchainImagesKHR(Handle, out uint swapChainImageCount).CheckResult();
-        VkImage[] swapChainImages = new VkImage[swapChainImageCount];
-        device.DeviceApi.vkGetSwapchainImagesKHR(Handle, swapChainImages).CheckResult();
-        _swapChainImageViews = new VkImageView[swapChainImages.Length];
-        Framebuffers = new VkFramebuffer[swapChainImages.Length];
-
-        for (int i = 0; i < swapChainImages.Length; i++)
-        {
-            var viewCreateInfo = new VkImageViewCreateInfo(
-                swapChainImages[i],
-                VkImageViewType.Image2D,
-                surfaceFormat.format,
-                VkComponentMapping.Rgba,
-                new VkImageSubresourceRange(VkImageAspectFlags.Color, 0, 1, 0, 1)
-                );
-
-            Device.DeviceApi.vkCreateImageView(&viewCreateInfo, null, out _swapChainImageViews[i]).CheckResult();
-            Device.DeviceApi.vkCreateFramebuffer(RenderPass, new[] { _swapChainImageViews[i], Depth.View }, Extent, 1u, out Framebuffers[i]);
         }
     }
 
     public void Dispose()
+        => Release(
+            Framebuffers,
+            _swapChainImageViews,
+            Handle,
+            framebuffer => Device.DeviceApi.vkDestroyFramebuffer(framebuffer),
+            view => Device.DeviceApi.vkDestroyImageView(view),
+            Depth.Dispose,
+            swapchain => Device.DeviceApi.vkDestroySwapchainKHR(swapchain));
+
+    // Destroys each object that exists, so that a constructor that failed at any step frees
+    // what it made: each framebuffer before its view, the depth image, then the swapchain.
+    public static void Release(
+        IReadOnlyList<VkFramebuffer> framebuffers,
+        IReadOnlyList<VkImageView> views,
+        VkSwapchainKHR handle,
+        Action<VkFramebuffer> destroyFramebuffer,
+        Action<VkImageView> destroyView,
+        Action disposeDepth,
+        Action<VkSwapchainKHR> destroySwapchain)
     {
-        for (int i = 0; i < _swapChainImageViews.Length; i++)
+        foreach (var framebuffer in framebuffers)
         {
-            Device.DeviceApi.vkDestroyImageView(_swapChainImageViews[i]);
+            if (framebuffer != VkFramebuffer.Null)
+                destroyFramebuffer(framebuffer);
         }
 
-        for (int i = 0; i < Framebuffers.Length; i++)
+        foreach (var view in views)
         {
-            Device.DeviceApi.vkDestroyFramebuffer(Framebuffers[i]);
+            if (view != VkImageView.Null)
+                destroyView(view);
         }
 
-        Depth.Dispose();
+        disposeDepth();
 
-        if (Handle != VkSwapchainKHR.Null)
-        {
-            Device.DeviceApi.vkDestroySwapchainKHR(Handle);
-        }
+        if (handle != VkSwapchainKHR.Null)
+            destroySwapchain(handle);
     }
 
     private VkExtent2D ChooseSwapExtent(VkSurfaceCapabilitiesKHR capabilities)

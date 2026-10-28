@@ -5,9 +5,30 @@ using Vortice.Vulkan;
 
 namespace ThreeDEngine.Tests;
 
-// Findings V18 and V30 of the codebase review of 2026-10-28 (TASK-0090), with no GPU.
+// Findings V18 and V30 of the codebase review of 2026-10-28 (TASK-0090), and V39 of the second
+// codebase review of that date (TASK-0099), with no GPU.
 public class RemakeAndPitchTests
 {
+    // V39: a constructor that failed after the swapchain existed leaked the handle, the depth
+    // image and the views. The release frees each object that exists, and no other.
+    [Fact]
+    public void The_Release_Of_A_Swapchain_Frees_Each_Object_That_Exists()
+    {
+        var freed = new List<string>();
+
+        Swapchain.Release(
+            [new VkFramebuffer(7), VkFramebuffer.Null],
+            [new VkImageView(5), new VkImageView(6), VkImageView.Null],
+            new VkSwapchainKHR(42),
+            framebuffer => freed.Add($"framebuffer {framebuffer.Handle}"),
+            view => freed.Add($"view {view.Handle}"),
+            () => freed.Add("depth"),
+            swapchain => freed.Add($"swapchain {swapchain.Handle}"));
+        Swapchain.Release([], [], VkSwapchainKHR.Null, _ => freed.Add("no framebuffer"), _ => freed.Add("no view"), () => freed.Add("depth of a failed creation"), _ => freed.Add("no swapchain"));
+
+        Assert.Equal(["framebuffer 7", "view 5", "view 6", "depth", "swapchain 42", "depth of a failed creation"], freed);
+    }
+
     // V18: after a failed remake the driver retired the old swapchain, so a retry gives none.
     [Fact]
     public void A_Retry_After_A_Failed_Remake_Gives_No_Old_Swapchain()

@@ -174,6 +174,29 @@ public class CameraTests
         Assert.True(double.IsFinite(camera.Distance));
     }
 
+    // V38 of the second codebase review of 2026-10-28: the yaw and the target accepted NaN, and
+    // each view was NaN.
+    [Theory]
+    [InlineData(double.NaN)]
+    [InlineData(double.PositiveInfinity)]
+    [InlineData(double.NegativeInfinity)]
+    public void The_Camera_Keeps_A_Finite_Yaw_And_Target(double value)
+    {
+        var set = new Camera { YawDegrees = value };
+        var orbited = new Camera { YawDegrees = 30 };
+        orbited.Orbit(value, 0);
+        var targeted = new Camera { Target = (1, 2, 3) };
+
+        Assert.Throws<ArgumentOutOfRangeException>(() => targeted.Target = (value, 0, 0));
+        Assert.Throws<ArgumentOutOfRangeException>(() => targeted.Target = (0, 0, value));
+        Assert.Equal((1.0, 2.0, 3.0), targeted.Target);
+        foreach (var camera in new[] { set, orbited, targeted })
+        {
+            var view = camera.View();
+            Assert.True(float.IsFinite(view.M11) && float.IsFinite(view.M13) && float.IsFinite(view.M41) && float.IsFinite(view.M43), $"The view is {view}.");
+        }
+    }
+
     // V22: with a near plane of 1 and a far plane of 1.5 the distance was 2, beyond the far
     // plane; a box of 3,000 units put the eye inside the body. Frame now says so.
     [Theory]
