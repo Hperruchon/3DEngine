@@ -1,7 +1,7 @@
 ---
 id: 0091
 title: The document file in the engine and the server
-status: Done
+status: Active
 phase: P8a
 opened: 2026-10-28
 depends-on: [0088]
@@ -122,7 +122,7 @@ document is in memory only, and the server says so.
 ## Method
 
 **Mechanical.** 31 new tests, with each theory case counted: 5 of the backend in the log, 23 of the file (the full
-scene on the native backend among them), and 3 process tests of the server. Fifteen injections each failed a test;
+scene on the native backend among them), and 3 process tests of the server. Thirteen injections each failed a test;
 two first passed and made two tests stronger. A process test kills the server after its results, and a second
 server opens the file to the same renamed body. Run 40671505395 passed on the three runners with the file code. A
 command with a file took 0.07 to 0.08 ms on this computer, and 0.001 to 0.009 ms with no file.
@@ -179,3 +179,7 @@ so the torn last line is tested with lines that a test writes. The desktop has n
   the server says so on its error output; a process test holds the line, and an injection that removes it failed
   it. Closed after a clean build and a full local run of 693 tests (564 in `Engine.Tests`, 89 in `3DEngine.Tests`,
   40 in `3DEngine.ImageTests`). Register entry R-0025 is closed.
+- 2026-10-28: correction before the merge: the count of injections of the task is 13 (3 of the contract, 7 of the
+  file, 3 of the server), not 15; the Outcome and the ledger entry v0.91 give 13.
+- 2026-10-28: correction before the merge: the count of injections of the task is 13 (3 of the contract, 7 of the
+  file, 3 of the server), not 15; the Outcome and the ledger entry v0.91 give 13.
