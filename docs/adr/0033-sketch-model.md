@@ -1,12 +1,12 @@
 ---
 id: 0033
 title: The sketch model in the engine
-status: Proposed
+status: Accepted
 topic: Contracts, sketch
 date: 2026-10-28
 supersedes: []
 superseded-by: []
-amends: []
+amends: ['0012', '0021', '0031']
 amended-by: []
 affects:
   - Engine.Contracts/Document.cs
@@ -151,9 +151,8 @@ Four conditions make this a decision and not a preference:
     point and each line, projected with the camera from the frame of its datum (Q9). The UI code stays in
     `3DEngine/Ui/` (ADR-0027). K2b gives the tools.
 
-When the owner accepts it, this record amends ADR-0012 §6 (the snapshot), ADR-0021 item 5 (the order of the events
-of a commit) and ADR-0031 items 3 and 6 (a step records sketch records, and an undo gives sketch events), and the
-commit that accepts it changes their text.
+This record amends ADR-0012 §6 (the snapshot), ADR-0021 item 5 (the order of the events of a commit) and ADR-0031
+items 3 to 5 (a step records sketch records, and an undo gives sketch events).
 
 ## Consequences
 
@@ -176,3 +175,4 @@ the circle, the arc and the kinds 6 to 14.
 
 - 2026-10-28 · TASK-0100 · Proposed, with the answers Q1 to Q9 of the owner of 2026-10-28 to the second codebase
   review of that date.
+- 2026-10-28 · TASK-0100 · The owner accepted the record on 2026-10-28 with no change.
