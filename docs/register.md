@@ -395,18 +395,6 @@ on Windows with a GPU, and no computer runs it on macOS.
 Exit: a runner of Windows or macOS gives a Vulkan device and the pipeline requires the test there, or the
 owner accepts Ubuntu alone and moves this entry to the accepted compromises.
 
-### R-0042 · K2 has no decisions for its scope, its model and its datum
-- class: risk
-- opened: 2026-10-28
-- due: 2026-11-27
-- extended: no
-- refs: `docs/reviews/2026-10-28-b-codebase-review.md`, questions Q1 to Q10; `docs/roadmap.md`, rows K2 and K0a; TASK-0095
-The roadmap row of K2 names five entities and fourteen constraints, and no document gives the list. The sketch
-model changes the public shape of `Engine.Contracts`, which needs the owner and an ADR. The second codebase review
-of 2026-10-28 gives nine decisions for K2 and K0a, and one decision on the rule of the rules review (T78). K2 cannot
-start before the answers.
-Exit: the owner answers Q1 to Q10, and the first commit of the K2 task records the answers.
-
 ## Accepted compromises
 
 These are conditions that the project keeps permanently and by decision. They do not age.
@@ -457,6 +445,22 @@ Closed YYYY-MM-DD · resolved · commit <hash>
 Closed YYYY-MM-DD · decided  · ADR-nnnn
 Closed YYYY-MM-DD · accepted · the reason to keep the condition
 ```
+
+### R-0042 · K2 has no decisions for its scope, its model and its datum
+- class: risk
+- opened: 2026-10-28
+- due: 2026-11-27
+- extended: no
+- refs: `docs/reviews/2026-10-28-b-codebase-review.md`, questions Q1 to Q10; `docs/roadmap.md`, rows K2 and K0a; TASK-0095
+The roadmap row of K2 names five entities and fourteen constraints, and no document gives the list. The sketch
+model changes the public shape of `Engine.Contracts`, which needs the owner and an ADR. The second codebase review
+of 2026-10-28 gives nine decisions for K2 and K0a, and one decision on the rule of the rules review (T78). K2 cannot
+start before the answers.
+Exit: the owner answers Q1 to Q10, and the first commit of the K2 task records the answers.
+Closed 2026-10-28 · resolved · TASK-0096. The owner answered A to each question on 2026-10-28. The first commit of
+TASK-0096, the next task, records the answers, as `docs/templates.md`, section 7, requires: the roadmap rows K2a,
+K2b, K2 and K0a hold Q1 to Q9, and TASK-0098 holds Q10. The ADR of K2a gives the contract, and the owner accepts it
+before the code.
 
 ### R-0041 · The desktop has no key for an undo or a redo
 - class: question

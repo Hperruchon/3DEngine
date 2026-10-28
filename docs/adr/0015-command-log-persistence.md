@@ -82,9 +82,11 @@ answered its questions Q1 to Q8 on 2026-10-28, with option A for each.
    number stays a double in that unit, and no code converts a number. The snapshot of ADR-0010 gains `lengthUnit`.
 8. **The open.** A host opens a file at its start, before its surface serves a request.
    - It makes the Document with the unit of the header, and applies each entry through the bus of its session,
-     with no write. Each entry must be applied and give the version of the entry.
-   - The idempotency cache fills as in a live session. The Document gets a new identifier (Q1, ADR-0005 §1), so an
-     old cursor of a subscriber cannot resume on another replay. This decides item 6 of ADR-0020.
+     with no write. The session must be new. Each entry must be applied and give the version of the entry.
+   - The open does not look in the idempotency cache, as a replay does not: a file can hold one command identifier
+     two times. Each result goes into the cache, so the cache fills as in a live session.
+   - The Document gets a new identifier (Q1, ADR-0005 §1), so an old cursor of a subscriber cannot resume on another
+     replay. This decides item 6 of ADR-0020.
    - A last line that is not complete or does not parse is cut off with `W-IO-TRUNCATED`. A bad line before it, an
      entry that is not applied, or a version that does not agree refuses the open with `E-IO-LOAD-FAILED`.
 9. **A document with no name (Q4).** It writes from its first command into a file in the folder of unsaved
@@ -146,3 +148,6 @@ Register entry R-0025 closes with P8a.
 - 2026-10-28 · TASK-0091 · Item 10: `engine-api-http` with no `--file` keeps the document in memory and says so, because
   twenty test classes start the program in the test process and would write into the folder of unsaved documents
   of the account. The owner chose this on 2026-10-28.
+- 2026-10-28 · TASK-0096 · Item 8: the open applies each entry with no look-up in the idempotency cache, refuses a
+  session that has a command, and checks the version of each result. The open skipped an entry whose command
+  identifier the cache held (finding E75 of the second codebase review of 2026-10-28).

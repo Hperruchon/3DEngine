@@ -110,7 +110,15 @@ public sealed class DocumentSession
 
     // A cancellation stops the command while it waits for the section. After
     // the bus starts the commit, it does not stop (ADR-0006 section 4).
-    public async Task<CommandResult> Apply(Command command, CancellationToken ct = default)
+    public Task<CommandResult> Apply(Command command, CancellationToken ct = default)
+        => Apply(command, entry: false, ct);
+
+    // ADR-0015 item 8: an open applies each entry of the file one time, with no
+    // look-up in the idempotency cache (finding E75).
+    internal Task<CommandResult> ApplyEntry(Command command, CancellationToken ct = default)
+        => Apply(command, entry: true, ct);
+
+    private async Task<CommandResult> Apply(Command command, bool entry, CancellationToken ct)
     {
         RefuseReentry();
         RefuseClosed();
@@ -118,7 +126,7 @@ public sealed class DocumentSession
         Hold();
         try
         {
-            return await _commands.Apply(command, ct).ConfigureAwait(false);
+            return await (entry ? _commands.ApplyEntry(command, ct) : _commands.Apply(command, ct)).ConfigureAwait(false);
         }
         finally
         {

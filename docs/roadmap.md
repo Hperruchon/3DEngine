@@ -163,11 +163,13 @@ boundary and each refused rung.
 
 | Phase | Content | Evenings |
 |---|---|---|
-| K0a | Extrude a closed profile of line segments over Manifold. No arc, because an arc needs a sine and a cosine (determinism rule 1). The first commit checks that the native package exports the extrude function (KD5). | 3–5 |
+| K0a | Extrude a closed profile of line segments over Manifold. The command records the identifier of its sketch and a distance, not coordinates, and the handler reads the current sketch (Q7 of the second review of 2026-10-28). No arc, because an arc needs a sine and a cosine (determinism rule 1). The first commit checks that the native package exports the extrude function (KD5). | 3–5 |
 | K0b | The extrude references its sketch, and a rebuild makes the solid again after an edit of the sketch. An ADR resolves the conflict with ADR-0021 (KD5). | 6–10 |
 | K0 | A feature graph over Manifold. No B-Rep. Deferred-query references. The rest after K0b. | 12–20 |
 | K1 | Exact predicates. A deterministic arithmetic layer. | 4–8 |
-| K2 | A 2D sketch model. Five entities and fourteen constraints. A sketch attaches to a datum. | 6–10 |
+| K2a | The sketch model in the engine. The point, the line segment that references two points (Q3), the fixed frame of a sketch, and the five constraints of K3a. A sketch records the identifier of a datum; the three origin planes have fixed identifiers (Q4). One command for each item, with scalar fields; the Document holds one sketch record for each sketch, and an undo restores the record before; the events `sketch.created`, `sketch.changed` and `sketch.removed`, and a query `GetSketch` (Q2). The positions are a projection of the record, and the log holds the inputs only (Q6). An angle records the pair (cos θ, sin θ) (Q5). The ADR names the five entities and the fourteen constraints now (Q1). The desktop draws a sketch as lines of the UI layer, read only (Q9). | 4–6 |
+| K2b | The sketch tools of the desktop. A sketch mode in the intent layer, a ray to the plane of the sketch, a pad for a line, and a panel of constraints (Q8). | 4–6 |
+| K2 | The rest of the sketch model, after K2b: the circle, the arc, the fifth entity and nine constraints (Q1). | 3–5 |
 | K3a | A constraint solver for five constraints: coincident, horizontal, vertical, distance and fixed. It uses only `+ - * / sqrt`, and its output stays outside the log (KD5). | 8–12 |
 | K3 | The rest of the constraint solver, after K3a. Write it. | 4–8 |
 | K4 | Planar faces only, with a boolean. Provenance inside the kernel. | 35–55 |
@@ -202,12 +204,14 @@ The tracks are not strictly sequential, but three rules hold:
    2026-10-28 puts P0.34, which holds a high finding, before P8a, and P0.35 and P0.36 after P8a, by the rule of
    `docs/templates.md`, section 7. On 2026-10-28, after P8f, the owner put P0.36 and then P0.35 before P8c, because
    a defect of P0.36 can put a wrong rename into the document file.
-   The second codebase review of 2026-10-28 puts P0.37 and P0.38, which hold high findings, before K2, and P0.39
-   and P0.40 after K2, by the rule of `docs/templates.md`, section 7.
+   The second codebase review of 2026-10-28 puts P0.37 and P0.38, which hold high findings, before K2a, and P0.39
+   and P0.40 after K2a, by the rule of `docs/templates.md`, section 7.
 2. R2 blocks each later phase in track R. No mesh leaves the geometry backend today.
 3. K4 needs K0, K1 and K2. Do not start K4 before the reference model exists.
 4. The path to the milestone "CAD on one part" (the owner, 2026-10-27, KD2): R7b, R8a, R8b, the codebase
-   review when its gate makes it due, P8a, P8f, P8c, R10, K2, K3a, K0a, then K0b. R9 comes after the milestone.
+   review when its gate makes it due, P8a, P8f, P8c, R10, K2a, K2b, K3a, K0a, then K0b. R9 comes after the milestone.
+   The owner answered the questions of the second codebase review of 2026-10-28 on 2026-10-28, A to each: K2
+   splits into K2a and K2b on the path, and the rest of K2 comes after the milestone with the rest of K3.
    `docs/proposals/2026-10-27-path-to-cad-decision-sheet.md` gives the analysis. A slice of a phase has a
    letter after its number (K0a, K0b, K3a), so that the review gate reads it as a phase of its track.
 

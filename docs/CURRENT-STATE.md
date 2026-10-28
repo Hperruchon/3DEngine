@@ -2720,3 +2720,29 @@ K2. R-0042 holds the ten questions of the review: nine for K2 and K0a, and one f
 New tests: none. The test list holds 829. `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero
 warnings. Open entries: 14 of 15. New diagnostic codes: none. The next codebase review is due when more than four
 product milestones or more than twelve entries follow v0.96.
+
+## v0.98 — An open applies each entry of the document file one time (P0.37, TASK-0096)
+
+The owner answered the ten questions of the second codebase review of 2026-10-28 on 2026-10-28, A to each. The first
+commit of this task records the answers: K2 splits into K2a (the engine model) and K2b (the tools of the desktop) on
+the path to the milestone, the rest of K2 comes after it, the extrude of K0a records the identifier of its sketch,
+and TASK-0098 adds the rule measures of Q10 to the review gate. R-0042 closes.
+
+**The change.**
+
+- E75: an open applies each entry with no look-up in the idempotency cache, as a replay does, and each result still
+  goes into the cache. The version of each result must equal the version of its entry.
+- An open refuses a session that has a command, with `E-IO-LOAD-FAILED`.
+- ADR-0015 item 8 says so, and the comment of `StepHistory` is true again.
+
+**Proof.** Two new tests. The probe of the review is a test: a command identifier that comes again after 1,024 other
+results, then an open, a command and a second open. Three injections each failed a test: the look-up in the session
+(through the check of the version: "The entry of version 4 gave the version 2"), the look-up in the bus, and no check
+of a new session. CI run 40758728721 passed on the three runners.
+
+**What stays.** The live bus still applies a command identifier again after the cache forgot it (E17, R-0028); the
+file now holds such a command as the live session applied it.
+
+New tests: 2. The test list holds 831 (622 in `Engine.Tests`, 144 in `3DEngine.Tests`, 65 in `3DEngine.ImageTests`).
+`dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open entries: 13 of 15. New
+diagnostic codes: none. Since the review of v0.96, 0 product milestones and 1 entry followed it.
