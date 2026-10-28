@@ -74,6 +74,7 @@ Therefore each approved objective must have a track here.
 - P8a — The document file in the engine and the server. v0.91, TASK-0091, ADR-0015.
 - P8f — The document file in the desktop and for an agent. v0.92, TASK-0092, ADR-0030.
 - P0.36 — A name is a JSON string of well-formed text, the server disposes at each stop, and the desktop ends a text field at a click on the scene. v0.93, TASK-0090.
+- P0.35 — The gates bind the names that the compiler and MSBuild bind, and the archive and the review counter check their links. v0.94, TASK-0089.
 
 ## Track 0 — Foundations
 
