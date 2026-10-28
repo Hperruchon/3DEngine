@@ -2558,3 +2558,32 @@ New tests: 31. The test list holds 693 (564 in `Engine.Tests`, 89 in `3DEngine.T
 entries: 13 of 15; R-0025 is closed. New diagnostic codes: `E-IO-BACKEND-MISMATCH`, `E-IO-NOT-ENCODABLE`,
 `E-IO-WRITE-FAILED`, `E-IO-LOAD-FAILED`, `E-IO-SAVE-FAILED`, `W-IO-TRUNCATED`, `W-IO-BACKEND-VERSION`. Since the
 review of v0.88, 1 product milestone and 3 entries followed it.
+
+## v0.92 — The document file in the desktop and for an agent (P8f, TASK-0092)
+
+The owner answered Q4 to Q6 of the codebase review of 2026-10-28, accepted ADR-0030 on 2026-10-28, and accepted the
+two pictures and the log on 2026-10-28.
+
+**The change.**
+
+- `3DEngine --file` opens or makes the file before the window; with no `--file` the desktop writes into the folder
+  of unsaved documents. Exit code 6 when the file does not open.
+- One document folder, `<documents>/3DEngine`, for a save and an open by name; a name is a plain file name, and a
+  save makes the folder.
+- `GET /document`, `POST /document/save` and `POST /document/open`. Only the desktop serves the open;
+  `engine-api-http` gives HTTP 501 with the new code `E-API-NOT-SUPPORTED`.
+- An open checks the file in a scratch session with its own backend, then the desktop starts again with `--file` on
+  the same port. A bad file leaves the window and gives its code.
+- The panel shows the file, or "unsaved", with "File name", Save as and Open.
+
+**Proof.** 26 new tests and nine injections. A process test starts the desktop program with a bad file and gets exit
+code 6. The visual check, under synchronization validation, saved a box, refused a bad file, and opened the saved
+file in a new process that rebuilt the same box.
+
+**What stays.** No test runs the restart of the program. The folder of unsaved documents grows. An open applies each
+command two times.
+
+New tests: 26. The test list holds 719 (582 in `Engine.Tests`, 89 in `3DEngine.Tests`, 48 in
+`3DEngine.ImageTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
+entries: 13 of 15. New diagnostic codes: `E-API-NOT-SUPPORTED`. Since the review of v0.88, 2 product milestones and
+4 entries followed it.

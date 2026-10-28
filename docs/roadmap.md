@@ -72,6 +72,7 @@ Therefore each approved objective must have a track here.
 - R8b — The desktop selects, hides, shows and renames a body, and the camera stays where it is. v0.88, TASK-0086, ADR-0029.
 - P0.34 — No file outside the gate files can replace the test framework of a test project. v0.90, TASK-0088.
 - P8a — The document file in the engine and the server. v0.91, TASK-0091, ADR-0015.
+- P8f — The document file in the desktop and for an agent. v0.92, TASK-0092, ADR-0030.
 
 ## Track 0 — Foundations
 

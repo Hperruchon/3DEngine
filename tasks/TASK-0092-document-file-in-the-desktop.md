@@ -1,7 +1,7 @@
 ---
 id: 0092
 title: The document file in the desktop and for an agent
-status: Active
+status: Done
 phase: P8f
 opened: 2026-10-28
 depends-on: [0091]
@@ -77,12 +77,42 @@ window.
 
 ## Acceptance criteria
 
-- [ ] Each new test fails before its correction, or an injection shows that it can fail.
-- [ ] A name that leaves the document folder is refused.
-- [ ] A file that does not open leaves the window open, with its code.
-- [ ] A picture of the desktop with its file name, after a save and after an open. The owner accepts it.
-- [ ] A clean build (`--no-incremental`) gives zero errors and zero warnings.
-- [ ] Continuous integration passes on `ubuntu-latest`, `windows-latest` and `macos-latest`.
+- [x] Each new test fails before its correction, or an injection shows that it can fail.
+- [x] A name that leaves the document folder is refused.
+- [x] A file that does not open leaves the window open, with its code.
+- [x] A picture of the desktop with its file name, after a save and after an open. The owner accepts it. The
+      owner accepted two pictures and the log on 2026-10-28.
+- [x] A clean build (`--no-incremental`) gives zero errors and zero warnings.
+- [ ] Continuous integration passes on `ubuntu-latest`, `windows-latest` and `macos-latest`. The merge
+      records the run.
+
+## Outcome
+
+Status: Done · v0.92 · the commit that carries this block.
+
+The desktop opens the file that `--file` names, writes an unsaved document into the folder of unsaved documents,
+and stops with exit code 6 when the file does not open. A person saves and opens by name in the panel, and an agent
+does the same over HTTP. An open checks the file in a scratch session, so a bad file leaves the window, and a good
+file starts the program again on the same port.
+
+## Method
+
+**Mechanical.** 26 new tests, with each theory case counted: 18 in `Engine.Tests` (the routes, the rule of a name,
+the default folder, the check) and 8 in `3DEngine.ImageTests` (the panel, the arguments of the restart, the check
+on the native backend, and a process test of the desktop program). Nine injections each failed a test. Run
+40676618897 passed on the three runners. The visual check drove the desktop over HTTP with scratch folders and
+synchronization validation: a save, a refused open of a bad file, and an open that started the program again
+and rebuilt the same box; no validation message. The owner accepted the two pictures.
+
+**Judgement.** The open starts the program again, as Q5 chose, and the old process checks the file first with its
+own backend, so the person never loses the window. The reader of a file shares the write access, so the check reads
+the file that the session holds. The buttons of the file have their own line, because the first layout put Open
+outside the panel, where its click went to the scene. A save makes the document folder, because the default folder
+of a new account does not exist.
+
+**Weakest.** The visual check used HTTP and not the buttons; a test of the panel presses them. An open applies each
+command two times. The folder of unsaved documents grows, because no code removes a file in it. No test runs the
+restart of the program; the visual check ran it one time.
 
 ## Notes for the implementer
 
@@ -108,3 +138,5 @@ window.
   does not exist before the first save; the save test starts with no folder, and an injection that makes no folder
   failed it. `Engine.Core/Persistence/**` replaces `DocumentFile.cs` in the write set. Correction of the line before:
   it gave nine injections when there were eight; this one is the ninth.
+- 2026-10-28: the owner accepted the two pictures and the log on 2026-10-28. Closed after a clean build and a full
+  local run of 719 tests (582 in `Engine.Tests`, 89 in `3DEngine.Tests`, 48 in `3DEngine.ImageTests`).
