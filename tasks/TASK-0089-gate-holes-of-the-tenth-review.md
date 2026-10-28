@@ -1,7 +1,7 @@
 ---
 id: 0089
 title: The gates bind the names that the compiler and MSBuild bind, and the archive and the review counter check their links
-status: Active
+status: Done
 phase: P0.35
 opened: 2026-10-28
 depends-on: [0088]
@@ -74,10 +74,36 @@ Each gate of the review binds what the compiler or MSBuild binds, and checks eac
 
 ## Acceptance criteria
 
-- [ ] Each form of the review fails its gate, and each injection of the review is in a test where a test can hold it.
-- [ ] Each new test fails before its correction.
-- [ ] A clean build (`--no-incremental`) gives zero errors and zero warnings.
-- [ ] Continuous integration passes on `ubuntu-latest`, `windows-latest` and `macos-latest`.
+- [x] Each form of the review fails its gate, and each injection of the review is in a test where a test can hold it.
+- [x] Each new test fails before its correction, or an injection shows that it can fail.
+- [x] A clean build (`--no-incremental`) gives zero errors and zero warnings.
+- [ ] Continuous integration passes on `ubuntu-latest`, `windows-latest` and `macos-latest`. The merge
+      records the run.
+
+## Outcome
+
+Status: Done · v0.94 · the commit that carries this block.
+
+A reference into `bin/` or `obj/` is refused (T63); the gate of the UI library reads names, XML and imports as the
+compiler and MSBuild do, and refuses a native import of `cimgui` outside the UI folder (T64); an archived ADR needs
+its file and its status (T65); a product task that its roadmap row does not name is a problem (T66); and the gate
+runner refuses a check that starts a task and does not wait for it (T67).
+
+## Method
+
+**Mechanical.** 16 new tests, with each theory case counted. The form of each finding of the review failed the gate
+program after its correction, and each had passed it before: a shim project under `bin/`, an import of
+`ui-packages.xml`, a deleted ADR with its row moved under "Archived", a roadmap row with no task, and a probe check
+with a discarded task and a `Task.Run`. Injections of the old rule failed the new test cases.
+
+**Judgement.** T66 keeps the rule D3 of TASK-0083 (`docs/templates.md`, section 7): a product task counts only when
+its roadmap row names it, and an entry with no task counts toward the limit of twelve only. Scope item 4 also asked
+that a heading with no task be a problem; that changes a rule of the owner, so the gate makes a product task with no
+row a problem and keeps the rest. The gate of the UI library refuses each string literal that names `cimgui`
+outside the UI folder, which also covers `NativeLibrary.Load`.
+
+**Weakest.** The runner has no test of its own, as for T59 and T60; the probe check is the proof of T67. The gate of
+the UI library still reads text for the comments and the global usings, which is stricter than the compiler.
 
 ## Notes for the implementer
 
@@ -110,3 +136,5 @@ Each gate of the review binds what the compiler or MSBuild binds, and checks eac
   and a string that names `cimgui` outside `3DEngine/Ui/` are offences; it reads each project file as XML, in any
   quote and case; and it reads each file that MSBuild reads for a project, imports too. Five test cases. The import
   of `ui-packages.xml` into `3DEngine.Vulkan` failed the gate program, and three injections each failed the cases.
+- 2026-10-28: closed after a clean build and a full local run of 754 tests (607 in `Engine.Tests`, 94 in
+  `3DEngine.Tests`, 53 in `3DEngine.ImageTests`).
