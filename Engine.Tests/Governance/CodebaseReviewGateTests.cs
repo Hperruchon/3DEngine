@@ -302,6 +302,54 @@ public class CodebaseReviewGateTests
         return (product, entries);
     }
 
+    // Finding T66 of the codebase review of 2026-10-28 (TASK-0089): the counter counts a
+    // product task only when its roadmap row names it (D3 of TASK-0083), so a row with no
+    // name of its task made a milestone an entry only, with no change to a gate file. The
+    // rule of D3 stays, and a product task after the last review whose row does not name it
+    // is a problem.
+    internal static IEnumerable<string> UnnamedProductTasks(
+        (int Major, int Minor) reviewed, string ledger, Func<string, string?> phaseOfTask, string roadmap)
+    {
+        roadmap = roadmap.Replace("\r", string.Empty, StringComparison.Ordinal);
+        foreach (Match entry in LedgerEntry.Matches(ledger.Replace("\r", string.Empty, StringComparison.Ordinal)))
+        {
+            var version = (int.Parse(entry.Groups[1].Value, CultureInfo.InvariantCulture), int.Parse(entry.Groups[2].Value, CultureInfo.InvariantCulture));
+            var tasks = Regex.Matches(entry.Groups["rest"].Value, @"TASK-(\d{4})");
+            if (version.CompareTo(reviewed) <= 0 || tasks.Count == 0)
+                continue;
+
+            var task = tasks[^1].Groups[1].Value;
+            if (phaseOfTask(task) is { } phase && ProductPhase.IsMatch(phase)
+                && !roadmap.Split('\n').Any(row => row.StartsWith($"| {phase} |", StringComparison.Ordinal) && row.Contains($"TASK-{task}", StringComparison.Ordinal)))
+                yield return $"v{version.Item1}.{version.Item2:00}: TASK-{task} has the product phase {phase}, and the row of {phase} in docs/roadmap.md does not name it, so the review counter does not count it";
+        }
+    }
+
+    [Fact]
+    public void Each_Product_Task_After_The_Last_Review_Is_Named_By_Its_Roadmap_Row()
+    {
+        var latest = Reviews().OrderBy(r => ParseVersion(r.Fields.GetValueOrDefault("ledger", string.Empty)) ?? (0, 0)).Last();
+        var problems = UnnamedProductTasks(
+            ParseVersion(latest.Fields["ledger"])!.Value,
+            RepositoryFiles.Read("docs", "CURRENT-STATE.md"),
+            PhaseOfTask,
+            RepositoryFiles.Read("docs", "roadmap.md")).ToList();
+
+        Assert.True(problems.Count == 0, "Name each product task in the row of its phase (finding T66):\n  " + string.Join("\n  ", problems));
+    }
+
+    [Fact]
+    public void A_Product_Task_Whose_Row_Names_Another_Task_Is_A_Problem()
+    {
+        var ledger = "## v0.10 — The review (governance, TASK-0001)\n\n## v0.11 — An entry (R8, TASK-0003)\n\n## v0.12 — An entry (R7, TASK-0002)\n";
+        var phases = new Dictionary<string, string> { ["0001"] = "governance", ["0002"] = "R7", ["0003"] = "R8" };
+        var roadmap = "| R7 | The intent layer. TASK-0002. | 5–7 |\n| R8 | Name and visibility. TASK-0009. | 4–6 |\n";
+
+        var problems = UnnamedProductTasks((0, 10), ledger, id => phases.GetValueOrDefault(id), roadmap).ToList();
+
+        Assert.Equal("TASK-0003", Regex.Match(Assert.Single(problems), @"TASK-\d{4}").Value);
+    }
+
     // The field 'phase' of the task file tasks/TASK-<id>-*.md, or null.
     private static string? PhaseOfTask(string id)
     {
