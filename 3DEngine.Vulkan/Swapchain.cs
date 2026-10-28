@@ -65,7 +65,17 @@ public sealed unsafe class Swapchain : IDisposable
             oldSwapchain = oldSwapchain
         };
 
-        device.DeviceApi.vkCreateSwapchainKHR(&createInfo, null, out Handle).CheckResult();
+        // The depth image exists before the swapchain, so a failed creation frees it
+        // (finding V18 of the codebase review of 2026-10-28, TASK-0090).
+        try
+        {
+            device.DeviceApi.vkCreateSwapchainKHR(&createInfo, null, out Handle).CheckResult();
+        }
+        catch
+        {
+            Depth.Dispose();
+            throw;
+        }
         // 3.x returns no span. Ask for the count, then fill an array of that size.
         device.DeviceApi.vkGetSwapchainImagesKHR(Handle, out uint swapChainImageCount).CheckResult();
         VkImage[] swapChainImages = new VkImage[swapChainImageCount];

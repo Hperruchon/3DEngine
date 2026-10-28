@@ -47,6 +47,7 @@ internal sealed class SessionBodies : IDisposable
     private readonly Dictionary<string, Entity> _entities = new(StringComparer.Ordinal);
     private readonly Dictionary<string, ((double X, double Y, double Z) Min, (double X, double Y, double Z) Max)> _boxes = new(StringComparer.Ordinal);
     private readonly Dictionary<Guid, (double[] Positions, uint[] Indices)> _triangles = new();
+    private readonly BodyVisibility _visibility = new();
 
     public SessionBodies(EngineHost host)
     {
@@ -90,7 +91,7 @@ internal sealed class SessionBodies : IDisposable
     public IReadOnlyList<LiveBody> Live => _live;
 
     // The count of live bodies that are visible and have a mesh.
-    public int VisibleCount => _entities.Keys.Count(meshId => IsVisible(meshId));
+    public int VisibleCount => _visibility.VisibleCount;
 
     // The triangles of each live body that has a mesh, with its visibility, for a pick.
     public IEnumerable<PickBody> PickBodies
@@ -128,6 +129,7 @@ internal sealed class SessionBodies : IDisposable
         {
             case Change.Consumed:
                 _live.RemoveAll(body => body.Id == change.BodyId);
+                _visibility.Remove(meshId);
                 _triangles.Remove(change.BodyId);
                 _boxes.Remove(meshId);
                 if (_entities.Remove(meshId, out var gone))
@@ -145,10 +147,12 @@ internal sealed class SessionBodies : IDisposable
                 if (index < 0)
                     return false;
                 _live[index] = _live[index] with { Name = change.Name, Visible = change.Visible };
+                _visibility.Set(meshId, change.Visible);
                 return Show(meshId, scene, change.Visible);
         }
 
         _live.Add(new LiveBody(change.BodyId, change.Kind, change.Name, change.Visible));
+        _visibility.Set(meshId, change.Visible);
 
         var result = _host.Session.Query<Tessellation>(new GetTessellationQuery { BodyId = change.BodyId })
             .GetAwaiter().GetResult();
@@ -173,6 +177,7 @@ internal sealed class SessionBodies : IDisposable
         _entities[meshId] = new Entity { Name = $"Body {change.BodyId}", MeshId = meshId, Origin = centre };
         _boxes[meshId] = Box(tessellation.Positions);
         _triangles[change.BodyId] = (tessellation.Positions, tessellation.Indices);
+        _visibility.SetMesh(meshId);
         return Show(meshId, scene, change.Visible);
     }
 
@@ -194,8 +199,7 @@ internal sealed class SessionBodies : IDisposable
         return true;
     }
 
-    private bool IsVisible(string meshId)
-        => _live.FirstOrDefault(body => body.Id.ToString() == meshId)?.Visible ?? false;
+    private bool IsVisible(string meshId) => _visibility.IsVisible(meshId);
 
     // The box around each visible live body that has a mesh, or null when none has one.
     public ((double X, double Y, double Z) Min, (double X, double Y, double Z) Max)? Bounds

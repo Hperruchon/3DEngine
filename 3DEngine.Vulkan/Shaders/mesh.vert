@@ -15,6 +15,11 @@ layout(push_constant) uniform Draw
 
 layout(location = 0) out vec3 viewPosition;
 
+// The highlight draws the selected body again with this shader and the depth test
+// GreaterOrEqual, so both pipelines must give the same depth (finding V28 of the codebase
+// review of 2026-10-28, TASK-0090).
+invariant gl_Position;
+
 void main()
 {
     vec4 inView = draw.modelView * vec4(position, 1.0);

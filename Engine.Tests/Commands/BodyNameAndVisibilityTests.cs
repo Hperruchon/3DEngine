@@ -121,6 +121,27 @@ public class BodyNameAndVisibilityTests
         Assert.Equal(1, await session.Read((document, _) => document.Version));
     }
 
+    // ADR-0028 item 3 since TASK-0090 (finding E73): a lone surrogate is refused, and a pair is
+    // a valid name. The test builds each name, because a lone surrogate is not a valid text
+    // for the data of a theory.
+    [Theory]
+    [InlineData("a", 0xD800, 0x0062, false)]
+    [InlineData("", 0xDC00, 0, false)]
+    [InlineData("end", 0xDBFF, 0, false)]
+    [InlineData("clef ", 0xD834, 0xDD1E, true)]
+    public async Task A_Name_Must_Be_Well_Formed_Utf16(string before, int unit, int next, bool valid)
+    {
+        var name = before + (char)unit + (next == 0 ? string.Empty : ((char)next).ToString());
+        var (session, _) = NewSession();
+        var id = await NewBox(session);
+
+        var result = await session.Apply(new RenameBodyCommand { BodyId = id, NewName = name });
+
+        Assert.Equal(valid ? CommandStatus.Applied : CommandStatus.Rejected, result.Status);
+        Assert.Equal(valid ? null : DiagnosticCodes.ValBodyNameInvalid, result.Error?.Code);
+        Assert.Equal(valid ? name : null, (await Info(session, id)).Name);
+    }
+
     [Fact]
     public async Task An_Unknown_Or_Consumed_Body_Is_Not_Found()
     {

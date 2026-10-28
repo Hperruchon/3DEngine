@@ -89,6 +89,14 @@ catch (IOException ex)
     await app.DisposeAsync();
     return 6;
 }
+// Finding E74 of the codebase review of 2026-10-28 (TASK-0090): each other exception of
+// the composition ended the process with the app not disposed.
+catch (Exception ex)
+{
+    Console.Error.WriteLine($"The host did not start: {ex.Message}");
+    await app.DisposeAsync();
+    return 5;
+}
 
 app.MapEngineSurface();
 
@@ -124,6 +132,10 @@ if (boundRefusal is not null)
 }
 
 await app.WaitForShutdownAsync();
+
+// Finding E74: the disposal closes the session, which waits for a running command, and
+// then frees the backend (E66); until TASK-0090 a normal stop returned with no disposal.
+await app.DisposeAsync();
 return 0;
 
 // Marker so Engine.Tests can use WebApplicationFactory<Program>.
