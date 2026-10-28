@@ -80,3 +80,5 @@ reads the payloads strictly must accept the new fields. The rule of a new comman
 
 - 2026-10-28 · TASK-0085 · The record is written with the defaults R8-Q1 to R8-Q8 of the owner of 2026-10-27,
   and the owner accepted the contract on 2026-10-28.
+- 2026-10-28 · TASK-0085 · The code applies the record. A field of an event payload with `Required: false` can
+  be null, as the name of a body with no name (item 7).

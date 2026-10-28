@@ -55,11 +55,20 @@ public sealed record CommandHandlerResult(
     // gives no list consumes nothing.
     public IReadOnlyList<BodyHandle> ConsumedBodies { get; init; } = Array.Empty<BodyHandle>();
 
+    // ADR-0028 item 6: the new record of each live body that the command changes,
+    // for example its name or its visibility. The commit replaces each record in
+    // Document.Bodies and emits body.changed after each body.consumed. A handler
+    // changes only a live body that the same command neither creates nor
+    // consumes, gives each one time, and keeps its kind; the bus refuses a list
+    // that breaks the rule. Empty by default.
+    public IReadOnlyList<BodyRecord> ChangedBodies { get; init; } = Array.Empty<BodyRecord>();
+
     public static CommandHandlerResult Success(
         Outputs outputs,
         IReadOnlyList<Diagnostic>? diagnostics = null,
         IReadOnlyList<BodyRecord>? createdBodies = null,
-        IReadOnlyList<BodyHandle>? consumedBodies = null)
+        IReadOnlyList<BodyHandle>? consumedBodies = null,
+        IReadOnlyList<BodyRecord>? changedBodies = null)
         => new(
             outputs,
             diagnostics ?? Array.Empty<Diagnostic>(),
@@ -67,6 +76,7 @@ public sealed record CommandHandlerResult(
             createdBodies ?? Array.Empty<BodyRecord>())
         {
             ConsumedBodies = consumedBodies ?? Array.Empty<BodyHandle>(),
+            ChangedBodies = changedBodies ?? Array.Empty<BodyRecord>(),
         };
 
     public static CommandHandlerResult Failure(

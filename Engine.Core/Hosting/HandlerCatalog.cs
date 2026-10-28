@@ -27,12 +27,15 @@ public static class HandlerCatalog
         new CreateBoxCommandHandler(),
         new TranslateCommandHandler(),
         new SubtractCommandHandler(),
+        new RenameBodyCommandHandler(),
+        new SetBodyVisibilityCommandHandler(),
     ];
 
     public static IReadOnlyList<IQueryHandler> QueryHandlers() =>
     [
         new GetBoundingBoxQueryHandler(),
         new GetTessellationQueryHandler(),
+        new GetBodyInfoQueryHandler(),
     ];
 
     public static void RegisterAll(CommandRegistry commands, QueryRegistry queries)

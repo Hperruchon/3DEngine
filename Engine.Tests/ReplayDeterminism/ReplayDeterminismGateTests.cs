@@ -63,6 +63,8 @@ public class ReplayDeterminismGateTests
             var expected = ReplayDeterminismFixture.ExpectedBodies[i];
             Assert.Equal(expected.HandleId, bodies[i].Handle.Id);
             Assert.Equal(expected.Kind, bodies[i].Kind);
+            Assert.Equal(expected.Name, bodies[i].Name);
+            Assert.Equal(expected.Visible, bodies[i].Visible);
         }
     }
 
@@ -98,6 +100,8 @@ public class ReplayDeterminismGateTests
         {
             Assert.Equal(firstBodies[i].Handle.Id, secondBodies[i].Handle.Id);
             Assert.Equal(firstBodies[i].Kind, secondBodies[i].Kind);
+            Assert.Equal(firstBodies[i].Name, secondBodies[i].Name);
+            Assert.Equal(firstBodies[i].Visible, secondBodies[i].Visible);
         }
     }
 }
