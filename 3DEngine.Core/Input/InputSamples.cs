@@ -59,6 +59,9 @@ public enum InputKey
     Enter,
     Escape,
     Tab,
+
+    // The key H: hide, and with Shift show all (ADR-0029 item 4).
+    H,
 }
 
 // One sample, at a time in nanoseconds of one clock of the host.

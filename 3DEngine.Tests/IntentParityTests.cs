@@ -32,6 +32,14 @@ public class IntentParityTests
         [typeof(SelectIntent)] = (
             [[Touch(1, 120, 80, PointerPhase.Down, 0)], [Touch(1, 120, 80, PointerPhase.Up, 100)]],
             [[Mouse(120, 80, PointerButtons.Left, PointerPhase.Down, 0)], [Mouse(120, 80, PointerButtons.Left, PointerPhase.Up, 100)]]),
+        // ADR-0029 item 4: a long press and a right click hide the body at the point; a tap of two
+        // fingers, and Shift and H on the keyboard, show each hidden body.
+        [typeof(HideIntent)] = (
+            [[Touch(1, 120, 80, PointerPhase.Down, 0)], [Touch(1, 120, 80, PointerPhase.Up, 600)]],
+            [[Mouse(120, 80, PointerButtons.Right, PointerPhase.Down, 0)], [Mouse(120, 80, PointerButtons.Right, PointerPhase.Up, 100)]]),
+        [typeof(ShowAllIntent)] = (
+            [[Touch(1, 100, 100, PointerPhase.Down, 0), Touch(2, 200, 100, PointerPhase.Down, 0)], [Touch(1, 100, 100, PointerPhase.Up, 120), Touch(2, 200, 100, PointerPhase.Up, 120)]],
+            [[new KeySample(InputKey.H, true, KeyModifiers.Shift, 10 * Ms)]]),
         [typeof(CancelIntent)] = (
             [[Touch(1, 100, 100, PointerPhase.Down, 0)], [Touch(1, 120, 100, PointerPhase.Move, 10)], [Touch(1, 120, 100, PointerPhase.Cancel, 20)]],
             [[Mouse(100, 100, PointerButtons.Left, PointerPhase.Down, 0)], [Mouse(120, 100, PointerButtons.Left, PointerPhase.Move, 10)], [new FocusLostSample(20 * Ms)]]),
@@ -48,6 +56,8 @@ public class IntentParityTests
     [InlineData(nameof(PanIntent))]
     [InlineData(nameof(ZoomIntent))]
     [InlineData(nameof(SelectIntent))]
+    [InlineData(nameof(HideIntent))]
+    [InlineData(nameof(ShowAllIntent))]
     [InlineData(nameof(CancelIntent))]
     public void A_Touch_Script_And_A_Mouse_Script_Give_The_Same_Intents(string kind)
     {
@@ -153,12 +163,62 @@ public class IntentParityTests
         Assert.All(intents, intent => Assert.IsType<PanIntent>(intent));
     }
 
+    // ADR-0029 item 4: a press between a tap and a long press gives nothing, and a long press
+    // that moved is a drag and not a hide.
+    [Fact]
+    public void A_Press_That_Is_Neither_A_Tap_Nor_A_Long_Press_Gives_No_Point_Intent()
+    {
+        var middle = Run([[Touch(1, 120, 80, PointerPhase.Down, 0)], [Touch(1, 120, 80, PointerPhase.Up, 400)]]);
+        var moved = Run([[Touch(1, 120, 80, PointerPhase.Down, 0)], [Touch(1, 140, 80, PointerPhase.Move, 100)], [Touch(1, 140, 80, PointerPhase.Up, 700)]]);
+
+        Assert.Empty(middle);
+        Assert.DoesNotContain(moved, intent => intent is HideIntent or SelectIntent);
+        Assert.Contains(moved, intent => intent is OrbitIntent);
+    }
+
+    // A pair that moves is a pan or a pinch and not a tap of two fingers, and a slow pair taps
+    // nothing.
+    [Fact]
+    public void A_Pair_That_Moves_Or_Stays_Too_Long_Does_Not_Show_All()
+    {
+        var moved = Run(Scripts[typeof(PanIntent)].Touch);
+        var slow = Run([[Touch(1, 100, 100, PointerPhase.Down, 0), Touch(2, 200, 100, PointerPhase.Down, 0)], [Touch(1, 100, 100, PointerPhase.Up, 600), Touch(2, 200, 100, PointerPhase.Up, 600)]]);
+
+        Assert.DoesNotContain(moved, intent => intent is ShowAllIntent);
+        Assert.Empty(slow);
+    }
+
+    // The key H with no Shift hides the selection: a hide with no point.
+    [Fact]
+    public void The_Key_H_Hides_The_Selection()
+    {
+        var intent = Assert.Single(Run([[new KeySample(InputKey.H, true, KeyModifiers.None, 0)]]));
+
+        Assert.Equal(new HideIntent(null, null), intent);
+    }
+
+    // Each gesture of ADR-0029 is a setting: a long press can select, and the map refuses a
+    // show all for a gesture of a point.
+    [Fact]
+    public void The_Gestures_Of_A_Hide_Are_Settings()
+    {
+        var map = new Dictionary<Gesture, IntentAction>(IntentSettings.Default.Map) { [Gesture.LongPress] = IntentAction.Select };
+        var settings = new IntentSettings { Map = map }.Validated();
+
+        Assert.IsType<SelectIntent>(Assert.Single(Run(Scripts[typeof(HideIntent)].Touch, settings)));
+
+        var wrong = new Dictionary<Gesture, IntentAction>(IntentSettings.Default.Map) { [Gesture.RightClick] = IntentAction.ShowAll };
+        Assert.Throws<ArgumentException>(() => new IntentSettings { Map = wrong }.Validated());
+    }
+
     private static bool Same(Intent a, Intent b) => (a, b) switch
     {
         (OrbitIntent x, OrbitIntent y) => Near(x.YawDegrees, y.YawDegrees) && Near(x.PitchDegrees, y.PitchDegrees),
         (PanIntent x, PanIntent y) => Near(x.DxPixels, y.DxPixels) && Near(x.DyPixels, y.DyPixels),
         (ZoomIntent x, ZoomIntent y) => Near(x.Factor, y.Factor),
         (SelectIntent x, SelectIntent y) => Near(x.X, y.X) && Near(x.Y, y.Y),
+        (HideIntent x, HideIntent y) => x.X.HasValue == y.X.HasValue && Near(x.X ?? 0, y.X ?? 0) && Near(x.Y ?? 0, y.Y ?? 0),
+        (ShowAllIntent, ShowAllIntent) => true,
         (CancelIntent, CancelIntent) => true,
         _ => false,
     };

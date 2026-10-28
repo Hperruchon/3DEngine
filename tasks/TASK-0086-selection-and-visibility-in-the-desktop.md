@@ -86,3 +86,9 @@ is a command of the session, and the camera frames the bodies only when the firs
 
 - 2026-10-28: opened after TASK-0085 (v0.87). The first commit holds ADR-0029 and the text changes of the
   three ADRs that it amends.
+- 2026-10-28: the gestures of ADR-0029 item 4. A long press (500 ms by default, decided at the release), a
+  right click, a tap of two fingers, H, and Shift and H, with the actions hide and show all and the intents
+  `HideIntent` and `ShowAllIntent`. A press keeps its largest displacement, because `Hold` marks each pair as
+  moved. The coverage check of the parity test failed on the two new kinds before their scripts existed. Six new
+  tests; four injections each failed one (no long press, no tap of two fingers, a right click as a click, Shift
+  ignored on H).
