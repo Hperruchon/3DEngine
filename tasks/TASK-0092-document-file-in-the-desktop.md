@@ -1,7 +1,7 @@
 ---
 id: 0092
 title: The document file in the desktop and for an agent
-status: Active
+status: Done
 phase: P8f
 opened: 2026-10-28
 depends-on: [0091]
@@ -144,3 +144,4 @@ restart of the program; the visual check ran it one time.
   with a file (TASK-0091) passed, and its cleanup failed, because Windows still held `plate.3de` after the kill.
   The cleanup of the two file process tests now tries for 5 s, then leaves the scratch folder, as the other process
   test of the class does. The task is Active for this change and Done again after it.
+- 2026-10-28: Done again after the change of the cleanup.
