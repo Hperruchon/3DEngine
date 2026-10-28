@@ -60,9 +60,13 @@ public static class ParameterBinder
 
         switch (declaredType)
         {
+            // Only a string is a string: a number, a boolean, an object or an array of a
+            // JSON request is refused (finding E72 of the codebase review of 2026-10-28,
+            // TASK-0090). The command line gives each value as text.
             case "string":
-                coerced = text ?? Convert.ToString(supplied, CultureInfo.InvariantCulture);
-                return true;
+                if (text is not null) { coerced = text; return true; }
+                reason = $"expected a string, received '{Describe(supplied)}'.";
+                return false;
 
             case "number":
                 if (supplied is double d) { coerced = d; return true; }
