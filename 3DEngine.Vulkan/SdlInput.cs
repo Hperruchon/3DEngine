@@ -112,6 +112,7 @@ public sealed unsafe class SdlInput
             SDL_Scancode.Return or SDL_Scancode.KpEnter => InputKey.Enter,
             SDL_Scancode.Escape => InputKey.Escape,
             SDL_Scancode.Tab => InputKey.Tab,
+            SDL_Scancode.H => InputKey.H,
             _ => null,
         };
         if (key is { } known)
