@@ -1,7 +1,7 @@
 ---
 id: 0088
 title: No file outside the gate files can replace the test framework of a test project
-status: Active
+status: Done
 phase: P0.34
 opened: 2026-10-28
 depends-on: [0087]
@@ -59,10 +59,35 @@ No file outside the gate files can change the result of a test in a test project
 
 ## Acceptance criteria
 
-- [ ] The framework file of T62 fails the gate from the gate program, which passes it before the change.
-- [ ] Each new test fails before its correction, or an injection shows that it can fail.
-- [ ] A clean build (`--no-incremental`) gives zero errors and zero warnings.
-- [ ] Continuous integration passes on `ubuntu-latest`, `windows-latest` and `macos-latest`.
+- [x] The framework file of T62 fails the gate from the gate program, which passes it before the change.
+- [x] Each new test fails before its correction, or an injection shows that it can fail.
+- [x] A clean build (`--no-incremental`) gives zero errors and zero warnings.
+- [ ] Continuous integration passes on `ubuntu-latest`, `windows-latest` and `macos-latest`. The merge
+      records the run.
+
+## Outcome
+
+Status: Done · v0.90 · the commit that carries this block.
+
+No file outside the gate files can give xUnit a framework, a runner, a message sink, an order or a discoverer of
+its own in a test project, and no product project can declare a name of xUnit where a test sees it. The file of
+T62 fails the gate program, which passed it before.
+
+## Method
+
+**Mechanical.** 26 new tests, with each theory case counted: the two gates on the repository, one permitted case and 23 cases of the
+forms. The file of T62 in `Engine.Tests/Http/` failed the gate program with six offences, and a type
+`Engine.Assert` in `Engine.Core` failed it with one. Four injections into the new checks each failed their cases.
+
+**Judgement.** The gate refuses each point where a framework, a runner or a discoverer enters, and not each type
+of `Xunit.Sdk` by name: each other type of that namespace needs the namespace, which the gate refuses in a test
+project. `Xunit.Abstractions` stays permitted, because a test uses its output helper; the interfaces of that
+namespace that a sink or a discoverer implements are refused by name. A product type counts when a test namespace
+sees it: in the global namespace, in a namespace that encloses a test namespace, or under one.
+
+**Weakest.** The gate reads syntax and binds no name, so an alias chain through a type that is not of xUnit, or
+reflection at run time, is not seen. The three gates that run engine code still run in the test process (T31),
+so a new form that reaches them is a new finding.
 
 ## Notes for the implementer
 
@@ -87,3 +112,5 @@ No file outside the gate files can change the result of a test in a test project
   passed it before the change, and a type `Engine.Assert` in `Engine.Core` failed it. Four injections each
   failed their cases (no attribute check: 5, no base type check: 3, no check of `Xunit.Sdk`: 5, no product
   namespace seen: 4).
+- 2026-10-28: closed after a clean build and a full local run of 662 tests (533 in `Engine.Tests`, 89 in
+  `3DEngine.Tests`, 40 in `3DEngine.ImageTests`).

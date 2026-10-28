@@ -2500,3 +2500,30 @@ the research gives 5 to 7 evenings for P8a and the roadmap 3 to 5, so the review
 New tests: none. The test list holds 636. `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero
 warnings. Open entries: 14 of 15. New diagnostic codes: none. The next codebase review is due when more than four
 product milestones or more than twelve entries follow v0.88.
+
+## v0.90 — No file outside the gate files can replace the test framework of a test project (P0.34, TASK-0088)
+
+The codebase review of 2026-10-28 found that a test framework of xUnit in a file that is not a gate file makes
+each failed test pass, with the exact count of tests (T62, high). The owner answered the eight questions of the
+review on 2026-10-28, A to each; the roadmap rows of P8a and of a new slice P8f hold the answers.
+
+**The change.**
+
+- `TestAttributeGateTests` refuses, in each test project, the attributes `TestFramework`, `TestCaseOrderer`,
+  `TestCollectionOrderer` and the discoverers, each type that derives from the runner surface of xUnit, the
+  namespace `Xunit.Sdk`, an alias that reaches them, and an extern alias.
+- The same gate refuses a type with a name of xUnit in a product project, in the global namespace or in a namespace
+  that a test namespace sees.
+- The roadmap splits P8a: P8a holds the engine and the server, and P8f the desktop and the agent (Q8). The review
+  gate reads a slice as a number and one letter, so the name is P8f and not P8a2.
+
+**Proof.** 26 new tests. The file of T62 failed the gate program with six offences, and a type `Engine.Assert` in
+`Engine.Core` failed it. Four injections each failed their cases.
+
+**What stays.** The gate reads syntax and binds no name. The three gates that run engine code stay in the test
+process (T31).
+
+New tests: 26. The test list holds 662 (533 in `Engine.Tests`, 89 in `3DEngine.Tests`, 40 in
+`3DEngine.ImageTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
+entries: 14 of 15. New diagnostic codes: none. Since the review of v0.88, 0 product milestones and 2 entries
+followed it.
