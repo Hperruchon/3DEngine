@@ -119,3 +119,7 @@ and the desktop sends the command that a person asks for.
   (`Presenter.OldSwapchain`), and the swapchain frees its depth image when its creation fails. The setter of
   `Camera.PitchDegrees` clamps to the range of `Orbit` and gives 0 for NaN. Five tests; the old rule of each failed
   its tests (1 and 3 cases). The free of the depth image has no test, because only a driver that fails reaches it.
+- 2026-10-28: E74. `engine-api-http` disposes its app after a normal stop, so the session closes and waits for a
+  running command before the backend goes (E66), and each other exception of the composition gives exit code 5
+  with the app disposed. No test: no test stops the server with a signal on each runner, and none can make the
+  composition throw; the full run of the process tests passes.
