@@ -64,7 +64,7 @@ public sealed unsafe class SdlInput
                 break;
 
             case SDL_EventType.KeyDown or SDL_EventType.KeyUp:
-                Key(sdlEvent.key.scancode, sdlEvent.type == SDL_EventType.KeyDown, time);
+                Key(sdlEvent.key.scancode, sdlEvent.key.key, sdlEvent.type == SDL_EventType.KeyDown, time);
                 break;
 
             case SDL_EventType.TextInput:
@@ -83,7 +83,7 @@ public sealed unsafe class SdlInput
     private PointerSample Mouse(SDL_MouseID which, float x, float y, PointerButtons buttons, PointerPhase phase, ulong time)
         => new(DeviceKind.Mouse, (ulong)which, 0, x, y, 1, buttons, _modifiers, phase, time);
 
-    private void Key(SDL_Scancode code, bool down, ulong time)
+    private void Key(SDL_Scancode code, SDL_Keycode keycode, bool down, ulong time)
     {
         if (code is SDL_Scancode.LeftShift or SDL_Scancode.RightShift)
         {
@@ -115,6 +115,13 @@ public sealed unsafe class SdlInput
             SDL_Scancode.H => InputKey.H,
             _ => null,
         };
+
+        // ADR-0032 item 9: Z and Y follow the letter of the layout, not the place of the key, so
+        // Control and Z undoes on a QWERTY, an AZERTY and a QWERTZ keyboard.
+        if ((uint)keycode == SDLK_Z)
+            key = InputKey.Z;
+        else if ((uint)keycode == SDLK_Y)
+            key = InputKey.Y;
         if (key is { } known)
             _frame.Add(new KeySample(known, down, _modifiers, time));
     }

@@ -23,6 +23,11 @@ internal sealed record UndoAction : PanelAction;
 
 internal sealed record RedoAction : PanelAction;
 
+// ADR-0032 item 4: the numbers of an apply of the pad, for a new box or a move of a body.
+internal sealed record CreateBoxAction(double X, double Y, double Z) : PanelAction;
+
+internal sealed record MoveBodyAction(Guid Body, double Dx, double Dy, double Dz) : PanelAction;
+
 // The line of the document file in the panel: the name of the file, or null for an
 // unsaved document, and the result of the last save or open.
 internal sealed record DocumentLine(string? FileName, string? Message);

@@ -1,7 +1,9 @@
 using System.Numerics;
 using System.Runtime.InteropServices;
+using System.Globalization;
 using ImGuiNET;
 using ThreeDEngine.Core.Input;
+using ThreeDEngine.Core.Numeric;
 using ThreeDEngine.Vulkan;
 
 namespace ThreeDEngine.Desktop.Ui;
@@ -43,6 +45,22 @@ internal sealed unsafe class DesktopUi : IDisposable
     public const string OpenLabel = "Open";
     public const string UndoLabel = "Undo";
     public const string RedoLabel = "Redo";
+    public const string NewBoxLabel = "New box";
+    public const string MoveLabel = "Move";
+
+    // ADR-0032 item 5: the window of the pad and its buttons, row by row.
+    public const string PadName = "Pad";
+    public static readonly string[][] PadRows =
+    [
+        ["7", "8", "9", "(", ")"],
+        ["4", "5", "6", "*", "pi"],
+        ["1", "2", "3", "-", "sqrt("],
+        ["0", ".", "+", "/", "Delete"],
+        ["Clear", "Next", "Apply", "Cancel"],
+    ];
+
+    // ADR-0015 item 7: the millimetre is the one length unit of a document.
+    private const string Unit = "mm";
 
     private readonly IntPtr _context;
     private readonly string _address;
@@ -68,6 +86,10 @@ internal sealed unsafe class DesktopUi : IDisposable
     // buffer, and Rename could rename the body that the click selected with the text of
     // the field.
     private bool _dropFocus;
+
+    // ADR-0032 items 3 and 4: the open pad, and the body of a move, or null for a new box.
+    private NumericPad? _pad;
+    private Guid? _padBody;
 
     public DesktopUi(string address)
     {
@@ -106,6 +128,22 @@ internal sealed unsafe class DesktopUi : IDisposable
 
     // The filter of the panel, as the person typed it.
     public string Filter => _filter;
+
+    // The open pad, or null.
+    public NumericPad? Pad => _pad;
+
+    // The key of the rectangle of a control of the pad, for ItemRectangle.
+    public static string PadItem(string label) => $"{PadName} {label}";
+
+    // The host gives the result of the command of an apply: null closes the pad, and a
+    // rejection stays in the pad (ADR-0032 item 8).
+    public void EndPad(string? rejection)
+    {
+        if (rejection is null)
+            (_pad, _padBody) = (null, null);
+        else
+            _pad?.Fail(rejection);
+    }
 
     // The rows of bodies that the last frame showed, in their order.
     public IReadOnlyList<string> ShownBodies => _shown;
@@ -160,11 +198,18 @@ internal sealed unsafe class DesktopUi : IDisposable
             _dropFocus = true;
         }
 
-        var (panel, intents) = _router.Route(samples, OverPanel, _textActive);
+        // ADR-0032 item 6: while the pad is open, it takes each key and each text of the frame.
+        var (panel, intents) = _router.Route(samples, OverPanel, _textActive || _pad is not null);
         var io = ImGui.GetIO();
 
         foreach (var sample in panel)
         {
+            if (_pad is { } pad && sample is KeySample or TextSample)
+            {
+                PadKey(pad, sample);
+                continue;
+            }
+
             switch (sample)
             {
                 case PointerSample pointer:
@@ -238,6 +283,8 @@ internal sealed unsafe class DesktopUi : IDisposable
         }
 
         Panel(bodies, selection, displaySize, document);
+        if (_pad is { } pad)
+            PadWindow(pad);
         ImGui.Render();
 
         _textActive = io.WantTextInput;
@@ -264,6 +311,10 @@ internal sealed unsafe class DesktopUi : IDisposable
             if (ImGui.Button(RedoLabel))
                 _actions.Add(new RedoAction());
             Item(RedoLabel);
+            ImGui.SameLine();
+            if (ImGui.Button(NewBoxLabel))
+                (_pad, _padBody) = (new NumericPad(NewBoxLabel, Unit, new("x", "10"), new("y", "10"), new("z", "10")), null);
+            Item(NewBoxLabel);
 
             ImGui.TextUnformatted(bodies.Count == 1 ? "1 live body" : $"{bodies.Count} live bodies");
 
@@ -324,6 +375,91 @@ internal sealed unsafe class DesktopUi : IDisposable
             _actions.Add(new SetVisibleAction(body.Id, !body.Visible));
         Item(visibility);
         ImGui.SameLine();
+
+        // ADR-0032 item 4: a move of the selected body by the offsets of the pad.
+        if (ImGui.Button(MoveLabel))
+            (_pad, _padBody) = (new NumericPad(MoveLabel, Unit, new("dx", "0"), new("dy", "0"), new("dz", "0")), body.Id);
+        Item(MoveLabel);
+        ImGui.SameLine();
+    }
+
+    // ADR-0032 item 5: the window of the pad. A row selects its field; the line under the fields
+    // gives the value of the active field, or its error, and the message of the last apply.
+    private void PadWindow(NumericPad pad)
+    {
+        ImGui.SetNextWindowPos(new Vector2(492f, 16f), ImGuiCond.FirstUseEver);
+        ImGui.SetNextWindowSize(new Vector2(620f, 600f), ImGuiCond.FirstUseEver);
+        if (ImGui.Begin(PadName))
+        {
+            ImGui.TextUnformatted(pad.Title);
+            var fields = pad.Fields;
+            for (var index = 0; index < fields.Count; index++)
+            {
+                if (ImGui.Selectable($"{fields[index].Name} = {fields[index].Text}  {pad.Unit}##field{index}", pad.Active == index, ImGuiSelectableFlags.None, new Vector2(0f, MinimumControlHeight)))
+                    pad.Select(index);
+                Item(PadItem(fields[index].Name));
+            }
+
+            var preview = pad.Preview;
+            ImGui.TextUnformatted(preview.IsValue ? $"= {preview.Value.ToString("G15", CultureInfo.InvariantCulture)} {pad.Unit}" : preview.Error!);
+            if (pad.Message is { } message)
+                ImGui.TextUnformatted(message);
+            ImGui.Separator();
+
+            foreach (var row in PadRows)
+            {
+                for (var column = 0; column < row.Length; column++)
+                {
+                    if (column > 0)
+                        ImGui.SameLine();
+                    if (ImGui.Button(row[column], new Vector2(108f, 0f)))
+                        Press(pad, row[column]);
+                    Item(PadItem(row[column]));
+                }
+            }
+        }
+
+        var position = ImGui.GetWindowPos();
+        var size = ImGui.GetWindowSize();
+        _panels.Add(new Vector4(position.X, position.Y, position.X + size.X, position.Y + size.Y));
+        ImGui.End();
+    }
+
+    // A button of the pad: an edit, an apply, a cancel, or the text of its label.
+    private void Press(NumericPad pad, string label)
+    {
+        switch (label)
+        {
+            case "Delete": pad.Delete(); break;
+            case "Clear": pad.Clear(); break;
+            case "Next": pad.Next(); break;
+            case "Apply": ApplyPad(pad); break;
+            case "Cancel": (_pad, _padBody) = (null, null); break;
+            default: pad.Append(label); break;
+        }
+    }
+
+    // ADR-0032 item 6: a key or a text of the frame while the pad is open.
+    private void PadKey(NumericPad pad, InputSample sample)
+    {
+        switch (sample)
+        {
+            case TextSample text: pad.Append(text.Text); break;
+            case KeySample { Down: true, Key: InputKey.Backspace }: Press(pad, "Delete"); break;
+            case KeySample { Down: true, Key: InputKey.Tab }: Press(pad, "Next"); break;
+            case KeySample { Down: true, Key: InputKey.Enter }: Press(pad, "Apply"); break;
+            case KeySample { Down: true, Key: InputKey.Escape }: Press(pad, "Cancel"); break;
+        }
+    }
+
+    // The numbers of an apply go to the host, and the pad stays open until EndPad.
+    private void ApplyPad(NumericPad pad)
+    {
+        if (pad.Apply() is not { } values)
+            return;
+        _actions.Add(_padBody is { } body
+            ? new MoveBodyAction(body, values[0], values[1], values[2])
+            : new CreateBoxAction(values[0], values[1], values[2]));
     }
 
     // ADR-0030 item 3: the name of the file, a name field, Save as and Open.

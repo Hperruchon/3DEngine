@@ -83,9 +83,8 @@ undo therefore needs no call of the backend and no replay. It changes only the l
     appends a command.
 11. **The desktop.** The panel gets the buttons Undo and Redo, for touch and for the mouse. A rejection shows in
     the status line of the panel. The projection of the desktop treats `body.removed` as `body.consumed`: the body
-    leaves the scene and the selection. The keys Ctrl+Z, Ctrl+Y and Ctrl+Shift+Z are not part of this record: a
-    key of the desktop is an intent, and each intent needs a touch gesture (ADR-0026 items 2 and 5). Register
-    entry R-0041 holds them.
+    leaves the scene and the selection. The keys Ctrl+Z, Ctrl+Y and Ctrl+Shift+Z, and the taps of three and four
+    fingers, give the same commands through the intent layer (ADR-0032 item 9).
 
 ## Consequences
 
@@ -104,10 +103,11 @@ replay gives the same history on each platform, because the history depends only
 - One shared history means that a person can undo the step of an agent. Q2 accepts this.
 - The history is in memory and has no limit. A step holds some body records only, so the cost is small.
 
-**Next:** TASK-0093 implements this record. Register entry R-0041 holds the keys of item 11. A limit to the depth of the history and the free of an unreachable body
+**Next:** TASK-0093 implements this record. TASK-0094 gives the keys of item 11 (ADR-0032). A limit to the depth of the history and the free of an unreachable body
 are not planned. A register entry records them when a measure shows a need.
 
 ## History
 
 - 2026-10-28 · TASK-0093 · Proposed, and accepted by the owner on the same day.
 - 2026-10-28 · TASK-0093 · The owner chose A: item 11 gives the buttons only, and R-0041 holds the keys.
+- 2026-10-28 · TASK-0094 · ADR-0032 amends item 11: the keys and two touch gestures come through the intent layer.

@@ -40,6 +40,14 @@ public class IntentParityTests
         [typeof(ShowAllIntent)] = (
             [[Touch(1, 100, 100, PointerPhase.Down, 0), Touch(2, 200, 100, PointerPhase.Down, 0)], [Touch(1, 100, 100, PointerPhase.Up, 120), Touch(2, 200, 100, PointerPhase.Up, 120)]],
             [[new KeySample(InputKey.H, true, KeyModifiers.Shift, 10 * Ms)]]),
+        // ADR-0032 item 9 (Q1 A): a tap of three fingers and Control and Z undo; a tap of four
+        // fingers and Control and Y redo.
+        [typeof(UndoIntent)] = (
+            [[Touch(1, 100, 100, PointerPhase.Down, 0), Touch(2, 200, 100, PointerPhase.Down, 0), Touch(3, 300, 100, PointerPhase.Down, 0)], [Touch(1, 100, 100, PointerPhase.Up, 120), Touch(2, 200, 100, PointerPhase.Up, 120), Touch(3, 300, 100, PointerPhase.Up, 120)]],
+            [[new KeySample(InputKey.Z, true, KeyModifiers.Control, 10 * Ms)]]),
+        [typeof(RedoIntent)] = (
+            [[Touch(1, 100, 100, PointerPhase.Down, 0), Touch(2, 200, 100, PointerPhase.Down, 0), Touch(3, 300, 100, PointerPhase.Down, 0), Touch(4, 400, 100, PointerPhase.Down, 0)], [Touch(1, 100, 100, PointerPhase.Up, 120), Touch(2, 200, 100, PointerPhase.Up, 120), Touch(3, 300, 100, PointerPhase.Up, 120), Touch(4, 400, 100, PointerPhase.Up, 120)]],
+            [[new KeySample(InputKey.Y, true, KeyModifiers.Control, 10 * Ms)]]),
         [typeof(CancelIntent)] = (
             [[Touch(1, 100, 100, PointerPhase.Down, 0)], [Touch(1, 120, 100, PointerPhase.Move, 10)], [Touch(1, 120, 100, PointerPhase.Cancel, 20)]],
             [[Mouse(100, 100, PointerButtons.Left, PointerPhase.Down, 0)], [Mouse(120, 100, PointerButtons.Left, PointerPhase.Move, 10)], [new FocusLostSample(20 * Ms)]]),
@@ -59,6 +67,8 @@ public class IntentParityTests
     [InlineData(nameof(HideIntent))]
     [InlineData(nameof(ShowAllIntent))]
     [InlineData(nameof(CancelIntent))]
+    [InlineData(nameof(UndoIntent))]
+    [InlineData(nameof(RedoIntent))]
     public void A_Touch_Script_And_A_Mouse_Script_Give_The_Same_Intents(string kind)
     {
         var (touch, mouse) = Scripts.Single(script => script.Key.Name == kind).Value;
@@ -197,6 +207,32 @@ public class IntentParityTests
         Assert.Equal(new HideIntent(null, null), intent);
     }
 
+    // ADR-0032 item 9: Control, Shift and Z redoes too, and Z or Y with no Control gives nothing.
+    [Fact]
+    public void The_Keys_Of_Undo_And_Redo_Need_Control()
+    {
+        Assert.Equal([new RedoIntent()], Run([[new KeySample(InputKey.Z, true, KeyModifiers.Control | KeyModifiers.Shift, 0)]]));
+        Assert.Empty(Run([[new KeySample(InputKey.Z, true, KeyModifiers.None, 0), new KeySample(InputKey.Y, true, KeyModifiers.Shift, 0)]]));
+        Assert.Empty(Run([[new KeySample(InputKey.Z, false, KeyModifiers.Control, 0)]]));
+    }
+
+    // A tap of three or four fingers is still and short, as a tap of two fingers is; five fingers
+    // give nothing.
+    [Fact]
+    public void A_Tap_Of_Three_Fingers_That_Moves_Or_Lasts_Does_Not_Undo()
+    {
+        InputSample[] Down(int fingers) => [.. Enumerable.Range(1, fingers).Select(finger => (InputSample)Touch((ulong)finger, 100 * finger, 100, PointerPhase.Down, 0))];
+        InputSample[] Up(int fingers, ulong ms) => [.. Enumerable.Range(1, fingers).Select(finger => (InputSample)Touch((ulong)finger, 100 * finger, 100, PointerPhase.Up, ms))];
+
+        var moved = Run([Down(3), [Touch(1, 130, 100, PointerPhase.Move, 50)], Up(3, 120)]);
+        var slow = Run([Down(3), Up(3, 600)]);
+        var five = Run([Down(5), Up(5, 120)]);
+
+        Assert.DoesNotContain(moved, intent => intent is UndoIntent);
+        Assert.Empty(slow);
+        Assert.Empty(five);
+    }
+
     // Each gesture of ADR-0029 is a setting: a long press can select, and the map refuses a
     // show all for a gesture of a point.
     [Fact]
@@ -220,6 +256,8 @@ public class IntentParityTests
         (HideIntent x, HideIntent y) => x.X.HasValue == y.X.HasValue && Near(x.X ?? 0, y.X ?? 0) && Near(x.Y ?? 0, y.Y ?? 0),
         (ShowAllIntent, ShowAllIntent) => true,
         (CancelIntent, CancelIntent) => true,
+        (UndoIntent, UndoIntent) => true,
+        (RedoIntent, RedoIntent) => true,
         _ => false,
     };
 

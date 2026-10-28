@@ -1,6 +1,7 @@
 using System.Numerics;
 using Engine.Api.Http;
 using Engine.Core.Geometry;
+using ThreeDEngine.Core.Input;
 using ThreeDEngine.Desktop;
 using ThreeDEngine.Desktop.Ui;
 using ThreeDEngine.Vulkan;
@@ -91,20 +92,94 @@ public class PanelImageTests
         }
     }
 
+    // ADR-0032 items 5 and 11 (TASK-0094): the pad is a second window of dark pixels with bright
+    // glyphs, beside the panel, in a picture as large as the window of the desktop.
+    [VulkanImageFact]
+    public void The_Pad_Draws_Its_Fields_And_Buttons_Over_The_Scene()
+    {
+        const uint PadWidth = 1280, PadHeight = 720;
+        var messagesBefore = GraphicsDevice.ValidationMessageCount;
+        using var host = new EngineHost(new InProcessMeshBackend(), "managed", "test");
+        using var ui = new DesktopUi("http://127.0.0.1:5180");
+        var scene = SessionScene.Create();
+        var camera = scene.Cameras[0];
+        var display = new Vector2(PadWidth, PadHeight);
+        byte[] pixels;
+        Vector4 pad;
+
+        using (var device = new GraphicsDevice("3DEngine.ImageTests", enableValidation: true, window: null, synchronizationValidation: true))
+        {
+            using var target = new OffscreenTarget(device, new VkExtent2D(PadWidth, PadHeight));
+            using var renderer = new SceneRenderer(device, target.RenderPass, host);
+            using var panelRenderer = new UiRenderer(device, target.RenderPass);
+            var (atlasWidth, atlasHeight, rgba) = ui.FontAtlas();
+            ui.SetFontTexture(panelRenderer.CreateTexture(atlasWidth, atlasHeight, rgba));
+            renderer.Update(scene, camera, (float)PadWidth / PadHeight);
+
+            for (var frame = 0; frame < 2; frame++)
+                ui.Frame(1f / 60f, display, Vector2.One, renderer.LiveBodies);
+            var button = ui.ItemRectangle(DesktopUi.NewBoxLabel)!.Value;
+            var (x, y) = ((button.X + button.Z) / 2, (button.Y + button.W) / 2);
+            foreach (var phase in new[] { PointerPhase.Down, PointerPhase.Up })
+            {
+                ui.Route([new PointerSample(DeviceKind.Mouse, 1, 0, x, y, 1, PointerButtons.Left, KeyModifiers.None, phase, 0)]);
+                ui.Frame(1f / 60f, display, Vector2.One, renderer.LiveBodies);
+            }
+
+            // A new window of Dear ImGui is hidden for its first frame.
+            var data = UiDrawData.Empty;
+            for (var frame = 0; frame < 3; frame++)
+                data = ui.Frame(1f / 60f, display, Vector2.One, renderer.LiveBodies);
+            Assert.NotNull(ui.Pad);
+            pad = ui.PanelRectangles[1];
+
+            pixels = target.Render((commandBuffer, framebuffer, extent) =>
+                renderer.Record(commandBuffer, framebuffer, extent, scene, camera,
+                    overlay => panelRenderer.Record(overlay, extent, data, 0)));
+        }
+
+        var picture = SavePicture(pixels, PadWidth, PadHeight, "pad.png");
+        Assert.True(GraphicsDevice.ValidationMessageCount == messagesBefore,
+            $"The validation layer gave {GraphicsDevice.ValidationMessageCount - messagesBefore} messages:\n"
+            + string.Join("\n", GraphicsDevice.ValidationMessages.Skip(messagesBefore)));
+        Assert.True(pad.Z <= PadWidth && pad.W <= PadHeight, $"The pad {pad} is not inside the picture {PadWidth} x {PadHeight}.");
+
+        int dark = 0, bright = 0, inside = 0;
+        for (var row = (int)pad.Y + 8; row < (int)pad.W - 8; row++)
+        {
+            for (var column = (int)pad.X + 8; column < (int)pad.Z - 8; column++)
+            {
+                var index = (row * (int)PadWidth + column) * 4;
+                var (r, g, b) = (pixels[index], pixels[index + 1], pixels[index + 2]);
+                inside++;
+                if (r < 60 && g < 60 && b < 60)
+                    dark++;
+                if (r > 180 && g > 180 && b > 180)
+                    bright++;
+            }
+        }
+
+        // The buttons of the pad are blue, so fewer pixels are dark than in the panel.
+        Assert.True(dark > inside * 0.4, $"The picture {picture}: {dark} of {inside} pixels of the pad are dark.");
+        Assert.True(bright > 300, $"The picture {picture}: {bright} pixels of the pad are bright; the text is absent.");
+    }
+
     private static (int R, int G, int B) Pixel(byte[] pixels, int column, int row)
     {
         var index = (row * (int)Width + column) * 4;
         return (pixels[index], pixels[index + 1], pixels[index + 2]);
     }
 
-    private static string SavePicture(byte[] pixels)
+    private static string SavePicture(byte[] pixels) => SavePicture(pixels, Width, Height, "panel.png");
+
+    private static string SavePicture(byte[] pixels, uint width, uint height, string name)
     {
         var folder = Environment.GetEnvironmentVariable("IMAGE_TEST_OUTPUT") is { Length: > 0 } output
             ? output
             : Path.Combine(AppContext.BaseDirectory, "pictures");
         Directory.CreateDirectory(folder);
-        var path = Path.Combine(folder, "panel.png");
-        Png.Write(path, (int)Width, (int)Height, pixels);
+        var path = Path.Combine(folder, name);
+        Png.Write(path, (int)width, (int)height, pixels);
         return path;
     }
 }

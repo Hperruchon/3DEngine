@@ -91,3 +91,8 @@ redoes with the keys.
 
 - 2026-10-28: opened after TASK-0093 (v0.95). The first commit holds ADR-0032, accepted by the owner with Q1 A,
   Q2 A and Q3 A, and the amendment links of ADR-0026 and ADR-0031.
+- 2026-10-28: the code (ADR-0032 items 1 to 9). `Expression` and `NumericPad` in `3DEngine.Core/Numeric/`; the
+  pads "New box" and "Move" in the panel, which take the keys while they are open; `InputKey.Z` and `Y` by key
+  code, so the letter and not the place of the key counts; `UndoIntent` and `RedoIntent` with the taps of three
+  and four fingers. 50 tests in `3DEngine.Tests`, 9 in `3DEngine.ImageTests`. 16 injections: 15 were caught at
+  once; a bad field that did not become active passed until its test selected another field first.
