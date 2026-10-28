@@ -2389,3 +2389,34 @@ New tests: 17. The test list holds 540 (466 in `Engine.Tests`, 67 in `3DEngine.T
 `3DEngine.ImageTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings.
 Open entries: 15 of 15. New diagnostic codes: none. Since the review of v0.76, 1 product milestone and 9
 entries followed it.
+
+## v0.86 — The desktop shows text and a panel, drawn by a first-party renderer (R7b, TASK-0084)
+
+On 2026-10-27 the owner decided the path to the milestone "CAD on one part" (KD1 to KD6), and chose the binding
+ImGui.NET, which has no question about a licence. ADR-0027 records KD1 and amends ADR-0026 item 1. Register entry
+R-0021 is closed. The roadmap gets the rows R7b, R8a, R8b, K0a, K0b and K3a and rule 4 of its order, and the decision
+sheet is `docs/proposals/2026-10-27-path-to-cad-decision-sheet.md`.
+
+**The change.**
+
+- `3DEngine.Vulkan/Ui/`: neutral 2D draw data, the first sampled texture, descriptor set and 2D pipeline, and the
+  shaders `ui.vert` and `ui.frag`.
+- `3DEngine.Core/Input/` and `SdlInput`: the text sample, seven keys of text editing, and the Control key.
+- `3DEngine/Ui/`: the router of the samples, the conversion of the draw data, and `DesktopUi` with the panel
+  "Document": the address, the live bodies with their kind, a filter field and a Clear button, each control 44
+  pixels high. ImGui.NET 1.91.6.1 has its only pin in `3DEngine/3DEngine.csproj`.
+- `UiLibraryGateTests` refuses the namespace outside `3DEngine/Ui/` and the pin outside the host project.
+- `THIRD-PARTY-NOTICES.md` section 5 gives the MIT texts of ImGui.NET, cimgui and Dear ImGui, and names its font.
+
+**Proof.** 34 new tests, and each one failed under an injection. Run 40603870213 passed on the three runners, with
+the native library on Windows, Linux and macOS arm64, and the image test of the panel on lavapipe. The desktop ran
+under synchronization validation with no message. The owner accepted the pictures on 2026-10-28.
+
+**What stays.** A failed check inside the native library stops the process; two such causes came up in the tests
+and are corrected. The default font is coarse at 26 pixels. The touch path of the panel is proven by synthetic
+samples only.
+
+New tests: 34. The test list holds 574 (475 in `Engine.Tests`, 75 in `3DEngine.Tests`, 24 in
+`3DEngine.ImageTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
+entries: 14 of 15. New diagnostic codes: none. Since the review of v0.76, 2 product milestones and 10 entries
+followed it.

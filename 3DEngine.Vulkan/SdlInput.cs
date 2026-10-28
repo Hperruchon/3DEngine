@@ -7,9 +7,10 @@ namespace ThreeDEngine.Vulkan;
 // The translation of SDL events into the samples of the intent layer (ADR-0026 item 4,
 // TASK-0082). The window turns the hint SDL_HINT_TOUCH_MOUSE_EVENTS off; this translation
 // also drops each mouse event whose device is SDL_TOUCH_MOUSEID, so a touch never counts
-// two times (decision D8). It keeps the state of the Shift keys from the key events, so
-// it makes no call of SDL, and a test gives it events that it builds.
-public sealed class SdlInput
+// two times (decision D8). It keeps the state of the Shift and Control keys from the key
+// events, so it makes no call of SDL, and a test gives it events that it builds. The text
+// input of SDL becomes a text sample (ADR-0027 item 5, TASK-0084).
+public sealed unsafe class SdlInput
 {
     private readonly List<InputSample> _frame = new();
     private KeyModifiers _modifiers;
@@ -66,6 +67,12 @@ public sealed class SdlInput
                 Key(sdlEvent.key.scancode, sdlEvent.type == SDL_EventType.KeyDown, time);
                 break;
 
+            case SDL_EventType.TextInput:
+                var text = NativeStrings.Read(sdlEvent.text.text);
+                if (text.Length > 0)
+                    _frame.Add(new TextSample(text, time));
+                break;
+
             case SDL_EventType.WindowFocusLost:
                 _modifiers = KeyModifiers.None;
                 _frame.Add(new FocusLostSample(time));
@@ -84,6 +91,12 @@ public sealed class SdlInput
             return;
         }
 
+        if (code is SDL_Scancode.LeftControl or SDL_Scancode.RightControl)
+        {
+            _modifiers = down ? _modifiers | KeyModifiers.Control : _modifiers & ~KeyModifiers.Control;
+            return;
+        }
+
         InputKey? key = code switch
         {
             SDL_Scancode.Left => InputKey.ArrowLeft,
@@ -92,6 +105,13 @@ public sealed class SdlInput
             SDL_Scancode.Down => InputKey.ArrowDown,
             SDL_Scancode.KpPlus or SDL_Scancode.Equals => InputKey.Plus,
             SDL_Scancode.KpMinus or SDL_Scancode.Minus => InputKey.Minus,
+            SDL_Scancode.Backspace => InputKey.Backspace,
+            SDL_Scancode.Delete => InputKey.Delete,
+            SDL_Scancode.Home => InputKey.Home,
+            SDL_Scancode.End => InputKey.End,
+            SDL_Scancode.Return or SDL_Scancode.KpEnter => InputKey.Enter,
+            SDL_Scancode.Escape => InputKey.Escape,
+            SDL_Scancode.Tab => InputKey.Tab,
             _ => null,
         };
         if (key is { } known)

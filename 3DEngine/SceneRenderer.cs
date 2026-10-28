@@ -34,6 +34,9 @@ internal sealed unsafe class SceneRenderer : IDisposable
         _bodies = new SessionBodies(host);
     }
 
+    // Each live body with its kind, for the panel of the user interface (ADR-0027 item 7).
+    public IReadOnlyList<(Guid Id, string Kind)> LiveBodies => _bodies.Live;
+
     // The box around the live bodies that the scene holds, or null.
     public ((double X, double Y, double Z) Min, (double X, double Y, double Z) Max)? Bounds => _bodies.Bounds;
 
@@ -48,8 +51,9 @@ internal sealed unsafe class SceneRenderer : IDisposable
         }
     }
 
-    // Records the render pass of one frame: the clear, then each draw of the scene.
-    public void Record(VkCommandBuffer commandBuffer, VkFramebuffer framebuffer, VkExtent2D extent, Scene scene, Camera camera)
+    // Records the render pass of one frame: the clear, then each draw of the scene, then the
+    // overlay, for example the user interface (ADR-0027 item 3), in the same render pass.
+    public void Record(VkCommandBuffer commandBuffer, VkFramebuffer framebuffer, VkExtent2D extent, Scene scene, Camera camera, Action<VkCommandBuffer>? overlay = null)
     {
         _drawList.Clear();
         SceneWalker.Fill(scene, camera, _drawList);
@@ -74,6 +78,7 @@ internal sealed unsafe class SceneRenderer : IDisposable
 
         _device.DeviceApi.vkCmdBeginRenderPass(commandBuffer, &renderPassInfo, VkSubpassContents.Inline);
         _executor.Execute(commandBuffer, extent, _drawList.Records, _meshes, camera.Projection((float)extent.width / extent.height));
+        overlay?.Invoke(commandBuffer);
         _device.DeviceApi.vkCmdEndRenderPass(commandBuffer);
     }
 

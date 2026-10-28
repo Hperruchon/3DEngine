@@ -39,18 +39,19 @@ names. Do not read all of them.
 | [0023](0023-camera-depth-and-draw-list.md) | The camera, the depth and the draw list of the renderer | Amended | Rendering | — | 0024, 0026 |
 | [0024](0024-in-process-events-and-body-origin.md) | The events of a session in its host, and the origin of a body in double precision | Accepted | Rendering, clients | 0019, 0023 | — |
 | [0025](0025-observe-a-cut.md) | The first demonstration, a device with no window, and an image test | Accepted | Rendering, boundary | 0009, 0017, 0022 | — |
-| [0026](0026-intent-layer.md) | Device-tagged pointer samples, an intent layer, and a parity test of touch and mouse | Accepted | Rendering, clients | 0023 | — |
+| [0026](0026-intent-layer.md) | Device-tagged pointer samples, an intent layer, and a parity test of touch and mouse | Amended | Rendering, clients | 0023 | 0027 |
+| [0027](0027-text-and-panels.md) | Text and panels through Dear ImGui, drawn by a first-party renderer | Accepted | Rendering, clients | 0026 | — |
 
 ## Topics
 
 - **Contracts** — 0005, 0006, 0008, 0012, 0013, 0018, 0020, 0021. Read these before changing `Engine.Contracts/**`.
 - **Boundary** — 0001, 0004, 0007, 0012, 0014, 0017, 0022, 0025. Read these before changing project references or adding clients.
 - **Workflow** — 0002. Read before adding a client or skipping CLI.
-- **Clients** — 0002, 0007, 0019, 0024, 0026. Read before changing UI/CLI/host code.
+- **Clients** — 0002, 0007, 0019, 0024, 0026, 0027. Read before changing UI/CLI/host code.
 - **Deployment** — 0004, 0019. Read these before changing where a session runs or which transport a host uses.
 - **Geometry** — 0001, 0012, 0014, 0018, 0021. Read before adding a capability or backend.
 - **Observability** — 0005, 0010, 0013, 0020, 0021. Read before changing event ordering, retention, subscription, or schema endpoints.
-- **Rendering** — 0009, 0017, 0018, 0022, 0023, 0024, 0025, 0026. Read these before changing `3DEngine.Core`, `3DEngine.Vulkan` or `3DEngine`.
+- **Rendering** — 0009, 0017, 0018, 0022, 0023, 0024, 0025, 0026, 0027. Read these before changing `3DEngine.Core`, `3DEngine.Vulkan` or `3DEngine`.
 
 ## Adding an ADR
 
