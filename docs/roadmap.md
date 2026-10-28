@@ -110,6 +110,9 @@ This track removes each condition that blocks other work.
 | P0.31 | A stop waits for a running command, and the present path is checked for hazards. TASK-0079. | 2 |
 | P0.32 | The desktop uses a binding with SDL 3.2 or later. TASK-0081. | 1–2 |
 | P0.33 | A codebase review follows the product milestones. TASK-0083. | 1 |
+| P0.34 | No file outside the gate files can replace the test framework of a test project. TASK-0088. | 1 |
+| P0.35 | The gates bind the names that the compiler and MSBuild bind, and the archive and the review counter check their links. TASK-0089. | 2–3 |
+| P0.36 | A name is a JSON string of well-formed text, the server disposes at each stop, and the desktop ends a text field at a click on the scene. TASK-0090. | 2–3 |
 
 ## Track P — The platform
 
@@ -183,7 +186,9 @@ The tracks are not strictly sequential, but three rules hold:
    codebase review of 2026-10-13 put P0.28 before R6 (question Q1, answered by the owner on 2026-10-14). P0.29 comes
    after R6, except the parts that R6 takes. P0.30 and P0.32 come before R7 (the owner answered
    questions Q1 and Q2, D7, of the codebase review of 2026-10-17 on 2026-10-17). The order of the owner of
-   2026-10-27: P0.33, P0.32, R7, TASK-0040, then P0.31, whose findings are medium or low.
+   2026-10-27: P0.33, P0.32, R7, TASK-0040, then P0.31, whose findings are medium or low. The codebase review of
+   2026-10-28 puts P0.34, which holds a high finding, before P8a, and P0.35 and P0.36 after P8a, by the rule of
+   `docs/templates.md`, section 7.
 2. R2 blocks each later phase in track R. No mesh leaves the geometry backend today.
 3. K4 needs K0, K1 and K2. Do not start K4 before the reference model exists.
 4. The path to the milestone "CAD on one part" (the owner, 2026-10-27, KD2): R7b, R8a, R8b, the codebase
