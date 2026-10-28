@@ -1,7 +1,7 @@
 ---
 id: 0084
 title: The desktop shows text and a panel, drawn by a first-party renderer
-status: Active
+status: Done
 phase: R7b
 opened: 2026-10-27
 depends-on: [0079, 0082]
@@ -92,14 +92,48 @@ way, and a gesture outside the panel still moves the camera.
 
 ## Acceptance criteria
 
-- [ ] Each new test fails before its correction, or an injection shows that it can fail.
-- [ ] `UiLibraryGateTests` fails on an injected use of the namespace `ImGuiNET` outside `3DEngine/Ui/`, and on
+- [x] Each new test fails before its correction, or an injection shows that it can fail.
+- [x] `UiLibraryGateTests` fails on an injected use of the namespace `ImGuiNET` outside `3DEngine/Ui/`, and on
       an injected pin of the package in another project.
-- [ ] The image test of the panel passes on lavapipe with no validation message.
-- [ ] A picture of the desktop with the panel, a typed filter, and the camera moved by a drag outside the
-      panel. The owner accepts it.
-- [ ] A clean build (`--no-incremental`) gives zero errors and zero warnings.
-- [ ] Continuous integration passes on `ubuntu-latest`, `windows-latest` and `macos-latest`.
+- [x] The image test of the panel passes on lavapipe with no validation message (run 40603870213).
+- [x] A picture of the desktop with the panel, a typed filter, and the camera moved by a drag outside the
+      panel. The owner accepted it on 2026-10-28.
+- [x] A clean build (`--no-incremental`) gives zero errors and zero warnings.
+- [ ] Continuous integration passes on `ubuntu-latest`, `windows-latest` and `macos-latest`. The merge
+      records the run.
+
+## Outcome
+
+Status: Done · v0.86 · the commit that carries this block.
+
+The desktop shows a panel with text, a text field and a button over the scene. Dear ImGui gives the draw
+data through ImGui.NET, and a first-party renderer draws it with the first sampled texture, descriptor set
+and 2D pipeline of the project. A gesture that starts over the panel belongs to it, and each other gesture
+moves the camera; a finger, a pen and a mouse give the panel the same action. Only `3DEngine/Ui/` names the
+library, and a gate holds it.
+
+## Method
+
+**Mechanical.** 34 new tests, with each theory case counted: 9 in `Engine.Tests` (the gate), 8 in
+`3DEngine.Tests` (the input and the renderer), and 17 in `3DEngine.ImageTests`: 16 that run on each runner
+(the router and the panel) and the image test of the panel, which runs on Ubuntu with lavapipe. Each one
+failed under an injection. Run 40603870213 passed on the three runners, so the native cimgui of the package ran on Windows,
+on Linux and on macOS arm64. The desktop under synchronization validation gave no validation message, and
+the owner accepted three pictures: the panel with two bodies, a typed filter, and an orbit after a drag
+outside the panel.
+
+**Judgement.** The renderer keeps one pair of buffers for each swapchain image, because the presenter waits
+for the fence of an image before it reuses it. The router decides the owner of a gesture at its start, from
+the panels of the last frame, so it needs no library and a test reads it alone. The tests of the panel live
+in `3DEngine.ImageTests`, the only verifier that may reference the host. The panel reads the live bodies
+that the desktop holds from the events, and no state of the engine.
+
+**Weakest.** A failed check inside the native library stops the whole process; on this computer it waited
+in a dialog, and a run of the tests blocked. Two causes came up and are corrected: a frame before the font
+atlas was built, and two test classes that used the library at the same time (Dear ImGui keeps one context
+for the process). A future defect of the same kind crashes the desktop and not one panel. The default font
+is a bitmap font and looks coarse at 26 pixels. The touch path is proven by synthetic samples only. Commit
+a0494b6 of TASK-0079 is not related; this task has no commit that does not build.
 
 ## Notes for the implementer
 
@@ -145,3 +179,5 @@ way, and a gesture outside the panel still moves the camera.
   the tags of the versions in use, and names the default font ProggyClean (MIT, by Tristan Grimmer). The
   repository does not hold the package, but the output of the desktop holds its native library.
   `docs/INDEX.md` names the two folders `Ui/`, and the glossary defines "panel".
+- 2026-10-28: the owner accepted the pictures. Closed, after a clean build and a full local run of 574 tests
+  (475 in `Engine.Tests`, 75 in `3DEngine.Tests`, 24 in `3DEngine.ImageTests`).
