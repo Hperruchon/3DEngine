@@ -35,12 +35,13 @@ internal static class DesktopEngineHost
         using (surface)
         {
             Console.WriteLine($"3DEngine serves the document at {surface.Address}");
+            Console.WriteLine($"3DEngine document file: {surface.Host.Session.FilePath ?? "none"}");
 
             try
             {
                 var scene = SessionScene.Create();
                 var window = new Window("3DEngine Desktop", 1280, 720);
-                using var engine = new NativeThreeDEngine(window, surface.Host, synchronizationValidation: surface.SynchronizationValidation, address: surface.Address);
+                using var engine = new NativeThreeDEngine(window, surface.Host, synchronizationValidation: surface.SynchronizationValidation, address: surface.Address, document: surface.Document);
 
                 engine.Initialize();
                 engine.LoadScene(scene);
@@ -49,7 +50,8 @@ internal static class DesktopEngineHost
                 bool running = true;
                 DateTime lastFrame = DateTime.UtcNow;
 
-                while (running && !surface.Stopping.IsCancellationRequested)
+                // ADR-0030 item 3: an open that a check accepted ends the loop.
+                while (running && !surface.Stopping.IsCancellationRequested && surface.Document.RequestedOpen is null)
                 {
                     // A frame draws nothing while the window has no area, so the loop
                     // waits for an event, at most 100 ms so that a stop of the surface
@@ -86,6 +88,14 @@ internal static class DesktopEngineHost
             {
                 Console.WriteLine($"Error: {ex.Message}");
             }
+        }
+
+        // ADR-0030 item 4: the surface is disposed, so the port is free, and the program
+        // starts again with the file on the same port.
+        if (surface.Document.RequestedOpen is { } requested)
+        {
+            Console.WriteLine($"3DEngine starts again with {requested}");
+            DesktopDocument.StartAgain(args, requested);
         }
 
         return 0;
