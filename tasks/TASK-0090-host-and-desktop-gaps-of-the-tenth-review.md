@@ -105,3 +105,7 @@ and the desktop sends the command that a person asks for.
   ImGui in the next frame, and the keys of the same frame go to the scene. The two probes of the review are tests,
   and both failed before the fix (the key went to the field; Rename gave the second body the text "X"). An
   injection that keeps the focus failed both.
+- 2026-10-28: V27. `BodyVisibility` keeps the visibility of each body by the identifier of its mesh and keeps the
+  count of the visible bodies that have a mesh until the next change; `SessionBodies` reads it for the count, the
+  box and the pick. Two tests; an injection that counts at each read failed one. The full image tests, with the
+  first demonstration on the GPU of this computer, pass.
