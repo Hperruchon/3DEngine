@@ -7,6 +7,10 @@ public static class DiagnosticCodes
     public const string CommandUnknown = "E-CMD-UNKNOWN";
     public const string CommandVersionStale = "E-CMD-VERSION-STALE";
     public const string CommandBusBusy = "E-CMD-BUS-BUSY";
+
+    // ADR-0031 item 8: an Undo with no step to reverse, and a Redo with no undone step.
+    public const string CommandNothingToUndo = "E-CMD-NOTHING-TO-UNDO";
+    public const string CommandNothingToRedo = "E-CMD-NOTHING-TO-REDO";
     public const string QueryUnknown = "E-QRY-UNKNOWN";
     public const string ApiBadRequest = "E-API-BAD-REQUEST";
     public const string ApiWsInvalidSubscribe = "E-API-WS-INVALID-SUBSCRIBE";

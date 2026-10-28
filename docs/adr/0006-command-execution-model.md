@@ -7,7 +7,7 @@ date: 2026-04-28
 supersedes: []
 superseded-by: []
 amends: []
-amended-by: ['0008', '0020']
+amended-by: ['0008', '0020', '0031']
 affects:
   - Engine.Core/CommandBus.cs
 enforced-by: Engine.Tests/CommandBusTests.cs
@@ -101,7 +101,7 @@ Task<CommandResult> Apply(Command, CancellationToken)
 - Parallel command execution within a Document. Rejected for V1.
 - Multi-Document parallelism. Out of scope for V1 (single Document per runtime).
 - Distributed transactions across commands.
-- Compensating-command auto-generation for cancellation-after-commit. Clients must explicitly issue an inverse command.
+- Compensating-command auto-generation for cancellation-after-commit. A client sends an `Undo` (ADR-0031).
 - Speculative execution / preview-as-command. Previews are client-side state (ADR 0007).
 - Priority queues, fairness policies, deadlines.
 
@@ -116,6 +116,11 @@ Task<CommandResult> Apply(Command, CancellationToken)
 
 ## Open challenges
 
-- **Compensating commands as the only undo path post-commit** is theoretically clean but requires every command to have a defined inverse. V1 punts: undo/redo is implemented as log truncation + replay (cheap, correct, slow on long logs). Compensation arrives if/when log replay becomes too slow.
+- **Undo and redo** are closed by ADR-0031. An undo appends the command `Undo` to the log, and the bus reverses the recorded body changes of the last step. Nothing cuts the log, and no command type needs an inverse.
 - **Long-running commands holding the serial slot** stall every other client. If this hurts UX in practice, the answer is *not* parallelism — it is breaking the long command into smaller steps. Architectural pressure points the right direction.
 - **Per-client back-pressure** vs the current global bus queue: with multiple clients, one noisy client can fill the 64-slot queue. Mitigation if observed: per-client quotas; deferred until needed.
+
+## History
+
+- 2026-10-28 · TASK-0093 · ADR-0031 closes the open challenge of undo: an undo appends a command, and nothing
+  cuts the log.

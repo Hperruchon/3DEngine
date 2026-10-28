@@ -18,6 +18,11 @@ internal sealed record SaveDocumentAction(string Name) : PanelAction;
 
 internal sealed record OpenDocumentAction(string Name) : PanelAction;
 
+// ADR-0031 item 11: an Undo or a Redo of the session.
+internal sealed record UndoAction : PanelAction;
+
+internal sealed record RedoAction : PanelAction;
+
 // The line of the document file in the panel: the name of the file, or null for an
 // unsaved document, and the result of the last save or open.
 internal sealed record DocumentLine(string? FileName, string? Message);

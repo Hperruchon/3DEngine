@@ -70,13 +70,26 @@ public sealed class DesktopDocumentTests : IDisposable
         Assert.Equal([new SaveDocumentAction("plate"), new OpenDocumentAction("plate")], ui.TakeActions());
     }
 
-    // ADR-0027 item 6 for the controls of ADR-0030 item 3.
+    // ADR-0031 item 11 (TASK-0093): a tap and a click give an undo and a redo.
+    [Fact]
+    public void The_Undo_And_Redo_Buttons_Give_Their_Actions_By_Touch_And_By_Mouse()
+    {
+        using var ui = Opened();
+
+        Tap(ui, DeviceKind.Touch, Centre(ui, DesktopUi.UndoLabel));
+        Tap(ui, DeviceKind.Mouse, Centre(ui, DesktopUi.RedoLabel));
+        Tap(ui, DeviceKind.Mouse, Centre(ui, DesktopUi.UndoLabel));
+
+        Assert.Equal([new UndoAction(), new RedoAction(), new UndoAction()], ui.TakeActions());
+    }
+
+    // ADR-0027 item 6 for the controls of ADR-0030 item 3 and ADR-0031 item 11.
     [Fact]
     public void Each_File_Control_Is_At_Least_44_Pixels_High()
     {
         using var ui = Opened();
 
-        foreach (var label in new[] { DesktopUi.FileNameLabel, DesktopUi.SaveAsLabel, DesktopUi.OpenLabel })
+        foreach (var label in new[] { DesktopUi.FileNameLabel, DesktopUi.SaveAsLabel, DesktopUi.OpenLabel, DesktopUi.UndoLabel, DesktopUi.RedoLabel })
         {
             var rectangle = ui.ItemRectangle(label) ?? throw new InvalidOperationException($"The panel has no control {label}.");
             Assert.True(rectangle.W - rectangle.Y >= DesktopUi.MinimumControlHeight, $"{label} is {rectangle.W - rectangle.Y} pixels high.");

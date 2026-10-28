@@ -133,6 +133,26 @@ public class BodyActionsTests
         Assert.Equal("Plate", (await Live(host)).Single(body => body.Id == A).Name);
     }
 
+    // ADR-0031 item 11 (TASK-0093): an undo and a redo are commands of the session; an applied
+    // move gives no line, and a rejection gives its code for the line of the panel.
+    [Fact]
+    public async Task An_Undo_And_A_Redo_Are_Commands_Of_The_Session_And_A_Rejection_Gives_Its_Code()
+    {
+        using var host = await TwoBoxes();
+        var actions = new BodyActions(host.Session);
+        actions.Select(B);
+
+        Assert.Null(actions.Undo());
+        Assert.Equal([A], (await Live(host)).Select(body => body.Id));
+        actions.Forget(await Live(host));
+        Assert.Null(actions.Selection);
+
+        Assert.Null(actions.Redo());
+        Assert.Equal([A, B], (await Live(host)).Select(body => body.Id).Order());
+        Assert.StartsWith("E-CMD-NOTHING-TO-REDO: ", actions.Redo(), StringComparison.Ordinal);
+        Assert.Equal(["Undo", "Redo"], await host.Session.Read((document, _) => document.Log.Skip(2).Select(entry => entry.Command.Name).ToArray()));
+    }
+
     // A hide with no selection and no body under the point sends nothing.
     [Fact]
     public async Task A_Hide_Of_Nothing_Sends_No_Command()

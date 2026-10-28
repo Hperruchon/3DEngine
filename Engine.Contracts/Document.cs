@@ -31,7 +31,8 @@ public sealed class Document
     // metadata; the backend owns the geometry data (ADR-0001 §3).
     // Mutation goes only through CommandBus's commit section. Since ADR-0021 the
     // collection holds the live bodies only: a command that consumes a body
-    // removes it, and a consumed body never becomes live again.
+    // removes it. A consumed body becomes live again only by an Undo of the step
+    // that consumed it (ADR-0031 item 9).
     private readonly Dictionary<Guid, BodyRecord> _bodies = new();
     public IReadOnlyCollection<BodyRecord> Bodies => _bodies.Values;
 
