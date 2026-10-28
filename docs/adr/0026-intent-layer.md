@@ -7,7 +7,7 @@ date: 2026-10-27
 supersedes: []
 superseded-by: []
 amends: ['0023']
-amended-by: ['0027', '0029']
+amended-by: ['0027', '0029', '0032']
 affects:
   - 3DEngine.Core/Input/**
 enforced-by: 3DEngine.Tests/IntentParityTests.cs (TASK-0082 creates it)
