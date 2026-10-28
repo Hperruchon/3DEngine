@@ -67,6 +67,7 @@ Therefore each approved objective must have a track here.
 - P0.32 — The desktop uses a binding with SDL 3.2 or later. v0.82, TASK-0081.
 - R7 — Touch, mouse and keyboard give the same intents, and a parity test holds it. v0.83, TASK-0082, ADR-0026.
 - P0.31 — A stop waits for a running command, and the present path is checked for hazards. v0.85, TASK-0079.
+- R7b — Text and panels: Dear ImGui through ImGui.NET, drawn by a first-party renderer. v0.86, TASK-0084, ADR-0027.
 
 ## Track 0 — Foundations
 
