@@ -1,7 +1,7 @@
 ---
 id: 0090
 title: A name is a JSON string of well-formed text, the server disposes at each stop, and the desktop ends a text field at a click on the scene
-status: Ready
+status: Active
 phase: P0.36
 opened: 2026-10-28
 depends-on: [0088]
@@ -99,3 +99,5 @@ and the desktop sends the command that a person asks for.
 ## Progress
 
 - 2026-10-28: opened by the codebase review of 2026-10-28 (TASK-0087).
+- 2026-10-28: the task is active. After P8f (v0.92) the owner put P0.36 and then P0.35 before P8c, because V26 can
+  put a wrong rename into the document file; the roadmap records the order.

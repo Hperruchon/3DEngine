@@ -192,7 +192,8 @@ The tracks are not strictly sequential, but three rules hold:
    questions Q1 and Q2, D7, of the codebase review of 2026-10-17 on 2026-10-17). The order of the owner of
    2026-10-27: P0.33, P0.32, R7, TASK-0040, then P0.31, whose findings are medium or low. The codebase review of
    2026-10-28 puts P0.34, which holds a high finding, before P8a, and P0.35 and P0.36 after P8a, by the rule of
-   `docs/templates.md`, section 7.
+   `docs/templates.md`, section 7. On 2026-10-28, after P8f, the owner put P0.36 and then P0.35 before P8c, because
+   a defect of P0.36 can put a wrong rename into the document file.
 2. R2 blocks each later phase in track R. No mesh leaves the geometry backend today.
 3. K4 needs K0, K1 and K2. Do not start K4 before the reference model exists.
 4. The path to the milestone "CAD on one part" (the owner, 2026-10-27, KD2): R7b, R8a, R8b, the codebase
