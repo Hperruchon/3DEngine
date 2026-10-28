@@ -226,11 +226,115 @@ public class TestAttributeGateTests
         Assert.Equal(offence, ShadowOffences("Probe.cs", source).Any());
     }
 
+    // Finding T68 of the second codebase review of 2026-10-28 (TASK-0097): the gate
+    // skipped a folder bin or obj at each depth, and MSBuild compiles each .cs file
+    // below the folder of a project except bin/ and obj/ at its root. A framework of
+    // T62 in Engine.Tests/Http/bin/ passed the gate, and each failed test passed. The
+    // gate now reads the files that MSBuild compiles, as DeterminismCallGateTests does.
     private static IEnumerable<string> Sources(string directory)
     {
         Assert.True(Directory.Exists(directory), $"{directory} was not found.");
+        var project = RepositoryFiles.Relative(directory);
         return Directory.EnumerateFiles(directory, "*.cs", SearchOption.AllDirectories)
-            .Where(file => !RepositoryFiles.Relative(file).Split('/').Any(part => part is "bin" or "obj"));
+            .Where(file => IsCompiled(project, RepositoryFiles.Relative(file)));
+    }
+
+    private static bool IsCompiled(string project, string relative)
+        => !relative.StartsWith($"{project}/obj/", StringComparison.Ordinal)
+        && !relative.StartsWith($"{project}/bin/", StringComparison.Ordinal);
+
+    [Theory]
+    [InlineData("Engine.Tests", "Engine.Tests/Http/bin/SupportFramework.cs", true)]
+    [InlineData("Engine.Tests", "Engine.Tests/Http/obj/SupportFramework.cs", true)]
+    [InlineData("3DEngine.Tests", "3DEngine.Tests/bin/x/SupportFramework.cs", false)]
+    [InlineData("Engine.Tests", "Engine.Tests/obj/Debug/Engine.Tests.AssemblyInfo.cs", false)]
+    public void The_Gate_Reads_Each_Source_That_MSBuild_Compiles(string project, string relative, bool compiled)
+    {
+        Assert.Equal(compiled, IsCompiled(project, relative));
+    }
+
+    // Finding T69 of the second codebase review of 2026-10-28 (TASK-0097): a Using item
+    // with an alias in the project file of 3DEngine.Tests named each type of the
+    // framework of T62, and the source that used only the aliases passed the gate. The
+    // project file of a test project may import the namespace Xunit, as each one does,
+    // and nothing else of xUnit; it adds no source and imports no file.
+    [Fact]
+    public void No_Test_Project_File_Brings_A_Name_Or_A_Source_Past_The_Gate()
+    {
+        var offences = new List<string>();
+
+        foreach (var project in TestProjects)
+        {
+            var file = RepositoryFiles.Path(project, project + ".csproj");
+            Assert.True(File.Exists(file), $"{file} was not found.");
+            offences.AddRange(ProjectFileOffences(RepositoryFiles.Relative(file), File.ReadAllText(file)));
+        }
+
+        Assert.True(
+            offences.Count == 0,
+            "The project file of a test project may hold <Using Include=\"Xunit\" /> and no other import of a "
+            + "name of xUnit, no alias with a name of xUnit, no Compile item and no Import: each one can bring a "
+            + "test framework or a shadow type past this gate (finding T69 of the second codebase review of "
+            + "2026-10-28). Offences:\n  " + string.Join("\n  ", offences));
+    }
+
+    // The forms of finding T69 and its neighbours; each one must be an offence.
+    [Theory]
+    [InlineData("<Using Include=\"Xunit.TestFrameworkAttribute\" Alias=\"Tf\" />", "imports Xunit.TestFrameworkAttribute")]
+    [InlineData("<Using Include=\"Xunit.Sdk.XunitTestFramework\" Alias=\"FwBase\" />", "imports Xunit.Sdk.XunitTestFramework")]
+    [InlineData("<Using Include=\"Xunit.Sdk\" />", "imports Xunit.Sdk")]
+    [InlineData("<Using Include=\"Xunit\" Static=\"true\" />", "imports Xunit")]
+    [InlineData("<Using Include=\"Xunit\" Alias=\"X\" />", "imports Xunit")]
+    [InlineData("<using include=\"xunit.sdk\" />", "imports xunit.sdk")]
+    [InlineData("<Using Include=\"Xunit%2ESdk\" />", "imports Xunit.Sdk")]
+    [InlineData("<Using Include=\"Xunit.Sdk\"><Alias>FwBase</Alias></Using>", "imports Xunit.Sdk")]
+    [InlineData("<Using Include=\"System.ObsoleteAttribute\" Alias=\"FactAttribute\" />", "aliases FactAttribute")]
+    [InlineData("<Compile Include=\"..\\shared\\Framework.cs\" />", "adds the Compile item ..\\shared\\Framework.cs")]
+    [InlineData("<Import Project=\"..\\shared\\Usings.props\" />", "imports the file ..\\shared\\Usings.props")]
+    public void Each_Form_Of_Finding_T69_Is_An_Offence(string element, string expected)
+    {
+        var xml = $"<Project Sdk=\"Microsoft.NET.Sdk\"><ItemGroup>{element}</ItemGroup></Project>";
+        var offences = ProjectFileOffences("Probe.csproj", xml).ToList();
+
+        Assert.True(
+            offences.Any(o => o.Contains(expected, StringComparison.Ordinal)),
+            $"Expected an offence with '{expected}'. Offences:\n  " + string.Join("\n  ", offences));
+    }
+
+    [Fact]
+    public void The_Import_Of_The_Namespace_Xunit_Is_Permitted()
+    {
+        Assert.Empty(ProjectFileOffences("Probe.csproj", "<Project Sdk=\"Microsoft.NET.Sdk\"><ItemGroup><Using Include=\"Xunit\" /></ItemGroup></Project>"));
+    }
+
+    // MSBuild reads the names of elements and attributes with no regard to case, and
+    // unescapes %XX in a value.
+    private static IEnumerable<string> ProjectFileOffences(string relative, string xml)
+    {
+        var document = System.Xml.Linq.XDocument.Parse(xml);
+        foreach (var element in document.Descendants())
+        {
+            var name = element.Name.LocalName;
+            string? Value(string key) => element.Attributes().FirstOrDefault(a => a.Name.LocalName.Equals(key, StringComparison.OrdinalIgnoreCase))?.Value
+                ?? element.Elements().FirstOrDefault(e => e.Name.LocalName.Equals(key, StringComparison.OrdinalIgnoreCase))?.Value;
+            string Unescaped(string? value) => Uri.UnescapeDataString((value ?? string.Empty).Trim());
+
+            if (name.Equals("Compile", StringComparison.OrdinalIgnoreCase))
+                yield return $"{relative}: adds the Compile item {Unescaped(Value("Include") ?? Value("Update"))}";
+            else if (name.Equals("Import", StringComparison.OrdinalIgnoreCase))
+                yield return $"{relative}: imports the file {Unescaped(Value("Project"))}";
+            else if (name.Equals("Using", StringComparison.OrdinalIgnoreCase))
+            {
+                var include = Unescaped(Value("Include") ?? Value("Update"));
+                var alias = Unescaped(Value("Alias"));
+                var isStatic = Unescaped(Value("Static"));
+                if (include.StartsWith("Xunit", StringComparison.OrdinalIgnoreCase)
+                    && (include != "Xunit" || alias.Length > 0 || isStatic.Length > 0))
+                    yield return $"{relative}: imports {include}" + (alias.Length > 0 ? $" as {alias}" : string.Empty);
+                if (XunitNames.Contains(alias))
+                    yield return $"{relative}: aliases {alias}";
+            }
+        }
     }
 
     // Each folder of a project file outside the test projects, the build output, the git
