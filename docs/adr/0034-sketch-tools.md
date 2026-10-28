@@ -1,12 +1,12 @@
 ---
 id: 0034
 title: The sketch tools of the desktop
-status: Proposed
+status: Accepted
 topic: Clients, sketch
 date: 2026-10-28
 supersedes: []
 superseded-by: []
-amends: []
+amends: ['0026', '0029', '0032']
 amended-by: []
 affects:
   - 3DEngine.Core/Input/**
@@ -45,7 +45,7 @@ Five facts constrain the design:
 - **The pad.** The pad has three fields (ADR-0032 item 3). A point of a sketch has two numbers, and a distance has
   one.
 
-The owner answers the questions Q1 to Q6 below before the code. Each question gives a recommendation.
+On 2026-10-28 the owner answered the questions Q1 to Q6 below, A to each.
 
 ### Questions for the owner
 
@@ -182,7 +182,7 @@ The decision below applies the recommended answers: Q1 A, Q2 A, Q3 A, Q4 A, Q5 A
     controls with no GPU, as the pad has.
 11. **No new code.** K2b adds no diagnostic code. A refusal of the engine shows its code of the namespace `SKETCH`.
 
-When the owner accepts it, this record amends ADR-0026 items 2 and 3 (the mode, the second map and the new intent), ADR-0029 item 4 (the
+This record amends ADR-0026 items 2 and 3 (the mode, the second map and the new intent), ADR-0029 item 4 (the
 gestures of a hide and of a show all give nothing in the mode `Sketch`), and ADR-0032 items 3 and 4 (a pad of one to three fields, and
 the pads of a sketch).
 
@@ -207,3 +207,4 @@ engine does not change. The tool is a pure state machine, so a test reads it wit
 ## History
 
 - 2026-10-28 · TASK-0101 · Proposed, with the questions Q1 to Q6 for the owner.
+- 2026-10-28 · TASK-0101 · The owner accepted the record on 2026-10-28 with Q1 to Q6 A, and no change.
