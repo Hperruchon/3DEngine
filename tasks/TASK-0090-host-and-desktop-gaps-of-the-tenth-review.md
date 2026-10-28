@@ -115,3 +115,7 @@ and the desktop sends the command that a person asks for.
   give HTTP 400 with `E-API-BAD-REQUEST` (five test cases); "\ud800" gave HTTP 500 before. The old rule of the
   binder failed the five cases, and a reader with no catch of a bad string failed one. The rule of a name in
   `BodyNames` (E73, ADR-0028 item 3) waits for the owner.
+- 2026-10-28: V18 and V30. A remake after a failed remake gives the driver no old swapchain
+  (`Presenter.OldSwapchain`), and the swapchain frees its depth image when its creation fails. The setter of
+  `Camera.PitchDegrees` clamps to the range of `Orbit` and gives 0 for NaN. Five tests; the old rule of each failed
+  its tests (1 and 3 cases). The free of the depth image has no test, because only a driver that fails reaches it.

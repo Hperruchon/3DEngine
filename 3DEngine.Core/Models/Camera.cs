@@ -74,7 +74,16 @@ public sealed class Camera : Entity
     public double YawDegrees { get; set; }
 
     /// <summary>The angle of the eye above the plane of x and z through the target.</summary>
-    public double PitchDegrees { get; set; }
+    // Finding V30 of the codebase review of 2026-10-28 (TASK-0090): a pitch of 90 degrees put
+    // the forward vector on the up vector, and the view was NaN. The setter clamps to the
+    // range of Orbit.
+    public double PitchDegrees
+    {
+        get => _pitchDegrees;
+        set => _pitchDegrees = double.IsNaN(value) ? 0.0 : Math.Clamp(value, MinimumPitchDegrees, MaximumPitchDegrees);
+    }
+
+    private double _pitchDegrees;
 
     /// <summary>Turns the camera about its target. The pitch stays between -89 and 89 degrees.</summary>
     public void Orbit(double yawDegrees, double pitchDegrees)
