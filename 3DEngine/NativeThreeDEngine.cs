@@ -151,6 +151,12 @@ public sealed class NativeThreeDEngine : IThreeDEngine, IDisposable
                 case OpenDocumentAction open:
                     _documentMessage = OpenDocument(open.Name);
                     break;
+                case UndoAction:
+                    _documentMessage = _actions.Undo();
+                    break;
+                case RedoAction:
+                    _documentMessage = _actions.Redo();
+                    break;
             }
         }
     }

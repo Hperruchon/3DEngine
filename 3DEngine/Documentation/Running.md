@@ -52,6 +52,12 @@ The panel shows the name of the file, or "unsaved". Type a name in "File name":
 An agent does the same with `GET /document`, `POST /document/save {"name": "plate"}` and
 `POST /document/open {"name": "plate"}`.
 
+Undo reverses the last command that changed the document, and Redo applies it again (ADR-0031). The
+document has one history, so an undo can reverse a command of an agent. A new command after an undo
+clears the redo list. The history is in the file, so an undo works after an open. An agent sends
+`POST /commands {"name": "Undo"}` and `{"name": "Redo"}`. When nothing is left to undo or to redo,
+the panel shows the code.
+
 ## What To Expect
 - The line `3DEngine serves the document at http://127.0.0.1:5180`. An agent sends commands and
   queries to that address, on the document that the window holds (ADR-0019, TASK-0054). The surface

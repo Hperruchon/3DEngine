@@ -65,6 +65,8 @@ public sealed class DocumentFileTests : IDisposable
         ["Subtract"] = new SubtractCommand { MinuendBodyId = Guid.NewGuid(), SubtrahendBodyId = Guid.NewGuid() },
         ["RenameBody"] = new RenameBodyCommand { BodyId = Guid.NewGuid(), NewName = "" },
         ["SetBodyVisibility"] = new SetBodyVisibilityCommand { BodyId = Guid.NewGuid(), Visible = false },
+        ["Undo"] = new UndoCommand { ExpectedDocumentVersion = 4 },
+        ["Redo"] = new RedoCommand(),
     };
 
     // ADR-0015 item 11: each handler has an encoder, and Create(Encode(c)) gives c.
@@ -154,6 +156,38 @@ public sealed class DocumentFileTests : IDisposable
         Assert.Equal(expected.Log, (await State(third)).Log);
         Assert.Equal(2, (await State(third)).Version);
         third.Close();
+    }
+
+    // ADR-0031 item 3: an open rebuilds the history from the entries, so an undo and a
+    // redo continue after a stop. Each command of the catalog, on the native backend.
+    [NativeManifoldFact]
+    public async Task An_Undo_And_A_Redo_Continue_After_An_Open_Of_The_File()
+    {
+        var path = FileNamed("history");
+        using var firstBackend = new ManifoldGeometryBackend();
+        using var secondBackend = new ManifoldGeometryBackend();
+        var first = NewSession(firstBackend);
+        DocumentFile.Create(first, path);
+        await ApplyScene(first);
+        await first.Apply(new UndoCommand());
+        var afterFourSteps = await State(first);
+        await first.Apply(new UndoCommand());
+        await first.Apply(new UndoCommand());
+        await first.Apply(new RedoCommand());
+        var expected = await State(first);
+        first.Close();
+
+        var second = NewSession(secondBackend);
+        await DocumentFile.Open(second, path);
+        AssertSameState(expected, await State(second));
+
+        var redo = await second.Apply(new RedoCommand());
+        Assert.Equal(CommandStatus.Applied, redo.Status);
+        Assert.Equal(afterFourSteps.Bodies, (await State(second)).Bodies);
+        var undo = await second.Apply(new UndoCommand());
+        Assert.Equal(CommandStatus.Applied, undo.Status);
+        second.Close();
+        Assert.Equal(1 + 6 + 4 + 2, File.ReadAllLines(path).Length);
     }
 
     // ADR-0015 item 4: a failed write rejects the command, the Document does not

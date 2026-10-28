@@ -40,6 +40,11 @@ public sealed class CommandBus
     // (TASK-0058).
     private readonly HashSet<Guid> _createdHandles = [];
 
+    // ADR-0031 item 3: the steps of the Document, for Undo and Redo. One bus serves
+    // one Document from its first command, so the history is complete, as the set
+    // above is.
+    private readonly StepHistory _history = new();
+
     public CommandBus(
         Document document,
         CommandRegistry registry,
@@ -164,12 +169,71 @@ public sealed class CommandBus
         if (!handlerResult.IsSuccess)
             return Reject(command, handlerResult.Error!, stopwatch, handlerResult.Diagnostics);
 
+        if (handlerResult.History != HistoryMove.None)
+            return Move(command, handler, handlerResult, stopwatch);
+
         RefuseWrongBodyLists(command, handlerResult);
 
         if (Journal is { } journal && Write(journal, command, handler, handlerResult, stopwatch) is { } refused)
             return refused;
 
-        return Commit(command, handlerResult, stopwatch);
+        // ADR-0031 item 3: the records before the commit, so that an Undo can give them back.
+        var step = new Step(
+            command.CommandId,
+            handlerResult.CreatedBodies,
+            handlerResult.ConsumedBodies.Select(LiveRecord).ToList(),
+            handlerResult.ChangedBodies.Select(body => (LiveRecord(body.Handle), body)).ToList());
+        var committed = Commit(
+            command, handlerResult.CreatedBodies, handlerResult.ConsumedBodies, [], handlerResult.ChangedBodies,
+            handlerResult.Outputs, handlerResult.Diagnostics, stopwatch);
+        _history.Record(step);
+        return committed;
+    }
+
+    private BodyRecord LiveRecord(BodyHandle handle)
+        => _document.Bodies.First(body => body.Handle.Id == handle.Id);
+
+    // ADR-0031 items 4, 7 and 8: an Undo or a Redo. The bus makes the lists from the
+    // step, so RefuseWrongBodyLists does not judge them: a reversal makes a consumed body
+    // live again, which ADR-0021 item 1, as amended, permits only here. No call of the
+    // backend: each body that a reversal makes live again is still in the backend.
+    private (CommandResult, IReadOnlyList<EventRecord>) Move(
+        Command command,
+        ICommandHandler handler,
+        CommandHandlerResult handlerResult,
+        Stopwatch stopwatch)
+    {
+        if (handlerResult.History is not (HistoryMove.Undo or HistoryMove.Redo)
+            || handlerResult.CreatedBodies.Count + handlerResult.ConsumedBodies.Count + handlerResult.ChangedBodies.Count > 0)
+            throw new InvalidOperationException(
+                $"The handler of '{command.Name}'@{command.SchemaVersion} gives the move {handlerResult.History} and a list of "
+                + "bodies, or a move that does not exist. ADR-0031 item 7: the bus computes the bodies of a move.");
+
+        var undo = handlerResult.History == HistoryMove.Undo;
+        if ((undo ? _history.NextUndo : _history.NextRedo) is not { } step)
+            return Reject(command, undo
+                ? new ErrorDetail(DiagnosticCodes.CommandNothingToUndo, "The document has no step to undo.")
+                : new ErrorDetail(DiagnosticCodes.CommandNothingToRedo, "The document has no undone step to redo."),
+                stopwatch, handlerResult.Diagnostics);
+
+        if (Journal is { } journal && Write(journal, command, handler, handlerResult, stopwatch) is { } refused)
+            return refused;
+
+        var outputs = new Outputs(new Dictionary<string, object?> { ["commandId"] = step.CommandId });
+        if (undo)
+        {
+            var reversed = Commit(
+                command, step.Consumed, [], step.Created.Select(body => body.Handle).ToList(),
+                step.Changed.Select(change => change.Before).ToList(), outputs, handlerResult.Diagnostics, stopwatch);
+            _history.Undone();
+            return reversed;
+        }
+
+        var applied = Commit(
+            command, step.Created, step.Consumed.Select(body => body.Handle).ToList(), [],
+            step.Changed.Select(change => change.After).ToList(), outputs, handlerResult.Diagnostics, stopwatch);
+        _history.Redone();
+        return applied;
     }
 
     // ADR-0015 item 4: the entry goes into the file before the commit, so each
@@ -253,19 +317,24 @@ public sealed class CommandBus
     }
 
     // 4. Commit: compute each Seq, append the log, register the created bodies,
-    // remove the consumed bodies. The log append adds one to the version
-    // (ADR-0020). All events of one commit share consecutive Seqs, in the order
-    // of ADR-0021 item 5 and ADR-0028 item 7: command.applied, each body.created,
-    // each body.consumed, each body.changed.
+    // remove the consumed and the removed bodies. The log append adds one to the
+    // version (ADR-0020). All events of one commit share consecutive Seqs, in the
+    // order of ADR-0031 item 5: command.applied, each body.created, each
+    // body.consumed, each body.removed, each body.changed. Only an Undo removes.
     // A subscriber that draws between two events therefore never sees fewer
     // bodies than the result has. Nothing here awaits, therefore nothing here
     // stops in the middle.
     private (CommandResult, IReadOnlyList<EventRecord>) Commit(
         Command command,
-        CommandHandlerResult handlerResult,
+        IReadOnlyList<BodyRecord> created,
+        IReadOnlyList<BodyHandle> consumed,
+        IReadOnlyList<BodyHandle> removed,
+        IReadOnlyList<BodyRecord> changed,
+        Outputs outputs,
+        IReadOnlyList<Diagnostic> diagnostics,
         Stopwatch stopwatch)
     {
-        var count = 1 + handlerResult.CreatedBodies.Count + handlerResult.ConsumedBodies.Count + handlerResult.ChangedBodies.Count;
+        var count = 1 + created.Count + consumed.Count + removed.Count + changed.Count;
         var appliedSeq = TakeSeqs(count);
         var events = new List<EventRecord>(count)
         {
@@ -279,7 +348,7 @@ public sealed class CommandBus
         _document.AppendCommand(new LogEntry(command, _backend.Identity));
 
         var lastSeq = appliedSeq;
-        foreach (var body in handlerResult.CreatedBodies)
+        foreach (var body in created)
         {
             _document.AddBody(body);
             _createdHandles.Add(body.Handle.Id);
@@ -293,7 +362,7 @@ public sealed class CommandBus
             }));
         }
 
-        foreach (var handle in handlerResult.ConsumedBodies)
+        foreach (var handle in consumed)
         {
             _document.RemoveBody(handle);
             lastSeq++;
@@ -303,7 +372,18 @@ public sealed class CommandBus
             }));
         }
 
-        foreach (var body in handlerResult.ChangedBodies)
+        // ADR-0031 item 6: an Undo removes each body that its step created.
+        foreach (var handle in removed)
+        {
+            _document.RemoveBody(handle);
+            lastSeq++;
+            events.Add(Event(lastSeq, command, "body.removed", new Dictionary<string, object?>
+            {
+                ["bodyId"] = handle.Id,
+            }));
+        }
+
+        foreach (var body in changed)
         {
             _document.ReplaceBody(body);
             lastSeq++;
@@ -321,8 +401,8 @@ public sealed class CommandBus
             Status: CommandStatus.Applied,
             AppliedAtSeq: appliedSeq,
             DocumentVersion: _document.Version,
-            Outputs: handlerResult.Outputs,
-            Diagnostics: handlerResult.Diagnostics,
+            Outputs: outputs,
+            Diagnostics: diagnostics,
             Error: null,
             DurationMs: stopwatch.ElapsedMilliseconds);
         return (result, events);
