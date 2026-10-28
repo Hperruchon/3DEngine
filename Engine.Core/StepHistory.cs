@@ -13,7 +13,9 @@ internal sealed record Step(
 
 // ADR-0031 item 2: one history for the Document. The command bus owns it and changes
 // it only in its commit, so a rejected Undo or Redo leaves it as it was. The history
-// depends only on the log, so an open and a replay rebuild the same history.
+// depends only on the log, so an open and a replay rebuild the same history: each
+// applies each entry one time, with no look-up in the idempotency cache (finding E75
+// of the second codebase review of 2026-10-28).
 internal sealed class StepHistory
 {
     private readonly List<Step> _done = [];
