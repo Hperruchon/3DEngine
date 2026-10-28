@@ -139,3 +139,6 @@ Register entry R-0025 closes with P8a.
 - 2026-10-28 · TASK-0091 · Written again for the document file, after KD3 and KD4 of the owner of 2026-10-27 and
   the answers Q1 to Q8 of 2026-10-28 to the codebase review of that date. The owner accepted the contract on
   2026-10-28.
+- 2026-10-28 · TASK-0091 · The contract of items 5 to 7 lands: `BackendIdentity`, `LogEntry`, `Document.Log` of entries,
+  `Document.LengthUnit` and `IGeometryBackend.Identity`. A replay of a plain list of commands, as a fixture,
+  records no backend and uses the backend that the caller gives.

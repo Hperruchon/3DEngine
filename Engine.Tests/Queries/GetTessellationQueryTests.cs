@@ -79,6 +79,8 @@ public class GetTessellationQueryTests
     {
         private readonly HashSet<Guid> _bodies = [];
 
+        public BackendIdentity Identity { get; } = new("test", "1");
+
         public BackendCapabilities Capabilities => BackendCapabilities.Mesh | BackendCapabilities.Tessellation;
 
         public T? TryGet<T>() where T : class => this as T;

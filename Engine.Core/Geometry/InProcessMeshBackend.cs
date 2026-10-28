@@ -11,6 +11,9 @@ public sealed class InProcessMeshBackend : IGeometryBackend, IMeshOps, IGeometry
 {
     private readonly Dictionary<Guid, BoxRecord> _boxes = new();
 
+    // ADR-0015 item 5. The hosts call this backend "managed" (ServerEngine).
+    public BackendIdentity Identity { get; } = new("managed", "1");
+
     public BackendCapabilities Capabilities
         => BackendCapabilities.Mesh | BackendCapabilities.Query;
 

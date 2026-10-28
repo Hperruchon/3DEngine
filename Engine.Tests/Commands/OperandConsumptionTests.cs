@@ -234,6 +234,8 @@ public class OperandConsumptionTests
 
         public List<string> Calls { get; } = [];
 
+        public BackendIdentity Identity { get; } = new("test", "1");
+
         public BackendCapabilities Capabilities
             => BackendCapabilities.Mesh | BackendCapabilities.Transform | BackendCapabilities.Booleans;
 

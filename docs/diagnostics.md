@@ -26,6 +26,7 @@ All `E-`/`W-`/`I-` codes used in `Engine.*` code MUST appear here. A code is nev
 | `E-GEOM-NATIVE-OP` | Error | A geometry backend operation failed or returned a degenerate result (e.g. a native Manifold FFI failure). | `Engine.Core` geometry command handlers, wrapping the backend call (P7b). |
 | `E-GEOM-BACKEND-INIT` | Error | The native geometry backend failed to initialise (native lib not found / load / version mismatch). | `Engine.Cli` before a command, and `Engine.Api.Http` at its start, when the native library does not load. Each one writes the code and the reason on the error output and stops with exit code 3. Raised since TASK-0036; until then the host took the managed backend with no message. |
 | `E-VAL-BODY-NAME-INVALID` | Error | The name of a `RenameBody` command breaks the rules of a name: more than 128 UTF-16 units, or a control character (ADR-0028 item 3). An empty name clears the name and is valid. | `Engine.Core` `RenameBodyCommandHandler`, before the commit. |
+| `E-IO-BACKEND-MISMATCH` | Error | A log entry records another backend than the backend of the replay or of the open (ADR-0015 item 6, anti-objective 10). | `Engine.Core` `Replay.ReplayLog` of log entries, as `BackendMismatchException`, and the open of a document file. Raised since TASK-0091. |
 
 ## Reserved namespaces
 
