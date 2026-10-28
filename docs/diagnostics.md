@@ -5,7 +5,7 @@ All `E-`/`W-`/`I-` codes used in `Engine.*` code MUST appear here. A code is nev
 ## Conventions
 
 - **Severity prefix:** `E-` error · `W-` warning · `I-` info
-- **Subsystem token:** `CMD` (command bus), `QRY` (query bus), `API` (HTTP transport), `GEOM` (geometry), `IO` (persistence/transport), `VAL` (validation). Add new tokens as subsystems land.
+- **Subsystem token:** `CMD` (command bus), `QRY` (query bus), `API` (HTTP transport), `GEOM` (geometry), `IO` (persistence/transport), `VAL` (validation), `SKETCH` (the sketch model, ADR-0033). Add new tokens as subsystems land.
 - **Format:** `<severity>-<subsystem>-<short-tag>` — short, kebab-style, stable.
 
 ## Active codes
@@ -36,6 +36,12 @@ All `E-`/`W-`/`I-` codes used in `Engine.*` code MUST appear here. A code is nev
 | `E-IO-SAVE-FAILED` | Error | A save of a document file to a new name failed: the session has no file, an earlier write failed, the target exists, or the move failed. The file stays where it was (ADR-0015 item 9). | `Engine.Core` `DocumentSession.SaveAs`. Raised since TASK-0091. |
 | `W-IO-TRUNCATED` | Warning | The last line of a document file was not complete or did not parse, and the open cut it off (ADR-0015 item 8). The work of that last command is lost, and each earlier command is kept. | `Engine.Core` `DocumentFile.Open`, in its list of warnings. Raised since TASK-0091. |
 | `W-IO-BACKEND-VERSION` | Warning | An entry of a document file records another version of the backend of the host; the open continues (ADR-0015 item 6). One warning for each open. | `Engine.Core` `DocumentFile.Open`, in its list of warnings. Raised since TASK-0091. |
+| `E-SKETCH-NOT-FOUND` | Error | A sketch command or `GetSketch` names a sketch that is not live in the Document (ADR-0033 item 6). | `Engine.Core` sketch command handlers and `GetSketchQueryHandler`. Raised since TASK-0100. |
+| `E-SKETCH-DATUM-NOT-FOUND` | Error | `CreateSketch` names a datum that does not exist; the datums are the origin planes XY, XZ and YZ (ADR-0033 item 1). | `Engine.Core` `CreateSketchCommandHandler`. Raised since TASK-0100. |
+| `E-SKETCH-ITEM-NOT-FOUND` | Error | A sketch command names an item that its sketch does not have, an item of another kind than the command needs, or the origin of the frame, which no command moves or deletes (ADR-0033 items 2 and 6). | `Engine.Core` sketch command handlers. Raised since TASK-0100. |
+| `E-SKETCH-LINE-INVALID` | Error | `AddSketchLine` gives one point as both ends of the line (ADR-0033 item 2). | `Engine.Core` `AddSketchLineCommandHandler`. Raised since TASK-0100. |
+| `E-SKETCH-CONSTRAINT-INVALID` | Error | A constraint has an unknown kind, a kind that this phase does not give, items of the wrong kind or count, or a value that is absent, not finite or negative (ADR-0033 items 3 and 6). | `Engine.Core` `AddSketchConstraintCommandHandler` and `SetSketchConstraintValueCommandHandler`. Raised since TASK-0100. |
+| `E-SKETCH-NAME-INVALID` | Error | The name of a `CreateSketch` command breaks the rules of a name of ADR-0028 item 3, as ADR-0033 item 4 requires. An empty name is no name and is valid. | `Engine.Core` `CreateSketchCommandHandler`. Raised since TASK-0100. |
 
 ## Reserved namespaces
 

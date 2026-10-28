@@ -71,6 +71,23 @@ public class DispatchSurfaceGateTests
         Assert.Equal("Engine.Api.Http/Endpoints/Injected.cs:2 names \"RenameBody\"", offence);
     }
 
+    // ADR-0033 item 12 (TASK-0100): the sketch commands change central files of the engine one
+    // time, as the commands of R8a did, and that exception does not reach the hosts either.
+    [Fact]
+    public void A_Host_File_That_Names_A_Sketch_Command_Is_An_Offence()
+    {
+        var names = HandlerCatalog.CommandHandlers().Select(h => h.CommandName)
+            .Concat(HandlerCatalog.QueryHandlers().Select(h => h.QueryName))
+            .ToArray();
+        Assert.Contains("CreateSketch", names);
+        Assert.Contains("GetSketch", names);
+
+        string[] injected = ["var command = new { name = \"CreateSketch\" };", "// GetSketch in a comment is prose."];
+        var offence = Assert.Single(Offences([("Engine.Api.Http.Server/Injected.cs", injected)], names));
+
+        Assert.Equal("Engine.Api.Http.Server/Injected.cs:1 names \"CreateSketch\"", offence);
+    }
+
     // A quoted name is a dispatch decision. A bare mention in a comment is prose and is permitted.
     private static List<string> Offences(IEnumerable<(string Relative, string[] Lines)> files, IReadOnlyList<string> names)
     {

@@ -7,7 +7,7 @@ date: 2026-10-28
 supersedes: []
 superseded-by: []
 amends: ['0006', '0021']
-amended-by: ['0032']
+amended-by: ['0032', '0033']
 affects:
   - Engine.Contracts/Handlers/ICommandHandler.cs
   - Engine.Core/CommandBus.cs
@@ -56,14 +56,17 @@ undo therefore needs no call of the backend and no replay. It changes only the l
    `Undo` reverses the last step that is not undone. `Redo` applies again the last step that an `Undo` reversed. A
    new step clears the redo list, so those undone steps never come back (Q3).
 3. **The record of a step.** At the commit of a step, the command bus records its effect: each body record that it
-   created, each body record that it consumed, and each body record that it changed, before and after. The bus
+   created, each body record that it consumed, and each body record that it changed, before and after; and each
+   sketch record that it created, and each sketch record that it changed, before and after (ADR-0033 item 10). The bus
    keeps the history in memory. The document file does not hold it. An open rebuilds it, because the open applies
    each entry through the bus again (ADR-0015 item 6).
 4. **An undo.** The commit of an `Undo` removes each body that the step created, makes each body that the step
    consumed live again with its record before the step, and gives each body that the step changed its record
-   before the step. A `Redo` gives the same changes and the same event kinds as the first commit of the step.
+   before the step. It removes each sketch that the step created, and gives each sketch that the step changed its
+   record before the step. A `Redo` gives the same changes and the same event kinds as the first commit of the step.
 5. **The events.** The events of one commit come in this order: `command.applied`, each `body.created`, each
-   `body.consumed`, each `body.removed`, then each `body.changed`. A body that an undo makes live again gives
+   `body.consumed`, each `body.removed`, then each `body.changed`, then each `sketch.created`, each `sketch.removed`
+   and each `sketch.changed` (ADR-0033 item 9). A body that an undo makes live again gives
    `body.created` with its full record. A subscriber that draws between two events therefore never sees fewer
    bodies than the result has.
 6. **The new event kind `body.removed`.** Its payload is `bodyId`. The cause of the event is the `Undo` that
@@ -111,3 +114,5 @@ are not planned. A register entry records them when a measure shows a need.
 - 2026-10-28 · TASK-0093 · Proposed, and accepted by the owner on the same day.
 - 2026-10-28 · TASK-0093 · The owner chose A: item 11 gives the buttons only, and R-0041 holds the keys.
 - 2026-10-28 · TASK-0094 · ADR-0032 amends item 11: the keys and two touch gestures come through the intent layer.
+- 2026-10-28 · TASK-0100 · ADR-0033 amends items 3 to 5: a step records sketch records, and an undo and a redo give
+  sketch events.

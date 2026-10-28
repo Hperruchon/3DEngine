@@ -37,6 +37,12 @@ internal static class SchemaEventsEndpoint
         return result;
     }
 
+    // ADR-0033 item 9: a sketch can have no name, so the name can be null.
+    private static readonly IReadOnlyDictionary<string, FieldSchema> SketchCreatedFields = new Dictionary<string, FieldSchema>(Fields(("sketchId", "guid"), ("datumId", "guid")), StringComparer.Ordinal)
+    {
+        ["name"] = new FieldSchema("string", Required: false),
+    };
+
     // The payload of a command event: the name and the version of the command (ADR-0006).
     private static readonly IReadOnlyDictionary<string, FieldSchema> CommandFields = Fields(("name", "string"), ("schemaVersion", "integer"));
 
@@ -58,6 +64,9 @@ internal static class SchemaEventsEndpoint
         new("body.consumed", Fields(("bodyId", "guid"))), // ADR-0021 item 6, TASK-0037
         new("body.removed", Fields(("bodyId", "guid"))), // ADR-0031 item 6, TASK-0093
         new("body.changed", BodyFields(("bodyId", "guid"))), // ADR-0028 item 7, TASK-0085
+        new("sketch.created", SketchCreatedFields), // ADR-0033 item 9, TASK-0100
+        new("sketch.changed", Fields(("sketchId", "guid"))), // ADR-0033 item 9, TASK-0100
+        new("sketch.removed", Fields(("sketchId", "guid"))), // ADR-0033 item 9, TASK-0100
     };
 
     public static IResult Handle() => Results.Json(Kinds, ApiJson.Options);

@@ -262,7 +262,13 @@ internal sealed unsafe class DesktopUi : IDisposable
     public static string RowText(LiveBody body)
         => (body.Name ?? $"{body.Kind}  {body.Id.ToString()[..8]}") + (body.Visible ? string.Empty : "  (hidden)");
 
-    public UiDrawData Frame(float deltaSeconds, Vector2 displaySize, Vector2 framebufferScale, IReadOnlyList<LiveBody> bodies, Guid? selection = null, DocumentLine? document = null)
+    // ADR-0033 item 13: the colour of the lines and the points of a sketch, as ImGui packs
+    // it (alpha, blue, green, red), and their sizes in pixels of the window.
+    internal const uint SketchColour = 0xFF30C8F0;
+    private const float SketchLineWidth = 2f;
+    private const float SketchPointRadius = 4f;
+
+    public UiDrawData Frame(float deltaSeconds, Vector2 displaySize, Vector2 framebufferScale, IReadOnlyList<LiveBody> bodies, Guid? selection = null, DocumentLine? document = null, SketchOverlay.Strokes? sketches = null)
     {
         ArgumentNullException.ThrowIfNull(bodies);
         ImGui.SetCurrentContext(_context);
@@ -282,6 +288,8 @@ internal sealed unsafe class DesktopUi : IDisposable
             _dropFocus = false;
         }
 
+        if (sketches is not null)
+            Sketches(sketches);
         Panel(bodies, selection, displaySize, document);
         if (_pad is { } pad)
             PadWindow(pad);
@@ -289,6 +297,17 @@ internal sealed unsafe class DesktopUi : IDisposable
 
         _textActive = io.WantTextInput;
         return UiDrawDataConverter.Convert(ImGui.GetDrawData());
+    }
+
+    // ADR-0033 item 13: the sketches, read only, on the background list of ImGui, so they
+    // come over the scene and under each window of the panel.
+    private static void Sketches(SketchOverlay.Strokes sketches)
+    {
+        var list = ImGui.GetBackgroundDrawList();
+        foreach (var (a, b) in sketches.Lines)
+            list.AddLine(a, b, SketchColour, SketchLineWidth);
+        foreach (var point in sketches.Points)
+            list.AddCircleFilled(point, SketchPointRadius, SketchColour);
     }
 
     private void Panel(IReadOnlyList<LiveBody> bodies, Guid? selection, Vector2 displaySize, DocumentLine? document)

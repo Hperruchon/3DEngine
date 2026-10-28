@@ -7,7 +7,7 @@ date: 2026-05-27
 supersedes: []
 superseded-by: []
 amends: []
-amended-by: ['0018', '0021', '0028', '0015']
+amended-by: ['0018', '0021', '0028', '0015', '0033']
 affects:
   - Engine.Contracts/Geometry/**
   - Engine.Core/Commands/**
@@ -183,9 +183,10 @@ Per ADR-0010 §3, the snapshot grows additively:
 snapshot
   ...existing fields...
   bodies: [ { handle: Guid, kind: string, name: string?, visible: boolean }, ... ]   // name and visible: ADR-0028
+  sketches: [ { sketchId: Guid, datumId: Guid, name: string? }, ... ]               // ADR-0033 item 9
 ```
 
-Empty array when no bodies. Existing clients that ignore unknown fields continue to function. This closes ADR-0010's "Geometry snapshot shape" open challenge.
+Empty array when no bodies, and when no sketches. Existing clients that ignore unknown fields continue to function. This closes ADR-0010's "Geometry snapshot shape" open challenge.
 
 ### 7. V1.x first-backend choice: in-process managed stub
 
@@ -250,3 +251,4 @@ This is *not* the Manifold backend — it is the wiring slice. A follow-on TASK 
   the snapshot gives them.
 - 2026-10-28 · TASK-0091 · ADR-0015 amends §1: `IGeometryBackend` gives its `Identity`, which each log entry
   records.
+- 2026-10-28 · TASK-0100 · ADR-0033 amends §6: the snapshot gives `sketches`, each live sketch with its datum and its name.
