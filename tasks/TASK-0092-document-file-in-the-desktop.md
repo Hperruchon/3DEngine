@@ -5,15 +5,17 @@ status: Active
 phase: P8f
 opened: 2026-10-28
 depends-on: [0091]
-governed-by: [0004, 0007, 0013, 0015, 0016, 0019, 0025, 0027, 0029, 0030]
+governed-by: [0004, 0007, 0013, 0015, 0016, 0019, 0024, 0025, 0027, 0029, 0030]
 writes:
   create:
     - tasks/TASK-0092-document-file-in-the-desktop.md
     - docs/adr/0030-document-file-in-the-desktop.md
     - Engine.Api.Http/Endpoints/DocumentEndpoint.cs
     - Engine.Api.Http/DocumentFolder.cs
+    - 3DEngine/DesktopDocument.cs
   modify:
     - Engine.Api.Http/EngineSurface.cs
+    - Engine.Api.Http/EngineHost.cs
     - Engine.Api.Http/Endpoints/SchemaDiagnosticsEndpoint.cs
     - Engine.Core/DiagnosticCodes.cs
     - Engine.Core/Persistence/DocumentFile.cs
@@ -91,3 +93,14 @@ window.
 ## Progress
 
 - 2026-10-28: opened after TASK-0091 (v0.91). The first commit holds ADR-0030, accepted by the owner.
+- 2026-10-28: the code (ADR-0030 items 1 to 5). `DocumentFolder` resolves a plain file name in one folder;
+  `GET /document`, `POST /document/save` and `POST /document/open` (501 with `E-API-NOT-SUPPORTED` on a host that
+  cannot start again); `EngineHost.FileName` is null for an unsaved document; `DocumentFile.Check` opens a file in a
+  scratch session with no write and no lock, and the reader of a file shares the write access, so a check reads a
+  file that the session holds. The desktop reads `--file`, `Desktop:UnsavedFolder` and `Desktop:DocumentFolder`,
+  stops with exit code 6, and `DesktopDocument` checks a file, ends the window loop, and starts the program again
+  with its arguments and the new file. The panel has a file line, "File name", Save as and Open; the buttons have
+  their own line, because the first layout put Open outside the panel and its click went to the scene. 26 new
+  tests: 18 in `Engine.Tests` and 8 in `3DEngine.ImageTests`, among them a process test of the desktop program.
+  Nine injections each failed a test; one first passed (a default folder that can start again), because each test
+  registered its own folder, so a test now starts a surface with no folder of its own.

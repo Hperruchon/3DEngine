@@ -10,6 +10,7 @@ using Microsoft.AspNetCore.Hosting.Server.Features;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 
 namespace Engine.Api.Http;
 
@@ -56,6 +57,10 @@ public static class EngineSurface
         builder.Services.AddSingleton(session);
         builder.Services.AddSingleton(services => services.GetRequiredService<EngineHost>().Broadcaster);
         builder.Services.AddSingleton(SubscriberOptions.Default);
+
+        // ADR-0030 item 2: a host that registered its own folder keeps it.
+        builder.Services.TryAddSingleton(services => new DocumentFolder(
+            services.GetRequiredService<IConfiguration>()["Engine:DocumentFolder"] is { Length: > 0 } folder ? folder : DocumentFolder.Default));
 
         // The Host header must name a loopback host. Without this filter a page
         // that resolves a name to 127.0.0.1 can post a command from a browser. The
@@ -115,6 +120,11 @@ public static class EngineSurface
         app.MapGet("/schema/backend", SchemaBackendEndpoint.Handle);
 
         app.MapGet("/events", EventsEndpoint.Handle);
+
+        // ADR-0030 item 4.
+        app.MapGet("/document", DocumentEndpoint.Get);
+        app.MapPost("/document/save", DocumentEndpoint.Save);
+        app.MapPost("/document/open", DocumentEndpoint.Open);
 
         return app;
     }

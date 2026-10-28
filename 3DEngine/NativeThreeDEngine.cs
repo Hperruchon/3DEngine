@@ -24,6 +24,11 @@ public sealed class NativeThreeDEngine : IThreeDEngine, IDisposable
 
     private readonly Window _window;
     private readonly EngineHost _host;
+
+    // ADR-0030 item 3: the document folder and the open of the desktop, and the result
+    // of the last save or open, which the panel shows.
+    private readonly DesktopDocument? _document;
+    private string? _documentMessage;
     private readonly string _address;
     private GraphicsDevice? _graphicsDevice;
     private SceneRenderer? _renderer;
@@ -31,9 +36,10 @@ public sealed class NativeThreeDEngine : IThreeDEngine, IDisposable
     private DesktopUi? _ui;
     private TimeSpan _delta;
 
-    public NativeThreeDEngine(Window window, EngineHost host, IntentSettings? settings = null, bool synchronizationValidation = false, string address = "")
+    internal NativeThreeDEngine(Window window, EngineHost host, IntentSettings? settings = null, bool synchronizationValidation = false, string address = "", DesktopDocument? document = null)
     {
         _window = window;
+        _document = document;
         _host = host;
         _address = address;
         _intents = new IntentMachine(settings);
@@ -139,8 +145,39 @@ public sealed class NativeThreeDEngine : IThreeDEngine, IDisposable
                 case ShowAllAction:
                     _actions.ShowAll(live);
                     break;
+                case SaveDocumentAction save:
+                    _documentMessage = SaveDocument(save.Name);
+                    break;
+                case OpenDocumentAction open:
+                    _documentMessage = OpenDocument(open.Name);
+                    break;
             }
         }
+    }
+
+    // A save in the serial section of the session, on the render loop (ADR-0030 item 3).
+    private string SaveDocument(string name)
+    {
+        if (_document is null)
+            return "The desktop has no document folder.";
+        var path = _document.Folder.Resolve(name, out var refusal);
+        if (path is null)
+            return refusal!;
+        var error = _host.Session.SaveAs(path).GetAwaiter().GetResult();
+        return error is null ? $"Saved as {Path.GetFileName(path)}" : $"{error.Code}: {error.Message}";
+    }
+
+    // The check of the file; when it opens, the window loop ends and the program starts
+    // again with it (ADR-0030 items 4 and 5).
+    private string OpenDocument(string name)
+    {
+        if (_document is null)
+            return "The desktop has no document folder.";
+        var path = _document.Folder.Resolve(name, out var refusal);
+        if (path is null)
+            return refusal!;
+        var error = _document.Folder.Reopen!(path, CancellationToken.None).GetAwaiter().GetResult();
+        return error is null ? $"Opening {Path.GetFileName(path)}" : $"{error.Code}: {error.Message}";
     }
 
     public void Render()
@@ -162,7 +199,7 @@ public sealed class NativeThreeDEngine : IThreeDEngine, IDisposable
             ? new Vector2((float)extent.width / window.width, (float)extent.height / window.height)
             : Vector2.One;
         _actions?.Forget(_renderer.LiveBodies);
-        var panel = _ui.Frame((float)_delta.TotalSeconds, display, scale, _renderer.LiveBodies, Selection);
+        var panel = _ui.Frame((float)_delta.TotalSeconds, display, scale, _renderer.LiveBodies, Selection, _document is null ? null : new DocumentLine(_host.FileName, _documentMessage));
         ApplyPanel(_renderer.LiveBodies);
 
         var ui = _uiRenderer;

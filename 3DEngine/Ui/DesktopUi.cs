@@ -38,6 +38,9 @@ internal sealed unsafe class DesktopUi : IDisposable
     public const string HideLabel = "Hide";
     public const string ShowLabel = "Show";
     public const string ShowAllLabel = "Show all";
+    public const string FileNameLabel = "File name";
+    public const string SaveAsLabel = "Save as";
+    public const string OpenLabel = "Open";
 
     private readonly IntPtr _context;
     private readonly string _address;
@@ -51,6 +54,8 @@ internal sealed unsafe class DesktopUi : IDisposable
 
     // The text of the name field, and the body that it was filled for.
     private string _name = string.Empty;
+
+    private string _fileName = string.Empty;
     private Guid? _nameFor;
     private bool _textActive;
 
@@ -195,7 +200,7 @@ internal sealed unsafe class DesktopUi : IDisposable
     public static string RowText(LiveBody body)
         => (body.Name ?? $"{body.Kind}  {body.Id.ToString()[..8]}") + (body.Visible ? string.Empty : "  (hidden)");
 
-    public UiDrawData Frame(float deltaSeconds, Vector2 displaySize, Vector2 framebufferScale, IReadOnlyList<LiveBody> bodies, Guid? selection = null)
+    public UiDrawData Frame(float deltaSeconds, Vector2 displaySize, Vector2 framebufferScale, IReadOnlyList<LiveBody> bodies, Guid? selection = null, DocumentLine? document = null)
     {
         ArgumentNullException.ThrowIfNull(bodies);
         ImGui.SetCurrentContext(_context);
@@ -209,14 +214,14 @@ internal sealed unsafe class DesktopUi : IDisposable
         _shown.Clear();
 
         ImGui.NewFrame();
-        Panel(bodies, selection, displaySize);
+        Panel(bodies, selection, displaySize, document);
         ImGui.Render();
 
         _textActive = io.WantTextInput;
         return UiDrawDataConverter.Convert(ImGui.GetDrawData());
     }
 
-    private void Panel(IReadOnlyList<LiveBody> bodies, Guid? selection, Vector2 displaySize)
+    private void Panel(IReadOnlyList<LiveBody> bodies, Guid? selection, Vector2 displaySize, DocumentLine? document)
     {
         ImGui.SetNextWindowPos(new Vector2(16f, 16f), ImGuiCond.FirstUseEver);
         // The first size fits inside a small display too.
@@ -224,6 +229,8 @@ internal sealed unsafe class DesktopUi : IDisposable
         if (ImGui.Begin(PanelName))
         {
             ImGui.TextUnformatted(_address);
+            if (document is not null)
+                File(document);
             ImGui.TextUnformatted(bodies.Count == 1 ? "1 live body" : $"{bodies.Count} live bodies");
 
             ImGui.SetNextItemWidth(220f);
@@ -283,6 +290,26 @@ internal sealed unsafe class DesktopUi : IDisposable
             _actions.Add(new SetVisibleAction(body.Id, !body.Visible));
         Item(visibility);
         ImGui.SameLine();
+    }
+
+    // ADR-0030 item 3: the name of the file, a name field, Save as and Open.
+    private void File(DocumentLine document)
+    {
+        ImGui.TextUnformatted(document.FileName is { } name ? $"File: {name}" : "File: unsaved");
+        ImGui.SetNextItemWidth(200f);
+        ImGui.InputText(FileNameLabel, ref _fileName, 128);
+        Item(FileNameLabel);
+        // The buttons have their own line, so that they stay inside the panel.
+        if (ImGui.Button(SaveAsLabel))
+            _actions.Add(new SaveDocumentAction(_fileName));
+        Item(SaveAsLabel);
+        ImGui.SameLine();
+        if (ImGui.Button(OpenLabel))
+            _actions.Add(new OpenDocumentAction(_fileName));
+        Item(OpenLabel);
+        if (document.Message is { } message)
+            ImGui.TextUnformatted(message);
+        ImGui.Separator();
     }
 
     private void Item(string label)
