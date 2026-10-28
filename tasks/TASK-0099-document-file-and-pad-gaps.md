@@ -1,7 +1,7 @@
 ---
 id: 0099
 title: The document file keeps each complete line and each held file, and the pad applies to the current selection
-status: Active
+status: Done
 phase: P0.40
 opened: 2026-10-28
 depends-on: [0101]
@@ -90,9 +90,9 @@ person sees.
 
 ## Acceptance criteria
 
-- [ ] Each form of the review fails a test before its correction, or an injection shows that the test can fail.
-- [ ] A clean build (`--no-incremental`) gives zero errors and zero warnings.
-- [ ] Continuous integration passes on `ubuntu-latest`, `windows-latest` and `macos-latest`.
+- [x] Each form of the review fails a test before its correction, or an injection shows that the test can fail.
+- [x] A clean build (`--no-incremental`) gives zero errors and zero warnings.
+- [x] Continuous integration passes on `ubuntu-latest`, `windows-latest` and `macos-latest`.
 
 ## Notes for the implementer
 
@@ -128,3 +128,6 @@ person sees.
   selection changes, the text fields are disabled while the pad is open, and a second apply waits for the end of the
   pad. Six injections each failed a test.
 - 2026-10-29: `eng/test-floor.txt` holds the new counts: 689, 190, and 95 with 100 on Linux.
+- 2026-10-29: a correction of the line of E76 to E85: eleven injections failed a test, and the twelfth showed the
+  redundant check. The visual check ran the desktop on 127.0.0.1: the New box pad opened inside the window, the text
+  fields were disabled, and the log held no warning. CI run 40786895807 passed on the three runners. Closed at v0.102.
