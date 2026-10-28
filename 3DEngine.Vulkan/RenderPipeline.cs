@@ -17,6 +17,11 @@ namespace ThreeDEngine.Vulkan;
 // a body (ADR-0018 item 9) is then counter-clockwise on the screen, and it is the
 // front face; the pipeline culls each back face. A negative height is core in
 // Vulkan 1.1, and the instance asks for 1.3.
+//
+// A highlight pipeline (ADR-0029 item 2, TASK-0086) draws a mesh again over itself: it
+// keeps a fragment whose depth is greater than or equal to the stored depth, writes no
+// depth, and blends with the alpha of its fragment shader. The constants above are the
+// state of the mesh pipeline.
 public sealed unsafe class RenderPipeline : IDisposable
 {
     public const VkPrimitiveTopology Topology = VkPrimitiveTopology.TriangleList;
@@ -27,7 +32,7 @@ public sealed unsafe class RenderPipeline : IDisposable
 
     private readonly GraphicsDevice _device;
 
-    public RenderPipeline(GraphicsDevice device, VkRenderPass renderPass, string vertexShader, string fragmentShader)
+    public RenderPipeline(GraphicsDevice device, VkRenderPass renderPass, string vertexShader, string fragmentShader, bool highlight = false)
     {
         _device = device;
 
@@ -68,10 +73,22 @@ public sealed unsafe class RenderPipeline : IDisposable
                 VkPipelineDepthStencilStateCreateInfo depthStencil = new()
                 {
                     depthTestEnable = true,
-                    depthWriteEnable = true,
-                    depthCompareOp = DepthCompare,
+                    depthWriteEnable = !highlight,
+                    depthCompareOp = highlight ? VkCompareOp.GreaterOrEqual : DepthCompare,
                 };
-                VkPipelineColorBlendAttachmentState blendAttachment = new() { colorWriteMask = VkColorComponentFlags.All };
+                VkPipelineColorBlendAttachmentState blendAttachment = highlight
+                    ? new()
+                    {
+                        blendEnable = true,
+                        srcColorBlendFactor = VkBlendFactor.SrcAlpha,
+                        dstColorBlendFactor = VkBlendFactor.OneMinusSrcAlpha,
+                        colorBlendOp = VkBlendOp.Add,
+                        srcAlphaBlendFactor = VkBlendFactor.Zero,
+                        dstAlphaBlendFactor = VkBlendFactor.One,
+                        alphaBlendOp = VkBlendOp.Add,
+                        colorWriteMask = VkColorComponentFlags.All,
+                    }
+                    : new() { colorWriteMask = VkColorComponentFlags.All };
                 VkPipelineColorBlendStateCreateInfo colorBlend = new() { attachmentCount = 1, pAttachments = &blendAttachment };
                 VkDynamicState* dynamicStates = stackalloc VkDynamicState[] { VkDynamicState.Viewport, VkDynamicState.Scissor };
                 VkPipelineDynamicStateCreateInfo dynamicState = new() { dynamicStateCount = 2, pDynamicStates = dynamicStates };

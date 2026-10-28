@@ -21,6 +21,12 @@ public sealed class IntentMachine
     // The touch and pen contacts that are down, in the order of their press.
     private readonly List<Contact> _contacts = new();
     private bool _twoContactsSeen;
+
+    // The touch gesture since its first contact went down: the time of that press, whether no
+    // contact moved beyond the slop, and how many contacts it had (ADR-0029 item 4).
+    private ulong _gestureDownNs;
+    private bool _gestureStill;
+    private int _gestureContacts;
     private (double X, double Y) _lastCentre;
     private double _lastSpread;
     private bool _pairMoved;
@@ -87,7 +93,10 @@ public sealed class IntentMachine
         switch (sample.Phase)
         {
             case PointerPhase.Down when contact is null:
+                if (_contacts.Count == 0)
+                    (_gestureDownNs, _gestureStill, _gestureContacts) = (sample.TimestampNs, true, 0);
                 _contacts.Add(new Contact(sample));
+                _gestureContacts++;
                 if (_contacts.Count == 2)
                     StartTwo();
                 break;
@@ -104,14 +113,22 @@ public sealed class IntentMachine
                     _pairMoved = true;
                 }
 
+                if (contact.Displacement > _settings.DragSlopPixels)
+                    _gestureStill = false;
                 break;
 
             case PointerPhase.Up when contact is not null:
                 _contacts.Remove(contact);
                 if (_contacts.Count == 0)
                 {
-                    if (!_twoContactsSeen && !contact.Moved && sample.TimestampNs - contact.DownNs <= _settings.TapMaxNanoseconds)
+                    var held = sample.TimestampNs - contact.DownNs;
+                    if (!_twoContactsSeen && !contact.Moved && held <= _settings.TapMaxNanoseconds)
                         Point(Gesture.Tap, contact.DownX, contact.DownY, intents);
+                    else if (!_twoContactsSeen && !contact.Moved && held >= _settings.LongPressNanoseconds)
+                        Point(Gesture.LongPress, contact.DownX, contact.DownY, intents);
+                    else if (_twoContactsSeen && _gestureContacts == 2 && _gestureStill
+                        && sample.TimestampNs - _gestureDownNs <= _settings.TapMaxNanoseconds)
+                        NoPoint(Gesture.TwoFingerTap, intents);
                     _twoContactsSeen = false;
                 }
                 else
@@ -152,12 +169,13 @@ public sealed class IntentMachine
     {
         switch (sample.Phase)
         {
-            case PointerPhase.Down when _mouse is null && (sample.Buttons & (PointerButtons.Left | PointerButtons.Middle)) != 0:
+            case PointerPhase.Down when _mouse is null && (sample.Buttons & (PointerButtons.Left | PointerButtons.Middle | PointerButtons.Right)) != 0:
                 _mouse = new MousePress(sample);
                 break;
 
             case PointerPhase.Move when _mouse is not null:
-                if (_mouse.MoveFrom(sample, _settings.DragSlopPixels) is { } delta)
+                // A drag of the right button gives no gesture; it only stops a right click.
+                if (_mouse.MoveFrom(sample, _settings.DragSlopPixels) is { } delta && _mouse.Button != PointerButtons.Right)
                 {
                     var gesture = _mouse.Button == PointerButtons.Middle ? Gesture.MiddleDrag
                         : (_mouse.Modifiers & KeyModifiers.Shift) != 0 ? Gesture.ShiftLeftDrag
@@ -169,7 +187,7 @@ public sealed class IntentMachine
 
             case PointerPhase.Up when _mouse is not null && (sample.Buttons & _mouse.Button) != 0:
                 if (!_mouse.Moved && sample.TimestampNs - _mouse.DownNs <= _settings.TapMaxNanoseconds)
-                    Point(Gesture.Click, _mouse.DownX, _mouse.DownY, intents);
+                    Point(_mouse.Button == PointerButtons.Right ? Gesture.RightClick : Gesture.Click, _mouse.DownX, _mouse.DownY, intents);
                 _mouse = null;
                 break;
 
@@ -191,6 +209,7 @@ public sealed class IntentMachine
             case InputKey.ArrowDown: Motion(motion, 0, step, intents); break;
             case InputKey.Plus: Scale(Gesture.PlusMinusKeys, _settings.ZoomPerStep, intents); break;
             case InputKey.Minus: Scale(Gesture.PlusMinusKeys, 1 / _settings.ZoomPerStep, intents); break;
+            case InputKey.H: NoPoint((key.Modifiers & KeyModifiers.Shift) != 0 ? Gesture.ShiftHKey : Gesture.HKey, intents); break;
         }
     }
 
@@ -233,8 +252,29 @@ public sealed class IntentMachine
 
     private void Point(Gesture gesture, double x, double y, List<Intent> intents)
     {
-        if (_settings.ActionOf(gesture) == IntentAction.Select)
-            intents.Add(new SelectIntent(x, y));
+        switch (_settings.ActionOf(gesture))
+        {
+            case IntentAction.Select:
+                intents.Add(new SelectIntent(x, y));
+                break;
+            case IntentAction.Hide:
+                intents.Add(new HideIntent(x, y));
+                break;
+        }
+    }
+
+    // A gesture with no point: hide the selection, or show each hidden body (ADR-0029 item 4).
+    private void NoPoint(Gesture gesture, List<Intent> intents)
+    {
+        switch (_settings.ActionOf(gesture))
+        {
+            case IntentAction.Hide:
+                intents.Add(new HideIntent(null, null));
+                break;
+            case IntentAction.ShowAll:
+                intents.Add(new ShowAllIntent());
+                break;
+        }
     }
 
     // A press of a pointer: where it went down, where its last motion ended, and whether
@@ -253,9 +293,14 @@ public sealed class IntentMachine
         public ulong DownNs { get; }
         public bool Moved { get; private set; }
 
+        // The largest distance from the point of the press so far; Hold does not change it, so a
+        // pair of fingers that never moves still taps (ADR-0029 item 4).
+        public double Displacement { get; private set; }
+
         // The motion since the last one, or null while the press stays inside the slop.
         public (double Dx, double Dy)? MoveFrom(PointerSample sample, double slop)
         {
+            Measure(sample);
             if (!Moved)
             {
                 var (fromX, fromY) = (sample.X - DownX, sample.Y - DownY);
@@ -271,8 +316,15 @@ public sealed class IntentMachine
 
         public void Place(PointerSample sample)
         {
+            Measure(sample);
             (X, Y) = (sample.X, sample.Y);
             Moved = true;
+        }
+
+        private void Measure(PointerSample sample)
+        {
+            var (dx, dy) = (sample.X - DownX, sample.Y - DownY);
+            Displacement = Math.Max(Displacement, Math.Sqrt(dx * dx + dy * dy));
         }
 
         // The press no longer taps, and its next motion starts where it is.
@@ -287,7 +339,9 @@ public sealed class IntentMachine
 
     private sealed class MousePress(PointerSample sample) : Press(sample)
     {
-        public PointerButtons Button { get; } = (sample.Buttons & PointerButtons.Left) != 0 ? PointerButtons.Left : PointerButtons.Middle;
+        public PointerButtons Button { get; } = (sample.Buttons & PointerButtons.Left) != 0 ? PointerButtons.Left
+            : (sample.Buttons & PointerButtons.Middle) != 0 ? PointerButtons.Middle
+            : PointerButtons.Right;
         public KeyModifiers Modifiers { get; } = sample.Modifiers;
     }
 }

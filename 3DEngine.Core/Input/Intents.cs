@@ -16,6 +16,13 @@ public sealed record ZoomIntent(double Factor) : Intent;
 // Select what is at this point of the window, in pixels.
 public sealed record SelectIntent(double X, double Y) : Intent;
 
+// Hide the body at this point of the window, or the selected body when the point is null
+// (ADR-0029 items 4 and 5).
+public sealed record HideIntent(double? X, double? Y) : Intent;
+
+// Show each hidden body (ADR-0029 items 4 and 5).
+public sealed record ShowAllIntent : Intent;
+
 // Stop the gesture in progress: a pointer was lost.
 public sealed record CancelIntent : Intent;
 
@@ -34,6 +41,15 @@ public enum Gesture
     ArrowKeys,
     ShiftArrowKeys,
     PlusMinusKeys,
+
+    // ADR-0029 item 4: a press of a finger or a pen with no motion that lasts at least
+    // LongPressNanoseconds, a click of the right button, a tap of two fingers, the key H, and
+    // Shift and H.
+    LongPress,
+    RightClick,
+    TwoFingerTap,
+    HKey,
+    ShiftHKey,
 }
 
 // The action that a gesture gives.
@@ -44,13 +60,17 @@ public enum IntentAction
     Pan,
     Zoom,
     Select,
+    Hide,
+    ShowAll,
 }
 
 // The settings of the intent layer: the map from each gesture to an action, and the
 // numbers of the gestures. The map is a user setting of the client (ADR-0007, ADR-0026
 // item 3, decision D4). A gesture of motion (a drag or the arrow keys) gives orbit, pan,
 // zoom or nothing; a gesture of scale (a pinch, the wheel, plus and minus) gives zoom or
-// nothing; a gesture of a point (a tap, a click) gives select or nothing.
+// nothing; a gesture of a point (a tap, a click, a long press, a right click) gives select,
+// hide or nothing; a gesture with no point (a tap of two fingers, H, Shift and H) gives hide
+// of the selection, show all or nothing (ADR-0029 item 4).
 public sealed record IntentSettings
 {
     public static IntentSettings Default { get; } = new();
@@ -69,6 +89,11 @@ public sealed record IntentSettings
         [Gesture.PlusMinusKeys] = IntentAction.Zoom,
         [Gesture.Tap] = IntentAction.Select,
         [Gesture.Click] = IntentAction.Select,
+        [Gesture.LongPress] = IntentAction.Hide,
+        [Gesture.RightClick] = IntentAction.Hide,
+        [Gesture.HKey] = IntentAction.Hide,
+        [Gesture.TwoFingerTap] = IntentAction.ShowAll,
+        [Gesture.ShiftHKey] = IntentAction.ShowAll,
     };
 
     // The degrees of orbit for each pixel of a drag.
@@ -89,6 +114,10 @@ public sealed record IntentSettings
     // A tap or a click: shorter than this time, and with less motion than the slop.
     public ulong TapMaxNanoseconds { get; init; } = 300_000_000;
 
+    // A long press: at least this time, and with less motion than the slop. The state machine
+    // decides it at the release (ADR-0029 item 4).
+    public ulong LongPressNanoseconds { get; init; } = 500_000_000;
+
     public IntentAction ActionOf(Gesture gesture) => Map.TryGetValue(gesture, out var action) ? action : IntentAction.None;
 
     // Throws when the map gives a gesture an action that it cannot give.
@@ -99,7 +128,10 @@ public sealed record IntentSettings
             var permitted = gesture switch
             {
                 Gesture.Pinch or Gesture.Wheel or Gesture.PlusMinusKeys => action is IntentAction.None or IntentAction.Zoom,
-                Gesture.Tap or Gesture.Click => action is IntentAction.None or IntentAction.Select,
+                Gesture.Tap or Gesture.Click or Gesture.LongPress or Gesture.RightClick
+                    => action is IntentAction.None or IntentAction.Select or IntentAction.Hide,
+                Gesture.TwoFingerTap or Gesture.HKey or Gesture.ShiftHKey
+                    => action is IntentAction.None or IntentAction.Hide or IntentAction.ShowAll,
                 _ => action is IntentAction.None or IntentAction.Orbit or IntentAction.Pan or IntentAction.Zoom,
             };
             if (!permitted)
