@@ -1,13 +1,13 @@
 ---
 id: 0025
 title: The first demonstration, a device with no window, and an image test
-status: Accepted
+status: Amended
 topic: Rendering, boundary
 date: 2026-10-14
 supersedes: []
 superseded-by: []
 amends: ['0009', '0017', '0022']
-amended-by: []
+amended-by: ['0029']
 affects:
   - 3DEngine.ImageTests/**
   - scripts/first-demonstration.js
@@ -65,9 +65,10 @@ On 2026-10-14 the owner answered question Q2 of that review with option A for ea
 
    The test enables the validation layer with synchronization validation, and fails on each message.
    It writes the picture as a PNG file, and the pipeline keeps that file when the test fails.
-6. **The frame of the camera (D5).** At each change of the live bodies, the camera frames their box: the
-   target goes to the centre of the box, and the distance puts the sphere around the box inside the
-   smaller angle of the field of view. The yaw and the pitch do not change.
+6. **The frame of the camera (D5).** When the set of visible bodies goes from empty to not empty, the camera
+   frames their box: the target goes to the centre of the box, and the distance puts the sphere around the
+   box inside the smaller angle of the field of view. The yaw and the pitch do not change. A later change of
+   a body does not move the camera (ADR-0029 item 8).
 7. **The script (D6).** `scripts/first-demonstration.js` sends the four commands of item 1 over HTTP to
    the desktop, at `http://127.0.0.1:5180` or at the address of its argument.
 
@@ -91,3 +92,5 @@ The image test project references the host, so a change of the host can break it
 
 - 2026-10-14 · TASK-0076 · The record is written with the answers of the owner to question Q2 of the
   codebase review of 2026-10-13.
+- 2026-10-28 · TASK-0086 · ADR-0029 amends item 6: the camera frames the visible bodies only when their set
+  goes from empty to not empty (decision KD6 of the owner).
