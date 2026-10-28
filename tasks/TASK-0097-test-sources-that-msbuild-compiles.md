@@ -1,7 +1,7 @@
 ---
 id: 0097
 title: The test framework gate reads each source and each alias that MSBuild compiles into a test project
-status: Active
+status: Done
 phase: P0.38
 opened: 2026-10-28
 depends-on: [0096]
@@ -71,10 +71,29 @@ No file outside the gate files can change the result of a test in a test project
 
 ## Acceptance criteria
 
-- [ ] The file of T68 and the project file of T69 each fail the gate program.
-- [ ] An injection that restores each old rule fails a test.
-- [ ] A clean build (`--no-incremental`) gives zero errors and zero warnings.
-- [ ] Continuous integration passes on `ubuntu-latest`, `windows-latest` and `macos-latest`.
+- [x] The file of T68 and the project file of T69 each fail the gate program.
+- [x] An injection that restores each old rule fails a test.
+- [x] A clean build (`--no-incremental`) gives zero errors and zero warnings.
+- [x] Continuous integration passes on `ubuntu-latest`, `windows-latest` and `macos-latest`.
+
+## Outcome
+
+Status: Done · v0.99 · the commit that carries this block.
+
+## Method
+
+**Mechanical.** `Sources` uses the rule of `DeterminismCallGateTests.IsCompiled`. A new check reads the project file
+of each test project as XML, and the judge holds the three project files in one set.
+
+**Judgement.** A test project file may hold `<Using Include="Xunit" />` and no other import of a name of xUnit: an
+alias to a type that is not of xUnit cannot hide a type of the framework, so only an alias with a name of xUnit is
+refused. A `Compile` item and an `Import` are refused, because none exists today and each one can bring a source or
+a `Using` item that the gate does not read. The names of elements and attributes compare with no regard to case, and
+a value is unescaped, as MSBuild reads them.
+
+**Weakest.** The theory of `IsCompiled` tests the rule and not the walk of the folder; the probe with the gate
+program is the proof that `Sources` uses it. A `Directory.Build` file can still add a `Using` item; it is a gate
+file, so the judge requires the task to name it.
 
 ## Notes for the implementer
 
@@ -87,3 +106,4 @@ No file outside the gate files can change the result of a test in a test project
 - 2026-10-28: opened by the second codebase review of 2026-10-28 (TASK-0095).
 - 2026-10-28: the gate reads each source that MSBuild compiles and the project file of each test project, and the
   judge names the project file of each test project as a gate file. The forms of T68 and T69 fail the gate program.
+- 2026-10-28: closed at v0.99. CI run 40759954421 passed on the three runners.

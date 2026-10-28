@@ -2746,3 +2746,27 @@ file now holds such a command as the live session applied it.
 New tests: 2. The test list holds 831 (622 in `Engine.Tests`, 144 in `3DEngine.Tests`, 65 in `3DEngine.ImageTests`).
 `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open entries: 13 of 15. New
 diagnostic codes: none. Since the review of v0.96, 0 product milestones and 1 entry followed it.
+
+## v0.99 — The test framework gate reads what MSBuild compiles into a test project (P0.38, TASK-0097)
+
+**The change.**
+
+- T68: `TestAttributeGateTests` skips `bin/` and `obj/` at the root of a test project only, as MSBuild does, so a
+  source in a `bin/` folder below the root is read.
+- T69: the gate reads the project file of each test project as XML. It refuses each import of a name of xUnit other
+  than the namespace `Xunit`, an alias with a name of xUnit, a `Compile` item and an `Import`, with no regard to case
+  and with `%XX` unescaped.
+- The judge names the project files of `3DEngine.Tests` and `3DEngine.ImageTests` as gate files, and
+  `docs/templates.md` says so.
+
+**Proof.** 20 new tests. The file of T68 in `Engine.Tests/Http/bin/` and the alias of T69 in
+`3DEngine.Tests/3DEngine.Tests.csproj` each failed the gate program ("200 runs of 104 checks, 2 failed"); the review
+had seen both pass. Three injections each failed their tests: a skip of `bin/` at each depth, no check of a `Using`
+item, and a judge with no project file of `3DEngine.Tests`. CI run 40759954421 passed on the three runners.
+
+**What stays.** The three gates that run engine code stay in the test process (T31). Each other user of the same skip
+of `bin/` waits for TASK-0098.
+
+New tests: 20. The test list holds 851 (642 in `Engine.Tests`, 144 in `3DEngine.Tests`, 65 in `3DEngine.ImageTests`).
+`dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open entries: 13 of 15. New
+diagnostic codes: none. Since the review of v0.96, 0 product milestones and 2 entries followed it.
