@@ -127,3 +127,4 @@ person sees.
 - 2026-10-29: V32, V33 and V34 are corrected, with 4 new test cases. A pad that names a selection closes when the
   selection changes, the text fields are disabled while the pad is open, and a second apply waits for the end of the
   pad. Six injections each failed a test.
+- 2026-10-29: `eng/test-floor.txt` holds the new counts: 689, 190, and 95 with 100 on Linux.
