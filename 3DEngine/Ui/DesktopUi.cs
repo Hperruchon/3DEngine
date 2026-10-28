@@ -76,7 +76,8 @@ internal sealed unsafe class DesktopUi : IDisposable
     // The key of the rectangle of a control of the window of the sketch, for ItemRectangle.
     public static string SketchItem(string label) => $"{SketchName} {label}";
 
-    private const float SketchWidth = 420f;
+    // Wide enough for the row of a constraint with its values and its residual.
+    private const float SketchWidth = 480f;
 
     // ADR-0032 item 5: the window of the pad and its buttons, row by row.
     public const string PadName = "Pad";
@@ -583,12 +584,14 @@ internal sealed unsafe class DesktopUi : IDisposable
         Guid[] items = [.. selection.OrderBy(item => points.ContainsKey(item) ? 0 : 1)];
         var shape = string.Concat(items.Select(item => points.ContainsKey(item) ? "P" : lines.Contains(item) ? "L" : "C"));
 
+        // The right edge of the content, left of the scroll bar.
+        var right = ImGui.GetCursorScreenPos().X + ImGui.GetContentRegionAvail().X;
         var first = true;
         void Flow(string label, Action press)
         {
             // A button goes on the line of the last one when it fits in the window.
             var width = ImGui.CalcTextSize(label).X + 2 * ImGui.GetStyle().FramePadding.X;
-            if (!first && ImGui.GetItemRectMax().X + ImGui.GetStyle().ItemSpacing.X + width <= ImGui.GetWindowPos().X + ImGui.GetWindowWidth() - ImGui.GetStyle().WindowPadding.X)
+            if (!first && ImGui.GetItemRectMax().X + ImGui.GetStyle().ItemSpacing.X + width <= right)
                 ImGui.SameLine();
             first = false;
             if (ImGui.Button(label))

@@ -108,3 +108,7 @@ mouse, and the log holds the same commands for both.
   tools Line and Select, a pad of one to three fields, `SketchActions`, the window of the sketch and its drawing.
   57 new test cases; 17 injections each failed a test. The panel image test counts 60 % dark pixels, not 70 %: the
   line of a new sketch adds three buttons.
+- 2026-10-28: the visual check ran on this computer with real clicks: a rectangle of five clicks on XY, and the five
+  kinds from the window. It showed two faults of display: a row of a constraint was cut, and a button went under
+  the scroll bar. The window of the sketch is now 480 pixels wide, and a line of buttons stops before the scroll
+  bar. The log held no warning with synchronization validation on.
