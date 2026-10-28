@@ -135,3 +135,12 @@ rebuilds the same Document with the backend that each entry records.
   check of the version before the apply), so the test of a failed write sends a stale command after it, and the
   repeated check of the version after the apply is gone. `Engine.Core.csproj` joined the write set, to give its
   internals to `Engine.Tests`.
+- 2026-10-28: the server (ADR-0015 item 10). `EngineHost` takes `DocumentFileOptions`: it opens the named file, or
+  makes it when it does not exist, before its surface serves a request, and frees the backend when the file does
+  not open; a host with no options has no file. `engine-api-http --file` gives the path, writes the warnings of the
+  open on its error output, and stops with exit code 6 when the file does not open. Two process tests: a host
+  killed after its results keeps both commands, and a second host opens the file to the renamed body; a bad header
+  gives exit code 6. Two injections each failed them (the server ignores `--file`; a bad file gives code 5). The
+  glossary gains "log entry", "document file" and "length unit". A command with a file took 0.07 to 0.08 ms on this
+  computer, and 0.001 to 0.009 ms with no file (500 commands of `NoOp`, two runs each). Correction of the line
+  before: seven injections each failed a test, not nine.
