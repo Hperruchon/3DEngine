@@ -1,7 +1,7 @@
 ---
 id: 0089
 title: The gates bind the names that the compiler and MSBuild bind, and the archive and the review counter check their links
-status: Ready
+status: Active
 phase: P0.35
 opened: 2026-10-28
 depends-on: [0088]
@@ -9,6 +9,7 @@ governed-by: []
 writes:
   create:
     - tasks/TASK-0089-gate-holes-of-the-tenth-review.md
+    - eng/repo-gates/DiscardedTasks.cs
   modify:
     - Engine.Tests/Governance/DependencyDirectionGateTests.cs
     - Engine.Tests/Governance/DeterminismCallGateTests.cs
@@ -89,3 +90,10 @@ Each gate of the review binds what the compiler or MSBuild binds, and checks eac
 ## Progress
 
 - 2026-10-28: opened by the codebase review of 2026-10-28 (TASK-0087).
+- 2026-10-28: the task is active, after P0.36 (v0.93), as the owner ordered on 2026-10-28.
+- 2026-10-28: T65 and T67. `AdrGateTests.ArchiveProblems` requires the file of each archived number in
+  `docs/adr/archive/`, with the status Withdrawn or Superseded, and the row with that status; the form of the review
+  (ADR-0001 deleted and its row moved under "Archived") failed the gate program, which passed it before. Four test
+  cases. The gate runner reads each gate file and refuses a discard of a call and a `Task.Run` or `StartNew` as a
+  statement (`eng/repo-gates/DiscardedTasks.cs`); both forms of the review, in a probe check, failed the runner. The
+  runner has no test of its own (T59 and T60 had none), so the probe is the proof.
