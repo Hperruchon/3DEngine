@@ -93,7 +93,8 @@ answered its questions Q1 to Q8 on 2026-10-28, with option A for each.
    target must not exist. A failure gives `E-IO-SAVE-FAILED`, and the file stays where it was. P8f gives the save
    to the desktop and to an agent.
 10. **The hosts.** `engine-api-http` opens the file that `--file` names, and makes it with a header when it does not
-    exist. With no `--file`, it writes into the folder of unsaved documents. A file that cannot open stops the start
+    exist. With no `--file`, it keeps the document in memory only and writes one line that says so at its start; the
+    folder of unsaved documents is for the desktop (P8f). A file that cannot open stops the start
     with exit code 6. The desktop opens a file in P8f (Q5). The command line has no file, because each run is a
     one-shot session (ADR-0019 item 7). A test that makes an `EngineHost` gets no file unless it gives one.
 11. **The code (Q7).** The journal, the encoding and the open live in `Engine.Core/Persistence/`. Each handler in
@@ -142,3 +143,6 @@ Register entry R-0025 closes with P8a.
 - 2026-10-28 · TASK-0091 · The contract of items 5 to 7 lands: `BackendIdentity`, `LogEntry`, `Document.Log` of entries,
   `Document.LengthUnit` and `IGeometryBackend.Identity`. A replay of a plain list of commands, as a fixture,
   records no backend and uses the backend that the caller gives.
+- 2026-10-28 · TASK-0091 · Item 10: `engine-api-http` with no `--file` keeps the document in memory and says so, because
+  twenty test classes start the program in the test process and would write into the folder of unsaved documents
+  of the account. The owner chose this on 2026-10-28.

@@ -1,7 +1,7 @@
 ---
 id: 0091
 title: The document file in the engine and the server
-status: Active
+status: Done
 phase: P8a
 opened: 2026-10-28
 depends-on: [0088]
@@ -100,13 +100,43 @@ rebuilds the same Document with the backend that each entry records.
 
 ## Acceptance criteria
 
-- [ ] Each new test fails before its correction, or an injection shows that it can fail.
-- [ ] A file that a host wrote opens in a second host and gives the same Document: the same version, log and
+- [x] Each new test fails before its correction, or an injection shows that it can fail.
+- [x] A file that a host wrote opens in a second host and gives the same Document: the same version, log and
       bodies, with names and visibilities.
-- [ ] A failed write rejects its command, and the Document does not change.
-- [ ] The seven new codes are in `docs/diagnostics.md`.
-- [ ] A clean build (`--no-incremental`) gives zero errors and zero warnings.
-- [ ] Continuous integration passes on `ubuntu-latest`, `windows-latest` and `macos-latest`.
+- [x] A failed write rejects its command, and the Document does not change.
+- [x] The seven new codes are in `docs/diagnostics.md`.
+- [x] A clean build (`--no-incremental`) gives zero errors and zero warnings.
+- [ ] Continuous integration passes on `ubuntu-latest`, `windows-latest` and `macos-latest`. The merge
+      records the run.
+
+## Outcome
+
+Status: Done · v0.91 · the commit that carries this block.
+
+The document file exists in the engine and the server. Each applied command of a session with a file is in the
+`.3de` file, flushed to disk, before its result; each entry records its backend, and the header records the length
+unit. An open applies each entry through the bus, refuses an entry of another backend, and cuts a torn last line
+with a warning. A save moves the file. `engine-api-http --file` opens or makes the file; with no `--file` the
+document is in memory only, and the server says so.
+
+## Method
+
+**Mechanical.** 31 new tests, with each theory case counted: 5 of the backend in the log, 23 of the file (the full
+scene on the native backend among them), and 3 process tests of the server. Fifteen injections each failed a test;
+two first passed and made two tests stronger. A process test kills the server after its results, and a second
+server opens the file to the same renamed body. Run 40671505395 passed on the three runners with the file code. A
+command with a file took 0.07 to 0.08 ms on this computer, and 0.001 to 0.009 ms with no file.
+
+**Judgement.** The bus writes the entry after the handler and before the commit, as ADR-0015 item 4 says, so a
+failed write is a rejection with no change of the Document. The reader accepts one kind of JSON value for each
+declared type, because a `null` for a string reached the binder as the text "null" in the first version. A replay of
+a plain list of commands, as the replay fixture, records no backend and keeps its old form. A server with no
+`--file` keeps the document in memory, because twenty test classes start the program in the test process; the
+owner chose this on 2026-10-28.
+
+**Weakest.** A failed write leaves the body of the handler in the backend. On Linux and macOS the lock of the file
+is advisory, so a second process that ignores it can write to the file. No test kills a process during a write,
+so the torn last line is tested with lines that a test writes. The desktop has no file until P8f.
 
 ## Notes for the implementer
 
@@ -144,3 +174,8 @@ rebuilds the same Document with the backend that each entry records.
   glossary gains "log entry", "document file" and "length unit". A command with a file took 0.07 to 0.08 ms on this
   computer, and 0.001 to 0.009 ms with no file (500 commands of `NoOp`, two runs each). Correction of the line
   before: seven injections each failed a test, not nine.
+- 2026-10-28: the owner chose on 2026-10-28 that `engine-api-http` with no `--file` keeps the document in memory,
+  because twenty test classes start the program in the test process. ADR-0015 item 10 changes by one sentence, and
+  the server says so on its error output; a process test holds the line, and an injection that removes it failed
+  it. Closed after a clean build and a full local run of 693 tests (564 in `Engine.Tests`, 89 in `3DEngine.Tests`,
+  40 in `3DEngine.ImageTests`). Register entry R-0025 is closed.
