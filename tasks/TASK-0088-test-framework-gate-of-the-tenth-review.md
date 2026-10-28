@@ -1,7 +1,7 @@
 ---
 id: 0088
 title: No file outside the gate files can replace the test framework of a test project
-status: Ready
+status: Active
 phase: P0.34
 opened: 2026-10-28
 depends-on: [0087]
@@ -75,3 +75,7 @@ No file outside the gate files can change the result of a test in a test project
 ## Progress
 
 - 2026-10-28: opened by the codebase review of 2026-10-28 (TASK-0087).
+- 2026-10-28: the task is active. The owner answered the questions of the review on 2026-10-28: A to each of Q1
+  to Q8. The roadmap holds the answers in the rows of P8a and of a new slice P8f, which Q8 makes: the review gate
+  reads a slice as a number and one letter, so "P8a1" would not count, and P8b to P8e exist. Q2 and Q3 change the
+  public shape of `Engine.Contracts`; the owner accepted that, and the ADR comes with P8a.
