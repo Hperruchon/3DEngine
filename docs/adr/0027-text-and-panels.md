@@ -1,13 +1,13 @@
 ---
 id: 0027
 title: Text and panels through Dear ImGui, drawn by a first-party renderer
-status: Accepted
+status: Amended
 topic: Rendering, clients
 date: 2026-10-27
 supersedes: []
 superseded-by: []
 amends: ['0026']
-amended-by: []
+amended-by: ['0029']
 affects:
   - 3DEngine/Ui/**
   - 3DEngine/3DEngine.csproj
@@ -64,8 +64,10 @@ Four facts limit the choice:
    The font is the default font of Dear ImGui at a larger size; no other font file enters the repository.
 7. **The first panel.** One panel shows the address of the document and the live bodies of the session
    with their kind and a short identifier, and a text field filters the list. The panel reads the bodies
-   that the desktop already holds from the events (ADR-0024); it reads no state of the engine. R8b adds
-   the rename and the visibility.
+   that the desktop already holds from the events (ADR-0024); it reads no state of the engine. Each row
+   gives the name of a body, or its kind and a short identifier, and the word "hidden"; a row selects its
+   body, and the selected body has a name field and the buttons "Rename" and "Hide" or "Show", beside a
+   button "Show all" (ADR-0029 item 7).
 8. **Tests.** The tests of the panel with no GPU live in `3DEngine.ImageTests`, because only that verifier
    may reference the host (`DependencyDirectionGateTests`). They run on each runner. An image test on
    lavapipe draws the panel offscreen. `UiLibraryGateTests` refuses the namespace outside `3DEngine/Ui/` and
@@ -94,3 +96,5 @@ the package of the desktop must leave it out. A gesture that starts over a panel
 
 - 2026-10-27 · TASK-0084 · The record is written with decision KD1 of the owner of 2026-10-27, and the
   binding ImGui.NET that the owner chose on the same date.
+- 2026-10-28 · TASK-0086 · ADR-0029 amends item 7: the rows select a body, and the panel renames, hides and
+  shows it.
