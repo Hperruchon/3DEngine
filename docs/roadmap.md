@@ -120,6 +120,10 @@ This track removes each condition that blocks other work.
 | P0.34 | No file outside the gate files can replace the test framework of a test project. TASK-0088. | 1 |
 | P0.35 | The gates bind the names that the compiler and MSBuild bind, and the archive and the review counter check their links. TASK-0089. | 2–3 |
 | P0.36 | A name is a JSON string of well-formed text, the server disposes at each stop, and the desktop ends a text field at a click on the scene. TASK-0090. | 2–3 |
+| P0.37 | An open applies each entry of the document file and gives its version, or refuses the file. TASK-0096. | 1 |
+| P0.38 | The test framework gate reads each source and each alias that MSBuild compiles into a test project. TASK-0097. | 1 |
+| P0.39 | The gates read the names, the packages and the assemblies that the build binds, and the review counter reads each heading. TASK-0098. | 2–3 |
+| P0.40 | The document file keeps each complete line and each held file, and the pad applies to the current selection. TASK-0099. | 3–4 |
 
 ## Track P — The platform
 
@@ -198,6 +202,8 @@ The tracks are not strictly sequential, but three rules hold:
    2026-10-28 puts P0.34, which holds a high finding, before P8a, and P0.35 and P0.36 after P8a, by the rule of
    `docs/templates.md`, section 7. On 2026-10-28, after P8f, the owner put P0.36 and then P0.35 before P8c, because
    a defect of P0.36 can put a wrong rename into the document file.
+   The second codebase review of 2026-10-28 puts P0.37 and P0.38, which hold high findings, before K2, and P0.39
+   and P0.40 after K2, by the rule of `docs/templates.md`, section 7.
 2. R2 blocks each later phase in track R. No mesh leaves the geometry backend today.
 3. K4 needs K0, K1 and K2. Do not start K4 before the reference model exists.
 4. The path to the milestone "CAD on one part" (the owner, 2026-10-27, KD2): R7b, R8a, R8b, the codebase

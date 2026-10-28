@@ -328,6 +328,10 @@ Progress 2026-10-28: TASK-0089 corrected T63 to T67. A reference must name a pro
 the gate of the UI library reads names, XML and imports, an archived ADR needs its file and its status, a product
 task with no roadmap row is a problem, and the runner refuses a discarded task. T4, T5, T7, T10, T13, T17, T23 and T25
 stay, and T31 stays open in part.
+Progress 2026-10-28: the second codebase review of 2026-10-28 finds new forms. A test framework in a `bin/` folder
+inside a test project (T68, high) and an alias in the project file of `3DEngine.Tests` (T69, high) each make each
+failed test pass with the exact count. T70 to T75 and T77 are medium or low. T31 is worse through T68. TASK-0097
+holds T68 and T69 before K2, and TASK-0098 holds the rest after K2. T4, T5, T7, T10, T13, T17, T23 and T25 stay.
 
 ### R-0033 · Seven findings of the third codebase review in the engine and the hosts have no task
 - class: debt
@@ -390,6 +394,18 @@ Vulkan layer that only Windows or macOS shows passes the pipeline. The computer 
 on Windows with a GPU, and no computer runs it on macOS.
 Exit: a runner of Windows or macOS gives a Vulkan device and the pipeline requires the test there, or the
 owner accepts Ubuntu alone and moves this entry to the accepted compromises.
+
+### R-0042 · K2 has no decisions for its scope, its model and its datum
+- class: risk
+- opened: 2026-10-28
+- due: 2026-11-27
+- extended: no
+- refs: `docs/reviews/2026-10-28-b-codebase-review.md`, questions Q1 to Q10; `docs/roadmap.md`, rows K2 and K0a; TASK-0095
+The roadmap row of K2 names five entities and fourteen constraints, and no document gives the list. The sketch
+model changes the public shape of `Engine.Contracts`, which needs the owner and an ADR. The second codebase review
+of 2026-10-28 gives nine decisions for K2 and K0a, and one decision on the rule of the rules review (T78). K2 cannot
+start before the answers.
+Exit: the owner answers Q1 to Q10, and the first commit of the K2 task records the answers.
 
 ## Accepted compromises
 
