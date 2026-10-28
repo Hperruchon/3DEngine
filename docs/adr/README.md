@@ -46,6 +46,7 @@ names. Do not read all of them.
 | [0030](0030-document-file-in-the-desktop.md) | The document file in the desktop and for an agent | Accepted | Persistence, deployment | — | — |
 | [0031](0031-undo-and-redo.md) | Undo and redo as commands of the log | Amended | Contracts, runtime | 0006, 0021 | 0032 |
 | [0032](0032-numeric-pad-and-evaluator.md) | The numeric pad, the expression evaluator and the keys of undo and redo | Accepted | Clients, rendering | 0026, 0031 | — |
+| [0033](0033-sketch-model.md) | The sketch model in the engine | Proposed | Contracts, sketch | — | — |
 
 ## Topics
 
