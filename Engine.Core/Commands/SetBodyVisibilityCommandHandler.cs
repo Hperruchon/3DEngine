@@ -2,13 +2,14 @@ using Engine.Contracts;
 using Engine.Contracts.Geometry;
 using Engine.Contracts.Handlers;
 using Engine.Contracts.Schema;
+using Engine.Core.Persistence;
 
 namespace Engine.Core.Commands;
 
 // ADR-0028 items 2 and 6: the body must be live. The handler changes no geometry, so it needs
 // no capability of the backend. A command that gives the visibility that the body has is
 // applied, and its commit gives its event.
-public sealed class SetBodyVisibilityCommandHandler : ICommandHandler
+public sealed class SetBodyVisibilityCommandHandler : ICommandHandler, ICommandEncoder
 {
     public string CommandName => "SetBodyVisibility";
     public int SchemaVersion => 1;
@@ -27,6 +28,17 @@ public sealed class SetBodyVisibilityCommandHandler : ICommandHandler
         };
 
     // Per ADR-0016.
+    // ADR-0015 item 11: the parameters that Create reads.
+    public IReadOnlyDictionary<string, object?> Encode(Command command)
+    {
+        var typed = (SetBodyVisibilityCommand)command;
+        return new Dictionary<string, object?>(StringComparer.Ordinal)
+        {
+            ["bodyId"] = typed.BodyId,
+            ["visible"] = typed.Visible,
+        };
+    }
+
     public Command Create(CommandInput input) => new SetBodyVisibilityCommand
     {
         CommandId = input.CommandId,

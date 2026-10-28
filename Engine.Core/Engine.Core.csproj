@@ -11,4 +11,9 @@
     <ProjectReference Include="..\Engine.Contracts\Engine.Contracts.csproj" />
   </ItemGroup>
 
+  <!-- ADR-0015 (TASK-0091): a test attaches a document file on a stream that fails. -->
+  <ItemGroup>
+    <InternalsVisibleTo Include="Engine.Tests" />
+  </ItemGroup>
+
 </Project>

@@ -14,6 +14,7 @@ writes:
   modify:
     - Engine.Contracts/Document.cs
     - Engine.Contracts/Geometry/IGeometryBackend.cs
+    - Engine.Core/Engine.Core.csproj
     - Engine.Core/CommandBus.cs
     - Engine.Core/DocumentSession.cs
     - Engine.Core/Replay.cs
@@ -123,3 +124,14 @@ rebuilds the same Document with the backend that each entry records.
   refuses another backend with `E-IO-BACKEND-MISMATCH`, and the snapshot gives `lengthUnit`. Five new tests; three
   injections each failed one (the bus records another backend, the replay checks no name, the replay checks the
   version too). `SchemaDiagnosticsEndpoint.cs` joined the write set.
+- 2026-10-28: the file (ADR-0015 items 1 to 4, 8, 9, 11 to 13). `Engine.Core/Persistence/` holds `ICommandEncoder`,
+  which each of the six handlers implements, `EntryCodec` (the header and the line of an entry, with a reader that
+  accepts one kind of JSON value for each declared type), `DocumentJournal` (one write and one flush to disk for
+  each line, a cut back and a broken state after a failure, a file made at the first command of a document with no
+  name, a move at a save) and `DocumentFile` (create, unsaved, open). The bus writes the entry after the handler and
+  before the commit, and refuses each command after a failed write. `DocumentSession.SaveAs` and the close of the
+  file. Six codes of the namespace `IO`. 23 new tests, with each theory case counted; the full scene runs on the
+  native backend. Nine injections each failed a test; two first passed (a broken file that does not refuse, and the
+  check of the version before the apply), so the test of a failed write sends a stale command after it, and the
+  repeated check of the version after the apply is gone. `Engine.Core.csproj` joined the write set, to give its
+  internals to `Engine.Tests`.
