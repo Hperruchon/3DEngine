@@ -92,3 +92,7 @@ is a command of the session, and the camera frames the bodies only when the firs
   moved. The coverage check of the parity test failed on the two new kinds before their scripts existed. Six new
   tests; four injections each failed one (no long press, no tap of two fingers, a right click as a click, Shift
   ignored on H).
+- 2026-10-28: the pick (ADR-0029 items 1 and 3). `3DEngine.Core/Picking/Picker.cs` gives the ray of a pixel
+  and the nearest visible body that it hits (Möller and Trumbore, in double precision). Eight tests; a point that
+  the camera projects lies on the ray of its pixel, within 1e-4. Four injections each failed (y not flipped, a
+  hidden body picked, the first hit and not the nearest, a hit behind the origin).
