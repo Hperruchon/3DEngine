@@ -2587,3 +2587,31 @@ New tests: 26. The test list holds 719 (582 in `Engine.Tests`, 89 in `3DEngine.T
 `3DEngine.ImageTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
 entries: 13 of 15. New diagnostic codes: `E-API-NOT-SUPPORTED`. Since the review of v0.88, 2 product milestones and
 4 entries followed it.
+
+## v0.93 — The hosts and the desktop of the review of 2026-10-28 (P0.36, TASK-0090)
+
+After P8f the owner put P0.36 and then P0.35 before P8c on 2026-10-28, and accepted the new rule of a name in ADR-0028
+item 3 on 2026-10-28.
+
+**The change.**
+
+- V26: a press on the scene ends the text field of the panel, so the next key goes to the scene and Rename sends the
+  name of the selected body.
+- V27: `BodyVisibility` gives the visibility by a lookup and keeps the count of visible bodies until a change.
+- E72 and E73: a string field over HTTP takes only a well-formed JSON string; `BodyNames` refuses a lone surrogate
+  with `E-VAL-BODY-NAME-INVALID`.
+- E74: `engine-api-http` disposes its app at a normal stop and at each exception of the composition.
+- V18: a retry of a remake gives no retired swapchain, and a failed swapchain frees its depth image.
+- V28: an image test requires the highlight on 99 % of the pixels of the selected body; `mesh.vert` declares
+  `invariant gl_Position`.
+- V30: the setter of the pitch clamps to the range of `Orbit`.
+
+**Proof.** 19 new tests. The two probes of V26 failed before the fix, and each other fix with a test failed under an
+injection of its old rule. Run 40691527334 passed on the three runners.
+
+**What stays.** E74 and the free of the depth image of V18 have no test.
+
+New tests: 19. The test list holds 738 (591 in `Engine.Tests`, 94 in `3DEngine.Tests`, 53 in
+`3DEngine.ImageTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
+entries: 13 of 15. New diagnostic codes: none. Since the review of v0.88, 2 product milestones and 5 entries
+followed it.

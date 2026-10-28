@@ -73,6 +73,7 @@ Therefore each approved objective must have a track here.
 - P0.34 — No file outside the gate files can replace the test framework of a test project. v0.90, TASK-0088.
 - P8a — The document file in the engine and the server. v0.91, TASK-0091, ADR-0015.
 - P8f — The document file in the desktop and for an agent. v0.92, TASK-0092, ADR-0030.
+- P0.36 — A name is a JSON string of well-formed text, the server disposes at each stop, and the desktop ends a text field at a click on the scene. v0.93, TASK-0090.
 
 ## Track 0 — Foundations
 
