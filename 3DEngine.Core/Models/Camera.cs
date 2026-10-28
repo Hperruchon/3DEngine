@@ -54,8 +54,18 @@ public sealed class Camera : Entity
             : throw new ArgumentOutOfRangeException(nameof(FarPlane), value, "A far plane is finite and greater than 0.");
     }
 
-    /// <summary>The point that the camera looks at, in the space of the scene.</summary>
-    public (double X, double Y, double Z) Target { get; set; }
+    /// <summary>The point that the camera looks at, in the space of the scene, with finite coordinates.</summary>
+    // Finding V38 of the second codebase review of 2026-10-28 (TASK-0099): a target of NaN gave
+    // a view of NaN. The setter refuses it, as the setter of the distance does.
+    public (double X, double Y, double Z) Target
+    {
+        get => _target;
+        set => _target = double.IsFinite(value.X) && double.IsFinite(value.Y) && double.IsFinite(value.Z)
+            ? value
+            : throw new ArgumentOutOfRangeException(nameof(Target), value, "A target has finite coordinates.");
+    }
+
+    private (double X, double Y, double Z) _target;
 
     /// <summary>The distance from the eye to the target, finite and greater than 0.</summary>
     /// <remarks>
@@ -71,7 +81,15 @@ public sealed class Camera : Entity
     }
 
     /// <summary>The turn about the y axis; 0 puts the eye on the positive z side of the target.</summary>
-    public double YawDegrees { get; set; }
+    // V38: a yaw of NaN or of an infinity gave a view of NaN. The setter gives 0 for a value that
+    // is not finite, as the setter of the pitch does for NaN.
+    public double YawDegrees
+    {
+        get => _yawDegrees;
+        set => _yawDegrees = double.IsFinite(value) ? value : 0.0;
+    }
+
+    private double _yawDegrees;
 
     /// <summary>The angle of the eye above the plane of x and z through the target.</summary>
     // Finding V30 of the codebase review of 2026-10-28 (TASK-0090): a pitch of 90 degrees put

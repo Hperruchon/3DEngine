@@ -66,7 +66,11 @@ public sealed class EngineHost : IDisposable
                 if (opens)
                     OpenWarnings = DocumentFile.Open(Session, path).GetAwaiter().GetResult();
                 else
+                {
                     DocumentFile.Create(Session, path);
+                    NewFileMessage = $"The file {Path.GetFullPath(path)} did not exist, so the host made a new empty document file there. "
+                        + "A save moves the file to its new name, so a start again with the same --file gives an empty document (ADR-0015 items 9 and 10).";
+                }
             }
             else if (file?.UnsavedFolder is { } folder)
             {
@@ -92,6 +96,11 @@ public sealed class EngineHost : IDisposable
     // The warnings of the open of the file (W-IO-TRUNCATED, W-IO-BACKEND-VERSION),
     // which the host writes on its error output.
     public IReadOnlyList<Diagnostic> OpenWarnings { get; } = Array.Empty<Diagnostic>();
+
+    // ADR-0015 item 10: the line that a host writes on its error output when it made the
+    // file of --file, or null. Until TASK-0099 a start after a save made an empty document
+    // with no message (finding E77 of the second codebase review of 2026-10-28).
+    public string? NewFileMessage { get; }
 
     public DocumentSession Session { get; }
 

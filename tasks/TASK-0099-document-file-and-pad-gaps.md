@@ -1,20 +1,23 @@
 ---
 id: 0099
 title: The document file keeps each complete line and each held file, and the pad applies to the current selection
-status: Ready
+status: Done
 phase: P0.40
 opened: 2026-10-28
-depends-on: [0098]
-governed-by: [0004, 0007, 0009, 0015, 0016, 0017, 0019, 0022, 0023, 0024, 0025, 0026, 0027, 0029, 0030, 0031, 0032, 0034]
+depends-on: [0101]
+governed-by: [0004, 0007, 0009, 0013, 0015, 0016, 0017, 0019, 0022, 0023, 0024, 0025, 0026, 0027, 0029, 0030, 0031, 0032, 0034]
 writes:
   create:
     - tasks/TASK-0099-document-file-and-pad-gaps.md
   modify:
     - Engine.Core/Persistence/**
     - Engine.Core/DocumentSession.cs
+    - Engine.Core/DiagnosticCodes.cs
     - Engine.Api.Http/DocumentFolder.cs
     - Engine.Api.Http/EngineHost.cs
     - Engine.Api.Http/Endpoints/DocumentEndpoint.cs
+    - Engine.Api.Http/Endpoints/CommandsEndpoint.cs
+    - Engine.Api.Http/Endpoints/SchemaDiagnosticsEndpoint.cs
     - Engine.Api.Http.Server/Program.cs
     - Engine.Tests/Persistence/**
     - Engine.Tests/Http/**
@@ -87,9 +90,9 @@ person sees.
 
 ## Acceptance criteria
 
-- [ ] Each form of the review fails a test before its correction, or an injection shows that the test can fail.
-- [ ] A clean build (`--no-incremental`) gives zero errors and zero warnings.
-- [ ] Continuous integration passes on `ubuntu-latest`, `windows-latest` and `macos-latest`.
+- [x] Each form of the review fails a test before its correction, or an injection shows that the test can fail.
+- [x] A clean build (`--no-incremental`) gives zero errors and zero warnings.
+- [x] Continuous integration passes on `ubuntu-latest`, `windows-latest` and `macos-latest`.
 
 ## Notes for the implementer
 
@@ -102,3 +105,29 @@ person sees.
 ## Progress
 
 - 2026-10-28: opened by the second codebase review of 2026-10-28 (TASK-0095).
+- 2026-10-28: the owner decided to do P0.40 now, after K2b and before K3a and P0.39. `depends-on` names TASK-0101
+  (K2b, Done) and not TASK-0098 (P0.39), and the status is Active. `roadmap.md`, "Order", rule 1, says so.
+- 2026-10-28: seven questions went to the owner (E76, E77, E81, E85, V31 to V34, V37): each one changes a Decision
+  section of ADR-0015, ADR-0030 or ADR-0032.
+- 2026-10-28: E78, E79, E80, E82, E83 and E84 are corrected, with 10 new test cases. Nine injections each failed a
+  test. The test of E83 asserts on Windows only, because .NET takes no lock on Linux and macOS for a write with the
+  share of a read.
+- 2026-10-28: V35, V36, V38 and V39 are corrected, with 10 new test cases. Five injections each failed a test. V39 is
+  confirmed by reading only; its test holds the release of each object that exists.
+- 2026-10-29: the owner answered Q1 to Q7 with A. ADR-0015 items 8 and 10, ADR-0030 items 2, 4 and 5, and ADR-0032
+  items 4 and 6 record the answers. Q5 A adds the code `E-API-OPEN-PENDING`, which the commit of V37 registers.
+- 2026-10-29: E76, E77, E81 and E85 are corrected, with 26 new test cases and one case changed: a complete last line
+  that is JSON is no longer a torn line. Twelve injections each failed a test. One injection showed that a check of
+  a final space or dot was redundant, and the check went out.
+- 2026-10-29: V31 and V37 are corrected. The check holds the file as a journal does, except the file that the desktop
+  holds. After an accepted open, the surface refuses each command, save and open with HTTP 503 and the new code
+  `E-API-OPEN-PENDING`, which `docs/diagnostics.md` registers. The write set gains `Engine.Core/DiagnosticCodes.cs`
+  `Engine.Api.Http/Endpoints/CommandsEndpoint.cs` and `SchemaDiagnosticsEndpoint.cs`, so `governed-by` gains ADR-0013. One new test case and two changed; four injections each
+  failed a test.
+- 2026-10-29: V32, V33 and V34 are corrected, with 4 new test cases. A pad that names a selection closes when the
+  selection changes, the text fields are disabled while the pad is open, and a second apply waits for the end of the
+  pad. Six injections each failed a test.
+- 2026-10-29: `eng/test-floor.txt` holds the new counts: 689, 190, and 95 with 100 on Linux.
+- 2026-10-29: a correction of the line of E76 to E85: eleven injections failed a test, and the twelfth showed the
+  redundant check. The visual check ran the desktop on 127.0.0.1: the New box pad opened inside the window, the text
+  fields were disabled, and the log held no warning. CI run 40786895807 passed on the three runners. Closed at v0.102.

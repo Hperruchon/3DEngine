@@ -25,6 +25,12 @@ public sealed class DocumentEndpointTests : IDisposable
 
     private string Documents => Path.Combine(_folder, "documents");
 
+    // A name whose file name, with .3de, has 255 characters, and one character more (E81).
+    private const string LongestName =
+        "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        + "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa";
+    private const string LongName = LongestName + "b";
+
     private static async Task<WebApplication> StartSurface(EngineHost host, DocumentFolder folder)
     {
         var builder = WebApplication.CreateBuilder();
@@ -107,6 +113,24 @@ public sealed class DocumentEndpointTests : IDisposable
     [InlineData("..")]
     [InlineData("")]
     [InlineData("pla\nte")]
+    // E81 of the second codebase review of 2026-10-28: the rules of a file name of Windows, on
+    // each operating system.
+    [InlineData("CON")]
+    [InlineData("nul")]
+    [InlineData("com1.3de")]
+    [InlineData("LPT9.part")]
+    [InlineData("Aux .old")]
+    [InlineData("a ")]
+    [InlineData("a.")]
+    [InlineData("a .3de")]
+    [InlineData(".3de")]
+    [InlineData("a*b")]
+    [InlineData("a?b")]
+    [InlineData("a<b")]
+    [InlineData("a>b")]
+    [InlineData("a|b")]
+    [InlineData("a\"b")]
+    [InlineData(LongName)]
     public async Task A_Name_That_Is_Not_A_Plain_File_Name_Is_Refused(string name)
     {
         var host = new EngineHost(new InProcessMeshBackend(), "managed", "test", new DocumentFileOptions(null, Path.Combine(_folder, "unsaved")));
@@ -130,12 +154,63 @@ public sealed class DocumentEndpointTests : IDisposable
     [InlineData("plate.3de", "plate.3de")]
     [InlineData("plate.3DE", "plate.3DE")]
     [InlineData("a b.c", "a b.c.3de")]
+    [InlineData("CONSOLE", "CONSOLE.3de")]
+    [InlineData("com10", "com10.3de")]
+    [InlineData("nul-plate", "nul-plate.3de")]
+    [InlineData(LongestName, LongestName + ".3de")]
     public void A_Plain_Name_Resolves_In_The_Folder_With_The_Extension(string name, string file)
     {
         var folder = new DocumentFolder(Documents);
 
         Assert.Equal(Path.Combine(Path.GetFullPath(Documents), file), folder.Resolve(name, out var refusal));
         Assert.Null(refusal);
+    }
+
+    // E79 of the second codebase review of 2026-10-28: a folder with a final separator
+    // refused each name.
+    [Fact]
+    public void A_Folder_With_A_Final_Separator_Resolves_A_Plain_Name()
+    {
+        var folder = new DocumentFolder(Documents + Path.DirectorySeparatorChar);
+
+        Assert.Equal(Path.Combine(Path.GetFullPath(Documents), "plate.3de"), folder.Resolve("plate", out var refusal));
+        Assert.Null(refusal);
+    }
+
+    // E85: engine-api-http with no --file refused a save with HTTP 409, and an open with 501.
+    [Fact]
+    public async Task A_Save_On_A_Host_With_No_File_Is_Not_Supported()
+    {
+        var host = new EngineHost(new InProcessMeshBackend(), "managed", "test");
+        await using var app = await StartSurface(host, new DocumentFolder(Documents));
+        using var http = new HttpClient { BaseAddress = new Uri(app.Urls.First()) };
+
+        var (status, body) = await Post(http, "/document/save", new { name = "plate" });
+
+        Assert.Equal(HttpStatusCode.NotImplemented, status);
+        Assert.Equal(DiagnosticCodes.ApiNotSupported, body.GetProperty("error").GetProperty("code").GetString());
+        Assert.False(File.Exists(Path.Combine(Documents, "plate.3de")));
+    }
+
+    // E80: a name with a lone surrogate gave HTTP 500 with no body.
+    [Fact]
+    public async Task A_Name_That_Is_Not_Well_Formed_Text_Is_Refused()
+    {
+        var host = new EngineHost(new InProcessMeshBackend(), "managed", "test", new DocumentFileOptions(null, Path.Combine(_folder, "unsaved")));
+        await using var app = await StartSurface(host, new DocumentFolder(Documents, (_, _) => Task.FromResult<ErrorDetail?>(null)));
+        using var http = new HttpClient { BaseAddress = new Uri(app.Urls.First()) };
+
+        foreach (var route in new[] { "/document/save", "/document/open" })
+        {
+            using var content = new StringContent("{\"name\":\"\\ud800\"}", System.Text.Encoding.UTF8, "application/json");
+            using var response = await http.PostAsync(route, content);
+            var body = JsonDocument.Parse(await response.Content.ReadAsStringAsync()).RootElement;
+
+            Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+            Assert.Equal(DiagnosticCodes.ApiBadRequest, body.GetProperty("error").GetProperty("code").GetString());
+        }
+
+        host.Session.Close();
     }
 
     // ADR-0030 item 4: engine-api-http cannot start itself again.
@@ -177,11 +252,13 @@ public sealed class DocumentEndpointTests : IDisposable
         host.Session.Close();
     }
 
+    // V37 of the second codebase review of 2026-10-28: after an accepted open, the surface
+    // refuses each command, save and open with HTTP 503, so no command changes the old document.
     [Fact]
     public async Task An_Open_Gives_The_Path_To_The_Host_And_Its_Answer_To_The_Agent()
     {
         var asked = new List<string>();
-        var host = new EngineHost(new InProcessMeshBackend(), "managed", "test");
+        var host = new EngineHost(new InProcessMeshBackend(), "managed", "test", new DocumentFileOptions(null, Path.Combine(_folder, "unsaved")));
         var folder = new DocumentFolder(Documents, (path, _) =>
         {
             asked.Add(path);
@@ -192,17 +269,37 @@ public sealed class DocumentEndpointTests : IDisposable
         await using var app = await StartSurface(host, folder);
         using var http = new HttpClient { BaseAddress = new Uri(app.Urls.First()) };
 
-        var (accepted, _) = await Post(http, "/document/open", new { name = "plate" });
         var (refused, body) = await Post(http, "/document/open", new { name = "bad" });
+        var (applied, _) = await Post(http, "/commands", new { name = "NoOp", schemaVersion = 1, parameters = new { echo = "before" } });
+        var (accepted, _) = await Post(http, "/document/open", new { name = "plate" });
+        var after = new[]
+        {
+            await Post(http, "/commands", new { name = "NoOp", schemaVersion = 1, parameters = new { echo = "after" } }),
+            await Post(http, "/document/save", new { name = "copy" }),
+            await Post(http, "/document/open", new { name = "other" }),
+        };
+        var state = JsonDocument.Parse(await http.GetStringAsync("/document")).RootElement;
 
-        Assert.Equal(HttpStatusCode.Accepted, accepted);
         Assert.Equal(HttpStatusCode.Conflict, refused);
         Assert.Equal(DiagnosticCodes.IoLoadFailed, body.GetProperty("error").GetProperty("code").GetString());
-        Assert.Equal([Path.Combine(Path.GetFullPath(Documents), "plate.3de"), Path.Combine(Path.GetFullPath(Documents), "bad.3de")], asked);
+        Assert.Equal(HttpStatusCode.OK, applied);
+        Assert.Equal(HttpStatusCode.Accepted, accepted);
+        Assert.True(folder.OpenAccepted);
+        foreach (var (status, reply) in after)
+        {
+            Assert.Equal(HttpStatusCode.ServiceUnavailable, status);
+            Assert.Equal(DiagnosticCodes.ApiOpenPending, reply.GetProperty("error").GetProperty("code").GetString());
+        }
+
+        Assert.Equal(1, state.GetProperty("version").GetInt64());
+        Assert.Equal([Path.Combine(Path.GetFullPath(Documents), "bad.3de"), Path.Combine(Path.GetFullPath(Documents), "plate.3de")], asked);
+        host.Session.Close();
     }
 
-    // ADR-0030 item 5: the check opens the file in a scratch session, also a file that
-    // a session of this process holds open, and gives the code of a file that does not open.
+    // ADR-0030 item 5: the check opens the file in a scratch session, and gives the code of a
+    // file that does not open. With no hold it reads the file that the host itself holds. With
+    // the hold, a held file fails on Windows (V31 of the second codebase review of 2026-10-28):
+    // on Linux and macOS .NET takes no lock for a write with the share of a read.
     [Fact]
     public async Task The_Check_Before_An_Open_Reads_A_Held_File_And_Gives_The_Code_Of_A_Bad_One()
     {
@@ -211,8 +308,11 @@ public sealed class DocumentEndpointTests : IDisposable
         DocumentFile.Create(session, path);
         await session.Apply(new NoOpCommand { Echo = "x" });
 
-        var good = await DocumentFile.Check(path, new InProcessMeshBackend());
-        var otherBackend = await DocumentFile.Check(path, NullGeometryBackend.Instance);
+        var good = await DocumentFile.Check(path, new InProcessMeshBackend(), hold: false);
+        var otherBackend = await DocumentFile.Check(path, NullGeometryBackend.Instance, hold: false);
+        var heldElsewhere = await DocumentFile.Check(path, new InProcessMeshBackend());
+        if (OperatingSystem.IsWindows())
+            Assert.Equal(DiagnosticCodes.IoLoadFailed, heldElsewhere!.Code);
         session.Close();
         var bad = Path.Combine(_folder, "bad.3de");
         File.WriteAllText(bad, "{\"format\":\"another\"}\n");

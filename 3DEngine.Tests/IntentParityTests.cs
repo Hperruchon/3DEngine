@@ -195,6 +195,20 @@ public class IntentParityTests
         Assert.Contains(moved, intent => intent is OrbitIntent);
     }
 
+    // V36 of the second codebase review of 2026-10-28: a tap counts the most contacts down at one
+    // time. Two fingers with one bounce gave Undo, the tap of three fingers.
+    [Fact]
+    public void A_Tap_Of_Two_Fingers_With_A_Bounce_Shows_All()
+    {
+        var bounce = Run([
+            [Touch(1, 100, 100, PointerPhase.Down, 0), Touch(2, 200, 100, PointerPhase.Down, 0)],
+            [Touch(2, 200, 100, PointerPhase.Up, 40)],
+            [Touch(3, 200, 101, PointerPhase.Down, 60)],
+            [Touch(1, 100, 100, PointerPhase.Up, 120), Touch(3, 200, 101, PointerPhase.Up, 120)]]);
+
+        Assert.IsType<ShowAllIntent>(Assert.Single(bounce));
+    }
+
     // A pair that moves is a pan or a pinch and not a tap of two fingers, and a slow pair taps
     // nothing.
     [Fact]

@@ -280,7 +280,7 @@ public sealed class NativeThreeDEngine : IThreeDEngine, IDisposable
         var path = _document.Folder.Resolve(name, out var refusal);
         if (path is null)
             return refusal!;
-        var error = _document.Folder.Reopen!(path, CancellationToken.None).GetAwaiter().GetResult();
+        var error = _document.Folder.Open(path, CancellationToken.None).GetAwaiter().GetResult();
         return error is null ? $"Opening {Path.GetFileName(path)}" : $"{error.Code}: {error.Message}";
     }
 

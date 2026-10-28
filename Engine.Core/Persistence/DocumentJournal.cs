@@ -10,12 +10,14 @@ public sealed class DocumentJournal : IDisposable
 {
     private Stream? _stream;
     private readonly string _lengthUnit;
+    private readonly Func<string, FileMode, Stream> _open;
 
-    private DocumentJournal(string path, string lengthUnit, Stream? stream)
+    private DocumentJournal(string path, string lengthUnit, Stream? stream, Func<string, FileMode, Stream>? open = null)
     {
         FilePath = path;
         _lengthUnit = lengthUnit;
         _stream = stream;
+        _open = open ?? OpenFile;
     }
 
     // The path of the file. For a document with no name, the file exists from the
@@ -29,7 +31,16 @@ public sealed class DocumentJournal : IDisposable
     public static DocumentJournal Create(string path, string lengthUnit)
     {
         var journal = new DocumentJournal(path, lengthUnit, OpenFile(path, FileMode.CreateNew));
-        journal.Append(EntryCodec.Header(lengthUnit));
+        try
+        {
+            journal.Append(EntryCodec.Header(lengthUnit));
+        }
+        catch
+        {
+            journal.Dispose();
+            throw;
+        }
+
         return journal;
     }
 
@@ -38,10 +49,14 @@ public sealed class DocumentJournal : IDisposable
     public static DocumentJournal Unsaved(string folder, Guid documentId, string lengthUnit)
         => new(Path.Combine(folder, documentId.ToString("D") + DocumentFile.Extension), lengthUnit, null);
 
-    // A file that an open read, with its length cut to the last valid line.
-    internal static DocumentJournal Resume(string path, string lengthUnit, long length)
+    // The file of an open, held with the access and the share of a journal before the
+    // open reads it, so that no other program writes to it while the entries apply
+    // (finding E83 of the second codebase review of 2026-10-28).
+    internal static FileStream Hold(string path) => OpenFile(path, FileMode.Open);
+
+    // The file that an open held and read, with its length cut to the last valid line.
+    internal static DocumentJournal Resume(FileStream stream, string path, string lengthUnit, long length)
     {
-        var stream = OpenFile(path, FileMode.Open);
         if (stream.Length != length)
         {
             stream.SetLength(length);
@@ -52,8 +67,10 @@ public sealed class DocumentJournal : IDisposable
         return new DocumentJournal(path, lengthUnit, stream);
     }
 
-    // A journal on a stream that a test gives, for a write that fails.
-    internal static DocumentJournal ForTest(string path, string lengthUnit, Stream stream) => new(path, lengthUnit, stream);
+    // A journal on a stream that a test gives, for a write that fails, and an optional
+    // function that opens a file in place of the file system, for an open that fails.
+    internal static DocumentJournal ForTest(string path, string lengthUnit, Stream? stream, Func<string, FileMode, Stream>? open = null)
+        => new(path, lengthUnit, stream, open);
 
     // Writes one line and its line feed in one call, then flushes to disk. A failure
     // throws an IOException, after the file is cut back and the journal is broken.
@@ -64,8 +81,20 @@ public sealed class DocumentJournal : IDisposable
 
         if (_stream is null)
         {
-            Directory.CreateDirectory(Path.GetDirectoryName(FilePath)!);
-            _stream = OpenFile(FilePath, FileMode.CreateNew);
+            // A failure of the first open breaks the journal too. Until TASK-0099 it came
+            // before the try, so the journal stayed whole, and an UnauthorizedAccessException
+            // left the bus (finding E84 of the second codebase review of 2026-10-28).
+            try
+            {
+                Directory.CreateDirectory(Path.GetDirectoryName(FilePath)!);
+                _stream = _open(FilePath, FileMode.CreateNew);
+            }
+            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or NotSupportedException)
+            {
+                Broken = true;
+                throw new IOException($"The document file {FilePath} cannot be made: {ex.Message}", ex);
+            }
+
             Append(EntryCodec.Header(_lengthUnit));
         }
 
@@ -85,7 +114,13 @@ public sealed class DocumentJournal : IDisposable
             }
             catch (Exception cut) when (cut is IOException or UnauthorizedAccessException or NotSupportedException)
             {
-                // The file keeps a part of the line; an open cuts it as a torn last line.
+                // The file can keep the line of this command. A part of a line is a torn
+                // line, but a complete line is an entry that an open applies, although the
+                // client saw the command rejected (E84). The message says so.
+                throw new IOException(
+                    $"The write of the document file {FilePath} failed: {ex.Message} The cut back to the last complete line "
+                    + $"failed too ({cut.Message}), so the file can keep the line of this command, and an open then applies it.",
+                    ex);
             }
 
             throw new IOException($"The write of the document file {FilePath} failed: {ex.Message}", ex);
@@ -104,7 +139,7 @@ public sealed class DocumentJournal : IDisposable
 
         if (_stream is null)
         {
-            _stream = OpenFile(target, FileMode.CreateNew);
+            _stream = _open(target, FileMode.CreateNew);
             FilePath = target;
             Append(EntryCodec.Header(_lengthUnit));
             return;
@@ -121,8 +156,18 @@ public sealed class DocumentJournal : IDisposable
         finally
         {
             // The file is at its new name or still at the old one; the journal writes to it.
-            _stream = OpenFile(FilePath, FileMode.Open);
-            _stream.Seek(0, SeekOrigin.End);
+            // A failure to open it again breaks the journal. Until TASK-0099 the journal then
+            // had no stream and was whole, so a later save made a file with a header only (E84).
+            try
+            {
+                _stream = _open(FilePath, FileMode.Open);
+                _stream.Seek(0, SeekOrigin.End);
+            }
+            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or NotSupportedException)
+            {
+                Broken = true;
+                throw new IOException($"The document file {FilePath} did not open again after the move: {ex.Message}", ex);
+            }
         }
     }
 

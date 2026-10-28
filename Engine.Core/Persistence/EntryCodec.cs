@@ -97,6 +97,21 @@ public static class EntryCodec
         return true;
     }
 
+    // True when the line is one JSON value; an open cuts only a last line that is not
+    // (ADR-0015 item 8).
+    public static bool IsJson(string line)
+    {
+        try
+        {
+            using var parsed = JsonDocument.Parse(line);
+            return true;
+        }
+        catch (JsonException)
+        {
+            return false;
+        }
+    }
+
     // The length unit of a header line, or a DocumentFileException.
     public static string ReadHeader(string line)
     {
@@ -158,7 +173,11 @@ public static class EntryCodec
                 raw[parameter.Name] = (declared, value.ValueKind) switch
                 {
                     (_, JsonValueKind.Null) => null,
-                    ("number", JsonValueKind.Number) => value.GetDouble(),
+                    // The writer refuses a number that is not finite (ADR-0015 item 4), so the
+                    // reader does too. Until TASK-0099 1e400 read as an infinity (E78).
+                    ("number", JsonValueKind.Number) => value.GetDouble() is var number && double.IsFinite(number)
+                        ? number
+                        : throw DocumentFileException.Load($"The parameter '{parameter.Name}' of {name} is {value.GetRawText()}, which is not a finite double."),
                     ("integer", JsonValueKind.Number) => value.GetInt64(),
                     ("boolean", JsonValueKind.True or JsonValueKind.False) => value.GetBoolean(),
                     ("string" or "guid", JsonValueKind.String) => value.GetString(),
