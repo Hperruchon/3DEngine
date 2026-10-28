@@ -81,13 +81,17 @@ The decision sheet does not answer three questions. On 2026-10-28 the owner answ
    the fields `x`, `y` and `z`, each with the text `10`, and its apply sends `CreateBox`. "Move" shows only while a
    body is selected. It opens the pad with the fields `dx`, `dy` and `dz`, each with the text `0`, and its apply
    sends `Translate` for the selected body. After a move, the new body is the selection (Q3 A). The pads of a
-   sketch are in ADR-0034 items 7 and 8.
+   sketch are in ADR-0034 items 7 and 8. A pad that names a selection closes when the selection changes: "Move" when
+   the selected body changes or leaves the list, and a pad of a sketch when the selection of the sketch changes.
+   "New box" and "Next point" name no selection, and they stay open. After an apply, the pad ignores each other apply
+   until the host ends it, so a key repeat or two presses of Enter give one command.
 5. **The display (R10-Q1).** The pad is a second window of the R7b user interface. It shows the three fields, the
    value of the active field or its error, and the buttons `7 8 9 ( )`, `4 5 6 * pi`, `1 2 3 - sqrt(`, `0 . + /`
    and Delete, Clear, Next, Apply and Cancel. Each control is at least 44 pixels high (ADR-0027 item 6).
 6. **The keys of the pad (R10-Q2).** While the pad is open, it takes each key and each text of the frame, and the
    scene gets none. Tab goes to the next field, Enter applies, Escape cancels, and Backspace deletes. A pointer
-   gesture outside the panels still moves the camera.
+   gesture outside the panels still moves the camera. The text fields of the panel (the filter, the
+   name of a body and the file name) are disabled while the pad is open, so that no field takes the keys of the pad.
 7. **The unit (R10-Q5).** Each value is in the length unit of the document, the millimetre (ADR-0015 item 7). The
    pad shows `mm` beside each field. An expression has no unit suffix.
 8. **The errors (R10-Q7).** The pad shows a short text: the error of the evaluator, or the code and the message of
@@ -123,3 +127,6 @@ R-0041 closes.
 - 2026-10-28 · TASK-0094 · Proposed, and accepted by the owner on the same day with Q1 A, Q2 A and Q3 A.
 - 2026-10-28 · TASK-0101 · ADR-0034 amends items 3 and 4: a pad of one, two or three fields, and the pads of a
   sketch.
+- 2026-10-29 · TASK-0099 · The owner answered the questions of TASK-0099 on 2026-10-29, A to each. Item 4: a pad that
+  names a selection closes when the selection changes (finding V32, Q2), and an apply waits for the end of the pad
+  (V34, Q6). Item 6: the text fields are disabled while the pad is open (V33, Q6).
