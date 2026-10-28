@@ -27,7 +27,9 @@ public sealed class IntentMachine
     private bool _twoContactsSeen;
 
     // The touch gesture since its first contact went down: the time of that press, whether no
-    // contact moved beyond the slop, and how many contacts it had (ADR-0029 item 4).
+    // contact moved beyond the slop, and the most contacts that were down at one time
+    // (ADR-0029 item 4). Until TASK-0099 it counted each press, so two fingers with one bounce
+    // gave a tap of three (finding V36 of the second codebase review of 2026-10-28).
     private ulong _gestureDownNs;
     private bool _gestureStill;
     private int _gestureContacts;
@@ -114,7 +116,7 @@ public sealed class IntentMachine
                 if (_contacts.Count == 0)
                     (_gestureDownNs, _gestureStill, _gestureContacts) = (sample.TimestampNs, true, 0);
                 _contacts.Add(new Contact(sample));
-                _gestureContacts++;
+                _gestureContacts = Math.Max(_gestureContacts, _contacts.Count);
                 if (_contacts.Count == 2)
                     StartTwo();
                 break;

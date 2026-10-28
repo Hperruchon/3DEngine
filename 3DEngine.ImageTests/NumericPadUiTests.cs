@@ -143,6 +143,44 @@ public sealed class NumericPadUiTests
         Assert.StartsWith("x: ", ui.Pad!.Message, StringComparison.Ordinal);
     }
 
+    // V35 of the second codebase review of 2026-10-28: the pad stays inside a tablet display, so a
+    // person with touch only reaches Apply. Apply, Cancel, Delete and the fields were outside it.
+    [Theory]
+    [InlineData(768f, 1024f, false)]
+    [InlineData(1024f, 768f, false)]
+    [InlineData(768f, 1024f, true)]
+    [InlineData(1024f, 768f, true)]
+    [InlineData(1280f, 720f, true)]
+    public void The_Pad_Stays_Inside_The_Display(float width, float height, bool bySketch)
+    {
+        var display = new Vector2(width, height);
+        using var ui = new DesktopUi("http://127.0.0.1:5180");
+        void Draw() => ui.Frame(1f / 60f, display, Vector2.One, [Body]);
+        Draw();
+        if (bySketch)
+            ui.OpenNextPointPad(chainOpen: true);
+        else
+        {
+            var at = ui.ItemRectangle(DesktopUi.NewBoxLabel) ?? throw new InvalidOperationException("The panel has no New box.");
+            var (x, y) = ((at.X + at.Z) / 2, (at.Y + at.W) / 2);
+            ui.Route([new PointerSample(DeviceKind.Touch, 1, 3, x, y, 1, PointerButtons.None, KeyModifiers.None, PointerPhase.Down, 0)]);
+            Draw();
+            ui.Route([new PointerSample(DeviceKind.Touch, 1, 3, x, y, 1, PointerButtons.None, KeyModifiers.None, PointerPhase.Up, 0)]);
+            Draw();
+        }
+
+        Draw();
+        Draw();
+
+        Assert.NotNull(ui.Pad);
+        var items = DesktopUi.PadRows.SelectMany(row => row).Concat(ui.Pad!.Fields.Select(field => field.Name)).Select(DesktopUi.PadItem);
+        foreach (var item in items)
+        {
+            var rectangle = ui.ItemRectangle(item) ?? throw new InvalidOperationException($"The pad has no control {item}.");
+            Assert.True(rectangle.X >= 0 && rectangle.Y >= 0 && rectangle.Z <= width && rectangle.W <= height, $"{item} is at {rectangle} on a display of {width} x {height}.");
+        }
+    }
+
     // ADR-0027 item 6 for the controls of ADR-0032 items 4 and 5.
     [Fact]
     public void Each_Control_Of_The_Pad_Is_At_Least_44_Pixels_High()

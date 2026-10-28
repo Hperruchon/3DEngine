@@ -81,6 +81,8 @@ internal sealed unsafe class DesktopUi : IDisposable
 
     // ADR-0032 item 5: the window of the pad and its buttons, row by row.
     public const string PadName = "Pad";
+    private const float PadWidth = 620f;
+    private const float PadHeight = 600f;
     public static readonly string[][] PadRows =
     [
         ["7", "8", "9", "(", ")"],
@@ -657,12 +659,15 @@ internal sealed unsafe class DesktopUi : IDisposable
     private void PadWindow(NumericPad pad, Vector2 displaySize)
     {
         // A pad of the sketch opens to the left of the window of the sketch, so that End and Close
-        // stay visible (ADR-0034 item 8).
-        if (_padBySketch)
-            ImGui.SetNextWindowPos(new Vector2(Math.Max(16f, displaySize.X - SketchWidth - 32f - 620f), 16f), ImGuiCond.Appearing);
-        else
-            ImGui.SetNextWindowPos(new Vector2(492f, 16f), ImGuiCond.Appearing);
-        ImGui.SetNextWindowSize(new Vector2(620f, 600f), ImGuiCond.FirstUseEver);
+        // stay visible (ADR-0034 item 8). The place and the size come from the display, as for the
+        // panel, so the pad stays inside a tablet display. Until TASK-0099 Apply was outside the
+        // display at 768 x 1024 and at 1024 x 768 (finding V35 of the second codebase review of
+        // 2026-10-28).
+        var width = Math.Min(PadWidth, displaySize.X - 32f);
+        var preferred = _padBySketch ? displaySize.X - SketchWidth - 32f - width : 492f;
+        var x = Math.Clamp(preferred, 16f, Math.Max(16f, displaySize.X - width - 16f));
+        ImGui.SetNextWindowPos(new Vector2(x, 16f), ImGuiCond.Appearing);
+        ImGui.SetNextWindowSize(new Vector2(width, Math.Clamp(displaySize.Y - 32f, 200f, PadHeight)), ImGuiCond.Appearing);
         if (ImGui.Begin(PadName))
         {
             ImGui.TextUnformatted(pad.Title);
