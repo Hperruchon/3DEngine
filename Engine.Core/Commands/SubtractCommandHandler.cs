@@ -2,10 +2,11 @@ using Engine.Contracts;
 using Engine.Contracts.Geometry;
 using Engine.Contracts.Handlers;
 using Engine.Contracts.Schema;
+using Engine.Core.Persistence;
 
 namespace Engine.Core.Commands;
 
-public sealed class SubtractCommandHandler : ICommandHandler
+public sealed class SubtractCommandHandler : ICommandHandler, ICommandEncoder
 {
     public string CommandName => "Subtract";
     public int SchemaVersion => 1;
@@ -24,6 +25,17 @@ public sealed class SubtractCommandHandler : ICommandHandler
         };
 
     // Per ADR-0016.
+    // ADR-0015 item 11: the parameters that Create reads.
+    public IReadOnlyDictionary<string, object?> Encode(Command command)
+    {
+        var typed = (SubtractCommand)command;
+        return new Dictionary<string, object?>(StringComparer.Ordinal)
+        {
+            ["minuendBodyId"] = typed.MinuendBodyId,
+            ["subtrahendBodyId"] = typed.SubtrahendBodyId,
+        };
+    }
+
     public Command Create(CommandInput input) => new SubtractCommand
     {
         CommandId = input.CommandId,

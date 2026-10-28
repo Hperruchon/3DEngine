@@ -42,6 +42,7 @@ public sealed class DocumentSession
         _queries = kit.CreateQueryBus();
         CommandRegistry = kit.CommandRegistry;
         QueryRegistry = kit.QueryRegistry;
+        BackendIdentity = kit.Backend.Identity;
     }
 
     // The registries are filled before the session exists and do not change
@@ -52,6 +53,60 @@ public sealed class DocumentSession
 
     // The identifier does not change for the life of the Document.
     public Guid DocumentId => _document.DocumentId;
+
+    // ADR-0015 item 7: the unit does not change for the life of the Document.
+    public string LengthUnit => _document.LengthUnit;
+
+    // ADR-0015 item 5: the backend that each log entry of this session records.
+    public Engine.Contracts.Geometry.BackendIdentity BackendIdentity { get; }
+
+    // The path of the document file, or null for a session with no file. It changes
+    // at a save.
+    public string? FilePath => _commands.Journal?.FilePath;
+
+    // ADR-0015 items 8 to 10: a host gives the session its file before the first
+    // command, after an open applied each entry with no write.
+    internal void Attach(Persistence.DocumentJournal journal)
+    {
+        ArgumentNullException.ThrowIfNull(journal);
+        if (_commands.Journal is not null)
+            throw new InvalidOperationException("The session has a document file.");
+        _commands.Journal = journal;
+    }
+
+    // ADR-0015 item 9: moves the document file to a new name, in the serial section,
+    // and later entries go there. The target must not exist. It gives null, or the
+    // error E-IO-SAVE-FAILED, and the file then stays where it was.
+    public async Task<ErrorDetail?> SaveAs(string path, CancellationToken ct = default)
+    {
+        ArgumentException.ThrowIfNullOrEmpty(path);
+
+        RefuseReentry();
+        RefuseClosed();
+        await _serial.WaitAsync(ct).ConfigureAwait(false);
+        Hold();
+        try
+        {
+            if (_commands.Journal is not { } journal)
+                return new ErrorDetail(DiagnosticCodes.IoSaveFailed, "The session has no document file.");
+            if (journal.Broken)
+                return new ErrorDetail(DiagnosticCodes.IoSaveFailed, $"An earlier write of the document file {journal.FilePath} failed.");
+
+            try
+            {
+                journal.MoveTo(Path.GetFullPath(path));
+                return null;
+            }
+            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+            {
+                return new ErrorDetail(DiagnosticCodes.IoSaveFailed, $"The save to {path} failed: {ex.Message}");
+            }
+        }
+        finally
+        {
+            Release();
+        }
+    }
 
     // A cancellation stops the command while it waits for the section. After
     // the bus starts the commit, it does not stop (ADR-0006 section 4).
@@ -156,7 +211,15 @@ public sealed class DocumentSession
         RefuseReentry();
         Volatile.Write(ref _closed, true);
         _serial.Wait();
-        _serial.Release();
+        try
+        {
+            // ADR-0015: no command runs, so the file closes after its last line.
+            _commands.Journal?.Dispose();
+        }
+        finally
+        {
+            _serial.Release();
+        }
     }
 
     private bool _closed;

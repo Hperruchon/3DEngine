@@ -29,6 +29,13 @@ internal static class SchemaDiagnosticsEndpoint
         new(DiagnosticCodes.GeomNativeOp,          "Error",   "GEOM"),
         new(DiagnosticCodes.GeomBackendInit,       "Error",   "GEOM"),
         new(DiagnosticCodes.ValBodyNameInvalid,    "Error",   "VAL"), // ADR-0028 item 3, TASK-0085
+        new(DiagnosticCodes.IoBackendMismatch,     "Error",   "IO"),  // ADR-0015 item 6, TASK-0091
+        new(DiagnosticCodes.IoNotEncodable,        "Error",   "IO"),  // ADR-0015 item 4, TASK-0091
+        new(DiagnosticCodes.IoWriteFailed,         "Error",   "IO"),  // ADR-0015 item 4, TASK-0091
+        new(DiagnosticCodes.IoLoadFailed,          "Error",   "IO"),  // ADR-0015 item 8, TASK-0091
+        new(DiagnosticCodes.IoSaveFailed,          "Error",   "IO"),  // ADR-0015 item 9, TASK-0091
+        new(DiagnosticCodes.IoTruncated,           "Warning", "IO"),  // ADR-0015 item 8, TASK-0091
+        new(DiagnosticCodes.IoBackendVersion,      "Warning", "IO"),  // ADR-0015 item 6, TASK-0091
     };
 
     public static IResult Handle() => Results.Json(Codes, ApiJson.Options);

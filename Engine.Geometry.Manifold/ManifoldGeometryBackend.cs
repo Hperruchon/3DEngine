@@ -38,6 +38,9 @@ public sealed class ManifoldGeometryBackend
     private readonly Dictionary<Guid, ManifoldSolidHandle> _solids = new();
     private bool _disposed;
 
+    // ADR-0015 item 5: the name and the version of the native library.
+    public BackendIdentity Identity { get; } = new("manifold", NativeVersion);
+
     public BackendCapabilities Capabilities
         => BackendCapabilities.Mesh | BackendCapabilities.Query
          | BackendCapabilities.Transform | BackendCapabilities.Booleans

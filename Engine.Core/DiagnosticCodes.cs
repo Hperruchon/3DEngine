@@ -20,4 +20,15 @@ public static class DiagnosticCodes
 
     // ADR-0028 item 3: a name of a body that breaks the rules of a name.
     public const string ValBodyNameInvalid = "E-VAL-BODY-NAME-INVALID";
+
+    // ADR-0015 item 6: a log entry of another backend than the backend of the replay.
+    public const string IoBackendMismatch = "E-IO-BACKEND-MISMATCH";
+
+    // ADR-0015 items 4, 6, 8 and 9: the document file.
+    public const string IoNotEncodable = "E-IO-NOT-ENCODABLE";
+    public const string IoWriteFailed = "E-IO-WRITE-FAILED";
+    public const string IoLoadFailed = "E-IO-LOAD-FAILED";
+    public const string IoSaveFailed = "E-IO-SAVE-FAILED";
+    public const string IoTruncated = "W-IO-TRUNCATED";
+    public const string IoBackendVersion = "W-IO-BACKEND-VERSION";
 }

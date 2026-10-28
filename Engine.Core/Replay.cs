@@ -16,8 +16,37 @@ namespace Engine.Core;
 // review of 2026-10-04). The replay also applies each entry, with no
 // idempotency cache, so a CommandId that is in the log two times is applied two
 // times (finding E17).
+//
+// ADR-0015 item 6 (KD3, anti-objective 10): a replay of log entries uses the
+// backend that each entry records, so an entry of another backend stops the replay
+// before it applies. A list of commands with no entries, for example a fixture or a
+// script, records no backend and replays on the backend that the caller gives.
 public static class Replay
 {
+    public static Task<ReplayResult> ReplayLog(
+        IEnumerable<LogEntry> log,
+        CommandRegistry registry,
+        IGeometryBackend? backend = null,
+        CancellationToken ct = default)
+    {
+        if (log is null) throw new ArgumentNullException(nameof(log));
+
+        var active = backend ?? NullGeometryBackend.Instance;
+        return ReplayLog(Checked(log, active.Identity), registry, active, ct);
+    }
+
+    private static IEnumerable<Command> Checked(IEnumerable<LogEntry> log, BackendIdentity active)
+    {
+        var index = 0;
+        foreach (var entry in log)
+        {
+            if (entry.Backend.Name != active.Name)
+                throw new BackendMismatchException(index, entry, active);
+            yield return entry.Command;
+            index++;
+        }
+    }
+
     public static async Task<ReplayResult> ReplayLog(
         IEnumerable<Command> log,
         CommandRegistry registry,
@@ -64,6 +93,25 @@ public sealed class ReplayDivergenceException : InvalidOperationException
     public Command Command { get; }
 
     public CommandResult Result { get; }
+}
+
+// ADR-0015 item 6: the code E-IO-BACKEND-MISMATCH.
+public sealed class BackendMismatchException : InvalidOperationException
+{
+    public BackendMismatchException(int index, LogEntry entry, BackendIdentity active)
+        : base(
+            $"{DiagnosticCodes.IoBackendMismatch}: entry {index} of the log ({entry.Command.Name} {entry.Command.CommandId}) "
+            + $"records the backend '{entry.Backend.Name}', and the replay has the backend '{active.Name}'. A replay uses "
+            + "the recorded backend (anti-objective 10).")
+    {
+        Index = index;
+        Entry = entry;
+    }
+
+    // The position of the entry in the log, from 0.
+    public int Index { get; }
+
+    public LogEntry Entry { get; }
 }
 
 public sealed record ReplayResult(Document Document, IEventSink Events);

@@ -249,6 +249,8 @@ public class BodyNameAndVisibilityTests
     {
         private readonly HashSet<Guid> _bodies = [];
 
+        public BackendIdentity Identity { get; } = new("test", "1");
+
         public BackendCapabilities Capabilities
             => BackendCapabilities.Mesh | BackendCapabilities.Query | BackendCapabilities.Transform | BackendCapabilities.Booleans;
 

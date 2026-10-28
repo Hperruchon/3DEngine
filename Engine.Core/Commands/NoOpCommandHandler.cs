@@ -2,10 +2,11 @@ using Engine.Contracts;
 using Engine.Contracts.Geometry;
 using Engine.Contracts.Handlers;
 using Engine.Contracts.Schema;
+using Engine.Core.Persistence;
 
 namespace Engine.Core.Commands;
 
-public sealed class NoOpCommandHandler : ICommandHandler
+public sealed class NoOpCommandHandler : ICommandHandler, ICommandEncoder
 {
     public string CommandName => "NoOp";
     public int SchemaVersion => 1;
@@ -23,6 +24,16 @@ public sealed class NoOpCommandHandler : ICommandHandler
         };
 
     // Per ADR-0016.
+    // ADR-0015 item 11: the parameters that Create reads.
+    public IReadOnlyDictionary<string, object?> Encode(Command command)
+    {
+        var typed = (NoOpCommand)command;
+        return new Dictionary<string, object?>(StringComparer.Ordinal)
+        {
+            ["echo"] = typed.Echo,
+        };
+    }
+
     public Command Create(CommandInput input) => new NoOpCommand
     {
         CommandId = input.CommandId,

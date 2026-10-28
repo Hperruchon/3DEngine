@@ -8,7 +8,13 @@ public sealed class Document
     public DateTime CreatedAt { get; }
     public DateTime UpdatedAt { get; private set; }
 
-    private readonly List<Command> _log = new();
+    // ADR-0015 item 7 (KD4): the one length unit of the Document. Each number of a
+    // command is a double in this unit, and no code converts a number.
+    public const string Millimetre = "mm";
+
+    public string LengthUnit { get; }
+
+    private readonly List<LogEntry> _log = new();
 
     // The version counts applied commands: it is the count of entries in Log
     // (ADR-0020). A rejected command and a cancelled command do not change it,
@@ -18,7 +24,8 @@ public sealed class Document
     // can set it (finding E10 of the codebase review of 2026-09-30).
     public long Version => _log.Count;
 
-    public IReadOnlyList<Command> Log => _log;
+    // ADR-0015 item 5: each entry holds the command and the backend that applied it.
+    public IReadOnlyList<LogEntry> Log => _log;
 
     // Body projection per ADR-0012 §3. The Document holds handles + minimum
     // metadata; the backend owns the geometry data (ADR-0001 §3).
@@ -28,8 +35,12 @@ public sealed class Document
     private readonly Dictionary<Guid, BodyRecord> _bodies = new();
     public IReadOnlyCollection<BodyRecord> Bodies => _bodies.Values;
 
-    public Document(Guid? projectId = null, int schemaVersion = 1)
+    public Document(Guid? projectId = null, int schemaVersion = 1, string lengthUnit = Millimetre)
     {
+        if (lengthUnit != Millimetre)
+            throw new ArgumentException($"The length unit {lengthUnit} is not permitted; the millimetre ({Millimetre}) is the only permitted unit (ADR-0015 item 7).", nameof(lengthUnit));
+
+        LengthUnit = lengthUnit;
         DocumentId = Guid.NewGuid();
         ProjectId = projectId;
         SchemaVersion = schemaVersion;
@@ -37,9 +48,9 @@ public sealed class Document
         UpdatedAt = CreatedAt;
     }
 
-    internal void AppendCommand(Command command)
+    internal void AppendCommand(LogEntry entry)
     {
-        _log.Add(command);
+        _log.Add(entry);
         UpdatedAt = DateTime.UtcNow;
     }
 

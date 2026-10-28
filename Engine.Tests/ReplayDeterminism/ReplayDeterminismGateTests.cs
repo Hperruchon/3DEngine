@@ -42,8 +42,8 @@ public class ReplayDeterminismGateTests
         for (var i = 0; i < ReplayDeterminismFixture.Commands.Count; i++)
         {
             var expected = ReplayDeterminismFixture.Commands[i];
-            Assert.Equal(expected.CommandId, result.Document.Log[i].CommandId);
-            Assert.Equal(expected.Name, result.Document.Log[i].Name);
+            Assert.Equal(expected.CommandId, result.Document.Log[i].Command.CommandId);
+            Assert.Equal(expected.Name, result.Document.Log[i].Command.Name);
         }
 
         var events = result.Events.Snapshot();
@@ -79,7 +79,7 @@ public class ReplayDeterminismGateTests
         Assert.Equal(first.Document.Version, second.Document.Version);
         Assert.Equal(first.Document.Log.Count, second.Document.Log.Count);
         for (var i = 0; i < first.Document.Log.Count; i++)
-            Assert.Equal(first.Document.Log[i].CommandId, second.Document.Log[i].CommandId);
+            Assert.Equal(first.Document.Log[i].Command.CommandId, second.Document.Log[i].Command.CommandId);
 
         var firstEvents = first.Events.Snapshot();
         var secondEvents = second.Events.Snapshot();

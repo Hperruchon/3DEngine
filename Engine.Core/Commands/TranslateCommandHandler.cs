@@ -2,10 +2,11 @@ using Engine.Contracts;
 using Engine.Contracts.Geometry;
 using Engine.Contracts.Handlers;
 using Engine.Contracts.Schema;
+using Engine.Core.Persistence;
 
 namespace Engine.Core.Commands;
 
-public sealed class TranslateCommandHandler : ICommandHandler
+public sealed class TranslateCommandHandler : ICommandHandler, ICommandEncoder
 {
     public string CommandName => "Translate";
     public int SchemaVersion => 1;
@@ -26,6 +27,19 @@ public sealed class TranslateCommandHandler : ICommandHandler
         };
 
     // Per ADR-0016.
+    // ADR-0015 item 11: the parameters that Create reads.
+    public IReadOnlyDictionary<string, object?> Encode(Command command)
+    {
+        var typed = (TranslateCommand)command;
+        return new Dictionary<string, object?>(StringComparer.Ordinal)
+        {
+            ["bodyId"] = typed.BodyId,
+            ["dx"] = typed.Dx,
+            ["dy"] = typed.Dy,
+            ["dz"] = typed.Dz,
+        };
+    }
+
     public Command Create(CommandInput input) => new TranslateCommand
     {
         CommandId = input.CommandId,

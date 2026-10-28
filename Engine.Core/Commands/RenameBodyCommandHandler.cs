@@ -2,13 +2,14 @@ using Engine.Contracts;
 using Engine.Contracts.Geometry;
 using Engine.Contracts.Handlers;
 using Engine.Contracts.Schema;
+using Engine.Core.Persistence;
 
 namespace Engine.Core.Commands;
 
 // ADR-0028 items 2, 3 and 6: the name must follow the rules of BodyNames, and the body must
 // be live. The handler changes no geometry, so it needs no capability of the backend. A
 // command that gives the name that the body has is applied, and its commit gives its event.
-public sealed class RenameBodyCommandHandler : ICommandHandler
+public sealed class RenameBodyCommandHandler : ICommandHandler, ICommandEncoder
 {
     public string CommandName => "RenameBody";
     public int SchemaVersion => 1;
@@ -27,6 +28,17 @@ public sealed class RenameBodyCommandHandler : ICommandHandler
         };
 
     // Per ADR-0016.
+    // ADR-0015 item 11: the parameters that Create reads.
+    public IReadOnlyDictionary<string, object?> Encode(Command command)
+    {
+        var typed = (RenameBodyCommand)command;
+        return new Dictionary<string, object?>(StringComparer.Ordinal)
+        {
+            ["bodyId"] = typed.BodyId,
+            ["name"] = typed.NewName,
+        };
+    }
+
     public Command Create(CommandInput input) => new RenameBodyCommand
     {
         CommandId = input.CommandId,

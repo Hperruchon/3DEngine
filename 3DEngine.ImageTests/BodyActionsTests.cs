@@ -49,7 +49,7 @@ public class BodyActionsTests
                 actions.Apply(intent, Pick, await Live(host));
         }
 
-        return await host.Session.Read((document, _) => document.Log.Skip(2).Select(command => command switch
+        return await host.Session.Read((document, _) => document.Log.Skip(2).Select(entry => entry.Command).Select(command => command switch
         {
             SetBodyVisibilityCommand visibility => $"SetBodyVisibility {visibility.BodyId} {visibility.Visible}",
             RenameBodyCommand rename => $"RenameBody {rename.BodyId} {rename.NewName}",

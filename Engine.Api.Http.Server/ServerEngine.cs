@@ -19,18 +19,18 @@ namespace Engine.Api.Http;
 // backend, through HostBackendOptions in the service container.
 internal static class ServerEngine
 {
-    public static EngineHost Create(HostBackendOptions options)
+    public static EngineHost Create(HostBackendOptions options, DocumentFileOptions? file = null)
     {
         ArgumentNullException.ThrowIfNull(options);
 
         if (options.UseManagedBackend)
         {
             var managed = new InProcessMeshBackend();
-            return new EngineHost(managed, "managed", typeof(InProcessMeshBackend).Assembly.GetName().Version?.ToString() ?? "unknown");
+            return new EngineHost(managed, "managed", typeof(InProcessMeshBackend).Assembly.GetName().Version?.ToString() ?? "unknown", file);
         }
 
         if (options.IsNativeAvailable())
-            return new EngineHost(new ManifoldGeometryBackend(), "manifold", ManifoldGeometryBackend.NativeVersion);
+            return new EngineHost(new ManifoldGeometryBackend(), "manifold", ManifoldGeometryBackend.NativeVersion, file);
 
         throw new BackendUnavailableException(
             $"{DiagnosticCodes.GeomBackendInit}: {ManifoldGeometryBackend.UnavailableReason()}");
