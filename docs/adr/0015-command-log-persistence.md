@@ -1,209 +1,141 @@
 ---
 id: 0015
-title: Command-log persistence for engine-api-http
-status: Proposed
-topic: Persistence, runtime, deployment
-date: 2026-05-27
+title: The document file
+status: Accepted
+topic: Persistence, contracts
+date: 2026-10-28
 supersedes: []
 superseded-by: []
-amends: []
+amends: ['0010', '0012']
 amended-by: []
 affects:
-  - Engine.Core/**
-  - Engine.Api.Http/**
-enforced-by: UNENFORCED (proposed; no implementation exists)
-notes: Re-filed from branch claude/happy-booth-1cef3f, where it carried the identifier 0014. See register entry R-0012.
+  - Engine.Contracts/Document.cs
+  - Engine.Contracts/LogEntry.cs
+  - Engine.Contracts/Geometry/IGeometryBackend.cs
+  - Engine.Contracts/Geometry/BackendIdentity.cs
+  - Engine.Core/CommandBus.cs
+  - Engine.Core/DocumentSession.cs
+  - Engine.Core/Replay.cs
+  - Engine.Core/Persistence/**
+  - Engine.Api.Http/EngineHost.cs
+  - Engine.Api.Http.Server/Program.cs
+enforced-by: Engine.Tests/Persistence/DocumentFileTests.cs (TASK-0091 creates it)
+notes: Written again by TASK-0091 (P8a) after decisions KD3 and KD4 of 2026-10-27 and Q1 to Q8 of 2026-10-28. The first text (2026-05-27) planned one log for each engine-api-http process; git holds it.
 ---
 
-# ADR 0015 — Command-log persistence for `engine-api-http`
+# ADR-0015 — The document file
 
-## Status
-
-Proposed — 2026-05-27. Re-filed 2026-09-20 by TASK-0018.
-
-This record was accepted on branch `claude/happy-booth-1cef3f`, which nobody merged. It carried the
-identifier 0014, and the main branch gives that identifier to the Manifold native-interop record.
-The design text below is unchanged. Only the identifier, the status and this note changed.
-
-The status is `Proposed` and not `Accepted`, for two reasons:
-
-- No code implements this design. An accepted record with no implementation is the drift that the
-  gates of v0.19 exist to prevent.
-- `docs/roadmap.md` gives this work the identifier P8a, and P8a is pending.
-
-The owner examined this question on 2026-09-21 and kept the status `Proposed`. See TASK-0021.
-
-Correction, 2026-09-21. The first version of this note gave a third reason. It said that `CLAUDE.md`,
-section "Scope clamps", still forbids persistence. That statement was false. Milestone v0.17 removed
-the persistence clamp. `CLAUDE.md` now says "No clamp is active" and "Persistence arrives with
-ADR-0015 and its task". The two reasons above are the true ones.
+This document uses Simplified Technical English (ASD-STE100). See `CLAUDE.md`, section "Language".
 
 ## Context
 
-ADR-0010 §4 settled the subscription-reset snapshot as a transport projection and explicitly NOT a persistence format. ADR-0011 §Open challenges flagged: "A separate persistence ADR is still open. Its design assumes server-default (the engine process owns the durable state); embedded mode either gets stripped-down persistence or stays ephemeral." `docs/roadmap.md` lists Persistence under V2 P8; the persistence question has been deferred since v0.5 (replay-determinism gate) made the underlying invariants concrete.
+Each state of the engine is in memory. A stop of a host loses each body and each command. Objective 12 of
+`docs/CHARTER.md` asks that a person can continue the work after three weeks, and objective 17 keeps the
+command log, the event stream and replay determinism. The log of the Document is therefore the natural document
+file: a replay of the log gives the same Document (ADR-0005 §5, the replay gate).
 
-As of v0.11 every state-bearing component in the engine is in-memory:
+The first text of this record (2026-05-27) planned one log for each `engine-api-http` process and no file for
+the desktop. Register entry R-0025 records that it describes a server and not a document. On 2026-10-27 the owner
+decided that the document file is the command log in JSON Lines, which the desktop opens and saves, with a flush
+to disk before each result, and one length unit in its header (KD4). The owner also decided that each log entry
+records the backend of its command and that the bus writes it (KD3), because anti-objective 10 says: "A command
+records the backend that performed the operation. A replay uses the recorded backend." `Command` has no such
+field, and a later change would have to rewrite each saved file.
 
-- `Document` (metadata, `Log`, `Bodies`) — `Engine.Core/Document.cs`, lives in `CommandBus`.
-- `Log` — the applied-command history, mutated only inside `CommandBus.Apply`.
-- `Bodies` — handle/kind projection, mutated only inside the commit section per ADR-0012 §3.
-- `InMemoryEventSink` — bounded ring, ADR-0005 §6.
-- `IdempotencyCache` — FIFO of 1024, ADR-0006 §7.
-- `InProcessMeshBackend` — `Dictionary<BodyHandle, BoxRecord>`, ADR-0012 §7.
-
-Restart `engine-api-http` and every Document, every body, every cached idempotent reply is gone. For the CLI this is a non-issue — each `engine apply` invocation is its own ephemeral session by design (ADR-0002, ADR-0011 §5). For `engine-api-http`, server-default per ADR-0011 §1, it is the gap between "a process you launch" and "a service operators can run." Restart-survivable Document state is the precondition for treating `engine-api-http` as an actual service.
-
-The clamps from the CLAUDE.md V1 scope section say "No persistence — in-memory only until persistence ADR + TASK." This ADR is that ADR. Its job is to pin the persistence model for V1.x: what is durable, what is recoverable, what is intentionally not.
-
-The kernel already has the property that makes persistence simple: ADR-0001 §4 ("backends are caches; losing the cache is recoverable by replay") + ADR-0005 §5 (replay is deterministic modulo `Timestamp`/`DocumentId`) + the v0.5 replay-determinism gate (CI proves the determinism holds, extended in v0.11 to cover `CreateBox`). If the command log is durable, every other piece of state is re-derivable from it on startup. This ADR rides that property.
+The codebase review of 2026-10-28 found these facts (sections 5 and 6 of the review). No code writes the log to
+a file. `IGeometryBackend` has no name. No command or field carries a unit. No code turns a command back into its
+parameters. A rejection also takes a sequence number, so a count of sequences cannot check a file. The owner
+answered its questions Q1 to Q8 on 2026-10-28, with option A for each.
 
 ## Decision
 
-### 1. The command log is the source of durable truth
+1. **The file.** One document is one file of JSON Lines: UTF-8 with no byte order mark, one JSON object on each
+   line, and a line feed at the end of each line. The extension is `.3de`. The first line is the header. Each
+   later line is one entry.
+2. **The header.** `{"format":"3dengine-document","formatVersion":1,"lengthUnit":"mm"}`. The format version 1 and
+   the unit `mm` are the only values for now. An open refuses another format, another version or another unit.
+3. **The entry.** One entry for each applied command, in the order of the log:
+   `{"version":1,"backend":{"name":"manifold","version":"3.5.2"},"command":{"name":"CreateBox","schemaVersion":1,"commandId":"…","expectedDocumentVersion":null,"parameters":{…}}}`.
+   `version` is `Document.Version` after the command, so the entries count 1, 2, 3 with no gap. The parameters
+   have the names and the types of the declaration of the handler (ADR-0013). A number is a JSON number in the
+   shortest form that reads back to the same double, and -0 keeps its sign. A rejected or cancelled command
+   writes no entry (ADR-0020 item 1).
+4. **The write is a part of the commit.** The order in the serial section is: the handler, the checks of the
+   lists of bodies, the encoding of the entry, the write of the line and the flush to disk, the commit, the result
+   in the cache, then the events. So each applied command is in the file before its result (KD4).
+   - A command with a value that the file cannot hold exactly (a number that is not finite, or a string that is not
+     well-formed UTF-16) is rejected before the write with `E-IO-NOT-ENCODABLE`.
+   - A failed write or flush rejects the command with `E-IO-WRITE-FAILED`. The file is cut back to its last
+     complete line, and the session refuses each later command with the same code.
+   - The rejection takes a sequence number and gives `command.rejected` (ADR-0005), and the version does not change
+     (ADR-0020).
+5. **The log entry in memory (KD3).** `Engine.Contracts` gains two records, `BackendIdentity(string Name, string
+   Version)` and `LogEntry(Command Command, BackendIdentity Backend)`. `Document.Log` becomes
+   `IReadOnlyList<LogEntry>`. `IGeometryBackend` gains `BackendIdentity Identity { get; }`, with no default, so each
+   backend states its own name. The bus writes the identity of its backend into each entry. No command payload
+   changes.
+6. **A replay uses the recorded backend.** `Replay.ReplayLog` and an open refuse an entry whose backend name is not
+   the name of the backend of the replay, with `E-IO-BACKEND-MISMATCH`. Another version of the same backend gives
+   `W-IO-BACKEND-VERSION` one time for each open, and the open continues. Capability negotiation never selects a
+   backend.
+7. **The length unit (KD4).** `Document.LengthUnit` is a string, `mm` by default and the only value for now. Each
+   number stays a double in that unit, and no code converts a number. The snapshot of ADR-0010 gains `lengthUnit`.
+8. **The open.** A host opens a file at its start, before its surface serves a request.
+   - It makes the Document with the unit of the header, and applies each entry through the bus of its session,
+     with no write. Each entry must be applied and give the version of the entry.
+   - The idempotency cache fills as in a live session. The Document gets a new identifier (Q1, ADR-0005 §1), so an
+     old cursor of a subscriber cannot resume on another replay. This decides item 6 of ADR-0020.
+   - A last line that is not complete or does not parse is cut off with `W-IO-TRUNCATED`. A bad line before it, an
+     entry that is not applied, or a version that does not agree refuses the open with `E-IO-LOAD-FAILED`.
+9. **A document with no name (Q4).** It writes from its first command into a file in the folder of unsaved
+   documents, `<local application data>/3DEngine/unsaved/<document identifier>.3de`, which the host can set.
+   `DocumentSession.SaveAs` moves the file to a new name in the serial section, and later entries go there. The
+   target must not exist. A failure gives `E-IO-SAVE-FAILED`, and the file stays where it was. P8f gives the save
+   to the desktop and to an agent.
+10. **The hosts.** `engine-api-http` opens the file that `--file` names, and makes it with a header when it does not
+    exist. With no `--file`, it writes into the folder of unsaved documents. A file that cannot open stops the start
+    with exit code 6. The desktop opens a file in P8f (Q5). The command line has no file, because each run is a
+    one-shot session (ADR-0019 item 7). A test that makes an `EngineHost` gets no file unless it gives one.
+11. **The code (Q7).** The journal, the encoding and the open live in `Engine.Core/Persistence/`. Each handler in
+    `Engine.Core/Commands/` gives its encoder through an interface of `Engine.Core`, so `ICommandHandler` does not
+    change. A test holds that each handler of `HandlerCatalog` has an encoder, and that `Create(Encode(c))` gives
+    `c` for each one.
+12. **Determinism.** The write and the read use no transcendental function (`CLAUDE.md`, rule 1). The reader reads
+    each number as a double. A test holds the bits of -0, a subnormal number, 0.1 and the largest double through a
+    write and a read.
+13. **The flush.** Each line is one write call, then `FileStream.Flush(true)`. On macOS, .NET uses `F_FULLFSYNC`.
+    The host opens the file with no share for a write, so a second host cannot write to it; on Linux and macOS
+    that lock is advisory.
 
-The on-disk artifact is a single append-only file: the **command log**. It mirrors `Document.Log` — every `Command` that the bus has announced as `Applied`, in `Seq` order, durably written before the bus returns the `CommandResult` to the client.
-
-Nothing else is persisted in V1.x:
-
-- **Not events.** They are derivations (`command.applied`, `body.created`). Replay regenerates them.
-- **Not the idempotency cache.** It is a session-local optimization (ADR-0006 §7). After a restart, retrying clients with old `CommandId`s see a fresh cache — they apply normally or hit replayed entries naturally, since the bus re-warms the cache during startup replay.
-- **Not the event ring.** It is bounded by design (ADR-0005 §6). After a restart, the ring starts fresh; replay re-emits events into it; older events are gone, same as before. The WebSocket `subscription.reset` protocol (ADR-0010 §2) already handles cursors that fall outside the ring.
-- **Not backend state.** Per ADR-0001 §4 and ADR-0012 §2, backends are caches. A fresh backend + replay reproduces every body.
-- **Not snapshots.** No periodic `Document` snapshot, no compaction — V1.x. Reasoning under §6.
-
-Rejected commands and Cancelled commands are NOT written to the log. Only `Applied` commands are durable. Rejection is a transport-level event (ADR-0005 §3); it leaves no state to persist.
-
-### 2. Durability semantics: fsync inside the commit section
-
-The bus's serial section (ADR-0006 §1) gains one new step:
-
-```
-validate → handler → events drafted → write-to-log + fsync → commit → return
-                                       │
-                                       └─ persistence happens here
-```
-
-Specifically: after the handler succeeds and the bus has decided the command is `Applied`, but before the bus mutates `Document.Log` / `Document.Bodies` / `Document.Version` and returns the `CommandResult`, the bus appends the command record to the on-disk log and calls `fsync` (or the platform equivalent). Only then does the bus commit in-memory state and announce the result.
-
-Consequences:
-
-- A client that has received `Status = Applied` has a durable guarantee. The command survives a crash.
-- A crash before fsync leaves the command absent from both the in-memory state (rolled back inside the bus) and from disk. The client sees no `CommandResult` — its retry with the same `CommandId` (ADR-0006 §7) gets a fresh attempt.
-- Write latency is added to every applied command. V1.x accepts this — operator-grade durability beats throughput for the first persistence slice. Performance-oriented batching is a future ADR.
-
-A write failure (disk full, IO error) inside this step turns the command into `Rejected` with `Error.Code = E-IO-WRITE-FAILED`. The in-memory Document is untouched. The serial section preserves its atomic-commit-at-end property (ADR-0006 §1) — partial state never escapes the bus.
-
-### 3. File format: JSON Lines with a header
-
-The on-disk file is JSON Lines (one JSON object per line, UTF-8, LF newlines). Two record types in V1.x:
-
-```
-{"schemaVersion":1,"type":"log-header","documentId":"<guid>","createdAt":"<iso8601>"}
-{"schemaVersion":1,"type":"command-applied","appliedAtSeq":1,"command":{...}}
-{"schemaVersion":1,"type":"command-applied","appliedAtSeq":2,"command":{...}}
-```
-
-- **First record is always `log-header`.** It carries `documentId` (so the in-memory `Document` reconstitutes with the same Guid on startup; satisfies operator expectations) and `createdAt` (advisory, ADR-0005 §1).
-- **Subsequent records are `command-applied`.** The `command` field is the *same JSON shape `POST /commands` accepts* — `{ name, version, commandId, parameters }`. Reusing the wire shape means the registry can deserialize each entry through the same path the HTTP endpoint uses; `cat | jq` is enough to inspect.
-- `appliedAtSeq` is redundant with replay-derived order but cheap; it gives operators a quick way to spot gaps and lets startup detect corruption (next record must increment by 1).
-- `schemaVersion` is on every record. A future format change can be detected on load and refused with `E-IO-LOAD-FAILED`.
-
-Field names are camelCase JSON, matching the HTTP-API and the snapshot conventions (ADR-0010 §2).
-
-Binary formats (BSON, MessagePack, protobuf) are rejected for V1.x. They would add a dependency and obfuscate the log for negligible payoff at V1.x scale. Revisit when log size or write throughput becomes a real problem.
-
-### 4. Startup: replay rebuilds everything
-
-On `engine-api-http` startup, given a configured log path:
-
-1. If the file does not exist, create it, write the `log-header`, the engine is a fresh Document.
-2. If the file exists, read it line-by-line:
-   - Header line → restore `documentId`.
-   - Each `command-applied` line → deserialize via the registry → submit through `Replay.ReplayLog` against a fresh backend and a fresh `InMemoryEventSink`.
-3. If a trailing record is malformed (partial write from a crash mid-fsync), truncate it. Log `W-IO-TRUNCATED` with the byte offset and the rejected partial record. The bus had not announced `Applied` for that command, so dropping it is safe (per §2).
-4. If a non-trailing record is malformed, abort startup with `E-IO-LOAD-FAILED`. Operator action required. The engine does not run with a partially-readable log.
-5. Once replay completes, the engine is in pre-shutdown state: same `Document.Version`, same `Document.Log` contents, same `Document.Bodies`. The HTTP and WebSocket surfaces come up; clients connect and proceed.
-
-Replay-derived `EventRecord.Timestamp` values reflect the restart time, not the original wall-clock. ADR-0005 §1 already declares timestamps advisory. Clients that surface timestamps for humans get post-restart values; clients that rely on `Seq` for ordering are unaffected.
-
-The idempotency cache is re-warmed naturally by the replay path — each replayed command lands a `CommandResult` in the cache via the same code path as live application. After replay completes, the cache holds the most recent ≤1024 results, exactly like before shutdown (minus the FIFO order being reset to insertion order, which is a non-observable difference).
-
-### 5. Scope: `engine-api-http` only in V1.x
-
-Persistence is wired only into `engine-api-http`. `Engine.Cli` stays ephemeral — no log file, no startup replay. Reasoning:
-
-- The CLI is canonical for embedded / single-invocation use (ADR-0011 §5). Adding a persistence flag invites file-locking conflicts with a running server and complicates the canonical-test surface for marginal value.
-- Embedded mode persistence is plausible but currently uncalled-for. If a use case appears (a long-running embedded host that wants survivability), it gets its own ADR.
-
-ADR-0011 §2 third bullet — "no persistence between client invocations is required (V1 clamp; revisits when persistence lands)" — is narrowed here: the clamp lifts for `engine-api-http`; it stays in force for `Engine.Cli`.
-
-### 6. Snapshots and compaction are deferred
-
-A standard event-sourcing pattern is "periodic snapshot + log tail since snapshot" to bound recovery time. V1.x does not do this. Reasoning:
-
-- V1.x command counts are small (single-digit to low-hundreds per session). Replay-from-genesis is sub-second.
-- Snapshotting adds: when-to-snapshot policy, snapshot format (potentially divergent from ADR-0010's wire snapshot), atomicity guarantees during snapshot writes, compaction policy, retention of old log segments for rollback. Each is its own design call.
-- ADR-0010 §4 already says the wire snapshot is not a persistence format. A persistence-side snapshot would be a *third* serialization of Document state; deferring it avoids prematurely picking one.
-
-When log size, startup latency, or compaction becomes a measured problem, a follow-on ADR adds the snapshot mechanism. Until then: append-only command log, replay-from-genesis on startup.
-
-### 7. Configuration
-
-The log path is operator-supplied at server startup. V1.x:
-
-- Command-line flag and environment variable (e.g. `--log-path` and `ENGINE_LOG_PATH`); precise spelling is a TASK detail.
-- If neither is set, the server runs in **ephemeral mode** — no file is opened, no replay, no persistence. Used by tests and dev runs. Logged at startup with `I-IO-EPHEMERAL` so operators are not surprised.
-- One log file per process. Multi-Document, multi-tenant, and multi-process variants are V2 (ADR-0011 §Non-goals).
-
-The file is opened with an exclusive lock on creation/open. A second `engine-api-http` process pointed at the same path fails fast with `E-IO-WRITE-FAILED` at startup. This prevents two engines from interleaving writes to the same log.
-
-### 8. Schema version handling
-
-A command's `Name@Version` is part of its serialized form (the same shape the HTTP API accepts). On replay, the registry must contain a handler for every `(Name, Version)` tuple present in the log. If a handler has been removed (a `CreateBox@1` whose handler was replaced by `CreateBox@2`-only), startup aborts with `E-IO-LOAD-FAILED` citing the missing handler.
-
-Command-version deprecation, migration of old log records to newer command shapes, and "frozen" old handlers preserved only for replay are all out of scope for this ADR. Operators are responsible for keeping handlers around for any command versions that appear in their log. A future ADR addresses migrations when the question first becomes real.
+This record amends ADR-0010 §2 (the snapshot gains `lengthUnit`) and ADR-0012 §1 (`IGeometryBackend` gains
+`Identity`).
 
 ## Consequences
 
-- **`engine-api-http` becomes restart-survivable.** Clients that disconnect across a server restart reconnect to the same `documentId`, the same `Document.Version`, and the same set of bodies. WebSocket reconnect (ADR-0010 §2) handles cursor placement against the fresh in-memory ring.
-- **`CommandBus` evolves.** Its constructor gains a `ICommandLog` (or equivalent) dependency. The default in tests and the CLI is `NullCommandLog` (no-op writes). `engine-api-http` wires the real file-backed implementation. The serial section adds the write+fsync step under §2. No public-API change to `Engine.Contracts`; the `ICommandLog` abstraction lives in `Engine.Core`.
-- **Startup path changes.** `engine-api-http` reads its log and replays before the HTTP listener accepts connections. Startup latency now scales with log size; V1.x sub-second at expected scales.
-- **`Engine.Cli` is unaffected.** No flag, no file, no replay — stays embedded-ephemeral per ADR-0011 §5.
-- **Test posture.** A new persistence-roundtrip test fixture: apply N commands → drop the engine → restart against the same log → assert `Document.Version`, `Document.Bodies`, `Document.Log` match (modulo `Timestamp`/`DocumentId` per ADR-0005). This composes with the existing replay-determinism gate.
-- **Three new diagnostic codes** (registered in `docs/diagnostics.md`, `DiagnosticCodes.cs`, and `/schema/diagnostics` in the same change):
-  - `E-IO-WRITE-FAILED` — disk write failure inside commit; command Rejected, in-memory state untouched.
-  - `E-IO-LOAD-FAILED` — startup load failure (missing handler, malformed non-trailing record, schema-version mismatch, lock contention). Server does not start.
-  - `W-IO-TRUNCATED` — startup detected and truncated a partial trailing record.
-  - `I-IO-EPHEMERAL` — informational, emitted at startup when no log path is configured.
-- **V1 clamp updates.** CLAUDE.md's "No persistence" clamp narrows: persistence lands for `engine-api-http`; it stays clamped for `Engine.Cli`. The roadmap moves P8 partially — the persistence portion of P8 is now V1.x territory; multi-Document and undo/redo remain V2.
+**Good:** The work of a person survives a stop, a crash and three weeks (objective 12). The file is the log, so
+nothing converts the Document into a second form, and a replay is the proof that the file is correct
+(objective 17). Each entry records its backend (anti-objective 10). The design needs no rewrite of the log for
+undo, because undo appends a command (P8c).
 
-## Non-goals
+**Bad:**
+- The public shape of `Engine.Contracts` changes: two new records, one member of `IGeometryBackend` that each
+  backend must give (the test backends too), the type of `Document.Log` (each reader of the log changes), and
+  `Document.LengthUnit`.
+- The snapshot gains a field, and a client that reads it strictly must accept it.
+- A command with a value that is not finite is applied with no file and rejected with a file, so the command line
+  and a host can differ for it.
+- `SaveAs` moves the file and does not copy it.
+- A failed write leaves the body of the handler in the backend: a leak, not a wrong Document.
+- A flush to disk for each command costs time, which P8a measures.
 
-- **Snapshots and compaction.** Deferred per §6.
-- **Multi-Document persistence.** One log file = one Document. Multi-Document is V2 (ADR-0011 §Non-goals).
-- **Multi-process / multi-writer safety.** Exclusive-lock-on-open is sufficient — concurrent writers are detected, not coordinated.
-- **Persistence for `Engine.Cli`.** Out of V1.x per §5.
-- **Encryption-at-rest.** Operator's filesystem-layer concern.
-- **Cross-version log migration.** Operators keep the handlers; we abort if they don't.
-- **WAL-style "torn write" recovery beyond truncate-trailing.** The fsync-per-applied-command discipline plus append-only writes makes torn writes only possible at the trailing edge.
-- **Performance-tuned batched fsync.** Per-command fsync in V1.x; batching is future work with its own latency/durability trade-off ADR.
-- **Persisting Rejected commands** for diagnostics. They surface as events at runtime (ADR-0005 §3); the log is for replay, not audit.
-- **Replacing `Document.Log` with disk reads.** The log stays in memory; disk is its durable mirror.
+**Next:** TASK-0091 (P8a) applies this record and registers the seven new codes of the namespace `IO`. P8f gives
+the open and the save to the desktop and to an agent. A list of unsaved documents for a recovery is not decided.
+Register entry R-0025 closes with P8a.
 
-## Validation rules
+## History
 
-1. Every command for which the bus returns `Status = Applied` MUST be present in the on-disk log before the result is returned to the client. CI: a fixture that intercepts the write call asserts it happens inside the commit section before `CommandResult` is yielded.
-2. A restart from the on-disk log + an empty backend + an empty event sink MUST reproduce the pre-shutdown `Document.Version`, `Document.Log` contents (modulo `Timestamp`), and `Document.Bodies`. CI: persistence-roundtrip fixture (described in §Consequences).
-3. The first record in the file is always `log-header`; subsequent records are `command-applied` with monotonic `appliedAtSeq` starting from 1. CI: format-gate test parses a freshly-written log and asserts the invariant.
-4. A second `engine-api-http` process pointed at the same log path MUST fail fast on startup. Manual test acceptable for V1.x; CI variant is a TASK detail.
-5. `Engine.Cli` invocations MUST NOT open, read, or write any persistence file. CI: a test runs the CLI binary with no env vars and asserts no file IO outside the working directory's stdout/stderr.
-6. The four new diagnostic codes (`E-IO-WRITE-FAILED`, `E-IO-LOAD-FAILED`, `W-IO-TRUNCATED`, `I-IO-EPHEMERAL`) MUST appear in `docs/diagnostics.md`, `Engine.Core/DiagnosticCodes.cs`, and `/schema/diagnostics` — enforced by the existing P2 + `SchemaEndpointGateTests` gates.
-
-## Open challenges
-
-- **Snapshot/compaction trigger.** When the log gets large enough that startup latency or disk usage matters, the snapshot ADR lands. The trigger (line count, byte size, time interval) is a future call.
-- **Embedded persistence for the CLI.** Some users will want a CLI that persists across invocations. The use case has not arrived; defer until it does.
-- **Multi-Document persistence.** When the engine grows beyond one Document per process, the log layout (per-Document file? single file with `documentId` per record?) needs a call. V2.
-- **Command-version migration.** When a `CreateBox@1` in the log needs to become a `CreateBox@2`, the registry needs a migration step. V2 at earliest; V1.x relies on operator discipline.
-- **Disk-format evolution.** `schemaVersion` is in every record so the load path can detect a mismatch and refuse. The actual upgrade mechanism is unspecified — when the second format lands, that ADR also specifies the upgrade tool.
-- **Backup / restore tooling.** The log is a single file; `cp` works. A real ops surface (point-in-time recovery, hot backup) is later.
+- 2026-05-27 · TASK-0018 · The first text: one log for each process of `engine-api-http`, accepted on a branch that
+  nobody merged, and filed on `main` as Proposed on 2026-09-20.
+- 2026-10-28 · TASK-0091 · Written again for the document file, after KD3 and KD4 of the owner of 2026-10-27 and
+  the answers Q1 to Q8 of 2026-10-28 to the codebase review of that date. The owner accepted the contract on
+  2026-10-28.

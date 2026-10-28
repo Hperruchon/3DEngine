@@ -7,7 +7,7 @@ date: 2026-05-27
 supersedes: []
 superseded-by: []
 amends: []
-amended-by: ['0018', '0021', '0028']
+amended-by: ['0018', '0021', '0028', '0015']
 affects:
   - Engine.Contracts/Geometry/**
   - Engine.Core/Commands/**
@@ -41,7 +41,12 @@ public interface IGeometryBackend
 {
     BackendCapabilities Capabilities { get; }
     T? TryGet<T>() where T : class;
+
+    // ADR-0015 item 5: the name and the version that each log entry records.
+    BackendIdentity Identity { get; }
 }
+
+public sealed record BackendIdentity(string Name, string Version);
 
 [Flags]
 public enum BackendCapabilities
@@ -243,3 +248,5 @@ This is *not* the Manifold backend — it is the wiring slice. A follow-on TASK 
   record; their folds wait.
 - 2026-10-28 · TASK-0085 · ADR-0028 amends §3 and §6: `BodyRecord` gains `Name` and `Visible`, and each body of
   the snapshot gives them.
+- 2026-10-28 · TASK-0091 · ADR-0015 amends §1: `IGeometryBackend` gives its `Identity`, which each log entry
+  records.

@@ -7,7 +7,7 @@ date: 2026-05-12
 supersedes: []
 superseded-by: []
 amends: []
-amended-by: ['0020']
+amended-by: ['0020', '0015']
 affects:
   - Engine.Api.Http/WebSockets/**
 enforced-by: Engine.Tests/Http/EventsEndpointWireShapeTests.cs
@@ -52,6 +52,7 @@ subscription.reset payload
     version         : long     // Document.Version at the moment of the reset
     createdAt       : DateTime // UTC, engine clock
     updatedAt       : DateTime // UTC, engine clock
+    lengthUnit      : string   // Document.LengthUnit, "mm" (ADR-0015 item 7)
 ```
 
 Field names are camelCase JSON, matching the existing HTTP-API conventions. Nulls are preserved.
@@ -105,3 +106,7 @@ Same as ADR-0005's framing of events: this is a transport projection, not a dura
 - **Geometry snapshot shape.** When P7 lands the first `IGeometryBackend` + a `CreateBox`-style command, `Document` gains entities/bodies. The snapshot extends; the gate test in P6.4 (`/schema/commands` invariant) doesn't catch a missing snapshot field today. Add a snapshot-coverage gate when state actually grows.
 - **Persistence reuse.** If the persistence ADR chooses a Document serialization different from this snapshot, the engine maintains two projections. That is fine — different surfaces, different shapes — but worth re-reading this ADR when persistence lands to confirm intentional divergence.
 - **Snapshot at request.** Clients may want to ask "give me the current snapshot without subscribing." That is a query, not a subscription event. If the use case appears, size it as a query (e.g. `DocumentSnapshot`); out of scope here.
+
+## History
+
+- 2026-10-28 · TASK-0091 · ADR-0015 amends §2: the snapshot gives the length unit of the Document.

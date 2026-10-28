@@ -5,7 +5,7 @@ status: Ready
 phase: P0.36
 opened: 2026-10-28
 depends-on: [0088]
-governed-by: [0004, 0007, 0009, 0012, 0016, 0017, 0019, 0021, 0022, 0023, 0024, 0025, 0026, 0027, 0028, 0029]
+governed-by: [0004, 0007, 0009, 0012, 0015, 0016, 0017, 0019, 0021, 0022, 0023, 0024, 0025, 0026, 0027, 0028, 0029]
 writes:
   create:
     - tasks/TASK-0090-host-and-desktop-gaps-of-the-tenth-review.md
