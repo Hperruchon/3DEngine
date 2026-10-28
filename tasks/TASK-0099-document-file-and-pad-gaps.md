@@ -5,16 +5,19 @@ status: Active
 phase: P0.40
 opened: 2026-10-28
 depends-on: [0101]
-governed-by: [0004, 0007, 0009, 0015, 0016, 0017, 0019, 0022, 0023, 0024, 0025, 0026, 0027, 0029, 0030, 0031, 0032, 0034]
+governed-by: [0004, 0007, 0009, 0013, 0015, 0016, 0017, 0019, 0022, 0023, 0024, 0025, 0026, 0027, 0029, 0030, 0031, 0032, 0034]
 writes:
   create:
     - tasks/TASK-0099-document-file-and-pad-gaps.md
   modify:
     - Engine.Core/Persistence/**
     - Engine.Core/DocumentSession.cs
+    - Engine.Core/DiagnosticCodes.cs
     - Engine.Api.Http/DocumentFolder.cs
     - Engine.Api.Http/EngineHost.cs
     - Engine.Api.Http/Endpoints/DocumentEndpoint.cs
+    - Engine.Api.Http/Endpoints/CommandsEndpoint.cs
+    - Engine.Api.Http/Endpoints/SchemaDiagnosticsEndpoint.cs
     - Engine.Api.Http.Server/Program.cs
     - Engine.Tests/Persistence/**
     - Engine.Tests/Http/**
@@ -116,3 +119,8 @@ person sees.
 - 2026-10-29: E76, E77, E81 and E85 are corrected, with 26 new test cases and one case changed: a complete last line
   that is JSON is no longer a torn line. Twelve injections each failed a test. One injection showed that a check of
   a final space or dot was redundant, and the check went out.
+- 2026-10-29: V31 and V37 are corrected. The check holds the file as a journal does, except the file that the desktop
+  holds. After an accepted open, the surface refuses each command, save and open with HTTP 503 and the new code
+  `E-API-OPEN-PENDING`, which `docs/diagnostics.md` registers. The write set gains `Engine.Core/DiagnosticCodes.cs`
+  `Engine.Api.Http/Endpoints/CommandsEndpoint.cs` and `SchemaDiagnosticsEndpoint.cs`, so `governed-by` gains ADR-0013. One new test case and two changed; four injections each
+  failed a test.

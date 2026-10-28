@@ -142,6 +142,41 @@ public sealed class DesktopDocumentTests : IDisposable
         Assert.Equal(good, document.RequestedOpen);
     }
 
+    // V31 of the second codebase review of 2026-10-28: the check holds the file as a journal
+    // does, so a file that another desktop holds fails it and the person keeps the window. The
+    // file that this desktop holds passes, because the old process frees it before the start.
+    // Only Windows refuses the hold: on Linux and macOS .NET takes no lock for a write with the
+    // share of a read (ADR-0030, Consequences).
+    [Fact]
+    public async Task The_Check_Refuses_A_File_That_Another_Desktop_Holds()
+    {
+        var path = Path.Combine(_folder, "held.3de");
+        using var backend = new ManifoldGeometryBackend();
+        var holder = new DocumentSession(EngineHosting.CreateDefault(backend));
+        DocumentFile.Create(holder, path);
+        await holder.Apply(new CreateBoxCommand { SizeX = 1, SizeY = 2, SizeZ = 3 });
+        try
+        {
+            var other = new DesktopDocument(_folder);
+            var refused = await other.Folder.Open(path, CancellationToken.None);
+            if (OperatingSystem.IsWindows())
+            {
+                Assert.Equal(DiagnosticCodes.IoLoadFailed, refused!.Code);
+                Assert.Null(other.RequestedOpen);
+                Assert.False(other.Folder.OpenAccepted);
+            }
+
+            var own = new DesktopDocument(_folder) { HeldFile = () => holder.FilePath };
+            Assert.Null(await own.Folder.Open(path, CancellationToken.None));
+            Assert.Equal(path, own.RequestedOpen);
+            Assert.True(own.Folder.OpenAccepted);
+        }
+        finally
+        {
+            holder.Close();
+        }
+    }
+
     // ADR-0030 item 1: the check comes before the window, so it runs on each runner.
     [Fact]
     public async Task A_Desktop_Whose_File_Does_Not_Open_Stops_With_Exit_Code_6()

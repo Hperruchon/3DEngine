@@ -20,6 +20,10 @@ public static class DiagnosticCodes
     // ADR-0030 item 4: a route that this host does not serve, for example an open
     // over HTTP in engine-api-http.
     public const string ApiNotSupported = "E-API-NOT-SUPPORTED";
+
+    // ADR-0030 item 4: the host accepted an open and starts again, so it refuses each
+    // command, save and open until then (TASK-0099).
+    public const string ApiOpenPending = "E-API-OPEN-PENDING";
     public const string GeomCapMissing = "E-GEOM-CAP-MISSING";
     public const string GeomInvalidParam = "E-GEOM-INVALID-PARAM";
     public const string GeomBodyNotFound = "E-GEOM-BODY-NOT-FOUND";
