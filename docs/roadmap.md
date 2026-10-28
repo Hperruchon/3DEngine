@@ -75,6 +75,7 @@ Therefore each approved objective must have a track here.
 - P8f — The document file in the desktop and for an agent. v0.92, TASK-0092, ADR-0030.
 - P0.36 — A name is a JSON string of well-formed text, the server disposes at each stop, and the desktop ends a text field at a click on the scene. v0.93, TASK-0090.
 - P0.35 — The gates bind the names that the compiler and MSBuild bind, and the archive and the review counter check their links. v0.94, TASK-0089.
+- P8c — Undo and redo as commands of the log, with one history for the document. v0.95, TASK-0093, ADR-0031.
 
 ## Track 0 — Foundations
 
@@ -125,7 +126,7 @@ This track removes each condition that blocks other work.
 |---|---|---|
 | P8a | The document file in the engine and the server. The command log in JSON Lines, written by `Engine.Core/Persistence/` (Q7). Each applied command goes into the file before its result, with fsync. The header records the length unit of the document, `Document.LengthUnit`, with the millimetre as the only unit for now (KD4, Q3). Each entry records the name and the version of the backend from `IGeometryBackend`, and the bus writes them (anti-objective 10, KD3, Q2). An open gives a new document identifier (Q1). A document with no name writes a temporary file from its first command, and a save moves it (Q4). The server opens the file that its command line names. ADR-0015 is written again (register entry R-0025). TASK-0091. | 3–4 |
 | P8b | The container model. One document holds one part. An assembly holds references at a fixed version. | 5–8 |
-| P8c | Undo and redo. Add the inverse command. | 3–5 |
+| P8c | Undo and redo. `Undo` and `Redo` are commands of the log, and the bus reverses the recorded body changes of a step (Q1 B to Q4 A). The keys wait in R-0041. ADR-0031, TASK-0093. | 3–5 |
 | P8d | The three layers. Log, ordered feature list, regeneration cache. | 5–8 |
 | P8e | The unit in the numeric pad. The header of P8a holds the length unit of the document (KD4). | 1 |
 | P8f | The document file in the desktop and for an agent. The desktop opens the file that its command line names, and an open in the window starts the program again (Q5). "Save" moves the file to the name typed in the panel. HTTP save and open on the loopback address, in one folder (Q6, ADR-0002). ADR-0030, TASK-0092. | 2–3 |

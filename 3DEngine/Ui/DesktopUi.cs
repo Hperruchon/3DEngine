@@ -247,8 +247,9 @@ internal sealed unsafe class DesktopUi : IDisposable
     private void Panel(IReadOnlyList<LiveBody> bodies, Guid? selection, Vector2 displaySize, DocumentLine? document)
     {
         ImGui.SetNextWindowPos(new Vector2(16f, 16f), ImGuiCond.FirstUseEver);
-        // The first size fits inside a small display too.
-        ImGui.SetNextWindowSize(new Vector2(460f, Math.Clamp(displaySize.Y - 32f, 200f, 560f)), ImGuiCond.FirstUseEver);
+        // The first size fits inside a small display too. Since the line of Undo and Redo (TASK-0093)
+        // the panel is 640 pixels high at most, so that two bodies and Show all fit with no scroll bar.
+        ImGui.SetNextWindowSize(new Vector2(460f, Math.Clamp(displaySize.Y - 32f, 200f, 640f)), ImGuiCond.FirstUseEver);
         if (ImGui.Begin(PanelName))
         {
             ImGui.TextUnformatted(_address);

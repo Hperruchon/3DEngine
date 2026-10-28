@@ -1,7 +1,7 @@
 ---
 id: 0093
 title: Undo and redo as commands of the log
-status: Active
+status: Done
 phase: P8c
 opened: 2026-10-28
 depends-on: [0089, 0091, 0092]
@@ -39,6 +39,7 @@ writes:
     - docs/glossary.md
     - docs/roadmap.md
     - docs/CURRENT-STATE.md
+    - docs/register.md
     - eng/test-floor.txt
   forbid:
     - Engine.Cli/**
@@ -73,7 +74,8 @@ A person and an agent undo and redo each step of the document, and an undo survi
 4. The commands `Undo` and `Redo` in `HandlerCatalog`, with their encoders (item 1).
 5. The event kind `body.removed` in the bus and in `/schema/events` (item 6).
 6. The codes `E-CMD-NOTHING-TO-UNDO` and `E-CMD-NOTHING-TO-REDO`, registered (item 8).
-7. The desktop: the buttons, the keys and the projection of `body.removed` (item 11).
+7. The desktop: the buttons and the projection of `body.removed` (item 11). The owner chose A on 2026-10-28: the
+   keys go to register entry R-0041.
 8. Tests: each command type undone and redone, the redo list cleared by a new step, an undo after an open of the
    file, a replay on two runs, the events and their order, the two rejections, and the desktop.
 
@@ -83,15 +85,16 @@ A person and an agent undo and redo each step of the document, and an undo survi
 - The free of a body that no step can make live again.
 - A query that gives the count of steps to undo or redo.
 - A separate history for each client (Q2 B).
+- The keys Ctrl+Z, Ctrl+Y and Ctrl+Shift+Z (R-0041).
 
 ## Acceptance criteria
 
-- [ ] Each new test fails before its correction, or an injection shows that it can fail.
-- [ ] For each command type, an undo gives the live body set before the step, and a redo gives the set after it.
-- [ ] A file with `Undo` and `Redo` entries opens, and a further undo gives the expected live set.
-- [ ] The two rejections give their codes and leave the version unchanged.
-- [ ] The visual check: the owner sees a subtract, an undo and a redo in the desktop.
-- [ ] `dotnet test` passes, the build has 0 warnings, and continuous integration is green on the three runners.
+- [x] Each new test fails before its correction, or an injection shows that it can fail.
+- [x] For each command type, an undo gives the live body set before the step, and a redo gives the set after it.
+- [x] A file with `Undo` and `Redo` entries opens, and a further undo gives the expected live set.
+- [x] The two rejections give their codes and leave the version unchanged.
+- [x] The visual check: the owner sees a subtract, an undo and a redo in the desktop.
+- [x] `dotnet test` passes, the build has 0 warnings, and continuous integration is green on the three runners.
 
 ## Notes for the implementer
 
@@ -109,3 +112,21 @@ A person and an agent undo and redo each step of the document, and an undo survi
   `/schema/events` and in the projection of the desktop; the two codes are registered. 13 tests in
   `Engine.Tests`, 3 in `3DEngine.ImageTests`. 13 injections: 12 were caught at once; a schema with no
   `body.removed` passed until the payload test applied undos, and it now fails there. The keys of item 11 wait.
+- 2026-10-28: the visual check passed, and the owner accepted it: a cut, an undo that gives back the plate and the
+  cutter, and a redo whose picture is the picture of the cut, byte for byte; no message of the validation layer.
+  The owner chose A for the keys (R-0041). The panel is 640 pixels high at most, so that Show all fits.
+
+## Outcome
+
+Status: Done · commit (the merge of the branch undo-and-redo) · v0.95
+
+## Method
+
+Mechanical: the two commands and their encoders, the catalog, the codes, the schema row, the projection case and
+            the two buttons.
+Judgement:  the bus, and no handler, makes the lists of a move, because the bus already owns the set of created
+            handles and a handler cannot give a wrong reversal. An undo calls no backend, because no backend
+            changes or frees a body; the Manifold backend frees a body only at its own disposal.
+Weakest:    the history depends on the claim that no backend frees a body. A backend that frees a consumed body
+            breaks an undo of that consumption, and only the native test of the file and the image test show it
+            (`An_Undo_And_A_Redo_Continue_After_An_Open_Of_The_File`, `The_Scene_Follows_An_Undo_And_A_Redo_Of_The_Cut`).
