@@ -1,7 +1,7 @@
 ---
 id: 0094
 title: The numeric pad, the expression evaluator and the keys of undo and redo
-status: Active
+status: Done
 phase: R10
 opened: 2026-10-28
 depends-on: [0093]
@@ -75,12 +75,12 @@ redoes with the keys.
 
 ## Acceptance criteria
 
-- [ ] Each new test fails before its correction, or an injection shows that it can fail.
-- [ ] The evaluator gives the expected number for each form of the grammar, and an error for each bad form.
-- [ ] A script of buttons and a script of keys give the same pad states and the same command.
-- [ ] Each new intent has a touch script and a mouse or keyboard script in the parity test.
-- [ ] The visual check: the owner sees the pad, a new box with typed sizes, and a move with a typed offset.
-- [ ] `dotnet test` passes, the build has 0 warnings, and continuous integration is green on the three runners.
+- [x] Each new test fails before its correction, or an injection shows that it can fail.
+- [x] The evaluator gives the expected number for each form of the grammar, and an error for each bad form.
+- [x] A script of buttons and a script of keys give the same pad states and the same command.
+- [x] Each new intent has a touch script and a mouse or keyboard script in the parity test.
+- [x] The visual check: the owner sees the pad, a new box with typed sizes, and a move with a typed offset.
+- [x] `dotnet test` passes, the build has 0 warnings, and continuous integration is green on the three runners.
 
 ## Notes for the implementer
 
@@ -96,3 +96,23 @@ redoes with the keys.
   code, so the letter and not the place of the key counts; `UndoIntent` and `RedoIntent` with the taps of three
   and four fingers. 50 tests in `3DEngine.Tests`, 9 in `3DEngine.ImageTests`. 16 injections: 15 were caught at
   once; a bad field that did not become active passed until its test selected another field first.
+- 2026-10-28: the visual check passed, and the owner accepted it: a New box pad typed 40, 30 and `2*pi`, the box,
+  a Move pad with dx 20 by clicks and dz `-sqrt(25)` by keys, the moved body selected, then Ctrl+Z and Ctrl+Y. The
+  file holds the numbers only. The buttons of the pad are 108 pixels wide, so that Delete and Cancel fit. CI run
+  40741567326 passed on the three runners. R-0041 closes.
+
+## Outcome
+
+Status: Done · commit (the merge of the branch pad-and-evaluator) · v0.96
+
+## Method
+
+Mechanical: the grammar of the sheet as a recursive descent, the two intents beside hide and show all, the parity
+            scripts, and the buttons of the pad.
+Judgement:  the pad reads the typed characters through the text path of ADR-0027, so it needs no key for a digit;
+            Z and Y come from the key code and not the scan code, so Control and Z follows the letter on an
+            AZERTY or a QWERTZ keyboard; the pad stays open after an apply until the host gives the result, so
+            a rejection stays in the pad.
+Weakest:    the lines of `NativeThreeDEngine` that apply the two intents and the two pad actions have no test,
+            as the other lines of that loop; the visual check is their only proof. The taps of three and four
+            fingers are proven by synthetic samples only (`IntentParityTests`).
