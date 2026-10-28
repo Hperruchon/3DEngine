@@ -1,7 +1,7 @@
 ---
 id: 0091
 title: The document file in the engine and the server
-status: Active
+status: Done
 phase: P8a
 opened: 2026-10-28
 depends-on: [0088]
@@ -183,3 +183,4 @@ so the torn last line is tested with lines that a test writes. The desktop has n
   file, 3 of the server), not 15; the Outcome and the ledger entry v0.91 give 13.
 - 2026-10-28: correction before the merge: the count of injections of the task is 13 (3 of the contract, 7 of the
   file, 3 of the server), not 15; the Outcome and the ledger entry v0.91 give 13.
+- 2026-10-28: Done again after the correction of the count.
