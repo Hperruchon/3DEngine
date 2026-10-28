@@ -2,6 +2,8 @@ using System.Numerics;
 using Engine.Contracts.Sketch;
 using Engine.Core.Queries;
 using ThreeDEngine.Core.Models;
+using ThreeDEngine.Core.Sketching;
+using ThreeDEngine.Desktop.Ui;
 
 namespace ThreeDEngine.Desktop;
 
@@ -9,23 +11,46 @@ namespace ThreeDEngine.Desktop;
 // to draw over the scene (ADR-0033 item 13). A point of a sketch at (x, y) is at
 // origin + x·u + y·v in the space of the Document (item 1). The projection is the inverse
 // of Picker.RayThrough, so a sketch and a pick agree on each pixel. This is presentation:
-// it uses the camera in double precision and runs outside the log (ADR-0007).
+// it uses the camera in double precision and runs outside the log (ADR-0007). With a focus, the
+// active sketch has its labels, its selected items and the ring of the first point of an open
+// chain, and each other sketch is grey (ADR-0034 item 9).
 internal static class SketchOverlay
 {
-    // The part of a line in front of the camera, and each point in front of it, in pixels.
-    public sealed record Strokes(IReadOnlyList<(Vector2 A, Vector2 B)> Lines, IReadOnlyList<Vector2> Points);
+    // How an item draws: an item of the active sketch, or of all sketches when no sketch is
+    // active; a selected item; or an item of a sketch that is not active.
+    public enum Mark
+    {
+        Active,
+        Selected,
+        Other,
+    }
+
+    public sealed record Stroke(Vector2 A, Vector2 B, Mark Mark);
+
+    public sealed record Spot(Vector2 At, Mark Mark);
+
+    public sealed record Label(Vector2 At, string Text);
+
+    // The part of a line in front of the camera, and each point in front of it, in pixels; the
+    // labels of the active sketch, and the ring of the first point of an open chain.
+    public sealed record Strokes(IReadOnlyList<Stroke> Lines, IReadOnlyList<Spot> Points, IReadOnlyList<Label> Labels, IReadOnlyList<Vector2> Rings);
+
+    // The active sketch, its selected items, and the first point of its open chain.
+    public sealed record Focus(Guid Sketch, IReadOnlyCollection<Guid> Selected, Guid? ChainStart);
 
     // The distance in front of the eye below which the overlay cuts a line.
     private const double Near = 1e-3;
 
-    public static Strokes Of(IEnumerable<SketchInfo> sketches, Camera camera, double width, double height)
+    public static Strokes Of(IEnumerable<SketchInfo> sketches, Camera camera, double width, double height, Focus? focus = null)
     {
         ArgumentNullException.ThrowIfNull(sketches);
         ArgumentNullException.ThrowIfNull(camera);
-        var lines = new List<(Vector2, Vector2)>();
-        var points = new List<Vector2>();
+        var lines = new List<Stroke>();
+        var points = new List<Spot>();
+        var labels = new List<Label>();
+        var rings = new List<Vector2>();
         if (!(width > 0 && height > 0))
-            return new Strokes(lines, points);
+            return new Strokes(lines, points, labels, rings);
 
         var frame = Frame.Of(camera, width, height);
         foreach (var sketch in sketches)
@@ -33,21 +58,57 @@ internal static class SketchOverlay
             if (Datums.Find(sketch.DatumId) is not { } datum)
                 continue;
 
+            var active = focus is null || focus.Sketch == sketch.SketchId;
+            Mark MarkOf(Guid item) => !active ? Mark.Other : focus?.Selected.Contains(item) == true ? Mark.Selected : Mark.Active;
+            var named = focus is not null && active ? SketchText.Labels(sketch) : null;
+
             var world = sketch.Points.ToDictionary(point => point.Id, point => frame.ToCamera(World(datum, point.X, point.Y)));
             foreach (var line in sketch.Lines)
             {
                 if (world.TryGetValue(line.Start, out var a) && world.TryGetValue(line.End, out var b) && frame.Segment(a, b) is { } segment)
-                    lines.Add(segment);
+                {
+                    lines.Add(new Stroke(segment.A, segment.B, MarkOf(line.Id)));
+                    if (named is not null)
+                        labels.Add(new Label((segment.A + segment.B) / 2 + LabelOffset, named[line.Id]));
+                }
             }
 
-            foreach (var point in world.Values)
+            foreach (var (id, point) in world)
             {
-                if (point.Forward >= Near)
-                    points.Add(frame.ToPixels(point));
+                if (point.Forward < Near)
+                    continue;
+                var pixel = frame.ToPixels(point);
+                points.Add(new Spot(pixel, MarkOf(id)));
+                if (named is not null)
+                    labels.Add(new Label(pixel + LabelOffset, named[id]));
+                if (active && focus?.ChainStart == id)
+                    rings.Add(pixel);
             }
         }
 
-        return new Strokes(lines, points);
+        return new Strokes(lines, points, labels, rings);
+    }
+
+    // The place of a label from its point or the middle of its line, in pixels.
+    private static readonly Vector2 LabelOffset = new(8f, -30f);
+
+    // ADR-0034 item 4: the active sketch as the tool sees it, with the pixel of each point in front
+    // of the camera. With no camera, no point has a pixel; the tool then reads the positions only.
+    public static SketchPicture Picture(SketchInfo sketch, Camera? camera = null, double width = 0, double height = 0)
+    {
+        ArgumentNullException.ThrowIfNull(sketch);
+        var frame = camera is not null && width > 0 && height > 0 && Datums.Find(sketch.DatumId) is { } datum ? (Frame.Of(camera, width, height), datum) : default;
+        var points = sketch.Points.Select(point =>
+        {
+            if (frame.Item1 is null)
+                return new ToolPoint(point.Id, point.X, point.Y, null, null);
+            var seen = frame.Item1.ToCamera(World(frame.datum, point.X, point.Y));
+            if (seen.Forward < Near)
+                return new ToolPoint(point.Id, point.X, point.Y, null, null);
+            var pixel = frame.Item1.ToPixels(seen);
+            return new ToolPoint(point.Id, point.X, point.Y, pixel.X, pixel.Y);
+        }).ToArray();
+        return new SketchPicture(points, [.. sketch.Lines.Select(line => new ToolLine(line.Id, line.Start, line.End))], [.. sketch.Constraints.Select(constraint => constraint.Id)]);
     }
 
     private static (double X, double Y, double Z) World(Datum datum, double x, double y)
