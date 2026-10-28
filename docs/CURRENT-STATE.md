@@ -2546,7 +2546,7 @@ document in memory. ADR-0015 is written again, and it amends ADR-0010 §2 and AD
   `--file`, the server says that the document is in memory only.
 - Seven codes of the namespace `IO`.
 
-**Proof.** 31 new tests and fifteen injections. A process test kills the server after its results, and a second
+**Proof.** 31 new tests and thirteen injections. A process test kills the server after its results, and a second
 server opens the file to the same renamed body. The full scene of each command opens again on the native backend
 with the same version, log and bodies. A command with a file took 0.07 to 0.08 ms on this computer.
 
