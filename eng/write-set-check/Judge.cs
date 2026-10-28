@@ -71,10 +71,21 @@ public sealed class Judge
         _git = git;
     }
 
+    // The project file of each test project; MSBuild reads the case of a path as
+    // the file system does.
+    private static readonly HashSet<string> TestProjectFiles = new(StringComparer.OrdinalIgnoreCase)
+    {
+        "Engine.Tests/Engine.Tests.csproj",
+        "3DEngine.Tests/3DEngine.Tests.csproj",
+        "3DEngine.ImageTests/3DEngine.ImageTests.csproj",
+    };
+
     // A file under Engine.Tests/Governance/, or a test class whose name ends in
     // GateTests, or the shared helpers of the gates. Also each file that can turn
-    // a gate off without a change to a gate: the project file of the tests,
-    // which can remove a gate from the compilation; a Directory.Build or
+    // a gate off without a change to a gate: the project file of each test
+    // project, which can remove a gate from the compilation or bring a test
+    // framework past TestAttributeGateTests (finding T69 of the second codebase
+    // review of 2026-10-28, TASK-0097); a Directory.Build or
     // Directory.Packages file, which MSBuild reads for each project below it;
     // the cut-off of this gate; each workflow (codebase review of 2026-10-04,
     // finding T9); each file of this program (TASK-0053); each file of the
@@ -85,7 +96,7 @@ public sealed class Judge
         return file.StartsWith("Engine.Tests/Governance/", StringComparison.Ordinal)
             || (file.StartsWith("Engine.Tests/", StringComparison.Ordinal) && file.EndsWith("GateTests.cs", StringComparison.Ordinal))
             || file.StartsWith("Engine.Tests/Diagnostics/", StringComparison.Ordinal)
-            || file == "Engine.Tests/Engine.Tests.csproj"
+            || TestProjectFiles.Contains(file)
             || IsBuildInput(file)
             || file == "eng/write-set-cutoff.txt"
             || file == "eng/count-tests.js"

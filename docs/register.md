@@ -332,6 +332,9 @@ Progress 2026-10-28: the second codebase review of 2026-10-28 finds new forms. A
 inside a test project (T68, high) and an alias in the project file of `3DEngine.Tests` (T69, high) each make each
 failed test pass with the exact count. T70 to T75 and T77 are medium or low. T31 is worse through T68. TASK-0097
 holds T68 and T69 before K2, and TASK-0098 holds the rest after K2. T4, T5, T7, T10, T13, T17, T23 and T25 stay.
+Progress 2026-10-28: TASK-0097 corrected T68 and T69. The test framework gate reads each source that MSBuild compiles
+and the project file of each test project, and the judge names those project files as gate files. T31 stays open in
+part.
 
 ### R-0033 · Seven findings of the third codebase review in the engine and the hosts have no task
 - class: debt
