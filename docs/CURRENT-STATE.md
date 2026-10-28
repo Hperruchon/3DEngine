@@ -2694,3 +2694,29 @@ New tests: 59. The test list holds 829 (620 in `Engine.Tests`, 144 in `3DEngine.
 `3DEngine.ImageTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
 entries: 13 of 15. New diagnostic codes: none. Since the review of v0.88, 4 product milestones and 8 entries
 followed it.
+
+## v0.97 — The second codebase review of 2026-10-28 (governance, TASK-0095)
+
+The review of 2026-10-28 examined v0.88, and 4 product milestones and 8 entries followed it, so K2 would make the
+gate fail. This entry is the eleventh codebase review: `docs/reviews/2026-10-28-b-codebase-review.md`, at `main`
+`c0fbb64`.
+
+**The state.** The fixes of the period held for the forms that they named: E72 to E74, V18, V26 to V28, V30, and
+T62 to T67. The measures: 13,749 production lines in 165 files, 829 tests, 0 warnings, and open findings 0
+critical, 8 high, 29 medium and 44 low.
+
+**The new findings.** Thirty-one. Three are high. An open of the document file skips an entry whose command
+identifier the cache holds, so the Document is wrong with no error (E75; I ran it). A test framework in a `bin/`
+folder inside a test project (T68; I ran it) and an alias in the project file of `3DEngine.Tests` (T69) each make
+each failed test pass with the exact count. Seven are medium: E76, E77, V31, V32, T70, T71 and T72.
+
+**The run of v0.95 on `main` (T76).** Run 40725490160 on `307ab67` failed only because no macOS runner took the job.
+The tree of `307ab67` equals the tip of its branch, and run 40745912217 on `c0fbb64` passed on the three runners.
+
+**The tasks.** TASK-0096 (P0.37) holds E75 and TASK-0097 (P0.38) holds T68 and T69; both come before K2.
+TASK-0098 (P0.39) holds T70 to T75 and T77, and TASK-0099 (P0.40) holds E76 to E85 and V31 to V39; both come after
+K2. R-0042 holds the ten questions of the review: nine for K2 and K0a, and one for the rules review (T78).
+
+New tests: none. The test list holds 829. `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero
+warnings. Open entries: 14 of 15. New diagnostic codes: none. The next codebase review is due when more than four
+product milestones or more than twelve entries follow v0.96.
