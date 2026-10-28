@@ -26,18 +26,32 @@ internal sealed class DesktopDocument
     // The path of the file to open after the window closes, or null.
     public string? RequestedOpen => Volatile.Read(ref _requested);
 
+    // The file that the session of this desktop holds, or null; the host sets it after it
+    // makes the session.
+    public Func<string?>? HeldFile { get; set; }
+
     private async Task<ErrorDetail?> Reopen(string path, CancellationToken ct)
     {
         if (RequestedOpen is not null)
             return new ErrorDetail(DiagnosticCodes.IoLoadFailed, $"An open of {RequestedOpen} is already in progress.");
 
+        // ADR-0030 item 5: the check holds the file as a journal does, so a file that another
+        // program holds fails it (V31). The file that this desktop holds is the exception: the
+        // old process frees it before the new program starts.
         using var backend = new ManifoldGeometryBackend();
-        if (await DocumentFile.Check(path, backend, ct) is { } error)
+        if (await DocumentFile.Check(path, backend, hold: !SameFile(path, HeldFile?.Invoke()), ct) is { } error)
             return error;
 
         Volatile.Write(ref _requested, path);
         return null;
     }
+
+    // True when the two paths name one file. Windows and macOS compare names with no case.
+    internal static bool SameFile(string path, string? other)
+        => other is not null && string.Equals(
+            Path.GetFullPath(path),
+            Path.GetFullPath(other),
+            OperatingSystem.IsLinux() ? StringComparison.Ordinal : StringComparison.OrdinalIgnoreCase);
 
     // The arguments of the program with --file set to the path; each other argument
     // stays, the port too.

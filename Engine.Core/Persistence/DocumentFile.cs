@@ -55,13 +55,18 @@ public static class DocumentFile
     // then the session writes each later command to the file. The session must be
     // new, with the unit of the header. It gives the warnings of the open.
     public static Task<IReadOnlyList<Diagnostic>> Open(DocumentSession session, string path, CancellationToken ct = default)
-        => Load(session, path, attach: true, ct);
+        => Load(session, path, attach: true, hold: true, ct);
 
     // ADR-0030 item 5: opens the file in a scratch session on the given backend, with
-    // no write and no lock of the file, and gives null or the error of the open. A
-    // host calls this before it starts again with the file, so that a file that does
-    // not open leaves the person with the window.
-    public static async Task<ErrorDetail?> Check(string path, Engine.Contracts.Geometry.IGeometryBackend backend, CancellationToken ct = default)
+    // no write, and gives null or the error of the open. A host calls this before it
+    // starts again with the file, so that a file that does not open leaves the person
+    // with the window. The check holds the file with the access and the share of a
+    // journal, so a file that another program holds fails it; hold is false only for the
+    // file that the host itself holds, which it frees before it starts again. Until
+    // TASK-0099 the check read with the share of a write and passed for a file of another
+    // desktop, and the new program then stopped (finding V31 of the second codebase review
+    // of 2026-10-28).
+    public static async Task<ErrorDetail?> Check(string path, Engine.Contracts.Geometry.IGeometryBackend backend, bool hold = true, CancellationToken ct = default)
     {
         ArgumentNullException.ThrowIfNull(backend);
         try
@@ -69,7 +74,7 @@ public static class DocumentFile
             var session = new DocumentSession(Hosting.EngineHosting.CreateDefault(backend, ReadLengthUnit(path)));
             try
             {
-                await Load(session, path, attach: false, ct).ConfigureAwait(false);
+                await Load(session, path, attach: false, hold, ct).ConfigureAwait(false);
                 return null;
             }
             finally
@@ -83,7 +88,7 @@ public static class DocumentFile
         }
     }
 
-    private static async Task<IReadOnlyList<Diagnostic>> Load(DocumentSession session, string path, bool attach, CancellationToken ct)
+    private static async Task<IReadOnlyList<Diagnostic>> Load(DocumentSession session, string path, bool attach, bool hold, CancellationToken ct)
     {
         ArgumentNullException.ThrowIfNull(session);
 
@@ -98,7 +103,7 @@ public static class DocumentFile
         // fails before an entry applies. Until TASK-0099 the open read with the share of a
         // write, applied each entry, and only then found the lock, with no code (E83).
         FileStream? held = null;
-        if (attach)
+        if (attach || hold)
         {
             try
             {
@@ -113,7 +118,7 @@ public static class DocumentFile
         try
         {
             var (warnings, validLength) = await Apply(session, path, held, ct).ConfigureAwait(false);
-            if (held is not null)
+            if (attach && held is not null)
             {
                 DocumentJournal journal;
                 try

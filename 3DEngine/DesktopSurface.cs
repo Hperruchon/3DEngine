@@ -146,6 +146,7 @@ internal sealed class DesktopSurface : IDisposable
             Console.Error.WriteLine($"{warning.Code}: {warning.Message}");
         if (host.NewFileMessage is { } made)
             Console.Error.WriteLine(made);
+        document.HeldFile = () => host.Session.FilePath;
 
         try
         {

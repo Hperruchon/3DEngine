@@ -252,11 +252,13 @@ public sealed class DocumentEndpointTests : IDisposable
         host.Session.Close();
     }
 
+    // V37 of the second codebase review of 2026-10-28: after an accepted open, the surface
+    // refuses each command, save and open with HTTP 503, so no command changes the old document.
     [Fact]
     public async Task An_Open_Gives_The_Path_To_The_Host_And_Its_Answer_To_The_Agent()
     {
         var asked = new List<string>();
-        var host = new EngineHost(new InProcessMeshBackend(), "managed", "test");
+        var host = new EngineHost(new InProcessMeshBackend(), "managed", "test", new DocumentFileOptions(null, Path.Combine(_folder, "unsaved")));
         var folder = new DocumentFolder(Documents, (path, _) =>
         {
             asked.Add(path);
@@ -267,17 +269,37 @@ public sealed class DocumentEndpointTests : IDisposable
         await using var app = await StartSurface(host, folder);
         using var http = new HttpClient { BaseAddress = new Uri(app.Urls.First()) };
 
-        var (accepted, _) = await Post(http, "/document/open", new { name = "plate" });
         var (refused, body) = await Post(http, "/document/open", new { name = "bad" });
+        var (applied, _) = await Post(http, "/commands", new { name = "NoOp", schemaVersion = 1, parameters = new { echo = "before" } });
+        var (accepted, _) = await Post(http, "/document/open", new { name = "plate" });
+        var after = new[]
+        {
+            await Post(http, "/commands", new { name = "NoOp", schemaVersion = 1, parameters = new { echo = "after" } }),
+            await Post(http, "/document/save", new { name = "copy" }),
+            await Post(http, "/document/open", new { name = "other" }),
+        };
+        var state = JsonDocument.Parse(await http.GetStringAsync("/document")).RootElement;
 
-        Assert.Equal(HttpStatusCode.Accepted, accepted);
         Assert.Equal(HttpStatusCode.Conflict, refused);
         Assert.Equal(DiagnosticCodes.IoLoadFailed, body.GetProperty("error").GetProperty("code").GetString());
-        Assert.Equal([Path.Combine(Path.GetFullPath(Documents), "plate.3de"), Path.Combine(Path.GetFullPath(Documents), "bad.3de")], asked);
+        Assert.Equal(HttpStatusCode.OK, applied);
+        Assert.Equal(HttpStatusCode.Accepted, accepted);
+        Assert.True(folder.OpenAccepted);
+        foreach (var (status, reply) in after)
+        {
+            Assert.Equal(HttpStatusCode.ServiceUnavailable, status);
+            Assert.Equal(DiagnosticCodes.ApiOpenPending, reply.GetProperty("error").GetProperty("code").GetString());
+        }
+
+        Assert.Equal(1, state.GetProperty("version").GetInt64());
+        Assert.Equal([Path.Combine(Path.GetFullPath(Documents), "bad.3de"), Path.Combine(Path.GetFullPath(Documents), "plate.3de")], asked);
+        host.Session.Close();
     }
 
-    // ADR-0030 item 5: the check opens the file in a scratch session, also a file that
-    // a session of this process holds open, and gives the code of a file that does not open.
+    // ADR-0030 item 5: the check opens the file in a scratch session, and gives the code of a
+    // file that does not open. With no hold it reads the file that the host itself holds. With
+    // the hold, a held file fails on Windows (V31 of the second codebase review of 2026-10-28):
+    // on Linux and macOS .NET takes no lock for a write with the share of a read.
     [Fact]
     public async Task The_Check_Before_An_Open_Reads_A_Held_File_And_Gives_The_Code_Of_A_Bad_One()
     {
@@ -286,8 +308,11 @@ public sealed class DocumentEndpointTests : IDisposable
         DocumentFile.Create(session, path);
         await session.Apply(new NoOpCommand { Echo = "x" });
 
-        var good = await DocumentFile.Check(path, new InProcessMeshBackend());
-        var otherBackend = await DocumentFile.Check(path, NullGeometryBackend.Instance);
+        var good = await DocumentFile.Check(path, new InProcessMeshBackend(), hold: false);
+        var otherBackend = await DocumentFile.Check(path, NullGeometryBackend.Instance, hold: false);
+        var heldElsewhere = await DocumentFile.Check(path, new InProcessMeshBackend());
+        if (OperatingSystem.IsWindows())
+            Assert.Equal(DiagnosticCodes.IoLoadFailed, heldElsewhere!.Code);
         session.Close();
         var bad = Path.Combine(_folder, "bad.3de");
         File.WriteAllText(bad, "{\"format\":\"another\"}\n");

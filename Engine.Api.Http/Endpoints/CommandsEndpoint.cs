@@ -24,8 +24,12 @@ namespace Engine.Api.Http.Endpoints;
 // HTTP 4xx only for transport-level problems. See TASK-0007 §3 + §5.
 internal static class CommandsEndpoint
 {
-    public static async Task<IResult> Handle(HttpContext context, EngineHost host)
+    public static async Task<IResult> Handle(HttpContext context, EngineHost host, DocumentFolder folder)
     {
+        // ADR-0030 item 4: after an accepted open, no command changes the old document (V37).
+        if (folder.OpenAccepted)
+            return DocumentEndpoint.OpenPending();
+
         if (!context.Request.HasJsonContentType())
             return Results.StatusCode(StatusCodes.Status415UnsupportedMediaType);
 

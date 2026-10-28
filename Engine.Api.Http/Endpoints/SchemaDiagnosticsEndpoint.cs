@@ -32,6 +32,7 @@ internal static class SchemaDiagnosticsEndpoint
         new(DiagnosticCodes.GeomBackendInit,       "Error",   "GEOM"),
         new(DiagnosticCodes.ValBodyNameInvalid,    "Error",   "VAL"), // ADR-0028 item 3, TASK-0085
         new(DiagnosticCodes.ApiNotSupported,       "Error",   "API"), // ADR-0030 item 4, TASK-0092
+        new(DiagnosticCodes.ApiOpenPending,        "Error",   "API"), // ADR-0030 item 4, TASK-0099
         new(DiagnosticCodes.IoBackendMismatch,     "Error",   "IO"),  // ADR-0015 item 6, TASK-0091
         new(DiagnosticCodes.IoNotEncodable,        "Error",   "IO"),  // ADR-0015 item 4, TASK-0091
         new(DiagnosticCodes.IoWriteFailed,         "Error",   "IO"),  // ADR-0015 item 4, TASK-0091

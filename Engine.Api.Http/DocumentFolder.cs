@@ -29,6 +29,27 @@ public sealed class DocumentFolder
     // error; null on a host that cannot start itself again (engine-api-http).
     public Func<string, CancellationToken, Task<ErrorDetail?>>? Reopen { get; }
 
+    // ADR-0030 item 4: true after an open that the host accepted. The surface then refuses
+    // each command, save and open with HTTP 503, because the host starts again. Until
+    // TASK-0099 a command after the reply 202 changed the old document (finding V37 of the
+    // second codebase review of 2026-10-28).
+    public bool OpenAccepted => Volatile.Read(ref _openAccepted);
+
+    private bool _openAccepted;
+
+    // Checks the file and starts the host again with it (Reopen), and records an accepted
+    // open. Each open of a host, by HTTP or by its window, goes through here.
+    public async Task<ErrorDetail?> Open(string path, CancellationToken ct)
+    {
+        if (Reopen is not { } reopen)
+            throw new InvalidOperationException("This host cannot start itself again, so it does not open a file.");
+
+        var error = await reopen(path, ct).ConfigureAwait(false);
+        if (error is null)
+            Volatile.Write(ref _openAccepted, true);
+        return error;
+    }
+
     // ADR-0030 item 2: a file name has at most 255 characters on each file system.
     public const int MaximumFileNameLength = 255;
 
