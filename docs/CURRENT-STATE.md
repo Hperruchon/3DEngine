@@ -2473,3 +2473,30 @@ New tests: 30. The test list holds 636 (507 in `Engine.Tests`, 89 in `3DEngine.T
 `3DEngine.ImageTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
 entries: 14 of 15. New diagnostic codes: none. Since the review of v0.76, 4 product milestones and 12 entries
 followed it.
+
+## v0.89 — The codebase review of 2026-10-28 (governance, TASK-0087)
+
+The review of 2026-10-17 examined v0.76, and 4 product milestones and 12 entries followed it, so this entry is the
+tenth codebase review: `docs/reviews/2026-10-28-codebase-review.md`, at `main` `e0a2c98`.
+
+**The state.** Each fix of the period held for the forms that it named: E66 to E71, V16 to V24, T55 to T61, and
+E46. The measures: 11,494 production lines in 147 files, 636 tests, 0 warnings, and open findings 0 critical, 6
+high, 26 medium and 32 low.
+
+**The new findings.** Fourteen. One is high: a test framework of xUnit in a file that is not a gate file makes
+each failed test pass, and the exact count stays (T62; I ran it). Four are medium: a click on the scene does not end
+a text field, so Rename can rename the wrong body (V26); each frame costs time in the square of the count of bodies
+(V27); a project under a `bin/` folder hides from two gates (T63); the gate of the UI library reads text (T64). V29
+carries the touch path that no screen has checked, as the owner chose on 2026-10-27.
+
+**The tasks.** TASK-0088 (P0.34) holds T62 and comes before P8a. TASK-0089 (P0.35) holds T63 to T67, and
+TASK-0090 (P0.36) holds E72 to E74, V18, V26 to V28 and V30; both come after P8a. The register stays at 14 of 15.
+
+**Questions for the owner.** Q1 to Q7 are the decisions of P8a: the identifier of a document at an open, the
+identity of the backend (KD3), the length unit (KD4), a document with no name, the open in the desktop, save and
+open by an agent, and the place of the code. Q2 and Q3 can each change the public shape of `Engine.Contracts`. Q8:
+the research gives 5 to 7 evenings for P8a and the roadmap 3 to 5, so the review proposes a split into P8a1 and P8a2.
+
+New tests: none. The test list holds 636. `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero
+warnings. Open entries: 14 of 15. New diagnostic codes: none. The next codebase review is due when more than four
+product milestones or more than twelve entries follow v0.88.

@@ -329,6 +329,11 @@ to case and refuse a wildcard reference, the determinism gate binds each name of
 an async lambda that returns void, the workflow reads the repository only, and the review gate checks the
 declared ledger version. T31 stays open in part: the three gates that run engine code stay in the test process.
 T4, T5, T7, T10, T13, T17, T23 and T25 stay.
+Progress 2026-10-28: the codebase review of 2026-10-28 finds the fixes of T54 to T61 held for their forms, and
+new forms: a test framework of xUnit in a file that is not a gate file makes each failed test pass with the exact
+count (T62, high), a project under a `bin/` folder hides from the dependency and determinism gates (T63), the gate
+of the UI library reads text (T64), and T65 to T67. T31 is worse through T62. TASK-0088 holds T62, and TASK-0089
+holds T63 to T67. T4, T5, T7, T10, T13, T17, T23 and T25 stay.
 
 ### R-0033 · Seven findings of the third codebase review in the engine and the hosts have no task
 - class: debt
