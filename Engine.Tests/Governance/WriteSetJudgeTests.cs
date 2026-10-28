@@ -81,6 +81,11 @@ public class WriteSetJudgeTests
     [InlineData("after.3DEngine.sln.targets")]
     [InlineData("before.3DEngine.sln.targets")]
     [InlineData("Engine.Tests/Engine.Tests.csproj.user")]
+    // Finding T69 of the second codebase review of 2026-10-28 (TASK-0097): the project
+    // file of each test project.
+    [InlineData("3DEngine.Tests/3DEngine.Tests.csproj")]
+    [InlineData("3DEngine.ImageTests/3DEngine.ImageTests.csproj")]
+    [InlineData("3dengine.tests/3DEngine.Tests.csproj")]
     [InlineData("directory.build.props")]
     [InlineData("eng/count-tests.js")]
     [InlineData("eng/test-floor.txt")]
