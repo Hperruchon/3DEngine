@@ -114,3 +114,6 @@ a person sees it in the desktop.
   their text changes in this commit.
 - 2026-10-28: the contract, the bus, the history, the seven commands, `GetSketch`, the six codes, the events and the
   snapshot. Eleven new tests; the replay gate holds a sketch. Six injections each failed a test.
+- 2026-10-28: the desktop draws each live sketch over the scene, read only (`SessionSketches`, `SketchOverlay`, the
+  background list of the panel). Eight new tests; five injections each failed a test. The visual check ran on this
+  computer: a box, a rectangle on XY and a line on XZ.

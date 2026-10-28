@@ -34,6 +34,9 @@ public sealed class NativeThreeDEngine : IThreeDEngine, IDisposable
     private SceneRenderer? _renderer;
     private UiRenderer? _uiRenderer;
     private DesktopUi? _ui;
+
+    // ADR-0033 item 13: the live sketches, which the panel draws over the scene.
+    private SessionSketches? _sketches;
     private TimeSpan _delta;
 
     internal NativeThreeDEngine(Window window, EngineHost host, IntentSettings? settings = null, bool synchronizationValidation = false, string address = "", DesktopDocument? document = null)
@@ -74,6 +77,7 @@ public sealed class NativeThreeDEngine : IThreeDEngine, IDisposable
         var (width, height, rgba) = _ui.FontAtlas();
         _ui.SetFontTexture(_uiRenderer.CreateTexture(width, height, rgba));
         _actions = new BodyActions(_host.Session);
+        _sketches = new SessionSketches(_host);
     }
 
     public void Update(TimeSpan deltaTime)
@@ -219,7 +223,9 @@ public sealed class NativeThreeDEngine : IThreeDEngine, IDisposable
             ? new Vector2((float)extent.width / window.width, (float)extent.height / window.height)
             : Vector2.One;
         _actions?.Forget(_renderer.LiveBodies);
-        var panel = _ui.Frame((float)_delta.TotalSeconds, display, scale, _renderer.LiveBodies, Selection, _document is null ? null : new DocumentLine(_host.FileName, _documentMessage));
+        _sketches?.Apply();
+        var sketches = _sketches is null ? null : SketchOverlay.Of(_sketches.Live, Camera, window.width, window.height);
+        var panel = _ui.Frame((float)_delta.TotalSeconds, display, scale, _renderer.LiveBodies, Selection, _document is null ? null : new DocumentLine(_host.FileName, _documentMessage), sketches);
         ApplyPanel(_renderer.LiveBodies);
 
         var ui = _uiRenderer;
@@ -245,6 +251,8 @@ public sealed class NativeThreeDEngine : IThreeDEngine, IDisposable
         _renderer = null;
         _uiRenderer?.Dispose();
         _uiRenderer = null;
+        _sketches?.Dispose();
+        _sketches = null;
         _ui?.Dispose();
         _ui = null;
         _graphicsDevice?.Dispose();
