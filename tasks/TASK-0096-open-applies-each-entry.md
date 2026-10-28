@@ -1,7 +1,7 @@
 ---
 id: 0096
 title: An open applies each entry of the document file and gives its version, or refuses the file
-status: Ready
+status: Active
 phase: P0.37
 opened: 2026-10-28
 depends-on: [0095]
@@ -19,6 +19,7 @@ writes:
     - docs/adr/0015-command-log-persistence.md
     - docs/adr/README.md
     - eng/test-floor.txt
+    - tasks/TASK-0098-gate-forms-of-the-eleventh-review.md
     - docs/register.md
     - docs/roadmap.md
     - docs/CURRENT-STATE.md
@@ -88,3 +89,6 @@ An open gives the Document that wrote the file, or it refuses the file with `E-I
 ## Progress
 
 - 2026-10-28: opened by the second codebase review of 2026-10-28 (TASK-0095).
+- 2026-10-28: the owner answered the questions of the second codebase review of 2026-10-28, A to each. This first
+  commit records the answers: the roadmap rows K2a, K2b, K2 and K0a hold Q1 to Q9, TASK-0098 holds Q10, and register
+  entry R-0042 closes.
