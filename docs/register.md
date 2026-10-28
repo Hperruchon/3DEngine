@@ -139,19 +139,6 @@ this: a projection with no graphics code may read `Engine.Contracts`, and design
 render state. The owner did not decide it.
 Exit: the owner decides before phase R5 starts, and ADR-0009 is amended or kept.
 
-### R-0025 · ADR-0015 describes the durability of a server and not a document file
-- class: question
-- opened: 2026-09-25
-- due: 2026-12-24
-- extended: no
-- refs: ADR-0015 §5, ADR-0019, `CLAUDE.md` section "Scope clamps", objective 11, `docs/reviews/2026-09-23-architecture-challenge.md` concern 7
-`CLAUDE.md` connects objective 11 to "a document that a person saves and opens". ADR-0015 has the
-status `Proposed`, and its §5 limits persistence to one log file for each `engine-api-http` process,
-with no open and no save by a person. Under ADR-0019 the desktop owns the session, therefore that
-scope misses the product. The architecture challenge recommends a rewrite around a document file. The
-owner did not decide it.
-Exit: the owner accepts a rewritten ADR-0015, or refuses the rewrite and gives the reason.
-
 ### R-0027 · Six findings of the first codebase review have no task
 - class: debt
 - opened: 2026-09-30
@@ -450,6 +437,22 @@ Closed YYYY-MM-DD · resolved · commit <hash>
 Closed YYYY-MM-DD · decided  · ADR-nnnn
 Closed YYYY-MM-DD · accepted · the reason to keep the condition
 ```
+
+### R-0025 · ADR-0015 describes the durability of a server and not a document file
+- class: question
+- opened: 2026-09-25
+- due: 2026-12-24
+- extended: no
+- refs: ADR-0015 §5, ADR-0019, `CLAUDE.md` section "Scope clamps", objective 11, `docs/reviews/2026-09-23-architecture-challenge.md` concern 7
+`CLAUDE.md` connects objective 11 to "a document that a person saves and opens". ADR-0015 has the
+status `Proposed`, and its §5 limits persistence to one log file for each `engine-api-http` process,
+with no open and no save by a person. Under ADR-0019 the desktop owns the session, therefore that
+scope misses the product. The architecture challenge recommends a rewrite around a document file. The
+owner did not decide it.
+Exit: the owner accepts a rewritten ADR-0015, or refuses the rewrite and gives the reason.
+Closed 2026-10-28 · decided · ADR-0015. The owner accepted the rewritten ADR-0015 on 2026-10-28 (KD4): the document
+file is the command log in JSON Lines, which the desktop opens and saves. TASK-0091 builds it in the engine and the
+server, and P8f in the desktop.
 
 ### R-0021 · The project has no decision on how to show the application
 - class: question

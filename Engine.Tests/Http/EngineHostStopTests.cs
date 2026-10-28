@@ -107,6 +107,8 @@ public class EngineHostStopTests
 
         public bool Disposed { get; private set; }
 
+        public BackendIdentity Identity { get; } = new("test", "1");
+
         public BackendCapabilities Capabilities => BackendCapabilities.Mesh;
 
         public T? TryGet<T>() where T : class => this as T;

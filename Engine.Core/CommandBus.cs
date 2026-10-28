@@ -82,6 +82,11 @@ public sealed class CommandBus
 
     public Document Document => _document;
 
+    // ADR-0015 item 4: the file that each applied command goes into before its
+    // result, or null for a bus with no file (a replay, the command line, a test).
+    // The session sets it, in its serial section or before its first command.
+    internal Persistence.DocumentJournal? Journal { get; set; }
+
     public async Task<CommandResult> Apply(Command command, CancellationToken ct = default)
     {
         if (command is null) throw new ArgumentNullException(nameof(command));
@@ -128,6 +133,13 @@ public sealed class CommandBus
             return Reject(command, error, stopwatch);
         }
 
+        // ADR-0015 item 4: after a failed write the file is not the log, so the
+        // session refuses each later command before its handler runs.
+        if (Journal is { Broken: true } broken)
+            return Reject(command, new ErrorDetail(
+                DiagnosticCodes.IoWriteFailed,
+                $"An earlier write of the document file {broken.FilePath} failed, so the session refuses each command."), stopwatch);
+
         // 2. Optimistic version check
         if (command.ExpectedDocumentVersion is { } expected && expected != _document.Version)
         {
@@ -153,7 +165,43 @@ public sealed class CommandBus
             return Reject(command, handlerResult.Error!, stopwatch, handlerResult.Diagnostics);
 
         RefuseWrongBodyLists(command, handlerResult);
+
+        if (Journal is { } journal && Write(journal, command, handler, handlerResult, stopwatch) is { } refused)
+            return refused;
+
         return Commit(command, handlerResult, stopwatch);
+    }
+
+    // ADR-0015 item 4: the entry goes into the file before the commit, so each
+    // applied command is in the file before its result. A command that the file
+    // cannot hold, or a failed write, is a rejection, and the Document does not
+    // change. The body that the handler made stays in the backend: a leak, not a
+    // wrong Document.
+    private (CommandResult, IReadOnlyList<EventRecord>)? Write(
+        Persistence.DocumentJournal journal,
+        Command command,
+        ICommandHandler handler,
+        CommandHandlerResult handlerResult,
+        Stopwatch stopwatch)
+    {
+        if (handler is not Persistence.ICommandEncoder encoder)
+            throw new InvalidOperationException(
+                $"The handler of '{command.Name}'@{command.SchemaVersion} has no encoder, so a document file cannot hold its "
+                + "command. ADR-0015 item 11: each handler of HandlerCatalog implements ICommandEncoder.");
+
+        var line = Persistence.EntryCodec.Entry(_document.Version + 1, _backend.Identity, command, encoder.Encode(command), out var refusal);
+        if (line is null)
+            return Reject(command, new ErrorDetail(DiagnosticCodes.IoNotEncodable, refusal!), stopwatch, handlerResult.Diagnostics);
+
+        try
+        {
+            journal.Append(line);
+            return null;
+        }
+        catch (IOException ex)
+        {
+            return Reject(command, new ErrorDetail(DiagnosticCodes.IoWriteFailed, ex.Message), stopwatch, handlerResult.Diagnostics);
+        }
     }
 
     // ADR-0021 item 2: a handler consumes only a live body, and it gives each
@@ -228,7 +276,7 @@ public sealed class CommandBus
             }),
         };
 
-        _document.AppendCommand(command);
+        _document.AppendCommand(new LogEntry(command, _backend.Identity));
 
         var lastSeq = appliedSeq;
         foreach (var body in handlerResult.CreatedBodies)

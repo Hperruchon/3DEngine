@@ -44,6 +44,7 @@ internal sealed record SnapshotMessage(
     long Seq,
     DateTime CreatedAt,
     DateTime UpdatedAt,
+    string LengthUnit,
     IReadOnlyList<SnapshotBodyEntry> Bodies);
 
 // ADR-0012 §6 and ADR-0028 item 7: each live body with its kind, its name and its visibility.
@@ -59,6 +60,8 @@ internal static class SnapshotProjector
         Seq: seq,
         CreatedAt: doc.CreatedAt,
         UpdatedAt: doc.UpdatedAt,
+        // ADR-0015 item 7, which amends ADR-0010 section 2.
+        LengthUnit: doc.LengthUnit,
         Bodies: doc.Bodies
             .Select(b => new SnapshotBodyEntry(b.Handle.Id, b.Kind, b.Name, b.Visible))
             .ToArray());

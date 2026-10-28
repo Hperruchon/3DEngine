@@ -47,7 +47,7 @@ public class CommandBusTests
         Assert.Equal(command.CommandId, events[0].CauseCommandId);
 
         Assert.Single(doc.Log);
-        Assert.Same(command, doc.Log[0]);
+        Assert.Same(command, doc.Log[0].Command);
     }
 
     [Fact]

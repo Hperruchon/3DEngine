@@ -2,6 +2,7 @@ using System.Diagnostics;
 using System.Net;
 using System.Net.Http.Json;
 using System.Net.WebSockets;
+using System.Text.Json;
 using System.Text.RegularExpressions;
 using Engine.Api.Http;
 using Microsoft.AspNetCore.Mvc.Testing;
@@ -388,6 +389,110 @@ public class HostGuardTests : IClassFixture<WebApplicationFactory<Program>>
         Assert.Contains("The host did not start", error, StringComparison.Ordinal);
         Assert.DoesNotContain("Unhandled exception", error, StringComparison.Ordinal);
         GC.KeepAlive(outputText);
+    }
+
+    // ADR-0015 items 4 and 10 (TASK-0091): with --file, each applied command is in the
+    // file before its result. The test kills the host after the results, so no stop
+    // writes anything, and a second host opens the file to the same body.
+    [Fact]
+    public async Task A_Host_With_A_File_Keeps_Each_Applied_Command_After_A_Kill()
+    {
+        var folder = Directory.CreateTempSubdirectory("engine-api-http-file-").FullName;
+        var path = Path.Combine(folder, "plate.3de");
+        try
+        {
+            Guid bodyId;
+            using (var first = StartHost($"--urls http://127.0.0.1:0 --file \"{path}\"", httpPorts: null))
+            {
+                using var http = new HttpClient { BaseAddress = new Uri(await ListeningAddressAsync(first)) };
+                bodyId = (await PostAsync(http, "/commands", new { name = "CreateBox", schemaVersion = 1, parameters = new { sizeX = 1.0, sizeY = 2.0, sizeZ = 3.0 } }))
+                    .GetProperty("outputs").GetProperty("bodyId").GetGuid();
+                var renamed = await PostAsync(http, "/commands", new { name = "RenameBody", schemaVersion = 1, parameters = new { bodyId, name = "Plate" } });
+                Assert.Equal("Applied", renamed.GetProperty("status").GetString());
+                first.Kill(entireProcessTree: true);
+                await first.WaitForExitAsync();
+            }
+
+            Assert.Equal(3, File.ReadAllLines(path).Length);
+
+            using var second = StartHost($"--urls http://127.0.0.1:0 --file \"{path}\"", httpPorts: null);
+            try
+            {
+                using var http = new HttpClient { BaseAddress = new Uri(await ListeningAddressAsync(second)) };
+                var info = (await PostAsync(http, "/queries", new { name = "GetBodyInfo", schemaVersion = 1, parameters = new { bodyId = bodyId.ToString() } }))
+                    .GetProperty("result");
+                Assert.Equal("Plate", info.GetProperty("name").GetString());
+            }
+            finally
+            {
+                second.Kill(entireProcessTree: true);
+                await second.WaitForExitAsync();
+            }
+        }
+        finally
+        {
+            Directory.Delete(folder, recursive: true);
+        }
+    }
+
+    // ADR-0015 item 10: with no --file the document is in memory only, and the host
+    // says so before it serves a request (the owner, 2026-10-28).
+    [Fact]
+    public async Task A_Host_With_No_File_Says_That_The_Document_Is_In_Memory_Only()
+    {
+        using var process = StartHost("--urls http://127.0.0.1:0", httpPorts: null);
+        var errorText = process.StandardError.ReadToEndAsync();
+        try
+        {
+            await ListeningAddressAsync(process);
+        }
+        finally
+        {
+            process.Kill(entireProcessTree: true);
+            await process.WaitForExitAsync();
+        }
+
+        Assert.Contains("has no document file", await errorText, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task A_Host_Whose_File_Does_Not_Open_Stops_With_Exit_Code_6()
+    {
+        var folder = Directory.CreateTempSubdirectory("engine-api-http-file-").FullName;
+        var path = Path.Combine(folder, "bad.3de");
+        File.WriteAllText(path, "{\"format\":\"another-document\",\"formatVersion\":1,\"lengthUnit\":\"mm\"}\n");
+        try
+        {
+            using var process = StartHost($"--urls http://127.0.0.1:0 --file \"{path}\"", httpPorts: null);
+            var errorText = process.StandardError.ReadToEndAsync();
+            var outputText = process.StandardOutput.ReadToEndAsync();
+            using var limit = new CancellationTokenSource(TimeSpan.FromSeconds(30));
+            try
+            {
+                await process.WaitForExitAsync(limit.Token);
+            }
+            catch (OperationCanceledException)
+            {
+                process.Kill(entireProcessTree: true);
+                Assert.Fail("The host did not exit within 30 seconds.");
+            }
+
+            var error = await errorText;
+            Assert.True(process.ExitCode == 6, $"The exit code is {process.ExitCode}. The error output: {error}");
+            Assert.Contains("E-IO-LOAD-FAILED", error, StringComparison.Ordinal);
+            GC.KeepAlive(outputText);
+        }
+        finally
+        {
+            Directory.Delete(folder, recursive: true);
+        }
+    }
+
+    private static async Task<JsonElement> PostAsync(HttpClient http, string route, object body)
+    {
+        using var response = await http.PostAsJsonAsync(route, body);
+        response.EnsureSuccessStatusCode();
+        return JsonDocument.Parse(await response.Content.ReadAsStringAsync()).RootElement.Clone();
     }
 
     // The host binary and its runtime configuration are in the test output,

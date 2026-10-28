@@ -29,11 +29,13 @@ namespace Engine.Core.Hosting;
 // the exact defect that register entry R-0003 recorded.
 public static class EngineHosting
 {
-    public static EngineKit CreateDefault(IGeometryBackend backend)
+    // ADR-0015 item 8: a host that opens a document file makes the Document with the
+    // length unit of its header.
+    public static EngineKit CreateDefault(IGeometryBackend backend, string lengthUnit = Document.Millimetre)
     {
         ArgumentNullException.ThrowIfNull(backend);
 
-        var document = new Document();
+        var document = new Document(lengthUnit: lengthUnit);
         var commands = new CommandRegistry();
         var queries = new QueryRegistry();
         HandlerCatalog.RegisterAll(commands, queries);
