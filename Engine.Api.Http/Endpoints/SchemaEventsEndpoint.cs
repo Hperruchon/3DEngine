@@ -56,6 +56,7 @@ internal static class SchemaEventsEndpoint
         new("subscription.reset", Fields(("documentId", "guid"), ("snapshot", "object"))),
         new("body.created", BodyFields(("bodyId", "guid"), ("kind", "string"))), // ADR-0012 §5, ADR-0028 item 7
         new("body.consumed", Fields(("bodyId", "guid"))), // ADR-0021 item 6, TASK-0037
+        new("body.removed", Fields(("bodyId", "guid"))), // ADR-0031 item 6, TASK-0093
         new("body.changed", BodyFields(("bodyId", "guid"))), // ADR-0028 item 7, TASK-0085
     };
 

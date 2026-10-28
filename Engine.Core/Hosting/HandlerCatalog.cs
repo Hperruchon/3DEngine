@@ -29,6 +29,8 @@ public static class HandlerCatalog
         new SubtractCommandHandler(),
         new RenameBodyCommandHandler(),
         new SetBodyVisibilityCommandHandler(),
+        new UndoCommandHandler(),
+        new RedoCommandHandler(),
     ];
 
     public static IReadOnlyList<IQueryHandler> QueryHandlers() =>

@@ -18,6 +18,8 @@ internal static class SchemaDiagnosticsEndpoint
         new(DiagnosticCodes.CommandUnknown,        "Error",   "CMD"),
         new(DiagnosticCodes.CommandVersionStale,   "Error",   "CMD"),
         new(DiagnosticCodes.CommandBusBusy,        "Error",   "CMD"),
+        new(DiagnosticCodes.CommandNothingToUndo,  "Error",   "CMD"), // ADR-0031 item 8, TASK-0093
+        new(DiagnosticCodes.CommandNothingToRedo,  "Error",   "CMD"), // ADR-0031 item 8, TASK-0093
         new(DiagnosticCodes.QueryUnknown,          "Error",   "QRY"),
         new(DiagnosticCodes.ApiBadRequest,         "Error",   "API"),
         new(DiagnosticCodes.ApiWsInvalidSubscribe, "Error",   "API"),
