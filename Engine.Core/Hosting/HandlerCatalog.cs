@@ -31,6 +31,13 @@ public static class HandlerCatalog
         new SetBodyVisibilityCommandHandler(),
         new UndoCommandHandler(),
         new RedoCommandHandler(),
+        new CreateSketchCommandHandler(),
+        new AddSketchPointCommandHandler(),
+        new AddSketchLineCommandHandler(),
+        new AddSketchConstraintCommandHandler(),
+        new SetSketchConstraintValueCommandHandler(),
+        new MoveSketchPointCommandHandler(),
+        new DeleteSketchItemCommandHandler(),
     ];
 
     public static IReadOnlyList<IQueryHandler> QueryHandlers() =>
@@ -38,6 +45,7 @@ public static class HandlerCatalog
         new GetBoundingBoxQueryHandler(),
         new GetTessellationQueryHandler(),
         new GetBodyInfoQueryHandler(),
+        new GetSketchQueryHandler(),
     ];
 
     public static void RegisterAll(CommandRegistry commands, QueryRegistry queries)

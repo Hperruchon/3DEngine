@@ -22,12 +22,17 @@ writes:
     - Engine.Core/Queries/**
     - Engine.Core/Hosting/HandlerCatalog.cs
     - Engine.Api.Http/Endpoints/SchemaEventsEndpoint.cs
+    - Engine.Api.Http/Endpoints/SchemaDiagnosticsEndpoint.cs
     - Engine.Api.Http/WebSockets/WireMessage.cs
     - Engine.Tests/Sketch/**
     - Engine.Tests/Commands/**
     - Engine.Tests/Http/**
     - Engine.Tests/Hosting/**
     - Engine.Tests/Persistence/**
+    - Engine.Tests/ReplayDeterminism/ReplayDeterminismFixture.cs
+    - Engine.Tests/ReplayDeterminism/ReplayDeterminismGateTests.cs
+    - Engine.Tests/Hosting/DispatchSurfaceGateTests.cs
+    - docs/adr/0033-sketch-model.md
     - 3DEngine/**
     - 3DEngine.ImageTests/**
     - docs/adr/0012-geometry-backend-wiring.md
@@ -107,3 +112,5 @@ a person sees it in the desktop.
 - 2026-10-28: opened with ADR-0033 as Proposed. The work waits for the owner to accept the contract.
 - 2026-10-28: the owner accepted ADR-0033 with no change. The record amends ADR-0012, ADR-0021 and ADR-0031, and
   their text changes in this commit.
+- 2026-10-28: the contract, the bus, the history, the seven commands, `GetSketch`, the six codes, the events and the
+  snapshot. Eleven new tests; the replay gate holds a sketch. Six injections each failed a test.

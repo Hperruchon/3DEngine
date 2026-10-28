@@ -39,6 +39,12 @@ internal static class SchemaDiagnosticsEndpoint
         new(DiagnosticCodes.IoSaveFailed,          "Error",   "IO"),  // ADR-0015 item 9, TASK-0091
         new(DiagnosticCodes.IoTruncated,           "Warning", "IO"),  // ADR-0015 item 8, TASK-0091
         new(DiagnosticCodes.IoBackendVersion,      "Warning", "IO"),  // ADR-0015 item 6, TASK-0091
+        new(DiagnosticCodes.SketchNotFound,        "Error",   "SKETCH"), // ADR-0033 item 6, TASK-0100
+        new(DiagnosticCodes.SketchDatumNotFound,   "Error",   "SKETCH"), // ADR-0033 item 6, TASK-0100
+        new(DiagnosticCodes.SketchItemNotFound,    "Error",   "SKETCH"), // ADR-0033 item 6, TASK-0100
+        new(DiagnosticCodes.SketchLineInvalid,     "Error",   "SKETCH"), // ADR-0033 item 6, TASK-0100
+        new(DiagnosticCodes.SketchConstraintInvalid, "Error", "SKETCH"), // ADR-0033 item 6, TASK-0100
+        new(DiagnosticCodes.SketchNameInvalid,     "Error",   "SKETCH"), // ADR-0033 items 4 and 6, TASK-0100
     };
 
     public static IResult Handle() => Results.Json(Codes, ApiJson.Options);

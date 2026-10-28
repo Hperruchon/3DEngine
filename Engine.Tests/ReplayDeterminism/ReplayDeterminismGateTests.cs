@@ -66,6 +66,9 @@ public class ReplayDeterminismGateTests
             Assert.Equal(expected.Name, bodies[i].Name);
             Assert.Equal(expected.Visible, bodies[i].Visible);
         }
+
+        // ADR-0033 (TASK-0100): the sketches, with the bits of each position and value.
+        Assert.Equal(ReplayDeterminismFixture.ExpectedSketches, result.Document.Sketches.Select(ReplayDeterminismFixture.Text));
     }
 
     [Fact]
@@ -103,5 +106,7 @@ public class ReplayDeterminismGateTests
             Assert.Equal(firstBodies[i].Name, secondBodies[i].Name);
             Assert.Equal(firstBodies[i].Visible, secondBodies[i].Visible);
         }
+
+        Assert.Equal(first.Document.Sketches.Select(ReplayDeterminismFixture.Text), second.Document.Sketches.Select(ReplayDeterminismFixture.Text));
     }
 }
