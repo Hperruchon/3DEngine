@@ -12,7 +12,10 @@ public sealed class DocumentFolder
     public DocumentFolder(string path, Func<string, CancellationToken, Task<ErrorDetail?>>? reopen = null)
     {
         ArgumentException.ThrowIfNullOrEmpty(path);
-        FullPath = System.IO.Path.GetFullPath(path);
+        // A folder with a final separator refused each name until TASK-0099, because
+        // GetDirectoryName gives no final separator (finding E79 of the second codebase
+        // review of 2026-10-28).
+        FullPath = System.IO.Path.TrimEndingDirectorySeparator(System.IO.Path.GetFullPath(path));
         Reopen = reopen;
     }
 

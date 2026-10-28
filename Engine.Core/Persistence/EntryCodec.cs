@@ -158,7 +158,11 @@ public static class EntryCodec
                 raw[parameter.Name] = (declared, value.ValueKind) switch
                 {
                     (_, JsonValueKind.Null) => null,
-                    ("number", JsonValueKind.Number) => value.GetDouble(),
+                    // The writer refuses a number that is not finite (ADR-0015 item 4), so the
+                    // reader does too. Until TASK-0099 1e400 read as an infinity (E78).
+                    ("number", JsonValueKind.Number) => value.GetDouble() is var number && double.IsFinite(number)
+                        ? number
+                        : throw DocumentFileException.Load($"The parameter '{parameter.Name}' of {name} is {value.GetRawText()}, which is not a finite double."),
                     ("integer", JsonValueKind.Number) => value.GetInt64(),
                     ("boolean", JsonValueKind.True or JsonValueKind.False) => value.GetBoolean(),
                     ("string" or "guid", JsonValueKind.String) => value.GetString(),

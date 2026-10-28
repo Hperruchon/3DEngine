@@ -455,12 +455,19 @@ public class HostGuardTests : IClassFixture<WebApplicationFactory<Program>>
         Assert.Contains("has no document file", await errorText, StringComparison.Ordinal);
     }
 
-    [Fact]
-    public async Task A_Host_Whose_File_Does_Not_Open_Stops_With_Exit_Code_6()
+    // A --file that names a folder gave exit code 5 until TASK-0099 (finding E82 of the
+    // second codebase review of 2026-10-28).
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task A_Host_Whose_File_Does_Not_Open_Stops_With_Exit_Code_6(bool fileIsAFolder)
     {
         var folder = Directory.CreateTempSubdirectory("engine-api-http-file-").FullName;
         var path = Path.Combine(folder, "bad.3de");
-        File.WriteAllText(path, "{\"format\":\"another-document\",\"formatVersion\":1,\"lengthUnit\":\"mm\"}\n");
+        if (fileIsAFolder)
+            Directory.CreateDirectory(path);
+        else
+            File.WriteAllText(path, "{\"format\":\"another-document\",\"formatVersion\":1,\"lengthUnit\":\"mm\"}\n");
         try
         {
             using var process = StartHost($"--urls http://127.0.0.1:0 --file \"{path}\"", httpPorts: null);

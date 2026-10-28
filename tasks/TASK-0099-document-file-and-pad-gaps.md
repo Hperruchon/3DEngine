@@ -104,3 +104,8 @@ person sees.
 - 2026-10-28: opened by the second codebase review of 2026-10-28 (TASK-0095).
 - 2026-10-28: the owner decided to do P0.40 now, after K2b and before K3a and P0.39. `depends-on` names TASK-0101
   (K2b, Done) and not TASK-0098 (P0.39), and the status is Active. `roadmap.md`, "Order", rule 1, says so.
+- 2026-10-28: seven questions went to the owner (E76, E77, E81, E85, V31 to V34, V37): each one changes a Decision
+  section of ADR-0015, ADR-0030 or ADR-0032.
+- 2026-10-28: E78, E79, E80, E82, E83 and E84 are corrected, with 10 new test cases. Nine injections each failed a
+  test. The test of E83 asserts on Windows only, because .NET takes no lock on Linux and macOS for a write with the
+  share of a read.

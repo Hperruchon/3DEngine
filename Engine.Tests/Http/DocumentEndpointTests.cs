@@ -138,6 +138,38 @@ public sealed class DocumentEndpointTests : IDisposable
         Assert.Null(refusal);
     }
 
+    // E79 of the second codebase review of 2026-10-28: a folder with a final separator
+    // refused each name.
+    [Fact]
+    public void A_Folder_With_A_Final_Separator_Resolves_A_Plain_Name()
+    {
+        var folder = new DocumentFolder(Documents + Path.DirectorySeparatorChar);
+
+        Assert.Equal(Path.Combine(Path.GetFullPath(Documents), "plate.3de"), folder.Resolve("plate", out var refusal));
+        Assert.Null(refusal);
+    }
+
+    // E80: a name with a lone surrogate gave HTTP 500 with no body.
+    [Fact]
+    public async Task A_Name_That_Is_Not_Well_Formed_Text_Is_Refused()
+    {
+        var host = new EngineHost(new InProcessMeshBackend(), "managed", "test", new DocumentFileOptions(null, Path.Combine(_folder, "unsaved")));
+        await using var app = await StartSurface(host, new DocumentFolder(Documents, (_, _) => Task.FromResult<ErrorDetail?>(null)));
+        using var http = new HttpClient { BaseAddress = new Uri(app.Urls.First()) };
+
+        foreach (var route in new[] { "/document/save", "/document/open" })
+        {
+            using var content = new StringContent("{\"name\":\"\\ud800\"}", System.Text.Encoding.UTF8, "application/json");
+            using var response = await http.PostAsync(route, content);
+            var body = JsonDocument.Parse(await response.Content.ReadAsStringAsync()).RootElement;
+
+            Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+            Assert.Equal(DiagnosticCodes.ApiBadRequest, body.GetProperty("error").GetProperty("code").GetString());
+        }
+
+        host.Session.Close();
+    }
+
     // ADR-0030 item 4: engine-api-http cannot start itself again.
     [Fact]
     public async Task An_Open_On_A_Host_That_Cannot_Start_Again_Is_Not_Supported()
