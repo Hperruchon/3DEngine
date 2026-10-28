@@ -28,17 +28,38 @@ internal static class JsonParameters
 
     private static object? Convert(JsonElement element) => element.ValueKind switch
     {
-        JsonValueKind.String => element.GetString(),
+        JsonValueKind.String => Text(element),
         JsonValueKind.True => true,
         JsonValueKind.False => false,
         JsonValueKind.Null => null,
         JsonValueKind.Number => AsNumber(element),
 
-        // An object and an array are deferred by ADR-0016. The raw text reaches
-        // the binder, which reports the declared type as unsupported. The
-        // failure is therefore visible and names the field.
-        _ => element.GetRawText(),
+        // An object and an array are deferred by ADR-0016. They reach the binder as a
+        // value that is not a string, so a field of each declared type refuses them and
+        // names the field. Until TASK-0090 the raw text reached the binder as a string,
+        // and a string field took it (finding E72 of the codebase review of 2026-10-28).
+        _ => new NotAString($"the JSON value {element.GetRawText()}"),
     };
+
+    // A JSON string that is not well-formed UTF-16 is refused as a value, and not with
+    // HTTP 500 (finding E73).
+    private static object Text(JsonElement element)
+    {
+        try
+        {
+            return element.GetString()!;
+        }
+        catch (InvalidOperationException)
+        {
+            return new NotAString("a string that is not well-formed UTF-16");
+        }
+    }
+
+    // A value that the binder must not read as text; its text names it in a refusal.
+    private sealed record NotAString(string Description)
+    {
+        public override string ToString() => Description;
+    }
 
     private static object AsNumber(JsonElement element)
         => element.TryGetInt64(out var whole) ? whole : element.GetDouble();

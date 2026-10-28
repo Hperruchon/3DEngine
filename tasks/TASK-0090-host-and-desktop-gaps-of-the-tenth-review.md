@@ -109,3 +109,9 @@ and the desktop sends the command that a person asks for.
   count of the visible bodies that have a mesh until the next change; `SessionBodies` reads it for the count, the
   box and the pick. Two tests; an injection that counts at each read failed one. The full image tests, with the
   first demonstration on the GPU of this computer, pass.
+- 2026-10-28: E72 and the HTTP part of E73. The reader of a JSON request gives an object, an array and a string
+  that is not well-formed UTF-16 as values that are not strings, and the binder takes only a string for a field of
+  type string; the command line gives each value as text. A name 42, true, an object, an array and "\ud800" each
+  give HTTP 400 with `E-API-BAD-REQUEST` (five test cases); "\ud800" gave HTTP 500 before. The old rule of the
+  binder failed the five cases, and a reader with no catch of a bad string failed one. The rule of a name in
+  `BodyNames` (E73, ADR-0028 item 3) waits for the owner.
