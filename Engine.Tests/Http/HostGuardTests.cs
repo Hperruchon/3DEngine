@@ -431,7 +431,7 @@ public class HostGuardTests : IClassFixture<WebApplicationFactory<Program>>
         }
         finally
         {
-            Directory.Delete(folder, recursive: true);
+            await DeleteFolder(folder);
         }
     }
 
@@ -484,7 +484,26 @@ public class HostGuardTests : IClassFixture<WebApplicationFactory<Program>>
         }
         finally
         {
-            Directory.Delete(folder, recursive: true);
+            await DeleteFolder(folder);
+        }
+    }
+
+    // Windows can hold the file of a killed host for a short time after its exit (run
+    // 40682786957), so the cleanup tries for 5 s and then leaves the folder in the
+    // folder of Path.GetTempPath.
+    private static async Task DeleteFolder(string folder)
+    {
+        for (var attempt = 0; attempt < 20; attempt++)
+        {
+            try
+            {
+                Directory.Delete(folder, recursive: true);
+                return;
+            }
+            catch (IOException)
+            {
+                await Task.Delay(250);
+            }
         }
     }
 

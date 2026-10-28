@@ -1,7 +1,7 @@
 ---
 id: 0092
 title: The document file in the desktop and for an agent
-status: Done
+status: Active
 phase: P8f
 opened: 2026-10-28
 depends-on: [0091]
@@ -140,3 +140,7 @@ restart of the program; the visual check ran it one time.
   it gave nine injections when there were eight; this one is the ninth.
 - 2026-10-28: the owner accepted the two pictures and the log on 2026-10-28. Closed after a clean build and a full
   local run of 719 tests (582 in `Engine.Tests`, 89 in `3DEngine.Tests`, 48 in `3DEngine.ImageTests`).
+- 2026-10-28: run 40682786957 of the close failed on Windows only: the assertions of the process test of a server
+  with a file (TASK-0091) passed, and its cleanup failed, because Windows still held `plate.3de` after the kill.
+  The cleanup of the two file process tests now tries for 5 s, then leaves the scratch folder, as the other process
+  test of the class does. The task is Active for this change and Done again after it.
