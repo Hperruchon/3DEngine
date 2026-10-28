@@ -29,9 +29,22 @@ public sealed class DocumentFolder
     // error; null on a host that cannot start itself again (engine-api-http).
     public Func<string, CancellationToken, Task<ErrorDetail?>>? Reopen { get; }
 
+    // ADR-0030 item 2: a file name has at most 255 characters on each file system.
+    public const int MaximumFileNameLength = 255;
+
+    // The names that Windows keeps for a device, with or without an extension.
+    private static readonly HashSet<string> ReservedNames = new(
+        ["CON", "PRN", "AUX", "NUL", .. Enumerable.Range(1, 9).Select(n => $"COM{n}"), .. Enumerable.Range(1, 9).Select(n => $"LPT{n}")],
+        StringComparer.OrdinalIgnoreCase);
+
     // The path in the folder of a plain file name, or null with the reason. A name has
     // no folder part, no drive, no control character, and is not . or ..; the host adds
-    // the extension .3de when it is absent.
+    // the extension .3de when it is absent. The same rules hold on each operating system,
+    // so that a file can move between them (ADR-0030 item 2): no character < > " | ? *, no
+    // reserved name of Windows, no final space or dot, a name before .3de, and a file name
+    // of 255 characters at most. Until TASK-0099 a save made "CON" and "a " on Windows, and
+    // the other characters gave HTTP 409 (finding E81 of the second codebase review of
+    // 2026-10-28).
     public string? Resolve(string? name, out string? refusal)
     {
         refusal = name switch
@@ -40,12 +53,27 @@ public sealed class DocumentFolder
             "." or ".." => $"The name '{name}' is not a file name.",
             _ when name.Any(c => c is '/' or '\\' or ':' || char.IsControl(c)) =>
                 $"The name '{name}' has a folder part, a drive or a control character; a name is a plain file name in the document folder.",
+            _ when name.Any(c => c is '<' or '>' or '"' or '|' or '?' or '*') =>
+                $"The name '{name}' has one of the characters < > \" | ? *, which a file name cannot have on Windows.",
             _ => null,
         };
         if (refusal is not null)
             return null;
 
         var file = name!.EndsWith(DocumentFile.Extension, StringComparison.OrdinalIgnoreCase) ? name : name + DocumentFile.Extension;
+        var stem = file[..^DocumentFile.Extension.Length];
+        refusal = stem switch
+        {
+            "" => $"The name '{name}' has no name before {DocumentFile.Extension}.",
+            // A name with a final space or dot has no extension, so its stem is the name.
+            _ when stem.EndsWith(' ') || stem.EndsWith('.') => $"The name '{name}' ends with a space or a dot, which Windows removes from a file name.",
+            _ when ReservedNames.Contains(stem.Split('.')[0].TrimEnd(' ')) => $"The name '{name}' is a name that Windows keeps for a device.",
+            _ when file.Length > MaximumFileNameLength => $"The file name has {file.Length} characters, and a file name has {MaximumFileNameLength} at most.",
+            _ => null,
+        };
+        if (refusal is not null)
+            return null;
+
         var path = System.IO.Path.GetFullPath(System.IO.Path.Combine(FullPath, file));
         if (!string.Equals(System.IO.Path.GetDirectoryName(path), FullPath, StringComparison.Ordinal))
         {

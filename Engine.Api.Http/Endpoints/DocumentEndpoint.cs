@@ -21,6 +21,15 @@ internal static class DocumentEndpoint
 
     public static async Task<IResult> Save(HttpRequest request, EngineHost host, DocumentFolder folder, CancellationToken ct)
     {
+        // ADR-0030 item 4: a host with no document file refuses a save, as it refuses an open.
+        // Until TASK-0099 it gave HTTP 409 with E-IO-SAVE-FAILED (finding E85 of the second
+        // codebase review of 2026-10-28).
+        if (host.Session.FilePath is null)
+            return Failure(
+                DiagnosticCodes.ApiNotSupported,
+                "This host has no document file, so it does not save; start it with --file (ADR-0030 item 4).",
+                StatusCodes.Status501NotImplemented);
+
         var (path, refused) = await Target(request, folder, ct);
         if (refused is not null)
             return refused;

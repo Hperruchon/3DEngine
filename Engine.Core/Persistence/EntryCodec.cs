@@ -97,6 +97,21 @@ public static class EntryCodec
         return true;
     }
 
+    // True when the line is one JSON value; an open cuts only a last line that is not
+    // (ADR-0015 item 8).
+    public static bool IsJson(string line)
+    {
+        try
+        {
+            using var parsed = JsonDocument.Parse(line);
+            return true;
+        }
+        catch (JsonException)
+        {
+            return false;
+        }
+    }
+
     // The length unit of a header line, or a DocumentFileException.
     public static string ReadHeader(string line)
     {

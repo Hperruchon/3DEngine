@@ -238,10 +238,11 @@ public sealed class DocumentFileTests : IDisposable
     }
 
     // ADR-0015 item 8: a torn last line is cut off with a warning, and the file then
-    // takes the next entry at the right place.
+    // takes the next entry at the right place. A torn line is a tail with no line feed, or
+    // a complete last line that is not JSON.
     [Theory]
     [InlineData("{\"version\":2,\"backend\"")]
-    [InlineData("{\"version\":2}\n")]
+    [InlineData("{\"version\":2,\"backend\"\n")]
     public async Task A_Torn_Last_Line_Is_Cut_Off_With_A_Warning(string tail)
     {
         var path = FileNamed("torn");
@@ -263,6 +264,36 @@ public sealed class DocumentFileTests : IDisposable
         Assert.Equal(2, (await State(third)).Version);
         third.Close();
         Assert.True(new FileInfo(path).Length > length);
+    }
+
+    // E76 of the second codebase review of 2026-10-28: a complete last line that is JSON and
+    // does not bind refuses the open, and the file keeps it. The open cut it, so a file of a
+    // newer engine lost its last command when an older engine opened it.
+    [Theory]
+    [InlineData("\"name\":\"NoOp\"", "\"name\":\"Fillet\"")]
+    [InlineData("\"schemaVersion\":1", "\"schemaVersion\":99")]
+    [InlineData("\"echo\":\"two\"", "\"echo\":2")]
+    [InlineData("\"backend\":", "\"engine\":")]
+    public async Task A_Complete_Last_Line_That_Does_Not_Bind_Refuses_The_Open_And_Stays(string from, string to)
+    {
+        var path = FileNamed("newer");
+        var first = NewSession();
+        DocumentFile.Create(first, path);
+        await first.Apply(new NoOpCommand { Echo = "one" });
+        await first.Apply(new NoOpCommand { Echo = "two" });
+        first.Close();
+        var lines = File.ReadAllText(path).Split('\n');
+        var last = lines.Length - 2;
+        Assert.Contains(from, lines[last], StringComparison.Ordinal);
+        lines[last] = lines[last].Replace(from, to, StringComparison.Ordinal);
+        File.WriteAllText(path, string.Join("\n", lines));
+        var bytes = File.ReadAllBytes(path);
+
+        var second = NewSession();
+        var error = await Assert.ThrowsAsync<DocumentFileException>(() => DocumentFile.Open(second, path));
+
+        Assert.Equal(DiagnosticCodes.IoLoadFailed, error.Code);
+        Assert.Equal(bytes, File.ReadAllBytes(path));
     }
 
     [Fact]

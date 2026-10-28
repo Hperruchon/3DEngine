@@ -113,3 +113,6 @@ person sees.
   confirmed by reading only; its test holds the release of each object that exists.
 - 2026-10-29: the owner answered Q1 to Q7 with A. ADR-0015 items 8 and 10, ADR-0030 items 2, 4 and 5, and ADR-0032
   items 4 and 6 record the answers. Q5 A adds the code `E-API-OPEN-PENDING`, which the commit of V37 registers.
+- 2026-10-29: E76, E77, E81 and E85 are corrected, with 26 new test cases and one case changed: a complete last line
+  that is JSON is no longer a torn line. Twelve injections each failed a test. One injection showed that a check of
+  a final space or dot was redundant, and the check went out.
