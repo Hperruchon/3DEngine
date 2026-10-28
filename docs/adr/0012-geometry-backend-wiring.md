@@ -7,7 +7,7 @@ date: 2026-05-27
 supersedes: []
 superseded-by: []
 amends: []
-amended-by: ['0018', '0021']
+amended-by: ['0018', '0021', '0028']
 affects:
   - Engine.Contracts/Geometry/**
   - Engine.Core/Commands/**
@@ -135,10 +135,11 @@ public sealed class Document
     internal void AddBody(BodyRecord body);   // called by CommandBus on commit
 }
 
-public sealed record BodyRecord(BodyHandle Handle, string Kind);
+public sealed record BodyRecord(BodyHandle Handle, string Kind, string? Name = null, bool Visible = true);
 ```
 
 - `Kind` is a string discriminator; extends additively as new primitives land. `"Box"` is a box from `CreateBox`. `"Solid"` is a general manifold solid, the result of `Translate` and `Subtract`.
+- `Name` and `Visible` are the name and the visibility of the body (ADR-0028): no name and visible until a command changes them.
 - The Document holds the *handle list and minimum metadata*; the backend owns the *geometry data*. This matches ADR-0001 §3.
 - Future fields (name, parent, hidden flag, etc.) extend `BodyRecord` additively under their own sized TASK.
 
@@ -176,7 +177,7 @@ Per ADR-0010 §3, the snapshot grows additively:
 ```
 snapshot
   ...existing fields...
-  bodies: [ { handle: Guid, kind: string }, ... ]
+  bodies: [ { handle: Guid, kind: string, name: string?, visible: boolean }, ... ]   // name and visible: ADR-0028
 ```
 
 Empty array when no bodies. Existing clients that ignore unknown fields continue to function. This closes ADR-0010's "Geometry snapshot shape" open challenge.
@@ -240,3 +241,5 @@ This is *not* the Manifold backend — it is the wiring slice. A follow-on TASK 
   validation rules, and its section goes. Item 1 no longer says that a later capability extends
   `IMeshOps`, because Amendment 1 chose separate interfaces. ADR-0018 and ADR-0021 still amend this
   record; their folds wait.
+- 2026-10-28 · TASK-0085 · ADR-0028 amends §3 and §6: `BodyRecord` gains `Name` and `Visible`, and each body of
+  the snapshot gives them.
