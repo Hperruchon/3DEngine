@@ -73,6 +73,13 @@ the pad is open it takes each key. After a move, the moved body is selected.
   the name of the sample scene.
 - A validation message appears in the console as `[WARN]` or `[ERROR]`. A correct run gives none.
 
+## Sketches
+The desktop draws each live sketch over the scene, in yellow, read only (ADR-0033): each point and each
+line, on its origin plane XY, XZ or YZ. The panel has no sketch tool yet (phase K2b). An agent builds a sketch
+with `POST /commands`, for example `{"name": "CreateSketch", "parameters": {"datumId":
+"00000000-0000-0000-0000-000000000001"}}`, then `AddSketchPoint`, `AddSketchLine` and `AddSketchConstraint`, and
+reads it with `POST /queries {"name": "GetSketch"}`, which gives the residual of each constraint.
+
 ## Useful Notes
 - The Vulkan code lives in `3DEngine.Vulkan`. See ADR-0017.
 - If Vulkan initialization fails, check GPU driver support and the presence of the Vulkan runtime on the machine.

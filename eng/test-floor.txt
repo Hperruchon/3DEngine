@@ -6,4 +6,4 @@
 Engine.Tests 653
 3DEngine.Tests 144
 # The image test runs on Ubuntu only (ADR-0025 item 4, R-0040).
-3DEngine.ImageTests 60 linux=65
+3DEngine.ImageTests 68 linux=73
