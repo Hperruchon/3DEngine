@@ -97,3 +97,7 @@ Each gate of the review binds what the compiler or MSBuild binds, and checks eac
   cases. The gate runner reads each gate file and refuses a discard of a call and a `Task.Run` or `StartNew` as a
   statement (`eng/repo-gates/DiscardedTasks.cs`); both forms of the review, in a probe check, failed the runner. The
   runner has no test of its own (T59 and T60 had none), so the probe is the proof.
+- 2026-10-28: T66. The rule D3 of TASK-0083 stays: the counter counts a product task only when its roadmap row names
+  it. A product task after the last review whose row does not name it is now a problem of the gate
+  (`UnnamedProductTasks`), so a milestone cannot become an entry with no trace. The phase still comes from the task
+  file. Two tests; the form of the review (the row of P8a with no TASK-0091) failed the gate program.
