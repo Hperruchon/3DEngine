@@ -39,4 +39,12 @@ public static class DiagnosticCodes
     public const string IoSaveFailed = "E-IO-SAVE-FAILED";
     public const string IoTruncated = "W-IO-TRUNCATED";
     public const string IoBackendVersion = "W-IO-BACKEND-VERSION";
+
+    // ADR-0033 item 6: the refusals of a sketch command.
+    public const string SketchNotFound = "E-SKETCH-NOT-FOUND";
+    public const string SketchDatumNotFound = "E-SKETCH-DATUM-NOT-FOUND";
+    public const string SketchItemNotFound = "E-SKETCH-ITEM-NOT-FOUND";
+    public const string SketchLineInvalid = "E-SKETCH-LINE-INVALID";
+    public const string SketchConstraintInvalid = "E-SKETCH-CONSTRAINT-INVALID";
+    public const string SketchNameInvalid = "E-SKETCH-NAME-INVALID";
 }

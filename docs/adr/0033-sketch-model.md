@@ -120,9 +120,10 @@ Four conditions make this a decision and not a preference:
 
    A refusal gives a new code of the namespace `SKETCH`: `E-SKETCH-NOT-FOUND` (no live sketch with the identifier),
    `E-SKETCH-DATUM-NOT-FOUND`, `E-SKETCH-ITEM-NOT-FOUND`, `E-SKETCH-LINE-INVALID` (the two points are one point),
-   and `E-SKETCH-CONSTRAINT-INVALID` (an unknown kind, items of the wrong kind or count, a value that is absent,
-   negative or not a unit pair, or a kind that this phase does not give). The frame and the origin point are not
-   deletable.
+   `E-SKETCH-CONSTRAINT-INVALID` (an unknown kind, items of the wrong kind or count, a value that is absent,
+   negative or not a unit pair, or a kind that this phase does not give), and `E-SKETCH-NAME-INVALID` (a name that
+   breaks the rules of item 4). The frame and the origin point are not deletable. A position that is not finite
+   gives `E-GEOM-INVALID-PARAM`.
 7. **The query.** `GetSketch { sketchId }` gives the record, and the residual of each constraint. The residual is
    for the person and for K3a; the engine applies a command with a constraint that the positions do not satisfy.
 8. **The result of a handler.** `CommandHandlerResult` gains `CreatedSketches` and `ChangedSketches`, two lists of
@@ -176,3 +177,6 @@ the circle, the arc and the kinds 6 to 14.
 - 2026-10-28 · TASK-0100 · Proposed, with the answers Q1 to Q9 of the owner of 2026-10-28 to the second codebase
   review of that date.
 - 2026-10-28 · TASK-0100 · The owner accepted the record on 2026-10-28 with no change.
+- 2026-10-28 · TASK-0100 · The contract lands: `Engine.Contracts/Sketch/`, `Document.Sketches` and the two lists of
+  `CommandHandlerResult`. Item 6 gains `E-SKETCH-NAME-INVALID`, because item 4 gives a name its rules and the record
+  named no code; the code of a body name keeps its meaning. A position that is not finite gives `E-GEOM-INVALID-PARAM`.
