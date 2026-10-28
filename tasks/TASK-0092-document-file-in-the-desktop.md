@@ -18,7 +18,7 @@ writes:
     - Engine.Api.Http/EngineHost.cs
     - Engine.Api.Http/Endpoints/SchemaDiagnosticsEndpoint.cs
     - Engine.Core/DiagnosticCodes.cs
-    - Engine.Core/Persistence/DocumentFile.cs
+    - Engine.Core/Persistence/**
     - 3DEngine/DesktopSurface.cs
     - 3DEngine/DesktopEngineHost.cs
     - 3DEngine/NativeThreeDEngine.cs
@@ -104,3 +104,7 @@ window.
   tests: 18 in `Engine.Tests` and 8 in `3DEngine.ImageTests`, among them a process test of the desktop program.
   Nine injections each failed a test; one first passed (a default folder that can start again), because each test
   registered its own folder, so a test now starts a surface with no folder of its own.
+- 2026-10-28: a save makes the document folder when it does not exist, because the default folder of a new account
+  does not exist before the first save; the save test starts with no folder, and an injection that makes no folder
+  failed it. `Engine.Core/Persistence/**` replaces `DocumentFile.cs` in the write set. Correction of the line before:
+  it gave nine injections when there were eight; this one is the ninth.

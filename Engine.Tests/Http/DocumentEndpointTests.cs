@@ -60,7 +60,7 @@ public sealed class DocumentEndpointTests : IDisposable
     [Fact]
     public async Task A_Save_Moves_The_Unsaved_File_Into_The_Document_Folder()
     {
-        Directory.CreateDirectory(Documents);
+        // The document folder does not exist yet; the save makes it.
         var host = new EngineHost(new InProcessMeshBackend(), "managed", "test", new DocumentFileOptions(null, Path.Combine(_folder, "unsaved")));
         await using var app = await StartSurface(host, new DocumentFolder(Documents));
         using var http = new HttpClient { BaseAddress = new Uri(app.Urls.First()) };
