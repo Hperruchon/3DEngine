@@ -7,7 +7,7 @@ date: 2026-09-25
 supersedes: []
 superseded-by: []
 amends: ['0012']
-amended-by: ['0028', '0031']
+amended-by: ['0028', '0031', '0033']
 affects:
   - Engine.Contracts/Document.cs
   - Engine.Contracts/Handlers/ICommandHandler.cs
@@ -61,8 +61,9 @@ ask", gives both to the owner. This record holds the decision.
 5. **The commit.** The bus removes each consumed body from `Document.Bodies` in the commit section,
    with the other changes of the commit. The events of one commit come in this order:
    `command.applied`, then each `body.created`, then each `body.consumed`, then each `body.removed`
-   (ADR-0031 item 5), then each `body.changed` (ADR-0028 item 7). A subscriber that draws between two
-   events therefore never sees fewer bodies than the result has.
+   (ADR-0031 item 5), then each `body.changed` (ADR-0028 item 7), then each `sketch.created`, each
+   `sketch.removed` and each `sketch.changed` (ADR-0033 item 9). A subscriber that draws between two events
+   therefore never sees fewer bodies than the result has.
 6. **The new event kind `body.consumed`.** Its payload is `bodyId`. The cause of the event is the
    command that consumed the body. `/schema/events` lists the kind.
 7. **The snapshot.** The reset snapshot of ADR-0010, extended by ADR-0012, lists the live bodies
@@ -91,3 +92,4 @@ of the reference direction between the render projection and `Engine.Contracts` 
   `body.consumed`.
 - 2026-10-28 · TASK-0093 · ADR-0031 amends item 1: an `Undo` makes a consumed body live again, and item 5:
   each `body.removed` of a commit comes after each `body.consumed`.
+- 2026-10-28 · TASK-0100 · ADR-0033 amends item 5: the sketch events of a commit come after its body events.

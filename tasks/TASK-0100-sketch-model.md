@@ -5,7 +5,7 @@ status: Active
 phase: K2a
 opened: 2026-10-28
 depends-on: [0097]
-governed-by: [0004, 0005, 0006, 0007, 0008, 0010, 0012, 0013, 0015, 0016, 0017, 0018, 0019, 0020, 0021, 0025, 0027, 0028, 0029, 0030, 0031, 0032]
+governed-by: [0004, 0005, 0006, 0007, 0008, 0010, 0012, 0013, 0015, 0016, 0017, 0018, 0019, 0020, 0021, 0025, 0027, 0028, 0029, 0030, 0031, 0032, 0033]
 writes:
   create:
     - tasks/TASK-0100-sketch-model.md
@@ -105,3 +105,5 @@ a person sees it in the desktop.
 ## Progress
 
 - 2026-10-28: opened with ADR-0033 as Proposed. The work waits for the owner to accept the contract.
+- 2026-10-28: the owner accepted ADR-0033 with no change. The record amends ADR-0012, ADR-0021 and ADR-0031, and
+  their text changes in this commit.
