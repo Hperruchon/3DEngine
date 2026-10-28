@@ -99,6 +99,9 @@ public sealed class DocumentJournal : IDisposable
         if (File.Exists(target))
             throw new IOException($"The file {target} exists. A save chooses a new name only.");
 
+        // The document folder of a new account does not exist before the first save (ADR-0030 item 2).
+        Directory.CreateDirectory(Path.GetDirectoryName(target)!);
+
         if (_stream is null)
         {
             _stream = OpenFile(target, FileMode.CreateNew);
