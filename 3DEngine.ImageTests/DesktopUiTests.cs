@@ -238,4 +238,39 @@ public class DesktopUiTests
         Assert.Equal((int)(width * height * 4), rgba.Length);
         Assert.Contains(Enumerable.Range(0, rgba.Length / 4), pixel => rgba[pixel * 4 + 3] == 255 && rgba[pixel * 4] == 255);
     }
+
+    // Finding V26 of the codebase review of 2026-10-28 (TASK-0090): a click on the scene ends
+    // the text field, so the next key goes to the scene and not to the field.
+    [Fact]
+    public void A_Click_On_The_Scene_Ends_The_Text_Field_And_The_Next_Key_Goes_To_The_Scene()
+    {
+        using var ui = Opened();
+        Type(ui, "a");
+
+        Tap(ui, DeviceKind.Mouse, (1200, 600));
+        var key = new KeySample(InputKey.H, true, KeyModifiers.None, 0);
+        var intents = Step(ui, key);
+
+        Assert.Contains(key, intents);
+    }
+
+    // Finding V26: a name typed for one body and a click on another body gives no rename of
+    // the second body with the typed name.
+    [Fact]
+    public void A_Name_Typed_For_One_Body_Does_Not_Rename_The_Body_That_A_Click_Selects()
+    {
+        using var ui = Opened();
+        var first = Bodies[0].Id;
+        var second = Bodies[1].Id;
+        StepWith(ui, first);
+        StepWith(ui, first);
+        Type(ui, "X", DesktopUi.NameLabel, first);
+
+        Tap(ui, DeviceKind.Mouse, (1200, 600), first);
+        StepWith(ui, second);
+        StepWith(ui, second);
+        Tap(ui, DeviceKind.Mouse, Centre(ui, DesktopUi.RenameLabel), second);
+
+        Assert.Equal([new RenameBodyAction(second, string.Empty)], ui.TakeActions());
+    }
 }

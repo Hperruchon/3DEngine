@@ -89,6 +89,53 @@ public class FirstDemonstrationImageTests
         Assert.True(problems.Count == 0, $"The picture {picture} differs from its structure:\n  " + string.Join("\n  ", problems.Take(20)));
     }
 
+    // Finding V28 of the codebase review of 2026-10-28 (TASK-0090): the highlight of the
+    // selected body tints each pixel of the body. The highlight draws the body again with the
+    // depth test GreaterOrEqual, so a depth that differs between the two pipelines leaves a
+    // pixel with no tint; mesh.vert declares its position invariant for that reason.
+    [VulkanImageFact]
+    public async Task The_Highlight_Tints_Each_Pixel_Of_The_Selected_Body()
+    {
+        var messagesBefore = GraphicsDevice.ValidationMessageCount;
+        using var host = new EngineHost(new ManifoldGeometryBackend(), "manifold", ManifoldGeometryBackend.NativeVersion);
+        var cut = await FirstDemonstration(host);
+
+        var scene = SessionScene.Create();
+        var camera = scene.Cameras[0];
+        byte[] plain;
+        byte[] selected;
+        using (var device = new GraphicsDevice("3DEngine.ImageTests", enableValidation: true, window: null, synchronizationValidation: true))
+        {
+            using var target = new OffscreenTarget(device, new VkExtent2D(Width, Height));
+            using var renderer = new SceneRenderer(device, target.RenderPass, host);
+            renderer.Update(scene, camera, (float)Width / Height);
+            plain = target.Render((commandBuffer, framebuffer, extent) => renderer.Record(commandBuffer, framebuffer, extent, scene, camera));
+            selected = target.Render((commandBuffer, framebuffer, extent) => renderer.Record(commandBuffer, framebuffer, extent, scene, camera, selected: cut));
+        }
+
+        Assert.True(GraphicsDevice.ValidationMessageCount == messagesBefore,
+            $"The validation layer gave {GraphicsDevice.ValidationMessageCount - messagesBefore} messages:\n"
+            + string.Join("\n", GraphicsDevice.ValidationMessages.Skip(messagesBefore)));
+
+        var body = 0;
+        var tinted = 0;
+        for (var row = 0; row < Height; row++)
+        {
+            for (var column = 0; column < Width; column++)
+            {
+                if (IsBackground(plain, column, row))
+                    continue;
+                body++;
+                var (before, after) = (Colour(plain, column, row), Colour(selected, column, row));
+                if (after.R - before.R >= 20 && before.B - after.B >= 20)
+                    tinted++;
+            }
+        }
+
+        Assert.True(body > 1000, $"The body covers {body} pixels.");
+        Assert.True(tinted >= body * 99 / 100, $"The highlight tints {tinted} of the {body} pixels of the body; the picture is {SavePicture(selected)}.");
+    }
+
     // The four commands of the first demonstration (ADR-0025 item 1). The result is the
     // identifier of the cut body.
     internal static async Task<Guid> FirstDemonstration(EngineHost host)

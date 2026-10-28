@@ -36,7 +36,8 @@ state today other than its handle and its kind (ADR-0012 §3), and a commit give
    `SetBodyVisibility { bodyId, visible }` sets the visibility. `GetBodyInfo { bodyId }` gives the
    identifier, the kind, the name and the visibility. A command that sets the value that the body has is
    applied, and gives its event.
-3. **The rules of a name.** A name has 1 to 128 UTF-16 units. A control character is refused. The engine
+3. **The rules of a name.** A name has 1 to 128 UTF-16 units. A control character is refused, and so is
+   text that is not well-formed UTF-16 (a lone surrogate). The engine
    does not trim, normalize or compare with the rules of a culture. Two bodies can have one name. A refused
    name gives the new code `E-VAL-BODY-NAME-INVALID`. An unknown or consumed body gives
    `E-GEOM-BODY-NOT-FOUND`.
@@ -82,3 +83,6 @@ reads the payloads strictly must accept the new fields. The rule of a new comman
   and the owner accepted the contract on 2026-10-28.
 - 2026-10-28 · TASK-0085 · The code applies the record. A field of an event payload with `Required: false` can
   be null, as the name of a body with no name (item 7).
+- 2026-10-28 · TASK-0090 · Item 3 refuses text that is not well-formed UTF-16, because a lone surrogate gave the
+  Document one name and each JSON view another (finding E73 of the codebase review of 2026-10-28). The owner accepted
+  the change on 2026-10-28.

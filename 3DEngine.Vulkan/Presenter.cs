@@ -192,7 +192,7 @@ public sealed unsafe class Presenter : IDisposable
         Swapchain created;
         try
         {
-            created = new Swapchain(_device, _surface, _window, RenderPass, _format, old.Handle);
+            created = new Swapchain(_device, _surface, _window, RenderPass, _format, OldSwapchain(_remakeFailed, old.Handle));
         }
         catch (Exception ex)
         {
@@ -209,6 +209,13 @@ public sealed unsafe class Presenter : IDisposable
         Recreations++;
         Log.Info($"The swapchain is made again with the extent {Swapchain.Extent.width} x {Swapchain.Extent.height}.");
     }
+
+    // The old swapchain that a remake gives to the driver. After a failed remake the driver
+    // retired it, and the rule VUID-VkSwapchainCreateInfoKHR-oldSwapchain-01933 forbids a
+    // retired swapchain there, so a retry gives none (finding V18 of the codebase review of
+    // 2026-10-28, TASK-0090).
+    public static VkSwapchainKHR OldSwapchain(bool remakeFailed, VkSwapchainKHR old)
+        => remakeFailed ? VkSwapchainKHR.Null : old;
 
     private PerFrame[] CreatePerFrame(int count)
     {

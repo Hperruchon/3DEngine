@@ -59,6 +59,14 @@ internal sealed unsafe class DesktopUi : IDisposable
     private Guid? _nameFor;
     private bool _textActive;
 
+    // Finding V26 of the codebase review of 2026-10-28 (TASK-0090): a press that starts
+    // outside the panel goes to the intents only, so Dear ImGui does not see the click away
+    // and keeps its text field. The panel then drops the focus in the next frame, and the
+    // keys after the press go to the scene at once. Until TASK-0090 the field kept its
+    // buffer, and Rename could rename the body that the click selected with the text of
+    // the field.
+    private bool _dropFocus;
+
     public DesktopUi(string address)
     {
         if (!UiDrawDataConverter.VertexLayoutAgrees)
@@ -143,7 +151,14 @@ internal sealed unsafe class DesktopUi : IDisposable
     public IReadOnlyList<InputSample> Route(IEnumerable<InputSample> frame)
     {
         ImGui.SetCurrentContext(_context);
-        var (panel, intents) = _router.Route(frame, OverPanel, _textActive);
+        var samples = frame as IReadOnlyList<InputSample> ?? frame.ToList();
+        if (_textActive && samples.Any(sample => sample is PointerSample { Phase: PointerPhase.Down } press && !OverPanel(press.X, press.Y)))
+        {
+            _textActive = false;
+            _dropFocus = true;
+        }
+
+        var (panel, intents) = _router.Route(samples, OverPanel, _textActive);
         var io = ImGui.GetIO();
 
         foreach (var sample in panel)
@@ -214,6 +229,12 @@ internal sealed unsafe class DesktopUi : IDisposable
         _shown.Clear();
 
         ImGui.NewFrame();
+        if (_dropFocus)
+        {
+            ImGui.SetWindowFocus(null);
+            _dropFocus = false;
+        }
+
         Panel(bodies, selection, displaySize, document);
         ImGui.Render();
 

@@ -1,7 +1,7 @@
 ---
 id: 0090
 title: A name is a JSON string of well-formed text, the server disposes at each stop, and the desktop ends a text field at a click on the scene
-status: Ready
+status: Done
 phase: P0.36
 opened: 2026-10-28
 depends-on: [0088]
@@ -83,10 +83,38 @@ and the desktop sends the command that a person asks for.
 
 ## Acceptance criteria
 
-- [ ] Each form of the review fails a test before its correction, or an injection shows that the test can fail.
-- [ ] The replay gate passes with the new rule of a name.
-- [ ] A clean build (`--no-incremental`) gives zero errors and zero warnings.
-- [ ] Continuous integration passes on `ubuntu-latest`, `windows-latest` and `macos-latest`.
+- [x] Each form of the review fails a test before its correction, or an injection shows that the test can fail,
+      except E74 and the free of the depth image of V18, which no test reaches (see Method).
+- [x] The replay gate passes with the new rule of a name.
+- [x] A clean build (`--no-incremental`) gives zero errors and zero warnings.
+- [ ] Continuous integration passes on `ubuntu-latest`, `windows-latest` and `macos-latest`. The merge
+      records the run.
+
+## Outcome
+
+Status: Done · v0.93 · the commit that carries this block.
+
+A click on the scene ends the text field of the panel, so Rename sends the command that a person asks for (V26),
+and a frame reads the visibility of the bodies in constant time (V27). A string field takes only a well-formed JSON
+string, and a name is well-formed UTF-16 (E72, E73). The server disposes its app at each stop (E74). A retry of a
+remake gives no retired swapchain, a failed swapchain frees its depth image (V18), an image test sees the highlight
+of the selection with an invariant position (V28), and the pitch of the camera is clamped (V30).
+
+## Method
+
+**Mechanical.** 19 new tests, with each theory case counted: 9 in `Engine.Tests`, 5 in `3DEngine.Tests` and 5 in
+`3DEngine.ImageTests` (one image test runs on Ubuntu and on a computer with a GPU only). The two probes of V26
+failed before the fix. Each other fix with a test failed it under an injection of its old rule. Run 40691527334
+passed on the three runners with V26 to V30, E72, E74 and the HTTP part of E73.
+
+**Judgement.** The focus of Dear ImGui drops in the frame after a press on the scene, and the keys of the same frame
+go to the scene at once. The visibility lives in a small type, so a test reads it with no GPU. The reader of a JSON
+request marks each value that is not a string, and the binder refuses it, so the command line keeps its text path.
+The owner accepted the new rule of a name in ADR-0028 item 3 on 2026-10-28.
+
+**Weakest.** E74 has no test: no test stops the server with a signal on each runner, and none makes its composition
+throw. The free of the depth image of V18 has no test, because only a driver that fails reaches it. The highlight
+test passed on the GPU of this computer before the invariant too.
 
 ## Notes for the implementer
 
@@ -99,3 +127,37 @@ and the desktop sends the command that a person asks for.
 ## Progress
 
 - 2026-10-28: opened by the codebase review of 2026-10-28 (TASK-0087).
+- 2026-10-28: the task is active. After P8f (v0.92) the owner put P0.36 and then P0.35 before P8c, because V26 can
+  put a wrong rename into the document file; the roadmap records the order.
+- 2026-10-28: V26. A press that starts outside the panel while a text field is active drops the focus of Dear
+  ImGui in the next frame, and the keys of the same frame go to the scene. The two probes of the review are tests,
+  and both failed before the fix (the key went to the field; Rename gave the second body the text "X"). An
+  injection that keeps the focus failed both.
+- 2026-10-28: V27. `BodyVisibility` keeps the visibility of each body by the identifier of its mesh and keeps the
+  count of the visible bodies that have a mesh until the next change; `SessionBodies` reads it for the count, the
+  box and the pick. Two tests; an injection that counts at each read failed one. The full image tests, with the
+  first demonstration on the GPU of this computer, pass.
+- 2026-10-28: E72 and the HTTP part of E73. The reader of a JSON request gives an object, an array and a string
+  that is not well-formed UTF-16 as values that are not strings, and the binder takes only a string for a field of
+  type string; the command line gives each value as text. A name 42, true, an object, an array and "\ud800" each
+  give HTTP 400 with `E-API-BAD-REQUEST` (five test cases); "\ud800" gave HTTP 500 before. The old rule of the
+  binder failed the five cases, and a reader with no catch of a bad string failed one. The rule of a name in
+  `BodyNames` (E73, ADR-0028 item 3) waits for the owner.
+- 2026-10-28: V18 and V30. A remake after a failed remake gives the driver no old swapchain
+  (`Presenter.OldSwapchain`), and the swapchain frees its depth image when its creation fails. The setter of
+  `Camera.PitchDegrees` clamps to the range of `Orbit` and gives 0 for NaN. Five tests; the old rule of each failed
+  its tests (1 and 3 cases). The free of the depth image has no test, because only a driver that fails reaches it.
+- 2026-10-28: E74. `engine-api-http` disposes its app after a normal stop, so the session closes and waits for a
+  running command before the backend goes (E66), and each other exception of the composition gives exit code 5
+  with the app disposed. No test: no test stops the server with a signal on each runner, and none can make the
+  composition throw; the full run of the process tests passes.
+- 2026-10-28: V28. An image test renders the first demonstration without and with the selection and requires the
+  tint on at least 99 % of the pixels of the body; a highlight with the depth test Never failed it (0 of 24,820
+  pixels). `mesh.vert` declares `invariant gl_Position`, compiled with shaderc v2023.8, and the lock changes for
+  `mesh.vert` only. The test passed on the GPU of this computer before the invariant too, so the invariant is a
+  rule for other drivers; lavapipe runs the test in the pipeline.
+- 2026-10-28: E73, the rule of a name. The owner chose on 2026-10-28 that a name is well-formed UTF-16: ADR-0028 item
+  3 and `BodyNames.Refusal` refuse a lone surrogate with `E-VAL-BODY-NAME-INVALID`, and a pair stays valid. Four test
+  cases, which build each name in code because the data of a theory changes a lone surrogate; the old rule failed the
+  three cases of a lone surrogate. Closed after a clean build and a full local run of 738 tests (591 in
+  `Engine.Tests`, 94 in `3DEngine.Tests`, 53 in `3DEngine.ImageTests`).
