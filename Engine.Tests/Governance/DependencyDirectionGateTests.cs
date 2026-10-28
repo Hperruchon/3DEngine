@@ -316,6 +316,49 @@ public class DependencyDirectionGateTests
         }
     }
 
+    // Finding T63 of the codebase review of 2026-10-28 (TASK-0089): the graph keys a project
+    // by its file name, and the gate reads no project under bin/ or obj/, so a reference to
+    // shim/bin/Engine.Contracts.csproj entered the graph as Engine.Contracts while MSBuild built
+    // the shim. Each reference must resolve, from the folder of its project as MSBuild does, to
+    // a project file that the gate reads.
+    [Fact]
+    public void Each_Project_Reference_Resolves_To_A_Project_That_The_Gate_Reads()
+    {
+        var scanned = ProjectFiles().Select(Path.GetFullPath).ToHashSet(StringComparer.OrdinalIgnoreCase);
+        var offences = ProjectFiles()
+            .SelectMany(project => ReferenceTargetOffences(
+                project,
+                FilesThatMsBuildReads(project).SelectMany(source => Includes(source, "ProjectReference")),
+                scanned))
+            .ToList();
+
+        Assert.True(offences.Count == 0, "A reference must name a project that the gate reads (finding T63):\n  " + string.Join("\n  ", offences));
+    }
+
+    internal static IEnumerable<string> ReferenceTargetOffences(string projectFile, IEnumerable<string> includes, ISet<string> scanned)
+    {
+        var directory = Path.GetDirectoryName(Path.GetFullPath(projectFile))!;
+        foreach (var include in includes)
+        {
+            var target = Path.GetFullPath(Path.Combine(directory, include.Replace('\\', Path.DirectorySeparatorChar)));
+            if (!scanned.Contains(target))
+                yield return $"{RepositoryFiles.Relative(projectFile)} references {include}, which is not a project that the gate reads (under bin/ or obj/, outside the repository, or absent)";
+        }
+    }
+
+    [Theory]
+    [InlineData(@"..\shim\bin\Engine.Contracts.csproj", true)]
+    [InlineData(@"..\Engine.Contracts\obj\Engine.Contracts.csproj", true)]
+    [InlineData(@"..\..\outside\Engine.Contracts.csproj", true)]
+    [InlineData(@"..\Engine.Contracts\Engine.Contracts.csproj", false)]
+    public void A_Reference_Outside_The_Projects_Of_The_Gate_Is_An_Offence(string include, bool offence)
+    {
+        var project = RepositoryFiles.Path("Engine.Core", "Engine.Core.csproj");
+        var scanned = ProjectFiles().Select(Path.GetFullPath).ToHashSet(StringComparer.OrdinalIgnoreCase);
+
+        Assert.Equal(offence, ReferenceTargetOffences(project, [include], scanned).Any());
+    }
+
     private static Dictionary<string, List<string>> Graph()
     {
         var graph = new Dictionary<string, List<string>>(StringComparer.Ordinal);

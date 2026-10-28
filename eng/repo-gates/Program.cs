@@ -73,6 +73,17 @@ foreach (var (type, method) in typeof(DiagnosticsScanner).Assembly.GetTypes()
     failures++;
 }
 
+// A check that starts a task and does not wait for it ends before the task, so a failure
+// in the task never fails the check: `_ = f();` with a function that returns a task, and
+// `Task.Run(...)` as a statement. Reflection does not see a discard, so the runner reads
+// the source of each gate file. Until TASK-0089 both forms passed (finding T67 of the
+// codebase review of 2026-10-28).
+foreach (var problem in DiscardedTasks.Problems(root))
+{
+    Console.WriteLine($"FAIL  {problem}");
+    failures++;
+}
+
 foreach (var (type, method) in checks)
 {
     var fact = method.GetCustomAttribute<FactAttribute>()!;
