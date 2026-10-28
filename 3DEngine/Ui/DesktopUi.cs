@@ -41,6 +41,8 @@ internal sealed unsafe class DesktopUi : IDisposable
     public const string FileNameLabel = "File name";
     public const string SaveAsLabel = "Save as";
     public const string OpenLabel = "Open";
+    public const string UndoLabel = "Undo";
+    public const string RedoLabel = "Redo";
 
     private readonly IntPtr _context;
     private readonly string _address;
@@ -252,6 +254,16 @@ internal sealed unsafe class DesktopUi : IDisposable
             ImGui.TextUnformatted(_address);
             if (document is not null)
                 File(document);
+
+            // ADR-0031 item 11: the history of the document. A rejection shows in the line of the file.
+            if (ImGui.Button(UndoLabel))
+                _actions.Add(new UndoAction());
+            Item(UndoLabel);
+            ImGui.SameLine();
+            if (ImGui.Button(RedoLabel))
+                _actions.Add(new RedoAction());
+            Item(RedoLabel);
+
             ImGui.TextUnformatted(bodies.Count == 1 ? "1 live body" : $"{bodies.Count} live bodies");
 
             ImGui.SetNextItemWidth(220f);

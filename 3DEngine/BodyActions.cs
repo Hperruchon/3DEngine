@@ -64,6 +64,20 @@ internal sealed class BodyActions(DocumentSession session)
     public void Rename(Guid body, string name)
         => Report(session.Apply(new RenameBodyCommand { BodyId = body, NewName = name }).GetAwaiter().GetResult());
 
+    // ADR-0031 item 11: an Undo or a Redo of the shared history. It returns null when the
+    // session applied it, or the rejection for the line of the panel. Forget then drops a
+    // selected body that the move removed.
+    public string? Undo() => Move(new UndoCommand());
+
+    public string? Redo() => Move(new RedoCommand());
+
+    private string? Move(Command command)
+    {
+        var result = session.Apply(command).GetAwaiter().GetResult();
+        Report(result);
+        return result.Status == CommandStatus.Applied ? null : $"{result.Error?.Code}: {result.Error?.Message}";
+    }
+
     // A selected body that left the session, for example one that an agent consumed, is no
     // longer selected.
     public void Forget(IReadOnlyList<LiveBody> live)

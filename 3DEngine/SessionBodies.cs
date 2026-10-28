@@ -19,8 +19,8 @@ internal sealed record LiveBody(Guid Id, string Kind, string? Name, bool Visible
 // the events of the session in one read of the session, so it misses no body. The
 // action of the subscription runs inside each commit and only puts the change in a
 // queue; the render loop calls Apply, which fetches each new mesh with the query
-// GetTessellation outside the commit, removes each consumed body, and applies each change
-// of a name or a visibility (body.changed, ADR-0028 item 7).
+// GetTessellation outside the commit, removes each consumed or removed body, and applies each
+// change of a name or a visibility (body.changed, ADR-0028 item 7).
 //
 // A hidden body keeps its mesh and its triangles, but its entity leaves the scene, so the
 // desktop does not draw it, cannot pick it, and leaves it out of the box that the camera
@@ -78,7 +78,9 @@ internal sealed class SessionBodies : IDisposable
             case "body.created":
                 _changes.Enqueue((Change.Created, bodyId, payload.GetValueOrDefault("kind") as string ?? string.Empty, name, visible));
                 break;
+            // ADR-0031 item 11: a body that an Undo removed leaves the scene as a consumed body does.
             case "body.consumed":
+            case "body.removed":
                 _changes.Enqueue((Change.Consumed, bodyId, string.Empty, null, false));
                 break;
             case "body.changed":

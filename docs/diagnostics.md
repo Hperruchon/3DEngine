@@ -15,6 +15,8 @@ All `E-`/`W-`/`I-` codes used in `Engine.*` code MUST appear here. A code is nev
 | `E-CMD-UNKNOWN` | Error | Command name + schema version is not registered in `CommandRegistry`. | `CommandBus.Apply` when no handler matches. |
 | `E-CMD-VERSION-STALE` | Error | Submitted command's `ExpectedDocumentVersion` does not match the Document's current `Version`. | `CommandBus.Apply` optimistic check. |
 | `E-CMD-BUS-BUSY` | Error | Inbound command queue is full; submission rejected without enqueueing. | Reserved for the transport task; not raised in P0 (no inbound queue yet). |
+| `E-CMD-NOTHING-TO-UNDO` | Error | An `Undo` found no step to reverse: the document has no step, or each step is undone. The log and the version do not change. | `CommandBus` (ADR-0031 item 8). |
+| `E-CMD-NOTHING-TO-REDO` | Error | A `Redo` found no undone step: no `Undo` came before it, or a new step cleared the redo list. The log and the version do not change. | `CommandBus` (ADR-0031 item 8). |
 | `E-QRY-UNKNOWN` | Error | Query name + schema version is not registered in `QueryRegistry`. | `QueryBus.Query` when no handler matches. |
 | `E-API-BAD-REQUEST` | Error | HTTP request body was malformed, missing a required field, or wrong content-type. Never reaches the bus. | `Engine.Api.Http` endpoints, returned with HTTP `400` or `415`. |
 | `E-API-WS-INVALID-SUBSCRIBE` | Error | WebSocket subscribe frame is malformed, missing, or wrong shape. The connection is closed before any subscription is established. | `Engine.Api.Http` `/events`, WebSocket close status `1007` (invalid payload data) with this reason. The owner decided 1007 on 2026-09-30; TASK-0010 said 1003, and the code sent 1007 from the start. |

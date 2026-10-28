@@ -24,6 +24,7 @@ public class EventPayloadSchemaTests(WebApplicationFactory<Program> factory)
             .ToDictionary(entry => entry.GetProperty("kind").GetString()!, entry => entry.GetProperty("payload"));
 
         Assert.Equal("guid", entries["body.consumed"].GetProperty("bodyId").GetProperty("type").GetString());
+        Assert.Equal("guid", entries["body.removed"].GetProperty("bodyId").GetProperty("type").GetString());
         Assert.Equal("guid", entries["body.created"].GetProperty("bodyId").GetProperty("type").GetString());
         Assert.Equal("string", entries["body.created"].GetProperty("kind").GetProperty("type").GetString());
         Assert.Empty(entries["heartbeat"].EnumerateObject());
@@ -53,8 +54,13 @@ public class EventPayloadSchemaTests(WebApplicationFactory<Program> factory)
         Assert.Equal(CommandStatus.Applied, (await host.Session.Apply(new RenameBodyCommand { BodyId = result, NewName = "" })).Status);
         await host.Session.Apply(new CreateBoxCommand { SizeX = 0, SizeY = 1, SizeZ = 1 });
 
+        // Three undos reverse the rename, the hide and the cut, so body.removed comes too
+        // (ADR-0031 item 6, TASK-0093), and a redo cuts again.
+        foreach (var move in new Command[] { new UndoCommand(), new UndoCommand(), new UndoCommand(), new RedoCommand() })
+            Assert.Equal(CommandStatus.Applied, (await host.Session.Apply(move)).Status);
+
         Assert.Equal(
-            ["body.changed", "body.consumed", "body.created", "command.applied", "command.rejected"],
+            ["body.changed", "body.consumed", "body.created", "body.removed", "command.applied", "command.rejected"],
             records.Select(record => record.Kind).Distinct().Order(StringComparer.Ordinal));
         var problems = records.SelectMany(PayloadProblems).ToList();
         Assert.True(problems.Count == 0, string.Join("\n  ", problems));

@@ -136,6 +136,45 @@ public class FirstDemonstrationImageTests
         Assert.True(tinted >= body * 99 / 100, $"The highlight tints {tinted} of the {body} pixels of the body; the picture is {SavePicture(selected)}.");
     }
 
+    // ADR-0031 item 11 (TASK-0093): an undo of the cut removes the cut from the scene and gives
+    // back its two operands, with their meshes; a redo gives the cut back. The meshes come from
+    // the backend, which never frees an operand, so each Update finds each mesh.
+    [VulkanImageFact]
+    public async Task The_Scene_Follows_An_Undo_And_A_Redo_Of_The_Cut()
+    {
+        var messagesBefore = GraphicsDevice.ValidationMessageCount;
+        using var host = new EngineHost(new ManifoldGeometryBackend(), "manifold", ManifoldGeometryBackend.NativeVersion);
+        var cut = await FirstDemonstration(host);
+        var operands = await host.Session.Read((document, _) => document.Log[3].Command) is SubtractCommand subtract
+            ? new[] { subtract.MinuendBodyId, subtract.SubtrahendBodyId }.Order().ToArray()
+            : throw new InvalidOperationException("The fourth command is not the cut.");
+
+        var scene = SessionScene.Create();
+        var camera = scene.Cameras[0];
+        using (var device = new GraphicsDevice("3DEngine.ImageTests", enableValidation: true, window: null, synchronizationValidation: true))
+        {
+            using var target = new OffscreenTarget(device, new VkExtent2D(Width, Height));
+            using var renderer = new SceneRenderer(device, target.RenderPass, host);
+            renderer.Update(scene, camera, (float)Width / Height);
+            Assert.Equal([cut], renderer.LiveBodies.Select(body => body.Id));
+
+            Assert.Equal(CommandStatus.Applied, (await host.Session.Apply(new UndoCommand())).Status);
+            renderer.Update(scene, camera, (float)Width / Height);
+            Assert.Equal(operands, renderer.LiveBodies.Select(body => body.Id).Order());
+            Assert.Equal(2, renderer.PickBodies.Count());
+
+            Assert.Equal(CommandStatus.Applied, (await host.Session.Apply(new RedoCommand())).Status);
+            renderer.Update(scene, camera, (float)Width / Height);
+            Assert.Equal([cut], renderer.LiveBodies.Select(body => body.Id));
+            Assert.Single(renderer.PickBodies);
+            target.Render((commandBuffer, framebuffer, extent) => renderer.Record(commandBuffer, framebuffer, extent, scene, camera));
+        }
+
+        Assert.True(GraphicsDevice.ValidationMessageCount == messagesBefore,
+            $"The validation layer gave {GraphicsDevice.ValidationMessageCount - messagesBefore} messages:\n"
+            + string.Join("\n", GraphicsDevice.ValidationMessages.Skip(messagesBefore)));
+    }
+
     // The four commands of the first demonstration (ADR-0025 item 1). The result is the
     // identifier of the cut body.
     internal static async Task<Guid> FirstDemonstration(EngineHost host)

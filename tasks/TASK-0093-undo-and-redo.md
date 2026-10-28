@@ -104,3 +104,8 @@ A person and an agent undo and redo each step of the document, and an undo survi
 
 - 2026-10-28: opened after TASK-0089 (v0.94). The first commit holds ADR-0031, accepted by the owner, the
   amendments of ADR-0006 and ADR-0021, and the contract: `HistoryMove` and `CommandHandlerResult.History`.
+- 2026-10-28: the code (ADR-0031 items 1 to 8 and the buttons of item 11). The bus records each step and makes
+  the lists of an undo and a redo; `Undo` and `Redo` are in `HandlerCatalog`; `body.removed` is in the bus, in
+  `/schema/events` and in the projection of the desktop; the two codes are registered. 13 tests in
+  `Engine.Tests`, 3 in `3DEngine.ImageTests`. 13 injections: 12 were caught at once; a schema with no
+  `body.removed` passed until the payload test applied undos, and it now fails there. The keys of item 11 wait.
