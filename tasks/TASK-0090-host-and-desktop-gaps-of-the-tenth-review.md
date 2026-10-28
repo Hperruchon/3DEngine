@@ -1,7 +1,7 @@
 ---
 id: 0090
 title: A name is a JSON string of well-formed text, the server disposes at each stop, and the desktop ends a text field at a click on the scene
-status: Active
+status: Done
 phase: P0.36
 opened: 2026-10-28
 depends-on: [0088]
@@ -83,10 +83,38 @@ and the desktop sends the command that a person asks for.
 
 ## Acceptance criteria
 
-- [ ] Each form of the review fails a test before its correction, or an injection shows that the test can fail.
-- [ ] The replay gate passes with the new rule of a name.
-- [ ] A clean build (`--no-incremental`) gives zero errors and zero warnings.
-- [ ] Continuous integration passes on `ubuntu-latest`, `windows-latest` and `macos-latest`.
+- [x] Each form of the review fails a test before its correction, or an injection shows that the test can fail,
+      except E74 and the free of the depth image of V18, which no test reaches (see Method).
+- [x] The replay gate passes with the new rule of a name.
+- [x] A clean build (`--no-incremental`) gives zero errors and zero warnings.
+- [ ] Continuous integration passes on `ubuntu-latest`, `windows-latest` and `macos-latest`. The merge
+      records the run.
+
+## Outcome
+
+Status: Done · v0.93 · the commit that carries this block.
+
+A click on the scene ends the text field of the panel, so Rename sends the command that a person asks for (V26),
+and a frame reads the visibility of the bodies in constant time (V27). A string field takes only a well-formed JSON
+string, and a name is well-formed UTF-16 (E72, E73). The server disposes its app at each stop (E74). A retry of a
+remake gives no retired swapchain, a failed swapchain frees its depth image (V18), an image test sees the highlight
+of the selection with an invariant position (V28), and the pitch of the camera is clamped (V30).
+
+## Method
+
+**Mechanical.** 19 new tests, with each theory case counted: 9 in `Engine.Tests`, 5 in `3DEngine.Tests` and 5 in
+`3DEngine.ImageTests` (one image test runs on Ubuntu and on a computer with a GPU only). The two probes of V26
+failed before the fix. Each other fix with a test failed it under an injection of its old rule. Run 40691527334
+passed on the three runners with V26 to V30, E72, E74 and the HTTP part of E73.
+
+**Judgement.** The focus of Dear ImGui drops in the frame after a press on the scene, and the keys of the same frame
+go to the scene at once. The visibility lives in a small type, so a test reads it with no GPU. The reader of a JSON
+request marks each value that is not a string, and the binder refuses it, so the command line keeps its text path.
+The owner accepted the new rule of a name in ADR-0028 item 3 on 2026-10-28.
+
+**Weakest.** E74 has no test: no test stops the server with a signal on each runner, and none makes its composition
+throw. The free of the depth image of V18 has no test, because only a driver that fails reaches it. The highlight
+test passed on the GPU of this computer before the invariant too.
 
 ## Notes for the implementer
 
@@ -128,3 +156,8 @@ and the desktop sends the command that a person asks for.
   pixels). `mesh.vert` declares `invariant gl_Position`, compiled with shaderc v2023.8, and the lock changes for
   `mesh.vert` only. The test passed on the GPU of this computer before the invariant too, so the invariant is a
   rule for other drivers; lavapipe runs the test in the pipeline.
+- 2026-10-28: E73, the rule of a name. The owner chose on 2026-10-28 that a name is well-formed UTF-16: ADR-0028 item
+  3 and `BodyNames.Refusal` refuse a lone surrogate with `E-VAL-BODY-NAME-INVALID`, and a pair stays valid. Four test
+  cases, which build each name in code because the data of a theory changes a lone surrogate; the old rule failed the
+  three cases of a lone surrogate. Closed after a clean build and a full local run of 738 tests (591 in
+  `Engine.Tests`, 94 in `3DEngine.Tests`, 53 in `3DEngine.ImageTests`).

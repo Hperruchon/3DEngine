@@ -20,6 +20,14 @@ public static class BodyNames
         {
             if (char.IsControl(name[index]))
                 return $"A name has no control character, and this one has U+{(int)name[index]:X4} at index {index}.";
+
+            // ADR-0028 item 3 since TASK-0090 (finding E73 of the codebase review of
+            // 2026-10-28): a name is well-formed UTF-16, so each JSON view and the document
+            // file give the same name.
+            if (char.IsHighSurrogate(name[index]) && index + 1 < name.Length && char.IsLowSurrogate(name[index + 1]))
+                index++;
+            else if (char.IsSurrogate(name[index]))
+                return $"A name is well-formed UTF-16 text, and this one has a lone surrogate U+{(int)name[index]:X4} at index {index}.";
         }
 
         return null;
