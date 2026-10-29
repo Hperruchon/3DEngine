@@ -7,7 +7,7 @@ date: 2026-09-25
 supersedes: []
 superseded-by: []
 amends: ['0012']
-amended-by: ['0028', '0031', '0033']
+amended-by: ['0028', '0031', '0033', '0037']
 affects:
   - Engine.Contracts/Document.cs
   - Engine.Contracts/Handlers/ICommandHandler.cs
@@ -93,3 +93,5 @@ of the reference direction between the render projection and `Engine.Contracts` 
 - 2026-10-28 · TASK-0093 · ADR-0031 amends item 1: an `Undo` makes a consumed body live again, and item 5:
   each `body.removed` of a commit comes after each `body.consumed`.
 - 2026-10-28 · TASK-0100 · ADR-0033 amends item 5: the sketch events of a commit come after its body events.
+- 2026-10-29 · TASK-0108 · ADR-0037 amends the consequence of the render state: a live handle can point at a new solid after a
+  rebuild, so a client keys a mesh by the geometry key of the body.
