@@ -4,7 +4,7 @@ title: The gates read the names, the packages and the assemblies that the build 
 status: Ready
 phase: P0.39
 opened: 2026-10-28
-depends-on: [0097]
+depends-on: [0102]
 governed-by: [0022]
 writes:
   create:
@@ -102,3 +102,4 @@ Each form of the review fails the gate program.
 ## Progress
 
 - 2026-10-28: opened by the second codebase review of 2026-10-28 (TASK-0095).
+- 2026-10-29: the owner put K3a (TASK-0102) before this task, so it depends on TASK-0102.

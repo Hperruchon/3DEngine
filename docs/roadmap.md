@@ -77,6 +77,12 @@ Therefore each approved objective must have a track here.
 - P0.35 — The gates bind the names that the compiler and MSBuild bind, and the archive and the review counter check their links. v0.94, TASK-0089.
 - P8c — Undo and redo as commands of the log, with one history for the document. v0.95, TASK-0093, ADR-0031.
 - R10 — A numeric pad and an expression evaluator for a new box and a move, and the keys of undo and redo. v0.96, TASK-0094, ADR-0032.
+- P0.37 — An open applies each entry of the document file one time. v0.98, TASK-0096.
+- P0.38 — The test framework gate reads what MSBuild compiles into a test project. v0.99, TASK-0097.
+- K2a — The engine holds a sketch of points, lines and five constraints, and the desktop draws it. v0.100, TASK-0100, ADR-0033.
+- K2b — The desktop draws a sketch of lines and adds its constraints, by touch and by mouse. v0.101, TASK-0101, ADR-0034.
+- P0.40 — The document file keeps each complete line and each held file, and the pad applies to the current selection. v0.102, TASK-0099.
+- K3a — The engine solves the five constraints of a sketch with `+ - * / sqrt` only, and the desktop shows if a sketch is solved. v0.103, TASK-0102, ADR-0035.
 
 ## Track 0 — Foundations
 
@@ -170,7 +176,7 @@ boundary and each refused rung.
 | K2a | The sketch model in the engine. The point, the line segment that references two points (Q3), the fixed frame of a sketch, and the five constraints of K3a. A sketch records the identifier of a datum; the three origin planes have fixed identifiers (Q4). One command for each item, with scalar fields; the Document holds one sketch record for each sketch, and an undo restores the record before; the events `sketch.created`, `sketch.changed` and `sketch.removed`, and a query `GetSketch` (Q2). The positions are a projection of the record, and the log holds the inputs only (Q6). An angle records the pair (cos θ, sin θ) (Q5). The ADR names the five entities and the fourteen constraints now (Q1). The desktop draws a sketch as lines of the UI layer, read only (Q9). ADR-0033, TASK-0100. | 4–6 |
 | K2b | The sketch tools of the desktop. A sketch mode in the intent layer, a ray to the plane of the sketch, a pad for a line, and a panel of constraints (Q8). ADR-0034, TASK-0101. | 4–6 |
 | K2 | The rest of the sketch model, after K2b: the circle, the arc and nine constraints (Q1). The five entities are the point, the line, the frame, the circle and the arc (ADR-0033 item 2). | 3–5 |
-| K3a | A constraint solver for five constraints: coincident, horizontal, vertical, distance and fixed. It uses only `+ - * / sqrt`, and its output stays outside the log (KD5). | 8–12 |
+| K3a | A constraint solver for five constraints: coincident, horizontal, vertical, distance and fixed. It uses only `+ - * / sqrt`, and its output stays outside the log (KD5). ADR-0035, TASK-0102. | 8–12 |
 | K3 | The rest of the constraint solver, after K3a. Write it. | 4–8 |
 | K4 | Planar faces only, with a boolean. Provenance inside the kernel. | 35–55 |
 | K5 | Add the cylinder, the cone, the sphere and the torus. | 55–85 |
@@ -207,6 +213,7 @@ The tracks are not strictly sequential, but three rules hold:
    The second codebase review of 2026-10-28 puts P0.37 and P0.38, which hold high findings, before K2a, and P0.39
    and P0.40 after K2a, by the rule of `docs/templates.md`, section 7. On 2026-10-28, after K2b, the owner put P0.40
    before K3a and before P0.39, because findings E76 and V32 of P0.40 are risks to the data of the work after K2b.
+   On 2026-10-29, after P0.40, the owner put K3a before P0.39.
 2. R2 blocks each later phase in track R. No mesh leaves the geometry backend today.
 3. K4 needs K0, K1 and K2. Do not start K4 before the reference model exists.
 4. The path to the milestone "CAD on one part" (the owner, 2026-10-27, KD2): R7b, R8a, R8b, the codebase

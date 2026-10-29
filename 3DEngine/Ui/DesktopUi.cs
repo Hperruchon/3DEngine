@@ -563,9 +563,14 @@ internal sealed unsafe class DesktopUi : IDisposable
     public static string SketchTitle(SketchInfo sketch)
         => $"{sketch.Name ?? sketch.SketchId.ToString()[..8]} on {Datums.Find(sketch.DatumId)?.Name ?? "?"}";
 
+    // ADR-0035 item 8: if the solver satisfies each constraint, and the number of free degrees.
+    public static string SketchStatus(SketchInfo sketch)
+        => sketch.Solved ? $"Solved, {sketch.Freedom} free" : "Not solved";
+
     private void ActiveSketch(SketchPanel panel, SketchInfo sketch)
     {
         ImGui.TextUnformatted(SketchTitle(sketch));
+        ImGui.TextUnformatted(SketchStatus(sketch));
         ToolButton(LineToolLabel, SketchToolKind.Line, panel.Tool);
         ImGui.SameLine();
         ToolButton(SelectToolLabel, SketchToolKind.Select, panel.Tool);

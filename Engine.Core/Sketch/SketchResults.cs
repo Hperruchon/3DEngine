@@ -17,11 +17,13 @@ public static class SketchResults
         => CommandHandlerResult.Failure(new ErrorDetail(code, message));
 
     // A new record of a live sketch, and the identifier of the item that the command
-    // added or changed as its output.
-    public static CommandHandlerResult Changed(SketchRecord sketch, string output, Guid id)
+    // added or changed as its output. The record goes through the solver, so the Document
+    // holds the solved positions; a held point stays where the command put it when a
+    // solution exists (ADR-0035 items 2 and 7).
+    public static CommandHandlerResult Changed(SketchRecord sketch, string output, Guid id, Guid? held = null)
         => CommandHandlerResult.Success(
             new Outputs(new Dictionary<string, object?> { [output] = id }),
-            changedSketches: [sketch]);
+            changedSketches: [SketchSolver.Solve(sketch, held)]);
 
     // ADR-0033 item 2: the origin of the frame has the identifier of its sketch, and no
     // command moves or deletes it.
