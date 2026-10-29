@@ -49,6 +49,7 @@ names. Do not read all of them.
 | [0033](0033-sketch-model.md) | The sketch model in the engine | Amended | Contracts, sketch | 0012, 0021, 0031 | 0035 |
 | [0034](0034-sketch-tools.md) | The sketch tools of the desktop | Accepted | Clients, sketch | 0026, 0029, 0032 | — |
 | [0035](0035-sketch-solver.md) | The constraint solver of a sketch | Accepted | Sketch, determinism | 0033 | — |
+| [0036](0036-extrude-of-a-sketch-profile.md) | The extrude of a closed profile of a sketch | Proposed | Contracts, geometry, sketch | — | — |
 
 ## Topics
 
