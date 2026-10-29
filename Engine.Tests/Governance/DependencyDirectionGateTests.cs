@@ -21,17 +21,161 @@ public class DependencyDirectionGateTests
     // older commit. Without this filter a stale copy shadows the real project
     // file, and the gate then reports a rule as satisfied when it is broken.
     // An injection test found this defect.
-    private static bool IsOutOfScope(string relative)
-        => relative.Contains("/obj/", StringComparison.Ordinal)
-        || relative.Contains("/bin/", StringComparison.Ordinal)
-        || relative.StartsWith(".claude/", StringComparison.Ordinal);
+    //
+    // Finding T68 of the second codebase review of 2026-10-28 (TASK-0097, TASK-0098): MSBuild
+    // leaves out bin/ and obj/ at the root of a project only, so the gate leaves out a folder
+    // bin or obj only when the folder above it holds a project file.
+    internal static bool IsOutOfScope(string relative, Func<string, bool> holdsProject)
+    {
+        if (relative.StartsWith(".claude/", StringComparison.Ordinal))
+            return true;
+
+        var parts = relative.Split('/');
+        for (var i = 0; i < parts.Length - 1; i++)
+        {
+            if (parts[i] is "bin" or "obj" && holdsProject(string.Join('/', parts[..i])))
+                return true;
+        }
+        return false;
+    }
+
+    private static bool HoldsProject(string relativeDirectory)
+        => Directory.EnumerateFiles(Path.Combine(RepositoryFiles.Root, relativeDirectory), "*.csproj").Any();
 
     private static List<string> ProjectFiles()
         => Directory
             .EnumerateFiles(RepositoryFiles.Root, "*.csproj", SearchOption.AllDirectories)
-            .Where(f => !IsOutOfScope(RepositoryFiles.Relative(f)))
+            .Where(f => !IsOutOfScope(RepositoryFiles.Relative(f), HoldsProject))
             .OrderBy(f => f, StringComparer.Ordinal)
             .ToList();
+
+    [Theory]
+    [InlineData("Engine.Tests/bin/Debug/net10.0/Probe.csproj", true)]
+    [InlineData("Engine.Tests/obj/Probe.csproj", true)]
+    [InlineData("Engine.Tests/Http/bin/Probe.csproj", false)]
+    [InlineData("shim/obj/Engine.Contracts.csproj", false)]
+    [InlineData(".claude/worktrees/copy/Engine.Core/Engine.Core.csproj", true)]
+    public void The_Gate_Leaves_Out_Only_The_Build_Output_At_The_Root_Of_A_Project(string relative, bool outOfScope)
+    {
+        string[] projects = ["Engine.Tests"];
+
+        Assert.Equal(outOfScope, IsOutOfScope(relative, directory => projects.Contains(directory)));
+    }
+
+    // Finding T72 of the second codebase review of 2026-10-28 (TASK-0098): Engine.Core gives its
+    // internals to the assembly Engine.Tests, and a client that took that assembly name read
+    // them. Each assembly name is unique and is not the name of the file of another project,
+    // and only a project file sets it, with no property. The four programs keep their names.
+    internal static IEnumerable<string> AssemblyNameOffences(
+        IEnumerable<(string Relative, XDocument Document)> projects, IEnumerable<(string Relative, XDocument Document)> imported)
+    {
+        var projectList = projects.ToList();
+        var stems = projectList.Select(p => Path.GetFileNameWithoutExtension(p.Relative)).ToHashSet(StringComparer.OrdinalIgnoreCase);
+        var names = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+
+        foreach (var (relative, document) in imported)
+        {
+            if (document.Descendants().Any(e => Is(e, "AssemblyName")))
+                yield return $"{relative} sets an AssemblyName; only a project file sets its own";
+        }
+
+        foreach (var (relative, document) in projectList)
+        {
+            var stem = Path.GetFileNameWithoutExtension(relative);
+            var declared = document.Descendants().Where(e => Is(e, "AssemblyName")).Select(e => e.Value.Trim()).ToList();
+            if (declared.Count > 1)
+                yield return $"{relative} sets AssemblyName {declared.Count} times";
+            var name = declared.Count == 0 ? stem : declared[^1];
+            if (name.IndexOfAny(['$', '@', '%']) >= 0)
+                yield return $"{relative} has the AssemblyName '{name}', whose value MSBuild computes";
+            else if (!string.Equals(name, stem, StringComparison.OrdinalIgnoreCase) && stems.Contains(name))
+                yield return $"{relative} takes the assembly name {name}, which is the name of another project";
+            if (names.TryGetValue(name, out var first))
+                yield return $"{relative} and {first} have the same assembly name {name}";
+            else
+                names[name] = relative;
+        }
+    }
+
+    [Fact]
+    public void Each_Assembly_Name_Is_Unique_And_Names_No_Other_Project()
+    {
+        var projects = ProjectFiles().Select(f => (RepositoryFiles.Relative(f), XDocument.Load(f))).ToList();
+        var imported = ProjectFiles()
+            .SelectMany(f => FilesThatMsBuildReads(f).Where(file => !string.Equals(file, Path.GetFullPath(f), StringComparison.OrdinalIgnoreCase)))
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .Select(f => (RepositoryFiles.Relative(f), XDocument.Load(f)));
+
+        var offences = AssemblyNameOffences(projects, imported).ToArray();
+
+        Assert.True(offences.Length == 0, "An assembly name that another project has reads the internals that the project gives to it.\n  " + string.Join("\n  ", offences));
+    }
+
+    [Theory]
+    [InlineData("3DEngine/3DEngine.csproj", "<Project><PropertyGroup><AssemblyName>Engine.Tests</AssemblyName></PropertyGroup></Project>", "is the name of another project")]
+    [InlineData("3DEngine/3DEngine.csproj", "<Project><PropertyGroup><assemblyname>engine.tests</assemblyname></PropertyGroup></Project>", "is the name of another project")]
+    [InlineData("3DEngine/3DEngine.csproj", "<Project><PropertyGroup><AssemblyName>$(Friend)</AssemblyName></PropertyGroup></Project>", "whose value MSBuild computes")]
+    [InlineData("3DEngine/3DEngine.csproj", "<Project><PropertyGroup><AssemblyName>engine</AssemblyName></PropertyGroup></Project>", "the same assembly name")]
+    public void Each_Form_Of_Finding_T72_Is_An_Offence(string relative, string text, string expected)
+    {
+        (string, XDocument)[] projects =
+        [
+            ("Engine.Tests/Engine.Tests.csproj", XDocument.Parse("<Project />")),
+            ("Engine.Cli/Engine.Cli.csproj", XDocument.Parse("<Project><PropertyGroup><AssemblyName>engine</AssemblyName></PropertyGroup></Project>")),
+            (relative, XDocument.Parse(text)),
+        ];
+
+        Assert.Contains(AssemblyNameOffences(projects, []), offence => offence.Contains(expected, StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public void An_Assembly_Name_In_An_Imported_File_Is_An_Offence()
+    {
+        (string, XDocument)[] imported = [("Directory.Build.props", XDocument.Parse("<Project><PropertyGroup><AssemblyName>Engine.Tests</AssemblyName></PropertyGroup></Project>"))];
+
+        Assert.Single(AssemblyNameOffences([], imported));
+        Assert.Empty(AssemblyNameOffences([("Engine.Cli/Engine.Cli.csproj", XDocument.Parse("<Project><PropertyGroup><AssemblyName>engine</AssemblyName></PropertyGroup></Project>"))], []));
+    }
+
+    // Finding T77 of the second codebase review of 2026-10-28 (TASK-0098): a NUL byte in a
+    // string literal made git show a test file as binary, so a person who reviewed a change
+    // of it saw no text. A source file holds no control byte other than a tab and the line ends.
+    internal static IEnumerable<string> ControlByteOffences(string relative, byte[] bytes)
+    {
+        for (var i = 0; i < bytes.Length; i++)
+        {
+            if ((bytes[i] < 0x20 && bytes[i] is not (0x09 or 0x0A or 0x0D)) || bytes[i] == 0x7F)
+            {
+                yield return $"{relative} holds the control byte 0x{bytes[i]:X2} at offset {i}; write an escape such as \\0";
+                yield break;
+            }
+        }
+    }
+
+    [Fact]
+    public void No_Source_File_Holds_A_Control_Byte()
+    {
+        var offences = ProjectFiles()
+            .Select(Path.GetDirectoryName)
+            .SelectMany(directory => Directory.EnumerateFiles(directory!, "*.cs", SearchOption.AllDirectories))
+            .Select(file => RepositoryFiles.Relative(file))
+            .Where(relative => !IsOutOfScope(relative, HoldsProject))
+            .Distinct(StringComparer.Ordinal)
+            .SelectMany(relative => ControlByteOffences(relative, File.ReadAllBytes(RepositoryFiles.Path(relative))))
+            .ToArray();
+
+        Assert.True(offences.Length == 0, string.Join("\n  ", offences));
+    }
+
+    [Theory]
+    [InlineData(new byte[] { 0x61, 0x00, 0x62 }, true)]
+    [InlineData(new byte[] { 0x61, 0x1B, 0x62 }, true)]
+    [InlineData(new byte[] { 0x61, 0x7F }, true)]
+    [InlineData(new byte[] { 0xEF, 0xBB, 0xBF, 0x61, 0x09, 0x0D, 0x0A }, false)]
+    public void A_Control_Byte_In_A_Source_File_Is_An_Offence(byte[] bytes, bool offence)
+    {
+        Assert.Equal(offence, ControlByteOffences("Probe.cs", bytes).Any());
+    }
 
     // Each value of the attribute Include on each item with the given name, one
     // path at a time. An Include may hold several paths with a semicolon, and
@@ -222,6 +366,9 @@ public class DependencyDirectionGateTests
     [InlineData("<Project><ItemGroup><ProjectReference Include=\"..\\3DEngine.Vulkan\\3DEngine.Vulka?.csproj\" /></ItemGroup></Project>", "with a wildcard")]
     [InlineData("<Project><Sdk Name=\"Other.Sdk\" /></Project>", "imports an SDK with the element Sdk")]
     [InlineData("<Project><Import Project=\"Sdk.targets\" Sdk=\"Third.Sdk\" /></Project>", "imports an SDK with the element Import")]
+    // Finding T71 of the second codebase review of 2026-10-28 (TASK-0098).
+    [InlineData("<Project><ItemGroup><PackageReference Include=\"ImGui%2ENET\" Version=\"1.91.6.1\" /></ItemGroup></Project>", "with an MSBuild escape")]
+    [InlineData("<Project><ItemGroup><ProjectReference Include=\"..\\3DEngine.Core\\3DEngine%2ECore.csproj\" /></ItemGroup></Project>", "with an MSBuild escape")]
     public void Each_Form_Of_Finding_T50_Is_An_Offence(string project, string expected)
     {
         var offences = ReferenceOffences("Probe.csproj", XDocument.Parse(project)).ToList();
@@ -288,6 +435,10 @@ public class DependencyDirectionGateTests
 
             if (include is not null && (include.Contains("$(", StringComparison.Ordinal) || include.Contains("@(", StringComparison.Ordinal) || include.Contains("%(", StringComparison.Ordinal)))
                 yield return $"{relative} has the item {name} '{include}', whose value MSBuild computes";
+            // Finding T71 of the second codebase review of 2026-10-28 (TASK-0098): MSBuild reads
+            // ImGui%2ENET as ImGui.NET, and NuGet restored it.
+            else if (include is not null && include.Contains('%', StringComparison.Ordinal))
+                yield return $"{relative} has the item {name} '{include}' with an MSBuild escape, which the gate does not read as MSBuild does";
             else if (include is not null && Is(element, "ProjectReference") && include.IndexOfAny(['*', '?']) >= 0)
                 yield return $"{relative} has the item {name} '{include}' with a wildcard, which the graph cannot read";
             else if (Is(element, "Reference") && include is not null)
