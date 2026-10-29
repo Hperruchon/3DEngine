@@ -63,6 +63,6 @@ public sealed class DeleteSketchItemCommandHandler : ICommandHandler, ICommandEn
             || SketchResults.IsOrigin(sketch, delete.ItemId))
             return Task.FromResult(SketchResults.ItemNotFound(delete.SketchId, delete.ItemId, "item that a command can delete"));
 
-        return Task.FromResult(SketchResults.Changed(SketchModel.Without(sketch, delete.ItemId), "itemId", delete.ItemId));
+        return Task.FromResult(SketchResults.Changed(document, backend, command.CommandId, SketchModel.Without(sketch, delete.ItemId), "itemId", delete.ItemId));
     }
 }

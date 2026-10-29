@@ -101,7 +101,7 @@ public sealed class ExtrudeTests : IDisposable
 
         var body = await Applied(session, new ExtrudeCommand { SketchId = sketch, Distance = distance }, "bodyId");
 
-        Assert.Equal(300.0, backend.Volume(new BodyHandle(body)), 9);
+        Assert.Equal(300.0, backend.Volume(new BodyHandle(await Key(session, body))), 9);
         var box = (await session.Query<Aabb>(new GetBoundingBoxQuery { BodyId = body })).Result;
         Assert.Equal((minX, minY, minZ, maxX, maxY, maxZ), (box.MinX, box.MinY, box.MinZ, box.MaxX, box.MaxY, box.MaxZ));
         var info = (await session.Query<BodyInfo>(new GetBodyInfoQuery { BodyId = body })).Result!;
@@ -119,7 +119,7 @@ public sealed class ExtrudeTests : IDisposable
 
         var body = await Applied(session, new ExtrudeCommand { SketchId = sketch, Distance = 5 }, "bodyId");
 
-        Assert.Equal(300.0, backend.Volume(new BodyHandle(body)), 9);
+        Assert.Equal(300.0, backend.Volume(new BodyHandle(await Key(session, body))), 9);
     }
 
     // ADR-0036 item 2: the loop starts at the start of the first line, follows the lines,
@@ -239,14 +239,16 @@ public sealed class ExtrudeTests : IDisposable
         Assert.Equal(DiagnosticCodes.GeomCapMissing, await Refused(session, new ExtrudeCommand { SketchId = sketch, Distance = 5 }));
     }
 
-    // ADR-0036 items 7 and 8, and ADR-0015: the sketch stays live and does not change, an
-    // edit of the sketch leaves the solid as it was (K0b changes that), an open of the
-    // file gives the same solid, and an undo removes it.
+    // ADR-0036 items 7 and 8, ADR-0037 item 5 and ADR-0015: the extrude leaves the sketch as
+    // it was, an edit of the sketch rebuilds the solid (until K0b it left the solid as it
+    // was), an open of the file gives the rebuilt solid, the first undo gives back the first
+    // solid, and the second undo removes the body.
     [NativeManifoldFact]
-    public async Task The_Sketch_Stays_The_File_Replays_The_Solid_And_An_Undo_Removes_It()
+    public async Task The_File_Replays_The_Rebuilt_Solid_And_Each_Undo_Steps_Back()
     {
         var path = Path.Combine(_folder, "extrude" + DocumentFile.Extension);
-        Aabb expected;
+        Aabb first;
+        Aabb moved;
         Guid body;
         using (var backend = new ManifoldGeometryBackend())
         {
@@ -258,9 +260,10 @@ public sealed class ExtrudeTests : IDisposable
             body = await Applied(live, new ExtrudeCommand { SketchId = sketch, Distance = -5 }, "bodyId");
 
             Assert.Equal(before, await live.Read((document, _) => document.Sketches.Single()));
-            expected = (await live.Query<Aabb>(new GetBoundingBoxQuery { BodyId = body })).Result;
+            first = (await live.Query<Aabb>(new GetBoundingBoxQuery { BodyId = body })).Result;
             await Applied(live, new MoveSketchPointCommand { SketchId = sketch, PointId = points[2], X = 20, Y = 20 }, "pointId");
-            Assert.Equal(expected, (await live.Query<Aabb>(new GetBoundingBoxQuery { BodyId = body })).Result);
+            moved = (await live.Query<Aabb>(new GetBoundingBoxQuery { BodyId = body })).Result;
+            Assert.Equal((1.0, 0.0, 2.0, 20.0, 5.0, 20.0), (moved.MinX, moved.MinY, moved.MinZ, moved.MaxX, moved.MaxY, moved.MaxZ));
             live.Close();
         }
 
@@ -268,14 +271,20 @@ public sealed class ExtrudeTests : IDisposable
         {
             var opened = new DocumentSession(EngineHosting.CreateDefault(backend));
             await DocumentFile.Open(opened, path);
-            Assert.Equal(expected, (await opened.Query<Aabb>(new GetBoundingBoxQuery { BodyId = body })).Result);
-            Assert.Equal(300.0, backend.Volume(new BodyHandle(body)), 9);
+            Assert.Equal(moved, (await opened.Query<Aabb>(new GetBoundingBoxQuery { BodyId = body })).Result);
+            // The loop (1, 2), (11, 2), (20, 20), (1, 8) has the area 147, by 5.
+            Assert.Equal(735.0, backend.Volume(new BodyHandle(await Key(opened, body))), 9);
 
             await Applied(opened, new UndoCommand(), "commandId");
+            Assert.Equal(first, (await opened.Query<Aabb>(new GetBoundingBoxQuery { BodyId = body })).Result);
             await Applied(opened, new UndoCommand(), "commandId");
             Assert.Equal(DiagnosticCodes.GeomBodyNotFound, (await opened.Query<Aabb>(new GetBoundingBoxQuery { BodyId = body })).Error?.Code);
             Assert.Equal(1, await opened.Read((document, _) => document.Sketches.Count));
             opened.Close();
         }
     }
+
+    // ADR-0037 item 2: the key of the solid of a body in the backend.
+    private static Task<Guid> Key(DocumentSession session, Guid body)
+        => session.Read((document, _) => document.Bodies.Single(record => record.Handle.Id == body).GeometryKey);
 }

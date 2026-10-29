@@ -73,6 +73,6 @@ public sealed class MoveSketchPointCommandHandler : ICommandHandler, ICommandEnc
                 DiagnosticCodes.GeomInvalidParam, "The position of a point of a sketch is a pair of finite numbers."));
 
         var points = sketch.Points.Select(point => point.Id == move.PointId ? point with { X = move.X, Y = move.Y } : point).ToList();
-        return Task.FromResult(SketchResults.Changed(sketch with { Points = points }, "pointId", move.PointId, held: move.PointId));
+        return Task.FromResult(SketchResults.Changed(document, backend, command.CommandId, sketch with { Points = points }, "pointId", move.PointId, held: move.PointId));
     }
 }

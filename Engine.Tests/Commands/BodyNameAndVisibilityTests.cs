@@ -262,7 +262,7 @@ public class BodyNameAndVisibilityTests
         Assert.Equal(true, created["visible"]);
 
         var snapshot = await session.Read((document, _) => SnapshotProjector.Project(document, seq: 0));
-        Assert.Equal(new SnapshotBodyEntry(id, "Box", "Plate", false), Assert.Single(snapshot.Bodies));
+        Assert.Equal(new SnapshotBodyEntry(id, "Box", "Plate", false, id, null), Assert.Single(snapshot.Bodies));
     }
 
     // A backend that stores each body and runs translate and subtract, with no geometry.

@@ -88,7 +88,8 @@ public sealed class TranslateCommandHandler : ICommandHandler, ICommandEncoder
         {
             transform.Translate(
                 handle,
-                new BodyHandle(translate.BodyId),
+                // ADR-0037 item 2: the solid of the body, under its geometry key.
+                new BodyHandle(source.GeometryKey),
                 translate.Dx, translate.Dy, translate.Dz);
         }
         catch (Exception ex)

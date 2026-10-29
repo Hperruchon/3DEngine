@@ -37,6 +37,18 @@ internal static class SchemaEventsEndpoint
         return result;
     }
 
+    // ADR-0037 item 8: body.created and body.changed give the geometry key of the body and
+    // its fault, which is null when the last rebuild succeeded.
+    private static IReadOnlyDictionary<string, FieldSchema> SolidFields(params (string Name, string Type)[] fields)
+    {
+        var result = new Dictionary<string, FieldSchema>(BodyFields(fields), StringComparer.Ordinal)
+        {
+            ["geometry"] = new FieldSchema("guid", Required: true),
+            ["fault"] = new FieldSchema("object", Required: false),
+        };
+        return result;
+    }
+
     // ADR-0033 item 9: a sketch can have no name, so the name can be null.
     private static readonly IReadOnlyDictionary<string, FieldSchema> SketchCreatedFields = new Dictionary<string, FieldSchema>(Fields(("sketchId", "guid"), ("datumId", "guid")), StringComparer.Ordinal)
     {
@@ -60,10 +72,10 @@ internal static class SchemaEventsEndpoint
         new("heartbeat", None),
         new("subscription.resume", Fields(("fromSeq", "integer"))),
         new("subscription.reset", Fields(("documentId", "guid"), ("snapshot", "object"))),
-        new("body.created", BodyFields(("bodyId", "guid"), ("kind", "string"))), // ADR-0012 §5, ADR-0028 item 7
+        new("body.created", SolidFields(("bodyId", "guid"), ("kind", "string"))), // ADR-0012 §5, ADR-0028 item 7, ADR-0037 item 8
         new("body.consumed", Fields(("bodyId", "guid"))), // ADR-0021 item 6, TASK-0037
         new("body.removed", Fields(("bodyId", "guid"))), // ADR-0031 item 6, TASK-0093
-        new("body.changed", BodyFields(("bodyId", "guid"))), // ADR-0028 item 7, TASK-0085
+        new("body.changed", SolidFields(("bodyId", "guid"))), // ADR-0028 item 7, TASK-0085, ADR-0037 item 8
         new("sketch.created", SketchCreatedFields), // ADR-0033 item 9, TASK-0100
         new("sketch.changed", Fields(("sketchId", "guid"))), // ADR-0033 item 9, TASK-0100
         new("sketch.removed", Fields(("sketchId", "guid"))), // ADR-0033 item 9, TASK-0100

@@ -212,6 +212,10 @@ public sealed class CommandBus
         return committed;
     }
 
+    // ADR-0037 item 8: the fault of a body in an event, or null.
+    private static IReadOnlyDictionary<string, object?>? Fault(BodyFault? fault)
+        => fault is null ? null : new Dictionary<string, object?> { ["code"] = fault.Code, ["message"] = fault.Message };
+
     private BodyRecord LiveRecord(BodyHandle handle)
         => _document.Bodies.First(body => body.Handle.Id == handle.Id);
 
@@ -432,6 +436,8 @@ public sealed class CommandBus
                 ["kind"] = body.Kind,
                 ["name"] = body.Name,
                 ["visible"] = body.Visible,
+                ["geometry"] = body.GeometryKey,
+                ["fault"] = Fault(body.Fault),
             }));
         }
 
@@ -465,6 +471,8 @@ public sealed class CommandBus
                 ["bodyId"] = body.Handle.Id,
                 ["name"] = body.Name,
                 ["visible"] = body.Visible,
+                ["geometry"] = body.GeometryKey,
+                ["fault"] = Fault(body.Fault),
             }));
         }
 
