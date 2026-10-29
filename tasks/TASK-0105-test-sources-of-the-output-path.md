@@ -1,7 +1,7 @@
 ---
 id: 0105
 title: The test framework gate reads the output path and each MSBuild file of a test project
-status: Ready
+status: Active
 phase: P0.41
 opened: 2026-10-29
 depends-on: [0104]
@@ -85,3 +85,7 @@ No file outside the gate files can change the result of a test in a test project
 ## Progress
 
 - 2026-10-29: opened by the codebase review of 2026-10-29 (TASK-0104).
+- 2026-10-29: the gate reads each MSBuild file of a test project (`FilesThatMsBuildReads`: the project file, its
+  `.user` file and each `Directory.Build` file above it), and refuses nine properties that move the output folders
+  or change the default items. Both forms of T79 fail the gate program; each old rule, put back, fails a test. The
+  judge needs no change: `IsBuildInput` already names each `.user` file a gate file. 7 new tests.

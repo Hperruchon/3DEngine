@@ -1,6 +1,7 @@
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
+using System.Text.RegularExpressions;
 
 namespace Engine.Tests.Governance;
 
@@ -258,6 +259,12 @@ public class TestAttributeGateTests
     // framework of T62, and the source that used only the aliases passed the gate. The
     // project file of a test project may import the namespace Xunit, as each one does,
     // and nothing else of xUnit; it adds no source and imports no file.
+    //
+    // Finding T79 of the codebase review of 2026-10-29 (TASK-0105): MSBuild also reads
+    // the file <project>.csproj.user and each Directory.Build file above the project,
+    // and the gate read the project file only. Twelve aliases in 3DEngine.Tests.csproj.user
+    // hid a framework of T62, and each failed test passed. The gate now reads each file
+    // that DependencyDirectionGateTests.FilesThatMsBuildReads gives for a test project.
     [Fact]
     public void No_Test_Project_File_Brings_A_Name_Or_A_Source_Past_The_Gate()
     {
@@ -267,15 +274,70 @@ public class TestAttributeGateTests
         {
             var file = RepositoryFiles.Path(project, project + ".csproj");
             Assert.True(File.Exists(file), $"{file} was not found.");
-            offences.AddRange(ProjectFileOffences(RepositoryFiles.Relative(file), File.ReadAllText(file)));
+            offences.AddRange(TestProjectOffences(file));
         }
 
         Assert.True(
             offences.Count == 0,
-            "The project file of a test project may hold <Using Include=\"Xunit\" /> and no other import of a "
-            + "name of xUnit, no alias with a name of xUnit, no Compile item and no Import: each one can bring a "
-            + "test framework or a shadow type past this gate (finding T69 of the second codebase review of "
-            + "2026-10-28). Offences:\n  " + string.Join("\n  ", offences));
+            "An MSBuild file of a test project may hold <Using Include=\"Xunit\" /> and no other import of a "
+            + "name of xUnit, no alias with a name of xUnit, no Compile item, no Import and no property that "
+            + "moves the output folders or changes the default items: each one can bring a test framework or a "
+            + "shadow type past this gate (findings T69 and T79 of the codebase reviews of 2026-10-28 and "
+            + "2026-10-29). Offences:\n  " + string.Join("\n  ", offences));
+    }
+
+    private static IEnumerable<string> TestProjectOffences(string projectFile)
+        => DependencyDirectionGateTests.FilesThatMsBuildReads(projectFile)
+            .SelectMany(file => ProjectFileOffences(RepositoryFiles.Relative(file), File.ReadAllText(file)));
+
+    // The .user file of T79: the gate reads it beside the project file.
+    [Fact]
+    public void The_User_File_Of_A_Test_Project_Is_Read()
+    {
+        var folder = System.IO.Path.Combine(System.IO.Path.GetTempPath(), "3de-t79-" + Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(folder);
+        try
+        {
+            var project = System.IO.Path.Combine(folder, "Probe.csproj");
+            File.WriteAllText(project, "<Project Sdk=\"Microsoft.NET.Sdk\"><ItemGroup><Using Include=\"Xunit\" /></ItemGroup></Project>");
+            File.WriteAllText(project + ".user", "<Project><ItemGroup><Using Include=\"Xunit.Sdk.XunitTestFramework\" Alias=\"FwBase\" /></ItemGroup></Project>");
+
+            var offences = TestProjectOffences(project).ToList();
+
+            Assert.True(
+                offences.Any(o => o.Contains("Probe.csproj.user", StringComparison.Ordinal) && o.Contains("imports Xunit.Sdk.XunitTestFramework", StringComparison.Ordinal)),
+                "Expected an offence of Probe.csproj.user. Offences:\n  " + string.Join("\n  ", offences));
+        }
+        finally
+        {
+            Directory.Delete(folder, recursive: true);
+        }
+    }
+
+    // Finding T79: the gate leaves out <project>/bin/ and <project>/obj/ by name, and
+    // MSBuild leaves out $(BaseOutputPath) and $(BaseIntermediateOutputPath) with
+    // $(DefaultItemExcludes). A test project with <BaseOutputPath>out\</BaseOutputPath>
+    // compiled 3DEngine.Tests/bin/, and a framework there passed. A test project keeps
+    // the default folders and the default items, so the rule of IsCompiled holds.
+    private static readonly Regex OutputProperty = new(
+        @"^(BaseOutputPath|OutputPath|BaseIntermediateOutputPath|IntermediateOutputPath|MSBuildProjectExtensionsPath|DefaultItemExcludes|DefaultExcludesInProjectFolder|EnableDefaultItems|EnableDefaultCompileItems)$",
+        RegexOptions.Compiled | RegexOptions.IgnoreCase);
+
+    [Theory]
+    [InlineData("<BaseOutputPath>out\\</BaseOutputPath>", "sets the property BaseOutputPath")]
+    [InlineData("<OutputPath>out\\</OutputPath>", "sets the property OutputPath")]
+    [InlineData("<baseintermediateoutputpath>o\\</baseintermediateoutputpath>", "sets the property baseintermediateoutputpath")]
+    [InlineData("<IntermediateOutputPath>o\\</IntermediateOutputPath>", "sets the property IntermediateOutputPath")]
+    [InlineData("<DefaultItemExcludes>x</DefaultItemExcludes>", "sets the property DefaultItemExcludes")]
+    [InlineData("<EnableDefaultCompileItems>false</EnableDefaultCompileItems>", "sets the property EnableDefaultCompileItems")]
+    public void Each_Form_Of_Finding_T79_Is_An_Offence(string element, string expected)
+    {
+        var xml = $"<Project Sdk=\"Microsoft.NET.Sdk\"><PropertyGroup>{element}</PropertyGroup></Project>";
+        var offences = ProjectFileOffences("Probe.csproj", xml).ToList();
+
+        Assert.True(
+            offences.Any(o => o.Contains(expected, StringComparison.Ordinal)),
+            $"Expected an offence with '{expected}'. Offences:\n  " + string.Join("\n  ", offences));
     }
 
     // The forms of finding T69 and its neighbours; each one must be an offence.
@@ -319,7 +381,9 @@ public class TestAttributeGateTests
                 ?? element.Elements().FirstOrDefault(e => e.Name.LocalName.Equals(key, StringComparison.OrdinalIgnoreCase))?.Value;
             string Unescaped(string? value) => Uri.UnescapeDataString((value ?? string.Empty).Trim());
 
-            if (name.Equals("Compile", StringComparison.OrdinalIgnoreCase))
+            if (OutputProperty.IsMatch(name))
+                yield return $"{relative}: sets the property {name}";
+            else if (name.Equals("Compile", StringComparison.OrdinalIgnoreCase))
                 yield return $"{relative}: adds the Compile item {Unescaped(Value("Include") ?? Value("Update"))}";
             else if (name.Equals("Import", StringComparison.OrdinalIgnoreCase))
                 yield return $"{relative}: imports the file {Unescaped(Value("Project"))}";
