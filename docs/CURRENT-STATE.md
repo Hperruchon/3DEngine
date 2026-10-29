@@ -2995,3 +2995,34 @@ New tests: 22. The test list holds 1058 (764 in `Engine.Tests`, 190 in `3DEngine
 `3DEngine.ImageTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
 entries: 14 of 15. New diagnostic codes: `E-SKETCH-PROFILE-INVALID`. Since the review of v0.96, 4 product
 milestones and 9 entries followed it.
+
+## v0.106 — The codebase review of 2026-10-29 (governance, TASK-0104)
+
+The owner chose on 2026-10-29 to do the review before K0b. The review examined `main` at `730e508`, the merge
+of v0.105.
+
+**The change.** `docs/reviews/2026-10-29-codebase-review.md`, the twelfth codebase review. It gives the state of
+each of the 204 findings of the last review, 23 new findings, the research for K0b and six questions for the
+owner. Three tasks hold the new findings: TASK-0105 (P0.41) holds T79 before K0b, and TASK-0106 (P0.42) and
+TASK-0107 (P0.43) hold the rest after K0b. Register entry R-0044 holds the questions. No code, test or gate
+changes.
+
+**Proof.** Four review agents worked in their own worktrees at `730e508`. I read each cited line on disk, and a
+script printed each cited line of the code for that reading. I ran E86 again with a probe test ("again: Applied v6;
+lines 2, with the id 2"), and T79 with a build, the gate program and a control. The review gate passes with twelve
+reviews.
+
+**What stays.** The new findings: 1 high (T79), 6 medium (E86, E87, V40, V41, T80, T81) and 16 low. Open findings
+of each review: 0 critical, 6 high, 28 medium and 40 low. The review did not repeat the runs of the agents except
+E86 and T79.
+
+**A correction.** The run 40839708477 of the merge of v0.104 on `main` (`8fe8d0b`) is red: the job "Gate on
+windows-latest" failed in `HostGuardTests.A_Host_With_A_File_Keeps_Each_Applied_Command_After_A_Kill`, with "The
+process cannot access the file ... because it is being used by another process". The branch run 40839163079 on
+`f8fae97` was green, and the ledger of v0.104 cites no run. I started TASK-0103 without reading the run on
+`main` (finding T87). The run 40869048102 on `730e508` passed. TASK-0107 makes the test wait for its file.
+
+New tests: none. The test list holds 1058 (764 in `Engine.Tests`, 190 in `3DEngine.Tests`, 104 in
+`3DEngine.ImageTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
+entries: 15 of 15. New diagnostic codes: none. Since the review of v0.105, 0 product milestones and 1 entry followed
+it.
