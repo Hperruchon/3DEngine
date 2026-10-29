@@ -68,6 +68,7 @@ internal sealed unsafe class DesktopUi : IDisposable
     public const string MovePointLabel = "Move point";
     public const string ValueLabel = "Value";
     public const string EditLabel = "Edit";
+    public const string ExtrudeLabel = "Extrude";
 
     // The five kinds of K2a (ADR-0033 item 3) and their buttons.
     public static readonly (string Label, string Kind)[] ConstraintButtons =
@@ -576,6 +577,11 @@ internal sealed unsafe class DesktopUi : IDisposable
         ToolButton(SelectToolLabel, SketchToolKind.Select, panel.Tool);
         ImGui.SameLine();
         SketchButton(FinishLabel, new FinishSketchAction());
+        ImGui.SameLine();
+        // ADR-0036 item 9 (Q4 A): the pad of one signed distance along the normal of the datum.
+        if (ImGui.Button(ExtrudeLabel))
+            OpenPad(new NumericPad(ExtrudeLabel, Unit, new PadField("distance", "10")), values => new ExtrudeAction(values[0]), bySketch: true);
+        Item(SketchItem(ExtrudeLabel));
 
         if (panel.Tool == SketchToolKind.Line)
         {
