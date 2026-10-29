@@ -1,18 +1,18 @@
 ---
 id: 0035
 title: The constraint solver of a sketch
-status: Proposed
+status: Accepted
 topic: Sketch, determinism
 date: 2026-10-29
 supersedes: []
 superseded-by: []
-amends: []
+amends: ['0033']
 amended-by: []
 affects:
   - Engine.Core/Sketch/**
   - Engine.Core/Queries/GetSketchQuery.cs
   - Engine.Core/Queries/GetSketchQueryHandler.cs
-enforced-by: Engine.Tests/Sketch/SketchSolverTests.cs
+enforced-by: Engine.Tests/Sketch/SketchSolverTests.cs (TASK-0102 creates it)
 ---
 
 # ADR-0035 — The constraint solver of a sketch
@@ -44,6 +44,8 @@ Five facts constrain the design:
 Research. **[Not verified in this session]** The solver of SolveSpace (`src/system.cpp`) uses the same method as
 option Q1 A: a Newton iteration whose step is the step of minimum norm, from a linear solve of J·Jᵀ. FreeCAD and
 Onshape keep a constraint that conflicts with the others, and show it in red; they do not refuse it.
+
+On 2026-10-29 the owner answered the questions Q1 to Q4 below, A to each.
 
 ### Questions for the owner
 
@@ -158,3 +160,4 @@ equations of the kinds 6 to 14.
 ## History
 
 - 2026-10-29 · TASK-0102 · Proposed, with the questions Q1 to Q4 for the owner.
+- 2026-10-29 · TASK-0102 · The owner accepted the record on 2026-10-29 with Q1 to Q4 A, and no change.

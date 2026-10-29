@@ -1,13 +1,13 @@
 ---
 id: 0033
 title: The sketch model in the engine
-status: Accepted
+status: Amended
 topic: Contracts, sketch
 date: 2026-10-28
 supersedes: []
 superseded-by: []
 amends: ['0012', '0021', '0031']
-amended-by: []
+amended-by: ['0035']
 affects:
   - Engine.Contracts/Document.cs
   - Engine.Contracts/Handlers/ICommandHandler.cs
@@ -100,7 +100,7 @@ Four conditions make this a decision and not a preference:
    The Document holds one record for each live sketch in `Document.Sketches`. A record never changes: an edit gives
    a new record with the same identifier. The positions of the points are a projection of the record and not an
    input: in K2a each position comes from the command that adds or moves the point, and from K3a the solver writes
-   them (Q6). The log holds the inputs only.
+   them (Q6, ADR-0035 item 2). The log holds the inputs only.
 5. **Identity.** The identifier of a sketch, of a point, of a line and of a constraint is the identifier of the
    command that adds it (ADR-0012 §4). No edit changes an identifier, and each command names an item by its
    identifier, never by its place in a list. A sketch is not consumed as a body is (ADR-0021): an edit replaces the
@@ -124,7 +124,8 @@ Four conditions make this a decision and not a preference:
    negative or not a unit pair, or a kind that this phase does not give), and `E-SKETCH-NAME-INVALID` (a name that
    breaks the rules of item 4). The frame and the origin point are not deletable. A position that is not finite
    gives `E-GEOM-INVALID-PARAM`.
-7. **The query.** `GetSketch { sketchId }` gives the record, and the residual of each constraint. The residual is
+7. **The query.** `GetSketch { sketchId }` gives the record, and the residual of each constraint. From K3a it
+   also gives `solved` and `freedom` (ADR-0035 item 8). The residual is
    for the person and for K3a; the engine applies a command with a constraint that the positions do not satisfy.
 8. **The result of a handler.** `CommandHandlerResult` gains `CreatedSketches` and `ChangedSketches`, two lists of
    `SketchRecord`, empty by default. A handler changes only a live sketch, gives each one time, and keeps its
@@ -180,3 +181,5 @@ the circle, the arc and the kinds 6 to 14.
 - 2026-10-28 · TASK-0100 · The contract lands: `Engine.Contracts/Sketch/`, `Document.Sketches` and the two lists of
   `CommandHandlerResult`. Item 6 gains `E-SKETCH-NAME-INVALID`, because item 4 gives a name its rules and the record
   named no code; the code of a body name keeps its meaning. A position that is not finite gives `E-GEOM-INVALID-PARAM`.
+- 2026-10-29 · TASK-0102 · ADR-0035 amends items 4 and 7: the solver writes the positions of each changed record,
+  and `GetSketch` gives `solved` and `freedom`.
