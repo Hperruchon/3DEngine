@@ -117,7 +117,7 @@ public class EventPayloadSchemaTests(WebApplicationFactory<Program> factory)
     public void A_Null_In_A_Required_Field_Is_A_Problem()
     {
         var record = new EventRecord(1, DateTime.UtcNow, Guid.NewGuid(), Guid.NewGuid(), "body.changed",
-            new Dictionary<string, object?> { ["bodyId"] = Guid.NewGuid(), ["name"] = null, ["visible"] = null });
+            new Dictionary<string, object?> { ["bodyId"] = Guid.NewGuid(), ["name"] = null, ["visible"] = null, ["geometry"] = Guid.NewGuid(), ["fault"] = null });
 
         var problem = Assert.Single(PayloadProblems(record));
         Assert.Contains("'visible' as null", problem, StringComparison.Ordinal);

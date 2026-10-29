@@ -7,7 +7,7 @@ date: 2026-10-28
 supersedes: []
 superseded-by: []
 amends: ['0006', '0021']
-amended-by: ['0032', '0033']
+amended-by: ['0032', '0033', '0037']
 affects:
   - Engine.Contracts/Handlers/ICommandHandler.cs
   - Engine.Core/CommandBus.cs
@@ -116,3 +116,5 @@ are not planned. A register entry records them when a measure shows a need.
 - 2026-10-28 · TASK-0094 · ADR-0032 amends item 11: the keys and two touch gestures come through the intent layer.
 - 2026-10-28 · TASK-0100 · ADR-0033 amends items 3 to 5: a step records sketch records, and an undo and a redo give
   sketch events.
+- 2026-10-29 · TASK-0108 · ADR-0037 amends the context: the backend still never changes and never frees a solid, and a body record
+  can point at a newer solid; an undo gives back the old key.

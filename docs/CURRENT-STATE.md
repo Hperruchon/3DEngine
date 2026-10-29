@@ -3055,3 +3055,37 @@ New tests: 7. The test list holds 1065 (771 in `Engine.Tests`, 190 in `3DEngine.
 `3DEngine.ImageTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
 entries: 15 of 15. New diagnostic codes: none. Since the review of v0.105, 0 product milestones and 2 entries
 followed it.
+
+## v0.108 — An edit of a sketch rebuilds each live extrude of it, and a broken profile gives a fault on the body (K0b, TASK-0108)
+
+The owner answered Q1 to Q6 of the codebase review of 2026-10-29 with A on 2026-10-29, and accepted ADR-0037 with no
+change. K0b is the engine and HTTP part; K0c is the desktop.
+
+**The change.**
+
+- `BodyRecord` gains `Geometry`, the key of its solid in the backend, and `Fault`, a `BodyFault(Code, Message)`.
+  Both are optional, so no saved file changes. `GeometryKey` gives `Geometry ?? Handle.Id`.
+- `Translate`, `Subtract`, `GetBoundingBox` and `GetTessellation` read a solid by `GeometryKey`. `Extrude` stores its
+  solid under `GeometryKeys.Derive`, a version 5 guid of RFC 9562, and never under its handle.
+- Each sketch command rebuilds each extrude of its sketch that is in effect in the log and live, in the order of the
+  log, under a new key (`Engine.Core/Sketch/SketchRebuild.cs`). An edit that does not change the solid changes no
+  body. `ExtrudeProfile` gives the parameters to `Extrude` and to the rebuild.
+- A broken profile, a sketch that is not solved, or a failure of the backend keeps the last solid, and the body gets
+  the fault `W-SKETCH-REBUILD-FAILED`. A consumed extrude gives `W-SKETCH-EXTRUDE-CONSUMED`. Both are new codes.
+- `body.created`, `body.changed` and the snapshot of a subscription give `geometry` and `fault`.
+- ADR-0037 amends ADR-0012, ADR-0021, ADR-0028, ADR-0031 and ADR-0036.
+
+**Proof.** 12 new test cases: 11 in `Engine.Tests/Sketch/RebuildTests.cs` and one over HTTP and the WebSocket. The
+test of the replay in `ExtrudeTests` turns round: the move of a corner now changes the box, the open gives the
+rebuilt solid with the volume 735, and the first undo gives back the first box. The key test holds a constant that a
+computation in Node with no shared code also gives. 16 injections: each one failed a test.
+
+**What stays.** The desktop draws the first mesh after a rebuild until K0c. A consumed extrude does not follow until
+K0. Each sketch command walks the whole log. The backend keeps one more solid for each rebuild (ADR-0031).
+
+**A correction.** None.
+
+New tests: 12. The test list holds 1077 (783 in `Engine.Tests`, 190 in `3DEngine.Tests`, 104 in
+`3DEngine.ImageTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
+entries: 14 of 15. New diagnostic codes: `W-SKETCH-REBUILD-FAILED`, `W-SKETCH-EXTRUDE-CONSUMED`. Since the review of
+v0.105, 1 product milestone and 3 entries followed it.

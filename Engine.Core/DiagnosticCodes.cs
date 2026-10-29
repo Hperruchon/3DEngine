@@ -55,4 +55,9 @@ public static class DiagnosticCodes
     // ADR-0036 item 4: the lines of a sketch do not form one closed loop, or the sketch
     // is not solved, so an extrude has no profile.
     public const string SketchProfileInvalid = "E-SKETCH-PROFILE-INVALID";
+
+    // ADR-0037 items 6 and 7: an edit of a sketch applies, and an extrude of it does not
+    // follow: its profile broke, or a later command consumed it.
+    public const string SketchRebuildFailed = "W-SKETCH-REBUILD-FAILED";
+    public const string SketchExtrudeConsumed = "W-SKETCH-EXTRUDE-CONSUMED";
 }

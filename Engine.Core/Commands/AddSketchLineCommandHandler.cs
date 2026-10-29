@@ -74,6 +74,6 @@ public sealed class AddSketchLineCommandHandler : ICommandHandler, ICommandEncod
                 DiagnosticCodes.SketchLineInvalid, $"A line references two different points, and both ends are the point '{add.StartPointId}'."));
 
         var line = new SketchLine(add.CommandId, add.StartPointId, add.EndPointId);
-        return Task.FromResult(SketchResults.Changed(sketch with { Lines = [.. sketch.Lines, line] }, "lineId", line.Id));
+        return Task.FromResult(SketchResults.Changed(document, backend, command.CommandId, sketch with { Lines = [.. sketch.Lines, line] }, "lineId", line.Id));
     }
 }

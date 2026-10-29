@@ -25,7 +25,7 @@ names. Do not read all of them.
 | [0008](0008-command-query-event-triad.md) | Command, query and event triad with structured results | Amended | Contracts | 0006 | 0020 |
 | [0009](0009-3dengine-core-peer-render-kernel.md) | 3DEngine.Core is a peer render kernel | Amended | Boundary, clients | — | 0022, 0025 |
 | [0010](0010-subscription-reset-snapshot-format.md) | subscription.reset snapshot format | Amended | Contracts, observability | — | 0020, 0015 |
-| [0012](0012-geometry-backend-wiring.md) | Geometry backend wiring | Amended | Boundary, geometry, contracts | — | 0018, 0021, 0028, 0015, 0033 |
+| [0012](0012-geometry-backend-wiring.md) | Geometry backend wiring | Amended | Boundary, geometry, contracts | — | 0018, 0021, 0028, 0015, 0033, 0037 |
 | [0013](0013-command-query-schema-declaration.md) | Command and query schema declaration | Accepted | Contracts, observability | — | — |
 | [0014](0014-manifold-native-interop.md) | Manifold backend native-interop posture | Accepted | Boundary, geometry, native-interop | — | — |
 | [0015](0015-command-log-persistence.md) | The document file | Accepted | Persistence, contracts | 0010, 0012 | — |
@@ -34,22 +34,23 @@ names. Do not read all of them.
 | [0018](0018-tessellation-capability.md) | The tessellation capability | Accepted | Geometry, contracts, rendering | 0012 | — |
 | [0019](0019-hybrid-deployment-topology.md) | The hybrid deployment topology | Amended | Clients, deployment | — | 0024 |
 | [0020](0020-document-version-meaning.md) | The meaning of the document version | Accepted | Contracts, runtime, observability | 0006, 0008, 0010 | — |
-| [0021](0021-operand-consumption.md) | Operand consumption and the live body set | Amended | Contracts, geometry, observability | 0012 | 0028, 0031, 0033 |
+| [0021](0021-operand-consumption.md) | Operand consumption and the live body set | Amended | Contracts, geometry, observability | 0012 | 0028, 0031, 0033, 0037 |
 | [0022](0022-first-render-pipeline.md) | The first render pipeline | Amended | Rendering, boundary | 0009, 0017 | 0025 |
 | [0023](0023-camera-depth-and-draw-list.md) | The camera, the depth and the draw list of the renderer | Amended | Rendering | — | 0024, 0026 |
 | [0024](0024-in-process-events-and-body-origin.md) | The events of a session in its host, and the origin of a body in double precision | Accepted | Rendering, clients | 0019, 0023 | — |
 | [0025](0025-observe-a-cut.md) | The first demonstration, a device with no window, and an image test | Amended | Rendering, boundary | 0009, 0017, 0022 | 0029 |
 | [0026](0026-intent-layer.md) | Device-tagged pointer samples, an intent layer, and a parity test of touch and mouse | Amended | Rendering, clients | 0023 | 0027, 0029, 0032, 0034 |
 | [0027](0027-text-and-panels.md) | Text and panels through Dear ImGui, drawn by a first-party renderer | Amended | Rendering, clients | 0026 | 0029 |
-| [0028](0028-body-name-and-visibility.md) | The name and the visibility of a body | Accepted | Contracts, geometry | 0012, 0021 | — |
+| [0028](0028-body-name-and-visibility.md) | The name and the visibility of a body | Amended | Contracts, geometry | 0012, 0021 | 0037 |
 | [0029](0029-selection-and-hide-gestures.md) | The selection, the hide gestures and the frame of the camera in the desktop | Amended | Rendering, clients | 0025, 0026, 0027 | 0034 |
 | [0030](0030-document-file-in-the-desktop.md) | The document file in the desktop and for an agent | Accepted | Persistence, deployment | — | — |
-| [0031](0031-undo-and-redo.md) | Undo and redo as commands of the log | Amended | Contracts, runtime | 0006, 0021 | 0032, 0033 |
+| [0031](0031-undo-and-redo.md) | Undo and redo as commands of the log | Amended | Contracts, runtime | 0006, 0021 | 0032, 0033, 0037 |
 | [0032](0032-numeric-pad-and-evaluator.md) | The numeric pad, the expression evaluator and the keys of undo and redo | Amended | Clients, rendering | 0026, 0031 | 0034 |
 | [0033](0033-sketch-model.md) | The sketch model in the engine | Amended | Contracts, sketch | 0012, 0021, 0031 | 0035 |
 | [0034](0034-sketch-tools.md) | The sketch tools of the desktop | Accepted | Clients, sketch | 0026, 0029, 0032 | — |
 | [0035](0035-sketch-solver.md) | The constraint solver of a sketch | Accepted | Sketch, determinism | 0033 | — |
-| [0036](0036-extrude-of-a-sketch-profile.md) | The extrude of a closed profile of a sketch | Accepted | Contracts, geometry, sketch | — | — |
+| [0036](0036-extrude-of-a-sketch-profile.md) | The extrude of a closed profile of a sketch | Amended | Contracts, geometry, sketch | — | 0037 |
+| [0037](0037-rebuild-of-an-extrude.md) | The rebuild of an extrude after an edit of its sketch | Accepted | Contracts, geometry, sketch | 0012, 0021, 0028, 0031, 0036 | — |
 
 ## Topics
 
