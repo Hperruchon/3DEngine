@@ -50,6 +50,7 @@ internal sealed unsafe class DesktopUi : IDisposable
     public const string RedoLabel = "Redo";
     public const string NewBoxLabel = "New box";
     public const string MoveLabel = "Move";
+    public const string FaultLabel = "Fault";
 
     // ADR-0034 items 6 and 8: the buttons of a new sketch in the panel, and the window of the
     // sketch with its controls. A row of the window has the label of its item (SketchText).
@@ -349,10 +350,12 @@ internal sealed unsafe class DesktopUi : IDisposable
         return actions;
     }
 
-    // The text of a row: the name of the body, or its kind and a short identifier, and the word
-    // "hidden" for a hidden body (ADR-0029 item 7).
+    // The text of a row: the name of the body, or its kind and a short identifier, the word
+    // "hidden" for a hidden body (ADR-0029 item 7), and the word "fault" for a body whose last
+    // rebuild failed (ADR-0037 item 6, K0c).
     public static string RowText(LiveBody body)
-        => (body.Name ?? $"{body.Kind}  {body.Id.ToString()[..8]}") + (body.Visible ? string.Empty : "  (hidden)");
+        => (body.Name ?? $"{body.Kind}  {body.Id.ToString()[..8]}") + (body.Visible ? string.Empty : "  (hidden)")
+        + (body.Fault is null ? string.Empty : "  (fault)");
 
     // ADR-0033 item 13: the colour of the lines and the points of a sketch, as ImGui packs
     // it (alpha, blue, green, red), and their sizes in pixels of the window.
@@ -505,6 +508,13 @@ internal sealed unsafe class DesktopUi : IDisposable
     {
         if (_nameFor != body.Id)
             (_name, _nameFor) = (body.Name ?? string.Empty, body.Id);
+
+        // ADR-0037 item 6 (Q2 A): the body keeps its last solid, and the panel gives the reason.
+        if (body.Fault is { } fault)
+        {
+            ImGui.TextWrapped($"{FaultLabel}: {fault.Message}");
+            Item(FaultLabel);
+        }
 
         ImGui.SetNextItemWidth(220f);
         TextField(NameLabel, ref _name, 128);
