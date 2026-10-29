@@ -27,7 +27,7 @@ public class SketchOverlayTests
         var ids = points.Select(_ => Guid.NewGuid()).ToArray();
         var lines = ids.Skip(1).Select((id, index) => new SketchLine(Guid.NewGuid(), ids[index], id)).ToArray();
         return new SketchInfo(Guid.NewGuid(), datum, null,
-            points.Select((point, index) => new SketchPoint(ids[index], point.X, point.Y)).ToArray(), lines, [], [], []);
+            points.Select((point, index) => new SketchPoint(ids[index], point.X, point.Y)).ToArray(), lines, [], [], [], true, 2 * (points.Length - 1));
     }
 
     // The overlay is the inverse of Picker.RayThrough: a point on the ray of a pixel projects

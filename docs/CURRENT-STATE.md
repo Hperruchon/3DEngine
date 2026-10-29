@@ -2880,3 +2880,38 @@ reading only. The branch `p040-file-and-pad-gaps` on origin holds a commit that 
 New tests: 51. The test list holds 979 (689 in `Engine.Tests`, 190 in `3DEngine.Tests`, 100 in `3DEngine.ImageTests`).
 `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open entries: 14 of 15. New
 diagnostic code: `E-API-OPEN-PENDING`. Since the review of v0.96, 2 product milestones and 6 entries followed it.
+
+## v0.103 — The engine solves the five constraints of a sketch, and the desktop shows if a sketch is solved (K3a, TASK-0102)
+
+The owner put K3a before P0.39 on 2026-10-29, accepted ADR-0035 with Q1 to Q4 A, and accepted the pictures of the
+visual check on 2026-10-29.
+
+**The change.**
+
+- `Engine.Core/Sketch/SketchSolver.cs` is a Newton iteration with the step of minimum norm: it solves (J·Jᵀ)·λ = r
+  by Gaussian elimination with partial pivoting, and drops a row with a pivot near zero. It uses `+ - * / sqrt`
+  only, in one fixed order. The tolerance is 1e-9 and the limit is 50 steps.
+- Each sketch command gives its record through the solver in `SketchResults.Changed`, so the Document holds the
+  solved positions and the log holds the inputs only. A set with no solution keeps the positions of the command.
+- `MoveSketchPoint` holds its point when a solution exists. No field and no schema version of a command changes.
+- `GetSketch` gives `solved` and `freedom`. The window "Sketch" shows them in one line, for example "Solved, 2 free".
+- ADR-0035 amends ADR-0033 items 4 and 7.
+
+**Proof.** 15 new test cases. A test compares the bits of a fixed solve with constants: CI run 40836376649 gave the
+same bits on Windows x64, Linux x64 and macOS arm64. A file that the server of v0.101 wrote, with a constraint that
+its positions do not satisfy, opens and solves. 14 injections: 11 were caught at once, and 3 after two more tests.
+The visual check ran the desktop on 127.0.0.1 with validation on: a rough rectangle became exact, a conflict showed
+"Not solved", and Ctrl+Z gave "Solved, 0 free". The log held no warning.
+
+**What stays.** The engine does not name the constraint that causes a conflict. The dense solve costs the cube of
+the number of equations. The kinds 6 to 14 wait for phase K3. Four tests of K2a and K2b expected an unsolved
+residual; they now expect a solved record or a conflict. On this computer `UiLibraryGateTests` also reads the
+worktrees of other sessions under `.claude/worktrees` and fails there; the pipeline has no such folder (P0.39).
+
+**A correction.** The list "Shipped" of `docs/roadmap.md` stopped at R10. This task adds P0.37, P0.38, K2a, K2b
+and P0.40.
+
+New tests: 15. The test list holds 994 (703 in `Engine.Tests`, 190 in `3DEngine.Tests`, 101 in
+`3DEngine.ImageTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
+entries: 14 of 15. New diagnostic codes: none. Since the review of v0.96, 3 product milestones and 7 entries
+followed it.

@@ -31,6 +31,8 @@ public sealed class GetSketchQueryHandler : IQueryHandler
             ["circles"] = new("array"),
             ["arcs"] = new("array"),
             ["constraints"] = new("array"),
+            ["solved"] = new("boolean"),
+            ["freedom"] = new("integer"),
         };
 
     // Per ADR-0016.
@@ -58,7 +60,9 @@ public sealed class GetSketchQueryHandler : IQueryHandler
             .Select(constraint => new SketchConstraintInfo(
                 constraint.Id, constraint.Kind, constraint.Items, constraint.Values, SketchConstraints.Residual(sketch, constraint)))
             .ToList();
+        var (solved, freedom) = SketchSolver.Status(sketch);
         return Task.FromResult(QueryHandlerResult.Success(new SketchInfo(
-            sketch.Id, sketch.DatumId, sketch.Name, sketch.Points, sketch.Lines, sketch.Circles, sketch.Arcs, constraints)));
+            sketch.Id, sketch.DatumId, sketch.Name, sketch.Points, sketch.Lines, sketch.Circles, sketch.Arcs, constraints,
+            solved, freedom)));
     }
 }
