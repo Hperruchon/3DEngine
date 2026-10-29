@@ -3089,3 +3089,32 @@ New tests: 12. The test list holds 1077 (783 in `Engine.Tests`, 190 in `3DEngine
 `3DEngine.ImageTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
 entries: 14 of 15. New diagnostic codes: `W-SKETCH-REBUILD-FAILED`, `W-SKETCH-EXTRUDE-CONSUMED`. Since the review of
 v0.105, 1 product milestone and 3 entries followed it.
+
+## v0.109 — The desktop draws the rebuilt solid of an extrude and shows the fault of a body (K0c, TASK-0109)
+
+K0c is the desktop part of the last step of the milestone "CAD on one part" (Q6 A of the codebase review of
+2026-10-29). The owner accepted the pictures of the visual check on 2026-10-29. With K0c the milestone is complete:
+a sketch with constraints, an extrude, and a solid that follows an edit of the sketch.
+
+**The change.**
+
+- `3DEngine/SessionBodies.cs` keeps the geometry key of the mesh of each live body. A `body.changed` with another
+  key gives another solid, after a rebuild or an undo, so the desktop fetches the mesh again and replaces the
+  entity. `BodyVisibility.RemoveMesh` keeps the visibility of the body while its mesh changes.
+- `LiveBody` gains the fault of the body. The row of a body with a fault ends with "(fault)", and the selected body
+  gives the reason.
+
+**Proof.** 2 new test cases: an image test on the GPU with the validation layer follows a move, a broken profile and
+two undos, with one entity in the scene at each step; a panel test checks the row and the reason. 6 injections: each
+one failed a test. The visual check ran the desktop on 127.0.0.1: a rectangle extruded by 5, Edit and Move point of
+P3, Delete of L3 with the fault in the panel, and two undos. The log held no warning.
+
+**What stays.** The reason of a fault names the body and the point by their full identifiers, so it is long in the
+panel. The pads of the sketch keep V40 and V41 until TASK-0106. A consumed extrude does not follow until K0.
+
+**A correction.** None.
+
+New tests: 2. The test list holds 1079 (783 in `Engine.Tests`, 190 in `3DEngine.Tests`, 106 in
+`3DEngine.ImageTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
+entries: 14 of 15. New diagnostic codes: none. Since the review of v0.105, 2 product milestones and 4 entries
+followed it.
