@@ -170,7 +170,7 @@ boundary and each refused rung.
 
 | Phase | Content | Evenings |
 |---|---|---|
-| K0a | Extrude a closed profile of line segments over Manifold. The command records the identifier of its sketch and a distance, not coordinates, and the handler reads the current sketch (Q7 of the second review of 2026-10-28). No arc, because an arc needs a sine and a cosine (determinism rule 1). The first commit checks that the native package exports the extrude function (KD5). | 3–5 |
+| K0a | Extrude a closed profile of line segments over Manifold. The command records the identifier of its sketch and a distance, not coordinates, and the handler reads the current sketch (Q7 of the second review of 2026-10-28). No arc, because an arc needs a sine and a cosine (determinism rule 1). The first commit checks that the native package exports the extrude function (KD5). ADR-0036, TASK-0103. | 3–5 |
 | K0b | The extrude references its sketch, and a rebuild makes the solid again after an edit of the sketch. An ADR resolves the conflict with ADR-0021 (KD5). | 6–10 |
 | K0 | A feature graph over Manifold. No B-Rep. Deferred-query references. The rest after K0b. | 12–20 |
 | K1 | Exact predicates. A deterministic arithmetic layer. | 4–8 |
