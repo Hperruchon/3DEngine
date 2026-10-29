@@ -47,6 +47,8 @@ internal static class SchemaDiagnosticsEndpoint
         new(DiagnosticCodes.SketchConstraintInvalid, "Error", "SKETCH"), // ADR-0033 item 6, TASK-0100
         new(DiagnosticCodes.SketchNameInvalid,     "Error",   "SKETCH"), // ADR-0033 items 4 and 6, TASK-0100
         new(DiagnosticCodes.SketchProfileInvalid,  "Error",   "SKETCH"), // ADR-0036 item 4, TASK-0103
+        new(DiagnosticCodes.SketchRebuildFailed,   "Warning", "SKETCH"), // ADR-0037 item 6, TASK-0108
+        new(DiagnosticCodes.SketchExtrudeConsumed, "Warning", "SKETCH"), // ADR-0037 item 7, TASK-0108
     };
 
     public static IResult Handle() => Results.Json(Codes, ApiJson.Options);

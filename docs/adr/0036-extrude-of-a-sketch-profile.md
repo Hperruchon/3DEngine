@@ -1,13 +1,13 @@
 ---
 id: 0036
 title: The extrude of a closed profile of a sketch
-status: Accepted
+status: Amended
 topic: Contracts, geometry, sketch
 date: 2026-10-29
 supersedes: []
 superseded-by: []
 amends: []
-amended-by: []
+amended-by: ['0037']
 affects:
   - Engine.Contracts/Geometry/**
   - Engine.Core/Commands/ExtrudeCommand.cs
@@ -139,3 +139,5 @@ exact on each platform.
 - 2026-10-29 · TASK-0103 · The owner accepted the record on 2026-10-29 with Q1 to Q4 A, and no change.
 - 2026-10-29 · TASK-0103 · The code applies items 1 to 8 and 10 in the engine and over Manifold. A load of each native
   function on each runner replaces the search of KD5.
+- 2026-10-29 · TASK-0108 · ADR-0037 amends item 7: an edit of the sketch rebuilds each live extrude of it; the sketch is still not
+  consumed.

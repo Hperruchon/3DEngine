@@ -64,7 +64,8 @@ public sealed class SubtractCommandHandler : ICommandHandler, ICommandEncoder
                     DiagnosticCodes.GeomBodyNotFound,
                     $"No body with id '{subtract.MinuendBodyId}' exists in the Document.")));
         }
-        if (!document.Bodies.Any(b => b.Handle.Id == subtract.SubtrahendBodyId))
+        var subtrahend = document.Bodies.FirstOrDefault(b => b.Handle.Id == subtract.SubtrahendBodyId);
+        if (subtrahend is null)
         {
             return Task.FromResult(CommandHandlerResult.Failure(
                 new ErrorDetail(
@@ -101,8 +102,9 @@ public sealed class SubtractCommandHandler : ICommandHandler, ICommandEncoder
         {
             boolean.Subtract(
                 handle,
-                new BodyHandle(subtract.MinuendBodyId),
-                new BodyHandle(subtract.SubtrahendBodyId));
+                // ADR-0037 item 2: the solids of the bodies, under their geometry keys.
+                new BodyHandle(minuend.GeometryKey),
+                new BodyHandle(subtrahend.GeometryKey));
         }
         catch (Exception ex)
         {

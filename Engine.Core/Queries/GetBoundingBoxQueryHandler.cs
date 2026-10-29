@@ -51,7 +51,8 @@ public sealed class GetBoundingBoxQueryHandler : IQueryHandler
                     "Active backend does not implement IGeometryQuery; cannot compute bounding box.")));
         }
 
-        if (!document.Bodies.Any(b => b.Handle.Id == bbox.BodyId))
+        var body = document.Bodies.FirstOrDefault(b => b.Handle.Id == bbox.BodyId);
+        if (body is null)
         {
             return Task.FromResult(QueryHandlerResult.Failure(
                 new ErrorDetail(
@@ -59,7 +60,8 @@ public sealed class GetBoundingBoxQueryHandler : IQueryHandler
                     $"No body with id '{bbox.BodyId}' exists in the Document.")));
         }
 
-        var aabb = geom.GetBoundingBox(new BodyHandle(bbox.BodyId));
+        // ADR-0037 item 2: the solid of the body, under its geometry key.
+        var aabb = geom.GetBoundingBox(new BodyHandle(body.GeometryKey));
         return Task.FromResult(QueryHandlerResult.Success(aabb));
     }
 }

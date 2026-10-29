@@ -74,6 +74,6 @@ public sealed class SetSketchConstraintValueCommandHandler : ICommandHandler, IC
 
         var changed = constraint with { Values = values };
         var constraints = sketch.Constraints.Select(candidate => candidate.Id == changed.Id ? changed : candidate).ToList();
-        return Task.FromResult(SketchResults.Changed(sketch with { Constraints = constraints }, "constraintId", changed.Id));
+        return Task.FromResult(SketchResults.Changed(document, backend, command.CommandId, sketch with { Constraints = constraints }, "constraintId", changed.Id));
     }
 }

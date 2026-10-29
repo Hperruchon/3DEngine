@@ -1,13 +1,13 @@
 ---
 id: 0028
 title: The name and the visibility of a body
-status: Accepted
+status: Amended
 topic: Contracts, geometry
 date: 2026-10-28
 supersedes: []
 superseded-by: []
 amends: ['0012', '0021']
-amended-by: []
+amended-by: ['0037']
 affects:
   - Engine.Contracts/BodyRecord.cs
   - Engine.Contracts/Handlers/ICommandHandler.cs
@@ -86,3 +86,4 @@ reads the payloads strictly must accept the new fields. The rule of a new comman
 - 2026-10-28 · TASK-0090 · Item 3 refuses text that is not well-formed UTF-16, because a lone surrogate gave the
   Document one name and each JSON view another (finding E73 of the codebase review of 2026-10-28). The owner accepted
   the change on 2026-10-28.
+- 2026-10-29 · TASK-0108 · ADR-0037 amends item 7: `body.created` and `body.changed` gain the fields `geometry` and `fault`.

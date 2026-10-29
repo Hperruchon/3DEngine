@@ -66,6 +66,6 @@ public sealed class AddSketchPointCommandHandler : ICommandHandler, ICommandEnco
                 DiagnosticCodes.GeomInvalidParam, "The position of a point of a sketch is a pair of finite numbers."));
 
         var point = new SketchPoint(add.CommandId, add.X, add.Y);
-        return Task.FromResult(SketchResults.Changed(sketch with { Points = [.. sketch.Points, point] }, "pointId", point.Id));
+        return Task.FromResult(SketchResults.Changed(document, backend, command.CommandId, sketch with { Points = [.. sketch.Points, point] }, "pointId", point.Id));
     }
 }

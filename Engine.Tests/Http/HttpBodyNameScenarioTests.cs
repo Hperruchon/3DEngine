@@ -83,7 +83,7 @@ public class HttpBodyNameScenarioTests
         Assert.Contains("\"GetBodyInfo\"", queries, StringComparison.Ordinal);
         var changed = events.EnumerateArray().Single(entry => entry.GetProperty("kind").GetString() == "body.changed");
         Assert.Equal(
-            ["bodyId", "name", "visible"],
+            ["bodyId", "fault", "geometry", "name", "visible"],
             changed.GetProperty("payload").EnumerateObject().Select(field => field.Name).Order(StringComparer.Ordinal));
     }
 
