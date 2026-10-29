@@ -408,17 +408,6 @@ the panel once and turned the camera once. Clicks within one frame of a new pad 
 the mouse before a click, so a person may never see it, but a wrong button of a pad gives a wrong number.
 Exit: a test of the order of the samples of a focus click explains it, and a change or a recorded reason closes it.
 
-### R-0044 · K0b has no decisions for the rebuild of a solid after an edit of its sketch
-- class: risk
-- opened: 2026-10-29
-- due: 2026-11-28
-- extended: no
-- refs: `docs/reviews/2026-10-29-codebase-review.md`, questions Q1 to Q6; `docs/roadmap.md`, row K0b; TASK-0104
-The bus refuses a handle that it created before, an undo calls no backend, and a step holds no geometry, so a solid
-cannot follow its sketch today. A rebuild changes the public shape of `Engine.Contracts`, which needs the owner and
-an ADR. The codebase review of 2026-10-29 gives six decisions for K0b. K0b cannot start before the answers.
-Exit: the owner answers Q1 to Q6, and the first commit of the K0b task records the answers.
-
 ## Accepted compromises
 
 These are conditions that the project keeps permanently and by decision. They do not age.
@@ -469,6 +458,20 @@ Closed YYYY-MM-DD · resolved · commit <hash>
 Closed YYYY-MM-DD · decided  · ADR-nnnn
 Closed YYYY-MM-DD · accepted · the reason to keep the condition
 ```
+
+### R-0044 · K0b has no decisions for the rebuild of a solid after an edit of its sketch
+- class: risk
+- opened: 2026-10-29
+- due: 2026-11-28
+- extended: no
+- refs: `docs/reviews/2026-10-29-codebase-review.md`, questions Q1 to Q6; `docs/roadmap.md`, row K0b; TASK-0104
+The bus refuses a handle that it created before, an undo calls no backend, and a step holds no geometry, so a solid
+cannot follow its sketch today. A rebuild changes the public shape of `Engine.Contracts`, which needs the owner and
+an ADR. The codebase review of 2026-10-29 gives six decisions for K0b. K0b cannot start before the answers.
+Exit: the owner answers Q1 to Q6, and the first commit of the K0b task records the answers.
+Closed 2026-10-29 · resolved · TASK-0108. The owner answered A to each question on 2026-10-29. The first commit of
+TASK-0108 records the answers, as `docs/templates.md`, section 7, requires: the roadmap rows K0b and K0c hold Q1 to
+Q6. The ADR of K0b gives the contract, and the owner accepts it before the code.
 
 ### R-0042 · K2 has no decisions for its scope, its model and its datum
 - class: risk
