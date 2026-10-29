@@ -87,6 +87,7 @@ Therefore each approved objective must have a track here.
 - K0a — The engine extrudes the closed profile of a solved sketch over Manifold, and the desktop extrudes the active sketch. v0.105, TASK-0103, ADR-0036.
 - P0.41 — The test framework gate reads the output path and each MSBuild file of a test project. v0.107, TASK-0105.
 - K0b — An edit of a sketch rebuilds each live extrude of it under its handle and a new geometry key, and a broken profile gives a fault. v0.108, TASK-0108, ADR-0037.
+- K0c — The desktop draws the rebuilt solid of an extrude and shows the fault of a body. The milestone "CAD on one part" is complete. v0.109, TASK-0109.
 
 ## Track 0 — Foundations
 
