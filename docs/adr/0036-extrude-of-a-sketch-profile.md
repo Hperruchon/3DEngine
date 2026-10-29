@@ -137,3 +137,5 @@ exact on each platform.
 
 - 2026-10-29 · TASK-0103 · Proposed, with the questions Q1 to Q4 for the owner.
 - 2026-10-29 · TASK-0103 · The owner accepted the record on 2026-10-29 with Q1 to Q4 A, and no change.
+- 2026-10-29 · TASK-0103 · The code applies items 1 to 8 and 10 in the engine and over Manifold. A load of each native
+  function on each runner replaces the search of KD5.

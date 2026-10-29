@@ -21,6 +21,7 @@ writes:
     - Engine.Api.Http/Endpoints/SchemaDiagnosticsEndpoint.cs
     - Engine.Tests/Sketch/**
     - Engine.Tests/Geometry/**
+    - Engine.Tests/Persistence/DocumentFileTests.cs
     - 3DEngine/**
     - 3DEngine.ImageTests/**
     - docs/adr/0036-extrude-of-a-sketch-profile.md
@@ -99,3 +100,7 @@ the sketch and the distance only.
   questions Q1 to Q4.
 - 2026-10-29: the owner accepted ADR-0036 with Q1 to Q4 A: one closed loop, a signed distance, a refusal of a
   sketch that is not solved, and the button "Extrude" with a pad.
+- 2026-10-29: the engine extrudes. `IExtrudeOps`, `ExtrudeParameters` and the flag `Extrude` in the contract,
+  the Manifold implementation, `SketchProfile`, the command `Extrude` and the code `E-SKETCH-PROFILE-INVALID`. A
+  test loads each of the 8 native functions. 19 tests in `ExtrudeTests`; each of 17 injections fails a test. The
+  write set gains `Engine.Tests/Persistence/DocumentFileTests.cs`, whose catalog test needs a sample of each command.

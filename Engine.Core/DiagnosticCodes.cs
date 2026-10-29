@@ -51,4 +51,8 @@ public static class DiagnosticCodes
     public const string SketchLineInvalid = "E-SKETCH-LINE-INVALID";
     public const string SketchConstraintInvalid = "E-SKETCH-CONSTRAINT-INVALID";
     public const string SketchNameInvalid = "E-SKETCH-NAME-INVALID";
+
+    // ADR-0036 item 4: the lines of a sketch do not form one closed loop, or the sketch
+    // is not solved, so an extrude has no profile.
+    public const string SketchProfileInvalid = "E-SKETCH-PROFILE-INVALID";
 }

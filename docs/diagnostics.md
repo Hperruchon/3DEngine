@@ -43,6 +43,7 @@ All `E-`/`W-`/`I-` codes used in `Engine.*` code MUST appear here. A code is nev
 | `E-SKETCH-LINE-INVALID` | Error | `AddSketchLine` gives one point as both ends of the line (ADR-0033 item 2). | `Engine.Core` `AddSketchLineCommandHandler`. Raised since TASK-0100. |
 | `E-SKETCH-CONSTRAINT-INVALID` | Error | A constraint has an unknown kind, a kind that this phase does not give, items of the wrong kind or count, or a value that is absent, not finite or negative (ADR-0033 items 3 and 6). | `Engine.Core` `AddSketchConstraintCommandHandler` and `SetSketchConstraintValueCommandHandler`. Raised since TASK-0100. |
 | `E-SKETCH-NAME-INVALID` | Error | The name of a `CreateSketch` command breaks the rules of a name of ADR-0028 item 3, as ADR-0033 item 4 requires. An empty name is no name and is valid. | `Engine.Core` `CreateSketchCommandHandler`. Raised since TASK-0100. |
+| `E-SKETCH-PROFILE-INVALID` | Error | `Extrude` names a sketch whose lines do not form one closed loop, or a sketch that is not solved (ADR-0036 items 2 and 4). A loop is closed when each point that a line uses is the end of exactly two lines, the lines form one cycle, no two lines that share no point cross or touch, and the area is not zero. The message names the reason. | `Engine.Core` `ExtrudeCommandHandler` and `SketchProfile`. Raised since TASK-0103. |
 
 ## Reserved namespaces
 
