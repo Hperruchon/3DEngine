@@ -104,3 +104,6 @@ on each platform.
   expected an unsolved residual now expect a solved record or a conflict. A file that the server of v0.101 wrote
   opens and solves. 14 injections: 11 caught at once, and 3 after two more tests (a move with a free start, and
   redundant rows with irrational entries).
+- 2026-10-29: CI run 40836376649 passed the step Test on the three runners, the bit test with them (macOS on arm64),
+  and failed only at the count of the tests. The test floor now gives 703 in `Engine.Tests` and 96, or 101 on Linux,
+  in `3DEngine.ImageTests`. The visual check ran the desktop on 127.0.0.1.
