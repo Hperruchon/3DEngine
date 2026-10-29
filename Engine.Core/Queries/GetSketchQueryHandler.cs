@@ -58,9 +58,10 @@ public sealed class GetSketchQueryHandler : IQueryHandler
 
         var constraints = sketch.Constraints
             .Select(constraint => new SketchConstraintInfo(
-                constraint.Id, constraint.Kind, constraint.Items, constraint.Values, SketchConstraints.Residual(sketch, constraint)))
+                constraint.Id, constraint.Kind, constraint.Items, constraint.Values, Finite(SketchConstraints.Residual(sketch, constraint))))
             .ToList();
         var (solved, freedom) = SketchSolver.Status(sketch);
+        static double? Finite(double value) => double.IsFinite(value) ? value : null;
         return Task.FromResult(QueryHandlerResult.Success(new SketchInfo(
             sketch.Id, sketch.DatumId, sketch.Name, sketch.Points, sketch.Lines, sketch.Circles, sketch.Arcs, constraints,
             solved, freedom)));

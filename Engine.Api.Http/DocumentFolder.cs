@@ -53,9 +53,12 @@ public sealed class DocumentFolder
     // ADR-0030 item 2: a file name has at most 255 characters on each file system.
     public const int MaximumFileNameLength = 255;
 
-    // The names that Windows keeps for a device, with or without an extension.
+    // The names that Windows keeps for a device, with or without an extension. Finding E93 of
+    // the codebase review of 2026-10-29: Windows also keeps COM0, LPT0, the digits 1, 2 and 3 as
+    // superscripts after COM and LPT, CONIN$ and CONOUT$, and each one passed until TASK-0106.
     private static readonly HashSet<string> ReservedNames = new(
-        ["CON", "PRN", "AUX", "NUL", .. Enumerable.Range(1, 9).Select(n => $"COM{n}"), .. Enumerable.Range(1, 9).Select(n => $"LPT{n}")],
+        ["CON", "PRN", "AUX", "NUL", "CONIN$", "CONOUT$",
+            .. new[] { "COM", "LPT" }.SelectMany(port => "0123456789\u00B9\u00B2\u00B3".Select(digit => port + digit))],
         StringComparer.OrdinalIgnoreCase);
 
     // The path in the folder of a plain file name, or null with the reason. A name has

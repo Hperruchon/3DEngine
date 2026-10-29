@@ -1,7 +1,7 @@
 ---
 id: 0106
 title: The sketch refuses an identifier that it holds, and the pads of the sketch follow the state that they act on
-status: Ready
+status: Active
 phase: P0.42
 opened: 2026-10-29
 depends-on: [0105]
@@ -12,6 +12,7 @@ writes:
   modify:
     - Engine.Core/Commands/**
     - Engine.Core/Sketch/**
+    - Engine.Core/Queries/GetSketchQuery.cs
     - Engine.Core/Queries/GetSketchQueryHandler.cs
     - Engine.Core/DiagnosticCodes.cs
     - Engine.Api.Http/DocumentFolder.cs
@@ -86,3 +87,9 @@ exists, and each pad of the sketch closes when the state that it acts on changes
 ## Progress
 
 - 2026-10-29: opened by the codebase review of 2026-10-29 (TASK-0104).
+- 2026-10-29: the owner said yes to TASK-0106 after K0c. The engine part: `E-SKETCH-ID-IN-USE` in the four handlers
+  that add an item (E86), `W-SKETCH-HOLD-DROPPED` and `SketchSolver.SolveWithHold` (E87), a residual that is not
+  finite is null (E88), read-only lists of a record (E91), the reason of a line of length zero (E92), and more
+  reserved names (E93). The limits of E89 and E90, measured in a Release build, and the rule of E92 are History lines
+  of ADR-0035 and ADR-0036. The write set gains `Engine.Core/Queries/GetSketchQuery.cs`, which holds the type of the
+  residual.

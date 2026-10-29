@@ -23,15 +23,23 @@ public static class SketchSolver
     // ADR-0035 items 2, 6 and 7: the record with solved positions, or the record as it
     // is when no solution exists. A held point first stays at its position; when that
     // gives no solution, the solver tries again with no hold.
-    public static SketchRecord Solve(SketchRecord sketch, Guid? held = null)
+    public static SketchRecord Solve(SketchRecord sketch, Guid? held = null) => SolveWithHold(sketch, held).Record;
+
+    // The same record, and true when the solver dropped the hold: the solve with the held
+    // point did not converge and the solve with no hold did, so the point is not where the
+    // command put it. Until TASK-0106 the command gave no sign of it (finding E87 of the
+    // codebase review of 2026-10-29). When both solves fail, the record keeps the positions
+    // of the command, so the point stays where the command put it.
+    public static (SketchRecord Record, bool HoldDropped) SolveWithHold(SketchRecord sketch, Guid? held)
     {
-        if (held is { } point && KindOf(sketch, point) == ItemKind.Point && point != sketch.Id
-            && Converge(sketch, point) is { } holding)
+        if (held is { } point && KindOf(sketch, point) == ItemKind.Point && point != sketch.Id)
         {
-            return holding;
+            if (Converge(sketch, point) is { } holding)
+                return (holding, false);
+            return Converge(sketch, null) is { } free ? (free, true) : (sketch, false);
         }
 
-        return Converge(sketch, null) ?? sketch;
+        return (Converge(sketch, null) ?? sketch, false);
     }
 
     // ADR-0035 item 8: true when each equation is within the tolerance, and the number of
@@ -197,7 +205,9 @@ public static class SketchSolver
         {
             Points = _sketch.Points
                 .Select(point => _index.TryGetValue(point.Id, out var i) ? point with { X = x[i], Y = x[i + 1] } : point)
-                .ToList(),
+                // Finding E91: a read-only list, so a client that casts it cannot change the Document.
+                .ToList()
+                .AsReadOnly(),
         };
 
         public bool IsFinite()
