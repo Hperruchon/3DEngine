@@ -1,7 +1,7 @@
 ---
 id: 0098
 title: The gates read the names, the packages and the assemblies that the build binds, and the review counter reads each heading
-status: Active
+status: Done
 phase: P0.39
 opened: 2026-10-28
 depends-on: [0102]
@@ -93,9 +93,9 @@ Each form of the review fails the gate program.
 
 ## Acceptance criteria
 
-- [ ] Each form of the review fails the gate program after its correction, and passed it before.
-- [ ] A clean build (`--no-incremental`) gives zero errors and zero warnings.
-- [ ] Continuous integration passes on `ubuntu-latest`, `windows-latest` and `macos-latest`.
+- [x] Each form of the review fails the gate program after its correction, and passed it before.
+- [x] A clean build (`--no-incremental`) gives zero errors and zero warnings.
+- [x] Continuous integration passes on `ubuntu-latest`, `windows-latest` and `macos-latest`.
 
 ## Notes for the implementer
 
@@ -125,3 +125,24 @@ Each form of the review fails the gate program.
   task and each local of a task type that the check never reads. The runner checks its own seven forms of T67 and
   T74 and four forms that wait at each run. With a type check that sees no task, the run fails on the five forms of
   T74, which is the behaviour of the runner before the change.
+- 2026-10-29: a probe checkout held each form of T70 to T77 at once. The gate program of main gave 200 runs and 0
+  failures on it; the program of this branch gave 8 failed checks, which name each form. The full test list passes
+  on the computer of the owner, with the worktrees of other sessions present.
+
+## Outcome
+
+Status: Done · commit (the merge of the branch p039-gate-forms) · v0.104
+
+## Method
+
+Mechanical: the global using and the joined constant of T70, the unescape and the refusal of T71, the root-only
+            rule of bin/ and obj/, the NUL byte of T77, the identifier, the title and the body of T75, and the
+            three rows of T78.
+Judgement:  T72 keeps the four programs with their own assembly names, and refuses a name that is not unique or
+            that another project has, which closes the hole with no rename. T73 takes the phase from the row of
+            the roadmap that names the task, and the task file must agree with it. T74 has no test project, so
+            the runner checks its own forms at each run.
+Weakest:    the constant check of T70 reads the constants of one file only, so a constant of another file in a
+            native import still passes; T74 counts a local as read when the body names it again, even in a call
+            that does not wait. The control byte gate reads `.cs` files only: the task file of this task held a
+            NUL byte for one commit (ab22ade), and no gate saw it.
