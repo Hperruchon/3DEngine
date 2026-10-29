@@ -121,3 +121,7 @@ Each form of the review fails the gate program.
   with two tasks, and a task file whose phase is not the phase of its row. An archived ADR keeps its id, its title
   and its sections "## Context" and "## Decision". A review with the ledger v0.104 or later gives the rows "Lines in
   the rule files", "Sentences with "must"" and "Sentences with "do not""; `docs/templates.md`, sections 6 and 7, say so.
+- 2026-10-29: T74. The runner binds each gate file with the compiler, and refuses each statement whose value is a
+  task and each local of a task type that the check never reads. The runner checks its own seven forms of T67 and
+  T74 and four forms that wait at each run. With a type check that sees no task, the run fails on the five forms of
+  T74, which is the behaviour of the runner before the change.
