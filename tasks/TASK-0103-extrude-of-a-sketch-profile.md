@@ -104,3 +104,8 @@ the sketch and the distance only.
   the Manifold implementation, `SketchProfile`, the command `Extrude` and the code `E-SKETCH-PROFILE-INVALID`. A
   test loads each of the 8 native functions. 19 tests in `ExtrudeTests`; each of 17 injections fails a test. The
   write set gains `Engine.Tests/Persistence/DocumentFileTests.cs`, whose catalog test needs a sample of each command.
+- 2026-10-29: the desktop extrudes. The window "Sketch" has the button "Extrude" with a pad of one field, `distance`
+  (text 10). A success ends the sketch mode and selects the new body. 3 new tests; each of 5 injections fails one.
+  The visual check: a rough rectangle from the pad, 4 free after the horizontal and vertical constraints, 2 free after
+  the sizes 10 and 6, then Extrude 5 gives the body "Extrude" with the box (2.25, 1.1, 0) to (12.25, 7.1, 5). An undo
+  removes it, and the sketch stays. The log has no warning.

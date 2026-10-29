@@ -126,6 +126,19 @@ internal sealed class SketchActions(DocumentSession session) : ISketchEditor
     public string? MovePoint(Guid point, double x, double y)
         => Active is { } sketch ? Rejection(Run(new MoveSketchPointCommand { SketchId = sketch, PointId = point, X = x, Y = y })) : null;
 
+    // ADR-0036 item 9: an extrude of the active sketch. A success ends the mode Sketch and gives
+    // the new body; a rejection keeps the mode and gives the text for the pad.
+    public (string? Rejection, Guid? Body) Extrude(double distance)
+    {
+        if (Active is not { } sketch)
+            return (null, null);
+        var result = Run(new ExtrudeCommand { SketchId = sketch, Distance = distance });
+        if (Output(result, "bodyId") is not { } body)
+            return (Rejection(result), null);
+        Finish();
+        return (null, body);
+    }
+
     // One command for each item. An item that an earlier delete removed with its point is gone
     // already, so its refusal is not shown.
     public void Delete(IReadOnlyList<Guid> items)

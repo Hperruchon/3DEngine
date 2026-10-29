@@ -113,7 +113,7 @@ public sealed class SketchWindowUiTests
         using var line = Opened(new SketchPanel([Sketch], Sketch, SketchToolKind.Line, true, [], null));
         using var select = Opened(Panel());
 
-        string[] lineControls = [DesktopUi.LineToolLabel, DesktopUi.SelectToolLabel, DesktopUi.FinishLabel, DesktopUi.NextPointLabel, DesktopUi.EndLabel, DesktopUi.CloseLabel, "O", "P1", "P2", "L1", "C1"];
+        string[] lineControls = [DesktopUi.LineToolLabel, DesktopUi.SelectToolLabel, DesktopUi.FinishLabel, DesktopUi.ExtrudeLabel, DesktopUi.NextPointLabel, DesktopUi.EndLabel, DesktopUi.CloseLabel, "O", "P1", "P2", "L1", "C1"];
         foreach (var control in lineControls)
         {
             var rectangle = line.ItemRectangle(DesktopUi.SketchItem(control));
@@ -195,6 +195,23 @@ public sealed class SketchWindowUiTests
         using var move = Opened(pointPanel);
         Tap(move, DeviceKind.Mouse, DesktopUi.SketchItem(DesktopUi.MovePointLabel), pointPanel);
         Assert.Equal(["3", "10"], move.Pad!.Fields.Select(field => field.Text));
+    }
+
+    // ADR-0036 item 9 (Q4 A): Extrude opens a pad of one field, distance, with the text 10, and its
+    // apply gives the extrude by that distance, by a tap and by a click.
+    [Theory]
+    [InlineData(DeviceKind.Mouse)]
+    [InlineData(DeviceKind.Touch)]
+    public void Extrude_Opens_A_Pad_Of_One_Distance(DeviceKind kind)
+    {
+        var panel = Panel();
+        using var ui = Opened(panel);
+        Tap(ui, kind, DesktopUi.SketchItem(DesktopUi.ExtrudeLabel), panel);
+
+        var field = Assert.Single(ui.Pad!.Fields);
+        Assert.Equal(("distance", "10"), (field.Name, field.Text));
+        Tap(ui, kind, DesktopUi.PadItem("Apply"), panel);
+        Assert.Equal(10.0, Assert.IsType<ExtrudeAction>(Assert.Single(ui.TakeActions())).Distance);
     }
 
     // ADR-0034 item 7: Next point opens a pad of x and y with no chain, and of dx and dy with a

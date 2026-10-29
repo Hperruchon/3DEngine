@@ -249,6 +249,13 @@ public sealed class NativeThreeDEngine : IThreeDEngine, IDisposable
             case DeleteSketchItemsAction delete:
                 sketch.Delete(delete.Items);
                 break;
+            case ExtrudeAction extrude:
+                // ADR-0036 item 9: a success ends the mode, and the new body becomes the selection.
+                var (extrudeRejection, body) = sketch.Extrude(extrude.Distance);
+                _ui.EndPad(extrudeRejection);
+                if (body is { } extruded)
+                    _actions?.Select(extruded);
+                break;
         }
     }
 
