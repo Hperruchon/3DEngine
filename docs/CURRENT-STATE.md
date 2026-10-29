@@ -2915,3 +2915,45 @@ New tests: 15. The test list holds 994 (703 in `Engine.Tests`, 190 in `3DEngine.
 `3DEngine.ImageTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
 entries: 14 of 15. New diagnostic codes: none. Since the review of v0.96, 3 product milestones and 7 entries
 followed it.
+
+## v0.104 — The gates read the names, the packages and the assemblies that the build binds, and the review counter reads each heading (P0.39, TASK-0098)
+
+The owner put P0.39 after K3a on 2026-10-29. The task holds the findings T70 to T75, T77 and T78 of the second
+codebase review of 2026-10-28.
+
+**The change.**
+
+- T70: `UiLibraryGateTests` refuses a global using of `ImGuiNET` in each file, the UI folder too, and reads the
+  value of a join, an interpolation and a constant of the file in a native import.
+- T71: the UI gate unescapes `%XX` before it compares a package, and `DependencyDirectionGateTests` refuses an
+  Include with an MSBuild escape.
+- T72: each assembly name is unique and is not the name of another project, and only a project file sets it. The
+  four programs `engine`, `engine-api-http`, `repo-gates` and `write-set-check` keep their names.
+- T73: the review counter counts each heading, takes the product phase from the row of the roadmap that names a
+  task, and refuses a version that does not rise, a heading after the last review with two tasks, and a task file
+  whose phase is not the phase of its row.
+- T74: the gate runner binds each gate file with the compiler and refuses each statement whose value is a task, and
+  each local of a task type that the check never reads. It checks its own forms at each run.
+- T75: an archived ADR keeps its identifier, its title and its sections "## Context" and "## Decision".
+- T77: the NUL byte of `3DEngine.Tests/SdlInputTests.cs` is the escape `\0`, and a gate refuses a control byte in a
+  `.cs` file.
+- T78: a review with the ledger v0.104 or later gives the three measures of the rules review. `docs/templates.md`,
+  sections 6 and 7, say so.
+- `DependencyDirectionGateTests` and `DispatchSurfaceGateTests` leave out bin/ and obj/ at the root of a project
+  only. `UiLibraryGateTests` skips `.claude/`, so the full test list passes on the computer of the owner.
+
+**Proof.** 42 new test cases. Eight new forms of T70 and T71 failed their tests on the gate before the change. A
+probe checkout held each form of T70 to T77: the gate program of main gave 0 failures, and the program of this
+branch gave 8 failed checks, one or more for each form. With a type check that sees no task, the runner fails on
+the five forms of T74.
+
+**What stays.** A constant of another file in a native import still passes the UI gate. The control byte gate
+reads `.cs` files only; the task file of this task held a NUL byte for one commit (ab22ade), and no gate saw it.
+The inventory of the rules stays a separate review when the owner asks for it.
+
+**A correction.** None.
+
+New tests: 42. The test list holds 1036 (745 in `Engine.Tests`, 190 in `3DEngine.Tests`, 101 in
+`3DEngine.ImageTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
+entries: 14 of 15. New diagnostic codes: none. Since the review of v0.96, 3 product milestones and 8 entries
+followed it.
