@@ -178,6 +178,31 @@ public class DesktopUiTests
         Assert.Equal("Plate  (hidden)", DesktopUi.RowText(new LiveBody(id, "Box", "Plate", false)));
     }
 
+    // ADR-0037 item 6 (K0c, TASK-0109): a body whose last rebuild failed has the word "fault" in
+    // its row, and the selected body gives the reason; a body with no fault gives none.
+    [Fact]
+    public void A_Body_With_A_Fault_Shows_The_Word_And_The_Reason()
+    {
+        var id = Guid.Parse("44444444-0000-0000-0000-000000000000");
+        var fault = new Engine.Contracts.BodyFault("W-SKETCH-REBUILD-FAILED", "The extrude keeps its last solid: the lines are open.");
+
+        Assert.Equal("Plate  (fault)", DesktopUi.RowText(new LiveBody(id, "Extrude", "Plate", true, fault)));
+        Assert.Equal("Plate  (hidden)  (fault)", DesktopUi.RowText(new LiveBody(id, "Extrude", "Plate", false, fault)));
+
+        LiveBody[] faulty = [new(id, "Extrude", "Plate", true, fault)];
+        LiveBody[] sound = [new(id, "Extrude", "Plate", true)];
+        using var withFault = new DesktopUi("http://127.0.0.1:5180");
+        using var withNone = new DesktopUi("http://127.0.0.1:5180");
+        for (var frame = 0; frame < 2; frame++)
+        {
+            withFault.Frame(1f / 60f, Display, Vector2.One, faulty, id);
+            withNone.Frame(1f / 60f, Display, Vector2.One, sound, id);
+        }
+
+        Assert.NotNull(withFault.ItemRectangle(DesktopUi.FaultLabel));
+        Assert.Null(withNone.ItemRectangle(DesktopUi.FaultLabel));
+    }
+
     // A tap of a finger and a click of the mouse on a row select its body.
     [Theory]
     [InlineData(DeviceKind.Mouse)]
