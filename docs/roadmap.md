@@ -89,6 +89,7 @@ Therefore each approved objective must have a track here.
 - K0b — An edit of a sketch rebuilds each live extrude of it under its handle and a new geometry key, and a broken profile gives a fault. v0.108, TASK-0108, ADR-0037.
 - K0c — The desktop draws the rebuilt solid of an extrude and shows the fault of a body. The milestone "CAD on one part" is complete. v0.109, TASK-0109.
 - P0.42 — The sketch refuses an identifier that it holds, and the pads of the sketch follow the state that they act on. v0.110, TASK-0106.
+- P0.43 — The gates read the target name, the root folders and each text file, and a host test waits for its file. v0.111, TASK-0107.
 
 ## Track 0 — Foundations
 
