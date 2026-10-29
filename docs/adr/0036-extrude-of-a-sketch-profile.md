@@ -1,7 +1,7 @@
 ---
 id: 0036
 title: The extrude of a closed profile of a sketch
-status: Proposed
+status: Accepted
 topic: Contracts, geometry, sketch
 date: 2026-10-29
 supersedes: []
@@ -136,3 +136,4 @@ exact on each platform.
 ## History
 
 - 2026-10-29 · TASK-0103 · Proposed, with the questions Q1 to Q4 for the owner.
+- 2026-10-29 · TASK-0103 · The owner accepted the record on 2026-10-29 with Q1 to Q4 A, and no change.
