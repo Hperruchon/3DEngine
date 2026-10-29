@@ -84,6 +84,14 @@ foreach (var problem in DiscardedTasks.Problems(root))
     failures++;
 }
 
+// The check above has no test project, so the runner gives it each form of findings T67
+// and T74 and each form that waits, at each run (TASK-0098).
+foreach (var problem in DiscardedTasks.SelfCheck())
+{
+    Console.WriteLine($"FAIL  DiscardedTasks: {problem}");
+    failures++;
+}
+
 foreach (var (type, method) in checks)
 {
     var fact = method.GetCustomAttribute<FactAttribute>()!;
