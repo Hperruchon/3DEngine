@@ -1,7 +1,7 @@
 ---
 id: 0108
 title: The engine rebuilds each live extrude of a sketch after an edit, and a broken profile gives a fault on the body
-status: Active
+status: Done
 phase: K0b
 opened: 2026-10-29
 depends-on: [0105]
@@ -83,17 +83,17 @@ of the backend, and an agent sees the new box, the key and the fault.
 ## Acceptance criteria
 
 - [x] The owner accepts ADR-0037 before the code.
-- [ ] An edit of a sketch changes the box of each live extrude of it, with the same body identifier, and an undo gives
+- [x] An edit of a sketch changes the box of each live extrude of it, with the same body identifier, and an undo gives
       back the old box.
-- [ ] An edit that breaks the profile applies, the body keeps its box and gets the fault, and a later edit that mends
+- [x] An edit that breaks the profile applies, the body keeps its box and gets the fault, and a later edit that mends
       the profile clears the fault.
-- [ ] An edit after a `Translate` of the extrude gives `W-SKETCH-EXTRUDE-CONSUMED` and changes no body; an extrude that
+- [x] An edit after a `Translate` of the extrude gives `W-SKETCH-EXTRUDE-CONSUMED` and changes no body; an extrude that
       an undo removed gives no warning.
-- [ ] An edit that does not change the profile gives no body event.
-- [ ] An open of the file and a replay give the same keys and the same boxes.
-- [ ] A read of a solid by the body identifier of an extrude fails, so a missed call site fails loudly.
-- [ ] Each new test fails when its injection breaks the code that it covers.
-- [ ] `dotnet test` passes, the build gives zero warnings, and CI passes on the branch and on `main`.
+- [x] An edit that does not change the profile gives no body event.
+- [x] An open of the file and a replay give the same keys and the same boxes.
+- [x] A read of a solid by the body identifier of an extrude fails, so a missed call site fails loudly.
+- [x] Each new test fails when its injection breaks the code that it covers.
+- [x] `dotnet test` passes, the build gives zero warnings, and CI passes on the branch and on `main`.
 
 ## Notes for the implementer
 
@@ -101,6 +101,25 @@ of the backend, and an agent sees the new box, the key and the fault.
   task turns it round.
 - `Document.Bodies` is a dictionary; the rebuild takes the extrudes in the order of the log.
 - The determinism gate reads `Engine.Core`. `GeometryKeys` uses SHA-1 on bytes, which has no floating point.
+
+## Outcome
+
+Status: Done · commit (the merge of the branch k0b1-rebuild) · v0.108
+
+## Method
+
+Mechanical: the two fields of the record, the key in four reads, the parameters of an extrude in one place, the
+            two codes, and the fields of the events and of the snapshot.
+Judgement:  the rebuild runs in `SketchResults.Changed`, the one place that each sketch command uses, so no handler
+            can forget it. The steps in effect come from a walk of the log that does what `StepHistory` does, so
+            a handler needs no access to the history of the bus. The first solid of an extrude goes under a
+            derived key, so each read that keeps the body identifier fails; the injections of the four reads
+            each failed a test. The constant of the key test came from the first run, and a computation in Node
+            with no shared code gave the same value.
+Weakest:    the desktop still draws the first mesh after a rebuild, because it reads `body.changed` for the
+            name and the visibility only; K0c reads `geometry`. Each sketch command walks the whole log. A
+            consumed extrude does not follow until K0. The branch name `k0b1-rebuild` keeps the name of Q6 of the
+            review, before the gate required the name K0b.
 
 ## Progress
 
@@ -115,3 +134,5 @@ of the backend, and an agent sees the new box, the key and the fault.
   `SketchRebuild` with the steps in effect; the codes `W-SKETCH-REBUILD-FAILED` and `W-SKETCH-EXTRUDE-CONSUMED`;
   `geometry` and `fault` in `body.created`, `body.changed` and the snapshot. 11 tests in `RebuildTests`, and the test
   of the replay in `ExtrudeTests` turns round. Each of 16 injections fails a test.
+- 2026-10-29: an HTTP test: an agent extrudes, moves a corner and opens the loop, and sees the new box, two keys in
+  the events, `W-SKETCH-REBUILD-FAILED` in the result and the fault in the snapshot of a new subscriber.
