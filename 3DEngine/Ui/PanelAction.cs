@@ -59,6 +59,9 @@ internal sealed record MoveSketchPointAction(Guid Point, double X, double Y) : P
 
 internal sealed record DeleteSketchItemsAction(IReadOnlyList<Guid> Items) : PanelAction;
 
+// ADR-0036 item 9: an extrude of the active sketch by the signed distance of the pad.
+internal sealed record ExtrudeAction(double Distance) : PanelAction;
+
 // The line of the document file in the panel: the name of the file, or null for an
 // unsaved document, and the result of the last save or open.
 internal sealed record DocumentLine(string? FileName, string? Message);

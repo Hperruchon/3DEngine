@@ -25,6 +25,15 @@ public sealed class NativeManifoldFactAttribute : FactAttribute
             : "Native manifoldc is not available on this computer, and CI is not true.";
 }
 
+// The same rule for a [Theory] (TASK-0103).
+public sealed class NativeManifoldTheoryAttribute : TheoryAttribute
+{
+    public NativeManifoldTheoryAttribute()
+    {
+        Skip = NativeManifoldFactAttribute.SkipReason(ManifoldGeometryBackend.IsNativeAvailable(), Environment.GetEnvironmentVariable("CI"));
+    }
+}
+
 // The rule of the attribute above (TASK-0036). With CI=true and the library
 // hidden from the output folder, 7 of the 13 native tests failed and none skipped;
 // before the change all 13 skipped and the run passed.
@@ -50,13 +59,13 @@ public class ManifoldGeometryBackendTests
     private static ManifoldGeometryBackend NewBackend() => new();
 
     [NativeManifoldFact]
-    public void Capabilities_Include_Mesh_Query_Transform_Booleans_Tessellation()
+    public void Capabilities_Include_Mesh_Query_Transform_Booleans_Tessellation_Extrude()
     {
         using var backend = NewBackend();
         Assert.Equal(
             BackendCapabilities.Mesh | BackendCapabilities.Query
                 | BackendCapabilities.Transform | BackendCapabilities.Booleans
-                | BackendCapabilities.Tessellation,
+                | BackendCapabilities.Tessellation | BackendCapabilities.Extrude,
             backend.Capabilities);
     }
 
