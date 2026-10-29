@@ -1,7 +1,7 @@
 ---
 id: 0102
 title: The engine solves the five constraints of a sketch, and the desktop shows if a sketch is solved
-status: Active
+status: Done
 phase: K3a
 opened: 2026-10-29
 depends-on: [0099, 0101]
@@ -76,17 +76,17 @@ on each platform.
 ## Acceptance criteria
 
 - [x] The owner accepts ADR-0035 before the code.
-- [ ] A rectangle of four rough points with two `horizontal`, two `vertical` and two `distance` constraints and one
+- [x] A rectangle of four rough points with two `horizontal`, two `vertical` and two `distance` constraints and one
       `fixed` gives exact positions, and `GetSketch` says solved with 0 free degrees.
-- [ ] A set that conflicts gives an applied command, the positions of the command, and `solved` false.
-- [ ] A move of a point holds the point when a solution exists.
-- [ ] A test of the bits of fixed solves passes on the three runners of the pipeline.
-- [ ] An undo after a solve gives back the record before, with no solve.
-- [ ] A file of v0.101 with an unsolved constraint opens, and its sketch is solved.
-- [ ] Each new test fails when its injection breaks the code that it covers.
-- [ ] The visual check: a rough rectangle in the desktop becomes exact as its constraints come, and the window shows
+- [x] A set that conflicts gives an applied command, the positions of the command, and `solved` false.
+- [x] A move of a point holds the point when a solution exists.
+- [x] A test of the bits of fixed solves passes on the three runners of the pipeline.
+- [x] An undo after a solve gives back the record before, with no solve.
+- [x] A file of v0.101 with an unsolved constraint opens, and its sketch is solved.
+- [x] Each new test fails when its injection breaks the code that it covers.
+- [x] The visual check: a rough rectangle in the desktop becomes exact as its constraints come, and the window shows
       the line of the status.
-- [ ] `dotnet test` passes, and the build gives zero warnings.
+- [x] `dotnet test` passes, and the build gives zero warnings.
 
 ## Notes for the implementer
 
@@ -107,3 +107,24 @@ on each platform.
 - 2026-10-29: CI run 40836376649 passed the step Test on the three runners, the bit test with them (macOS on arm64),
   and failed only at the count of the tests. The test floor now gives 703 in `Engine.Tests` and 96, or 101 on Linux,
   in `3DEngine.ImageTests`. The visual check ran the desktop on 127.0.0.1.
+- 2026-10-29: the owner accepted the pictures of the visual check: a rough rectangle with 6 free degrees, then 2
+  after two horizontal and two vertical constraints, then 0 after the lengths 10 and 6; a length 7 of L3 gave
+  "Not solved" with the positions kept, and Ctrl+Z gave "Solved, 0 free". The constraints of the check came through
+  the HTTP surface of the desktop, and the rectangle through clicks.
+
+## Outcome
+
+Status: Done · commit (the merge of the branch k3a-sketch-solver) · v0.103
+
+## Method
+
+Mechanical: the equations of the five kinds and their derivatives, the elimination, the two fields of GetSketch,
+            and the status line of the window.
+Judgement:  the solve runs in `SketchResults.Changed`, the one place that each sketch command uses, so no handler
+            can forget it; only `MoveSketchPoint` changes, to name its held point. A converged first step
+            gives the record back as it is, so a solved record keeps its bits. The test of an old file reads a
+            file that the real server of v0.101 wrote, and not a file that this engine writes.
+Weakest:    the limit of a pivot (1e-12 of the largest diagonal entry of J·Jᵀ) squares the condition of J, so
+            a sketch with very different sizes can count a redundant row as independent, or the reverse;
+            `A_Redundant_Row_With_Irrational_Entries_Is_Dropped` tests one case only. The bit test proves
+            one sketch on three runners, not each sketch.

@@ -77,6 +77,12 @@ Therefore each approved objective must have a track here.
 - P0.35 — The gates bind the names that the compiler and MSBuild bind, and the archive and the review counter check their links. v0.94, TASK-0089.
 - P8c — Undo and redo as commands of the log, with one history for the document. v0.95, TASK-0093, ADR-0031.
 - R10 — A numeric pad and an expression evaluator for a new box and a move, and the keys of undo and redo. v0.96, TASK-0094, ADR-0032.
+- P0.37 — An open applies each entry of the document file one time. v0.98, TASK-0096.
+- P0.38 — The test framework gate reads what MSBuild compiles into a test project. v0.99, TASK-0097.
+- K2a — The engine holds a sketch of points, lines and five constraints, and the desktop draws it. v0.100, TASK-0100, ADR-0033.
+- K2b — The desktop draws a sketch of lines and adds its constraints, by touch and by mouse. v0.101, TASK-0101, ADR-0034.
+- P0.40 — The document file keeps each complete line and each held file, and the pad applies to the current selection. v0.102, TASK-0099.
+- K3a — The engine solves the five constraints of a sketch with `+ - * / sqrt` only, and the desktop shows if a sketch is solved. v0.103, TASK-0102, ADR-0035.
 
 ## Track 0 — Foundations
 
