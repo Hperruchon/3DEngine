@@ -85,6 +85,7 @@ Therefore each approved objective must have a track here.
 - K3a — The engine solves the five constraints of a sketch with `+ - * / sqrt` only, and the desktop shows if a sketch is solved. v0.103, TASK-0102, ADR-0035.
 - P0.39 — The gates read the names, the packages and the assemblies that the build binds, and the review counter reads each heading. v0.104, TASK-0098.
 - K0a — The engine extrudes the closed profile of a solved sketch over Manifold, and the desktop extrudes the active sketch. v0.105, TASK-0103, ADR-0036.
+- P0.41 — The test framework gate reads the output path and each MSBuild file of a test project. v0.107, TASK-0105.
 
 ## Track 0 — Foundations
 
