@@ -3026,3 +3026,32 @@ New tests: none. The test list holds 1058 (764 in `Engine.Tests`, 190 in `3DEngi
 `3DEngine.ImageTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
 entries: 15 of 15. New diagnostic codes: none. Since the review of v0.105, 0 product milestones and 1 entry followed
 it.
+
+## v0.107 — The test framework gate reads the output path and each MSBuild file of a test project (P0.41, TASK-0105)
+
+The codebase review of 2026-10-29 put P0.41 before K0b, because it holds the high finding T79.
+
+**The change.**
+
+- `TestAttributeGateTests` reads each MSBuild file of a test project with
+  `DependencyDirectionGateTests.FilesThatMsBuildReads`: the project file, its `.user` file and each
+  `Directory.Build` file above it. Until now it read the project file only.
+- The gate refuses nine properties that move the output folders or change the default items, such as
+  `BaseOutputPath`, `OutputPath` and `DefaultItemExcludes`. So the folders that `IsCompiled` leaves out are the
+  folders that MSBuild leaves out.
+- `docs/templates.md`, section 5, gives the new files and offences of the gate.
+
+**Proof.** 7 new test cases. In the real checkout, `<BaseOutputPath>` with a framework attribute in
+`3DEngine.Tests/bin/`, and an alias of `Xunit.Sdk` in `3DEngine.Tests/3DEngine.Tests.csproj.user`, each failed the
+gate program. Each old rule, put back, failed a test: the project file only failed
+`The_User_File_Of_A_Test_Project_Is_Read`, and no check of the properties failed the rows of T79.
+
+**What stays.** A property that the list does not name is a new form. The review recommends to read the evaluation
+of MSBuild. T80 and T81 wait for TASK-0107.
+
+**A correction.** None.
+
+New tests: 7. The test list holds 1065 (771 in `Engine.Tests`, 190 in `3DEngine.Tests`, 104 in
+`3DEngine.ImageTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
+entries: 15 of 15. New diagnostic codes: none. Since the review of v0.105, 0 product milestones and 2 entries
+followed it.
