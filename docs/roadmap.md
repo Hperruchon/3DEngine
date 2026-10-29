@@ -84,6 +84,7 @@ Therefore each approved objective must have a track here.
 - P0.40 — The document file keeps each complete line and each held file, and the pad applies to the current selection. v0.102, TASK-0099.
 - K3a — The engine solves the five constraints of a sketch with `+ - * / sqrt` only, and the desktop shows if a sketch is solved. v0.103, TASK-0102, ADR-0035.
 - P0.39 — The gates read the names, the packages and the assemblies that the build binds, and the review counter reads each heading. v0.104, TASK-0098.
+- K0a — The engine extrudes the closed profile of a solved sketch over Manifold, and the desktop extrudes the active sketch. v0.105, TASK-0103, ADR-0036.
 
 ## Track 0 — Foundations
 
@@ -170,7 +171,7 @@ boundary and each refused rung.
 
 | Phase | Content | Evenings |
 |---|---|---|
-| K0a | Extrude a closed profile of line segments over Manifold. The command records the identifier of its sketch and a distance, not coordinates, and the handler reads the current sketch (Q7 of the second review of 2026-10-28). No arc, because an arc needs a sine and a cosine (determinism rule 1). The first commit checks that the native package exports the extrude function (KD5). | 3–5 |
+| K0a | Extrude a closed profile of line segments over Manifold. The command records the identifier of its sketch and a distance, not coordinates, and the handler reads the current sketch (Q7 of the second review of 2026-10-28). No arc, because an arc needs a sine and a cosine (determinism rule 1). The first commit checks that the native package exports the extrude function (KD5). ADR-0036, TASK-0103. | 3–5 |
 | K0b | The extrude references its sketch, and a rebuild makes the solid again after an edit of the sketch. An ADR resolves the conflict with ADR-0021 (KD5). | 6–10 |
 | K0 | A feature graph over Manifold. No B-Rep. Deferred-query references. The rest after K0b. | 12–20 |
 | K1 | Exact predicates. A deterministic arithmetic layer. | 4–8 |

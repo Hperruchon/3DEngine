@@ -38,6 +38,7 @@ public static class HandlerCatalog
         new SetSketchConstraintValueCommandHandler(),
         new MoveSketchPointCommandHandler(),
         new DeleteSketchItemCommandHandler(),
+        new ExtrudeCommandHandler(),
     ];
 
     public static IReadOnlyList<IQueryHandler> QueryHandlers() =>

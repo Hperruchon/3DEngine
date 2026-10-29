@@ -8,8 +8,12 @@ namespace Engine.Geometry.Manifold.Native;
 [StructLayout(LayoutKind.Sequential)]
 internal readonly record struct ManifoldVec3(double X, double Y, double Z);
 
-// Thin P/Invoke surface over manifoldc — what CreateBox, GetBoundingBox, Translate, and
-// Subtract need (twelve symbols). Binding style: source-generated [LibraryImport] per
+// Blittable mirror of manifoldc's ManifoldVec2 (types.h of 3.5.2: two doubles).
+[StructLayout(LayoutKind.Sequential)]
+internal readonly record struct ManifoldVec2(double X, double Y);
+
+// Thin P/Invoke surface over manifoldc — what CreateBox, GetBoundingBox, Translate,
+// Subtract, Tessellate and Extrude need. Binding style: source-generated [LibraryImport] per
 // ADR-0014 §1. The original nine were verified end-to-end against a real manifoldc.dll
 // (TASK-0012 §2 spike); the three P7c ops (translate/difference/is_empty) follow the same
 // convention and are exercised by the native [NativeManifoldFact] tests. All match
@@ -64,6 +68,28 @@ internal static partial class ManifoldNative
     // call the C++ delete on a buffer that Marshal.AllocHGlobal gave (manifoldc.cpp of
     // 3.5.2, line 1075); this pair keeps one allocator for one buffer.
     [LibraryImport(Lib)] internal static partial void manifold_destruct_meshgl64(nint mesh);
+
+    // The extrude (ADR-0036 item 6, TASK-0103). manifold_simple_polygon copies `length`
+    // ManifoldVec2 values into a std::vector that it builds in `mem` with placement new;
+    // manifold_polygons copies each simple polygon into a vector of vectors in `mem`
+    // (manifoldc.cpp of 3.5.2, lines 68 to 85). manifold_extrude reads the polygons, and
+    // manifold_transform reads four columns: the images of x, y and z, then the move
+    // (lines 268 to 275 and 538 to 545). Each destruct runs the destructor in place and
+    // does not free `mem`, as manifold_destruct_meshgl64 does.
+    [LibraryImport(Lib)] internal static partial nuint manifold_simple_polygon_size();
+    [LibraryImport(Lib)] internal static partial nuint manifold_polygons_size();
+    [LibraryImport(Lib)] internal static partial nint manifold_simple_polygon(nint mem, nint points, nuint length);
+    [LibraryImport(Lib)] internal static partial nint manifold_polygons(nint mem, nint polygons, nuint length);
+    [LibraryImport(Lib)] internal static partial void manifold_destruct_simple_polygon(nint polygon);
+    [LibraryImport(Lib)] internal static partial void manifold_destruct_polygons(nint polygons);
+    [LibraryImport(Lib)]
+    internal static partial nint manifold_extrude(
+        nint mem, nint polygons, double height, int slices, double twistDegrees, double scaleX, double scaleY);
+    [LibraryImport(Lib)]
+    internal static partial nint manifold_transform(
+        nint mem, nint manifold,
+        double x1, double y1, double z1, double x2, double y2, double z2,
+        double x3, double y3, double z3, double x4, double y4, double z4);
 
     // The volume of a solid, for the test of the winding (ADR-0018 item 9).
     [LibraryImport(Lib)] internal static partial double manifold_volume(nint manifold);

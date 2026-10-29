@@ -3,6 +3,7 @@ using Engine.Contracts;
 using Engine.Contracts.Sketch;
 using Engine.Core.Commands;
 using Engine.Core.Geometry;
+using Engine.Geometry.Manifold;
 using ThreeDEngine.Core.Input;
 using ThreeDEngine.Core.Models;
 using ThreeDEngine.Core.Sketching;
@@ -182,5 +183,28 @@ public class SketchActionsTests
         Assert.Null(actions.Message);
         Assert.Equal((2, 0), (actions.Current()!.Points.Count, actions.Current()!.Lines.Count));
         Assert.Equal(CommandStatus.Applied, (await host.Session.Apply(new UndoCommand())).Status);
+    }
+    // ADR-0036 item 9: an extrude of an open chain keeps the mode and gives the code for the pad, and
+    // an extrude of the closed rectangle ends the mode and gives the new body.
+    [Fact]
+    public async Task An_Extrude_Ends_The_Mode_And_Gives_The_New_Body()
+    {
+        using var host = new EngineHost(new ManifoldGeometryBackend(), "manifold", ManifoldGeometryBackend.NativeVersion);
+        var actions = new SketchActions(host.Session);
+        actions.Create(Datums.XY.Id);
+        foreach (var (a, b) in new[] { (0.0, 0.0), (10, 0), (0, 6), (-10, 0) })
+            Assert.Null(actions.Next(a, b));
+
+        var (rejection, none) = actions.Extrude(5);
+        Assert.StartsWith("E-SKETCH-PROFILE-INVALID", rejection);
+        Assert.Null(none);
+        Assert.NotNull(actions.Active);
+
+        actions.Close();
+        var (closed, body) = actions.Extrude(5);
+        Assert.Null(closed);
+        Assert.Null(actions.Active);
+        var created = await host.Session.Read((document, _) => document.Bodies.Single());
+        Assert.Equal((body, "Extrude"), (created.Handle.Id, created.Kind));
     }
 }
