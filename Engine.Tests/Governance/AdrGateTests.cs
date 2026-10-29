@@ -227,7 +227,7 @@ public class AdrGateTests
                 problems.Add($"{id}: the index lists it in force and under \"Archived\"");
         }
 
-        problems.AddRange(ArchiveProblems(archived, ArchivedStatus));
+        problems.AddRange(ArchiveProblems(archived, ArchivedFile));
 
         Assert.True(problems.Count == 0, string.Join("\n  ", problems));
     }
@@ -270,36 +270,78 @@ public class AdrGateTests
     // have its file in docs/adr/archive/, with the status Withdrawn or Superseded, and the row
     // must give that status. Until TASK-0089 a deleted record with its row moved under
     // "Archived" passed the gate. The function is pure, so a test gives it each form.
-    internal static IEnumerable<string> ArchiveProblems(IEnumerable<string> archivedRows, Func<string, string?> statusOfArchiveFile)
+    //
+    // Finding T75 of the second codebase review of 2026-10-28 (TASK-0098): a file with the status
+    // only passed, so a deleted record could leave a stub. The file keeps the identifier of its
+    // number, the title of its row, and a body with its sections "## Context" and "## Decision".
+    internal sealed record ArchiveFile(string Status, string Id, string Title, string Body);
+
+    internal static IEnumerable<string> ArchiveProblems(IEnumerable<string> archivedRows, Func<string, ArchiveFile?> archiveFile)
     {
         foreach (var row in archivedRows)
         {
             var id = RowId(row);
-            var status = statusOfArchiveFile(id);
-            if (status is null)
+            var file = archiveFile(id);
+            var title = row.Split('|', StringSplitOptions.TrimEntries) is { Length: > 2 } cells ? cells[2] : string.Empty;
+            if (file is null)
                 yield return $"{id}: the index lists it under \"Archived\", and docs/adr/archive/ has no file of it";
-            else if (status is not ("Withdrawn" or "Superseded"))
-                yield return $"{id}: its file in docs/adr/archive/ has the status {status}; an archived record is Withdrawn or Superseded";
-            else if (!row.Contains($"| {status} |", StringComparison.Ordinal))
-                yield return $"{id}: the row under \"Archived\" does not give the status {status} of its file";
+            else if (file.Status is not ("Withdrawn" or "Superseded"))
+                yield return $"{id}: its file in docs/adr/archive/ has the status {file.Status}; an archived record is Withdrawn or Superseded";
+            else if (!row.Contains($"| {file.Status} |", StringComparison.Ordinal))
+                yield return $"{id}: the row under \"Archived\" does not give the status {file.Status} of its file";
+            else if (file.Id != id)
+                yield return $"{id}: its file in docs/adr/archive/ gives the id '{file.Id}'";
+            else if (file.Title.Length == 0 || file.Title != title)
+                yield return $"{id}: its file in docs/adr/archive/ gives the title '{file.Title}', and its row gives '{title}'";
+            else if (!Regex.IsMatch(file.Body, @"^## Context\s*$", RegexOptions.Multiline) || !Regex.IsMatch(file.Body, @"^## Decision\s*$", RegexOptions.Multiline))
+                yield return $"{id}: its file in docs/adr/archive/ has no body with the sections \"## Context\" and \"## Decision\"";
         }
     }
 
-    // The status of the file of a number in docs/adr/archive/, or null when it has none.
-    private static string? ArchivedStatus(string id)
+    // The file of a number in docs/adr/archive/, or null when it has none.
+    private static ArchiveFile? ArchivedFile(string id)
     {
         var folder = RepositoryFiles.Path("docs", "adr", "archive");
         var file = Directory.Exists(folder) ? Directory.EnumerateFiles(folder, $"{id}-*.md").FirstOrDefault() : null;
-        return file is null ? null : RepositoryFiles.ReadFrontMatter(File.ReadAllText(file))?.GetValueOrDefault("status") ?? string.Empty;
+        if (file is null)
+            return null;
+
+        var text = File.ReadAllText(file).Replace("\r", string.Empty, StringComparison.Ordinal);
+        var fields = RepositoryFiles.ReadFrontMatter(text) ?? new Dictionary<string, string>(StringComparer.Ordinal);
+        var end = text.StartsWith("---\n", StringComparison.Ordinal) ? text.IndexOf("\n---\n", 4, StringComparison.Ordinal) : -1;
+        return new ArchiveFile(
+            fields.GetValueOrDefault("status") ?? string.Empty,
+            fields.GetValueOrDefault("id") ?? string.Empty,
+            fields.GetValueOrDefault("title") ?? string.Empty,
+            end < 0 ? string.Empty : text[(end + 5)..]);
     }
 
+    private const string ArchivedRow = "| [0042](archive/0042-x.md) | X | Withdrawn | — | today |";
+
+    private static readonly ArchiveFile Complete = new("Withdrawn", "0042", "X", "# ADR-0042 — X\n\n## Context\n\nA reason.\n\n## Decision\n\nA rule.\n");
+
     [Theory]
-    [InlineData("| [0042](archive/0042-x.md) | X | Withdrawn | — | today |", null, "has no file of it")]
-    [InlineData("| [0042](archive/0042-x.md) | X | Withdrawn | — | today |", "Accepted", "has the status Accepted")]
-    [InlineData("| [0042](archive/0042-x.md) | X | Withdrawn | — | today |", "Superseded", "does not give the status Superseded")]
-    public void Each_Form_Of_Finding_T65_Is_A_Problem(string row, string? status, string expected)
+    [InlineData(null, "has no file of it")]
+    [InlineData("Accepted", "has the status Accepted")]
+    [InlineData("Superseded", "does not give the status Superseded")]
+    public void Each_Form_Of_Finding_T65_Is_A_Problem(string? status, string expected)
     {
-        var problems = ArchiveProblems([row], _ => status).ToList();
+        var problems = ArchiveProblems([ArchivedRow], _ => status is null ? null : Complete with { Status = status }).ToList();
+
+        Assert.Contains(problems, problem => problem.Contains(expected, StringComparison.Ordinal));
+    }
+
+    // The forms of finding T75. The first one is the file of the review: front matter with the
+    // status only.
+    [Theory]
+    [InlineData("", "", "", "gives the id ''")]
+    [InlineData("0042", "", "# A stub\n", "gives the title ''")]
+    [InlineData("0042", "Y", "# A stub\n", "its row gives 'X'")]
+    [InlineData("0042", "X", "", "has no body")]
+    [InlineData("0042", "X", "## Context\n\nA reason.\n", "has no body")]
+    public void Each_Form_Of_Finding_T75_Is_A_Problem(string id, string title, string body, string expected)
+    {
+        var problems = ArchiveProblems([ArchivedRow], _ => new ArchiveFile("Withdrawn", id, title, body)).ToList();
 
         Assert.Contains(problems, problem => problem.Contains(expected, StringComparison.Ordinal));
     }
@@ -307,7 +349,7 @@ public class AdrGateTests
     [Fact]
     public void An_Archived_Record_With_Its_File_And_Its_Status_Is_No_Problem()
     {
-        Assert.Empty(ArchiveProblems(["| [0042](archive/0042-x.md) | X | Withdrawn | — | today |"], _ => "Withdrawn"));
+        Assert.Empty(ArchiveProblems([ArchivedRow], _ => Complete));
     }
 
     private static List<Adr> Parse()

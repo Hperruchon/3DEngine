@@ -1,7 +1,7 @@
 ---
 id: 0098
 title: The gates read the names, the packages and the assemblies that the build binds, and the review counter reads each heading
-status: Ready
+status: Done
 phase: P0.39
 opened: 2026-10-28
 depends-on: [0102]
@@ -82,6 +82,9 @@ Each form of the review fails the gate program.
    `docs/reviews/2026-09-25-rules-review.md`, section 1. `CodebaseReviewGateTests` requires the rows in a review
    after this task, and `docs/templates.md`, sections 6 and 7, say so. The inventory of the rules stays a separate
    review when the owner asks for it.
+10. The scans of `UiLibraryGateTests` skip `.claude/`, as `DependencyDirectionGateTests` does. On the computer of the
+    owner the folder holds the worktrees of other sessions, and the gate failed there on their copies (TASK-0102,
+    v0.103).
 
 ## Scope (out)
 
@@ -90,9 +93,9 @@ Each form of the review fails the gate program.
 
 ## Acceptance criteria
 
-- [ ] Each form of the review fails the gate program after its correction, and passed it before.
-- [ ] A clean build (`--no-incremental`) gives zero errors and zero warnings.
-- [ ] Continuous integration passes on `ubuntu-latest`, `windows-latest` and `macos-latest`.
+- [x] Each form of the review fails the gate program after its correction, and passed it before.
+- [x] A clean build (`--no-incremental`) gives zero errors and zero warnings.
+- [x] Continuous integration passes on `ubuntu-latest`, `windows-latest` and `macos-latest`.
 
 ## Notes for the implementer
 
@@ -103,3 +106,43 @@ Each form of the review fails the gate program.
 
 - 2026-10-28: opened by the second codebase review of 2026-10-28 (TASK-0095).
 - 2026-10-29: the owner put K3a (TASK-0102) before this task, so it depends on TASK-0102.
+- 2026-10-29: K3a is Done at v0.103, and this task starts. Item 10 is new: the local failure of the UI gate that
+  TASK-0102 reported. T72 keeps the four programs whose assembly name is not the name of their file (`engine`,
+  `engine-api-http`, `repo-gates`, `write-set-check`): the gate requires assembly names that are unique and that are
+  not the name of another project, which closes the same hole.
+- 2026-10-29: T70, T71, T72, T77 and items 8 and 10. `UiLibraryGateTests` refuses a global using of the namespace in
+  each file, reads the value of a join, an interpolation and a constant of the file, and unescapes %XX before it
+  compares a package. `DependencyDirectionGateTests` refuses an Include with an MSBuild escape, an assembly name of
+  another project or a computed one, an AssemblyName outside a project file, and a control byte in a source file; it
+  and `DispatchSurfaceGateTests` leave out bin/ and obj/ at the root of a project only. The NUL byte of
+  `SdlInputTests.cs` is now \0. The eight new forms of T70 and T71 failed their tests on the gate before the change.
+- 2026-10-29: T73, T75 and T78. The review counter counts each heading, counts a product milestone when the row of a
+  product phase names one of its tasks, and refuses a version that does not rise, a heading after the last review
+  with two tasks, and a task file whose phase is not the phase of its row. An archived ADR keeps its id, its title
+  and its sections "## Context" and "## Decision". A review with the ledger v0.104 or later gives the rows "Lines in
+  the rule files", "Sentences with "must"" and "Sentences with "do not""; `docs/templates.md`, sections 6 and 7, say so.
+- 2026-10-29: T74. The runner binds each gate file with the compiler, and refuses each statement whose value is a
+  task and each local of a task type that the check never reads. The runner checks its own seven forms of T67 and
+  T74 and four forms that wait at each run. With a type check that sees no task, the run fails on the five forms of
+  T74, which is the behaviour of the runner before the change.
+- 2026-10-29: a probe checkout held each form of T70 to T77 at once. The gate program of main gave 200 runs and 0
+  failures on it; the program of this branch gave 8 failed checks, which name each form. The full test list passes
+  on the computer of the owner, with the worktrees of other sessions present.
+
+## Outcome
+
+Status: Done · commit (the merge of the branch p039-gate-forms) · v0.104
+
+## Method
+
+Mechanical: the global using and the joined constant of T70, the unescape and the refusal of T71, the root-only
+            rule of bin/ and obj/, the NUL byte of T77, the identifier, the title and the body of T75, and the
+            three rows of T78.
+Judgement:  T72 keeps the four programs with their own assembly names, and refuses a name that is not unique or
+            that another project has, which closes the hole with no rename. T73 takes the phase from the row of
+            the roadmap that names the task, and the task file must agree with it. T74 has no test project, so
+            the runner checks its own forms at each run.
+Weakest:    the constant check of T70 reads the constants of one file only, so a constant of another file in a
+            native import still passes; T74 counts a local as read when the body names it again, even in a call
+            that does not wait. The control byte gate reads `.cs` files only: the task file of this task held a
+            NUL byte for one commit (ab22ade), and no gate saw it.

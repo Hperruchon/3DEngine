@@ -312,8 +312,10 @@ dotnet run --project eng/write-set-check -- --staged --task TASK-nnnn &&
 3. A text rule that an agent broke two times becomes a gate, or the rule is deleted.
 4. Each rule has one home. A second file points at the home in one line. It does not repeat the
    rule.
-5. A rules review repeats with each codebase review. It repeats the measures of
-   `docs/reviews/2026-09-25-rules-review.md`, section 1, so that growth is visible.
+5. Each codebase review repeats three measures of `docs/reviews/2026-09-25-rules-review.md`, section 1, with
+   the method of that section: the lines in the rule files, the sentences with "must" and the sentences with
+   "do not". So growth is visible. `CodebaseReviewGateTests` requires the three rows in each review after
+   TASK-0098 (the owner, 2026-10-28). The inventory of the rules is a separate review when the owner asks for it.
 
 ---
 
@@ -327,9 +329,10 @@ the next one. `Engine.Tests/Governance/CodebaseReviewGateTests.cs` reads this fo
 **When.** A review is due when more than four product milestones, or more than twelve ledger entries of any
 kind, follow the ledger version that the last review examined (the owner, 2026-10-27, TASK-0083). A product
 milestone is a ledger entry whose task has a phase of track R, K, P or V, for example R7, K0, P8a or V1; a
-phase of track 0 (P0.nn) and a governance entry do not count. The gate reads the phase from the task file that
-the heading names, and counts it only when the row of that phase in `docs/roadmap.md` names the same task. An
-entry with no task counts toward the limit of twelve only. The gate counts ledger entries in
+phase of track 0 (P0.nn) and a governance entry do not count. The gate counts an entry as a product milestone
+when the row of a product phase in `docs/roadmap.md` names its task, and the task file must give the phase of
+that row (TASK-0098). Each ledger version is greater than the one before it, and each heading after the last
+review names one task. An entry with no task counts toward the limit of twelve only. The gate counts ledger entries in
 `docs/CURRENT-STATE.md`, not days, because objective 12 says that time is irregular.
 
 **The order of the findings.** A critical or high finding goes into a task that comes before the next product
@@ -363,6 +366,9 @@ previous: <the file name of the previous review, or none>
 | Findings: high | | |
 | Findings: medium | | |
 | Findings: low | | |
+| Lines in the rule files | | |
+| Sentences with "must" | | |
+| Sentences with "do not" | | |
 
 ## Findings of the previous review
 <One line for each identifier of the previous review: fixed, open or worse, with the evidence.>
