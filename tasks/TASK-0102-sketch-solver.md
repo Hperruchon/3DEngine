@@ -5,16 +5,18 @@ status: Active
 phase: K3a
 opened: 2026-10-29
 depends-on: [0099, 0101]
-governed-by: [0004, 0007, 0016, 0018, 0019, 0025, 0027, 0028, 0029, 0030, 0032, 0033, 0034, 0035]
+governed-by: [0004, 0007, 0012, 0016, 0018, 0019, 0021, 0025, 0027, 0028, 0029, 0030, 0031, 0032, 0033, 0034, 0035]
 writes:
   create:
     - tasks/TASK-0102-sketch-solver.md
     - docs/adr/0035-sketch-solver.md
   modify:
     - Engine.Core/Sketch/**
+    - Engine.Core/Commands/MoveSketchPointCommandHandler.cs
     - Engine.Core/Queries/GetSketchQuery.cs
     - Engine.Core/Queries/GetSketchQueryHandler.cs
     - Engine.Tests/Sketch/**
+    - Engine.Tests/Http/HttpSketchScenarioTests.cs
     - 3DEngine/Ui/**
     - 3DEngine.ImageTests/**
     - docs/adr/0035-sketch-solver.md
@@ -28,7 +30,6 @@ writes:
     - docs/CURRENT-STATE.md
   forbid:
     - Engine.Contracts/**
-    - Engine.Core/Commands/**
     - Engine.Core/CommandBus.cs
     - Engine.Api.Http/**
     - Engine.Cli/**
@@ -69,7 +70,8 @@ on each platform.
 - A name for the constraint that causes a conflict.
 - A drag of a point with a live solve: R11.
 - A sparse solver, and a limit of the size of a sketch.
-- A change of a command or of its schema version. `Engine.Core/Commands/**` stays as it is.
+- A change of the fields or of the schema version of a command. Only `MoveSketchPoint` changes: it names its
+  point as held (ADR-0035 item 7).
 
 ## Acceptance criteria
 
@@ -97,3 +99,8 @@ on each platform.
 - 2026-10-29: the owner chose the order K3a, then P0.39. TASK-0098 now depends on this task. ADR-0035 is proposed
   with the questions Q1 to Q4.
 - 2026-10-29: the owner accepted ADR-0035 with Q1 to Q4 A. ADR-0033 is amended.
+- 2026-10-29: `SketchSolver` solves each changed record in `SketchResults.Changed`; `MoveSketchPoint` holds its point;
+  `GetSketch` gives `solved` and `freedom`, and the window "Sketch" shows them. Four tests of K2a and K2b that
+  expected an unsolved residual now expect a solved record or a conflict. A file that the server of v0.101 wrote
+  opens and solves. 14 injections: 11 caught at once, and 3 after two more tests (a move with a free start, and
+  redundant rows with irrational entries).

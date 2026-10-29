@@ -29,7 +29,8 @@ public sealed class SketchWindowUiTests
         [new(SketchId, 0, 0), new(A, 3, 4), new(B, 3, 10)],
         [new(Line, A, B)],
         [], [],
-        [new SketchConstraintInfo(Fix, "fixed", [A], [3, 4], 0)]);
+        [new SketchConstraintInfo(Fix, "fixed", [A], [3, 4], 0)],
+        true, 2);
 
     private static SketchPanel Panel(params Guid[] selection) => new([Sketch], Sketch, SketchToolKind.Select, false, selection, null);
 
@@ -94,6 +95,14 @@ public sealed class SketchWindowUiTests
         using var empty = Opened(new SketchPanel([], null, SketchToolKind.Line, false, [], null));
         Assert.Null(empty.ItemRectangle(DesktopUi.SketchItem(DesktopUi.FinishLabel)));
         Assert.Single(empty.PanelRectangles);
+    }
+
+    // ADR-0035 item 8: the line under the title says if the sketch is solved, with its free degrees.
+    [Fact]
+    public void The_Status_Line_Says_If_The_Sketch_Is_Solved()
+    {
+        Assert.Equal("Solved, 2 free", DesktopUi.SketchStatus(Sketch));
+        Assert.Equal("Not solved", DesktopUi.SketchStatus(Sketch with { Solved = false }));
     }
 
     // ADR-0034 item 8: the tools, Next point while the tool Line is active, End and Close while a

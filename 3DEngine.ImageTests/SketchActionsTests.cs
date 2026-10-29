@@ -114,7 +114,8 @@ public class SketchActionsTests
         Assert.Equal(sketch.Points[1].Id, sketch.Lines[^1].End);
     }
 
-    // ADR-0034 item 8: the five kinds of K2a from the actions, each with its residual.
+    // ADR-0034 item 8: the five kinds of K2a from the actions, each with its residual. The solver
+    // satisfies the first four (ADR-0035); a vertical line of length 30 then conflicts with them.
     [Fact]
     public async Task Each_Kind_Of_Constraint_Is_Added_With_Its_Residual()
     {
@@ -127,18 +128,18 @@ public class SketchActionsTests
         var (origin, a, b, line) = (sketch.Points[0].Id, sketch.Points[1].Id, sketch.Points[2].Id, sketch.Lines[0].Id);
 
         Assert.Null(actions.AddConstraint("horizontal", [line], []));
-        Assert.Null(actions.AddConstraint("vertical", [line], []));
         Assert.Null(actions.AddConstraint("distance", [line], [30]));
-        Assert.Null(actions.AddConstraint("fixed", [b], [35, 1]));
+        Assert.Null(actions.AddConstraint("fixed", [b], [30, 0]));
         Assert.Null(actions.AddConstraint("coincident", [origin, a], []));
+        Assert.True(actions.Current()!.Solved);
+        Assert.Null(actions.AddConstraint("vertical", [line], []));
         Assert.StartsWith("E-SKETCH-CONSTRAINT-INVALID", actions.AddConstraint("fixed", [line], [0, 0]));
 
         var residuals = actions.Current()!.Constraints.Select(constraint => (constraint.Kind, constraint.Residual)).ToArray();
-        Assert.Equal(["horizontal", "vertical", "distance", "fixed", "coincident"], residuals.Select(residual => residual.Kind));
-        Assert.Equal(1, residuals[0].Residual);
-        Assert.Equal(30, residuals[1].Residual);
-        Assert.Equal(0, residuals[3].Residual);
-        Assert.Equal(5, residuals[4].Residual);
+        Assert.Equal(["horizontal", "distance", "fixed", "coincident", "vertical"], residuals.Select(residual => residual.Kind));
+        Assert.All(residuals[..4], residual => Assert.Equal(0, residual.Residual, 9));
+        Assert.Equal(30, residuals[4].Residual, 9);
+        Assert.False(actions.Current()!.Solved);
     }
 
     // ADR-0034 items 5 and 6: an undo of the last point ends the chain, and an undo of CreateSketch

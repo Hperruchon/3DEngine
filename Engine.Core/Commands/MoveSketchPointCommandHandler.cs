@@ -9,7 +9,7 @@ using Engine.Core.Sketch;
 namespace Engine.Core.Commands;
 
 // ADR-0033 items 2, 5 and 6: a point of a live sketch moves to a finite position. The
-// origin of the frame does not move.
+// origin of the frame does not move. The solver holds the moved point (ADR-0035 item 7).
 public sealed class MoveSketchPointCommandHandler : ICommandHandler, ICommandEncoder
 {
     public string CommandName => "MoveSketchPoint";
@@ -73,6 +73,6 @@ public sealed class MoveSketchPointCommandHandler : ICommandHandler, ICommandEnc
                 DiagnosticCodes.GeomInvalidParam, "The position of a point of a sketch is a pair of finite numbers."));
 
         var points = sketch.Points.Select(point => point.Id == move.PointId ? point with { X = move.X, Y = move.Y } : point).ToList();
-        return Task.FromResult(SketchResults.Changed(sketch with { Points = points }, "pointId", move.PointId));
+        return Task.FromResult(SketchResults.Changed(sketch with { Points = points }, "pointId", move.PointId, held: move.PointId));
     }
 }
