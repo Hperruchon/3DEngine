@@ -51,23 +51,37 @@ internal sealed class SessionSketches : IDisposable
     // Each live sketch, as the last call of Apply left them.
     public IReadOnlyCollection<SketchInfo> Live => _live.Values;
 
+    // The number of reads of a sketch, for a test of V44.
+    public int Reads { get; private set; }
+
     // On the render loop. A failure of one sketch is written as a warning, and the next
     // sketch continues, as in SessionBodies.
+    //
+    // Finding V44 of the codebase review of 2026-10-29: each read runs the status of the solver,
+    // and an agent can change one sketch twenty times in a frame. Apply reads each changed sketch
+    // one time, in the order of its first change, after the queue is empty.
     public void Apply()
     {
+        var changed = new List<Guid>();
         while (_changes.TryDequeue(out var change))
         {
             if (change.Removed)
             {
                 _live.Remove(change.SketchId);
-                continue;
+                changed.Remove(change.SketchId);
             }
+            else if (!changed.Contains(change.SketchId))
+                changed.Add(change.SketchId);
+        }
 
-            var result = _host.Session.Query<SketchInfo>(new GetSketchQuery { SketchId = change.SketchId }).GetAwaiter().GetResult();
+        foreach (var sketchId in changed)
+        {
+            Reads++;
+            var result = _host.Session.Query<SketchInfo>(new GetSketchQuery { SketchId = sketchId }).GetAwaiter().GetResult();
             if (result.Result is { } sketch)
-                _live[change.SketchId] = sketch;
+                _live[sketchId] = sketch;
             else if (result.Error?.Code != Engine.Core.DiagnosticCodes.SketchNotFound)
-                Console.WriteLine($"[WARN] The sketch {change.SketchId} was not read: {result.Error?.Code} {result.Error?.Message}");
+                Console.WriteLine($"[WARN] The sketch {sketchId} was not read: {result.Error?.Code} {result.Error?.Message}");
         }
     }
 

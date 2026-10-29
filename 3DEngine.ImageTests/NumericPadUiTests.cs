@@ -1,4 +1,7 @@
 using System.Numerics;
+using Engine.Contracts.Sketch;
+using Engine.Core.Queries;
+using ThreeDEngine.Core.Sketching;
 using ThreeDEngine.Core.Input;
 using ThreeDEngine.Desktop;
 using ThreeDEngine.Desktop.Ui;
@@ -155,7 +158,12 @@ public sealed class NumericPadUiTests
     {
         var display = new Vector2(width, height);
         using var ui = new DesktopUi("http://127.0.0.1:5180");
-        void Draw() => ui.Frame(1f / 60f, display, Vector2.One, [Body]);
+        // The pad of a sketch opens while a sketch is active and the tool Line has an open
+        // chain, and it closes when that state changes (finding V40, TASK-0106).
+        var id = Guid.Parse("50000000-0000-0000-0000-000000000000");
+        var sketch = new SketchInfo(id, Datums.XY.Id, null, [new SketchPoint(id, 0, 0)], [], [], [], [], true, 0);
+        SketchPanel? panel = bySketch ? new SketchPanel([sketch], sketch, SketchToolKind.Line, true, [], null) : null;
+        void Draw() => ui.Frame(1f / 60f, display, Vector2.One, [Body], null, null, null, panel);
         Draw();
         if (bySketch)
             ui.OpenNextPointPad(chainOpen: true);

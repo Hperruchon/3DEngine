@@ -78,6 +78,8 @@ internal static class SketchOverlay
                 if (point.Forward < Near)
                     continue;
                 var pixel = frame.ToPixels(point);
+                if (!Finite(pixel))
+                    continue;
                 points.Add(new Spot(pixel, MarkOf(id)));
                 if (named is not null)
                     labels.Add(new Label(pixel + LabelOffset, named[id]));
@@ -106,7 +108,7 @@ internal static class SketchOverlay
             if (seen.Forward < Near)
                 return new ToolPoint(point.Id, point.X, point.Y, null, null);
             var pixel = frame.Item1.ToPixels(seen);
-            return new ToolPoint(point.Id, point.X, point.Y, pixel.X, pixel.Y);
+            return Finite(pixel) ? new ToolPoint(point.Id, point.X, point.Y, pixel.X, pixel.Y) : new ToolPoint(point.Id, point.X, point.Y, null, null);
         }).ToArray();
         return new SketchPicture(points, [.. sketch.Lines.Select(line => new ToolLine(line.Id, line.Start, line.End))], [.. sketch.Constraints.Select(constraint => constraint.Id)]);
     }
@@ -159,7 +161,8 @@ internal static class SketchOverlay
                 a = Cut(b, a);
             else if (b.Forward < Near)
                 b = Cut(a, b);
-            return (ToPixels(a), ToPixels(b));
+            var (start, end) = (ToPixels(a), ToPixels(b));
+            return Finite(start) && Finite(end) ? (start, end) : null;
         }
 
         // The point between front and behind at the near distance.
@@ -172,6 +175,11 @@ internal static class SketchOverlay
                 Near);
         }
     }
+
+    // Finding V45 of the codebase review of 2026-10-29: a finite position far from the camera, as
+    // 1e308, gives a pixel that is not finite as a float, and its vertices went to the GPU. Such a
+    // point or segment is not drawn and has no pixel for the tool.
+    private static bool Finite(Vector2 pixel) => float.IsFinite(pixel.X) && float.IsFinite(pixel.Y);
 
     private static double Dot((double X, double Y, double Z) a, (double X, double Y, double Z) b) => (a.X * b.X) + (a.Y * b.Y) + (a.Z * b.Z);
 

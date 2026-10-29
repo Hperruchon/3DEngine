@@ -43,7 +43,7 @@ internal static class SketchText
         {
             var items = string.Join(" ", constraint.Items.Select(item => labels.GetValueOrDefault(item, "?")));
             var values = constraint.Values.Count == 0 ? string.Empty : " = " + string.Join(", ", constraint.Values.Select(Short));
-            yield return (constraint.Id, $"{labels[constraint.Id]}  {constraint.Kind} {items}{values}  r {Short(constraint.Residual)}");
+            yield return (constraint.Id, $"{labels[constraint.Id]}  {constraint.Kind} {items}{values}  r {(constraint.Residual is { } residual ? Short(residual) : "not finite")}");
         }
     }
 

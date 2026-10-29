@@ -72,6 +72,11 @@ public sealed class AddSketchConstraintCommandHandler : ICommandHandler, IComman
     {
         var add = (AddSketchConstraintCommand)command;
 
+        // Finding E86 of the codebase review of 2026-10-29: the item takes the identifier of the
+        // command, so a command that the log holds is refused before it gives a second item.
+        if (SketchResults.InUse(document, command) is { } inUse)
+            return Task.FromResult(inUse);
+
         if (SketchModel.Find(document, add.SketchId) is not { } sketch)
             return Task.FromResult(SketchResults.NotFound(add.SketchId));
 

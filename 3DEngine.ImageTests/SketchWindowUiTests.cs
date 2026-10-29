@@ -137,7 +137,9 @@ public sealed class SketchWindowUiTests
 
         Assert.Equal(["Horizontal", "Vertical", "Distance", DesktopUi.DeleteLabel], Buttons(Line));
         Assert.Equal(["Coincident", "Distance", DesktopUi.DeleteLabel], Buttons(A, B));
-        Assert.Equal(["Distance", DesktopUi.DeleteLabel], Buttons(Line, SketchId));
+        // V43 (TASK-0106): a selection with the origin O gives no Delete, because the engine refuses
+        // to delete O and the delete of the other items gave no message for it.
+        Assert.Equal(["Distance"], Buttons(Line, SketchId));
         Assert.Equal(["Fixed", DesktopUi.MovePointLabel, DesktopUi.DeleteLabel], Buttons(B));
         Assert.Equal([DesktopUi.ValueLabel, DesktopUi.DeleteLabel], Buttons(Fix));
         Assert.Empty(Buttons());
@@ -249,9 +251,11 @@ public sealed class SketchWindowUiTests
         Step(ui, Panel(A));
         Assert.Null(ui.Pad);
 
+        // The pad of the next point has the scope of the chain and not of the selection, so a
+        // change of the selection with the tool Line keeps it (V40, TASK-0106).
         ui.OpenNextPointPad(chainOpen: false);
-        Step(ui, Panel(B));
-        Step(ui, Panel());
+        Step(ui, new SketchPanel([Sketch], Sketch, SketchToolKind.Line, false, [B], null));
+        Step(ui, new SketchPanel([Sketch], Sketch, SketchToolKind.Line, false, [], null));
         Assert.NotNull(ui.Pad);
     }
 }

@@ -57,6 +57,11 @@ public sealed class CreateSketchCommandHandler : ICommandHandler, ICommandEncode
     {
         var create = (CreateSketchCommand)command;
 
+        // Finding E86 of the codebase review of 2026-10-29: the item takes the identifier of the
+        // command, so a command that the log holds is refused before it gives a second item.
+        if (SketchResults.InUse(document, command) is { } inUse)
+            return Task.FromResult(inUse);
+
         if (Datums.Find(create.DatumId) is null)
             return Task.FromResult(SketchResults.Failure(
                 DiagnosticCodes.SketchDatumNotFound,

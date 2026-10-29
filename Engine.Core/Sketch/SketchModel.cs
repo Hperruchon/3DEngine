@@ -56,9 +56,11 @@ public static class SketchModel
 
         return sketch with
         {
-            Points = sketch.Points.Where(point => !removed.Contains(point.Id)).ToList(),
-            Lines = sketch.Lines.Where(line => !removed.Contains(line.Id)).ToList(),
-            Constraints = sketch.Constraints.Where(constraint => !removed.Contains(constraint.Id)).ToList(),
+            // Finding E91 of the codebase review of 2026-10-29: a read-only list, so a client
+            // that casts a list of GetSketch cannot change the Document.
+            Points = sketch.Points.Where(point => !removed.Contains(point.Id)).ToList().AsReadOnly(),
+            Lines = sketch.Lines.Where(line => !removed.Contains(line.Id)).ToList().AsReadOnly(),
+            Constraints = sketch.Constraints.Where(constraint => !removed.Contains(constraint.Id)).ToList().AsReadOnly(),
         };
     }
 }

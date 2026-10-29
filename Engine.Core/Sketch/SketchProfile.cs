@@ -56,6 +56,15 @@ public static class SketchProfile
         var position = sketch.Points.ToDictionary(point => point.Id);
         var loop = order.Select(id => (position[id].X, position[id].Y)).ToList();
 
+        // Finding E92 of the codebase review of 2026-10-29: two points of a line at one
+        // position give a line of length zero. Until TASK-0106 the check below gave the reason
+        // "cross or touch" for it, which names two other lines.
+        foreach (var line in sketch.Lines)
+        {
+            if (position[line.Start].X == position[line.End].X && position[line.Start].Y == position[line.End].Y)
+                return (null, $"The line '{line.Id}' has the length zero, because its two points are at one position.");
+        }
+
         // No two lines that share no point may cross or touch.
         for (var i = 0; i < sketch.Lines.Count; i++)
         {
