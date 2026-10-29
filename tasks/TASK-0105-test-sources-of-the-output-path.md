@@ -1,7 +1,7 @@
 ---
 id: 0105
 title: The test framework gate reads the output path and each MSBuild file of a test project
-status: Active
+status: Done
 phase: P0.41
 opened: 2026-10-29
 depends-on: [0104]
@@ -70,10 +70,10 @@ No file outside the gate files can change the result of a test in a test project
 
 ## Acceptance criteria
 
-- [ ] The file of each form of T79 fails the gate program.
-- [ ] An injection that restores each old rule fails a test.
-- [ ] A clean build (`--no-incremental`) gives zero errors and zero warnings.
-- [ ] Continuous integration passes on `ubuntu-latest`, `windows-latest` and `macos-latest`, on the branch and on
+- [x] The file of each form of T79 fails the gate program.
+- [x] An injection that restores each old rule fails a test.
+- [x] A clean build (`--no-incremental`) gives zero errors and zero warnings.
+- [x] Continuous integration passes on `ubuntu-latest`, `windows-latest` and `macos-latest`, on the branch and on
       `main` after the merge.
 
 ## Notes for the implementer
@@ -81,6 +81,21 @@ No file outside the gate files can change the result of a test in a test project
 - The forms need `git add -f`, because `.gitignore` holds `bin/` and `*.user`. A test of the gate writes the files
   in a scratch copy, as the tests of T68 and T69 do.
 - The review recommends the evaluation of MSBuild over more names of properties: each new name is a new form.
+
+## Outcome
+
+Status: Done · commit (the merge of the branch p041-output-path) · v0.107
+
+## Method
+
+Mechanical: the call of `FilesThatMsBuildReads` in place of the project file, the list of properties, and the
+            test cases of the forms.
+Judgement:  the gate refuses a property that moves the output folders, and does not follow it: with the default
+            folders the rule of `IsCompiled` holds, and a test project has no reason to move them. The judge did not
+            change, because each `.user` file is a build input already (TASK-0073).
+Weakest:    the list names nine properties. A property that MSBuild adds later, or another way to change the
+            items of the compilation, is a new form; the review recommends to read the evaluation of MSBuild.
+            The CI criterion covers the branch and `main`, and a merge run is read before the next task.
 
 ## Progress
 
