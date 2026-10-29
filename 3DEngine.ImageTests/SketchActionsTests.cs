@@ -138,8 +138,8 @@ public class SketchActionsTests
 
         var residuals = actions.Current()!.Constraints.Select(constraint => (constraint.Kind, constraint.Residual)).ToArray();
         Assert.Equal(["horizontal", "distance", "fixed", "coincident", "vertical"], residuals.Select(residual => residual.Kind));
-        Assert.All(residuals[..4], residual => Assert.Equal(0, residual.Residual, 9));
-        Assert.Equal(30, residuals[4].Residual, 9);
+        Assert.All(residuals[..4], residual => Assert.Equal(0, residual.Residual!.Value, 9));
+        Assert.Equal(30, residuals[4].Residual!.Value, 9);
         Assert.False(actions.Current()!.Solved);
     }
 

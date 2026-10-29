@@ -119,6 +119,13 @@ public sealed class DocumentEndpointTests : IDisposable
     [InlineData("nul")]
     [InlineData("com1.3de")]
     [InlineData("LPT9.part")]
+    // E93 of the codebase review of 2026-10-29: more names that Windows keeps.
+    [InlineData("COM0")]
+    [InlineData("lpt0.3de")]
+    [InlineData("COM\u00B9")]
+    [InlineData("LPT\u00B3.old")]
+    [InlineData("CONIN$")]
+    [InlineData("conout$.3de")]
     [InlineData("Aux .old")]
     [InlineData("a ")]
     [InlineData("a.")]

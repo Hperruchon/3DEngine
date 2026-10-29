@@ -49,6 +49,8 @@ internal static class SchemaDiagnosticsEndpoint
         new(DiagnosticCodes.SketchProfileInvalid,  "Error",   "SKETCH"), // ADR-0036 item 4, TASK-0103
         new(DiagnosticCodes.SketchRebuildFailed,   "Warning", "SKETCH"), // ADR-0037 item 6, TASK-0108
         new(DiagnosticCodes.SketchExtrudeConsumed, "Warning", "SKETCH"), // ADR-0037 item 7, TASK-0108
+        new(DiagnosticCodes.SketchIdInUse,         "Error",   "SKETCH"), // finding E86, TASK-0106
+        new(DiagnosticCodes.SketchHoldDropped,     "Warning", "SKETCH"), // finding E87, TASK-0106
     };
 
     public static IResult Handle() => Results.Json(Codes, ApiJson.Options);

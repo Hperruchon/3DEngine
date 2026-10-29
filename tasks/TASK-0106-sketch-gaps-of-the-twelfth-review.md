@@ -1,7 +1,7 @@
 ---
 id: 0106
 title: The sketch refuses an identifier that it holds, and the pads of the sketch follow the state that they act on
-status: Ready
+status: Done
 phase: P0.42
 opened: 2026-10-29
 depends-on: [0105]
@@ -12,6 +12,7 @@ writes:
   modify:
     - Engine.Core/Commands/**
     - Engine.Core/Sketch/**
+    - Engine.Core/Queries/GetSketchQuery.cs
     - Engine.Core/Queries/GetSketchQueryHandler.cs
     - Engine.Core/DiagnosticCodes.cs
     - Engine.Api.Http/DocumentFolder.cs
@@ -77,12 +78,40 @@ exists, and each pad of the sketch closes when the state that it acts on changes
 
 ## Acceptance criteria
 
-- [ ] Each finding of the scope has a test that fails before the change.
-- [ ] An injection that restores each old rule fails a test.
-- [ ] A new code is in `docs/diagnostics.md`.
-- [ ] A clean build (`--no-incremental`) gives zero errors and zero warnings.
-- [ ] Continuous integration passes on the three runners, on the branch and on `main` after the merge.
+- [x] Each finding of the scope has a test that fails before the change.
+- [x] An injection that restores each old rule fails a test.
+- [x] A new code is in `docs/diagnostics.md`.
+- [x] A clean build (`--no-incremental`) gives zero errors and zero warnings.
+- [x] Continuous integration passes on the three runners, on the branch and on `main` after the merge.
+
+## Outcome
+
+Status: Done · commit (the merge of the branch p042-sketch-gaps) · v0.110
+
+## Method
+
+Mechanical: the two codes, the null residual, the read-only lists, the reason of a line of length zero, the reserved
+            names, the button rules of the origin, the one read of each sketch, and the check of a pixel.
+Judgement:  E86 refuses a command whose identifier the log holds, which is the exact case of a resend after the cache
+            forgets it, and never the case of an open, which applies each entry one time. E87 gives a warning and
+            does not change the solver, so no saved file gives other positions. E89 and E90 are measured limits in
+            ADR-0035 and not a new solver. The key of the Next point pad comes from the state that names its fields,
+            because the host opens the pad again before the panel sees the new chain.
+Weakest:    the solve of a long chain still takes 0.1 s for 100 points and 0.75 s for 200 in the serial section
+            (E89). The reason of a fault and of a profile still names items by their full identifiers. E87 warns and
+            does not find the solution that a damped step could find.
 
 ## Progress
 
 - 2026-10-29: opened by the codebase review of 2026-10-29 (TASK-0104).
+- 2026-10-29: the owner said yes to TASK-0106 after K0c. The engine part: `E-SKETCH-ID-IN-USE` in the four handlers
+  that add an item (E86), `W-SKETCH-HOLD-DROPPED` and `SketchSolver.SolveWithHold` (E87), a residual that is not
+  finite is null (E88), read-only lists of a record (E91), the reason of a line of length zero (E92), and more
+  reserved names (E93). The limits of E89 and E90, measured in a Release build, and the rule of E92 are History lines
+  of ADR-0035 and ADR-0036. The write set gains `Engine.Core/Queries/GetSketchQuery.cs`, which holds the type of the
+  residual.
+- 2026-10-29: the desktop part: the Next point pad has the scope of the active sketch, the tool and the chain (V40),
+  the Extrude pad the scope of the active sketch (V41), a pad of the sketch opens below the row of End and Close on a
+  narrow display (V42), the origin has no Fixed, Move point or Delete (V43), one read of each changed sketch (V44),
+  and no pixel that is not finite (V45). Two pad tests open the Next point pad in the state of the desktop: an
+  active sketch and the tool Line. 10 tests in `SketchGapUiTests`; each of 7 injections fails one.

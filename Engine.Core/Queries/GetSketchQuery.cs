@@ -28,4 +28,7 @@ public sealed record SketchInfo(
     bool Solved,
     int Freedom);
 
-public sealed record SketchConstraintInfo(Guid Id, string Kind, IReadOnlyList<Guid> Items, IReadOnlyList<double> Values, double Residual);
+// Residual is null when it is not finite, for example for points near the largest double
+// (finding E88 of the codebase review of 2026-10-29): JSON has no infinity, and the HTTP
+// surface gave status 500 with no body.
+public sealed record SketchConstraintInfo(Guid Id, string Kind, IReadOnlyList<Guid> Items, IReadOnlyList<double> Values, double? Residual);

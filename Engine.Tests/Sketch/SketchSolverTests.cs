@@ -226,7 +226,7 @@ public sealed class SketchSolverTests : IDisposable
         var rough = await Sketch(session, sketch);
 
         await Applied(session, new AddSketchConstraintCommand { SketchId = sketch, Kind = "horizontal", First = line }, "constraintId");
-        Assert.Equal(0, (await Sketch(session, sketch)).Constraints[0].Residual, 9);
+        Assert.Equal(0, (await Sketch(session, sketch)).Constraints[0].Residual!.Value, 9);
 
         await Applied(session, new UndoCommand(), "commandId");
         var undone = await Sketch(session, sketch);
