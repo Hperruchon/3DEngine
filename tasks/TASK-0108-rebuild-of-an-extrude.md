@@ -5,7 +5,7 @@ status: Active
 phase: K0b
 opened: 2026-10-29
 depends-on: [0105]
-governed-by: [0004, 0005, 0006, 0008, 0010, 0012, 0013, 0015, 0016, 0018, 0019, 0020, 0021, 0028, 0031, 0033, 0035, 0036]
+governed-by: [0004, 0005, 0006, 0008, 0010, 0012, 0013, 0015, 0016, 0018, 0019, 0020, 0021, 0028, 0031, 0033, 0035, 0036, 0037]
 writes:
   create:
     - tasks/TASK-0108-rebuild-of-an-extrude.md
@@ -30,6 +30,7 @@ writes:
     - docs/adr/0036-extrude-of-a-sketch-profile.md
     - docs/adr/0037-rebuild-of-an-extrude.md
     - docs/adr/README.md
+    - tasks/TASK-0106-sketch-gaps-of-the-twelfth-review.md
     - docs/diagnostics.md
     - docs/glossary.md
     - eng/test-floor.txt
@@ -81,7 +82,7 @@ of the backend, and an agent sees the new box, the key and the fault.
 
 ## Acceptance criteria
 
-- [ ] The owner accepts ADR-0037 before the code.
+- [x] The owner accepts ADR-0037 before the code.
 - [ ] An edit of a sketch changes the box of each live extrude of it, with the same body identifier, and an undo gives
       back the old box.
 - [ ] An edit that breaks the profile applies, the body keeps its box and gets the fault, and a later edit that mends
@@ -105,3 +106,7 @@ of the backend, and an agent sees the new box, the key and the fault.
 
 - 2026-10-29: the owner answered Q1 to Q6 of the codebase review of 2026-10-29 with A. The roadmap rows K0b and K0c
   hold the answers, and register entry R-0044 is closed. ADR-0037 is proposed.
+- 2026-10-29: the owner accepted ADR-0037 with no change. It amends ADR-0012, ADR-0021, ADR-0028, ADR-0031 and
+  ADR-0036.
+  The write set gains the task file of TASK-0106: the affects of ADR-0037 meet its write set, so its governed-by
+  must list 0037 (TaskGovernanceGateTests).

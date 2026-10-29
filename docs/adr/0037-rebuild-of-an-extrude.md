@@ -1,12 +1,12 @@
 ---
 id: 0037
 title: The rebuild of an extrude after an edit of its sketch
-status: Proposed
+status: Accepted
 topic: Contracts, geometry, sketch
 date: 2026-10-29
 supersedes: []
 superseded-by: []
-amends: []
+amends: ['0012', '0021', '0028', '0031', '0036']
 amended-by: []
 affects:
   - Engine.Contracts/BodyRecord.cs
@@ -121,3 +121,4 @@ body, and the edit is never refused.
 ## History
 
 - 2026-10-29 · TASK-0108 · Proposed, from the answers of the owner to Q1 to Q6 of the codebase review of 2026-10-29.
+- 2026-10-29 · TASK-0108 · The owner accepted the record on 2026-10-29, with no change.
