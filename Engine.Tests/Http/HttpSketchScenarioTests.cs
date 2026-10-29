@@ -46,9 +46,11 @@ public class HttpSketchScenarioTests
         var sketch = JsonDocument.Parse(await query.Content.ReadAsStringAsync(limit.Token)).RootElement.GetProperty("result");
         Assert.Equal("Profile", sketch.GetProperty("name").GetString());
         Assert.Equal(3, sketch.GetProperty("points").GetArrayLength());
+        // ADR-0035: the solver makes the line horizontal and 40 long, and two degrees stay free.
         var residuals = sketch.GetProperty("constraints").EnumerateArray().Select(c => c.GetProperty("residual").GetDouble()).ToArray();
-        Assert.Equal(3.0, residuals[0]);
-        Assert.Equal(Math.Sqrt(1609) - 40, residuals[1]);
+        Assert.All(residuals, residual => Assert.Equal(0, residual, 9));
+        Assert.True(sketch.GetProperty("solved").GetBoolean());
+        Assert.Equal(2, sketch.GetProperty("freedom").GetInt32());
 
         var kinds = new List<string>();
         while (kinds.Count(kind => kind.StartsWith("sketch.", StringComparison.Ordinal)) < 6)
