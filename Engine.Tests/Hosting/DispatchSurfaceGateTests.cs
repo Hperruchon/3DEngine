@@ -36,7 +36,7 @@ public class DispatchSurfaceGateTests
             foreach (var path in Directory.EnumerateFiles(directory, "*.cs", SearchOption.AllDirectories))
             {
                 var relative = Path.GetRelativePath(root, path).Replace('\\', '/');
-                if (relative.Contains("/obj/", StringComparison.Ordinal) || relative.Contains("/bin/", StringComparison.Ordinal))
+                if (!IsCompiled(project, relative))
                     continue;
 
                 files.Add((relative, File.ReadAllLines(path)));
@@ -50,6 +50,24 @@ public class DispatchSurfaceGateTests
             "Per ADR-0016 a host must not name a command or a query. Adding a command must change "
             + "only its own files and HandlerCatalog. Offences:\n  "
             + string.Join("\n  ", offences));
+    }
+
+    // MSBuild compiles each .cs file below the folder of a project except bin/ and obj/ at its
+    // root (finding T68 of the second codebase review of 2026-10-28, TASK-0098). Until
+    // TASK-0098 the gate skipped a folder bin or obj at each depth, so a host file in
+    // Engine.Cli/Commands/bin/ named a command and passed.
+    internal static bool IsCompiled(string project, string relative)
+        => !relative.StartsWith($"{project}/obj/", StringComparison.Ordinal)
+        && !relative.StartsWith($"{project}/bin/", StringComparison.Ordinal);
+
+    [Theory]
+    [InlineData("Engine.Cli", "Engine.Cli/Commands/bin/Host.cs", true)]
+    [InlineData("Engine.Cli", "Engine.Cli/Commands/obj/Host.cs", true)]
+    [InlineData("Engine.Cli", "Engine.Cli/bin/Debug/Host.cs", false)]
+    [InlineData("Engine.Api.Http", "Engine.Api.Http/obj/Debug/Engine.Api.Http.AssemblyInfo.cs", false)]
+    public void The_Gate_Reads_Each_Host_Source_That_MSBuild_Compiles(string project, string relative, bool compiled)
+    {
+        Assert.Equal(compiled, IsCompiled(project, relative));
     }
 
     // ADR-0028 item 9 (TASK-0085): the commands of R8a change central files of the engine one

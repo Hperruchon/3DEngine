@@ -2,6 +2,7 @@ using System.Text.RegularExpressions;
 using System.Xml.Linq;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
+using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Xunit;
 
 namespace Engine.Tests.Governance;
@@ -24,6 +25,8 @@ public class UiLibraryGateTests
     private const string ThisGate = "Engine.Tests/Governance/UiLibraryGateTests.cs";
 
     private static readonly Regex Namespace = new(@"\bImGuiNET\b", RegexOptions.Compiled);
+
+    private static readonly Regex MsBuildEscape = new("%([0-9A-Fa-f]{2})", RegexOptions.Compiled);
 
     // MSBuild compares the name of a package with no case (finding T55 of the codebase
     // review of 2026-10-17), so the gate does too.
@@ -93,6 +96,36 @@ public class UiLibraryGateTests
         Assert.Contains(PackageOffences([(path, text)]), offence => offence.StartsWith(path, StringComparison.Ordinal));
     }
 
+    // The forms of finding T70 of the second codebase review of 2026-10-28 (TASK-0098): a
+    // global using in 3DEngine/Ui/ opens the namespace to each file of the project, and a
+    // constant that the compiler concatenates hides the name of the native library. Each one
+    // compiled and passed the gate of main.
+    [Theory]
+    [InlineData("3DEngine/Ui/Usings.cs", "global using ImGuiNET;", "a global using")]
+    [InlineData("3DEngine/Ui/Usings.cs", "global using Gui = ImGuiNET.ImGui;", "a global using")]
+    [InlineData("3DEngine/Ui/Usings.cs", "global using static ImGu\\u0069NET.ImGui;", "a global using")]
+    [InlineData("3DEngine/NativeThreeDEngine.cs", "internal static class C { [System.Runtime.InteropServices.DllImport(\"cim\" + \"gui\")] static extern void igNewFrame(); }", "native library cimgui")]
+    [InlineData("3DEngine/NativeThreeDEngine.cs", "internal static class C { const string Part = \"cim\"; const string Name = Part + \"GUI\"; [System.Runtime.InteropServices.DllImport(Name)] static extern void igNewFrame(); }", "native library cimgui")]
+    [InlineData("3DEngine/NativeThreeDEngine.cs", "internal static class C { static nint L() => System.Runtime.InteropServices.NativeLibrary.Load($\"cim{\"gui\"}\"); }", "native library cimgui")]
+    public void Each_Form_Of_Finding_T70_Is_An_Offence(string path, string text, string expected)
+    {
+        var offences = NamespaceOffences([(path, text)]);
+
+        Assert.True(
+            offences.Any(o => o.Contains(expected, StringComparison.Ordinal)),
+            $"Expected an offence with '{expected}'. Offences:\n  " + string.Join("\n  ", offences));
+    }
+
+    // Finding T71 (TASK-0098): MSBuild unescapes %2E to a point, so NuGet restored ImGui.NET
+    // for a name that the gate did not read as ImGui.NET.
+    [Theory]
+    [InlineData("3DEngine.Vulkan/3DEngine.Vulkan.csproj", "<Project><ItemGroup><PackageReference Include=\"ImGui%2ENET\" Version=\"1.91.6.1\" /></ItemGroup></Project>")]
+    [InlineData("3DEngine.Vulkan/3DEngine.Vulkan.csproj", "<PackageReference Include=\"%49mGui.NET\" Version=\"1.91.6.1\" />")]
+    public void Each_Form_Of_Finding_T71_Is_An_Offence(string path, string text)
+    {
+        Assert.Contains(PackageOffences([(path, text)]), offence => offence.StartsWith(path, StringComparison.Ordinal));
+    }
+
     [Fact]
     public void The_Ui_Folder_And_The_Project_Of_The_Host_Are_Not_Offences()
     {
@@ -104,23 +137,39 @@ public class UiLibraryGateTests
     {
         foreach (var (path, text) in files)
         {
-            if (path.StartsWith(UiFolder, StringComparison.Ordinal))
-                continue;
-
-            var lines = text.Replace("\r", string.Empty, StringComparison.Ordinal).Split('\n');
-            for (var i = 0; i < lines.Length; i++)
+            var inUiFolder = path.StartsWith(UiFolder, StringComparison.Ordinal);
+            if (!inUiFolder)
             {
-                if (Namespace.IsMatch(lines[i]))
-                    yield return $"{path}:{i + 1} names the namespace ImGuiNET outside {UiFolder}";
+                var lines = text.Replace("\r", string.Empty, StringComparison.Ordinal).Split('\n');
+                for (var i = 0; i < lines.Length; i++)
+                {
+                    if (Namespace.IsMatch(lines[i]))
+                        yield return $"{path}:{i + 1} names the namespace ImGuiNET outside {UiFolder}";
+                }
             }
 
             if (!path.EndsWith(".cs", StringComparison.Ordinal))
                 continue;
 
+            var root = CSharpSyntaxTree.ParseText(text).GetRoot();
+            static int Line(SyntaxNode node) => node.GetLocation().GetLineSpan().StartLinePosition.Line + 1;
+
+            // Finding T70 of the second codebase review of 2026-10-28 (TASK-0098): a global
+            // using applies to each file of the project, so it is an offence in 3DEngine/Ui/ too.
+            foreach (var directive in root.DescendantNodes().OfType<UsingDirectiveSyntax>())
+            {
+                if (directive.GlobalKeyword.IsKind(SyntaxKind.GlobalKeyword)
+                    && directive.DescendantTokens().Any(token => token.ValueText == "ImGuiNET"))
+                    yield return $"{path}:{Line(directive)} opens the namespace ImGuiNET to each file of the project with a global using";
+            }
+
+            if (inUiFolder)
+                continue;
+
             // Finding T64 of the codebase review of 2026-10-28 (TASK-0089): the text misses
             // an escaped name and a native import. The tokens of the compiler give the value of
             // each name with each escape resolved, and each string literal.
-            foreach (var token in CSharpSyntaxTree.ParseText(text).GetRoot().DescendantTokens())
+            foreach (var token in root.DescendantTokens())
             {
                 var line = token.GetLocation().GetLineSpan().StartLinePosition.Line + 1;
                 if (token.IsKind(SyntaxKind.IdentifierToken) && token.ValueText == "ImGuiNET" && token.Text != "ImGuiNET")
@@ -128,6 +177,72 @@ public class UiLibraryGateTests
                 if (token.IsKind(SyntaxKind.StringLiteralToken) && token.ValueText.Contains("cimgui", StringComparison.OrdinalIgnoreCase))
                     yield return $"{path}:{line} names the native library cimgui outside {UiFolder}";
             }
+
+            // Finding T70: the compiler joins "cim" + "gui", an interpolation of constants, and a
+            // constant of the file into one string, so the gate reads the value of each one.
+            var constants = root.DescendantNodes().OfType<VariableDeclaratorSyntax>()
+                .Where(variable => variable.Initializer is not null && IsConstant(variable))
+                .GroupBy(variable => variable.Identifier.ValueText)
+                .ToDictionary(group => group.Key, group => group.First().Initializer!.Value);
+            foreach (var expression in root.DescendantNodes().OfType<ExpressionSyntax>())
+            {
+                if (expression is not (BinaryExpressionSyntax or InterpolatedStringExpressionSyntax or IdentifierNameSyntax or MemberAccessExpressionSyntax)
+                    || expression.Parent is BinaryExpressionSyntax or ParenthesizedExpressionSyntax or InterpolationSyntax or MemberAccessExpressionSyntax)
+                    continue;
+                if (Constant(expression, constants, 0) is { } value && value.Contains("cimgui", StringComparison.OrdinalIgnoreCase))
+                    yield return $"{path}:{Line(expression)} names the native library cimgui outside {UiFolder} in a constant";
+            }
+        }
+    }
+
+    private static bool IsConstant(VariableDeclaratorSyntax variable)
+        => variable.Parent?.Parent switch
+        {
+            FieldDeclarationSyntax field => field.Modifiers.Any(SyntaxKind.ConstKeyword),
+            LocalDeclarationStatementSyntax local => local.Modifiers.Any(SyntaxKind.ConstKeyword),
+            _ => false,
+        };
+
+    // The string that the compiler computes for an expression of string literals, joins,
+    // interpolations of constants and constants of the file, or null for another expression.
+    private static string? Constant(ExpressionSyntax expression, IReadOnlyDictionary<string, ExpressionSyntax> constants, int depth)
+    {
+        if (depth > 16)
+            return null;
+
+        switch (expression)
+        {
+            case LiteralExpressionSyntax literal when literal.IsKind(SyntaxKind.StringLiteralExpression):
+                return literal.Token.ValueText;
+            case ParenthesizedExpressionSyntax parenthesized:
+                return Constant(parenthesized.Expression, constants, depth + 1);
+            case BinaryExpressionSyntax binary when binary.IsKind(SyntaxKind.AddExpression):
+                return Constant(binary.Left, constants, depth + 1) is { } left && Constant(binary.Right, constants, depth + 1) is { } right
+                    ? left + right
+                    : null;
+            case InterpolatedStringExpressionSyntax interpolated:
+            {
+                var text = new System.Text.StringBuilder();
+                foreach (var content in interpolated.Contents)
+                {
+                    var part = content switch
+                    {
+                        InterpolatedStringTextSyntax piece => piece.TextToken.ValueText,
+                        InterpolationSyntax hole => Constant(hole.Expression, constants, depth + 1),
+                        _ => null,
+                    };
+                    if (part is null)
+                        return null;
+                    text.Append(part);
+                }
+                return text.ToString();
+            }
+            case IdentifierNameSyntax name:
+                return constants.TryGetValue(name.Identifier.ValueText, out var value) ? Constant(value, constants, depth + 1) : null;
+            case MemberAccessExpressionSyntax access:
+                return constants.TryGetValue(access.Name.Identifier.ValueText, out var member) ? Constant(member, constants, depth + 1) : null;
+            default:
+                return null;
         }
     }
 
@@ -138,7 +253,10 @@ public class UiLibraryGateTests
             if (path == PinningProject)
                 continue;
 
-            if (PackageReference.IsMatch(text) || PinsByXml(text))
+            // Finding T71 (TASK-0098): MSBuild reads %XX as the character of that code, so the
+            // gate reads the text as MSBuild does.
+            var unescaped = MsBuildEscape.Replace(text, match => ((char)Convert.ToInt32(match.Groups[1].Value, 16)).ToString());
+            if (PackageReference.IsMatch(unescaped) || PinsByXml(unescaped))
                 yield return $"{path} pins the package ImGui.NET; only {PinningProject} may";
         }
     }
@@ -168,9 +286,11 @@ public class UiLibraryGateTests
             .Distinct(StringComparer.OrdinalIgnoreCase)
             .Select(file => (RepositoryFiles.Relative(file), File.ReadAllText(file)));
 
+    // A worktree of another session under .claude/ is a copy of an older commit, not a project
+    // of this checkout (TASK-0098, item 10), as DependencyDirectionGateTests says.
     private static IEnumerable<string> ProjectDirectories()
         => Directory.EnumerateFiles(RepositoryFiles.Root, "*.csproj", SearchOption.AllDirectories)
-            .Where(file => !RepositoryFiles.Relative(file).Split('/').Any(part => part is "bin" or "obj" or ".git"))
+            .Where(file => !RepositoryFiles.Relative(file).Split('/').Any(part => part is "bin" or "obj" or ".git" or ".claude"))
             .Select(file => Path.GetDirectoryName(file)!)
             .Distinct();
 
