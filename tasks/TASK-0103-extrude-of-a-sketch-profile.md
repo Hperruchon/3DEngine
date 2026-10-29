@@ -5,7 +5,7 @@ status: Active
 phase: K0a
 opened: 2026-10-29
 depends-on: [0098]
-governed-by: [0001, 0004, 0007, 0008, 0012, 0013, 0014, 0015, 0016, 0017, 0018, 0019, 0021, 0025, 0027, 0028, 0029, 0030, 0031, 0032, 0033, 0034, 0035]
+governed-by: [0001, 0004, 0007, 0008, 0012, 0013, 0014, 0015, 0016, 0017, 0018, 0019, 0021, 0025, 0027, 0028, 0029, 0030, 0031, 0032, 0033, 0034, 0035, 0036]
 writes:
   create:
     - tasks/TASK-0103-extrude-of-a-sketch-profile.md
@@ -74,7 +74,7 @@ the sketch and the distance only.
 
 ## Acceptance criteria
 
-- [ ] The owner accepts ADR-0036 before the code.
+- [x] The owner accepts ADR-0036 before the code.
 - [ ] A test loads `manifold_extrude`, `manifold_simple_polygon`, `manifold_polygons` and `manifold_transform` on each
       runner.
 - [ ] A rectangle of 10 by 6 mm on each origin plane, extruded by 5 and by −5, gives a solid with the volume 300 and the
@@ -97,3 +97,5 @@ the sketch and the distance only.
   `Engine.Geometry.Manifold.Native` 3.5.2.1 found `manifold_extrude`, `manifold_simple_polygon`,
   `manifold_polygons` and their sizes in `win-x64`, `linux-x64` and `osx-arm64`. ADR-0036 is proposed with the
   questions Q1 to Q4.
+- 2026-10-29: the owner accepted ADR-0036 with Q1 to Q4 A: one closed loop, a signed distance, a refusal of a
+  sketch that is not solved, and the button "Extrude" with a pad.
