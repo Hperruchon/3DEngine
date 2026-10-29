@@ -5,7 +5,7 @@ status: Active
 phase: K3a
 opened: 2026-10-29
 depends-on: [0099, 0101]
-governed-by: [0004, 0007, 0016, 0018, 0019, 0025, 0027, 0028, 0029, 0030, 0032, 0033, 0034]
+governed-by: [0004, 0007, 0016, 0018, 0019, 0025, 0027, 0028, 0029, 0030, 0032, 0033, 0034, 0035]
 writes:
   create:
     - tasks/TASK-0102-sketch-solver.md
@@ -73,7 +73,7 @@ on each platform.
 
 ## Acceptance criteria
 
-- [ ] The owner accepts ADR-0035 before the code.
+- [x] The owner accepts ADR-0035 before the code.
 - [ ] A rectangle of four rough points with two `horizontal`, two `vertical` and two `distance` constraints and one
       `fixed` gives exact positions, and `GetSketch` says solved with 0 free degrees.
 - [ ] A set that conflicts gives an applied command, the positions of the command, and `solved` false.
@@ -96,3 +96,4 @@ on each platform.
 
 - 2026-10-29: the owner chose the order K3a, then P0.39. TASK-0098 now depends on this task. ADR-0035 is proposed
   with the questions Q1 to Q4.
+- 2026-10-29: the owner accepted ADR-0035 with Q1 to Q4 A. ADR-0033 is amended.
