@@ -48,6 +48,7 @@ names. Do not read all of them.
 | [0032](0032-numeric-pad-and-evaluator.md) | The numeric pad, the expression evaluator and the keys of undo and redo | Amended | Clients, rendering | 0026, 0031 | 0034 |
 | [0033](0033-sketch-model.md) | The sketch model in the engine | Accepted | Contracts, sketch | 0012, 0021, 0031 | — |
 | [0034](0034-sketch-tools.md) | The sketch tools of the desktop | Accepted | Clients, sketch | 0026, 0029, 0032 | — |
+| [0035](0035-sketch-solver.md) | The constraint solver of a sketch | Proposed | Sketch, determinism | — | — |
 
 ## Topics
 
