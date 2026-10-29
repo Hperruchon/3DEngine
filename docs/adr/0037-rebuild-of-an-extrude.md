@@ -122,3 +122,5 @@ body, and the edit is never refused.
 
 - 2026-10-29 · TASK-0108 · Proposed, from the answers of the owner to Q1 to Q6 of the codebase review of 2026-10-29.
 - 2026-10-29 · TASK-0108 · The owner accepted the record on 2026-10-29, with no change.
+- 2026-10-29 · TASK-0108 · The code applies items 1 to 9. The constant of the key test agrees with a computation in Node
+  that shares no code with the engine.

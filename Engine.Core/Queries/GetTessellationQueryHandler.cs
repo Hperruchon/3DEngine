@@ -52,7 +52,8 @@ public sealed class GetTessellationQueryHandler : IQueryHandler
                     "Active backend does not implement ITessellationOps; cannot give the triangles of a body.")));
         }
 
-        if (!document.Bodies.Any(b => b.Handle.Id == tessellation.BodyId))
+        var body = document.Bodies.FirstOrDefault(b => b.Handle.Id == tessellation.BodyId);
+        if (body is null)
         {
             return Task.FromResult(QueryHandlerResult.Failure(
                 new ErrorDetail(
@@ -60,6 +61,7 @@ public sealed class GetTessellationQueryHandler : IQueryHandler
                     $"No body with id '{tessellation.BodyId}' exists in the Document.")));
         }
 
-        return Task.FromResult(QueryHandlerResult.Success(ops.Tessellate(new BodyHandle(tessellation.BodyId))));
+        // ADR-0037 item 2: the solid of the body, under its geometry key.
+        return Task.FromResult(QueryHandlerResult.Success(ops.Tessellate(new BodyHandle(body.GeometryKey))));
     }
 }

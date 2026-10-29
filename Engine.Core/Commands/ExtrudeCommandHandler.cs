@@ -65,17 +65,10 @@ public sealed class ExtrudeCommandHandler : ICommandHandler, ICommandEncoder
             return Task.FromResult(SketchResults.Failure(
                 DiagnosticCodes.GeomInvalidParam, "Extrude requires a distance that is finite and not zero."));
 
-        // CreateSketch refuses a datum that does not exist (ADR-0033 item 6), so each
-        // live sketch has one of the origin planes.
-        var datum = Datums.Find(sketch.DatumId)!;
-
-        // Item 4 (Q3 A): a sketch that is not solved gives no solid.
-        if (!SketchSolver.Status(sketch).Solved)
-            return Task.FromResult(SketchResults.Failure(
-                DiagnosticCodes.SketchProfileInvalid, $"The sketch '{sketch.Id}' is not solved, so its profile is not the part that its constraints give."));
-
-        var (loop, reason) = SketchProfile.Find(sketch);
-        if (loop is null)
+        // Items 2 to 4: a sketch that is not solved, or whose lines are not one closed loop,
+        // gives no solid. The rebuild of ADR-0037 uses the same code.
+        var (parameters, reason) = ExtrudeProfile.Parameters(sketch, extrude.Distance);
+        if (parameters is not { } profile)
             return Task.FromResult(SketchResults.Failure(DiagnosticCodes.SketchProfileInvalid, reason!));
 
         var ops = backend.TryGet<IExtrudeOps>();
@@ -83,24 +76,14 @@ public sealed class ExtrudeCommandHandler : ICommandHandler, ICommandEncoder
             return Task.FromResult(SketchResults.Failure(
                 DiagnosticCodes.GeomCapMissing, "Active backend does not implement IExtrudeOps; cannot extrude a profile."));
 
-        // Item 3: the height is |distance|, and the frame moves by min(0, distance) along
-        // n. Each axis of an origin plane holds 0 and ±1 only, so each product is exact.
-        var height = extrude.Distance > 0 ? extrude.Distance : -extrude.Distance;
-        var shift = extrude.Distance > 0 ? 0.0 : extrude.Distance;
-        var (u, v, n) = (datum.U, datum.V, datum.Normal);
-        var parameters = new ExtrudeParameters(
-            loop,
-            height,
-            (shift * n.X, shift * n.Y, shift * n.Z),
-            (u.X, u.Y, u.Z),
-            (v.X, v.Y, v.Z),
-            (n.X, n.Y, n.Z));
-
-        // ADR-0012 §4: the handle is the identifier of the command.
+        // ADR-0012 §4: the handle is the identifier of the command. ADR-0037 item 3: the
+        // solid goes under a derived key and never under the handle, so a read of a solid
+        // by the body identifier fails loudly.
         var handle = new BodyHandle(extrude.CommandId);
+        var key = GeometryKeys.Derive(extrude.CommandId, extrude.CommandId);
         try
         {
-            ops.Extrude(handle, parameters);
+            ops.Extrude(new BodyHandle(key), profile);
         }
         catch (Exception ex)
         {
@@ -112,6 +95,6 @@ public sealed class ExtrudeCommandHandler : ICommandHandler, ICommandEncoder
 
         return Task.FromResult(CommandHandlerResult.Success(
             new Outputs(new Dictionary<string, object?> { ["bodyId"] = handle.Id }),
-            createdBodies: [new BodyRecord(handle, "Extrude")]));
+            createdBodies: [new BodyRecord(handle, "Extrude", Geometry: key)]));
     }
 }

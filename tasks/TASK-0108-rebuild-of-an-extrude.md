@@ -110,3 +110,8 @@ of the backend, and an agent sees the new box, the key and the fault.
   ADR-0036.
   The write set gains the task file of TASK-0106: the affects of ADR-0037 meet its write set, so its governed-by
   must list 0037 (TaskGovernanceGateTests).
+- 2026-10-29: the engine rebuilds. `BodyRecord.Geometry`, `BodyRecord.Fault` and `BodyFault` in the contract; each
+  read of a solid uses `GeometryKey`; `GeometryKeys.Derive`; `ExtrudeProfile`, shared by `Extrude` and the rebuild;
+  `SketchRebuild` with the steps in effect; the codes `W-SKETCH-REBUILD-FAILED` and `W-SKETCH-EXTRUDE-CONSUMED`;
+  `geometry` and `fault` in `body.created`, `body.changed` and the snapshot. 11 tests in `RebuildTests`, and the test
+  of the replay in `ExtrudeTests` turns round. Each of 16 injections fails a test.
