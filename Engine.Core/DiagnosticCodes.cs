@@ -60,4 +60,9 @@ public static class DiagnosticCodes
     // follow: its profile broke, or a later command consumed it.
     public const string SketchRebuildFailed = "W-SKETCH-REBUILD-FAILED";
     public const string SketchExtrudeConsumed = "W-SKETCH-EXTRUDE-CONSUMED";
+
+    // Findings E86 and E87 of the codebase review of 2026-10-29: a command whose identifier
+    // the log holds, and a move whose point the solver could not hold.
+    public const string SketchIdInUse = "E-SKETCH-ID-IN-USE";
+    public const string SketchHoldDropped = "W-SKETCH-HOLD-DROPPED";
 }

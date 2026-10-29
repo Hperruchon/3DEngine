@@ -105,7 +105,7 @@ public sealed class SketchModelTests : IDisposable
         Assert.Equal((0.0, 0.0), (sketch.Points[0].X, sketch.Points[0].Y));
         Assert.Equal([scene.AB, scene.BC], sketch.Lines.Select(line => line.Id));
         Assert.Equal(scene.Constraints, sketch.Constraints.Select(constraint => constraint.Id));
-        Assert.All(sketch.Constraints, constraint => Assert.Equal(0, constraint.Residual, 9));
+        Assert.All(sketch.Constraints, constraint => Assert.Equal(0, constraint.Residual!.Value, 9));
         Assert.Equal((30.0, 0.0), (Math.Round(sketch.Points[2].X, 9), Math.Round(sketch.Points[2].Y, 9)));
         Assert.Equal((true, 0), (sketch.Solved, sketch.Freedom));
 
@@ -113,7 +113,7 @@ public sealed class SketchModelTests : IDisposable
         // for BC conflicts with the horizontal AB.
         await Applied(session, new SetSketchConstraintValueCommand { SketchId = scene.Sketch, ConstraintId = scene.Constraints[3], Value = 25 }, "constraintId");
         var conflict = await Sketch(session, scene.Sketch);
-        Assert.Equal(-5.0, conflict.Constraints[3].Residual, 9);
+        Assert.Equal(-5.0, conflict.Constraints[3].Residual!.Value, 9);
         Assert.False(conflict.Solved);
     }
 
@@ -129,8 +129,8 @@ public sealed class SketchModelTests : IDisposable
         // The two lengths of zero conflict with the fixed C, so the positions stay solved for
         // the five constraints of the scene: C (30, 20) and the line from (0, 0) to (30, 0).
         var constraints = (await Sketch(session, scene.Sketch)).Constraints;
-        Assert.Equal(20, constraints.Single(c => c.Id == toLine).Residual, 9);
-        Assert.Equal(Math.Sqrt(1300), constraints.Single(c => c.Id == toPoint).Residual, 9);
+        Assert.Equal(20, constraints.Single(c => c.Id == toLine).Residual!.Value, 9);
+        Assert.Equal(Math.Sqrt(1300), constraints.Single(c => c.Id == toPoint).Residual!.Value, 9);
     }
 
     // ADR-0033 item 6: a point goes with each line that references it, and each constraint

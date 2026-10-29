@@ -161,3 +161,10 @@ equations of the kinds 6 to 14.
 
 - 2026-10-29 · TASK-0102 · Proposed, with the questions Q1 to Q4 for the owner.
 - 2026-10-29 · TASK-0102 · The owner accepted the record on 2026-10-29 with Q1 to Q4 A, and no change.
+- 2026-10-29 · TASK-0106 · The limits of size and place, measured (findings E89 and E90 of the codebase review of
+  2026-10-29). A move in a chain of n points with a length on each line and one fixed point, in a Release build on
+  the computer of the owner: 3.2 ms for 25 points, 16 ms for 50, 99 ms for 100 and 752 ms for 200; the solve runs in
+  the serial section, so each other client waits. The Context gives less than a millisecond for a few hundred
+  equations, which holds for the add of a free point and not for a move of a long chain. The tolerance is absolute
+  (item 5), and the spacing of doubles near 10⁷ is about 1.9e-9, so a sketch more than about 10⁶ length units from
+  the origin does not solve. A move that cannot hold its point now gives W-SKETCH-HOLD-DROPPED (item 7, finding E87).

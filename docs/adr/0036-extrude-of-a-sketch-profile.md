@@ -141,3 +141,7 @@ exact on each platform.
   function on each runner replaces the search of KD5.
 - 2026-10-29 · TASK-0108 · ADR-0037 amends item 7: an edit of the sketch rebuilds each live extrude of it; the sketch is still not
   consumed.
+- 2026-10-29 · TASK-0106 · Item 2 gains the reason of a line of length zero, whose two points are at one position
+  (finding E92 of the codebase review of 2026-10-29); before, the check of a touch gave the reason. Item 3 has no
+  smallest distance: each finite distance that is not zero applies, and the backend decides on a solid of almost no
+  height or area.
