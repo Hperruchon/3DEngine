@@ -1,7 +1,7 @@
 ---
 id: 0103
 title: The engine extrudes a closed profile of a sketch over Manifold, and the desktop extrudes the active sketch
-status: Active
+status: Done
 phase: K0a
 opened: 2026-10-29
 depends-on: [0098]
@@ -76,16 +76,16 @@ the sketch and the distance only.
 ## Acceptance criteria
 
 - [x] The owner accepts ADR-0036 before the code.
-- [ ] A test loads `manifold_extrude`, `manifold_simple_polygon`, `manifold_polygons` and `manifold_transform` on each
+- [x] A test loads `manifold_extrude`, `manifold_simple_polygon`, `manifold_polygons` and `manifold_transform` on each
       runner.
-- [ ] A rectangle of 10 by 6 mm on each origin plane, extruded by 5 and by −5, gives a solid with the volume 300 and the
+- [x] A rectangle of 10 by 6 mm on each origin plane, extruded by 5 and by −5, gives a solid with the volume 300 and the
       bounding box that the frame of its datum gives.
-- [ ] A profile that is open, that has a branch, that crosses itself, or that has the area zero, and a sketch that is
+- [x] A profile that is open, that has a branch, that crosses itself, or that has the area zero, and a sketch that is
       not solved, each give `E-SKETCH-PROFILE-INVALID`, and the document does not change.
-- [ ] A replay of the log gives the same body, and an undo removes it.
-- [ ] Each new test fails when its injection breaks the code that it covers.
-- [ ] The visual check: a person draws a rectangle, constrains it, and extrudes it in the desktop.
-- [ ] `dotnet test` passes, and the build gives zero warnings.
+- [x] A replay of the log gives the same body, and an undo removes it.
+- [x] Each new test fails when its injection breaks the code that it covers.
+- [x] The visual check: a person draws a rectangle, constrains it, and extrudes it in the desktop.
+- [x] `dotnet test` passes, and the build gives zero warnings.
 
 ## Notes for the implementer
 
@@ -109,3 +109,21 @@ the sketch and the distance only.
   The visual check: a rough rectangle from the pad, 4 free after the horizontal and vertical constraints, 2 free after
   the sizes 10 and 6, then Extrude 5 gives the body "Extrude" with the box (2.25, 1.1, 0) to (12.25, 7.1, 5). An undo
   removes it, and the sketch stays. The log has no warning.
+- 2026-10-29: CI runs 40865119918 and 40866036929 passed on the three runners, with the load of the native
+  functions on each. The owner accepted the pictures of the visual check.
+
+## Outcome
+
+Status: Done · commit (the merge of the branch k0a-extrude) · v0.105
+
+## Method
+
+Mechanical: the contract, the native imports, the command with its encoder, the code, the button and its pad.
+Judgement:  the handler reads the solved record of the Document and checks it with `SketchSolver.Status`, so the
+            log holds the identifier and the distance only. The profile walks the lines from the start of the
+            first line, so its order depends on the record only. The backend gets a positive height and a frame,
+            and the frame of an origin plane holds 0 and 1 only, so the move is exact. A line that folds back
+            on the line before it is refused by the area (3 lines) or by a touch (4 lines or more).
+Weakest:    the tests of a crossing and of a touch use exact comparisons with zero. A point that is very near a
+            line, and not on it, passes the check, and Manifold then decides. The visual check added the
+            constraints over HTTP and drew the rectangle through the pad, as the check of K3a did.

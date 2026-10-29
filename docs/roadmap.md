@@ -84,6 +84,7 @@ Therefore each approved objective must have a track here.
 - P0.40 — The document file keeps each complete line and each held file, and the pad applies to the current selection. v0.102, TASK-0099.
 - K3a — The engine solves the five constraints of a sketch with `+ - * / sqrt` only, and the desktop shows if a sketch is solved. v0.103, TASK-0102, ADR-0035.
 - P0.39 — The gates read the names, the packages and the assemblies that the build binds, and the review counter reads each heading. v0.104, TASK-0098.
+- K0a — The engine extrudes the closed profile of a solved sketch over Manifold, and the desktop extrudes the active sketch. v0.105, TASK-0103, ADR-0036.
 
 ## Track 0 — Foundations
 
