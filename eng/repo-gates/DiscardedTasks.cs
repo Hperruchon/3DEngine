@@ -25,7 +25,7 @@ internal static class DiscardedTasks
     // The helpers of the gates, which the compilation needs to bind their calls. The check
     // does not read them.
     private static IEnumerable<string> HelperFiles(string root)
-        => new[] { Path.Combine(root, "Engine.Tests", "Governance", "RepositoryFiles.cs"), Path.Combine(root, "Engine.Tests", "Diagnostics", "DiagnosticsScanner.cs") }
+        => new[] { Path.Combine(root, "Engine.Tests", "Governance", "RepositoryFiles.cs"), Path.Combine(root, "Engine.Tests", "Governance", "ConstantStrings.cs"), Path.Combine(root, "Engine.Tests", "Diagnostics", "DiagnosticsScanner.cs") }
             .Where(File.Exists);
 
     public static IEnumerable<string> Problems(string root)

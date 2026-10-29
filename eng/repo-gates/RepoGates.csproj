@@ -25,6 +25,7 @@
   <ItemGroup>
     <Compile Include="..\..\Engine.Tests\Governance\*GateTests.cs" Link="Gates\%(Filename)%(Extension)" />
     <Compile Include="..\..\Engine.Tests\Governance\RepositoryFiles.cs" Link="Gates\RepositoryFiles.cs" />
+    <Compile Include="..\..\Engine.Tests\Governance\ConstantStrings.cs" Link="Gates\ConstantStrings.cs" />
     <Compile Include="..\..\Engine.Tests\Diagnostics\DiagnosticsRegistryGateTests.cs" Link="Gates\DiagnosticsRegistryGateTests.cs" />
     <Compile Include="..\..\Engine.Tests\Diagnostics\DiagnosticsScanner.cs" Link="Gates\DiagnosticsScanner.cs" />
   </ItemGroup>

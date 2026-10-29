@@ -116,6 +116,23 @@ public class UiLibraryGateTests
             $"Expected an offence with '{expected}'. Offences:\n  " + string.Join("\n  ", offences));
     }
 
+    // The forms of finding T82 of the codebase review of 2026-10-29 (TASK-0107): a raw string,
+    // nameof, an escape in a string and a constant of another file. Each one compiled and
+    // passed the gate of main.
+    [Theory]
+    [InlineData("internal static class C { [System.Runtime.InteropServices.DllImport(\"\"\"cimgui\"\"\")] static extern void igNewFrame(); }")]
+    [InlineData("internal static class cimgui { [System.Runtime.InteropServices.DllImport(nameof(cimgui))] static extern void igNewFrame(); }")]
+    [InlineData("internal static class C { [System.Runtime.InteropServices.DllImport(\"cim\\u0067ui\")] static extern void igNewFrame(); }")]
+    [InlineData("internal static class C { [System.Runtime.InteropServices.DllImport(Names.Part + \"gui\")] static extern void igNewFrame(); }")]
+    public void Each_Form_Of_Finding_T82_Is_An_Offence(string text)
+    {
+        var offences = NamespaceOffences([("3DEngine/NativeThreeDEngine.cs", text), ("3DEngine/Names.cs", "internal static class Names { internal const string Part = \"cim\"; }")]).ToList();
+
+        Assert.True(
+            offences.Any(o => o.StartsWith("3DEngine/NativeThreeDEngine.cs:1 names the native library cimgui", StringComparison.Ordinal)),
+            "Expected an offence in 3DEngine/NativeThreeDEngine.cs. Offences:\n  " + string.Join("\n  ", offences));
+    }
+
     // Finding T71 (TASK-0098): MSBuild unescapes %2E to a point, so NuGet restored ImGui.NET
     // for a name that the gate did not read as ImGui.NET.
     [Theory]
@@ -135,7 +152,8 @@ public class UiLibraryGateTests
 
     private static IEnumerable<string> NamespaceOffences(IEnumerable<(string Path, string Text)> files)
     {
-        foreach (var (path, text) in files)
+        var list = files.ToList();
+        foreach (var (path, text) in list)
         {
             var inUiFolder = path.StartsWith(UiFolder, StringComparison.Ordinal);
             if (!inUiFolder)
@@ -167,82 +185,25 @@ public class UiLibraryGateTests
                 continue;
 
             // Finding T64 of the codebase review of 2026-10-28 (TASK-0089): the text misses
-            // an escaped name and a native import. The tokens of the compiler give the value of
-            // each name with each escape resolved, and each string literal.
+            // an escaped name. The tokens of the compiler give the value of each name with each
+            // escape resolved.
             foreach (var token in root.DescendantTokens())
             {
-                var line = token.GetLocation().GetLineSpan().StartLinePosition.Line + 1;
                 if (token.IsKind(SyntaxKind.IdentifierToken) && token.ValueText == "ImGuiNET" && token.Text != "ImGuiNET")
-                    yield return $"{path}:{line} names the namespace ImGuiNET with an escape outside {UiFolder}";
-                if (token.IsKind(SyntaxKind.StringLiteralToken) && token.ValueText.Contains("cimgui", StringComparison.OrdinalIgnoreCase))
-                    yield return $"{path}:{line} names the native library cimgui outside {UiFolder}";
-            }
-
-            // Finding T70: the compiler joins "cim" + "gui", an interpolation of constants, and a
-            // constant of the file into one string, so the gate reads the value of each one.
-            var constants = root.DescendantNodes().OfType<VariableDeclaratorSyntax>()
-                .Where(variable => variable.Initializer is not null && IsConstant(variable))
-                .GroupBy(variable => variable.Identifier.ValueText)
-                .ToDictionary(group => group.Key, group => group.First().Initializer!.Value);
-            foreach (var expression in root.DescendantNodes().OfType<ExpressionSyntax>())
-            {
-                if (expression is not (BinaryExpressionSyntax or InterpolatedStringExpressionSyntax or IdentifierNameSyntax or MemberAccessExpressionSyntax)
-                    || expression.Parent is BinaryExpressionSyntax or ParenthesizedExpressionSyntax or InterpolationSyntax or MemberAccessExpressionSyntax)
-                    continue;
-                if (Constant(expression, constants, 0) is { } value && value.Contains("cimgui", StringComparison.OrdinalIgnoreCase))
-                    yield return $"{path}:{Line(expression)} names the native library cimgui outside {UiFolder} in a constant";
+                    yield return $"{path}:{Line(token.Parent!)} names the namespace ImGuiNET with an escape outside {UiFolder}";
             }
         }
-    }
 
-    private static bool IsConstant(VariableDeclaratorSyntax variable)
-        => variable.Parent?.Parent switch
+        // Findings T64, T70 and T82 (TASK-0089, TASK-0098, TASK-0107): a string literal, a join,
+        // an interpolation of constants, a raw string, nameof and a constant of another file
+        // each give the name of the native library. Until TASK-0107 the gate read a string
+        // literal token and computed the joins of one file itself, and [DllImport("""cimgui""")]
+        // and [DllImport(nameof(cimgui))] passed. The compiler now gives the value of each one.
+        var sources = list.Where(file => file.Path.EndsWith(".cs", StringComparison.Ordinal));
+        foreach (var (path, line, value) in ConstantStrings.Values(sources).Distinct())
         {
-            FieldDeclarationSyntax field => field.Modifiers.Any(SyntaxKind.ConstKeyword),
-            LocalDeclarationStatementSyntax local => local.Modifiers.Any(SyntaxKind.ConstKeyword),
-            _ => false,
-        };
-
-    // The string that the compiler computes for an expression of string literals, joins,
-    // interpolations of constants and constants of the file, or null for another expression.
-    private static string? Constant(ExpressionSyntax expression, IReadOnlyDictionary<string, ExpressionSyntax> constants, int depth)
-    {
-        if (depth > 16)
-            return null;
-
-        switch (expression)
-        {
-            case LiteralExpressionSyntax literal when literal.IsKind(SyntaxKind.StringLiteralExpression):
-                return literal.Token.ValueText;
-            case ParenthesizedExpressionSyntax parenthesized:
-                return Constant(parenthesized.Expression, constants, depth + 1);
-            case BinaryExpressionSyntax binary when binary.IsKind(SyntaxKind.AddExpression):
-                return Constant(binary.Left, constants, depth + 1) is { } left && Constant(binary.Right, constants, depth + 1) is { } right
-                    ? left + right
-                    : null;
-            case InterpolatedStringExpressionSyntax interpolated:
-            {
-                var text = new System.Text.StringBuilder();
-                foreach (var content in interpolated.Contents)
-                {
-                    var part = content switch
-                    {
-                        InterpolatedStringTextSyntax piece => piece.TextToken.ValueText,
-                        InterpolationSyntax hole => Constant(hole.Expression, constants, depth + 1),
-                        _ => null,
-                    };
-                    if (part is null)
-                        return null;
-                    text.Append(part);
-                }
-                return text.ToString();
-            }
-            case IdentifierNameSyntax name:
-                return constants.TryGetValue(name.Identifier.ValueText, out var value) ? Constant(value, constants, depth + 1) : null;
-            case MemberAccessExpressionSyntax access:
-                return constants.TryGetValue(access.Name.Identifier.ValueText, out var member) ? Constant(member, constants, depth + 1) : null;
-            default:
-                return null;
+            if (!path.StartsWith(UiFolder, StringComparison.Ordinal) && value.Contains("cimgui", StringComparison.OrdinalIgnoreCase))
+                yield return $"{path}:{line} names the native library cimgui outside {UiFolder}";
         }
     }
 

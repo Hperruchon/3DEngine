@@ -299,20 +299,29 @@ public class DeterminismCallGateTests
     [Fact]
     public void No_Project_Ships_A_32_Bit_Runtime_Identifier()
     {
-        var offences = new List<string>();
+        var offences = RuntimeIdentifierOffences(RepositoryFiles.Root).ToList();
 
+        Assert.True(
+            offences.Count == 0,
+            "CLAUDE.md, determinism rule 5: do not ship a 32-bit x86 runtime identifier. Offences:\n  "
+            + string.Join("\n  ", offences));
+    }
+
+    private static IEnumerable<string> RuntimeIdentifierOffences(string root)
+    {
         // Each MSBuild file and not each project file only: a Directory.Build.props
         // with the identifier passed until TASK-0047 (codebase review of
         // 2026-10-04, finding T9).
         var files = new[] { "*.csproj", "*.props", "*.targets" }
-            .SelectMany(pattern => Directory.EnumerateFiles(RepositoryFiles.Root, pattern, SearchOption.AllDirectories));
+            .SelectMany(pattern => Directory.EnumerateFiles(root, pattern, SearchOption.AllDirectories));
 
         foreach (var file in files)
         {
-            var relative = RepositoryFiles.Relative(file);
-            if (relative.Contains("/obj/", StringComparison.Ordinal)
-                || relative.Contains("/bin/", StringComparison.Ordinal)
-                || relative.StartsWith(".claude/", StringComparison.Ordinal))
+            // Finding T81 of the codebase review of 2026-10-29 (TASK-0107): the check left out
+            // bin/ and obj/ at each depth, and Engine.Cli imported Build/bin/rid.props with
+            // win-x86. MSBuild leaves them out at the root of a project only.
+            var relative = Path.GetRelativePath(root, file).Replace('\\', '/');
+            if (DependencyDirectionGateTests.IsOutOfScope(relative, directory => Directory.EnumerateFiles(Path.Combine(root, directory), "*.csproj").Any()))
                 continue;
 
             foreach (Match match in RuntimeIdentifier.Matches(File.ReadAllText(file)))
@@ -320,15 +329,30 @@ public class DeterminismCallGateTests
                 foreach (var identifier in match.Groups["value"].Value.Split(';', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
                 {
                     if (identifier.EndsWith("-x86", StringComparison.OrdinalIgnoreCase))
-                        offences.Add($"{relative} names the runtime identifier {identifier}");
+                        yield return $"{relative} names the runtime identifier {identifier}";
                 }
             }
         }
+    }
 
-        Assert.True(
-            offences.Count == 0,
-            "CLAUDE.md, determinism rule 5: do not ship a 32-bit x86 runtime identifier. Offences:\n  "
-            + string.Join("\n  ", offences));
+    [Fact]
+    public void A_Runtime_Identifier_In_A_Bin_Folder_Below_The_Root_Of_A_Project_Is_An_Offence()
+    {
+        var root = Directory.CreateTempSubdirectory("runtime-identifier-").FullName;
+        try
+        {
+            Directory.CreateDirectory(Path.Combine(root, "Engine.Cli", "Build", "bin"));
+            Directory.CreateDirectory(Path.Combine(root, "Engine.Cli", "bin"));
+            File.WriteAllText(Path.Combine(root, "Engine.Cli", "Engine.Cli.csproj"), "<Project />");
+            File.WriteAllText(Path.Combine(root, "Engine.Cli", "Build", "bin", "rid.props"), "<Project><PropertyGroup><RuntimeIdentifier>win-x86</RuntimeIdentifier></PropertyGroup></Project>");
+            File.WriteAllText(Path.Combine(root, "Engine.Cli", "bin", "output.props"), "<Project><PropertyGroup><RuntimeIdentifier>win-x86</RuntimeIdentifier></PropertyGroup></Project>");
+
+            Assert.Equal(["Engine.Cli/Build/bin/rid.props names the runtime identifier win-x86"], RuntimeIdentifierOffences(root));
+        }
+        finally
+        {
+            Directory.Delete(root, recursive: true);
+        }
     }
 
     // A member of each namespace of the framework. Until TASK-0073 the list held

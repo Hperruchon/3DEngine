@@ -331,7 +331,8 @@ kind, follow the ledger version that the last review examined (the owner, 2026-1
 milestone is a ledger entry whose task has a phase of track R, K, P or V, for example R7, K0, P8a or V1; a
 phase of track 0 (P0.nn) and a governance entry do not count. The gate counts an entry as a product milestone
 when the row of a product phase in `docs/roadmap.md` names its task, and the task file must give the phase of
-that row (TASK-0098). Each ledger version is greater than the one before it, and each heading after the last
+that row (TASK-0098). It also counts an entry whose heading names a product phase, and the heading must give the
+phase of the task file (TASK-0107). Each ledger version is greater than the one before it, and each heading after the last
 review names one task. An entry with no task counts toward the limit of twelve only. The gate counts ledger entries in
 `docs/CURRENT-STATE.md`, not days, because objective 12 says that time is irregular.
 
