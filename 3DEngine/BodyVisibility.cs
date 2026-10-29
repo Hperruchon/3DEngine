@@ -29,6 +29,13 @@ internal sealed class BodyVisibility
         _count = null;
     }
 
+    // A body whose mesh goes away and keeps its visibility, as in a rebuild (ADR-0037 item 8).
+    public void RemoveMesh(string meshId)
+    {
+        _meshes.Remove(meshId);
+        _count = null;
+    }
+
     public void Remove(string meshId)
     {
         _visible.Remove(meshId);

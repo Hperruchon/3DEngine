@@ -11,8 +11,9 @@ using ThreeDEngine.Vulkan;
 namespace ThreeDEngine.Desktop;
 
 // One live body as the desktop holds it: its identifier, its kind, its name and its
-// visibility (ADR-0028), for the panel and the selection.
-internal sealed record LiveBody(Guid Id, string Kind, string? Name, bool Visible);
+// visibility (ADR-0028), for the panel and the selection, and the fault of its last
+// rebuild, or null (ADR-0037 item 6).
+internal sealed record LiveBody(Guid Id, string Kind, string? Name, bool Visible, BodyFault? Fault = null);
 
 // The projection of the live bodies of the session into the scene of the desktop
 // (roadmap phase R5, ADR-0009, ADR-0024). It reads the live bodies and subscribes to
@@ -21,6 +22,10 @@ internal sealed record LiveBody(Guid Id, string Kind, string? Name, bool Visible
 // queue; the render loop calls Apply, which fetches each new mesh with the query
 // GetTessellation outside the commit, removes each consumed or removed body, and applies each
 // change of a name or a visibility (body.changed, ADR-0028 item 7).
+//
+// ADR-0037 item 8 (K0c, TASK-0109): body.changed also gives the geometry key and the fault
+// of the body. When the key differs from the key of the mesh that the desktop holds, a
+// rebuild or an undo gave the body another solid, and Apply fetches its mesh again.
 //
 // A hidden body keeps its mesh and its triangles, but its entity leaves the scene, so the
 // desktop does not draw it, cannot pick it, and leaves it out of the box that the camera
@@ -34,13 +39,20 @@ internal sealed class SessionBodies : IDisposable
         Changed,
     }
 
+    // One change of the queue, from an event or from the first read of the session.
+    private readonly record struct Pending(
+        Change Change, Guid BodyId, string Kind, string? Name, bool Visible, Guid Geometry, BodyFault? Fault);
+
     private readonly EngineHost _host;
-    private readonly ConcurrentQueue<(Change Change, Guid BodyId, string Kind, string? Name, bool Visible)> _changes = new();
+    private readonly ConcurrentQueue<Pending> _changes = new();
     private readonly IDisposable _subscription;
 
     // Each live body, in the order of its creation, for the panel of the user interface
     // (ADR-0027 item 7). It holds a body also when its mesh failed.
     private readonly List<LiveBody> _live = new();
+
+    // The geometry key of the mesh that the desktop holds for each live body.
+    private readonly Dictionary<Guid, Guid> _geometry = new();
 
     // The entity, the box and the triangles of each live body that has a mesh, by the
     // identifier of its mesh. The entity of a hidden body is not in the scene.
@@ -59,7 +71,7 @@ internal sealed class SessionBodies : IDisposable
         _subscription = host.Session.Read((document, _) =>
         {
             foreach (var body in document.Bodies)
-                _changes.Enqueue((Change.Created, body.Handle.Id, body.Kind, body.Name, body.Visible));
+                _changes.Enqueue(new Pending(Change.Created, body.Handle.Id, body.Kind, body.Name, body.Visible, body.GeometryKey, body.Fault));
             return host.Subscribe(OnEvent);
         }).GetAwaiter().GetResult();
     }
@@ -73,18 +85,23 @@ internal sealed class SessionBodies : IDisposable
 
         var name = payload.GetValueOrDefault("name") as string;
         var visible = payload.GetValueOrDefault("visible") is not false;
+        var geometry = payload.GetValueOrDefault("geometry") is Guid key ? key : bodyId;
+        var fault = payload.GetValueOrDefault("fault") is IReadOnlyDictionary<string, object?> fields
+            && fields.GetValueOrDefault("code") is string code
+            ? new BodyFault(code, fields.GetValueOrDefault("message") as string ?? string.Empty)
+            : null;
         switch (record.Kind)
         {
             case "body.created":
-                _changes.Enqueue((Change.Created, bodyId, payload.GetValueOrDefault("kind") as string ?? string.Empty, name, visible));
+                _changes.Enqueue(new Pending(Change.Created, bodyId, payload.GetValueOrDefault("kind") as string ?? string.Empty, name, visible, geometry, fault));
                 break;
             // ADR-0031 item 11: a body that an Undo removed leaves the scene as a consumed body does.
             case "body.consumed":
             case "body.removed":
-                _changes.Enqueue((Change.Consumed, bodyId, string.Empty, null, false));
+                _changes.Enqueue(new Pending(Change.Consumed, bodyId, string.Empty, null, false, bodyId, null));
                 break;
             case "body.changed":
-                _changes.Enqueue((Change.Changed, bodyId, string.Empty, name, visible));
+                _changes.Enqueue(new Pending(Change.Changed, bodyId, string.Empty, name, visible, geometry, fault));
                 break;
         }
     }
@@ -124,38 +141,45 @@ internal sealed class SessionBodies : IDisposable
     }
 
     // One change of the queue. It returns true when the scene changed.
-    private bool ApplyOne((Change Change, Guid BodyId, string Kind, string? Name, bool Visible) change, Scene scene, IDictionary<string, GpuMesh> meshes, GraphicsDevice device)
+    private bool ApplyOne(Pending change, Scene scene, IDictionary<string, GpuMesh> meshes, GraphicsDevice device)
     {
         var meshId = change.BodyId.ToString();
         switch (change.Change)
         {
             case Change.Consumed:
                 _live.RemoveAll(body => body.Id == change.BodyId);
+                _geometry.Remove(change.BodyId);
                 _visibility.Remove(meshId);
-                _triangles.Remove(change.BodyId);
-                _boxes.Remove(meshId);
-                if (_entities.Remove(meshId, out var gone))
-                    scene.Entities.Remove(gone);
-                if (!meshes.Remove(meshId, out var mesh))
-                    return false;
-
-                // A frame in flight can still read the buffers of the mesh.
-                device.WaitIdle();
-                mesh.Dispose();
-                return true;
+                return RemoveMesh(change.BodyId, scene, meshes, device);
 
             case Change.Changed:
                 var index = _live.FindIndex(body => body.Id == change.BodyId);
                 if (index < 0)
                     return false;
-                _live[index] = _live[index] with { Name = change.Name, Visible = change.Visible };
+                _live[index] = _live[index] with { Name = change.Name, Visible = change.Visible, Fault = change.Fault };
                 _visibility.Set(meshId, change.Visible);
+
+                // ADR-0037 item 8: another key is another solid, so the mesh comes again.
+                if (_geometry.GetValueOrDefault(change.BodyId) != change.Geometry)
+                {
+                    var removed = RemoveMesh(change.BodyId, scene, meshes, device);
+                    _geometry[change.BodyId] = change.Geometry;
+                    return AddMesh(change, scene, meshes, device) | removed;
+                }
+
                 return Show(meshId, scene, change.Visible);
         }
 
-        _live.Add(new LiveBody(change.BodyId, change.Kind, change.Name, change.Visible));
+        _live.Add(new LiveBody(change.BodyId, change.Kind, change.Name, change.Visible, change.Fault));
+        _geometry[change.BodyId] = change.Geometry;
         _visibility.Set(meshId, change.Visible);
+        return AddMesh(change, scene, meshes, device);
+    }
 
+    // Fetches the triangles of the body and puts its mesh and its entity in place.
+    private bool AddMesh(Pending change, Scene scene, IDictionary<string, GpuMesh> meshes, GraphicsDevice device)
+    {
+        var meshId = change.BodyId.ToString();
         var result = _host.Session.Query<Tessellation>(new GetTessellationQuery { BodyId = change.BodyId })
             .GetAwaiter().GetResult();
 
@@ -181,6 +205,24 @@ internal sealed class SessionBodies : IDisposable
         _triangles[change.BodyId] = (tessellation.Positions, tessellation.Indices);
         _visibility.SetMesh(meshId);
         return Show(meshId, scene, change.Visible);
+    }
+
+    // Takes the mesh, the entity, the box and the triangles of a body away. It returns true
+    // when the scene changed.
+    private bool RemoveMesh(Guid bodyId, Scene scene, IDictionary<string, GpuMesh> meshes, GraphicsDevice device)
+    {
+        var meshId = bodyId.ToString();
+        _triangles.Remove(bodyId);
+        _boxes.Remove(meshId);
+        _visibility.RemoveMesh(meshId);
+        var changed = _entities.Remove(meshId, out var gone) && scene.Entities.Remove(gone);
+        if (!meshes.Remove(meshId, out var mesh))
+            return changed;
+
+        // A frame in flight can still read the buffers of the mesh.
+        device.WaitIdle();
+        mesh.Dispose();
+        return true;
     }
 
     // Puts the entity of a mesh in the scene or takes it out. It returns true when the scene
