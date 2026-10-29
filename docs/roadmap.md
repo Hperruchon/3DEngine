@@ -176,7 +176,8 @@ boundary and each refused rung.
 | Phase | Content | Evenings |
 |---|---|---|
 | K0a | Extrude a closed profile of line segments over Manifold. The command records the identifier of its sketch and a distance, not coordinates, and the handler reads the current sketch (Q7 of the second review of 2026-10-28). No arc, because an arc needs a sine and a cosine (determinism rule 1). The first commit checks that the native package exports the extrude function (KD5). ADR-0036, TASK-0103. | 3–5 |
-| K0b | The extrude references its sketch, and a rebuild makes the solid again after an edit of the sketch. An ADR resolves the conflict with ADR-0021 (KD5). | 6–10 |
+| K0b | The engine and HTTP: an edit of a sketch rebuilds each live extrude of the sketch under its handle and a new geometry key, and a profile that breaks gives a fault on the body and keeps its last solid (Q1 to Q5 A of the codebase review of 2026-10-29). An ADR resolves the conflict with ADR-0021 (KD5). TASK-0108. | 4–6 |
+| K0c | The desktop: a body that a rebuild changes gets its new mesh, and the panel shows the fault of a body (Q6 A of the codebase review of 2026-10-29). | 2–4 |
 | K0 | A feature graph over Manifold. No B-Rep. Deferred-query references. The rest after K0b. | 12–20 |
 | K1 | Exact predicates. A deterministic arithmetic layer. | 4–8 |
 | K2a | The sketch model in the engine. The point, the line segment that references two points (Q3), the fixed frame of a sketch, and the five constraints of K3a. A sketch records the identifier of a datum; the three origin planes have fixed identifiers (Q4). One command for each item, with scalar fields; the Document holds one sketch record for each sketch, and an undo restores the record before; the events `sketch.created`, `sketch.changed` and `sketch.removed`, and a query `GetSketch` (Q2). The positions are a projection of the record, and the log holds the inputs only (Q6). An angle records the pair (cos θ, sin θ) (Q5). The ADR names the five entities and the fourteen constraints now (Q1). The desktop draws a sketch as lines of the UI layer, read only (Q9). ADR-0033, TASK-0100. | 4–6 |
@@ -225,7 +226,9 @@ The tracks are not strictly sequential, but three rules hold:
 2. R2 blocks each later phase in track R. No mesh leaves the geometry backend today.
 3. K4 needs K0, K1 and K2. Do not start K4 before the reference model exists.
 4. The path to the milestone "CAD on one part" (the owner, 2026-10-27, KD2): R7b, R8a, R8b, the codebase
-   review when its gate makes it due, P8a, P8f, P8c, R10, K2a, K2b, K3a, K0a, then K0b. R9 comes after the milestone.
+   review when its gate makes it due, P8a, P8f, P8c, R10, K2a, K2b, K3a, K0a, K0b, then K0c. R9 comes after the
+   milestone. The owner answered the questions of the codebase review of 2026-10-29 on 2026-10-29, A to each: K0b
+   splits into K0b, the engine and HTTP, and K0c, the desktop.
    The owner answered the questions of the second codebase review of 2026-10-28 on 2026-10-28, A to each: K2
    splits into K2a and K2b on the path, and the rest of K2 comes after the milestone with the rest of K3.
    `docs/proposals/2026-10-27-path-to-cad-decision-sheet.md` gives the analysis. A slice of a phase has a

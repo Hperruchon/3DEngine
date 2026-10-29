@@ -50,6 +50,7 @@ names. Do not read all of them.
 | [0034](0034-sketch-tools.md) | The sketch tools of the desktop | Accepted | Clients, sketch | 0026, 0029, 0032 | — |
 | [0035](0035-sketch-solver.md) | The constraint solver of a sketch | Accepted | Sketch, determinism | 0033 | — |
 | [0036](0036-extrude-of-a-sketch-profile.md) | The extrude of a closed profile of a sketch | Accepted | Contracts, geometry, sketch | — | — |
+| [0037](0037-rebuild-of-an-extrude.md) | The rebuild of an extrude after an edit of its sketch | Proposed | Contracts, geometry, sketch | — | — |
 
 ## Topics
 
