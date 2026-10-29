@@ -93,3 +93,8 @@ exists, and each pad of the sketch closes when the state that it acts on changes
   reserved names (E93). The limits of E89 and E90, measured in a Release build, and the rule of E92 are History lines
   of ADR-0035 and ADR-0036. The write set gains `Engine.Core/Queries/GetSketchQuery.cs`, which holds the type of the
   residual.
+- 2026-10-29: the desktop part: the Next point pad has the scope of the active sketch, the tool and the chain (V40),
+  the Extrude pad the scope of the active sketch (V41), a pad of the sketch opens below the row of End and Close on a
+  narrow display (V42), the origin has no Fixed, Move point or Delete (V43), one read of each changed sketch (V44),
+  and no pixel that is not finite (V45). Two pad tests open the Next point pad in the state of the desktop: an
+  active sketch and the tool Line. 10 tests in `SketchGapUiTests`; each of 7 injections fails one.

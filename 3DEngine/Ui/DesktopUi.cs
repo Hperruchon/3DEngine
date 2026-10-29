@@ -132,11 +132,16 @@ internal sealed unsafe class DesktopUi : IDisposable
     // names none. The pad closes when the key of the frame differs. Until TASK-0099 the Move pad
     // moved the body that was selected when it opened (finding V32 of the second codebase review
     // of 2026-10-28).
-    private enum PadScope { None, Body, Sketch }
+    // Findings V40 and V41 of the codebase review of 2026-10-29 (TASK-0106): Chain is the active
+    // sketch, the tool and the state of the chain, which decide whether the numbers of Next point
+    // are a position or an offset; Active is the active sketch, which Extrude acts on.
+    private enum PadScope { None, Body, Sketch, Chain, Active }
     private PadScope _padScope;
     private string? _padKey;
     private string _bodyKey = string.Empty;
     private string _sketchKey = string.Empty;
+    private string _chainKey = string.Empty;
+    private string _activeKey = string.Empty;
 
     // ADR-0032 item 4: true after an apply, until the host ends the pad, so a second Enter in one
     // frame gives no second command (V34).
@@ -203,19 +208,28 @@ internal sealed unsafe class DesktopUi : IDisposable
     public void OpenNextPointPad(bool chainOpen)
     {
         var (a, b) = chainOpen ? ("dx", "dy") : ("x", "y");
-        OpenPad(new NumericPad(NextPointLabel, Unit, new(a, "0"), new(b, "0")), values => new NextPointAction(values[0], values[1]), bySketch: true);
+        // The key comes from the state that names the fields, not from the last frame: the host
+        // opens the pad again in the frame of an apply, before the panel sees the new chain.
+        OpenPad(new NumericPad(NextPointLabel, Unit, new(a, "0"), new(b, "0")), values => new NextPointAction(values[0], values[1]), bySketch: true,
+            scope: PadScope.Chain, key: ChainKey(_activeKey, SketchToolKind.Line, chainOpen));
     }
 
-    private void OpenPad(NumericPad pad, Func<double[], PanelAction> apply, bool bySketch = false, PadScope scope = PadScope.None)
+    private void OpenPad(NumericPad pad, Func<double[], PanelAction> apply, bool bySketch = false, PadScope scope = PadScope.None, string? key = null)
     {
         (_pad, _padApply, _padBySketch, _padApplied) = (pad, apply, bySketch, false);
-        (_padScope, _padKey) = (scope, scope switch
-        {
-            PadScope.Body => _bodyKey,
-            PadScope.Sketch => _sketchKey,
-            _ => null,
-        });
+        (_padScope, _padKey) = (scope, key ?? Key(scope));
     }
+
+    private string? Key(PadScope scope) => scope switch
+    {
+        PadScope.Body => _bodyKey,
+        PadScope.Sketch => _sketchKey,
+        PadScope.Chain => _chainKey,
+        PadScope.Active => _activeKey,
+        _ => null,
+    };
+
+    private static string ChainKey(string active, SketchToolKind tool, bool chainOpen) => $"{active}:{tool}:{chainOpen}";
 
     private void ClosePad() => (_pad, _padApply, _padScope, _padKey, _padApplied) = (null, null, PadScope.None, null, false);
 
@@ -227,13 +241,10 @@ internal sealed unsafe class DesktopUi : IDisposable
         _sketchKey = sketchPanel?.Active is { } active
             ? active.SketchId + ":" + string.Join(",", sketchPanel.Selection.Order())
             : string.Empty;
+        _activeKey = sketchPanel?.Active?.SketchId.ToString() ?? string.Empty;
+        _chainKey = sketchPanel?.Active is null ? string.Empty : ChainKey(_activeKey, sketchPanel.Tool, sketchPanel.ChainOpen);
 
-        var current = _padScope switch
-        {
-            PadScope.Body => _bodyKey,
-            PadScope.Sketch => _sketchKey,
-            _ => null,
-        };
+        var current = Key(_padScope);
         if (_pad is not null && _padKey is not null && current != _padKey)
             ClosePad();
     }
@@ -590,7 +601,7 @@ internal sealed unsafe class DesktopUi : IDisposable
         ImGui.SameLine();
         // ADR-0036 item 9 (Q4 A): the pad of one signed distance along the normal of the datum.
         if (ImGui.Button(ExtrudeLabel))
-            OpenPad(new NumericPad(ExtrudeLabel, Unit, new PadField("distance", "10")), values => new ExtrudeAction(values[0]), bySketch: true);
+            OpenPad(new NumericPad(ExtrudeLabel, Unit, new PadField("distance", "10")), values => new ExtrudeAction(values[0]), bySketch: true, scope: PadScope.Active);
         Item(SketchItem(ExtrudeLabel));
 
         if (panel.Tool == SketchToolKind.Line)
@@ -652,6 +663,11 @@ internal sealed unsafe class DesktopUi : IDisposable
         Guid[] items = [.. selection.OrderBy(item => points.ContainsKey(item) ? 0 : 1)];
         var shape = string.Concat(items.Select(item => points.ContainsKey(item) ? "P" : lines.Contains(item) ? "L" : "C"));
 
+        // Finding V43 of the codebase review of 2026-10-29: the origin O of the frame has the
+        // identifier of its sketch, and the engine refuses to move it or to delete it (ADR-0033
+        // item 2). A selection with O gives no Fixed, Move point or Delete.
+        var origin = selection.Contains(sketch.SketchId);
+
         // The right edge of the content, left of the scroll bar.
         var right = ImGui.GetCursorScreenPos().X + ImGui.GetContentRegionAvail().X;
         var first = true;
@@ -674,7 +690,7 @@ internal sealed unsafe class DesktopUi : IDisposable
                 ("coincident", "PP") => true,
                 ("horizontal" or "vertical", "L") => true,
                 ("distance", "PP" or "PL" or "L") => true,
-                ("fixed", "P") => true,
+                ("fixed", "P") => !origin,
                 _ => false,
             };
             if (!fits)
@@ -699,7 +715,7 @@ internal sealed unsafe class DesktopUi : IDisposable
             });
         }
 
-        if (shape == "P")
+        if (shape == "P" && !origin)
         {
             var point = points[items[0]];
             Flow(MovePointLabel, () => OpenPad(
@@ -719,7 +735,8 @@ internal sealed unsafe class DesktopUi : IDisposable
                 scope: PadScope.Sketch));
         }
 
-        Flow(DeleteLabel, () => _actions.Add(new DeleteSketchItemsAction([.. selection])));
+        if (!origin)
+            Flow(DeleteLabel, () => _actions.Add(new DeleteSketchItemsAction([.. selection])));
     }
 
     // ADR-0032 item 5: the window of the pad. A row selects its field; the line under the fields
@@ -734,8 +751,15 @@ internal sealed unsafe class DesktopUi : IDisposable
         var width = Math.Min(PadWidth, displaySize.X - 32f);
         var preferred = _padBySketch ? displaySize.X - SketchWidth - 32f - width : 492f;
         var x = Math.Clamp(preferred, 16f, Math.Max(16f, displaySize.X - width - 16f));
-        ImGui.SetNextWindowPos(new Vector2(x, 16f), ImGuiCond.Appearing);
-        ImGui.SetNextWindowSize(new Vector2(width, Math.Clamp(displaySize.Y - 32f, 200f, PadHeight)), ImGuiCond.Appearing);
+
+        // Finding V42 of the codebase review of 2026-10-29: on a display with no room to the left
+        // of the window of the sketch, as 768 x 1024, the pad covered End and Close. It now opens
+        // below the row of Next point, End and Close.
+        var y = 16f;
+        if (_padBySketch && preferred < 16f && ItemRectangle(SketchItem(NextPointLabel)) is { } nextPoint)
+            y = nextPoint.W + 8f;
+        ImGui.SetNextWindowPos(new Vector2(x, y), ImGuiCond.Appearing);
+        ImGui.SetNextWindowSize(new Vector2(width, Math.Clamp(displaySize.Y - y - 16f, 200f, PadHeight)), ImGuiCond.Appearing);
         if (ImGui.Begin(PadName))
         {
             ImGui.TextUnformatted(pad.Title);
