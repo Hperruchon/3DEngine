@@ -88,6 +88,7 @@ Therefore each approved objective must have a track here.
 - P0.41 — The test framework gate reads the output path and each MSBuild file of a test project. v0.107, TASK-0105.
 - K0b — An edit of a sketch rebuilds each live extrude of it under its handle and a new geometry key, and a broken profile gives a fault. v0.108, TASK-0108, ADR-0037.
 - K0c — The desktop draws the rebuilt solid of an extrude and shows the fault of a body. The milestone "CAD on one part" is complete. v0.109, TASK-0109.
+- P0.42 — The sketch refuses an identifier that it holds, and the pads of the sketch follow the state that they act on. v0.110, TASK-0106.
 
 ## Track 0 — Foundations
 

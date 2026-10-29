@@ -3118,3 +3118,41 @@ New tests: 2. The test list holds 1079 (783 in `Engine.Tests`, 190 in `3DEngine.
 `3DEngine.ImageTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
 entries: 14 of 15. New diagnostic codes: none. Since the review of v0.105, 2 product milestones and 4 entries
 followed it.
+
+## v0.110 — The sketch refuses an identifier that it holds, and the pads of the sketch follow the state that they act on (P0.42, TASK-0106)
+
+The codebase review of 2026-10-29 put P0.42 after K0b. The owner said yes to it on 2026-10-29, after K0c.
+
+**The change.**
+
+- E86: `CreateSketch`, `AddSketchPoint`, `AddSketchLine` and `AddSketchConstraint` refuse a command whose identifier
+  the log holds, with the new code `E-SKETCH-ID-IN-USE`. A resend after the cache forgets a command gave a second
+  item with one identifier, or an exception of the solver.
+- E87: `SketchSolver.SolveWithHold` says when the solver dropped the hold, and a move gives the new warning
+  `W-SKETCH-HOLD-DROPPED`. The comment of `SketchResults` agrees with the code.
+- E88: a residual that is not finite is null in `GetSketch`, so the HTTP surface gives no status 500.
+- E91: the lists of a record that the solver or a delete builds are read-only.
+- E92: a line of length zero gives its own reason. E93: COM0, LPT0, the superscript ports, CONIN$ and CONOUT$ are
+  reserved names.
+- E89 and E90: the measured limits are History lines of ADR-0035: in a Release build a move takes 3 ms for 25 points,
+  99 ms for 100 and 752 ms for 200, and a sketch more than about 10⁶ units from the origin does not solve. ADR-0036
+  records that no smallest distance exists.
+- V40 and V41: the Next point pad has the scope of the active sketch, the tool and the chain, and the Extrude pad the
+  scope of the active sketch; each closes when its scope changes.
+- V42: a pad of the sketch opens below the row of End and Close on a narrow display. V43: a selection with the origin
+  gives no Fixed, Move point or Delete. V44: the desktop reads each changed sketch one time. V45: the overlay drops a
+  pixel that is not finite.
+
+**Proof.** 22 new test cases: 6 in `SketchGapTests`, 6 rows of reserved names, and 10 in `SketchGapUiTests`. 15
+injections: each one failed a test. Four tests change with the new rules: three of the pads and the buttons, and the
+residual of five tests is nullable.
+
+**What stays.** The solve of a long chain stays in the serial section (E89). E87 warns and does not damp the step.
+The reason of a fault names items by their full identifiers. The cache that forgets an identifier (E17) stays.
+
+**A correction.** None.
+
+New tests: 22. The test list holds 1101 (795 in `Engine.Tests`, 190 in `3DEngine.Tests`, 116 in
+`3DEngine.ImageTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
+entries: 14 of 15. New diagnostic codes: `E-SKETCH-ID-IN-USE`, `W-SKETCH-HOLD-DROPPED`. Since the review of v0.105, 2
+product milestones and 5 entries followed it.
