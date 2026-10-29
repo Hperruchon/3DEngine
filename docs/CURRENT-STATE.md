@@ -2957,3 +2957,41 @@ New tests: 42. The test list holds 1036 (745 in `Engine.Tests`, 190 in `3DEngine
 `3DEngine.ImageTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
 entries: 14 of 15. New diagnostic codes: none. Since the review of v0.96, 3 product milestones and 8 entries
 followed it.
+
+## v0.105 — The engine extrudes the closed profile of a solved sketch over Manifold, and the desktop extrudes the active sketch (K0a, TASK-0103)
+
+The owner put K0a after P0.39 on 2026-10-29, accepted ADR-0036 with Q1 to Q4 A, and accepted the pictures of the
+visual check on 2026-10-29.
+
+**The change.**
+
+- `Engine.Contracts/Geometry` gains the capability `IExtrudeOps`, the value type `ExtrudeParameters` and the flag
+  `BackendCapabilities.Extrude`. The managed stub does not implement them, so it gives `E-GEOM-CAP-MISSING`.
+- `ManifoldGeometryBackend` makes one simple polygon of the loop, extrudes it along +Z with no slice and no twist,
+  and moves it into the frame of the datum with `manifold_transform`. The frame holds 0 and 1 only.
+- `Engine.Core/Sketch/SketchProfile.cs` finds the one closed loop of the lines with `+ - * /` and comparisons
+  only, and orders it counter-clockwise.
+- The command `Extrude` records `sketchId` and a signed `distance`, and gives `bodyId`. A profile that is not one
+  closed loop, and a sketch that is not solved, give the new code `E-SKETCH-PROFILE-INVALID` with the reason.
+  The sketch stays live and does not change.
+- The window "Sketch" has the button "Extrude" with a pad of one field, `distance`. A success ends the sketch mode
+  and selects the new body.
+
+**Proof.** 22 new test cases. A test loads the 8 native functions of the extrude: CI runs 40865119918 and
+40866036929 passed it on Windows x64, Linux x64 and macOS arm64, so KD5 is closed. A rectangle of 10 by 6 on each
+origin plane, extruded by 5 and by -5, gives the volume 300 and the box of its frame. An open file replays the
+solid, and an undo removes it. 22 injections: each one failed a test. The visual check ran the desktop on
+127.0.0.1: a constrained rectangle extruded by 5 gave the box (2.25, 1.1, 0) to (12.25, 7.1, 5), and an undo
+removed it. The log held no warning.
+
+**What stays.** One loop only: a hole, an arc and a profile of selected lines wait. An edit of the sketch after the
+extrude leaves the solid as it was until K0b. A point very near a line, and not on it, passes the check of a
+touch, because the check compares with zero.
+
+**A correction.** The comment of `Engine.Geometry.Manifold/Native/ManifoldNative.cs` gave "twelve symbols" for the
+imports; it held more since TASK-0028. It now names the operations and no count.
+
+New tests: 22. The test list holds 1058 (764 in `Engine.Tests`, 190 in `3DEngine.Tests`, 104 in
+`3DEngine.ImageTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
+entries: 14 of 15. New diagnostic codes: `E-SKETCH-PROFILE-INVALID`. Since the review of v0.96, 4 product
+milestones and 9 entries followed it.
