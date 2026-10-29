@@ -132,6 +132,9 @@ This track removes each condition that blocks other work.
 | P0.38 | The test framework gate reads each source and each alias that MSBuild compiles into a test project. TASK-0097. | 1 |
 | P0.39 | The gates read the names, the packages and the assemblies that the build binds, and the review counter reads each heading. TASK-0098. | 2–3 |
 | P0.40 | The document file keeps each complete line and each held file, and the pad applies to the current selection. TASK-0099. | 3–4 |
+| P0.41 | The test framework gate reads the output path and each MSBuild file of a test project. TASK-0105. | 1 |
+| P0.42 | The sketch refuses an identifier that it holds, and the pads of the sketch follow the state that they act on. TASK-0106. | 3–4 |
+| P0.43 | The gates read the target name, the root folders and each text file, and a host test waits for its file. TASK-0107. | 2–3 |
 
 ## Track P — The platform
 
@@ -216,6 +219,8 @@ The tracks are not strictly sequential, but three rules hold:
    and P0.40 after K2a, by the rule of `docs/templates.md`, section 7. On 2026-10-28, after K2b, the owner put P0.40
    before K3a and before P0.39, because findings E76 and V32 of P0.40 are risks to the data of the work after K2b.
    On 2026-10-29, after P0.40, the owner put K3a before P0.39.
+   The codebase review of 2026-10-29 puts P0.41, which holds a high finding, before K0b, and P0.42 and P0.43 after
+   K0b, by the rule of `docs/templates.md`, section 7.
 2. R2 blocks each later phase in track R. No mesh leaves the geometry backend today.
 3. K4 needs K0, K1 and K2. Do not start K4 before the reference model exists.
 4. The path to the milestone "CAD on one part" (the owner, 2026-10-27, KD2): R7b, R8a, R8b, the codebase
