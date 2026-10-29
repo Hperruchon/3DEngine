@@ -74,6 +74,7 @@ public sealed class DocumentFileTests : IDisposable
         ["SetSketchConstraintValue"] = new SetSketchConstraintValueCommand { SketchId = Guid.NewGuid(), ConstraintId = Guid.NewGuid(), Value = double.MaxValue },
         ["MoveSketchPoint"] = new MoveSketchPointCommand { SketchId = Guid.NewGuid(), PointId = Guid.NewGuid(), X = 123456789.125, Y = -1e-300 },
         ["DeleteSketchItem"] = new DeleteSketchItemCommand { SketchId = Guid.NewGuid(), ItemId = Guid.NewGuid() },
+        ["Extrude"] = new ExtrudeCommand { SketchId = Guid.NewGuid(), Distance = -2.5 },
     };
 
     // ADR-0015 item 11: each handler has an encoder, and Create(Encode(c)) gives c.

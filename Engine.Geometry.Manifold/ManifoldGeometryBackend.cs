@@ -15,6 +15,8 @@ namespace Engine.Geometry.Manifold;
 // P7c (ADR-0012 Amendment 1) adds transform (Translate) and boolean (Subtract) ops that
 // the managed stub deliberately does not implement — real solids the stub can't represent.
 // R2 (ADR-0018, TASK-0028) adds the tessellation, which the stub does not implement either.
+// K0a (ADR-0036, TASK-0103) adds the extrude of one closed loop, which the stub does not
+// implement either.
 //
 // Threading (ADR-0014 §3): single-threaded from the engine's view. Each call from a
 // command and each call from a query runs inside the serial section of the
@@ -33,7 +35,7 @@ namespace Engine.Geometry.Manifold;
 // InProcessMeshBackend's exception contract (InvalidOperationException on duplicate,
 // KeyNotFoundException on missing) so the existing handlers behave the same.
 public sealed class ManifoldGeometryBackend
-    : IGeometryBackend, IMeshOps, IGeometryQuery, ITransformOps, IBooleanOps, ITessellationOps, IDisposable
+    : IGeometryBackend, IMeshOps, IGeometryQuery, ITransformOps, IBooleanOps, ITessellationOps, IExtrudeOps, IDisposable
 {
     private readonly Dictionary<Guid, ManifoldSolidHandle> _solids = new();
     private bool _disposed;
@@ -44,7 +46,7 @@ public sealed class ManifoldGeometryBackend
     public BackendCapabilities Capabilities
         => BackendCapabilities.Mesh | BackendCapabilities.Query
          | BackendCapabilities.Transform | BackendCapabilities.Booleans
-         | BackendCapabilities.Tessellation;
+         | BackendCapabilities.Tessellation | BackendCapabilities.Extrude;
 
     public T? TryGet<T>() where T : class => this as T;
 
@@ -183,6 +185,72 @@ public sealed class ManifoldGeometryBackend
         }
 
         _solids[result.Id] = new ManifoldSolidHandle(solid);
+    }
+
+    // IExtrudeOps (ADR-0036 item 6). One simple polygon of the loop, extruded along +Z
+    // with no slice, no twist and the scale 1, then moved into the frame by the matrix
+    // of the columns U, V and N and the move Origin. Each entry of a frame of an origin
+    // plane is 0 or ±1, so the move is exact. Throws on a duplicate handle, as
+    // CreateBox does.
+    public unsafe void Extrude(BodyHandle handle, ExtrudeParameters parameters)
+    {
+        ObjectDisposedException.ThrowIf(_disposed, this);
+        if (_solids.ContainsKey(handle.Id))
+            throw new InvalidOperationException(
+                $"Backend already holds a body under handle '{handle.Id}'.");
+
+        var points = new ManifoldVec2[parameters.Loop.Count];
+        for (var i = 0; i < points.Length; i++)
+            points[i] = new ManifoldVec2(parameters.Loop[i].X, parameters.Loop[i].Y);
+
+        nint polygonBuffer = Marshal.AllocHGlobal((nint)ManifoldNative.manifold_simple_polygon_size());
+        nint polygonsBuffer = Marshal.AllocHGlobal((nint)ManifoldNative.manifold_polygons_size());
+        nint polygon = 0;
+        nint polygons = 0;
+        nint prism;
+        try
+        {
+            fixed (ManifoldVec2* first = points)
+                polygon = ManifoldNative.manifold_simple_polygon(polygonBuffer, (nint)first, (nuint)points.Length);
+            nint list = polygon;
+            polygons = ManifoldNative.manifold_polygons(polygonsBuffer, (nint)(&list), 1);
+
+            nint prismBuffer = Marshal.AllocHGlobal((nint)ManifoldNative.manifold_manifold_size());
+            prism = ManifoldNative.manifold_extrude(
+                prismBuffer, polygons, parameters.Height, slices: 0, twistDegrees: 0, scaleX: 1, scaleY: 1);
+        }
+        finally
+        {
+            // manifold_polygons copies each polygon, so both go after the extrude.
+            if (polygons != 0) ManifoldNative.manifold_destruct_polygons(polygons);
+            if (polygon != 0) ManifoldNative.manifold_destruct_simple_polygon(polygon);
+            Marshal.FreeHGlobal(polygonsBuffer);
+            Marshal.FreeHGlobal(polygonBuffer);
+        }
+
+        int status = ManifoldNative.manifold_status(prism);
+        if (status != 0 || ManifoldNative.manifold_is_empty(prism) != 0)
+        {
+            ManifoldNative.manifold_delete_manifold(prism); // frees its buffer
+            throw new ManifoldNativeException(
+                $"manifold_extrude failed with status {status}, or gave an empty solid, for handle '{handle.Id}'.");
+        }
+
+        var (u, v, n, origin) = (parameters.U, parameters.V, parameters.N, parameters.Origin);
+        nint buffer = Marshal.AllocHGlobal((nint)ManifoldNative.manifold_manifold_size());
+        nint solid = ManifoldNative.manifold_transform(
+            buffer, prism, u.X, u.Y, u.Z, v.X, v.Y, v.Z, n.X, n.Y, n.Z, origin.X, origin.Y, origin.Z);
+        ManifoldNative.manifold_delete_manifold(prism); // frees its buffer
+
+        status = ManifoldNative.manifold_status(solid);
+        if (status != 0)
+        {
+            ManifoldNative.manifold_delete_manifold(solid); // frees `buffer`
+            throw new ManifoldNativeException(
+                $"manifold_transform failed with status {status} for handle '{handle.Id}'.");
+        }
+
+        _solids[handle.Id] = new ManifoldSolidHandle(solid);
     }
 
     // IGeometryQuery. Native axis-aligned bounding box. Throws if the handle is unknown
