@@ -3156,3 +3156,47 @@ New tests: 22. The test list holds 1101 (795 in `Engine.Tests`, 190 in `3DEngine
 `3DEngine.ImageTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
 entries: 14 of 15. New diagnostic codes: `E-SKETCH-ID-IN-USE`, `W-SKETCH-HOLD-DROPPED`. Since the review of v0.105, 2
 product milestones and 5 entries followed it.
+
+## v0.111 — The gates read the target name, the root folders and each text file, and a host test waits for its file (P0.43, TASK-0107)
+
+The codebase review of 2026-10-29 put P0.43 after K0b. The owner said yes to it on 2026-10-30.
+
+**The red run of v0.110.** The run 40910981448 on `main` at `13b4a01` failed. The jobs on Windows and Ubuntu passed,
+and GitHub cancelled the job on macOS because no runner took it ("not acquired by Runner of type hosted even after
+multiple attempts"). The tree of `13b4a01` is the tree of the branch tip `10eb878`, whose run 40910430159 passed on
+the three runners. The cause is the infrastructure and not the code, as in T76.
+
+**The change.**
+
+- T80: no MSBuild file sets `TargetName`, which gives the built file and the assembly the name `Engine.Tests`.
+- T81: the diagnostics scanner and the check of the runtime identifier leave out `bin/` and `obj/` at the root of a
+  project only. The scanner also reads the value of each constant expression, so `"E-SKETCH-" + "HIDDEN"` is a code.
+- T82: the UI gate takes the value of each constant string from the compiler. A raw string, `nameof`, an escape and
+  a constant of another file name `cimgui` too. The new helper `Engine.Tests/Governance/ConstantStrings.cs` serves
+  both gates.
+- T83: the gate runner waits after each check until the thread pool and the timers of the check are idle, collects
+  each task that nobody holds, and fails the check when a task of it failed with no reader. It runs on the main
+  thread, and it checks its eight forms at each run.
+- T84: the review counter counts an entry whose heading names a product phase, and the heading must give the phase
+  of the task file. `docs/templates.md`, section 7, says so.
+- T85: an archived ADR holds a line of text under "## Context" and under "## Decision".
+- T86: the control byte gate reads each file that git tracks, except four binary types, and refuses U+202A to
+  U+202E and U+2066 to U+2069.
+- T87: `HostGuardTests` reads the file of the killed host for up to 10 s, until the process releases it.
+
+**Proof.** 19 new test cases. 14 injections: each one failed a test or the gate program. Ten put back an old rule,
+two removed a part of the wait of the runner, and two put the forms of T86 into the repository. One test changes
+with the new rule of T84: five entries of a phase whose row names another task are now a due review.
+
+**What stays.** T83 does not see a task that a static field holds. The two constant scans cost about 5 s. A
+`Directory.Build.rsp` file can set `TargetName` for each project; a probe build gave `Engine.Tests.dll`, no such
+file is in the repository, and R-0031 records it. T31 stays open in part.
+
+**A correction.** The write set of TASK-0107 named its gate files with the patterns `Engine.Tests/Governance/**`,
+`Engine.Tests/Diagnostics/**` and `eng/repo-gates/**`. The judge permits a gate file by its exact name only, so the
+task now names each of the fifteen files.
+
+New tests: 19. The test list holds 1120 (814 in `Engine.Tests`, 190 in `3DEngine.Tests`, 116 in
+`3DEngine.ImageTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
+entries: 14 of 15. New diagnostic codes: none. Since the review of v0.105, 2 product milestones and 6 entries followed
+it.
