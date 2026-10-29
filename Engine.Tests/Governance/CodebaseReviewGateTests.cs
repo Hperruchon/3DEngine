@@ -97,17 +97,48 @@ public class CodebaseReviewGateTests
                 continue;
             }
 
-            foreach (var measure in RequiredMeasures)
-            {
-                if (!measures.Contains($"| {measure} |", StringComparison.Ordinal))
-                    problems.Add($"{review.Name}: the measures table has no row \"{measure}\"");
-            }
+            foreach (var measure in MissingMeasures(review.Fields.GetValueOrDefault("ledger", string.Empty), measures))
+                problems.Add($"{review.Name}: the measures table has no row \"{measure}\"");
         }
 
         Assert.True(
             problems.Count == 0,
             "Each review repeats the same measures, so that the next review can compare. See "
             + "docs/templates.md, section 7.\n  " + string.Join("\n  ", problems));
+    }
+
+    // Finding T78 of the second codebase review of 2026-10-28 (TASK-0098): no codebase review
+    // repeated the measures of the rules review, which docs/templates.md, section 6, rule 5
+    // asks for. The owner chose A on 2026-10-28: a review after TASK-0098 (ledger v0.104 and
+    // later) gives three rows with the method of docs/reviews/2026-09-25-rules-review.md,
+    // section 1.
+    private static readonly string[] RuleMeasures =
+    [
+        "Lines in the rule files",
+        "Sentences with \"must\"",
+        "Sentences with \"do not\"",
+    ];
+
+    private static readonly (int Major, int Minor) RuleMeasuresFrom = (0, 104);
+
+    private static IEnumerable<string> MissingMeasures(string ledger, string measures)
+    {
+        var required = ParseVersion(ledger) is { } version && version.CompareTo(RuleMeasuresFrom) >= 0
+            ? RequiredMeasures.Concat(RuleMeasures)
+            : RequiredMeasures;
+        return required.Where(measure => !measures.Contains($"| {measure} |", StringComparison.Ordinal));
+    }
+
+    [Theory]
+    [InlineData("v0.103", 0)]
+    [InlineData("v0.104", 3)]
+    [InlineData("v0.120", 3)]
+    public void A_Review_After_TASK_0098_Gives_The_Measures_Of_The_Rules(string ledger, int missing)
+    {
+        var measures = string.Concat(RequiredMeasures.Select(measure => $"| {measure} | 1 | A count. |\n"));
+
+        Assert.Equal(missing, MissingMeasures(ledger, measures).Count());
+        Assert.Empty(MissingMeasures(ledger, measures + string.Concat(RuleMeasures.Select(measure => $"| {measure} | 1 | A count. |\n"))));
     }
 
     [Fact]
@@ -196,9 +227,9 @@ public class CodebaseReviewGateTests
 
     // The decision of the owner of 2026-10-27 (TASK-0083): a review is due when more than
     // four product milestones, or more than twelve entries of any kind, follow the ledger
-    // version of the last review. A product milestone is an entry whose task has a phase
-    // of track R, K, P or V; the phase comes from the task file that the heading names,
-    // and counts only when the row of that phase in docs/roadmap.md names the same task.
+    // version of the last review. A product milestone is an entry whose task the row of a
+    // phase of track R, K, P or V in docs/roadmap.md names. Until TASK-0098 the phase came
+    // from the task file, and the row had to name the same task (finding T73).
     // Until TASK-0083 each entry counted, with a limit of six, and the review and the record
     // of the answers of the owner used two of the six.
     private const int ProductMilestoneLimit = 4;
@@ -216,7 +247,6 @@ public class CodebaseReviewGateTests
         var (product, entries) = MilestonesAfter(
             reviewed!.Value,
             RepositoryFiles.Read("docs", "CURRENT-STATE.md"),
-            PhaseOfTask,
             RepositoryFiles.Read("docs", "roadmap.md"));
 
         Assert.True(
@@ -256,10 +286,7 @@ public class CodebaseReviewGateTests
 
         var ledger = "# Ledger\n\n## v0.9 — Before\n\n## v0.10 — The review (governance, TASK-0001)\n"
             + string.Concat(Enumerable.Range(11, count).Select(minor => $"\n## v0.{minor} — An entry {heading}\n"));
-        var phases = new Dictionary<string, string> { ["0001"] = "governance", ["0002"] = "R7", ["0003"] = "R8", ["0004"] = "P0.33" };
-        var roadmap = "| R7 | The intent layer. TASK-0002. | 5–7 |\n| R8 | Name and visibility. TASK-0009. | 4–6 |\n| P0.33 | The review rule. TASK-0004. | 1 |\n";
-
-        var (product, entries) = MilestonesAfter((0, 10), ledger, id => phases.GetValueOrDefault(id), roadmap);
+        var (product, entries) = MilestonesAfter((0, 10), ledger, Rows);
 
         Assert.Equal(overdue, product > ProductMilestoneLimit || entries > EntryLimit);
     }
@@ -274,32 +301,93 @@ public class CodebaseReviewGateTests
         @"^(?:[RKV]\d+|P(?!0\.)\d+)(?:[a-z]|\.\d+)?$", RegexOptions.Compiled);
 
     // The count of product milestones and the count of entries after the reviewed version.
-    private static (int Product, int Entries) MilestonesAfter(
-        (int Major, int Minor) reviewed, string ledger, Func<string, string?> phaseOfTask, string roadmap)
+    // Finding T73 of the second codebase review of 2026-10-28 (TASK-0098): the counter
+    // skipped a repeated version, took the last task of a heading only, and took the phase
+    // from the task file, which is not a gate file. It now counts each heading, and an entry
+    // is a product milestone when the row of a product phase in docs/roadmap.md names one of
+    // its tasks. HeadingProblems refuses a repeated version and a heading with two tasks, and
+    // UnnamedProductTasks refuses a task file whose phase is not the phase of its row.
+    private static (int Product, int Entries) MilestonesAfter((int Major, int Minor) reviewed, string ledger, string roadmap)
     {
         var (product, entries) = (0, 0);
-        var seen = new HashSet<(int, int)>();
-        roadmap = roadmap.Replace("\r", string.Empty, StringComparison.Ordinal);
 
         foreach (Match entry in LedgerEntry.Matches(ledger.Replace("\r", string.Empty, StringComparison.Ordinal)))
         {
             var version = (int.Parse(entry.Groups[1].Value, CultureInfo.InvariantCulture), int.Parse(entry.Groups[2].Value, CultureInfo.InvariantCulture));
-            if (version.CompareTo(reviewed) <= 0 || !seen.Add(version))
+            if (version.CompareTo(reviewed) <= 0)
                 continue;
 
             entries++;
-            var tasks = Regex.Matches(entry.Groups["rest"].Value, @"TASK-(\d{4})");
-            if (tasks.Count == 0)
-                continue;
-
-            var task = tasks[^1].Groups[1].Value;
-            if (phaseOfTask(task) is { } phase
-                && ProductPhase.IsMatch(phase)
-                && roadmap.Split('\n').Any(row => row.StartsWith($"| {phase} |", StringComparison.Ordinal) && row.Contains($"TASK-{task}", StringComparison.Ordinal)))
+            if (Regex.Matches(entry.Groups["rest"].Value, @"TASK-(\d{4})").Any(task => ProductRowPhase(roadmap, task.Groups[1].Value) is not null))
                 product++;
         }
 
         return (product, entries);
+    }
+
+    // The product phase whose row in docs/roadmap.md names the task, or null.
+    private static string? ProductRowPhase(string roadmap, string task)
+        => roadmap.Replace("\r", string.Empty, StringComparison.Ordinal).Split('\n')
+            .Where(row => row.StartsWith("| ", StringComparison.Ordinal) && row.Contains($"TASK-{task}", StringComparison.Ordinal))
+            .Select(row => row[2..].Split(" |")[0])
+            .FirstOrDefault(ProductPhase.IsMatch);
+
+    // Finding T73: each ledger version is greater than the one before it, and each heading
+    // after the reviewed version names one task.
+    internal static IEnumerable<string> HeadingProblems((int Major, int Minor) reviewed, string ledger)
+    {
+        (int, int)? previous = null;
+        foreach (Match entry in LedgerEntry.Matches(ledger.Replace("\r", string.Empty, StringComparison.Ordinal)))
+        {
+            var version = (int.Parse(entry.Groups[1].Value, CultureInfo.InvariantCulture), int.Parse(entry.Groups[2].Value, CultureInfo.InvariantCulture));
+            if (previous is { } before && version.CompareTo(before) <= 0)
+                yield return $"v{version.Item1}.{version.Item2:00} follows v{before.Item1}.{before.Item2:00}; each ledger version is greater than the one before it";
+            previous = version;
+
+            var tasks = Regex.Matches(entry.Groups["rest"].Value, @"TASK-\d{4}").Count;
+            if (version.CompareTo(reviewed) > 0 && tasks != 1)
+                yield return $"v{version.Item1}.{version.Item2:00} names {tasks} tasks in its heading; a heading after the last review names one";
+        }
+    }
+
+    [Fact]
+    public void Each_Ledger_Version_Rises_And_Each_Heading_Names_One_Task()
+    {
+        var latest = Reviews().OrderBy(r => ParseVersion(r.Fields.GetValueOrDefault("ledger", string.Empty)) ?? (0, 0)).Last();
+        var problems = HeadingProblems(ParseVersion(latest.Fields["ledger"])!.Value, RepositoryFiles.Read("docs", "CURRENT-STATE.md")).ToList();
+
+        Assert.True(problems.Count == 0, "The review counter reads each heading of the ledger (finding T73):\n  " + string.Join("\n  ", problems));
+    }
+
+    // The three forms of finding T73. Each one passed the gate of main.
+    private static readonly string Rows = "| R7 | The intent layer. TASK-0002. | 5–7 |\n| R8 | Name and visibility. TASK-0009. | 4–6 |\n| P0.33 | The review rule. TASK-0004. | 1 |\n";
+
+    [Fact]
+    public void A_Heading_That_Names_A_Second_Task_Last_Counts_Its_Product_Task_And_Is_A_Problem()
+    {
+        var ledger = "## v0.10 — The review (governance, TASK-0001)\n\n## v0.11 — An entry (R7, TASK-0002, TASK-0001)\n";
+
+        Assert.Equal(1, MilestonesAfter((0, 10), ledger, Rows).Product);
+        Assert.Contains(HeadingProblems((0, 10), ledger), problem => problem.Contains("names 2 tasks", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public void A_Product_Task_With_Another_Phase_In_Its_File_Counts_And_Is_A_Problem()
+    {
+        var ledger = "## v0.10 — The review (governance, TASK-0001)\n\n## v0.11 — An entry (P0.99, TASK-0002)\n";
+        var phases = new Dictionary<string, string> { ["0001"] = "governance", ["0002"] = "P0.99" };
+
+        Assert.Equal(1, MilestonesAfter((0, 10), ledger, Rows).Product);
+        Assert.Contains(UnnamedProductTasks((0, 10), ledger, id => phases.GetValueOrDefault(id), Rows), problem => problem.Contains("P0.99", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public void A_Repeated_Version_Counts_Each_Heading_And_Is_A_Problem()
+    {
+        var ledger = "## v0.10 — The review (governance, TASK-0001)\n\n## v0.11 — An entry (R7, TASK-0002)\n\n## v0.11 — An entry (R7, TASK-0002)\n";
+
+        Assert.Equal((2, 2), MilestonesAfter((0, 10), ledger, Rows));
+        Assert.Contains(HeadingProblems((0, 10), ledger), problem => problem.Contains("follows v0.11", StringComparison.Ordinal));
     }
 
     // Finding T66 of the codebase review of 2026-10-28 (TASK-0089): the counter counts a
@@ -314,14 +402,22 @@ public class CodebaseReviewGateTests
         foreach (Match entry in LedgerEntry.Matches(ledger.Replace("\r", string.Empty, StringComparison.Ordinal)))
         {
             var version = (int.Parse(entry.Groups[1].Value, CultureInfo.InvariantCulture), int.Parse(entry.Groups[2].Value, CultureInfo.InvariantCulture));
-            var tasks = Regex.Matches(entry.Groups["rest"].Value, @"TASK-(\d{4})");
-            if (version.CompareTo(reviewed) <= 0 || tasks.Count == 0)
+            if (version.CompareTo(reviewed) <= 0)
                 continue;
 
-            var task = tasks[^1].Groups[1].Value;
-            if (phaseOfTask(task) is { } phase && ProductPhase.IsMatch(phase)
-                && !roadmap.Split('\n').Any(row => row.StartsWith($"| {phase} |", StringComparison.Ordinal) && row.Contains($"TASK-{task}", StringComparison.Ordinal)))
-                yield return $"v{version.Item1}.{version.Item2:00}: TASK-{task} has the product phase {phase}, and the row of {phase} in docs/roadmap.md does not name it, so the review counter does not count it";
+            foreach (Match match in Regex.Matches(entry.Groups["rest"].Value, @"TASK-(\d{4})"))
+            {
+                var task = match.Groups[1].Value;
+                var phase = phaseOfTask(task);
+                var rowPhase = ProductRowPhase(roadmap, task);
+                if (phase is not null && ProductPhase.IsMatch(phase)
+                    && !roadmap.Split('\n').Any(row => row.StartsWith($"| {phase} |", StringComparison.Ordinal) && row.Contains($"TASK-{task}", StringComparison.Ordinal)))
+                    yield return $"v{version.Item1}.{version.Item2:00}: TASK-{task} has the product phase {phase}, and the row of {phase} in docs/roadmap.md does not name it, so the review counter does not count it";
+                // Finding T73 (TASK-0098): a task file is not a gate file, so its phase must be
+                // the phase of the product row that names it.
+                else if (rowPhase is not null && phase != rowPhase)
+                    yield return $"v{version.Item1}.{version.Item2:00}: the row of {rowPhase} in docs/roadmap.md names TASK-{task}, and its task file gives the phase {phase ?? "none"}";
+            }
         }
     }
 
