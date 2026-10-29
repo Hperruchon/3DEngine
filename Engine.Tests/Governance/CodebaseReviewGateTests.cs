@@ -260,6 +260,8 @@ public class CodebaseReviewGateTests
     // The cases of the method of the decision of 2026-10-27. The ledger starts at the
     // reviewed version v0.10; TASK-0001 is governance, TASK-0002 is R7 and its row names
     // it, TASK-0003 is R8 and its row names another task, TASK-0004 is P0.33 (track 0).
+    // Since TASK-0107 a heading that names a product phase counts (finding T84), and
+    // UnnamedProductTasks refuses the row that does not name its task.
     [Theory]
     [InlineData("seven governance entries", false)]
     [InlineData("four product entries", false)]
@@ -267,7 +269,7 @@ public class CodebaseReviewGateTests
     [InlineData("twelve track 0 entries", false)]
     [InlineData("thirteen track 0 entries", true)]
     [InlineData("five product entries under governance headings", true)]
-    [InlineData("five entries of a phase whose row names another task", false)]
+    [InlineData("five entries of a phase whose row names another task", true)]
     [InlineData("thirteen entries with no task", true)]
     public void A_Review_Follows_The_Product_Milestones(string scenario, bool overdue)
     {
@@ -318,12 +320,20 @@ public class CodebaseReviewGateTests
                 continue;
 
             entries++;
-            if (Regex.Matches(entry.Groups["rest"].Value, @"TASK-(\d{4})").Any(task => ProductRowPhase(roadmap, task.Groups[1].Value) is not null))
+            if ((HeadingPhase(entry.Groups["rest"].Value) is { } phase && ProductPhase.IsMatch(phase))
+                || Regex.Matches(entry.Groups["rest"].Value, @"TASK-(\d{4})").Any(task => ProductRowPhase(roadmap, task.Groups[1].Value) is not null))
                 product++;
         }
 
         return (product, entries);
     }
+
+    // Finding T84 of the codebase review of 2026-10-29 (TASK-0107): the phase of a heading, for
+    // example K0a in "(K0a, TASK-0103)", or null. The counter took the phase from the roadmap
+    // row only, so a task whose row and file lost the product phase was an entry only, while
+    // its heading still named K0a.
+    private static string? HeadingPhase(string rest)
+        => Regex.Match(rest, @"\((?<phase>[^(),]+), TASK-\d{4}\)\s*$") is { Success: true } match ? match.Groups["phase"].Value.Trim() : null;
 
     // The product phase whose row in docs/roadmap.md names the task, or null.
     private static string? ProductRowPhase(string roadmap, string task)
@@ -417,6 +427,9 @@ public class CodebaseReviewGateTests
                 // the phase of the product row that names it.
                 else if (rowPhase is not null && phase != rowPhase)
                     yield return $"v{version.Item1}.{version.Item2:00}: the row of {rowPhase} in docs/roadmap.md names TASK-{task}, and its task file gives the phase {phase ?? "none"}";
+                // Finding T84 (TASK-0107): the heading, the task file and the row give one phase.
+                else if (HeadingPhase(entry.Groups["rest"].Value) is { } headingPhase && headingPhase != phase)
+                    yield return $"v{version.Item1}.{version.Item2:00}: the heading gives the phase {headingPhase}, and the task file of TASK-{task} gives {phase ?? "none"}";
             }
         }
     }
@@ -444,6 +457,21 @@ public class CodebaseReviewGateTests
         var problems = UnnamedProductTasks((0, 10), ledger, id => phases.GetValueOrDefault(id), roadmap).ToList();
 
         Assert.Equal("TASK-0003", Regex.Match(Assert.Single(problems), @"TASK-\d{4}").Value);
+    }
+
+    // The form of finding T84: the heading of v0.105 still said K0a, and the task file and the
+    // row of TASK-0103 lost the phase. Each one passed the gate of main.
+    [Fact]
+    public void A_Heading_That_Names_A_Product_Phase_Counts_And_Must_Agree_With_Its_Task()
+    {
+        var ledger = "## v0.10 — The review (governance, TASK-0001)\n"
+            + string.Concat(Enumerable.Range(11, 5).Select(minor => $"\n## v0.{minor} — An entry (K0a, TASK-0003)\n"));
+        var phases = new Dictionary<string, string> { ["0001"] = "governance", ["0003"] = "P0.41" };
+        var roadmap = "| K0a | Extrude. ADR-0036. | 3–5 |\n| P0.41 | The output path. | 1 |\n";
+
+        Assert.Equal((5, 5), MilestonesAfter((0, 10), ledger, roadmap));
+        Assert.Contains(UnnamedProductTasks((0, 10), ledger, id => phases.GetValueOrDefault(id), roadmap), problem => problem.Contains("the heading gives the phase K0a", StringComparison.Ordinal));
+        Assert.Empty(UnnamedProductTasks((0, 10), ledger.Replace("K0a", "P0.41", StringComparison.Ordinal), id => phases.GetValueOrDefault(id), roadmap));
     }
 
     // The field 'phase' of the task file tasks/TASK-<id>-*.md, or null.

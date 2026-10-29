@@ -1,7 +1,7 @@
 ---
 id: 0107
 title: The gates read the target name, the root folders and each text file, and a host test waits for its file
-status: Ready
+status: Active
 phase: P0.43
 opened: 2026-10-29
 depends-on: [0106]
@@ -9,11 +9,20 @@ governed-by: []
 writes:
   create:
     - tasks/TASK-0107-gate-forms-of-the-twelfth-review.md
+    - eng/repo-gates/PendingTasks.cs
+    - Engine.Tests/Governance/ConstantStrings.cs
   modify:
-    - Engine.Tests/Governance/**
-    - Engine.Tests/Diagnostics/**
+    - Engine.Tests/Governance/AdrGateTests.cs
+    - Engine.Tests/Governance/CodebaseReviewGateTests.cs
+    - Engine.Tests/Governance/DependencyDirectionGateTests.cs
+    - Engine.Tests/Governance/DeterminismCallGateTests.cs
+    - Engine.Tests/Governance/UiLibraryGateTests.cs
+    - Engine.Tests/Diagnostics/DiagnosticsRegistryGateTests.cs
+    - Engine.Tests/Diagnostics/DiagnosticsScanner.cs
     - Engine.Tests/Http/HostGuardTests.cs
-    - eng/repo-gates/**
+    - eng/repo-gates/DiscardedTasks.cs
+    - eng/repo-gates/Program.cs
+    - eng/repo-gates/RepoGates.csproj
     - eng/write-set-check/Judge.cs
     - docs/templates.md
     - eng/test-floor.txt
@@ -74,3 +83,5 @@ Each gate reads what the build binds in the forms of T80 to T86, and the test of
 ## Progress
 
 - 2026-10-29: opened by the codebase review of 2026-10-29 (TASK-0104).
+- 2026-10-30: the gates read the target name, the root folders, the constant values and each tracked text file, the
+  runner waits for each task of a check, and the host test waits for its file (T80 to T87). 14 injections caught.
