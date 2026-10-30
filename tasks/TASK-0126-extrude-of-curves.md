@@ -1,7 +1,7 @@
 ---
 id: 0126
 title: An extrude takes a profile with arcs and circles
-status: Active
+status: Done
 phase: K0e
 opened: 2026-10-31
 depends-on: [0117, 0122, 0128]
@@ -61,14 +61,28 @@ An extrude of a sketch with arcs, or of one circle, gives a solid whose polygon 
 
 ## Acceptance criteria
 
-- [ ] The bit test gives one hash on Windows, Linux and macOS.
-- [ ] Each rule of ADR-0040 item 1 has a refusal test, and an injection that removes a rule fails a test.
-- [ ] An extrude and a rebuild of a circle on the native backend give the box of the circle.
-- [ ] A clean build (`--no-incremental`) gives zero errors and zero warnings.
-- [ ] Continuous integration passes on the three runners, on the branch and on `main` after the merge.
+- [x] The bit test gives one hash on Windows, Linux and macOS.
+- [x] Each rule of ADR-0040 item 1 has a refusal test, and an injection that removes a rule fails a test.
+- [x] An extrude and a rebuild of a circle on the native backend give the box of the circle.
+- [x] A clean build (`--no-incremental`) gives zero errors and zero warnings.
+- [x] Continuous integration passes on the three runners, on the branch and on `main` after the merge.
+
+## Outcome
+
+Status: Done · commit (the merge of the branch k0e-curve-extrude) · v0.130
+
+## Method
+
+Mechanical: the walk of the edges, the polygon of an arc in each direction, the checks of the polygon, and the tests.
+Judgement:  the vertices come from turns of the step and not from a sine of each angle, so no transcendental function
+            is in the log path; the last vertex of an arc is its end point, so the drift of the turns does not move
+            a point of the person. With lines only, each message keeps its text.
+Weakest:    the bit test holds the hash of the first run on Windows x64; the runners on Linux and macOS give the
+            proof. The vertex half a turn from the start holds the rounding of 32 turns (about 4e-15 of the radius).
 
 ## Progress
 
 - 2026-10-31: ADR-0040 Accepted under the standing answer of the owner. The draft compared the cosine of the step with
   cos(2π / 64); item 2 uses 0.9951 as a margin, so the count of a full turn does not depend on the last bit of its
   halvings. An injection of cos(2π / 64) also gives 64 segments on this computer, so no test can hold the margin.
+- 2026-10-31: 11 new test cases; 7 injections, 6 caught (the margin of 0.9951 has no test); closed at v0.130.
