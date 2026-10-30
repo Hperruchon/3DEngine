@@ -77,7 +77,7 @@ internal sealed unsafe class DesktopUi : IDisposable
     public static readonly (string Label, string Kind)[] ConstraintButtons =
         [("Coincident", "coincident"), ("Horizontal", "horizontal"), ("Vertical", "vertical"), ("Distance", "distance"), ("Fixed", "fixed"),
          ("On curve", "pointOn"), ("Tangent", "tangent"), ("Inside tangent", "tangent"), ("Equal", "equal"), ("Radius", "radius"),
-         ("On line", "pointOn"), ("Midpoint", "midpoint"), ("Parallel", "parallel"), ("Perpendicular", "perpendicular"), ("Angle", "angle")];
+         ("On line", "pointOn"), ("Midpoint", "midpoint"), ("Parallel", "parallel"), ("Perpendicular", "perpendicular"), ("Angle", "angle"), ("Symmetric", "symmetric")];
 
     // Phase K2f (TASK-0125): On curve takes a point and a curve, and On line a point and a line.
     public const string OnCurveLabel = "On curve";
@@ -763,11 +763,12 @@ internal sealed unsafe class DesktopUi : IDisposable
                 ("equal", "AA" or "LL") => true,
                 ("radius", "A") => true,
                 // The kinds of K2c on lines: a point of pointOn and of midpoint is not an end of its
-                // line, as the engine requires (SketchConstraints.Refusal). Symmetric takes three items,
-                // and the selection holds two (ADR-0034 item 4), so it has no button.
+                // line, as the engine requires (SketchConstraints.Refusal). Symmetric takes two points
+                // that are not ends of the line, since the selection holds three items (K2g, TASK-0127).
                 ("pointOn", "PL") => label == OnLineLabel && !IsEnd(sketch, items[0], items[1]),
                 ("midpoint", "PL") => !IsEnd(sketch, items[0], items[1]),
                 ("parallel" or "perpendicular" or "angle", "LL") => true,
+                ("symmetric", "PPL") => !IsEnd(sketch, items[0], items[2]) && !IsEnd(sketch, items[1], items[2]),
                 _ => false,
             };
             if (!fits)

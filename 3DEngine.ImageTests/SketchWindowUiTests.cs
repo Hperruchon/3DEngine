@@ -213,6 +213,26 @@ public sealed class SketchWindowUiTests
         Assert.Equal(["Coincident", "Distance"], Buttons(C, SketchId));
     }
 
+    // Phase K2g (TASK-0127): two points and a line give Symmetric when no point is an end of the line,
+    // and its action takes the points first.
+    [Fact]
+    public void Two_Points_And_A_Line_Give_Symmetric()
+    {
+        static string[] Buttons(params Guid[] selection)
+        {
+            using var ui = Opened(LinePanel(selection));
+            string[] all = [.. DesktopUi.ConstraintButtons.Select(button => button.Label), DesktopUi.MovePointLabel, DesktopUi.ValueLabel, DesktopUi.DeleteLabel];
+            return [.. all.Where(label => ui.ItemRectangle(DesktopUi.SketchItem(label)) is not null)];
+        }
+
+        Assert.Equal(["Symmetric"], Buttons(C, Line, SketchId));
+        Assert.Equal([DesktopUi.DeleteLabel], Buttons(A, C, Line));
+
+        var symmetric = Assert.IsType<AddConstraintAction>(Assert.Single(Taps(DeviceKind.Touch, LinePanel(Line, C, SketchId), DesktopUi.SketchItem("Symmetric"))));
+        Assert.Equal("symmetric", symmetric.Kind);
+        Assert.Equal([C, SketchId, Line], symmetric.Items);
+    }
+
     // Angle opens the pad with the current angle in degrees, and its apply gives the cosine and the
     // sine: L1 points along +y and L2 along +x, so the angle from L1 to L2 is −90 degrees.
     [Fact]

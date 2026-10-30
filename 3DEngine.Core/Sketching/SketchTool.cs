@@ -51,7 +51,8 @@ public enum SketchToolKind
 // The tool Line makes a chain. A tap within HitPixels of a point uses that point; each other tap
 // adds a point. Each point after the first adds a line from the last point. A tap on the first
 // point closes the chain, and a tap on the last point ends it. The tool Select toggles the nearest
-// point, or else the nearest line, in a selection of two items at most.
+// point, or else the nearest line, in a selection of three items at most. Phase K2g (TASK-0127): the
+// limit was two, and symmetric takes two points and a line.
 //
 // Phase K2e (TASK-0122): the tool Circle takes the centre, then a point on the circle, and adds a
 // circle whose radius is the distance in the plane. The tool Arc takes the centre, the start and
@@ -63,7 +64,7 @@ public sealed class SketchTool
     // Half the height of a control (ADR-0027 item 6), so that a finger hits a point.
     public const double HitPixels = 22;
 
-    public const int MaximumSelection = 2;
+    public const int MaximumSelection = 3;
 
     private readonly List<Guid> _selection = new();
 
