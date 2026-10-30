@@ -5,7 +5,7 @@ status: Active
 phase: P0.49
 opened: 2026-10-30
 depends-on: [0122]
-governed-by: [0004, 0012, 0015, 0016, 0019, 0021, 0028, 0031, 0033, 0035, 0036, 0037, 0039]
+governed-by: [0004, 0006, 0012, 0015, 0016, 0019, 0020, 0021, 0028, 0031, 0033, 0035, 0036, 0037, 0039]
 writes:
   create:
     - tasks/TASK-0123-forms-of-the-fourteenth-review.md
@@ -14,9 +14,11 @@ writes:
     - Engine.Core/Commands/ExtrudeCommandHandler.cs
     - Engine.Core/Sketch/SketchResults.cs
     - Engine.Core/Persistence/DocumentFile.cs
+    - Engine.Core/CommandBus.cs
     - Engine.Api.Http/Json/ApiJson.cs
     - Engine.Tests/Sketch/CircleArcTests.cs
     - Engine.Tests/Persistence/DocumentFileTests.cs
+    - Engine.Tests/Sketch/SketchGapTests.cs
     - Engine.Tests/Http/CommandsEndpointTests.cs
     - Engine.Tests/Governance/CodebaseReviewGateTests.cs
     - Engine.Tests/Governance/ConstantStrings.cs
@@ -27,6 +29,7 @@ writes:
     - eng/repo-gates/DiscardedTasks.cs
     - eng/test-floor.txt
     - docs/register.md
+    - docs/diagnostics.md
     - docs/roadmap.md
     - docs/CURRENT-STATE.md
   forbid:
@@ -79,3 +82,7 @@ The engine, the surface and the gates close each form of the review, and a test 
 - 2026-10-30: opened by the codebase review of 2026-10-30 (b) (TASK-0120).
 - 2026-10-31: E98, E101 and T96 to T102 with 30 new test cases and five new forms of the self check of the runner;
   17 injections caught. E99 and E100 wait for Q1 (R-0046).
+- 2026-10-30: the owner answered Q1 A. The guard of a repeated identifier acts on a live command only: the bus sets
+  `SketchResults.ApplyingEntry` for an open and a replay. `Extrude` takes the guard (E99). The write set gains
+  `Engine.Core/CommandBus.cs`, `Engine.Tests/Sketch/SketchGapTests.cs` and `docs/diagnostics.md`. The line of
+  2026-10-31 above has a wrong date: the work was on 2026-10-30.

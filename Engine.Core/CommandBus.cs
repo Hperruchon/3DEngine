@@ -125,7 +125,9 @@ public sealed class CommandBus
             // stop it in the middle (finding E4). A sink that throws loses an event,
             // which a subscriber recovers with a reset, and never a part of the
             // Document. A retry with the same CommandId gets the cached result.
-            var (result, events) = await Decide(command, stopwatch, ct).ConfigureAwait(false);
+            // E100 (TASK-0123): an open (ApplyEntry) and a replay (a bus with no cache) apply an
+            // entry of a log, which the guard of a repeated identifier does not refuse.
+            var (result, events) = await Decide(command, entry: !lookUp || _idempotency is null, stopwatch, ct).ConfigureAwait(false);
             _idempotency?.Store(command.CommandId, result);
 
             foreach (var record in events)
@@ -141,9 +143,13 @@ public sealed class CommandBus
 
     private async Task<(CommandResult Result, IReadOnlyList<EventRecord> Events)> Decide(
         Command command,
+        bool entry,
         Stopwatch stopwatch,
         CancellationToken ct)
     {
+        // The value flows into the handler and goes back at the end of this method.
+        Sketch.SketchResults.ApplyingEntry.Value = entry;
+
         // 1. Lookup
         if (!_registry.TryFind(command.Name, command.SchemaVersion, out var handler))
         {
