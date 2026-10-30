@@ -101,6 +101,13 @@ internal sealed class SketchActions(DocumentSession session) : ISketchEditor
     public Guid? AddLine(Guid start, Guid end)
         => Output(Active is { } sketch ? Run(new AddSketchLineCommand { SketchId = sketch, StartPointId = start, EndPointId = end }) : null, "lineId");
 
+    // Phase K2e (TASK-0122): the curves of the tools Circle and Arc.
+    public Guid? AddCircle(Guid centre, double radius)
+        => Output(Active is { } sketch ? Run(new AddSketchCircleCommand { SketchId = sketch, CenterPointId = centre, Radius = radius }) : null, "circleId");
+
+    public Guid? AddArc(Guid centre, Guid start, Guid end)
+        => Output(Active is { } sketch ? Run(new AddSketchArcCommand { SketchId = sketch, CenterPointId = centre, StartPointId = start, EndPointId = end }) : null, "arcId");
+
     // ADR-0034 item 8: a constraint of a kind on the items, in their order, with its values.
     public string? AddConstraint(string kind, IReadOnlyList<Guid> items, IReadOnlyList<double> values)
     {

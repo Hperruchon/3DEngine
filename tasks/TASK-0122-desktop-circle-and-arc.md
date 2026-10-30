@@ -1,7 +1,7 @@
 ---
 id: 0122
 title: The desktop draws and adds circles and arcs
-status: Ready
+status: Active
 phase: K2e
 opened: 2026-10-30
 depends-on: [0117, 0121]
@@ -16,10 +16,12 @@ writes:
     - 3DEngine/NativeThreeDEngine.cs
     - 3DEngine/Ui/DesktopUi.cs
     - 3DEngine/Ui/PanelAction.cs
+    - 3DEngine/Ui/SketchText.cs
     - 3DEngine.Core/Sketching/SketchTool.cs
     - 3DEngine.Tests/SketchToolTests.cs
     - 3DEngine.ImageTests/SketchOverlayTests.cs
     - 3DEngine.ImageTests/SketchActionsTests.cs
+    - 3DEngine.ImageTests/SketchWindowUiTests.cs
     - docs/adr/0034-sketch-tools.md
     - eng/test-floor.txt
     - docs/roadmap.md
@@ -44,8 +46,8 @@ research and the recommended approach.
 
 ## Goal
 
-The desktop draws each circle and each arc of a sketch, adds them with two tools, and offers the constraints of K2c
-and K2d in the panel.
+The desktop draws each circle and each arc of a sketch, adds them with two tools, and offers the constraints of K2d
+on a curve in the panel.
 
 ## Scope (in)
 
@@ -60,6 +62,8 @@ and K2d in the panel.
 
 - A change of the engine. An extrude of a profile with a curve (TASK-0117, Scope (out)).
 - V51 to V55. P0.50 holds them, after this task.
+- The kinds of K2c on lines in the panel (pointOn and midpoint on a line, parallel, perpendicular, equal of two
+  lines, symmetric and angle). They change the buttons of the selections of K2b, so a later task adds them.
 
 ## Acceptance criteria
 
@@ -72,3 +76,8 @@ and K2d in the panel.
 ## Progress
 
 - 2026-10-30: opened by the codebase review of 2026-10-30 (b) (TASK-0120).
+- 2026-10-30: the tools Circle and Arc, the polyline of a curve, the pick of a curve and the kinds on a curve in the
+  window. The Goal named the kinds of K2c too; Scope (in) item 4 names the kinds on a curve only, and the Goal and the
+  row of K2e now agree with it.
+- 2026-10-30: 10 new test cases (5 in `3DEngine.Tests`, 5 in `3DEngine.ImageTests`); 8 injections caught. The row of
+  Next point stays the second row of the window, so the pad stays inside a display of 1024 x 768.

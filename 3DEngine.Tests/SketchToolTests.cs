@@ -6,7 +6,8 @@ namespace ThreeDEngine.Tests;
 
 // The sketch tools of the desktop with no window (ADR-0034, TASK-0101). ADR-0034 names this file in
 // enforced-by: the ray to the plane of a sketch, the step of a tap, the turn of the camera, and
-// the chain and the selection of the tools Line and Select.
+// the chain and the selection of the tools Line and Select. Phase K2e (TASK-0122): the tools Circle
+// and Arc, and a pick of a curve.
 public class SketchToolTests
 {
     private const double Width = 800;
@@ -125,6 +126,7 @@ public class SketchToolTests
         public List<string> Log { get; } = new();
         public Dictionary<Guid, (double X, double Y)> Points { get; } = new();
         public List<(Guid Start, Guid End)> Lines { get; } = new();
+        public Dictionary<Guid, (Guid Centre, double Radius)> Circles { get; } = new();
 
         public Guid? AddPoint(double x, double y)
         {
@@ -143,7 +145,30 @@ public class SketchToolTests
             return Guid.NewGuid();
         }
 
+        public Guid? AddCircle(Guid centre, double radius)
+        {
+            var id = Guid.NewGuid();
+            Circles[id] = (centre, radius);
+            Log.Add($"circle {Name(centre)} {radius}");
+            return id;
+        }
+
+        public Guid? AddArc(Guid centre, Guid start, Guid end)
+        {
+            Log.Add($"arc {Name(centre)} {Name(start)} {Name(end)}");
+            return Guid.NewGuid();
+        }
+
         private string Name(Guid point) => Points.TryGetValue(point, out var at) ? $"({at.X},{at.Y})" : "origin";
+
+        // A circle in pixels as a polygon of 32 sides, with the pixel (10 x, 10 y) for a point (x, y).
+        private ToolCurve Curve(Guid id, (Guid Centre, double Radius) circle)
+        {
+            var c = Points[circle.Centre];
+            var corners = Enumerable.Range(0, 33).Select(i => 2 * Math.PI * i / 32)
+                .Select(angle => (X: 10 * (c.X + (circle.Radius * Math.Cos(angle))), Y: 10 * (c.Y + (circle.Radius * Math.Sin(angle))))).ToArray();
+            return new ToolCurve(id, [.. corners.Skip(1).Select((corner, i) => (corners[i], corner))]);
+        }
 
         // The picture of the points, with the pixel (10 x, 10 y) for a point (x, y).
         public SketchPicture Picture(params Guid[] extra)
@@ -151,7 +176,8 @@ public class SketchToolTests
                 [.. Points.Select(point => new ToolPoint(point.Key, point.Value.X, point.Value.Y, 10 * point.Value.X, 10 * point.Value.Y)),
                  .. extra.Select(id => new ToolPoint(id, 0, 0, 0, 0))],
                 [.. Lines.Select((line, index) => new ToolLine(new Guid(index + 1, 0, 0, new byte[8]), line.Start, line.End))],
-                []);
+                [],
+                [.. Circles.Select(circle => Curve(circle.Key, circle.Value))]);
     }
 
     // A tap at the pixel of the position (x, y), as the picture of the editor places it.
@@ -304,6 +330,93 @@ public class SketchToolTests
 
         Assert.Null(tool.Last);
         Assert.Equal([picture.Points[0].Id], tool.Selection);
+    }
+
+    // Phase K2e: the tool Circle takes the centre and a point on the circle, and adds no point
+    // on the circle. The radius is the distance in the plane.
+    [Fact]
+    public void The_Tool_Circle_Adds_A_Centre_And_A_Circle_Of_The_Distance()
+    {
+        var (tool, editor) = (new SketchTool { Kind = SketchToolKind.Circle }, new Editor());
+
+        Tap(tool, editor, 1, 1);
+        Assert.Equal(tool.First, tool.Last);
+        Assert.NotNull(tool.First);
+        Tap(tool, editor, 4, 5);
+
+        Assert.Equal(["point 1 1", "circle (1,1) 5"], editor.Log);
+        Assert.Null(tool.First);
+    }
+
+    // A tap on a point uses its position, and a tap on the centre again ends the circle.
+    [Fact]
+    public void The_Tool_Circle_Uses_A_Point_And_Ends_On_Its_Centre()
+    {
+        var (tool, editor) = (new SketchTool(), new Editor());
+        Tap(tool, editor, 0, 0);
+        Tap(tool, editor, 6, 8);
+        tool.Kind = SketchToolKind.Circle;
+        editor.Log.Clear();
+
+        Tap(tool, editor, 0, 0);
+        Tap(tool, editor, 0, 0);
+        Assert.Null(tool.First);
+        Tap(tool, editor, 0.5, 0.5);
+        Tap(tool, editor, 6.5, 8.5);
+
+        Assert.Equal(["circle (0,0) 10"], editor.Log);
+    }
+
+    // The tool Arc takes the centre, the start and the end; a new end goes on the circle of the
+    // start in the direction of the tap, so the implicit equation of the arc holds at the add.
+    [Fact]
+    public void The_Tool_Arc_Puts_A_New_End_On_The_Circle_Of_The_Start()
+    {
+        var (tool, editor) = (new SketchTool { Kind = SketchToolKind.Arc }, new Editor());
+
+        Tap(tool, editor, 0, 0);
+        Tap(tool, editor, 5, 0);
+        Assert.Equal(editor.Points.Keys.Last(), tool.Last);
+        Tap(tool, editor, 0, 3);
+
+        Assert.Equal(["point 0 0", "point 5 0", "point 0 5", "arc (0,0) (5,0) (0,5)"], editor.Log);
+        Assert.Null(tool.First);
+    }
+
+    // The pad gives a position to a tool of a curve, never an offset.
+    [Fact]
+    public void The_Pad_Gives_Positions_To_The_Tool_Circle()
+    {
+        var (tool, editor) = (new SketchTool { Kind = SketchToolKind.Circle }, new Editor());
+
+        tool.Next(2, 2, editor.Picture(), editor);
+        tool.Next(2, 5, editor.Picture(), editor);
+
+        Assert.Equal(["point 2 2", "circle (2,2) 3"], editor.Log);
+    }
+
+    // The tool Select picks a curve near its polyline, and Forget drops a curve that left the
+    // record and ends a curve whose centre left it.
+    [Fact]
+    public void The_Tool_Select_Picks_A_Curve_And_Forget_Drops_It()
+    {
+        var (tool, editor) = (new SketchTool { Kind = SketchToolKind.Circle }, new Editor());
+        Tap(tool, editor, 20, 20);
+        Tap(tool, editor, 25, 20);
+        var circle = editor.Circles.Keys.Single();
+        tool.Kind = SketchToolKind.Select;
+
+        tool.Tap(250, 205, null, editor.Picture(), editor);
+        Assert.Equal([circle], tool.Selection);
+        tool.Forget(editor.Picture());
+        Assert.Equal([circle], tool.Selection);
+
+        tool.Kind = SketchToolKind.Circle;
+        Tap(tool, editor, 50, 50);
+        Assert.NotNull(tool.First);
+        tool.Forget(new SketchPicture([], [], []));
+        Assert.Null(tool.First);
+        Assert.Empty(tool.Selection);
     }
 
     private static (double X, double Y, double Z) Normal((double X, double Y, double Z) v)
