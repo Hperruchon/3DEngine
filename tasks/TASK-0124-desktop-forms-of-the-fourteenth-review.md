@@ -73,3 +73,6 @@ release, the other input and the meshes of a frame follow the review.
 - 2026-10-30: opened by the codebase review of 2026-10-30 (b) (TASK-0120).
 - 2026-10-30: the owner answered Q2 A. V51: an arrow gives no offset past the vanishing point of its axis. V53: other
   input during a drag gives nothing. ADR-0038 items 5 and 8 hold both, and R-0046 is closed.
+- 2026-10-30: V52: the overlay clips a segment to the window with a margin of one window; the test of V49 now checks
+  that no vertex goes beyond the limit, as a line through the window draws its visible part. V54 and V55. 7 new test
+  cases, one of them on a GPU; 6 injections caught.
