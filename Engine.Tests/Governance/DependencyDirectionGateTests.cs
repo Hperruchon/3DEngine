@@ -66,6 +66,12 @@ public class DependencyDirectionGateTests
     // internals to the assembly Engine.Tests, and a client that took that assembly name read
     // them. Each assembly name is unique and is not the name of the file of another project,
     // and only a project file sets it, with no property. The four programs keep their names.
+    // The item and the properties that name the file of the built assembly (T88).
+    private static readonly HashSet<string> BuiltFileNames = new(StringComparer.OrdinalIgnoreCase)
+    {
+        "IntermediateAssembly", "TargetName", "AssemblyName", "TargetPath", "TargetFileName",
+    };
+
     internal static IEnumerable<string> AssemblyNameOffences(
         IEnumerable<(string Relative, XDocument Document)> projects, IEnumerable<(string Relative, XDocument Document)> imported)
     {
@@ -82,10 +88,23 @@ public class DependencyDirectionGateTests
         // Finding T80 of the codebase review of 2026-10-29 (TASK-0107): TargetName names the
         // built file, and the compiler takes the assembly name from that file. The desktop set
         // TargetName Engine.Tests and read the internals of the kernel. No file sets it.
+        //
+        // Finding T88 of the codebase review of 2026-10-30 (TASK-0112): a target that replaced the
+        // item IntermediateAssembly gave the desktop the file Engine.Tests.dll and the internals of
+        // the kernel. No file sets that item, and no task gives an output to it or to a property
+        // that names the built file.
         foreach (var (relative, document) in projectList.Concat(imported))
         {
             if (document.Descendants().Any(e => Is(e, "TargetName")))
                 yield return $"{relative} sets TargetName, which gives the assembly the name of its file; set AssemblyName in the project file";
+            if (document.Descendants().Any(e => Is(e, "IntermediateAssembly")))
+                yield return $"{relative} sets the item IntermediateAssembly, which names the file that the compiler builds";
+            foreach (var output in document.Descendants().Where(e => Is(e, "Output")))
+            {
+                var target = Value(output, "ItemName") ?? Value(output, "PropertyName");
+                if (target is not null && BuiltFileNames.Contains(target.Trim()))
+                    yield return $"{relative} gives the output of a task to {target.Trim()}, which names the built assembly";
+            }
         }
 
         foreach (var (relative, document) in projectList)
@@ -128,6 +147,11 @@ public class DependencyDirectionGateTests
     // Finding T80 (TASK-0107).
     [InlineData("3DEngine/3DEngine.csproj", "<Project><PropertyGroup><TargetName>Engine.Tests</TargetName></PropertyGroup></Project>", "sets TargetName")]
     [InlineData("3DEngine/3DEngine.csproj", "<Project><Target Name=\"T\"><PropertyGroup><targetname>Engine.Tests</targetname></PropertyGroup></Target></Project>", "sets TargetName")]
+    // Finding T88 (TASK-0112): the form of the review, its case form, and the outputs of a task.
+    [InlineData("3DEngine/3DEngine.csproj", "<Project><Target Name=\"ProbeRename\" BeforeTargets=\"CoreCompile\"><ItemGroup><IntermediateAssembly Remove=\"@(IntermediateAssembly)\" /><IntermediateAssembly Include=\"obj\\Debug\\net10.0\\Engine.Tests.dll\" /></ItemGroup></Target></Project>", "sets the item IntermediateAssembly")]
+    [InlineData("3DEngine/3DEngine.csproj", "<Project><Target Name=\"T\"><ItemGroup><intermediateassembly Include=\"Engine.Tests.dll\" /></ItemGroup></Target></Project>", "sets the item IntermediateAssembly")]
+    [InlineData("3DEngine/3DEngine.csproj", "<Project><Target Name=\"T\"><CreateItem Include=\"Engine.Tests.dll\"><Output TaskParameter=\"Include\" ItemName=\"IntermediateAssembly\" /></CreateItem></Target></Project>", "names the built assembly")]
+    [InlineData("3DEngine/3DEngine.csproj", "<Project><Target Name=\"T\"><CreateProperty Value=\"Engine.Tests\"><Output TaskParameter=\"Value\" PropertyName=\" targetname \" /></CreateProperty></Target></Project>", "names the built assembly")]
     public void Each_Form_Of_Finding_T72_Is_An_Offence(string relative, string text, string expected)
     {
         (string, XDocument)[] projects =
