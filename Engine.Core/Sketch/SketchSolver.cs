@@ -50,7 +50,7 @@ public static class SketchSolver
         var x = system.Start();
         system.Evaluate(x);
         var rank = system.Rows == 0 ? 0 : Eliminate(system.Product(), new double[system.Rows], out _);
-        return (system.WithinTolerance(), system.Variables - rank);
+        return (system.WithinTolerance() && system.CurvesHaveRadius(x), system.Variables - rank);
     }
 
     // The values and the derivatives of the equations at the positions of the record, for a
@@ -74,7 +74,7 @@ public static class SketchSolver
             if (!system.IsFinite())
                 return null;
             if (system.WithinTolerance())
-                return step == 0 ? sketch : system.Record(x);
+                return !system.CurvesHaveRadius(x) ? null : step == 0 ? sketch : system.Record(x);
             if (step == MaximumSteps)
                 return null;
 
@@ -243,6 +243,34 @@ public static class SketchSolver
                 .AsReadOnly(),
             Circles = _sketch.Circles.Select(circle => circle with { Radius = x[_radius[circle.Id]] }).ToList().AsReadOnly(),
         };
+
+        // Finding E97 of the codebase review of 2026-10-30 (b) (TASK-0121): true when each circle
+        // has a radius greater than 0 and each arc has its start and its end away from its centre.
+        // The equations also hold for a negative radius and for a radius of 0, and until TASK-0121
+        // a solve gave them and the sketch showed as solved.
+        public bool CurvesHaveRadius(double[] x)
+        {
+            foreach (var circle in _sketch.Circles)
+            {
+                if (!(x[_radius[circle.Id]] > 0))
+                    return false;
+            }
+            foreach (var arc in _sketch.Arcs)
+            {
+                if (Position(x, arc.Start) == Position(x, arc.Center) || Position(x, arc.End) == Position(x, arc.Center))
+                    return false;
+            }
+            return true;
+        }
+
+        // The position of a point in x, or in the record for a point with no variable: the origin.
+        private (double X, double Y) Position(double[] x, Guid point)
+        {
+            if (_index.TryGetValue(point, out var i))
+                return (x[i], x[i + 1]);
+            var fixedPoint = _sketch.Points.First(p => p.Id == point);
+            return (fixedPoint.X, fixedPoint.Y);
+        }
 
         public bool IsFinite()
         {

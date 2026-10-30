@@ -188,6 +188,78 @@ public sealed class CircleArcTests
             "The bits of the solve: " + bits);
     }
 
+    // Finding E97 of the codebase review of 2026-10-30 (b) (TASK-0121): the equations of these
+    // sketches hold only for a radius that is negative or 0, and the solve gave that radius and a
+    // solved status. Now the solve fails, the record keeps the positions of the command, and the
+    // status is not solved.
+    public static TheoryData<string> NoPositiveRadius => new()
+    {
+        "an outer tangent of two fixed centres 10 apart, with a radius of 20 for one circle",
+        "a tangent of a fixed line through the fixed centre",
+        "a pointOn of a point fixed at the fixed centre of a circle",
+        "a pointOn of a point fixed at the fixed centre of an arc",
+    };
+
+    private static SketchRecord WithNoPositiveRadius(string name) => name switch
+    {
+        "an outer tangent of two fixed centres 10 apart, with a radius of 20 for one circle" => Record(
+            [(1, 1), (11, 1)], [], [(0, 1), (1, 1)], [],
+            ("fixed", [0], [1, 1]), ("fixed", [1], [11, 1]), ("radius", [301], [20]), ("tangent", [300, 301], [1])),
+        "a tangent of a fixed line through the fixed centre" => Record(
+            [(0, 0.5), (10, 0.5), (5, 0.5)], [(0, 1)], [(2, 2)], [],
+            ("fixed", [0], [0, 0.5]), ("fixed", [1], [10, 0.5]), ("fixed", [2], [5, 0.5]), ("tangent", [100, 300], [])),
+        "a pointOn of a point fixed at the fixed centre of a circle" => Record(
+            [(3, 3), (3, 3)], [], [(0, 2)], [],
+            ("fixed", [0], [3, 3]), ("fixed", [1], [3, 3]), ("pointOn", [1, 300], [])),
+        _ => Record(
+            [(3, 3), (5, 3), (3, 5), (3, 3)], [], [], [(0, 1, 2)],
+            ("fixed", [0], [3, 3]), ("fixed", [3], [3, 3]), ("pointOn", [3, 400], [])),
+    };
+
+    [Theory]
+    [MemberData(nameof(NoPositiveRadius))]
+    public void A_Solve_Gives_No_Radius_That_Is_Not_Positive(string name)
+    {
+        var rough = WithNoPositiveRadius(name);
+
+        var solved = SketchSolver.Solve(rough);
+
+        Assert.Same(rough, solved);
+        Assert.False(SketchSolver.Status(solved).Solved);
+    }
+
+    // The equation of an arc holds when its three points are at one position, and the status
+    // gave solved for an arc of radius 0. AddSketchArc compares identifiers only (E98).
+    [Fact]
+    public void An_Arc_Of_Radius_Zero_Is_Not_Solved()
+    {
+        var sketch = Record([(2, 2), (2, 2), (2, 2)], [], [], [(0, 1, 2)]);
+
+        Assert.False(SketchSolver.Status(sketch).Solved);
+    }
+
+    // The same through a command: the tangent applies, the Document keeps the radius 2, and the
+    // sketch shows as not solved. Until TASK-0121 the Document held a circle of radius 0.
+    [Fact]
+    public async Task A_Tangent_Through_The_Fixed_Centre_Keeps_The_Radius_Of_The_Command()
+    {
+        var session = NewSession();
+        var s = await Applied(session, new CreateSketchCommand { DatumId = Datums.XY.Id }, "sketchId");
+        var a = await Applied(session, new AddSketchPointCommand { SketchId = s, X = 0, Y = 1 }, "pointId");
+        var b = await Applied(session, new AddSketchPointCommand { SketchId = s, X = 10, Y = 1 }, "pointId");
+        var c = await Applied(session, new AddSketchPointCommand { SketchId = s, X = 5, Y = 1 }, "pointId");
+        var line = await Applied(session, new AddSketchLineCommand { SketchId = s, StartPointId = a, EndPointId = b }, "lineId");
+        foreach (var (point, x) in new[] { (a, 0.0), (b, 10.0), (c, 5.0) })
+            await Applied(session, new AddSketchConstraintCommand { SketchId = s, Kind = "fixed", First = point, Value = x, SecondValue = 1 }, "constraintId");
+        var circle = await Applied(session, new AddSketchCircleCommand { SketchId = s, CenterPointId = c, Radius = 2 }, "circleId");
+
+        await Applied(session, new AddSketchConstraintCommand { SketchId = s, Kind = "tangent", First = line, Second = circle }, "constraintId");
+
+        var info = (await session.Query<SketchInfo>(new GetSketchQuery { SketchId = s })).Result!;
+        Assert.Equal(2.0, info.Circles.Single().Radius);
+        Assert.False(info.Solved);
+    }
+
     private static DocumentSession NewSession() => new(EngineHosting.CreateDefault(new InProcessMeshBackend()));
 
     private static async Task<Guid> Applied(DocumentSession session, Command command, string output)
@@ -227,6 +299,11 @@ public sealed class CircleArcTests
         Assert.Equal(DiagnosticCodes.SketchConstraintInvalid, await Refused(session, new AddSketchConstraintCommand { SketchId = s, Kind = "radius", First = circle, Value = 0 }));
         Assert.Equal(DiagnosticCodes.SketchConstraintInvalid, await Refused(session, new AddSketchConstraintCommand { SketchId = s, Kind = "tangent", First = circle, Second = arc, Value = 2 }));
         Assert.Equal(DiagnosticCodes.SketchConstraintInvalid, await Refused(session, new AddSketchConstraintCommand { SketchId = s, Kind = "equal", First = circle, Second = circle }));
+
+        // E97: a line with an end at the centre cannot touch the curve with a radius above 0.
+        var spoke = await Applied(session, new AddSketchLineCommand { SketchId = s, StartPointId = c, EndPointId = a }, "lineId");
+        Assert.Equal(DiagnosticCodes.SketchConstraintInvalid, await Refused(session, new AddSketchConstraintCommand { SketchId = s, Kind = "tangent", First = spoke, Second = circle }));
+        Assert.Equal(DiagnosticCodes.SketchConstraintInvalid, await Refused(session, new AddSketchConstraintCommand { SketchId = s, Kind = "tangent", First = spoke, Second = arc }));
 
         var info = (await session.Query<SketchInfo>(new GetSketchQuery { SketchId = s })).Result!;
         Assert.Equal((circle, 2.0), (info.Circles.Single().Id, info.Circles.Single().Radius));
