@@ -95,6 +95,7 @@ Therefore each approved objective must have a track here.
 - P0.46 — The native wrapper frees each buffer with its allocator, and the binder and the endpoint read numbers and versions as the schema says. v0.115, TASK-0115.
 - K0d — An edit of a sketch rebuilds each translate and subtract that descends from its extrude. v0.116, TASK-0116.
 - K2d — The engine holds the circle and the arc of a sketch, and solves tangent, radius, pointOn and equal on them. v0.117, TASK-0117.
+- P0.45 — The sketch keeps read-only lists and refuses each identifier that the log holds, and the gates read the forms of the thirteenth review. v0.118, TASK-0114.
 
 ## Track 0 — Foundations
 
