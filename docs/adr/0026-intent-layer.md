@@ -7,7 +7,7 @@ date: 2026-10-27
 supersedes: []
 superseded-by: []
 amends: ['0023']
-amended-by: ['0027', '0029', '0032', '0034']
+amended-by: ['0027', '0029', '0032', '0034', '0038']
 affects:
   - 3DEngine.Core/Input/**
 enforced-by: 3DEngine.Tests/IntentParityTests.cs (TASK-0082 creates it)
@@ -88,3 +88,5 @@ command, and the comparison of logs of anti-objective 7 starts with R8.
 - 2026-10-28 · TASK-0094 · ADR-0032 amends items 2 and 3: the intents undo and redo, and their gestures.
 - 2026-10-28 · TASK-0101 · ADR-0034 amends items 2 and 3: the mode `Sketch`, its map, and the intent of a point
   of the sketch.
+- 2026-10-30 · TASK-0113 · ADR-0038 amends item 2: four intents of the gizmo, and the hit test that the host gives to
+  `IntentMachine`.
