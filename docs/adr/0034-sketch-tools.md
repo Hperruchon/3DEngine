@@ -143,7 +143,7 @@ The decision below applies the recommended answers: Q1 A, Q2 A, Q3 A, Q4 A, Q5 A
    - Each other tap adds a point and a line from the last point.
    - A tap whose ray gives no position does nothing.
    The tool `Select` toggles the nearest point within 22 pixels, or else the nearest line within 22 pixels. The
-   selection holds two items at most; a third item replaces the first.
+   selection holds three items at most; a fourth item replaces the first. Until K2g (TASK-0127) it held two.
    Phase K2e (TASK-0122) adds the tools `Circle` and `Arc` (`AddSketchCircle`, `AddSketchArc`):
    - `Circle`: a tap gives the centre, and a second tap a point on the circle. The radius is the distance in the
      plane, with `sqrt` only, and the tool adds no point on the circle.
@@ -160,7 +160,8 @@ The decision below applies the recommended answers: Q1 A, Q2 A, Q3 A, Q4 A, Q5 A
    Phase K2f (TASK-0125) adds the kinds of K2c on lines: On line and Midpoint (a point that is not an end of the
    line), and Equal, Parallel, Perpendicular and Angle (two lines). Angle opens a pad of degrees with the angle from
    the first line to the second, and the client gives the cosine and the sine to the command (ADR-0033 item 3). A
-   multiple of 90 degrees gives exact numbers. Symmetric has no button: it takes three items.
+   multiple of 90 degrees gives exact numbers. Phase K2g (TASK-0127) adds Symmetric: two points that are not ends of
+   the line, and the line.
 5. **The undo.** Each command is one step of the history (ADR-0033 item 10). A tap that adds a point and a line gives
    two steps. An undo or a redo of the session can change the active sketch; the tool then drops each item of the
    chain and of the selection that is not in the record, and ends the chain when its last point is gone.
@@ -230,3 +231,5 @@ engine does not change. The tool is a pure state machine, so a test reads it wit
 - 2026-10-30 · TASK-0122 · Item 4: the tools Circle and Arc, the pick of a curve, the kinds on a curve in the window,
   and the polyline of a curve (phase K2e).
 - 2026-10-31 · TASK-0125 · Item 4: the kinds of K2c on lines in the window (phase K2f).
+- 2026-10-31 · TASK-0127 · Item 4: the selection holds three items, and the window has Symmetric (phase K2g, the
+  answer "1 3 4" of the owner).
