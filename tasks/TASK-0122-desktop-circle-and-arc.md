@@ -9,6 +9,7 @@ governed-by: [0007, 0009, 0019, 0022, 0023, 0025, 0027, 0029, 0030, 0032, 0034]
 writes:
   create:
     - tasks/TASK-0122-desktop-circle-and-arc.md
+    - 3DEngine.ImageTests/CurveImageTests.cs
   modify:
     - 3DEngine/SketchOverlay.cs
     - 3DEngine/SketchActions.cs
@@ -81,3 +82,6 @@ on a curve in the panel.
   row of K2e now agree with it.
 - 2026-10-30: 10 new test cases (5 in `3DEngine.Tests`, 5 in `3DEngine.ImageTests`); 8 injections caught. The row of
   Next point stays the second row of the window, so the pad stays inside a display of 1024 x 768.
+- 2026-10-30: `CurveImageTests` draws a circle, an arc and a tangent line on a GPU with no window and gives the
+  picture of the visual check; an injection that draws no curve fails it. A person used the computer, so the check
+  drove no mouse and opened no window.
