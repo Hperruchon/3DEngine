@@ -43,14 +43,22 @@ public static class SketchModel
 
     public static SketchLine Line(SketchRecord sketch, Guid id) => sketch.Lines.First(line => line.Id == id);
 
-    // ADR-0033 item 6: DeleteSketchItem removes a point with each line that references it,
-    // a line, or a constraint, and each constraint that references a removed item. The
-    // origin of the frame is not deletable; the caller checks it.
+    public static SketchCircle Circle(SketchRecord sketch, Guid id) => sketch.Circles.First(circle => circle.Id == id);
+
+    public static SketchArc Arc(SketchRecord sketch, Guid id) => sketch.Arcs.First(arc => arc.Id == id);
+
+    // ADR-0033 item 6: DeleteSketchItem removes a point with each line, circle and arc that
+    // references it, a line, a circle, an arc, or a constraint, and each constraint that
+    // references a removed item. The origin of the frame is not deletable; the caller checks it.
     public static SketchRecord Without(SketchRecord sketch, Guid id)
     {
         var removed = new HashSet<Guid> { id };
         foreach (var line in sketch.Lines.Where(line => removed.Contains(line.Start) || removed.Contains(line.End)))
             removed.Add(line.Id);
+        foreach (var circle in sketch.Circles.Where(circle => removed.Contains(circle.Center)))
+            removed.Add(circle.Id);
+        foreach (var arc in sketch.Arcs.Where(arc => removed.Contains(arc.Center) || removed.Contains(arc.Start) || removed.Contains(arc.End)))
+            removed.Add(arc.Id);
         foreach (var constraint in sketch.Constraints.Where(constraint => constraint.Items.Any(removed.Contains)))
             removed.Add(constraint.Id);
 
@@ -60,6 +68,8 @@ public static class SketchModel
             // that casts a list of GetSketch cannot change the Document.
             Points = sketch.Points.Where(point => !removed.Contains(point.Id)).ToList().AsReadOnly(),
             Lines = sketch.Lines.Where(line => !removed.Contains(line.Id)).ToList().AsReadOnly(),
+            Circles = sketch.Circles.Where(circle => !removed.Contains(circle.Id)).ToList().AsReadOnly(),
+            Arcs = sketch.Arcs.Where(arc => !removed.Contains(arc.Id)).ToList().AsReadOnly(),
             Constraints = sketch.Constraints.Where(constraint => !removed.Contains(constraint.Id)).ToList().AsReadOnly(),
         };
     }
