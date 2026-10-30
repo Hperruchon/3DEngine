@@ -1,7 +1,7 @@
 ---
 id: 0123
 title: The engine, the surface and the gates close the forms of the fourteenth review
-status: Ready
+status: Active
 phase: P0.49
 opened: 2026-10-30
 depends-on: [0122]
@@ -77,3 +77,5 @@ The engine, the surface and the gates close each form of the review, and a test 
 ## Progress
 
 - 2026-10-30: opened by the codebase review of 2026-10-30 (b) (TASK-0120).
+- 2026-10-31: E98, E101 and T96 to T102 with 30 new test cases and five new forms of the self check of the runner;
+  17 injections caught. E99 and E100 wait for Q1 (R-0046).

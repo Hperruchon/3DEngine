@@ -300,6 +300,11 @@ public sealed class CircleArcTests
         Assert.Equal(DiagnosticCodes.SketchConstraintInvalid, await Refused(session, new AddSketchConstraintCommand { SketchId = s, Kind = "tangent", First = circle, Second = arc, Value = 2 }));
         Assert.Equal(DiagnosticCodes.SketchConstraintInvalid, await Refused(session, new AddSketchConstraintCommand { SketchId = s, Kind = "equal", First = circle, Second = circle }));
 
+        // E98 (TASK-0123): a start or an end at the position of the centre gives an arc of radius 0.
+        var atCentre = await Applied(session, new AddSketchPointCommand { SketchId = s, X = 3, Y = 3 }, "pointId");
+        Assert.Equal(DiagnosticCodes.SketchCurveInvalid, await Refused(session, new AddSketchArcCommand { SketchId = s, CenterPointId = c, StartPointId = atCentre, EndPointId = b }));
+        Assert.Equal(DiagnosticCodes.SketchCurveInvalid, await Refused(session, new AddSketchArcCommand { SketchId = s, CenterPointId = c, StartPointId = a, EndPointId = atCentre }));
+
         // E97: a line with an end at the centre cannot touch the curve with a radius above 0.
         var spoke = await Applied(session, new AddSketchLineCommand { SketchId = s, StartPointId = c, EndPointId = a }, "lineId");
         Assert.Equal(DiagnosticCodes.SketchConstraintInvalid, await Refused(session, new AddSketchConstraintCommand { SketchId = s, Kind = "tangent", First = spoke, Second = circle }));

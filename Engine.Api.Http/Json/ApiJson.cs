@@ -20,6 +20,10 @@ internal static class ApiJson
         WriteIndented = false,
         PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
         DictionaryKeyPolicy = JsonNamingPolicy.CamelCase,
+        // Finding E101 of the codebase review of 2026-10-30 (b) (TASK-0123): a repeated member of
+        // an envelope or of a parameter kept its last value, so a second "expectedDocumentVersion"
+        // of null removed the check of the version. A repeated member is a malformed body.
+        AllowDuplicateProperties = false,
         Converters =
         {
             new JsonStringEnumConverter(),

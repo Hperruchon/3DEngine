@@ -342,10 +342,22 @@ public class CodebaseReviewGateTests
             .Select(row => row[2..].Split(" |")[0])
             .FirstOrDefault(ProductPhase.IsMatch);
 
+    // Finding T96 of the codebase review of 2026-10-30 (b) (TASK-0123): a line that Markdown shows
+    // as a heading of a version, but with two spaces, a space before it, a tab, a "V" or another
+    // level. LedgerEntry did not read it, so it hid a product milestone from the counter.
+    private static readonly Regex NearLedgerEntry = new(
+        @"^(?<line>[^\S\n]*#{1,6}[^\S\n]*[vV][^\S\n]*\d[^\n]*)$", RegexOptions.Compiled | RegexOptions.Multiline);
+
     // Finding T73: each ledger version is greater than the one before it, and each heading
     // after the reviewed version names one task.
     internal static IEnumerable<string> HeadingProblems((int Major, int Minor) reviewed, string ledger)
     {
+        foreach (Match near in NearLedgerEntry.Matches(ledger.Replace("\r", string.Empty, StringComparison.Ordinal)))
+        {
+            if (!LedgerEntry.IsMatch(near.Groups["line"].Value))
+                yield return $"\"{near.Groups["line"].Value}\" is a heading of a version that does not start with \"## v\"; the review counter reads that form only";
+        }
+
         (int, int)? previous = null;
         foreach (Match entry in LedgerEntry.Matches(ledger.Replace("\r", string.Empty, StringComparison.Ordinal)))
         {
@@ -488,6 +500,23 @@ public class CodebaseReviewGateTests
         var ledger = "## v0.10 — The review (governance, TASK-0001)\n\n" + heading + "\n";
 
         Assert.Contains(HeadingProblems((0, 10), ledger), problem => problem.Contains("does not end its heading", StringComparison.Ordinal));
+        Assert.Empty(HeadingProblems((0, 10), ledger.Replace(heading, "## v0.11 — An entry (K0b, TASK-0003)", StringComparison.Ordinal)));
+    }
+
+    // The forms of finding T96. The control is the heading of the exact form.
+    [Theory]
+    [InlineData("##  v0.11 — An entry (K0b, TASK-0003)")]
+    [InlineData(" ## v0.11 — An entry (K0b, TASK-0003)")]
+    [InlineData("## V0.11 — An entry (K0b, TASK-0003)")]
+    [InlineData("##\tv0.11 — An entry (K0b, TASK-0003)")]
+    [InlineData("##\u00A0v0.11 — An entry (K0b, TASK-0003)")]
+    [InlineData("### v0.11 — An entry (K0b, TASK-0003)")]
+    [InlineData("#v0.11 — An entry (K0b, TASK-0003)")]
+    public void A_Heading_Of_A_Near_Form_Is_A_Problem(string heading)
+    {
+        var ledger = "## v0.10 — The review (governance, TASK-0001)\n\n" + heading + "\n";
+
+        Assert.Contains(HeadingProblems((0, 10), ledger), problem => problem.Contains("does not start with", StringComparison.Ordinal));
         Assert.Empty(HeadingProblems((0, 10), ledger.Replace(heading, "## v0.11 — An entry (K0b, TASK-0003)", StringComparison.Ordinal)));
     }
 

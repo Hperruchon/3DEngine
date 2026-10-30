@@ -22,8 +22,9 @@ internal static class DiscardedTasks
             .Where(File.Exists)
             .OrderBy(file => file, StringComparer.Ordinal);
 
-    // The helpers of the gates, which the compilation needs to bind their calls. The check
-    // does not read them.
+    // The helpers of the gates, which the compilation needs to bind their calls. Finding T100 of
+    // the codebase review of 2026-10-30 (b) (TASK-0123): the check did not read them, and a thread
+    // in DiagnosticsScanner.cs passed. It reads them now.
     private static IEnumerable<string> HelperFiles(string root)
         => new[] { Path.Combine(root, "Engine.Tests", "Governance", "RepositoryFiles.cs"), Path.Combine(root, "Engine.Tests", "Governance", "ConstantStrings.cs"), Path.Combine(root, "Engine.Tests", "Diagnostics", "DiagnosticsScanner.cs") }
             .Where(File.Exists);
@@ -31,8 +32,8 @@ internal static class DiscardedTasks
     public static IEnumerable<string> Problems(string root)
     {
         var gates = GateFiles(root).Select(file => Parse(Path.GetRelativePath(root, file).Replace('\\', '/'), File.ReadAllText(file))).ToList();
-        var helpers = HelperFiles(root).Select(file => Parse(Path.GetRelativePath(root, file).Replace('\\', '/'), File.ReadAllText(file)));
-        return Problems(gates, [.. gates, .. helpers]);
+        var helpers = HelperFiles(root).Select(file => Parse(Path.GetRelativePath(root, file).Replace('\\', '/'), File.ReadAllText(file))).ToList();
+        return Problems([.. gates, .. helpers], [.. gates, .. helpers]);
     }
 
     public static IEnumerable<string> Problems(string relative, string source)
@@ -77,12 +78,20 @@ internal static class DiscardedTasks
                 // Findings T94 and T95 of the codebase review of 2026-10-30 (TASK-0114): PendingTasks
                 // waits for the thread pool and the timers, so a task on its own thread and a task
                 // that waits for a source that nobody completes passed. No gate needs either.
+                // Finding T100 (TASK-0123): a semaphore or an event that nobody sets is a source that
+                // nobody completes, as T95; TaskContinuationOptions.LongRunning and a cast of the value
+                // 2 are LongRunning, as T94.
                 else if (node is BaseObjectCreationExpressionSyntax creation
-                    && model.GetTypeInfo(creation).Type is INamedTypeSymbol { Name: "Thread" or "TaskCompletionSource" } created
+                    && model.GetTypeInfo(creation).Type is INamedTypeSymbol { Name: "Thread" or "TaskCompletionSource" or "SemaphoreSlim" or "Semaphore" or "ManualResetEventSlim" or "ManualResetEvent" or "AutoResetEvent" or "CountdownEvent" or "Barrier" } created
                     && created.ContainingNamespace?.ToDisplayString() is "System.Threading" or "System.Threading.Tasks")
                     yield return $"{relative}:{Line(node)}: a check makes a {created.Name}, whose work the runner does not see";
                 else if (node is IdentifierNameSyntax { Identifier.ValueText: "LongRunning" } name
-                    && model.GetSymbolInfo(name).Symbol is IFieldSymbol { ContainingType.Name: "TaskCreationOptions" })
+                    && model.GetSymbolInfo(name).Symbol is IFieldSymbol { ContainingType.Name: "TaskCreationOptions" or "TaskContinuationOptions" })
+                    yield return $"{relative}:{Line(node)}: a check starts a task on its own thread, whose work the runner does not see";
+                else if (node is CastExpressionSyntax cast
+                    && model.GetTypeInfo(cast).Type is INamedTypeSymbol { Name: "TaskCreationOptions" or "TaskContinuationOptions", ContainingNamespace: var space }
+                    && space.ToDisplayString() == "System.Threading.Tasks"
+                    && model.GetConstantValue(cast) is { HasValue: true, Value: int options } && (options & 2) != 0)
                     yield return $"{relative}:{Line(node)}: a check starts a task on its own thread, whose work the runner does not see";
             }
         }
@@ -134,6 +143,11 @@ internal static class DiscardedTasks
         ("a task on its own thread (T94)", "await Task.Factory.StartNew(() => { }, TaskCreationOptions.LongRunning);", true),
         ("a thread (T94)", "new System.Threading.Thread(() => { }).Start();", true),
         ("a source that nobody completes (T95)", "var source = new TaskCompletionSource(); await source.Task;", true),
+        ("a continuation on its own thread (T100)", "await Task.CompletedTask.ContinueWith(_ => { }, TaskContinuationOptions.LongRunning);", true),
+        ("a cast of the value of LongRunning (T100)", "await Task.Factory.StartNew(() => { }, (TaskCreationOptions)2);", true),
+        ("a semaphore that nobody releases (T100)", "await new System.Threading.SemaphoreSlim(0).WaitAsync();", true),
+        ("an event that nobody sets (T100)", "new System.Threading.ManualResetEventSlim(false).Wait();", true),
+        ("a task with other options", "await Task.Factory.StartNew(() => { }, (TaskCreationOptions)1);", false),
         ("an await", "await Task.Run(() => { });", false),
         ("a local that the check awaits", "var task = Work(); await task;", false),
         ("a task that the check passes", "await Task.WhenAll(Work(), Work());", false),
