@@ -166,7 +166,7 @@ public sealed class SketchModelTests : IDisposable
         Assert.Equal(DiagnosticCodes.SketchItemNotFound, await Refused(session, new AddSketchLineCommand { SketchId = s, StartPointId = scene.A, EndPointId = scene.AB }));
         Assert.Equal(DiagnosticCodes.SketchLineInvalid, await Refused(session, new AddSketchLineCommand { SketchId = s, StartPointId = scene.A, EndPointId = scene.A }));
         Assert.Equal(DiagnosticCodes.SketchItemNotFound, await Refused(session, new AddSketchConstraintCommand { SketchId = s, Kind = "horizontal", First = Guid.NewGuid() }));
-        Assert.Equal(DiagnosticCodes.SketchConstraintInvalid, await Refused(session, new AddSketchConstraintCommand { SketchId = s, Kind = "parallel", First = scene.AB, Second = scene.BC }));
+        Assert.Equal(DiagnosticCodes.SketchConstraintInvalid, await Refused(session, new AddSketchConstraintCommand { SketchId = s, Kind = "tangent", First = scene.AB, Second = scene.BC }));
         Assert.Equal(DiagnosticCodes.SketchConstraintInvalid, await Refused(session, new AddSketchConstraintCommand { SketchId = s, Kind = "glue", First = scene.A }));
         Assert.Equal(DiagnosticCodes.SketchConstraintInvalid, await Refused(session, new AddSketchConstraintCommand { SketchId = s, Kind = "horizontal", First = scene.A }));
         Assert.Equal(DiagnosticCodes.SketchConstraintInvalid, await Refused(session, new AddSketchConstraintCommand { SketchId = s, Kind = "coincident", First = scene.A, Second = scene.A }));
