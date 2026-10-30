@@ -168,4 +168,44 @@ public class GizmoTests
 
         Assert.DoesNotContain(changed, intent => intent is GizmoMoveIntent or GizmoEndIntent);
     }
+
+    // Finding V51 of the codebase review of 2026-10-30 (b) (TASK-0124): with yaw 60, a drag of the X
+    // arrow toward −X gives a negative offset up to the vanishing point of −X, near x = 100. Past it,
+    // the nearest point of the axis was behind the eye, and the offset jumped to +X. Now there is
+    // no offset there, so the drag keeps its last offset (ADR-0038 item 8).
+    [Fact]
+    public void A_Drag_Past_The_Vanishing_Point_Of_An_Axis_Gives_No_Offset()
+    {
+        var camera = new Camera { Target = (0, 0, 0), Distance = 10, YawDegrees = 60, PitchDegrees = 0 };
+        var layout = TranslateGizmo.Layout(camera, Width, Height, Pivot)!;
+        var start = ((layout.Origin.X + layout.Ends[GizmoHandle.X].X) / 2, (double)layout.Origin.Y);
+
+        foreach (var x in new[] { 300.0, 150.0, 110.0 })
+            Assert.True(TranslateGizmo.Offset(camera, Width, Height, Pivot, GizmoHandle.X, start, (x, 300.0)) is { X: < 0 }, $"x = {x}");
+        foreach (var x in new[] { 90.0, 50.0 })
+            Assert.Null(TranslateGizmo.Offset(camera, Width, Height, Pivot, GizmoHandle.X, start, (x, 300.0)));
+    }
+
+    // Finding V53 (TASK-0124, answer Q2 A of the owner): during a drag of the gizmo, the wheel, the
+    // camera keys, H, undo and redo give nothing; Escape still cancels. Before and after the drag,
+    // the same inputs act.
+    [Fact]
+    public void Other_Input_During_A_Drag_Gives_Nothing()
+    {
+        InputSample[][] others =
+        [
+            [new WheelSample(1, 20 * Ms)],
+            [new KeySample(InputKey.ArrowLeft, true, KeyModifiers.None, 30 * Ms)],
+            [new KeySample(InputKey.Plus, true, KeyModifiers.None, 31 * Ms)],
+            [new KeySample(InputKey.H, true, KeyModifiers.None, 32 * Ms)],
+            [new KeySample(InputKey.Z, true, KeyModifiers.Control, 33 * Ms)],
+            [new KeySample(InputKey.Y, true, KeyModifiers.Control, 34 * Ms)],
+        ];
+
+        var during = Run(OnHandle(), [[Mouse(100, 100, PointerPhase.Down, 0)], [Mouse(120, 100, PointerPhase.Move, 10)], .. others,
+            [Mouse(121, 100, PointerPhase.Move, 60)], [Mouse(121, 100, PointerPhase.Up, 400)]]);
+        Assert.Equal([typeof(GizmoStartIntent), typeof(GizmoMoveIntent), typeof(GizmoMoveIntent), typeof(GizmoEndIntent)], during.Select(intent => intent.GetType()));
+
+        Assert.Equal(others.Length, Run(OnHandle(), others).Count);
+    }
 }
