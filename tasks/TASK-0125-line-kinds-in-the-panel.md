@@ -1,7 +1,7 @@
 ---
 id: 0125
 title: The window of the sketch offers the constraints of K2c on lines
-status: Active
+status: Done
 phase: K2f
 opened: 2026-10-31
 depends-on: [0110, 0122, 0124]
@@ -53,12 +53,24 @@ A person adds each kind of K2c that a selection of two items can name from the w
 
 ## Acceptance criteria
 
-- [ ] A test of the window gives the buttons of each selection, and an injection that removes a fit fails it.
-- [ ] Angle gives the cosine and the sine of the degrees, with exact numbers for a multiple of 90 degrees.
-- [ ] A clean build (`--no-incremental`) gives zero errors and zero warnings.
-- [ ] Continuous integration passes on the three runners, on the branch and on `main` after the merge.
+- [x] A test of the window gives the buttons of each selection, and an injection that removes a fit fails it.
+- [x] Angle gives the cosine and the sine of the degrees, with exact numbers for a multiple of 90 degrees.
+- [x] A clean build (`--no-incremental`) gives zero errors and zero warnings.
+- [x] Continuous integration passes on the three runners, on the branch and on `main` after the merge.
+
+## Outcome
+
+Status: Done · commit (the merge of the branch k2f-line-kinds) · v0.127
+
+## Method
+
+Mechanical: six buttons in the fit rules of the window, the angle pad, and the angle of two lines in SketchText.
+Judgement:  the fit rules refuse an end of a line, as the engine does, so a button never gives a refusal; Symmetric
+            waits, because a third item needs a change of the selection rule of ADR-0034 item 4.
+Weakest:    no picture: the buttons follow the layout of the buttons of K2b and K2e, which the tests measure.
 
 ## Progress
 
 - 2026-10-31: the six buttons, the angle pad, and 2 new test cases; the test of the selection of a line and O gains
   On line and Midpoint.
+- 2026-10-31: 5 injections caught; closed at v0.127.
