@@ -106,6 +106,7 @@ Therefore each approved objective must have a track here.
 - K2f — The window of the sketch offers the constraints of K2c on lines. v0.127, TASK-0125.
 - K2g — The selection holds three items, and the window of the sketch offers Symmetric. v0.128, TASK-0127.
 - K3 — The constraint solver holds the fourteen kinds of ADR-0033 item 3. Closed at v0.129, from TASK-0102, TASK-0110 and TASK-0117.
+- K0e — An extrude takes a profile of lines and arcs, or one circle. v0.130, TASK-0126, ADR-0040.
 
 ## Track 0 — Foundations
 
@@ -206,6 +207,7 @@ boundary and each refused rung.
 | K0b | The engine and HTTP: an edit of a sketch rebuilds each live extrude of the sketch under its handle and a new geometry key, and a profile that breaks gives a fault on the body and keeps its last solid (Q1 to Q5 A of the codebase review of 2026-10-29). An ADR resolves the conflict with ADR-0021 (KD5). TASK-0108. | 4–6 |
 | K0c | The desktop: a body that a rebuild changes gets its new mesh, and the panel shows the fault of a body (Q6 A of the codebase review of 2026-10-29). TASK-0109. | 2–4 |
 | K0d | An edit of a sketch rebuilds each translate and subtract that descends from its extrude, as a projection of the log (KQ1 to KQ4 A of 2026-10-30, and Q1 to Q3 A of the codebase review of 2026-10-30). ADR-0039, TASK-0116. | 6–9 |
+| K0e | An extrude takes a profile of lines and arcs, or one circle, as a polygon of + - * / sqrt (the answer "1 3 4" of 2026-10-31, item 1). ADR-0040, TASK-0126. | 4–6 |
 | K0 | A feature graph over Manifold. No B-Rep. Deferred-query references. The rest after K0d. | 12–20 |
 | K1 | Exact predicates. A deterministic arithmetic layer. | 4–8 |
 | K2a | The sketch model in the engine. The point, the line segment that references two points (Q3), the fixed frame of a sketch, and the five constraints of K3a. A sketch records the identifier of a datum; the three origin planes have fixed identifiers (Q4). One command for each item, with scalar fields; the Document holds one sketch record for each sketch, and an undo restores the record before; the events `sketch.created`, `sketch.changed` and `sketch.removed`, and a query `GetSketch` (Q2). The positions are a projection of the record, and the log holds the inputs only (Q6). An angle records the pair (cos θ, sin θ) (Q5). The ADR names the five entities and the fourteen constraints now (Q1). The desktop draws a sketch as lines of the UI layer, read only (Q9). ADR-0033, TASK-0100. | 4–6 |

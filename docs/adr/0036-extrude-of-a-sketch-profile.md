@@ -7,7 +7,7 @@ date: 2026-10-29
 supersedes: []
 superseded-by: []
 amends: []
-amended-by: ['0037']
+amended-by: ['0037', '0040']
 affects:
   - Engine.Contracts/Geometry/**
   - Engine.Core/Commands/ExtrudeCommand.cs
