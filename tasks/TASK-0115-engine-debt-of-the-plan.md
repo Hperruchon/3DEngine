@@ -1,18 +1,25 @@
 ---
 id: 0115
 title: The native wrapper frees each buffer with its allocator, and the binder and the endpoint read numbers and versions as the schema says
-status: Ready
+status: Active
 phase: P0.46
 opened: 2026-10-30
-depends-on: [0114]
+depends-on: [0111]
 governed-by: [0004, 0014, 0016, 0018, 0019, 0036]
 writes:
   create:
     - tasks/TASK-0115-engine-debt-of-the-plan.md
+    - Engine.Tests/Geometry/ManifoldOwnershipTests.cs
   modify:
     - Engine.Geometry.Manifold/ManifoldGeometryBackend.cs
+    - Engine.Geometry.Manifold/Native/ManifoldNative.cs
+    - Engine.Geometry.Manifold/Native/ManifoldSolidHandle.cs
     - Engine.Core/Hosting/ParameterBinder.cs
     - Engine.Api.Http/Endpoints/CommandsEndpoint.cs
+    - Engine.Api.Http/Endpoints/QueriesEndpoint.cs
+    - Engine.Tests/Hosting/ParameterBinderTests.cs
+    - Engine.Tests/Http/CommandsEndpointTests.cs
+    - tasks/TASK-0114-forms-of-the-thirteenth-review.md
     - eng/test-floor.txt
     - docs/register.md
     - docs/roadmap.md
@@ -30,23 +37,27 @@ This task uses Simplified Technical English (ASD-STE100). See `CLAUDE.md`, secti
 ## Context
 
 The plan of 2026-10-30 (answer Q4 A) gives this task the open findings E11, E14 and E16 of the reviews, and the
-test of the first click of R-0043. E14 runs at each extrude and at each rebuild since K0a and K0b.
+test of the first click of R-0043. E14 runs at each extrude and at each rebuild since K0a and K0b. The plan put this
+task after P0.45. R9 waits for the visual check of the owner on its branch, and P0.45 changes the desktop, so under
+the answer Q3 A this task comes first: it changes no file of the desktop.
 
 ## Goal
 
-The Manifold wrapper frees each buffer with the function of its allocator, and E11 and E16 are closed, and the
-first click into the desktop window has a test.
+The Manifold wrapper frees each buffer with the function of its allocator, the binder refuses a number that is not
+finite (E11), and each request envelope refuses a member that it does not name (E16).
 
 ## Scope (in)
 
-1. E14: each buffer from `Marshal.AllocHGlobal` is freed with `Marshal.FreeHGlobal`, and each object of Manifold
-   with its own delete function.
-2. E11 and E16, as the reviews give them. The task reads their text in `docs/reviews/` first.
-3. R-0043: a test of the first click into the desktop window, and the exit of the register entry.
+1. E14: each object of Manifold in a buffer of `Marshal.AllocHGlobal` goes with its destructor in place, and the
+   buffer with `Marshal.FreeHGlobal`. The binding holds no `manifold_delete_*` function.
+2. E11: the binder refuses a number that is not finite. E16: the envelopes of `POST /commands` and
+   `POST /queries` refuse an unknown member with HTTP 400.
 
 ## Scope (out)
 
 - A change of the native package.
+- R-0043 moves to TASK-0114. Its probe needs a run of the desktop with a log of the samples of a focus click, and its
+  fix can change `3DEngine/NativeThreeDEngine.cs`, which the parked branch of R9 changes.
 
 ## Acceptance criteria
 
@@ -57,3 +68,4 @@ first click into the desktop window has a test.
 ## Progress
 
 - 2026-10-30: opened by the codebase review of 2026-10-30 (TASK-0111), from the plan of 2026-10-30.
+- 2026-10-30: E14, E11 and E16, with their tests; R-0043 moves to TASK-0114, with the reason in Scope (out).

@@ -1,4 +1,5 @@
 using System.Text.Json;
+using System.Text.Json.Serialization;
 using Engine.Api.Http.Errors;
 using Engine.Api.Http.Json;
 using Engine.Contracts;
@@ -87,6 +88,10 @@ internal static class QueriesEndpoint
         return Results.Json(result, ApiJson.Options);
     }
 
+    // Finding E16 of the codebase review of 2026-09-30 (TASK-0115): a member that the envelope
+    // does not name, for example a typing error in expectedDocumentVersion, is refused with
+    // HTTP 400, as the binder refuses an unknown parameter.
+    [JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
     internal sealed record QueryRequest(
         string? Name,
         int? SchemaVersion,
