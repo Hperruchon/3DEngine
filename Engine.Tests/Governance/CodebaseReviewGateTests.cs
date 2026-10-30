@@ -357,6 +357,10 @@ public class CodebaseReviewGateTests
             var tasks = Regex.Matches(entry.Groups["rest"].Value, @"TASK-\d{4}").Count;
             if (version.CompareTo(reviewed) > 0 && tasks != 1)
                 yield return $"v{version.Item1}.{version.Item2:00} names {tasks} tasks in its heading; a heading after the last review names one";
+            // Finding T93 of the codebase review of 2026-10-30 (TASK-0114): a third item in the
+            // parenthesis or a point after it hid the phase from the counter.
+            else if (version.CompareTo(reviewed) > 0 && HeadingPhase(entry.Groups["rest"].Value) is null)
+                yield return $"v{version.Item1}.{version.Item2:00} does not end its heading with \"(<phase>, TASK-nnnn)\"; the review counter reads the phase there";
         }
     }
 
@@ -472,6 +476,19 @@ public class CodebaseReviewGateTests
         Assert.Equal((5, 5), MilestonesAfter((0, 10), ledger, roadmap));
         Assert.Contains(UnnamedProductTasks((0, 10), ledger, id => phases.GetValueOrDefault(id), roadmap), problem => problem.Contains("the heading gives the phase K0a", StringComparison.Ordinal));
         Assert.Empty(UnnamedProductTasks((0, 10), ledger.Replace("K0a", "P0.41", StringComparison.Ordinal), id => phases.GetValueOrDefault(id), roadmap));
+    }
+
+    // The forms of finding T93: a third item in the parenthesis, a point after it, and no space.
+    [Theory]
+    [InlineData("## v0.11 — An entry (K0b, TASK-0003, ADR-0037)")]
+    [InlineData("## v0.11 — An entry (K0b, TASK-0003).")]
+    [InlineData("## v0.11 — An entry (K0b,TASK-0003)")]
+    public void A_Heading_That_Does_Not_End_With_The_Form_Is_A_Problem(string heading)
+    {
+        var ledger = "## v0.10 — The review (governance, TASK-0001)\n\n" + heading + "\n";
+
+        Assert.Contains(HeadingProblems((0, 10), ledger), problem => problem.Contains("does not end its heading", StringComparison.Ordinal));
+        Assert.Empty(HeadingProblems((0, 10), ledger.Replace(heading, "## v0.11 — An entry (K0b, TASK-0003)", StringComparison.Ordinal)));
     }
 
     // The field 'phase' of the task file tasks/TASK-<id>-*.md, or null.

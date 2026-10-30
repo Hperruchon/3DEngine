@@ -3385,3 +3385,34 @@ New tests: 25. The test list holds 1198 (892 in `Engine.Tests`, 190 in `3DEngine
 `3DEngine.ImageTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
 entries: 14 of 15. New diagnostic codes: `E-SKETCH-CURVE-INVALID`. Since the review of v0.112, 2 product milestones and
 5 entries followed it.
+
+## v0.118 — The sketch keeps read-only lists and refuses each identifier that the log holds, and the gates read the forms of the thirteenth review (P0.45, TASK-0114)
+
+The codebase review of 2026-10-30 put its medium and low findings after R9. R9 waits for the visual check of the owner
+on its branch, so under the answer Q3 A of the plan this task took the items of the engine and the gates, and
+TASK-0118 (P0.47) took the items of the desktop and R-0043.
+
+**The change.**
+
+- E94: each list of a sketch record that a command gives is read-only, also after a move and a change of a value.
+- E95: `MoveSketchPoint`, `SetSketchConstraintValue` and `DeleteSketchItem` refuse an identifier that the log holds
+  with `E-SKETCH-ID-IN-USE`. E96: the comment of `SubtractCommand` says that it consumes both operands.
+- T89: the UI gate reads a source with the extension `.CS`. T90: `ConstantStrings` binds each file in the compilation
+  of its own project and the projects that it references. T91: no engine source holds a constant that is a part of a
+  diagnostic code. T92: the control byte gate refuses U+2028, U+2029, U+200E, U+200F, U+061C and U+0085. T93: each
+  ledger heading after the last review ends with `(<phase>, TASK-nnnn)`. T94 and T95: no gate file makes a thread or a
+  `TaskCompletionSource`, or starts a task with `TaskCreationOptions.LongRunning`.
+
+**Proof.** 18 new test cases, and three new forms of the self check of the runner. 11 injections: each one failed a
+test or the gate program.
+
+**What stays.** A task of a gate that waits for another kind of signal that nobody gives (R-0031). The desktop items in
+TASK-0118.
+
+**A correction.** The first write set of TASK-0114 did not name the three sketch handlers of E95 and
+`eng/repo-gates/DiscardedTasks.cs`; the task names them now.
+
+New tests: 18. The test list holds 1216 (910 in `Engine.Tests`, 190 in `3DEngine.Tests`, 116 in
+`3DEngine.ImageTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
+entries: 14 of 15. New diagnostic codes: none. Since the review of v0.112, 2 product milestones and 6 entries followed
+it.

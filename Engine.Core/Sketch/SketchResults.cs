@@ -27,7 +27,7 @@ public static class SketchResults
     public static CommandHandlerResult Changed(
         Document document, IGeometryBackend backend, Guid edit, SketchRecord sketch, string output, Guid id, Guid? held = null)
     {
-        var (solved, dropped) = SketchSolver.SolveWithHold(sketch, held);
+        var (solved, dropped) = SketchSolver.SolveWithHold(ReadOnly(sketch), held);
         var before = SketchModel.Find(document, solved.Id)!;
         var (bodies, rebuild) = SketchRebuild.Rebuild(document, backend, edit, before, solved);
         var diagnostics = dropped
@@ -43,6 +43,19 @@ public static class SketchResults
             changedBodies: bodies,
             changedSketches: [solved]);
     }
+
+    // Finding E94 of the codebase review of 2026-10-30 (TASK-0114): a move or a change of a value
+    // built a List of the handler, and a solve that ends at its first step returns that record, so
+    // the Document held a list that a client could change through a cast. Each list of a record
+    // that a command gives is read-only.
+    private static SketchRecord ReadOnly(SketchRecord sketch) => sketch with
+    {
+        Points = sketch.Points.ToList().AsReadOnly(),
+        Lines = sketch.Lines.ToList().AsReadOnly(),
+        Circles = sketch.Circles.ToList().AsReadOnly(),
+        Arcs = sketch.Arcs.ToList().AsReadOnly(),
+        Constraints = sketch.Constraints.ToList().AsReadOnly(),
+    };
 
     // Finding E86 of the codebase review of 2026-10-29: the refusal of a command whose
     // identifier the log holds. A client that sends a command again after the cache of the
