@@ -55,6 +55,11 @@ internal sealed unsafe class SceneRenderer : IDisposable
     // hide, does not move the camera. Until TASK-0086 the camera framed each change.
     public static bool ShouldFrame(int visibleBefore, int visibleAfter) => visibleBefore == 0 && visibleAfter > 0;
 
+    // ADR-0038 items 2 and 7: the pivot of the gizmo of a body, and the preview of its drag.
+    public (double X, double Y, double Z)? Pivot(Guid bodyId) => _bodies.Pivot(bodyId);
+
+    public void Preview(Guid bodyId, System.Numerics.Vector3 offset) => _bodies.Preview(bodyId, offset);
+
     // The box around the live bodies that the scene holds, or null.
     public ((double X, double Y, double Z) Min, (double X, double Y, double Z) Max)? Bounds => _bodies.Bounds;
 

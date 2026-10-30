@@ -35,6 +35,29 @@ public sealed record RedoIntent : Intent;
 // mode Sketch gives it; the host gives it to the active tool.
 public sealed record SketchPointIntent(double X, double Y) : Intent;
 
+// A handle of the translate gizmo (ADR-0038 item 4): an arrow along one axis, or a square in
+// one plane.
+public enum GizmoHandle
+{
+    X,
+    Y,
+    Z,
+    XY,
+    YZ,
+    ZX,
+}
+
+// ADR-0038 item 5: a drag of a handle of the gizmo. The start gives the handle and the point of
+// the press, each motion and the release give the point of the pointer, in pixels of the
+// window, and a cancel ends the drag with no command.
+public sealed record GizmoStartIntent(GizmoHandle Handle, double X, double Y) : Intent;
+
+public sealed record GizmoMoveIntent(double X, double Y) : Intent;
+
+public sealed record GizmoEndIntent(double X, double Y) : Intent;
+
+public sealed record GizmoCancelIntent : Intent;
+
 // The mode of the intent layer, which the host sets (ADR-0034 item 1). In the mode Sketch the
 // entries of IntentSettings.SketchMap replace the entries of IntentSettings.Map.
 public enum IntentMode
