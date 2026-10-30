@@ -47,6 +47,13 @@ internal static class DiagnosticsScanner
             yield return match.Value;
     }
 
+    // Finding T81 of the codebase review of 2026-10-29 (TASK-0107): the compiler joins
+    // "E-SKETCH-" + "HIDDEN" into a code that the text does not hold, so the scanner also reads
+    // the value of each constant expression.
+    public static IEnumerable<(string Path, string Code)> ConstantCodes(IEnumerable<(string Path, string Text)> files)
+        => Engine.Tests.Governance.ConstantStrings.Values(files)
+            .SelectMany(constant => ExtractCodes(constant.Value).Select(code => (constant.Path, code)));
+
     public static HashSet<string> ParseRegistry(string registryMarkdown)
     {
         var codes = new HashSet<string>(StringComparer.Ordinal);
@@ -77,16 +84,12 @@ internal static class DiagnosticsScanner
         }
     }
 
+    // Finding T81 of the codebase review of 2026-10-29 (TASK-0107): MSBuild leaves out bin/ and
+    // obj/ at the root of a project only, and the scanner left them out at each depth, so a code
+    // in Engine.Core/Sketch/bin/ compiled and the registry gate did not name it. The scanner now
+    // uses the rule of the dependency gate (finding T68).
     private static bool HasExcludedSegment(string repoRoot, string filePath)
-    {
-        var relative = Path.GetRelativePath(repoRoot, filePath);
-        var segments = relative.Split(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
-        foreach (var segment in segments)
-        {
-            if (string.Equals(segment, "bin", StringComparison.Ordinal) ||
-                string.Equals(segment, "obj", StringComparison.Ordinal))
-                return true;
-        }
-        return false;
-    }
+        => Engine.Tests.Governance.DependencyDirectionGateTests.IsOutOfScope(
+            Path.GetRelativePath(repoRoot, filePath).Replace('\\', '/'),
+            directory => Directory.EnumerateFiles(Path.Combine(repoRoot, directory), "*.csproj").Any());
 }

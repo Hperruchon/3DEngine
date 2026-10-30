@@ -79,6 +79,15 @@ public class DependencyDirectionGateTests
                 yield return $"{relative} sets an AssemblyName; only a project file sets its own";
         }
 
+        // Finding T80 of the codebase review of 2026-10-29 (TASK-0107): TargetName names the
+        // built file, and the compiler takes the assembly name from that file. The desktop set
+        // TargetName Engine.Tests and read the internals of the kernel. No file sets it.
+        foreach (var (relative, document) in projectList.Concat(imported))
+        {
+            if (document.Descendants().Any(e => Is(e, "TargetName")))
+                yield return $"{relative} sets TargetName, which gives the assembly the name of its file; set AssemblyName in the project file";
+        }
+
         foreach (var (relative, document) in projectList)
         {
             var stem = Path.GetFileNameWithoutExtension(relative);
@@ -116,6 +125,9 @@ public class DependencyDirectionGateTests
     [InlineData("3DEngine/3DEngine.csproj", "<Project><PropertyGroup><assemblyname>engine.tests</assemblyname></PropertyGroup></Project>", "is the name of another project")]
     [InlineData("3DEngine/3DEngine.csproj", "<Project><PropertyGroup><AssemblyName>$(Friend)</AssemblyName></PropertyGroup></Project>", "whose value MSBuild computes")]
     [InlineData("3DEngine/3DEngine.csproj", "<Project><PropertyGroup><AssemblyName>engine</AssemblyName></PropertyGroup></Project>", "the same assembly name")]
+    // Finding T80 (TASK-0107).
+    [InlineData("3DEngine/3DEngine.csproj", "<Project><PropertyGroup><TargetName>Engine.Tests</TargetName></PropertyGroup></Project>", "sets TargetName")]
+    [InlineData("3DEngine/3DEngine.csproj", "<Project><Target Name=\"T\"><PropertyGroup><targetname>Engine.Tests</targetname></PropertyGroup></Target></Project>", "sets TargetName")]
     public void Each_Form_Of_Finding_T72_Is_An_Offence(string relative, string text, string expected)
     {
         (string, XDocument)[] projects =
@@ -134,12 +146,18 @@ public class DependencyDirectionGateTests
         (string, XDocument)[] imported = [("Directory.Build.props", XDocument.Parse("<Project><PropertyGroup><AssemblyName>Engine.Tests</AssemblyName></PropertyGroup></Project>"))];
 
         Assert.Single(AssemblyNameOffences([], imported));
+        Assert.Single(AssemblyNameOffences([], [("3DEngine/3DEngine.csproj.user", XDocument.Parse("<Project><PropertyGroup><TargetName>Engine.Tests</TargetName></PropertyGroup></Project>"))]));
         Assert.Empty(AssemblyNameOffences([("Engine.Cli/Engine.Cli.csproj", XDocument.Parse("<Project><PropertyGroup><AssemblyName>engine</AssemblyName></PropertyGroup></Project>"))], []));
     }
 
     // Finding T77 of the second codebase review of 2026-10-28 (TASK-0098): a NUL byte in a
     // string literal made git show a test file as binary, so a person who reviewed a change
     // of it saw no text. A source file holds no control byte other than a tab and the line ends.
+    //
+    // Finding T86 of the codebase review of 2026-10-29 (TASK-0107): the gate read .cs files only,
+    // and a NUL byte in a task file passed. A bidirectional control (U+202A to U+202E, U+2066
+    // to U+2069) shows text in another order than the compiler reads it, and U+202E in a
+    // comment passed. Each tracked text file holds neither.
     internal static IEnumerable<string> ControlByteOffences(string relative, byte[] bytes)
     {
         for (var i = 0; i < bytes.Length; i++)
@@ -149,22 +167,61 @@ public class DependencyDirectionGateTests
                 yield return $"{relative} holds the control byte 0x{bytes[i]:X2} at offset {i}; write an escape such as \\0";
                 yield break;
             }
+
+            // The UTF-8 bytes of U+202A to U+202E are E2 80 AA to E2 80 AE, and of U+2066 to
+            // U+2069 are E2 81 A6 to E2 81 A9.
+            if (bytes[i] == 0xE2 && i + 2 < bytes.Length
+                && ((bytes[i + 1] == 0x80 && bytes[i + 2] is >= 0xAA and <= 0xAE) || (bytes[i + 1] == 0x81 && bytes[i + 2] is >= 0xA6 and <= 0xA9)))
+            {
+                yield return $"{relative} holds the bidirectional control U+{(bytes[i + 1] == 0x80 ? 0x2000 : 0x2040) + bytes[i + 2] - 0x80:X4} at offset {i}; write an escape such as \\u202E";
+                yield break;
+            }
         }
     }
 
+    // The tracked files that hold bytes and not text. A new binary type fails the gate until
+    // it is in this list.
+    private static readonly string[] BinaryExtensions = [".spv", ".nupkg", ".png", ".ico"];
+
     [Fact]
-    public void No_Source_File_Holds_A_Control_Byte()
+    public void No_Tracked_Text_File_Holds_A_Control_Byte()
     {
-        var offences = ProjectFiles()
-            .Select(Path.GetDirectoryName)
-            .SelectMany(directory => Directory.EnumerateFiles(directory!, "*.cs", SearchOption.AllDirectories))
-            .Select(file => RepositoryFiles.Relative(file))
-            .Where(relative => !IsOutOfScope(relative, HoldsProject))
-            .Distinct(StringComparer.Ordinal)
+        var offences = TrackedFiles()
+            .Where(relative => !BinaryExtensions.Contains(Path.GetExtension(relative), StringComparer.OrdinalIgnoreCase))
+            .Where(relative => File.Exists(RepositoryFiles.Path(relative)))
             .SelectMany(relative => ControlByteOffences(relative, File.ReadAllBytes(RepositoryFiles.Path(relative))))
             .ToArray();
 
         Assert.True(offences.Length == 0, string.Join("\n  ", offences));
+    }
+
+    // The files that git tracks, from the git of PATH outside the checkout, as the judge of the
+    // write set finds it (finding T29). No git, or a git that fails, fails the gate: an empty
+    // list is not evidence.
+    private static List<string> TrackedFiles()
+    {
+        var git = WriteSetCheck.Judge.FindGit(RepositoryFiles.Root, Environment.GetEnvironmentVariable("PATH"));
+        Assert.True(git is not null, "The gate finds no git in a folder of PATH outside the checkout.");
+
+        var start = new System.Diagnostics.ProcessStartInfo(git)
+        {
+            WorkingDirectory = Path.GetTempPath(),
+            RedirectStandardOutput = true,
+            RedirectStandardError = true,
+            UseShellExecute = false,
+            StandardOutputEncoding = System.Text.Encoding.UTF8,
+        };
+        foreach (var argument in new[] { "-C", RepositoryFiles.Root, "ls-files", "-z" })
+            start.ArgumentList.Add(argument);
+
+        using var process = System.Diagnostics.Process.Start(start)!;
+        var output = process.StandardOutput.ReadToEndAsync();
+        process.StandardError.ReadToEnd();
+        process.WaitForExit();
+        var files = WriteSetCheck.Judge.ParseGitPaths(output.GetAwaiter().GetResult()).Order(StringComparer.Ordinal).ToList();
+
+        Assert.True(process.ExitCode == 0 && files.Count > 0, $"git ls-files gave the exit code {process.ExitCode} and {files.Count} files.");
+        return files;
     }
 
     [Theory]
@@ -172,6 +229,13 @@ public class DependencyDirectionGateTests
     [InlineData(new byte[] { 0x61, 0x1B, 0x62 }, true)]
     [InlineData(new byte[] { 0x61, 0x7F }, true)]
     [InlineData(new byte[] { 0xEF, 0xBB, 0xBF, 0x61, 0x09, 0x0D, 0x0A }, false)]
+    // Finding T86: U+202E, U+202A, U+2066 and U+2069; U+2014 (an em dash, E2 80 94) and
+    // U+2192 (an arrow, E2 86 92) are text.
+    [InlineData(new byte[] { 0x2F, 0x2F, 0xE2, 0x80, 0xAE, 0x61 }, true)]
+    [InlineData(new byte[] { 0xE2, 0x80, 0xAA }, true)]
+    [InlineData(new byte[] { 0xE2, 0x81, 0xA6 }, true)]
+    [InlineData(new byte[] { 0xE2, 0x81, 0xA9 }, true)]
+    [InlineData(new byte[] { 0xE2, 0x80, 0x94, 0xE2, 0x86, 0x92 }, false)]
     public void A_Control_Byte_In_A_Source_File_Is_An_Offence(byte[] bytes, bool offence)
     {
         Assert.Equal(offence, ControlByteOffences("Probe.cs", bytes).Any());

@@ -92,6 +92,15 @@ foreach (var problem in DiscardedTasks.SelfCheck())
     failures++;
 }
 
+// The runner waits for the work that each check leaves, and fails a check whose task failed
+// with no reader (finding T83, TASK-0107). It checks its own forms first, at each run.
+PendingTasks.Watch();
+foreach (var problem in PendingTasks.SelfCheck())
+{
+    Console.WriteLine($"FAIL  PendingTasks: {problem}");
+    failures++;
+}
+
 foreach (var (type, method) in checks)
 {
     var fact = method.GetCustomAttribute<FactAttribute>()!;
@@ -131,11 +140,16 @@ foreach (var (type, method) in checks)
         runs++;
         try
         {
+            // The runner waits on the main thread and does not await, so that no thread of
+            // the pool is busy when PendingTasks waits for the work of the check.
+            var timers = PendingTasks.Timers();
             var result = method.Invoke(Activator.CreateInstance(type), row);
             if (result is Task task)
-                await task;
+                task.GetAwaiter().GetResult();
             else if (result is ValueTask valueTask)
-                await valueTask;
+                valueTask.AsTask().GetAwaiter().GetResult();
+            if (PendingTasks.Settle(timers) is { } problem)
+                throw new InvalidOperationException(problem);
             Console.WriteLine($"pass  {label}");
         }
         catch (Exception exception)
