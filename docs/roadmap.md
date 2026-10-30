@@ -104,6 +104,7 @@ Therefore each approved objective must have a track here.
 - P0.49 — The engine, the surface and the gates close the forms of the fourteenth review. v0.125, TASK-0123.
 - P0.50 — The gizmo stays in front of the eye, and the overlay keeps each visible part of a line. v0.126, TASK-0124.
 - K2f — The window of the sketch offers the constraints of K2c on lines. v0.127, TASK-0125.
+- K2g — The selection holds three items, and the window of the sketch offers Symmetric. v0.128, TASK-0127.
 
 ## Track 0 — Foundations
 
