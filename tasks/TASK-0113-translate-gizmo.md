@@ -1,7 +1,7 @@
 ---
 id: 0113
 title: The desktop moves the selected body with a translate gizmo
-status: Active
+status: Done
 phase: R9
 opened: 2026-10-30
 depends-on: [0112]
@@ -72,16 +72,33 @@ drawing of the body follows, and the release sends one `Translate`.
 
 ## Acceptance criteria
 
-- [ ] Touch and mouse give the same intents of the gizmo, and the coverage test holds the four new kinds.
-- [ ] The end of a drag sends one `Translate` with the offset, and a cancel and a zero offset send nothing.
-- [ ] The image test shows the arrows in front of the body.
-- [ ] An injection that breaks each part fails a test.
-- [ ] The owner accepts the pictures of the visual check.
-- [ ] A clean build (`--no-incremental`) gives zero errors and zero warnings.
-- [ ] Continuous integration passes on the three runners, on the branch and on `main` after the merge.
+- [x] Touch and mouse give the same intents of the gizmo, and the coverage test holds the four new kinds.
+- [x] The end of a drag sends one `Translate` with the offset, and a cancel and a zero offset send nothing.
+- [x] The image test shows the arrows in front of the body.
+- [x] An injection that breaks each part fails a test.
+- [x] The owner accepts the pictures of the visual check.
+- [x] A clean build (`--no-incremental`) gives zero errors and zero warnings.
+- [x] Continuous integration passes on the three runners, on the branch and on `main` after the merge.
+
+## Outcome
+
+Status: Done · commit (the merge of the branch r9-gizmo-on-main) · v0.119
+
+## Method
+
+Mechanical: the four intents and their scripts, the layout, the hit test, the offset, the overlay pipeline and its
+            shaders, and the tests.
+Judgement:  the hit test is a function of the host, so the intent layer keeps no geometry; the drag starts after
+            the slop, so a still press on a handle selects as before. The preview moves the transform of the entity
+            and the engine sees nothing until the release.
+Weakest:    no touch screen ran the gizmo; its touch path is synthetic, as for the sketch tools. An arrow that
+            points to the eye is short and moves fast.
 
 ## Progress
 
 - 2026-10-30: opened by the plan of 2026-10-30, after P0.44.
 - 2026-10-30: the intents, the geometry, the drag, the overlay pipeline and the tests; 10 injections caught. The visual
   check ran on this computer: the gizmo on a box, and one Translate (dx 11.89, dy 0, dz 0) from a drag of the arrow X.
+- 2026-10-30: the owner said yes to the pictures of the visual check. The commit moves onto main by a cherry-pick on
+  the branch r9-gizmo-on-main, with the index of the ADRs and the test floor merged by hand.
+- 2026-10-30: closed at v0.119.

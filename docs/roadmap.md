@@ -96,6 +96,7 @@ Therefore each approved objective must have a track here.
 - K0d — An edit of a sketch rebuilds each translate and subtract that descends from its extrude. v0.116, TASK-0116.
 - K2d — The engine holds the circle and the arc of a sketch, and solves tangent, radius, pointOn and equal on them. v0.117, TASK-0117.
 - P0.45 — The sketch keeps read-only lists and refuses each identifier that the log holds, and the gates read the forms of the thirteenth review. v0.118, TASK-0114.
+- R9 — The desktop moves the selected body with a translate gizmo. v0.119, TASK-0113.
 
 ## Track 0 — Foundations
 
