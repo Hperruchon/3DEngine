@@ -164,6 +164,9 @@ This track removes each condition that blocks other work.
 | P0.48 | A solve keeps each radius of a circle positive (E97 of the codebase review of 2026-10-30 (b); before K2e). TASK-0121. | 1–2 |
 | P0.49 | The engine, the surface and the gates close the forms of the fourteenth review (E98 to E101, T96 to T102; after K2e; E99 and E100 after Q1). TASK-0123. | 3–4 |
 | P0.50 | The gizmo stays in front of the eye, and the overlay keeps each visible part of a line (V51 to V55; after K2e; V53 after Q2). TASK-0124. | 2–3 |
+| P0.51 | A radius at the noise level does not solve, and the check of the tasks binds the real gate files (E102, T103 of the codebase review of 2026-10-31; before R11a). TASK-0130. | 1–2 |
+| P0.52 | The engine, the surface and the gates close the forms of the fifteenth review (E103 to E105, T104 to T109; after R11a). TASK-0132. | 3–4 |
+| P0.53 | The pad of an angle takes degrees, and the tools and the window follow the review (V56 to V62; after R11a). TASK-0133. | 2–3 |
 
 ## Track P — The platform
 
@@ -194,7 +197,8 @@ The first objective. Each phase ends with something that a person can observe.
 | R8b | Name and visibility in the desktop. The pick of one body, a highlight, the gestures, and the text field of R7b. The selection stays a state of the client (ADR-0007). The camera frames the bodies only when the set goes from empty to not empty (KD6). TASK-0086. | 4–5 |
 | R9 | A transform gizmo at a constant screen size. After the milestone "CAD on one part" (KD2). Translate only, from the defaults R9-Q1 to Q8 of 2026-10-27. ADR-0038, TASK-0113. | 5–8 |
 | R10 | A numeric pad and an expression evaluator. The pad gives the sizes of a new box and the offsets of a move; the drags of the camera have no numeric equivalent. The keys of undo and redo (R-0041). ADR-0032, TASK-0094. | 3–5 |
-| R11 | Escalated selection and a snap engine. | 4–6 |
+| R11a | A tap of the sketch snaps to a midpoint, a line, a curve or the grid (the codebase review of 2026-10-31, sections 5 and 6, Q2 A). TASK-0131. | 3–4 |
+| R11 | Escalated selection and a snap engine. The rest after R11a. | 4–6 |
 
 ## Track K — The kernel
 

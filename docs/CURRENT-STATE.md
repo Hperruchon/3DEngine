@@ -3756,3 +3756,30 @@ New tests: 11. The test list holds 1318 (960 in `Engine.Tests`, 217 in `3DEngine
 `3DEngine.ImageTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
 entries: 14 of 15. New diagnostic codes: none. Since the review of v0.121, 4 product milestones and 9 entries followed
 it.
+
+## v0.131 — The codebase review of 2026-10-31 (governance, TASK-0129)
+
+The review of 2026-10-30 (b) examined v0.121. After it came 4 product milestones (K2e, K2f, K2g, K0e) and 9 entries, so
+the next product milestone makes a review due. The owner told the session on 2026-10-31 to work alone until the morning
+and to use its recommendation for each question.
+
+**The record.** `docs/reviews/2026-10-31-codebase-review.md` examines `main` at `661eb8a`, the merge of v0.130. Three
+agents probed the code in parallel at `4f252bf`, the same tree: the engine with the HTTP surface, the desktop, and the
+gates. I ran the failing engine probes again, injected T103 with a control, and read the cited desktop lines.
+
+**The findings.** 18 new findings: two high (E102, a radius at the noise level shows as solved; T103, the check of the
+tasks of a gate binds no task of a real gate file), six medium (E103, V56, T104 to T107) and ten low (E104, E105, V57
+to V62, T108, T109). E97 to E101, V51 to V55 and T96 to T102 are fixed for their forms; T94, T95 and T100 hold for the
+full names only. Open findings: 0 critical, 7 high, 25 medium and 34 low.
+
+**The order.** TASK-0130 (P0.51) holds E102 and T103 before the next product phase. TASK-0131 is R11a, the first slice
+of R11. TASK-0132 (P0.52) and TASK-0133 (P0.53) hold the medium and low findings after R11a. The standing answer of the
+owner takes Q1 A and Q2 A, so no register entry waits.
+
+**A correction.** The fourteenth review said that T94 and T95 were fixed, and TASK-0123 said that T100 was fixed. Each
+fix holds for the full names only (T103).
+
+New tests: none. The test list holds 1318 (960 in `Engine.Tests`, 217 in `3DEngine.Tests`, 141 in
+`3DEngine.ImageTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
+entries: 14 of 15. New diagnostic codes: none. Since the review of v0.130, 0 product milestones and 1 entry followed
+it.
