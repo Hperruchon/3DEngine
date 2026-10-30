@@ -3450,3 +3450,33 @@ New tests: 24, and one image test. The test list holds 1241 (910 in `Engine.Test
 `3DEngine.ImageTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
 entries: 14 of 15. New diagnostic codes: none. Since the review of v0.112, 3 product milestones and 7 entries followed
 it.
+
+## v0.120 — The pads of the sketch follow their values, and the desktop meshes each body one time for each frame (P0.47, TASK-0118)
+
+TASK-0114 gave this task the desktop findings of the codebase review of 2026-10-30, and it waited for R9, which changed
+the same files.
+
+**The change.**
+
+- V46: the key of a pad of the sketch also holds the positions of the selected points, of the ends of a selected line,
+  and the values of a selected constraint, so the pad closes when a value that it shows changes. An agent edit or an
+  undo while the pad is open no longer comes back at its apply.
+- V47: when the scope check of a frame closes a pad, the action that an Enter of the same frame gave is dropped.
+- V48: `SessionBodies.Apply` skips a `body.changed` that a later change of the same body follows in the same frame,
+  so twenty changes give one mesh.
+- V49: the overlay of the sketch drops a pixel farther than 10⁷ from the window.
+- V50: the fault of a selected body takes one line with its code, and the reason shows on a hover or a press.
+
+**Proof.** 6 new test cases in `3DEngine.ImageTests/DesktopFormsTests.cs`, one of them on a GPU. 5 injections: each one
+failed a test.
+
+**What stays.** R-0043 stays open. A probe logged each SDL event, each routed sample and each intent of a focus click,
+and a focus to another window gave one `FocusLostSample` to both. Its click reached the window above the desktop, and
+the log held motions of a mouse that the probe did not move, so a person used the computer and the run stopped.
+
+**A correction.** None.
+
+New tests: 6. The test list holds 1247 (910 in `Engine.Tests`, 210 in `3DEngine.Tests`, 127 in
+`3DEngine.ImageTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
+entries: 14 of 15. New diagnostic codes: none. Since the review of v0.112, 3 product milestones and 8 entries followed
+it.
