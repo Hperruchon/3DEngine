@@ -340,14 +340,17 @@ public sealed class CircleArcTests
         Assert.Empty((await session.Read((document, _) => document.Sketches.Single())).Circles);
     }
 
-    // ADR-0036: an extrude takes a profile of lines only, so a sketch with a circle is refused.
+    // ADR-0040 item 1 (TASK-0126): a circle is a profile alone, so a sketch with a circle and a line
+    // is refused. Until TASK-0126 each sketch with a circle was refused.
     [Fact]
-    public async Task An_Extrude_Refuses_A_Sketch_With_A_Circle()
+    public async Task An_Extrude_Refuses_A_Circle_With_A_Line()
     {
         var session = NewSession();
         var s = await Applied(session, new CreateSketchCommand { DatumId = Datums.XY.Id }, "sketchId");
         var c = await Applied(session, new AddSketchPointCommand { SketchId = s, X = 3, Y = 3 }, "pointId");
         await Applied(session, new AddSketchCircleCommand { SketchId = s, CenterPointId = c, Radius = 2 }, "circleId");
+        var d = await Applied(session, new AddSketchPointCommand { SketchId = s, X = 9, Y = 3 }, "pointId");
+        await Applied(session, new AddSketchLineCommand { SketchId = s, StartPointId = c, EndPointId = d }, "lineId");
 
         Assert.Equal(DiagnosticCodes.SketchProfileInvalid, await Refused(session, new ExtrudeCommand { SketchId = s, Distance = 5 }));
     }
