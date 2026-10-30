@@ -1,7 +1,7 @@
 ---
 id: 0120
 title: The codebase review of 2026-10-30 (b) is a record
-status: Active
+status: Done
 phase: governance
 opened: 2026-10-30
 depends-on: [0119]
@@ -70,11 +70,23 @@ approach for K2e.
 
 ## Acceptance criteria
 
-- [ ] The review has one line for each finding of the previous review, and the gate of the review passes.
-- [ ] Each new finding has a task.
-- [ ] Continuous integration passes on the three runners, on the branch and on `main` after the merge.
+- [x] The review has one line for each finding of the previous review, and the gate of the review passes.
+- [x] Each new finding has a task.
+- [x] Continuous integration passes on the three runners, on the branch and on `main` after the merge.
+
+## Outcome
+
+Status: Done · commit (the merge of the branch codebase-review-2026-10-30-b) · v0.122
+
+## Method
+
+Mechanical: the measures, the lines of the previous findings, the task files, the register entry and the rows.
+Judgement:  T96 and T97 are medium, not high as the agent said, because T93 and T90, their earlier forms, are medium.
+            E97 holds the negative radius and the radius of zero in one finding, because one check closes both.
+Weakest:    the gate findings T97 to T102 come from an agent; I read the cited lines and ran T96 only.
 
 ## Progress
 
 - 2026-10-30: three agents probed the code at `6e065d5`, the tree of `main` after the merge of v0.121. I ran each
   failing probe again, injected T96, and wrote the probe of E100.
+- 2026-10-30: closed at v0.122.
