@@ -1,7 +1,7 @@
 ---
 id: 0118
 title: The pads of the sketch follow their values, and the desktop meshes each body one time for each frame
-status: Active
+status: Done
 phase: P0.47
 opened: 2026-10-30
 depends-on: [0113, 0114]
@@ -63,11 +63,25 @@ panel.
 
 ## Acceptance criteria
 
-- [ ] Each form of the review fails a test, and an injection that restores each old rule fails a test.
-- [ ] A clean build (`--no-incremental`) gives zero errors and zero warnings.
-- [ ] Continuous integration passes on the three runners, on the branch and on `main` after the merge.
+- [x] Each form of the review fails a test, and an injection that restores each old rule fails a test.
+- [x] A clean build (`--no-incremental`) gives zero errors and zero warnings.
+- [x] Continuous integration passes on the three runners, on the branch and on `main` after the merge.
+
+## Outcome
+
+Status: Done · commit (the merge of the branch p047-desktop-forms) · v0.120
+
+## Method
+
+Mechanical: the values in the key of a pad, the drop of a stale pad action, the skip of a superseded change, the limit
+            of a pixel, and one line of a fault.
+Judgement:  a body.changed carries the whole state of the body, so a superseded change can go with no loss; the key
+            of a pad holds the exact text of each shown value, so any change of a shown value closes the pad.
+Weakest:    R-0043 stays open: its probe needs a time when nobody else uses the mouse. The reason of a fault shows on a
+            hover or a press only.
 
 ## Progress
 
 - 2026-10-30: opened by TASK-0114, with the desktop items of TASK-0114 and R-0043 of TASK-0115.
 - 2026-10-30: V46 to V50 with 6 new test cases and 5 injections caught; R-0043 stays open with the reason in Scope (out).
+- 2026-10-30: closed at v0.120.
