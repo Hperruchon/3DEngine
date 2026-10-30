@@ -1,7 +1,7 @@
 ---
 id: 0129
 title: The codebase review of 2026-10-31 is a record
-status: Active
+status: Done
 phase: governance
 opened: 2026-10-31
 depends-on: [0126]
@@ -65,11 +65,23 @@ R11.
 
 ## Acceptance criteria
 
-- [ ] The review has one line for each finding of the previous review, and the gate of the review passes.
-- [ ] Each new finding has a task.
-- [ ] Continuous integration passes on the three runners, on the branch and on `main` after the merge.
+- [x] The review has one line for each finding of the previous review, and the gate of the review passes.
+- [x] Each new finding has a task.
+- [x] Continuous integration passes on the three runners, on the branch and on `main` after the merge.
+
+## Outcome
+
+Status: Done · commit (the merge of the branch codebase-review-2026-10-31) · v0.131
+
+## Method
+
+Mechanical: the measures, the lines of the previous findings, the task files and the roadmap rows.
+Judgement:  E102 is high, as E97, whose form it is; T103 is high, because a whole check acts on no real file. The lines
+            of T94, T95, T100, E97, E100, V53 and others say "fixed for its forms" and name the new finding.
+Weakest:    most new findings come from agents; I ran E102 and T103 and read the cited lines of the desktop.
 
 ## Progress
 
 - 2026-10-31: three agents probed the code at `4f252bf`, the tree of `main` at v0.130. I ran the failing engine
   probes again, injected T103 with its control, and read the cited desktop lines.
+- 2026-10-31: closed at v0.131.
