@@ -184,3 +184,12 @@ equations of the kinds 6 to 14.
   the two values; the residual of `angle` is |u₂ − w|. A test compares each derivative with a central difference, a
   fixed solve with constant bits, and each start that shrank a line. The owner approved the plan of 2026-10-30, and
   its answer Q2 A permits this line with no new record.
+- 2026-10-30 · TASK-0117 · Item 3: after the x and the y of the points, the radius of each circle is a variable, in
+  the order of the record, and the solved record holds the new radii; `freedom` counts it (item 8). Item 4: after the
+  equations of the constraints, each arc gives |s − c| − |e − c| = 0. With r the radius of a circle, or |s − c| for an
+  arc: `pointOn` p on a curve gives |p − c| − r; `equal` of two curves gives r₁ − r₂; `radius` gives r − R;
+  `tangent` of a line a→b and a curve gives cross(b − a, c − a) / |b − a| − s·r, with s the side of the centre at the
+  start of the solve; `tangent` of two curves gives |c₁ − c₂| − (r₁ + r₂) for 1, and |c₁ − c₂| − s·(r₁ − r₂) for −1, with
+  s the sign of r₁ − r₂ at the start. Each is in length units. A test compares each derivative with a central
+  difference, also by a radius, and a fixed solve with constant bits. The answer Q2 A of the plan of 2026-10-30 permits
+  this line with no new record.

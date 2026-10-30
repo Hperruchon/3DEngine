@@ -65,4 +65,8 @@ public static class DiagnosticCodes
     // the log holds, and a move whose point the solver could not hold.
     public const string SketchIdInUse = "E-SKETCH-ID-IN-USE";
     public const string SketchHoldDropped = "W-SKETCH-HOLD-DROPPED";
+
+    // Phase K2d (TASK-0117): a circle with a radius that is not a positive finite number, or an
+    // arc whose centre, start and end are not three different points.
+    public const string SketchCurveInvalid = "E-SKETCH-CURVE-INVALID";
 }
