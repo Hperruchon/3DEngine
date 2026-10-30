@@ -153,6 +153,9 @@ This track removes each condition that blocks other work.
 | P0.45 | The sketch keeps read-only lists and refuses each identifier that the log holds, and the gates read the forms of the thirteenth review (E94 to E96, T89 to T95). TASK-0114. | 2–3 |
 | P0.47 | The pads of the sketch follow their values, and the desktop meshes each body one time for each frame (V46 to V50, R-0043; after R9). TASK-0118. | 2–3 |
 | P0.46 | The native wrapper frees each buffer with its allocator, and the binder and the endpoint read numbers and versions as the schema says (E11, E14, E16, R-0043; the plan of 2026-10-30). TASK-0115. | 2–3 |
+| P0.48 | A solve keeps each radius of a circle positive (E97 of the codebase review of 2026-10-30 (b); before K2e). TASK-0121. | 1–2 |
+| P0.49 | The engine, the surface and the gates close the forms of the fourteenth review (E98 to E101, T96 to T102; after K2e; E99 and E100 after Q1). TASK-0123. | 3–4 |
+| P0.50 | The gizmo stays in front of the eye, and the overlay keeps each visible part of a line (V51 to V55; after K2e; V53 after Q2). TASK-0124. | 2–3 |
 
 ## Track P — The platform
 
@@ -202,6 +205,7 @@ boundary and each refused rung.
 | K2b | The sketch tools of the desktop. A sketch mode in the intent layer, a ray to the plane of the sketch, a pad for a line, and a panel of constraints (Q8). ADR-0034, TASK-0101. | 4–6 |
 | K2c | The seven constraints of ADR-0033 item 3 on points and lines: pointOn, midpoint, parallel, perpendicular, equal, symmetric and angle, with their equations in the solver (the plan of 2026-10-30). TASK-0110. | 3–5 |
 | K2d | The circle and the arc in the engine: two commands, the radius as a variable of the solver, the equation of an arc, and tangent, radius, pointOn and equal on a curve (the plan of 2026-10-30). The desktop waits for K2e. TASK-0117. | 4–6 |
+| K2e | The desktop draws and adds circles and arcs, and the panel offers the constraints of K2c and K2d (the codebase review of 2026-10-30 (b), sections 5 and 6). TASK-0122. | 4–6 |
 | K3a | A constraint solver for five constraints: coincident, horizontal, vertical, distance and fixed. It uses only `+ - * / sqrt`, and its output stays outside the log (KD5). ADR-0035, TASK-0102. | 8–12 |
 | K3 | The rest of the constraint solver, after K3a. Write it. | 4–8 |
 | K4 | Planar faces only, with a boolean. Provenance inside the kernel. | 35–55 |
