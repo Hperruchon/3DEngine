@@ -3353,3 +3353,35 @@ New tests: 11. The test list holds 1173 (867 in `Engine.Tests`, 190 in `3DEngine
 `3DEngine.ImageTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
 entries: 14 of 15. New diagnostic codes: none. Since the review of v0.112, 1 product milestone and 4 entries followed
 it.
+
+## v0.117 — The engine holds the circle and the arc of a sketch, and solves tangent, radius, pointOn and equal on them (K2d, TASK-0117)
+
+The plan of 2026-10-30 puts K2d after K0d. `SketchRecord` already held `Circles` and `Arcs`, so the public shape of
+`Engine.Contracts` does not change; the History lines of ADR-0033 and ADR-0035 give the decisions, under the answer Q2 A.
+
+**The change.**
+
+- `AddSketchCircle` (`sketchId`, `centerPointId`, `radius`) and `AddSketchArc` (`sketchId`, `centerPointId`,
+  `startPointId`, `endPointId`) add a circle and an arc. A radius that is not a positive finite number, and an arc
+  whose three points are not three different points, give the new code `E-SKETCH-CURVE-INVALID`.
+- `DeleteSketchItem` takes a circle and an arc, and a delete of a point removes each curve that references it.
+- The solver gives the radius of each circle a column after the points, and the solved record holds the new radii.
+  Each arc adds |s − c| − |e − c| = 0, so its two radii are equal.
+- `AddSketchConstraint` accepts `tangent` (a line and a curve, or two curves with 1 or −1), `radius`, and `pointOn`
+  and `equal` on a circle or an arc. The radius of an arc is the distance from its centre to its start.
+- `Extrude` still takes a profile of lines only, and refuses a sketch with a curve with `E-SKETCH-PROFILE-INVALID`.
+
+**Proof.** 25 new test cases in `Engine.Tests/Sketch/CircleArcTests.cs`: each of ten forms on a curve solves a rough
+sketch with its free degrees, the radii of an arc become equal, each derivative agrees with a central difference also
+by a radius, a fixed solve with curves gives constant bits, the commands and each refusal, a delete, and an extrude.
+`DocumentFileTests` holds a sample of each new command. 11 injections: each one failed a test.
+
+**What stays.** The desktop draws no circle and no arc (K2e). The side of a tangent comes from the positions at the
+start of a solve.
+
+**A correction.** None.
+
+New tests: 25. The test list holds 1198 (892 in `Engine.Tests`, 190 in `3DEngine.Tests`, 116 in
+`3DEngine.ImageTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
+entries: 14 of 15. New diagnostic codes: `E-SKETCH-CURVE-INVALID`. Since the review of v0.112, 2 product milestones and
+5 entries followed it.

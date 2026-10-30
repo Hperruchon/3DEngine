@@ -1,7 +1,7 @@
 ---
 id: 0117
 title: The engine holds the circle and the arc of a sketch, and solves tangent, radius, pointOn and equal on them
-status: Active
+status: Done
 phase: K2d
 opened: 2026-10-30
 depends-on: [0116]
@@ -74,13 +74,29 @@ treats the radius of a circle as a variable, and `AddSketchConstraint` accepts `
 
 ## Acceptance criteria
 
-- [ ] Each kind on a curve solves a rough sketch to a residual less than 1e-9, with its free degrees.
-- [ ] The analytic derivatives agree with a central difference, also by a radius.
-- [ ] A fixed solve with curves gives constant bits on the three runners.
-- [ ] An injection that breaks each new equation or each new refusal fails a test.
-- [ ] A clean build (`--no-incremental`) gives zero errors and zero warnings.
-- [ ] Continuous integration passes on the three runners, on the branch and on `main` after the merge.
+- [x] Each kind on a curve solves a rough sketch to a residual less than 1e-9, with its free degrees.
+- [x] The analytic derivatives agree with a central difference, also by a radius.
+- [x] A fixed solve with curves gives constant bits on the three runners.
+- [x] An injection that breaks each new equation or each new refusal fails a test.
+- [x] A clean build (`--no-incremental`) gives zero errors and zero warnings.
+- [x] Continuous integration passes on the three runners, on the branch and on `main` after the merge.
+
+## Outcome
+
+Status: Done · commit (the merge of the branch k2d-circle-arc) · v0.117
+
+## Method
+
+Mechanical: the two commands, the code, the delete, the residuals, and the History lines.
+Judgement:  the radius of a circle is a variable of the solver, so a constraint changes it as it moves a point; the
+            radius of an arc is the distance to its start, so an arc adds no variable and one equation. A term of a
+            radius names its circle, so one function writes each column of the Jacobian.
+Weakest:    the side of a tangent comes from the positions at the start of the solve, so a tangent cannot move a
+            circle to the other side of its line. A point on an arc lies on the circle of the arc, with no check of
+            its angle.
 
 ## Progress
 
 - 2026-10-30: opened by the plan of 2026-10-30, after K0d.
+- 2026-10-30: the commands, the solver, the kinds, 25 new test cases and 11 injections caught.
+- 2026-10-30: closed at v0.117.
