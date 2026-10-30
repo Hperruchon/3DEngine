@@ -1,7 +1,7 @@
 ---
 id: 0121
 title: A solve keeps each radius of a circle positive
-status: Ready
+status: Active
 phase: P0.48
 opened: 2026-10-30
 depends-on: [0120]
@@ -61,3 +61,5 @@ No solve gives a circle a radius that is not greater than 0, and the sketch then
 ## Progress
 
 - 2026-10-30: opened by the codebase review of 2026-10-30 (b) (TASK-0120).
+- 2026-10-30: the check of the radius in the solve and in the status, the refusal of a tangent through the centre;
+  6 new test cases; 4 injections caught.
