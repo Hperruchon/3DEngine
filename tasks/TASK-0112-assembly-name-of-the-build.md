@@ -1,7 +1,7 @@
 ---
 id: 0112
 title: No MSBuild element gives a client the assembly name of another project
-status: Ready
+status: Active
 phase: P0.44
 opened: 2026-10-30
 depends-on: [0111]
@@ -66,3 +66,4 @@ The dependency gate refuses each MSBuild element that sets the name or the path 
 ## Progress
 
 - 2026-10-30: opened by the codebase review of 2026-10-30 (TASK-0111).
+- 2026-10-30: started.
