@@ -52,6 +52,20 @@ public class IntentParityTests
         [typeof(SketchPointIntent)] = (
             [[Touch(1, 120, 80, PointerPhase.Down, 0)], [Touch(1, 120, 80, PointerPhase.Up, 100)]],
             [[Mouse(120, 80, PointerButtons.Left, PointerPhase.Down, 0)], [Mouse(120, 80, PointerButtons.Left, PointerPhase.Up, 100)]]),
+        // ADR-0038 item 5: a drag that starts on a handle of the gizmo. A second finger and the key
+        // Escape cancel it.
+        [typeof(GizmoStartIntent)] = (
+            [[Touch(1, 100, 100, PointerPhase.Down, 0)], [Touch(1, 110, 100, PointerPhase.Move, 10)], [Touch(1, 130, 105, PointerPhase.Move, 20)], [Touch(1, 130, 105, PointerPhase.Up, 400)]],
+            [[Mouse(100, 100, PointerButtons.Left, PointerPhase.Down, 0)], [Mouse(110, 100, PointerButtons.Left, PointerPhase.Move, 10)], [Mouse(130, 105, PointerButtons.Left, PointerPhase.Move, 20)], [Mouse(130, 105, PointerButtons.Left, PointerPhase.Up, 400)]]),
+        [typeof(GizmoMoveIntent)] = (
+            [[Touch(1, 100, 100, PointerPhase.Down, 0)], [Touch(1, 110, 100, PointerPhase.Move, 10)], [Touch(1, 130, 105, PointerPhase.Move, 20)], [Touch(1, 130, 105, PointerPhase.Up, 400)]],
+            [[Mouse(100, 100, PointerButtons.Left, PointerPhase.Down, 0)], [Mouse(110, 100, PointerButtons.Left, PointerPhase.Move, 10)], [Mouse(130, 105, PointerButtons.Left, PointerPhase.Move, 20)], [Mouse(130, 105, PointerButtons.Left, PointerPhase.Up, 400)]]),
+        [typeof(GizmoEndIntent)] = (
+            [[Touch(1, 100, 100, PointerPhase.Down, 0)], [Touch(1, 110, 100, PointerPhase.Move, 10)], [Touch(1, 130, 105, PointerPhase.Move, 20)], [Touch(1, 130, 105, PointerPhase.Up, 400)]],
+            [[Mouse(100, 100, PointerButtons.Left, PointerPhase.Down, 0)], [Mouse(110, 100, PointerButtons.Left, PointerPhase.Move, 10)], [Mouse(130, 105, PointerButtons.Left, PointerPhase.Move, 20)], [Mouse(130, 105, PointerButtons.Left, PointerPhase.Up, 400)]]),
+        [typeof(GizmoCancelIntent)] = (
+            [[Touch(1, 100, 100, PointerPhase.Down, 0)], [Touch(1, 120, 100, PointerPhase.Move, 10)], [Touch(2, 200, 100, PointerPhase.Down, 20)]],
+            [[Mouse(100, 100, PointerButtons.Left, PointerPhase.Down, 0)], [Mouse(120, 100, PointerButtons.Left, PointerPhase.Move, 10)], [new KeySample(InputKey.Escape, true, KeyModifiers.None, 20 * Ms)]]),
         [typeof(CancelIntent)] = (
             [[Touch(1, 100, 100, PointerPhase.Down, 0)], [Touch(1, 120, 100, PointerPhase.Move, 10)], [Touch(1, 120, 100, PointerPhase.Cancel, 20)]],
             [[Mouse(100, 100, PointerButtons.Left, PointerPhase.Down, 0)], [Mouse(120, 100, PointerButtons.Left, PointerPhase.Move, 10)], [new FocusLostSample(20 * Ms)]]),
@@ -60,9 +74,13 @@ public class IntentParityTests
     // The mode of the machine for the script of a kind; the other kinds run in the mode Scene.
     private static readonly Dictionary<Type, IntentMode> Modes = new() { [typeof(SketchPointIntent)] = IntentMode.Sketch };
 
-    private static List<Intent> Run(InputSample[][] script, IntentSettings? settings = null, IntentMode mode = IntentMode.Scene)
+    // The kinds whose script starts on a handle of the gizmo: the hit test gives the arrow X at
+    // each point (ADR-0038 item 5).
+    private static readonly HashSet<Type> OnGizmo = [typeof(GizmoStartIntent), typeof(GizmoMoveIntent), typeof(GizmoEndIntent), typeof(GizmoCancelIntent)];
+
+    private static List<Intent> Run(InputSample[][] script, IntentSettings? settings = null, IntentMode mode = IntentMode.Scene, Func<double, double, GizmoHandle?>? hitTest = null)
     {
-        var machine = new IntentMachine(settings) { Mode = mode };
+        var machine = new IntentMachine(settings) { Mode = mode, HitTest = hitTest };
         return [.. script.SelectMany(frame => machine.Step(frame))];
     }
 
@@ -77,13 +95,18 @@ public class IntentParityTests
     [InlineData(nameof(UndoIntent))]
     [InlineData(nameof(RedoIntent))]
     [InlineData(nameof(SketchPointIntent))]
+    [InlineData(nameof(GizmoStartIntent))]
+    [InlineData(nameof(GizmoMoveIntent))]
+    [InlineData(nameof(GizmoEndIntent))]
+    [InlineData(nameof(GizmoCancelIntent))]
     public void A_Touch_Script_And_A_Mouse_Script_Give_The_Same_Intents(string kind)
     {
         var (type, (touch, mouse)) = Scripts.Single(script => script.Key.Name == kind);
         var mode = Modes.GetValueOrDefault(type, IntentMode.Scene);
+        Func<double, double, GizmoHandle?>? hitTest = OnGizmo.Contains(type) ? (_, _) => GizmoHandle.X : null;
 
-        var fromTouch = Run(touch, mode: mode);
-        var fromMouse = Run(mouse, mode: mode);
+        var fromTouch = Run(touch, mode: mode, hitTest: hitTest);
+        var fromMouse = Run(mouse, mode: mode, hitTest: hitTest);
 
         Assert.Contains(fromTouch, intent => intent.GetType().Name == kind);
         Assert.Equal(fromMouse.Count, fromTouch.Count);
@@ -328,6 +351,10 @@ public class IntentParityTests
         (UndoIntent, UndoIntent) => true,
         (RedoIntent, RedoIntent) => true,
         (SketchPointIntent x, SketchPointIntent y) => Near(x.X, y.X) && Near(x.Y, y.Y),
+        (GizmoStartIntent x, GizmoStartIntent y) => x.Handle == y.Handle && Near(x.X, y.X) && Near(x.Y, y.Y),
+        (GizmoMoveIntent x, GizmoMoveIntent y) => Near(x.X, y.X) && Near(x.Y, y.Y),
+        (GizmoEndIntent x, GizmoEndIntent y) => Near(x.X, y.X) && Near(x.Y, y.Y),
+        (GizmoCancelIntent, GizmoCancelIntent) => true,
         _ => false,
     };
 

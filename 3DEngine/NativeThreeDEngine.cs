@@ -3,6 +3,7 @@ using Engine.Api.Http;
 using Engine.Contracts.Sketch;
 using SDL3;
 using ThreeDEngine.Core.Abstractions;
+using ThreeDEngine.Core.Gizmo;
 using ThreeDEngine.Core.Input;
 using ThreeDEngine.Core.Models;
 using ThreeDEngine.Core.Picking;
@@ -36,6 +37,10 @@ public sealed class NativeThreeDEngine : IThreeDEngine, IDisposable
     private SceneRenderer? _renderer;
     private UiRenderer? _uiRenderer;
     private DesktopUi? _ui;
+
+    // ADR-0038: the drag of the translate gizmo, and the overlay pipeline that draws it.
+    private readonly GizmoActions _gizmo = new();
+    private OverlayRenderer? _overlay;
 
     // ADR-0033 item 13: the live sketches, which the panel draws over the scene.
     private SessionSketches? _sketches;
@@ -78,6 +83,7 @@ public sealed class NativeThreeDEngine : IThreeDEngine, IDisposable
         _renderer = new SceneRenderer(_graphicsDevice, _graphicsDevice.Presenter!.RenderPass, _host);
 
         _uiRenderer = new UiRenderer(_graphicsDevice, _graphicsDevice.Presenter.RenderPass);
+        _overlay = new OverlayRenderer(_graphicsDevice, _graphicsDevice.Presenter.RenderPass);
         _ui = new DesktopUi(_address);
         var (width, height, rgba) = _ui.FontAtlas();
         _ui.SetFontTexture(_uiRenderer.CreateTexture(width, height, rgba));
@@ -105,8 +111,21 @@ public sealed class NativeThreeDEngine : IThreeDEngine, IDisposable
 
         // ADR-0034 item 1: the intent layer is in the mode Sketch while a sketch is active.
         _intents.Mode = _sketchActions?.Active is null ? IntentMode.Scene : IntentMode.Sketch;
+
+        // ADR-0038 item 5: the hit test of the gizmo that shows now, or none.
+        var window = _window.Extent;
+        var layout = GizmoLayout();
+        _intents.HitTest = layout is null ? null : (x, y) => TranslateGizmo.Hit(layout, x, y);
         foreach (var intent in _intents.Step(_ui is null ? frame : _ui.Route(frame)))
         {
+            // ADR-0038 item 2: a drag of the gizmo moves the drawing, and its end sends one Translate.
+            if (_actions is not null && _renderer is not null
+                && _gizmo.Apply(intent, Camera, window.width, window.height, Selection, _renderer.Pivot, _renderer.Preview, _actions.Move, out var rejection))
+            {
+                _documentMessage = rejection ?? _documentMessage;
+                continue;
+            }
+
             // A select, a hide and a show all go to the selection and to the session (ADR-0029).
             if (_actions is not null && _renderer is not null && _actions.Apply(intent, Pick, _renderer.LiveBodies))
                 continue;
@@ -137,6 +156,17 @@ public sealed class NativeThreeDEngine : IThreeDEngine, IDisposable
                     break;
             }
         }
+    }
+
+    // ADR-0038 item 7: the gizmo shows on the selected body when the body is live and visible,
+    // the mode is Scene, and no pad is open.
+    private GizmoLayout? GizmoLayout()
+    {
+        var window = _window.Extent;
+        if (_renderer is null || _ui?.Pad is not null || _sketchActions?.Active is not null || Selection is not { } body
+            || window.width == 0 || window.height == 0)
+            return null;
+        return _gizmo.Layout(Camera, window.width, window.height, _renderer.Pivot(body));
     }
 
     // The nearest visible body under a point of the window, or null (ADR-0029 item 1).
@@ -333,9 +363,19 @@ public sealed class NativeThreeDEngine : IThreeDEngine, IDisposable
 
         var ui = _uiRenderer;
         var selected = Selection;
+
+        // ADR-0038 item 9: the gizmo after the scene and the highlight, and before the panels.
+        var gizmo = GizmoLayout() is { } layout
+            ? TranslateGizmo.Shapes(layout, _gizmo.Active).Select(shape => new OverlayDraw(shape.Triangles, shape.Colour)).ToArray()
+            : [];
+        var overlayRenderer = _overlay;
         presenter.RenderFrame((commandBuffer, framebuffer, frameExtent) =>
             _renderer.Record(commandBuffer, framebuffer, frameExtent, scene, Camera,
-                overlay => ui.Record(overlay, frameExtent, panel, presenter.CurrentImage), selected));
+                overlay =>
+                {
+                    overlayRenderer?.Record(overlay, frameExtent, display, gizmo, presenter.CurrentImage);
+                    ui.Record(overlay, frameExtent, panel, presenter.CurrentImage);
+                }, selected));
     }
 
     // The scene gives the camera when it holds one; else the camera keeps its state.
@@ -354,6 +394,8 @@ public sealed class NativeThreeDEngine : IThreeDEngine, IDisposable
         _renderer = null;
         _uiRenderer?.Dispose();
         _uiRenderer = null;
+        _overlay?.Dispose();
+        _overlay = null;
         _sketches?.Dispose();
         _sketches = null;
         _ui?.Dispose();

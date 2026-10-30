@@ -4,6 +4,6 @@
 # macos). A task that adds or removes tests sets the new count in the same commit.
 # This file is a gate file.
 Engine.Tests 910
-3DEngine.Tests 190
+3DEngine.Tests 210
 # The image test runs on Ubuntu only (ADR-0025 item 4, R-0040).
-3DEngine.ImageTests 110 linux=116
+3DEngine.ImageTests 114 linux=121
