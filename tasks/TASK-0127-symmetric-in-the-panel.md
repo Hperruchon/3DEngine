@@ -1,7 +1,7 @@
 ---
 id: 0127
 title: The selection holds three items, and the window of the sketch offers Symmetric
-status: Active
+status: Done
 phase: K2g
 opened: 2026-10-31
 depends-on: [0125]
@@ -52,11 +52,23 @@ A person selects two points and a line, and adds Symmetric from the window of th
 
 ## Acceptance criteria
 
-- [ ] A test of the tool holds three items and replaces the first with a fourth.
-- [ ] A test of the window gives Symmetric for two points and a line, and not for an end of the line.
-- [ ] A clean build (`--no-incremental`) gives zero errors and zero warnings.
-- [ ] Continuous integration passes on the three runners, on the branch and on `main` after the merge.
+- [x] A test of the tool holds three items and replaces the first with a fourth.
+- [x] A test of the window gives Symmetric for two points and a line, and not for an end of the line.
+- [x] A clean build (`--no-incremental`) gives zero errors and zero warnings.
+- [x] Continuous integration passes on the three runners, on the branch and on `main` after the merge.
+
+## Outcome
+
+Status: Done · commit (the merge of the branch k2g-symmetric) · v0.128
+
+## Method
+
+Mechanical: the limit of the selection, one button and its fit rule.
+Judgement:  a fourth item replaces the first, as a third did before, so a person who selects more items keeps the last
+            three.
+Weakest:    no picture of the window with three selected rows.
 
 ## Progress
 
 - 2026-10-31: the limit of three items, the button Symmetric, the test of the tool changed, and 1 new test case.
+- 2026-10-31: 2 injections caught; closed at v0.128.

@@ -3684,3 +3684,25 @@ New tests: 2. The test list holds 1306 (949 in `Engine.Tests`, 217 in `3DEngine.
 `3DEngine.ImageTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
 entries: 14 of 15. New diagnostic codes: none. Since the review of v0.121, 2 product milestones and 6 entries followed
 it.
+
+## v0.128 — The selection holds three items, and the window of the sketch offers Symmetric (K2g, TASK-0127)
+
+K2f left Symmetric with no button, because it takes two points and a line and the selection held two items. The owner
+chose this item on 2026-10-31 ("1 3 4", item 3).
+
+**The change.**
+
+- `SketchTool.MaximumSelection` is 3, and a fourth item replaces the first (ADR-0034 item 4).
+- Symmetric fits two points that are not ends of the line, and the line; its action takes the points first.
+
+**Proof.** 1 new test case in `3DEngine.ImageTests/SketchWindowUiTests.cs`, and the test of the tool Select holds
+three items. 2 injections: each one failed a test.
+
+**What stays.** No picture of the window with three selected rows.
+
+**A correction.** None.
+
+New tests: 1. The test list holds 1307 (949 in `Engine.Tests`, 217 in `3DEngine.Tests`, 141 in
+`3DEngine.ImageTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
+entries: 14 of 15. New diagnostic codes: none. Since the review of v0.121, 3 product milestones and 7 entries followed
+it.
