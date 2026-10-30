@@ -3783,3 +3783,29 @@ New tests: none. The test list holds 1318 (960 in `Engine.Tests`, 217 in `3DEngi
 `3DEngine.ImageTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
 entries: 14 of 15. New diagnostic codes: none. Since the review of v0.130, 0 product milestones and 1 entry followed
 it.
+
+## v0.132 — A radius at the noise level does not solve, and the check of the tasks binds the real gate files (P0.51, TASK-0130)
+
+The codebase review of 2026-10-31 found E102 and T103 (high) and put them before R11a (`docs/templates.md`, section 7).
+
+**The change.**
+
+- E102: `SketchSolver` gives no solution, and `Status` gives not solved, when a radius, or the distance of the start or
+  of the end of an arc from its centre, is not greater than `SketchSolver.Tolerance` (1e-9). A coincident centre and a
+  tangent gave a radius of 5.6e-17 and a solved sketch.
+- T103: `eng/repo-gates/DiscardedTasks.cs` compiles the gate files with the global usings of the SDK and of Xunit, as
+  the two projects do; a gate file that does not compile there fails the run; the self check has no using of its own.
+  `new Thread(...)`, a task in a local and a `SemaphoreSlim` with no full name now fail the gate program; they passed.
+
+**Proof.** 2 new test cases in `Engine.Tests/Sketch/CircleArcTests.cs`, and four new forms of the self check of the
+runner. 4 injections: each one failed a test or the gate program. The three forms of the review, injected into a gate
+file, each failed the gate program.
+
+**What stays.** The medium and low findings in TASK-0132 and TASK-0133.
+
+**A correction.** None.
+
+New tests: 2. The test list holds 1320 (962 in `Engine.Tests`, 217 in `3DEngine.Tests`, 141 in
+`3DEngine.ImageTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
+entries: 14 of 15. New diagnostic codes: none. Since the review of v0.130, 0 product milestones and 2 entries followed
+it.
