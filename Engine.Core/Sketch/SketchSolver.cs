@@ -375,35 +375,43 @@ public static class SketchSolver
                 (b, (wy / length) - (ratio * lx), (-wx / length) - (ratio * ly)));
         }
 
-        // parallel: cross(d₁, d₂) / |d₁|. perpendicular: dot(d₁, d₂) / |d₁|. equal: |d₁| − |d₂|.
-        // angle: the two rows of d₂ − |d₂|·w with w = R(θ)·d₁ / |d₁|, which are zero only when d₂
-        // has the direction of d₁ turned by θ, so the solve keeps the branch of the inequality
-        // of ADR-0033 item 3. For a direction of length zero the quotient takes 1 for |d₁| and
-        // the unit direction (1, 0), as Separation does.
+        // parallel: cross(d₁, d₂) / (|d₁|·|d₂|), the sine of the angle between the lines.
+        // perpendicular: dot(d₁, d₂) / (|d₁|·|d₂|), its cosine. equal: |d₁| − |d₂|, in length units.
+        // angle: cross(w, u₂) / (1 + dot(w, u₂)) with w = R(θ)·u₁, which is zero only when d₂ has
+        // the direction of d₁ turned by θ, so the solve keeps the branch of the inequality of
+        // ADR-0033 item 3. Two rows u₂ − w have rank one away from the solution, and the solver
+        // then drops one of them and does not converge. For a direction of length zero the
+        // quotient takes 1 for its length and the unit direction (1, 0), as Separation does.
         private void TwoLines(string kind, SketchLine first, SketchLine second, IReadOnlyList<double> values)
         {
             var (d1x, d1y) = (X(first.End) - X(first.Start), Y(first.End) - Y(first.Start));
             var (d2x, d2y) = (X(second.End) - X(second.Start), Y(second.End) - Y(second.Start));
             var l1 = Math.Sqrt((d1x * d1x) + (d1y * d1y));
             var l2 = Math.Sqrt((d2x * d2x) + (d2y * d2y));
-            var n1 = l1 == 0 ? 1 : l1;
+            var (n1, n2) = (l1 == 0 ? 1 : l1, l2 == 0 ? 1 : l2);
             var (u1x, u1y) = l1 == 0 ? (1.0, 0.0) : (d1x / l1, d1y / l1);
             var (u2x, u2y) = l2 == 0 ? (1.0, 0.0) : (d2x / l2, d2y / l2);
 
+            // Finding of the codebase review of 2026-10-30: an equation of a direction that grows
+            // with |d₂| has the root d₂ = 0, and the step of minimum norm from an exact parallel
+            // start went to it, so a line shrank to one point. Each equation of a direction is
+            // now a function of the two unit directions only, so no length changes its value.
             switch (kind)
             {
                 case SketchConstraints.Parallel:
                 {
-                    var value = ((d1x * d2y) - (d1y * d2x)) / n1;
-                    var (gx, gy) = Quotient(d2y / n1, -d2x / n1, value, d1x, d1y, l1);
-                    Directions(first, second, value, (gx, gy), (-d1y / n1, d1x / n1));
+                    var value = ((d1x * d2y) - (d1y * d2x)) / (n1 * n2);
+                    var byFirst = Quotient(d2y / (n1 * n2), -d2x / (n1 * n2), value, d1x, d1y, l1);
+                    var bySecond = Quotient(-d1y / (n1 * n2), d1x / (n1 * n2), value, d2x, d2y, l2);
+                    Directions(first, second, value, byFirst, bySecond);
                     break;
                 }
                 case SketchConstraints.Perpendicular:
                 {
-                    var value = ((d1x * d2x) + (d1y * d2y)) / n1;
-                    var (gx, gy) = Quotient(d2x / n1, d2y / n1, value, d1x, d1y, l1);
-                    Directions(first, second, value, (gx, gy), (d1x / n1, d1y / n1));
+                    var value = ((d1x * d2x) + (d1y * d2y)) / (n1 * n2);
+                    var byFirst = Quotient(d2x / (n1 * n2), d2y / (n1 * n2), value, d1x, d1y, l1);
+                    var bySecond = Quotient(d1x / (n1 * n2), d1y / (n1 * n2), value, d2x, d2y, l2);
+                    Directions(first, second, value, byFirst, bySecond);
                     break;
                 }
                 case SketchConstraints.Equal:
@@ -413,12 +421,19 @@ public static class SketchSolver
                 {
                     var (cos, sin) = (values[0], values[1]);
                     var (wx, wy) = ((cos * u1x) - (sin * u1y), (sin * u1x) + (cos * u1y));
-                    // P = (I − u₁·u₁ᵀ) / |d₁| is the derivative of u₁, and M = R(θ)·P.
-                    var (p00, p01, p11) = l1 == 0 ? (0.0, 0.0, 0.0) : ((1 - (u1x * u1x)) / l1, -(u1x * u1y) / l1, (1 - (u1y * u1y)) / l1);
-                    var (m00, m01) = ((cos * p00) - (sin * p01), (cos * p01) - (sin * p11));
-                    var (m10, m11) = ((sin * p00) + (cos * p01), (sin * p01) + (cos * p11));
-                    Directions(first, second, d2x - (l2 * wx), (-l2 * m00, -l2 * m01), (1 - (wx * u2x), -(wx * u2y)));
-                    Directions(first, second, d2y - (l2 * wy), (-l2 * m10, -l2 * m11), (-(wy * u2x), 1 - (wy * u2y)));
+                    // g = cross(w, u₂) / (1 + dot(w, u₂)), the tangent of half the angle φ from w
+                    // to u₂. Its step of Gauss and Newton is Δφ = −sin φ, so a solve goes to φ = 0
+                    // from each start but the opposite one, where g is not finite and the solve
+                    // stops.
+                    var c = (wx * u2y) - (wy * u2x);
+                    var k = 1 + (wx * u2x) + (wy * u2y);
+                    var value = c / k;
+                    var (gu2x, gu2y) = ((-wy - (value * wx)) / k, (wx - (value * wy)) / k);
+                    var (gwx, gwy) = ((u2y - (value * u2x)) / k, (-u2x - (value * u2y)) / k);
+                    // By u₁ through w = R(θ)·u₁, then by d₁ and d₂ through P and Q, the
+                    // derivatives (I − u·uᵀ) / |d| of the unit directions; zero for a length of zero.
+                    var (gu1x, gu1y) = ((cos * gwx) + (sin * gwy), (-sin * gwx) + (cos * gwy));
+                    Directions(first, second, value, Unit(gu1x, gu1y, u1x, u1y, l1), Unit(gu2x, gu2y, u2x, u2y, l2));
                     break;
                 }
             }
@@ -450,6 +465,16 @@ public static class SketchSolver
         // derivative is g.
         private static (double X, double Y) Quotient(double gx, double gy, double value, double dx, double dy, double length)
             => length == 0 ? (gx, gy) : (gx - (value * dx / (length * length)), gy - (value * dy / (length * length)));
+
+        // The derivative by d of a function of the unit direction u = d / |d|, from its derivative
+        // g by u: (I − u·uᵀ)·g / |d|, or zero for a direction of length zero.
+        private static (double X, double Y) Unit(double gx, double gy, double ux, double uy, double length)
+        {
+            if (length == 0)
+                return (0, 0);
+            var along = (ux * gx) + (uy * gy);
+            return ((gx - (along * ux)) / length, (gy - (along * uy)) / length);
+        }
 
         // One row of two directions d₁ = b₁ − a₁ and d₂ = b₂ − a₂, from its derivatives by d₁ and d₂.
         private void Directions(SketchLine first, SketchLine second, double value, (double X, double Y) byFirst, (double X, double Y) bySecond)

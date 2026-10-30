@@ -33,7 +33,7 @@ public static class SketchConstraints
     public static IReadOnlyList<string> Later { get; } = ["tangent", "radius"];
 
     // The kinds whose equation has two rows: a position or a vector of two coordinates.
-    public static bool HasTwoRows(string kind) => kind is Coincident or Fixed or Midpoint or Symmetric or Angle;
+    public static bool HasTwoRows(string kind) => kind is Coincident or Fixed or Midpoint or Symmetric;
 
     // Null when the kind, the items and the values form a constraint of this phase in the
     // sketch, or the reason of E-SKETCH-CONSTRAINT-INVALID.
@@ -58,7 +58,9 @@ public static class SketchConstraints
             // says nothing and midpoint makes the line a point.
             PointOn or Midpoint => kinds is [ItemKind.Point, ItemKind.Line] && !IsEnd(sketch, items[0], items[1]) && values.Count == 0,
             Parallel or Perpendicular or Equal => kinds is [ItemKind.Line, ItemKind.Line] && items[0] != items[1] && values.Count == 0,
-            Symmetric => kinds is [ItemKind.Point, ItemKind.Point, ItemKind.Line] && items[0] != items[1] && values.Count == 0,
+            // A point of symmetric on an end of the line puts the other point on it too.
+            Symmetric => kinds is [ItemKind.Point, ItemKind.Point, ItemKind.Line] && items[0] != items[1]
+                && !IsEnd(sketch, items[0], items[2]) && !IsEnd(sketch, items[1], items[2]) && values.Count == 0,
             Angle => kinds is [ItemKind.Line, ItemKind.Line] && items[0] != items[1] && values.Count == 2,
             _ => false,
         };
@@ -118,8 +120,9 @@ public static class SketchConstraints
                 var p = Point(sketch, constraint.Items[0]);
                 return Length(p.X - constraint.Values[0], p.Y - constraint.Values[1]);
             }
-            // ADR-0035, History of TASK-0110: each residual below is in length units, as the
-            // equation of the solver is.
+            // ADR-0035, History of TASK-0110: each residual below has the unit of the equation of
+            // the solver: a length, or for parallel, perpendicular and angle a value of the two
+            // unit directions, which no length changes.
             case PointOn:
             {
                 var p = Point(sketch, constraint.Items[0]);
@@ -136,11 +139,11 @@ public static class SketchConstraints
             {
                 var (d1x, d1y) = Direction(sketch, constraint.Items[0]);
                 var (d2x, d2y) = Direction(sketch, constraint.Items[1]);
-                var n1 = Normaliser(d1x, d1y);
+                var n = Normaliser(d1x, d1y) * Normaliser(d2x, d2y);
                 return constraint.Kind switch
                 {
-                    Parallel => ((d1x * d2y) - (d1y * d2x)) / n1,
-                    Perpendicular => ((d1x * d2x) + (d1y * d2y)) / n1,
+                    Parallel => ((d1x * d2y) - (d1y * d2x)) / n,
+                    Perpendicular => ((d1x * d2x) + (d1y * d2y)) / n,
                     Equal => Length(d1x, d1y) - Length(d2x, d2y),
                     _ => AngleError(d1x, d1y, d2x, d2y, constraint.Values[0], constraint.Values[1]),
                 };
@@ -217,15 +220,16 @@ public static class SketchConstraints
         return length == 0 ? Length(wx, wy) : ((dx * wy) - (dy * wx)) / length;
     }
 
-    // The length of d₂ − |d₂|·R(θ)·d₁ / |d₁|: zero when d₂ has the direction of d₁ turned by θ,
-    // which is the condition of ADR-0033 item 3 with its inequality. A direction of length
-    // zero has the unit direction (1, 0).
+    // The length of u₂ − R(θ)·u₁ for the unit directions of the two lines: zero when d₂ has the
+    // direction of d₁ turned by θ, which is the condition of ADR-0033 item 3 with its inequality.
+    // A direction of length zero has the unit direction (1, 0).
     private static double AngleError(double d1x, double d1y, double d2x, double d2y, double cos, double sin)
     {
         var l1 = Length(d1x, d1y);
         var (u1x, u1y) = l1 == 0 ? (1.0, 0.0) : (d1x / l1, d1y / l1);
         var l2 = Length(d2x, d2y);
+        var (u2x, u2y) = l2 == 0 ? (1.0, 0.0) : (d2x / l2, d2y / l2);
         var (wx, wy) = ((cos * u1x) - (sin * u1y), (sin * u1x) + (cos * u1y));
-        return Length(d2x - (l2 * wx), d2y - (l2 * wy));
+        return Length(u2x - wx, u2y - wy);
     }
 }

@@ -145,11 +145,11 @@ public sealed class LineConstraintTests
         // The positions: (1.5, 2.25), (11.5, 2.25), the start of the second line at (1.5, 2.25) with
         // one unit of the last place, its end (10.16…, 7.25), the midpoint (6.5, 2.25), the point
         // (4.098…, 3.75), and the two symmetric points, as the first run on Windows x64 gave them
-        // on 2026-10-30.
+        // on 2026-10-30, after the fix of the review of that date.
         Assert.True(
             bits == "3FF8000000000000,4002000000000000 4027000000000000,4002000000000000 3FF8000000000001,4002000000000001 "
-                + "4024520CD1372FEB,401D000000000000 401A000000000000,4002000000000000 4010646E17211CC1,400DFFFFFFFFFFFE "
-                + "40080DD8B34E5E58,40168F941BEA411A 4014C1EFD49B0A63,3FFDC1AF9056FBB3",
+                + "4024520CD1372FEB,401D000000000001 401A000000000000,4002000000000000 4010646E17211E72,400E000000000202 "
+                + "4008EA1EDD314C83,4015D0D0CB7A1DBF 401453CCBFA9F16B,40005E5E690C3062",
             "The bits of the solve: " + bits);
     }
 
@@ -160,16 +160,43 @@ public sealed class LineConstraintTests
     public void An_Angle_Keeps_Its_Branch()
     {
         var opposite = Record([(0, 0), (10, 0), (5, 5), (5 - (8 * Cos30), 5 - 4)], TwoLines, ("angle", [100, 101], [Cos30, 0.5]));
-        Assert.Equal(16, SketchConstraints.Residual(opposite, opposite.Constraints[0]), 9);
+        Assert.Equal(2, SketchConstraints.Residual(opposite, opposite.Constraints[0]), 9);
 
         var near = Record([(0, 0), (10, 0), (5, 5), (5 - (8 * Cos30) + 0.7, 5 - 4 - 0.9)], TwoLines, ("angle", [100, 101], [Cos30, 0.5]), ("fixed", [0], [0, 0]), ("fixed", [1], [10, 0]));
         var solved = SketchSolver.Solve(near);
 
         var (a, b, c, d) = (solved.Points[1], solved.Points[2], solved.Points[3], solved.Points[4]);
         var (d1x, d1y, d2x, d2y) = (b.X - a.X, b.Y - a.Y, d.X - c.X, d.Y - c.Y);
-        Assert.True(SketchSolver.Status(solved).Solved);
+        Assert.True(SketchSolver.Status(solved).Solved, $"({c.X}, {c.Y}) to ({d.X}, {d.Y}), residual {SketchConstraints.Residual(solved, solved.Constraints[0])}");
         Assert.True((((d1x * d2x) + (d1y * d2y)) * Cos30) + (((d1x * d2y) - (d1y * d2x)) * 0.5) > 0);
     }
+
+    // The finding of the codebase review of 2026-10-30: from an exact parallel or normal start,
+    // or from the opposite direction of an angle, the equations of TASK-0110 that grew with |d₂|
+    // took the second line to one point and reported it as solved. A solve now ends with each
+    // line at its length, or the sketch is not solved; it never ends with a line of length zero.
+    [Theory]
+    [InlineData("perpendicular", 1.0, 5.0, 9.0, 5.0, 0.0, 0.0)]
+    [InlineData("parallel", 5.0, 1.0, 5.0, 9.0, 0.0, 0.0)]
+    [InlineData("angle", 9.0, 5.0, 1.0, 5.0, 1.0, 0.0)]
+    [InlineData("angle", 9.0, 5.0, 1.0, 5.01, 1.0, 0.0)]
+    [InlineData("angle", 9.0, 5.0, 1.0, 5.3, Cos30Value, 0.5)]
+    [InlineData("angle", 4.0, 3.0, -4.0, 3.0, 1.0, 0.0)]
+    public void No_Solve_Takes_A_Line_To_One_Point(string kind, double ax, double ay, double bx, double by, double cos, double sin)
+    {
+        double[] values = kind == "angle" ? [cos, sin] : [];
+        var sketch = Record([(0, 0), (10, 0), (ax, ay), (bx, by)], TwoLines, ("fixed", [0], [0, 0]), ("fixed", [1], [10, 0]), (kind, [100, 101], values));
+
+        var solved = SketchSolver.Solve(sketch);
+
+        var (c, d) = (solved.Points[3], solved.Points[4]);
+        var length = Math.Sqrt(((d.X - c.X) * (d.X - c.X)) + ((d.Y - c.Y) * (d.Y - c.Y)));
+        Assert.True(length > 1, $"{kind}: the second line has the length {length}.");
+        if (SketchSolver.Status(solved).Solved && kind == "angle")
+            Assert.True((((d.X - c.X) * cos) + ((d.Y - c.Y) * sin)) > 0, "The second line has the direction opposite to the angle.");
+    }
+
+    private const double Cos30Value = 0.8660254037844386;
 
     private static DocumentSession NewSession() => new(EngineHosting.CreateDefault(new InProcessMeshBackend()));
 
@@ -209,6 +236,7 @@ public sealed class LineConstraintTests
             new() { SketchId = s, Kind = "equal", First = ab, Second = cd, Value = 2 },
             new() { SketchId = s, Kind = "symmetric", First = c, Second = c, Third = ab },
             new() { SketchId = s, Kind = "symmetric", First = c, Second = e },
+            new() { SketchId = s, Kind = "symmetric", First = a, Second = e, Third = ab },
             new() { SketchId = s, Kind = "angle", First = ab, Second = cd, Value = 1, SecondValue = 1 },
             new() { SketchId = s, Kind = "angle", First = ab, Second = cd, Value = 1 },
             new() { SketchId = s, Kind = "angle", First = ab, Second = cd, Value = double.NaN, SecondValue = 0 },
