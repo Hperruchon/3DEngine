@@ -3530,3 +3530,30 @@ New tests: none. The test list holds 1248 (910 in `Engine.Tests`, 210 in `3DEngi
 `3DEngine.ImageTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
 entries: 15 of 15. New diagnostic codes: none. Since the review of v0.121, 0 product milestones and 1 entry followed
 it.
+
+## v0.123 — A solve keeps each radius of a circle positive (P0.48, TASK-0121)
+
+The codebase review of 2026-10-30 (b) found E97 (high) and put it before K2e (`docs/templates.md`, section 7).
+
+**The change.**
+
+- `SketchSolver` gives no solution when a circle has a radius that is not greater than 0, or an arc has its start or
+  its end at its centre. The record then keeps the positions of the command, as for each other solve that fails, and
+  `Status` gives not solved. Two circles with fixed centres 10 apart, a radius of 20 and an outer tangent gave the
+  radius −10 and solved.
+- `SketchConstraints.Refusal` refuses a `tangent` of a line with an end at the centre of its curve. That end is on
+  the line, so only a radius of 0 satisfies it.
+
+**Proof.** 6 new test cases in `Engine.Tests/Sketch/CircleArcTests.cs`: the four sketches of the review, the tangent
+through a fixed centre by a command, and an arc of radius 0 in the status; and two refusals in the test of the
+refusals. 4 injections: each one failed a test.
+
+**What stays.** E98: `AddSketchArc` still accepts an arc of radius 0 (P0.49). A solve that fails here can miss a
+positive solution from another start; the cases of the review have none.
+
+**A correction.** None.
+
+New tests: 6. The test list holds 1254 (916 in `Engine.Tests`, 210 in `3DEngine.Tests`, 128 in
+`3DEngine.ImageTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
+entries: 15 of 15. New diagnostic codes: none. Since the review of v0.121, 0 product milestones and 2 entries followed
+it.

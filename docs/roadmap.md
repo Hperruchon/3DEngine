@@ -99,6 +99,7 @@ Therefore each approved objective must have a track here.
 - R9 — The desktop moves the selected body with a translate gizmo. v0.119, TASK-0113.
 - P0.47 — The pads of the sketch follow their values, and the desktop meshes each body one time for each frame. v0.120, TASK-0118.
 - P8e — The numeric pad shows the length unit of the document. v0.121, TASK-0119.
+- P0.48 — A solve keeps each radius of a circle positive. v0.123, TASK-0121.
 
 ## Track 0 — Foundations
 

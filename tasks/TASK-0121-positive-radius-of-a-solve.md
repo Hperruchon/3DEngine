@@ -1,7 +1,7 @@
 ---
 id: 0121
 title: A solve keeps each radius of a circle positive
-status: Active
+status: Done
 phase: P0.48
 opened: 2026-10-30
 depends-on: [0120]
@@ -53,13 +53,25 @@ No solve gives a circle a radius that is not greater than 0, and the sketch then
 
 ## Acceptance criteria
 
-- [ ] Each probe of E97 fails before the change and passes after it.
-- [ ] An injection that removes the check of the radius fails a test.
-- [ ] A clean build (`--no-incremental`) gives zero errors and zero warnings.
-- [ ] Continuous integration passes on the three runners, on the branch and on `main` after the merge.
+- [x] Each probe of E97 fails before the change and passes after it.
+- [x] An injection that removes the check of the radius fails a test.
+- [x] A clean build (`--no-incremental`) gives zero errors and zero warnings.
+- [x] Continuous integration passes on the three runners, on the branch and on `main` after the merge.
+
+## Outcome
+
+Status: Done · commit (the merge of the branch p048-positive-radius) · v0.123
+
+## Method
+
+Mechanical: the check of each radius after a solve and in the status, and the refusal of a tangent through the centre.
+Judgement:  a solve with no positive radius fails, as each other solve that fails: the record keeps the positions of
+            the command, so no new rule and no new code. A radius of 1e-300 counts as positive, as at the add.
+Weakest:    the solve can miss a positive solution that another start gives; the four cases have none.
 
 ## Progress
 
 - 2026-10-30: opened by the codebase review of 2026-10-30 (b) (TASK-0120).
 - 2026-10-30: the check of the radius in the solve and in the status, the refusal of a tangent through the centre;
   6 new test cases; 4 injections caught.
+- 2026-10-30: closed at v0.123.
