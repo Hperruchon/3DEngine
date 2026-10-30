@@ -179,4 +179,56 @@ public class SketchOverlayTests
         Assert.Equal(sketch.Lines.Select(line => line.Id), picture.Lines.Select(line => line.Id));
         Assert.All(SketchOverlay.Picture(sketch).Points, point => Assert.Null(point.PixelX));
     }
+
+    // A sketch with a circle of radius 5 about (0, 0) and an arc about (20, 0) from (23, 0) to
+    // (20, 3), a quarter turn counter-clockwise (ADR-0033 item 2).
+    private static SketchInfo WithCurves()
+    {
+        var ids = Enumerable.Range(0, 4).Select(_ => Guid.NewGuid()).ToArray();
+        (double X, double Y)[] at = [(0, 0), (20, 0), (23, 0), (20, 3)];
+        return new SketchInfo(Guid.NewGuid(), Datums.XY.Id, null,
+            [.. at.Select((point, index) => new SketchPoint(ids[index], point.X, point.Y))], [],
+            [new SketchCircle(Guid.NewGuid(), ids[0], 5)], [new SketchArc(Guid.NewGuid(), ids[1], ids[2], ids[3])], [], true, 4);
+    }
+
+    // Phase K2e (TASK-0122): a circle is a polyline of a full turn, and an arc the part of it that
+    // its sweep covers, counter-clockwise from its start. Each vertex is on the curve.
+    [Fact]
+    public void A_Circle_And_An_Arc_Are_Polylines_On_Their_Curves()
+    {
+        var sketch = WithCurves();
+
+        var curves = SketchOverlay.Curves(sketch).ToArray();
+
+        var circle = curves[0].Polyline;
+        Assert.Equal(SketchOverlay.TurnSegments + 1, circle.Count);
+        Assert.All(circle, p => Assert.Equal(5, Math.Sqrt((p.X * p.X) + (p.Y * p.Y)), 9));
+        var arc = curves[1].Polyline;
+        Assert.Equal((SketchOverlay.TurnSegments / 4) + 1, arc.Count);
+        Assert.Equal(23, arc[0].X, 9);
+        Assert.Equal(0, arc[0].Y, 9);
+        Assert.Equal(20, arc[^1].X, 9);
+        Assert.Equal(3, arc[^1].Y, 9);
+        Assert.All(arc, p => Assert.True(p.Y >= -1e-9 && p.X >= 20 - 1e-9, $"({p.X}, {p.Y}) is not on the quarter turn"));
+    }
+
+    // The overlay draws the segments of each curve with its label, and the picture of the tool has
+    // the same segments in pixels.
+    [Fact]
+    public void The_Overlay_And_The_Picture_Draw_Each_Curve()
+    {
+        var camera = Camera();
+        var sketch = WithCurves();
+
+        var strokes = SketchOverlay.Of([sketch], camera, Display.X, Display.Y, new SketchOverlay.Focus(sketch.SketchId, [sketch.Circles[0].Id], null));
+        var picture = SketchOverlay.Picture(sketch, camera, Display.X, Display.Y);
+
+        Assert.Equal(SketchOverlay.TurnSegments, strokes.Lines.Count(line => line.Mark == SketchOverlay.Mark.Selected));
+        Assert.Equal(SketchOverlay.TurnSegments / 4, strokes.Lines.Count(line => line.Mark == SketchOverlay.Mark.Active));
+        Assert.Equal(["A1", "P1", "P2", "P3", "P4", "R1"], strokes.Labels.Select(label => label.Text).Order());
+        Assert.Equal([sketch.Circles[0].Id, sketch.Arcs[0].Id], picture.Curves.Select(curve => curve.Id));
+        Assert.Equal(
+            strokes.Lines.Select(line => ((double)line.A.X, (double)line.A.Y)),
+            picture.Curves.SelectMany(curve => curve.Pixels).Select(segment => segment.A));
+    }
 }

@@ -180,6 +180,63 @@ public sealed class SketchWindowUiTests
         Assert.Equal([3.0], distance.Values);
     }
 
+    private static readonly Guid Ring = Guid.Parse("20000000-0000-0000-0000-000000000000");
+    private static readonly Guid Bow = Guid.Parse("40000000-0000-0000-0000-000000000000");
+
+    // Phase K2e (TASK-0122): the sketch of the fixture with the circle R1 about P1 of radius 2.5,
+    // and the arc A1 about O from P1 to P2.
+    private static SketchPanel CurvePanel(params Guid[] selection)
+    {
+        var sketch = Sketch with { Circles = [new SketchCircle(Ring, A, 2.5)], Arcs = [new SketchArc(Bow, SketchId, A, B)] };
+        return new([sketch], sketch, SketchToolKind.Select, false, selection, null);
+    }
+
+    // The kinds on a curve fit their selections, with the items in the order of the kind: the
+    // point, then the line, then the curve.
+    [Fact]
+    public void The_Buttons_Of_A_Curve_Are_The_Kinds_That_Fit_It()
+    {
+        static string[] Buttons(params Guid[] selection)
+        {
+            using var ui = Opened(CurvePanel(selection));
+            string[] all = [.. DesktopUi.ConstraintButtons.Select(button => button.Label), DesktopUi.MovePointLabel, DesktopUi.ValueLabel, DesktopUi.DeleteLabel];
+            return [.. all.Where(label => ui.ItemRectangle(DesktopUi.SketchItem(label)) is not null)];
+        }
+
+        Assert.Equal(["Radius", DesktopUi.DeleteLabel], Buttons(Ring));
+        Assert.Equal(["On curve", DesktopUi.DeleteLabel], Buttons(Ring, B));
+        Assert.Equal(["Tangent", DesktopUi.DeleteLabel], Buttons(Bow, Line));
+        Assert.Equal(["Tangent", DesktopUi.InsideTangentLabel, "Equal", DesktopUi.DeleteLabel], Buttons(Ring, Bow));
+    }
+
+    // Inside tangent gives −1, Tangent of a line gives no value, and On curve takes the point
+    // first; Radius opens the pad with the current radius.
+    [Fact]
+    public void The_Kinds_On_A_Curve_Give_Their_Actions()
+    {
+        var two = Assert.IsType<AddConstraintAction>(Assert.Single(Taps(DeviceKind.Touch, CurvePanel(Ring, Bow), DesktopUi.SketchItem(DesktopUi.InsideTangentLabel))));
+        Assert.Equal("tangent", two.Kind);
+        Assert.Equal([Ring, Bow], two.Items);
+        Assert.Equal([-1.0], two.Values);
+        var line = Assert.IsType<AddConstraintAction>(Assert.Single(Taps(DeviceKind.Mouse, CurvePanel(Bow, Line), DesktopUi.SketchItem("Tangent"))));
+        Assert.Equal("tangent", line.Kind);
+        Assert.Equal([Line, Bow], line.Items);
+        Assert.Empty(line.Values);
+        var on = Assert.IsType<AddConstraintAction>(Assert.Single(Taps(DeviceKind.Mouse, CurvePanel(Ring, B), DesktopUi.SketchItem("On curve"))));
+        Assert.Equal("pointOn", on.Kind);
+        Assert.Equal([B, Ring], on.Items);
+
+        var panel = CurvePanel(Ring);
+        using var ui = Opened(panel);
+        Tap(ui, DeviceKind.Touch, DesktopUi.SketchItem("Radius"), panel);
+        Assert.Equal("2.5", Assert.Single(ui.Pad!.Fields).Text);
+        Tap(ui, DeviceKind.Touch, DesktopUi.PadItem("Apply"), panel);
+        var radius = Assert.IsType<AddConstraintAction>(Assert.Single(ui.TakeActions()));
+        Assert.Equal("radius", radius.Kind);
+        Assert.Equal([Ring], radius.Items);
+        Assert.Equal([2.5], radius.Values);
+    }
+
     // Value opens the pad with the values of the constraint, and Move point with the position.
     [Fact]
     public void Value_And_Move_Point_Start_With_The_Current_Numbers()

@@ -19,6 +19,11 @@ internal static class SketchText
             labels[point.Id] = point.Id == sketch.SketchId ? "O" : $"P{number++}";
         for (var index = 0; index < sketch.Lines.Count; index++)
             labels[sketch.Lines[index].Id] = $"L{index + 1}";
+        // Phase K2e (TASK-0122): R for a circle (a ring) and A for an arc; C is a constraint.
+        for (var index = 0; index < sketch.Circles.Count; index++)
+            labels[sketch.Circles[index].Id] = $"R{index + 1}";
+        for (var index = 0; index < sketch.Arcs.Count; index++)
+            labels[sketch.Arcs[index].Id] = $"A{index + 1}";
         for (var index = 0; index < sketch.Constraints.Count; index++)
             labels[sketch.Constraints[index].Id] = $"C{index + 1}";
         return labels;
@@ -39,12 +44,30 @@ internal static class SketchText
             yield return (point.Id, $"{labels[point.Id]}  ({Short(point.X)}, {Short(point.Y)})");
         foreach (var line in sketch.Lines)
             yield return (line.Id, $"{labels[line.Id]}  {labels[line.Start]}-{labels[line.End]}  {Short(Distance(sketch, [line.Id]) ?? 0)}");
+        foreach (var circle in sketch.Circles)
+            yield return (circle.Id, $"{labels[circle.Id]}  {labels[circle.Center]}  r {Short(circle.Radius)}");
+        foreach (var arc in sketch.Arcs)
+            yield return (arc.Id, $"{labels[arc.Id]}  {labels[arc.Center]} {labels[arc.Start]}-{labels[arc.End]}  r {Short(Radius(sketch, arc.Id) ?? 0)}");
         foreach (var constraint in sketch.Constraints)
         {
             var items = string.Join(" ", constraint.Items.Select(item => labels.GetValueOrDefault(item, "?")));
             var values = constraint.Values.Count == 0 ? string.Empty : " = " + string.Join(", ", constraint.Values.Select(Short));
             yield return (constraint.Id, $"{labels[constraint.Id]}  {constraint.Kind} {items}{values}  r {(constraint.Residual is { } residual ? Short(residual) : "not finite")}");
         }
+    }
+
+    // The radius of a circle, or the distance from the centre of an arc to its start, as the
+    // engine measures it (SketchConstraints.CurveRadius), or null.
+    public static double? Radius(SketchInfo sketch, Guid curve)
+    {
+        ArgumentNullException.ThrowIfNull(sketch);
+        if (sketch.Circles.FirstOrDefault(circle => circle.Id == curve) is { } found)
+            return found.Radius;
+        if (sketch.Arcs.FirstOrDefault(arc => arc.Id == curve) is not { } arc)
+            return null;
+        var points = sketch.Points.ToDictionary(point => point.Id);
+        var (c, s) = (points[arc.Center], points[arc.Start]);
+        return Math.Sqrt(((s.X - c.X) * (s.X - c.X)) + ((s.Y - c.Y) * (s.Y - c.Y)));
     }
 
     // The distance of two points, of a point to a line, or the length of a line, as the engine

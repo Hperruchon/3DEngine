@@ -207,4 +207,40 @@ public class SketchActionsTests
         var created = await host.Session.Read((document, _) => document.Bodies.Single());
         Assert.Equal((body, "Extrude"), (created.Handle.Id, created.Kind));
     }
+
+    // Phase K2e (TASK-0122): a touch script of the tools Circle and Arc through the session adds a
+    // circle and an arc, the sketch is solved, and a tap of the tool Select on each curve picks it.
+    [Fact]
+    public async Task The_Tools_Circle_And_Arc_Add_Curves_That_Select_Picks()
+    {
+        using var host = new EngineHost(new InProcessMeshBackend(), "managed", "test");
+        var actions = new SketchActions(host.Session);
+        actions.Create(Datums.XY.Id);
+        var camera = Facing();
+        void Taps(params (double X, double Y)[] pixels)
+        {
+            foreach (var (x, y) in pixels)
+                actions.Tap(camera, x, y, Width, Height);
+        }
+
+        actions.Tool.Kind = SketchToolKind.Circle;
+        Taps((440, 360), (540, 360));
+        actions.Tool.Kind = SketchToolKind.Arc;
+        Taps((840, 360), (940, 360), (840, 260));
+
+        var sketch = actions.Current()!;
+        var circle = Assert.Single(sketch.Circles);
+        var arc = Assert.Single(sketch.Arcs);
+        Assert.True(circle.Radius > 0);
+        Assert.True(sketch.Solved);
+        Assert.Equal(4, await host.Session.Read((document, _) => document.Sketches.Single().Points.Count - 1));
+
+        // A vertex a quarter turn along each curve, away from each point.
+        actions.Tool.Kind = SketchToolKind.Select;
+        var picture = SketchOverlay.Picture(sketch, camera, Width, Height);
+        Taps(picture.Curves.Single(curve => curve.Id == circle.Id).Pixels[SketchOverlay.TurnSegments / 4].A);
+        Assert.Equal([circle.Id], actions.Tool.Selection);
+        Taps(picture.Curves.Single(curve => curve.Id == arc.Id).Pixels[SketchOverlay.TurnSegments / 8].A);
+        Assert.Equal([circle.Id, arc.Id], actions.Tool.Selection);
+    }
 }
