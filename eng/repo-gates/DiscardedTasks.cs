@@ -73,6 +73,17 @@ internal static class DiscardedTasks
                     && IsTask(local.Type)
                     && !IsRead(local, declarator, model))
                     yield return $"{relative}:{Line(node)}: a check keeps a task in '{local.Name}' and never awaits, returns or passes it";
+
+                // Findings T94 and T95 of the codebase review of 2026-10-30 (TASK-0114): PendingTasks
+                // waits for the thread pool and the timers, so a task on its own thread and a task
+                // that waits for a source that nobody completes passed. No gate needs either.
+                else if (node is BaseObjectCreationExpressionSyntax creation
+                    && model.GetTypeInfo(creation).Type is INamedTypeSymbol { Name: "Thread" or "TaskCompletionSource" } created
+                    && created.ContainingNamespace?.ToDisplayString() is "System.Threading" or "System.Threading.Tasks")
+                    yield return $"{relative}:{Line(node)}: a check makes a {created.Name}, whose work the runner does not see";
+                else if (node is IdentifierNameSyntax { Identifier.ValueText: "LongRunning" } name
+                    && model.GetSymbolInfo(name).Symbol is IFieldSymbol { ContainingType.Name: "TaskCreationOptions" })
+                    yield return $"{relative}:{Line(node)}: a check starts a task on its own thread, whose work the runner does not see";
             }
         }
     }
@@ -120,6 +131,9 @@ internal static class DiscardedTasks
         ("ContinueWith as a statement (T74)", "Task.CompletedTask.ContinueWith(_ => { });", true),
         ("global::System.Threading.Tasks.Task.Run (T74)", "global::System.Threading.Tasks.Task.Run(() => { });", true),
         ("a call of a Func<Task> (T74)", "Func<Task> start = Work; start();", true),
+        ("a task on its own thread (T94)", "await Task.Factory.StartNew(() => { }, TaskCreationOptions.LongRunning);", true),
+        ("a thread (T94)", "new System.Threading.Thread(() => { }).Start();", true),
+        ("a source that nobody completes (T95)", "var source = new TaskCompletionSource(); await source.Task;", true),
         ("an await", "await Task.Run(() => { });", false),
         ("a local that the check awaits", "var task = Work(); await task;", false),
         ("a task that the check passes", "await Task.WhenAll(Work(), Work());", false),

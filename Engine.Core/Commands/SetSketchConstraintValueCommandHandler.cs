@@ -62,6 +62,12 @@ public sealed class SetSketchConstraintValueCommandHandler : ICommandHandler, IC
     {
         var set = (SetSketchConstraintValueCommand)command;
 
+        // Finding E95 of the codebase review of 2026-10-30 (TASK-0114): a command sent again after
+        // the cache forgot it reused the key of a rebuild and gave a false fault. Each sketch
+        // command refuses an identifier that the log holds, as E86 gave the commands that add.
+        if (SketchResults.InUse(document, command) is { } inUse)
+            return Task.FromResult(inUse);
+
         if (SketchModel.Find(document, set.SketchId) is not { } sketch)
             return Task.FromResult(SketchResults.NotFound(set.SketchId));
 

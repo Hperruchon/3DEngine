@@ -95,6 +95,7 @@ Therefore each approved objective must have a track here.
 - P0.46 — The native wrapper frees each buffer with its allocator, and the binder and the endpoint read numbers and versions as the schema says. v0.115, TASK-0115.
 - K0d — An edit of a sketch rebuilds each translate and subtract that descends from its extrude. v0.116, TASK-0116.
 - K2d — The engine holds the circle and the arc of a sketch, and solves tangent, radius, pointOn and equal on them. v0.117, TASK-0117.
+- P0.45 — The sketch keeps read-only lists and refuses each identifier that the log holds, and the gates read the forms of the thirteenth review. v0.118, TASK-0114.
 
 ## Track 0 — Foundations
 
@@ -146,7 +147,8 @@ This track removes each condition that blocks other work.
 | P0.42 | The sketch refuses an identifier that it holds, and the pads of the sketch follow the state that they act on. TASK-0106. | 3–4 |
 | P0.43 | The gates read the target name, the root folders and each text file, and a host test waits for its file. TASK-0107. | 2–3 |
 | P0.44 | No MSBuild element gives a client the assembly name of another project (T88 of the codebase review of 2026-10-30). TASK-0112. | 1 |
-| P0.45 | The sketch keeps read-only lists, the pads follow their values, and the gates read the forms of the thirteenth review (after R9). TASK-0114. | 3–4 |
+| P0.45 | The sketch keeps read-only lists and refuses each identifier that the log holds, and the gates read the forms of the thirteenth review (E94 to E96, T89 to T95). TASK-0114. | 2–3 |
+| P0.47 | The pads of the sketch follow their values, and the desktop meshes each body one time for each frame (V46 to V50, R-0043; after R9). TASK-0118. | 2–3 |
 | P0.46 | The native wrapper frees each buffer with its allocator, and the binder and the endpoint read numbers and versions as the schema says (E11, E14, E16, R-0043; the plan of 2026-10-30). TASK-0115. | 2–3 |
 
 ## Track P — The platform
