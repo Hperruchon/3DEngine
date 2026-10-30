@@ -1,7 +1,7 @@
 ---
 id: 0112
 title: No MSBuild element gives a client the assembly name of another project
-status: Active
+status: Done
 phase: P0.44
 opened: 2026-10-30
 depends-on: [0111]
@@ -59,11 +59,26 @@ The dependency gate refuses each MSBuild element that sets the name or the path 
 
 ## Acceptance criteria
 
-- [ ] The form of T88 fails the gate program, and an injection that restores the old rule fails a test.
-- [ ] A clean build (`--no-incremental`) gives zero errors and zero warnings.
-- [ ] Continuous integration passes on the three runners, on the branch and on `main` after the merge.
+- [x] The form of T88 fails the gate program, and an injection that restores the old rule fails a test.
+- [x] A clean build (`--no-incremental`) gives zero errors and zero warnings.
+- [x] Continuous integration passes on the three runners, on the branch and on `main` after the merge.
+
+## Outcome
+
+Status: Done · commit (the merge of the branch p044-assembly-name) · v0.114
+
+## Method
+
+Mechanical: the refusal of the item IntermediateAssembly and of each task output to a name of the built file.
+Judgement:  a text gate and not a comparison of the built assemblies, because the text gate runs on each commit with
+            no build; the task records the comparison as the next step if a probe finds a form that text cannot see.
+Weakest:    a target that calls the task Csc with its own OutputAssembly, and a Directory.Build.rsp file (R-0031),
+            still name a file that no gate reads.
 
 ## Progress
 
 - 2026-10-30: opened by the codebase review of 2026-10-30 (TASK-0111).
 - 2026-10-30: started.
+- 2026-10-30: the item IntermediateAssembly and the outputs of a task to a name of the built file are offences; 4 new test
+  cases; 3 injections caught, one of them the form of the review in `3DEngine/3DEngine.csproj` under the gate program.
+- 2026-10-30: closed at v0.114.

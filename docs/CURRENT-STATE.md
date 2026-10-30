@@ -3264,3 +3264,25 @@ New tests: none. The test list holds 1145 (839 in `Engine.Tests`, 190 in `3DEngi
 `3DEngine.ImageTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
 entries: 15 of 15. New diagnostic codes: none. Since the review of v0.112, 0 product milestones and 1 entry followed
 it.
+
+## v0.114 — No MSBuild element gives a client the assembly name of another project (P0.44, TASK-0112)
+
+The codebase review of 2026-10-30 found T88 (high) and put it before R9 (`docs/templates.md`, section 7).
+
+**The change.** `DependencyDirectionGateTests.AssemblyNameOffences` refuses the item `IntermediateAssembly` and
+each `Output` of a task whose `ItemName` or `PropertyName` is `IntermediateAssembly`, `TargetName`,
+`AssemblyName`, `TargetPath` or `TargetFileName`, in each file that MSBuild reads for a project, with no regard to
+case. A target that replaced the item gave the desktop the file `Engine.Tests.dll` and the internals of the kernel.
+
+**Proof.** 4 new rows of `Each_Form_Of_Finding_T72_Is_An_Offence`: the form of the review, its case form, and the
+outputs of `CreateItem` and `CreateProperty`. 3 injections: each one failed a test or the gate program; the third
+put the form of the review in `3DEngine/3DEngine.csproj`.
+
+**What stays.** A target that calls the task `Csc` with its own output, and a `Directory.Build.rsp` file (R-0031).
+
+**A correction.** None.
+
+New tests: 4. The test list holds 1149 (843 in `Engine.Tests`, 190 in `3DEngine.Tests`, 116 in
+`3DEngine.ImageTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
+entries: 15 of 15. New diagnostic codes: none. Since the review of v0.112, 0 product milestones and 2 entries followed
+it.
