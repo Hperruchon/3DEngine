@@ -94,9 +94,11 @@ internal static partial class ManifoldNative
     // The volume of a solid, for the test of the winding (ADR-0018 item 9).
     [LibraryImport(Lib)] internal static partial double manifold_volume(nint manifold);
 
-    // VERIFIED (TASK-0012 §2): manifold_delete_* frees the caller `mem` buffer itself.
-    // Call these ONLY to release — never also Marshal.FreeHGlobal the buffer, that
-    // double-frees and crashes the process.
-    [LibraryImport(Lib)] internal static partial void manifold_delete_manifold(nint manifold);
-    [LibraryImport(Lib)] internal static partial void manifold_delete_box(nint box);
+    // Finding E14 of the codebase review of 2026-09-30 (TASK-0115): manifold_delete_* is the
+    // C++ delete (manifoldc.cpp of 3.5.2, line 1070), and the buffer comes from
+    // Marshal.AllocHGlobal, so one buffer went to two allocators. Each destruct runs the
+    // destructor in place and does not free `mem` (line 1099); the caller then frees the buffer
+    // with Marshal.FreeHGlobal, as for the mesh and the polygons. The binding holds no delete.
+    [LibraryImport(Lib)] internal static partial void manifold_destruct_manifold(nint manifold);
+    [LibraryImport(Lib)] internal static partial void manifold_destruct_box(nint box);
 }
