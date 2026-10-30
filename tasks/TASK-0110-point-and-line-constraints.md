@@ -1,7 +1,7 @@
 ---
 id: 0110
 title: The engine solves the seven constraints of points and lines that K2a named
-status: Active
+status: Done
 phase: K2c
 opened: 2026-10-30
 depends-on: [0107]
@@ -101,3 +101,4 @@ Weakest:    the derivatives are written by hand, and only a central difference a
   perpendicular and angle shrank a line to one point from an exact start (two high findings), and that symmetric
   accepted an end of its line. The equations of a direction now use the unit directions only, and symmetric refuses
   an end. 6 new test cases.
+- 2026-10-30: closed again at v0.112 after the fix.
