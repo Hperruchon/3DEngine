@@ -60,8 +60,16 @@ public static class SketchResults
     // Finding E86 of the codebase review of 2026-10-29: the refusal of a command whose
     // identifier the log holds. A client that sends a command again after the cache of the
     // bus forgot it (E17) got a second item with the same identifier, or an exception.
+    //
+    // Finding E100 of the codebase review of 2026-10-30 (b) (TASK-0123, answer Q1 A of the owner):
+    // the refusal acts on a live command only. An open of a file and a replay of a log apply each
+    // entry as the session that wrote it did (ADR-0015 item 8), and up to v0.117 a move that a
+    // client sent again entered the log two times, so the open of that file failed. The bus sets
+    // ApplyingEntry while a handler applies an entry of a log.
+    internal static readonly AsyncLocal<bool> ApplyingEntry = new();
+
     public static CommandHandlerResult? InUse(Document document, Command command)
-        => document.Log.Any(entry => entry.Command.CommandId == command.CommandId)
+        => !ApplyingEntry.Value && document.Log.Any(entry => entry.Command.CommandId == command.CommandId)
             ? Failure(DiagnosticCodes.SketchIdInUse, $"The log holds a command with the id '{command.CommandId}', and a sketch item takes the id of its command.")
             : null;
 
