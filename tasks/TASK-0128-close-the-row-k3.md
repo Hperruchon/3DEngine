@@ -1,7 +1,7 @@
 ---
 id: 0128
 title: The roadmap row K3 closes, because K3a, K2c and K2d hold the fourteen kinds
-status: Active
+status: Done
 phase: governance
 opened: 2026-10-31
 depends-on: [0102, 0110, 0117]
@@ -49,9 +49,20 @@ The row K3 says that it is done, and names the tasks that did the work.
 
 ## Acceptance criteria
 
-- [ ] The row K3 names TASK-0102, TASK-0110 and TASK-0117, and the gates pass.
-- [ ] Continuous integration passes on the three runners, on the branch and on `main` after the merge.
+- [x] The row K3 names TASK-0102, TASK-0110 and TASK-0117, and the gates pass.
+- [x] Continuous integration passes on the three runners, on the branch and on `main` after the merge.
+
+## Outcome
+
+Status: Done · commit (the merge of the branch k3-row-close) · v0.129
+
+## Method
+
+Mechanical: the text of the row K3, one done line and one ledger entry.
+Judgement:  a governance entry, because the row closes and no work is new; the row names the three tasks of the work.
+Weakest:    the review counter counts this entry as an entry only, not as a product milestone.
 
 ## Progress
 
 - 2026-10-31: `SketchConstraints.Given` holds the fourteen kinds of ADR-0033 item 3 (read on disk).
+- 2026-10-31: closed at v0.129.
