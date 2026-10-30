@@ -72,7 +72,7 @@ public sealed class SetSketchConstraintValueCommandHandler : ICommandHandler, IC
         if (SketchConstraints.Refusal(sketch, constraint.Kind, constraint.Items, values) is { } refusal)
             return Task.FromResult(SketchResults.Failure(DiagnosticCodes.SketchConstraintInvalid, refusal));
 
-        var changed = constraint with { Values = values };
+        var changed = constraint with { Values = SketchConstraints.Recorded(constraint.Kind, values) };
         var constraints = sketch.Constraints.Select(candidate => candidate.Id == changed.Id ? changed : candidate).ToList();
         return Task.FromResult(SketchResults.Changed(document, backend, command.CommandId, sketch with { Constraints = constraints }, "constraintId", changed.Id));
     }

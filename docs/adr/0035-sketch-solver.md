@@ -168,3 +168,19 @@ equations of the kinds 6 to 14.
   equations, which holds for the add of a free point and not for a move of a long chain. The tolerance is absolute
   (item 5), and the spacing of doubles near 10⁷ is about 1.9e-9, so a sketch more than about 10⁶ length units from
   the origin does not solve. A move that cannot hold its point now gives W-SKETCH-HOLD-DROPPED (item 7, finding E87).
+- 2026-10-30 · TASK-0110 · The equations of phase K2c (item 4). With d = b − a for each line and u = d / |d|:
+  `pointOn` p, a→b gives cross(d, p − a) / |d|, a distance of zero to the line; `midpoint` p, a→b gives the two
+  rows p − (a + b) / 2; `equal` gives |d₁| − |d₂|; `symmetric` p, q, a→b gives cross(d, m − a) / |d| with
+  m = (p + q) / 2, and dot(q − p, d) / |d|. These are in length units. The three kinds of a direction are functions of
+  u₁ and u₂ only, so no length changes their value: `parallel` gives cross(u₁, u₂), `perpendicular` gives
+  dot(u₁, u₂), and `angle` gives cross(w, u₂) / (1 + dot(w, u₂)) with w = R(θ)·u₁, the tangent of half the angle from
+  w to u₂. The tolerance of item 5 is then a bound of about 1e-9 on the angle. An equation of a direction that grows
+  with |d₂| has the root d₂ = 0, and the codebase review of 2026-10-30 found that the step of minimum norm went to
+  it from an exact start, so a line shrank to one point. The equation of `angle` is zero only on the branch of the
+  inequality of ADR-0033 item 3, its step of Gauss and Newton is Δφ = −sin φ, and at the exact opposite direction it
+  is not finite, so the solve stops and the record keeps its positions (item 6). Two rows u₂ − w have rank one away
+  from the solution, and the solver then drops one of them and does not converge. A quotient by a length of zero
+  takes 1, and a unit direction of a length of zero is (1, 0). The residual of a kind with two rows is the length of
+  the two values; the residual of `angle` is |u₂ − w|. A test compares each derivative with a central difference, a
+  fixed solve with constant bits, and each start that shrank a line. The owner approved the plan of 2026-10-30, and
+  its answer Q2 A permits this line with no new record.
