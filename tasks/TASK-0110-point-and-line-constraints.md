@@ -1,7 +1,7 @@
 ---
 id: 0110
 title: The engine solves the seven constraints of points and lines that K2a named
-status: Done
+status: Active
 phase: K2c
 opened: 2026-10-30
 depends-on: [0107]
@@ -84,10 +84,10 @@ Status: Done · commit (the merge of the branch k2c-line-constraints) · v0.112
 ## Method
 
 Mechanical: the seven kinds, their checks, their residuals, the normalised pair of an angle, and the History lines.
-Judgement:  each equation is in length units, so the absolute tolerance of ADR-0035 item 5 holds for each one; a raw
-            cross product of two lines of length 10⁴ has a rounding error above 1e-9. The angle has two rows,
-            d₂ − |d₂|·R(θ)·d₁ / |d₁|, and not the one row of ADR-0033 item 3, so the inequality of that item holds
-            in the solve and not only after it.
+Judgement:  the equations of a direction are functions of the two unit directions only. A form that grows with
+            |d₂| shrank a line to one point from an exact start (the review probe of 2026-10-30, before the merge).
+            The angle is cross(w, u₂) / (1 + dot(w, u₂)), and not the one row of ADR-0033 item 3, so the inequality
+            of that item holds in the solve and not only after it; two rows u₂ − w did not converge.
 Weakest:    the derivatives are written by hand, and only a central difference at two sets of positions checks them.
             The desktop panel does not offer the new kinds yet; an agent and the HTTP surface use them now.
 
@@ -97,3 +97,7 @@ Weakest:    the derivatives are written by hand, and only a central difference a
 - 2026-10-30: the seven kinds, their equations, their residuals and their refusals; 19 new test cases; 12
   injections caught. The gate of governed-by added 0004, 0012, 0016, 0021, 0028, 0031 and 0037.
 - 2026-10-30: closed at v0.112.
+- 2026-10-30: the engine probe of the codebase review of 2026-10-30 found, before the merge, that parallel,
+  perpendicular and angle shrank a line to one point from an exact start (two high findings), and that symmetric
+  accepted an end of its line. The equations of a direction now use the unit directions only, and symmetric refuses
+  an end. 6 new test cases.
