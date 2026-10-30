@@ -105,6 +105,7 @@ Therefore each approved objective must have a track here.
 - P0.50 — The gizmo stays in front of the eye, and the overlay keeps each visible part of a line. v0.126, TASK-0124.
 - K2f — The window of the sketch offers the constraints of K2c on lines. v0.127, TASK-0125.
 - K2g — The selection holds three items, and the window of the sketch offers Symmetric. v0.128, TASK-0127.
+- K3 — The constraint solver holds the fourteen kinds of ADR-0033 item 3. Closed at v0.129, from TASK-0102, TASK-0110 and TASK-0117.
 
 ## Track 0 — Foundations
 
@@ -215,7 +216,7 @@ boundary and each refused rung.
 | K2f | The window of the sketch offers the constraints of K2c on lines: On line, Midpoint, Equal, Parallel, Perpendicular and Angle (the Scope (out) of K2e). TASK-0125. | 1–2 |
 | K2g | The selection holds three items, and the window of the sketch offers Symmetric (the answer "1 3 4" of 2026-10-31). TASK-0127. | 1 |
 | K3a | A constraint solver for five constraints: coincident, horizontal, vertical, distance and fixed. It uses only `+ - * / sqrt`, and its output stays outside the log (KD5). ADR-0035, TASK-0102. | 8–12 |
-| K3 | The rest of the constraint solver, after K3a. Write it. | 4–8 |
+| K3 | The rest of the constraint solver, after K3a. Done: the fourteen kinds of ADR-0033 item 3 are in K3a (TASK-0102), K2c (TASK-0110) and K2d (TASK-0117); the owner closed the row on 2026-10-31. | 4–8 |
 | K4 | Planar faces only, with a boolean. Provenance inside the kernel. | 35–55 |
 | K5 | Add the cylinder, the cone, the sphere and the torus. | 55–85 |
 | K6 | STEP export for the analytic subset. | 6–12 |

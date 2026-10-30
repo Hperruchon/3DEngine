@@ -3706,3 +3706,20 @@ New tests: 1. The test list holds 1307 (949 in `Engine.Tests`, 217 in `3DEngine.
 `3DEngine.ImageTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
 entries: 14 of 15. New diagnostic codes: none. Since the review of v0.121, 3 product milestones and 7 entries followed
 it.
+
+## v0.129 — The roadmap row K3 closes, because K3a, K2c and K2d hold the fourteen kinds (governance, TASK-0128)
+
+The row K3 said "The rest of the constraint solver, after K3a." `SketchConstraints.Given` holds the fourteen kinds of
+ADR-0033 item 3: K3a (TASK-0102) gave five, K2c (TASK-0110) seven, and K2d (TASK-0117) tangent and radius. The owner
+chose to close the row on 2026-10-31 ("1 3 4", item 4).
+
+**The change.** The row K3 says that it is done and names the three tasks, and `docs/roadmap.md` has a done line.
+
+**What stays.** The speed of the dense solve stays the finding P1 (register entry R-0027).
+
+**A correction.** None.
+
+New tests: none. The test list holds 1307 (949 in `Engine.Tests`, 217 in `3DEngine.Tests`, 141 in
+`3DEngine.ImageTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
+entries: 14 of 15. New diagnostic codes: none. Since the review of v0.121, 3 product milestones and 8 entries followed
+it.
