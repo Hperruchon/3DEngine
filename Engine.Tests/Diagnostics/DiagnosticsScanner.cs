@@ -54,6 +54,17 @@ internal static class DiagnosticsScanner
         => Engine.Tests.Governance.ConstantStrings.Values(files)
             .SelectMany(constant => ExtractCodes(constant.Value).Select(code => (constant.Path, code)));
 
+    // Finding T91 of the codebase review of 2026-10-30 (TASK-0114): a code built at run time, as
+    // "E-SKETCH-" + a field, or string.Concat("W-SKETCH-", "JOINED"), passed, because only a
+    // constant value is read. A constant string with the start of a code that is not a full code
+    // is a part of a code, and each code is one constant.
+    private static readonly Regex CodeStart = new(@"^[EWI]-[A-Z0-9-]*$", RegexOptions.Compiled);
+
+    public static IEnumerable<(string Path, int Line, string Value)> PartsOfCodes(IEnumerable<(string Path, string Text)> files)
+        => Engine.Tests.Governance.ConstantStrings.Values(files)
+            .Where(constant => CodeStart.IsMatch(constant.Value) && !(CodePattern.Match(constant.Value) is { Success: true } code && code.Value == constant.Value))
+            .Distinct();
+
     public static HashSet<string> ParseRegistry(string registryMarkdown)
     {
         var codes = new HashSet<string>(StringComparer.Ordinal);

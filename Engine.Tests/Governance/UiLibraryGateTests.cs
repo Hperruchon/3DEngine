@@ -133,6 +133,18 @@ public class UiLibraryGateTests
             "Expected an offence in 3DEngine/NativeThreeDEngine.cs. Offences:\n  " + string.Join("\n  ", offences));
     }
 
+    // Finding T89 of the codebase review of 2026-10-30 (TASK-0114): the build on Windows compiles a
+    // file with the extension .CS, and the gate compared the extension with case.
+    [Fact]
+    public void A_Source_With_An_Upper_Case_Extension_Is_Read()
+    {
+        var offences = NamespaceOffences([("3DEngine/ProbeUpper.CS", "using ImGuiNET;\ninternal static class C { [System.Runtime.InteropServices.DllImport(\"cimgui\")] static extern void igNewFrame(); }")]).ToList();
+
+        Assert.Contains(offences, offence => offence.Contains("names the namespace ImGuiNET", StringComparison.Ordinal));
+        Assert.Contains(offences, offence => offence.Contains("native library cimgui", StringComparison.Ordinal));
+        Assert.True(IsSource("3DEngine/ProbeUpper.CS") && IsSource("3DEngine/Probe.Cs") && !IsSource("3DEngine/Probe.csproj"));
+    }
+
     // Finding T71 (TASK-0098): MSBuild unescapes %2E to a point, so NuGet restored ImGui.NET
     // for a name that the gate did not read as ImGui.NET.
     [Theory]
@@ -166,7 +178,7 @@ public class UiLibraryGateTests
                 }
             }
 
-            if (!path.EndsWith(".cs", StringComparison.Ordinal))
+            if (!IsSource(path))
                 continue;
 
             var root = CSharpSyntaxTree.ParseText(text).GetRoot();
@@ -199,7 +211,7 @@ public class UiLibraryGateTests
         // each give the name of the native library. Until TASK-0107 the gate read a string
         // literal token and computed the joins of one file itself, and [DllImport("""cimgui""")]
         // and [DllImport(nameof(cimgui))] passed. The compiler now gives the value of each one.
-        var sources = list.Where(file => file.Path.EndsWith(".cs", StringComparison.Ordinal));
+        var sources = list.Where(file => IsSource(file.Path));
         foreach (var (path, line, value) in ConstantStrings.Values(sources).Distinct())
         {
             if (!path.StartsWith(UiFolder, StringComparison.Ordinal) && value.Contains("cimgui", StringComparison.OrdinalIgnoreCase))
@@ -227,7 +239,7 @@ public class UiLibraryGateTests
     private static IEnumerable<(string Path, string Text)> SourceFiles()
         => ProjectDirectories()
             .SelectMany(directory => Directory.EnumerateFiles(directory, "*.*", SearchOption.AllDirectories)
-                .Where(file => file.EndsWith(".cs", StringComparison.Ordinal) || IsProjectFile(file))
+                .Where(file => IsSource(file) || IsProjectFile(file))
                 .Where(file => !InBuildOutput(directory, file)))
             .Select(file => (RepositoryFiles.Relative(file), File.ReadAllText(file)));
 
@@ -276,10 +288,14 @@ public class UiLibraryGateTests
                 .Any(value => value is not null && value.Split(';').Any(part => string.Equals(part.Trim(), "ImGui.NET", StringComparison.OrdinalIgnoreCase))));
     }
 
+    // Finding T89 (TASK-0114): a C# source, with no regard to the case of its extension, as the
+    // build on Windows compiles it.
+    internal static bool IsSource(string file) => file.EndsWith(".cs", StringComparison.OrdinalIgnoreCase);
+
     private static bool IsProjectFile(string file)
-        => file.EndsWith(".csproj", StringComparison.Ordinal)
-            || file.EndsWith(".props", StringComparison.Ordinal)
-            || file.EndsWith(".targets", StringComparison.Ordinal);
+        => file.EndsWith(".csproj", StringComparison.OrdinalIgnoreCase)
+            || file.EndsWith(".props", StringComparison.OrdinalIgnoreCase)
+            || file.EndsWith(".targets", StringComparison.OrdinalIgnoreCase);
 
     private static bool InBuildOutput(string projectDirectory, string file)
     {

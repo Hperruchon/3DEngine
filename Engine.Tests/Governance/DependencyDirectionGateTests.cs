@@ -200,6 +200,18 @@ public class DependencyDirectionGateTests
                 yield return $"{relative} holds the bidirectional control U+{(bytes[i + 1] == 0x80 ? 0x2000 : 0x2040) + bytes[i + 2] - 0x80:X4} at offset {i}; write an escape such as \\u202E";
                 yield break;
             }
+
+            // Finding T92 of the codebase review of 2026-10-30 (TASK-0114): the line and paragraph
+            // separators U+2028 and U+2029 (E2 80 A8 and A9) end a comment for the compiler and not
+            // for a reader, and the marks of direction U+200E and U+200F (E2 80 8E and 8F), U+061C
+            // (D8 9C) and U+0085 (C2 85) change the order or the lines that a reader sees.
+            if ((bytes[i] == 0xE2 && i + 2 < bytes.Length && bytes[i + 1] == 0x80 && bytes[i + 2] is 0xA8 or 0xA9 or 0x8E or 0x8F)
+                || (bytes[i] == 0xD8 && i + 1 < bytes.Length && bytes[i + 1] == 0x9C)
+                || (bytes[i] == 0xC2 && i + 1 < bytes.Length && bytes[i + 1] == 0x85))
+            {
+                yield return $"{relative} holds a separator or a mark of direction at offset {i}; write an escape such as \\u2028";
+                yield break;
+            }
         }
     }
 
@@ -260,6 +272,15 @@ public class DependencyDirectionGateTests
     [InlineData(new byte[] { 0xE2, 0x81, 0xA6 }, true)]
     [InlineData(new byte[] { 0xE2, 0x81, 0xA9 }, true)]
     [InlineData(new byte[] { 0xE2, 0x80, 0x94, 0xE2, 0x86, 0x92 }, false)]
+    // Finding T92 (TASK-0114): U+2028, U+2029, U+200E, U+200F, U+061C and U+0085; a dash U+2013
+    // (E2 80 93) and an e with an acute accent (C3 A9) are text.
+    [InlineData(new byte[] { 0x2F, 0x2F, 0x61, 0xE2, 0x80, 0xA8, 0x63 }, true)]
+    [InlineData(new byte[] { 0xE2, 0x80, 0xA9 }, true)]
+    [InlineData(new byte[] { 0xE2, 0x80, 0x8E }, true)]
+    [InlineData(new byte[] { 0xE2, 0x80, 0x8F }, true)]
+    [InlineData(new byte[] { 0xD8, 0x9C }, true)]
+    [InlineData(new byte[] { 0xC2, 0x85 }, true)]
+    [InlineData(new byte[] { 0xE2, 0x80, 0x93, 0xC3, 0xA9 }, false)]
     public void A_Control_Byte_In_A_Source_File_Is_An_Offence(byte[] bytes, bool offence)
     {
         Assert.Equal(offence, ControlByteOffences("Probe.cs", bytes).Any());

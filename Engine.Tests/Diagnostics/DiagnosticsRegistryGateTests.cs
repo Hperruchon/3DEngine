@@ -124,6 +124,46 @@ public class DiagnosticsRegistryGateTests
         }
     }
 
+    // Finding T91 of the codebase review of 2026-10-30 (TASK-0114): no engine source holds a part
+    // of a code, so no code is built at run time.
+    [Fact]
+    public void No_Engine_Source_Holds_A_Part_Of_A_Code()
+    {
+        var repoRoot = DiagnosticsScanner.FindRepoRoot(AppContext.BaseDirectory);
+        var sources = DiagnosticsScanner.EnumerateEngineSources(repoRoot)
+            .Select(sourcePath => (Path: Path.GetRelativePath(repoRoot, sourcePath).Replace('\\', '/'), Text: File.ReadAllText(sourcePath)));
+
+        var parts = DiagnosticsScanner.PartsOfCodes(sources).Select(part => $"{part.Path}:{part.Line} holds '{part.Value}'").ToList();
+
+        Assert.True(parts.Count == 0, "Write each diagnostic code as one constant (finding T91):\n  " + string.Join("\n  ", parts));
+    }
+
+    [Theory]
+    [InlineData("static class P { static readonly string Tag = \"HIDDEN\"; static string Code() => \"E-SKETCH-\" + Tag; }")]
+    [InlineData("static class P { static string Code() => string.Concat(\"W-SKETCH-\", \"JOINED\"); }")]
+    [InlineData("static class P { const string Start = \"I-SKETCH\"; }")]
+    public void A_Part_Of_A_Code_Is_An_Offence(string source)
+    {
+        Assert.NotEmpty(DiagnosticsScanner.PartsOfCodes([("Engine.Core/Probe.cs", source)]));
+        Assert.Empty(DiagnosticsScanner.PartsOfCodes([("Engine.Core/Probe.cs", "static class P { const string Code = \"E-SKETCH-HIDDEN\"; }")]));
+    }
+
+    // Finding T90 of the codebase review of 2026-10-30 (TASK-0114): two internal types of one name
+    // in two projects made the one compilation ambiguous, and a joined code passed. Each file binds
+    // in the compilation of its own project.
+    [Fact]
+    public void A_Type_Of_The_Same_Name_In_Another_Project_Hides_No_Code()
+    {
+        (string, string)[] files =
+        [
+            ("Engine.Core/ProbeShared.cs", "namespace Engine.Probe; internal static class Shared { internal const string Part = \"E-SKETCH\"; }"),
+            ("Engine.Cli/ProbeShared.cs", "namespace Engine.Probe; internal static class Shared { internal const string Part = \"X\"; }"),
+            ("Engine.Core/ProbeCode.cs", "namespace Engine.Probe; internal static class Codes { internal const string Duplicate = Shared.Part + \"-DUP\"; }"),
+        ];
+
+        Assert.Contains("E-SKETCH-DUP", DiagnosticsScanner.ConstantCodes(files).Select(use => use.Code));
+    }
+
     // Finding T81: the compiler joins a code from two strings and from a constant of another
     // file, and the scanner reads the value.
     [Fact]
