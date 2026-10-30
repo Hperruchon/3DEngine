@@ -179,7 +179,13 @@ internal static class SketchOverlay
     // Finding V45 of the codebase review of 2026-10-29: a finite position far from the camera, as
     // 1e308, gives a pixel that is not finite as a float, and its vertices went to the GPU. Such a
     // point or segment is not drawn and has no pixel for the tool.
-    private static bool Finite(Vector2 pixel) => float.IsFinite(pixel.X) && float.IsFinite(pixel.Y);
+    // Finding V49 of the codebase review of 2026-10-30 (TASK-0118): a finite pixel of about 1e38
+    // made vertices that are not finite in the line code of the UI library, so a pixel farther
+    // than this limit from the window is dropped too.
+    public const float PixelLimit = 1e7f;
+
+    private static bool Finite(Vector2 pixel)
+        => float.IsFinite(pixel.X) && float.IsFinite(pixel.Y) && Math.Abs(pixel.X) <= PixelLimit && Math.Abs(pixel.Y) <= PixelLimit;
 
     private static double Dot((double X, double Y, double Z) a, (double X, double Y, double Z) b) => (a.X * b.X) + (a.Y * b.Y) + (a.Z * b.Z);
 

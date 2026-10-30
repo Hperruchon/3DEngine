@@ -106,6 +106,9 @@ internal sealed class SessionBodies : IDisposable
         }
     }
 
+    // The count of meshes that Apply uploaded, for a test of V48 (TASK-0118).
+    public int Meshes { get; private set; }
+
     // Each live body, as the last call of Apply left them.
     public IReadOnlyList<LiveBody> Live => _live;
 
@@ -125,8 +128,19 @@ internal sealed class SessionBodies : IDisposable
     public bool Apply(Scene scene, IDictionary<string, GpuMesh> meshes, GraphicsDevice device)
     {
         var changed = false;
-        while (_changes.TryDequeue(out var change))
+        // Finding V48 of the codebase review of 2026-10-30 (TASK-0118): twenty changes of one body
+        // in one frame gave twenty meshes. Each body.changed carries the whole state of the body, so
+        // a change that a later change of the same body follows, with no other event of it between,
+        // is skipped.
+        var queued = new List<Pending>();
+        while (_changes.TryDequeue(out var next))
+            queued.Add(next);
+
+        for (var i = 0; i < queued.Count; i++)
         {
+            var change = queued[i];
+            if (change.Change == Change.Changed && Superseded(queued, i))
+                continue;
             try
             {
                 changed |= ApplyOne(change, scene, meshes, device);
@@ -138,6 +152,17 @@ internal sealed class SessionBodies : IDisposable
         }
 
         return changed;
+    }
+
+    // True when the next event of the same body after the change at the index is a change too.
+    private static bool Superseded(List<Pending> queued, int index)
+    {
+        for (var j = index + 1; j < queued.Count; j++)
+        {
+            if (queued[j].BodyId == queued[index].BodyId)
+                return queued[j].Change == Change.Changed;
+        }
+        return false;
     }
 
     // One change of the queue. It returns true when the scene changed.
@@ -200,6 +225,7 @@ internal sealed class SessionBodies : IDisposable
 
         var centre = MeshVertex.Centre(tessellation.Positions);
         meshes[meshId] = new GpuMesh(device, MeshVertex.Narrow(tessellation.Positions, centre, 1.0), tessellation.Indices);
+        Meshes++;
         _entities[meshId] = new Entity { Name = $"Body {change.BodyId}", MeshId = meshId, Origin = centre };
         _boxes[meshId] = Box(tessellation.Positions);
         _triangles[change.BodyId] = (tessellation.Positions, tessellation.Indices);
