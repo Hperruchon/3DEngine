@@ -1,7 +1,7 @@
 ---
 id: 0123
 title: The engine, the surface and the gates close the forms of the fourteenth review
-status: Active
+status: Done
 phase: P0.49
 opened: 2026-10-30
 depends-on: [0122]
@@ -72,10 +72,23 @@ The engine, the surface and the gates close each form of the review, and a test 
 
 ## Acceptance criteria
 
-- [ ] Each form of the review fails a test or the gate program.
-- [ ] An injection that restores each old rule fails a test.
-- [ ] A clean build (`--no-incremental`) gives zero errors and zero warnings.
-- [ ] Continuous integration passes on the three runners, on the branch and on `main` after the merge.
+- [x] Each form of the review fails a test or the gate program.
+- [x] An injection that restores each old rule fails a test.
+- [x] A clean build (`--no-incremental`) gives zero errors and zero warnings.
+- [x] Continuous integration passes on the three runners, on the branch and on `main` after the merge.
+
+## Outcome
+
+Status: Done · commit (the merge of the branch p049-fourteenth-forms) · v0.125
+
+## Method
+
+Mechanical: the refusal of an arc of radius 0, the repeated member, the forms of the gates, and the guard of Extrude.
+Judgement:  Q1 A by an ambient flag of the bus, because the interface of a handler is in Engine.Contracts; T99 by the
+            four forms of the review, because no rule of the syntax finds each code that a call builds; each project
+            grants its internals to each other project, so a constant binds as in the one compilation before.
+Weakest:    T99 stays a rule in text for each other spelling of a call. A repeated add of a file of v0.109 or earlier
+            gives two items with one identifier again at the open, as the earlier engine did.
 
 ## Progress
 
@@ -86,3 +99,4 @@ The engine, the surface and the gates close each form of the review, and a test 
   `SketchResults.ApplyingEntry` for an open and a replay. `Extrude` takes the guard (E99). The write set gains
   `Engine.Core/CommandBus.cs`, `Engine.Tests/Sketch/SketchGapTests.cs` and `docs/diagnostics.md`. The line of
   2026-10-31 above has a wrong date: the work was on 2026-10-30.
+- 2026-10-30: closed at v0.125.

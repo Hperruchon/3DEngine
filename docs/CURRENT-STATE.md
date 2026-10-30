@@ -3590,3 +3590,41 @@ New tests: 11. The test list holds 1265 (916 in `Engine.Tests`, 215 in `3DEngine
 `3DEngine.ImageTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
 entries: 15 of 15. New diagnostic codes: none. Since the review of v0.121, 1 product milestone and 3 entries followed
 it.
+
+## v0.125 — The engine, the surface and the gates close the forms of the fourteenth review (P0.49, TASK-0123)
+
+The codebase review of 2026-10-30 (b) put its medium and low findings of the engine, the HTTP surface and the gates
+after K2e. The owner answered Q1 A on 2026-10-30, after the first commit of this task, so its second commit records
+the answer.
+
+**The change.**
+
+- E98: `AddSketchArc` refuses a start or an end at the position of the centre.
+- E99 and E100 (Q1 A): the guard of a repeated identifier acts on a live command only. The bus sets
+  `SketchResults.ApplyingEntry` while a handler applies an entry of an open or a replay, so a file of v0.117 in which
+  a client sent a move again opens. `Extrude` takes the guard.
+- E101: the HTTP surface refuses a repeated member of an envelope and of the parameters with HTTP 400.
+- T96: each line that Markdown shows as a heading of a version has the exact form `## v`.
+- T97 and T98: each project of the constants reader is its own compilation, with the compilations of the projects that
+  it references, read from each file that MSBuild reads for it.
+- T99: a part of a code in an interpolated string, a middle part such as `-SKETCH-`, a code in lower case, and a
+  severity after the separator of `string.Join` are offences.
+- T100: the check of the tasks reads the helper files, and refuses `TaskContinuationOptions.LongRunning`, a cast of
+  the value 2, and a semaphore or an event that a gate makes.
+- T101: each item `Compile` names `.cs` files only. T102: a lone CR, the C1 controls, U+200B, U+2060 and U+FEFF after
+  the start are offences.
+
+**Proof.** 33 new test cases and five new forms of the self check of the runner. 21 injections: each one failed a test
+or the gate program.
+
+**What stays.** T99 stays a rule in text for each other spelling of a call. V51 to V55 in TASK-0124. R-0046 stays
+open until the first commit of TASK-0124 records Q2 A.
+
+**A correction.** The row of `E-SKETCH-ID-IN-USE` in `docs/diagnostics.md` named four commands; TASK-0114 and
+TASK-0117 gave the code to five more. The row now names each one. The first progress line of TASK-0123 had the date
+2026-10-31; the work was on 2026-10-30.
+
+New tests: 33. The test list holds 1298 (949 in `Engine.Tests`, 215 in `3DEngine.Tests`, 134 in
+`3DEngine.ImageTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
+entries: 15 of 15. New diagnostic codes: none. Since the review of v0.121, 1 product milestone and 4 entries followed
+it.
