@@ -1,7 +1,7 @@
 ---
 id: 0116
 title: An edit of a sketch rebuilds each translate and subtract that descends from its extrude
-status: Active
+status: Done
 phase: K0d
 opened: 2026-10-30
 depends-on: [0111]
@@ -65,13 +65,27 @@ runs again in log order under new keys, and the live end keeps its handle and ge
 
 ## Acceptance criteria
 
-- [ ] Each case of the review, section 6, item 6, has a test, and an injection fails each one.
-- [ ] A replay and an open give the same keys and solids on the three runners.
-- [ ] A clean build (`--no-incremental`) gives zero errors and zero warnings.
-- [ ] Continuous integration passes on the three runners, on the branch and on `main` after the merge.
+- [x] Each case of the review, section 6, item 6, has a test, and an injection fails each one.
+- [x] A replay and an open give the same keys and solids on the three runners.
+- [x] A clean build (`--no-incremental`) gives zero errors and zero warnings.
+- [x] Continuous integration passes on the three runners, on the branch and on `main` after the merge.
+
+## Outcome
+
+Status: Done · commit (the merge of the branch k0d-chain-rebuild) · v0.116
+
+## Method
+
+Mechanical: the graph of the steps in effect, the walk from each seed to its end, and the records.
+Judgement:  the evaluation of an end runs its upstream steps from the live sketches (Q1 A), so an operand of
+            another sketch follows its own sketch; each handle has one consumer, so the upstream of an end is a tree
+            and each step runs one time with no memo.
+Weakest:    each edit runs each step upstream of each end on the backend again, and each old solid stays in the
+            backend. A step that the graph does not know gives a fault, and none exists today.
 
 ## Progress
 
 - 2026-10-30: opened by the codebase review of 2026-10-30 (TASK-0111). Deferred until the answers to Q1 to Q3.
 - 2026-10-30: the owner answered A to Q1 to Q3. ADR-0039 (Accepted under KQ4 A), `FeatureGraph`, the chain in
   `SketchRebuild`, `ChainRebuildTests` and the flipped test of a consumed extrude in `RebuildTests`.
+- 2026-10-30: closed at v0.116.
