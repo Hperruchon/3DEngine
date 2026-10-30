@@ -287,9 +287,9 @@ public class SketchToolTests
     }
 
     // ADR-0034 item 4 (Q6 A): the tool Select toggles the nearest point, or else the nearest line,
-    // and holds two items at most.
+    // and holds three items at most since K2g (TASK-0127); a fourth item replaces the first.
     [Fact]
-    public void The_Tool_Select_Toggles_Two_Items_At_Most()
+    public void The_Tool_Select_Toggles_Three_Items_At_Most()
     {
         var (tool, editor) = (new SketchTool(), new Editor());
         Tap(tool, editor, 0, 0);
@@ -305,11 +305,14 @@ public class SketchToolTests
         Assert.Equal([a, bottom], tool.Selection);
 
         tool.Tap(398, 1, null, picture, editor);
-        Assert.Equal([bottom, b], tool.Selection);
+        Assert.Equal([a, bottom, b], tool.Selection);
+        var right = picture.Lines[1].Id;
+        tool.Tap(402, 100, null, picture, editor);
+        Assert.Equal([bottom, b, right], tool.Selection);
         tool.Tap(200, 15, null, picture, editor);
-        Assert.Equal([b], tool.Selection);
+        Assert.Equal([b, right], tool.Selection);
         tool.Tap(200, 100, null, picture, editor);
-        Assert.Equal([b], tool.Selection);
+        Assert.Equal([b, right], tool.Selection);
         Assert.Equal(3, editor.Points.Count);
     }
 
