@@ -51,6 +51,7 @@ internal static class SchemaDiagnosticsEndpoint
         new(DiagnosticCodes.SketchExtrudeConsumed, "Warning", "SKETCH"), // ADR-0037 item 7, TASK-0108
         new(DiagnosticCodes.SketchIdInUse,         "Error",   "SKETCH"), // finding E86, TASK-0106
         new(DiagnosticCodes.SketchHoldDropped,     "Warning", "SKETCH"), // finding E87, TASK-0106
+        new(DiagnosticCodes.SketchCurveInvalid,    "Error",   "SKETCH"), // phase K2d, TASK-0117
     };
 
     public static IResult Handle() => Results.Json(Codes, ApiJson.Options);

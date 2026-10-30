@@ -34,6 +34,8 @@ public static class HandlerCatalog
         new CreateSketchCommandHandler(),
         new AddSketchPointCommandHandler(),
         new AddSketchLineCommandHandler(),
+        new AddSketchCircleCommandHandler(),
+        new AddSketchArcCommandHandler(),
         new AddSketchConstraintCommandHandler(),
         new SetSketchConstraintValueCommandHandler(),
         new MoveSketchPointCommandHandler(),

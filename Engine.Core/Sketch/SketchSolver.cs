@@ -143,13 +143,17 @@ public static class SketchSolver
     }
 
     // ADR-0035 items 3 and 4: the variables are the x and the y of each point other than
-    // the origin, in the order of the record. The equations come in the order of the
-    // constraints, then the two equations of a held point.
+    // the origin, in the order of the record, then the radius of each circle (TASK-0117). The
+    // equations come in the order of the constraints, then the equation of each arc, then the
+    // two equations of a held point.
     private sealed class EquationSystem
     {
         private readonly SketchRecord _sketch;
         private readonly Guid? _held;
         private readonly Dictionary<Guid, int> _index = new();
+
+        // The column of the radius of each circle (TASK-0117).
+        private readonly Dictionary<Guid, int> _radius = new();
         private readonly List<SketchConstraint> _constraints;
         private readonly double[] _sides;
         private double[] _x = [];
@@ -164,13 +168,15 @@ public static class SketchSolver
                 if (point.Id != sketch.Id)
                     _index[point.Id] = 2 * _index.Count;
             }
-            Variables = 2 * _index.Count;
+            foreach (var circle in sketch.Circles)
+                _radius[circle.Id] = (2 * _index.Count) + _radius.Count;
+            Variables = (2 * _index.Count) + _radius.Count;
             _constraints = sketch.Constraints.ToList();
 
             var rows = 0;
             foreach (var constraint in _constraints)
                 rows += SketchConstraints.HasTwoRows(constraint.Kind) ? 2 : 1;
-            Rows = rows + (held is null ? 0 : 2);
+            Rows = rows + sketch.Arcs.Count + (held is null ? 0 : 2);
             Jacobian = new double[Rows, Variables];
             Values = new double[Rows];
 
@@ -188,6 +194,21 @@ public static class SketchSolver
                     var (p, a, b) = (Point(sketch, constraint.Items[0]), Point(sketch, line.Start), Point(sketch, line.End));
                     if (((b.X - a.X) * (p.Y - a.Y)) - ((b.Y - a.Y) * (p.X - a.X)) < 0)
                         _sides[c] = -1;
+                }
+
+                // TASK-0117: the side of the centre to the line of a tangent, and for an inner
+                // tangent of two curves the sign of r₁ − r₂, from the positions at the start.
+                if (constraint.Kind == SketchConstraints.Tangent && KindOf(sketch, constraint.Items[0]) == ItemKind.Line)
+                {
+                    var line = Line(sketch, constraint.Items[0]);
+                    var (p, a, b) = (Point(sketch, SketchConstraints.Centre(sketch, constraint.Items[1])), Point(sketch, line.Start), Point(sketch, line.End));
+                    if (((b.X - a.X) * (p.Y - a.Y)) - ((b.Y - a.Y) * (p.X - a.X)) < 0)
+                        _sides[c] = -1;
+                }
+                else if (constraint.Kind == SketchConstraints.Tangent && constraint.Values[0] < 0
+                    && SketchConstraints.CurveRadius(sketch, constraint.Items[0]) < SketchConstraints.CurveRadius(sketch, constraint.Items[1]))
+                {
+                    _sides[c] = -1;
                 }
             }
         }
@@ -208,6 +229,8 @@ public static class SketchSolver
                 if (_index.TryGetValue(point.Id, out var i))
                     (x[i], x[i + 1]) = (point.X, point.Y);
             }
+            foreach (var circle in _sketch.Circles)
+                x[_radius[circle.Id]] = circle.Radius;
             return x;
         }
 
@@ -218,6 +241,7 @@ public static class SketchSolver
                 // Finding E91: a read-only list, so a client that casts it cannot change the Document.
                 .ToList()
                 .AsReadOnly(),
+            Circles = _sketch.Circles.Select(circle => circle with { Radius = x[_radius[circle.Id]] }).ToList().AsReadOnly(),
         };
 
         public bool IsFinite()
@@ -273,6 +297,14 @@ public static class SketchSolver
             for (var c = 0; c < _constraints.Count; c++)
                 Add(_constraints[c], _sides[c]);
 
+            // TASK-0117: the two radii of each arc are equal, |s − c| − |e − c| = 0.
+            foreach (var arc in _sketch.Arcs)
+            {
+                var (from, start) = Spoke(arc.Center, arc.Start);
+                var (to, end) = Spoke(arc.Center, arc.End);
+                Equation(from - to, (arc.Start, start.X, start.Y), (arc.End, -end.X, -end.Y), (arc.Center, end.X - start.X, end.Y - start.Y));
+            }
+
             if (_held is { } held)
             {
                 var point = Point(_sketch, held);
@@ -319,9 +351,45 @@ public static class SketchSolver
                     Equation(Y(items[0]) - constraint.Values[1], (items[0], 0, 1));
                     break;
                 // ADR-0035, History of TASK-0110: the equations of K2c, each in length units.
-                case SketchConstraints.PointOn:
+                case SketchConstraints.PointOn when KindOf(_sketch, items[1]) == ItemKind.Line:
                     ToLine(items[0], Line(_sketch, items[1]), 0);
                     break;
+                // TASK-0117: |p − c| − r of the circle or of the arc.
+                case SketchConstraints.PointOn:
+                {
+                    var (distance, u) = Spoke(SketchConstraints.Centre(_sketch, items[1]), items[0]);
+                    var terms = new List<(Guid, double, double)> { (items[0], u.X, u.Y), (SketchConstraints.Centre(_sketch, items[1]), -u.X, -u.Y) };
+                    Equation(distance - RadiusOf(items[1], -1, terms), [.. terms]);
+                    break;
+                }
+                case SketchConstraints.Equal when KindOf(_sketch, items[0]) != ItemKind.Line:
+                {
+                    var terms = new List<(Guid, double, double)>();
+                    var value = RadiusOf(items[0], 1, terms) - RadiusOf(items[1], -1, terms);
+                    Equation(value, [.. terms]);
+                    break;
+                }
+                case SketchConstraints.Radius:
+                {
+                    var terms = new List<(Guid, double, double)>();
+                    Equation(RadiusOf(items[0], 1, terms) - constraint.Values[0], [.. terms]);
+                    break;
+                }
+                case SketchConstraints.Tangent when KindOf(_sketch, items[0]) == ItemKind.Line:
+                    Tangent(Line(_sketch, items[0]), items[1], side);
+                    break;
+                case SketchConstraints.Tangent:
+                {
+                    // |c₁ − c₂| − (r₁ + r₂) outside, or |c₁ − c₂| − s·(r₁ − r₂) inside, with s the sign at the start.
+                    var (c1, c2) = (SketchConstraints.Centre(_sketch, items[0]), SketchConstraints.Centre(_sketch, items[1]));
+                    var (distance, u) = Spoke(c2, c1);
+                    var terms = new List<(Guid, double, double)> { (c1, u.X, u.Y), (c2, -u.X, -u.Y) };
+                    var outside = constraint.Values[0] > 0;
+                    var r1 = RadiusOf(items[0], outside ? -1 : -side, terms);
+                    var r2 = RadiusOf(items[1], outside ? -1 : side, terms);
+                    Equation(outside ? distance - (r1 + r2) : distance - (side * (r1 - r2)), [.. terms]);
+                    break;
+                }
                 case SketchConstraints.Midpoint:
                 {
                     var line = Line(_sketch, items[1]);
@@ -338,6 +406,61 @@ public static class SketchSolver
                 default:
                     throw new InvalidOperationException($"The constraint {constraint.Id} has the kind '{constraint.Kind}', which the solver does not give.");
             }
+        }
+
+        // The distance from the point q to the point p and the unit direction from q to p; at a
+        // distance of zero the direction is (1, 0).
+        private (double Distance, (double X, double Y) Unit) Spoke(Guid q, Guid p)
+        {
+            var (dx, dy) = (X(p) - X(q), Y(p) - Y(q));
+            var distance = Math.Sqrt((dx * dx) + (dy * dy));
+            return (distance, distance == 0 ? (1.0, 0.0) : (dx / distance, dy / distance));
+        }
+
+        // The radius of a circle, a variable, or of an arc, |s − c|, and its derivatives times the
+        // weight added to the terms. A term of a circle names the circle, and Equation puts it in
+        // the column of its radius.
+        private double RadiusOf(Guid curve, double weight, List<(Guid, double, double)> terms)
+        {
+            if (_radius.TryGetValue(curve, out var column))
+            {
+                terms.Add((curve, weight, 0));
+                return _x[column];
+            }
+            var arc = Arc(_sketch, curve);
+            var (distance, u) = Spoke(arc.Center, arc.Start);
+            terms.Add((arc.Start, weight * u.X, weight * u.Y));
+            terms.Add((arc.Center, -weight * u.X, -weight * u.Y));
+            return distance;
+        }
+
+        // tangent of a line a→b and a curve: cross(b − a, c − a) / |b − a| − s·r, with s the side of
+        // the centre at the start; a line of length zero gives |c − a| − r.
+        private void Tangent(SketchLine line, Guid curve, double side)
+        {
+            var centre = SketchConstraints.Centre(_sketch, curve);
+            var (a, b) = (line.Start, line.End);
+            var (dx, dy) = (X(b) - X(a), Y(b) - Y(a));
+            var (wx, wy) = (X(centre) - X(a), Y(centre) - Y(a));
+            var length = Math.Sqrt((dx * dx) + (dy * dy));
+            if (length == 0)
+            {
+                var (distance, u) = Spoke(a, centre);
+                var zero = new List<(Guid, double, double)> { (centre, u.X, u.Y), (a, -u.X, -u.Y) };
+                Equation(distance - RadiusOf(curve, -1, zero), [.. zero]);
+                return;
+            }
+
+            var value = ((dx * wy) - (dy * wx)) / length;
+            var (lx, ly) = (dx / length, dy / length);
+            var ratio = value / length;
+            var terms = new List<(Guid, double, double)>
+            {
+                (centre, -dy / length, dx / length),
+                (a, ((dy - wy) / length) + (ratio * lx), ((wx - dx) / length) + (ratio * ly)),
+                (b, (wy / length) - (ratio * lx), (-wx / length) - (ratio * ly)),
+            };
+            Equation(value - (side * RadiusOf(curve, -side, terms)), [.. terms]);
         }
 
         // |p − q| − length. At a length of zero the derivative takes the direction (1, 0).
@@ -496,6 +619,11 @@ public static class SketchSolver
                 {
                     Jacobian[_row, i] += dx;
                     Jacobian[_row, i + 1] += dy;
+                }
+                else if (_radius.TryGetValue(point, out var column))
+                {
+                    // A term of a circle: dx is the derivative by its radius.
+                    Jacobian[_row, column] += dx;
                 }
             }
             _row++;
