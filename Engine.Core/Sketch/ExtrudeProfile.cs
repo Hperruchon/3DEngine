@@ -5,11 +5,12 @@ namespace Engine.Core.Sketch;
 
 // ADR-0036 items 2 to 4 and ADR-0037 item 5: the parameters of an extrude of a sketch by a
 // distance. Extrude and the rebuild of an extrude use this one code, so a rebuild of a sketch
-// gives the same bits as a new extrude of it. The code uses + - * / and comparisons only.
+// gives the same bits as a new extrude of it. The code uses + - * / sqrt and comparisons only (the
+// polygon of a curve, ADR-0040 item 2).
 public static class ExtrudeProfile
 {
     // The parameters, or the reason that the sketch has no profile: it is not solved, or its
-    // lines are not one closed loop. The caller checks the distance.
+    // lines and arcs are not one closed loop and it is not one circle. The caller checks the distance.
     public static (ExtrudeParameters? Parameters, string? Reason) Parameters(SketchRecord sketch, double distance)
     {
         // ADR-0036 item 4 (Q3 A): a sketch that is not solved gives no solid.
