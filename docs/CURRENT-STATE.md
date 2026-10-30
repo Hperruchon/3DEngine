@@ -3723,3 +3723,36 @@ New tests: none. The test list holds 1307 (949 in `Engine.Tests`, 217 in `3DEngi
 `3DEngine.ImageTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
 entries: 14 of 15. New diagnostic codes: none. Since the review of v0.121, 3 product milestones and 8 entries followed
 it.
+
+## v0.130 — An extrude takes a profile with arcs and circles (K0e, TASK-0126)
+
+An extrude refused a sketch with a curve, because the polygon of an arc needs the points between its ends, and a sine
+and a cosine are not permitted in code of the log (determinism rule 1). The owner chose this item on 2026-10-31
+("1 3 4", item 1), and then told the session to use its recommended answers until the morning, so ADR-0040 is
+Accepted with Q1 A, Q2 A and Q3 A.
+
+**The change.**
+
+- A profile is one closed loop of lines and arcs, or one circle alone (ADR-0040 item 1). `SketchProfile.Find` walks
+  the edges and adds the polygon of each arc in the direction of the walk; the checks of ADR-0036 item 2 run on the
+  polygon.
+- `SketchProfile.Turn` gives the polygon of a curve with `+ - * / sqrt` only: the sweep comes from the dot and the
+  cross of the two directions, each halving gives the cosine and the sine of half the angle, and each vertex is the one
+  before it turned by the step. A full turn has 64 segments, and an arc the power of two that its sweep needs.
+- The row of `E-SKETCH-PROFILE-INVALID` names the rules of a curve (Q3 A). No public shape of `Engine.Contracts`
+  changes, and the desktop needs no change.
+
+**Proof.** 11 new test cases in `Engine.Tests/Sketch/CurveProfileTests.cs`, among them a hash of the bits of an arc
+and a circle, which the three runners check, and an extrude and a rebuild of a circle on Manifold. 7 injections: 6
+failed a test. The seventh put back the constant cos(2π / 64) of the draft, and a full turn still gave 64 segments.
+
+**What stays.** Holes (Q1 A) and a tolerance of the chord (Q2 A). A curved face is flat facets.
+
+**A correction.** The draft of ADR-0040 said that the constant cos(2π / 64) gave a seventh halving of a full turn. No
+run showed it: the injection gives 64 segments. The ADR, the comment of the code and the task now call 0.9951 a margin.
+The test `An_Extrude_Refuses_A_Sketch_With_A_Circle` became `An_Extrude_Refuses_A_Circle_With_A_Line`.
+
+New tests: 11. The test list holds 1318 (960 in `Engine.Tests`, 217 in `3DEngine.Tests`, 141 in
+`3DEngine.ImageTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
+entries: 14 of 15. New diagnostic codes: none. Since the review of v0.121, 4 product milestones and 9 entries followed
+it.
