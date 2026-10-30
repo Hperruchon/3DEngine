@@ -168,3 +168,13 @@ equations of the kinds 6 to 14.
   equations, which holds for the add of a free point and not for a move of a long chain. The tolerance is absolute
   (item 5), and the spacing of doubles near 10⁷ is about 1.9e-9, so a sketch more than about 10⁶ length units from
   the origin does not solve. A move that cannot hold its point now gives W-SKETCH-HOLD-DROPPED (item 7, finding E87).
+- 2026-10-30 · TASK-0110 · The equations of phase K2c (item 4), each in length units, so the tolerance of item 5
+  applies to each one. With d = b − a for each line: `pointOn` p, a→b gives cross(d, p − a) / |d|, as a distance of
+  zero to the line; `midpoint` p, a→b gives the two rows p − (a + b) / 2; `parallel` gives cross(d₁, d₂) / |d₁|;
+  `perpendicular` gives dot(d₁, d₂) / |d₁|; `equal` gives |d₁| − |d₂|; `symmetric` p, q, a→b gives cross(d, m − a) / |d|
+  with m = (p + q) / 2, and dot(q − p, d) / |d|; `angle` gives the two rows of d₂ − |d₂|·R(θ)·d₁ / |d₁|. The rows of
+  `angle` are zero only when d₂ has the direction of d₁ turned by θ, so they hold the inequality of ADR-0033 item 3,
+  and a solve does not end on the line in the opposite direction. A quotient by a length of zero takes 1, and a unit
+  direction of a length of zero is (1, 0). The residual of a kind with two rows is the length of the two values. A
+  test compares each derivative with a central difference, and a fixed solve with constant bits. The owner approved
+  the plan of 2026-10-30, and its answer Q2 A permits this line with no new record.
