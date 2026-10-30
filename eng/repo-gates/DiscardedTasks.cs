@@ -45,9 +45,29 @@ internal static class DiscardedTasks
     private static SyntaxTree Parse(string relative, string source)
         => CSharpSyntaxTree.ParseText(source, new CSharpParseOptions(LanguageVersion.Preview), path: relative);
 
+    // Finding T103 of the codebase review of 2026-10-31 (TASK-0130): the compilation had no global
+    // using, and no gate file names System.Threading, so Task, Thread and SemaphoreSlim did not bind
+    // in a real gate file, and each check of a task saw nothing; the self check passed because each
+    // of its forms named its usings. The compilation now has the implicit usings of the SDK and the
+    // item Using of Xunit, as RepoGates.csproj and Engine.Tests.csproj compile the files, and a gate
+    // file with an error of the compiler fails the run, so a name that does not bind cannot hide a
+    // form again.
+    internal const string GlobalUsings =
+        "global using global::System;\n"
+        + "global using global::System.Collections.Generic;\n"
+        + "global using global::System.IO;\n"
+        + "global using global::System.Linq;\n"
+        + "global using global::System.Net.Http;\n"
+        + "global using global::System.Threading;\n"
+        + "global using global::System.Threading.Tasks;\n"
+        + "global using global::Xunit;\n";
+
     private static IEnumerable<string> Problems(IReadOnlyList<SyntaxTree> checkedTrees, IReadOnlyList<SyntaxTree> allTrees)
     {
-        var compilation = CSharpCompilation.Create("gates", allTrees, References.Value, new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary));
+        var usings = CSharpSyntaxTree.ParseText(GlobalUsings, new CSharpParseOptions(LanguageVersion.Preview), path: "GlobalUsings.g.cs");
+        var compilation = CSharpCompilation.Create("gates", [.. allTrees, usings], References.Value, new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary));
+        foreach (var error in compilation.GetDiagnostics().Where(d => d.Severity == DiagnosticSeverity.Error && checkedTrees.Contains(d.Location.SourceTree)).Take(5))
+            yield return $"{error.Location.SourceTree!.FilePath}:{error.Location.GetLineSpan().StartLinePosition.Line + 1}: the check of the tasks cannot bind a gate file: {error.Id} {error.GetMessage(System.Globalization.CultureInfo.InvariantCulture)}";
         foreach (var tree in checkedTrees)
         {
             var model = compilation.GetSemanticModel(tree);
@@ -142,6 +162,10 @@ internal static class DiscardedTasks
         ("a call of a Func<Task> (T74)", "Func<Task> start = Work; start();", true),
         ("a task on its own thread (T94)", "await Task.Factory.StartNew(() => { }, TaskCreationOptions.LongRunning);", true),
         ("a thread (T94)", "new System.Threading.Thread(() => { }).Start();", true),
+        ("a thread with no full name (T103)", "new Thread(() => { }).Start();", true),
+        ("a semaphore with no full name (T103)", "await new SemaphoreSlim(0).WaitAsync();", true),
+        ("a source with no full name (T103)", "await new TaskCompletionSource().Task;", true),
+        ("a name that does not bind (T103)", "await new NoSuchType().Task;", true),
         ("a source that nobody completes (T95)", "var source = new TaskCompletionSource(); await source.Task;", true),
         ("a continuation on its own thread (T100)", "await Task.CompletedTask.ContinueWith(_ => { }, TaskContinuationOptions.LongRunning);", true),
         ("a cast of the value of LongRunning (T100)", "await Task.Factory.StartNew(() => { }, (TaskCreationOptions)2);", true),
@@ -158,7 +182,8 @@ internal static class DiscardedTasks
     {
         foreach (var (name, body, problem) in Forms)
         {
-            var source = "using System;\nusing System.Threading.Tasks;\npublic class Probe\n{\n    private static Task Work() => Task.CompletedTask;\n\n"
+            // The preamble of a real gate file: no using, as the global usings give them.
+            var source = "public class Probe\n{\n    private static Task Work() => Task.CompletedTask;\n\n"
                 + $"    public async Task Check()\n    {{\n        {body}\n        await Task.CompletedTask;\n    }}\n}}\n";
             var found = Problems("Probe.cs", source).Any();
             if (found != problem)

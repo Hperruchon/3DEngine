@@ -1,7 +1,7 @@
 ---
 id: 0130
 title: A radius at the noise level does not solve, and the check of the tasks binds the real gate files
-status: Ready
+status: Active
 phase: P0.51
 opened: 2026-10-31
 depends-on: [0129]
@@ -61,3 +61,5 @@ T94, T95 and T100 with the spelling of a real gate file.
 ## Progress
 
 - 2026-10-31: opened by the codebase review of 2026-10-31 (TASK-0129).
+- 2026-10-31: E102 with the tolerance of the solver; T103 with the global usings, a failure for a gate file that does not
+  compile, and four forms of the self check with no full name; 2 new test cases; 4 injections caught.

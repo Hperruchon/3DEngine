@@ -248,19 +248,30 @@ public static class SketchSolver
         // has a radius greater than 0 and each arc has its start and its end away from its centre.
         // The equations also hold for a negative radius and for a radius of 0, and until TASK-0121
         // a solve gave them and the sketch showed as solved.
+        //
+        // Finding E102 of the codebase review of 2026-10-31 (TASK-0130): the iteration stops when each
+        // equation is within Tolerance, so a radius of 5.6e-17 from a coincident centre and a tangent
+        // passed the test "greater than 0". A radius, and the distance of the start and of the end of
+        // an arc from its centre, must be greater than Tolerance.
         public bool CurvesHaveRadius(double[] x)
         {
             foreach (var circle in _sketch.Circles)
             {
-                if (!(x[_radius[circle.Id]] > 0))
+                if (!(x[_radius[circle.Id]] > Tolerance))
                     return false;
             }
             foreach (var arc in _sketch.Arcs)
             {
-                if (Position(x, arc.Start) == Position(x, arc.Center) || Position(x, arc.End) == Position(x, arc.Center))
+                if (!(Distance(x, arc.Start, arc.Center) > Tolerance) || !(Distance(x, arc.End, arc.Center) > Tolerance))
                     return false;
             }
             return true;
+        }
+
+        private double Distance(double[] x, Guid a, Guid b)
+        {
+            var (p, q) = (Position(x, a), Position(x, b));
+            return Math.Sqrt(((p.X - q.X) * (p.X - q.X)) + ((p.Y - q.Y) * (p.Y - q.Y)));
         }
 
         // The position of a point in x, or in the record for a point with no variable: the origin.
