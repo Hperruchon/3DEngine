@@ -214,12 +214,22 @@ internal static class SketchOverlay
 
         public Vector2 ToPixels(CameraPoint p)
         {
-            var nx = p.Right / p.Forward / (TanHalf * Aspect);
-            var ny = p.Up / p.Forward / TanHalf;
-            return new Vector2((float)((nx + 1) / 2 * Width), (float)((1 - ny) / 2 * Height));
+            var (x, y) = Pixels(p);
+            return new Vector2((float)x, (float)y);
         }
 
-        // The part of the segment in front of the near distance, or null.
+        private (double X, double Y) Pixels(CameraPoint p)
+        {
+            var nx = p.Right / p.Forward / (TanHalf * Aspect);
+            var ny = p.Up / p.Forward / TanHalf;
+            return ((nx + 1) / 2 * Width, (1 - ny) / 2 * Height);
+        }
+
+        // The part of the segment in front of the near distance and inside the window with a margin
+        // of one window on each side, or null. Finding V52 of the codebase review of 2026-10-30 (b)
+        // (TASK-0124): the pixel of the cut at the near distance was farther than PixelLimit, and the
+        // limit of V49 dropped a line whose far part was in the window. The clip in double
+        // precision keeps each visible part of the line.
         public (Vector2 A, Vector2 B)? Segment(CameraPoint a, CameraPoint b)
         {
             if (a.Forward < Near && b.Forward < Near)
@@ -228,8 +238,37 @@ internal static class SketchOverlay
                 a = Cut(b, a);
             else if (b.Forward < Near)
                 b = Cut(a, b);
-            var (start, end) = (ToPixels(a), ToPixels(b));
+            if (Clip(Pixels(a), Pixels(b), (-Width, -Height), (2 * Width, 2 * Height)) is not { } clipped)
+                return null;
+            var (start, end) = (new Vector2((float)clipped.A.X, (float)clipped.A.Y), new Vector2((float)clipped.B.X, (float)clipped.B.Y));
             return Finite(start) && Finite(end) ? (start, end) : null;
+        }
+
+        // The part of the segment from a to b inside the rectangle from low to high (Liang and
+        // Barsky), or null when no part is inside or a pixel is not finite.
+        private static ((double X, double Y) A, (double X, double Y) B)? Clip((double X, double Y) a, (double X, double Y) b, (double X, double Y) low, (double X, double Y) high)
+        {
+            if (!double.IsFinite(a.X) || !double.IsFinite(a.Y) || !double.IsFinite(b.X) || !double.IsFinite(b.Y))
+                return null;
+            var (dx, dy) = (b.X - a.X, b.Y - a.Y);
+            var (enter, leave) = (0.0, 1.0);
+            foreach (var (p, q) in new[] { (-dx, a.X - low.X), (dx, high.X - a.X), (-dy, a.Y - low.Y), (dy, high.Y - a.Y) })
+            {
+                if (p == 0)
+                {
+                    if (q < 0)
+                        return null;
+                    continue;
+                }
+                var r = q / p;
+                if (p < 0)
+                    enter = Math.Max(enter, r);
+                else
+                    leave = Math.Min(leave, r);
+                if (enter > leave)
+                    return null;
+            }
+            return ((a.X + (enter * dx), a.Y + (enter * dy)), (a.X + (leave * dx), a.Y + (leave * dy)));
         }
 
         // The point between front and behind at the near distance.

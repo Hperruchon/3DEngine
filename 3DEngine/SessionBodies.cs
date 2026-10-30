@@ -141,6 +141,11 @@ internal sealed class SessionBodies : IDisposable
             var change = queued[i];
             if (change.Change == Change.Changed && Superseded(queued, i))
                 continue;
+            // Finding V55 of the codebase review of 2026-10-30 (b) (TASK-0124): a creation and then
+            // changes of the same body in one frame gave two meshes. The creation takes the state of
+            // the last change, so the change that follows it has the key of the mesh already.
+            if (change.Change == Change.Created && LastChange(queued, i) is { } last)
+                change = change with { Name = last.Name, Visible = last.Visible, Geometry = last.Geometry, Fault = last.Fault };
             try
             {
                 changed |= ApplyOne(change, scene, meshes, device);
@@ -163,6 +168,22 @@ internal sealed class SessionBodies : IDisposable
                 return queued[j].Change == Change.Changed;
         }
         return false;
+    }
+
+    // The last change of the body of the event at the index in the run of changes that follows it,
+    // or null when the next event of the same body is not a change.
+    private static Pending? LastChange(List<Pending> queued, int index)
+    {
+        Pending? last = null;
+        for (var j = index + 1; j < queued.Count; j++)
+        {
+            if (queued[j].BodyId != queued[index].BodyId)
+                continue;
+            if (queued[j].Change != Change.Changed)
+                break;
+            last = queued[j];
+        }
+        return last;
     }
 
     // One change of the queue. It returns true when the scene changed.
