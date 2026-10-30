@@ -102,6 +102,7 @@ Therefore each approved objective must have a track here.
 - P0.48 — A solve keeps each radius of a circle positive. v0.123, TASK-0121.
 - K2e — The desktop draws and adds circles and arcs, and the panel offers the constraints of K2d on a curve. v0.124, TASK-0122.
 - P0.49 — The engine, the surface and the gates close the forms of the fourteenth review. v0.125, TASK-0123.
+- P0.50 — The gizmo stays in front of the eye, and the overlay keeps each visible part of a line. v0.126, TASK-0124.
 
 ## Track 0 — Foundations
 

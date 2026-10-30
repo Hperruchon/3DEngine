@@ -53,7 +53,10 @@ internal sealed class GizmoActions
 
             case GizmoEndIntent end:
                 Follow(camera, width, height, end.X, end.Y, preview);
-                if (_body is { } moved && Offset != (0, 0, 0))
+                // Finding V54 of the codebase review of 2026-10-30 (b) (TASK-0124): an agent or an
+                // undo can take the body out of the document during the drag. A body with no pivot
+                // gets no Translate, as a cancel; the session refused it with E-GEOM-BODY-NOT-FOUND.
+                if (_body is { } moved && Offset != (0, 0, 0) && pivotOf(moved) is not null)
                 {
                     var (dx, dy, dz) = Offset;
                     Reset(preview);

@@ -101,19 +101,42 @@ public sealed class DesktopFormsTests
         Assert.Contains(ui.TakeActions(), action => action is NextPointAction);
     }
 
-    // V49: a point at 3e37 gives no stroke, because its pixels are beyond the limit.
+    // V49: a point at 3e37 gives no vertex beyond the limit. Since V52 (TASK-0124) a line through the
+    // window draws its part in the window, and a line beside the window draws nothing.
     [Fact]
-    public void A_Point_Far_Beyond_The_Window_Gives_No_Stroke()
+    public void A_Point_Far_Beyond_The_Window_Gives_No_Vertex_Beyond_The_Limit()
     {
-        var far = Guid.NewGuid();
-        var sketch = new SketchInfo(SketchId, Datums.XY.Id, null, [new(SketchId, -3e37, -3e37), new(far, 3e37, 3e37)],
+        var (far, beside) = (Guid.NewGuid(), Guid.NewGuid());
+        var sketch = new SketchInfo(SketchId, Datums.XY.Id, null, [new(SketchId, -3e37, -3e37), new(far, 3e37, 3e37), new(beside, 3e37, 4e37)],
             [new SketchLine(Guid.NewGuid(), SketchId, far)], [], [], [], true, 2);
+        var aside = sketch with { Points = [new(SketchId, 0, 0), new(far, 3e37, 3e37), new(beside, 3e37, 4e37)], Lines = [new SketchLine(Guid.NewGuid(), far, beside)] };
         var camera = new Camera { YawDegrees = 0, PitchDegrees = 0, Distance = 100, Target = (0, 0, 0) };
 
         var strokes = SketchOverlay.Of([sketch], camera, Display.X, Display.Y, new SketchOverlay.Focus(SketchId, [], null));
 
-        Assert.Empty(strokes.Lines);
+        var (a, b, _) = Assert.Single(strokes.Lines);
+        Assert.All(new[] { a, b }, end => Assert.True(Math.Abs(end.X) <= 2 * Display.X && Math.Abs(end.Y) <= 2 * Display.Y, $"{end}"));
         Assert.All(strokes.Points, spot => Assert.True(Math.Abs(spot.At.X) <= SketchOverlay.PixelLimit && Math.Abs(spot.At.Y) <= SketchOverlay.PixelLimit));
+        Assert.Empty(SketchOverlay.Of([aside], camera, Display.X, Display.Y).Lines);
+    }
+
+    // V52 (TASK-0124): a line on the plane XZ that passes beside the eye and behind it keeps the part
+    // that is in the window. The cut at the near distance gave a pixel beyond the limit of V49, and
+    // the overlay dropped the line.
+    [Theory]
+    [InlineData(5.0)]
+    [InlineData(20.0)]
+    public void A_Line_That_Passes_Behind_The_Eye_Keeps_Its_Visible_Part(double side)
+    {
+        var (start, end) = (Guid.NewGuid(), Guid.NewGuid());
+        var sketch = new SketchInfo(SketchId, Datums.XZ.Id, null, [new(SketchId, 0, 0), new(start, side, -30), new(end, side, 20)],
+            [new SketchLine(Guid.NewGuid(), start, end)], [], [], [], true, 2);
+        var camera = new Camera { YawDegrees = 0, PitchDegrees = 0, Distance = 10, Target = (0, 0, 0) };
+
+        var strokes = SketchOverlay.Of([sketch], camera, Display.X, Display.Y);
+
+        var (a, b, _) = Assert.Single(strokes.Lines);
+        Assert.True(a.X >= 0 && a.X <= Display.X || b.X >= 0 && b.X <= Display.X, $"{a} {b}");
     }
 
     // V50: the fault of a selected body takes one line, so Show all stays in the panel on a display
@@ -165,6 +188,36 @@ public sealed class DesktopFormsTests
 
         Assert.Equal(before + 1, renderer.Meshes);
         Assert.Equal(30.0, renderer.Bounds!.Value.Max.X);
+    }
+
+    // V55 (TASK-0124): an extrude and five changes of its body before the first update give one mesh,
+    // of the last solid. The creation took the key of its event, and the last change meshed again.
+    [VulkanImageFact]
+    public async Task A_Body_Created_And_Changed_In_One_Frame_Gives_One_Mesh()
+    {
+        using var host = new EngineHost(new ManifoldGeometryBackend(), "manifold", ManifoldGeometryBackend.NativeVersion);
+        var scene = SessionScene.Create();
+        var camera = scene.Cameras[0];
+        using var device = new GraphicsDevice("3DEngine.ImageTests", enableValidation: true, window: null);
+        using var target = new OffscreenTarget(device, new VkExtent2D(320, 240));
+        using var renderer = new SceneRenderer(device, target.RenderPass, host);
+        renderer.Update(scene, camera, 4f / 3);
+        var before = renderer.Meshes;
+
+        var sketch = Output(await host.Session.Apply(new CreateSketchCommand { DatumId = Datums.XY.Id }), "sketchId");
+        (double X, double Y)[] corners = [(0, 0), (10, 0), (10, 6), (0, 6)];
+        var points = new List<Guid>();
+        foreach (var (x, y) in corners)
+            points.Add(Output(await host.Session.Apply(new AddSketchPointCommand { SketchId = sketch, X = x, Y = y }), "pointId"));
+        for (var i = 0; i < points.Count; i++)
+            await host.Session.Apply(new AddSketchLineCommand { SketchId = sketch, StartPointId = points[i], EndPointId = points[(i + 1) % points.Count] });
+        await host.Session.Apply(new ExtrudeCommand { SketchId = sketch, Distance = 5 });
+        for (var i = 0; i < 5; i++)
+            await host.Session.Apply(new MoveSketchPointCommand { SketchId = sketch, PointId = points[2], X = 11 + i, Y = 6 });
+        renderer.Update(scene, camera, 4f / 3);
+
+        Assert.Equal(before + 1, renderer.Meshes);
+        Assert.Equal(15.0, renderer.Bounds!.Value.Max.X);
     }
 
     private static Guid Output(CommandResult result, string name)

@@ -66,6 +66,35 @@ public class GizmoActionsTests
         Assert.Null(gizmo.Active);
     }
 
+    // Finding V54 of the codebase review of 2026-10-30 (b) (TASK-0124): an undo during the drag takes
+    // the body out of the document. The release then sends no Translate and gives no rejection,
+    // as a cancel, and the drawing goes back.
+    [Fact]
+    public async Task The_End_Of_A_Drag_Of_A_Body_That_Left_The_Document_Sends_Nothing()
+    {
+        var (host, actions, box) = await OneBox();
+        using var _ = host;
+        var gizmo = new GizmoActions();
+        (double X, double Y, double Z)? PivotOf(Guid body)
+            => host.Session.Read((document, _) => document.Bodies.Any(record => record.Handle.Id == body)).GetAwaiter().GetResult() ? (0, 0, 0) : null;
+        var previews = new List<(Guid Body, Vector3 Offset)>();
+        string? Step(Intent intent)
+        {
+            Assert.True(gizmo.Apply(intent, Front(), Width, Height, box, PivotOf, (body, offset) => previews.Add((body, offset)), actions.Move, out var rejection));
+            return rejection;
+        }
+
+        Step(new GizmoStartIntent(GizmoHandle.X, 450, 300));
+        Step(new GizmoMoveIntent(470, 300));
+        Assert.Equal(CommandStatus.Applied, (await host.Session.Apply(new UndoCommand())).Status);
+        var rejection = Step(new GizmoEndIntent(475, 300));
+
+        Assert.Null(rejection);
+        Assert.IsType<UndoCommand>(await host.Session.Read((document, _) => document.Log[^1].Command));
+        Assert.Equal((box, Vector3.Zero), previews[^1]);
+        Assert.Null(gizmo.Active);
+    }
+
     [Fact]
     public async Task A_Cancel_And_An_Offset_Of_Zero_Send_Nothing()
     {

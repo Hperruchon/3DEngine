@@ -3628,3 +3628,33 @@ New tests: 33. The test list holds 1298 (949 in `Engine.Tests`, 215 in `3DEngine
 `3DEngine.ImageTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
 entries: 15 of 15. New diagnostic codes: none. Since the review of v0.121, 1 product milestone and 4 entries followed
 it.
+
+## v0.126 — The gizmo stays in front of the eye, and the overlay keeps each visible part of a line (P0.50, TASK-0124)
+
+The codebase review of 2026-10-30 (b) put its desktop findings after K2e, which changes the same overlay. The owner
+answered Q2 A on 2026-10-30, and the first commit of this task records it.
+
+**The change.**
+
+- V51: an arrow of the gizmo gives no offset when the point of the ray nearest to the axis is nearer than the near
+  plane, so a drag past the vanishing point of an axis keeps its last offset. The body jumped behind the eye.
+- V53 (Q2 A): while a drag of the gizmo runs, the wheel, the arrow keys, plus, minus, H, Control+Z and Control+Y give
+  nothing; Escape still cancels. ADR-0038 items 5 and 8 hold V53 and V51.
+- V52: the overlay clips each segment to the window with a margin of one window before the limit of a pixel of V49, so
+  a line that passes beside and behind the eye keeps its visible part.
+- V54: the release of a drag sends no `Translate` when the body left the document during the drag.
+- V55: a body that is created and changed in one frame takes the state of its last change, so it gives one mesh.
+
+**Proof.** 6 new test cases: 2 in `3DEngine.Tests/GizmoTests.cs`, 1 in `3DEngine.ImageTests/GizmoActionsTests.cs`,
+and 3 in `DesktopFormsTests.cs`, one of them on a GPU. 6 injections: each one failed a test.
+
+**What stays.** No person dragged the gizmo past a vanishing point in the real window. R-0043 stays open.
+
+**A correction.** The test of V49 said that a point at 3·10³⁷ gives no stroke. A line through the window from such a
+point now draws its part in the window, so the test checks that no vertex goes beyond the limit, which is the
+property of V49. R-0046 is closed: the owner answered Q1 A (TASK-0123) and Q2 A (TASK-0124).
+
+New tests: 6. The test list holds 1304 (949 in `Engine.Tests`, 217 in `3DEngine.Tests`, 138 in
+`3DEngine.ImageTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
+entries: 14 of 15. New diagnostic codes: none. Since the review of v0.121, 1 product milestone and 5 entries followed
+it.

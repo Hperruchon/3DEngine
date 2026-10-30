@@ -56,14 +56,16 @@ Four facts constrain the design:
    with the handle and the point of the press, then `GizmoMoveIntent` for each motion, and `GizmoEndIntent` at the
    release. A second contact, the key Escape, a lost pointer, a loss of the focus and a change of the mode give
    `GizmoCancelIntent`. A press on a handle that does not move is a tap or a click, as before. This amends ADR-0026
-   item 2: four new intents and the hit-test function.
+   item 2: four new intents and the hit-test function. While a drag runs, the wheel, the arrow keys, plus, minus,
+   H, Control+Z and Control+Y give nothing, so the view and the document stay still; Escape still cancels (V53, Q2 A
+   of the codebase review of 2026-10-30 (b)).
 6. **The keyboard (R9-Q6).** The pad of R10 is the keyboard of the gizmo. The gizmo adds no key other than Escape.
 7. **The scope (R9-Q7).** The gizmo shows on the selected body when the body is live and visible, the mode is
    `Scene`, and no pad is open. The pivot is the centre of the box of the body. The pick comes from R8b.
 8. **The offset.** An arrow moves the body along its axis: the offset is the change of the point of the axis that is
    nearest to the ray through the pointer. A square moves the body in its plane: the offset is the change of the
    point where the ray meets the plane through the pivot. A ray parallel to the axis or to the plane keeps the last
-   offset. The functions live in `3DEngine.Core/Gizmo/`, with no device.
+   offset, and so does a ray whose nearest point to the axis is nearer than the near plane, or behind the eye (V51). The functions live in `3DEngine.Core/Gizmo/`, with no device.
 9. **The pipeline (R9-Q8).** `OverlayRenderer` draws the gizmo after the highlight and before the user interface,
    in the same render pass: triangles in window points, a push block with the scale, the translation and the colour,
    no depth test, no culling, and the blend of the alpha. The shaders are `overlay.vert` and `overlay.frag`.
@@ -86,3 +88,5 @@ the same intents, and a test holds it. The pad stays the exact way to move.
 
 - 2026-10-30 · TASK-0113 · Accepted, from the defaults R9-Q1 to Q8 of the owner of 2026-10-27, under the answer Q2 A
   of the plan of 2026-10-30.
+- 2026-10-30 · TASK-0124 · Item 5: other input during a drag gives nothing (V53, Q2 A of the owner). Item 8: a ray whose
+  nearest point to the axis is nearer than the near plane keeps the last offset (V51).
