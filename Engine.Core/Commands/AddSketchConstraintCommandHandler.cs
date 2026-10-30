@@ -96,7 +96,7 @@ public sealed class AddSketchConstraintCommandHandler : ICommandHandler, IComman
         if (SketchConstraints.Refusal(sketch, add.Kind, items, values) is { } refusal)
             return Task.FromResult(SketchResults.Failure(DiagnosticCodes.SketchConstraintInvalid, refusal));
 
-        var constraint = new SketchConstraint(add.CommandId, add.Kind, items, values);
+        var constraint = new SketchConstraint(add.CommandId, add.Kind, items, SketchConstraints.Recorded(add.Kind, values));
         return Task.FromResult(SketchResults.Changed(document, backend, command.CommandId, sketch with { Constraints = [.. sketch.Constraints, constraint] }, "constraintId", constraint.Id));
     }
 }

@@ -90,6 +90,7 @@ Therefore each approved objective must have a track here.
 - K0c — The desktop draws the rebuilt solid of an extrude and shows the fault of a body. The milestone "CAD on one part" is complete. v0.109, TASK-0109.
 - P0.42 — The sketch refuses an identifier that it holds, and the pads of the sketch follow the state that they act on. v0.110, TASK-0106.
 - P0.43 — The gates read the target name, the root folders and each text file, and a host test waits for its file. v0.111, TASK-0107.
+- K2c — The engine solves pointOn, midpoint, parallel, perpendicular, equal, symmetric and angle. v0.112, TASK-0110.
 
 ## Track 0 — Foundations
 
@@ -186,7 +187,8 @@ boundary and each refused rung.
 | K1 | Exact predicates. A deterministic arithmetic layer. | 4–8 |
 | K2a | The sketch model in the engine. The point, the line segment that references two points (Q3), the fixed frame of a sketch, and the five constraints of K3a. A sketch records the identifier of a datum; the three origin planes have fixed identifiers (Q4). One command for each item, with scalar fields; the Document holds one sketch record for each sketch, and an undo restores the record before; the events `sketch.created`, `sketch.changed` and `sketch.removed`, and a query `GetSketch` (Q2). The positions are a projection of the record, and the log holds the inputs only (Q6). An angle records the pair (cos θ, sin θ) (Q5). The ADR names the five entities and the fourteen constraints now (Q1). The desktop draws a sketch as lines of the UI layer, read only (Q9). ADR-0033, TASK-0100. | 4–6 |
 | K2b | The sketch tools of the desktop. A sketch mode in the intent layer, a ray to the plane of the sketch, a pad for a line, and a panel of constraints (Q8). ADR-0034, TASK-0101. | 4–6 |
-| K2 | The rest of the sketch model, after K2b: the circle, the arc and nine constraints (Q1). The five entities are the point, the line, the frame, the circle and the arc (ADR-0033 item 2). | 3–5 |
+| K2c | The seven constraints of ADR-0033 item 3 on points and lines: pointOn, midpoint, parallel, perpendicular, equal, symmetric and angle, with their equations in the solver (the plan of 2026-10-30). TASK-0110. | 3–5 |
+| K2 | The rest of the sketch model, after K2c: the circle, the arc, tangent, radius, and pointOn and equal on a circle or an arc (Q1). The five entities are the point, the line, the frame, the circle and the arc (ADR-0033 item 2). | 3–5 |
 | K3a | A constraint solver for five constraints: coincident, horizontal, vertical, distance and fixed. It uses only `+ - * / sqrt`, and its output stays outside the log (KD5). ADR-0035, TASK-0102. | 8–12 |
 | K3 | The rest of the constraint solver, after K3a. Write it. | 4–8 |
 | K4 | Planar faces only, with a boolean. Provenance inside the kernel. | 35–55 |

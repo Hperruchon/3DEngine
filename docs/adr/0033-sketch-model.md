@@ -183,3 +183,10 @@ the circle, the arc and the kinds 6 to 14.
   named no code; the code of a body name keeps its meaning. A position that is not finite gives `E-GEOM-INVALID-PARAM`.
 - 2026-10-29 · TASK-0102 · ADR-0035 amends items 4 and 7: the solver writes the positions of each changed record,
   and `GetSketch` gives `solved` and `freedom`.
+- 2026-10-30 · TASK-0110 · Phase K2c gives the kinds 6 (a point and a line), 7, 8, 9, 10 (two lines), 12 and 14.
+  The owner approved the plan of 2026-10-30, and its answer Q2 A permits this line with no new record, because no
+  public shape of `Engine.Contracts` changes. A point of `pointOn` or `midpoint` is not an end of its line, a point
+  of `symmetric` is not an end of its line, the two lines of a kind are two lines, and the two points of `symmetric`
+  are two points; each other form gives `E-SKETCH-CONSTRAINT-INVALID`. The residual of `GetSketch` has the unit of
+  the equation of ADR-0035. Phase K2d gives the circle, the arc, `tangent`, `radius`, and `pointOn` and `equal` on
+  them.

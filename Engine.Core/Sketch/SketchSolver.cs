@@ -53,6 +53,16 @@ public static class SketchSolver
         return (system.WithinTolerance(), system.Variables - rank);
     }
 
+    // The values and the derivatives of the equations at the positions of the record, for a
+    // test that compares each derivative with a central difference (TASK-0110). The columns are
+    // the x and the y of each point other than the origin, in the order of the record.
+    internal static (double[] Values, double[,] Jacobian) Linearise(SketchRecord sketch)
+    {
+        var system = new EquationSystem(sketch, null);
+        system.Evaluate(system.Start());
+        return ((double[])system.Values.Clone(), (double[,])system.Jacobian.Clone());
+    }
+
     // The solved record, or null when the iteration does not converge.
     private static SketchRecord? Converge(SketchRecord sketch, Guid? held)
     {
@@ -159,7 +169,7 @@ public static class SketchSolver
 
             var rows = 0;
             foreach (var constraint in _constraints)
-                rows += constraint.Kind is SketchConstraints.Coincident or SketchConstraints.Fixed ? 2 : 1;
+                rows += SketchConstraints.HasTwoRows(constraint.Kind) ? 2 : 1;
             Rows = rows + (held is null ? 0 : 2);
             Jacobian = new double[Rows, Variables];
             Values = new double[Rows];
@@ -308,6 +318,23 @@ public static class SketchSolver
                     Equation(X(items[0]) - constraint.Values[0], (items[0], 1, 0));
                     Equation(Y(items[0]) - constraint.Values[1], (items[0], 0, 1));
                     break;
+                // ADR-0035, History of TASK-0110: the equations of K2c, each in length units.
+                case SketchConstraints.PointOn:
+                    ToLine(items[0], Line(_sketch, items[1]), 0);
+                    break;
+                case SketchConstraints.Midpoint:
+                {
+                    var line = Line(_sketch, items[1]);
+                    Equation(X(items[0]) - ((X(line.Start) + X(line.End)) / 2), (items[0], 1, 0), (line.Start, -0.5, 0), (line.End, -0.5, 0));
+                    Equation(Y(items[0]) - ((Y(line.Start) + Y(line.End)) / 2), (items[0], 0, 1), (line.Start, 0, -0.5), (line.End, 0, -0.5));
+                    break;
+                }
+                case SketchConstraints.Parallel or SketchConstraints.Perpendicular or SketchConstraints.Equal or SketchConstraints.Angle:
+                    TwoLines(constraint.Kind, Line(_sketch, items[0]), Line(_sketch, items[1]), constraint.Values);
+                    break;
+                case SketchConstraints.Symmetric:
+                    Mirror(items[0], items[1], Line(_sketch, items[2]));
+                    break;
                 default:
                     throw new InvalidOperationException($"The constraint {constraint.Id} has the kind '{constraint.Kind}', which the solver does not give.");
             }
@@ -347,6 +374,116 @@ public static class SketchSolver
                 (a, ((dy - wy) / length) + (ratio * lx), ((wx - dx) / length) + (ratio * ly)),
                 (b, (wy / length) - (ratio * lx), (-wx / length) - (ratio * ly)));
         }
+
+        // parallel: cross(d₁, d₂) / (|d₁|·|d₂|), the sine of the angle between the lines.
+        // perpendicular: dot(d₁, d₂) / (|d₁|·|d₂|), its cosine. equal: |d₁| − |d₂|, in length units.
+        // angle: cross(w, u₂) / (1 + dot(w, u₂)) with w = R(θ)·u₁, which is zero only when d₂ has
+        // the direction of d₁ turned by θ, so the solve keeps the branch of the inequality of
+        // ADR-0033 item 3. Two rows u₂ − w have rank one away from the solution, and the solver
+        // then drops one of them and does not converge. For a direction of length zero the
+        // quotient takes 1 for its length and the unit direction (1, 0), as Separation does.
+        private void TwoLines(string kind, SketchLine first, SketchLine second, IReadOnlyList<double> values)
+        {
+            var (d1x, d1y) = (X(first.End) - X(first.Start), Y(first.End) - Y(first.Start));
+            var (d2x, d2y) = (X(second.End) - X(second.Start), Y(second.End) - Y(second.Start));
+            var l1 = Math.Sqrt((d1x * d1x) + (d1y * d1y));
+            var l2 = Math.Sqrt((d2x * d2x) + (d2y * d2y));
+            var (n1, n2) = (l1 == 0 ? 1 : l1, l2 == 0 ? 1 : l2);
+            var (u1x, u1y) = l1 == 0 ? (1.0, 0.0) : (d1x / l1, d1y / l1);
+            var (u2x, u2y) = l2 == 0 ? (1.0, 0.0) : (d2x / l2, d2y / l2);
+
+            // Finding of the codebase review of 2026-10-30: an equation of a direction that grows
+            // with |d₂| has the root d₂ = 0, and the step of minimum norm from an exact parallel
+            // start went to it, so a line shrank to one point. Each equation of a direction is
+            // now a function of the two unit directions only, so no length changes its value.
+            switch (kind)
+            {
+                case SketchConstraints.Parallel:
+                {
+                    var value = ((d1x * d2y) - (d1y * d2x)) / (n1 * n2);
+                    var byFirst = Quotient(d2y / (n1 * n2), -d2x / (n1 * n2), value, d1x, d1y, l1);
+                    var bySecond = Quotient(-d1y / (n1 * n2), d1x / (n1 * n2), value, d2x, d2y, l2);
+                    Directions(first, second, value, byFirst, bySecond);
+                    break;
+                }
+                case SketchConstraints.Perpendicular:
+                {
+                    var value = ((d1x * d2x) + (d1y * d2y)) / (n1 * n2);
+                    var byFirst = Quotient(d2x / (n1 * n2), d2y / (n1 * n2), value, d1x, d1y, l1);
+                    var bySecond = Quotient(d1x / (n1 * n2), d1y / (n1 * n2), value, d2x, d2y, l2);
+                    Directions(first, second, value, byFirst, bySecond);
+                    break;
+                }
+                case SketchConstraints.Equal:
+                    Directions(first, second, l1 - l2, (u1x, u1y), (-u2x, -u2y));
+                    break;
+                default:
+                {
+                    var (cos, sin) = (values[0], values[1]);
+                    var (wx, wy) = ((cos * u1x) - (sin * u1y), (sin * u1x) + (cos * u1y));
+                    // g = cross(w, u₂) / (1 + dot(w, u₂)), the tangent of half the angle φ from w
+                    // to u₂. Its step of Gauss and Newton is Δφ = −sin φ, so a solve goes to φ = 0
+                    // from each start but the opposite one, where g is not finite and the solve
+                    // stops.
+                    var c = (wx * u2y) - (wy * u2x);
+                    var k = 1 + (wx * u2x) + (wy * u2y);
+                    var value = c / k;
+                    var (gu2x, gu2y) = ((-wy - (value * wx)) / k, (wx - (value * wy)) / k);
+                    var (gwx, gwy) = ((u2y - (value * u2x)) / k, (-u2x - (value * u2y)) / k);
+                    // By u₁ through w = R(θ)·u₁, then by d₁ and d₂ through P and Q, the
+                    // derivatives (I − u·uᵀ) / |d| of the unit directions; zero for a length of zero.
+                    var (gu1x, gu1y) = ((cos * gwx) + (sin * gwy), (-sin * gwx) + (cos * gwy));
+                    Directions(first, second, value, Unit(gu1x, gu1y, u1x, u1y, l1), Unit(gu2x, gu2y, u2x, u2y, l2));
+                    break;
+                }
+            }
+        }
+
+        // symmetric p, q, a→b: the midpoint m of p and q is on the line, cross(d, m − a) / |d| = 0,
+        // and q − p is normal to it, dot(q − p, d) / |d| = 0.
+        private void Mirror(Guid p, Guid q, SketchLine line)
+        {
+            var (a, b) = (line.Start, line.End);
+            var (dx, dy) = (X(b) - X(a), Y(b) - Y(a));
+            var length = Math.Sqrt((dx * dx) + (dy * dy));
+            var n = length == 0 ? 1 : length;
+
+            var (wx, wy) = (((X(p) + X(q)) / 2) - X(a), ((Y(p) + Y(q)) / 2) - Y(a));
+            var across = ((dx * wy) - (dy * wx)) / n;
+            var (cx, cy) = Quotient(wy / n, -wx / n, across, dx, dy, length);
+            var (hx, hy) = (-dy / (2 * n), dx / (2 * n));
+            Equation(across, (p, hx, hy), (q, hx, hy), (a, (dy / n) - cx, (-dx / n) - cy), (b, cx, cy));
+
+            var (sx, sy) = (X(q) - X(p), Y(q) - Y(p));
+            var along = ((sx * dx) + (sy * dy)) / n;
+            var (ex, ey) = Quotient(sx / n, sy / n, along, dx, dy, length);
+            Equation(along, (p, -dx / n, -dy / n), (q, dx / n, dy / n), (a, -ex, -ey), (b, ex, ey));
+        }
+
+        // The derivative by d of f(d) / |d|, from the derivative g / |d| of its numerator: g / |d|
+        // − value · d / |d|². For a direction of length zero the quotient takes 1, so the
+        // derivative is g.
+        private static (double X, double Y) Quotient(double gx, double gy, double value, double dx, double dy, double length)
+            => length == 0 ? (gx, gy) : (gx - (value * dx / (length * length)), gy - (value * dy / (length * length)));
+
+        // The derivative by d of a function of the unit direction u = d / |d|, from its derivative
+        // g by u: (I − u·uᵀ)·g / |d|, or zero for a direction of length zero.
+        private static (double X, double Y) Unit(double gx, double gy, double ux, double uy, double length)
+        {
+            if (length == 0)
+                return (0, 0);
+            var along = (ux * gx) + (uy * gy);
+            return ((gx - (along * ux)) / length, (gy - (along * uy)) / length);
+        }
+
+        // One row of two directions d₁ = b₁ − a₁ and d₂ = b₂ − a₂, from its derivatives by d₁ and d₂.
+        private void Directions(SketchLine first, SketchLine second, double value, (double X, double Y) byFirst, (double X, double Y) bySecond)
+            => Equation(
+                value,
+                (first.End, byFirst.X, byFirst.Y),
+                (first.Start, -byFirst.X, -byFirst.Y),
+                (second.End, bySecond.X, bySecond.Y),
+                (second.Start, -bySecond.X, -bySecond.Y));
 
         // One row: its value, and the derivatives of x and y of each point. A term of the
         // origin is a constant and has no column; two terms of one point add.
