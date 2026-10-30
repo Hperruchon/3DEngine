@@ -3200,3 +3200,35 @@ New tests: 19. The test list holds 1120 (814 in `Engine.Tests`, 190 in `3DEngine
 `3DEngine.ImageTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
 entries: 14 of 15. New diagnostic codes: none. Since the review of v0.105, 2 product milestones and 6 entries followed
 it.
+
+## v0.112 — The engine solves pointOn, midpoint, parallel, perpendicular, equal, symmetric and angle (K2c, TASK-0110)
+
+The owner approved the plan of 2026-10-30 with the answers A to Q1 to Q4 and KQ1 to KQ4. K2c is its first item.
+
+**The change.**
+
+- `AddSketchConstraint` accepts seven more kinds of ADR-0033 item 3: `pointOn` (a point and a line), `midpoint`,
+  `parallel`, `perpendicular`, `equal` (two lines), `symmetric` and `angle`. A point of `pointOn` or `midpoint`
+  that is an end of its line, one line twice, one point twice in `symmetric`, and a pair of an angle that is not a
+  unit pair each give `E-SKETCH-CONSTRAINT-INVALID`. `tangent` and `radius` wait for K2d.
+- `AddSketchConstraint` and `SetSketchConstraintValue` record the pair of an angle divided by its length.
+- The solver gives each kind its equations in length units, with derivatives by formula. The two rows of an angle
+  are zero only in the direction of the angle, so a solve does not end on the opposite line.
+- `GetSketch` gives the residual of each new kind. The History lines of ADR-0033 and ADR-0035 give the equations,
+  under the answer Q2 A.
+
+**Proof.** 19 new test cases in `Engine.Tests/Sketch/LineConstraintTests.cs`: each kind solves a rough sketch with
+its free degrees, each derivative agrees with a central difference, a fixed solve of the seven kinds gives constant
+bits, an angle keeps its branch, each wrong form is refused, and the pair of an angle is recorded as a unit pair. 12
+injections: each one failed a test. One test of `SketchModelTests` now sends `tangent` in place of `parallel` for a
+kind that waits.
+
+**What stays.** The desktop panel of constraints gives the five kinds of K2a. The circle and the arc wait for K2d.
+
+**A correction.** The first `governed-by` of TASK-0110 named 0033 and 0035 only, and the gate added seven ADRs whose
+`affects` holds a file of the write set.
+
+New tests: 19. The test list holds 1139 (833 in `Engine.Tests`, 190 in `3DEngine.Tests`, 116 in
+`3DEngine.ImageTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
+entries: 14 of 15. New diagnostic codes: none. Since the review of v0.105, 3 product milestones and 7 entries followed
+it.
