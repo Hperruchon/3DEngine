@@ -1,3 +1,4 @@
+using System.Xml.Linq;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
@@ -7,8 +8,13 @@ namespace Engine.Tests.Governance;
 // The string values that the compiler computes in a set of C# files (TASK-0107). A gate that
 // reads text misses a value that the compiler joins or resolves: "cim" + "gui", a raw string,
 // nameof(cimgui), an escape such as S, and a constant of another file (findings T81 and
-// T82 of the codebase review of 2026-10-29). One compilation binds each file with the
-// assemblies of the runtime, so a constant of one project that another project names binds too.
+// T82 of the codebase review of 2026-10-29).
+//
+// Finding T90 of the codebase review of 2026-10-30 (TASK-0114): one compilation of all files made
+// two internal types of one name in two projects ambiguous, and a joined code passed. Each file now
+// binds in the compilation of its own project: the files of the project, of each project that it
+// references, and the assemblies of the runtime. The project of a file is the first folder of its
+// path, as each project of the repository lies in a folder of the root.
 internal static class ConstantStrings
 {
     // Each expression of each file whose constant value is a string, with its line.
@@ -17,23 +23,59 @@ internal static class ConstantStrings
         var trees = files
             .Select(file => CSharpSyntaxTree.ParseText(file.Text, new CSharpParseOptions(LanguageVersion.Preview), path: file.Path))
             .ToList();
-        var compilation = CSharpCompilation.Create("constants", trees, References.Value, new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary, allowUnsafe: true));
+        var byProject = trees.GroupBy(Project).ToDictionary(group => group.Key, group => group.ToList(), StringComparer.Ordinal);
 
-        foreach (var tree in trees)
+        foreach (var (project, own) in byProject.OrderBy(pair => pair.Key, StringComparer.Ordinal))
         {
-            var model = compilation.GetSemanticModel(tree);
-            foreach (var expression in tree.GetRoot().DescendantNodes().OfType<ExpressionSyntax>())
+            var referenced = References(project).Where(byProject.ContainsKey).SelectMany(name => byProject[name]);
+            var compilation = CSharpCompilation.Create(
+                "constants-" + project, [.. own, .. referenced], RuntimeReferences.Value,
+                new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary, allowUnsafe: true));
+
+            foreach (var tree in own)
             {
-                if (model.GetConstantValue(expression) is { HasValue: true, Value: string value })
-                    yield return (tree.FilePath, expression.GetLocation().GetLineSpan().StartLinePosition.Line + 1, value);
+                var model = compilation.GetSemanticModel(tree);
+                foreach (var expression in tree.GetRoot().DescendantNodes().OfType<ExpressionSyntax>())
+                {
+                    if (model.GetConstantValue(expression) is { HasValue: true, Value: string value })
+                        yield return (tree.FilePath, expression.GetLocation().GetLineSpan().StartLinePosition.Line + 1, value);
+                }
             }
         }
+    }
+
+    private static string Project(SyntaxTree tree) => tree.FilePath.Split('/')[0];
+
+    // The projects that a project references, and each project that they reference, from the
+    // items ProjectReference of its project file in the repository. A folder with no project file
+    // references nothing.
+    private static IReadOnlyCollection<string> References(string project)
+    {
+        var found = new SortedSet<string>(StringComparer.Ordinal);
+        var queue = new Queue<string>([project]);
+        while (queue.Count > 0)
+        {
+            var next = queue.Dequeue();
+            var file = RepositoryFiles.Path(next, next + ".csproj");
+            if (!File.Exists(file))
+                continue;
+            foreach (var reference in XDocument.Load(file).Descendants().Where(e => DependencyDirectionGateTests.Is(e, "ProjectReference")))
+            {
+                var include = DependencyDirectionGateTests.Value(reference, "Include");
+                if (include is null)
+                    continue;
+                var name = Path.GetFileNameWithoutExtension(include.Replace('\\', '/'));
+                if (name != project && found.Add(name))
+                    queue.Enqueue(name);
+            }
+        }
+        return found;
     }
 
     // The assemblies of the runtime, so that the compiler binds the attributes and the types
     // of the framework. The folder of System.Private.CoreLib only: the test process also loads
     // the engine assemblies, and the program repo-gates does not, so both bind the same files.
-    private static readonly Lazy<MetadataReference[]> References = new(() =>
+    private static readonly Lazy<MetadataReference[]> RuntimeReferences = new(() =>
         ((AppContext.GetData("TRUSTED_PLATFORM_ASSEMBLIES") as string) ?? string.Empty)
             .Split(Path.PathSeparator, StringSplitOptions.RemoveEmptyEntries)
             .Where(path => path.EndsWith(".dll", StringComparison.OrdinalIgnoreCase)

@@ -151,6 +151,54 @@ public sealed class SketchGapTests
         Assert.True(((ICollection<SketchConstraint>)deleted.Constraints).IsReadOnly);
     }
 
+    // Finding E94 of the codebase review of 2026-10-30 (TASK-0114): a move in a sketch with no
+    // constraint and a change of a value gave the Document a list of the handler.
+    [Fact]
+    public async Task A_Move_And_A_Change_Of_A_Value_Give_Read_Only_Lists()
+    {
+        var session = NewSession();
+        var sketch = Output(await Applied(session, new CreateSketchCommand { DatumId = Datums.XY.Id }), "sketchId");
+        var point = Output(await Applied(session, new AddSketchPointCommand { SketchId = sketch, X = 1, Y = 1 }), "pointId");
+        await Applied(session, new MoveSketchPointCommand { SketchId = sketch, PointId = point, X = 2, Y = 2 });
+        var moved = await session.Read((document, _) => document.Sketches.Single());
+        Assert.True(((ICollection<SketchPoint>)moved.Points).IsReadOnly);
+
+        var other = Output(await Applied(session, new AddSketchPointCommand { SketchId = sketch, X = 5, Y = 1 }), "pointId");
+        var distance = Output(await Applied(session, new AddSketchConstraintCommand { SketchId = sketch, Kind = "distance", First = point, Second = other, Value = 3 }), "constraintId");
+        await Applied(session, new SetSketchConstraintValueCommand { SketchId = sketch, ConstraintId = distance, Value = 4 });
+        var changed = await session.Read((document, _) => document.Sketches.Single());
+        Assert.True(((ICollection<SketchConstraint>)changed.Constraints).IsReadOnly);
+        Assert.True(((ICollection<SketchLine>)changed.Lines).IsReadOnly);
+    }
+
+    // Finding E95 of the codebase review of 2026-10-30 (TASK-0114): a move, a change of a value
+    // and a delete sent again after the cache forgot them are refused, as E86 refuses an add.
+    [Fact]
+    public async Task Each_Sketch_Command_Sent_Again_After_The_Cache_Forgot_It_Is_Refused()
+    {
+        var session = NewSession();
+        var sketch = Output(await Applied(session, new CreateSketchCommand { DatumId = Datums.XY.Id }), "sketchId");
+        var a = Output(await Applied(session, new AddSketchPointCommand { SketchId = sketch, X = 0, Y = 0 }), "pointId");
+        var b = Output(await Applied(session, new AddSketchPointCommand { SketchId = sketch, X = 4, Y = 0 }), "pointId");
+        var c = Output(await Applied(session, new AddSketchPointCommand { SketchId = sketch, X = 4, Y = 4 }), "pointId");
+        var distance = Output(await Applied(session, new AddSketchConstraintCommand { SketchId = sketch, Kind = "distance", First = a, Second = b, Value = 4 }), "constraintId");
+        var move = new MoveSketchPointCommand { SketchId = sketch, PointId = b, X = 5, Y = 0 };
+        var set = new SetSketchConstraintValueCommand { SketchId = sketch, ConstraintId = distance, Value = 6 };
+        var delete = new DeleteSketchItemCommand { SketchId = sketch, ItemId = c };
+        foreach (Command command in new Command[] { move, set, delete })
+            await Applied(session, command);
+        var before = await session.Read((document, _) => document.Version);
+
+        await Forget(session);
+
+        foreach (Command again in new Command[] { move, set, delete })
+        {
+            var result = await session.Apply(again);
+            Assert.Equal((CommandStatus.Rejected, DiagnosticCodes.SketchIdInUse), (result.Status, result.Error?.Code));
+        }
+        Assert.Equal(before, await session.Read((document, _) => document.Version));
+    }
+
     // E92: two points of a line at one position give their own reason, and not "cross or touch".
     [Fact]
     public void A_Line_Of_Length_Zero_Gives_Its_Own_Reason()
