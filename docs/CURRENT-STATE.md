@@ -3317,3 +3317,39 @@ New tests: 13. The test list holds 1162 (856 in `Engine.Tests`, 190 in `3DEngine
 `3DEngine.ImageTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
 entries: 15 of 15. New diagnostic codes: none. Since the review of v0.112, 0 product milestones and 3 entries followed
 it.
+
+## v0.116 — An edit of a sketch rebuilds each translate and subtract that descends from its extrude (K0d, TASK-0116)
+
+The owner chose the first slice of K0 on 2026-10-30 (KQ1 to KQ4 A) and answered A to Q1, Q2 and Q3 of the codebase
+review of that date. ADR-0039 holds the decisions, and KQ4 A accepts it.
+
+**The change.**
+
+- `FeatureGraph.Of(log)` in `Engine.Core/Sketch/` gives the command in effect that creates each handle and the
+  command that consumes it, as a projection of the log. No field of the Document and no file changes.
+- After an edit of a sketch, each extrude of it whose body a `Translate` or a `Subtract` consumed is a seed. The
+  rebuild walks from each seed to its live end, and runs each step upstream of the end again in log order under
+  `GeometryKeys.Derive(edit, body)`: an extrude of the edited sketch from the solved record, an extrude of another
+  sketch from its live record (Q1 A), and a `Translate` or a `Subtract` with a changed operand. A box keeps its key.
+- The end gets the new key and one `body.changed`. A step that does not resolve or fails gives the end the fault
+  `W-SKETCH-REBUILD-FAILED`, and the edit applies. The owner widened the meaning of that code to a body of the chain
+  (Q2 A), and `docs/diagnostics.md` says so. `W-SKETCH-EXTRUDE-CONSUMED` stays for a consumer that the graph does
+  not know (Q3 A); none exists today.
+- An edit that gives the same profile changes no end. An undo of the edit swaps the records back and calls no backend.
+- ADR-0039 amends ADR-0037 item 7. R-0045 closes.
+
+**Proof.** 11 new test cases in `Engine.Tests/Sketch/ChainRebuildTests.cs`: a translate, a subtract with the extrude
+as each operand, a chain of three steps, an undo and a redo, an empty cut with its fault and its repair, an operand of
+another sketch, two extrudes in one subtract, two ends in the log order, an unchanged profile, the graph of a log, and
+an open of the file. The test of a consumed extrude in `RebuildTests` now expects the rebuild. 10 injections: each
+one failed a test.
+
+**What stays.** Each edit runs each step upstream of each end on the backend again, and each old solid stays in the
+backend (ADR-0037 item 9).
+
+**A correction.** The `governed-by` of TASK-0114 gains ADR-0039, whose `affects` holds a file of its write set.
+
+New tests: 11. The test list holds 1173 (867 in `Engine.Tests`, 190 in `3DEngine.Tests`, 116 in
+`3DEngine.ImageTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
+entries: 14 of 15. New diagnostic codes: none. Since the review of v0.112, 1 product milestone and 4 entries followed
+it.

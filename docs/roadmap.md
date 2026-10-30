@@ -93,6 +93,7 @@ Therefore each approved objective must have a track here.
 - K2c — The engine solves pointOn, midpoint, parallel, perpendicular, equal, symmetric and angle. v0.112, TASK-0110.
 - P0.44 — No MSBuild element gives a client the assembly name of another project. v0.114, TASK-0112.
 - P0.46 — The native wrapper frees each buffer with its allocator, and the binder and the endpoint read numbers and versions as the schema says. v0.115, TASK-0115.
+- K0d — An edit of a sketch rebuilds each translate and subtract that descends from its extrude. v0.116, TASK-0116.
 
 ## Track 0 — Foundations
 
@@ -188,7 +189,7 @@ boundary and each refused rung.
 | K0a | Extrude a closed profile of line segments over Manifold. The command records the identifier of its sketch and a distance, not coordinates, and the handler reads the current sketch (Q7 of the second review of 2026-10-28). No arc, because an arc needs a sine and a cosine (determinism rule 1). The first commit checks that the native package exports the extrude function (KD5). ADR-0036, TASK-0103. | 3–5 |
 | K0b | The engine and HTTP: an edit of a sketch rebuilds each live extrude of the sketch under its handle and a new geometry key, and a profile that breaks gives a fault on the body and keeps its last solid (Q1 to Q5 A of the codebase review of 2026-10-29). An ADR resolves the conflict with ADR-0021 (KD5). TASK-0108. | 4–6 |
 | K0c | The desktop: a body that a rebuild changes gets its new mesh, and the panel shows the fault of a body (Q6 A of the codebase review of 2026-10-29). TASK-0109. | 2–4 |
-| K0d | An edit of a sketch rebuilds each translate and subtract that descends from its extrude, as a projection of the log (KQ1 to KQ4 A of 2026-10-30, and Q1 to Q3 of the codebase review of 2026-10-30). TASK-0116. | 6–9 |
+| K0d | An edit of a sketch rebuilds each translate and subtract that descends from its extrude, as a projection of the log (KQ1 to KQ4 A of 2026-10-30, and Q1 to Q3 A of the codebase review of 2026-10-30). ADR-0039, TASK-0116. | 6–9 |
 | K0 | A feature graph over Manifold. No B-Rep. Deferred-query references. The rest after K0d. | 12–20 |
 | K1 | Exact predicates. A deterministic arithmetic layer. | 4–8 |
 | K2a | The sketch model in the engine. The point, the line segment that references two points (Q3), the fixed frame of a sketch, and the five constraints of K3a. A sketch records the identifier of a datum; the three origin planes have fixed identifiers (Q4). One command for each item, with scalar fields; the Document holds one sketch record for each sketch, and an undo restores the record before; the events `sketch.created`, `sketch.changed` and `sketch.removed`, and a query `GetSketch` (Q2). The positions are a projection of the record, and the log holds the inputs only (Q6). An angle records the pair (cos θ, sin θ) (Q5). The ADR names the five entities and the fourteen constraints now (Q1). The desktop draws a sketch as lines of the UI layer, read only (Q9). ADR-0033, TASK-0100. | 4–6 |
