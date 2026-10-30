@@ -335,6 +335,11 @@ holds T68 and T69 before K2, and TASK-0098 holds the rest after K2. T4, T5, T7, 
 Progress 2026-10-28: TASK-0097 corrected T68 and T69. The test framework gate reads each source that MSBuild compiles
 and the project file of each test project, and the judge names those project files as gate files. T31 stays open in
 part.
+Progress 2026-10-30: TASK-0107 corrected T80 to T87 for their forms. It found a new form that no gate reads: MSBuild
+reads each `Directory.Build.rsp` above a project at the command line, and a `/p:TargetName=` or `/p:AssemblyName=` in
+it sets the property for each project. A probe build outside the repository gave `Engine.Tests.dll` from such a
+file. No such file is in the repository. The next codebase review gives it a
+finding. T31 stays open in part.
 
 ### R-0033 · Seven findings of the third codebase review in the engine and the hosts have no task
 - class: debt

@@ -295,7 +295,28 @@ public class AdrGateTests
                 yield return $"{id}: its file in docs/adr/archive/ gives the title '{file.Title}', and its row gives '{title}'";
             else if (!Regex.IsMatch(file.Body, @"^## Context\s*$", RegexOptions.Multiline) || !Regex.IsMatch(file.Body, @"^## Decision\s*$", RegexOptions.Multiline))
                 yield return $"{id}: its file in docs/adr/archive/ has no body with the sections \"## Context\" and \"## Decision\"";
+            else if (EmptySection(file.Body) is { } empty)
+                yield return $"{id}: its file in docs/adr/archive/ has no paragraph under \"## {empty}\"";
         }
+    }
+
+    // Finding T85 of the codebase review of 2026-10-29 (TASK-0107): a file with the two
+    // headings and no text below them passed. Each section holds a line of text that is not a
+    // heading before the next heading of its level; ADR-0011 starts its decision with "### 1.".
+    // The name of the first empty section, or null.
+    private static string? EmptySection(string body)
+    {
+        var lines = body.Split('\n');
+        foreach (var name in new[] { "Context", "Decision" })
+        {
+            var start = Array.FindIndex(lines, line => line.TrimEnd() == $"## {name}");
+            var text = lines.Skip(start + 1)
+                .TakeWhile(line => !line.StartsWith("# ", StringComparison.Ordinal) && !line.StartsWith("## ", StringComparison.Ordinal))
+                .Any(line => line.Trim().Length > 0 && !line.StartsWith('#'));
+            if (!text)
+                return name;
+        }
+        return null;
     }
 
     // The file of a number in docs/adr/archive/, or null when it has none.
@@ -342,6 +363,19 @@ public class AdrGateTests
     public void Each_Form_Of_Finding_T75_Is_A_Problem(string id, string title, string body, string expected)
     {
         var problems = ArchiveProblems([ArchivedRow], _ => new ArchiveFile("Withdrawn", id, title, body)).ToList();
+
+        Assert.Contains(problems, problem => problem.Contains(expected, StringComparison.Ordinal));
+    }
+
+    // The form of finding T85: the two headings with no paragraph, the second heading with no
+    // paragraph, and a section that holds a heading only.
+    [Theory]
+    [InlineData("## Context\n\n## Decision\n", "under \"## Context\"")]
+    [InlineData("## Context\n\nA reason.\n\n## Decision\n\n", "under \"## Decision\"")]
+    [InlineData("## Context\n\n### A part\n\n## Decision\n\nA rule.\n", "under \"## Context\"")]
+    public void Each_Form_Of_Finding_T85_Is_A_Problem(string body, string expected)
+    {
+        var problems = ArchiveProblems([ArchivedRow], _ => Complete with { Body = body }).ToList();
 
         Assert.Contains(problems, problem => problem.Contains(expected, StringComparison.Ordinal));
     }

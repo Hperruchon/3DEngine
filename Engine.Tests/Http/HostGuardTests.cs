@@ -413,7 +413,7 @@ public class HostGuardTests : IClassFixture<WebApplicationFactory<Program>>
                 await first.WaitForExitAsync();
             }
 
-            Assert.Equal(3, File.ReadAllLines(path).Length);
+            Assert.Equal(3, (await ReadLinesWhenFree(path)).Length);
 
             using var second = StartHost($"--urls http://127.0.0.1:0 --file \"{path}\"", httpPorts: null);
             try
@@ -551,6 +551,45 @@ public class HostGuardTests : IClassFixture<WebApplicationFactory<Program>>
             {
                 await Task.Delay(250);
             }
+        }
+    }
+
+    // Finding T87 of the codebase review of 2026-10-29 (TASK-0107): the run 40839708477 on
+    // Windows read the file of a killed host before the process released it. The read tries
+    // for 10 s, and the last try gives its exception.
+    private static async Task<string[]> ReadLinesWhenFree(string path)
+    {
+        for (var attempt = 0; attempt < 40; attempt++)
+        {
+            try
+            {
+                return File.ReadAllLines(path);
+            }
+            catch (IOException)
+            {
+                await Task.Delay(250);
+            }
+        }
+        return File.ReadAllLines(path);
+    }
+
+    [Fact]
+    public async Task A_File_That_Another_Handle_Holds_Is_Read_When_The_Handle_Closes()
+    {
+        var folder = Directory.CreateTempSubdirectory("engine-api-http-held-").FullName;
+        var path = Path.Combine(folder, "plate.3de");
+        try
+        {
+            await File.WriteAllLinesAsync(path, ["a", "b", "c"]);
+            using var held = new FileStream(path, FileMode.Open, FileAccess.ReadWrite, FileShare.None);
+            Assert.Throws<IOException>(() => File.ReadAllLines(path));
+            using var release = new Timer(_ => held.Dispose(), null, 500, Timeout.Infinite);
+
+            Assert.Equal(["a", "b", "c"], await ReadLinesWhenFree(path));
+        }
+        finally
+        {
+            await DeleteFolder(folder);
         }
     }
 
