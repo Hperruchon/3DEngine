@@ -3286,3 +3286,34 @@ New tests: 4. The test list holds 1149 (843 in `Engine.Tests`, 190 in `3DEngine.
 `3DEngine.ImageTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
 entries: 15 of 15. New diagnostic codes: none. Since the review of v0.112, 0 product milestones and 2 entries followed
 it.
+
+## v0.115 — The native wrapper frees each buffer with its allocator, and the binder and the endpoint read numbers and versions as the schema says (P0.46, TASK-0115)
+
+The plan of 2026-10-30 (answer Q4 A) gives this task E11, E14 and E16. R9 waits for the visual check of the owner on
+its branch, and P0.45 changes the desktop, so under the answer Q3 A this task came before them: it changes no file of
+the desktop.
+
+**The change.**
+
+- E14: each solid of Manifold in a buffer of `Marshal.AllocHGlobal` goes with `manifold_destruct_manifold` and then
+  `Marshal.FreeHGlobal`, and each box with `manifold_destruct_box` and `Marshal.FreeHGlobal`. The C++ delete of
+  `manifold_delete_*` gave one buffer to two allocators. The binding holds no delete function.
+- E11: the binder refuses a number that is not finite, as text and as a typed value. `CreateBox` with `1e999`
+  gave `Applied`, and a query of the body gave HTTP 500; it now gives HTTP 400 with `E-API-BAD-REQUEST`.
+- E16: the envelopes of `POST /commands` and `POST /queries` refuse a member that they do not name, with HTTP 400.
+  A typing error in `expectedDocumentVersion` removed the check of the version with no error.
+
+**Proof.** 13 new test cases: 7 rows of `ParameterBinderTests`, 4 cases of `CommandsEndpointTests` with a control
+for each envelope, and 2 in `ManifoldOwnershipTests`. 5 injections: each one failed a test.
+
+**What stays.** R-0043 moves to TASK-0114: its probe needs a run of the desktop with a log of the samples, and its fix
+can change a file that the parked branch of R9 changes. A file of an earlier version that holds a number that is not
+finite cannot exist, because JSON cannot hold one.
+
+**A correction.** The comment of `ManifoldNative.cs` said "VERIFIED" for a delete that frees the caller buffer; the
+review of 2026-09-30 found that it is the C++ delete. The comment now gives the destruct and the free.
+
+New tests: 13. The test list holds 1162 (856 in `Engine.Tests`, 190 in `3DEngine.Tests`, 116 in
+`3DEngine.ImageTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
+entries: 15 of 15. New diagnostic codes: none. Since the review of v0.112, 0 product milestones and 3 entries followed
+it.
