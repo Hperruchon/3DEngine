@@ -190,3 +190,11 @@ the circle, the arc and the kinds 6 to 14.
   are two points; each other form gives `E-SKETCH-CONSTRAINT-INVALID`. The residual of `GetSketch` has the unit of
   the equation of ADR-0035. Phase K2d gives the circle, the arc, `tangent`, `radius`, and `pointOn` and `equal` on
   them.
+- 2026-10-30 · TASK-0117 · Phase K2d gives the circle and the arc (item 2) with the commands `AddSketchCircle`
+  (`sketchId`, `centerPointId`, `radius`; output `circleId`) and `AddSketchArc` (`sketchId`, `centerPointId`,
+  `startPointId`, `endPointId`; output `arcId`), and the new code `E-SKETCH-CURVE-INVALID` for a radius that is not a
+  positive finite number or an arc whose three points are not three different points. A delete of a point removes
+  each circle and each arc that references it, and `DeleteSketchItem` takes a circle and an arc. The kinds 6 and 10 on
+  a circle or an arc, 11 and 13 are given. The radius of an arc is the distance from its centre to its start, and a
+  point of `pointOn` on an arc lies on the circle of the arc. The answer Q2 A of the plan of 2026-10-30 permits this
+  line with no new record, because no public shape of `Engine.Contracts` changes.

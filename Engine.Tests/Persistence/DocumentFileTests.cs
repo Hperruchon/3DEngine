@@ -70,6 +70,8 @@ public sealed class DocumentFileTests : IDisposable
         ["CreateSketch"] = new CreateSketchCommand { DatumId = Engine.Contracts.Sketch.Datums.XZ.Id, SketchName = "plate é 𝄞" },
         ["AddSketchPoint"] = new AddSketchPointCommand { SketchId = Guid.NewGuid(), X = -0.0, Y = 1e-310 },
         ["AddSketchLine"] = new AddSketchLineCommand { SketchId = Guid.NewGuid(), StartPointId = Guid.NewGuid(), EndPointId = Guid.NewGuid() },
+        ["AddSketchCircle"] = new AddSketchCircleCommand { SketchId = Guid.NewGuid(), CenterPointId = Guid.NewGuid(), Radius = 2.5 },
+        ["AddSketchArc"] = new AddSketchArcCommand { SketchId = Guid.NewGuid(), CenterPointId = Guid.NewGuid(), StartPointId = Guid.NewGuid(), EndPointId = Guid.NewGuid() },
         ["AddSketchConstraint"] = new AddSketchConstraintCommand { SketchId = Guid.NewGuid(), Kind = "fixed", First = Guid.NewGuid(), Value = 0.1, SecondValue = -0.0 },
         ["SetSketchConstraintValue"] = new SetSketchConstraintValueCommand { SketchId = Guid.NewGuid(), ConstraintId = Guid.NewGuid(), Value = double.MaxValue },
         ["MoveSketchPoint"] = new MoveSketchPointCommand { SketchId = Guid.NewGuid(), PointId = Guid.NewGuid(), X = 123456789.125, Y = -1e-300 },

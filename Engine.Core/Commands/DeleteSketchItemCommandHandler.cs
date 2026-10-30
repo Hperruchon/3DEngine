@@ -59,7 +59,7 @@ public sealed class DeleteSketchItemCommandHandler : ICommandHandler, ICommandEn
         if (SketchModel.Find(document, delete.SketchId) is not { } sketch)
             return Task.FromResult(SketchResults.NotFound(delete.SketchId));
 
-        if (SketchModel.KindOf(sketch, delete.ItemId) is not (SketchModel.ItemKind.Point or SketchModel.ItemKind.Line or SketchModel.ItemKind.Constraint)
+        if (SketchModel.KindOf(sketch, delete.ItemId) is not (SketchModel.ItemKind.Point or SketchModel.ItemKind.Line or SketchModel.ItemKind.Circle or SketchModel.ItemKind.Arc or SketchModel.ItemKind.Constraint)
             || SketchResults.IsOrigin(sketch, delete.ItemId))
             return Task.FromResult(SketchResults.ItemNotFound(delete.SketchId, delete.ItemId, "item that a command can delete"));
 
