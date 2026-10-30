@@ -3557,3 +3557,36 @@ New tests: 6. The test list holds 1254 (916 in `Engine.Tests`, 210 in `3DEngine.
 `3DEngine.ImageTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
 entries: 15 of 15. New diagnostic codes: none. Since the review of v0.121, 0 product milestones and 2 entries followed
 it.
+
+## v0.124 — The desktop draws and adds circles and arcs (K2e, TASK-0122)
+
+K2d (TASK-0117) gave the engine the circle and the arc. The codebase review of 2026-10-30 (b), sections 5 and 6,
+gave the research and the approach.
+
+**The change.**
+
+- `SketchOverlay` draws each circle and each arc as a polyline of 64 segments for a full turn, counter-clockwise
+  from the start of an arc, and the picture of the tool holds the pixels of each curve. The polyline is presentation
+  (ADR-0007), so it uses a sine and a cosine outside the log.
+- `SketchTool` has the tools Circle and Arc. Circle takes the centre and a point on the circle; the radius is the
+  distance in the plane, with `sqrt` only. Arc takes the centre, the start and the end, and a new end goes on the
+  circle of the start. The tool Select also picks a curve.
+- The window of the sketch has the buttons Circle and Arc, and On curve, Tangent, Inside tangent, Equal and Radius
+  for a selection with a curve. A circle has the label R1, and an arc A1. ADR-0034 item 4 holds the tools.
+- The row of Next point stays the second row of the window, so the pad stays inside a display of 1024 × 768.
+
+**Proof.** 11 new test cases: 5 in `3DEngine.Tests/SketchToolTests.cs`, 2 in `SketchOverlayTests.cs`, 2 in
+`SketchWindowUiTests.cs`, 1 in `SketchActionsTests.cs` through a session, and 1 on a GPU in `CurveImageTests.cs`.
+9 injections: each one failed a test. The owner accepted the picture `curves.png` of the GPU test on 2026-10-30.
+
+**What stays.** The kinds of K2c on lines have no button (pointOn and midpoint on a line, parallel, perpendicular,
+equal of two lines, symmetric and angle). An extrude refuses a profile with a curve (TASK-0117). V51 to V55 in
+TASK-0124. A person used the computer, so no run drove the real window with a mouse.
+
+**A correction.** The Goal of TASK-0122 and the row of K2e named the kinds of K2c too; Scope (in) item 4 named the
+kinds on a curve only, and the Goal and the row now agree with it.
+
+New tests: 11. The test list holds 1265 (916 in `Engine.Tests`, 215 in `3DEngine.Tests`, 134 in
+`3DEngine.ImageTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
+entries: 15 of 15. New diagnostic codes: none. Since the review of v0.121, 1 product milestone and 3 entries followed
+it.

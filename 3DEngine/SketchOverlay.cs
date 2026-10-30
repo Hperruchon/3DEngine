@@ -73,6 +73,20 @@ internal static class SketchOverlay
                 }
             }
 
+            foreach (var curve in Curves(sketch))
+            {
+                var first = true;
+                foreach (var (a, b) in Pairs(curve.Polyline))
+                {
+                    if (frame.Segment(frame.ToCamera(World(datum, a.X, a.Y)), frame.ToCamera(World(datum, b.X, b.Y))) is not { } segment)
+                        continue;
+                    lines.Add(new Stroke(segment.A, segment.B, MarkOf(curve.Id)));
+                    if (named is not null && first)
+                        labels.Add(new Label(segment.A + LabelOffset, named[curve.Id]));
+                    first = false;
+                }
+            }
+
             foreach (var (id, point) in world)
             {
                 if (point.Forward < Near)
@@ -110,7 +124,60 @@ internal static class SketchOverlay
             var pixel = frame.Item1.ToPixels(seen);
             return Finite(pixel) ? new ToolPoint(point.Id, point.X, point.Y, pixel.X, pixel.Y) : new ToolPoint(point.Id, point.X, point.Y, null, null);
         }).ToArray();
-        return new SketchPicture(points, [.. sketch.Lines.Select(line => new ToolLine(line.Id, line.Start, line.End))], [.. sketch.Constraints.Select(constraint => constraint.Id)]);
+        var curves = Curves(sketch).Select(curve => new ToolCurve(curve.Id, frame.Item1 is null ? [] :
+        [
+            .. Pairs(curve.Polyline)
+                .Select(pair => frame.Item1.Segment(frame.Item1.ToCamera(World(frame.datum, pair.A.X, pair.A.Y)), frame.Item1.ToCamera(World(frame.datum, pair.B.X, pair.B.Y))))
+                .OfType<(Vector2 A, Vector2 B)>()
+                .Select(segment => (((double)segment.A.X, (double)segment.A.Y), ((double)segment.B.X, (double)segment.B.Y))),
+        ])).ToArray();
+        return new SketchPicture(points, [.. sketch.Lines.Select(line => new ToolLine(line.Id, line.Start, line.End))], [.. sketch.Constraints.Select(constraint => constraint.Id)], curves);
+    }
+
+    // Phase K2e (TASK-0122): the segments of a full turn of a circle. An arc has the part of them
+    // that its sweep covers, at least one.
+    public const int TurnSegments = 64;
+
+    // The polyline of each circle and each arc of a sketch in the plane, counter-clockwise from the
+    // start of an arc (ADR-0033 item 2). The polyline is presentation (ADR-0007): it stays outside
+    // the log, so it uses a sine, a cosine and an arc tangent. An arc whose end is not on the circle
+    // of its start, as in a sketch that is not solved, ends in the direction of its end. A curve of
+    // radius 0 has no polyline.
+    public static IEnumerable<(Guid Id, IReadOnlyList<(double X, double Y)> Polyline)> Curves(SketchInfo sketch)
+    {
+        ArgumentNullException.ThrowIfNull(sketch);
+        var points = sketch.Points.ToDictionary(point => point.Id);
+        foreach (var circle in sketch.Circles)
+        {
+            if (points.TryGetValue(circle.Center, out var c))
+                yield return (circle.Id, Polyline(c.X, c.Y, circle.Radius, 0, 2 * Math.PI));
+        }
+
+        foreach (var arc in sketch.Arcs)
+        {
+            if (!points.TryGetValue(arc.Center, out var c) || !points.TryGetValue(arc.Start, out var s) || !points.TryGetValue(arc.End, out var e))
+                continue;
+            var radius = Math.Sqrt(((s.X - c.X) * (s.X - c.X)) + ((s.Y - c.Y) * (s.Y - c.Y)));
+            var from = Math.Atan2(s.Y - c.Y, s.X - c.X);
+            var sweep = Math.Atan2(e.Y - c.Y, e.X - c.X) - from;
+            while (sweep <= 0)
+                sweep += 2 * Math.PI;
+            yield return (arc.Id, Polyline(c.X, c.Y, radius, from, sweep));
+        }
+    }
+
+    private static IReadOnlyList<(double X, double Y)> Polyline(double cx, double cy, double radius, double from, double sweep)
+    {
+        if (!(radius > 0) || !double.IsFinite(radius) || !double.IsFinite(sweep))
+            return [];
+        var count = Math.Max(1, (int)Math.Ceiling(TurnSegments * sweep / (2 * Math.PI)));
+        return [.. Enumerable.Range(0, count + 1).Select(i => from + (sweep * i / count)).Select(angle => (cx + (radius * Math.Cos(angle)), cy + (radius * Math.Sin(angle))))];
+    }
+
+    private static IEnumerable<((double X, double Y) A, (double X, double Y) B)> Pairs(IReadOnlyList<(double X, double Y)> polyline)
+    {
+        for (var i = 1; i < polyline.Count; i++)
+            yield return (polyline[i - 1], polyline[i]);
     }
 
     private static (double X, double Y, double Z) World(Datum datum, double x, double y)
