@@ -1,4 +1,7 @@
 using System.Text.RegularExpressions;
+using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CSharp;
+using Microsoft.CodeAnalysis.CSharp.Syntax;
 
 namespace Engine.Tests.Diagnostics;
 
@@ -60,10 +63,52 @@ internal static class DiagnosticsScanner
     // is a part of a code, and each code is one constant.
     private static readonly Regex CodeStart = new(@"^[EWI]-[A-Z0-9-]*$", RegexOptions.Compiled);
 
+    //
+    // Finding T99 of the codebase review of 2026-10-30 (b) (TASK-0123): four more forms passed. A
+    // part of a code is also:
+    // - the middle of a code, as "-SKETCH-" in "E" + ("-SKETCH-" + Tag);
+    // - the start of a code or a code in lower case, as "e-sketch-hidden".ToUpperInvariant();
+    // - a text part of an interpolated string that is one of these, as $"E-SKETCH-{Tag}";
+    // - a severity after the separator "-" of string.Join, as string.Join("-", "I", "SKETCH", Tag).
+    // Another spelling of a call stays a rule in text: each code is one constant.
+    private static readonly Regex CodeMiddle = new(@"^-[A-Z][A-Z0-9]*-[A-Z0-9-]*$", RegexOptions.Compiled);
+
+    private static readonly Regex CodeAnyCase = new(@"^[EWIewi]-[A-Za-z0-9-]*$", RegexOptions.Compiled);
+
+    private static bool IsPart(string value)
+        => (CodeAnyCase.IsMatch(value) || CodeMiddle.IsMatch(value))
+            && !(CodePattern.Match(value) is { Success: true } code && code.Value == value);
+
     public static IEnumerable<(string Path, int Line, string Value)> PartsOfCodes(IEnumerable<(string Path, string Text)> files)
-        => Engine.Tests.Governance.ConstantStrings.Values(files)
-            .Where(constant => CodeStart.IsMatch(constant.Value) && !(CodePattern.Match(constant.Value) is { Success: true } code && code.Value == constant.Value))
+    {
+        var list = files.ToList();
+        return Engine.Tests.Governance.ConstantStrings.Values(list)
+            .Where(constant => IsPart(constant.Value))
+            .Concat(list.SelectMany(BuiltParts))
             .Distinct();
+    }
+
+    // The parts of codes that only the syntax shows: the text parts of an interpolated string, and
+    // a severity that string.Join puts after "-".
+    private static IEnumerable<(string Path, int Line, string Value)> BuiltParts((string Path, string Text) file)
+    {
+        var root = CSharpSyntaxTree.ParseText(file.Text, new CSharpParseOptions(LanguageVersion.Preview), path: file.Path).GetRoot();
+        static int LineOf(SyntaxNode node) => node.GetLocation().GetLineSpan().StartLinePosition.Line + 1;
+
+        foreach (var part in root.DescendantNodes().OfType<InterpolatedStringTextSyntax>())
+        {
+            if (IsPart(part.TextToken.ValueText))
+                yield return (file.Path, LineOf(part), part.TextToken.ValueText);
+        }
+
+        foreach (var call in root.DescendantNodes().OfType<InvocationExpressionSyntax>())
+        {
+            if (call.Expression is MemberAccessExpressionSyntax { Name.Identifier.ValueText: "Join" }
+                && call.ArgumentList.Arguments is [{ Expression: LiteralExpressionSyntax separator }, { Expression: LiteralExpressionSyntax severity }, ..]
+                && separator.Token.ValueText == "-" && severity.Token.ValueText is "E" or "W" or "I")
+                yield return (file.Path, LineOf(call), severity.Token.ValueText + "-");
+        }
+    }
 
     public static HashSet<string> ParseRegistry(string registryMarkdown)
     {

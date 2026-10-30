@@ -31,6 +31,26 @@ public class CommandsEndpointTests : IClassFixture<WebApplicationFactory<Program
         Assert.Equal(HttpStatusCode.BadRequest, (await client.PostAsync(route, wrong)).StatusCode);
     }
 
+    // Finding E101 of the codebase review of 2026-10-30 (b) (TASK-0123): a repeated member kept its
+    // last value, so a second "expectedDocumentVersion" of null removed the check of the version.
+    // A repeated member of an envelope or of the parameters gives HTTP 400; the same envelope with
+    // the member once is the control.
+    [Theory]
+    [InlineData("/commands", "{\"name\":\"NoOp\",\"schemaVersion\":1,\"parameters\":{\"echo\":\"a\"},\"expectedDocumentVersion\":999999", ",\"expectedDocumentVersion\":null", "}")]
+    [InlineData("/commands", "{\"name\":\"NoOp\",\"schemaVersion\":1,\"parameters\":{\"echo\":\"a\"", ",\"echo\":\"b\"", "}}")]
+    [InlineData("/queries", "{\"name\":\"GetBodyInfo\",\"schemaVersion\":1,\"parameters\":{\"bodyId\":\"7a7a7a7a-0000-0000-0000-000000000000\"}", ",\"name\":\"GetBodyInfo\"", "}")]
+    public async Task A_Repeated_Member_Gives_400(string route, string start, string repeated, string close)
+    {
+        var client = _factory.CreateClient();
+        using var once = new StringContent(start + close, System.Text.Encoding.UTF8, "application/json");
+        using var twice = new StringContent(start + repeated + close, System.Text.Encoding.UTF8, "application/json");
+
+        Assert.NotEqual(HttpStatusCode.BadRequest, (await client.PostAsync(route, once)).StatusCode);
+        var response = await client.PostAsync(route, twice);
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        Assert.Equal("E-API-BAD-REQUEST", (await ReadJsonAsync(response)).GetProperty("error").GetProperty("code").GetString());
+    }
+
     // Finding E11 (TASK-0115): CreateBox with 1e999 was applied, and a query of the body gave
     // HTTP 500. The binder refuses it, so the host answers HTTP 400 and the log holds nothing.
     [Fact]

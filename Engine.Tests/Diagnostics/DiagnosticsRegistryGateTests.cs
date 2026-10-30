@@ -142,6 +142,11 @@ public class DiagnosticsRegistryGateTests
     [InlineData("static class P { static readonly string Tag = \"HIDDEN\"; static string Code() => \"E-SKETCH-\" + Tag; }")]
     [InlineData("static class P { static string Code() => string.Concat(\"W-SKETCH-\", \"JOINED\"); }")]
     [InlineData("static class P { const string Start = \"I-SKETCH\"; }")]
+    // The forms of finding T99 (TASK-0123).
+    [InlineData("static class P { static readonly string Tag = \"HIDDEN\"; static string Code() => $\"E-SKETCH-{Tag}\"; }")]
+    [InlineData("static class P { static readonly string Tag = \"HIDDEN\"; static string Code() => \"E\" + (\"-SKETCH-\" + Tag); }")]
+    [InlineData("static class P { static readonly string Tag = \"HIDDEN\"; static string Code() => string.Join(\"-\", \"I\", \"SKETCH\", Tag); }")]
+    [InlineData("static class P { static string Code() => \"e-sketch-hidden\".ToUpperInvariant(); }")]
     public void A_Part_Of_A_Code_Is_An_Offence(string source)
     {
         Assert.NotEmpty(DiagnosticsScanner.PartsOfCodes([("Engine.Core/Probe.cs", source)]));
@@ -162,6 +167,40 @@ public class DiagnosticsRegistryGateTests
         ];
 
         Assert.Contains("E-SKETCH-DUP", DiagnosticsScanner.ConstantCodes(files).Select(use => use.Code));
+    }
+
+    // Finding T97 of the codebase review of 2026-10-30 (b) (TASK-0123): the same form through a
+    // project that the project of the code references. The files of both projects went into one
+    // compilation, and the two types gave error CS0101 there.
+    [Fact]
+    public void A_Type_Of_The_Same_Name_In_A_Referenced_Project_Hides_No_Code()
+    {
+        (string, string)[] files =
+        [
+            ("Engine.Cli/ProbeShared.cs", "namespace Engine.Probe; internal static class Shared { internal const string Part = \"E\"; }"),
+            ("Engine.Cli/ProbeCode.cs", "namespace Engine.Probe; internal static class Codes { internal const string Duplicate = Shared.Part + \"-SKETCH-DUPX\"; }"),
+            ("Engine.Core/ProbeShared.cs", "namespace Engine.Probe; internal static class Shared { internal const string Part = \"X\"; }"),
+        ];
+
+        Assert.Contains("E-SKETCH-DUPX", DiagnosticsScanner.ConstantCodes(files).Select(use => use.Code));
+    }
+
+    // Finding T98 (TASK-0123): the references of a project come from each file that MSBuild reads
+    // for it, not from its project file only. A reference in a Directory.Build.props file is one.
+    [Fact]
+    public void A_Reference_In_Another_File_Of_MsBuild_Is_A_Reference()
+    {
+        var props = Path.Combine(Path.GetTempPath(), "t98-" + Guid.NewGuid().ToString("N") + ".props");
+        File.WriteAllText(props, "<Project><ItemGroup><ProjectReference Include=\"../Engine.Core/Engine.Core.csproj\" /></ItemGroup></Project>");
+        try
+        {
+            Assert.Contains("Engine.Core", Engine.Tests.Governance.ConstantStrings.References("Engine.Cli", file => file.EndsWith("Engine.Cli.csproj", StringComparison.Ordinal) ? [props] : []));
+            Assert.Empty(Engine.Tests.Governance.ConstantStrings.References("Engine.Cli", _ => []));
+        }
+        finally
+        {
+            File.Delete(props);
+        }
     }
 
     // Finding T81: the compiler joins a code from two strings and from a constant of another

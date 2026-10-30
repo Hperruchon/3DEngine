@@ -212,6 +212,19 @@ public class DependencyDirectionGateTests
                 yield return $"{relative} holds a separator or a mark of direction at offset {i}; write an escape such as \\u2028";
                 yield break;
             }
+
+            // Finding T102 of the codebase review of 2026-10-30 (b) (TASK-0123): a CR with no LF after
+            // it ends a line for the compiler, and a viewer can show the two lines as one; the C1
+            // controls U+0080 to U+009F (C2 80 to C2 9F), the zero width space U+200B (E2 80 8B), the
+            // word joiner U+2060 (E2 81 A0) and U+FEFF after the start (EF BB BF) do not show.
+            if ((bytes[i] == 0x0D && (i + 1 >= bytes.Length || bytes[i + 1] != 0x0A))
+                || (bytes[i] == 0xC2 && i + 1 < bytes.Length && bytes[i + 1] is >= 0x80 and <= 0x9F)
+                || (bytes[i] == 0xE2 && i + 2 < bytes.Length && ((bytes[i + 1] == 0x80 && bytes[i + 2] == 0x8B) || (bytes[i + 1] == 0x81 && bytes[i + 2] == 0xA0)))
+                || (i > 0 && bytes[i] == 0xEF && i + 2 < bytes.Length && bytes[i + 1] == 0xBB && bytes[i + 2] == 0xBF))
+            {
+                yield return $"{relative} holds a lone CR or a character that does not show at offset {i}; write an escape such as \\u200B";
+                yield break;
+            }
         }
     }
 
@@ -281,6 +294,17 @@ public class DependencyDirectionGateTests
     [InlineData(new byte[] { 0xD8, 0x9C }, true)]
     [InlineData(new byte[] { 0xC2, 0x85 }, true)]
     [InlineData(new byte[] { 0xE2, 0x80, 0x93, 0xC3, 0xA9 }, false)]
+    // Finding T102 (TASK-0123): a lone CR in the middle and at the end, U+009B, U+008D, U+200B,
+    // U+2060 and U+FEFF after the start; a CR with its LF, a no-break space (C2 A0) and U+FEFF at
+    // the start are text.
+    [InlineData(new byte[] { 0x2F, 0x2F, 0x61, 0x0D, 0x23, 0x65 }, true)]
+    [InlineData(new byte[] { 0x61, 0x0D }, true)]
+    [InlineData(new byte[] { 0x61, 0xC2, 0x9B }, true)]
+    [InlineData(new byte[] { 0xC2, 0x8D }, true)]
+    [InlineData(new byte[] { 0xE2, 0x80, 0x8B }, true)]
+    [InlineData(new byte[] { 0xE2, 0x81, 0xA0 }, true)]
+    [InlineData(new byte[] { 0x61, 0xEF, 0xBB, 0xBF }, true)]
+    [InlineData(new byte[] { 0xEF, 0xBB, 0xBF, 0x61, 0x0D, 0x0A, 0xC2, 0xA0 }, false)]
     public void A_Control_Byte_In_A_Source_File_Is_An_Offence(byte[] bytes, bool offence)
     {
         Assert.Equal(offence, ControlByteOffences("Probe.cs", bytes).Any());
@@ -420,6 +444,42 @@ public class DependencyDirectionGateTests
             offences.Length == 0,
             "An import that the gate cannot read can carry a reference that breaks the authority diagram. "
             + "Name one file by a path with no property and no wildcard.\n  " + string.Join("\n  ", offences));
+    }
+
+    // Finding T101 of the codebase review of 2026-10-30 (b) (TASK-0123): an item Compile compiles a
+    // file of any extension, and the UI gate and the diagnostics scanner read the files *.cs only.
+    // A file ProbeUi.txt with [DllImport("cimgui")] and <Compile Include="ProbeUi.txt" /> put
+    // igNewFrame into engine.dll, and the UI gate passed. Each item Compile names .cs files only.
+    internal static IEnumerable<string> CompileOffences(string file, XDocument document)
+        => document.Descendants().Where(e => Is(e, "Compile"))
+            .SelectMany(item => (Value(item, "Include") ?? string.Empty).Split(';', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
+            .Where(part => !part.EndsWith(".cs", StringComparison.OrdinalIgnoreCase))
+            .Select(part => $"{file} compiles '{part}', which is not a .cs file");
+
+    [Fact]
+    public void Each_Compile_Item_Names_CSharp_Files_Only()
+    {
+        var offences = ProjectFiles()
+            .SelectMany(FilesThatMsBuildReads)
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .SelectMany(file => CompileOffences(RepositoryFiles.Relative(file), XDocument.Load(file)))
+            .ToArray();
+
+        Assert.True(offences.Length == 0, "The gates read the .cs files only. Give each source the extension .cs.\n  " + string.Join("\n  ", offences));
+    }
+
+    // The form of finding T101 and two more, and the controls: a .cs file in either case.
+    [Theory]
+    [InlineData("<Compile Include=\"ProbeUi.txt\" />", true)]
+    [InlineData("<Compile Include=\"Probe.cs;ProbeUi.txt\" />", true)]
+    [InlineData("<Compile Include=\"$(Probe)\" />", true)]
+    [InlineData("<Compile Include=\"Probe.cs\" />", false)]
+    [InlineData("<Compile Include=\"Probe.CS\" Link=\"Probe.txt\" />", false)]
+    public void A_Compile_Item_Of_Another_Extension_Is_An_Offence(string item, bool offence)
+    {
+        var document = XDocument.Parse($"<Project><ItemGroup>{item}</ItemGroup></Project>");
+
+        Assert.Equal(offence, CompileOffences("Probe.csproj", document).Any());
     }
 
     // The properties that tell MSBuild to import a file that no Import element
