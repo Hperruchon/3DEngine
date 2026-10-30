@@ -3505,3 +3505,28 @@ New tests: 1. The test list holds 1248 (910 in `Engine.Tests`, 210 in `3DEngine.
 `3DEngine.ImageTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
 entries: 14 of 15. New diagnostic codes: none. Since the review of v0.112, 4 product milestones and 9 entries followed
 it.
+
+## v0.122 — The codebase review of 2026-10-30 (b) (governance, TASK-0120)
+
+The review of 2026-10-30 examined v0.112. After it came 4 product milestones (K0d, K2d, R9, P8e) and 9 entries, so the
+next product milestone makes a review due. K2e is the next product phase, so the fourteenth review comes before it.
+
+**The record.** `docs/reviews/2026-10-30-b-codebase-review.md` examines `main` at `dab1355`, the merge of v0.121.
+Three agents probed the code in parallel at `6e065d5`, the same tree, each one in its own worktree: the engine, the
+desktop, and the gates with the HTTP surface. I ran each failing probe again, injected T96 with a control, and wrote
+the probe of E100.
+
+**The findings.** 19 new findings: one high (E97, a solve gives a circle a negative radius or a radius of zero and
+the sketch shows as solved), ten medium (E100, E101, V51, V52, T96 to T101) and six low (E98, E99, V53 to V55, T102).
+T88, E94 to E96, T89 to T95 and V46 to V50 of the last review are fixed, and so are E11, E14 and E16. Open findings:
+0 critical, 6 high, 29 medium and 30 low.
+
+**The order.** TASK-0121 (P0.48) holds E97 before K2e. TASK-0122 is K2e. TASK-0123 (P0.49) and TASK-0124 (P0.50) hold
+the medium and low findings after K2e. E99 and E100 wait for Q1, and V53 waits for Q2 (register entry R-0046).
+
+**A correction.** None.
+
+New tests: none. The test list holds 1248 (910 in `Engine.Tests`, 210 in `3DEngine.Tests`, 128 in
+`3DEngine.ImageTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
+entries: 15 of 15. New diagnostic codes: none. Since the review of v0.121, 0 product milestones and 1 entry followed
+it.
