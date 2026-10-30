@@ -1,7 +1,7 @@
 ---
 id: 0124
 title: The gizmo stays in front of the eye, and the overlay keeps each visible part of a line
-status: Active
+status: Done
 phase: P0.50
 opened: 2026-10-30
 depends-on: [0122, 0123]
@@ -63,10 +63,23 @@ release, the other input and the meshes of a frame follow the review.
 
 ## Acceptance criteria
 
-- [ ] Each form of the review fails a test.
-- [ ] An injection that restores each old rule fails a test.
-- [ ] A clean build (`--no-incremental`) gives zero errors and zero warnings.
-- [ ] Continuous integration passes on the three runners, on the branch and on `main` after the merge.
+- [x] Each form of the review fails a test.
+- [x] An injection that restores each old rule fails a test.
+- [x] A clean build (`--no-incremental`) gives zero errors and zero warnings.
+- [x] Continuous integration passes on the three runners, on the branch and on `main` after the merge.
+
+## Outcome
+
+Status: Done · commit (the merge of the branch p050-desktop-fourteenth) · v0.126
+
+## Method
+
+Mechanical: the check of the ray of an arrow, the drop of other input during a drag, the clip of a segment, the check
+            of the pivot at the release, and the state of a creation.
+Judgement:  the clip keeps a margin of one window on each side, so a stroke of the UI library stays far from a large
+            magnitude; Q2 A drops the input, and Escape still cancels.
+Weakest:    no person dragged the gizmo past a vanishing point in the real window; the tests use the functions of
+            the gizmo and the intent machine with no device.
 
 ## Progress
 
@@ -74,5 +87,6 @@ release, the other input and the meshes of a frame follow the review.
 - 2026-10-30: the owner answered Q2 A. V51: an arrow gives no offset past the vanishing point of its axis. V53: other
   input during a drag gives nothing. ADR-0038 items 5 and 8 hold both, and R-0046 is closed.
 - 2026-10-30: V52: the overlay clips a segment to the window with a margin of one window; the test of V49 now checks
-  that no vertex goes beyond the limit, as a line through the window draws its visible part. V54 and V55. 7 new test
+  that no vertex goes beyond the limit, as a line through the window draws its visible part. V54 and V55. 6 new test
   cases, one of them on a GPU; 6 injections caught.
+- 2026-10-30: closed at v0.126. The last progress line said 7 new test cases; the count is 6.
