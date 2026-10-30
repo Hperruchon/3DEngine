@@ -93,7 +93,8 @@ The decision sheet does not answer three questions. On 2026-10-28 the owner answ
    gesture outside the panels still moves the camera. The text fields of the panel (the filter, the
    name of a body and the file name) are disabled while the pad is open, so that no field takes the keys of the pad.
 7. **The unit (R10-Q5).** Each value is in the length unit of the document, the millimetre (ADR-0015 item 7). The
-   pad shows `mm` beside each field. An expression has no unit suffix.
+   pad shows the length unit of the session of its host beside each field, `mm` for now. An expression has no unit
+   suffix.
 8. **The errors (R10-Q7).** The pad shows a short text: the error of the evaluator, or the code and the message of
    a rejected command. No new diagnostic code.
 9. **The keys of undo and redo (R-0041).** `InputKey` gains `Z` and `Y`, and `SdlInput` gives them. The intent
@@ -130,3 +131,5 @@ R-0041 closes.
 - 2026-10-29 · TASK-0099 · The owner answered the questions of TASK-0099 on 2026-10-29, A to each. Item 4: a pad that
   names a selection closes when the selection changes (finding V32, Q2), and an apply waits for the end of the pad
   (V34, Q6). Item 6: the text fields are disabled while the pad is open (V33, Q6).
+- 2026-10-30 · TASK-0119 · Item 7: the pad shows the length unit of the session, which the header of the file gives
+  (P8e), not the constant `mm`.

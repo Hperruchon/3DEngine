@@ -84,7 +84,7 @@ public sealed class NativeThreeDEngine : IThreeDEngine, IDisposable
 
         _uiRenderer = new UiRenderer(_graphicsDevice, _graphicsDevice.Presenter.RenderPass);
         _overlay = new OverlayRenderer(_graphicsDevice, _graphicsDevice.Presenter.RenderPass);
-        _ui = new DesktopUi(_address);
+        _ui = new DesktopUi(_address, _host.Session.LengthUnit);
         var (width, height, rgba) = _ui.FontAtlas();
         _ui.SetFontTexture(_uiRenderer.CreateTexture(width, height, rgba));
         _actions = new BodyActions(_host.Session);

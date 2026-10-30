@@ -42,7 +42,7 @@ public sealed class SketchWindowUiTests
 
     private static DesktopUi Opened(SketchPanel? panel)
     {
-        var ui = new DesktopUi("http://127.0.0.1:5180");
+        var ui = new DesktopUi("http://127.0.0.1:5180", Engine.Contracts.Document.Millimetre);
         Step(ui, panel);
         Step(ui, panel);
         return ui;

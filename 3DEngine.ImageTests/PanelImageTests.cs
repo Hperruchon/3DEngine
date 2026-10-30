@@ -29,7 +29,7 @@ public class PanelImageTests
     {
         var messagesBefore = GraphicsDevice.ValidationMessageCount;
         using var host = new EngineHost(new InProcessMeshBackend(), "managed", "test");
-        using var ui = new DesktopUi("http://127.0.0.1:5180");
+        using var ui = new DesktopUi("http://127.0.0.1:5180", Engine.Contracts.Document.Millimetre);
         var scene = SessionScene.Create();
         var camera = scene.Cameras[0];
         byte[] pixels;
@@ -102,7 +102,7 @@ public class PanelImageTests
         const uint PadWidth = 1280, PadHeight = 720;
         var messagesBefore = GraphicsDevice.ValidationMessageCount;
         using var host = new EngineHost(new InProcessMeshBackend(), "managed", "test");
-        using var ui = new DesktopUi("http://127.0.0.1:5180");
+        using var ui = new DesktopUi("http://127.0.0.1:5180", Engine.Contracts.Document.Millimetre);
         var scene = SessionScene.Create();
         var camera = scene.Cameras[0];
         var display = new Vector2(PadWidth, PadHeight);
