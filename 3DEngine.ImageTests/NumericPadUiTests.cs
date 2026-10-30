@@ -25,9 +25,9 @@ public sealed class NumericPadUiTests
         return intents;
     }
 
-    private static DesktopUi Opened(Guid? selection = null)
+    private static DesktopUi Opened(Guid? selection = null, string unit = Engine.Contracts.Document.Millimetre)
     {
-        var ui = new DesktopUi("http://127.0.0.1:5180");
+        var ui = new DesktopUi("http://127.0.0.1:5180", unit);
         Step(ui, selection);
         Step(ui, selection);
         return ui;
@@ -70,6 +70,24 @@ public sealed class NumericPadUiTests
         Assert.NotNull(ui.Pad);
         ui.EndPad(null);
         Assert.Null(ui.Pad);
+    }
+
+    // P8e (TASK-0119): the pad shows the length unit that the host gives, not a constant. The
+    // engine permits the millimetre only (ADR-0015 item 7), so the test gives another text.
+    [Fact]
+    public void Each_Pad_Shows_The_Length_Unit_Of_The_Document()
+    {
+        using var ui = Opened(Body.Id, "in");
+
+        Tap(ui, DeviceKind.Mouse, DesktopUi.NewBoxLabel, Body.Id);
+        Assert.Equal(DesktopUi.NewBoxLabel, ui.Pad?.Title);
+        Assert.Equal("in", ui.Pad!.Unit);
+        Tap(ui, DeviceKind.Mouse, DesktopUi.PadItem("Cancel"), Body.Id);
+        Assert.Null(ui.Pad);
+
+        Tap(ui, DeviceKind.Mouse, DesktopUi.MoveLabel, Body.Id);
+        Assert.Equal(DesktopUi.MoveLabel, ui.Pad?.Title);
+        Assert.Equal("in", ui.Pad!.Unit);
     }
 
     // ADR-0032 item 3: a script of buttons and a script of keys give the same states and the
@@ -157,7 +175,7 @@ public sealed class NumericPadUiTests
     public void The_Pad_Stays_Inside_The_Display(float width, float height, bool bySketch)
     {
         var display = new Vector2(width, height);
-        using var ui = new DesktopUi("http://127.0.0.1:5180");
+        using var ui = new DesktopUi("http://127.0.0.1:5180", Engine.Contracts.Document.Millimetre);
         // The pad of a sketch opens while a sketch is active and the tool Line has an open
         // chain, and it closes when that state changes (finding V40, TASK-0106).
         var id = Guid.Parse("50000000-0000-0000-0000-000000000000");
@@ -195,7 +213,7 @@ public sealed class NumericPadUiTests
     public void The_Move_Pad_Closes_When_The_Selection_Changes()
     {
         var other = new LiveBody(Guid.Parse("33333333-0000-0000-0000-000000000000"), "Box", null, true);
-        using var ui = new DesktopUi("http://127.0.0.1:5180");
+        using var ui = new DesktopUi("http://127.0.0.1:5180", Engine.Contracts.Document.Millimetre);
         void Draw(Guid? selection, params LiveBody[] bodies) => ui.Frame(1f / 60f, Display, Vector2.One, bodies, selection);
         Draw(Body.Id, Body, other);
         Draw(Body.Id, Body, other);
@@ -252,7 +270,7 @@ public sealed class NumericPadUiTests
     [Fact]
     public void The_Text_Fields_Are_Disabled_While_The_Pad_Is_Open()
     {
-        using var ui = new DesktopUi("http://127.0.0.1:5180");
+        using var ui = new DesktopUi("http://127.0.0.1:5180", Engine.Contracts.Document.Millimetre);
         var line = new DocumentLine("plate.3de", null);
         void Draw(params InputSample[] frame)
         {

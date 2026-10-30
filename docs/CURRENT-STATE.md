@@ -3480,3 +3480,28 @@ New tests: 6. The test list holds 1247 (910 in `Engine.Tests`, 210 in `3DEngine.
 `3DEngine.ImageTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
 entries: 14 of 15. New diagnostic codes: none. Since the review of v0.112, 3 product milestones and 8 entries followed
 it.
+
+## v0.121 — The numeric pad shows the length unit of the document (P8e, TASK-0119)
+
+P8a (TASK-0091) put the length unit of the document in the header of its file (KD4). The pad of the desktop still
+showed the constant `mm`.
+
+**The change.**
+
+- `DesktopUi` takes the length unit in its constructor, with no default value. Each pad shows that unit beside
+  each field.
+- The desktop host gives `_host.Session.LengthUnit`, the unit that the header of the file gave to the session.
+- ADR-0032 item 7 now says that the pad shows the length unit of the session, `mm` for now.
+
+**Proof.** 1 new test case in `3DEngine.ImageTests/NumericPadUiTests.cs`: a panel with the unit `in` opens New box
+and Move, and each pad shows `in`. An injection that puts back the constant `mm` failed it.
+
+**What stays.** The header permits the millimetre only (ADR-0015 item 7), so no test can show that the host gives the
+unit of its session. A second unit is a later decision of the owner.
+
+**A correction.** None.
+
+New tests: 1. The test list holds 1248 (910 in `Engine.Tests`, 210 in `3DEngine.Tests`, 128 in
+`3DEngine.ImageTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
+entries: 14 of 15. New diagnostic codes: none. Since the review of v0.112, 4 product milestones and 9 entries followed
+it.

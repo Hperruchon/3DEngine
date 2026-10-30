@@ -35,7 +35,7 @@ public sealed class DesktopDocumentTests : IDisposable
 
     private static DesktopUi Opened()
     {
-        var ui = new DesktopUi("http://127.0.0.1:5180");
+        var ui = new DesktopUi("http://127.0.0.1:5180", Engine.Contracts.Document.Millimetre);
         Step(ui);
         Step(ui);
         return ui;
@@ -99,7 +99,7 @@ public sealed class DesktopDocumentTests : IDisposable
     [Fact]
     public void A_Panel_With_No_Document_Line_Has_No_File_Controls()
     {
-        using var ui = new DesktopUi("http://127.0.0.1:5180");
+        using var ui = new DesktopUi("http://127.0.0.1:5180", Engine.Contracts.Document.Millimetre);
         ui.Frame(1f / 60f, Display, Vector2.One, Bodies);
         ui.Frame(1f / 60f, Display, Vector2.One, Bodies);
 

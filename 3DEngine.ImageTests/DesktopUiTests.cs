@@ -36,7 +36,7 @@ public class DesktopUiTests
     // Two frames, so that the panel has its layout and its rectangles.
     private static DesktopUi Opened()
     {
-        var ui = new DesktopUi("http://127.0.0.1:5180");
+        var ui = new DesktopUi("http://127.0.0.1:5180", Engine.Contracts.Document.Millimetre);
         Step(ui);
         Step(ui);
         return ui;
@@ -191,8 +191,8 @@ public class DesktopUiTests
 
         LiveBody[] faulty = [new(id, "Extrude", "Plate", true, fault)];
         LiveBody[] sound = [new(id, "Extrude", "Plate", true)];
-        using var withFault = new DesktopUi("http://127.0.0.1:5180");
-        using var withNone = new DesktopUi("http://127.0.0.1:5180");
+        using var withFault = new DesktopUi("http://127.0.0.1:5180", Engine.Contracts.Document.Millimetre);
+        using var withNone = new DesktopUi("http://127.0.0.1:5180", Engine.Contracts.Document.Millimetre);
         for (var frame = 0; frame < 2; frame++)
         {
             withFault.Frame(1f / 60f, Display, Vector2.One, faulty, id);

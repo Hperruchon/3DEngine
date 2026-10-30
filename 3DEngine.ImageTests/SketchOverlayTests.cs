@@ -130,7 +130,7 @@ public class SketchOverlayTests
     [Fact]
     public void The_Panel_Draws_The_Strokes_Of_A_Sketch()
     {
-        using var ui = new DesktopUi("http://127.0.0.1:5180");
+        using var ui = new DesktopUi("http://127.0.0.1:5180", Engine.Contracts.Document.Millimetre);
         var strokes = new SketchOverlay.Strokes(
             [new(new Vector2(700, 300), new Vector2(900, 500), SketchOverlay.Mark.Active)],
             [new(new Vector2(700, 300), SketchOverlay.Mark.Active), new(new Vector2(900, 500), SketchOverlay.Mark.Active)],
