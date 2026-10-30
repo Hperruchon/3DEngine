@@ -1,7 +1,7 @@
 ---
 id: 0111
 title: The codebase review of 2026-10-30 is a record
-status: Active
+status: Done
 phase: governance
 opened: 2026-10-30
 depends-on: [0110]
@@ -70,9 +70,20 @@ the questions for roadmap phase K0d.
 
 ## Acceptance criteria
 
-- [ ] The review has one line for each finding of the previous review, and the gate of the review passes.
-- [ ] Each new finding has a task or a register entry.
-- [ ] Continuous integration passes on the three runners, on the branch and on `main` after the merge.
+- [x] The review has one line for each finding of the previous review, and the gate of the review passes.
+- [x] Each new finding has a task or a register entry.
+- [x] Continuous integration passes on the three runners, on the branch and on `main` after the merge.
+
+## Outcome
+
+Status: Done · commit (the merge of the branch codebase-review-2026-10-30) · v0.113
+
+## Method
+
+Mechanical: the measures, the lines of the previous findings, the task files and the register entry.
+Judgement:  the three defects of K2c that the engine agent found at its first push get no identifier, because the
+            reviewed commit holds their correction. Q2 recommends a new code, because CLAUDE.md forbids a new meaning.
+Weakest:    most new findings come from agents; I ran T88 again and read the cited lines of the others.
 
 ## Progress
 
@@ -80,3 +91,4 @@ the questions for roadmap phase K0d.
   `e3451ad`; the engine agent found three defects of K2c before its merge, and TASK-0110 corrected them.
 - 2026-10-30: the review, the five task files, R-0045 and the roadmap rows. The run 41108036605 on `a839bb7`
   is green.
+- 2026-10-30: closed at v0.113.
