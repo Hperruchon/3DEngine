@@ -96,6 +96,7 @@ Therefore each approved objective must have a track here.
 - K0d — An edit of a sketch rebuilds each translate and subtract that descends from its extrude. v0.116, TASK-0116.
 - K2d — The engine holds the circle and the arc of a sketch, and solves tangent, radius, pointOn and equal on them. v0.117, TASK-0117.
 - P0.45 — The sketch keeps read-only lists and refuses each identifier that the log holds, and the gates read the forms of the thirteenth review. v0.118, TASK-0114.
+- R9 — The desktop moves the selected body with a translate gizmo. v0.119, TASK-0113.
 
 ## Track 0 — Foundations
 
@@ -178,7 +179,7 @@ The first objective. Each phase ends with something that a person can observe.
 | R7b | Text and panels. Dear ImGui through ImGui.NET, a first-party 2D renderer, and the input of the intent layer (ADR-0027). TASK-0084. | 4–6 |
 | R8a | Name and visibility in the engine. The commands `RenameBody` and `SetBodyVisibility`, the query `GetBodyInfo`, the event kind `body.changed`, and ADR-0028. TASK-0085. | 3–4 |
 | R8b | Name and visibility in the desktop. The pick of one body, a highlight, the gestures, and the text field of R7b. The selection stays a state of the client (ADR-0007). The camera frames the bodies only when the set goes from empty to not empty (KD6). TASK-0086. | 4–5 |
-| R9 | A transform gizmo at a constant screen size. After the milestone "CAD on one part" (KD2). | 5–8 |
+| R9 | A transform gizmo at a constant screen size. After the milestone "CAD on one part" (KD2). Translate only, from the defaults R9-Q1 to Q8 of 2026-10-27. ADR-0038, TASK-0113. | 5–8 |
 | R10 | A numeric pad and an expression evaluator. The pad gives the sizes of a new box and the offsets of a move; the drags of the camera have no numeric equivalent. The keys of undo and redo (R-0041). ADR-0032, TASK-0094. | 3–5 |
 | R11 | Escalated selection and a snap engine. | 4–6 |
 
