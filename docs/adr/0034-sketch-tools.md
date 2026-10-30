@@ -157,6 +157,10 @@ The decision below applies the recommended answers: Q1 A, Q2 A, Q3 A, Q4 A, Q5 A
    pad with the current radius. A curve draws as a polyline of 64 segments for a full turn; the polyline is
    presentation (ADR-0007), so the desktop computes it with a sine and a cosine. A circle has the label R1, R2 and
    onward, and an arc A1, A2 and onward.
+   Phase K2f (TASK-0125) adds the kinds of K2c on lines: On line and Midpoint (a point that is not an end of the
+   line), and Equal, Parallel, Perpendicular and Angle (two lines). Angle opens a pad of degrees with the angle from
+   the first line to the second, and the client gives the cosine and the sine to the command (ADR-0033 item 3). A
+   multiple of 90 degrees gives exact numbers. Symmetric has no button: it takes three items.
 5. **The undo.** Each command is one step of the history (ADR-0033 item 10). A tap that adds a point and a line gives
    two steps. An undo or a redo of the session can change the active sketch; the tool then drops each item of the
    chain and of the selection that is not in the record, and ends the chain when its last point is gone.
@@ -225,3 +229,4 @@ engine does not change. The tool is a pure state machine, so a test reads it wit
   are P1, P2 and onward. A tap on the first point of a chain of one line ends the chain and adds no line.
 - 2026-10-30 · TASK-0122 · Item 4: the tools Circle and Arc, the pick of a curve, the kinds on a curve in the window,
   and the polyline of a curve (phase K2e).
+- 2026-10-31 · TASK-0125 · Item 4: the kinds of K2c on lines in the window (phase K2f).

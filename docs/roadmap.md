@@ -103,6 +103,7 @@ Therefore each approved objective must have a track here.
 - K2e — The desktop draws and adds circles and arcs, and the panel offers the constraints of K2d on a curve. v0.124, TASK-0122.
 - P0.49 — The engine, the surface and the gates close the forms of the fourteenth review. v0.125, TASK-0123.
 - P0.50 — The gizmo stays in front of the eye, and the overlay keeps each visible part of a line. v0.126, TASK-0124.
+- K2f — The window of the sketch offers the constraints of K2c on lines. v0.127, TASK-0125.
 
 ## Track 0 — Foundations
 
@@ -210,6 +211,7 @@ boundary and each refused rung.
 | K2c | The seven constraints of ADR-0033 item 3 on points and lines: pointOn, midpoint, parallel, perpendicular, equal, symmetric and angle, with their equations in the solver (the plan of 2026-10-30). TASK-0110. | 3–5 |
 | K2d | The circle and the arc in the engine: two commands, the radius as a variable of the solver, the equation of an arc, and tangent, radius, pointOn and equal on a curve (the plan of 2026-10-30). The desktop waits for K2e. TASK-0117. | 4–6 |
 | K2e | The desktop draws and adds circles and arcs, and the panel offers the constraints of K2d on a curve (the codebase review of 2026-10-30 (b), sections 5 and 6). TASK-0122. | 4–6 |
+| K2f | The window of the sketch offers the constraints of K2c on lines: On line, Midpoint, Equal, Parallel, Perpendicular and Angle (the Scope (out) of K2e). TASK-0125. | 1–2 |
 | K3a | A constraint solver for five constraints: coincident, horizontal, vertical, distance and fixed. It uses only `+ - * / sqrt`, and its output stays outside the log (KD5). ADR-0035, TASK-0102. | 8–12 |
 | K3 | The rest of the constraint solver, after K3a. Write it. | 4–8 |
 | K4 | Planar faces only, with a boolean. Provenance inside the kernel. | 35–55 |

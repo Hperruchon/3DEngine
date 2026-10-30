@@ -138,8 +138,9 @@ public sealed class SketchWindowUiTests
         Assert.Equal(["Horizontal", "Vertical", "Distance", DesktopUi.DeleteLabel], Buttons(Line));
         Assert.Equal(["Coincident", "Distance", DesktopUi.DeleteLabel], Buttons(A, B));
         // V43 (TASK-0106): a selection with the origin O gives no Delete, because the engine refuses
-        // to delete O and the delete of the other items gave no message for it.
-        Assert.Equal(["Distance"], Buttons(Line, SketchId));
+        // to delete O and the delete of the other items gave no message for it. Since K2f (TASK-0125)
+        // O and a line also give On line and Midpoint: O is not an end of the line.
+        Assert.Equal(["Distance", DesktopUi.OnLineLabel, "Midpoint"], Buttons(Line, SketchId));
         Assert.Equal(["Fixed", DesktopUi.MovePointLabel, DesktopUi.DeleteLabel], Buttons(B));
         Assert.Equal([DesktopUi.ValueLabel, DesktopUi.DeleteLabel], Buttons(Fix));
         Assert.Empty(Buttons());
@@ -182,6 +183,57 @@ public sealed class SketchWindowUiTests
 
     private static readonly Guid Ring = Guid.Parse("20000000-0000-0000-0000-000000000000");
     private static readonly Guid Bow = Guid.Parse("40000000-0000-0000-0000-000000000000");
+
+    private static readonly Guid C = Guid.Parse("cc000000-0000-0000-0000-000000000000");
+    private static readonly Guid Other = Guid.Parse("2e000000-0000-0000-0000-000000000000");
+
+    // Phase K2f (TASK-0125): the sketch of the fixture with P3 (7, 4) and the line L2 from P1 to P3,
+    // at a right angle to L1.
+    private static SketchPanel LinePanel(params Guid[] selection)
+    {
+        var sketch = Sketch with { Points = [.. Sketch.Points, new SketchPoint(C, 7, 4)], Lines = [.. Sketch.Lines, new SketchLine(Other, A, C)] };
+        return new([sketch], sketch, SketchToolKind.Select, false, selection, null);
+    }
+
+    // The kinds of K2c on lines fit their selections; a point of pointOn or midpoint is not an end of
+    // its line.
+    [Fact]
+    public void The_Buttons_Of_Lines_Are_The_Kinds_Of_K2c_That_Fit_Them()
+    {
+        static string[] Buttons(params Guid[] selection)
+        {
+            using var ui = Opened(LinePanel(selection));
+            string[] all = [.. DesktopUi.ConstraintButtons.Select(button => button.Label), DesktopUi.MovePointLabel, DesktopUi.ValueLabel, DesktopUi.DeleteLabel];
+            return [.. all.Where(label => ui.ItemRectangle(DesktopUi.SketchItem(label)) is not null)];
+        }
+
+        Assert.Equal(["Equal", "Parallel", "Perpendicular", "Angle", DesktopUi.DeleteLabel], Buttons(Line, Other));
+        Assert.Equal(["Distance", DesktopUi.OnLineLabel, "Midpoint", DesktopUi.DeleteLabel], Buttons(C, Line));
+        Assert.Equal(["Distance", DesktopUi.DeleteLabel], Buttons(B, Line));
+        Assert.Equal(["Coincident", "Distance"], Buttons(C, SketchId));
+    }
+
+    // Angle opens the pad with the current angle in degrees, and its apply gives the cosine and the
+    // sine: L1 points along +y and L2 along +x, so the angle from L1 to L2 is −90 degrees.
+    [Fact]
+    public void Angle_Opens_A_Pad_Of_Degrees_And_Gives_The_Cosine_And_The_Sine()
+    {
+        var panel = LinePanel(Line, Other);
+        using var ui = Opened(panel);
+        Tap(ui, DeviceKind.Touch, DesktopUi.SketchItem("Angle"), panel);
+
+        Assert.Equal(DesktopUi.AngleUnit, ui.Pad!.Unit);
+        Assert.Equal("-90", Assert.Single(ui.Pad.Fields).Text);
+        Tap(ui, DeviceKind.Touch, DesktopUi.PadItem("Apply"), panel);
+
+        var angle = Assert.IsType<AddConstraintAction>(Assert.Single(ui.TakeActions()));
+        Assert.Equal("angle", angle.Kind);
+        Assert.Equal([Line, Other], angle.Items);
+        Assert.Equal([0.0, -1.0], angle.Values);
+        var thirty = DesktopUi.CosineAndSine(30);
+        Assert.Equal(Math.Sqrt(3) / 2, thirty[0], 15);
+        Assert.Equal(0.5, thirty[1], 15);
+    }
 
     // Phase K2e (TASK-0122): the sketch of the fixture with the circle R1 about P1 of radius 2.5,
     // and the arc A1 about O from P1 to P2.
