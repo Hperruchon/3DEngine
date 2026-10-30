@@ -1,10 +1,10 @@
 ---
 id: 0124
 title: The gizmo stays in front of the eye, and the overlay keeps each visible part of a line
-status: Ready
+status: Active
 phase: P0.50
 opened: 2026-10-30
-depends-on: [0122]
+depends-on: [0122, 0123]
 governed-by: [0007, 0009, 0019, 0022, 0023, 0025, 0026, 0029, 0031, 0032, 0034, 0038]
 writes:
   create:
@@ -71,3 +71,5 @@ release, the other input and the meshes of a frame follow the review.
 ## Progress
 
 - 2026-10-30: opened by the codebase review of 2026-10-30 (b) (TASK-0120).
+- 2026-10-30: the owner answered Q2 A. V51: an arrow gives no offset past the vanishing point of its axis. V53: other
+  input during a drag gives nothing. ADR-0038 items 5 and 8 hold both, and R-0046 is closed.

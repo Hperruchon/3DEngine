@@ -94,6 +94,11 @@ public sealed class IntentMachine
                 case PointerSample mouse:
                     Mouse(mouse, intents);
                     break;
+                // Finding V53 of the codebase review of 2026-10-30 (b) (TASK-0124, answer Q2 A): a drag
+                // of the gizmo keeps the view and the document still, so the wheel, the camera keys,
+                // H, undo and redo give nothing while it runs. Escape still cancels it.
+                case WheelSample when Dragging:
+                    break;
                 case WheelSample wheel:
                     Scale(Gesture.Wheel, Math.Pow(_settings.ZoomPerStep, wheel.Steps), intents);
                     break;
@@ -260,6 +265,8 @@ public sealed class IntentMachine
 
     private void Key(KeySample key, List<Intent> intents)
     {
+        if (Dragging && key.Key != InputKey.Escape)
+            return;
         var step = _settings.PixelsPerKey;
         var motion = (key.Modifiers & KeyModifiers.Shift) != 0 ? Gesture.ShiftArrowKeys : Gesture.ArrowKeys;
         switch (key.Key)
@@ -278,6 +285,9 @@ public sealed class IntentMachine
             case InputKey.Escape: CancelGizmo(intents); break;
         }
     }
+
+    // A drag of the gizmo runs: it started, and no cancel ended it.
+    private bool Dragging => _gizmo is { Started: true, Cancelled: false };
 
     // A pointer was lost: the gesture in progress ends, and nothing stays down.
     private void Lose(List<Intent> intents)

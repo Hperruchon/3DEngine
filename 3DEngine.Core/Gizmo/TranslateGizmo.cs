@@ -128,7 +128,9 @@ public static class TranslateGizmo
 
     // ADR-0038 item 8: the offset of the pivot for a drag of a handle from the point of the press
     // to the point of the pointer, or null when a ray is parallel to the axis or to the plane, or
-    // meets the plane behind the eye.
+    // meets the plane behind the eye, or when the point of the axis nearest to a ray is nearer than
+    // the near plane along the ray. Until TASK-0124 a drag past the vanishing point of an axis put
+    // the body behind the eye (finding V51 of the codebase review of 2026-10-30 (b)).
     public static (double X, double Y, double Z)? Offset(
         Camera camera, double width, double height, (double X, double Y, double Z) pivot, GizmoHandle handle,
         (double X, double Y) from, (double X, double Y) to)
@@ -138,7 +140,7 @@ public static class TranslateGizmo
         if (Arrows.Contains(handle))
         {
             var axis = Axis(handle);
-            if (Nearest(start, pivot, axis) is not { } a || Nearest(end, pivot, axis) is not { } b)
+            if (Nearest(start, pivot, axis, camera.NearPlane) is not { } a || Nearest(end, pivot, axis, camera.NearPlane) is not { } b)
                 return null;
             return Along((0, 0, 0), axis, b - a);
         }
@@ -226,8 +228,9 @@ public static class TranslateGizmo
     }
 
     // The parameter of the point of the line pivot + t·axis that is nearest to the ray, or null
-    // when the ray is parallel to the axis.
-    private static double? Nearest(Ray ray, (double X, double Y, double Z) pivot, (double X, double Y, double Z) axis)
+    // when the ray is parallel to the axis, or when the nearest point of the ray is nearer than
+    // near along it, at s = dot(d, w) + b·t: behind the eye for s < 0.
+    private static double? Nearest(Ray ray, (double X, double Y, double Z) pivot, (double X, double Y, double Z) axis, double near)
     {
         const double Parallel = 1e-9;
         var w = (pivot.X - ray.Origin.X, pivot.Y - ray.Origin.Y, pivot.Z - ray.Origin.Z);
@@ -236,7 +239,8 @@ public static class TranslateGizmo
         if (denominator < Parallel)
             return null;
         // The two lines p(t) = pivot + t·axis and r(s) = origin + s·direction, with unit vectors.
-        return ((b * Dot(ray.Direction, w)) - Dot(axis, w)) / denominator;
+        var t = ((b * Dot(ray.Direction, w)) - Dot(axis, w)) / denominator;
+        return Dot(ray.Direction, w) + (b * t) >= near ? t : null;
     }
 
     private static (double X, double Y, double Z) Along((double X, double Y, double Z) p, (double X, double Y, double Z) d, double t)
