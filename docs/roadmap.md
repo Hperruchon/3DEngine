@@ -91,6 +91,7 @@ Therefore each approved objective must have a track here.
 - P0.42 — The sketch refuses an identifier that it holds, and the pads of the sketch follow the state that they act on. v0.110, TASK-0106.
 - P0.43 — The gates read the target name, the root folders and each text file, and a host test waits for its file. v0.111, TASK-0107.
 - K2c — The engine solves pointOn, midpoint, parallel, perpendicular, equal, symmetric and angle. v0.112, TASK-0110.
+- P0.44 — No MSBuild element gives a client the assembly name of another project. v0.114, TASK-0112.
 
 ## Track 0 — Foundations
 
