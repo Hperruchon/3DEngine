@@ -7,10 +7,19 @@ public sealed record ToolPoint(Guid Id, double X, double Y, double? PixelX, doub
 // A line of the active sketch: its two points.
 public sealed record ToolLine(Guid Id, Guid Start, Guid End);
 
-// The active sketch at one frame: each point, each line and the identifier of each constraint, in
-// the order of the record.
-public sealed record SketchPicture(IReadOnlyList<ToolPoint> Points, IReadOnlyList<ToolLine> Lines, IReadOnlyCollection<Guid> Constraints)
+// A circle or an arc of the active sketch (phase K2e): the segments in pixels of the part of its
+// polyline in front of the eye, for a pick.
+public sealed record ToolCurve(Guid Id, IReadOnlyList<((double X, double Y) A, (double X, double Y) B)> Pixels);
+
+// The active sketch at one frame: each point, each line, each curve and the identifier of each
+// constraint, in the order of the record.
+public sealed record SketchPicture(IReadOnlyList<ToolPoint> Points, IReadOnlyList<ToolLine> Lines, IReadOnlyCollection<Guid> Constraints, IReadOnlyList<ToolCurve> Curves)
 {
+    public SketchPicture(IReadOnlyList<ToolPoint> points, IReadOnlyList<ToolLine> lines, IReadOnlyCollection<Guid> constraints)
+        : this(points, lines, constraints, [])
+    {
+    }
+
     public static SketchPicture Empty { get; } = new([], [], []);
 }
 
@@ -21,12 +30,18 @@ public interface ISketchEditor
     Guid? AddPoint(double x, double y);
 
     Guid? AddLine(Guid start, Guid end);
+
+    Guid? AddCircle(Guid centre, double radius);
+
+    Guid? AddArc(Guid centre, Guid start, Guid end);
 }
 
 public enum SketchToolKind
 {
     Line,
     Select,
+    Circle,
+    Arc,
 }
 
 // The tools of the sketch mode (ADR-0034 item 4, Q2 A and Q6 A): a pure state machine. It reads no
@@ -37,6 +52,12 @@ public enum SketchToolKind
 // adds a point. Each point after the first adds a line from the last point. A tap on the first
 // point closes the chain, and a tap on the last point ends it. The tool Select toggles the nearest
 // point, or else the nearest line, in a selection of two items at most.
+//
+// Phase K2e (TASK-0122): the tool Circle takes the centre, then a point on the circle, and adds a
+// circle whose radius is the distance in the plane. The tool Arc takes the centre, the start and
+// the end, and adds an arc counter-clockwise from the start (ADR-0033 item 2). A new end goes on
+// the circle of the start, so the implicit equation of the arc holds at the add. A tap on a point
+// uses that point, as for a line. The tool Select also picks the nearest curve.
 public sealed class SketchTool
 {
     // Half the height of a control (ADR-0027 item 6), so that a finger hits a point.
@@ -45,6 +66,9 @@ public sealed class SketchTool
     public const int MaximumSelection = 2;
 
     private readonly List<Guid> _selection = new();
+
+    // The points of the curve that the tool Circle or Arc makes, with their positions.
+    private readonly List<(Guid Id, double X, double Y)> _curve = new();
     private SketchToolKind _kind;
     private int _chainLines;
 
@@ -74,12 +98,15 @@ public sealed class SketchTool
         ArgumentNullException.ThrowIfNull(editor);
         if (_kind == SketchToolKind.Select)
         {
-            if ((NearestPoint(pixelX, pixelY, picture) ?? NearestLine(pixelX, pixelY, picture)) is { } item)
+            if ((NearestPoint(pixelX, pixelY, picture) ?? NearestLine(pixelX, pixelY, picture) ?? NearestCurve(pixelX, pixelY, picture)) is { } item)
                 Toggle(item);
             return;
         }
 
-        Place(NearestPoint(pixelX, pixelY, picture), position, editor);
+        if (_kind is SketchToolKind.Circle or SketchToolKind.Arc)
+            PlaceCurve(NearestPoint(pixelX, pixelY, picture), position, picture, editor);
+        else
+            Place(NearestPoint(pixelX, pixelY, picture), position, editor);
     }
 
     // ADR-0034 item 7: the next point from the pad. With an open chain the two numbers are an
@@ -89,6 +116,13 @@ public sealed class SketchTool
     {
         ArgumentNullException.ThrowIfNull(picture);
         ArgumentNullException.ThrowIfNull(editor);
+        // The tools of a curve take the two numbers as a position.
+        if (_kind is SketchToolKind.Circle or SketchToolKind.Arc)
+        {
+            PlaceCurve(picture.Points.FirstOrDefault(point => point.X == a && point.Y == b)?.Id, (a, b), picture, editor);
+            return;
+        }
+
         var from = Last is { } last ? picture.Points.FirstOrDefault(point => point.Id == last) : null;
         var (x, y) = from is null ? (a, b) : (from.X + a, from.Y + b);
         Place(picture.Points.FirstOrDefault(point => point.X == x && point.Y == y)?.Id, (x, y), editor);
@@ -107,6 +141,7 @@ public sealed class SketchTool
     public void End()
     {
         (First, Last, _chainLines) = (null, null, 0);
+        _curve.Clear();
     }
 
     // A row of the window or a tap of the tool Select: an item that is selected is cleared; a new
@@ -127,7 +162,7 @@ public sealed class SketchTool
     public void Forget(SketchPicture picture)
     {
         ArgumentNullException.ThrowIfNull(picture);
-        var live = picture.Points.Select(point => point.Id).Concat(picture.Lines.Select(line => line.Id)).Concat(picture.Constraints).ToHashSet();
+        var live = picture.Points.Select(point => point.Id).Concat(picture.Lines.Select(line => line.Id)).Concat(picture.Curves.Select(curve => curve.Id)).Concat(picture.Constraints).ToHashSet();
         _selection.RemoveAll(item => !live.Contains(item));
         if ((First is { } first && !live.Contains(first)) || (Last is { } last && !live.Contains(last)))
             End();
@@ -165,6 +200,77 @@ public sealed class SketchTool
             End();
         else
             Last = next;
+    }
+
+    // A tap of the tool Circle or Arc: the centre first, then a point on the circle, or the start
+    // and then the end of an arc. A tap on the centre or on the start again ends the curve.
+    private void PlaceCurve(Guid? hit, (double X, double Y)? position, SketchPicture picture, ISketchEditor editor)
+    {
+        var at = hit is { } id && picture.Points.FirstOrDefault(point => point.Id == id) is { } point ? (point.X, point.Y) : position;
+        if (at is not { } p || (hit is { } again && _curve.Any(item => item.Id == again)))
+        {
+            if (hit is not null)
+                End();
+            return;
+        }
+
+        if (_curve.Count == 0)
+        {
+            if ((hit ?? editor.AddPoint(p.X, p.Y)) is { } centre)
+            {
+                _curve.Add((centre, p.X, p.Y));
+                (First, Last) = (centre, centre);
+            }
+            return;
+        }
+
+        var c = _curve[0];
+        var (dx, dy) = (p.X - c.X, p.Y - c.Y);
+        var distance = Math.Sqrt((dx * dx) + (dy * dy));
+        if (!(distance > 0))
+            return;
+
+        if (_kind == SketchToolKind.Circle)
+        {
+            editor.AddCircle(c.Id, distance);
+            End();
+            return;
+        }
+
+        if (_curve.Count == 1)
+        {
+            if ((hit ?? editor.AddPoint(p.X, p.Y)) is { } start)
+            {
+                _curve.Add((start, p.X, p.Y));
+                Last = start;
+            }
+            return;
+        }
+
+        // A new end goes on the circle of the start, along the direction of the tap.
+        var s = _curve[1];
+        var radius = Math.Sqrt(((s.X - c.X) * (s.X - c.X)) + ((s.Y - c.Y) * (s.Y - c.Y)));
+        var end = hit ?? editor.AddPoint(c.X + (dx * radius / distance), c.Y + (dy * radius / distance));
+        if (end is { } e)
+            editor.AddArc(c.Id, s.Id, e);
+        End();
+    }
+
+    private static Guid? NearestCurve(double x, double y, SketchPicture picture)
+    {
+        Guid? nearest = null;
+        var best = HitPixels;
+        foreach (var curve in picture.Curves)
+        {
+            foreach (var (a, b) in curve.Pixels)
+            {
+                var distance = ToSegment(x, y, a, b);
+                if (distance <= best)
+                    (nearest, best) = (curve.Id, distance);
+            }
+        }
+
+        return nearest;
     }
 
     private static Guid? NearestPoint(double x, double y, SketchPicture picture)

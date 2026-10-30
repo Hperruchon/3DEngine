@@ -61,6 +61,8 @@ internal sealed unsafe class DesktopUi : IDisposable
     public const string SketchName = "Sketch";
     public const string LineToolLabel = "Line";
     public const string SelectToolLabel = "Select";
+    public const string CircleToolLabel = "Circle";
+    public const string ArcToolLabel = "Arc";
     public const string FinishLabel = "Finish";
     public const string NextPointLabel = "Next point";
     public const string EndLabel = "End";
@@ -73,7 +75,12 @@ internal sealed unsafe class DesktopUi : IDisposable
 
     // The five kinds of K2a (ADR-0033 item 3) and their buttons.
     public static readonly (string Label, string Kind)[] ConstraintButtons =
-        [("Coincident", "coincident"), ("Horizontal", "horizontal"), ("Vertical", "vertical"), ("Distance", "distance"), ("Fixed", "fixed")];
+        [("Coincident", "coincident"), ("Horizontal", "horizontal"), ("Vertical", "vertical"), ("Distance", "distance"), ("Fixed", "fixed"),
+         ("On curve", "pointOn"), ("Tangent", "tangent"), ("Inside tangent", "tangent"), ("Equal", "equal"), ("Radius", "radius")];
+
+    // Phase K2e (TASK-0122): Tangent of two curves gives 1 (outside), and Inside tangent gives −1
+    // (ADR-0033 item 3, kind 11).
+    public const string InsideTangentLabel = "Inside tangent";
 
     // The key of the rectangle of a control of the window of the sketch, for ItemRectangle.
     public static string SketchItem(string label) => $"{SketchName} {label}";
@@ -638,13 +645,12 @@ internal sealed unsafe class DesktopUi : IDisposable
         ImGui.SameLine();
         ToolButton(SelectToolLabel, SketchToolKind.Select, panel.Tool);
         ImGui.SameLine();
-        SketchButton(FinishLabel, new FinishSketchAction());
+        ToolButton(CircleToolLabel, SketchToolKind.Circle, panel.Tool);
         ImGui.SameLine();
-        // ADR-0036 item 9 (Q4 A): the pad of one signed distance along the normal of the datum.
-        if (ImGui.Button(ExtrudeLabel))
-            OpenPad(new NumericPad(ExtrudeLabel, _unit, new PadField("distance", "10")), values => new ExtrudeAction(values[0]), bySketch: true, scope: PadScope.Active);
-        Item(SketchItem(ExtrudeLabel));
+        ToolButton(ArcToolLabel, SketchToolKind.Arc, panel.Tool);
 
+        // The row of Next point stays the second row, so the pad below it stays inside a display of
+        // 1024 x 768 (finding V42); Finish and Extrude follow it (TASK-0122).
         if (panel.Tool == SketchToolKind.Line)
         {
             if (ImGui.Button(NextPointLabel))
@@ -658,6 +664,13 @@ internal sealed unsafe class DesktopUi : IDisposable
                 SketchButton(CloseLabel, new CloseChainAction());
             }
         }
+
+        SketchButton(FinishLabel, new FinishSketchAction());
+        ImGui.SameLine();
+        // ADR-0036 item 9 (Q4 A): the pad of one signed distance along the normal of the datum.
+        if (ImGui.Button(ExtrudeLabel))
+            OpenPad(new NumericPad(ExtrudeLabel, _unit, new PadField("distance", "10")), values => new ExtrudeAction(values[0]), bySketch: true, scope: PadScope.Active);
+        Item(SketchItem(ExtrudeLabel));
 
         SelectionButtons(sketch, panel.Selection);
         if (panel.Message is { } message)
@@ -700,9 +713,12 @@ internal sealed unsafe class DesktopUi : IDisposable
 
         var points = sketch.Points.ToDictionary(point => point.Id);
         var lines = sketch.Lines.Select(line => line.Id).ToHashSet();
+        var curves = sketch.Circles.Select(circle => circle.Id).Concat(sketch.Arcs.Select(arc => arc.Id)).ToHashSet();
         var constraint = selection.Count == 1 ? sketch.Constraints.FirstOrDefault(item => item.Id == selection[0]) : null;
-        Guid[] items = [.. selection.OrderBy(item => points.ContainsKey(item) ? 0 : 1)];
-        var shape = string.Concat(items.Select(item => points.ContainsKey(item) ? "P" : lines.Contains(item) ? "L" : "C"));
+        // The points first, then the lines, then the curves (A), as the kinds take their items.
+        int Order(Guid item) => points.ContainsKey(item) ? 0 : lines.Contains(item) ? 1 : curves.Contains(item) ? 2 : 3;
+        Guid[] items = [.. selection.OrderBy(Order)];
+        var shape = string.Concat(items.Select(item => Order(item) switch { 0 => "P", 1 => "L", 2 => "A", _ => "C" }));
 
         // Finding V43 of the codebase review of 2026-10-29: the origin O of the frame has the
         // identifier of its sketch, and the engine refuses to move it or to delete it (ADR-0033
@@ -732,6 +748,11 @@ internal sealed unsafe class DesktopUi : IDisposable
                 ("horizontal" or "vertical", "L") => true,
                 ("distance", "PP" or "PL" or "L") => true,
                 ("fixed", "P") => !origin,
+                ("pointOn", "PA") => true,
+                ("tangent", "LA") => label != InsideTangentLabel,
+                ("tangent", "AA") => true,
+                ("equal", "AA") => true,
+                ("radius", "A") => true,
                 _ => false,
             };
             if (!fits)
@@ -748,6 +769,13 @@ internal sealed unsafe class DesktopUi : IDisposable
                     case "fixed":
                         var at = points[items[0]];
                         OpenPad(new NumericPad(label, _unit, new("x", SketchText.Number(at.X)), new("y", SketchText.Number(at.Y))), values => new AddConstraintAction(kind, items, values), bySketch: true, scope: PadScope.Sketch);
+                        break;
+                    case "radius":
+                        var radius = SketchText.Radius(sketch, items[0]) ?? 0;
+                        OpenPad(new NumericPad(label, _unit, new PadField("radius", SketchText.Number(radius))), values => new AddConstraintAction(kind, items, values), bySketch: true, scope: PadScope.Sketch);
+                        break;
+                    case "tangent" when shape == "AA":
+                        _actions.Add(new AddConstraintAction(kind, items, [label == InsideTangentLabel ? -1 : 1]));
                         break;
                     default:
                         _actions.Add(new AddConstraintAction(kind, items, []));

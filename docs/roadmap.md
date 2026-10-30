@@ -100,6 +100,7 @@ Therefore each approved objective must have a track here.
 - P0.47 — The pads of the sketch follow their values, and the desktop meshes each body one time for each frame. v0.120, TASK-0118.
 - P8e — The numeric pad shows the length unit of the document. v0.121, TASK-0119.
 - P0.48 — A solve keeps each radius of a circle positive. v0.123, TASK-0121.
+- K2e — The desktop draws and adds circles and arcs, and the panel offers the constraints of K2d on a curve. v0.124, TASK-0122.
 
 ## Track 0 — Foundations
 
@@ -206,7 +207,7 @@ boundary and each refused rung.
 | K2b | The sketch tools of the desktop. A sketch mode in the intent layer, a ray to the plane of the sketch, a pad for a line, and a panel of constraints (Q8). ADR-0034, TASK-0101. | 4–6 |
 | K2c | The seven constraints of ADR-0033 item 3 on points and lines: pointOn, midpoint, parallel, perpendicular, equal, symmetric and angle, with their equations in the solver (the plan of 2026-10-30). TASK-0110. | 3–5 |
 | K2d | The circle and the arc in the engine: two commands, the radius as a variable of the solver, the equation of an arc, and tangent, radius, pointOn and equal on a curve (the plan of 2026-10-30). The desktop waits for K2e. TASK-0117. | 4–6 |
-| K2e | The desktop draws and adds circles and arcs, and the panel offers the constraints of K2c and K2d (the codebase review of 2026-10-30 (b), sections 5 and 6). TASK-0122. | 4–6 |
+| K2e | The desktop draws and adds circles and arcs, and the panel offers the constraints of K2d on a curve (the codebase review of 2026-10-30 (b), sections 5 and 6). TASK-0122. | 4–6 |
 | K3a | A constraint solver for five constraints: coincident, horizontal, vertical, distance and fixed. It uses only `+ - * / sqrt`, and its output stays outside the log (KD5). ADR-0035, TASK-0102. | 8–12 |
 | K3 | The rest of the constraint solver, after K3a. Write it. | 4–8 |
 | K4 | Planar faces only, with a boolean. Provenance inside the kernel. | 35–55 |

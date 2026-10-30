@@ -144,6 +144,19 @@ The decision below applies the recommended answers: Q1 A, Q2 A, Q3 A, Q4 A, Q5 A
    - A tap whose ray gives no position does nothing.
    The tool `Select` toggles the nearest point within 22 pixels, or else the nearest line within 22 pixels. The
    selection holds two items at most; a third item replaces the first.
+   Phase K2e (TASK-0122) adds the tools `Circle` and `Arc` (`AddSketchCircle`, `AddSketchArc`):
+   - `Circle`: a tap gives the centre, and a second tap a point on the circle. The radius is the distance in the
+     plane, with `sqrt` only, and the tool adds no point on the circle.
+   - `Arc`: a tap gives the centre, then the start, then the end, counter-clockwise from the start (ADR-0033 item 2).
+     A new end goes on the circle of the start in the direction of the tap, so the equation of the arc holds.
+   - A tap on a point uses that point. A tap on the centre or on the start again ends the curve. The pad gives a
+     position, not an offset.
+   - The tool `Select` also picks the nearest curve within 22 pixels of its polyline.
+   The window of the sketch has the buttons Circle and Arc, and the kinds on a curve: On curve (a point and a curve),
+   Tangent (a line and a curve, or two curves outside), Inside tangent, Equal (two curves) and Radius, which opens the
+   pad with the current radius. A curve draws as a polyline of 64 segments for a full turn; the polyline is
+   presentation (ADR-0007), so the desktop computes it with a sine and a cosine. A circle has the label R1, R2 and
+   onward, and an arc A1, A2 and onward.
 5. **The undo.** Each command is one step of the history (ADR-0033 item 10). A tap that adds a point and a line gives
    two steps. An undo or a redo of the session can change the active sketch; the tool then drops each item of the
    chain and of the selection that is not in the record, and ends the chain when its last point is gone.
@@ -210,3 +223,5 @@ engine does not change. The tool is a pure state machine, so a test reads it wit
 - 2026-10-28 · TASK-0101 · The owner accepted the record on 2026-10-28 with Q1 to Q6 A, and no change.
 - 2026-10-28 · TASK-0101 · The window of the sketch is 480 pixels wide, and the origin has the label O; the points
   are P1, P2 and onward. A tap on the first point of a chain of one line ends the chain and adds no line.
+- 2026-10-30 · TASK-0122 · Item 4: the tools Circle and Arc, the pick of a curve, the kinds on a curve in the window,
+  and the polyline of a curve (phase K2e).
