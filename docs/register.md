@@ -415,6 +415,10 @@ In the visual check of K2b, a synthetic click into a window without the focus, w
 the panel once and turned the camera once. Clicks within one frame of a new pad also hit other keys. A hand moves
 the mouse before a click, so a person may never see it, but a wrong button of a pad gives a wrong number.
 Exit: a test of the order of the samples of a focus click explains it, and a change or a recorded reason closes it.
+Progress 2026-10-30: TASK-0118 built a probe that logs each SDL event of the mouse and of the focus, each sample that
+the router gives to the panel or to the intents, and each intent. A focus to another window gave one
+`FocusLostSample` to both. Its click reached the window above the desktop, and the log held motions of a mouse that
+the probe did not move, so the run stopped. The next run needs a time when nobody else uses the mouse.
 
 ## Accepted compromises
 
