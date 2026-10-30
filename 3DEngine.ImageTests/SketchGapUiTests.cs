@@ -41,7 +41,7 @@ public sealed class SketchGapUiTests
 
     private static DesktopUi Opened(SketchPanel? panel, Vector2? display = null)
     {
-        var ui = new DesktopUi("http://127.0.0.1:5180");
+        var ui = new DesktopUi("http://127.0.0.1:5180", Engine.Contracts.Document.Millimetre);
         Step(ui, panel, display);
         Step(ui, panel, display);
         return ui;

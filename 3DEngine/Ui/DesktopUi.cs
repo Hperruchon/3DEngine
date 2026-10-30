@@ -94,11 +94,13 @@ internal sealed unsafe class DesktopUi : IDisposable
         ["Clear", "Next", "Apply", "Cancel"],
     ];
 
-    // ADR-0015 item 7: the millimetre is the one length unit of a document.
-    private const string Unit = "mm";
-
     private readonly IntPtr _context;
     private readonly string _address;
+
+    // ADR-0015 item 7 and ADR-0032 item 7: the length unit of the document, which the pad shows beside
+    // each field. The host gives the unit of its session, which the header of the file gave (P8e,
+    // TASK-0119). Until TASK-0119 the pad showed the constant mm.
+    private readonly string _unit;
     private readonly UiInputRouter _router = new();
     private readonly List<Vector4> _panels = new();
     private readonly Dictionary<string, Vector4> _items = new(StringComparer.Ordinal);
@@ -150,12 +152,14 @@ internal sealed unsafe class DesktopUi : IDisposable
     // V47: the action that the pad added in this frame, until the scope check of the frame.
     private PanelAction? _padAction;
 
-    public DesktopUi(string address)
+    public DesktopUi(string address, string lengthUnit)
     {
+        ArgumentNullException.ThrowIfNull(lengthUnit);
         if (!UiDrawDataConverter.VertexLayoutAgrees)
             throw new InvalidOperationException("The vertex of Dear ImGui does not have the layout of UiVertex.");
 
         _address = address;
+        _unit = lengthUnit;
         _context = ImGui.CreateContext();
         ImGui.SetCurrentContext(_context);
 
@@ -213,7 +217,7 @@ internal sealed unsafe class DesktopUi : IDisposable
         var (a, b) = chainOpen ? ("dx", "dy") : ("x", "y");
         // The key comes from the state that names the fields, not from the last frame: the host
         // opens the pad again in the frame of an apply, before the panel sees the new chain.
-        OpenPad(new NumericPad(NextPointLabel, Unit, new(a, "0"), new(b, "0")), values => new NextPointAction(values[0], values[1]), bySketch: true,
+        OpenPad(new NumericPad(NextPointLabel, _unit, new(a, "0"), new(b, "0")), values => new NextPointAction(values[0], values[1]), bySketch: true,
             scope: PadScope.Chain, key: ChainKey(_activeKey, SketchToolKind.Line, chainOpen));
     }
 
@@ -492,7 +496,7 @@ internal sealed unsafe class DesktopUi : IDisposable
             Item(RedoLabel);
             ImGui.SameLine();
             if (ImGui.Button(NewBoxLabel))
-                OpenPad(new NumericPad(NewBoxLabel, Unit, new("x", "10"), new("y", "10"), new("z", "10")), values => new CreateBoxAction(values[0], values[1], values[2]));
+                OpenPad(new NumericPad(NewBoxLabel, _unit, new("x", "10"), new("y", "10"), new("z", "10")), values => new CreateBoxAction(values[0], values[1], values[2]));
             Item(NewBoxLabel);
 
             // ADR-0034 item 6: a new sketch on each origin plane.
@@ -580,7 +584,7 @@ internal sealed unsafe class DesktopUi : IDisposable
 
         // ADR-0032 item 4: a move of the selected body by the offsets of the pad.
         if (ImGui.Button(MoveLabel))
-            OpenPad(new NumericPad(MoveLabel, Unit, new("dx", "0"), new("dy", "0"), new("dz", "0")), values => new MoveBodyAction(body.Id, values[0], values[1], values[2]), scope: PadScope.Body);
+            OpenPad(new NumericPad(MoveLabel, _unit, new("dx", "0"), new("dy", "0"), new("dz", "0")), values => new MoveBodyAction(body.Id, values[0], values[1], values[2]), scope: PadScope.Body);
         Item(MoveLabel);
         ImGui.SameLine();
     }
@@ -638,7 +642,7 @@ internal sealed unsafe class DesktopUi : IDisposable
         ImGui.SameLine();
         // ADR-0036 item 9 (Q4 A): the pad of one signed distance along the normal of the datum.
         if (ImGui.Button(ExtrudeLabel))
-            OpenPad(new NumericPad(ExtrudeLabel, Unit, new PadField("distance", "10")), values => new ExtrudeAction(values[0]), bySketch: true, scope: PadScope.Active);
+            OpenPad(new NumericPad(ExtrudeLabel, _unit, new PadField("distance", "10")), values => new ExtrudeAction(values[0]), bySketch: true, scope: PadScope.Active);
         Item(SketchItem(ExtrudeLabel));
 
         if (panel.Tool == SketchToolKind.Line)
@@ -739,11 +743,11 @@ internal sealed unsafe class DesktopUi : IDisposable
                 {
                     case "distance":
                         var length = SketchText.Distance(sketch, items) ?? 0;
-                        OpenPad(new NumericPad(label, Unit, new PadField("length", SketchText.Number(length))), values => new AddConstraintAction(kind, items, values), bySketch: true, scope: PadScope.Sketch);
+                        OpenPad(new NumericPad(label, _unit, new PadField("length", SketchText.Number(length))), values => new AddConstraintAction(kind, items, values), bySketch: true, scope: PadScope.Sketch);
                         break;
                     case "fixed":
                         var at = points[items[0]];
-                        OpenPad(new NumericPad(label, Unit, new("x", SketchText.Number(at.X)), new("y", SketchText.Number(at.Y))), values => new AddConstraintAction(kind, items, values), bySketch: true, scope: PadScope.Sketch);
+                        OpenPad(new NumericPad(label, _unit, new("x", SketchText.Number(at.X)), new("y", SketchText.Number(at.Y))), values => new AddConstraintAction(kind, items, values), bySketch: true, scope: PadScope.Sketch);
                         break;
                     default:
                         _actions.Add(new AddConstraintAction(kind, items, []));
@@ -756,7 +760,7 @@ internal sealed unsafe class DesktopUi : IDisposable
         {
             var point = points[items[0]];
             Flow(MovePointLabel, () => OpenPad(
-                new NumericPad(MovePointLabel, Unit, new("x", SketchText.Number(point.X)), new("y", SketchText.Number(point.Y))),
+                new NumericPad(MovePointLabel, _unit, new("x", SketchText.Number(point.X)), new("y", SketchText.Number(point.Y))),
                 values => new MoveSketchPointAction(point.Id, values[0], values[1]),
                 bySketch: true,
                 scope: PadScope.Sketch));
@@ -766,7 +770,7 @@ internal sealed unsafe class DesktopUi : IDisposable
         {
             string[] names = constraint.Values.Count == 1 ? ["length"] : ["x", "y"];
             Flow(ValueLabel, () => OpenPad(
-                new NumericPad(ValueLabel, Unit, [.. constraint.Values.Select((value, index) => new PadField(names[index], SketchText.Number(value)))]),
+                new NumericPad(ValueLabel, _unit, [.. constraint.Values.Select((value, index) => new PadField(names[index], SketchText.Number(value)))]),
                 values => new SetConstraintValueAction(constraint.Id, values),
                 bySketch: true,
                 scope: PadScope.Sketch));

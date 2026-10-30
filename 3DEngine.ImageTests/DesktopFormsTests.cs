@@ -38,7 +38,7 @@ public sealed class DesktopFormsTests
 
     private static DesktopUi Opened(SketchPanel panel)
     {
-        var ui = new DesktopUi("http://127.0.0.1:5180");
+        var ui = new DesktopUi("http://127.0.0.1:5180", Engine.Contracts.Document.Millimetre);
         Step(ui, panel);
         Step(ui, panel);
         return ui;
@@ -124,7 +124,7 @@ public sealed class DesktopFormsTests
         var small = new Vector2(1024, 768);
         var fault = new BodyFault("W-SKETCH-REBUILD-FAILED", "The body '0fe4ab0b-8d7a-5381-a0e5-152a7ab115b6' keeps its last solid: the point 'a0000000-0000-0000-0000-000000000000' is the end of 1 line, and a closed profile has 2 lines at each point.");
         LiveBody[] bodies = [new(Guid.NewGuid(), "Extrude", "Plate", true, fault), new(Guid.NewGuid(), "Box", null, true)];
-        using var ui = new DesktopUi("http://127.0.0.1:5180");
+        using var ui = new DesktopUi("http://127.0.0.1:5180", Engine.Contracts.Document.Millimetre);
         for (var frame = 0; frame < 3; frame++)
         {
             ui.Route([]);
