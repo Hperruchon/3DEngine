@@ -464,6 +464,18 @@ Closed YYYY-MM-DD · decided  · ADR-nnnn
 Closed YYYY-MM-DD · accepted · the reason to keep the condition
 ```
 
+### R-0045 · K0d has no decisions for an operand of another sketch and for the code of a failed step
+- class: risk
+- opened: 2026-10-30
+- due: 2026-11-29
+- extended: no
+- refs: `docs/reviews/2026-10-30-codebase-review.md`, questions Q1 to Q3; `docs/roadmap.md`, row K0d; TASK-0116
+The owner decided the first slice of K0 on 2026-10-30 (KQ1 to KQ4 A). The research of the codebase review of
+2026-10-30 found three points that the answers do not decide: an operand of a `Subtract` that comes from another
+sketch, the code of a failed step of the chain, and the future of `W-SKETCH-EXTRUDE-CONSUMED`. A wider meaning of a
+code needs the owner (`CLAUDE.md`, "Diagnostic codes"). TASK-0116 stays Deferred until the answers.
+Exit: the owner answers Q1 to Q3, and the first commit of TASK-0116 records the answers.
+
 ### R-0044 · K0b has no decisions for the rebuild of a solid after an edit of its sketch
 - class: risk
 - opened: 2026-10-29
