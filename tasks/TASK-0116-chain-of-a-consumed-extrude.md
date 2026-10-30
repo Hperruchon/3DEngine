@@ -1,11 +1,11 @@
 ---
 id: 0116
 title: An edit of a sketch rebuilds each translate and subtract that descends from its extrude
-status: Deferred
+status: Active
 phase: K0d
 opened: 2026-10-30
 depends-on: [0111]
-governed-by: []
+governed-by: [0004, 0033, 0035, 0037, 0039]
 writes:
   create:
     - tasks/TASK-0116-chain-of-a-consumed-extrude.md
@@ -21,6 +21,7 @@ writes:
     - docs/adr/0021-operand-consumption.md
     - docs/adr/0031-undo-and-redo.md
     - docs/adr/README.md
+    - tasks/TASK-0114-forms-of-the-thirteenth-review.md
     - eng/test-floor.txt
     - docs/register.md
     - docs/roadmap.md
@@ -44,7 +45,8 @@ K0b (ADR-0037) rebuilds a live extrude after an edit of its sketch, and a consum
 `W-SKETCH-EXTRUDE-CONSUMED`. The owner decided on 2026-10-30 (KQ1 to KQ4 A) that the first slice of K0 is the chain
 of a consumed extrude, as a projection of the log, with a reference by body handle and command identifier. The
 codebase review of 2026-10-30, sections 5 and 6, gives the research, and its questions Q1 to Q3 ask three more
-decisions. The task stays Deferred until the owner answers them (R-0045).
+decisions. The owner answered A to Q1, Q2 and Q3 on 2026-10-30 (R-0045 closes): the full upstream from the live
+sketches, the wider meaning of `W-SKETCH-REBUILD-FAILED`, and `W-SKETCH-EXTRUDE-CONSUMED` for an unknown consumer.
 
 ## Goal
 
@@ -71,3 +73,5 @@ runs again in log order under new keys, and the live end keeps its handle and ge
 ## Progress
 
 - 2026-10-30: opened by the codebase review of 2026-10-30 (TASK-0111). Deferred until the answers to Q1 to Q3.
+- 2026-10-30: the owner answered A to Q1 to Q3. ADR-0039 (Accepted under KQ4 A), `FeatureGraph`, the chain in
+  `SketchRebuild`, `ChainRebuildTests` and the flipped test of a consumed extrude in `RebuildTests`.

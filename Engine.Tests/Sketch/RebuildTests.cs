@@ -259,11 +259,12 @@ public sealed class RebuildTests : IDisposable
         Assert.Equal(DiagnosticCodes.SketchRebuildFailed, Assert.Single(conflict.Diagnostics).Code);
     }
 
-    // ADR-0037 item 7 (Q3 A): after a Translate consumes the extrude, an edit applies with
-    // W-SKETCH-EXTRUDE-CONSUMED and changes no body; an extrude that an undo removed is not in
-    // effect and gives no warning.
+    // ADR-0037 item 7, which ADR-0039 amends (TASK-0116): after a Translate consumes the extrude,
+    // an edit rebuilds the translated body with no warning; an extrude that an undo removed is
+    // not in effect and gives no warning. Until TASK-0116 the edit gave W-SKETCH-EXTRUDE-CONSUMED
+    // and changed no body.
     [NativeManifoldFact]
-    public async Task A_Consumed_Extrude_Gives_A_Warning_And_An_Undone_One_Gives_None()
+    public async Task A_Consumed_Extrude_Follows_And_An_Undone_One_Gives_No_Warning()
     {
         using var backend = new ManifoldGeometryBackend();
         var part = await NewPart(backend);
@@ -272,11 +273,9 @@ public sealed class RebuildTests : IDisposable
 
         var edit = await Applied(part.Session, new MoveSketchPointCommand { SketchId = part.Sketch, PointId = part.Points[2], X = 15, Y = 12 });
 
-        var warning = Assert.Single(edit.Diagnostics);
-        Assert.Equal((DiagnosticCodes.SketchExtrudeConsumed, Severity.Warning), (warning.Code, warning.Severity));
-        Assert.Equal(part.Body, warning.Data!["bodyId"]);
-        Assert.Equal((1.0, 2.0, 10.0, 11.0, 8.0, 15.0), Six(await Box(part.Session, translate.CommandId)));
-        Assert.DoesNotContain(part.Events.Snapshot(), record => record.Kind == "body.changed" && record.CauseCommandId == edit.CommandId);
+        Assert.Empty(edit.Diagnostics);
+        Assert.Equal((1.0, 2.0, 10.0, 15.0, 12.0, 15.0), Six(await Box(part.Session, translate.CommandId)));
+        Assert.Contains(part.Events.Snapshot(), record => record.Kind == "body.changed" && record.CauseCommandId == edit.CommandId);
 
         using var other = new ManifoldGeometryBackend();
         var undone = await NewPart(other);

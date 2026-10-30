@@ -1,13 +1,13 @@
 ---
 id: 0037
 title: The rebuild of an extrude after an edit of its sketch
-status: Accepted
+status: Amended
 topic: Contracts, geometry, sketch
 date: 2026-10-29
 supersedes: []
 superseded-by: []
 amends: ['0012', '0021', '0028', '0031', '0036']
-amended-by: []
+amended-by: ['0039']
 affects:
   - Engine.Contracts/BodyRecord.cs
   - Engine.Core/Sketch/**
@@ -124,3 +124,5 @@ body, and the edit is never refused.
 - 2026-10-29 · TASK-0108 · The owner accepted the record on 2026-10-29, with no change.
 - 2026-10-29 · TASK-0108 · The code applies items 1 to 9. The constant of the key test agrees with a computation in Node
   that shares no code with the engine.
+- 2026-10-30 · TASK-0116 · ADR-0039 amends item 7: a consumed extrude follows through its chain of `Translate` and
+  `Subtract` to the live body at its end, and `W-SKETCH-REBUILD-FAILED` covers a body of the chain.
