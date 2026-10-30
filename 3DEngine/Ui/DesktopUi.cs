@@ -76,7 +76,16 @@ internal sealed unsafe class DesktopUi : IDisposable
     // The five kinds of K2a (ADR-0033 item 3) and their buttons.
     public static readonly (string Label, string Kind)[] ConstraintButtons =
         [("Coincident", "coincident"), ("Horizontal", "horizontal"), ("Vertical", "vertical"), ("Distance", "distance"), ("Fixed", "fixed"),
-         ("On curve", "pointOn"), ("Tangent", "tangent"), ("Inside tangent", "tangent"), ("Equal", "equal"), ("Radius", "radius")];
+         ("On curve", "pointOn"), ("Tangent", "tangent"), ("Inside tangent", "tangent"), ("Equal", "equal"), ("Radius", "radius"),
+         ("On line", "pointOn"), ("Midpoint", "midpoint"), ("Parallel", "parallel"), ("Perpendicular", "perpendicular"), ("Angle", "angle")];
+
+    // Phase K2f (TASK-0125): On curve takes a point and a curve, and On line a point and a line.
+    public const string OnCurveLabel = "On curve";
+    public const string OnLineLabel = "On line";
+
+    // ADR-0033 item 3, kind 14: the pad of an angle takes degrees, and the client gives the cosine and
+    // the sine to the command, so the log holds no angle (determinism rule 2).
+    public const string AngleUnit = "deg";
 
     // Phase K2e (TASK-0122): Tangent of two curves gives 1 (outside), and Inside tangent gives −1
     // (ADR-0033 item 3, kind 11).
@@ -748,11 +757,17 @@ internal sealed unsafe class DesktopUi : IDisposable
                 ("horizontal" or "vertical", "L") => true,
                 ("distance", "PP" or "PL" or "L") => true,
                 ("fixed", "P") => !origin,
-                ("pointOn", "PA") => true,
+                ("pointOn", "PA") => label == OnCurveLabel,
                 ("tangent", "LA") => label != InsideTangentLabel,
                 ("tangent", "AA") => true,
-                ("equal", "AA") => true,
+                ("equal", "AA" or "LL") => true,
                 ("radius", "A") => true,
+                // The kinds of K2c on lines: a point of pointOn and of midpoint is not an end of its
+                // line, as the engine requires (SketchConstraints.Refusal). Symmetric takes three items,
+                // and the selection holds two (ADR-0034 item 4), so it has no button.
+                ("pointOn", "PL") => label == OnLineLabel && !IsEnd(sketch, items[0], items[1]),
+                ("midpoint", "PL") => !IsEnd(sketch, items[0], items[1]),
+                ("parallel" or "perpendicular" or "angle", "LL") => true,
                 _ => false,
             };
             if (!fits)
@@ -773,6 +788,10 @@ internal sealed unsafe class DesktopUi : IDisposable
                     case "radius":
                         var radius = SketchText.Radius(sketch, items[0]) ?? 0;
                         OpenPad(new NumericPad(label, _unit, new PadField("radius", SketchText.Number(radius))), values => new AddConstraintAction(kind, items, values), bySketch: true, scope: PadScope.Sketch);
+                        break;
+                    case "angle":
+                        var degrees = SketchText.Angle(sketch, items[0], items[1]) ?? 0;
+                        OpenPad(new NumericPad(label, AngleUnit, new PadField("angle", SketchText.Number(degrees))), values => new AddConstraintAction(kind, items, CosineAndSine(values[0])), bySketch: true, scope: PadScope.Sketch);
                         break;
                     case "tangent" when shape == "AA":
                         _actions.Add(new AddConstraintAction(kind, items, [label == InsideTangentLabel ? -1 : 1]));
@@ -806,6 +825,26 @@ internal sealed unsafe class DesktopUi : IDisposable
 
         if (!origin)
             Flow(DeleteLabel, () => _actions.Add(new DeleteSketchItemsAction([.. selection])));
+    }
+
+    private static bool IsEnd(SketchInfo sketch, Guid point, Guid line)
+        => sketch.Lines.FirstOrDefault(item => item.Id == line) is { } found && (found.Start == point || found.End == point);
+
+    // The cosine and the sine of an angle in degrees. A multiple of 90 degrees gives exact numbers, so
+    // an angle of 90 records (0, 1) and not (6.1e-17, 1).
+    internal static double[] CosineAndSine(double degrees)
+    {
+        var turn = degrees % 360;
+        if (turn < 0)
+            turn += 360;
+        return turn switch
+        {
+            0 => [1, 0],
+            90 => [0, 1],
+            180 => [-1, 0],
+            270 => [0, -1],
+            _ => [Math.Cos(degrees * Math.PI / 180), Math.Sin(degrees * Math.PI / 180)],
+        };
     }
 
     // ADR-0032 item 5: the window of the pad. A row selects its field; the line under the fields

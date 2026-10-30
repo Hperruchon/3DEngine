@@ -56,6 +56,19 @@ internal static class SketchText
         }
     }
 
+    // Phase K2f (TASK-0125): the angle in degrees from the first line to the second, counter-
+    // clockwise, as the kind angle reads it (ADR-0033 item 3, kind 14), or null.
+    public static double? Angle(SketchInfo sketch, Guid first, Guid second)
+    {
+        ArgumentNullException.ThrowIfNull(sketch);
+        var points = sketch.Points.ToDictionary(point => point.Id);
+        (double X, double Y)? Direction(Guid id)
+            => sketch.Lines.FirstOrDefault(line => line.Id == id) is { } line ? (points[line.End].X - points[line.Start].X, points[line.End].Y - points[line.Start].Y) : null;
+        if (Direction(first) is not { } a || Direction(second) is not { } b)
+            return null;
+        return Math.Atan2((a.X * b.Y) - (a.Y * b.X), (a.X * b.X) + (a.Y * b.Y)) * 180 / Math.PI;
+    }
+
     // The radius of a circle, or the distance from the centre of an arc to its start, as the
     // engine measures it (SketchConstraints.CurveRadius), or null.
     public static double? Radius(SketchInfo sketch, Guid curve)
