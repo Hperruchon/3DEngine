@@ -68,15 +68,19 @@ public static class ParameterBinder
                 reason = $"expected a string, received '{Describe(supplied)}'.";
                 return false;
 
+            // Finding E11 of the codebase review of 2026-09-30 (TASK-0115): the texts Infinity, NaN
+            // and 1e999 gave a number that is not finite, the log held it, and a query of the body
+            // gave HTTP 500. A number is finite, as the document file of JSON can hold it.
             case "number":
-                if (supplied is double d) { coerced = d; return true; }
+                if (supplied is double d && double.IsFinite(d)) { coerced = d; return true; }
                 if (text is not null
-                    && double.TryParse(text, NumberStyles.Float, CultureInfo.InvariantCulture, out var pd))
+                    && double.TryParse(text, NumberStyles.Float, CultureInfo.InvariantCulture, out var pd)
+                    && double.IsFinite(pd))
                 {
                     coerced = pd;
                     return true;
                 }
-                reason = $"expected a number, received '{Describe(supplied)}'.";
+                reason = $"expected a finite number, received '{Describe(supplied)}'.";
                 return false;
 
             case "integer":

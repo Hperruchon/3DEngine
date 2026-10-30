@@ -63,6 +63,8 @@ The engine, the desktop and the gates close each form of the review, and a test 
    is not a full code. T92: the separators and the marks of direction. T93: the exact form of a heading. T94 and
    T95: a check that leaves a task that is not complete fails, and a gate file names no `LongRunning` and no
    `new Thread`.
+5. R-0043, from TASK-0115: a test of the order of the samples of a focus click into the desktop window, and a change
+   or a recorded reason that closes the entry.
 
 ## Scope (out)
 
@@ -78,3 +80,4 @@ The engine, the desktop and the gates close each form of the review, and a test 
 ## Progress
 
 - 2026-10-30: opened by the codebase review of 2026-10-30 (TASK-0111).
+- 2026-10-30: TASK-0115 gave this task R-0043 (item 5), because R-0043 needs the desktop after the merge of R9.

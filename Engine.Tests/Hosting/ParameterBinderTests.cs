@@ -64,6 +64,11 @@ public class ParameterBinderTests
     [InlineData("integer", "1.5")]
     [InlineData("boolean", "yes")]
     [InlineData("guid", "not-a-guid")]
+    // Finding E11 (TASK-0115): a number that is not finite.
+    [InlineData("number", "Infinity")]
+    [InlineData("number", "NaN")]
+    [InlineData("number", "1e999")]
+    [InlineData("number", "-Infinity")]
     public void Wrong_Type_Fails_And_Names_The_Field_And_The_Value(string type, string supplied)
     {
         var result = ParameterBinder.Bind(
@@ -73,6 +78,19 @@ public class ParameterBinderTests
         Assert.False(result.IsSuccess);
         Assert.Contains("field", result.FirstMessage);
         Assert.Contains(supplied, result.FirstMessage);
+    }
+
+    // Finding E11 (TASK-0115): a typed double of a JSON reader that is not finite is refused too.
+    [Theory]
+    [InlineData(double.PositiveInfinity)]
+    [InlineData(double.NegativeInfinity)]
+    [InlineData(double.NaN)]
+    public void A_Typed_Number_That_Is_Not_Finite_Fails(double supplied)
+    {
+        var result = ParameterBinder.Bind(Schema(("size", "number", true)), Raw(("size", supplied)));
+
+        Assert.False(result.IsSuccess);
+        Assert.Contains("finite", result.FirstMessage);
     }
 
     [Fact]

@@ -110,12 +110,12 @@ public sealed class ManifoldGeometryBackend
         int status = ManifoldNative.manifold_status(solid);
         if (status != 0)
         {
-            ManifoldNative.manifold_delete_manifold(solid); // frees `buffer`
+            Release(solid, buffer);
             throw new ManifoldNativeException(
                 $"manifold_cube failed with status {status} for handle '{handle.Id}'.");
         }
 
-        _solids[handle.Id] = new ManifoldSolidHandle(solid);
+        _solids[handle.Id] = new ManifoldSolidHandle(solid, buffer);
     }
 
     // ITransformOps. Stores a translated copy of `source` under `result`, leaving the
@@ -139,12 +139,12 @@ public sealed class ManifoldGeometryBackend
         int status = ManifoldNative.manifold_status(solid);
         if (status != 0)
         {
-            ManifoldNative.manifold_delete_manifold(solid); // frees `buffer`
+            Release(solid, buffer);
             throw new ManifoldNativeException(
                 $"manifold_translate failed with status {status} for handle '{result.Id}'.");
         }
 
-        _solids[result.Id] = new ManifoldSolidHandle(solid);
+        _solids[result.Id] = new ManifoldSolidHandle(solid, buffer);
     }
 
     // IBooleanOps. Stores (minuend - subtrahend) under `result`, leaving both operands
@@ -171,20 +171,20 @@ public sealed class ManifoldGeometryBackend
         int status = ManifoldNative.manifold_status(solid);
         if (status != 0)
         {
-            ManifoldNative.manifold_delete_manifold(solid); // frees `buffer`
+            Release(solid, buffer);
             throw new ManifoldNativeException(
                 $"manifold_difference failed with status {status} for handle '{result.Id}'.");
         }
 
         if (ManifoldNative.manifold_is_empty(solid) != 0)
         {
-            ManifoldNative.manifold_delete_manifold(solid); // frees `buffer`
+            Release(solid, buffer);
             throw new ManifoldNativeException(
                 $"Subtraction produced an empty solid for handle '{result.Id}' " +
                 "(the subtrahend fully contains the minuend).");
         }
 
-        _solids[result.Id] = new ManifoldSolidHandle(solid);
+        _solids[result.Id] = new ManifoldSolidHandle(solid, buffer);
     }
 
     // IExtrudeOps (ADR-0036 item 6). One simple polygon of the loop, extruded along +Z
@@ -207,6 +207,7 @@ public sealed class ManifoldGeometryBackend
         nint polygonsBuffer = Marshal.AllocHGlobal((nint)ManifoldNative.manifold_polygons_size());
         nint polygon = 0;
         nint polygons = 0;
+        nint prismBuffer = Marshal.AllocHGlobal((nint)ManifoldNative.manifold_manifold_size());
         nint prism;
         try
         {
@@ -215,7 +216,6 @@ public sealed class ManifoldGeometryBackend
             nint list = polygon;
             polygons = ManifoldNative.manifold_polygons(polygonsBuffer, (nint)(&list), 1);
 
-            nint prismBuffer = Marshal.AllocHGlobal((nint)ManifoldNative.manifold_manifold_size());
             prism = ManifoldNative.manifold_extrude(
                 prismBuffer, polygons, parameters.Height, slices: 0, twistDegrees: 0, scaleX: 1, scaleY: 1);
         }
@@ -231,7 +231,7 @@ public sealed class ManifoldGeometryBackend
         int status = ManifoldNative.manifold_status(prism);
         if (status != 0 || ManifoldNative.manifold_is_empty(prism) != 0)
         {
-            ManifoldNative.manifold_delete_manifold(prism); // frees its buffer
+            Release(prism, prismBuffer);
             throw new ManifoldNativeException(
                 $"manifold_extrude failed with status {status}, or gave an empty solid, for handle '{handle.Id}'.");
         }
@@ -240,17 +240,25 @@ public sealed class ManifoldGeometryBackend
         nint buffer = Marshal.AllocHGlobal((nint)ManifoldNative.manifold_manifold_size());
         nint solid = ManifoldNative.manifold_transform(
             buffer, prism, u.X, u.Y, u.Z, v.X, v.Y, v.Z, n.X, n.Y, n.Z, origin.X, origin.Y, origin.Z);
-        ManifoldNative.manifold_delete_manifold(prism); // frees its buffer
+        Release(prism, prismBuffer);
 
         status = ManifoldNative.manifold_status(solid);
         if (status != 0)
         {
-            ManifoldNative.manifold_delete_manifold(solid); // frees `buffer`
+            Release(solid, buffer);
             throw new ManifoldNativeException(
                 $"manifold_transform failed with status {status} for handle '{handle.Id}'.");
         }
 
-        _solids[handle.Id] = new ManifoldSolidHandle(solid);
+        _solids[handle.Id] = new ManifoldSolidHandle(solid, buffer);
+    }
+
+    // Finding E14 (TASK-0115): a solid in a buffer of Marshal.AllocHGlobal goes with its
+    // destructor in place and then with Marshal.FreeHGlobal, never with the C++ delete.
+    internal static void Release(nint solid, nint buffer)
+    {
+        ManifoldNative.manifold_destruct_manifold(solid);
+        Marshal.FreeHGlobal(buffer);
     }
 
     // IGeometryQuery. Native axis-aligned bounding box. Throws if the handle is unknown
@@ -274,7 +282,9 @@ public sealed class ManifoldGeometryBackend
         }
         finally
         {
-            ManifoldNative.manifold_delete_box(box); // frees `boxBuffer`
+            // The destructor in place, then the allocator that gave the buffer (E14).
+            ManifoldNative.manifold_destruct_box(box);
+            Marshal.FreeHGlobal(boxBuffer);
         }
     }
 

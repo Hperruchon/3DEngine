@@ -14,6 +14,39 @@ public class CommandsEndpointTests : IClassFixture<WebApplicationFactory<Program
         _factory = factory;
     }
 
+    // Finding E16 of the codebase review of 2026-09-30 (TASK-0115): a typing error in a member of
+    // the envelope removed the version check with no error. Each unknown member gives HTTP 400.
+    // The envelope with no unknown member is the control: it gives no HTTP 400.
+    [Theory]
+    [InlineData("/commands", "{\"name\":\"NoOp\",\"schemaVersion\":1,\"parameters\":{\"echo\":\"a\"}", ",\"expectedDocumentVersoin\":5")]
+    [InlineData("/commands", "{\"name\":\"NoOp\",\"schemaVersion\":1,\"parameters\":{\"echo\":\"a\"}", ",\"extra\":1")]
+    [InlineData("/queries", "{\"name\":\"GetBodyInfo\",\"schemaVersion\":1,\"parameters\":{\"bodyId\":\"7a7a7a7a-0000-0000-0000-000000000000\"}", ",\"expectedDocumentVersion\":1")]
+    public async Task An_Unknown_Member_Of_The_Envelope_Gives_400(string route, string envelope, string unknown)
+    {
+        var client = _factory.CreateClient();
+        using var valid = new StringContent(envelope + "}", System.Text.Encoding.UTF8, "application/json");
+        using var wrong = new StringContent(envelope + unknown + "}", System.Text.Encoding.UTF8, "application/json");
+
+        Assert.NotEqual(HttpStatusCode.BadRequest, (await client.PostAsync(route, valid)).StatusCode);
+        Assert.Equal(HttpStatusCode.BadRequest, (await client.PostAsync(route, wrong)).StatusCode);
+    }
+
+    // Finding E11 (TASK-0115): CreateBox with 1e999 was applied, and a query of the body gave
+    // HTTP 500. The binder refuses it, so the host answers HTTP 400 and the log holds nothing.
+    [Fact]
+    public async Task A_Number_That_Is_Not_Finite_Is_Rejected()
+    {
+        var client = _factory.CreateClient();
+        using var content = new StringContent("{\"name\":\"CreateBox\",\"schemaVersion\":1,\"parameters\":{\"sizeX\":1e999,\"sizeY\":1,\"sizeZ\":1}}", System.Text.Encoding.UTF8, "application/json");
+
+        var response = await client.PostAsync("/commands", content);
+
+        var body = await ReadJsonAsync(response);
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        Assert.Equal("E-API-BAD-REQUEST", body.GetProperty("error").GetProperty("code").GetString());
+        Assert.Contains("expected a finite number", body.GetProperty("error").GetProperty("message").GetString());
+    }
+
     [Fact]
     public async Task PostCommands_NoOp_With_Echo_Returns_200_And_Json_Status_Applied()
     {
