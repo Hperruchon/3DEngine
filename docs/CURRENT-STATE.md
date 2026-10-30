@@ -3416,3 +3416,37 @@ New tests: 18. The test list holds 1216 (910 in `Engine.Tests`, 190 in `3DEngine
 `3DEngine.ImageTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
 entries: 14 of 15. New diagnostic codes: none. Since the review of v0.112, 2 product milestones and 6 entries followed
 it.
+
+## v0.119 — The desktop moves the selected body with a translate gizmo (R9, TASK-0113)
+
+The owner chose the defaults R9-Q1 to Q8 on 2026-10-27, and the plan of 2026-10-30 put R9 after P0.44. ADR-0038 holds
+the decisions, under the answer Q2 A, and amends ADR-0026 item 2. The owner said yes to the pictures of the visual
+check on 2026-10-30.
+
+**The change.**
+
+- The intent layer has four new intents, `GizmoStartIntent`, `GizmoMoveIntent`, `GizmoEndIntent` and
+  `GizmoCancelIntent`, and the host gives `IntentMachine` a hit test. A press of the left button or of the first
+  contact on a handle in the mode `Scene` drags the gizmo after the slop. A second contact, Escape, a lost pointer and
+  a change of the mode cancel it. A still press on a handle selects as before.
+- `3DEngine.Core/Gizmo/TranslateGizmo.cs` gives three arrows of 100 window points at the depth of the pivot and three
+  squares, the hit test, the offset along an axis or in a plane, and the triangles of each handle.
+- `3DEngine/GizmoActions.cs` moves the drawing of the body during the drag, and the release sends one `Translate`
+  through `BodyActions.Move`, which selects the new body. A cancel and an offset of zero send nothing.
+- `3DEngine.Vulkan/OverlayRenderer.cs` with `overlay.vert` and `overlay.frag` draws the gizmo after the scene and the
+  highlight and before the panels, with no depth test and no culling, and the colour in the push block.
+
+**Proof.** 24 new test cases: 16 in `3DEngine.Tests/GizmoTests.cs`, 4 rows of `IntentParityTests`, and 4 in
+`3DEngine.ImageTests/GizmoActionsTests.cs`; and one image test on Ubuntu, `GizmoImageTests`. 10 injections: each one
+failed a test. The visual check on the computer of the owner: the gizmo on a selected box in front of it, and a drag
+of the arrow X that gave one `Translate` with dx 11.89 and dy = dz = 0, with no message of the validation layer.
+
+**What stays.** No touch screen ran the gizmo. No rotation and no snap (ADR-0038, "Next").
+
+**A correction.** The branch r9-translate-gizmo started before P0.46, K0d, K2d and P0.45 merged. Its commit moves onto
+`main` by a cherry-pick on the branch r9-gizmo-on-main; the index of the ADRs and the test floor merged by hand.
+
+New tests: 24, and one image test. The test list holds 1241 (910 in `Engine.Tests`, 210 in `3DEngine.Tests`, 121 in
+`3DEngine.ImageTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
+entries: 14 of 15. New diagnostic codes: none. Since the review of v0.112, 3 product milestones and 7 entries followed
+it.
