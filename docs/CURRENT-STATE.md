@@ -3658,3 +3658,29 @@ New tests: 6. The test list holds 1304 (949 in `Engine.Tests`, 217 in `3DEngine.
 `3DEngine.ImageTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
 entries: 14 of 15. New diagnostic codes: none. Since the review of v0.121, 1 product milestone and 5 entries followed
 it.
+
+## v0.127 — The window of the sketch offers the constraints of K2c on lines (K2f, TASK-0125)
+
+K2c gave the engine the kinds on points and lines, and K2e gave the window the kinds on a curve. The Scope (out) of
+K2e left the kinds of K2c on lines to a later task.
+
+**The change.**
+
+- On line and Midpoint fit a point and a line when the point is not an end of the line, as the engine requires.
+- Equal, Parallel, Perpendicular and Angle fit two lines. Angle opens a pad of degrees with the angle from the first
+  line to the second, counter-clockwise, and the client gives its cosine and sine to the command (ADR-0033 item 3,
+  determinism rule 2). A multiple of 90 degrees gives exact numbers.
+- ADR-0034 item 4 names the buttons.
+
+**Proof.** 2 new test cases in `3DEngine.ImageTests/SketchWindowUiTests.cs`, and the test of a line and O gains On
+line and Midpoint. 5 injections: each one failed a test.
+
+**What stays.** Symmetric has no button: it takes two points and a line, and the selection holds two items at most
+(ADR-0034 item 4). No picture of the new buttons.
+
+**A correction.** None.
+
+New tests: 2. The test list holds 1306 (949 in `Engine.Tests`, 217 in `3DEngine.Tests`, 140 in
+`3DEngine.ImageTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
+entries: 14 of 15. New diagnostic codes: none. Since the review of v0.121, 2 product milestones and 6 entries followed
+it.
