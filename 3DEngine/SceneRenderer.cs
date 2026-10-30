@@ -47,6 +47,9 @@ internal sealed unsafe class SceneRenderer : IDisposable
     // interface (ADR-0027 item 7, ADR-0029 item 7).
     public IReadOnlyList<LiveBody> LiveBodies => _bodies.Live;
 
+    // The count of meshes that the scene uploaded (V48, TASK-0118).
+    public int Meshes => _bodies.Meshes;
+
     // The triangles of each live body for a pick (ADR-0029 item 1).
     public IEnumerable<PickBody> PickBodies => _bodies.PickBodies;
 

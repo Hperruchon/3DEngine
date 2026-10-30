@@ -147,6 +147,9 @@ internal sealed unsafe class DesktopUi : IDisposable
     // frame gives no second command (V34).
     private bool _padApplied;
 
+    // V47: the action that the pad added in this frame, until the scope check of the frame.
+    private PanelAction? _padAction;
+
     public DesktopUi(string address)
     {
         if (!UiDrawDataConverter.VertexLayoutAgrees)
@@ -238,15 +241,44 @@ internal sealed unsafe class DesktopUi : IDisposable
     private void FollowSelection(IReadOnlyList<LiveBody> bodies, Guid? selection, SketchPanel? sketchPanel)
     {
         _bodyKey = selection is { } id && bodies.Any(body => body.Id == id) ? id.ToString() : string.Empty;
+        // Finding V46 of the codebase review of 2026-10-30 (TASK-0118): the key also holds the
+        // positions of the selected points, of the ends of a selected line, and the values of a
+        // selected constraint, so a pad closes when a value that it shows changes, and its apply
+        // never moves a point back after an edit of another client or an undo.
         _sketchKey = sketchPanel?.Active is { } active
-            ? active.SketchId + ":" + string.Join(",", sketchPanel.Selection.Order())
+            ? active.SketchId + ":" + string.Join(",", sketchPanel.Selection.Order()) + ":" + ShownValues(active, sketchPanel.Selection)
             : string.Empty;
         _activeKey = sketchPanel?.Active?.SketchId.ToString() ?? string.Empty;
         _chainKey = sketchPanel?.Active is null ? string.Empty : ChainKey(_activeKey, sketchPanel.Tool, sketchPanel.ChainOpen);
 
         var current = Key(_padScope);
         if (_pad is not null && _padKey is not null && current != _padKey)
+        {
+            // Finding V47 (TASK-0118): an Enter routed in this frame applied the pad before the
+            // panel saw the new scope, so its action read old numbers in a new state.
+            if (_padAction is { } stale)
+                _actions.Remove(stale);
             ClosePad();
+        }
+        _padAction = null;
+    }
+
+    // The positions and the values that a pad of the selection shows, in the order of the selection.
+    private static string ShownValues(SketchInfo sketch, IReadOnlyCollection<Guid> selection)
+    {
+        var values = new List<string>();
+        foreach (var id in selection.Order())
+        {
+            if (sketch.Points.FirstOrDefault(point => point.Id == id) is { } point)
+                values.Add(Exact(point.X) + " " + Exact(point.Y));
+            else if (sketch.Lines.FirstOrDefault(line => line.Id == id) is { } line)
+                values.AddRange(sketch.Points.Where(p => p.Id == line.Start || p.Id == line.End).Select(p => Exact(p.X) + " " + Exact(p.Y)));
+            else if (sketch.Constraints.FirstOrDefault(constraint => constraint.Id == id) is { } constraint)
+                values.Add(string.Join(" ", constraint.Values.Select(Exact)));
+        }
+        return string.Join(";", values);
+
+        static string Exact(double value) => value.ToString("R", System.Globalization.CultureInfo.InvariantCulture);
     }
 
     // The rows of bodies that the last frame showed, in their order.
@@ -521,10 +553,15 @@ internal sealed unsafe class DesktopUi : IDisposable
             (_name, _nameFor) = (body.Name ?? string.Empty, body.Id);
 
         // ADR-0037 item 6 (Q2 A): the body keeps its last solid, and the panel gives the reason.
+        // Finding V50 of the codebase review of 2026-10-30 (TASK-0118): the full reason with the
+        // identifiers took 208 pixels and pushed Show all out of the panel. One line gives the code,
+        // and a hover or a press on it gives the reason.
         if (body.Fault is { } fault)
         {
-            ImGui.TextWrapped($"{FaultLabel}: {fault.Message}");
+            ImGui.TextUnformatted($"{FaultLabel}: {fault.Code}");
             Item(FaultLabel);
+            if (ImGui.IsItemHovered() || ImGui.IsItemActive())
+                ImGui.SetTooltip(fault.Message);
         }
 
         ImGui.SetNextItemWidth(220f);
@@ -831,7 +868,8 @@ internal sealed unsafe class DesktopUi : IDisposable
             return;
         if (pad.Apply() is { } values && _padApply is { } apply)
         {
-            _actions.Add(apply(values));
+            _padAction = apply(values);
+            _actions.Add(_padAction);
             _padApplied = true;
         }
     }
