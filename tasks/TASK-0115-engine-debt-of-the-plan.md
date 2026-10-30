@@ -1,7 +1,7 @@
 ---
 id: 0115
 title: The native wrapper frees each buffer with its allocator, and the binder and the endpoint read numbers and versions as the schema says
-status: Active
+status: Done
 phase: P0.46
 opened: 2026-10-30
 depends-on: [0111]
@@ -61,11 +61,25 @@ finite (E11), and each request envelope refuses a member that it does not name (
 
 ## Acceptance criteria
 
-- [ ] A test or an injection proves each fix.
-- [ ] A clean build (`--no-incremental`) gives zero errors and zero warnings.
-- [ ] Continuous integration passes on the three runners, on the branch and on `main` after the merge.
+- [x] A test or an injection proves each fix.
+- [x] A clean build (`--no-incremental`) gives zero errors and zero warnings.
+- [x] Continuous integration passes on the three runners, on the branch and on `main` after the merge.
+
+## Outcome
+
+Status: Done · commit (the merge of the branch p046-engine-debt) · v0.115
+
+## Method
+
+Mechanical: the destruct functions and Marshal.FreeHGlobal, the finite check of the binder, and the attribute of the
+            two envelopes.
+Judgement:  the binding drops manifold_delete_* so that no later code can call the C++ delete on a buffer of
+            Marshal.AllocHGlobal. R-0043 moves to TASK-0114, because its probe needs the desktop.
+Weakest:    no test sees a mismatch of allocators: the test of the binding holds the rule, and a loop of 2,000 solids
+            shows no fault of the process on this computer only.
 
 ## Progress
 
 - 2026-10-30: opened by the codebase review of 2026-10-30 (TASK-0111), from the plan of 2026-10-30.
 - 2026-10-30: E14, E11 and E16, with their tests; R-0043 moves to TASK-0114, with the reason in Scope (out).
+- 2026-10-30: closed at v0.115.
