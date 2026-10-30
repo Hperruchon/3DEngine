@@ -3237,3 +3237,30 @@ New tests: 25. The test list holds 1145 (839 in `Engine.Tests`, 190 in `3DEngine
 `3DEngine.ImageTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
 entries: 14 of 15. New diagnostic codes: none. Since the review of v0.105, 3 product milestones and 7 entries followed
 it.
+
+## v0.113 — The codebase review of 2026-10-30 (governance, TASK-0111)
+
+The owner approved the plan of 2026-10-30 (answer Q1 A), which puts the thirteenth codebase review after K2c. The
+review was not due: 3 product milestones and 7 entries followed the review of v0.105.
+
+**The record.** `docs/reviews/2026-10-30-codebase-review.md` examines `main` at `a839bb7`, the merge of v0.112.
+Four agents probed the code in parallel, each one in its own worktree: the engine, the desktop and the gates, and a
+fourth agent researched K0d. The engine agent worked at the first push of K2c and found two high defects and one
+low defect there; TASK-0110 corrected them before its merge.
+
+**The findings.** 16 new findings: one high (T88, an item `IntermediateAssembly` gives a client the assembly name
+`Engine.Tests`), seven medium (V46, T89, T90, T91, T93, T94, T95) and eight low (E94, E95, E96, V47 to V50, T92).
+E86 to E93, V40 to V45 and T79 to T87 are fixed or fixed for their forms. Open findings: 0 critical, 6 high, 29
+medium and 32 low.
+
+**The order.** TASK-0112 (P0.44) holds T88 before R9. TASK-0114 (P0.45) holds the medium and low findings after R9.
+TASK-0115 (P0.46) holds E11, E14, E16 and the test of R-0043, as the plan says. TASK-0116 (K0d) is Deferred until
+the owner answers Q1 to Q3 (register entry R-0045).
+
+**A correction.** The review counts 37 ADRs, and the ledger of v0.112 gives no count of ADRs; no earlier statement
+changes.
+
+New tests: none. The test list holds 1145 (839 in `Engine.Tests`, 190 in `3DEngine.Tests`, 116 in
+`3DEngine.ImageTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
+entries: 15 of 15. New diagnostic codes: none. Since the review of v0.112, 0 product milestones and 1 entry followed
+it.
