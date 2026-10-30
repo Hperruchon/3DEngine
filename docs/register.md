@@ -475,6 +475,8 @@ The owner decided the first slice of K0 on 2026-10-30 (KQ1 to KQ4 A). The resear
 sketch, the code of a failed step of the chain, and the future of `W-SKETCH-EXTRUDE-CONSUMED`. A wider meaning of a
 code needs the owner (`CLAUDE.md`, "Diagnostic codes"). TASK-0116 stays Deferred until the answers.
 Exit: the owner answers Q1 to Q3, and the first commit of TASK-0116 records the answers.
+Closed 2026-10-30 · resolved · TASK-0116. The owner answered A to Q1, Q2 and Q3 on 2026-10-30. The first commit of
+TASK-0116 records the answers in ADR-0039, which KQ4 A accepts, and in the rows of `docs/diagnostics.md`.
 
 ### R-0044 · K0b has no decisions for the rebuild of a solid after an edit of its sketch
 - class: risk
