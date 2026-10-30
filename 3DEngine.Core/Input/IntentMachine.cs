@@ -16,7 +16,9 @@ namespace ThreeDEngine.Core.Input;
 // settings give the action of each gesture. A press moves first by more than the slop, and
 // the first motion then gives the whole distance from the press, so a touch and a mouse on
 // one path give the same intents. In the mode Sketch, a tap or a click gives a point of the
-// sketch, and the gestures of a hide and of a show all give nothing (ADR-0034 item 1).
+// sketch, and the gestures of a hide and of a show all give nothing (ADR-0034 item 1). In the
+// mode Scene, a press that starts on a handle of the gizmo, as the hit test of the host says, is a
+// drag of the gizmo: a start, motions and an end, or a cancel (ADR-0038 item 5).
 public sealed class IntentMachine
 {
     private readonly IntentSettings _settings;
@@ -39,6 +41,18 @@ public sealed class IntentMachine
 
     private MousePress? _mouse;
 
+    // ADR-0038 item 5: the drag of a handle of the gizmo, from the press on the handle to the
+    // release. Started is true after the press moved beyond the slop, and Cancelled after a
+    // cancel, which makes the rest of the press give nothing.
+    private sealed class GizmoPress(GizmoHandle handle)
+    {
+        public GizmoHandle Handle { get; } = handle;
+        public bool Started { get; set; }
+        public bool Cancelled { get; set; }
+    }
+
+    private GizmoPress? _gizmo;
+
     public IntentMachine(IntentSettings? settings = null)
     {
         _settings = (settings ?? IntentSettings.Default).Validated();
@@ -57,6 +71,10 @@ public sealed class IntentMachine
             Lose([]);
         }
     }
+
+    // The hit test of the host (ADR-0038 item 5): the handle of the gizmo under a point of the
+    // window, or null. Null when the host shows no gizmo.
+    public Func<double, double, GizmoHandle?>? HitTest { get; set; }
 
     public IReadOnlyList<Intent> Step(IEnumerable<InputSample> frame)
     {
@@ -114,7 +132,17 @@ public sealed class IntentMachine
         {
             case PointerPhase.Down when contact is null:
                 if (_contacts.Count == 0)
+                {
                     (_gestureDownNs, _gestureStill, _gestureContacts) = (sample.TimestampNs, true, 0);
+                    _gizmo = Handle(sample);
+                }
+                else
+                {
+                    // A second contact stops a drag of the gizmo, and the pair pans and pinches.
+                    CancelGizmo(intents);
+                    _gizmo = null;
+                }
+
                 _contacts.Add(new Contact(sample));
                 _gestureContacts = Math.Max(_gestureContacts, _contacts.Count);
                 if (_contacts.Count == 2)
@@ -122,7 +150,12 @@ public sealed class IntentMachine
                 break;
 
             case PointerPhase.Move when contact is not null:
-                if (_contacts.Count == 1)
+                if (_contacts.Count == 1 && _gizmo is not null)
+                {
+                    if (contact.MoveFrom(sample, _settings.DragSlopPixels) is { } delta)
+                        DragGizmo(contact, sample, delta, intents);
+                }
+                else if (_contacts.Count == 1)
                 {
                     if (contact.MoveFrom(sample, _settings.DragSlopPixels) is { } delta)
                         Motion(Gesture.OneFingerDrag, delta.Dx, delta.Dy, intents);
@@ -141,6 +174,7 @@ public sealed class IntentMachine
                 _contacts.Remove(contact);
                 if (_contacts.Count == 0)
                 {
+                    EndGizmo(sample, intents);
                     var held = sample.TimestampNs - contact.DownNs;
                     if (!_twoContactsSeen && !contact.Moved && held <= _settings.TapMaxNanoseconds)
                         Point(Gesture.Tap, contact.DownX, contact.DownY, intents);
@@ -191,6 +225,12 @@ public sealed class IntentMachine
         {
             case PointerPhase.Down when _mouse is null && (sample.Buttons & (PointerButtons.Left | PointerButtons.Middle | PointerButtons.Right)) != 0:
                 _mouse = new MousePress(sample);
+                _gizmo = _mouse.Button == PointerButtons.Left ? Handle(sample) : null;
+                break;
+
+            case PointerPhase.Move when _mouse is not null && _gizmo is not null:
+                if (_mouse.MoveFrom(sample, _settings.DragSlopPixels) is { } drag)
+                    DragGizmo(_mouse, sample, drag, intents);
                 break;
 
             case PointerPhase.Move when _mouse is not null:
@@ -206,6 +246,7 @@ public sealed class IntentMachine
                 break;
 
             case PointerPhase.Up when _mouse is not null && (sample.Buttons & _mouse.Button) != 0:
+                EndGizmo(sample, intents);
                 if (!_mouse.Moved && sample.TimestampNs - _mouse.DownNs <= _settings.TapMaxNanoseconds)
                     Point(_mouse.Button == PointerButtons.Right ? Gesture.RightClick : Gesture.Click, _mouse.DownX, _mouse.DownY, intents);
                 _mouse = null;
@@ -234,18 +275,61 @@ public sealed class IntentMachine
                 NoPoint((key.Modifiers & KeyModifiers.Shift) != 0 ? Gesture.ControlShiftZKey : Gesture.ControlZKey, intents);
                 break;
             case InputKey.Y when (key.Modifiers & KeyModifiers.Control) != 0: NoPoint(Gesture.ControlYKey, intents); break;
+            case InputKey.Escape: CancelGizmo(intents); break;
         }
     }
 
     // A pointer was lost: the gesture in progress ends, and nothing stays down.
     private void Lose(List<Intent> intents)
     {
+        CancelGizmo(intents);
+        _gizmo = null;
         if (_contacts.Count > 0 || _mouse is not null)
             intents.Add(new CancelIntent());
         _contacts.Clear();
         _twoContactsSeen = false;
         _pairMoved = false;
         _mouse = null;
+    }
+
+    // The handle under a press in the mode Scene, as the hit test of the host gives it.
+    private GizmoPress? Handle(PointerSample sample)
+        => _mode == IntentMode.Scene && HitTest?.Invoke(sample.X, sample.Y) is { } handle ? new GizmoPress(handle) : null;
+
+    // A motion of the press on a handle beyond the slop: the start with the point of the press,
+    // then the point of the pointer.
+    private void DragGizmo(Press press, PointerSample sample, (double Dx, double Dy) delta, List<Intent> intents)
+    {
+        if (_gizmo is not { Cancelled: false } gizmo)
+            return;
+        if (!gizmo.Started)
+        {
+            gizmo.Started = true;
+            intents.Add(new GizmoStartIntent(gizmo.Handle, press.DownX, press.DownY));
+        }
+        if (delta.Dx != 0 || delta.Dy != 0)
+            intents.Add(new GizmoMoveIntent(sample.X, sample.Y));
+    }
+
+    // The release of a press on a handle: the end of its drag. A drag starts only after the press
+    // moved beyond the slop, and such a press never taps or clicks, so a press that did not move
+    // gives its tap or its click and no end.
+    private void EndGizmo(PointerSample sample, List<Intent> intents)
+    {
+        var gizmo = _gizmo;
+        _gizmo = null;
+        if (gizmo is { Started: true, Cancelled: false })
+            intents.Add(new GizmoEndIntent(sample.X, sample.Y));
+    }
+
+    // A cancel of the drag in progress: the rest of the press gives nothing.
+    private void CancelGizmo(List<Intent> intents)
+    {
+        if (_gizmo is { Started: true, Cancelled: false } gizmo)
+        {
+            gizmo.Cancelled = true;
+            intents.Add(new GizmoCancelIntent());
+        }
     }
 
     private void Motion(Gesture gesture, double dx, double dy, List<Intent> intents)
