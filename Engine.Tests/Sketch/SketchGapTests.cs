@@ -199,6 +199,49 @@ public sealed class SketchGapTests
         Assert.Equal(before, await session.Read((document, _) => document.Version));
     }
 
+    // Finding E99 of the codebase review of 2026-10-30 (b) (TASK-0123): an extrude sent again after
+    // the cache forgot it is refused by the guard, as each other sketch command, and not by the
+    // key that the backend holds.
+    [Engine.Tests.Geometry.NativeManifoldFact]
+    public async Task An_Extrude_Sent_Again_After_The_Cache_Forgot_It_Is_Refused_By_The_Guard()
+    {
+        using var backend = new Engine.Geometry.Manifold.ManifoldGeometryBackend();
+        var session = new DocumentSession(EngineHosting.CreateDefault(backend));
+        var sketch = Output(await Applied(session, new CreateSketchCommand { DatumId = Datums.XY.Id }), "sketchId");
+        var corners = new List<Guid>();
+        foreach (var (x, y) in new[] { (0.0, 0.0), (4.0, 0.0), (0.0, 3.0) })
+            corners.Add(Output(await Applied(session, new AddSketchPointCommand { SketchId = sketch, X = x, Y = y }), "pointId"));
+        for (var i = 0; i < 3; i++)
+            await Applied(session, new AddSketchLineCommand { SketchId = sketch, StartPointId = corners[i], EndPointId = corners[(i + 1) % 3] });
+        var extrude = new ExtrudeCommand { SketchId = sketch, Distance = 2 };
+        await Applied(session, extrude);
+        var before = await session.Read((document, _) => document.Version);
+
+        await Forget(session);
+
+        var result = await session.Apply(extrude);
+        Assert.Equal((CommandStatus.Rejected, DiagnosticCodes.SketchIdInUse), (result.Status, result.Error?.Code));
+        Assert.Equal(before, await session.Read((document, _) => document.Version));
+    }
+
+    // Finding E100 (TASK-0123, answer Q1 A): a replay applies an entry whose identifier came before,
+    // as the session that wrote the log did; up to v0.117 a move that a client sent again entered
+    // the log two times.
+    [Fact]
+    public async Task A_Replay_Applies_A_Move_Whose_Identifier_Came_Before()
+    {
+        var sketch = new CreateSketchCommand { DatumId = Datums.XY.Id };
+        var point = new AddSketchPointCommand { SketchId = sketch.CommandId, X = 1, Y = 1 };
+        var move = new MoveSketchPointCommand { SketchId = sketch.CommandId, PointId = point.CommandId, X = 2, Y = 2 };
+
+        var registry = new CommandRegistry();
+        HandlerCatalog.RegisterAll(registry, new QueryRegistry());
+        var replayed = await Replay.ReplayLog(new Command[] { sketch, point, move, move }, registry, new InProcessMeshBackend());
+
+        Assert.Equal(4, replayed.Document.Version);
+        Assert.Equal((2.0, 2.0), replayed.Document.Sketches.Single().Points.Where(p => p.Id == point.CommandId).Select(p => (p.X, p.Y)).Single());
+    }
+
     // E92: two points of a line at one position give their own reason, and not "cross or touch".
     [Fact]
     public void A_Line_Of_Length_Zero_Gives_Its_Own_Reason()

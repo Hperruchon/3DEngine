@@ -15,6 +15,16 @@ namespace Engine.Tests.Governance;
 // binds in the compilation of its own project: the files of the project, of each project that it
 // references, and the assemblies of the runtime. The project of a file is the first folder of its
 // path, as each project of the repository lies in a folder of the root.
+//
+// Finding T97 of the codebase review of 2026-10-30 (b) (TASK-0123): the files of the referenced
+// projects went into the same compilation, so a type of one name in a project and in a project that
+// it references gave error CS0101 there, and a joined code passed. Each project is now its own
+// compilation, and a project gets the compilations of the projects that it references, as the
+// build does. Each compilation grants its internals to each other project, as the items
+// InternalsVisibleTo of the repository do for the projects that read them.
+// Finding T98 (TASK-0123): the references came from the project file only, and a reference in a
+// Directory.Build.props file passed. They now come from each file that MSBuild reads for the
+// project (DependencyDirectionGateTests.FilesThatMsBuildReads).
 internal static class ConstantStrings
 {
     // Each expression of each file whose constant value is a string, with its line.
@@ -24,14 +34,26 @@ internal static class ConstantStrings
             .Select(file => CSharpSyntaxTree.ParseText(file.Text, new CSharpParseOptions(LanguageVersion.Preview), path: file.Path))
             .ToList();
         var byProject = trees.GroupBy(Project).ToDictionary(group => group.Key, group => group.ToList(), StringComparer.Ordinal);
+        var grants = CSharpSyntaxTree.ParseText(
+            string.Concat(byProject.Keys.Select(name => $"[assembly: System.Runtime.CompilerServices.InternalsVisibleTo(\"{name}\")]\n")),
+            new CSharpParseOptions(LanguageVersion.Preview));
+        var compilations = new Dictionary<string, CSharpCompilation>(StringComparer.Ordinal);
+
+        CSharpCompilation CompilationOf(string project)
+        {
+            if (compilations.TryGetValue(project, out var known))
+                return known;
+            var referenced = References(project).Where(byProject.ContainsKey).Select(name => CompilationOf(name).ToMetadataReference());
+            var compilation = CSharpCompilation.Create(
+                project, [.. byProject[project], grants], [.. RuntimeReferences.Value, .. referenced],
+                new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary, allowUnsafe: true));
+            compilations[project] = compilation;
+            return compilation;
+        }
 
         foreach (var (project, own) in byProject.OrderBy(pair => pair.Key, StringComparer.Ordinal))
         {
-            var referenced = References(project).Where(byProject.ContainsKey).SelectMany(name => byProject[name]);
-            var compilation = CSharpCompilation.Create(
-                "constants-" + project, [.. own, .. referenced], RuntimeReferences.Value,
-                new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary, allowUnsafe: true));
-
+            var compilation = CompilationOf(project);
             foreach (var tree in own)
             {
                 var model = compilation.GetSemanticModel(tree);
@@ -47,19 +69,21 @@ internal static class ConstantStrings
     private static string Project(SyntaxTree tree) => tree.FilePath.Split('/')[0];
 
     // The projects that a project references, and each project that they reference, from the
-    // items ProjectReference of its project file in the repository. A folder with no project file
-    // references nothing.
-    private static IReadOnlyCollection<string> References(string project)
+    // items ProjectReference of each file that MSBuild reads for its project file in the repository.
+    // A folder with no project file references nothing. A test gives another reader of the files.
+    internal static IReadOnlyCollection<string> References(string project, Func<string, IEnumerable<string>>? filesOf = null)
     {
+        filesOf ??= DependencyDirectionGateTests.FilesThatMsBuildReads;
         var found = new SortedSet<string>(StringComparer.Ordinal);
         var queue = new Queue<string>([project]);
         while (queue.Count > 0)
         {
             var next = queue.Dequeue();
-            var file = RepositoryFiles.Path(next, next + ".csproj");
-            if (!File.Exists(file))
+            var projectFile = RepositoryFiles.Path(next, next + ".csproj");
+            if (!File.Exists(projectFile))
                 continue;
-            foreach (var reference in XDocument.Load(file).Descendants().Where(e => DependencyDirectionGateTests.Is(e, "ProjectReference")))
+            foreach (var reference in filesOf(projectFile)
+                .SelectMany(file => XDocument.Load(file).Descendants().Where(e => DependencyDirectionGateTests.Is(e, "ProjectReference"))))
             {
                 var include = DependencyDirectionGateTests.Value(reference, "Include");
                 if (include is null)

@@ -431,6 +431,8 @@ because the guard of E95 also acts on an open, and ADR-0015 item 8 says that an 
 does not say what a wheel, a key of the camera, an undo or a hide does during a drag of the gizmo (V53). A decision
 and the code disagree for E100, so the owner decides (`CLAUDE.md`, "Stop and ask").
 Exit: the owner answers Q1 and Q2, and the first commits of TASK-0123 and TASK-0124 record the answers.
+Progress 2026-10-30: the owner answered A to Q1 and Q2. TASK-0123 had its first commit before the answer, so its next
+commit records Q1 A; the first commit of TASK-0124 records Q2 A and closes this entry.
 
 ## Accepted compromises
 

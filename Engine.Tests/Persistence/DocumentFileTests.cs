@@ -471,6 +471,37 @@ public sealed class DocumentFileTests : IDisposable
         Assert.Equal(5, reopened.Version);
     }
 
+    // Finding E100 of the codebase review of 2026-10-30 (b) (TASK-0123, answer Q1 A): up to v0.117
+    // a move that a client sent again after the cache forgot it entered the log two times, and the
+    // guard of E95 refused the second entry at the open, so the file did not open. The file here is
+    // the file of v0.117: the line of the move again, with the next version. A move sent again to a
+    // live session is still refused (SketchGapTests).
+    [Fact]
+    public async Task An_Open_Applies_A_Move_That_A_Client_Sent_Again()
+    {
+        var path = FileNamed("move-again");
+        var live = NewSession();
+        DocumentFile.Create(live, path);
+        var sketch = (Guid)(await live.Apply(new CreateSketchCommand { DatumId = Engine.Contracts.Sketch.Datums.XY.Id })).Outputs.Values["sketchId"]!;
+        var point = (Guid)(await live.Apply(new AddSketchPointCommand { SketchId = sketch, X = 1, Y = 1 })).Outputs.Values["pointId"]!;
+        await live.Apply(new MoveSketchPointCommand { SketchId = sketch, PointId = point, X = 2, Y = 2 });
+        live.Close();
+        var lines = File.ReadAllLines(path).ToList();
+        var again = System.Text.Json.Nodes.JsonNode.Parse(lines[^1])!.AsObject();
+        again["version"] = lines.Count;
+        lines.Add(again.ToJsonString());
+        File.WriteAllLines(path, lines);
+
+        var opened = NewSession();
+        var warnings = await DocumentFile.Open(opened, path);
+        var (version, moved) = await opened.Read((document, _) => (document.Version, document.Sketches.Single().Points.Single(p => p.Id == point)));
+        opened.Close();
+
+        Assert.Empty(warnings);
+        Assert.Equal(4, version);
+        Assert.Equal((2.0, 2.0), (moved.X, moved.Y));
+    }
+
     // ADR-0015 item 8: the versions of the entries count from 1, so an open needs a new
     // session. An open into a session with a command wrote a file that did not open
     // again (E75).
