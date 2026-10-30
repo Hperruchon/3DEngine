@@ -1,7 +1,7 @@
 ---
 id: 0119
 title: The numeric pad shows the length unit of the document
-status: Active
+status: Done
 phase: P8e
 opened: 2026-10-30
 depends-on: [0091, 0118]
@@ -60,12 +60,24 @@ Each pad of the desktop shows the length unit of the session of its host.
 
 ## Acceptance criteria
 
-- [ ] A test opens two pads in a panel with a unit that is not `mm`, and each pad shows that unit.
-- [ ] An injection that puts back the constant `mm` fails the test.
-- [ ] A clean build (`--no-incremental`) gives zero errors and zero warnings.
-- [ ] Continuous integration passes on the three runners, on the branch and on `main` after the merge.
+- [x] A test opens two pads in a panel with a unit that is not `mm`, and each pad shows that unit.
+- [x] An injection that puts back the constant `mm` fails the test.
+- [x] A clean build (`--no-incremental`) gives zero errors and zero warnings.
+- [x] Continuous integration passes on the three runners, on the branch and on `main` after the merge.
+
+## Outcome
+
+Status: Done · commit (the merge of the branch p8e-length-unit) · v0.121
+
+## Method
+
+Mechanical: the unit is a parameter of the constructor of `DesktopUi`, and each caller gives it.
+Judgement:  a parameter with no default value, so the compiler finds each caller that does not give a unit.
+Weakest:    the header permits the millimetre only, so no test can show that the host gives the unit of its session
+            and not the constant. The line in `NativeThreeDEngine.cs` is read, not tested.
 
 ## Progress
 
 - 2026-10-30: the unit is a parameter of the constructor of `DesktopUi`; 1 new test case; the injection of the
   constant `mm` failed it.
+- 2026-10-30: closed at v0.121.
