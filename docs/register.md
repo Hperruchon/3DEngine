@@ -420,6 +420,18 @@ the router gives to the panel or to the intents, and each intent. A focus to ano
 `FocusLostSample` to both. Its click reached the window above the desktop, and the log held motions of a mouse that
 the probe did not move, so the run stopped. The next run needs a time when nobody else uses the mouse.
 
+### R-0046 · An open of an earlier file and other input during a drag have no decision
+- class: risk
+- opened: 2026-10-30
+- due: 2026-11-29
+- extended: no
+- refs: `docs/reviews/2026-10-30-b-codebase-review.md`, questions Q1 and Q2; TASK-0123; TASK-0124
+The codebase review of 2026-10-30 (b) found that an open refuses a file in which a client sent a move again (E100),
+because the guard of E95 also acts on an open, and ADR-0015 item 8 says that an open applies such an entry. ADR-0038
+does not say what a wheel, a key of the camera, an undo or a hide does during a drag of the gizmo (V53). A decision
+and the code disagree for E100, so the owner decides (`CLAUDE.md`, "Stop and ask").
+Exit: the owner answers Q1 and Q2, and the first commits of TASK-0123 and TASK-0124 record the answers.
+
 ## Accepted compromises
 
 These are conditions that the project keeps permanently and by decision. They do not age.
