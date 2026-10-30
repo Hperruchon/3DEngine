@@ -1,7 +1,7 @@
 ---
 id: 0110
 title: The engine solves the seven constraints of points and lines that K2a named
-status: Active
+status: Done
 phase: K2c
 opened: 2026-10-30
 depends-on: [0107]
@@ -70,15 +70,30 @@ gives the residual of each one.
 
 ## Acceptance criteria
 
-- [ ] Each of the seven kinds solves a rough sketch to a residual less than 1e-9.
-- [ ] The analytic derivatives of each new equation agree with a central difference.
-- [ ] A fixed solve with the new kinds gives constant bits, and the pipeline runs it on the three runners.
-- [ ] An injection that breaks each new equation or each new refusal fails a test.
-- [ ] A clean build (`--no-incremental`) gives zero errors and zero warnings.
-- [ ] Continuous integration passes on the three runners, on the branch and on `main` after the merge.
+- [x] Each of the seven kinds solves a rough sketch to a residual less than 1e-9.
+- [x] The analytic derivatives of each new equation agree with a central difference.
+- [x] A fixed solve with the new kinds gives constant bits, and the pipeline runs it on the three runners.
+- [x] An injection that breaks each new equation or each new refusal fails a test.
+- [x] A clean build (`--no-incremental`) gives zero errors and zero warnings.
+- [x] Continuous integration passes on the three runners, on the branch and on `main` after the merge.
+
+## Outcome
+
+Status: Done · commit (the merge of the branch k2c-line-constraints) · v0.112
+
+## Method
+
+Mechanical: the seven kinds, their checks, their residuals, the normalised pair of an angle, and the History lines.
+Judgement:  each equation is in length units, so the absolute tolerance of ADR-0035 item 5 holds for each one; a raw
+            cross product of two lines of length 10⁴ has a rounding error above 1e-9. The angle has two rows,
+            d₂ − |d₂|·R(θ)·d₁ / |d₁|, and not the one row of ADR-0033 item 3, so the inequality of that item holds
+            in the solve and not only after it.
+Weakest:    the derivatives are written by hand, and only a central difference at two sets of positions checks them.
+            The desktop panel does not offer the new kinds yet; an agent and the HTTP surface use them now.
 
 ## Progress
 
 - 2026-10-30: opened by the plan of 2026-10-30 (answers A to Q1 to Q4 and KQ1 to KQ4).
 - 2026-10-30: the seven kinds, their equations, their residuals and their refusals; 19 new test cases; 12
   injections caught. The gate of governed-by added 0004, 0012, 0016, 0021, 0028, 0031 and 0037.
+- 2026-10-30: closed at v0.112.
