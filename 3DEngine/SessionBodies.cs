@@ -245,6 +245,19 @@ internal sealed class SessionBodies : IDisposable
 
     private bool IsVisible(string meshId) => _visibility.IsVisible(meshId);
 
+    // ADR-0038 item 7: the pivot of the gizmo, the centre of the box of a visible live body with a
+    // mesh, or null.
+    public (double X, double Y, double Z)? Pivot(Guid bodyId)
+        => _entities.TryGetValue(bodyId.ToString(), out var entity) && IsVisible(bodyId.ToString()) ? entity.Origin : null;
+
+    // ADR-0038 item 2: the drawing of a body moves by the offset of a drag. The engine does not
+    // change, and an offset of zero gives the drawing back.
+    public void Preview(Guid bodyId, System.Numerics.Vector3 offset)
+    {
+        if (_entities.TryGetValue(bodyId.ToString(), out var entity))
+            entity.Transform = entity.Transform with { Position = offset };
+    }
+
     // The box around each visible live body that has a mesh, or null when none has one.
     public ((double X, double Y, double Z) Min, (double X, double Y, double Z) Max)? Bounds
     {
