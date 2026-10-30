@@ -1,7 +1,7 @@
 ---
 id: 0114
 title: The sketch keeps read-only lists and refuses each identifier that the log holds, and the gates read the forms of the thirteenth review
-status: Active
+status: Done
 phase: P0.45
 opened: 2026-10-30
 depends-on: [0112]
@@ -75,13 +75,28 @@ The engine, the desktop and the gates close each form of the review, and a test 
 
 ## Acceptance criteria
 
-- [ ] Each form of the review fails a test or the gate program.
-- [ ] An injection that restores each old rule fails a test.
-- [ ] A clean build (`--no-incremental`) gives zero errors and zero warnings.
-- [ ] Continuous integration passes on the three runners, on the branch and on `main` after the merge.
+- [x] Each form of the review fails a test or the gate program.
+- [x] An injection that restores each old rule fails a test.
+- [x] A clean build (`--no-incremental`) gives zero errors and zero warnings.
+- [x] Continuous integration passes on the three runners, on the branch and on `main` after the merge.
+
+## Outcome
+
+Status: Done · commit (the merge of the branch p045-review-forms) · v0.118
+
+## Method
+
+Mechanical: the read-only lists, the guards of a used identifier, the comment of Subtract, the predicate of a
+            source, the separators, the form of a heading, and the three refusals of the runner.
+Judgement:  T90 binds each file in the compilation of its own project with the projects that it references, so the
+            internal types of two projects never meet. T94 and T95 refuse a thread, a task of its own thread and a
+            source of a task in a gate file, because no gate needs them and the runner cannot wait for their work.
+Weakest:    a task that waits for another kind of signal that nobody gives, for example a semaphore, still passes the
+            runner; R-0031 records it. The desktop items wait in TASK-0118.
 
 ## Progress
 
 - 2026-10-30: opened by the codebase review of 2026-10-30 (TASK-0111).
 - 2026-10-30: TASK-0115 gave this task R-0043 (item 5), because R-0043 needs the desktop after the merge of R9.
 - 2026-10-30: E94 to E96 and T89 to T95, with their tests; 11 injections caught. The desktop items move to TASK-0118.
+- 2026-10-30: closed at v0.118.

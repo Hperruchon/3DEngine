@@ -340,6 +340,9 @@ reads each `Directory.Build.rsp` above a project at the command line, and a `/p:
 it sets the property for each project. A probe build outside the repository gave `Engine.Tests.dll` from such a
 file. No such file is in the repository. The next codebase review gives it a
 finding. T31 stays open in part.
+Progress 2026-10-30: TASK-0114 corrected T89 to T95 for their forms. PendingTasks still does not see a task that waits
+for a signal that nobody gives with a type other than TaskCompletionSource, for example a semaphore. T31 stays open in
+part.
 
 ### R-0033 · Seven findings of the third codebase review in the engine and the hosts have no task
 - class: debt
