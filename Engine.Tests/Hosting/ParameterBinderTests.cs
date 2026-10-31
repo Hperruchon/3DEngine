@@ -124,6 +124,25 @@ public class ParameterBinderTests
         Assert.Equal(exact, (double)result.Values!["n"]!);
     }
 
+    // TASK-0152: the HTTP surface gives each JSON number as a double. A whole double up to 2^53 is
+    // an integer; a fraction, a larger double and a number that is not finite are refused.
+    [Theory]
+    [InlineData(800.0, true)]
+    [InlineData(-3.0, true)]
+    [InlineData(9007199254740992.0, true)]
+    [InlineData(1.5, false)]
+    [InlineData(18014398509481984.0, false)]
+    [InlineData(double.NaN, false)]
+    [InlineData(double.PositiveInfinity, false)]
+    public void A_Whole_Double_Of_The_Json_Reader_Is_An_Integer(double supplied, bool accepted)
+    {
+        var result = ParameterBinder.Bind(Schema(("width", "integer", true)), Raw(("width", supplied)));
+
+        Assert.Equal(accepted, result.IsSuccess);
+        if (accepted)
+            Assert.Equal((long)supplied, result.Values!["width"]);
+    }
+
     [Fact]
     public void A_Number_Parses_With_The_Invariant_Culture()
     {

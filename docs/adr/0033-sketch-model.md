@@ -7,7 +7,7 @@ date: 2026-10-28
 supersedes: []
 superseded-by: []
 amends: ['0012', '0021', '0031']
-amended-by: ['0035']
+amended-by: ['0035', '0045']
 affects:
   - Engine.Contracts/Document.cs
   - Engine.Contracts/Handlers/ICommandHandler.cs
@@ -198,3 +198,5 @@ the circle, the arc and the kinds 6 to 14.
   a circle or an arc, 11 and 13 are given. The radius of an arc is the distance from its centre to its start, and a
   point of `pointOn` on an arc lies on the circle of the arc. The answer Q2 A of the plan of 2026-10-30 permits this
   line with no new record, because no public shape of `Engine.Contracts` changes.
+- 2026-10-31 · TASK-0152 · ADR-0045 amends items 8 and 9: `CommandHandlerResult` gains `CreatedImages` and
+  `ChangedImages`, and the image events come after the sketch events.

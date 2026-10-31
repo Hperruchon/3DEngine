@@ -3,7 +3,7 @@
 # assembly, its count, and an optional count for one platform (linux, windows or
 # macos). A task that adds or removes tests sets the new count in the same commit.
 # This file is a gate file.
-Engine.Tests 1033
+Engine.Tests 1049
 3DEngine.Tests 237
 # The verification spike of the vision library (ADR-0042, TASK-0145).
 3DEngine.VisionTests 3

@@ -51,15 +51,19 @@ public sealed class AssetStoreTests : IDisposable
 
         var upper = await store.Read(Abc.ToUpperInvariant());
         var path = await store.Read("../" + Abc[3..]);
+        // Finding E113 of the codebase review of 2026-10-31 (c): a final line feed is not a name.
+        var lineFeed = await store.Read(Abc + "\n");
         var absent = await store.Read(new string('0', 64));
         File.WriteAllBytes(Path.Combine(Store, Abc), "abd"u8.ToArray());
         var changed = await store.Read(Abc);
 
         Assert.Equal(DiagnosticCodes.AssetBadName, upper.Error?.Code);
         Assert.Equal(DiagnosticCodes.AssetBadName, path.Error?.Code);
+        Assert.Equal(DiagnosticCodes.AssetBadName, lineFeed.Error?.Code);
+        Assert.False(AssetStore.IsName(Abc + "\n"));
         Assert.Equal(DiagnosticCodes.AssetNotFound, absent.Error?.Code);
         Assert.Equal(DiagnosticCodes.AssetCorrupt, changed.Error?.Code);
-        Assert.All(new[] { upper.Content, path.Content, absent.Content, changed.Content }, Assert.Null);
+        Assert.All(new[] { upper.Content, path.Content, lineFeed.Content, absent.Content, changed.Content }, Assert.Null);
     }
 
     // ADR-0044 item 3: an asset of 16 MiB is stored, and one byte more is refused with nothing kept.

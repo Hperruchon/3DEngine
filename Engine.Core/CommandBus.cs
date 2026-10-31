@@ -4,6 +4,7 @@ using System.Runtime.CompilerServices;
 using Engine.Contracts;
 using Engine.Contracts.Geometry;
 using Engine.Contracts.Handlers;
+using Engine.Contracts.Images;
 using Engine.Contracts.Sketch;
 using Engine.Core.Geometry;
 
@@ -49,6 +50,9 @@ public sealed class CommandBus
     // ADR-0033 item 5: each sketch identifier that a commit of this bus created, as the
     // set of handles above does for the bodies.
     private readonly HashSet<Guid> _createdSketches = [];
+
+    // ADR-0045 item 7: each image identifier that a commit of this bus created.
+    private readonly HashSet<Guid> _createdImages = [];
 
     public CommandBus(
         Document document,
@@ -198,6 +202,7 @@ public sealed class CommandBus
 
         RefuseWrongBodyLists(command, handlerResult);
         RefuseWrongSketchLists(command, handlerResult);
+        RefuseWrongImageLists(command, handlerResult);
 
         if (Journal is { } journal && Write(journal, command, handler, handlerResult, stopwatch) is { } refused)
             return refused;
@@ -210,12 +215,15 @@ public sealed class CommandBus
             handlerResult.ConsumedBodies.Select(LiveRecord).ToList(),
             handlerResult.ChangedBodies.Select(body => (LiveRecord(body.Handle), body)).ToList(),
             handlerResult.CreatedSketches,
-            handlerResult.ChangedSketches.Select(sketch => (LiveSketch(sketch.Id), sketch)).ToList());
+            handlerResult.ChangedSketches.Select(sketch => (LiveSketch(sketch.Id), sketch)).ToList(),
+            handlerResult.CreatedImages,
+            handlerResult.ChangedImages.Select(image => (LiveImage(image.Id), image)).ToList());
         var committed = Commit(
             command,
             new Effect(
                 handlerResult.CreatedBodies, handlerResult.ConsumedBodies, [], handlerResult.ChangedBodies,
-                handlerResult.CreatedSketches, [], handlerResult.ChangedSketches),
+                handlerResult.CreatedSketches, [], handlerResult.ChangedSketches,
+                handlerResult.CreatedImages, [], handlerResult.ChangedImages),
             handlerResult.Outputs, handlerResult.Diagnostics, stopwatch);
         _history.Record(step);
         return committed;
@@ -231,6 +239,9 @@ public sealed class CommandBus
     private SketchRecord LiveSketch(Guid id)
         => _document.Sketches.First(sketch => sketch.Id == id);
 
+    private ImageRecord LiveImage(Guid id)
+        => _document.Images.First(image => image.Id == id);
+
     // ADR-0031 items 4, 7 and 8: an Undo or a Redo. The bus makes the lists from the
     // step, so RefuseWrongBodyLists does not judge them: a reversal makes a consumed body
     // live again, which ADR-0021 item 1, as amended, permits only here. No call of the
@@ -243,10 +254,11 @@ public sealed class CommandBus
     {
         if (handlerResult.History is not (HistoryMove.Undo or HistoryMove.Redo)
             || handlerResult.CreatedBodies.Count + handlerResult.ConsumedBodies.Count + handlerResult.ChangedBodies.Count
-                + handlerResult.CreatedSketches.Count + handlerResult.ChangedSketches.Count > 0)
+                + handlerResult.CreatedSketches.Count + handlerResult.ChangedSketches.Count
+                + handlerResult.CreatedImages.Count + handlerResult.ChangedImages.Count > 0)
             throw new InvalidOperationException(
                 $"The handler of '{command.Name}'@{command.SchemaVersion} gives the move {handlerResult.History} and a list of "
-                + "bodies or sketches, or a move that does not exist. ADR-0031 item 7: the bus computes the changes of a move.");
+                + "bodies, sketches or images, or a move that does not exist. ADR-0031 item 7: the bus computes the changes of a move.");
 
         var undo = handlerResult.History == HistoryMove.Undo;
         if ((undo ? _history.NextUndo : _history.NextRedo) is not { } step)
@@ -267,7 +279,9 @@ public sealed class CommandBus
                     step.Consumed, [], step.Created.Select(body => body.Handle).ToList(),
                     step.Changed.Select(change => change.Before).ToList(),
                     [], step.CreatedSketches.Select(sketch => sketch.Id).ToList(),
-                    step.ChangedSketches.Select(change => change.Before).ToList()),
+                    step.ChangedSketches.Select(change => change.Before).ToList(),
+                    [], step.CreatedImages.Select(image => image.Id).ToList(),
+                    step.ChangedImages.Select(change => change.Before).ToList()),
                 outputs, handlerResult.Diagnostics, stopwatch);
             _history.Undone();
             return reversed;
@@ -278,7 +292,8 @@ public sealed class CommandBus
             new Effect(
                 step.Created, step.Consumed.Select(body => body.Handle).ToList(), [],
                 step.Changed.Select(change => change.After).ToList(),
-                step.CreatedSketches, [], step.ChangedSketches.Select(change => change.After).ToList()),
+                step.CreatedSketches, [], step.ChangedSketches.Select(change => change.After).ToList(),
+                step.CreatedImages, [], step.ChangedImages.Select(change => change.After).ToList()),
             outputs, handlerResult.Diagnostics, stopwatch);
         _history.Redone();
         return applied;
@@ -391,8 +406,34 @@ public sealed class CommandBus
         }
     }
 
-    // The changes of one commit to the live bodies and the live sketches. Only an Undo
-    // removes a body or a sketch.
+    // ADR-0045 item 7: the rule of the sketches, for the images. A changed image also keeps
+    // its asset.
+    private void RefuseWrongImageLists(Command command, CommandHandlerResult result)
+    {
+        var created = new HashSet<Guid>();
+        foreach (var image in result.CreatedImages)
+        {
+            if (_createdImages.Contains(image.Id) || !created.Add(image.Id))
+                throw new InvalidOperationException(
+                    $"The handler of '{command.Name}'@{command.SchemaVersion} creates image {image.Id}, which this bus "
+                    + "created before or which is in its list two times. ADR-0045 item 7: an identifier is given one time.");
+        }
+
+        var changed = new HashSet<Guid>();
+        foreach (var image in result.ChangedImages)
+        {
+            var live = _document.Images.FirstOrDefault(candidate => candidate.Id == image.Id);
+            if (live is null || created.Contains(image.Id) || !changed.Add(image.Id)
+                || live.DatumId != image.DatumId || live.Asset != image.Asset)
+                throw new InvalidOperationException(
+                    $"The handler of '{command.Name}'@{command.SchemaVersion} changes image {image.Id}, which is not "
+                    + "live, which the same command creates, which is in its list two times, or whose datum or asset it "
+                    + "changes. ADR-0045 item 7 permits a change of a live image, one time, with the same datum and asset.");
+        }
+    }
+
+    // The changes of one commit to the live bodies, sketches and images. Only an Undo
+    // removes a body, a sketch or an image.
     private sealed record Effect(
         IReadOnlyList<BodyRecord> Created,
         IReadOnlyList<BodyHandle> Consumed,
@@ -400,14 +441,18 @@ public sealed class CommandBus
         IReadOnlyList<BodyRecord> Changed,
         IReadOnlyList<SketchRecord> CreatedSketches,
         IReadOnlyList<Guid> RemovedSketches,
-        IReadOnlyList<SketchRecord> ChangedSketches);
+        IReadOnlyList<SketchRecord> ChangedSketches,
+        IReadOnlyList<ImageRecord> CreatedImages,
+        IReadOnlyList<Guid> RemovedImages,
+        IReadOnlyList<ImageRecord> ChangedImages);
 
     // 4. Commit: compute each Seq, append the log, register the created bodies,
     // remove the consumed and the removed bodies, then the same for the sketches. The
     // log append adds one to the version (ADR-0020). All events of one commit share
     // consecutive Seqs, in the order of ADR-0031 item 5 and ADR-0033 item 9:
     // command.applied, each body.created, each body.consumed, each body.removed, each
-    // body.changed, each sketch.created, each sketch.removed, each sketch.changed.
+    // body.changed, each sketch.created, each sketch.removed, each sketch.changed, and
+    // since ADR-0045 item 8 each image.created, each image.removed, each image.changed.
     // A subscriber that draws between two events therefore never sees fewer
     // bodies than the result has. Nothing here awaits, therefore nothing here
     // stops in the middle.
@@ -420,7 +465,8 @@ public sealed class CommandBus
     {
         var (created, consumed, removed, changed) = (effect.Created, effect.Consumed, effect.Removed, effect.Changed);
         var count = 1 + created.Count + consumed.Count + removed.Count + changed.Count
-            + effect.CreatedSketches.Count + effect.RemovedSketches.Count + effect.ChangedSketches.Count;
+            + effect.CreatedSketches.Count + effect.RemovedSketches.Count + effect.ChangedSketches.Count
+            + effect.CreatedImages.Count + effect.RemovedImages.Count + effect.ChangedImages.Count;
         var appliedSeq = TakeSeqs(count);
         var events = new List<EventRecord>(count)
         {
@@ -519,6 +565,32 @@ public sealed class CommandBus
             }));
         }
 
+        // ADR-0045 item 8: the record of an image is small, so its event carries it.
+        foreach (var image in effect.CreatedImages)
+        {
+            _document.AddImage(image);
+            _createdImages.Add(image.Id);
+            lastSeq++;
+            events.Add(Event(lastSeq, command, "image.created", ImageFields(image)));
+        }
+
+        foreach (var id in effect.RemovedImages)
+        {
+            _document.RemoveImage(id);
+            lastSeq++;
+            events.Add(Event(lastSeq, command, "image.removed", new Dictionary<string, object?>
+            {
+                ["imageId"] = id,
+            }));
+        }
+
+        foreach (var image in effect.ChangedImages)
+        {
+            _document.ReplaceImage(image);
+            lastSeq++;
+            events.Add(Event(lastSeq, command, "image.changed", ImageFields(image)));
+        }
+
         var result = new CommandResult(
             CommandId: command.CommandId,
             CommandName: command.Name,
@@ -531,6 +603,18 @@ public sealed class CommandBus
             DurationMs: stopwatch.ElapsedMilliseconds);
         return (result, events);
     }
+
+    private static Dictionary<string, object?> ImageFields(ImageRecord image) => new()
+    {
+        ["imageId"] = image.Id,
+        ["asset"] = image.Asset,
+        ["datumId"] = image.DatumId,
+        ["originU"] = image.OriginU,
+        ["originV"] = image.OriginV,
+        ["width"] = image.Width,
+        ["height"] = image.Height,
+        ["scale"] = image.Scale,
+    };
 
     private (CommandResult, IReadOnlyList<EventRecord>) Reject(
         Command command,

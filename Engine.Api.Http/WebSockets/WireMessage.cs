@@ -46,7 +46,8 @@ internal sealed record SnapshotMessage(
     DateTime UpdatedAt,
     string LengthUnit,
     IReadOnlyList<SnapshotBodyEntry> Bodies,
-    IReadOnlyList<SnapshotSketchEntry> Sketches);
+    IReadOnlyList<SnapshotSketchEntry> Sketches,
+    IReadOnlyList<SnapshotImageEntry> Images);
 
 // ADR-0012 §6 and ADR-0028 item 7: each live body with its kind, its name and its visibility.
 // ADR-0037 item 8: the snapshot gives the geometry key and the fault of each body.
@@ -54,6 +55,10 @@ internal sealed record SnapshotBodyEntry(Guid Handle, string Kind, string? Name,
 
 // ADR-0033 item 9, which amends ADR-0012 §6: each live sketch with its datum and its name.
 internal sealed record SnapshotSketchEntry(Guid SketchId, Guid DatumId, string? Name);
+
+// ADR-0045 item 10, which amends ADR-0012 §6: each live image with each field of its record.
+internal sealed record SnapshotImageEntry(
+    Guid ImageId, string Asset, Guid DatumId, double OriginU, double OriginV, int Width, int Height, double Scale);
 
 internal static class SnapshotProjector
 {
@@ -72,5 +77,8 @@ internal static class SnapshotProjector
             .ToArray(),
         Sketches: doc.Sketches
             .Select(s => new SnapshotSketchEntry(s.Id, s.DatumId, s.Name))
+            .ToArray(),
+        Images: doc.Images
+            .Select(i => new SnapshotImageEntry(i.Id, i.Asset, i.DatumId, i.OriginU, i.OriginV, i.Width, i.Height, i.Scale))
             .ToArray());
 }
