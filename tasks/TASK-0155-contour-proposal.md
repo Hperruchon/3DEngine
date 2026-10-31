@@ -77,3 +77,6 @@ the image, which the tools of the sketch then edit.
   twelve libraries and an FFmpeg file, so V3 proposes with its own code (R-0048). 11 new test cases: 7 in
   3DEngine.Tests, and 3 with no GPU and 1 image test in 3DEngine.ImageTests. 7 injections; the first threshold
   injection passed, because each test image had two greys, until a test with a ring of a third grey.
+- 2026-10-31: the full run of 3DEngine.ImageTests crashed the test host in SketchWindowUiTests: the new image test
+  drove Dear ImGui out of the collection of the panel tests, in parallel with them. It is in the collection now, and
+  three full runs gave 157 of 157.
