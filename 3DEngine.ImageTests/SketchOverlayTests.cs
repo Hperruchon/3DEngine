@@ -126,6 +126,21 @@ public class SketchOverlayTests
         Assert.Equal("Before", Assert.Single(sketches.Live).Name);
     }
 
+    // ADR-0041 item 6 (phase R11b, TASK-0134): the panel draws the mark of a snap as a square in the
+    // colour of a snap.
+    [Fact]
+    public void The_Panel_Draws_The_Mark_Of_A_Snap()
+    {
+        using var ui = new DesktopUi("http://127.0.0.1:5180", Engine.Contracts.Document.Millimetre);
+        var strokes = new SketchOverlay.Strokes([], [], [], [], new Vector2(800, 400));
+
+        var without = ui.Frame(1f / 60f, Display, Vector2.One, [], null, null, strokes with { Snap = null });
+        var with = ui.Frame(1f / 60f, Display, Vector2.One, [], null, null, strokes);
+
+        Assert.DoesNotContain(without.Vertices, vertex => vertex.Colour == DesktopUi.SnapColour);
+        Assert.Contains(with.Vertices, vertex => vertex.Colour == DesktopUi.SnapColour && Math.Abs(vertex.Position.X - 800) <= 8 && Math.Abs(vertex.Position.Y - 400) <= 8);
+    }
+
     // ADR-0033 item 13: the panel draws the lines and the points in the colour of a sketch.
     [Fact]
     public void The_Panel_Draws_The_Strokes_Of_A_Sketch()

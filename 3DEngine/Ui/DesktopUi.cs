@@ -428,6 +428,10 @@ internal sealed unsafe class DesktopUi : IDisposable
 
     // ADR-0034 item 9: a selected item in white and wider, and each sketch that is not active in grey.
     internal const uint SelectedColour = 0xFFFFFFFF;
+
+    // The mark of a snap: a square of 12 pixels in cyan (ABGR).
+    internal const uint SnapColour = 0xFFFFE000;
+    private const float SnapHalfSize = 6f;
     internal const uint OtherSketchColour = 0xFF909090;
     private const float SelectedLineWidth = 4f;
     private const float SelectedPointRadius = 7f;
@@ -478,6 +482,9 @@ internal sealed unsafe class DesktopUi : IDisposable
             list.AddCircleFilled(point.At, point.Mark == SketchOverlay.Mark.Selected ? SelectedPointRadius : SketchPointRadius, Colour(point.Mark));
         foreach (var ring in sketches.Rings)
             list.AddCircle(ring, RingRadius, SketchColour, 0, SketchLineWidth);
+        // ADR-0041 item 6 (phase R11b): a square at the point that a tap under the mouse would take.
+        if (sketches.Snap is { } snap)
+            list.AddRect(snap - new Vector2(SnapHalfSize), snap + new Vector2(SnapHalfSize), SnapColour, 0, ImDrawFlags.None, SketchLineWidth);
         foreach (var label in sketches.Labels)
             list.AddText(label.At, SketchColour, label.Text);
     }

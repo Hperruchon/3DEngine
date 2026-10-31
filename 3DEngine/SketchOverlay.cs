@@ -33,7 +33,8 @@ internal static class SketchOverlay
 
     // The part of a line in front of the camera, and each point in front of it, in pixels; the
     // labels of the active sketch, and the ring of the first point of an open chain.
-    public sealed record Strokes(IReadOnlyList<Stroke> Lines, IReadOnlyList<Spot> Points, IReadOnlyList<Label> Labels, IReadOnlyList<Vector2> Rings);
+    // Phase R11b (TASK-0134): Snap is the pixel of the point that a tap under the mouse would take.
+    public sealed record Strokes(IReadOnlyList<Stroke> Lines, IReadOnlyList<Spot> Points, IReadOnlyList<Label> Labels, IReadOnlyList<Vector2> Rings, Vector2? Snap = null);
 
     // The active sketch, its selected items, and the first point of its open chain.
     public sealed record Focus(Guid Sketch, IReadOnlyCollection<Guid> Selected, Guid? ChainStart);
@@ -195,6 +196,22 @@ internal static class SketchOverlay
     {
         for (var i = 1; i < polyline.Count; i++)
             yield return (polyline[i - 1], polyline[i]);
+    }
+
+    // The pixel of a position of the plane of a sketch, or null when it is behind the eye or not
+    // finite (ADR-0041 item 6).
+    public static Vector2? Pixel(SketchInfo sketch, Camera camera, double width, double height, (double X, double Y) position)
+    {
+        ArgumentNullException.ThrowIfNull(sketch);
+        ArgumentNullException.ThrowIfNull(camera);
+        if (!(width > 0 && height > 0) || Datums.Find(sketch.DatumId) is not { } datum)
+            return null;
+        var frame = Frame.Of(camera, width, height);
+        var seen = frame.ToCamera(World(datum, position.X, position.Y));
+        if (seen.Forward < Near)
+            return null;
+        var pixel = frame.ToPixels(seen);
+        return Finite(pixel) ? pixel : null;
     }
 
     private static (double X, double Y, double Z) World(Datum datum, double x, double y)
