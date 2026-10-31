@@ -119,6 +119,7 @@ Therefore each approved objective must have a track here.
 - P0.59 — A sink of events does not throw, and a test holds each sink to it. v0.141, TASK-0140.
 - R11b — The overlay marks the point that a tap under the mouse or a finger would take. v0.143, TASK-0134, ADR-0041.
 - P0.60 — The open follows the replay, the adds follow the solver, and the comments of the cache are true. v0.144, TASK-0142.
+- P0.61 — The gates read disabled text, the routes of the test host, each sink, and the next forms of the fifteenth review. v0.145, TASK-0143.
 
 ## Track 0 — Foundations
 
