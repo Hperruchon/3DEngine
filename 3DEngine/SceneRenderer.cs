@@ -32,6 +32,9 @@ internal sealed unsafe class SceneRenderer : IDisposable
     private readonly DrawListExecutor _highlighter;
     private readonly List<DrawRecord> _selected = new();
 
+    // The images of the scene, each on a quad (ADR-0043, phase V1a).
+    private readonly ImageRenderer _images;
+
     public SceneRenderer(GraphicsDevice device, VkRenderPass renderPass, EngineHost host)
     {
         _device = device;
@@ -40,6 +43,7 @@ internal sealed unsafe class SceneRenderer : IDisposable
         _executor = new DrawListExecutor(device, _pipeline);
         _highlight = new RenderPipeline(device, renderPass, "mesh.vert", "highlight.frag", highlight: true);
         _highlighter = new DrawListExecutor(device, _highlight);
+        _images = new ImageRenderer(device, renderPass);
         _bodies = new SessionBodies(host);
     }
 
@@ -78,9 +82,14 @@ internal sealed unsafe class SceneRenderer : IDisposable
         }
     }
 
-    // Records the render pass of one frame: the clear, then each draw of the scene, then the
-    // overlay, for example the user interface (ADR-0027 item 3), in the same render pass.
-    public void Record(VkCommandBuffer commandBuffer, VkFramebuffer framebuffer, VkExtent2D extent, Scene scene, Camera camera, Action<VkCommandBuffer>? overlay = null, Guid? selected = null)
+    // ADR-0043 item 4: uploads an image under its identifier, one time. The caller uploads outside
+    // a frame.
+    public void Upload(string imageId, uint width, uint height, ReadOnlySpan<byte> rgba) => _images.Upload(imageId, width, height, rgba);
+
+    // Records the render pass of one frame: the clear, then each draw of the scene, then each image
+    // on its quad (ADR-0043 item 3), then the overlay, for example the user interface (ADR-0027
+    // item 3), in the same render pass.
+    public void Record(VkCommandBuffer commandBuffer, VkFramebuffer framebuffer, VkExtent2D extent, Scene scene, Camera camera, Action<VkCommandBuffer>? overlay = null, Guid? selected = null, IReadOnlyList<ImageQuad>? images = null)
     {
         _drawList.Clear();
         SceneWalker.Fill(scene, camera, _drawList);
@@ -106,6 +115,8 @@ internal sealed unsafe class SceneRenderer : IDisposable
         _device.DeviceApi.vkCmdBeginRenderPass(commandBuffer, &renderPassInfo, VkSubpassContents.Inline);
         var projection = camera.Projection((float)extent.width / extent.height);
         _executor.Execute(commandBuffer, extent, _drawList.Records, _meshes, projection);
+        if (images is { Count: > 0 })
+            _images.Record(commandBuffer, extent, images.Select(quad => (quad.ImageId, quad.ModelView(camera))), projection);
 
         // The selected body again, through the highlight pipeline, after each body.
         _selected.Clear();
@@ -130,5 +141,6 @@ internal sealed unsafe class SceneRenderer : IDisposable
         _meshes.Clear();
         _pipeline.Dispose();
         _highlight.Dispose();
+        _images.Dispose();
     }
 }
