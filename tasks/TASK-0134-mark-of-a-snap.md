@@ -1,7 +1,7 @@
 ---
 id: 0134
 title: The overlay marks the point that a tap under the mouse or a finger would take
-status: Active
+status: Done
 phase: R11b
 opened: 2026-10-31
 depends-on: [0131, 0133]
@@ -63,11 +63,24 @@ before its tap.
 
 ## Acceptance criteria
 
-- [ ] A touch script and a mouse script give the same `SketchHoverIntent` (objective 9).
-- [ ] The mark is the pixel of the point that a tap would take, and the tool Select has none.
-- [ ] A picture on a GPU shows the mark, and the owner accepts it.
-- [ ] A clean build (`--no-incremental`) gives zero errors and zero warnings.
-- [ ] Continuous integration passes on the three runners, on the branch and on `main` after the merge.
+- [x] A touch script and a mouse script give the same `SketchHoverIntent` (objective 9).
+- [x] The mark is the pixel of the point that a tap would take, and the tool Select has none.
+- [x] A picture on a GPU shows the mark, and the owner accepts it.
+- [x] A clean build (`--no-incremental`) gives zero errors and zero warnings.
+- [x] Continuous integration passes on the three runners, on the branch and on `main` after the merge.
+
+## Outcome
+
+Status: Done · commit (the merge of the branch r11b-snap-mark) · v0.143
+
+## Method
+
+Mechanical: the pixel of the mark from the target of the tool, the parity of the touch and mouse scripts, and the
+            picture of the GPU test of the curves.
+Judgement:  a press of the left button and the first contact of a finger give the hover too, so that the touch and
+            mouse scripts agree; the size and the colour of the square.
+Weakest:    the owner accepted the picture through the standing answer "Use the recommendation"; no person moved the
+            real mouse over the window.
 
 ## Progress
 
@@ -76,3 +89,4 @@ before its tap.
 - 2026-10-31: the hover, the target, the mark and the square; 3 new test cases, and the GPU test of the curves also draws
   the mark; 6 injections caught. The visual check waits for the owner.
 - 2026-10-31: main merged into the branch (v0.135 to v0.142); the counts of eng/test-floor.txt add the two sides.
+- 2026-10-31: the owner answered "Use the recommendation", which accepts the picture; closed at v0.143.
