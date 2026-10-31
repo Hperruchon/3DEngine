@@ -61,6 +61,7 @@ names. Do not read all of them.
 | [0045](0045-image-on-a-datum.md) | An image on a datum, and its calibration | Accepted | Contracts, vision | 0012, 0031, 0033 | — |
 | [0046](0046-image-in-the-desktop.md) | The image of a datum in the desktop | Accepted | Rendering, vision, clients | — | — |
 | [0047](0047-contour-proposal.md) | The proposal of a contour and its accept as a sketch | Accepted | Vision, clients | 0042 | — |
+| [0048](0048-stl-export.md) | The STL export of the live bodies | Accepted | Persistence, clients | — | — |
 
 ## Topics
 

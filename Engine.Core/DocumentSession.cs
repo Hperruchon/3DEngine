@@ -28,6 +28,7 @@ public sealed class DocumentSession
     private readonly IEventSink _events;
     private readonly CommandBus _commands;
     private readonly QueryBus _queries;
+    private readonly Engine.Contracts.Geometry.IGeometryBackend _backend;
 
     // The sink is the decorated sink when a host decorates one, and the sink of
     // the kit when a host does not. The session builds the one command bus of
@@ -43,6 +44,7 @@ public sealed class DocumentSession
         CommandRegistry = kit.CommandRegistry;
         QueryRegistry = kit.QueryRegistry;
         BackendIdentity = kit.Backend.Identity;
+        _backend = kit.Backend;
     }
 
     // The registries are filled before the session exists and do not change
@@ -164,6 +166,27 @@ public sealed class DocumentSession
         try
         {
             return read(_document, _events);
+        }
+        finally
+        {
+            Release();
+        }
+    }
+
+    // ADR-0048 item 3 (phase P8g, TASK-0157): a read of the Document and of the geometry of its bodies in the
+    // section, as a query reads them, for an export that is not a query. The function must not keep a
+    // reference to the Document or to the backend after it returns.
+    public async Task<T> ReadGeometry<T>(Func<Document, Engine.Contracts.Geometry.IGeometryBackend, T> read, CancellationToken ct = default)
+    {
+        ArgumentNullException.ThrowIfNull(read);
+
+        RefuseReentry();
+        RefuseClosed();
+        await _serial.WaitAsync(ct).ConfigureAwait(false);
+        Hold();
+        try
+        {
+            return read(_document, _backend);
         }
         finally
         {

@@ -47,6 +47,7 @@ internal sealed unsafe class DesktopUi : IDisposable
     public const string FileNameLabel = "File name";
     public const string SaveAsLabel = "Save as";
     public const string OpenLabel = "Open";
+    public const string ExportStlLabel = "Export STL";
     public const string UndoLabel = "Undo";
     public const string RedoLabel = "Redo";
     public const string NewBoxLabel = "New box";
@@ -1098,6 +1099,10 @@ internal sealed unsafe class DesktopUi : IDisposable
         if (ImGui.Button(OpenLabel))
             _actions.Add(new OpenDocumentAction(_fileName));
         Item(OpenLabel);
+        ImGui.SameLine();
+        if (ImGui.Button(ExportStlLabel))
+            _actions.Add(new ExportStlAction(_fileName));
+        Item(ExportStlLabel);
         if (document.Message is { } message)
             ImGui.TextUnformatted(message);
         ImGui.Separator();

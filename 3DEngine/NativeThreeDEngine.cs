@@ -236,6 +236,9 @@ public sealed class NativeThreeDEngine : IThreeDEngine, IDisposable
                 case OpenDocumentAction open:
                     _documentMessage = OpenDocument(open.Name);
                     break;
+                case ExportStlAction export:
+                    _documentMessage = ExportStl(export.Name);
+                    break;
                 case UndoAction:
                     _documentMessage = _actions.Undo();
                     break;
@@ -361,6 +364,31 @@ public sealed class NativeThreeDEngine : IThreeDEngine, IDisposable
             return refusal!;
         var error = _host.Session.SaveAs(path).GetAwaiter().GetResult();
         return error is null ? $"Saved as {Path.GetFileName(path)}" : $"{error.Code}: {error.Message}";
+    }
+
+    // ADR-0048 item 6: the live bodies as one STL file in the document folder, with the name of the field and the
+    // extension .stl; the rules of a name are the rules of a document file (ADR-0030 item 2).
+    private string ExportStl(string name)
+    {
+        if (_document is null)
+            return "The desktop has no document folder.";
+        var path = _document.Folder.Resolve(name, out var refusal);
+        if (path is null)
+            return refusal!;
+        path = Path.ChangeExtension(path, ".stl");
+        var (content, error) = _host.Session.ReadGeometry(Engine.Core.Export.StlExport.Write).GetAwaiter().GetResult();
+        if (error is not null)
+            return $"{error.Code}: {error.Message}";
+        try
+        {
+            File.WriteAllBytes(path, content!);
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+            return $"{Engine.Core.DiagnosticCodes.IoSaveFailed}: {ex.Message}";
+        }
+
+        return $"Exported {(content!.Length - 84) / 50} triangles to {Path.GetFileName(path)}";
     }
 
     // The check of the file; when it opens, the window loop ends and the program starts
