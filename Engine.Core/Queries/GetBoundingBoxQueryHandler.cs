@@ -61,7 +61,17 @@ public sealed class GetBoundingBoxQueryHandler : IQueryHandler
         }
 
         // ADR-0037 item 2: the solid of the body, under its geometry key.
-        var aabb = geom.GetBoundingBox(new BodyHandle(body.GeometryKey));
-        return Task.FromResult(QueryHandlerResult.Success(aabb));
+        // Finding E32 of the codebase review of 2026-10-08 (TASK-0135): a body that the backend does not
+        // hold threw KeyNotFoundException through the query bus, and a host answered HTTP 500. A failure
+        // of the backend gives E-GEOM-NATIVE-OP, as for a command.
+        try
+        {
+            return Task.FromResult(QueryHandlerResult.Success(geom.GetBoundingBox(new BodyHandle(body.GeometryKey))));
+        }
+        catch (Exception ex) when (ex is not OperationCanceledException)
+        {
+            return Task.FromResult(QueryHandlerResult.Failure(new ErrorDetail(
+                DiagnosticCodes.GeomNativeOp, $"The backend could not give the bounding box of the body '{body.Handle.Id}': {ex.GetType().Name}: {ex.Message}")));
+        }
     }
 }
