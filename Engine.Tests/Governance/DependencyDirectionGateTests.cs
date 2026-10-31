@@ -871,6 +871,35 @@ public class DependencyDirectionGateTests
     // read only files of the repository, also from a build of main (TASK-0064).
     private static readonly string[] Judges = ["WriteSetCheck", "RepoGates"];
 
+    // The verification spike of the vision library (phase V0, ADR-0042 item 4, TASK-0145).
+    private static readonly string[] VisionVerifiers = ["3DEngine.VisionTests"];
+
+    [Fact]
+    public void The_Vision_Spike_References_No_Project()
+    {
+        // ADR-0042 items 3 and 5: the vision library stays out of the projects of the log, and the
+        // spike depends on no project of the repository.
+        var graph = Graph();
+        Assert.True(graph.ContainsKey("3DEngine.VisionTests"), "3DEngine.VisionTests.csproj was not found.");
+        Assert.Empty(graph["3DEngine.VisionTests"]);
+    }
+
+    [Fact]
+    public void Only_The_Vision_Spike_Pins_The_Vision_Library()
+    {
+        // ADR-0042 item 5: each package of OpenCvSharp4 has its pin in the vision spike, so no
+        // Engine.* project and no render-side project can reach the library.
+        var pins = ProjectFiles()
+            .Where(f => Includes(f, "PackageReference").Any(name => name.StartsWith("OpenCvSharp", StringComparison.OrdinalIgnoreCase)))
+            .Select(RepositoryFiles.Relative)
+            .ToArray();
+
+        Assert.True(
+            pins.SequenceEqual(["3DEngine.VisionTests/3DEngine.VisionTests.csproj"]),
+            $"OpenCvSharp4 must have its pins in 3DEngine.VisionTests/3DEngine.VisionTests.csproj only. "
+            + $"Pins found: {(pins.Length == 0 ? "none" : string.Join(", ", pins))}");
+    }
+
     [Fact]
     public void The_Judge_Of_The_Write_Set_Has_No_Project_Reference()
     {
@@ -888,7 +917,7 @@ public class DependencyDirectionGateTests
         // A new project must enter one of the lists above before the gate can
         // apply a rule to it. Until TASK-0039 an unlisted project passed each
         // test, because no test read it (rules review finding F22).
-        string[] classified = [.. Kernel, .. RenderSide, .. HeadlessClients, .. Surfaces, .. HostsThatDraw, .. Verifiers, .. RenderVerifiers, .. ImageVerifiers, .. Packaging, .. Judges];
+        string[] classified = [.. Kernel, .. RenderSide, .. HeadlessClients, .. Surfaces, .. HostsThatDraw, .. Verifiers, .. RenderVerifiers, .. ImageVerifiers, .. Packaging, .. Judges, .. VisionVerifiers];
 
         var unclassified = Graph().Keys
             .Where(p => !classified.Contains(p))
@@ -898,7 +927,7 @@ public class DependencyDirectionGateTests
         Assert.True(
             unclassified.Length == 0,
             "Each project must be a kernel, a render-side project, a headless client, a surface library, a host that "
-            + "draws, a verifier, a verifier of the render side, an image verifier or a packaging project, so that the dependency rules apply to it. "
+            + "draws, a verifier, a verifier of the render side, an image verifier, a packaging project, a judge or a vision verifier, so that the dependency rules apply to it. "
             + "Add it to one list.\n  " + string.Join("\n  ", unclassified));
     }
 

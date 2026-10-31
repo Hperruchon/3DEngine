@@ -55,6 +55,7 @@ names. Do not read all of them.
 | [0039](0039-chain-of-a-consumed-extrude.md) | The rebuild of the chain of a consumed extrude | Accepted | Geometry, sketch | 0037 | — |
 | [0040](0040-extrude-of-curves.md) | The extrude of a profile with arcs and circles | Accepted | Geometry, sketch | 0036 | — |
 | [0041](0041-snap-of-a-sketch-tap.md) | The snap of a tap of the sketch | Accepted | Clients, sketch | 0026, 0034 | — |
+| [0042](0042-vision-library.md) | The vision library and its place | Accepted | Vision, boundary | — | — |
 
 ## Topics
 

@@ -121,6 +121,7 @@ Therefore each approved objective must have a track here.
 - P0.60 — The open follows the replay, the adds follow the solver, and the comments of the cache are true. v0.144, TASK-0142.
 - P0.61 — The gates read disabled text, the routes of the test host, each sink, and the next forms of the fifteenth review. v0.145, TASK-0143.
 - P0.62 — An arc ends within a pixel of its start, and Escape cancels a press on a handle before the slop. v0.146, TASK-0144.
+- V0 — The vision library loads and finds a contour on the three platforms of the pipeline. v0.147, TASK-0145, ADR-0042.
 
 ## Track 0 — Foundations
 
@@ -258,7 +259,7 @@ The first domain extension. Objective 15 puts it before materials, chemistry and
 
 | Phase | Content | Evenings |
 |---|---|---|
-| V0 | A verification spike. The vision library on three platforms. | 1 |
+| V0 | A verification spike. The vision library on three platforms (ADR-0042; the owner chose it on 2026-10-31, after R11b). TASK-0145. | 1 |
 | V1 | A content-addressed asset store. A textured quad. | 2–3 |
 | V2 | Place an image on a datum. Calibrate it to real units. | 2–3 |
 | V3 | A contour proposal becomes an editable sketch. Propose and accept. | 3–5 |
