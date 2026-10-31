@@ -35,6 +35,12 @@ internal static class JsonRenderer
         },
     };
 
+    // ADR-0044 item 5: the result of a verb asset, with the options of the other results.
+    public static void WriteValue<T>(T value, TextWriter writer)
+    {
+        writer.WriteLine(JsonSerializer.Serialize(value, Options));
+    }
+
     public static void WriteCommandResult(CommandResult result, TextWriter writer)
     {
         var json = JsonSerializer.Serialize(result, Options);

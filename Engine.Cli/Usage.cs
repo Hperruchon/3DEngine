@@ -13,14 +13,17 @@ internal static class Usage
 Usage:
   engine apply <command-name> [--param k=v ...]   Apply a command, print CommandResult JSON.
   engine query <query-name> [--param k=v ...]     Run a query, print QueryResult JSON.
+  engine asset put <file> [--folder <path>]       Put a file into the store of the assets, print its name.
+  engine asset get <name> <file> [--folder <path>]  Write an asset of the store to a file.
   engine help                                     Print this usage.
 
 Each invocation builds a fresh in-memory engine. There is no persistence
-between invocations.
+between invocations. The store of the assets is outside the engine, in
+<local application data>/3DEngine/assets unless --folder names another.
 
 Exit codes:
   0  Applied
-  1  Rejected or Cancelled (commands), or query rejected
+  1  Rejected or Cancelled (commands), query rejected, or asset refused
   2  Invalid usage
   3  The native geometry backend did not load (E-GEOM-BACKEND-INIT)
 
