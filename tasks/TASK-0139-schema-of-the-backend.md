@@ -1,7 +1,7 @@
 ---
 id: 0139
 title: The schema of the backend is in the list of the surface, and it gives the identity of the backend
-status: Active
+status: Done
 phase: P0.58
 opened: 2026-10-31
 depends-on: [0138]
@@ -58,10 +58,23 @@ log records.
 
 ## Acceptance criteria
 
-- [ ] A test of each part fails before the change and passes after it.
-- [ ] A clean build (`--no-incremental`) gives zero errors and zero warnings.
-- [ ] Continuous integration passes on the three runners, on the branch and on `main` after the merge.
+- [x] A test of each part fails before the change and passes after it.
+- [x] A clean build (`--no-incremental`) gives zero errors and zero warnings.
+- [x] Continuous integration passes on the three runners, on the branch and on `main` after the merge.
+
+## Outcome
+
+Status: Done · commit (the merge of the branch p058-schema-backend) · v0.140
+
+## Method
+
+Mechanical: one line and a section of history in ADR-0008, one gate that compares two lists, and two calls that read
+            the identity.
+Judgement:  the list of ADR-0008 §9 was incomplete, which is a false statement about the repository and not a new
+            decision, so the task corrects it; the desktop already gives the identity, so its file stays as it is.
+Weakest:    the gate reads the text of `EngineSurface.cs`, so a route that a helper maps escapes it.
 
 ## Progress
 
 - 2026-10-31: E35 with 1 new test case and 1 new assertion.
+- 2026-10-31: 2 injections caught; closed at v0.140.
