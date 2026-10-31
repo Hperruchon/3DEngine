@@ -157,7 +157,7 @@ public sealed class SketchGapUiTests
     [Fact]
     public async Task Twenty_Changes_Of_One_Sketch_Give_One_Read()
     {
-        using var host = new EngineHost(new InProcessMeshBackend(), "managed", "test");
+        using var host = new EngineHost(new InProcessMeshBackend());
         var sketch = (await host.Session.Apply(new CreateSketchCommand { DatumId = Datums.XY.Id })).Outputs;
         sketch.TryGet<Guid>("sketchId", out var id);
         (await host.Session.Apply(new AddSketchPointCommand { SketchId = id, X = 1, Y = 1 })).Outputs.TryGet<Guid>("pointId", out var point);

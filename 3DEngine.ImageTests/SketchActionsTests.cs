@@ -44,7 +44,7 @@ public class SketchActionsTests
     // two sets of identifiers compare.
     private static async Task<List<string>> Log(InputSample[][] script)
     {
-        using var host = new EngineHost(new InProcessMeshBackend(), "managed", "test");
+        using var host = new EngineHost(new InProcessMeshBackend());
         var actions = new SketchActions(host.Session);
         Assert.NotNull(actions.Create(Datums.XY.Id));
         var machine = new IntentMachine { Mode = IntentMode.Sketch };
@@ -101,7 +101,7 @@ public class SketchActionsTests
     [Fact]
     public async Task The_Pad_Draws_An_Exact_Rectangle()
     {
-        using var host = new EngineHost(new InProcessMeshBackend(), "managed", "test");
+        using var host = new EngineHost(new InProcessMeshBackend());
         var actions = new SketchActions(host.Session);
         actions.Create(Datums.XZ.Id);
 
@@ -120,7 +120,7 @@ public class SketchActionsTests
     [Fact]
     public async Task Each_Kind_Of_Constraint_Is_Added_With_Its_Residual()
     {
-        using var host = new EngineHost(new InProcessMeshBackend(), "managed", "test");
+        using var host = new EngineHost(new InProcessMeshBackend());
         var actions = new SketchActions(host.Session);
         actions.Create(Datums.YZ.Id);
         actions.Next(5, 0);
@@ -148,7 +148,7 @@ public class SketchActionsTests
     [Fact]
     public async Task An_Undo_Ends_The_Chain_Then_The_Mode()
     {
-        using var host = new EngineHost(new InProcessMeshBackend(), "managed", "test");
+        using var host = new EngineHost(new InProcessMeshBackend());
         using var live = new SessionSketches(host);
         var actions = new SketchActions(host.Session);
         actions.Create(Datums.XY.Id);
@@ -171,7 +171,7 @@ public class SketchActionsTests
     [Fact]
     public async Task A_Delete_Of_A_Point_And_Its_Line_Gives_No_Message()
     {
-        using var host = new EngineHost(new InProcessMeshBackend(), "managed", "test");
+        using var host = new EngineHost(new InProcessMeshBackend());
         var actions = new SketchActions(host.Session);
         actions.Create(Datums.XY.Id);
         actions.Next(5, 0);
@@ -189,7 +189,7 @@ public class SketchActionsTests
     [Fact]
     public async Task An_Extrude_Ends_The_Mode_And_Gives_The_New_Body()
     {
-        using var host = new EngineHost(new ManifoldGeometryBackend(), "manifold", ManifoldGeometryBackend.NativeVersion);
+        using var host = new EngineHost(new ManifoldGeometryBackend());
         var actions = new SketchActions(host.Session);
         actions.Create(Datums.XY.Id);
         foreach (var (a, b) in new[] { (0.0, 0.0), (10, 0), (0, 6), (-10, 0) })
@@ -213,7 +213,7 @@ public class SketchActionsTests
     [Fact]
     public void The_Mark_Is_The_Pixel_Of_The_Point_That_A_Tap_Would_Take()
     {
-        using var host = new EngineHost(new InProcessMeshBackend(), "managed", "test");
+        using var host = new EngineHost(new InProcessMeshBackend());
         var actions = new SketchActions(host.Session);
         actions.Create(Datums.XY.Id);
         var (a, b) = (actions.AddPoint(-20, 0)!.Value, actions.AddPoint(20, 0)!.Value);
@@ -236,7 +236,7 @@ public class SketchActionsTests
     [Fact]
     public async Task The_Tools_Circle_And_Arc_Add_Curves_That_Select_Picks()
     {
-        using var host = new EngineHost(new InProcessMeshBackend(), "managed", "test");
+        using var host = new EngineHost(new InProcessMeshBackend());
         var actions = new SketchActions(host.Session);
         actions.Create(Datums.XY.Id);
         var camera = Facing();

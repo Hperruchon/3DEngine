@@ -36,7 +36,7 @@ public class EventPayloadSchemaTests(WebApplicationFactory<Program> factory)
     [NativeManifoldFact]
     public async Task Each_Payload_That_The_Bus_Emits_Agrees_With_Its_Entry()
     {
-        using var host = new EngineHost(new ManifoldGeometryBackend(), "manifold", ManifoldGeometryBackend.NativeVersion);
+        using var host = new EngineHost(new ManifoldGeometryBackend());
         var records = new List<EventRecord>();
         using var subscription = host.Subscribe(records.Add);
 

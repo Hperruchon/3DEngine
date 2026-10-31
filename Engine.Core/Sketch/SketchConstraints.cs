@@ -84,8 +84,12 @@ public static class SketchConstraints
 
         if (values.Any(value => !double.IsFinite(value)))
             return $"A value of the constraint '{kind}' is not a finite number.";
-        if (kind == Radius && !(values[0] > 0))
-            return $"The radius of a constraint 'radius' is {values[0]}, and a radius is positive.";
+        // Finding E108 of the codebase review of 2026-10-31 (b) (TASK-0142): as for the add of a circle,
+        // a live add or change of a value must give a radius greater than the tolerance of the solver; an
+        // entry of a log keeps the rule of 0 (E103).
+        var least = SketchResults.ApplyingEntry.Value ? 0 : SketchSolver.Tolerance;
+        if (kind == Radius && !(values[0] > least))
+            return $"The radius of a constraint 'radius' is {values[0]}, and a radius is greater than {least}.";
         if (kind == Distance && values[0] < 0)
             return $"The length of a constraint 'distance' is {values[0]}, and a length is not negative.";
         if (kind == Angle && !(Math.Abs((values[0] * values[0]) + (values[1] * values[1]) - 1) <= UnitPairLimit))

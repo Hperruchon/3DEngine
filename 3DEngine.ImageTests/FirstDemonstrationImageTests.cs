@@ -49,7 +49,7 @@ public class FirstDemonstrationImageTests
     public async Task The_First_Demonstration_Shows_A_Notch()
     {
         var messagesBefore = GraphicsDevice.ValidationMessageCount;
-        using var host = new EngineHost(new ManifoldGeometryBackend(), "manifold", ManifoldGeometryBackend.NativeVersion);
+        using var host = new EngineHost(new ManifoldGeometryBackend());
 
         var cut = await FirstDemonstration(host);
         var tessellation = (await host.Session.Query<Tessellation>(new GetTessellationQuery { BodyId = cut })).Result!;
@@ -97,7 +97,7 @@ public class FirstDemonstrationImageTests
     public async Task The_Highlight_Tints_Each_Pixel_Of_The_Selected_Body()
     {
         var messagesBefore = GraphicsDevice.ValidationMessageCount;
-        using var host = new EngineHost(new ManifoldGeometryBackend(), "manifold", ManifoldGeometryBackend.NativeVersion);
+        using var host = new EngineHost(new ManifoldGeometryBackend());
         var cut = await FirstDemonstration(host);
 
         var scene = SessionScene.Create();
@@ -143,7 +143,7 @@ public class FirstDemonstrationImageTests
     public async Task The_Scene_Follows_An_Undo_And_A_Redo_Of_The_Cut()
     {
         var messagesBefore = GraphicsDevice.ValidationMessageCount;
-        using var host = new EngineHost(new ManifoldGeometryBackend(), "manifold", ManifoldGeometryBackend.NativeVersion);
+        using var host = new EngineHost(new ManifoldGeometryBackend());
         var cut = await FirstDemonstration(host);
         var operands = await host.Session.Read((document, _) => document.Log[3].Command) is SubtractCommand subtract
             ? new[] { subtract.MinuendBodyId, subtract.SubtrahendBodyId }.Order().ToArray()

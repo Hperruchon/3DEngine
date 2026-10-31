@@ -21,7 +21,7 @@ public class HttpSketchScenarioTests
     [Fact]
     public async Task An_Agent_Builds_A_Sketch_Over_Http_And_Reads_It_With_Its_Residuals()
     {
-        var host = new EngineHost(new InProcessMeshBackend(), "managed", "test");
+        var host = new EngineHost(new InProcessMeshBackend());
         await using var app = await StartSurface(host);
         using var http = new HttpClient { BaseAddress = new Uri(app.Urls.First()) };
         using var limit = new CancellationTokenSource(Limit);
@@ -81,7 +81,7 @@ public class HttpSketchScenarioTests
     [NativeManifoldFact]
     public async Task An_Agent_Sees_The_Rebuild_Of_An_Extrude_Over_Http()
     {
-        var host = new EngineHost(new ManifoldGeometryBackend(), "manifold", ManifoldGeometryBackend.NativeVersion);
+        var host = new EngineHost(new ManifoldGeometryBackend());
         await using var app = await StartSurface(host);
         using var http = new HttpClient { BaseAddress = new Uri(app.Urls.First()) };
         using var limit = new CancellationTokenSource(Limit);
