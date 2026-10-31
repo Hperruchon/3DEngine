@@ -25,8 +25,19 @@ namespace Engine.Tests.Governance;
 // Finding T98 (TASK-0123): the references came from the project file only, and a reference in a
 // Directory.Build.props file passed. They now come from each file that MSBuild reads for the
 // project (DependencyDirectionGateTests.FilesThatMsBuildReads).
+//
+// Findings T104 and T105 of the codebase review of 2026-10-31 (TASK-0132): the compilations had no
+// global using, so a name that only an implicit using of the SDK binds gave no constant, and each
+// compilation granted its internals to each project, so a name that the build resolves was ambiguous.
+// Each compilation now has the preamble of its project: the implicit usings of the SDK, which each
+// project of the repository enables, its items Using, and the grants of its items InternalsVisibleTo,
+// read from each file that MSBuild reads for it.
 internal static class ConstantStrings
 {
+    // The implicit usings of Microsoft.NET.Sdk.
+    internal static readonly string[] ImplicitUsings =
+        ["System", "System.Collections.Generic", "System.IO", "System.Linq", "System.Net.Http", "System.Threading", "System.Threading.Tasks"];
+
     // Each expression of each file whose constant value is a string, with its line.
     public static IEnumerable<(string Path, int Line, string Value)> Values(IEnumerable<(string Path, string Text)> files)
     {
@@ -34,18 +45,18 @@ internal static class ConstantStrings
             .Select(file => CSharpSyntaxTree.ParseText(file.Text, new CSharpParseOptions(LanguageVersion.Preview), path: file.Path))
             .ToList();
         var byProject = trees.GroupBy(Project).ToDictionary(group => group.Key, group => group.ToList(), StringComparer.Ordinal);
-        var grants = CSharpSyntaxTree.ParseText(
-            string.Concat(byProject.Keys.Select(name => $"[assembly: System.Runtime.CompilerServices.InternalsVisibleTo(\"{name}\")]\n")),
-            new CSharpParseOptions(LanguageVersion.Preview));
         var compilations = new Dictionary<string, CSharpCompilation>(StringComparer.Ordinal);
+        var building = new HashSet<string>(StringComparer.Ordinal);
 
         CSharpCompilation CompilationOf(string project)
         {
             if (compilations.TryGetValue(project, out var known))
                 return known;
-            var referenced = References(project).Where(byProject.ContainsKey).Select(name => CompilationOf(name).ToMetadataReference());
+            // A cycle of references, which MSBuild refuses, ends here and does not recurse.
+            building.Add(project);
+            var referenced = References(project).Where(name => byProject.ContainsKey(name) && !building.Contains(name)).Select(name => CompilationOf(name).ToMetadataReference()).ToList();
             var compilation = CSharpCompilation.Create(
-                project, [.. byProject[project], grants], [.. RuntimeReferences.Value, .. referenced],
+                project, [.. byProject[project], Preamble(project)], [.. RuntimeReferences.Value, .. referenced],
                 new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary, allowUnsafe: true));
             compilations[project] = compilation;
             return compilation;
@@ -67,6 +78,23 @@ internal static class ConstantStrings
     }
 
     private static string Project(SyntaxTree tree) => tree.FilePath.Split('/')[0];
+
+    // The global usings and the grants of a project, as its files give them to the build.
+    private static SyntaxTree Preamble(string project)
+    {
+        var projectFile = RepositoryFiles.Path(project, project + ".csproj");
+        var items = File.Exists(projectFile)
+            ? DependencyDirectionGateTests.FilesThatMsBuildReads(projectFile).SelectMany(file => XDocument.Load(file).Descendants()).ToList()
+            : [];
+        string? Include(XElement item) => DependencyDirectionGateTests.Value(item, "Include");
+        var usings = ImplicitUsings.Concat(items.Where(e => DependencyDirectionGateTests.Is(e, "Using")).Select(Include).OfType<string>());
+        var grants = items.Where(e => DependencyDirectionGateTests.Is(e, "InternalsVisibleTo")).Select(Include).OfType<string>();
+        return CSharpSyntaxTree.ParseText(
+            string.Concat(usings.Distinct().Select(name => $"global using global::{name};\n"))
+                + string.Concat(grants.Distinct().Select(name => $"[assembly: System.Runtime.CompilerServices.InternalsVisibleTo(\"{name}\")]\n")),
+            new CSharpParseOptions(LanguageVersion.Preview),
+            path: project + "/obj/Preamble.g.cs");
+    }
 
     // The projects that a project references, and each project that they reference, from the
     // items ProjectReference of each file that MSBuild reads for its project file in the repository.

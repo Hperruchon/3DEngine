@@ -66,10 +66,16 @@ public static class SketchResults
     // entry as the session that wrote it did (ADR-0015 item 8), and up to v0.117 a move that a
     // client sent again entered the log two times, so the open of that file failed. The bus sets
     // ApplyingEntry while a handler applies an entry of a log.
+    //
+    // Finding E104 of the codebase review of 2026-10-31 (TASK-0132): a command that creates an item
+    // takes the identifier of its command for the item, so an entry of it that the log holds two times
+    // gave two items with one identifier, or an exception of the solver. For such a command the
+    // refusal also acts on an entry, and the open names the line; createsItem is false for a move, a
+    // change of a value and a delete.
     internal static readonly AsyncLocal<bool> ApplyingEntry = new();
 
-    public static CommandHandlerResult? InUse(Document document, Command command)
-        => !ApplyingEntry.Value && document.Log.Any(entry => entry.Command.CommandId == command.CommandId)
+    public static CommandHandlerResult? InUse(Document document, Command command, bool createsItem)
+        => (createsItem || !ApplyingEntry.Value) && document.Log.Any(entry => entry.Command.CommandId == command.CommandId)
             ? Failure(DiagnosticCodes.SketchIdInUse, $"The log holds a command with the id '{command.CommandId}', and a sketch item takes the id of its command.")
             : null;
 

@@ -71,7 +71,13 @@ internal static class DiagnosticsScanner
     // - a text part of an interpolated string that is one of these, as $"E-SKETCH-{Tag}";
     // - a severity after the separator "-" of string.Join, as string.Join("-", "I", "SKETCH", Tag).
     // Another spelling of a call stays a rule in text: each code is one constant.
-    private static readonly Regex CodeMiddle = new(@"^-[A-Z][A-Z0-9]*-[A-Z0-9-]*$", RegexOptions.Compiled);
+    // Finding T109 of the codebase review of 2026-10-31 (TASK-0132): the middle of a code with no dash
+    // after it, as "-SKETCH" in $"{Sev}-SKETCH{"-"}{Tag}", a severity alone as a constant, as
+    // string.Join("-", new[] { "E", "SKETCH", Tag }) or a constant Sev = "E", and a severity as a
+    // character before a string, as 'E' + "-SKETCH", are parts of a code too.
+    private static readonly Regex CodeMiddle = new(@"^-[A-Z][A-Z0-9]*(?:-[A-Z0-9-]*)?$", RegexOptions.Compiled);
+
+    private static bool IsSeverity(string value) => value is "E" or "W" or "I";
 
     private static readonly Regex CodeAnyCase = new(@"^[EWIewi]-[A-Za-z0-9-]*$", RegexOptions.Compiled);
 
@@ -83,7 +89,7 @@ internal static class DiagnosticsScanner
     {
         var list = files.ToList();
         return Engine.Tests.Governance.ConstantStrings.Values(list)
-            .Where(constant => IsPart(constant.Value))
+            .Where(constant => IsPart(constant.Value) || IsSeverity(constant.Value))
             .Concat(list.SelectMany(BuiltParts))
             .Distinct();
     }
@@ -99,6 +105,12 @@ internal static class DiagnosticsScanner
         {
             if (IsPart(part.TextToken.ValueText))
                 yield return (file.Path, LineOf(part), part.TextToken.ValueText);
+        }
+
+        foreach (var add in root.DescendantNodes().OfType<BinaryExpressionSyntax>().Where(node => node.IsKind(SyntaxKind.AddExpression)))
+        {
+            if (add.Left is LiteralExpressionSyntax { Token.Value: char severity } && IsSeverity(severity.ToString()))
+                yield return (file.Path, LineOf(add), severity + "-");
         }
 
         foreach (var call in root.DescendantNodes().OfType<InvocationExpressionSyntax>())

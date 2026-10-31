@@ -67,13 +67,14 @@ public static class SketchConstraints
         // TASK-0117: the kinds on a circle or an arc. A point of pointOn is not a point of its
         // curve, two curves are two curves, and a tangent of two curves gives 1 (outside) or −1
         // (inside). A line of a tangent has no end at the centre of its curve: that end is on the
-        // line, so the radius must be 0 (finding E97 of the codebase review of 2026-10-30 (b)).
+        // line, so the radius must be 0 (finding E97 of the codebase review of 2026-10-30 (b)). An entry
+        // of an open or a replay passes, because v0.117 to v0.122 applied it (E103, TASK-0132, Q1 A).
         fits = fits || kind switch
         {
             PointOn => items.Count == 2 && kinds[0] == ItemKind.Point && IsCurve(kinds[1])
                 && !CurvePoints(sketch, items[1]).Contains(items[0]) && values.Count == 0,
             Equal => items.Count == 2 && IsCurve(kinds[0]) && IsCurve(kinds[1]) && items[0] != items[1] && values.Count == 0,
-            Tangent => items.Count == 2 && ((kinds[0] == ItemKind.Line && IsCurve(kinds[1]) && !IsEnd(sketch, Centre(sketch, items[1]), items[0]) && values.Count == 0)
+            Tangent => items.Count == 2 && ((kinds[0] == ItemKind.Line && IsCurve(kinds[1]) && (SketchResults.ApplyingEntry.Value || !IsEnd(sketch, Centre(sketch, items[1]), items[0])) && values.Count == 0)
                 || (IsCurve(kinds[0]) && IsCurve(kinds[1]) && items[0] != items[1] && values is [1 or -1])),
             Radius => kinds is [ItemKind.Circle or ItemKind.Arc] && values.Count == 1,
             _ => false,

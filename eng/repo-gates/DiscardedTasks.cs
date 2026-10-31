@@ -52,15 +52,9 @@ internal static class DiscardedTasks
     // item Using of Xunit, as RepoGates.csproj and Engine.Tests.csproj compile the files, and a gate
     // file with an error of the compiler fails the run, so a name that does not bind cannot hide a
     // form again.
-    internal const string GlobalUsings =
-        "global using global::System;\n"
-        + "global using global::System.Collections.Generic;\n"
-        + "global using global::System.IO;\n"
-        + "global using global::System.Linq;\n"
-        + "global using global::System.Net.Http;\n"
-        + "global using global::System.Threading;\n"
-        + "global using global::System.Threading.Tasks;\n"
-        + "global using global::Xunit;\n";
+    // The implicit usings of the SDK are the list of ConstantStrings (TASK-0132).
+    internal static readonly string GlobalUsings =
+        string.Concat(Engine.Tests.Governance.ConstantStrings.ImplicitUsings.Append("Xunit").Select(name => $"global using global::{name};\n"));
 
     private static IEnumerable<string> Problems(IReadOnlyList<SyntaxTree> checkedTrees, IReadOnlyList<SyntaxTree> allTrees)
     {
