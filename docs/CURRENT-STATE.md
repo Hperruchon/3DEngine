@@ -4111,3 +4111,71 @@ New tests: 3. The test list holds 1378 (1006 in `Engine.Tests`, 226 in `3DEngine
 `3DEngine.ImageTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
 entries: 14 of 15. New diagnostic codes: none. Since the review of v0.141, 1 product milestone and 2 entries followed
 it.
+
+## v0.144 — The open follows the replay, the adds follow the solver, and the comments of the cache are true (P0.60, TASK-0142)
+
+The codebase review of 2026-10-31 (b) found E106 to E112 (low), each the next form of a fix of P0.54 to P0.58. R11b
+merged at v0.143, so this task came next.
+
+**The change.**
+
+- E106: the open of a document file throws `OperationCanceledException` for a result Cancelled with a cancelled token,
+  as the replay does since E29.
+- E107: `ErrorText.Clause` in `Engine.Core/Replay.cs` drops the full stop of an error message, and the replay and the
+  open share it, so the message of an open has no "..".
+- E108: a live add of a circle, a live add of a constraint `radius` and a live change of its value refuse a radius
+  that is not greater than `SketchSolver.Tolerance`. An entry of a log keeps the rule of 0 (E103).
+- E109: `EntryCodec` reads a header line and an entry line with `AllowDuplicateProperties = false`. `IsJson` keeps the
+  default options, so a last line with a repeated member is refused and not cut.
+- E110 and E112: the comments of the two backends say that an open does not look in the cache and a replay has none;
+  the comment of `Replay` says that the rule of E103 does not act in a replay of plain commands.
+- E111: `EngineHost` reads `backend.Identity`, and its two string parameters go. 21 files built a host with them: the
+  two hosts and 19 test files, which entered the write set of the task for this reason.
+- Register entry R-0036 records Q1 A and Q2 A of the review: the owner accepts E25 and E27, with their reasons.
+
+**Proof.** 6 new test cases in `Engine.Tests/Commands/EngineDebtTests.cs`. 6 injections: each fix undone alone failed
+its test. The removed parameters of E111 are a compile error at each old call.
+
+**What stays.** E34 and E39 stay in R-0036. The gate findings T110 to T116 are P0.61 (TASK-0143), and V63 and V64 are
+P0.62 (TASK-0144).
+
+**A correction.** None.
+
+New tests: 6. The test list holds 1384 (1012 in `Engine.Tests`, 226 in `3DEngine.Tests`, 146 in
+`3DEngine.ImageTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
+entries: 14 of 15. New diagnostic codes: none. Since the review of v0.141, 1 product milestone and 3 entries followed
+it.
+
+## v0.145 — The gates read disabled text, the routes of the test host, each sink, and the next forms of the fifteenth review (P0.61, TASK-0143)
+
+The codebase review of 2026-10-31 (b) found T110 (medium) and T111 to T116 (low) in the gates. P0.60 merged at v0.144,
+so this task came next.
+
+**The change.**
+
+- T110: `ConstantStrings.Constants` throws for a file with code inside a condition `#if`, so each gate that reads
+  constants fails (the scanner of codes, the scanner of parts and the UI gate). The check of the tasks refuses such a
+  gate file, and its self check has the form.
+- T111: the gate of the schema routes reads the endpoints of the test host, and keeps each route under `/schema` in
+  any case. A route of `MapMethods`, of `MapGroup` or with a capital letter is now in the list that it compares.
+- T112: the gate of the sinks keeps each type that is not abstract and not an interface, in each assembly of a
+  project of the repository next to the tests. It reads the `AssemblyName` of each project, because `Engine.Cli` builds
+  `engine.dll`; the first form missed a struct sink there.
+- T113: the control byte gate refuses U+E0100 to U+E01EF and U+180B to U+180F.
+- T114: the counter of the review refuses an ordered list marker before a heading, and a setext heading in a quote.
+- T115: an `ItemName` that holds `$(` or `@(`, or `Compile` with spaces, is refused.
+- T116: the scanner of parts takes the value of a constant char on the left of an add from the compiler.
+
+**Proof.** 13 new test cases. 13 injections: the form of T110 in `Engine.Cli` and in a gate file, its control with no
+condition, a route `/Schema/probe` of `MapMethods`, a struct sink in `Engine.Cli`, a character U+180B, and each fix
+undone against its new test case. Each one failed a gate.
+
+**What stays.** The gate of the sinks cannot see a sink in the desktop host, because `Engine.Tests` does not reference
+it. No such sink exists.
+
+**A correction.** None.
+
+New tests: 13. The test list holds 1397 (1025 in `Engine.Tests`, 226 in `3DEngine.Tests`, 146 in
+`3DEngine.ImageTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
+entries: 14 of 15. New diagnostic codes: none. Since the review of v0.141, 1 product milestone and 4 entries followed
+it.

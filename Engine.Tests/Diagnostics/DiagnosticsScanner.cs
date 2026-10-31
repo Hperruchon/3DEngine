@@ -88,11 +88,21 @@ internal static class DiagnosticsScanner
     public static IEnumerable<(string Path, int Line, string Value)> PartsOfCodes(IEnumerable<(string Path, string Text)> files)
     {
         var list = files.ToList();
-        return Engine.Tests.Governance.ConstantStrings.Values(list)
-            .Where(constant => IsPart(constant.Value) || IsSeverity(constant.Value))
+        var constants = Engine.Tests.Governance.ConstantStrings.Constants(list).ToList();
+        return constants
+            .Where(constant => constant.Value is string value && (IsPart(value) || IsSeverity(value)))
+            .Select(constant => (constant.Path, constant.Line, (string)constant.Value))
+            .Concat(constants.Where(IsSeverityBeforeAdd).Select(constant => (constant.Path, constant.Line, constant.Value + "-")))
             .Concat(list.SelectMany(BuiltParts))
             .Distinct();
     }
+
+    // Finding T116 of the codebase review of 2026-10-31 (b) (TASK-0143): the syntax read a char literal
+    // on the left of an add only, and const char S = 'E'; S + "-x" + Tag gave no part. The value of the
+    // left operand comes from the compiler now.
+    private static bool IsSeverityBeforeAdd((string Path, int Line, object Value, ExpressionSyntax Expression) constant)
+        => constant.Value is char severity && IsSeverity(severity.ToString())
+            && constant.Expression.Parent is BinaryExpressionSyntax add && add.IsKind(SyntaxKind.AddExpression) && add.Left == constant.Expression;
 
     // The parts of codes that only the syntax shows: the text parts of an interpolated string, and
     // a severity that string.Join puts after "-".
@@ -105,12 +115,6 @@ internal static class DiagnosticsScanner
         {
             if (IsPart(part.TextToken.ValueText))
                 yield return (file.Path, LineOf(part), part.TextToken.ValueText);
-        }
-
-        foreach (var add in root.DescendantNodes().OfType<BinaryExpressionSyntax>().Where(node => node.IsKind(SyntaxKind.AddExpression)))
-        {
-            if (add.Left is LiteralExpressionSyntax { Token.Value: char severity } && IsSeverity(severity.ToString()))
-                yield return (file.Path, LineOf(add), severity + "-");
         }
 
         foreach (var call in root.DescendantNodes().OfType<InvocationExpressionSyntax>())

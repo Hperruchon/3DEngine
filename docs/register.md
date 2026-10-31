@@ -394,6 +394,10 @@ platform with no payload).
 Progress 2026-10-31: TASK-0139 corrects E35 (ADR-0008 §9 lists `/schema/backend`, a gate holds the routes equal to
 the list, and the endpoint gives the identity of the backend).
 Progress 2026-10-31: TASK-0140 corrects E18 of R-0033, the only cause of E33; the next review judges E33 again.
+Progress 2026-10-31: the owner accepts E25 and E27 (questions Q1 A and Q2 A of the codebase review of 2026-10-31 (b),
+by the standing answer of 2026-10-31; TASK-0142 records it). E25: no production code replays a log, and the open of
+a document file is the load path that continues live. E27: its refusal needs a change of `Engine.Contracts`, and
+only a test or a script replays a log. E34 and E39 stay.
 
 ### R-0039 · No test calls the surface of the desktop host
 - class: debt

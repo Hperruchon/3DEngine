@@ -68,6 +68,12 @@ internal static class DiscardedTasks
             var relative = tree.FilePath;
             int Line(SyntaxNode node) => node.GetLocation().GetLineSpan().StartLinePosition.Line + 1;
 
+            // Finding T110 of the codebase review of 2026-10-31 (b) (TASK-0143): the parse has no
+            // preprocessor symbol, and the build defines NET, so a task inside #if NET was disabled text
+            // here and code for the build.
+            foreach (var hidden in tree.GetRoot().DescendantTrivia().Where(t => t.IsKind(SyntaxKind.DisabledTextTrivia)))
+                yield return $"{relative}:{tree.GetLineSpan(hidden.Span).StartLinePosition.Line + 1}: a gate file holds code that a preprocessor condition hides from the check";
+
             foreach (var node in tree.GetRoot().DescendantNodes())
             {
                 if (node is AssignmentExpressionSyntax { Left: IdentifierNameSyntax { Identifier.ValueText: "_" }, Right: var right }
@@ -159,6 +165,7 @@ internal static class DiscardedTasks
         ("a thread with no full name (T103)", "new Thread(() => { }).Start();", true),
         ("a semaphore with no full name (T103)", "await new SemaphoreSlim(0).WaitAsync();", true),
         ("a source with no full name (T103)", "await new TaskCompletionSource().Task;", true),
+        ("a task inside a condition #if (T110)", "\n#if NET\n        Task.Run(() => { });\n#endif\n", true),
         ("a name that does not bind (T103)", "await new NoSuchType().Task;", true),
         ("a source that nobody completes (T95)", "var source = new TaskCompletionSource(); await source.Task;", true),
         ("a continuation on its own thread (T100)", "await Task.CompletedTask.ContinueWith(_ => { }, TaskContinuationOptions.LongRunning);", true),

@@ -70,9 +70,13 @@ public sealed class AddSketchCircleCommandHandler : ICommandHandler, ICommandEnc
         if (SketchModel.KindOf(sketch, add.CenterPointId) != SketchModel.ItemKind.Point)
             return Task.FromResult(SketchResults.ItemNotFound(add.SketchId, add.CenterPointId, "point"));
 
-        if (!(double.IsFinite(add.Radius) && add.Radius > 0))
+        // Finding E108 of the codebase review of 2026-10-31 (b) (TASK-0142): the solver says that a
+        // radius not greater than its tolerance is no radius (E102), and the add accepted it. A live add
+        // is refused; an entry of a log keeps the rule of 0, because an earlier version applied it (E103).
+        var least = SketchResults.ApplyingEntry.Value ? 0 : SketchSolver.Tolerance;
+        if (!(double.IsFinite(add.Radius) && add.Radius > least))
             return Task.FromResult(SketchResults.Failure(
-                DiagnosticCodes.SketchCurveInvalid, $"The radius of a circle is a positive finite number, and the command gives {add.Radius}."));
+                DiagnosticCodes.SketchCurveInvalid, $"The radius of a circle is a finite number greater than {least}, and the command gives {add.Radius}."));
 
         var circle = new SketchCircle(add.CommandId, add.CenterPointId, add.Radius);
         return Task.FromResult(SketchResults.Changed(document, backend, command.CommandId, sketch with { Circles = [.. sketch.Circles, circle] }, "circleId", circle.Id));

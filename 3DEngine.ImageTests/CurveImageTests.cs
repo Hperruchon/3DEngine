@@ -29,7 +29,7 @@ public class CurveImageTests
     public void A_Circle_And_An_Arc_Draw_In_The_Colour_Of_The_Sketch()
     {
         var messagesBefore = GraphicsDevice.ValidationMessageCount;
-        using var host = new EngineHost(new InProcessMeshBackend(), "managed", "test");
+        using var host = new EngineHost(new InProcessMeshBackend());
         using var ui = new DesktopUi("http://127.0.0.1:5180", Engine.Contracts.Document.Millimetre);
         var actions = new SketchActions(host.Session);
         actions.Create(Datums.XY.Id);
