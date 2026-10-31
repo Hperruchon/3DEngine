@@ -1,7 +1,7 @@
 ---
 id: 0145
 title: The vision library loads and finds a contour on the three platforms of the pipeline
-status: Active
+status: Done
 phase: V0
 opened: 2026-10-31
 depends-on: [0144]
@@ -59,10 +59,23 @@ contour and the edges of an image.
 
 ## Acceptance criteria
 
-- [ ] The three tests pass on the three runners of the pipeline, and none skips.
-- [ ] A reference from the spike to a project, and a pin of OpenCvSharp4 in another project, each fail the gate.
-- [ ] A clean build (`--no-incremental`) gives zero errors and zero warnings.
-- [ ] Continuous integration passes on the three runners, on the branch and on `main` after the merge.
+- [x] The three tests pass on the three runners of the pipeline, and none skips.
+- [x] A reference from the spike to a project, and a pin of OpenCvSharp4 in another project, each fail the gate.
+- [x] A clean build (`--no-incremental`) gives zero errors and zero warnings.
+- [x] Continuous integration passes on the three runners, on the branch and on `main` after the merge.
+
+## Outcome
+
+Status: Done · commit (the merge of the branch v0-vision-spike) · v0.147
+
+## Method
+
+Mechanical: the package ids and versions from nuget.org and the SDK, the three tests on the three runners (run
+            41180854816), and the count of each test project in the pipeline.
+Judgement:  OpenCvSharp4 over OpenCvSharp5, because the line 4 is mature and the line 5 is two weeks old; the slim Linux
+            payload, because it needs no GTK3.
+Weakest:    the licence facts come from the pages of the packages; a check of the notices of the native payload waits
+            for the phase that distributes it (ADR-0042 item 6).
 
 ## Progress
 
@@ -71,3 +84,4 @@ contour and the edges of an image.
   three tests pass on Windows x64 here.
 - 2026-10-31: two tests of the gate; 2 injections caught: a reference from the spike to Engine.Core, and a pin of
   OpenCvSharp4 in Engine.Cli.
+- 2026-10-31: the three tests passed on the three runners; closed at v0.147.

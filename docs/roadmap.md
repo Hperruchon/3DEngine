@@ -121,6 +121,7 @@ Therefore each approved objective must have a track here.
 - P0.60 — The open follows the replay, the adds follow the solver, and the comments of the cache are true. v0.144, TASK-0142.
 - P0.61 — The gates read disabled text, the routes of the test host, each sink, and the next forms of the fifteenth review. v0.145, TASK-0143.
 - P0.62 — An arc ends within a pixel of its start, and Escape cancels a press on a handle before the slop. v0.146, TASK-0144.
+- V0 — The vision library loads and finds a contour on the three platforms of the pipeline. v0.147, TASK-0145, ADR-0042.
 
 ## Track 0 — Foundations
 
