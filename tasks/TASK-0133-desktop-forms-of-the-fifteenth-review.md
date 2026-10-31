@@ -1,7 +1,7 @@
 ---
 id: 0133
 title: The pad of an angle takes degrees, and the tools and the window follow the review
-status: Ready
+status: Done
 phase: P0.53
 opened: 2026-10-31
 depends-on: [0131]
@@ -55,11 +55,26 @@ still, and the window offers only the kinds that the engine accepts.
 
 ## Acceptance criteria
 
-- [ ] Each form of the review fails a test.
-- [ ] An injection that restores each old rule fails a test.
-- [ ] A clean build (`--no-incremental`) gives zero errors and zero warnings.
-- [ ] Continuous integration passes on the three runners, on the branch and on `main` after the merge.
+- [x] Each form of the review fails a test.
+- [x] An injection that restores each old rule fails a test.
+- [x] A clean build (`--no-incremental`) gives zero errors and zero warnings.
+- [x] Continuous integration passes on the three runners, on the branch and on `main` after the merge.
+
+## Outcome
+
+Status: Done · commit (the merge of the branch p053-desktop-fifteenth) · v0.135
+
+## Method
+
+Mechanical: the pad of an angle, the item checks of the window, the turn of CosineAndSine, the current positions of a
+            curve, the end of an arc on the ray of its start, the nearer of a line and a curve, and the press on a
+            handle.
+Judgement:  a press on a handle drops the other input from the press on, as a drag does (Q2 A of the fourteenth
+            review), because the anchor of the drag is the press.
+Weakest:    no person tried the new pad with the real window.
 
 ## Progress
 
 - 2026-10-31: opened by the codebase review of 2026-10-31 (TASK-0129).
+- 2026-10-31: V56 to V62 with 6 new test cases; 9 injections caught.
+- 2026-10-31: closed at v0.135.
