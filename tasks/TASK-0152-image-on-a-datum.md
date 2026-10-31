@@ -1,7 +1,7 @@
 ---
 id: 0152
 title: The Document holds an image on a datum, and a command calibrates it to real units
-status: Active
+status: Done
 phase: V2a
 opened: 2026-10-31
 depends-on: [0148]
@@ -80,13 +80,26 @@ undo and redo, the snapshot and the document file hold it.
 
 ## Acceptance criteria
 
-- [ ] Each command, each refusal, each event, undo and redo, the document file and the snapshot have a test.
-- [ ] An agent places and calibrates an image over HTTP with the name that `PUT /assets` gives.
-- [ ] A clean build (`--no-incremental`) gives zero errors and zero warnings.
-- [ ] Continuous integration passes on the three runners, on the branch and on `main` after the merge.
+- [x] Each command, each refusal, each event, undo and redo, the document file and the snapshot have a test.
+- [x] An agent places and calibrates an image over HTTP with the name that `PUT /assets` gives.
+- [x] A clean build (`--no-incremental`) gives zero errors and zero warnings.
+- [x] Continuous integration passes on the three runners, on the branch and on `main` after the merge.
+
+## Outcome
+
+Status: Done · commit (the merge of the branch v2a-image-on-a-datum) · v0.151
+
+## Method
+
+Mechanical: each command, each refusal, the events of each commit, undo and redo, the document file, the snapshot over
+            HTTP, and one injection for each rule.
+Judgement:  the record in the event and no query; the origin at the lower-left corner; the client gives the size;
+            a whole double up to 2^53 is an integer.
+Weakest:    no client places an image yet, so the frame of ADR-0045 item 2 has no picture until V2b.
 
 ## Progress
 
 - 2026-10-31: ADR-0045, the record, the two commands, the events, the steps and the snapshot. The HTTP test found that
   an integer field refused each JSON number, because the surface gives a number as a double; the binder takes a whole
   double up to 2^53 now. 16 new test cases in `Engine.Tests`. 9 injections caught.
+- 2026-10-31: closed at v0.151.
