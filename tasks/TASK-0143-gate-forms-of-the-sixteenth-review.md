@@ -1,7 +1,7 @@
 ---
 id: 0143
 title: The gates read disabled text, the routes of the test host, each sink, and the next forms of the fifteenth review
-status: Ready
+status: Done
 phase: P0.61
 opened: 2026-10-31
 depends-on: [0141]
@@ -61,10 +61,27 @@ T106 to T109 fail a gate.
 
 ## Acceptance criteria
 
-- [ ] Each gate fails on an injection of its new form before the change, and the control still fails after it.
-- [ ] A clean build (`--no-incremental`) gives zero errors and zero warnings.
-- [ ] Continuous integration passes on the three runners, on the branch and on `main` after the merge.
+- [x] Each gate fails on an injection of its new form before the change, and the control still fails after it.
+- [x] A clean build (`--no-incremental`) gives zero errors and zero warnings.
+- [x] Continuous integration passes on the three runners, on the branch and on `main` after the merge.
+
+## Outcome
+
+Status: Done · commit (the merge of the branch p061-gate-forms-c) · v0.145
+
+## Method
+
+Mechanical: each form of the review as a test case, each form in a real file, and each fix undone against its test.
+Judgement:  a file with disabled text throws in the reader of constants, so each gate that reads constants fails and
+            no new gate can forget the check; U+034F and U+2800 stay text, as the review says.
+Weakest:    the gate of the sinks reads the assemblies next to Engine.Tests, so a sink in a project that the test
+            project does not reference (the desktop host) is still out of its reach.
 
 ## Progress
 
 - 2026-10-31: opened by the codebase review of 2026-10-31 (b).
+- 2026-10-31: R11b merged; the task starts. The seven gates and 13 new test cases. The gate of the sinks first missed a
+  struct sink in Engine.Cli, because the project builds engine.dll; it reads the AssemblyName of each project now. 13
+  injections caught: 7 forms in real files or undone fixes, and 6 undone fixes against their new test cases.
+- 2026-10-31: main merged into the branch (P0.60, v0.144); Engine.Tests counts 1006 + 6 + 13 = 1025.
+- 2026-10-31: closed at v0.145.

@@ -7,6 +7,8 @@ using Engine.Contracts.Schema;
 using Engine.Core;
 using Engine.Core.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
+using Microsoft.AspNetCore.Routing;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Engine.Tests.Http;
 
@@ -146,12 +148,20 @@ public class SchemaEndpointGateTests : IClassFixture<WebApplicationFactory<Progr
     // Finding E35 of the codebase review of 2026-10-08 (TASK-0139): /schema/backend was in no list of
     // the surface. Each route of the surface under /schema is in the list of ADR-0008 §9, and each entry
     // of the list is a route.
+    //
+    // Finding T111 of the codebase review of 2026-10-31 (b) (TASK-0143): the gate read the form
+    // app.MapGet("/schema… of the source only, and MapMethods, MapGroup and "/Schema/…" passed, though
+    // the routing does not regard case. The routes come from the endpoints of the test host now, and a
+    // route is under /schema in any case.
     [Fact]
     public void The_Schema_Routes_Of_The_Surface_Are_The_List_Of_ADR_0008()
     {
-        var surface = File.ReadAllText(FindSource("Engine.Api.Http", "EngineSurface.cs"));
-        var routes = Regex.Matches(surface, "app\\.MapGet\\(\"(/schema[^\"]*)\"")
-            .Select(m => m.Groups[1].Value.Replace(":int}", "}", StringComparison.Ordinal))
+        var routes = _factory.Services.GetRequiredService<EndpointDataSource>().Endpoints
+            .OfType<RouteEndpoint>()
+            .Select(endpoint => "/" + (endpoint.RoutePattern.RawText ?? string.Empty).TrimStart('/'))
+            .Where(route => route.StartsWith("/schema", StringComparison.OrdinalIgnoreCase))
+            .Select(route => route.Replace(":int}", "}", StringComparison.Ordinal))
+            .Distinct(StringComparer.Ordinal)
             .Order(StringComparer.Ordinal)
             .ToArray();
 
