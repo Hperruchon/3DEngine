@@ -117,11 +117,22 @@ jobs:
         env:
           # The image test writes its picture here (ADR-0025 item 5).
           IMAGE_TEST_OUTPUT: ${{ runner.temp }}/pictures
+          # The determinism test writes the hash of its native replay here (TASK-0156).
+          DETERMINISM_HASH_FILE: ${{ runner.temp }}/determinism/hash.txt
         run: |
           results="$RUNNER_TEMP/test-results"
           dotnet test --no-build --logger trx --results-directory "$results" \
               --blame-hang-timeout 2m --blame-hang-dump-type none \
             || { node eng/report-failed-tests.js "$results"; exit 1; }
+
+      # The job "Compare the determinism hashes" reads the hash of each runner (TASK-0156).
+      # A runner whose test did not write the file fails here, and not only there.
+      - name: Keep the determinism hash
+        uses: actions/upload-artifact@v4
+        with:
+          name: determinism-${{ matrix.os }}
+          path: ${{ runner.temp }}/determinism/hash.txt
+          if-no-files-found: error
 
       # When a test fails, the run keeps the picture of the image test, so that a
       # person can look at it (ADR-0025 item 5).
@@ -166,6 +177,33 @@ jobs:
             || { echo "FAIL: CreateBox did not apply"; exit 1; }
           echo "$output" | grep -q '"bodyId"' \
             || { echo "FAIL: no body identifier in the outputs"; exit 1; }
+
+  # Anti-objective 16: a replay gives the same result on each platform. Each runner of the job
+  # "Gate" replays one log with geometry and solved sketches on the native backend and keeps the
+  # SHA-256 of the exact bits; this job compares the three (TASK-0156). Until then each runner
+  # compared with its own constants only (register entry R-0023).
+  determinism:
+    name: Compare the determinism hashes
+    needs: gate
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Take the hash of each runner
+        uses: actions/download-artifact@v4
+        with:
+          pattern: determinism-*
+          path: ${{ runner.temp }}/determinism
+
+      - name: Compare the hashes
+        run: node eng/compare-determinism.js "$RUNNER_TEMP/determinism"
 
   write-set-gate:
     timeout-minutes: 30
