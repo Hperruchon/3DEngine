@@ -389,6 +389,8 @@ comments of a repeated identifier, and the ".." of the message of a divergence).
 decision on the handover of the bus of a replay, and an open of a document file is the load path today.
 Progress 2026-10-31: TASK-0138 corrects E38 (the reason of a library that does not load gives a missing file or a
 platform with no payload).
+Progress 2026-10-31: TASK-0139 corrects E35 (ADR-0008 §9 lists `/schema/backend`, a gate holds the routes equal to
+the list, and the endpoint gives the identity of the backend).
 
 ### R-0039 · No test calls the surface of the desktop host
 - class: debt
