@@ -82,6 +82,10 @@ internal sealed class DesktopSurface : IDisposable
     // The address that an agent uses, for example http://127.0.0.1:5180.
     public string Address { get; }
 
+    // ADR-0046 item 2: the store of the assets that the surface serves, so the window and an agent
+    // read the same bytes.
+    public Engine.Core.Assets.AssetStore Assets => _app.Services.GetRequiredService<Engine.Core.Assets.AssetStore>();
+
     // Cancelled when the surface stops, for example at Ctrl+C in the console. The
     // window then closes too (finding E50 of the review of 2026-10-11).
     public CancellationToken Stopping => _app.Lifetime.ApplicationStopping;
