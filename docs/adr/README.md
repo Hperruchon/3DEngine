@@ -47,13 +47,14 @@ names. Do not read all of them.
 | [0031](0031-undo-and-redo.md) | Undo and redo as commands of the log | Amended | Contracts, runtime | 0006, 0021 | 0032, 0033, 0037 |
 | [0032](0032-numeric-pad-and-evaluator.md) | The numeric pad, the expression evaluator and the keys of undo and redo | Amended | Clients, rendering | 0026, 0031 | 0034 |
 | [0033](0033-sketch-model.md) | The sketch model in the engine | Amended | Contracts, sketch | 0012, 0021, 0031 | 0035 |
-| [0034](0034-sketch-tools.md) | The sketch tools of the desktop | Accepted | Clients, sketch | 0026, 0029, 0032 | — |
+| [0034](0034-sketch-tools.md) | The sketch tools of the desktop | Amended | Clients, sketch | 0026, 0029, 0032 | 0041 |
 | [0035](0035-sketch-solver.md) | The constraint solver of a sketch | Accepted | Sketch, determinism | 0033 | — |
 | [0036](0036-extrude-of-a-sketch-profile.md) | The extrude of a closed profile of a sketch | Amended | Contracts, geometry, sketch | — | 0037, 0040 |
 | [0037](0037-rebuild-of-an-extrude.md) | The rebuild of an extrude after an edit of its sketch | Amended | Contracts, geometry, sketch | 0012, 0021, 0028, 0031, 0036 | 0039 |
 | [0038](0038-translate-gizmo.md) | The translate gizmo of the desktop | Accepted | Rendering, clients | 0026 | — |
 | [0039](0039-chain-of-a-consumed-extrude.md) | The rebuild of the chain of a consumed extrude | Accepted | Geometry, sketch | 0037 | — |
 | [0040](0040-extrude-of-curves.md) | The extrude of a profile with arcs and circles | Accepted | Geometry, sketch | 0036 | — |
+| [0041](0041-snap-of-a-sketch-tap.md) | The snap of a tap of the sketch | Accepted | Clients, sketch | 0034 | — |
 
 ## Topics
 

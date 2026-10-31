@@ -124,14 +124,31 @@ internal static class SketchOverlay
             var pixel = frame.Item1.ToPixels(seen);
             return Finite(pixel) ? new ToolPoint(point.Id, point.X, point.Y, pixel.X, pixel.Y) : new ToolPoint(point.Id, point.X, point.Y, null, null);
         }).ToArray();
+        var geometry = Geometry(sketch);
         var curves = Curves(sketch).Select(curve => new ToolCurve(curve.Id, frame.Item1 is null ? [] :
         [
             .. Pairs(curve.Polyline)
                 .Select(pair => frame.Item1.Segment(frame.Item1.ToCamera(World(frame.datum, pair.A.X, pair.A.Y)), frame.Item1.ToCamera(World(frame.datum, pair.B.X, pair.B.Y))))
                 .OfType<(Vector2 A, Vector2 B)>()
                 .Select(segment => (((double)segment.A.X, (double)segment.A.Y), ((double)segment.B.X, (double)segment.B.Y))),
-        ])).ToArray();
+        ], geometry[curve.Id].Centre, geometry[curve.Id].Radius)).ToArray();
         return new SketchPicture(points, [.. sketch.Lines.Select(line => new ToolLine(line.Id, line.Start, line.End))], [.. sketch.Constraints.Select(constraint => constraint.Id)], curves);
+    }
+
+    // ADR-0041 (phase R11a): the centre and the radius of each curve in the plane, for a snap; the
+    // radius of an arc is the distance of its start from its centre.
+    private static Dictionary<Guid, ((double X, double Y) Centre, double Radius)> Geometry(SketchInfo sketch)
+    {
+        var points = sketch.Points.ToDictionary(point => point.Id);
+        var geometry = new Dictionary<Guid, ((double X, double Y) Centre, double Radius)>();
+        foreach (var circle in sketch.Circles.Where(circle => points.ContainsKey(circle.Center)))
+            geometry[circle.Id] = ((points[circle.Center].X, points[circle.Center].Y), circle.Radius);
+        foreach (var arc in sketch.Arcs.Where(arc => points.ContainsKey(arc.Center) && points.ContainsKey(arc.Start)))
+        {
+            var (c, s) = (points[arc.Center], points[arc.Start]);
+            geometry[arc.Id] = ((c.X, c.Y), Math.Sqrt(((s.X - c.X) * (s.X - c.X)) + ((s.Y - c.Y) * (s.Y - c.Y))));
+        }
+        return geometry;
     }
 
     // Phase K2e (TASK-0122): the segments of a full turn of a circle. An arc has the part of them
