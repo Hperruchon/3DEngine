@@ -203,8 +203,14 @@ internal static class SketchOverlay
     public static Vector2? Pixel(SketchInfo sketch, Camera camera, double width, double height, (double X, double Y) position)
     {
         ArgumentNullException.ThrowIfNull(sketch);
+        return Pixel(sketch.DatumId, camera, width, height, position);
+    }
+
+    // The pixel of a position of the plane of a datum, or null; ADR-0047 item 3 draws a proposal with it.
+    public static Vector2? Pixel(Guid datumId, Camera camera, double width, double height, (double X, double Y) position)
+    {
         ArgumentNullException.ThrowIfNull(camera);
-        if (!(width > 0 && height > 0) || Datums.Find(sketch.DatumId) is not { } datum)
+        if (!(width > 0 && height > 0) || Datums.Find(datumId) is not { } datum)
             return null;
         var frame = Frame.Of(camera, width, height);
         var seen = frame.ToCamera(World(datum, position.X, position.Y));

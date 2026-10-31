@@ -55,11 +55,12 @@ names. Do not read all of them.
 | [0039](0039-chain-of-a-consumed-extrude.md) | The rebuild of the chain of a consumed extrude | Accepted | Geometry, sketch | 0037 | — |
 | [0040](0040-extrude-of-curves.md) | The extrude of a profile with arcs and circles | Accepted | Geometry, sketch | 0036 | — |
 | [0041](0041-snap-of-a-sketch-tap.md) | The snap of a tap of the sketch | Accepted | Clients, sketch | 0026, 0034 | — |
-| [0042](0042-vision-library.md) | The vision library and its place | Accepted | Vision, boundary | — | — |
+| [0042](0042-vision-library.md) | The vision library and its place | Amended | Vision, boundary | — | 0047 |
 | [0043](0043-textured-quad.md) | An image on a flat rectangle of the scene | Accepted | Rendering, vision | — | — |
 | [0044](0044-asset-store.md) | The store of the assets of an account | Accepted | Vision, persistence | — | — |
 | [0045](0045-image-on-a-datum.md) | An image on a datum, and its calibration | Accepted | Contracts, vision | 0012, 0031, 0033 | — |
 | [0046](0046-image-in-the-desktop.md) | The image of a datum in the desktop | Accepted | Rendering, vision, clients | — | — |
+| [0047](0047-contour-proposal.md) | The proposal of a contour and its accept as a sketch | Accepted | Vision, clients | 0042 | — |
 
 ## Topics
 

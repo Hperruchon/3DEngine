@@ -132,6 +132,7 @@ Therefore each approved objective must have a track here.
 - P0.64 — The pin rules read each imported file, the sink gate reads the desktop, and the next forms of the sixteenth review fail. v0.154, TASK-0150.
 - P0.65 — A cancelled press gives nothing, and the mark of the snap is where the point goes and only while a finger is down. v0.155, TASK-0151.
 - P0.66 — The lag test of the events fills the queue of the subscriber with a count and no timing. v0.156, TASK-0154.
+- V3 — A contour proposal of a placed image becomes an editable sketch. v0.157, TASK-0155, ADR-0047.
 
 ## Track 0 — Foundations
 
@@ -280,7 +281,7 @@ The first domain extension. Objective 15 puts it before materials, chemistry and
 | V2a | The Document holds an image on a datum, and a command calibrates it to real units (ADR-0045). TASK-0152. | 1–2 |
 | V2b | The desktop places a PNG file on a datum, draws it, and calibrates it with two taps (ADR-0046). TASK-0153. | 1–2 |
 | V2 | Place an image on a datum. Calibrate it to real units. Done: V2a (TASK-0152) and V2b (TASK-0153), on 2026-10-31. | 2–3 |
-| V3 | A contour proposal becomes an editable sketch. Propose and accept. | 3–5 |
+| V3 | A contour proposal becomes an editable sketch. Propose and accept. The desktop proposes the contour of the largest region with its own code, and an accept records a sketch (ADR-0047). TASK-0155. | 3–5 |
 
 ## Order
 

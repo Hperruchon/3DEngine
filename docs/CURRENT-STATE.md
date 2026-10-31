@@ -4522,3 +4522,36 @@ New tests: 0. The test list holds 1489 (1065 in `Engine.Tests`, 268 in `3DEngine
 `3DEngine.ImageTests`, 3 in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and
 zero warnings. Open entries: 14 of 15. New diagnostic codes: 0. Since the review of v0.149, 2 product milestones and 7
 entries followed it.
+
+## v0.157 — A contour proposal of a placed image becomes an editable sketch (V3, TASK-0155)
+
+On 2026-10-31 the owner gave the order: V3, then the cross-platform determinism hash in CI, then an STL export of the
+live bodies, then the review when it is due, with the recommended answer to each question.
+
+**The change.**
+
+- `3DEngine.Core/Vision/ContourProposal.cs` proposes the outer contour of the largest region of an image: the grey in
+  integers, the threshold of Otsu, the region of the class that touches the border less, the trace of Moore with the
+  stop of Jacob, and the simplification of Douglas and Peucker to at most 200 vertices (ADR-0047 items 1 and 2).
+- The window "Images" has "Propose contour" for each live image; the proposal shows over the scene, and Accept sends
+  `CreateSketch`, `AddSketchPoint` and `AddSketchLine` on the datum of the image, and makes the sketch active (items
+  3 and 4). Reject drops it.
+- ADR-0047 amends ADR-0042 item 3: the vision library stays in the spike. Its Windows payload links about twelve
+  libraries statically and has an FFmpeg file under LGPL v2.1, and the macOS payload links FFmpeg; register entry
+  R-0048 asks the owner about these licences.
+
+**Proof.** 11 new test cases: 7 in `3DEngine.Tests/ContourProposalTests.cs`, 3 in
+`3DEngine.ImageTests/ContourAcceptTests.cs` and 1 image test, `ContourImageTests`, which writes `contour.png`: the six
+points and lines of an L-shaped part lie on its edges. 7 injections, one for each rule; each one failed a test.
+
+**What stays.** A hole, more than one region, an arc or a constraint from a contour, one step of undo for one accept,
+and the vision library in the desktop (R-0048).
+
+**A correction.** The first threshold injection passed, because each test image had two greys; a test with a ring of a
+third grey holds the threshold now. The first full run of the image tests crashed the test host: the new image test
+drove Dear ImGui out of the collection of the panel tests.
+
+New tests: 11. The test list holds 1500 (1065 in `Engine.Tests`, 275 in `3DEngine.Tests`, 157 in
+`3DEngine.ImageTests`, 3 in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and
+zero warnings. Open entries: 15 of 15. New diagnostic codes: 0. Since the review of v0.149, 3 product milestones and 8
+entries followed it.
