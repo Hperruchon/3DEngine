@@ -19,10 +19,10 @@ public sealed class InProcessMeshBackend : IGeometryBackend, IMeshOps, IGeometry
 
     public T? TryGet<T>() where T : class => this as T;
 
-    // IMeshOps. Stores the box under the given handle. Throws on duplicate
-    // because the bus computes handles from CommandId and the idempotency
-    // cache short-circuits duplicate commands — a true collision here would
-    // be a programmer error worth surfacing loudly.
+    // IMeshOps. Stores the box under the given handle. Throws on duplicate,
+    // because the bus computes handles from CommandId. The idempotency cache of
+    // a live bus stops a command that comes again; a replay and an open have no
+    // cache, so the handler gives E-GEOM-NATIVE-OP for the second entry (E31).
     public void CreateBox(BodyHandle handle, BoxParameters parameters)
     {
         if (_boxes.ContainsKey(handle.Id))

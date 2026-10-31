@@ -47,6 +47,25 @@ public class BackendSelectionTests : IClassFixture<WebApplicationFactory<Program
         Assert.Contains(ManifoldGeometryBackend.NativeLibraryName, stderr.ToString());
     }
 
+    // Finding E37 of the codebase review of 2026-10-08 (TASK-0137): with no library, a misspelled command
+    // or query gave the exit code 3 of the backend. The name comes before the backend.
+    [Fact]
+    public async Task With_No_Library_A_Misspelled_Name_Gives_Its_Own_Error()
+    {
+        var command = new StringWriter();
+        var query = new StringWriter();
+
+        var applyExit = await Engine.Cli.Cli.RunAsync(
+            ["apply", "CreateBx"], command, new StringWriter(), CancellationToken.None, NoNativeLibrary);
+        var queryExit = await Engine.Cli.Cli.RunAsync(
+            ["query", "GetBoundingBx"], query, new StringWriter(), CancellationToken.None, NoNativeLibrary);
+
+        Assert.Equal(Engine.Cli.Cli.ExitRejected, applyExit);
+        Assert.Contains(DiagnosticCodes.CommandUnknown, command.ToString());
+        Assert.Equal(Engine.Cli.Cli.ExitRejected, queryExit);
+        Assert.Contains(DiagnosticCodes.QueryUnknown, query.ToString());
+    }
+
     [Fact]
     public async Task A_Test_Can_Give_The_Command_Line_The_Managed_Backend()
     {

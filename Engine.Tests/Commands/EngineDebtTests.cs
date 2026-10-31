@@ -55,6 +55,24 @@ public sealed class EngineDebtTests
         Assert.Same(throwing, divergence.Command);
         Assert.Null(divergence.Result);
         Assert.IsType<InvalidCastException>(divergence.InnerException);
+        Assert.DoesNotContain("..", divergence.Message, StringComparison.Ordinal);
+    }
+
+    // E31 (TASK-0137): the comments of the backends said that the idempotency cache stops each duplicate.
+    // A replay has no cache, and a second box with one identifier is a divergence with E-GEOM-NATIVE-OP.
+    [Fact]
+    public async Task A_Box_That_The_Log_Holds_Two_Times_Is_A_Divergence()
+    {
+        var box = new CreateBoxCommand { SizeX = 1, SizeY = 1, SizeZ = 1 };
+        var registry = new CommandRegistry();
+        registry.Register(new CreateBoxCommandHandler());
+
+        var divergence = await Assert.ThrowsAsync<ReplayDivergenceException>(
+            () => Replay.ReplayLog(new Command[] { box, box }, registry, new InProcessMeshBackend()));
+
+        Assert.Equal(1, divergence.Index);
+        Assert.Equal(DiagnosticCodes.GeomNativeOp, divergence.Result?.Error?.Code);
+        Assert.DoesNotContain("..", divergence.Message, StringComparison.Ordinal);
     }
 
     // E30 (TASK-0136): the backend of a replay was optional, and the null backend made each log with
