@@ -72,3 +72,4 @@ The scene draws an image on a parallelogram of the scene, and a body in front of
   files did not change). 9 new test cases: 8 in `3DEngine.Tests` and 1 image test. The first image test missed an
   image with no depth test, because its point behind the box fell in the blend of red and blue; it compares two
   points of the face of the box now. 5 injections caught.
+- 2026-10-31: merged main (V1b at v0.148); the conflicts were the rows of the ADR index, the roadmap and the test floor.

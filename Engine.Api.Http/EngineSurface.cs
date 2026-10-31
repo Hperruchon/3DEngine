@@ -61,6 +61,10 @@ public static class EngineSurface
         // ADR-0030 item 2: a host that registered its own folder keeps it.
         builder.Services.TryAddSingleton(services => new DocumentFolder(
             services.GetRequiredService<IConfiguration>()["Engine:DocumentFolder"] is { Length: > 0 } folder ? folder : DocumentFolder.Default));
+        // ADR-0044 item 4: the store of the assets of the account, or the folder of the setting
+        // Engine:AssetFolder. A host registers its own store before AddEngineSurface.
+        builder.Services.TryAddSingleton(services => new Engine.Core.Assets.AssetStore(
+            services.GetRequiredService<IConfiguration>()["Engine:AssetFolder"] is { Length: > 0 } assets ? assets : Engine.Core.Assets.AssetStore.Default));
 
         // The Host header must name a loopback host. Without this filter a page
         // that resolves a name to 127.0.0.1 can post a command from a browser. The
@@ -125,6 +129,10 @@ public static class EngineSurface
         app.MapGet("/document", DocumentEndpoint.Get);
         app.MapPost("/document/save", DocumentEndpoint.Save);
         app.MapPost("/document/open", DocumentEndpoint.Open);
+
+        // ADR-0044 item 4.
+        app.MapPut("/assets", AssetsEndpoint.Put);
+        app.MapGet("/assets/{name}", AssetsEndpoint.Get);
 
         return app;
     }

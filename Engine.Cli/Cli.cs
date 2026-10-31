@@ -2,6 +2,7 @@ using Engine.Contracts;
 using Engine.Contracts.Geometry;
 using Engine.Contracts.Handlers;
 using Engine.Core;
+using Engine.Core.Assets;
 using Engine.Core.Geometry;
 using Engine.Core.Hosting;
 using Engine.Geometry.Manifold;
@@ -45,6 +46,7 @@ public static class Cli
             "help" => Help(stdout),
             "apply" => await Apply(rest, stdout, stderr, ct, backend).ConfigureAwait(false),
             "query" => await Query(rest, stdout, stderr, ct, backend).ConfigureAwait(false),
+            "asset" => await Asset(rest, stdout, stderr, ct).ConfigureAwait(false),
             _ => InvalidUsage(stderr, $"Unknown verb: {verb}"),
         };
     }
@@ -61,6 +63,84 @@ public static class Cli
             stderr.WriteLine(reason);
         stderr.Write(Usage.Text);
         return ExitInvalidUsage;
+    }
+
+    // ADR-0044 item 5 (phase V1b, TASK-0147): the store of the assets of the account, which is outside
+    // each session, so the command line keeps no state of a session between two runs.
+    //
+    //   engine asset put <file> [--folder <path>]          { asset, size }
+    //   engine asset get <name> <file> [--folder <path>]   { asset, size }
+    private static async Task<int> Asset(string[] args, TextWriter stdout, TextWriter stderr, CancellationToken ct)
+    {
+        var folder = AssetStore.Default;
+        var positional = new List<string>();
+        for (var i = 0; i < args.Length; i++)
+        {
+            if (args[i] == "--folder")
+            {
+                if (i + 1 >= args.Length || args[i + 1].Length == 0)
+                    return InvalidUsage(stderr, "--folder requires a path.");
+                folder = args[++i];
+            }
+            else
+            {
+                positional.Add(args[i]);
+            }
+        }
+
+        var store = new AssetStore(folder);
+        switch (positional)
+        {
+            case ["put", var file]:
+            {
+                FileStream input;
+                try
+                {
+                    input = File.OpenRead(file);
+                }
+                catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or ArgumentException or NotSupportedException)
+                {
+                    return InvalidUsage(stderr, $"asset put cannot read {file}: {ex.Message}");
+                }
+
+                await using (input)
+                {
+                    var (name, size, error) = await store.Put(input, ct).ConfigureAwait(false);
+                    return AssetResult(stdout, name, size, error);
+                }
+            }
+            case ["get", var name, var file]:
+            {
+                var (content, error) = await store.Read(name, ct).ConfigureAwait(false);
+                if (error is null)
+                {
+                    try
+                    {
+                        await File.WriteAllBytesAsync(file, content!, ct).ConfigureAwait(false);
+                    }
+                    catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or ArgumentException or NotSupportedException)
+                    {
+                        error = new ErrorDetail(DiagnosticCodes.AssetWriteFailed, $"The asset {name} could not be written to {file}: {ex.Message}");
+                    }
+                }
+
+                return AssetResult(stdout, name, content?.Length ?? 0, error);
+            }
+            default:
+                return InvalidUsage(stderr, "asset requires 'put <file>' or 'get <name> <file>'.");
+        }
+    }
+
+    private static int AssetResult(TextWriter stdout, string? name, long size, ErrorDetail? error)
+    {
+        if (error is not null)
+        {
+            JsonRenderer.WriteValue(new { error = new { code = error.Code, message = error.Message } }, stdout);
+            return ExitRejected;
+        }
+
+        JsonRenderer.WriteValue(new { asset = name, size }, stdout);
+        return ExitApplied;
     }
 
     private static async Task<int> Apply(
