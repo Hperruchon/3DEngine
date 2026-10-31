@@ -120,6 +120,7 @@ Therefore each approved objective must have a track here.
 - R11b — The overlay marks the point that a tap under the mouse or a finger would take. v0.143, TASK-0134, ADR-0041.
 - P0.60 — The open follows the replay, the adds follow the solver, and the comments of the cache are true. v0.144, TASK-0142.
 - P0.61 — The gates read disabled text, the routes of the test host, each sink, and the next forms of the fifteenth review. v0.145, TASK-0143.
+- P0.62 — An arc ends within a pixel of its start, and Escape cancels a press on a handle before the slop. v0.146, TASK-0144.
 
 ## Track 0 — Foundations
 

@@ -1,7 +1,7 @@
 ---
 id: 0144
 title: An arc ends within a pixel of its start, and Escape cancels a press on a handle before the slop
-status: Ready
+status: Done
 phase: P0.62
 opened: 2026-10-31
 depends-on: [0141]
@@ -51,10 +51,29 @@ the rest of a press on a handle give nothing.
 
 ## Acceptance criteria
 
-- [ ] A test of each finding fails before the change and passes after it.
-- [ ] A clean build (`--no-incremental`) gives zero errors and zero warnings.
-- [ ] Continuous integration passes on the three runners, on the branch and on `main` after the merge.
+- [x] A test of each finding fails before the change and passes after it.
+- [x] A clean build (`--no-incremental`) gives zero errors and zero warnings.
+- [x] Continuous integration passes on the three runners, on the branch and on `main` after the merge.
+
+## Outcome
+
+Status: Done · commit (the merge of the branch p062-desktop-forms) · v0.146
+
+## Method
+
+Mechanical: a tool script for each finding, and each fix undone against its test.
+Judgement:  the scale in pixels comes from the tap and the start, a local measure that a perspective view bends a
+            little; an end within 22 pixels of the start ends the curve, as a tap on the start does.
+Weakest:    no person tried the arc or the cancel with the real window; the tests drive the tool and the intent
+            machine with scripts.
 
 ## Progress
 
 - 2026-10-31: opened by the codebase review of 2026-10-31 (b).
+- 2026-10-31: R11b merged; the task starts. The tool Arc ends the curve when the new end is within HitPixels of the
+  start, with the scale of the tap and the start; the pad gives no pixel and keeps the limit of V61. Escape before the
+  slop cancels the press on a handle with no intent. The first form of the rule in pixels ended each arc of the pad,
+  because the scale was 0 with no pixel; the GPU test of the curves showed it, and a test of the pad holds it now. 3 new
+  test cases; 3 injections caught.
+- 2026-10-31: main merged into the branch (P0.60 and P0.61, v0.144 and v0.145); 3DEngine.Tests counts 226 + 3 = 229.
+- 2026-10-31: closed at v0.146.
