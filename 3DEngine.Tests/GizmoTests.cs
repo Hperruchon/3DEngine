@@ -155,6 +155,19 @@ public class GizmoTests
         Assert.Equal([typeof(GizmoStartIntent), typeof(GizmoMoveIntent), typeof(GizmoCancelIntent), typeof(PanIntent)], byFinger.Select(intent => intent.GetType()));
     }
 
+    // Finding V64 (TASK-0144): Escape before the slop left the press open, and a motion after it
+    // started the drag. The rest of the press gives nothing, and no drag started, so no cancel.
+    [Fact]
+    public void Escape_Before_The_Slop_Cancels_The_Press_On_A_Handle()
+    {
+        var intents = Run(OnHandle(),
+            [Mouse(100, 100, PointerPhase.Down, 0)],
+            [new KeySample(InputKey.Escape, true, KeyModifiers.None, 10 * Ms)],
+            [Mouse(140, 100, PointerPhase.Move, 20)], [Mouse(140, 100, PointerPhase.Up, 400)]);
+
+        Assert.Empty(intents);
+    }
+
     // ADR-0038 item 5: a change of the mode during a drag cancels it.
     [Fact]
     public void A_Change_Of_The_Mode_Cancels_The_Drag()

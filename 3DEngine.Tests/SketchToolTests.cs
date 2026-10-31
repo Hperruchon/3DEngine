@@ -491,6 +491,35 @@ public class SketchToolTests
         Assert.Null(tool.First);
     }
 
+    // Finding V63 (TASK-0144): at 10 pixels for each unit, a tap 30 pixels from the start puts the new
+    // end 0.03 units from it, a third of a pixel; it ends the curve, with no second point and no arc.
+    [Fact]
+    public void An_End_Within_A_Pixel_Of_The_Start_Ends_The_Arc()
+    {
+        var (tool, editor) = (new SketchTool { Kind = SketchToolKind.Arc }, new Editor());
+
+        Tap(tool, editor, 0, 0);
+        Tap(tool, editor, 100, 1);
+        Tap(tool, editor, 103, 1);
+
+        Assert.Equal(["point 0 0", "point 100 1"], editor.Log);
+        Assert.Null(tool.First);
+    }
+
+    // V63 (TASK-0144): the pad gives no pixel, so the rule in pixels does not act, and the pad still
+    // makes an arc. The first form of the fix ended each arc of the pad, and only the GPU test saw it.
+    [Fact]
+    public void An_Arc_From_The_Pad_Still_Makes_An_Arc()
+    {
+        var (tool, editor) = (new SketchTool { Kind = SketchToolKind.Arc }, new Editor());
+
+        tool.Next(8, 2, editor.Picture(), editor);
+        tool.Next(14, 2, editor.Picture(), editor);
+        tool.Next(8, 8, editor.Picture(), editor);
+
+        Assert.Equal(["point 8 2", "point 14 2", "point 8 8", "arc (8,2) (14,2) (8,8)"], editor.Log);
+    }
+
     // Finding V62 (TASK-0133): a tap on a circle that a line touches selects the circle, the nearer
     // item; the line within 22 pixels took the pick.
     [Fact]

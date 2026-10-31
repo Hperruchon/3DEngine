@@ -351,13 +351,16 @@ public sealed class IntentMachine
     }
 
     // A cancel of the drag in progress: the rest of the press gives nothing.
+    // Finding V64 of the codebase review of 2026-10-31 (b) (TASK-0144): a press that had not moved
+    // beyond the slop stayed open, and a motion after Escape started the drag. Such a press is
+    // cancelled too, with no intent, because no drag started.
     private void CancelGizmo(List<Intent> intents)
     {
-        if (_gizmo is { Started: true, Cancelled: false } gizmo)
-        {
-            gizmo.Cancelled = true;
+        if (_gizmo is not { Cancelled: false } gizmo)
+            return;
+        gizmo.Cancelled = true;
+        if (gizmo.Started)
             intents.Add(new GizmoCancelIntent());
-        }
     }
 
     private void Motion(Gesture gesture, double dx, double dy, List<Intent> intents)
