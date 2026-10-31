@@ -35,6 +35,11 @@ public sealed record RedoIntent : Intent;
 // mode Sketch gives it; the host gives it to the active tool.
 public sealed record SketchPointIntent(double X, double Y) : Intent;
 
+// Phase R11b (TASK-0134, ADR-0041 item 6): the mouse at this point of the window with no button
+// down, in the mode Sketch. The host shows there the mark of the point that a tap would take. A
+// touch and a pen have no hover, so they give none.
+public sealed record SketchHoverIntent(double X, double Y) : Intent;
+
 // A handle of the translate gizmo (ADR-0038 item 4): an arrow along one axis, or a square in
 // one plane.
 public enum GizmoHandle

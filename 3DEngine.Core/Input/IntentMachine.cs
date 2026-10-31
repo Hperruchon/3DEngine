@@ -140,6 +140,7 @@ public sealed class IntentMachine
                 {
                     (_gestureDownNs, _gestureStill, _gestureContacts) = (sample.TimestampNs, true, 0);
                     _gizmo = Handle(sample);
+                    Hover(sample, intents);
                 }
                 else
                 {
@@ -231,11 +232,17 @@ public sealed class IntentMachine
             case PointerPhase.Down when _mouse is null && (sample.Buttons & (PointerButtons.Left | PointerButtons.Middle | PointerButtons.Right)) != 0:
                 _mouse = new MousePress(sample);
                 _gizmo = _mouse.Button == PointerButtons.Left ? Handle(sample) : null;
+                if (_mouse.Button == PointerButtons.Left)
+                    Hover(sample, intents);
                 break;
 
             case PointerPhase.Move when _mouse is not null && _gizmo is not null:
                 if (_mouse.MoveFrom(sample, _settings.DragSlopPixels) is { } drag)
                     DragGizmo(_mouse, sample, drag, intents);
+                break;
+
+            case PointerPhase.Move when _mouse is null:
+                Hover(sample, intents);
                 break;
 
             case PointerPhase.Move when _mouse is not null:
@@ -284,6 +291,15 @@ public sealed class IntentMachine
             case InputKey.Y when (key.Modifiers & KeyModifiers.Control) != 0: NoPoint(Gesture.ControlYKey, intents); break;
             case InputKey.Escape: CancelGizmo(intents); break;
         }
+    }
+
+    // ADR-0041 item 6 (phase R11b): the point of the mark of a snap in the mode Sketch: the mouse with
+    // no button, the press of the left button, and the first contact of a touch or a pen, so each
+    // method shows the mark before the tap (objective 9).
+    private void Hover(PointerSample sample, List<Intent> intents)
+    {
+        if (_mode == IntentMode.Sketch)
+            intents.Add(new SketchHoverIntent(sample.X, sample.Y));
     }
 
     // A press on a handle of the gizmo holds, and no cancel ended it. Finding V58 of the codebase review

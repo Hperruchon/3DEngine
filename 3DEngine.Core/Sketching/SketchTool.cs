@@ -114,6 +114,16 @@ public sealed class SketchTool
             Place(hit, at, editor);
     }
 
+    // ADR-0041 item 6 (phase R11b): the position that a tap at the pixel would take: a point within
+    // HitPixels, else the snap.
+    public static (double X, double Y)? Target(double pixelX, double pixelY, (double X, double Y)? position, SketchPicture picture)
+    {
+        ArgumentNullException.ThrowIfNull(picture);
+        return NearestPoint(pixelX, pixelY, picture) is { } hit && picture.Points.First(point => point.Id == hit) is { } point
+            ? (point.X, point.Y)
+            : Snap(pixelX, pixelY, position, picture);
+    }
+
     // ADR-0041: the snap of a tap at a pixel, in this order, each within HitPixels: the midpoint of
     // a line; else the nearest point on a line or a curve; else the position of the grid that the
     // host gives. A snap is a position only: it adds no constraint.

@@ -133,7 +133,8 @@ public class GizmoTests
     {
         var intents = Run(OnHandle(mode), [Mouse(x, 100, PointerPhase.Down, 0)], [Mouse(x + 20, 100, PointerPhase.Move, 10)], [Mouse(x + 20, 100, PointerPhase.Up, 400)]);
 
-        Assert.IsType<OrbitIntent>(Assert.Single(intents));
+        // The press of the mode Sketch also gives the mark of a snap (R11b), which is not a drag.
+        Assert.IsType<OrbitIntent>(Assert.Single(intents, intent => intent is not SketchHoverIntent));
     }
 
     // ADR-0038 item 5: after Escape the rest of the press gives nothing, and a second finger
@@ -221,6 +222,17 @@ public class GizmoTests
             [Mouse(130, 100, PointerPhase.Up, 400)]);
 
         Assert.Equal([typeof(GizmoStartIntent), typeof(GizmoMoveIntent), typeof(GizmoEndIntent)], intents.Select(intent => intent.GetType()));
+    }
+
+    // ADR-0041 item 6 (phase R11b, TASK-0134): the mode Scene gives no mark of a snap, and the mode
+    // Sketch gives one for the mouse with no button and for the press.
+    [Fact]
+    public void Only_The_Mode_Sketch_Gives_The_Mark_Of_A_Snap()
+    {
+        var hover = new InputSample[] { new PointerSample(DeviceKind.Mouse, 1, 0, 200, 150, 1, PointerButtons.None, KeyModifiers.None, PointerPhase.Move, 0) };
+
+        Assert.Empty(new IntentMachine { Mode = IntentMode.Scene }.Step(hover));
+        Assert.Equal(new SketchHoverIntent(200, 150), Assert.Single(new IntentMachine { Mode = IntentMode.Sketch }.Step(hover)));
     }
 
 }

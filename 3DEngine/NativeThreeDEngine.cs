@@ -40,6 +40,9 @@ public sealed class NativeThreeDEngine : IThreeDEngine, IDisposable
 
     // ADR-0038: the drag of the translate gizmo, and the overlay pipeline that draws it.
     private readonly GizmoActions _gizmo = new();
+
+    // ADR-0041 item 6 (phase R11b): the last point of the mouse with no button in the mode Sketch.
+    private (double X, double Y)? _hover;
     private OverlayRenderer? _overlay;
 
     // ADR-0033 item 13: the live sketches, which the panel draws over the scene.
@@ -153,6 +156,11 @@ public sealed class NativeThreeDEngine : IThreeDEngine, IDisposable
                 // ADR-0034 items 2 to 4: a tap or a click of the mode Sketch goes to the active tool.
                 case SketchPointIntent point when _sketchActions is not null:
                     _sketchActions.Tap(Camera, point.X, point.Y, _window.Extent.width, _window.Extent.height);
+                    break;
+
+                // ADR-0041 item 6 (phase R11b): the mouse with no button, for the mark of the snap.
+                case SketchHoverIntent hover:
+                    _hover = (hover.X, hover.Y);
                     break;
             }
         }
@@ -349,6 +357,8 @@ public sealed class NativeThreeDEngine : IThreeDEngine, IDisposable
             var tool = sketchActions.Tool;
             var focus = sketchActions.Active is { } active ? new SketchOverlay.Focus(active, [.. tool.Selection], tool.First) : null;
             sketches = SketchOverlay.Of(_sketches.Live, Camera, window.width, window.height, focus);
+            if (_hover is { } hover && sketchActions.Mark(Camera, hover.X, hover.Y, window.width, window.height) is { } mark)
+                sketches = sketches with { Snap = mark };
             sketchPanel = new SketchPanel(
                 _sketches.Live,
                 _sketches.Live.FirstOrDefault(sketch => sketch.SketchId == sketchActions.Active),
