@@ -4328,5 +4328,6 @@ distance) and Q3 A (the client decodes the image); the task of V2 records them i
 
 New tests: none. The test list holds 1420 (1033 in `Engine.Tests`, 237 in `3DEngine.Tests`, 147 in
 `3DEngine.ImageTests`, 3 in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and
-zero warnings. Open entries: 14 of 15. New diagnostic codes: none. Since the review of v0.149, 0 product milestones and
+zero warnings. Open entries: 15 of 15: R-0047 records the lag test of the events, which failed on Windows in the first run
+of this branch. New diagnostic codes: none. Since the review of v0.149, 0 product milestones and
 1 entry followed it.

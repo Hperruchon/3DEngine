@@ -74,7 +74,7 @@ line is a line of a `.cs` or `.razor` file that git tracks.
 | Tests | 1,420 | `dotnet test 3DEngine.sln`: 1,033, 237, 147 and 3 passed, 0 failed, 0 skipped. The last review gave 1,375. |
 | Gate classes | 19 | Tracked files whose name ends in `GateTests.cs`. `eng/repo-gates` gives 353 runs of 141 checks. The last review gave 19. |
 | Build warnings (clean build) | 0 | `dotnet build 3DEngine.sln --no-incremental`. |
-| Open register entries | 14 | Section "Open" of `docs/register.md`; the limit is 15. This review adds none. The last review gave 14. |
+| Open register entries | 14 | Section "Open" of `docs/register.md`; the limit is 15. The last review gave 14. After this commit, the first run of this review added R-0047, a test of the events that depends on the speed of the runner, so 15 are open. |
 | ADRs | 44 | `docs/adr/0001` to `0044`, with 0003 and 0011 in `docs/adr/archive/`. In force: 42 (21 accepted, 21 amended). None is proposed. |
 | Findings: critical | 0 | Each finding that is open at this commit, from any review. The last review gave 0. |
 | Findings: high | 5 | The same method: V2, V3, T1, T4, T31. The last review gave 5. |
