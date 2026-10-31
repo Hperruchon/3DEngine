@@ -52,10 +52,16 @@ public sealed class NativeThreeDEngine : IThreeDEngine, IDisposable
     private SketchActions? _sketchActions;
     private TimeSpan _delta;
 
-    internal NativeThreeDEngine(Window window, EngineHost host, IntentSettings? settings = null, bool synchronizationValidation = false, string address = "", DesktopDocument? document = null)
+    // ADR-0046 items 2 to 4: the store of the assets, the live images, and the window of the images.
+    private readonly Engine.Core.Assets.AssetStore? _assets;
+    private SessionImages? _images;
+    private ImageActions? _imageActions;
+
+    internal NativeThreeDEngine(Window window, EngineHost host, IntentSettings? settings = null, bool synchronizationValidation = false, string address = "", DesktopDocument? document = null, Engine.Core.Assets.AssetStore? assets = null)
     {
         _window = window;
         _document = document;
+        _assets = assets;
         _host = host;
         _address = address;
         _intents = new IntentMachine(settings);
@@ -93,6 +99,8 @@ public sealed class NativeThreeDEngine : IThreeDEngine, IDisposable
         _actions = new BodyActions(_host.Session);
         _sketches = new SessionSketches(_host);
         _sketchActions = new SketchActions(_host.Session);
+        _images = new SessionImages(_host, _assets);
+        _imageActions = new ImageActions(_host.Session, _assets);
     }
 
     public void Update(TimeSpan deltaTime)
@@ -128,6 +136,11 @@ public sealed class NativeThreeDEngine : IThreeDEngine, IDisposable
                 _documentMessage = rejection ?? _documentMessage;
                 continue;
             }
+
+            // ADR-0046 item 4: during a calibration a tap of the scene is a point of the image.
+            if (intent is SelectIntent select && _imageActions is not null && _images is not null
+                && _imageActions.Tap(Camera, select.X, select.Y, window.width, window.height, _images.Live))
+                continue;
 
             // A select, a hide and a show all go to the selection and to the session (ADR-0029).
             if (_actions is not null && _renderer is not null && _actions.Apply(intent, Pick, _renderer.LiveBodies))
@@ -226,6 +239,18 @@ public sealed class NativeThreeDEngine : IThreeDEngine, IDisposable
                     break;
                 case MoveBodyAction move:
                     _ui.EndPad(_actions.Move(move.Body, move.Dx, move.Dy, move.Dz));
+                    break;
+                case PlaceImageAction place:
+                    _imageActions?.Place(place.Path, place.Datum);
+                    break;
+                case StartCalibrationAction start:
+                    _imageActions?.StartCalibration(start.Image);
+                    break;
+                case CalibrateImageAction calibrate:
+                    _imageActions?.Calibrate(calibrate.Distance);
+                    break;
+                case CancelCalibrationAction:
+                    _imageActions?.Cancel();
                     break;
                 default:
                     ApplySketch(action);
@@ -349,6 +374,12 @@ public sealed class NativeThreeDEngine : IThreeDEngine, IDisposable
             : Vector2.One;
         _actions?.Forget(_renderer.LiveBodies);
         _sketches?.Apply();
+        var renderer = _renderer;
+        _images?.Apply((asset, picture) => renderer.Upload(asset, (uint)picture.Width, (uint)picture.Height, picture.Rgba));
+        var images = _images?.Quads();
+        var imagePanel = _images is not null && _imageActions is { } imageActions
+            ? new ImagePanel(_images.Live, imageActions.Calibrating, imageActions.Points.Count, imageActions.Message)
+            : null;
         SketchOverlay.Strokes? sketches = null;
         SketchPanel? sketchPanel = null;
         if (_sketches is not null && _sketchActions is { } sketchActions)
@@ -368,7 +399,7 @@ public sealed class NativeThreeDEngine : IThreeDEngine, IDisposable
                 sketchActions.Message);
         }
 
-        var panel = _ui.Frame((float)_delta.TotalSeconds, display, scale, _renderer.LiveBodies, Selection, _document is null ? null : new DocumentLine(_host.FileName, _documentMessage), sketches, sketchPanel);
+        var panel = _ui.Frame((float)_delta.TotalSeconds, display, scale, _renderer.LiveBodies, Selection, _document is null ? null : new DocumentLine(_host.FileName, _documentMessage), sketches, sketchPanel, imagePanel);
         ApplyPanel(_renderer.LiveBodies);
 
         var ui = _uiRenderer;
@@ -385,7 +416,7 @@ public sealed class NativeThreeDEngine : IThreeDEngine, IDisposable
                 {
                     overlayRenderer?.Record(overlay, frameExtent, display, gizmo, presenter.CurrentImage);
                     ui.Record(overlay, frameExtent, panel, presenter.CurrentImage);
-                }, selected));
+                }, selected, images));
     }
 
     // The scene gives the camera when it holds one; else the camera keeps its state.
@@ -408,6 +439,8 @@ public sealed class NativeThreeDEngine : IThreeDEngine, IDisposable
         _overlay = null;
         _sketches?.Dispose();
         _sketches = null;
+        _images?.Dispose();
+        _images = null;
         _ui?.Dispose();
         _ui = null;
         _graphicsDevice?.Dispose();

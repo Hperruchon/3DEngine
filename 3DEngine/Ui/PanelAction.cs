@@ -1,3 +1,4 @@
+using Engine.Contracts.Images;
 using ThreeDEngine.Core.Sketching;
 
 namespace ThreeDEngine.Desktop.Ui;
@@ -75,3 +76,17 @@ internal sealed record SketchPanel(
     bool ChainOpen,
     IReadOnlyList<Guid> Selection,
     string? Message);
+
+// ADR-0046 items 3 and 4: the place of a PNG file on an origin plane, and the calibration of a live
+// image by two taps on it and a real distance.
+internal sealed record PlaceImageAction(string Path, Guid Datum) : PanelAction;
+
+internal sealed record StartCalibrationAction(Guid Image) : PanelAction;
+
+internal sealed record CalibrateImageAction(double Distance) : PanelAction;
+
+internal sealed record CancelCalibrationAction : PanelAction;
+
+// ADR-0046 items 3 and 4: what the window of the images shows. Calibrating is the image of the
+// calibration, or null, and Points the number of its taps.
+internal sealed record ImagePanel(IReadOnlyCollection<ImageRecord> Live, Guid? Calibrating, int Points, string? Message);

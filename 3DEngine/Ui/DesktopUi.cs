@@ -1,6 +1,7 @@
 using System.Numerics;
 using System.Runtime.InteropServices;
 using System.Globalization;
+using Engine.Contracts.Images;
 using Engine.Contracts.Sketch;
 using Engine.Core.Queries;
 using ImGuiNET;
@@ -91,6 +92,20 @@ internal sealed unsafe class DesktopUi : IDisposable
     // (ADR-0033 item 3, kind 11).
     public const string InsideTangentLabel = "Inside tangent";
 
+    // ADR-0046 items 3 and 4: the window of the images, with the file field, a place on each origin
+    // plane, a calibration of each live image, and the distance of a calibration.
+    public const string ImagesName = "Images";
+    public const string ImageFileLabel = "PNG file";
+    public static readonly (string Label, Guid Datum)[] PlaceImageButtons =
+        [("Place on XY", Datums.XY.Id), ("Place on XZ", Datums.XZ.Id), ("Place on YZ", Datums.YZ.Id)];
+    public const string CalibrateLabel = "Calibrate";
+    public const string DistanceLabel = "Distance";
+    public const string ApplyCalibrationLabel = "Apply";
+    public const string CancelCalibrationLabel = "Cancel calibration";
+    public const string PlaceLineLabel = "Place on";
+    private const float ImagesWidth = 280f;
+    private const float ImagesHeight = 300f;
+
     // The key of the rectangle of a control of the window of the sketch, for ItemRectangle.
     public static string SketchItem(string label) => $"{SketchName} {label}";
 
@@ -129,6 +144,10 @@ internal sealed unsafe class DesktopUi : IDisposable
     private string _name = string.Empty;
 
     private string _fileName = string.Empty;
+
+    // ADR-0046: the text of the file field and of the distance field of the window of the images.
+    private string _imagePath = string.Empty;
+    private string _distance = "100";
     private Guid? _nameFor;
     private bool _textActive;
 
@@ -437,7 +456,7 @@ internal sealed unsafe class DesktopUi : IDisposable
     private const float SelectedPointRadius = 7f;
     private const float RingRadius = 12f;
 
-    public UiDrawData Frame(float deltaSeconds, Vector2 displaySize, Vector2 framebufferScale, IReadOnlyList<LiveBody> bodies, Guid? selection = null, DocumentLine? document = null, SketchOverlay.Strokes? sketches = null, SketchPanel? sketchPanel = null)
+    public UiDrawData Frame(float deltaSeconds, Vector2 displaySize, Vector2 framebufferScale, IReadOnlyList<LiveBody> bodies, Guid? selection = null, DocumentLine? document = null, SketchOverlay.Strokes? sketches = null, SketchPanel? sketchPanel = null, ImagePanel? imagePanel = null)
     {
         ArgumentNullException.ThrowIfNull(bodies);
         ImGui.SetCurrentContext(_context);
@@ -463,6 +482,8 @@ internal sealed unsafe class DesktopUi : IDisposable
         Panel(bodies, selection, displaySize, document);
         if (sketchPanel is { } shown && (shown.Active is not null || shown.Live.Count > 0))
             SketchWindow(shown, displaySize);
+        if (imagePanel is not null)
+            ImageWindow(imagePanel, displaySize);
         if (_pad is { } pad)
             PadWindow(pad, displaySize);
         ImGui.Render();
@@ -632,6 +653,73 @@ internal sealed unsafe class DesktopUi : IDisposable
         _panels.Add(new Vector4(position.X, position.Y, position.X + size.X, position.Y + size.Y));
         ImGui.End();
     }
+
+    // ADR-0046 items 3 and 4: the window of the images, to the right of the panel and closed until
+    // the person opens it. Under the panel it hid Show all in a window 720 pixels high, and at 280
+    // pixels wide it stays left of the window of the sketch in a window 1280 pixels wide.
+    private void ImageWindow(ImagePanel panel, Vector2 displaySize)
+    {
+        ImGui.SetNextWindowPos(new Vector2(492f, 16f), ImGuiCond.FirstUseEver);
+        ImGui.SetNextWindowSize(new Vector2(ImagesWidth, Math.Clamp(displaySize.Y - 32f, 120f, ImagesHeight)), ImGuiCond.FirstUseEver);
+        ImGui.SetNextWindowCollapsed(true, ImGuiCond.FirstUseEver);
+        if (ImGui.Begin(ImagesName))
+        {
+            ImGui.TextUnformatted(ImageFileLabel);
+            ImGui.SetNextItemWidth(ImagesWidth - 24f);
+            TextField($"##{ImageFileLabel}", ref _imagePath, 260);
+            Item(ImageFileLabel);
+            ImGui.AlignTextToFramePadding();
+            ImGui.TextUnformatted(PlaceLineLabel);
+            foreach (var (label, datum) in PlaceImageButtons)
+            {
+                ImGui.SameLine();
+                if (ImGui.Button($"{label[^2..]}##{label}"))
+                    _actions.Add(new PlaceImageAction(_imagePath, datum));
+                Item(label);
+            }
+
+            ImGui.Separator();
+            foreach (var image in panel.Live)
+            {
+                var label = $"{CalibrateLabel} {ImageTitle(image)}";
+                ImGui.TextWrapped(ImageTitle(image));
+                if (ImGui.Button($"{CalibrateLabel}##{image.Id}"))
+                    _actions.Add(new StartCalibrationAction(image.Id));
+                Item(label);
+            }
+
+            if (panel.Calibrating is not null)
+            {
+                ImGui.TextUnformatted($"Tap two points of the image: {panel.Points} of 2");
+                ImGui.SetNextItemWidth(120f);
+                TextField(DistanceLabel, ref _distance, 32);
+                Item(DistanceLabel);
+                ImGui.SameLine();
+                ImGui.TextUnformatted(_unit);
+                ImGui.SameLine();
+                // A text that is not a number gives NaN, and the engine refuses it with its reason.
+                if (ImGui.Button(ApplyCalibrationLabel))
+                    _actions.Add(new CalibrateImageAction(double.TryParse(_distance, NumberStyles.Float, CultureInfo.InvariantCulture, out var distance) ? distance : double.NaN));
+                Item(ApplyCalibrationLabel);
+                if (ImGui.Button(CancelCalibrationLabel))
+                    _actions.Add(new CancelCalibrationAction());
+                Item(CancelCalibrationLabel);
+            }
+
+            if (panel.Message is { } message)
+                ImGui.TextWrapped(message);
+        }
+
+        var position = ImGui.GetWindowPos();
+        var size = ImGui.GetWindowSize();
+        _panels.Add(new Vector4(position.X, position.Y, position.X + size.X, position.Y + size.Y));
+        ImGui.End();
+    }
+
+    // The short name of the asset of an image, its size in pixels, its datum and its scale.
+    public static string ImageTitle(ImageRecord image)
+        => $"{image.Asset[..8]} {image.Width}x{image.Height} on {Datums.Find(image.DatumId)?.Name ?? "?"}, "
+            + $"{image.Scale.ToString("G4", CultureInfo.InvariantCulture)} mm/px";
 
     private void LiveSketches(IReadOnlyCollection<SketchInfo> live)
     {
