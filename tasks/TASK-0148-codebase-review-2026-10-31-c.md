@@ -1,7 +1,7 @@
 ---
 id: 0148
 title: The codebase review of 2026-10-31 (c) is a record
-status: Active
+status: Done
 phase: governance
 opened: 2026-10-31
 depends-on: [0146]
