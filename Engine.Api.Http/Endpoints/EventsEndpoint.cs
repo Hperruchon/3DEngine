@@ -67,7 +67,7 @@ internal static class EventsEndpoint
             webSocket,
             channelCapacity: options.ChannelCapacity,
             heartbeatInterval: options.HeartbeatInterval,
-            pumpDelay: options.PumpDelay);
+            pumpGate: options.PumpGate);
 
         try
         {
