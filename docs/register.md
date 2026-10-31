@@ -365,6 +365,8 @@ corrections of E20 and E23 in the next task, before TASK-0037.
 Progress 2026-10-08: TASK-0051 corrected E20 (a call back into the session throws at once) and E23
 (the HTTP host checks each source of an address before the start and the bound addresses after it).
 TASK-0038 now depends on TASK-0051. E18, E19, E21, E22 and seven parts of E24 stay.
+Progress 2026-10-31: TASK-0140 corrects E18 by the answer Q4: `IEventSink` states that a sink must not throw, and
+`Engine.Tests/EventSinkContractTests.cs` finds each sink of the engine and of the surface and tests it.
 
 ### R-0036 · Fifteen findings of the fourth codebase review in the engine and the hosts have no task
 - class: debt
@@ -391,6 +393,7 @@ Progress 2026-10-31: TASK-0138 corrects E38 (the reason of a library that does n
 platform with no payload).
 Progress 2026-10-31: TASK-0139 corrects E35 (ADR-0008 §9 lists `/schema/backend`, a gate holds the routes equal to
 the list, and the endpoint gives the identity of the backend).
+Progress 2026-10-31: TASK-0140 corrects E18 of R-0033, the only cause of E33; the next review judges E33 again.
 
 ### R-0039 · No test calls the surface of the desktop host
 - class: debt
