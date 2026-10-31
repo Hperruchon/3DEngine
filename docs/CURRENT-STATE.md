@@ -4371,3 +4371,37 @@ New tests: 16. The test list holds 1436 (1049 in `Engine.Tests`, 237 in `3DEngin
 `3DEngine.ImageTests`, 3 in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and
 zero warnings. Open entries: 15 of 15. New diagnostic codes: 7. Since the review of v0.149, 1 product milestone and 2
 entries followed it.
+
+## v0.152 — The desktop places a PNG file on a datum, draws it, and calibrates it with two taps (V2b, TASK-0153)
+
+V2a (v0.151) put the record of an image on a datum in the Document. The standing answer Q3 A of the review of v0.150
+says that the client decodes the image. The owner told the session on 2026-10-31 to work alone until 2026-11-01 10:00
+and not to wait for the visual check, so the session judged the pictures and sends them. This entry closes V2.
+
+**The change.**
+
+- `3DEngine.Core/Imaging/PngReader.cs` reads a PNG file of 8 bits for each channel with no interlace, in the five colour
+  types, with the five filters and the CRC of each chunk, on `System.IO.Compression` only, at most 4096 pixels on a side
+  (ADR-0046 item 1). No new package.
+- `3DEngine/SessionImages.cs` follows the live images and their events, uploads the bytes of each asset of the store one
+  time, and gives the quad of each image; `3DEngine/ImagePlacement.cs` gives the quad and the pixel of ADR-0045 item 2
+  (ADR-0046 item 2). The surface gives the desktop its store.
+- The window "Images" places a PNG file on an origin plane, and calibrates an image with two taps of the scene on it and
+  a real distance; during a calibration a tap does not select (`3DEngine/ImageActions.cs`, items 3 and 4).
+
+**Proof.** 24 new test cases: 20 in `3DEngine.Tests/PngReaderTests.cs`, 4 in `3DEngine.ImageTests/ImageActionsTests.cs`,
+and 1 image test, `3DEngine.ImageTests/PlacedImageImageTests.cs`, which writes `placed-image.png`. 10 injections; the
+first mutant of the Paeth predictor gave the same result for each input, and the second one passed until a test with a
+tie of up and the corner. The live window drew a PNG file of an independent encoder over HTTP, with no message of the
+validation layer.
+
+**What stays.** A mark of the taps, a move, a rotation and a removal of an image, and a format other than PNG. A picture
+of a camera is often larger than 4096 pixels on a side.
+
+**A correction.** The first place of the window of the images was under the panel, and in a window 720 pixels high it
+hid Show all; it is to the right of the panel and closed at the start now.
+
+New tests: 24. The test list holds 1461 (1049 in `Engine.Tests`, 257 in `3DEngine.Tests`, 152 in
+`3DEngine.ImageTests`, 3 in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and
+zero warnings. Open entries: 15 of 15. New diagnostic codes: 0. Since the review of v0.149, 2 product milestones and 3
+entries followed it.

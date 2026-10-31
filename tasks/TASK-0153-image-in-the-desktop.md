@@ -1,7 +1,7 @@
 ---
 id: 0153
 title: The desktop places a PNG file on a datum, draws it, and calibrates it with two taps
-status: Active
+status: Done
 phase: V2b
 opened: 2026-10-31
 depends-on: [0152]
@@ -66,11 +66,24 @@ bodies, and calibrates it with two taps on it and a real distance.
 
 ## Acceptance criteria
 
-- [ ] The reader has a test for each colour type, each filter and each refusal.
-- [ ] A test with no GPU places a file, calibrates the image with two taps, and follows the projection through undo.
-- [ ] A picture on a GPU shows a placed and calibrated PNG file on its datum, with no message of the validation layer.
-- [ ] A clean build (`--no-incremental`) gives zero errors and zero warnings.
-- [ ] Continuous integration passes on the three runners, on the branch and on `main` after the merge.
+- [x] The reader has a test for each colour type, each filter and each refusal.
+- [x] A test with no GPU places a file, calibrates the image with two taps, and follows the projection through undo.
+- [x] A picture on a GPU shows a placed and calibrated PNG file on its datum, with no message of the validation layer.
+- [x] A clean build (`--no-incremental`) gives zero errors and zero warnings.
+- [x] Continuous integration passes on the three runners, on the branch and on `main` after the merge.
+
+## Outcome
+
+Status: Done · commit (the merge of the branch v2b-image-in-the-desktop) · v0.152
+
+## Method
+
+Mechanical: each colour type, filter and refusal of the reader, the place, the taps and the projection with no GPU, the
+            picture on a GPU, the live window over HTTP, and one injection for each rule.
+Judgement:  an own reader and no package; at most 4096 pixels on a side; the window closed at the start and to the right
+            of the panel.
+Weakest:    no test drives the host: the taps of a calibration in the live window, and the buttons of the window of the
+            images, ran only through ImageActions and the panel code. The owner's visual check comes after the merge.
 
 ## Progress
 
@@ -79,3 +92,4 @@ bodies, and calibrates it with two taps on it and a real distance.
   predictor changed no result, and the second one passed until a test with a tie of up and the corner. The live window
   drew a PNG file of an independent encoder; under the panel the window of the images hid Show all, so it is to the
   right of the panel and closed at the start.
+- 2026-10-31: closed at v0.152.
