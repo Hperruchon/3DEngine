@@ -4085,3 +4085,29 @@ New tests: none. The test list holds 1375 (1006 in `Engine.Tests`, 225 in `3DEng
 `3DEngine.ImageTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
 entries: 14 of 15. New diagnostic codes: none. Since the review of v0.141, 0 product milestones and 1 entry followed
 it.
+
+## v0.143 — The overlay marks the point that a tap under the mouse or a finger would take (R11b, TASK-0134)
+
+R11a (TASK-0131) gave a tap of the sketch a snap, and ADR-0041 item 5 left the mark of the snap to the rest of R11,
+because the intent machine had no hover intent.
+
+**The change.**
+
+- In the mode Sketch, the intent machine gives `SketchHoverIntent` for a motion of the mouse with no button, for the
+  press of the left button, and for the first contact of a touch or a pen (ADR-0041 item 6, which amends ADR-0026).
+  A hover for the mouse alone failed the parity test of objective 9, so a finger gives the hover while it is down.
+- `SketchTool.Target` gives the point that a tap there would take, `SketchActions.Mark` asks the tool for it, and
+  `SketchOverlay.Pixel` gives its pixel. The panel draws a cyan square of 12 pixels there. The tool Select has none.
+
+**Proof.** 3 new test cases: 1 in `3DEngine.Tests` and 2 in `3DEngine.ImageTests`. The GPU test of the curves also
+draws the mark. 6 injections: each one failed a test. The owner answered "Use the recommendation" on 2026-10-31 for
+the picture of the mark, which accepts it.
+
+**What stays.** The escalated selection of faces and edges needs their identity (K4), and stays in the row R11.
+
+**A correction.** None.
+
+New tests: 3. The test list holds 1378 (1006 in `Engine.Tests`, 226 in `3DEngine.Tests`, 146 in
+`3DEngine.ImageTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
+entries: 14 of 15. New diagnostic codes: none. Since the review of v0.141, 1 product milestone and 2 entries followed
+it.

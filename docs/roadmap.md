@@ -117,6 +117,7 @@ Therefore each approved objective must have a track here.
 - P0.57 — The reason of a native library that does not load separates a missing file from a platform with no payload. v0.139, TASK-0138.
 - P0.58 — The schema of the backend is in the list of the surface, and it gives the identity of the backend. v0.140, TASK-0139.
 - P0.59 — A sink of events does not throw, and a test holds each sink to it. v0.141, TASK-0140.
+- R11b — The overlay marks the point that a tap under the mouse or a finger would take. v0.143, TASK-0134, ADR-0041.
 
 ## Track 0 — Foundations
 
