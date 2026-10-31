@@ -3920,3 +3920,32 @@ New tests: 3. The test list holds 1366 (997 in `Engine.Tests`, 225 in `3DEngine.
 `3DEngine.ImageTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
 entries: 14 of 15. New diagnostic codes: none. Since the review of v0.130, 1 product milestone and 6 entries followed
 it.
+
+## v0.137 — An exception of a handler in a replay is a divergence, and a replay needs a backend (P0.55, TASK-0136)
+
+R11b (TASK-0134) still waits for the visual check of the owner, so this task took the findings of the replay in
+register entry R-0036.
+
+**The change.**
+
+- E28: `Replay.ReplayLog` wraps an exception of an entry that is not a cancellation in `ReplayDivergenceException`.
+  The exception names the entry and the command, `Result` is null, and `InnerException` holds the exception. Before
+  the change an `InvalidCastException` left the replay with no entry and no command. The test of finding E7 asserts
+  the exact type now.
+- E30: the parameter `backend` of the two methods `Replay.ReplayLog` is required, and null gives
+  `ArgumentNullException`. The default null backend made each log with geometry diverge at its first body. Six calls
+  in the tests name `NullGeometryBackend.Instance`.
+
+**Proof.** 2 new test cases in `Engine.Tests/Commands/EngineDebtTests.cs`. 2 injections: each one failed a test.
+
+**What stays.** E27, the refusal of a backend that holds a body: `IGeometryBackend` has no member that tells it, so
+the refusal needs a change of `Engine.Contracts` and an ADR, which is a stop condition. It stays in R-0036 for the
+owner, with the other open findings.
+
+**A correction.** The first write set had no `governed-by`; the gate of the task asked for ADR-0004, ADR-0015 and
+ADR-0020, and the task names them now.
+
+New tests: 2. The test list holds 1368 (999 in `Engine.Tests`, 225 in `3DEngine.Tests`, 144 in
+`3DEngine.ImageTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
+entries: 14 of 15. New diagnostic codes: none. Since the review of v0.130, 1 product milestone and 7 entries followed
+it.

@@ -1,7 +1,7 @@
 ---
 id: 0136
 title: An exception of a handler in a replay is a divergence, and a replay needs a backend
-status: Active
+status: Done
 phase: P0.55
 opened: 2026-10-31
 depends-on: [0135]
@@ -61,10 +61,23 @@ An exception of a handler in a replay names its entry and its command, and each 
 
 ## Acceptance criteria
 
-- [ ] A test of each finding fails before the change and passes after it.
-- [ ] A clean build (`--no-incremental`) gives zero errors and zero warnings.
-- [ ] Continuous integration passes on the three runners, on the branch and on `main` after the merge.
+- [x] A test of each finding fails before the change and passes after it.
+- [x] A clean build (`--no-incremental`) gives zero errors and zero warnings.
+- [x] Continuous integration passes on the three runners, on the branch and on `main` after the merge.
+
+## Outcome
+
+Status: Done · commit (the merge of the branch p055-replay-debt) · v0.137
+
+## Method
+
+Mechanical: one catch around the apply of an entry, a second constructor of the divergence, and a required parameter.
+Judgement:  the divergence of a thrown entry has no result, so `Result` is null and `InnerException` holds the
+            exception; a cancellation passes the catch, as E29 requires; E27 needs a member of the contract, which is a
+            stop condition, so it stays for the owner.
+Weakest:    E27 and the other findings of R-0036 stay open.
 
 ## Progress
 
 - 2026-10-31: E28 and E30 with 2 new test cases; E27 skipped, see "Scope (out)".
+- 2026-10-31: 2 injections caught; `governed-by` names ADR-0004, ADR-0015 and ADR-0020; closed at v0.137.
