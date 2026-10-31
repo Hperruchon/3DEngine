@@ -1,7 +1,7 @@
 ---
 id: 0141
 title: The codebase review of 2026-10-31 (b) is a record
-status: Active
+status: Done
 phase: governance
 opened: 2026-10-31
 depends-on: [0140]
@@ -65,10 +65,23 @@ finding.
 
 ## Acceptance criteria
 
-- [ ] `CodebaseReviewGateTests` passes with the new review.
-- [ ] Continuous integration passes on the three runners, on the branch and on `main` after the merge.
+- [x] `CodebaseReviewGateTests` passes with the new review.
+- [x] Continuous integration passes on the three runners, on the branch and on `main` after the merge.
+
+## Outcome
+
+Status: Done · commit (the merge of the branch codebase-review-2026-10-31-b) · v0.142
+
+## Method
+
+Mechanical: the measures and the lines of the earlier findings come from two scripts that read git, the ledger and the
+            last review.
+Judgement:  the severity of each new finding; the agents gave V63, V64 and T111 as medium, and the review gives them low,
+            as the findings V61, V58 and E35 that they follow.
+Weakest:    the desktop and gate findings rest on the runs of one agent; I ran the engine probes and T110 only.
 
 ## Progress
 
 - 2026-10-31: two review agents probed `eb8c06f`; I ran the probes of the engine again and injected T110 with its
   control.
+- 2026-10-31: closed at v0.142.
