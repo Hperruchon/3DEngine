@@ -1,7 +1,7 @@
 ---
 id: 0135
 title: The log of the Document is read-only, a cancelled replay is a cancellation, and a query of a lost body gives an error
-status: Active
+status: Done
 phase: P0.54
 opened: 2026-10-31
 depends-on: [0133]
@@ -58,10 +58,23 @@ of a body that the backend does not hold gives an error and not an exception.
 
 ## Acceptance criteria
 
-- [ ] A test of each finding fails before the change and passes after it.
-- [ ] A clean build (`--no-incremental`) gives zero errors and zero warnings.
-- [ ] Continuous integration passes on the three runners, on the branch and on `main` after the merge.
+- [x] A test of each finding fails before the change and passes after it.
+- [x] A clean build (`--no-incremental`) gives zero errors and zero warnings.
+- [x] Continuous integration passes on the three runners, on the branch and on `main` after the merge.
+
+## Outcome
+
+Status: Done · commit (the merge of the branch p054-engine-debt) · v0.136
+
+## Method
+
+Mechanical: one read-only view, one check of the token, and two catches of the backend.
+Judgement:  a change of Engine.Contracts with no change of the public shape still needs an ADR file in the commit, so
+            ADR-0020, whose rule E26 broke, records it; a cancellation that the caller did not ask for stays a
+            divergence.
+Weakest:    the other twelve findings of R-0036 stay open.
 
 ## Progress
 
 - 2026-10-31: E26, E29 and E32 with 3 new test cases.
+- 2026-10-31: 4 injections caught; the write set gains ADR-0020; closed at v0.136.
