@@ -206,6 +206,7 @@ This track removes each condition that blocks other work.
 | P0.64 | The pin rules read each imported file, the sink gate reads the desktop, and the next forms of the sixteenth review fail (T117 to T122; after V2). TASK-0150. | 2–3 |
 | P0.65 | A cancelled press gives nothing, and the mark of the snap is where the point goes and only while a finger is down (V65 to V67; after V2). TASK-0151. | 1–2 |
 | P0.66 | The lag test of the events fills the queue of the subscriber with a count and no timing (register entry R-0047). TASK-0154. | 1 |
+| P0.67 | Each runner hashes a native replay with geometry and solved sketches, and a last job compares the hashes (anti-objective 16, register entry R-0023). TASK-0156. | 1 |
 
 ## Track P — The platform
 

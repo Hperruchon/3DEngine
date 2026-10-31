@@ -113,19 +113,6 @@ defect shows now.
 Exit: each defect is corrected, with the check that the review gives for it, before the first render
 phase that runs on Linux or on macOS.
 
-### R-0023 · No gate compares the native output of one platform with another
-- class: debt
-- opened: 2026-09-25
-- due: 2027-03-24
-- extended: no
-- refs: `Engine.Tests/ReplayDeterminism/ReplayDeterminismGateTests.cs`, `docs/reviews/2026-09-23-codebase-review.md` finding T1, anti-objective 16
-The replay gate runs on the managed backend, and it compares no geometry value. Each runner compares
-only with its own constants. A difference in the Manifold output between Windows, Linux and macOS
-therefore passes. Anti-objective 16 requires the same result on each platform. The cost becomes real
-when a saved document moves between platforms.
-Exit: the repository holds a baseline of exact native outputs, such as the bits of a bounding box and
-a hash of a mesh, and each runner compares its output with that baseline.
-
 ### R-0024 · The render projection may need to read `Engine.Contracts`
 - class: question
 - opened: 2026-09-25
@@ -492,6 +479,24 @@ needs a deliberate act.
 ---
 
 ## Closed
+
+### R-0023 · No gate compares the native output of one platform with another
+- class: debt
+- opened: 2026-09-25
+- due: 2027-03-24
+- extended: no
+- refs: `Engine.Tests/ReplayDeterminism/ReplayDeterminismGateTests.cs`, `docs/reviews/2026-09-23-codebase-review.md` finding T1, anti-objective 16
+The replay gate runs on the managed backend, and it compares no geometry value. Each runner compares
+only with its own constants. A difference in the Manifold output between Windows, Linux and macOS
+therefore passes. Anti-objective 16 requires the same result on each platform. The cost becomes real
+when a saved document moves between platforms.
+Exit: the repository holds a baseline of exact native outputs, such as the bits of a bounding box and
+a hash of a mesh, and each runner compares its output with that baseline.
+Closed 2026-10-31 · resolved · TASK-0156. The owner chose the form on 2026-10-31: each runner of the job "Gate"
+replays one log with a cut, moves and an extrude of a solved sketch on the native backend and keeps the SHA-256 of the
+bits of each mesh, bounding box and solved point, and the job "Compare the determinism hashes" compares the three. The
+exit above asked for a baseline in the repository; the comparison of the runners in each run answers the title, and
+it is the oldest entry that the work answers.
 
 ### R-0047 · The lag test of the events depends on the speed of the runner
 - class: risk
