@@ -64,6 +64,11 @@ public static class Replay
         foreach (var command in log)
         {
             var result = await bus.Apply(command, ct).ConfigureAwait(false);
+            // Finding E29 of the codebase review of 2026-10-08 (TASK-0135): the bus turns a cancellation
+            // into Cancelled, and the replay reported it as a divergence of the log. A cancellation of
+            // the caller stays a cancellation.
+            if (result.Status == CommandStatus.Cancelled && ct.IsCancellationRequested)
+                throw new OperationCanceledException(ct);
             if (result.Status != CommandStatus.Applied)
                 throw new ReplayDivergenceException(index, command, result);
             index++;
