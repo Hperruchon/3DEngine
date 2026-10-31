@@ -16,7 +16,9 @@ namespace ThreeDEngine.ImageTests;
 // Phase V3 (ADR-0047, TASK-0155): a PNG file of an L-shaped dark part on a light ground, placed on the plane
 // XY and calibrated to 0.5 mm for each pixel. The desktop proposes its contour, the person accepts it, and
 // the overlay draws the new sketch over the image in the colour of a sketch. The file contour.png is the
-// picture of the visual check.
+// picture of the visual check. Dear ImGui keeps one global context, so the test is in the collection of
+// the tests of the panel; out of it, a parallel test of the panel crashed the test host.
+[Collection(DearImGui.Collection)]
 public sealed class ContourImageTests : IDisposable
 {
     private const uint Width = 1280;
