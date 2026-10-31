@@ -4207,3 +4207,38 @@ New tests: 3. The test list holds 1400 (1025 in `Engine.Tests`, 229 in `3DEngine
 `3DEngine.ImageTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
 entries: 14 of 15. New diagnostic codes: none. Since the review of v0.141, 1 product milestone and 5 entries followed
 it.
+
+## v0.147 — The vision library loads and finds a contour on the three platforms of the pipeline (V0, TASK-0145)
+
+The codebase review of 2026-10-31 (b), question Q3, left the product phase after R11b to the owner. On 2026-10-31 the
+owner chose V0, the first phase of track V (objective 15). No earlier record chose a library.
+
+**The decision.** ADR-0042 chooses OpenCvSharp4 4.13.0.20260627, over OpenCV 4.13, under the Apache-2.0 licence. Each
+platform restores one native payload: `OpenCvSharp4.runtime.win`, `OpenCvSharp4.official.runtime.linux-x64.slim` and
+`OpenCvSharp4.runtime.osx.arm64`. Emgu.CV has no macOS arm64 payload and is GPL v3; OpenCvSharp5 is two weeks old.
+Vision is input, not design truth: a result enters the Document only through the commands that exist, so no project
+of the log references the library and a replay never calls it.
+
+**The change.**
+
+- `3DEngine.VisionTests` is a new test project in the solution. It references no project and holds the only pins of
+  OpenCvSharp4. Its three tests give the version 4.13, the four corners of the contour of a filled rectangle, and its
+  edges on the border only, with exact pixels.
+- `DependencyDirectionGateTests` gives the spike a class of its own, which references no project, and keeps each pin
+  of OpenCvSharp4 in it.
+- `docs/INDEX.md`, `docs/adr/README.md` and `eng/test-floor.txt` name the project and the record.
+
+**Proof.** 5 new test cases: 3 in `3DEngine.VisionTests` and 2 in `Engine.Tests`. The pipeline ran the three tests of
+the spike on Windows x64, Ubuntu x64 and macOS arm64 (run 41180854816), and the count of each runner holds them. 2
+injections: a reference from the spike to `Engine.Core`, and a pin of OpenCvSharp4 in `Engine.Cli`; each one failed
+the gate.
+
+**What stays.** V1 adds a store of assets and a textured quad; the notices of the library come with the first program
+that distributes it (ADR-0042 item 6).
+
+**A correction.** None.
+
+New tests: 5. The test list holds 1405 (1027 in `Engine.Tests`, 229 in `3DEngine.Tests`, 146 in
+`3DEngine.ImageTests`, 3 in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and
+zero warnings. Open entries: 14 of 15. New diagnostic codes: none. Since the review of v0.141, 2 product milestones
+and 6 entries followed it.
