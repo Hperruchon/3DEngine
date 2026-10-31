@@ -375,6 +375,10 @@ public class CodebaseReviewGateTests
             var nested = Regex.IsMatch(line, @"^\s*(?:(?:[>*+-]|\d{1,9}[.)])\s*)+#");
             var html = Regex.IsMatch(line, @"^\s*<h[1-6]", RegexOptions.IgnoreCase);
             var setext = index > 0 && Unquoted(lines[index - 1]).Trim().Length > 0 && Regex.IsMatch(Unquoted(line), @"^ {0,3}(?:=+|-+)\s*$");
+            // Finding T122 of the codebase review of 2026-10-31 (c) (TASK-0150): inside a list item the
+            // indent of an underline counts from the content of the item, so more than three spaces
+            // passed. An underline at any indent after a line that holds a version is a problem.
+            setext |= index > 0 && Regex.IsMatch(lines[index - 1], @"v\d+\.\d+") && Regex.IsMatch(Unquoted(line), @"^\s*(?:=+|-+)\s*$");
             if (heading || nested || html || setext)
                 yield return $"line {index + 1} \"{line}\" is a heading that does not start with \"## v\"; the review counter reads that form only";
         }
@@ -543,6 +547,11 @@ public class CodebaseReviewGateTests
     [InlineData("1. ## v0.11 — An entry (K0b, TASK-0003)")]
     [InlineData("1) ## v0.11 — An entry (K0b, TASK-0003)")]
     [InlineData("> v0.11 — An entry (K0b, TASK-0003)\n> ===")]
+    // Finding T122 of the codebase review of 2026-10-31 (c) (TASK-0150): a setext heading inside a list
+    // item, whose underline has more than three spaces before it.
+    [InlineData("- v0.11 — An entry (K0b, TASK-0003)\n    ===")]
+    [InlineData("10. v0.11 — An entry (K0b, TASK-0003)\n    ---")]
+    [InlineData("> - v0.11 — An entry (K0b, TASK-0003)\n>     ===")]
     [InlineData("<h2>v0.11 — An entry (K0b, TASK-0003)</h2>")]
     [InlineData("## \u03BD0.11 — An entry (K0b, TASK-0003)")]
     [InlineData("## \uFF560.11 — An entry (K0b, TASK-0003)")]
