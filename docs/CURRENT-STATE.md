@@ -4179,3 +4179,31 @@ New tests: 13. The test list holds 1397 (1025 in `Engine.Tests`, 226 in `3DEngin
 `3DEngine.ImageTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
 entries: 14 of 15. New diagnostic codes: none. Since the review of v0.141, 1 product milestone and 4 entries followed
 it.
+
+## v0.146 — An arc ends within a pixel of its start, and Escape cancels a press on a handle before the slop (P0.62, TASK-0144)
+
+The codebase review of 2026-10-31 (b) found V63 and V64 (low) in the desktop. P0.61 merged at v0.145, so this task came
+next, and it is the last task of that review.
+
+**The change.**
+
+- V63: the tool Arc ends the curve when the new end is within `HitPixels` of the start on the screen. The scale is the
+  pixels for each unit of the plane between the tap and the start. The pad gives no pixel, so it keeps the limit of
+  V61, 1e-9 of the radius.
+- V64: Escape before the slop cancels the press on a handle, so a later motion starts no drag. No `GizmoCancelIntent`
+  goes out, because no drag started.
+
+**Proof.** 3 new test cases: 2 in `3DEngine.Tests/SketchToolTests.cs` and 1 in `3DEngine.Tests/GizmoTests.cs`. 3
+injections: each fix undone, and the first form of the rule in pixels; each one failed a test. That first form took a
+scale of 0 when the pad gave no pixel, so each arc of the pad ended with no arc. The GPU test of the curves showed it
+before the commit, and the test of the pad holds it now.
+
+**What stays.** Nothing of the review: its tasks P0.60 to P0.62 are done. The owner chooses the next product phase
+(question Q3 A of the review).
+
+**A correction.** None.
+
+New tests: 3. The test list holds 1400 (1025 in `Engine.Tests`, 229 in `3DEngine.Tests`, 146 in
+`3DEngine.ImageTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
+entries: 14 of 15. New diagnostic codes: none. Since the review of v0.141, 1 product milestone and 5 entries followed
+it.
