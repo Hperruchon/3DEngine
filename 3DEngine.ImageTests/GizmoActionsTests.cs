@@ -25,7 +25,7 @@ public class GizmoActionsTests
 
     private static async Task<(EngineHost Host, BodyActions Actions, Guid Box)> OneBox()
     {
-        var host = new EngineHost(new ManifoldGeometryBackend(), "manifold", ManifoldGeometryBackend.NativeVersion);
+        var host = new EngineHost(new ManifoldGeometryBackend());
         var actions = new BodyActions(host.Session);
         Assert.Null(actions.CreateBox(1, 1, 1));
         var box = await host.Session.Read((document, _) => document.Bodies.Single().Handle.Id);

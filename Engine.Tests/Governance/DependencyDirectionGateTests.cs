@@ -249,7 +249,10 @@ public class DependencyDirectionGateTests
         foreach (var rune in decoded.EnumerateRunes())
         {
             var hidden = (System.Text.Rune.GetUnicodeCategory(rune) == System.Globalization.UnicodeCategory.Format && !(offset == 0 && rune.Value == 0xFEFF))
-                || rune.Value is 0x115F or 0x1160 or 0x3164 or 0xFFA0 or (>= 0xFE00 and <= 0xFE0F);
+                || rune.Value is 0x115F or 0x1160 or 0x3164 or 0xFFA0 or (>= 0xFE00 and <= 0xFE0F)
+                // Finding T113 of the codebase review of 2026-10-31 (b) (TASK-0143): the selectors of
+                // variation of the supplement and of Mongolian do not show. U+034F and U+2800 stay text.
+                || rune.Value is (>= 0xE0100 and <= 0xE01EF) or (>= 0x180B and <= 0x180F);
             if (hidden)
             {
                 yield return $"{relative} holds the character U+{rune.Value:X4}, which does not show, at character {offset}; write an escape";
@@ -349,6 +352,11 @@ public class DependencyDirectionGateTests
     [InlineData(new byte[] { 0x61, 0x81 }, true)]
     [InlineData(new byte[] { 0xE0, 0x82, 0x85 }, true)]
     [InlineData(new byte[] { 0x61, 0xE2, 0x82, 0xAC }, false)]
+    // Finding T113 (TASK-0143): U+E0100 and U+180B do not show; U+034F and U+2800 are text.
+    [InlineData(new byte[] { 0x61, 0xF3, 0xA0, 0x84, 0x80 }, true)]
+    [InlineData(new byte[] { 0x61, 0xE1, 0xA0, 0x8B }, true)]
+    [InlineData(new byte[] { 0x61, 0xCD, 0x8F }, false)]
+    [InlineData(new byte[] { 0x61, 0xE2, 0xA0, 0x80 }, false)]
     public void A_Control_Byte_In_A_Source_File_Is_An_Offence(byte[] bytes, bool offence)
     {
         Assert.Equal(offence, ControlByteOffences("Probe.cs", bytes).Any());
@@ -501,8 +509,15 @@ public class DependencyDirectionGateTests
             .SelectMany(item => (Value(item, "Include") ?? string.Empty).Split(';', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
             .Where(part => !part.EndsWith(".cs", StringComparison.OrdinalIgnoreCase))
             .Select(part => $"{file} compiles '{part}', which is not a .cs file")
-            .Concat(document.Descendants().Where(e => Is(e, "Output") && string.Equals(Value(e, "ItemName"), "Compile", StringComparison.OrdinalIgnoreCase))
+            .Concat(document.Descendants().Where(e => Is(e, "Output") && Value(e, "ItemName") is { } name && IsCompileName(name))
                 .Select(_ => $"{file} adds items Compile through the output of a task, which the gates cannot read"));
+
+    // Finding T115 of the codebase review of 2026-10-31 (b) (TASK-0143): ItemName="$(I)" with
+    // <I>Compile</I> passed, because the check compared the literal value. A name that MSBuild
+    // computes is refused too, and the value is trimmed.
+    private static bool IsCompileName(string name)
+        => string.Equals(name.Trim(), "Compile", StringComparison.OrdinalIgnoreCase)
+            || name.Contains("$(", StringComparison.Ordinal) || name.Contains("@(", StringComparison.Ordinal);
 
     [Fact]
     public void Each_Compile_Item_Names_CSharp_Files_Only()
@@ -527,6 +542,10 @@ public class DependencyDirectionGateTests
     [InlineData("<CreateItem Include=\"ProbeUi2.txt\"><Output TaskParameter=\"Include\" ItemName=\"Compile\" /></CreateItem>", true)]
     [InlineData("<CreateItem Include=\"ProbeUi2.txt\"><Output TaskParameter=\"Include\" ItemName=\"compile\" /></CreateItem>", true)]
     [InlineData("<CreateItem Include=\"Probe.txt\"><Output TaskParameter=\"Include\" ItemName=\"Other\" /></CreateItem>", false)]
+    // Finding T115 (TASK-0143): a name that a property or an item gives, and a name with spaces.
+    [InlineData("<CreateItem Include=\"ProbeUi2.txt\"><Output TaskParameter=\"Include\" ItemName=\"$(I)\" /></CreateItem>", true)]
+    [InlineData("<CreateItem Include=\"ProbeUi2.txt\"><Output TaskParameter=\"Include\" ItemName=\"@(I)\" /></CreateItem>", true)]
+    [InlineData("<CreateItem Include=\"ProbeUi2.txt\"><Output TaskParameter=\"Include\" ItemName=\" Compile \" /></CreateItem>", true)]
     public void A_Compile_Item_Of_Another_Extension_Is_An_Offence(string item, bool offence)
     {
         var document = XDocument.Parse($"<Project><ItemGroup>{item}</ItemGroup></Project>");

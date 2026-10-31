@@ -63,3 +63,4 @@ the rest of a press on a handle give nothing.
   slop cancels the press on a handle with no intent. The first form of the rule in pixels ended each arc of the pad,
   because the scale was 0 with no pixel; the GPU test of the curves showed it, and a test of the pad holds it now. 3 new
   test cases; 3 injections caught.
+- 2026-10-31: main merged into the branch (P0.60 and P0.61, v0.144 and v0.145); 3DEngine.Tests counts 226 + 3 = 229.

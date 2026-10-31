@@ -40,10 +40,28 @@ internal static class ConstantStrings
 
     // Each expression of each file whose constant value is a string, with its line.
     public static IEnumerable<(string Path, int Line, string Value)> Values(IEnumerable<(string Path, string Text)> files)
+        => Constants(files)
+            .Where(constant => constant.Value is string)
+            .Select(constant => (constant.Path, constant.Line, (string)constant.Value));
+
+    // Each expression of each file that has a constant value, with its line and the expression.
+    // Finding T116 of the codebase review of 2026-10-31 (b) (TASK-0143): the scanner of parts of codes
+    // needs the value of a constant char, which Values does not give.
+    //
+    // Finding T110 of the same review: the parse has no preprocessor symbol, and the build defines NET,
+    // so code inside #if NET was disabled text here and code for the build. A file with disabled text
+    // throws, so each gate that reads constants fails, as DeterminismCallGateTests does.
+    public static IEnumerable<(string Path, int Line, object Value, ExpressionSyntax Expression)> Constants(IEnumerable<(string Path, string Text)> files)
     {
         var trees = files
             .Select(file => CSharpSyntaxTree.ParseText(file.Text, new CSharpParseOptions(LanguageVersion.Preview), path: file.Path))
             .ToList();
+        foreach (var tree in trees)
+        {
+            if (tree.GetRoot().DescendantTrivia().FirstOrDefault(t => t.IsKind(SyntaxKind.DisabledTextTrivia)) is { RawKind: not 0 } hidden)
+                throw new InvalidOperationException(
+                    $"{tree.FilePath}:{tree.GetLineSpan(hidden.Span).StartLinePosition.Line + 1} holds code that a preprocessor condition hides from the gate");
+        }
         var byProject = trees.GroupBy(Project).ToDictionary(group => group.Key, group => group.ToList(), StringComparer.Ordinal);
         var compilations = new Dictionary<string, CSharpCompilation>(StringComparer.Ordinal);
         var building = new HashSet<string>(StringComparer.Ordinal);
@@ -70,8 +88,8 @@ internal static class ConstantStrings
                 var model = compilation.GetSemanticModel(tree);
                 foreach (var expression in tree.GetRoot().DescendantNodes().OfType<ExpressionSyntax>())
                 {
-                    if (model.GetConstantValue(expression) is { HasValue: true, Value: string value })
-                        yield return (tree.FilePath, expression.GetLocation().GetLineSpan().StartLinePosition.Line + 1, value);
+                    if (model.GetConstantValue(expression) is { HasValue: true, Value: { } value })
+                        yield return (tree.FilePath, expression.GetLocation().GetLineSpan().StartLinePosition.Line + 1, value, expression);
                 }
             }
         }

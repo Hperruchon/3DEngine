@@ -13,16 +13,53 @@ public sealed class EventSinkContractTests
     // A new sink of the engine or of the surface must enter this list with a test below.
     private static readonly Type[] TestedSinks = [typeof(InMemoryEventSink), typeof(BroadcastingEventSink)];
 
+    // Finding T112 of the codebase review of 2026-10-31 (b) (TASK-0143): the gate kept classes only and
+    // read two assemblies, and DocumentSession takes a sink from each host. It keeps each type that is
+    // not abstract and not an interface, in each assembly of a project of the repository that the test
+    // project copies to its folder, except the test projects.
     [Fact]
     public void Each_Sink_Of_The_Engine_Has_A_Test_That_It_Does_Not_Throw()
     {
-        var sinks = new[] { typeof(IEventSink).Assembly, typeof(EngineHost).Assembly }
+        var sinks = Sinks(ProjectAssemblies());
+
+        Assert.Contains(typeof(EngineHost).Assembly, ProjectAssemblies());
+        Assert.Contains(ProjectAssemblies(), assembly => assembly.GetName().Name == "engine");
+        Assert.Equal(TestedSinks.OrderBy(type => type.FullName, StringComparer.Ordinal), sinks);
+    }
+
+    // The control of T112: a struct that implements IEventSink is a sink.
+    [Fact]
+    public void A_Struct_That_Implements_The_Sink_Is_A_Sink()
+    {
+        Assert.Contains(typeof(StructSink), Sinks([typeof(StructSink).Assembly]));
+    }
+
+    private static Type[] Sinks(IEnumerable<System.Reflection.Assembly> assemblies)
+        => assemblies
             .SelectMany(assembly => assembly.GetTypes())
-            .Where(type => type is { IsClass: true, IsAbstract: false } && typeof(IEventSink).IsAssignableFrom(type))
+            .Where(type => type is { IsAbstract: false, IsInterface: false } && typeof(IEventSink).IsAssignableFrom(type))
             .OrderBy(type => type.FullName, StringComparer.Ordinal)
             .ToArray();
 
-        Assert.Equal(TestedSinks.OrderBy(type => type.FullName, StringComparer.Ordinal), sinks);
+    // The assemblies of the projects of the repository that the build copies next to the tests. A
+    // project can name its assembly: Engine.Cli builds engine.dll.
+    private static System.Reflection.Assembly[] ProjectAssemblies()
+        => Directory.EnumerateFiles(Engine.Tests.Governance.RepositoryFiles.Root, "*.csproj", SearchOption.AllDirectories)
+            .Where(file => !Path.GetFileNameWithoutExtension(file).EndsWith("Tests", StringComparison.Ordinal))
+            .Select(file => System.Xml.Linq.XDocument.Load(file).Descendants("AssemblyName").FirstOrDefault()?.Value ?? Path.GetFileNameWithoutExtension(file))
+            .Where(name => File.Exists(Path.Combine(AppContext.BaseDirectory, name + ".dll")))
+            .Distinct(StringComparer.Ordinal)
+            .Order(StringComparer.Ordinal)
+            .Select(name => System.Reflection.Assembly.Load(name))
+            .ToArray();
+
+    private readonly struct StructSink : IEventSink
+    {
+        public Task Append(EventRecord record, CancellationToken ct) => throw new InvalidOperationException("A struct sink throws.");
+
+        public IReadOnlyList<EventRecord> Snapshot() => [];
+
+        public int Count => 0;
     }
 
     // The ring evicts the oldest event when it is full, and the range that stays is contiguous.

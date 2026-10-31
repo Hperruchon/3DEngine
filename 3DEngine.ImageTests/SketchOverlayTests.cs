@@ -90,7 +90,7 @@ public class SketchOverlayTests
     [Fact]
     public async Task The_Desktop_Follows_The_Sketch_Events_Of_The_Session()
     {
-        using var host = new EngineHost(new InProcessMeshBackend(), "managed", "test");
+        using var host = new EngineHost(new InProcessMeshBackend());
         using var sketches = new SessionSketches(host);
         var session = host.Session;
 
@@ -117,7 +117,7 @@ public class SketchOverlayTests
     [Fact]
     public async Task A_Sketch_Of_An_Open_Document_Is_Drawn()
     {
-        using var host = new EngineHost(new InProcessMeshBackend(), "managed", "test");
+        using var host = new EngineHost(new InProcessMeshBackend());
         await host.Session.Apply(new CreateSketchCommand { DatumId = Datums.YZ.Id, SketchName = "Before" });
 
         using var sketches = new SessionSketches(host);
