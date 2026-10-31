@@ -1,7 +1,7 @@
 ---
 id: 0150
 title: The pin rules read each imported file, the sink gate reads the desktop, and the next forms of the sixteenth review fail
-status: Active
+status: Done
 phase: P0.64
 opened: 2026-10-31
 depends-on: [0148]
@@ -55,9 +55,21 @@ A pin through an imported file, a sink in any host, and the next forms of T113 t
 
 ## Acceptance criteria
 
-- [ ] Each gate fails on an injection of its new form before the change, and the control still fails after it.
-- [ ] A clean build (`--no-incremental`) gives zero errors and zero warnings.
-- [ ] Continuous integration passes on the three runners, on the branch and on `main` after the merge.
+- [x] Each gate fails on an injection of its new form before the change, and the control still fails after it.
+- [x] A clean build (`--no-incremental`) gives zero errors and zero warnings.
+- [x] Continuous integration passes on the three runners, on the branch and on `main` after the merge.
+
+## Outcome
+
+Status: Done · commit (the merge of the branch p064-gate-forms) · v0.154
+
+## Method
+
+Mechanical: each form of the review as a test case that the old gate passed, and the injections of T117 and T118 in
+            real files before and after the change.
+Judgement:  an explicit list of the projects whose sinks another test project reads; the set of Unicode 16 written in
+            the gate; an underline at any indent only after a line with a version.
+Weakest:    the list of the default ignorable characters is a copy of one version of Unicode; a later version can add one.
 
 ## Progress
 - 2026-10-31: T117 to T122. Each new form was a test case that the old gate passed; T117 and T118 were also
@@ -65,3 +77,4 @@ A pin through an imported file, a sink in any host, and the next forms of T113 t
   3DEngine.Core, a throwing sink in 3DEngine, and a list with no entry for 3DEngine. The set of T121 first named
   U+FEFF, and the gate then refused the byte order mark of a file; the rule of the category Format keeps its exception.
   12 new test cases in Engine.Tests and 1 in 3DEngine.ImageTests.
+- 2026-10-31: closed at v0.154.
