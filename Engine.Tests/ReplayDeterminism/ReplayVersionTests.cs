@@ -81,8 +81,8 @@ public class ReplayVersionTests
         var box = new CreateBoxCommand { SizeX = 1, SizeY = 2, SizeZ = 3 };
         Command[] log = [new NoOpCommand { Echo = "first" }, box];
 
-        var error = await Assert.ThrowsAnyAsync<InvalidOperationException>(
-            () => Replay.ReplayLog(log, NewRegistry()));
+        var error = await Assert.ThrowsAsync<ReplayDivergenceException>(
+            () => Replay.ReplayLog(log, NewRegistry(), NullGeometryBackend.Instance));
 
         Assert.Contains(box.CommandId.ToString(), error.Message);
         Assert.Contains(DiagnosticCodes.GeomCapMissing, error.Message);
