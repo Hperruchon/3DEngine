@@ -27,6 +27,50 @@ public sealed class EventSinkContractTests
         Assert.Equal(TestedSinks.OrderBy(type => type.FullName, StringComparer.Ordinal), sinks);
     }
 
+    // Finding T118 of the codebase review of 2026-10-31 (c) (TASK-0150): the gate skipped a project whose
+    // assembly is not in this folder with no message, and Engine.Tests does not reference the desktop.
+    // Each project that can reach IEventSink is read here, or a test of another test project reads it.
+    private static readonly Dictionary<string, string> ReadElsewhere = new(StringComparer.Ordinal)
+    {
+        ["3DEngine"] = "3DEngine.ImageTests/DesktopSinkContractTests.cs",
+    };
+
+    [Fact]
+    public void Each_Project_That_Can_Hold_A_Sink_Is_Read_Here_Or_By_A_Named_Test()
+    {
+        var unread = ProjectsThatReachTheSink()
+            .Where(name => !File.Exists(Path.Combine(AppContext.BaseDirectory, name + ".dll")))
+            .ToArray();
+
+        Assert.Equal(ReadElsewhere.Keys.Order(StringComparer.Ordinal), unread);
+        Assert.All(ReadElsewhere.Values, test => Assert.True(File.Exists(Engine.Tests.Governance.RepositoryFiles.Path(test)), $"{test} does not exist."));
+    }
+
+    // The assembly of each project that is not a test and that is Engine.Core, the project of IEventSink,
+    // or references it directly or through another project, in each file that MSBuild reads for it.
+    private static string[] ProjectsThatReachTheSink()
+    {
+        var projects = Directory.EnumerateFiles(Engine.Tests.Governance.RepositoryFiles.Root, "*.csproj", SearchOption.AllDirectories)
+            .GroupBy(file => Path.GetFileNameWithoutExtension(file), StringComparer.Ordinal)
+            .ToDictionary(group => group.Key, group => group.First(), StringComparer.Ordinal);
+        var references = projects.ToDictionary(
+            project => project.Key,
+            project => Engine.Tests.Governance.DependencyDirectionGateTests.FilesThatMsBuildReads(project.Value)
+                .SelectMany(file => System.Xml.Linq.XDocument.Load(file).Descendants().Where(element => element.Name.LocalName == "ProjectReference"))
+                .Select(element => Path.GetFileNameWithoutExtension(((string?)element.Attribute("Include") ?? string.Empty).Replace('\\', '/')))
+                .ToArray(),
+            StringComparer.Ordinal);
+
+        bool Reaches(string project, HashSet<string> seen)
+            => project == "Engine.Core" || (seen.Add(project) && references.GetValueOrDefault(project, []).Any(next => Reaches(next, seen)));
+
+        return projects
+            .Where(project => !project.Key.EndsWith("Tests", StringComparison.Ordinal) && Reaches(project.Key, []))
+            .Select(project => System.Xml.Linq.XDocument.Load(project.Value).Descendants("AssemblyName").FirstOrDefault()?.Value ?? project.Key)
+            .Order(StringComparer.Ordinal)
+            .ToArray();
+    }
+
     // The control of T112: a struct that implements IEventSink is a sink.
     [Fact]
     public void A_Struct_That_Implements_The_Sink_Is_A_Sink()
