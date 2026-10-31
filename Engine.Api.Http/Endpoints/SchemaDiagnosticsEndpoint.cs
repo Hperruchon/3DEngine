@@ -57,6 +57,13 @@ internal static class SchemaDiagnosticsEndpoint
         new(DiagnosticCodes.AssetNotFound,         "Error",   "ASSET"), // ADR-0044 item 2, TASK-0147
         new(DiagnosticCodes.AssetCorrupt,          "Error",   "ASSET"), // ADR-0044 item 2, TASK-0147
         new(DiagnosticCodes.AssetWriteFailed,      "Error",   "ASSET"), // ADR-0044 item 2, TASK-0147
+        new(DiagnosticCodes.ImageNotFound,         "Error",   "IMAGE"), // ADR-0045 item 6, TASK-0152
+        new(DiagnosticCodes.ImageIdInUse,          "Error",   "IMAGE"), // ADR-0045 item 6, TASK-0152
+        new(DiagnosticCodes.ImageAssetInvalid,     "Error",   "IMAGE"), // ADR-0045 item 6, TASK-0152
+        new(DiagnosticCodes.ImageDatumNotFound,    "Error",   "IMAGE"), // ADR-0045 item 6, TASK-0152
+        new(DiagnosticCodes.ImageSizeInvalid,      "Error",   "IMAGE"), // ADR-0045 item 6, TASK-0152
+        new(DiagnosticCodes.ImageScaleInvalid,     "Error",   "IMAGE"), // ADR-0045 item 6, TASK-0152
+        new(DiagnosticCodes.ImageCalibrationInvalid, "Error", "IMAGE"), // ADR-0045 item 6, TASK-0152
     };
 
     public static IResult Handle() => Results.Json(Codes, ApiJson.Options);

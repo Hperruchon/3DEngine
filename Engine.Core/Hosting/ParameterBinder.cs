@@ -48,6 +48,9 @@ public static class ParameterBinder
             : new BindResult(null, failures);
     }
 
+    // 2^53: each whole number up to it has an exact double.
+    private const double MaximumExactInteger = 9007199254740992;
+
     private static bool TryCoerce(
         object supplied,
         string declaredType,
@@ -83,9 +86,17 @@ public static class ParameterBinder
                 reason = $"expected a finite number, received '{Describe(supplied)}'.";
                 return false;
 
+            // TASK-0152: the HTTP surface gives each JSON number as a double, so an integer field
+            // refused 800 until PlaceImage, the first command with one. A whole double up to 2^53
+            // is exact, so it is the integer; a larger one or a fraction is refused.
             case "integer":
                 if (supplied is long l) { coerced = l; return true; }
                 if (supplied is int i) { coerced = (long)i; return true; }
+                if (supplied is double whole && double.IsFinite(whole) && Math.Floor(whole) == whole && Math.Abs(whole) <= MaximumExactInteger)
+                {
+                    coerced = (long)whole;
+                    return true;
+                }
                 if (text is not null
                     && long.TryParse(text, NumberStyles.Integer, CultureInfo.InvariantCulture, out var pl))
                 {

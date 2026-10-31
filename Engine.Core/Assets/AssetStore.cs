@@ -117,6 +117,8 @@ public sealed partial class AssetStore
         }
     }
 
-    [GeneratedRegex("^[0-9a-f]{64}$", RegexOptions.CultureInvariant)]
+    // Finding E113 of the codebase review of 2026-10-31 (c) (TASK-0152): $ also matches before a
+    // final line feed, so a name with one passed, and a read then threw. \z ends at the end only.
+    [GeneratedRegex(@"^[0-9a-f]{64}\z", RegexOptions.CultureInvariant)]
     private static partial Regex Name();
 }

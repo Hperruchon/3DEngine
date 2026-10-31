@@ -76,4 +76,13 @@ public static class DiagnosticCodes
     public const string AssetNotFound = "E-ASSET-NOT-FOUND";
     public const string AssetCorrupt = "E-ASSET-CORRUPT";
     public const string AssetWriteFailed = "E-ASSET-WRITE-FAILED";
+
+    // ADR-0045 (phase V2a, TASK-0152): an image on a datum and its calibration.
+    public const string ImageNotFound = "E-IMAGE-NOT-FOUND";
+    public const string ImageIdInUse = "E-IMAGE-ID-IN-USE";
+    public const string ImageAssetInvalid = "E-IMAGE-ASSET-INVALID";
+    public const string ImageDatumNotFound = "E-IMAGE-DATUM-NOT-FOUND";
+    public const string ImageSizeInvalid = "E-IMAGE-SIZE-INVALID";
+    public const string ImageScaleInvalid = "E-IMAGE-SCALE-INVALID";
+    public const string ImageCalibrationInvalid = "E-IMAGE-CALIBRATION-INVALID";
 }
