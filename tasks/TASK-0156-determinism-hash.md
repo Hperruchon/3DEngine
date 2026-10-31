@@ -70,6 +70,5 @@ A difference of one bit in a mesh, a bounding box or a solved point between two 
 - 2026-10-31: run 41222744710 gave three hashes and equal summaries: the boxes and the solved points agree on the
   three runners, and a mesh differs. Each body line holds a short hash of its positions and of its indices now.
 - 2026-10-31: run 41223228416 gave 61cfb8ff on Ubuntu and on macOS and dd2a6132 on Windows, with equal summaries, short
-  hashes of the meshes included. AppendLine wrote "
-" on Windows; each line ends with a line feed now, and Windows
-  gives 61cfb8ff75aceb8466a27a3e608ea3bdd1a4aca399e1a1674b3a979ecfecad8f too.
+  hashes of the meshes included. AppendLine wrote a carriage return and a line feed on Windows; each line ends with a line feed now,
+  and Windows gives 61cfb8ff75aceb8466a27a3e608ea3bdd1a4aca399e1a1674b3a979ecfecad8f too.
