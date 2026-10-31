@@ -757,8 +757,10 @@ internal sealed unsafe class DesktopUi : IDisposable
                 ("horizontal" or "vertical", "L") => true,
                 ("distance", "PP" or "PL" or "L") => true,
                 ("fixed", "P") => !origin,
-                ("pointOn", "PA") => label == OnCurveLabel,
-                ("tangent", "LA") => label != InsideTangentLabel,
+                // Finding V59 of the codebase review of 2026-10-31 (TASK-0133): the engine refuses a point
+                // that defines the curve and a line with an end at the centre (SketchConstraints.Refusal).
+                ("pointOn", "PA") => label == OnCurveLabel && !CurvePoints(sketch, items[1]).Contains(items[0]),
+                ("tangent", "LA") => label != InsideTangentLabel && !IsEnd(sketch, CurvePoints(sketch, items[1])[0], items[0]),
                 ("tangent", "AA") => true,
                 ("equal", "AA" or "LL") => true,
                 ("radius", "A") => true,
@@ -814,7 +816,19 @@ internal sealed unsafe class DesktopUi : IDisposable
                 scope: PadScope.Sketch));
         }
 
-        if (constraint is { Values.Count: > 0 })
+        // Finding V56 of the codebase review of 2026-10-31 (TASK-0133): the Value pad of an angle showed
+        // its cosine and its sine in millimetres. It takes degrees, as the pad of Angle does. A tangent of
+        // two curves has the value 1 or −1, which Tangent and Inside tangent give, so it has no Value.
+        if (constraint is { Kind: "angle", Values.Count: 2 })
+        {
+            var degrees = Math.Atan2(constraint.Values[1], constraint.Values[0]) * 180 / Math.PI;
+            Flow(ValueLabel, () => OpenPad(
+                new NumericPad(ValueLabel, AngleUnit, new PadField("angle", SketchText.Number(degrees))),
+                values => new SetConstraintValueAction(constraint.Id, CosineAndSine(values[0])),
+                bySketch: true,
+                scope: PadScope.Sketch));
+        }
+        else if (constraint is { Values.Count: > 0 } && constraint.Kind != "tangent")
         {
             string[] names = constraint.Values.Count == 1 ? ["length"] : ["x", "y"];
             Flow(ValueLabel, () => OpenPad(
@@ -827,6 +841,12 @@ internal sealed unsafe class DesktopUi : IDisposable
         if (!origin)
             Flow(DeleteLabel, () => _actions.Add(new DeleteSketchItemsAction([.. selection])));
     }
+
+    // The centre of a curve first, then the start and the end of an arc.
+    private static Guid[] CurvePoints(SketchInfo sketch, Guid curve)
+        => sketch.Circles.FirstOrDefault(circle => circle.Id == curve) is { } circle
+            ? [circle.Center]
+            : sketch.Arcs.FirstOrDefault(arc => arc.Id == curve) is { } arc ? [arc.Center, arc.Start, arc.End] : [Guid.Empty];
 
     private static bool IsEnd(SketchInfo sketch, Guid point, Guid line)
         => sketch.Lines.FirstOrDefault(item => item.Id == line) is { } found && (found.Start == point || found.End == point);
@@ -844,7 +864,9 @@ internal sealed unsafe class DesktopUi : IDisposable
             90 => [0, 1],
             180 => [-1, 0],
             270 => [0, -1],
-            _ => [Math.Cos(degrees * Math.PI / 180), Math.Sin(degrees * Math.PI / 180)],
+            // Finding V60 (TASK-0133): the turn, not the degrees, so 1e20 gives the angle of its turn; a
+            // value that is not finite gives NaN, which the engine refuses.
+            _ => [Math.Cos(turn * Math.PI / 180), Math.Sin(turn * Math.PI / 180)],
         };
     }
 
