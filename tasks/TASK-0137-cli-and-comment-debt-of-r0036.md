@@ -1,7 +1,7 @@
 ---
 id: 0137
 title: The command line checks a name before the backend, and the comments of the replay are true
-status: Active
+status: Done
 phase: P0.56
 opened: 2026-10-31
 depends-on: [0136]
@@ -60,10 +60,22 @@ replay say what the code does.
 
 ## Acceptance criteria
 
-- [ ] A test of each finding fails before the change and passes after it.
-- [ ] A clean build (`--no-incremental`) gives zero errors and zero warnings.
-- [ ] Continuous integration passes on the three runners, on the branch and on `main` after the merge.
+- [x] A test of each finding fails before the change and passes after it.
+- [x] A clean build (`--no-incremental`) gives zero errors and zero warnings.
+- [x] Continuous integration passes on the three runners, on the branch and on `main` after the merge.
+
+## Outcome
+
+Status: Done · commit (the merge of the branch p056-cli-debt) · v0.138
+
+## Method
+
+Mechanical: the catalog before the session in two verbs, four comments, and one clause with no full stop.
+Judgement:  a test of a comment cannot fail before the change, so the test of the repeated box proves the new text
+            of the comments; the comment of the reset belongs to E18 of R-0033, so it stays.
+Weakest:    E25, E27 and the findings of the hosts in R-0036 stay open.
 
 ## Progress
 
 - 2026-10-31: E37 and E31 with 2 new test cases and 2 new assertions.
+- 2026-10-31: 3 injections caught; `governed-by` names the fifteen ADRs of the write set; closed at v0.138.
