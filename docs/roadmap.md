@@ -107,6 +107,7 @@ Therefore each approved objective must have a track here.
 - K2g — The selection holds three items, and the window of the sketch offers Symmetric. v0.128, TASK-0127.
 - K3 — The constraint solver holds the fourteen kinds of ADR-0033 item 3. Closed at v0.129, from TASK-0102, TASK-0110 and TASK-0117.
 - K0e — An extrude takes a profile of lines and arcs, or one circle. v0.130, TASK-0126, ADR-0040.
+- P0.51 — A radius at the noise level does not solve, and the check of the tasks binds the real gate files. v0.132, TASK-0130.
 
 ## Track 0 — Foundations
 
