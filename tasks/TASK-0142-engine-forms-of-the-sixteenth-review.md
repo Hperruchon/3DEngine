@@ -1,7 +1,7 @@
 ---
 id: 0142
 title: The open follows the replay, the adds follow the solver, and the comments of the cache are true
-status: Active
+status: Done
 phase: P0.60
 opened: 2026-10-31
 depends-on: [0141]
@@ -84,9 +84,20 @@ that the solver refuses, and each comment of the cache says what the code does.
 
 ## Acceptance criteria
 
-- [ ] A test of each finding fails before the change and passes after it; a comment has no test.
-- [ ] A clean build (`--no-incremental`) gives zero errors and zero warnings.
-- [ ] Continuous integration passes on the three runners, on the branch and on `main` after the merge.
+- [x] A test of each finding fails before the change and passes after it; a comment has no test.
+- [x] A clean build (`--no-incremental`) gives zero errors and zero warnings.
+- [x] Continuous integration passes on the three runners, on the branch and on `main` after the merge.
+
+## Outcome
+
+Status: Done · commit (the merge of the branch p060-engine-forms) · v0.144
+
+## Method
+
+Mechanical: the probes of the review as tests, one injection for each fix, and the compiler for each host of E111.
+Judgement:  an entry of a log keeps the rule of 0 for a radius, as E103 did for an arc; `IsJson` keeps the default
+            options, so a repeated member in a last line is refused and not cut as a torn line.
+Weakest:    E110 and E112 change comments only, and no test holds a comment.
 
 ## Progress
 
@@ -94,3 +105,4 @@ that the solver refuses, and each comment of the cache says what the code does.
 - 2026-10-31: R11b merged; the task starts. E111 removes two parameters of `EngineHost`, so the 19 test files that
   build a host enter the write set. `IsJson` keeps the default options, so a last line with a repeated member is
   refused and not cut as a torn line. 6 new test cases; 6 injections caught.
+- 2026-10-31: closed at v0.144.
