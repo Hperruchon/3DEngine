@@ -116,6 +116,7 @@ Therefore each approved objective must have a track here.
 - P0.56 — The command line checks a name before the backend, and the comments of the replay are true. v0.138, TASK-0137.
 - P0.57 — The reason of a native library that does not load separates a missing file from a platform with no payload. v0.139, TASK-0138.
 - P0.58 — The schema of the backend is in the list of the surface, and it gives the identity of the backend. v0.140, TASK-0139.
+- P0.59 — A sink of events does not throw, and a test holds each sink to it. v0.141, TASK-0140.
 
 ## Track 0 — Foundations
 
@@ -181,6 +182,7 @@ This track removes each condition that blocks other work.
 | P0.56 | The command line checks a name before the backend, and the comments of the replay are true (E37, E31 of R-0036). TASK-0137. | 1 |
 | P0.57 | The reason of a native library that does not load separates a missing file from a platform with no payload (E38 of R-0036). TASK-0138. | 1 |
 | P0.58 | The schema of the backend is in the list of the surface, and it gives the identity of the backend (E35 of R-0036). TASK-0139. | 1 |
+| P0.59 | A sink of events does not throw, and a test holds each sink to it (E18 of R-0033, Q4 of 2026-10-04). TASK-0140. | 1 |
 
 ## Track P — The platform
 
