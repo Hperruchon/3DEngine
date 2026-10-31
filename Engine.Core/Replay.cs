@@ -23,16 +23,18 @@ namespace Engine.Core;
 // script, records no backend and replays on the backend that the caller gives.
 public static class Replay
 {
+    // Finding E30 of the codebase review of 2026-10-08 (TASK-0136): the backend was optional, and the
+    // default null backend made each log with geometry diverge at its first body. The caller names it.
     public static Task<ReplayResult> ReplayLog(
         IEnumerable<LogEntry> log,
         CommandRegistry registry,
-        IGeometryBackend? backend = null,
+        IGeometryBackend backend,
         CancellationToken ct = default)
     {
         if (log is null) throw new ArgumentNullException(nameof(log));
+        if (backend is null) throw new ArgumentNullException(nameof(backend));
 
-        var active = backend ?? NullGeometryBackend.Instance;
-        return ReplayLog(Checked(log, active.Identity), registry, active, ct);
+        return ReplayLog(Checked(log, backend.Identity), registry, backend, ct);
     }
 
     private static IEnumerable<Command> Checked(IEnumerable<LogEntry> log, BackendIdentity active)
@@ -50,20 +52,32 @@ public static class Replay
     public static async Task<ReplayResult> ReplayLog(
         IEnumerable<Command> log,
         CommandRegistry registry,
-        IGeometryBackend? backend = null,
+        IGeometryBackend backend,
         CancellationToken ct = default)
     {
         if (log is null) throw new ArgumentNullException(nameof(log));
         if (registry is null) throw new ArgumentNullException(nameof(registry));
+        if (backend is null) throw new ArgumentNullException(nameof(backend));
 
         var document = new Document();
         var sink = new InMemoryEventSink();
-        var bus = CommandBus.ForReplay(document, registry, sink, backend ?? NullGeometryBackend.Instance);
+        var bus = CommandBus.ForReplay(document, registry, sink, backend);
 
         var index = 0;
         foreach (var command in log)
         {
-            var result = await bus.Apply(command, ct).ConfigureAwait(false);
+            CommandResult result;
+            // Finding E28 of the codebase review of 2026-10-08 (TASK-0136): the bus catches a cancellation
+            // only, so an exception of a handler left the replay with no entry and no command. It is a
+            // divergence at that entry, and the exception is its inner exception.
+            try
+            {
+                result = await bus.Apply(command, ct).ConfigureAwait(false);
+            }
+            catch (Exception ex) when (ex is not OperationCanceledException)
+            {
+                throw new ReplayDivergenceException(index, command, ex);
+            }
             // Finding E29 of the codebase review of 2026-10-08 (TASK-0135): the bus turns a cancellation
             // into Cancelled, and the replay reported it as a divergence of the log. A cancellation of
             // the caller stays a cancellation.
@@ -92,12 +106,24 @@ public sealed class ReplayDivergenceException : InvalidOperationException
         Result = result;
     }
 
+    public ReplayDivergenceException(int index, Command command, Exception exception)
+        : base(
+            $"The replay diverged at entry {index} of the log: {command.Name} {command.CommandId} threw "
+            + $"{exception.GetType().Name}: {exception.Message}. Each entry of a log was applied one time, so a "
+            + "replay must apply it too.",
+            exception)
+    {
+        Index = index;
+        Command = command;
+    }
+
     // The position of the entry in the log, from 0.
     public int Index { get; }
 
     public Command Command { get; }
 
-    public CommandResult Result { get; }
+    // Null when the entry threw; InnerException then holds the exception.
+    public CommandResult? Result { get; }
 }
 
 // ADR-0015 item 6: the code E-IO-BACKEND-MISMATCH.

@@ -112,6 +112,7 @@ Therefore each approved objective must have a track here.
 - P0.52 — The engine, the surface and the gates close the forms of the fifteenth review. v0.134, TASK-0132.
 - P0.53 — The pad of an angle takes degrees, and the tools and the window follow the review. v0.135, TASK-0133.
 - P0.54 — The log of the Document is read-only, a cancelled replay is a cancellation, and a query of a lost body gives an error. v0.136, TASK-0135.
+- P0.55 — An exception of a handler in a replay is a divergence, and a replay needs a backend. v0.137, TASK-0136.
 
 ## Track 0 — Foundations
 
@@ -173,6 +174,7 @@ This track removes each condition that blocks other work.
 | P0.52 | The engine, the surface and the gates close the forms of the fifteenth review (E103 to E105, T104 to T109; after R11a). TASK-0132. | 3–4 |
 | P0.53 | The pad of an angle takes degrees, and the tools and the window follow the review (V56 to V62; after R11a). TASK-0133. | 2–3 |
 | P0.54 | The log of the Document is read-only, a cancelled replay is a cancellation, and a query of a lost body gives an error (E26, E29, E32 of R-0036). TASK-0135. | 1 |
+| P0.55 | An exception of a handler in a replay is a divergence, and a replay needs a backend (E28, E30 of R-0036). TASK-0136. | 1 |
 
 ## Track P — The platform
 

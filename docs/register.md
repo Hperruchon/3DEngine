@@ -381,6 +381,9 @@ Progress 2026-10-17: TASK-0067 corrected the open part of E36: each failure of t
 documented exit code (5 for each failure other than codes 1 to 4), and no failure of the start crashes.
 Progress 2026-10-31: TASK-0135 corrects E26 (the log is a read-only view), E29 (a cancelled replay throws
 `OperationCanceledException`) and E32 (a query of a body that the backend does not hold gives `E-GEOM-NATIVE-OP`).
+Progress 2026-10-31: TASK-0136 corrects E28 (an exception of a handler in a replay is a `ReplayDivergenceException`)
+and E30 (the backend of a replay is required). E27 stays: its refusal needs a member of `IGeometryBackend` that tells
+if the backend holds a body, which is a change of `Engine.Contracts` and needs the owner and an ADR.
 
 ### R-0039 · No test calls the surface of the desktop host
 - class: debt
