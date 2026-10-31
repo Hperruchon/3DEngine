@@ -1,7 +1,7 @@
 ---
 id: 0148
 title: The codebase review of 2026-10-31 (c) is a record
-status: Done
+status: Active
 phase: governance
 opened: 2026-10-31
 depends-on: [0146]
@@ -16,6 +16,7 @@ writes:
   modify:
     - docs/roadmap.md
     - docs/CURRENT-STATE.md
+    - docs/register.md
   forbid:
     - Engine.Contracts/**
     - Engine.Core/**
@@ -85,3 +86,5 @@ Weakest:    each probe ran on Windows only; E113 on Linux and the mark of V67 in
 
 - 2026-10-31: two review agents probed `b410a59`; I ran their 23 probes again and injected T117 with its control.
 - 2026-10-31: closed at v0.150.
+- 2026-10-31: run 41214590078 failed on Windows in `EventsEndpointLagTests`, which depends on the speed of the runner;
+  register entry R-0047 records it.
