@@ -4003,3 +4003,28 @@ New tests: 1. The test list holds 1371 (1002 in `Engine.Tests`, 225 in `3DEngine
 `3DEngine.ImageTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
 entries: 14 of 15. New diagnostic codes: none. Since the review of v0.130, 1 product milestone and 9 entries followed
 it.
+
+## v0.140 — The schema of the backend is in the list of the surface, and it gives the identity of the backend (P0.58, TASK-0139)
+
+R11b (TASK-0134) still waits for the visual check of the owner, so this task took finding E35 of register entry R-0036.
+
+**The change.**
+
+- ADR-0008 §9 lists `/schema/backend`, which TASK-0036 added with no line there, and a section of history records it.
+  A new gate in `Engine.Tests/Http/SchemaEndpointGateTests.cs` holds the routes of `EngineSurface.cs` under
+  `/schema` equal to the list of §9.
+- `ServerEngine.Create` gives the host the name and the version of `backend.Identity` (ADR-0015 item 5). With the
+  managed backend, `/schema/backend` gave the version "1.0.0.0" of the assembly `Engine.Core`; it gives "1" now,
+  which each log entry records. The desktop host already gave the identity of the native backend.
+
+**Proof.** 1 new test case and 1 new assertion. 2 injections: the list of ADR-0008 with no line for
+`/schema/backend`, and the version of the assembly; each one failed a test.
+
+**What stays.** E25, E27, E33, E34 and E39 stay in R-0036.
+
+**A correction.** ADR-0008 §9 was incomplete; this task corrects it.
+
+New tests: 1. The test list holds 1372 (1003 in `Engine.Tests`, 225 in `3DEngine.Tests`, 144 in
+`3DEngine.ImageTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
+entries: 14 of 15. New diagnostic codes: none. Since the review of v0.130, 1 product milestone and 10 entries followed
+it.
