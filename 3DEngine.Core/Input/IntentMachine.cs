@@ -180,9 +180,14 @@ public sealed class IntentMachine
                 _contacts.Remove(contact);
                 if (_contacts.Count == 0)
                 {
-                    EndGizmo(sample, intents);
+                    var cancelled = EndGizmo(sample, intents);
                     var held = sample.TimestampNs - contact.DownNs;
-                    if (!_twoContactsSeen && !contact.Moved && held <= _settings.TapMaxNanoseconds)
+                    if (cancelled)
+                    {
+                        // Finding V65 of the codebase review of 2026-10-31 (c) (TASK-0151): the rest of
+                        // a press that Escape cancelled gives nothing, also no tap.
+                    }
+                    else if (!_twoContactsSeen && !contact.Moved && held <= _settings.TapMaxNanoseconds)
                         Point(Gesture.Tap, contact.DownX, contact.DownY, intents);
                     else if (!_twoContactsSeen && !contact.Moved && held >= _settings.LongPressNanoseconds)
                         Point(Gesture.LongPress, contact.DownX, contact.DownY, intents);
@@ -258,8 +263,8 @@ public sealed class IntentMachine
                 break;
 
             case PointerPhase.Up when _mouse is not null && (sample.Buttons & _mouse.Button) != 0:
-                EndGizmo(sample, intents);
-                if (!_mouse.Moved && sample.TimestampNs - _mouse.DownNs <= _settings.TapMaxNanoseconds)
+                // Finding V65: and no click.
+                if (!EndGizmo(sample, intents) && !_mouse.Moved && sample.TimestampNs - _mouse.DownNs <= _settings.TapMaxNanoseconds)
                     Point(_mouse.Button == PointerButtons.Right ? Gesture.RightClick : Gesture.Click, _mouse.DownX, _mouse.DownY, intents);
                 _mouse = null;
                 break;
@@ -341,13 +346,15 @@ public sealed class IntentMachine
 
     // The release of a press on a handle: the end of its drag. A drag starts only after the press
     // moved beyond the slop, and such a press never taps or clicks, so a press that did not move
-    // gives its tap or its click and no end.
-    private void EndGizmo(PointerSample sample, List<Intent> intents)
+    // gives its tap or its click and no end. True when a cancel ended the press, so the release
+    // gives no tap and no click (finding V65).
+    private bool EndGizmo(PointerSample sample, List<Intent> intents)
     {
         var gizmo = _gizmo;
         _gizmo = null;
         if (gizmo is { Started: true, Cancelled: false })
             intents.Add(new GizmoEndIntent(sample.X, sample.Y));
+        return gizmo is { Cancelled: true };
     }
 
     // A cancel of the drag in progress: the rest of the press gives nothing.

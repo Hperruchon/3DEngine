@@ -506,6 +506,36 @@ public class SketchToolTests
         Assert.Null(tool.First);
     }
 
+    // Finding V66 of the codebase review of 2026-10-31 (c) (TASK-0151): with the centre (0, 0) and the start
+    // (10, 0), a tap at (0, 5) puts the end at (0, 10), on the circle, and the mark showed at (0, 5).
+    // The target is where the point goes; the tool Line keeps the snap.
+    [Fact]
+    public void The_Target_Of_The_End_Of_An_Arc_Is_On_Its_Circle()
+    {
+        var (tool, editor) = (new SketchTool { Kind = SketchToolKind.Arc }, new Editor());
+        Tap(tool, editor, 0, 0);
+        Tap(tool, editor, 10, 0);
+
+        var target = tool.Target(0, 50, (0, 5), editor.Picture());
+        Tap(tool, editor, 0, 5);
+        var line = new SketchTool { Kind = SketchToolKind.Line }.Target(0, 50, (0, 5), editor.Picture());
+
+        Assert.Equal((0.0, 10.0), target);
+        Assert.Contains("point 0 10", editor.Log);
+        Assert.Equal((0.0, 5.0), line);
+    }
+
+    // V66: where a tap ends the curve, the target is null, so no mark shows a point that no tap adds.
+    [Fact]
+    public void The_Target_Is_Null_Where_A_Tap_Ends_The_Arc()
+    {
+        var (tool, editor) = (new SketchTool { Kind = SketchToolKind.Arc }, new Editor());
+        Tap(tool, editor, 0, 0);
+        Tap(tool, editor, 100, 1);
+
+        Assert.Null(tool.Target(1030, 10, (103, 1), editor.Picture()));
+    }
+
     // V63 (TASK-0144): the pad gives no pixel, so the rule in pixels does not act, and the pad still
     // makes an arc. The first form of the fix ended each arc of the pad, and only the GPU test saw it.
     [Fact]

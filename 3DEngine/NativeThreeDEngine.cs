@@ -121,7 +121,13 @@ public sealed class NativeThreeDEngine : IThreeDEngine, IDisposable
         var frame = _input.TakeFrame();
 
         // ADR-0034 item 1: the intent layer is in the mode Sketch while a sketch is active.
-        _intents.Mode = _sketchActions?.Active is null ? IntentMode.Scene : IntentMode.Sketch;
+        var mode = _sketchActions?.Active is null ? IntentMode.Scene : IntentMode.Sketch;
+        // Finding V67 of the codebase review of 2026-10-31 (c) (TASK-0151): the mark stayed after a change
+        // of mode, after a finger lifted and after a cancel; ADR-0041 item 6 shows it while the finger
+        // is down.
+        if (mode != _intents.Mode)
+            _hover = null;
+        _intents.Mode = mode;
 
         // ADR-0038 item 5: the hit test of the gizmo that shows now, or none.
         var window = _window.Extent;
@@ -177,6 +183,8 @@ public sealed class NativeThreeDEngine : IThreeDEngine, IDisposable
                     break;
             }
         }
+
+        _hover = HoverMark.After(_hover, frame);
     }
 
     // ADR-0038 item 7: the gizmo shows on the selected body when the body is live and visible,

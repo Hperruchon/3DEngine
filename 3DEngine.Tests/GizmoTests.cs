@@ -168,6 +168,26 @@ public class GizmoTests
         Assert.Empty(intents);
     }
 
+    // Finding V65 of the codebase review of 2026-10-31 (c) (TASK-0151): a press on a handle, Escape, and a
+    // release with no motion inside the tap time gave a click or a tap, which selected.
+    [Fact]
+    public void Escape_Then_A_Still_Release_On_A_Handle_Gives_No_Click_And_No_Tap()
+    {
+        var mouse = Run(OnHandle(),
+            [Mouse(100, 100, PointerPhase.Down, 0)],
+            [new KeySample(InputKey.Escape, true, KeyModifiers.None, 10 * Ms)],
+            [Mouse(100, 100, PointerPhase.Up, 100)]);
+        var finger = Run(OnHandle(),
+            [Touch(1, 100, 100, PointerPhase.Down, 0)],
+            [new KeySample(InputKey.Escape, true, KeyModifiers.None, 10 * Ms)],
+            [Touch(1, 100, 100, PointerPhase.Up, 100)]);
+        var control = Run(OnHandle(), [Mouse(100, 100, PointerPhase.Down, 0)], [Mouse(100, 100, PointerPhase.Up, 100)]);
+
+        Assert.Empty(mouse);
+        Assert.Empty(finger);
+        Assert.Equal([typeof(SelectIntent)], control.Select(intent => intent.GetType()));
+    }
+
     // ADR-0038 item 5: a change of the mode during a drag cancels it.
     [Fact]
     public void A_Change_Of_The_Mode_Cancels_The_Drag()
