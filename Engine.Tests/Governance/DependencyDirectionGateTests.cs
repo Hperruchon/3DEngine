@@ -174,6 +174,15 @@ public class DependencyDirectionGateTests
         Assert.Empty(AssemblyNameOffences([("Engine.Cli/Engine.Cli.csproj", XDocument.Parse("<Project><PropertyGroup><AssemblyName>engine</AssemblyName></PropertyGroup></Project>"))], []));
     }
 
+    // The Unicode set Default_Ignorable_Code_Point (DerivedCoreProperties.txt, Unicode 16), with
+    // U+034F, the combining grapheme joiner, which a text can use, and U+FEFF, which the rule of the
+    // category Format holds with its exception for a byte order mark at the start.
+    private static bool IsDefaultIgnorable(int value)
+        => value is 0x00AD or 0x061C or 0x115F or 0x1160 or 0x17B4 or 0x17B5 or 0x3164 or 0xFFA0
+            or (>= 0x180B and <= 0x180F) or (>= 0x200B and <= 0x200F) or (>= 0x202A and <= 0x202E)
+            or (>= 0x2060 and <= 0x206F) or (>= 0xFE00 and <= 0xFE0F) or (>= 0xFFF0 and <= 0xFFF8)
+            or (>= 0x1BCA0 and <= 0x1BCA3) or (>= 0x1D173 and <= 0x1D17A) or (>= 0xE0000 and <= 0xE0FFF);
+
     // Finding T77 of the second codebase review of 2026-10-28 (TASK-0098): a NUL byte in a
     // string literal made git show a test file as binary, so a person who reviewed a change
     // of it saw no text. A source file holds no control byte other than a tab and the line ends.
@@ -252,7 +261,11 @@ public class DependencyDirectionGateTests
                 || rune.Value is 0x115F or 0x1160 or 0x3164 or 0xFFA0 or (>= 0xFE00 and <= 0xFE0F)
                 // Finding T113 of the codebase review of 2026-10-31 (b) (TASK-0143): the selectors of
                 // variation of the supplement and of Mongolian do not show. U+034F and U+2800 stay text.
-                || rune.Value is (>= 0xE0100 and <= 0xE01EF) or (>= 0x180B and <= 0x180F);
+                || rune.Value is (>= 0xE0100 and <= 0xE01EF) or (>= 0x180B and <= 0x180F)
+                // Finding T121 of the codebase review of 2026-10-31 (c) (TASK-0150): the rest of the
+                // Unicode set Default_Ignorable_Code_Point, whose characters are not all of the
+                // category Format; U+17B4 is valid inside a C# identifier.
+                || IsDefaultIgnorable(rune.Value);
             if (hidden)
             {
                 yield return $"{relative} holds the character U+{rune.Value:X4}, which does not show, at character {offset}; write an escape";
@@ -357,6 +370,12 @@ public class DependencyDirectionGateTests
     [InlineData(new byte[] { 0x61, 0xE1, 0xA0, 0x8B }, true)]
     [InlineData(new byte[] { 0x61, 0xCD, 0x8F }, false)]
     [InlineData(new byte[] { 0x61, 0xE2, 0xA0, 0x80 }, false)]
+    // Finding T121 of the codebase review of 2026-10-31 (c) (TASK-0150): U+17B4, which is valid inside
+    // an identifier, U+2065 and U+FFF0 are default ignorable and do not show; U+17B6 is text.
+    [InlineData(new byte[] { 0x61, 0xE1, 0x9E, 0xB4 }, true)]
+    [InlineData(new byte[] { 0x61, 0xE2, 0x81, 0xA5 }, true)]
+    [InlineData(new byte[] { 0x61, 0xEF, 0xBF, 0xB0 }, true)]
+    [InlineData(new byte[] { 0x61, 0xE1, 0x9E, 0xB6 }, false)]
     public void A_Control_Byte_In_A_Source_File_Is_An_Offence(byte[] bytes, bool offence)
     {
         Assert.Equal(offence, ControlByteOffences("Probe.cs", bytes).Any());
@@ -425,6 +444,10 @@ public class DependencyDirectionGateTests
     // skipped it, and a wildcard import and a .csproj.user file each carried a
     // reference that MSBuild saw and the gate did not (findings T16 and T46 of the
     // codebase reviews of 2026-10-04 and 2026-10-12).
+    // The packages that a project references, in each file that MSBuild reads for it (T117).
+    private static IEnumerable<string> PackageReferences(string projectFile)
+        => FilesThatMsBuildReads(projectFile).SelectMany(file => Includes(file, "PackageReference"));
+
     internal static IEnumerable<string> FilesThatMsBuildReads(string projectFile)
     {
         var root = Path.GetFullPath(RepositoryFiles.Root).TrimEnd(Path.DirectorySeparatorChar);
@@ -515,9 +538,14 @@ public class DependencyDirectionGateTests
     // Finding T115 of the codebase review of 2026-10-31 (b) (TASK-0143): ItemName="$(I)" with
     // <I>Compile</I> passed, because the check compared the literal value. A name that MSBuild
     // computes is refused too, and the value is trimmed.
+    // Finding T119 of the codebase review of 2026-10-31 (c) (TASK-0150): MSBuild reads the escape
+    // Comp%69le as Compile, so each %XX is decoded before the check, as T71 does for a path.
     private static bool IsCompileName(string name)
-        => string.Equals(name.Trim(), "Compile", StringComparison.OrdinalIgnoreCase)
-            || name.Contains("$(", StringComparison.Ordinal) || name.Contains("@(", StringComparison.Ordinal);
+    {
+        var unescaped = Uri.UnescapeDataString(name);
+        return string.Equals(unescaped.Trim(), "Compile", StringComparison.OrdinalIgnoreCase)
+            || unescaped.Contains("$(", StringComparison.Ordinal) || unescaped.Contains("@(", StringComparison.Ordinal);
+    }
 
     [Fact]
     public void Each_Compile_Item_Names_CSharp_Files_Only()
@@ -546,6 +574,10 @@ public class DependencyDirectionGateTests
     [InlineData("<CreateItem Include=\"ProbeUi2.txt\"><Output TaskParameter=\"Include\" ItemName=\"$(I)\" /></CreateItem>", true)]
     [InlineData("<CreateItem Include=\"ProbeUi2.txt\"><Output TaskParameter=\"Include\" ItemName=\"@(I)\" /></CreateItem>", true)]
     [InlineData("<CreateItem Include=\"ProbeUi2.txt\"><Output TaskParameter=\"Include\" ItemName=\" Compile \" /></CreateItem>", true)]
+    // Finding T119 of the codebase review of 2026-10-31 (c) (TASK-0150): an escape of MSBuild; MSBuild
+    // reads Comp%69le as Compile.
+    [InlineData("<CreateItem Include=\"ProbeUi2.txt\"><Output TaskParameter=\"Include\" ItemName=\"Comp%69le\" /></CreateItem>", true)]
+    [InlineData("<CreateItem Include=\"ProbeUi2.txt\"><Output TaskParameter=\"Include\" ItemName=\"%43ompile\" /></CreateItem>", true)]
     public void A_Compile_Item_Of_Another_Extension_Is_An_Offence(string item, bool offence)
     {
         var document = XDocument.Parse($"<Project><ItemGroup>{item}</ItemGroup></Project>");
@@ -889,8 +921,10 @@ public class DependencyDirectionGateTests
     {
         // ADR-0042 item 5: each package of OpenCvSharp4 has its pin in the vision spike, so no
         // Engine.* project and no render-side project can reach the library.
+        // Finding T117 of the codebase review of 2026-10-31 (c) (TASK-0150): the rule read the project
+        // file only, and an imported .props file pinned the library into Engine.Core with no failure.
         var pins = ProjectFiles()
-            .Where(f => Includes(f, "PackageReference").Any(name => name.StartsWith("OpenCvSharp", StringComparison.OrdinalIgnoreCase)))
+            .Where(f => PackageReferences(f).Any(name => name.StartsWith("OpenCvSharp", StringComparison.OrdinalIgnoreCase)))
             .Select(RepositoryFiles.Relative)
             .ToArray();
 
@@ -1042,9 +1076,9 @@ public class DependencyDirectionGateTests
         // ADR-0017 rule 4. Before TASK-0027 three project files pinned the Vulkan
         // binding, therefore "which version does the repository use" had three
         // answers. A host receives each binding through its project reference.
+        // Finding T117: each file that MSBuild reads for the project, as for the vision library.
         var pins = ProjectFiles()
-            .Where(f => Includes(f, "PackageReference")
-                .Any(name => string.Equals(name, package, StringComparison.OrdinalIgnoreCase)))
+            .Where(f => PackageReferences(f).Any(name => string.Equals(name, package, StringComparison.OrdinalIgnoreCase)))
             .Select(RepositoryFiles.Relative)
             .ToArray();
 
