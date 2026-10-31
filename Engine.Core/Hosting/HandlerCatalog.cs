@@ -41,6 +41,8 @@ public static class HandlerCatalog
         new MoveSketchPointCommandHandler(),
         new DeleteSketchItemCommandHandler(),
         new ExtrudeCommandHandler(),
+        new PlaceImageCommandHandler(),
+        new CalibrateImageCommandHandler(),
     ];
 
     public static IReadOnlyList<IQueryHandler> QueryHandlers() =>

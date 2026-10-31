@@ -55,6 +55,11 @@ internal static class SchemaEventsEndpoint
         ["name"] = new FieldSchema("string", Required: false),
     };
 
+    // ADR-0045 item 8: image.created and image.changed carry the whole record of the image.
+    private static readonly IReadOnlyDictionary<string, FieldSchema> ImageFields = Fields(
+        ("imageId", "guid"), ("asset", "string"), ("datumId", "guid"), ("originU", "number"), ("originV", "number"),
+        ("width", "integer"), ("height", "integer"), ("scale", "number"));
+
     // The payload of a command event: the name and the version of the command (ADR-0006).
     private static readonly IReadOnlyDictionary<string, FieldSchema> CommandFields = Fields(("name", "string"), ("schemaVersion", "integer"));
 
@@ -79,6 +84,9 @@ internal static class SchemaEventsEndpoint
         new("sketch.created", SketchCreatedFields), // ADR-0033 item 9, TASK-0100
         new("sketch.changed", Fields(("sketchId", "guid"))), // ADR-0033 item 9, TASK-0100
         new("sketch.removed", Fields(("sketchId", "guid"))), // ADR-0033 item 9, TASK-0100
+        new("image.created", ImageFields), // ADR-0045 item 8, TASK-0152
+        new("image.changed", ImageFields), // ADR-0045 item 8, TASK-0152
+        new("image.removed", Fields(("imageId", "guid"))), // ADR-0045 item 8, TASK-0152
     };
 
     public static IResult Handle() => Results.Json(Kinds, ApiJson.Options);

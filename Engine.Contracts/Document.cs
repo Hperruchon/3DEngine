@@ -47,6 +47,10 @@ public sealed class Document
     private readonly Dictionary<Guid, Sketch.SketchRecord> _sketches = new();
     public IReadOnlyCollection<Sketch.SketchRecord> Sketches => _sketches.Values;
 
+    // ADR-0045 item 3: one record for each live image, as for a sketch.
+    private readonly Dictionary<Guid, Images.ImageRecord> _images = new();
+    public IReadOnlyCollection<Images.ImageRecord> Images => _images.Values;
+
     public Document(Guid? projectId = null, int schemaVersion = 1, string lengthUnit = Millimetre)
     {
         if (lengthUnit != Millimetre)
@@ -94,5 +98,17 @@ public sealed class Document
         if (!_sketches.ContainsKey(sketch.Id))
             throw new InvalidOperationException($"No live sketch {sketch.Id} to replace.");
         _sketches[sketch.Id] = sketch;
+    }
+
+    internal void AddImage(Images.ImageRecord image) => _images[image.Id] = image;
+
+    internal void RemoveImage(Guid id) => _images.Remove(id);
+
+    // ADR-0045 item 1: an edit gives a new record with the same identifier.
+    internal void ReplaceImage(Images.ImageRecord image)
+    {
+        if (!_images.ContainsKey(image.Id))
+            throw new InvalidOperationException($"No live image {image.Id} to replace.");
+        _images[image.Id] = image;
     }
 }

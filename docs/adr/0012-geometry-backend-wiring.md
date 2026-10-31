@@ -7,7 +7,7 @@ date: 2026-05-27
 supersedes: []
 superseded-by: []
 amends: []
-amended-by: ['0018', '0021', '0028', '0015', '0033', '0037']
+amended-by: ['0018', '0021', '0028', '0015', '0033', '0037', '0045']
 affects:
   - Engine.Contracts/Geometry/**
   - Engine.Core/Commands/**
@@ -254,3 +254,5 @@ This is *not* the Manifold backend — it is the wiring slice. A follow-on TASK 
 - 2026-10-28 · TASK-0100 · ADR-0033 amends §6: the snapshot gives `sketches`, each live sketch with its datum and its name.
 - 2026-10-29 · TASK-0108 · ADR-0037 amends §3 and §4: the Document holds the geometry key of each body, and a command that makes a
   solid for a body that it does not create derives the key from its own identifier and the body identifier.
+- 2026-10-31 · TASK-0152 · ADR-0045 amends §6: the snapshot gives `images`, each live image with each field of its
+  record.
