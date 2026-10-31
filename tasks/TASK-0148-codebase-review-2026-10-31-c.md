@@ -1,7 +1,7 @@
 ---
 id: 0148
 title: The codebase review of 2026-10-31 (c) is a record
-status: Active
+status: Done
 phase: governance
 opened: 2026-10-31
 depends-on: [0146]
@@ -66,9 +66,22 @@ finding.
 
 ## Acceptance criteria
 
-- [ ] `CodebaseReviewGateTests` passes with the new review.
-- [ ] Continuous integration passes on the three runners, on the branch and on `main` after the merge.
+- [x] `CodebaseReviewGateTests` passes with the new review.
+- [x] Continuous integration passes on the three runners, on the branch and on `main` after the merge.
+
+## Outcome
+
+Status: Done · commit (the merge of the branch codebase-review-2026-10-31-c) · v0.150
+
+## Method
+
+Mechanical: the measures and the lines of the earlier findings come from scripts that read git, the ledger and the
+            last review; the 23 probes of the agents ran again on this computer.
+Judgement:  the severity of each new finding; E113 is medium because the command line throws with no exit code, and
+            T117 is medium because it lets the vision library into the engine with no failure.
+Weakest:    each probe ran on Windows only; E113 on Linux and the mark of V67 in a live window are not verified.
 
 ## Progress
 
 - 2026-10-31: two review agents probed `b410a59`; I ran their 23 probes again and injected T117 with its control.
+- 2026-10-31: closed at v0.150.
