@@ -3,6 +3,7 @@ using Engine.Api.Http.Json;
 using Engine.Core;
 using Engine.Core.Assets;
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Http.Features;
 
 namespace Engine.Api.Http.Endpoints;
 
@@ -16,6 +17,15 @@ internal static class AssetsEndpoint
 {
     public static async Task<IResult> Put(HttpRequest request, AssetStore store, CancellationToken ct)
     {
+        // Finding E118 of the codebase review of 2026-10-31 (c) (TASK-0149): a body over the request
+        // limit of the server threw BadHttpRequestException inside the read, and the route gave a 413
+        // with no envelope. A length over the limit of an asset is refused before the read. For a body
+        // with no length the server sets no limit, and the store stops at its own limit of 16 MiB.
+        if (request.ContentLength > AssetStore.MaximumBytes)
+            return Failure(AssetStore.TooLarge().Code, AssetStore.TooLarge().Message);
+        if (request.HttpContext.Features.Get<IHttpMaxRequestBodySizeFeature>() is { IsReadOnly: false } limit)
+            limit.MaxRequestBodySize = null;
+
         var (name, size, error) = await store.Put(request.Body, ct);
         return error is null
             ? Results.Json(new AssetState(name!, size), ApiJson.Options)
@@ -36,6 +46,7 @@ internal static class AssetsEndpoint
             DiagnosticCodes.AssetTooLarge => StatusCodes.Status413PayloadTooLarge,
             DiagnosticCodes.AssetBadName => StatusCodes.Status400BadRequest,
             DiagnosticCodes.AssetNotFound => StatusCodes.Status404NotFound,
+            // E114: a read of the store failed; a put whose body failed is not a fault of the store.
             _ => StatusCodes.Status500InternalServerError,
         });
 

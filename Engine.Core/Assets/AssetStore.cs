@@ -33,24 +33,35 @@ public sealed partial class AssetStore
 
     // ADR-0044 item 2: reads the stream up to the limit, and puts its bytes under their name. The write
     // goes to a scratch file of the folder first, then moves to the name, so a reader never sees a
-    // part of an asset. A name that the store holds already is not written again.
+    // part of an asset. A name that the store holds with the same bytes is not written again.
     public async Task<(string? Name, long Size, ErrorDetail? Error)> Put(Stream content, CancellationToken ct = default)
     {
         ArgumentNullException.ThrowIfNull(content);
         using var buffer = new MemoryStream();
         var chunk = new byte[81920];
         int read;
-        while ((read = await content.ReadAsync(chunk, ct).ConfigureAwait(false)) > 0)
+        try
         {
-            if (buffer.Length + read > MaximumBytes)
-                return (null, 0, new ErrorDetail(DiagnosticCodes.AssetTooLarge, $"An asset holds at most {MaximumBytes} bytes (16 MiB), and this one holds more (ADR-0044 item 3)."));
-            buffer.Write(chunk, 0, read);
+            while ((read = await content.ReadAsync(chunk, ct).ConfigureAwait(false)) > 0)
+            {
+                if (buffer.Length + read > MaximumBytes)
+                    return (null, 0, TooLarge());
+                buffer.Write(chunk, 0, read);
+            }
+        }
+        // Finding E114 of the codebase review of 2026-10-31 (c) (TASK-0149): a stream that fails gave
+        // its exception to the route and to the command line.
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+            return (null, 0, new ErrorDetail(DiagnosticCodes.AssetReadFailed, $"The content of the asset could not be read: {ex.Message}"));
         }
 
         var bytes = buffer.GetBuffer().AsMemory(0, (int)buffer.Length);
         var name = NameOf(bytes.Span);
         var path = Path.Combine(Folder, name);
-        if (File.Exists(path))
+        // Finding E115: a damaged file under the name stayed, and the put gave no error. It is
+        // written again, and the move replaces it.
+        if (HoldsName(path, name))
             return (name, bytes.Length, null);
 
         var scratch = Path.Combine(Folder, $"{name}.{Guid.NewGuid():N}.tmp");
@@ -65,20 +76,42 @@ public sealed partial class AssetStore
 
             try
             {
-                File.Move(scratch, path);
+                File.Move(scratch, path, overwrite: true);
             }
-            catch (IOException) when (File.Exists(path))
+            catch (Exception ex) when ((ex is IOException or UnauthorizedAccessException) && HoldsName(path, name))
             {
                 // Another put of the same content came first; the content of the name is the same.
-                File.Delete(scratch);
             }
 
             return (name, bytes.Length, null);
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
         {
-            TryDelete(scratch);
             return (null, 0, new ErrorDetail(DiagnosticCodes.AssetWriteFailed, $"The asset {name} could not be written to {Folder}: {ex.Message}"));
+        }
+        // Finding E116: a cancellation of the write left the scratch file. Each way out of the
+        // write deletes it, if it is still there.
+        finally
+        {
+            if (File.Exists(scratch))
+                TryDelete(scratch);
+        }
+    }
+
+    // ADR-0044 item 3, and finding E118: the route also gives this error for a body over the limit.
+    public static ErrorDetail TooLarge()
+        => new(DiagnosticCodes.AssetTooLarge, $"An asset holds at most {MaximumBytes} bytes (16 MiB), and this one holds more (ADR-0044 item 3).");
+
+    // True when the file at the path holds bytes whose name is the name.
+    private static bool HoldsName(string path, string name)
+    {
+        try
+        {
+            return File.Exists(path) && NameOf(File.ReadAllBytes(path)) == name;
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+            return false;
         }
     }
 
@@ -98,6 +131,12 @@ public sealed partial class AssetStore
         catch (Exception ex) when (ex is FileNotFoundException or DirectoryNotFoundException)
         {
             return (null, new ErrorDetail(DiagnosticCodes.AssetNotFound, $"The store at {Folder} holds no asset {name}."));
+        }
+        // Finding E114 of the codebase review of 2026-10-31 (c) (TASK-0149): a folder under the name,
+        // a file that another program locks, or a file that the account cannot read threw.
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+            return (null, new ErrorDetail(DiagnosticCodes.AssetReadFailed, $"The asset {name} in {Folder} could not be read: {ex.Message}"));
         }
 
         return NameOf(content) == name

@@ -207,6 +207,36 @@ public sealed class EngineDebtTests
         Assert.Equal(3, replay.Document.Log.Count);
     }
 
+    // E117 of the codebase review of 2026-10-31 (c) (TASK-0149): the add of an arc tested a start or an
+    // end equal to the centre, and the solver needs a distance greater than 1e-9. A live arc at the noise
+    // level is refused; an entry of a log keeps the rule of 0 (E103).
+    [Fact]
+    public async Task A_Live_Arc_At_The_Noise_Level_Is_Refused_And_An_Entry_Still_Applies()
+    {
+        var session = NewSession();
+        var sketch = await Applied(session, new CreateSketchCommand { DatumId = Datums.XY.Id }, "sketchId");
+        var centre = await Applied(session, new AddSketchPointCommand { SketchId = sketch, X = 3, Y = 3 }, "pointId");
+        var near = await Applied(session, new AddSketchPointCommand { SketchId = sketch, X = 3 + 5e-10, Y = 3 }, "pointId");
+        var far = await Applied(session, new AddSketchPointCommand { SketchId = sketch, X = 3, Y = 5 }, "pointId");
+        var other = await Applied(session, new AddSketchPointCommand { SketchId = sketch, X = 5, Y = 3 }, "pointId");
+
+        var nearStart = await session.Apply(new AddSketchArcCommand { SketchId = sketch, CenterPointId = centre, StartPointId = near, EndPointId = far });
+        var nearEnd = await session.Apply(new AddSketchArcCommand { SketchId = sketch, CenterPointId = centre, StartPointId = far, EndPointId = near });
+        var good = await session.Apply(new AddSketchArcCommand { SketchId = sketch, CenterPointId = centre, StartPointId = other, EndPointId = far });
+
+        var create = new CreateSketchCommand { DatumId = Datums.XY.Id };
+        var points = new[] { (3.0, 3.0), (3 + 5e-10, 3.0), (3.0, 5.0) }
+            .Select(p => new AddSketchPointCommand { SketchId = create.CommandId, X = p.Item1, Y = p.Item2 }).ToArray();
+        var arc = new AddSketchArcCommand { SketchId = create.CommandId, CenterPointId = points[0].CommandId, StartPointId = points[1].CommandId, EndPointId = points[2].CommandId };
+        Command[] log = [create, .. points, arc];
+        var replay = await Replay.ReplayLog(log, Registry(), new InProcessMeshBackend());
+
+        Assert.Equal(DiagnosticCodes.SketchCurveInvalid, nearStart.Error?.Code);
+        Assert.Equal(DiagnosticCodes.SketchCurveInvalid, nearEnd.Error?.Code);
+        Assert.Equal(CommandStatus.Applied, good.Status);
+        Assert.Equal(5, replay.Document.Log.Count);
+    }
+
     // E109 (TASK-0142): the reader of a document file took the last value of a repeated member, which the
     // writer cannot write. It refuses the line.
     [Fact]
