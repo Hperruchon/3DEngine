@@ -125,6 +125,7 @@ Therefore each approved objective must have a track here.
 - V1b — The engine keeps each asset under the SHA-256 of its bytes, in one store of the account. v0.148, TASK-0147, ADR-0044.
 - V1a — The scene draws an image on a quad with the depth of the bodies. v0.149, TASK-0146, ADR-0043.
 - V1 — A content-addressed asset store and a textured quad. Closed at v0.149, from TASK-0146 and TASK-0147.
+- V2a — The Document holds an image on a datum, and a command calibrates it to real units. v0.151, TASK-0152, ADR-0045.
 
 ## Track 0 — Foundations
 
@@ -269,7 +270,8 @@ The first domain extension. Objective 15 puts it before materials, chemistry and
 | V1a | The scene draws an image on a quad with the depth of the bodies (ADR-0043). TASK-0146. | 1 |
 | V1b | The engine keeps each asset under the SHA-256 of its bytes, in one store of the account (ADR-0044). TASK-0147. | 1–2 |
 | V1 | A content-addressed asset store. A textured quad. Done: V1a (TASK-0146) and V1b (TASK-0147); the owner accepted the picture of V1a on 2026-10-31. | 2–3 |
-| V2 | Place an image on a datum. Calibrate it to real units. | 2–3 |
+| V2a | The Document holds an image on a datum, and a command calibrates it to real units (ADR-0045). TASK-0152. | 1–2 |
+| V2 | Place an image on a datum. Calibrate it to real units. The rest after V2a: the image in the desktop (V2b). | 2–3 |
 | V3 | A contour proposal becomes an editable sketch. Propose and accept. | 3–5 |
 
 ## Order

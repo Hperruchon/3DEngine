@@ -44,7 +44,8 @@ Each name, each error of the file system and each size of a body gives a coded a
 
 ## Scope (in)
 
-1. E113: the pattern of a name ends with `\z`, so a final line feed is not a name.
+1. E113: TASK-0152 (V2a) corrected the pattern of a name, because `PlaceImage` checks the name; this task keeps a test
+   of the route and of the command line with a final line feed.
 2. E114: `Read` and `Put` give a coded error for `IOException` and `UnauthorizedAccessException`, and the command line gives an exit code for each one.
 3. E115: a put whose name holds a file that does not hash to the name writes the file again and replaces it.
 4. E116: a put deletes its scratch file when the move did not occur, also after a cancellation.

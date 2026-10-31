@@ -4331,3 +4331,43 @@ New tests: none. The test list holds 1420 (1033 in `Engine.Tests`, 237 in `3DEng
 zero warnings. Open entries: 15 of 15: R-0047 records the lag test of the events, which failed on Windows in the first run
 of this branch. New diagnostic codes: none. Since the review of v0.149, 0 product milestones and
 1 entry followed it.
+
+## v0.151 — The Document holds an image on a datum, and a command calibrates it to real units (V2a, TASK-0152)
+
+The owner told the session on 2026-10-31: "do the review, then start V2". The review of v0.150 asked three questions,
+and the standing answer of the owner takes Q1 A (the Document holds a record of each placed image), Q2 A (a calibration
+records two points and a distance) and Q3 A (the client decodes the image). V2 changes the public shape of
+`Engine.Contracts`, so ADR-0045 comes with it.
+
+**The change.**
+
+- `Engine.Contracts/Images/ImageRecord.cs` holds the asset, the datum, the origin, the width and the height in pixels,
+  and the scale in millimetres for each pixel (ADR-0045 items 1 and 2). `Document.Images` holds each live image, and
+  `CommandHandlerResult` gains `CreatedImages` and `ChangedImages` (items 3 and 7).
+- `PlaceImage`@1 places an image of the store on an origin plane, and `CalibrateImage`@1 sets the scale from two points
+  of the image and a real distance, with `+ - * / sqrt` only (items 4 and 5). The handlers do not read the store.
+- The events `image.created`, `image.changed` and `image.removed` carry the record and come after the sketch events;
+  a step records its images for undo and redo; the snapshot gives `images` (items 8 to 10). ADR-0045 amends ADR-0012,
+  ADR-0031 and ADR-0033.
+- Seven codes in the new namespace `IMAGE`, in `docs/diagnostics.md` and in `/schema/diagnostics`. An origin that is
+  not finite gives `E-GEOM-INVALID-PARAM`.
+- E113 of the review: the pattern of a name of an asset ends with `\z`. TASK-0149 keeps the tests of the route and of
+  the command line.
+
+**Proof.** 16 new test cases: 8 in `Engine.Tests/Images/ImageCommandTests.cs`, 1 in
+`Engine.Tests/Http/HttpImageScenarioTests.cs`, 7 in `Engine.Tests/Hosting/ParameterBinderTests.cs`, and a line feed in
+`AssetStoreTests`. 9 injections: a bus that lets a handler change the asset, an undo that keeps the placed image, a
+product in place of the quotient, no check of the datum, a snapshot with no image, an event with no scale, `$` in place
+of `\z`, and two faults of the integer field; each one failed a test.
+
+**What stays.** The desktop does not show a placed image, and no client decodes a file (V2b). No command moves, turns or
+removes an image.
+
+**A correction.** `ParameterBinder` refused each JSON number for a field of the type `integer`, because the HTTP surface
+gives each number as a double (`JsonParameters.AsNumber`). No command had an integer field before `PlaceImage`, so no
+test saw it; the HTTP test of this task found it. A whole double up to 2^53 is an integer now.
+
+New tests: 16. The test list holds 1436 (1049 in `Engine.Tests`, 237 in `3DEngine.Tests`, 147 in
+`3DEngine.ImageTests`, 3 in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and
+zero warnings. Open entries: 15 of 15. New diagnostic codes: 7. Since the review of v0.149, 1 product milestone and 2
+entries followed it.

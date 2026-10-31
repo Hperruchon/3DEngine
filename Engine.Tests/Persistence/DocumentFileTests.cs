@@ -77,6 +77,11 @@ public sealed class DocumentFileTests : IDisposable
         ["MoveSketchPoint"] = new MoveSketchPointCommand { SketchId = Guid.NewGuid(), PointId = Guid.NewGuid(), X = 123456789.125, Y = -1e-300 },
         ["DeleteSketchItem"] = new DeleteSketchItemCommand { SketchId = Guid.NewGuid(), ItemId = Guid.NewGuid() },
         ["Extrude"] = new ExtrudeCommand { SketchId = Guid.NewGuid(), Distance = -2.5 },
+        ["PlaceImage"] = new PlaceImageCommand
+        {
+            Asset = new string('a', 64), DatumId = Engine.Contracts.Sketch.Datums.XZ.Id, Width = 640, Height = 480, OriginU = -1.5, OriginV = 2.25, Scale = 0.125,
+        },
+        ["CalibrateImage"] = new CalibrateImageCommand { ImageId = Guid.NewGuid(), X1 = 1, Y1 = 2.5, X2 = -3, Y2 = 4, Distance = 12.75 },
     };
 
     // ADR-0015 item 11: each handler has an encoder, and Create(Encode(c)) gives c.

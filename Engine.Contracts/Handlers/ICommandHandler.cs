@@ -78,6 +78,15 @@ public sealed record CommandHandlerResult(
 
     public IReadOnlyList<Sketch.SketchRecord> ChangedSketches { get; init; } = Array.Empty<Sketch.SketchRecord>();
 
+    // ADR-0045 item 7: the record of each image that the command creates, and the new
+    // record of each live image that it changes. The commit adds or replaces each one and
+    // emits image.created or image.changed after the sketch events. A handler changes only
+    // a live image, gives each one time, and keeps its identifier, its asset and its datum;
+    // the bus refuses a list that breaks the rule. Empty by default.
+    public IReadOnlyList<Images.ImageRecord> CreatedImages { get; init; } = Array.Empty<Images.ImageRecord>();
+
+    public IReadOnlyList<Images.ImageRecord> ChangedImages { get; init; } = Array.Empty<Images.ImageRecord>();
+
     public static CommandHandlerResult Success(
         Outputs outputs,
         IReadOnlyList<Diagnostic>? diagnostics = null,
@@ -85,7 +94,9 @@ public sealed record CommandHandlerResult(
         IReadOnlyList<BodyHandle>? consumedBodies = null,
         IReadOnlyList<BodyRecord>? changedBodies = null,
         IReadOnlyList<Sketch.SketchRecord>? createdSketches = null,
-        IReadOnlyList<Sketch.SketchRecord>? changedSketches = null)
+        IReadOnlyList<Sketch.SketchRecord>? changedSketches = null,
+        IReadOnlyList<Images.ImageRecord>? createdImages = null,
+        IReadOnlyList<Images.ImageRecord>? changedImages = null)
         => new(
             outputs,
             diagnostics ?? Array.Empty<Diagnostic>(),
@@ -96,6 +107,8 @@ public sealed record CommandHandlerResult(
             ChangedBodies = changedBodies ?? Array.Empty<BodyRecord>(),
             CreatedSketches = createdSketches ?? Array.Empty<Sketch.SketchRecord>(),
             ChangedSketches = changedSketches ?? Array.Empty<Sketch.SketchRecord>(),
+            CreatedImages = createdImages ?? Array.Empty<Images.ImageRecord>(),
+            ChangedImages = changedImages ?? Array.Empty<Images.ImageRecord>(),
         };
 
     public static CommandHandlerResult Failure(
