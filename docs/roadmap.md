@@ -128,6 +128,7 @@ Therefore each approved objective must have a track here.
 - V2a — The Document holds an image on a datum, and a command calibrates it to real units. v0.151, TASK-0152, ADR-0045.
 - V2b — The desktop places a PNG file on a datum, draws it, and calibrates it with two taps. v0.152, TASK-0153, ADR-0046.
 - V2 — An image on a datum, calibrated to real units. Closed at v0.152, from TASK-0152 and TASK-0153.
+- P0.63 — The store of the assets gives a code for each error and repairs a damaged file, and an arc follows the solver. v0.153, TASK-0149.
 
 ## Track 0 — Foundations
 
