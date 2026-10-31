@@ -57,6 +57,7 @@ names. Do not read all of them.
 | [0041](0041-snap-of-a-sketch-tap.md) | The snap of a tap of the sketch | Accepted | Clients, sketch | 0026, 0034 | — |
 | [0042](0042-vision-library.md) | The vision library and its place | Accepted | Vision, boundary | — | — |
 | [0043](0043-textured-quad.md) | An image on a flat rectangle of the scene | Accepted | Rendering, vision | — | — |
+| [0044](0044-asset-store.md) | The store of the assets of an account | Accepted | Vision, persistence | — | — |
 
 ## Topics
 

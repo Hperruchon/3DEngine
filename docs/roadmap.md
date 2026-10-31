@@ -122,6 +122,7 @@ Therefore each approved objective must have a track here.
 - P0.61 — The gates read disabled text, the routes of the test host, each sink, and the next forms of the fifteenth review. v0.145, TASK-0143.
 - P0.62 — An arc ends within a pixel of its start, and Escape cancels a press on a handle before the slop. v0.146, TASK-0144.
 - V0 — The vision library loads and finds a contour on the three platforms of the pipeline. v0.147, TASK-0145, ADR-0042.
+- V1b — The engine keeps each asset under the SHA-256 of its bytes, in one store of the account. v0.148, TASK-0147, ADR-0044.
 
 ## Track 0 — Foundations
 
@@ -261,7 +262,8 @@ The first domain extension. Objective 15 puts it before materials, chemistry and
 |---|---|---|
 | V0 | A verification spike. The vision library on three platforms (ADR-0042; the owner chose it on 2026-10-31, after R11b). TASK-0145. | 1 |
 | V1a | The scene draws an image on a quad with the depth of the bodies (ADR-0043). TASK-0146. | 1 |
-| V1 | A content-addressed asset store. A textured quad. The rest after V1a: the store of the assets. | 2–3 |
+| V1b | The engine keeps each asset under the SHA-256 of its bytes, in one store of the account (ADR-0044). TASK-0147. | 1–2 |
+| V1 | A content-addressed asset store. A textured quad. The rest after V1a and V1b: none. | 2–3 |
 | V2 | Place an image on a datum. Calibrate it to real units. | 2–3 |
 | V3 | A contour proposal becomes an editable sketch. Propose and accept. | 3–5 |
 

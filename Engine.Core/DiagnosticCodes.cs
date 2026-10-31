@@ -69,4 +69,11 @@ public static class DiagnosticCodes
     // Phase K2d (TASK-0117): a circle with a radius that is not a positive finite number, or an
     // arc whose centre, start and end are not three different points.
     public const string SketchCurveInvalid = "E-SKETCH-CURVE-INVALID";
+
+    // ADR-0044 (phase V1b, TASK-0147): the store of the assets of an account.
+    public const string AssetTooLarge = "E-ASSET-TOO-LARGE";
+    public const string AssetBadName = "E-ASSET-BAD-NAME";
+    public const string AssetNotFound = "E-ASSET-NOT-FOUND";
+    public const string AssetCorrupt = "E-ASSET-CORRUPT";
+    public const string AssetWriteFailed = "E-ASSET-WRITE-FAILED";
 }
