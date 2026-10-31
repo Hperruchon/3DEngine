@@ -198,6 +198,10 @@ public sealed class CircleArcTests
         "a tangent of a fixed line through the fixed centre",
         "a pointOn of a point fixed at the fixed centre of a circle",
         "a pointOn of a point fixed at the fixed centre of an arc",
+        // Finding E102 of the codebase review of 2026-10-31 (TASK-0130): the solve gave a radius of
+        // 5.6e-17 and 3.7e-10, at the level of the tolerance, and the sketch showed as solved.
+        "a tangent of a line whose start is coincident with the centre of a circle",
+        "a tangent of a line whose start is coincident with the centre of an arc",
     };
 
     private static SketchRecord WithNoPositiveRadius(string name) => name switch
@@ -211,9 +215,15 @@ public sealed class CircleArcTests
         "a pointOn of a point fixed at the fixed centre of a circle" => Record(
             [(3, 3), (3, 3)], [], [(0, 2)], [],
             ("fixed", [0], [3, 3]), ("fixed", [1], [3, 3]), ("pointOn", [1, 300], [])),
-        _ => Record(
+        "a pointOn of a point fixed at the fixed centre of an arc" => Record(
             [(3, 3), (5, 3), (3, 5), (3, 3)], [], [], [(0, 1, 2)],
             ("fixed", [0], [3, 3]), ("fixed", [3], [3, 3]), ("pointOn", [3, 400], [])),
+        "a tangent of a line whose start is coincident with the centre of a circle" => Record(
+            [(0, 0), (1, 1), (6, 1)], [(1, 2)], [(0, 5)], [],
+            ("coincident", [1, 0], []), ("tangent", [100, 300], [])),
+        _ => Record(
+            [(0, 0), (5, 0), (0, 5), (1, 1), (6, 1)], [(3, 4)], [], [(0, 1, 2)],
+            ("coincident", [3, 0], []), ("tangent", [100, 400], [])),
     };
 
     [Theory]

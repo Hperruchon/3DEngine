@@ -1,7 +1,7 @@
 ---
 id: 0130
 title: A radius at the noise level does not solve, and the check of the tasks binds the real gate files
-status: Ready
+status: Done
 phase: P0.51
 opened: 2026-10-31
 depends-on: [0129]
@@ -53,11 +53,28 @@ T94, T95 and T100 with the spelling of a real gate file.
 
 ## Acceptance criteria
 
-- [ ] Each probe of E102 fails before the change and passes after it.
-- [ ] A thread, a task in a local, a semaphore and LongRunning with no full name in a gate file fail the gate program.
-- [ ] A clean build (`--no-incremental`) gives zero errors and zero warnings.
-- [ ] Continuous integration passes on the three runners, on the branch and on `main` after the merge.
+- [x] Each probe of E102 fails before the change and passes after it.
+- [x] A thread, a task in a local, a semaphore and LongRunning with no full name in a gate file fail the gate program.
+- [x] A clean build (`--no-incremental`) gives zero errors and zero warnings.
+- [x] Continuous integration passes on the three runners, on the branch and on `main` after the merge.
+
+## Outcome
+
+Status: Done · commit (the merge of the branch p051-noise-radius-usings) · v0.132
+
+## Method
+
+Mechanical: the tolerance in the check of a radius, the global usings, the failure of a file that does not compile,
+            and four forms of the self check.
+Judgement:  the threshold of a radius is the tolerance of the equations, the length below which the solver cannot tell
+            a value from 0; a gate file with an error of the compiler fails the run, so a missing using cannot hide a
+            form again.
+Weakest:    the list of global usings is the list of the SDK and of Xunit in the code; a new item Using of a project
+            needs a line there, and a gate file that needs it then fails the run with its error, which shows it.
 
 ## Progress
 
 - 2026-10-31: opened by the codebase review of 2026-10-31 (TASK-0129).
+- 2026-10-31: E102 with the tolerance of the solver; T103 with the global usings, a failure for a gate file that does not
+  compile, and four forms of the self check with no full name; 2 new test cases; 4 injections caught.
+- 2026-10-31: closed at v0.132.
