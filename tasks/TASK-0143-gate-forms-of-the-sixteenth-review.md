@@ -71,3 +71,4 @@ T106 to T109 fail a gate.
 - 2026-10-31: R11b merged; the task starts. The seven gates and 13 new test cases. The gate of the sinks first missed a
   struct sink in Engine.Cli, because the project builds engine.dll; it reads the AssemblyName of each project now. 13
   injections caught: 7 forms in real files or undone fixes, and 6 undone fixes against their new test cases.
+- 2026-10-31: main merged into the branch (P0.60, v0.144); Engine.Tests counts 1006 + 6 + 13 = 1025.

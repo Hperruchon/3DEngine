@@ -28,7 +28,7 @@ public class BodyActionsTests
 
     private static async Task<EngineHost> TwoBoxes()
     {
-        var host = new EngineHost(new InProcessMeshBackend(), "managed", "test");
+        var host = new EngineHost(new InProcessMeshBackend());
         foreach (var id in new[] { A, B })
             Assert.Equal(CommandStatus.Applied, (await host.Session.Apply(new CreateBoxCommand { CommandId = id, SizeX = 1, SizeY = 1, SizeZ = 1 })).Status);
         return host;
@@ -139,7 +139,7 @@ public class BodyActionsTests
     [Fact]
     public async Task The_Pad_Creates_A_Box_And_Moves_The_Selected_Body()
     {
-        using var host = new EngineHost(new ManifoldGeometryBackend(), "manifold", ManifoldGeometryBackend.NativeVersion);
+        using var host = new EngineHost(new ManifoldGeometryBackend());
         var actions = new BodyActions(host.Session);
 
         Assert.Null(actions.CreateBox(40, 30, 2 * Math.PI));

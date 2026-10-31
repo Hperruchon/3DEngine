@@ -52,7 +52,7 @@ public sealed class DocumentEndpointTests : IDisposable
     [Fact]
     public async Task A_Host_With_No_File_Gives_No_Name()
     {
-        var host = new EngineHost(new InProcessMeshBackend(), "managed", "test");
+        var host = new EngineHost(new InProcessMeshBackend());
         await using var app = await StartSurface(host, new DocumentFolder(Documents));
         using var http = new HttpClient { BaseAddress = new Uri(app.Urls.First()) };
 
@@ -67,7 +67,7 @@ public sealed class DocumentEndpointTests : IDisposable
     public async Task A_Save_Moves_The_Unsaved_File_Into_The_Document_Folder()
     {
         // The document folder does not exist yet; the save makes it.
-        var host = new EngineHost(new InProcessMeshBackend(), "managed", "test", new DocumentFileOptions(null, Path.Combine(_folder, "unsaved")));
+        var host = new EngineHost(new InProcessMeshBackend(), new DocumentFileOptions(null, Path.Combine(_folder, "unsaved")));
         await using var app = await StartSurface(host, new DocumentFolder(Documents));
         using var http = new HttpClient { BaseAddress = new Uri(app.Urls.First()) };
         await Post(http, "/commands", new { name = "NoOp", schemaVersion = 1, parameters = new { echo = "x" } });
@@ -92,7 +92,7 @@ public sealed class DocumentEndpointTests : IDisposable
     {
         Directory.CreateDirectory(Documents);
         File.WriteAllText(Path.Combine(Documents, "taken.3de"), "keep");
-        var host = new EngineHost(new InProcessMeshBackend(), "managed", "test", new DocumentFileOptions(null, Path.Combine(_folder, "unsaved")));
+        var host = new EngineHost(new InProcessMeshBackend(), new DocumentFileOptions(null, Path.Combine(_folder, "unsaved")));
         await using var app = await StartSurface(host, new DocumentFolder(Documents));
         using var http = new HttpClient { BaseAddress = new Uri(app.Urls.First()) };
 
@@ -140,7 +140,7 @@ public sealed class DocumentEndpointTests : IDisposable
     [InlineData(LongName)]
     public async Task A_Name_That_Is_Not_A_Plain_File_Name_Is_Refused(string name)
     {
-        var host = new EngineHost(new InProcessMeshBackend(), "managed", "test", new DocumentFileOptions(null, Path.Combine(_folder, "unsaved")));
+        var host = new EngineHost(new InProcessMeshBackend(), new DocumentFileOptions(null, Path.Combine(_folder, "unsaved")));
         await using var app = await StartSurface(host, new DocumentFolder(Documents, (_, _) => Task.FromResult<ErrorDetail?>(null)));
         using var http = new HttpClient { BaseAddress = new Uri(app.Urls.First()) };
 
@@ -188,7 +188,7 @@ public sealed class DocumentEndpointTests : IDisposable
     [Fact]
     public async Task A_Save_On_A_Host_With_No_File_Is_Not_Supported()
     {
-        var host = new EngineHost(new InProcessMeshBackend(), "managed", "test");
+        var host = new EngineHost(new InProcessMeshBackend());
         await using var app = await StartSurface(host, new DocumentFolder(Documents));
         using var http = new HttpClient { BaseAddress = new Uri(app.Urls.First()) };
 
@@ -203,7 +203,7 @@ public sealed class DocumentEndpointTests : IDisposable
     [Fact]
     public async Task A_Name_That_Is_Not_Well_Formed_Text_Is_Refused()
     {
-        var host = new EngineHost(new InProcessMeshBackend(), "managed", "test", new DocumentFileOptions(null, Path.Combine(_folder, "unsaved")));
+        var host = new EngineHost(new InProcessMeshBackend(), new DocumentFileOptions(null, Path.Combine(_folder, "unsaved")));
         await using var app = await StartSurface(host, new DocumentFolder(Documents, (_, _) => Task.FromResult<ErrorDetail?>(null)));
         using var http = new HttpClient { BaseAddress = new Uri(app.Urls.First()) };
 
@@ -225,7 +225,7 @@ public sealed class DocumentEndpointTests : IDisposable
     [Fact]
     public async Task A_Repeated_Member_Of_A_Document_Route_Is_Refused()
     {
-        var host = new EngineHost(new InProcessMeshBackend(), "managed", "test", new DocumentFileOptions(null, Path.Combine(_folder, "unsaved")));
+        var host = new EngineHost(new InProcessMeshBackend(), new DocumentFileOptions(null, Path.Combine(_folder, "unsaved")));
         await using var app = await StartSurface(host, new DocumentFolder(Documents, (_, _) => Task.FromResult<ErrorDetail?>(null)));
         using var http = new HttpClient { BaseAddress = new Uri(app.Urls.First()) };
 
@@ -247,7 +247,7 @@ public sealed class DocumentEndpointTests : IDisposable
     [Fact]
     public async Task An_Open_On_A_Host_That_Cannot_Start_Again_Is_Not_Supported()
     {
-        var host = new EngineHost(new InProcessMeshBackend(), "managed", "test");
+        var host = new EngineHost(new InProcessMeshBackend());
         await using var app = await StartSurface(host, new DocumentFolder(Documents));
         using var http = new HttpClient { BaseAddress = new Uri(app.Urls.First()) };
 
@@ -262,7 +262,7 @@ public sealed class DocumentEndpointTests : IDisposable
     [Fact]
     public async Task A_Surface_With_No_Folder_Of_Its_Own_Reads_The_Setting_And_Refuses_An_Open()
     {
-        var host = new EngineHost(new InProcessMeshBackend(), "managed", "test", new DocumentFileOptions(null, Path.Combine(_folder, "unsaved")));
+        var host = new EngineHost(new InProcessMeshBackend(), new DocumentFileOptions(null, Path.Combine(_folder, "unsaved")));
         var builder = WebApplication.CreateBuilder();
         builder.WebHost.UseUrls("http://127.0.0.1:0");
         builder.Configuration["Engine:DocumentFolder"] = Documents;
@@ -288,7 +288,7 @@ public sealed class DocumentEndpointTests : IDisposable
     public async Task An_Open_Gives_The_Path_To_The_Host_And_Its_Answer_To_The_Agent()
     {
         var asked = new List<string>();
-        var host = new EngineHost(new InProcessMeshBackend(), "managed", "test", new DocumentFileOptions(null, Path.Combine(_folder, "unsaved")));
+        var host = new EngineHost(new InProcessMeshBackend(), new DocumentFileOptions(null, Path.Combine(_folder, "unsaved")));
         var folder = new DocumentFolder(Documents, (path, _) =>
         {
             asked.Add(path);

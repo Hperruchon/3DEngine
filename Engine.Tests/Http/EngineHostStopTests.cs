@@ -24,7 +24,7 @@ public class EngineHostStopTests
     public async Task A_Stop_Frees_The_Backend_Only_After_The_Running_Command_Ends()
     {
         var backend = new SlowBackend();
-        var host = new EngineHost(backend, "slow", "test");
+        var host = new EngineHost(backend);
         var app = await StartSurface(host);
         using var http = new HttpClient { BaseAddress = new Uri(app.Urls.First()) };
 
@@ -73,7 +73,7 @@ public class EngineHostStopTests
     [Fact]
     public async Task A_Closed_Session_Refuses_Each_Later_Call()
     {
-        var host = new EngineHost(new InProcessMeshBackend(), "managed", "test");
+        var host = new EngineHost(new InProcessMeshBackend());
         host.Dispose();
 
         var box = new CreateBoxCommand { SizeX = 1, SizeY = 1, SizeZ = 1 };

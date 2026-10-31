@@ -15,7 +15,7 @@ public class EngineHostSubscriptionTests
     [Fact]
     public async Task A_Subscriber_Receives_Each_Event_Of_A_Commit_In_Order()
     {
-        using var host = new EngineHost(new InProcessMeshBackend(), "managed", "test");
+        using var host = new EngineHost(new InProcessMeshBackend());
         var received = new List<string>();
         using var subscription = host.Subscribe(record => received.Add(record.Kind));
 
@@ -28,7 +28,7 @@ public class EngineHostSubscriptionTests
     [Fact]
     public async Task A_Disposed_Subscription_Receives_No_Later_Event()
     {
-        using var host = new EngineHost(new InProcessMeshBackend(), "managed", "test");
+        using var host = new EngineHost(new InProcessMeshBackend());
         var count = 0;
         var subscription = host.Subscribe(_ => count++);
 
@@ -44,7 +44,7 @@ public class EngineHostSubscriptionTests
     [Fact]
     public async Task An_Action_That_Throws_Is_Removed_And_The_Commit_Continues()
     {
-        using var host = new EngineHost(new InProcessMeshBackend(), "managed", "test");
+        using var host = new EngineHost(new InProcessMeshBackend());
         var failures = 0;
         var other = new List<string>();
         using var failing = host.Subscribe(_ => { failures++; throw new InvalidOperationException("a defect of the host"); });
@@ -64,7 +64,7 @@ public class EngineHostSubscriptionTests
     [Fact]
     public async Task The_Removal_Of_An_Action_Is_Reported_With_Its_Code()
     {
-        using var host = new EngineHost(new InProcessMeshBackend(), "managed", "test");
+        using var host = new EngineHost(new InProcessMeshBackend());
         var reports = new System.Collections.Concurrent.ConcurrentQueue<string>();
         var reported = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
         host.Broadcaster.Report = message =>
@@ -92,7 +92,7 @@ public class EngineHostSubscriptionTests
     [Fact]
     public async Task A_Report_That_Throws_Does_Not_Stop_The_Commit()
     {
-        using var host = new EngineHost(new InProcessMeshBackend(), "managed", "test");
+        using var host = new EngineHost(new InProcessMeshBackend());
         host.Broadcaster.Report = _ => throw new InvalidOperationException("a defect of the report");
         using var failing = host.Subscribe(_ => throw new InvalidOperationException("a defect of the host"));
         var other = new List<string>();
@@ -108,7 +108,7 @@ public class EngineHostSubscriptionTests
     [Fact]
     public async Task A_Report_That_Blocks_Does_Not_Hold_The_Session()
     {
-        using var host = new EngineHost(new InProcessMeshBackend(), "managed", "test");
+        using var host = new EngineHost(new InProcessMeshBackend());
         using var release = new ManualResetEventSlim();
         host.Broadcaster.Report = _ => release.Wait(Limit);
         using var failing = host.Subscribe(_ => throw new InvalidOperationException("a defect of the host"));
@@ -136,7 +136,7 @@ public class EngineHostSubscriptionTests
     [Fact]
     public async Task An_Action_Cannot_Change_A_Payload()
     {
-        using var host = new EngineHost(new InProcessMeshBackend(), "managed", "test");
+        using var host = new EngineHost(new InProcessMeshBackend());
         EventRecord? created = null;
         using var subscription = host.Subscribe(record =>
         {
@@ -156,7 +156,7 @@ public class EngineHostSubscriptionTests
     [Fact]
     public async Task Each_Subscription_Is_One_Entry_That_Its_Disposal_Removes_Once()
     {
-        using var host = new EngineHost(new InProcessMeshBackend(), "managed", "test");
+        using var host = new EngineHost(new InProcessMeshBackend());
         var counter = new Counter();
         var first = host.Subscribe(counter.Count);
         using var second = host.Subscribe(counter.Count);
@@ -180,7 +180,7 @@ public class EngineHostSubscriptionTests
     [Fact]
     public async Task A_Read_And_A_Subscription_In_One_Section_Miss_No_Body()
     {
-        using var host = new EngineHost(new InProcessMeshBackend(), "managed", "test");
+        using var host = new EngineHost(new InProcessMeshBackend());
         await host.Session.Apply(new CreateBoxCommand { SizeX = 1, SizeY = 1, SizeZ = 1 });
         var created = new List<Guid>();
 
