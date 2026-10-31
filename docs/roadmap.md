@@ -130,6 +130,7 @@ Therefore each approved objective must have a track here.
 - V2 — An image on a datum, calibrated to real units. Closed at v0.152, from TASK-0152 and TASK-0153.
 - P0.63 — The store of the assets gives a code for each error and repairs a damaged file, and an arc follows the solver. v0.153, TASK-0149.
 - P0.64 — The pin rules read each imported file, the sink gate reads the desktop, and the next forms of the sixteenth review fail. v0.154, TASK-0150.
+- P0.65 — A cancelled press gives nothing, and the mark of the snap is where the point goes and only while a finger is down. v0.155, TASK-0151.
 
 ## Track 0 — Foundations
 
