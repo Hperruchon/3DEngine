@@ -24,7 +24,7 @@ public class GizmoImageTests
     public async Task The_Overlay_Draws_The_Gizmo_In_Front_Of_The_Body()
     {
         var messagesBefore = GraphicsDevice.ValidationMessageCount;
-        using var host = new EngineHost(new ManifoldGeometryBackend(), "manifold", ManifoldGeometryBackend.NativeVersion);
+        using var host = new EngineHost(new ManifoldGeometryBackend());
         Assert.Equal(CommandStatus.Applied, (await host.Session.Apply(new CreateBoxCommand { SizeX = 4, SizeY = 4, SizeZ = 4 })).Status);
         var box = await host.Session.Read((document, _) => document.Bodies.Single().Handle.Id);
 

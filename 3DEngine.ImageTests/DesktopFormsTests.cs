@@ -164,7 +164,7 @@ public sealed class DesktopFormsTests
     [VulkanImageFact]
     public async Task Twenty_Changes_Of_One_Body_In_One_Frame_Give_One_Mesh()
     {
-        using var host = new EngineHost(new ManifoldGeometryBackend(), "manifold", ManifoldGeometryBackend.NativeVersion);
+        using var host = new EngineHost(new ManifoldGeometryBackend());
         var sketch = Output(await host.Session.Apply(new CreateSketchCommand { DatumId = Datums.XY.Id }), "sketchId");
         (double X, double Y)[] corners = [(0, 0), (10, 0), (10, 6), (0, 6)];
         var points = new List<Guid>();
@@ -195,7 +195,7 @@ public sealed class DesktopFormsTests
     [VulkanImageFact]
     public async Task A_Body_Created_And_Changed_In_One_Frame_Gives_One_Mesh()
     {
-        using var host = new EngineHost(new ManifoldGeometryBackend(), "manifold", ManifoldGeometryBackend.NativeVersion);
+        using var host = new EngineHost(new ManifoldGeometryBackend());
         var scene = SessionScene.Create();
         var camera = scene.Cameras[0];
         using var device = new GraphicsDevice("3DEngine.ImageTests", enableValidation: true, window: null);

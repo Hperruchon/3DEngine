@@ -28,7 +28,7 @@ public class RebuildImageTests
     public async Task The_Scene_Takes_The_Rebuilt_Mesh_And_The_Panel_The_Fault()
     {
         var messagesBefore = GraphicsDevice.ValidationMessageCount;
-        using var host = new EngineHost(new ManifoldGeometryBackend(), "manifold", ManifoldGeometryBackend.NativeVersion);
+        using var host = new EngineHost(new ManifoldGeometryBackend());
         var sketch = await Applied(host, new CreateSketchCommand { DatumId = Datums.XY.Id }, "sketchId");
         (double X, double Y)[] corners = [(0, 0), (10, 0), (10, 6), (0, 6)];
         var points = new List<Guid>();
