@@ -93,9 +93,10 @@ public sealed class ManifoldGeometryBackend
          + "cannot move or cut a solid, therefore the host does not start with it.";
 
     // IMeshOps. Builds a native, origin-centered Manifold cube and stores it under the
-    // handle. Throws on duplicate (mirrors the stub) — the bus derives handles from
-    // CommandId and the idempotency cache short-circuits duplicates, so a real
-    // collision is a programmer error.
+    // handle. Throws on duplicate (mirrors the stub), because the bus derives handles
+    // from CommandId. The idempotency cache of a live bus stops a command that comes
+    // again; a replay and an open have no cache, so the handler gives E-GEOM-NATIVE-OP
+    // for the second entry (E31).
     public void CreateBox(BodyHandle handle, BoxParameters parameters)
     {
         ObjectDisposedException.ThrowIf(_disposed, this);

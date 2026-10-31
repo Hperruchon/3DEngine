@@ -14,8 +14,9 @@ namespace Engine.Core;
 // entry, the command and the error. Until TASK-0035 the replay discarded each
 // result and returned a Document that looked correct (finding E7 of the codebase
 // review of 2026-10-04). The replay also applies each entry, with no
-// idempotency cache, so a CommandId that is in the log two times is applied two
-// times (finding E17).
+// idempotency cache (finding E17). A CommandId that is in the log two times is
+// applied two times only for a command that creates nothing; for a command that
+// creates a body or a sketch item the second entry is a divergence (E31, E104).
 //
 // ADR-0015 item 6 (KD3, anti-objective 10): a replay of log entries uses the
 // backend that each entry records, so an entry of another backend stops the replay
@@ -98,7 +99,7 @@ public sealed class ReplayDivergenceException : InvalidOperationException
         : base(
             $"The replay diverged at entry {index} of the log: {command.Name} {command.CommandId} gave "
             + $"{result.Status}"
-            + (result.Error is { } error ? $" with {error.Code}: {error.Message}" : string.Empty)
+            + (result.Error is { } error ? $" with {error.Code}: {Clause(error.Message)}" : string.Empty)
             + ". Each entry of a log was applied one time, so a replay must apply it too.")
     {
         Index = index;
@@ -109,13 +110,17 @@ public sealed class ReplayDivergenceException : InvalidOperationException
     public ReplayDivergenceException(int index, Command command, Exception exception)
         : base(
             $"The replay diverged at entry {index} of the log: {command.Name} {command.CommandId} threw "
-            + $"{exception.GetType().Name}: {exception.Message}. Each entry of a log was applied one time, so a "
+            + $"{exception.GetType().Name}: {Clause(exception.Message)}. Each entry of a log was applied one time, so a "
             + "replay must apply it too.",
             exception)
     {
         Index = index;
         Command = command;
     }
+
+    // Finding E31 of the codebase review of 2026-10-08 (TASK-0137): a message of an error ends with a
+    // full stop, and the text after it gave "..". The clause drops its own full stop.
+    private static string Clause(string message) => message.TrimEnd().TrimEnd('.');
 
     // The position of the entry in the log, from 0.
     public int Index { get; }

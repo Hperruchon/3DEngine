@@ -384,6 +384,9 @@ Progress 2026-10-31: TASK-0135 corrects E26 (the log is a read-only view), E29 (
 Progress 2026-10-31: TASK-0136 corrects E28 (an exception of a handler in a replay is a `ReplayDivergenceException`)
 and E30 (the backend of a replay is required). E27 stays: its refusal needs a member of `IGeometryBackend` that tells
 if the backend holds a body, which is a change of `Engine.Contracts` and needs the owner and an ADR.
+Progress 2026-10-31: TASK-0137 corrects E37 (with no library, a misspelled name gives its own error) and E31 (the
+comments of a repeated identifier, and the ".." of the message of a divergence). E25 stays: its correction needs a
+decision on the handover of the bus of a replay, and an open of a document file is the load path today.
 
 ### R-0039 · No test calls the surface of the desktop host
 - class: debt
