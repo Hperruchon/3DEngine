@@ -4438,3 +4438,32 @@ New tests: 4. The test list holds 1465 (1053 in `Engine.Tests`, 257 in `3DEngine
 `3DEngine.ImageTests`, 3 in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and
 zero warnings. Open entries: 15 of 15. New diagnostic codes: 1. Since the review of v0.149, 2 product milestones and 4
 entries followed it.
+
+## v0.154 — The pin rules read each imported file, the sink gate reads the desktop, and the next forms of the sixteenth review fail (P0.64, TASK-0150)
+
+The codebase review of v0.150 found T117 (medium) and T118 to T122 (low) in the gates, after V2.
+
+**The change.**
+
+- T117: `Only_The_Vision_Spike_Pins_The_Vision_Library` and `Each_Binding_Has_One_Pin_In_The_Vulkan_Layer` read the
+  `PackageReference` items of each file that MSBuild reads for a project, as the other rules of the dependency gate do.
+- T118: `EventSinkContractTests` fails when a project that reaches `Engine.Core`, the project of `IEventSink`, is not in
+  its folder and no named test reads it; `3DEngine.ImageTests/DesktopSinkContractTests.cs` reads the sinks of the desktop.
+- T119: the check of an item name decodes each escape of MSBuild. T120: each constant `char` E, W or I is a part of a
+  code. T121: the control byte gate refuses the Unicode set `Default_Ignorable_Code_Point`, with U+034F as text and the
+  byte order mark at the start of a file. T122: an underline of `=` or `-` at any indent after a line with a version
+  fails the counter of the review.
+
+**Proof.** 13 new test cases: 12 in `Engine.Tests` and 1 in `3DEngine.ImageTests`. The old gates passed each new
+form. Four injections in real files fail a gate now: an imported `.props` file with `OpenCvSharp4` in `Engine.Core` and
+with `Vortice.Vulkan` in `3DEngine.Core`, a throwing sink in `3DEngine`, and a list with no entry for `3DEngine`.
+
+**What stays.** The set of T121 is the set of Unicode 16; a later version of Unicode can add a character.
+
+**A correction.** The first set of T121 named U+FEFF, and the gate then refused the byte order mark at the start of a
+file: two test cases and the check of the tracked files failed. The rule of the category Format keeps its exception.
+
+New tests: 13. The test list holds 1478 (1065 in `Engine.Tests`, 257 in `3DEngine.Tests`, 153 in
+`3DEngine.ImageTests`, 3 in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and
+zero warnings. Open entries: 15 of 15. New diagnostic codes: 0. Since the review of v0.149, 2 product milestones and 5
+entries followed it.
