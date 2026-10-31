@@ -22,6 +22,11 @@ namespace Engine.Core;
 // backend that each entry records, so an entry of another backend stops the replay
 // before it applies. A list of commands with no entries, for example a fixture or a
 // script, records no backend and replays on the backend that the caller gives.
+//
+// Finding E112 of the codebase review of 2026-10-31 (b) (TASK-0142): a replay applies each
+// command as an entry of a log (CommandBus, a bus with no cache), also a command of a fixture or a
+// script. So a rule that a live session has and an open does not have (E103, ApplyingEntry) does
+// not act in a replay: a script can replay an arc with its start on its centre.
 public static class Replay
 {
     // Finding E30 of the codebase review of 2026-10-08 (TASK-0136): the backend was optional, and the
@@ -99,7 +104,7 @@ public sealed class ReplayDivergenceException : InvalidOperationException
         : base(
             $"The replay diverged at entry {index} of the log: {command.Name} {command.CommandId} gave "
             + $"{result.Status}"
-            + (result.Error is { } error ? $" with {error.Code}: {Clause(error.Message)}" : string.Empty)
+            + (result.Error is { } error ? $" with {error.Code}: {ErrorText.Clause(error.Message)}" : string.Empty)
             + ". Each entry of a log was applied one time, so a replay must apply it too.")
     {
         Index = index;
@@ -110,17 +115,13 @@ public sealed class ReplayDivergenceException : InvalidOperationException
     public ReplayDivergenceException(int index, Command command, Exception exception)
         : base(
             $"The replay diverged at entry {index} of the log: {command.Name} {command.CommandId} threw "
-            + $"{exception.GetType().Name}: {Clause(exception.Message)}. Each entry of a log was applied one time, so a "
+            + $"{exception.GetType().Name}: {ErrorText.Clause(exception.Message)}. Each entry of a log was applied one time, so a "
             + "replay must apply it too.",
             exception)
     {
         Index = index;
         Command = command;
     }
-
-    // Finding E31 of the codebase review of 2026-10-08 (TASK-0137): a message of an error ends with a
-    // full stop, and the text after it gave "..". The clause drops its own full stop.
-    private static string Clause(string message) => message.TrimEnd().TrimEnd('.');
 
     // The position of the entry in the log, from 0.
     public int Index { get; }
@@ -151,3 +152,11 @@ public sealed class BackendMismatchException : InvalidOperationException
 }
 
 public sealed record ReplayResult(Document Document, IEventSink Events);
+
+// Finding E31 of the codebase review of 2026-10-08 (TASK-0137): a message of an error ends with a
+// full stop, and the text after it gave "..". The clause drops its own full stop. The replay and the
+// open of a document file share it (finding E107 of the codebase review of 2026-10-31 (b), TASK-0142).
+internal static class ErrorText
+{
+    internal static string Clause(string message) => message.TrimEnd().TrimEnd('.');
+}

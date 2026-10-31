@@ -207,10 +207,15 @@ public static class DocumentFile
                 throw DocumentFileException.Load($"The entry of version {entry.Version} ({entry.Command.Name}) threw {ex.GetType().Name}: {ex.Message}");
             }
 
+            // Finding E106 of the codebase review of 2026-10-31 (b) (TASK-0142), as E29 for the replay:
+            // the bus turns a cancellation into Cancelled, and the open reported a load failure. A
+            // cancellation of the caller stays a cancellation.
+            if (result.Status == CommandStatus.Cancelled && ct.IsCancellationRequested)
+                throw new OperationCanceledException(ct);
             if (result.Status != CommandStatus.Applied)
                 throw DocumentFileException.Load(
                     $"The entry of version {entry.Version} ({entry.Command.Name}) gave {result.Status}"
-                    + (result.Error is { } error ? $", with {error.Code}: {error.Message}" : string.Empty)
+                    + (result.Error is { } error ? $", with {error.Code}: {ErrorText.Clause(error.Message)}" : string.Empty)
                     + ". Each entry was applied one time, so an open must apply it too.");
             if (result.DocumentVersion != entry.Version)
                 throw DocumentFileException.Load(

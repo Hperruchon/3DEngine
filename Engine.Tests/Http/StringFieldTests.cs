@@ -40,7 +40,7 @@ public class StringFieldTests
     [InlineData("\"\\ud800\"")]
     public async Task A_Name_That_Is_Not_A_Well_Formed_Json_String_Is_Refused(string name)
     {
-        var host = new EngineHost(new InProcessMeshBackend(), "managed", "test");
+        var host = new EngineHost(new InProcessMeshBackend());
         await using var app = await StartSurface(host);
         using var http = new HttpClient { BaseAddress = new Uri(app.Urls.First()) };
         var box = await http.PostAsync("/commands", new StringContent(

@@ -114,7 +114,7 @@ internal sealed class DesktopSurface : IDisposable
             builder.Configuration[FileSetting] is { Length: > 0 } named ? named : null,
             builder.Configuration[UnsavedFolderSetting] is { Length: > 0 } unsaved ? unsaved : DocumentFile.DefaultUnsavedFolder);
         builder.Services.AddSingleton(document.Folder);
-        builder.AddEngineSurface(_ => new EngineHost(new ManifoldGeometryBackend(), "manifold", ManifoldGeometryBackend.NativeVersion, file));
+        builder.AddEngineSurface(_ => new EngineHost(new ManifoldGeometryBackend(), file));
 
         var app = builder.Build();
 

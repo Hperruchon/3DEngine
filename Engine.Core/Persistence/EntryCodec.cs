@@ -112,12 +112,17 @@ public static class EntryCodec
         }
     }
 
+    // Finding E109 of the codebase review of 2026-10-31 (b) (TASK-0142): the reader took the last value
+    // of a repeated member, and the writer never repeats one (the rule of E78). The two readers refuse
+    // it. IsJson keeps the default options, so a last line with a repeated member is refused, not cut.
+    private static readonly JsonDocumentOptions Strict = new() { AllowDuplicateProperties = false };
+
     // The length unit of a header line, or a DocumentFileException.
     public static string ReadHeader(string line)
     {
         try
         {
-            using var parsed = JsonDocument.Parse(line);
+            using var parsed = JsonDocument.Parse(line, Strict);
             var root = parsed.RootElement;
             var format = root.GetProperty("format").GetString();
             var formatVersion = root.GetProperty("formatVersion").GetInt32();
@@ -148,7 +153,7 @@ public static class EntryCodec
         ICommandHandler handler;
         try
         {
-            using var parsed = JsonDocument.Parse(line);
+            using var parsed = JsonDocument.Parse(line, Strict);
             var root = parsed.RootElement;
             version = root.GetProperty("version").GetInt64();
             var backendElement = root.GetProperty("backend");
