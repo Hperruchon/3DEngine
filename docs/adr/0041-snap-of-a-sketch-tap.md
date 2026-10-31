@@ -51,7 +51,8 @@ owner, and this record is Accepted.
    pen. This amends ADR-0026: a new intent, and each method gives it, so objective 9 holds: a finger shows the mark
    while it is down, before its tap. The host asks the tool for the point that a tap there would take (a point within
    22 pixels, else the snap of item 1), and the overlay draws a square of 12 pixels in cyan at its pixel. The tool
-   Select has no mark.
+   Select has no mark. For the end of an arc the point is on the circle of its start, as the tap puts it, and there is
+   no mark where the tap ends the curve. The mark goes when the finger lifts and when a pointer is lost.
 
 ## Consequences
 
@@ -65,3 +66,5 @@ owner, and this record is Accepted.
   of 2026-10-31).
 - 2026-10-31 · TASK-0134 · Item 6: the mark of the snap and the intent `SketchHoverIntent` (phase R11b); the record
   amends ADR-0026.
+- 2026-10-31 · TASK-0151 · Item 6: the mark at the end of an arc is on its circle, and it goes when the finger lifts
+  (findings V66 and V67 of the codebase review of 2026-10-31 (c)).

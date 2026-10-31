@@ -78,7 +78,7 @@ internal sealed class SketchActions(DocumentSession session) : ISketchEditor
         if (Tool.Kind == SketchToolKind.Select || Current() is not { } sketch || Datums.Find(sketch.DatumId) is not { } datum || !(width > 0 && height > 0))
             return null;
         var picture = SketchOverlay.Picture(sketch, camera, width, height);
-        return SketchTool.Target(x, y, Position(datum, camera, x, y, width, height), picture) is { } target
+        return Tool.Target(x, y, Position(datum, camera, x, y, width, height), picture) is { } target
             ? SketchOverlay.Pixel(sketch, camera, width, height, target)
             : null;
     }

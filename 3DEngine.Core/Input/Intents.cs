@@ -35,9 +35,11 @@ public sealed record RedoIntent : Intent;
 // mode Sketch gives it; the host gives it to the active tool.
 public sealed record SketchPointIntent(double X, double Y) : Intent;
 
-// Phase R11b (TASK-0134, ADR-0041 item 6): the mouse at this point of the window with no button
-// down, in the mode Sketch. The host shows there the mark of the point that a tap would take. A
-// touch and a pen have no hover, so they give none.
+// Phase R11b (TASK-0134, ADR-0041 item 6): in the mode Sketch, the mouse at this point of the window
+// with no button down or at the press of the left button, and the first contact of a touch or a pen
+// while it is down. The host shows there the mark of the point that a tap would take. Finding V67 of
+// the codebase review of 2026-10-31 (c) (TASK-0151): until then this comment said that a touch gives
+// none.
 public sealed record SketchHoverIntent(double X, double Y) : Intent;
 
 // A handle of the translate gizmo (ADR-0038 item 4): an arrow along one axis, or a square in
