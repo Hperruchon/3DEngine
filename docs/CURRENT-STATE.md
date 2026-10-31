@@ -3809,3 +3809,29 @@ New tests: 2. The test list holds 1320 (962 in `Engine.Tests`, 217 in `3DEngine.
 `3DEngine.ImageTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
 entries: 14 of 15. New diagnostic codes: none. Since the review of v0.130, 0 product milestones and 2 entries followed
 it.
+
+## v0.133 — A tap of the sketch snaps to a midpoint, a line, a curve or the grid (R11a, TASK-0131)
+
+The roadmap row R11 had no slice. The codebase review of 2026-10-31 proposed R11a, and the standing answer of the
+owner of 2026-10-31 takes Q2 A, so ADR-0041 is Accepted.
+
+**The change.**
+
+- A tap of the tools Line, Circle and Arc that has no point within 22 pixels takes the midpoint of a line, else the
+  nearest point on a line or a curve, else the position of the grid (ADR-0041 items 1 and 2). A snap adds no
+  constraint (item 3).
+- `SketchOverlay.Picture` gives each curve its centre and its radius in the plane. ADR-0041 amends ADR-0034.
+
+**Proof.** 5 new test cases: 4 in `3DEngine.Tests/SketchToolTests.cs` and 1 in `3DEngine.ImageTests/SketchOverlayTests.cs`.
+5 injections: each one failed a test.
+
+**What stays.** The mark of the snap before a tap needs a hover intent (ADR-0026); the escalated selection of faces and
+edges needs their identity (K4). Both stay in the row R11.
+
+**A correction.** The review planned a mark of the snap and a picture of it; the intent machine has no hover intent, so
+TASK-0131 moved the mark to Scope (out) and changed that criterion to a test of the picture.
+
+New tests: 5. The test list holds 1325 (962 in `Engine.Tests`, 221 in `3DEngine.Tests`, 142 in
+`3DEngine.ImageTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
+entries: 14 of 15. New diagnostic codes: none. Since the review of v0.130, 1 product milestone and 3 entries followed
+it.
