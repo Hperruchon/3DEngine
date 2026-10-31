@@ -66,6 +66,20 @@ public class BackendSelectionTests : IClassFixture<WebApplicationFactory<Program
         Assert.Contains(DiagnosticCodes.QueryUnknown, query.ToString());
     }
 
+    // Finding E38 of the codebase review of 2026-10-08 (TASK-0138): on win-x64 the sentence said that the
+    // package holds win-x64. A platform of the package and a platform with no payload give two causes.
+    [Fact]
+    public void The_Reason_Separates_A_Missing_File_From_A_Platform_With_No_Payload()
+    {
+        var packaged = ManifoldGeometryBackend.UnavailableReason("win-x64");
+        var other = ManifoldGeometryBackend.UnavailableReason("linux-arm64");
+
+        Assert.Contains("the file is not in the folder of the program", packaged, StringComparison.Ordinal);
+        Assert.DoesNotContain("platforms win-x64, linux-x64 and osx-arm64 only", packaged, StringComparison.Ordinal);
+        Assert.Contains("platforms win-x64, linux-x64 and osx-arm64 only", other, StringComparison.Ordinal);
+        Assert.DoesNotContain("the file is not in the folder of the program", other, StringComparison.Ordinal);
+    }
+
     [Fact]
     public async Task A_Test_Can_Give_The_Command_Line_The_Managed_Backend()
     {
