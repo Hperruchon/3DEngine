@@ -1,7 +1,7 @@
 ---
 id: 0132
 title: The engine, the surface and the gates close the forms of the fifteenth review
-status: Ready
+status: Active
 phase: P0.52
 opened: 2026-10-31
 depends-on: [0131]
@@ -11,6 +11,15 @@ writes:
     - tasks/TASK-0132-forms-of-the-fifteenth-review.md
   modify:
     - Engine.Core/Commands/AddSketchArcCommandHandler.cs
+    - Engine.Core/Commands/AddSketchCircleCommandHandler.cs
+    - Engine.Core/Commands/AddSketchConstraintCommandHandler.cs
+    - Engine.Core/Commands/AddSketchLineCommandHandler.cs
+    - Engine.Core/Commands/AddSketchPointCommandHandler.cs
+    - Engine.Core/Commands/CreateSketchCommandHandler.cs
+    - Engine.Core/Commands/DeleteSketchItemCommandHandler.cs
+    - Engine.Core/Commands/ExtrudeCommandHandler.cs
+    - Engine.Core/Commands/MoveSketchPointCommandHandler.cs
+    - Engine.Core/Commands/SetSketchConstraintValueCommandHandler.cs
     - Engine.Core/Sketch/SketchConstraints.cs
     - Engine.Core/Sketch/SketchResults.cs
     - Engine.Api.Http/Endpoints/DocumentEndpoint.cs
@@ -21,6 +30,8 @@ writes:
     - Engine.Tests/Governance/DependencyDirectionGateTests.cs
     - Engine.Tests/Diagnostics/DiagnosticsScanner.cs
     - Engine.Tests/Diagnostics/DiagnosticsRegistryGateTests.cs
+    - eng/repo-gates/DiscardedTasks.cs
+    - docs/diagnostics.md
     - eng/test-floor.txt
     - docs/roadmap.md
     - docs/CURRENT-STATE.md
@@ -70,3 +81,7 @@ The engine, the surface and the gates close each form of the review, and a test 
 ## Progress
 
 - 2026-10-31: opened by the codebase review of 2026-10-31 (TASK-0129).
+- 2026-10-31: E103 (Q1 A), E104, E105, and T104 to T109. The write set gains `eng/repo-gates/DiscardedTasks.cs`, which
+  takes the list of implicit usings of `ConstantStrings`, and `docs/diagnostics.md`, whose row of
+  `E-SKETCH-ID-IN-USE` said that an open never raises the code, and the nine handlers that call `SketchResults.InUse`
+  with its new parameter.

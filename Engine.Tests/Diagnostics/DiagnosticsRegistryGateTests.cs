@@ -147,6 +147,12 @@ public class DiagnosticsRegistryGateTests
     [InlineData("static class P { static readonly string Tag = \"HIDDEN\"; static string Code() => \"E\" + (\"-SKETCH-\" + Tag); }")]
     [InlineData("static class P { static readonly string Tag = \"HIDDEN\"; static string Code() => string.Join(\"-\", \"I\", \"SKETCH\", Tag); }")]
     [InlineData("static class P { static string Code() => \"e-sketch-hidden\".ToUpperInvariant(); }")]
+    // The forms of finding T109 (TASK-0132).
+    [InlineData("static class P { static readonly string Tag = \"HIDDEN\"; static string Code() => string.Join(\"-\", new[] { \"E\", \"SKETCH\", Tag }); }")]
+    [InlineData("static class P { const string Sev = \"E\"; static readonly string Tag = \"HIDDEN\"; static string Code() => string.Join(\"-\", Sev, \"SKETCH\", Tag); }")]
+    [InlineData("static class P { static string Code() => string.Concat(\"E\", \"-\", \"SKETCH-X\"); }")]
+    [InlineData("static class P { static readonly string Sev = \"x\"; static readonly string Tag = \"HIDDEN\"; static string Code() => $\"{Sev}-SKETCH{\"-\"}{Tag}\"; }")]
+    [InlineData("static class P { static readonly string Tag = \"HIDDEN\"; static string Code() => 'E' + \"-x\" + Tag; }")]
     public void A_Part_Of_A_Code_Is_An_Offence(string source)
     {
         Assert.NotEmpty(DiagnosticsScanner.PartsOfCodes([("Engine.Core/Probe.cs", source)]));
@@ -201,6 +207,32 @@ public class DiagnosticsRegistryGateTests
         {
             File.Delete(props);
         }
+    }
+
+    // Finding T104 of the codebase review of 2026-10-31 (TASK-0132): a name that only an implicit using
+    // of the SDK binds gave no constant, so the joined code passed.
+    [Fact]
+    public void A_Name_Of_An_Implicit_Using_Hides_No_Code()
+    {
+        (string, string)[] files = [("Engine.Core/ProbeZ1.cs", "static class Z { const string Code = \"E\" + (\"-SKETCH\" + (\"-\" + nameof(GC))); }")];
+
+        Assert.Contains("E-SKETCH-GC", DiagnosticsScanner.ConstantCodes(files).Select(use => use.Code));
+    }
+
+    // Finding T105 (TASK-0132): each compilation granted its internals to each project, so an internal
+    // and a public type of one name were ambiguous, and the build, which grants Engine.Core to
+    // Engine.Tests only, takes the public one.
+    [Fact]
+    public void A_Grant_That_The_Build_Does_Not_Give_Hides_No_Code()
+    {
+        (string, string)[] files =
+        [
+            ("Engine.Core/ProbeZA.cs", "namespace Engine.Core.ProbeZA; internal static class Tag { internal const string Part = \"X\", Mid = \"-Y\", End = \"-Z\"; }"),
+            ("Engine.Core/ProbeZB.cs", "namespace Engine.Core.ProbeZB; public static class Tag { public const string Part = \"E\", Mid = \"-SKETCH\", End = \"-AMBIG\"; }"),
+            ("Engine.Cli/ProbeZC.cs", "using Engine.Core.ProbeZA; using Engine.Core.ProbeZB; static class C { const string Code = Tag.Part + Tag.Mid + Tag.End; }"),
+        ];
+
+        Assert.Contains("E-SKETCH-AMBIG", DiagnosticsScanner.ConstantCodes(files).Select(use => use.Code));
     }
 
     // Finding T81: the compiler joins a code from two strings and from a constant of another
