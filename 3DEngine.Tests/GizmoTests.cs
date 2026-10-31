@@ -208,4 +208,19 @@ public class GizmoTests
 
         Assert.Equal(others.Length, Run(OnHandle(), others).Count);
     }
+    // Finding V58 of the codebase review of 2026-10-31 (TASK-0133): a press on a handle before the slop
+    // let a wheel and an undo act. They give nothing from the press on.
+    [Fact]
+    public void Other_Input_Before_The_Slop_Of_A_Press_On_A_Handle_Gives_Nothing()
+    {
+        var intents = Run(OnHandle(),
+            [Mouse(100, 100, PointerPhase.Down, 0)],
+            [new WheelSample(1, 5 * Ms)],
+            [new KeySample(InputKey.Z, true, KeyModifiers.Control, 6 * Ms)],
+            [Mouse(130, 100, PointerPhase.Move, 10)],
+            [Mouse(130, 100, PointerPhase.Up, 400)]);
+
+        Assert.Equal([typeof(GizmoStartIntent), typeof(GizmoMoveIntent), typeof(GizmoEndIntent)], intents.Select(intent => intent.GetType()));
+    }
+
 }

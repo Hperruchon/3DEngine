@@ -1,7 +1,7 @@
 ---
 id: 0133
 title: The pad of an angle takes degrees, and the tools and the window follow the review
-status: Ready
+status: Active
 phase: P0.53
 opened: 2026-10-31
 depends-on: [0131]
@@ -63,3 +63,4 @@ still, and the window offers only the kinds that the engine accepts.
 ## Progress
 
 - 2026-10-31: opened by the codebase review of 2026-10-31 (TASK-0129).
+- 2026-10-31: V56 to V62 with 6 new test cases; 9 injections caught.

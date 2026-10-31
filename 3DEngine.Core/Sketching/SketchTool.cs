@@ -100,7 +100,7 @@ public sealed class SketchTool
         ArgumentNullException.ThrowIfNull(editor);
         if (_kind == SketchToolKind.Select)
         {
-            if ((NearestPoint(pixelX, pixelY, picture) ?? NearestLine(pixelX, pixelY, picture) ?? NearestCurve(pixelX, pixelY, picture)) is { } item)
+            if ((NearestPoint(pixelX, pixelY, picture) ?? NearestEdge(pixelX, pixelY, picture)) is { } item)
                 Toggle(item);
             return;
         }
@@ -283,6 +283,10 @@ public sealed class SketchTool
             return;
         }
 
+        // Finding V57 of the codebase review of 2026-10-31 (TASK-0133): the centre and the start take
+        // their current positions from the picture, so a point that moved between two taps counts
+        // where it is now.
+        Refresh(picture);
         var c = _curve[0];
         var (dx, dy) = (p.X - c.X, p.Y - c.Y);
         var distance = Math.Sqrt((dx * dx) + (dy * dy));
@@ -309,10 +313,49 @@ public sealed class SketchTool
         // A new end goes on the circle of the start, along the direction of the tap.
         var s = _curve[1];
         var radius = Math.Sqrt(((s.X - c.X) * (s.X - c.X)) + ((s.Y - c.Y) * (s.Y - c.Y)));
-        var end = hit ?? editor.AddPoint(c.X + (dx * radius / distance), c.Y + (dy * radius / distance));
+        var (ex, ey) = (c.X + (dx * radius / distance), c.Y + (dy * radius / distance));
+        // Finding V61 (TASK-0133): a new end in the direction of the start made a second point at the
+        // position of the start and an arc of a full turn; it ends the curve.
+        if (hit is null && Math.Sqrt(((ex - s.X) * (ex - s.X)) + ((ey - s.Y) * (ey - s.Y))) <= 1e-9 * radius)
+        {
+            End();
+            return;
+        }
+
+        var end = hit ?? editor.AddPoint(ex, ey);
         if (end is { } e)
             editor.AddArc(c.Id, s.Id, e);
         End();
+    }
+
+    private void Refresh(SketchPicture picture)
+    {
+        for (var i = 0; i < _curve.Count; i++)
+        {
+            if (picture.Points.FirstOrDefault(point => point.Id == _curve[i].Id) is { } now)
+                _curve[i] = (now.Id, now.X, now.Y);
+        }
+    }
+
+    // Finding V62 (TASK-0133): the nearest of the lines and the curves, so a tap on a circle that a
+    // line touches selects the circle. A line within HitPixels took the pick before a nearer curve.
+    private static Guid? NearestEdge(double x, double y, SketchPicture picture)
+    {
+        var line = NearestLine(x, y, picture);
+        var curve = NearestCurve(x, y, picture);
+        if (line is null || curve is null)
+            return line ?? curve;
+        return Distance(x, y, picture, curve.Value) < Distance(x, y, picture, line.Value) ? curve : line;
+    }
+
+    // The distance in pixels from a point to a line or a curve of the picture.
+    private static double Distance(double x, double y, SketchPicture picture, Guid item)
+    {
+        if (picture.Curves.FirstOrDefault(curve => curve.Id == item) is { } found)
+            return found.Pixels.Select(segment => ToSegment(x, y, segment.A, segment.B)).DefaultIfEmpty(double.PositiveInfinity).Min();
+        var line = picture.Lines.First(item2 => item2.Id == item);
+        var (a, b) = (picture.Points.First(point => point.Id == line.Start), picture.Points.First(point => point.Id == line.End));
+        return ToSegment(x, y, (a.PixelX!.Value, a.PixelY!.Value), (b.PixelX!.Value, b.PixelY!.Value));
     }
 
     private static Guid? NearestCurve(double x, double y, SketchPicture picture)

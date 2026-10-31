@@ -286,8 +286,10 @@ public sealed class IntentMachine
         }
     }
 
-    // A drag of the gizmo runs: it started, and no cancel ended it.
-    private bool Dragging => _gizmo is { Started: true, Cancelled: false };
+    // A press on a handle of the gizmo holds, and no cancel ended it. Finding V58 of the codebase review
+    // of 2026-10-31 (TASK-0133): a wheel and an undo before the slop still acted, and the drag then
+    // started from a view or a body that had changed.
+    private bool Dragging => _gizmo is { Cancelled: false };
 
     // A pointer was lost: the gesture in progress ends, and nothing stays down.
     private void Lose(List<Intent> intents)
