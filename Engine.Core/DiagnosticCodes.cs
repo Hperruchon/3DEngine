@@ -77,6 +77,9 @@ public static class DiagnosticCodes
     public const string AssetCorrupt = "E-ASSET-CORRUPT";
     public const string AssetWriteFailed = "E-ASSET-WRITE-FAILED";
 
+    // Finding E114 of the codebase review of 2026-10-31 (c) (TASK-0149).
+    public const string AssetReadFailed = "E-ASSET-READ-FAILED";
+
     // ADR-0045 (phase V2a, TASK-0152): an image on a datum and its calibration.
     public const string ImageNotFound = "E-IMAGE-NOT-FOUND";
     public const string ImageIdInUse = "E-IMAGE-ID-IN-USE";
