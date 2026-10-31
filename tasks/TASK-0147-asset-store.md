@@ -1,7 +1,7 @@
 ---
 id: 0147
 title: The engine keeps each asset under the SHA-256 of its bytes, in one store of the account
-status: Active
+status: Done
 phase: V1b
 opened: 2026-10-31
 depends-on: [0145]
@@ -59,12 +59,24 @@ An agent, the command line and a host put the bytes of a file into one store and
 
 ## Acceptance criteria
 
-- [ ] The name of "abc" is the SHA-256 of FIPS 180-2, and a second put of the same bytes gives one file.
-- [ ] A bad name, an absent asset, a changed file, an asset over 16 MiB and a folder that cannot be written each give
+- [x] The name of "abc" is the SHA-256 of FIPS 180-2, and a second put of the same bytes gives one file.
+- [x] A bad name, an absent asset, a changed file, an asset over 16 MiB and a folder that cannot be written each give
       their code.
-- [ ] The two routes and the two verbs put and get an asset, and refuse a bad name.
-- [ ] A clean build (`--no-incremental`) gives zero errors and zero warnings.
-- [ ] Continuous integration passes on the three runners, on the branch and on `main` after the merge.
+- [x] The two routes and the two verbs put and get an asset, and refuse a bad name.
+- [x] A clean build (`--no-incremental`) gives zero errors and zero warnings.
+- [x] Continuous integration passes on the three runners, on the branch and on `main` after the merge.
+
+## Outcome
+
+Status: Done · commit (the merge of the branch v1b-asset-store) · v0.148
+
+## Method
+
+Mechanical: the name of "abc" from FIPS 180-2, the six tests of the store, its routes and its verbs, and one injection
+            for each rule.
+Judgement:  the limit of 16 MiB under the request limit of Kestrel; the status of each error; the store outside each
+            session, as the owner chose.
+Weakest:    no test stops the process between the write of the scratch file and its move; the move gives the guarantee.
 
 ## Progress
 
@@ -74,3 +86,4 @@ An agent, the command line and a host put the bytes of a file into one store and
 - 2026-10-31: 5 injections caught: no hash check on a read, no limit of size, an upper-case name, a missing asset
   with the status 500, and a path as a name. The first form of the injection of the limit was dead code, which the
   compiler refused; the second form compiled and failed the test of the limit.
+- 2026-10-31: closed at v0.148.

@@ -4242,3 +4242,33 @@ New tests: 5. The test list holds 1405 (1027 in `Engine.Tests`, 229 in `3DEngine
 `3DEngine.ImageTests`, 3 in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and
 zero warnings. Open entries: 14 of 15. New diagnostic codes: none. Since the review of v0.141, 2 product milestones
 and 6 entries followed it.
+
+## v0.148 — The engine keeps each asset under the SHA-256 of its bytes, in one store of the account (V1b, TASK-0147)
+
+The owner told the session on 2026-10-31 to start V1: "A content-addressed asset store. A textured quad." V1a
+(TASK-0146) draws an image on a quad and waits for the visual check of the owner; V1b needs no picture, so it merged
+first. On 2026-10-31 the owner chose one store for each account for the bytes of an asset.
+
+**The change.**
+
+- `Engine.Core/Assets/AssetStore.cs` names each asset by the SHA-256 of its bytes, in 64 lower-case hexadecimal digits
+  (ADR-0044 item 1). A put writes a scratch file, flushes it and moves it to the name; a read computes the name again
+  (item 2). An asset holds at most 16 MiB (item 3). The folder is `<local application data>/3DEngine/assets`, or the
+  setting `Engine:AssetFolder`.
+- The surface gains `PUT /assets` and `GET /assets/{name}` (item 4), outside the triad of ADR-0008. The command line
+  gains `engine asset put <file>` and `engine asset get <name> <file>`, each with `--folder` (item 5).
+- Five codes in the new namespace `ASSET`: `E-ASSET-TOO-LARGE`, `E-ASSET-BAD-NAME`, `E-ASSET-NOT-FOUND`,
+  `E-ASSET-CORRUPT` and `E-ASSET-WRITE-FAILED`, in `docs/diagnostics.md` and in `/schema/diagnostics`.
+
+**Proof.** 6 new test cases in `Engine.Tests/Assets/AssetStoreTests.cs`. 5 injections: no hash check on a read, no
+limit of size, an upper-case name, a missing asset with the status 500, and a path as a name; each one failed a test.
+
+**What stays.** No command names an asset yet (V2), nothing removes an asset, and a copied document file does not carry
+its assets (ADR-0044 item 6).
+
+**A correction.** None.
+
+New tests: 6. The test list holds 1411 (1033 in `Engine.Tests`, 229 in `3DEngine.Tests`, 146 in
+`3DEngine.ImageTests`, 3 in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and
+zero warnings. Open entries: 14 of 15. New diagnostic codes: 5. Since the review of v0.141, 3 product milestones and 7
+entries followed it.
