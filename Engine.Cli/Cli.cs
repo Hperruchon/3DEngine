@@ -86,11 +86,11 @@ public static class Cli
 
         // Per ADR-0016: find the handler, bind the parameters, then let the
         // handler build its command. No command name appears in this file.
-        var session = BuildSession(backend, stderr);
-        if (session is null)
-            return ExitBackendUnavailable;
-
-        if (!session.CommandRegistry.TryFind(name, DefaultSchemaVersion, out var handler))
+        // Finding E37 of the codebase review of 2026-10-08 (TASK-0137): the session came first, so
+        // with no native library a misspelled command gave the exit code 3 and not E-CMD-UNKNOWN.
+        // The catalog needs no backend, so the name and the parameters come before the backend.
+        var (commands, _) = Catalog();
+        if (!commands.TryFind(name, DefaultSchemaVersion, out var handler))
         {
             // No sentinel command: produce the Rejected result client-side.
             // CommandBus.Apply requires a concrete Command; constructing one
@@ -107,6 +107,10 @@ public static class Cli
 
         var command = handler.Create(
             new CommandInput(bound.Values!, Guid.NewGuid(), ExpectedDocumentVersion: null));
+
+        var session = BuildSession(backend, stderr);
+        if (session is null)
+            return ExitBackendUnavailable;
 
         var result = await session.Apply(command, ct).ConfigureAwait(false);
 
@@ -136,11 +140,8 @@ public static class Cli
         }
 
         // Per ADR-0016: same three steps as Apply. No query name appears here.
-        var session = BuildSession(backend, stderr);
-        if (session is null)
-            return ExitBackendUnavailable;
-
-        if (!session.QueryRegistry.TryFind(name, DefaultSchemaVersion, out var handler))
+        var (_, queries) = Catalog();
+        if (!queries.TryFind(name, DefaultSchemaVersion, out var handler))
         {
             var unknown = new QueryResult<object>(
                 QueryName: name,
@@ -161,6 +162,10 @@ public static class Cli
 
         var query = handler.Create(new QueryInput(bound.Values!, Guid.NewGuid()));
 
+        var session = BuildSession(backend, stderr);
+        if (session is null)
+            return ExitBackendUnavailable;
+
         // The CLI holds each result as an object and writes its fields as JSON,
         // so a new query needs no change here (ADR-0018 item 7, TASK-0028).
         // Until TASK-0028 the CLI read each result as an Aabb.
@@ -176,6 +181,16 @@ public static class Cli
         foreach (var (key, value) in parameters)
             raw[key] = value;
         return raw;
+    }
+
+    // The handlers of HandlerCatalog with no backend, so that the name and the parameters are
+    // checked before the backend loads (E37). The session holds the same catalog.
+    private static (CommandRegistry Commands, QueryRegistry Queries) Catalog()
+    {
+        var commands = new CommandRegistry();
+        var queries = new QueryRegistry();
+        HandlerCatalog.RegisterAll(commands, queries);
+        return (commands, queries);
     }
 
     private static CommandResult UnknownCommand(string name) => new(

@@ -41,7 +41,7 @@ public class BackendRecordTests
             new LogEntry(new NoOpCommand { Echo = "b" }, new BackendIdentity("manifold", "3.5.2")),
         };
 
-        var error = await Assert.ThrowsAsync<BackendMismatchException>(() => Replay.ReplayLog(log, registry));
+        var error = await Assert.ThrowsAsync<BackendMismatchException>(() => Replay.ReplayLog(log, registry, NullGeometryBackend.Instance));
 
         Assert.Equal(1, error.Index);
         Assert.StartsWith(DiagnosticCodes.IoBackendMismatch, error.Message, StringComparison.Ordinal);
@@ -55,7 +55,7 @@ public class BackendRecordTests
         registry.Register(new NoOpCommandHandler());
         var log = new[] { new LogEntry(new NoOpCommand { Echo = "a" }, new BackendIdentity("null", "0")) };
 
-        var replay = await Replay.ReplayLog(log, registry);
+        var replay = await Replay.ReplayLog(log, registry, NullGeometryBackend.Instance);
 
         Assert.Equal(1, replay.Document.Version);
         Assert.Equal(NullGeometryBackend.Instance.Identity, replay.Document.Log[0].Backend);

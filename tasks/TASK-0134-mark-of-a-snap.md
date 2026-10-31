@@ -75,3 +75,4 @@ before its tap.
   first contact of a finger give the hover too; the tests of the gestures of the mode Sketch skip the hover.
 - 2026-10-31: the hover, the target, the mark and the square; 3 new test cases, and the GPU test of the curves also draws
   the mark; 6 injections caught. The visual check waits for the owner.
+- 2026-10-31: main merged into the branch (v0.135 to v0.142); the counts of eng/test-floor.txt add the two sides.

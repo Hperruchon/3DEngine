@@ -111,6 +111,12 @@ Therefore each approved objective must have a track here.
 - R11a — A tap of the sketch snaps to a midpoint, a line, a curve or the grid. v0.133, TASK-0131, ADR-0041.
 - P0.52 — The engine, the surface and the gates close the forms of the fifteenth review. v0.134, TASK-0132.
 - P0.53 — The pad of an angle takes degrees, and the tools and the window follow the review. v0.135, TASK-0133.
+- P0.54 — The log of the Document is read-only, a cancelled replay is a cancellation, and a query of a lost body gives an error. v0.136, TASK-0135.
+- P0.55 — An exception of a handler in a replay is a divergence, and a replay needs a backend. v0.137, TASK-0136.
+- P0.56 — The command line checks a name before the backend, and the comments of the replay are true. v0.138, TASK-0137.
+- P0.57 — The reason of a native library that does not load separates a missing file from a platform with no payload. v0.139, TASK-0138.
+- P0.58 — The schema of the backend is in the list of the surface, and it gives the identity of the backend. v0.140, TASK-0139.
+- P0.59 — A sink of events does not throw, and a test holds each sink to it. v0.141, TASK-0140.
 
 ## Track 0 — Foundations
 
@@ -171,6 +177,15 @@ This track removes each condition that blocks other work.
 | P0.51 | A radius at the noise level does not solve, and the check of the tasks binds the real gate files (E102, T103 of the codebase review of 2026-10-31; before R11a). TASK-0130. | 1–2 |
 | P0.52 | The engine, the surface and the gates close the forms of the fifteenth review (E103 to E105, T104 to T109; after R11a). TASK-0132. | 3–4 |
 | P0.53 | The pad of an angle takes degrees, and the tools and the window follow the review (V56 to V62; after R11a). TASK-0133. | 2–3 |
+| P0.54 | The log of the Document is read-only, a cancelled replay is a cancellation, and a query of a lost body gives an error (E26, E29, E32 of R-0036). TASK-0135. | 1 |
+| P0.55 | An exception of a handler in a replay is a divergence, and a replay needs a backend (E28, E30 of R-0036). TASK-0136. | 1 |
+| P0.56 | The command line checks a name before the backend, and the comments of the replay are true (E37, E31 of R-0036). TASK-0137. | 1 |
+| P0.57 | The reason of a native library that does not load separates a missing file from a platform with no payload (E38 of R-0036). TASK-0138. | 1 |
+| P0.58 | The schema of the backend is in the list of the surface, and it gives the identity of the backend (E35 of R-0036). TASK-0139. | 1 |
+| P0.59 | A sink of events does not throw, and a test holds each sink to it (E18 of R-0033, Q4 of 2026-10-04). TASK-0140. | 1 |
+| P0.60 | The open follows the replay, the adds follow the solver, and the comments of the cache are true (E106 to E112 of the codebase review of 2026-10-31 (b); after R11b). TASK-0142. | 2–3 |
+| P0.61 | The gates read disabled text, the routes of the test host, each sink, and the next forms of the fifteenth review (T110 to T116; after R11b). TASK-0143. | 2–3 |
+| P0.62 | An arc ends within a pixel of its start, and Escape cancels a press on a handle before the slop (V63, V64; after R11b). TASK-0144. | 1 |
 
 ## Track P — The platform
 

@@ -4,7 +4,8 @@ namespace Engine.Core;
 
 // Bounded ring buffer per ADR-0005 §3 (default capacity 10_000).
 // On overflow, evicts the oldest event. Surviving range stays contiguous in Seq
-// because the engine never produces gaps.
+// because the engine never produces gaps: the bus gives each Seq in order, and
+// no sink throws (IEventSink, finding E18).
 public sealed class InMemoryEventSink : IEventSink
 {
     public const int DefaultCapacity = 10_000;

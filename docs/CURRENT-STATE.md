@@ -3894,3 +3894,194 @@ New tests: 6. The test list holds 1363 (994 in `Engine.Tests`, 225 in `3DEngine.
 `3DEngine.ImageTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
 entries: 14 of 15. New diagnostic codes: none. Since the review of v0.130, 1 product milestone and 5 entries followed
 it.
+
+## v0.136 — The log of the Document is read-only, a cancelled replay is a cancellation, and a query of a lost body gives an error (P0.54, TASK-0135)
+
+R11b (TASK-0134) waits for the visual check of the owner on its branch, so this task took three findings of register
+entry R-0036 that change no file of the desktop.
+
+**The change.**
+
+- E26: `Document.Log` is a read-only view of the list. A cast to `List` and a `Clear` moved the version from 2 to 0.
+  The public shape does not change; ADR-0020 has a section of history for it.
+- E29: `Replay.ReplayLog` throws `OperationCanceledException` when a command gives Cancelled and the token of the
+  caller is cancelled. It reported a divergence of the log.
+- E32: `GetBoundingBox` and `GetTessellation` give `E-GEOM-NATIVE-OP` when the backend throws. A body that the
+  backend did not hold threw `KeyNotFoundException` out of the query bus, and a host answered HTTP 500.
+
+**Proof.** 3 new test cases in `Engine.Tests/Commands/EngineDebtTests.cs`. 4 injections: each one failed a test.
+
+**What stays.** Twelve findings of R-0036.
+
+**A correction.** The write set first did not name ADR-0020; the check of the staged change refuses a change of
+`Engine.Contracts/` with no ADR file, and the write set names it now.
+
+New tests: 3. The test list holds 1366 (997 in `Engine.Tests`, 225 in `3DEngine.Tests`, 144 in
+`3DEngine.ImageTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
+entries: 14 of 15. New diagnostic codes: none. Since the review of v0.130, 1 product milestone and 6 entries followed
+it.
+
+## v0.137 — An exception of a handler in a replay is a divergence, and a replay needs a backend (P0.55, TASK-0136)
+
+R11b (TASK-0134) still waits for the visual check of the owner, so this task took the findings of the replay in
+register entry R-0036.
+
+**The change.**
+
+- E28: `Replay.ReplayLog` wraps an exception of an entry that is not a cancellation in `ReplayDivergenceException`.
+  The exception names the entry and the command, `Result` is null, and `InnerException` holds the exception. Before
+  the change an `InvalidCastException` left the replay with no entry and no command. The test of finding E7 asserts
+  the exact type now.
+- E30: the parameter `backend` of the two methods `Replay.ReplayLog` is required, and null gives
+  `ArgumentNullException`. The default null backend made each log with geometry diverge at its first body. Six calls
+  in the tests name `NullGeometryBackend.Instance`.
+
+**Proof.** 2 new test cases in `Engine.Tests/Commands/EngineDebtTests.cs`. 2 injections: each one failed a test.
+
+**What stays.** E27, the refusal of a backend that holds a body: `IGeometryBackend` has no member that tells it, so
+the refusal needs a change of `Engine.Contracts` and an ADR, which is a stop condition. It stays in R-0036 for the
+owner, with the other open findings.
+
+**A correction.** The first write set had no `governed-by`; the gate of the task asked for ADR-0004, ADR-0015 and
+ADR-0020, and the task names them now.
+
+New tests: 2. The test list holds 1368 (999 in `Engine.Tests`, 225 in `3DEngine.Tests`, 144 in
+`3DEngine.ImageTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
+entries: 14 of 15. New diagnostic codes: none. Since the review of v0.130, 1 product milestone and 7 entries followed
+it.
+
+## v0.138 — The command line checks a name before the backend, and the comments of the replay are true (P0.56, TASK-0137)
+
+R11b (TASK-0134) still waits for the visual check of the owner, so this task took two more findings of register entry
+R-0036.
+
+**The change.**
+
+- E37: `Cli.Apply` and `Cli.Query` find the handler in the catalog and bind the parameters before the backend
+  loads. With no native library, `apply CreateBx` gave the exit code 3 of the backend. It gives `E-CMD-UNKNOWN` with
+  the exit code 1 now, and a misspelled query gives `E-QRY-UNKNOWN`.
+- E31: the comments of `InProcessMeshBackend` and `ManifoldGeometryBackend` said that the idempotency cache stops
+  each repeated command. A replay and an open have no cache, and the second box is a divergence with
+  `E-GEOM-NATIVE-OP`. The comments of `Replay.cs` and `CommandBus.cs` say the same, and that the cache keeps the
+  results up to its capacity. The message of `ReplayDivergenceException` gave ".." after an error message that ends
+  with a full stop.
+
+**Proof.** 2 new test cases: one in `Engine.Tests/Hosting/BackendSelectionTests.cs` and one in
+`Engine.Tests/Commands/EngineDebtTests.cs`, plus 2 new assertions for the "..". 3 injections: each one failed a test.
+The test of the repeated box proves the new comments; it passes before the change too.
+
+**What stays.** E25 (a session on a replayed Document needs a decision on the handover of the bus), E27 (a change of
+`Engine.Contracts`) and the findings of the hosts in R-0036. The comment of the reset in `CommandBus.cs` is E18 of
+R-0033.
+
+**A correction.** The first task text named the code `E-QUERY-UNKNOWN`. The code is `E-QRY-UNKNOWN`.
+
+New tests: 2. The test list holds 1370 (1001 in `Engine.Tests`, 225 in `3DEngine.Tests`, 144 in
+`3DEngine.ImageTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
+entries: 14 of 15. New diagnostic codes: none. Since the review of v0.130, 1 product milestone and 8 entries followed
+it.
+
+## v0.139 — The reason of a native library that does not load separates a missing file from a platform with no payload (P0.57, TASK-0138)
+
+R11b (TASK-0134) still waits for the visual check of the owner, so this task took finding E38 of register entry R-0036.
+
+**The change.**
+
+- E38: `ManifoldGeometryBackend.UnavailableReason` takes the platform. A platform of the folder `runtimes` of the
+  package 3.5.2.1 (`win-x64`, `linux-x64`, `osx-arm64`) gives "the file is not in the folder of the program, or the
+  system cannot load it". Another platform gives the list of the three platforms. On `win-x64` the sentence said that
+  the package holds `win-x64`. The command line, the HTTP host and the desktop give the same sentence.
+
+**Proof.** 1 new test case in `Engine.Tests/Hosting/BackendSelectionTests.cs`. 1 injection: it failed the test.
+
+**What stays.** The list of the platforms is a copy of the package, and a new package must change it. E25, E27, E33,
+E34, E35 and E39 stay in R-0036.
+
+**A correction.** None.
+
+New tests: 1. The test list holds 1371 (1002 in `Engine.Tests`, 225 in `3DEngine.Tests`, 144 in
+`3DEngine.ImageTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
+entries: 14 of 15. New diagnostic codes: none. Since the review of v0.130, 1 product milestone and 9 entries followed
+it.
+
+## v0.140 — The schema of the backend is in the list of the surface, and it gives the identity of the backend (P0.58, TASK-0139)
+
+R11b (TASK-0134) still waits for the visual check of the owner, so this task took finding E35 of register entry R-0036.
+
+**The change.**
+
+- ADR-0008 §9 lists `/schema/backend`, which TASK-0036 added with no line there, and a section of history records it.
+  A new gate in `Engine.Tests/Http/SchemaEndpointGateTests.cs` holds the routes of `EngineSurface.cs` under
+  `/schema` equal to the list of §9.
+- `ServerEngine.Create` gives the host the name and the version of `backend.Identity` (ADR-0015 item 5). With the
+  managed backend, `/schema/backend` gave the version "1.0.0.0" of the assembly `Engine.Core`; it gives "1" now,
+  which each log entry records. The desktop host already gave the identity of the native backend.
+
+**Proof.** 1 new test case and 1 new assertion. 2 injections: the list of ADR-0008 with no line for
+`/schema/backend`, and the version of the assembly; each one failed a test.
+
+**What stays.** E25, E27, E33, E34 and E39 stay in R-0036.
+
+**A correction.** ADR-0008 §9 was incomplete; this task corrects it.
+
+New tests: 1. The test list holds 1372 (1003 in `Engine.Tests`, 225 in `3DEngine.Tests`, 144 in
+`3DEngine.ImageTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
+entries: 14 of 15. New diagnostic codes: none. Since the review of v0.130, 1 product milestone and 10 entries followed
+it.
+
+## v0.141 — A sink of events does not throw, and a test holds each sink to it (P0.59, TASK-0140)
+
+R11b (TASK-0134) still waits for the visual check of the owner, so this task took finding E18 of register entry
+R-0033. The owner answered its question Q4 on 2026-10-04: a sink must not throw, by contract, and a test holds each
+sink to it. TASK-0047 recorded the answer, and no test held a sink to it until now.
+
+**The change.**
+
+- `IEventSink` states that `Append` must not throw for a record of the bus, and why: the bus appends after the
+  Document changed, so a throw leaves a gap in the sequence that ADR-0005 forbids.
+- `Engine.Tests/EventSinkContractTests.cs` finds each class of `Engine.Core` and `Engine.Api.Http` that implements
+  `IEventSink` (two today) and requires it in a list with a test. It tests the ring when it is full and the
+  broadcasting sink when an action of a subscription throws.
+- The comment of `CommandBus.cs` said that a subscriber recovers a lost event with a reset; no code sends one. It
+  states the rule now, and `InMemoryEventSink.cs` gives the reason that its range has no gap.
+
+**Proof.** 3 new test cases. 3 injections: a new sink with no test, a ring that throws when it is full, and a
+broadcaster that does not catch an action; each one failed a test.
+
+**What stays.** E33 of R-0036 had only this cause, so the next review judges it again. E19, E21, E22 and seven parts of
+E24 stay in R-0033.
+
+**A correction.** None.
+
+New tests: 3. The test list holds 1375 (1006 in `Engine.Tests`, 225 in `3DEngine.Tests`, 144 in
+`3DEngine.ImageTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
+entries: 14 of 15. New diagnostic codes: none. Since the review of v0.130, 1 product milestone and 11 entries followed
+it.
+
+## v0.142 — The codebase review of 2026-10-31 (b) (governance, TASK-0141)
+
+The review of 2026-10-31 examined v0.130. After it came 1 product milestone (R11a) and 11 entries, and R11b (TASK-0134)
+would give the twelfth, so this review comes before it. The owner told the session on 2026-10-31 to work alone until
+the morning and to use its recommendation for each question.
+
+**The record.** `docs/reviews/2026-10-31-b-codebase-review.md` examines `main` at `296ae13`, the merge of v0.141. Two
+agents probed the code in parallel at `eb8c06f`, the same tree: the engine with the hosts, and the desktop with the
+gates. I ran the twelve engine probes again, injected T110 with a control, and read the cited desktop lines.
+
+**The findings.** 18 new findings: one medium (T110, a condition `#if` hides code from three gates) and seventeen low
+(E106 to E112, V63, V64, T111 to T116). Each low finding is the next form of a fix of this period. E18, E26, E28 to
+E33, E35, E37, E38, E102 to E105, V56 to V62 and T103 to T109 are fixed for their forms. Open findings: 0 critical, 5
+high, 17 medium and 31 low.
+
+**The order.** No new finding is high, so no task comes before R11b. TASK-0142 (P0.60) holds the engine findings,
+TASK-0143 (P0.61) the gate findings and TASK-0144 (P0.62) the desktop findings, after R11b. The standing answer of the
+owner takes Q1 A and Q2 A (the owner accepts E25 and E27; TASK-0142 records it in R-0036) and Q3 A (the owner chooses
+the product phase after R11b).
+
+**A correction.** The comment that TASK-0137 wrote in the two backends says that an open has no cache, which is false
+(E110).
+
+New tests: none. The test list holds 1375 (1006 in `Engine.Tests`, 225 in `3DEngine.Tests`, 144 in
+`3DEngine.ImageTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
+entries: 14 of 15. New diagnostic codes: none. Since the review of v0.141, 0 product milestones and 1 entry followed
+it.

@@ -1,6 +1,7 @@
 using System.Net;
 using System.Reflection;
 using System.Text.Json;
+using System.Text.RegularExpressions;
 using Engine.Api.Http;
 using Engine.Contracts.Schema;
 using Engine.Core;
@@ -140,6 +141,30 @@ public class SchemaEndpointGateTests : IClassFixture<WebApplicationFactory<Progr
                 $"SchemaQueriesEndpoint.cs must not contain the string literal {literal} " +
                 "(per ADR-0013 §3 the endpoint is a pure projection from the handler).");
         }
+    }
+
+    // Finding E35 of the codebase review of 2026-10-08 (TASK-0139): /schema/backend was in no list of
+    // the surface. Each route of the surface under /schema is in the list of ADR-0008 §9, and each entry
+    // of the list is a route.
+    [Fact]
+    public void The_Schema_Routes_Of_The_Surface_Are_The_List_Of_ADR_0008()
+    {
+        var surface = File.ReadAllText(FindSource("Engine.Api.Http", "EngineSurface.cs"));
+        var routes = Regex.Matches(surface, "app\\.MapGet\\(\"(/schema[^\"]*)\"")
+            .Select(m => m.Groups[1].Value.Replace(":int}", "}", StringComparison.Ordinal))
+            .Order(StringComparer.Ordinal)
+            .ToArray();
+
+        var adr = File.ReadAllText(FindSource("docs", "adr", "0008-command-query-event-triad.md"));
+        var section = adr[adr.IndexOf("### 9. Schema endpoints", StringComparison.Ordinal)..];
+        section = section[..section.IndexOf("\n## ", StringComparison.Ordinal)];
+        var listed = Regex.Matches(section, "^- `(/schema[^`]*)`", RegexOptions.Multiline)
+            .Select(m => m.Groups[1].Value)
+            .Order(StringComparer.Ordinal)
+            .ToArray();
+
+        Assert.NotEmpty(routes);
+        Assert.Equal(listed, routes);
     }
 
     private static void AssertFieldDictEquals(
