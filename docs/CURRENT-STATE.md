@@ -3980,3 +3980,26 @@ New tests: 2. The test list holds 1370 (1001 in `Engine.Tests`, 225 in `3DEngine
 `3DEngine.ImageTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
 entries: 14 of 15. New diagnostic codes: none. Since the review of v0.130, 1 product milestone and 8 entries followed
 it.
+
+## v0.139 — The reason of a native library that does not load separates a missing file from a platform with no payload (P0.57, TASK-0138)
+
+R11b (TASK-0134) still waits for the visual check of the owner, so this task took finding E38 of register entry R-0036.
+
+**The change.**
+
+- E38: `ManifoldGeometryBackend.UnavailableReason` takes the platform. A platform of the folder `runtimes` of the
+  package 3.5.2.1 (`win-x64`, `linux-x64`, `osx-arm64`) gives "the file is not in the folder of the program, or the
+  system cannot load it". Another platform gives the list of the three platforms. On `win-x64` the sentence said that
+  the package holds `win-x64`. The command line, the HTTP host and the desktop give the same sentence.
+
+**Proof.** 1 new test case in `Engine.Tests/Hosting/BackendSelectionTests.cs`. 1 injection: it failed the test.
+
+**What stays.** The list of the platforms is a copy of the package, and a new package must change it. E25, E27, E33,
+E34, E35 and E39 stay in R-0036.
+
+**A correction.** None.
+
+New tests: 1. The test list holds 1371 (1002 in `Engine.Tests`, 225 in `3DEngine.Tests`, 144 in
+`3DEngine.ImageTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
+entries: 14 of 15. New diagnostic codes: none. Since the review of v0.130, 1 product milestone and 9 entries followed
+it.

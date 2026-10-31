@@ -1,7 +1,7 @@
 ---
 id: 0138
 title: The reason of a native library that does not load separates a missing file from a platform with no payload
-status: Active
+status: Done
 phase: P0.57
 opened: 2026-10-31
 depends-on: [0137]
@@ -54,10 +54,22 @@ none learns that.
 
 ## Acceptance criteria
 
-- [ ] A test fails before the change and passes after it.
-- [ ] A clean build (`--no-incremental`) gives zero errors and zero warnings.
-- [ ] Continuous integration passes on the three runners, on the branch and on `main` after the merge.
+- [x] A test fails before the change and passes after it.
+- [x] A clean build (`--no-incremental`) gives zero errors and zero warnings.
+- [x] Continuous integration passes on the three runners, on the branch and on `main` after the merge.
+
+## Outcome
+
+Status: Done · commit (the merge of the branch p057-backend-reason) · v0.139
+
+## Method
+
+Mechanical: one overload with the platform as a parameter, and one list of the platforms of the package.
+Judgement:  the list is a copy of the folder `runtimes` of the package 3.5.2.1, and a new package must change it;
+            no test reads the package folder, because its path depends on the computer.
+Weakest:    the list can drift from the package; E34 and E39 stay open.
 
 ## Progress
 
 - 2026-10-31: E38 with 1 new test case; the folder `runtimes` of the package 3.5.2.1 holds the three platforms.
+- 2026-10-31: 1 injection caught; `governed-by` names ADR-0014, ADR-0018 and ADR-0036; closed at v0.139.
