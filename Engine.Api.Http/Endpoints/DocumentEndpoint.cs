@@ -75,7 +75,9 @@ internal static class DocumentEndpoint
         string? name;
         try
         {
-            using var body = await JsonDocument.ParseAsync(request.Body, cancellationToken: ct);
+            // Finding E105 of the codebase review of 2026-10-31 (TASK-0132): a repeated member took its
+            // last value, as E101 found for the envelopes.
+            using var body = await JsonDocument.ParseAsync(request.Body, new JsonDocumentOptions { AllowDuplicateProperties = false }, ct);
             name = body.RootElement.ValueKind == JsonValueKind.Object
                 && body.RootElement.TryGetProperty("name", out var field)
                 && field.ValueKind == JsonValueKind.String

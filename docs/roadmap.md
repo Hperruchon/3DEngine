@@ -109,6 +109,7 @@ Therefore each approved objective must have a track here.
 - K0e — An extrude takes a profile of lines and arcs, or one circle. v0.130, TASK-0126, ADR-0040.
 - P0.51 — A radius at the noise level does not solve, and the check of the tasks binds the real gate files. v0.132, TASK-0130.
 - R11a — A tap of the sketch snaps to a midpoint, a line, a curve or the grid. v0.133, TASK-0131, ADR-0041.
+- P0.52 — The engine, the surface and the gates close the forms of the fifteenth review. v0.134, TASK-0132.
 
 ## Track 0 — Foundations
 

@@ -220,6 +220,29 @@ public sealed class DocumentEndpointTests : IDisposable
         host.Session.Close();
     }
 
+    // Finding E105 of the codebase review of 2026-10-31 (TASK-0132): a repeated member took its last
+    // value. Each route of a document refuses it, as the envelopes of E101 do.
+    [Fact]
+    public async Task A_Repeated_Member_Of_A_Document_Route_Is_Refused()
+    {
+        var host = new EngineHost(new InProcessMeshBackend(), "managed", "test", new DocumentFileOptions(null, Path.Combine(_folder, "unsaved")));
+        await using var app = await StartSurface(host, new DocumentFolder(Documents, (_, _) => Task.FromResult<ErrorDetail?>(null)));
+        using var http = new HttpClient { BaseAddress = new Uri(app.Urls.First()) };
+
+        foreach (var route in new[] { "/document/save", "/document/open" })
+        {
+            using var content = new StringContent("{\"name\":\"a\",\"name\":\"b\"}", System.Text.Encoding.UTF8, "application/json");
+            using var response = await http.PostAsync(route, content);
+            var body = JsonDocument.Parse(await response.Content.ReadAsStringAsync()).RootElement;
+
+            Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+            Assert.Equal(DiagnosticCodes.ApiBadRequest, body.GetProperty("error").GetProperty("code").GetString());
+        }
+
+        Assert.False(File.Exists(Path.Combine(Documents, "a.3de")) || File.Exists(Path.Combine(Documents, "b.3de")));
+        host.Session.Close();
+    }
+
     // ADR-0030 item 4: engine-api-http cannot start itself again.
     [Fact]
     public async Task An_Open_On_A_Host_That_Cannot_Start_Again_Is_Not_Supported()
