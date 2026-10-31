@@ -6,6 +6,9 @@ using Engine.Core.Assets;
 using Engine.Core.Geometry;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Http.Features;
+using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Engine.Tests.Assets;
@@ -145,6 +148,128 @@ public sealed class AssetStoreTests : IDisposable
         Assert.Equal(1, badExit);
         Assert.Equal(DiagnosticCodes.AssetBadName, Code(badOutput));
         Assert.Equal(2, usageExit);
+    }
+
+    // Findings E113 and E114 of the codebase review of 2026-10-31 (c) (TASK-0149): a name with a final
+    // line feed, and a folder under a valid name, give a coded error from the store, the route and the
+    // command line, and no exception.
+    [Fact]
+    public async Task A_Line_Feed_And_A_Folder_Under_A_Name_Give_Their_Codes_Everywhere()
+    {
+        var folder = new string('1', 64);
+        Directory.CreateDirectory(Path.Combine(Store, folder));
+        var store = new AssetStore(Store);
+        await using var app = await StartSurface(store);
+        using var http = new HttpClient { BaseAddress = new Uri(app.Urls.First()) };
+
+        var read = await store.Read(folder);
+        using var lineFeed = await http.GetAsync($"/assets/{Abc}%0A");
+        using var held = await http.GetAsync($"/assets/{folder}");
+        var (lineFeedExit, lineFeedOutput) = Run("asset", "get", Abc + "\n", Path.Combine(_folder, "copy.bin"), "--folder", Store);
+        var (heldExit, heldOutput) = Run("asset", "get", folder, Path.Combine(_folder, "copy.bin"), "--folder", Store);
+
+        Assert.Equal(DiagnosticCodes.AssetReadFailed, read.Error?.Code);
+        Assert.Equal(HttpStatusCode.BadRequest, lineFeed.StatusCode);
+        Assert.Equal(DiagnosticCodes.AssetBadName, Code(await lineFeed.Content.ReadAsStringAsync()));
+        Assert.Equal(HttpStatusCode.InternalServerError, held.StatusCode);
+        Assert.Equal(DiagnosticCodes.AssetReadFailed, Code(await held.Content.ReadAsStringAsync()));
+        Assert.Equal((1, DiagnosticCodes.AssetBadName), (lineFeedExit, Code(lineFeedOutput)));
+        Assert.Equal((1, DiagnosticCodes.AssetReadFailed), (heldExit, Code(heldOutput)));
+    }
+
+    // Findings E114 to E116: a stream that fails gives a code, a put of the right bytes repairs a
+    // damaged file, and a cancelled put leaves no scratch file.
+    [Fact]
+    public async Task A_Put_Gives_A_Code_For_A_Failed_Stream_Repairs_A_Damaged_File_And_Leaves_No_Scratch_File()
+    {
+        var store = new AssetStore(Store);
+        await store.Put(new MemoryStream("abc"u8.ToArray()));
+        File.WriteAllBytes(Path.Combine(Store, Abc), "abd"u8.ToArray());
+
+        var failed = await store.Put(new ThrowingStream());
+        var repaired = await store.Put(new MemoryStream("abc"u8.ToArray()));
+        var read = await store.Read(Abc);
+        using var cancel = new CancellationTokenSource();
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(() => store.Put(new CancelAtEnd("hello"u8.ToArray(), cancel), cancel.Token));
+
+        Assert.Equal(DiagnosticCodes.AssetReadFailed, failed.Error?.Code);
+        Assert.Equal((Abc, (string?)null), (repaired.Name, repaired.Error?.Code));
+        Assert.Equal("abc"u8.ToArray(), read.Content);
+        Assert.Equal([Abc], Directory.GetFiles(Store).Select(Path.GetFileName));
+    }
+
+    // Finding E118: a body over the request limit of the server gave a 413 with no envelope. A length
+    // over the limit of an asset is refused before the read, and for a body with no length the route
+    // lifts the limit of the server, so the store stops it at 16 MiB with the code of ADR-0044 item 3.
+    // The route runs on a request of the test: over a socket the server answers and closes the
+    // connection while the client still sends, and the client then fails before it reads the reply.
+    [Fact]
+    public async Task A_Body_Over_The_Limit_Gives_The_Envelope_And_The_Server_Sets_No_Limit_Of_Its_Own()
+    {
+        var store = new AssetStore(Store);
+        var withLength = new DefaultHttpContext();
+        withLength.Request.ContentLength = 31_000_000;
+        withLength.Request.Body = new MemoryStream();
+        var noLength = new DefaultHttpContext();
+        var server = new ServerLimit();
+        noLength.Features.Set<IHttpMaxRequestBodySizeFeature>(server);
+        noLength.Request.Body = new MemoryStream(new byte[17_000_000]);
+
+        var first = await Engine.Api.Http.Endpoints.AssetsEndpoint.Put(withLength.Request, store, CancellationToken.None);
+        var second = await Engine.Api.Http.Endpoints.AssetsEndpoint.Put(noLength.Request, store, CancellationToken.None);
+
+        Assert.All(new[] { first, second }, result =>
+        {
+            Assert.Equal(StatusCodes.Status413PayloadTooLarge, ((IStatusCodeHttpResult)result).StatusCode);
+            Assert.Equal(DiagnosticCodes.AssetTooLarge, Code(JsonSerializer.Serialize(((IValueHttpResult)result).Value, Engine.Api.Http.Json.ApiJson.Options)));
+        });
+        Assert.Null(server.MaxRequestBodySize);
+        Assert.False(Directory.Exists(Store) && Directory.EnumerateFileSystemEntries(Store).Any());
+    }
+
+    // The request limit of Kestrel, 30 MB by default.
+    private sealed class ServerLimit : IHttpMaxRequestBodySizeFeature
+    {
+        public bool IsReadOnly => false;
+
+        public long? MaxRequestBodySize { get; set; } = 30_000_000;
+    }
+
+    private static async Task<WebApplication> StartSurface(AssetStore store)
+    {
+        var builder = WebApplication.CreateBuilder();
+        builder.WebHost.UseUrls("http://127.0.0.1:0");
+        builder.Services.AddSingleton(store);
+        builder.AddEngineSurface(_ => new EngineHost(new InProcessMeshBackend()));
+        var app = builder.Build();
+        app.MapEngineSurface();
+        await app.StartAsync();
+        return app;
+    }
+
+    // A stream whose second read fails, as a client that resets its connection.
+    private sealed class ThrowingStream() : MemoryStream(new byte[200_000])
+    {
+        private int _calls;
+
+        public override async ValueTask<int> ReadAsync(Memory<byte> buffer, CancellationToken ct = default)
+        {
+            if (++_calls == 2)
+                throw new IOException("The connection was reset.");
+            return await base.ReadAsync(buffer, ct);
+        }
+    }
+
+    // A stream that cancels the put after its last read, so the cancellation comes in the write.
+    private sealed class CancelAtEnd(byte[] bytes, CancellationTokenSource cancel) : MemoryStream(bytes)
+    {
+        public override async ValueTask<int> ReadAsync(Memory<byte> buffer, CancellationToken ct = default)
+        {
+            var read = await base.ReadAsync(buffer, ct);
+            if (read == 0)
+                await cancel.CancelAsync();
+            return read;
+        }
     }
 
     private static (int Exit, string Output) Run(params string[] args)

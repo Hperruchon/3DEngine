@@ -86,14 +86,20 @@ public sealed class AddSketchArcCommandHandler : ICommandHandler, ICommandEncode
         // a circle refuses. Until TASK-0123 the solve then moved the points of the person.
         // Finding E103 of the codebase review of 2026-10-31 (TASK-0132, Q1 A): v0.117 to v0.124 applied
         // such an arc, so an open and a replay of their files apply it; the solve then gives no solution.
+        // Finding E117 of the codebase review of 2026-10-31 (c) (TASK-0149): the test was s == c, and the
+        // solver needs a distance greater than SketchSolver.Tolerance, so an arc of radius 5e-10 was
+        // applied and the sketch was not solved, as E108 found for a circle.
         var (c, s, e) = (Position(sketch, add.CenterPointId), Position(sketch, add.StartPointId), Position(sketch, add.EndPointId));
-        if (!SketchResults.ApplyingEntry.Value && (s == c || e == c))
+        if (!SketchResults.ApplyingEntry.Value && (!(Distance(s, c) > SketchSolver.Tolerance) || !(Distance(e, c) > SketchSolver.Tolerance)))
             return Task.FromResult(SketchResults.Failure(
-                DiagnosticCodes.SketchCurveInvalid, "The start and the end of an arc are away from its centre, and the command puts one of them on it."));
+                DiagnosticCodes.SketchCurveInvalid, $"The start and the end of an arc are more than {SketchSolver.Tolerance} from its centre, and the command puts one of them nearer."));
 
         var arc = new SketchArc(add.CommandId, add.CenterPointId, add.StartPointId, add.EndPointId);
         return Task.FromResult(SketchResults.Changed(document, backend, command.CommandId, sketch with { Arcs = [.. sketch.Arcs, arc] }, "arcId", arc.Id));
     }
+
+    private static double Distance((double X, double Y) a, (double X, double Y) b)
+        => Math.Sqrt((a.X - b.X) * (a.X - b.X) + (a.Y - b.Y) * (a.Y - b.Y));
 
     private static (double X, double Y) Position(SketchRecord sketch, Guid point)
     {
