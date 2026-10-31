@@ -194,6 +194,9 @@ This track removes each condition that blocks other work.
 | P0.60 | The open follows the replay, the adds follow the solver, and the comments of the cache are true (E106 to E112 of the codebase review of 2026-10-31 (b); after R11b). TASK-0142. | 2–3 |
 | P0.61 | The gates read disabled text, the routes of the test host, each sink, and the next forms of the fifteenth review (T110 to T116; after R11b). TASK-0143. | 2–3 |
 | P0.62 | An arc ends within a pixel of its start, and Escape cancels a press on a handle before the slop (V63, V64; after R11b). TASK-0144. | 1 |
+| P0.63 | The store of the assets takes only a true name and gives a code for each error, and an arc follows the solver (E113 to E118 of the codebase review of 2026-10-31 (c); after V2). TASK-0149. | 2–3 |
+| P0.64 | The pin rules read each imported file, the sink gate reads the desktop, and the next forms of the sixteenth review fail (T117 to T122; after V2). TASK-0150. | 2–3 |
+| P0.65 | A cancelled press gives nothing, and the mark of the snap is where the point goes and only while a finger is down (V65 to V67; after V2). TASK-0151. | 1–2 |
 
 ## Track P — The platform
 
