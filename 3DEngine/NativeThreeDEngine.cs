@@ -260,6 +260,20 @@ public sealed class NativeThreeDEngine : IThreeDEngine, IDisposable
                 case CancelCalibrationAction:
                     _imageActions?.Cancel();
                     break;
+                case ProposeContourAction propose when _images is not null:
+                    _imageActions?.Propose(propose.Image, _images.Live);
+                    break;
+                // ADR-0047 item 4: an accept makes the new sketch the active sketch, so the person edits it.
+                case AcceptContourAction when _images is not null:
+                    if (_imageActions?.Accept(_images.Live) is { } accepted && _sketchActions is { } editing)
+                    {
+                        editing.Edit(accepted.Sketch);
+                        Face(accepted.Datum);
+                    }
+                    break;
+                case RejectContourAction:
+                    _imageActions?.Reject();
+                    break;
                 default:
                     ApplySketch(action);
                     break;
@@ -386,7 +400,7 @@ public sealed class NativeThreeDEngine : IThreeDEngine, IDisposable
         _images?.Apply((asset, picture) => renderer.Upload(asset, (uint)picture.Width, (uint)picture.Height, picture.Rgba));
         var images = _images?.Quads();
         var imagePanel = _images is not null && _imageActions is { } imageActions
-            ? new ImagePanel(_images.Live, imageActions.Calibrating, imageActions.Points.Count, imageActions.Message)
+            ? new ImagePanel(_images.Live, imageActions.Calibrating, imageActions.Points.Count, imageActions.Message, imageActions.Proposal?.Pixels.Count ?? 0)
             : null;
         SketchOverlay.Strokes? sketches = null;
         SketchPanel? sketchPanel = null;
@@ -405,6 +419,13 @@ public sealed class NativeThreeDEngine : IThreeDEngine, IDisposable
                 tool.Last is not null,
                 tool.Selection,
                 sketchActions.Message);
+        }
+
+        // ADR-0047 item 3: the lines of a proposal over the scene, as the lines of a sketch.
+        if (_images is not null && _imageActions?.ProposalLines(_images.Live, Camera, window.width, window.height) is { Count: > 0 } proposal)
+        {
+            var strokes = sketches ?? new SketchOverlay.Strokes([], [], [], []);
+            sketches = strokes with { Lines = [.. strokes.Lines, .. proposal] };
         }
 
         var panel = _ui.Frame((float)_delta.TotalSeconds, display, scale, _renderer.LiveBodies, Selection, _document is null ? null : new DocumentLine(_host.FileName, _documentMessage), sketches, sketchPanel, imagePanel);

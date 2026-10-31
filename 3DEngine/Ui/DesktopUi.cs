@@ -102,6 +102,9 @@ internal sealed unsafe class DesktopUi : IDisposable
     public const string DistanceLabel = "Distance";
     public const string ApplyCalibrationLabel = "Apply";
     public const string CancelCalibrationLabel = "Cancel calibration";
+    public const string ProposeLabel = "Propose contour";
+    public const string AcceptLabel = "Accept";
+    public const string RejectLabel = "Reject";
     public const string PlaceLineLabel = "Place on";
     private const float ImagesWidth = 280f;
     private const float ImagesHeight = 300f;
@@ -686,6 +689,23 @@ internal sealed unsafe class DesktopUi : IDisposable
                 if (ImGui.Button($"{CalibrateLabel}##{image.Id}"))
                     _actions.Add(new StartCalibrationAction(image.Id));
                 Item(label);
+                ImGui.SameLine();
+                if (ImGui.Button($"{ProposeLabel}##{image.Id}"))
+                    _actions.Add(new ProposeContourAction(image.Id));
+                Item($"{ProposeLabel} {ImageTitle(image)}");
+            }
+
+            // ADR-0047 item 3: the proposal shows on the scene until the person accepts or rejects it.
+            if (panel.ProposalPoints > 0)
+            {
+                ImGui.TextUnformatted($"Contour of {panel.ProposalPoints} points");
+                if (ImGui.Button(AcceptLabel))
+                    _actions.Add(new AcceptContourAction());
+                Item(AcceptLabel);
+                ImGui.SameLine();
+                if (ImGui.Button(RejectLabel))
+                    _actions.Add(new RejectContourAction());
+                Item(RejectLabel);
             }
 
             if (panel.Calibrating is not null)

@@ -1,13 +1,13 @@
 ---
 id: 0042
 title: The vision library and its place
-status: Accepted
+status: Amended
 topic: Vision, boundary
 date: 2026-10-31
 supersedes: []
 superseded-by: []
 amends: []
-amended-by: []
+amended-by: ['0047']
 affects:
   - 3DEngine.VisionTests/**
 enforced-by: Engine.Tests/Governance/DependencyDirectionGateTests.cs
@@ -68,3 +68,5 @@ The candidates on 2026-10-31, from nuget.org and the pages of each project:
 ## History
 
 - 2026-10-31 · TASK-0145 · The record, Accepted under the standing answer of the owner of 2026-10-31.
+- 2026-10-31 · TASK-0155 · ADR-0047 amends item 3: V3 proposes a contour with its own managed code, and the library
+  stays in the spike until the owner answers register entry R-0048 on its licences.

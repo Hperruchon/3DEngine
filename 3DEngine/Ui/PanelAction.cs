@@ -87,6 +87,13 @@ internal sealed record CalibrateImageAction(double Distance) : PanelAction;
 
 internal sealed record CancelCalibrationAction : PanelAction;
 
+// ADR-0047 items 3 and 4: the proposal of a contour of a live image, and its accept or its reject.
+internal sealed record ProposeContourAction(Guid Image) : PanelAction;
+
+internal sealed record AcceptContourAction : PanelAction;
+
+internal sealed record RejectContourAction : PanelAction;
+
 // ADR-0046 items 3 and 4: what the window of the images shows. Calibrating is the image of the
 // calibration, or null, and Points the number of its taps.
-internal sealed record ImagePanel(IReadOnlyCollection<ImageRecord> Live, Guid? Calibrating, int Points, string? Message);
+internal sealed record ImagePanel(IReadOnlyCollection<ImageRecord> Live, Guid? Calibrating, int Points, string? Message, int ProposalPoints = 0);

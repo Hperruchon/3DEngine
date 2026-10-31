@@ -280,7 +280,7 @@ The first domain extension. Objective 15 puts it before materials, chemistry and
 | V2a | The Document holds an image on a datum, and a command calibrates it to real units (ADR-0045). TASK-0152. | 1–2 |
 | V2b | The desktop places a PNG file on a datum, draws it, and calibrates it with two taps (ADR-0046). TASK-0153. | 1–2 |
 | V2 | Place an image on a datum. Calibrate it to real units. Done: V2a (TASK-0152) and V2b (TASK-0153), on 2026-10-31. | 2–3 |
-| V3 | A contour proposal becomes an editable sketch. Propose and accept. | 3–5 |
+| V3 | A contour proposal becomes an editable sketch. Propose and accept. The desktop proposes the contour of the largest region with its own code, and an accept records a sketch (ADR-0047). TASK-0155. | 3–5 |
 
 ## Order
 

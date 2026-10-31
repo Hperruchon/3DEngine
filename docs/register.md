@@ -439,6 +439,19 @@ the router gives to the panel or to the intents, and each intent. A focus to ano
 `FocusLostSample` to both. Its click reached the window above the desktop, and the log held motions of a mouse that
 the probe did not move, so the run stopped. The next run needs a time when nobody else uses the mouse.
 
+### R-0048 · The licences of the native vision library in a distributed program have no decision
+- class: question
+- opened: 2026-10-31
+- due: 2027-01-29
+- extended: no
+- refs: `docs/adr/0042-vision-library.md` item 6, `docs/adr/0047-contour-proposal.md` item 1, TASK-0155
+The Windows payload of OpenCvSharp4 4.13.0.20260627 links zlib, libjpeg-turbo, libwebp, libpng, libtiff, OpenJPEG,
+OpenEXR, Protobuf, Flatbuffers, Intel IPP ICV and Tesseract statically, and has a separate FFmpeg file under LGPL v2.1;
+the macOS payload links FFmpeg statically. V3 proposes a contour with its own code, so no distributed program holds the
+library. A phase that needs more vision than one contour needs the library in the desktop.
+Exit: the owner decides if the desktop may hold the library and on which platforms, with or without the FFmpeg file,
+and the phase that does it adds the notices of ADR-0042 item 6.
+
 ## Accepted compromises
 
 These are conditions that the project keeps permanently and by decision. They do not age.
