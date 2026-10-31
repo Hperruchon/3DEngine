@@ -1,7 +1,7 @@
 ---
 id: 0149
 title: The store of the assets takes only a true name and gives a code for each error, and an arc follows the solver
-status: Ready
+status: Active
 phase: P0.63
 opened: 2026-10-31
 depends-on: [0148]
@@ -19,6 +19,7 @@ writes:
     - Engine.Tests/Assets/AssetStoreTests.cs
     - Engine.Tests/Commands/EngineDebtTests.cs
     - docs/diagnostics.md
+    - docs/adr/0044-asset-store.md
     - eng/test-floor.txt
     - docs/roadmap.md
     - docs/CURRENT-STATE.md
@@ -64,4 +65,7 @@ Each name, each error of the file system and each size of a body gives a coded a
 - [ ] Continuous integration passes on the three runners, on the branch and on `main` after the merge.
 
 ## Progress
-
+- 2026-10-31: E114 to E118, and a test of E113 on the route and the command line. The first fix of E118 caught
+  `BadHttpRequestException` in the route, and the test showed that the new catch of E114 in the store took it first,
+  because it is an `IOException`; for a body with no length the route now lifts the limit of the server, and the store
+  applies its own. 4 new test cases. New code: `E-ASSET-READ-FAILED`.

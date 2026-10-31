@@ -57,6 +57,7 @@ internal static class SchemaDiagnosticsEndpoint
         new(DiagnosticCodes.AssetNotFound,         "Error",   "ASSET"), // ADR-0044 item 2, TASK-0147
         new(DiagnosticCodes.AssetCorrupt,          "Error",   "ASSET"), // ADR-0044 item 2, TASK-0147
         new(DiagnosticCodes.AssetWriteFailed,      "Error",   "ASSET"), // ADR-0044 item 2, TASK-0147
+        new(DiagnosticCodes.AssetReadFailed,       "Error",   "ASSET"), // finding E114, TASK-0149
         new(DiagnosticCodes.ImageNotFound,         "Error",   "IMAGE"), // ADR-0045 item 6, TASK-0152
         new(DiagnosticCodes.ImageIdInUse,          "Error",   "IMAGE"), // ADR-0045 item 6, TASK-0152
         new(DiagnosticCodes.ImageAssetInvalid,     "Error",   "IMAGE"), // ADR-0045 item 6, TASK-0152

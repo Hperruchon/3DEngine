@@ -37,7 +37,7 @@ recommendation for each other question, so this record is Accepted.
    writes a scratch file of the folder, flushes it to the disk, and moves it to the name, so a reader never sees a part
    of an asset; a name that the store holds is not written again. A read computes the name of the bytes again and
    refuses a file whose bytes changed. The codes are `E-ASSET-BAD-NAME`, `E-ASSET-NOT-FOUND`, `E-ASSET-CORRUPT` and
-   `E-ASSET-WRITE-FAILED`.
+   `E-ASSET-WRITE-FAILED`, and since TASK-0149 `E-ASSET-READ-FAILED` for a read that fails for another reason.
 3. **The limit.** An asset holds at most 16 MiB, under the request limit of Kestrel (30 MB). A larger one gives
    `E-ASSET-TOO-LARGE`, and the store keeps nothing of it.
 4. **The folder and HTTP.** The folder is `<local application data>/3DEngine/assets`, or the setting
@@ -61,3 +61,4 @@ recommendation for each other question, so this record is Accepted.
 ## History
 
 - 2026-10-31 · TASK-0147 · The record, after the answer of the owner on the place of the bytes.
+- 2026-10-31 · TASK-0149 · Item 2 gains `E-ASSET-READ-FAILED` (finding E114), a put repairs a damaged file (E115), and a route with no length lets the store apply its limit (E118).
