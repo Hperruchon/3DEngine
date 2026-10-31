@@ -387,6 +387,8 @@ if the backend holds a body, which is a change of `Engine.Contracts` and needs t
 Progress 2026-10-31: TASK-0137 corrects E37 (with no library, a misspelled name gives its own error) and E31 (the
 comments of a repeated identifier, and the ".." of the message of a divergence). E25 stays: its correction needs a
 decision on the handover of the bus of a replay, and an open of a document file is the load path today.
+Progress 2026-10-31: TASK-0138 corrects E38 (the reason of a library that does not load gives a missing file or a
+platform with no payload).
 
 ### R-0039 · No test calls the surface of the desktop host
 - class: debt
