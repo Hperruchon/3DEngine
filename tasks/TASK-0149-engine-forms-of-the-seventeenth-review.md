@@ -1,7 +1,7 @@
 ---
 id: 0149
 title: The store of the assets takes only a true name and gives a code for each error, and an arc follows the solver
-status: Active
+status: Done
 phase: P0.63
 opened: 2026-10-31
 depends-on: [0148]
@@ -60,12 +60,25 @@ Each name, each error of the file system and each size of a body gives a coded a
 
 ## Acceptance criteria
 
-- [ ] Each finding has a test that fails before the change and passes after it.
-- [ ] A clean build (`--no-incremental`) gives zero errors and zero warnings.
-- [ ] Continuous integration passes on the three runners, on the branch and on `main` after the merge.
+- [x] Each finding has a test that fails before the change and passes after it.
+- [x] A clean build (`--no-incremental`) gives zero errors and zero warnings.
+- [x] Continuous integration passes on the three runners, on the branch and on `main` after the merge.
+
+## Outcome
+
+Status: Done · commit (the merge of the branch p063-engine-forms) · v0.153
+
+## Method
+
+Mechanical: each probe of the review as a test case, and each fix undone against its test (7 injections).
+Judgement:  one new code for a read that fails; the route lifts the limit of the server and does not catch its
+            exception; the route test runs on a request of the test.
+Weakest:    no test sends a body over the limit through a socket, because the client fails when the server closes
+            first; the route code runs only on a request of the test.
 
 ## Progress
 - 2026-10-31: E114 to E118, and a test of E113 on the route and the command line. The first fix of E118 caught
   `BadHttpRequestException` in the route, and the test showed that the new catch of E114 in the store took it first,
   because it is an `IOException`; for a body with no length the route now lifts the limit of the server, and the store
   applies its own. 4 new test cases. New code: `E-ASSET-READ-FAILED`.
+- 2026-10-31: closed at v0.153.

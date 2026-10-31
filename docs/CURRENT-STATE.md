@@ -4405,3 +4405,36 @@ New tests: 24. The test list holds 1461 (1049 in `Engine.Tests`, 257 in `3DEngin
 `3DEngine.ImageTests`, 3 in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and
 zero warnings. Open entries: 15 of 15. New diagnostic codes: 0. Since the review of v0.149, 2 product milestones and 3
 entries followed it.
+
+## v0.153 — The store of the assets gives a code for each error and repairs a damaged file, and an arc follows the solver (P0.63, TASK-0149)
+
+The codebase review of v0.150 found E113 (medium) and E114 to E118 (low) in the engine and the hosts, after V2. V2a
+corrected the pattern of E113 at v0.151.
+
+**The change.**
+
+- E114: `AssetStore.Read` gives `E-ASSET-READ-FAILED` for a folder under a name, a locked file or a file that the
+  account cannot read, and `AssetStore.Put` gives it for a stream that fails. The route gives a 500 with the envelope,
+  and the command line the exit code 1.
+- E115: a put of the right bytes writes a damaged file again, and the move replaces it. E116: each way out of a put
+  deletes its scratch file, a cancellation too.
+- E117: a live add of an arc refuses a start or an end within `SketchSolver.Tolerance` of the centre; an entry of a log
+  keeps the rule of 0 (E103).
+- E118: `PUT /assets` refuses a length over 16 MiB before the read, and for a body with no length it lifts the request
+  limit of the server, so the store stops the body at its own limit with `E-ASSET-TOO-LARGE`.
+- ADR-0044 item 2 names the new code.
+
+**Proof.** 4 new test cases in `Engine.Tests/Assets/AssetStoreTests.cs` and `Engine.Tests/Commands/EngineDebtTests.cs`,
+with the line feed of E113 on the route and the command line. 7 injections, one for each fix; each one failed a test.
+
+**What stays.** No test sends a body over the limit through a socket: the server answers and closes the connection
+while the client still sends, and the client then fails before it reads the reply.
+
+**A correction.** The first fix of E118 caught `BadHttpRequestException` in the route. Its test showed that the new
+catch of E114 in the store took the exception first, because it is an `IOException`, and gave a 500; the route now lifts
+the limit of the server instead.
+
+New tests: 4. The test list holds 1465 (1053 in `Engine.Tests`, 257 in `3DEngine.Tests`, 152 in
+`3DEngine.ImageTests`, 3 in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and
+zero warnings. Open entries: 15 of 15. New diagnostic codes: 1. Since the review of v0.149, 2 product milestones and 4
+entries followed it.
