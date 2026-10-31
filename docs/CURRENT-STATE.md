@@ -4495,3 +4495,30 @@ New tests: 11. The test list holds 1489 (1065 in `Engine.Tests`, 268 in `3DEngin
 `3DEngine.ImageTests`, 3 in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and
 zero warnings. Open entries: 15 of 15. New diagnostic codes: 0. Since the review of v0.149, 2 product milestones and 6
 entries followed it.
+
+## v0.156 — The lag test of the events fills the queue of the subscriber with a count and no timing (P0.66, TASK-0154)
+
+Register entry R-0047, which the review of v0.150 opened: a run of a change of documents only failed on Windows in
+`EventsEndpointLagTests`, because the queue overflowed only when the posts came faster than a pump delay of 200 ms.
+
+**The change.**
+
+- `Engine.Api.Http/WebSockets/SubscriberOptions.cs`: `PumpGate`, a task that the pump of a subscriber awaits before each
+  send, replaces `PumpDelay`. Production keeps it null, as it kept the delay at zero.
+- `Engine.Tests/Http/EventsEndpointLagTests.cs` lets the pump send the reset and holds it while four events overflow a
+  channel of two, then opens the gate and reads the close `subscriber.lagged`.
+- R-0047 is closed.
+
+**Proof.** With a pause of 500 ms between the posts, the old test failed in 16 s and the new one passed in 2 s. Five
+runs of the lag test and of the heartbeat test passed.
+
+**What stays.** The rule of ADR-0005 §6 does not change: a subscriber that lags is disconnected after its queued
+messages. The heartbeat test still measures time.
+
+**A correction.** The comment of `SubscriberOptions` said that the delay slowed the pump "deterministically"; it was a
+delay, so the result depended on the speed of the runner.
+
+New tests: 0. The test list holds 1489 (1065 in `Engine.Tests`, 268 in `3DEngine.Tests`, 153 in
+`3DEngine.ImageTests`, 3 in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and
+zero warnings. Open entries: 14 of 15. New diagnostic codes: 0. Since the review of v0.149, 2 product milestones and 7
+entries followed it.

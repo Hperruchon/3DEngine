@@ -21,8 +21,12 @@ public class EventsEndpointLagTests : IClassFixture<WebApplicationFactory<Progra
     [Fact]
     public async Task Slow_Subscriber_Is_Disconnected_With_Subscriber_Lagged_While_Fast_Subscriber_Receives_All_Events()
     {
-        // Tiny channel + a small PumpDelay makes the slow subscriber overflow
-        // deterministically when events arrive in bursts.
+        // Register entry R-0047 (TASK-0154): a pump delay of 200 ms gave the overflow only when the
+        // posts came faster than the delay, and on a slow runner they did not. The gate lets the
+        // pump send the reset, and then holds it until the posts are done. The pump holds at most
+        // one event and the channel two, so the fourth event overflows on each runner.
+        var open = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var sends = 0;
         using var factory = _baseFactory.WithWebHostBuilder(builder =>
         {
             builder.ConfigureTestServices(services =>
@@ -30,7 +34,7 @@ public class EventsEndpointLagTests : IClassFixture<WebApplicationFactory<Progra
                 services.Replace(ServiceDescriptor.Singleton(new SubscriberOptions(
                     ChannelCapacity: 2,
                     HeartbeatInterval: TimeSpan.FromMinutes(5),
-                    PumpDelay: TimeSpan.FromMilliseconds(200))));
+                    PumpGate: ct => Interlocked.Increment(ref sends) == 1 ? Task.CompletedTask : open.Task.WaitAsync(ct))));
             });
         });
 
@@ -49,9 +53,9 @@ public class EventsEndpointLagTests : IClassFixture<WebApplicationFactory<Progra
         var initial = await WebSocketTestClient.ReceiveJsonAsync(slowSocket);
         Assert.Equal("subscription.reset", initial.GetProperty("kind").GetString());
 
-        // Now flood the engine with commands faster than the slow subscriber
-        // can drain (PumpDelay 200 ms per message, channel cap 2).
-        for (var i = 0; i < 12; i++)
+        // Four events while the gate holds the pump: one in the pump, two in the channel, and the
+        // fourth overflows. Each post returns after its commit gave the event to the subscriber.
+        for (var i = 0; i < 4; i++)
         {
             var r = await http.PostAsJsonAsync("/commands", new
             {
@@ -61,6 +65,8 @@ public class EventsEndpointLagTests : IClassFixture<WebApplicationFactory<Progra
             });
             r.EnsureSuccessStatusCode();
         }
+
+        open.SetResult();
 
         // Walk the slow subscriber's stream until we observe a Close frame.
         // We may also see a handful of buffered events first; that's fine.

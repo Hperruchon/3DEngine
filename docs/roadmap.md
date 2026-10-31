@@ -131,6 +131,7 @@ Therefore each approved objective must have a track here.
 - P0.63 — The store of the assets gives a code for each error and repairs a damaged file, and an arc follows the solver. v0.153, TASK-0149.
 - P0.64 — The pin rules read each imported file, the sink gate reads the desktop, and the next forms of the sixteenth review fail. v0.154, TASK-0150.
 - P0.65 — A cancelled press gives nothing, and the mark of the snap is where the point goes and only while a finger is down. v0.155, TASK-0151.
+- P0.66 — The lag test of the events fills the queue of the subscriber with a count and no timing. v0.156, TASK-0154.
 
 ## Track 0 — Foundations
 
@@ -203,6 +204,7 @@ This track removes each condition that blocks other work.
 | P0.63 | The store of the assets takes only a true name and gives a code for each error, and an arc follows the solver (E113 to E118 of the codebase review of 2026-10-31 (c); after V2). TASK-0149. | 2–3 |
 | P0.64 | The pin rules read each imported file, the sink gate reads the desktop, and the next forms of the sixteenth review fail (T117 to T122; after V2). TASK-0150. | 2–3 |
 | P0.65 | A cancelled press gives nothing, and the mark of the snap is where the point goes and only while a finger is down (V65 to V67; after V2). TASK-0151. | 1–2 |
+| P0.66 | The lag test of the events fills the queue of the subscriber with a count and no timing (register entry R-0047). TASK-0154. | 1 |
 
 ## Track P — The platform
 
