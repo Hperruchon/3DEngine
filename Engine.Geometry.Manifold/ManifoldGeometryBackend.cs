@@ -86,16 +86,29 @@ public sealed class ManifoldGeometryBackend
     // The sentence that a host gives when the native library does not load: the library,
     // the platform and the platforms that have a payload (register entry R-0020 holds the
     // others). The host adds the code E-GEOM-BACKEND-INIT.
-    public static string UnavailableReason()
+    public static string UnavailableReason() => UnavailableReason(RuntimeInformation.RuntimeIdentifier);
+
+    // The platforms of the folder runtimes of the package Engine.Geometry.Manifold.Native 3.5.2.1.
+    internal static readonly string[] PackagedPlatforms = ["win-x64", "linux-x64", "osx-arm64"];
+
+    // Finding E38 of the codebase review of 2026-10-08 (TASK-0138): on win-x64 the sentence said that
+    // the package holds win-x64, which tells nothing. A platform of the package and a platform with no
+    // payload now give two causes.
+    internal static string UnavailableReason(string platform)
         => $"The native geometry library '{NativeLibraryName}' (Manifold {NativeVersion}) did not load "
-         + $"on the platform {RuntimeInformation.RuntimeIdentifier}. The native package holds the "
-         + "platforms win-x64, linux-x64 and osx-arm64. The managed backend holds boxes only and "
-         + "cannot move or cut a solid, therefore the host does not start with it.";
+         + $"on the platform {platform}. "
+         + (PackagedPlatforms.Contains(platform)
+             ? $"The native package holds {platform}, so the file is not in the folder of the program, "
+               + "or the system cannot load it. "
+             : "The native package holds the platforms win-x64, linux-x64 and osx-arm64 only. ")
+         + "The managed backend holds boxes only and cannot move or cut a solid, therefore the host "
+         + "does not start with it.";
 
     // IMeshOps. Builds a native, origin-centered Manifold cube and stores it under the
-    // handle. Throws on duplicate (mirrors the stub) — the bus derives handles from
-    // CommandId and the idempotency cache short-circuits duplicates, so a real
-    // collision is a programmer error.
+    // handle. Throws on duplicate (mirrors the stub), because the bus derives handles
+    // from CommandId. The idempotency cache of a live bus stops a command that comes
+    // again; a replay and an open have no cache, so the handler gives E-GEOM-NATIVE-OP
+    // for the second entry (E31).
     public void CreateBox(BodyHandle handle, BoxParameters parameters)
     {
         ObjectDisposedException.ThrowIf(_disposed, this);

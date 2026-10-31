@@ -365,6 +365,8 @@ corrections of E20 and E23 in the next task, before TASK-0037.
 Progress 2026-10-08: TASK-0051 corrected E20 (a call back into the session throws at once) and E23
 (the HTTP host checks each source of an address before the start and the bound addresses after it).
 TASK-0038 now depends on TASK-0051. E18, E19, E21, E22 and seven parts of E24 stay.
+Progress 2026-10-31: TASK-0140 corrects E18 by the answer Q4: `IEventSink` states that a sink must not throw, and
+`Engine.Tests/EventSinkContractTests.cs` finds each sink of the engine and of the surface and tests it.
 
 ### R-0036 · Fifteen findings of the fourth codebase review in the engine and the hosts have no task
 - class: debt
@@ -379,6 +381,19 @@ the queries, `/schema/backend`, the exit codes and the backend selection.
 Exit: each finding has a task, or it is corrected, or the owner accepts it and gives the reason.
 Progress 2026-10-17: TASK-0067 corrected the open part of E36: each failure of the start of a host has a
 documented exit code (5 for each failure other than codes 1 to 4), and no failure of the start crashes.
+Progress 2026-10-31: TASK-0135 corrects E26 (the log is a read-only view), E29 (a cancelled replay throws
+`OperationCanceledException`) and E32 (a query of a body that the backend does not hold gives `E-GEOM-NATIVE-OP`).
+Progress 2026-10-31: TASK-0136 corrects E28 (an exception of a handler in a replay is a `ReplayDivergenceException`)
+and E30 (the backend of a replay is required). E27 stays: its refusal needs a member of `IGeometryBackend` that tells
+if the backend holds a body, which is a change of `Engine.Contracts` and needs the owner and an ADR.
+Progress 2026-10-31: TASK-0137 corrects E37 (with no library, a misspelled name gives its own error) and E31 (the
+comments of a repeated identifier, and the ".." of the message of a divergence). E25 stays: its correction needs a
+decision on the handover of the bus of a replay, and an open of a document file is the load path today.
+Progress 2026-10-31: TASK-0138 corrects E38 (the reason of a library that does not load gives a missing file or a
+platform with no payload).
+Progress 2026-10-31: TASK-0139 corrects E35 (ADR-0008 §9 lists `/schema/backend`, a gate holds the routes equal to
+the list, and the endpoint gives the identity of the backend).
+Progress 2026-10-31: TASK-0140 corrects E18 of R-0033, the only cause of E33; the next review judges E33 again.
 
 ### R-0039 · No test calls the surface of the desktop host
 - class: debt

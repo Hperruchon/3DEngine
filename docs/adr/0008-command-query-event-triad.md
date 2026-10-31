@@ -168,8 +168,11 @@ When the HTTP API exists:
 - `/schema/queries/{name}@{version}` — full schema (parameters + result).
 - `/schema/events` — index of event kinds + payload schemas.
 - `/schema/diagnostics` — code registry.
+- `/schema/backend` — the name and the version of the geometry backend that the host composed (TASK-0036). They are
+  the identity that each log entry records (ADR-0015 item 5), since TASK-0139.
 
 Schemas are generated from the engine's registries, not hand-written. CI fails if a registered command/query/event lacks a schema entry.
+Since TASK-0139 a test also holds the routes of the surface under `/schema` equal to this list.
 
 ## Consequences
 
@@ -210,3 +213,8 @@ Serial execution, atomic commit, idempotency window, optimistic version check, a
 - **Bulk queries / pagination.** Listing all entities in a 100k-entity Document needs paging. Out of scope for V1 (no V1 query is that expensive); the schema for query results should leave room for a `cursor` field so paging adds without a contract break.
 - **Streaming queries.** Some inspections (live raycast under the cursor) want a subscription, not a one-shot. V1 has no answer. Likely solved by treating them as ephemeral commands with progress events, or by introducing a third surface in V2; do not improvise it now.
 - **Diagnostic code stability across versions.** A code that disappears in V2 leaves stranded clients. Promise: codes are append-only; deprecation marks them obsolete in the registry but keeps them recognized.
+
+## History
+
+- 2026-10-31 · TASK-0139 · Section 9 lists `/schema/backend`, which TASK-0036 added with no line here (finding E35 of
+  the codebase review of 2026-10-08), and a test holds the routes equal to the list.

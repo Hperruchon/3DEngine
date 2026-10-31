@@ -25,12 +25,18 @@ internal static class ServerEngine
 
         if (options.UseManagedBackend)
         {
+            // Finding E35 of the codebase review of 2026-10-08 (TASK-0139): /schema/backend gave the
+            // version of the assembly Engine.Core, which says nothing. It gives the identity that each
+            // entry of the log records (ADR-0015 item 5).
             var managed = new InProcessMeshBackend();
-            return new EngineHost(managed, "managed", typeof(InProcessMeshBackend).Assembly.GetName().Version?.ToString() ?? "unknown", file);
+            return new EngineHost(managed, managed.Identity.Name, managed.Identity.Version, file);
         }
 
         if (options.IsNativeAvailable())
-            return new EngineHost(new ManifoldGeometryBackend(), "manifold", ManifoldGeometryBackend.NativeVersion, file);
+        {
+            var native = new ManifoldGeometryBackend();
+            return new EngineHost(native, native.Identity.Name, native.Identity.Version, file);
+        }
 
         throw new BackendUnavailableException(
             $"{DiagnosticCodes.GeomBackendInit}: {ManifoldGeometryBackend.UnavailableReason()}");

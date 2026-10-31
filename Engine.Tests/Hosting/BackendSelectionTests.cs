@@ -5,6 +5,7 @@ using Engine.Api.Http;
 using Engine.Api.Http.WebSockets;
 using Engine.Cli;
 using Engine.Core;
+using Engine.Core.Geometry;
 using Engine.Geometry.Manifold;
 using Engine.Tests.Geometry;
 using Microsoft.AspNetCore.Mvc.Testing;
@@ -45,6 +46,39 @@ public class BackendSelectionTests : IClassFixture<WebApplicationFactory<Program
         Assert.Equal(string.Empty, stdout.ToString());
         Assert.StartsWith(DiagnosticCodes.GeomBackendInit + ":", stderr.ToString());
         Assert.Contains(ManifoldGeometryBackend.NativeLibraryName, stderr.ToString());
+    }
+
+    // Finding E37 of the codebase review of 2026-10-08 (TASK-0137): with no library, a misspelled command
+    // or query gave the exit code 3 of the backend. The name comes before the backend.
+    [Fact]
+    public async Task With_No_Library_A_Misspelled_Name_Gives_Its_Own_Error()
+    {
+        var command = new StringWriter();
+        var query = new StringWriter();
+
+        var applyExit = await Engine.Cli.Cli.RunAsync(
+            ["apply", "CreateBx"], command, new StringWriter(), CancellationToken.None, NoNativeLibrary);
+        var queryExit = await Engine.Cli.Cli.RunAsync(
+            ["query", "GetBoundingBx"], query, new StringWriter(), CancellationToken.None, NoNativeLibrary);
+
+        Assert.Equal(Engine.Cli.Cli.ExitRejected, applyExit);
+        Assert.Contains(DiagnosticCodes.CommandUnknown, command.ToString());
+        Assert.Equal(Engine.Cli.Cli.ExitRejected, queryExit);
+        Assert.Contains(DiagnosticCodes.QueryUnknown, query.ToString());
+    }
+
+    // Finding E38 of the codebase review of 2026-10-08 (TASK-0138): on win-x64 the sentence said that the
+    // package holds win-x64. A platform of the package and a platform with no payload give two causes.
+    [Fact]
+    public void The_Reason_Separates_A_Missing_File_From_A_Platform_With_No_Payload()
+    {
+        var packaged = ManifoldGeometryBackend.UnavailableReason("win-x64");
+        var other = ManifoldGeometryBackend.UnavailableReason("linux-arm64");
+
+        Assert.Contains("the file is not in the folder of the program", packaged, StringComparison.Ordinal);
+        Assert.DoesNotContain("platforms win-x64, linux-x64 and osx-arm64 only", packaged, StringComparison.Ordinal);
+        Assert.Contains("platforms win-x64, linux-x64 and osx-arm64 only", other, StringComparison.Ordinal);
+        Assert.DoesNotContain("the file is not in the folder of the program", other, StringComparison.Ordinal);
     }
 
     [Fact]
@@ -90,6 +124,8 @@ public class BackendSelectionTests : IClassFixture<WebApplicationFactory<Program
         var json = await factory.CreateClient().GetFromJsonAsync<JsonElement>("/schema/backend");
 
         Assert.Equal("managed", json.GetProperty("name").GetString());
+        // E35 (TASK-0139): the version is the identity of the backend, and not the version of an assembly.
+        Assert.Equal(new InProcessMeshBackend().Identity.Version, json.GetProperty("version").GetString());
     }
 
     // The version that /schema/backend gives must be the version of the native

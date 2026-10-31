@@ -1,6 +1,7 @@
 using Engine.Contracts;
 using Engine.Core;
 using Engine.Core.Commands;
+using Engine.Core.Geometry;
 
 namespace Engine.Tests;
 
@@ -27,7 +28,7 @@ public class ReplayTests
         // Replay using a fresh registry of the same shape.
         var replayRegistry = new CommandRegistry();
         replayRegistry.Register(new NoOpCommandHandler());
-        var replay = await Replay.ReplayLog(originalDoc.Log, replayRegistry);
+        var replay = await Replay.ReplayLog(originalDoc.Log, replayRegistry, NullGeometryBackend.Instance);
 
         Assert.Equal(originalDoc.Log.Count, replay.Document.Log.Count);
         for (var i = 0; i < originalDoc.Log.Count; i++)
@@ -51,7 +52,7 @@ public class ReplayTests
 
         var replayRegistry = new CommandRegistry();
         replayRegistry.Register(new NoOpCommandHandler());
-        var replay = await Replay.ReplayLog(commands, replayRegistry);
+        var replay = await Replay.ReplayLog(commands, replayRegistry, NullGeometryBackend.Instance);
 
         var originalEvents = originalSink.Snapshot();
         var replayEvents = replay.Events.Snapshot();

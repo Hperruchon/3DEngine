@@ -84,3 +84,8 @@ from the version alone that another client tried a command. It must read the eve
 **Next:** TASK-0035 adds the replay fixture of the probe first, and watches it fail. Then it counts
 applied commands only, adds `seq` to the reset snapshot, and corrects the comments that cite ADR-0005
 or TASK-0001 for the old meaning.
+
+## History
+
+- 2026-10-31 · TASK-0135 · `Document.Log` is a read-only view of the list, so a cast cannot change the version (finding
+  E26 of the codebase review of 2026-10-08). The public shape does not change.
