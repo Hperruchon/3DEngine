@@ -8,8 +8,9 @@ public sealed record ToolPoint(Guid Id, double X, double Y, double? PixelX, doub
 public sealed record ToolLine(Guid Id, Guid Start, Guid End);
 
 // A circle or an arc of the active sketch (phase K2e): the segments in pixels of the part of its
-// polyline in front of the eye, for a pick.
-public sealed record ToolCurve(Guid Id, IReadOnlyList<((double X, double Y) A, (double X, double Y) B)> Pixels);
+// polyline in front of the eye, for a pick, and its centre and radius in the plane, for a snap
+// (phase R11a, ADR-0041).
+public sealed record ToolCurve(Guid Id, IReadOnlyList<((double X, double Y) A, (double X, double Y) B)> Pixels, (double X, double Y) Centre = default, double Radius = 0);
 
 // The active sketch at one frame: each point, each line, each curve and the identifier of each
 // constraint, in the order of the record.
@@ -104,10 +105,67 @@ public sealed class SketchTool
             return;
         }
 
+        // ADR-0041 (phase R11a): a tap with no point within HitPixels takes a snap.
+        var hit = NearestPoint(pixelX, pixelY, picture);
+        var at = hit is null ? Snap(pixelX, pixelY, position, picture) : position;
         if (_kind is SketchToolKind.Circle or SketchToolKind.Arc)
-            PlaceCurve(NearestPoint(pixelX, pixelY, picture), position, picture, editor);
+            PlaceCurve(hit, at, picture, editor);
         else
-            Place(NearestPoint(pixelX, pixelY, picture), position, editor);
+            Place(hit, at, editor);
+    }
+
+    // ADR-0041: the snap of a tap at a pixel, in this order, each within HitPixels: the midpoint of
+    // a line; else the nearest point on a line or a curve; else the position of the grid that the
+    // host gives. A snap is a position only: it adds no constraint.
+    public static (double X, double Y)? Snap(double pixelX, double pixelY, (double X, double Y)? position, SketchPicture picture)
+    {
+        ArgumentNullException.ThrowIfNull(picture);
+        var points = picture.Points
+            .Where(point => point.PixelX is not null && point.PixelY is not null)
+            .ToDictionary(point => point.Id);
+
+        (double X, double Y)? midpoint = null;
+        var best = HitPixels;
+        foreach (var line in picture.Lines)
+        {
+            if (!points.TryGetValue(line.Start, out var a) || !points.TryGetValue(line.End, out var b))
+                continue;
+            var (mx, my) = ((a.PixelX!.Value + b.PixelX!.Value) / 2, (a.PixelY!.Value + b.PixelY!.Value) / 2);
+            var distance = Math.Sqrt(((mx - pixelX) * (mx - pixelX)) + ((my - pixelY) * (my - pixelY)));
+            if (distance <= best)
+                (midpoint, best) = (((a.X + b.X) / 2, (a.Y + b.Y) / 2), distance);
+        }
+        if (midpoint is not null)
+            return midpoint;
+
+        (double X, double Y)? on = null;
+        best = HitPixels;
+        foreach (var line in picture.Lines)
+        {
+            if (!points.TryGetValue(line.Start, out var a) || !points.TryGetValue(line.End, out var b))
+                continue;
+            var (distance, t) = Along(pixelX, pixelY, (a.PixelX!.Value, a.PixelY!.Value), (b.PixelX!.Value, b.PixelY!.Value));
+            if (distance <= best)
+                (on, best) = ((a.X + (t * (b.X - a.X)), a.Y + (t * (b.Y - a.Y))), distance);
+        }
+        if (position is { } p)
+        {
+            foreach (var curve in picture.Curves)
+            {
+                var (dx, dy) = (p.X - curve.Centre.X, p.Y - curve.Centre.Y);
+                var length = Math.Sqrt((dx * dx) + (dy * dy));
+                if (!(curve.Radius > 0) || !(length > 0))
+                    continue;
+                foreach (var (a, b) in curve.Pixels)
+                {
+                    var (distance, _) = Along(pixelX, pixelY, a, b);
+                    if (distance <= best)
+                        (on, best) = ((curve.Centre.X + (dx * curve.Radius / length), curve.Centre.Y + (dy * curve.Radius / length)), distance);
+                }
+            }
+        }
+
+        return on ?? position;
     }
 
     // ADR-0034 item 7: the next point from the pad. With an open chain the two numbers are an
@@ -307,6 +365,17 @@ public sealed class SketchTool
         }
 
         return nearest;
+    }
+
+    // The distance in pixels from a point to a segment, and the parameter of the nearest point of the
+    // segment from a (0) to b (1).
+    private static (double Distance, double T) Along(double x, double y, (double X, double Y) a, (double X, double Y) b)
+    {
+        var (dx, dy) = (b.X - a.X, b.Y - a.Y);
+        var squared = dx * dx + dy * dy;
+        var t = squared == 0 ? 0 : Math.Clamp(((x - a.X) * dx + (y - a.Y) * dy) / squared, 0, 1);
+        var (cx, cy) = (a.X + t * dx - x, a.Y + t * dy - y);
+        return (Math.Sqrt(cx * cx + cy * cy), t);
     }
 
     // The distance in pixels from a point to a segment.

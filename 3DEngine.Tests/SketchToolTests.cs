@@ -167,7 +167,7 @@ public class SketchToolTests
             var c = Points[circle.Centre];
             var corners = Enumerable.Range(0, 33).Select(i => 2 * Math.PI * i / 32)
                 .Select(angle => (X: 10 * (c.X + (circle.Radius * Math.Cos(angle))), Y: 10 * (c.Y + (circle.Radius * Math.Sin(angle))))).ToArray();
-            return new ToolCurve(id, [.. corners.Skip(1).Select((corner, i) => (corners[i], corner))]);
+            return new ToolCurve(id, [.. corners.Skip(1).Select((corner, i) => (corners[i], corner))], c, circle.Radius);
         }
 
         // The picture of the points, with the pixel (10 x, 10 y) for a point (x, y).
@@ -420,6 +420,45 @@ public class SketchToolTests
         tool.Forget(new SketchPicture([], [], []));
         Assert.Null(tool.First);
         Assert.Empty(tool.Selection);
+    }
+
+    // Phase R11a (TASK-0131, ADR-0041): a tap with no point within 22 pixels takes the midpoint of a
+    // line, else the nearest point on a line or a curve, else the position of the grid. The line goes
+    // from (0, 0) to (10, 0), at the pixels (0, 0) to (100, 0), and the circle has the centre (30, 30)
+    // and the radius 5.
+    [Theory]
+    [InlineData(52, 3, 5.0, 0.0)]
+    [InlineData(75, 4, 7.5, 0.0)]
+    [InlineData(200, 200, 20.0, 20.0)]
+    public void A_Tap_Snaps_To_A_Midpoint_A_Line_Or_The_Grid(double pixelX, double pixelY, double x, double y)
+    {
+        var editor = new Editor();
+        editor.AddLine(editor.AddPoint(0, 0)!.Value, editor.AddPoint(10, 0)!.Value);
+        var tool = new SketchTool();
+        editor.Log.Clear();
+
+        tool.Tap(pixelX, pixelY, (pixelX / 10, pixelY / 10), editor.Picture(), editor);
+
+        Assert.Equal([$"point {x} {y}"], editor.Log);
+    }
+
+    [Fact]
+    public void A_Tap_Near_A_Circle_Snaps_Onto_It_And_A_Point_Comes_First()
+    {
+        var editor = new Editor();
+        var centre = editor.AddPoint(30, 30)!.Value;
+        editor.AddCircle(centre, 5);
+        var tool = new SketchTool();
+
+        tool.Tap(352, 301, (35.2, 30.1), editor.Picture(), editor);
+        var added = editor.Points.Last().Value;
+        Assert.Equal(5, Math.Sqrt(((added.X - 30) * (added.X - 30)) + ((added.Y - 30) * (added.Y - 30))), 12);
+
+        tool.End();
+        var count = editor.Points.Count;
+        tool.Tap(302, 301, (30.2, 30.1), editor.Picture(), editor);
+        Assert.Equal(count, editor.Points.Count);
+        Assert.Equal(centre, tool.First);
     }
 
     private static (double X, double Y, double Z) Normal((double X, double Y, double Z) v)

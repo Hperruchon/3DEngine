@@ -1,13 +1,13 @@
 ---
 id: 0034
 title: The sketch tools of the desktop
-status: Accepted
+status: Amended
 topic: Clients, sketch
 date: 2026-10-28
 supersedes: []
 superseded-by: []
 amends: ['0026', '0029', '0032']
-amended-by: []
+amended-by: ['0041']
 affects:
   - 3DEngine.Core/Input/**
   - 3DEngine.Core/Picking/**
