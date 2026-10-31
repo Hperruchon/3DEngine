@@ -3835,3 +3835,35 @@ New tests: 5. The test list holds 1325 (962 in `Engine.Tests`, 221 in `3DEngine.
 `3DEngine.ImageTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
 entries: 14 of 15. New diagnostic codes: none. Since the review of v0.130, 1 product milestone and 3 entries followed
 it.
+
+## v0.134 — The engine, the surface and the gates close the forms of the fifteenth review (P0.52, TASK-0132)
+
+The codebase review of 2026-10-31 put its medium and low findings of the engine, the HTTP surface and the gates after
+R11a. The standing answer of the owner of 2026-10-31 takes Q1 A for E103.
+
+**The change.**
+
+- E103 (Q1 A): the refusals of an arc at its centre and of a tangent through the centre do not act on an entry of an
+  open or a replay, so the files of v0.117 to v0.122 open; the solve then gives no solution.
+- E104: a command that creates an item is refused also for an entry whose identifier came before, with
+  `E-SKETCH-ID-IN-USE`, so the open names the line. A second `AddSketchPoint` gave an `IndexOutOfRangeException`.
+- E105: the routes `/document/save` and `/document/open` refuse a repeated member with HTTP 400.
+- T104 and T105: each compilation of `ConstantStrings` has the implicit usings of the SDK, the items `Using` and only
+  the grants `InternalsVisibleTo` of its project; a cycle of references ends.
+- T106: each heading line of the ledger other than its title is `## v`. T107: an `Output` with the item name
+  `Compile` is an offence. T108: a file that is not valid UTF-8, a character of the category Format after the start,
+  a Hangul filler and a variation selector are offences. T109: a constant severity alone, a middle of a code with no
+  dash after it, and a character severity before a string are parts of a code.
+
+**Proof.** 32 new test cases. 13 injections: each one failed a test. The gate program gives 339 runs of 138 checks.
+
+**What stays.** T109 reads the syntax for a call whose separator is not a literal. The desktop findings in TASK-0133.
+
+**A correction.** The row of `E-SKETCH-ID-IN-USE` said that an open never raises the code; since E104 it raises it for
+a command that creates an item, and the row says so. The first write set did not name the nine handlers that call
+`SketchResults.InUse` with its new parameter; the check of the staged change found it before the push.
+
+New tests: 32. The test list holds 1357 (994 in `Engine.Tests`, 221 in `3DEngine.Tests`, 142 in
+`3DEngine.ImageTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
+entries: 14 of 15. New diagnostic codes: none. Since the review of v0.130, 1 product milestone and 4 entries followed
+it.
