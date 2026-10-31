@@ -107,8 +107,9 @@ public sealed class ManifoldGeometryBackend
     // IMeshOps. Builds a native, origin-centered Manifold cube and stores it under the
     // handle. Throws on duplicate (mirrors the stub), because the bus derives handles
     // from CommandId. The idempotency cache of a live bus stops a command that comes
-    // again; a replay and an open have no cache, so the handler gives E-GEOM-NATIVE-OP
-    // for the second entry (E31).
+    // again; an open does not look in the cache (ApplyEntry), and a replay has none, so
+    // the handler gives E-GEOM-NATIVE-OP for the second entry (E31; E110 corrected this
+    // comment).
     public void CreateBox(BodyHandle handle, BoxParameters parameters)
     {
         ObjectDisposedException.ThrowIf(_disposed, this);

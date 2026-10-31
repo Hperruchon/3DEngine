@@ -14,8 +14,9 @@ namespace Engine.Api.Http;
 // commands and queries to it; each one goes through the same bus as a command
 // over HTTP (ADR-0019 item 2).
 //
-// The host chooses the backend and gives it here with its name and version. The
-// library references Engine.Core and Engine.Contracts only (ADR-0019 item 3), so
+// The host chooses the backend and gives it here; the host reads its name and version from
+// the identity of the backend (finding E111 of the codebase review of 2026-10-31 (b),
+// TASK-0142), which is the identity that the log records. The library references Engine.Core and Engine.Contracts only (ADR-0019 item 3), so
 // it cannot name the native backend; that choice belongs to a composition root
 // (ADR-0014 section 4). Until TASK-0038 this class chose the backend itself.
 //
@@ -30,13 +31,11 @@ public sealed class EngineHost : IDisposable
     // writes there from the first command. A host with no file keeps the document in
     // memory only, as each test that makes a host. A file that does not open throws
     // a DocumentFileException, and the backend is freed.
-    public EngineHost(IGeometryBackend backend, string backendName, string backendVersion, DocumentFileOptions? file = null)
+    public EngineHost(IGeometryBackend backend, DocumentFileOptions? file = null)
     {
         ArgumentNullException.ThrowIfNull(backend);
 
         Backend = backend;
-        BackendName = backendName;
-        BackendVersion = backendVersion;
         Broadcaster = new EventBroadcaster();
 
         // One composition point for every other part, shared with the CLI.
@@ -105,10 +104,11 @@ public sealed class EngineHost : IDisposable
     public DocumentSession Session { get; }
 
     // The name and the version of the backend that the host composed, for
-    // /schema/backend. Engine.Contracts does not change for them.
-    public string BackendName { get; }
+    // /schema/backend. Until TASK-0142 a host gave them as two free strings, and a test
+    // host gave "test" for a backend that records "1" (E111).
+    public string BackendName => Backend.Identity.Name;
 
-    public string BackendVersion { get; }
+    public string BackendVersion => Backend.Identity.Version;
 
     public CommandRegistry CommandRegistry { get; }
 

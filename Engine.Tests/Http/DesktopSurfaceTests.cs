@@ -26,7 +26,7 @@ public class DesktopSurfaceTests
     [Fact]
     public async Task A_Command_Over_Http_Changes_The_Session_That_The_Host_Owns()
     {
-        var host = new EngineHost(new InProcessMeshBackend(), "managed", "test");
+        var host = new EngineHost(new InProcessMeshBackend());
         await using var app = await StartSurface(host);
         using var http = new HttpClient { BaseAddress = new Uri(app.Urls.First()) };
         using var limit = new CancellationTokenSource(Limit);
@@ -50,7 +50,7 @@ public class DesktopSurfaceTests
     [Fact]
     public async Task A_Subscriber_Of_The_Surface_Receives_The_Event_Of_A_Typed_Call_Of_The_Host()
     {
-        var host = new EngineHost(new InProcessMeshBackend(), "managed", "test");
+        var host = new EngineHost(new InProcessMeshBackend());
         await using var app = await StartSurface(host);
         using var limit = new CancellationTokenSource(Limit);
         using var socket = new ClientWebSocket();
@@ -83,7 +83,7 @@ public class DesktopSurfaceTests
     [Fact]
     public async Task A_Host_With_A_Subscriber_Stops_At_Once()
     {
-        var host = new EngineHost(new InProcessMeshBackend(), "managed", "test");
+        var host = new EngineHost(new InProcessMeshBackend());
         await using var app = await StartSurface(host);
         using var limit = new CancellationTokenSource(Limit);
         using var socket = new ClientWebSocket();
@@ -104,7 +104,7 @@ public class DesktopSurfaceTests
     [Fact]
     public async Task A_Host_With_A_Partial_Request_Stops_Within_5_Seconds()
     {
-        var host = new EngineHost(new InProcessMeshBackend(), "managed", "test");
+        var host = new EngineHost(new InProcessMeshBackend());
         await using var app = await StartSurface(host);
         var address = new Uri(app.Urls.First());
         using var client = new System.Net.Sockets.TcpClient();
