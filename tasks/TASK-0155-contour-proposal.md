@@ -1,7 +1,7 @@
 ---
 id: 0155
 title: A contour proposal of a placed image becomes an editable sketch
-status: Active
+status: Done
 phase: V3
 opened: 2026-10-31
 depends-on: [0153]
@@ -65,11 +65,23 @@ the image, which the tools of the sketch then edit.
 
 ## Acceptance criteria
 
-- [ ] The proposal has a test for each rule of ADR-0047 item 2, with exact pixels.
-- [ ] A test with no GPU accepts a proposal and reads the sketch on the datum of the image.
-- [ ] A picture on a GPU shows the accepted sketch on the edges of its image, with no message of the validation layer.
-- [ ] A clean build (`--no-incremental`) gives zero errors and zero warnings.
-- [ ] Continuous integration passes on the three runners, on the branch and on `main` after the merge.
+- [x] The proposal has a test for each rule of ADR-0047 item 2, with exact pixels.
+- [x] A test with no GPU accepts a proposal and reads the sketch on the datum of the image.
+- [x] A picture on a GPU shows the accepted sketch on the edges of its image, with no message of the validation layer.
+- [x] A clean build (`--no-incremental`) gives zero errors and zero warnings.
+- [x] Continuous integration passes on the three runners, on the branch and on `main` after the merge.
+
+## Outcome
+
+Status: Done · commit (the merge of the branch v3-contour-proposal) · v0.157
+
+## Method
+
+Mechanical: each rule of the proposal on a synthetic image with exact pixels, the accept read back from the session,
+            the picture on a GPU, three full runs of the image tests, and one injection for each rule.
+Judgement:  managed code in place of the vision library, because of its licences (R-0048); the region is the class
+            that touches the border less; at most 200 vertices.
+Weakest:    no test proposes from a photo, and the host wires the buttons with no test of its own.
 
 ## Progress
 
@@ -80,3 +92,4 @@ the image, which the tools of the sketch then edit.
 - 2026-10-31: the full run of 3DEngine.ImageTests crashed the test host in SketchWindowUiTests: the new image test
   drove Dear ImGui out of the collection of the panel tests, in parallel with them. It is in the collection now, and
   three full runs gave 157 of 157.
+- 2026-10-31: closed at v0.157.
