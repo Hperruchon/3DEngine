@@ -183,6 +183,9 @@ This track removes each condition that blocks other work.
 | P0.57 | The reason of a native library that does not load separates a missing file from a platform with no payload (E38 of R-0036). TASK-0138. | 1 |
 | P0.58 | The schema of the backend is in the list of the surface, and it gives the identity of the backend (E35 of R-0036). TASK-0139. | 1 |
 | P0.59 | A sink of events does not throw, and a test holds each sink to it (E18 of R-0033, Q4 of 2026-10-04). TASK-0140. | 1 |
+| P0.60 | The open follows the replay, the adds follow the solver, and the comments of the cache are true (E106 to E112 of the codebase review of 2026-10-31 (b); after R11b). TASK-0142. | 2–3 |
+| P0.61 | The gates read disabled text, the routes of the test host, each sink, and the next forms of the fifteenth review (T110 to T116; after R11b). TASK-0143. | 2–3 |
+| P0.62 | An arc ends within a pixel of its start, and Escape cancels a press on a handle before the slop (V63, V64; after R11b). TASK-0144. | 1 |
 
 ## Track P — The platform
 
