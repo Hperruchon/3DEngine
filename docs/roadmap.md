@@ -260,6 +260,7 @@ The first domain extension. Objective 15 puts it before materials, chemistry and
 | Phase | Content | Evenings |
 |---|---|---|
 | V0 | A verification spike. The vision library on three platforms (ADR-0042; the owner chose it on 2026-10-31, after R11b). TASK-0145. | 1 |
+| V1b | The engine keeps each asset under the SHA-256 of its bytes, in one store of the account (ADR-0044). TASK-0147. | 1–2 |
 | V1 | A content-addressed asset store. A textured quad. | 2–3 |
 | V2 | Place an image on a datum. Calibrate it to real units. | 2–3 |
 | V3 | A contour proposal becomes an editable sketch. Propose and accept. | 3–5 |

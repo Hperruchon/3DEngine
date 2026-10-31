@@ -52,6 +52,11 @@ internal static class SchemaDiagnosticsEndpoint
         new(DiagnosticCodes.SketchIdInUse,         "Error",   "SKETCH"), // finding E86, TASK-0106
         new(DiagnosticCodes.SketchHoldDropped,     "Warning", "SKETCH"), // finding E87, TASK-0106
         new(DiagnosticCodes.SketchCurveInvalid,    "Error",   "SKETCH"), // phase K2d, TASK-0117
+        new(DiagnosticCodes.AssetTooLarge,         "Error",   "ASSET"), // ADR-0044 item 3, TASK-0147
+        new(DiagnosticCodes.AssetBadName,          "Error",   "ASSET"), // ADR-0044 item 1, TASK-0147
+        new(DiagnosticCodes.AssetNotFound,         "Error",   "ASSET"), // ADR-0044 item 2, TASK-0147
+        new(DiagnosticCodes.AssetCorrupt,          "Error",   "ASSET"), // ADR-0044 item 2, TASK-0147
+        new(DiagnosticCodes.AssetWriteFailed,      "Error",   "ASSET"), // ADR-0044 item 2, TASK-0147
     };
 
     public static IResult Handle() => Results.Json(Codes, ApiJson.Options);
