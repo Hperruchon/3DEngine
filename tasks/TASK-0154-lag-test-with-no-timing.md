@@ -1,7 +1,7 @@
 ---
 id: 0154
 title: The lag test of the events fills the queue of the subscriber with a count and no timing
-status: Active
+status: Done
 phase: P0.66
 opened: 2026-10-31
 depends-on: [0148]
@@ -55,11 +55,24 @@ The lag test gives the same result on a fast and on a slow runner.
 
 ## Acceptance criteria
 
-- [ ] With a pause of 500 ms between the posts, the old test fails and the new test passes.
-- [ ] A clean build (`--no-incremental`) gives zero errors and zero warnings.
-- [ ] Continuous integration passes on the three runners, on the branch and on `main` after the merge.
+- [x] With a pause of 500 ms between the posts, the old test fails and the new test passes.
+- [x] A clean build (`--no-incremental`) gives zero errors and zero warnings.
+- [x] Continuous integration passes on the three runners, on the branch and on `main` after the merge.
+
+## Outcome
+
+Status: Done · commit (the merge of the branch p066-lag-test) · v0.156
+
+## Method
+
+Mechanical: the slow runner as a pause of 500 ms between the posts, on the old seam and on the new one; five runs of the
+            lag test and of the heartbeat test.
+Judgement:  a gate of the test in place of a delay; the rule of ADR-0005 §6 stays, so the pump still sends the queued
+            messages before the close.
+Weakest:    the heartbeat test still measures time with a stopwatch; this task did not change it.
 
 ## Progress
 
 - 2026-10-31: the gate, the lag test and the heartbeat test. With a pause of 500 ms between the posts the old test
   failed in 16 s, and the new test passed in 2 s. Five runs of the two tests passed.
+- 2026-10-31: closed at v0.156.
