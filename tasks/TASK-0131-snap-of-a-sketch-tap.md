@@ -1,7 +1,7 @@
 ---
 id: 0131
 title: A tap of the sketch snaps to a midpoint, a line, a curve or the grid
-status: Active
+status: Done
 phase: R11a
 opened: 2026-10-31
 depends-on: [0130]
@@ -61,10 +61,21 @@ the grid.
 
 ## Acceptance criteria
 
-- [ ] A tool script gives each snap in the order of ADR-0041.
-- [ ] A test of the picture gives the centre and the radius of each curve.
-- [ ] A clean build (`--no-incremental`) gives zero errors and zero warnings.
-- [ ] Continuous integration passes on the three runners, on the branch and on `main` after the merge.
+- [x] A tool script gives each snap in the order of ADR-0041.
+- [x] A test of the picture gives the centre and the radius of each curve.
+- [x] A clean build (`--no-incremental`) gives zero errors and zero warnings.
+- [x] Continuous integration passes on the three runners, on the branch and on `main` after the merge.
+
+## Outcome
+
+Status: Done · commit (the merge of the branch r11a-sketch-snap) · v0.133
+
+## Method
+
+Mechanical: the snap from the picture, the centre and the radius of each curve in the picture, and ADR-0041.
+Judgement:  a point on a line takes the parameter of the nearest pixel, so it is on the line though not exactly under
+            the pointer in a perspective view; a midpoint uses the middle of the two pixels for the distance only.
+Weakest:    no mark shows the snap before the tap, and no person tried the snap with the real window.
 
 ## Progress
 
@@ -72,3 +83,4 @@ the grid.
 - 2026-10-31: ADR-0041 Accepted under the standing answer (Q2 A). The review planned a mark of the snap before the tap;
   the intent machine has no hover intent, so the mark moves to Scope (out), and the acceptance criterion of a picture
   of the mark becomes a test of the picture. The snap and 5 new test cases.
+- 2026-10-31: 5 injections caught; closed at v0.133.
