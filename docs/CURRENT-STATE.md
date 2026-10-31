@@ -4028,3 +4028,32 @@ New tests: 1. The test list holds 1372 (1003 in `Engine.Tests`, 225 in `3DEngine
 `3DEngine.ImageTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
 entries: 14 of 15. New diagnostic codes: none. Since the review of v0.130, 1 product milestone and 10 entries followed
 it.
+
+## v0.141 — A sink of events does not throw, and a test holds each sink to it (P0.59, TASK-0140)
+
+R11b (TASK-0134) still waits for the visual check of the owner, so this task took finding E18 of register entry
+R-0033. The owner answered its question Q4 on 2026-10-04: a sink must not throw, by contract, and a test holds each
+sink to it. TASK-0047 recorded the answer, and no test held a sink to it until now.
+
+**The change.**
+
+- `IEventSink` states that `Append` must not throw for a record of the bus, and why: the bus appends after the
+  Document changed, so a throw leaves a gap in the sequence that ADR-0005 forbids.
+- `Engine.Tests/EventSinkContractTests.cs` finds each class of `Engine.Core` and `Engine.Api.Http` that implements
+  `IEventSink` (two today) and requires it in a list with a test. It tests the ring when it is full and the
+  broadcasting sink when an action of a subscription throws.
+- The comment of `CommandBus.cs` said that a subscriber recovers a lost event with a reset; no code sends one. It
+  states the rule now, and `InMemoryEventSink.cs` gives the reason that its range has no gap.
+
+**Proof.** 3 new test cases. 3 injections: a new sink with no test, a ring that throws when it is full, and a
+broadcaster that does not catch an action; each one failed a test.
+
+**What stays.** E33 of R-0036 had only this cause, so the next review judges it again. E19, E21, E22 and seven parts of
+E24 stay in R-0033.
+
+**A correction.** None.
+
+New tests: 3. The test list holds 1375 (1006 in `Engine.Tests`, 225 in `3DEngine.Tests`, 144 in
+`3DEngine.ImageTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
+entries: 14 of 15. New diagnostic codes: none. Since the review of v0.130, 1 product milestone and 11 entries followed
+it.
