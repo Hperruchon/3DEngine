@@ -3894,3 +3894,29 @@ New tests: 6. The test list holds 1363 (994 in `Engine.Tests`, 225 in `3DEngine.
 `3DEngine.ImageTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
 entries: 14 of 15. New diagnostic codes: none. Since the review of v0.130, 1 product milestone and 5 entries followed
 it.
+
+## v0.136 — The log of the Document is read-only, a cancelled replay is a cancellation, and a query of a lost body gives an error (P0.54, TASK-0135)
+
+R11b (TASK-0134) waits for the visual check of the owner on its branch, so this task took three findings of register
+entry R-0036 that change no file of the desktop.
+
+**The change.**
+
+- E26: `Document.Log` is a read-only view of the list. A cast to `List` and a `Clear` moved the version from 2 to 0.
+  The public shape does not change; ADR-0020 has a section of history for it.
+- E29: `Replay.ReplayLog` throws `OperationCanceledException` when a command gives Cancelled and the token of the
+  caller is cancelled. It reported a divergence of the log.
+- E32: `GetBoundingBox` and `GetTessellation` give `E-GEOM-NATIVE-OP` when the backend throws. A body that the
+  backend did not hold threw `KeyNotFoundException` out of the query bus, and a host answered HTTP 500.
+
+**Proof.** 3 new test cases in `Engine.Tests/Commands/EngineDebtTests.cs`. 4 injections: each one failed a test.
+
+**What stays.** Twelve findings of R-0036.
+
+**A correction.** The write set first did not name ADR-0020; the check of the staged change refuses a change of
+`Engine.Contracts/` with no ADR file, and the write set names it now.
+
+New tests: 3. The test list holds 1366 (997 in `Engine.Tests`, 225 in `3DEngine.Tests`, 144 in
+`3DEngine.ImageTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
+entries: 14 of 15. New diagnostic codes: none. Since the review of v0.130, 1 product milestone and 6 entries followed
+it.
