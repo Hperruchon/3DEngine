@@ -5,6 +5,7 @@ using Engine.Api.Http;
 using Engine.Api.Http.WebSockets;
 using Engine.Cli;
 using Engine.Core;
+using Engine.Core.Geometry;
 using Engine.Geometry.Manifold;
 using Engine.Tests.Geometry;
 using Microsoft.AspNetCore.Mvc.Testing;
@@ -123,6 +124,8 @@ public class BackendSelectionTests : IClassFixture<WebApplicationFactory<Program
         var json = await factory.CreateClient().GetFromJsonAsync<JsonElement>("/schema/backend");
 
         Assert.Equal("managed", json.GetProperty("name").GetString());
+        // E35 (TASK-0139): the version is the identity of the backend, and not the version of an assembly.
+        Assert.Equal(new InProcessMeshBackend().Identity.Version, json.GetProperty("version").GetString());
     }
 
     // The version that /schema/backend gives must be the version of the native
