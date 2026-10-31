@@ -1,7 +1,7 @@
 ---
 id: 0146
 title: The scene draws an image on a quad with the depth of the bodies
-status: Active
+status: Done
 phase: V1a
 opened: 2026-10-31
 depends-on: [0145]
@@ -60,11 +60,23 @@ The scene draws an image on a parallelogram of the scene, and a body in front of
 
 ## Acceptance criteria
 
-- [ ] A test with no GPU gives the matrix of each corner, far from the origin too, and the state of the pipeline.
-- [ ] A picture on a GPU shows the image behind a box and a small image in front of it, with no message of the
+- [x] A test with no GPU gives the matrix of each corner, far from the origin too, and the state of the pipeline.
+- [x] A picture on a GPU shows the image behind a box and a small image in front of it, with no message of the
       validation layer, and the owner accepts it.
-- [ ] A clean build (`--no-incremental`) gives zero errors and zero warnings.
-- [ ] Continuous integration passes on the three runners, on the branch and on `main` after the merge.
+- [x] A clean build (`--no-incremental`) gives zero errors and zero warnings.
+- [x] Continuous integration passes on the three runners, on the branch and on `main` after the merge.
+
+## Outcome
+
+Status: Done · commit (the merge of the branch v1a-textured-quad) · v0.149
+
+## Method
+
+Mechanical: the matrix of each corner near and far from the origin, the state of the pipeline, the picture on a GPU,
+            and one injection for each rule.
+Judgement:  the draw after the bodies with the same depth test; both faces drawn; at most 16 images; an absent image
+            is not drawn.
+Weakest:    the desktop window does not draw a quad yet (V2); only the off-screen picture shows it.
 
 ## Progress
 
@@ -73,3 +85,4 @@ The scene draws an image on a parallelogram of the scene, and a body in front of
   image with no depth test, because its point behind the box fell in the blend of red and blue; it compares two
   points of the face of the box now. 5 injections caught.
 - 2026-10-31: merged main (V1b at v0.148); the conflicts were the rows of the ADR index, the roadmap and the test floor.
+- 2026-10-31: the owner accepted the picture ("yes, close V1a"); closed at v0.149.

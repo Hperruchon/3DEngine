@@ -4272,3 +4272,34 @@ New tests: 6. The test list holds 1411 (1033 in `Engine.Tests`, 229 in `3DEngine
 `3DEngine.ImageTests`, 3 in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and
 zero warnings. Open entries: 14 of 15. New diagnostic codes: 5. Since the review of v0.141, 3 product milestones and 7
 entries followed it.
+
+## v0.149 — The scene draws an image on a quad with the depth of the bodies (V1a, TASK-0146)
+
+The owner told the session on 2026-10-31 to start V1: "A content-addressed asset store. A textured quad." V1b merged
+first at v0.148. On 2026-10-31 the owner accepted the picture of V1a: "yes, close V1a". This entry closes V1.
+
+**The change.**
+
+- `3DEngine.Core/Rendering/ImageQuad.cs` holds an image name, a corner and two edges in double precision (ADR-0043
+  item 1). Its model-view matrix subtracts the eye in double precision before the conversion to float, as the bodies
+  do (item 2).
+- `3DEngine.Vulkan/ImageRenderer.cs` and the shaders `image.vert` and `image.frag` draw an opaque image on each quad,
+  on both faces, with the depth test and the depth write of the bodies (item 3). An image uploads once for each name (item 4);
+  the renderer holds at most 16 images, and a quad of an absent image is not drawn.
+- `3DEngine/SceneRenderer.cs` draws the quads after the bodies (item 3).
+
+**Proof.** 9 new test cases: 8 in `3DEngine.Tests/ImageQuadTests.cs` and 1 in
+`3DEngine.ImageTests/ImageQuadImageTests.cs`, which writes `image-quad.png`. 5 injections: no depth test, a second
+upload that replaces the image, an absent image that throws, a matrix with no subtraction of the eye, and the
+subtraction in float; each one failed a test. The first image test missed the injection with no depth test, because
+its point behind the box fell in the blend of red and blue; it compares two points of the face of the box now.
+
+**What stays.** The desktop window does not draw a quad, no command names an asset, and an image file is not decoded
+(V2). A transparent image, a mip map and the release of an image are out of scope (ADR-0043).
+
+**A correction.** None.
+
+New tests: 9. The test list holds 1420 (1033 in `Engine.Tests`, 237 in `3DEngine.Tests`, 147 in
+`3DEngine.ImageTests`, 3 in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and
+zero warnings. Open entries: 14 of 15. New diagnostic codes: 0. Since the review of v0.141, 4 product milestones and 8
+entries followed it.
