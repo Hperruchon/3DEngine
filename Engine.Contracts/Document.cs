@@ -16,6 +16,11 @@ public sealed class Document
 
     private readonly List<LogEntry> _log = new();
 
+    // Finding E26 of the codebase review of 2026-10-08 (TASK-0135): Log returned the list itself, and a
+    // cast to List and a Clear moved the version from 2 to 0. Log is a read-only view of the list; the
+    // public shape does not change.
+    private readonly System.Collections.ObjectModel.ReadOnlyCollection<LogEntry> _logView;
+
     // The version counts applied commands: it is the count of entries in Log
     // (ADR-0020). A rejected command and a cancelled command do not change it,
     // so a replay of the log rebuilds it. Seq, the identity of an event, is a
@@ -25,7 +30,7 @@ public sealed class Document
     public long Version => _log.Count;
 
     // ADR-0015 item 5: each entry holds the command and the backend that applied it.
-    public IReadOnlyList<LogEntry> Log => _log;
+    public IReadOnlyList<LogEntry> Log => _logView;
 
     // Body projection per ADR-0012 §3. The Document holds handles + minimum
     // metadata; the backend owns the geometry data (ADR-0001 §3).
@@ -48,6 +53,7 @@ public sealed class Document
             throw new ArgumentException($"The length unit {lengthUnit} is not permitted; the millimetre ({Millimetre}) is the only permitted unit (ADR-0015 item 7).", nameof(lengthUnit));
 
         LengthUnit = lengthUnit;
+        _logView = _log.AsReadOnly();
         DocumentId = Guid.NewGuid();
         ProjectId = projectId;
         SchemaVersion = schemaVersion;
