@@ -212,6 +212,17 @@ public class SketchOverlayTests
         Assert.All(arc, p => Assert.True(p.Y >= -1e-9 && p.X >= 20 - 1e-9, $"({p.X}, {p.Y}) is not on the quarter turn"));
     }
 
+    // Phase R11a (TASK-0131, ADR-0041): the picture gives each curve its centre and its radius in the
+    // plane, for a snap; the radius of an arc is the distance of its start from its centre.
+    [Fact]
+    public void The_Picture_Gives_The_Centre_And_The_Radius_Of_Each_Curve()
+    {
+        var picture = SketchOverlay.Picture(WithCurves(), Camera(), Display.X, Display.Y);
+
+        Assert.Equal(((0.0, 0.0), 5.0), (picture.Curves[0].Centre, picture.Curves[0].Radius));
+        Assert.Equal(((20.0, 0.0), 3.0), (picture.Curves[1].Centre, picture.Curves[1].Radius));
+    }
+
     // The overlay draws the segments of each curve with its label, and the picture of the tool has
     // the same segments in pixels.
     [Fact]
