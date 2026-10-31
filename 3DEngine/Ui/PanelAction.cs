@@ -21,6 +21,9 @@ internal sealed record SaveDocumentAction(string Name) : PanelAction;
 
 internal sealed record OpenDocumentAction(string Name) : PanelAction;
 
+// ADR-0048 item 6: the live bodies as one STL file of the name in the document folder.
+internal sealed record ExportStlAction(string Name) : PanelAction;
+
 // ADR-0031 item 11: an Undo or a Redo of the session.
 internal sealed record UndoAction : PanelAction;
 

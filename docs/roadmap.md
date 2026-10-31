@@ -134,6 +134,7 @@ Therefore each approved objective must have a track here.
 - P0.66 — The lag test of the events fills the queue of the subscriber with a count and no timing. v0.156, TASK-0154.
 - V3 — A contour proposal of a placed image becomes an editable sketch. v0.157, TASK-0155, ADR-0047.
 - P0.67 — Each runner hashes a native replay with geometry and solved sketches, and a last job compares the hashes. v0.158, TASK-0156.
+- P8g — The live bodies leave the engine as one binary STL file, from the surface, the command line and the desktop. v0.159, TASK-0157, ADR-0048.
 
 ## Track 0 — Foundations
 
@@ -219,6 +220,7 @@ This track removes each condition that blocks other work.
 | P8d | The three layers. Log, ordered feature list, regeneration cache. | 5–8 |
 | P8e | The unit in the numeric pad. The header of P8a holds the length unit of the document (KD4). TASK-0119. | 1 |
 | P8f | The document file in the desktop and for an agent. The desktop opens the file that its command line names, and an open in the window starts the program again (Q5). "Save" moves the file to the name typed in the panel. HTTP save and open on the loopback address, in one folder (Q6, ADR-0002). ADR-0030, TASK-0092. | 2–3 |
+| P8g | An STL export of the live bodies, from the surface, the command line and the desktop (ADR-0048). TASK-0157. | 1 |
 
 ## Track R — The renderer
 

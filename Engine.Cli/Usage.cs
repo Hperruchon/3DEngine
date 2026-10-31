@@ -15,6 +15,7 @@ Usage:
   engine query <query-name> [--param k=v ...]     Run a query, print QueryResult JSON.
   engine asset put <file> [--folder <path>]       Put a file into the store of the assets, print its name.
   engine asset get <name> <file> [--folder <path>]  Write an asset of the store to a file.
+  engine export stl <document.3de> <file.stl>     Write the live bodies of a document file as one STL file.
   engine help                                     Print this usage.
 
 Each invocation builds a fresh in-memory engine. There is no persistence
@@ -23,7 +24,7 @@ between invocations. The store of the assets is outside the engine, in
 
 Exit codes:
   0  Applied
-  1  Rejected or Cancelled (commands), query rejected, or asset refused
+  1  Rejected or Cancelled (commands), query rejected, asset refused, or export failed
   2  Invalid usage
   3  The native geometry backend did not load (E-GEOM-BACKEND-INIT)
 

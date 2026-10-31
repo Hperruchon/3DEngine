@@ -134,6 +134,9 @@ public static class EngineSurface
         app.MapPut("/assets", AssetsEndpoint.Put);
         app.MapGet("/assets/{name}", AssetsEndpoint.Get);
 
+        // ADR-0048 item 4: the live bodies as one STL file.
+        app.MapGet("/export/stl", ExportEndpoint.Stl);
+
         return app;
     }
 
