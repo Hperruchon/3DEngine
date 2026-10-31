@@ -54,6 +54,9 @@ public class CrossPlatformHashTests
         ];
     }
 
+    // Each line of the text ends with a line feed on each platform: AppendLine writes Environment.NewLine,
+    // and the first runs of the pipeline gave Windows its own hash with equal numbers (TASK-0156).
+    //
     // The text of the state: each live body in the order of its handle, with the bits of its bounding box and of
     // each position and its indices, then each sketch with the bits of each point. The first line of the file is
     // the SHA-256 of this text; the lines of the bounding boxes and of the points follow, so a person can read a
@@ -75,9 +78,9 @@ public class CrossPlatformHashTests
             var indices = string.Join(" ", mesh.Indices);
             // A short hash of the positions and of the indices, so a difference between two runners names its part.
             lines.Add($"{line} positions {mesh.Positions.Length} {Short(positions)} indices {mesh.Indices.Length} {Short(indices)}");
-            text.AppendLine(line);
-            text.AppendLine(positions);
-            text.AppendLine(indices);
+            text.Append(line).Append('\n');
+            text.Append(positions).Append('\n');
+            text.Append(indices).Append('\n');
         }
 
         foreach (var sketch in document.Sketches.OrderBy(sketch => sketch.Id))
@@ -86,7 +89,7 @@ public class CrossPlatformHashTests
             {
                 var line = $"point {sketch.Id} {point.Id} {Bits(point.X)} {Bits(point.Y)}";
                 lines.Add(line);
-                text.AppendLine(line);
+                text.Append(line).Append('\n');
             }
         }
 
