@@ -179,6 +179,7 @@ This track removes each condition that blocks other work.
 | P0.55 | An exception of a handler in a replay is a divergence, and a replay needs a backend (E28, E30 of R-0036). TASK-0136. | 1 |
 | P0.56 | The command line checks a name before the backend, and the comments of the replay are true (E37, E31 of R-0036). TASK-0137. | 1 |
 | P0.57 | The reason of a native library that does not load separates a missing file from a platform with no payload (E38 of R-0036). TASK-0138. | 1 |
+| P0.58 | The schema of the backend is in the list of the surface, and it gives the identity of the backend (E35 of R-0036). TASK-0139. | 1 |
 
 ## Track P — The platform
 
