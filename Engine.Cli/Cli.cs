@@ -47,6 +47,7 @@ public static class Cli
             "apply" => await Apply(rest, stdout, stderr, ct, backend).ConfigureAwait(false),
             "query" => await Query(rest, stdout, stderr, ct, backend).ConfigureAwait(false),
             "asset" => await Asset(rest, stdout, stderr, ct).ConfigureAwait(false),
+            "export" => await Export(rest, stdout, stderr, ct, backend).ConfigureAwait(false),
             _ => InvalidUsage(stderr, $"Unknown verb: {verb}"),
         };
     }
@@ -129,6 +130,53 @@ public static class Cli
             default:
                 return InvalidUsage(stderr, "asset requires 'put <file>' or 'get <name> <file>'.");
         }
+    }
+
+    // ADR-0048 item 5 (phase P8g, TASK-0157): the live bodies of a document file as one binary STL file. The
+    // command line keeps no session between two runs, so it opens the document file first.
+    //
+    //   engine export stl <document.3de> <file.stl>   { file, triangles }
+    private static async Task<int> Export(string[] args, TextWriter stdout, TextWriter stderr, CancellationToken ct, BackendOptions backend)
+    {
+        if (args is not ["stl", var document, var file])
+            return InvalidUsage(stderr, "export requires 'stl <document.3de> <file.stl>'.");
+
+        var session = BuildSession(backend, stderr);
+        if (session is null)
+            return ExitBackendUnavailable;
+
+        ErrorDetail? error;
+        byte[]? content = null;
+        try
+        {
+            await Engine.Core.Persistence.DocumentFile.Open(session, document, ct).ConfigureAwait(false);
+            (content, error) = await session.ReadGeometry(Engine.Core.Export.StlExport.Write, ct).ConfigureAwait(false);
+            if (content is not null)
+                await File.WriteAllBytesAsync(file, content, ct).ConfigureAwait(false);
+        }
+        catch (Engine.Core.Persistence.DocumentFileException ex)
+        {
+            // The message of the exception starts with its code (DocumentFileException).
+            error = new ErrorDetail(ex.Code, ex.Message.StartsWith(ex.Code + ": ", StringComparison.Ordinal) ? ex.Message[(ex.Code.Length + 2)..] : ex.Message);
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or ArgumentException or NotSupportedException)
+        {
+            error = new ErrorDetail(content is null ? DiagnosticCodes.IoLoadFailed : DiagnosticCodes.IoSaveFailed, $"The STL file of {document} could not be made at {file}: {ex.Message}");
+        }
+        finally
+        {
+            // The open holds the document file; the close gives it back, also to a caller in the same process.
+            session.Close();
+        }
+
+        if (error is not null)
+        {
+            JsonRenderer.WriteValue(new { error = new { code = error.Code, message = error.Message } }, stdout);
+            return ExitRejected;
+        }
+
+        JsonRenderer.WriteValue(new { file, triangles = (content!.Length - 84) / 50 }, stdout);
+        return ExitApplied;
     }
 
     private static int AssetResult(TextWriter stdout, string? name, long size, ErrorDetail? error)
