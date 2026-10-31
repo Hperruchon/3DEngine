@@ -52,6 +52,11 @@ public class IntentParityTests
         [typeof(SketchPointIntent)] = (
             [[Touch(1, 120, 80, PointerPhase.Down, 0)], [Touch(1, 120, 80, PointerPhase.Up, 100)]],
             [[Mouse(120, 80, PointerButtons.Left, PointerPhase.Down, 0)], [Mouse(120, 80, PointerButtons.Left, PointerPhase.Up, 100)]]),
+        // ADR-0041 item 6 (phase R11b): the mark of a snap. The mouse with no button and the first
+        // contact of a finger, before the tap, give it.
+        [typeof(SketchHoverIntent)] = (
+            [[Touch(1, 120, 80, PointerPhase.Down, 0)]],
+            [[Mouse(120, 80, PointerButtons.None, PointerPhase.Move, 0)]]),
         // ADR-0038 item 5: a drag that starts on a handle of the gizmo. A second finger and the key
         // Escape cancel it.
         [typeof(GizmoStartIntent)] = (
@@ -72,7 +77,7 @@ public class IntentParityTests
     };
 
     // The mode of the machine for the script of a kind; the other kinds run in the mode Scene.
-    private static readonly Dictionary<Type, IntentMode> Modes = new() { [typeof(SketchPointIntent)] = IntentMode.Sketch };
+    private static readonly Dictionary<Type, IntentMode> Modes = new() { [typeof(SketchPointIntent)] = IntentMode.Sketch, [typeof(SketchHoverIntent)] = IntentMode.Sketch };
 
     // The kinds whose script starts on a handle of the gizmo: the hit test gives the arrow X at
     // each point (ADR-0038 item 5).
@@ -299,7 +304,8 @@ public class IntentParityTests
     [Fact]
     public void The_Mode_Sketch_Gives_Points_And_No_Hide()
     {
-        static List<Intent> InSketch(InputSample[][] script) => Run(script, mode: IntentMode.Sketch);
+        // The mark of a snap (R11b) is not a gesture of this test.
+        static List<Intent> InSketch(InputSample[][] script) => [.. Run(script, mode: IntentMode.Sketch).Where(intent => intent is not SketchHoverIntent)];
 
         Assert.Empty(InSketch(Scripts[typeof(HideIntent)].Touch));
         Assert.Empty(InSketch(Scripts[typeof(HideIntent)].Mouse));
@@ -333,7 +339,7 @@ public class IntentParityTests
         var map = new Dictionary<Gesture, IntentAction>(IntentSettings.Default.SketchMap) { [Gesture.LongPress] = IntentAction.SketchPoint };
         var settings = new IntentSettings { SketchMap = map }.Validated();
 
-        Assert.IsType<SketchPointIntent>(Assert.Single(Run(Scripts[typeof(HideIntent)].Touch, settings, IntentMode.Sketch)));
+        Assert.IsType<SketchPointIntent>(Assert.Single(Run(Scripts[typeof(HideIntent)].Touch, settings, IntentMode.Sketch), intent => intent is not SketchHoverIntent));
 
         var wrong = new Dictionary<Gesture, IntentAction>(IntentSettings.Default.SketchMap) { [Gesture.HKey] = IntentAction.SketchPoint };
         Assert.Throws<ArgumentException>(() => new IntentSettings { SketchMap = wrong }.Validated());
@@ -351,6 +357,7 @@ public class IntentParityTests
         (UndoIntent, UndoIntent) => true,
         (RedoIntent, RedoIntent) => true,
         (SketchPointIntent x, SketchPointIntent y) => Near(x.X, y.X) && Near(x.Y, y.Y),
+        (SketchHoverIntent x, SketchHoverIntent y) => Near(x.X, y.X) && Near(x.Y, y.Y),
         (GizmoStartIntent x, GizmoStartIntent y) => x.Handle == y.Handle && Near(x.X, y.X) && Near(x.Y, y.Y),
         (GizmoMoveIntent x, GizmoMoveIntent y) => Near(x.X, y.X) && Near(x.Y, y.Y),
         (GizmoEndIntent x, GizmoEndIntent y) => Near(x.X, y.X) && Near(x.Y, y.Y),

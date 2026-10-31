@@ -54,6 +54,14 @@ public class CurveImageTests
         var camera = Facing();
         var display = new Vector2(Width, Height);
         var strokes = SketchOverlay.Of([sketch], camera, Width, Height, new SketchOverlay.Focus(sketch.SketchId, [], null));
+
+        // Phase R11b (TASK-0134): the mouse a few pixels from the middle of the line gives the mark of
+        // the snap at its midpoint (ADR-0041 item 6).
+        var ends = sketch.Points.Where(point => point.Id == a || point.Id == b).ToArray();
+        var middle = SketchOverlay.Pixel(sketch, camera, Width, Height, ((ends[0].X + ends[1].X) / 2, (ends[0].Y + ends[1].Y) / 2))!.Value;
+        var mark = actions.Mark(camera, middle.X + 6, middle.Y + 5, Width, Height)!.Value;
+        Assert.Equal(middle, mark);
+        strokes = strokes with { Snap = mark };
         var panel = new SketchPanel([sketch], sketch, SketchToolKind.Arc, false, [], null);
         byte[] pixels;
         Vector4[] windows;
@@ -100,6 +108,20 @@ public class CurveImageTests
         }
 
         Assert.Equal(SketchOverlay.TurnSegments + (SketchOverlay.TurnSegments / 4), seen);
+
+        // The colour 0xFFFFE000 of DesktopUi.SnapColour is (0, 224, 255) in RGBA, on the edge of a square
+        // of 12 pixels about the mark.
+        var cyan = 0;
+        for (var row = (int)mark.Y - 8; row <= (int)mark.Y + 8; row++)
+        {
+            for (var column = (int)mark.X - 8; column <= (int)mark.X + 8; column++)
+            {
+                var index = (row * (int)Width + column) * 4;
+                if (pixels[index] < 60 && pixels[index + 1] > 180 && pixels[index + 2] > 200)
+                    cyan++;
+            }
+        }
+        Assert.True(cyan >= 20, $"{cyan} pixels of the colour of a snap near {mark} in {picture}.");
     }
 
     // A pixel within 2 pixels of (x, y) with the colour of a sketch.
