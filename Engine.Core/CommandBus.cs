@@ -124,7 +124,9 @@ public sealed class CommandBus
             // CancellationToken.None: the commit is done, and a cancellation must not
             // stop it in the middle (finding E4). A sink that throws loses an event,
             // which a subscriber recovers with a reset, and never a part of the
-            // Document. A retry with the same CommandId gets the cached result.
+            // Document. A retry with the same CommandId gets the cached result while the cache
+            // holds it: the cache keeps the last results up to its capacity, 1,024 by default
+            // (ADR-0006 §7, finding E31).
             // E100 (TASK-0123): an open (ApplyEntry) and a replay (a bus with no cache) apply an
             // entry of a log, which the guard of a repeated identifier does not refuse.
             var (result, events) = await Decide(command, entry: !lookUp || _idempotency is null, stopwatch, ct).ConfigureAwait(false);
