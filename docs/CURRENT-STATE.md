@@ -4303,3 +4303,31 @@ New tests: 9. The test list holds 1420 (1033 in `Engine.Tests`, 237 in `3DEngine
 `3DEngine.ImageTests`, 3 in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and
 zero warnings. Open entries: 14 of 15. New diagnostic codes: 0. Since the review of v0.141, 4 product milestones and 8
 entries followed it.
+
+## v0.150 — The codebase review of 2026-10-31 (c) (governance, TASK-0148)
+
+The review of 2026-10-31 (b) examined v0.141. After it came 4 product milestones (R11b, V0, V1b and V1a) and 8
+entries, so the next product milestone would make the review late. On 2026-10-31 the owner told the session: "do the
+review, then start V2", and to work alone until 2026-11-01 10:00 with its recommendation for each question.
+
+**The record.** `docs/reviews/2026-10-31-c-codebase-review.md` examines `main` at `e851093`, the merge of v0.149. Two
+agents probed the code in parallel at `b410a59`, the same tree: the engine with the hosts, and the desktop with the
+gates. I ran their 23 probes again, injected T117 with a control, and read each cited line.
+
+**The findings.** 15 new findings: two medium (E113, the store takes a name that ends in a line feed; T117, an imported
+file pins the vision library into the engine and the gate passes) and thirteen low (E114 to E118, V65 to V67, T118 to
+T122). E106 to E112, V63, V64 and T110 to T116 are fixed for their forms, and the owner accepted E25 and E27. Open
+findings: 0 critical, 5 high, 16 medium and 29 low.
+
+**The order.** No new finding is high, so no task comes before V2. TASK-0149 (P0.63) holds the engine findings,
+TASK-0150 (P0.64) the gate findings and TASK-0151 (P0.65) the desktop findings, after V2. The standing answer of the
+owner takes Q1 A (the Document holds a record of each placed image), Q2 A (a calibration records two points and a
+distance) and Q3 A (the client decodes the image); the task of V2 records them in its ADR.
+
+**A correction.** None.
+
+New tests: none. The test list holds 1420 (1033 in `Engine.Tests`, 237 in `3DEngine.Tests`, 147 in
+`3DEngine.ImageTests`, 3 in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and
+zero warnings. Open entries: 15 of 15: R-0047 records the lag test of the events, which failed on Windows in the first run
+of this branch. New diagnostic codes: none. Since the review of v0.149, 0 product milestones and
+1 entry followed it.
