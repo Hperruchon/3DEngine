@@ -1,7 +1,7 @@
 ---
 id: 0140
 title: A sink of events does not throw, and a test holds each sink to it
-status: Active
+status: Done
 phase: P0.59
 opened: 2026-10-31
 depends-on: [0139]
@@ -59,10 +59,22 @@ The rule of Q4 is in `IEventSink` and in a test, and no comment says that a rese
 
 ## Acceptance criteria
 
-- [ ] A test of each part fails when a violation is injected.
-- [ ] A clean build (`--no-incremental`) gives zero errors and zero warnings.
-- [ ] Continuous integration passes on the three runners, on the branch and on `main` after the merge.
+- [x] A test of each part fails when a violation is injected.
+- [x] A clean build (`--no-incremental`) gives zero errors and zero warnings.
+- [x] Continuous integration passes on the three runners, on the branch and on `main` after the merge.
+
+## Outcome
+
+Status: Done · commit (the merge of the branch p059-sink-contract) · v0.141
+
+## Method
+
+Mechanical: one rule in a comment of the interface, one gate by reflection, two tests, and two comments.
+Judgement:  the owner gave the correction in Q4, so this task only puts it in a test; the gate reads the two
+            production assemblies that implement a sink today, and a sink in a new assembly escapes it.
+Weakest:    a sink can still throw for a cause that no test injects, for example a lock that a defect breaks.
 
 ## Progress
 
 - 2026-10-31: the rule, 3 new test cases and the two comments.
+- 2026-10-31: 3 injections caught; `governed-by` names the ten ADRs of the write set; closed at v0.141.
