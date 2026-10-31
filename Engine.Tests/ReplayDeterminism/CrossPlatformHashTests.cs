@@ -60,6 +60,7 @@ public class CrossPlatformHashTests
     // difference.
     public static (string Hash, IReadOnlyList<string> Lines) State(Document document, IGeometryBackend backend)
     {
+        static string Short(string text) => Convert.ToHexStringLower(SHA256.HashData(Encoding.UTF8.GetBytes(text)))[..16];
         static string Bits(double value) => BitConverter.DoubleToInt64Bits(value).ToString("x16", CultureInfo.InvariantCulture);
         var query = backend.TryGet<IGeometryQuery>()!;
         var tessellation = backend.TryGet<ITessellationOps>()!;
@@ -70,10 +71,13 @@ public class CrossPlatformHashTests
             var box = query.GetBoundingBox(new BodyHandle(body.GeometryKey));
             var line = $"body {body.Handle.Id} {body.Kind} box {string.Join(" ", new[] { box.MinX, box.MinY, box.MinZ, box.MaxX, box.MaxY, box.MaxZ }.Select(Bits))}";
             var mesh = tessellation.Tessellate(new BodyHandle(body.GeometryKey));
-            lines.Add($"{line} positions {mesh.Positions.Length} indices {mesh.Indices.Length}");
+            var positions = string.Join(" ", mesh.Positions.Select(Bits));
+            var indices = string.Join(" ", mesh.Indices);
+            // A short hash of the positions and of the indices, so a difference between two runners names its part.
+            lines.Add($"{line} positions {mesh.Positions.Length} {Short(positions)} indices {mesh.Indices.Length} {Short(indices)}");
             text.AppendLine(line);
-            text.AppendLine(string.Join(" ", mesh.Positions.Select(Bits)));
-            text.AppendLine(string.Join(" ", mesh.Indices));
+            text.AppendLine(positions);
+            text.AppendLine(indices);
         }
 
         foreach (var sketch in document.Sketches.OrderBy(sketch => sketch.Id))

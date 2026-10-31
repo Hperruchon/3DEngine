@@ -28,7 +28,7 @@ for (const runner of runners) {
 }
 
 const hashes = runners.map(runner => files[runner][0]);
-for (const runner of runners) console.log(`${runner}: ${files[runner][0]}`);
+for (const runner of runners) console.log(`::notice title=Determinism::${runner} gives ${files[runner][0]}`);
 if (hashes.every(hash => hash === hashes[0])) {
   console.log('The three runners give one hash.');
   process.exit(0);

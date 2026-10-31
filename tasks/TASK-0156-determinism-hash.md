@@ -67,3 +67,5 @@ A difference of one bit in a mesh, a bounding box or a solved point between two 
 - 2026-10-31: the test, the script and the two steps of the pipeline. On Windows the hash is
   dd2a6132b0e2f1143a84a439bab092f4f815f360101def8de0aa2f81881994a6. The script passed three equal files and failed a
   changed point, a changed hash and a missing runner.
+- 2026-10-31: run 41222744710 gave three hashes and equal summaries: the boxes and the solved points agree on the
+  three runners, and a mesh differs. Each body line holds a short hash of its positions and of its indices now.
