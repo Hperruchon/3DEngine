@@ -379,6 +379,8 @@ the queries, `/schema/backend`, the exit codes and the backend selection.
 Exit: each finding has a task, or it is corrected, or the owner accepts it and gives the reason.
 Progress 2026-10-17: TASK-0067 corrected the open part of E36: each failure of the start of a host has a
 documented exit code (5 for each failure other than codes 1 to 4), and no failure of the start crashes.
+Progress 2026-10-31: TASK-0135 corrects E26 (the log is a read-only view), E29 (a cancelled replay throws
+`OperationCanceledException`) and E32 (a query of a body that the backend does not hold gives `E-GEOM-NATIVE-OP`).
 
 ### R-0039 · No test calls the surface of the desktop host
 - class: debt
