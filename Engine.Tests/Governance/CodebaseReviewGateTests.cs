@@ -348,6 +348,9 @@ public class CodebaseReviewGateTests
     private static readonly Regex NearLedgerEntry = new(
         @"^(?<line>[^\S\n]*#{1,6}[^\S\n]*[vV][^\S\n]*\d[^\n]*)$", RegexOptions.Compiled | RegexOptions.Multiline);
 
+    // A line with no quote marker before it (T114).
+    private static string Unquoted(string line) => Regex.Replace(line, @"^ {0,3}(?:>[^\S\n]?)+", string.Empty);
+
     // Finding T73: each ledger version is greater than the one before it, and each heading
     // after the reviewed version names one task.
     internal static IEnumerable<string> HeadingProblems((int Major, int Minor) reviewed, string ledger)
@@ -367,9 +370,11 @@ public class CodebaseReviewGateTests
         {
             var line = lines[index];
             var heading = Regex.IsMatch(line, @"^ {0,3}#") && !(index == 0 && line.StartsWith("# ", StringComparison.Ordinal)) && !LedgerEntry.IsMatch(line) && !NearLedgerEntry.IsMatch(line);
-            var nested = Regex.IsMatch(line, @"^\s*(?:[>*+-]\s*)+#");
+            // Finding T114 of the codebase review of 2026-10-31 (b) (TASK-0143): an ordered list marker
+            // and a setext heading in a quote passed.
+            var nested = Regex.IsMatch(line, @"^\s*(?:(?:[>*+-]|\d{1,9}[.)])\s*)+#");
             var html = Regex.IsMatch(line, @"^\s*<h[1-6]", RegexOptions.IgnoreCase);
-            var setext = index > 0 && lines[index - 1].Trim().Length > 0 && Regex.IsMatch(line, @"^ {0,3}(?:=+|-+)\s*$");
+            var setext = index > 0 && Unquoted(lines[index - 1]).Trim().Length > 0 && Regex.IsMatch(Unquoted(line), @"^ {0,3}(?:=+|-+)\s*$");
             if (heading || nested || html || setext)
                 yield return $"line {index + 1} \"{line}\" is a heading that does not start with \"## v\"; the review counter reads that form only";
         }
@@ -534,6 +539,10 @@ public class CodebaseReviewGateTests
     [InlineData("v0.11 — An entry (K0b, TASK-0003)\n---")]
     [InlineData("> ## v0.11 — An entry (K0b, TASK-0003)")]
     [InlineData("- ## v0.11 — An entry (K0b, TASK-0003)")]
+    // Finding T114 (TASK-0143): an ordered list marker, and a setext heading in a quote.
+    [InlineData("1. ## v0.11 — An entry (K0b, TASK-0003)")]
+    [InlineData("1) ## v0.11 — An entry (K0b, TASK-0003)")]
+    [InlineData("> v0.11 — An entry (K0b, TASK-0003)\n> ===")]
     [InlineData("<h2>v0.11 — An entry (K0b, TASK-0003)</h2>")]
     [InlineData("## \u03BD0.11 — An entry (K0b, TASK-0003)")]
     [InlineData("## \uFF560.11 — An entry (K0b, TASK-0003)")]

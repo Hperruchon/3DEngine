@@ -153,10 +153,26 @@ public class DiagnosticsRegistryGateTests
     [InlineData("static class P { static string Code() => string.Concat(\"E\", \"-\", \"SKETCH-X\"); }")]
     [InlineData("static class P { static readonly string Sev = \"x\"; static readonly string Tag = \"HIDDEN\"; static string Code() => $\"{Sev}-SKETCH{\"-\"}{Tag}\"; }")]
     [InlineData("static class P { static readonly string Tag = \"HIDDEN\"; static string Code() => 'E' + \"-x\" + Tag; }")]
+    // The form of finding T116 (TASK-0143): a severity in a const char.
+    [InlineData("static class P { const char S = 'E'; static readonly string Tag = \"HIDDEN\"; static string Code() => S + \"-x\" + Tag; }")]
     public void A_Part_Of_A_Code_Is_An_Offence(string source)
     {
         Assert.NotEmpty(DiagnosticsScanner.PartsOfCodes([("Engine.Core/Probe.cs", source)]));
         Assert.Empty(DiagnosticsScanner.PartsOfCodes([("Engine.Core/Probe.cs", "static class P { const string Code = \"E-SKETCH-HIDDEN\"; }")]));
+    }
+
+    // Finding T110 of the codebase review of 2026-10-31 (b) (TASK-0143): the scanner parses with no
+    // preprocessor symbol, and the build defines NET, so a code inside #if NET was invisible to the
+    // gate. A file with disabled text fails each reader of constants.
+    [Fact]
+    public void Code_That_A_Preprocessor_Condition_Hides_Fails_The_Scanner()
+    {
+        const string Hidden = "static class P {\n#if NET\n    internal const string Code = \"E-CLI-\" + \"HIDDEN\";\n#endif\n}\n";
+
+        var error = Assert.Throws<InvalidOperationException>(() => DiagnosticsScanner.ConstantCodes([("Engine.Cli/Probe.cs", Hidden)]).ToList());
+        Assert.Contains("Engine.Cli/Probe.cs:3", error.Message, StringComparison.Ordinal);
+        Assert.Throws<InvalidOperationException>(() => DiagnosticsScanner.PartsOfCodes([("Engine.Cli/Probe.cs", Hidden)]).ToList());
+        Assert.Contains("E-CLI-HIDDEN", DiagnosticsScanner.ConstantCodes([("Engine.Cli/Probe.cs", Hidden.Replace("#if NET\n", string.Empty, StringComparison.Ordinal).Replace("#endif\n", string.Empty, StringComparison.Ordinal))]).Select(use => use.Code));
     }
 
     // Finding T90 of the codebase review of 2026-10-30 (TASK-0114): two internal types of one name
