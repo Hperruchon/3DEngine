@@ -27,6 +27,119 @@ internal sealed class ImageActions(DocumentSession session, AssetStore? store)
     // The result of the last action, or null.
     public string? Message { get; private set; }
 
+    // ADR-0047 item 3: the image of the proposal and the vertices of its contour in pixels, or null.
+    public (Guid Image, IReadOnlyList<(double X, double Y)> Pixels)? Proposal { get; private set; }
+
+    // ADR-0047 items 1 and 3: the contour of the largest region of the image, from the bytes of its asset.
+    public void Propose(Guid image, IReadOnlyCollection<ImageRecord> live)
+    {
+        Proposal = null;
+        if (live.FirstOrDefault(candidate => candidate.Id == image) is not { } record)
+        {
+            Message = "The image is not live.";
+            return;
+        }
+
+        if (store is null)
+        {
+            Message = "The desktop has no store of assets.";
+            return;
+        }
+
+        var (content, error) = store.Read(record.Asset).GetAwaiter().GetResult();
+        if (content is null)
+        {
+            Message = $"{error?.Code}: {error?.Message}";
+            return;
+        }
+
+        try
+        {
+            var picture = PngReader.Read(content);
+            Proposal = ThreeDEngine.Core.Vision.ContourProposal.Propose(picture.Width, picture.Height, picture.Rgba) is { } pixels
+                ? (image, pixels)
+                : null;
+            Message = Proposal is null ? "The image has no region that gives a contour." : null;
+        }
+        catch (InvalidDataException ex)
+        {
+            Message = ex.Message;
+        }
+    }
+
+    public void Reject()
+    {
+        (Proposal, Message) = (null, null);
+    }
+
+    // ADR-0047 item 4: a new sketch on the datum of the image, a point at each vertex and a line along each
+    // side, with the commands that exist. The sketch and its datum, or null with the reason in Message.
+    public (Guid Sketch, Guid Datum)? Accept(IReadOnlyCollection<ImageRecord> live)
+    {
+        if (Proposal is not { } proposal || live.FirstOrDefault(candidate => candidate.Id == proposal.Image) is not { } image)
+        {
+            (Proposal, Message) = (null, "No proposal to accept.");
+            return null;
+        }
+
+        Proposal = null;
+        var created = session.Apply(new CreateSketchCommand { DatumId = image.DatumId }).GetAwaiter().GetResult();
+        if (!created.Outputs.TryGet<Guid>("sketchId", out var sketch))
+        {
+            Message = Rejected(created) ?? "The sketch gave no identifier.";
+            return null;
+        }
+
+        var points = new List<Guid>();
+        foreach (var pixel in proposal.Pixels)
+        {
+            var (u, v) = ImagePlacement.At(image, pixel);
+            var point = session.Apply(new AddSketchPointCommand { SketchId = sketch, X = u, Y = v }).GetAwaiter().GetResult();
+            if (!point.Outputs.TryGet<Guid>("pointId", out var id))
+            {
+                Message = Rejected(point) ?? "A point gave no identifier.";
+                return (sketch, image.DatumId);
+            }
+
+            points.Add(id);
+        }
+
+        for (var i = 0; i < points.Count; i++)
+        {
+            var line = session.Apply(new AddSketchLineCommand { SketchId = sketch, StartPointId = points[i], EndPointId = points[(i + 1) % points.Count] })
+                .GetAwaiter().GetResult();
+            if (Rejected(line) is { } refused)
+            {
+                Message = refused;
+                return (sketch, image.DatumId);
+            }
+        }
+
+        Message = $"Accepted: a sketch of {points.Count} points and {points.Count} lines";
+        return (sketch, image.DatumId);
+    }
+
+    private static string? Rejected(CommandResult result)
+        => result.Status == CommandStatus.Applied ? null : $"{result.Error?.Code}: {result.Error?.Message}";
+
+    // ADR-0047 item 3: the sides of the proposal in pixels of the window, for the overlay.
+    public IReadOnlyList<SketchOverlay.Stroke> ProposalLines(IReadOnlyCollection<ImageRecord> live, Camera camera, double width, double height)
+    {
+        if (Proposal is not { } proposal || live.FirstOrDefault(candidate => candidate.Id == proposal.Image) is not { } image)
+            return [];
+        var pixels = proposal.Pixels
+            .Select(pixel => SketchOverlay.Pixel(image.DatumId, camera, width, height, ImagePlacement.At(image, pixel)))
+            .ToList();
+        var lines = new List<SketchOverlay.Stroke>();
+        for (var i = 0; i < pixels.Count; i++)
+        {
+            if (pixels[i] is { } a && pixels[(i + 1) % pixels.Count] is { } b)
+                lines.Add(new SketchOverlay.Stroke(a, b, SketchOverlay.Mark.Selected));
+        }
+
+        return lines;
+    }
+
     public void Place(string path, Guid datum)
     {
         Message = PlaceFile(path.Trim().Trim('"'), datum);

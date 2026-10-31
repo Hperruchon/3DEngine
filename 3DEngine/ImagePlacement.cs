@@ -27,4 +27,8 @@ internal static class ImagePlacement
     // upper-left corner, so row 0 is the top row of the image.
     public static (double X, double Y) Pixel(ImageRecord image, (double U, double V) at)
         => ((at.U - image.OriginU) / image.Scale, image.Height - (at.V - image.OriginV) / image.Scale);
+
+    // The point (U, V) of the datum at the pixel (x, y) of the image, the inverse of Pixel (ADR-0047 item 4).
+    public static (double U, double V) At(ImageRecord image, (double X, double Y) pixel)
+        => (image.OriginU + (pixel.X * image.Scale), image.OriginV + ((image.Height - pixel.Y) * image.Scale));
 }
