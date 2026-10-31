@@ -115,13 +115,26 @@ public sealed class SketchTool
     }
 
     // ADR-0041 item 6 (phase R11b): the position that a tap at the pixel would take: a point within
-    // HitPixels, else the snap.
-    public static (double X, double Y)? Target(double pixelX, double pixelY, (double X, double Y)? position, SketchPicture picture)
+    // HitPixels, else the snap. Finding V66 of the codebase review of 2026-10-31 (c) (TASK-0151): the
+    // end of an arc goes on the circle of its start, so the mark was not where the point went. For the
+    // end of an arc the target is on the circle, as PlaceCurve puts it, and null where the curve ends.
+    public (double X, double Y)? Target(double pixelX, double pixelY, (double X, double Y)? position, SketchPicture picture)
     {
         ArgumentNullException.ThrowIfNull(picture);
-        return NearestPoint(pixelX, pixelY, picture) is { } hit && picture.Points.First(point => point.Id == hit) is { } point
+        var hit = NearestPoint(pixelX, pixelY, picture);
+        var at = hit is { } id && picture.Points.First(point => point.Id == id) is { } point
             ? (point.X, point.Y)
             : Snap(pixelX, pixelY, position, picture);
+        if (hit is not null || _kind != SketchToolKind.Arc || _curve.Count != 2 || at is not { } p)
+            return at;
+
+        Refresh(picture);
+        var c = _curve[0];
+        var distance = Math.Sqrt(((p.X - c.X) * (p.X - c.X)) + ((p.Y - c.Y) * (p.Y - c.Y)));
+        if (!(distance > 0))
+            return null;
+        var (end, closes) = ArcEnd(p, (pixelX, pixelY), picture, distance);
+        return closes ? null : end;
     }
 
     // ADR-0041: the snap of a tap at a pixel, in this order, each within HitPixels: the midpoint of
@@ -320,32 +333,40 @@ public sealed class SketchTool
             return;
         }
 
-        // A new end goes on the circle of the start, along the direction of the tap.
-        var s = _curve[1];
-        var radius = Math.Sqrt(((s.X - c.X) * (s.X - c.X)) + ((s.Y - c.Y) * (s.Y - c.Y)));
-        var (ex, ey) = (c.X + (dx * radius / distance), c.Y + (dy * radius / distance));
-        // Finding V61 (TASK-0133): a new end in the direction of the start made a second point at the
-        // position of the start and an arc of a full turn; it ends the curve.
-        // Finding V63 of the codebase review of 2026-10-31 (b) (TASK-0144): the limit was 1e-9 of the
-        // radius, so an end 0.003 mm from the start made a second point and an arc of nearly a full turn.
-        // The curve ends when the new end is within HitPixels of the start on the screen. The scale is
-        // the pixels for each unit of the plane between the tap and the start. The pad gives no pixel, and
-        // keeps the limit of V61.
-        var gap = Math.Sqrt(((ex - s.X) * (ex - s.X)) + ((ey - s.Y) * (ey - s.Y)));
-        var apart = Math.Sqrt(((p.X - s.X) * (p.X - s.X)) + ((p.Y - s.Y) * (p.Y - s.Y)));
-        var scale = picture.Points.FirstOrDefault(point => point.Id == s.Id) is { PixelX: { } sx, PixelY: { } sy } && pixel is { } tap && apart > 0
-            ? Math.Sqrt(((tap.X - sx) * (tap.X - sx)) + ((tap.Y - sy) * (tap.Y - sy))) / apart
-            : 0;
-        if (hit is null && (gap <= 1e-9 * radius || (scale > 0 && gap * scale <= HitPixels)))
+        var (arcEnd, closes) = ArcEnd(p, pixel, picture, distance);
+        if (hit is null && closes)
         {
             End();
             return;
         }
 
-        var end = hit ?? editor.AddPoint(ex, ey);
+        var end = hit ?? editor.AddPoint(arcEnd.X, arcEnd.Y);
         if (end is { } e)
-            editor.AddArc(c.Id, s.Id, e);
+            editor.AddArc(c.Id, _curve[1].Id, e);
         End();
+    }
+
+    // The new end of an arc for a tap at the position p, at the distance from the centre: on the circle
+    // of the start, along the direction of the tap. Closes is true when the curve ends there.
+    // Finding V61 (TASK-0133): a new end in the direction of the start made a second point at the
+    // position of the start and an arc of a full turn; it ends the curve.
+    // Finding V63 of the codebase review of 2026-10-31 (b) (TASK-0144): the limit was 1e-9 of the
+    // radius, so an end 0.003 mm from the start made a second point and an arc of nearly a full turn.
+    // The curve ends when the new end is within HitPixels of the start on the screen. The scale is
+    // the pixels for each unit of the plane between the tap and the start. The pad gives no pixel, and
+    // keeps the limit of V61.
+    private ((double X, double Y) End, bool Closes) ArcEnd((double X, double Y) p, (double X, double Y)? pixel, SketchPicture picture, double distance)
+    {
+        var (c, s) = (_curve[0], _curve[1]);
+        var (dx, dy) = (p.X - c.X, p.Y - c.Y);
+        var radius = Math.Sqrt(((s.X - c.X) * (s.X - c.X)) + ((s.Y - c.Y) * (s.Y - c.Y)));
+        var (ex, ey) = (c.X + (dx * radius / distance), c.Y + (dy * radius / distance));
+        var gap = Math.Sqrt(((ex - s.X) * (ex - s.X)) + ((ey - s.Y) * (ey - s.Y)));
+        var apart = Math.Sqrt(((p.X - s.X) * (p.X - s.X)) + ((p.Y - s.Y) * (p.Y - s.Y)));
+        var scale = picture.Points.FirstOrDefault(point => point.Id == s.Id) is { PixelX: { } sx, PixelY: { } sy } && pixel is { } tap && apart > 0
+            ? Math.Sqrt(((tap.X - sx) * (tap.X - sx)) + ((tap.Y - sy) * (tap.Y - sy))) / apart
+            : 0;
+        return ((ex, ey), gap <= 1e-9 * radius || (scale > 0 && gap * scale <= HitPixels));
     }
 
     private void Refresh(SketchPicture picture)

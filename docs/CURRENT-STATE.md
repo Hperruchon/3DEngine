@@ -4467,3 +4467,31 @@ New tests: 13. The test list holds 1478 (1065 in `Engine.Tests`, 257 in `3DEngin
 `3DEngine.ImageTests`, 3 in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and
 zero warnings. Open entries: 15 of 15. New diagnostic codes: 0. Since the review of v0.149, 2 product milestones and 5
 entries followed it.
+
+## v0.155 — A cancelled press gives nothing, and the mark of the snap is where the point goes and only while a finger is down (P0.65, TASK-0151)
+
+The codebase review of v0.150 found V65 to V67 (low) in the desktop, after V2. With this entry each finding of that
+review has its task done.
+
+**The change.**
+
+- V65: `IntentMachine` gives no click and no tap for the release of a press on a handle that Escape cancelled; the
+  rest of the press gives nothing, as the comment of `CancelGizmo` says.
+- V66: `SketchTool.Target` is a method of the tool. For the end of an arc it gives the point on the circle of the start,
+  which the tap adds, and null where the tap ends the curve; the tap and the target share `ArcEnd`.
+- V67: `3DEngine.Core/Input/HoverMark.cs` clears the mark after a lift of a finger or a pen and after a cancel, and the
+  host clears it on a change of mode. The comment of `SketchHoverIntent` says that a finger and a pen give it while
+  they are down.
+- ADR-0041 item 6 says the two rules of the mark.
+
+**Proof.** 11 new test cases in `3DEngine.Tests`: `GizmoTests`, `SketchToolTests` and `HoverMarkTests`. 4 injections,
+one for each rule; each one failed a test.
+
+**What stays.** No test drives the host, so the clear on a change of mode has no test.
+
+**A correction.** The comment of `SketchHoverIntent` said that a touch and a pen give no hover; R11b gave them one.
+
+New tests: 11. The test list holds 1489 (1065 in `Engine.Tests`, 268 in `3DEngine.Tests`, 153 in
+`3DEngine.ImageTests`, 3 in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and
+zero warnings. Open entries: 15 of 15. New diagnostic codes: 0. Since the review of v0.149, 2 product milestones and 6
+entries followed it.
