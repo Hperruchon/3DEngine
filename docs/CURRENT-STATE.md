@@ -3949,3 +3949,34 @@ New tests: 2. The test list holds 1368 (999 in `Engine.Tests`, 225 in `3DEngine.
 `3DEngine.ImageTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
 entries: 14 of 15. New diagnostic codes: none. Since the review of v0.130, 1 product milestone and 7 entries followed
 it.
+
+## v0.138 — The command line checks a name before the backend, and the comments of the replay are true (P0.56, TASK-0137)
+
+R11b (TASK-0134) still waits for the visual check of the owner, so this task took two more findings of register entry
+R-0036.
+
+**The change.**
+
+- E37: `Cli.Apply` and `Cli.Query` find the handler in the catalog and bind the parameters before the backend
+  loads. With no native library, `apply CreateBx` gave the exit code 3 of the backend. It gives `E-CMD-UNKNOWN` with
+  the exit code 1 now, and a misspelled query gives `E-QRY-UNKNOWN`.
+- E31: the comments of `InProcessMeshBackend` and `ManifoldGeometryBackend` said that the idempotency cache stops
+  each repeated command. A replay and an open have no cache, and the second box is a divergence with
+  `E-GEOM-NATIVE-OP`. The comments of `Replay.cs` and `CommandBus.cs` say the same, and that the cache keeps the
+  results up to its capacity. The message of `ReplayDivergenceException` gave ".." after an error message that ends
+  with a full stop.
+
+**Proof.** 2 new test cases: one in `Engine.Tests/Hosting/BackendSelectionTests.cs` and one in
+`Engine.Tests/Commands/EngineDebtTests.cs`, plus 2 new assertions for the "..". 3 injections: each one failed a test.
+The test of the repeated box proves the new comments; it passes before the change too.
+
+**What stays.** E25 (a session on a replayed Document needs a decision on the handover of the bus), E27 (a change of
+`Engine.Contracts`) and the findings of the hosts in R-0036. The comment of the reset in `CommandBus.cs` is E18 of
+R-0033.
+
+**A correction.** The first task text named the code `E-QUERY-UNKNOWN`. The code is `E-QRY-UNKNOWN`.
+
+New tests: 2. The test list holds 1370 (1001 in `Engine.Tests`, 225 in `3DEngine.Tests`, 144 in
+`3DEngine.ImageTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
+entries: 14 of 15. New diagnostic codes: none. Since the review of v0.130, 1 product milestone and 8 entries followed
+it.
