@@ -19,7 +19,7 @@ public class HttpBodyNameScenarioTests
     [Fact]
     public async Task A_Rename_And_A_Hide_Over_Http_Reach_The_Query_And_The_Event_Stream()
     {
-        var host = new EngineHost(new InProcessMeshBackend(), "managed", "test");
+        var host = new EngineHost(new InProcessMeshBackend());
         await using var app = await StartSurface(host);
         using var http = new HttpClient { BaseAddress = new Uri(app.Urls.First()) };
         using var limit = new CancellationTokenSource(Limit);
@@ -70,7 +70,7 @@ public class HttpBodyNameScenarioTests
     [Fact]
     public async Task The_Schema_Endpoints_List_The_New_Commands_The_Query_And_The_Event_Kind()
     {
-        var host = new EngineHost(new InProcessMeshBackend(), "managed", "test");
+        var host = new EngineHost(new InProcessMeshBackend());
         await using var app = await StartSurface(host);
         using var http = new HttpClient { BaseAddress = new Uri(app.Urls.First()) };
 

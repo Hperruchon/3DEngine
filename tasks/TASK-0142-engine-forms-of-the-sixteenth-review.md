@@ -1,11 +1,11 @@
 ---
 id: 0142
 title: The open follows the replay, the adds follow the solver, and the comments of the cache are true
-status: Ready
+status: Active
 phase: P0.60
 opened: 2026-10-31
 depends-on: [0141]
-governed-by: [0004, 0007, 0012, 0014, 0015, 0016, 0018, 0019, 0020, 0021, 0024, 0028, 0029, 0030, 0031, 0033, 0035, 0036, 0037, 0039]
+governed-by: [0004, 0007, 0012, 0014, 0015, 0016, 0018, 0019, 0020, 0021, 0024, 0025, 0028, 0029, 0030, 0031, 0033, 0035, 0036, 0037, 0039]
 writes:
   create:
     - tasks/TASK-0142-engine-forms-of-the-sixteenth-review.md
@@ -22,6 +22,25 @@ writes:
     - Engine.Api.Http.Server/ServerEngine.cs
     - 3DEngine/DesktopSurface.cs
     - Engine.Tests/Commands/EngineDebtTests.cs
+    - 3DEngine.ImageTests/BodyActionsTests.cs
+    - 3DEngine.ImageTests/CurveImageTests.cs
+    - 3DEngine.ImageTests/DesktopFormsTests.cs
+    - 3DEngine.ImageTests/FirstDemonstrationImageTests.cs
+    - 3DEngine.ImageTests/GizmoActionsTests.cs
+    - 3DEngine.ImageTests/GizmoImageTests.cs
+    - 3DEngine.ImageTests/PanelImageTests.cs
+    - 3DEngine.ImageTests/RebuildImageTests.cs
+    - 3DEngine.ImageTests/SketchActionsTests.cs
+    - 3DEngine.ImageTests/SketchGapUiTests.cs
+    - 3DEngine.ImageTests/SketchOverlayTests.cs
+    - Engine.Tests/Http/DesktopSurfaceTests.cs
+    - Engine.Tests/Http/DocumentEndpointTests.cs
+    - Engine.Tests/Http/EngineHostStopTests.cs
+    - Engine.Tests/Http/EngineHostSubscriptionTests.cs
+    - Engine.Tests/Http/EventPayloadSchemaTests.cs
+    - Engine.Tests/Http/HttpBodyNameScenarioTests.cs
+    - Engine.Tests/Http/HttpSketchScenarioTests.cs
+    - Engine.Tests/Http/StringFieldTests.cs
     - docs/register.md
     - eng/test-floor.txt
     - docs/roadmap.md
@@ -72,3 +91,6 @@ that the solver refuses, and each comment of the cache says what the code does.
 ## Progress
 
 - 2026-10-31: opened by the codebase review of 2026-10-31 (b).
+- 2026-10-31: R11b merged; the task starts. E111 removes two parameters of `EngineHost`, so the 19 test files that
+  build a host enter the write set. `IsJson` keeps the default options, so a last line with a repeated member is
+  refused and not cut as a torn line. 6 new test cases; 6 injections caught.
