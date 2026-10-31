@@ -117,6 +117,7 @@ Therefore each approved objective must have a track here.
 - P0.57 — The reason of a native library that does not load separates a missing file from a platform with no payload. v0.139, TASK-0138.
 - P0.58 — The schema of the backend is in the list of the surface, and it gives the identity of the backend. v0.140, TASK-0139.
 - P0.59 — A sink of events does not throw, and a test holds each sink to it. v0.141, TASK-0140.
+- R11b — The overlay marks the point that a tap under the mouse or a finger would take. v0.143, TASK-0134, ADR-0041.
 
 ## Track 0 — Foundations
 
@@ -217,7 +218,8 @@ The first objective. Each phase ends with something that a person can observe.
 | R9 | A transform gizmo at a constant screen size. After the milestone "CAD on one part" (KD2). Translate only, from the defaults R9-Q1 to Q8 of 2026-10-27. ADR-0038, TASK-0113. | 5–8 |
 | R10 | A numeric pad and an expression evaluator. The pad gives the sizes of a new box and the offsets of a move; the drags of the camera have no numeric equivalent. The keys of undo and redo (R-0041). ADR-0032, TASK-0094. | 3–5 |
 | R11a | A tap of the sketch snaps to a midpoint, a line, a curve or the grid (the codebase review of 2026-10-31, sections 5 and 6, Q2 A). TASK-0131. | 3–4 |
-| R11 | Escalated selection and a snap engine. The rest after R11a. | 4–6 |
+| R11b | The mark of the snap under the mouse, and under a finger before its tap (ADR-0041 item 6). TASK-0134. | 2–3 |
+| R11 | Escalated selection and a snap engine. The rest after R11b. | 4–6 |
 
 ## Track K — The kernel
 

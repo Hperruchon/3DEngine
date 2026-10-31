@@ -208,6 +208,29 @@ public class SketchActionsTests
         Assert.Equal((body, "Extrude"), (created.Handle.Id, created.Kind));
     }
 
+    // ADR-0041 item 6 (phase R11b, TASK-0134): the mark under the mouse is the pixel of the point that a
+    // tap there would take: the midpoint of a line near its middle, and no mark for the tool Select.
+    [Fact]
+    public void The_Mark_Is_The_Pixel_Of_The_Point_That_A_Tap_Would_Take()
+    {
+        using var host = new EngineHost(new InProcessMeshBackend(), "managed", "test");
+        var actions = new SketchActions(host.Session);
+        actions.Create(Datums.XY.Id);
+        var (a, b) = (actions.AddPoint(-20, 0)!.Value, actions.AddPoint(20, 0)!.Value);
+        actions.AddLine(a, b);
+        var camera = Facing();
+        var sketch = actions.Current()!;
+        var middle = SketchOverlay.Pixel(sketch, camera, Width, Height, (0, 0))!.Value;
+
+        var mark = actions.Mark(camera, middle.X + 9, middle.Y + 7, Width, Height);
+
+        Assert.Equal(middle, mark);
+        var start = SketchOverlay.Pixel(sketch, camera, Width, Height, (-20, 0))!.Value;
+        Assert.Equal(start, actions.Mark(camera, start.X + 5, start.Y - 4, Width, Height));
+        actions.Tool.Kind = SketchToolKind.Select;
+        Assert.Null(actions.Mark(camera, middle.X + 9, middle.Y + 7, Width, Height));
+    }
+
     // Phase K2e (TASK-0122): a touch script of the tools Circle and Arc through the session adds a
     // circle and an arc, the sketch is solved, and a tap of the tool Select on each curve picks it.
     [Fact]

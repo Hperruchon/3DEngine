@@ -70,6 +70,19 @@ internal sealed class SketchActions(DocumentSession session) : ISketchEditor
         Tool.Tap(x, y, Position(datum, camera, x, y, width, height), SketchOverlay.Picture(sketch, camera, width, height), this);
     }
 
+    // ADR-0041 item 6 (phase R11b): the pixel of the point that a tap of the tool at this pixel would
+    // take, for the mark of the overlay, or null for the tool Select and for no position.
+    public System.Numerics.Vector2? Mark(Camera camera, double x, double y, double width, double height)
+    {
+        ArgumentNullException.ThrowIfNull(camera);
+        if (Tool.Kind == SketchToolKind.Select || Current() is not { } sketch || Datums.Find(sketch.DatumId) is not { } datum || !(width > 0 && height > 0))
+            return null;
+        var picture = SketchOverlay.Picture(sketch, camera, width, height);
+        return SketchTool.Target(x, y, Position(datum, camera, x, y, width, height), picture) is { } target
+            ? SketchOverlay.Pixel(sketch, camera, width, height, target)
+            : null;
+    }
+
     // The rounded position of a pixel on the plane of the datum, or null. The step comes from the
     // millimetres between the positions of this pixel and of the next pixel to the right.
     private static (double X, double Y)? Position(Datum datum, Camera camera, double x, double y, double width, double height)
