@@ -60,7 +60,7 @@ public sealed class ExtrudeCommandHandler : ICommandHandler, ICommandEncoder
         // Finding E99 of the codebase review of 2026-10-30 (b) (TASK-0123): the body takes the
         // identifier of the command, so a command that the log holds is refused before the backend,
         // as for each other sketch command. The backend refused it only by the key that it held.
-        if (SketchResults.InUse(document, command) is { } inUse)
+        if (SketchResults.InUse(document, command, createsItem: true) is { } inUse)
             return Task.FromResult(inUse);
 
         if (SketchModel.Find(document, extrude.SketchId) is not { } sketch)

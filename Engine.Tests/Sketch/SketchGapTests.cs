@@ -242,6 +242,52 @@ public sealed class SketchGapTests
         Assert.Equal((2.0, 2.0), replayed.Document.Sketches.Single().Points.Where(p => p.Id == point.CommandId).Select(p => (p.X, p.Y)).Single());
     }
 
+    private static CommandRegistry Registry()
+    {
+        var registry = new CommandRegistry();
+        HandlerCatalog.RegisterAll(registry, new QueryRegistry());
+        return registry;
+    }
+
+    // Finding E103 of the codebase review of 2026-10-31 (TASK-0132, Q1 A): v0.117 to v0.122 applied an
+    // arc with its start at its centre, and a tangent of a line whose start is the centre. A replay of
+    // their logs applies them, and the solve gives no solution, so the sketch shows as not solved.
+    // A live command is still refused (CircleArcTests).
+    [Fact]
+    public async Task A_Replay_Applies_The_Curves_That_An_Earlier_Engine_Applied()
+    {
+        var sketch = new CreateSketchCommand { DatumId = Datums.XY.Id };
+        var c = new AddSketchPointCommand { SketchId = sketch.CommandId, X = 0, Y = 0 };
+        var s = new AddSketchPointCommand { SketchId = sketch.CommandId, X = 0, Y = 0 };
+        var e = new AddSketchPointCommand { SketchId = sketch.CommandId, X = 0, Y = 5 };
+        var arc = new AddSketchArcCommand { SketchId = sketch.CommandId, CenterPointId = c.CommandId, StartPointId = s.CommandId, EndPointId = e.CommandId };
+        var far = new AddSketchPointCommand { SketchId = sketch.CommandId, X = 9, Y = 0 };
+        var circle = new AddSketchCircleCommand { SketchId = sketch.CommandId, CenterPointId = c.CommandId, Radius = 2 };
+        var line = new AddSketchLineCommand { SketchId = sketch.CommandId, StartPointId = c.CommandId, EndPointId = far.CommandId };
+        var tangent = new AddSketchConstraintCommand { SketchId = sketch.CommandId, Kind = "tangent", First = line.CommandId, Second = circle.CommandId };
+
+        var replayed = await Replay.ReplayLog(new Command[] { sketch, c, s, e, arc, far, circle, line, tangent }, Registry(), new InProcessMeshBackend());
+
+        var record = replayed.Document.Sketches.Single();
+        Assert.Equal((1, 1, 1), (record.Arcs.Count, record.Circles.Count, record.Constraints.Count));
+        Assert.False(SketchSolver.Status(record).Solved);
+    }
+
+    // Finding E104 (TASK-0132): an add that the log holds two times gave two items with one identifier,
+    // or an IndexOutOfRangeException of the solver. A command that creates an item is refused also for
+    // an entry, so the replay names the entry.
+    [Fact]
+    public async Task A_Replay_Refuses_An_Add_Whose_Identifier_Came_Before()
+    {
+        var sketch = new CreateSketchCommand { DatumId = Datums.XY.Id };
+        var point = new AddSketchPointCommand { SketchId = sketch.CommandId, X = 1, Y = 1 };
+
+        var divergence = await Assert.ThrowsAsync<ReplayDivergenceException>(
+            () => Replay.ReplayLog(new Command[] { sketch, point, point }, Registry(), new InProcessMeshBackend()));
+
+        Assert.Contains(DiagnosticCodes.SketchIdInUse, divergence.Message);
+    }
+
     // E92: two points of a line at one position give their own reason, and not "cross or touch".
     [Fact]
     public void A_Line_Of_Length_Zero_Gives_Its_Own_Reason()

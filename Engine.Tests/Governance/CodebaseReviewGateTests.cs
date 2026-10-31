@@ -358,6 +358,22 @@ public class CodebaseReviewGateTests
                 yield return $"\"{near.Groups["line"].Value}\" is a heading of a version that does not start with \"## v\"; the review counter reads that form only";
         }
 
+        // Finding T106 of the codebase review of 2026-10-31 (TASK-0132): "## version", a setext
+        // heading, a heading in a quote or a list, an HTML heading and a letter that looks like v
+        // passed. The ledger has one title on its first line and the headings "## v" only, so each
+        // other heading line is a problem.
+        var lines = ledger.Replace("\r", string.Empty, StringComparison.Ordinal).Split('\n');
+        for (var index = 0; index < lines.Length; index++)
+        {
+            var line = lines[index];
+            var heading = Regex.IsMatch(line, @"^ {0,3}#") && !(index == 0 && line.StartsWith("# ", StringComparison.Ordinal)) && !LedgerEntry.IsMatch(line) && !NearLedgerEntry.IsMatch(line);
+            var nested = Regex.IsMatch(line, @"^\s*(?:[>*+-]\s*)+#");
+            var html = Regex.IsMatch(line, @"^\s*<h[1-6]", RegexOptions.IgnoreCase);
+            var setext = index > 0 && lines[index - 1].Trim().Length > 0 && Regex.IsMatch(line, @"^ {0,3}(?:=+|-+)\s*$");
+            if (heading || nested || html || setext)
+                yield return $"line {index + 1} \"{line}\" is a heading that does not start with \"## v\"; the review counter reads that form only";
+        }
+
         (int, int)? previous = null;
         foreach (Match entry in LedgerEntry.Matches(ledger.Replace("\r", string.Empty, StringComparison.Ordinal)))
         {
@@ -512,6 +528,16 @@ public class CodebaseReviewGateTests
     [InlineData("##\u00A0v0.11 — An entry (K0b, TASK-0003)")]
     [InlineData("### v0.11 — An entry (K0b, TASK-0003)")]
     [InlineData("#v0.11 — An entry (K0b, TASK-0003)")]
+    // Finding T106 (TASK-0132): "version", a setext heading, a heading in a quote or a list, an HTML
+    // heading, a Greek nu, a full-width v, and a bold version.
+    [InlineData("## version 0.11 — An entry (K0b, TASK-0003)")]
+    [InlineData("v0.11 — An entry (K0b, TASK-0003)\n---")]
+    [InlineData("> ## v0.11 — An entry (K0b, TASK-0003)")]
+    [InlineData("- ## v0.11 — An entry (K0b, TASK-0003)")]
+    [InlineData("<h2>v0.11 — An entry (K0b, TASK-0003)</h2>")]
+    [InlineData("## \u03BD0.11 — An entry (K0b, TASK-0003)")]
+    [InlineData("## \uFF560.11 — An entry (K0b, TASK-0003)")]
+    [InlineData("## **v0.11** — An entry (K0b, TASK-0003)")]
     public void A_Heading_Of_A_Near_Form_Is_A_Problem(string heading)
     {
         var ledger = "## v0.10 — The review (governance, TASK-0001)\n\n" + heading + "\n";

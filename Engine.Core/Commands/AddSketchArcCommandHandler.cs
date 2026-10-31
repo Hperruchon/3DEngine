@@ -65,7 +65,7 @@ public sealed class AddSketchArcCommandHandler : ICommandHandler, ICommandEncode
 
         // Finding E86 of the codebase review of 2026-10-29: the item takes the identifier of the
         // command, so a command that the log holds is refused before it gives a second item.
-        if (SketchResults.InUse(document, command) is { } inUse)
+        if (SketchResults.InUse(document, command, createsItem: true) is { } inUse)
             return Task.FromResult(inUse);
 
         if (SketchModel.Find(document, add.SketchId) is not { } sketch)
@@ -84,8 +84,10 @@ public sealed class AddSketchArcCommandHandler : ICommandHandler, ICommandEncode
         // Finding E98 of the codebase review of 2026-10-30 (b) (TASK-0123): a start or an end at the
         // position of the centre gives an arc of radius 0, as a circle of radius 0, which the add of
         // a circle refuses. Until TASK-0123 the solve then moved the points of the person.
+        // Finding E103 of the codebase review of 2026-10-31 (TASK-0132, Q1 A): v0.117 to v0.124 applied
+        // such an arc, so an open and a replay of their files apply it; the solve then gives no solution.
         var (c, s, e) = (Position(sketch, add.CenterPointId), Position(sketch, add.StartPointId), Position(sketch, add.EndPointId));
-        if (s == c || e == c)
+        if (!SketchResults.ApplyingEntry.Value && (s == c || e == c))
             return Task.FromResult(SketchResults.Failure(
                 DiagnosticCodes.SketchCurveInvalid, "The start and the end of an arc are away from its centre, and the command puts one of them on it."));
 
