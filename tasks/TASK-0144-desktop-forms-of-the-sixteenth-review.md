@@ -1,7 +1,7 @@
 ---
 id: 0144
 title: An arc ends within a pixel of its start, and Escape cancels a press on a handle before the slop
-status: Ready
+status: Active
 phase: P0.62
 opened: 2026-10-31
 depends-on: [0141]
@@ -58,3 +58,8 @@ the rest of a press on a handle give nothing.
 ## Progress
 
 - 2026-10-31: opened by the codebase review of 2026-10-31 (b).
+- 2026-10-31: R11b merged; the task starts. The tool Arc ends the curve when the new end is within HitPixels of the
+  start, with the scale of the tap and the start; the pad gives no pixel and keeps the limit of V61. Escape before the
+  slop cancels the press on a handle with no intent. The first form of the rule in pixels ended each arc of the pad,
+  because the scale was 0 with no pixel; the GPU test of the curves showed it, and a test of the pad holds it now. 3 new
+  test cases; 3 injections caught.
