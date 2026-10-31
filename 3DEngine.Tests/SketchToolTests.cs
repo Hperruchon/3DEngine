@@ -461,6 +461,51 @@ public class SketchToolTests
         Assert.Equal(centre, tool.First);
     }
 
+    // Finding V57 of the codebase review of 2026-10-31 (TASK-0133): a centre that moved between the two
+    // taps gives the radius from its current position.
+    [Fact]
+    public void A_Circle_Takes_The_Current_Position_Of_Its_Centre()
+    {
+        var (tool, editor) = (new SketchTool { Kind = SketchToolKind.Circle }, new Editor());
+        Tap(tool, editor, 0, 0);
+        var centre = tool.First!.Value;
+        editor.Points[centre] = (10, 0);
+
+        Tap(tool, editor, 13, 4);
+
+        Assert.Equal("circle (10,0) 5", editor.Log[^1]);
+    }
+
+    // Finding V61 (TASK-0133): a new end in the direction of the start ends the curve, with no second
+    // point at the position of the start and no arc.
+    [Fact]
+    public void An_End_In_The_Direction_Of_The_Start_Ends_The_Arc()
+    {
+        var (tool, editor) = (new SketchTool { Kind = SketchToolKind.Arc }, new Editor());
+
+        Tap(tool, editor, 0, 0);
+        Tap(tool, editor, 5, 0);
+        Tap(tool, editor, 10, 0);
+
+        Assert.Equal(["point 0 0", "point 5 0"], editor.Log);
+        Assert.Null(tool.First);
+    }
+
+    // Finding V62 (TASK-0133): a tap on a circle that a line touches selects the circle, the nearer
+    // item; the line within 22 pixels took the pick.
+    [Fact]
+    public void The_Tool_Select_Picks_The_Nearer_Of_A_Line_And_A_Curve()
+    {
+        var editor = new Editor();
+        editor.AddCircle(editor.AddPoint(30, 30)!.Value, 5);
+        editor.AddLine(editor.AddPoint(20, 25)!.Value, editor.AddPoint(40, 25)!.Value);
+        var tool = new SketchTool { Kind = SketchToolKind.Select };
+
+        tool.Tap(330, 260, null, editor.Picture(), editor);
+
+        Assert.Equal([editor.Circles.Keys.Single()], tool.Selection);
+    }
+
     private static (double X, double Y, double Z) Normal((double X, double Y, double Z) v)
     {
         var length = Math.Sqrt(v.X * v.X + v.Y * v.Y + v.Z * v.Z);

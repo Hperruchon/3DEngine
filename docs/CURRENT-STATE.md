@@ -3867,3 +3867,30 @@ New tests: 32. The test list holds 1357 (994 in `Engine.Tests`, 221 in `3DEngine
 `3DEngine.ImageTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
 entries: 14 of 15. New diagnostic codes: none. Since the review of v0.130, 1 product milestone and 4 entries followed
 it.
+
+## v0.135 — The pad of an angle takes degrees, and the tools and the window follow the review (P0.53, TASK-0133)
+
+The codebase review of 2026-10-31 put its desktop findings after R11a, which changes the same tool.
+
+**The change.**
+
+- V56: the Value pad of an angle shows its degrees and gives the cosine and the sine; a tangent of two curves has no
+  Value, because Tangent and Inside tangent give its value. V60: `CosineAndSine` reads the turn, so 1e20 gives the angle
+  of its turn.
+- V57: a pending circle or arc reads the current positions of its centre and its start. V61: a new end of an arc in
+  the direction of its start ends the curve, with no second point. V62: the tool Select picks the nearer of a line and
+  a curve.
+- V58: from a press on a handle of the gizmo, the wheel, the camera keys, H, undo and redo give nothing. V59: On curve
+  and Tangent take the item checks of `SketchConstraints.Refusal`.
+
+**Proof.** 6 new test cases: 4 in `3DEngine.Tests` and 2 in `3DEngine.ImageTests/SketchWindowUiTests.cs`. 9 injections:
+each one failed a test.
+
+**What stays.** No person tried the new pad and the picks with the real window.
+
+**A correction.** None.
+
+New tests: 6. The test list holds 1363 (994 in `Engine.Tests`, 225 in `3DEngine.Tests`, 144 in
+`3DEngine.ImageTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
+entries: 14 of 15. New diagnostic codes: none. Since the review of v0.130, 1 product milestone and 5 entries followed
+it.

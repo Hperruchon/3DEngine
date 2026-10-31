@@ -309,6 +309,54 @@ public sealed class SketchWindowUiTests
         Assert.Equal([2.5], radius.Values);
     }
 
+    // Findings V59 and V60 of the codebase review of 2026-10-31 (TASK-0133): the window offers On curve
+    // and Tangent only where the engine accepts them, and CosineAndSine reads the turn.
+    [Fact]
+    public void The_Kinds_On_A_Curve_Take_The_Item_Checks_Of_The_Engine()
+    {
+        static string[] Buttons(params Guid[] selection)
+        {
+            using var ui = Opened(CurvePanel(selection));
+            string[] all = [.. DesktopUi.ConstraintButtons.Select(button => button.Label), DesktopUi.MovePointLabel, DesktopUi.ValueLabel, DesktopUi.DeleteLabel];
+            return [.. all.Where(label => ui.ItemRectangle(DesktopUi.SketchItem(label)) is not null)];
+        }
+
+        // A is the centre of R1 and the start of A1, and an end of L1.
+        Assert.Equal([DesktopUi.DeleteLabel], Buttons(Ring, A));
+        Assert.Equal([DesktopUi.DeleteLabel], Buttons(Bow, A));
+        Assert.Equal([DesktopUi.DeleteLabel], Buttons(Ring, Line));
+        Assert.Equal(DesktopUi.CosineAndSine(30), DesktopUi.CosineAndSine(360000030));
+        Assert.Equal(DesktopUi.CosineAndSine(1e20 % 360), DesktopUi.CosineAndSine(1e20));
+    }
+
+    private static readonly Guid AngleId = Guid.Parse("a1000000-0000-0000-0000-000000000000");
+    private static readonly Guid TangentId = Guid.Parse("71000000-0000-0000-0000-000000000000");
+
+    // Finding V56 (TASK-0133): the Value pad of an angle shows its degrees and gives the cosine and the
+    // sine; a tangent of two curves has no Value.
+    [Fact]
+    public void The_Value_Of_An_Angle_Is_In_Degrees()
+    {
+        var lines = LinePanel().Active!;
+        var angle = lines with { Constraints = [.. lines.Constraints, new SketchConstraintInfo(AngleId, "angle", [Line, Other], [0, 1], 0)] };
+        var panel = new SketchPanel([angle], angle, SketchToolKind.Select, false, [AngleId], null);
+        using var ui = Opened(panel);
+        Tap(ui, DeviceKind.Mouse, DesktopUi.SketchItem(DesktopUi.ValueLabel), panel);
+
+        Assert.Equal(DesktopUi.AngleUnit, ui.Pad!.Unit);
+        Assert.Equal("90", Assert.Single(ui.Pad.Fields).Text);
+        foreach (var key in new[] { "Clear", "4", "5", "Apply" })
+            Tap(ui, DeviceKind.Mouse, DesktopUi.PadItem(key), panel);
+        var set = Assert.IsType<SetConstraintValueAction>(Assert.Single(ui.TakeActions()));
+        Assert.Equal(DesktopUi.CosineAndSine(45), set.Values);
+
+        var curves = CurvePanel().Active!;
+        var tangent = curves with { Constraints = [.. curves.Constraints, new SketchConstraintInfo(TangentId, "tangent", [Ring, Bow], [1], 0)] };
+        var tangentPanel = new SketchPanel([tangent], tangent, SketchToolKind.Select, false, [TangentId], null);
+        using var other = Opened(tangentPanel);
+        Assert.Null(other.ItemRectangle(DesktopUi.SketchItem(DesktopUi.ValueLabel)));
+    }
+
     // Value opens the pad with the values of the constraint, and Move point with the position.
     [Fact]
     public void Value_And_Move_Point_Start_With_The_Current_Numbers()
