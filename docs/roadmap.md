@@ -134,6 +134,7 @@ Therefore each approved objective must have a track here.
 - P0.66 — The lag test of the events fills the queue of the subscriber with a count and no timing. v0.156, TASK-0154.
 - V3 — A contour proposal of a placed image becomes an editable sketch. v0.157, TASK-0155, ADR-0047.
 - P0.67 — Each runner hashes a native replay with geometry and solved sketches, and a last job compares the hashes. v0.158, TASK-0156.
+- P8g — The live bodies leave the engine as one binary STL file, from the surface, the command line and the desktop. v0.159, TASK-0157, ADR-0048.
 
 ## Track 0 — Foundations
 

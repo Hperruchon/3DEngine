@@ -1,7 +1,7 @@
 ---
 id: 0157
 title: The live bodies leave the engine as one binary STL file, from the surface, the command line and the desktop
-status: Active
+status: Done
 phase: P8g
 opened: 2026-10-31
 depends-on: [0156]
@@ -56,12 +56,26 @@ A person, an agent and a script each get the live bodies of a document as one ST
 
 ## Acceptance criteria
 
-- [ ] A box gives twelve triangles with unit normals out of it, and each vertex is a position of the tessellation.
-- [ ] The route and the command line give the file and each refusal.
-- [ ] A clean build (`--no-incremental`) gives zero errors and zero warnings.
-- [ ] Continuous integration passes on the three runners, on the branch and on `main` after the merge.
+- [x] A box gives twelve triangles with unit normals out of it, and each vertex is a position of the tessellation.
+- [x] The route and the command line give the file and each refusal.
+- [x] A clean build (`--no-incremental`) gives zero errors and zero warnings.
+- [x] Continuous integration passes on the three runners, on the branch and on `main` after the merge.
+
+## Outcome
+
+Status: Done · commit (the merge of the branch p8g-stl-export) · v0.159
+
+## Method
+
+Mechanical: the file of a box read back triangle by triangle, two boxes, an empty document, the managed backend, the
+            route, the verb, and one injection for each rule (7).
+Judgement:  binary STL in millimetres; each live body, visible or hidden; a new read of the session in place of a
+            query, because a file is not the result of a query.
+Weakest:    no other program read the file; the test reads it with its own reader, and the button of the desktop has no
+            test of its own.
 
 ## Progress
 
 - 2026-10-31: ADR-0048, the writer, the read of the session, the route, the verb and the button. The test of the command
   line found that its export held the document file after it; the verb closes its session now. 4 new test cases.
+- 2026-10-31: closed at v0.159.

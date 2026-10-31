@@ -4584,3 +4584,33 @@ New tests: 1. The test list holds 1501 (1066 in `Engine.Tests`, 275 in `3DEngine
 `3DEngine.ImageTests`, 3 in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and
 zero warnings. Open entries: 14 of 15. New diagnostic codes: 0. Since the review of v0.149, 3 product milestones and 9
 entries followed it.
+
+## v0.159 — The live bodies leave the engine as one binary STL file, from the surface, the command line and the desktop (P8g, TASK-0157)
+
+On 2026-10-31 the owner gave the order: after V3 and the determinism hash, "an STL export of the live bodies". P0.67
+(v0.158) showed that the native triangles are the same bits on the three platforms.
+
+**The change.**
+
+- `Engine.Core/Export/StlExport.cs` writes each live body, in the order of its handle, as binary STL: a header of 80
+  bytes, the count, and for each triangle the unit normal by the right-hand rule and the three vertices as floats, in
+  millimetres (ADR-0048 items 1 and 2). A backend with no tessellation gives `E-GEOM-CAP-MISSING`, and a tessellation
+  that fails gives `E-GEOM-NATIVE-OP`.
+- `DocumentSession.ReadGeometry` gives the Document and its backend in the serial section (item 3).
+- `GET /export/stl` gives the file as `model/stl`, or 501 and 500 with the envelope (item 4).
+  `engine export stl <document.3de> <file.stl>` opens a document file and writes the file (item 5). The button
+  "Export STL" of the desktop writes it in the document folder (item 6).
+
+**Proof.** 4 new test cases in `Engine.Tests/Export/StlExportTests.cs`: a box gives twelve triangles whose normals are
+unit vectors out of it and whose vertices are positions of the tessellation; two boxes, an empty document and the
+managed backend; the route; the verb. 7 injections, one for each rule; each one failed a test.
+
+**What stays.** ASCII STL, colours, the visible bodies only, and STEP (K6). No other program read a file of the export.
+
+**A correction.** The test of the verb found that the export held the document file after it, because its session
+stayed open; the verb closes its session now.
+
+New tests: 4. The test list holds 1505 (1070 in `Engine.Tests`, 275 in `3DEngine.Tests`, 157 in
+`3DEngine.ImageTests`, 3 in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and
+zero warnings. Open entries: 14 of 15. New diagnostic codes: 0. Since the review of v0.149, 4 product milestones and 10
+entries followed it.
