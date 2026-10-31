@@ -1,7 +1,7 @@
 ---
 id: 0132
 title: The engine, the surface and the gates close the forms of the fifteenth review
-status: Active
+status: Done
 phase: P0.52
 opened: 2026-10-31
 depends-on: [0131]
@@ -73,10 +73,25 @@ The engine, the surface and the gates close each form of the review, and a test 
 
 ## Acceptance criteria
 
-- [ ] Each form of the review fails a test or the gate program.
-- [ ] An injection that restores each old rule fails a test.
-- [ ] A clean build (`--no-incremental`) gives zero errors and zero warnings.
-- [ ] Continuous integration passes on the three runners, on the branch and on `main` after the merge.
+- [x] Each form of the review fails a test or the gate program.
+- [x] An injection that restores each old rule fails a test.
+- [x] A clean build (`--no-incremental`) gives zero errors and zero warnings.
+- [x] Continuous integration passes on the three runners, on the branch and on `main` after the merge.
+
+## Outcome
+
+Status: Done · commit (the merge of the branch p052-fifteenth-forms) · v0.134
+
+## Method
+
+Mechanical: the flag of an entry in two refusals and in the guard of an add, one option of the route, and the forms of
+            the gates.
+Judgement:  an add keeps its guard at an entry, because its second entry gives two items with one identifier; T106
+            refuses each heading that is not "## v", because the ledger has no other heading; T108 refuses each
+            character of the category Format, and no tracked file holds one.
+Weakest:    T109 still reads the syntax for a call whose separator is not a literal; the implicit usings of an SDK
+            other than Microsoft.NET.Sdk are not in the list, because the references of the compilation do not hold
+            their assemblies.
 
 ## Progress
 
@@ -85,3 +100,4 @@ The engine, the surface and the gates close each form of the review, and a test 
   takes the list of implicit usings of `ConstantStrings`, and `docs/diagnostics.md`, whose row of
   `E-SKETCH-ID-IN-USE` said that an open never raises the code, and the nine handlers that call `SketchResults.InUse`
   with its new parameter.
+- 2026-10-31: 32 new test cases; 13 injections caught; closed at v0.134.
