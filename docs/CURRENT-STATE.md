@@ -4555,3 +4555,32 @@ New tests: 11. The test list holds 1500 (1065 in `Engine.Tests`, 275 in `3DEngin
 `3DEngine.ImageTests`, 3 in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and
 zero warnings. Open entries: 15 of 15. New diagnostic codes: 0. Since the review of v0.149, 3 product milestones and 8
 entries followed it.
+
+## v0.158 — Each runner hashes a native replay with geometry and solved sketches, and a last job compares the hashes (P0.67, TASK-0156)
+
+On 2026-10-31 the owner gave the order: after V3, the cross-platform determinism hash in CI, and close the oldest
+register entry that the work answers. Anti-objective 16 says that a replay gives the same result on each platform.
+
+**The change.**
+
+- `Engine.Tests/ReplayDeterminism/CrossPlatformHashTests.cs` replays a log with a cut, two moves and an extrude of a
+  sketch with six constraints on the native backend, and writes the SHA-256 of the bits of each mesh, each bounding box
+  and each solved point, with a summary line for each body and each point, to the file of `DETERMINISM_HASH_FILE`.
+- The job "Gate" keeps the file of each runner as an artifact, and the new job "Compare the determinism hashes" compares
+  the three with `eng/compare-determinism.js`: a missing runner or two different hashes fail it, with the lines that
+  differ as annotations.
+- Register entry R-0023, opened 2026-09-25, is closed: each runner compared with its own constants only.
+
+**Proof.** The script passed three equal files and failed a changed point, a changed hash and a missing runner. The
+three runners of the pipeline give one hash, 61cfb8ff75aceb8466a27a3e608ea3bdd1a4aca399e1a1674b3a979ecfecad8f: the
+native meshes, the boxes and the solved points are the same bits on Windows x64, Linux x64 and macOS arm64.
+
+**What stays.** One log only, and no baseline in the repository, so a change on the three runners at once passes.
+
+**A correction.** The first two runs failed with equal numbers: `StringBuilder.AppendLine` wrote a carriage return and a
+line feed on Windows, so Windows had its own hash. Each line ends with a line feed now.
+
+New tests: 1. The test list holds 1501 (1066 in `Engine.Tests`, 275 in `3DEngine.Tests`, 157 in
+`3DEngine.ImageTests`, 3 in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and
+zero warnings. Open entries: 14 of 15. New diagnostic codes: 0. Since the review of v0.149, 3 product milestones and 9
+entries followed it.

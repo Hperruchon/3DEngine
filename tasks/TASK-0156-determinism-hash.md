@@ -1,7 +1,7 @@
 ---
 id: 0156
 title: Each runner hashes a native replay with geometry and solved sketches, and a last job compares the hashes
-status: Active
+status: Done
 phase: P0.67
 opened: 2026-10-31
 depends-on: [0155]
@@ -57,10 +57,22 @@ A difference of one bit in a mesh, a bounding box or a solved point between two 
 
 ## Acceptance criteria
 
-- [ ] The compare script passes three equal files and fails a changed line, a changed hash and a missing runner.
-- [ ] The pipeline gives one hash on the three runners.
-- [ ] A clean build (`--no-incremental`) gives zero errors and zero warnings.
-- [ ] Continuous integration passes on the three runners, on the branch and on `main` after the merge.
+- [x] The compare script passes three equal files and fails a changed line, a changed hash and a missing runner.
+- [x] The pipeline gives one hash on the three runners.
+- [x] A clean build (`--no-incremental`) gives zero errors and zero warnings.
+- [x] Continuous integration passes on the three runners, on the branch and on `main` after the merge.
+
+## Outcome
+
+Status: Done · commit (the merge of the branch p067-determinism-hash) · v0.158
+
+## Method
+
+Mechanical: the compare script on three equal files, a changed point, a changed hash and a missing runner; three runs
+            of the pipeline, the last of them with one hash on the three runners.
+Judgement:  the full meshes in the hash, and not only the records of the Document; a short hash of each part of a mesh
+            in the summary, so a difference names its part.
+Weakest:    one log; a later log with other operations can find a difference that this one does not reach.
 
 ## Progress
 
@@ -72,3 +84,4 @@ A difference of one bit in a mesh, a bounding box or a solved point between two 
 - 2026-10-31: run 41223228416 gave 61cfb8ff on Ubuntu and on macOS and dd2a6132 on Windows, with equal summaries, short
   hashes of the meshes included. AppendLine wrote a carriage return and a line feed on Windows; each line ends with a line feed now,
   and Windows gives 61cfb8ff75aceb8466a27a3e608ea3bdd1a4aca399e1a1674b3a979ecfecad8f too.
+- 2026-10-31: closed at v0.158.
