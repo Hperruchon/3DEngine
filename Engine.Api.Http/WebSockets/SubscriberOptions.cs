@@ -1,10 +1,11 @@
 namespace Engine.Api.Http.WebSockets;
 
 // Tunables for Subscriber. Defaults match ADR-0005 / TASK-0010 §6 (1024-deep
-// outbound queue, 30 s idle heartbeat). PumpDelay is a test seam — production
-// keeps it at TimeSpan.Zero. Setting it non-zero slows the pump deterministically
-// so tests can saturate the outbound queue and exercise the lag path without
-// timing flakiness.
+// outbound queue, 30 s idle heartbeat). PumpGate is a test seam, and production
+// keeps it null: the pump awaits the task of the gate before each send, so a test
+// holds the pump and fills the outbound queue with a count and no timing. Until
+// TASK-0154 the seam was a delay of the pump, and the lag test failed on a slow
+// runner, whose posts came slower than the delay (register entry R-0047).
 //
 // PermittedOriginHosts lists the hosts that a browser Origin header may name on
 // a WebSocket upgrade. The host serves a loopback address only (ADR-0019 §5),
@@ -15,12 +16,12 @@ namespace Engine.Api.Http.WebSockets;
 internal sealed record SubscriberOptions(
     int ChannelCapacity,
     TimeSpan HeartbeatInterval,
-    TimeSpan PumpDelay)
+    Func<CancellationToken, Task>? PumpGate)
 {
     public static SubscriberOptions Default { get; } = new(
         ChannelCapacity: Subscriber.DefaultChannelCapacity,
         HeartbeatInterval: Subscriber.DefaultHeartbeatInterval,
-        PumpDelay: TimeSpan.Zero);
+        PumpGate: null);
 
     public IReadOnlyList<string> PermittedOriginHosts { get; init; } = ["localhost", "127.0.0.1", "[::1]"];
 }

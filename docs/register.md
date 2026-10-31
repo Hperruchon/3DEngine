@@ -439,18 +439,6 @@ the router gives to the panel or to the intents, and each intent. A focus to ano
 `FocusLostSample` to both. Its click reached the window above the desktop, and the log held motions of a mouse that
 the probe did not move, so the run stopped. The next run needs a time when nobody else uses the mouse.
 
-### R-0047 · The lag test of the events depends on the speed of the runner
-- class: risk
-- opened: 2026-10-31
-- due: 2026-11-30
-- extended: no
-- refs: `Engine.Tests/Http/EventsEndpointLagTests.cs:53-79`, run 41214590078, TASK-0148
-The slow subscriber overflows only when twelve posts arrive faster than its pump delay of 200 ms. In run 41214590078
-on Windows, of a commit that changed documents only, no close came, and the read stopped at its limit of 10 s with
-`OperationCanceledException`. A red run with no cause in the change costs a run and hides a true failure.
-Exit: the test makes the overflow sure, for example with a pump that waits for a signal of the test, or the owner
-accepts it with a reason.
-
 ## Accepted compromises
 
 These are conditions that the project keeps permanently and by decision. They do not age.
@@ -491,6 +479,21 @@ needs a deliberate act.
 ---
 
 ## Closed
+
+### R-0047 · The lag test of the events depends on the speed of the runner
+- class: risk
+- opened: 2026-10-31
+- due: 2026-11-30
+- extended: no
+- refs: `Engine.Tests/Http/EventsEndpointLagTests.cs:53-79`, run 41214590078, TASK-0148
+The slow subscriber overflows only when twelve posts arrive faster than its pump delay of 200 ms. In run 41214590078
+on Windows, of a commit that changed documents only, no close came, and the read stopped at its limit of 10 s with
+`OperationCanceledException`. A red run with no cause in the change costs a run and hides a true failure.
+Exit: the test makes the overflow sure, for example with a pump that waits for a signal of the test, or the owner
+accepts it with a reason.
+Closed 2026-10-31 · resolved · TASK-0154. `SubscriberOptions.PumpGate` replaces the delay: the test holds the pump,
+and four events overflow a channel of two on each runner. With a pause of 500 ms between the posts the old test failed
+and the new one passed.
 
 ### R-0046 · An open of an earlier file and other input during a drag have no decision
 - class: risk

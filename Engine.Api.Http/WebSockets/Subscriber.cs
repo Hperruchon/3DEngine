@@ -38,13 +38,13 @@ internal sealed class Subscriber : IAsyncDisposable
     /// Completes when the pump exits — i.e. the connection should be torn down.
     public Task RunCompleted => _pumpTask;
 
-    private readonly TimeSpan _pumpDelay;
+    private readonly Func<CancellationToken, Task>? _pumpGate;
 
     public Subscriber(
         WebSocket socket,
         int channelCapacity = DefaultChannelCapacity,
         TimeSpan? heartbeatInterval = null,
-        TimeSpan? pumpDelay = null)
+        Func<CancellationToken, Task>? pumpGate = null)
     {
         _socket = socket ?? throw new ArgumentNullException(nameof(socket));
         ChannelCapacity = channelCapacity;
@@ -57,7 +57,7 @@ internal sealed class Subscriber : IAsyncDisposable
             AllowSynchronousContinuations = false,
         });
         _heartbeatInterval = heartbeatInterval ?? DefaultHeartbeatInterval;
-        _pumpDelay = pumpDelay ?? TimeSpan.Zero;
+        _pumpGate = pumpGate;
         _lastSendTicks = DateTime.UtcNow.Ticks;
 
         _pumpTask = Task.Run(PumpAsync);
@@ -94,8 +94,8 @@ internal sealed class Subscriber : IAsyncDisposable
         {
             await foreach (var message in _outbound.Reader.ReadAllAsync(_cts.Token).ConfigureAwait(false))
             {
-                if (_pumpDelay > TimeSpan.Zero)
-                    await Task.Delay(_pumpDelay, _cts.Token).ConfigureAwait(false);
+                if (_pumpGate is not null)
+                    await _pumpGate(_cts.Token).ConfigureAwait(false);
                 var bytes = JsonSerializer.SerializeToUtf8Bytes(message, message.GetType(), ApiJson.Options);
                 await _socket.SendAsync(bytes, WebSocketMessageType.Text, endOfMessage: true, _cts.Token).ConfigureAwait(false);
                 Interlocked.Exchange(ref _lastSendTicks, DateTime.UtcNow.Ticks);

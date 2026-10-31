@@ -45,7 +45,7 @@ public class HeartbeatTests : IClassFixture<WebApplicationFactory<Program>>
                 services.Replace(ServiceDescriptor.Singleton(new SubscriberOptions(
                     ChannelCapacity: Subscriber.DefaultChannelCapacity,
                     HeartbeatInterval: interval,
-                    PumpDelay: TimeSpan.Zero)));
+                    PumpGate: null)));
             });
         });
 
