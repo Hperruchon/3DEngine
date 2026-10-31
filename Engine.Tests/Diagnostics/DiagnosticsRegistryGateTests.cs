@@ -155,6 +155,10 @@ public class DiagnosticsRegistryGateTests
     [InlineData("static class P { static readonly string Tag = \"HIDDEN\"; static string Code() => 'E' + \"-x\" + Tag; }")]
     // The form of finding T116 (TASK-0143): a severity in a const char.
     [InlineData("static class P { const char S = 'E'; static readonly string Tag = \"HIDDEN\"; static string Code() => S + \"-x\" + Tag; }")]
+    // The forms of finding T120 of the codebase review of 2026-10-31 (c) (TASK-0150): a severity in a
+    // const char in an interpolation and in a call.
+    [InlineData("static class P { const char S = 'E'; static readonly string Tag = \"HIDDEN\"; static string Code() => $\"{S}-{\"SKETCH\"}-{Tag}\"; }")]
+    [InlineData("static class P { const char S = 'W'; static readonly string Tag = \"HIDDEN\"; static string Code() => string.Concat(S, \"-\", \"SKETCH\", \"-\", Tag); }")]
     public void A_Part_Of_A_Code_Is_An_Offence(string source)
     {
         Assert.NotEmpty(DiagnosticsScanner.PartsOfCodes([("Engine.Core/Probe.cs", source)]));

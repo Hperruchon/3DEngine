@@ -93,6 +93,11 @@ internal static class DiagnosticsScanner
             .Where(constant => constant.Value is string value && (IsPart(value) || IsSeverity(value)))
             .Select(constant => (constant.Path, constant.Line, (string)constant.Value))
             .Concat(constants.Where(IsSeverityBeforeAdd).Select(constant => (constant.Path, constant.Line, constant.Value + "-")))
+            // Finding T120 of the codebase review of 2026-10-31 (c) (TASK-0150): a const char E, W or I in
+            // an interpolation or a call gave no part. Each constant char of a severity is a part, as a
+            // constant string of a severity is.
+            .Concat(constants.Where(constant => constant.Value is char severity && IsSeverity(severity.ToString()))
+                .Select(constant => (constant.Path, constant.Line, constant.Value.ToString()!)))
             .Concat(list.SelectMany(BuiltParts))
             .Distinct();
     }

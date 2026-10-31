@@ -1,14 +1,15 @@
 ---
 id: 0150
 title: The pin rules read each imported file, the sink gate reads the desktop, and the next forms of the sixteenth review fail
-status: Ready
+status: Active
 phase: P0.64
 opened: 2026-10-31
 depends-on: [0148]
-governed-by: []
+governed-by: [0025]
 writes:
   create:
     - tasks/TASK-0150-gate-forms-of-the-seventeenth-review.md
+    - 3DEngine.ImageTests/DesktopSinkContractTests.cs
   modify:
     - Engine.Tests/Governance/DependencyDirectionGateTests.cs
     - Engine.Tests/EventSinkContractTests.cs
@@ -59,4 +60,8 @@ A pin through an imported file, a sink in any host, and the next forms of T113 t
 - [ ] Continuous integration passes on the three runners, on the branch and on `main` after the merge.
 
 ## Progress
-
+- 2026-10-31: T117 to T122. Each new form was a test case that the old gate passed; T117 and T118 were also
+  injected in real files: an imported .props file with OpenCvSharp4 in Engine.Core and with Vortice.Vulkan in
+  3DEngine.Core, a throwing sink in 3DEngine, and a list with no entry for 3DEngine. The set of T121 first named
+  U+FEFF, and the gate then refused the byte order mark of a file; the rule of the category Format keeps its exception.
+  12 new test cases in Engine.Tests and 1 in 3DEngine.ImageTests.
