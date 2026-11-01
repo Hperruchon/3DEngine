@@ -74,13 +74,26 @@ public sealed partial class AssetStore
                 file.Flush(flushToDisk: true);
             }
 
+            // Finding E120 of the codebase review of 2026-11-01 (TASK-0160): a move that replaced the file failed on
+            // Windows while another put read or replaced it. The move replaces nothing first. When the name exists,
+            // only a file that does not hold its name is replaced (E115), and the name is read again before a failure.
             try
             {
-                File.Move(scratch, path, overwrite: true);
+                File.Move(scratch, path, overwrite: false);
             }
-            catch (Exception ex) when ((ex is IOException or UnauthorizedAccessException) && HoldsName(path, name))
+            catch (Exception ex) when ((ex is IOException or UnauthorizedAccessException) && File.Exists(path))
             {
-                // Another put of the same content came first; the content of the name is the same.
+                if (!HoldsName(path, name))
+                {
+                    try
+                    {
+                        File.Move(scratch, path, overwrite: true);
+                    }
+                    catch (Exception again) when ((again is IOException or UnauthorizedAccessException) && HoldsName(path, name))
+                    {
+                        // Another put of the same content replaced the file first; the content of the name is the same.
+                    }
+                }
             }
 
             return (name, bytes.Length, null);

@@ -13,6 +13,10 @@ public static class StlExport
     // The 80 bytes of the header, padded with spaces.
     public const string Header = "3DEngine STL export, binary, millimetres";
 
+    // Finding E121 of the codebase review of 2026-11-01 (TASK-0160): the file is one array of 84 + 50 bytes for each
+    // triangle, so it holds at most this count. Up to TASK-0160 a larger count threw OverflowException.
+    public static readonly int MaximumTriangles = (int)((Array.MaxLength - 84L) / 50);
+
     // The file of each live body in the order of its handle, or the error of a backend with no tessellation.
     public static (byte[]? Content, ErrorDetail? Error) Write(Document document, IGeometryBackend backend)
     {
@@ -21,32 +25,42 @@ public static class StlExport
         if (backend.TryGet<ITessellationOps>() is not { } ops)
             return (null, new ErrorDetail(DiagnosticCodes.GeomCapMissing, "The backend does not implement ITessellationOps, so it gives no triangles for an STL file."));
 
-        List<Tessellation> meshes;
+        List<(Guid Body, Tessellation Mesh)> meshes;
         try
         {
             meshes = document.Bodies
                 .OrderBy(body => body.Handle.Id)
-                .Select(body => ops.Tessellate(new BodyHandle(body.GeometryKey)))
+                .Select(body => (body.Handle.Id, ops.Tessellate(new BodyHandle(body.GeometryKey))))
                 .ToList();
         }
         catch (Exception ex) when (ex is not OperationCanceledException)
         {
             return (null, new ErrorDetail(DiagnosticCodes.GeomNativeOp, $"The backend gave no triangles of a body: {ex.Message}"));
         }
-        var triangles = meshes.Sum(mesh => mesh.Indices.Length / 3);
+        var count = meshes.Sum(item => (long)(item.Mesh.Indices.Length / 3));
+        if (count > MaximumTriangles)
+            return (null, new ErrorDetail(DiagnosticCodes.ExportTooLarge, $"The live bodies have {count} triangles, and one STL file of the export holds at most {MaximumTriangles}."));
 
+        var triangles = (int)count;
         var content = new byte[84 + (50 * triangles)];
         var header = Encoding.ASCII.GetBytes(Header.PadRight(80));
         header.CopyTo(content, 0);
         BinaryPrimitives.WriteUInt32LittleEndian(content.AsSpan(80), (uint)triangles);
         var at = 84;
-        foreach (var mesh in meshes)
+        foreach (var (body, mesh) in meshes)
         {
             for (var t = 0; t + 2 < mesh.Indices.Length; t += 3)
             {
                 var (a, b, c) = (Vertex(mesh, mesh.Indices[t]), Vertex(mesh, mesh.Indices[t + 1]), Vertex(mesh, mesh.Indices[t + 2]));
+                var normal = Normal(a, b, c);
+
+                // E121: a float of the file holds at most about 3.4e38, and ADR-0048 item 1 gives a unit normal. A
+                // vertex out of that range, or a normal that is not finite, is refused, and no file is written.
+                if (!IsFloat(a) || !IsFloat(b) || !IsFloat(c) || !IsFloat(normal))
+                    return (null, new ErrorDetail(DiagnosticCodes.ExportRange, $"A triangle of the body '{body}' has a vertex or a normal that a float of an STL file does not hold; each coordinate must be finite and at most {float.MaxValue} mm in magnitude."));
+
                 var span = content.AsSpan(at, 50);
-                Floats(span, Normal(a, b, c));
+                Floats(span, normal);
                 Floats(span[12..], a);
                 Floats(span[24..], b);
                 Floats(span[36..], c);
@@ -70,6 +84,9 @@ public static class StlExport
         var length = Math.Sqrt((nx * nx) + (ny * ny) + (nz * nz));
         return length > 0 ? (nx / length, ny / length, nz / length) : (0, 0, 0);
     }
+
+    private static bool IsFloat((double X, double Y, double Z) value)
+        => float.IsFinite((float)value.X) && float.IsFinite((float)value.Y) && float.IsFinite((float)value.Z);
 
     private static void Floats(Span<byte> span, (double X, double Y, double Z) value)
     {

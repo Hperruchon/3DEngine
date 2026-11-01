@@ -133,13 +133,19 @@ public static class Cli
     }
 
     // ADR-0048 item 5 (phase P8g, TASK-0157): the live bodies of a document file as one binary STL file. The
-    // command line keeps no session between two runs, so it opens the document file first.
+    // command line keeps no session between two runs, so it reads the document file first. Finding E119 of the
+    // codebase review of 2026-11-01 (TASK-0160): the read has no journal and read access only, so the document
+    // file does not change and a file that the desktop holds reads; the output gives the warnings of the read.
+    // Finding E122: a write of the STL file that fails gives E-EXPORT-WRITE-FAILED, not a code of a save.
     //
-    //   engine export stl <document.3de> <file.stl>   { file, triangles }
+    //   engine export stl <document.3de> <file.stl>   { file, triangles, warnings }
     private static async Task<int> Export(string[] args, TextWriter stdout, TextWriter stderr, CancellationToken ct, BackendOptions backend)
     {
         if (args is not ["stl", var document, var file])
             return InvalidUsage(stderr, "export requires 'stl <document.3de> <file.stl>'.");
+
+        if (string.IsNullOrWhiteSpace(document))
+            return ExportFailure(stdout, new ErrorDetail(DiagnosticCodes.IoLoadFailed, "The path of the document file is empty."));
 
         var session = BuildSession(backend, stderr);
         if (session is null)
@@ -147,10 +153,13 @@ public static class Cli
 
         ErrorDetail? error;
         byte[]? content = null;
+        IReadOnlyList<Diagnostic> warnings = [];
+        var writing = false;
         try
         {
-            await Engine.Core.Persistence.DocumentFile.Open(session, document, ct).ConfigureAwait(false);
+            warnings = await Engine.Core.Persistence.DocumentFile.Read(session, document, ct).ConfigureAwait(false);
             (content, error) = await session.ReadGeometry(Engine.Core.Export.StlExport.Write, ct).ConfigureAwait(false);
+            writing = true;
             if (content is not null)
                 await File.WriteAllBytesAsync(file, content, ct).ConfigureAwait(false);
         }
@@ -161,22 +170,31 @@ public static class Cli
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or ArgumentException or NotSupportedException)
         {
-            error = new ErrorDetail(content is null ? DiagnosticCodes.IoLoadFailed : DiagnosticCodes.IoSaveFailed, $"The STL file of {document} could not be made at {file}: {ex.Message}");
+            error = writing
+                ? new ErrorDetail(DiagnosticCodes.ExportWriteFailed, $"The STL file of {document} could not be written at {file}: {ex.Message}")
+                : new ErrorDetail(DiagnosticCodes.IoLoadFailed, $"The document file {document} could not be read: {ex.Message}");
         }
         finally
         {
-            // The open holds the document file; the close gives it back, also to a caller in the same process.
             session.Close();
         }
 
         if (error is not null)
-        {
-            JsonRenderer.WriteValue(new { error = new { code = error.Code, message = error.Message } }, stdout);
-            return ExitRejected;
-        }
+            return ExportFailure(stdout, error);
 
-        JsonRenderer.WriteValue(new { file, triangles = (content!.Length - 84) / 50 }, stdout);
+        JsonRenderer.WriteValue(new
+        {
+            file,
+            triangles = (content!.Length - 84) / 50,
+            warnings = warnings.Select(warning => new { code = warning.Code, message = warning.Message }).ToArray(),
+        }, stdout);
         return ExitApplied;
+    }
+
+    private static int ExportFailure(TextWriter stdout, ErrorDetail error)
+    {
+        JsonRenderer.WriteValue(new { error = new { code = error.Code, message = error.Message } }, stdout);
+        return ExitRejected;
     }
 
     private static int AssetResult(TextWriter stdout, string? name, long size, ErrorDetail? error)

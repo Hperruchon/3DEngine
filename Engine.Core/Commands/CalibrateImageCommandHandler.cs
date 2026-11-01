@@ -76,6 +76,17 @@ public sealed class CalibrateImageCommandHandler : ICommandHandler, ICommandEnco
 
         var (dx, dy) = (calibrate.X2 - calibrate.X1, calibrate.Y2 - calibrate.Y1);
         var pixels = Math.Sqrt(dx * dx + dy * dy);
+
+        // Finding E123 of the codebase review of 2026-11-01 (TASK-0160): the square of the distance of two
+        // different finite points can underflow to 0 or overflow to infinity. Then the root takes dx and dy over the
+        // larger of their magnitudes, with + - * / sqrt only. Each other calibration keeps the bits of v0.152, so a
+        // saved document opens with the same scale.
+        if ((pixels == 0 || double.IsPositiveInfinity(pixels)) && double.IsFinite(dx) && double.IsFinite(dy) && (dx != 0 || dy != 0))
+        {
+            var larger = Math.Max(Math.Abs(dx), Math.Abs(dy));
+            var (u, v) = (dx / larger, dy / larger);
+            pixels = larger * Math.Sqrt(u * u + v * v);
+        }
         if (!double.IsFinite(pixels) || pixels <= 0 || !double.IsFinite(calibrate.Distance) || calibrate.Distance <= 0)
             return Task.FromResult(ImageResults.Failure(
                 DiagnosticCodes.ImageCalibrationInvalid,
