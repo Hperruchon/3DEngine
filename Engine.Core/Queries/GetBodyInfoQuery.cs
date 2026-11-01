@@ -11,5 +11,6 @@ public sealed record GetBodyInfoQuery : Query
     public required Guid BodyId { get; init; }
 }
 
-// The result of GetBodyInfo. Name is null when the body has no name.
-public sealed record BodyInfo(Guid BodyId, string Kind, string? Name, bool Visible);
+// The result of GetBodyInfo. Name is null when the body has no name. Distance is the distance in
+// effect of the extrude whose handle is the body, or null for each other body (ADR-0049 item 7).
+public sealed record BodyInfo(Guid BodyId, string Kind, string? Name, bool Visible, double? Distance = null);

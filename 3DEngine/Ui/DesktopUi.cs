@@ -52,6 +52,7 @@ internal sealed unsafe class DesktopUi : IDisposable
     public const string RedoLabel = "Redo";
     public const string NewBoxLabel = "New box";
     public const string MoveLabel = "Move";
+    public const string SetDistanceLabel = "Set distance";
     public const string FaultLabel = "Fault";
 
     // ADR-0034 items 6 and 8: the buttons of a new sketch in the panel, and the window of the
@@ -635,7 +636,21 @@ internal sealed unsafe class DesktopUi : IDisposable
             OpenPad(new NumericPad(MoveLabel, _unit, new("dx", "0"), new("dy", "0"), new("dz", "0")), values => new MoveBodyAction(body.Id, values[0], values[1], values[2]), scope: PadScope.Body);
         Item(MoveLabel);
         ImGui.SameLine();
+
+        // ADR-0049 item 8: the host reads the distance in effect and opens the pad with it.
+        if (body.Kind == "Extrude")
+        {
+            if (ImGui.Button(SetDistanceLabel))
+                _actions.Add(new EditDistanceAction(body.Id));
+            Item(SetDistanceLabel);
+            ImGui.SameLine();
+        }
     }
+
+    // ADR-0049 item 8: the pad of the distance of the selected extrude, which starts with the
+    // distance in effect. A change of the selection closes it, as for Move.
+    public void OpenDistancePad(Guid body, double distance)
+        => OpenPad(new NumericPad(SetDistanceLabel, _unit, new PadField("distance", SketchText.Number(distance))), values => new SetDistanceAction(body, values[0]), scope: PadScope.Body);
 
     // ADR-0034 item 8: the window of the sketch. With no active sketch it lists each live sketch
     // with Edit. With an active sketch it gives the tools, the buttons of the selection and a row
