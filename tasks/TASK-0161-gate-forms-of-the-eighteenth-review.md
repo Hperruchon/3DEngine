@@ -1,7 +1,7 @@
 ---
 id: 0161
 title: The comparison refuses an empty hash, the pin rules read a global reference, and the next forms of the seventeenth review fail
-status: Ready
+status: Active
 phase: P0.70
 opened: 2026-11-01
 depends-on: [0158]
@@ -58,3 +58,10 @@ An empty hash, a global reference of a pinned package, and the next forms of T12
 
 ## Progress
 
+- 2026-11-01: T123: the comparison refuses a first line that is not 64 lower-case hexadecimal digits, and names the
+  runner; three empty files gave exit 0 before and exit 1 after, and the controls did not change. T124: the reader of
+  the pin rules takes `GlobalPackageReference` too; an injected `Engine.Core/Directory.Packages.props` passed the old
+  gate and fails the new one, and the control `PackageReference` fails it. T125: the rule of a setext heading reads
+  the paragraph back to its first line, and a letter that is not ASCII counts as the v. T126: a constant char of a
+  severity is a part where it joins text only, and `char.ToUpperInvariant('e')` and `"EWI"[0]` count there. 6 new
+  test cases; each new test failed on the old gate.

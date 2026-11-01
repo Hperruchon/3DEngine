@@ -444,9 +444,12 @@ public class DependencyDirectionGateTests
     // skipped it, and a wildcard import and a .csproj.user file each carried a
     // reference that MSBuild saw and the gate did not (findings T16 and T46 of the
     // codebase reviews of 2026-10-04 and 2026-10-12).
-    // The packages that a project references, in each file that MSBuild reads for it (T117).
+    // The packages that a project references, in each file that MSBuild reads for it (T117). Finding T124 of the
+    // codebase review of 2026-11-01 (TASK-0161): a GlobalPackageReference of central package management references
+    // a package for each project, and the pin rules read PackageReference only, so it pinned the vision library into
+    // Engine.Core with no failure.
     private static IEnumerable<string> PackageReferences(string projectFile)
-        => FilesThatMsBuildReads(projectFile).SelectMany(file => Includes(file, "PackageReference"));
+        => FilesThatMsBuildReads(projectFile).SelectMany(file => Includes(file, "PackageReference").Concat(Includes(file, "GlobalPackageReference")));
 
     internal static IEnumerable<string> FilesThatMsBuildReads(string projectFile)
     {
@@ -648,6 +651,24 @@ public class DependencyDirectionGateTests
         Assert.True(
             offences.Any(o => o.Contains(expected, StringComparison.Ordinal)),
             $"Expected an offence with '{expected}'. Offences:\n  " + string.Join("\n  ", offences));
+    }
+
+    // Finding T124 of the codebase review of 2026-11-01 (TASK-0161): a GlobalPackageReference is a package of the
+    // project for the pin rules, in each case that MSBuild reads.
+    [Fact]
+    public void A_Global_Package_Reference_Is_A_Package_Of_The_Project()
+    {
+        var file = Path.Combine(Directory.CreateTempSubdirectory("package-").FullName, "Probe.csproj");
+        try
+        {
+            File.WriteAllText(file, "<Project><ItemGroup><GlobalPackageReference Include=\"OpenCvSharp4\" /><globalpackagereference include=\"Vortice.Vulkan\" /></ItemGroup></Project>");
+
+            Assert.Equal(["OpenCvSharp4", "Vortice.Vulkan"], PackageReferences(file));
+        }
+        finally
+        {
+            Directory.Delete(Path.GetDirectoryName(file)!, recursive: true);
+        }
     }
 
     // The third form of finding T50: an extension file in obj/ (TASK-0073).
