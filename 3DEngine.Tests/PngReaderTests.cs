@@ -82,6 +82,57 @@ public class PngReaderTests
         };
     }
 
+    // V68 of the codebase review of 2026-11-01 (TASK-0159): the decompressor throws ZLibException, an
+    // IOException, for a zlib header with the flag FDICT. Each malformed stream must give
+    // InvalidDataException, so the desktop skips the image and keeps its window.
+    public static TheoryData<string, string, byte[]> WrongStreams()
+    {
+        const string NotZlib = "not a zlib stream that the desktop reads";
+        var deflate = Deflate([0, 1, 2, 3, 4, 5, 6]);
+        var badAdler = Zlib(1, 2, 3, 4, 5, 6);
+        badAdler[^1] ^= 0xFF;
+        var random = new byte[64];
+        new Random(68).NextBytes(random);
+        return new TheoryData<string, string, byte[]>
+        {
+            { "preset dictionary", NotZlib, [0x78, 0xBB, 0, 0, 0, 1, .. deflate] },
+            { "Adler sum", NotZlib, badAdler },
+            { "window of 64 KiB", NotZlib, [0x88, 0x1C, .. deflate] },
+            { "random data", NotZlib, random },
+            { "empty stream", "shorter than its rows", [] },
+        };
+    }
+
+    [Theory]
+    [MemberData(nameof(WrongStreams))]
+    public void Each_Malformed_Stream_Is_Refused(string form, string reason, byte[] idat)
+    {
+        var refusal = Assert.Throws<InvalidDataException>(() => PngReader.Read(Encode(2, 1, 2, [], idat: idat)));
+
+        Assert.True(refusal.Message.Contains(reason, StringComparison.Ordinal), form + ": " + refusal.Message);
+    }
+
+    // The rows of one RGB picture of 2 by 1 pixels with the filter 0, in a zlib stream.
+    private static byte[] Zlib(params byte[] row)
+    {
+        using var compressed = new MemoryStream();
+        using (var zlib = new ZLibStream(compressed, CompressionLevel.Optimal, leaveOpen: true))
+        {
+            zlib.WriteByte(0);
+            zlib.Write(row);
+        }
+
+        return compressed.ToArray();
+    }
+
+    private static byte[] Deflate(byte[] data)
+    {
+        using var compressed = new MemoryStream();
+        using (var deflate = new DeflateStream(compressed, CompressionLevel.Optimal, leaveOpen: true))
+            deflate.Write(data);
+        return compressed.ToArray();
+    }
+
     [Theory]
     [MemberData(nameof(WrongFiles))]
     public void A_File_Of_Another_Form_Is_Refused_With_Its_Reason(string reason, byte[] file)
@@ -92,8 +143,9 @@ public class PngReaderTests
     }
 
     // A PNG file with the given rows, each with one filter. Width and height go in IHDR as given, so
-    // a test can make a header that the reader refuses.
-    private static byte[] Encode(int width, int height, byte colourType, byte[][] rows, byte filter = 0, byte[]? palette = null, byte depth = 8, byte interlace = 0)
+    // a test can make a header that the reader refuses. The bytes of idat, if given, replace the
+    // compressed rows.
+    private static byte[] Encode(int width, int height, byte colourType, byte[][] rows, byte filter = 0, byte[]? palette = null, byte depth = 8, byte interlace = 0, byte[]? idat = null)
     {
         var header = new byte[13];
         BinaryPrimitives.WriteInt32BigEndian(header, width);
@@ -118,7 +170,7 @@ public class PngReaderTests
         Chunk(file, "IHDR", header);
         if (palette is not null)
             Chunk(file, "PLTE", palette);
-        Chunk(file, "IDAT", compressed.ToArray());
+        Chunk(file, "IDAT", idat ?? compressed.ToArray());
         Chunk(file, "IEND", []);
         return file.ToArray();
     }
