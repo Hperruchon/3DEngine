@@ -37,14 +37,18 @@ event, the Document or the log (`CLAUDE.md`, determinism rule 6). This record is
 2. **The bodies.** Each live body of the Document, visible or hidden, in the order of its handle, in one file. A
    document with no body gives a file with no triangle. The STL file is not a document file: an open does not read it.
 3. **The engine.** `StlExport.Write` in `Engine.Core/Export` gives the bytes, or `E-GEOM-CAP-MISSING` for a backend with
-   no tessellation, or `E-GEOM-NATIVE-OP` for a tessellation that fails. `DocumentSession.ReadGeometry` gives the
-   Document and its backend in the serial section, as a query has them, so a command cannot change a body during the
-   export.
+   no tessellation, or `E-GEOM-NATIVE-OP` for a tessellation that fails. A vertex or a normal that a 32-bit float does
+   not hold gives `E-EXPORT-RANGE`, and more triangles than one file holds give `E-EXPORT-TOO-LARGE`; each one gives no
+   file. `DocumentSession.ReadGeometry` gives the Document and its backend in the serial section, as a query has them,
+   so a command cannot change a body during the export.
 4. **The surface.** `GET /export/stl` gives the file as `model/stl`, or the envelope with 501 for a backend with no
-   tessellation and 500 for each other error. The route is outside the triad of ADR-0008, as the routes of the assets
-   are (ADR-0044 item 4): the bytes of a file are not the result of a query.
-5. **The command line.** `engine export stl <document.3de> <file.stl>` opens the document file, writes the STL file,
-   closes the session, and prints `{ file, triangles }` or `{ error }`, with the exit code 0, 1 or 2.
+   tessellation, 422 for `E-EXPORT-RANGE` and `E-EXPORT-TOO-LARGE`, and 500 for each other error. The route is outside
+   the triad of ADR-0008, as the routes of the assets are (ADR-0044 item 4): the bytes of a file are not the result of
+   a query.
+5. **The command line.** `engine export stl <document.3de> <file.stl>` reads the document file with read access only and
+   no journal, so the file does not change and a file that the desktop holds reads. It writes the STL file, closes the
+   session, and prints `{ file, triangles, warnings }` or `{ error }`, with the exit code 0, 1 or 2. A write of the STL
+   file that fails gives `E-EXPORT-WRITE-FAILED`.
 6. **The desktop.** The button "Export STL" of the line of the file writes the STL file in the document folder, with the
    name of the field and the extension `.stl`; a name has the rules of a document file (ADR-0030 item 2).
 7. **Not in P8g.** ASCII STL, the colour of a body, an export of the visible bodies only, and another format (STEP is
@@ -58,3 +62,6 @@ event, the Document or the log (`CLAUDE.md`, determinism rule 6). This record is
 ## History
 
 - 2026-10-31 · TASK-0157 · The record, under the standing answer of the owner of 2026-10-31.
+- 2026-11-01 · TASK-0160 · Items 3 to 5, from findings E119, E121 and E122 of the codebase review of 2026-11-01:
+  the codes of the range and of the size, the status 422, the read with no journal, and the warnings and the code of
+  a write of the command line. Until TASK-0160 the verb opened the document file as an edit does.

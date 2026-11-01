@@ -127,6 +127,24 @@ public sealed class ImageCommandTests : IDisposable
         Assert.Equal(0.5, Assert.Single(await Images(session)).Scale);
     }
 
+    // Finding E123 of the codebase review of 2026-11-01 (TASK-0160): two different finite points whose square of
+    // the distance underflows or overflows give their distance, and the scale is the distance over it.
+    [Fact]
+    public async Task A_Calibration_Whose_Square_Underflows_Or_Overflows_Gives_The_Distance()
+    {
+        var (session, _) = NewSession();
+        var id = await Applied(session, Place() with { Scale = 0.5 }, "imageId");
+
+        var small = await session.Apply(new CalibrateImageCommand { ImageId = id, X1 = 0, Y1 = 0, X2 = 1e-170, Y2 = 0, Distance = 10 });
+        Assert.Equal(CommandStatus.Applied, small.Status);
+        Assert.Equal(10 / 1e-170, Assert.Single(await Images(session)).Scale);
+
+        var large = await session.Apply(new CalibrateImageCommand { ImageId = id, X1 = 0, Y1 = 0, X2 = 3e160, Y2 = 4e160, Distance = 10 });
+        Assert.Equal(CommandStatus.Applied, large.Status);
+        var scale = Assert.Single(await Images(session)).Scale;
+        Assert.True(Math.Abs(scale - 2e-160) <= 2e-175, $"The scale is {scale}.");
+    }
+
     // ADR-0045 items 8 and 9: the events of each commit, and an undo and a redo of each step.
     [Fact]
     public async Task Undo_And_Redo_Give_The_Image_Before_And_After_Each_Step()

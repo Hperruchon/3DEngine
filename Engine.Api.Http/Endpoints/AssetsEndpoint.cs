@@ -46,7 +46,8 @@ internal static class AssetsEndpoint
             DiagnosticCodes.AssetTooLarge => StatusCodes.Status413PayloadTooLarge,
             DiagnosticCodes.AssetBadName => StatusCodes.Status400BadRequest,
             DiagnosticCodes.AssetNotFound => StatusCodes.Status404NotFound,
-            // E114: a read of the store failed; a put whose body failed is not a fault of the store.
+            // E114: a read of the store failed, or the body of a put could not be read. The row of
+            // E-ASSET-READ-FAILED gives 500 for each (finding E124, TASK-0160).
             _ => StatusCodes.Status500InternalServerError,
         });
 
