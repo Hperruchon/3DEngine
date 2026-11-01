@@ -198,6 +198,26 @@ public sealed class AssetStoreTests : IDisposable
         Assert.Equal([Abc], Directory.GetFiles(Store).Select(Path.GetFileName));
     }
 
+    // Finding E120 of the codebase review of 2026-11-01 (TASK-0160): parallel puts of the same new bytes each give
+    // the name. The replace of a file that another put read or replaced failed on Windows, 20 times in 320 puts of
+    // the probe of the review; the move now replaces only a file that does not hold its name.
+    [Fact]
+    public async Task Parallel_Puts_Of_The_Same_New_Bytes_Each_Give_The_Name()
+    {
+        var store = new AssetStore(Store);
+        var failures = new List<string>();
+        for (var round = 0; round < 20; round++)
+        {
+            var bytes = new byte[1 << 20];
+            new Random(round).NextBytes(bytes);
+            var puts = await Task.WhenAll(Enumerable.Range(0, 8).Select(_ => Task.Run(() => store.Put(new MemoryStream(bytes)))));
+            failures.AddRange(puts.Where(put => put.Error is not null).Select(put => $"{round}: {put.Error!.Code} {put.Error.Message}"));
+        }
+
+        Assert.True(failures.Count == 0, string.Join("\n", failures));
+        Assert.Equal(20, Directory.GetFiles(Store).Length);
+    }
+
     // Finding E118: a body over the request limit of the server gave a 413 with no envelope. A length
     // over the limit of an asset is refused before the read, and for a body with no length the route
     // lifts the limit of the server, so the store stops it at 16 MiB with the code of ADR-0044 item 3.
