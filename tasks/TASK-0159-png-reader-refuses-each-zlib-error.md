@@ -1,7 +1,7 @@
 ---
 id: 0159
 title: The PNG reader refuses each error of the decompressor, so an image cannot stop the desktop
-status: Active
+status: Done
 phase: P0.68
 opened: 2026-11-01
 depends-on: [0158]
@@ -47,9 +47,20 @@ Each PNG file that the reader cannot decode gives `InvalidDataException`, so the
 
 ## Acceptance criteria
 
-- [ ] The test of the flag FDICT fails before the change and passes after it.
-- [ ] A clean build (`--no-incremental`) gives zero errors and zero warnings.
-- [ ] Continuous integration passes on the three runners, on the branch and on `main` after the merge.
+- [x] The test of the flag FDICT fails before the change and passes after it.
+- [x] A clean build (`--no-incremental`) gives zero errors and zero warnings.
+- [x] Continuous integration passes on the three runners, on the branch and on `main` after the merge.
+
+## Outcome
+
+Status: Done · commit (the merge of the branch p068-png-zlib-errors) · v0.161
+
+## Method
+
+Mechanical: the five malformed streams of the review, each one in a PNG file, read by the reader; the case of the
+            flag FDICT run before the change (it failed with `ZLibException`) and after it.
+Judgement:  one reason for each error of the decompressor, because the message of `ZLibStream` names an archive entry.
+Weakest:    no live window placed such an image; the catch of the host is read, not run.
 
 ## Progress
 
@@ -57,3 +68,4 @@ Each PNG file that the reader cannot decode gives `InvalidDataException`, so the
   `ZLibException` and each other `IOException`, and each `InvalidDataException` of `ZLibStream`. Before the change the
   test of the flag FDICT failed with `ZLibException`. 5 new test cases. The owner answered A to Q1, Q2 and Q3 of the
   review on 2026-11-01.
+- 2026-11-01: closed at v0.161.

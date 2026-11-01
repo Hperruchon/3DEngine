@@ -4643,3 +4643,31 @@ New tests: none. The test list holds 1505 (1070 in `Engine.Tests`, 275 in `3DEng
 `3DEngine.ImageTests`, 3 in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and
 zero warnings. Open entries: 14 of 15. New diagnostic codes: none. Since the review of v0.159, 0 product milestones and
 1 entry followed it.
+
+## v0.161 — The PNG reader refuses each error of the decompressor (P0.68, TASK-0159)
+
+The codebase review of 2026-11-01 found V68 (high): a PNG file whose zlib header sets the flag FDICT made
+`ZLibStream` throw `ZLibException`, an `IOException`. `3DEngine/SessionImages.cs` and `3DEngine/ImageActions.cs` catch
+`InvalidDataException` only, so the render loop of the desktop ended at the first frame that drew the image, at each
+start. The review put it before the next product phase.
+
+**The change.** `3DEngine.Core/Imaging/PngReader.cs` (`Inflate`) gives `InvalidDataException` with one reason, "not a
+zlib stream that the desktop reads", for `ZLibException`, each other `IOException` and each `InvalidDataException` of
+`ZLibStream`. The last form had a message about an archive entry, which does not help a person. A stream that is too
+short keeps its reason, and the check of a stream that is too long is now outside the catch.
+
+**Proof.** 5 new test cases in `3DEngine.Tests/PngReaderTests.cs`: the flag FDICT, a bad Adler sum, a window of
+64 KiB, random data and an empty stream. Before the change the case of the flag FDICT failed with `ZLibException`, and
+three controls failed on the message.
+
+**The answers of the owner.** On 2026-11-01 the owner answered A to Q1, Q2 and Q3 of the review: the next product phase
+is K0f, its edit is one command that records the extrude and its new distance, and V69 takes an opening with a cross
+of 3 × 3 and a refusal of a polygon that is still not simple.
+
+**What stays.** No live window placed such an image; the catch of the host is read, not run. The other findings of the
+review are in P0.69 to P0.71.
+
+New tests: 5. The test list holds 1510 (1070 in `Engine.Tests`, 280 in `3DEngine.Tests`, 157 in
+`3DEngine.ImageTests`, 3 in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and
+zero warnings. Open entries: 14 of 15. New diagnostic codes: 0. Since the review of v0.159, 0 product milestones and 2
+entries followed it.
