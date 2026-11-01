@@ -22,6 +22,8 @@ internal static class ExportEndpoint
         return Results.Json(new ApiErrorEnvelope(new ApiErrorBody(error.Code, error.Message)), ApiJson.Options, statusCode: error.Code switch
         {
             DiagnosticCodes.GeomCapMissing => StatusCodes.Status501NotImplemented,
+            // Finding E121 (TASK-0160): the bodies of the document do not fit the form of an STL file.
+            DiagnosticCodes.ExportRange or DiagnosticCodes.ExportTooLarge => StatusCodes.Status422UnprocessableEntity,
             _ => StatusCodes.Status500InternalServerError,
         });
     }

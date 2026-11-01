@@ -57,6 +57,14 @@ public static class DocumentFile
     public static Task<IReadOnlyList<Diagnostic>> Open(DocumentSession session, string path, CancellationToken ct = default)
         => Load(session, path, attach: true, hold: true, ct);
 
+    // Finding E119 of the codebase review of 2026-11-01 (TASK-0160): applies each entry of the file
+    // with read access only and no journal, so the file does not change and a file that another
+    // session holds reads. A reader that changes nothing, as the export of the command line, uses
+    // this; it gives the warnings of the read. Until TASK-0160 the export opened the file as an edit
+    // does, so it held the file for a write and cut an incomplete last line.
+    public static Task<IReadOnlyList<Diagnostic>> Read(DocumentSession session, string path, CancellationToken ct = default)
+        => Load(session, path, attach: false, hold: false, ct);
+
     // ADR-0030 item 5: opens the file in a scratch session on the given backend, with
     // no write, and gives null or the error of the open. A host calls this before it
     // starts again with the file, so that a file that does not open leaves the person
@@ -117,7 +125,7 @@ public static class DocumentFile
 
         try
         {
-            var (warnings, validLength) = await Apply(session, path, held, ct).ConfigureAwait(false);
+            var (warnings, validLength) = await Apply(session, path, held, attach, ct).ConfigureAwait(false);
             if (attach && held is not null)
             {
                 DocumentJournal journal;
@@ -143,7 +151,7 @@ public static class DocumentFile
     }
 
     // Applies each entry of the file, and gives the warnings and the length of the valid lines.
-    private static async Task<(IReadOnlyList<Diagnostic> Warnings, long ValidLength)> Apply(DocumentSession session, string path, FileStream? held, CancellationToken ct)
+    private static async Task<(IReadOnlyList<Diagnostic> Warnings, long ValidLength)> Apply(DocumentSession session, string path, FileStream? held, bool cuts, CancellationToken ct)
     {
         var diagnostics = new List<Diagnostic>();
         var lines = Lines(path, held, out var torn);
@@ -227,7 +235,9 @@ public static class DocumentFile
             diagnostics.Add(new Diagnostic(
                 Severity.Warning,
                 DiagnosticCodes.IoTruncated,
-                $"The last line of {path} is not complete or does not parse, and the open cut it off ({Encoding.UTF8.GetByteCount(torn)} bytes)."));
+                cuts
+                    ? $"The last line of {path} is not complete or does not parse, and the open cut it off ({Encoding.UTF8.GetByteCount(torn)} bytes)."
+                    : $"The last line of {path} is not complete or does not parse, and the read skipped it ({Encoding.UTF8.GetByteCount(torn)} bytes); the file keeps it."));
 
         return (diagnostics, validLength);
     }

@@ -1,7 +1,7 @@
 ---
 id: 0160
 title: The export reads the document file only, the store takes parallel puts, and each edge of the export and the calibration gives a code
-status: Ready
+status: Done
 phase: P0.69
 opened: 2026-11-01
 depends-on: [0158]
@@ -23,6 +23,7 @@ writes:
     - Engine.Tests/Assets/AssetStoreTests.cs
     - Engine.Tests/Images/ImageCommandTests.cs
     - docs/diagnostics.md
+    - docs/adr/0048-stl-export.md
     - eng/test-floor.txt
     - docs/roadmap.md
     - docs/CURRENT-STATE.md
@@ -61,9 +62,29 @@ The export changes no document file, two puts of the same bytes each give the na
 
 ## Acceptance criteria
 
-- [ ] Each finding has a test that fails before the change and passes after it.
-- [ ] A clean build (`--no-incremental`) gives zero errors and zero warnings.
-- [ ] Continuous integration passes on the three runners, on the branch and on `main` after the merge.
+- [x] Each finding has a test that fails before the change and passes after it.
+- [x] A clean build (`--no-incremental`) gives zero errors and zero warnings.
+- [x] Continuous integration passes on the three runners, on the branch and on `main` after the merge.
+
+## Outcome
+
+Status: Done · commit (the merge of the branch p069-engine-forms) · v0.163
+
+## Method
+
+Mechanical: one test for each of E119 to E123, each run before its change (6 failed) and after it; the parallel puts
+            failed on this computer before the change.
+Judgement:  the scaled root of E123 only where the plain root fails, so no saved scale changes; a token EXPORT for the
+            codes of the export; E124 by the comment, because the row of the code already gives 500.
+Weakest:    E120 runs on Windows only in this session; E124 has no test, because it changes a comment.
 
 ## Progress
 
+- 2026-11-01: E119: `DocumentFile.Read` loads a document file with read access only and no journal, and the verb gives
+  its warnings. E120: a put moves with no overwrite first. E121: `E-EXPORT-RANGE` and `E-EXPORT-TOO-LARGE`. E122:
+  `E-EXPORT-WRITE-FAILED`, the rows of the three codes of the geometry and the document file, and a message for an
+  empty path. E123: the scaled root only where the plain root underflows or overflows, so each earlier calibration
+  keeps its bits. E124: the comment of the route. 6 new test cases; each one failed before its change, and the
+  parallel puts failed on this computer. ADR-0048 items 3 to 5 follow the code. E124 changes a comment only, so it has
+  no test.
+- 2026-11-01: closed at v0.163.

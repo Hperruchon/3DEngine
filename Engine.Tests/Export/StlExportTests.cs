@@ -147,6 +147,117 @@ public sealed class StlExportTests : IDisposable
         Assert.Equal(2, usageExit);
     }
 
+    // Finding E119 of the codebase review of 2026-11-01 (TASK-0160): the export reads the document file and changes
+    // nothing. An incomplete last line stays in the file and gives W-IO-TRUNCATED in the output, and a file that a
+    // live session holds, as the desktop does, gives its bodies.
+    [NativeManifoldFact]
+    public async Task The_Command_Line_Reads_The_Document_File_And_Changes_Nothing()
+    {
+        var document = Path.Combine(_folder, "torn" + DocumentFile.Extension);
+        using (var backend = new ManifoldGeometryBackend())
+        {
+            var session = Session(backend);
+            DocumentFile.Create(session, document);
+            await session.Apply(new CreateBoxCommand { SizeX = 10, SizeY = 20, SizeZ = 30 });
+            session.Close();
+        }
+
+        File.AppendAllText(document, "{\"version\":2,\"comm");
+        var before = File.ReadAllBytes(document);
+        var stl = Path.Combine(_folder, "torn.stl");
+
+        var (exit, output) = Run("export", "stl", document, stl);
+
+        Assert.Equal(0, exit);
+        Assert.Equal(before, File.ReadAllBytes(document));
+        var warning = Assert.Single(JsonDocument.Parse(output).RootElement.GetProperty("warnings").EnumerateArray());
+        Assert.Equal(DiagnosticCodes.IoTruncated, warning.GetProperty("code").GetString());
+
+        using var live = new ManifoldGeometryBackend();
+        var holder = Session(live);
+        File.WriteAllBytes(document, before[..^"{\"version\":2,\"comm".Length]);
+        await DocumentFile.Open(holder, document);
+        var (heldExit, heldOutput) = Run("export", "stl", document, stl);
+        holder.Close();
+
+        Assert.Equal(0, heldExit);
+        Assert.Equal(12, JsonDocument.Parse(heldOutput).RootElement.GetProperty("triangles").GetInt32());
+    }
+
+    // Finding E122: a file that cannot be written gives E-EXPORT-WRITE-FAILED, and an empty path of the document
+    // gives E-IO-LOAD-FAILED with its own message.
+    [NativeManifoldFact]
+    public async Task The_Command_Line_Gives_The_Code_Of_The_Export_And_Of_An_Empty_Path()
+    {
+        var document = Path.Combine(_folder, "part" + DocumentFile.Extension);
+        using (var backend = new ManifoldGeometryBackend())
+        {
+            var session = Session(backend);
+            DocumentFile.Create(session, document);
+            await session.Apply(new CreateBoxCommand { SizeX = 1, SizeY = 1, SizeZ = 1 });
+            session.Close();
+        }
+
+        var (writeExit, writeOutput) = Run("export", "stl", document, Path.Combine(_folder, "absent", "part.stl"));
+        var (emptyExit, emptyOutput) = Run("export", "stl", "", Path.Combine(_folder, "part.stl"));
+
+        var write = JsonDocument.Parse(writeOutput).RootElement.GetProperty("error");
+        var empty = JsonDocument.Parse(emptyOutput).RootElement.GetProperty("error");
+        Assert.Equal((1, DiagnosticCodes.ExportWriteFailed), (writeExit, write.GetProperty("code").GetString()));
+        Assert.Equal((1, DiagnosticCodes.IoLoadFailed, "The path of the document file is empty."), (emptyExit, empty.GetProperty("code").GetString(), empty.GetProperty("message").GetString()));
+    }
+
+    // Finding E121: a vertex that is not finite as a float gives E-EXPORT-RANGE and no file, and a control box at the
+    // edge of the range of a float gives its file.
+    [NativeManifoldFact]
+    public async Task A_Vertex_Out_Of_The_Range_Of_A_Float_Is_Refused()
+    {
+        using var backend = new ManifoldGeometryBackend();
+        var session = Session(backend);
+        var box = await session.Apply(new CreateBoxCommand { SizeX = 1, SizeY = 1, SizeZ = 1 });
+        Assert.True(box.Outputs.TryGet<Guid>("bodyId", out var body));
+        var near = await session.Apply(new TranslateCommand { BodyId = body, Dx = 1e38, Dy = 0, Dz = 0 });
+        Assert.True(near.Outputs.TryGet<Guid>("bodyId", out var moved));
+
+        var (control, controlError) = await session.ReadGeometry(StlExport.Write);
+        await session.Apply(new TranslateCommand { BodyId = moved, Dx = 1e39, Dy = 0, Dz = 0 });
+        var (content, error) = await session.ReadGeometry(StlExport.Write);
+
+        Assert.Null(controlError);
+        Assert.All(Triangles(control!).SelectMany(t => t.Vertices.Append(t.Normal)).SelectMany(v => v), value => Assert.True(float.IsFinite(value)));
+        Assert.Null(content);
+        Assert.Equal(DiagnosticCodes.ExportRange, error!.Code);
+    }
+
+    // Finding E121: more triangles than one file holds gives E-EXPORT-TOO-LARGE, and no OverflowException. The
+    // backend gives one mesh of a million triangles for each of 44 bodies.
+    [Fact]
+    public void More_Triangles_Than_A_File_Holds_Are_Refused()
+    {
+        var document = new Document();
+        for (var i = 0; i < 44; i++)
+            document.AddBody(new BodyRecord(new BodyHandle(Guid.NewGuid()), "Box"));
+
+        var (content, error) = StlExport.Write(document, new LargeMeshBackend());
+
+        Assert.Null(content);
+        Assert.Equal(DiagnosticCodes.ExportTooLarge, error!.Code);
+    }
+
+    // A backend whose each body has one shared mesh of a million triangles with no area.
+    private sealed class LargeMeshBackend : IGeometryBackend, ITessellationOps
+    {
+        private static readonly Tessellation Mesh = new([0, 0, 0], new uint[3_000_000]);
+
+        public BackendCapabilities Capabilities => BackendCapabilities.None;
+
+        public BackendIdentity Identity => new("large", "1");
+
+        public T? TryGet<T>() where T : class => this as T;
+
+        public Tessellation Tessellate(BodyHandle handle) => Mesh;
+    }
+
     private static (int Exit, string Output) Run(params string[] args)
     {
         var stdout = new StringWriter();
