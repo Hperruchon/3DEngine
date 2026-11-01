@@ -7,7 +7,7 @@ date: 2026-10-29
 supersedes: []
 superseded-by: []
 amends: ['0012', '0021', '0028', '0031', '0036']
-amended-by: ['0039']
+amended-by: ['0039', '0049']
 affects:
   - Engine.Contracts/BodyRecord.cs
   - Engine.Core/Sketch/**
@@ -126,3 +126,5 @@ body, and the edit is never refused.
   that shares no code with the engine.
 - 2026-10-30 · TASK-0116 · ADR-0039 amends item 7: a consumed extrude follows through its chain of `Translate` and
   `Subtract` to the live body at its end, and `W-SKETCH-REBUILD-FAILED` covers a body of the chain.
+- 2026-11-01 · TASK-0163 · ADR-0049 amends item 5: the rebuild of an extrude uses its distance in effect, the distance of
+  the last `SetExtrudeDistance` in effect for it, or else the distance of the `Extrude`.

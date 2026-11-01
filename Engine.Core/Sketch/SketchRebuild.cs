@@ -8,7 +8,8 @@ namespace Engine.Core.Sketch;
 // ADR-0037 items 4 to 7: after an edit of a sketch, each extrude of it follows. The rebuild
 // runs inside the handler of the edit, before the commit, so a replay of the log gives the
 // same solids under the same keys. ADR-0039: a consumed extrude follows through its chain of
-// Translate and Subtract to the live body at its end.
+// Translate and Subtract to the live body at its end. ADR-0049: an edit of the distance of an
+// extrude takes the same path, and each rebuild reads the distance in effect.
 public static class SketchRebuild
 {
     // ADR-0037 item 4: the identifier of each command of the log whose step is in effect. The
@@ -43,21 +44,101 @@ public static class SketchRebuild
         return [.. done];
     }
 
+    // ADR-0049 item 2: the Extrude in effect with the identifier, live or consumed, or null.
+    public static ExtrudeCommand? ExtrudeInEffect(IReadOnlyList<LogEntry> log, Guid extrudeId)
+        => InEffect(log).Contains(extrudeId)
+            ? log.Select(entry => entry.Command).OfType<ExtrudeCommand>().FirstOrDefault(extrude => extrude.CommandId == extrudeId)
+            : null;
+
+    // ADR-0049 items 3 and 7: the distance in effect of the Extrude in effect with the identifier,
+    // or null when no Extrude in effect has it.
+    public static double? DistanceInEffect(IReadOnlyList<LogEntry> log, Guid extrudeId)
+        => ExtrudeInEffect(log, extrudeId) is { } extrude ? Distances(log, InEffect(log))(extrude) : null;
+
+    // ADR-0049 item 3: the distance of the last SetExtrudeDistance in effect for an extrude, in
+    // the order of the log, or else the distance of the Extrude. The dictionary is a lookup only,
+    // so no order comes from it.
+    private static Func<ExtrudeCommand, double> Distances(IReadOnlyList<LogEntry> log, HashSet<Guid> inEffect)
+    {
+        var last = new Dictionary<Guid, double>();
+        foreach (var entry in log)
+        {
+            if (entry.Command is SetExtrudeDistanceCommand set && inEffect.Contains(set.CommandId))
+                last[set.ExtrudeId] = set.Distance;
+        }
+
+        return extrude => last.TryGetValue(extrude.CommandId, out var distance) ? distance : extrude.Distance;
+    }
+
+    // The sketch and the distance that give the parameters of an extrude. A null sketch is not live.
+    private readonly record struct ExtrudeInput(Guid SketchId, SketchRecord? Sketch, double Distance);
+
+    // What an edit changes: the extrudes that it targets, the input of each one before and after
+    // the edit, and the codes of its warnings. An edit of a sketch targets each extrude of the
+    // sketch (ADR-0037 item 5), and an edit of a distance targets one extrude (ADR-0049 item 4).
+    private sealed record Edit(
+        Guid Id,
+        Func<ExtrudeCommand, bool> Targets,
+        Func<ExtrudeCommand, ExtrudeInput> Before,
+        Func<ExtrudeCommand, ExtrudeInput> After,
+        Func<ExtrudeCommand, ExtrudeInput> Other,
+        string FailedCode,
+        string ConsumedCode);
+
+    private static (ExtrudeParameters? Parameters, string? Reason) Parameters(ExtrudeInput input)
+        => input.Sketch is { } sketch
+            ? ExtrudeProfile.Parameters(sketch, input.Distance)
+            : (null, $"The sketch '{input.SketchId}' is not live.");
+
     // The new record of each live extrude of the sketch that the edit changes, and the
     // diagnostics of the rebuild. Before is the record of the sketch in the Document, and
-    // after is the solved record that the edit gives.
+    // after is the solved record that the edit gives. Each extrude takes its distance in effect
+    // (ADR-0049 item 3).
     public static (IReadOnlyList<BodyRecord> Changed, IReadOnlyList<Diagnostic> Diagnostics) Rebuild(
         Document document, IGeometryBackend backend, Guid edit, SketchRecord before, SketchRecord after)
     {
+        var inEffect = InEffect(document.Log);
+        var distance = Distances(document.Log, inEffect);
+        return Run(document, backend, inEffect, new Edit(
+            edit,
+            extrude => extrude.SketchId == after.Id,
+            extrude => new(after.Id, before, distance(extrude)),
+            extrude => new(after.Id, after, distance(extrude)),
+            extrude => new(extrude.SketchId, document.Sketches.FirstOrDefault(sketch => sketch.Id == extrude.SketchId), distance(extrude)),
+            DiagnosticCodes.SketchRebuildFailed,
+            DiagnosticCodes.SketchExtrudeConsumed));
+    }
+
+    // ADR-0049 items 4 and 5: the new record of the extrude, or of the end of its chain, after a
+    // new distance. The sketch is its live record.
+    public static (IReadOnlyList<BodyRecord> Changed, IReadOnlyList<Diagnostic> Diagnostics) RebuildDistance(
+        Document document, IGeometryBackend backend, Guid edit, ExtrudeCommand target, double next)
+    {
+        var inEffect = InEffect(document.Log);
+        var distance = Distances(document.Log, inEffect);
+        ExtrudeInput Live(ExtrudeCommand extrude, double value)
+            => new(extrude.SketchId, document.Sketches.FirstOrDefault(sketch => sketch.Id == extrude.SketchId), value);
+        return Run(document, backend, inEffect, new Edit(
+            edit,
+            extrude => extrude.CommandId == target.CommandId,
+            extrude => Live(extrude, distance(extrude)),
+            extrude => Live(extrude, next),
+            extrude => Live(extrude, distance(extrude)),
+            DiagnosticCodes.FeatureRebuildFailed,
+            DiagnosticCodes.FeatureRebuildFailed));
+    }
+
+    private static (IReadOnlyList<BodyRecord> Changed, IReadOnlyList<Diagnostic> Diagnostics) Run(
+        Document document, IGeometryBackend backend, HashSet<Guid> inEffect, Edit edit)
+    {
         var changed = new List<BodyRecord>();
         var diagnostics = new List<Diagnostic>();
-        var inEffect = InEffect(document.Log);
         var seeds = new List<ExtrudeCommand>();
 
         // The order of the log, never the order of Document.Bodies (ADR-0037 item 5).
         foreach (var extrude in document.Log.Select(entry => entry.Command).OfType<ExtrudeCommand>())
         {
-            if (extrude.SketchId != after.Id || !inEffect.Contains(extrude.CommandId))
+            if (!edit.Targets(extrude) || !inEffect.Contains(extrude.CommandId))
                 continue;
 
             // ADR-0039 item 2: an extrude in effect whose body is not live was consumed by a later
@@ -68,7 +149,7 @@ public static class SketchRebuild
                 continue;
             }
 
-            var (parameters, reason) = ExtrudeProfile.Parameters(after, extrude.Distance);
+            var (parameters, reason) = Parameters(edit.After(extrude));
             if (parameters is not { } next)
             {
                 Fail(body, reason!);
@@ -76,7 +157,7 @@ public static class SketchRebuild
             }
 
             // ADR-0037 item 5: an edit that does not change the solid changes nothing.
-            if (body.Fault is null && ExtrudeProfile.Parameters(before, extrude.Distance).Parameters is { } previous
+            if (body.Fault is null && Parameters(edit.Before(extrude)).Parameters is { } previous
                 && ExtrudeProfile.Same(previous, next))
                 continue;
 
@@ -86,7 +167,7 @@ public static class SketchRebuild
                 continue;
             }
 
-            var key = GeometryKeys.Derive(edit, body.Handle.Id);
+            var key = GeometryKeys.Derive(edit.Id, body.Handle.Id);
             try
             {
                 ops.Extrude(new BodyHandle(key), next);
@@ -101,14 +182,14 @@ public static class SketchRebuild
         }
 
         if (seeds.Count > 0)
-            new Chain(document, backend, edit, before, after, changed, diagnostics).Rebuild(seeds);
+            new Chain(document, backend, edit, changed, diagnostics).Rebuild(seeds);
         return (changed, diagnostics);
 
-        // ADR-0037 item 6 (Q2 A): the body keeps its last solid and gets the fault, and the
-        // result gives the same code. A fault that does not change gives no new record.
+        // ADR-0037 item 6 (Q2 A) and ADR-0049 item 5: the body keeps its last solid and gets the
+        // fault, and the result gives the same code. A fault that does not change gives no new record.
         void Fail(BodyRecord body, string reason)
         {
-            var fault = new BodyFault(DiagnosticCodes.SketchRebuildFailed, $"The extrude '{body.Handle.Id}' keeps its last solid: {reason}");
+            var fault = new BodyFault(edit.FailedCode, $"The extrude '{body.Handle.Id}' keeps its last solid: {reason}");
             diagnostics.Add(new Diagnostic(
                 Severity.Warning, fault.Code, fault.Message,
                 Data: new Dictionary<string, object?> { ["bodyId"] = body.Handle.Id }));
@@ -117,11 +198,10 @@ public static class SketchRebuild
         }
     }
 
-    // ADR-0039 items 2 to 7: the chain of each consumed extrude of the edited sketch, from the
+    // ADR-0039 items 2 to 7: the chain of each consumed extrude that the edit targets, from the
     // seeds to the live ends.
     private sealed class Chain(
-        Document document, IGeometryBackend backend, Guid edit, SketchRecord before, SketchRecord after,
-        List<BodyRecord> changed, List<Diagnostic> diagnostics)
+        Document document, IGeometryBackend backend, Edit edit, List<BodyRecord> changed, List<Diagnostic> diagnostics)
     {
         private readonly FeatureGraph _graph = FeatureGraph.Of(document.Log);
 
@@ -130,7 +210,7 @@ public static class SketchRebuild
             var ends = new List<BodyRecord>();
             foreach (var seed in seeds)
             {
-                if (End(seed.CommandId) is not { } end)
+                if (End(seed) is not { } end)
                     continue;
                 if (!ends.Any(known => known.Handle.Id == end.Handle.Id))
                     ends.Add(end);
@@ -152,10 +232,11 @@ public static class SketchRebuild
         }
 
         // The live body at the end of the walk from a seed through each consumer, or null. A
-        // consumer that the graph does not know gives W-SKETCH-EXTRUDE-CONSUMED (ADR-0039 item 7).
-        private BodyRecord? End(Guid seed)
+        // consumer that the graph does not know gives W-SKETCH-EXTRUDE-CONSUMED (ADR-0039 item 7),
+        // or W-FEATURE-REBUILD-FAILED for an edit of a distance (ADR-0049 item 5).
+        private BodyRecord? End(ExtrudeCommand seed)
         {
-            var handle = seed;
+            var handle = seed.CommandId;
             while (true)
             {
                 if (document.Bodies.FirstOrDefault(body => body.Handle.Id == handle) is { } live)
@@ -164,25 +245,25 @@ public static class SketchRebuild
                 {
                     diagnostics.Add(new Diagnostic(
                         Severity.Warning,
-                        DiagnosticCodes.SketchExtrudeConsumed,
-                        $"The extrude '{seed}' of the sketch '{after.Id}' was consumed by a command that the feature graph does not know, so its solid does not follow the edit.",
-                        Data: new Dictionary<string, object?> { ["bodyId"] = seed }));
+                        edit.ConsumedCode,
+                        $"The extrude '{seed.CommandId}' of the sketch '{seed.SketchId}' was consumed by a command that the feature graph does not know, so its solid does not follow the edit.",
+                        Data: new Dictionary<string, object?> { ["bodyId"] = seed.CommandId }));
                     return null;
                 }
                 handle = consumer.CommandId;
             }
         }
 
-        // True when an extrude of the edited sketch upstream of the handle gets other parameters.
+        // True when an extrude that the edit targets upstream of the handle gets other parameters.
         private bool ProfileChanges(Guid handle)
         {
             switch (_graph.Creator(handle))
             {
-                case ExtrudeCommand extrude when extrude.SketchId == after.Id:
-                    var previous = ExtrudeProfile.Parameters(before, extrude.Distance).Parameters;
-                    var next = ExtrudeProfile.Parameters(after, extrude.Distance).Parameters;
+                case ExtrudeCommand extrude when edit.Targets(extrude):
+                    var previous = Parameters(edit.Before(extrude)).Parameters;
+                    var next = Parameters(edit.After(extrude)).Parameters;
                     return previous is not { } p || next is not { } n || !ExtrudeProfile.Same(p, n);
-                // An extrude of another sketch does not change with this edit.
+                // An extrude that the edit does not target does not change with this edit.
                 case ExtrudeCommand:
                     return false;
                 case { } command:
@@ -198,7 +279,7 @@ public static class SketchRebuild
         // that meet in one Subtract give one end, which Rebuild takes one time.
         private (Guid Key, bool Changed, string? Failure) Evaluate(Guid handle)
         {
-            var key = GeometryKeys.Derive(edit, handle);
+            var key = GeometryKeys.Derive(edit.Id, handle);
             switch (_graph.Creator(handle))
             {
                 case CreateBoxCommand:
@@ -206,10 +287,10 @@ public static class SketchRebuild
 
                 case ExtrudeCommand extrude:
                 {
-                    var sketch = extrude.SketchId == after.Id ? after : document.Sketches.FirstOrDefault(s => s.Id == extrude.SketchId);
-                    if (sketch is null)
+                    var input = edit.Targets(extrude) ? edit.After(extrude) : edit.Other(extrude);
+                    if (input.Sketch is null)
                         return (handle, false, $"the sketch '{extrude.SketchId}' of the extrude '{handle}' is not live");
-                    var (parameters, reason) = ExtrudeProfile.Parameters(sketch, extrude.Distance);
+                    var (parameters, reason) = Parameters(input);
                     if (parameters is not { } next)
                         return (handle, false, $"the extrude '{handle}': {reason}");
                     if (backend.TryGet<IExtrudeOps>() is not { } ops)
@@ -263,11 +344,11 @@ public static class SketchRebuild
             }
         }
 
-        // ADR-0039 item 5 (Q2 A): the end keeps its last solid and gets the fault, and the result
-        // gives the same code. A fault that does not change gives no new record.
+        // ADR-0039 item 5 (Q2 A) and ADR-0049 item 5: the end keeps its last solid and gets the
+        // fault, and the result gives the same code. A fault that does not change gives no new record.
         private void Fail(BodyRecord end, string reason)
         {
-            var fault = new BodyFault(DiagnosticCodes.SketchRebuildFailed, $"The body '{end.Handle.Id}' keeps its last solid: {reason}");
+            var fault = new BodyFault(edit.FailedCode, $"The body '{end.Handle.Id}' keeps its last solid: {reason}");
             diagnostics.Add(new Diagnostic(
                 Severity.Warning, fault.Code, fault.Message,
                 Data: new Dictionary<string, object?> { ["bodyId"] = end.Handle.Id }));

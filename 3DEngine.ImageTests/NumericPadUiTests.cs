@@ -3,6 +3,7 @@ using Engine.Contracts.Sketch;
 using Engine.Core.Queries;
 using ThreeDEngine.Core.Sketching;
 using ThreeDEngine.Core.Input;
+using ThreeDEngine.Core.Numeric;
 using ThreeDEngine.Desktop;
 using ThreeDEngine.Desktop.Ui;
 
@@ -18,10 +19,14 @@ public sealed class NumericPadUiTests
 
     private static readonly LiveBody Body = new(Guid.Parse("22222222-0000-0000-0000-000000000000"), "Box", null, true);
 
+    // A body of the kind Extrude, which the panel lists only while it is the selection, so each
+    // other test draws the panel of one body (ADR-0049 item 8).
+    private static readonly LiveBody Extruded = new(Guid.Parse("44444444-0000-0000-0000-000000000000"), "Extrude", null, true);
+
     private static IReadOnlyList<InputSample> Step(DesktopUi ui, Guid? selection, params InputSample[] frame)
     {
         var intents = ui.Route(frame);
-        ui.Frame(1f / 60f, Display, Vector2.One, [Body], selection);
+        ui.Frame(1f / 60f, Display, Vector2.One, selection == Extruded.Id ? [Body, Extruded] : [Body], selection);
         return intents;
     }
 
@@ -145,6 +150,27 @@ public sealed class NumericPadUiTests
             Tap(ui, DeviceKind.Mouse, DesktopUi.PadItem(label), Body.Id);
 
         Assert.Equal([new MoveBodyAction(Body.Id, 5, 0, -2)], ui.TakeActions());
+    }
+
+    // ADR-0049 item 8 (TASK-0163): Set distance shows only for a selected extrude and asks the host
+    // for the pad; the pad starts with the distance in effect, and an apply gives the new distance.
+    [Fact]
+    public void Set_Distance_Shows_Only_For_An_Extrude_And_Gives_The_New_Distance()
+    {
+        using var box = Opened(Body.Id);
+        Assert.Null(box.ItemRectangle(DesktopUi.SetDistanceLabel));
+
+        using var ui = Opened(Extruded.Id);
+        Tap(ui, DeviceKind.Touch, DesktopUi.SetDistanceLabel, Extruded.Id);
+        Assert.Equal([new EditDistanceAction(Extruded.Id)], ui.TakeActions());
+
+        ui.OpenDistancePad(Extruded.Id, 5);
+        Step(ui, Extruded.Id);
+        Assert.Equal([new PadField("distance", "5")], ui.Pad!.Fields);
+        foreach (var label in new[] { "Clear", "1", "2", "Apply" })
+            Tap(ui, DeviceKind.Mouse, DesktopUi.PadItem(label), Extruded.Id);
+
+        Assert.Equal([new SetDistanceAction(Extruded.Id, 12)], ui.TakeActions());
     }
 
     // ADR-0032 item 8: a rejection of the command stays in the pad, and a bad field gives no action.

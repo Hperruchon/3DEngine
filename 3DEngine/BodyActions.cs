@@ -1,16 +1,17 @@
 using Engine.Contracts;
 using Engine.Core;
 using Engine.Core.Commands;
+using Engine.Core.Queries;
 using ThreeDEngine.Core.Input;
 
 namespace ThreeDEngine.Desktop;
 
 // The selection of the desktop and the commands of a hide, a show all and a rename
 // (ADR-0029 items 1, 5 and 6, TASK-0086), an undo and a redo (ADR-0031), and a new box and a
-// move from the pad (ADR-0032). The selection is a state of the client (ADR-0007):
-// one body or none. Each change of a body is a command of the session, the same command that
-// an agent sends (ADR-0019 item 2), so the log records each one. The desktop calls this on
-// its render loop, outside each commit.
+// move from the pad (ADR-0032), and a new distance of an extrude (ADR-0049). The selection is a
+// state of the client (ADR-0007): one body or none. Each change of a body is a command of the
+// session, the same command that an agent sends (ADR-0019 item 2), so the log records each one.
+// The desktop calls this on its render loop, outside each commit.
 internal sealed class BodyActions(DocumentSession session)
 {
     // The selected body, or null.
@@ -86,6 +87,15 @@ internal sealed class BodyActions(DocumentSession session)
             Selection = moved;
         return Rejection(result);
     }
+
+    // ADR-0049 items 7 and 8: the distance in effect of the extrude whose handle is the body, from
+    // GetBodyInfo, or null for another body. A new distance from the pad: the body keeps its
+    // handle, so the selection stays.
+    public double? Distance(Guid body)
+        => session.Query<BodyInfo>(new GetBodyInfoQuery { BodyId = body }).GetAwaiter().GetResult().Result?.Distance;
+
+    public string? SetDistance(Guid body, double distance)
+        => Rejection(session.Apply(new SetExtrudeDistanceCommand { ExtrudeId = body, Distance = distance }).GetAwaiter().GetResult());
 
     private static string? Rejection(CommandResult result)
     {
