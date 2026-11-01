@@ -1,7 +1,7 @@
 ---
 id: 0158
 title: The codebase review of 2026-11-01 is a record
-status: Active
+status: Done
 phase: governance
 opened: 2026-11-01
 depends-on: [0157]
@@ -68,10 +68,23 @@ finding.
 
 ## Acceptance criteria
 
-- [ ] `CodebaseReviewGateTests` passes with the new review.
-- [ ] Continuous integration passes on the three runners, on the branch and on `main` after the merge.
+- [x] `CodebaseReviewGateTests` passes with the new review.
+- [x] Continuous integration passes on the three runners, on the branch and on `main` after the merge.
+
+## Outcome
+
+Status: Done · commit (the merge of the branch codebase-review-2026-11-01) · v0.160
+
+## Method
+
+Mechanical: the measures and the lines of the earlier findings come from scripts that read git, the ledger and the
+            last review; the probes of the agents ran again on this computer, and T123 and T124 were injected with controls.
+Judgement:  the severity of each new finding; V68 is high because a file from an agent or a saved document stops the
+            desktop at each start; E119, V69 and V70 are medium because a person meets them in normal use.
+Weakest:    each probe ran on Windows only; E120 on Linux and macOS, and V68 and V70 in a live window, are not verified.
 
 ## Progress
 
 - 2026-11-01: two review agents probed `3fd8b9b`; I ran their probes again and injected T123 and T124 with their
   controls.
+- 2026-11-01: closed at v0.160.
