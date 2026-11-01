@@ -1,7 +1,7 @@
 ---
 id: 0159
 title: The PNG reader refuses each error of the decompressor, so an image cannot stop the desktop
-status: Ready
+status: Active
 phase: P0.68
 opened: 2026-11-01
 depends-on: [0158]
@@ -53,3 +53,7 @@ Each PNG file that the reader cannot decode gives `InvalidDataException`, so the
 
 ## Progress
 
+- 2026-11-01: `Inflate` gives `InvalidDataException` with one reason for each error of the decompressor:
+  `ZLibException` and each other `IOException`, and each `InvalidDataException` of `ZLibStream`. Before the change the
+  test of the flag FDICT failed with `ZLibException`. 5 new test cases. The owner answered A to Q1, Q2 and Q3 of the
+  review on 2026-11-01.
