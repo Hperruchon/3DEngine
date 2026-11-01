@@ -108,18 +108,26 @@ public static class PngReader
     {
         compressed.Position = 0;
         var rows = new byte[size];
+        int after;
         try
         {
             using var zlib = new ZLibStream(compressed, CompressionMode.Decompress);
             zlib.ReadExactly(rows);
-            if (zlib.ReadByte() != -1)
-                throw new InvalidDataException("The image data of the PNG file is longer than its rows.");
+            after = zlib.ReadByte();
         }
         catch (EndOfStreamException)
         {
             throw new InvalidDataException("The image data of the PNG file is shorter than its rows.");
         }
+        // V68 (TASK-0159): a preset dictionary gives ZLibException, an IOException, and a bad header
+        // or sum gives InvalidDataException with a message about an archive. Each one is a refusal.
+        catch (Exception exception) when (exception is IOException or InvalidDataException)
+        {
+            throw new InvalidDataException($"The image data of the PNG file is not a zlib stream that the desktop reads: {exception.Message}", exception);
+        }
 
+        if (after != -1)
+            throw new InvalidDataException("The image data of the PNG file is longer than its rows.");
         return rows;
     }
 
