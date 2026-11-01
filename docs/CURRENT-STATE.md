@@ -4710,3 +4710,41 @@ New tests: 10. The test list holds 1520 (1079 in `Engine.Tests`, 280 in `3DEngin
 `3DEngine.ImageTests`, 3 in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and
 zero warnings. Open entries: 14 of 15. New diagnostic codes: 3. Since the review of v0.159, 1 product milestone and 3
 entries followed it.
+
+## v0.163 — The export reads the document file only, the store takes parallel puts, and each edge gives a code (P0.69, TASK-0160)
+
+The codebase review of 2026-11-01 found E119 (medium) and E120 to E124 (low) in the engine and its hosts. They came
+after the next product phase, K0f (v0.162). The owner gave the order on 2026-11-01: "start P0.69".
+
+**The changes.**
+- **E119.** `DocumentFile.Read` applies each entry with read access only and no journal. `engine export stl` uses it,
+  so the document file does not change and a file that the desktop holds reads. The output gives `warnings`.
+  `W-IO-TRUNCATED` of a read says that the read skipped the line and that the file keeps it.
+- **E120.** A put moves its scratch file with no overwrite first. When the name exists, it replaces only a file that
+  does not hold its name (E115), and reads the name again before a failure.
+- **E121.** `StlExport` refuses a vertex or a normal that a 32-bit float does not hold (`E-EXPORT-RANGE`), and more
+  than `MaximumTriangles` triangles (`E-EXPORT-TOO-LARGE`), in place of infinite floats and an `OverflowException`.
+  The route gives 422 for each.
+- **E122.** A write of the STL file that fails gives `E-EXPORT-WRITE-FAILED`, not `E-IO-SAVE-FAILED`. An empty path of
+  the document gives "The path of the document file is empty.". The rows of `E-GEOM-CAP-MISSING`, `E-GEOM-NATIVE-OP`,
+  `E-IO-LOAD-FAILED` and `W-IO-TRUNCATED` name the export.
+- **E123.** A calibration takes `dx` and `dy` over the larger of their magnitudes before the root, only where the plain
+  root underflows to 0 or overflows. Each calibration that applied before gives the same bits, so a saved document
+  opens with the same scale.
+- **E124.** The comment of `PUT /assets` agrees with the row of `E-ASSET-READ-FAILED`: a body that the server cannot read
+  gives 500.
+
+ADR-0048 items 3 to 5 follow the code. The new subsystem token `EXPORT` holds the three new codes.
+
+**Proof.** 6 new test cases in `Engine.Tests`: the read of a file with an incomplete last line and of a file that a
+session holds, the code of a write and of an empty path, a vertex out of the range of a float with a control at
+1e38, more triangles than a file holds, 160 parallel puts of the same new bytes, and a calibration whose square
+underflows or overflows. Each one failed before its change; the parallel puts failed on this computer with "Access to
+the path is denied". E124 changes a comment only, so it has no test.
+
+**What stays.** E120 is not verified on Linux and macOS, where a rename replaces a file in one step.
+
+New tests: 6. The test list holds 1526 (1085 in `Engine.Tests`, 280 in `3DEngine.Tests`, 158 in
+`3DEngine.ImageTests`, 3 in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and
+zero warnings. Open entries: 14 of 15. New diagnostic codes: 3. Since the review of v0.159, 1 product milestone and 4
+entries followed it.
