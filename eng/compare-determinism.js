@@ -25,6 +25,13 @@ for (const runner of runners) {
     process.exit(1);
   }
   files[runner] = fs.readFileSync(file, 'utf8').replace(/\r/g, '').split('\n').filter(line => line.length > 0);
+
+  // Finding T123 of the codebase review of 2026-11-01 (TASK-0161): three empty files gave three undefined hashes,
+  // which are equal. The first line must be the SHA-256 of the test, 64 lower-case hexadecimal digits.
+  if (!/^[0-9a-f]{64}$/.test(files[runner][0] ?? '')) {
+    console.log(`::error title=Determinism::the runner ${runner} gave no hash on the first line of ${file}: ${JSON.stringify(files[runner][0] ?? '(an empty file)')}`);
+    process.exit(1);
+  }
 }
 
 const hashes = runners.map(runner => files[runner][0]);

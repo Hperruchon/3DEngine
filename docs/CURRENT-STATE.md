@@ -4748,3 +4748,33 @@ New tests: 6. The test list holds 1526 (1085 in `Engine.Tests`, 280 in `3DEngine
 `3DEngine.ImageTests`, 3 in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and
 zero warnings. Open entries: 14 of 15. New diagnostic codes: 3. Since the review of v0.159, 1 product milestone and 4
 entries followed it.
+
+## v0.164 — The comparison refuses an empty hash, the pin rules read a global reference, and the next forms fail (P0.70, TASK-0161)
+
+The codebase review of 2026-11-01 found T123 to T126 (low) in the gates and the pipeline. The owner gave the order on
+2026-11-01: "start P0.70".
+
+**The changes.**
+- **T123.** `eng/compare-determinism.js` refuses a first line that is not 64 lower-case hexadecimal digits, and names
+  the runner. Three empty files gave "The three runners give one hash." with exit 0.
+- **T124.** The reader of the pin rules of the vision library and of the Vulkan layer takes `GlobalPackageReference`
+  too, in each file that MSBuild reads for a project.
+- **T125.** The rule of a setext heading in the ledger reads the paragraph back to its first line, and a letter that
+  is not ASCII before the digits counts as the v.
+- **T126.** A constant char of a severity is a part of a code only where it joins text: an operand of an add, an
+  interpolation, or an argument of `Join`, `Concat`, `Format` or `Append`. `c == 'E'` in a parser of numbers is not a
+  part now, and `char.ToUpperInvariant('e')` and `"EWI"[0]` in those places are parts.
+
+**Proof.** Each change ran against the old gate first. T123: four cases through the old and the new script; three
+empty files gave exit 0 and then exit 1, and the three controls gave the same exit code before and after. T124: an
+injected `Engine.Core/Directory.Packages.props` with a `GlobalPackageReference` of OpenCvSharp4 passed the old gate
+and fails the new one; the control `PackageReference` fails it. T125 and T126: 5 new test cases failed on the old
+gate and pass on the new one, and the forms of T120 and T122 still fail. 6 new test cases in all.
+
+**What stays.** A severity in a call that does not join text, for example a method of a client that builds a code,
+stays a rule in text: each code is one constant.
+
+New tests: 6. The test list holds 1532 (1091 in `Engine.Tests`, 280 in `3DEngine.Tests`, 158 in
+`3DEngine.ImageTests`, 3 in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and
+zero warnings. Open entries: 14 of 15. New diagnostic codes: 0. Since the review of v0.159, 1 product milestone and 5
+entries followed it.

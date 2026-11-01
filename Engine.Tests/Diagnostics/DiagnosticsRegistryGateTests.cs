@@ -159,10 +159,24 @@ public class DiagnosticsRegistryGateTests
     // const char in an interpolation and in a call.
     [InlineData("static class P { const char S = 'E'; static readonly string Tag = \"HIDDEN\"; static string Code() => $\"{S}-{\"SKETCH\"}-{Tag}\"; }")]
     [InlineData("static class P { const char S = 'W'; static readonly string Tag = \"HIDDEN\"; static string Code() => string.Concat(S, \"-\", \"SKETCH\", \"-\", Tag); }")]
+    // The forms of finding T126 of the codebase review of 2026-11-01 (TASK-0161): a severity that the compiler
+    // does not fold, in an interpolation. The rest of the code comes from a parameter, so the severity is the only
+    // constant part.
+    [InlineData("static class P { static string Code(string rest) => $\"{char.ToUpperInvariant('e')}{rest}\"; }")]
+    [InlineData("static class P { static string Code(string rest) => $\"{\"EWI\"[0]}{rest}\"; }")]
     public void A_Part_Of_A_Code_Is_An_Offence(string source)
     {
         Assert.NotEmpty(DiagnosticsScanner.PartsOfCodes([("Engine.Core/Probe.cs", source)]));
         Assert.Empty(DiagnosticsScanner.PartsOfCodes([("Engine.Core/Probe.cs", "static class P { const string Code = \"E-SKETCH-HIDDEN\"; }")]));
+    }
+
+    // Finding T126: a comparison with a constant char of a severity, as in a parser of numbers, is not a part of a code.
+    [Fact]
+    public void A_Comparison_With_A_Severity_Char_Is_Not_A_Part()
+    {
+        const string Parser = "static class P { const char Exponent = 'E'; static bool IsExponent(char c) => c == 'E' || c == Exponent || char.ToUpperInvariant(c) == 'E'; }";
+
+        Assert.Empty(DiagnosticsScanner.PartsOfCodes([("Engine.Core/Probe.cs", Parser)]));
     }
 
     // Finding T110 of the codebase review of 2026-10-31 (b) (TASK-0143): the scanner parses with no
