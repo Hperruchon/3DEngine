@@ -1,7 +1,7 @@
 ---
 id: 0163
 title: A command changes the distance of a live extrude, and the extrude and its chain rebuild
-status: Active
+status: Done
 phase: K0f
 opened: 2026-11-01
 depends-on: [0159]
@@ -71,15 +71,29 @@ follow, with undo, redo, replay and the document file as they are.
 
 ## Acceptance criteria
 
-- [ ] A live extrude takes the new distance under its handle, with one `body.changed`, and the end of a chain follows.
-- [ ] An undo, a redo, a later edit of the sketch and an open read the distance in effect.
-- [ ] Each refusal gives its code, and a broken profile gives the fault `W-FEATURE-REBUILD-FAILED`.
-- [ ] The button shows only for an extrude, its pad starts with the distance in effect, and an apply gives the command.
-- [ ] A clean build (`--no-incremental`) gives zero errors and zero warnings.
-- [ ] Continuous integration passes on the three runners, on the branch and on `main` after the merge.
+- [x] A live extrude takes the new distance under its handle, with one `body.changed`, and the end of a chain follows.
+- [x] An undo, a redo, a later edit of the sketch and an open read the distance in effect.
+- [x] Each refusal gives its code, and a broken profile gives the fault `W-FEATURE-REBUILD-FAILED`.
+- [x] The button shows only for an extrude, its pad starts with the distance in effect, and an apply gives the command.
+- [x] A clean build (`--no-incremental`) gives zero errors and zero warnings.
+- [x] Continuous integration passes on the three runners, on the branch and on `main` after the merge.
+
+## Outcome
+
+Status: Done · commit (the merge of the branch k0f-extrude-distance) · v0.162
+
+## Method
+
+Mechanical: a live extrude, a chain of a translate and a cut, an undo, a redo, a later edit of the sketch, a broken
+            profile, the query, an open, the button and its pad, and one injection for each rule (6). A visual check
+            of the drawing after a command over the loopback surface.
+Judgement:  one path of the rebuild for the two edits; new codes of the token FEATURE, because the codes of a sketch
+            edit name a sketch command; the distance in the query, so that a client does not read the log.
+Weakest:    no live window took a tap on the button; the test of the panel holds it with no GPU.
 
 ## Progress
 
 - 2026-11-01: ADR-0049, the command, the distance in effect and the shared path of the rebuild in `SketchRebuild`, the
   field of the query and the button of the desktop. 10 new test cases. 6 injections, one for each rule; each one
   failed a test. The label of the button is "Set distance", because the window of the images has a field "Distance".
+- 2026-11-01: closed at v0.162.

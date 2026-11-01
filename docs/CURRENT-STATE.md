@@ -4671,3 +4671,42 @@ New tests: 5. The test list holds 1510 (1070 in `Engine.Tests`, 280 in `3DEngine
 `3DEngine.ImageTests`, 3 in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and
 zero warnings. Open entries: 14 of 15. New diagnostic codes: 0. Since the review of v0.159, 0 product milestones and 2
 entries followed it.
+
+## v0.162 — A command changes the distance of a live extrude (K0f, TASK-0163)
+
+On 2026-11-01 the owner answered A to Q1 and Q2 of the codebase review of 2026-11-01: the next product phase is K0f,
+and its edit is one command that records the extrude and its new distance. Up to v0.161 the only edit after the fact
+was an edit of a sketch.
+
+**The change.**
+- `SetExtrudeDistance { extrudeId, distance }` (ADR-0049 item 1) takes an `Extrude` in effect, live or consumed.
+- Each rebuild reads the distance in effect: the distance of the last `SetExtrudeDistance` in effect for the extrude,
+  or else the distance of the `Extrude` (item 3). So a later edit of the sketch keeps the new distance, and an undo
+  gives back the old one.
+- `Engine.Core/Sketch/SketchRebuild.cs` has one path for the two edits: an edit of a sketch targets each extrude of
+  the sketch, and an edit of a distance targets one extrude. A live extrude rebuilds under a key of the edit, and a
+  consumed extrude rebuilds the end of its chain (items 4 and 6).
+- A broken profile gives the fault `W-FEATURE-REBUILD-FAILED`, and the command applies (item 5).
+- `GetBodyInfo` gives `distance`, the distance in effect of an extrude, or null (item 7).
+- A selected extrude in the desktop gets the button "Set distance". The host reads the distance with `GetBodyInfo` and
+  opens the pad with it, and an apply sends the command (item 8). The label is not "Distance", because the window of
+  the images has a field with that label, and the panel finds a control by its label.
+
+**New codes.** The subsystem token `FEATURE`: `E-FEATURE-ID-IN-USE`, `E-FEATURE-NOT-FOUND` and
+`W-FEATURE-REBUILD-FAILED`. The codes of a sketch edit say "a sketch command", so a reuse would change their meaning.
+ADR-0049 amends ADR-0028 item 2, ADR-0037 item 5 and ADR-0039 item 3. ADR-0039 is now amended.
+
+**Proof.** 9 new test cases in `Engine.Tests/Sketch/ExtrudeDistanceTests.cs`: a live extrude and a negative distance,
+the same distance, the refusals, a command sent again after the cache forgot it, an undo and a later edit of the
+sketch, the end of a chain, a broken profile and its repair, the query, and an open. 1 new test case in
+`3DEngine.ImageTests/NumericPadUiTests.cs`: the button and its pad. 6 injections, one for each rule; each one failed a
+test. A visual check: the desktop drew the taller solid after the command came over its loopback surface, and its log
+had no warning.
+
+**What stays.** The desktop cannot edit the extrude of a moved or cut body; an agent sends the command with the
+identifier of the extrude. No live window took a tap on the button, because a person was at the computer.
+
+New tests: 10. The test list holds 1520 (1079 in `Engine.Tests`, 280 in `3DEngine.Tests`, 158 in
+`3DEngine.ImageTests`, 3 in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and
+zero warnings. Open entries: 14 of 15. New diagnostic codes: 3. Since the review of v0.159, 1 product milestone and 3
+entries followed it.
