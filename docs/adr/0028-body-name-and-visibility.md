@@ -7,7 +7,7 @@ date: 2026-10-28
 supersedes: []
 superseded-by: []
 amends: ['0012', '0021']
-amended-by: ['0037']
+amended-by: ['0037', '0049']
 affects:
   - Engine.Contracts/BodyRecord.cs
   - Engine.Contracts/Handlers/ICommandHandler.cs
@@ -87,3 +87,4 @@ reads the payloads strictly must accept the new fields. The rule of a new comman
   Document one name and each JSON view another (finding E73 of the codebase review of 2026-10-28). The owner accepted
   the change on 2026-10-28.
 - 2026-10-29 · TASK-0108 · ADR-0037 amends item 7: `body.created` and `body.changed` gain the fields `geometry` and `fault`.
+- 2026-11-01 · TASK-0163 · ADR-0049 amends item 2: `GetBodyInfo` gives `distance`, the distance in effect of an extrude.

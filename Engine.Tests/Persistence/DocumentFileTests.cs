@@ -82,6 +82,7 @@ public sealed class DocumentFileTests : IDisposable
             Asset = new string('a', 64), DatumId = Engine.Contracts.Sketch.Datums.XZ.Id, Width = 640, Height = 480, OriginU = -1.5, OriginV = 2.25, Scale = 0.125,
         },
         ["CalibrateImage"] = new CalibrateImageCommand { ImageId = Guid.NewGuid(), X1 = 1, Y1 = 2.5, X2 = -3, Y2 = 4, Distance = 12.75 },
+        ["SetExtrudeDistance"] = new SetExtrudeDistanceCommand { ExtrudeId = Guid.NewGuid(), Distance = -7.25 },
     };
 
     // ADR-0015 item 11: each handler has an encoder, and Create(Encode(c)) gives c.

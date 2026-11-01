@@ -1,13 +1,13 @@
 ---
 id: 0039
 title: The rebuild of the chain of a consumed extrude
-status: Accepted
+status: Amended
 topic: Geometry, sketch
 date: 2026-10-30
 supersedes: []
 superseded-by: []
 amends: ['0037']
-amended-by: []
+amended-by: ['0049']
 affects:
   - Engine.Core/Sketch/**
 enforced-by: Engine.Tests/Sketch/ChainRebuildTests.cs (TASK-0116 creates it)
@@ -96,3 +96,4 @@ replay and the document file stay as they are.
 ## History
 
 - 2026-10-30 · TASK-0116 · Accepted under KQ4 A, from KQ1 to KQ4 A and Q1 to Q3 A of the owner of 2026-10-30.
+- 2026-11-01 · TASK-0163 · ADR-0049 amends item 3: an extrude upstream of an end uses its distance in effect.

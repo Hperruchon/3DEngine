@@ -43,6 +43,7 @@ public static class HandlerCatalog
         new ExtrudeCommandHandler(),
         new PlaceImageCommandHandler(),
         new CalibrateImageCommandHandler(),
+        new SetExtrudeDistanceCommandHandler(),
     ];
 
     public static IReadOnlyList<IQueryHandler> QueryHandlers() =>
