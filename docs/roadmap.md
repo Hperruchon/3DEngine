@@ -209,6 +209,10 @@ This track removes each condition that blocks other work.
 | P0.65 | A cancelled press gives nothing, and the mark of the snap is where the point goes and only while a finger is down (V65 to V67; after V2). TASK-0151. | 1–2 |
 | P0.66 | The lag test of the events fills the queue of the subscriber with a count and no timing (register entry R-0047). TASK-0154. | 1 |
 | P0.67 | Each runner hashes a native replay with geometry and solved sketches, and a last job compares the hashes (anti-objective 16, register entry R-0023). TASK-0156. | 1 |
+| P0.68 | The PNG reader refuses each error of the decompressor, so an image cannot stop the desktop (V68 of the codebase review of 2026-11-01; before the next product phase). TASK-0159. | 1 |
+| P0.69 | The export reads the document file only, the store takes parallel puts, and each edge of the export and the calibration gives a code (E119 to E124; after the next product phase). TASK-0160. | 2–3 |
+| P0.70 | The comparison refuses an empty hash, the pin rules read a global reference, and the next forms of the seventeenth review fail (T123 to T126; after the next product phase). TASK-0161. | 1–2 |
+| P0.71 | A proposal gives a simple polygon, the taps of a calibration reach it, and the image actions follow their refusals (V69 to V73; after the next product phase; V69 after Q3). TASK-0162. | 2–3 |
 
 ## Track P — The platform
 
