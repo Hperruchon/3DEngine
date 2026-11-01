@@ -1,7 +1,7 @@
 ---
 id: 0161
 title: The comparison refuses an empty hash, the pin rules read a global reference, and the next forms of the seventeenth review fail
-status: Active
+status: Done
 phase: P0.70
 opened: 2026-11-01
 depends-on: [0158]
@@ -52,9 +52,22 @@ An empty hash, a global reference of a pinned package, and the next forms of T12
 
 ## Acceptance criteria
 
-- [ ] Each gate fails on an injection of its new form before the change, and the control still fails after it.
-- [ ] A clean build (`--no-incremental`) gives zero errors and zero warnings.
-- [ ] Continuous integration passes on the three runners, on the branch and on `main` after the merge.
+- [x] Each gate fails on an injection of its new form before the change, and the control still fails after it.
+- [x] A clean build (`--no-incremental`) gives zero errors and zero warnings.
+- [x] Continuous integration passes on the three runners, on the branch and on `main` after the merge.
+
+## Outcome
+
+Status: Done · commit (the merge of the branch p070-gate-forms) · v0.164
+
+## Method
+
+Mechanical: the old and the new comparison on four cases; the old and the new pin rules on an injected file and a
+            control; 5 new test cases of T125 and T126 against the old gate and the new one.
+Judgement:  T126 counts a char where it joins text, as the review recommended, and keeps each other spelling a rule
+            in text; T124 reads the global reference and does not refuse it, because central package management is
+            a valid form of MSBuild.
+Weakest:    the comparison of the hashes has no test of its own in the test list; the injection is a script.
 
 ## Progress
 
@@ -65,3 +78,4 @@ An empty hash, a global reference of a pinned package, and the next forms of T12
   the paragraph back to its first line, and a letter that is not ASCII counts as the v. T126: a constant char of a
   severity is a part where it joins text only, and `char.ToUpperInvariant('e')` and `"EWI"[0]` count there. 6 new
   test cases; each new test failed on the old gate.
+- 2026-11-01: closed at v0.164.
