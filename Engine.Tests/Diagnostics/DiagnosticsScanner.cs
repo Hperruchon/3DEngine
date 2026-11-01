@@ -94,9 +94,10 @@ internal static class DiagnosticsScanner
             .Select(constant => (constant.Path, constant.Line, (string)constant.Value))
             .Concat(constants.Where(IsSeverityBeforeAdd).Select(constant => (constant.Path, constant.Line, constant.Value + "-")))
             // Finding T120 of the codebase review of 2026-10-31 (c) (TASK-0150): a const char E, W or I in
-            // an interpolation or a call gave no part. Each constant char of a severity is a part, as a
-            // constant string of a severity is.
-            .Concat(constants.Where(constant => constant.Value is char severity && IsSeverity(severity.ToString()))
+            // an interpolation or a call gave no part. Finding T126 of the codebase review of 2026-11-01
+            // (TASK-0161): each constant char of a severity was a part, so c == 'E' in a parser of numbers
+            // was a false part. A constant char of a severity is a part where it joins text only.
+            .Concat(constants.Where(constant => constant.Value is char severity && IsSeverity(severity.ToString()) && JoinsText(constant.Expression))
                 .Select(constant => (constant.Path, constant.Line, constant.Value.ToString()!)))
             .Concat(list.SelectMany(BuiltParts))
             .Distinct();
@@ -109,8 +110,47 @@ internal static class DiagnosticsScanner
         => constant.Value is char severity && IsSeverity(severity.ToString())
             && constant.Expression.Parent is BinaryExpressionSyntax add && add.IsKind(SyntaxKind.AddExpression) && add.Left == constant.Expression;
 
-    // The parts of codes that only the syntax shows: the text parts of an interpolated string, and
-    // a severity that string.Join puts after "-".
+    // T126: an expression joins text when it is an operand of an add, the expression of an interpolation, or an
+    // argument of a call that joins text, through parentheses and casts. Another spelling of a call stays a rule in
+    // text: each code is one constant.
+    private static bool JoinsText(ExpressionSyntax expression)
+    {
+        SyntaxNode node = expression;
+        while (node.Parent is ParenthesizedExpressionSyntax or CastExpressionSyntax)
+            node = node.Parent;
+        return node.Parent switch
+        {
+            BinaryExpressionSyntax add => add.IsKind(SyntaxKind.AddExpression),
+            InterpolationSyntax => true,
+            ArgumentSyntax { Parent: ArgumentListSyntax { Parent: InvocationExpressionSyntax call } } => JoinName(call.Expression),
+            _ => false,
+        };
+    }
+
+    private static bool JoinName(ExpressionSyntax expression) => expression switch
+    {
+        MemberAccessExpressionSyntax member => member.Name.Identifier.ValueText is "Join" or "Concat" or "Format" or "Append",
+        IdentifierNameSyntax name => name.Identifier.ValueText is "Join" or "Concat" or "Format" or "Append",
+        _ => false,
+    };
+
+    // T126: the char of a severity that the compiler does not fold, where it joins text: char.ToUpperInvariant('e')
+    // or char.ToUpper('e'), and a constant index into a string literal, as "EWI"[0].
+    private static string? BuiltSeverity(ExpressionSyntax expression)
+    {
+        var value = expression switch
+        {
+            InvocationExpressionSyntax { Expression: MemberAccessExpressionSyntax { Name.Identifier.ValueText: "ToUpperInvariant" or "ToUpper" }, ArgumentList.Arguments: [{ Expression: LiteralExpressionSyntax literal }] }
+                when literal.IsKind(SyntaxKind.CharacterLiteralExpression) => char.ToUpperInvariant((char)literal.Token.Value!).ToString(),
+            ElementAccessExpressionSyntax { Expression: LiteralExpressionSyntax text, ArgumentList.Arguments: [{ Expression: LiteralExpressionSyntax index }] }
+                when text.IsKind(SyntaxKind.StringLiteralExpression) && index.Token.Value is int at && at >= 0 && at < text.Token.ValueText.Length => text.Token.ValueText[at].ToString(),
+            _ => null,
+        };
+        return value is not null && IsSeverity(value) && JoinsText(expression) ? value : null;
+    }
+
+    // The parts of codes that only the syntax shows: the text parts of an interpolated string, a
+    // severity that string.Join puts after "-", and the char of a severity that the compiler does not fold (T126).
     private static IEnumerable<(string Path, int Line, string Value)> BuiltParts((string Path, string Text) file)
     {
         var root = CSharpSyntaxTree.ParseText(file.Text, new CSharpParseOptions(LanguageVersion.Preview), path: file.Path).GetRoot();
@@ -128,6 +168,12 @@ internal static class DiagnosticsScanner
                 && call.ArgumentList.Arguments is [{ Expression: LiteralExpressionSyntax separator }, { Expression: LiteralExpressionSyntax severity }, ..]
                 && separator.Token.ValueText == "-" && severity.Token.ValueText is "E" or "W" or "I")
                 yield return (file.Path, LineOf(call), severity.Token.ValueText + "-");
+        }
+
+        foreach (var expression in root.DescendantNodes().OfType<ExpressionSyntax>())
+        {
+            if (BuiltSeverity(expression) is { } severity)
+                yield return (file.Path, LineOf(expression), severity);
         }
     }
 

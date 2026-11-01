@@ -351,6 +351,13 @@ public class CodebaseReviewGateTests
     // A line with no quote marker before it (T114).
     private static string Unquoted(string line) => Regex.Replace(line, @"^ {0,3}(?:>[^\S\n]?)+", string.Empty);
 
+    // The lines of the paragraph that ends at the index, from that line back to the first line after a blank line (T125).
+    private static IEnumerable<string> Paragraph(string[] lines, int last)
+    {
+        for (var index = last; index >= 0 && Unquoted(lines[index]).Trim().Length > 0; index--)
+            yield return lines[index];
+    }
+
     // Finding T73: each ledger version is greater than the one before it, and each heading
     // after the reviewed version names one task.
     internal static IEnumerable<string> HeadingProblems((int Major, int Minor) reviewed, string ledger)
@@ -378,7 +385,10 @@ public class CodebaseReviewGateTests
             // Finding T122 of the codebase review of 2026-10-31 (c) (TASK-0150): inside a list item the
             // indent of an underline counts from the content of the item, so more than three spaces
             // passed. An underline at any indent after a line that holds a version is a problem.
-            setext |= index > 0 && Regex.IsMatch(lines[index - 1], @"v\d+\.\d+") && Regex.IsMatch(Unquoted(line), @"^\s*(?:=+|-+)\s*$");
+            // Finding T125 of the codebase review of 2026-11-01 (TASK-0161): a list item of two lines with the version
+            // on its first line, and a Greek nu, passed. The rule reads the paragraph back to its first line, and a
+            // letter that is not ASCII before the digits counts as the v.
+            setext |= index > 0 && Regex.IsMatch(Unquoted(line), @"^\s*(?:=+|-+)\s*$") && Paragraph(lines, index - 1).Any(text => Regex.IsMatch(text, @"(?:v|[\p{L}-[\x00-\x7F]])\d+\.\d+"));
             if (heading || nested || html || setext)
                 yield return $"line {index + 1} \"{line}\" is a heading that does not start with \"## v\"; the review counter reads that form only";
         }
@@ -552,6 +562,10 @@ public class CodebaseReviewGateTests
     [InlineData("- v0.11 — An entry (K0b, TASK-0003)\n    ===")]
     [InlineData("10. v0.11 — An entry (K0b, TASK-0003)\n    ---")]
     [InlineData("> - v0.11 — An entry (K0b, TASK-0003)\n>     ===")]
+    // Finding T125 of the codebase review of 2026-11-01 (TASK-0161): a list item of two lines with the version on its
+    // first line, and a Greek nu in place of the v.
+    [InlineData("- v0.11 — An entry (K0b,\n  TASK-0003)\n    ===")]
+    [InlineData("- ν0.11 — An entry (K0b, TASK-0003)\n    ===")]
     [InlineData("<h2>v0.11 — An entry (K0b, TASK-0003)</h2>")]
     [InlineData("## \u03BD0.11 — An entry (K0b, TASK-0003)")]
     [InlineData("## \uFF560.11 — An entry (K0b, TASK-0003)")]
