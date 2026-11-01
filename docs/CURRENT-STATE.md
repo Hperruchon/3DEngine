@@ -4614,3 +4614,32 @@ New tests: 4. The test list holds 1505 (1070 in `Engine.Tests`, 275 in `3DEngine
 `3DEngine.ImageTests`, 3 in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and
 zero warnings. Open entries: 14 of 15. New diagnostic codes: 0. Since the review of v0.149, 4 product milestones and 10
 entries followed it.
+
+## v0.160 — The codebase review of 2026-11-01 (governance, TASK-0158)
+
+The review of 2026-10-31 (c) examined v0.149. After it came 4 product milestones (V2a, V2b, V3 and P8g) and 10
+entries, so the next product milestone would make the review late. On 2026-11-01 the owner told the session: "do the
+review".
+
+**The record.** `docs/reviews/2026-11-01-codebase-review.md` examines `main` at `3fd8b9b`, the merge of v0.159. Two
+agents probed the code in parallel at that commit: the engine with the hosts, and the desktop with the gates. I ran
+their probes again, injected T123 and T124 with their controls, and read each cited line.
+
+**The findings.** 16 new findings. One is high: V68, a PNG file that asks for a preset dictionary stops the desktop
+at each start. Three are medium: E119 (the export of the command line holds the document file for a write), V69 (a
+part of one pixel gives a sketch that does not extrude) and V70 (with an active sketch, the taps of a calibration go to
+the sketch). Twelve are low: E120 to E124, V71 to V73 and T123 to T126. E113, E114, E116 to E118, V65 to V67, T118,
+T119 and T121 are fixed, and T1 is fixed by TASK-0156. Open findings: 0 critical, 5 high, 17 medium and 28 low.
+
+**The order.** TASK-0159 (P0.68) holds V68 and comes before the next product phase. TASK-0160 (P0.69) holds the engine
+findings, TASK-0161 (P0.70) the gate findings and TASK-0162 (P0.71) the desktop findings, after it. Q1 asks the owner
+for the next product phase (recommended: K0f, an edit of the distance of a live extrude), Q2 for what that edit records,
+and Q3 for the fix of V69.
+
+**A correction.** The line of E18 in the review of 2026-10-31 (c) lost the end of its code span; this review gives it
+again.
+
+New tests: none. The test list holds 1505 (1070 in `Engine.Tests`, 275 in `3DEngine.Tests`, 157 in
+`3DEngine.ImageTests`, 3 in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and
+zero warnings. Open entries: 14 of 15. New diagnostic codes: none. Since the review of v0.159, 0 product milestones and
+1 entry followed it.
