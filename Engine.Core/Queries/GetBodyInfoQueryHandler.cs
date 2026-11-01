@@ -2,6 +2,7 @@ using Engine.Contracts;
 using Engine.Contracts.Geometry;
 using Engine.Contracts.Handlers;
 using Engine.Contracts.Schema;
+using Engine.Core.Sketch;
 
 namespace Engine.Core.Queries;
 
@@ -26,6 +27,7 @@ public sealed class GetBodyInfoQueryHandler : IQueryHandler
             ["kind"] = new("string"),
             ["name"] = new("string"),
             ["visible"] = new("boolean"),
+            ["distance"] = new("number", Required: false),
         };
 
     // Per ADR-0016.
@@ -52,6 +54,8 @@ public sealed class GetBodyInfoQueryHandler : IQueryHandler
                     $"No body with id '{info.BodyId}' exists in the Document.")));
         }
 
-        return Task.FromResult(QueryHandlerResult.Success(new BodyInfo(body.Handle.Id, body.Kind, body.Name, body.Visible)));
+        // ADR-0049 item 7: a client reads the distance of an extrude here, and does not read the log.
+        var distance = SketchRebuild.DistanceInEffect(document.Log, body.Handle.Id);
+        return Task.FromResult(QueryHandlerResult.Success(new BodyInfo(body.Handle.Id, body.Kind, body.Name, body.Visible, distance)));
     }
 }

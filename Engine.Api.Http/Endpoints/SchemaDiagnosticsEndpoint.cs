@@ -65,6 +65,9 @@ internal static class SchemaDiagnosticsEndpoint
         new(DiagnosticCodes.ImageSizeInvalid,      "Error",   "IMAGE"), // ADR-0045 item 6, TASK-0152
         new(DiagnosticCodes.ImageScaleInvalid,     "Error",   "IMAGE"), // ADR-0045 item 6, TASK-0152
         new(DiagnosticCodes.ImageCalibrationInvalid, "Error", "IMAGE"), // ADR-0045 item 6, TASK-0152
+        new(DiagnosticCodes.FeatureIdInUse,        "Error",   "FEATURE"), // ADR-0049 item 2, TASK-0163
+        new(DiagnosticCodes.FeatureNotFound,       "Error",   "FEATURE"), // ADR-0049 item 2, TASK-0163
+        new(DiagnosticCodes.FeatureRebuildFailed,  "Warning", "FEATURE"), // ADR-0049 item 5, TASK-0163
     };
 
     public static IResult Handle() => Results.Json(Codes, ApiJson.Options);

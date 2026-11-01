@@ -251,6 +251,12 @@ public sealed class NativeThreeDEngine : IThreeDEngine, IDisposable
                 case MoveBodyAction move:
                     _ui.EndPad(_actions.Move(move.Body, move.Dx, move.Dy, move.Dz));
                     break;
+                case EditDistanceAction editDistance when _actions.Distance(editDistance.Body) is { } distance:
+                    _ui.OpenDistancePad(editDistance.Body, distance);
+                    break;
+                case SetDistanceAction setDistance:
+                    _ui.EndPad(_actions.SetDistance(setDistance.Body, setDistance.Distance));
+                    break;
                 case PlaceImageAction place:
                     _imageActions?.Place(place.Path, place.Datum);
                     break;

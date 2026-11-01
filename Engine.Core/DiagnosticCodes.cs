@@ -88,4 +88,9 @@ public static class DiagnosticCodes
     public const string ImageSizeInvalid = "E-IMAGE-SIZE-INVALID";
     public const string ImageScaleInvalid = "E-IMAGE-SCALE-INVALID";
     public const string ImageCalibrationInvalid = "E-IMAGE-CALIBRATION-INVALID";
+
+    // ADR-0049 (phase K0f, TASK-0163): an edit of the distance of an extrude.
+    public const string FeatureIdInUse = "E-FEATURE-ID-IN-USE";
+    public const string FeatureNotFound = "E-FEATURE-NOT-FOUND";
+    public const string FeatureRebuildFailed = "W-FEATURE-REBUILD-FAILED";
 }
