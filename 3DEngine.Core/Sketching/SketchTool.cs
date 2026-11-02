@@ -9,8 +9,9 @@ public sealed record ToolLine(Guid Id, Guid Start, Guid End);
 
 // A circle or an arc of the active sketch (phase K2e): the segments in pixels of the part of its
 // polyline in front of the eye, for a pick, and its centre and radius in the plane, for a snap
-// (phase R11a, ADR-0041).
-public sealed record ToolCurve(Guid Id, IReadOnlyList<((double X, double Y) A, (double X, double Y) B)> Pixels, (double X, double Y) Centre = default, double Radius = 0);
+// (phase R11a, ADR-0041). Phase R11c (TASK-0165): an arc also gives the positions of its start and
+// its end, for the sweep of an intersection; a circle gives null for each.
+public sealed record ToolCurve(Guid Id, IReadOnlyList<((double X, double Y) A, (double X, double Y) B)> Pixels, (double X, double Y) Centre = default, double Radius = 0, (double X, double Y)? Start = null, (double X, double Y)? End = null);
 
 // The active sketch at one frame: each point, each line, each curve and the identifier of each
 // constraint, in the order of the record.
@@ -20,6 +21,10 @@ public sealed record SketchPicture(IReadOnlyList<ToolPoint> Points, IReadOnlyLis
         : this(points, lines, constraints, [])
     {
     }
+
+    // Phase R11c (TASK-0165): the pixel of a position of the plane, or null when it is behind the eye.
+    // With no camera there is no function, and a tap takes no intersection.
+    public Func<(double X, double Y), (double X, double Y)?>? ToPixel { get; init; }
 
     public static SketchPicture Empty { get; } = new([], [], []);
 }
@@ -137,12 +142,16 @@ public sealed class SketchTool
         return closes ? null : end;
     }
 
-    // ADR-0041: the snap of a tap at a pixel, in this order, each within HitPixels: the midpoint of
-    // a line; else the nearest point on a line or a curve; else the position of the grid that the
-    // host gives. A snap is a position only: it adds no constraint.
+    // ADR-0041: the snap of a tap at a pixel, in this order, each within HitPixels: the intersection
+    // of two edges (phase R11c); else the midpoint of a line; else the nearest point on a line or a
+    // curve; else the position of the grid that the host gives. A snap is a position only: it adds
+    // no constraint.
     public static (double X, double Y)? Snap(double pixelX, double pixelY, (double X, double Y)? position, SketchPicture picture)
     {
         ArgumentNullException.ThrowIfNull(picture);
+        if (Crossing(pixelX, pixelY, picture) is { } crossing)
+            return crossing;
+
         var points = picture.Points
             .Where(point => point.PixelX is not null && point.PixelY is not null)
             .ToDictionary(point => point.Id);
@@ -189,6 +198,125 @@ public sealed class SketchTool
         }
 
         return on ?? position;
+    }
+
+    // Phase R11c (TASK-0165, ADR-0041 items 1 and 2): the intersection of two edges of the picture
+    // whose pixel is nearest to the tap within HitPixels, or null. Two lines that share a point meet
+    // only at that point, which is a point of the picture, so they give none.
+    private static (double X, double Y)? Crossing(double pixelX, double pixelY, SketchPicture picture)
+    {
+        if (picture.ToPixel is not { } toPixel)
+            return null;
+        var points = picture.Points.ToDictionary(point => point.Id);
+        var lines = picture.Lines
+            .Where(line => points.ContainsKey(line.Start) && points.ContainsKey(line.End))
+            .Select(line => (line.Start, line.End, A: (points[line.Start].X, points[line.Start].Y), B: (points[line.End].X, points[line.End].Y)))
+            .ToArray();
+        var curves = picture.Curves.Where(curve => curve.Radius > 0).ToArray();
+
+        var candidates = new List<(double X, double Y)>();
+        for (var i = 0; i < lines.Length; i++)
+        {
+            for (var j = i + 1; j < lines.Length; j++)
+            {
+                var (first, second) = (lines[i], lines[j]);
+                if (first.Start != second.Start && first.Start != second.End && first.End != second.Start && first.End != second.End)
+                    candidates.AddRange(Meet(first.A, first.B, second.A, second.B));
+            }
+
+            foreach (var curve in curves)
+                candidates.AddRange(Meet(lines[i].A, lines[i].B, curve));
+        }
+
+        for (var i = 0; i < curves.Length; i++)
+        {
+            for (var j = i + 1; j < curves.Length; j++)
+                candidates.AddRange(Meet(curves[i], curves[j]));
+        }
+
+        (double X, double Y)? nearest = null;
+        var best = HitPixels;
+        foreach (var candidate in candidates)
+        {
+            if (toPixel(candidate) is not { } pixel)
+                continue;
+            var distance = Math.Sqrt(((pixel.X - pixelX) * (pixel.X - pixelX)) + ((pixel.Y - pixelY) * (pixel.Y - pixelY)));
+            if (distance <= best)
+                (nearest, best) = (candidate, distance);
+        }
+
+        return nearest;
+    }
+
+    // The point where the segments ab and cd cross, with each parameter in [0, 1]; none when they are
+    // parallel.
+    private static IEnumerable<(double X, double Y)> Meet((double X, double Y) a, (double X, double Y) b, (double X, double Y) c, (double X, double Y) d)
+    {
+        var (rx, ry, sx, sy) = (b.X - a.X, b.Y - a.Y, d.X - c.X, d.Y - c.Y);
+        var denominator = (rx * sy) - (ry * sx);
+        if (denominator == 0)
+            yield break;
+        var (qx, qy) = (c.X - a.X, c.Y - a.Y);
+        var t = ((qx * sy) - (qy * sx)) / denominator;
+        var u = ((qx * ry) - (qy * rx)) / denominator;
+        if (t is >= 0 and <= 1 && u is >= 0 and <= 1)
+            yield return (a.X + (t * rx), a.Y + (t * ry));
+    }
+
+    // The points where the segment ab meets a curve: the roots t in [0, 1] of |a + t (b - a) - c| = r
+    // that are on the sweep of the curve.
+    private static IEnumerable<(double X, double Y)> Meet((double X, double Y) a, (double X, double Y) b, ToolCurve curve)
+    {
+        var (dx, dy, fx, fy) = (b.X - a.X, b.Y - a.Y, a.X - curve.Centre.X, a.Y - curve.Centre.Y);
+        var squared = (dx * dx) + (dy * dy);
+        var half = (fx * dx) + (fy * dy);
+        var discriminant = (half * half) - (squared * ((fx * fx) + (fy * fy) - (curve.Radius * curve.Radius)));
+        if (!(squared > 0) || discriminant < 0)
+            yield break;
+        var root = Math.Sqrt(discriminant);
+        foreach (var t in new[] { (-half - root) / squared, (-half + root) / squared })
+        {
+            var p = (a.X + (t * dx), a.Y + (t * dy));
+            if (t is >= 0 and <= 1 && OnSweep(curve, p))
+                yield return p;
+        }
+    }
+
+    // The points where two curves meet: on the line between the two centres at the distance "along"
+    // from the first centre, and at the distance "height" on each side of it, on the sweep of each.
+    private static IEnumerable<(double X, double Y)> Meet(ToolCurve first, ToolCurve second)
+    {
+        var (dx, dy) = (second.Centre.X - first.Centre.X, second.Centre.Y - first.Centre.Y);
+        var distance = Math.Sqrt((dx * dx) + (dy * dy));
+        if (!(distance > 0) || distance > first.Radius + second.Radius || distance < Math.Abs(first.Radius - second.Radius))
+            yield break;
+        var along = ((first.Radius * first.Radius) - (second.Radius * second.Radius) + (distance * distance)) / (2 * distance);
+        var height = Math.Sqrt(Math.Max(0, (first.Radius * first.Radius) - (along * along)));
+        var (mx, my) = (first.Centre.X + (along * dx / distance), first.Centre.Y + (along * dy / distance));
+        foreach (var side in new[] { -1.0, 1.0 })
+        {
+            var p = (mx - (side * height * dy / distance), my + (side * height * dx / distance));
+            if (OnSweep(first, p) && OnSweep(second, p))
+                yield return p;
+        }
+    }
+
+    // A position on the circle of a curve is on the curve: each position for a circle, and for an arc
+    // the positions counter-clockwise from its start to its end (ADR-0033 item 2), as SketchOverlay
+    // draws it. An end in the direction of the start gives a full turn. The snap is presentation: the
+    // command records the numbers, so the arc tangent does not reach a replay.
+    private static bool OnSweep(ToolCurve curve, (double X, double Y) p)
+    {
+        if (curve.Start is not { } s || curve.End is not { } e)
+            return true;
+        var from = Math.Atan2(s.Y - curve.Centre.Y, s.X - curve.Centre.X);
+        var sweep = Math.Atan2(e.Y - curve.Centre.Y, e.X - curve.Centre.X) - from;
+        while (sweep <= 0)
+            sweep += 2 * Math.PI;
+        var at = Math.Atan2(p.Y - curve.Centre.Y, p.X - curve.Centre.X) - from;
+        while (at < 0)
+            at += 2 * Math.PI;
+        return at <= sweep;
     }
 
     // ADR-0034 item 7: the next point from the pad. With an open chain the two numbers are an
