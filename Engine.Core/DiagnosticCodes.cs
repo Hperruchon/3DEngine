@@ -101,6 +101,11 @@ public static class DiagnosticCodes
     public const string DatumNotFound = "E-DATUM-NOT-FOUND";
     public const string DatumReferenceFailed = "W-DATUM-REFERENCE-FAILED";
 
+    // ADR-0052 (phase K0h, TASK-0167): an edge or a vertex of a feature as a reference of a sketch.
+    public const string SketchReferenceInvalid = "E-SKETCH-REFERENCE-INVALID";
+    public const string SketchReferenceCycle = "E-SKETCH-REFERENCE-CYCLE";
+    public const string SketchReferenceFailed = "W-SKETCH-REFERENCE-FAILED";
+
     // Findings E121 and E122 of the codebase review of 2026-11-01 (TASK-0160): the STL export of ADR-0048.
     public const string ExportRange = "E-EXPORT-RANGE";
     public const string ExportTooLarge = "E-EXPORT-TOO-LARGE";

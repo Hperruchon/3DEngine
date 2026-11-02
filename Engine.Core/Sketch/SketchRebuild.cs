@@ -11,7 +11,9 @@ namespace Engine.Core.Sketch;
 // Translate and Subtract to the live body at its end. ADR-0049: an edit of the distance of an
 // extrude takes the same path, and each rebuild reads the distance in effect. ADR-0051 item 6:
 // each datum in effect resolves again from the state after the edit, and each extrude of a
-// sketch on a datum that moves follows, as an extrude of the edited sketch does.
+// sketch on a datum that moves follows, as an extrude of the edited sketch does. ADR-0052 item 8:
+// each reference of a sketch resolves again too, and each extrude of a sketch whose reference moves
+// follows its solved record.
 public static class SketchRebuild
 {
     // ADR-0037 item 4: the identifier of each command of the log whose step is in effect. The
@@ -76,14 +78,16 @@ public static class SketchRebuild
     private readonly record struct ExtrudeInput(Guid SketchId, SketchRecord? Sketch, double Distance);
 
     // What an edit changes: the extrudes that it targets, the input of each one before and after
-    // the edit, and the codes of its warnings. An edit of a sketch targets each extrude of the
-    // sketch (ADR-0037 item 5), and an edit of a distance targets one extrude (ADR-0049 item 4).
+    // the edit, the record of each sketch after the edit, and the codes of its warnings. An edit of a
+    // sketch targets each extrude of the sketch (ADR-0037 item 5), and an edit of a distance targets
+    // one extrude (ADR-0049 item 4).
     private sealed record Edit(
         Guid Id,
         Func<ExtrudeCommand, bool> Targets,
         Func<ExtrudeCommand, ExtrudeInput> Before,
         Func<ExtrudeCommand, ExtrudeInput> After,
         Func<ExtrudeCommand, ExtrudeInput> Other,
+        Func<Guid, SketchRecord?> SketchAfter,
         string FailedCode,
         string ConsumedCode);
 
@@ -100,7 +104,7 @@ public static class SketchRebuild
     // diagnostics of the rebuild. Before is the record of the sketch in the Document, and
     // after is the solved record that the edit gives. Each extrude takes its distance in effect
     // (ADR-0049 item 3).
-    public static (IReadOnlyList<BodyRecord> Changed, IReadOnlyList<DatumRecord> Datums, IReadOnlyList<Diagnostic> Diagnostics) Rebuild(
+    public static (IReadOnlyList<BodyRecord> Changed, IReadOnlyList<DatumRecord> Datums, IReadOnlyList<SketchRecord> Sketches, IReadOnlyList<Diagnostic> Diagnostics) Rebuild(
         Document document, IGeometryBackend backend, Guid edit, SketchRecord before, SketchRecord after)
     {
         var inEffect = InEffect(document.Log);
@@ -111,13 +115,14 @@ public static class SketchRebuild
             extrude => new(after.Id, before, distance(extrude)),
             extrude => new(after.Id, after, distance(extrude)),
             extrude => new(extrude.SketchId, document.Sketches.FirstOrDefault(sketch => sketch.Id == extrude.SketchId), distance(extrude)),
+            id => id == after.Id ? after : SketchModel.Find(document, id),
             DiagnosticCodes.SketchRebuildFailed,
             DiagnosticCodes.SketchExtrudeConsumed));
     }
 
     // ADR-0049 items 4 and 5: the new record of the extrude, or of the end of its chain, after a
     // new distance. The sketch is its live record.
-    public static (IReadOnlyList<BodyRecord> Changed, IReadOnlyList<DatumRecord> Datums, IReadOnlyList<Diagnostic> Diagnostics) RebuildDistance(
+    public static (IReadOnlyList<BodyRecord> Changed, IReadOnlyList<DatumRecord> Datums, IReadOnlyList<SketchRecord> Sketches, IReadOnlyList<Diagnostic> Diagnostics) RebuildDistance(
         Document document, IGeometryBackend backend, Guid edit, ExtrudeCommand target, double next)
     {
         var inEffect = InEffect(document.Log);
@@ -130,33 +135,35 @@ public static class SketchRebuild
             extrude => Live(extrude, distance(extrude)),
             extrude => Live(extrude, next),
             extrude => Live(extrude, distance(extrude)),
+            id => SketchModel.Find(document, id),
             DiagnosticCodes.FeatureRebuildFailed,
             DiagnosticCodes.FeatureRebuildFailed));
     }
 
-    private static (IReadOnlyList<BodyRecord> Changed, IReadOnlyList<DatumRecord> Datums, IReadOnlyList<Diagnostic> Diagnostics) Run(
+    private static (IReadOnlyList<BodyRecord> Changed, IReadOnlyList<DatumRecord> Datums, IReadOnlyList<SketchRecord> Sketches, IReadOnlyList<Diagnostic> Diagnostics) Run(
         Document document, IGeometryBackend backend, HashSet<Guid> inEffect, Edit first)
     {
         var changed = new List<BodyRecord>();
         var graph = FeatureGraph.Of(document.Log);
 
-        // ADR-0051 item 6: the datums after the edit, in the order of the log. An extrude of a sketch
-        // on a datum whose frame moves is a target of the edit, with the frame of each state.
-        var (datums, after, datumWarnings) = DatumResolver.Rebuild(document, graph, extrude =>
-        {
-            var input = first.Targets(extrude) ? first.After(extrude) : first.Other(extrude);
-            return new DatumResolver.ExtrudeState(input.Sketch, input.Distance);
-        });
+        // ADR-0051 item 6 and ADR-0052 item 8: the datums and the references after the edit, in the order
+        // of the log. An extrude of a sketch on a datum whose frame moves, or of a sketch whose reference
+        // moves, is a target of the edit, with the frame and the record of each state.
+        ExtrudeInput Next(ExtrudeCommand extrude) => first.Targets(extrude) ? first.After(extrude) : first.Other(extrude);
+        var outcome = DatumResolver.Rebuild(document, graph, first.SketchAfter, extrude => Next(extrude).Distance);
+        var (datums, after) = (outcome.Datums, outcome.FrameOf);
         Func<Guid, DatumFrame?> before = id => DatumResolver.Frame(document, id);
         var moved = datums.Where(datum => datum.Frame != before(datum.Id)).Select(datum => datum.Id).ToHashSet();
-        bool OnMoved(ExtrudeCommand extrude) => first.Other(extrude).Sketch is { } sketch && moved.Contains(sketch.DatumId);
+        var resketched = outcome.Sketches.Select(sketch => sketch.Id).ToHashSet();
+        bool Follows(ExtrudeCommand extrude)
+            => resketched.Contains(extrude.SketchId) || (first.Other(extrude).Sketch is { } sketch && moved.Contains(sketch.DatumId));
         var edit = first with
         {
-            Targets = extrude => first.Targets(extrude) || OnMoved(extrude),
+            Targets = extrude => first.Targets(extrude) || Follows(extrude),
             Before = extrude => first.Targets(extrude) ? first.Before(extrude) : first.Other(extrude),
-            After = extrude => first.Targets(extrude) ? first.After(extrude) : first.Other(extrude),
+            After = extrude => resketched.Contains(extrude.SketchId) ? Next(extrude) with { Sketch = outcome.SketchOf(extrude.SketchId) } : Next(extrude),
         };
-        var diagnostics = new List<Diagnostic>(datumWarnings);
+        var diagnostics = new List<Diagnostic>(outcome.Diagnostics);
         var seeds = new List<ExtrudeCommand>();
 
         // The order of the log, never the order of Document.Bodies (ADR-0037 item 5).
@@ -207,7 +214,7 @@ public static class SketchRebuild
 
         if (seeds.Count > 0)
             new Chain(document, backend, edit, before, after, changed, diagnostics).Rebuild(seeds);
-        return (changed, datums, diagnostics);
+        return (changed, datums, outcome.Sketches, diagnostics);
 
         // ADR-0037 item 6 (Q2 A) and ADR-0049 item 5: the body keeps its last solid and gets the
         // fault, and the result gives the same code. A fault that does not change gives no new record.

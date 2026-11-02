@@ -66,7 +66,9 @@ public sealed class DeleteSketchItemCommandHandler : ICommandHandler, ICommandEn
             return Task.FromResult(SketchResults.NotFound(delete.SketchId));
 
         if (SketchModel.KindOf(sketch, delete.ItemId) is not (SketchModel.ItemKind.Point or SketchModel.ItemKind.Line or SketchModel.ItemKind.Circle or SketchModel.ItemKind.Arc or SketchModel.ItemKind.Constraint)
-            || SketchResults.IsOrigin(sketch, delete.ItemId))
+            || SketchResults.IsOrigin(sketch, delete.ItemId)
+            // ADR-0052 item 5: the identifier of a reference removes it whole; one point of an edge alone is refused.
+            || (SketchModel.IsReferencePoint(sketch, delete.ItemId) && sketch.References.All(reference => reference.Id != delete.ItemId)))
             return Task.FromResult(SketchResults.ItemNotFound(delete.SketchId, delete.ItemId, "item that a command can delete"));
 
         return Task.FromResult(SketchResults.Changed(document, backend, command.CommandId, SketchModel.Without(sketch, delete.ItemId), "itemId", delete.ItemId));

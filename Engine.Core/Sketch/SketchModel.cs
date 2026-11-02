@@ -50,9 +50,17 @@ public static class SketchModel
     // ADR-0033 item 6: DeleteSketchItem removes a point with each line, circle and arc that
     // references it, a line, a circle, an arc, or a constraint, and each constraint that
     // references a removed item. The origin of the frame is not deletable; the caller checks it.
+    // ADR-0052 item 5: a delete of the identifier of a reference also removes its points and its line,
+    // and the caller refuses a delete of one point of a reference alone.
     public static SketchRecord Without(SketchRecord sketch, Guid id)
     {
         var removed = new HashSet<Guid> { id };
+        foreach (var reference in sketch.References.Where(reference => reference.Id == id))
+        {
+            removed.UnionWith(reference.Points);
+            if (reference.Line is { } line)
+                removed.Add(line);
+        }
         foreach (var line in sketch.Lines.Where(line => removed.Contains(line.Start) || removed.Contains(line.End)))
             removed.Add(line.Id);
         foreach (var circle in sketch.Circles.Where(circle => removed.Contains(circle.Center)))
@@ -71,6 +79,29 @@ public static class SketchModel
             Circles = sketch.Circles.Where(circle => !removed.Contains(circle.Id)).ToList().AsReadOnly(),
             Arcs = sketch.Arcs.Where(arc => !removed.Contains(arc.Id)).ToList().AsReadOnly(),
             Constraints = sketch.Constraints.Where(constraint => !removed.Contains(constraint.Id)).ToList().AsReadOnly(),
+            References = sketch.References.Where(reference => !removed.Contains(reference.Id)).ToList().AsReadOnly(),
+        };
+    }
+
+    // ADR-0052 item 5: true when a reference drives the point. It has no variable in the solver, and
+    // no command moves it.
+    public static bool IsReferencePoint(SketchRecord sketch, Guid id)
+        => sketch.References.Any(reference => reference.Points.Contains(id));
+
+    // ADR-0052 item 8: the record with the points of the reference at the positions and with its
+    // fault, or null when nothing changes. Null positions keep the last points.
+    public static SketchRecord? Placed(SketchRecord sketch, SketchReference reference, IReadOnlyList<(double X, double Y)>? positions, DatumFault? fault)
+    {
+        var moves = positions is null
+            ? new Dictionary<Guid, (double X, double Y)>()
+            : reference.Points.Zip(positions).ToDictionary(pair => pair.First, pair => pair.Second);
+        if (reference.Fault == fault && moves.All(move => Point(sketch, move.Key) is var point && point.X == move.Value.X && point.Y == move.Value.Y))
+            return null;
+
+        return sketch with
+        {
+            Points = sketch.Points.Select(point => moves.TryGetValue(point.Id, out var at) ? point with { X = at.X, Y = at.Y } : point).ToList().AsReadOnly(),
+            References = sketch.References.Select(item => item.Id == reference.Id ? item with { Fault = fault } : item).ToList().AsReadOnly(),
         };
     }
 }

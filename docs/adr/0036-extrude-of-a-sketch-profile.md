@@ -7,7 +7,7 @@ date: 2026-10-29
 supersedes: []
 superseded-by: []
 amends: []
-amended-by: ['0037', '0040', '0050', '0051']
+amended-by: ['0037', '0040', '0050', '0051', '0052']
 affects:
   - Engine.Contracts/Geometry/**
   - Engine.Core/Commands/ExtrudeCommand.cs
@@ -154,3 +154,4 @@ exact on each platform.
   extrude only the rounded checks accepted no longer opens (Q1 A of the owner of 2026-11-02).
 - 2026-11-02 · TASK-0166 · ADR-0051 amends items 3 and 6: the frame of a datum on a face has its own origin, and
   the side of a line has general axes.
+- 2026-11-03 · TASK-0167 · ADR-0052 amends item 2: a line of a reference is not an edge of the profile.

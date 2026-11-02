@@ -8,13 +8,26 @@ namespace Engine.Core.Sketch;
 // resolves on the steps in effect at the place of the command that holds it: the feature gives
 // its carrier from its current inputs, and each Translate before that place on the chain of the
 // body of the feature moves it. The code uses + - * / sqrt and comparisons only (item 10), and it
-// takes the datums in the order of the log, never in the order of a set.
+// takes the datums in the order of the log, never in the order of a set. ADR-0052: the points of an
+// edge or a vertex for a reference of a sketch, their projection onto the plane of the sketch, and
+// the check of a cycle.
 public static class DatumResolver
 {
-    // ADR-0051 item 1: the names of the faces. The names of the edges and the vertices wait for K0h.
+    // ADR-0051 item 1: the names of the faces.
     public static readonly IReadOnlyList<string> ExtrudeFaces = ["start", "end", "side"];
 
     public static readonly IReadOnlyList<string> BoxFaces = ["+x", "-x", "+y", "-y", "+z", "-z"];
+
+    // ADR-0052 item 1: the names of the edges and the vertices of an extrude. Each one takes an itemId:
+    // a line for startEdge and endEdge, and a point for the others.
+    public static readonly IReadOnlyList<string> ExtrudeEdges = ["startEdge", "endEdge", "sideEdge"];
+
+    public static readonly IReadOnlyList<string> ExtrudeVertices = ["startVertex", "endVertex"];
+
+    // The identifiers of the two ends of the edge of a reference (ADR-0052 item 2).
+    public static readonly Guid FirstEnd = new("00000000-0000-0000-0000-000000000001");
+
+    public static readonly Guid SecondEnd = new("00000000-0000-0000-0000-000000000002");
 
     // The sketch and the distance of an extrude in one state of the Document: now, or after an edit.
     public readonly record struct ExtrudeState(SketchRecord? Sketch, double Distance);
@@ -33,13 +46,13 @@ public static class DatumResolver
     public static string? Form(DatumReference reference, Command? feature) => feature switch
     {
         ExtrudeCommand when !ExtrudeFaces.Contains(reference.Element) =>
-            $"The element '{reference.Element}' is not a face of an extrude; the faces are {string.Join(", ", ExtrudeFaces)}. The edges and the vertices arrive with K0h.",
+            $"The element '{reference.Element}' is not a face of an extrude; the faces are {string.Join(", ", ExtrudeFaces)}. An edge or a vertex is a reference of a sketch (AddSketchReference, ADR-0052).",
         ExtrudeCommand when reference.Element == "side" && reference.ItemId is null =>
             "The element 'side' needs the itemId of a line of the sketch of the extrude.",
         ExtrudeCommand when reference.Element != "side" && reference.ItemId is not null =>
             $"The element '{reference.Element}' takes no itemId.",
         CreateBoxCommand when !BoxFaces.Contains(reference.Element) =>
-            $"The element '{reference.Element}' is not a face of a box; the faces are {string.Join(", ", BoxFaces)}. The edges and the vertices arrive with K0h.",
+            $"The element '{reference.Element}' is not a face of a box; the faces are {string.Join(", ", BoxFaces)}. An edge or a vertex is a reference of a sketch (AddSketchReference, ADR-0052).",
         CreateBoxCommand when reference.ItemId is not null =>
             "A face of a box takes no itemId.",
         ExtrudeCommand or CreateBoxCommand => null,
@@ -68,41 +81,156 @@ public static class DatumResolver
         return frame is { } carrier ? (carrier with { Origin = Moved(carrier.Origin, graph, feature.CommandId, place) }, null) : (null, reason);
     }
 
-    // ADR-0051 item 6: each datum in effect resolved again in the order of the log, from the state
-    // after an edit. The result gives the new record of each datum whose frame or fault changes,
-    // the frame of each datum after the edit, and a warning for each datum that does not resolve.
-    // A datum that does not resolve keeps its last frame.
-    public static (IReadOnlyList<DatumRecord> Changed, Func<Guid, DatumFrame?> FrameOf, IReadOnlyList<Diagnostic> Diagnostics) Rebuild(
-        Document document, FeatureGraph graph, Func<ExtrudeCommand, ExtrudeState> state)
+    // What a rebuild of the datums and the references gives: the new record of each datum and each
+    // sketch that changes, in the order of the log, the frame of each datum and the record of each
+    // sketch after the edit, and a warning for each one that does not resolve.
+    public sealed record Outcome(
+        IReadOnlyList<DatumRecord> Datums,
+        IReadOnlyList<SketchRecord> Sketches,
+        Func<Guid, DatumFrame?> FrameOf,
+        Func<Guid, SketchRecord?> SketchOf,
+        IReadOnlyList<Diagnostic> Diagnostics);
+
+    // ADR-0051 item 6 and ADR-0052 item 8: each CreateDatum and each AddSketchReference in effect,
+    // resolved again in the order of the log, from the state after an edit. SketchOf gives the record
+    // of a sketch after the edit, and distanceOf the distance of an extrude after it. A reference
+    // whose points move changes its sketch, and the solver solves it again, so a later reference or
+    // datum sees the new record. A datum or a reference that does not resolve keeps its last frame or
+    // its last points and gets a fault.
+    public static Outcome Rebuild(
+        Document document, FeatureGraph graph, Func<Guid, SketchRecord?> sketchOf, Func<ExtrudeCommand, double> distanceOf)
     {
         var frames = new Dictionary<Guid, DatumFrame>();
-        var changed = new List<DatumRecord>();
+        var sketches = new Dictionary<Guid, SketchRecord>();
+        var changedDatums = new List<DatumRecord>();
+        var changedSketches = new List<Guid>();
         var diagnostics = new List<Diagnostic>();
-        DatumFrame? FrameOf(Guid id) => OriginPlane(id) ?? (frames.TryGetValue(id, out var frame) ? frame : null);
+        DatumFrame? FrameOf(Guid id) => OriginPlane(id) ?? (frames.TryGetValue(id, out var frame) ? frame : Frame(document, id));
+        SketchRecord? SketchOf(Guid id) => sketches.TryGetValue(id, out var sketch) ? sketch : sketchOf(id);
+        ExtrudeState State(ExtrudeCommand extrude) => new(SketchOf(extrude.SketchId), distanceOf(extrude));
 
-        foreach (var create in document.Log.Select(entry => entry.Command).OfType<CreateDatumCommand>())
+        foreach (var command in document.Log.Select(entry => entry.Command))
         {
-            if (document.Datums.FirstOrDefault(datum => datum.Id == create.CommandId) is not { } datum)
-                continue;
-            var (frame, reason) = Resolve(datum.Reference, graph, graph.Order(create.CommandId), state, FrameOf);
-            DatumRecord next;
-            if (frame is { } resolved)
-                next = datum with { Frame = resolved, Fault = null };
-            else
+            switch (command)
             {
-                var fault = new DatumFault(DiagnosticCodes.DatumReferenceFailed, $"The datum '{datum.Id}' keeps its last plane: {reason}");
-                next = datum with { Fault = fault };
-                diagnostics.Add(new Diagnostic(
-                    Severity.Warning, fault.Code, fault.Message,
-                    Data: new Dictionary<string, object?> { ["datumId"] = datum.Id }));
-            }
+                case CreateDatumCommand create when document.Datums.FirstOrDefault(datum => datum.Id == create.CommandId) is { } datum:
+                {
+                    var (frame, reason) = Resolve(datum.Reference, graph, graph.Order(create.CommandId), State, FrameOf);
+                    DatumRecord next;
+                    if (frame is { } resolved)
+                        next = datum with { Frame = resolved, Fault = null };
+                    else
+                    {
+                        var fault = new DatumFault(DiagnosticCodes.DatumReferenceFailed, $"The datum '{datum.Id}' keeps its last plane: {reason}");
+                        next = datum with { Fault = fault };
+                        diagnostics.Add(new Diagnostic(
+                            Severity.Warning, fault.Code, fault.Message,
+                            Data: new Dictionary<string, object?> { ["datumId"] = datum.Id }));
+                    }
 
-            frames[datum.Id] = next.Frame;
-            if (next != datum)
-                changed.Add(next);
+                    frames[datum.Id] = next.Frame;
+                    if (next != datum)
+                        changedDatums.Add(next);
+                    break;
+                }
+
+                case AddSketchReferenceCommand add
+                    when SketchOf(add.SketchId) is { } record && record.References.FirstOrDefault(reference => reference.Id == add.CommandId) is { } entry:
+                {
+                    var (positions, reason) = Positions(entry.Target, graph, graph.Order(add.CommandId), State, FrameOf, record);
+                    DatumFault? fault = null;
+                    if (positions is null)
+                    {
+                        fault = new DatumFault(DiagnosticCodes.SketchReferenceFailed, $"The reference '{entry.Id}' of the sketch '{record.Id}' keeps its last points: {reason}");
+                        diagnostics.Add(new Diagnostic(
+                            Severity.Warning, fault.Code, fault.Message,
+                            Data: new Dictionary<string, object?> { ["sketchId"] = record.Id, ["referenceId"] = entry.Id }));
+                    }
+
+                    if (SketchModel.Placed(record, entry, positions, fault) is not { } placed)
+                        break;
+                    sketches[record.Id] = SketchSolver.Solve(placed);
+                    if (!changedSketches.Contains(record.Id))
+                        changedSketches.Add(record.Id);
+                    break;
+                }
+            }
         }
 
-        return (changed, FrameOf, diagnostics);
+        return new Outcome(changedDatums, [.. changedSketches.Select(id => sketches[id])], FrameOf, SketchOf, diagnostics);
+    }
+
+    // ADR-0052 item 7: the reason that a reference of a sketch has the wrong form for its feature, or null.
+    public static string? PointForm(DatumReference reference, Command? feature) => feature switch
+    {
+        ExtrudeCommand when !ExtrudeEdges.Contains(reference.Element) && !ExtrudeVertices.Contains(reference.Element) =>
+            $"The element '{reference.Element}' is not an edge or a vertex of an extrude; they are {string.Join(", ", ExtrudeEdges.Concat(ExtrudeVertices))}. A face is a datum (CreateDatum, ADR-0051).",
+        ExtrudeCommand when reference.ItemId is null =>
+            $"The element '{reference.Element}' needs the itemId of {(reference.Element is "startEdge" or "endEdge" ? "a line" : "a point")} of the profile of the extrude.",
+        CreateBoxCommand when BoxAxes(reference.Element) is not { Count: 2 or 3 } =>
+            $"The element '{reference.Element}' is not an edge or a vertex of a box: an edge has two signed axes and a vertex three, in the order x, y, z, for example '+x-z' or '+x-y+z'.",
+        CreateBoxCommand when reference.ItemId is not null =>
+            "An edge or a vertex of a box takes no itemId.",
+        ExtrudeCommand or CreateBoxCommand => null,
+        _ => $"No CreateBox or Extrude in effect has the id '{reference.FeatureId}'.",
+    };
+
+    // ADR-0052 items 1 and 3: the positions in the plane of the sketch of the point of a vertex, or of
+    // the two ends of an edge, or the reason that the reference does not resolve.
+    public static (IReadOnlyList<(double X, double Y)>? Positions, string? Reason) Positions(
+        DatumReference reference, FeatureGraph graph, int place, Func<ExtrudeCommand, ExtrudeState> state,
+        Func<Guid, DatumFrame?> frameOf, SketchRecord sketch)
+    {
+        var feature = graph.Creator(reference.FeatureId);
+        if (feature is null || graph.Order(feature.CommandId) >= place)
+            return (null, $"No CreateBox or Extrude in effect before the reference has the id '{reference.FeatureId}'.");
+        if (PointForm(reference, feature) is { } wrong)
+            return (null, wrong);
+        if (frameOf(sketch.DatumId) is not { } plane)
+            return (null, $"The datum '{sketch.DatumId}' of the sketch '{sketch.Id}' does not exist.");
+
+        var (points, reason) = feature switch
+        {
+            ExtrudeCommand extrude => ExtrudePoints(extrude, reference, state(extrude), frameOf),
+            CreateBoxCommand box => (BoxPoints(box, reference.Element), null),
+            _ => (null, $"The command '{feature.Name}' has no edges."),
+        };
+        if (points is null)
+            return (null, reason);
+
+        // Item 3: the orthogonal projection onto the plane of the sketch, with + - * only.
+        var positions = points
+            .Select(point => Moved(point, graph, feature.CommandId, place))
+            .Select(point =>
+            {
+                var (x, y, z) = (point.X - plane.Origin.X, point.Y - plane.Origin.Y, point.Z - plane.Origin.Z);
+                return ((x * plane.U.X) + (y * plane.U.Y) + (z * plane.U.Z), (x * plane.V.X) + (y * plane.V.Y) + (z * plane.V.Z));
+            })
+            .ToList();
+        if (positions.Count == 2 && positions[0] == positions[1])
+            return (null, $"The edge '{reference.Element}' of '{reference.FeatureId}' projects to one point of the plane of the sketch; use its vertex.");
+        return (positions, null);
+    }
+
+    // ADR-0052 item 7: true when the feature depends on the sketch: it is an extrude of the sketch, or
+    // an extrude whose sketch lies on a datum or holds a reference whose feature depends on the sketch.
+    public static bool DependsOn(Document document, FeatureGraph graph, Guid feature, Guid sketch)
+    {
+        var seen = new HashSet<Guid>();
+        return Feature(feature);
+
+        bool Feature(Guid id) => graph.Creator(id) is ExtrudeCommand extrude && Sketch(extrude.SketchId);
+
+        bool Sketch(Guid id)
+        {
+            if (id == sketch)
+                return true;
+            if (!seen.Add(id) || SketchModel.Find(document, id) is not { } record)
+                return false;
+            if (document.Datums.FirstOrDefault(datum => datum.Id == record.DatumId) is { } datum && Feature(datum.Reference.FeatureId))
+                return true;
+            return record.References.Any(reference => Feature(reference.Target.FeatureId));
+        }
     }
 
     // ADR-0051 item 3: the faces of an extrude of a sketch on the frame (O, U, V, N) by the distance d.
@@ -152,6 +280,90 @@ public static class DatumResolver
         var along = new DatumAxis(((tx * u.X) + (ty * v.X)) / length, ((tx * u.Y) + (ty * v.Y)) / length, ((tx * u.Z) + (ty * v.Z)) / length);
         var origin = new DatumPoint(o.X + (p.X * u.X) + (p.Y * v.X), o.Y + (p.X * u.Y) + (p.Y * v.Y), o.Z + (p.X * u.Z) + (p.Y * v.Z));
         return (new DatumFrame(origin, along, n, Cross(along, n)), null);
+    }
+
+    // ADR-0052 item 1: the points of an edge or a vertex of an extrude, in the space of the Document,
+    // before the moves of its chain. A line of a reference is not a line of the profile (item 6).
+    private static (IReadOnlyList<DatumPoint>? Points, string? Reason) ExtrudePoints(
+        ExtrudeCommand extrude, DatumReference reference, ExtrudeState state, Func<Guid, DatumFrame?> frameOf)
+    {
+        if (state.Sketch is not { } sketch)
+            return (null, $"The sketch '{extrude.SketchId}' of the extrude '{extrude.CommandId}' is not live.");
+        if (frameOf(sketch.DatumId) is not { } frame)
+            return (null, $"The datum '{sketch.DatumId}' of the sketch '{sketch.Id}' does not exist.");
+        var (parameters, reason) = ExtrudeProfile.Parameters(sketch, state.Distance, frame);
+        if (parameters is null)
+            return (null, $"The profile of the extrude '{extrude.CommandId}' does not resolve: {reason}");
+
+        var (o, u, v, n, d) = (frame.Origin, frame.U, frame.V, frame.Normal, state.Distance);
+        DatumPoint World(SketchPoint p, double h)
+            => new(o.X + (p.X * u.X) + (p.Y * v.X) + (h * n.X), o.Y + (p.X * u.Y) + (p.Y * v.Y) + (h * n.Y), o.Z + (p.X * u.Z) + (p.Y * v.Z) + (h * n.Z));
+        var construction = sketch.References.Select(item => item.Line).OfType<Guid>().ToHashSet();
+        var item = reference.ItemId;
+
+        if (reference.Element is "startEdge" or "endEdge")
+        {
+            if (sketch.Arcs.Any(arc => arc.Id == item))
+                return (null, $"The arc '{item}' is a curved edge, which waits for K5.");
+            if (sketch.Lines.FirstOrDefault(line => line.Id == item && !construction.Contains(line.Id)) is not { } line)
+                return (null, $"The item '{item}' is not a line of the profile of the extrude '{extrude.CommandId}'.");
+            var h = reference.Element == "endEdge" ? d : 0;
+            return ([World(SketchModel.Point(sketch, line.Start), h), World(SketchModel.Point(sketch, line.End), h)], null);
+        }
+
+        // A vertex of the profile is an end of a line of the profile or of an arc.
+        var vertex = sketch.Lines.Where(line => !construction.Contains(line.Id)).Any(line => line.Start == item || line.End == item)
+            || sketch.Arcs.Any(arc => arc.Start == item || arc.End == item);
+        if (!vertex)
+            return (null, $"The item '{item}' is not a vertex of the profile of the extrude '{extrude.CommandId}'.");
+        var point = SketchModel.Point(sketch, item!.Value);
+        return reference.Element switch
+        {
+            "sideEdge" => ([World(point, 0), World(point, d)], null),
+            "endVertex" => ([World(point, d)], null),
+            _ => ([World(point, 0)], null),
+        };
+    }
+
+    // ADR-0052 item 1: the signed axes of the name of an edge or a vertex of a box, in the order x, y,
+    // z, or null. "+x-z" gives [(0, 1), (2, -1)].
+    private static IReadOnlyList<(int Axis, int Sign)>? BoxAxes(string element)
+    {
+        if (element.Length is 0 || element.Length % 2 != 0)
+            return null;
+        var axes = new List<(int Axis, int Sign)>();
+        for (var i = 0; i < element.Length; i += 2)
+        {
+            var axis = "xyz".IndexOf(element[i + 1]);
+            if (element[i] is not ('+' or '-') || axis < 0 || (axes.Count > 0 && axes[^1].Axis >= axis))
+                return null;
+            axes.Add((axis, element[i] == '+' ? 1 : -1));
+        }
+
+        return axes;
+    }
+
+    // ADR-0052 item 1: the points of an edge or a vertex of a box with its centre at the origin. An
+    // edge runs along its free axis from -h to +h.
+    private static IReadOnlyList<DatumPoint> BoxPoints(CreateBoxCommand box, string element)
+    {
+        var half = new[] { box.SizeX / 2, box.SizeY / 2, box.SizeZ / 2 };
+        var axes = BoxAxes(element)!;
+        var ends = axes.Count == 3 ? new[] { 1 } : new[] { -1, 1 };
+        // An edge runs along the one axis that its name does not give; a vertex has no free axis.
+        var free = axes.Count == 2 ? Enumerable.Range(0, 3).First(axis => axes.All(item => item.Axis != axis)) : -1;
+        return
+        [
+            .. ends.Select(end =>
+            {
+                var at = new double[3];
+                foreach (var (axis, sign) in axes)
+                    at[axis] = sign * half[axis];
+                if (axes.Count == 2)
+                    at[free] = end * half[free];
+                return new DatumPoint(at[0], at[1], at[2]);
+            }),
+        ];
     }
 
     // ADR-0051 item 3: a face of a box with its centre at the origin. Each axis holds 0 and ±1.
