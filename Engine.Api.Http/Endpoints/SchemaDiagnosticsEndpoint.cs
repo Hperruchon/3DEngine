@@ -68,6 +68,11 @@ internal static class SchemaDiagnosticsEndpoint
         new(DiagnosticCodes.FeatureIdInUse,        "Error",   "FEATURE"), // ADR-0049 item 2, TASK-0163
         new(DiagnosticCodes.FeatureNotFound,       "Error",   "FEATURE"), // ADR-0049 item 2, TASK-0163
         new(DiagnosticCodes.FeatureRebuildFailed,  "Warning", "FEATURE"), // ADR-0049 item 5, TASK-0163
+        new(DiagnosticCodes.DatumIdInUse,          "Error",   "DATUM"), // ADR-0051 item 7, TASK-0166
+        new(DiagnosticCodes.DatumReferenceInvalid, "Error",   "DATUM"), // ADR-0051 item 7, TASK-0166
+        new(DiagnosticCodes.DatumNameInvalid,      "Error",   "DATUM"), // ADR-0051 item 7, TASK-0166
+        new(DiagnosticCodes.DatumNotFound,         "Error",   "DATUM"), // ADR-0051 item 7, TASK-0166
+        new(DiagnosticCodes.DatumReferenceFailed,  "Warning", "DATUM"), // ADR-0051 item 6, TASK-0166
         new(DiagnosticCodes.ExportRange,           "Error",   "EXPORT"), // finding E121, TASK-0160
         new(DiagnosticCodes.ExportTooLarge,        "Error",   "EXPORT"), // finding E121, TASK-0160
         new(DiagnosticCodes.ExportWriteFailed,     "Error",   "EXPORT"), // finding E122, TASK-0160

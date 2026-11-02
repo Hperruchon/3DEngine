@@ -51,6 +51,28 @@ public class CrossPlatformHashTests
             new AddSketchConstraintCommand { CommandId = Id(36), SketchId = sketch, Kind = "distance", First = bc, Value = 20.5 },
             new ExtrudeCommand { CommandId = Id(40), SketchId = sketch, Distance = 12.75 },
             new TranslateCommand { CommandId = Id(41), BodyId = Id(40), Dx = -7.5, Dy = 2.25, Dz = 1 },
+
+            // ADR-0051 item 10 (TASK-0166): a sketch on the side of a slanted line, whose datum has general axes, so
+            // manifold_transform multiplies general numbers in native code; then a move of a point of that line, so the
+            // datum and the solid on it move.
+            new CreateSketchCommand { CommandId = Id(50), DatumId = Datums.XY.Id },
+            new AddSketchPointCommand { CommandId = Id(51), SketchId = Id(50), X = 50.25, Y = 0.5 },
+            new AddSketchPointCommand { CommandId = Id(52), SketchId = Id(50), X = 71.5, Y = 3.75 },
+            new AddSketchPointCommand { CommandId = Id(53), SketchId = Id(50), X = 64.125, Y = 17.5 },
+            new AddSketchLineCommand { CommandId = Id(54), SketchId = Id(50), StartPointId = Id(51), EndPointId = Id(52) },
+            new AddSketchLineCommand { CommandId = Id(55), SketchId = Id(50), StartPointId = Id(52), EndPointId = Id(53) },
+            new AddSketchLineCommand { CommandId = Id(56), SketchId = Id(50), StartPointId = Id(53), EndPointId = Id(51) },
+            new ExtrudeCommand { CommandId = Id(57), SketchId = Id(50), Distance = 9.5 },
+            new CreateDatumCommand { CommandId = Id(58), FeatureId = Id(57), Element = "side", ItemId = Id(55) },
+            new CreateSketchCommand { CommandId = Id(60), DatumId = Id(58) },
+            new AddSketchPointCommand { CommandId = Id(61), SketchId = Id(60), X = 1.5, Y = 1.25 },
+            new AddSketchPointCommand { CommandId = Id(62), SketchId = Id(60), X = 6.75, Y = 1.5 },
+            new AddSketchPointCommand { CommandId = Id(63), SketchId = Id(60), X = 4.25, Y = 6.125 },
+            new AddSketchLineCommand { CommandId = Id(64), SketchId = Id(60), StartPointId = Id(61), EndPointId = Id(62) },
+            new AddSketchLineCommand { CommandId = Id(65), SketchId = Id(60), StartPointId = Id(62), EndPointId = Id(63) },
+            new AddSketchLineCommand { CommandId = Id(66), SketchId = Id(60), StartPointId = Id(63), EndPointId = Id(61) },
+            new ExtrudeCommand { CommandId = Id(67), SketchId = Id(60), Distance = 3.25 },
+            new MoveSketchPointCommand { CommandId = Id(68), SketchId = Id(50), PointId = Id(53), X = 63.5, Y = 18.25 },
         ];
     }
 
@@ -93,6 +115,15 @@ public class CrossPlatformHashTests
             }
         }
 
+        // ADR-0051 item 10 (TASK-0166): the bits of the frame of each datum.
+        foreach (var datum in document.Datums.OrderBy(datum => datum.Id))
+        {
+            var (o, u, v, n) = (datum.Frame.Origin, datum.Frame.U, datum.Frame.V, datum.Frame.Normal);
+            var line = $"datum {datum.Id} {string.Join(" ", new[] { o.X, o.Y, o.Z, u.X, u.Y, u.Z, v.X, v.Y, v.Z, n.X, n.Y, n.Z }.Select(Bits))}";
+            lines.Add(line);
+            text.Append(line).Append('\n');
+        }
+
         return (Convert.ToHexStringLower(SHA256.HashData(Encoding.UTF8.GetBytes(text.ToString()))), lines);
     }
 
@@ -113,8 +144,14 @@ public class CrossPlatformHashTests
 
         var (hash, lines) = State(one.Document, first);
         Assert.Equal(Log().Count, one.Document.Log.Count);
-        Assert.Equal(2, one.Document.Bodies.Count);
-        Assert.True(SketchSolver.Status(Assert.Single(one.Document.Sketches)).Solved, "The sketch of the log is not solved.");
+        Assert.Equal(4, one.Document.Bodies.Count);
+        Assert.Equal(3, one.Document.Sketches.Count);
+        Assert.All(one.Document.Sketches, sketch => Assert.True(SketchSolver.Status(sketch).Solved, $"The sketch {sketch.Id} of the log is not solved."));
+        // The datum on the side of the slanted line has general axes, and each body has no fault.
+        var datum = Assert.Single(one.Document.Datums);
+        Assert.Null(datum.Fault);
+        Assert.NotEqual(0, datum.Frame.U.X * datum.Frame.U.Y);
+        Assert.All(one.Document.Bodies, body => Assert.Null(body.Fault));
         Assert.Equal(hash, State(two.Document, second).Hash);
 
         if (Environment.GetEnvironmentVariable("DETERMINISM_HASH_FILE") is { Length: > 0 } file)

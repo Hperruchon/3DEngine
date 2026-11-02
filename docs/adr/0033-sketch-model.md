@@ -7,7 +7,7 @@ date: 2026-10-28
 supersedes: []
 superseded-by: []
 amends: ['0012', '0021', '0031']
-amended-by: ['0035', '0045']
+amended-by: ['0035', '0045', '0051']
 affects:
   - Engine.Contracts/Document.cs
   - Engine.Contracts/Handlers/ICommandHandler.cs
@@ -58,7 +58,8 @@ Four conditions make this a decision and not a preference:
    | YZ | `00000000-0000-0000-0000-000000000003` | +Y | +Z | +X |
 
    The origin of each one is (0, 0, 0). A sketch records the identifier of its datum, so a later command that makes
-   a datum plane is additive (Q4). `Engine.Contracts/Sketch/Datums.cs` holds the three.
+   a datum plane is additive (Q4). `Engine.Contracts/Sketch/Datums.cs` holds the three. Since ADR-0051 a sketch can
+   also lie on a datum of `CreateDatum`, on a face of a feature, with an origin that is not (0, 0, 0).
 2. **The five entities.** The point, the line segment, the frame of a sketch, the circle and the arc (Q1). K2a gives
    the point, the line and the frame; phase K2 gives the circle and the arc after K2b. The ellipse of
    `docs/CHARTER.md` waits for a later phase.
@@ -200,3 +201,5 @@ the circle, the arc and the kinds 6 to 14.
   line with no new record, because no public shape of `Engine.Contracts` changes.
 - 2026-10-31 · TASK-0152 · ADR-0045 amends items 8 and 9: `CommandHandlerResult` gains `CreatedImages` and
   `ChangedImages`, and the image events come after the sketch events.
+- 2026-11-02 · TASK-0166 · ADR-0051 amends items 1 and 9: a sketch can lie on a datum of the Document, and the
+  datum events come after the image events.
