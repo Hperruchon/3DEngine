@@ -44,11 +44,15 @@ decision below; register entry R-0048 asks the owner about the licences of the v
    its own code.
 2. **The method.** The grey of a pixel is (299 R + 587 G + 114 B + 500) / 1000 in integers. The threshold of Otsu
    separates two classes, and the region is the class that holds fewer pixels of the border of the image. Of the
-   regions whose pixels touch by a side, the proposal takes the largest. The trace of the neighbours of Moore, with
+   regions whose pixels touch by a side, the proposal takes the largest, after an opening of the class with a square
+   of 3 × 3: a pixel stays when a square of nine pixels of the class holds it, so each part that is one or two pixels
+   wide goes, and the corner of a rectangle stays. The trace of the neighbours of Moore, with
    the stop of Jacob, gives its outer boundary; Douglas and Peucker simplify it with a tolerance of the larger of one
    pixel and 0.5 % of the boundary, and the tolerance grows by half until the polygon has at most 200 vertices. A vertex
    is at the centre of a pixel. An image with no two classes, or a region with fewer than three vertices, gives no
-   proposal. The arithmetic is integers and `+ − × / sqrt`, so a proposal is the same on each platform; it is outside
+   proposal. A polygon that is not simple gives no proposal, and the reason: a side of the length zero, two sides that
+   share no vertex and cross or touch, two sides that share a vertex and go back along one line, or the area zero, as
+   the engine refuses a profile. The arithmetic is integers and `+ − × / sqrt`, so a proposal is the same on each platform; it is outside
    the log in each case.
 3. **The proposal in the desktop.** Each live image of the window "Images" has a button "Propose contour". The
    proposal shows over the scene as the lines of a sketch until the person accepts it or rejects it.
@@ -64,8 +68,18 @@ decision below; register entry R-0048 asks the owner about the licences of the v
 - No change of `Engine.Contracts`, of the document file and of the log.
 - An undo of an accept takes one step for each command: 1 + 2n steps for a polygon of n vertices.
 - A photo with a shadow or a background of many greys can give a region that is not the part; the person rejects it.
+- The opening removes a wall of a part that is narrower than three pixels in the image. A photo with a larger number of
+  pixels keeps such a wall.
+- An accept that the session refuses after its first command stops. Its message gives the points and the lines that
+  exist, and the number of steps of undo that remove them.
 
 ## History
 
 - 2026-10-31 · TASK-0155 · The record, with the recommended answers under the standing order of the owner of
   2026-10-31.
+- 2026-11-02 · TASK-0162 · Item 2 gets the opening and the refusal of a polygon that is not simple (finding V69 of the
+  codebase review of 2026-11-01, answer A to Q3). Q3 named a cross of 3 × 3. A cross removes the corner pixel of
+  each rectangle, so a rectangle of 120 by 40 pixels gave a quadrilateral with a skew of one pixel. A square keeps the
+  corners, and it removes the same parts of one and two pixels. The record says a square, and register entry R-0049
+  asks the owner to confirm it.
+- 2026-11-02 · TASK-0162 · The owner confirmed the square of item 2, and R-0049 is closed.

@@ -5,6 +5,7 @@ using Engine.Contracts.Sketch;
 using Engine.Core.Assets;
 using Engine.Core.Commands;
 using Engine.Core.Geometry;
+using ThreeDEngine.Core.Input;
 using ThreeDEngine.Core.Models;
 using ThreeDEngine.Desktop;
 
@@ -108,6 +109,58 @@ public sealed class ImageActionsTests : IDisposable
 
         actions.Calibrate(40);
         Assert.Equal("A calibration needs two taps on the image.", actions.Message);
+    }
+
+    // Finding V70 of the codebase review of 2026-11-01 (TASK-0162): with an active sketch a tap gives a
+    // point intent and no select, and the point went to the sketch tool. A calibration takes each kind of
+    // point intent, and no other intent; with no calibration it takes none.
+    [Fact]
+    public async Task A_Calibration_Takes_The_Point_Intents_Of_Each_Mode()
+    {
+        using var host = new EngineHost(new InProcessMeshBackend());
+        var actions = new ImageActions(host.Session, new AssetStore(Path.Combine(_folder, "store")));
+        actions.Place(Picture("plan.png", 100, 50), Datums.XY.Id);
+        var image = Assert.Single(await host.Session.Read((document, _) => document.Images.ToList()));
+        var camera = new Camera { Target = (50, 25, 0), Distance = 200, YawDegrees = 0, PitchDegrees = 0 };
+
+        var free = actions.Tap(new SketchPointIntent(300, 300), camera, 800, 600, [image]);
+        actions.StartCalibration(image.Id);
+        var hover = actions.Tap(new SketchHoverIntent(300, 300), camera, 800, 600, [image]);
+        var sketchPoint = actions.Tap(new SketchPointIntent(300, 300), camera, 800, 600, [image]);
+        var select = actions.Tap(new SelectIntent(500, 300), camera, 800, 600, [image]);
+
+        Assert.False(free);
+        Assert.False(hover);
+        Assert.True(sketchPoint && select);
+        Assert.Equal(2, actions.Points.Count);
+    }
+
+    // Finding V71 of the codebase review of 2026-11-01 (TASK-0162): two taps on one pixel gave a calibration
+    // that the engine refuses, and the desktop kept the two points, so each next tap went nowhere. Now the
+    // refusal clears the points, and two new taps calibrate the image.
+    [Fact]
+    public async Task A_Refused_Calibration_Clears_Its_Two_Points()
+    {
+        using var host = new EngineHost(new InProcessMeshBackend());
+        var actions = new ImageActions(host.Session, new AssetStore(Path.Combine(_folder, "store")));
+        actions.Place(Picture("plan.png", 100, 50), Datums.XY.Id);
+        var image = Assert.Single(await host.Session.Read((document, _) => document.Images.ToList()));
+        var camera = new Camera { Target = (50, 25, 0), Distance = 200, YawDegrees = 0, PitchDegrees = 0 };
+
+        actions.StartCalibration(image.Id);
+        actions.Tap(camera, 300, 300, 800, 600, [image]);
+        actions.Tap(camera, 300, 300, 800, 600, [image]);
+        actions.Calibrate(40);
+        var refused = actions.Message;
+        var cleared = actions.Points.Count;
+        actions.Tap(camera, 300, 300, 800, 600, [image]);
+        actions.Tap(camera, 500, 300, 800, 600, [image]);
+        actions.Calibrate(40);
+
+        Assert.EndsWith("Tap two points of the image again.", refused);
+        Assert.Equal(0, cleared);
+        Assert.Null(actions.Calibrating);
+        Assert.StartsWith("Calibrated: ", actions.Message);
     }
 
     // ADR-0046 item 2: the projection reads the live images and each event, uploads each asset one

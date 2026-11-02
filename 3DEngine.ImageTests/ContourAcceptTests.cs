@@ -20,15 +20,16 @@ public sealed class ContourAcceptTests : IDisposable
 
     public void Dispose() => Directory.Delete(_folder, recursive: true);
 
-    // A light picture of 100 by 50 pixels with a dark part from (20, 10) to (79, 39).
-    private string Part(byte region = 30)
+    // A light picture of 100 by 50 pixels with a dark part from (20, 10) to (79, 39), and a spur of one
+    // pixel from (80, 25) to (89, 25) when the test says.
+    private string Part(byte region = 30, bool spur = false)
     {
         var rgba = new byte[100 * 50 * 4];
         for (var y = 0; y < 50; y++)
         {
             for (var x = 0; x < 100; x++)
             {
-                var value = x is >= 20 and <= 79 && y is >= 10 and <= 39 ? region : (byte)220;
+                var value = (x is >= 20 and <= 79 && y is >= 10 and <= 39) || (spur && y == 25 && x is >= 80 and <= 89) ? region : (byte)220;
                 rgba.AsSpan(((y * 100) + x) * 4, 3).Fill(value);
                 rgba[(((y * 100) + x) * 4) + 3] = 255;
             }
@@ -85,6 +86,46 @@ public sealed class ContourAcceptTests : IDisposable
         Assert.Equal("Accepted: a sketch of 4 points and 4 lines", actions.Message);
     }
 
+    // Finding V69 of the codebase review of 2026-11-01 (TASK-0162): a part with a spur of one pixel gave a
+    // sketch with the tip of the spur two times, and Extrude refused it. Now the sketch extrudes.
+    [Fact]
+    public async Task An_Accepted_Proposal_Of_A_Part_With_A_Spur_Extrudes()
+    {
+        using var host = new EngineHost(new Engine.Geometry.Manifold.ManifoldGeometryBackend());
+        var actions = new ImageActions(host.Session, new AssetStore(Path.Combine(_folder, "store")));
+        var image = await Placed(host, actions, Part(spur: true));
+
+        actions.Propose(image.Id, [image]);
+        var pixels = actions.Proposal?.Pixels;
+        var accepted = actions.Accept([image]);
+        var extruded = await host.Session.Apply(new ExtrudeCommand { SketchId = accepted!.Value.Sketch, Distance = 5 });
+
+        Assert.Equal([(20.5, 10.5), (79.5, 10.5), (79.5, 39.5), (20.5, 39.5)], pixels);
+        Assert.Equal(Engine.Contracts.CommandStatus.Applied, extruded.Status);
+    }
+
+    // Finding V73 of the codebase review of 2026-11-01 (TASK-0162): an accept whose second point the session
+    // refuses stops, and its message says which items exist and how many steps of undo remove them. The
+    // live record has a scale of 4e306 mm for each pixel, so the U of the second vertex is not finite.
+    [Fact]
+    public async Task An_Accept_That_The_Session_Stops_Says_Which_Items_Exist()
+    {
+        using var host = new EngineHost(new InProcessMeshBackend());
+        var actions = new ImageActions(host.Session, new AssetStore(Path.Combine(_folder, "store")));
+        var image = await Placed(host, actions, Part()) with { Scale = 4e306 };
+
+        actions.Propose(image.Id, [image]);
+        var accepted = actions.Accept([image]);
+
+        Assert.NotNull(accepted);
+        var sketch = (await host.Session.Query<SketchInfo>(new GetSketchQuery { SketchId = accepted.Value.Sketch })).Result!;
+        // The origin of the frame and the first vertex.
+        Assert.Equal(2, sketch.Points.Count);
+        Assert.Empty(sketch.Lines);
+        Assert.StartsWith("E-GEOM-INVALID-PARAM: ", actions.Message);
+        Assert.EndsWith("The accept stopped: the sketch exists with 1 of 4 points and 0 of 4 lines, and 2 steps of undo remove them.", actions.Message);
+    }
+
     // ADR-0047 item 3: a reject drops the proposal and sends no command; an image of one grey gives no
     // proposal and a reason; an accept with no proposal sends no command.
     [Fact]
@@ -113,7 +154,7 @@ public sealed class ContourAcceptTests : IDisposable
         Assert.Equal("No proposal to accept.", noProposal);
         Assert.Equal(before + 1, placedFlat);
         Assert.Null(actions.Proposal);
-        Assert.Equal("The image has no region that gives a contour.", actions.Message);
+        Assert.Equal(ThreeDEngine.Core.Vision.ContourProposal.NoRegion, actions.Message);
         Assert.Empty(await host.Session.Read((document, _) => document.Sketches.ToList()));
     }
 }

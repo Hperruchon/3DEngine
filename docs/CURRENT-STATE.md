@@ -4778,3 +4778,40 @@ New tests: 6. The test list holds 1532 (1091 in `Engine.Tests`, 280 in `3DEngine
 `3DEngine.ImageTests`, 3 in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and
 zero warnings. Open entries: 14 of 15. New diagnostic codes: 0. Since the review of v0.159, 1 product milestone and 5
 entries followed it.
+
+## v0.165 — A proposal gives a simple polygon, the taps of a calibration reach it, and the image actions follow their refusals (P0.71, TASK-0162)
+
+The codebase review of 2026-11-01 found V69 and V70 (medium) and V71 to V73 (low) in the desktop. The owner answered
+A to Q3 and gave the order on 2026-11-02: "start P0.71".
+
+**The changes.**
+- **V69.** `ContourProposal` opens the class of the region with a square of 3 × 3 before the largest region and the
+  trace, so a spur or a neck of one or two pixels goes. A polygon that is still not simple gives no proposal and the
+  reason "The contour of the region crosses or touches itself, so its sketch does not extrude." The check is the rule
+  of the engine for a profile, in integers.
+- **V70.** `ImageActions.Tap` takes the intent. A select of the mode Scene and a sketch point of the mode Sketch are
+  both taps of a calibration, so an active sketch does not take them.
+- **V71.** A calibration that the engine refuses clears its two points, and the message asks for two taps again.
+- **V72.** `NativeThreeDEngine.StlPath` removes a final `.stl` before `Resolve`, so "part.stl" gives "part.stl".
+- **V73.** An accept that the session stops after its first command gives the points and the lines that exist and the
+  number of steps of undo that remove them.
+
+**A decision that differs from the answer.** Q3 named a cross of 3 × 3. The session measured it: a cross removes the
+corner pixel of each rectangle, and the rectangle of the tests gave a quadrilateral with a skew of one pixel. The reason
+of answer A is that the opening changes only parts that cannot be a wall of a solid, so ADR-0047 item 2 says a square,
+which keeps the corners and removes the same parts. The owner confirmed the square on 2026-11-02, and register entry
+R-0049 is closed.
+
+**Proof.** An injection of the old behaviour of each finding fails its tests: no opening (3 cases of the proposal and
+the extrude of an accept), no check of a simple polygon (1 case), no sketch point in a calibration, no clear of the
+points, no removal of `.stl` (3 cases), and the old message of a stopped accept. After the opening, 111,413 random
+unions of rectangles and discs, with noise, gave no polygon that is not simple; a slot of 2 pixels along a circle of
+radius 20 gives one, so it is the test of the refusal.
+
+**What stays.** The routing of the intents in `NativeThreeDEngine` has no test with a window; the test calls
+`ImageActions.Tap` with each intent. A wall of a part that is narrower than three pixels in the image goes.
+
+New tests: 14. The test list holds 1546 (1091 in `Engine.Tests`, 285 in `3DEngine.Tests`, 167 in
+`3DEngine.ImageTests`, 3 in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and
+zero warnings. Open entries: 14 of 15. New diagnostic codes: 0. Since the review of v0.159, 1 product milestone and 6
+entries followed it.
