@@ -231,6 +231,52 @@ public class SketchActionsTests
         Assert.Null(actions.Mark(camera, middle.X + 9, middle.Y + 7, Width, Height));
     }
 
+    // Phase R11c (TASK-0165, ADR-0041 item 1): the mark near the intersection of two lines of the
+    // session is the pixel of the intersection (8, 0), and a tap there adds a point at it. The
+    // midpoints (0, 0) and (8, 9) of the two lines are more than 44 pixels from it.
+    [Fact]
+    public void The_Mark_And_The_Tap_Near_An_Intersection_Take_It()
+    {
+        using var host = new EngineHost(new InProcessMeshBackend());
+        var actions = new SketchActions(host.Session);
+        actions.Create(Datums.XY.Id);
+        actions.AddLine(actions.AddPoint(-20, 0)!.Value, actions.AddPoint(20, 0)!.Value);
+        actions.AddLine(actions.AddPoint(8, -6)!.Value, actions.AddPoint(8, 24)!.Value);
+        var camera = Facing();
+        var sketch = actions.Current()!;
+        var crossing = SketchOverlay.Pixel(sketch, camera, Width, Height, (8, 0))!.Value;
+        foreach (var midpoint in new[] { (0.0, 0.0), (8.0, 9.0) })
+            Assert.True(System.Numerics.Vector2.Distance(crossing, SketchOverlay.Pixel(sketch, camera, Width, Height, midpoint)!.Value) > 2 * SketchTool.HitPixels);
+
+        var mark = actions.Mark(camera, crossing.X + 6, crossing.Y - 5, Width, Height)!.Value;
+        Assert.True(System.Numerics.Vector2.Distance(crossing, mark) < 1e-3f);
+
+        actions.Tap(camera, crossing.X + 6, crossing.Y - 5, Width, Height);
+        var added = actions.Current()!.Points[^1];
+        Assert.Equal(8, added.X, 12);
+        Assert.Equal(0, added.Y, 12);
+    }
+
+    // The picture gives the start and the end of an arc, so an intersection outside its sweep has no
+    // mark. The line x = 10 meets the circle of the arc of centre (0, 0) from (20, 0) to (0, 20) at
+    // (10, 17.3), on the arc, and at (10, -17.3), outside it.
+    [Fact]
+    public void An_Intersection_Outside_The_Sweep_Of_An_Arc_Has_No_Mark()
+    {
+        using var host = new EngineHost(new InProcessMeshBackend());
+        var actions = new SketchActions(host.Session);
+        actions.Create(Datums.XY.Id);
+        actions.AddArc(actions.AddPoint(0, 0)!.Value, actions.AddPoint(20, 0)!.Value, actions.AddPoint(0, 20)!.Value);
+        actions.AddLine(actions.AddPoint(10, -30)!.Value, actions.AddPoint(10, 30)!.Value);
+        var camera = Facing();
+        var sketch = actions.Current()!;
+        var on = SketchOverlay.Pixel(sketch, camera, Width, Height, (10, Math.Sqrt(300)))!.Value;
+        var outside = SketchOverlay.Pixel(sketch, camera, Width, Height, (10, -Math.Sqrt(300)))!.Value;
+
+        Assert.True(System.Numerics.Vector2.Distance(on, actions.Mark(camera, on.X + 6, on.Y - 5, Width, Height)!.Value) < 1e-3f);
+        Assert.True(System.Numerics.Vector2.Distance(outside, actions.Mark(camera, outside.X + 6, outside.Y - 5, Width, Height)!.Value) > 1);
+    }
+
     // Phase K2e (TASK-0122): a touch script of the tools Circle and Arc through the session adds a
     // circle and an arc, the sketch is solved, and a tap of the tool Select on each curve picks it.
     [Fact]

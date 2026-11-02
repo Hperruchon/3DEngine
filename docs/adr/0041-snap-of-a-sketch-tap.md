@@ -34,18 +34,23 @@ owner, and this record is Accepted.
 
 1. **The order.** A tap of the tools Line, Circle and Arc that has no point within 22 pixels takes the first of these
    that is within 22 pixels, and else the position of the grid:
+   - the nearest intersection of two lines, of a line and a curve, or of two curves (phase R11c, TASK-0165). Two
+     lines that share a point give none, because they meet at that point;
    - the midpoint of a line;
    - the nearest point on a line, or on a circle or an arc, whichever is nearer.
 2. **The position.** A midpoint is the middle of the two points in the plane. A point on a line is the point at the
    parameter of the nearest pixel of the segment, so it is on the line. A point on a curve is the centre plus the
-   radius along the direction from the centre to the position of the tap, so it is on the curve.
+   radius along the direction from the centre to the position of the tap, so it is on the curve. An intersection is
+   computed in the plane: it is on each segment between its two points, and on an arc between its start and its end
+   counter-clockwise. Its distance from the tap is the distance from the pixel of the intersection.
 3. **No constraint (Q2 A).** A snap gives a position to `AddSketchPoint`, as the grid does. It adds no `midpoint` and
    no `pointOn`, and a later move of the line does not move the point.
 4. **Presentation.** The snap is client state (ADR-0007): the command records the numbers, and the log holds no snap.
    `SketchTool` computes it from the picture of the active sketch; the picture gives each curve its centre and its
-   radius in the plane.
-5. **Out of this slice.** The escalated selection of faces and edges needs their identity (K4), and waits for the
-   rest of R11. Until R11b the mark of item 6 waited too.
+   radius in the plane, each arc its start and its end, and the pixel of a position of the plane.
+5. **Out of this record.** The escalated selection of faces and edges needs their identity (K4). On 2026-11-02 the
+   owner moved it to the roadmap row R12, after K4, and closed R11 after R11c. Until R11b the mark of item 6 waited
+   too.
 6. **The mark (phase R11b, TASK-0134).** In the mode Sketch, the intent machine gives `SketchHoverIntent` for a
    motion of the mouse with no button, for the press of the left button, and for the first contact of a touch or a
    pen. This amends ADR-0026: a new intent, and each method gives it, so objective 9 holds: a finger shows the mark
@@ -59,6 +64,8 @@ owner, and this record is Accepted.
 - A person can put a point at the middle of a line, or on a line or a curve, with one tap.
 - A tap near a line no longer gives the position of the grid; a person who wants the grid taps more than 22 pixels from
   each line.
+- A person can put a point where two edges cross with one tap. A point near both an intersection and a midpoint takes
+  the intersection.
 
 ## History
 
@@ -68,3 +75,5 @@ owner, and this record is Accepted.
   amends ADR-0026.
 - 2026-10-31 · TASK-0151 · Item 6: the mark at the end of an arc is on its circle, and it goes when the finger lifts
   (findings V66 and V67 of the codebase review of 2026-10-31 (c)).
+- 2026-11-02 · TASK-0165 · Items 1, 2 and 4: the snap to an intersection (phase R11c). Item 5: the escalated selection
+  moves to R12 after K4. The owner chose both on 2026-11-02.
