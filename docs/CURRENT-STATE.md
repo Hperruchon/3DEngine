@@ -4918,3 +4918,26 @@ New tests: 18. The test list holds 1588 (1127 in `Engine.Tests`, 289 in `3DEngin
 `3DEngine.ImageTests`, 3 in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and
 zero warnings. Open entries: 14 of 15. New diagnostic codes: 5. Since the review of v0.159, 4 product milestones and 9
 entries followed it.
+
+## v0.169 — The codebase review of 2026-11-03 (governance, TASK-0168)
+
+The review of 2026-11-01 examined v0.159, and 4 product milestones and 9 entries followed it, so K0h would make the
+review late. The owner gave the order on 2026-11-03: "do the review, then close K0h".
+`docs/reviews/2026-11-03-codebase-review.md` examines `main` at `1c3fb7c` (v0.168). Two review agents worked in
+parallel, each one in its own worktree, with probes that they deleted after the run.
+
+**The result.**
+- The fixes of the last review hold for the forms that they named, and V68, the high finding of the PNG reader, is
+  fixed. E120 is fixed for the parallel puts; its form of a held file stays open.
+- Eight new findings, all low: E125 (a datum on a very short or very long side gets a frame that is not finite),
+  E126 (a rebuild through a datum gives the codes of a sketch edit, and three rows do not say so), E127 (a datum with
+  a fault repeats its warning at each edit), V74 (the mark of the snap during a calibration), V75 (the snap to an
+  intersection costs 3.2 ms in each frame over 200 lines), and T127 to T129 (the next forms of three gates).
+- Open findings: 0 critical, 4 high, 14 medium and 25 low.
+- TASK-0169 (P0.72) holds E125 to E127, and TASK-0170 (P0.73) holds V74, V75 and T127 to T129, after K0h. Q1 asks
+  for the next product phase after K0h, Q2 for the warning of E127, and Q3 for the codes of E126.
+
+No code changes. The test list holds 1588 (1127 in `Engine.Tests`, 289 in `3DEngine.Tests`, 169 in
+`3DEngine.ImageTests`, 3 in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and
+zero warnings. Open entries: 14 of 15. New diagnostic codes: 0. Since the review of v0.168, 0 product milestones and 1
+entry followed it.
