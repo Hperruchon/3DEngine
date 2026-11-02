@@ -1,7 +1,7 @@
 ---
 id: 0164
 title: The exact predicates of the profile of a sketch
-status: Active
+status: Done
 phase: K1
 opened: 2026-11-02
 depends-on: [0162]
@@ -68,12 +68,28 @@ build on predicates that are correct.
 
 ## Acceptance criteria
 
-- [ ] Each case of the context of ADR-0050 has a test that fails with the rounded form and passes with the exact form.
-- [ ] A test compares the filter with the exact path on 200,000 cases near one line.
-- [ ] An injection of each part of the filter (the bound, the smallest permanent) fails a test.
-- [ ] A clean build (`--no-incremental`) gives zero errors and zero warnings.
-- [ ] Continuous integration passes on the three runners, on the branch and on `main` after the merge.
+- [x] Each case of the context of ADR-0050 has a test that fails with the rounded form and passes with the exact form.
+- [x] A test compares the filter with the exact path on 200,000 cases near one line.
+- [x] An injection of each part of the filter (the bound, the smallest permanent) fails a test.
+- [x] A clean build (`--no-incremental`) gives zero errors and zero warnings.
+- [x] Continuous integration passes on the three runners, on the branch and on `main` after the merge.
+
+## Outcome
+
+Status: Done · commit (the merge of the branch k1-exact-predicates) · v0.166
+
+## Method
+
+Mechanical: a search with exact BigInt arithmetic in Node.js for each case where the rounded checks are wrong; an
+            injection of each old or wrong form against its tests; a comparison of the filter with the exact path on
+            200,000 cases near one line.
+Judgement:  the filter bound 4ε and the smallest permanent 1e-270, from the bound of Shewchuk and the error of an
+            underflow; an exact path with BigInteger and not the expansions of Shewchuk, because its proof is the
+            arithmetic of integers.
+Weakest:    the bound of the filter rests on the proof of Shewchuk and on the argument of ADR-0050 item 2; the tests
+            show no counterexample, but they do not prove the bound.
 
 ## Progress
 
 - 2026-11-02: opened.
+- 2026-11-02: closed at v0.166.
