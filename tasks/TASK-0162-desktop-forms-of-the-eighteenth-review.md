@@ -1,7 +1,7 @@
 ---
 id: 0162
 title: A proposal gives a simple polygon, the taps of a calibration reach it, and the image actions follow their refusals
-status: Active
+status: Done
 phase: P0.71
 opened: 2026-11-01
 depends-on: [0158]
@@ -57,9 +57,22 @@ An accepted proposal extrudes or is refused with a reason, a calibration takes i
 
 ## Acceptance criteria
 
-- [ ] Each finding has a test that fails before the change and passes after it.
-- [ ] A clean build (`--no-incremental`) gives zero errors and zero warnings.
-- [ ] Continuous integration passes on the three runners, on the branch and on `main` after the merge.
+- [x] Each finding has a test that fails before the change and passes after it.
+- [x] A clean build (`--no-incremental`) gives zero errors and zero warnings.
+- [x] Continuous integration passes on the three runners, on the branch and on `main` after the merge.
+
+## Outcome
+
+Status: Done · commit (the merge of the branch p071-desktop-forms) · v0.165
+
+## Method
+
+Mechanical: an injection of the old behaviour of each finding against its tests; a measure of the cross and the square
+            on the seven old tests of the proposal; 111,413 random shapes through the new proposal.
+Judgement:  the square of 3 × 3 and not the cross of Q3, because the cross skews a rectangle; the owner confirmed it (R-0049); an accept that
+            stops keeps its items and says which, as the scope says, and does not undo them.
+Weakest:    the routing of the intents in the window has no test; the test of V73 forces the refusal with a live record
+            whose scale the document does not hold.
 
 ## Progress
 
@@ -76,4 +89,4 @@ An accepted proposal extrudes or is refused with a reason, a calibration takes i
   engine refuses the second point. The write set adds `3DEngine.ImageTests/StlNameTests.cs`, because the name of
   the export is not an action of the images, and `docs/register.md` for R-0049. 14 new test cases; an injection of
   the old behaviour of each finding fails its tests.
-
+- 2026-11-02: closed at v0.165.
