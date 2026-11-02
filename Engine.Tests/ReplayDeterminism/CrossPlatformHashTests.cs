@@ -72,6 +72,12 @@ public class CrossPlatformHashTests
             new AddSketchLineCommand { CommandId = Id(65), SketchId = Id(60), StartPointId = Id(62), EndPointId = Id(63) },
             new AddSketchLineCommand { CommandId = Id(66), SketchId = Id(60), StartPointId = Id(63), EndPointId = Id(61) },
             new ExtrudeCommand { CommandId = Id(67), SketchId = Id(60), Distance = 3.25 },
+
+            // ADR-0052 item 10 (TASK-0167): a sketch on XZ with the projection of an edge of the end cap of the extrude on the
+            // slanted side, and of a vertex of the base; the move below moves both.
+            new CreateSketchCommand { CommandId = Id(70), DatumId = Datums.XZ.Id },
+            new AddSketchReferenceCommand { CommandId = Id(71), SketchId = Id(70), FeatureId = Id(67), Element = "endEdge", ItemId = Id(64) },
+            new AddSketchReferenceCommand { CommandId = Id(72), SketchId = Id(70), FeatureId = Id(57), Element = "endVertex", ItemId = Id(53) },
             new MoveSketchPointCommand { CommandId = Id(68), SketchId = Id(50), PointId = Id(53), X = 63.5, Y = 18.25 },
         ];
     }
@@ -145,7 +151,9 @@ public class CrossPlatformHashTests
         var (hash, lines) = State(one.Document, first);
         Assert.Equal(Log().Count, one.Document.Log.Count);
         Assert.Equal(4, one.Document.Bodies.Count);
-        Assert.Equal(3, one.Document.Sketches.Count);
+        Assert.Equal(4, one.Document.Sketches.Count);
+        Assert.All(one.Document.Sketches.SelectMany(sketch => sketch.References), reference => Assert.Null(reference.Fault));
+        Assert.Equal(2, one.Document.Sketches.Single(sketch => sketch.Id == Id(70)).References.Count);
         Assert.All(one.Document.Sketches, sketch => Assert.True(SketchSolver.Status(sketch).Solved, $"The sketch {sketch.Id} of the log is not solved."));
         // The datum on the side of the slanted line has general axes, and each body has no fault.
         var datum = Assert.Single(one.Document.Datums);

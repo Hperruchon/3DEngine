@@ -45,6 +45,7 @@ public static class HandlerCatalog
         new CalibrateImageCommandHandler(),
         new SetExtrudeDistanceCommandHandler(),
         new CreateDatumCommandHandler(),
+        new AddSketchReferenceCommandHandler(),
     ];
 
     public static IReadOnlyList<IQueryHandler> QueryHandlers() =>

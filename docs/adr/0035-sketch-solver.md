@@ -1,13 +1,13 @@
 ---
 id: 0035
 title: The constraint solver of a sketch
-status: Accepted
+status: Amended
 topic: Sketch, determinism
 date: 2026-10-29
 supersedes: []
 superseded-by: []
 amends: ['0033']
-amended-by: []
+amended-by: ['0052']
 affects:
   - Engine.Core/Sketch/**
   - Engine.Core/Queries/GetSketchQuery.cs
@@ -193,3 +193,4 @@ equations of the kinds 6 to 14.
   s the sign of r₁ − r₂ at the start. Each is in length units. A test compares each derivative with a central
   difference, also by a radius, and a fixed solve with constant bits. The answer Q2 A of the plan of 2026-10-30 permits
   this line with no new record.
+- 2026-11-03 · TASK-0167 · ADR-0052 amends items 3 and 4: a point of a reference has no variable, as the origin.

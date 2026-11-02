@@ -29,6 +29,13 @@ public static class SketchProfile
     // repeat the first one. A point with no line does not count.
     public static (IReadOnlyList<(double X, double Y)>? Loop, string? Reason) Find(SketchRecord sketch)
     {
+        // ADR-0052 item 6: a line of a reference is a construction line, not an edge of the profile.
+        if (sketch.References.Any(reference => reference.Line is not null))
+        {
+            var construction = sketch.References.Select(reference => reference.Line).OfType<Guid>().ToHashSet();
+            sketch = sketch with { Lines = sketch.Lines.Where(line => !construction.Contains(line.Id)).ToList() };
+        }
+
         var position = sketch.Points.ToDictionary(point => point.Id);
 
         // ADR-0040 item 1: a circle is a profile alone.

@@ -33,6 +33,7 @@ public sealed class GetSketchQueryHandler : IQueryHandler
             ["constraints"] = new("array"),
             ["solved"] = new("boolean"),
             ["freedom"] = new("integer"),
+            ["references"] = new("array"),
         };
 
     // Per ADR-0016.
@@ -64,6 +65,6 @@ public sealed class GetSketchQueryHandler : IQueryHandler
         static double? Finite(double value) => double.IsFinite(value) ? value : null;
         return Task.FromResult(QueryHandlerResult.Success(new SketchInfo(
             sketch.Id, sketch.DatumId, sketch.Name, sketch.Points, sketch.Lines, sketch.Circles, sketch.Arcs, constraints,
-            solved, freedom)));
+            solved, freedom) { References = sketch.References }));
     }
 }
