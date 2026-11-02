@@ -4941,3 +4941,45 @@ No code changes. The test list holds 1588 (1127 in `Engine.Tests`, 289 in `3DEng
 `3DEngine.ImageTests`, 3 in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and
 zero warnings. Open entries: 14 of 15. New diagnostic codes: 0. Since the review of v0.168, 0 product milestones and 1
 entry followed it.
+
+## v0.170 — The edges and the vertices of a feature as references in a sketch (K0h, TASK-0167)
+
+The owner gave the order "start K0h" on 2026-11-02 and answered four questions on the same day, each with the
+recommended answer. ADR-0052 holds them: a reference adds the orthogonal projection of an edge or a vertex; a
+reference point has no variable; a feature that depends on the sketch is a cycle; and a reference that does not
+resolve keeps its points with a fault. The owner then gave the order "do the review, then close K0h", so the review of
+v0.169 came first.
+
+**The change.**
+- `AddSketchReference` records `sketchId`, `featureId`, `element` and `itemId`. A vertex adds one point with the
+  identifier of the command, and a straight edge adds a line with that identifier and two points with derived
+  identifiers. The elements are the start and end edges of a line, the side edge and the start and end vertices of a
+  point of an extrude, and the edges and the vertices of a box by their signed axes. A curved edge waits for K5, and an
+  edge that projects to one point is refused.
+- `SketchRecord.References` lists them. A reference point has no variable in the solver, no command moves it, and a
+  delete of the reference removes its points and its line; one point of an edge alone is not deletable. A line of a
+  reference is not an edge of the profile.
+- `E-SKETCH-REFERENCE-CYCLE` refuses a feature that depends on the sketch, through an extrude, a datum or a reference.
+- After each edit the rebuild takes each `CreateDatum` and each `AddSketchReference` in the order of the log. A
+  reference whose points move solves its sketch again, and each extrude of that sketch follows. A reference that does
+  not resolve keeps its points with `W-SKETCH-REFERENCE-FAILED`.
+- Three new codes in the namespace `SKETCH`. ADR-0052 amends ADR-0033, ADR-0035, ADR-0036 and ADR-0051.
+
+**Proof.** An injection of each wrong form fails its tests: a reference point as a variable, a construction line in the
+profile, a move of a reference point, a delete of one end of an edge, a delete that keeps the points, no check of a
+cycle, a rebuild that does not resolve a reference, an extrude that does not follow its moved reference, a failed
+reference with no fault, a projection that takes u for v, a side edge with no height, an edge of a box that does not
+span its free axis, a curved edge that resolves as a line, an edge that projects to one point, and two ends with one
+identifier. The log of the determinism hash gains two references; the branch run gave equal hashes on the three
+runners.
+
+**A correction.** ADR-0052 affects `DatumResolver.cs`, which TASK-0169 of the review writes, so its `governed-by`
+gains 0052.
+
+**What stays.** E125 and E127 of the review of v0.169 also reach a reference (P0.72). The desktop draws the lines of a
+reference as the other lines until K0i.
+
+New tests: 10. The test list holds 1598 (1137 in `Engine.Tests`, 289 in `3DEngine.Tests`, 169 in
+`3DEngine.ImageTests`, 3 in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and
+zero warnings. Open entries: 14 of 15. New diagnostic codes: 3. Since the review of v0.168, 1 product milestone and 2
+entries followed it.

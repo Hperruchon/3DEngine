@@ -1,7 +1,7 @@
 ---
 id: 0167
 title: The edges and the vertices of a feature as references in a sketch
-status: Active
+status: Done
 phase: K0h
 opened: 2026-11-03
 depends-on: [0166]
@@ -41,6 +41,7 @@ writes:
     - eng/test-floor.txt
     - docs/roadmap.md
     - docs/CURRENT-STATE.md
+    - tasks/TASK-0169-engine-forms-of-the-nineteenth-review.md
   forbid:
     - 3DEngine/**
     - 3DEngine.Core/**
@@ -78,19 +79,19 @@ sketch follows an edit of the feature.
 
 ## Acceptance criteria
 
-- [ ] The vertices and the edges of an extrude and of a box project onto the plane of the sketch.
-- [ ] A reference point holds in the solver, no command moves it, and only the whole reference is deleted.
-- [ ] A sketch with a reference edge extrudes, and an edit of the base moves the references and the solid that
+- [x] The vertices and the edges of an extrude and of a box project onto the plane of the sketch.
+- [x] A reference point holds in the solver, no command moves it, and only the whole reference is deleted.
+- [x] A sketch with a reference edge extrudes, and an edit of the base moves the references and the solid that
       follows them.
-- [ ] A reference that does not resolve keeps its points with `W-SKETCH-REFERENCE-FAILED`, and the edit applies.
-- [ ] A cycle and each other refusal give their codes, and an undo, a redo and an open give the same state.
-- [ ] An injection of each part fails its test.
-- [ ] A clean build (`--no-incremental`) gives zero errors and zero warnings.
-- [ ] Continuous integration passes on the three runners with equal determinism hashes, on the branch and on `main`.
+- [x] A reference that does not resolve keeps its points with `W-SKETCH-REFERENCE-FAILED`, and the edit applies.
+- [x] A cycle and each other refusal give their codes, and an undo, a redo and an open give the same state.
+- [x] An injection of each part fails its test.
+- [x] A clean build (`--no-incremental`) gives zero errors and zero warnings.
+- [x] Continuous integration passes on the three runners with equal determinism hashes, on the branch and on `main`.
 
 ## Outcome
 
-Status: Active
+Status: Done · commit (the merge of the branch k0h-edge-references) · v0.170
 
 ## Method
 
@@ -106,3 +107,7 @@ Weakest:    the check of a cycle reads the current records only; a cycle that a 
 - 2026-11-03: opened from the answers of the owner; ADR-0052 Accepted.
 - 2026-11-03: the record, the command, the points of each element, the projection, the hold of the solver, the
   profile, the cycle and the rebuild; 10 new test cases, the hash log gains two references, and 15 injections caught.
+- 2026-11-03: the branch run 41543581304 gave equal hashes; the review of v0.169 came first, and main merged into
+  the branch; closed at v0.170.
+- 2026-11-03: ADR-0052 affects DatumResolver.cs, so TASK-0169 of the review gains 0052 in governed-by, and its file
+  joins the write set of this task.
