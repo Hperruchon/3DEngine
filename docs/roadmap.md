@@ -144,6 +144,7 @@ Therefore each approved objective must have a track here.
 - R11c — A tap of the sketch snaps to the intersection of two lines, of a line and a curve, or of two curves. v0.167, TASK-0165, ADR-0041.
 - R11 — The snaps of the sketch. Closed at v0.167, from TASK-0131, TASK-0134 and TASK-0165; the escalated selection moves to R12.
 - K0g — A datum on a face of an extrude or a box, a sketch on it, and the rebuild of each datum after an edit. v0.168, TASK-0166, ADR-0051.
+- K0h — The edges and the vertices of an extrude and a box as references in a sketch. v0.170, TASK-0167, ADR-0052.
 
 ## Track 0 — Foundations
 
@@ -275,7 +276,7 @@ boundary and each refused rung.
 | K0e | An extrude takes a profile of lines and arcs, or one circle, as a polygon of + - * / sqrt (the answer "1 3 4" of 2026-10-31, item 1). ADR-0040, TASK-0126. | 4–6 |
 | K0f | A command changes the distance of a live extrude, and the extrude and each step of its chain rebuild; the desktop gives the pad of the distance (Q1 and Q2 A of the codebase review of 2026-11-01). ADR-0049, TASK-0163. | 2–3 |
 | K0g | A datum on a face of an extrude or a box, a sketch on it, and the rebuild of each datum after an edit; a reference resolves at its place in the log (the eight answers of the owner of 2026-11-02). ADR-0051, TASK-0166. | 6–9 |
-| K0h | The edges and the vertices of an extrude and a box as references in a sketch (ADR-0051 item 1). | 4–6 |
+| K0h | The edges and the vertices of an extrude and a box as references in a sketch: the projection onto the plane of the sketch, a point with no variable, no cycle, and a fault that keeps the points (the four answers of the owner of 2026-11-02). ADR-0052, TASK-0167. | 4–6 |
 | K0i | The desktop: a tap on a face starts a sketch on a datum of it, and the overlay draws a sketch on a datum of the Document (ADR-0051 item 11). | 3–5 |
 | K0 | A feature graph over Manifold. No B-Rep. Deferred-query references. The rest after K0f is K0g, K0h and K0i (the owner, 2026-11-02). | 12–20 |
 | K1 | Exact predicates. A deterministic arithmetic layer. The 2D predicates of the profile of a sketch, a rounded filter and an exact path with integers; the 3D predicate arrives with K4 (Q1 and Q2 A of 2026-11-02). ADR-0050, TASK-0164. | 4–8 |

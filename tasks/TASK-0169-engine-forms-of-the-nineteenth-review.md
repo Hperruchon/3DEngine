@@ -5,7 +5,7 @@ status: Ready
 phase: P0.72
 opened: 2026-11-03
 depends-on: [0168]
-governed-by: [0004, 0012, 0016, 0021, 0028, 0031, 0033, 0035, 0037, 0039, 0049, 0051]
+governed-by: [0004, 0012, 0016, 0021, 0028, 0031, 0033, 0035, 0037, 0039, 0049, 0051, 0052]
 writes:
   create:
     - tasks/TASK-0169-engine-forms-of-the-nineteenth-review.md

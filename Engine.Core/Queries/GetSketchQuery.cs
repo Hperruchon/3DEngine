@@ -26,7 +26,11 @@ public sealed record SketchInfo(
     IReadOnlyList<SketchArc> Arcs,
     IReadOnlyList<SketchConstraintInfo> Constraints,
     bool Solved,
-    int Freedom);
+    int Freedom)
+{
+    // ADR-0052 item 9: each reference of the sketch to an edge or a vertex of a feature.
+    public IReadOnlyList<SketchReference> References { get; init; } = [];
+}
 
 // Residual is null when it is not finite, for example for points near the largest double
 // (finding E88 of the codebase review of 2026-10-29): JSON has no infinity, and the HTTP
