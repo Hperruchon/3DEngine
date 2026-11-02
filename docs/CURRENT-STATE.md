@@ -4850,3 +4850,32 @@ New tests: 18. The test list holds 1564 (1109 in `Engine.Tests`, 285 in `3DEngin
 `3DEngine.ImageTests`, 3 in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and
 zero warnings. Open entries: 14 of 15. New diagnostic codes: 0. Since the review of v0.159, 2 product milestones and 7
 entries followed it.
+
+## v0.167 — A tap of the sketch snaps to the intersection of two lines or curves (R11c, TASK-0165)
+
+The owner gave the order "start R11" on 2026-11-02, and chose two answers on the same day: the slice R11c holds the
+snap to an intersection, and the escalated selection of faces and edges moves to a new row R12 after K4, because it
+needs a stable identity of each face and each edge. The row R11 closes after R11c.
+
+**The change.**
+- `SketchTool.Snap` takes the nearest intersection of two lines, of a line and a curve, or of two curves within 22
+  pixels, before the midpoint of a line (ADR-0041 item 1). The intersection is computed in the plane, on each segment
+  between its points and on an arc between its start and its end counter-clockwise.
+- Two lines that share a point give no intersection, because they meet at that point.
+- `SketchPicture.ToPixel` gives the pixel of a position of the plane, and `ToolCurve` gives the start and the end of an
+  arc. `SketchOverlay.Picture` fills both. A picture with no camera has no pixel function and takes no intersection.
+- The mark of ADR-0041 item 6 shows the intersection under the mouse and under a finger, with no change of its drawing.
+
+**Proof.** An injection of each wrong form fails its tests: no intersection, no skip of a shared point, no range of two
+segments, no range of a segment and a curve, no sweep of an arc, no pixel function, and no ends of an arc in the
+picture. Two tests run through the session: the mark and the tap at the crossing of two lines, and no mark at an
+intersection outside the sweep of an arc.
+
+**What stays.** No person moved the mouse over the window, and no new picture of the GPU shows the mark at an
+intersection. A tap that wants a midpoint near an intersection gets the intersection. The escalated selection is the
+row R12 after K4.
+
+New tests: 6. The test list holds 1570 (1109 in `Engine.Tests`, 289 in `3DEngine.Tests`, 169 in
+`3DEngine.ImageTests`, 3 in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and
+zero warnings. Open entries: 14 of 15. New diagnostic codes: 0. Since the review of v0.159, 3 product milestones and 8
+entries followed it.
