@@ -73,7 +73,9 @@ public sealed class ExtrudeCommandHandler : ICommandHandler, ICommandEncoder
 
         // Items 2 to 4: a sketch that is not solved, or whose lines are not one closed loop,
         // gives no solid. The rebuild of ADR-0037 uses the same code.
-        var (parameters, reason) = ExtrudeProfile.Parameters(sketch, extrude.Distance);
+        // ADR-0051 item 5: the frame of the datum of the sketch, an origin plane or a datum of the
+        // Document with its last frame. CreateSketch refuses a datum that does not exist.
+        var (parameters, reason) = ExtrudeProfile.Parameters(sketch, extrude.Distance, DatumResolver.Frame(document, sketch.DatumId)!);
         if (parameters is not { } profile)
             return Task.FromResult(SketchResults.Failure(DiagnosticCodes.SketchProfileInvalid, reason!));
 

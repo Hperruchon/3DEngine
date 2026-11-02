@@ -4879,3 +4879,42 @@ New tests: 6. The test list holds 1570 (1109 in `Engine.Tests`, 289 in `3DEngine
 `3DEngine.ImageTests`, 3 in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and
 zero warnings. Open entries: 14 of 15. New diagnostic codes: 0. Since the review of v0.159, 3 product milestones and 8
 entries followed it.
+
+## v0.168 — A datum on a face of an extrude or a box, and a sketch on it (K0g, TASK-0166)
+
+The owner gave the order "start K0" on 2026-11-02 and answered eight questions on the same day. ADR-0051 holds them:
+a reference names a face, an edge or a vertex of an extrude or a box; the log records a query that the engine solves
+again; a reference resolves at its own place in the log; a datum is its own entity; a reference that does not resolve
+gives a fault and keeps its last plane; a subtract passes the carrier; and the engine comes before the desktop. The rest
+of K0 is three slices: K0g (the faces), K0h (the edges and the vertices) and K0i (the desktop).
+
+**The change.**
+- `CreateDatum` records `featureId`, `element` and `itemId`: the start cap, the end cap or the side of a line of an
+  extrude, or one of the six faces of a box. `DatumResolver` gives a right-handed frame whose normal goes out of the
+  solid, from the current sketch, the distance in effect and the frame of the datum of the sketch, moved by each
+  `Translate` before the place of the datum on the chain of the body.
+- The Document holds `Datums`, a result gives `CreatedDatums` and `ChangedDatums`, and the events `datum.created`,
+  `datum.changed` and `datum.removed` come after the image events. The snapshot gives `datums`, and `GetDatum` gives
+  the record. An undo removes a datum, and a redo gives it back.
+- `CreateSketch` takes a datum of the Document, and an extrude starts from the origin and the axes of the frame.
+- After each edit, each datum resolves again in the order of the log. A datum that moves makes each extrude of each
+  sketch on it a target of the rebuild of ADR-0039. A datum that does not resolve keeps its last frame with
+  `W-DATUM-REFERENCE-FAILED`.
+- Five new codes in the namespace `DATUM`. ADR-0051 amends ADR-0012 §6, ADR-0031, ADR-0033, ADR-0036 and ADR-0039.
+
+**Proof.** An injection of each wrong form fails its tests: a translate after the place that moves the datum, a
+subtract that stops the walk, a start cap that is not turned, a side that ignores the order of the loop, a side that
+faces in, the face −x of a box at +x, a reserved name of K0h that resolves, an extrude that ignores the origin of the
+datum, a moved datum that does not move its extrudes, a failed reference with no fault, an undo that does not remove a
+datum, a sketch that takes only an origin plane, and a snapshot with no datum. The log of the determinism hash gains a
+sketch on the side of a slanted line with general axes, and a move of a point of that line; the job "Compare the
+determinism hashes" gave equal bits on the three runners.
+
+**What stays.** The edges and the vertices wait for K0h, and the desktop for K0i: until K0i the desktop draws the
+solids of a sketch on a datum of the Document, not the sketch. A face that a subtract removed still gives a datum, until
+K4. `PlaceImage` keeps the origin planes.
+
+New tests: 18. The test list holds 1588 (1127 in `Engine.Tests`, 289 in `3DEngine.Tests`, 169 in
+`3DEngine.ImageTests`, 3 in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and
+zero warnings. Open entries: 14 of 15. New diagnostic codes: 5. Since the review of v0.159, 4 product milestones and 9
+entries followed it.

@@ -8,7 +8,8 @@ using Engine.Core.Sketch;
 
 namespace Engine.Core.Commands;
 
-// ADR-0033 items 1, 4 and 6. The datum is one of the three origin planes. A name follows
+// ADR-0033 items 1, 4 and 6. The datum is one of the three origin planes, or since ADR-0051
+// item 5 a datum of the Document, with a fault or not. A name follows
 // the rules of the name of a body (ADR-0028 item 3); an empty name is no name. The
 // handler needs no capability of the backend: a sketch is not a body.
 public sealed class CreateSketchCommandHandler : ICommandHandler, ICommandEncoder
@@ -62,10 +63,10 @@ public sealed class CreateSketchCommandHandler : ICommandHandler, ICommandEncode
         if (SketchResults.InUse(document, command, createsItem: true) is { } inUse)
             return Task.FromResult(inUse);
 
-        if (Datums.Find(create.DatumId) is null)
+        if (DatumResolver.Frame(document, create.DatumId) is null)
             return Task.FromResult(SketchResults.Failure(
                 DiagnosticCodes.SketchDatumNotFound,
-                $"No datum with id '{create.DatumId}' exists. The datums are the origin planes XY, XZ and YZ (ADR-0033 item 1)."));
+                $"No datum with id '{create.DatumId}' exists. The datums are the origin planes XY, XZ and YZ (ADR-0033 item 1) and each datum of CreateDatum in effect (ADR-0051 item 5)."));
 
         if (create.SketchName is { } name && BodyNames.Refusal(name) is { } refusal)
             return Task.FromResult(SketchResults.Failure(DiagnosticCodes.SketchNameInvalid, refusal));

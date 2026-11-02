@@ -10,9 +10,11 @@ namespace Engine.Core.Sketch;
 public static class ExtrudeProfile
 {
     // The parameters, or the reason that the sketch has no profile: it is not solved, or its
-    // lines and arcs are not one closed loop and it is not one circle. The caller checks the distance.
-    public static (ExtrudeParameters? Parameters, string? Reason) Parameters(SketchRecord sketch, double distance)
+    // lines and arcs are not one closed loop and it is not one circle. The caller checks the distance
+    // and gives the frame of the datum of the sketch (ADR-0051 item 5).
+    public static (ExtrudeParameters? Parameters, string? Reason) Parameters(SketchRecord sketch, double distance, DatumFrame frame)
     {
+        ArgumentNullException.ThrowIfNull(frame);
         // ADR-0036 item 4 (Q3 A): a sketch that is not solved gives no solid.
         if (!SketchSolver.Status(sketch).Solved)
             return (null, $"The sketch '{sketch.Id}' is not solved, so its profile is not the part that its constraints give.");
@@ -21,19 +23,17 @@ public static class ExtrudeProfile
         if (loop is null)
             return (null, reason);
 
-        // CreateSketch refuses a datum that does not exist (ADR-0033 item 6), so each
-        // live sketch has one of the origin planes.
-        var datum = Datums.Find(sketch.DatumId)!;
-
         // ADR-0036 item 3: the height is |distance|, and the frame moves by min(0, distance)
         // along n. Each axis of an origin plane holds 0 and ±1 only, so each product is exact.
+        // ADR-0051 item 5: the frame starts at the origin of the datum; the side of a line has
+        // general axes (item 10).
         var height = distance > 0 ? distance : -distance;
         var shift = distance > 0 ? 0.0 : distance;
-        var (u, v, n) = (datum.U, datum.V, datum.Normal);
+        var (o, u, v, n) = (frame.Origin, frame.U, frame.V, frame.Normal);
         return (new ExtrudeParameters(
             loop,
             height,
-            (shift * n.X, shift * n.Y, shift * n.Z),
+            (o.X + (shift * n.X), o.Y + (shift * n.Y), o.Z + (shift * n.Z)),
             (u.X, u.Y, u.Z),
             (v.X, v.Y, v.Z),
             (n.X, n.Y, n.Z)), null);

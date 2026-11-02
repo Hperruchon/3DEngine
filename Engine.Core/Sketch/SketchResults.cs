@@ -29,7 +29,7 @@ public static class SketchResults
     {
         var (solved, dropped) = SketchSolver.SolveWithHold(ReadOnly(sketch), held);
         var before = SketchModel.Find(document, solved.Id)!;
-        var (bodies, rebuild) = SketchRebuild.Rebuild(document, backend, edit, before, solved);
+        var (bodies, datums, rebuild) = SketchRebuild.Rebuild(document, backend, edit, before, solved);
         var diagnostics = dropped
             ? [new Diagnostic(
                 Severity.Warning,
@@ -41,7 +41,8 @@ public static class SketchResults
             new Outputs(new Dictionary<string, object?> { [output] = id }),
             diagnostics: diagnostics,
             changedBodies: bodies,
-            changedSketches: [solved]);
+            changedSketches: [solved],
+            changedDatums: datums);
     }
 
     // Finding E94 of the codebase review of 2026-10-30 (TASK-0114): a move or a change of a value

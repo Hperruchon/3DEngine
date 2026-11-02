@@ -83,6 +83,7 @@ public sealed class DocumentFileTests : IDisposable
         },
         ["CalibrateImage"] = new CalibrateImageCommand { ImageId = Guid.NewGuid(), X1 = 1, Y1 = 2.5, X2 = -3, Y2 = 4, Distance = 12.75 },
         ["SetExtrudeDistance"] = new SetExtrudeDistanceCommand { ExtrudeId = Guid.NewGuid(), Distance = -7.25 },
+        ["CreateDatum"] = new CreateDatumCommand { FeatureId = Guid.NewGuid(), Element = "side", ItemId = Guid.NewGuid(), DatumName = "Wall" },
     };
 
     // ADR-0015 item 11: each handler has an encoder, and Create(Encode(c)) gives c.
