@@ -6,7 +6,8 @@ namespace Engine.Core;
 // record that the step made, Consumed each record that it removed, as it was before
 // the step, and Changed each record that it replaced, before and after. ADR-0033 item 10:
 // CreatedSketches and ChangedSketches do the same for the sketches of the step. ADR-0045
-// item 9: CreatedImages and ChangedImages do the same for the images of the step.
+// item 9: CreatedImages and ChangedImages do the same for the images of the step. ADR-0051
+// item 4: CreatedDatums and ChangedDatums do the same for the datums of the step.
 internal sealed record Step(
     Guid CommandId,
     IReadOnlyList<BodyRecord> Created,
@@ -15,7 +16,9 @@ internal sealed record Step(
     IReadOnlyList<Engine.Contracts.Sketch.SketchRecord> CreatedSketches,
     IReadOnlyList<(Engine.Contracts.Sketch.SketchRecord Before, Engine.Contracts.Sketch.SketchRecord After)> ChangedSketches,
     IReadOnlyList<Engine.Contracts.Images.ImageRecord> CreatedImages,
-    IReadOnlyList<(Engine.Contracts.Images.ImageRecord Before, Engine.Contracts.Images.ImageRecord After)> ChangedImages);
+    IReadOnlyList<(Engine.Contracts.Images.ImageRecord Before, Engine.Contracts.Images.ImageRecord After)> ChangedImages,
+    IReadOnlyList<Engine.Contracts.Sketch.DatumRecord> CreatedDatums,
+    IReadOnlyList<(Engine.Contracts.Sketch.DatumRecord Before, Engine.Contracts.Sketch.DatumRecord After)> ChangedDatums);
 
 // ADR-0031 item 2: one history for the Document. The command bus owns it and changes
 // it only in its commit, so a rejected Undo or Redo leaves it as it was. The history

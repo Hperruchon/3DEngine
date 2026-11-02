@@ -71,9 +71,35 @@ public class EventPayloadSchemaTests(WebApplicationFactory<Program> factory)
         })
             Assert.Equal(CommandStatus.Applied, (await host.Session.Apply(step)).Status);
 
+        // A datum with no name on the end of an extrude, a new distance that moves it, a datum with a
+        // name on a box, then an undo and a redo, so that each datum event comes (ADR-0051 item 9, TASK-0166).
+        var square = await host.Session.Apply(new CreateSketchCommand { DatumId = Engine.Contracts.Sketch.Datums.XY.Id });
+        Assert.True(square.Outputs.TryGet<Guid>("sketchId", out var profile));
+        var corners = new List<Guid>();
+        foreach (var (x, y) in new[] { (0.0, 0.0), (2.0, 0.0), (2.0, 2.0), (0.0, 2.0) })
+        {
+            var point = await host.Session.Apply(new AddSketchPointCommand { SketchId = profile, X = x, Y = y });
+            Assert.True(point.Outputs.TryGet<Guid>("pointId", out var corner));
+            corners.Add(corner);
+        }
+        for (var i = 0; i < corners.Count; i++)
+            Assert.Equal(CommandStatus.Applied, (await host.Session.Apply(new AddSketchLineCommand { SketchId = profile, StartPointId = corners[i], EndPointId = corners[(i + 1) % corners.Count] })).Status);
+        var extrude = await host.Session.Apply(new ExtrudeCommand { SketchId = profile, Distance = 1 });
+        Assert.True(extrude.Outputs.TryGet<Guid>("bodyId", out var solid));
+        var block = await host.Session.Apply(new CreateBoxCommand { SizeX = 1, SizeY = 1, SizeZ = 1 });
+        Assert.True(block.Outputs.TryGet<Guid>("bodyId", out var cube));
+        foreach (var step in new Command[]
+        {
+            new CreateDatumCommand { FeatureId = solid, Element = "end" },
+            new SetExtrudeDistanceCommand { ExtrudeId = solid, Distance = 2 },
+            new CreateDatumCommand { FeatureId = cube, Element = "+z", DatumName = "D" },
+            new UndoCommand(), new RedoCommand(),
+        })
+            Assert.Equal(CommandStatus.Applied, (await host.Session.Apply(step)).Status);
+
         Assert.Equal(
             ["body.changed", "body.consumed", "body.created", "body.removed", "command.applied", "command.rejected",
-                "sketch.changed", "sketch.created", "sketch.removed"],
+                "datum.changed", "datum.created", "datum.removed", "sketch.changed", "sketch.created", "sketch.removed"],
             records.Select(record => record.Kind).Distinct().Order(StringComparer.Ordinal));
         var problems = records.SelectMany(PayloadProblems).ToList();
         Assert.True(problems.Count == 0, string.Join("\n  ", problems));

@@ -7,7 +7,7 @@ date: 2026-10-29
 supersedes: []
 superseded-by: []
 amends: []
-amended-by: ['0037', '0040', '0050']
+amended-by: ['0037', '0040', '0050', '0051']
 affects:
   - Engine.Contracts/Geometry/**
   - Engine.Core/Commands/ExtrudeCommand.cs
@@ -98,7 +98,8 @@ The decision below applies the recommended answers: Q1 A, Q2 A, Q3 A and Q4 A.
    Since ADR-0050 the checks of a cross, a touch and the area use the exact predicates of `Engine.Core/Exact/`,
    so each sign is the sign of the true coordinates.
 3. **The distance (Q2).** A distance that is zero or not finite gives `E-GEOM-INVALID-PARAM`. The backend gets the
-   height |distance|, and the frame of the datum moved by min(0, distance) along n.
+   height |distance|, and the frame of the datum moved by min(0, distance) along n. Since ADR-0051 the frame starts
+   at the origin of the datum, which is not (0, 0, 0) for a datum on a face.
 4. **The refusals (Q3).** No live sketch with the identifier gives `E-SKETCH-NOT-FOUND`. A profile that breaks item 2,
    and a sketch that is not solved (ADR-0035 item 8), give the new code `E-SKETCH-PROFILE-INVALID`, with a message
    that names the reason. A backend without the capability gives `E-GEOM-CAP-MISSING`, and a native failure gives
@@ -112,6 +113,8 @@ The decision below applies the recommended answers: Q1 A, Q2 A, Q3 A and Q4 A.
 6. **The backend.** `ManifoldGeometryBackend` makes one simple polygon of the loop, extrudes it with no slice, no twist
    and the scale 1, and moves the solid with `manifold_transform` by the matrix of the columns u, v and n and the
    origin. Each entry of the matrix is 0 or ±1, and the origin is (0, 0, 0) moved along n, so the move is exact.
+   Since ADR-0051 a datum on the side of a line has general axes, so the move is not exact; item 10 of ADR-0051
+   gives the proof of its bits on the three runners.
 7. **The sketch.** The extrude does not consume the sketch and does not change it (ADR-0033 item 5). The sketch stays
    live and the desktop still draws it. K0b decides what an edit of the sketch does to the solid.
 8. **Undo.** The extrude is one step: an undo removes the body (ADR-0031).
@@ -149,3 +152,5 @@ exact on each platform.
   height or area.
 - 2026-11-02 · TASK-0164 · ADR-0050 amends item 2: the checks of a cross, a touch and the area are exact. A file whose
   extrude only the rounded checks accepted no longer opens (Q1 A of the owner of 2026-11-02).
+- 2026-11-02 · TASK-0166 · ADR-0051 amends items 3 and 6: the frame of a datum on a face has its own origin, and
+  the side of a line has general axes.

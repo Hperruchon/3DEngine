@@ -51,6 +51,12 @@ public sealed class Document
     private readonly Dictionary<Guid, Images.ImageRecord> _images = new();
     public IReadOnlyCollection<Images.ImageRecord> Images => _images.Values;
 
+    // ADR-0051 item 4: one record for each datum in effect, as for a sketch. The three origin
+    // planes of ADR-0033 item 1 are not in this collection. The collection gives no order: a
+    // rebuild takes the datums in the order of the log.
+    private readonly Dictionary<Guid, Sketch.DatumRecord> _datums = new();
+    public IReadOnlyCollection<Sketch.DatumRecord> Datums => _datums.Values;
+
     public Document(Guid? projectId = null, int schemaVersion = 1, string lengthUnit = Millimetre)
     {
         if (lengthUnit != Millimetre)
@@ -110,5 +116,17 @@ public sealed class Document
         if (!_images.ContainsKey(image.Id))
             throw new InvalidOperationException($"No live image {image.Id} to replace.");
         _images[image.Id] = image;
+    }
+
+    internal void AddDatum(Sketch.DatumRecord datum) => _datums[datum.Id] = datum;
+
+    internal void RemoveDatum(Guid id) => _datums.Remove(id);
+
+    // ADR-0051 item 4: a change gives a new record with the same identifier.
+    internal void ReplaceDatum(Sketch.DatumRecord datum)
+    {
+        if (!_datums.ContainsKey(datum.Id))
+            throw new InvalidOperationException($"No datum {datum.Id} in effect to replace.");
+        _datums[datum.Id] = datum;
     }
 }

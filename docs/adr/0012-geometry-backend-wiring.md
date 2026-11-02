@@ -7,7 +7,7 @@ date: 2026-05-27
 supersedes: []
 superseded-by: []
 amends: []
-amended-by: ['0018', '0021', '0028', '0015', '0033', '0037', '0045']
+amended-by: ['0018', '0021', '0028', '0015', '0033', '0037', '0045', '0051']
 affects:
   - Engine.Contracts/Geometry/**
   - Engine.Core/Commands/**
@@ -256,3 +256,4 @@ This is *not* the Manifold backend — it is the wiring slice. A follow-on TASK 
   solid for a body that it does not create derives the key from its own identifier and the body identifier.
 - 2026-10-31 · TASK-0152 · ADR-0045 amends §6: the snapshot gives `images`, each live image with each field of its
   record.
+- 2026-11-02 · TASK-0166 · ADR-0051 amends §6: the snapshot gives `datums`, each datum in effect with its name.

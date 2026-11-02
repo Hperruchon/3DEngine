@@ -53,6 +53,7 @@ public sealed class CommandBus
 
     // ADR-0045 item 7: each image identifier that a commit of this bus created.
     private readonly HashSet<Guid> _createdImages = [];
+    private readonly HashSet<Guid> _createdDatums = [];
 
     public CommandBus(
         Document document,
@@ -203,6 +204,7 @@ public sealed class CommandBus
         RefuseWrongBodyLists(command, handlerResult);
         RefuseWrongSketchLists(command, handlerResult);
         RefuseWrongImageLists(command, handlerResult);
+        RefuseWrongDatumLists(command, handlerResult);
 
         if (Journal is { } journal && Write(journal, command, handler, handlerResult, stopwatch) is { } refused)
             return refused;
@@ -217,13 +219,16 @@ public sealed class CommandBus
             handlerResult.CreatedSketches,
             handlerResult.ChangedSketches.Select(sketch => (LiveSketch(sketch.Id), sketch)).ToList(),
             handlerResult.CreatedImages,
-            handlerResult.ChangedImages.Select(image => (LiveImage(image.Id), image)).ToList());
+            handlerResult.ChangedImages.Select(image => (LiveImage(image.Id), image)).ToList(),
+            handlerResult.CreatedDatums,
+            handlerResult.ChangedDatums.Select(datum => (LiveDatum(datum.Id), datum)).ToList());
         var committed = Commit(
             command,
             new Effect(
                 handlerResult.CreatedBodies, handlerResult.ConsumedBodies, [], handlerResult.ChangedBodies,
                 handlerResult.CreatedSketches, [], handlerResult.ChangedSketches,
-                handlerResult.CreatedImages, [], handlerResult.ChangedImages),
+                handlerResult.CreatedImages, [], handlerResult.ChangedImages,
+                handlerResult.CreatedDatums, [], handlerResult.ChangedDatums),
             handlerResult.Outputs, handlerResult.Diagnostics, stopwatch);
         _history.Record(step);
         return committed;
@@ -242,6 +247,9 @@ public sealed class CommandBus
     private ImageRecord LiveImage(Guid id)
         => _document.Images.First(image => image.Id == id);
 
+    private DatumRecord LiveDatum(Guid id)
+        => _document.Datums.First(datum => datum.Id == id);
+
     // ADR-0031 items 4, 7 and 8: an Undo or a Redo. The bus makes the lists from the
     // step, so RefuseWrongBodyLists does not judge them: a reversal makes a consumed body
     // live again, which ADR-0021 item 1, as amended, permits only here. No call of the
@@ -255,10 +263,11 @@ public sealed class CommandBus
         if (handlerResult.History is not (HistoryMove.Undo or HistoryMove.Redo)
             || handlerResult.CreatedBodies.Count + handlerResult.ConsumedBodies.Count + handlerResult.ChangedBodies.Count
                 + handlerResult.CreatedSketches.Count + handlerResult.ChangedSketches.Count
-                + handlerResult.CreatedImages.Count + handlerResult.ChangedImages.Count > 0)
+                + handlerResult.CreatedImages.Count + handlerResult.ChangedImages.Count
+                + handlerResult.CreatedDatums.Count + handlerResult.ChangedDatums.Count > 0)
             throw new InvalidOperationException(
                 $"The handler of '{command.Name}'@{command.SchemaVersion} gives the move {handlerResult.History} and a list of "
-                + "bodies, sketches or images, or a move that does not exist. ADR-0031 item 7: the bus computes the changes of a move.");
+                + "bodies, sketches, images or datums, or a move that does not exist. ADR-0031 item 7: the bus computes the changes of a move.");
 
         var undo = handlerResult.History == HistoryMove.Undo;
         if ((undo ? _history.NextUndo : _history.NextRedo) is not { } step)
@@ -281,7 +290,9 @@ public sealed class CommandBus
                     [], step.CreatedSketches.Select(sketch => sketch.Id).ToList(),
                     step.ChangedSketches.Select(change => change.Before).ToList(),
                     [], step.CreatedImages.Select(image => image.Id).ToList(),
-                    step.ChangedImages.Select(change => change.Before).ToList()),
+                    step.ChangedImages.Select(change => change.Before).ToList(),
+                    [], step.CreatedDatums.Select(datum => datum.Id).ToList(),
+                    step.ChangedDatums.Select(change => change.Before).ToList()),
                 outputs, handlerResult.Diagnostics, stopwatch);
             _history.Undone();
             return reversed;
@@ -293,7 +304,8 @@ public sealed class CommandBus
                 step.Created, step.Consumed.Select(body => body.Handle).ToList(), [],
                 step.Changed.Select(change => change.After).ToList(),
                 step.CreatedSketches, [], step.ChangedSketches.Select(change => change.After).ToList(),
-                step.CreatedImages, [], step.ChangedImages.Select(change => change.After).ToList()),
+                step.CreatedImages, [], step.ChangedImages.Select(change => change.After).ToList(),
+                step.CreatedDatums, [], step.ChangedDatums.Select(change => change.After).ToList()),
             outputs, handlerResult.Diagnostics, stopwatch);
         _history.Redone();
         return applied;
@@ -432,8 +444,33 @@ public sealed class CommandBus
         }
     }
 
-    // The changes of one commit to the live bodies, sketches and images. Only an Undo
-    // removes a body, a sketch or an image.
+    // ADR-0051 item 4: the rule of the images, for the datums. A changed datum also keeps its
+    // reference: a rebuild changes only its frame and its fault.
+    private void RefuseWrongDatumLists(Command command, CommandHandlerResult result)
+    {
+        var created = new HashSet<Guid>();
+        foreach (var datum in result.CreatedDatums)
+        {
+            if (_createdDatums.Contains(datum.Id) || !created.Add(datum.Id))
+                throw new InvalidOperationException(
+                    $"The handler of '{command.Name}'@{command.SchemaVersion} creates datum {datum.Id}, which this bus "
+                    + "created before or which is in its list two times. ADR-0051 item 4: an identifier is given one time.");
+        }
+
+        var changed = new HashSet<Guid>();
+        foreach (var datum in result.ChangedDatums)
+        {
+            var live = _document.Datums.FirstOrDefault(candidate => candidate.Id == datum.Id);
+            if (live is null || created.Contains(datum.Id) || !changed.Add(datum.Id) || live.Reference != datum.Reference)
+                throw new InvalidOperationException(
+                    $"The handler of '{command.Name}'@{command.SchemaVersion} changes datum {datum.Id}, which is not "
+                    + "in effect, which the same command creates, which is in its list two times, or whose reference it "
+                    + "changes. ADR-0051 item 4 permits a change of a datum in effect, one time, with the same reference.");
+        }
+    }
+
+    // The changes of one commit to the live bodies, sketches, images and datums. Only an Undo
+    // removes a body, a sketch, an image or a datum.
     private sealed record Effect(
         IReadOnlyList<BodyRecord> Created,
         IReadOnlyList<BodyHandle> Consumed,
@@ -444,7 +481,10 @@ public sealed class CommandBus
         IReadOnlyList<SketchRecord> ChangedSketches,
         IReadOnlyList<ImageRecord> CreatedImages,
         IReadOnlyList<Guid> RemovedImages,
-        IReadOnlyList<ImageRecord> ChangedImages);
+        IReadOnlyList<ImageRecord> ChangedImages,
+        IReadOnlyList<DatumRecord> CreatedDatums,
+        IReadOnlyList<Guid> RemovedDatums,
+        IReadOnlyList<DatumRecord> ChangedDatums);
 
     // 4. Commit: compute each Seq, append the log, register the created bodies,
     // remove the consumed and the removed bodies, then the same for the sketches. The
@@ -452,7 +492,8 @@ public sealed class CommandBus
     // consecutive Seqs, in the order of ADR-0031 item 5 and ADR-0033 item 9:
     // command.applied, each body.created, each body.consumed, each body.removed, each
     // body.changed, each sketch.created, each sketch.removed, each sketch.changed, and
-    // since ADR-0045 item 8 each image.created, each image.removed, each image.changed.
+    // since ADR-0045 item 8 each image.created, each image.removed, each image.changed, and since
+    // ADR-0051 item 9 each datum.created, each datum.removed, each datum.changed.
     // A subscriber that draws between two events therefore never sees fewer
     // bodies than the result has. Nothing here awaits, therefore nothing here
     // stops in the middle.
@@ -466,7 +507,8 @@ public sealed class CommandBus
         var (created, consumed, removed, changed) = (effect.Created, effect.Consumed, effect.Removed, effect.Changed);
         var count = 1 + created.Count + consumed.Count + removed.Count + changed.Count
             + effect.CreatedSketches.Count + effect.RemovedSketches.Count + effect.ChangedSketches.Count
-            + effect.CreatedImages.Count + effect.RemovedImages.Count + effect.ChangedImages.Count;
+            + effect.CreatedImages.Count + effect.RemovedImages.Count + effect.ChangedImages.Count
+            + effect.CreatedDatums.Count + effect.RemovedDatums.Count + effect.ChangedDatums.Count;
         var appliedSeq = TakeSeqs(count);
         var events = new List<EventRecord>(count)
         {
@@ -589,6 +631,39 @@ public sealed class CommandBus
             _document.ReplaceImage(image);
             lastSeq++;
             events.Add(Event(lastSeq, command, "image.changed", ImageFields(image)));
+        }
+
+        // ADR-0051 item 9: a client reads the frame and the fault of a datum with GetDatum.
+        foreach (var datum in effect.CreatedDatums)
+        {
+            _document.AddDatum(datum);
+            _createdDatums.Add(datum.Id);
+            lastSeq++;
+            events.Add(Event(lastSeq, command, "datum.created", new Dictionary<string, object?>
+            {
+                ["datumId"] = datum.Id,
+                ["name"] = datum.Name,
+            }));
+        }
+
+        foreach (var id in effect.RemovedDatums)
+        {
+            _document.RemoveDatum(id);
+            lastSeq++;
+            events.Add(Event(lastSeq, command, "datum.removed", new Dictionary<string, object?>
+            {
+                ["datumId"] = id,
+            }));
+        }
+
+        foreach (var datum in effect.ChangedDatums)
+        {
+            _document.ReplaceDatum(datum);
+            lastSeq++;
+            events.Add(Event(lastSeq, command, "datum.changed", new Dictionary<string, object?>
+            {
+                ["datumId"] = datum.Id,
+            }));
         }
 
         var result = new CommandResult(

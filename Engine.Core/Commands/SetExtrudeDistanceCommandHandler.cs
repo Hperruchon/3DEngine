@@ -74,11 +74,12 @@ public sealed class SetExtrudeDistanceCommandHandler : ICommandHandler, ICommand
             return Task.FromResult(Failure(
                 DiagnosticCodes.FeatureNotFound, $"No Extrude in effect has the id '{set.ExtrudeId}'."));
 
-        var (bodies, diagnostics) = SketchRebuild.RebuildDistance(document, backend, set.CommandId, extrude, set.Distance);
+        var (bodies, datums, diagnostics) = SketchRebuild.RebuildDistance(document, backend, set.CommandId, extrude, set.Distance);
         return Task.FromResult(CommandHandlerResult.Success(
             new Outputs(new Dictionary<string, object?> { ["extrudeId"] = extrude.CommandId }),
             diagnostics: diagnostics,
-            changedBodies: bodies));
+            changedBodies: bodies,
+            changedDatums: datums));
     }
 
     private static CommandHandlerResult Failure(string code, string message)

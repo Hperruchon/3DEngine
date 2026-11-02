@@ -44,6 +44,7 @@ public static class HandlerCatalog
         new PlaceImageCommandHandler(),
         new CalibrateImageCommandHandler(),
         new SetExtrudeDistanceCommandHandler(),
+        new CreateDatumCommandHandler(),
     ];
 
     public static IReadOnlyList<IQueryHandler> QueryHandlers() =>
@@ -52,6 +53,7 @@ public static class HandlerCatalog
         new GetTessellationQueryHandler(),
         new GetBodyInfoQueryHandler(),
         new GetSketchQueryHandler(),
+        new GetDatumQueryHandler(),
     ];
 
     public static void RegisterAll(CommandRegistry commands, QueryRegistry queries)
