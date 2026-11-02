@@ -141,6 +141,8 @@ Therefore each approved objective must have a track here.
 - P0.70 — The comparison refuses an empty hash, the pin rules read a global reference, and the next forms of the seventeenth review fail. v0.164, TASK-0161.
 - P0.71 — A proposal gives a simple polygon, the taps of a calibration reach it, and the image actions follow their refusals. v0.165, TASK-0162.
 - K1 — The profile of a sketch uses exact predicates: a rounded filter and an exact path with integers. v0.166, TASK-0164, ADR-0050.
+- R11c — A tap of the sketch snaps to the intersection of two lines, of a line and a curve, or of two curves. v0.167, TASK-0165, ADR-0041.
+- R11 — The snaps of the sketch. Closed at v0.167, from TASK-0131, TASK-0134 and TASK-0165; the escalated selection moves to R12.
 
 ## Track 0 — Foundations
 

@@ -1,7 +1,7 @@
 ---
 id: 0165
 title: A tap of the sketch snaps to the intersection of two lines or curves
-status: Active
+status: Done
 phase: R11c
 opened: 2026-11-02
 depends-on: [0164]
@@ -58,24 +58,25 @@ intersection, and the mark of ADR-0041 item 6 shows it before the tap.
 
 ## Acceptance criteria
 
-- [ ] A tap near the intersection of two lines, of a line and a circle, and of two circles adds a point at the
+- [x] A tap near the intersection of two lines, of a line and a circle, and of two circles adds a point at the
       intersection, and an intersection comes before a midpoint.
-- [ ] An intersection of the circle of an arc outside the sweep of the arc gives no snap.
-- [ ] The mark under the mouse in the desktop is the pixel of the intersection.
-- [ ] An injection of each part fails its test.
-- [ ] A clean build (`--no-incremental`) gives zero errors and zero warnings.
-- [ ] Continuous integration passes on the three runners, on the branch and on `main` after the merge.
+- [x] An intersection of the circle of an arc outside the sweep of the arc gives no snap.
+- [x] The mark under the mouse in the desktop is the pixel of the intersection (through `SketchActions.Mark`).
+- [x] An injection of each part fails its test.
+- [x] A clean build (`--no-incremental`) gives zero errors and zero warnings.
+- [x] Continuous integration passes on the three runners, on the branch and on `main` after the merge.
 
 ## Outcome
 
-Status: Active
+Status: Done · commit (the merge of the branch r11c-intersection-snap) · v0.167
 
 ## Method
 
 Mechanical: the intersections in the plane, the test of the sweep of an arc, and the distance in pixels.
 Judgement:  an intersection comes before a midpoint; two lines that share a point give no intersection, because the
             point is a point of the picture.
-Weakest:    the drawing of the mark does not change, so no new picture of the GPU shows it.
+Weakest:    the drawing of the mark does not change, so no new picture of the GPU shows it, and no person moved the
+            mouse over the window.
 
 ## Progress
 
@@ -83,3 +84,4 @@ Weakest:    the drawing of the mark does not change, so no new picture of the GP
 - 2026-11-02: the snap to an intersection, the pixel function and the ends of an arc in the picture; 6 new test
   cases, and 7 injections caught (no intersection, no skip of a shared point, no range of two segments, no range of a
   segment and a curve, no sweep, no pixel function, no ends of an arc).
+- 2026-11-02: closed at v0.167; the row R11 closes, and the escalated selection is the row R12.
