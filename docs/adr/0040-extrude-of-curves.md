@@ -1,13 +1,13 @@
 ---
 id: 0040
 title: The extrude of a profile with arcs and circles
-status: Accepted
+status: Amended
 topic: Geometry, sketch
 date: 2026-10-31
 supersedes: []
 superseded-by: []
 amends: ['0036']
-amended-by: []
+amended-by: ['0050']
 affects:
   - Engine.Core/Sketch/SketchProfile.cs
   - Engine.Core/Commands/ExtrudeCommandHandler.cs
@@ -38,7 +38,8 @@ Q2 A and Q3 A below are the answers of the owner, and this record is Accepted.
      edges, and the edges form one cycle. The centre of an arc is not a point of the loop;
    - one circle, with no other line and no other arc.
    The other rules of ADR-0036 item 2 hold for the polygon of item 2: no two segments that share no vertex cross or
-   touch, the area is not zero, and the polygon turns counter-clockwise.
+   touch, the area is not zero, and the polygon turns counter-clockwise. Since ADR-0050 these checks are exact, and a
+   vertex of the polygon that is not finite gives a reason before them.
 2. **The polygon of an arc (Q2).** The engine computes each vertex with `+ - * / sqrt` and comparisons only:
    - With c the centre, s the start and e the end, r = |s − c|, a = (s − c) / r and b = (e − c) / |e − c|, the sweep
      θ from a to b counter-clockwise (ADR-0033 item 2) has cos θ = dot(a, b) and sin θ = cross(a, b). An end in the
@@ -98,3 +99,5 @@ owner chose the same form for `W-SKETCH-REBUILD-FAILED` on 2026-10-30.
   Q2 A and Q3 A under the standing answer of the owner. Item 2 compares the cosine of the step with 0.9951, not with
   cos(2π / 64), as a margin: with cos(2π / 64) a full turn also gives 64 segments on Windows x64 (an injection of
   TASK-0126), but the count then depends on the last bit of the halvings.
+- 2026-11-02 · TASK-0164 · ADR-0050 amends item 1: the checks of a cross, a touch and the area of the polygon are
+  exact, and a vertex that is not finite gives a reason.

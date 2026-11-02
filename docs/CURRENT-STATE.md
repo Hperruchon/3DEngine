@@ -4815,3 +4815,38 @@ New tests: 14. The test list holds 1546 (1091 in `Engine.Tests`, 285 in `3DEngin
 `3DEngine.ImageTests`, 3 in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and
 zero warnings. Open entries: 14 of 15. New diagnostic codes: 0. Since the review of v0.159, 1 product milestone and 6
 entries followed it.
+
+## v0.166 — The profile of a sketch uses exact predicates (K1, TASK-0164)
+
+The owner gave the order "start K1" on 2026-11-02, and answered A to two questions on the same day: the profile uses
+the exact predicates for the live command, the open and the rebuild, and the 3D predicate arrives with K4. ADR-0050
+holds the decision, and it amends ADR-0036 item 2 and ADR-0040 item 1.
+
+**The change.**
+- `Engine.Core/Exact/Predicates.cs` gives `Orient2D`. It first computes the rounded value. When the permanent is at
+  least 1e-270 and the value is more than 4ε times the permanent, the rounded sign is the true sign. Each other case,
+  an overflow included, goes to an exact path that scales the coordinates to one exponent as `BigInteger` values.
+- `AreaSign` gives the sign of twice the area of a loop, with integers each time.
+- `SketchProfile` uses them for the checks of a cross, a touch and the area. A vertex of the polygon that is not
+  finite gives a reason under `E-SKETCH-PROFILE-INVALID` before the checks.
+
+**What the rounded checks did wrong.** A search with exact BigInt arithmetic in Node.js found each case, and each is a
+test: three points on one line exactly with a rounded value that is not zero; a point near a line with the rounded
+value zero; a loop that touches itself on a line, which `Extrude` accepted; a sliver triangle with the rounded area
+zero, which `Extrude` refused; and subnormal products, where a filter with no smallest permanent gives the wrong sign.
+
+**The cost (Q1 A).** ADR-0035 and ADR-0037 say that a command that the engine accepted at the save must not get a
+rejection at the open. A saved file whose `Extrude` only the rounded checks accepted is an exception: it gives
+`E-IO-LOAD-FAILED` at the open. The format version stays 1.
+
+**Proof.** An injection of each old or wrong form fails its tests: the rounded side (the touch), the rounded area (the
+sliver), no check of a finite vertex, the bound zero (5 cases), the bound 1.5ε (the comparison of the filter with the
+exact path on 200,000 cases near one line), and no smallest permanent (3 subnormal cases).
+
+**What stays.** `Orient3D` waits for K4. The checks of `ContourProposal` in `3DEngine.Core` are already exact in
+`long`. No tool repairs a saved file that the exact checks refuse.
+
+New tests: 18. The test list holds 1564 (1109 in `Engine.Tests`, 285 in `3DEngine.Tests`, 167 in
+`3DEngine.ImageTests`, 3 in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and
+zero warnings. Open entries: 14 of 15. New diagnostic codes: 0. Since the review of v0.159, 2 product milestones and 7
+entries followed it.
