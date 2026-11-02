@@ -480,6 +480,20 @@ needs a deliberate act.
 
 ## Closed
 
+### R-0049 · The opening of a contour proposal uses a square, and the answer to Q3 named a cross
+- class: question
+- opened: 2026-11-02
+- due: 2026-12-02
+- extended: no
+- refs: `docs/adr/0047-contour-proposal.md` item 2, `docs/reviews/2026-11-01-codebase-review.md` Q3, TASK-0162
+The owner answered A to Q3 of the codebase review of 2026-11-01: an opening with a cross of 3 × 3. On 2026-11-02 the
+session measured the cross: it removes the corner pixel of each rectangle, and the rectangle of 120 by 40 pixels of
+`3DEngine.Tests/ContourProposalTests.cs` gave the quadrilateral (41.5, 30.5), (158.5, 30.5), (159.5, 68.5),
+(41.5, 69.5). The reason of answer A is that the opening changes only parts that cannot be a wall of a solid. A square
+of 3 × 3 keeps the four corners, and it removes the same spurs and necks of one and two pixels. TASK-0162 uses the square.
+Exit: the owner confirms the square, or a task changes the opening to the cross and the tests of the rectangles.
+Closed 2026-11-02 · resolved · TASK-0162. The owner confirmed the square: "square is fine, confirm R-0049".
+
 ### R-0023 · No gate compares the native output of one platform with another
 - class: debt
 - opened: 2026-09-25
