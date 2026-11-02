@@ -49,11 +49,11 @@ names. Do not read all of them.
 | [0033](0033-sketch-model.md) | The sketch model in the engine | Amended | Contracts, sketch | 0012, 0021, 0031 | 0035, 0045 |
 | [0034](0034-sketch-tools.md) | The sketch tools of the desktop | Amended | Clients, sketch | 0026, 0029, 0032 | 0041 |
 | [0035](0035-sketch-solver.md) | The constraint solver of a sketch | Accepted | Sketch, determinism | 0033 | — |
-| [0036](0036-extrude-of-a-sketch-profile.md) | The extrude of a closed profile of a sketch | Amended | Contracts, geometry, sketch | — | 0037, 0040 |
+| [0036](0036-extrude-of-a-sketch-profile.md) | The extrude of a closed profile of a sketch | Amended | Contracts, geometry, sketch | — | 0037, 0040, 0050 |
 | [0037](0037-rebuild-of-an-extrude.md) | The rebuild of an extrude after an edit of its sketch | Amended | Contracts, geometry, sketch | 0012, 0021, 0028, 0031, 0036 | 0039, 0049 |
 | [0038](0038-translate-gizmo.md) | The translate gizmo of the desktop | Accepted | Rendering, clients | 0026 | — |
 | [0039](0039-chain-of-a-consumed-extrude.md) | The rebuild of the chain of a consumed extrude | Amended | Geometry, sketch | 0037 | 0049 |
-| [0040](0040-extrude-of-curves.md) | The extrude of a profile with arcs and circles | Accepted | Geometry, sketch | 0036 | — |
+| [0040](0040-extrude-of-curves.md) | The extrude of a profile with arcs and circles | Amended | Geometry, sketch | 0036 | 0050 |
 | [0041](0041-snap-of-a-sketch-tap.md) | The snap of a tap of the sketch | Accepted | Clients, sketch | 0026, 0034 | — |
 | [0042](0042-vision-library.md) | The vision library and its place | Amended | Vision, boundary | — | 0047 |
 | [0043](0043-textured-quad.md) | An image on a flat rectangle of the scene | Accepted | Rendering, vision | — | — |
@@ -63,6 +63,7 @@ names. Do not read all of them.
 | [0047](0047-contour-proposal.md) | The proposal of a contour and its accept as a sketch | Accepted | Vision, clients | 0042 | — |
 | [0048](0048-stl-export.md) | The STL export of the live bodies | Accepted | Persistence, clients | — | — |
 | [0049](0049-edit-of-an-extrude-distance.md) | The edit of the distance of an extrude | Accepted | Geometry, feature graph, clients | 0028, 0037, 0039 | — |
+| [0050](0050-exact-predicates.md) | The exact predicates of the profile of a sketch | Accepted | Geometry, sketch, determinism | 0036, 0040 | — |
 
 ## Topics
 
