@@ -2,7 +2,8 @@ namespace ThreeDEngine.Core.Vision;
 
 // ADR-0047 items 1 and 2 (phase V3, TASK-0155): the outer contour of the largest region of an image, as
 // a closed polygon in pixels, which the desktop proposes and the person accepts as a sketch. The grey
-// value, the threshold and the trace use integers, and the simplification uses + - * / and sqrt only,
+// value, the threshold, the opening, the trace and the check of a simple polygon use integers, and the
+// simplification uses + - * / and sqrt only,
 // so the proposal is the same on each platform. A vertex is at the centre of a pixel: x to the right
 // and y down from the upper-left corner of the image, so pixel (i, j) has its centre at (i + 0.5, j + 0.5).
 public static class ContourProposal
@@ -14,10 +15,17 @@ public static class ContourProposal
     // Clockwise in the image, with y down, from the west: W, NW, N, NE, E, SE, S, SW.
     private static readonly (int Dx, int Dy)[] Around = [(-1, 0), (-1, -1), (0, -1), (1, -1), (1, 0), (1, 1), (0, 1), (-1, 1)];
 
-    // The polygon of the proposal, or null when the image has no two classes of grey or its largest
-    // region has fewer than three vertices.
-    public static IReadOnlyList<(double X, double Y)>? Propose(int width, int height, ReadOnlySpan<byte> rgba)
+    // The reason of a proposal that the image does not give.
+    public const string NoRegion = "The image has no region that gives a contour.";
+
+    // The reason of a polygon that is not simple, which the engine refuses as a profile.
+    public const string NotSimple = "The contour of the region crosses or touches itself, so its sketch does not extrude.";
+
+    // The polygon of the proposal, or null with the reason: the image has no two classes of grey, its
+    // largest region has fewer than three vertices, or the polygon is not simple.
+    public static IReadOnlyList<(double X, double Y)>? Propose(int width, int height, ReadOnlySpan<byte> rgba, out string? reason)
     {
+        reason = NoRegion;
         if (width < 1 || height < 1 || rgba.Length != (long)width * height * 4)
             throw new ArgumentException("The pixels do not fill the picture.", nameof(rgba));
 
@@ -27,7 +35,7 @@ public static class ContourProposal
 
         if (Threshold(grey) is not { } threshold)
             return null;
-        var foreground = Foreground(grey, width, height, threshold);
+        var foreground = Open(Foreground(grey, width, height, threshold), width, height);
         var region = Largest(foreground, width, height);
         if (region is null)
             return null;
@@ -44,7 +52,19 @@ public static class ContourProposal
             polygon = Simplify(boundary, tolerance);
         }
 
-        return polygon.Count < 3 ? null : polygon.Select(point => (point.X + 0.5, point.Y + 0.5)).ToList();
+        if (polygon.Count < 3)
+            return null;
+
+        // Finding V69 of the codebase review of 2026-11-01 (TASK-0162): the engine refuses a profile that
+        // crosses or touches itself, so the proposal refuses it first, with its reason.
+        if (!Simple(polygon))
+        {
+            reason = NotSimple;
+            return null;
+        }
+
+        reason = null;
+        return polygon.Select(point => (point.X + 0.5, point.Y + 0.5)).ToList();
     }
 
     // The threshold of Otsu: the grey value that separates the two classes with the largest variance
@@ -108,6 +128,46 @@ public static class ContourProposal
         for (var i = 0; i < grey.Length; i++)
             mask[i] = grey[i] > threshold == lightIsForeground;
         return mask;
+    }
+
+    // ADR-0047 item 2: the opening with a square of 3 × 3. A pixel stays when a square of nine pixels of
+    // the mask holds it, so a part of the mask that is one or two pixels wide goes, and the corner of a
+    // rectangle stays. Finding V69 of the codebase review of 2026-11-01 (TASK-0162): the trace went out
+    // and back along such a part, and the polygon touched itself.
+    private static bool[] Open(bool[] mask, int width, int height)
+    {
+        bool In(bool[] cells, int x, int y) => x >= 0 && y >= 0 && x < width && y < height && cells[(y * width) + x];
+
+        // True when each pixel, or when one pixel, of the square of 3 × 3 about (x, y) is in the cells.
+        bool Square(bool[] cells, int x, int y, bool all)
+        {
+            for (var dy = -1; dy <= 1; dy++)
+            {
+                for (var dx = -1; dx <= 1; dx++)
+                {
+                    if (In(cells, x + dx, y + dy) != all)
+                        return !all;
+                }
+            }
+
+            return all;
+        }
+
+        var centre = new bool[mask.Length];
+        for (var y = 0; y < height; y++)
+        {
+            for (var x = 0; x < width; x++)
+                centre[(y * width) + x] = Square(mask, x, y, all: true);
+        }
+
+        var opened = new bool[mask.Length];
+        for (var y = 0; y < height; y++)
+        {
+            for (var x = 0; x < width; x++)
+                opened[(y * width) + x] = Square(centre, x, y, all: false);
+        }
+
+        return opened;
     }
 
     // The largest region of the mask whose pixels touch by a side, or null when the mask is empty. Of two
@@ -197,6 +257,51 @@ public static class ContourProposal
 
         return boundary;
     }
+
+    // ADR-0047 item 2: the rule of the engine for a profile (Engine.Core/Sketch/SketchProfile.cs). No side
+    // has the length zero, no two sides that share no vertex cross or touch, no two sides that share a
+    // vertex go back along one line, and the area is not zero. The vertices are pixels, so each product
+    // is an exact integer.
+    private static bool Simple(List<(int X, int Y)> polygon)
+    {
+        var n = polygon.Count;
+        long twiceArea = 0;
+        for (var i = 0; i < n; i++)
+        {
+            var (a, b, c) = (polygon[i], polygon[(i + 1) % n], polygon[(i + 2) % n]);
+            if (a == b)
+                return false;
+            twiceArea += ((long)a.X * b.Y) - ((long)b.X * a.Y);
+            if (Side(a, b, c) == 0 && (((long)(b.X - a.X) * (c.X - b.X)) + ((long)(b.Y - a.Y) * (c.Y - b.Y))) < 0)
+                return false;
+            for (var j = i + 2; j < n; j++)
+            {
+                if (i == 0 && j == n - 1)
+                    continue;
+                if (Meet(a, b, polygon[j], polygon[(j + 1) % n]))
+                    return false;
+            }
+        }
+
+        return twiceArea != 0;
+    }
+
+    // True when the segments pq and rs cross or touch.
+    private static bool Meet((int X, int Y) p, (int X, int Y) q, (int X, int Y) r, (int X, int Y) s)
+    {
+        var (d1, d2, d3, d4) = (Side(r, s, p), Side(r, s, q), Side(p, q, r), Side(p, q, s));
+        if (((d1 > 0 && d2 < 0) || (d1 < 0 && d2 > 0)) && ((d3 > 0 && d4 < 0) || (d3 < 0 && d4 > 0)))
+            return true;
+        return (d1 == 0 && Within(r, s, p)) || (d2 == 0 && Within(r, s, q)) || (d3 == 0 && Within(p, q, r)) || (d4 == 0 && Within(p, q, s));
+    }
+
+    // The cross product of (b − a) and (c − a): positive when c is left of the line ab.
+    private static long Side((int X, int Y) a, (int X, int Y) b, (int X, int Y) c)
+        => ((long)(b.X - a.X) * (c.Y - a.Y)) - ((long)(b.Y - a.Y) * (c.X - a.X));
+
+    // True when c, on the line ab, is inside the box of the segment ab.
+    private static bool Within((int X, int Y) a, (int X, int Y) b, (int X, int Y) c)
+        => Math.Min(a.X, b.X) <= c.X && c.X <= Math.Max(a.X, b.X) && Math.Min(a.Y, b.Y) <= c.Y && c.Y <= Math.Max(a.Y, b.Y);
 
     // The closed polygon of Douglas and Peucker: the first point and the point farthest from it split the
     // boundary into two chains, and each chain keeps the points farther than the tolerance from its chord.
