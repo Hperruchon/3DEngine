@@ -177,7 +177,10 @@ public class SketchToolTests
                  .. extra.Select(id => new ToolPoint(id, 0, 0, 0, 0))],
                 [.. Lines.Select((line, index) => new ToolLine(new Guid(index + 1, 0, 0, new byte[8]), line.Start, line.End))],
                 [],
-                [.. Circles.Select(circle => Curve(circle.Key, circle.Value))]);
+                [.. Circles.Select(circle => Curve(circle.Key, circle.Value))])
+            {
+                ToPixel = position => (10 * position.X, 10 * position.Y),
+            };
     }
 
     // A tap at the pixel of the position (x, y), as the picture of the editor places it.
@@ -459,6 +462,86 @@ public class SketchToolTests
         tool.Tap(302, 301, (30.2, 30.1), editor.Picture(), editor);
         Assert.Equal(count, editor.Points.Count);
         Assert.Equal(centre, tool.First);
+    }
+
+    // Phase R11c (TASK-0165, ADR-0041 item 1): a tap within 22 pixels of the intersection of two edges
+    // takes it, before a midpoint. The lines (0, 0)-(20, 0) and (4, -4)-(4, 8) cross at (4, 0), whose
+    // pixel is 7.2 pixels from the tap; the midpoint (4, 2) of the second line is 14.6 pixels from it.
+    // The line (20, 30)-(40, 30) meets the circle of centre (30, 30) and radius 5 at (35, 30), and the
+    // circles of radius 5 at (0, 0) and (8, 0) meet at (4, 3).
+    [Fact]
+    public void A_Tap_Near_An_Intersection_Snaps_To_It_Before_A_Midpoint()
+    {
+        var lines = new Editor();
+        lines.AddLine(lines.AddPoint(0, 0)!.Value, lines.AddPoint(20, 0)!.Value);
+        lines.AddLine(lines.AddPoint(4, -4)!.Value, lines.AddPoint(4, 8)!.Value);
+        Assert.Equal((4.0, 0.0), SketchTool.Snap(44, 6, (4.4, 0.6), lines.Picture()));
+
+        var line = new Editor();
+        line.AddCircle(line.AddPoint(30, 30)!.Value, 5);
+        line.AddLine(line.AddPoint(20, 30)!.Value, line.AddPoint(40, 30)!.Value);
+        Assert.Equal((35.0, 30.0), SketchTool.Snap(346, 305, (34.6, 30.5), line.Picture()));
+
+        var circles = new Editor();
+        circles.AddCircle(circles.AddPoint(0, 0)!.Value, 5);
+        circles.AddCircle(circles.AddPoint(8, 0)!.Value, 5);
+        var tool = new SketchTool();
+        circles.Log.Clear();
+        tool.Tap(42, 33, (4.2, 3.3), circles.Picture(), circles);
+        Assert.Equal(["point 4 3"], circles.Log);
+    }
+
+    // Two lines that share a point give no intersection, and a picture with no pixel function, as with
+    // no camera, gives none: the tap takes the midpoint or the position on the line.
+    [Fact]
+    public void Lines_That_Share_A_Point_And_A_Picture_With_No_Pixels_Give_No_Intersection()
+    {
+        var editor = new Editor();
+        var (a, b) = (editor.AddPoint(0, 0)!.Value, editor.AddPoint(20, 0)!.Value);
+        editor.AddLine(a, b);
+        editor.AddLine(b, editor.AddPoint(20, 10)!.Value);
+        Assert.Equal((19.0, 0.0), SketchTool.Snap(190, 3, (19, 0.3), editor.Picture()));
+
+        var crossing = new Editor();
+        crossing.AddLine(crossing.AddPoint(0, 0)!.Value, crossing.AddPoint(20, 0)!.Value);
+        crossing.AddLine(crossing.AddPoint(4, -4)!.Value, crossing.AddPoint(4, 8)!.Value);
+        Assert.Equal((4.0, 2.0), SketchTool.Snap(44, 6, (4.4, 0.6), crossing.Picture() with { ToPixel = null }));
+    }
+
+    // A segment meets an edge only between its two points. The extension of the line (0, 0)-(10, 0)
+    // meets the line (14, -4)-(14, 8) at (14, 0), and the extension of the line (20, 30)-(24, 30) meets
+    // the circle of centre (30, 30) and radius 5 at (25, 30).
+    [Fact]
+    public void The_Extension_Of_A_Segment_Gives_No_Intersection()
+    {
+        var lines = new Editor();
+        lines.AddLine(lines.AddPoint(0, 0)!.Value, lines.AddPoint(10, 0)!.Value);
+        lines.AddLine(lines.AddPoint(14, -4)!.Value, lines.AddPoint(14, 8)!.Value);
+        Assert.Equal((14.0, 2.0), SketchTool.Snap(142, 3, (14.2, 0.3), lines.Picture()));
+
+        var curve = new Editor();
+        curve.AddCircle(curve.AddPoint(30, 30)!.Value, 5);
+        curve.AddLine(curve.AddPoint(20, 30)!.Value, curve.AddPoint(24, 30)!.Value);
+        Assert.NotEqual((25.0, 30.0), SketchTool.Snap(251, 302, (25.1, 30.2), curve.Picture()));
+    }
+
+    // An arc meets the circle of another curve only on its sweep. The arc has the centre (0, 0), the
+    // start (5, 0) and the end (0, 5), counter-clockwise; the circle of centre (8, 0) and radius 5 meets
+    // its circle at (4, 3), on the arc, and at (4, -3), outside it.
+    [Fact]
+    public void An_Intersection_Outside_The_Sweep_Of_An_Arc_Gives_No_Snap()
+    {
+        var editor = new Editor();
+        editor.AddCircle(editor.AddPoint(8, 0)!.Value, 5);
+        var picture = editor.Picture();
+        var quarter = Enumerable.Range(0, 9).Select(i => Math.PI * i / 16).Select(angle => (X: 50 * Math.Cos(angle), Y: 50 * Math.Sin(angle))).ToArray();
+        var arc = new ToolCurve(Guid.NewGuid(), [.. quarter.Skip(1).Select((corner, i) => (quarter[i], corner))], (0, 0), 5, (5, 0), (0, 5));
+        picture = picture with { Curves = [.. picture.Curves, arc] };
+
+        Assert.Equal((4.0, 3.0), SketchTool.Snap(43, 33, (4.3, 3.3), picture));
+        var below = SketchTool.Snap(43, -33, (4.3, -3.3), picture)!.Value;
+        Assert.NotEqual((4.0, -3.0), below);
+        Assert.Equal(5, Math.Sqrt(((below.X - 8) * (below.X - 8)) + (below.Y * below.Y)), 12);
     }
 
     // Finding V57 of the codebase review of 2026-10-31 (TASK-0133): a centre that moved between the two

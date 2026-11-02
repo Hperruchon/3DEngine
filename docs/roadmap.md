@@ -252,7 +252,9 @@ The first objective. Each phase ends with something that a person can observe.
 | R10 | A numeric pad and an expression evaluator. The pad gives the sizes of a new box and the offsets of a move; the drags of the camera have no numeric equivalent. The keys of undo and redo (R-0041). ADR-0032, TASK-0094. | 3–5 |
 | R11a | A tap of the sketch snaps to a midpoint, a line, a curve or the grid (the codebase review of 2026-10-31, sections 5 and 6, Q2 A). TASK-0131. | 3–4 |
 | R11b | The mark of the snap under the mouse, and under a finger before its tap (ADR-0041 item 6). TASK-0134. | 2–3 |
-| R11 | Escalated selection and a snap engine. The rest after R11b. | 4–6 |
+| R11c | A tap of the sketch snaps to the intersection of two lines, of a line and a curve, or of two curves (the owner, 2026-11-02). TASK-0165. | 2–3 |
+| R11 | Escalated selection and a snap engine. Closed after R11c: R11a to R11c give the snaps, and the escalated selection moves to R12 (the owner, 2026-11-02). | 4–6 |
+| R12 | The escalated selection of faces and edges. It needs a stable identity of each face and each edge, so it comes after K4 (ADR-0041 item 5; the owner, 2026-11-02). | 4–6 |
 
 ## Track K — The kernel
 

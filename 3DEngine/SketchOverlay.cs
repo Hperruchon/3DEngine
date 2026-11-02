@@ -132,22 +132,28 @@ internal static class SketchOverlay
                 .Select(pair => frame.Item1.Segment(frame.Item1.ToCamera(World(frame.datum, pair.A.X, pair.A.Y)), frame.Item1.ToCamera(World(frame.datum, pair.B.X, pair.B.Y))))
                 .OfType<(Vector2 A, Vector2 B)>()
                 .Select(segment => (((double)segment.A.X, (double)segment.A.Y), ((double)segment.B.X, (double)segment.B.Y))),
-        ], geometry[curve.Id].Centre, geometry[curve.Id].Radius)).ToArray();
-        return new SketchPicture(points, [.. sketch.Lines.Select(line => new ToolLine(line.Id, line.Start, line.End))], [.. sketch.Constraints.Select(constraint => constraint.Id)], curves);
+        ], geometry[curve.Id].Centre, geometry[curve.Id].Radius, geometry[curve.Id].Start, geometry[curve.Id].End)).ToArray();
+        return new SketchPicture(points, [.. sketch.Lines.Select(line => new ToolLine(line.Id, line.Start, line.End))], [.. sketch.Constraints.Select(constraint => constraint.Id)], curves)
+        {
+            // Phase R11c (TASK-0165): the pixel of an intersection, for its snap.
+            ToPixel = frame.Item1 is null ? null : position => Pixel(sketch.DatumId, camera!, width, height, position) is { } pixel ? (pixel.X, pixel.Y) : null,
+        };
     }
 
     // ADR-0041 (phase R11a): the centre and the radius of each curve in the plane, for a snap; the
-    // radius of an arc is the distance of its start from its centre.
-    private static Dictionary<Guid, ((double X, double Y) Centre, double Radius)> Geometry(SketchInfo sketch)
+    // radius of an arc is the distance of its start from its centre. Phase R11c (TASK-0165): an arc
+    // also gives its start and its end, for the sweep of an intersection.
+    private static Dictionary<Guid, ((double X, double Y) Centre, double Radius, (double X, double Y)? Start, (double X, double Y)? End)> Geometry(SketchInfo sketch)
     {
         var points = sketch.Points.ToDictionary(point => point.Id);
-        var geometry = new Dictionary<Guid, ((double X, double Y) Centre, double Radius)>();
+        var geometry = new Dictionary<Guid, ((double X, double Y) Centre, double Radius, (double X, double Y)? Start, (double X, double Y)? End)>();
         foreach (var circle in sketch.Circles.Where(circle => points.ContainsKey(circle.Center)))
-            geometry[circle.Id] = ((points[circle.Center].X, points[circle.Center].Y), circle.Radius);
+            geometry[circle.Id] = ((points[circle.Center].X, points[circle.Center].Y), circle.Radius, null, null);
         foreach (var arc in sketch.Arcs.Where(arc => points.ContainsKey(arc.Center) && points.ContainsKey(arc.Start)))
         {
             var (c, s) = (points[arc.Center], points[arc.Start]);
-            geometry[arc.Id] = ((c.X, c.Y), Math.Sqrt(((s.X - c.X) * (s.X - c.X)) + ((s.Y - c.Y) * (s.Y - c.Y))));
+            (double X, double Y)? e = points.TryGetValue(arc.End, out var end) ? (end.X, end.Y) : null;
+            geometry[arc.Id] = ((c.X, c.Y), Math.Sqrt(((s.X - c.X) * (s.X - c.X)) + ((s.Y - c.Y) * (s.Y - c.Y))), (s.X, s.Y), e);
         }
         return geometry;
     }
