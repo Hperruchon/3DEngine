@@ -82,3 +82,4 @@ decision below; register entry R-0048 asks the owner about the licences of the v
   each rectangle, so a rectangle of 120 by 40 pixels gave a quadrilateral with a skew of one pixel. A square keeps the
   corners, and it removes the same parts of one and two pixels. The record says a square, and register entry R-0049
   asks the owner to confirm it.
+- 2026-11-02 · TASK-0162 · The owner confirmed the square of item 2, and R-0049 is closed.

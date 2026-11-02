@@ -139,6 +139,7 @@ Therefore each approved objective must have a track here.
 - K0f — A command changes the distance of a live extrude, and the extrude and its chain rebuild. v0.162, TASK-0163, ADR-0049.
 - P0.69 — The export reads the document file only, the store takes parallel puts, and each edge of the export and the calibration gives a code. v0.163, TASK-0160.
 - P0.70 — The comparison refuses an empty hash, the pin rules read a global reference, and the next forms of the seventeenth review fail. v0.164, TASK-0161.
+- P0.71 — A proposal gives a simple polygon, the taps of a calibration reach it, and the image actions follow their refusals. v0.165, TASK-0162.
 
 ## Track 0 — Foundations
 
