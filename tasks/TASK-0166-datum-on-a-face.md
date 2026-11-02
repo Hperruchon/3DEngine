@@ -1,7 +1,7 @@
 ---
 id: 0166
 title: A datum on a face of an extrude or a box, and a sketch on it
-status: Active
+status: Done
 phase: K0g
 opened: 2026-11-02
 depends-on: [0165]
@@ -87,19 +87,19 @@ base moves the datum and the solid on it.
 
 ## Acceptance criteria
 
-- [ ] The caps and the sides of an extrude and the six faces of a box give right-handed frames that face out.
-- [ ] A Translate before the datum moves it, and a Translate after it does not.
-- [ ] A sketch on a datum extrudes from its face, and an edit of the base moves the datum and the solid on it.
-- [ ] A reference that does not resolve keeps its last plane with `W-DATUM-REFERENCE-FAILED`, and the edit applies.
-- [ ] Each refusal gives its code, an undo and a redo remove and give back a datum, and an open gives the same state.
-- [ ] Each datum event agrees with `/schema/events`, and an agent does the chain over HTTP.
-- [ ] An injection of each part fails its test.
-- [ ] A clean build (`--no-incremental`) gives zero errors and zero warnings.
-- [ ] Continuous integration passes on the three runners with equal determinism hashes, on the branch and on `main`.
+- [x] The caps and the sides of an extrude and the six faces of a box give right-handed frames that face out.
+- [x] A Translate before the datum moves it, and a Translate after it does not.
+- [x] A sketch on a datum extrudes from its face, and an edit of the base moves the datum and the solid on it.
+- [x] A reference that does not resolve keeps its last plane with `W-DATUM-REFERENCE-FAILED`, and the edit applies.
+- [x] Each refusal gives its code, an undo and a redo remove and give back a datum, and an open gives the same state.
+- [x] Each datum event agrees with `/schema/events`, and an agent does the chain over HTTP.
+- [x] An injection of each part fails its test.
+- [x] A clean build (`--no-incremental`) gives zero errors and zero warnings.
+- [x] Continuous integration passes on the three runners with equal determinism hashes, on the branch and on `main`.
 
 ## Outcome
 
-Status: Active
+Status: Done · commit (the merge of the branch k0g-datum-on-a-face) · v0.168
 
 ## Method
 
@@ -115,3 +115,4 @@ Weakest:    the bits of a solid on a side with general axes depend on `manifold_
 - 2026-11-02: the contract, the bus, the resolver, CreateDatum, GetDatum, the rebuild of each datum and the surface;
   18 new test cases (17 in DatumTests and an HTTP scenario), the payload test and the hash log gain the datums, and
   13 injections caught. ADR-0051 also amends ADR-0012 §6 and ADR-0031, as ADR-0045 did for the images.
+- 2026-11-02: the branch run 41539101412 gave equal determinism hashes on the three runners; closed at v0.168.
