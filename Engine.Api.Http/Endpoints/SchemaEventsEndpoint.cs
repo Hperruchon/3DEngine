@@ -60,6 +60,12 @@ internal static class SchemaEventsEndpoint
         ("imageId", "guid"), ("asset", "string"), ("datumId", "guid"), ("originU", "number"), ("originV", "number"),
         ("width", "integer"), ("height", "integer"), ("scale", "number"));
 
+    // ADR-0051 item 9: a datum can have no name, so the name can be null.
+    private static readonly IReadOnlyDictionary<string, FieldSchema> DatumCreatedFields = new Dictionary<string, FieldSchema>(Fields(("datumId", "guid")), StringComparer.Ordinal)
+    {
+        ["name"] = new FieldSchema("string", Required: false),
+    };
+
     // The payload of a command event: the name and the version of the command (ADR-0006).
     private static readonly IReadOnlyDictionary<string, FieldSchema> CommandFields = Fields(("name", "string"), ("schemaVersion", "integer"));
 
@@ -87,6 +93,9 @@ internal static class SchemaEventsEndpoint
         new("image.created", ImageFields), // ADR-0045 item 8, TASK-0152
         new("image.changed", ImageFields), // ADR-0045 item 8, TASK-0152
         new("image.removed", Fields(("imageId", "guid"))), // ADR-0045 item 8, TASK-0152
+        new("datum.created", DatumCreatedFields), // ADR-0051 item 9, TASK-0166
+        new("datum.changed", Fields(("datumId", "guid"))), // ADR-0051 item 9, TASK-0166
+        new("datum.removed", Fields(("datumId", "guid"))), // ADR-0051 item 9, TASK-0166
     };
 
     public static IResult Handle() => Results.Json(Kinds, ApiJson.Options);

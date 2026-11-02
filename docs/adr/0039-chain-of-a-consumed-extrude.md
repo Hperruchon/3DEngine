@@ -7,7 +7,7 @@ date: 2026-10-30
 supersedes: []
 superseded-by: []
 amends: ['0037']
-amended-by: ['0049']
+amended-by: ['0049', '0051']
 affects:
   - Engine.Core/Sketch/**
 enforced-by: Engine.Tests/Sketch/ChainRebuildTests.cs (TASK-0116 creates it)
@@ -97,3 +97,5 @@ replay and the document file stay as they are.
 
 - 2026-10-30 · TASK-0116 · Accepted under KQ4 A, from KQ1 to KQ4 A and Q1 to Q3 A of the owner of 2026-10-30.
 - 2026-11-01 · TASK-0163 · ADR-0049 amends item 3: an extrude upstream of an end uses its distance in effect.
+- 2026-11-02 · TASK-0166 · ADR-0051 item 6 amends items 2 and 3: each datum resolves again after an edit, and each
+  extrude of a sketch on a datum that moves is a target of the edit, as an extrude of the edited sketch is.

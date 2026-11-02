@@ -87,6 +87,15 @@ public sealed record CommandHandlerResult(
 
     public IReadOnlyList<Images.ImageRecord> ChangedImages { get; init; } = Array.Empty<Images.ImageRecord>();
 
+    // ADR-0051 item 4: the record of each datum that the command creates, and the new record
+    // of each datum in effect whose frame or fault a rebuild changes (item 6). The commit adds
+    // or replaces each one and emits datum.created or datum.changed after the image events. A
+    // handler changes only a datum in effect, gives each one time, and keeps its identifier and
+    // its reference; the bus refuses a list that breaks the rule. Empty by default.
+    public IReadOnlyList<Sketch.DatumRecord> CreatedDatums { get; init; } = Array.Empty<Sketch.DatumRecord>();
+
+    public IReadOnlyList<Sketch.DatumRecord> ChangedDatums { get; init; } = Array.Empty<Sketch.DatumRecord>();
+
     public static CommandHandlerResult Success(
         Outputs outputs,
         IReadOnlyList<Diagnostic>? diagnostics = null,
@@ -96,7 +105,9 @@ public sealed record CommandHandlerResult(
         IReadOnlyList<Sketch.SketchRecord>? createdSketches = null,
         IReadOnlyList<Sketch.SketchRecord>? changedSketches = null,
         IReadOnlyList<Images.ImageRecord>? createdImages = null,
-        IReadOnlyList<Images.ImageRecord>? changedImages = null)
+        IReadOnlyList<Images.ImageRecord>? changedImages = null,
+        IReadOnlyList<Sketch.DatumRecord>? createdDatums = null,
+        IReadOnlyList<Sketch.DatumRecord>? changedDatums = null)
         => new(
             outputs,
             diagnostics ?? Array.Empty<Diagnostic>(),
@@ -109,6 +120,8 @@ public sealed record CommandHandlerResult(
             ChangedSketches = changedSketches ?? Array.Empty<Sketch.SketchRecord>(),
             CreatedImages = createdImages ?? Array.Empty<Images.ImageRecord>(),
             ChangedImages = changedImages ?? Array.Empty<Images.ImageRecord>(),
+            CreatedDatums = createdDatums ?? Array.Empty<Sketch.DatumRecord>(),
+            ChangedDatums = changedDatums ?? Array.Empty<Sketch.DatumRecord>(),
         };
 
     public static CommandHandlerResult Failure(

@@ -94,6 +94,13 @@ public static class DiagnosticCodes
     public const string FeatureNotFound = "E-FEATURE-NOT-FOUND";
     public const string FeatureRebuildFailed = "W-FEATURE-REBUILD-FAILED";
 
+    // ADR-0051 (phase K0g, TASK-0166): a datum on a face of a feature.
+    public const string DatumIdInUse = "E-DATUM-ID-IN-USE";
+    public const string DatumReferenceInvalid = "E-DATUM-REFERENCE-INVALID";
+    public const string DatumNameInvalid = "E-DATUM-NAME-INVALID";
+    public const string DatumNotFound = "E-DATUM-NOT-FOUND";
+    public const string DatumReferenceFailed = "W-DATUM-REFERENCE-FAILED";
+
     // Findings E121 and E122 of the codebase review of 2026-11-01 (TASK-0160): the STL export of ADR-0048.
     public const string ExportRange = "E-EXPORT-RANGE";
     public const string ExportTooLarge = "E-EXPORT-TOO-LARGE";
