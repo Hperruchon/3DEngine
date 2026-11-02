@@ -1,4 +1,5 @@
 using Engine.Contracts.Sketch;
+using Engine.Core.Exact;
 
 namespace Engine.Core.Sketch;
 
@@ -10,6 +11,9 @@ namespace Engine.Core.Sketch;
 // curve uses + - * / sqrt and comparisons only: the step of an arc comes from halvings of its
 // sweep, and each vertex is the one before it turned by the step, so a replay and a rebuild
 // give the same bits on each platform.
+//
+// ADR-0050 (TASK-0164): the checks of a touch, a cross and the area use the exact predicates, so
+// the profile that the engine accepts is the profile that the true coordinates give.
 public static class SketchProfile
 {
     // ADR-0040 item 2: the step of a curve has a cosine of at least this number, the cosine of
@@ -107,6 +111,11 @@ public static class SketchProfile
                 return (null, $"The line '{line.Id}' has the length zero, because its two points are at one position.");
         }
 
+        // ADR-0050 item 4: the exact predicates take finite coordinates only. Each point of the record
+        // is finite, but the polygon of an arc with very large values can overflow.
+        if (loop.Any(vertex => !double.IsFinite(vertex.X) || !double.IsFinite(vertex.Y)))
+            return (null, "A vertex of the polygon of the loop is not finite, because the values of the sketch are too large.");
+
         // No two segments of the polygon that share no vertex may cross or touch. Segment i goes
         // from vertex i to vertex i + 1 and belongs to the edge of vertex i. With lines only, two
         // segments that share no vertex are two lines that share no point, as before ADR-0040.
@@ -122,18 +131,11 @@ public static class SketchProfile
             }
         }
 
-        // Twice the signed area, summed in the order of the loop.
-        var twiceArea = 0.0;
-        for (var i = 0; i < loop.Count; i++)
-        {
-            var (x0, y0) = loop[i];
-            var (x1, y1) = loop[(i + 1) % loop.Count];
-            twiceArea += x0 * y1 - x1 * y0;
-        }
-
-        if (twiceArea == 0)
+        // The exact sign of twice the signed area, summed in the order of the loop.
+        var area = Predicates.AreaSign(loop);
+        if (area == 0)
             return (null, "The area of the loop is zero.");
-        if (twiceArea < 0)
+        if (area < 0)
             loop.Reverse();
 
         return (loop, null);
@@ -181,10 +183,10 @@ public static class SketchProfile
     // True when the segments pq and rs have a common point.
     private static bool Meet((double X, double Y) p, (double X, double Y) q, (double X, double Y) r, (double X, double Y) s)
     {
-        var d1 = Side(r, s, p);
-        var d2 = Side(r, s, q);
-        var d3 = Side(p, q, r);
-        var d4 = Side(p, q, s);
+        var d1 = Predicates.Orient2D(r, s, p);
+        var d2 = Predicates.Orient2D(r, s, q);
+        var d3 = Predicates.Orient2D(p, q, r);
+        var d4 = Predicates.Orient2D(p, q, s);
 
         if (((d1 > 0 && d2 < 0) || (d1 < 0 && d2 > 0)) && ((d3 > 0 && d4 < 0) || (d3 < 0 && d4 > 0)))
             return true;
@@ -194,10 +196,6 @@ public static class SketchProfile
             || (d3 == 0 && Within(p, q, r))
             || (d4 == 0 && Within(p, q, s));
     }
-
-    // The cross product of (b − a) and (c − a): positive when c is left of the line ab.
-    private static double Side((double X, double Y) a, (double X, double Y) b, (double X, double Y) c)
-        => (b.X - a.X) * (c.Y - a.Y) - (b.Y - a.Y) * (c.X - a.X);
 
     // True when c, on the line ab, is inside the box of the segment ab.
     private static bool Within((double X, double Y) a, (double X, double Y) b, (double X, double Y) c)

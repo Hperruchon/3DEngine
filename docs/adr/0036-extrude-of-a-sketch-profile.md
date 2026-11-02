@@ -7,7 +7,7 @@ date: 2026-10-29
 supersedes: []
 superseded-by: []
 amends: []
-amended-by: ['0037', '0040']
+amended-by: ['0037', '0040', '0050']
 affects:
   - Engine.Contracts/Geometry/**
   - Engine.Core/Commands/ExtrudeCommand.cs
@@ -95,6 +95,8 @@ The decision below applies the recommended answers: Q1 A, Q2 A, Q3 A and Q4 A.
    - The loop starts at the start of the first line of the record and follows the lines in the order of the record.
    - When the area of the loop is negative, the loop turns round, so it is counter-clockwise.
    - The area must not be zero.
+   Since ADR-0050 the checks of a cross, a touch and the area use the exact predicates of `Engine.Core/Exact/`,
+   so each sign is the sign of the true coordinates.
 3. **The distance (Q2).** A distance that is zero or not finite gives `E-GEOM-INVALID-PARAM`. The backend gets the
    height |distance|, and the frame of the datum moved by min(0, distance) along n.
 4. **The refusals (Q3).** No live sketch with the identifier gives `E-SKETCH-NOT-FOUND`. A profile that breaks item 2,
@@ -145,3 +147,5 @@ exact on each platform.
   (finding E92 of the codebase review of 2026-10-29); before, the check of a touch gave the reason. Item 3 has no
   smallest distance: each finite distance that is not zero applies, and the backend decides on a solid of almost no
   height or area.
+- 2026-11-02 · TASK-0164 · ADR-0050 amends item 2: the checks of a cross, a touch and the area are exact. A file whose
+  extrude only the rounded checks accepted no longer opens (Q1 A of the owner of 2026-11-02).
