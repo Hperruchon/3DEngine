@@ -143,9 +143,9 @@ public sealed class NativeThreeDEngine : IThreeDEngine, IDisposable
                 continue;
             }
 
-            // ADR-0046 item 4: during a calibration a tap of the scene is a point of the image.
-            if (intent is SelectIntent select && _imageActions is not null && _images is not null
-                && _imageActions.Tap(Camera, select.X, select.Y, window.width, window.height, _images.Live))
+            // ADR-0046 item 4: during a calibration a tap of the scene is a point of the image, in each mode.
+            if (_imageActions is not null && _images is not null
+                && _imageActions.Tap(intent, Camera, window.width, window.height, _images.Live))
                 continue;
 
             // A select, a hide and a show all go to the selection and to the session (ADR-0029).
@@ -378,10 +378,9 @@ public sealed class NativeThreeDEngine : IThreeDEngine, IDisposable
     {
         if (_document is null)
             return "The desktop has no document folder.";
-        var path = _document.Folder.Resolve(name, out var refusal);
+        var path = StlPath(_document.Folder, name, out var refusal);
         if (path is null)
             return refusal!;
-        path = Path.ChangeExtension(path, ".stl");
         var (content, error) = _host.Session.ReadGeometry(Engine.Core.Export.StlExport.Write).GetAwaiter().GetResult();
         if (error is not null)
             return $"{error.Code}: {error.Message}";
@@ -395,6 +394,16 @@ public sealed class NativeThreeDEngine : IThreeDEngine, IDisposable
         }
 
         return $"Exported {(content!.Length - 84) / 50} triangles to {Path.GetFileName(path)}";
+    }
+
+    // The path of the STL file of a name. Finding V72 of the codebase review of 2026-11-01 (TASK-0162):
+    // Resolve adds .3de, so until TASK-0162 the name "part.stl" gave the file "part.stl.stl".
+    internal static string? StlPath(DocumentFolder folder, string name, out string? refusal)
+    {
+        if (name.EndsWith(".stl", StringComparison.OrdinalIgnoreCase))
+            name = name[..^4];
+        var path = folder.Resolve(name, out refusal);
+        return path is null ? null : Path.ChangeExtension(path, ".stl");
     }
 
     // The check of the file; when it opens, the window loop ends and the program starts

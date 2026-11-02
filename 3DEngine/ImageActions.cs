@@ -5,6 +5,7 @@ using Engine.Core;
 using Engine.Core.Assets;
 using Engine.Core.Commands;
 using ThreeDEngine.Core.Imaging;
+using ThreeDEngine.Core.Input;
 using ThreeDEngine.Core.Models;
 using ThreeDEngine.Core.Picking;
 
@@ -56,10 +57,10 @@ internal sealed class ImageActions(DocumentSession session, AssetStore? store)
         try
         {
             var picture = PngReader.Read(content);
-            Proposal = ThreeDEngine.Core.Vision.ContourProposal.Propose(picture.Width, picture.Height, picture.Rgba) is { } pixels
+            Proposal = ThreeDEngine.Core.Vision.ContourProposal.Propose(picture.Width, picture.Height, picture.Rgba, out var reason) is { } pixels
                 ? (image, pixels)
                 : null;
-            Message = Proposal is null ? "The image has no region that gives a contour." : null;
+            Message = reason;
         }
         catch (InvalidDataException ex)
         {
@@ -82,6 +83,12 @@ internal sealed class ImageActions(DocumentSession session, AssetStore? store)
             return null;
         }
 
+        // Finding V73 of the codebase review of 2026-11-01 (TASK-0162): an accept that stops after its first
+        // command says which items exist and how many steps of undo remove them (ADR-0047 item 4).
+        string Stopped(string refused, int points, int lines)
+            => $"{refused} The accept stopped: the sketch exists with {points} of {proposal.Pixels.Count} points and {lines} of "
+                + $"{proposal.Pixels.Count} lines, and {1 + points + lines} steps of undo remove them.";
+
         Proposal = null;
         var created = session.Apply(new CreateSketchCommand { DatumId = image.DatumId }).GetAwaiter().GetResult();
         if (!created.Outputs.TryGet<Guid>("sketchId", out var sketch))
@@ -97,7 +104,7 @@ internal sealed class ImageActions(DocumentSession session, AssetStore? store)
             var point = session.Apply(new AddSketchPointCommand { SketchId = sketch, X = u, Y = v }).GetAwaiter().GetResult();
             if (!point.Outputs.TryGet<Guid>("pointId", out var id))
             {
-                Message = Rejected(point) ?? "A point gave no identifier.";
+                Message = Stopped(Rejected(point) ?? "A point gave no identifier.", points.Count, 0);
                 return (sketch, image.DatumId);
             }
 
@@ -110,7 +117,7 @@ internal sealed class ImageActions(DocumentSession session, AssetStore? store)
                 .GetAwaiter().GetResult();
             if (Rejected(line) is { } refused)
             {
-                Message = refused;
+                Message = Stopped(refused, points.Count, i);
                 return (sketch, image.DatumId);
             }
         }
@@ -189,6 +196,17 @@ internal sealed class ImageActions(DocumentSession session, AssetStore? store)
         _points.Clear();
     }
 
+    // ADR-0046 item 4: the point intents of a tap, a select in the mode Scene and a point in the mode
+    // Sketch. Finding V70 of the codebase review of 2026-11-01 (TASK-0162): until TASK-0162 the desktop
+    // gave only a select to the calibration, so with an active sketch the taps went to the sketch tool.
+    public bool Tap(Intent intent, Camera camera, double width, double height, IReadOnlyCollection<ImageRecord> live)
+        => intent switch
+        {
+            SelectIntent select => Tap(camera, select.X, select.Y, width, height, live),
+            SketchPointIntent point => Tap(camera, point.X, point.Y, width, height, live),
+            _ => false,
+        };
+
     // A tap of the scene during a calibration: the pixel of the image under it, on the plane of
     // the datum of the image. True when the calibration takes the tap, so the selection does not.
     public bool Tap(Camera camera, double x, double y, double width, double height, IReadOnlyCollection<ImageRecord> live)
@@ -221,9 +239,12 @@ internal sealed class ImageActions(DocumentSession session, AssetStore? store)
         {
             ImageId = id, X1 = _points[0].X, Y1 = _points[0].Y, X2 = _points[1].X, Y2 = _points[1].Y, Distance = distance,
         }).GetAwaiter().GetResult();
+        // Finding V71 of the codebase review of 2026-11-01 (TASK-0162): the desktop kept the two points of a
+        // refused calibration, so each next tap went nowhere. The next two taps are the points again.
         if (result.Status != CommandStatus.Applied)
         {
-            Message = $"{result.Error?.Code}: {result.Error?.Message}";
+            _points.Clear();
+            Message = $"{result.Error?.Code}: {result.Error?.Message} Tap two points of the image again.";
             return;
         }
 
