@@ -144,6 +144,7 @@ Therefore each approved objective must have a track here.
 - R11c — A tap of the sketch snaps to the intersection of two lines, of a line and a curve, or of two curves. v0.167, TASK-0165, ADR-0041.
 - R11 — The snaps of the sketch. Closed at v0.167, from TASK-0131, TASK-0134 and TASK-0165; the escalated selection moves to R12.
 - K0g — A datum on a face of an extrude or a box, a sketch on it, and the rebuild of each datum after an edit. v0.168, TASK-0166, ADR-0051.
+- K0h — The edges and the vertices of an extrude and a box as references in a sketch. v0.170, TASK-0167, ADR-0052.
 
 ## Track 0 — Foundations
 
