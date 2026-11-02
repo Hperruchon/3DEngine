@@ -298,10 +298,10 @@ public sealed class DatumTests : IDisposable
         })
             Assert.Equal(DiagnosticCodes.DatumReferenceInvalid, await Refused(session, new CreateDatumCommand { FeatureId = feature, Element = element, ItemId = item }));
 
-        // A name of K0h gives the reason that names K0h, not the reason of a wrong item.
+        // An edge gives the reason that names AddSketchReference (ADR-0052 item 7), not the reason of a wrong item.
         var reserved = await session.Apply(new CreateDatumCommand { FeatureId = body, Element = "startEdge", ItemId = sketch.Lines[0] });
         Assert.Equal(DiagnosticCodes.DatumReferenceInvalid, reserved.Error?.Code);
-        Assert.Contains("K0h", reserved.Error!.Message, StringComparison.Ordinal);
+        Assert.Contains("AddSketchReference", reserved.Error!.Message, StringComparison.Ordinal);
 
         Assert.Equal(DiagnosticCodes.DatumNameInvalid, await Refused(session, new CreateDatumCommand { FeatureId = body, Element = "end", DatumName = "a\nb" }));
         // A command sent again after the idempotency cache forgot it, as in ExtrudeDistanceTests.

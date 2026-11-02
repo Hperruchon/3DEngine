@@ -73,6 +73,9 @@ internal static class SchemaDiagnosticsEndpoint
         new(DiagnosticCodes.DatumNameInvalid,      "Error",   "DATUM"), // ADR-0051 item 7, TASK-0166
         new(DiagnosticCodes.DatumNotFound,         "Error",   "DATUM"), // ADR-0051 item 7, TASK-0166
         new(DiagnosticCodes.DatumReferenceFailed,  "Warning", "DATUM"), // ADR-0051 item 6, TASK-0166
+        new(DiagnosticCodes.SketchReferenceInvalid, "Error",  "SKETCH"), // ADR-0052 item 7, TASK-0167
+        new(DiagnosticCodes.SketchReferenceCycle,  "Error",   "SKETCH"), // ADR-0052 item 7, TASK-0167
+        new(DiagnosticCodes.SketchReferenceFailed, "Warning", "SKETCH"), // ADR-0052 item 8, TASK-0167
         new(DiagnosticCodes.ExportRange,           "Error",   "EXPORT"), // finding E121, TASK-0160
         new(DiagnosticCodes.ExportTooLarge,        "Error",   "EXPORT"), // finding E121, TASK-0160
         new(DiagnosticCodes.ExportWriteFailed,     "Error",   "EXPORT"), // finding E122, TASK-0160

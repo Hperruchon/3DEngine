@@ -1,13 +1,13 @@
 ---
 id: 0051
 title: The references to the elements of a feature, and a datum on a face
-status: Accepted
+status: Amended
 topic: Contracts, feature graph, sketch
 date: 2026-11-02
 supersedes: []
 superseded-by: []
 amends: ['0012', '0031', '0033', '0036', '0039']
-amended-by: []
+amended-by: ['0052']
 affects:
   - Engine.Contracts/Sketch/DatumRecord.cs
   - Engine.Core/Sketch/DatumResolver.cs
@@ -55,7 +55,8 @@ The owner gave the order "start K0" on 2026-11-02 and answered eight questions o
    | `CreateBox` | `+x`, `-x`, `+y`, `-y`, `+z`, `-z` | two signed axes in the order x, y, z, for example `+x-z` | three signed axes, for example `+x-y+z` |
 
    `start` is the cap on the plane of the sketch, and `end` is the cap at the distance. The side of a line is the face
-   that the line sweeps. The names of K0h are reserved: until K0h, `CreateDatum` refuses them.
+   that the line sweeps. The names of K0h are reserved: until K0h, `CreateDatum` refuses them. Since ADR-0052 an
+   edge or a vertex is a reference of a sketch, and `CreateDatum` still takes the faces only.
 2. **The place (Q of the place).** A reference resolves on the steps in effect, at the place of the command that holds
    it in the log:
    - The feature gives its carrier from its current inputs: for an extrude, the sketch record in the Document, the
@@ -129,3 +130,5 @@ The owner gave the order "start K0" on 2026-11-02 and answered eight questions o
 ## History
 
 - 2026-11-02 · TASK-0166 · Accepted with the eight answers of the owner of 2026-11-02.
+- 2026-11-03 · TASK-0167 · ADR-0052 amends items 1 and 6: an edge or a vertex is a reference of a sketch, and the
+  rebuild resolves each reference of a sketch with the datums, in the order of the log.

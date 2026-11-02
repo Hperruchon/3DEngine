@@ -71,7 +71,9 @@ public sealed class MoveSketchPointCommandHandler : ICommandHandler, ICommandEnc
         if (SketchModel.Find(document, move.SketchId) is not { } sketch)
             return Task.FromResult(SketchResults.NotFound(move.SketchId));
 
-        if (SketchModel.KindOf(sketch, move.PointId) != SketchModel.ItemKind.Point || SketchResults.IsOrigin(sketch, move.PointId))
+        // ADR-0052 item 5: a point of a reference has no variable, as the origin, and no command moves it.
+        if (SketchModel.KindOf(sketch, move.PointId) != SketchModel.ItemKind.Point || SketchResults.IsOrigin(sketch, move.PointId)
+            || SketchModel.IsReferencePoint(sketch, move.PointId))
             return Task.FromResult(SketchResults.ItemNotFound(move.SketchId, move.PointId, "point that a command can move"));
 
         if (!SketchResults.AreFinite(move.X, move.Y))

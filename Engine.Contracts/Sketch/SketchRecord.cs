@@ -13,7 +13,18 @@ public sealed record SketchRecord(
     IReadOnlyList<SketchLine> Lines,
     IReadOnlyList<SketchCircle> Circles,
     IReadOnlyList<SketchArc> Arcs,
-    IReadOnlyList<SketchConstraint> Constraints);
+    IReadOnlyList<SketchConstraint> Constraints)
+{
+    // ADR-0052 item 4: each reference to an edge or a vertex of a feature, in the order of the
+    // record. Its points and its line are also in Points and Lines. Empty by default.
+    public IReadOnlyList<SketchReference> References { get; init; } = [];
+}
+
+// ADR-0052 item 4: a reference of a sketch to an edge or a vertex of a feature. Points holds the
+// point of a vertex, or the two ends of an edge in the order of the element; Line is the line of
+// an edge, or null for a vertex. The points have no variable in the solver (item 5). Fault is null
+// when the last resolution succeeded, and the points then keep their last positions.
+public sealed record SketchReference(Guid Id, DatumReference Target, IReadOnlyList<Guid> Points, Guid? Line, DatumFault? Fault);
 
 // A point of a sketch, at (X, Y) in the plane of its datum, in the length unit of the
 // Document (ADR-0033 item 2).

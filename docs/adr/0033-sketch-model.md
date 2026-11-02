@@ -7,7 +7,7 @@ date: 2026-10-28
 supersedes: []
 superseded-by: []
 amends: ['0012', '0021', '0031']
-amended-by: ['0035', '0045', '0051']
+amended-by: ['0035', '0045', '0051', '0052']
 affects:
   - Engine.Contracts/Document.cs
   - Engine.Contracts/Handlers/ICommandHandler.cs
@@ -203,3 +203,5 @@ the circle, the arc and the kinds 6 to 14.
   `ChangedImages`, and the image events come after the sketch events.
 - 2026-11-02 · TASK-0166 · ADR-0051 amends items 1 and 9: a sketch can lie on a datum of the Document, and the
   datum events come after the image events.
+- 2026-11-03 · TASK-0167 · ADR-0052 amends items 4 and 6: the record gains `References`, and a delete of a reference
+  removes its points and its line.

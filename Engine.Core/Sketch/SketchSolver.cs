@@ -143,7 +143,7 @@ public static class SketchSolver
     }
 
     // ADR-0035 items 3 and 4: the variables are the x and the y of each point other than
-    // the origin, in the order of the record, then the radius of each circle (TASK-0117). The
+    // the origin and the points of a reference (ADR-0052 item 5), in the order of the record, then the radius of each circle (TASK-0117). The
     // equations come in the order of the constraints, then the equation of each arc, then the
     // two equations of a held point.
     private sealed class EquationSystem
@@ -163,9 +163,10 @@ public static class SketchSolver
         {
             _sketch = sketch;
             _held = held;
+            var fixedPoints = sketch.References.SelectMany(reference => reference.Points).ToHashSet();
             foreach (var point in sketch.Points)
             {
-                if (point.Id != sketch.Id)
+                if (point.Id != sketch.Id && !fixedPoints.Contains(point.Id))
                     _index[point.Id] = 2 * _index.Count;
             }
             foreach (var circle in sketch.Circles)
@@ -274,7 +275,8 @@ public static class SketchSolver
             return Math.Sqrt(((p.X - q.X) * (p.X - q.X)) + ((p.Y - q.Y) * (p.Y - q.Y)));
         }
 
-        // The position of a point in x, or in the record for a point with no variable: the origin.
+        // The position of a point in x, or in the record for a point with no variable: the origin and
+        // each point of a reference.
         private (double X, double Y) Position(double[] x, Guid point)
         {
             if (_index.TryGetValue(point, out var i))
