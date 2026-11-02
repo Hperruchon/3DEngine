@@ -222,6 +222,8 @@ This track removes each condition that blocks other work.
 | P0.69 | The export reads the document file only, the store takes parallel puts, and each edge of the export and the calibration gives a code (E119 to E124; after the next product phase). TASK-0160. | 2–3 |
 | P0.70 | The comparison refuses an empty hash, the pin rules read a global reference, and the next forms of the seventeenth review fail (T123 to T126; after the next product phase). TASK-0161. | 1–2 |
 | P0.71 | A proposal gives a simple polygon, the taps of a calibration reach it, and the image actions follow their refusals (V69 to V73; after the next product phase; V69 after Q3). TASK-0162. | 2–3 |
+| P0.72 | A datum and a reference of a sketch refuse a frame or a point that is not finite, and give their warnings and codes as a body does (E125 to E127 of the codebase review of 2026-11-03; after K0h; E126 after Q3 and E127 after Q2). TASK-0169. | 1–2 |
+| P0.73 | The mark of the snap during a calibration, the cost of the snap to an intersection, and the next forms of three gates (V74, V75, T127 to T129; after K0h). TASK-0170. | 1–2 |
 
 ## Track P — The platform
 
