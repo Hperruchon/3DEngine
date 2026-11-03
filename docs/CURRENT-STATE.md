@@ -4983,3 +4983,32 @@ New tests: 10. The test list holds 1598 (1137 in `Engine.Tests`, 289 in `3DEngin
 `3DEngine.ImageTests`, 3 in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and
 zero warnings. Open entries: 14 of 15. New diagnostic codes: 3. Since the review of v0.168, 1 product milestone and 2
 entries followed it.
+
+## v0.171 — A datum and a reference refuse a value that is not finite, and warn on a new fault only (P0.72, TASK-0169)
+
+On 2026-11-03 the owner answered the three questions of the review of v0.169 with "A A A": K0i is the product phase
+after P0.72 and P0.73 (Q1), a fault that stays gives no new warning (Q2), and the rows of three codes widen (Q3).
+
+**The change.**
+- E125: the side of a very short or very long line scales by the larger of its two components when its square
+  underflows or overflows, as a calibration does (E123). Each other side keeps its bits. A frame with a value that is
+  not finite or an axis of the length zero, and a projected point of a reference that is not finite, do not resolve:
+  `E-DATUM-REFERENCE-INVALID` or `E-SKETCH-REFERENCE-INVALID` at the add, and a fault with the last value at a rebuild.
+- E127: the warning `W-DATUM-REFERENCE-FAILED` or `W-SKETCH-REFERENCE-FAILED` comes only when the fault is new or
+  changes. The record keeps the fault.
+- E126: the warning of an extrude that follows a moved datum and fails gives `datumId` beside `bodyId`, for a live
+  extrude and for the end of its chain. The rows of `W-SKETCH-REBUILD-FAILED`, `W-FEATURE-REBUILD-FAILED` and
+  `E-SKETCH-DATUM-NOT-FOUND` name these extrudes and the datums of `CreateDatum`.
+- ADR-0051 item 6 and ADR-0052 item 8 record the rules, each with a line of its history. The write set gained ADR-0052.
+- Correction: the row of `E-DATUM-REFERENCE-INVALID` said that the edges and the vertices arrive with K0h. K0h is done,
+  so the row now names `AddSketchReference`.
+
+**Proof.** Seven injections each fail their test: no scale of the side, no check of the frame, no check of a projected
+point, a warning at each edit for a datum and for a reference, and no `datumId` for a live extrude and for the end of a
+chain. The test of a value that is not finite calls `DatumResolver` directly with a distance of `double.MaxValue`. No
+test makes such a frame through commands and the backend; that path is not verified.
+
+New tests: 4. The test list holds 1602 (1141 in `Engine.Tests`, 289 in `3DEngine.Tests`, 169 in
+`3DEngine.ImageTests`, 3 in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and
+zero warnings. Open entries: 14 of 15. New diagnostic codes: 0. Since the review of v0.168, 1 product milestone and 3
+entries followed it.

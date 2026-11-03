@@ -91,8 +91,11 @@ The owner gave the order "start K0" on 2026-11-02 and answered eight questions o
    effect of each sketch on it, and the rebuild of ADR-0039 takes each one as it takes an extrude of the edited
    sketch. A datum that does not resolve keeps its last frame, gets the fault `W-DATUM-REFERENCE-FAILED` with the
    reason, and the edit applies. A datum that resolves again loses its fault. The reasons are: the feature is not in
-   effect, the item is not in the record, the item is not a line of the profile, and the profile of the extrude does
-   not resolve (ADR-0036 item 2, ADR-0040 item 1).
+   effect, the item is not in the record, the item is not a line of the profile, the profile of the extrude does
+   not resolve (ADR-0036 item 2, ADR-0040 item 1), and the frame has a value that is not finite or an axis of the
+   length zero. The warning comes when the fault is new or changes; a fault that stays gives no new warning, and the
+   record shows it. An extrude that follows a moved datum and fails gets the code of the edit, and the data of its
+   warning gives `datumId`.
 7. **The refusals.** `CreateDatum` refuses with `E-DATUM-REFERENCE-INVALID` a feature that is not a `CreateBox` or an
    `Extrude` in effect, an unknown name, a name of K0h, an absent or extra `itemId`, and a reference that does not
    resolve now, with the reason of item 6. A name that breaks the rules gives `E-DATUM-NAME-INVALID`, and an identifier
@@ -132,3 +135,7 @@ The owner gave the order "start K0" on 2026-11-02 and answered eight questions o
 - 2026-11-02 · TASK-0166 · Accepted with the eight answers of the owner of 2026-11-02.
 - 2026-11-03 · TASK-0167 · ADR-0052 amends items 1 and 6: an edge or a vertex is a reference of a sketch, and the
   rebuild resolves each reference of a sketch with the datums, in the order of the log.
+- 2026-11-03 · TASK-0169 · Item 6, from findings E125 to E127 of the codebase review of 2026-11-03 and the answers
+  Q2 A and Q3 A of the owner: a frame that is not finite does not resolve, and the side of a line scales by the
+  larger of its two components when its square underflows or overflows; a fault that stays gives no new warning; and
+  the warning of an extrude on a moved datum gives `datumId`. Until TASK-0169 each edit gave the warning again.

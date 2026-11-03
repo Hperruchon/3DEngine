@@ -7,6 +7,7 @@ using Engine.Core.Geometry;
 using Engine.Core.Hosting;
 using Engine.Core.Persistence;
 using Engine.Core.Queries;
+using Engine.Core.Sketch;
 using Engine.Geometry.Manifold;
 using Engine.Tests.Geometry;
 
@@ -371,6 +372,130 @@ public sealed class DatumTests : IDisposable
             Assert.Equal(bodies, await opened.Read((document, _) => document.Bodies.ToList()));
             Assert.Equal(box, await Bounds(opened, boss));
             opened.Close();
+        }
+    }
+
+    // Finding E125 of the codebase review of 2026-11-03 (TASK-0169): the square of a very short side underflows
+    // to 0 and the square of a very long side overflows. The side scales by the larger of its two components, so each
+    // frame is a unit frame that faces out of the solid.
+    [NativeManifoldFact]
+    public async Task A_Very_Short_Or_Very_Long_Side_Gives_A_Unit_Frame()
+    {
+        using var backend = new ManifoldGeometryBackend();
+        var (session, _) = NewSession(backend);
+        var short_ = await NewSketch(session, Datums.XY.Id, [(0, 0), (1e-170, 0), (10, 5), (5, 10), (-5, 5)]);
+        var long_ = await NewSketch(session, Datums.XY.Id, [(-1e160, 0), (1e160, 0), (0, 1e160)]);
+        var shortBody = await Extrude(session, short_, 5);
+        var longBody = await Extrude(session, long_, 5);
+
+        Assert.Equal(new DatumFrame(new DatumPoint(0, 0, 0), X, Z, Minus(Y)), await Frame(session, await Datum(session, shortBody, "side", short_.Lines[0])));
+        Assert.Equal(new DatumFrame(new DatumPoint(-1e160, 0, 0), X, Z, Minus(Y)), await Frame(session, await Datum(session, longBody, "side", long_.Lines[0])));
+    }
+
+    // Finding E125: a frame whose origin overflows does not resolve. At an add the reason refuses the command, and at a
+    // rebuild the datum keeps its last frame with a fault. A point of a reference that is not finite does not resolve.
+    [NativeManifoldFact]
+    public async Task A_Frame_Or_A_Point_That_Is_Not_Finite_Does_Not_Resolve()
+    {
+        using var backend = new ManifoldGeometryBackend();
+        var (session, _) = NewSession(backend);
+        var base_ = await Extrude(session, await NewSketch(session, Datums.XY.Id, Rectangle), 5);
+        var low = await Datum(session, base_, "end");
+        var top = await NewSketch(session, low, [(2, 3), (4, 3), (4, 5), (2, 5)]);
+        var boss = await Extrude(session, top, 3);
+        var high = await Datum(session, boss, "end");
+        var floor = Output(await Applied(session, new CreateSketchCommand { DatumId = Datums.XY.Id }), "sketchId");
+        var document = await session.Read((document, _) => document);
+        var graph = FeatureGraph.Of(document.Log);
+
+        // The distance double.MaxValue puts the low datum at z = MaxValue and the end of the boss at infinity.
+        DatumResolver.ExtrudeState Huge(ExtrudeCommand extrude) => new(SketchModel.Find(document, extrude.SketchId), double.MaxValue);
+        DatumFrame? Raised(Guid id) => id == low ? new DatumFrame(new DatumPoint(0, 0, double.MaxValue), X, Y, Z) : DatumResolver.Frame(document, id);
+
+        var (frame, reason) = DatumResolver.Resolve(new DatumReference(boss, "end", null), graph, int.MaxValue, Huge, Raised);
+        Assert.Null(frame);
+        Assert.Contains("not finite", reason);
+
+        var outcome = DatumResolver.Rebuild(document, graph, id => SketchModel.Find(document, id), _ => double.MaxValue);
+        var kept = Assert.Single(outcome.Datums, datum => datum.Id == high);
+        Assert.Equal(document.Datums.Single(datum => datum.Id == high).Frame, kept.Frame);
+        Assert.Equal(DiagnosticCodes.DatumReferenceFailed, kept.Fault?.Code);
+        Assert.Contains(outcome.Diagnostics, d => d.Code == DiagnosticCodes.DatumReferenceFailed && Equals(d.Data?["datumId"], high));
+        Assert.Equal(double.MaxValue, Assert.Single(outcome.Datums, datum => datum.Id == low).Frame.Origin.Z);
+
+        var (positions, why) = DatumResolver.Positions(
+            new DatumReference(boss, "endVertex", top.Points[0]), graph, int.MaxValue, Huge, Raised, SketchModel.Find(document, floor)!);
+        Assert.Null(positions);
+        Assert.Contains("not finite", why);
+    }
+
+    // Finding E127 (Q2 A of the review of 2026-11-03): a datum or a reference with a fault gives its warning at the
+    // edit that causes the fault, and a later edit that does not change the fault gives no warning. The record keeps
+    // the fault.
+    [NativeManifoldFact]
+    public async Task A_Fault_That_Stays_Gives_No_New_Warning()
+    {
+        using var backend = new ManifoldGeometryBackend();
+        var (session, _) = NewSession(backend);
+        var sketch = await NewSketch(session, Datums.XY.Id, Rectangle);
+        var base_ = await Extrude(session, sketch, 5);
+        var datum = await Datum(session, base_, "side", sketch.Lines[1]);
+        var floor = Output(await Applied(session, new CreateSketchCommand { DatumId = Datums.XY.Id }), "sketchId");
+        var reference = Output(await Applied(session, new AddSketchReferenceCommand { SketchId = floor, FeatureId = base_, Element = "startVertex", ItemId = sketch.Points[0] }), "referenceId");
+
+        var delete = await Applied(session, new DeleteSketchItemCommand { SketchId = sketch.Id, ItemId = sketch.Lines[1] });
+        Assert.Contains(delete.Diagnostics, d => d.Code == DiagnosticCodes.DatumReferenceFailed && Equals(d.Data?["datumId"], datum));
+        Assert.Contains(delete.Diagnostics, d => d.Code == DiagnosticCodes.SketchReferenceFailed && Equals(d.Data?["referenceId"], reference));
+
+        var other = Output(await Applied(session, new CreateSketchCommand { DatumId = Datums.XZ.Id }), "sketchId");
+        var later = await Applied(session, new AddSketchPointCommand { SketchId = other, X = 1, Y = 1 });
+
+        Assert.DoesNotContain(later.Diagnostics, d => d.Code is DiagnosticCodes.DatumReferenceFailed or DiagnosticCodes.SketchReferenceFailed);
+        Assert.Equal(DiagnosticCodes.DatumReferenceFailed, (await Get(session, datum)).Fault?.Code);
+        var record = await session.Read((document, _) => SketchModel.Find(document, floor)!);
+        Assert.Equal(DiagnosticCodes.SketchReferenceFailed, record.References.Single().Fault?.Code);
+    }
+
+    // Finding E126 (Q3 A of the review of 2026-11-03): an extrude that follows a moved datum and fails gets the code
+    // of the edit, and the data of the warning gives the datum, for a live extrude and for the end of its chain.
+    [NativeManifoldFact]
+    public async Task A_Failed_Extrude_On_A_Moved_Datum_Names_The_Datum()
+    {
+        using var manifold = new ManifoldGeometryBackend();
+        var backend = new FailingExtrudeBackend(manifold);
+        var (session, _) = NewSession(backend);
+        var base_ = await Extrude(session, await NewSketch(session, Datums.XY.Id, Rectangle), 5);
+        var datum = await Datum(session, base_, "end");
+        var boss = await Extrude(session, await NewSketch(session, datum, [(2, 3), (4, 3), (4, 5), (2, 5)]), 2);
+        var post = await Extrude(session, await NewSketch(session, datum, [(6, 3), (8, 3), (8, 5), (6, 5)]), 2);
+        var moved = Output(await Applied(session, new TranslateCommand { BodyId = post, Dx = 1, Dy = 0, Dz = 0 }), "bodyId");
+
+        // Only an extrude whose frame starts above z = 6 fails, so the base follows and the two solids on the datum do not.
+        backend.FailAbove = 6;
+        var edit = await Applied(session, new SetExtrudeDistanceCommand { ExtrudeId = base_, Distance = 8 });
+
+        var warnings = edit.Diagnostics.Where(d => d.Code == DiagnosticCodes.FeatureRebuildFailed).ToList();
+        Assert.Equal(2, warnings.Count);
+        Assert.Contains(warnings, d => Equals(d.Data?["bodyId"], boss) && Equals(d.Data?["datumId"], datum));
+        Assert.Contains(warnings, d => Equals(d.Data?["bodyId"], moved) && Equals(d.Data?["datumId"], datum));
+    }
+
+    // The backend of Manifold, with an extrude that throws when its frame starts above a height.
+    private sealed class FailingExtrudeBackend(ManifoldGeometryBackend inner) : IGeometryBackend, IExtrudeOps
+    {
+        public double FailAbove { get; set; } = double.PositiveInfinity;
+
+        public BackendCapabilities Capabilities => inner.Capabilities;
+
+        public BackendIdentity Identity => inner.Identity;
+
+        public T? TryGet<T>() where T : class => typeof(T) == typeof(IExtrudeOps) ? this as T : inner.TryGet<T>();
+
+        public void Extrude(BodyHandle handle, ExtrudeParameters parameters)
+        {
+            if (parameters.Origin.Z > FailAbove)
+                throw new InvalidOperationException("The test fails this extrude.");
+            inner.TryGet<IExtrudeOps>()!.Extrude(handle, parameters);
         }
     }
 }
