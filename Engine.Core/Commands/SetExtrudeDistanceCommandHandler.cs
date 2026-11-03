@@ -59,7 +59,7 @@ public sealed class SetExtrudeDistanceCommandHandler : ICommandHandler, ICommand
         // Item 2: the rule of SketchResults.InUse for a command that creates no item. A command sent
         // again would reuse the keys of its rebuild (finding E95), and an entry of a log applies as
         // the session that wrote it did (finding E100).
-        if (!SketchResults.ApplyingEntry.Value && document.Log.Any(entry => entry.Command.CommandId == command.CommandId))
+        if (!SketchResults.ApplyingEntry.Value && Features.FeatureList.Of(document).Holds(command.CommandId))
             return Task.FromResult(Failure(
                 DiagnosticCodes.FeatureIdInUse,
                 $"The log holds a command with the id '{command.CommandId}', and the rebuild of an edit takes the id of its command."));
@@ -70,7 +70,7 @@ public sealed class SetExtrudeDistanceCommandHandler : ICommandHandler, ICommand
                 DiagnosticCodes.GeomInvalidParam, "SetExtrudeDistance requires a distance that is finite and not zero."));
 
         // Item 2: an extrude in effect, live or consumed.
-        if (SketchRebuild.ExtrudeInEffect(document.Log, set.ExtrudeId) is not { } extrude)
+        if (SketchRebuild.ExtrudeInEffect(document, set.ExtrudeId) is not { } extrude)
             return Task.FromResult(Failure(
                 DiagnosticCodes.FeatureNotFound, $"No Extrude in effect has the id '{set.ExtrudeId}'."));
 

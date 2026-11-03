@@ -73,7 +73,7 @@ public sealed class AddSketchReferenceCommandHandler : ICommandHandler, ICommand
             return Task.FromResult(SketchResults.NotFound(add.SketchId));
 
         // Item 7: a feature that depends on the sketch would make the sketch depend on itself.
-        var graph = FeatureGraph.Of(document.Log);
+        var graph = FeatureGraph.Of(document);
         if (DatumResolver.DependsOn(document, graph, add.FeatureId, sketch.Id))
             return Task.FromResult(SketchResults.Failure(
                 DiagnosticCodes.SketchReferenceCycle,
@@ -86,7 +86,7 @@ public sealed class AddSketchReferenceCommandHandler : ICommandHandler, ICommand
             int.MaxValue,
             extrude => new DatumResolver.ExtrudeState(
                 SketchModel.Find(document, extrude.SketchId),
-                SketchRebuild.DistanceInEffect(document.Log, extrude.CommandId) ?? extrude.Distance),
+                SketchRebuild.DistanceInEffect(document, extrude.CommandId) ?? extrude.Distance),
             id => DatumResolver.Frame(document, id),
             sketch);
         if (positions is null)

@@ -117,7 +117,9 @@ public static class DatumResolver
         SketchRecord? SketchOf(Guid id) => sketches.TryGetValue(id, out var sketch) ? sketch : sketchOf(id);
         ExtrudeState State(ExtrudeCommand extrude) => new(SketchOf(extrude.SketchId), distanceOf(extrude));
 
-        foreach (var command in document.Log.Select(entry => entry.Command))
+        // ADR-0054 item 4: the steps in effect, in the order of the log. A datum or a reference of a step that is not in
+        // effect has no record, so the walk of the whole log gave the same result.
+        foreach (var command in Features.FeatureList.Of(document).Steps)
         {
             switch (command)
             {

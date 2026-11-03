@@ -55,7 +55,7 @@ public sealed class GetBodyInfoQueryHandler : IQueryHandler
         }
 
         // ADR-0049 item 7: a client reads the distance of an extrude here, and does not read the log.
-        var distance = SketchRebuild.DistanceInEffect(document.Log, body.Handle.Id);
+        var distance = SketchRebuild.DistanceInEffect(document, body.Handle.Id);
         return Task.FromResult(QueryHandlerResult.Success(new BodyInfo(body.Handle.Id, body.Kind, body.Name, body.Visible, distance)));
     }
 }
