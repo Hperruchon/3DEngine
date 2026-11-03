@@ -149,6 +149,7 @@ Therefore each approved objective must have a track here.
 - P0.73 — The mark of the snap hides during a calibration, the snap of a large sketch fits in a frame, and the next forms of three gates fail. v0.172, TASK-0170.
 - K0i — A tap on a face starts a sketch on a datum of it, and the desktop draws a sketch on a datum of the Document. v0.173, TASK-0171, ADR-0053.
 - K0 — A feature graph over Manifold with deferred-query references. Closed at v0.173, from K0a to K0i in this list.
+- P0.74 — A put of an asset waits for a name that another program holds, and does not replace a name that it cannot read. v0.174, TASK-0172.
 
 ## Track 0 — Foundations
 
@@ -229,6 +230,7 @@ This track removes each condition that blocks other work.
 | P0.71 | A proposal gives a simple polygon, the taps of a calibration reach it, and the image actions follow their refusals (V69 to V73; after the next product phase; V69 after Q3). TASK-0162. | 2–3 |
 | P0.72 | A datum and a reference of a sketch refuse a frame or a point that is not finite, and give their warnings and codes as a body does (E125 to E127 of the codebase review of 2026-11-03; after K0h; E126 after Q3 and E127 after Q2). TASK-0169. | 1–2 |
 | P0.73 | The mark of the snap during a calibration, the cost of the snap to an intersection, and the next forms of three gates (V74, V75, T127 to T129; after K0h). TASK-0170. | 1–2 |
+| P0.74 | A put of an asset waits for a name that another program holds, and does not replace a name that it cannot read (register entry R-0050). TASK-0172. | 1 |
 
 ## Track P — The platform
 
