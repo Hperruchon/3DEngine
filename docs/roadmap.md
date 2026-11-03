@@ -147,6 +147,8 @@ Therefore each approved objective must have a track here.
 - K0h — The edges and the vertices of an extrude and a box as references in a sketch. v0.170, TASK-0167, ADR-0052.
 - P0.72 — A datum and a reference refuse a value that is not finite, and warn on a new fault only. v0.171, TASK-0169.
 - P0.73 — The mark of the snap hides during a calibration, the snap of a large sketch fits in a frame, and the next forms of three gates fail. v0.172, TASK-0170.
+- K0i — A tap on a face starts a sketch on a datum of it, and the desktop draws a sketch on a datum of the Document. v0.173, TASK-0171, ADR-0053.
+- K0 — A feature graph over Manifold with deferred-query references. Closed at v0.173, from K0a to K0i in this list.
 
 ## Track 0 — Foundations
 
