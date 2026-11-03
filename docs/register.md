@@ -439,21 +439,6 @@ library. A phase that needs more vision than one contour needs the library in th
 Exit: the owner decides if the desktop may hold the library and on which platforms, with or without the FFmpeg file,
 and the phase that does it adds the notices of ADR-0042 item 6.
 
-### R-0050 · Parallel puts of the same new bytes still fail on Windows with "Access to the path is denied"
-- class: risk
-- opened: 2026-11-03
-- due: 2026-12-03
-- extended: no
-- refs: `Engine.Core/Assets/AssetStore.cs:76-97`, `Engine.Tests/Assets/AssetStoreTests.cs:203-218`, TASK-0160, finding E120
-The run 41612851491 on `main`, of the merge of v0.172, failed on windows-latest: in round 10 of
-`Parallel_Puts_Of_The_Same_New_Bytes_Each_Give_The_Name`, six of eight puts gave `E-ASSET-WRITE-FAILED` with "Access to
-the path is denied". The branch run of the same tree passed, and v0.172 did not touch the store. The cause is
-inferred, not run: a move of the same name that runs at the same time can make the next move fail while the file
-does not exist yet, and the fix of E120 catches a failure only when the file exists. A red run on `main` hides the
-next real failure.
-Exit: the parallel puts pass on Windows in each run, by a fix with a test that fails before it, or the owner accepts
-the failure.
-
 ## Accepted compromises
 
 These are conditions that the project keeps permanently and by decision. They do not age.
@@ -494,6 +479,26 @@ needs a deliberate act.
 ---
 
 ## Closed
+
+### R-0050 · Parallel puts of the same new bytes still fail on Windows with "Access to the path is denied"
+- class: risk
+- opened: 2026-11-03
+- due: 2026-12-03
+- extended: no
+- refs: `Engine.Core/Assets/AssetStore.cs:76-97`, `Engine.Tests/Assets/AssetStoreTests.cs:203-218`, TASK-0160, finding E120
+The run 41612851491 on `main`, of the merge of v0.172, failed on windows-latest: in round 10 of
+`Parallel_Puts_Of_The_Same_New_Bytes_Each_Give_The_Name`, six of eight puts gave `E-ASSET-WRITE-FAILED` with "Access to
+the path is denied". The branch run of the same tree passed, and v0.172 did not touch the store. The cause is
+inferred, not run: a move of the same name that runs at the same time can make the next move fail while the file
+does not exist yet, and the fix of E120 catches a failure only when the file exists. A red run on `main` hides the
+next real failure.
+Exit: the parallel puts pass on Windows in each run, by a fix with a test that fails before it, or the owner accepts
+the failure.
+Closed 2026-11-03 · resolved · TASK-0172. A probe on Windows 11 showed that `File.Move` gives this message, with no
+path, when it replaces a file that a reader holds, and that a read fails while another program holds the file with
+no share. The put took a name that it could not read as damaged and replaced it, and each failed replace made the
+next one. A put now replaces only a name with other bytes, and it reads the name again and waits after a failed
+move, up to 12 moves. A test that holds the name for 100 ms failed before the fix and passes after it.
 
 ### R-0049 · The opening of a contour proposal uses a square, and the answer to Q3 named a cross
 - class: question

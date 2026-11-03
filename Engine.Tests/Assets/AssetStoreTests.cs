@@ -218,6 +218,40 @@ public sealed class AssetStoreTests : IDisposable
         Assert.Equal(20, Directory.GetFiles(Store).Length);
     }
 
+    // R-0050 (TASK-0172): a name that another program holds for a short time is not a failure. On Windows a read of a
+    // file that another program holds with no share fails, and a move that replaces a file that a reader holds gives
+    // "Access to the path is denied"; the parallel puts of run 41612851491 gave the second. The put waits and tries
+    // again. Each hold ends after 100 ms.
+    [Fact]
+    public async Task A_Put_Waits_For_A_Name_That_Another_Program_Holds()
+    {
+        var store = new AssetStore(Store);
+        await store.Put(new MemoryStream("abc"u8.ToArray()));
+        var path = Path.Combine(Store, Abc);
+
+        var locked = await PutWhileHeld(store, path, FileShare.None);
+        File.WriteAllBytes(path, "abd"u8.ToArray());
+        var repaired = await PutWhileHeld(store, path, FileShare.Read);
+
+        Assert.Equal((Abc, (string?)null), (locked.Name, locked.Error?.Code));
+        Assert.Equal((Abc, (string?)null), (repaired.Name, repaired.Error?.Code));
+        Assert.Equal("abc"u8.ToArray(), (await store.Read(Abc)).Content);
+        Assert.Equal([Abc], Directory.GetFiles(Store).Select(Path.GetFileName));
+    }
+
+    // Holds the file at the path with the share, starts a put of "abc" and ends the hold 100 ms later.
+    private static async Task<(string? Name, long Size, Engine.Contracts.ErrorDetail? Error)> PutWhileHeld(AssetStore store, string path, FileShare share)
+    {
+        Task<(string? Name, long Size, Engine.Contracts.ErrorDetail? Error)> put;
+        using (new FileStream(path, FileMode.Open, FileAccess.Read, share))
+        {
+            put = Task.Run(() => store.Put(new MemoryStream("abc"u8.ToArray())));
+            await Task.Delay(100);
+        }
+
+        return await put;
+    }
+
     // Finding E118: a body over the request limit of the server gave a 413 with no envelope. A length
     // over the limit of an asset is refused before the read, and for a body with no length the route
     // lifts the limit of the server, so the store stops it at 16 MiB with the code of ADR-0044 item 3.
