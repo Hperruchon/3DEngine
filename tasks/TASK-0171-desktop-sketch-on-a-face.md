@@ -1,7 +1,7 @@
 ---
 id: 0171
 title: The desktop starts a sketch on a face, and draws a sketch on a datum of the Document
-status: Active
+status: Done
 phase: K0i
 opened: 2026-11-03
 depends-on: [0167, 0169, 0170]
@@ -75,13 +75,13 @@ datum is, with the items of a reference dim.
 
 ## Acceptance criteria
 
-- [ ] Each item has a test that fails when its change is removed.
-- [ ] A clean build (`--no-incremental`) gives zero errors and zero warnings.
-- [ ] Continuous integration passes on the three runners, on the branch and on `main` after the merge.
+- [x] Each item has a test that fails when its change is removed.
+- [x] A clean build (`--no-incremental`) gives zero errors and zero warnings.
+- [x] Continuous integration passes on the three runners, on the branch and on `main` after the merge.
 
 ## Outcome
 
-Status: Active
+Status: Done · commit (the merge of the branch k0i-sketch-on-a-face) · v0.173
 
 ## Method
 
@@ -92,3 +92,4 @@ Weakest:    no one opened the window; the armed tap of the render loop has no te
 ## Progress
 
 - 2026-11-03: opened with the four answers of the owner; ADR-0053.
+- 2026-11-03: eleven tests and thirteen injections; closed at v0.173. The change commit says sixteen tests; the count is eleven.
