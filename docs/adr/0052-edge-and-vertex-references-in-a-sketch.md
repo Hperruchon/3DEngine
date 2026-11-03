@@ -76,6 +76,8 @@ recommended answer:
    move changes its sketch, the solver solves the sketch again, and each extrude of the sketch is a target of the
    rebuild of ADR-0039. The result gives each sketch that changes. A reference that does not resolve keeps its points,
    gets the fault `W-SKETCH-REFERENCE-FAILED`, and the edit applies; a reference that resolves again loses its fault.
+   A projected point that is not finite does not resolve. The warning comes when the fault is new or changes; a fault
+   that stays gives no new warning, and the record shows it.
 9. **The contract.** `Engine.Contracts/Sketch/SketchRecord.cs` gains `SketchReference` and `SketchRecord.References`.
    No event kind changes: a change of a reference is a `sketch.changed`. `GetSketch` gives the references.
 10. **Determinism.** The carrier, the moves and the projection use `+ - * / sqrt` only. The log of the determinism hash
@@ -93,3 +95,6 @@ recommended answer:
 ## History
 
 - 2026-11-03 · TASK-0167 · Accepted with the four answers of the owner of 2026-11-02.
+- 2026-11-03 · TASK-0169 · Item 8, from findings E125 and E127 of the codebase review of 2026-11-03 and the answer
+  Q2 A of the owner: a projected point that is not finite does not resolve, and a fault that stays gives no new
+  warning.
