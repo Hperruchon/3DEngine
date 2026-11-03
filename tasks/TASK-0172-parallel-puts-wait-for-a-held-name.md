@@ -1,7 +1,7 @@
 ---
 id: 0172
 title: A put of an asset waits for a name that another program holds, and does not replace a name that it cannot read
-status: Active
+status: Done
 phase: P0.74
 opened: 2026-11-03
 depends-on: [0160]
@@ -55,14 +55,14 @@ A put gives the name of its bytes when another program, or another put, holds th
 
 ## Acceptance criteria
 
-- [ ] A put while another program holds the name with no share, and a put of a damaged name that a reader holds, fail
+- [x] A put while another program holds the name with no share, and a put of a damaged name that a reader holds, fail
       before the change and pass after it.
-- [ ] A clean build (`--no-incremental`) gives zero errors and zero warnings.
-- [ ] Continuous integration passes on the three runners, on the branch and on `main` after the merge.
+- [x] A clean build (`--no-incremental`) gives zero errors and zero warnings.
+- [x] Continuous integration passes on the three runners, on the branch and on `main` after the merge.
 
 ## Outcome
 
-Status: Active
+Status: Done · commit (the merge of the branch p074-parallel-puts) · v0.174
 
 ## Method
 
@@ -75,3 +75,4 @@ Weakest:    the cause on the runner is inferred from the message, not run there:
 ## Progress
 
 - 2026-11-03: opened by the order of the owner. The probe, the fix and the test.
+- 2026-11-03: one test, three injections caught and one not caught (see the ledger); closed at v0.174.
