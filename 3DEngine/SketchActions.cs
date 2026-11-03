@@ -35,6 +35,34 @@ internal sealed class SketchActions(DocumentSession session) : ISketchEditor
         return sketch;
     }
 
+    // ADR-0053 item 6 (phase K0i, TASK-0171): a new sketch on the face of a body under a hit. GetFaceAt names the face;
+    // a datum with the same reference and the frame of the face now takes the sketch, and else CreateDatum makes one.
+    // It gives the new sketch and its frame, or null with the message of the refusal.
+    public (Guid Sketch, DatumFrame Frame)? CreateOnFace(Guid body, (double X, double Y, double Z) point, (double X, double Y, double Z) normal)
+    {
+        Message = null;
+        var face = session.Query<FaceInfo>(new GetFaceAtQuery { BodyId = body, X = point.X, Y = point.Y, Z = point.Z, Nx = normal.X, Ny = normal.Y, Nz = normal.Z })
+            .GetAwaiter().GetResult();
+        if (face.Result is not { } found)
+        {
+            Message = face.Error is { } error ? $"{error.Code}: {error.Message}" : "The face was not read.";
+            return null;
+        }
+
+        var datum = found.DatumId;
+        if (datum is null)
+        {
+            var created = Run(new CreateDatumCommand { FeatureId = found.Reference.FeatureId, Element = found.Reference.Element, ItemId = found.Reference.ItemId });
+            if (created.Status != CommandStatus.Applied || !created.Outputs.TryGet<Guid>("datumId", out var id))
+                return null;
+            datum = id;
+        }
+
+        if (Create(datum.Value) is not { } sketch || Current() is not { } info || SketchOverlay.PlaneOf(info) is not { } frame)
+            return null;
+        return (sketch, frame);
+    }
+
     public void Edit(Guid sketch)
     {
         Active = sketch;
@@ -64,7 +92,7 @@ internal sealed class SketchActions(DocumentSession session) : ISketchEditor
     public void Tap(Camera camera, double x, double y, double width, double height)
     {
         ArgumentNullException.ThrowIfNull(camera);
-        if (Current() is not { } sketch || Datums.Find(sketch.DatumId) is not { } datum || !(width > 0 && height > 0))
+        if (Current() is not { } sketch || SketchOverlay.PlaneOf(sketch) is not { } datum || !(width > 0 && height > 0))
             return;
 
         Tool.Tap(x, y, Position(datum, camera, x, y, width, height), SketchOverlay.Picture(sketch, camera, width, height), this);
@@ -75,7 +103,7 @@ internal sealed class SketchActions(DocumentSession session) : ISketchEditor
     public System.Numerics.Vector2? Mark(Camera camera, double x, double y, double width, double height)
     {
         ArgumentNullException.ThrowIfNull(camera);
-        if (Tool.Kind == SketchToolKind.Select || Current() is not { } sketch || Datums.Find(sketch.DatumId) is not { } datum || !(width > 0 && height > 0))
+        if (Tool.Kind == SketchToolKind.Select || Current() is not { } sketch || SketchOverlay.PlaneOf(sketch) is not { } datum || !(width > 0 && height > 0))
             return null;
         var picture = SketchOverlay.Picture(sketch, camera, width, height);
         return Tool.Target(x, y, Position(datum, camera, x, y, width, height), picture) is { } target
@@ -84,10 +112,11 @@ internal sealed class SketchActions(DocumentSession session) : ISketchEditor
     }
 
     // The rounded position of a pixel on the plane of the datum, or null. The step comes from the
-    // millimetres between the positions of this pixel and of the next pixel to the right.
-    private static (double X, double Y)? Position(Datum datum, Camera camera, double x, double y, double width, double height)
+    // millimetres between the positions of this pixel and of the next pixel to the right. ADR-0053 item 7: the plane goes
+    // through the origin of the frame of the datum.
+    private static (double X, double Y)? Position(DatumFrame datum, Camera camera, double x, double y, double width, double height)
     {
-        var (origin, u, v) = ((0.0, 0.0, 0.0), (datum.U.X, datum.U.Y, datum.U.Z), (datum.V.X, datum.V.Y, datum.V.Z));
+        var (origin, u, v) = ((datum.Origin.X, datum.Origin.Y, datum.Origin.Z), (datum.U.X, datum.U.Y, datum.U.Z), (datum.V.X, datum.V.Y, datum.V.Z));
         if (Picker.OnPlane(Picker.RayThrough(camera, x, y, width, height), origin, u, v) is not { } at)
             return null;
 

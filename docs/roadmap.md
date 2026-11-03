@@ -147,6 +147,8 @@ Therefore each approved objective must have a track here.
 - K0h — The edges and the vertices of an extrude and a box as references in a sketch. v0.170, TASK-0167, ADR-0052.
 - P0.72 — A datum and a reference refuse a value that is not finite, and warn on a new fault only. v0.171, TASK-0169.
 - P0.73 — The mark of the snap hides during a calibration, the snap of a large sketch fits in a frame, and the next forms of three gates fail. v0.172, TASK-0170.
+- K0i — A tap on a face starts a sketch on a datum of it, and the desktop draws a sketch on a datum of the Document. v0.173, TASK-0171, ADR-0053.
+- K0 — A feature graph over Manifold with deferred-query references. Closed at v0.173, from K0a to K0i in this list.
 
 ## Track 0 — Foundations
 
@@ -279,7 +281,7 @@ boundary and each refused rung.
 | K0f | A command changes the distance of a live extrude, and the extrude and each step of its chain rebuild; the desktop gives the pad of the distance (Q1 and Q2 A of the codebase review of 2026-11-01). ADR-0049, TASK-0163. | 2–3 |
 | K0g | A datum on a face of an extrude or a box, a sketch on it, and the rebuild of each datum after an edit; a reference resolves at its place in the log (the eight answers of the owner of 2026-11-02). ADR-0051, TASK-0166. | 6–9 |
 | K0h | The edges and the vertices of an extrude and a box as references in a sketch: the projection onto the plane of the sketch, a point with no variable, no cycle, and a fault that keeps the points (the four answers of the owner of 2026-11-02). ADR-0052, TASK-0167. | 4–6 |
-| K0i | The desktop: a tap on a face starts a sketch on a datum of it, and the overlay draws a sketch on a datum of the Document (ADR-0051 item 11). | 3–5 |
+| K0i | The desktop: a tap on a face starts a sketch on a datum of it, and the overlay draws a sketch on a datum of the Document (ADR-0051 item 11; the four answers of the owner of 2026-11-03). ADR-0053, TASK-0171. | 3–5 |
 | K0 | A feature graph over Manifold. No B-Rep. Deferred-query references. The rest after K0f is K0g, K0h and K0i (the owner, 2026-11-02). | 12–20 |
 | K1 | Exact predicates. A deterministic arithmetic layer. The 2D predicates of the profile of a sketch, a rounded filter and an exact path with integers; the 3D predicate arrives with K4 (Q1 and Q2 A of 2026-11-02). ADR-0050, TASK-0164. | 4–8 |
 | K2a | The sketch model in the engine. The point, the line segment that references two points (Q3), the fixed frame of a sketch, and the five constraints of K3a. A sketch records the identifier of a datum; the three origin planes have fixed identifiers (Q4). One command for each item, with scalar fields; the Document holds one sketch record for each sketch, and an undo restores the record before; the events `sketch.created`, `sketch.changed` and `sketch.removed`, and a query `GetSketch` (Q2). The positions are a projection of the record, and the log holds the inputs only (Q6). An angle records the pair (cos θ, sin θ) (Q5). The ADR names the five entities and the fourteen constraints now (Q1). The desktop draws a sketch as lines of the UI layer, read only (Q9). ADR-0033, TASK-0100. | 4–6 |

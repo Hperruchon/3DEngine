@@ -43,6 +43,9 @@ internal sealed record SetDistanceAction(Guid Body, double Distance) : PanelActi
 // ADR-0034 item 6: a new sketch on a datum, the edit of a live sketch, and the end of the mode.
 internal sealed record NewSketchAction(Guid Datum) : PanelAction;
 
+// ADR-0053 item 6 (phase K0i, TASK-0171): the button Face arms the next tap of the mode Scene for a sketch on a face.
+internal sealed record SketchOnFaceAction : PanelAction;
+
 internal sealed record EditSketchAction(Guid Sketch) : PanelAction;
 
 internal sealed record FinishSketchAction : PanelAction;

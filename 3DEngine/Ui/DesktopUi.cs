@@ -61,6 +61,9 @@ internal sealed unsafe class DesktopUi : IDisposable
     public static readonly (string Label, Guid Datum)[] NewSketchButtons =
         [("Sketch XY", Datums.XY.Id), ("Sketch XZ", Datums.XZ.Id), ("Sketch YZ", Datums.YZ.Id)];
 
+    // ADR-0053 item 6 (phase K0i, TASK-0171): the button that arms a tap on a face for a new sketch.
+    public const string SketchOnFaceLabel = "Sketch Face";
+
     public const string SketchName = "Sketch";
     public const string LineToolLabel = "Line";
     public const string SelectToolLabel = "Select";
@@ -457,6 +460,9 @@ internal sealed unsafe class DesktopUi : IDisposable
     internal const uint SnapColour = 0xFFFFE000;
     private const float SnapHalfSize = 6f;
     internal const uint OtherSketchColour = 0xFF909090;
+
+    // ADR-0053 item 8: a line or a point of a reference of the sketch, dim.
+    internal const uint ReferenceColour = 0xFF706048;
     private const float SelectedLineWidth = 4f;
     private const float SelectedPointRadius = 7f;
     private const float RingRadius = 12f;
@@ -519,6 +525,7 @@ internal sealed unsafe class DesktopUi : IDisposable
     {
         SketchOverlay.Mark.Selected => SelectedColour,
         SketchOverlay.Mark.Other => OtherSketchColour,
+        SketchOverlay.Mark.Reference => ReferenceColour,
         _ => SketchColour,
     };
 
@@ -558,6 +565,11 @@ internal sealed unsafe class DesktopUi : IDisposable
                     _actions.Add(new NewSketchAction(datum));
                 Item(label);
             }
+
+            ImGui.SameLine();
+            if (ImGui.Button($"Face##{SketchOnFaceLabel}"))
+                _actions.Add(new SketchOnFaceAction());
+            Item(SketchOnFaceLabel);
 
             ImGui.TextUnformatted(bodies.Count == 1 ? "1 live body" : $"{bodies.Count} live bodies");
 
