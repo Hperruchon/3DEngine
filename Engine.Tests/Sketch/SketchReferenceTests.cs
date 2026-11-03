@@ -356,4 +356,85 @@ public sealed class SketchReferenceTests : IDisposable
             opened.Close();
         }
     }
+
+    // The layout of findings E128 and E129 of the second codebase review of 2026-11-03 (TASK-0176): a datum on a side of
+    // the base and a reference of a wall to a vertex of the base, and after them in the log a reference of the base to a
+    // vertex of a post, with a corner of the base on it. A move of the post moves the corner of the base through the later
+    // reference.
+    private sealed record LaterReference(Sketch Base, Guid Side, Guid Wall, Guid Early, Sketch Post);
+
+    private static async Task<LaterReference> LaterReferenceLayout(DocumentSession session)
+    {
+        var base_ = await NewSketch(session, Datums.XY.Id, Rectangle);
+        var body = await Extrude(session, base_.Id, 5);
+        var side = Output(await Applied(session, new CreateDatumCommand { FeatureId = body, Element = "side", ItemId = base_.Lines[0] }), "datumId");
+        var wall = await EmptySketch(session, Datums.XZ.Id);
+        var early = await Reference(session, wall, body, "endVertex", base_.Points[1]);
+        var post = await NewSketch(session, Datums.XY.Id, [(20, 0), (26, 0), (26, 4), (20, 4)]);
+        var pin = await Extrude(session, post.Id, 3);
+        var late = await Reference(session, base_.Id, pin, "startVertex", post.Points[0]);
+        await Applied(session, new AddSketchConstraintCommand { SketchId = base_.Id, Kind = "coincident", First = base_.Points[1], Second = late });
+        return new LaterReference(base_, side, wall, early, post);
+    }
+
+    // Finding E128 (ADR-0055 item 1, TASK-0176): a datum and a reference before a later reference of their sketch follow
+    // that reference at the edit that moves it, and a later edit that has no relation to them changes nothing.
+    [NativeManifoldFact]
+    public async Task A_Datum_And_A_Reference_Before_A_Later_Reference_Of_Their_Sketch_Follow_It_At_Once()
+    {
+        using var backend = new ManifoldGeometryBackend();
+        var (session, events) = NewSession(backend);
+        var layout = await LaterReferenceLayout(session);
+        Task<DatumFrame> Frame() => session.Read((document, _) => document.Datums.Single(datum => datum.Id == layout.Side).Frame);
+
+        await Applied(session, new MoveSketchPointCommand { SketchId = layout.Post.Id, PointId = layout.Post.Points[0], X = 22, Y = -1 });
+
+        var corner = (await Record(session, layout.Base.Id)).Points.Single(point => point.Id == layout.Base.Points[1]);
+        Assert.Equal((22.0, -1.0), (corner.X, corner.Y));
+        Assert.Equal([(22.0, 5.0)], await Points(session, layout.Wall, layout.Early));
+        var frame = await Frame();
+        Assert.Equal(0.0, (frame.U.X * -3.0) - (frame.U.Y * 21.0), 12);
+
+        // An edit that has no relation to the datum and the wall gives no event of them.
+        var other = await EmptySketch(session, Datums.YZ.Id);
+        var unrelated = await Applied(session, new AddSketchPointCommand { SketchId = other, X = 1, Y = 1 });
+        Assert.Empty(unrelated.Diagnostics);
+        Assert.Equal(frame, await Frame());
+        Assert.DoesNotContain(events.Snapshot(), e => e.CauseCommandId == unrelated.CommandId && e.Kind is "datum.changed" or "body.changed");
+        Assert.Equal(["command.applied", "sketch.changed"], events.Snapshot().Where(e => e.CauseCommandId == unrelated.CommandId).Select(e => e.Kind));
+    }
+
+    // Finding E128 (TASK-0176): a fault of the later reference comes at an edit with two walks of the planes, and the
+    // result gives its warning one time. The delete of a line of the post opens its profile, so the vertex of the post
+    // does not resolve.
+    [NativeManifoldFact]
+    public async Task A_Fault_Of_A_Later_Reference_Gives_One_Warning()
+    {
+        using var backend = new ManifoldGeometryBackend();
+        var (session, _) = NewSession(backend);
+        var layout = await LaterReferenceLayout(session);
+
+        var delete = await Applied(session, new DeleteSketchItemCommand { SketchId = layout.Post.Id, ItemId = layout.Post.Lines[0] });
+
+        Assert.Single(delete.Diagnostics, d => d.Code == DiagnosticCodes.SketchReferenceFailed);
+        Assert.Equal([(20.0, 5.0)], await Points(session, layout.Wall, layout.Early));
+    }
+
+    // Finding E129 (TASK-0176): an edit of the wall after the move of the post gives an envelope. Before TASK-0176 the
+    // reference of the wall was stale, the walk of the planes solved the wall again, and the bus threw, because the wall
+    // was two times in the list of the edit.
+    [NativeManifoldFact]
+    public async Task An_Edit_Of_A_Sketch_After_A_Later_Reference_Moved_Its_Target_Applies()
+    {
+        using var backend = new ManifoldGeometryBackend();
+        var (session, _) = NewSession(backend);
+        var layout = await LaterReferenceLayout(session);
+        await Applied(session, new MoveSketchPointCommand { SketchId = layout.Post.Id, PointId = layout.Post.Points[0], X = 22, Y = -1 });
+
+        var edit = await Applied(session, new AddSketchPointCommand { SketchId = layout.Wall, X = 30, Y = 1 });
+
+        Assert.Empty(edit.Diagnostics);
+        Assert.Contains((await Record(session, layout.Wall)).Points, point => point.Id == Output(edit, "pointId"));
+        Assert.Equal([(22.0, 5.0)], await Points(session, layout.Wall, layout.Early));
+    }
 }

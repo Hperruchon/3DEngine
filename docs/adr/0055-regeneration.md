@@ -48,7 +48,9 @@ recommended answer:
    the same keys (ADR-0037 item 4). It makes two walks of the steps in effect, in the order of the log:
    - **The planes.** Each datum and each reference of a sketch resolves again from the state after the edit
      (`DatumResolver.Rebuild`, ADR-0051 item 6, ADR-0052 item 8). This walk reads the parameters of the features only,
-     never a solid.
+     never a solid. It repeats while a reference solves a sketch again, because a reference later in the log can change
+     a sketch that an earlier datum or reference read; the datums and the warnings come from the last walk (finding
+     E128, TASK-0176).
    - **The solids.** Each live body whose chain holds an extrude that the edit targets is evaluated again.
 
    The planes come first because a reference later in the log can change a sketch that an earlier extrude reads, so the
@@ -91,3 +93,5 @@ recommended answer:
 ## History
 
 - 2026-11-03 · TASK-0174 · Accepted with the four answers of the owner of 2026-11-03.
+- 2026-11-04 · TASK-0176 · Item 1: the walk of the planes repeats while a reference solves a sketch again (finding E128
+  of the second codebase review of 2026-11-03), and an edit of a sketch takes the record of the walk (E129).
