@@ -150,6 +150,7 @@ Therefore each approved objective must have a track here.
 - K0i — A tap on a face starts a sketch on a datum of it, and the desktop draws a sketch on a datum of the Document. v0.173, TASK-0171, ADR-0053.
 - K0 — A feature graph over Manifold with deferred-query references. Closed at v0.173, from K0a to K0i in this list.
 - P0.74 — A put of an asset waits for a name that another program holds, and does not replace a name that it cannot read. v0.174, TASK-0172.
+- P8d1 — The ordered feature list is a fold of the log that the engine reads, and `GetFeatures` gives each feature with its inputs and its state. v0.175, TASK-0173, ADR-0054.
 
 ## Track 0 — Foundations
 
@@ -239,7 +240,9 @@ This track removes each condition that blocks other work.
 | P8a | The document file in the engine and the server. The command log in JSON Lines, written by `Engine.Core/Persistence/` (Q7). Each applied command goes into the file before its result, with fsync. The header records the length unit of the document, `Document.LengthUnit`, with the millimetre as the only unit for now (KD4, Q3). Each entry records the name and the version of the backend from `IGeometryBackend`, and the bus writes them (anti-objective 10, KD3, Q2). An open gives a new document identifier (Q1). A document with no name writes a temporary file from its first command, and a save moves it (Q4). The server opens the file that its command line names. ADR-0015 is written again (register entry R-0025). TASK-0091. | 3–4 |
 | P8b | The container model. One document holds one part. An assembly holds references at a fixed version. | 5–8 |
 | P8c | Undo and redo. `Undo` and `Redo` are commands of the log, and the bus reverses the recorded body changes of a step (Q1 B to Q4 A). The keys wait in R-0041. ADR-0031, TASK-0093. | 3–5 |
-| P8d | The three layers. Log, ordered feature list, regeneration cache. | 5–8 |
+| P8d | The three layers. Log, ordered feature list, regeneration cache. Two slices (Q1 A of 2026-11-03). | 5–8 |
+| P8d1 | The ordered feature list: a fold of the log that the engine reads, and the query `GetFeatures` with the inputs and the state of each feature (four answers A of 2026-11-03). ADR-0054, TASK-0173. | 2–3 |
+| P8d2 | The regeneration cache: a regeneration of each feature after a changed feature, with reuse of each unchanged solid, and the place of a fault (charter rule 4). | 3–5 |
 | P8e | The unit in the numeric pad. The header of P8a holds the length unit of the document (KD4). TASK-0119. | 1 |
 | P8f | The document file in the desktop and for an agent. The desktop opens the file that its command line names, and an open in the window starts the program again (Q5). "Save" moves the file to the name typed in the panel. HTTP save and open on the loopback address, in one folder (Q6, ADR-0002). ADR-0030, TASK-0092. | 2–3 |
 | P8g | An STL export of the live bodies, from the surface, the command line and the desktop (ADR-0048). TASK-0157. | 1 |
