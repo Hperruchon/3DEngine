@@ -5116,3 +5116,42 @@ New tests: 1. The test list holds 1630 (1162 in `Engine.Tests`, 291 in `3DEngine
 `3DEngine.ImageTests`, 3 in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and
 zero warnings. Open entries: 14 of 15. New diagnostic codes: 0. Since the review of v0.168, 2 product milestones and 6
 entries followed it.
+
+## v0.175 — The ordered feature list is a fold of the log, and GetFeatures gives each feature (P8d1, TASK-0173)
+
+The owner gave the order "start P8d" on 2026-11-03 and answered four questions on the same day, each with the
+recommended answer. ADR-0054 holds them: the feature list comes first and the regeneration cache in P8d2, the creators
+are the rows, a feature has four states and no suppress, and the list is a fold of the log.
+
+**The change.**
+- `FeatureList` (`Engine.Core/Features/`) applies each entry of the log one time, as `StepHistory` does: an Undo removes
+  what the last step in effect gave, a Redo applies it again, and a new step clears the undone list. It gives the steps
+  in effect in the order of the log, the identifiers of the log, the creator, the consumer and the place of a handle,
+  and the distance in effect of an extrude. `FeatureList.Of(document)` advances the list of a Document to the end of its
+  log.
+- The engine readers of the log read the list: the rebuilds, the datum resolver, the face finder, the checks of an
+  identifier in use, `SetExtrudeDistance` and `GetBodyInfo`. `FeatureGraph` is a view of it. `SketchRebuild.InEffect`
+  stays as the walk that the tests compare with the fold.
+- `GetFeatures` gives each `CreateBox`, `Extrude`, `Translate`, `Subtract`, `CreateDatum`, `CreateSketch` and
+  `PlaceImage` in effect, in the order of the log, with `inputs`, `consumedBy`, `state` and `fault`. A consumed body is
+  `consumed`, a live body with a fault is `failed`, and a datum or a sketch with a fault is `unresolved`. The faults stay
+  in the records of the Document, so `Engine.Contracts` does not change.
+- ADR-0054 amends ADR-0039 item 1. The roadmap splits P8d into P8d1 and P8d2.
+
+**Proof.** After each of 400 commands of a session on the native backend, with each kind of the graph, undos and redos,
+the fold of the session and a new fold of the log give what the walk of the whole log gives. A written log of 600
+entries, with a Redo after a new step that the bus refuses, gives the same. Ten injections each fail a test: an Undo
+that keeps a consumer or a distance, a Redo that adds nothing, a new step that keeps the undone list, a place off by
+one, an Undo that the list does not hold, a failed body shown as unresolved, a sketch with no inputs of its references,
+no consumer, and no row for an image. The probe of 10,000 commands: a block of 250 took 497 ms before at the end and
+46 ms after.
+
+**What stays.** A rebuild still visits the steps in effect in their order; P8d2 replaces it with the regeneration. The
+list is state outside the Document, correct only when each entry of the log applies to it one time; no code changes the
+log of a Document other than by an append. No HTTP or command-line test calls `GetFeatures`; the surface serves each
+query of the catalog.
+
+New tests: 3. The test list holds 1633 (1165 in `Engine.Tests`, 291 in `3DEngine.Tests`, 174 in
+`3DEngine.ImageTests`, 3 in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and
+zero warnings. Open entries: 14 of 15. New diagnostic codes: 0. Since the review of v0.168, 3 product milestones and 7
+entries followed it.

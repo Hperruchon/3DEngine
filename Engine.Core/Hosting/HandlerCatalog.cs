@@ -56,6 +56,7 @@ public static class HandlerCatalog
         new GetSketchQueryHandler(),
         new GetDatumQueryHandler(),
         new GetFaceAtQueryHandler(),
+        new GetFeaturesQueryHandler(),
     ];
 
     public static void RegisterAll(CommandRegistry commands, QueryRegistry queries)
