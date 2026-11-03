@@ -544,6 +544,29 @@ public class SketchToolTests
         Assert.Equal(5, Math.Sqrt(((below.X - 8) * (below.X - 8)) + (below.Y * below.Y)), 12);
     }
 
+    // Finding V75 of the codebase review of 2026-11-03 (TASK-0170): the snap tested each pair of lines, and a grid of
+    // 100 horizontal and 100 vertical lines has 10,000 crossings. The snap now skips each line whose box in pixels is
+    // more than HitPixels from the tap, so a tap near (50, 50) takes it and allocates less than 256 KB.
+    [Fact]
+    public void The_Snap_Of_A_Large_Sketch_Tests_Only_The_Lines_Near_The_Tap()
+    {
+        var editor = new Editor();
+        for (var i = 0; i < 100; i++)
+        {
+            editor.AddLine(editor.AddPoint(-1, i)!.Value, editor.AddPoint(101, i)!.Value);
+            editor.AddLine(editor.AddPoint(i, -1)!.Value, editor.AddPoint(i, 101)!.Value);
+        }
+        var picture = editor.Picture();
+        SketchTool.Snap(503, 502, (50.3, 50.2), picture);
+
+        var before = GC.GetAllocatedBytesForCurrentThread();
+        var snap = SketchTool.Snap(503, 502, (50.3, 50.2), picture);
+        var allocated = GC.GetAllocatedBytesForCurrentThread() - before;
+
+        Assert.Equal((50.0, 50.0), snap);
+        Assert.True(allocated < 256 * 1024, $"The snap allocated {allocated} bytes.");
+    }
+
     // Finding V57 of the codebase review of 2026-10-31 (TASK-0133): a centre that moved between the two
     // taps gives the radius from its current position.
     [Fact]
