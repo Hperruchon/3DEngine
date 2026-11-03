@@ -396,6 +396,12 @@ public sealed class NativeThreeDEngine : IThreeDEngine, IDisposable
         return $"Exported {(content!.Length - 84) / 50} triangles to {Path.GetFileName(path)}";
     }
 
+    // ADR-0041 item 6: the mark shows where a tap goes. Finding V74 of the codebase review of 2026-11-03 (TASK-0170):
+    // during a calibration a tap goes to the image as the raw pixel under it, and not to the snap of the sketch tool,
+    // so the mark does not show.
+    internal static (double X, double Y)? MarkPoint((double X, double Y)? hover, ImageActions? images)
+        => images?.Calibrating is null ? hover : null;
+
     // The path of the STL file of a name. Finding V72 of the codebase review of 2026-11-01 (TASK-0162):
     // Resolve adds .3de, so until TASK-0162 the name "part.stl" gave the file "part.stl.stl".
     internal static string? StlPath(DocumentFolder folder, string name, out string? refusal)
@@ -453,7 +459,7 @@ public sealed class NativeThreeDEngine : IThreeDEngine, IDisposable
             var tool = sketchActions.Tool;
             var focus = sketchActions.Active is { } active ? new SketchOverlay.Focus(active, [.. tool.Selection], tool.First) : null;
             sketches = SketchOverlay.Of(_sketches.Live, Camera, window.width, window.height, focus);
-            if (_hover is { } hover && sketchActions.Mark(Camera, hover.X, hover.Y, window.width, window.height) is { } mark)
+            if (MarkPoint(_hover, _imageActions) is { } hover && sketchActions.Mark(Camera, hover.X, hover.Y, window.width, window.height) is { } mark)
                 sketches = sketches with { Snap = mark };
             sketchPanel = new SketchPanel(
                 _sketches.Live,

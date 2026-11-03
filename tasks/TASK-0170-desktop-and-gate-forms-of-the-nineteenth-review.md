@@ -1,7 +1,7 @@
 ---
 id: 0170
 title: The mark of a calibration, the cost of the snap, and the next forms of three gates
-status: Ready
+status: Active
 phase: P0.73
 opened: 2026-11-03
 depends-on: [0168]
@@ -64,7 +64,7 @@ next form that the review found.
 
 ## Outcome
 
-Status: Ready
+Status: Active
 
 ## Method
 
@@ -75,3 +75,7 @@ Weakest:    the time of V75 depends on the runner; a limit of the allocation is 
 ## Progress
 
 - 2026-11-03: opened by the codebase review of 2026-11-03.
+- 2026-11-03: the five fixes. V74 is a static rule of the desktop, `NativeThreeDEngine.MarkPoint`, which the render
+  calls. V75 has a limit of the allocation: 18,768 bytes after the fix, and 573,064 bytes with each line tested.
+  The rule that the review recommended for T129, `[vV\p{L}-[\x00-\x7F]]`, subtracts ASCII from v and V too, and an
+  injection of it failed four forms; the rule keeps two alternatives.

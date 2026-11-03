@@ -164,6 +164,13 @@ public class DiagnosticsRegistryGateTests
     // constant part.
     [InlineData("static class P { static string Code(string rest) => $\"{char.ToUpperInvariant('e')}{rest}\"; }")]
     [InlineData("static class P { static string Code(string rest) => $\"{\"EWI\"[0]}{rest}\"; }")]
+    // The forms of finding T128 of the codebase review of 2026-11-03 (TASK-0170): a severity through ToString, an
+    // array and new string, which the fix of T126 lost.
+    [InlineData("static class P { const char S = 'E'; static string Code(string rest) => $\"{S.ToString()}{rest}\"; }")]
+    [InlineData("static class P { const char S = 'W'; static string Code(string rest) => S.ToString() + rest; }")]
+    [InlineData("static class P { static string Code(string rest) => new string(new[] { 'E' }) + rest; }")]
+    [InlineData("static class P { static string Code(string rest) => new System.String(new char[] { 'I' }) + rest; }")]
+    [InlineData("static class P { static string Code(string rest) => $\"{char.ToUpperInvariant('e').ToString()}{rest}\"; }")]
     public void A_Part_Of_A_Code_Is_An_Offence(string source)
     {
         Assert.NotEmpty(DiagnosticsScanner.PartsOfCodes([("Engine.Core/Probe.cs", source)]));
