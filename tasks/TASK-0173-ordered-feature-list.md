@@ -1,7 +1,7 @@
 ---
 id: 0173
 title: The ordered feature list is a fold of the log that the engine reads, and GetFeatures gives each feature with its inputs and its state
-status: Active
+status: Done
 phase: P8d1
 opened: 2026-11-03
 depends-on: [0172]
@@ -68,14 +68,14 @@ reads the features of a document in their order.
 
 ## Acceptance criteria
 
-- [ ] After each command of a log with undos and redos, the fold gives what a walk of the whole log gives.
-- [ ] `GetFeatures` gives each state, and each injection of the fold and of the query fails a test.
-- [ ] A clean build (`--no-incremental`) gives zero errors and zero warnings.
-- [ ] Continuous integration passes on the three runners, on the branch and on `main` after the merge.
+- [x] After each command of a log with undos and redos, the fold gives what a walk of the whole log gives.
+- [x] `GetFeatures` gives each state, and each injection of the fold and of the query fails a test.
+- [x] A clean build (`--no-incremental`) gives zero errors and zero warnings.
+- [x] Continuous integration passes on the three runners, on the branch and on `main` after the merge.
 
 ## Outcome
 
-Status: Active
+Status: Done · commit (the merge of the branch p8d1-feature-list) · v0.175
 
 ## Method
 
@@ -88,3 +88,4 @@ Weakest:    the list is state outside the Document; a code path that changes the
 ## Progress
 
 - 2026-11-03: opened with the four answers of the owner. The fold, the readers, the query and three tests.
+- 2026-11-03: ten injections each fail a test; closed at v0.175.
