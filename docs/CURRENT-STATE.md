@@ -5012,3 +5012,36 @@ New tests: 4. The test list holds 1602 (1141 in `Engine.Tests`, 289 in `3DEngine
 `3DEngine.ImageTests`, 3 in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and
 zero warnings. Open entries: 14 of 15. New diagnostic codes: 0. Since the review of v0.168, 1 product milestone and 3
 entries followed it.
+
+## v0.172 — The mark of a calibration, the cost of the snap, and the next forms of three gates (P0.73, TASK-0170)
+
+The second task of the review of v0.169, after P0.72. The owner gave the order "go ahead" on 2026-11-03.
+
+**The change.**
+- V74: the mark of the snap does not show while a calibration waits for its taps, because the calibration takes the
+  raw pixel and not the snap. `NativeThreeDEngine.MarkPoint` holds the rule, and the render calls it.
+- V75: the snap to an intersection skips each line whose box in pixels is more than `HitPixels` from the tap, because
+  a line projects to the segment between the pixels of its ends. A line with an end behind the eye stays. The three
+  forms of `Meet` add their points with no iterator. One snap over a grid of 200 lines allocates 18,768 bytes; with each
+  line tested it allocates 573,064 bytes, and the review measured 4.8 MB with the iterators.
+- T127: `No_Output_Of_A_Task_Adds_A_Package` refuses an `Output` whose item name is `PackageReference`,
+  `GlobalPackageReference` or a computed name, in each file that MSBuild reads.
+- T128: the scanner of the diagnostic codes follows a call of `ToString()`, an element of an array and an argument of
+  `new string(...)`. The control `c == 'E'` stays clean.
+- T129: the rule of a setext heading of a version takes a capital V and a space before the digits.
+- Correction: the review recommended the class `[vV\p{L}-[\x00-\x7F]]` for T129. In .NET a subtraction applies to the
+  whole class, so it removes v and V too; an injection of it failed four forms of the test. The rule keeps two
+  alternatives.
+
+**Proof.** Nine injections each fail their test: the mark during a calibration, each line in the snap, the rule of
+T127, the target of the review in `Engine.Core/Engine.Core.csproj` (with the version of the package, the restore took
+OpenCvSharp4, `No_Output_Of_A_Task_Adds_A_Package` failed, and the old pin rule passed), each of the three forms of
+T128, the rule of T129 before the fix, and the rule that the review recommended.
+
+**What stays.** The test of V74 calls the rule, not the render: a render that does not call `MarkPoint` passes. No one
+opened the window.
+
+New tests: 16. The test list holds 1618 (1155 in `Engine.Tests`, 290 in `3DEngine.Tests`, 170 in
+`3DEngine.ImageTests`, 3 in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and
+zero warnings. Open entries: 14 of 15. New diagnostic codes: 0. Since the review of v0.168, 1 product milestone and 4
+entries followed it.
