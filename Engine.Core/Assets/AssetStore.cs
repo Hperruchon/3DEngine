@@ -61,7 +61,8 @@ public sealed partial class AssetStore
         var path = Path.Combine(Folder, name);
         // Finding E115: a damaged file under the name stayed, and the put gave no error. It is
         // written again, and the move replaces it.
-        if (HoldsName(path, name))
+        var state = StateOf(path, name);
+        if (state == Content.Same)
             return (name, bytes.Length, null);
 
         var scratch = Path.Combine(Folder, $"{name}.{Guid.NewGuid():N}.tmp");
@@ -75,28 +76,25 @@ public sealed partial class AssetStore
             }
 
             // Finding E120 of the codebase review of 2026-11-01 (TASK-0160): a move that replaced the file failed on
-            // Windows while another put read or replaced it. The move replaces nothing first. When the name exists,
-            // only a file that does not hold its name is replaced (E115), and the name is read again before a failure.
-            try
+            // Windows while another put read or replaced it. Only a file that holds other bytes is replaced (E115).
+            // R-0050 (TASK-0172): on Windows a read fails while another program holds the file with no share, and a
+            // replace fails while a reader holds it. A name that cannot be read is not damaged, so the put does not
+            // replace it; it reads the name again after each failed move and waits, up to MoveAttempts moves.
+            for (var attempt = 1; ; attempt++)
             {
-                File.Move(scratch, path, overwrite: false);
-            }
-            catch (Exception ex) when ((ex is IOException or UnauthorizedAccessException) && File.Exists(path))
-            {
-                if (!HoldsName(path, name))
+                try
                 {
-                    try
-                    {
-                        File.Move(scratch, path, overwrite: true);
-                    }
-                    catch (Exception again) when ((again is IOException or UnauthorizedAccessException) && HoldsName(path, name))
-                    {
-                        // Another put of the same content replaced the file first; the content of the name is the same.
-                    }
+                    File.Move(scratch, path, overwrite: state == Content.Other);
+                    return (name, bytes.Length, null);
+                }
+                catch (Exception ex) when ((ex is IOException or UnauthorizedAccessException) && attempt < MoveAttempts)
+                {
+                    state = StateOf(path, name);
+                    if (state == Content.Same)
+                        return (name, bytes.Length, null);
+                    await Task.Delay(Math.Min(5 << (attempt - 1), 200), ct).ConfigureAwait(false);
                 }
             }
-
-            return (name, bytes.Length, null);
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
         {
@@ -115,16 +113,24 @@ public sealed partial class AssetStore
     public static ErrorDetail TooLarge()
         => new(DiagnosticCodes.AssetTooLarge, $"An asset holds at most {MaximumBytes} bytes (16 MiB), and this one holds more (ADR-0044 item 3).");
 
-    // True when the file at the path holds bytes whose name is the name.
-    private static bool HoldsName(string path, string name)
+    // R-0050: the number of moves of a put before its failure. The pauses between them grow from 5 ms to 200 ms, so a
+    // put waits about 1.3 s for a name that another program holds.
+    private const int MoveAttempts = 12;
+
+    // The content at a name: absent, the bytes of the name, other bytes, or a file that cannot be read now.
+    private enum Content { Absent, Same, Other, Unreadable }
+
+    private static Content StateOf(string path, string name)
     {
+        if (!File.Exists(path))
+            return Content.Absent;
         try
         {
-            return File.Exists(path) && NameOf(File.ReadAllBytes(path)) == name;
+            return NameOf(File.ReadAllBytes(path)) == name ? Content.Same : Content.Other;
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
         {
-            return false;
+            return Content.Unreadable;
         }
     }
 
