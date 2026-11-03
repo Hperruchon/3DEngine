@@ -1,7 +1,7 @@
 ---
 id: 0178
 title: The desktop shows the dimensions of the overall box and of a selected body, with a toggle in the panel
-status: Active
+status: Done
 phase: R13
 opened: 2026-11-04
 depends-on: [0176]
@@ -67,16 +67,16 @@ thickness of a selected board on the model.
 
 ## Acceptance criteria
 
-- [ ] The toggles are off at each start, take a tap and a click, and are inside the panel with a long list of bodies.
-- [ ] The overall box gives three dimension lines with labels in the unit of the document, and the selected body three
+- [x] The toggles are off at each start, take a tap and a click, and are inside the panel with a long list of bodies.
+- [x] The overall box gives three dimension lines with labels in the unit of the document, and the selected body three
       more in the colour of the selection, with its size and its thickness in the panel.
-- [ ] An image test of a shelf shows the lines, and the owner gets its picture.
-- [ ] A clean build (`--no-incremental`) gives zero errors and zero warnings.
-- [ ] Continuous integration passes on the three runners, on the branch and on `main` after the merge.
+- [x] An image test of a shelf shows the lines, and the owner gets its picture.
+- [x] A clean build (`--no-incremental`) gives zero errors and zero warnings.
+- [x] Continuous integration passes on the three runners, on the branch and on `main` after the merge.
 
 ## Outcome
 
-Status: Active
+Status: Done · commit (the merge of the branch r13-dimension-overlay) · v0.179
 
 ## Method
 
@@ -87,3 +87,4 @@ Weakest:    no one opened the desktop window; the image test renders the same co
 ## Progress
 
 - 2026-11-04: opened with the four answers of the owner. The geometry, the overlay, the toggles and the tests.
+- 2026-11-04: ten injections each fail a test; the picture of the image test goes to the owner; closed at v0.179.
