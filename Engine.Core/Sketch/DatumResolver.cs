@@ -78,7 +78,15 @@ public static class DatumResolver
             CreateBoxCommand box => (Box(box, reference.Element), null),
             _ => (null, $"The command '{feature.Name}' has no faces."),
         };
-        return frame is { } carrier ? (carrier with { Origin = Moved(carrier.Origin, graph, feature.CommandId, place) }, null) : (null, reason);
+        if (frame is not { } carrier)
+            return (null, reason);
+
+        // Finding E125 of the codebase review of 2026-11-03 (TASK-0169): a sum of the origin can overflow, and a frame
+        // with a value that is not finite or an axis of the length zero is not a plane.
+        var resolved = carrier with { Origin = Moved(carrier.Origin, graph, feature.CommandId, place) };
+        return Finite(resolved)
+            ? (resolved, null)
+            : (null, $"The element '{reference.Element}' of '{reference.FeatureId}' gives a frame with a value that is not finite or an axis of the length zero.");
     }
 
     // What a rebuild of the datums and the references gives: the new record of each datum and each
@@ -121,11 +129,13 @@ public static class DatumResolver
                         next = datum with { Frame = resolved, Fault = null };
                     else
                     {
+                        // Finding E127 (Q2 A of the review of 2026-11-03): a fault that stays gives no new warning.
                         var fault = new DatumFault(DiagnosticCodes.DatumReferenceFailed, $"The datum '{datum.Id}' keeps its last plane: {reason}");
                         next = datum with { Fault = fault };
-                        diagnostics.Add(new Diagnostic(
-                            Severity.Warning, fault.Code, fault.Message,
-                            Data: new Dictionary<string, object?> { ["datumId"] = datum.Id }));
+                        if (datum.Fault != fault)
+                            diagnostics.Add(new Diagnostic(
+                                Severity.Warning, fault.Code, fault.Message,
+                                Data: new Dictionary<string, object?> { ["datumId"] = datum.Id }));
                     }
 
                     frames[datum.Id] = next.Frame;
@@ -142,9 +152,10 @@ public static class DatumResolver
                     if (positions is null)
                     {
                         fault = new DatumFault(DiagnosticCodes.SketchReferenceFailed, $"The reference '{entry.Id}' of the sketch '{record.Id}' keeps its last points: {reason}");
-                        diagnostics.Add(new Diagnostic(
-                            Severity.Warning, fault.Code, fault.Message,
-                            Data: new Dictionary<string, object?> { ["sketchId"] = record.Id, ["referenceId"] = entry.Id }));
+                        if (entry.Fault != fault)
+                            diagnostics.Add(new Diagnostic(
+                                Severity.Warning, fault.Code, fault.Message,
+                                Data: new Dictionary<string, object?> { ["sketchId"] = record.Id, ["referenceId"] = entry.Id }));
                     }
 
                     if (SketchModel.Placed(record, entry, positions, fault) is not { } placed)
@@ -207,6 +218,9 @@ public static class DatumResolver
                 return ((x * plane.U.X) + (y * plane.U.Y) + (z * plane.U.Z), (x * plane.V.X) + (y * plane.V.Y) + (z * plane.V.Z));
             })
             .ToList();
+        // Finding E125: a sum can overflow, and an infinity times 0 gives NaN.
+        if (positions.Any(at => !double.IsFinite(at.Item1) || !double.IsFinite(at.Item2)))
+            return (null, $"The element '{reference.Element}' of '{reference.FeatureId}' gives a point that is not finite in the plane of the sketch.");
         if (positions.Count == 2 && positions[0] == positions[1])
             return (null, $"The edge '{reference.Element}' of '{reference.FeatureId}' projects to one point of the plane of the sketch; use its vertex.");
         return (positions, null);
@@ -277,6 +291,17 @@ public static class DatumResolver
 
         var (tx, ty) = (q.X - p.X, q.Y - p.Y);
         var length = Math.Sqrt((tx * tx) + (ty * ty));
+
+        // Finding E125: the square of a very short or very long side underflows to 0 or overflows. Then the root
+        // takes tx and ty over the larger of their magnitudes, as a calibration does (E123). Each other side keeps
+        // the bits of v0.167.
+        if ((length == 0 || double.IsPositiveInfinity(length)) && double.IsFinite(tx) && double.IsFinite(ty) && (tx != 0 || ty != 0))
+        {
+            var larger = Math.Max(Math.Abs(tx), Math.Abs(ty));
+            var (sx, sy) = (tx / larger, ty / larger);
+            length = larger * Math.Sqrt((sx * sx) + (sy * sy));
+        }
+
         var along = new DatumAxis(((tx * u.X) + (ty * v.X)) / length, ((tx * u.Y) + (ty * v.Y)) / length, ((tx * u.Z) + (ty * v.Z)) / length);
         var origin = new DatumPoint(o.X + (p.X * u.X) + (p.Y * v.X), o.Y + (p.X * u.Y) + (p.Y * v.Y), o.Z + (p.X * u.Z) + (p.Y * v.Z));
         return (new DatumFrame(origin, along, n, Cross(along, n)), null);
@@ -399,6 +424,14 @@ public static class DatumResolver
 
         return new DatumPoint(x, y, z);
     }
+
+    // Finding E125: each value of the frame is finite, and no axis has the length zero.
+    private static bool Finite(DatumFrame frame)
+        => Finite(frame.Origin.X, frame.Origin.Y, frame.Origin.Z) && Axis(frame.U) && Axis(frame.V) && Axis(frame.Normal);
+
+    private static bool Axis(DatumAxis a) => Finite(a.X, a.Y, a.Z) && (a.X != 0 || a.Y != 0 || a.Z != 0);
+
+    private static bool Finite(double x, double y, double z) => double.IsFinite(x) && double.IsFinite(y) && double.IsFinite(z);
 
     private static DatumAxis Negative(DatumAxis a) => new(-a.X, -a.Y, -a.Z);
 

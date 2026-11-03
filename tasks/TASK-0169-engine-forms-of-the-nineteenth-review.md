@@ -1,7 +1,7 @@
 ---
 id: 0169
 title: A datum and a reference refuse a frame or a point that is not finite, and give their warnings and codes as a body does
-status: Ready
+status: Active
 phase: P0.72
 opened: 2026-11-03
 depends-on: [0168]
@@ -16,6 +16,7 @@ writes:
     - Engine.Tests/Sketch/DatumTests.cs
     - docs/diagnostics.md
     - docs/adr/0051-references-and-datum-on-a-face.md
+    - docs/adr/0052-edge-and-vertex-references-in-a-sketch.md
     - eng/test-floor.txt
     - docs/roadmap.md
     - docs/CURRENT-STATE.md
@@ -63,7 +64,7 @@ changes, and each row of the registry names each target of its code.
 
 ## Outcome
 
-Status: Ready
+Status: Active
 
 ## Method
 
@@ -74,3 +75,5 @@ Weakest:    the bits of a NaN on arm64 are inferred, not run.
 ## Progress
 
 - 2026-11-03: opened by the codebase review of 2026-11-03.
+- 2026-11-03: the owner answered Q1 A, Q2 A and Q3 A. ADR-0052 item 8 states the rule of the warning of a reference,
+  so the write set gains ADR-0052. The handlers need no change: each one refuses through `DatumResolver`.

@@ -89,7 +89,12 @@ public static class SketchRebuild
         Func<ExtrudeCommand, ExtrudeInput> Other,
         Func<Guid, SketchRecord?> SketchAfter,
         string FailedCode,
-        string ConsumedCode);
+        string ConsumedCode)
+    {
+        // Finding E126 (Q3 A of the codebase review of 2026-11-03): the datum whose frame moved, for an extrude that
+        // the edit targets only because its sketch lies on that datum, or null.
+        public Func<ExtrudeCommand, Guid?> Through { get; init; } = _ => null;
+    }
 
     // The parameters of an extrude in one state, with the frame of the datum of its sketch in that
     // state (ADR-0051 item 5).
@@ -162,6 +167,7 @@ public static class SketchRebuild
             Targets = extrude => first.Targets(extrude) || Follows(extrude),
             Before = extrude => first.Targets(extrude) ? first.Before(extrude) : first.Other(extrude),
             After = extrude => resketched.Contains(extrude.SketchId) ? Next(extrude) with { Sketch = outcome.SketchOf(extrude.SketchId) } : Next(extrude),
+            Through = extrude => !first.Targets(extrude) && first.Other(extrude).Sketch is { } sketch && moved.Contains(sketch.DatumId) ? sketch.DatumId : null,
         };
         var diagnostics = new List<Diagnostic>(outcome.Diagnostics);
         var seeds = new List<ExtrudeCommand>();
@@ -181,9 +187,10 @@ public static class SketchRebuild
             }
 
             var (parameters, reason) = Parameters(edit.After(extrude), after);
+            var through = edit.Through(extrude);
             if (parameters is not { } next)
             {
-                Fail(body, reason!);
+                Fail(body, reason!, through);
                 continue;
             }
 
@@ -194,7 +201,7 @@ public static class SketchRebuild
 
             if (backend.TryGet<IExtrudeOps>() is not { } ops)
             {
-                Fail(body, "The active backend does not implement IExtrudeOps, so the solid cannot follow the edit.");
+                Fail(body, "The active backend does not implement IExtrudeOps, so the solid cannot follow the edit.", through);
                 continue;
             }
 
@@ -205,7 +212,7 @@ public static class SketchRebuild
             }
             catch (Exception ex)
             {
-                Fail(body, $"The geometry backend failed to extrude the new profile: {ex.Message}");
+                Fail(body, $"The geometry backend failed to extrude the new profile: {ex.Message}", through);
                 continue;
             }
 
@@ -218,16 +225,22 @@ public static class SketchRebuild
 
         // ADR-0037 item 6 (Q2 A) and ADR-0049 item 5: the body keeps its last solid and gets the
         // fault, and the result gives the same code. A fault that does not change gives no new record.
-        void Fail(BodyRecord body, string reason)
+        void Fail(BodyRecord body, string reason, Guid? through)
         {
             var fault = new BodyFault(edit.FailedCode, $"The extrude '{body.Handle.Id}' keeps its last solid: {reason}");
             diagnostics.Add(new Diagnostic(
                 Severity.Warning, fault.Code, fault.Message,
-                Data: new Dictionary<string, object?> { ["bodyId"] = body.Handle.Id }));
+                Data: Data(body.Handle.Id, through)));
             if (body.Fault != fault)
                 changed.Add(body with { Fault = fault });
         }
     }
+
+    // The data of a warning of a rebuild: the body, and the datum through which it follows the edit (finding E126).
+    private static Dictionary<string, object?> Data(Guid body, Guid? through)
+        => through is { } datum
+            ? new Dictionary<string, object?> { ["bodyId"] = body, ["datumId"] = datum }
+            : new Dictionary<string, object?> { ["bodyId"] = body };
 
     // ADR-0039 items 2 to 7: the chain of each consumed extrude that the edit targets, from the
     // seeds to the live ends.
@@ -304,6 +317,15 @@ public static class SketchRebuild
                     return true;
             }
         }
+
+        // Finding E126: the first datum, in the order of the operands, through which an extrude upstream of the
+        // handle is a target of the edit, or null.
+        private Guid? Through(Guid handle) => _graph.Creator(handle) switch
+        {
+            ExtrudeCommand extrude => edit.Through(extrude),
+            CreateBoxCommand or null => null,
+            { } command => FeatureGraph.Operands(command).Select(Through).FirstOrDefault(id => id is not null),
+        };
 
         // ADR-0039 item 3: the key of the solid of a handle for this edit, with true when the step
         // changed, or the reason of a failure. Each handle has one consumer in effect (ADR-0021
@@ -383,7 +405,7 @@ public static class SketchRebuild
             var fault = new BodyFault(edit.FailedCode, $"The body '{end.Handle.Id}' keeps its last solid: {reason}");
             diagnostics.Add(new Diagnostic(
                 Severity.Warning, fault.Code, fault.Message,
-                Data: new Dictionary<string, object?> { ["bodyId"] = end.Handle.Id }));
+                Data: Data(end.Handle.Id, Through(end.Handle.Id))));
             if (end.Fault != fault)
                 changed.Add(end with { Fault = fault });
         }
