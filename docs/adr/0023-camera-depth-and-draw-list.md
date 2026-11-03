@@ -71,3 +71,6 @@ host is replaced in R7. The roadmap line of R4 no longer names flat arrays or in
 - 2026-10-12 · TASK-0071 · ADR-0024 amends item 2: each entity has an origin in double precision.
 - 2026-10-27 · TASK-0082 · ADR-0026 amends item 2: the intent layer moves the camera from touch, mouse and
   keyboard.
+- 2026-11-04 · TASK-0179 · The far plane of the camera of the desktop follows the box of the visible bodies: at least
+  1000, sixteen times the radius of the box and two times the distance of the eye (register entry R-0051). The reversed
+  depth of item 1 keeps its precision at that range.

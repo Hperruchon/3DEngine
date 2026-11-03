@@ -76,15 +76,19 @@ internal sealed unsafe class SceneRenderer : IDisposable
     public ((double X, double Y, double Z) Min, (double X, double Y, double Z) Max)? BoxOf(Guid bodyId) => _bodies.BoxOf(bodyId);
 
     // Brings each change of the live bodies into the scene. When the first visible body
-    // comes, the camera frames the visible bodies for the aspect of the target.
+    // comes, the camera frames the visible bodies for the aspect of the target. Register
+    // entry R-0051 (TASK-0179): at each change the far plane follows the box of the visible
+    // bodies, so a model larger than the default far plane shows whole.
     public void Update(Scene scene, Camera camera, float aspect)
     {
         var before = _bodies.VisibleCount;
-        if (_bodies.Apply(scene, _meshes, _device) && ShouldFrame(before, _bodies.VisibleCount) && _bodies.Bounds is { } box
-            && !camera.Frame(box.Min, box.Max, aspect))
-        {
+        if (!_bodies.Apply(scene, _meshes, _device))
+            return;
+        if (_bodies.Bounds is not { } box)
+            return;
+        camera.FarPlane = camera.FarPlaneFor(box.Min, box.Max);
+        if (ShouldFrame(before, _bodies.VisibleCount) && !camera.Frame(box.Min, box.Max, aspect))
             Console.WriteLine($"[WARN] The bodies do not fit between the near plane ({camera.NearPlane}) and the far plane ({camera.FarPlane}) of the camera, so a part of them is not drawn.");
-        }
     }
 
     // ADR-0043 item 4: uploads an image under its identifier, one time. The caller uploads outside
