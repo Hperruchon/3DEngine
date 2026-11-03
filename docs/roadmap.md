@@ -153,6 +153,7 @@ Therefore each approved objective must have a track here.
 - P8d1 — The ordered feature list is a fold of the log that the engine reads, and `GetFeatures` gives each feature with its inputs and its state. v0.175, TASK-0173, ADR-0054.
 - P8d2 — One regeneration evaluates the features again after an edit, and each step whose inputs did not change keeps its solid. v0.176, TASK-0174, ADR-0055.
 - P8d — The three layers: the log, the ordered feature list and the regeneration. Closed at v0.176, with P8d1 and P8d2 in this list.
+- P0.75 — The walk of the planes repeats until no reference solves a sketch again, and an edit of a sketch takes the record of the walk. v0.178, TASK-0176.
 
 ## Track 0 — Foundations
 

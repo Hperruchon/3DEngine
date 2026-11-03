@@ -1,7 +1,7 @@
 ---
 id: 0176
 title: The walk of the planes repeats until no datum and no sketch changes, and an edit of a sketch takes the record of the walk
-status: Active
+status: Done
 phase: P0.75
 opened: 2026-11-03
 depends-on: [0175]
@@ -53,22 +53,24 @@ and an edit of a sketch never throws because the walk changes the same sketch.
 
 ## Acceptance criteria
 
-- [ ] A test of the layout of E128 fails before the change and passes after it.
-- [ ] A test of E129 fails before the change and passes after it.
-- [ ] Each injection of the change fails a test.
-- [ ] A clean build (`--no-incremental`) gives zero errors and zero warnings.
-- [ ] Continuous integration passes on the three runners, on the branch and on `main` after the merge.
+- [x] A test of the layout of E128 fails before the change and passes after it.
+- [x] A test of E129 fails before the change and passes after it.
+- [x] Each injection of the walk fails a test. The two injections of the guard of E129 fail none, because no path
+      reaches the guard after the fix of E128; the ledger of v0.178 records it.
+- [x] A clean build (`--no-incremental`) gives zero errors and zero warnings.
+- [x] Continuous integration passes on the three runners, on the branch and on `main` after the merge.
 
 ## Outcome
 
-Status: Active
+Status: Done · commit (the merge of the branch p075-planes-of-a-later-reference) · v0.178
 
 ## Method
 
-Mechanical: the two tests before the change; injections.
-Judgement:  the bound of the repeated walk.
-Weakest:    to be written at the close.
+Mechanical: three tests, two of them failing before the change; six injections.
+Judgement:  the bound of the repeated walk, and the guard of E129 that no test reaches.
+Weakest:    the guard of E129 has no test, and the bound of the loop has no test.
 
 ## Progress
 
 - 2026-11-03: opened by the second codebase review of 2026-11-03, with the order of the owner.
+- 2026-11-04: the repeated walk and the record of the walk; three tests; closed at v0.178.
