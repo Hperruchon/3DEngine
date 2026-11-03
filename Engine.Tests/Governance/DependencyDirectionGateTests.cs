@@ -543,11 +543,49 @@ public class DependencyDirectionGateTests
     // computes is refused too, and the value is trimmed.
     // Finding T119 of the codebase review of 2026-10-31 (c) (TASK-0150): MSBuild reads the escape
     // Comp%69le as Compile, so each %XX is decoded before the check, as T71 does for a path.
-    private static bool IsCompileName(string name)
+    private static bool IsCompileName(string name) => IsItemName(name, "Compile");
+
+    // True when MSBuild reads the name as one of the items, or computes the name.
+    private static bool IsItemName(string name, params string[] items)
     {
         var unescaped = Uri.UnescapeDataString(name);
-        return string.Equals(unescaped.Trim(), "Compile", StringComparison.OrdinalIgnoreCase)
+        return items.Any(item => string.Equals(unescaped.Trim(), item, StringComparison.OrdinalIgnoreCase))
             || unescaped.Contains("$(", StringComparison.Ordinal) || unescaped.Contains("@(", StringComparison.Ordinal);
+    }
+
+    // Finding T127 of the codebase review of 2026-11-03 (TASK-0170): a Target with CreateItem and an Output whose item
+    // name is PackageReference pinned OpenCvSharp4 into Engine.Core, and the pin rules passed, because they read the
+    // elements PackageReference and GlobalPackageReference only. An Output of a task adds no package.
+    internal static IEnumerable<string> PackageOutputOffences(string file, XDocument document)
+        => document.Descendants()
+            .Where(e => Is(e, "Output") && Value(e, "ItemName") is { } name && IsItemName(name, "PackageReference", "GlobalPackageReference"))
+            .Select(_ => $"{file} adds packages through the output of a task, which the pin rules cannot read");
+
+    [Fact]
+    public void No_Output_Of_A_Task_Adds_A_Package()
+    {
+        var offences = ProjectFiles()
+            .SelectMany(FilesThatMsBuildReads)
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .SelectMany(file => PackageOutputOffences(RepositoryFiles.Relative(file), XDocument.Load(file)))
+            .ToArray();
+
+        Assert.True(offences.Length == 0, "The pin rules read the elements of a package only. Name each package in an item.\n  " + string.Join("\n  ", offences));
+    }
+
+    // The form of finding T127, its next forms, and the controls.
+    [Theory]
+    [InlineData("<CreateItem Include=\"OpenCvSharp4\"><Output TaskParameter=\"Include\" ItemName=\"PackageReference\" /></CreateItem>", true)]
+    [InlineData("<CreateItem Include=\"OpenCvSharp4\"><Output TaskParameter=\"Include\" ItemName=\"globalpackagereference\" /></CreateItem>", true)]
+    [InlineData("<CreateItem Include=\"OpenCvSharp4\"><Output TaskParameter=\"Include\" ItemName=\"$(I)\" /></CreateItem>", true)]
+    [InlineData("<CreateItem Include=\"OpenCvSharp4\"><Output TaskParameter=\"Include\" ItemName=\"Package%52eference\" /></CreateItem>", true)]
+    [InlineData("<CreateItem Include=\"Probe.txt\"><Output TaskParameter=\"Include\" ItemName=\"Other\" /></CreateItem>", false)]
+    [InlineData("<PackageReference Include=\"OpenCvSharp4\" />", false)]
+    public void A_Package_Through_The_Output_Of_A_Task_Is_An_Offence(string item, bool offence)
+    {
+        var document = XDocument.Parse($"<Project><Target Name=\"T\">{item}</Target></Project>");
+
+        Assert.Equal(offence, PackageOutputOffences("Probe.csproj", document).Any());
     }
 
     [Fact]
