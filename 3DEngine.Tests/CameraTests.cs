@@ -209,6 +209,48 @@ public class CameraTests
         Assert.False(camera.Frame((0, 0, 0), (size, size, size), 16f / 9f));
     }
 
+    // Register entry R-0051 (TASK-0179): the default far plane cannot hold an L-shaped shelf of 1900 mm, and the far
+    // plane for its box frames it whole, for a wide, a square and a narrow window, and also far from the origin: each
+    // corner is in the picture and in front of the far plane. The shelf lies on its side, 1900 mm along X, and the camera
+    // looks along −Z, so the long side is across the narrow way of a window of the aspect 0.3.
+    [Theory]
+    [InlineData(16f / 9f, 0.0)]
+    [InlineData(1f, 0.0)]
+    [InlineData(0.3f, 0.0)]
+    [InlineData(16f / 9f, 25000.0)]
+    public void The_Far_Plane_For_A_Box_Frames_A_Shelf_Of_1900_Mm_Whole(float aspect, double offset)
+    {
+        (double X, double Y, double Z) min = (offset - 950, -325, -609);
+        (double X, double Y, double Z) max = (offset + 950, 325, 609);
+        Assert.False(new Camera().Frame(min, max, aspect));
+
+        var camera = new Camera { YawDegrees = 0, PitchDegrees = 0 };
+        camera.FarPlane = camera.FarPlaneFor(min, max);
+
+        Assert.True(camera.Frame(min, max, aspect), $"The far plane {camera.FarPlane} does not hold the box at the distance {camera.Distance}.");
+        var eye = camera.Eye();
+        var viewProjection = camera.View() * camera.Projection(aspect);
+        foreach (var x in new[] { min.X, max.X })
+        foreach (var y in new[] { min.Y, max.Y })
+        foreach (var z in new[] { min.Z, max.Z })
+        {
+            var clip = Vector4.Transform(new Vector4((float)(x - eye.X), (float)(y - eye.Y), (float)(z - eye.Z), 1f), viewProjection);
+            var (nx, ny, depth) = (clip.X / clip.W, clip.Y / clip.W, clip.Z / clip.W);
+            Assert.True(Math.Abs(nx) <= 1 && Math.Abs(ny) <= 1 && depth > 0 && depth < 1, $"The corner ({x}, {y}, {z}) is at ({nx}, {ny}, {depth}).");
+        }
+    }
+
+    // R-0051: the far plane of a small box is the default, and it is never less than two times the distance of the eye.
+    [Fact]
+    public void The_Far_Plane_For_A_Box_Keeps_The_Default_And_The_View()
+    {
+        var camera = new Camera { Distance = 900 };
+
+        Assert.Equal(Camera.DefaultFarPlane, new Camera().FarPlaneFor((0, 0, 0), (10, 6, 4)));
+        Assert.Equal(1800f, camera.FarPlaneFor((0, 0, 0), (10, 6, 4)));
+        Assert.Equal(float.MaxValue, camera.FarPlaneFor((0, 0, 0), (double.MaxValue, 1, 1)));
+    }
+
     [Fact]
     public void A_Zoom_Between_Close_Planes_Keeps_The_Eye_At_Two_Times_The_Near_Plane()
     {
