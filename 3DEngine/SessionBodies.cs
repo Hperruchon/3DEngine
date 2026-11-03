@@ -320,6 +320,14 @@ internal sealed class SessionBodies : IDisposable
         }
     }
 
+    // ADR-0056 item 3 (phase R13): the box of each live body that has a mesh, the visible ones only or each one.
+    public IEnumerable<((double X, double Y, double Z) Min, (double X, double Y, double Z) Max)> Boxes(bool hiddenToo)
+        => _boxes.Where(box => hiddenToo || IsVisible(box.Key)).Select(box => box.Value);
+
+    // ADR-0056 item 6: the box of the mesh of a visible live body, or null.
+    public ((double X, double Y, double Z) Min, (double X, double Y, double Z) Max)? BoxOf(Guid bodyId)
+        => _boxes.TryGetValue(bodyId.ToString(), out var box) && IsVisible(bodyId.ToString()) ? box : null;
+
     private static ((double X, double Y, double Z) Min, (double X, double Y, double Z) Max) Box(double[] positions)
     {
         (double X, double Y, double Z) min = (double.MaxValue, double.MaxValue, double.MaxValue);

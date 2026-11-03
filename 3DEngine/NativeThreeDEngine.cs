@@ -5,6 +5,7 @@ using SDL3;
 using ThreeDEngine.Core.Abstractions;
 using ThreeDEngine.Core.Gizmo;
 using ThreeDEngine.Core.Input;
+using ThreeDEngine.Core.Measuring;
 using ThreeDEngine.Core.Models;
 using ThreeDEngine.Core.Picking;
 using ThreeDEngine.Core.Sketching;
@@ -81,6 +82,10 @@ public sealed class NativeThreeDEngine : IThreeDEngine, IDisposable
     public Guid? Selection => _actions?.Selection;
 
     private BodyActions? _actions;
+
+    // ADR-0056 item 6 (phase R13): the distance in effect of the selected body, for its box, so that GetBodyInfo runs one
+    // time for each change of the selection or of its solid and not in each frame.
+    private (Guid Body, ((double X, double Y, double Z) Min, (double X, double Y, double Z) Max) Box, double? Distance)? _sizeOf;
 
     public string Name => "3DEngine Desktop Runtime";
 
@@ -510,7 +515,23 @@ public sealed class NativeThreeDEngine : IThreeDEngine, IDisposable
             sketches = strokes with { Lines = [.. strokes.Lines, .. proposal] };
         }
 
-        var panel = _ui.Frame((float)_delta.TotalSeconds, display, scale, _renderer.LiveBodies, Selection, _document is null ? null : new DocumentLine(_host.FileName, _documentMessage), sketches, sketchPanel, imagePanel);
+        // ADR-0056 items 3 to 6 (phase R13): the dimension overlay while its toggle in the panel is on.
+        DimensionOverlay.Strokes? dimensions = null;
+        string? size = null;
+        if (_ui.ShowDimensions)
+        {
+            var unit = _host.Session.LengthUnit;
+            var selectedBox = Selection is { } body ? _renderer.BoxOf(body) : null;
+            dimensions = DimensionOverlay.Of(Dimensions.Union(_renderer.Boxes(_ui.HiddenToo)), selectedBox, Camera, window.width, window.height, unit);
+            if (Selection is { } chosen && selectedBox is { } box && _actions is not null)
+            {
+                if (_sizeOf is not { } known || known.Body != chosen || known.Box != box)
+                    _sizeOf = (chosen, box, _actions.Distance(chosen));
+                size = DimensionOverlay.SizeText(box, _sizeOf.Value.Distance, unit);
+            }
+        }
+
+        var panel = _ui.Frame((float)_delta.TotalSeconds, display, scale, _renderer.LiveBodies, Selection, _document is null ? null : new DocumentLine(_host.FileName, _documentMessage), sketches, sketchPanel, imagePanel, dimensions, size);
         ApplyPanel(_renderer.LiveBodies);
 
         var ui = _uiRenderer;
