@@ -5295,3 +5295,34 @@ New tests: 18. The test list holds 1657 (1171 in `Engine.Tests`, 302 in `3DEngin
 `3DEngine.ImageTests`, 3 in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and
 zero warnings. Open entries: 15 of 15. New diagnostic codes: 0. Since the review of v0.176, 1 product milestone and 3
 entries followed it.
+
+## v0.180 — The far plane of the camera of the desktop follows the box of the visible bodies (P0.77, TASK-0179)
+
+TASK-0178 (R13) found register entry R-0051: the camera of the desktop kept the default far plane of 1000 units, and
+`Camera.Frame` and `Zoom` hold the distance at half the far plane, so the shelf of the owner, 1900 mm high, could not
+show whole. The owner gave the order on 2026-11-04: "merge when green, then fix R-0051", so this task comes after R13
+and before P0.76. It takes the first exit of the entry: the far plane follows the size of the live bodies.
+
+**The change.**
+- `Camera.FarPlaneFor` gives the far plane that holds a box: the largest of the default of 1000, sixteen times the radius
+  of the box, and two times the distance of the eye. The far plane is a distance from the eye, so the radius of the box
+  sets it. Sixteen holds a framed box for an aspect down to 0.3, where `Frame` puts the eye at about 5.9 radii.
+- `SceneRenderer.Update` sets it at each change of the bodies, before the first frame of ADR-0029 item 8. The frame of
+  the camera still happens only when the visible bodies go from none to some.
+- ADR-0023 records the rule in its history; the reversed depth of its item 1 keeps its precision at that range.
+- Register entry R-0051 is closed.
+
+**Proof.** `CameraTests` gains five tests: the default camera cannot frame a shelf of 1900 mm, and with the far plane
+for its box each corner is in the picture and in front of the far plane, for the aspects 16:9, 1 and 0.3 and 25 m from
+the origin; a small box keeps the default; and the far plane is never less than two times the distance. The image test
+of the dimensions no longer sets a far plane itself, and it checks that the update gave the camera the far plane of the
+shelf. Five injections each fail a test: an update that keeps the far plane, eight radii in place of sixteen, no hold of
+the view, the radius of one extent, and no cap at the largest float.
+
+**What stays.** No one opened the desktop window; the image test renders the same code offscreen. The near plane stays
+0.1, so a model in metres of a few millimetres keeps the limits that it had.
+
+New tests: 5. The test list holds 1662 (1171 in `Engine.Tests`, 307 in `3DEngine.Tests`, 181 in
+`3DEngine.ImageTests`, 3 in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and
+zero warnings. Open entries: 14 of 15. New diagnostic codes: 0. Since the review of v0.176, 1 product milestone and 4
+entries followed it.
