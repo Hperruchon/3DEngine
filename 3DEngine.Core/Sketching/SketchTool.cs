@@ -203,35 +203,42 @@ public sealed class SketchTool
     // Phase R11c (TASK-0165, ADR-0041 items 1 and 2): the intersection of two edges of the picture
     // whose pixel is nearest to the tap within HitPixels, or null. Two lines that share a point meet
     // only at that point, which is a point of the picture, so they give none.
+    // Finding V75 of the codebase review of 2026-11-03 (TASK-0170): the pairs of 200 lines cost 3.2 ms and 4.8 MB in
+    // each frame of hover. A line projects to the segment between the pixels of its ends, so its crossing is in the box
+    // of those pixels; a line whose box is more than HitPixels from the tap gives no crossing that the snap can take,
+    // and the snap skips it. A line with an end behind the eye has no pixel, and the snap keeps it.
     private static (double X, double Y)? Crossing(double pixelX, double pixelY, SketchPicture picture)
     {
         if (picture.ToPixel is not { } toPixel)
             return null;
         var points = picture.Points.ToDictionary(point => point.Id);
-        var lines = picture.Lines
-            .Where(line => points.ContainsKey(line.Start) && points.ContainsKey(line.End))
-            .Select(line => (line.Start, line.End, A: (points[line.Start].X, points[line.Start].Y), B: (points[line.End].X, points[line.End].Y)))
-            .ToArray();
+        var lines = new List<(Guid Start, Guid End, (double X, double Y) A, (double X, double Y) B)>();
+        foreach (var line in picture.Lines)
+        {
+            if (points.TryGetValue(line.Start, out var a) && points.TryGetValue(line.End, out var b) && Near(a, b))
+                lines.Add((line.Start, line.End, (a.X, a.Y), (b.X, b.Y)));
+        }
         var curves = picture.Curves.Where(curve => curve.Radius > 0).ToArray();
 
         var candidates = new List<(double X, double Y)>();
-        for (var i = 0; i < lines.Length; i++)
+        for (var i = 0; i < lines.Count; i++)
         {
-            for (var j = i + 1; j < lines.Length; j++)
+            for (var j = i + 1; j < lines.Count; j++)
             {
                 var (first, second) = (lines[i], lines[j]);
-                if (first.Start != second.Start && first.Start != second.End && first.End != second.Start && first.End != second.End)
-                    candidates.AddRange(Meet(first.A, first.B, second.A, second.B));
+                if (first.Start != second.Start && first.Start != second.End && first.End != second.Start && first.End != second.End
+                    && Meet(first.A, first.B, second.A, second.B) is { } meet)
+                    candidates.Add(meet);
             }
 
             foreach (var curve in curves)
-                candidates.AddRange(Meet(lines[i].A, lines[i].B, curve));
+                Meet(lines[i].A, lines[i].B, curve, candidates);
         }
 
         for (var i = 0; i < curves.Length; i++)
         {
             for (var j = i + 1; j < curves.Length; j++)
-                candidates.AddRange(Meet(curves[i], curves[j]));
+                Meet(curves[i], curves[j], candidates);
         }
 
         (double X, double Y)? nearest = null;
@@ -246,58 +253,68 @@ public sealed class SketchTool
         }
 
         return nearest;
+
+        // True when the tap is within HitPixels of the box of the pixels of the two ends, or when an end has no pixel.
+        bool Near(ToolPoint a, ToolPoint b)
+        {
+            if (a.PixelX is not { } ax || a.PixelY is not { } ay || b.PixelX is not { } bx || b.PixelY is not { } by)
+                return true;
+            return pixelX >= Math.Min(ax, bx) - HitPixels && pixelX <= Math.Max(ax, bx) + HitPixels
+                && pixelY >= Math.Min(ay, by) - HitPixels && pixelY <= Math.Max(ay, by) + HitPixels;
+        }
     }
 
-    // The point where the segments ab and cd cross, with each parameter in [0, 1]; none when they are
+    // The point where the segments ab and cd cross, with each parameter in [0, 1]; null when they are
     // parallel.
-    private static IEnumerable<(double X, double Y)> Meet((double X, double Y) a, (double X, double Y) b, (double X, double Y) c, (double X, double Y) d)
+    private static (double X, double Y)? Meet((double X, double Y) a, (double X, double Y) b, (double X, double Y) c, (double X, double Y) d)
     {
         var (rx, ry, sx, sy) = (b.X - a.X, b.Y - a.Y, d.X - c.X, d.Y - c.Y);
         var denominator = (rx * sy) - (ry * sx);
         if (denominator == 0)
-            yield break;
+            return null;
         var (qx, qy) = (c.X - a.X, c.Y - a.Y);
         var t = ((qx * sy) - (qy * sx)) / denominator;
         var u = ((qx * ry) - (qy * rx)) / denominator;
-        if (t is >= 0 and <= 1 && u is >= 0 and <= 1)
-            yield return (a.X + (t * rx), a.Y + (t * ry));
+        return t is >= 0 and <= 1 && u is >= 0 and <= 1 ? (a.X + (t * rx), a.Y + (t * ry)) : null;
     }
 
     // The points where the segment ab meets a curve: the roots t in [0, 1] of |a + t (b - a) - c| = r
-    // that are on the sweep of the curve.
-    private static IEnumerable<(double X, double Y)> Meet((double X, double Y) a, (double X, double Y) b, ToolCurve curve)
+    // that are on the sweep of the curve, added to the candidates.
+    private static void Meet((double X, double Y) a, (double X, double Y) b, ToolCurve curve, List<(double X, double Y)> candidates)
     {
         var (dx, dy, fx, fy) = (b.X - a.X, b.Y - a.Y, a.X - curve.Centre.X, a.Y - curve.Centre.Y);
         var squared = (dx * dx) + (dy * dy);
         var half = (fx * dx) + (fy * dy);
         var discriminant = (half * half) - (squared * ((fx * fx) + (fy * fy) - (curve.Radius * curve.Radius)));
         if (!(squared > 0) || discriminant < 0)
-            yield break;
+            return;
         var root = Math.Sqrt(discriminant);
-        foreach (var t in new[] { (-half - root) / squared, (-half + root) / squared })
+        for (var side = -1; side <= 1; side += 2)
         {
+            var t = (-half + (side * root)) / squared;
             var p = (a.X + (t * dx), a.Y + (t * dy));
             if (t is >= 0 and <= 1 && OnSweep(curve, p))
-                yield return p;
+                candidates.Add(p);
         }
     }
 
     // The points where two curves meet: on the line between the two centres at the distance "along"
-    // from the first centre, and at the distance "height" on each side of it, on the sweep of each.
-    private static IEnumerable<(double X, double Y)> Meet(ToolCurve first, ToolCurve second)
+    // from the first centre, and at the distance "height" on each side of it, on the sweep of each,
+    // added to the candidates.
+    private static void Meet(ToolCurve first, ToolCurve second, List<(double X, double Y)> candidates)
     {
         var (dx, dy) = (second.Centre.X - first.Centre.X, second.Centre.Y - first.Centre.Y);
         var distance = Math.Sqrt((dx * dx) + (dy * dy));
         if (!(distance > 0) || distance > first.Radius + second.Radius || distance < Math.Abs(first.Radius - second.Radius))
-            yield break;
+            return;
         var along = ((first.Radius * first.Radius) - (second.Radius * second.Radius) + (distance * distance)) / (2 * distance);
         var height = Math.Sqrt(Math.Max(0, (first.Radius * first.Radius) - (along * along)));
         var (mx, my) = (first.Centre.X + (along * dx / distance), first.Centre.Y + (along * dy / distance));
-        foreach (var side in new[] { -1.0, 1.0 })
+        for (var side = -1.0; side <= 1.0; side += 2.0)
         {
             var p = (mx - (side * height * dy / distance), my + (side * height * dx / distance));
             if (OnSweep(first, p) && OnSweep(second, p))
-                yield return p;
+                candidates.Add(p);
         }
     }
 

@@ -113,11 +113,13 @@ internal static class DiagnosticsScanner
     // T126: an expression joins text when it is an operand of an add, the expression of an interpolation, or an
     // argument of a call that joins text, through parentheses and casts. Another spelling of a call stays a rule in
     // text: each code is one constant.
+    // Finding T128 of the codebase review of 2026-11-03 (TASK-0170): the fix of T126 lost three forms that T120 caught:
+    // S.ToString(), an element of an array, and an argument of new string(...). The walk goes through each one too.
     private static bool JoinsText(ExpressionSyntax expression)
     {
         SyntaxNode node = expression;
-        while (node.Parent is ParenthesizedExpressionSyntax or CastExpressionSyntax)
-            node = node.Parent;
+        while (Outer(node) is { } outer)
+            node = outer;
         return node.Parent switch
         {
             BinaryExpressionSyntax add => add.IsKind(SyntaxKind.AddExpression),
@@ -126,6 +128,26 @@ internal static class DiagnosticsScanner
             _ => false,
         };
     }
+
+    // The expression that holds the node and keeps its text: a parenthesis, a cast, a call of ToString with no
+    // argument, an array of the node, or a new string of the node (T128). Null for each other parent.
+    private static SyntaxNode? Outer(SyntaxNode node) => node.Parent switch
+    {
+        ParenthesizedExpressionSyntax or CastExpressionSyntax => node.Parent,
+        MemberAccessExpressionSyntax { Name.Identifier.ValueText: "ToString", Parent: InvocationExpressionSyntax { ArgumentList.Arguments.Count: 0 } call } member
+            when member.Expression == node => call,
+        InitializerExpressionSyntax { Parent: ArrayCreationExpressionSyntax or ImplicitArrayCreationExpressionSyntax } initializer => initializer.Parent,
+        ArgumentSyntax { Parent: ArgumentListSyntax { Parent: ObjectCreationExpressionSyntax creation } } when IsString(creation.Type) => creation,
+        _ => null,
+    };
+
+    private static bool IsString(TypeSyntax type) => type switch
+    {
+        PredefinedTypeSyntax predefined => predefined.Keyword.IsKind(SyntaxKind.StringKeyword),
+        IdentifierNameSyntax name => name.Identifier.ValueText == "String",
+        QualifiedNameSyntax qualified => qualified.Right.Identifier.ValueText == "String",
+        _ => false,
+    };
 
     private static bool JoinName(ExpressionSyntax expression) => expression switch
     {

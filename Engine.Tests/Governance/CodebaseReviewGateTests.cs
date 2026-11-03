@@ -388,7 +388,10 @@ public class CodebaseReviewGateTests
             // Finding T125 of the codebase review of 2026-11-01 (TASK-0161): a list item of two lines with the version
             // on its first line, and a Greek nu, passed. The rule reads the paragraph back to its first line, and a
             // letter that is not ASCII before the digits counts as the v.
-            setext |= index > 0 && Regex.IsMatch(Unquoted(line), @"^\s*(?:=+|-+)\s*$") && Paragraph(lines, index - 1).Any(text => Regex.IsMatch(text, @"(?:v|[\p{L}-[\x00-\x7F]])\d+\.\d+"));
+            // Finding T129 of the codebase review of 2026-11-03 (TASK-0170): a capital V, and a space before the digits,
+            // passed; NearLedgerEntry takes both (T96). A class [vV\p{L}-[\x00-\x7F]] subtracts ASCII from v and V too,
+            // so the rule keeps two alternatives.
+            setext |= index > 0 && Regex.IsMatch(Unquoted(line), @"^\s*(?:=+|-+)\s*$") && Paragraph(lines, index - 1).Any(text => Regex.IsMatch(text, @"(?:[vV]|[\p{L}-[\x00-\x7F]])[^\S\n]*\d+\.\d+"));
             if (heading || nested || html || setext)
                 yield return $"line {index + 1} \"{line}\" is a heading that does not start with \"## v\"; the review counter reads that form only";
         }
@@ -566,6 +569,9 @@ public class CodebaseReviewGateTests
     // first line, and a Greek nu in place of the v.
     [InlineData("- v0.11 — An entry (K0b,\n  TASK-0003)\n    ===")]
     [InlineData("- ν0.11 — An entry (K0b, TASK-0003)\n    ===")]
+    // Finding T129 of the codebase review of 2026-11-03 (TASK-0170): a capital V and a space before the digits.
+    [InlineData("- V0.11 — An entry (K0b, TASK-0003)\n    ===")]
+    [InlineData("- v 0.11 — An entry (K0b, TASK-0003)\n    ===")]
     [InlineData("<h2>v0.11 — An entry (K0b, TASK-0003)</h2>")]
     [InlineData("## \u03BD0.11 — An entry (K0b, TASK-0003)")]
     [InlineData("## \uFF560.11 — An entry (K0b, TASK-0003)")]

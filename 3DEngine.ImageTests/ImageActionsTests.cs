@@ -135,6 +135,29 @@ public sealed class ImageActionsTests : IDisposable
         Assert.Equal(2, actions.Points.Count);
     }
 
+    // Finding V74 of the codebase review of 2026-11-03 (TASK-0170): the hover intent of the mode Sketch is not a point
+    // intent, so it sets the point of the mark during a calibration too. The mark of the snap shows only when no
+    // calibration waits for its taps, because the calibration takes the raw pixel and not the snap.
+    [Fact]
+    public async Task No_Mark_Of_The_Snap_Shows_During_A_Calibration()
+    {
+        using var host = new EngineHost(new InProcessMeshBackend());
+        var actions = new ImageActions(host.Session, new AssetStore(Path.Combine(_folder, "store")));
+        actions.Place(Picture("plan.png", 100, 50), Datums.XY.Id);
+        var image = Assert.Single(await host.Session.Read((document, _) => document.Images.ToList()));
+        (double X, double Y)? hover = (300, 300);
+
+        var free = NativeThreeDEngine.MarkPoint(hover, actions);
+        actions.StartCalibration(image.Id);
+        var calibrating = NativeThreeDEngine.MarkPoint(hover, actions);
+        actions.Cancel();
+
+        Assert.Equal(hover, free);
+        Assert.Null(calibrating);
+        Assert.Equal(hover, NativeThreeDEngine.MarkPoint(hover, actions));
+        Assert.Equal(hover, NativeThreeDEngine.MarkPoint(hover, null));
+    }
+
     // Finding V71 of the codebase review of 2026-11-01 (TASK-0162): two taps on one pixel gave a calibration
     // that the engine refuses, and the desktop kept the two points, so each next tap went nowhere. Now the
     // refusal clears the points, and two new taps calibrate the image.

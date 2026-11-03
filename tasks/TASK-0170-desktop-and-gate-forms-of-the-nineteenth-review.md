@@ -1,7 +1,7 @@
 ---
 id: 0170
 title: The mark of a calibration, the cost of the snap, and the next forms of three gates
-status: Ready
+status: Done
 phase: P0.73
 opened: 2026-11-03
 depends-on: [0168]
@@ -58,13 +58,13 @@ next form that the review found.
 
 ## Acceptance criteria
 
-- [ ] Each finding has a test or an injection that fails before the change and passes after it.
-- [ ] A clean build (`--no-incremental`) gives zero errors and zero warnings.
-- [ ] Continuous integration passes on the three runners, on the branch and on `main` after the merge.
+- [x] Each finding has a test or an injection that fails before the change and passes after it.
+- [x] A clean build (`--no-incremental`) gives zero errors and zero warnings.
+- [x] Continuous integration passes on the three runners, on the branch and on `main` after the merge.
 
 ## Outcome
 
-Status: Ready
+Status: Done · commit (the merge of the branch p073-desktop-gate-forms) · v0.172
 
 ## Method
 
@@ -75,3 +75,8 @@ Weakest:    the time of V75 depends on the runner; a limit of the allocation is 
 ## Progress
 
 - 2026-11-03: opened by the codebase review of 2026-11-03.
+- 2026-11-03: the five fixes. V74 is a static rule of the desktop, `NativeThreeDEngine.MarkPoint`, which the render
+  calls. V75 has a limit of the allocation: 18,768 bytes after the fix, and 573,064 bytes with each line tested.
+  The rule that the review recommended for T129, `[vV\p{L}-[\x00-\x7F]]`, subtracts ASCII from v and V too, and an
+  injection of it failed four forms; the rule keeps two alternatives.
+- 2026-11-03: nine injections; closed at v0.172.
