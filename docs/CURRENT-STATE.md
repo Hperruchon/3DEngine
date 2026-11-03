@@ -5155,3 +5155,45 @@ New tests: 3. The test list holds 1633 (1165 in `Engine.Tests`, 291 in `3DEngine
 `3DEngine.ImageTests`, 3 in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and
 zero warnings. Open entries: 14 of 15. New diagnostic codes: 0. Since the review of v0.168, 3 product milestones and 7
 entries followed it.
+
+## v0.176 — One regeneration evaluates the features again after an edit (P8d2, TASK-0174)
+
+The owner gave the order "go ahead with P8d2" on 2026-11-03 and answered four questions on the same day, each with the
+recommended answer. ADR-0055 holds them: one regeneration pass replaces the three rebuild paths and each test of v0.175
+passes with no change, a step whose inputs did not change keeps its solid, the faults stay in the records of the
+Document, and no suppress.
+
+**The change.**
+- `Regeneration` (`Engine.Core/Features/`) evaluates the steps in effect again after an edit, in two walks in the order
+  of the log: the planes (each datum and each reference of a sketch, `DatumResolver.Rebuild`), then the solids. The
+  planes come first because a reference later in the log can change a sketch that an earlier extrude reads.
+- A live extrude that the edit targets is the end of its own chain, so one evaluation serves the live and the consumed
+  extrudes (ADR-0039). Each end comes one time, in the log order of the command that creates it, and the `body.changed`
+  events of an edit come in that order. Before, each live extrude came before each end of a chain.
+- `SketchRebuild.Rebuild` and `SketchRebuild.RebuildDistance` give the inputs of their edit to the regeneration. The
+  private `Run` and the class `Chain` of `SketchRebuild` are gone.
+- The fault of a live extrude has the form of the fault of a chain, "The body '…' keeps its last solid: …". The code
+  and the data do not change.
+- Anti-objective 4 of the charter gets one sentence: the records of the Document are a projection of the log, so a fault
+  in a record lives in the cache. `Engine.Contracts` does not change.
+- ADR-0055 amends ADR-0037 item 5, ADR-0039 item 2 and ADR-0054 item 4. P8d is closed with P8d1 and P8d2.
+
+**Proof.** Each test of v0.175 passes with no change of the test (1165 in `Engine.Tests`). After each command of eight
+seeded sessions of 250 commands, with sketches on the origin planes and on the end of an extrude, moves that break and
+mend a profile, new distances, moves, cuts, undos and redos, 44,991 live bodies with no fault have the bounds and the
+volume of a build from nothing of their chain, and 6,637 bodies with a fault have a chain that a build from nothing
+cannot give. A count of the calls of the backend shows that an edit calls it only for the steps downstream of it. Ten
+injections each fail a test: the ends in the order of their extrudes, the live extrudes first, no skip of an unchanged
+extrude, no new evaluation of an end with a fault, an extrude that reads its old input, solids that read the old
+frames, a subtract that needs two changed operands, a new key for each call, no follower of a moved datum, and a
+`Translate` of an unchanged source that runs again.
+
+**What stays.** Each extrude upstream of an end that changes extrudes again, because the Document holds no record of a
+consumed body; a cache of solids across edits is out of this task. The build from nothing of the test uses the same
+backend and the same formulas as the engine, so it does not find a fault of `ExtrudeProfile` or of the backend. No edit
+of a box, a `Translate` or a `Subtract` exists; ADR-0055 item 6 says where one goes.
+
+New tests: 3. The test list holds 1636 (1168 in `Engine.Tests`, 291 in `3DEngine.Tests`, 174 in
+`3DEngine.ImageTests`, 3 in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and
+zero warnings. Open entries: 14 of 15. New diagnostic codes: 0. Since the review of v0.168, 4 product milestones and 8
+entries followed it.

@@ -1,7 +1,7 @@
 ---
 id: 0174
 title: One regeneration evaluates the features again after an edit, and each step whose inputs did not change keeps its solid
-status: Active
+status: Done
 phase: P8d2
 opened: 2026-11-03
 depends-on: [0173]
@@ -60,17 +60,17 @@ results of each current test do not change.
 
 ## Acceptance criteria
 
-- [ ] Each test of v0.175 passes with no change of the test.
-- [ ] After each command of eight random sessions, each live body with no fault has the solid that a build from
+- [x] Each test of v0.175 passes with no change of the test.
+- [x] After each command of eight random sessions, each live body with no fault has the solid that a build from
       nothing gives, and each body with a fault has a chain that a build from nothing cannot give.
-- [ ] An edit calls the backend only for the steps downstream of it, in the log order of the ends.
-- [ ] Each injection of the regeneration fails a test.
-- [ ] A clean build (`--no-incremental`) gives zero errors and zero warnings.
-- [ ] Continuous integration passes on the three runners, on the branch and on `main` after the merge.
+- [x] An edit calls the backend only for the steps downstream of it, in the log order of the ends.
+- [x] Each injection of the regeneration fails a test.
+- [x] A clean build (`--no-incremental`) gives zero errors and zero warnings.
+- [x] Continuous integration passes on the three runners, on the branch and on `main` after the merge.
 
 ## Outcome
 
-Status: Active
+Status: Done · commit (the merge of the branch p8d2-regeneration) · v0.176
 
 ## Method
 
@@ -82,4 +82,5 @@ Weakest:    the build from nothing of the test uses the same backend and the sam
 
 ## Progress
 
-- 2026-11-03: opened with the four answers of the owner. The regeneration, the two edits, two tests and the records.
+- 2026-11-03: opened with the four answers of the owner. The regeneration, the two edits, three tests and the records.
+- 2026-11-03: ten injections each fail a test; closed at v0.176.
