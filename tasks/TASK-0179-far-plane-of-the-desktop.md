@@ -1,7 +1,7 @@
 ---
 id: 0179
 title: The far plane of the camera of the desktop follows the box of the visible bodies
-status: Active
+status: Done
 phase: P0.77
 opened: 2026-11-04
 depends-on: [0178]
@@ -52,16 +52,16 @@ The desktop frames a model of 1900 mm whole, in a wide and in a narrow window, w
 
 ## Acceptance criteria
 
-- [ ] The default camera cannot frame the shelf, and the far plane for its box frames each corner in the picture and in
+- [x] The default camera cannot frame the shelf, and the far plane for its box frames each corner in the picture and in
       front of the far plane, for the aspects 16:9, 1 and 0.3 and far from the origin.
-- [ ] The image test of the dimensions passes with no far plane of its own.
-- [ ] Each injection of the change fails a test.
-- [ ] A clean build (`--no-incremental`) gives zero errors and zero warnings.
-- [ ] Continuous integration passes on the three runners, on the branch and on `main` after the merge.
+- [x] The image test of the dimensions passes with no far plane of its own.
+- [x] Each injection of the change fails a test.
+- [x] A clean build (`--no-incremental`) gives zero errors and zero warnings.
+- [x] Continuous integration passes on the three runners, on the branch and on `main` after the merge.
 
 ## Outcome
 
-Status: Active
+Status: Done · commit (the merge of the branch p077-far-plane) · v0.180
 
 ## Method
 
@@ -72,3 +72,4 @@ Weakest:    no one opened the desktop window; the image test renders the same co
 ## Progress
 
 - 2026-11-04: opened with the order of the owner; the rule, its call, the tests and five injections.
+- 2026-11-04: closed at v0.180.

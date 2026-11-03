@@ -155,6 +155,7 @@ Therefore each approved objective must have a track here.
 - P8d — The three layers: the log, the ordered feature list and the regeneration. Closed at v0.176, with P8d1 and P8d2 in this list.
 - P0.75 — The walk of the planes repeats until no reference solves a sketch again, and an edit of a sketch takes the record of the walk. v0.178, TASK-0176.
 - R13 — The desktop shows the dimensions of the overall box and of a selected body, with a toggle in the panel. v0.179, TASK-0178, ADR-0056.
+- P0.77 — The far plane of the camera of the desktop follows the box of the visible bodies. v0.180, TASK-0179.
 
 ## Track 0 — Foundations
 
