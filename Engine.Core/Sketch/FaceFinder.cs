@@ -18,7 +18,7 @@ public static class FaceFinder
         Document document, Guid body, (double X, double Y, double Z) point, (double X, double Y, double Z) normal)
     {
         ArgumentNullException.ThrowIfNull(document);
-        var graph = FeatureGraph.Of(document.Log);
+        var graph = FeatureGraph.Of(document);
         var length = Math.Sqrt((normal.X * normal.X) + (normal.Y * normal.Y) + (normal.Z * normal.Z));
         if (!(length > 0) || !double.IsFinite(length) || !double.IsFinite(point.X) || !double.IsFinite(point.Y) || !double.IsFinite(point.Z))
             return (null, null, "A face needs a finite point and a normal of a length greater than 0.");
@@ -35,7 +35,7 @@ public static class FaceFinder
 
         DatumResolver.ExtrudeState State(ExtrudeCommand extrude) => new(
             SketchModel.Find(document, extrude.SketchId),
-            SketchRebuild.DistanceInEffect(document.Log, extrude.CommandId) ?? extrude.Distance);
+            SketchRebuild.DistanceInEffect(document, extrude.CommandId) ?? extrude.Distance);
         DatumFrame? FrameOf(Guid id) => DatumResolver.Frame(document, id);
 
         foreach (var reference in Faces(feature, State))

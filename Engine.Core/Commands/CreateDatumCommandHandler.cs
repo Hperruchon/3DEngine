@@ -66,7 +66,7 @@ public sealed class CreateDatumCommandHandler : ICommandHandler, ICommandEncoder
 
         // The datum takes the identifier of the command, so a command that the log holds is refused
         // before it gives a second datum, as for a sketch and an image.
-        if (document.Log.Any(entry => entry.Command.CommandId == command.CommandId))
+        if (Features.FeatureList.Of(document).Holds(command.CommandId))
             return Task.FromResult(Failure(
                 DiagnosticCodes.DatumIdInUse,
                 $"The log holds a command with the id '{command.CommandId}', and a datum takes the id of its command."));
@@ -77,11 +77,11 @@ public sealed class CreateDatumCommandHandler : ICommandHandler, ICommandEncoder
         var reference = new DatumReference(create.FeatureId, create.Element, create.ItemId);
         var (frame, reason) = DatumResolver.Resolve(
             reference,
-            FeatureGraph.Of(document.Log),
+            FeatureGraph.Of(document),
             int.MaxValue,
             extrude => new DatumResolver.ExtrudeState(
                 SketchModel.Find(document, extrude.SketchId),
-                SketchRebuild.DistanceInEffect(document.Log, extrude.CommandId) ?? extrude.Distance),
+                SketchRebuild.DistanceInEffect(document, extrude.CommandId) ?? extrude.Distance),
             id => DatumResolver.Frame(document, id));
         if (frame is null)
             return Task.FromResult(Failure(DiagnosticCodes.DatumReferenceInvalid, reason!));

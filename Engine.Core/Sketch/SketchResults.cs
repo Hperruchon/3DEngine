@@ -76,7 +76,7 @@ public static class SketchResults
     internal static readonly AsyncLocal<bool> ApplyingEntry = new();
 
     public static CommandHandlerResult? InUse(Document document, Command command, bool createsItem)
-        => (createsItem || !ApplyingEntry.Value) && document.Log.Any(entry => entry.Command.CommandId == command.CommandId)
+        => (createsItem || !ApplyingEntry.Value) && Features.FeatureList.Of(document).Holds(command.CommandId)
             ? Failure(DiagnosticCodes.SketchIdInUse, $"The log holds a command with the id '{command.CommandId}', and a sketch item takes the id of its command.")
             : null;
 

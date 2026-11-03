@@ -15,7 +15,7 @@ internal static class ImageResults
     // takes the identifier of its command, so a command that the log holds is refused. A
     // command that changes an image is refused only outside an open or a replay.
     public static CommandHandlerResult? InUse(Document document, Command command, bool createsImage)
-        => (createsImage || !SketchResults.ApplyingEntry.Value) && document.Log.Any(entry => entry.Command.CommandId == command.CommandId)
+        => (createsImage || !SketchResults.ApplyingEntry.Value) && Features.FeatureList.Of(document).Holds(command.CommandId)
             ? Failure(DiagnosticCodes.ImageIdInUse, $"The log holds a command with the id '{command.CommandId}', and an image takes the id of its command.")
             : null;
 
