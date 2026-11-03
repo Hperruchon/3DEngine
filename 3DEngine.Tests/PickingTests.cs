@@ -79,6 +79,23 @@ public class PickingTests
         Assert.Equal(9.0, hit.Value.Distance, 9);
     }
 
+    // ADR-0053 item 5 (phase K0i, TASK-0171): a hit gives its point and the normal of the hit triangle toward the
+    // origin of the ray, for each order of the vertices of the triangle.
+    [Fact]
+    public void A_Hit_Gives_Its_Point_And_A_Normal_Toward_The_Eye()
+    {
+        var ray = new Ray((0.25, 0, 10), (0, 0, -1));
+        var up = new PickBody(Guid.NewGuid(), [-1, -1, 2, 1, -1, 2, 0, 1, 2], [0, 1, 2], true);
+        var down = up with { Indices = [0, 2, 1] };
+
+        var first = Picker.Nearest(ray, [up])!.Value;
+        var second = Picker.Nearest(ray, [down])!.Value;
+
+        Assert.Equal((0.25, 0.0, 2.0), first.Point);
+        Assert.Equal((0.0, 0.0, 1.0), first.Normal);
+        Assert.Equal((0.0, 0.0, 1.0), second.Normal);
+    }
+
     // ADR-0029 item 3: a hidden body cannot be picked, so the body behind it is.
     [Fact]
     public void A_Hidden_Body_Is_Not_Picked()
