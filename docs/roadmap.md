@@ -155,6 +155,7 @@ Therefore each approved objective must have a track here.
 - P8d — The three layers: the log, the ordered feature list and the regeneration. Closed at v0.176, with P8d1 and P8d2 in this list.
 - P0.75 — The walk of the planes repeats until no reference solves a sketch again, and an edit of a sketch takes the record of the walk. v0.178, TASK-0176.
 - R13 — The desktop shows the dimensions of the overall box and of a selected body, with a toggle in the panel. v0.179, TASK-0178, ADR-0056.
+- P0.77 — The far plane of the camera of the desktop follows the box of the visible bodies. v0.180, TASK-0179.
 
 ## Track 0 — Foundations
 
@@ -238,6 +239,7 @@ This track removes each condition that blocks other work.
 | P0.74 | A put of an asset waits for a name that another program holds, and does not replace a name that it cannot read (register entry R-0050). TASK-0172. | 1 |
 | P0.75 | The walk of the planes repeats until no datum and no sketch changes, and an edit of a sketch takes the record of the walk (E128 and E129 of the second codebase review of 2026-11-03; before R13 by the order of the owner). TASK-0176. | 1–2 |
 | P0.76 | A sketch on a face looks from the side of the eye, the arm of a face ends with a new sketch, a datum on a short side has axes of the length 1, and the next forms of three gates (V76, V77, E130, T130 to T132; after R13). TASK-0177. | 2–3 |
+| P0.77 | The far plane of the camera of the desktop follows the box of the visible bodies, so a model larger than 1000 mm shows whole (register entry R-0051; the owner, 2026-11-04, before P0.76). TASK-0179. | 1 |
 
 ## Track P — The platform
 
@@ -350,7 +352,8 @@ The tracks are not strictly sequential, but three rules hold:
    The second codebase review of 2026-11-03 puts P0.76, which holds medium and low findings, after R13, by the rule of
    `docs/templates.md`, section 7. On 2026-11-03 the owner gave the order "merge, fix E128 and E129, then R13", so
    P0.75, which holds two medium findings, comes before R13. The owner added R13 to the plan on 2026-11-03, after
-   P0.75 and before P0.76.
+   P0.75 and before P0.76. On 2026-11-04 the owner gave the order "merge when green, then fix R-0051", so P0.77 comes
+   after R13 and before P0.76.
 2. R2 blocks each later phase in track R. No mesh leaves the geometry backend today.
 3. K4 needs K0, K1 and K2. Do not start K4 before the reference model exists.
 4. The path to the milestone "CAD on one part" (the owner, 2026-10-27, KD2): R7b, R8a, R8b, the codebase

@@ -4,6 +4,7 @@ using Engine.Core.Commands;
 using Engine.Geometry.Manifold;
 using ThreeDEngine.Core.Input;
 using ThreeDEngine.Core.Measuring;
+using ThreeDEngine.Core.Models;
 using ThreeDEngine.Desktop;
 using ThreeDEngine.Desktop.Ui;
 using ThreeDEngine.Vulkan;
@@ -48,7 +49,6 @@ public class DimensionImageTests
         using var ui = new DesktopUi("http://127.0.0.1:5180", Engine.Contracts.Document.Millimetre);
         var scene = SessionScene.Create();
         var camera = scene.Cameras[0];
-        camera.FarPlane = 20000f;
         var display = new Vector2(Width, Height);
         var selected = boards[2];
         byte[] pixels;
@@ -63,6 +63,12 @@ public class DimensionImageTests
             var (atlasWidth, atlasHeight, rgba) = ui.FontAtlas();
             ui.SetFontTexture(panelRenderer.CreateTexture(atlasWidth, atlasHeight, rgba));
             renderer.Update(scene, camera, (float)Width / Height);
+
+            // Register entry R-0051 (TASK-0179): the update gives the camera the far plane of the box of the shelf, so the
+            // frame holds it whole; up to v0.179 this test set a far plane of 20000 itself.
+            var shelf = renderer.Bounds!.Value;
+            Assert.Equal(new Camera { Distance = camera.Distance }.FarPlaneFor(shelf.Min, shelf.Max), camera.FarPlane);
+            Assert.True(camera.Distance + 1000 < camera.FarPlane, $"The eye at {camera.Distance} does not hold the shelf before the far plane {camera.FarPlane}.");
             camera.YawDegrees = 35;
             camera.PitchDegrees = 20;
             camera.Distance *= 1.3;

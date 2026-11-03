@@ -24,7 +24,7 @@ public sealed class Camera : Entity
     // plane; Projection checks that pair, because a caller can set the two in each order.
     private float _fieldOfViewDegrees = 60.0f;
     private float _nearPlane = 0.1f;
-    private float _farPlane = 1000.0f;
+    private float _farPlane = DefaultFarPlane;
     private double _distance = 10.0;
 
     /// <summary>The vertical field of view, greater than 0 and less than 180 degrees.</summary>
@@ -43,6 +43,29 @@ public sealed class Camera : Entity
         set => _nearPlane = float.IsFinite(value) && value > 0
             ? value
             : throw new ArgumentOutOfRangeException(nameof(NearPlane), value, "A near plane is finite and greater than 0.");
+    }
+
+    /// <summary>The far plane of a new camera.</summary>
+    public const float DefaultFarPlane = 1000.0f;
+
+    /// <summary>
+    /// Register entry R-0051 (TASK-0179): the far plane that holds a box of the scene. The
+    /// far plane of 1000 cut a model in millimetres larger than about 1000 mm, because
+    /// Frame and Zoom keep the distance at half the far plane. The far plane is a distance
+    /// from the eye, so the radius of the box sets it. Sixteen times the radius keeps a
+    /// framed box whole for an aspect down to 0.3: there Frame puts the eye at about 5.9
+    /// times the radius, which is less than half the far plane, and the far side of the box
+    /// at about 6.9 times the radius. The far plane is never less than the default, and
+    /// never less than two times the current distance: with the target inside the box, each
+    /// point of it is at most the distance and two radii from the eye, and the larger of 16
+    /// radii and two distances holds that.
+    /// </summary>
+    public float FarPlaneFor((double X, double Y, double Z) min, (double X, double Y, double Z) max)
+    {
+        var (dx, dy, dz) = (max.X - min.X, max.Y - min.Y, max.Z - min.Z);
+        var radius = Math.Sqrt(dx * dx + dy * dy + dz * dz) / 2.0;
+        var far = Math.Max(DefaultFarPlane, Math.Max(16.0 * radius, 2.0 * Distance));
+        return double.IsFinite(far) && far < float.MaxValue ? (float)far : float.MaxValue;
     }
 
     /// <summary>The distance of the far plane, finite and greater than 0.</summary>
