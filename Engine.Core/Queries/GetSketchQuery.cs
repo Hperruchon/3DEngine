@@ -30,6 +30,10 @@ public sealed record SketchInfo(
 {
     // ADR-0052 item 9: each reference of the sketch to an edge or a vertex of a feature.
     public IReadOnlyList<SketchReference> References { get; init; } = [];
+
+    // ADR-0053 item 7: the frame of the datum of the sketch now, an origin plane or the last frame of a datum of the
+    // Document, or null when the datum does not exist. A position (x, y) of the sketch is the point O + x U + y V.
+    public DatumFrame? Frame { get; init; }
 }
 
 // Residual is null when it is not finite, for example for points near the largest double

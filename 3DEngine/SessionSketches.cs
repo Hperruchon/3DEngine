@@ -10,11 +10,14 @@ namespace ThreeDEngine.Desktop;
 // events of the session in one read, so it misses no sketch. The action of the
 // subscription runs inside each commit and only puts the identifier in a queue; the render
 // loop calls Apply, which reads each changed sketch with the query GetSketch outside the
-// commit. The desktop draws a sketch and does not change it: K2b gives the tools.
+// commit. The desktop draws a sketch and does not change it: K2b gives the tools. ADR-0053 item 7 (phase K0i,
+// TASK-0171): the record of a sketch holds the frame of its datum, so a change of the frame of a datum reads each live
+// sketch on it again.
 internal sealed class SessionSketches : IDisposable
 {
     private readonly EngineHost _host;
     private readonly ConcurrentQueue<(Guid SketchId, bool Removed)> _changes = new();
+    private readonly ConcurrentQueue<Guid> _datums = new();
     private readonly IDisposable _subscription;
     private readonly Dictionary<Guid, SketchInfo> _live = new();
 
@@ -32,8 +35,14 @@ internal sealed class SessionSketches : IDisposable
     // Inside the commit: no call of the session, and no wait.
     private void OnEvent(EventRecord record)
     {
-        if (record.Payload is not IReadOnlyDictionary<string, object?> payload
-            || payload.GetValueOrDefault("sketchId") is not Guid sketchId)
+        if (record.Payload is not IReadOnlyDictionary<string, object?> payload)
+            return;
+        if (record.Kind == "datum.changed" && payload.GetValueOrDefault("datumId") is Guid datumId)
+        {
+            _datums.Enqueue(datumId);
+            return;
+        }
+        if (payload.GetValueOrDefault("sketchId") is not Guid sketchId)
             return;
 
         switch (record.Kind)
@@ -62,6 +71,12 @@ internal sealed class SessionSketches : IDisposable
     // one time, in the order of its first change, after the queue is empty.
     public void Apply()
     {
+        while (_datums.TryDequeue(out var datum))
+        {
+            foreach (var sketch in _live.Values.Where(sketch => sketch.DatumId == datum).ToList())
+                _changes.Enqueue((sketch.SketchId, false));
+        }
+
         var changed = new List<Guid>();
         while (_changes.TryDequeue(out var change))
         {

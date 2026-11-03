@@ -5045,3 +5045,43 @@ New tests: 16. The test list holds 1618 (1155 in `Engine.Tests`, 290 in `3DEngin
 `3DEngine.ImageTests`, 3 in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and
 zero warnings. Open entries: 14 of 15. New diagnostic codes: 0. Since the review of v0.168, 1 product milestone and 4
 entries followed it.
+
+## v0.173 — The desktop starts a sketch on a face, and draws a sketch on a datum of the Document (K0i, TASK-0171)
+
+The owner chose K0i after P0.72 and P0.73 (Q1 A of the review of v0.169), gave the order "go ahead" on 2026-11-03, and
+answered four questions on the same day, each with the recommended answer. ADR-0053 holds them: an engine query names
+the face, a tap reuses a datum on the face or creates one, the walk goes through a `Translate` and to the minuend of a
+`Subtract`, and the items of a reference draw dim. K0 is complete with K0g, K0h and K0i.
+
+**The change.**
+- `GetFaceAt { bodyId, x, y, z, nx, ny, nz }` gives `reference` and `datumId`. `FaceFinder` walks from the body back
+  through each `Translate` and through a `Subtract` to its minuend, to an `Extrude` or a `CreateBox`. It resolves each
+  face at the end of the log and takes the first one whose normal is within a dot product of 0.999, whose plane holds the
+  point within t = 1e-6 × (1 + the largest coordinate), and whose extent holds the point: the loop of the profile for a
+  cap, the rectangle of the line and the height for a side, and the rectangle of the half sizes for a box. `datumId` is a
+  datum with the same reference, no fault and the frame of the face now. A curved side, a face of a subtrahend and a
+  point off each face give `E-DATUM-FACE-NOT-FOUND`, and a body that is not live gives `E-GEOM-BODY-NOT-FOUND`.
+- A pick gives the point and the normal of the hit triangle, turned toward the eye.
+- The window has the button `Face` after `XY`, `XZ` and `YZ`. It arms the next tap of the mode Scene; the tap calls
+  `GetFaceAt`, then `CreateDatum` when no datum is on the face, then `CreateSketch`, and the camera faces the normal.
+- `GetSketch` gives `frame`. The overlay, the tool, the mark, the pixel of a snap and the camera use it, so a sketch on a
+  datum of the Document draws and takes taps where the datum is. `SessionSketches` reads each sketch on a datum again
+  after `datum.changed`.
+- The overlay draws the points and the lines of a reference in a dim colour (`Mark.Reference`).
+- One new code in the namespace `DATUM`. ADR-0053 amends ADR-0029 item 1, ADR-0034 item 6 and ADR-0051 item 11.
+- R-0050 records the failure of the run 41612851491 on `main` of v0.172: on windows-latest the parallel puts of the asset
+  store gave "Access to the path is denied" (finding E120, TASK-0160). The branch run of the same tree passed.
+- Correction: the change commit `596dacc` says "Sixteen new tests". The count is eleven.
+
+**Proof.** Thirteen injections each fail their test: a walk with no `Translate`, no check of the normal, of the
+rectangle of a box face, of the loop of a cap or of the height of a side, a reuse of a datum with another frame, no frame
+in `GetSketch`, a normal of a pick that is not turned, an overlay and a tool that ignore the origin of the frame, no dim
+mark, no read after `datum.changed`, and a tap that always creates a datum.
+
+**What stays.** No one opened the window. The armed tap of the render loop has no test; its parts, the pick and
+`SketchActions.CreateOnFace`, have tests. A tool that adds a reference by a tap waits for a later phase.
+
+New tests: 11. The test list holds 1629 (1161 in `Engine.Tests`, 291 in `3DEngine.Tests`, 174 in
+`3DEngine.ImageTests`, 3 in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and
+zero warnings. Open entries: 15 of 15. New diagnostic codes: 1. Since the review of v0.168, 2 product milestones and 5
+entries followed it.

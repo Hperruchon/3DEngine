@@ -50,6 +50,9 @@ public sealed class NativeThreeDEngine : IThreeDEngine, IDisposable
 
     // ADR-0034: the active sketch, its tool, and the commands of the sketch mode.
     private SketchActions? _sketchActions;
+
+    // ADR-0053 item 6 (phase K0i, TASK-0171): true when the next tap of the mode Scene starts a sketch on a face.
+    private bool _faceArmed;
     private TimeSpan _delta;
 
     // ADR-0046 items 2 to 4: the store of the assets, the live images, and the window of the images.
@@ -148,6 +151,14 @@ public sealed class NativeThreeDEngine : IThreeDEngine, IDisposable
                 && _imageActions.Tap(intent, Camera, window.width, window.height, _images.Live))
                 continue;
 
+            // ADR-0053 item 6: an armed tap of the mode Scene starts a sketch on the face under it.
+            if (_faceArmed && intent is SelectIntent face)
+            {
+                _faceArmed = false;
+                _documentMessage = SketchOnFace(face.X, face.Y);
+                continue;
+            }
+
             // A select, a hide and a show all go to the selection and to the session (ADR-0029).
             if (_actions is not null && _renderer is not null && _actions.Apply(intent, Pick, _renderer.LiveBodies))
                 continue;
@@ -196,6 +207,21 @@ public sealed class NativeThreeDEngine : IThreeDEngine, IDisposable
             || window.width == 0 || window.height == 0)
             return null;
         return _gizmo.Layout(Camera, window.width, window.height, _renderer.Pivot(body));
+    }
+
+    // ADR-0053 item 6: the pick under the tap, then the face, the datum and the sketch. It gives the message of a tap
+    // that hits no body or of a refusal, or null.
+    private string? SketchOnFace(double x, double y)
+    {
+        var window = _window.Extent;
+        if (_renderer is null || _sketchActions is null || window.width == 0 || window.height == 0)
+            return null;
+        if (Picker.Nearest(Picker.RayThrough(Camera, x, y, window.width, window.height), _renderer.PickBodies) is not { } hit)
+            return "No body is under the tap, so no sketch started.";
+        if (_sketchActions.CreateOnFace(hit.Id, hit.Point, hit.Normal) is not { } created)
+            return _sketchActions.Message;
+        Face(created.Frame.Normal);
+        return null;
     }
 
     // The nearest visible body under a point of the window, or null (ADR-0029 item 1).
@@ -298,14 +324,18 @@ public sealed class NativeThreeDEngine : IThreeDEngine, IDisposable
 
         switch (action)
         {
+            case SketchOnFaceAction:
+                _faceArmed = sketch.Active is null;
+                _documentMessage = _faceArmed ? "Tap a face of a body for the new sketch." : "Finish the active sketch first.";
+                break;
             case NewSketchAction create:
                 if (sketch.Create(create.Datum) is not null)
                     Face(create.Datum);
                 break;
             case EditSketchAction edit:
                 sketch.Edit(edit.Sketch);
-                if (_sketches?.Live.FirstOrDefault(live => live.SketchId == edit.Sketch) is { } info)
-                    Face(info.DatumId);
+                if (_sketches?.Live.FirstOrDefault(live => live.SketchId == edit.Sketch) is { } info && SketchOverlay.PlaneOf(info) is { } plane)
+                    Face(plane.Normal);
                 break;
             case FinishSketchAction:
                 sketch.Finish();
@@ -357,8 +387,11 @@ public sealed class NativeThreeDEngine : IThreeDEngine, IDisposable
     private void Face(Guid datum)
     {
         if (Datums.Find(datum) is { } plane)
-            SketchCamera.Face(Camera, (plane.Normal.X, plane.Normal.Y, plane.Normal.Z));
+            Face(plane.Normal);
     }
+
+    // ADR-0053 item 6: the camera looks along the normal of a frame of the Document too.
+    private void Face(DatumAxis normal) => SketchCamera.Face(Camera, (normal.X, normal.Y, normal.Z));
 
     // A save in the serial section of the session, on the render loop (ADR-0030 item 3).
     private string SaveDocument(string name)

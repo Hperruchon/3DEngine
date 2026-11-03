@@ -7,7 +7,7 @@ date: 2026-11-02
 supersedes: []
 superseded-by: []
 amends: ['0012', '0031', '0033', '0036', '0039']
-amended-by: ['0052']
+amended-by: ['0052', '0053']
 affects:
   - Engine.Contracts/Sketch/DatumRecord.cs
   - Engine.Core/Sketch/DatumResolver.cs
@@ -139,3 +139,5 @@ The owner gave the order "start K0" on 2026-11-02 and answered eight questions o
   Q2 A and Q3 A of the owner: a frame that is not finite does not resolve, and the side of a line scales by the
   larger of its two components when its square underflows or overflows; a fault that stays gives no new warning; and
   the warning of an extrude on a moved datum gives `datumId`. Until TASK-0169 each edit gave the warning again.
+- 2026-11-03 · TASK-0171 · ADR-0053 amends item 11: the desktop starts a sketch on a face and draws a sketch on a
+  datum of the Document (K0i).

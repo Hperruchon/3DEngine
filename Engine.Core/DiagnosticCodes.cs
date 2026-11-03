@@ -101,6 +101,9 @@ public static class DiagnosticCodes
     public const string DatumNotFound = "E-DATUM-NOT-FOUND";
     public const string DatumReferenceFailed = "W-DATUM-REFERENCE-FAILED";
 
+    // ADR-0053 (phase K0i, TASK-0171): the face under a point of a hit.
+    public const string DatumFaceNotFound = "E-DATUM-FACE-NOT-FOUND";
+
     // ADR-0052 (phase K0h, TASK-0167): an edge or a vertex of a feature as a reference of a sketch.
     public const string SketchReferenceInvalid = "E-SKETCH-REFERENCE-INVALID";
     public const string SketchReferenceCycle = "E-SKETCH-REFERENCE-CYCLE";

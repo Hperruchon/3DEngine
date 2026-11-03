@@ -13,7 +13,9 @@ namespace ThreeDEngine.Desktop;
 // of Picker.RayThrough, so a sketch and a pick agree on each pixel. This is presentation:
 // it uses the camera in double precision and runs outside the log (ADR-0007). With a focus, the
 // active sketch has its labels, its selected items and the ring of the first point of an open
-// chain, and each other sketch is grey (ADR-0034 item 9).
+// chain, and each other sketch is grey (ADR-0034 item 9). ADR-0053 item 7 (phase K0i, TASK-0171): a sketch draws on
+// the frame of its datum, an origin plane or a datum of the Document, and item 8: the lines and the points of a
+// reference of the sketch draw dim.
 internal static class SketchOverlay
 {
     // How an item draws: an item of the active sketch, or of all sketches when no sketch is
@@ -23,6 +25,7 @@ internal static class SketchOverlay
         Active,
         Selected,
         Other,
+        Reference,
     }
 
     public sealed record Stroke(Vector2 A, Vector2 B, Mark Mark);
@@ -56,11 +59,12 @@ internal static class SketchOverlay
         var frame = Frame.Of(camera, width, height);
         foreach (var sketch in sketches)
         {
-            if (Datums.Find(sketch.DatumId) is not { } datum)
+            if (PlaneOf(sketch) is not { } datum)
                 continue;
 
             var active = focus is null || focus.Sketch == sketch.SketchId;
-            Mark MarkOf(Guid item) => !active ? Mark.Other : focus?.Selected.Contains(item) == true ? Mark.Selected : Mark.Active;
+            var driven = Driven(sketch);
+            Mark MarkOf(Guid item) => !active ? Mark.Other : focus?.Selected.Contains(item) == true ? Mark.Selected : driven.Contains(item) ? Mark.Reference : Mark.Active;
             var named = focus is not null && active ? SketchText.Labels(sketch) : null;
 
             var world = sketch.Points.ToDictionary(point => point.Id, point => frame.ToCamera(World(datum, point.X, point.Y)));
@@ -114,7 +118,7 @@ internal static class SketchOverlay
     public static SketchPicture Picture(SketchInfo sketch, Camera? camera = null, double width = 0, double height = 0)
     {
         ArgumentNullException.ThrowIfNull(sketch);
-        var frame = camera is not null && width > 0 && height > 0 && Datums.Find(sketch.DatumId) is { } datum ? (Frame.Of(camera, width, height), datum) : default;
+        var frame = camera is not null && width > 0 && height > 0 && PlaneOf(sketch) is { } datum ? (Frame.Of(camera, width, height), datum) : default;
         var points = sketch.Points.Select(point =>
         {
             if (frame.Item1 is null)
@@ -136,7 +140,7 @@ internal static class SketchOverlay
         return new SketchPicture(points, [.. sketch.Lines.Select(line => new ToolLine(line.Id, line.Start, line.End))], [.. sketch.Constraints.Select(constraint => constraint.Id)], curves)
         {
             // Phase R11c (TASK-0165): the pixel of an intersection, for its snap.
-            ToPixel = frame.Item1 is null ? null : position => Pixel(sketch.DatumId, camera!, width, height, position) is { } pixel ? (pixel.X, pixel.Y) : null,
+            ToPixel = frame.Item1 is null ? null : position => Pixel(sketch, camera!, width, height, position) is { } pixel ? (pixel.X, pixel.Y) : null,
         };
     }
 
@@ -209,14 +213,18 @@ internal static class SketchOverlay
     public static Vector2? Pixel(SketchInfo sketch, Camera camera, double width, double height, (double X, double Y) position)
     {
         ArgumentNullException.ThrowIfNull(sketch);
-        return Pixel(sketch.DatumId, camera, width, height, position);
+        return Pixel(PlaneOf(sketch), camera, width, height, position);
     }
 
-    // The pixel of a position of the plane of a datum, or null; ADR-0047 item 3 draws a proposal with it.
+    // The pixel of a position of an origin plane, or null; ADR-0047 item 3 draws a proposal with it. An image stays on
+    // an origin plane (ADR-0053 item 10).
     public static Vector2? Pixel(Guid datumId, Camera camera, double width, double height, (double X, double Y) position)
+        => Pixel(OriginPlane(datumId), camera, width, height, position);
+
+    private static Vector2? Pixel(DatumFrame? plane, Camera camera, double width, double height, (double X, double Y) position)
     {
         ArgumentNullException.ThrowIfNull(camera);
-        if (!(width > 0 && height > 0) || Datums.Find(datumId) is not { } datum)
+        if (!(width > 0 && height > 0) || plane is not { } datum)
             return null;
         var frame = Frame.Of(camera, width, height);
         var seen = frame.ToCamera(World(datum, position.X, position.Y));
@@ -226,8 +234,24 @@ internal static class SketchOverlay
         return Finite(pixel) ? pixel : null;
     }
 
-    private static (double X, double Y, double Z) World(Datum datum, double x, double y)
-        => ((x * datum.U.X) + (y * datum.V.X), (x * datum.U.Y) + (y * datum.V.Y), (x * datum.U.Z) + (y * datum.V.Z));
+    // ADR-0053 item 7: the frame of the datum of a sketch, as GetSketch gives it, or the origin plane of its datum when
+    // the record holds no frame.
+    public static DatumFrame? PlaneOf(SketchInfo sketch)
+    {
+        ArgumentNullException.ThrowIfNull(sketch);
+        return sketch.Frame ?? OriginPlane(sketch.DatumId);
+    }
+
+    private static DatumFrame? OriginPlane(Guid datumId)
+        => Datums.Find(datumId) is { } datum ? new DatumFrame(new DatumPoint(0, 0, 0), datum.U, datum.V, datum.Normal) : null;
+
+    // Item 8: the points and the lines that the references of the sketch drive.
+    private static HashSet<Guid> Driven(SketchInfo sketch)
+        => [.. sketch.References.SelectMany(reference => reference.Line is { } line ? reference.Points.Append(line) : reference.Points)];
+
+    // A position (x, y) of the plane is the point O + x U + y V.
+    private static (double X, double Y, double Z) World(DatumFrame datum, double x, double y)
+        => (datum.Origin.X + (x * datum.U.X) + (y * datum.V.X), datum.Origin.Y + (x * datum.U.Y) + (y * datum.V.Y), datum.Origin.Z + (x * datum.U.Z) + (y * datum.V.Z));
 
     // A point in the frame of the camera: to the right, up, and forward from the eye.
     private readonly record struct CameraPoint(double Right, double Up, double Forward);

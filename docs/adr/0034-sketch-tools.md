@@ -7,7 +7,7 @@ date: 2026-10-28
 supersedes: []
 superseded-by: []
 amends: ['0026', '0029', '0032']
-amended-by: ['0041']
+amended-by: ['0041', '0053']
 affects:
   - 3DEngine.Core/Input/**
   - 3DEngine.Core/Picking/**
@@ -233,3 +233,5 @@ engine does not change. The tool is a pure state machine, so a test reads it wit
 - 2026-10-31 · TASK-0125 · Item 4: the kinds of K2c on lines in the window (phase K2f).
 - 2026-10-31 · TASK-0127 · Item 4: the selection holds three items, and the window has Symmetric (phase K2g, the
   answer "1 3 4" of the owner).
+- 2026-11-03 · TASK-0171 · ADR-0053 amends item 6: the button `Face` arms a tap on a face of a body, which starts a
+  sketch on a datum of that face.
