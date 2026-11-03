@@ -5257,3 +5257,41 @@ New tests: 3. The test list holds 1639 (1171 in `Engine.Tests`, 291 in `3DEngine
 `3DEngine.ImageTests`, 3 in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and
 zero warnings. Open entries: 14 of 15. New diagnostic codes: 0. Since the review of v0.176, 0 product milestones and 2
 entries followed it.
+
+## v0.179 — The desktop shows the dimensions of the overall box and of a selected body (R13, TASK-0178)
+
+The owner used the desktop and an agent to make an L-shaped shelf for an entry hall, and needs to read its dimensions
+on the model. On 2026-11-03 the owner added the phase R13 to the plan, after P0.75, and on 2026-11-04 answered four
+questions. ADR-0056 holds them: the thickness is the distance in effect of a live extrude, else the smallest extent of
+the box; the overall size is of the visible bodies or, with an option, of each live body; the dimensions are lines with
+labels in the scene; and the toggle is a state of the client, off at each start.
+
+**The change.**
+- `Dimensions` (`3DEngine.Core/Measuring/`) gives the three dimensions of a box, one along each axis, from the side of
+  the eye. The up axis of the desktop is Y, so the lines of X and Z lie at the lowest Y on the faces that face the eye,
+  and the line of Y on the vertical edge of the side of the eye. Each line is out by one twentieth of the largest
+  extent. A label gives the axis, the value with at most two decimals and the unit of the document, for example
+  "X 1200 mm".
+- `DimensionOverlay` (`3DEngine/`) turns the dimensions of the overall box, and of the selected body in the colour of
+  the selection, into lines with arrows, extension lines and labels in pixels, with the clip of the sketch lines.
+- The panel has the checkboxes "Dimensions" and "Hidden too" on a line before the list of the bodies, so a long list
+  does not push them out. With the dimensions on, the selected body shows its size and its thickness on two lines. The
+  desktop reads the distance of the selected body once for each change of the selection or of its box.
+- Nothing enters the log, no command, event or query is new, and `Engine.Contracts` does not change.
+- Register entry R-0051: the camera of the desktop keeps the default far plane of 1000 units, so a model larger than
+  about 1000 mm cannot show whole. The image test sets a far plane of 20000.
+
+**Proof.** Eleven unit tests in `3DEngine.Tests` give the place of each line from each side of the eye, the format, the
+thickness and the union. Six tests of the panel with no GPU give the toggles by tap and by click, their place inside
+the panel, the line of the size, and the strokes of a shelf. An image test on Vulkan draws an L-shaped shelf of five
+boards with the dimensions on and a board selected, and counts the orange and the white pixels outside the panel. Ten
+injections each fail a test. Two defects of the first build are corrected: the toggles did not fit on the line of
+"Show all", and with five bodies and a selection they were below the panel.
+
+**What stays.** No one opened the desktop window; the image test renders the same code offscreen. The labels of a thin
+board can touch each other. A dimension between two points, an angle and a saved dimension are out of this phase.
+
+New tests: 18. The test list holds 1657 (1171 in `Engine.Tests`, 302 in `3DEngine.Tests`, 181 in
+`3DEngine.ImageTests`, 3 in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and
+zero warnings. Open entries: 15 of 15. New diagnostic codes: 0. Since the review of v0.176, 1 product milestone and 3
+entries followed it.
