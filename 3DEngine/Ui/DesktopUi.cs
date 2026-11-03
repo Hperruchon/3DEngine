@@ -55,6 +55,12 @@ internal sealed unsafe class DesktopUi : IDisposable
     public const string SetDistanceLabel = "Set distance";
     public const string FaultLabel = "Fault";
 
+    // ADR-0056 item 2 (phase R13, TASK-0178): the toggles of the dimension overlay, and the line of the size of the
+    // selected body.
+    public const string DimensionsLabel = "Dimensions";
+    public const string HiddenTooLabel = "Hidden too";
+    public const string SizeLabel = "Size";
+
     // ADR-0034 items 6 and 8: the buttons of a new sketch in the panel, and the window of the
     // sketch with its controls. A row of the window has the label of its item (SketchText).
     public const string SketchLineLabel = "Sketch on";
@@ -234,6 +240,17 @@ internal sealed unsafe class DesktopUi : IDisposable
 
     // The filter of the panel, as the person typed it.
     public string Filter => _filter;
+
+    // ADR-0056 items 2 and 3: the toggles of the dimension overlay, a state of the client, off at each start.
+    private bool _dimensions;
+    private bool _hiddenToo;
+
+    public bool ShowDimensions => _dimensions;
+
+    public bool HiddenToo => _hiddenToo;
+
+    // The text of the size of the selected body for this frame, or null.
+    private string? _size;
 
     // The open pad, or null.
     public NumericPad? Pad => _pad;
@@ -467,9 +484,10 @@ internal sealed unsafe class DesktopUi : IDisposable
     private const float SelectedPointRadius = 7f;
     private const float RingRadius = 12f;
 
-    public UiDrawData Frame(float deltaSeconds, Vector2 displaySize, Vector2 framebufferScale, IReadOnlyList<LiveBody> bodies, Guid? selection = null, DocumentLine? document = null, SketchOverlay.Strokes? sketches = null, SketchPanel? sketchPanel = null, ImagePanel? imagePanel = null)
+    public UiDrawData Frame(float deltaSeconds, Vector2 displaySize, Vector2 framebufferScale, IReadOnlyList<LiveBody> bodies, Guid? selection = null, DocumentLine? document = null, SketchOverlay.Strokes? sketches = null, SketchPanel? sketchPanel = null, ImagePanel? imagePanel = null, DimensionOverlay.Strokes? dimensions = null, string? size = null)
     {
         ArgumentNullException.ThrowIfNull(bodies);
+        _size = size;
         ImGui.SetCurrentContext(_context);
         var io = ImGui.GetIO();
         io.DisplaySize = displaySize;
@@ -490,6 +508,8 @@ internal sealed unsafe class DesktopUi : IDisposable
 
         if (sketches is not null)
             Sketches(sketches);
+        if (dimensions is not null)
+            Dimensions(dimensions);
         Panel(bodies, selection, displaySize, document);
         if (sketchPanel is { } shown && (shown.Active is not null || shown.Live.Count > 0))
             SketchWindow(shown, displaySize);
@@ -519,6 +539,33 @@ internal sealed unsafe class DesktopUi : IDisposable
             list.AddRect(snap - new Vector2(SnapHalfSize), snap + new Vector2(SnapHalfSize), SnapColour, 0, ImDrawFlags.None, SketchLineWidth);
         foreach (var label in sketches.Labels)
             list.AddText(label.At, SketchColour, label.Text);
+    }
+
+    // ADR-0056 item 4: the dimension lines in orange, and those of the selected body in the colour of the selection, on
+    // the background list, under each window of the panel.
+    internal const uint DimensionColour = 0xFF40A0FF;
+    private const float DimensionLineWidth = 1.5f;
+    private const float ArrowLength = 12f;
+    private const float ArrowHalfWidth = 5f;
+
+    private static void Dimensions(DimensionOverlay.Strokes dimensions)
+    {
+        var list = ImGui.GetBackgroundDrawList();
+        foreach (var line in dimensions.Lines)
+        {
+            var colour = line.Mark == DimensionOverlay.Mark.Selected ? SelectedColour : DimensionColour;
+            list.AddLine(line.A, line.B, colour, DimensionLineWidth);
+            var along = line.B - line.A;
+            if (!line.Arrows || !(along.Length() > 2 * ArrowLength))
+                continue;
+            var unit = Vector2.Normalize(along);
+            var side = new Vector2(-unit.Y, unit.X) * ArrowHalfWidth;
+            list.AddTriangleFilled(line.A, line.A + (unit * ArrowLength) + side, line.A + (unit * ArrowLength) - side, colour);
+            list.AddTriangleFilled(line.B, line.B - (unit * ArrowLength) + side, line.B - (unit * ArrowLength) - side, colour);
+        }
+
+        foreach (var label in dimensions.Labels)
+            list.AddText(label.At, label.Mark == DimensionOverlay.Mark.Selected ? SelectedColour : DimensionColour, label.Text);
     }
 
     private static uint Colour(SketchOverlay.Mark mark) => mark switch
@@ -570,6 +617,16 @@ internal sealed unsafe class DesktopUi : IDisposable
             if (ImGui.Button($"Face##{SketchOnFaceLabel}"))
                 _actions.Add(new SketchOnFaceAction());
             Item(SketchOnFaceLabel);
+
+            // ADR-0056 item 2: the toggles of the dimension overlay, on a line of their own before the list of the bodies,
+            // so that a long list does not push them out of the panel.
+            ImGui.Checkbox(DimensionsLabel, ref _dimensions);
+            Item(DimensionsLabel);
+            ImGui.SameLine();
+            ImGui.BeginDisabled(!_dimensions);
+            ImGui.Checkbox(HiddenTooLabel, ref _hiddenToo);
+            ImGui.EndDisabled();
+            Item(HiddenTooLabel);
 
             ImGui.TextUnformatted(bodies.Count == 1 ? "1 live body" : $"{bodies.Count} live bodies");
 
@@ -627,6 +684,13 @@ internal sealed unsafe class DesktopUi : IDisposable
             Item(FaultLabel);
             if (ImGui.IsItemHovered() || ImGui.IsItemActive())
                 ImGui.SetTooltip(fault.Message);
+        }
+
+        // ADR-0056 item 6: the size and the thickness of the selected body while the dimensions show.
+        if (_dimensions && _size is { } size)
+        {
+            ImGui.TextUnformatted(size);
+            Item(SizeLabel);
         }
 
         ImGui.SetNextItemWidth(220f);

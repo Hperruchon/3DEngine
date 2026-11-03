@@ -154,6 +154,7 @@ Therefore each approved objective must have a track here.
 - P8d2 — One regeneration evaluates the features again after an edit, and each step whose inputs did not change keeps its solid. v0.176, TASK-0174, ADR-0055.
 - P8d — The three layers: the log, the ordered feature list and the regeneration. Closed at v0.176, with P8d1 and P8d2 in this list.
 - P0.75 — The walk of the planes repeats until no reference solves a sketch again, and an edit of a sketch takes the record of the walk. v0.178, TASK-0176.
+- R13 — The desktop shows the dimensions of the overall box and of a selected body, with a toggle in the panel. v0.179, TASK-0178, ADR-0056.
 
 ## Track 0 — Foundations
 
@@ -275,6 +276,7 @@ The first objective. Each phase ends with something that a person can observe.
 | R11c | A tap of the sketch snaps to the intersection of two lines, of a line and a curve, or of two curves (the owner, 2026-11-02). TASK-0165. | 2–3 |
 | R11 | Escalated selection and a snap engine. Closed after R11c: R11a to R11c give the snaps, and the escalated selection moves to R12 (the owner, 2026-11-02). | 4–6 |
 | R12 | The escalated selection of faces and edges. It needs a stable identity of each face and each edge, so it comes after K4 (ADR-0041 item 5; the owner, 2026-11-02). | 4–6 |
+| R13 | The dimension overlay of the desktop: a toggle in the panel, the overall size of the visible bodies or of each live body, and the size and the thickness of a selected body, as lines with labels in the scene (the owner, 2026-11-03; four answers of 2026-11-04). ADR-0056, TASK-0178. | 2–4 |
 
 ## Track K — The kernel
 
@@ -347,7 +349,8 @@ The tracks are not strictly sequential, but three rules hold:
    K0b, by the rule of `docs/templates.md`, section 7.
    The second codebase review of 2026-11-03 puts P0.76, which holds medium and low findings, after R13, by the rule of
    `docs/templates.md`, section 7. On 2026-11-03 the owner gave the order "merge, fix E128 and E129, then R13", so
-   P0.75, which holds two medium findings, comes before R13.
+   P0.75, which holds two medium findings, comes before R13. The owner added R13 to the plan on 2026-11-03, after
+   P0.75 and before P0.76.
 2. R2 blocks each later phase in track R. No mesh leaves the geometry backend today.
 3. K4 needs K0, K1 and K2. Do not start K4 before the reference model exists.
 4. The path to the milestone "CAD on one part" (the owner, 2026-10-27, KD2): R7b, R8a, R8b, the codebase

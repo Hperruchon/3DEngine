@@ -439,6 +439,20 @@ library. A phase that needs more vision than one contour needs the library in th
 Exit: the owner decides if the desktop may hold the library and on which platforms, with or without the FFmpeg file,
 and the phase that does it adds the notices of ADR-0042 item 6.
 
+### R-0051 · The desktop cannot show a model in millimetres that is larger than about 1000 mm
+- class: risk
+- opened: 2026-11-04
+- due: 2026-12-04
+- extended: no
+- refs: `3DEngine.Core/Models/Camera.cs:26-27`, `3DEngine.Core/Models/Camera.cs:183-185`, finding V22 of the codebase review of 2026-10-17, TASK-0178, ADR-0056
+The camera of the desktop keeps the default far plane of 1000 units, and `Camera.Frame` and `Zoom` hold the distance
+at half the far plane, so the eye of a shelf of 1900 mm stays 500 mm from its centre and the far part of the model is
+cut. TASK-0178 found it: its image test of the dimension overlay sets a far plane of 20000 to show the shelf whole.
+`Camera.Frame` returns false for such a box, and `SceneRenderer.cs:82-86` writes a warning to the console only, so the
+person sees no message in the window.
+Exit: the far plane of the desktop follows the size of the live bodies, or the owner sets a fixed range of sizes, and
+a test frames a box of 1900 mm whole.
+
 ## Accepted compromises
 
 These are conditions that the project keeps permanently and by decision. They do not age.

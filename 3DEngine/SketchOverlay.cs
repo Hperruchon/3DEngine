@@ -221,6 +221,17 @@ internal static class SketchOverlay
     public static Vector2? Pixel(Guid datumId, Camera camera, double width, double height, (double X, double Y) position)
         => Pixel(OriginPlane(datumId), camera, width, height, position);
 
+    // ADR-0056 item 4 (phase R13): the pixels of a segment of the space of the Document, clipped as each line of a sketch
+    // is, or null when no part of it is in front of the eye.
+    public static (Vector2 A, Vector2 B)? Segment(Camera camera, double width, double height, (double X, double Y, double Z) a, (double X, double Y, double Z) b)
+    {
+        ArgumentNullException.ThrowIfNull(camera);
+        if (!(width > 0 && height > 0))
+            return null;
+        var frame = Frame.Of(camera, width, height);
+        return frame.Segment(frame.ToCamera(a), frame.ToCamera(b));
+    }
+
     private static Vector2? Pixel(DatumFrame? plane, Camera camera, double width, double height, (double X, double Y) position)
     {
         ArgumentNullException.ThrowIfNull(camera);
