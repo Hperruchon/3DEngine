@@ -70,6 +70,11 @@ internal sealed unsafe class SceneRenderer : IDisposable
     // The box around the live bodies that the scene holds, or null.
     public ((double X, double Y, double Z) Min, (double X, double Y, double Z) Max)? Bounds => _bodies.Bounds;
 
+    // ADR-0056 items 3 and 6 (phase R13): the boxes of the dimension overlay.
+    public IEnumerable<((double X, double Y, double Z) Min, (double X, double Y, double Z) Max)> Boxes(bool hiddenToo) => _bodies.Boxes(hiddenToo);
+
+    public ((double X, double Y, double Z) Min, (double X, double Y, double Z) Max)? BoxOf(Guid bodyId) => _bodies.BoxOf(bodyId);
+
     // Brings each change of the live bodies into the scene. When the first visible body
     // comes, the camera frames the visible bodies for the aspect of the target.
     public void Update(Scene scene, Camera camera, float aspect)

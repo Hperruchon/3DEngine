@@ -69,6 +69,7 @@ names. Do not read all of them.
 | [0053](0053-desktop-sketch-on-a-face.md) | The desktop starts a sketch on a face, and draws a sketch on a datum of the Document | Accepted | Desktop, sketch, feature graph | 0029, 0034, 0051 | — |
 | [0054](0054-ordered-feature-list.md) | The ordered feature list, a fold of the log | Amended | Feature graph, runtime | 0039 | 0055 |
 | [0055](0055-regeneration.md) | The regeneration of the features after an edit | Accepted | Feature graph, geometry, runtime | 0037, 0039, 0054 | — |
+| [0056](0056-dimension-overlay.md) | The dimension overlay of the desktop | Accepted | Desktop, renderer | — | — |
 
 ## Topics
 
