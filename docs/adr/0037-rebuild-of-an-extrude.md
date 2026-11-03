@@ -7,7 +7,7 @@ date: 2026-10-29
 supersedes: []
 superseded-by: []
 amends: ['0012', '0021', '0028', '0031', '0036']
-amended-by: ['0039', '0049']
+amended-by: ['0039', '0049', '0055']
 affects:
   - Engine.Contracts/BodyRecord.cs
   - Engine.Core/Sketch/**
@@ -128,3 +128,6 @@ body, and the edit is never refused.
   `Subtract` to the live body at its end, and `W-SKETCH-REBUILD-FAILED` covers a body of the chain.
 - 2026-11-01 · TASK-0163 · ADR-0049 amends item 5: the rebuild of an extrude uses its distance in effect, the distance of
   the last `SetExtrudeDistance` in effect for it, or else the distance of the `Extrude`.
+- 2026-11-03 · TASK-0174 · ADR-0055 item 2 amends item 5: a live extrude is the end of its own chain, and the
+  regeneration takes each end in the log order of the command that creates it; the fault of a live extrude has the form
+  of the fault of a chain.

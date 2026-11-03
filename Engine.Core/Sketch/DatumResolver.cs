@@ -104,7 +104,8 @@ public static class DatumResolver
     // of a sketch after the edit, and distanceOf the distance of an extrude after it. A reference
     // whose points move changes its sketch, and the solver solves it again, so a later reference or
     // datum sees the new record. A datum or a reference that does not resolve keeps its last frame or
-    // its last points and gets a fault.
+    // its last points and gets a fault. ADR-0055 item 1: this is the first walk of the regeneration
+    // (Features/Regeneration.cs).
     public static Outcome Rebuild(
         Document document, FeatureGraph graph, Func<Guid, SketchRecord?> sketchOf, Func<ExtrudeCommand, double> distanceOf)
     {

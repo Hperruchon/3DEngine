@@ -207,7 +207,8 @@ and you must not join them.
    Document. **It does not apply to a rebuild.** A rebuild is a projection. A feature in a rebuild is
    correct, failed, suppressed, or has an unresolved reference. A failed feature stays in the feature
    list, and the features after it continue to evaluate. An error is a fact about a rebuild,
-   therefore an error lives in the cache and never in the log.
+   therefore an error lives in the cache and never in the log. The records of the Document are a
+   projection of the log, so a fault in a record lives in the cache (ADR-0055).
 5. **Nothing enters the log that a replay cannot reproduce.** A result, a field dataset, the output
    of a solver, the output of an inference and derived geometry each stay outside the log. The log
    records that a job produced an artifact. A replay rebuilds the reference, never the bytes.

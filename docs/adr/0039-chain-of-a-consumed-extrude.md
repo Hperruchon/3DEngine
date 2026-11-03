@@ -7,7 +7,7 @@ date: 2026-10-30
 supersedes: []
 superseded-by: []
 amends: ['0037']
-amended-by: ['0049', '0051', '0054']
+amended-by: ['0049', '0051', '0054', '0055']
 affects:
   - Engine.Core/Sketch/**
 enforced-by: Engine.Tests/Sketch/ChainRebuildTests.cs (TASK-0116 creates it)
@@ -101,3 +101,5 @@ replay and the document file stay as they are.
   extrude of a sketch on a datum that moves is a target of the edit, as an extrude of the edited sketch is.
 - 2026-11-03 · TASK-0173 · ADR-0054 item 4 amends item 1: the graph is a view of the ordered feature list, a fold of
   the log, and the steps in effect come from the list.
+- 2026-11-03 · TASK-0174 · ADR-0055 item 2 amends item 2: a live extrude that the edit targets is an end too, and one
+  regeneration takes the ends of the live and the consumed extrudes in one order.
