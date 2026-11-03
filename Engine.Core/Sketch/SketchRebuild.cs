@@ -2,6 +2,7 @@ using Engine.Contracts;
 using Engine.Contracts.Geometry;
 using Engine.Contracts.Sketch;
 using Engine.Core.Commands;
+using Engine.Core.Features;
 
 namespace Engine.Core.Sketch;
 
@@ -19,7 +20,8 @@ public static class SketchRebuild
     // ADR-0037 item 4: the identifier of each command of the log whose step is in effect. The
     // walk does what StepHistory does: an Undo moves the last step in effect to the undone
     // list, a Redo moves it back, and each other entry is a new step that clears the undone
-    // list. It depends only on the log.
+    // list. It depends only on the log. ADR-0054 item 4: the engine reads FeatureList.InEffect; this walk is the
+    // reference that the tests compare with the fold.
     public static HashSet<Guid> InEffect(IReadOnlyList<LogEntry> log)
     {
         var done = new List<Guid>();
@@ -49,30 +51,11 @@ public static class SketchRebuild
     }
 
     // ADR-0049 item 2: the Extrude in effect with the identifier, live or consumed, or null.
-    public static ExtrudeCommand? ExtrudeInEffect(IReadOnlyList<LogEntry> log, Guid extrudeId)
-        => InEffect(log).Contains(extrudeId)
-            ? log.Select(entry => entry.Command).OfType<ExtrudeCommand>().FirstOrDefault(extrude => extrude.CommandId == extrudeId)
-            : null;
+    public static ExtrudeCommand? ExtrudeInEffect(Document document, Guid extrudeId) => FeatureList.Of(document).Extrude(extrudeId);
 
     // ADR-0049 items 3 and 7: the distance in effect of the Extrude in effect with the identifier,
     // or null when no Extrude in effect has it.
-    public static double? DistanceInEffect(IReadOnlyList<LogEntry> log, Guid extrudeId)
-        => ExtrudeInEffect(log, extrudeId) is { } extrude ? Distances(log, InEffect(log))(extrude) : null;
-
-    // ADR-0049 item 3: the distance of the last SetExtrudeDistance in effect for an extrude, in
-    // the order of the log, or else the distance of the Extrude. The dictionary is a lookup only,
-    // so no order comes from it.
-    private static Func<ExtrudeCommand, double> Distances(IReadOnlyList<LogEntry> log, HashSet<Guid> inEffect)
-    {
-        var last = new Dictionary<Guid, double>();
-        foreach (var entry in log)
-        {
-            if (entry.Command is SetExtrudeDistanceCommand set && inEffect.Contains(set.CommandId))
-                last[set.ExtrudeId] = set.Distance;
-        }
-
-        return extrude => last.TryGetValue(extrude.CommandId, out var distance) ? distance : extrude.Distance;
-    }
+    public static double? DistanceInEffect(Document document, Guid extrudeId) => FeatureList.Of(document).DistanceInEffect(extrudeId);
 
     // The sketch and the distance that give the parameters of an extrude. A null sketch is not live.
     private readonly record struct ExtrudeInput(Guid SketchId, SketchRecord? Sketch, double Distance);
@@ -112,9 +95,9 @@ public static class SketchRebuild
     public static (IReadOnlyList<BodyRecord> Changed, IReadOnlyList<DatumRecord> Datums, IReadOnlyList<SketchRecord> Sketches, IReadOnlyList<Diagnostic> Diagnostics) Rebuild(
         Document document, IGeometryBackend backend, Guid edit, SketchRecord before, SketchRecord after)
     {
-        var inEffect = InEffect(document.Log);
-        var distance = Distances(document.Log, inEffect);
-        return Run(document, backend, inEffect, new Edit(
+        var list = FeatureList.Of(document);
+        var distance = list.Distance;
+        return Run(document, backend, list, new Edit(
             edit,
             extrude => extrude.SketchId == after.Id,
             extrude => new(after.Id, before, distance(extrude)),
@@ -130,11 +113,11 @@ public static class SketchRebuild
     public static (IReadOnlyList<BodyRecord> Changed, IReadOnlyList<DatumRecord> Datums, IReadOnlyList<SketchRecord> Sketches, IReadOnlyList<Diagnostic> Diagnostics) RebuildDistance(
         Document document, IGeometryBackend backend, Guid edit, ExtrudeCommand target, double next)
     {
-        var inEffect = InEffect(document.Log);
-        var distance = Distances(document.Log, inEffect);
+        var list = FeatureList.Of(document);
+        var distance = list.Distance;
         ExtrudeInput Live(ExtrudeCommand extrude, double value)
             => new(extrude.SketchId, document.Sketches.FirstOrDefault(sketch => sketch.Id == extrude.SketchId), value);
-        return Run(document, backend, inEffect, new Edit(
+        return Run(document, backend, list, new Edit(
             edit,
             extrude => extrude.CommandId == target.CommandId,
             extrude => Live(extrude, distance(extrude)),
@@ -146,10 +129,10 @@ public static class SketchRebuild
     }
 
     private static (IReadOnlyList<BodyRecord> Changed, IReadOnlyList<DatumRecord> Datums, IReadOnlyList<SketchRecord> Sketches, IReadOnlyList<Diagnostic> Diagnostics) Run(
-        Document document, IGeometryBackend backend, HashSet<Guid> inEffect, Edit first)
+        Document document, IGeometryBackend backend, FeatureList list, Edit first)
     {
         var changed = new List<BodyRecord>();
-        var graph = FeatureGraph.Of(document.Log);
+        var graph = FeatureGraph.Of(document);
 
         // ADR-0051 item 6 and ADR-0052 item 8: the datums and the references after the edit, in the order
         // of the log. An extrude of a sketch on a datum whose frame moves, or of a sketch whose reference
@@ -172,10 +155,11 @@ public static class SketchRebuild
         var diagnostics = new List<Diagnostic>(outcome.Diagnostics);
         var seeds = new List<ExtrudeCommand>();
 
-        // The order of the log, never the order of Document.Bodies (ADR-0037 item 5).
-        foreach (var extrude in document.Log.Select(entry => entry.Command).OfType<ExtrudeCommand>())
+        // The order of the log, never the order of Document.Bodies (ADR-0037 item 5). The steps of the list are the
+        // steps in effect in the order of the log (ADR-0054 item 4).
+        foreach (var extrude in list.Steps.OfType<ExtrudeCommand>())
         {
-            if (!edit.Targets(extrude) || !inEffect.Contains(extrude.CommandId))
+            if (!edit.Targets(extrude))
                 continue;
 
             // ADR-0039 item 2: an extrude in effect whose body is not live was consumed by a later
@@ -248,7 +232,7 @@ public static class SketchRebuild
         Document document, IGeometryBackend backend, Edit edit, Func<Guid, DatumFrame?> before, Func<Guid, DatumFrame?> after,
         List<BodyRecord> changed, List<Diagnostic> diagnostics)
     {
-        private readonly FeatureGraph _graph = FeatureGraph.Of(document.Log);
+        private readonly FeatureGraph _graph = FeatureGraph.Of(document);
 
         public void Rebuild(IReadOnlyList<ExtrudeCommand> seeds)
         {

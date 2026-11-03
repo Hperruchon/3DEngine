@@ -1,5 +1,6 @@
 using Engine.Contracts;
 using Engine.Core.Commands;
+using Engine.Core.Features;
 
 namespace Engine.Core.Sketch;
 
@@ -7,55 +8,30 @@ namespace Engine.Core.Sketch;
 // command that creates each handle and the command that consumes it. A CreateBox, an Extrude, a
 // Translate and a Subtract create the body whose handle is their command identifier; a Translate
 // consumes its body, and a Subtract consumes its two operands (ADR-0021 item 3). The graph holds
-// no state of its own and never changes the Document.
+// no state of its own and never changes the Document. ADR-0054 item 4: it is a view of the feature
+// list, so the graph of a Document reads no entry of the log a second time.
 public sealed class FeatureGraph
 {
-    private readonly Dictionary<Guid, Command> _creators = new();
-    private readonly Dictionary<Guid, Command> _consumers = new();
-    private readonly Dictionary<Guid, int> _order = new();
+    private readonly FeatureList _list;
 
-    private FeatureGraph()
-    {
-    }
+    private FeatureGraph(FeatureList list) => _list = list;
 
-    public static FeatureGraph Of(IReadOnlyList<LogEntry> log)
-    {
-        var graph = new FeatureGraph();
-        var inEffect = SketchRebuild.InEffect(log);
-        var index = 0;
-        foreach (var entry in log)
-        {
-            var command = entry.Command;
-            if (!inEffect.Contains(command.CommandId))
-                continue;
+    public static FeatureGraph Of(Document document) => new(FeatureList.Of(document));
 
-            graph._order[command.CommandId] = index++;
-            if (Creates(command))
-                graph._creators[command.CommandId] = command;
-            foreach (var operand in Operands(command))
-                graph._consumers[operand] = command;
-        }
-
-        return graph;
-    }
+    public static FeatureGraph Of(IReadOnlyList<LogEntry> log) => new(FeatureList.Build(log));
 
     // The command in effect that creates the handle, or null.
-    public Command? Creator(Guid handle) => _creators.GetValueOrDefault(handle);
+    public Command? Creator(Guid handle) => _list.Creator(handle);
 
     // The command in effect that consumes the handle, or null.
-    public Command? Consumer(Guid handle) => _consumers.GetValueOrDefault(handle);
+    public Command? Consumer(Guid handle) => _list.Consumer(handle);
 
     // The place of a command among the steps in effect, for an order that a hash set does not give.
-    public int Order(Guid commandId) => _order.GetValueOrDefault(commandId, int.MaxValue);
+    public int Order(Guid commandId) => _list.Order(commandId);
 
     // The kinds of command that create a body, which the graph knows.
-    public static bool Creates(Command command) => command is CreateBoxCommand or ExtrudeCommand or TranslateCommand or SubtractCommand;
+    public static bool Creates(Command command) => FeatureList.Creates(command);
 
     // The bodies that a command consumes, in the order of its fields.
-    public static IReadOnlyList<Guid> Operands(Command command) => command switch
-    {
-        TranslateCommand translate => [translate.BodyId],
-        SubtractCommand subtract => [subtract.MinuendBodyId, subtract.SubtrahendBodyId],
-        _ => [],
-    };
+    public static IReadOnlyList<Guid> Operands(Command command) => FeatureList.Operands(command);
 }
