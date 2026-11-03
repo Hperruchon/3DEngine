@@ -30,6 +30,11 @@ public static class SketchResults
         var (solved, dropped) = SketchSolver.SolveWithHold(ReadOnly(sketch), held);
         var before = SketchModel.Find(document, solved.Id)!;
         var (bodies, datums, sketches, rebuild) = SketchRebuild.Rebuild(document, backend, edit, before, solved);
+
+        // Finding E129 of the second codebase review of 2026-11-03 (TASK-0176): the walk of the planes can solve the
+        // edited sketch again, when a reference of it moves. Its record then replaces the record of the edit, so the
+        // list names the sketch one time (ADR-0033 item 8).
+        var record = sketches.FirstOrDefault(sketch => sketch.Id == solved.Id) ?? solved;
         var diagnostics = dropped
             ? [new Diagnostic(
                 Severity.Warning,
@@ -41,7 +46,7 @@ public static class SketchResults
             new Outputs(new Dictionary<string, object?> { [output] = id }),
             diagnostics: diagnostics,
             changedBodies: bodies,
-            changedSketches: [solved, .. sketches],
+            changedSketches: [record, .. sketches.Where(sketch => sketch.Id != solved.Id)],
             changedDatums: datums);
     }
 

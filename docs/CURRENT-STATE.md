@@ -5223,3 +5223,37 @@ No code changes. The test list holds 1636 (1168 in `Engine.Tests`, 291 in `3DEng
 `3DEngine.ImageTests`, 3 in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and
 zero warnings. Open entries: 14 of 15. New diagnostic codes: 0. Since the review of v0.176, 0 product milestones and 1
 entry followed it.
+
+## v0.178 — The walk of the planes repeats until no reference solves a sketch again (P0.75, TASK-0176)
+
+The second codebase review of 2026-11-03 found E128 and E129 (medium). The owner gave the order on 2026-11-03: "merge,
+fix E128 and E129, then R13", so this task comes before R13, against the rule of `docs/templates.md`, section 7, which
+puts a medium finding after the next product phase.
+
+**The change.**
+- E128: `DatumResolver.Rebuild`, the first walk of the regeneration (ADR-0055 item 1), repeats its walk of the steps in
+  effect while a reference solves a sketch again. A reference later in the log can change a sketch that an earlier
+  datum or reference read; the next walk reads the new record. The datums and the warnings come from the last walk, and
+  a warning of a reference compares with its fault before the edit, so a fault gives one warning. A walk that solves
+  no sketch ends the loop. The count of the references bounds it, and an exception names a cycle past that bound.
+- E129: `SketchResults.Changed` takes the record of the walk for the edited sketch when the walk gives one, so the list
+  of the edit names each sketch one time.
+- ADR-0055 item 1 and its history record the repeated walk.
+
+**Proof.** Three new tests in `SketchReferenceTests` use the layout of the review: a datum on a side of a base and a
+reference of a wall to a vertex of the base, then a later reference of the base to a vertex of a post. Before the
+change the first test failed (the reference of the wall stayed at (20, 5) after the move of the post), and the second
+threw `InvalidOperationException` at an edit of the wall. After it, the datum and the reference follow at the move, and
+a later edit that has no relation to them gives no event of them. The third test gives one warning for a fault at an
+edit with two walks. Four of six injections each fail a test: one walk only, a warning that reads the record of the
+walk, the warnings of each walk, and the datums of each walk.
+
+**What stays.** The two injections of the guard of E129 fail no test: after the fix of E128 each edit leaves the datums
+and the references in agreement, so no path that a test can reach makes the walk solve the edited sketch again. The
+guard stays for a later cause. A second walk runs only at an edit that moves a reference, so the cost of the other edits
+does not change. The bound of the loop has no test, because the cycle check of ADR-0052 item 7 refuses each cycle.
+
+New tests: 3. The test list holds 1639 (1171 in `Engine.Tests`, 291 in `3DEngine.Tests`, 174 in
+`3DEngine.ImageTests`, 3 in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and
+zero warnings. Open entries: 14 of 15. New diagnostic codes: 0. Since the review of v0.176, 0 product milestones and 2
+entries followed it.

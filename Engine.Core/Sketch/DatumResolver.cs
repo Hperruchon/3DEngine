@@ -106,6 +106,14 @@ public static class DatumResolver
     // datum sees the new record. A datum or a reference that does not resolve keeps its last frame or
     // its last points and gets a fault. ADR-0055 item 1: this is the first walk of the regeneration
     // (Features/Regeneration.cs).
+    //
+    // Finding E128 of the second codebase review of 2026-11-03 (TASK-0176): a reference later in the
+    // log can change a sketch that an earlier datum or reference read, so the walk repeats while a
+    // reference solves a sketch again. Each walk reads the frames and the sketches of the walk before
+    // it, and the datums and the warnings come from the last walk. A datum reads only steps before it
+    // in the log, except through a sketch, and the cycle check of ADR-0052 item 7 keeps the graph of
+    // the references acyclic, so a walk that changes no sketch ends the loop; the count of the
+    // references bounds it.
     public static Outcome Rebuild(
         Document document, FeatureGraph graph, Func<Guid, SketchRecord?> sketchOf, Func<ExtrudeCommand, double> distanceOf)
     {
@@ -120,58 +128,79 @@ public static class DatumResolver
 
         // ADR-0054 item 4: the steps in effect, in the order of the log. A datum or a reference of a step that is not in
         // effect has no record, so the walk of the whole log gave the same result.
-        foreach (var command in Features.FeatureList.Of(document).Steps)
+        var steps = Features.FeatureList.Of(document).Steps;
+        var limit = steps.OfType<AddSketchReferenceCommand>().Count() + 1;
+        for (var walk = 1; Walk(); walk++)
         {
-            switch (command)
-            {
-                case CreateDatumCommand create when document.Datums.FirstOrDefault(datum => datum.Id == create.CommandId) is { } datum:
-                {
-                    var (frame, reason) = Resolve(datum.Reference, graph, graph.Order(create.CommandId), State, FrameOf);
-                    DatumRecord next;
-                    if (frame is { } resolved)
-                        next = datum with { Frame = resolved, Fault = null };
-                    else
-                    {
-                        // Finding E127 (Q2 A of the review of 2026-11-03): a fault that stays gives no new warning.
-                        var fault = new DatumFault(DiagnosticCodes.DatumReferenceFailed, $"The datum '{datum.Id}' keeps its last plane: {reason}");
-                        next = datum with { Fault = fault };
-                        if (datum.Fault != fault)
-                            diagnostics.Add(new Diagnostic(
-                                Severity.Warning, fault.Code, fault.Message,
-                                Data: new Dictionary<string, object?> { ["datumId"] = datum.Id }));
-                    }
-
-                    frames[datum.Id] = next.Frame;
-                    if (next != datum)
-                        changedDatums.Add(next);
-                    break;
-                }
-
-                case AddSketchReferenceCommand add
-                    when SketchOf(add.SketchId) is { } record && record.References.FirstOrDefault(reference => reference.Id == add.CommandId) is { } entry:
-                {
-                    var (positions, reason) = Positions(entry.Target, graph, graph.Order(add.CommandId), State, FrameOf, record);
-                    DatumFault? fault = null;
-                    if (positions is null)
-                    {
-                        fault = new DatumFault(DiagnosticCodes.SketchReferenceFailed, $"The reference '{entry.Id}' of the sketch '{record.Id}' keeps its last points: {reason}");
-                        if (entry.Fault != fault)
-                            diagnostics.Add(new Diagnostic(
-                                Severity.Warning, fault.Code, fault.Message,
-                                Data: new Dictionary<string, object?> { ["sketchId"] = record.Id, ["referenceId"] = entry.Id }));
-                    }
-
-                    if (SketchModel.Placed(record, entry, positions, fault) is not { } placed)
-                        break;
-                    sketches[record.Id] = SketchSolver.Solve(placed);
-                    if (!changedSketches.Contains(record.Id))
-                        changedSketches.Add(record.Id);
-                    break;
-                }
-            }
+            if (walk > limit)
+                throw new InvalidOperationException("The walk of the planes does not end, so the references of the sketches have a cycle.");
         }
 
         return new Outcome(changedDatums, [.. changedSketches.Select(id => sketches[id])], FrameOf, SketchOf, diagnostics);
+
+        // One walk of the steps in effect. True when a reference solved a sketch again.
+        bool Walk()
+        {
+            var solved = false;
+            changedDatums.Clear();
+            diagnostics.Clear();
+            foreach (var command in steps)
+            {
+                switch (command)
+                {
+                    case CreateDatumCommand create when document.Datums.FirstOrDefault(datum => datum.Id == create.CommandId) is { } datum:
+                    {
+                        var (frame, reason) = Resolve(datum.Reference, graph, graph.Order(create.CommandId), State, FrameOf);
+                        DatumRecord next;
+                        if (frame is { } resolved)
+                            next = datum with { Frame = resolved, Fault = null };
+                        else
+                        {
+                            // Finding E127 (Q2 A of the review of 2026-11-03): a fault that stays gives no new warning.
+                            var fault = new DatumFault(DiagnosticCodes.DatumReferenceFailed, $"The datum '{datum.Id}' keeps its last plane: {reason}");
+                            next = datum with { Fault = fault };
+                            if (datum.Fault != fault)
+                                diagnostics.Add(new Diagnostic(
+                                    Severity.Warning, fault.Code, fault.Message,
+                                    Data: new Dictionary<string, object?> { ["datumId"] = datum.Id }));
+                        }
+
+                        frames[datum.Id] = next.Frame;
+                        if (next != datum)
+                            changedDatums.Add(next);
+                        break;
+                    }
+
+                    case AddSketchReferenceCommand add
+                        when SketchOf(add.SketchId) is { } record && record.References.FirstOrDefault(reference => reference.Id == add.CommandId) is { } entry:
+                    {
+                        var (positions, reason) = Positions(entry.Target, graph, graph.Order(add.CommandId), State, FrameOf, record);
+                        DatumFault? fault = null;
+                        if (positions is null)
+                        {
+                            fault = new DatumFault(DiagnosticCodes.SketchReferenceFailed, $"The reference '{entry.Id}' of the sketch '{record.Id}' keeps its last points: {reason}");
+                            // A fault that stays gives no new warning. The fault before the edit decides, so a later walk
+                            // gives the warning of the first one.
+                            var before = sketchOf(record.Id)?.References.FirstOrDefault(reference => reference.Id == entry.Id)?.Fault;
+                            if (before != fault)
+                                diagnostics.Add(new Diagnostic(
+                                    Severity.Warning, fault.Code, fault.Message,
+                                    Data: new Dictionary<string, object?> { ["sketchId"] = record.Id, ["referenceId"] = entry.Id }));
+                        }
+
+                        if (SketchModel.Placed(record, entry, positions, fault) is not { } placed)
+                            break;
+                        sketches[record.Id] = SketchSolver.Solve(placed);
+                        solved = true;
+                        if (!changedSketches.Contains(record.Id))
+                            changedSketches.Add(record.Id);
+                        break;
+                    }
+                }
+            }
+
+            return solved;
+        }
     }
 
     // ADR-0052 item 7: the reason that a reference of a sketch has the wrong form for its feature, or null.
