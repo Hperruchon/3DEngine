@@ -14,7 +14,8 @@ namespace Engine.Core.Sketch;
 // each datum in effect resolves again from the state after the edit, and each extrude of a
 // sketch on a datum that moves follows, as an extrude of the edited sketch does. ADR-0052 item 8:
 // each reference of a sketch resolves again too, and each extrude of a sketch whose reference moves
-// follows its solved record.
+// follows its solved record. ADR-0055 item 1: the two edits give their inputs to one regeneration
+// (Features/Regeneration.cs), which evaluates the features again.
 public static class SketchRebuild
 {
     // ADR-0037 item 4: the identifier of each command of the log whose step is in effect. The
@@ -57,37 +58,6 @@ public static class SketchRebuild
     // or null when no Extrude in effect has it.
     public static double? DistanceInEffect(Document document, Guid extrudeId) => FeatureList.Of(document).DistanceInEffect(extrudeId);
 
-    // The sketch and the distance that give the parameters of an extrude. A null sketch is not live.
-    private readonly record struct ExtrudeInput(Guid SketchId, SketchRecord? Sketch, double Distance);
-
-    // What an edit changes: the extrudes that it targets, the input of each one before and after
-    // the edit, the record of each sketch after the edit, and the codes of its warnings. An edit of a
-    // sketch targets each extrude of the sketch (ADR-0037 item 5), and an edit of a distance targets
-    // one extrude (ADR-0049 item 4).
-    private sealed record Edit(
-        Guid Id,
-        Func<ExtrudeCommand, bool> Targets,
-        Func<ExtrudeCommand, ExtrudeInput> Before,
-        Func<ExtrudeCommand, ExtrudeInput> After,
-        Func<ExtrudeCommand, ExtrudeInput> Other,
-        Func<Guid, SketchRecord?> SketchAfter,
-        string FailedCode,
-        string ConsumedCode)
-    {
-        // Finding E126 (Q3 A of the codebase review of 2026-11-03): the datum whose frame moved, for an extrude that
-        // the edit targets only because its sketch lies on that datum, or null.
-        public Func<ExtrudeCommand, Guid?> Through { get; init; } = _ => null;
-    }
-
-    // The parameters of an extrude in one state, with the frame of the datum of its sketch in that
-    // state (ADR-0051 item 5).
-    private static (ExtrudeParameters? Parameters, string? Reason) Parameters(ExtrudeInput input, Func<Guid, DatumFrame?> frames)
-        => input.Sketch is not { } sketch
-            ? (null, $"The sketch '{input.SketchId}' is not live.")
-            : frames(sketch.DatumId) is { } frame
-                ? ExtrudeProfile.Parameters(sketch, input.Distance, frame)
-                : (null, $"The datum '{sketch.DatumId}' of the sketch '{sketch.Id}' does not exist.");
-
     // The new record of each live extrude of the sketch that the edit changes, and the
     // diagnostics of the rebuild. Before is the record of the sketch in the Document, and
     // after is the solved record that the edit gives. Each extrude takes its distance in effect
@@ -95,9 +65,8 @@ public static class SketchRebuild
     public static (IReadOnlyList<BodyRecord> Changed, IReadOnlyList<DatumRecord> Datums, IReadOnlyList<SketchRecord> Sketches, IReadOnlyList<Diagnostic> Diagnostics) Rebuild(
         Document document, IGeometryBackend backend, Guid edit, SketchRecord before, SketchRecord after)
     {
-        var list = FeatureList.Of(document);
-        var distance = list.Distance;
-        return Run(document, backend, list, new Edit(
+        var distance = FeatureList.Of(document).Distance;
+        return Run(document, backend, new Regeneration.Edit(
             edit,
             extrude => extrude.SketchId == after.Id,
             extrude => new(after.Id, before, distance(extrude)),
@@ -113,11 +82,10 @@ public static class SketchRebuild
     public static (IReadOnlyList<BodyRecord> Changed, IReadOnlyList<DatumRecord> Datums, IReadOnlyList<SketchRecord> Sketches, IReadOnlyList<Diagnostic> Diagnostics) RebuildDistance(
         Document document, IGeometryBackend backend, Guid edit, ExtrudeCommand target, double next)
     {
-        var list = FeatureList.Of(document);
-        var distance = list.Distance;
-        ExtrudeInput Live(ExtrudeCommand extrude, double value)
+        var distance = FeatureList.Of(document).Distance;
+        Regeneration.ExtrudeInput Live(ExtrudeCommand extrude, double value)
             => new(extrude.SketchId, document.Sketches.FirstOrDefault(sketch => sketch.Id == extrude.SketchId), value);
-        return Run(document, backend, list, new Edit(
+        return Run(document, backend, new Regeneration.Edit(
             edit,
             extrude => extrude.CommandId == target.CommandId,
             extrude => Live(extrude, distance(extrude)),
@@ -129,269 +97,9 @@ public static class SketchRebuild
     }
 
     private static (IReadOnlyList<BodyRecord> Changed, IReadOnlyList<DatumRecord> Datums, IReadOnlyList<SketchRecord> Sketches, IReadOnlyList<Diagnostic> Diagnostics) Run(
-        Document document, IGeometryBackend backend, FeatureList list, Edit first)
+        Document document, IGeometryBackend backend, Regeneration.Edit edit)
     {
-        var changed = new List<BodyRecord>();
-        var graph = FeatureGraph.Of(document);
-
-        // ADR-0051 item 6 and ADR-0052 item 8: the datums and the references after the edit, in the order
-        // of the log. An extrude of a sketch on a datum whose frame moves, or of a sketch whose reference
-        // moves, is a target of the edit, with the frame and the record of each state.
-        ExtrudeInput Next(ExtrudeCommand extrude) => first.Targets(extrude) ? first.After(extrude) : first.Other(extrude);
-        var outcome = DatumResolver.Rebuild(document, graph, first.SketchAfter, extrude => Next(extrude).Distance);
-        var (datums, after) = (outcome.Datums, outcome.FrameOf);
-        Func<Guid, DatumFrame?> before = id => DatumResolver.Frame(document, id);
-        var moved = datums.Where(datum => datum.Frame != before(datum.Id)).Select(datum => datum.Id).ToHashSet();
-        var resketched = outcome.Sketches.Select(sketch => sketch.Id).ToHashSet();
-        bool Follows(ExtrudeCommand extrude)
-            => resketched.Contains(extrude.SketchId) || (first.Other(extrude).Sketch is { } sketch && moved.Contains(sketch.DatumId));
-        var edit = first with
-        {
-            Targets = extrude => first.Targets(extrude) || Follows(extrude),
-            Before = extrude => first.Targets(extrude) ? first.Before(extrude) : first.Other(extrude),
-            After = extrude => resketched.Contains(extrude.SketchId) ? Next(extrude) with { Sketch = outcome.SketchOf(extrude.SketchId) } : Next(extrude),
-            Through = extrude => !first.Targets(extrude) && first.Other(extrude).Sketch is { } sketch && moved.Contains(sketch.DatumId) ? sketch.DatumId : null,
-        };
-        var diagnostics = new List<Diagnostic>(outcome.Diagnostics);
-        var seeds = new List<ExtrudeCommand>();
-
-        // The order of the log, never the order of Document.Bodies (ADR-0037 item 5). The steps of the list are the
-        // steps in effect in the order of the log (ADR-0054 item 4).
-        foreach (var extrude in list.Steps.OfType<ExtrudeCommand>())
-        {
-            if (!edit.Targets(extrude))
-                continue;
-
-            // ADR-0039 item 2: an extrude in effect whose body is not live was consumed by a later
-            // command in effect, so it is a seed of a chain.
-            if (document.Bodies.FirstOrDefault(body => body.Handle.Id == extrude.CommandId) is not { } body)
-            {
-                seeds.Add(extrude);
-                continue;
-            }
-
-            var (parameters, reason) = Parameters(edit.After(extrude), after);
-            var through = edit.Through(extrude);
-            if (parameters is not { } next)
-            {
-                Fail(body, reason!, through);
-                continue;
-            }
-
-            // ADR-0037 item 5: an edit that does not change the solid changes nothing.
-            if (body.Fault is null && Parameters(edit.Before(extrude), before).Parameters is { } previous
-                && ExtrudeProfile.Same(previous, next))
-                continue;
-
-            if (backend.TryGet<IExtrudeOps>() is not { } ops)
-            {
-                Fail(body, "The active backend does not implement IExtrudeOps, so the solid cannot follow the edit.", through);
-                continue;
-            }
-
-            var key = GeometryKeys.Derive(edit.Id, body.Handle.Id);
-            try
-            {
-                ops.Extrude(new BodyHandle(key), next);
-            }
-            catch (Exception ex)
-            {
-                Fail(body, $"The geometry backend failed to extrude the new profile: {ex.Message}", through);
-                continue;
-            }
-
-            changed.Add(body with { Geometry = key, Fault = null });
-        }
-
-        if (seeds.Count > 0)
-            new Chain(document, backend, edit, before, after, changed, diagnostics).Rebuild(seeds);
-        return (changed, datums, outcome.Sketches, diagnostics);
-
-        // ADR-0037 item 6 (Q2 A) and ADR-0049 item 5: the body keeps its last solid and gets the
-        // fault, and the result gives the same code. A fault that does not change gives no new record.
-        void Fail(BodyRecord body, string reason, Guid? through)
-        {
-            var fault = new BodyFault(edit.FailedCode, $"The extrude '{body.Handle.Id}' keeps its last solid: {reason}");
-            diagnostics.Add(new Diagnostic(
-                Severity.Warning, fault.Code, fault.Message,
-                Data: Data(body.Handle.Id, through)));
-            if (body.Fault != fault)
-                changed.Add(body with { Fault = fault });
-        }
-    }
-
-    // The data of a warning of a rebuild: the body, and the datum through which it follows the edit (finding E126).
-    private static Dictionary<string, object?> Data(Guid body, Guid? through)
-        => through is { } datum
-            ? new Dictionary<string, object?> { ["bodyId"] = body, ["datumId"] = datum }
-            : new Dictionary<string, object?> { ["bodyId"] = body };
-
-    // ADR-0039 items 2 to 7: the chain of each consumed extrude that the edit targets, from the
-    // seeds to the live ends.
-    private sealed class Chain(
-        Document document, IGeometryBackend backend, Edit edit, Func<Guid, DatumFrame?> before, Func<Guid, DatumFrame?> after,
-        List<BodyRecord> changed, List<Diagnostic> diagnostics)
-    {
-        private readonly FeatureGraph _graph = FeatureGraph.Of(document);
-
-        public void Rebuild(IReadOnlyList<ExtrudeCommand> seeds)
-        {
-            var ends = new List<BodyRecord>();
-            foreach (var seed in seeds)
-            {
-                if (End(seed) is not { } end)
-                    continue;
-                if (!ends.Any(known => known.Handle.Id == end.Handle.Id))
-                    ends.Add(end);
-            }
-
-            // The log order of the command that creates each end, never the order of a set.
-            foreach (var end in ends.OrderBy(body => _graph.Order(body.Handle.Id)))
-            {
-                // ADR-0039 item 4: an edit that changes no extrude upstream of the end changes nothing.
-                if (end.Fault is null && !ProfileChanges(end.Handle.Id))
-                    continue;
-
-                var (key, stepChanged, failure) = Evaluate(end.Handle.Id);
-                if (failure is not null)
-                    Fail(end, failure);
-                else if (stepChanged)
-                    changed.Add(end with { Geometry = key, Fault = null });
-            }
-        }
-
-        // The live body at the end of the walk from a seed through each consumer, or null. A
-        // consumer that the graph does not know gives W-SKETCH-EXTRUDE-CONSUMED (ADR-0039 item 7),
-        // or W-FEATURE-REBUILD-FAILED for an edit of a distance (ADR-0049 item 5).
-        private BodyRecord? End(ExtrudeCommand seed)
-        {
-            var handle = seed.CommandId;
-            while (true)
-            {
-                if (document.Bodies.FirstOrDefault(body => body.Handle.Id == handle) is { } live)
-                    return live;
-                if (_graph.Consumer(handle) is not { } consumer || !FeatureGraph.Creates(consumer))
-                {
-                    diagnostics.Add(new Diagnostic(
-                        Severity.Warning,
-                        edit.ConsumedCode,
-                        $"The extrude '{seed.CommandId}' of the sketch '{seed.SketchId}' was consumed by a command that the feature graph does not know, so its solid does not follow the edit.",
-                        Data: new Dictionary<string, object?> { ["bodyId"] = seed.CommandId }));
-                    return null;
-                }
-                handle = consumer.CommandId;
-            }
-        }
-
-        // True when an extrude that the edit targets upstream of the handle gets other parameters.
-        private bool ProfileChanges(Guid handle)
-        {
-            switch (_graph.Creator(handle))
-            {
-                case ExtrudeCommand extrude when edit.Targets(extrude):
-                    var previous = Parameters(edit.Before(extrude), before).Parameters;
-                    var next = Parameters(edit.After(extrude), after).Parameters;
-                    return previous is not { } p || next is not { } n || !ExtrudeProfile.Same(p, n);
-                // An extrude that the edit does not target does not change with this edit.
-                case ExtrudeCommand:
-                    return false;
-                case { } command:
-                    return FeatureGraph.Operands(command).Any(ProfileChanges);
-                default:
-                    return true;
-            }
-        }
-
-        // Finding E126: the first datum, in the order of the operands, through which an extrude upstream of the
-        // handle is a target of the edit, or null.
-        private Guid? Through(Guid handle) => _graph.Creator(handle) switch
-        {
-            ExtrudeCommand extrude => edit.Through(extrude),
-            CreateBoxCommand or null => null,
-            { } command => FeatureGraph.Operands(command).Select(Through).FirstOrDefault(id => id is not null),
-        };
-
-        // ADR-0039 item 3: the key of the solid of a handle for this edit, with true when the step
-        // changed, or the reason of a failure. Each handle has one consumer in effect (ADR-0021
-        // item 1), so the steps upstream of one end are a tree and each runs one time; two seeds
-        // that meet in one Subtract give one end, which Rebuild takes one time.
-        private (Guid Key, bool Changed, string? Failure) Evaluate(Guid handle)
-        {
-            var key = GeometryKeys.Derive(edit.Id, handle);
-            switch (_graph.Creator(handle))
-            {
-                case CreateBoxCommand:
-                    return (handle, false, null);
-
-                case ExtrudeCommand extrude:
-                {
-                    var input = edit.Targets(extrude) ? edit.After(extrude) : edit.Other(extrude);
-                    if (input.Sketch is null)
-                        return (handle, false, $"the sketch '{extrude.SketchId}' of the extrude '{handle}' is not live");
-                    var (parameters, reason) = Parameters(input, after);
-                    if (parameters is not { } next)
-                        return (handle, false, $"the extrude '{handle}': {reason}");
-                    if (backend.TryGet<IExtrudeOps>() is not { } ops)
-                        return (handle, false, "the active backend does not implement IExtrudeOps");
-                    return Run(handle, key, () => ops.Extrude(new BodyHandle(key), next));
-                }
-
-                case TranslateCommand translate:
-                {
-                    var (source, sourceChanged, failure) = Evaluate(translate.BodyId);
-                    if (failure is not null)
-                        return (handle, false, failure);
-                    if (!sourceChanged)
-                        return (handle, false, null);
-                    if (backend.TryGet<ITransformOps>() is not { } ops)
-                        return (handle, false, "the active backend does not implement ITransformOps");
-                    return Run(handle, key, () => ops.Translate(new BodyHandle(key), new BodyHandle(source), translate.Dx, translate.Dy, translate.Dz));
-                }
-
-                case SubtractCommand subtract:
-                {
-                    var (minuend, minuendChanged, minuendFailure) = Evaluate(subtract.MinuendBodyId);
-                    var (subtrahend, subtrahendChanged, subtrahendFailure) = Evaluate(subtract.SubtrahendBodyId);
-                    if ((minuendFailure ?? subtrahendFailure) is { } failure)
-                        return (handle, false, failure);
-                    if (!minuendChanged && !subtrahendChanged)
-                        return (handle, false, null);
-                    if (backend.TryGet<IBooleanOps>() is not { } ops)
-                        return (handle, false, "the active backend does not implement IBooleanOps");
-                    return Run(handle, key, () => ops.Subtract(new BodyHandle(key), new BodyHandle(minuend), new BodyHandle(subtrahend)));
-                }
-
-                case { } other:
-                    return (handle, false, $"the command '{other.Name}' that creates the body '{handle}' is not a step that the feature graph knows");
-                default:
-                    return (handle, false, $"no command in effect creates the body '{handle}'");
-            }
-        }
-
-        // One call of the backend for one step; an exception is the failure of the step.
-        private static (Guid Key, bool Changed, string? Failure) Run(Guid handle, Guid key, Action call)
-        {
-            try
-            {
-                call();
-                return (key, true, null);
-            }
-            catch (Exception ex)
-            {
-                return (handle, false, $"the step '{handle}' failed in the geometry backend: {ex.Message}");
-            }
-        }
-
-        // ADR-0039 item 5 (Q2 A) and ADR-0049 item 5: the end keeps its last solid and gets the
-        // fault, and the result gives the same code. A fault that does not change gives no new record.
-        private void Fail(BodyRecord end, string reason)
-        {
-            var fault = new BodyFault(edit.FailedCode, $"The body '{end.Handle.Id}' keeps its last solid: {reason}");
-            diagnostics.Add(new Diagnostic(
-                Severity.Warning, fault.Code, fault.Message,
-                Data: Data(end.Handle.Id, Through(end.Handle.Id))));
-            if (end.Fault != fault)
-                changed.Add(end with { Fault = fault });
-        }
+        var outcome = Regeneration.Run(document, backend, edit);
+        return (outcome.Bodies, outcome.Datums, outcome.Sketches, outcome.Diagnostics);
     }
 }
