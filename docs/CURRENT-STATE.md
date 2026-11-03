@@ -5197,3 +5197,29 @@ New tests: 3. The test list holds 1636 (1168 in `Engine.Tests`, 291 in `3DEngine
 `3DEngine.ImageTests`, 3 in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and
 zero warnings. Open entries: 14 of 15. New diagnostic codes: 0. Since the review of v0.168, 4 product milestones and 8
 entries followed it.
+
+## v0.177 — The second codebase review of 2026-11-03 (governance, TASK-0175)
+
+The review of 2026-11-03 examined v0.168, and 4 product milestones and 8 entries followed it, so the next product
+milestone would make the review late. The owner gave the order on 2026-11-03: "merge when green, then start the
+codebase review", and later: "merge, fix E128 and E129, then R13". `docs/reviews/2026-11-03-b-codebase-review.md`
+examines `main` at `db28439` (v0.176). Two review agents worked in parallel, each one in its own worktree, with probes
+and injections that they restored or deleted after the run.
+
+**The result.**
+- The fixes of the last review hold for the forms that they named. E126, E127 and V74 are fixed; E120, E125, V75 and
+  T127 to T129 are fixed for their forms.
+- Four new medium findings: E128 (the walk of the planes is one pass in log order, so a datum or a reference before a
+  later reference of its sketch keeps a stale frame until an unrelated edit), E129 (an edit of such a sketch throws),
+  V76 (after a tap on a face the camera can turn behind the body), and V77 (the arm of the button Face survives a new
+  sketch).
+- Four new low findings: E130 (a datum on a side whose square is subnormal), and T130 to T132 (the next forms of three
+  gates; T130 lets `Engine.Core` reference `3DEngine.Core` through a computed `ProjectReference`).
+- Open findings: 0 critical, 4 high, 18 medium and 20 low.
+- TASK-0176 (P0.75) holds E128 and E129 before R13, by the order of the owner. TASK-0177 (P0.76) holds V76, V77, E130
+  and T130 to T132, after R13. The review asks no question.
+
+No code changes. The test list holds 1636 (1168 in `Engine.Tests`, 291 in `3DEngine.Tests`, 174 in
+`3DEngine.ImageTests`, 3 in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and
+zero warnings. Open entries: 14 of 15. New diagnostic codes: 0. Since the review of v0.176, 0 product milestones and 1
+entry followed it.

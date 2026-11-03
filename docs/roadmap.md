@@ -234,6 +234,8 @@ This track removes each condition that blocks other work.
 | P0.72 | A datum and a reference of a sketch refuse a frame or a point that is not finite, and give their warnings and codes as a body does (E125 to E127 of the codebase review of 2026-11-03; after K0h; E126 after Q3 and E127 after Q2). TASK-0169. | 1–2 |
 | P0.73 | The mark of the snap during a calibration, the cost of the snap to an intersection, and the next forms of three gates (V74, V75, T127 to T129; after K0h). TASK-0170. | 1–2 |
 | P0.74 | A put of an asset waits for a name that another program holds, and does not replace a name that it cannot read (register entry R-0050). TASK-0172. | 1 |
+| P0.75 | The walk of the planes repeats until no datum and no sketch changes, and an edit of a sketch takes the record of the walk (E128 and E129 of the second codebase review of 2026-11-03; before R13 by the order of the owner). TASK-0176. | 1–2 |
+| P0.76 | A sketch on a face looks from the side of the eye, the arm of a face ends with a new sketch, a datum on a short side has axes of the length 1, and the next forms of three gates (V76, V77, E130, T130 to T132; after R13). TASK-0177. | 2–3 |
 
 ## Track P — The platform
 
@@ -342,6 +344,9 @@ The tracks are not strictly sequential, but three rules hold:
    On 2026-10-29, after P0.40, the owner put K3a before P0.39.
    The codebase review of 2026-10-29 puts P0.41, which holds a high finding, before K0b, and P0.42 and P0.43 after
    K0b, by the rule of `docs/templates.md`, section 7.
+   The second codebase review of 2026-11-03 puts P0.76, which holds medium and low findings, after R13, by the rule of
+   `docs/templates.md`, section 7. On 2026-11-03 the owner gave the order "merge, fix E128 and E129, then R13", so
+   P0.75, which holds two medium findings, comes before R13.
 2. R2 blocks each later phase in track R. No mesh leaves the geometry backend today.
 3. K4 needs K0, K1 and K2. Do not start K4 before the reference model exists.
 4. The path to the milestone "CAD on one part" (the owner, 2026-10-27, KD2): R7b, R8a, R8b, the codebase
