@@ -1,13 +1,13 @@
 ---
 id: 0054
 title: The ordered feature list, a fold of the log
-status: Accepted
+status: Amended
 topic: Feature graph, runtime
 date: 2026-11-03
 supersedes: []
 superseded-by: []
 amends: ['0039']
-amended-by: []
+amended-by: ['0055']
 affects:
   - Engine.Core/Features/**
   - Engine.Core/Queries/GetFeaturesQuery.cs
@@ -83,3 +83,5 @@ same day, each with the recommended answer:
 ## History
 
 - 2026-11-03 · TASK-0173 · Accepted with the four answers of the owner of 2026-11-03.
+- 2026-11-03 · TASK-0174 · ADR-0055 item 1 amends item 4: the regeneration replaces the visit of the steps in effect, with
+  a walk of the planes and then a walk of the solids.
