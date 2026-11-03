@@ -146,6 +146,7 @@ Therefore each approved objective must have a track here.
 - K0g — A datum on a face of an extrude or a box, a sketch on it, and the rebuild of each datum after an edit. v0.168, TASK-0166, ADR-0051.
 - K0h — The edges and the vertices of an extrude and a box as references in a sketch. v0.170, TASK-0167, ADR-0052.
 - P0.72 — A datum and a reference refuse a value that is not finite, and warn on a new fault only. v0.171, TASK-0169.
+- P0.73 — The mark of the snap hides during a calibration, the snap of a large sketch fits in a frame, and the next forms of three gates fail. v0.172, TASK-0170.
 
 ## Track 0 — Foundations
 
