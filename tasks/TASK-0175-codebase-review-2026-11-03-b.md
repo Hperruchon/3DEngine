@@ -1,7 +1,7 @@
 ---
 id: 0175
 title: The second codebase review of 2026-11-03 is a record
-status: Active
+status: Done
 phase: governance
 opened: 2026-11-03
 depends-on: [0174]
@@ -65,12 +65,12 @@ finding.
 
 ## Acceptance criteria
 
-- [ ] `CodebaseReviewGateTests` passes with the new review.
-- [ ] Continuous integration passes on the three runners, on the branch and on `main` after the merge.
+- [x] `CodebaseReviewGateTests` passes with the new review.
+- [x] Continuous integration passes on the three runners, on the branch and on `main` after the merge.
 
 ## Outcome
 
-Status: Active
+Status: Done · commit (the merge of the branch codebase-review-2026-11-03-b) · v0.177
 
 ## Method
 
@@ -83,3 +83,4 @@ Weakest:    the two review agents ran their probes on Windows x64 only, and no o
 ## Progress
 
 - 2026-11-03: two review agents at `db28439`; 4 new medium and 4 new low findings; the review written.
+- 2026-11-03: closed at v0.177.
