@@ -1,7 +1,7 @@
 ---
 id: 0169
 title: A datum and a reference refuse a frame or a point that is not finite, and give their warnings and codes as a body does
-status: Active
+status: Done
 phase: P0.72
 opened: 2026-11-03
 depends-on: [0168]
@@ -58,13 +58,13 @@ changes, and each row of the registry names each target of its code.
 
 ## Acceptance criteria
 
-- [ ] Each finding has a test that fails before the change and passes after it.
-- [ ] A clean build (`--no-incremental`) gives zero errors and zero warnings.
-- [ ] Continuous integration passes on the three runners, on the branch and on `main` after the merge.
+- [x] Each finding has a test that fails before the change and passes after it.
+- [x] A clean build (`--no-incremental`) gives zero errors and zero warnings.
+- [x] Continuous integration passes on the three runners, on the branch and on `main` after the merge.
 
 ## Outcome
 
-Status: Active
+Status: Done · commit (the merge of the branch p072-datum-forms) · v0.171
 
 ## Method
 
@@ -77,3 +77,4 @@ Weakest:    the bits of a NaN on arm64 are inferred, not run.
 - 2026-11-03: opened by the codebase review of 2026-11-03.
 - 2026-11-03: the owner answered Q1 A, Q2 A and Q3 A. ADR-0052 item 8 states the rule of the warning of a reference,
   so the write set gains ADR-0052. The handlers need no change: each one refuses through `DatumResolver`.
+- 2026-11-03: four tests and seven injections; closed at v0.171.
