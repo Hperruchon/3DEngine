@@ -5085,3 +5085,34 @@ New tests: 11. The test list holds 1629 (1161 in `Engine.Tests`, 291 in `3DEngin
 `3DEngine.ImageTests`, 3 in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and
 zero warnings. Open entries: 15 of 15. New diagnostic codes: 1. Since the review of v0.168, 2 product milestones and 5
 entries followed it.
+
+## v0.174 — A put of an asset waits for a name that another program holds (P0.74, TASK-0172)
+
+The owner gave the order "fix R-0050, then start P8d" on 2026-11-03.
+
+**The cause.** A probe on Windows 11 gave the error of `File.Move` for each state of the name. A move that replaces a
+file that a reader holds gives "Access to the path is denied" with no path, the message of the run 41612851491, also
+when the reader shares the delete. A read of a file that another program holds with no share fails. The fix of E120
+took a name that it could not read as a damaged name and replaced it; while the other puts read the name, the replace
+failed, and the put gave `E-ASSET-WRITE-FAILED`.
+
+**The change.**
+- `AssetStore` gives a name one of four states: absent, the bytes of the name, other bytes, or a file that cannot be
+  read now. A put replaces only a name with other bytes (E115).
+- After a failed move the put reads the name again. It gives the name when the name holds its bytes, and otherwise it
+  waits and moves again, up to 12 moves, with pauses from 5 ms to 200 ms (about 1.3 s in all).
+- R-0050 closes.
+
+**Proof.** `A_Put_Waits_For_A_Name_That_Another_Program_Holds` holds the name for 100 ms, first with no share and then
+as a reader of a damaged name. Before the fix each put gave `E-ASSET-WRITE-FAILED` with the message of the run, and
+after it each put gives the name. Three injections each fail their test: one move only, no pause, and no read of the
+name after a failed move. 2,400 parallel puts of the probe gave no failure.
+
+**What stays.** The cause on the runner is inferred from the message: this computer gave no failure in 2,400 parallel
+puts before the fix. An injection that takes a name that cannot be read as damaged passes the tests, because on
+Windows its replace fails and waits in the same way; the rule keeps the replaces out of the way of the reads.
+
+New tests: 1. The test list holds 1630 (1162 in `Engine.Tests`, 291 in `3DEngine.Tests`, 174 in
+`3DEngine.ImageTests`, 3 in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and
+zero warnings. Open entries: 14 of 15. New diagnostic codes: 0. Since the review of v0.168, 2 product milestones and 6
+entries followed it.
