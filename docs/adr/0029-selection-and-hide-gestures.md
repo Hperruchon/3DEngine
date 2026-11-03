@@ -7,7 +7,7 @@ date: 2026-10-28
 supersedes: []
 superseded-by: []
 amends: ['0025', '0026', '0027']
-amended-by: ['0034']
+amended-by: ['0034', '0053']
 affects:
   - 3DEngine.Core/Input/**
   - 3DEngine.Core/Picking/**
@@ -75,3 +75,5 @@ that framed it leaves the camera where it is.
   owner of 2026-10-27.
 - 2026-10-28 · TASK-0101 · ADR-0034 amends item 4: the gestures of a hide and of a show all give nothing in the
   mode `Sketch` of the intent layer.
+- 2026-11-03 · TASK-0171 · ADR-0053 amends item 1: a hit gives its point and the normal of the hit triangle toward
+  the eye, for the query `GetFaceAt`.

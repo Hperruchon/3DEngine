@@ -10,8 +10,15 @@ public readonly record struct Ray((double X, double Y, double Z) Origin, (double
 // triangle. A hidden body is not picked (ADR-0029 item 3).
 public sealed record PickBody(Guid Id, double[] Positions, uint[] Indices, bool Visible);
 
-// The body that a ray hits first, and the distance from the origin of the ray to the hit.
-public readonly record struct PickHit(Guid Id, double Distance);
+// The body that a ray hits first, and the distance from the origin of the ray to the hit. ADR-0053 item 5 (phase K0i,
+// TASK-0171): the point of the hit, and the normal of length 1 of the hit triangle, turned toward the origin of the ray,
+// so the order of the vertices of the tessellation does not matter.
+public readonly record struct PickHit(Guid Id, double Distance)
+{
+    public (double X, double Y, double Z) Point { get; init; }
+
+    public (double X, double Y, double Z) Normal { get; init; }
+}
 
 // The pick of the desktop (ADR-0029 item 1, TASK-0086): the ray of a pixel, and the nearest
 // visible body that it hits. It needs no GPU, so a test reads it. A pick is presentation: it
@@ -59,10 +66,17 @@ public static class Picker
 
             for (var i = 0; i + 2 < body.Indices.Length; i += 3)
             {
-                if (Hit(ray, Vertex(body, body.Indices[i]), Vertex(body, body.Indices[i + 1]), Vertex(body, body.Indices[i + 2])) is { } distance
-                    && (nearest is null || distance < nearest.Value.Distance))
+                var (a, b, c) = (Vertex(body, body.Indices[i]), Vertex(body, body.Indices[i + 1]), Vertex(body, body.Indices[i + 2]));
+                if (Hit(ray, a, b, c) is { } distance && (nearest is null || distance < nearest.Value.Distance))
                 {
-                    nearest = new PickHit(body.Id, distance);
+                    var normal = Normal(Cross(Minus(b, a), Minus(c, a)));
+                    if (Dot(normal, ray.Direction) > 0)
+                        normal = (-normal.X, -normal.Y, -normal.Z);
+                    nearest = new PickHit(body.Id, distance)
+                    {
+                        Point = (ray.Origin.X + (distance * ray.Direction.X), ray.Origin.Y + (distance * ray.Direction.Y), ray.Origin.Z + (distance * ray.Direction.Z)),
+                        Normal = normal,
+                    };
                 }
             }
         }
