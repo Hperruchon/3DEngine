@@ -1,7 +1,7 @@
 ---
 id: 0176
 title: The walk of the planes repeats until no datum and no sketch changes, and an edit of a sketch takes the record of the walk
-status: Ready
+status: Active
 phase: P0.75
 opened: 2026-11-03
 depends-on: [0175]
@@ -61,7 +61,7 @@ and an edit of a sketch never throws because the walk changes the same sketch.
 
 ## Outcome
 
-Status: Ready
+Status: Active
 
 ## Method
 
