@@ -48,7 +48,13 @@ internal sealed record SnapshotMessage(
     IReadOnlyList<SnapshotBodyEntry> Bodies,
     IReadOnlyList<SnapshotSketchEntry> Sketches,
     IReadOnlyList<SnapshotImageEntry> Images,
-    IReadOnlyList<SnapshotDatumEntry> Datums);
+    IReadOnlyList<SnapshotDatumEntry> Datums,
+    string Kind,
+    IReadOnlyList<SnapshotReferenceEntry> References);
+
+// ADR-0071 item 6, which amends ADR-0012 §6: the kind of the Document, and each reference of an assembly with each
+// field of its record.
+internal sealed record SnapshotReferenceEntry(Guid ReferenceId, string Part, long Version, double X, double Y, double Z);
 
 // ADR-0012 §6 and ADR-0028 item 7: each live body with its kind, its name and its visibility.
 // ADR-0037 item 8: the snapshot gives the geometry key and the fault of each body.
@@ -88,5 +94,9 @@ internal static class SnapshotProjector
             .ToArray(),
         Datums: doc.Datums
             .Select(d => new SnapshotDatumEntry(d.Id, d.Name))
+            .ToArray(),
+        Kind: doc.Kind,
+        References: doc.References
+            .Select(r => new SnapshotReferenceEntry(r.Id, r.Part, r.Version, r.X, r.Y, r.Z))
             .ToArray());
 }

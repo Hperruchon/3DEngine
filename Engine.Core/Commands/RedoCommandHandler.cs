@@ -8,10 +8,13 @@ namespace Engine.Core.Commands;
 
 // ADR-0031 item 7: the handler asks for the move only. The command bus computes the
 // bodies from its history and gives the output commandId, the step that it applied again.
-public sealed class RedoCommandHandler : ICommandHandler, ICommandEncoder
+public sealed class RedoCommandHandler : ICommandHandler, ICommandEncoder, IDocumentKinds
 {
     public string CommandName => "Redo";
     public int SchemaVersion => 1;
+
+    // ADR-0071 item 2: the command applies in a part and in an assembly.
+    public IReadOnlySet<string> Kinds => DocumentKinds.Each;
 
     public IReadOnlyDictionary<string, FieldSchema> Parameters { get; } =
         new Dictionary<string, FieldSchema>();

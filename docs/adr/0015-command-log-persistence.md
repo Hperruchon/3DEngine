@@ -1,13 +1,13 @@
 ---
 id: 0015
 title: The document file
-status: Accepted
+status: Amended
 topic: Persistence, contracts
 date: 2026-10-28
 supersedes: []
 superseded-by: []
 amends: ['0010', '0012']
-amended-by: []
+amended-by: ['0071']
 affects:
   - Engine.Contracts/Document.cs
   - Engine.Contracts/LogEntry.cs
@@ -54,6 +54,8 @@ answered its questions Q1 to Q8 on 2026-10-28, with option A for each.
    later line is one entry.
 2. **The header.** `{"format":"3dengine-document","formatVersion":1,"lengthUnit":"mm"}`. The format version 1 and
    the unit `mm` are the only values for now. An open refuses another format, another version or another unit.
+   ADR-0071 item 4: the header of an assembly ends with `"kind":"assembly"`; a header with no field `kind` is a part,
+   and an open refuses another kind.
 3. **The entry.** One entry for each applied command, in the order of the log:
    `{"version":1,"backend":{"name":"manifold","version":"3.5.2"},"command":{"name":"CreateBox","schemaVersion":1,"commandId":"…","expectedDocumentVersion":null,"parameters":{…}}}`.
    `version` is `Document.Version` after the command, so the entries count 1, 2, 3 with no gap. The parameters
@@ -159,3 +161,5 @@ Register entry R-0025 closes with P8a.
 - 2026-10-29 · TASK-0099 · Item 8: only a tail with no line feed, or a last line that is not JSON, is a torn line;
   a complete last line that does not bind refuses the open and the file does not change (finding E76, the answer
   Q3 A of the owner). Item 10: a start that makes the file of `--file` says so on the error output (finding E77, Q1 A).
+- 2026-11-06 · TASK-0202 · ADR-0071 amends item 2: the header of an assembly gives its kind, and the header of a part
+  does not change.
