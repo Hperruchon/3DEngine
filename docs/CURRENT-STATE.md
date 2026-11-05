@@ -5362,3 +5362,30 @@ and no test drives that call.
 New tests: 25. The test list holds 1687 (1188 in `Engine.Tests`, 308 in `3DEngine.Tests`, 188 in `3DEngine.ImageTests`,
 3 in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
 entries: 14 of 15. New diagnostic codes: 0. Since the review of v0.176, 1 product milestone and 5 entries followed it.
+
+## v0.182 — The codebase review of 2026-11-05 (governance, TASK-0180)
+
+The review of 2026-11-03 (b) examined v0.176, and 1 product milestone and 5 entries followed it, so the gate did not
+make a review due. The owner gave the order on 2026-11-05: "start the codebase review", and later "merge the review
+when green". `docs/reviews/2026-11-05-codebase-review.md` examines `main` at `3cd76af` (v0.181). Two review agents
+worked in parallel, each one in its own worktree, with probes and injections that they restored or deleted after the
+run.
+
+**The result.**
+- The fixes of the last review hold for the forms that they named. V76 is fixed; E128, E130, V77 and T130 to T132 are
+  fixed for their forms; E129 is fixed, and no test reaches the fix.
+- One new medium finding: V78, after a hide the far plane can drop below a visible body far from the target, because
+  the rule of P0.77 holds a box only while the target is inside it.
+- Twelve new low findings: E131 (a diagonal side whose components are subnormal), E132 (no test fails without the fix
+  of E129), E133 (the changed sketches of the walk are not in the order of the log, which the comment states), V79 to
+  V82 (labels that overlap or leave the window, a union of each box in each frame, lines that do not follow a drag),
+  V83 (ADR-0056 items 2 and 7 disagree with the code), V84 (no test drives the call of the arm), and T133 to T135 (the
+  next forms of three gates; T133 lets `Engine.Core` reference `3DEngine.Core` through an item `ReferencePath`).
+- Open findings: 0 critical, 4 high, 15 medium and 28 low.
+- TASK-0181 (P0.78) holds V78 to V84, and TASK-0182 (P0.79) holds E131 to E133 and T133 to T135, after the next product
+  phase. Q1 asks for that phase, and Q2 whether ADR-0056 or the code is correct for V83.
+
+No code changes. The test list holds 1687 (1188 in `Engine.Tests`, 308 in `3DEngine.Tests`, 188 in
+`3DEngine.ImageTests`, 3 in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and
+zero warnings. Open entries: 14 of 15. New diagnostic codes: 0. Since the review of v0.181, 0 product milestones and 1
+entry followed it.
