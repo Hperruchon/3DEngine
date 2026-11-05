@@ -6,9 +6,14 @@ namespace ThreeDEngine.Core.Sketching;
 // along the normal of the plane, from the side of the plane where the eye is now. The target and
 // the distance stay. The camera is a state of the client (ADR-0007), so this is presentation and
 // the trigonometry here never reaches the log.
+//
+// Finding V76 of the second codebase review of 2026-11-03 (TASK-0177): the side came from the eye
+// and the target, not from the plane, so a target further out along the normal than the eye put
+// the eye behind a face of a body. The side now comes from the plane through its origin. The eye
+// is at the distance from the target, so the new eye stays on the side of the plane of the old one.
 public static class SketchCamera
 {
-    public static void Face(Camera camera, (double X, double Y, double Z) normal)
+    public static void Face(Camera camera, (double X, double Y, double Z) normal, (double X, double Y, double Z) origin)
     {
         ArgumentNullException.ThrowIfNull(camera);
         var length = Math.Sqrt(normal.X * normal.X + normal.Y * normal.Y + normal.Z * normal.Z);
@@ -16,7 +21,7 @@ public static class SketchCamera
             throw new ArgumentOutOfRangeException(nameof(normal), "A normal has a length.");
 
         var eye = camera.Eye();
-        var side = (eye.X - camera.Target.X) * normal.X + (eye.Y - camera.Target.Y) * normal.Y + (eye.Z - camera.Target.Z) * normal.Z;
+        var side = (eye.X - origin.X) * normal.X + (eye.Y - origin.Y) * normal.Y + (eye.Z - origin.Z) * normal.Z;
         var sign = side < 0 ? -1.0 : 1.0;
         var (x, y, z) = (Plain(sign * normal.X / length), sign * normal.Y / length, Plain(sign * normal.Z / length));
 

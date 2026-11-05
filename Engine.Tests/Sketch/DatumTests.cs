@@ -392,6 +392,22 @@ public sealed class DatumTests : IDisposable
         Assert.Equal(new DatumFrame(new DatumPoint(-1e160, 0, 0), X, Z, Minus(Y)), await Frame(session, await Datum(session, longBody, "side", long_.Lines[0])));
     }
 
+    // Finding E130 of the second codebase review of 2026-11-03 (TASK-0177): a side whose sum of squares is subnormal but
+    // not 0 gives a unit frame. Up to v0.180 a side of 3e-162 gave axes of the length 0.954, and 1e-158 of 1.0000000082.
+    [NativeManifoldTheory]
+    [InlineData(3e-162)]
+    [InlineData(1e-158)]
+    [InlineData(1e-155)]
+    public async Task A_Side_Whose_Square_Is_Subnormal_Gives_A_Unit_Frame(double length)
+    {
+        using var backend = new ManifoldGeometryBackend();
+        var (session, _) = NewSession(backend);
+        var sketch = await NewSketch(session, Datums.XY.Id, [(0, 0), (length, 0), (10, 5), (5, 10), (-5, 5)]);
+        var body = await Extrude(session, sketch, 5);
+
+        Assert.Equal(new DatumFrame(new DatumPoint(0, 0, 0), X, Z, Minus(Y)), await Frame(session, await Datum(session, body, "side", sketch.Lines[0])));
+    }
+
     // Finding E125: a frame whose origin overflows does not resolve. At an add the reason refuses the command, and at a
     // rebuild the datum keeps its last frame with a fault. A point of a reference that is not finite does not resolve.
     [NativeManifoldFact]
