@@ -75,6 +75,7 @@ names. Do not read all of them.
 | [0059](0059-references-by-the-identity-of-a-face.md) | The references by the identity of a face, and a datum on a face that a cut removed | Accepted | Kernel, feature graph, sketch | 0051, 0053, 0055, 0058 | — |
 | [0060](0060-unit-kind-in-the-command-schema.md) | The unit kind of each number parameter in the command schema | Accepted | Contracts, clients | 0013 | — |
 | [0061](0061-android-platform.md) | Android is a platform of the program, with the person on the phone and no surface | Accepted | Platform, clients, rendering | 0017, 0027 | — |
+| [0070](0070-step-export-of-the-owned-kernel.md) | The STEP export of the planar faces of the owned kernel | Accepted | Kernel, persistence, clients | — | — |
 
 ## Topics
 
