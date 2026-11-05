@@ -159,6 +159,7 @@ Therefore each approved objective must have a track here.
 - P0.76 — A sketch on a face looks from the side of the eye, the arm of a face ends with a new sketch, a datum on a short side has unit axes, and the next forms of three gates fail. v0.181, TASK-0177.
 - P0.78 — The far plane holds each visible body from the eye, and the dimension overlay keeps its labels apart and inside the window, follows a drag and reads the boxes once for each change. v0.183, TASK-0181.
 - P0.79 — A datum on a diagonal subnormal side has unit axes, the walk of the planes gives its sketches in the order of the log, and the next forms of three gates fail. v0.184, TASK-0182.
+- K4a — The owned kernel subtracts planar solids exactly, and each face of the result keeps its provenance. v0.185, TASK-0183, ADR-0057.
 
 ## Track 0 — Foundations
 
