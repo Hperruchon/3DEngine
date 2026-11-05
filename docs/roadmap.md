@@ -161,6 +161,7 @@ Therefore each approved objective must have a track here.
 - P0.79 — A datum on a diagonal subnormal side has unit axes, the walk of the planes gives its sketches in the order of the log, and the next forms of three gates fail. v0.184, TASK-0182.
 - K4a — The owned kernel subtracts planar solids exactly, and each face of the result keeps its provenance. v0.185, TASK-0183, ADR-0057.
 - K4b — The engine reads the owned kernel, and GetFaces gives the faces of a body with their names. v0.186, TASK-0184, ADR-0058.
+- K4c — A datum on a face that a cut removed gets a fault, and a datum on the wall of a hole faces into the hole. v0.187, TASK-0185, ADR-0059.
 
 ## Track 0 — Foundations
 
