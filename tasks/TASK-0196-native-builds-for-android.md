@@ -75,3 +75,5 @@ Weakest:    to be written at the close.
 - 2026-11-06: opened with the Android order; the Android branch of build.sh, two rows of the Manifold matrix, and the
   workflow, the script and the pin of cimgui. The commit of cimgui: the tag 1.91.6dock names 970c614, "pull imgui
   docking 1.91.6 and generate", which ImGui.NET-nativebuild v1.91.6 pins.
+- 2026-11-06: the first run built Manifold for both Android ABIs, and the check of the build machine failed: clang
+  writes the source path into the text of a lambda. Both Android scripts map the source folder with -ffile-prefix-map.

@@ -57,6 +57,9 @@ if [ -n "$abi" ]; then
     "-DANDROID_ABI=$abi"
     "-DANDROID_PLATFORM=android-33"
     "-DCMAKE_SHARED_LINKER_FLAGS=-Wl,-z,max-page-size=16384"
+    # Clang writes the source path into the text of a lambda and of __FILE__; the map keeps the build machine out.
+    "-DCMAKE_C_FLAGS=-ffile-prefix-map=$source_dir=manifold"
+    "-DCMAKE_CXX_FLAGS=-ffile-prefix-map=$source_dir=manifold"
   )
 fi
 
