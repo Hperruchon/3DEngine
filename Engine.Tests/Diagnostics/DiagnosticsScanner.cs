@@ -97,7 +97,10 @@ internal static class DiagnosticsScanner
             // an interpolation or a call gave no part. Finding T126 of the codebase review of 2026-11-01
             // (TASK-0161): each constant char of a severity was a part, so c == 'E' in a parser of numbers
             // was a false part. A constant char of a severity is a part where it joins text only.
-            .Concat(constants.Where(constant => constant.Value is char severity && IsSeverity(severity.ToString()) && JoinsText(constant.Expression))
+            // Finding T137 of the codebase review of 2026-11-05 (b) (TASK-0192): six more spellings hid a severity from the
+            // walk of JoinsText: a local variable, a Replace on other text, Prepend, Concat of an array, a char array and a
+            // conditional. The chase of spellings stops: a constant char of a severity is a part, unless it is compared.
+            .Concat(constants.Where(constant => constant.Value is char severity && IsSeverity(severity.ToString()) && !IsCompared(constant.Expression))
                 .Select(constant => (constant.Path, constant.Line, constant.Value.ToString()!)))
             .Concat(list.SelectMany(BuiltParts))
             .Distinct();
@@ -109,6 +112,26 @@ internal static class DiagnosticsScanner
     private static bool IsSeverityBeforeAdd((string Path, int Line, object Value, ExpressionSyntax Expression) constant)
         => constant.Value is char severity && IsSeverity(severity.ToString())
             && constant.Expression.Parent is BinaryExpressionSyntax add && add.IsKind(SyntaxKind.AddExpression) && add.Left == constant.Expression;
+
+    // T137: an expression is compared when it is an operand of == or !=, a constant of a pattern, or the value of a case
+    // label, through parentheses and casts. The initializer of a constant is not a use: each use of the constant is read
+    // itself. Each other use of a constant char of a severity can join text.
+    private static bool IsCompared(ExpressionSyntax expression)
+    {
+        SyntaxNode node = expression;
+        while (node.Parent is ParenthesizedExpressionSyntax or CastExpressionSyntax)
+            node = node.Parent;
+        return node.Parent switch
+        {
+            BinaryExpressionSyntax binary => binary.IsKind(SyntaxKind.EqualsExpression) || binary.IsKind(SyntaxKind.NotEqualsExpression),
+            ConstantPatternSyntax or CaseSwitchLabelSyntax => true,
+            EqualsValueClauseSyntax { Parent: VariableDeclaratorSyntax { Parent: VariableDeclarationSyntax { Parent: FieldDeclarationSyntax field } } }
+                => field.Modifiers.Any(SyntaxKind.ConstKeyword),
+            EqualsValueClauseSyntax { Parent: VariableDeclaratorSyntax { Parent: VariableDeclarationSyntax { Parent: LocalDeclarationStatementSyntax local } } }
+                => local.IsConst,
+            _ => false,
+        };
+    }
 
     // T126: an expression joins text when it is an operand of an add, the expression of an interpolation, or an
     // argument of a call that joins text, through parentheses and casts. Another spelling of a call stays a rule in

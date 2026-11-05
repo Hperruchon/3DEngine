@@ -25,7 +25,8 @@ internal static class FaceGone
 
     // The datums after a check: a datum with no fault whose chain holds a Subtract, and whose face is not a face of the
     // body at the end of the chain, gets the fault. TagsOf gives the names of the faces of a live end, or null when the
-    // kernel cannot build it, and then the datum has no check. Each datum keeps the order of its list.
+    // kernel cannot build it; then a datum keeps the face-gone fault of that end from the state before (E139), and another
+    // datum has no check. Each datum keeps the order of its list.
     public static (IReadOnlyList<DatumRecord> Datums, IReadOnlyList<Diagnostic> Warnings) Check(
         IReadOnlyList<DatumRecord> datums, Func<Guid, DatumRecord?> before, FeatureGraph graph, Func<Guid, IReadOnlySet<FaceTag>?> tagsOf)
     {
@@ -42,6 +43,12 @@ internal static class FaceGone
                 if (before(datum.Id)?.Fault != fault)
                     warnings.Add(Warning(datum, fault));
             }
+            // Finding E139 of the codebase review of 2026-11-05 (b) (TASK-0192): while the kernel cannot build the end, the
+            // end keeps the solid of an earlier state, which still has no such face. So the datum keeps the face-gone fault
+            // of that end from the state before, with no new warning.
+            else if (datum.Fault is null && cut && end is { } kept && tagsOf(kept) is null && before(datum.Id)?.Fault is { } earlier
+                && earlier == Fault(datum, kept))
+                next = datum with { Fault = earlier };
 
             result.Add(next);
         }

@@ -42,7 +42,7 @@ public class DependencyDirectionGateTests
     private static bool HoldsProject(string relativeDirectory)
         => Directory.EnumerateFiles(Path.Combine(RepositoryFiles.Root, relativeDirectory), "*.csproj").Any();
 
-    private static List<string> ProjectFiles()
+    internal static List<string> ProjectFiles()
         => Directory
             .EnumerateFiles(RepositoryFiles.Root, "*.csproj", SearchOption.AllDirectories)
             .Where(f => !IsOutOfScope(RepositoryFiles.Relative(f), HoldsProject))
@@ -895,7 +895,7 @@ public class DependencyDirectionGateTests
         Assert.Equal(offence, ReferenceTargetOffences(project, [include], scanned).Any());
     }
 
-    private static Dictionary<string, List<string>> Graph()
+    internal static Dictionary<string, List<string>> Graph()
     {
         var graph = new Dictionary<string, List<string>>(StringComparer.Ordinal);
 
@@ -929,6 +929,20 @@ public class DependencyDirectionGateTests
         var graph = Graph();
         Assert.True(graph.ContainsKey("Engine.Kernel"), "Engine.Kernel.csproj was not found.");
         Assert.Empty(graph["Engine.Kernel"]);
+    }
+
+    // Finding T139 of the codebase review of 2026-11-05 (b) (TASK-0192): ADR-0057 item 1 says that the owned kernel references
+    // no project and no package, and the fact above read the projects only, so a package in Engine.Kernel passed each gate.
+    // A package is code that the determinism gate does not read, so the kernel of identity, the engine and the contracts
+    // reference no package, in each file that MSBuild reads for them.
+    [Theory]
+    [InlineData("Engine.Kernel")]
+    [InlineData("Engine.Core")]
+    [InlineData("Engine.Contracts")]
+    public void A_Project_Of_The_Path_Of_The_Log_References_No_Package(string project)
+    {
+        var file = ProjectFiles().Single(path => string.Equals(Path.GetFileNameWithoutExtension(path), project, StringComparison.OrdinalIgnoreCase));
+        Assert.Empty(PackageReferences(file));
     }
 
     // ADR-0058 item 1 (phase K4b, TASK-0184): the engine reads the owned kernel for the faces of a body. No other project.

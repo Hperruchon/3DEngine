@@ -47,7 +47,8 @@ of K4. On 2026-11-05 the owner answered five questions:
 1. **The state of an edit.** The projection of ADR-0058 item 2 also reads the state of an edit before its commit: the
    sketch and the distance of each extrude, and the frame of each datum, after the edit.
 2. **The kept solids.** The projection keeps the solid of the last 64 committed geometry keys. A key comes from the
-   command and the body (ADR-0037 item 3), so a committed key names one solid. A body with a fault gives no solid.
+   command and the body (ADR-0037 item 3), so a committed key names one solid in one Document. The projection keeps it
+   under the identity of the Document and the key (E135, TASK-0192). A body with a fault gives no solid.
 3. **A gone face.** The chain of a feature is the walk from its body through each consumer, a `Translate` or a
    `Subtract`, to the live body at its end. A datum with no other fault, whose chain holds a `Subtract`, and whose name
    is not a face of the kernel solid of that end, gets the fault `W-DATUM-REFERENCE-FAILED`. The message says that the
@@ -59,7 +60,8 @@ of K4. On 2026-11-05 the owner answered five questions:
      its names from the state after the edit; an end that it does not change takes the kept solid of its key.
    - `CreateDatum` refuses a gone face with `E-DATUM-REFERENCE-INVALID` (ADR-0051 item 7). In the replay of an entry of
      a log it gives the datum the fault and the warning instead, so a document of an earlier version opens.
-   When the kernel cannot build an end, the datum has no check. An undo restores the record before (ADR-0031), so it
+   When the kernel cannot build an end, a datum keeps the face-gone fault of that end from the state before (E139,
+   TASK-0192), and another datum has no check. An undo restores the record before (ADR-0031), so it
    removes the fault of the step.
 4. **A face of a subtrahend.** The face of a subtrahend is a wall of the result, and its outward normal points into the
    hole. This amends ADR-0051 items 2 and 8. Each `Subtract` before the place of the reference that takes the body of
@@ -92,3 +94,6 @@ of K4. On 2026-11-05 the owner answered five questions:
 - 2026-11-05 · TASK-0185 · Accepted with the five answers of the owner of 2026-11-05.
 - 2026-11-05 · TASK-0190 · Finding E134: a replay of an older `CreateDatum` on a gone face gives the fault, not
   a refusal (Q1 A of the codebase review of 2026-11-05 (b), answered by the standing order of 2026-11-05).
+- 2026-11-05 · TASK-0192 · Findings E135 and E139 of the codebase review of 2026-11-05 (b): the kept solids are keyed
+  by the Document too, and a face-gone fault stays while the kernel cannot build the end. Q4 A, answered by the standing
+  order of 2026-11-05.

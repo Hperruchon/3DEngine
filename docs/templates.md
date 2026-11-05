@@ -254,7 +254,9 @@ that made it necessary.
 Each gate class here reads only files of the repository, except `DispatchSurfaceGateTests`,
 `SchemaEndpointGateTests` and `ReplayDeterminismGateTests`, which run engine code. The program
 `eng/repo-gates` runs each class that reads only files, from a build of `main`. `Engine.Tests` also runs
-each class as a test, but the run of the program decides (TASK-0064).
+each class as a test, but the run of the program decides (TASK-0064). `BuiltAssemblyReferenceTests` holds
+the rule of `DependencyDirectionGateTests` for the built assemblies: it reads the metadata of each `Engine.*`
+assembly of the test run, so it is a test only (T136, TASK-0192).
 
 | Gate | It reads | It fails when |
 |---|---|---|

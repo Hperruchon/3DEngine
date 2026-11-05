@@ -22,8 +22,8 @@ public sealed class PlaceImageCommandHandler : ICommandHandler, ICommandEncoder
         {
             ["asset"] = new("string", Required: true),
             ["datumId"] = new("guid", Required: true),
-            ["width"] = new("integer", Required: true),
-            ["height"] = new("integer", Required: true),
+            ["width"] = new("integer", Required: true, Unit: UnitKinds.Pixel),
+            ["height"] = new("integer", Required: true, Unit: UnitKinds.Pixel),
             ["originU"] = new("number", Required: false, Unit: UnitKinds.Length),
             ["originV"] = new("number", Required: false, Unit: UnitKinds.Length),
             ["scale"] = new("number", Required: false, Unit: UnitKinds.Scale),

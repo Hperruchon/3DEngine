@@ -169,6 +169,7 @@ Therefore each approved objective must have a track here.
 - P0.82 — A document whose log holds a datum on a face that a cut removed opens again. v0.192, TASK-0190.
 - R14a — Android is a platform of the charter, with ADR-0061 and the rows of R14. v0.193, TASK-0193, ADR-0061.
 - P0.83 — A press of a hand keeps its place, the far plane holds the images, and a drag queries no size in each frame. v0.194, TASK-0191.
+- P0.84 — The kept solids belong to one Document, the faces of the kernel keep their holes, and the next forms of five gates fail. v0.195, TASK-0192.
 
 ## Track 0 — Foundations
 

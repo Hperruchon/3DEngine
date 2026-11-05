@@ -78,6 +78,9 @@ public class SchemaEndpointGateTests : IClassFixture<WebApplicationFactory<Progr
         }
     }
 
+    // Findings T140 and E141 of the codebase review of 2026-11-05 (b) (TASK-0192): the rule read the number parameters of
+    // the commands only, so the pixel size of PlaceImage and the point and the direction of GetFaceAt had no unit. It
+    // reads each number and each integer parameter of a command and of a query.
     // ADR-0060 item 6: each number parameter of a registered command declares one
     // unit of the vocabulary, in Unit or in UnitBy. Until TASK-0186 a number had no
     // stated meaning, and each client held the meaning in its own code.
@@ -88,6 +91,7 @@ public class SchemaEndpointGateTests : IClassFixture<WebApplicationFactory<Progr
 
         var problems = host.CommandRegistry.Handlers
             .SelectMany(h => UnitProblems(h.CommandName, h.Parameters))
+            .Concat(host.QueryRegistry.Handlers.SelectMany(h => UnitProblems(h.QueryName, h.Parameters)))
             .ToArray();
 
         Assert.True(problems.Length == 0, "ADR-0060 item 6:\n  " + string.Join("\n  ", problems));
@@ -97,7 +101,7 @@ public class SchemaEndpointGateTests : IClassFixture<WebApplicationFactory<Progr
     [Fact]
     public void The_Unit_Vocabulary_Is_The_List_Of_ADR_0060()
         => Assert.Equal(
-            ["length", "pixel", "scale", "cosine", "sine", "sign", "constraint-value"],
+            ["length", "pixel", "scale", "cosine", "sine", "sign", "constraint-value", "direction"],
             UnitKinds.All);
 
     // The acceptance criteria of TASK-0186: the wire gives the unit of a field, the map
@@ -139,15 +143,15 @@ public class SchemaEndpointGateTests : IClassFixture<WebApplicationFactory<Progr
         foreach (var (name, field) in parameters)
         {
             var where = $"{command}.{name}";
-            if (field.Type != "number")
+            if (field.Type is not ("number" or "integer"))
             {
                 if (field.Unit is not null || field.UnitBy is not null)
-                    yield return $"{where} is a {field.Type} and declares a unit; only a number has a unit";
+                    yield return $"{where} is a {field.Type} and declares a unit; only a number or an integer has a unit";
                 continue;
             }
 
             if (field.Unit is null && field.UnitBy is null)
-                yield return $"{where} is a number with no unit; declare Unit or UnitBy";
+                yield return $"{where} is a {field.Type} with no unit; declare Unit or UnitBy";
             else if (field.Unit is not null && field.UnitBy is not null)
                 yield return $"{where} declares Unit and UnitBy; declare one";
             else if (field.Unit is { } unit && !UnitKinds.All.Contains(unit))
@@ -174,7 +178,8 @@ public class SchemaEndpointGateTests : IClassFixture<WebApplicationFactory<Progr
     [InlineData("no such field", "takes its unit from 'type', which is not a string parameter of C")]
     [InlineData("field not a string", "takes its unit from 'count', which is not a string parameter of C")]
     [InlineData("empty map", "takes its unit from 'kind' with an empty map")]
-    [InlineData("unit on a string", "is a string and declares a unit; only a number has a unit")]
+    [InlineData("unit on a string", "is a string and declares a unit; only a number or an integer has a unit")]
+    [InlineData("integer with no unit", "is a integer with no unit; declare Unit or UnitBy")]
     [InlineData("correct", null)]
     public void Each_Form_Of_ADR_0060_Item_6_Is_A_Problem(string form, string? expected)
     {
@@ -190,12 +195,13 @@ public class SchemaEndpointGateTests : IClassFixture<WebApplicationFactory<Progr
             "empty map" => new("number", UnitBy: byKind with { Units = new Dictionary<string, string>() }),
             "unit on a string" => new("number", Unit: UnitKinds.Length),
             "correct" => new("number", UnitBy: byKind),
+            "integer with no unit" => new("integer"),
             _ => throw new ArgumentOutOfRangeException(nameof(form)),
         };
         var parameters = new Dictionary<string, FieldSchema>
         {
             ["kind"] = form == "unit on a string" ? new("string", Unit: UnitKinds.Length) : new("string"),
-            ["count"] = new("integer"),
+            ["count"] = new("integer", Unit: UnitKinds.Pixel),
             ["value"] = form == "unit on a string" ? new("number", Unit: UnitKinds.Length) : value,
             ["distance"] = new("number", Unit: UnitKinds.Length),
         };
@@ -348,6 +354,18 @@ public class SchemaEndpointGateTests : IClassFixture<WebApplicationFactory<Progr
                 fieldJson.EnumerateObject().Select(p => p.Name).Where(n => n is not ("type" or "required" or "unit" or "unitBy")),
                 Array.Empty<string>());
         }
+    }
+
+    // Finding E140 of the codebase review of 2026-11-05 (b) (TASK-0192): FieldMapConverter writes four named members, and
+    // the comparison of the wire above lists the same four, so a new member of FieldSchema left the wire with no failure.
+    // Each public member of FieldSchema and of UnitByField is a member that the converter writes.
+    [Fact]
+    public void Each_Member_Of_A_Field_Schema_Is_A_Member_That_The_Converter_Writes()
+    {
+        static string[] Members(Type type) => [.. type.GetProperties(System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance).Select(p => p.Name).Order(StringComparer.Ordinal)];
+
+        Assert.Equal(["Required", "Type", "Unit", "UnitBy"], Members(typeof(FieldSchema)));
+        Assert.Equal(["Field", "Units"], Members(typeof(UnitByField)));
     }
 
     private static string FindSource(params string[] segments)
