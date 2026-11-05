@@ -29,6 +29,8 @@ internal static class SchemaDiagnosticsEndpoint
         new(DiagnosticCodes.GeomInvalidParam,      "Error",   "GEOM"),
         new(DiagnosticCodes.GeomBodyNotFound,      "Error",   "GEOM"),
         new(DiagnosticCodes.GeomNativeOp,          "Error",   "GEOM"),
+        new(DiagnosticCodes.GeomBodyFaulted,       "Error",   "GEOM"), // ADR-0058 item 3, TASK-0184
+        new(DiagnosticCodes.GeomFacesFailed,       "Error",   "GEOM"), // ADR-0058 item 3, TASK-0184
         new(DiagnosticCodes.GeomBackendInit,       "Error",   "GEOM"),
         new(DiagnosticCodes.ValBodyNameInvalid,    "Error",   "VAL"), // ADR-0028 item 3, TASK-0085
         new(DiagnosticCodes.ApiNotSupported,       "Error",   "API"), // ADR-0030 item 4, TASK-0092

@@ -29,6 +29,14 @@ public static class SketchProfile
     // repeat the first one. A point with no line does not count.
     public static (IReadOnlyList<(double X, double Y)>? Loop, string? Reason) Find(SketchRecord sketch)
     {
+        var (loop, reason) = FindWithItems(sketch);
+        return (loop?.Select(vertex => (vertex.X, vertex.Y)).ToList(), reason);
+    }
+
+    // ADR-0058 item 2: the loop of Find, with the item of the side from each vertex to the next one: the line, the arc
+    // or the circle whose segment that side is. The owned kernel names each side face by this item.
+    public static (IReadOnlyList<(double X, double Y, Guid Item)>? Loop, string? Reason) FindWithItems(SketchRecord sketch)
+    {
         // ADR-0052 item 6: a line of a reference is a construction line, not an edge of the profile.
         if (sketch.References.Any(reference => reference.Line is not null))
         {
@@ -45,7 +53,7 @@ public static class SketchProfile
                 return (null, "A circle is a profile alone, and the sketch holds another circle, line or arc.");
             var circle = sketch.Circles[0];
             var c = position[circle.Center];
-            return (Turn((c.X, c.Y), (c.X + circle.Radius, c.Y), null), null);
+            return ([.. Turn((c.X, c.Y), (c.X + circle.Radius, c.Y), null).Select(vertex => (vertex.X, vertex.Y, circle.Id))], null);
         }
 
         if (sketch.Lines.Count == 0 && sketch.Arcs.Count == 0)
@@ -142,10 +150,14 @@ public static class SketchProfile
         var area = Predicates.AreaSign(loop);
         if (area == 0)
             return (null, "The area of the loop is zero.");
+        // After the reverse, the side from vertex k to vertex k + 1 is the side from vertex n - 2 - k to n - 1 - k before.
         if (area < 0)
+        {
             loop.Reverse();
+            owners = [.. Enumerable.Range(0, n).Select(k => owners[((2 * n) - 2 - k) % n])];
+        }
 
-        return (loop, null);
+        return ([.. loop.Select((vertex, i) => (vertex.X, vertex.Y, owners[i]))], null);
     }
 
     // ADR-0040 item 2: the vertices of a curve about c, counter-clockwise from s, up to the vertex
