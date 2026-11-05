@@ -163,6 +163,7 @@ Therefore each approved objective must have a track here.
 - K4b — The engine reads the owned kernel, and GetFaces gives the faces of a body with their names. v0.186, TASK-0184, ADR-0058.
 - K4c — A datum on a face that a cut removed gets a fault, and a datum on the wall of a hole faces into the hole. v0.187, TASK-0185, ADR-0059.
 - K4 — Planar faces with a boolean, and the provenance of each face inside the owned kernel. Closed at v0.187, with K4a to K4c in this list.
+- P0.80 — A gate fails when an open task plans an ADR number that another ADR file or another open task has. v0.188, TASK-0187.
 
 ## Track 0 — Foundations
 

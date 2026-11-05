@@ -1,7 +1,7 @@
 ---
 id: 0187
 title: A gate fails when an open task plans an ADR number that another ADR file or another open task has
-status: Active
+status: Done
 phase: P0.80
 opened: 2026-11-05
 depends-on: []
@@ -50,8 +50,8 @@ put this task before P8h.
 
 ## Scope (out)
 
-- The numbers of tasks. A task file has its number in its name, and two task files of one number fail
-  `TaskGovernanceGateTests` at the merge.
+- The numbers of tasks. Two task files of one number fail the pipeline today, but only because
+  `AdrEnforcementExistsGateTests` keys a dictionary by the task identifier and throws. No rule names it.
 - A task that is Done. Its plan is history, and its file exists or its plan changed by decision.
 - The write-set judge. It judges one commit, not the plans of other tasks.
 
@@ -72,7 +72,20 @@ put this task before P8h.
 - A plan is no problem when the existing file of its number has the same name. An Active task that made its ADR has
   that file.
 
+## Outcome
+
+Status: Done · commit (the merge of the branch p080-adr-number-gate) · v0.188
+
+## Method
+
+Mechanical: the fact, the theory of six forms and the fact of the names of the records.
+Judgement:  a task that is not Done holds its plan, also when it is Deferred, because it can start again.
+Weakest:    a path under modify: that names a new ADR file is not read, and no test of this task shows what the
+            write-set judge does with it.
+
 ## Progress
 
 - 2026-11-05: opened from R-0052, before P8h, by the order of the owner.
 - 2026-11-05: the fact, its theory and the fact of the names; 3 injections and 4 mutations each fail a test.
+- 2026-11-05: the sentence on the numbers of tasks under "Scope (out)" was false, and is corrected.
+- 2026-11-05: closed at v0.188.
