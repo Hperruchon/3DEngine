@@ -254,6 +254,9 @@ This track removes each condition that blocks other work.
 | P0.79 | A datum on a diagonal subnormal side has unit axes, the walk of the planes gives its sketches in the order of the log, and the next forms of three gates (E131 to E133, T133 to T135; after the next product phase). TASK-0182. | 1–2 |
 | P0.80 | A gate fails when an open task plans an ADR number that another ADR file or another open task has (register entry R-0052; the owner, 2026-11-05, before P8h). TASK-0187. | 1 |
 | P0.81 | A press and a release of the mouse take the place of the cursor, not the last place of a motion (register entry R-0043; the owner, 2026-11-05, before the codebase review). TASK-0188. | 1 |
+| P0.82 | A document whose log holds a datum on a face that a cut removed opens again (E134 of the codebase review of 2026-11-05 (b); before the next product phase). TASK-0190. | 1 |
+| P0.83 | A press of a hand keeps its place, the far plane holds the images, and a drag queries no size in each frame (V85 to V87 of the codebase review of 2026-11-05 (b); after the next product phase). TASK-0191. | 1–2 |
+| P0.84 | The kept solids belong to one Document, the faces of the kernel keep their holes, and the next forms of five gates fail (E135 to E141, T136 to T140 of the codebase review of 2026-11-05 (b); after the next product phase). TASK-0192. | 2–3 |
 
 ## Track P — The platform
 
@@ -374,6 +377,8 @@ The tracks are not strictly sequential, but three rules hold:
    after R13 and before P0.76.
    The codebase review of 2026-11-05 puts P0.78 and P0.79, which hold medium and low findings, after the next
    product phase, by the rule of `docs/templates.md`, section 7. Q1 of that review asks for the next product phase.
+   The codebase review of 2026-11-05 (b) puts P0.82, which holds a high finding, before the next product phase, and
+   P0.83 and P0.84, which hold medium and low findings, after it.
    On 2026-11-05 the owner answered A to Q1, the redesign of the desktop, and then, because the redesign is still work
    in progress, gave the order "Ok": P0.78 and P0.79 now, and then K4.
    On 2026-11-05 the owner answered the four questions of K4: the boolean first, a new project, one face for each
