@@ -187,6 +187,13 @@ public class DiagnosticsRegistryGateTests
     [InlineData("static class P { const char S = 'W'; static string Code(string rest) => rest.PadLeft(rest.Length + 1, S); }")]
     [InlineData("static class P { const char S = 'I'; static string Code(string rest) => string.Concat(System.Linq.Enumerable.Repeat(S, 1)) + rest; }")]
     [InlineData("static class P { const char S = 'E'; static string Code(string rest) => string.Create(1, S, (span, c) => span[0] = c) + rest; }")]
+    // Finding T137 of the codebase review of 2026-11-05 (b) (TASK-0192): six more spellings that the walk of JoinsText missed.
+    [InlineData("static class P { const char S = 'E'; static string Code(string rest) { var s = S.ToString(); return s + rest; } }")]
+    [InlineData("static class P { const char S = 'W'; static string Code(string rest) => (\"X\" + rest).Replace('X', S); }")]
+    [InlineData("static class P { const char S = 'I'; static string Code(string rest) => string.Concat(System.Linq.Enumerable.Prepend(rest, S)); }")]
+    [InlineData("static class P { const char S = 'E'; static string Code(string rest) => string.Concat(System.Linq.Enumerable.Concat(new[] { S }, rest)); }")]
+    [InlineData("static class P { const char S = 'W'; static string Code(string rest) { char[] a = [S]; return new string(a) + rest; } }")]
+    [InlineData("static class P { const char S = 'I'; static string Code(string rest, bool b) => (b ? S : S).ToString() + rest; }")]
     public void A_Part_Of_A_Code_Is_An_Offence(string source)
     {
         Assert.NotEmpty(DiagnosticsScanner.PartsOfCodes([("Engine.Core/Probe.cs", source)]));
