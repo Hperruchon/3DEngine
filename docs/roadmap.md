@@ -261,6 +261,7 @@ This track removes each condition that blocks other work.
 | P8e | The unit in the numeric pad. The header of P8a holds the length unit of the document (KD4). TASK-0119. | 1 |
 | P8f | The document file in the desktop and for an agent. The desktop opens the file that its command line names, and an open in the window starts the program again (Q5). "Save" moves the file to the name typed in the panel. HTTP save and open on the loopback address, in one folder (Q6, ADR-0002). ADR-0030, TASK-0092. | 2–3 |
 | P8g | An STL export of the live bodies, from the surface, the command line and the desktop (ADR-0048). TASK-0157. | 1 |
+| P8h | The unit kind of each number parameter in the command schema: `Unit` and `UnitBy` on `FieldSchema`, a unit on each of the 21 number parameters, and a gate. From the module-declaration proposal of the desktop redesign; the owner chose `constraint-value` and `scale` on 2026-11-05. ADR-0059, TASK-0186. | 1–2 |
 
 ## Track R — The renderer
 
@@ -370,6 +371,8 @@ The tracks are not strictly sequential, but three rules hold:
    in progress, gave the order "Ok": P0.78 and P0.79 now, and then K4.
    On 2026-11-05 the owner answered the four questions of K4: the boolean first, a new project, one face for each
    curve of a profile, and the references by identity in a later slice. So K4a comes first, then K4b, then K4c.
+   On 2026-11-05 the owner put P8h (TASK-0186) on the task list for a later session, from the module-declaration
+   proposal of the desktop redesign. It comes after K4c, unless the owner gives another order.
 2. R2 blocks each later phase in track R. No mesh leaves the geometry backend today.
 3. K4 needs K0, K1 and K2. Do not start K4 before the reference model exists.
 4. The path to the milestone "CAD on one part" (the owner, 2026-10-27, KD2): R7b, R8a, R8b, the codebase
