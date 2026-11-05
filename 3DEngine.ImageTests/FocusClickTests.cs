@@ -7,14 +7,14 @@ using ThreeDEngine.Vulkan;
 
 namespace ThreeDEngine.ImageTests;
 
-// Register entry R-0043 (TASK-0188): the order of the samples of a click whose cursor moved with no
-// motion message before the press. A probe of 2026-11-05 posted messages to a hidden window of SDL 3.2.10
-// on Windows and moved no cursor: a press posted at (300, 200) came as a press at (0, 299), the last place
-// of a motion. SDL_mouse.c fills button.x and button.y from mouse->x and mouse->y. So the press of such a
-// click reaches the place of the last motion, and the next motion with the button down reaches the place
-// of the click. These tests give that order to SdlInput and to the panel. With the place of the event, the
-// panel moves or the camera turns, the two faults of the visual check of K2b. With the place of the
-// cursor, the click reaches its place.
+// Register entry R-0043 and finding V85 (TASK-0188, TASK-0191): the order of the samples of a click whose cursor moved
+// with no motion message before the press. A probe of 2026-11-05 posted messages to a hidden window of SDL 3.2.10 on
+// Windows and moved no cursor: a press posted at (300, 200) came as a press at (0, 299), the last place of a motion,
+// because SDL_mouse.c fills button.x and button.y from mouse->x and mouse->y. So the press of such a click reaches the
+// place of the last motion, and the next motion with the button down reaches the place of the click. With that order
+// the panel moves or the camera turns, the two faults of the visual check of K2b. The hook of Window warps the mouse of
+// SDL to the place of the button message first, so SDL gives a motion and then the press at the place of the click.
+// These tests give both orders to SdlInput, the panel and the intent machine.
 [Collection(DearImGui.Collection)]
 public class FocusClickTests
 {
@@ -58,24 +58,27 @@ public class FocusClickTests
         return e;
     }
 
-    // The events of SDL for a click at the place "click" after a last motion at the place "last": a motion at
-    // the last place, the press at the last place, the motion with the button down at the click, a frame with the
-    // button down, as a hand gives, and the release at the click. Each frame of events goes through SdlInput, the
-    // panel and the intent machine.
+    // The events of SDL for a click at the place "click" after a last motion at the place "last", a frame with the
+    // button down as a hand gives, and the release at the click. With no correction: the press at the last place, then
+    // the motion with the button down at the click. With the warp of the hook: a motion at the click, then the press
+    // there. Each frame of events goes through SdlInput, the panel and the intent machine.
     private static (Vector4 PanelBefore, Vector4 PanelAfter, List<Intent> Intents, List<PointerSample> Presses) Click(
-        (float X, float Y) last, (float X, float Y) click, Func<(float X, float Y)?>? cursor)
+        (float X, float Y) last, (float X, float Y) click, bool warped)
     {
         using var ui = Opened();
-        var input = new SdlInput(cursor);
+        var input = new SdlInput();
         var machine = new IntentMachine();
         var intents = new List<Intent>();
         var presses = new List<PointerSample>();
         var before = ui.PanelRectangles[0];
 
+        SDL_Event[] press = warped
+            ? [Motion(click.X, click.Y, held: false), Button(true, click.X, click.Y)]
+            : [Button(true, last.X, last.Y), Motion(click.X, click.Y, held: true)];
         SDL_Event[][] frames =
         [
             [Motion(last.X, last.Y, held: false)],
-            [Button(true, last.X, last.Y), Motion(click.X, click.Y, held: true)],
+            press,
             [],
             [Button(false, click.X, click.Y)],
             [],
@@ -97,7 +100,7 @@ public class FocusClickTests
     private static (float X, float Y) TitleOf(Vector4 panel) => ((panel.X + panel.Z) / 2, panel.Y + 6);
 
     [Fact]
-    public void A_Press_At_The_Last_Place_Over_The_Title_Moves_The_Panel_And_The_Place_Of_The_Cursor_Does_Not()
+    public void A_Press_At_The_Last_Place_Over_The_Title_Moves_The_Panel_And_The_Warp_Of_The_Hook_Does_Not()
     {
         Vector4 panel;
         using (var ui = Opened())
@@ -106,18 +109,18 @@ public class FocusClickTests
         (float X, float Y) viewport = (900, 500);
         Assert.False(panel.X <= viewport.X && viewport.X < panel.Z && panel.Y <= viewport.Y && viewport.Y < panel.W);
 
-        var stale = Click(title, viewport, cursor: null);
+        var stale = Click(title, viewport, warped: false);
         Assert.NotEqual(stale.PanelBefore, stale.PanelAfter);
 
-        var fixedClick = Click(title, viewport, cursor: () => viewport);
-        Assert.Equal(fixedClick.PanelBefore, fixedClick.PanelAfter);
-        var press = Assert.Single(fixedClick.Presses);
+        var warped = Click(title, viewport, warped: true);
+        Assert.Equal(warped.PanelBefore, warped.PanelAfter);
+        var press = Assert.Single(warped.Presses);
         Assert.Equal((viewport.X, viewport.Y), ((float)press.X, (float)press.Y));
-        Assert.DoesNotContain(fixedClick.Intents, intent => intent is OrbitIntent);
+        Assert.DoesNotContain(warped.Intents, intent => intent is OrbitIntent);
     }
 
     [Fact]
-    public void A_Press_At_The_Last_Place_In_The_Viewport_Turns_The_Camera_And_The_Place_Of_The_Cursor_Does_Not()
+    public void A_Press_At_The_Last_Place_In_The_Viewport_Turns_The_Camera_And_The_Warp_Of_The_Hook_Does_Not()
     {
         Vector4 panel;
         using (var ui = Opened())
@@ -125,11 +128,11 @@ public class FocusClickTests
         (float X, float Y) inside = ((panel.X + panel.Z) / 2, (panel.Y + panel.W) / 2);
         (float X, float Y) viewport = (900, 500);
 
-        var stale = Click(viewport, inside, cursor: null);
+        var stale = Click(viewport, inside, warped: false);
         Assert.Contains(stale.Intents, intent => intent is OrbitIntent);
 
-        var fixedClick = Click(viewport, inside, cursor: () => inside);
-        Assert.DoesNotContain(fixedClick.Intents, intent => intent is OrbitIntent);
-        Assert.Equal(fixedClick.PanelBefore, fixedClick.PanelAfter);
+        var warped = Click(viewport, inside, warped: true);
+        Assert.DoesNotContain(warped.Intents, intent => intent is OrbitIntent);
+        Assert.Equal(warped.PanelBefore, warped.PanelAfter);
     }
 }

@@ -341,6 +341,11 @@ internal sealed class SessionBodies : IDisposable
     public ((double X, double Y, double Z) Min, (double X, double Y, double Z) Max)? BoxOf(Guid bodyId)
         => _boxes.ContainsKey(bodyId.ToString()) && IsVisible(bodyId.ToString()) ? Shifted(bodyId.ToString()) : null;
 
+    // Finding V87 of the codebase review of 2026-11-05 (b) (TASK-0191): the box of the mesh of a visible live body with
+    // no offset of a preview, or null. A preview does not change the engine, so a query of the body keeps this key.
+    public ((double X, double Y, double Z) Min, (double X, double Y, double Z) Max)? RestBoxOf(Guid bodyId)
+        => _boxes.TryGetValue(bodyId.ToString(), out var rest) && IsVisible(bodyId.ToString()) ? rest : null;
+
     // Finding V82 of the codebase review of 2026-11-05 (TASK-0181): the box of a mesh moves with the preview of a drag,
     // so the dimensions follow the body that the person drags.
     private ((double X, double Y, double Z) Min, (double X, double Y, double Z) Max) Shifted(string meshId)
