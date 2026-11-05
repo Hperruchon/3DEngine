@@ -159,6 +159,7 @@ Therefore each approved objective must have a track here.
 - P0.76 — A sketch on a face looks from the side of the eye, the arm of a face ends with a new sketch, a datum on a short side has unit axes, and the next forms of three gates fail. v0.181, TASK-0177.
 - P0.78 — The far plane holds each visible body from the eye, and the dimension overlay keeps its labels apart and inside the window, follows a drag and reads the boxes once for each change. v0.183, TASK-0181.
 - P0.79 — A datum on a diagonal subnormal side has unit axes, the walk of the planes gives its sketches in the order of the log, and the next forms of three gates fail. v0.184, TASK-0182.
+- K4a — The owned kernel subtracts planar solids exactly, and each face of the result keeps its provenance. v0.185, TASK-0183, ADR-0057.
 
 ## Track 0 — Foundations
 
@@ -312,7 +313,10 @@ boundary and each refused rung.
 | K2g | The selection holds three items, and the window of the sketch offers Symmetric (the answer "1 3 4" of 2026-10-31). TASK-0127. | 1 |
 | K3a | A constraint solver for five constraints: coincident, horizontal, vertical, distance and fixed. It uses only `+ - * / sqrt`, and its output stays outside the log (KD5). ADR-0035, TASK-0102. | 8–12 |
 | K3 | The rest of the constraint solver, after K3a. Done: the fourteen kinds of ADR-0033 item 3 are in K3a (TASK-0102), K2c (TASK-0110) and K2d (TASK-0117); the owner closed the row on 2026-10-31. | 4–8 |
-| K4 | Planar faces only, with a boolean. Provenance inside the kernel. | 35–55 |
+| K4 | Planar faces only, with a boolean. Provenance inside the kernel. In slices from K4a (the four answers of the owner of 2026-11-05). | 35–55 |
+| K4a | The exact planar subtract in the new project `Engine.Kernel`: rational solids of boxes, extrudes and moves, `Orient3D`, a binary space partition, the provenance of each face, and the B-Rep of the result, proven against Manifold. The boolean first; one face for each curve of a profile; no engine change. ADR-0057, TASK-0183. | 8–12 |
+| K4b | The engine reads the kernel: the B-Rep of each body as a projection of the feature list, and a query of its faces with their names. | 6–10 |
+| K4c | The datums and the references by the identity of a face, and a fault for a face that is gone (ADR-0051 item 8). | 4–6 |
 | K5 | Add the cylinder, the cone, the sphere and the torus. | 55–85 |
 | K6 | STEP export for the analytic subset. | 6–12 |
 | K7 | General extrude and revolve of a simple curve. **Optional.** Year two. | 40–65 |
@@ -363,6 +367,8 @@ The tracks are not strictly sequential, but three rules hold:
    product phase, by the rule of `docs/templates.md`, section 7. Q1 of that review asks for the next product phase.
    On 2026-11-05 the owner answered A to Q1, the redesign of the desktop, and then, because the redesign is still work
    in progress, gave the order "Ok": P0.78 and P0.79 now, and then K4.
+   On 2026-11-05 the owner answered the four questions of K4: the boolean first, a new project, one face for each
+   curve of a profile, and the references by identity in a later slice. So K4a comes first, then K4b, then K4c.
 2. R2 blocks each later phase in track R. No mesh leaves the geometry backend today.
 3. K4 needs K0, K1 and K2. Do not start K4 before the reference model exists.
 4. The path to the milestone "CAD on one part" (the owner, 2026-10-27, KD2): R7b, R8a, R8b, the codebase

@@ -921,6 +921,16 @@ public class DependencyDirectionGateTests
         Assert.Empty(graph["Engine.Contracts"]);
     }
 
+    // ADR-0057 item 1: the owned kernel references no project, so its identity cannot depend on a backend, the bus or a
+    // client.
+    [Fact]
+    public void The_Owned_Kernel_References_No_Project()
+    {
+        var graph = Graph();
+        Assert.True(graph.ContainsKey("Engine.Kernel"), "Engine.Kernel.csproj was not found.");
+        Assert.Empty(graph["Engine.Kernel"]);
+    }
+
     [Fact]
     public void Engine_Core_References_Only_Engine_Contracts()
     {
@@ -964,7 +974,8 @@ public class DependencyDirectionGateTests
     // packaging project. A project outside each class is a project that no
     // rule reads, which is how the vendored sample framework escaped the gate
     // before TASK-0027.
-    private static readonly string[] Kernel = ["Engine.Contracts", "Engine.Core", "Engine.Geometry.Manifold"];
+    // ADR-0057 item 1 (phase K4a, TASK-0183): the owned kernel of identity is in the class of the kernel.
+    private static readonly string[] Kernel = ["Engine.Contracts", "Engine.Core", "Engine.Geometry.Manifold", "Engine.Kernel"];
 
     private static readonly string[] RenderSide = ["3DEngine.Core", "3DEngine.Vulkan"];
 
