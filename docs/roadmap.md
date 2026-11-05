@@ -170,6 +170,7 @@ Therefore each approved objective must have a track here.
 - R14a — Android is a platform of the charter, with ADR-0061 and the rows of R14. v0.193, TASK-0193, ADR-0061.
 - P0.83 — A press of a hand keeps its place, the far plane holds the images, and a drag queries no size in each frame. v0.194, TASK-0191.
 - P0.84 — The kept solids belong to one Document, the faces of the kernel keep their holes, and the next forms of five gates fail. v0.195, TASK-0192.
+- R14b — The host owns the document session, the surface mounts on it as an option, and an open stays in the same process. v0.196, TASK-0194, ADR-0061.
 
 ## Track 0 — Foundations
 
@@ -302,7 +303,7 @@ The first objective. Each phase ends with something that a person can observe.
 | R12 | The escalated selection of faces and edges. It needs a stable identity of each face and each edge, so it comes after K4 (ADR-0041 item 5; the owner, 2026-11-02). | 4–6 |
 | R13 | The dimension overlay of the desktop: a toggle in the panel, the overall size of the visible bodies or of each live body, and the size and the thickness of a selected body, as lines with labels in the scene (the owner, 2026-11-03; four answers of 2026-11-04). ADR-0056, TASK-0178. | 2–4 |
 | R14a | Android in the charter: objective 8 and anti-objective 16, the closure of R-0020, ADR-0061 with its amendments of ADR-0017 and ADR-0027, and the rows R14b to R14g (the Android order of the owner, 2026-11-05). TASK-0193. | 1 |
-| R14b | The host owns the document session, the surface mounts on that session as an option, and an open of a file stays in the same process (`3DEngine/DesktopDocument.cs`). The behaviour of the desktop does not change, and tests prove it (ADR-0061 item 9). | 2–4 |
+| R14b | The host owns the document session, the surface mounts on that session as an option, and an open of a file stays in the same process (`3DEngine/DesktopDocument.cs`). The behaviour of the desktop does not change, and tests prove it (ADR-0061 item 9). TASK-0194. | 2–4 |
 | R14c | `ppy.SDL3-CS` replaces `Alimer.Bindings.SDL` on the desktop, with no change of behaviour and no file of 32-bit x86; the image tests stay green (ADR-0061 item 5). | 2–4 |
 | R14d | The native builds of Manifold and cimgui for `android-arm64` and `android-x64` on GitHub Actions, with the NDK, serial (ADR-0061 items 6 and 7). | 3–6 |
 | R14e | The Android host: a `net10.0-android` project, an activity that subclasses `SDLActivity`, the APK, the document picker for Open and Save, a new surface and swapchain after a loss, the pre-rotation, and a pause in the background. A box, a subtract and the cut on the S23 Ultra, and a test sheet for the owner. The row closes only after the test of the owner (ADR-0061 item 9). | 10–20 |

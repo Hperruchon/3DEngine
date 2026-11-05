@@ -1,7 +1,7 @@
 ---
 id: 0194
 title: The host owns the document session, the surface mounts on it as an option, and an open stays in the same process
-status: Active
+status: Done
 phase: R14b
 opened: 2026-11-06
 depends-on: [0193]
@@ -62,20 +62,21 @@ session, and the next session holds the file in the same process, on the same po
 
 ## Acceptance criteria
 
-- [ ] Each test of the desktop and of the surface passes, with no change of its expectation except the start again.
-- [ ] Each injection of the change fails a test.
-- [ ] A clean build (`--no-incremental`) gives zero errors and zero warnings.
-- [ ] Continuous integration passes on the three runners, on the branch and on `main` after the merge.
+- [x] Each test of the desktop and of the surface passes, with no change of its expectation except the start again.
+- [x] Each injection of the change fails a test.
+- [x] A clean build (`--no-incremental`) gives zero errors and zero warnings.
+- [x] Continuous integration passes on the three runners, on the branch and on `main` after the merge.
 
 ## Outcome
 
-Status: Active
+Status: Done · commit (the merge of the branch r14b-host-owns-session) · v0.196
 
 ## Method
 
 Mechanical: the move of the session from the container of the surface to the host, with the order of the checks kept.
 Judgement:  the session opens inside the start of the surface, so the exit codes keep their order.
-Weakest:    to be written at the close.
+Weakest:    the tests run the loop of the sessions with no window; only the probe made a second GPU device on the
+            real window, and nobody looked at the picture of the second session.
 
 ## Progress
 
@@ -84,3 +85,4 @@ Weakest:    to be written at the close.
 - 2026-11-06: a probe of the real desktop with --port 0: a box, a save as second, a box, and an open of second over
   HTTP gave 202; the next session served second.3de at the version 2 on a new port, in the same process, with a new
   Vulkan instance and no validation message. Nobody looked at the window.
+- 2026-11-06: closed at v0.196.
