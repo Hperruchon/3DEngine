@@ -5423,3 +5423,35 @@ ends the arm. Ten injections each fail a test.
 New tests: 6. The test list holds 1693 (1188 in `Engine.Tests`, 309 in `3DEngine.Tests`, 193 in `3DEngine.ImageTests`,
 3 in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
 entries: 14 of 15. New diagnostic codes: 0. Since the review of v0.181, 0 product milestones and 2 entries followed it.
+
+## v0.184 — A datum on a diagonal subnormal side has unit axes, and the next forms of three gates fail (P0.79, TASK-0182)
+
+The codebase review of 2026-11-05 found E131 to E133 and T133 to T135 (low). On 2026-11-05 the owner gave the order
+"Ok" to P0.78 and P0.79 before the next product phase, K4.
+
+**The change.**
+- E131: in the scaled branch of a side of a datum, the axis comes from the scaled components and their own root, which
+  are normal. A diagonal side of 5e-324 gave an axis of the length 1.414; it gives 1 now.
+- E132: a test puts a stale point of a reference into the Document itself, and the next edit of its sketch solves it
+  again in the walk of the planes; the guard of E129 takes the record of the walk. The guard has a test now.
+- E133: `DatumResolver.Rebuild` gives its changed sketches in the log order of their creation, as its comment says.
+- T133: `ItemOffences` refuses each item of a file that MSBuild reads that is not in a short list: the items that the
+  repository uses and the items that a gate reads.
+- T134: the scanner of the codes walks a string call after `ToString`, a `StringBuilder` of the node, a pad, a repeat
+  and `string.Create`.
+- T135: a `#` at any indent is a heading problem of the ledger.
+
+**Proof.** Before the change: an item `ReferencePath` or `Analyzer` in a target of `Engine.Core.csproj` passed 131 of 131
+tests of the dependency gate, the seven spellings of T134 gave no part, and the three headings of T135 gave no problem.
+After it: each one fails, the control `Reference` still fails its own gate, and the real projects, the sources and the
+ledger pass. New tests: four diagonal sides from 1e-310 to 5e-324 with a unit frame, a stale reference that the guard
+mends, the order of the changed sketches, and the new forms in the three theories. Four injections each fail a test: the
+axis over the subnormal length, an edit that keeps its record, the edited sketch two times, and the order of the first
+solve.
+
+**What stays.** If the guard of E129 acts, the record of the walk comes from a solve with no hold, so a held point can
+move with no `W-SKETCH-HOLD-DROPPED`; no command reaches that state.
+
+New tests: 23. The test list holds 1716 (1211 in `Engine.Tests`, 309 in `3DEngine.Tests`, 193 in `3DEngine.ImageTests`,
+3 in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
+entries: 14 of 15. New diagnostic codes: 0. Since the review of v0.181, 0 product milestones and 3 entries followed it.
