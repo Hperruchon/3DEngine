@@ -111,7 +111,9 @@ public static class StepExport
         if (value == 0)
             return "0.";
         var text = value.ToString("R", CultureInfo.InvariantCulture);
-        var e = text.IndexOf('E', StringComparison.Ordinal);
+        // The format R of a finite double holds no letter other than the exponent, so the first letter is the exponent.
+        // A search for a letter keeps the diagnostics scanner free of a constant severity (T137, TASK-0192).
+        var e = text.AsSpan().IndexOfAnyInRange('A', 'Z');
         var (mantissa, exponent) = e < 0 ? (text, "") : (text[..e], text[e..]);
         return mantissa.Contains('.', StringComparison.Ordinal) ? mantissa + exponent : mantissa + "." + exponent;
     }

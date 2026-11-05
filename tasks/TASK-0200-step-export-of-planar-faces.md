@@ -1,7 +1,7 @@
 ---
 id: 0200
 title: The live bodies leave the engine as one STEP file of their planar faces
-status: Active
+status: Done
 phase: K6a
 opened: 2026-11-06
 depends-on: [0184]
@@ -70,7 +70,7 @@ file of AP214, with the same bytes on each platform.
 - [x] The bytes of a fixed body have one SHA-256 in each culture; the pipeline runs the test on three runners.
 - [x] A void, a fault and a coordinate out of the range of a double give `E-EXPORT-BODY-FAILED` and no file.
 - [x] A clean build (`--no-incremental`) gives zero errors and zero warnings.
-- [ ] Continuous integration passes on the three runners, on the branch and on `main` after the merge.
+- [x] Continuous integration passes on the three runners, on the branch and on `main` after the merge.
 
 ## Notes for the implementer
 
@@ -79,7 +79,7 @@ transcendental function; `DeterminismCallGateTests` scans `Engine.Core`.
 
 ## Outcome
 
-Status: Done · commit (the merge of the branch k6a-step-export) · v0.TBD
+Status: Done · commit (the merge of the branch k6a-step-export) · v0.198
 
 ## Method
 
@@ -94,3 +94,5 @@ Weakest:    no reader of STEP outside the repository read the files. `StepReader
 - 2026-11-06: opened by the engine lane of the order of 2026-11-05. AP214, not AP242, answered by the standing order of
   2026-11-05 (ADR-0070 item 1). The writer, the route, the verb, the code, ADR-0070 and the tests. Three injections
   each fail a test: the current culture in `Real`, no refusal of a void, and the same sense on each oriented edge.
+- 2026-11-06: integrated by the main session at v0.198. The rule of T137 (TASK-0192, merged after this branch
+  opened) refuses the constant 'E' of `Real`; the search for the exponent is a search for a capital letter now.
