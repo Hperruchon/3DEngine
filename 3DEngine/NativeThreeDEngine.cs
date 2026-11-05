@@ -23,7 +23,7 @@ namespace ThreeDEngine.Desktop;
 // panel after the scene, in the same render pass (ADR-0027, TASK-0084).
 public sealed class NativeThreeDEngine : IThreeDEngine, IDisposable
 {
-    private readonly SdlInput _input = new();
+    private readonly SdlInput _input;
     private readonly IntentMachine _intents;
 
     private readonly Window _window;
@@ -62,6 +62,8 @@ public sealed class NativeThreeDEngine : IThreeDEngine, IDisposable
     internal NativeThreeDEngine(Window window, EngineHost host, IntentSettings? settings = null, bool synchronizationValidation = false, string address = "", DesktopDocument? document = null, Engine.Core.Assets.AssetStore? assets = null)
     {
         _window = window;
+        // R-0043 (TASK-0188): a press and a release take the place of the cursor, not the last place of a motion.
+        _input = new SdlInput(window.Cursor);
         _document = document;
         _assets = assets;
         _host = host;

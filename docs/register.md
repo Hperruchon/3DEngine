@@ -411,21 +411,6 @@ Vulkan layer that only Windows or macOS shows passes the pipeline. The computer 
 on Windows with a GPU, and no computer runs it on macOS.
 Exit: a runner of Windows or macOS gives a Vulkan device and the pipeline requires the test there, or the
 owner accepts Ubuntu alone and moves this entry to the accepted compromises.
-### R-0043 · The first click into the desktop window can reach the panel at a wrong place
-- class: risk
-- opened: 2026-10-28
-- due: 2026-11-27
-- extended: no
-- refs: `3DEngine/Ui/UiInputRouter.cs`, `3DEngine.Vulkan/SdlInput.cs`, TASK-0101
-In the visual check of K2b, a synthetic click into a window without the focus, with no motion before it, dragged
-the panel once and turned the camera once. Clicks within one frame of a new pad also hit other keys. A hand moves
-the mouse before a click, so a person may never see it, but a wrong button of a pad gives a wrong number.
-Exit: a test of the order of the samples of a focus click explains it, and a change or a recorded reason closes it.
-Progress 2026-10-30: TASK-0118 built a probe that logs each SDL event of the mouse and of the focus, each sample that
-the router gives to the panel or to the intents, and each intent. A focus to another window gave one
-`FocusLostSample` to both. Its click reached the window above the desktop, and the log held motions of a mouse that
-the probe did not move, so the run stopped. The next run needs a time when nobody else uses the mouse.
-
 ### R-0048 · The licences of the native vision library in a distributed program have no decision
 - class: question
 - opened: 2026-10-31
@@ -492,6 +477,27 @@ needs a deliberate act.
 ---
 
 ## Closed
+
+### R-0043 · The first click into the desktop window can reach the panel at a wrong place
+- class: risk
+- opened: 2026-10-28
+- due: 2026-11-27
+- extended: no
+- refs: `3DEngine/Ui/UiInputRouter.cs`, `3DEngine.Vulkan/SdlInput.cs`, TASK-0101
+In the visual check of K2b, a synthetic click into a window without the focus, with no motion before it, dragged
+the panel once and turned the camera once. Clicks within one frame of a new pad also hit other keys. A hand moves
+the mouse before a click, so a person may never see it, but a wrong button of a pad gives a wrong number.
+Exit: a test of the order of the samples of a focus click explains it, and a change or a recorded reason closes it.
+Progress 2026-10-30: TASK-0118 built a probe that logs each SDL event of the mouse and of the focus, each sample that
+the router gives to the panel or to the intents, and each intent. A focus to another window gave one
+`FocusLostSample` to both. Its click reached the window above the desktop, and the log held motions of a mouse that
+the probe did not move, so the run stopped. The next run needs a time when nobody else uses the mouse.
+Closed 2026-11-05 · resolved · TASK-0188. SDL 3.2.10 gives a press and a release at the last place of a motion:
+`SDL_mouse.c` fills `button.x` from `mouse->x`, and a probe that moved no cursor got a press posted at (300, 200) at
+(0, 299). `3DEngine.ImageTests/FocusClickTests.cs` gives that order to `SdlInput` and the panel: with the place of
+the event the panel moves and the camera turns, the two faults of K2b. On Windows a press and a release now take the
+place of the cursor (`Window.Cursor`), and the same order reaches the place of the click. Three injections each fail
+a test. Linux and macOS keep the place of the event; no probe ran there.
 
 ### R-0052 · Two sessions can plan the same ADR number, and no gate sees it before a merge
 - class: risk

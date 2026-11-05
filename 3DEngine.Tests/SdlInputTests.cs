@@ -192,4 +192,69 @@ public unsafe class SdlInputTests
         e.key.key = (SDL_Keycode)letter;
         return e;
     }
+
+    private static SDL_Event MouseMotion(float x, float y, bool held)
+    {
+        SDL_Event e = default;
+        e.type = SDL_EventType.MouseMotion;
+        e.motion.which = (SDL_MouseID)1;
+        e.motion.state = held ? SDL_MouseButtonFlags.Left : 0;
+        e.motion.x = x;
+        e.motion.y = y;
+        return e;
+    }
+
+    private static SDL_Event MouseButton(SDL_EventType type, float x, float y)
+    {
+        SDL_Event e = default;
+        e.type = type;
+        e.button.which = (SDL_MouseID)1;
+        e.button.button = 1;
+        e.button.down = type == SDL_EventType.MouseButtonDown;
+        e.button.x = x;
+        e.button.y = y;
+        return e;
+    }
+
+    // Register entry R-0043 (TASK-0188): SDL 3.2 gives a press at the last place of a motion. The events are in the
+    // order of a probe of SDL 3.2.10 on Windows: a motion at the last place, the press at the last place, the motion
+    // with the button down at the click, and the release. With a cursor, the press and the release take its place
+    // and each motion keeps its own; with no cursor, or a cursor that gives null, they keep the place of the event.
+    [Theory]
+    [InlineData(true, 300f, 200f)]
+    [InlineData(false, 50f, 60f)]
+    public void A_Press_And_A_Release_Take_The_Place_Of_The_Cursor_When_The_Host_Gives_One(bool cursorKnown, float pressX, float pressY)
+    {
+        foreach (var input in cursorKnown
+            ? new[] { new SdlInput(() => (300f, 200f)) }
+            : new[] { new SdlInput(), new SdlInput(() => null) })
+        {
+            input.Translate(MouseMotion(50, 60, held: false), 800, 600);
+            input.Translate(MouseButton(SDL_EventType.MouseButtonDown, 50, 60), 800, 600);
+            input.Translate(MouseMotion(300, 200, held: true), 800, 600);
+            input.Translate(MouseButton(SDL_EventType.MouseButtonUp, 50, 60), 800, 600);
+
+            var samples = input.TakeFrame().Cast<PointerSample>().Select(s => (s.Phase, s.X, s.Y)).ToArray();
+            Assert.Equal(
+                new[]
+                {
+                    (PointerPhase.Move, 50.0, 60.0),
+                    (PointerPhase.Down, (double)pressX, (double)pressY),
+                    (PointerPhase.Move, 300.0, 200.0),
+                    (PointerPhase.Up, (double)pressX, (double)pressY),
+                },
+                samples);
+        }
+    }
+
+    // The touch rule of decision D8 stays first: a cursor does not bring back a mouse event of a touch.
+    [Fact]
+    public void A_Cursor_Does_Not_Bring_Back_A_Mouse_Event_Of_A_Touch()
+    {
+        var input = new SdlInput(() => (300f, 200f));
+
+        input.Translate(SyntheticButton(SDL_EventType.MouseButtonDown, 100, 100, 0), 800, 600);
+
+        Assert.Empty(input.TakeFrame());
+    }
 }

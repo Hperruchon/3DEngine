@@ -5629,3 +5629,44 @@ units; a later task can read the schema.
 New tests: 12. The test list holds 1762 (1257 in `Engine.Tests`, 309 in `3DEngine.Tests`, 193 in `3DEngine.ImageTests`,
 3 in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
 entries: 15 of 15. New diagnostic codes: 0. Since the review of v0.181, 4 product milestones and 8 entries followed it.
+
+## v0.190 — A press and a release of the mouse take the place of the cursor (P0.81, TASK-0188)
+
+Register entry R-0043, class risk, was due on 2026-11-27. In the visual check of K2b a synthetic click into the
+desktop window dragged the panel once and turned the camera once, and clicks on a new pad hit other keys. The probe of
+TASK-0118 stopped, because a person used the mouse. On 2026-11-05 the owner gave the order "fix R-0043 first, then the
+review".
+
+**The cause.** SDL 3.2.10 is the native library of `Alimer.Bindings.SDL` 3.9.8. Its `SDL_PrivateSendMouseButton`
+(`src/events/SDL_mouse.c`) fills `button.x` and `button.y` from `mouse->x` and `mouse->y`, the last place of a
+motion, and the Windows backend does not read the place of a button message. A probe posted messages to a hidden SDL
+window and moved no cursor: a press posted at (300, 200) came at (0, 299). So when the cursor jumps with no motion
+message before the press, the press reaches the last place, and the next motion with the button down reaches the
+click. Over the title of the panel that is a drag of the panel; in the viewport it is a turn of the camera. By the same
+cause, a click on a key of a pad after a click on another key can reach the first key again; no test shows it.
+
+**The change.**
+- `SdlInput` takes an optional source of the cursor place. A press and a release take that place, and a motion keeps
+  its own. With no source, or a source that gives null, nothing changes.
+- `Window.Cursor` reads the place as SDL reads it at a focus gain on Windows: `GetCursorPos`, then
+  `ScreenToClient` with the handle of the window. It gives null on another video driver.
+- `NativeThreeDEngine` gives `Window.Cursor` to its `SdlInput`.
+
+**Proof.** `3DEngine.ImageTests/FocusClickTests.cs` gives the order of the probe to `SdlInput`, the panel and the
+intent machine. With the place of the event the panel moves and the camera turns; with the place of the cursor the
+press reaches the click, the panel stays and no orbit comes. `SdlInputTests` holds the rule: the press and the release
+take the cursor, each motion keeps its place, and a touch stays dropped. Three injections each fail a test: no
+correction, a correction of the press only, and a correction of each motion too. The probe also gave the same
+numbers for `GetCursorPos` with `ScreenToClient` and for the global state of SDL less the place of the window, at the
+display scale 1 of the computer of the owner.
+
+**What stays.** No person clicked the real window after the change, because a probe with the mouse needs a time when
+nobody uses the computer. Linux and macOS keep the place of the event: the cause is in the common file `SDL_mouse.c`,
+but no probe ran on X11, Wayland or Cocoa, and on Wayland a program cannot read the cursor. A hand moves the mouse
+before a click, so a person sees the fault there only after a jump of the cursor with no motion.
+
+**A correction.** None.
+
+New tests: 5. The test list holds 1767 (1257 in `Engine.Tests`, 312 in `3DEngine.Tests`, 195 in `3DEngine.ImageTests`,
+3 in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
+entries: 14 of 15. New diagnostic codes: 0. Since the review of v0.181, 4 product milestones and 9 entries followed it.

@@ -74,8 +74,42 @@ public sealed unsafe class Window
         _ = SDL_SetWindowPosition(_window, SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED);
         Id = SDL_GetWindowID(_window);
 
+        // R-0043 (TASK-0188): the handle of the window for Cursor, on the video driver of Windows only.
+        if (OperatingSystem.IsWindows() && SDL_GetCurrentVideoDriver() == "windows")
+            _handle = SDL_GetPointerProperty(SDL_GetWindowProperties(_window), SDL_PROP_WINDOW_WIN32_HWND_POINTER, IntPtr.Zero);
+
         // The text input of SDL gives the text events of a text field (ADR-0027 item 5).
         _ = SDL_StartTextInput(_window);
+    }
+
+    private readonly IntPtr _handle;
+
+    // Register entry R-0043 (TASK-0188): the place of the cursor in the coordinates of the window, read as SDL 3.2
+    // reads it at a focus gain on Windows (GetCursorPos, then ScreenToClient), so it has the coordinates of a motion
+    // event. It is null on another video driver: SDL gives no such reading there that a probe checked.
+    public (float X, float Y)? Cursor()
+    {
+        if (_handle == IntPtr.Zero || !Win32.GetCursorPos(out var point) || !Win32.ScreenToClient(_handle, ref point))
+            return null;
+        return (point.X, point.Y);
+    }
+
+    private static class Win32
+    {
+        [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential)]
+        internal struct Point
+        {
+            public int X;
+            public int Y;
+        }
+
+        [System.Runtime.InteropServices.DllImport("user32.dll")]
+        [return: System.Runtime.InteropServices.MarshalAs(System.Runtime.InteropServices.UnmanagedType.Bool)]
+        internal static extern bool GetCursorPos(out Point point);
+
+        [System.Runtime.InteropServices.DllImport("user32.dll")]
+        [return: System.Runtime.InteropServices.MarshalAs(System.Runtime.InteropServices.UnmanagedType.Bool)]
+        internal static extern bool ScreenToClient(IntPtr window, ref Point point);
     }
 
     public string Title { get; }
