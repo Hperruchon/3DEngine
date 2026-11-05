@@ -578,6 +578,50 @@ public class DependencyDirectionGateTests
         Assert.True(offences.Length == 0, "The gates read the items of a project as elements only. Name each item in an item group.\n  " + string.Join("\n  ", offences));
     }
 
+    // Finding T133 of the codebase review of 2026-11-05 (TASK-0182): an item ReferencePath in a target made Engine.Core
+    // reference 3DEngine.Core, and each gate passed, because the gates read the items ProjectReference, Reference and the
+    // package items only. Each item of each file that MSBuild reads is now one of the items that the repository uses, or
+    // one that a gate reads; a new kind of item needs a change of this list and of the gate that reads it.
+    internal static readonly string[] PermittedItems =
+    [
+        "Compile", "EmbeddedResource", "FrameworkReference", "GlobalPackageReference", "InternalsVisibleTo", "None",
+        "PackageReference", "ProjectReference", "Reference", "Using",
+    ];
+
+    internal static IEnumerable<string> ItemOffences(string file, XDocument document)
+        => document.Descendants().Where(e => Is(e, "ItemGroup"))
+            .SelectMany(group => group.Elements())
+            .Where(item => !PermittedItems.Any(name => Is(item, name)))
+            .Select(item => $"{file} has the item '{item.Name.LocalName}', which no gate reads");
+
+    [Fact]
+    public void Each_Item_Of_A_Project_Is_One_That_A_Gate_Reads()
+    {
+        var offences = ProjectFiles()
+            .SelectMany(FilesThatMsBuildReads)
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .SelectMany(file => ItemOffences(RepositoryFiles.Relative(file), XDocument.Load(file)))
+            .ToArray();
+
+        Assert.True(offences.Length == 0, "A gate reads each kind of item that a project may hold. Use one of: "
+            + string.Join(", ", PermittedItems) + ".\n  " + string.Join("\n  ", offences));
+    }
+
+    // The forms of finding T133, and the controls.
+    [Theory]
+    [InlineData("<Target Name=\"T\"><ItemGroup><ReferencePath Include=\"..\\3DEngine.Core\\bin\\3DEngine.Core.dll\" /></ItemGroup></Target>", true)]
+    [InlineData("<Target Name=\"T\"><ItemGroup><ReferencePathWithRefAssemblies Include=\"Probe.dll\" /></ItemGroup></Target>", true)]
+    [InlineData("<ItemGroup><Analyzer Include=\"Probe.dll\" /></ItemGroup>", true)]
+    [InlineData("<ItemGroup><Content Include=\"Probe.txt\" /></ItemGroup>", true)]
+    [InlineData("<ItemGroup><ProjectReference Include=\"..\\Engine.Contracts\\Engine.Contracts.csproj\" /><None Include=\"a.txt\"><Pack>true</Pack></None></ItemGroup>", false)]
+    [InlineData("<ItemGroup><Using Include=\"Xunit\" /><Compile Remove=\"Probe.cs\" /></ItemGroup>", false)]
+    public void An_Item_That_No_Gate_Reads_Is_An_Offence(string items, bool offence)
+    {
+        var document = XDocument.Parse($"<Project>{items}</Project>");
+
+        Assert.Equal(offence, ItemOffences("Probe.csproj", document).Any());
+    }
+
     // The forms of findings T127 and T130, their next forms, and the controls.
     [Theory]
     [InlineData("<CreateItem Include=\"OpenCvSharp4\"><Output TaskParameter=\"Include\" ItemName=\"PackageReference\" /></CreateItem>", true)]

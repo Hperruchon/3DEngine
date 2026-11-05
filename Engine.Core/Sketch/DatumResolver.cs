@@ -139,7 +139,9 @@ public static class DatumResolver
                 throw new InvalidOperationException("The walk of the planes does not end, so the references of the sketches have a cycle.");
         }
 
-        return new Outcome(changedDatums, [.. changedSketches.Select(id => sketches[id])], FrameOf, SketchOf, diagnostics);
+        // Finding E133 of the codebase review of 2026-11-05 (TASK-0182): the sketches came in the order of their first solve
+        // over all walks. They come in the log order of the command that creates each one, as the Outcome says.
+        return new Outcome(changedDatums, [.. changedSketches.OrderBy(id => graph.Order(id)).Select(id => sketches[id])], FrameOf, SketchOf, diagnostics);
 
         // One walk of the steps in effect. True when a reference solved a sketch again.
         bool Walk()
@@ -332,14 +334,17 @@ public static class DatumResolver
         // codebase review of 2026-11-03 (TASK-0177): a sum of the squares that is subnormal but not 0 loses bits, and a
         // side of 3e-162 gave axes of the length 0.954; such a side scales too. Each side whose sum is a normal double
         // keeps the bits of v0.167.
+        var along = new DatumAxis(((tx * u.X) + (ty * v.X)) / length, ((tx * u.Y) + (ty * v.Y)) / length, ((tx * u.Z) + (ty * v.Z)) / length);
         if (((tx * tx) + (ty * ty) < SmallestNormal || double.IsPositiveInfinity(length)) && double.IsFinite(tx) && double.IsFinite(ty) && (tx != 0 || ty != 0))
         {
+            // Finding E131 of the codebase review of 2026-11-05 (TASK-0182): the scaled length is subnormal when both
+            // components are, and tx and ty over it kept their error, so a diagonal side of 5e-324 gave an axis of the
+            // length 1.414. The axis comes from the scaled components and their own root, which are normal.
             var larger = Math.Max(Math.Abs(tx), Math.Abs(ty));
             var (sx, sy) = (tx / larger, ty / larger);
-            length = larger * Math.Sqrt((sx * sx) + (sy * sy));
+            var root = Math.Sqrt((sx * sx) + (sy * sy));
+            along = new DatumAxis(((sx * u.X) + (sy * v.X)) / root, ((sx * u.Y) + (sy * v.Y)) / root, ((sx * u.Z) + (sy * v.Z)) / root);
         }
-
-        var along = new DatumAxis(((tx * u.X) + (ty * v.X)) / length, ((tx * u.Y) + (ty * v.Y)) / length, ((tx * u.Z) + (ty * v.Z)) / length);
         var origin = new DatumPoint(o.X + (p.X * u.X) + (p.Y * v.X), o.Y + (p.X * u.Y) + (p.Y * v.Y), o.Z + (p.X * u.Z) + (p.Y * v.Z));
         return (new DatumFrame(origin, along, n, Cross(along, n)), null);
     }

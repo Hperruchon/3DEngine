@@ -178,6 +178,15 @@ public class DiagnosticsRegistryGateTests
     [InlineData("static class P { const char S = 'W'; static string Code(string rest) => char.ToString(S) + rest; }")]
     [InlineData("static class P { const char S = 'I'; static string Code(string rest) => System.Convert.ToString(S) + rest; }")]
     [InlineData("static class P { const char S = 'E'; static string Code(string rest) => new System.Text.StringBuilder(rest).Insert(0, S).ToString(); }")]
+    // The forms of finding T134 of the codebase review of 2026-11-05 (TASK-0182): a string call after ToString, a
+    // StringBuilder of the node, a pad, a repeat and string.Create.
+    [InlineData("static class P { const char S = 'E'; static string Code(string rest) => S.ToString().ToUpperInvariant() + rest; }")]
+    [InlineData("static class P { const char S = 'W'; static string Code(string rest) => S.ToString().Trim() + rest; }")]
+    [InlineData("static class P { const char S = 'I'; static string Code(string rest) => S.ToString().Insert(1, rest); }")]
+    [InlineData("static class P { const char S = 'E'; static string Code(string rest) => new System.Text.StringBuilder(S.ToString()).Append(rest).ToString(); }")]
+    [InlineData("static class P { const char S = 'W'; static string Code(string rest) => rest.PadLeft(rest.Length + 1, S); }")]
+    [InlineData("static class P { const char S = 'I'; static string Code(string rest) => string.Concat(System.Linq.Enumerable.Repeat(S, 1)) + rest; }")]
+    [InlineData("static class P { const char S = 'E'; static string Code(string rest) => string.Create(1, S, (span, c) => span[0] = c) + rest; }")]
     public void A_Part_Of_A_Code_Is_An_Offence(string source)
     {
         Assert.NotEmpty(DiagnosticsScanner.PartsOfCodes([("Engine.Core/Probe.cs", source)]));

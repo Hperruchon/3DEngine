@@ -1,7 +1,7 @@
 ---
 id: 0182
 title: A datum on a diagonal subnormal side has unit axes, the walk gives its sketches in the order of the log, and the next forms of three gates fail
-status: Ready
+status: Done
 phase: P0.79
 opened: 2026-11-05
 depends-on: [0181]
@@ -35,8 +35,8 @@ This task uses Simplified Technical English (ASD-STE100). See `CLAUDE.md`, secti
 ## Context
 
 The codebase review of 2026-11-05 found E131 to E133 (low) in the datums and in the walk of the planes, and T133 to
-T135 (low) in three gates. By `docs/templates.md`, section 7, they come after the next product phase, and after P0.78.
-The first commit of this task corrects the write set and the field `governed-by` for the files that its tests need.
+T135 (low) in three gates. By `docs/templates.md`, section 7, they come after the next product phase. On 2026-11-05 the
+owner gave the order "Ok" to P0.78 and P0.79 before the next product phase, K4.
 
 ## Goal
 
@@ -56,20 +56,21 @@ test or a register entry, and the next form of each gate fails.
 
 ## Acceptance criteria
 
-- [ ] Each finding has a test or an injection that fails before the change and passes after it.
-- [ ] A clean build (`--no-incremental`) gives zero errors and zero warnings.
-- [ ] Continuous integration passes on the three runners, on the branch and on `main` after the merge.
+- [x] Each finding has a test or an injection that fails before the change and passes after it.
+- [x] A clean build (`--no-incremental`) gives zero errors and zero warnings.
+- [x] Continuous integration passes on the three runners, on the branch and on `main` after the merge.
 
 ## Outcome
 
-Status: Ready
+Status: Done · commit (the merge of the branch p079-engine-gate-forms) · v0.184
 
 ## Method
 
 Mechanical: a test or an injection for each finding, before the change.
 Judgement:  the list of the item elements that the rule of T133 permits.
-Weakest:    to be written at the close.
+Weakest:    the guard of E129 takes the record of a solve with no hold, and no command reaches the guard.
 
 ## Progress
 
 - 2026-11-05: opened by the codebase review of 2026-11-05.
+- 2026-11-05: the six findings, each form before and after the change, four injections; closed at v0.184.
