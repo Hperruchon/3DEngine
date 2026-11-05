@@ -5729,3 +5729,34 @@ replayed `Subtract`. The document of v0.186 came from a probe; no file of a pers
 New tests: 1. The test list holds 1768 (1258 in `Engine.Tests`, 312 in `3DEngine.Tests`, 195 in `3DEngine.ImageTests`,
 3 in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
 entries: 14 of 15. New diagnostic codes: 0. Since the review of v0.190, 0 product milestones and 2 entries followed it.
+
+## v0.193 — Android is a platform of the charter, with ADR-0061 and the rows of R14 (R14a, TASK-0193)
+
+On 2026-11-05 the owner gave the Android order and a standing order for an autonomous run until 2026-11-08, and
+confirmed both in the chat of the session. This entry is phase a of the Android order. The order required a check of
+each library fact on disk before the ADR; section 5 of `docs/reviews/2026-11-05-b-codebase-review.md` gives it.
+
+**The change.**
+- `docs/CHARTER.md`: objective 8 is "Windows, Linux, macOS and Android each work. A gate verifies each one
+  continuously." Anti-objective 16 adds Android on arm64; a build for `android-x64` exists only for the emulator of the
+  pipeline. `CLAUDE.md`, section "Determinism rules", names the same platforms.
+- ADR-0061 holds the eight decisions: the S23 Ultra and API 33, the Vulkan floor 1.3, no HTTP and no WebSocket surface
+  on the phone (anti-objective 7 holds, because each capability is a command or a query that the desktop surface
+  gives), `ppy.SDL3-CS` on each platform, cimgui built for Android in this repository, Manifold for Android on GitHub
+  Actions with the NDK, and the Mono runtime with hashes equal to the desktop runners. It amends ADR-0017 item 4 and
+  ADR-0027 item 9.
+- R-0020 is closed as decided. R-0054 records that the SDL of the pin, 3.5.0, is probably a development version.
+- The roadmap holds R14a to R14g, and the order: P0.83 and P0.84, then R14b to R14f. R14g comes inside the redesign.
+
+**Proof.** `ObjectiveReferenceGateTests`, `AdrGateTests`, `RegisterGateTests` and `TaskGovernanceGateTests` pass. The
+throwaway Android app of the check built with 0 warnings and 0 errors; it is not in the repository.
+
+**What stays.** No fact of the phone is proved: the load of `libvulkan.so` by `Vortice.Vulkan` and the hash under Mono
+wait for R14e and R14f. The NDK is not on this computer, so R14d builds on GitHub Actions.
+
+**A correction.** None.
+
+No code changes. The test list holds 1768 (1258 in `Engine.Tests`, 312 in `3DEngine.Tests`, 195 in
+`3DEngine.ImageTests`, 3 in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and
+zero warnings. Open entries: 14 of 15. New diagnostic codes: 0. Since the review of v0.190, 1 product milestone and 3
+entries followed it.
