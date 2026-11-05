@@ -16,6 +16,7 @@ Usage:
   engine asset put <file> [--folder <path>]       Put a file into the store of the assets, print its name.
   engine asset get <name> <file> [--folder <path>]  Write an asset of the store to a file.
   engine export stl <document.3de> <file.stl>     Write the live bodies of a document file as one STL file.
+  engine export step <document.3de> <file.step>   Write the live bodies of a document file as one STEP file.
   engine help                                     Print this usage.
 
 Each invocation builds a fresh in-memory engine. There is no persistence
