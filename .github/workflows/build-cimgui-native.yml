@@ -1,0 +1,179 @@
+name: Build cimgui native for Android
+
+# Phase R14d (ADR-0061 item 6, TASK-0196): builds the native cimgui of ImGui.NET 1.91.6.1 (the tag of the pin file) for
+# android-arm64 and android-x64 with the NDK of the Ubuntu image, checks each library, and packs one NuGet with
+# runtimes/<rid>/native/libcimgui.so. On main the pack job pushes the package to the branch
+# native-package-cimgui/<version>, so a session fetches it with git and no sign-in, as for Manifold
+# (build-manifold-native.yml). A run on another branch builds and checks only. A version is immutable: when its branch
+# exists, nothing is pushed.
+
+on:
+  push:
+    branches: ['**']
+    paths:
+      - eng/cimgui-native/cimgui-ref.txt
+      - eng/cimgui-native/build-android.sh
+      - eng/cimgui-native/Engine.Native.DearImGui.csproj
+      - .github/workflows/build-cimgui-native.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  pin:
+    name: Read the pin
+    runs-on: ubuntu-latest
+    outputs:
+      cimgui_ref: ${{ steps.pin.outputs.cimgui_ref }}
+      cimgui_commit: ${{ steps.pin.outputs.cimgui_commit }}
+      package_version: ${{ steps.pin.outputs.package_version }}
+    steps:
+      - name: Checkout (this repo, for the pin file)
+        uses: actions/checkout@v4
+
+      - name: Read eng/cimgui-native/cimgui-ref.txt
+        id: pin
+        shell: bash
+        run: |
+          set -euo pipefail
+          file=eng/cimgui-native/cimgui-ref.txt
+          ref=$(grep -E '^cimgui_ref=' "$file" | head -1 | cut -d= -f2- | tr -d '[:space:]')
+          commit=$(grep -E '^cimgui_commit=' "$file" | head -1 | cut -d= -f2- | tr -d '[:space:]')
+          version=$(grep -E '^package_version=' "$file" | head -1 | cut -d= -f2- | tr -d '[:space:]')
+          [[ "$version" =~ ^[0-9]+(\.[0-9]+){1,3}$ ]] || { echo "::error title=cimgui::package_version '$version' is not a version"; exit 1; }
+          [[ "$ref" =~ ^[A-Za-z0-9][A-Za-z0-9._-]{0,99}$ ]] || { echo "::error title=cimgui::cimgui_ref '$ref' is not a tag"; exit 1; }
+          [[ "$commit" =~ ^[0-9a-f]{40}$ ]] || { echo "::error title=cimgui::cimgui_commit '$commit' is not a commit"; exit 1; }
+          # The tag must still name the pinned commit, so a moved tag fails the build.
+          remote=$(git ls-remote https://github.com/cimgui/cimgui "refs/tags/$ref" "refs/tags/$ref^{}")
+          tagged=$(grep -F "refs/tags/$ref^{}" <<<"$remote" | cut -f1 || true)
+          [ -n "$tagged" ] || tagged=$(head -1 <<<"$remote" | cut -f1)
+          [ "$tagged" = "$commit" ] || { echo "::error title=cimgui::the tag $ref names $tagged, not the pinned $commit"; exit 1; }
+          echo "cimgui_ref=$ref" >> "$GITHUB_OUTPUT"
+          echo "cimgui_commit=$commit" >> "$GITHUB_OUTPUT"
+          echo "package_version=$version" >> "$GITHUB_OUTPUT"
+
+  build:
+    name: cimgui (${{ matrix.rid }})
+    needs: pin
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { rid: android-arm64, abi: arm64-v8a }
+          - { rid: android-x64,   abi: x86_64 }
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout (this repo, for the build script)
+        uses: actions/checkout@v4
+        with:
+          path: engine
+
+      - name: Checkout cimgui @ ${{ needs.pin.outputs.cimgui_ref }}
+        uses: actions/checkout@v4
+        with:
+          repository: cimgui/cimgui
+          ref: ${{ needs.pin.outputs.cimgui_commit }}
+          submodules: recursive
+          path: cimgui
+
+      - name: Build, stage and check
+        shell: bash
+        run: bash engine/eng/cimgui-native/build-android.sh cimgui staging ${{ matrix.abi }}
+
+      - name: Upload native-${{ matrix.rid }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: native-${{ matrix.rid }}
+          path: staging/
+          if-no-files-found: error
+
+  pack:
+    name: Pack the NuGet of cimgui
+    needs: [pin, build]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout (this repo, for the packaging project)
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Set up .NET (pinned by global.json)
+        uses: actions/setup-dotnet@v4
+        with:
+          global-json-file: global.json
+
+      - name: Download native artifacts
+        uses: actions/download-artifact@v4
+        with:
+          pattern: native-*
+          path: dl
+
+      - name: Lay out runtimes/<rid>/native
+        shell: bash
+        run: |
+          set -euo pipefail
+          base=eng/cimgui-native
+          rm -rf "$base/runtimes"
+          for d in dl/native-*; do
+            rid="${d##*/native-}"
+            mkdir -p "$base/runtimes/$rid/native"
+            cp -v "$d"/* "$base/runtimes/$rid/native/"
+          done
+          find "$base/runtimes" -type f
+
+      - name: Pack
+        shell: bash
+        env:
+          VERSION: ${{ needs.pin.outputs.package_version }}
+          CIMGUI_COMMIT: ${{ needs.pin.outputs.cimgui_commit }}
+        run: >
+          dotnet pack eng/cimgui-native/Engine.Native.DearImGui.csproj
+          -c Release
+          "-p:Version=$VERSION"
+          -p:RepositoryType=git
+          -p:RepositoryUrl=https://github.com/cimgui/cimgui
+          "-p:RepositoryCommit=$CIMGUI_COMMIT"
+          -p:EnableSourceControlManagerQueries=false
+          -p:PublishRepositoryUrl=true
+          -o nupkg
+
+      - name: Upload nupkg
+        uses: actions/upload-artifact@v4
+        with:
+          name: Engine.Native.DearImGui.${{ needs.pin.outputs.package_version }}
+          path: nupkg/*.nupkg
+          if-no-files-found: error
+
+      - name: Push the package to native-package-cimgui/<version>
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REF: ${{ github.ref }}
+          VERSION: ${{ needs.pin.outputs.package_version }}
+          SOURCE_SHA: ${{ github.sha }}
+          CIMGUI_COMMIT: ${{ needs.pin.outputs.cimgui_commit }}
+        run: |
+          set -euo pipefail
+          branch="native-package-cimgui/$VERSION"
+          if [ "$REF" != "refs/heads/main" ]; then
+            echo "::notice title=cimgui package::built and checked on $REF; only main pushes a package to $branch."
+            exit 0
+          fi
+          if git ls-remote --exit-code --heads origin "$branch" > /dev/null; then
+            echo "::notice title=cimgui package::$branch exists, and a version is immutable, so nothing is pushed."
+            exit 0
+          fi
+          mkdir out && cp nupkg/*.nupkg out/
+          git checkout --orphan "$branch"
+          git rm -rf --quiet .
+          git clean -fdx --quiet --exclude=out
+          mv out/*.nupkg . && rmdir out
+          git add ./*.nupkg
+          git -c user.name="github-actions[bot]" -c user.email="41898282+github-actions[bot]@users.noreply.github.com" \
+            commit --quiet -m "The native package of cimgui $VERSION, cimgui $CIMGUI_COMMIT, built by $SOURCE_SHA"
+          auth=$(printf 'x-access-token:%s' "$GH_TOKEN" | base64 | tr -d '\n')
+          git -c "http.https://github.com/.extraheader=AUTHORIZATION: basic $auth" push origin "HEAD:refs/heads/$branch"
+          echo "pushed $branch"
