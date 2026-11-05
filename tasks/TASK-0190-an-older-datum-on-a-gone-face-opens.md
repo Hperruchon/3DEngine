@@ -1,7 +1,7 @@
 ---
 id: 0190
 title: A document whose log holds a datum on a face that a cut removed opens again
-status: Ready
+status: Active
 phase: P0.82
 opened: 2026-11-05
 depends-on: [0189]
@@ -70,3 +70,6 @@ Weakest:    to be written at the close.
 ## Progress
 
 - 2026-11-05: opened by the codebase review of 2026-11-05 (b).
+- 2026-11-05: Q1 of the review is A, answered by the standing order of 2026-11-05. The test of the open
+  fails before the change with `E-IO-LOAD-FAILED` and `E-DATUM-REFERENCE-INVALID`; the change, and 3 injections that
+  each fail a test.

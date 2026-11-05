@@ -38,7 +38,9 @@ of K4. On 2026-11-05 the owner answered five questions:
 - **A hole wall.** A datum can be on the wall of a hole: the face of the tool, with its normal turned into the hole. No
   field of a contract changes.
 - **A split face.** The two parts of a face have one plane, so a datum keeps its plane and its frame.
-- **Older documents.** The turn applies to each replay, also of a document made before this record.
+- **Older documents.** The turn applies to each replay, also of a document made before this record. Before this
+  record a client could create a datum on a face that a cut had removed, so a replay of such an entry gives the datum
+  the fault of item 3 and does not refuse it (finding E134, TASK-0190).
 
 ## Decision
 
@@ -55,7 +57,8 @@ of K4. On 2026-11-05 the owner answered five questions:
      the two kept solids.
    - The regeneration (ADR-0055) checks each datum in effect after its two walks. An end that the edit changes takes
      its names from the state after the edit; an end that it does not change takes the kept solid of its key.
-   - `CreateDatum` refuses a gone face with `E-DATUM-REFERENCE-INVALID` (ADR-0051 item 7).
+   - `CreateDatum` refuses a gone face with `E-DATUM-REFERENCE-INVALID` (ADR-0051 item 7). In the replay of an entry of
+     a log it gives the datum the fault and the warning instead, so a document of an earlier version opens.
    When the kernel cannot build an end, the datum has no check. An undo restores the record before (ADR-0031), so it
    removes the fault of the step.
 4. **A face of a subtrahend.** The face of a subtrahend is a wall of the result, and its outward normal points into the
@@ -87,3 +90,5 @@ of K4. On 2026-11-05 the owner answered five questions:
 ## History
 
 - 2026-11-05 · TASK-0185 · Accepted with the five answers of the owner of 2026-11-05.
+- 2026-11-05 · TASK-0190 · Finding E134: a replay of an older `CreateDatum` on a gone face gives the fault, not
+  a refusal (Q1 A of the codebase review of 2026-11-05 (b), answered by the standing order of 2026-11-05).
