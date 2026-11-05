@@ -34,6 +34,30 @@ public sealed class PlanarSubtractTests
         }
     }
 
+    // Finding E136 of the codebase review of 2026-11-05 (b) (TASK-0192): below the smallest normal double the conversion
+    // rounded to 53 bits and then again in Math.ScaleB. The quantum there is 2^-1074, so the nearest double comes from one
+    // rounding: a value above half of the quantum gives the quantum, a tie goes to the even multiple, and each quotient of
+    // two doubles gives the double that a division of doubles gives, which IEEE 754 rounds one time.
+    [Fact]
+    public void A_Value_Below_The_Smallest_Normal_Double_Rounds_One_Time()
+    {
+        var quantum = Rational.FromDouble(double.Epsilon);
+        var tiny = new Rational(BigInteger.One, BigInteger.Pow(2, 60));
+        Assert.Equal(double.Epsilon, ((new Rational(1, 2) + tiny) * quantum).ToDouble());
+        Assert.Equal(double.Epsilon, ((new Rational(3, 2) - tiny) * quantum).ToDouble());
+        Assert.Equal(0.0, (new Rational(1, 2) * quantum).ToDouble());
+        Assert.Equal(2 * double.Epsilon, (new Rational(3, 2) * quantum).ToDouble());
+        Assert.Equal(-double.Epsilon, ((new Rational(-1, 2) - tiny) * quantum).ToDouble());
+
+        var random = new Random(136);
+        for (var i = 0; i < 2000; i++)
+        {
+            var x = (random.NextDouble() + 0.5) * Math.Pow(2, -random.Next(1000, 1074));
+            var y = (random.NextDouble() + 0.5) * Math.Pow(2, random.Next(0, 60));
+            Assert.Equal(x / y, (Rational.FromDouble(x) / Rational.FromDouble(y)).ToDouble());
+        }
+    }
+
     // Item 3: the sign of the determinant is exact. Four points whose rounded determinant is not zero lie on one plane,
     // and a point one unit in the last place off the plane has its true side.
     [Fact]
@@ -285,5 +309,44 @@ public sealed class PlanarSubtractTests
     {
         var points = solid.Polygons.SelectMany(polygon => polygon.Vertices).Select(point => point.ToDoubles()).ToList();
         return ((points.Min(p => p.X), points.Min(p => p.Y), points.Min(p => p.Z)), (points.Max(p => p.X), points.Max(p => p.Y), points.Max(p => p.Z)));
+    }
+
+    // Finding E137 of the codebase review of 2026-11-05 (b) (TASK-0192): a diamond prism through a plate whose vertex (5, 0)
+    // touches the side +x. Each of the two faces +z and -z of the plate has its outer loop and the hole of the diamond.
+    // The walk of a loop took the first edge that left a vertex, so on one face the hole joined the outer loop.
+    [Fact]
+    public void A_Hole_That_Touches_The_Boundary_At_A_Vertex_Is_A_Hole_On_Each_Face()
+    {
+        ProfileVertex[] diamond =
+        [
+            new(Rational.FromDouble(5), Rational.FromDouble(0), Sides[0]),
+            new(Rational.FromDouble(3), Rational.FromDouble(1), Sides[1]),
+            new(Rational.FromDouble(1), Rational.FromDouble(0), Sides[2]),
+            new(Rational.FromDouble(3), Rational.FromDouble(-1), Sides[3]),
+        ];
+        var tool = KernelSolid.Extrude(B, diamond, V(0, 0, -5), XY.U, XY.V, XY.N, Rational.FromDouble(10));
+        var brep = Brep.Of(PlanarBoolean.Subtract(KernelSolid.Box(A, 10, 10, 2), tool)!);
+
+        var caps = brep.Faces.Where(face => face.Tag.Feature == A && face.Tag.Element is "+z" or "-z").ToList();
+        Assert.Equal(2, caps.Count);
+        Assert.All(caps, face => Assert.Equal([true, false], face.Loops.Select(loop => loop.Outer)));
+    }
+
+    // Finding E138 of the codebase review of 2026-11-05 (b) (TASK-0192): four bars cut a moat around an island of 8 by 8 in
+    // a plate of 20 by 20, and a pin of 1 by 1 goes through the island. On the face +z the plate keeps the moat as its
+    // hole, and the island keeps the pin. The owner of a hole was the first outer loop that held it, the plate.
+    [Fact]
+    public void A_Hole_In_An_Island_Belongs_To_The_Island()
+    {
+        var cut = KernelSolid.Box(A, 20, 20, 2);
+        foreach (var (sx, sy, x, y) in new[] { (10.0, 1.0, 0.0, 4.5), (10.0, 1.0, 0.0, -4.5), (1.0, 10.0, 4.5, 0.0), (1.0, 10.0, -4.5, 0.0) })
+            cut = PlanarBoolean.Subtract(cut, KernelSolid.Box(B, Rational.FromDouble(sx), Rational.FromDouble(sy), 4).Translate(V(x, y, 0)))!;
+        var brep = Brep.Of(PlanarBoolean.Subtract(cut, KernelSolid.Box(B, 1, 1, 4))!);
+
+        var tops = brep.Faces.Where(face => face.Tag.Feature == A && face.Tag.Element == "+z")
+            .Select(face => (Right: face.Loops[0].Vertices.Max(v => brep.Vertices[v].X.ToDouble()), Holes: face.Loops.Count(loop => !loop.Outer)))
+            .OrderBy(face => face.Right)
+            .ToList();
+        Assert.Equal([(4.0, 1), (10.0, 1)], tops);
     }
 }

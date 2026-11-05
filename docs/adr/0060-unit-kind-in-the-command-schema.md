@@ -11,6 +11,7 @@ amended-by: []
 affects:
   - Engine.Contracts/Schema/**
   - Engine.Core/Commands/**
+  - Engine.Core/Queries/**
   - Engine.Api.Http/Schema/**
 enforced-by: Engine.Tests/Http/SchemaEndpointGateTests.cs
 ---
@@ -46,12 +47,13 @@ same date the owner chose `constraint-value` for `SetSketchConstraintValue`, `sc
    names of the vocabulary as constants, so a wrong name in a handler is a compile error.
 2. **The vocabulary.**
    - `length`: a length in the length unit of the document.
-   - `pixel`: a position on an image, in pixels (ADR-0045 item 5).
+   - `pixel`: a position or a size on an image, in pixels (ADR-0045 item 5).
    - `scale`: a length for one pixel of an image (ADR-0045 item 1). Its value follows the length unit of the document.
    - `cosine` and `sine`: the two numbers of an angle. A client shows a pair as one angle in degrees, and the client
      computes the cosine and the sine.
    - `sign`: −1 or 1.
    - `constraint-value`: see item 4.
+   - `direction`: a component of a direction, with no unit (E141, TASK-0192).
 
    The draft of this record had `ratio`, a number with no unit. No parameter uses it, and a later change can add a
    unit at a low cost (`CLAUDE.md`, "Method"), so the vocabulary does not hold it.
@@ -65,9 +67,10 @@ same date the owner chose `constraint-value` for `SetSketchConstraintValue`, `sc
 5. **Metadata only.** `ParameterBinder` converts no value. Nothing new enters the log, a document file or a replay. The
    `SchemaVersion` of a command does not change. The schema endpoints write `unit` and `unitBy` only when a field
    declares them, so a field with no unit keeps its form of ADR-0013.
-6. **The rule.** Each `number` parameter of a registered command declares `Unit` or `UnitBy`, not both. Each unit is
-   in the vocabulary. `UnitBy.Field` names a `string` parameter of the same command, and its map is not empty. A field
-   that is not a number declares no unit. The list of the vocabulary in the code equals item 2.
+6. **The rule.** Each `number` and each `integer` parameter of a registered command or query declares `Unit` or
+   `UnitBy`, not both (T140 and E141, TASK-0192). Each unit is in the vocabulary. `UnitBy.Field` names a `string`
+   parameter of the same command, and its map is not empty. A field that is not a number or an integer declares no unit.
+   The list of the vocabulary in the code equals item 2.
 7. **Out of this record.** The units of query results and of command outputs. They need the nested schema that
    ADR-0013 defers.
 
@@ -87,3 +90,6 @@ same date the owner chose `constraint-value` for `SetSketchConstraintValue`, `sc
 
 - 2026-11-05 · TASK-0186 · Accepted from the draft of the module-declaration proposal, with the three choices of the
   owner of 2026-11-05.
+- 2026-11-05 · TASK-0192 · Findings T140 and E141 of the codebase review of 2026-11-05 (b): item 6 reads each
+  integer parameter and the parameters of queries, `pixel` names a size too, and item 2 adds `direction` for the
+  normal of `GetFaceAt`. Q3 A, answered by the standing order of 2026-11-05.

@@ -18,12 +18,12 @@ public sealed class GetFaceAtQueryHandler : IQueryHandler
         new Dictionary<string, FieldSchema>
         {
             ["bodyId"] = new("guid", Required: true),
-            ["x"] = new("number", Required: true),
-            ["y"] = new("number", Required: true),
-            ["z"] = new("number", Required: true),
-            ["nx"] = new("number", Required: true),
-            ["ny"] = new("number", Required: true),
-            ["nz"] = new("number", Required: true),
+            ["x"] = new("number", Required: true, Unit: UnitKinds.Length),
+            ["y"] = new("number", Required: true, Unit: UnitKinds.Length),
+            ["z"] = new("number", Required: true, Unit: UnitKinds.Length),
+            ["nx"] = new("number", Required: true, Unit: UnitKinds.Direction),
+            ["ny"] = new("number", Required: true, Unit: UnitKinds.Direction),
+            ["nz"] = new("number", Required: true, Unit: UnitKinds.Direction),
         };
 
     public IReadOnlyDictionary<string, FieldSchema> Result { get; } =
