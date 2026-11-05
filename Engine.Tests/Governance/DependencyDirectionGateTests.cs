@@ -1035,7 +1035,8 @@ public class DependencyDirectionGateTests
     private static readonly string[] ImageVerifiers = ["3DEngine.ImageTests"];
 
     // eng/manifold-native packs the native payload. It holds no code.
-    private static readonly string[] Packaging = ["Engine.Geometry.Manifold.Native"];
+    // Phase R14d (ADR-0061 item 6, TASK-0196): the package of the native cimgui for Android is a packaging project too.
+    private static readonly string[] Packaging = ["Engine.Geometry.Manifold.Native", "Engine.Native.DearImGui"];
 
     // eng/write-set-check judges the write set of each commit. The pipeline
     // builds it from main, alone (TASK-0053). eng/repo-gates runs the gates that
