@@ -359,6 +359,8 @@ The tracks are not strictly sequential, but three rules hold:
    after R13 and before P0.76.
    The codebase review of 2026-11-05 puts P0.78 and P0.79, which hold medium and low findings, after the next
    product phase, by the rule of `docs/templates.md`, section 7. Q1 of that review asks for the next product phase.
+   On 2026-11-05 the owner answered A to Q1, the redesign of the desktop, and then, because the redesign is still work
+   in progress, gave the order "Ok": P0.78 and P0.79 now, and then K4.
 2. R2 blocks each later phase in track R. No mesh leaves the geometry backend today.
 3. K4 needs K0, K1 and K2. Do not start K4 before the reference model exists.
 4. The path to the milestone "CAD on one part" (the owner, 2026-10-27, KD2): R7b, R8a, R8b, the codebase

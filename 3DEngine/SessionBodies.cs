@@ -4,6 +4,7 @@ using Engine.Contracts;
 using Engine.Contracts.Geometry;
 using Engine.Core;
 using Engine.Core.Queries;
+using ThreeDEngine.Core.Measuring;
 using ThreeDEngine.Core.Models;
 using ThreeDEngine.Core.Picking;
 using ThreeDEngine.Vulkan;
@@ -135,6 +136,10 @@ internal sealed class SessionBodies : IDisposable
         var queued = new List<Pending>();
         while (_changes.TryDequeue(out var next))
             queued.Add(next);
+
+        // V81: a change of a body can change a box or a visibility, so the kept unions go.
+        if (queued.Count > 0)
+            _unions = null;
 
         for (var i = 0; i < queued.Count; i++)
         {
@@ -302,31 +307,48 @@ internal sealed class SessionBodies : IDisposable
     public void Preview(Guid bodyId, System.Numerics.Vector3 offset)
     {
         if (_entities.TryGetValue(bodyId.ToString(), out var entity))
-            entity.Transform = entity.Transform with { Position = offset };
-    }
-
-    // The box around each visible live body that has a mesh, or null when none has one.
-    public ((double X, double Y, double Z) Min, (double X, double Y, double Z) Max)? Bounds
-    {
-        get
         {
-            var boxes = _boxes.Where(box => IsVisible(box.Key)).Select(box => box.Value).ToList();
-            if (boxes.Count == 0)
-                return null;
-
-            return (
-                (boxes.Min(b => b.Min.X), boxes.Min(b => b.Min.Y), boxes.Min(b => b.Min.Z)),
-                (boxes.Max(b => b.Max.X), boxes.Max(b => b.Max.Y), boxes.Max(b => b.Max.Z)));
+            entity.Transform = entity.Transform with { Position = offset };
+            _unions = null;
         }
     }
 
-    // ADR-0056 item 3 (phase R13): the box of each live body that has a mesh, the visible ones only or each one.
-    public IEnumerable<((double X, double Y, double Z) Min, (double X, double Y, double Z) Max)> Boxes(bool hiddenToo)
-        => _boxes.Where(box => hiddenToo || IsVisible(box.Key)).Select(box => box.Value);
+    // The box around each visible live body that has a mesh, or null when none has one.
+    public ((double X, double Y, double Z) Min, (double X, double Y, double Z) Max)? Bounds => Union(hiddenToo: false);
+
+    // ADR-0056 item 3 (phase R13): the box around each live body that has a mesh, the visible ones only or each one, or
+    // null when none has one.
+    // Finding V81 of the codebase review of 2026-11-05 (TASK-0181): the overlay made the union of each box in each frame.
+    // The two unions are kept until a change of the bodies or of a preview, so the far plane of each frame (V78) and the
+    // dimensions read them at no cost. UnionsMade counts each new pair, for a test.
+    public ((double X, double Y, double Z) Min, (double X, double Y, double Z) Max)? Union(bool hiddenToo)
+    {
+        if (_unions is not { } unions)
+        {
+            unions = (Dimensions.Union(_boxes.Keys.Where(IsVisible).Select(Shifted)), Dimensions.Union(_boxes.Keys.Select(Shifted)));
+            _unions = unions;
+            UnionsMade++;
+        }
+
+        return hiddenToo ? unions.All : unions.Visible;
+    }
+
+    internal int UnionsMade { get; private set; }
+
+    private (((double X, double Y, double Z) Min, (double X, double Y, double Z) Max)? Visible, ((double X, double Y, double Z) Min, (double X, double Y, double Z) Max)? All)? _unions;
 
     // ADR-0056 item 6: the box of the mesh of a visible live body, or null.
     public ((double X, double Y, double Z) Min, (double X, double Y, double Z) Max)? BoxOf(Guid bodyId)
-        => _boxes.TryGetValue(bodyId.ToString(), out var box) && IsVisible(bodyId.ToString()) ? box : null;
+        => _boxes.ContainsKey(bodyId.ToString()) && IsVisible(bodyId.ToString()) ? Shifted(bodyId.ToString()) : null;
+
+    // Finding V82 of the codebase review of 2026-11-05 (TASK-0181): the box of a mesh moves with the preview of a drag,
+    // so the dimensions follow the body that the person drags.
+    private ((double X, double Y, double Z) Min, (double X, double Y, double Z) Max) Shifted(string meshId)
+    {
+        var (min, max) = _boxes[meshId];
+        var offset = _entities.TryGetValue(meshId, out var entity) ? entity.Transform.Position : System.Numerics.Vector3.Zero;
+        return ((min.X + offset.X, min.Y + offset.Y, min.Z + offset.Z), (max.X + offset.X, max.Y + offset.Y, max.Z + offset.Z));
+    }
 
     private static ((double X, double Y, double Z) Min, (double X, double Y, double Z) Max) Box(double[] positions)
     {

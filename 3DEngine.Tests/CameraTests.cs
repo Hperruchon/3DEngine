@@ -241,14 +241,42 @@ public class CameraTests
     }
 
     // R-0051: the far plane of a small box is the default, and it is never less than two times the distance of the eye.
+    // V78 (TASK-0181): a small box at the target gives two times the distance from the eye to its far side.
     [Fact]
     public void The_Far_Plane_For_A_Box_Keeps_The_Default_And_The_View()
     {
-        var camera = new Camera { Distance = 900 };
+        var camera = new Camera { Target = (0, 0, 0), Distance = 900 };
+        var radius = Math.Sqrt(10 * 10 + 6 * 6 + 4 * 4) / 2.0;
 
         Assert.Equal(Camera.DefaultFarPlane, new Camera().FarPlaneFor((0, 0, 0), (10, 6, 4)));
-        Assert.Equal(1800f, camera.FarPlaneFor((0, 0, 0), (10, 6, 4)));
+        Assert.Equal(2 * (900 + radius), camera.FarPlaneFor((-5, -3, -2), (5, 3, 2)), 2);
+        Assert.True(camera.FarPlaneFor((-5, -3, -2), (5, 3, 2)) >= 1800f);
         Assert.Equal(float.MaxValue, camera.FarPlaneFor((0, 0, 0), (double.MaxValue, 1, 1)));
+    }
+
+    // Finding V78 of the codebase review of 2026-11-05 (TASK-0181): a box A of 100 at the origin and a box B of 100 at
+    // x = 5000. The camera frames A and turns to B, and then A is hidden, so the far plane comes from the box of B alone,
+    // with the target outside it. Up to v0.182 the far plane was 1385.6 and B lay beyond it; now the far side of B is in
+    // front of the far plane.
+    [Fact]
+    public void The_Far_Plane_Holds_A_Box_Far_From_The_Target()
+    {
+        (double X, double Y, double Z) aMin = (-50, -50, -50), aMax = (50, 50, 50);
+        (double X, double Y, double Z) bMin = (4950, -50, -50), bMax = (5050, 50, 50);
+        var camera = new Camera();
+        camera.FarPlane = camera.FarPlaneFor((-50, -50, -50), (5050, 50, 50));
+        Assert.True(camera.Frame(aMin, aMax, 16f / 9f));
+        camera.YawDegrees = -90;
+        camera.PitchDegrees = 0;
+
+        camera.FarPlane = camera.FarPlaneFor(bMin, bMax);
+
+        var eye = camera.Eye();
+        var farSide = Math.Sqrt(Math.Pow(5000 - eye.X, 2) + eye.Y * eye.Y + eye.Z * eye.Z) + Math.Sqrt(3 * 100 * 100) / 2;
+        Assert.True(farSide < camera.FarPlane, $"The far side of B is {farSide} from the eye, and the far plane is {camera.FarPlane}.");
+        var viewProjection = camera.View() * camera.Projection(16f / 9f);
+        var clip = Vector4.Transform(new Vector4((float)(5000 - eye.X), (float)-eye.Y, (float)-eye.Z, 1f), viewProjection);
+        Assert.True(clip.Z / clip.W is > 0 and < 1, $"The centre of B has the depth {clip.Z / clip.W}.");
     }
 
     [Fact]

@@ -45,9 +45,9 @@ On 2026-11-04 the owner answered four questions:
 1. **Presentation only.** The desktop computes each dimension from the boxes of the meshes that it holds and from
    `GetBodyInfo`. No command, no event and no query is new, nothing enters the log or the saved file, and
    `Engine.Contracts` does not change (ADR-0007, ADR-0009).
-2. **The toggles (Q4).** The panel has the checkbox "Dimensions" on the line of "Show all", off at each start of the
-   desktop, and the checkbox "Hidden too" after it. Each one takes a tap and a click (objective 9). They are a state of
-   the client.
+2. **The toggles (Q4).** The panel has the checkbox "Dimensions", off at each start of the desktop, and the checkbox
+   "Hidden too" after it, on a line of their own before the list of the bodies, so that a long list does not push them
+   out of the panel. Each one takes a tap and a click (objective 9). They are a state of the client.
 3. **The overall size (Q2).** The overall box is the union of the boxes of the visible live bodies. With "Hidden too",
    it is the union of the boxes of each live body that has a mesh. The box that the camera frames does not change: it
    holds the visible bodies only (ADR-0029 item 3).
@@ -64,8 +64,9 @@ On 2026-11-04 the owner answered four questions:
    the selection, and the panel gives its size and its thickness: the absolute value of the distance in effect for a
    live extrude, else the smallest extent of its box. The desktop reads the distance once for each change of the
    selection or of the bodies, not in each frame.
-7. **The cost.** The overlay draws six to twelve segments and six labels in each frame, and it reads the boxes that the
-   desktop holds. No dimension calls the engine in a frame.
+7. **The cost.** Each box gives three dimension lines and six extension lines, so the overlay draws up to 18 segments
+   and six labels in each frame. It reads the union of the boxes that the desktop keeps until a change of the bodies.
+   No dimension calls the engine in a frame.
 8. **Determinism.** The overlay is outside the log, so the determinism rules of `CLAUDE.md` do not apply to it. It uses
    + - * / and comparisons only.
 9. **Out of this record.** A dimension between two picked points, an angle, a dimension of a sketch item, a dimension
@@ -81,3 +82,6 @@ On 2026-11-04 the owner answered four questions:
 ## History
 
 - 2026-11-04 · TASK-0178 · Accepted with the four answers of the owner of 2026-11-04.
+- 2026-11-05 · TASK-0181 · Items 2 and 7 follow the code (finding V83, Q2 A of the codebase review of 2026-11-05): the
+  toggles are on a line of their own, a box draws up to 18 segments, and the union of the boxes is kept (V81). The
+  labels stay inside the window and apart (V79, V80), and the boxes follow the preview of a drag (V82).

@@ -55,16 +55,23 @@ public sealed class Camera : Entity
     /// from the eye, so the radius of the box sets it. Sixteen times the radius keeps a
     /// framed box whole for an aspect down to 0.3: there Frame puts the eye at about 5.9
     /// times the radius, which is less than half the far plane, and the far side of the box
-    /// at about 6.9 times the radius. The far plane is never less than the default, and
-    /// never less than two times the current distance: with the target inside the box, each
-    /// point of it is at most the distance and two radii from the eye, and the larger of 16
-    /// radii and two distances holds that.
+    /// at about 6.9 times the radius. The far plane is never less than the default.
+    ///
+    /// Finding V78 of the codebase review of 2026-11-05 (TASK-0181): the rule held each point
+    /// only while the target was inside the box, so a hide of a body near the target put a
+    /// visible body far from it beyond the far plane. The far plane now also holds two times
+    /// the distance from the eye to the far side of the box, the distance from the eye to its
+    /// centre plus its radius, wherever the target is. Zoom keeps the eye at half the far
+    /// plane, so the person can still zoom out from a box.
     /// </summary>
     public float FarPlaneFor((double X, double Y, double Z) min, (double X, double Y, double Z) max)
     {
         var (dx, dy, dz) = (max.X - min.X, max.Y - min.Y, max.Z - min.Z);
         var radius = Math.Sqrt(dx * dx + dy * dy + dz * dz) / 2.0;
-        var far = Math.Max(DefaultFarPlane, Math.Max(16.0 * radius, 2.0 * Distance));
+        var eye = Eye();
+        var (cx, cy, cz) = ((min.X + max.X) / 2.0 - eye.X, (min.Y + max.Y) / 2.0 - eye.Y, (min.Z + max.Z) / 2.0 - eye.Z);
+        var reach = Math.Sqrt(cx * cx + cy * cy + cz * cz) + radius;
+        var far = Math.Max(DefaultFarPlane, Math.Max(16.0 * radius, Math.Max(2.0 * reach, 2.0 * Distance)));
         return double.IsFinite(far) && far < float.MaxValue ? (float)far : float.MaxValue;
     }
 
