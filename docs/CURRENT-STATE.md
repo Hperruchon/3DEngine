@@ -5564,3 +5564,32 @@ slices; the owner closes the row.
 New tests: 5. The test list holds 1742 (1237 in `Engine.Tests`, 309 in `3DEngine.Tests`, 193 in `3DEngine.ImageTests`,
 3 in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
 entries: 14 of 15. New diagnostic codes: 0. Since the review of v0.181, 3 product milestones and 6 entries followed it.
+
+## v0.188 — A gate fails when an open task plans an ADR number that another record has (P0.80, TASK-0187)
+
+On 2026-11-05 TASK-0186 (P8h) planned `docs/adr/0059-unit-kind-in-the-command-schema.md`, and K4c (TASK-0185)
+committed `docs/adr/0059-references-by-the-identity-of-a-face.md` 12 minutes later, in another session. The merge of
+the two was clean and each gate passed, because `AdrGateTests` read only the ADR files that exist. A hand change gave
+ADR-0060 to TASK-0186 (781a080), and register entry R-0052 recorded the gap. The register then held 15 open entries,
+the maximum, and P8h must add one, so the owner put this task before P8h.
+
+**The change.** `AdrGateTests.No_Open_Task_Plans_An_Adr_Number_That_Another_Record_Has` reads the `create:` list of
+each task that is not Done. A planned file `docs/adr/NNNN-*.md` fails when a file in `docs/adr/` or in
+`docs/adr/archive/`, or an earlier plan, has its number with another name. The own file of an Active task is no
+problem. The row of `AdrGateTests` in `docs/templates.md`, section 5, gives the new rule. R-0052 is closed with the
+exit "Resolve".
+
+**Proof.** The collision of 2026-11-05, injected into TASK-0186, passed the 437 governance tests and the 148 checks of
+`eng/repo-gates` before the change. After the change it fails the new fact, and so do two plans of one number and a
+plan of the archived number 0003. Four mutations of the gate each fail one test: the own file as a problem, a Done task
+read, two plans of one number accepted, and the archive not read. The last mutation first failed no test, so a new
+fact requires an archived name and a name in force in the list of the records.
+
+**What stays.** The fact reads `create:` only. The numbers of tasks have no rule. An injection of two task files of
+the number 0186 fails the pipeline, but only because `AdrEnforcementExistsGateTests` keys a dictionary by the task
+identifier and throws "An item with the same key has already been added". The task file said at 8bba7a1 that
+`TaskGovernanceGateTests` fails it; that statement was false, and the close commit corrects it.
+
+New tests: 8. The test list holds 1750 (1245 in `Engine.Tests`, 309 in `3DEngine.Tests`, 193 in `3DEngine.ImageTests`,
+3 in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
+entries: 14 of 15. New diagnostic codes: 0. Since the review of v0.181, 3 product milestones and 7 entries followed it.

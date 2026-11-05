@@ -439,20 +439,6 @@ library. A phase that needs more vision than one contour needs the library in th
 Exit: the owner decides if the desktop may hold the library and on which platforms, with or without the FFmpeg file,
 and the phase that does it adds the notices of ADR-0042 item 6.
 
-### R-0052 · Two sessions can plan the same ADR number, and no gate sees it before a merge
-- class: risk
-- opened: 2026-11-05
-- due: 2026-12-05
-- extended: no
-- refs: `Engine.Tests/Governance/AdrGateTests.cs:88`, TASK-0185, TASK-0186, ADR-0059
-On 2026-11-05 the session that opened TASK-0186 planned `docs/adr/0059-unit-kind-in-the-command-schema.md` in its
-write set, and K4c (TASK-0185) committed `docs/adr/0059-references-by-the-identity-of-a-face.md` 12 minutes later.
-The merge of the two was clean and each gate passed, because `Each_Identifier_Matches_Its_File_Name_And_Is_Unique`
-reads only the files that exist. The K4c session found the collision by reading, and a hand change gave ADR-0060 to
-TASK-0186.
-Exit: a gate fails when a task that is not Done plans to create an ADR file whose number another ADR file already
-has, and an injection of the collision of 2026-11-05 fails it.
-
 ## Accepted compromises
 
 These are conditions that the project keeps permanently and by decision. They do not age.
@@ -493,6 +479,25 @@ needs a deliberate act.
 ---
 
 ## Closed
+
+### R-0052 · Two sessions can plan the same ADR number, and no gate sees it before a merge
+- class: risk
+- opened: 2026-11-05
+- due: 2026-12-05
+- extended: no
+- refs: `Engine.Tests/Governance/AdrGateTests.cs:88`, TASK-0185, TASK-0186, ADR-0059
+On 2026-11-05 the session that opened TASK-0186 planned `docs/adr/0059-unit-kind-in-the-command-schema.md` in its
+write set, and K4c (TASK-0185) committed `docs/adr/0059-references-by-the-identity-of-a-face.md` 12 minutes later.
+The merge of the two was clean and each gate passed, because `Each_Identifier_Matches_Its_File_Name_And_Is_Unique`
+reads only the files that exist. The K4c session found the collision by reading, and a hand change gave ADR-0060 to
+TASK-0186.
+Exit: a gate fails when a task that is not Done plans to create an ADR file whose number another ADR file already
+has, and an injection of the collision of 2026-11-05 fails it.
+Closed 2026-11-05 · resolved · TASK-0187. `AdrGateTests.No_Open_Task_Plans_An_Adr_Number_That_Another_Record_Has`
+reads the `create:` list of each task that is not Done. A planned ADR file fails when a file in `docs/adr/` or in
+`docs/adr/archive/`, or an earlier plan, has its number with another name. The collision of 2026-11-05 passes each
+gate before the change. After it, the collision, two plans of one number and a plan of an archived number each
+fail the fact, and four mutations of the gate each fail a test.
 
 ### R-0051 · The desktop cannot show a model in millimetres that is larger than about 1000 mm
 - class: risk
