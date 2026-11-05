@@ -1,7 +1,7 @@
 ---
 id: 0192
 title: The kept solids belong to one Document, the faces of the kernel keep their holes, and the next forms of five gates fail
-status: Active
+status: Done
 phase: P0.84
 opened: 2026-11-05
 depends-on: [0191]
@@ -70,19 +70,20 @@ number and each integer gives its unit, and the next form of each gate fails.
 
 ## Acceptance criteria
 
-- [ ] Each finding has a test or an injection that fails before the change and passes after it.
-- [ ] A clean build (`--no-incremental`) gives zero errors and zero warnings.
-- [ ] Continuous integration passes on the three runners, on the branch and on `main` after the merge.
+- [x] Each finding has a test or an injection that fails before the change and passes after it.
+- [x] A clean build (`--no-incremental`) gives zero errors and zero warnings.
+- [x] Continuous integration passes on the three runners, on the branch and on `main` after the merge.
 
 ## Outcome
 
-Status: Ready
+Status: Done · commit (the merge of the branch p084-engine-forms) · v0.195
 
 ## Method
 
 Mechanical: a test or an injection for each finding, before the change.
 Judgement:  the place of the kept solids, and the rule of T136 that reads the built assemblies.
-Weakest:    to be written at the close.
+Weakest:    the rule of E137 is proved on one touching vertex only; a vertex where three loops meet has no test. The
+            test of T136 reads the assemblies of the test run, so it sees the projects that Engine.Tests references.
 
 ## Progress
 
@@ -92,3 +93,4 @@ Weakest:    to be written at the close.
   number parameter: its `distance` is a member of the result, which R-0053 holds, so E141 is the six parameters of
   GetFaceAt. Q3 to Q5 of the review are A, answered by the standing order of 2026-11-05.
 - 2026-11-05: E135 to E141 and T136 to T140 with 21 new tests; 13 injections each fail a test.
+- 2026-11-05: closed at v0.195.
