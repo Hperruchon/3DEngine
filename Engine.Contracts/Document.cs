@@ -14,6 +14,15 @@ public sealed class Document
 
     public string LengthUnit { get; }
 
+    // ADR-0071 item 1 (phase P8b1, TASK-0202): the kind of the Document. A part holds the bodies, the sketches,
+    // the images and the datums of one part. An assembly holds references to parts at a fixed version only. The
+    // kind is fixed when the Document is made; a document file of an earlier version is a part.
+    public const string Part = "part";
+
+    public const string Assembly = "assembly";
+
+    public string Kind { get; }
+
     private readonly List<LogEntry> _log = new();
 
     // Finding E26 of the codebase review of 2026-10-08 (TASK-0135): Log returned the list itself, and a
@@ -57,12 +66,19 @@ public sealed class Document
     private readonly Dictionary<Guid, Sketch.DatumRecord> _datums = new();
     public IReadOnlyCollection<Sketch.DatumRecord> Datums => _datums.Values;
 
-    public Document(Guid? projectId = null, int schemaVersion = 1, string lengthUnit = Millimetre)
+    // ADR-0071 item 3: one record for each reference of an assembly, as for an image. A part holds none.
+    private readonly Dictionary<Guid, Assembly.PartReference> _references = new();
+    public IReadOnlyCollection<Assembly.PartReference> References => _references.Values;
+
+    public Document(Guid? projectId = null, int schemaVersion = 1, string lengthUnit = Millimetre, string kind = Part)
     {
         if (lengthUnit != Millimetre)
             throw new ArgumentException($"The length unit {lengthUnit} is not permitted; the millimetre ({Millimetre}) is the only permitted unit (ADR-0015 item 7).", nameof(lengthUnit));
+        if (kind is not (Part or Assembly))
+            throw new ArgumentException($"The kind {kind} is not permitted; a Document is a {Part} or an {Assembly} (ADR-0071 item 1).", nameof(kind));
 
         LengthUnit = lengthUnit;
+        Kind = kind;
         _logView = _log.AsReadOnly();
         DocumentId = Guid.NewGuid();
         ProjectId = projectId;
@@ -119,6 +135,10 @@ public sealed class Document
     }
 
     internal void AddDatum(Sketch.DatumRecord datum) => _datums[datum.Id] = datum;
+
+    internal void AddReference(Assembly.PartReference reference) => _references[reference.Id] = reference;
+
+    internal void RemoveReference(Guid id) => _references.Remove(id);
 
     internal void RemoveDatum(Guid id) => _datums.Remove(id);
 

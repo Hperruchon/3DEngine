@@ -96,6 +96,11 @@ public sealed record CommandHandlerResult(
 
     public IReadOnlyList<Sketch.DatumRecord> ChangedDatums { get; init; } = Array.Empty<Sketch.DatumRecord>();
 
+    // ADR-0071 item 5 (phase P8b1, TASK-0202): the record of each reference of an assembly that the command creates.
+    // The commit adds each one and emits reference.created after the datum events. A record never changes, so a handler
+    // gives no changed reference; the bus refuses an identifier that it created before. Empty by default.
+    public IReadOnlyList<Assembly.PartReference> CreatedReferences { get; init; } = Array.Empty<Assembly.PartReference>();
+
     public static CommandHandlerResult Success(
         Outputs outputs,
         IReadOnlyList<Diagnostic>? diagnostics = null,
@@ -107,7 +112,8 @@ public sealed record CommandHandlerResult(
         IReadOnlyList<Images.ImageRecord>? createdImages = null,
         IReadOnlyList<Images.ImageRecord>? changedImages = null,
         IReadOnlyList<Sketch.DatumRecord>? createdDatums = null,
-        IReadOnlyList<Sketch.DatumRecord>? changedDatums = null)
+        IReadOnlyList<Sketch.DatumRecord>? changedDatums = null,
+        IReadOnlyList<Assembly.PartReference>? createdReferences = null)
         => new(
             outputs,
             diagnostics ?? Array.Empty<Diagnostic>(),
@@ -122,6 +128,7 @@ public sealed record CommandHandlerResult(
             ChangedImages = changedImages ?? Array.Empty<Images.ImageRecord>(),
             CreatedDatums = createdDatums ?? Array.Empty<Sketch.DatumRecord>(),
             ChangedDatums = changedDatums ?? Array.Empty<Sketch.DatumRecord>(),
+            CreatedReferences = createdReferences ?? Array.Empty<Assembly.PartReference>(),
         };
 
     public static CommandHandlerResult Failure(

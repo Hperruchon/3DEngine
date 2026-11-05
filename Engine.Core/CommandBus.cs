@@ -4,6 +4,7 @@ using System.Runtime.CompilerServices;
 using Engine.Contracts;
 using Engine.Contracts.Geometry;
 using Engine.Contracts.Handlers;
+using Engine.Contracts.Assembly;
 using Engine.Contracts.Images;
 using Engine.Contracts.Sketch;
 using Engine.Core.Geometry;
@@ -54,6 +55,9 @@ public sealed class CommandBus
     // ADR-0045 item 7: each image identifier that a commit of this bus created.
     private readonly HashSet<Guid> _createdImages = [];
     private readonly HashSet<Guid> _createdDatums = [];
+
+    // ADR-0071 item 5: each reference identifier that a commit of this bus created.
+    private readonly HashSet<Guid> _createdReferences = [];
 
     public CommandBus(
         Document document,
@@ -174,6 +178,13 @@ public sealed class CommandBus
                 DiagnosticCodes.IoWriteFailed,
                 $"An earlier write of the document file {broken.FilePath} failed, so the session refuses each command."), stopwatch);
 
+        // ADR-0071 item 2: a command applies only in a kind of document that its handler permits, so an assembly
+        // holds no body and a part holds no reference. The refusal comes before the handler runs.
+        if (!Commands.DocumentKinds.Permits(handler, _document.Kind))
+            return Reject(command, new ErrorDetail(
+                DiagnosticCodes.CommandKindRefused,
+                $"The command '{command.Name}' does not apply in a document of the kind '{_document.Kind}' (ADR-0071 item 2)."), stopwatch);
+
         // 2. Optimistic version check
         if (command.ExpectedDocumentVersion is { } expected && expected != _document.Version)
         {
@@ -205,6 +216,7 @@ public sealed class CommandBus
         RefuseWrongSketchLists(command, handlerResult);
         RefuseWrongImageLists(command, handlerResult);
         RefuseWrongDatumLists(command, handlerResult);
+        RefuseWrongReferenceLists(command, handlerResult);
 
         if (Journal is { } journal && Write(journal, command, handler, handlerResult, stopwatch) is { } refused)
             return refused;
@@ -221,14 +233,16 @@ public sealed class CommandBus
             handlerResult.CreatedImages,
             handlerResult.ChangedImages.Select(image => (LiveImage(image.Id), image)).ToList(),
             handlerResult.CreatedDatums,
-            handlerResult.ChangedDatums.Select(datum => (LiveDatum(datum.Id), datum)).ToList());
+            handlerResult.ChangedDatums.Select(datum => (LiveDatum(datum.Id), datum)).ToList(),
+            handlerResult.CreatedReferences);
         var committed = Commit(
             command,
             new Effect(
                 handlerResult.CreatedBodies, handlerResult.ConsumedBodies, [], handlerResult.ChangedBodies,
                 handlerResult.CreatedSketches, [], handlerResult.ChangedSketches,
                 handlerResult.CreatedImages, [], handlerResult.ChangedImages,
-                handlerResult.CreatedDatums, [], handlerResult.ChangedDatums),
+                handlerResult.CreatedDatums, [], handlerResult.ChangedDatums,
+                handlerResult.CreatedReferences, []),
             handlerResult.Outputs, handlerResult.Diagnostics, stopwatch);
         _history.Record(step);
         return committed;
@@ -264,10 +278,11 @@ public sealed class CommandBus
             || handlerResult.CreatedBodies.Count + handlerResult.ConsumedBodies.Count + handlerResult.ChangedBodies.Count
                 + handlerResult.CreatedSketches.Count + handlerResult.ChangedSketches.Count
                 + handlerResult.CreatedImages.Count + handlerResult.ChangedImages.Count
-                + handlerResult.CreatedDatums.Count + handlerResult.ChangedDatums.Count > 0)
+                + handlerResult.CreatedDatums.Count + handlerResult.ChangedDatums.Count
+                + handlerResult.CreatedReferences.Count > 0)
             throw new InvalidOperationException(
                 $"The handler of '{command.Name}'@{command.SchemaVersion} gives the move {handlerResult.History} and a list of "
-                + "bodies, sketches, images or datums, or a move that does not exist. ADR-0031 item 7: the bus computes the changes of a move.");
+                + "bodies, sketches, images, datums or references, or a move that does not exist. ADR-0031 item 7: the bus computes the changes of a move.");
 
         var undo = handlerResult.History == HistoryMove.Undo;
         if ((undo ? _history.NextUndo : _history.NextRedo) is not { } step)
@@ -292,7 +307,8 @@ public sealed class CommandBus
                     [], step.CreatedImages.Select(image => image.Id).ToList(),
                     step.ChangedImages.Select(change => change.Before).ToList(),
                     [], step.CreatedDatums.Select(datum => datum.Id).ToList(),
-                    step.ChangedDatums.Select(change => change.Before).ToList()),
+                    step.ChangedDatums.Select(change => change.Before).ToList(),
+                    [], step.CreatedReferences.Select(reference => reference.Id).ToList()),
                 outputs, handlerResult.Diagnostics, stopwatch);
             _history.Undone();
             return reversed;
@@ -305,7 +321,8 @@ public sealed class CommandBus
                 step.Changed.Select(change => change.After).ToList(),
                 step.CreatedSketches, [], step.ChangedSketches.Select(change => change.After).ToList(),
                 step.CreatedImages, [], step.ChangedImages.Select(change => change.After).ToList(),
-                step.CreatedDatums, [], step.ChangedDatums.Select(change => change.After).ToList()),
+                step.CreatedDatums, [], step.ChangedDatums.Select(change => change.After).ToList(),
+                step.CreatedReferences, []),
             outputs, handlerResult.Diagnostics, stopwatch);
         _history.Redone();
         return applied;
@@ -469,8 +486,22 @@ public sealed class CommandBus
         }
     }
 
-    // The changes of one commit to the live bodies, sketches, images and datums. Only an Undo
-    // removes a body, a sketch, an image or a datum.
+    // ADR-0071 item 5: the rule of the images, for the references. A reference never changes, so a list has
+    // created references only.
+    private void RefuseWrongReferenceLists(Command command, CommandHandlerResult result)
+    {
+        var created = new HashSet<Guid>();
+        foreach (var reference in result.CreatedReferences)
+        {
+            if (_createdReferences.Contains(reference.Id) || !created.Add(reference.Id))
+                throw new InvalidOperationException(
+                    $"The handler of '{command.Name}'@{command.SchemaVersion} creates reference {reference.Id}, which this bus "
+                    + "created before or which is in its list two times. ADR-0071 item 5: an identifier is given one time.");
+        }
+    }
+
+    // The changes of one commit to the live bodies, sketches, images, datums and references. Only an
+    // Undo removes a body, a sketch, an image, a datum or a reference.
     private sealed record Effect(
         IReadOnlyList<BodyRecord> Created,
         IReadOnlyList<BodyHandle> Consumed,
@@ -484,7 +515,9 @@ public sealed class CommandBus
         IReadOnlyList<ImageRecord> ChangedImages,
         IReadOnlyList<DatumRecord> CreatedDatums,
         IReadOnlyList<Guid> RemovedDatums,
-        IReadOnlyList<DatumRecord> ChangedDatums);
+        IReadOnlyList<DatumRecord> ChangedDatums,
+        IReadOnlyList<PartReference> CreatedReferences,
+        IReadOnlyList<Guid> RemovedReferences);
 
     // 4. Commit: compute each Seq, append the log, register the created bodies,
     // remove the consumed and the removed bodies, then the same for the sketches. The
@@ -493,7 +526,8 @@ public sealed class CommandBus
     // command.applied, each body.created, each body.consumed, each body.removed, each
     // body.changed, each sketch.created, each sketch.removed, each sketch.changed, and
     // since ADR-0045 item 8 each image.created, each image.removed, each image.changed, and since
-    // ADR-0051 item 9 each datum.created, each datum.removed, each datum.changed.
+    // ADR-0051 item 9 each datum.created, each datum.removed, each datum.changed, and since ADR-0071
+    // item 5 each reference.created and each reference.removed.
     // A subscriber that draws between two events therefore never sees fewer
     // bodies than the result has. Nothing here awaits, therefore nothing here
     // stops in the middle.
@@ -508,7 +542,8 @@ public sealed class CommandBus
         var count = 1 + created.Count + consumed.Count + removed.Count + changed.Count
             + effect.CreatedSketches.Count + effect.RemovedSketches.Count + effect.ChangedSketches.Count
             + effect.CreatedImages.Count + effect.RemovedImages.Count + effect.ChangedImages.Count
-            + effect.CreatedDatums.Count + effect.RemovedDatums.Count + effect.ChangedDatums.Count;
+            + effect.CreatedDatums.Count + effect.RemovedDatums.Count + effect.ChangedDatums.Count
+            + effect.CreatedReferences.Count + effect.RemovedReferences.Count;
         var appliedSeq = TakeSeqs(count);
         var events = new List<EventRecord>(count)
         {
@@ -663,6 +698,33 @@ public sealed class CommandBus
             events.Add(Event(lastSeq, command, "datum.changed", new Dictionary<string, object?>
             {
                 ["datumId"] = datum.Id,
+            }));
+        }
+
+        // ADR-0071 item 5: the record of a reference is small, so its event carries it.
+        foreach (var reference in effect.CreatedReferences)
+        {
+            _document.AddReference(reference);
+            _createdReferences.Add(reference.Id);
+            lastSeq++;
+            events.Add(Event(lastSeq, command, "reference.created", new Dictionary<string, object?>
+            {
+                ["referenceId"] = reference.Id,
+                ["part"] = reference.Part,
+                ["version"] = reference.Version,
+                ["x"] = reference.X,
+                ["y"] = reference.Y,
+                ["z"] = reference.Z,
+            }));
+        }
+
+        foreach (var id in effect.RemovedReferences)
+        {
+            _document.RemoveReference(id);
+            lastSeq++;
+            events.Add(Event(lastSeq, command, "reference.removed", new Dictionary<string, object?>
+            {
+                ["referenceId"] = id,
             }));
         }
 

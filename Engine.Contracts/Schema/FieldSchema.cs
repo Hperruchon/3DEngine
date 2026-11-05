@@ -43,6 +43,9 @@ public static class UnitKinds
     // A component of a direction, with no unit (finding E141 of the codebase review of 2026-11-05 (b), TASK-0192).
     public const string Direction = "direction";
 
+    // A count of items, with no unit, as the count of the entries of a part (ADR-0071 item 3, TASK-0202).
+    public const string Count = "count";
+
     public static IReadOnlyList<string> All { get; } =
-        [Length, Pixel, Scale, Cosine, Sine, Sign, ConstraintValue, Direction];
+        [Length, Pixel, Scale, Cosine, Sine, Sign, ConstraintValue, Direction, Count];
 }
