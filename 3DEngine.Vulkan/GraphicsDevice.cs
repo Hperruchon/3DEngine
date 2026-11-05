@@ -8,7 +8,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Runtime.InteropServices;
 using Vortice.Vulkan;
-using static SDL3.SDL3;
+using static SDL.SDL3;
 using static Vortice.Vulkan.Vulkan;
 
 namespace ThreeDEngine.Vulkan;
@@ -65,7 +65,13 @@ public unsafe sealed class GraphicsDevice : IDisposable
 
         List<string> instanceExtensions = [];
         if (window is not null)
-            instanceExtensions.AddRange(SDL_Vulkan_GetInstanceExtensions());
+        {
+            // The binding of R14c (ADR-0061 item 5) gives the names as a pointer and a count.
+            uint count;
+            var required = SDL_Vulkan_GetInstanceExtensions(&count);
+            for (var index = 0u; required != null && index < count; index++)
+                instanceExtensions.Add(System.Runtime.InteropServices.Marshal.PtrToStringUTF8((IntPtr)required[index])!);
+        }
 
         List<string> instanceLayers = enableValidation ? GetOptimalValidationLayers(availableInstanceLayers) : [];
         ValidationEnabled = instanceLayers.Count > 0;

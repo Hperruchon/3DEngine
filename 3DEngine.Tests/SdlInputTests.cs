@@ -1,7 +1,7 @@
-using SDL3;
+using SDL;
 using ThreeDEngine.Core.Input;
 using ThreeDEngine.Vulkan;
-using static SDL3.SDL3;
+using static SDL.SDL3;
 
 namespace ThreeDEngine.Tests;
 
@@ -12,7 +12,7 @@ public unsafe class SdlInputTests
     private static SDL_Event Finger(SDL_EventType type, ulong finger, float x, float y, ulong ms)
     {
         SDL_Event e = default;
-        e.type = type;
+        e.type = (uint)(type);
         e.tfinger.timestamp = ms * 1_000_000;
         e.tfinger.touchID = (SDL_TouchID)1UL;
         e.tfinger.fingerID = (SDL_FingerID)finger;
@@ -26,10 +26,10 @@ public unsafe class SdlInputTests
     private static SDL_Event SyntheticMotion(float x, float y, float dx, ulong ms)
     {
         SDL_Event e = default;
-        e.type = SDL_EventType.MouseMotion;
+        e.type = (uint)(SDL_EventType.SDL_EVENT_MOUSE_MOTION);
         e.motion.timestamp = ms * 1_000_000;
-        e.motion.which = (SDL_MouseID)SDL_TOUCH_MOUSEID;
-        e.motion.state = SDL_MouseButtonFlags.Left;
+        e.motion.which = SDL_TOUCH_MOUSEID;
+        e.motion.state = (SDL_MouseButtonFlags)SDL_BUTTON_LMASK;
         e.motion.x = x;
         e.motion.y = y;
         e.motion.xrel = dx;
@@ -39,11 +39,11 @@ public unsafe class SdlInputTests
     private static SDL_Event SyntheticButton(SDL_EventType type, float x, float y, ulong ms)
     {
         SDL_Event e = default;
-        e.type = type;
+        e.type = (uint)(type);
         e.button.timestamp = ms * 1_000_000;
-        e.button.which = (SDL_MouseID)SDL_TOUCH_MOUSEID;
+        e.button.which = SDL_TOUCH_MOUSEID;
         e.button.button = 1;
-        e.button.down = type == SDL_EventType.MouseButtonDown;
+        e.button.down = type == SDL_EventType.SDL_EVENT_MOUSE_BUTTON_DOWN;
         e.button.x = x;
         e.button.y = y;
         return e;
@@ -52,7 +52,7 @@ public unsafe class SdlInputTests
     private static SDL_Event Key(SDL_EventType type, SDL_Scancode code)
     {
         SDL_Event e = default;
-        e.type = type;
+        e.type = (uint)(type);
         e.key.scancode = code;
         return e;
     }
@@ -67,10 +67,10 @@ public unsafe class SdlInputTests
 
         foreach (var frame in new[]
         {
-            new[] { Finger(SDL_EventType.FingerDown, 5, 0.1f, 0.1f, 0), SyntheticButton(SDL_EventType.MouseButtonDown, 100, 100, 0) },
-            new[] { Finger(SDL_EventType.FingerMotion, 5, 0.12f, 0.1f, 10), SyntheticMotion(120, 100, 20, 10) },
-            new[] { Finger(SDL_EventType.FingerMotion, 5, 0.14f, 0.1f, 20), SyntheticMotion(140, 100, 20, 20) },
-            new[] { Finger(SDL_EventType.FingerUp, 5, 0.14f, 0.1f, 400), SyntheticButton(SDL_EventType.MouseButtonUp, 140, 100, 400) },
+            new[] { Finger(SDL_EventType.SDL_EVENT_FINGER_DOWN, 5, 0.1f, 0.1f, 0), SyntheticButton(SDL_EventType.SDL_EVENT_MOUSE_BUTTON_DOWN, 100, 100, 0) },
+            new[] { Finger(SDL_EventType.SDL_EVENT_FINGER_MOTION, 5, 0.12f, 0.1f, 10), SyntheticMotion(120, 100, 20, 10) },
+            new[] { Finger(SDL_EventType.SDL_EVENT_FINGER_MOTION, 5, 0.14f, 0.1f, 20), SyntheticMotion(140, 100, 20, 20) },
+            new[] { Finger(SDL_EventType.SDL_EVENT_FINGER_UP, 5, 0.14f, 0.1f, 400), SyntheticButton(SDL_EventType.SDL_EVENT_MOUSE_BUTTON_UP, 140, 100, 400) },
         })
         {
             foreach (var e in frame)
@@ -88,7 +88,7 @@ public unsafe class SdlInputTests
     {
         var input = new SdlInput();
 
-        input.Translate(Finger(SDL_EventType.FingerDown, 9, 0.25f, 0.5f, 3), 800, 600);
+        input.Translate(Finger(SDL_EventType.SDL_EVENT_FINGER_DOWN, 9, 0.25f, 0.5f, 3), 800, 600);
 
         var sample = Assert.IsType<PointerSample>(Assert.Single(input.TakeFrame()));
         Assert.Equal(DeviceKind.Touch, sample.Kind);
@@ -110,7 +110,7 @@ public unsafe class SdlInputTests
         fixed (byte* nothing = empty)
         {
             SDL_Event e = default;
-            e.type = SDL_EventType.TextInput;
+            e.type = (uint)(SDL_EventType.SDL_EVENT_TEXT_INPUT);
             e.text.text = text;
             input.Translate(e, 800, 600);
             e.text.text = nothing;
@@ -127,10 +127,10 @@ public unsafe class SdlInputTests
     {
         var input = new SdlInput();
 
-        input.Translate(Key(SDL_EventType.KeyDown, SDL_Scancode.LeftControl), 800, 600);
-        input.Translate(Key(SDL_EventType.KeyDown, SDL_Scancode.Backspace), 800, 600);
-        input.Translate(Key(SDL_EventType.KeyUp, SDL_Scancode.LeftControl), 800, 600);
-        input.Translate(Key(SDL_EventType.KeyDown, SDL_Scancode.Return), 800, 600);
+        input.Translate(Key(SDL_EventType.SDL_EVENT_KEY_DOWN, SDL_Scancode.SDL_SCANCODE_LCTRL), 800, 600);
+        input.Translate(Key(SDL_EventType.SDL_EVENT_KEY_DOWN, SDL_Scancode.SDL_SCANCODE_BACKSPACE), 800, 600);
+        input.Translate(Key(SDL_EventType.SDL_EVENT_KEY_UP, SDL_Scancode.SDL_SCANCODE_LCTRL), 800, 600);
+        input.Translate(Key(SDL_EventType.SDL_EVENT_KEY_DOWN, SDL_Scancode.SDL_SCANCODE_RETURN), 800, 600);
 
         Assert.Collection(
             input.TakeFrame(),
@@ -157,10 +157,10 @@ public unsafe class SdlInputTests
     {
         var input = new SdlInput();
 
-        input.Translate(Key(SDL_EventType.KeyDown, SDL_Scancode.LeftShift), 800, 600);
-        input.Translate(Key(SDL_EventType.KeyDown, SDL_Scancode.Left), 800, 600);
-        input.Translate(Key(SDL_EventType.KeyUp, SDL_Scancode.LeftShift), 800, 600);
-        input.Translate(Key(SDL_EventType.KeyDown, SDL_Scancode.Left), 800, 600);
+        input.Translate(Key(SDL_EventType.SDL_EVENT_KEY_DOWN, SDL_Scancode.SDL_SCANCODE_LSHIFT), 800, 600);
+        input.Translate(Key(SDL_EventType.SDL_EVENT_KEY_DOWN, SDL_Scancode.SDL_SCANCODE_LEFT), 800, 600);
+        input.Translate(Key(SDL_EventType.SDL_EVENT_KEY_UP, SDL_Scancode.SDL_SCANCODE_LSHIFT), 800, 600);
+        input.Translate(Key(SDL_EventType.SDL_EVENT_KEY_DOWN, SDL_Scancode.SDL_SCANCODE_LEFT), 800, 600);
 
         Assert.Collection(
             input.TakeFrame(),
@@ -175,10 +175,10 @@ public unsafe class SdlInputTests
     {
         var input = new SdlInput();
 
-        input.Translate(Key(SDL_EventType.KeyDown, SDL_Scancode.LeftControl), 800, 600);
-        input.Translate(Letter(SDL_Scancode.W, SDLK_Z), 800, 600);
-        input.Translate(Letter(SDL_Scancode.Z, SDLK_W), 800, 600);
-        input.Translate(Letter(SDL_Scancode.Z, SDLK_Y), 800, 600);
+        input.Translate(Key(SDL_EventType.SDL_EVENT_KEY_DOWN, SDL_Scancode.SDL_SCANCODE_LCTRL), 800, 600);
+        input.Translate(Letter(SDL_Scancode.SDL_SCANCODE_W, SDLK_Z), 800, 600);
+        input.Translate(Letter(SDL_Scancode.SDL_SCANCODE_Z, SDLK_W), 800, 600);
+        input.Translate(Letter(SDL_Scancode.SDL_SCANCODE_Z, SDLK_Y), 800, 600);
 
         Assert.Collection(
             input.TakeFrame(),
@@ -188,7 +188,7 @@ public unsafe class SdlInputTests
 
     private static SDL_Event Letter(SDL_Scancode code, uint letter)
     {
-        var e = Key(SDL_EventType.KeyDown, code);
+        var e = Key(SDL_EventType.SDL_EVENT_KEY_DOWN, code);
         e.key.key = (SDL_Keycode)letter;
         return e;
     }
@@ -196,9 +196,9 @@ public unsafe class SdlInputTests
     private static SDL_Event MouseMotion(float x, float y, bool held)
     {
         SDL_Event e = default;
-        e.type = SDL_EventType.MouseMotion;
+        e.type = (uint)(SDL_EventType.SDL_EVENT_MOUSE_MOTION);
         e.motion.which = (SDL_MouseID)1;
-        e.motion.state = held ? SDL_MouseButtonFlags.Left : 0;
+        e.motion.state = held ? (SDL_MouseButtonFlags)SDL_BUTTON_LMASK : 0;
         e.motion.x = x;
         e.motion.y = y;
         return e;
@@ -207,10 +207,10 @@ public unsafe class SdlInputTests
     private static SDL_Event MouseButton(SDL_EventType type, float x, float y)
     {
         SDL_Event e = default;
-        e.type = type;
+        e.type = (uint)(type);
         e.button.which = (SDL_MouseID)1;
         e.button.button = 1;
-        e.button.down = type == SDL_EventType.MouseButtonDown;
+        e.button.down = type == SDL_EventType.SDL_EVENT_MOUSE_BUTTON_DOWN;
         e.button.x = x;
         e.button.y = y;
         return e;
@@ -226,8 +226,8 @@ public unsafe class SdlInputTests
         var machine = new IntentMachine();
 
         input.Translate(MouseMotion(500, 300, held: false), 800, 600);
-        input.Translate(MouseButton(SDL_EventType.MouseButtonDown, 500, 300), 800, 600);
-        input.Translate(MouseButton(SDL_EventType.MouseButtonUp, 500, 300), 800, 600);
+        input.Translate(MouseButton(SDL_EventType.SDL_EVENT_MOUSE_BUTTON_DOWN, 500, 300), 800, 600);
+        input.Translate(MouseButton(SDL_EventType.SDL_EVENT_MOUSE_BUTTON_UP, 500, 300), 800, 600);
         input.Translate(MouseMotion(560, 300, held: false), 800, 600);
 
         Assert.Equal(new SelectIntent(500, 300), Assert.Single(machine.Step(input.TakeFrame()).OfType<SelectIntent>()));
