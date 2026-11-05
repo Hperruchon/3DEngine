@@ -10,7 +10,7 @@ namespace Engine.Api.Http.Endpoints;
 //
 //   GET  /document                     { name, lengthUnit, version }
 //   POST /document/save { "name": n }  saves the file as n.3de in the document folder
-//   POST /document/open { "name": n }  only on a host that can start itself again
+//   POST /document/open { "name": n }  only on a host that opens a file (the desktop)
 internal static class DocumentEndpoint
 {
     public static async Task<IResult> Get(EngineHost host, CancellationToken ct)
@@ -66,7 +66,7 @@ internal static class DocumentEndpoint
     internal static IResult OpenPending()
         => Failure(
             DiagnosticCodes.ApiOpenPending,
-            "This host accepted an open and starts again with the new file, so it refuses each command, save and open. Connect again after the start.",
+            "This host accepted an open and opens the new file in a next session, so it refuses each command, save and open. Connect again after the start.",
             StatusCodes.Status503ServiceUnavailable);
 
     // The path in the document folder of the name in the body, or the reply of a refusal.

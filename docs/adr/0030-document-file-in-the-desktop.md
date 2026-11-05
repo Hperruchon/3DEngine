@@ -1,13 +1,13 @@
 ---
 id: 0030
 title: The document file in the desktop and for an agent
-status: Accepted
+status: Amended
 topic: Persistence, deployment
 date: 2026-10-28
 supersedes: []
 superseded-by: []
 amends: []
-amended-by: []
+amended-by: ['0061']
 affects:
   - 3DEngine/DesktopSurface.cs
   - 3DEngine/DesktopEngineHost.cs
@@ -99,3 +99,5 @@ HTTP (ADR-0002). An open never leaves the person with no window, because the old
   of a file name (finding E81, Q7). Item 4: a save with no document file gives HTTP 501 (E85, Q5), the port rule, and
   the refusal with HTTP 503 and `E-API-OPEN-PENDING` after an accepted open (V37, Q5). Item 5: the check opens the
   file with the access and the share of the journal (V31, Q4).
+- 2026-11-05 · TASK-0194 · ADR-0061 item 9 amends item 4: the desktop opens the file of an accepted open in a next
+  session of the same process, on the same port and in the same window. It does not start again.

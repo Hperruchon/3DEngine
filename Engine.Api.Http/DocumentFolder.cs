@@ -4,7 +4,8 @@ using Engine.Core.Persistence;
 namespace Engine.Api.Http;
 
 // ADR-0030 item 2: the one folder where a save and an open by name go, and the
-// function of a host that can start itself again with another file (item 4). A host
+// function of a host that opens another file (item 4; since R14b the desktop opens it in a next session of the same
+// process, ADR-0061 item 9). A host
 // registers its own folder before AddEngineSurface; with none, the surface reads the
 // setting Engine:DocumentFolder, or takes the default.
 public sealed class DocumentFolder
@@ -25,24 +26,24 @@ public sealed class DocumentFolder
 
     public string FullPath { get; }
 
-    // Checks the file at the path and starts the host again with it, or gives the
-    // error; null on a host that cannot start itself again (engine-api-http).
+    // Checks the file at the path and gives it to the host for its next session, or gives the
+    // error; null on a host that does not open a file (engine-api-http).
     public Func<string, CancellationToken, Task<ErrorDetail?>>? Reopen { get; }
 
     // ADR-0030 item 4: true after an open that the host accepted. The surface then refuses
-    // each command, save and open with HTTP 503, because the host starts again. Until
+    // each command, save and open with HTTP 503, because the host opens the file in a next session. Until
     // TASK-0099 a command after the reply 202 changed the old document (finding V37 of the
     // second codebase review of 2026-10-28).
     public bool OpenAccepted => Volatile.Read(ref _openAccepted);
 
     private bool _openAccepted;
 
-    // Checks the file and starts the host again with it (Reopen), and records an accepted
+    // Checks the file and gives it to the host (Reopen), and records an accepted
     // open. Each open of a host, by HTTP or by its window, goes through here.
     public async Task<ErrorDetail?> Open(string path, CancellationToken ct)
     {
         if (Reopen is not { } reopen)
-            throw new InvalidOperationException("This host cannot start itself again, so it does not open a file.");
+            throw new InvalidOperationException("This host does not open a file.");
 
         var error = await reopen(path, ct).ConfigureAwait(false);
         if (error is null)

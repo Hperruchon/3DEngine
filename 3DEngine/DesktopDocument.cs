@@ -7,11 +7,12 @@ using Engine.Geometry.Manifold;
 
 namespace ThreeDEngine.Desktop;
 
-// ADR-0030 items 3 to 5 (TASK-0092): the document folder of the desktop, and an open
-// that starts the program again. An open checks the file in a scratch session with its
-// own backend first, so a file that does not open leaves the person with the window.
-// Then the window loop ends, the surface frees the port, and the program starts again
-// with --file and the same port, so an agent connects again to the same address.
+// ADR-0030 items 3 to 5 (TASK-0092): the document folder of the desktop, and an open. An
+// open checks the file in a scratch session with its own backend first, so a file that does
+// not open leaves the person with the window. Then the window loop ends, the surface frees
+// the port, and the next session holds the file on the same port, so an agent connects again
+// to the same address. Since R14b (ADR-0061 item 9, TASK-0194) the next session is in the
+// same process; until then the program started again with --file.
 internal sealed class DesktopDocument
 {
     private string? _requested;
@@ -52,41 +53,4 @@ internal sealed class DesktopDocument
             Path.GetFullPath(path),
             Path.GetFullPath(other),
             OperatingSystem.IsLinux() ? StringComparison.Ordinal : StringComparison.OrdinalIgnoreCase);
-
-    // The arguments of the program with --file set to the path; each other argument
-    // stays, the port too.
-    public static string[] Arguments(IReadOnlyList<string> args, string path)
-    {
-        var kept = new List<string>();
-        for (var index = 0; index < args.Count; index++)
-        {
-            if (args[index] == "--file")
-            {
-                index++;
-                continue;
-            }
-
-            if (args[index].StartsWith("--file=", StringComparison.Ordinal))
-                continue;
-
-            kept.Add(args[index]);
-        }
-
-        kept.Add("--file");
-        kept.Add(path);
-        return [.. kept];
-    }
-
-    // Starts the program again with the arguments. A program that runs as
-    // "dotnet 3DEngine.dll" starts the same way.
-    public static void StartAgain(IReadOnlyList<string> args, string path)
-    {
-        var program = Environment.ProcessPath ?? throw new InvalidOperationException("The path of the program is not known.");
-        var start = new ProcessStartInfo(program) { UseShellExecute = false };
-        if (string.Equals(Path.GetFileNameWithoutExtension(program), "dotnet", StringComparison.OrdinalIgnoreCase))
-            start.ArgumentList.Add(Environment.GetCommandLineArgs()[0]);
-        foreach (var argument in Arguments(args, path))
-            start.ArgumentList.Add(argument);
-        Process.Start(start)?.Dispose();
-    }
 }
