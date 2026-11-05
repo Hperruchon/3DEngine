@@ -4,9 +4,9 @@
 // into this project and changed it. ADR-0017 gives the rules for this project.
 
 using System;
-using SDL3;
+using SDL;
 using Vortice.Vulkan;
-using static SDL3.SDL3;
+using static SDL.SDL3;
 
 namespace ThreeDEngine.Vulkan;
 
@@ -23,37 +23,37 @@ public enum WindowFlags
 
 public sealed unsafe class Window
 {
-    private readonly SDL_Window _window;
+    private readonly SDL_Window* _window;
 
     public unsafe Window(string title, int width, int height, WindowFlags flags = WindowFlags.None)
     {
         Title = title;
 
-        SDL_WindowFlags sdl_flags = SDL_WindowFlags.HighPixelDensity | SDL_WindowFlags.Vulkan | SDL_WindowFlags.Hidden;
+        SDL_WindowFlags sdl_flags = (SDL_WindowFlags)SDL_WINDOW_HIGH_PIXEL_DENSITY | (SDL_WindowFlags)SDL_WINDOW_VULKAN | (SDL_WindowFlags)SDL_WINDOW_HIDDEN;
         if ((flags & WindowFlags.Fullscreen) != WindowFlags.None)
         {
-            sdl_flags |= SDL_WindowFlags.Fullscreen;
+            sdl_flags |= (SDL_WindowFlags)SDL_WINDOW_FULLSCREEN;
         }
         else
         {
             if ((flags & WindowFlags.Borderless) != WindowFlags.None)
             {
-                sdl_flags |= SDL_WindowFlags.Borderless;
+                sdl_flags |= (SDL_WindowFlags)SDL_WINDOW_BORDERLESS;
             }
 
             if ((flags & WindowFlags.Resizable) != WindowFlags.None)
             {
-                sdl_flags |= SDL_WindowFlags.Resizable;
+                sdl_flags |= (SDL_WindowFlags)SDL_WINDOW_RESIZABLE;
             }
 
             if ((flags & WindowFlags.Minimized) != WindowFlags.None)
             {
-                sdl_flags |= SDL_WindowFlags.Minimized;
+                sdl_flags |= (SDL_WindowFlags)SDL_WINDOW_MINIMIZED;
             }
 
             if ((flags & WindowFlags.Maximized) != WindowFlags.None)
             {
-                sdl_flags |= SDL_WindowFlags.Maximized;
+                sdl_flags |= (SDL_WindowFlags)SDL_WINDOW_MAXIMIZED;
             }
         }
 
@@ -66,12 +66,12 @@ public sealed unsafe class Window
         }
 
         _window = SDL_CreateWindow(title, width, height, sdl_flags);
-        if (_window.IsNull)
+        if (_window == null)
         {
             throw new Exception("SDL: failed to create window");
         }
 
-        _ = SDL_SetWindowPosition(_window, SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED);
+        _ = SDL_SetWindowPosition(_window, (int)SDL_WINDOWPOS_CENTERED, (int)SDL_WINDOWPOS_CENTERED);
         Id = SDL_GetWindowID(_window);
 
         // Register entry R-0043 and finding V85 (TASK-0188, TASK-0191): the hook of the button messages, on the video
@@ -98,17 +98,17 @@ public sealed unsafe class Window
     // SDL reads it. When the place of a button message of this window is not the place that SDL holds, it warps the mouse
     // of SDL to the place of the message, where the cursor already is. SDL then gives a motion and the press at the true
     // place. A hand gives a motion before each press, so SDL holds the place of the press and the hook does nothing.
+    // Since R14c (TASK-0195) the binding is ppy.SDL3-CS with SDL 3.5.0, and a probe of 2026-11-06 gave the same result.
     [System.Runtime.InteropServices.UnmanagedCallersOnly(CallConvs = [typeof(System.Runtime.CompilerServices.CallConvCdecl)])]
-    private static SDLBool Hook(IntPtr userdata, tagMSG message)
+    private static SDLBool Hook(IntPtr userdata, MSG* msg)
     {
         var window = s_hooked;
-        var msg = (Win32.Message*)message.Value;
-        if (window is null || msg is null || msg->Window != window._handle || Win32.FromPenOrTouch(Win32.GetMessageExtraInfo()))
+        if (window is null || msg is null || msg->hwnd != window._handle || Win32.FromPenOrTouch(Win32.GetMessageExtraInfo()))
             return true;
 
         float x, y;
         _ = SDL_GetMouseState(&x, &y);
-        if (Correction(msg->Kind, msg->LParam, x, y) is { } place)
+        if (Correction(msg->message, msg->lParam, x, y) is { } place)
         {
             Console.WriteLine($"[INFO] A button message at ({place.X}, {place.Y}) moves the mouse of SDL from ({x}, {y}) before SDL reads it (R-0043).");
             SDL_WarpMouseInWindow(window._window, place.X, place.Y);
@@ -134,20 +134,6 @@ public sealed unsafe class Window
         internal const uint FirstButtonMessage = 0x0201;
         internal const uint LastButtonMessage = 0x0209;
 
-        // The layout of MSG on x64 and arm64.
-        [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential)]
-        internal struct Message
-        {
-            public IntPtr Window;
-            public uint Kind;
-            public nint WParam;
-            public nint LParam;
-            public uint Time;
-            public int X;
-            public int Y;
-            public uint Private;
-        }
-
         // A message that Windows makes from a pen or a touch carries this mark; SDL leaves it to its pen and touch events.
         internal static bool FromPenOrTouch(nint extraInfo) => ((ulong)extraInfo & 0xFFFFFF00UL) == 0xFF515700UL;
 
@@ -162,7 +148,8 @@ public sealed unsafe class Window
     {
         get
         {
-            SDL_GetWindowSize(_window, out int width, out int height);
+            int width, height;
+            _ = SDL_GetWindowSize(_window, &width, &height);
             return new(width, height);
         }
     }
@@ -178,7 +165,7 @@ public sealed unsafe class Window
     {
         get
         {
-            if ((SDL_GetWindowFlags(_window) & SDL_WindowFlags.Minimized) != 0)
+            if ((SDL_GetWindowFlags(_window) & (SDL_WindowFlags)SDL_WINDOW_MINIMIZED) != 0)
                 return true;
 
             var extent = Extent;
@@ -196,7 +183,7 @@ public sealed unsafe class Window
     public VkSurfaceKHR CreateSurface(VkInstance instance)
     {
         VkSurfaceKHR surface;
-        if (!SDL_Vulkan_CreateSurface(_window, instance, 0, (ulong**)&surface))
+        if (!SDL_Vulkan_CreateSurface(_window, (VkInstance_T*)instance.Handle, null, (VkSurfaceKHR_T**)&surface))
         {
             throw new Exception("SDL: failed to create vulkan surface");
         }

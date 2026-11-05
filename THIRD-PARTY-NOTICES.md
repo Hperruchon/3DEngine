@@ -115,7 +115,7 @@ licence of this repository, therefore the notice for the sample author was absen
 | Licence | MIT License |
 | Licence text | Below. It is a copy of `LICENSE` at commit `ef01519051c1ea9ab92cf6f381ab7ca897ab293f`, which the nuspec of `Vortice.Vulkan` 3.2.3 names. |
 
-The NuGet packages `Vortice.Vulkan` and `Alimer.Bindings.SDL` are not in this list. The repository
+The NuGet packages `Vortice.Vulkan` and `ppy.SDL3-CS` are not in this list (since R14c, ADR-0061 item 5). The repository
 does not hold them. A restore downloads each one.
 
 ```
