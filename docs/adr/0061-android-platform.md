@@ -6,10 +6,12 @@ topic: Platform, clients, rendering
 date: 2026-11-05
 supersedes: []
 superseded-by: []
-amends: ['0017', '0027']
+amends: ['0017', '0027', '0030']
 amended-by: []
 affects:
   - 3DEngine.Android/**
+  - 3DEngine/DesktopSession.cs
+  - 3DEngine/DesktopEngineHost.cs
   - 3DEngine.Vulkan/3DEngine.Vulkan.csproj
   - eng/cimgui-native/**
   - .github/workflows/build-manifold-native.yml
@@ -103,3 +105,5 @@ owner is the only tester on a real device.
 
 - 2026-11-05 · TASK-0193 · Accepted with the Android order and the standing order of the owner of 2026-11-05. The
   order answers the questions of this record in advance with the recommended option.
+- 2026-11-05 · TASK-0194 · R14b applies item 9: the host owns the session (`DesktopSession`), the surface mounts on it
+  with the new form of `AddEngineSurface`, and an open stays in the same process. This amends ADR-0030 item 4.
