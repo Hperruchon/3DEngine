@@ -70,7 +70,8 @@ names. Do not read all of them.
 | [0054](0054-ordered-feature-list.md) | The ordered feature list, a fold of the log | Amended | Feature graph, runtime | 0039 | 0055 |
 | [0055](0055-regeneration.md) | The regeneration of the features after an edit | Accepted | Feature graph, geometry, runtime | 0037, 0039, 0054 | — |
 | [0056](0056-dimension-overlay.md) | The dimension overlay of the desktop | Accepted | Desktop, renderer | — | — |
-| [0057](0057-planar-subtract-in-the-owned-kernel.md) | The exact planar subtract of the owned kernel, with the provenance of each face | Accepted | Kernel, geometry, determinism | — | — |
+| [0057](0057-planar-subtract-in-the-owned-kernel.md) | The exact planar subtract of the owned kernel, with the provenance of each face | Amended | Kernel, geometry, determinism | — | 0058 |
+| [0058](0058-the-engine-reads-the-owned-kernel.md) | The engine reads the owned kernel for the faces of a body | Accepted | Kernel, geometry, queries | 0057 | — |
 
 ## Topics
 

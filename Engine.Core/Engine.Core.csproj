@@ -9,6 +9,8 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Engine.Contracts\Engine.Contracts.csproj" />
+    <!-- ADR-0058 item 1 (phase K4b, TASK-0184): the engine reads the owned kernel for the faces of a body. -->
+    <ProjectReference Include="..\Engine.Kernel\Engine.Kernel.csproj" />
   </ItemGroup>
 
   <!-- ADR-0015 (TASK-0091): a test attaches a document file on a stream that fails. -->
