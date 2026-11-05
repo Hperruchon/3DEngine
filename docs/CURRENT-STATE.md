@@ -5486,3 +5486,41 @@ of a face comes in K4c. A rational grows with each cut, so a model with many cut
 New tests: 12. The test list holds 1728 (1223 in `Engine.Tests`, 309 in `3DEngine.Tests`, 193 in `3DEngine.ImageTests`,
 3 in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
 entries: 14 of 15. New diagnostic codes: 0. Since the review of v0.181, 1 product milestone and 4 entries followed it.
+
+## v0.186 — The engine reads the owned kernel, and GetFaces gives the faces of a body with their names (K4b, TASK-0184)
+
+K4a (v0.185) gave the exact planar subtract of the owned kernel, and no project of the engine read it. On 2026-11-05
+the owner answered the four questions of K4b: the kernel beside Manifold, the B-Rep at the query with a cache, one
+entry for each face name, and a split face as one name with its parts. ADR-0058 gives the design and amends ADR-0057
+item 1.
+
+**The change.**
+- `Engine.Core` references `Engine.Kernel`, and no other project of the engine does. The dependency gate says so.
+- `KernelProjection` builds the kernel solid of a body from the steps in effect: a box, an extrude of the sketch and
+  the distance in effect on the frame of its datum, a translate and a subtract. `SketchProfile.FindWithItems` gives
+  the line, the arc or the circle of each side.
+- The query `GetFaces(bodyId)` gives one entry for each face name: the reference as `CreateDatum` takes it, the
+  count of the parts, the count of the holes, the area, a point inside the face, and the unit normal, or null for the
+  facets of a curve. A body with a fault gives `E-GEOM-BODY-FAULTED`; a body that the kernel cannot build gives
+  `E-GEOM-FACES-FAILED`. The handler keeps the result of the last 64 geometry keys.
+- The topology of the kernel is faster: a rounded filter comes before the exact test of a vertex on an edge, and the
+  removal of straight vertices works in passes. A cylinder of 64 facets with a hole took about 3 s; it takes under
+  0.1 s now.
+
+**Proof.** Before the change, the dependency gate refused the new reference of `Engine.Core`. A box gives six names
+with their areas and normals, and the result writes as JSON with each field. An extrude names start, end and one side
+for each line, also with a negative distance and a loop drawn clockwise. The facets of a circle are one face with no
+normal. A slot cuts the top of a plate into one name with two parts, and the walls of the slot keep the names of the
+slot. A ring has the area of the plate less the hole. The bounds of the kernel solid of each body agree with Manifold.
+The cache builds one time for each key, and again after an edit. Fifteen injections each fail a test.
+
+**What stays.** `E-GEOM-FACES-FAILED` has no test through the commands: each command that breaks a profile also
+gives the body a fault. The subtract of the kernel is still slow on curves, about 0.2 s for each cylinder of 64
+facets. The desktop does not call `GetFaces`; a reference by the identity of a face comes in K4c. An injection script
+that restored a file with its old time left a stale build once; the script now sets a new time, and each injection ran
+again.
+
+New tests: 9. The test list holds 1737 (1232 in `Engine.Tests`, 309 in `3DEngine.Tests`, 193 in `3DEngine.ImageTests`,
+3 in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
+entries: 14 of 15. New diagnostic codes: 2 (`E-GEOM-BODY-FAULTED`, `E-GEOM-FACES-FAILED`). Since the review of
+v0.181, 2 product milestones and 5 entries followed it.

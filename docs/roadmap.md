@@ -160,6 +160,7 @@ Therefore each approved objective must have a track here.
 - P0.78 — The far plane holds each visible body from the eye, and the dimension overlay keeps its labels apart and inside the window, follows a drag and reads the boxes once for each change. v0.183, TASK-0181.
 - P0.79 — A datum on a diagonal subnormal side has unit axes, the walk of the planes gives its sketches in the order of the log, and the next forms of three gates fail. v0.184, TASK-0182.
 - K4a — The owned kernel subtracts planar solids exactly, and each face of the result keeps its provenance. v0.185, TASK-0183, ADR-0057.
+- K4b — The engine reads the owned kernel, and GetFaces gives the faces of a body with their names. v0.186, TASK-0184, ADR-0058.
 
 ## Track 0 — Foundations
 

@@ -1,7 +1,7 @@
 ---
 id: 0184
 title: The engine reads the owned kernel, and a query gives the faces of a body with their names
-status: Active
+status: Done
 phase: K4b
 opened: 2026-11-05
 depends-on: [0183]
@@ -74,11 +74,11 @@ and the item that made it.
 - [x] A query again gives the kept result, and an edit builds a new one.
 - [x] An injection into each new step makes a test fail.
 - [x] A clean build (`--no-incremental`) gives zero errors and zero warnings.
-- [ ] Continuous integration passes on the three runners, on the branch and on `main` after the merge.
+- [x] Continuous integration passes on the three runners, on the branch and on `main` after the merge.
 
 ## Outcome
 
-Status: Active
+Status: Done · commit (the merge of the branch k4b-engine-reads-kernel) · v0.186
 
 ## Method
 
@@ -90,3 +90,4 @@ Weakest:    no command reaches `E-GEOM-FACES-FAILED`, so the code has no test th
 
 - 2026-11-05: opened after the four answers of the owner on K4b.
 - 2026-11-05: the projection, the query and the faster topology; 9 tests, and 15 injections each fail a test.
+- 2026-11-05: closed at v0.186.
