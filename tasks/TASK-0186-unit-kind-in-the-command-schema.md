@@ -9,7 +9,7 @@ governed-by: [0004, 0008, 0012, 0016, 0019, 0021, 0028, 0031, 0033, 0036, 0037, 
 writes:
   create:
     - tasks/TASK-0186-unit-kind-in-the-command-schema.md
-    - docs/adr/0059-unit-kind-in-the-command-schema.md
+    - docs/adr/0060-unit-kind-in-the-command-schema.md
   modify:
     - Engine.Contracts/Schema/FieldSchema.cs
     - Engine.Core/Commands/AddSketchCircleCommandHandler.cs
@@ -64,7 +64,7 @@ holds the rule.
 
 ## Scope (in)
 
-- ADR-0059 "Unit kind in the command schema", from the draft, with the two choices of the owner.
+- ADR-0060 "Unit kind in the command schema", from the draft, with the two choices of the owner.
   It amends ADR-0013 (status Amended, `amended-by`, one History line).
 - `FieldSchema` gets `Unit` and `UnitBy`; a new record `UnitByField(Field, Units)`.
 - A unit on each of the 21 number parameters of the 11 command handlers (count of 2026-11-05;
@@ -87,7 +87,7 @@ holds the rule.
   | Translate | dx, dy, dz | length |
 
 - The schema endpoint projects both members. An absent member is not written.
-- The gate rules of ADR-0059.
+- The gate rules of ADR-0060.
 
 ## Scope (out)
 
@@ -101,8 +101,8 @@ holds the rule.
 
 ## Acceptance criteria
 
-- [ ] ADR-0059 exists with the decision of the draft and the two choices of the owner of
-      2026-11-05, and ADR-0013 shows `amended-by: ['0059']` and status Amended.
+- [ ] ADR-0060 exists with the decision of the draft and the two choices of the owner of
+      2026-11-05, and ADR-0013 shows `amended-by: ['0060']` and status Amended.
 - [ ] `GET /schema/commands/AddSketchConstraint@1` gives `unitBy` for `value` and `secondValue`
       with the map above; `GET /schema/commands/CreateBox@1` gives `"unit": "length"` for `sizeX`.
 - [ ] The gate fails when a number parameter has no unit, when a unit is not in the vocabulary,
@@ -116,7 +116,7 @@ holds the rule.
 
 - Read ADR-0013 too. The gate does not list it in `governed-by`, because its `affects` names
   `Engine.Contracts/Handlers/**` and `Engine.Api.Http/Endpoints/Schema**`, not the paths of this
-  task. ADR-0059 amends it, and its `affects` covers `Engine.Contracts/Schema/**`.
+  task. ADR-0060 amends it, and its `affects` covers `Engine.Contracts/Schema/**`.
 - The unit vocabulary of V1: `length`, `scale`, `cosine`, `sine`, `sign`, `ratio`,
   `constraint-value`. `ratio` has no user in this task; keep it, because a later command with a
   direction component needs it, or remove it and say why in the ADR.
@@ -124,5 +124,5 @@ holds the rule.
 - Keep `FieldSchema` positional: existing calls `new("number", Required: true)` must compile with
   no change except the added unit argument.
 - Take this task after K4c (roadmap, section "Order"), unless the owner gives another order.
-- Check the numbers at commit: 0186 and ADR-0059 were free on `main` at b3ec40a (v0.186). The
-  session of K4c may take TASK-0185 and an ADR number first.
+- Check the numbers at commit: 0186 and ADR-0060 were free on `main` at 7256f92 (v0.187). K4c took
+  ADR-0059 first, so on 2026-11-05 the owner gave ADR-0060 to this task.
