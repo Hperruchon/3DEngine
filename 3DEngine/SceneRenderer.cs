@@ -70,8 +70,11 @@ internal sealed unsafe class SceneRenderer : IDisposable
     // The box around the live bodies that the scene holds, or null.
     public ((double X, double Y, double Z) Min, (double X, double Y, double Z) Max)? Bounds => _bodies.Bounds;
 
-    // ADR-0056 items 3 and 6 (phase R13): the boxes of the dimension overlay.
-    public IEnumerable<((double X, double Y, double Z) Min, (double X, double Y, double Z) Max)> Boxes(bool hiddenToo) => _bodies.Boxes(hiddenToo);
+    // ADR-0056 items 3 and 6 (phase R13): the boxes of the dimension overlay, kept until a change (V81).
+    public ((double X, double Y, double Z) Min, (double X, double Y, double Z) Max)? Union(bool hiddenToo) => _bodies.Union(hiddenToo);
+
+    // The count of the unions that the bodies made, for a test of V81.
+    internal int UnionsMade => _bodies.UnionsMade;
 
     public ((double X, double Y, double Z) Min, (double X, double Y, double Z) Max)? BoxOf(Guid bodyId) => _bodies.BoxOf(bodyId);
 
@@ -79,16 +82,24 @@ internal sealed unsafe class SceneRenderer : IDisposable
     // comes, the camera frames the visible bodies for the aspect of the target. Register
     // entry R-0051 (TASK-0179): at each change the far plane follows the box of the visible
     // bodies, so a model larger than the default far plane shows whole.
+    // Finding V78 of the codebase review of 2026-11-05 (TASK-0181): the far plane follows the eye too, so the host calls
+    // this in each frame and the far plane is set in each frame, from the kept box (V81), also with no change of a body.
     public void Update(Scene scene, Camera camera, float aspect)
     {
         var before = _bodies.VisibleCount;
-        if (!_bodies.Apply(scene, _meshes, _device))
-            return;
+        var changed = _bodies.Apply(scene, _meshes, _device);
         if (_bodies.Bounds is not { } box)
             return;
+
+        // Frame keeps the distance at half the far plane, so the far plane of the box comes before the frame, and again
+        // after it, from the new eye.
         camera.FarPlane = camera.FarPlaneFor(box.Min, box.Max);
-        if (ShouldFrame(before, _bodies.VisibleCount) && !camera.Frame(box.Min, box.Max, aspect))
-            Console.WriteLine($"[WARN] The bodies do not fit between the near plane ({camera.NearPlane}) and the far plane ({camera.FarPlane}) of the camera, so a part of them is not drawn.");
+        if (changed && ShouldFrame(before, _bodies.VisibleCount))
+        {
+            if (!camera.Frame(box.Min, box.Max, aspect))
+                Console.WriteLine($"[WARN] The bodies do not fit between the near plane ({camera.NearPlane}) and the far plane ({camera.FarPlane}) of the camera, so a part of them is not drawn.");
+            camera.FarPlane = camera.FarPlaneFor(box.Min, box.Max);
+        }
     }
 
     // ADR-0043 item 4: uploads an image under its identifier, one time. The caller uploads outside

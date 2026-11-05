@@ -1,11 +1,11 @@
 ---
 id: 0181
 title: The far plane holds each visible body from the eye, and the dimension overlay keeps its labels apart and follows a drag
-status: Ready
+status: Done
 phase: P0.78
 opened: 2026-11-05
 depends-on: [0180]
-governed-by: [0007, 0009, 0019, 0022, 0023, 0025, 0029, 0031, 0043, 0056]
+governed-by: [0007, 0009, 0019, 0022, 0023, 0025, 0027, 0029, 0030, 0031, 0032, 0034, 0043, 0056]
 writes:
   create:
     - tasks/TASK-0181-desktop-forms-of-the-twenty-first-review.md
@@ -15,8 +15,11 @@ writes:
     - 3DEngine/NativeThreeDEngine.cs
     - 3DEngine/DimensionOverlay.cs
     - 3DEngine/SessionBodies.cs
+    - 3DEngine/Ui/DesktopUi.cs
     - 3DEngine.Tests/CameraTests.cs
     - 3DEngine.ImageTests/DimensionOverlayTests.cs
+    - 3DEngine.ImageTests/DimensionImageTests.cs
+    - 3DEngine.ImageTests/FaceArmTests.cs
     - docs/adr/0056-dimension-overlay.md
     - eng/test-floor.txt
     - docs/roadmap.md
@@ -34,8 +37,9 @@ This task uses Simplified Technical English (ASD-STE100). See `CLAUDE.md`, secti
 
 The codebase review of 2026-11-05 found V78 (medium) in the far plane of P0.77, and V79 to V84 (low) in the dimension
 overlay of R13 and in the arm of the button Face. By `docs/templates.md`, section 7, they come after the next product
-phase. Q2 of the review decides the amendment of ADR-0056 (V83). The first commit of this task corrects the write set
-and the field `governed-by` for the files that its tests need.
+phase. On 2026-11-05 the owner answered A to Q1 and Q2 of the review, and then, because the redesign of the desktop
+is still work in progress in another session, gave the order "Ok" to the recommendation: P0.78 and P0.79 now, before
+the next product phase, and then K4. Q2 A amends ADR-0056 items 2 and 7 to the code (V83).
 
 ## Goal
 
@@ -56,20 +60,21 @@ a drag, the overlay reads the boxes once for each change, and a test drives the 
 
 ## Acceptance criteria
 
-- [ ] Each finding has a test or an injection that fails before the change and passes after it.
-- [ ] A clean build (`--no-incremental`) gives zero errors and zero warnings.
-- [ ] Continuous integration passes on the three runners, on the branch and on `main` after the merge.
+- [x] Each finding has a test or an injection that fails before the change and passes after it.
+- [x] A clean build (`--no-incremental`) gives zero errors and zero warnings.
+- [x] Continuous integration passes on the three runners, on the branch and on `main` after the merge.
 
 ## Outcome
 
-Status: Ready
+Status: Done · commit (the merge of the branch p078-desktop-forms) · v0.183
 
 ## Method
 
 Mechanical: a test or an injection for each finding, before the change.
 Judgement:  the margin of the far plane, and the rule that keeps two labels apart.
-Weakest:    to be written at the close.
+Weakest:    no one opened the desktop window, and no test drives the two lines of the host that read the arm.
 
 ## Progress
 
 - 2026-11-05: opened by the codebase review of 2026-11-05.
+- 2026-11-05: the seven findings, each with a test, ten injections; closed at v0.183.

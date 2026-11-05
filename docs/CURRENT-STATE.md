@@ -5389,3 +5389,37 @@ No code changes. The test list holds 1687 (1188 in `Engine.Tests`, 308 in `3DEng
 `3DEngine.ImageTests`, 3 in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and
 zero warnings. Open entries: 14 of 15. New diagnostic codes: 0. Since the review of v0.181, 0 product milestones and 1
 entry followed it.
+
+## v0.183 — The far plane holds each visible body from the eye, and the dimension overlay keeps its labels apart (P0.78, TASK-0181)
+
+The codebase review of 2026-11-05 found V78 (medium) and V79 to V84 (low). On 2026-11-05 the owner answered A to Q1 and
+Q2 of that review, and then, because the redesign of the desktop is still work in progress in another session, gave
+the order "Ok" to the recommendation: P0.78 and P0.79 now, before the next product phase, and then K4.
+
+**The change.**
+- V78: `Camera.FarPlaneFor` also holds two times the distance from the eye to the far side of the box, wherever the
+  target is. `SceneRenderer.Update` sets the far plane in each frame, before and after a frame of the camera, so a hide,
+  a pan or a zoom keeps each visible body in front of the far plane.
+- V81: `SessionBodies` keeps the union of the boxes of the visible bodies and of each body, until a change of the
+  bodies or a preview, so the far plane and the dimensions of each frame read it at no cost.
+- V82: the box of a body moves with the preview of a drag, so the dimensions follow the dragged body.
+- V80: a label is at the middle of the part of its line inside the window, and a line with no such part has no label.
+- V79: the panel places the labels apart and inside the window, with the size of each text in its font
+  (`DimensionOverlay.Place`).
+- V84: `DesktopUi` owns the arm of the button Face and applies each of its actions to it in `TakeActions`.
+- V83: ADR-0056 items 2 and 7 follow the code (Q2 A): the toggles are on a line of their own, and a box draws up to 18
+  segments.
+
+**Proof.** New tests: the camera of the review that frames A and turns to B, with B in front of the far plane after the
+hide; on Vulkan, a hide and a pan with the far plane of each frame, a kept union over three frames that a hide makes
+again, and a box that follows a preview; the labels of the thin board of the image test, which overlap where the
+overlay puts them, apart and inside the window after the placement; the placement and the clip as functions; the label
+of the close camera of the review inside the window; and a press of the real buttons Face and "Sketch XY" that arms and
+ends the arm. Ten injections each fail a test.
+
+**What stays.** No one opened the desktop window; the image tests render the same code offscreen. The host still reads
+`FaceArm.Take` and `ArmMessage` itself, and no test drives those two lines.
+
+New tests: 6. The test list holds 1693 (1188 in `Engine.Tests`, 309 in `3DEngine.Tests`, 193 in `3DEngine.ImageTests`,
+3 in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
+entries: 14 of 15. New diagnostic codes: 0. Since the review of v0.181, 0 product milestones and 2 entries followed it.

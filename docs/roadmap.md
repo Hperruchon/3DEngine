@@ -157,6 +157,7 @@ Therefore each approved objective must have a track here.
 - R13 — The desktop shows the dimensions of the overall box and of a selected body, with a toggle in the panel. v0.179, TASK-0178, ADR-0056.
 - P0.77 — The far plane of the camera of the desktop follows the box of the visible bodies. v0.180, TASK-0179.
 - P0.76 — A sketch on a face looks from the side of the eye, the arm of a face ends with a new sketch, a datum on a short side has unit axes, and the next forms of three gates fail. v0.181, TASK-0177.
+- P0.78 — The far plane holds each visible body from the eye, and the dimension overlay keeps its labels apart and inside the window, follows a drag and reads the boxes once for each change. v0.183, TASK-0181.
 
 ## Track 0 — Foundations
 
@@ -359,6 +360,8 @@ The tracks are not strictly sequential, but three rules hold:
    after R13 and before P0.76.
    The codebase review of 2026-11-05 puts P0.78 and P0.79, which hold medium and low findings, after the next
    product phase, by the rule of `docs/templates.md`, section 7. Q1 of that review asks for the next product phase.
+   On 2026-11-05 the owner answered A to Q1, the redesign of the desktop, and then, because the redesign is still work
+   in progress, gave the order "Ok": P0.78 and P0.79 now, and then K4.
 2. R2 blocks each later phase in track R. No mesh leaves the geometry backend today.
 3. K4 needs K0, K1 and K2. Do not start K4 before the reference model exists.
 4. The path to the milestone "CAD on one part" (the owner, 2026-10-27, KD2): R7b, R8a, R8b, the codebase

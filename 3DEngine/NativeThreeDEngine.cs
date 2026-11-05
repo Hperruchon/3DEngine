@@ -52,8 +52,6 @@ public sealed class NativeThreeDEngine : IThreeDEngine, IDisposable
     // ADR-0034: the active sketch, its tool, and the commands of the sketch mode.
     private SketchActions? _sketchActions;
 
-    // ADR-0053 item 6 (phase K0i, TASK-0171): the arm of the next tap of the mode Scene for a sketch on a face.
-    private readonly FaceArm _faceArm = new();
     private TimeSpan _delta;
 
     // ADR-0046 items 2 to 4: the store of the assets, the live images, and the window of the images.
@@ -157,7 +155,7 @@ public sealed class NativeThreeDEngine : IThreeDEngine, IDisposable
                 continue;
 
             // ADR-0053 item 6: an armed tap of the mode Scene starts a sketch on the face under it.
-            if (_faceArm.Take(intent, out var face))
+            if (_ui is not null && _ui.FaceArm.Take(intent, out var face))
             {
                 _documentMessage = SketchOnFace(face.X, face.Y);
                 continue;
@@ -244,10 +242,11 @@ public sealed class NativeThreeDEngine : IThreeDEngine, IDisposable
         if (_ui is null || _actions is null)
             return;
 
-        foreach (var action in _ui.TakeActions())
+        // ADR-0053 item 6 and findings V77 and V84: the panel applies each action to the arm of the button Face.
+        var actions = _ui.TakeActions();
+        _documentMessage = _ui.ArmMessage ?? _documentMessage;
+        foreach (var action in actions)
         {
-            // ADR-0053 item 6 and finding V77: the button Face arms a tap, and each start of a sketch ends the arm.
-            _documentMessage = _faceArm.Panel(action, _sketchActions?.Active is not null) ?? _documentMessage;
             switch (action)
             {
                 case SelectBodyAction select:
@@ -331,7 +330,7 @@ public sealed class NativeThreeDEngine : IThreeDEngine, IDisposable
         switch (action)
         {
             case SketchOnFaceAction:
-                // The arm took the action before this switch (FaceArm.Panel).
+                // The panel applied the action to the arm (DesktopUi.TakeActions).
                 break;
             case NewSketchAction create:
                 if (sketch.Create(create.Datum) is not null)
@@ -525,7 +524,7 @@ public sealed class NativeThreeDEngine : IThreeDEngine, IDisposable
         {
             var unit = _host.Session.LengthUnit;
             var selectedBox = Selection is { } body ? _renderer.BoxOf(body) : null;
-            dimensions = DimensionOverlay.Of(Dimensions.Union(_renderer.Boxes(_ui.HiddenToo)), selectedBox, Camera, window.width, window.height, unit);
+            dimensions = DimensionOverlay.Of(_renderer.Union(_ui.HiddenToo), selectedBox, Camera, window.width, window.height, unit);
             if (Selection is { } chosen && selectedBox is { } box && _actions is not null)
             {
                 if (_sizeOf is not { } known || known.Body != chosen || known.Box != box)
