@@ -5700,3 +5700,32 @@ No code changes. The test list holds 1767 (1257 in `Engine.Tests`, 312 in `3DEng
 `3DEngine.ImageTests`, 3 in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and
 zero warnings. Open entries: 14 of 15. New diagnostic codes: 0. Since the review of v0.190, 0 product milestones and 1
 entry followed it.
+
+## v0.192 — A document whose log holds a datum on a face that a cut removed opens again (P0.82, TASK-0190)
+
+The codebase review of 2026-11-05 (b) found E134 (high). Since K4c (v0.187) `CreateDatumCommandHandler` refuses a datum
+on a face that a cut removed, and the refusal also acted in the replay of a log. Before K4c the handler resolved a face
+from the parameters of the feature only, so a client of v0.186 or earlier could record such a datum, and the open of
+that document failed with `E-IO-LOAD-FAILED` and `E-DATUM-REFERENCE-INVALID`. A high finding comes before the next
+product phase. The standing order of 2026-11-05 answers Q1 of the review with A.
+
+**The change.**
+- In the replay of an entry (`SketchResults.ApplyingEntry`) the handler does not refuse the gone face. The datum gets
+  the fault `W-DATUM-REFERENCE-FAILED` and its warning, as after a `Subtract`, and keeps the frame of its reference.
+- A new command is still refused.
+- ADR-0059, "Older documents" and item 3, state the rule, with a history line.
+
+**Proof.** `FaceGoneTests.An_Older_Log_With_A_Datum_On_A_Gone_Face_Opens_And_The_Datum_Has_The_Fault` writes a log, sets
+the face of its last `CreateDatum` to the face that the cut removed, as a client of v0.186 could record it, and opens it.
+Before the change the open failed with the two codes; after it the datum has the fault, and a new command on the face is
+refused. Three injections each fail a test: a refusal that always acts, a refusal that never acts, and a replay with no
+fault.
+
+**What stays.** The open gives no warning of the fault, because an open gives the warnings of the file only, as for a
+replayed `Subtract`. The document of v0.186 came from a probe; no file of a person was checked.
+
+**A correction.** None.
+
+New tests: 1. The test list holds 1768 (1258 in `Engine.Tests`, 312 in `3DEngine.Tests`, 195 in `3DEngine.ImageTests`,
+3 in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
+entries: 14 of 15. New diagnostic codes: 0. Since the review of v0.190, 0 product milestones and 2 entries followed it.
