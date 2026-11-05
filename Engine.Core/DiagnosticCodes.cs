@@ -117,4 +117,7 @@ public static class DiagnosticCodes
     public const string ExportRange = "E-EXPORT-RANGE";
     public const string ExportTooLarge = "E-EXPORT-TOO-LARGE";
     public const string ExportWriteFailed = "E-EXPORT-WRITE-FAILED";
+
+    // ADR-0070 (phase K6a, TASK-0200): a body that the STEP export does not write.
+    public const string ExportBodyFailed = "E-EXPORT-BODY-FAILED";
 }
