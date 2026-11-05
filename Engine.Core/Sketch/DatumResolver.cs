@@ -87,6 +87,12 @@ public static class DatumResolver
         // Finding E125 of the codebase review of 2026-11-03 (TASK-0169): a sum of the origin can overflow, and a frame
         // with a value that is not finite or an axis of the length zero is not a plane.
         var resolved = carrier with { Origin = Moved(carrier.Origin, graph, feature.CommandId, place) };
+
+        // ADR-0059 item 4 (phase K4c, TASK-0185): a face of a subtrahend is a wall of the result, with its normal into the
+        // hole. Each Subtract before the place that takes the body as its subtrahend turns the frame, so that n stays out
+        // of the solid: (u, v, n) becomes (u, -v, -n), which is right-handed again.
+        if (Turned(graph, feature.CommandId, place))
+            resolved = resolved with { V = Negative(resolved.V), Normal = Negative(resolved.Normal) };
         return Finite(resolved)
             ? (resolved, null)
             : (null, $"The element '{reference.Element}' of '{reference.FeatureId}' gives a frame with a value that is not finite or an axis of the length zero.");
@@ -465,6 +471,23 @@ public static class DatumResolver
         }
 
         return new DatumPoint(x, y, z);
+    }
+
+    // ADR-0059 item 4: true when an odd count of the Subtract steps in effect before the place, on the chain of consumers
+    // of the body of the feature, takes the body of the chain as the subtrahend.
+    private static bool Turned(FeatureGraph graph, Guid handle, int place)
+    {
+        var turned = false;
+        while (graph.Consumer(handle) is { } consumer && graph.Order(consumer.CommandId) < place)
+        {
+            if (consumer is SubtractCommand subtract && subtract.SubtrahendBodyId == handle)
+                turned = !turned;
+            else if (consumer is not (TranslateCommand or SubtractCommand))
+                break;
+            handle = consumer.CommandId;
+        }
+
+        return turned;
     }
 
     // Finding E125: each value of the frame is finite, and no axis has the length zero.

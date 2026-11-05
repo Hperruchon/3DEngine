@@ -110,7 +110,12 @@ public sealed class FaceFinderTests
         var cut = Output(await Applied(session, new SubtractCommand { MinuendBodyId = plate, SubtrahendBodyId = tool }), "bodyId");
 
         Assert.Equal(new DatumReference(plate, "+z", null), await Face(session, cut, (15, 15, 2), (0, 0, 1)));
-        Assert.Equal(DiagnosticCodes.DatumFaceNotFound, (await At(session, cut, (5, 0, 0), (-1, 0, 0))).Error?.Code);
+
+        // ADR-0059 item 5 (TASK-0185): the wall of the hole is the face +x of the tool, and its normal points into the
+        // hole. The plane of the face +z of the plate inside the hole is not a face, because the cut removed that part.
+        Assert.Equal(new DatumReference(tool, "+x", null), await Face(session, cut, (5, 0, 0), (-1, 0, 0)));
+        Assert.Equal(DiagnosticCodes.DatumFaceNotFound, (await At(session, cut, (5, 0, 0), (1, 0, 0))).Error?.Code);
+        Assert.Equal(DiagnosticCodes.DatumFaceNotFound, (await At(session, cut, (0, 0, 2), (0, 0, 1))).Error?.Code);
     }
 
     // Items 1 and 3: the side of a circle is curved, so no datum names it, and a cap of the circle is a face.
@@ -126,6 +131,14 @@ public sealed class FaceFinderTests
 
         Assert.Equal(new DatumReference(body, "end", null), await Face(session, body, (1, 1, 3), (0, 0, 1)));
         Assert.Equal(DiagnosticCodes.DatumFaceNotFound, (await At(session, body, (5, 0, 1), (1, 0, 0))).Error?.Code);
+
+        // ADR-0059 item 5: the middle of the first facet of the 64 facets, with the normal of that facet, is on a piece of
+        // the side, and the facets of the circle are one name with more than one plane.
+        var (cos, sin) = (Math.Cos(Math.PI / 64), Math.Sin(Math.PI / 64));
+        var middle = ((5 + (5 * Math.Cos(Math.PI / 32))) / 2, 5 * Math.Sin(Math.PI / 32) / 2, 1.0);
+        var curved = await At(session, body, middle, (cos, sin, 0));
+        Assert.Equal(DiagnosticCodes.DatumFaceNotFound, curved.Error?.Code);
+        Assert.Contains("is curved", curved.Error!.Message, StringComparison.Ordinal);
     }
 
     // Item 1: a datum with the reference and the frame of the face now is reused. A Translate after the datum moves the

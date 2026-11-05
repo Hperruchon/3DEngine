@@ -75,9 +75,10 @@ public sealed class CreateDatumCommandHandler : ICommandHandler, ICommandEncoder
             return Task.FromResult(Failure(DiagnosticCodes.DatumNameInvalid, refusal));
 
         var reference = new DatumReference(create.FeatureId, create.Element, create.ItemId);
+        var graph = FeatureGraph.Of(document);
         var (frame, reason) = DatumResolver.Resolve(
             reference,
-            FeatureGraph.Of(document),
+            graph,
             int.MaxValue,
             extrude => new DatumResolver.ExtrudeState(
                 SketchModel.Find(document, extrude.SketchId),
@@ -85,6 +86,16 @@ public sealed class CreateDatumCommandHandler : ICommandHandler, ICommandEncoder
             id => DatumResolver.Frame(document, id));
         if (frame is null)
             return Task.FromResult(Failure(DiagnosticCodes.DatumReferenceInvalid, reason!));
+
+        // ADR-0059 item 3 (phase K4c, TASK-0185): a face that a cut removed resolves its plane, but it is not a face of the
+        // body at the end of its chain now, so a new datum refuses it.
+        var (end, cut) = Features.KernelProjection.End(graph, reference.FeatureId);
+        if (cut && end is { } handle && document.Bodies.FirstOrDefault(body => body.Handle.Id == handle) is { } live
+            && Features.KernelProjection.OfRecord(document, live).Solid is { } solid
+            && !FaceGone.Holds(Features.KernelProjection.Tags(solid), reference))
+            return Task.FromResult(Failure(
+                DiagnosticCodes.DatumReferenceInvalid,
+                $"The face '{reference.Element}' of '{reference.FeatureId}' is gone: no face of the body '{handle}' has its name."));
 
         var datum = new DatumRecord(command.CommandId, string.IsNullOrEmpty(create.DatumName) ? null : create.DatumName, reference, frame, null);
         var outputs = new Outputs(new Dictionary<string, object?> { ["datumId"] = datum.Id });

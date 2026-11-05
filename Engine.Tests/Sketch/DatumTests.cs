@@ -174,8 +174,11 @@ public sealed class DatumTests : IDisposable
         Assert.Equal(new DatumPoint(1, 2, 10), (await Frame(session, datum)).Origin);
     }
 
-    // Items 2 and 8: a Subtract on the chain passes the carrier with no change, and a Translate after
-    // it, before the datum, moves the datum. The face +z of the minuend is at 5, moved by 3.
+    // Items 2 and 8: a Subtract on the chain passes the carrier of the minuend with no change, and a
+    // Translate after it, before the datum, moves the datum. The face +z of the minuend is at 5, moved
+    // by 3. ADR-0059 items 3 and 4 (TASK-0185): the subtrahend is taller than the minuend, so its face
+    // +z is gone and CreateDatum refuses it; its face +x is a wall of the hole, at x = 2 and moved by 3,
+    // with the frame turned so that the normal points into the hole.
     [NativeManifoldFact]
     public async Task A_Subtract_Passes_The_Carrier_And_A_Translate_After_It_Moves_It()
     {
@@ -186,8 +189,15 @@ public sealed class DatumTests : IDisposable
         var cut = Output(await Applied(session, new SubtractCommand { MinuendBodyId = minuend, SubtrahendBodyId = subtrahend }), "bodyId");
         await Applied(session, new TranslateCommand { BodyId = cut, Dx = 0, Dy = 0, Dz = 3 });
 
-        Assert.Equal(new DatumPoint(0, 0, 8), (await Frame(session, await Datum(session, minuend, "+z"))).Origin);
-        Assert.Equal(new DatumPoint(0, 0, 23), (await Frame(session, await Datum(session, subtrahend, "+z"))).Origin);
+        Assert.Equal(
+            new DatumFrame(new DatumPoint(0, 0, 8), new DatumAxis(1, 0, 0), new DatumAxis(0, 1, 0), new DatumAxis(0, 0, 1)),
+            await Frame(session, await Datum(session, minuend, "+z")));
+        var gone = await session.Apply(new CreateDatumCommand { FeatureId = subtrahend, Element = "+z" });
+        Assert.Equal(DiagnosticCodes.DatumReferenceInvalid, gone.Error?.Code);
+        Assert.Contains("is gone", gone.Error!.Message, StringComparison.Ordinal);
+        Assert.Equal(
+            new DatumFrame(new DatumPoint(2, 0, 3), new DatumAxis(0, 1, 0), new DatumAxis(0, 0, -1), new DatumAxis(-1, 0, 0)),
+            await Frame(session, await Datum(session, subtrahend, "+x")));
     }
 
     // Item 5: a sketch on a datum extrudes from its face: on the top of a box, and on its face -x,

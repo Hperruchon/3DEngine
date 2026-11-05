@@ -1,4 +1,5 @@
 using Engine.Contracts;
+using Engine.Contracts.Sketch;
 using Engine.Core.Commands;
 using Engine.Core.Sketch;
 using Engine.Kernel;
@@ -10,34 +11,123 @@ namespace Engine.Core.Features;
 // walk goes from the body to the command that creates it, as the regeneration does: a CreateBox, an Extrude of the
 // sketch and the distance in effect on the frame of its datum, a Translate, or a Subtract of two bodies. The kernel
 // reads each input double exactly, so the projection does not depend on the platform, and it does not enter the log.
+//
+// ADR-0059 items 1 and 2 (phase K4c, TASK-0185): the projection also reads a state that is not committed yet, the state
+// of an edit before its commit, and it keeps the solid of each committed geometry key.
 internal static class KernelProjection
 {
-    // The kernel solid of the body, or the reason that the kernel cannot build it.
+    // ADR-0059 item 2: the count of the committed solids that the projection keeps; the oldest goes first.
+    public const int CacheSize = 64;
+
+    private static readonly object Gate = new();
+    private static readonly Dictionary<Guid, KernelSolid> Kept = [];
+    private static readonly Queue<Guid> KeptOrder = new();
+
+    // The kernel solid of the body in the committed state of the Document, or the reason that the kernel cannot build it.
     public static (KernelSolid? Solid, string? Reason) Of(Document document, Guid body)
     {
         ArgumentNullException.ThrowIfNull(document);
-        return Solid(document, FeatureGraph.Of(document), body);
+        return Of(FeatureGraph.Of(document), body, Committed(document), id => DatumResolver.Frame(document, id));
     }
 
-    private static (KernelSolid? Solid, string? Reason) Solid(Document document, FeatureGraph graph, Guid handle)
+    // The kernel solid of the body in one state: state gives the sketch and the distance of an extrude, and frameOf the
+    // frame of a datum.
+    public static (KernelSolid? Solid, string? Reason) Of(
+        FeatureGraph graph, Guid body, Func<ExtrudeCommand, DatumResolver.ExtrudeState> state, Func<Guid, DatumFrame?> frameOf)
+    {
+        ArgumentNullException.ThrowIfNull(graph);
+        return Solid(graph, body, state, frameOf);
+    }
+
+    // ADR-0059 item 2: the solid of a live body with no fault, kept under its geometry key. A rebuild gives a body a new
+    // key (ADR-0037 item 2), and a key comes from the command and the body (ADR-0037 item 3), so a committed key names
+    // one solid. A body with a fault keeps the solid of an earlier state, so it gives no solid.
+    public static (KernelSolid? Solid, string? Reason) OfRecord(Document document, BodyRecord record)
+    {
+        ArgumentNullException.ThrowIfNull(document);
+        ArgumentNullException.ThrowIfNull(record);
+        if (record.Fault is { } fault)
+            return (null, $"The body '{record.Handle.Id}' has the fault {fault.Code}, so its solid comes from an earlier state.");
+        lock (Gate)
+        {
+            if (Kept.TryGetValue(record.GeometryKey, out var kept))
+                return (kept, null);
+        }
+
+        var (solid, reason) = Of(document, record.Handle.Id);
+        if (solid is null)
+            return (null, reason);
+        lock (Gate)
+        {
+            if (Kept.TryAdd(record.GeometryKey, solid))
+            {
+                KeptOrder.Enqueue(record.GeometryKey);
+                if (KeptOrder.Count > CacheSize)
+                    Kept.Remove(KeptOrder.Dequeue());
+            }
+        }
+
+        return (solid, null);
+    }
+
+    // True when the projection keeps a solid under the key, for a test of item 2.
+    internal static bool IsKept(Guid key)
+    {
+        lock (Gate)
+            return Kept.ContainsKey(key);
+    }
+
+    // ADR-0059 item 3: the names of the faces of a solid.
+    public static IReadOnlySet<FaceTag> Tags(KernelSolid solid)
+    {
+        ArgumentNullException.ThrowIfNull(solid);
+        return solid.Polygons.Select(polygon => polygon.Tag).ToHashSet();
+    }
+
+    // ADR-0059 item 3: the handle at the end of the chain of consumers of the body of a feature, and true when a Subtract
+    // is on the chain. A consumer that is not a Translate or a Subtract gives no end.
+    public static (Guid? End, bool Cut) End(FeatureGraph graph, Guid feature)
+    {
+        ArgumentNullException.ThrowIfNull(graph);
+        var (handle, cut) = (feature, false);
+        while (graph.Consumer(handle) is { } consumer)
+        {
+            if (consumer is SubtractCommand)
+                cut = true;
+            else if (consumer is not TranslateCommand)
+                return (null, cut);
+            handle = consumer.CommandId;
+        }
+
+        return (handle, cut);
+    }
+
+    // The state of the committed Document: the sketch and the distance in effect of an extrude.
+    private static Func<ExtrudeCommand, DatumResolver.ExtrudeState> Committed(Document document)
+        => extrude => new DatumResolver.ExtrudeState(
+            SketchModel.Find(document, extrude.SketchId),
+            SketchRebuild.DistanceInEffect(document, extrude.CommandId) ?? extrude.Distance);
+
+    private static (KernelSolid? Solid, string? Reason) Solid(
+        FeatureGraph graph, Guid handle, Func<ExtrudeCommand, DatumResolver.ExtrudeState> state, Func<Guid, DatumFrame?> frameOf)
     {
         switch (graph.Creator(handle))
         {
             case CreateBoxCommand box:
                 return (KernelSolid.Box(box.CommandId, Rational.FromDouble(box.SizeX), Rational.FromDouble(box.SizeY), Rational.FromDouble(box.SizeZ)), null);
             case ExtrudeCommand extrude:
-                return Extrude(document, extrude);
+                return Extrude(extrude, state(extrude), frameOf);
             case TranslateCommand translate:
             {
-                var (solid, reason) = Solid(document, graph, translate.BodyId);
+                var (solid, reason) = Solid(graph, translate.BodyId, state, frameOf);
                 return (solid?.Translate(Vector3R.FromDoubles(translate.Dx, translate.Dy, translate.Dz)), reason);
             }
             case SubtractCommand subtract:
             {
-                var (minuend, first) = Solid(document, graph, subtract.MinuendBodyId);
+                var (minuend, first) = Solid(graph, subtract.MinuendBodyId, state, frameOf);
                 if (minuend is null)
                     return (null, first);
-                var (subtrahend, second) = Solid(document, graph, subtract.SubtrahendBodyId);
+                var (subtrahend, second) = Solid(graph, subtract.SubtrahendBodyId, state, frameOf);
                 if (subtrahend is null)
                     return (null, second);
                 var result = PlanarBoolean.Subtract(minuend, subtrahend);
@@ -50,20 +140,21 @@ internal static class KernelProjection
         }
     }
 
-    // Item 2: the profile of the sketch in effect, with the item of each side, on the frame of its datum, by the distance
-    // in effect. The distance keeps its sign, so the start face is on the plane of the sketch, as ADR-0051 item 1 says.
-    private static (KernelSolid? Solid, string? Reason) Extrude(Document document, ExtrudeCommand extrude)
+    // Item 2: the profile of the sketch in the state, with the item of each side, on the frame of its datum, by the
+    // distance in the state. The distance keeps its sign, so the start face is on the plane of the sketch, as ADR-0051
+    // item 1 says.
+    private static (KernelSolid? Solid, string? Reason) Extrude(ExtrudeCommand extrude, DatumResolver.ExtrudeState state, Func<Guid, DatumFrame?> frameOf)
     {
-        if (SketchModel.Find(document, extrude.SketchId) is not { } sketch)
+        if (state.Sketch is not { } sketch)
             return (null, $"The sketch '{extrude.SketchId}' of the Extrude '{extrude.CommandId}' is not in the Document.");
         if (!SketchSolver.Status(sketch).Solved)
             return (null, $"The sketch '{sketch.Id}' is not solved.");
         var (loop, reason) = SketchProfile.FindWithItems(sketch);
         if (loop is null)
             return (null, reason);
-        if (DatumResolver.Frame(document, sketch.DatumId) is not { } frame)
+        if (frameOf(sketch.DatumId) is not { } frame)
             return (null, $"The datum '{sketch.DatumId}' of the sketch '{sketch.Id}' is not in the Document.");
-        var distance = SketchRebuild.DistanceInEffect(document, extrude.CommandId) ?? extrude.Distance;
+        var distance = state.Distance;
         if (distance == 0 || !double.IsFinite(distance))
             return (null, $"The Extrude '{extrude.CommandId}' has the distance {distance}.");
 

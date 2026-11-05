@@ -64,14 +64,15 @@ names. Do not read all of them.
 | [0048](0048-stl-export.md) | The STL export of the live bodies | Accepted | Persistence, clients | — | — |
 | [0049](0049-edit-of-an-extrude-distance.md) | The edit of the distance of an extrude | Accepted | Geometry, feature graph, clients | 0028, 0037, 0039 | — |
 | [0050](0050-exact-predicates.md) | The exact predicates of the profile of a sketch | Accepted | Geometry, sketch, determinism | 0036, 0040 | — |
-| [0051](0051-references-and-datum-on-a-face.md) | The references to the elements of a feature, and a datum on a face | Amended | Contracts, feature graph, sketch | 0012, 0031, 0033, 0036, 0039 | 0052, 0053 |
+| [0051](0051-references-and-datum-on-a-face.md) | The references to the elements of a feature, and a datum on a face | Amended | Contracts, feature graph, sketch | 0012, 0031, 0033, 0036, 0039 | 0052, 0053, 0059 |
 | [0052](0052-edge-and-vertex-references-in-a-sketch.md) | The edges and the vertices of a feature as references in a sketch | Accepted | Contracts, feature graph, sketch | 0033, 0035, 0036, 0051 | — |
-| [0053](0053-desktop-sketch-on-a-face.md) | The desktop starts a sketch on a face, and draws a sketch on a datum of the Document | Accepted | Desktop, sketch, feature graph | 0029, 0034, 0051 | — |
+| [0053](0053-desktop-sketch-on-a-face.md) | The desktop starts a sketch on a face, and draws a sketch on a datum of the Document | Amended | Desktop, sketch, feature graph | 0029, 0034, 0051 | 0059 |
 | [0054](0054-ordered-feature-list.md) | The ordered feature list, a fold of the log | Amended | Feature graph, runtime | 0039 | 0055 |
-| [0055](0055-regeneration.md) | The regeneration of the features after an edit | Accepted | Feature graph, geometry, runtime | 0037, 0039, 0054 | — |
+| [0055](0055-regeneration.md) | The regeneration of the features after an edit | Amended | Feature graph, geometry, runtime | 0037, 0039, 0054 | 0059 |
 | [0056](0056-dimension-overlay.md) | The dimension overlay of the desktop | Accepted | Desktop, renderer | — | — |
 | [0057](0057-planar-subtract-in-the-owned-kernel.md) | The exact planar subtract of the owned kernel, with the provenance of each face | Amended | Kernel, geometry, determinism | — | 0058 |
-| [0058](0058-the-engine-reads-the-owned-kernel.md) | The engine reads the owned kernel for the faces of a body | Accepted | Kernel, geometry, queries | 0057 | — |
+| [0058](0058-the-engine-reads-the-owned-kernel.md) | The engine reads the owned kernel for the faces of a body | Amended | Kernel, geometry, queries | 0057 | 0059 |
+| [0059](0059-references-by-the-identity-of-a-face.md) | The references by the identity of a face, and a datum on a face that a cut removed | Accepted | Kernel, feature graph, sketch | 0051, 0053, 0055, 0058 | — |
 
 ## Topics
 
