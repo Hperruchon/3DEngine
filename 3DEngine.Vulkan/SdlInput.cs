@@ -1,6 +1,6 @@
-using SDL3;
+using SDL;
 using ThreeDEngine.Core.Input;
-using static SDL3.SDL3;
+using static SDL.SDL3;
 
 namespace ThreeDEngine.Vulkan;
 
@@ -30,33 +30,33 @@ public sealed unsafe class SdlInput
     public void Translate(in SDL_Event sdlEvent, double windowWidth, double windowHeight)
     {
         var time = sdlEvent.common.timestamp;
-        switch (sdlEvent.type)
+        switch (sdlEvent.Type)
         {
-            case SDL_EventType.MouseMotion when (uint)sdlEvent.motion.which != SDL_TOUCH_MOUSEID:
+            case SDL_EventType.SDL_EVENT_MOUSE_MOTION when sdlEvent.motion.which != SDL_TOUCH_MOUSEID:
                 _frame.Add(Mouse(sdlEvent.motion.which, sdlEvent.motion.x, sdlEvent.motion.y, Buttons(sdlEvent.motion.state), PointerPhase.Move, time));
                 break;
 
-            case SDL_EventType.MouseButtonDown or SDL_EventType.MouseButtonUp when (uint)sdlEvent.button.which != SDL_TOUCH_MOUSEID:
+            case SDL_EventType.SDL_EVENT_MOUSE_BUTTON_DOWN or SDL_EventType.SDL_EVENT_MOUSE_BUTTON_UP when sdlEvent.button.which != SDL_TOUCH_MOUSEID:
                 _frame.Add(Mouse(
                     sdlEvent.button.which,
                     sdlEvent.button.x,
                     sdlEvent.button.y,
                     Button(sdlEvent.button.button),
-                    sdlEvent.type == SDL_EventType.MouseButtonDown ? PointerPhase.Down : PointerPhase.Up,
+                    sdlEvent.Type == SDL_EventType.SDL_EVENT_MOUSE_BUTTON_DOWN ? PointerPhase.Down : PointerPhase.Up,
                     time));
                 break;
 
-            case SDL_EventType.MouseWheel when (uint)sdlEvent.wheel.which != SDL_TOUCH_MOUSEID:
-                var steps = sdlEvent.wheel.direction == SDL_MouseWheelDirection.Flipped ? -sdlEvent.wheel.y : sdlEvent.wheel.y;
+            case SDL_EventType.SDL_EVENT_MOUSE_WHEEL when sdlEvent.wheel.which != SDL_TOUCH_MOUSEID:
+                var steps = sdlEvent.wheel.direction == SDL_MouseWheelDirection.SDL_MOUSEWHEEL_FLIPPED ? -sdlEvent.wheel.y : sdlEvent.wheel.y;
                 _frame.Add(new WheelSample(steps, time));
                 break;
 
-            case SDL_EventType.FingerDown or SDL_EventType.FingerMotion or SDL_EventType.FingerUp:
+            case SDL_EventType.SDL_EVENT_FINGER_DOWN or SDL_EventType.SDL_EVENT_FINGER_MOTION or SDL_EventType.SDL_EVENT_FINGER_UP:
                 var finger = sdlEvent.tfinger;
-                var phase = sdlEvent.type switch
+                var phase = sdlEvent.Type switch
                 {
-                    SDL_EventType.FingerDown => PointerPhase.Down,
-                    SDL_EventType.FingerUp => PointerPhase.Up,
+                    SDL_EventType.SDL_EVENT_FINGER_DOWN => PointerPhase.Down,
+                    SDL_EventType.SDL_EVENT_FINGER_UP => PointerPhase.Up,
                     _ => PointerPhase.Move,
                 };
                 // SDL gives a finger in the range 0 to 1 of the window.
@@ -66,17 +66,17 @@ public sealed unsafe class SdlInput
                     PointerButtons.None, _modifiers, phase, time));
                 break;
 
-            case SDL_EventType.KeyDown or SDL_EventType.KeyUp:
-                Key(sdlEvent.key.scancode, sdlEvent.key.key, sdlEvent.type == SDL_EventType.KeyDown, time);
+            case SDL_EventType.SDL_EVENT_KEY_DOWN or SDL_EventType.SDL_EVENT_KEY_UP:
+                Key(sdlEvent.key.scancode, sdlEvent.key.key, sdlEvent.Type == SDL_EventType.SDL_EVENT_KEY_DOWN, time);
                 break;
 
-            case SDL_EventType.TextInput:
+            case SDL_EventType.SDL_EVENT_TEXT_INPUT:
                 var text = NativeStrings.Read(sdlEvent.text.text);
                 if (text.Length > 0)
                     _frame.Add(new TextSample(text, time));
                 break;
 
-            case SDL_EventType.WindowFocusLost:
+            case SDL_EventType.SDL_EVENT_WINDOW_FOCUS_LOST:
                 _modifiers = KeyModifiers.None;
                 _frame.Add(new FocusLostSample(time));
                 break;
@@ -88,13 +88,13 @@ public sealed unsafe class SdlInput
 
     private void Key(SDL_Scancode code, SDL_Keycode keycode, bool down, ulong time)
     {
-        if (code is SDL_Scancode.LeftShift or SDL_Scancode.RightShift)
+        if (code is SDL_Scancode.SDL_SCANCODE_LSHIFT or SDL_Scancode.SDL_SCANCODE_RSHIFT)
         {
             _modifiers = down ? _modifiers | KeyModifiers.Shift : _modifiers & ~KeyModifiers.Shift;
             return;
         }
 
-        if (code is SDL_Scancode.LeftControl or SDL_Scancode.RightControl)
+        if (code is SDL_Scancode.SDL_SCANCODE_LCTRL or SDL_Scancode.SDL_SCANCODE_RCTRL)
         {
             _modifiers = down ? _modifiers | KeyModifiers.Control : _modifiers & ~KeyModifiers.Control;
             return;
@@ -102,20 +102,20 @@ public sealed unsafe class SdlInput
 
         InputKey? key = code switch
         {
-            SDL_Scancode.Left => InputKey.ArrowLeft,
-            SDL_Scancode.Right => InputKey.ArrowRight,
-            SDL_Scancode.Up => InputKey.ArrowUp,
-            SDL_Scancode.Down => InputKey.ArrowDown,
-            SDL_Scancode.KpPlus or SDL_Scancode.Equals => InputKey.Plus,
-            SDL_Scancode.KpMinus or SDL_Scancode.Minus => InputKey.Minus,
-            SDL_Scancode.Backspace => InputKey.Backspace,
-            SDL_Scancode.Delete => InputKey.Delete,
-            SDL_Scancode.Home => InputKey.Home,
-            SDL_Scancode.End => InputKey.End,
-            SDL_Scancode.Return or SDL_Scancode.KpEnter => InputKey.Enter,
-            SDL_Scancode.Escape => InputKey.Escape,
-            SDL_Scancode.Tab => InputKey.Tab,
-            SDL_Scancode.H => InputKey.H,
+            SDL_Scancode.SDL_SCANCODE_LEFT => InputKey.ArrowLeft,
+            SDL_Scancode.SDL_SCANCODE_RIGHT => InputKey.ArrowRight,
+            SDL_Scancode.SDL_SCANCODE_UP => InputKey.ArrowUp,
+            SDL_Scancode.SDL_SCANCODE_DOWN => InputKey.ArrowDown,
+            SDL_Scancode.SDL_SCANCODE_KP_PLUS or SDL_Scancode.SDL_SCANCODE_EQUALS => InputKey.Plus,
+            SDL_Scancode.SDL_SCANCODE_KP_MINUS or SDL_Scancode.SDL_SCANCODE_MINUS => InputKey.Minus,
+            SDL_Scancode.SDL_SCANCODE_BACKSPACE => InputKey.Backspace,
+            SDL_Scancode.SDL_SCANCODE_DELETE => InputKey.Delete,
+            SDL_Scancode.SDL_SCANCODE_HOME => InputKey.Home,
+            SDL_Scancode.SDL_SCANCODE_END => InputKey.End,
+            SDL_Scancode.SDL_SCANCODE_RETURN or SDL_Scancode.SDL_SCANCODE_KP_ENTER => InputKey.Enter,
+            SDL_Scancode.SDL_SCANCODE_ESCAPE => InputKey.Escape,
+            SDL_Scancode.SDL_SCANCODE_TAB => InputKey.Tab,
+            SDL_Scancode.SDL_SCANCODE_H => InputKey.H,
             _ => null,
         };
 
@@ -130,9 +130,9 @@ public sealed unsafe class SdlInput
     }
 
     private static PointerButtons Buttons(SDL_MouseButtonFlags state)
-        => ((state & SDL_MouseButtonFlags.Left) != 0 ? PointerButtons.Left : PointerButtons.None)
-        | ((state & SDL_MouseButtonFlags.Middle) != 0 ? PointerButtons.Middle : PointerButtons.None)
-        | ((state & SDL_MouseButtonFlags.Right) != 0 ? PointerButtons.Right : PointerButtons.None);
+        => ((state & (SDL_MouseButtonFlags)SDL_BUTTON_LMASK) != 0 ? PointerButtons.Left : PointerButtons.None)
+        | ((state & (SDL_MouseButtonFlags)SDL_BUTTON_MMASK) != 0 ? PointerButtons.Middle : PointerButtons.None)
+        | ((state & (SDL_MouseButtonFlags)SDL_BUTTON_RMASK) != 0 ? PointerButtons.Right : PointerButtons.None);
 
     // SDL numbers the buttons 1 (left), 2 (middle) and 3 (right).
     private static PointerButtons Button(byte button) => button switch

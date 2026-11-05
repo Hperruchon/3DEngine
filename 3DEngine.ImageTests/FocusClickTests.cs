@@ -1,9 +1,10 @@
 using System.Numerics;
-using SDL3;
+using SDL;
 using ThreeDEngine.Core.Input;
 using ThreeDEngine.Desktop;
 using ThreeDEngine.Desktop.Ui;
 using ThreeDEngine.Vulkan;
+using static SDL.SDL3;
 
 namespace ThreeDEngine.ImageTests;
 
@@ -38,9 +39,9 @@ public class FocusClickTests
     private static SDL_Event Motion(float x, float y, bool held)
     {
         SDL_Event e = default;
-        e.type = SDL_EventType.MouseMotion;
+        e.type = (uint)(SDL_EventType.SDL_EVENT_MOUSE_MOTION);
         e.motion.which = (SDL_MouseID)1;
-        e.motion.state = held ? SDL_MouseButtonFlags.Left : 0;
+        e.motion.state = held ? (SDL_MouseButtonFlags)SDL_BUTTON_LMASK : 0;
         e.motion.x = x;
         e.motion.y = y;
         return e;
@@ -49,7 +50,7 @@ public class FocusClickTests
     private static SDL_Event Button(bool down, float x, float y)
     {
         SDL_Event e = default;
-        e.type = down ? SDL_EventType.MouseButtonDown : SDL_EventType.MouseButtonUp;
+        e.type = (uint)(down ? SDL_EventType.SDL_EVENT_MOUSE_BUTTON_DOWN : SDL_EventType.SDL_EVENT_MOUSE_BUTTON_UP);
         e.button.which = (SDL_MouseID)1;
         e.button.button = 1;
         e.button.down = down;

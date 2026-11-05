@@ -1,6 +1,6 @@
-using SDL3;
+using SDL;
 using ThreeDEngine.Vulkan;
-using static SDL3.SDL3;
+using static SDL.SDL3;
 
 namespace ThreeDEngine.Desktop;
 
@@ -70,7 +70,7 @@ internal static class DesktopEngineHost
     }
 
     // The window loop of one session, until the window closes, the surface stops, or an open is accepted.
-    private static void Show(Window window, DesktopSurface surface)
+    private static unsafe void Show(Window window, DesktopSurface surface)
     {
         try
         {
@@ -95,15 +95,16 @@ internal static class DesktopEngineHost
                 if (window.HasNoArea)
                     Window.WaitForEvent(100);
 
-                while (SDL_PollEvent(out SDL_Event sdlEvent))
+                SDL_Event sdlEvent;
+                while (SDL_PollEvent(&sdlEvent))
                 {
-                    if (sdlEvent.type == SDL_EventType.Quit)
+                    if (sdlEvent.Type == SDL_EventType.SDL_EVENT_QUIT)
                     {
                         running = false;
                         break;
                     }
 
-                    if (sdlEvent.type == SDL_EventType.WindowCloseRequested)
+                    if (sdlEvent.Type == SDL_EventType.SDL_EVENT_WINDOW_CLOSE_REQUESTED)
                     {
                         running = false;
                         break;
