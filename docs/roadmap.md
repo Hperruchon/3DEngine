@@ -167,6 +167,7 @@ Therefore each approved objective must have a track here.
 - P8h — Each number parameter of a command declares its unit kind in the schema. v0.189, TASK-0186, ADR-0060.
 - P0.81 — A press and a release of the mouse take the place of the cursor, not the last place of a motion. v0.190, TASK-0188.
 - P0.82 — A document whose log holds a datum on a face that a cut removed opens again. v0.192, TASK-0190.
+- R14a — Android is a platform of the charter, with ADR-0061 and the rows of R14. v0.193, TASK-0193, ADR-0061.
 
 ## Track 0 — Foundations
 
@@ -298,6 +299,13 @@ The first objective. Each phase ends with something that a person can observe.
 | R11 | Escalated selection and a snap engine. Closed after R11c: R11a to R11c give the snaps, and the escalated selection moves to R12 (the owner, 2026-11-02). | 4–6 |
 | R12 | The escalated selection of faces and edges. It needs a stable identity of each face and each edge, so it comes after K4 (ADR-0041 item 5; the owner, 2026-11-02). | 4–6 |
 | R13 | The dimension overlay of the desktop: a toggle in the panel, the overall size of the visible bodies or of each live body, and the size and the thickness of a selected body, as lines with labels in the scene (the owner, 2026-11-03; four answers of 2026-11-04). ADR-0056, TASK-0178. | 2–4 |
+| R14a | Android in the charter: objective 8 and anti-objective 16, the closure of R-0020, ADR-0061 with its amendments of ADR-0017 and ADR-0027, and the rows R14b to R14g (the Android order of the owner, 2026-11-05). TASK-0193. | 1 |
+| R14b | The host owns the document session, the surface mounts on that session as an option, and an open of a file stays in the same process (`3DEngine/DesktopDocument.cs`). The behaviour of the desktop does not change, and tests prove it (ADR-0061 item 9). | 2–4 |
+| R14c | `ppy.SDL3-CS` replaces `Alimer.Bindings.SDL` on the desktop, with no change of behaviour and no file of 32-bit x86; the image tests stay green (ADR-0061 item 5). | 2–4 |
+| R14d | The native builds of Manifold and cimgui for `android-arm64` and `android-x64` on GitHub Actions, with the NDK, serial (ADR-0061 items 6 and 7). | 3–6 |
+| R14e | The Android host: a `net10.0-android` project, an activity that subclasses `SDLActivity`, the APK, the document picker for Open and Save, a new surface and swapchain after a loss, the pre-rotation, and a pause in the background. A box, a subtract and the cut on the S23 Ultra, and a test sheet for the owner. The row closes only after the test of the owner (ADR-0061 item 9). | 10–20 |
+| R14f | The gate of Android: a job builds the APK at each push, a job runs the x86-64 emulator with software Vulkan and a smoke test, and the pipeline compares the hash of Android with the hashes of the desktop runners (ADR-0061 items 1 and 8). | 4–8 |
+| R14g | The layout of the phone, inside the redesign of the desktop: each region of the redesign gives its form on the screen of the S23 Ultra (ADR-0061 item 9). | 8–15 |
 
 ## Track K — The kernel
 
@@ -380,6 +388,9 @@ The tracks are not strictly sequential, but three rules hold:
    product phase, by the rule of `docs/templates.md`, section 7. Q1 of that review asks for the next product phase.
    The codebase review of 2026-11-05 (b) puts P0.82, which holds a high finding, before the next product phase, and
    P0.83 and P0.84, which hold medium and low findings, after it.
+   On 2026-11-05 the owner gave the Android order and a standing order for an autonomous run until 2026-11-08. The
+   next product phase is R14a, so the order is P0.82, R14a, P0.83, P0.84, then R14b to R14f. R14g comes inside the
+   redesign of the desktop.
    On 2026-11-05 the owner answered A to Q1, the redesign of the desktop, and then, because the redesign is still work
    in progress, gave the order "Ok": P0.78 and P0.79 now, and then K4.
    On 2026-11-05 the owner answered the four questions of K4: the boolean first, a new project, one face for each

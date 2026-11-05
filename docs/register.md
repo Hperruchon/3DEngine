@@ -85,20 +85,6 @@ The configuration calls this feed an interim bootstrap. The publish step in the 
 inactive. A person commits each package by hand.
 Exit: a real feed exists. Or: accept this mechanism permanently and give the reason.
 
-### R-0020 · The platform list needs a study before objective 8 changes
-- class: question
-- opened: 2026-09-25
-- due: 2026-12-24
-- extended: no
-- refs: `docs/CHARTER.md` objective 8 and anti-objective 16, `docs/reviews/2026-09-23-architecture-challenge.md` concern 4, R-0007
-Objective 8 names Windows, Linux and macOS. Anti-objective 16 names x64 and arm64 for each. The
-Manifold package covers `win-x64`, `linux-x64` and `osx-arm64` only. On 2026-09-25 the owner asked
-for each platform, Android included, and added: "maybe we should check how to make it as simple as
-possible". Android is not in the twenty objectives. A study must give the cost of each platform: the
-native build, the runner, the Vulkan path, and the test from one computer.
-Exit: the owner decides the platform list from the study, and objective 8 and anti-objective 16 agree
-with it.
-
 ### R-0022 · Three Vulkan defects block the first render on Linux and on macOS
 - class: debt
 - opened: 2026-09-25
@@ -437,6 +423,19 @@ areas inside it need the nested schema that ADR-0013 defers.
 Exit: an ADR gives the units of results and outputs, with the nested schema or without it, or the owner accepts that a
 client holds them.
 
+### R-0054 · The SDL of the pin of ppy.SDL3-CS is probably a development version
+- class: question
+- opened: 2026-11-05
+- due: 2027-02-03
+- extended: no
+- refs: `docs/adr/0061-android-platform.md` item 5, `docs/adr/0017-first-party-vulkan-layer.md` item 4, TASK-0193
+The native library of `ppy.SDL3-CS` 2026.1002.1 holds the string "SDL-3.5.0-ea7a2da". SDL gives an odd minor number
+to a development version, so 3.5.0 is probably not a release; nobody verified that from SDL. The binding of today holds
+SDL 3.2.10, a release. ADR-0061 pins 2026.1002.1, because it is the version that the check of 2026-11-05 built for
+Android.
+Exit: R14c pins a version of `ppy.SDL3-CS` whose SDL is a release, or the owner accepts the development version and
+this entry moves to the accepted compromises.
+
 ## Accepted compromises
 
 These are conditions that the project keeps permanently and by decision. They do not age.
@@ -477,6 +476,24 @@ needs a deliberate act.
 ---
 
 ## Closed
+
+### R-0020 · The platform list needs a study before objective 8 changes
+- class: question
+- opened: 2026-09-25
+- due: 2026-12-24
+- extended: no
+- refs: `docs/CHARTER.md` objective 8 and anti-objective 16, `docs/reviews/2026-09-23-architecture-challenge.md` concern 4, R-0007
+Objective 8 names Windows, Linux and macOS. Anti-objective 16 names x64 and arm64 for each. The
+Manifold package covers `win-x64`, `linux-x64` and `osx-arm64` only. On 2026-09-25 the owner asked
+for each platform, Android included, and added: "maybe we should check how to make it as simple as
+possible". Android is not in the twenty objectives. A study must give the cost of each platform: the
+native build, the runner, the Vulkan path, and the test from one computer.
+Exit: the owner decides the platform list from the study, and objective 8 and anti-objective 16 agree
+with it.
+Closed 2026-11-05 · decided · TASK-0193 · ADR-0061. The Android order of the owner of 2026-11-05 makes Android a
+requirement: objective 8 names Windows, Linux, macOS and Android, and anti-objective 16 adds Android on arm64, with
+`android-x64` for the emulator of the pipeline only. The check of the libraries of 2026-11-05 gives the cost of the
+platform: the binding of SDL, two native builds on GitHub Actions, and the emulator in the pipeline.
 
 ### R-0043 · The first click into the desktop window can reach the panel at a wrong place
 - class: risk

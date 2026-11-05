@@ -7,7 +7,7 @@ date: 2026-09-23
 supersedes: []
 superseded-by: []
 amends: []
-amended-by: ['0022', '0025']
+amended-by: ['0022', '0025', '0061']
 affects:
   - 3DEngine.Vulkan/**
   - 3DEngine/3DEngine.csproj
@@ -85,3 +85,5 @@ this project.
   shaders with their lock file, and the render pass of the first pipeline.
 - 2026-10-14 · TASK-0076 · ADR-0025 amends items 1, 3 and 7: a device with no window, the offscreen
   target, and the image test project `3DEngine.ImageTests`.
+- 2026-11-05 · TASK-0193 · ADR-0061 amends item 4: `ppy.SDL3-CS` replaces `Alimer.Bindings.SDL` on each
+  platform, and this project holds its only pin. R14c applies it.

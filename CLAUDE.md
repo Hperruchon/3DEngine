@@ -86,7 +86,7 @@ processes.
 
 ## Determinism rules
 
-A replay must give the same result on Windows, Linux and macOS, and on x64 and arm64. Anti-objective
+A replay must give the same result on Windows, Linux and macOS, on x64 and arm64, and on Android on arm64. Anti-objective
 16 in `docs/CHARTER.md` gives the property. These rules keep it.
 
 The operations `+`, `-`, `*`, `/` and `sqrt` give one correct result on each platform. Code that uses

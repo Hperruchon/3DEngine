@@ -30,7 +30,7 @@ names. Do not read all of them.
 | [0014](0014-manifold-native-interop.md) | Manifold backend native-interop posture | Accepted | Boundary, geometry, native-interop | — | — |
 | [0015](0015-command-log-persistence.md) | The document file | Accepted | Persistence, contracts | 0010, 0012 | — |
 | [0016](0016-handler-declared-construction.md) | Handler-declared command and query construction | Accepted | Contracts, clients | — | — |
-| [0017](0017-first-party-vulkan-layer.md) | The first-party Vulkan layer | Amended | Boundary, rendering | — | 0022, 0025 |
+| [0017](0017-first-party-vulkan-layer.md) | The first-party Vulkan layer | Amended | Boundary, rendering | — | 0022, 0025, 0061 |
 | [0018](0018-tessellation-capability.md) | The tessellation capability | Accepted | Geometry, contracts, rendering | 0012 | — |
 | [0019](0019-hybrid-deployment-topology.md) | The hybrid deployment topology | Amended | Clients, deployment | — | 0024 |
 | [0020](0020-document-version-meaning.md) | The meaning of the document version | Accepted | Contracts, runtime, observability | 0006, 0008, 0010 | — |
@@ -40,7 +40,7 @@ names. Do not read all of them.
 | [0024](0024-in-process-events-and-body-origin.md) | The events of a session in its host, and the origin of a body in double precision | Accepted | Rendering, clients | 0019, 0023 | — |
 | [0025](0025-observe-a-cut.md) | The first demonstration, a device with no window, and an image test | Amended | Rendering, boundary | 0009, 0017, 0022 | 0029 |
 | [0026](0026-intent-layer.md) | Device-tagged pointer samples, an intent layer, and a parity test of touch and mouse | Amended | Rendering, clients | 0023 | 0027, 0029, 0032, 0034, 0038, 0041 |
-| [0027](0027-text-and-panels.md) | Text and panels through Dear ImGui, drawn by a first-party renderer | Amended | Rendering, clients | 0026 | 0029 |
+| [0027](0027-text-and-panels.md) | Text and panels through Dear ImGui, drawn by a first-party renderer | Amended | Rendering, clients | 0026 | 0029, 0061 |
 | [0028](0028-body-name-and-visibility.md) | The name and the visibility of a body | Amended | Contracts, geometry | 0012, 0021 | 0037, 0049 |
 | [0029](0029-selection-and-hide-gestures.md) | The selection, the hide gestures and the frame of the camera in the desktop | Amended | Rendering, clients | 0025, 0026, 0027 | 0034, 0053 |
 | [0030](0030-document-file-in-the-desktop.md) | The document file in the desktop and for an agent | Accepted | Persistence, deployment | — | — |
@@ -74,17 +74,18 @@ names. Do not read all of them.
 | [0058](0058-the-engine-reads-the-owned-kernel.md) | The engine reads the owned kernel for the faces of a body | Amended | Kernel, geometry, queries | 0057 | 0059 |
 | [0059](0059-references-by-the-identity-of-a-face.md) | The references by the identity of a face, and a datum on a face that a cut removed | Accepted | Kernel, feature graph, sketch | 0051, 0053, 0055, 0058 | — |
 | [0060](0060-unit-kind-in-the-command-schema.md) | The unit kind of each number parameter in the command schema | Accepted | Contracts, clients | 0013 | — |
+| [0061](0061-android-platform.md) | Android is a platform of the program, with the person on the phone and no surface | Accepted | Platform, clients, rendering | 0017, 0027 | — |
 
 ## Topics
 
 - **Contracts** — 0005, 0006, 0008, 0012, 0013, 0015, 0018, 0020, 0021, 0028, 0033, 0045, 0060. Read these before changing `Engine.Contracts/**`.
 - **Boundary** — 0001, 0004, 0007, 0012, 0014, 0017, 0022, 0025. Read these before changing project references or adding clients.
 - **Workflow** — 0002. Read before adding a client or skipping CLI.
-- **Clients** — 0002, 0007, 0019, 0024, 0026, 0027, 0029, 0030, 0032, 0034, 0060. Read before changing UI/CLI/host code.
-- **Deployment** — 0004, 0019, 0030. Read these before changing where a session runs or which transport a host uses.
+- **Clients** — 0002, 0007, 0019, 0024, 0026, 0027, 0029, 0030, 0032, 0034, 0060, 0061. Read before changing UI/CLI/host code.
+- **Deployment** — 0004, 0019, 0030, 0061. Read these before changing where a session runs or which transport a host uses.
 - **Geometry** — 0001, 0012, 0014, 0018, 0021, 0028. Read before adding a capability or backend.
 - **Observability** — 0005, 0010, 0013, 0020, 0021. Read before changing event ordering, retention, subscription, or schema endpoints.
-- **Rendering** — 0009, 0017, 0018, 0022, 0023, 0024, 0025, 0026, 0027, 0029. Read these before changing `3DEngine.Core`, `3DEngine.Vulkan` or `3DEngine`.
+- **Rendering** — 0009, 0017, 0018, 0022, 0023, 0024, 0025, 0026, 0027, 0029, 0061. Read these before changing `3DEngine.Core`, `3DEngine.Vulkan` or `3DEngine`.
 
 ## Adding an ADR
 
