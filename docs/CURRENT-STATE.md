@@ -5801,3 +5801,47 @@ New tests: 14 test cases, and 3 test cases of v0.190 are replaced. The test list
 in `3DEngine.Tests`, 198 in `3DEngine.ImageTests`, 3 in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln
 --no-incremental` gives zero errors and zero warnings. Open entries: 14 of 15. New diagnostic codes: 0. Since the review
 of v0.190, 1 product milestone and 4 entries followed it.
+
+## v0.195 — The kept solids belong to one Document, the faces of the kernel keep their holes, and the next forms of five gates fail (P0.84, TASK-0192)
+
+The codebase review of 2026-11-05 (b) found E135 and T139 (medium), and E136 to E141, T136 to T138 and T140 (low). They
+come after the next product phase, R14a (v0.193), and after P0.83.
+
+**The change in the engine and the kernel.**
+- E135: `KernelProjection` keeps the solids under the identity of the Document and the geometry key. Two sessions in one
+  process with one command identifier of a box read their own solid. ADR-0059 item 2 states it.
+- E136: below the smallest normal double, `Rational.ToDouble` computes the quotient at the quantum 2^-1074 with one
+  bit to round, so it rounds one time, as ADR-0057 item 2 says and as a division of doubles does.
+- E137: at a vertex with two outgoing edges, the walk of a loop takes the first edge counter-clockwise, about the normal
+  of the face, from the edge back. A hole that touches the outer boundary at a vertex is a hole on each face.
+- E138: a hole belongs to the outer loop of the smallest area that holds it, so a hole in an island belongs to the island.
+- E139: while the kernel cannot build the end of the chain of a datum, the datum keeps the face-gone fault of that end
+  from the state before, with no new warning (Q4 A). ADR-0059 item 3 states it.
+- E140: a test compares the public members of `FieldSchema` and `UnitByField` with the members that the converter
+  writes.
+- E141 and T140: the unit rule reads each integer parameter and the parameters of queries (Q3 A). `width` and `height`
+  of `PlaceImage` declare `pixel`, the point of `GetFaceAt` declares `length`, and its normal declares the new unit
+  kind `direction`. ADR-0060 items 2 and 6 state it.
+
+**The change in the gates.**
+- T136: `BuiltAssemblyReferenceTests` reads the assembly references of each built `Engine.*` assembly and fails a
+  first-party reference that the graph of `ProjectReference` does not reach. It is a test only, because it reads the
+  build, so `eng/repo-gates` does not compile it.
+- T137: a constant char of a severity is a part of a code unless it is compared (`==`, `!=`, a pattern or a case
+  label) or it is the initializer of a constant.
+- T138: an HTML heading element anywhere on a line of the ledger is a heading problem.
+- T139: `Engine.Kernel`, `Engine.Core` and `Engine.Contracts` reference no package, in each file that MSBuild reads.
+
+**Proof.** 21 new tests. The forms of the review fail each rule before the change: the probe of E135, the two values of
+E136, the diamond of E137, the island of E138, the bow tie of the tool of E139, the member of E140, and the injections of
+T136 to T140. Thirteen injections each fail a test, and the test of E136 failed before the change.
+
+**What stays.** The rule of E137 has a test of one touching vertex only; a vertex where three loops meet has none. The
+test of T136 reads the assemblies that `Engine.Tests` references, the seven engine projects.
+
+**A correction.** The review says that `GetBodyInfo` has a number parameter `distance` with no unit. That `distance`
+is a member of the result, which R-0053 holds, so E141 is the six parameters of `GetFaceAt`.
+
+New tests: 21. The test list holds 1800 (1279 in `Engine.Tests`, 320 in `3DEngine.Tests`, 198 in `3DEngine.ImageTests`,
+3 in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
+entries: 14 of 15. New diagnostic codes: 0. Since the review of v0.190, 1 product milestone and 5 entries followed it.
