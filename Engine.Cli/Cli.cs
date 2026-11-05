@@ -137,12 +137,15 @@ public static class Cli
     // codebase review of 2026-11-01 (TASK-0160): the read has no journal and read access only, so the document
     // file does not change and a file that the desktop holds reads; the output gives the warnings of the read.
     // Finding E122: a write of the STL file that fails gives E-EXPORT-WRITE-FAILED, not a code of a save.
+    // ADR-0070 item 5 (phase K6a, TASK-0200): the same verb writes a STEP file of the owned kernel, with the same read.
     //
-    //   engine export stl <document.3de> <file.stl>   { file, triangles, warnings }
+    //   engine export stl <document.3de> <file.stl>     { file, triangles, warnings }
+    //   engine export step <document.3de> <file.step>   { file, bodies, warnings }
     private static async Task<int> Export(string[] args, TextWriter stdout, TextWriter stderr, CancellationToken ct, BackendOptions backend)
     {
-        if (args is not ["stl", var document, var file])
-            return InvalidUsage(stderr, "export requires 'stl <document.3de> <file.stl>'.");
+        if (args is not [var format and ("stl" or "step"), var document, var file])
+            return InvalidUsage(stderr, "export requires 'stl <document.3de> <file.stl>' or 'step <document.3de> <file.step>'.");
+        var step = format == "step";
 
         if (string.IsNullOrWhiteSpace(document))
             return ExportFailure(stdout, new ErrorDetail(DiagnosticCodes.IoLoadFailed, "The path of the document file is empty."));
@@ -153,12 +156,17 @@ public static class Cli
 
         ErrorDetail? error;
         byte[]? content = null;
+        var bodies = 0;
         IReadOnlyList<Diagnostic> warnings = [];
         var writing = false;
         try
         {
             warnings = await Engine.Core.Persistence.DocumentFile.Read(session, document, ct).ConfigureAwait(false);
-            (content, error) = await session.ReadGeometry(Engine.Core.Export.StlExport.Write, ct).ConfigureAwait(false);
+            (content, error, bodies) = await session.ReadGeometry((read, geometry) =>
+            {
+                var (bytes, failure) = step ? Engine.Core.Export.StepExport.Write(read) : Engine.Core.Export.StlExport.Write(read, geometry);
+                return (bytes, failure, read.Bodies.Count);
+            }, ct).ConfigureAwait(false);
             writing = true;
             if (content is not null)
                 await File.WriteAllBytesAsync(file, content, ct).ConfigureAwait(false);
@@ -171,7 +179,7 @@ public static class Cli
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or ArgumentException or NotSupportedException)
         {
             error = writing
-                ? new ErrorDetail(DiagnosticCodes.ExportWriteFailed, $"The STL file of {document} could not be written at {file}: {ex.Message}")
+                ? new ErrorDetail(DiagnosticCodes.ExportWriteFailed, $"The {(step ? "STEP" : "STL")} file of {document} could not be written at {file}: {ex.Message}")
                 : new ErrorDetail(DiagnosticCodes.IoLoadFailed, $"The document file {document} could not be read: {ex.Message}");
         }
         finally
@@ -182,12 +190,11 @@ public static class Cli
         if (error is not null)
             return ExportFailure(stdout, error);
 
-        JsonRenderer.WriteValue(new
-        {
-            file,
-            triangles = (content!.Length - 84) / 50,
-            warnings = warnings.Select(warning => new { code = warning.Code, message = warning.Message }).ToArray(),
-        }, stdout);
+        var written = warnings.Select(warning => new { code = warning.Code, message = warning.Message }).ToArray();
+        if (step)
+            JsonRenderer.WriteValue(new { file, bodies, warnings = written }, stdout);
+        else
+            JsonRenderer.WriteValue(new { file, triangles = (content!.Length - 84) / 50, warnings = written }, stdout);
         return ExitApplied;
     }
 
