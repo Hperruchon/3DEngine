@@ -103,6 +103,112 @@ public class AdrGateTests
         Assert.True(problems.Count == 0, string.Join("\n  ", problems));
     }
 
+    // Register entry R-0052 (TASK-0187). On 2026-11-05 TASK-0186 planned
+    // docs/adr/0059-unit-kind-in-the-command-schema.md in its write set, and K4c
+    // committed docs/adr/0059-references-by-the-identity-of-a-face.md 12 minutes
+    // later. The merge was clean and each gate passed, because the fact above reads
+    // only the files that exist. So the plan of a task that is not Done holds its
+    // number too, and a merge of two plans of one number fails.
+    [Fact]
+    public void No_Open_Task_Plans_An_Adr_Number_That_Another_Record_Has()
+    {
+        var plans = RepositoryFiles.Tasks().Select(t => new PlannedAdrs(t.Id, t.Status, t.Create));
+
+        var problems = PlannedNumberProblems(plans, RecordNames()).ToArray();
+
+        Assert.True(problems.Length == 0, "Give each planned ADR a free number (register entry R-0052):\n  "
+            + string.Join("\n  ", problems));
+    }
+
+    // An archived number stays taken (docs/templates.md, section 1, rule 4), so the
+    // names hold the files of docs/adr/ and of docs/adr/archive/.
+    [Fact]
+    public void The_Record_Names_Of_A_Plan_Hold_The_Records_In_Force_And_The_Archive()
+    {
+        var names = RecordNames().ToArray();
+
+        Assert.Contains("0003-blazor-as-thin-viewer.md", names);
+        Assert.Contains("0059-references-by-the-identity-of-a-face.md", names);
+    }
+
+    private static IEnumerable<string> RecordNames()
+    {
+        var archive = RepositoryFiles.Path("docs", "adr", "archive");
+        return AdrFiles()
+            .Concat(Directory.Exists(archive) ? Directory.EnumerateFiles(archive, "0*.md") : [])
+            .Select(f => Path.GetFileName(f));
+    }
+
+    internal sealed record PlannedAdrs(string Task, string Status, IReadOnlyList<string> Create);
+
+    private static readonly Regex PlannedAdr = new(@"^docs/adr/(?<name>(?<id>\d{4})-[^/]+\.md)$");
+
+    // A planned ADR is a path under create: of a task that is not Done, in docs/adr/
+    // and not in its archive. Its number is free when no file in docs/adr/ or in
+    // docs/adr/archive/ has it with another name, and when no earlier plan has it
+    // with another name. An Active task that made its record has the file of its
+    // own name, and that is no problem. A Done task is history.
+    internal static IEnumerable<string> PlannedNumberProblems(IEnumerable<PlannedAdrs> plans, IEnumerable<string> fileNames)
+    {
+        var files = fileNames
+            .GroupBy(n => n[..4], StringComparer.Ordinal)
+            .ToDictionary(g => g.Key, g => g.ToArray(), StringComparer.Ordinal);
+        var planned = new Dictionary<string, (string Task, string Name)>(StringComparer.Ordinal);
+
+        foreach (var plan in plans.Where(p => p.Status != "Done"))
+        {
+            foreach (var path in plan.Create)
+            {
+                var match = PlannedAdr.Match(path.Replace('\\', '/'));
+                if (!match.Success)
+                    continue;
+
+                var id = match.Groups["id"].Value;
+                var name = match.Groups["name"].Value;
+                if (files.TryGetValue(id, out var existing) && !existing.Contains(name, StringComparer.Ordinal))
+                    yield return $"{plan.Task} plans {path}, and the number {id} is the file {string.Join(", ", existing)}";
+
+                if (planned.TryGetValue(id, out var other) && other.Name != name)
+                    yield return $"{plan.Task} plans {path}, and {other.Task} plans docs/adr/{other.Name} with the same number";
+                else
+                    planned.TryAdd(id, (plan.Task, name));
+            }
+        }
+    }
+
+    [Theory]
+    [InlineData("an existing file", "and the number 0059 is the file 0059-references-by-the-identity-of-a-face.md")]
+    [InlineData("an archived file", "and the number 0003 is the file 0003-blazor-as-thin-viewer.md")]
+    [InlineData("two open tasks", "and TASK-0186 plans docs/adr/0060-unit-kind.md with the same number")]
+    [InlineData("its own file", null)]
+    [InlineData("a done task", null)]
+    [InlineData("a path that is no record", null)]
+    public void Each_Form_Of_Register_Entry_R0052_Is_A_Problem(string form, string? expected)
+    {
+        string[] files = ["0003-blazor-as-thin-viewer.md", "0059-references-by-the-identity-of-a-face.md"];
+        PlannedAdrs[] plans = form switch
+        {
+            "an existing file" => [new("TASK-0186", "Ready", ["docs/adr/0059-unit-kind.md"])],
+            "an archived file" => [new("TASK-0186", "Ready", ["docs/adr/0003-a-new-record.md"])],
+            "two open tasks" =>
+            [
+                new("TASK-0186", "Ready", ["docs/adr/0060-unit-kind.md"]),
+                new("TASK-0187", "Active", ["docs/adr/0060-another-record.md"]),
+            ],
+            "its own file" => [new("TASK-0185", "Active", ["docs/adr/0059-references-by-the-identity-of-a-face.md"])],
+            "a done task" => [new("TASK-0186", "Done", ["docs/adr/0059-unit-kind.md"])],
+            "a path that is no record" => [new("TASK-0186", "Ready", ["docs/adr/archive/0059-x.md", "docs/0059-x.md"])],
+            _ => throw new ArgumentOutOfRangeException(nameof(form)),
+        };
+
+        var problems = PlannedNumberProblems(plans, files).ToArray();
+
+        if (expected is null)
+            Assert.Empty(problems);
+        else
+            Assert.Contains(problems, p => p.EndsWith(expected, StringComparison.Ordinal));
+    }
+
     [Fact]
     public void Each_Supersession_And_Each_Amendment_Is_Reciprocal()
     {
