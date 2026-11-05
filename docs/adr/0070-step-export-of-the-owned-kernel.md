@@ -51,8 +51,13 @@ Three constraints remove the obvious alternatives:
    `1.E-07` mm.
 2. **The bodies.** Each live body of the Document, visible or hidden, in the order of its handle, gives its B-Rep from
    `KernelProjection.OfRecord` and `Brep.Of`. One PRODUCT, `document`, holds one `ADVANCED_BREP_SHAPE_REPRESENTATION`
-   with each solid. Each closed shell of a body is one `MANIFOLD_SOLID_BREP` with the identifier of the body as its
-   name, so a cut that splits a body gives two solids of one name. Each face is an `ADVANCED_FACE` on a `PLANE`, with a
+   with each solid. A shell with a positive volume is an outer shell, and each outer shell of a body is one solid with
+   the identifier of the body as its name, so a cut that splits a body gives two solids of one name. A shell with a
+   negative volume is a void. A void belongs to the smallest outer shell that holds its first vertex, by the parity of
+   the faces that an exact ray crosses; a ray that meets an edge, a vertex or the plane of a face at the point goes to
+   the next of eight fixed directions. A solid with no void is a `MANIFOLD_SOLID_BREP`. A solid with voids is a
+   `BREP_WITH_VOIDS`, and each void is an `ORIENTED_CLOSED_SHELL` with `.F.` on a `CLOSED_SHELL` whose faces turn,
+   so that the shell points out of the void (ISO 10303-42). Each face is an `ADVANCED_FACE` on a `PLANE`, with a
    `FACE_OUTER_BOUND` and a `FACE_BOUND` for each hole, each one an `EDGE_LOOP` of `ORIENTED_EDGE`. Each edge is one
    `EDGE_CURVE` on a `LINE` from its lower vertex to its higher vertex, and each vertex is one `VERTEX_POINT`. The normal
    of a plane points out of the solid, and its first axis is the first side of the outer loop. An exact vertex leaves
@@ -62,8 +67,8 @@ Three constraints remove the obvious alternatives:
    so they are planes in the file until K5.
 3. **A refusal.** `StepExport.Write` gives `E-EXPORT-BODY-FAILED`, with the body and the reason, and no file, for the
    first body that it cannot write: a body with a fault, a body that the kernel does not build, a B-Rep that is not
-   closed, a shell with a negative volume (a void inside the body, which needs `BREP_WITH_VOIDS`), and a coordinate
-   that a double does not hold. A silent skip of a body is refused (anti-objective 9). The export needs no capability
+   closed, a shell with no volume, a void that no outer shell holds or that no ray tests, and a coordinate that a
+   double does not hold. A silent skip of a body is refused (anti-objective 9). The export needs no capability
    of the backend.
 4. **The surface.** `GET /export/step` gives the file as `model/step`, or the envelope with 422 for
    `E-EXPORT-BODY-FAILED` and 500 for each other error. As for `GET /export/stl` (ADR-0048 item 4), the route is outside
@@ -71,8 +76,8 @@ Three constraints remove the obvious alternatives:
 5. **The command line.** `engine export step <document.3de> <file.step>` reads the document file as
    `engine export stl` does (ADR-0048 item 5), writes the STEP file, and prints `{ file, bodies, warnings }` or
    `{ error }`, with the exit code 0, 1 or 2. A write that fails gives `E-EXPORT-WRITE-FAILED`.
-6. **Not in K6a.** The desktop button, `BREP_WITH_VOIDS`, the name and the colour of a body in the file, the surfaces of
-   K5, and an import of any kind.
+6. **Not in K6a and K6b.** The desktop button, the name and the colour of a body in the file, the surfaces of K5, and an
+   import of any kind.
 
 ## Consequences
 
@@ -80,14 +85,16 @@ Three constraints remove the obvious alternatives:
 design can edit. The file comes from the owned kernel, so it is the same bytes on each platform, and a test proves it
 by a hash on the three runners of the pipeline.
 
-**Bad:** a curved side of an extrude is a set of planar facets in the file, as in the kernel. A body with a void and a
-body with a fault give no file at all, so one such body stops the export of each other body. No reader of STEP runs in
-the pipeline: the tests read the file back with a small reader of the repository, which checks the topology and the
-numbers but not each rule of AP214.
+**Bad:** a curved side of an extrude is a set of planar facets in the file, as in the kernel. A body with a fault gives no file
+at all, so one such body stops the export of each other body. No reader of STEP runs in the pipeline: the tests read the file back with a small reader of the repository, which checks the topology and the
+numbers but not each rule of AP214. The test of a void costs one exact ray against each face of each outer shell
+of the body, for each void.
 
-**Next:** `BREP_WITH_VOIDS` and the button of the desktop come in later slices of K6. The surfaces of K5 add a
-`CYLINDRICAL_SURFACE` and the other analytic surfaces to the same writer.
+**Next:** the button of the desktop comes in a later slice of K6, after the Android work on the desktop. The surfaces
+of K5 add a `CYLINDRICAL_SURFACE` and the other analytic surfaces to the same writer.
 
 ## History
 
 - 2026-11-06 · TASK-0200 · The record, under the standing order of 2026-11-05.
+- 2026-11-06 · TASK-0201 · Items 2, 3 and 6: a void is a `BREP_WITH_VOIDS` of the smallest outer shell that holds it,
+  under the standing order of 2026-11-05. Until TASK-0201 a void gave `E-EXPORT-BODY-FAILED`.

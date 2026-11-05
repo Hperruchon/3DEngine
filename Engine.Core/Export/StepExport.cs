@@ -8,7 +8,7 @@ namespace Engine.Core.Export;
 
 // ADR-0070 (phase K6a, TASK-0200): the live bodies of a Document as one STEP file of AP214, from the B-Rep of the owned
 // kernel (ADR-0058). Each face is a PLANE with its loops, each edge is a LINE between two VERTEX_POINT, and each closed
-// shell is a MANIFOLD_SOLID_BREP. A STEP file is presentation, as an STL file is: it never enters a command, an event,
+// shell is a MANIFOLD_SOLID_BREP, or a BREP_WITH_VOIDS with the voids inside it (phase K6b, TASK-0201). A STEP file is presentation, as an STL file is: it never enters a command, an event,
 // the Document or the log. The text is the same bytes on each platform: an exact vertex leaves the kernel with one
 // rounding to the nearest double, a direction uses + - * / and sqrt only, and each number has the shortest form that
 // reads back to the same double, in the invariant culture (CLAUDE.md, determinism rules 1 and 6).
@@ -50,10 +50,13 @@ public static class StepExport
     public static (byte[]? Content, ErrorDetail? Error) Write(IReadOnlyList<(Guid Body, Brep Brep)> solids)
     {
         ArgumentNullException.ThrowIfNull(solids);
+        var planned = new List<(Guid Body, Brep Brep, IReadOnlyList<Solid> Solids)>();
         foreach (var (body, brep) in solids)
         {
-            if (Check(brep) is { } reason)
-                return Refused(body, reason);
+            var (plan, reason) = Plan(brep);
+            if (plan is null)
+                return Refused(body, reason!);
+            planned.Add((body, brep, plan));
         }
 
         var file = new Writer();
@@ -80,8 +83,8 @@ public static class StepExport
         var placement = file.Add($"AXIS2_PLACEMENT_3D('',{Ref(origin)},{Ref(z)},{Ref(x)})");
 
         var items = new List<int> { placement };
-        foreach (var (body, brep) in solids)
-            items.AddRange(Body(file, body, brep));
+        foreach (var (body, brep, plan) in planned)
+            items.AddRange(Body(file, body, brep, plan));
 
         var representation = file.Add($"ADVANCED_BREP_SHAPE_REPRESENTATION('',({string.Join(',', items.Select(Ref))}),{Ref(context)})");
         file.Add($"SHAPE_DEFINITION_REPRESENTATION({Ref(shape)},{Ref(representation)})");
@@ -126,28 +129,136 @@ public static class StepExport
     private static (byte[]? Content, ErrorDetail? Error) Refused(Guid body, string reason)
         => (null, new ErrorDetail(DiagnosticCodes.ExportBodyFailed, $"The STEP export does not write the body '{body}': {reason}"));
 
-    // Item 3: a B-Rep that the file can hold: closed, with no void, and with each coordinate finite as a double.
-    private static string? Check(Brep brep)
+    // Item 2: one solid of the file: the index of its outer shell, and the indices of the voids inside it.
+    private sealed record Solid(int Outer, IReadOnlyList<int> Voids);
+
+    // The directions of the ray of item 2, in their order. Each one has integer parts that no box of the engine shares, so
+    // the first ray seldom meets an edge or a vertex; a ray that does goes to the next direction.
+    internal static readonly Vector3R[] Rays =
+    [
+        new(7, 3, 2), new(-5, 11, 3), new(3, -2, 13), new(-11, -7, 5), new(2, 13, -17), new(19, -3, -7), new(-13, 5, -11), new(1, -17, 19),
+    ];
+
+    // Items 2 and 3: the solids of a B-Rep that the file can hold, or the reason that it cannot. The B-Rep is closed, each
+    // coordinate is finite as a double, each shell has a volume, and each void is inside an outer shell. A shell with a
+    // positive volume is an outer shell; a shell with a negative volume is a void, and it belongs to the smallest outer
+    // shell that holds its first vertex, so a void inside a solid inside a void belongs to the inner solid.
+    private static (IReadOnlyList<Solid>? Solids, string? Reason) Plan(Brep brep)
     {
         if (!brep.Valid)
-            return "its B-Rep in the owned kernel is not closed.";
-        foreach (var shell in brep.Shells)
-        {
-            var volume = Volume(brep, shell);
-            if (volume.Sign < 0)
-                return "it has a void inside, and K6a writes no BREP_WITH_VOIDS.";
-            if (volume.IsZero)
-                return "a shell of its B-Rep has no volume.";
-        }
-
+            return (null, "its B-Rep in the owned kernel is not closed.");
         foreach (var vertex in brep.Vertices)
         {
             var (vx, vy, vz) = vertex.ToDoubles();
             if (!double.IsFinite(vx) || !double.IsFinite(vy) || !double.IsFinite(vz))
-                return "a vertex has a coordinate that a double does not hold.";
+                return (null, "a vertex has a coordinate that a double does not hold.");
+        }
+
+        var volumes = brep.Shells.Select(shell => Volume(brep, shell)).ToList();
+        if (volumes.Any(volume => volume.IsZero))
+            return (null, "a shell of its B-Rep has no volume.");
+        var outers = Enumerable.Range(0, brep.Shells.Count).Where(s => volumes[s].Sign > 0).ToList();
+        var voids = outers.ToDictionary(s => s, _ => new List<int>());
+        foreach (var hollow in Enumerable.Range(0, brep.Shells.Count).Where(s => volumes[s].Sign < 0))
+        {
+            var point = brep.Vertices[brep.Faces[brep.Shells[hollow][0]].Loops[0].Vertices[0]];
+            int? owner = null;
+            foreach (var outer in outers)
+            {
+                switch (Inside(brep, brep.Shells[outer], point))
+                {
+                    case null:
+                        return (null, "no ray of the test of a void passes clear of the edges of a shell.");
+                    case true when owner is null || volumes[outer] < volumes[owner.Value]:
+                        owner = outer;
+                        break;
+                }
+            }
+
+            if (owner is null)
+                return (null, "a void of its B-Rep is inside no outer shell.");
+            voids[owner.Value].Add(hollow);
+        }
+
+        return ([.. outers.Select(outer => new Solid(outer, voids[outer]))], null);
+    }
+
+    // Item 2: true when the point is inside the closed shell, by the parity of the faces that a ray from the point crosses.
+    // Each test is exact. A ray that meets an edge, a vertex or the plane of a face at the point goes to the next direction;
+    // null when each direction does.
+    internal static bool? Inside(Brep brep, IReadOnlyList<int> shell, Vector3R point)
+    {
+        foreach (var direction in Rays)
+        {
+            if (Crossings(brep, shell, point, direction) is { } count)
+                return count % 2 == 1;
         }
 
         return null;
+    }
+
+    internal static int? Crossings(Brep brep, IReadOnlyList<int> shell, Vector3R point, Vector3R direction)
+    {
+        var count = 0;
+        foreach (var f in shell)
+        {
+            var face = brep.Faces[f];
+            var along = face.Plane.Normal.Dot(direction);
+            var height = face.Plane.Offset - face.Plane.Normal.Dot(point);
+            if (along.IsZero)
+            {
+                if (height.IsZero)
+                    return null;
+                continue;
+            }
+
+            var t = height / along;
+            if (t.IsZero)
+                return null;
+            if (t.Sign < 0)
+                continue;
+            switch (InFace(brep, face, point + (direction * t)))
+            {
+                case null:
+                    return null;
+                case true:
+                    count++;
+                    break;
+            }
+        }
+
+        return count;
+    }
+
+    // True when a point of the plane of the face is inside the face, false when it is outside, and null when it is on a
+    // loop. The axis of the largest part of the normal drops out, and the parity of all the loops gives the holes.
+    private static bool? InFace(Brep brep, BrepFace face, Vector3R q)
+    {
+        static Rational Abs(Rational r) => r.Sign < 0 ? -r : r;
+        var n = face.Plane.Normal;
+        var drop = Abs(n.X) >= Abs(n.Y) && Abs(n.X) >= Abs(n.Z) ? 0 : Abs(n.Y) >= Abs(n.Z) ? 1 : 2;
+        (Rational U, Rational V) P(Vector3R p) => drop switch { 0 => (p.Y, p.Z), 1 => (p.Z, p.X), _ => (p.X, p.Y) };
+        var point = P(q);
+        var inside = false;
+        foreach (var loop in face.Loops)
+        {
+            for (var i = 0; i < loop.Vertices.Count; i++)
+            {
+                var (a, b) = (P(brep.Vertices[loop.Vertices[i]]), P(brep.Vertices[loop.Vertices[(i + 1) % loop.Vertices.Count]]));
+                var cross = ((b.U - a.U) * (point.V - a.V)) - ((b.V - a.V) * (point.U - a.U));
+                if (cross.IsZero
+                    && (a.U <= point.U || b.U <= point.U) && (a.U >= point.U || b.U >= point.U)
+                    && (a.V <= point.V || b.V <= point.V) && (a.V >= point.V || b.V >= point.V))
+                    return null;
+                if ((a.V > point.V) == (b.V > point.V))
+                    continue;
+                var x = a.U + ((b.U - a.U) * (point.V - a.V) / (b.V - a.V));
+                if (x > point.U)
+                    inside = !inside;
+            }
+        }
+
+        return inside;
     }
 
     // The volume of a shell times six, by the divergence theorem: each face gives a point of its plane dot the sum of the
@@ -172,8 +283,8 @@ public static class StepExport
     }
 
     // Item 2: the entities of one body, from the leaves up, so each reference names an earlier instance. The result is the
-    // list of its solids, one for each shell.
-    private static List<int> Body(Writer file, Guid body, Brep brep)
+    // list of its solids, one for each outer shell.
+    private static List<int> Body(Writer file, Guid body, Brep brep, IReadOnlyList<Solid> solids)
     {
         var points = brep.Vertices.Select(p => file.Add($"CARTESIAN_POINT('',{Triple(p.ToDoubles())})")).ToList();
         var vertices = points.Select(p => file.Add($"VERTEX_POINT('',{Ref(p)})")).ToList();
@@ -189,27 +300,33 @@ public static class StepExport
             edges.Add(file.Add($"EDGE_CURVE('',{Ref(vertices[edge.From])},{Ref(vertices[edge.To])},{Ref(line)},.T.)"));
         }
 
+        // Item 2: the faces of a void turn, so that its CLOSED_SHELL points out of the void, and the ORIENTED_CLOSED_SHELL
+        // with .F. turns it back, as ISO 10303-42 gives BREP_WITH_VOIDS.
+        var turned = solids.SelectMany(solid => solid.Voids).SelectMany(v => brep.Shells[v]).ToHashSet();
         var faces = new List<int>();
-        foreach (var face in brep.Faces)
+        for (var f = 0; f < brep.Faces.Count; f++)
         {
+            var face = brep.Faces[f];
+            var turn = turned.Contains(f);
             var bounds = new List<int>();
-            foreach (var loop in face.Loops)
+            foreach (var kept in face.Loops)
             {
+                var loop = turn ? (IReadOnlyList<int>)[.. kept.Vertices.Reverse()] : kept.Vertices;
                 var uses = new List<int>();
-                for (var i = 0; i < loop.Vertices.Count; i++)
+                for (var i = 0; i < loop.Count; i++)
                 {
-                    var (a, b) = (loop.Vertices[i], loop.Vertices[(i + 1) % loop.Vertices.Count]);
+                    var (a, b) = (loop[i], loop[(i + 1) % loop.Count]);
                     var edge = edges[edgeOf[a < b ? (a, b) : (b, a)]];
                     uses.Add(file.Add($"ORIENTED_EDGE('',*,*,{Ref(edge)},{(a < b ? ".T." : ".F.")})"));
                 }
                 var edgeLoop = file.Add($"EDGE_LOOP('',({string.Join(',', uses.Select(Ref))}))");
-                bounds.Add(file.Add($"{(loop.Outer ? "FACE_OUTER_BOUND" : "FACE_BOUND")}('',{Ref(edgeLoop)},.T.)"));
+                bounds.Add(file.Add($"{(kept.Outer ? "FACE_OUTER_BOUND" : "FACE_BOUND")}('',{Ref(edgeLoop)},.T.)"));
             }
 
-            // The plane: its normal points out of the solid, and its first axis is the first side of the outer loop, which
-            // lies in the plane exactly.
-            var outer = face.Loops[0].Vertices;
-            var axis = file.Add($"DIRECTION('',{Triple(Unit(face.Plane.Normal))})");
+            // The plane: its normal points out of the solid, or out of the void for a face of a void, and its first axis is
+            // the first side of the outer loop, which lies in the plane exactly.
+            var outer = turn ? (IReadOnlyList<int>)[.. face.Loops[0].Vertices.Reverse()] : face.Loops[0].Vertices;
+            var axis = file.Add($"DIRECTION('',{Triple(Unit(turn ? -face.Plane.Normal : face.Plane.Normal))})");
             var reference = file.Add($"DIRECTION('',{Triple(Unit(brep.Vertices[outer[1]] - brep.Vertices[outer[0]]))})");
             var frame = file.Add($"AXIS2_PLACEMENT_3D('',{Ref(points[outer[0]])},{Ref(axis)},{Ref(reference)})");
             var plane = file.Add($"PLANE('',{Ref(frame)})");
@@ -217,10 +334,14 @@ public static class StepExport
         }
 
         var name = body.ToString("D", CultureInfo.InvariantCulture);
-        return [.. brep.Shells.Select(shell =>
+        int Closed(int shell) => file.Add($"CLOSED_SHELL('',({string.Join(',', brep.Shells[shell].Select(f => Ref(faces[f])))}))");
+        return [.. solids.Select(solid =>
         {
-            var closed = file.Add($"CLOSED_SHELL('',({string.Join(',', shell.Select(f => Ref(faces[f])))}))");
-            return file.Add($"MANIFOLD_SOLID_BREP('{name}',{Ref(closed)})");
+            var closed = Closed(solid.Outer);
+            if (solid.Voids.Count == 0)
+                return file.Add($"MANIFOLD_SOLID_BREP('{name}',{Ref(closed)})");
+            var voids = solid.Voids.Select(v => file.Add($"ORIENTED_CLOSED_SHELL('',*,{Ref(Closed(v))},.F.)")).ToList();
+            return file.Add($"BREP_WITH_VOIDS('{name}',{Ref(closed)},({string.Join(',', voids.Select(Ref))}))");
         })];
     }
 
