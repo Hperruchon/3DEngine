@@ -5524,3 +5524,43 @@ New tests: 9. The test list holds 1737 (1232 in `Engine.Tests`, 309 in `3DEngine
 3 in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
 entries: 14 of 15. New diagnostic codes: 2 (`E-GEOM-BODY-FAULTED`, `E-GEOM-FACES-FAILED`). Since the review of
 v0.181, 2 product milestones and 5 entries followed it.
+
+## v0.187 — A datum on a face that a cut removed gets a fault, and a datum on the wall of a hole faces into the hole (K4c, TASK-0185)
+
+K4b (v0.186) gave the faces of each body, with their names, from the owned kernel. A datum still resolved its plane from
+the parameters of its feature only, so a cut could remove its face with no warning, and a tap on the wall of a hole gave
+no face. On 2026-11-05 the owner answered the five questions of K4c: the existing fault, a check after a cut only, a
+datum on a hole wall that faces into the hole, a split face that keeps its plane, and the turn also for older documents.
+ADR-0059 gives the design and amends ADR-0051, ADR-0053, ADR-0055 and ADR-0058.
+
+**The change.**
+- A `Subtract`, each edit whose regeneration reaches a chain with a `Subtract`, and `CreateDatum` check the name of
+  the face of a datum against the kernel solid of the live body at the end of its chain. A gone face gives the fault
+  `W-DATUM-REFERENCE-FAILED`, and the datum stays on the plane of its reference; `CreateDatum` refuses it with
+  `E-DATUM-REFERENCE-INVALID`. An undo removes the fault of its step.
+- Each `Subtract` before the place of a reference that takes the body of its chain as the subtrahend turns the frame:
+  (u, v, n) becomes (u, −v, −n). A datum on the wall of a hole faces into the hole, and two such cuts turn it back. A
+  datum made before the cut keeps its frame.
+- `GetFaceAt` takes the face under a hit from the kernel solid of the body. A wall of a hole is a face, and the part of
+  a face that a cut removed is not.
+- The projection reads the state of an edit before its commit, and it keeps the solid of the last 64 committed keys.
+
+**Proof.** A tool that removes the face +x of a plate gives its datum the fault and one warning; an undo removes the
+fault, and a redo gives it again. An edit that moves the side of an extrude out of the tool removes the fault, an edit
+that moves it back gives it again, and an edit that keeps it inside gives no new warning; edits of another sketch keep
+each state. `CreateDatum` refuses the face +z of a tool taller than the plate. A sketch on the wall +x of a hole
+extrudes from x = 2 to x = 1, into the hole. A face that two cuts take as a subtrahend faces out again. Sixteen
+injections each fail a test. Four injections first did not fail or did not compile, and each one gave a new assert: the
+full frame of a datum on a minuend after a cut, the reason of a curved face, an extrude in the test of the kept solid,
+and a test of a body with a fault. The point of the old test of a curved side was on no facet; it is now in the middle of
+the first facet.
+
+**What stays.** An edge or a vertex of a sketch reference that a cut removes has no check. A datum whose end the kernel
+cannot build has no check, and no test reaches that state. Each `Subtract` and each edit of a chain with a
+`Subtract` runs the kernel, about 0.2 s for a cylinder of 64 facets. A datum that the API made on a face of a cut tool
+after the cut turns in a replay of an older document; the repository holds no such document. The row K4 has its three
+slices; the owner closes the row.
+
+New tests: 5. The test list holds 1742 (1237 in `Engine.Tests`, 309 in `3DEngine.Tests`, 193 in `3DEngine.ImageTests`,
+3 in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
+entries: 14 of 15. New diagnostic codes: 0. Since the review of v0.181, 3 product milestones and 6 entries followed it.

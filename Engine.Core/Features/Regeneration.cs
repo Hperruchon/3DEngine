@@ -74,7 +74,35 @@ internal static class Regeneration
 
         var solids = new Solids(document, backend, list, edit, before, planes.FrameOf);
         solids.Walk();
-        return new Outcome(solids.Changed, planes.Datums, planes.Sketches, [.. planes.Diagnostics, .. solids.Diagnostics]);
+
+        // ADR-0059 item 3 (phase K4c, TASK-0185): after the solids, a datum on a face that a cut removed gets a fault. The
+        // rebuild of the planes gives each datum that resolves no fault, so each datum in effect has the check again. The
+        // names of an end that the edit changes come from the state after the edit; the names of an end that it does not
+        // change come from the kept solid of its committed key.
+        DatumResolver.ExtrudeState StateAfter(ExtrudeCommand extrude)
+        {
+            var input = edit.Targets(extrude) ? edit.After(extrude) : edit.Other(extrude);
+            return new DatumResolver.ExtrudeState(input.Sketch, input.Distance);
+        }
+        var names = new Dictionary<Guid, IReadOnlySet<Kernel.FaceTag>?>();
+        IReadOnlySet<Kernel.FaceTag>? TagsOf(Guid end)
+        {
+            if (names.TryGetValue(end, out var known))
+                return known;
+            Kernel.KernelSolid? solid = null;
+            if (solids.Changed.FirstOrDefault(body => body.Handle.Id == end) is { } rebuilt)
+                solid = rebuilt.Fault is null ? KernelProjection.Of(graph, end, StateAfter, planes.FrameOf).Solid : null;
+            else if (document.Bodies.FirstOrDefault(body => body.Handle.Id == end) is { } live)
+                solid = KernelProjection.OfRecord(document, live).Solid;
+            return names[end] = solid is null ? null : KernelProjection.Tags(solid);
+        }
+
+        var rebuiltDatums = planes.Datums.ToDictionary(datum => datum.Id);
+        // The order of the log, never the order of a collection of the Document.
+        var inEffect = document.Datums.OrderBy(datum => graph.Order(datum.Id)).Select(datum => rebuiltDatums.GetValueOrDefault(datum.Id, datum)).ToList();
+        var (checkedDatums, gone) = FaceGone.Check(inEffect, id => document.Datums.FirstOrDefault(datum => datum.Id == id), graph, TagsOf);
+        var datums = checkedDatums.Where(datum => !document.Datums.Contains(datum)).ToList();
+        return new Outcome(solids.Changed, datums, planes.Sketches, [.. planes.Diagnostics, .. solids.Diagnostics, .. gone]);
     }
 
     // The parameters of an extrude in one state, with the frame of the datum of its sketch in that state (ADR-0051
