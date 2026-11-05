@@ -5670,3 +5670,33 @@ before a click, so a person sees the fault there only after a jump of the cursor
 New tests: 5. The test list holds 1767 (1257 in `Engine.Tests`, 312 in `3DEngine.Tests`, 195 in `3DEngine.ImageTests`,
 3 in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
 entries: 14 of 15. New diagnostic codes: 0. Since the review of v0.181, 4 product milestones and 9 entries followed it.
+
+## v0.191 — The codebase review of 2026-11-05 (b) (governance, TASK-0189)
+
+The review of 2026-11-05 examined v0.181, and 4 product milestones and 9 entries followed it, so the gate did not make
+a review due yet. On 2026-11-05 the owner gave the order "fix R-0043 first, then the review", and later confirmed the
+Android order and the standing order of an autonomous run until 2026-11-08. `docs/reviews/2026-11-05-b-codebase-review.md`
+examines `main` at `d9292fa` (v0.190). Two review agents worked in parallel, each one in its own worktree, with probes
+and injections that they restored or deleted after the run. I read the cited lines of each new finding of the levels
+high and medium.
+
+**The result.**
+- The fixes of the last review hold for their forms: E131 to E133, V78 to V83 and T133 to T135. V84 is fixed in part.
+- One new high finding: E134, a document whose log holds a `CreateDatum` on a face that a cut removed no longer opens,
+  because the refusal of K4c also acts in a replay.
+- Four new medium findings: E135 (the kept kernel solids are static for the process, under a key that is unique in one
+  Document only), V85 (a press of a hand that moves on takes the later place of the cursor, a cost of P0.81), V86 (the
+  far plane ignores the images), and T139 (a package in the owned kernel passes each gate).
+- Eleven new low findings: E136 to E141 (a double rounding, two forms of the loops of a face, a fault that goes, a
+  member of the schema that leaves the wire, the units of query parameters), V87 (a query in each frame of a drag),
+  and T136 to T138 and T140 (the next forms of three gates, and the integer parameters of the unit rule).
+- Open findings: 0 critical, 5 high, 18 medium and 28 low.
+- TASK-0190 (P0.82) holds E134 before the next product phase. TASK-0191 (P0.83) holds V85 to V87, and TASK-0192
+  (P0.84) holds E135 to E141 and T136 to T140, after it.
+- The standing order of 2026-11-05 answers Q1 to Q5 with the recommended option A. The owner checks the answers on
+  2026-11-08.
+
+No code changes. The test list holds 1767 (1257 in `Engine.Tests`, 312 in `3DEngine.Tests`, 195 in
+`3DEngine.ImageTests`, 3 in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and
+zero warnings. Open entries: 14 of 15. New diagnostic codes: 0. Since the review of v0.190, 0 product milestones and 1
+entry followed it.
