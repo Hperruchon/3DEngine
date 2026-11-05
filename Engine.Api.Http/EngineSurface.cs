@@ -153,6 +153,9 @@ public static class EngineSurface
         // ADR-0048 item 4: the live bodies as one STL file.
         app.MapGet("/export/stl", ExportEndpoint.Stl);
 
+        // ADR-0070 item 4: the live bodies as one STEP file.
+        app.MapGet("/export/step", ExportEndpoint.Step);
+
         return app;
     }
 
