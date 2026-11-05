@@ -1,7 +1,7 @@
 ---
 id: 0191
 title: A press of a hand keeps its place, the far plane holds the images, and a drag queries no size in each frame
-status: Active
+status: Done
 phase: P0.83
 opened: 2026-11-05
 depends-on: [0190]
@@ -56,19 +56,22 @@ hold the live images, and a drag of the gizmo reads the size of a body one time.
 
 ## Acceptance criteria
 
-- [ ] Each finding has a test or an injection that fails before the change and passes after it.
-- [ ] A clean build (`--no-incremental`) gives zero errors and zero warnings.
-- [ ] Continuous integration passes on the three runners, on the branch and on `main` after the merge.
+- [x] Each finding has a test or an injection that fails before the change and passes after it.
+- [x] A clean build (`--no-incremental`) gives zero errors and zero warnings.
+- [x] Continuous integration passes on the three runners, on the branch and on `main` after the merge.
 
 ## Outcome
 
-Status: Ready
+Status: Done · commit (the merge of the branch p083-desktop-forms) · v0.194
 
 ## Method
 
 Mechanical: a test or an injection for each finding, before the change.
-Judgement:  the key of the size of a body during a preview.
-Weakest:    to be written at the close.
+Judgement:  Q2 B instead of A, because A keeps the old place in the case of R-0043; the key of the size of a body
+            during a preview.
+Weakest:    no test of the pipeline reaches the hook, because it needs a window of Windows; the probe of the real
+            Window ran on this computer only. The warp sets the cursor to the place of the message: if the cursor
+            moved after a stale press, it goes back to the press.
 
 ## Progress
 
@@ -81,3 +84,4 @@ Weakest:    to be written at the close.
   cursor in one pump: with the hook the press came at the place of the cursor, with one log line; without the hook it
   came at (50, 60). A press after a motion at its place gave no correction. The probe moved no cursor.
 - 2026-11-05: V85 to V87 with 14 test cases; 5 injections each fail a test.
+- 2026-11-05: closed at v0.194.
