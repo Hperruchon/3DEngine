@@ -126,3 +126,9 @@ holds the rule.
 - Take this task after K4c (roadmap, section "Order"), unless the owner gives another order.
 - Check the numbers at commit: 0186 and ADR-0060 were free on `main` at 7256f92 (v0.187). K4c took
   ADR-0059 first, so on 2026-11-05 the owner gave ADR-0060 to this task.
+
+## Progress
+
+- 2026-11-05: opened from the module-declaration proposal of the desktop redesign.
+- 2026-11-05: takes ADR-0060, because K4c took ADR-0059 first (0b527cd).
+- 2026-11-05: governs the line that closes the roadmap row K4, because it is the only open task.

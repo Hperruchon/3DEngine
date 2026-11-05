@@ -162,6 +162,7 @@ Therefore each approved objective must have a track here.
 - K4a — The owned kernel subtracts planar solids exactly, and each face of the result keeps its provenance. v0.185, TASK-0183, ADR-0057.
 - K4b — The engine reads the owned kernel, and GetFaces gives the faces of a body with their names. v0.186, TASK-0184, ADR-0058.
 - K4c — A datum on a face that a cut removed gets a fault, and a datum on the wall of a hole faces into the hole. v0.187, TASK-0185, ADR-0059.
+- K4 — Planar faces with a boolean, and the provenance of each face inside the owned kernel. Closed at v0.187, with K4a to K4c in this list.
 
 ## Track 0 — Foundations
 
@@ -316,7 +317,7 @@ boundary and each refused rung.
 | K2g | The selection holds three items, and the window of the sketch offers Symmetric (the answer "1 3 4" of 2026-10-31). TASK-0127. | 1 |
 | K3a | A constraint solver for five constraints: coincident, horizontal, vertical, distance and fixed. It uses only `+ - * / sqrt`, and its output stays outside the log (KD5). ADR-0035, TASK-0102. | 8–12 |
 | K3 | The rest of the constraint solver, after K3a. Done: the fourteen kinds of ADR-0033 item 3 are in K3a (TASK-0102), K2c (TASK-0110) and K2d (TASK-0117); the owner closed the row on 2026-10-31. | 4–8 |
-| K4 | Planar faces only, with a boolean. Provenance inside the kernel. In slices from K4a (the four answers of the owner of 2026-11-05). | 35–55 |
+| K4 | Planar faces only, with a boolean. Provenance inside the kernel. In slices from K4a (the four answers of the owner of 2026-11-05). Done: K4a, K4b and K4c, each in its own row; the owner closed the row on 2026-11-05. | 35–55 |
 | K4a | The exact planar subtract in the new project `Engine.Kernel`: rational solids of boxes, extrudes and moves, `Orient3D`, a binary space partition, the provenance of each face, and the B-Rep of the result, proven against Manifold. The boolean first; one face for each curve of a profile; no engine change. ADR-0057, TASK-0183. | 8–12 |
 | K4b | The engine reads the kernel: the B-Rep of each body as a projection of the feature list, and a query of its faces with their names. Beside Manifold, built at the query and cached, one entry for each name, and a split face is one name with its parts (the four answers of the owner of 2026-11-05). ADR-0058, TASK-0184. | 6–10 |
 | K4c | The datums and the references by the identity of a face, and a fault for a face that is gone (ADR-0051 item 8). The existing fault, a check after a cut only, a datum on a hole wall faces into the hole, a split face keeps its plane, and the turn applies to older documents (the five answers of the owner of 2026-11-05). ADR-0059, TASK-0185. | 4–6 |
