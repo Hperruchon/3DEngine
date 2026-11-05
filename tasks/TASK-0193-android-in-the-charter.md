@@ -1,7 +1,7 @@
 ---
 id: 0193
 title: Android is a platform of the charter, with ADR-0061 and the rows of R14
-status: Active
+status: Done
 phase: R14a
 opened: 2026-11-05
 depends-on: [0190]
@@ -60,11 +60,22 @@ are amended, and the roadmap holds R14a to R14g.
 
 ## Acceptance criteria
 
-- [ ] `ObjectiveReferenceGateTests`, `AdrGateTests`, `RegisterGateTests` and `TaskGovernanceGateTests` pass.
-- [ ] Continuous integration passes on the three runners, on the branch and on `main` after the merge.
+- [x] `ObjectiveReferenceGateTests`, `AdrGateTests`, `RegisterGateTests` and `TaskGovernanceGateTests` pass.
+- [x] Continuous integration passes on the three runners, on the branch and on `main` after the merge.
+
+## Outcome
+
+Status: Done · commit (the merge of the branch r14a-android-governance) · v0.193
+
+## Method
+
+Mechanical: the text of the eight decisions of the order, and the check of each library fact in the packages.
+Judgement:  the slices of R14 for the phases a to g; the pin 2026.1002.1 with its SDL 3.5.0 in R-0054.
+Weakest:    no fact of the phone is proved: the load of libvulkan.so and the hash under Mono wait for R14e and R14f.
 
 ## Progress
 
 - 2026-11-05: opened with the Android order and the standing order of the owner of 2026-11-05; the check of the
   libraries found no false fact that blocks the order.
 - 2026-11-05: the charter, CLAUDE.md, ADR-0061 and its amendments, the register and the roadmap rows.
+- 2026-11-05: closed at v0.193.
