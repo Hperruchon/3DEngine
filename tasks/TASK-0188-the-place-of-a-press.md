@@ -1,7 +1,7 @@
 ---
 id: 0188
 title: A press and a release of the mouse take the place of the cursor, not the last place of a motion
-status: Active
+status: Done
 phase: P0.81
 opened: 2026-11-05
 depends-on: []
@@ -62,14 +62,27 @@ A press and a release of the mouse reach the place of the cursor on Windows, als
 
 ## Acceptance criteria
 
-- [ ] With the place of the event, the order of the probe moves the panel and turns the camera.
-- [ ] With the place of the cursor, the same order reaches the place of the click, and nothing moves.
-- [ ] Each injection of the change fails a test.
-- [ ] A clean build (`--no-incremental`) gives zero errors and zero warnings.
-- [ ] Continuous integration passes on the three runners, on the branch and on `main` after the merge.
+- [x] With the place of the event, the order of the probe moves the panel and turns the camera.
+- [x] With the place of the cursor, the same order reaches the place of the click, and nothing moves.
+- [x] Each injection of the change fails a test.
+- [x] A clean build (`--no-incremental`) gives zero errors and zero warnings.
+- [x] Continuous integration passes on the three runners, on the branch and on `main` after the merge.
+
+## Outcome
+
+Status: Done · commit (the merge of the branch p081-focus-click) · v0.190
+
+## Method
+
+Mechanical: the order of the samples of the probe through SdlInput, the panel and the intent machine; 3 injections.
+Judgement:  the place of the cursor at the time of the event, read as SDL reads it at a focus gain, and not a rule
+            that guesses a stale press from the next motion.
+Weakest:    no person clicked the real window after the change; the place of the cursor at the time of the event can
+            differ by a few pixels from the place of the press during a fast motion.
 
 ## Progress
 
 - 2026-11-05: opened with the order of the owner; the source of SDL 3.2.10 and a probe that moved no cursor give the
   cause.
 - 2026-11-05: the source of the cursor, its call in the host, 5 tests, and 3 injections that each fail a test.
+- 2026-11-05: closed at v0.190.
