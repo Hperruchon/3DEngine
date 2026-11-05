@@ -1,7 +1,7 @@
 ---
 id: 0180
 title: The codebase review of 2026-11-05 is a record
-status: Active
+status: Done
 phase: governance
 opened: 2026-11-05
 depends-on: [0177]
@@ -64,12 +64,12 @@ finding.
 
 ## Acceptance criteria
 
-- [ ] `CodebaseReviewGateTests` passes with the new review.
-- [ ] Continuous integration passes on the three runners, on the branch and on `main` after the merge.
+- [x] `CodebaseReviewGateTests` passes with the new review.
+- [x] Continuous integration passes on the three runners, on the branch and on `main` after the merge.
 
 ## Outcome
 
-Status: Active
+Status: Done · commit (the merge of the branch codebase-review-2026-11-05) · v0.182
 
 ## Method
 
@@ -81,3 +81,4 @@ Weakest:    the two review agents ran their probes on Windows x64 only, and no o
 ## Progress
 
 - 2026-11-05: two review agents at `3cd76af`; 1 new medium and 12 new low findings; the review written.
+- 2026-11-05: closed at v0.182.
