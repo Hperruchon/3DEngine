@@ -5760,3 +5760,44 @@ No code changes. The test list holds 1768 (1258 in `Engine.Tests`, 312 in `3DEng
 `3DEngine.ImageTests`, 3 in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and
 zero warnings. Open entries: 14 of 15. New diagnostic codes: 0. Since the review of v0.190, 1 product milestone and 3
 entries followed it.
+
+## v0.194 — A press of a hand keeps its place, the far plane holds the images, and a drag queries no size in each frame (P0.83, TASK-0191)
+
+The codebase review of 2026-11-05 (b) found V85 and V86 (medium) and V87 (low) in the desktop. They come after the next
+product phase, R14a (v0.193).
+
+**The change.**
+- V85: since v0.190 `SdlInput` gave a press and a release the place of the cursor at the poll, so a hand that moved on
+  after a click moved the click. `SdlInput` keeps the place of the event again, and `Window.Cursor` is gone.
+  `Window` hooks the Windows messages of SDL (`SDL_SetWindowsMessageHook`, on the video driver "windows" only). When a
+  button message of the window comes at another place than the place that SDL holds, the hook warps the mouse of SDL to
+  the place of the message, where the cursor already is, and writes one log line. SDL then gives a motion and the press
+  at that place. A hand gives a motion before each press, so the hook does nothing for it. `Window.Correction` holds
+  the rule.
+- V86: `SceneRenderer.Update` takes the quads of the live images, and the box of the far plane and of the frame holds
+  their corners (`SceneRenderer.SceneBox`). The host reads the quads before the update.
+- V87: the size of the selected body is kept under its box with no offset of a preview (`SessionBodies.RestBoxOf`,
+  `NativeThreeDEngine.SizeOf`), so a drag of the gizmo queries `GetBodyInfo` one time.
+
+**Proof.** A probe of the real `Window` on SDL 3.2.10 posted a motion at (50, 60) and a press at the place of the cursor
+in one pump, to a hidden window. Without the hook, the press and the release came at (50, 60); with it, at the place of
+the cursor, with one log line. A press after a motion at its own place gave no correction. The probe also shows that
+SDL moves its place to the cursor at the end of each pump, so the stale press needs the motion and the press in one pump,
+as a synthetic click gives them. The probe moved no cursor. New tests: a click and a motion of the hand in one poll
+select at the click; ten cases of `Window.Correction`; the box of an image alone; `Update` with an image and no body on a
+GPU; and one query for three frames of a drag. Five injections each fail a test.
+
+**What stays.** No test of the pipeline reaches the hook, because it needs a window of Windows. The warp sets the cursor
+to the place of the message, so after a stale press a cursor that moved goes back to the press. Linux and macOS keep the
+place of the event. The frame with an image and no body does not move the camera, because the frame follows a change of
+the bodies only.
+
+**A correction.** The entry v0.190 says that a press takes the place of the cursor; from this entry it takes the place
+of its button message. Q2 of the review: the standing order gives A, the cursor only when no motion came after the last
+button event. A keeps the old place in the case of R-0043, because a hover gives a motion before the jump of the cursor,
+so this task takes B, the hook. The owner checks the answer on 2026-11-08.
+
+New tests: 14 test cases, and 3 test cases of v0.190 are replaced. The test list holds 1779 (1258 in `Engine.Tests`, 320
+in `3DEngine.Tests`, 198 in `3DEngine.ImageTests`, 3 in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln
+--no-incremental` gives zero errors and zero warnings. Open entries: 14 of 15. New diagnostic codes: 0. Since the review
+of v0.190, 1 product milestone and 4 entries followed it.

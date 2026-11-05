@@ -11,23 +11,12 @@ namespace ThreeDEngine.Vulkan;
 // events, so it makes no call of SDL, and a test gives it events that it builds. The text
 // input of SDL becomes a text sample (ADR-0027 item 5, TASK-0084).
 //
-// Register entry R-0043 (TASK-0188): SDL 3.2 gives a press and a release of a mouse button at
-// the last place of a motion, not at the place of the press (SDL_mouse.c fills button.x from
-// mouse->x). A cursor that moves with no motion message before the press, as a synthetic click
-// does, gives the press at an old place: a drag of a panel, a turn of the camera, or a wrong
-// key of a pad. The host can give the place of the cursor in the coordinates of the window;
-// then a press and a release take that place, and a motion keeps its own.
+// Register entry R-0043 and finding V85 (TASK-0188, TASK-0191): a press and a release keep the place of the event.
+// Window corrects the place that SDL holds before SDL reads a button message, on Windows.
 public sealed unsafe class SdlInput
 {
     private readonly List<InputSample> _frame = new();
-    private readonly Func<(float X, float Y)?>? _cursor;
     private KeyModifiers _modifiers;
-
-    // With no cursor, or a cursor that gives null, a press and a release keep the place of the event.
-    public SdlInput(Func<(float X, float Y)?>? cursor = null)
-    {
-        _cursor = cursor;
-    }
 
     // The samples since the last call of TakeFrame, in their order.
     public IReadOnlyList<InputSample> TakeFrame()
@@ -48,11 +37,10 @@ public sealed unsafe class SdlInput
                 break;
 
             case SDL_EventType.MouseButtonDown or SDL_EventType.MouseButtonUp when (uint)sdlEvent.button.which != SDL_TOUCH_MOUSEID:
-                var (x, y) = _cursor?.Invoke() ?? (sdlEvent.button.x, sdlEvent.button.y);
                 _frame.Add(Mouse(
                     sdlEvent.button.which,
-                    x,
-                    y,
+                    sdlEvent.button.x,
+                    sdlEvent.button.y,
                     Button(sdlEvent.button.button),
                     sdlEvent.type == SDL_EventType.MouseButtonDown ? PointerPhase.Down : PointerPhase.Up,
                     time));
