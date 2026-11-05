@@ -1,7 +1,7 @@
 ---
 id: 0186
 title: Each number parameter of a command declares its unit kind in the schema
-status: Active
+status: Done
 phase: P8h
 opened: 2026-11-05
 depends-on: []
@@ -129,6 +129,18 @@ holds the rule.
 - Check the numbers at commit: 0186 and ADR-0060 were free on `main` at 7256f92 (v0.187). K4c took
   ADR-0059 first, so on 2026-11-05 the owner gave ADR-0060 to this task.
 
+## Outcome
+
+Status: Done · commit (the merge of the branch p8h-unit-kind) · v0.189
+
+## Method
+
+Mechanical: the two members, the constants of the vocabulary, the 25 units and the comparison of the wire.
+Judgement:  a converter on the wire records of `Engine.Api.Http/Schema/SchemaTypes.cs` writes an absent unit as no
+            member, because the options of the API are outside the write set and write a null; `ratio` is out.
+Weakest:    the values of a `UnitBy` map are not checked against the kinds of `SketchConstraints`; a wrong kind
+            name in the map passes the rule, and only the fact of the wire, which names the five kinds, fails it.
+
 ## Progress
 
 - 2026-11-05: opened from the module-declaration proposal of the desktop redesign.
@@ -140,3 +152,4 @@ holds the rule.
 - 2026-11-05: `ratio` has no user, so ADR-0060 leaves it out and says why.
 - 2026-11-05: the members, the 25 units, the converter of the wire and the gate; 12 tests, and 13 injections each
   fail a test.
+- 2026-11-05: closed at v0.189.
