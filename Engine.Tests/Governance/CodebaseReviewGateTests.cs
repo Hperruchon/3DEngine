@@ -351,13 +351,6 @@ public class CodebaseReviewGateTests
     // A line with no quote marker before it (T114).
     private static string Unquoted(string line) => Regex.Replace(line, @"^ {0,3}(?:>[^\S\n]?)+", string.Empty);
 
-    // The lines of the paragraph that ends at the index, from that line back to the first line after a blank line (T125).
-    private static IEnumerable<string> Paragraph(string[] lines, int last)
-    {
-        for (var index = last; index >= 0 && Unquoted(lines[index]).Trim().Length > 0; index--)
-            yield return lines[index];
-    }
-
     // Finding T73: each ledger version is greater than the one before it, and each heading
     // after the reviewed version names one task.
     internal static IEnumerable<string> HeadingProblems((int Major, int Minor) reviewed, string ledger)
@@ -389,9 +382,11 @@ public class CodebaseReviewGateTests
             // on its first line, and a Greek nu, passed. The rule reads the paragraph back to its first line, and a
             // letter that is not ASCII before the digits counts as the v.
             // Finding T129 of the codebase review of 2026-11-03 (TASK-0170): a capital V, and a space before the digits,
-            // passed; NearLedgerEntry takes both (T96). A class [vV\p{L}-[\x00-\x7F]] subtracts ASCII from v and V too,
-            // so the rule keeps two alternatives.
-            setext |= index > 0 && Regex.IsMatch(Unquoted(line), @"^\s*(?:=+|-+)\s*$") && Paragraph(lines, index - 1).Any(text => Regex.IsMatch(text, @"(?:[vV]|[\p{L}-[\x00-\x7F]])[^\S\n]*\d+\.\d+"));
+            // passed; NearLedgerEntry takes both (T96).
+            // Finding T132 of the second codebase review of 2026-11-03 (TASK-0177): "0.11", "Version 0.11" and "v.0.11"
+            // passed, because the rule read the version of the paragraph. Each underline at any indent after a line
+            // that is not blank is a problem now, as the rule at an indent of 0 to 3 is, with no condition on the text.
+            setext |= index > 0 && Unquoted(lines[index - 1]).Trim().Length > 0 && Regex.IsMatch(Unquoted(line), @"^\s*(?:=+|-+)\s*$");
             if (heading || nested || html || setext)
                 yield return $"line {index + 1} \"{line}\" is a heading that does not start with \"## v\"; the review counter reads that form only";
         }
@@ -572,6 +567,11 @@ public class CodebaseReviewGateTests
     // Finding T129 of the codebase review of 2026-11-03 (TASK-0170): a capital V and a space before the digits.
     [InlineData("- V0.11 — An entry (K0b, TASK-0003)\n    ===")]
     [InlineData("- v 0.11 — An entry (K0b, TASK-0003)\n    ===")]
+    // Finding T132 of the second codebase review of 2026-11-03 (TASK-0177): no v before the digits, a word, and a point.
+    [InlineData("- 0.11 — An entry (K0b, TASK-0003)\n    ===")]
+    [InlineData("- Version 0.11 — An entry (K0b, TASK-0003)\n    ===")]
+    [InlineData("- v.0.11 — An entry (K0b, TASK-0003)\n    ===")]
+    [InlineData("> An entry (K0b, TASK-0003)\n>      ---")]
     [InlineData("<h2>v0.11 — An entry (K0b, TASK-0003)</h2>")]
     [InlineData("## \u03BD0.11 — An entry (K0b, TASK-0003)")]
     [InlineData("## \uFF560.11 — An entry (K0b, TASK-0003)")]

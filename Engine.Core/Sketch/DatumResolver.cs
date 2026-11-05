@@ -29,6 +29,9 @@ public static class DatumResolver
 
     public static readonly Guid SecondEnd = new("00000000-0000-0000-0000-000000000002");
 
+    // The smallest positive normal double, 2^-1022. A smaller positive value is subnormal and has fewer bits (E130).
+    private const double SmallestNormal = 2.2250738585072014E-308;
+
     // The sketch and the distance of an extrude in one state of the Document: now, or after an edit.
     public readonly record struct ExtrudeState(SketchRecord? Sketch, double Distance);
 
@@ -325,9 +328,11 @@ public static class DatumResolver
         var length = Math.Sqrt((tx * tx) + (ty * ty));
 
         // Finding E125: the square of a very short or very long side underflows to 0 or overflows. Then the root
-        // takes tx and ty over the larger of their magnitudes, as a calibration does (E123). Each other side keeps
-        // the bits of v0.167.
-        if ((length == 0 || double.IsPositiveInfinity(length)) && double.IsFinite(tx) && double.IsFinite(ty) && (tx != 0 || ty != 0))
+        // takes tx and ty over the larger of their magnitudes, as a calibration does (E123). Finding E130 of the second
+        // codebase review of 2026-11-03 (TASK-0177): a sum of the squares that is subnormal but not 0 loses bits, and a
+        // side of 3e-162 gave axes of the length 0.954; such a side scales too. Each side whose sum is a normal double
+        // keeps the bits of v0.167.
+        if (((tx * tx) + (ty * ty) < SmallestNormal || double.IsPositiveInfinity(length)) && double.IsFinite(tx) && double.IsFinite(ty) && (tx != 0 || ty != 0))
         {
             var larger = Math.Max(Math.Abs(tx), Math.Abs(ty));
             var (sx, sy) = (tx / larger, ty / larger);
