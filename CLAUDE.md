@@ -74,6 +74,9 @@ reference each other. A host that draws subscribes to `Engine.Core` events and p
 `3DEngine.Core` state (ADR-0009). `Engine.Tests/Governance/DependencyDirectionGateTests.cs` holds
 each dependency rule.
 
+`Engine.Kernel` is the owned kernel of identity (ADR-0057). It is on the design-truth side and
+references no project. No engine project references it before phase K4b.
+
 The topology is the hybrid topology of ADR-0019 (TASK-0038, TASK-0054). `Engine.Api.Http` is the
 surface library: a host mounts the HTTP and WebSocket surface on a document session that it owns. Two
 hosts mount it: the program `engine-api-http` (`Engine.Api.Http.Server`) and the desktop host
