@@ -165,6 +165,7 @@ Therefore each approved objective must have a track here.
 - K4 — Planar faces with a boolean, and the provenance of each face inside the owned kernel. Closed at v0.187, with K4a to K4c in this list.
 - P0.80 — A gate fails when an open task plans an ADR number that another ADR file or another open task has. v0.188, TASK-0187.
 - P8h — Each number parameter of a command declares its unit kind in the schema. v0.189, TASK-0186, ADR-0060.
+- P0.81 — A press and a release of the mouse take the place of the cursor, not the last place of a motion. v0.190, TASK-0188.
 
 ## Track 0 — Foundations
 
