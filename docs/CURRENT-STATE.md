@@ -5593,3 +5593,39 @@ identifier and throws "An item with the same key has already been added". The ta
 New tests: 8. The test list holds 1750 (1245 in `Engine.Tests`, 309 in `3DEngine.Tests`, 193 in `3DEngine.ImageTests`,
 3 in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
 entries: 14 of 15. New diagnostic codes: 0. Since the review of v0.181, 3 product milestones and 7 entries followed it.
+
+## v0.189 — Each number parameter of a command declares its unit kind in the schema (P8h, TASK-0186)
+
+A client builds a command from `/schema/commands`, but `FieldSchema` gave a type and "required" only. So each client
+held the meaning of each number in its own code: `3DEngine/Ui/DesktopUi.cs` holds the names of the pad fields and
+`CosineAndSine`. The module-declaration proposal of the desktop redesign needs the meaning from the engine. On
+2026-11-05 the owner put P8h on the task list and chose `constraint-value` for `SetSketchConstraintValue` and
+`scale` as its own unit kind. ADR-0060 gives the design and amends ADR-0013. K4c took ADR-0059 first, so this record
+is ADR-0060 (781a080).
+
+**The change.**
+- `FieldSchema` gets two optional members, `Unit` and `UnitBy` (`UnitByField(Field, Units)`), and the existing
+  calls stay valid. `UnitKinds` holds the vocabulary as constants: `length`, `pixel`, `scale`, `cosine`, `sine`,
+  `sign` and `constraint-value`.
+- Each of the 25 number parameters of the 11 command handlers declares a unit. `value` and `secondValue` of
+  `AddSketchConstraint` take their unit from `kind`: distance, radius and fixed give `length`, tangent gives
+  `sign`, and angle gives `cosine` and `sine`.
+- The schema endpoints write `unit` and `unitBy` only when a field declares them. A field with no unit keeps its form.
+- The unit is metadata only. No value changes, nothing new enters the log, and no `SchemaVersion` changes.
+
+**Proof.** `GET /schema/commands/CreateBox@1` gives `"unit": "length"` for `sizeX`, `CalibrateImage@1` gives
+`pixel` for `x1`, and `AddSketchConstraint@1` gives the two maps. The gate compares the units on the wire with the
+handlers, and a theory gives each of nine forms of the rule. Thirteen injections each fail a test: a number with no
+unit, a unit outside the vocabulary, a wrong unit in a map, a map on a field that is not a string, a wire that drops a
+unit, writes a null unit or changes the values of a map, a new unit without the record, and five mutations of the rule.
+The canonical replay gate passes with no change.
+
+**What stays.** The task counted 21 number parameters; the count at the start was 25, because `CalibrateImage` has
+four points in pixels, and the owner chose the new unit `pixel` for them. The draft had `ratio`; no parameter uses
+it, so ADR-0060 leaves it out. The values of a `UnitBy` map are not checked against the kinds of `SketchConstraints`.
+The units of query results and command outputs are register entry R-0053. The desktop still holds its own table of
+units; a later task can read the schema.
+
+New tests: 12. The test list holds 1762 (1257 in `Engine.Tests`, 309 in `3DEngine.Tests`, 193 in `3DEngine.ImageTests`,
+3 in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
+entries: 15 of 15. New diagnostic codes: 0. Since the review of v0.181, 4 product milestones and 8 entries followed it.
