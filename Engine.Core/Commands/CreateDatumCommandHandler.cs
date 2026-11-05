@@ -87,19 +87,28 @@ public sealed class CreateDatumCommandHandler : ICommandHandler, ICommandEncoder
         if (frame is null)
             return Task.FromResult(Failure(DiagnosticCodes.DatumReferenceInvalid, reason!));
 
+        var datum = new DatumRecord(command.CommandId, string.IsNullOrEmpty(create.DatumName) ? null : create.DatumName, reference, frame, null);
+        var warnings = new List<Diagnostic>();
+
         // ADR-0059 item 3 (phase K4c, TASK-0185): a face that a cut removed resolves its plane, but it is not a face of the
         // body at the end of its chain now, so a new datum refuses it.
         var (end, cut) = Features.KernelProjection.End(graph, reference.FeatureId);
         if (cut && end is { } handle && document.Bodies.FirstOrDefault(body => body.Handle.Id == handle) is { } live
             && Features.KernelProjection.OfRecord(document, live).Solid is { } solid
             && !FaceGone.Holds(Features.KernelProjection.Tags(solid), reference))
-            return Task.FromResult(Failure(
-                DiagnosticCodes.DatumReferenceInvalid,
-                $"The face '{reference.Element}' of '{reference.FeatureId}' is gone: no face of the body '{handle}' has its name."));
+        {
+            // Finding E134 of the codebase review of 2026-11-05 (b) (TASK-0190): before K4c a client could record such a
+            // datum, so an entry of a log gives the datum the fault of a gone face, as a Subtract does, and the open holds.
+            if (!SketchResults.ApplyingEntry.Value)
+                return Task.FromResult(Failure(
+                    DiagnosticCodes.DatumReferenceInvalid,
+                    $"The face '{reference.Element}' of '{reference.FeatureId}' is gone: no face of the body '{handle}' has its name."));
+            datum = datum with { Fault = FaceGone.Fault(datum, handle) };
+            warnings.Add(FaceGone.Warning(datum, datum.Fault));
+        }
 
-        var datum = new DatumRecord(command.CommandId, string.IsNullOrEmpty(create.DatumName) ? null : create.DatumName, reference, frame, null);
         var outputs = new Outputs(new Dictionary<string, object?> { ["datumId"] = datum.Id });
-        return Task.FromResult(CommandHandlerResult.Success(outputs, createdDatums: [datum]));
+        return Task.FromResult(CommandHandlerResult.Success(outputs, diagnostics: warnings, createdDatums: [datum]));
     }
 
     private static CommandHandlerResult Failure(string code, string message)
