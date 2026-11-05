@@ -216,45 +216,41 @@ public unsafe class SdlInputTests
         return e;
     }
 
-    // Register entry R-0043 (TASK-0188): SDL 3.2 gives a press at the last place of a motion. The events are in the
-    // order of a probe of SDL 3.2.10 on Windows: a motion at the last place, the press at the last place, the motion
-    // with the button down at the click, and the release. With a cursor, the press and the release take its place
-    // and each motion keeps its own; with no cursor, or a cursor that gives null, they keep the place of the event.
-    [Theory]
-    [InlineData(true, 300f, 200f)]
-    [InlineData(false, 50f, 60f)]
-    public void A_Press_And_A_Release_Take_The_Place_Of_The_Cursor_When_The_Host_Gives_One(bool cursorKnown, float pressX, float pressY)
+    // Finding V85 of the codebase review of 2026-11-05 (b) (TASK-0191): a hand gives a motion before each press, so SDL
+    // gives the press at its place. A click at (500, 300) and a motion of the hand to (560, 300) in the same poll select
+    // at the place of the click. TASK-0188 took the place of the cursor at the poll, and the select came at (560, 300).
+    [Fact]
+    public void A_Click_Keeps_The_Place_Of_Its_Event_When_The_Hand_Moves_On_In_The_Same_Poll()
     {
-        foreach (var input in cursorKnown
-            ? new[] { new SdlInput(() => (300f, 200f)) }
-            : new[] { new SdlInput(), new SdlInput(() => null) })
-        {
-            input.Translate(MouseMotion(50, 60, held: false), 800, 600);
-            input.Translate(MouseButton(SDL_EventType.MouseButtonDown, 50, 60), 800, 600);
-            input.Translate(MouseMotion(300, 200, held: true), 800, 600);
-            input.Translate(MouseButton(SDL_EventType.MouseButtonUp, 50, 60), 800, 600);
+        var input = new SdlInput();
+        var machine = new IntentMachine();
 
-            var samples = input.TakeFrame().Cast<PointerSample>().Select(s => (s.Phase, s.X, s.Y)).ToArray();
-            Assert.Equal(
-                new[]
-                {
-                    (PointerPhase.Move, 50.0, 60.0),
-                    (PointerPhase.Down, (double)pressX, (double)pressY),
-                    (PointerPhase.Move, 300.0, 200.0),
-                    (PointerPhase.Up, (double)pressX, (double)pressY),
-                },
-                samples);
-        }
+        input.Translate(MouseMotion(500, 300, held: false), 800, 600);
+        input.Translate(MouseButton(SDL_EventType.MouseButtonDown, 500, 300), 800, 600);
+        input.Translate(MouseButton(SDL_EventType.MouseButtonUp, 500, 300), 800, 600);
+        input.Translate(MouseMotion(560, 300, held: false), 800, 600);
+
+        Assert.Equal(new SelectIntent(500, 300), Assert.Single(machine.Step(input.TakeFrame()).OfType<SelectIntent>()));
     }
 
-    // The touch rule of decision D8 stays first: a cursor does not bring back a mouse event of a touch.
-    [Fact]
-    public void A_Cursor_Does_Not_Bring_Back_A_Mouse_Event_Of_A_Touch()
+    // Register entry R-0043 and finding V85 (TASK-0188, TASK-0191): the rule of the hook of Window. A button message whose
+    // place is not the place that SDL holds gives its place, as signed words of lParam; the same place, and each other
+    // message, give nothing.
+    [Theory]
+    [InlineData(0x0201u, 300, 200, 300f, 200f, false)]
+    [InlineData(0x0201u, 300, 200, 50f, 60f, true)]
+    [InlineData(0x0202u, 300, 200, 50f, 60f, true)]
+    [InlineData(0x0203u, 300, 200, 50f, 60f, true)]
+    [InlineData(0x0204u, 300, 200, 50f, 60f, true)]
+    [InlineData(0x0208u, 300, 200, 50f, 60f, true)]
+    [InlineData(0x0209u, 300, 200, 50f, 60f, true)]
+    [InlineData(0x0201u, -5, -7, 0f, 0f, true)]
+    [InlineData(0x0200u, 300, 200, 50f, 60f, false)]
+    [InlineData(0x020Au, 300, 200, 50f, 60f, false)]
+    public void A_Button_Message_At_Another_Place_Than_The_Place_Of_SDL_Gives_Its_Place(uint message, int x, int y, float heldX, float heldY, bool corrected)
     {
-        var input = new SdlInput(() => (300f, 200f));
+        var lParam = (nint)(((y & 0xFFFF) << 16) | (x & 0xFFFF));
 
-        input.Translate(SyntheticButton(SDL_EventType.MouseButtonDown, 100, 100, 0), 800, 600);
-
-        Assert.Empty(input.TakeFrame());
+        Assert.Equal(corrected ? ((float X, float Y)?)((float)x, (float)y) : null, Window.Correction(message, lParam, heldX, heldY));
     }
 }

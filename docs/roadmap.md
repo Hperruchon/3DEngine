@@ -168,6 +168,7 @@ Therefore each approved objective must have a track here.
 - P0.81 — A press and a release of the mouse take the place of the cursor, not the last place of a motion. v0.190, TASK-0188.
 - P0.82 — A document whose log holds a datum on a face that a cut removed opens again. v0.192, TASK-0190.
 - R14a — Android is a platform of the charter, with ADR-0061 and the rows of R14. v0.193, TASK-0193, ADR-0061.
+- P0.83 — A press of a hand keeps its place, the far plane holds the images, and a drag queries no size in each frame. v0.194, TASK-0191.
 
 ## Track 0 — Foundations
 
