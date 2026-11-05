@@ -50,6 +50,10 @@ public sealed class Brep
 
         var rings = solid.Polygons.Select(polygon => polygon.Vertices.Select(Id).ToList()).ToList();
 
+        // ADR-0058 item 5: the rounded value of each vertex, for a filter before each exact test. Rounding to the nearest
+        // keeps the order, so a vertex whose rounded value is outside the rounded box of an edge is outside its exact box.
+        var rounded = vertices.Select(p => p.ToDoubles()).ToArray();
+
         // 2. Each edge of each polygon gets each vertex that lies on it exactly, so the pieces of the partition meet at
         // their vertices and no T-junction stays.
         for (var r = 0; r < rings.Count; r++)
@@ -60,7 +64,7 @@ public sealed class Brep
             {
                 var (a, b) = (ring[i], ring[(i + 1) % ring.Count]);
                 split.Add(a);
-                split.AddRange(Between(vertices, a, b));
+                split.AddRange(Between(vertices, rounded, a, b));
             }
             rings[r] = split;
         }
@@ -99,11 +103,13 @@ public sealed class Brep
         }
 
         // 4. A vertex where each loop that holds it goes straight on is not a corner: it goes, so an edge that the
-        // partition split is one edge again.
+        // partition split is one edge again. ADR-0058 item 5: each pass removes each straight vertex that it finds. A
+        // removal does not change whether a neighbour goes straight on, because the neighbour keeps its direction.
         var removed = true;
         while (removed)
         {
             removed = false;
+            var straightVertices = new List<int>();
             var uses = new Dictionary<int, List<(int Face, int Loop, int At)>>();
             for (var f = 0; f < faces.Count; f++)
             {
@@ -129,13 +135,19 @@ public sealed class Brep
                     var (prev, next) = (loop[(use.At + loop.Count - 1) % loop.Count], loop[(use.At + 1) % loop.Count]);
                     return loop.Count > 3 && (vertices[vertex] - vertices[prev]).Cross(vertices[next] - vertices[vertex]).IsZero;
                 });
-                if (!straight)
-                    continue;
-                foreach (var use in list.OrderByDescending(use => use.At))
-                    faces[use.Face].Loops[use.Loop].RemoveAt(use.At);
-                removed = true;
-                break;
+                if (straight)
+                    straightVertices.Add(vertex);
             }
+
+            if (straightVertices.Count == 0)
+                continue;
+            var gone = straightVertices.ToHashSet();
+            foreach (var face in faces)
+            {
+                foreach (var loop in face.Loops)
+                    loop.RemoveAll(gone.Contains);
+            }
+            removed = true;
         }
 
         // 5. The edges, with the faces of their coedges, and the check that each edge has one coedge in each direction.
@@ -271,14 +283,25 @@ public sealed class Brep
 
     private static Rational Abs(Rational value) => value.Sign < 0 ? -value : value;
 
-    // The vertices strictly between a and b on the segment ab, in their order from a.
-    private static IEnumerable<int> Between(List<Vector3R> vertices, int a, int b)
+    // The vertices strictly between a and b on the segment ab, in their order from a. Only a vertex whose rounded value
+    // is inside the rounded box of ab gets the exact test.
+    private static IEnumerable<int> Between(List<Vector3R> vertices, (double X, double Y, double Z)[] rounded, int a, int b)
     {
         var (pa, pb) = (vertices[a], vertices[b]);
+        var (ra, rb) = (rounded[a], rounded[b]);
+        var (lx, hx) = (Math.Min(ra.X, rb.X), Math.Max(ra.X, rb.X));
+        var (ly, hy) = (Math.Min(ra.Y, rb.Y), Math.Max(ra.Y, rb.Y));
+        var (lz, hz) = (Math.Min(ra.Z, rb.Z), Math.Max(ra.Z, rb.Z));
+        bool InBox(int i)
+        {
+            var r = rounded[i];
+            return r.X >= lx && r.X <= hx && r.Y >= ly && r.Y <= hy && r.Z >= lz && r.Z <= hz;
+        }
+
         var d = pb - pa;
         var length = d.Dot(d);
         return Enumerable.Range(0, vertices.Count)
-            .Where(i => i != a && i != b && d.Cross(vertices[i] - pa).IsZero)
+            .Where(i => i != a && i != b && InBox(i) && d.Cross(vertices[i] - pa).IsZero)
             .Select(i => (Index: i, T: d.Dot(vertices[i] - pa)))
             .Where(item => item.T.Sign > 0 && item.T < length)
             .OrderBy(item => item.T)

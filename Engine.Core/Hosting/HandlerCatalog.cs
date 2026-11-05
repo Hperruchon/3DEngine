@@ -56,6 +56,7 @@ public static class HandlerCatalog
         new GetSketchQueryHandler(),
         new GetDatumQueryHandler(),
         new GetFaceAtQueryHandler(),
+        new GetFacesQueryHandler(),
         new GetFeaturesQueryHandler(),
     ];
 

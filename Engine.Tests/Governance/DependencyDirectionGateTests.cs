@@ -931,11 +931,12 @@ public class DependencyDirectionGateTests
         Assert.Empty(graph["Engine.Kernel"]);
     }
 
+    // ADR-0058 item 1 (phase K4b, TASK-0184): the engine reads the owned kernel for the faces of a body. No other project.
     [Fact]
-    public void Engine_Core_References_Only_Engine_Contracts()
+    public void Engine_Core_References_Only_Engine_Contracts_And_The_Owned_Kernel()
     {
         var graph = Graph();
-        Assert.Equal(["Engine.Contracts"], graph["Engine.Core"]);
+        Assert.Equal(["Engine.Contracts", "Engine.Kernel"], graph["Engine.Core"]);
     }
 
     [Fact]

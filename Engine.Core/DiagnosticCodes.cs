@@ -30,6 +30,10 @@ public static class DiagnosticCodes
     public const string GeomNativeOp = "E-GEOM-NATIVE-OP";
     public const string GeomBackendInit = "E-GEOM-BACKEND-INIT";
 
+    // ADR-0058 item 3: GetFaces of a body with a fault, and of a body that the owned kernel cannot build.
+    public const string GeomBodyFaulted = "E-GEOM-BODY-FAULTED";
+    public const string GeomFacesFailed = "E-GEOM-FACES-FAILED";
+
     // ADR-0028 item 3: a name of a body that breaks the rules of a name.
     public const string ValBodyNameInvalid = "E-VAL-BODY-NAME-INVALID";
 
