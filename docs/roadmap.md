@@ -156,6 +156,7 @@ Therefore each approved objective must have a track here.
 - P0.75 — The walk of the planes repeats until no reference solves a sketch again, and an edit of a sketch takes the record of the walk. v0.178, TASK-0176.
 - R13 — The desktop shows the dimensions of the overall box and of a selected body, with a toggle in the panel. v0.179, TASK-0178, ADR-0056.
 - P0.77 — The far plane of the camera of the desktop follows the box of the visible bodies. v0.180, TASK-0179.
+- P0.76 — A sketch on a face looks from the side of the eye, the arm of a face ends with a new sketch, a datum on a short side has unit axes, and the next forms of three gates fail. v0.181, TASK-0177.
 
 ## Track 0 — Foundations
 

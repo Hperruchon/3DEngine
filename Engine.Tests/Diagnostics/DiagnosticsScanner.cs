@@ -129,14 +129,19 @@ internal static class DiagnosticsScanner
         };
     }
 
-    // The expression that holds the node and keeps its text: a parenthesis, a cast, a call of ToString with no
-    // argument, an array of the node, or a new string of the node (T128). Null for each other parent.
+    // The expression that holds the node and keeps its text: a parenthesis, a cast, a call of ToString, an array of
+    // the node, or a new string of the node (T128). Null for each other parent.
+    // Finding T131 of the second codebase review of 2026-11-03 (TASK-0177): a ToString with an argument, a static
+    // ToString of the node (char.ToString(S), Convert.ToString(S)) and a collection expression gave no part. The walk
+    // goes through each one, and an insert into a StringBuilder joins text (JoinName).
     private static SyntaxNode? Outer(SyntaxNode node) => node.Parent switch
     {
         ParenthesizedExpressionSyntax or CastExpressionSyntax => node.Parent,
-        MemberAccessExpressionSyntax { Name.Identifier.ValueText: "ToString", Parent: InvocationExpressionSyntax { ArgumentList.Arguments.Count: 0 } call } member
+        MemberAccessExpressionSyntax { Name.Identifier.ValueText: "ToString", Parent: InvocationExpressionSyntax call } member
             when member.Expression == node => call,
+        ArgumentSyntax { Parent: ArgumentListSyntax { Parent: InvocationExpressionSyntax { Expression: MemberAccessExpressionSyntax { Name.Identifier.ValueText: "ToString" } } call } } => call,
         InitializerExpressionSyntax { Parent: ArrayCreationExpressionSyntax or ImplicitArrayCreationExpressionSyntax } initializer => initializer.Parent,
+        ExpressionElementSyntax { Parent: CollectionExpressionSyntax collection } => collection,
         ArgumentSyntax { Parent: ArgumentListSyntax { Parent: ObjectCreationExpressionSyntax creation } } when IsString(creation.Type) => creation,
         _ => null,
     };
@@ -151,8 +156,8 @@ internal static class DiagnosticsScanner
 
     private static bool JoinName(ExpressionSyntax expression) => expression switch
     {
-        MemberAccessExpressionSyntax member => member.Name.Identifier.ValueText is "Join" or "Concat" or "Format" or "Append",
-        IdentifierNameSyntax name => name.Identifier.ValueText is "Join" or "Concat" or "Format" or "Append",
+        MemberAccessExpressionSyntax member => member.Name.Identifier.ValueText is "Join" or "Concat" or "Format" or "Append" or "Insert",
+        IdentifierNameSyntax name => name.Identifier.ValueText is "Join" or "Concat" or "Format" or "Append" or "Insert",
         _ => false,
     };
 

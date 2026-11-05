@@ -1,20 +1,25 @@
 ---
 id: 0177
 title: A sketch on a face looks from the side of the eye, the arm of a face ends with a new sketch, and the next forms of four rules fail
-status: Ready
+status: Done
 phase: P0.76
 opened: 2026-11-03
-depends-on: [0176]
-governed-by: [0004, 0007, 0009, 0019, 0023, 0029, 0033, 0034, 0035, 0037, 0039, 0041, 0051, 0052, 0055]
+depends-on: [0179]
+governed-by: [0004, 0007, 0009, 0019, 0022, 0023, 0025, 0029, 0033, 0034, 0035, 0037, 0039, 0041, 0051, 0052, 0055]
 writes:
   create:
     - tasks/TASK-0177-desktop-and-gate-forms-of-the-twentieth-review.md
+    - 3DEngine/FaceArm.cs
+    - 3DEngine.ImageTests/FaceArmTests.cs
   modify:
     - 3DEngine.Core/Sketching/SketchCamera.cs
     - 3DEngine/NativeThreeDEngine.cs
+    - 3DEngine.Tests/SketchToolTests.cs
     - Engine.Core/Sketch/DatumResolver.cs
+    - Engine.Tests/Sketch/DatumTests.cs
     - Engine.Tests/Governance/DependencyDirectionGateTests.cs
     - Engine.Tests/Diagnostics/DiagnosticsScanner.cs
+    - Engine.Tests/Diagnostics/DiagnosticsRegistryGateTests.cs
     - Engine.Tests/Governance/CodebaseReviewGateTests.cs
     - eng/test-floor.txt
     - docs/roadmap.md
@@ -51,20 +56,21 @@ sketch, a datum on a short side has axes of the length 1, and the next form of e
 
 ## Acceptance criteria
 
-- [ ] Each finding has a test or an injection that fails before the change and passes after it.
-- [ ] A clean build (`--no-incremental`) gives zero errors and zero warnings.
-- [ ] Continuous integration passes on the three runners, on the branch and on `main` after the merge.
+- [x] Each finding has a test or an injection that fails before the change and passes after it.
+- [x] A clean build (`--no-incremental`) gives zero errors and zero warnings.
+- [x] Continuous integration passes on the three runners, on the branch and on `main` after the merge.
 
 ## Outcome
 
-Status: Ready
+Status: Done · commit (the merge of the branch p076-twentieth-review-forms) · v0.181
 
 ## Method
 
 Mechanical: a test or an injection for each finding, before the change.
-Judgement:  the list of the item names that the rule of T130 refuses.
-Weakest:    to be written at the close.
+Judgement:  the list of the item names that the rule of T130 refuses (each one), and the threshold of E130.
+Weakest:    no one opened the desktop window for V76 and V77, and no test drives the call of FaceArm in the host.
 
 ## Progress
 
 - 2026-11-03: opened by the second codebase review of 2026-11-03.
+- 2026-11-05: the six findings, each form before and after the change, four injections; closed at v0.181.

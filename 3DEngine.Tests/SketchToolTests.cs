@@ -112,12 +112,29 @@ public class SketchToolTests
     {
         var camera = new Camera { Target = (1, 2, 3), Distance = 25, YawDegrees = yaw, PitchDegrees = pitch };
 
-        SketchCamera.Face(camera, (nx, ny, nz));
+        SketchCamera.Face(camera, (nx, ny, nz), (0, 0, 0));
 
         Assert.Equal(faceYaw, camera.YawDegrees, 9);
         Assert.Equal(facePitch, camera.PitchDegrees, 9);
         Assert.Equal((1.0, 2.0, 3.0), camera.Target);
         Assert.Equal(25, camera.Distance);
+    }
+
+    // Finding V76 of the second codebase review of 2026-11-03 (TASK-0177): the camera of the review looks at the origin
+    // from 100 at the yaw −12°, and the face +x of a body lies at x = −35, so the eye is 14.2 on the outer side of the
+    // face and the target 35 on that side. The eye stays on the outer side; up to v0.180 it went to x = −100, behind the
+    // body.
+    [Fact]
+    public void The_Camera_Faces_A_Face_From_The_Side_Of_Its_Plane_Where_The_Eye_Is()
+    {
+        var camera = new Camera { Target = (0, 0, 0), Distance = 100, YawDegrees = -12, PitchDegrees = 0 };
+        Assert.True(camera.Eye().X + 35 > 0);
+
+        SketchCamera.Face(camera, (1, 0, 0), (-35, 0, 1.69));
+
+        Assert.Equal(90, camera.YawDegrees, 9);
+        Assert.True(camera.Eye().X > -35, $"The eye is at {camera.Eye()}, behind the face at x = -35.");
+        Assert.Equal((0.0, 0.0, 0.0), camera.Target);
     }
 
     // An editor that records each command and gives a new identifier, or refuses each line.

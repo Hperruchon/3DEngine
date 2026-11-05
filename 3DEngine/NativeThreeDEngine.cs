@@ -52,8 +52,8 @@ public sealed class NativeThreeDEngine : IThreeDEngine, IDisposable
     // ADR-0034: the active sketch, its tool, and the commands of the sketch mode.
     private SketchActions? _sketchActions;
 
-    // ADR-0053 item 6 (phase K0i, TASK-0171): true when the next tap of the mode Scene starts a sketch on a face.
-    private bool _faceArmed;
+    // ADR-0053 item 6 (phase K0i, TASK-0171): the arm of the next tap of the mode Scene for a sketch on a face.
+    private readonly FaceArm _faceArm = new();
     private TimeSpan _delta;
 
     // ADR-0046 items 2 to 4: the store of the assets, the live images, and the window of the images.
@@ -157,9 +157,8 @@ public sealed class NativeThreeDEngine : IThreeDEngine, IDisposable
                 continue;
 
             // ADR-0053 item 6: an armed tap of the mode Scene starts a sketch on the face under it.
-            if (_faceArmed && intent is SelectIntent face)
+            if (_faceArm.Take(intent, out var face))
             {
-                _faceArmed = false;
                 _documentMessage = SketchOnFace(face.X, face.Y);
                 continue;
             }
@@ -225,7 +224,7 @@ public sealed class NativeThreeDEngine : IThreeDEngine, IDisposable
             return "No body is under the tap, so no sketch started.";
         if (_sketchActions.CreateOnFace(hit.Id, hit.Point, hit.Normal) is not { } created)
             return _sketchActions.Message;
-        Face(created.Frame.Normal);
+        Face(created.Frame);
         return null;
     }
 
@@ -247,6 +246,8 @@ public sealed class NativeThreeDEngine : IThreeDEngine, IDisposable
 
         foreach (var action in _ui.TakeActions())
         {
+            // ADR-0053 item 6 and finding V77: the button Face arms a tap, and each start of a sketch ends the arm.
+            _documentMessage = _faceArm.Panel(action, _sketchActions?.Active is not null) ?? _documentMessage;
             switch (action)
             {
                 case SelectBodyAction select:
@@ -330,8 +331,7 @@ public sealed class NativeThreeDEngine : IThreeDEngine, IDisposable
         switch (action)
         {
             case SketchOnFaceAction:
-                _faceArmed = sketch.Active is null;
-                _documentMessage = _faceArmed ? "Tap a face of a body for the new sketch." : "Finish the active sketch first.";
+                // The arm took the action before this switch (FaceArm.Panel).
                 break;
             case NewSketchAction create:
                 if (sketch.Create(create.Datum) is not null)
@@ -340,7 +340,7 @@ public sealed class NativeThreeDEngine : IThreeDEngine, IDisposable
             case EditSketchAction edit:
                 sketch.Edit(edit.Sketch);
                 if (_sketches?.Live.FirstOrDefault(live => live.SketchId == edit.Sketch) is { } info && SketchOverlay.PlaneOf(info) is { } plane)
-                    Face(plane.Normal);
+                    Face(plane);
                 break;
             case FinishSketchAction:
                 sketch.Finish();
@@ -388,15 +388,18 @@ public sealed class NativeThreeDEngine : IThreeDEngine, IDisposable
         }
     }
 
-    // ADR-0034 item 6 (Q4 A): the camera looks along the normal of the datum of a new active sketch.
+    // ADR-0034 item 6 (Q4 A): the camera looks along the normal of the datum of a new active sketch. An origin plane
+    // goes through the origin.
     private void Face(Guid datum)
     {
         if (Datums.Find(datum) is { } plane)
-            Face(plane.Normal);
+            SketchCamera.Face(Camera, (plane.Normal.X, plane.Normal.Y, plane.Normal.Z), (0, 0, 0));
     }
 
-    // ADR-0053 item 6: the camera looks along the normal of a frame of the Document too.
-    private void Face(DatumAxis normal) => SketchCamera.Face(Camera, (normal.X, normal.Y, normal.Z));
+    // ADR-0053 item 6: the camera looks along the normal of a frame of the Document too, from the side of its plane
+    // where the eye is (finding V76).
+    private void Face(DatumFrame frame)
+        => SketchCamera.Face(Camera, (frame.Normal.X, frame.Normal.Y, frame.Normal.Z), (frame.Origin.X, frame.Origin.Y, frame.Origin.Z));
 
     // A save in the serial section of the session, on the render loop (ADR-0030 item 3).
     private string SaveDocument(string name)
