@@ -7,7 +7,7 @@ date: 2026-11-02
 supersedes: []
 superseded-by: []
 amends: ['0012', '0031', '0033', '0036', '0039']
-amended-by: ['0052', '0053']
+amended-by: ['0052', '0053', '0059']
 affects:
   - Engine.Contracts/Sketch/DatumRecord.cs
   - Engine.Core/Sketch/DatumResolver.cs
@@ -62,7 +62,9 @@ The owner gave the order "start K0" on 2026-11-02 and answered eight questions o
    - The feature gives its carrier from its current inputs: for an extrude, the sketch record in the Document, the
      distance in effect (ADR-0049 item 3), and the frame of the datum of the sketch; for a box, its three sizes.
    - Each `Translate` in effect on the chain of consumers of the body of the feature, before the place of the
-     reference, moves the carrier by its offset. A `Subtract` passes the carrier with no change (item 8).
+     reference, moves the carrier by its offset. A `Subtract` passes the carrier of its minuend with no change
+     (item 8). Since K4c, each `Subtract` before the place that takes the body as its subtrahend turns the frame
+     (ADR-0059 item 4).
    - A step after the place of the reference does not move it. A reference names only a feature before it, so the
      references form no cycle.
 3. **The frame of a face.** A face gives a right-handed frame: an origin o and the axes u, v and n = u × v, with n
@@ -102,7 +104,8 @@ The owner gave the order "start K0" on 2026-11-02 and answered eight questions o
    that the log holds gives `E-DATUM-ID-IN-USE`. `GetDatum` with no datum of the identifier gives `E-DATUM-NOT-FOUND`.
 8. **A subtract (Q of a subtract).** A reference resolves the carrier of its element: a plane for a face. A subtract
    can remove the face or cut it into parts, and before K4 the engine cannot see it. So the reference still resolves,
-   and the datum stays where the face was. K4 can then detect a face that is gone.
+   and the datum stays where the face was. Since K4c the datum also gets a fault when the face is gone (ADR-0059
+   item 3).
 9. **The contract.** `Engine.Contracts` gains:
    - `Sketch/DatumRecord.cs`: `DatumRecord`, `DatumReference`, `DatumFrame`, `DatumPoint` and `DatumFault`;
    - `Document.Datums`, and the lists `CreatedDatums` and `ChangedDatums` of `CommandHandlerResult`;
@@ -141,3 +144,5 @@ The owner gave the order "start K0" on 2026-11-02 and answered eight questions o
   the warning of an extrude on a moved datum gives `datumId`. Until TASK-0169 each edit gave the warning again.
 - 2026-11-03 · TASK-0171 · ADR-0053 amends item 11: the desktop starts a sketch on a face and draws a sketch on a
   datum of the Document (K0i).
+- 2026-11-05 · TASK-0185 · ADR-0059 amends items 2 and 8: a face of a subtrahend turns, and a gone face gives a
+  fault.

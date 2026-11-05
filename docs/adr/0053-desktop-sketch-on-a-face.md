@@ -1,13 +1,13 @@
 ---
 id: 0053
 title: The desktop starts a sketch on a face, and draws a sketch on a datum of the Document
-status: Accepted
+status: Amended
 topic: Desktop, sketch, feature graph
 date: 2026-11-03
 supersedes: []
 superseded-by: []
 amends: ['0029', '0034', '0051']
-amended-by: []
+amended-by: ['0059']
 affects:
   - Engine.Core/Queries/GetFaceAtQuery.cs
   - Engine.Core/Queries/GetFaceAtQueryHandler.cs
@@ -48,7 +48,8 @@ order "go ahead" on 2026-11-03 and answered four questions on the same day, each
 2. **The walk (Q of a chain).** From the body, the query takes the command that creates it: a `Translate` gives its
    body, and a `Subtract` gives its minuend, until it reaches an `Extrude` or a `CreateBox`. Each other command gives
    `E-DATUM-FACE-NOT-FOUND`. A face of the subtrahend, for example the wall of a hole, is not a face of the minuend, so
-   it gives the same code.
+   it gives the same code. Since K4c the face comes from the kernel solid of the body, and a wall of a hole is a face
+   (ADR-0059 item 5).
 3. **The match.** The query resolves each face of the feature with `DatumResolver.Resolve` at the end of the log, so the
    frame includes each `Translate` of the chain (ADR-0051 item 2). The order is `start`, `end`, the side of each line
    of the record of the sketch, and for a box `+x`, `-x`, `+y`, `-y`, `+z`, `-z`. The first face matches when:
@@ -89,3 +90,4 @@ order "go ahead" on 2026-11-03 and answered four questions on the same day, each
 ## History
 
 - 2026-11-03 · TASK-0171 · Accepted with the four answers of the owner of 2026-11-03.
+- 2026-11-05 · TASK-0185 · ADR-0059 item 5 amends items 2 and 3: the face comes from the kernel solid of the body.
