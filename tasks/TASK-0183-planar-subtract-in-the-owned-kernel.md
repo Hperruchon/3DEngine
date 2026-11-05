@@ -1,7 +1,7 @@
 ---
 id: 0183
 title: The owned kernel subtracts planar solids exactly, and each face of the result keeps its provenance
-status: Active
+status: Done
 phase: K4a
 opened: 2026-11-05
 depends-on: [0182]
@@ -69,11 +69,11 @@ its bounds agree with Manifold.
 - [x] On 60 random models, the volume and the bounds agree with Manifold, and each B-Rep is valid.
 - [x] An injection into each step of the B-Rep makes a test fail.
 - [x] A clean build (`--no-incremental`) gives zero errors and zero warnings.
-- [ ] Continuous integration passes on the three runners, on the branch and on `main` after the merge.
+- [x] Continuous integration passes on the three runners, on the branch and on `main` after the merge.
 
 ## Outcome
 
-Status: Active
+Status: Done · commit (the merge of the branch k4a-planar-subtract) · v0.185
 
 ## Method
 
@@ -86,3 +86,4 @@ Weakest:    the random models are boxes and L extrudes with one or two cuts; a m
 - 2026-11-05: opened after the four answers of the owner on K4.
 - 2026-11-05: the kernel, 11 tests and 1 gate fact; ten injections fail, and the two gate controls pass before the
   change.
+- 2026-11-05: closed at v0.185.
