@@ -78,6 +78,136 @@ public class SchemaEndpointGateTests : IClassFixture<WebApplicationFactory<Progr
         }
     }
 
+    // ADR-0060 item 6: each number parameter of a registered command declares one
+    // unit of the vocabulary, in Unit or in UnitBy. Until TASK-0186 a number had no
+    // stated meaning, and each client held the meaning in its own code.
+    [Fact]
+    public void Each_Number_Parameter_Of_A_Command_Declares_One_Unit_Of_The_Vocabulary()
+    {
+        var host = (EngineHost)_factory.Services.GetService(typeof(EngineHost))!;
+
+        var problems = host.CommandRegistry.Handlers
+            .SelectMany(h => UnitProblems(h.CommandName, h.Parameters))
+            .ToArray();
+
+        Assert.True(problems.Length == 0, "ADR-0060 item 6:\n  " + string.Join("\n  ", problems));
+    }
+
+    // ADR-0060 item 2. A new unit needs a change of the record, not only of the code.
+    [Fact]
+    public void The_Unit_Vocabulary_Is_The_List_Of_ADR_0060()
+        => Assert.Equal(
+            ["length", "pixel", "scale", "cosine", "sine", "sign", "constraint-value"],
+            UnitKinds.All);
+
+    // The acceptance criteria of TASK-0186: the wire gives the unit of a field, the map
+    // of a field whose unit follows the kind, and no unit member for a field with no unit.
+    [Fact]
+    public async Task The_Schema_Of_A_Command_Gives_The_Unit_Of_Each_Number_On_The_Wire()
+    {
+        var client = _factory.CreateClient();
+
+        var box = JsonDocument.Parse(await client.GetStringAsync("/schema/commands/CreateBox@1")).RootElement;
+        Assert.Equal("length", box.GetProperty("parameters").GetProperty("sizeX").GetProperty("unit").GetString());
+
+        var calibrate = JsonDocument.Parse(await client.GetStringAsync("/schema/commands/CalibrateImage@1")).RootElement;
+        Assert.Equal("pixel", calibrate.GetProperty("parameters").GetProperty("x1").GetProperty("unit").GetString());
+        Assert.False(calibrate.GetProperty("parameters").GetProperty("imageId").TryGetProperty("unit", out _));
+        Assert.False(calibrate.GetProperty("parameters").GetProperty("imageId").TryGetProperty("unitBy", out _));
+        Assert.False(calibrate.GetProperty("outputs").GetProperty("scale").TryGetProperty("unit", out _));
+
+        var constraint = JsonDocument.Parse(await client.GetStringAsync("/schema/commands/AddSketchConstraint@1")).RootElement;
+        var value = constraint.GetProperty("parameters").GetProperty("value");
+        Assert.False(value.TryGetProperty("unit", out _));
+        Assert.Equal("kind", value.GetProperty("unitBy").GetProperty("field").GetString());
+        Assert.Equal(
+            new Dictionary<string, string>
+            {
+                ["distance"] = "length", ["radius"] = "length", ["fixed"] = "length", ["tangent"] = "sign", ["angle"] = "cosine",
+            },
+            value.GetProperty("unitBy").GetProperty("units").EnumerateObject().ToDictionary(p => p.Name, p => p.Value.GetString()!));
+        Assert.Equal(
+            new Dictionary<string, string> { ["fixed"] = "length", ["angle"] = "sine" },
+            constraint.GetProperty("parameters").GetProperty("secondValue").GetProperty("unitBy").GetProperty("units")
+                .EnumerateObject().ToDictionary(p => p.Name, p => p.Value.GetString()!));
+    }
+
+    // ADR-0060 items 2, 3 and 6, for the parameters of one command. The function is pure,
+    // so a theory gives it each form.
+    internal static IEnumerable<string> UnitProblems(string command, IReadOnlyDictionary<string, FieldSchema> parameters)
+    {
+        foreach (var (name, field) in parameters)
+        {
+            var where = $"{command}.{name}";
+            if (field.Type != "number")
+            {
+                if (field.Unit is not null || field.UnitBy is not null)
+                    yield return $"{where} is a {field.Type} and declares a unit; only a number has a unit";
+                continue;
+            }
+
+            if (field.Unit is null && field.UnitBy is null)
+                yield return $"{where} is a number with no unit; declare Unit or UnitBy";
+            else if (field.Unit is not null && field.UnitBy is not null)
+                yield return $"{where} declares Unit and UnitBy; declare one";
+            else if (field.Unit is { } unit && !UnitKinds.All.Contains(unit))
+                yield return $"{where} declares the unit '{unit}', which is not in the vocabulary";
+            else if (field.UnitBy is { } unitBy)
+            {
+                if (!parameters.TryGetValue(unitBy.Field, out var by) || by.Type != "string")
+                    yield return $"{where} takes its unit from '{unitBy.Field}', which is not a string parameter of {command}";
+
+                foreach (var (value, unitOfValue) in unitBy.Units.Where(u => !UnitKinds.All.Contains(u.Value)))
+                    yield return $"{where} declares the unit '{unitOfValue}' for '{value}', which is not in the vocabulary";
+
+                if (unitBy.Units.Count == 0)
+                    yield return $"{where} takes its unit from '{unitBy.Field}' with an empty map";
+            }
+        }
+    }
+
+    [Theory]
+    [InlineData("no unit", "is a number with no unit; declare Unit or UnitBy")]
+    [InlineData("both", "declares Unit and UnitBy; declare one")]
+    [InlineData("unknown unit", "declares the unit 'degree', which is not in the vocabulary")]
+    [InlineData("unknown unit by kind", "declares the unit 'degree' for 'angle', which is not in the vocabulary")]
+    [InlineData("no such field", "takes its unit from 'type', which is not a string parameter of C")]
+    [InlineData("field not a string", "takes its unit from 'count', which is not a string parameter of C")]
+    [InlineData("empty map", "takes its unit from 'kind' with an empty map")]
+    [InlineData("unit on a string", "is a string and declares a unit; only a number has a unit")]
+    [InlineData("correct", null)]
+    public void Each_Form_Of_ADR_0060_Item_6_Is_A_Problem(string form, string? expected)
+    {
+        var byKind = new UnitByField("kind", new Dictionary<string, string> { ["angle"] = UnitKinds.Cosine });
+        FieldSchema value = form switch
+        {
+            "no unit" => new("number"),
+            "both" => new("number", Unit: UnitKinds.Length, UnitBy: byKind),
+            "unknown unit" => new("number", Unit: "degree"),
+            "unknown unit by kind" => new("number", UnitBy: new("kind", new Dictionary<string, string> { ["angle"] = "degree" })),
+            "no such field" => new("number", UnitBy: byKind with { Field = "type" }),
+            "field not a string" => new("number", UnitBy: byKind with { Field = "count" }),
+            "empty map" => new("number", UnitBy: byKind with { Units = new Dictionary<string, string>() }),
+            "unit on a string" => new("number", Unit: UnitKinds.Length),
+            "correct" => new("number", UnitBy: byKind),
+            _ => throw new ArgumentOutOfRangeException(nameof(form)),
+        };
+        var parameters = new Dictionary<string, FieldSchema>
+        {
+            ["kind"] = form == "unit on a string" ? new("string", Unit: UnitKinds.Length) : new("string"),
+            ["count"] = new("integer"),
+            ["value"] = form == "unit on a string" ? new("number", Unit: UnitKinds.Length) : value,
+            ["distance"] = new("number", Unit: UnitKinds.Length),
+        };
+
+        var problems = UnitProblems("C", parameters).ToArray();
+
+        if (expected is null)
+            Assert.Empty(problems);
+        else
+            Assert.Contains(problems, p => p.EndsWith(expected, StringComparison.Ordinal));
+    }
+
     [Fact]
     public async Task Every_DiagnosticCodes_Constant_Appears_In_Schema_Diagnostics()
     {
@@ -193,6 +323,30 @@ public class SchemaEndpointGateTests : IClassFixture<WebApplicationFactory<Progr
                 $"{label}.{key} missing from endpoint output.");
             Assert.Equal(schema.Type, fieldJson.GetProperty("type").GetString());
             Assert.Equal(schema.Required, fieldJson.GetProperty("required").GetBoolean());
+
+            // ADR-0060 item 5: the wire writes a unit and a map only when the handler declares them.
+            Assert.True(
+                fieldJson.TryGetProperty("unit", out var unit) == schema.Unit is not null,
+                $"{label}.{key}: the wire and the handler disagree on the presence of a unit.");
+            if (schema.Unit is not null)
+                Assert.Equal(schema.Unit, unit.GetString());
+
+            Assert.True(
+                fieldJson.TryGetProperty("unitBy", out var unitBy) == schema.UnitBy is not null,
+                $"{label}.{key}: the wire and the handler disagree on the presence of a unit map.");
+            if (schema.UnitBy is not null)
+            {
+                Assert.Equal(schema.UnitBy.Field, unitBy.GetProperty("field").GetString());
+                Assert.Equal(
+                    schema.UnitBy.Units.OrderBy(u => u.Key, StringComparer.Ordinal).ToArray(),
+                    unitBy.GetProperty("units").EnumerateObject()
+                        .Select(p => new KeyValuePair<string, string>(p.Name, p.Value.GetString()!))
+                        .OrderBy(u => u.Key, StringComparer.Ordinal).ToArray());
+            }
+
+            Assert.Equal(
+                fieldJson.EnumerateObject().Select(p => p.Name).Where(n => n is not ("type" or "required" or "unit" or "unitBy")),
+                Array.Empty<string>());
         }
     }
 

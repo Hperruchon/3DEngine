@@ -20,7 +20,7 @@ public sealed class ExtrudeCommandHandler : ICommandHandler, ICommandEncoder
         new Dictionary<string, FieldSchema>
         {
             ["sketchId"] = new("guid", Required: true),
-            ["distance"] = new("number", Required: true),
+            ["distance"] = new("number", Required: true, Unit: UnitKinds.Length),
         };
 
     public IReadOnlyDictionary<string, FieldSchema> Outputs { get; } =

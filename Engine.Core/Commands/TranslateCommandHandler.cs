@@ -15,9 +15,9 @@ public sealed class TranslateCommandHandler : ICommandHandler, ICommandEncoder
         new Dictionary<string, FieldSchema>
         {
             ["bodyId"] = new("guid", Required: true),
-            ["dx"] = new("number", Required: true),
-            ["dy"] = new("number", Required: true),
-            ["dz"] = new("number", Required: true),
+            ["dx"] = new("number", Required: true, Unit: UnitKinds.Length),
+            ["dy"] = new("number", Required: true, Unit: UnitKinds.Length),
+            ["dz"] = new("number", Required: true, Unit: UnitKinds.Length),
         };
 
     public IReadOnlyDictionary<string, FieldSchema> Outputs { get; } =

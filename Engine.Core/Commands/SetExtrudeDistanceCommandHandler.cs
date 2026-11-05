@@ -19,7 +19,7 @@ public sealed class SetExtrudeDistanceCommandHandler : ICommandHandler, ICommand
         new Dictionary<string, FieldSchema>
         {
             ["extrudeId"] = new("guid", Required: true),
-            ["distance"] = new("number", Required: true),
+            ["distance"] = new("number", Required: true, Unit: UnitKinds.Length),
         };
 
     public IReadOnlyDictionary<string, FieldSchema> Outputs { get; } =

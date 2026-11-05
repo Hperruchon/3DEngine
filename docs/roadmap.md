@@ -265,7 +265,7 @@ This track removes each condition that blocks other work.
 | P8e | The unit in the numeric pad. The header of P8a holds the length unit of the document (KD4). TASK-0119. | 1 |
 | P8f | The document file in the desktop and for an agent. The desktop opens the file that its command line names, and an open in the window starts the program again (Q5). "Save" moves the file to the name typed in the panel. HTTP save and open on the loopback address, in one folder (Q6, ADR-0002). ADR-0030, TASK-0092. | 2–3 |
 | P8g | An STL export of the live bodies, from the surface, the command line and the desktop (ADR-0048). TASK-0157. | 1 |
-| P8h | The unit kind of each number parameter in the command schema: `Unit` and `UnitBy` on `FieldSchema`, a unit on each of the 21 number parameters, and a gate. From the module-declaration proposal of the desktop redesign; the owner chose `constraint-value` and `scale` on 2026-11-05. ADR-0060, TASK-0186. | 1–2 |
+| P8h | The unit kind of each number parameter in the command schema: `Unit` and `UnitBy` on `FieldSchema`, a unit on each of the 25 number parameters, and a gate. From the module-declaration proposal of the desktop redesign; the owner chose `constraint-value`, `scale` and `pixel` on 2026-11-05. ADR-0060, TASK-0186. | 1–2 |
 
 ## Track R — The renderer
 
