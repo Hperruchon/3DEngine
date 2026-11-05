@@ -317,7 +317,7 @@ boundary and each refused rung.
 | K4 | Planar faces only, with a boolean. Provenance inside the kernel. In slices from K4a (the four answers of the owner of 2026-11-05). | 35–55 |
 | K4a | The exact planar subtract in the new project `Engine.Kernel`: rational solids of boxes, extrudes and moves, `Orient3D`, a binary space partition, the provenance of each face, and the B-Rep of the result, proven against Manifold. The boolean first; one face for each curve of a profile; no engine change. ADR-0057, TASK-0183. | 8–12 |
 | K4b | The engine reads the kernel: the B-Rep of each body as a projection of the feature list, and a query of its faces with their names. Beside Manifold, built at the query and cached, one entry for each name, and a split face is one name with its parts (the four answers of the owner of 2026-11-05). ADR-0058, TASK-0184. | 6–10 |
-| K4c | The datums and the references by the identity of a face, and a fault for a face that is gone (ADR-0051 item 8). | 4–6 |
+| K4c | The datums and the references by the identity of a face, and a fault for a face that is gone (ADR-0051 item 8). The existing fault, a check after a cut only, a datum on a hole wall faces into the hole, a split face keeps its plane, and the turn applies to older documents (the five answers of the owner of 2026-11-05). ADR-0059, TASK-0185. | 4–6 |
 | K5 | Add the cylinder, the cone, the sphere and the torus. | 55–85 |
 | K6 | STEP export for the analytic subset. | 6–12 |
 | K7 | General extrude and revolve of a simple curve. **Optional.** Year two. | 40–65 |

@@ -1,13 +1,13 @@
 ---
 id: 0058
 title: The engine reads the owned kernel for the faces of a body
-status: Accepted
+status: Amended
 topic: Kernel, geometry, queries
 date: 2026-11-05
 supersedes: []
 superseded-by: []
 amends: ['0057']
-amended-by: []
+amended-by: ['0059']
 affects:
   - Engine.Core/Features/KernelProjection.cs
   - Engine.Core/Queries/GetFacesQuery.cs
@@ -84,3 +84,5 @@ query, so this record also makes the topology faster.
 ## History
 
 - 2026-11-05 · TASK-0184 · Accepted with the four answers of the owner of 2026-11-05.
+- 2026-11-05 · TASK-0185 · ADR-0059 items 1 and 2 amend item 2: the projection also reads the state of an edit, and
+  it keeps the solid of each committed key.

@@ -122,10 +122,42 @@ public sealed class SubtractCommandHandler : ICommandHandler, ICommandEncoder
             ["bodyId"] = handle.Id,
         });
 
+        var (datums, warnings) = GoneFaces(document, minuend, subtrahend, handle.Id);
         return Task.FromResult(CommandHandlerResult.Success(
             outputs,
+            diagnostics: warnings,
             // The result takes the name and the visibility of the minuend (ADR-0028 item 5).
             createdBodies: new[] { new BodyRecord(handle, "Solid", minuend.Name, minuend.Visible) },
-            consumedBodies: new[] { new BodyHandle(subtract.MinuendBodyId), new BodyHandle(subtract.SubtrahendBodyId) }));
+            consumedBodies: new[] { new BodyHandle(subtract.MinuendBodyId), new BodyHandle(subtract.SubtrahendBodyId) },
+            changedDatums: datums));
+    }
+
+    // ADR-0059 item 3 (phase K4c, TASK-0185): a datum on a face of either operand that the cut removes gets a fault. The
+    // owned kernel subtracts the kept solids of the two operands, and a datum whose chain ends at an operand is checked
+    // against the names of the result. When the kernel cannot build an operand or the result, no datum has a check.
+    private static (IReadOnlyList<Engine.Contracts.Sketch.DatumRecord> Datums, IReadOnlyList<Diagnostic> Warnings) GoneFaces(
+        Document document, BodyRecord minuend, BodyRecord subtrahend, Guid body)
+    {
+        if (Features.KernelProjection.OfRecord(document, minuend).Solid is not { } a
+            || Features.KernelProjection.OfRecord(document, subtrahend).Solid is not { } b
+            || Kernel.PlanarBoolean.Subtract(a, b) is not { } result)
+            return ([], []);
+
+        var graph = Sketch.FeatureGraph.Of(document);
+        var tags = Features.KernelProjection.Tags(result);
+        var changed = new List<Engine.Contracts.Sketch.DatumRecord>();
+        var warnings = new List<Diagnostic>();
+        foreach (var datum in document.Datums.OrderBy(datum => graph.Order(datum.Id)))
+        {
+            var end = Features.KernelProjection.End(graph, datum.Reference.FeatureId).End;
+            if (datum.Fault is not null || (end != minuend.Handle.Id && end != subtrahend.Handle.Id) || Sketch.FaceGone.Holds(tags, datum.Reference))
+                continue;
+            // The fault names the body of the result, which has the identifier of the command.
+            var fault = Sketch.FaceGone.Fault(datum, body);
+            changed.Add(datum with { Fault = fault });
+            warnings.Add(Sketch.FaceGone.Warning(datum, fault));
+        }
+
+        return (changed, warnings);
     }
 }
