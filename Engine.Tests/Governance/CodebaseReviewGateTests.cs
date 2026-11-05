@@ -376,7 +376,10 @@ public class CodebaseReviewGateTests
             // Finding T114 of the codebase review of 2026-10-31 (b) (TASK-0143): an ordered list marker
             // and a setext heading in a quote passed.
             var nested = Regex.IsMatch(line, @"^\s*(?:(?:[>*+-]|\d{1,9}[.)])\s*)+#");
-            var html = Regex.IsMatch(line, @"^\s*<h[1-6]", RegexOptions.IgnoreCase);
+            // Finding T138 of the codebase review of 2026-11-05 (b) (TASK-0192): an HTML heading inside another element, or
+            // after a comment, passed, and CommonMark gives such a line as an HTML block, so GitHub shows a heading. A heading
+            // element anywhere on a line is a problem.
+            var html = Regex.IsMatch(line, @"<h[1-6](?:[\s>/]|$)", RegexOptions.IgnoreCase);
             var setext = index > 0 && Unquoted(lines[index - 1]).Trim().Length > 0 && Regex.IsMatch(Unquoted(line), @"^ {0,3}(?:=+|-+)\s*$");
             // Finding T122 of the codebase review of 2026-10-31 (c) (TASK-0150): inside a list item the
             // indent of an underline counts from the content of the item, so more than three spaces
@@ -581,6 +584,11 @@ public class CodebaseReviewGateTests
     [InlineData("- An entry\n\n    ## Version 0.11 — An entry (K0b, TASK-0003)")]
     [InlineData("10. An entry\n     ## 0.11 — An entry (K0b, TASK-0003)")]
     [InlineData("<h2>v0.11 — An entry (K0b, TASK-0003)</h2>")]
+    // Finding T138 of the codebase review of 2026-11-05 (b) (TASK-0192): an HTML heading inside another element.
+    [InlineData("<div><h2>0.11 — An entry (K0b, TASK-0003)</h2></div>")]
+    [InlineData("<!-- x --><h2>0.11 — An entry (K0b, TASK-0003)</h2>")]
+    [InlineData("<details><summary><h2>0.11 — An entry (K0b, TASK-0003)</h2></summary></details>")]
+    [InlineData("<div><H3 class=\"x\">0.11 — An entry (K0b, TASK-0003)</H3></div>")]
     [InlineData("## \u03BD0.11 — An entry (K0b, TASK-0003)")]
     [InlineData("## \uFF560.11 — An entry (K0b, TASK-0003)")]
     [InlineData("## **v0.11** — An entry (K0b, TASK-0003)")]

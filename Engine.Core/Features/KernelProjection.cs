@@ -20,8 +20,11 @@ internal static class KernelProjection
     public const int CacheSize = 64;
 
     private static readonly object Gate = new();
-    private static readonly Dictionary<Guid, KernelSolid> Kept = [];
-    private static readonly Queue<Guid> KeptOrder = new();
+    // Finding E135 of the codebase review of 2026-11-05 (b) (TASK-0192): the key was the geometry key alone, which is
+    // unique in one Document only (a client chooses the command identifier of a box), so two sessions in one process
+    // read the solid of each other. The key holds the identity of the Document too.
+    private static readonly Dictionary<(Guid Document, Guid Key), KernelSolid> Kept = [];
+    private static readonly Queue<(Guid Document, Guid Key)> KeptOrder = new();
 
     // The kernel solid of the body in the committed state of the Document, or the reason that the kernel cannot build it.
     public static (KernelSolid? Solid, string? Reason) Of(Document document, Guid body)
@@ -48,9 +51,10 @@ internal static class KernelProjection
         ArgumentNullException.ThrowIfNull(record);
         if (record.Fault is { } fault)
             return (null, $"The body '{record.Handle.Id}' has the fault {fault.Code}, so its solid comes from an earlier state.");
+        var key = (document.DocumentId, record.GeometryKey);
         lock (Gate)
         {
-            if (Kept.TryGetValue(record.GeometryKey, out var kept))
+            if (Kept.TryGetValue(key, out var kept))
                 return (kept, null);
         }
 
@@ -59,9 +63,9 @@ internal static class KernelProjection
             return (null, reason);
         lock (Gate)
         {
-            if (Kept.TryAdd(record.GeometryKey, solid))
+            if (Kept.TryAdd(key, solid))
             {
-                KeptOrder.Enqueue(record.GeometryKey);
+                KeptOrder.Enqueue(key);
                 if (KeptOrder.Count > CacheSize)
                     Kept.Remove(KeptOrder.Dequeue());
             }
@@ -70,11 +74,11 @@ internal static class KernelProjection
         return (solid, null);
     }
 
-    // True when the projection keeps a solid under the key, for a test of item 2.
-    internal static bool IsKept(Guid key)
+    // True when the projection keeps a solid of the Document under the key, for a test of item 2.
+    internal static bool IsKept(Guid document, Guid key)
     {
         lock (Gate)
-            return Kept.ContainsKey(key);
+            return Kept.ContainsKey((document, key));
     }
 
     // ADR-0059 item 3: the names of the faces of a solid.

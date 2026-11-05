@@ -99,7 +99,7 @@ public sealed class Brep
                 }
             }
 
-            faces.Add((plane, tag, Loops(directed)));
+            faces.Add((plane, tag, Loops(directed, vertices, plane.Normal)));
         }
 
         // 4. A vertex where each loop that holds it goes straight on is not a corner: it goes, so an edge that the
@@ -252,6 +252,9 @@ public sealed class Brep
 
     // The outer loop of the list that contains a vertex of the hole, by an exact count of the crossings of a ray in the
     // plane, or the first outer loop when the list has one.
+    // Finding E138 of the codebase review of 2026-11-05 (b) (TASK-0192): the first outer loop that held the hole was its
+    // owner, so a hole in an island of a face went to the region around the island. The owner is the outer loop of the
+    // smallest area that holds the hole.
     private static List<int>? Owner(List<Vector3R> vertices, List<List<int>> outers, List<int> hole, PlaneR plane)
     {
         if (outers.Count == 1)
@@ -262,6 +265,7 @@ public sealed class Brep
         var drop = ax >= ay && ax >= az ? 0 : ay >= az ? 1 : 2;
         (Rational U, Rational V) P(Vector3R p) => drop switch { 0 => (p.Y, p.Z), 1 => (p.Z, p.X), _ => (p.X, p.Y) };
         var point = P(vertices[hole[0]]);
+        List<int>? owner = null;
         foreach (var outer in outers)
         {
             var inside = false;
@@ -274,11 +278,11 @@ public sealed class Brep
                 if (x > point.U)
                     inside = !inside;
             }
-            if (inside)
-                return outer;
+            if (inside && (owner is null || Area(vertices, outer, plane) < Area(vertices, owner, plane)))
+                owner = outer;
         }
 
-        return null;
+        return owner;
     }
 
     private static Rational Abs(Rational value) => value.Sign < 0 ? -value : value;
@@ -308,9 +312,14 @@ public sealed class Brep
             .Select(item => item.Index);
     }
 
-    // The closed loops of a set of directed edges: from the first edge that no loop holds, along the first edge that
-    // leaves the end of the last one.
-    private static List<List<int>> Loops(List<(int From, int To)> directed)
+    // The closed loops of a set of directed edges: from the first edge that no loop holds, along an edge that leaves the
+    // end of the last one.
+    // Finding E137 of the codebase review of 2026-11-05 (b) (TASK-0192): a hole that touches the outer boundary at a vertex
+    // gives that vertex two outgoing edges, and the first edge that left it joined the hole to the outer loop on one face
+    // and not on the other. At such a vertex the walk takes the first edge counter-clockwise, about the normal of the
+    // face, from the edge back to the vertex before, so the outer loop and the hole stay apart. A loop closes when that
+    // rule gives its first edge again.
+    private static List<List<int>> Loops(List<(int From, int To)> directed, List<Vector3R> vertices, Vector3R normal)
     {
         var loops = new List<List<int>>();
         var left = new List<(int From, int To)>(directed);
@@ -319,20 +328,48 @@ public sealed class Brep
             var start = left[0];
             left.RemoveAt(0);
             var loop = new List<int> { start.From };
-            var at = start.To;
-            while (at != start.From)
+            var (from, at) = start;
+            while (true)
             {
-                loop.Add(at);
-                var next = left.FindIndex(edge => edge.From == at);
-                if (next < 0)
+                var candidates = left.Where(edge => edge.From == at).ToList();
+                if (at == start.From)
+                    candidates.Add(start);
+                if (candidates.Count == 0)
                     throw new InvalidOperationException("The boundary of a face is not closed.");
-                at = left[next].To;
-                left.RemoveAt(next);
+                var next = candidates.Count == 1 ? candidates[0] : FirstCounterClockwise(vertices, normal, from, at, candidates);
+                if (next == start)
+                    break;
+                loop.Add(at);
+                left.Remove(next);
+                (from, at) = next;
             }
             loops.Add(loop);
         }
 
         return loops;
+    }
+
+    // The edge whose direction comes first counter-clockwise about the normal from the direction back to the vertex
+    // before: an angle in (0, 180) degrees, then in [180, 360), then 0. Each test is exact.
+    private static (int From, int To) FirstCounterClockwise(List<Vector3R> vertices, Vector3R normal, int from, int at, List<(int From, int To)> candidates)
+    {
+        var back = vertices[from] - vertices[at];
+        int Half(Vector3R d)
+        {
+            var turn = back.Cross(d).Dot(normal).Sign;
+            return turn > 0 ? 0 : turn < 0 || back.Dot(d).Sign < 0 ? 1 : 2;
+        }
+
+        var best = candidates[0];
+        foreach (var edge in candidates.Skip(1))
+        {
+            var (d, e) = (vertices[edge.To] - vertices[at], vertices[best.To] - vertices[at]);
+            var (hd, he) = (Half(d), Half(e));
+            if (hd < he || (hd == he && e.Cross(d).Dot(normal).Sign < 0))
+                best = edge;
+        }
+
+        return best;
     }
 
     // The area of a loop along the normal of its plane, times two: positive for a counter-clockwise loop.

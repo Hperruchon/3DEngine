@@ -172,7 +172,8 @@ public sealed class FaceGoneTests
 
         var (solid, _) = await session.Read((document, _) => Engine.Core.Features.KernelProjection.OfRecord(document, record));
         Assert.NotNull(solid);
-        Assert.True(Engine.Core.Features.KernelProjection.IsKept(record.GeometryKey));
+        var documentId = await session.Read((document, _) => document.DocumentId);
+        Assert.True(Engine.Core.Features.KernelProjection.IsKept(documentId, record.GeometryKey));
 
         var faulted = record with { Fault = new BodyFault(DiagnosticCodes.SketchRebuildFailed, "A test fault.") };
         var (none, reason) = await session.Read((document, _) => Engine.Core.Features.KernelProjection.OfRecord(document, faulted));
@@ -245,5 +246,71 @@ public sealed class FaceGoneTests
                 session.Close();
             Directory.Delete(folder, recursive: true);
         }
+    }
+
+    // Finding E135 of the codebase review of 2026-11-05 (b) (TASK-0192): the kept solids were static for the process under
+    // the geometry key alone, and a client chooses the command identifier of a box. A first session keeps a box of 10
+    // under the identifier X. A second session makes a box of 40 under X, a datum on its face +x, and a cut by a tool at
+    // x 3 to 7, which does not reach that face. The datum keeps no fault, because the second session reads its own solid.
+    [NativeManifoldFact]
+    public async Task Two_Sessions_With_The_Same_Command_Identifier_Read_Their_Own_Solid()
+    {
+        var shared = Guid.NewGuid();
+        using var firstBackend = new ManifoldGeometryBackend();
+        var first = NewSession(firstBackend);
+        var small = Output(await Applied(first, new CreateBoxCommand { CommandId = shared, SizeX = 10, SizeY = 10, SizeZ = 10 }), "bodyId");
+        var kept = await first.Query<FaceInfo>(new GetFaceAtQuery { BodyId = small, X = 5, Y = 0, Z = 0, Nx = 1, Ny = 0, Nz = 0 });
+        Assert.NotNull(kept.Result);
+
+        using var secondBackend = new ManifoldGeometryBackend();
+        var second = NewSession(secondBackend);
+        var large = Output(await Applied(second, new CreateBoxCommand { CommandId = shared, SizeX = 40, SizeY = 10, SizeZ = 10 }), "bodyId");
+        var datum = await Datum(second, large, "+x");
+        var tool = await Moved(second, await Box(second, 4, 20, 20), 5, 0, 0);
+        var cut = await Applied(second, new SubtractCommand { MinuendBodyId = large, SubtrahendBodyId = tool });
+
+        Assert.DoesNotContain(cut.Diagnostics, item => item.Code == DiagnosticCodes.DatumReferenceFailed);
+        Assert.Null((await Record(second, datum)).Fault);
+    }
+
+    // Finding E139 of the codebase review of 2026-11-05 (b) (TASK-0192): while the end of the chain of a datum has a body
+    // fault, the kernel cannot build it, and the face-gone fault of the datum went away, although the old solid of the end
+    // still has no such face. A bow tie in the sketch of the tool gives the cut a body fault, and the datum keeps its fault
+    // with no new warning. A profile that is simple again keeps the fault, and still no new warning comes.
+    [NativeManifoldFact]
+    public async Task A_Face_Gone_Fault_Stays_While_The_End_Of_Its_Chain_Has_A_Body_Fault()
+    {
+        using var backend = new ManifoldGeometryBackend();
+        var session = NewSession(backend);
+        var sketch = Output(await Applied(session, new CreateSketchCommand { DatumId = Datums.XY.Id }), "sketchId");
+        (double X, double Y)[] corners = [(0, 0), (10, 0), (10, 6), (0, 6)];
+        var points = new Guid[4];
+        for (var i = 0; i < 4; i++)
+            points[i] = Output(await Applied(session, new AddSketchPointCommand { SketchId = sketch, X = corners[i].X, Y = corners[i].Y }), "pointId");
+        var lines = new Guid[4];
+        for (var i = 0; i < 4; i++)
+            lines[i] = Output(await Applied(session, new AddSketchLineCommand { SketchId = sketch, StartPointId = points[i], EndPointId = points[(i + 1) % 4] }), "lineId");
+        var plate = Output(await Applied(session, new ExtrudeCommand { SketchId = sketch, Distance = 2 }), "bodyId");
+        var side = await Datum(session, plate, "side", lines[1]);
+        var toolSketch = Output(await Applied(session, new CreateSketchCommand { DatumId = Datums.XY.Id }), "sketchId");
+        (double X, double Y)[] toolCorners = [(9, -5), (13, -5), (13, 11), (9, 11)];
+        var toolPoints = new Guid[4];
+        for (var i = 0; i < 4; i++)
+            toolPoints[i] = Output(await Applied(session, new AddSketchPointCommand { SketchId = toolSketch, X = toolCorners[i].X, Y = toolCorners[i].Y }), "pointId");
+        for (var i = 0; i < 4; i++)
+            await Applied(session, new AddSketchLineCommand { SketchId = toolSketch, StartPointId = toolPoints[i], EndPointId = toolPoints[(i + 1) % 4] });
+        var tool = Output(await Applied(session, new ExtrudeCommand { SketchId = toolSketch, Distance = 2 }), "bodyId");
+        var cut = await Cut(session, plate, tool);
+        var fault = (await Record(session, side)).Fault;
+        Assert.Equal(DiagnosticCodes.DatumReferenceFailed, fault?.Code);
+
+        var bowTie = await Applied(session, new MoveSketchPointCommand { SketchId = toolSketch, PointId = toolPoints[2], X = 13, Y = -15 });
+        Assert.NotNull((await session.Read((document, _) => document.Bodies.Single(body => body.Handle.Id == cut))).Fault);
+        Assert.Equal(fault, (await Record(session, side)).Fault);
+        Assert.DoesNotContain(bowTie.Diagnostics, item => item.Code == DiagnosticCodes.DatumReferenceFailed);
+
+        var mended = await Applied(session, new MoveSketchPointCommand { SketchId = toolSketch, PointId = toolPoints[2], X = 13, Y = 11 });
+        Assert.Equal(fault, (await Record(session, side)).Fault);
+        Assert.DoesNotContain(mended.Diagnostics, item => item.Code == DiagnosticCodes.DatumReferenceFailed);
     }
 }

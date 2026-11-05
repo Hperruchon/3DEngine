@@ -66,8 +66,8 @@ public readonly struct Rational : IEquatable<Rational>, IComparable<Rational>
             : new Rational(numerator, BigInteger.One << -exponent);
     }
 
-    // The nearest double, with a tie to the even significand. A value beyond the range of a double gives an infinity, and
-    // a value below the smallest normal double loses bits, as a division of doubles does.
+    // The nearest double, with a tie to the even significand, from one rounding. A value beyond the range of a double gives
+    // an infinity. Below the smallest normal double the quantum is 2^-1074, as for a division of doubles.
     public double ToDouble()
     {
         if (Numerator.IsZero)
@@ -88,7 +88,13 @@ public readonly struct Rational : IEquatable<Rational>, IComparable<Rational>
         else if (q < BigInteger.One << 53)
             q = Quotient(--shift, out r, out d);
 
-        // q has 54 bits: 53 for the double and one to round; r and d decide a tie.
+        // Finding E136 of the codebase review of 2026-11-05 (b) (TASK-0192): below the smallest normal double the 53 bits
+        // were rounded, and Math.ScaleB rounded them again to the quantum 2^-1074. The quotient takes the bits of that
+        // quantum and one bit to round, so the value rounds one time and Math.ScaleB is exact.
+        if (shift + 1 < -1074)
+            q = Quotient(shift = -1075, out r, out d);
+
+        // q has 54 bits, or fewer below the smallest normal double: the bits of the double and one to round; r decides a tie.
         var half = !q.IsEven;
         q >>= 1;
         shift++;

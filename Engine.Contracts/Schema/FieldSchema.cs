@@ -5,7 +5,7 @@ namespace Engine.Contracts.Schema;
 // Nested object/array shape (item type, properties) is deferred until a
 // command needs it.
 //
-// ADR-0060: a number parameter of a command declares its unit kind, in Unit or in
+// ADR-0060: a number or an integer parameter of a command or of a query declares its unit kind, in Unit or in
 // UnitBy and not in both. The unit is metadata only: no host converts a value, and
 // nothing new enters the log. The wire does not write an absent member.
 public sealed record FieldSchema(string Type, bool Required = false, string? Unit = null, UnitByField? UnitBy = null);
@@ -22,7 +22,7 @@ public static class UnitKinds
     // A length in the length unit of the document.
     public const string Length = "length";
 
-    // A position on an image, in pixels.
+    // A position or a size on an image, in pixels.
     public const string Pixel = "pixel";
 
     // A length for one pixel of an image.
@@ -40,6 +40,9 @@ public static class UnitKinds
     // The unit that the kind of the constraint gives, through the map of AddSketchConstraint.
     public const string ConstraintValue = "constraint-value";
 
+    // A component of a direction, with no unit (finding E141 of the codebase review of 2026-11-05 (b), TASK-0192).
+    public const string Direction = "direction";
+
     public static IReadOnlyList<string> All { get; } =
-        [Length, Pixel, Scale, Cosine, Sine, Sign, ConstraintValue];
+        [Length, Pixel, Scale, Cosine, Sine, Sign, ConstraintValue, Direction];
 }
