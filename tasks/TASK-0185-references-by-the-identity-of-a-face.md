@@ -1,7 +1,7 @@
 ---
 id: 0185
 title: A datum on a face that a cut removed gets a fault, and a datum on the wall of a hole faces into the hole
-status: Active
+status: Done
 phase: K4c
 opened: 2026-11-05
 depends-on: [0184]
@@ -75,11 +75,11 @@ whose datum faces into the hole.
 - [x] `GetFaceAt` gives the wall of a hole, and no face where the cut removed one.
 - [x] An injection into each new step makes a test fail.
 - [x] A clean build (`--no-incremental`) gives zero errors and zero warnings.
-- [ ] Continuous integration passes on the three runners, on the branch and on `main` after the merge.
+- [x] Continuous integration passes on the three runners, on the branch and on `main` after the merge.
 
 ## Outcome
 
-Status: Active
+Status: Done · commit (the merge of the branch k4c-references-by-identity) · v0.187
 
 ## Method
 
@@ -91,3 +91,4 @@ Weakest:    a datum whose end the kernel cannot build has no check, and no test 
 
 - 2026-11-05: opened after the five answers of the owner on K4c.
 - 2026-11-05: the check, the turn and the finder; 5 tests and 4 changed tests, and 16 injections each fail a test.
+- 2026-11-05: closed at v0.187.
