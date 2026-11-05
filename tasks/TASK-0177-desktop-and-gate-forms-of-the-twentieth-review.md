@@ -1,7 +1,7 @@
 ---
 id: 0177
 title: A sketch on a face looks from the side of the eye, the arm of a face ends with a new sketch, and the next forms of four rules fail
-status: Active
+status: Done
 phase: P0.76
 opened: 2026-11-03
 depends-on: [0179]
@@ -56,20 +56,21 @@ sketch, a datum on a short side has axes of the length 1, and the next form of e
 
 ## Acceptance criteria
 
-- [ ] Each finding has a test or an injection that fails before the change and passes after it.
-- [ ] A clean build (`--no-incremental`) gives zero errors and zero warnings.
-- [ ] Continuous integration passes on the three runners, on the branch and on `main` after the merge.
+- [x] Each finding has a test or an injection that fails before the change and passes after it.
+- [x] A clean build (`--no-incremental`) gives zero errors and zero warnings.
+- [x] Continuous integration passes on the three runners, on the branch and on `main` after the merge.
 
 ## Outcome
 
-Status: Active
+Status: Done · commit (the merge of the branch p076-twentieth-review-forms) · v0.181
 
 ## Method
 
 Mechanical: a test or an injection for each finding, before the change.
-Judgement:  the list of the item names that the rule of T130 refuses.
-Weakest:    to be written at the close.
+Judgement:  the list of the item names that the rule of T130 refuses (each one), and the threshold of E130.
+Weakest:    no one opened the desktop window for V76 and V77, and no test drives the call of FaceArm in the host.
 
 ## Progress
 
 - 2026-11-03: opened by the second codebase review of 2026-11-03.
+- 2026-11-05: the six findings, each form before and after the change, four injections; closed at v0.181.

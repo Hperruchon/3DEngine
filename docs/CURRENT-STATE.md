@@ -5326,3 +5326,39 @@ New tests: 5. The test list holds 1662 (1171 in `Engine.Tests`, 307 in `3DEngine
 `3DEngine.ImageTests`, 3 in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and
 zero warnings. Open entries: 14 of 15. New diagnostic codes: 0. Since the review of v0.176, 1 product milestone and 4
 entries followed it.
+
+## v0.181 — A sketch on a face looks from the side of the eye, and the next forms of three gates fail (P0.76, TASK-0177)
+
+The second codebase review of 2026-11-03 found V76 and V77 (medium) in the desktop of K0i, E130 (low) in the datums, and
+T130 to T132 (low) in three gates. By `docs/templates.md`, section 7, they come after the next product phase, R13, and
+the owner put P0.77 before them on 2026-11-04. The owner gave the order "yes" to start this task on 2026-11-05.
+
+**The change.**
+- V76: `SketchCamera.Face` takes the side of the eye from the plane of the datum, through its origin, and not from the
+  target. The eye is at the distance from the target, so the new eye stays on the side of the plane of the old one. The
+  target and the distance stay, as ADR-0034 item 6 says. A tap on a face no longer turns the camera behind the body.
+- V77: `FaceArm` (`3DEngine/`) holds the arm of the button Face. The button arms it when no sketch is active, a tap to
+  select takes it, and a new sketch, an edit of a sketch, an accept of a contour and the start of a calibration end it.
+  The host has one call for each action of the panel and no state of its own.
+- E130: a side of a datum whose sum of squares is below the smallest normal double scales as E125 does, so its axes have
+  the length 1. Each side whose sum is a normal double keeps its bits.
+- T130: `ItemOutputOffences` refuses each `Output` of a task with an item name; no project of the repository adds an item
+  through a task, and an `Output` with `PropertyName` stays free. It replaces the rule of T127.
+- T131: the scanner of the codes walks a collection expression, a `ToString` with an argument and a static `ToString` of
+  the node, and an insert into a `StringBuilder` joins text.
+- T132: each underline at any indent after a line that is not blank is a heading problem, with no condition on the
+  version.
+
+**Proof.** Before the change: an `Output` with `ProjectReference` or `Reference` in `Engine.Core.csproj` passed 126 of 126
+tests of the dependency gate, the five spellings of T131 gave no part, and the four headings of T132 gave no problem.
+After it: each one fails, and the real projects, the sources and the ledger pass. New tests: a camera of the review that
+faces a face from its outer side, seven tests of the arm, three sides of 3e-162, 1e-158 and 1e-155 with a unit frame,
+and the new forms in the three theories. Four injections each fail a test: the side from the target, a start that keeps
+the arm, an active sketch that arms, and a subnormal sum that keeps its bits.
+
+**What stays.** No one opened the desktop window for V76 and V77. The host calls `FaceArm` for each action of the panel,
+and no test drives that call.
+
+New tests: 25. The test list holds 1687 (1188 in `Engine.Tests`, 308 in `3DEngine.Tests`, 188 in `3DEngine.ImageTests`,
+3 in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
+entries: 14 of 15. New diagnostic codes: 0. Since the review of v0.176, 1 product milestone and 5 entries followed it.
