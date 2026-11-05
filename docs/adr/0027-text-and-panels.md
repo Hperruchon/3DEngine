@@ -7,7 +7,7 @@ date: 2026-10-27
 supersedes: []
 superseded-by: []
 amends: ['0026']
-amended-by: ['0029']
+amended-by: ['0029', '0061']
 affects:
   - 3DEngine/Ui/**
   - 3DEngine/3DEngine.csproj
@@ -98,3 +98,5 @@ the package of the desktop must leave it out. A gesture that starts over a panel
   binding ImGui.NET that the owner chose on the same date.
 - 2026-10-28 · TASK-0086 · ADR-0029 amends item 7: the rows select a body, and the panel renames, hides and
   shows it.
+- 2026-11-05 · TASK-0193 · ADR-0061 amends item 9: this repository builds the native cimgui of ImGui.NET
+  1.91.6.1 for `android-arm64` and `android-x64`. R14d applies it.
