@@ -1,13 +1,13 @@
 ---
 id: 0055
 title: The regeneration of the features after an edit
-status: Accepted
+status: Amended
 topic: Feature graph, geometry, runtime
 date: 2026-11-03
 supersedes: []
 superseded-by: []
 amends: ['0037', '0039', '0054']
-amended-by: []
+amended-by: ['0059']
 affects:
   - Engine.Core/Features/Regeneration.cs
   - Engine.Core/Sketch/SketchRebuild.cs
@@ -53,6 +53,9 @@ recommended answer:
      E128, TASK-0176).
    - **The solids.** Each live body whose chain holds an extrude that the edit targets is evaluated again.
 
+   Since K4c, after the two walks, each datum in effect whose chain holds a `Subtract` has the check of a gone face
+   (ADR-0059 item 3).
+
    The planes come first because a reference later in the log can change a sketch that an earlier extrude reads, so the
    order of the log is not the order of the inputs. `SketchRebuild.Rebuild` (an edit of a sketch) and
    `SketchRebuild.RebuildDistance` (an edit of a distance) give the inputs of their edit to the regeneration and do
@@ -95,3 +98,4 @@ recommended answer:
 - 2026-11-03 · TASK-0174 · Accepted with the four answers of the owner of 2026-11-03.
 - 2026-11-04 · TASK-0176 · Item 1: the walk of the planes repeats while a reference solves a sketch again (finding E128
   of the second codebase review of 2026-11-03), and an edit of a sketch takes the record of the walk (E129).
+- 2026-11-05 · TASK-0185 · ADR-0059 item 3 amends item 1: the check of a gone face after the two walks.
