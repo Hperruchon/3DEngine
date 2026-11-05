@@ -172,6 +172,7 @@ Therefore each approved objective must have a track here.
 - P0.84 — The kept solids belong to one Document, the faces of the kernel keep their holes, and the next forms of five gates fail. v0.195, TASK-0192.
 - R14b — The host owns the document session, the surface mounts on it as an option, and an open stays in the same process. v0.196, TASK-0194, ADR-0061.
 - R14c — ppy.SDL3-CS replaces Alimer.Bindings.SDL on the desktop, with no change of behaviour. v0.197, TASK-0195, ADR-0061.
+- K6a — The live bodies leave the engine as one STEP file of their planar faces. v0.198, TASK-0200, ADR-0070.
 
 ## Track 0 — Foundations
 
@@ -344,6 +345,7 @@ boundary and each refused rung.
 | K4c | The datums and the references by the identity of a face, and a fault for a face that is gone (ADR-0051 item 8). The existing fault, a check after a cut only, a datum on a hole wall faces into the hole, a split face keeps its plane, and the turn applies to older documents (the five answers of the owner of 2026-11-05). ADR-0059, TASK-0185. | 4–6 |
 | K5 | Add the cylinder, the cone, the sphere and the torus. | 55–85 |
 | K6 | STEP export for the analytic subset. | 6–12 |
+| K6a | The planar B-Rep of the owned kernel of each live body as one STEP file of AP214, with the same bytes on each platform, from the surface and the command line (the engine lane of the order of 2026-11-05). ADR-0070, TASK-0200. | 1–2 |
 | K7 | General extrude and revolve of a simple curve. **Optional.** Year two. | 40–65 |
 
 ## Track V — Machine vision
