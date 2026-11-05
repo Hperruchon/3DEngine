@@ -437,4 +437,57 @@ public sealed class SketchReferenceTests : IDisposable
         Assert.Contains((await Record(session, layout.Wall)).Points, point => point.Id == Output(edit, "pointId"));
         Assert.Equal([(22.0, 5.0)], await Points(session, layout.Wall, layout.Early));
     }
+
+    // Finding E132 of the codebase review of 2026-11-05 (TASK-0182): no state that the commands give reaches the guard of
+    // E129, so the test puts a stale point of the reference of the wall into the Document itself. The next edit of the
+    // wall solves the wall again in the walk of the planes, and the guard takes the record of the walk: the edit applies,
+    // the reference is at its true place, and the edit gives one record of the wall.
+    [NativeManifoldFact]
+    public async Task An_Edit_Of_A_Sketch_With_A_Stale_Reference_Takes_The_Record_Of_The_Walk()
+    {
+        using var backend = new ManifoldGeometryBackend();
+        var (session, events) = NewSession(backend);
+        var layout = await LaterReferenceLayout(session);
+        await session.Read((document, _) =>
+        {
+            var wall = document.Sketches.Single(sketch => sketch.Id == layout.Wall);
+            var point = wall.References.Single(reference => reference.Id == layout.Early).Points.Single();
+            document.ReplaceSketch(wall with { Points = [.. wall.Points.Select(p => p.Id == point ? p with { X = 0, Y = 0 } : p)] });
+            return 0;
+        });
+        Assert.Equal([(0.0, 0.0)], await Points(session, layout.Wall, layout.Early));
+
+        var edit = await Applied(session, new AddSketchPointCommand { SketchId = layout.Wall, X = 30, Y = 1 });
+
+        Assert.Empty(edit.Diagnostics);
+        Assert.Equal([(20.0, 5.0)], await Points(session, layout.Wall, layout.Early));
+        Assert.Contains((await Record(session, layout.Wall)).Points, point => point.Id == Output(edit, "pointId"));
+        Assert.Single(events.Snapshot(), e => e.CauseCommandId == edit.CommandId && e.Kind == "sketch.changed");
+    }
+
+    // Finding E133 of the codebase review of 2026-11-05 (TASK-0182): the wall is created before the base, and the base
+    // changes through the later reference first, so the order of the first solve was base, wall. The changed sketches
+    // come in the log order of their creation: the post that the edit changes, then the wall, then the base.
+    [NativeManifoldFact]
+    public async Task The_Sketches_That_The_Walk_Changes_Come_In_The_Order_Of_The_Log()
+    {
+        using var backend = new ManifoldGeometryBackend();
+        var (session, events) = NewSession(backend);
+        var wall = await EmptySketch(session, Datums.XZ.Id);
+        var base_ = await NewSketch(session, Datums.XY.Id, Rectangle);
+        var body = await Extrude(session, base_.Id, 5);
+        await Reference(session, wall, body, "endVertex", base_.Points[1]);
+        var post = await NewSketch(session, Datums.XY.Id, [(20, 0), (26, 0), (26, 4), (20, 4)]);
+        var pin = await Extrude(session, post.Id, 3);
+        var late = await Reference(session, base_.Id, pin, "startVertex", post.Points[0]);
+        await Applied(session, new AddSketchConstraintCommand { SketchId = base_.Id, Kind = "coincident", First = base_.Points[1], Second = late });
+
+        var move = await Applied(session, new MoveSketchPointCommand { SketchId = post.Id, PointId = post.Points[0], X = 22, Y = -1 });
+
+        var changed = events.Snapshot()
+            .Where(e => e.CauseCommandId == move.CommandId && e.Kind == "sketch.changed")
+            .Select(e => (Guid)((IReadOnlyDictionary<string, object?>)e.Payload!)["sketchId"]!)
+            .ToList();
+        Assert.Equal([post.Id, wall, base_.Id], changed);
+    }
 }

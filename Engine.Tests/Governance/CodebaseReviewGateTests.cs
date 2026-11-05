@@ -369,7 +369,10 @@ public class CodebaseReviewGateTests
         for (var index = 0; index < lines.Length; index++)
         {
             var line = lines[index];
-            var heading = Regex.IsMatch(line, @"^ {0,3}#") && !(index == 0 && line.StartsWith("# ", StringComparison.Ordinal)) && !LedgerEntry.IsMatch(line) && !NearLedgerEntry.IsMatch(line);
+            // Finding T135 of the codebase review of 2026-11-05 (TASK-0182): a "#" at an indent of four or more in a list
+            // item, with no v, passed; CommonMark counts that indent from the content of the item. A "#" at any indent is
+            // a heading problem, as the setext rule of T132 is at any indent.
+            var heading = Regex.IsMatch(line, @"^\s*#") && !(index == 0 && line.StartsWith("# ", StringComparison.Ordinal)) && !LedgerEntry.IsMatch(line) && !NearLedgerEntry.IsMatch(line);
             // Finding T114 of the codebase review of 2026-10-31 (b) (TASK-0143): an ordered list marker
             // and a setext heading in a quote passed.
             var nested = Regex.IsMatch(line, @"^\s*(?:(?:[>*+-]|\d{1,9}[.)])\s*)+#");
@@ -572,6 +575,11 @@ public class CodebaseReviewGateTests
     [InlineData("- Version 0.11 — An entry (K0b, TASK-0003)\n    ===")]
     [InlineData("- v.0.11 — An entry (K0b, TASK-0003)\n    ===")]
     [InlineData("> An entry (K0b, TASK-0003)\n>      ---")]
+    // Finding T135 of the codebase review of 2026-11-05 (TASK-0182): an ATX heading with no v, at an indent of four or more
+    // in a list item.
+    [InlineData("- An entry\n    ## 0.11 — An entry (K0b, TASK-0003)")]
+    [InlineData("- An entry\n\n    ## Version 0.11 — An entry (K0b, TASK-0003)")]
+    [InlineData("10. An entry\n     ## 0.11 — An entry (K0b, TASK-0003)")]
     [InlineData("<h2>v0.11 — An entry (K0b, TASK-0003)</h2>")]
     [InlineData("## \u03BD0.11 — An entry (K0b, TASK-0003)")]
     [InlineData("## \uFF560.11 — An entry (K0b, TASK-0003)")]

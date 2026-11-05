@@ -408,6 +408,28 @@ public sealed class DatumTests : IDisposable
         Assert.Equal(new DatumFrame(new DatumPoint(0, 0, 0), X, Z, Minus(Y)), await Frame(session, await Datum(session, body, "side", sketch.Lines[0])));
     }
 
+    // Finding E131 of the codebase review of 2026-11-05 (TASK-0182): a diagonal side whose components are subnormal gives
+    // a unit frame. Up to v0.183 a side of 5e-324 gave U = (1, 1, 0), of the length 1.414, and 1e-320 gave 1.00013.
+    [NativeManifoldTheory]
+    [InlineData(1e-310)]
+    [InlineData(1e-315)]
+    [InlineData(1e-320)]
+    [InlineData(5e-324)]
+    public async Task A_Diagonal_Side_Whose_Components_Are_Subnormal_Gives_A_Unit_Frame(double length)
+    {
+        using var backend = new ManifoldGeometryBackend();
+        var (session, _) = NewSession(backend);
+        var sketch = await NewSketch(session, Datums.XY.Id, [(0, 0), (length, length), (10, 5), (5, 10), (-5, 5)]);
+        var body = await Extrude(session, sketch, 5);
+
+        var frame = await Frame(session, await Datum(session, body, "side", sketch.Lines[0]));
+
+        static double Length(DatumAxis a) => Math.Sqrt((a.X * a.X) + (a.Y * a.Y) + (a.Z * a.Z));
+        Assert.Equal(1.0, Length(frame.U), 15);
+        Assert.Equal(1.0, Length(frame.Normal), 15);
+        Assert.Equal((frame.U.X, 0.0), (frame.U.Y, frame.U.Z));
+    }
+
     // Finding E125: a frame whose origin overflows does not resolve. At an add the reason refuses the command, and at a
     // rebuild the datum keeps its last frame with a fault. A point of a reference that is not finite does not resolve.
     [NativeManifoldFact]
