@@ -157,6 +157,7 @@ Therefore each approved objective must have a track here.
 - R13 — The desktop shows the dimensions of the overall box and of a selected body, with a toggle in the panel. v0.179, TASK-0178, ADR-0056.
 - P0.77 — The far plane of the camera of the desktop follows the box of the visible bodies. v0.180, TASK-0179.
 - P0.76 — A sketch on a face looks from the side of the eye, the arm of a face ends with a new sketch, a datum on a short side has unit axes, and the next forms of three gates fail. v0.181, TASK-0177.
+- P0.78 — The far plane holds each visible body from the eye, and the dimension overlay keeps its labels apart and inside the window, follows a drag and reads the boxes once for each change. v0.183, TASK-0181.
 
 ## Track 0 — Foundations
 

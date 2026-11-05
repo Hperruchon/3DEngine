@@ -1,7 +1,7 @@
 ---
 id: 0181
 title: The far plane holds each visible body from the eye, and the dimension overlay keeps its labels apart and follows a drag
-status: Active
+status: Done
 phase: P0.78
 opened: 2026-11-05
 depends-on: [0180]
@@ -60,20 +60,21 @@ a drag, the overlay reads the boxes once for each change, and a test drives the 
 
 ## Acceptance criteria
 
-- [ ] Each finding has a test or an injection that fails before the change and passes after it.
-- [ ] A clean build (`--no-incremental`) gives zero errors and zero warnings.
-- [ ] Continuous integration passes on the three runners, on the branch and on `main` after the merge.
+- [x] Each finding has a test or an injection that fails before the change and passes after it.
+- [x] A clean build (`--no-incremental`) gives zero errors and zero warnings.
+- [x] Continuous integration passes on the three runners, on the branch and on `main` after the merge.
 
 ## Outcome
 
-Status: Active
+Status: Done · commit (the merge of the branch p078-desktop-forms) · v0.183
 
 ## Method
 
 Mechanical: a test or an injection for each finding, before the change.
 Judgement:  the margin of the far plane, and the rule that keeps two labels apart.
-Weakest:    to be written at the close.
+Weakest:    no one opened the desktop window, and no test drives the two lines of the host that read the arm.
 
 ## Progress
 
 - 2026-11-05: opened by the codebase review of 2026-11-05.
+- 2026-11-05: the seven findings, each with a test, ten injections; closed at v0.183.
