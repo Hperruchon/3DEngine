@@ -5911,3 +5911,38 @@ on Linux or macOS.
 New tests: 1. The test list holds 1801 (1280 in `Engine.Tests`, 320 in `3DEngine.Tests`, 198 in `3DEngine.ImageTests`,
 3 in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
 entries: 14 of 15. New diagnostic codes: 0. Since the review of v0.190, 3 product milestones and 7 entries followed it.
+
+## v0.198 — The live bodies leave the engine as one STEP file of their planar faces (K6a, TASK-0200)
+
+Roadmap row K6 comes in slices. K6a is the first, in the engine lane of the order of the owner of 2026-11-05 (a second
+session in its own worktree; the main session merges it and writes this entry).
+
+**The change.**
+- `StepExport` in `Engine.Core/Export` writes each live body, in the order of its handle, as the B-rep of the owned
+  kernel (`KernelProjection.OfRecord`, `Brep.Of`). The file is ISO 10303-21 text of AP214.
+- Each face is an `ADVANCED_FACE` on a `PLANE` with its bounds, each edge an `EDGE_CURVE` on a `LINE`, each vertex a
+  `VERTEX_POINT`, and each closed shell a `MANIFOLD_SOLID_BREP` with the identifier of its body.
+- The header has no time. A number is the shortest text that reads back to the same double, in the invariant culture.
+  Only + - * / and sqrt compute a number, so the bytes are the same on each platform.
+- `GET /export/step` gives `model/step`, or 422 with the code. `engine export step <document.3de> <file.step>` prints
+  `{ file, bodies, warnings }`.
+- `E-EXPORT-BODY-FAILED` refuses the file for a body with a fault, a body that the kernel does not build, a B-rep that is
+  not closed, a void, or a coordinate that a double does not hold. ADR-0070 holds the decisions; the standing order
+  chose AP214.
+
+**Proof.** `StepReader` (tests) reads each file back and checks each reference, each closed loop, two uses in opposite
+senses for each edge, the plane of each vertex, and the counts of faces, edges, vertices and holes against `Brep.Of`: a
+box, a plate with a hole, a body that a cut splits into two solids, a concave extrude, and a document of the engine. A
+SHA-256 of a fixed body is the same in the culture fr-FR. Three injections each fail a test.
+
+**What stays.** No reader of STEP outside the repository read a file. A curved side is planar facets until K5. A void
+waits for K6b, and the desktop button for a later slice.
+
+**A correction.** The rule of T137 (TASK-0192) merged after the branch of K6a opened, and it refused the constant `'E'`
+in `StepExport.Real`. The integration finds the exponent as the first capital letter, which gives the same index for
+the format R of a finite double; the tests of `Real` pass with no change.
+
+New tests: 17. The test list holds 1818 (1297 in `Engine.Tests`, 320 in `3DEngine.Tests`, 198 in `3DEngine.ImageTests`,
+3 in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
+entries: 14 of 15. New diagnostic codes: 1 (`E-EXPORT-BODY-FAILED`). Since the review of v0.190, 4 product milestones and
+8 entries followed it.
