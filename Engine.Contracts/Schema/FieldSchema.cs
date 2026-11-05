@@ -4,4 +4,42 @@ namespace Engine.Contracts.Schema;
 // "string", "integer", "number", "boolean", "object", "array", "guid", "datetime".
 // Nested object/array shape (item type, properties) is deferred until a
 // command needs it.
-public sealed record FieldSchema(string Type, bool Required = false);
+//
+// ADR-0060: a number parameter of a command declares its unit kind, in Unit or in
+// UnitBy and not in both. The unit is metadata only: no host converts a value, and
+// nothing new enters the log. The wire does not write an absent member.
+public sealed record FieldSchema(string Type, bool Required = false, string? Unit = null, UnitByField? UnitBy = null);
+
+// ADR-0060 item 3: the unit of a number that depends on the value of a string
+// parameter of the same command. Units gives the unit for each value of Field; a
+// value that is not in the map takes no number.
+public sealed record UnitByField(string Field, IReadOnlyDictionary<string, string> Units);
+
+// ADR-0060 item 2: the unit vocabulary. A client shows Length with the length unit
+// of the document, and a pair Cosine and Sine as one angle.
+public static class UnitKinds
+{
+    // A length in the length unit of the document.
+    public const string Length = "length";
+
+    // A position on an image, in pixels.
+    public const string Pixel = "pixel";
+
+    // A length for one pixel of an image.
+    public const string Scale = "scale";
+
+    // The cosine of an angle.
+    public const string Cosine = "cosine";
+
+    // The sine of an angle.
+    public const string Sine = "sine";
+
+    // -1 or 1.
+    public const string Sign = "sign";
+
+    // The unit that the kind of the constraint gives, through the map of AddSketchConstraint.
+    public const string ConstraintValue = "constraint-value";
+
+    public static IReadOnlyList<string> All { get; } =
+        [Length, Pixel, Scale, Cosine, Sine, Sign, ConstraintValue];
+}

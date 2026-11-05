@@ -20,8 +20,8 @@ public sealed class SetSketchConstraintValueCommandHandler : ICommandHandler, IC
         {
             ["sketchId"] = new("guid", Required: true),
             ["constraintId"] = new("guid", Required: true),
-            ["value"] = new("number", Required: true),
-            ["secondValue"] = new("number", Required: false),
+            ["value"] = new("number", Required: true, Unit: UnitKinds.ConstraintValue),
+            ["secondValue"] = new("number", Required: false, Unit: UnitKinds.ConstraintValue),
         };
 
     public IReadOnlyDictionary<string, FieldSchema> Outputs { get; } =
