@@ -5845,3 +5845,38 @@ is a member of the result, which R-0053 holds, so E141 is the six parameters of 
 New tests: 21. The test list holds 1800 (1279 in `Engine.Tests`, 320 in `3DEngine.Tests`, 198 in `3DEngine.ImageTests`,
 3 in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
 entries: 14 of 15. New diagnostic codes: 0. Since the review of v0.190, 1 product milestone and 5 entries followed it.
+
+## v0.196 — The host owns the document session, the surface mounts on it as an option, and an open stays in the same process (R14b, TASK-0194)
+
+Phase b of the Android order of 2026-11-05 (ADR-0061 item 9). The container of the surface made the session of the
+desktop and disposed it, so a host with no surface had no session, and an accepted open started the program again with
+`--file`. The phone mounts no surface (ADR-0061 item 4), and an Android app cannot start itself again.
+
+**The change.**
+- `DesktopSession` makes the session, the document folder and the store of the assets from the settings. A failure
+  gives the exit codes of today: 3 for the native backend, 6 for a file that does not open, 5 for another failure.
+- `AddEngineSurface` has a second form for a session that the host made. The container does not dispose an instance
+  that it did not make, so the session outlives the surface.
+- `DesktopSurface` opens the session at the point of its checks where it made it before, so the order of the checks
+  stays, and it disposes the session only when its own start fails.
+- `DesktopEngineHost.RunSessions` runs the sessions one after the other on one window. An accepted open ends the
+  window loop; the surface stops and frees the port, the host disposes the session, and the next session holds the file
+  in the same process. `DesktopDocument.StartAgain` and `Arguments` are gone.
+- ADR-0061 amends ADR-0030 item 4, and the texts of `DocumentFolder` and of `/document/open` say "a next session".
+
+**Proof.** `3DEngine.ImageTests/DesktopSessionTests.cs`: a session with no surface applies a command and its file
+holds it; an open over the folder of the first session gives the next session the second file, with two bodies, in the
+same process, and the first file is free; a surface that stops leaves its session usable. Four injections each fail a
+test. A probe of the real desktop with `--port 0` made a box, saved it as `second`, made a second box, and sent
+`/document/open` over HTTP: the reply was 202, and the next session served `second.3de` at the version 2 on a new port,
+in the same process, with a new Vulkan instance and no validation message.
+
+**What stays.** Nobody looked at the window of the second session. A desktop with `--port 0` gets a new port at an
+open, as it did when it started again (ADR-0030 item 4).
+
+**A correction.** None.
+
+New tests: 3, and the 3 cases of `Arguments` are gone. The test list holds 1800 (1279 in `Engine.Tests`, 320 in
+`3DEngine.Tests`, 198 in `3DEngine.ImageTests`, 3 in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln
+--no-incremental` gives zero errors and zero warnings. Open entries: 14 of 15. New diagnostic codes: 0. Since the review
+of v0.190, 2 product milestones and 6 entries followed it.

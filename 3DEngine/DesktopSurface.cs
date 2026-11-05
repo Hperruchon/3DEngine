@@ -25,19 +25,17 @@ namespace ThreeDEngine.Desktop;
 // the start and each bound address that is not loopback after it (TASK-0044,
 // TASK-0051, TASK-0058). The surface stops with the desktop (ADR-0019 item 6).
 //
-// The desktop is a composition root, so it chooses the native backend here
-// (ADR-0014 section 4). As each host does, it stops when the native library does
-// not load (TASK-0036).
+// Phase R14b (ADR-0061 item 9, TASK-0194): the host owns the session (DesktopSession), and the surface mounts on it.
+// The surface opens the session at the point of its checks where it made it before, so the order of the checks and the
+// exit codes stay. It disposes the session only when its own start fails; else the host disposes the session after
+// the surface. DesktopSession holds the backend, the document file and the store of the assets.
 //
 // The setting "Desktop:SynchronizationValidation" (true or false, false by default)
 // also turns on the checks of synchronization of the validation layer, for a check of
 // the present path by a person (finding V16 of the codebase review of 2026-10-17,
 // TASK-0079). Give it as --Desktop:SynchronizationValidation=true.
 //
-// The document file (ADR-0030, TASK-0092): --file names it, and the desktop opens it,
-// or makes it when it does not exist, before the window. With no --file the desktop
-// writes into the folder of unsaved documents ("Desktop:UnsavedFolder") from its first
-// command. A save and an open by name use the document folder ("Desktop:DocumentFolder").
+// The document file (ADR-0030, TASK-0092): DesktopSession gives the rules.
 internal sealed class DesktopSurface : IDisposable
 {
     public const int DefaultPort = 5180;
@@ -62,36 +60,39 @@ internal sealed class DesktopSurface : IDisposable
 
     private readonly WebApplication _app;
 
-    private DesktopSurface(WebApplication app, EngineHost host, string address, bool synchronizationValidation, DesktopDocument document)
+    private DesktopSurface(WebApplication app, DesktopSession session, string address, bool synchronizationValidation)
     {
         _app = app;
-        Document = document;
-        Host = host;
+        Session = session;
         Address = address;
         SynchronizationValidation = synchronizationValidation;
     }
 
+    // The session that the surface serves. The host owns it and disposes it after the surface (R14b).
+    public DesktopSession Session { get; }
+
     // True when the validation layer must also check the synchronization (V16).
     public bool SynchronizationValidation { get; }
 
-    public DesktopDocument Document { get; }
+    public DesktopDocument Document => Session.Document;
 
     // The session of the document that the desktop holds.
-    public EngineHost Host { get; }
+    public EngineHost Host => Session.Host;
 
     // The address that an agent uses, for example http://127.0.0.1:5180.
     public string Address { get; }
 
     // ADR-0046 item 2: the store of the assets that the surface serves, so the window and an agent
     // read the same bytes.
-    public Engine.Core.Assets.AssetStore Assets => _app.Services.GetRequiredService<Engine.Core.Assets.AssetStore>();
+    public Engine.Core.Assets.AssetStore Assets => Session.Assets;
 
     // Cancelled when the surface stops, for example at Ctrl+C in the console. The
     // window then closes too (finding E50 of the review of 2026-10-11).
     public CancellationToken Stopping => _app.Lifetime.ApplicationStopping;
 
-    // The surface, or null with an exit code and a message.
-    public static (DesktopSurface? Surface, int ExitCode, string? Message) Start(string[] args)
+    // The surface, or null with an exit code and a message. A file that is not null replaces the setting "file": the
+    // host gives the file of an open (ADR-0030 item 4, R14b).
+    public static (DesktopSurface? Surface, int ExitCode, string? Message) Start(string[] args, string? file = null)
     {
         var builder = WebApplication.CreateBuilder(args);
         builder.Configuration.AddCommandLine(args, new Dictionary<string, string> { ["--port"] = PortSetting });
@@ -110,47 +111,26 @@ internal sealed class DesktopSurface : IDisposable
         if (!bool.TryParse(synchronizationSetting, out var synchronizationValidation))
             return (null, ExitSettingInvalid, $"The setting '{SynchronizationValidationSetting}' must be true or false, and '{synchronizationSetting}' is not.");
 
-        if (!ManifoldGeometryBackend.IsNativeAvailable())
-            return (null, ExitBackendUnavailable, $"{DiagnosticCodes.GeomBackendInit}: {ManifoldGeometryBackend.UnavailableReason()}");
+        var (session, code, message) = DesktopSession.Open(builder.Configuration, file);
+        if (session is null)
+            return (null, code, message);
 
-        var document = new DesktopDocument(builder.Configuration[DocumentFolderSetting] is { Length: > 0 } documents ? documents : DocumentFolder.Default);
-        var file = new DocumentFileOptions(
-            builder.Configuration[FileSetting] is { Length: > 0 } named ? named : null,
-            builder.Configuration[UnsavedFolderSetting] is { Length: > 0 } unsaved ? unsaved : DocumentFile.DefaultUnsavedFolder);
-        builder.Services.AddSingleton(document.Folder);
-        builder.AddEngineSurface(_ => new EngineHost(new ManifoldGeometryBackend(), file));
+        // ADR-0030 item 2 and ADR-0046 item 2: the folder and the store of the session, so the window and an agent read the
+        // same files. Before R14b the container made the session here and disposed it with the app (TASK-0062).
+        builder.Services.AddSingleton(session.Document.Folder);
+        builder.Services.AddSingleton(session.Assets);
+        builder.AddEngineSurface(session.Host);
 
-        var app = builder.Build();
-
-        // The container makes the session here, so it owns it, and the disposal of
-        // the app disposes the backend. Before TASK-0062 the desktop made the
-        // session itself, and nothing disposed it (finding E52 of the review of
-        // 2026-10-11). The session resolves inside the try, so that a throw there also
-        // disposes the app; until TASK-0079 it resolved before the try, and the outer
-        // catch of the desktop gave code 5 with the app not disposed (finding E71 of the
-        // codebase review of 2026-10-17).
-        EngineHost host;
+        WebApplication app;
         try
         {
-            host = app.Services.GetRequiredService<EngineHost>();
-        }
-        catch (IOException ex)
-        {
-            // ADR-0030 item 1: a DocumentFileException gives its code in its message.
-            app.DisposeAsync().AsTask().GetAwaiter().GetResult();
-            return (null, ExitFileNotOpened, $"The document file did not open: {ex.Message}");
+            app = builder.Build();
         }
         catch (Exception ex)
         {
-            app.DisposeAsync().AsTask().GetAwaiter().GetResult();
+            session.Dispose();
             return (null, ExitStartFailed, $"The surface did not start: {ex.Message}");
         }
-
-        foreach (var warning in host.OpenWarnings)
-            Console.Error.WriteLine($"{warning.Code}: {warning.Message}");
-        if (host.NewFileMessage is { } made)
-            Console.Error.WriteLine(made);
-        document.HeldFile = () => host.Session.FilePath;
 
         try
         {
@@ -160,6 +140,7 @@ internal sealed class DesktopSurface : IDisposable
         catch (IOException ex) when (ex.InnerException is AddressInUseException)
         {
             app.DisposeAsync().AsTask().GetAwaiter().GetResult();
+            session.Dispose();
             return (null, ExitAddressInUse, $"The address is in use. Give another port with --port. {ex.Message}");
         }
         // Until TASK-0067 each other failure of the start, for example a port that the
@@ -168,6 +149,7 @@ internal sealed class DesktopSurface : IDisposable
         catch (Exception ex)
         {
             app.DisposeAsync().AsTask().GetAwaiter().GetResult();
+            session.Dispose();
             return (null, ExitStartFailed, $"The surface did not start: {ex.Message}");
         }
 
@@ -176,12 +158,14 @@ internal sealed class DesktopSurface : IDisposable
         {
             app.StopAsync().GetAwaiter().GetResult();
             app.DisposeAsync().AsTask().GetAwaiter().GetResult();
+            session.Dispose();
             return (null, ExitAddressRefused, boundRefusal);
         }
 
-        return (new DesktopSurface(app, host, app.Urls.First(), synchronizationValidation, document), 0, null);
+        return (new DesktopSurface(app, session, app.Urls.First(), synchronizationValidation), 0, null);
     }
 
+    // Stops and frees the surface and its port. The session stays for the host, which disposes it (R14b).
     public void Dispose()
     {
         _app.StopAsync().GetAwaiter().GetResult();

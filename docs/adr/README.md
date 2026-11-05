@@ -43,7 +43,7 @@ names. Do not read all of them.
 | [0027](0027-text-and-panels.md) | Text and panels through Dear ImGui, drawn by a first-party renderer | Amended | Rendering, clients | 0026 | 0029, 0061 |
 | [0028](0028-body-name-and-visibility.md) | The name and the visibility of a body | Amended | Contracts, geometry | 0012, 0021 | 0037, 0049 |
 | [0029](0029-selection-and-hide-gestures.md) | The selection, the hide gestures and the frame of the camera in the desktop | Amended | Rendering, clients | 0025, 0026, 0027 | 0034, 0053 |
-| [0030](0030-document-file-in-the-desktop.md) | The document file in the desktop and for an agent | Accepted | Persistence, deployment | — | — |
+| [0030](0030-document-file-in-the-desktop.md) | The document file in the desktop and for an agent | Amended | Persistence, deployment | — | 0061 |
 | [0031](0031-undo-and-redo.md) | Undo and redo as commands of the log | Amended | Contracts, runtime | 0006, 0021 | 0032, 0033, 0037, 0045, 0051 |
 | [0032](0032-numeric-pad-and-evaluator.md) | The numeric pad, the expression evaluator and the keys of undo and redo | Amended | Clients, rendering | 0026, 0031 | 0034 |
 | [0033](0033-sketch-model.md) | The sketch model in the engine | Amended | Contracts, sketch | 0012, 0021, 0031 | 0035, 0045, 0051, 0052 |
@@ -74,7 +74,7 @@ names. Do not read all of them.
 | [0058](0058-the-engine-reads-the-owned-kernel.md) | The engine reads the owned kernel for the faces of a body | Amended | Kernel, geometry, queries | 0057 | 0059 |
 | [0059](0059-references-by-the-identity-of-a-face.md) | The references by the identity of a face, and a datum on a face that a cut removed | Accepted | Kernel, feature graph, sketch | 0051, 0053, 0055, 0058 | — |
 | [0060](0060-unit-kind-in-the-command-schema.md) | The unit kind of each number parameter in the command schema | Accepted | Contracts, clients | 0013 | — |
-| [0061](0061-android-platform.md) | Android is a platform of the program, with the person on the phone and no surface | Accepted | Platform, clients, rendering | 0017, 0027 | — |
+| [0061](0061-android-platform.md) | Android is a platform of the program, with the person on the phone and no surface | Accepted | Platform, clients, rendering | 0017, 0027, 0030 | — |
 
 ## Topics
 
