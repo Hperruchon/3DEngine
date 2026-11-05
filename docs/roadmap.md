@@ -166,6 +166,7 @@ Therefore each approved objective must have a track here.
 - P0.80 — A gate fails when an open task plans an ADR number that another ADR file or another open task has. v0.188, TASK-0187.
 - P8h — Each number parameter of a command declares its unit kind in the schema. v0.189, TASK-0186, ADR-0060.
 - P0.81 — A press and a release of the mouse take the place of the cursor, not the last place of a motion. v0.190, TASK-0188.
+- P0.82 — A document whose log holds a datum on a face that a cut removed opens again. v0.192, TASK-0190.
 
 ## Track 0 — Foundations
 

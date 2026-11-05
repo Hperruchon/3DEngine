@@ -199,4 +199,51 @@ public sealed class FaceGoneTests
         var datum = await Datum(session, tool, "+x");
         Assert.Equal(new DatumAxis(1, 0, 0), (await Record(session, datum)).Frame.Normal);
     }
+
+    // Finding E134 of the codebase review of 2026-11-05 (b) (TASK-0190): before K4c a client could record a datum on a
+    // face that a cut had removed, because CreateDatum resolved the face from the parameters of the feature only. The open
+    // of such a log gives the datum the fault W-DATUM-REFERENCE-FAILED, and a new command is still refused.
+    [NativeManifoldFact]
+    public async Task An_Older_Log_With_A_Datum_On_A_Gone_Face_Opens_And_The_Datum_Has_The_Fault()
+    {
+        var folder = Directory.CreateTempSubdirectory("face-gone-").FullName;
+        var sessions = new List<DocumentSession>();
+        try
+        {
+            var path = Path.Combine(folder, "older" + Engine.Core.Persistence.DocumentFile.Extension);
+            using var backend = new ManifoldGeometryBackend();
+            var live = NewSession(backend);
+            sessions.Add(live);
+            Engine.Core.Persistence.DocumentFile.Create(live, path);
+            var plate = await Box(live, 10, 10, 2);
+            var tool = await Moved(live, await Box(live, 4, 20, 20), 5, 0, 0);
+            await Cut(live, plate, tool);
+            Assert.Equal(DiagnosticCodes.DatumReferenceInvalid, (await live.Apply(new CreateDatumCommand { FeatureId = plate, Element = "+x" })).Error?.Code);
+            var datum = await Datum(live, plate, "+z");
+            live.Close();
+
+            // The log of a client of v0.186: the last entry names the face +x, which the cut removed. The log writes the
+            // sign + as the escape \u002B.
+            const string Top = "\"\\u002Bz\"";
+            var text = File.ReadAllText(path);
+            var at = text.LastIndexOf(Top, StringComparison.Ordinal);
+            Assert.True(at > 0, "The last entry of the log names no face +z.");
+            File.WriteAllText(path, string.Concat(text.AsSpan(0, at), "\"\\u002Bx\"", text.AsSpan(at + Top.Length)));
+
+            using var second = new ManifoldGeometryBackend();
+            var opened = NewSession(second);
+            sessions.Add(opened);
+            await Engine.Core.Persistence.DocumentFile.Open(opened, path);
+            var record = await Record(opened, datum);
+            Assert.Equal((DiagnosticCodes.DatumReferenceFailed, "+x"), (record.Fault?.Code, record.Reference.Element));
+            Assert.Contains("is gone", record.Fault!.Message, StringComparison.Ordinal);
+            Assert.Equal(DiagnosticCodes.DatumReferenceInvalid, (await opened.Apply(new CreateDatumCommand { FeatureId = plate, Element = "+x" })).Error?.Code);
+        }
+        finally
+        {
+            foreach (var session in sessions)
+                session.Close();
+            Directory.Delete(folder, recursive: true);
+        }
+    }
 }
