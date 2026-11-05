@@ -171,6 +171,13 @@ public class DiagnosticsRegistryGateTests
     [InlineData("static class P { static string Code(string rest) => new string(new[] { 'E' }) + rest; }")]
     [InlineData("static class P { static string Code(string rest) => new System.String(new char[] { 'I' }) + rest; }")]
     [InlineData("static class P { static string Code(string rest) => $\"{char.ToUpperInvariant('e').ToString()}{rest}\"; }")]
+    // The forms of finding T131 of the second codebase review of 2026-11-03 (TASK-0177): a collection expression, a
+    // ToString with an argument, a static ToString, and an insert into a StringBuilder.
+    [InlineData("static class P { static string Code(string rest) => new string(['E']) + rest; }")]
+    [InlineData("static class P { const char S = 'E'; static string Code(string rest) => S.ToString(System.Globalization.CultureInfo.InvariantCulture) + rest; }")]
+    [InlineData("static class P { const char S = 'W'; static string Code(string rest) => char.ToString(S) + rest; }")]
+    [InlineData("static class P { const char S = 'I'; static string Code(string rest) => System.Convert.ToString(S) + rest; }")]
+    [InlineData("static class P { const char S = 'E'; static string Code(string rest) => new System.Text.StringBuilder(rest).Insert(0, S).ToString(); }")]
     public void A_Part_Of_A_Code_Is_An_Offence(string source)
     {
         Assert.NotEmpty(DiagnosticsScanner.PartsOfCodes([("Engine.Core/Probe.cs", source)]));
