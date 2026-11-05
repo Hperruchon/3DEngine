@@ -71,7 +71,7 @@ A change to an objective needs a decision from the owner. See `CLAUDE.md`, secti
 
 ### The hard requirements
 
-8. Windows, Linux and macOS each work. A gate verifies each one continuously.
+8. Windows, Linux, macOS and Android each work. A gate verifies each one continuously.
 9. Each operation works by touch. Each operation also works by mouse and keyboard. Neither method is
    secondary.
 10. Learning and usefulness are both objectives. One does not have priority.
@@ -252,7 +252,8 @@ Each refusal below is a measured wall, not a preference. The measurements are in
 ### Determinism
 
 16. **A replay gives the same result on each supported platform.** The platforms are Windows, Linux
-    and macOS, on x64 and arm64. `CLAUDE.md` holds the operational rules that keep this property.
+    and macOS, on x64 and arm64, and Android on arm64. A build for `android-x64` exists only for the
+    emulator of the pipeline. `CLAUDE.md` holds the operational rules that keep this property.
 
 ## How an agent uses this charter
 
