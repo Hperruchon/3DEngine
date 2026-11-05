@@ -165,6 +165,7 @@ Therefore each approved objective must have a track here.
 - K4 — Planar faces with a boolean, and the provenance of each face inside the owned kernel. Closed at v0.187, with K4a to K4c in this list.
 - P0.80 — A gate fails when an open task plans an ADR number that another ADR file or another open task has. v0.188, TASK-0187.
 - P8h — Each number parameter of a command declares its unit kind in the schema. v0.189, TASK-0186, ADR-0060.
+- P0.81 — A press and a release of the mouse take the place of the cursor, not the last place of a motion. v0.190, TASK-0188.
 
 ## Track 0 — Foundations
 
@@ -252,6 +253,7 @@ This track removes each condition that blocks other work.
 | P0.78 | The far plane holds each visible body from the eye, and the dimension overlay keeps its labels apart and inside the window, follows a drag and reads the boxes once for each change (V78 to V84 of the codebase review of 2026-11-05; after the next product phase; V83 after Q2). TASK-0181. | 2–3 |
 | P0.79 | A datum on a diagonal subnormal side has unit axes, the walk of the planes gives its sketches in the order of the log, and the next forms of three gates (E131 to E133, T133 to T135; after the next product phase). TASK-0182. | 1–2 |
 | P0.80 | A gate fails when an open task plans an ADR number that another ADR file or another open task has (register entry R-0052; the owner, 2026-11-05, before P8h). TASK-0187. | 1 |
+| P0.81 | A press and a release of the mouse take the place of the cursor, not the last place of a motion (register entry R-0043; the owner, 2026-11-05, before the codebase review). TASK-0188. | 1 |
 
 ## Track P — The platform
 
