@@ -1,7 +1,7 @@
 ---
 id: 0195
 title: ppy.SDL3-CS replaces Alimer.Bindings.SDL on the desktop, with no change of behaviour
-status: Active
+status: Done
 phase: R14c
 opened: 2026-11-06
 depends-on: [0194]
@@ -58,23 +58,25 @@ The desktop runs on `ppy.SDL3-CS` 2026.1002.1 with the behaviour of today, and e
 
 ## Acceptance criteria
 
-- [ ] Each test passes with no change of an expectation.
-- [ ] Each injection of the gate fails a test.
-- [ ] A clean build (`--no-incremental`) gives zero errors and zero warnings.
-- [ ] Continuous integration passes on the three runners, on the branch and on `main` after the merge.
+- [x] Each test passes with no change of an expectation.
+- [x] Each injection of the gate fails a test.
+- [x] A clean build (`--no-incremental`) gives zero errors and zero warnings.
+- [x] Continuous integration passes on the three runners, on the branch and on `main` after the merge.
 
 ## Outcome
 
-Status: Active
+Status: Done · commit (the merge of the branch r14c-sdl-binding) · v0.197
 
 ## Method
 
 Mechanical: a script maps the names of the enumerations, and the compiler gives each other change.
 Judgement:  the pin 2026.1002.1, whose SDL is a development snapshot (R-0054).
-Weakest:    to be written at the close.
+Weakest:    no test reaches the window and its swapchain; one run of the desktop on Windows proved them, and the
+            pipeline runs no window on Linux or macOS.
 
 ## Progress
 
 - 2026-11-06: opened with the Android order; the pin, the port of seven files, the pin rule, and two injections that
   each fail a test. A probe of the hook of R-0043 on SDL 3.5.0 corrects a stale press, and a run of the desktop opened
   a second file with a new Vulkan instance and no error.
+- 2026-11-06: closed at v0.197.

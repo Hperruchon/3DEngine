@@ -5880,3 +5880,34 @@ New tests: 3, and the 3 cases of `Arguments` are gone. The test list holds 1800 
 `3DEngine.Tests`, 198 in `3DEngine.ImageTests`, 3 in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln
 --no-incremental` gives zero errors and zero warnings. Open entries: 14 of 15. New diagnostic codes: 0. Since the review
 of v0.190, 2 product milestones and 6 entries followed it.
+
+## v0.197 — ppy.SDL3-CS replaces Alimer.Bindings.SDL on the desktop, with no change of behaviour (R14c, TASK-0195)
+
+Phase c of the Android order of 2026-11-05 (ADR-0061 item 5). `Alimer.Bindings.SDL` has no Android library and no
+release after 2025-04-04. `ppy.SDL3-CS` ships `libSDL3.so` for Android and the Java class `SDLActivity`.
+
+**The change.**
+- `3DEngine.Vulkan/3DEngine.Vulkan.csproj` pins `ppy.SDL3-CS` 2026.1002.1, and ADR-0017 item 4 names it.
+- Seven files follow the binding: the names of the enumerations in the form of C, a window as a pointer, the type of
+  an event as the property `Type`, the Vulkan surface with the opaque types of SDL, the instance extensions as a pointer
+  and a count, and the hook of R-0043 with the `MSG` of the binding, in place of a struct of its own.
+- The pin rule of `DependencyDirectionGateTests` names `ppy.SDL3-CS`, and `No_Project_References_The_Old_Binding_Of_Sdl`
+  refuses the old binding.
+- R-0054: the native SDL of five versions of `ppy.SDL3-CS` is a snapshot of the main branch of SDL (3.3.3, then 3.5.0),
+  so no version has a release. The decision stays with the owner.
+
+**Proof.** Each test passes with no change of an expectation, the 198 image tests too. Two injections each fail a test:
+a second pin, and the old binding in the host. A probe of the real `Window` on SDL 3.5.0 posted a stale press: the hook
+gave the press at the place of the click, and a press after a motion at its place gave no correction. A run of the
+desktop opened a second file over HTTP: SDL gave the surface extensions of Windows, the second session made its own
+Vulkan instance, and the log had no error.
+
+**What stays.** The build output holds the native files of 32-bit x86 of the package, as it holds the file `win-x86` of
+ImGui.NET; the desktop has no distributed package yet, and ADR-0027 says that the package leaves them out. No window ran
+on Linux or macOS.
+
+**A correction.** None.
+
+New tests: 1. The test list holds 1801 (1280 in `Engine.Tests`, 320 in `3DEngine.Tests`, 198 in `3DEngine.ImageTests`,
+3 in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
+entries: 14 of 15. New diagnostic codes: 0. Since the review of v0.190, 3 product milestones and 7 entries followed it.
