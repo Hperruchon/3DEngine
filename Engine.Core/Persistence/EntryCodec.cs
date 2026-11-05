@@ -19,12 +19,16 @@ public static class EntryCodec
     public const string Format = "3dengine-document";
     public const int FormatVersion = 1;
 
-    public static string Header(string lengthUnit)
+    // ADR-0071 item 4: the header of a part has no field kind, so a part file has the same bytes as before
+    // TASK-0202; the header of an assembly ends with "kind":"assembly".
+    public static string Header(string lengthUnit, string kind = Document.Part)
         => Write(writer =>
         {
             writer.WriteString("format", Format);
             writer.WriteNumber("formatVersion", FormatVersion);
             writer.WriteString("lengthUnit", lengthUnit);
+            if (kind != Document.Part)
+                writer.WriteString("kind", kind);
         });
 
     // The line of one applied command, or null with the reason when a value cannot
@@ -118,7 +122,11 @@ public static class EntryCodec
     private static readonly JsonDocumentOptions Strict = new() { AllowDuplicateProperties = false };
 
     // The length unit of a header line, or a DocumentFileException.
-    public static string ReadHeader(string line)
+    public static string ReadHeader(string line) => ReadHeaderFields(line).LengthUnit;
+
+    // ADR-0071 item 4: the length unit and the kind of a header. A header with no field kind is a part, so each file
+    // of an earlier version opens as a part; another kind than part or assembly gives E-IO-LOAD-FAILED.
+    public static (string LengthUnit, string Kind) ReadHeaderFields(string line)
     {
         try
         {
@@ -131,7 +139,10 @@ public static class EntryCodec
                 throw DocumentFileException.Load($"The header gives the format {format} {formatVersion}, and this engine reads {Format} {FormatVersion}.");
             if (unit != Document.Millimetre)
                 throw DocumentFileException.Load($"The header gives the length unit {unit}, and the millimetre ({Document.Millimetre}) is the only permitted unit (ADR-0015 item 7).");
-            return unit;
+            var kind = root.TryGetProperty("kind", out var field) ? field.GetString() : Document.Part;
+            if (kind is not (Document.Part or Document.Assembly))
+                throw DocumentFileException.Load($"The header gives the kind {kind}, and a document is a {Document.Part} or an {Document.Assembly} (ADR-0071 item 4).");
+            return (unit, kind);
         }
         catch (Exception ex) when (ex is JsonException or KeyNotFoundException or InvalidOperationException or FormatException)
         {
