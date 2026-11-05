@@ -26,7 +26,7 @@ names. Do not read all of them.
 | [0009](0009-3dengine-core-peer-render-kernel.md) | 3DEngine.Core is a peer render kernel | Amended | Boundary, clients | — | 0022, 0025 |
 | [0010](0010-subscription-reset-snapshot-format.md) | subscription.reset snapshot format | Amended | Contracts, observability | — | 0020, 0015 |
 | [0012](0012-geometry-backend-wiring.md) | Geometry backend wiring | Amended | Boundary, geometry, contracts | — | 0018, 0021, 0028, 0015, 0033, 0037, 0045, 0051 |
-| [0013](0013-command-query-schema-declaration.md) | Command and query schema declaration | Accepted | Contracts, observability | — | — |
+| [0013](0013-command-query-schema-declaration.md) | Command and query schema declaration | Amended | Contracts, observability | — | 0060 |
 | [0014](0014-manifold-native-interop.md) | Manifold backend native-interop posture | Accepted | Boundary, geometry, native-interop | — | — |
 | [0015](0015-command-log-persistence.md) | The document file | Accepted | Persistence, contracts | 0010, 0012 | — |
 | [0016](0016-handler-declared-construction.md) | Handler-declared command and query construction | Accepted | Contracts, clients | — | — |
@@ -73,13 +73,14 @@ names. Do not read all of them.
 | [0057](0057-planar-subtract-in-the-owned-kernel.md) | The exact planar subtract of the owned kernel, with the provenance of each face | Amended | Kernel, geometry, determinism | — | 0058 |
 | [0058](0058-the-engine-reads-the-owned-kernel.md) | The engine reads the owned kernel for the faces of a body | Amended | Kernel, geometry, queries | 0057 | 0059 |
 | [0059](0059-references-by-the-identity-of-a-face.md) | The references by the identity of a face, and a datum on a face that a cut removed | Accepted | Kernel, feature graph, sketch | 0051, 0053, 0055, 0058 | — |
+| [0060](0060-unit-kind-in-the-command-schema.md) | The unit kind of each number parameter in the command schema | Accepted | Contracts, clients | 0013 | — |
 
 ## Topics
 
-- **Contracts** — 0005, 0006, 0008, 0012, 0013, 0015, 0018, 0020, 0021, 0028, 0033, 0045. Read these before changing `Engine.Contracts/**`.
+- **Contracts** — 0005, 0006, 0008, 0012, 0013, 0015, 0018, 0020, 0021, 0028, 0033, 0045, 0060. Read these before changing `Engine.Contracts/**`.
 - **Boundary** — 0001, 0004, 0007, 0012, 0014, 0017, 0022, 0025. Read these before changing project references or adding clients.
 - **Workflow** — 0002. Read before adding a client or skipping CLI.
-- **Clients** — 0002, 0007, 0019, 0024, 0026, 0027, 0029, 0030, 0032, 0034. Read before changing UI/CLI/host code.
+- **Clients** — 0002, 0007, 0019, 0024, 0026, 0027, 0029, 0030, 0032, 0034, 0060. Read before changing UI/CLI/host code.
 - **Deployment** — 0004, 0019, 0030. Read these before changing where a session runs or which transport a host uses.
 - **Geometry** — 0001, 0012, 0014, 0018, 0021, 0028. Read before adding a capability or backend.
 - **Observability** — 0005, 0010, 0013, 0020, 0021. Read before changing event ordering, retention, subscription, or schema endpoints.

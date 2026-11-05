@@ -24,8 +24,19 @@ public sealed class AddSketchConstraintCommandHandler : ICommandHandler, IComman
             ["first"] = new("guid", Required: true),
             ["second"] = new("guid", Required: false),
             ["third"] = new("guid", Required: false),
-            ["value"] = new("number", Required: false),
-            ["secondValue"] = new("number", Required: false),
+            ["value"] = new("number", Required: false, UnitBy: new("kind", new Dictionary<string, string>
+            {
+                [SketchConstraints.Distance] = UnitKinds.Length,
+                [SketchConstraints.Radius] = UnitKinds.Length,
+                [SketchConstraints.Fixed] = UnitKinds.Length,
+                [SketchConstraints.Tangent] = UnitKinds.Sign,
+                [SketchConstraints.Angle] = UnitKinds.Cosine,
+            })),
+            ["secondValue"] = new("number", Required: false, UnitBy: new("kind", new Dictionary<string, string>
+            {
+                [SketchConstraints.Fixed] = UnitKinds.Length,
+                [SketchConstraints.Angle] = UnitKinds.Sine,
+            })),
         };
 
     public IReadOnlyDictionary<string, FieldSchema> Outputs { get; } =

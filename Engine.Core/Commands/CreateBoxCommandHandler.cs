@@ -14,9 +14,9 @@ public sealed class CreateBoxCommandHandler : ICommandHandler, ICommandEncoder
     public IReadOnlyDictionary<string, FieldSchema> Parameters { get; } =
         new Dictionary<string, FieldSchema>
         {
-            ["sizeX"] = new("number", Required: true),
-            ["sizeY"] = new("number", Required: true),
-            ["sizeZ"] = new("number", Required: true),
+            ["sizeX"] = new("number", Required: true, Unit: UnitKinds.Length),
+            ["sizeY"] = new("number", Required: true, Unit: UnitKinds.Length),
+            ["sizeZ"] = new("number", Required: true, Unit: UnitKinds.Length),
         };
 
     public IReadOnlyDictionary<string, FieldSchema> Outputs { get; } =

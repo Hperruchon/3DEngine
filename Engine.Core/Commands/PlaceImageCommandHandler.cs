@@ -24,9 +24,9 @@ public sealed class PlaceImageCommandHandler : ICommandHandler, ICommandEncoder
             ["datumId"] = new("guid", Required: true),
             ["width"] = new("integer", Required: true),
             ["height"] = new("integer", Required: true),
-            ["originU"] = new("number", Required: false),
-            ["originV"] = new("number", Required: false),
-            ["scale"] = new("number", Required: false),
+            ["originU"] = new("number", Required: false, Unit: UnitKinds.Length),
+            ["originV"] = new("number", Required: false, Unit: UnitKinds.Length),
+            ["scale"] = new("number", Required: false, Unit: UnitKinds.Scale),
         };
 
     public IReadOnlyDictionary<string, FieldSchema> Outputs { get; } =

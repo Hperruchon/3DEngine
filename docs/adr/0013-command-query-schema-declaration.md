@@ -1,13 +1,13 @@
 ---
 id: 0013
 title: Command and query schema declaration
-status: Accepted
+status: Amended
 topic: Contracts, observability
 date: 2026-05-27
 supersedes: []
 superseded-by: []
 amends: []
-amended-by: []
+amended-by: ['0060']
 affects:
   - Engine.Contracts/Handlers/**
   - Engine.Api.Http/Endpoints/Schema**
@@ -162,3 +162,5 @@ holds the rule that a host names no command.
 
 - 2026-10-27 · TASK-0040 · Item 7 holds the construction step of ADR-0016 (2026-09-20): `Create` on
   each handler, `ParameterBinder` and `HandlerCatalog`. ADR-0016 no longer amends this record.
+- 2026-11-05 · TASK-0186 · ADR-0060 amends item 2: `FieldSchema` gets `Unit` and `UnitBy`, and each number
+  parameter of a command declares its unit kind.

@@ -20,8 +20,8 @@ public sealed class MoveSketchPointCommandHandler : ICommandHandler, ICommandEnc
         {
             ["sketchId"] = new("guid", Required: true),
             ["pointId"] = new("guid", Required: true),
-            ["x"] = new("number", Required: true),
-            ["y"] = new("number", Required: true),
+            ["x"] = new("number", Required: true, Unit: UnitKinds.Length),
+            ["y"] = new("number", Required: true, Unit: UnitKinds.Length),
         };
 
     public IReadOnlyDictionary<string, FieldSchema> Outputs { get; } =
