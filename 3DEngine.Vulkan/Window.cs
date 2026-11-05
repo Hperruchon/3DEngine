@@ -74,42 +74,85 @@ public sealed unsafe class Window
         _ = SDL_SetWindowPosition(_window, SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED);
         Id = SDL_GetWindowID(_window);
 
-        // R-0043 (TASK-0188): the handle of the window for Cursor, on the video driver of Windows only.
+        // Register entry R-0043 and finding V85 (TASK-0188, TASK-0191): the hook of the button messages, on the video
+        // driver of Windows only. The process has one window, so the hook is static.
         if (OperatingSystem.IsWindows() && SDL_GetCurrentVideoDriver() == "windows")
+        {
             _handle = SDL_GetPointerProperty(SDL_GetWindowProperties(_window), SDL_PROP_WINDOW_WIN32_HWND_POINTER, IntPtr.Zero);
+            s_hooked = this;
+            SDL_SetWindowsMessageHook(&Hook, IntPtr.Zero);
+        }
 
         // The text input of SDL gives the text events of a text field (ADR-0027 item 5).
         _ = SDL_StartTextInput(_window);
     }
 
     private readonly IntPtr _handle;
+    private static Window? s_hooked;
 
-    // Register entry R-0043 (TASK-0188): the place of the cursor in the coordinates of the window, read as SDL 3.2
-    // reads it at a focus gain on Windows (GetCursorPos, then ScreenToClient), so it has the coordinates of a motion
-    // event. It is null on another video driver: SDL gives no such reading there that a probe checked.
-    public (float X, float Y)? Cursor()
+    // Register entry R-0043 and finding V85 of the codebase review of 2026-11-05 (b) (TASK-0188, TASK-0191). SDL 3.2 gives
+    // a press and a release of a mouse button at the last place of a motion (SDL_mouse.c fills button.x from mouse->x),
+    // and its Windows backend does not read the place of the button message. A cursor that moves with no motion message
+    // before a press, as a synthetic click does, gives the press at an old place. TASK-0188 took the place of the cursor
+    // at the poll, and a hand that moves on after a press then moved the click (V85). The hook sees each message before
+    // SDL reads it. When the place of a button message of this window is not the place that SDL holds, it warps the mouse
+    // of SDL to the place of the message, where the cursor already is. SDL then gives a motion and the press at the true
+    // place. A hand gives a motion before each press, so SDL holds the place of the press and the hook does nothing.
+    [System.Runtime.InteropServices.UnmanagedCallersOnly(CallConvs = [typeof(System.Runtime.CompilerServices.CallConvCdecl)])]
+    private static SDLBool Hook(IntPtr userdata, tagMSG message)
     {
-        if (_handle == IntPtr.Zero || !Win32.GetCursorPos(out var point) || !Win32.ScreenToClient(_handle, ref point))
+        var window = s_hooked;
+        var msg = (Win32.Message*)message.Value;
+        if (window is null || msg is null || msg->Window != window._handle || Win32.FromPenOrTouch(Win32.GetMessageExtraInfo()))
+            return true;
+
+        float x, y;
+        _ = SDL_GetMouseState(&x, &y);
+        if (Correction(msg->Kind, msg->LParam, x, y) is { } place)
+        {
+            Console.WriteLine($"[INFO] A button message at ({place.X}, {place.Y}) moves the mouse of SDL from ({x}, {y}) before SDL reads it (R-0043).");
+            SDL_WarpMouseInWindow(window._window, place.X, place.Y);
+        }
+        return true;
+    }
+
+    // The place of a button message in the coordinates of the window, when it is not the place that SDL holds; null for
+    // another message or the same place. The message gives its place in the low and the high word of lParam, signed.
+    public static (float X, float Y)? Correction(uint message, nint lParam, float heldX, float heldY)
+    {
+        if (message is < Win32.FirstButtonMessage or > Win32.LastButtonMessage)
             return null;
-        return (point.X, point.Y);
+        float x = (short)(lParam & 0xFFFF);
+        float y = (short)((lParam >> 16) & 0xFFFF);
+        return x == heldX && y == heldY ? null : (x, y);
     }
 
     private static class Win32
     {
+        // WM_LBUTTONDOWN to WM_MBUTTONDBLCLK: the left, the right and the middle button, each with a press, a release and
+        // a double click.
+        internal const uint FirstButtonMessage = 0x0201;
+        internal const uint LastButtonMessage = 0x0209;
+
+        // The layout of MSG on x64 and arm64.
         [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential)]
-        internal struct Point
+        internal struct Message
         {
+            public IntPtr Window;
+            public uint Kind;
+            public nint WParam;
+            public nint LParam;
+            public uint Time;
             public int X;
             public int Y;
+            public uint Private;
         }
 
-        [System.Runtime.InteropServices.DllImport("user32.dll")]
-        [return: System.Runtime.InteropServices.MarshalAs(System.Runtime.InteropServices.UnmanagedType.Bool)]
-        internal static extern bool GetCursorPos(out Point point);
+        // A message that Windows makes from a pen or a touch carries this mark; SDL leaves it to its pen and touch events.
+        internal static bool FromPenOrTouch(nint extraInfo) => ((ulong)extraInfo & 0xFFFFFF00UL) == 0xFF515700UL;
 
         [System.Runtime.InteropServices.DllImport("user32.dll")]
-        [return: System.Runtime.InteropServices.MarshalAs(System.Runtime.InteropServices.UnmanagedType.Bool)]
-        internal static extern bool ScreenToClient(IntPtr window, ref Point point);
+        internal static extern nint GetMessageExtraInfo();
     }
 
     public string Title { get; }

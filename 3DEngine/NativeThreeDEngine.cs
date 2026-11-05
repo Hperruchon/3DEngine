@@ -23,7 +23,7 @@ namespace ThreeDEngine.Desktop;
 // panel after the scene, in the same render pass (ADR-0027, TASK-0084).
 public sealed class NativeThreeDEngine : IThreeDEngine, IDisposable
 {
-    private readonly SdlInput _input;
+    private readonly SdlInput _input = new();
     private readonly IntentMachine _intents;
 
     private readonly Window _window;
@@ -62,8 +62,6 @@ public sealed class NativeThreeDEngine : IThreeDEngine, IDisposable
     internal NativeThreeDEngine(Window window, EngineHost host, IntentSettings? settings = null, bool synchronizationValidation = false, string address = "", DesktopDocument? document = null, Engine.Core.Assets.AssetStore? assets = null)
     {
         _window = window;
-        // R-0043 (TASK-0188): a press and a release take the place of the cursor, not the last place of a motion.
-        _input = new SdlInput(window.Cursor);
         _document = document;
         _assets = assets;
         _host = host;
@@ -85,7 +83,14 @@ public sealed class NativeThreeDEngine : IThreeDEngine, IDisposable
 
     // ADR-0056 item 6 (phase R13): the distance in effect of the selected body, for its box, so that GetBodyInfo runs one
     // time for each change of the selection or of its solid and not in each frame.
-    private (Guid Body, ((double X, double Y, double Z) Min, (double X, double Y, double Z) Max) Box, double? Distance)? _sizeOf;
+    private (Guid Body, ((double X, double Y, double Z) Min, (double X, double Y, double Z) Max) Still, double? Distance)? _sizeOf;
+
+    // Finding V87 of the codebase review of 2026-11-05 (b) (TASK-0191): the key was the box with the offset of a preview,
+    // so a drag of the gizmo queried GetBodyInfo in each frame, against ADR-0056 item 6. The key is the box with no
+    // offset: a preview does not change the engine, so a drag queries one time.
+    internal static (Guid Body, ((double X, double Y, double Z) Min, (double X, double Y, double Z) Max) Still, double? Distance) SizeOf(
+        (Guid Body, ((double X, double Y, double Z) Min, (double X, double Y, double Z) Max) Still, double? Distance)? known, Guid body, ((double X, double Y, double Z) Min, (double X, double Y, double Z) Max) rest, Func<Guid, double?> query)
+        => known is { } kept && kept.Body == body && kept.Still == rest ? kept : (body, rest, query(body));
 
     public string Name => "3DEngine Desktop Runtime";
 
@@ -477,7 +482,12 @@ public sealed class NativeThreeDEngine : IThreeDEngine, IDisposable
         ApplyIntents();
         var extent = presenter.Swapchain.Extent;
         var scene = CurrentScene;
-        _renderer.Update(scene, Camera, (float)extent.width / extent.height);
+        var renderer = _renderer;
+        _images?.Apply((asset, picture) => renderer.Upload(asset, (uint)picture.Width, (uint)picture.Height, picture.Rgba));
+        var images = _images?.Quads();
+
+        // Finding V86 of the codebase review of 2026-11-05 (b) (TASK-0191): the far plane holds the live images too.
+        _renderer.Update(scene, Camera, (float)extent.width / extent.height, images);
 
         // The samples are in pixels of the window; the swapchain can have more pixels.
         var window = _window.Extent;
@@ -487,9 +497,6 @@ public sealed class NativeThreeDEngine : IThreeDEngine, IDisposable
             : Vector2.One;
         _actions?.Forget(_renderer.LiveBodies);
         _sketches?.Apply();
-        var renderer = _renderer;
-        _images?.Apply((asset, picture) => renderer.Upload(asset, (uint)picture.Width, (uint)picture.Height, picture.Rgba));
-        var images = _images?.Quads();
         var imagePanel = _images is not null && _imageActions is { } imageActions
             ? new ImagePanel(_images.Live, imageActions.Calibrating, imageActions.Points.Count, imageActions.Message, imageActions.Proposal?.Pixels.Count ?? 0)
             : null;
@@ -527,10 +534,9 @@ public sealed class NativeThreeDEngine : IThreeDEngine, IDisposable
             var unit = _host.Session.LengthUnit;
             var selectedBox = Selection is { } body ? _renderer.BoxOf(body) : null;
             dimensions = DimensionOverlay.Of(_renderer.Union(_ui.HiddenToo), selectedBox, Camera, window.width, window.height, unit);
-            if (Selection is { } chosen && selectedBox is { } box && _actions is not null)
+            if (Selection is { } chosen && selectedBox is { } box && _renderer.RestBoxOf(chosen) is { } rest && _actions is { } actions)
             {
-                if (_sizeOf is not { } known || known.Body != chosen || known.Box != box)
-                    _sizeOf = (chosen, box, _actions.Distance(chosen));
+                _sizeOf = SizeOf(_sizeOf, chosen, rest, actions.Distance);
                 size = DimensionOverlay.SizeText(box, _sizeOf.Value.Distance, unit);
             }
         }

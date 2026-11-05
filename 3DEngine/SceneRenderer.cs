@@ -78,17 +78,22 @@ internal sealed unsafe class SceneRenderer : IDisposable
 
     public ((double X, double Y, double Z) Min, (double X, double Y, double Z) Max)? BoxOf(Guid bodyId) => _bodies.BoxOf(bodyId);
 
+    // V87 (TASK-0191): the box of a body with no offset of a preview.
+    public ((double X, double Y, double Z) Min, (double X, double Y, double Z) Max)? RestBoxOf(Guid bodyId) => _bodies.RestBoxOf(bodyId);
+
     // Brings each change of the live bodies into the scene. When the first visible body
     // comes, the camera frames the visible bodies for the aspect of the target. Register
     // entry R-0051 (TASK-0179): at each change the far plane follows the box of the visible
     // bodies, so a model larger than the default far plane shows whole.
     // Finding V78 of the codebase review of 2026-11-05 (TASK-0181): the far plane follows the eye too, so the host calls
     // this in each frame and the far plane is set in each frame, from the kept box (V81), also with no change of a body.
-    public void Update(Scene scene, Camera camera, float aspect)
+    // Finding V86 of the codebase review of 2026-11-05 (b) (TASK-0191): the box holds each live image too, so an image
+    // larger than the default far plane, also with no body, shows whole.
+    public void Update(Scene scene, Camera camera, float aspect, IReadOnlyList<ImageQuad>? images = null)
     {
         var before = _bodies.VisibleCount;
         var changed = _bodies.Apply(scene, _meshes, _device);
-        if (_bodies.Bounds is not { } box)
+        if (SceneBox(_bodies.Bounds, images) is not { } box)
             return;
 
         // Frame keeps the distance at half the far plane, so the far plane of the box comes before the frame, and again
@@ -100,6 +105,24 @@ internal sealed unsafe class SceneRenderer : IDisposable
                 Console.WriteLine($"[WARN] The bodies do not fit between the near plane ({camera.NearPlane}) and the far plane ({camera.FarPlane}) of the camera, so a part of them is not drawn.");
             camera.FarPlane = camera.FarPlaneFor(box.Min, box.Max);
         }
+    }
+
+    // V86 (TASK-0191): the box of the bodies and of the four corners of each image quad, or null when both are absent.
+    internal static ((double X, double Y, double Z) Min, (double X, double Y, double Z) Max)? SceneBox(
+        ((double X, double Y, double Z) Min, (double X, double Y, double Z) Max)? bodies, IReadOnlyList<ImageQuad>? images)
+    {
+        var box = bodies;
+        foreach (var quad in images ?? [])
+        {
+            var (o, r, u) = (quad.Origin, quad.Right, quad.Up);
+            foreach (var corner in new (double X, double Y, double Z)[] { o, (o.X + r.X, o.Y + r.Y, o.Z + r.Z), (o.X + u.X, o.Y + u.Y, o.Z + u.Z), (o.X + r.X + u.X, o.Y + r.Y + u.Y, o.Z + r.Z + u.Z) })
+                box = box is { } known
+                    ? ((Math.Min(known.Min.X, corner.X), Math.Min(known.Min.Y, corner.Y), Math.Min(known.Min.Z, corner.Z)),
+                       (Math.Max(known.Max.X, corner.X), Math.Max(known.Max.Y, corner.Y), Math.Max(known.Max.Z, corner.Z)))
+                    : (corner, corner);
+        }
+
+        return box;
     }
 
     // ADR-0043 item 4: uploads an image under its identifier, one time. The caller uploads outside
