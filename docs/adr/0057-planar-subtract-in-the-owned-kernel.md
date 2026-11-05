@@ -1,13 +1,13 @@
 ---
 id: 0057
 title: The exact planar subtract of the owned kernel, with the provenance of each face
-status: Accepted
+status: Amended
 topic: Kernel, geometry, determinism
 date: 2026-11-05
 supersedes: []
 superseded-by: []
 amends: []
-amended-by: []
+amended-by: ['0058']
 affects:
   - Engine.Kernel/**
 enforced-by: Engine.Tests/Kernel/PlanarSubtractTests.cs (TASK-0183 creates it)
@@ -37,7 +37,8 @@ slices. On 2026-11-05 the owner answered four questions:
 ## Decision
 
 1. **The project.** `Engine.Kernel` is a library of managed code that references no project and no package. In K4a no
-   project of the engine references it; `Engine.Tests` does. The dependency gate holds it in the class of the kernel,
+   project of the engine referenced it; `Engine.Tests` does. Since K4b (ADR-0058 item 1) `Engine.Core` references it,
+   and no other project of the engine does. The dependency gate holds it in the class of the kernel,
    and the determinism gate reads it as a project of the path of the log.
 2. **The numbers.** Each coordinate, each plane and each value of the kernel is an exact rational of two `BigInteger`
    values. A double enters exactly (its bits), and the kernel uses + - * / and comparisons only, so each sign of each
@@ -65,7 +66,7 @@ slices. On 2026-11-05 the owner answered four questions:
    kernel with those of Manifold, and the topology with the Euler–Poincaré formula.
 8. **Determinism.** The kernel has no transcendental call, no hash order and no clock; each list keeps the order of its
    input. The same input gives the same B-Rep on each platform.
-9. **Out of this record.** The engine reads the kernel (K4b): a B-Rep of each body as a projection of the feature list,
+9. **Out of this record.** The engine reads the kernel (K4b, ADR-0058): a B-Rep of each body as a projection of the feature list,
    a query of the faces and their names. The datums and the references by the identity of a face, and a fault for a
    face that is gone (K4c). A union and an intersection. Curved surfaces (K5).
 
@@ -80,3 +81,4 @@ slices. On 2026-11-05 the owner answered four questions:
 ## History
 
 - 2026-11-05 · TASK-0183 · Accepted with the four answers of the owner of 2026-11-05.
+- 2026-11-05 · TASK-0184 · ADR-0058 item 1 amends item 1: `Engine.Core` references the kernel.
