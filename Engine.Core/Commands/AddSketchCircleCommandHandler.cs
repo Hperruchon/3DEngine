@@ -20,7 +20,7 @@ public sealed class AddSketchCircleCommandHandler : ICommandHandler, ICommandEnc
         {
             ["sketchId"] = new("guid", Required: true),
             ["centerPointId"] = new("guid", Required: true),
-            ["radius"] = new("number", Required: true),
+            ["radius"] = new("number", Required: true, Unit: UnitKinds.Length),
         };
 
     public IReadOnlyDictionary<string, FieldSchema> Outputs { get; } =

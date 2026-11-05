@@ -18,11 +18,11 @@ public sealed class CalibrateImageCommandHandler : ICommandHandler, ICommandEnco
         new Dictionary<string, FieldSchema>
         {
             ["imageId"] = new("guid", Required: true),
-            ["x1"] = new("number", Required: true),
-            ["y1"] = new("number", Required: true),
-            ["x2"] = new("number", Required: true),
-            ["y2"] = new("number", Required: true),
-            ["distance"] = new("number", Required: true),
+            ["x1"] = new("number", Required: true, Unit: UnitKinds.Pixel),
+            ["y1"] = new("number", Required: true, Unit: UnitKinds.Pixel),
+            ["x2"] = new("number", Required: true, Unit: UnitKinds.Pixel),
+            ["y2"] = new("number", Required: true, Unit: UnitKinds.Pixel),
+            ["distance"] = new("number", Required: true, Unit: UnitKinds.Length),
         };
 
     public IReadOnlyDictionary<string, FieldSchema> Outputs { get; } =

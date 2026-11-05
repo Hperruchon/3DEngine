@@ -439,6 +439,19 @@ library. A phase that needs more vision than one contour needs the library in th
 Exit: the owner decides if the desktop may hold the library and on which platforms, with or without the FFmpeg file,
 and the phase that does it adds the notices of ADR-0042 item 6.
 
+### R-0053 · A query result and a command output give a number with no unit
+- class: question
+- opened: 2026-11-05
+- due: 2027-02-03
+- extended: no
+- refs: `docs/adr/0060-unit-kind-in-the-command-schema.md` item 7, `docs/adr/0013-command-query-schema-declaration.md` item 2, TASK-0186
+Since TASK-0186 each number parameter of a command declares its unit kind, but `Outputs` of a command and `Result`
+of a query declare none. `CalibrateImage` gives `scale` and `GetBoundingBox` gives six lengths with no stated
+meaning, so a client that shows them still holds the meaning in its own code. `GetFaces` gives an array, and the
+areas inside it need the nested schema that ADR-0013 defers.
+Exit: an ADR gives the units of results and outputs, with the nested schema or without it, or the owner accepts that a
+client holds them.
+
 ## Accepted compromises
 
 These are conditions that the project keeps permanently and by decision. They do not age.

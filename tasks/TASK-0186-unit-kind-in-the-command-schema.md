@@ -1,11 +1,11 @@
 ---
 id: 0186
 title: Each number parameter of a command declares its unit kind in the schema
-status: Ready
+status: Active
 phase: P8h
 opened: 2026-11-05
 depends-on: []
-governed-by: [0004, 0008, 0012, 0016, 0019, 0021, 0028, 0031, 0033, 0036, 0037, 0040, 0045, 0049]
+governed-by: [0004, 0008, 0012, 0016, 0019, 0021, 0028, 0031, 0033, 0036, 0037, 0040, 0045, 0049, 0060]
 writes:
   create:
     - tasks/TASK-0186-unit-kind-in-the-command-schema.md
@@ -68,8 +68,8 @@ holds the rule.
 - ADR-0060 "Unit kind in the command schema", from the draft, with the two choices of the owner.
   It amends ADR-0013 (status Amended, `amended-by`, one History line).
 - `FieldSchema` gets `Unit` and `UnitBy`; a new record `UnitByField(Field, Units)`.
-- A unit on each of the 21 number parameters of the 11 command handlers (count of 2026-11-05;
-  the count at the start of the task is the truth):
+- A unit on each of the 25 number parameters of the 11 command handlers (count at the start of the
+  task; the count of 21 when the task opened missed the four points of `CalibrateImage`):
 
   | Command | Parameter | Unit |
   | --- | --- | --- |
@@ -77,6 +77,7 @@ holds the rule.
   | AddSketchConstraint | value | UnitBy kind: distance, radius, fixed → length; tangent → sign; angle → cosine |
   | AddSketchConstraint | secondValue | UnitBy kind: fixed → length; angle → sine |
   | AddSketchPoint | x, y | length |
+  | CalibrateImage | x1, y1, x2, y2 | pixel (the owner, 2026-11-05) |
   | CalibrateImage | distance | length |
   | CreateBox | sizeX, sizeY, sizeZ | length |
   | Extrude | distance | length |
@@ -118,7 +119,7 @@ holds the rule.
 - Read ADR-0013 too. The gate does not list it in `governed-by`, because its `affects` names
   `Engine.Contracts/Handlers/**` and `Engine.Api.Http/Endpoints/Schema**`, not the paths of this
   task. ADR-0060 amends it, and its `affects` covers `Engine.Contracts/Schema/**`.
-- The unit vocabulary of V1: `length`, `scale`, `cosine`, `sine`, `sign`, `ratio`,
+- The unit vocabulary of V1: `length`, `pixel` (the owner, 2026-11-05), `scale`, `cosine`, `sine`, `sign`, `ratio`,
   `constraint-value`. `ratio` has no user in this task; keep it, because a later command with a
   direction component needs it, or remove it and say why in the ADR.
 - A kind that is not in a `UnitBy` map takes no value. Do not add an entry for it.
@@ -134,3 +135,8 @@ holds the rule.
 - 2026-11-05: takes ADR-0060, because K4c took ADR-0059 first (0b527cd).
 - 2026-11-05: governs the line that closes the roadmap row K4, because it is the only open task.
 - 2026-11-05: adds register entry R-0052, a gate for an ADR number that two tasks plan.
+- 2026-11-05: the count at the start is 25 number parameters, not 21: `CalibrateImage` has `x1`, `y1`, `x2` and
+  `y2`, points in pixels. The owner chose the new unit `pixel` for them.
+- 2026-11-05: `ratio` has no user, so ADR-0060 leaves it out and says why.
+- 2026-11-05: the members, the 25 units, the converter of the wire and the gate; 12 tests, and 13 injections each
+  fail a test.
