@@ -29,6 +29,7 @@ writes:
     - docs/adr/README.md
     - docs/roadmap.md
     - docs/CURRENT-STATE.md
+    - docs/register.md
     - docs/INDEX.md
     - eng/test-floor.txt
   forbid:
@@ -132,3 +133,4 @@ holds the rule.
 - 2026-11-05: opened from the module-declaration proposal of the desktop redesign.
 - 2026-11-05: takes ADR-0060, because K4c took ADR-0059 first (0b527cd).
 - 2026-11-05: governs the line that closes the roadmap row K4, because it is the only open task.
+- 2026-11-05: adds register entry R-0052, a gate for an ADR number that two tasks plan.
