@@ -82,6 +82,7 @@ internal static class SchemaDiagnosticsEndpoint
         new(DiagnosticCodes.ExportRange,           "Error",   "EXPORT"), // finding E121, TASK-0160
         new(DiagnosticCodes.ExportTooLarge,        "Error",   "EXPORT"), // finding E121, TASK-0160
         new(DiagnosticCodes.ExportWriteFailed,     "Error",   "EXPORT"), // finding E122, TASK-0160
+        new(DiagnosticCodes.ExportBodyFailed,      "Error",   "EXPORT"), // ADR-0070 item 3, TASK-0200
     };
 
     public static IResult Handle() => Results.Json(Codes, ApiJson.Options);
