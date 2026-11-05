@@ -6,10 +6,13 @@ using Engine.Core.Persistence;
 
 namespace Engine.Core.Commands;
 
-public sealed class NoOpCommandHandler : ICommandHandler, ICommandEncoder
+public sealed class NoOpCommandHandler : ICommandHandler, ICommandEncoder, IDocumentKinds
 {
     public string CommandName => "NoOp";
     public int SchemaVersion => 1;
+
+    // ADR-0071 item 2: the command applies in a part and in an assembly.
+    public IReadOnlySet<string> Kinds => DocumentKinds.Each;
 
     public IReadOnlyDictionary<string, FieldSchema> Parameters { get; } =
         new Dictionary<string, FieldSchema>

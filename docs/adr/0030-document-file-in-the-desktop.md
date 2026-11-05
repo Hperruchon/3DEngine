@@ -7,7 +7,7 @@ date: 2026-10-28
 supersedes: []
 superseded-by: []
 amends: []
-amended-by: ['0061']
+amended-by: ['0061', '0071']
 affects:
   - 3DEngine/DesktopSurface.cs
   - 3DEngine/DesktopEngineHost.cs
@@ -54,7 +54,8 @@ no window. The surface library serves two hosts (ADR-0019), and only the desktop
    Open. Save as calls `DocumentSession.SaveAs` with the path in the document folder. Open checks the file (item 5),
    then starts the program again with `--file` and the same port, and closes the window.
 4. **HTTP.** The surface gains three routes on the loopback address:
-   - `GET /document` gives `{ "name": <file name or null>, "lengthUnit": "mm", "version": <document version> }`.
+   - `GET /document` gives `{ "name": <file name or null>, "lengthUnit": "mm", "version": <document version>,
+     "kind": "part" or "assembly" }` (`kind` since ADR-0071 item 6).
    - `POST /document/save { "name": "plate" }` saves the document as `plate.3de` in the document folder. A failure
      gives `E-IO-SAVE-FAILED`. A host with no document file (`engine-api-http` with no `--file`) refuses the save with
      HTTP 501 and `E-API-NOT-SUPPORTED`, as it refuses the open.
@@ -101,3 +102,4 @@ HTTP (ADR-0002). An open never leaves the person with no window, because the old
   file with the access and the share of the journal (V31, Q4).
 - 2026-11-05 · TASK-0194 · ADR-0061 item 9 amends item 4: the desktop opens the file of an accepted open in a next
   session of the same process, on the same port and in the same window. It does not start again.
+- 2026-11-06 · TASK-0202 · ADR-0071 amends item 4: `GET /document` gives the kind of the Document.

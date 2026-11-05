@@ -15,8 +15,8 @@ internal static class DocumentEndpoint
 {
     public static async Task<IResult> Get(EngineHost host, CancellationToken ct)
     {
-        var (version, unit) = await host.Session.Read((document, _) => (document.Version, document.LengthUnit), ct);
-        return Results.Json(new DocumentState(host.FileName, unit, version), ApiJson.Options);
+        var (version, unit, kind) = await host.Session.Read((document, _) => (document.Version, document.LengthUnit, document.Kind), ct);
+        return Results.Json(new DocumentState(host.FileName, unit, version, kind), ApiJson.Options);
     }
 
     public static async Task<IResult> Save(HttpRequest request, EngineHost host, DocumentFolder folder, CancellationToken ct)
@@ -38,7 +38,7 @@ internal static class DocumentEndpoint
 
         var error = await host.Session.SaveAs(path!, ct);
         return error is null
-            ? Results.Json(new DocumentState(Path.GetFileName(path!), host.Session.LengthUnit, null), ApiJson.Options)
+            ? Results.Json(new DocumentState(Path.GetFileName(path!), host.Session.LengthUnit, null, host.Session.Kind), ApiJson.Options)
             : Failure(error.Code, error.Message, StatusCodes.Status409Conflict);
     }
 
@@ -58,7 +58,7 @@ internal static class DocumentEndpoint
 
         var error = await folder.Open(path!, ct);
         return error is null
-            ? Results.Json(new DocumentState(Path.GetFileName(path!), null, null), ApiJson.Options, statusCode: StatusCodes.Status202Accepted)
+            ? Results.Json(new DocumentState(Path.GetFileName(path!), null, null, null), ApiJson.Options, statusCode: StatusCodes.Status202Accepted)
             : Failure(error.Code, error.Message, StatusCodes.Status409Conflict);
     }
 
@@ -105,5 +105,6 @@ internal static class DocumentEndpoint
     private static IResult Failure(string code, string message, int status)
         => Results.Json(new ApiErrorEnvelope(new ApiErrorBody(code, message)), ApiJson.Options, statusCode: status);
 
-    internal sealed record DocumentState(string? Name, string? LengthUnit, long? Version);
+    // ADR-0071 item 6: the kind of the Document, part or assembly.
+    internal sealed record DocumentState(string? Name, string? LengthUnit, long? Version, string? Kind);
 }

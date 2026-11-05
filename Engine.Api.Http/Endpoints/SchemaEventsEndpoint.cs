@@ -96,6 +96,8 @@ internal static class SchemaEventsEndpoint
         new("datum.created", DatumCreatedFields), // ADR-0051 item 9, TASK-0166
         new("datum.changed", Fields(("datumId", "guid"))), // ADR-0051 item 9, TASK-0166
         new("datum.removed", Fields(("datumId", "guid"))), // ADR-0051 item 9, TASK-0166
+        new("reference.created", Fields(("referenceId", "guid"), ("part", "string"), ("version", "integer"), ("x", "number"), ("y", "number"), ("z", "number"))), // ADR-0071 item 5, TASK-0202
+        new("reference.removed", Fields(("referenceId", "guid"))), // ADR-0071 item 5, TASK-0202
     };
 
     public static IResult Handle() => Results.Json(Kinds, ApiJson.Options);
