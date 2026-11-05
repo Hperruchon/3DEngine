@@ -46,6 +46,7 @@ public static class HandlerCatalog
         new SetExtrudeDistanceCommandHandler(),
         new CreateDatumCommandHandler(),
         new AddSketchReferenceCommandHandler(),
+        new AddPartReferenceCommandHandler(),
     ];
 
     public static IReadOnlyList<IQueryHandler> QueryHandlers() =>
@@ -58,6 +59,7 @@ public static class HandlerCatalog
         new GetFaceAtQueryHandler(),
         new GetFacesQueryHandler(),
         new GetFeaturesQueryHandler(),
+        new GetPartReferencesQueryHandler(),
     ];
 
     public static void RegisterAll(CommandRegistry commands, QueryRegistry queries)

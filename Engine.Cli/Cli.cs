@@ -256,9 +256,11 @@ public static class Cli
 
         var name = args[0];
         Dictionary<string, string> parameters;
+        string kind;
         try
         {
-            parameters = ArgParser.ParseParams(args[1..]);
+            (kind, var rest) = Kind(args[1..]);
+            parameters = ArgParser.ParseParams(rest);
         }
         catch (ArgParseException ex)
         {
@@ -289,7 +291,7 @@ public static class Cli
         var command = handler.Create(
             new CommandInput(bound.Values!, Guid.NewGuid(), ExpectedDocumentVersion: null));
 
-        var session = BuildSession(backend, stderr);
+        var session = BuildSession(backend, stderr, kind);
         if (session is null)
             return ExitBackendUnavailable;
 
@@ -311,9 +313,11 @@ public static class Cli
 
         var name = args[0];
         Dictionary<string, string> parameters;
+        string kind;
         try
         {
-            parameters = ArgParser.ParseParams(args[1..]);
+            (kind, var rest) = Kind(args[1..]);
+            parameters = ArgParser.ParseParams(rest);
         }
         catch (ArgParseException ex)
         {
@@ -343,7 +347,7 @@ public static class Cli
 
         var query = handler.Create(new QueryInput(bound.Values!, Guid.NewGuid()));
 
-        var session = BuildSession(backend, stderr);
+        var session = BuildSession(backend, stderr, kind);
         if (session is null)
             return ExitBackendUnavailable;
 
@@ -398,7 +402,18 @@ public static class Cli
     // which holds boxes only, and anti-objective 9 refuses that silent fallback.
     // The one-shot process reclaims the native backend on exit. This choice stays
     // here, because only a composition root may name Engine.Geometry.Manifold.
-    private static DocumentSession? BuildSession(BackendOptions options, TextWriter stderr)
+    // ADR-0071 item 4 (phase P8b1, TASK-0202): --kind assembly makes the one-shot Document of apply and query an assembly;
+    // with no --kind it is a part. The option comes before the first --param.
+    private static (string Kind, string[] Others) Kind(string[] args)
+    {
+        if (args is not ["--kind", .. var tail])
+            return (Document.Part, args);
+        if (tail is not [var kind and (Document.Part or Document.Assembly), .. var rest])
+            throw new ArgParseException($"'--kind' requires '{Document.Part}' or '{Document.Assembly}'.");
+        return (kind, rest);
+    }
+
+    private static DocumentSession? BuildSession(BackendOptions options, TextWriter stderr, string kind = Document.Part)
     {
         IGeometryBackend backend;
         if (options.UseManagedBackend)
@@ -415,7 +430,7 @@ public static class Cli
             return null;
         }
 
-        return new DocumentSession(EngineHosting.CreateDefault(backend));
+        return new DocumentSession(EngineHosting.CreateDefault(backend, kind: kind));
     }
 
     // The CLI dispatches by name only. It has no argument for a schema

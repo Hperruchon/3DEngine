@@ -24,6 +24,16 @@ public static class DocumentFile
         return EntryCodec.ReadHeader(lines[0].Text);
     }
 
+    // ADR-0071 item 4: the kind of the header of a file, so that a host makes its Document with that kind before the
+    // open. A header with no field kind is a part.
+    public static string ReadKind(string path)
+    {
+        var lines = Lines(path, out _);
+        if (lines.Count == 0)
+            throw DocumentFileException.Load($"The file {path} has no complete header line.");
+        return EntryCodec.ReadHeaderFields(lines[0].Text).Kind;
+    }
+
     // A new file with its header at the path; the session writes each command to it. A
     // file that cannot be made gives E-IO-LOAD-FAILED, as a file that does not open. Until
     // TASK-0099 a path of a folder gave an UnauthorizedAccessException, and engine-api-http
@@ -34,7 +44,7 @@ public static class DocumentFile
         DocumentJournal journal;
         try
         {
-            journal = DocumentJournal.Create(path, session.LengthUnit);
+            journal = DocumentJournal.Create(path, session.LengthUnit, session.Kind);
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or NotSupportedException)
         {
@@ -48,7 +58,7 @@ public static class DocumentFile
     public static void Unsaved(DocumentSession session, string folder)
     {
         ArgumentNullException.ThrowIfNull(session);
-        session.Attach(DocumentJournal.Unsaved(folder, session.DocumentId, session.LengthUnit));
+        session.Attach(DocumentJournal.Unsaved(folder, session.DocumentId, session.LengthUnit, session.Kind));
     }
 
     // Applies each entry of the file through the bus of the session, with no write,
@@ -79,7 +89,7 @@ public static class DocumentFile
         ArgumentNullException.ThrowIfNull(backend);
         try
         {
-            var session = new DocumentSession(Hosting.EngineHosting.CreateDefault(backend, ReadLengthUnit(path)));
+            var session = new DocumentSession(Hosting.EngineHosting.CreateDefault(backend, ReadLengthUnit(path), ReadKind(path)));
             try
             {
                 await Load(session, path, attach: false, hold, ct).ConfigureAwait(false);
@@ -131,7 +141,7 @@ public static class DocumentFile
                 DocumentJournal journal;
                 try
                 {
-                    journal = DocumentJournal.Resume(held, path, session.LengthUnit, validLength);
+                    journal = DocumentJournal.Resume(held, path, session.LengthUnit, validLength, session.Kind);
                 }
                 catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
                 {
@@ -158,9 +168,11 @@ public static class DocumentFile
         if (lines.Count == 0)
             throw DocumentFileException.Load($"The file {path} has no complete header line.");
 
-        var unit = EntryCodec.ReadHeader(lines[0].Text);
+        var (unit, kind) = EntryCodec.ReadHeaderFields(lines[0].Text);
         if (unit != session.LengthUnit)
             throw DocumentFileException.Load($"The file gives the length unit {unit}, and the Document has {session.LengthUnit}.");
+        if (kind != session.Kind)
+            throw DocumentFileException.Load($"The file is a document of the kind {kind}, and the Document is a {session.Kind} (ADR-0071 item 4).");
 
         var validLength = lines[^1].End;
         var backend = session.BackendIdentity;
