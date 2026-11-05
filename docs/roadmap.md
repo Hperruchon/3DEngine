@@ -241,6 +241,8 @@ This track removes each condition that blocks other work.
 | P0.75 | The walk of the planes repeats until no datum and no sketch changes, and an edit of a sketch takes the record of the walk (E128 and E129 of the second codebase review of 2026-11-03; before R13 by the order of the owner). TASK-0176. | 1–2 |
 | P0.76 | A sketch on a face looks from the side of the eye, the arm of a face ends with a new sketch, a datum on a short side has axes of the length 1, and the next forms of three gates (V76, V77, E130, T130 to T132; after R13). TASK-0177. | 2–3 |
 | P0.77 | The far plane of the camera of the desktop follows the box of the visible bodies, so a model larger than 1000 mm shows whole (register entry R-0051; the owner, 2026-11-04, before P0.76). TASK-0179. | 1 |
+| P0.78 | The far plane holds each visible body from the eye, and the dimension overlay keeps its labels apart and inside the window, follows a drag and reads the boxes once for each change (V78 to V84 of the codebase review of 2026-11-05; after the next product phase; V83 after Q2). TASK-0181. | 2–3 |
+| P0.79 | A datum on a diagonal subnormal side has unit axes, the walk of the planes gives its sketches in the order of the log, and the next forms of three gates (E131 to E133, T133 to T135; after the next product phase). TASK-0182. | 1–2 |
 
 ## Track P — The platform
 
@@ -355,6 +357,8 @@ The tracks are not strictly sequential, but three rules hold:
    P0.75, which holds two medium findings, comes before R13. The owner added R13 to the plan on 2026-11-03, after
    P0.75 and before P0.76. On 2026-11-04 the owner gave the order "merge when green, then fix R-0051", so P0.77 comes
    after R13 and before P0.76.
+   The codebase review of 2026-11-05 puts P0.78 and P0.79, which hold medium and low findings, after the next
+   product phase, by the rule of `docs/templates.md`, section 7. Q1 of that review asks for the next product phase.
 2. R2 blocks each later phase in track R. No mesh leaves the geometry backend today.
 3. K4 needs K0, K1 and K2. Do not start K4 before the reference model exists.
 4. The path to the milestone "CAD on one part" (the owner, 2026-10-27, KD2): R7b, R8a, R8b, the codebase
