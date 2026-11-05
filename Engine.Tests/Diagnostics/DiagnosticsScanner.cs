@@ -115,11 +115,22 @@ internal static class DiagnosticsScanner
     // text: each code is one constant.
     // Finding T128 of the codebase review of 2026-11-03 (TASK-0170): the fix of T126 lost three forms that T120 caught:
     // S.ToString(), an element of an array, and an argument of new string(...). The walk goes through each one too.
+    // Finding T134 of the codebase review of 2026-11-05 (TASK-0182): a string call after ToString, a StringBuilder of the
+    // node, a pad, a repeat and string.Create hid a severity. A call that inserts into the text of the node, or appends
+    // to it, joins text; a call that changes the case or the spaces keeps the text, as ToString does.
     private static bool JoinsText(ExpressionSyntax expression)
     {
         SyntaxNode node = expression;
-        while (Outer(node) is { } outer)
+        while (true)
+        {
+            if (node.Parent is MemberAccessExpressionSyntax { Parent: InvocationExpressionSyntax } member && member.Expression == node
+                && JoinCalls.Contains(member.Name.Identifier.ValueText))
+                return true;
+            if (Outer(node) is not { } outer)
+                break;
             node = outer;
+        }
+
         return node.Parent switch
         {
             BinaryExpressionSyntax add => add.IsKind(SyntaxKind.AddExpression),
@@ -137,27 +148,44 @@ internal static class DiagnosticsScanner
     private static SyntaxNode? Outer(SyntaxNode node) => node.Parent switch
     {
         ParenthesizedExpressionSyntax or CastExpressionSyntax => node.Parent,
-        MemberAccessExpressionSyntax { Name.Identifier.ValueText: "ToString", Parent: InvocationExpressionSyntax call } member
-            when member.Expression == node => call,
-        ArgumentSyntax { Parent: ArgumentListSyntax { Parent: InvocationExpressionSyntax { Expression: MemberAccessExpressionSyntax { Name.Identifier.ValueText: "ToString" } } call } } => call,
+        MemberAccessExpressionSyntax { Parent: InvocationExpressionSyntax call } member
+            when member.Expression == node && TextCalls.Contains(member.Name.Identifier.ValueText) => call,
+        ArgumentSyntax { Parent: ArgumentListSyntax { Parent: InvocationExpressionSyntax { Expression: MemberAccessExpressionSyntax { Name.Identifier.ValueText: "ToString" or "Repeat" } } call } } => call,
         InitializerExpressionSyntax { Parent: ArrayCreationExpressionSyntax or ImplicitArrayCreationExpressionSyntax } initializer => initializer.Parent,
         ExpressionElementSyntax { Parent: CollectionExpressionSyntax collection } => collection,
         ArgumentSyntax { Parent: ArgumentListSyntax { Parent: ObjectCreationExpressionSyntax creation } } when IsString(creation.Type) => creation,
         _ => null,
     };
 
+    // T134: the calls that keep the text of the node, and the calls that join text to it.
+    private static readonly HashSet<string> TextCalls =
+        ["ToString", "ToUpperInvariant", "ToLowerInvariant", "ToUpper", "ToLower", "Trim", "TrimStart", "TrimEnd", "Normalize"];
+
+    private static readonly HashSet<string> JoinCalls = ["Insert", "Append", "AppendLine", "Replace", "PadLeft", "PadRight"];
+
+    // A string or, since T134, a StringBuilder, whose constructor takes the text of the node.
     private static bool IsString(TypeSyntax type) => type switch
     {
         PredefinedTypeSyntax predefined => predefined.Keyword.IsKind(SyntaxKind.StringKeyword),
-        IdentifierNameSyntax name => name.Identifier.ValueText == "String",
-        QualifiedNameSyntax qualified => qualified.Right.Identifier.ValueText == "String",
+        IdentifierNameSyntax name => name.Identifier.ValueText is "String" or "StringBuilder",
+        QualifiedNameSyntax qualified => qualified.Right.Identifier.ValueText is "String" or "StringBuilder",
         _ => false,
     };
 
     private static bool JoinName(ExpressionSyntax expression) => expression switch
     {
-        MemberAccessExpressionSyntax member => member.Name.Identifier.ValueText is "Join" or "Concat" or "Format" or "Append" or "Insert",
+        MemberAccessExpressionSyntax { Name.Identifier.ValueText: "Create" } member => IsStringName(member.Expression),
+        MemberAccessExpressionSyntax member => member.Name.Identifier.ValueText is "Join" or "Concat" or "Format" or "Append" or "Insert" or "PadLeft" or "PadRight",
         IdentifierNameSyntax name => name.Identifier.ValueText is "Join" or "Concat" or "Format" or "Append" or "Insert",
+        _ => false,
+    };
+
+    // T134: string.Create and String.Create build a string from the state that they take.
+    private static bool IsStringName(ExpressionSyntax expression) => expression switch
+    {
+        PredefinedTypeSyntax predefined => predefined.Keyword.IsKind(SyntaxKind.StringKeyword),
+        IdentifierNameSyntax name => name.Identifier.ValueText == "String",
+        MemberAccessExpressionSyntax member => member.Name.Identifier.ValueText == "String",
         _ => false,
     };
 
