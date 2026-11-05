@@ -1,7 +1,7 @@
 ---
 id: 0190
 title: A document whose log holds a datum on a face that a cut removed opens again
-status: Active
+status: Done
 phase: P0.82
 opened: 2026-11-05
 depends-on: [0189]
@@ -53,19 +53,20 @@ A new command keeps the refusal.
 
 ## Acceptance criteria
 
-- [ ] The test of the open fails before the change and passes after it.
-- [ ] A clean build (`--no-incremental`) gives zero errors and zero warnings.
-- [ ] Continuous integration passes on the three runners, on the branch and on `main` after the merge.
+- [x] The test of the open fails before the change and passes after it.
+- [x] A clean build (`--no-incremental`) gives zero errors and zero warnings.
+- [x] Continuous integration passes on the three runners, on the branch and on `main` after the merge.
 
 ## Outcome
 
-Status: Ready
+Status: Done · commit (the merge of the branch p082-older-datum) · v0.192
 
 ## Method
 
 Mechanical: a test of the open before the change.
 Judgement:  the fault of the datum in a replay.
-Weakest:    to be written at the close.
+Weakest:    a document of v0.186 with such a datum came from a probe, not from a file of a person; the open gives
+            no warning of the fault, as for each replayed command.
 
 ## Progress
 
@@ -73,3 +74,4 @@ Weakest:    to be written at the close.
 - 2026-11-05: Q1 of the review is A, answered by the standing order of 2026-11-05. The test of the open
   fails before the change with `E-IO-LOAD-FAILED` and `E-DATUM-REFERENCE-INVALID`; the change, and 3 injections that
   each fail a test.
+- 2026-11-05: closed at v0.192.
