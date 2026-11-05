@@ -435,6 +435,9 @@ SDL 3.2.10, a release. ADR-0061 pins 2026.1002.1, because it is the version that
 Android.
 Exit: R14c pins a version of `ppy.SDL3-CS` whose SDL is a release, or the owner accepts the development version and
 this entry moves to the accepted compromises.
+Progress 2026-11-06: TASK-0195 read the native SDL of five versions of `ppy.SDL3-CS` from 2025.1205.0 to 2026.1002.1:
+SDL-3.3.3-8e64411, then SDL-3.5.0 with four commits. Each one is a snapshot of the main branch of SDL, and none is a
+release, so the first exit is not open; the decision is the owner's. R14c keeps 2026.1002.1.
 
 ## Accepted compromises
 

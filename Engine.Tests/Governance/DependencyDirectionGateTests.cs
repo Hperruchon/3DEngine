@@ -1207,9 +1207,23 @@ public class DependencyDirectionGateTests
         Assert.True(offences.Length == 0, string.Join("\n  ", offences));
     }
 
+    // R14c (ADR-0061 item 5, TASK-0195): the old binding of SDL has no Android library, and two bindings of one native
+    // library give two answers to "which SDL runs". No project references it, in each file that MSBuild reads.
+    [Fact]
+    public void No_Project_References_The_Old_Binding_Of_Sdl()
+    {
+        var offences = ProjectFiles()
+            .Where(f => PackageReferences(f).Any(name => string.Equals(name, "Alimer.Bindings.SDL", StringComparison.OrdinalIgnoreCase)))
+            .Select(RepositoryFiles.Relative)
+            .ToArray();
+
+        Assert.True(offences.Length == 0, "ADR-0061 item 5: ppy.SDL3-CS is the binding of SDL.\n  " + string.Join("\n  ", offences));
+    }
+
     [Theory]
     [InlineData("Vortice.Vulkan")]
-    [InlineData("Alimer.Bindings.SDL")]
+    // Since R14c (ADR-0061 item 5, TASK-0195) the binding of SDL is ppy.SDL3-CS on each platform.
+    [InlineData("ppy.SDL3-CS")]
     public void Each_Binding_Has_One_Pin_In_The_Vulkan_Layer(string package)
     {
         // ADR-0017 rule 4. Before TASK-0027 three project files pinned the Vulkan

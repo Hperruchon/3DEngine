@@ -53,7 +53,7 @@ change the two kernels.
    `3DEngine.Tests` also references it, with no GPU (ADR-0022), and the image test project
    `3DEngine.ImageTests` references it with a device and no window (ADR-0025).
 4. `3DEngine.Vulkan/3DEngine.Vulkan.csproj` holds the only pin of `Vortice.Vulkan` and the only pin of
-   `Alimer.Bindings.SDL`. A host receives each binding through its project reference. The version
+   `ppy.SDL3-CS` (ADR-0061 item 5, R14c; until then `Alimer.Bindings.SDL`). A host receives each binding through its project reference. The version
    of each binding therefore has one answer, in one line.
 5. The vendored projects `Vortice.Vulkan.Sample` and `Vortice.Vulkan.SampleFramework` are removed.
    Each type and each method that moved has a caller in the host. A method with no caller did not
