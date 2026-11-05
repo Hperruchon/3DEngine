@@ -33,6 +33,7 @@
     <ProjectReference Include="..\Engine.Geometry.Manifold\Engine.Geometry.Manifold.csproj" />
     <!-- The judge of the write set (TASK-0053): the gates read the task files with its reader. -->
     <ProjectReference Include="..\eng\write-set-check\WriteSetCheck.csproj" />
+    <ProjectReference Include="..\Engine.Kernel\Engine.Kernel.csproj" />
   </ItemGroup>
 
 </Project>

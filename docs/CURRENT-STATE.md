@@ -5455,3 +5455,34 @@ move with no `W-SKETCH-HOLD-DROPPED`; no command reaches that state.
 New tests: 23. The test list holds 1716 (1211 in `Engine.Tests`, 309 in `3DEngine.Tests`, 193 in `3DEngine.ImageTests`,
 3 in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
 entries: 14 of 15. New diagnostic codes: 0. Since the review of v0.181, 0 product milestones and 3 entries followed it.
+
+## v0.185 — The owned kernel subtracts planar solids exactly, and each face keeps its provenance (K4a, TASK-0183)
+
+Phase K4 gives planar faces with a boolean, and the provenance of each face inside the kernel. On 2026-11-05 the owner
+answered the four questions of K4: the boolean first, a new project, one face for each curve of a profile, and the
+references by identity in a later slice. ADR-0057 gives the design of this first slice.
+
+**The change.**
+- The new project `Engine.Kernel` references no project. The dependency gate holds it in the class of the kernel with
+  a new fact, and the determinism gate reads it.
+- Exact rationals of `BigInteger`: a double enters with its bits and leaves with one rounding to the nearest. Exact
+  vectors and planes, and the predicate `Orient3D`.
+- A box, an extrude of a polygon profile and a move. Each face has a tag: the feature, the element (`+x`, `start`,
+  `end`, `side`) and, for a side, the item of the sketch that made it.
+- `PlanarBoolean.Subtract` clips with a binary space partition and an exact split point. An empty result gives null.
+- `Brep.Of` splits each T-junction, joins the pieces of one plane and one tag into one face, removes each straight
+  vertex, splits a face into its regions with an exact ray test, and finds the shells after that split.
+
+**Proof.** A box gives 8 vertices, 12 edges and 6 faces. An L extrude of the distance 5 and -5 gives 12, 18 and 8. A
+plate minus a box gives a ring of 16, 24, 10 and 2 holes. A slot and a hole give two shells, with each hole in the face
+of its own half. On 60 random models with one or two cuts, the exact volume and the bounds agree with Manifold, and each
+B-Rep is closed. Ten injections each fail a test: the T-junction split, the cancellation of opposite edges, the removal
+of straight vertices, the split into regions, the owner of a hole, the shells, the coplanar rule, the split point, a
+project reference and a call of `Math.Sin`. The last two pass with the gates before the change.
+
+**What stays.** The engine does not read the kernel; Manifold still makes each solid (K4b). A reference by the identity
+of a face comes in K4c. A rational grows with each cut, so a model with many cuts is slow and has no test.
+
+New tests: 12. The test list holds 1728 (1223 in `Engine.Tests`, 309 in `3DEngine.Tests`, 193 in `3DEngine.ImageTests`,
+3 in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
+entries: 14 of 15. New diagnostic codes: 0. Since the review of v0.181, 1 product milestone and 4 entries followed it.

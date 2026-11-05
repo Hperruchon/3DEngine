@@ -39,7 +39,7 @@ public class DeterminismCallGateTests
     // The projects whose code writes to the log or computes what the log
     // records. The render side is presentation and may use an angle.
     private static readonly string[] LogPathProjects =
-        ["Engine.Contracts", "Engine.Core", "Engine.Geometry.Manifold"];
+        ["Engine.Contracts", "Engine.Core", "Engine.Geometry.Manifold", "Engine.Kernel"];
 
     // Rule 1: each transcendental function, and each function whose result is an
     // estimate or is not one correctly rounded result. Rule 3: FusedMultiplyAdd.
