@@ -264,6 +264,8 @@ This track removes each condition that blocks other work.
 | P0.82 | A document whose log holds a datum on a face that a cut removed opens again (E134 of the codebase review of 2026-11-05 (b); before the next product phase). TASK-0190. | 1 |
 | P0.83 | A press of a hand keeps its place, the far plane holds the images, and a drag queries no size in each frame (V85 to V87 of the codebase review of 2026-11-05 (b); after the next product phase). TASK-0191. | 1–2 |
 | P0.84 | The kept solids belong to one Document, the faces of the kernel keep their holes, and the next forms of five gates fail (E135 to E141, T136 to T140 of the codebase review of 2026-11-05 (b); after the next product phase). TASK-0192. | 2–3 |
+| P0.85 | Each hole of a face has its owner, the STEP export refuses what a strict reader refuses, and the session of the desktop holds an open (E142 to E151 of the codebase review of 2026-11-06; after the next product phase). TASK-0197. | 2–3 |
+| P0.86 | The window keeps no input between sessions, the hook has the cases of one axis, and the next forms of four gates fail (V88 to V90, T141 to T144 of the codebase review of 2026-11-06; after the next product phase). TASK-0198. | 1–2 |
 
 ## Track P — The platform
 
@@ -397,6 +399,8 @@ The tracks are not strictly sequential, but three rules hold:
    On 2026-11-05 the owner gave the Android order and a standing order for an autonomous run until 2026-11-08. The
    next product phase is R14a, so the order is P0.82, R14a, P0.83, P0.84, then R14b to R14f. R14g comes inside the
    redesign of the desktop.
+   The codebase review of 2026-11-06 puts P0.85 and P0.86, which hold medium and low findings, after the next product
+   phase, K6b, by the rule of `docs/templates.md`, section 7.
    On 2026-11-05 the owner answered A to Q1, the redesign of the desktop, and then, because the redesign is still work
    in progress, gave the order "Ok": P0.78 and P0.79 now, and then K4.
    On 2026-11-05 the owner answered the four questions of K4: the boolean first, a new project, one face for each
