@@ -89,7 +89,7 @@ public class DimensionImageTests
             Assert.True(ui.ShowDimensions);
             var box = renderer.BoxOf(selected)!.Value;
             size = DimensionOverlay.SizeText(box, null, "mm");
-            var strokes = DimensionOverlay.Of(Dimensions.Union(renderer.Boxes(ui.HiddenToo)), box, camera, Width, Height, "mm");
+            var strokes = DimensionOverlay.Of(renderer.Union(ui.HiddenToo), box, camera, Width, Height, "mm");
             var data = UiDrawData.Empty;
             for (var frame = 0; frame < 3; frame++)
                 data = ui.Frame(1f / 60f, display, Vector2.One, renderer.LiveBodies, selected, dimensions: strokes, size: size);
@@ -124,6 +124,67 @@ public class DimensionImageTests
 
         Assert.True(orange > 300, $"The picture {picture}: {orange} pixels are orange; the overall dimensions are absent.");
         Assert.True(white > 100, $"The picture {picture}: {white} pixels are white; the dimensions of the board are absent.");
+    }
+
+    // Findings V78, V81 and V82 of the codebase review of 2026-11-05 (TASK-0181), on the renderer of the desktop: a box A
+    // of 100 at the origin and a box B of 100 at x = 5000. The union of the boxes is kept from frame to frame (V81). The
+    // camera looks from A to B, and a hide of A keeps B in front of the far plane in the next frame (V78). A preview of a
+    // drag of B moves its box (V82).
+    [VulkanImageFact]
+    public async Task The_Far_Plane_Holds_A_Far_Body_After_A_Hide_And_The_Boxes_Follow_A_Drag()
+    {
+        var messagesBefore = GraphicsDevice.ValidationMessageCount;
+        using var host = new EngineHost(new ManifoldGeometryBackend());
+        var a = await host.Session.Apply(new CreateBoxCommand { SizeX = 100, SizeY = 100, SizeZ = 100 });
+        Assert.True(a.Outputs.TryGet<Guid>("bodyId", out var bodyA));
+        var created = await host.Session.Apply(new CreateBoxCommand { SizeX = 100, SizeY = 100, SizeZ = 100 });
+        Assert.True(created.Outputs.TryGet<Guid>("bodyId", out var box));
+        var moved = await host.Session.Apply(new TranslateCommand { BodyId = box, Dx = 5000, Dy = 0, Dz = 0 });
+        Assert.True(moved.Outputs.TryGet<Guid>("bodyId", out var bodyB));
+        var scene = SessionScene.Create();
+        var camera = scene.Cameras[0];
+
+        using (var device = new GraphicsDevice("3DEngine.ImageTests", enableValidation: true, window: null, synchronizationValidation: true))
+        {
+            using var target = new OffscreenTarget(device, new VkExtent2D(Width, Height));
+            using var renderer = new SceneRenderer(device, target.RenderPass, host);
+            renderer.Update(scene, camera, (float)Width / Height);
+            var unions = renderer.UnionsMade;
+            renderer.Update(scene, camera, (float)Width / Height);
+            renderer.Update(scene, camera, (float)Width / Height);
+            Assert.Equal(unions, renderer.UnionsMade);
+
+            camera.Target = (0, 0, 0);
+            camera.Distance = 173.2;
+            camera.YawDegrees = -90;
+            camera.PitchDegrees = 0;
+            await host.Session.Apply(new SetBodyVisibilityCommand { BodyId = bodyA, Visible = false });
+            renderer.Update(scene, camera, (float)Width / Height);
+
+            Assert.True(renderer.UnionsMade > unions, "A hide did not make the union again.");
+            var eye = camera.Eye();
+            var farSide = Math.Sqrt(Math.Pow(5000 - eye.X, 2) + eye.Y * eye.Y + eye.Z * eye.Z) + Math.Sqrt(3 * 100 * 100) / 2;
+            Assert.True(farSide < camera.FarPlane, $"The far side of B is {farSide} from the eye, and the far plane is {camera.FarPlane}.");
+
+            // A pan away from B with no change of a body: the next frame gives the far plane of the new eye.
+            camera.Target = (-20000, 0, 0);
+            renderer.Update(scene, camera, (float)Width / Height);
+            eye = camera.Eye();
+            farSide = Math.Sqrt(Math.Pow(5000 - eye.X, 2) + eye.Y * eye.Y + eye.Z * eye.Z) + Math.Sqrt(3 * 100 * 100) / 2;
+            Assert.True(farSide < camera.FarPlane, $"After the pan the far side of B is {farSide} from the eye, and the far plane is {camera.FarPlane}.");
+
+            var before = renderer.BoxOf(bodyB)!.Value;
+            renderer.Preview(bodyB, new System.Numerics.Vector3(0, 0, 250));
+            var dragged = renderer.BoxOf(bodyB)!.Value;
+            Assert.Equal((before.Min.Z + 250, before.Max.Z + 250), (dragged.Min.Z, dragged.Max.Z));
+            Assert.Equal(dragged, renderer.Union(hiddenToo: false));
+            renderer.Preview(bodyB, System.Numerics.Vector3.Zero);
+            Assert.Equal(before, renderer.BoxOf(bodyB));
+        }
+
+        Assert.True(GraphicsDevice.ValidationMessageCount == messagesBefore,
+            $"The validation layer gave {GraphicsDevice.ValidationMessageCount - messagesBefore} messages:\n"
+            + string.Join("\n", GraphicsDevice.ValidationMessages.Skip(messagesBefore)));
     }
 
     private static (int R, int G, int B) Pixel(byte[] pixels, int column, int row)

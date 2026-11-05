@@ -454,8 +454,23 @@ internal sealed unsafe class DesktopUi : IDisposable
     {
         var actions = _actions.ToArray();
         _actions.Clear();
+
+        // Finding V84 of the codebase review of 2026-11-05 (TASK-0181): the host called the arm for each action, and no
+        // test drove that call. The panel applies each action to the arm here, with the active sketch of its last frame,
+        // and gives the message of the last change of the arm.
+        ArmMessage = null;
+        foreach (var action in actions)
+            ArmMessage = FaceArm.Panel(action, _sketchActive) ?? ArmMessage;
         return actions;
     }
+
+    // ADR-0053 item 6: the arm of the button Face, a state of the client, and the message of its last change.
+    public FaceArm FaceArm { get; } = new();
+
+    public string? ArmMessage { get; private set; }
+
+    // True when the sketch panel of the last frame had an active sketch.
+    private bool _sketchActive;
 
     // The text of a row: the name of the body, or its kind and a short identifier, the word
     // "hidden" for a hidden body (ADR-0029 item 7), and the word "fault" for a body whose last
@@ -488,6 +503,7 @@ internal sealed unsafe class DesktopUi : IDisposable
     {
         ArgumentNullException.ThrowIfNull(bodies);
         _size = size;
+        _sketchActive = sketchPanel?.Active is not null;
         ImGui.SetCurrentContext(_context);
         var io = ImGui.GetIO();
         io.DisplaySize = displaySize;
@@ -509,7 +525,7 @@ internal sealed unsafe class DesktopUi : IDisposable
         if (sketches is not null)
             Sketches(sketches);
         if (dimensions is not null)
-            Dimensions(dimensions);
+            Dimensions(dimensions, displaySize);
         Panel(bodies, selection, displaySize, document);
         if (sketchPanel is { } shown && (shown.Active is not null || shown.Live.Count > 0))
             SketchWindow(shown, displaySize);
@@ -548,7 +564,17 @@ internal sealed unsafe class DesktopUi : IDisposable
     private const float ArrowLength = 12f;
     private const float ArrowHalfWidth = 5f;
 
-    private static void Dimensions(DimensionOverlay.Strokes dimensions)
+    // V79 (TASK-0181): the labels of the last frame where the placement put them, and the size of a text in the font of
+    // the panel, for a test.
+    internal IReadOnlyList<DimensionOverlay.Label> PlacedLabels { get; private set; } = [];
+
+    internal Vector2 TextSize(string text)
+    {
+        ImGui.SetCurrentContext(_context);
+        return ImGui.CalcTextSize(text);
+    }
+
+    private void Dimensions(DimensionOverlay.Strokes dimensions, Vector2 displaySize)
     {
         var list = ImGui.GetBackgroundDrawList();
         foreach (var line in dimensions.Lines)
@@ -564,7 +590,9 @@ internal sealed unsafe class DesktopUi : IDisposable
             list.AddTriangleFilled(line.B, line.B - (unit * ArrowLength) + side, line.B - (unit * ArrowLength) - side, colour);
         }
 
-        foreach (var label in dimensions.Labels)
+        // Finding V79 of the codebase review of 2026-11-05: the labels go apart, with the size of the text of this font.
+        PlacedLabels = DimensionOverlay.Place(dimensions.Labels, text => ImGui.CalcTextSize(text), displaySize);
+        foreach (var label in PlacedLabels)
             list.AddText(label.At, label.Mark == DimensionOverlay.Mark.Selected ? SelectedColour : DimensionColour, label.Text);
     }
 
