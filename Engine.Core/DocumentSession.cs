@@ -59,6 +59,9 @@ public sealed class DocumentSession
     // ADR-0015 item 7: the unit does not change for the life of the Document.
     public string LengthUnit => _document.LengthUnit;
 
+    // ADR-0071 item 1: the kind of the Document, which is fixed when the Document is made.
+    public string Kind => _document.Kind;
+
     // ADR-0015 item 5: the backend that each log entry of this session records.
     public Engine.Contracts.Geometry.BackendIdentity BackendIdentity { get; }
 
