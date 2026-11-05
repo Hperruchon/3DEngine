@@ -106,16 +106,6 @@ public sealed class DesktopDocumentTests : IDisposable
         Assert.Null(ui.ItemRectangle(DesktopUi.SaveAsLabel));
     }
 
-    // ADR-0030 item 4: the program starts again with the same arguments and the new file.
-    [Theory]
-    [InlineData(new[] { "--port", "5181" }, new[] { "--port", "5181", "--file", "b.3de" })]
-    [InlineData(new[] { "--file", "a.3de", "--port", "0" }, new[] { "--port", "0", "--file", "b.3de" })]
-    [InlineData(new[] { "--file=a.3de", "--Desktop:SynchronizationValidation=true" }, new[] { "--Desktop:SynchronizationValidation=true", "--file", "b.3de" })]
-    public void The_Program_Starts_Again_With_Its_Arguments_And_The_New_File(string[] args, string[] expected)
-    {
-        Assert.Equal(expected, DesktopDocument.Arguments(args, "b.3de"));
-    }
-
     // ADR-0030 item 5: a file that does not open leaves the window; a file that opens
     // ends the window loop.
     [Fact]

@@ -46,6 +46,23 @@ public static class EngineSurface
         ArgumentNullException.ThrowIfNull(builder);
         ArgumentNullException.ThrowIfNull(session);
 
+        builder.Services.AddSingleton(session);
+        return AddSurface(builder);
+    }
+
+    // Phase R14b (ADR-0061 item 9, TASK-0194): before the build, for a session that the host made and owns. The container
+    // does not dispose an instance that it did not make, so the session outlives the surface, and the host disposes it.
+    public static WebApplicationBuilder AddEngineSurface(this WebApplicationBuilder builder, EngineHost session)
+    {
+        ArgumentNullException.ThrowIfNull(builder);
+        ArgumentNullException.ThrowIfNull(session);
+
+        builder.Services.AddSingleton(session);
+        return AddSurface(builder);
+    }
+
+    private static WebApplicationBuilder AddSurface(WebApplicationBuilder builder)
+    {
         // The default of the framework reloads Kestrel:Endpoints when a
         // configuration file changes, and starts each new endpoint with no check
         // (finding E41 of the review of 2026-10-09). This loader does not reload.
@@ -54,7 +71,6 @@ public static class EngineSurface
 
         builder.Services.Configure<Microsoft.Extensions.Hosting.HostOptions>(options => options.ShutdownTimeout = ShutdownTimeout);
 
-        builder.Services.AddSingleton(session);
         builder.Services.AddSingleton(services => services.GetRequiredService<EngineHost>().Broadcaster);
         builder.Services.AddSingleton(SubscriberOptions.Default);
 
