@@ -87,6 +87,7 @@ names. Do not read all of them.
 | [0079](0079-the-activity-may-start-again.md) | The activity of the phone may start again in its process | Accepted | Clients, platform | 0073 | — |
 | [0080](0080-the-fixed-controls-of-the-redesign.md) | The title of the document, Undo, Redo and the status line are fixed controls of the redesign | Accepted | Clients, rendering | 0030, 0031 | — |
 | [0081](0081-the-tool-ring-of-the-redesign.md) | The tools of the selected body are the segments of a ring that follows it | Accepted | Clients, rendering | — | — |
+| [0082](0082-the-values-on-the-edges-of-the-redesign.md) | A value that a command changes sits on the edge of the selected body that it measures | Accepted | Clients, rendering | — | — |
 
 ## Topics
 

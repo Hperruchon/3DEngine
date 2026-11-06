@@ -378,7 +378,8 @@ internal sealed unsafe partial class DesktopUi : IDisposable
     // stayed open.
     public bool OverPanel(double x, double y)
         => _cutList is not null || _newList is not null
-            || _panels.Concat(_fixed).Any(panel => x >= panel.X && x < panel.Z && y >= panel.Y && y < panel.W) || OverRing(x, y);
+            || _panels.Concat(_fixed).Any(panel => x >= panel.X && x < panel.Z && y >= panel.Y && y < panel.W) || OverRing(x, y)
+            || OverValue(x, y);
 
     // The font atlas as RGBA pixels, for the renderer to upload. It is built once.
     public (uint Width, uint Height, byte[] Rgba) FontAtlas() => _atlas;
@@ -491,7 +492,7 @@ internal sealed unsafe partial class DesktopUi : IDisposable
         => (body.Name ?? $"{body.Kind}  {body.Id.ToString()[..8]}") + (body.Visible ? string.Empty : "  (hidden)")
         + (body.Fault is null ? string.Empty : "  (fault)");
 
-    public UiDrawData Frame(float deltaSeconds, Vector2 displaySize, Vector2 framebufferScale, IReadOnlyList<LiveBody> bodies, Guid? selection = null, DocumentLine? document = null, SketchOverlay.Strokes? sketches = null, SketchPanel? sketchPanel = null, ImagePanel? imagePanel = null, DimensionOverlay.Strokes? dimensions = null, string? size = null, FaceLine? face = null, Vector2? ringCentre = null, float ringBody = 0f, Vector4 safeInsets = default)
+    public UiDrawData Frame(float deltaSeconds, Vector2 displaySize, Vector2 framebufferScale, IReadOnlyList<LiveBody> bodies, Guid? selection = null, DocumentLine? document = null, SketchOverlay.Strokes? sketches = null, SketchPanel? sketchPanel = null, ImagePanel? imagePanel = null, DimensionOverlay.Strokes? dimensions = null, string? size = null, FaceLine? face = null, Vector2? ringCentre = null, float ringBody = 0f, Vector4 safeInsets = default, IReadOnlyList<EdgeValues.Value>? values = null)
     {
         ArgumentNullException.ThrowIfNull(bodies);
         _size = size;
@@ -529,6 +530,8 @@ internal sealed unsafe partial class DesktopUi : IDisposable
         FixedControls(displaySize);
         // ADR-0081 (TASK-0253): the tool ring of the selected body, around the centre of its box on the screen.
         Ring(displaySize, bodies.FirstOrDefault(body => body.Id == selection), ringCentre, ringBody);
+        // ADR-0082 (TASK-0254): the values of the selected extrude on its edges.
+        Values(displaySize, selection is null ? null : values);
         if (sketchPanel is { } shown && (shown.Active is not null || shown.Live.Count > 0))
             SketchWindow(shown, displaySize);
         if (imagePanel is not null)

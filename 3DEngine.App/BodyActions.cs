@@ -175,6 +175,23 @@ internal sealed class BodyActions(DocumentSession session)
         return info;
     }
 
+    // ADR-0082 item 1 (TASK-0254): each edge of the selected body, from the kept result when the key is the same.
+    public IReadOnlyList<EdgeEntry> Edges(Guid? key = null)
+        => Selection is { } body && Info(body, key) is { } info ? info.Edges : [];
+
+    // ADR-0082 item 1: the distance of the extrude, kept with the body and its geometry key, so that a frame does not wait
+    // for the serial section (V109); a key of null asks each time.
+    private (Guid Body, Guid Key, double? Distance)? _keptDistance;
+
+    public double? DistanceOf(Guid body, Guid? key)
+    {
+        if (key is not null && _keptDistance is { } kept && kept.Body == body && kept.Key == key)
+            return kept.Distance;
+        var distance = Distance(body);
+        _keptDistance = key is null ? null : (body, key.Value, distance);
+        return distance;
+    }
+
     // ADR-0077 item 3: the edges of the selected face, each with the face as one of its two names.
     public IReadOnlyList<EdgeEntry> EdgesOfFace(Guid? key = null)
         => Selection is { } body && Face is { } face && Info(body, key) is { } info
