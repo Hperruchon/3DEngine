@@ -35,7 +35,26 @@ public sealed class EventSinkContractTests
         ["3DEngine"] = "3DEngine.ImageTests/DesktopSinkContractTests.cs",
         // ADR-0072 (TASK-0222): the application of the desktop, which the same test reads.
         ["3DEngine.App"] = "3DEngine.ImageTests/DesktopSinkContractTests.cs",
+        // Phase R14e2 (TASK-0226): the Android program is not built in a test run, so this file reads its source.
+        ["3DEngine.Android"] = "Engine.Tests/EventSinkContractTests.cs",
     };
+
+    // Phase R14e2 (TASK-0226): the pipeline does not build the Android program, so no test reads its assembly. Its sink
+    // is FanOutSink of 3DEngine.App, which DesktopSinkContractTests reads; no file of the program names IEventSink.
+    [Fact]
+    public void The_Android_Program_Holds_No_Sink()
+    {
+        var folder = Engine.Tests.Governance.RepositoryFiles.Path("3DEngine.Android");
+        Assert.True(Directory.Exists(folder), "3DEngine.Android does not exist.");
+        var offences = Directory.EnumerateFiles(folder, "*.cs", SearchOption.AllDirectories)
+            .Where(file => !file.Contains(Path.DirectorySeparatorChar + "obj" + Path.DirectorySeparatorChar, StringComparison.Ordinal)
+                && !file.Contains(Path.DirectorySeparatorChar + "bin" + Path.DirectorySeparatorChar, StringComparison.Ordinal))
+            .Where(file => File.ReadAllText(file).Contains("IEventSink", StringComparison.Ordinal))
+            .Select(Engine.Tests.Governance.RepositoryFiles.Relative)
+            .ToArray();
+
+        Assert.True(offences.Length == 0, "A file of the Android program names IEventSink, and no test reads it:\n  " + string.Join("\n  ", offences));
+    }
 
     [Fact]
     public void Each_Project_That_Can_Hold_A_Sink_Is_Read_Here_Or_By_A_Named_Test()
