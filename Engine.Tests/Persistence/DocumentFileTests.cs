@@ -632,30 +632,107 @@ public sealed class DocumentFileTests : IDisposable
         Assert.False(Directory.Exists(blocker));
     }
 
-    // E84: when the file does not open again after a move, the journal is broken. It had no
-    // stream and was whole, so a later save made a file with a header only.
+    // E84 and finding E162 of the codebase review of 2026-11-06 (d) (TASK-0241): until TASK-0241 a save closed the file
+    // before the new open, so an open that failed left no stream, and E84 broke the journal. Now the old file stays open
+    // until the new file holds each line, so a new file that does not open fails the save only: the journal stays whole
+    // at its old name, the next command goes there, and a later save moves it.
     [Fact]
-    public async Task A_Failed_Open_After_A_Move_Breaks_The_Journal()
+    public async Task A_New_Name_That_Does_Not_Open_Fails_The_Save_And_The_Journal_Stays_At_Its_Old_Name()
     {
         var path = FileNamed("before");
-        File.WriteAllText(path, EntryCodec.Header(Document.Millimetre) + "\n");
         var opens = 0;
         Stream FailOnce(string file, FileMode mode)
-            => opens++ == 0
+            => opens++ == 1
                 ? throw new IOException("The disk went away.")
                 : new FileStream(file, mode, FileAccess.ReadWrite, FileShare.Read);
         var session = NewSession();
-        session.Attach(DocumentJournal.ForTest(path, Document.Millimetre, new MemoryStream(), FailOnce));
+        session.Attach(DocumentJournal.ForTest(path, Document.Millimetre, null, FailOnce));
+        await session.Apply(new NoOpCommand { Echo = "one" });
 
         var move = await session.SaveAs(FileNamed("after"));
+        var command = await session.Apply(new NoOpCommand { Echo = "two" });
         var save = await session.SaveAs(FileNamed("third"));
-        var command = await session.Apply(new NoOpCommand { Echo = "one" });
+        var expected = await State(session);
         session.Close();
 
         Assert.Equal(DiagnosticCodes.IoSaveFailed, move!.Code);
-        Assert.Equal(DiagnosticCodes.IoWriteFailed, command.Error!.Code);
-        Assert.Equal(DiagnosticCodes.IoSaveFailed, save!.Code);
-        Assert.False(File.Exists(FileNamed("third")));
+        Assert.Equal(CommandStatus.Applied, command.Status);
+        Assert.Null(save);
+        Assert.False(File.Exists(FileNamed("after")));
+        Assert.False(File.Exists(path));
+        var reopened = NewSession();
+        await DocumentFile.Open(reopened, FileNamed("third"));
+        AssertSameState(expected, await State(reopened));
+        reopened.Close();
+    }
+
+    // E162 (TASK-0241): a save to a new name holds a handle on the document at each moment, so no second host can append
+    // a line between the old name and the new one. Each stream of the journal counts the live handles; until TASK-0241
+    // the close of the old file came before the open of the new one, and the count fell to zero.
+    [Fact]
+    public async Task A_Save_To_A_New_Name_Holds_A_Handle_On_The_Document_At_Each_Moment()
+    {
+        var live = new int[1];
+        var lows = new List<int>();
+        Stream Counted(string file, FileMode mode)
+        {
+            var stream = new CountedStream(new FileStream(file, mode, FileAccess.ReadWrite, FileShare.Read), live, lows);
+            live[0]++;
+            return stream;
+        }
+        var path = FileNamed("held");
+        var session = NewSession();
+        session.Attach(DocumentJournal.ForTest(path, Document.Millimetre, null, Counted));
+        await session.Apply(new NoOpCommand { Echo = "one" });
+
+        Assert.Null(await session.SaveAs(FileNamed("moved")));
+        var during = lows.ToArray();
+        await session.Apply(new NoOpCommand { Echo = "two" });
+        var expected = await State(session);
+        session.Close();
+
+        Assert.Equal([1], during);
+        Assert.False(File.Exists(path));
+        var reopened = NewSession();
+        await DocumentFile.Open(reopened, FileNamed("moved"));
+        AssertSameState(expected, await State(reopened));
+        reopened.Close();
+    }
+
+    // A stream that counts the live handles of a test, and keeps the count after each close.
+    private sealed class CountedStream(Stream inner, int[] live, List<int> lows) : Stream
+    {
+        private bool _closed;
+
+        public override bool CanRead => inner.CanRead;
+        public override bool CanSeek => inner.CanSeek;
+        public override bool CanWrite => inner.CanWrite;
+        public override long Length => inner.Length;
+
+        public override long Position
+        {
+            get => inner.Position;
+            set => inner.Position = value;
+        }
+
+        public override void Flush() => inner.Flush();
+        public override int Read(byte[] buffer, int offset, int count) => inner.Read(buffer, offset, count);
+        public override long Seek(long offset, SeekOrigin origin) => inner.Seek(offset, origin);
+        public override void SetLength(long value) => inner.SetLength(value);
+        public override void Write(byte[] buffer, int offset, int count) => inner.Write(buffer, offset, count);
+
+        protected override void Dispose(bool disposing)
+        {
+            if (disposing && !_closed)
+            {
+                _closed = true;
+                inner.Dispose();
+                live[0]--;
+                lows.Add(live[0]);
+            }
+
+            base.Dispose(disposing);
+        }
     }
 
     // E84: when the flush and the cut both fail, the file can keep the complete line of a

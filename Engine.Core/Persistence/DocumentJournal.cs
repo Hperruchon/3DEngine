@@ -133,6 +133,13 @@ public sealed class DocumentJournal : IDisposable
 
     // Moves the file to a new name; later lines go there. The target must not exist.
     // A journal whose file does not exist yet makes the file at the new name.
+    //
+    // Finding E162 of the codebase review of 2026-11-06 (d) (TASK-0241), Q1 A: until TASK-0241 the journal closed its
+    // file, moved it and opened it again, so for a moment no handle held the document, and a second host could append a
+    // line there; the next line of this journal then gave a version two times, and the document did not open. Now the
+    // journal makes the file at the new name with the share of a journal, copies each line into it and flushes it, and
+    // only then closes and deletes the old file. A handle holds the document at each moment. A failure before the switch
+    // deletes the new file and leaves the journal whole at its old name.
     internal void MoveTo(string target)
     {
         if (File.Exists(target))
@@ -150,28 +157,40 @@ public sealed class DocumentJournal : IDisposable
         }
 
         Flush(_stream);
-        _stream.Dispose();
-        _stream = null;
+        var copy = _open(target, FileMode.CreateNew);
         try
         {
-            File.Move(FilePath, target);
-            FilePath = target;
+            _stream.Seek(0, SeekOrigin.Begin);
+            _stream.CopyTo(copy);
+            Flush(copy);
         }
-        finally
+        catch
         {
-            // The file is at its new name or still at the old one; the journal writes to it.
-            // A failure to open it again breaks the journal. Until TASK-0099 the journal then
-            // had no stream and was whole, so a later save made a file with a header only (E84).
-            try
-            {
-                _stream = _open(FilePath, FileMode.Open);
-                _stream.Seek(0, SeekOrigin.End);
-            }
-            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or NotSupportedException)
-            {
-                Broken = true;
-                throw new IOException($"The document file {FilePath} did not open again after the move: {ex.Message}", ex);
-            }
+            copy.Dispose();
+            DeleteQuietly(target);
+            _stream.Seek(0, SeekOrigin.End);
+            throw;
+        }
+
+        var old = FilePath;
+        _stream.Dispose();
+        _stream = copy;
+        FilePath = target;
+
+        // The document is whole at its new name. A program that holds the old file keeps it there, with no effect on
+        // this document.
+        DeleteQuietly(old);
+    }
+
+    private static void DeleteQuietly(string path)
+    {
+        try
+        {
+            File.Delete(path);
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+            // The file stays; nothing of the journal depends on it.
         }
     }
 

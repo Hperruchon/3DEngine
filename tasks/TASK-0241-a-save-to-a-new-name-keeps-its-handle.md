@@ -1,7 +1,7 @@
 ---
 id: 0241
 title: A save to a new name keeps a handle on the document at each moment
-status: Ready
+status: Active
 phase: P0.96
 opened: 2026-11-06
 depends-on: [0240]
@@ -11,7 +11,8 @@ writes:
     - tasks/TASK-0241-a-save-to-a-new-name-keeps-its-handle.md
   modify:
     - Engine.Core/Persistence/DocumentJournal.cs
-    - Engine.Tests/Persistence/DocumentJournalTests.cs
+    - Engine.Tests/Persistence/DocumentFileTests.cs
+    - docs/adr/0015-command-log-persistence.md
     - eng/test-floor.txt
     - docs/roadmap.md
     - docs/CURRENT-STATE.md
@@ -53,14 +54,17 @@ and the new one.
 
 ## Outcome
 
-Status: Ready
+Status: Active
 
 ## Method
 
 Mechanical: a test or an injection for each finding, before the change.
-Judgement:  to be written in the task.
+Judgement:  a new file that does not open fails the save only, and the journal stays whole at its old name; a delete
+            of the old file that fails leaves that file, because the document is whole at its new name.
 Weakest:    to be written at the close.
 
 ## Progress
 
 - 2026-11-06: opened by the codebase review of 2026-11-06 (d).
+- 2026-11-06: the copy and the delete; the test of E84 now holds the save that fails with the journal whole, and a new
+  test counts the live handles. The old MoveTo fails both tests. ADR-0015 item 9 and its consequences say so.
