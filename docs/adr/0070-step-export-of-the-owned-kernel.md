@@ -54,8 +54,9 @@ Three constraints remove the obvious alternatives:
    with each solid. A shell with a positive volume is an outer shell, and each outer shell of a body is one solid with
    the identifier of the body as its name, so a cut that splits a body gives two solids of one name. A shell with a
    negative volume is a void. A void belongs to the smallest outer shell that holds its first vertex, by the parity of
-   the faces that an exact ray crosses; a ray that meets an edge, a vertex or the plane of a face at the point goes to
-   the next of eight fixed directions. A solid with no void is a `MANIFOLD_SOLID_BREP`. A solid with voids is a
+   the faces that an exact ray crosses; a ray that meets an edge or a vertex, or that lies in the plane of a face, goes
+   to the next of eight fixed directions. A face whose plane holds the point and that does not hold the point is not
+   crossed (TASK-0224). A solid with no void is a `MANIFOLD_SOLID_BREP`. A solid with voids is a
    `BREP_WITH_VOIDS`, and each void is an `ORIENTED_CLOSED_SHELL` with `.F.` on a `CLOSED_SHELL` whose faces turn,
    so that the shell points out of the void (ISO 10303-42). Each face is an `ADVANCED_FACE` on a `PLANE`, with a
    `FACE_OUTER_BOUND` and a `FACE_BOUND` for each hole, each one an `EDGE_LOOP` of `ORIENTED_EDGE`. Each edge is one
@@ -103,3 +104,5 @@ of K5 add a `CYLINDRICAL_SURFACE` and the other analytic surfaces to the same wr
 - 2026-11-06 · TASK-0197 · Item 3: three more refusals, each with its reason (findings E143, E145 and E146 of the
   codebase review of 2026-11-06, Q1 A). Until TASK-0197 an edge of four faces gave the reason "not closed", and a
   pinched solid and a sliver of less than the precision of a double went into the file.
+- 2026-11-06 · TASK-0224 · Item 2: a face whose plane holds the point and that does not hold it is not crossed (finding
+  E152). Until TASK-0224 such a point gave no answer for each direction, and the export refused the body.
