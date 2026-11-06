@@ -1,7 +1,7 @@
 ---
 id: 0222
 title: The drawing code of the desktop becomes a library that an Android program can reference
-status: Active
+status: Done
 phase: R14e1
 opened: 2026-11-06
 depends-on: [0196, 0198]
@@ -88,20 +88,21 @@ ASP.NET Core, and the desktop behaves as before.
 
 ## Acceptance criteria
 
-- [ ] Each test passes, among them the image tests, with the same count.
-- [ ] A clean build (`--no-incremental`) gives zero errors and zero warnings.
-- [ ] An injection of a reference to `Engine.Api.Http` in `3DEngine.App` fails the new rule.
-- [ ] Continuous integration passes on the three runners, on the branch and on `main` after the merge.
+- [x] Each test passes, among them the image tests, with the same count.
+- [x] A clean build (`--no-incremental`) gives zero errors and zero warnings.
+- [x] An injection of a reference to `Engine.Api.Http` in `3DEngine.App` fails the new rule.
+- [x] Continuous integration passes on the three runners, on the branch and on `main` after the merge.
 
 ## Outcome
 
-Status: Active
+Status: Done · commit (the merge of the branch r14e1-drawing-library) · v0.207
 
 ## Method
 
 Mechanical: the move of the files with git, and the adapter of `EngineHost`.
 Judgement:  the boundary of the library: two interfaces of the host, and not a move of `EngineHost`.
-Weakest:    to be written at the close.
+Weakest:    no Android program references the library yet, so the claim that one can rests on the rule and on the
+            probe of a library; R14e2 builds the first APK with it.
 
 ## Progress
 
@@ -114,3 +115,4 @@ Weakest:    to be written at the close.
   one names the new path, and each task says so in a progress line. `docs/INDEX.md` named `Alimer.Bindings.SDL` as a
   pin of the Vulkan layer, which was false since R14c. A reference to `Engine.Api.Http` and a framework reference of
   ASP.NET Core in the application each fail the new rule. The image tests pass with the same count, 200.
+- 2026-11-06: closed at v0.207. The row R14e stays open.
