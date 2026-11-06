@@ -345,6 +345,7 @@ The first objective. Each phase ends with something that a person can observe.
 | R14f2 | The APK holds its assemblies, and the pipeline starts it on the x86-64 emulator with Vulkan in software and reads its log (ADR-0061 item 9). TASK-0229. | 1–2 |
 | R14f3 | The probe of the determinism hash moves into `Engine.Core`, the program of the phone runs it on the emulator, and the pipeline compares four platforms (ADR-0061 item 8, ADR-0074). TASK-0233. | 1–2 |
 | R14g | The layout of the phone, inside the redesign of the desktop: each region of the redesign gives its form on the screen of the S23 Ultra (ADR-0061 item 9). | 8–15 |
+| R15 | The user interface of the desktop is one partial file for each region: the panel, the overlays, the window of the sketch, the window of the images and the pad, with no change of a line of code (the fallback queue of the owner, 2026-11-05). TASK-0234. | 1 |
 
 ## Track K — The kernel
 
