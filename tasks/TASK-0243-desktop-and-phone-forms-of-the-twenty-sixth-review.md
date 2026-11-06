@@ -1,7 +1,7 @@
 ---
 id: 0243
 title: A cancelled finger ends, the activity tells its starts, and the face and the texts hold their next forms
-status: Active
+status: Done
 phase: P0.98
 opened: 2026-11-06
 depends-on: [0242]
@@ -66,13 +66,13 @@ first frame comes after a frame, the outline follows a drag, a lost pointer keep
 
 ## Acceptance criteria
 
-- [ ] Each finding has a test or an injection that fails before the change and passes after it.
-- [ ] A clean build (`--no-incremental`) gives zero errors and zero warnings.
-- [ ] Continuous integration passes on the three runners, on the branch and on `main` after the merge.
+- [x] Each finding has a test or an injection that fails before the change and passes after it.
+- [x] A clean build (`--no-incremental`) gives zero errors and zero warnings.
+- [x] Continuous integration passes on the three runners, on the branch and on `main` after the merge.
 
 ## Outcome
 
-Status: Active
+Status: Done · commit (the merge of the branch p098-phone-and-face) · v0.228
 
 ## Method
 
@@ -80,7 +80,8 @@ Mechanical: a test or an injection for each finding, before the change.
 Judgement:  P0.98 before P0.97, because the emulator job failed in 3 of the last 4 runs and V105 holds its probable
             cause; a flag ByKey on CancelIntent, not a new kind of intent, because each kind needs a touch script
             (ADR-0026 item 5); the cache of V109 by the geometry key that the client already holds.
-Weakest:    to be written at the close.
+Weakest:    one run passed with the wait for the launcher, so the cause of V105 is not proven; V106 has no test, because
+            the presenter needs a surface; no person tapped a face on the phone or cancelled a finger.
 
 ## Progress
 
@@ -90,3 +91,4 @@ Weakest:    to be written at the close.
   submitted frame; the outline follows a drag; a lost pointer keeps the face; the entry of the face waits for no
   command; the comments and ADR-0075 say what the code holds. An injection of V104, V107, V108 and V109 each fails a
   test; V105 and V106 have no test on this computer, and the probe of T149 gives the same exits for the smoke test.
+- 2026-11-06: run 42285931818 passed: the launcher was resumed before the start, the activity wrote its line, and the first frame came. Closed at v0.228.

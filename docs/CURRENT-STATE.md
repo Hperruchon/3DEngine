@@ -6816,3 +6816,37 @@ documents only.
 New tests: 3. The test list holds 1948 (1377 in `Engine.Tests`, 335 in `3DEngine.Tests`, 233 in `3DEngine.ImageTests`, 3
 in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
 entries: 15 of 15. New diagnostic codes: 0. Since the review of v0.223, 1 product milestone and 4 entries followed it.
+
+## v0.228 — A cancelled finger ends, the activity tells its starts, and the face and the texts hold their next forms (P0.98, TASK-0243)
+
+The codebase review of 2026-11-06 (d) found V104 and V105 (medium) and V106 to V111 (low). They come after the next
+product phase, K5b. This task comes before P0.97, because the emulator job failed in 3 of the 4 runs before it, and V105
+holds its probable cause.
+
+**The change.**
+- V104: `SdlInput` reads `SDL_EVENT_FINGER_CANCELED` as a touch sample with the phase Cancel, so a finger that the system
+  takes ends in the intent layer, and the next tap selects again.
+- V105: the activity writes a line at each create, change of the configuration and destroy, and it holds eight more
+  configuration changes. The smoke test waits until the launcher is the resumed activity before the start.
+- V106: the phone writes "the first frame is drawn" after the first frame that the presenter submitted.
+- V107: the outline of a selected face follows a drag of the gizmo.
+- V108: `CancelIntent` has `ByKey`; only the key Escape goes back from a face, and a lost pointer keeps it.
+- V109: the entry of the selected face is kept by its body, its face and the geometry key of the body, so a frame does not
+  wait for the serial section that a long command holds.
+- V110 and V111: the comments of the phone say that no run shows the order of the background; ADR-0075 names the six
+  files of its items 2 and 3 and the tasks that changed them; the comment of `Distance` stands above it again.
+
+**Proof.** Five new tests. An injection of V104, V107, V108 and V109 each fails a test; the test of V109 holds the
+serial section on another thread, and its first form, which held it on the thread of the test, did not see the defect.
+The probe of T149 gives the same exits for the smoke test. Run 42285931818 passed: the launcher was resumed before the
+start, the activity wrote "the activity is created", and the first frame came.
+
+**What stays.** V105 is not proven: one run passed. V106 has no test, because the presenter needs a surface.
+
+**A correction.** The merge of v0.227 came after run 42283808971 of the close of K5b, whose emulator job failed with the
+signature of V105; run 42282849670 of the change passed on each job. The run of `main` at v0.227 (42285027469) failed in
+the same job, the eleventh such failure.
+
+New tests: 5. The test list holds 1953 (1377 in `Engine.Tests`, 337 in `3DEngine.Tests`, 236 in `3DEngine.ImageTests`, 3
+in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
+entries: 15 of 15. New diagnostic codes: 0. Since the review of v0.223, 1 product milestone and 5 entries followed it.
