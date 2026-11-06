@@ -6981,3 +6981,31 @@ Run 42296524985 passed.
 New tests: 2. The test list holds 1965 (1384 in `Engine.Tests`, 337 in `3DEngine.Tests`, 241 in `3DEngine.ImageTests`, 3
 in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
 entries: 15 of 15. New diagnostic codes: 0. Since the review of v0.223, 3 product milestones and 9 entries followed it.
+
+## v0.233 — The title of the document, Undo, Redo and the status line are fixed controls of the redesign (R16b1, TASK-0248)
+
+The owner ordered the layout of the redesign slice by slice on 2026-11-06 (evening), with the fixed controls first. The
+"mix" direction of the designer brief shows the name of the document at the top left and Undo and Redo as round buttons
+at the bottom left. At 1280 by 720 the panel had no free line (finding V50).
+
+**The change.** ADR-0080 is new and Accepted under the standing order of 2026-11-05, which gave A for its two questions;
+it amends ADR-0030 item 3 and ADR-0031 item 11.
+- The title bar of the panel is "3DEngine | " and the name of the file or "unsaved", then the unit; on the phone, the
+  program and the unit. The line "File: name" and the address leave the panel.
+- Undo and Redo are round anchors of 48 pixels at the bottom left, with arrows that the draw list draws, because the
+  bitmap font has none. The panel ends above them.
+- The address is a status line on the row of the anchors; the bottom right of the brief is under the window of a sketch.
+- Each fixed control is a rectangle that a tap does not pass.
+
+**Proof.** Two new tests: the anchors at the bottom left, under no panel, with the status line on their row; and the
+title. An injection that removes the fixed controls and one that lets the panel cover them each fail a test. Each test
+that taps Undo and Redo passes, because their items keep their names. Run 42298401536 passed.
+
+**What stays.** No person tapped the anchors. The command field of the brief waits for the questions of the agent.
+
+**A correction.** Run 42297666769 of the first branch, `redesign-b1-fixed`, failed the write-set job: the task named the
+file of ADR-0030 with a wrong name. The branch `redesign-b1-fixed-b` holds the corrected commit.
+
+New tests: 2. The test list holds 1967 (1384 in `Engine.Tests`, 337 in `3DEngine.Tests`, 243 in `3DEngine.ImageTests`, 3
+in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
+entries: 15 of 15. New diagnostic codes: 0. Since the review of v0.223, 4 product milestones and 10 entries followed it.
