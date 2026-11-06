@@ -6260,3 +6260,37 @@ New tests: 10 (7 in `Engine.Tests`, 3 in `3DEngine.ImageTests`). The test list h
 `3DEngine.Tests`, 203 in `3DEngine.ImageTests`, 3 in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental`
 gives zero errors and zero warnings. Open entries: 15 of 15. New diagnostic codes: 0. Since the review of v0.207, 1
 product milestone and 1 entry followed it.
+
+## v0.210 — A void on the plane of a distant face is written, a replay and an export know an assembly, and two gates read the transitive form (P0.89, TASK-0224)
+
+The codebase review of 2026-11-06 (b) found E152 and T145 (medium) and E153 to E155 and T146 (low), to correct after
+the next product phase, R14e2. The standing order of 2026-11-05 answered Q1 with A.
+
+**The change.**
+- E152: `StepExport.Crossings` skips a face whose plane holds the point and that does not hold the point. A void level
+  with a distant face of its outer shell is a `BREP_WITH_VOIDS`; ADR-0070 item 2 says so.
+- E153: `Replay.ReplayLog` takes the kind of the Document, so the replay of an assembly log gives its references.
+- E154 (Q1 A): the header of a new assembly has `formatVersion` 2, which an engine before TASK-0202 refuses. A part
+  header keeps its bytes, and an assembly file of the version 1 still opens. ADR-0071 item 4 says so.
+- E155: `engine export` reads the kind of the header and refuses an assembly with the new code
+  `E-EXPORT-KIND-REFUSED`.
+- T145: the rules of ADR-0072 read the framework references and the SDK of each project that the application and the
+  program of the phone reach. T146: a fact holds the rows of the list of the packages equal to the projects of the
+  desktop.
+
+**Proof.** Each new test failed before its change, or an injection proves it: the plane test as before, the replay as a
+part, the header of the version 1 for an assembly, the export as a part, the web SDK on the application, a framework
+reference in `Engine.Core`, and a host that draws with no row each fail a test or a gate.
+
+**What stays.** The review of Codex of v0.208 found that `CodebaseReviewGateTests.ProductPhase` refuses a phase with a
+letter and then a digit, so the gate counts neither P8b1, R14e1 nor R14e2; the next codebase review carries it. The review
+of Codex of v0.206 found that a `Directory.Build.targets` inside `3DEngine.Vulkan` can change the version of the pin;
+the next codebase review carries it too.
+
+**A correction.** The entries v0.207 and v0.208 said that the gate makes the review due before R14e2. The gate did not
+count R14e1, so it did not; the count of four product milestones in those entries was made by hand, and it is true.
+
+New tests: 6. The test list holds 1879 (1341 in `Engine.Tests`, 332 in `3DEngine.Tests`, 203 in `3DEngine.ImageTests`, 3
+in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
+entries: 15 of 15. New diagnostic codes: 1 (`E-EXPORT-KIND-REFUSED`). Since the review of v0.207, 1 product milestone and
+2 entries followed it.

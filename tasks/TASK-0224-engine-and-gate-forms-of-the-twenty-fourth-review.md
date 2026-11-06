@@ -1,7 +1,7 @@
 ---
 id: 0224
 title: A void on the plane of a distant face is written, a replay and an export know an assembly, and two gates read the transitive form
-status: Active
+status: Done
 phase: P0.89
 opened: 2026-11-06
 depends-on: [0226]
@@ -60,20 +60,21 @@ know an assembly, an older engine refuses an assembly, and two gates read the tr
 
 ## Acceptance criteria
 
-- [ ] Each finding has a test or an injection that fails before the change and passes after it.
-- [ ] A clean build (`--no-incremental`) gives zero errors and zero warnings.
-- [ ] Continuous integration passes on the three runners, on the branch and on `main` after the merge.
+- [x] Each finding has a test or an injection that fails before the change and passes after it.
+- [x] A clean build (`--no-incremental`) gives zero errors and zero warnings.
+- [x] Continuous integration passes on the three runners, on the branch and on `main` after the merge.
 
 ## Outcome
 
-Status: Active
+Status: Done · commit (the merge of the branch p089-review-forms) · v0.210
 
 ## Method
 
 Mechanical: a test or an injection for each finding, before the change.
 Judgement:  a new code for an export of an assembly, E-EXPORT-KIND-REFUSED, because each code of the export means a
             body or a write; a header of the version 2 for an assembly only, so a part file keeps its bytes.
-Weakest:    to be written at the close.
+Weakest:    no engine before TASK-0202 ran against a header of the version 2; its code at `ab55b07` refuses each
+            version but 1. No reader outside the repository read the voids of E152.
 
 ## Progress
 
@@ -87,3 +88,4 @@ Weakest:    to be written at the close.
   desktop. Seven injections each fail a test or a gate: the plane test as before, the replay as a part, the header of
   the version 1, the export as a part, the web SDK on the application, a framework reference in `Engine.Core`, and a host
   with no row.
+- 2026-11-06: closed at v0.210.
