@@ -76,11 +76,11 @@ public static class DocumentFile
         => Load(session, path, attach: false, hold: false, ct);
 
     // ADR-0030 item 5: opens the file in a scratch session on the given backend, with
-    // no write, and gives null or the error of the open. A host calls this before it
-    // starts again with the file, so that a file that does not open leaves the person
+    // no write, and gives null or the error of the open. A host calls this before its
+    // next session holds the file, so that a file that does not open leaves the person
     // with the window. The check holds the file with the access and the share of a
     // journal, so a file that another program holds fails it; hold is false only for the
-    // file that the host itself holds, which it frees before it starts again. Until
+    // file that the host itself holds, which it frees before the next session. Until
     // TASK-0099 the check read with the share of a write and passed for a file of another
     // desktop, and the new program then stopped (finding V31 of the second codebase review
     // of 2026-10-28).

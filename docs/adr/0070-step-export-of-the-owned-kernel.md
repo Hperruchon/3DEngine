@@ -66,9 +66,11 @@ Three constraints remove the obvious alternatives:
    determinism rule 1). The facets of an arc or a circle of a profile are planar faces of the kernel (ADR-0057 item 4),
    so they are planes in the file until K5.
 3. **A refusal.** `StepExport.Write` gives `E-EXPORT-BODY-FAILED`, with the body and the reason, and no file, for the
-   first body that it cannot write: a body with a fault, a body that the kernel does not build, a B-Rep that is not
-   closed, a shell with no volume, a void that no outer shell holds or that no ray tests, and a coordinate that a
-   double does not hold. A silent skip of a body is refused (anti-objective 9). The export needs no capability
+   first body that it cannot write: a body with a fault, a body that the kernel does not build, a B-Rep with an edge of
+   more than two faces, a B-Rep that is not closed, two vertices that round to one double, an edge that lies inside a
+   face that does not hold it (a solid pinched along that edge), a shell with no volume, a void that no outer shell
+   holds or that no ray tests, and a coordinate that a double does not hold. A silent skip of a body is refused
+   (anti-objective 9). The export needs no capability
    of the backend.
 4. **The surface.** `GET /export/step` gives the file as `model/step`, or the envelope with 422 for
    `E-EXPORT-BODY-FAILED` and 500 for each other error. As for `GET /export/stl` (ADR-0048 item 4), the route is outside
@@ -86,8 +88,8 @@ design can edit. The file comes from the owned kernel, so it is the same bytes o
 by a hash on the three runners of the pipeline.
 
 **Bad:** a curved side of an extrude is a set of planar facets in the file, as in the kernel. A body with a fault gives no file
-at all, so one such body stops the export of each other body. No reader of STEP runs in the pipeline: the tests read the file back with a small reader of the repository, which checks the topology and the
-numbers but not each rule of AP214. The test of a void costs one exact ray against each face of each outer shell
+at all, so one such body stops the export of each other body. No reader of STEP runs in the pipeline: the tests read the file back with a small reader of the repository, which checks the topology, the
+sense of each loop and of each line, and the numbers, but not each rule of AP214. The test of a void costs one exact ray against each face of each outer shell
 of the body, for each void.
 
 **Next:** the button of the desktop comes in a later slice of K6, after the Android work on the desktop. The surfaces
@@ -98,3 +100,6 @@ of K5 add a `CYLINDRICAL_SURFACE` and the other analytic surfaces to the same wr
 - 2026-11-06 · TASK-0200 · The record, under the standing order of 2026-11-05.
 - 2026-11-06 · TASK-0201 · Items 2, 3 and 6: a void is a `BREP_WITH_VOIDS` of the smallest outer shell that holds it,
   under the standing order of 2026-11-05. Until TASK-0201 a void gave `E-EXPORT-BODY-FAILED`.
+- 2026-11-06 · TASK-0197 · Item 3: three more refusals, each with its reason (findings E143, E145 and E146 of the
+  codebase review of 2026-11-06, Q1 A). Until TASK-0197 an edge of four faces gave the reason "not closed", and a
+  pinched solid and a sliver of less than the precision of a double went into the file.

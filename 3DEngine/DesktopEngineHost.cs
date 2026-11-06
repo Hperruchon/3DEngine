@@ -32,24 +32,35 @@ internal static class DesktopEngineHost
 
     // Phase R14b (ADR-0061 item 9, TASK-0194), which amends ADR-0030 item 4: the sessions of the desktop, one after the
     // other, in one process. An open that a check accepted ends the window loop of a session. The surface stops, so the
-    // port is free, the host disposes the session, and the next session holds the file of the open on the same port and
-    // in the same window. Until R14b the program started again with --file. The exit code is the code of the first
-    // session that does not start, or 0.
+    // port is free, the host disposes the session, and the next session holds the file of the open in the same window,
+    // on the same port when the port is fixed. Until R14b the program started again with --file. The exit code is the
+    // code of a first session that does not start, or 0.
+    // Finding E150 of the codebase review of 2026-11-06 (TASK-0197), Q3 A: a next session that does not start ended the
+    // run, with the first document already closed. ADR-0030 item 5 keeps the person in the window, so a session on the
+    // previous file starts again, and the error goes to the standard error. When that session does not start either, the
+    // run ends with its code.
     internal static int RunSessions(
         string[] args,
         Func<string[], string?, (DesktopSurface? Surface, int ExitCode, string? Message)> start,
         Action<DesktopSurface> show)
     {
         string? file = null;
+        string? previous = null;
+        var (first, again) = (true, false);
         while (true)
         {
             var (surface, exitCode, message) = start(args, file);
             if (surface is null)
             {
                 Console.Error.WriteLine(message);
-                return exitCode;
+                if (first || again)
+                    return exitCode;
+                Console.Error.WriteLine($"3DEngine opens {previous ?? "the document of the start"} again");
+                (file, again) = (previous, true);
+                continue;
             }
 
+            (first, again) = (false, false);
             string? requested;
             using (surface.Session)
             {
@@ -59,6 +70,7 @@ internal static class DesktopEngineHost
                     Console.WriteLine($"3DEngine document file: {surface.Host.Session.FilePath ?? "none"}");
                     show(surface);
                     requested = surface.Document.RequestedOpen;
+                    previous = surface.Host.Session.FilePath;
                 }
             }
 
