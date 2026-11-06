@@ -1,7 +1,7 @@
 ---
 id: 0250
 title: A second session of the phone in its process makes its window
-status: Active
+status: Done
 phase: P0.100
 opened: 2026-11-06
 depends-on: [0249]
@@ -48,22 +48,24 @@ A session of the phone destroys its window at its end, so a later session in the
 
 ## Acceptance criteria
 
-- [ ] Each finding has a test or an injection that fails before the change and passes after it.
-- [ ] A clean build (`--no-incremental`) gives zero errors and zero warnings.
-- [ ] Continuous integration passes on the three runners, on the branch and on `main` after the merge.
+- [x] Each finding has a test or an injection that fails before the change and passes after it.
+- [x] A clean build (`--no-incremental`) gives zero errors and zero warnings.
+- [x] Continuous integration passes on the three runners, on the branch and on `main` after the merge.
 
 ## Outcome
 
-Status: Active
+Status: Done · commit (the merge of the branch p0100-window-dispose) · v0.235
 
 ## Method
 
 Mechanical: a test or an injection for each finding, before the change.
 Judgement:  the test uses the video driver "offscreen" of SDL and asks SDL for the window by its identifier, because the
             limit of one window is a rule of SDL on Android only.
-Weakest:    to be written at the close.
+Weakest:    the test runs on the video driver "offscreen" of SDL, not on Android, where the limit of one window is; no
+            device had a new start of the activity during a session.
 
 ## Progress
 
 - 2026-11-06: opened by the codebase review of 2026-11-06 (e).
 - 2026-11-06: `Window.Dispose` and the `using` of the phone; one test. An injection of a `Dispose` with no destroy fails it.
+- 2026-11-06: run 42302467567 passed, with the test of the window on the Linux runner. Closed at v0.235.
