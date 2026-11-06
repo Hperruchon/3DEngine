@@ -198,6 +198,7 @@ Therefore each approved objective must have a track here.
 - P0.94 — The key Escape goes back from the face, and the button "Sketch on face" ends the arm of Face. v0.222, TASK-0237.
 - K5a — A command CreateCylinder makes a cylinder of 64 plane facets, with three face names. v0.223, TASK-0238, ADR-0076.
 - P0.95 — The smoke test of the emulator gives the exception of the program as public annotations. v0.224, TASK-0239.
+- Review — The codebase review of 2026-11-06 (d). v0.225, TASK-0240.
 
 ## Track 0 — Foundations
 
