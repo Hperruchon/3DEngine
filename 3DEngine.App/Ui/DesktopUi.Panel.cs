@@ -182,6 +182,13 @@ internal sealed unsafe partial class DesktopUi
                     _actions.Add(new SketchOnSelectedFaceAction());
                 Item(SketchOnFaceButtonLabel);
             }
+
+            // ADR-0077 item 4 (phase R12b, TASK-0245): the selected edge, on its own line.
+            if (face.EdgeText is { } edgeText)
+            {
+                ImGui.TextUnformatted(edgeText);
+                Item(EdgeLabel);
+            }
         }
 
         ImGui.SetNextItemWidth(220f);

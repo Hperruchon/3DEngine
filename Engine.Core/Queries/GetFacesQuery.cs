@@ -22,5 +22,10 @@ public sealed record FaceEntry(DatumReference Reference, int Parts, int Holes, d
 // One edge of an outline, from one vertex of the B-Rep to the other.
 public sealed record FaceSegment(DatumPoint Start, DatumPoint End);
 
-// The faces of the body, in the order of the first face of each name in the B-Rep.
-public sealed record FacesInfo(IReadOnlyList<FaceEntry> Faces);
+// ADR-0077 items 1 and 2 (phase R12b, TASK-0245): one edge of the body, the pair of the names of its two faces, the lower
+// one first; the count of its parts, the chains of its segments that share a vertex; its length; and its segments.
+public sealed record EdgeEntry(DatumReference First, DatumReference Second, int Parts, double Length, IReadOnlyList<FaceSegment> Segments);
+
+// The faces of the body, in the order of the first face of each name in the B-Rep, and its edges, in the order of the
+// first B-Rep edge of each pair (ADR-0077).
+public sealed record FacesInfo(IReadOnlyList<FaceEntry> Faces, IReadOnlyList<EdgeEntry> Edges);

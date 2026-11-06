@@ -112,7 +112,7 @@ public sealed class GetFacesTests
         Assert.True(top.Z == 2 && Math.Abs(top.X) < 5 && Math.Abs(top.Y) < 3, $"{top}");
 
         // ADR-0018 item 7: a host writes the result as JSON, with each field of an entry.
-        var json = System.Text.Json.JsonSerializer.Serialize<object>(new FacesInfo(faces), new System.Text.Json.JsonSerializerOptions(System.Text.Json.JsonSerializerDefaults.Web));
+        var json = System.Text.Json.JsonSerializer.Serialize<object>(new FacesInfo(faces, []), new System.Text.Json.JsonSerializerOptions(System.Text.Json.JsonSerializerDefaults.Web));
         Assert.Contains("\"faces\":[{\"reference\":{\"featureId\":", json, StringComparison.Ordinal);
         Assert.Contains("\"parts\":1,\"holes\":0,\"area\":24,\"point\":{", json, StringComparison.Ordinal);
         Assert.Contains("\"normal\":{\"x\":1,\"y\":0,\"z\":0}", json, StringComparison.Ordinal);
@@ -202,6 +202,73 @@ public sealed class GetFacesTests
         Assert.Equal((1, 1, 84.0), (Named(faces, plate, "+z").Parts, Named(faces, plate, "+z").Holes, Named(faces, plate, "+z").Area));
         Assert.Equal((1, 0, 8.0), (Named(faces, tool, "-y").Parts, Named(faces, tool, "-y").Holes, Named(faces, tool, "-y").Area));
         Assert.Equal(10, faces.Count);
+    }
+
+    private static async Task<IReadOnlyList<EdgeEntry>> Edges(DocumentSession session, Guid body)
+    {
+        var result = await Query(session, body);
+        Assert.True(result.Error is null, $"{result.Error?.Code} {result.Error?.Message}");
+        return result.Result!.Edges;
+    }
+
+    // ADR-0077 items 1 and 2 (phase R12b, TASK-0245): a box gives twelve edges, each the pair of two of its faces, the lower
+    // name first, with one part, one segment and the length of the side of the box that it runs along.
+    [NativeManifoldFact]
+    public async Task A_Box_Gives_Twelve_Edges_Named_By_Their_Faces()
+    {
+        using var backend = new ManifoldGeometryBackend();
+        var session = NewSession(backend);
+        var box = await Box(session, 10, 6, 4);
+
+        var edges = await Edges(session, box);
+
+        Assert.Equal(12, edges.Count);
+        Assert.All(edges, edge => Assert.Equal((1, 1), (edge.Parts, edge.Segments.Count)));
+        Assert.All(edges, edge => Assert.True(string.CompareOrdinal(edge.First.Element, edge.Second.Element) < 0, $"{edge.First.Element} {edge.Second.Element}"));
+        var vertical = Assert.Single(edges, edge => (edge.First.Element, edge.Second.Element) == ("+x", "+y"));
+        Assert.Equal(4.0, vertical.Length);
+        Assert.Equal(10.0, Assert.Single(edges, edge => (edge.First.Element, edge.Second.Element) == ("+y", "+z")).Length);
+        Assert.Equal([4.0, 4, 4, 4, 6, 6, 6, 6, 10, 10, 10, 10], edges.Select(edge => edge.Length).Order());
+    }
+
+    // ADR-0077 item 1: the 64 segments of the rim of a cylinder are one edge, and the facets of the side meet in no edge.
+    [NativeManifoldFact]
+    public async Task The_Rim_Of_A_Cylinder_Is_One_Edge_Of_64_Segments()
+    {
+        using var backend = new ManifoldGeometryBackend();
+        var session = NewSession(backend);
+        var body = Output(await Applied(session, new CreateCylinderCommand { Radius = 5, Height = 10 }), "bodyId");
+
+        var edges = await Edges(session, body);
+
+        Assert.Equal(2, edges.Count);
+        Assert.Contains(edges, edge => (edge.First.Element, edge.Second.Element) == ("+z", "side"));
+        Assert.Contains(edges, edge => (edge.First.Element, edge.Second.Element) == ("-z", "side"));
+        var rim = 2 * 64 * 5 * Math.Sin(Math.PI / 64);
+        Assert.All(edges, edge =>
+        {
+            Assert.Equal((1, 64), (edge.Parts, edge.Segments.Count));
+            Assert.True(Math.Abs(edge.Length - rim) < 1e-9 * rim, $"{edge.Length} against {rim}");
+        });
+    }
+
+    // ADR-0077 item 1: a cut gives the wall of a hole its edges with no new rule: a plate with a round hole has its twelve
+    // edges and the two rims of the hole, each between a face of the plate and the side of the tool.
+    [NativeManifoldFact]
+    public async Task A_Cut_Gives_The_Rims_Of_The_Hole_As_Edges()
+    {
+        using var backend = new ManifoldGeometryBackend();
+        var session = NewSession(backend);
+        var plate = await Box(session, 20, 20, 4);
+        var tool = Output(await Applied(session, new CreateCylinderCommand { Radius = 3, Height = 10 }), "bodyId");
+        var cut = Output(await Applied(session, new SubtractCommand { MinuendBodyId = plate, SubtrahendBodyId = tool }), "bodyId");
+
+        var edges = await Edges(session, cut);
+
+        Assert.Equal(14, edges.Count);
+        var rims = edges.Where(edge => edge.First.FeatureId == tool || edge.Second.FeatureId == tool).ToList();
+        Assert.Equal(2, rims.Count);
+        Assert.All(rims, rim => Assert.Equal((1, 64), (rim.Parts, rim.Segments.Count)));
     }
 
     // ADR-0075 item 2 (phase R12a, TASK-0236): the outline of each face name, which a client draws as the mark of a

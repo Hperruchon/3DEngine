@@ -203,6 +203,7 @@ Therefore each approved objective must have a track here.
 - K5b — A list "New" of the panel of the desktop and of the phone makes a box or a cylinder. v0.227, TASK-0244, ADR-0076.
 - P0.98 — A cancelled finger ends, the activity tells its starts, and the face and the texts hold their next forms. v0.228, TASK-0243.
 - P0.97 — The readers of a file, the pin rule, the smoke test and the comparison hold their next forms. v0.229, TASK-0242.
+- R12b — A tap near an edge of the selected face selects the edge. v0.230, TASK-0245, ADR-0077.
 
 ## Track 0 — Foundations
 
@@ -349,6 +350,7 @@ The first objective. Each phase ends with something that a person can observe.
 | R11 | Escalated selection and a snap engine. Closed after R11c: R11a to R11c give the snaps, and the escalated selection moves to R12 (the owner, 2026-11-02). | 4–6 |
 | R12 | The escalated selection of faces and edges. It needs a stable identity of each face and each edge, so it comes after K4 (ADR-0041 item 5; the owner, 2026-11-02). | 4–6 |
 | R12a | A second tap on the selected body selects the face under the point: the outline of each face name in `GetFaces`, its mark in the scene, and the face in the panel with a button Sketch (ADR-0075). TASK-0236. | 2–3 |
+| R12b | A tap near an edge of the selected face selects the edge: an edge is the pair of the names of its two faces, `GetFaces` gives the edges, and the panel gives the length (ADR-0077). TASK-0245. | 2–3 |
 | R13 | The dimension overlay of the desktop: a toggle in the panel, the overall size of the visible bodies or of each live body, and the size and the thickness of a selected body, as lines with labels in the scene (the owner, 2026-11-03; four answers of 2026-11-04). ADR-0056, TASK-0178. | 2–4 |
 | R14a | Android in the charter: objective 8 and anti-objective 16, the closure of R-0020, ADR-0061 with its amendments of ADR-0017 and ADR-0027, and the rows R14b to R14g (the Android order of the owner, 2026-11-05). TASK-0193. | 1 |
 | R14b | The host owns the document session, the surface mounts on that session as an option, and an open of a file stays in the same process (`3DEngine/DesktopDocument.cs`). The behaviour of the desktop does not change, and tests prove it (ADR-0061 item 9). TASK-0194. | 2–4 |

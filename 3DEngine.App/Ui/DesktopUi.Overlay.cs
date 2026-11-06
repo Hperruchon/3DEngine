@@ -34,7 +34,13 @@ internal sealed unsafe partial class DesktopUi
         var list = ImGui.GetBackgroundDrawList();
         foreach (var (a, b) in face.Outline)
             list.AddLine(a, b, SelectedColour, SelectedLineWidth);
+
+        // ADR-0077 item 4 (phase R12b, TASK-0245): the selected edge over the outline, wider.
+        foreach (var (a, b) in face.Edge ?? [])
+            list.AddLine(a, b, SelectedColour, SelectedEdgeWidth);
     }
+
+    private const float SelectedEdgeWidth = 8f;
 
     // ADR-0033 item 13: the sketches, read only, on the background list of ImGui, so they
     // come over the scene and under each window of the panel.

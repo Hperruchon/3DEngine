@@ -28,6 +28,45 @@ internal static class FaceOverlay
         return lines;
     }
 
+    // ADR-0077 item 3 (phase R12b, TASK-0245): the edge whose segments on the screen pass nearest the point, at most
+    // within pixels away, or null.
+    public static EdgeEntry? Nearest(IReadOnlyList<EdgeEntry> edges, Camera camera, double width, double height, double x, double y,
+        double within = 12, (double X, double Y, double Z) offset = default)
+    {
+        ArgumentNullException.ThrowIfNull(edges);
+        EdgeEntry? nearest = null;
+        var best = within * within;
+        var point = new Vector2((float)x, (float)y);
+        foreach (var edge in edges)
+        {
+            foreach (var (a, b) in Of(edge.Segments, camera, width, height, offset))
+            {
+                var d = DistanceSquared(point, a, b);
+                if (d <= best)
+                    (best, nearest) = (d, edge);
+            }
+        }
+
+        return nearest;
+    }
+
+    private static double DistanceSquared(Vector2 p, Vector2 a, Vector2 b)
+    {
+        var ab = b - a;
+        var length = Vector2.Dot(ab, ab);
+        var t = length == 0 ? 0 : Math.Clamp(Vector2.Dot(p - a, ab) / length, 0, 1);
+        var nearest = a + (ab * t);
+        return Vector2.DistanceSquared(p, nearest);
+    }
+
+    // ADR-0077 item 4: the line of the edge in the panel: the elements of its two names and its length.
+    public static string EdgeText(EdgeEntry edge, string unit)
+    {
+        ArgumentNullException.ThrowIfNull(edge);
+        ArgumentNullException.ThrowIfNull(unit);
+        return $"Edge {edge.First.Element} | {edge.Second.Element}: {Dimensions.Format(edge.Length)} {unit}";
+    }
+
     // The line of the face in the panel: the element of its name and its area. The font of the panel has no sign of a
     // square, so the unit is in words.
     public static string Text(FaceEntry face, string unit)

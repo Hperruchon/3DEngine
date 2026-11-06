@@ -30,8 +30,23 @@ internal sealed class BodyActions(DocumentSession session)
         }
     }
 
-    // ADR-0075 item 2 (phase R12a, TASK-0236): the selected face of the selected body, by its name, or null.
-    public DatumReference? Face { get; private set; }
+    private DatumReference? _face;
+
+    // ADR-0075 item 2 (phase R12a, TASK-0236): the selected face of the selected body, by its name, or null. ADR-0077 item 3
+    // (phase R12b, TASK-0245): a change of the face clears the selected edge.
+    public DatumReference? Face
+    {
+        get => _face;
+        private set
+        {
+            if (_face != value)
+                Edge = null;
+            _face = value;
+        }
+    }
+
+    // ADR-0077 item 3: the selected edge of the selected face, by the pair of the names of its faces, or null.
+    public (DatumReference First, DatumReference Second)? Edge { get; private set; }
 
     // Selects a body, or none. The row of a body in the panel gives the body, with no face.
     public void Select(Guid? body)
@@ -42,7 +57,10 @@ internal sealed class BodyActions(DocumentSession session)
 
     // Applies an intent of the selection or of the visibility, with the pick of a point of the
     // window. It returns false for each other intent, which the host applies to the camera.
-    public bool Apply(Intent intent, Func<double, double, PickHit?> pick, IReadOnlyList<LiveBody> live)
+    // ADR-0077 item 3: edgeAt gives the edge of the selected face nearest a point of the window, at most 12 pixels away, or
+    // null; a host with no edges gives none.
+    public bool Apply(Intent intent, Func<double, double, PickHit?> pick, IReadOnlyList<LiveBody> live,
+        Func<double, double, (DatumReference First, DatumReference Second)?>? edgeAt = null)
     {
         ArgumentNullException.ThrowIfNull(pick);
         ArgumentNullException.ThrowIfNull(live);
@@ -56,13 +74,25 @@ internal sealed class BodyActions(DocumentSession session)
             {
                 var hit = pick(select.X, select.Y);
                 if (hit is { } on && on.Id == Selection)
-                    Face = FaceAt(on);
+                {
+                    // ADR-0077 item 3: near an edge of the selected face, the tap selects the edge and keeps the face.
+                    if (Face is not null && edgeAt?.Invoke(select.X, select.Y) is { } edge)
+                        Edge = edge;
+                    else
+                    {
+                        Edge = null;
+                        Face = FaceAt(on);
+                    }
+                }
                 else
                     Selection = hit?.Id;
                 return true;
             }
 
-            // The key Escape goes back from the face to its body.
+            // The key Escape goes back from the edge to its face, and from the face to its body (ADR-0077 item 3).
+            case CancelIntent { ByKey: true } when Edge is not null:
+                Edge = null;
+                return true;
             case CancelIntent { ByKey: true } when Face is not null:
                 Face = null;
                 return true;
@@ -127,8 +157,36 @@ internal sealed class BodyActions(DocumentSession session)
         return Rejection(result);
     }
 
-    // V109 (TASK-0243): the entry of the selected face, with its body, its face and the geometry key of the body.
-    private (Guid Body, DatumReference Face, Guid Key, FaceEntry Entry)? _kept;
+    // V109 (TASK-0243): the result of GetFaces of the selected body, with its body and the geometry key of the body.
+    // ADR-0077 (TASK-0245): the result holds the edges too, so the edges of the selected face need no other query.
+    private (Guid Body, Guid Key, FacesInfo Info)? _kept;
+
+    // The faces and the edges of the body, from the kept result when the key is the same.
+    private FacesInfo? Info(Guid body, Guid? key)
+    {
+        if (key is not null && _kept is { } kept && kept.Body == body && kept.Key == key)
+            return kept.Info;
+        var info = session.Query<FacesInfo>(new GetFacesQuery { BodyId = body }).GetAwaiter().GetResult().Result;
+        _kept = info is null || key is null ? null : (body, key.Value, info);
+        return info;
+    }
+
+    // ADR-0077 item 3: the edges of the selected face, each with the face as one of its two names.
+    public IReadOnlyList<EdgeEntry> EdgesOfFace(Guid? key = null)
+        => Selection is { } body && Face is { } face && Info(body, key) is { } info
+            ? [.. info.Edges.Where(edge => edge.First == face || edge.Second == face)]
+            : [];
+
+    // ADR-0077 item 4: the entry of the selected edge, or null. A pair that the body no longer has clears the edge.
+    public EdgeEntry? SelectedEdge(Guid? key = null)
+    {
+        if (Selection is not { } body || Edge is not { } edge || Info(body, key) is not { } info)
+            return null;
+        var entry = info.Edges.FirstOrDefault(candidate => (candidate.First, candidate.Second) == edge);
+        if (entry is null)
+            Edge = null;
+        return entry;
+    }
 
     // ADR-0075 item 3 (phase R12a, TASK-0236): the entry of GetFaces of the selected face, or null. A face whose name the
     // body no longer has, for example after a cut, or a body whose faces are not known, is no longer selected.
@@ -139,13 +197,9 @@ internal sealed class BodyActions(DocumentSession session)
     {
         if (Selection is not { } body || Face is not { } face)
             return null;
-        if (key is not null && _kept is { } kept && kept.Body == body && kept.Face == face && kept.Key == key)
-            return kept.Entry;
-        var entry = session.Query<FacesInfo>(new GetFacesQuery { BodyId = body }).GetAwaiter().GetResult().Result?
-            .Faces.FirstOrDefault(candidate => candidate.Reference == face);
+        var entry = Info(body, key)?.Faces.FirstOrDefault(candidate => candidate.Reference == face);
         if (entry is null)
             Face = null;
-        _kept = entry is null || key is null ? null : (body, face, key.Value, entry);
         return entry;
     }
 
