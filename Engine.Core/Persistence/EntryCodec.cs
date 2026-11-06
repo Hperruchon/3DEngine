@@ -19,13 +19,18 @@ public static class EntryCodec
     public const string Format = "3dengine-document";
     public const int FormatVersion = 1;
 
+    // Finding E154 of the codebase review of 2026-11-06 (b) (TASK-0224, Q1 A): an engine before TASK-0202 read an assembly
+    // with no reference as an empty part and wrote part entries after its header, and the current engine then refused
+    // the file. An older engine reads only the version 1, so the header of a new assembly has the version 2.
+    public const int AssemblyFormatVersion = 2;
+
     // ADR-0071 item 4: the header of a part has no field kind, so a part file has the same bytes as before
-    // TASK-0202; the header of an assembly ends with "kind":"assembly".
+    // TASK-0202; the header of an assembly has the version 2 and ends with "kind":"assembly".
     public static string Header(string lengthUnit, string kind = Document.Part)
         => Write(writer =>
         {
             writer.WriteString("format", Format);
-            writer.WriteNumber("formatVersion", FormatVersion);
+            writer.WriteNumber("formatVersion", kind == Document.Part ? FormatVersion : AssemblyFormatVersion);
             writer.WriteString("lengthUnit", lengthUnit);
             if (kind != Document.Part)
                 writer.WriteString("kind", kind);
@@ -135,11 +140,16 @@ public static class EntryCodec
             var format = root.GetProperty("format").GetString();
             var formatVersion = root.GetProperty("formatVersion").GetInt32();
             var unit = root.GetProperty("lengthUnit").GetString();
-            if (format != Format || formatVersion != FormatVersion)
-                throw DocumentFileException.Load($"The header gives the format {format} {formatVersion}, and this engine reads {Format} {FormatVersion}.");
+            if (format != Format || formatVersion is not (FormatVersion or AssemblyFormatVersion))
+                throw DocumentFileException.Load($"The header gives the format {format} {formatVersion}, and this engine reads {Format} {FormatVersion} and {AssemblyFormatVersion}.");
             if (unit != Document.Millimetre)
                 throw DocumentFileException.Load($"The header gives the length unit {unit}, and the millimetre ({Document.Millimetre}) is the only permitted unit (ADR-0015 item 7).");
-            var kind = root.TryGetProperty("kind", out var field) ? field.GetString() : Document.Part;
+            // A header of the version 1 is a part, or an assembly of TASK-0202 to TASK-0224; a header of the version 2 is an
+            // assembly (E154).
+            var named = root.TryGetProperty("kind", out var field);
+            var kind = named ? field.GetString() : Document.Part;
+            if (formatVersion == AssemblyFormatVersion && kind != Document.Assembly)
+                throw DocumentFileException.Load($"The header of the version {AssemblyFormatVersion} gives the kind {(named ? kind : "of no field")}, and that version is an {Document.Assembly} (ADR-0071 item 4).");
             if (kind is not (Document.Part or Document.Assembly))
                 throw DocumentFileException.Load($"The header gives the kind {kind}, and a document is a {Document.Part} or an {Document.Assembly} (ADR-0071 item 4).");
             return (unit, kind);

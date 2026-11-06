@@ -121,6 +121,10 @@ public static class DiagnosticCodes
     // ADR-0070 (phase K6a, TASK-0200): a body that the STEP export does not write.
     public const string ExportBodyFailed = "E-EXPORT-BODY-FAILED";
 
+    // Finding E155 of the codebase review of 2026-11-06 (b) (TASK-0224): an export of the command line read an assembly.
+    // An assembly holds references and no body, and the engine does not resolve a reference (ADR-0071 item 7).
+    public const string ExportKindRefused = "E-EXPORT-KIND-REFUSED";
+
     // ADR-0071 (phase P8b1, TASK-0202): the kind of a Document, and a reference of an assembly.
     public const string CommandKindRefused = "E-CMD-KIND-REFUSED";
     public const string AssemblyReferenceInvalid = "E-ASSEMBLY-REFERENCE-INVALID";

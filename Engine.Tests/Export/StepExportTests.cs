@@ -172,6 +172,26 @@ public sealed class StepExportTests : IDisposable
             step.Solids().Select(solid => (Largest(step.Faces(solid)), Largest(Assert.Single(step.Voids(solid))))).OrderByDescending(pair => pair.Item1));
     }
 
+    // Finding E152 of the codebase review of 2026-11-06 (b) (TASK-0224): an L of 20 by 10 by 10 has a step face at z = 0
+    // for x from 0 to 10. A void of 2 at x = -6 to -4 and z = -2 to 0 has its first vertex (-4, -1, 0) on the plane of
+    // that step, far from it. A ray from a point on a plane starts on that plane in each direction, so each of the eight
+    // rays gave no count, and the export refused the body with "no ray of the test of a void passes clear of the edges".
+    [Fact]
+    public void A_Void_Level_With_A_Distant_Face_Is_A_Brep_With_Voids()
+    {
+        var ell = PlanarBoolean.Subtract(Box(20, 10, 10), Box(10, 10, 10).Translate(new Vector3R(5, 0, 5)))!;
+        var shell = Brep.Of(ell).Shells[0];
+        Assert.True(StepExport.Inside(Brep.Of(ell), shell, new Vector3R(-5, 0, 0)));
+
+        var body = Guid.NewGuid();
+        var hollow = Brep.Of(PlanarBoolean.Subtract(ell, Box(2, 2, 2).Translate(new Vector3R(-5, 0, -1)))!);
+
+        var step = Matches(Written((body, hollow)), (body, hollow));
+
+        Assert.Equal(2, hollow.Shells.Count);
+        Assert.Single(Assert.Single(step.Solids(), solid => step.Instances[solid].Name == "BREP_WITH_VOIDS") is var solid ? step.Voids(solid) : []);
+    }
+
     // Item 2: a ray that meets an edge goes to the next direction. The first ray from (-2, 2, -2) meets the edge of the box
     // at (5, 5, 0), so it gives no count, and the second ray crosses the face +y once. A point out of the box is outside.
     [Fact]

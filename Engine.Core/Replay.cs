@@ -36,11 +36,22 @@ public static class Replay
         CommandRegistry registry,
         IGeometryBackend backend,
         CancellationToken ct = default)
+        => ReplayLog(log, registry, backend, Document.Part, ct);
+
+    // Finding E153 of the codebase review of 2026-11-06 (b) (TASK-0224): a replay made a part, so the replay of an
+    // assembly log refused its first AddPartReference with E-CMD-KIND-REFUSED. The kind of the Document is not in a log
+    // entry, only in the header of the file (ADR-0071 item 4), so the caller gives it.
+    public static Task<ReplayResult> ReplayLog(
+        IEnumerable<LogEntry> log,
+        CommandRegistry registry,
+        IGeometryBackend backend,
+        string kind,
+        CancellationToken ct = default)
     {
         if (log is null) throw new ArgumentNullException(nameof(log));
         if (backend is null) throw new ArgumentNullException(nameof(backend));
 
-        return ReplayLog(Checked(log, backend.Identity), registry, backend, ct);
+        return ReplayLog(Checked(log, backend.Identity), registry, backend, kind, ct);
     }
 
     private static IEnumerable<Command> Checked(IEnumerable<LogEntry> log, BackendIdentity active)
@@ -55,17 +66,25 @@ public static class Replay
         }
     }
 
+    public static Task<ReplayResult> ReplayLog(
+        IEnumerable<Command> log,
+        CommandRegistry registry,
+        IGeometryBackend backend,
+        CancellationToken ct = default)
+        => ReplayLog(log, registry, backend, Document.Part, ct);
+
     public static async Task<ReplayResult> ReplayLog(
         IEnumerable<Command> log,
         CommandRegistry registry,
         IGeometryBackend backend,
+        string kind,
         CancellationToken ct = default)
     {
         if (log is null) throw new ArgumentNullException(nameof(log));
         if (registry is null) throw new ArgumentNullException(nameof(registry));
         if (backend is null) throw new ArgumentNullException(nameof(backend));
 
-        var document = new Document();
+        var document = new Document(kind: kind);
         var sink = new InMemoryEventSink();
         var bus = CommandBus.ForReplay(document, registry, sink, backend);
 

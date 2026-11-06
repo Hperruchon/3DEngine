@@ -1050,12 +1050,43 @@ public class DependencyDirectionGateTests
             Assert.True(graph.ContainsKey(host), $"{host}.csproj was not found.");
             offences.AddRange(graph[host].Where(target => !permitted.Contains(target))
                 .Select(target => $"{host} references {target}; ADR-0072 item 1 permits no surface on a host with no surface"));
-            var file = ProjectFiles().Single(f => Path.GetFileNameWithoutExtension(f) == host);
-            offences.AddRange(FilesThatMsBuildReads(file).SelectMany(read => Includes(read, "FrameworkReference"))
-                .Select(framework => $"{host} references the framework {framework}; ADR-0072 item 1 permits none"));
+            offences.AddRange(FrameworkOffences(host, graph));
         }
 
         Assert.True(offences.Count == 0, string.Join("\n  ", offences));
+    }
+
+    // Finding T145 of the codebase review of 2026-11-06 (b) (TASK-0224): the rules of ADR-0072 read the framework
+    // references of the project only, and a framework flows through each project reference and comes with the web SDK.
+    // So the web SDK on the application, or a FrameworkReference in Engine.Core, gave the application ASP.NET Core, and
+    // each gate passed. The offences of the project and of each project that it reaches, in each file that MSBuild reads.
+    private static IEnumerable<string> FrameworkOffences(string project, Dictionary<string, List<string>> graph)
+    {
+        var reached = new HashSet<string>(StringComparer.Ordinal) { project };
+        var stack = new Stack<string>([project]);
+        while (stack.Count > 0)
+        {
+            foreach (var next in graph.GetValueOrDefault(stack.Pop()) ?? [])
+            {
+                if (reached.Add(next))
+                    stack.Push(next);
+            }
+        }
+
+        foreach (var name in reached.Order(StringComparer.Ordinal))
+        {
+            var file = ProjectFiles().Single(f => Path.GetFileNameWithoutExtension(f) == name);
+            foreach (var read in FilesThatMsBuildReads(file))
+            {
+                var relative = RepositoryFiles.Relative(read);
+                foreach (var framework in Includes(read, "FrameworkReference"))
+                    yield return $"{project} reaches the framework {framework} through {relative}; ADR-0072 item 1 permits none";
+                if (XDocument.Load(read).Root is { } root && Value(root, "Sdk") is { } sdks
+                    && sdks.Split(';', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+                        .Any(sdk => !string.Equals(sdk.Split('/')[0], "Microsoft.NET.Sdk", StringComparison.OrdinalIgnoreCase)))
+                    yield return $"{project} reaches the SDK {sdks} through {relative}; ADR-0072 item 1 permits Microsoft.NET.Sdk only";
+            }
+        }
     }
 
     [Fact]
@@ -1073,9 +1104,7 @@ public class DependencyDirectionGateTests
             Assert.True(graph.ContainsKey(application), $"{application}.csproj was not found.");
             offences.AddRange(graph[application].Where(target => !permitted.Contains(target))
                 .Select(target => $"{application} references {target}; ADR-0072 item 1 permits Engine.Contracts, Engine.Core and the render side only"));
-            var file = ProjectFiles().Single(f => Path.GetFileNameWithoutExtension(f) == application);
-            offences.AddRange(FilesThatMsBuildReads(file).SelectMany(read => Includes(read, "FrameworkReference"))
-                .Select(framework => $"{application} references the framework {framework}; ADR-0072 item 1 permits none"));
+            offences.AddRange(FrameworkOffences(application, graph));
         }
 
         Assert.True(offences.Count == 0, string.Join("\n  ", offences));
@@ -1278,6 +1307,22 @@ public class DependencyDirectionGateTests
             .ToArray();
 
         Assert.True(offences.Length == 0, "ADR-0061 item 5: ppy.SDL3-CS is the binding of SDL.\n  " + string.Join("\n  ", offences));
+    }
+
+    // Finding T146 of the codebase review of 2026-11-06 (b) (TASK-0224): the list below named its projects by hand, so a
+    // new host that draws had no row, and a second binding of SDL in it passed, the form of T144 again. The rows name each
+    // project of the render side, of the hosts that draw and of the applications, and no other one.
+    [Fact]
+    public void Each_Project_Of_The_Desktop_Has_A_Row_In_The_List_Of_The_Packages()
+    {
+        var method = typeof(DependencyDirectionGateTests).GetMethod(nameof(Each_Project_Of_The_Desktop_Names_Only_The_Packages_Of_Its_List))!;
+        var rows = method.CustomAttributes
+            .Where(attribute => attribute.AttributeType.Name == "InlineDataAttribute")
+            .Select(attribute => (string)((IReadOnlyCollection<System.Reflection.CustomAttributeTypedArgument>)attribute.ConstructorArguments[0].Value!).First().Value!)
+            .Select(path => Path.GetFileNameWithoutExtension(path))
+            .Order(StringComparer.Ordinal);
+
+        Assert.Equal([.. RenderSide.Concat(HostsThatDraw).Concat(Applications).Order(StringComparer.Ordinal)], rows);
     }
 
     // Finding T144 (TASK-0198): a second binding of SDL with another name, SDL3-CS, in the host passed each gate. Each
