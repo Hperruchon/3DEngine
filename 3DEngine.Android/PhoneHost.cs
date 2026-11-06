@@ -39,6 +39,7 @@ internal static class PhoneHost
             }
 
             using var host = new LocalSessionHost(new ManifoldGeometryBackend());
+            BlockOnPause();
             var window = new Window("3DEngine", 1080, 2316);
             while (Foreground(window, host) && WaitForForeground())
                 Console.Error.WriteLine("3DEngine: the program is in the foreground again, with the same document.");
@@ -51,6 +52,19 @@ internal static class PhoneHost
             Console.Error.WriteLine($"3DEngine: the session of the phone ended: {ex.GetType().Name}: {ex.Message}");
             foreach (var line in ex.ToString().Split('\n'))
                 Console.Error.WriteLine($"3DEngine: | {line.TrimEnd()}");
+        }
+    }
+
+    // Finding V101 of the codebase review of 2026-11-06 (c) (TASK-0232), Q1 B: SDL blocks the thread of the program in its
+    // event loop while the program is paused, so the loop sees WILL_ENTER_BACKGROUND only at the return, and the engine
+    // ends then, just before the new one starts (ADR-0073 item 3). The hint holds that order, so that it does not rest on
+    // a default of SDL. SDL starts its video in SDL_CreateWindow, so the hint comes before the window.
+    private static unsafe void BlockOnPause()
+    {
+        fixed (byte* name = SDL_HINT_ANDROID_BLOCK_ON_PAUSE)
+        fixed (byte* on = "1"u8)
+        {
+            _ = SDL_SetHint(name, on);
         }
     }
 

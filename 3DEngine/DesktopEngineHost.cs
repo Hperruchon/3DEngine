@@ -93,6 +93,7 @@ internal static class DesktopEngineHost
             (first, again) = (false, false);
             string? requested;
             bool shown;
+            var host = surface.Host;
             using (surface.Session)
             {
                 using (surface)
@@ -101,12 +102,15 @@ internal static class DesktopEngineHost
                     Console.WriteLine($"3DEngine document file: {surface.Host.Session.FilePath ?? "none"}");
                     shown = show(surface);
                     requested = surface.Document.RequestedOpen;
-                    // V91: a document of the unsaved folder has no name; it starts again from its journal when the journal
-                    // exists, and as a new document of the start when it does not.
-                    var path = surface.Host.Session.FilePath;
-                    previous = surface.Host.FileName is null && (path is null || !File.Exists(path)) ? null : path;
                 }
             }
+
+            // V91: a document of the unsaved folder has no name; it starts again from its journal when the journal exists,
+            // and as a new document of the start when it does not. Finding V97 of the codebase review of 2026-11-06 (c)
+            // (TASK-0232): the choice is after the stop of the surface and the close of the session, so a command of the
+            // stop has made its journal already.
+            var path = host.Session.FilePath;
+            previous = host.FileName is null && (path is null || !File.Exists(path)) ? null : path;
 
             if (!shown)
                 return DesktopSurface.ExitWindowFailed;

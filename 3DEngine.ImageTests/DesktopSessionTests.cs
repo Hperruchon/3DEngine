@@ -199,6 +199,38 @@ public sealed class DesktopSessionTests : IDisposable
         Assert.Equal(boxes, Directory.Exists(unsaved) ? Directory.GetFiles(unsaved).Length : 0);
     }
 
+    // Finding V97 of the codebase review of 2026-11-06 (c) (TASK-0232): the start again chose the previous document inside
+    // the use of the surface, before its stop. A command that came during the stop made the journal after the choice, so
+    // the next session was a new empty document, and the work stayed in a journal that the window did not show.
+    [Fact]
+    public async Task A_Command_Of_The_Stop_Is_In_The_Document_Of_The_Start_Again()
+    {
+        var second = Path.Combine(Documents, "second.3de");
+        await Made(second, 2);
+        var shown = new List<(string? Name, int Bodies)>();
+        CommandStatus? late = null;
+        void Show(DesktopSurface surface)
+        {
+            if (shown.Count == 0)
+            {
+                var host = surface.Host;
+                surface.Stopping.Register(() => late = host.Session.Apply(new CreateBoxCommand { SizeX = 1, SizeY = 2, SizeZ = 3 }).GetAwaiter().GetResult().Status);
+            }
+            shown.Add((surface.Host.FileName, Bodies(surface.Host).GetAwaiter().GetResult()));
+            if (shown.Count == 1)
+                Assert.Null(surface.Document.Folder.Open(second, CancellationToken.None).GetAwaiter().GetResult());
+        }
+
+        (DesktopSurface?, int, string?) Start(string[] args, string? file)
+            => file == second ? (null, DesktopSurface.ExitStartFailed, "The file is held.") : DesktopEngineHost.Start(args, file);
+
+        var exit = DesktopEngineHost.RunSessions(NoFile(), Start, Show);
+
+        Assert.Equal(0, exit);
+        Assert.Equal(CommandStatus.Applied, late);
+        Assert.Equal([(null, 0), (null, 1)], shown);
+    }
+
     // Finding V92 of the codebase review of 2026-11-06 (b) (TASK-0225): a window that does not open, or a loop that fails,
     // gave an unhandled exception or the exit code 0. A show that fails gives ExitWindowFailed, and the run disposes the
     // session.

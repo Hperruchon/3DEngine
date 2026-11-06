@@ -10,6 +10,9 @@ amends: []
 amended-by: []
 affects:
   - 3DEngine.App/PhoneLifecycle.cs
+  - 3DEngine.App/Ui/DesktopUi.cs
+  - 3DEngine.App/Ui/PanelAction.cs
+  - 3DEngine.App/BodyActions.cs
   - 3DEngine.Android/**
 enforced-by: 3DEngine.ImageTests/CutUiTests.cs
 ---
@@ -54,13 +57,17 @@ no test can run before a device does. **Recommended: A.**
 ## Decision
 
 1. **The cut.** The controls of the selected body give a list "Cut with" (`DesktopUi.CutLabel`) of the other visible
-   bodies, on the line of Move. A tap on a body gives `CutBodyAction(Body, Tool)`. The list shows only with a selected
-   body and another visible body.
+   bodies, on the line of Move when it fits there, else on a line of its own. A tap on a body gives
+   `CutBodyAction(Body, Tool)`. The list shows only with a selected body and another visible body. The open list is a
+   rectangle of the panels, so a tap on it does not reach the scene.
 2. **The command.** `BodyActions.Cut` sends `Subtract` with the selected body as the minuend and the tool as the
-   subtrahend. The new body becomes the selection, as after a move; a rejection goes to the line of the document.
+   subtrahend. The new body becomes the selection, as after a move; a rejection goes to the line of the document. A host
+   with no files, as the phone, has a line of the document with the message only.
 3. **The background.** `PhoneLifecycle` gives a step for each event of SDL: a quit, a close and `TERMINATING` end the
    program; `WILL_ENTER_BACKGROUND` and `DID_ENTER_BACKGROUND` end the engine; `DID_ENTER_FOREGROUND` makes a new engine
-   on the same window and the same session. The document stays; the selection and the state of the panel do not.
+   on the same window and the same session. The document stays; the selection and the state of the panel do not. The
+   host sets `SDL_HINT_ANDROID_BLOCK_ON_PAUSE` to 1: SDL blocks the thread of the program while it is paused, so the
+   loop reads the events of the background at the return, and the engine ends then, just before the new engine starts.
 4. **The orientation.** The activity stays in portrait until a slice of the pre-rotation.
 
 ## Consequences
@@ -77,3 +84,7 @@ the pre-rotation.
 ## History
 
 - 2026-11-06 · TASK-0227 · The record, under the standing order of 2026-11-05.
+- 2026-11-06 · TASK-0232 · The codebase review of 2026-11-06 (c): item 1 gives the line of its own for an extrude (V98)
+  and the rectangle of the open list; item 2 gives the line of a host with no files (V99); item 3 gives the order of a
+  blocked thread, with the hint of SDL (V101, Q1 B of that review, answered by the standing order of 2026-11-05); the
+  affects field names the files of items 1 and 2 (V102).

@@ -3,9 +3,10 @@
 This document uses Simplified Technical English (ASD-STE100). See `CLAUDE.md`, section "Language".
 
 **Status: the first test of R14e.** Written 2026-11-06 by TASK-0227. The row R14e of `docs/roadmap.md` closes only after
-the owner does this test on the reference device (ADR-0061 items 2 and 9). No device ran the program before this test.
+the owner does this test on the reference device (ADR-0061 items 2 and 9). No phone ran the program before this test.
 Since TASK-0229 the pipeline starts it at each push on the emulator of Android 14 for x86-64, with Vulkan in software,
-up to its first frame; no gesture and no step of section 3 runs there.
+up to its first frame, and since TASK-0233 it compares the determinism hash of the emulator with the desktop runners.
+No touch, no background and no other step of section 3 runs there, and the emulator runs no code of arm64.
 
 ## 1 What you need
 
@@ -53,8 +54,9 @@ when you can.
 | 5 | Tap "Cut with", then tap the second body. | One body in the list: the plate with a square hole. |
 | 6 | Drag one finger in the scene, and pinch with two fingers. | The camera turns and zooms; the hole shows. |
 | 7 | Tap Undo, then Redo. | Undo gives the two boxes again; Redo gives the plate with the hole. |
-| 8 | Press Home, wait 10 seconds, and open the app again. | The same plate with the hole. The selection is gone. |
+| 8 | Press Home, wait 10 seconds, and open the app again. | The same plate with the hole. The selection is gone. In the log, the line "goes into the background" comes at the return, just before the line "in the foreground again" (ADR-0073 item 3). |
 | 9 | Close the app from the list of recent apps. | The app ends. A new start gives an empty scene: the phone saves no file yet. |
+| 10 | With the cable, start the app with the probe: `"/c/Program Files (x86)/Android/android-sdk/platform-tools/adb.exe" shell am start -n org.threedengine.phone/org.threedengine.phone.MainActivity --ez probe true` | In the log, the line "3DEngine: determinism 59876e9fc860e451302d5c97e47af81db1f59b3d03ab65aeb0c546e9ef4ea4f1", the hash of the desktop runners (ADR-0074). Another hash is a failure of anti-objective 16: copy each line "determinism-line" of the log. |
 
 ## 4 Results
 
@@ -69,6 +71,7 @@ when you can.
 | 7 | | |
 | 8 | | |
 | 9 | | |
+| 10 | | |
 
 ## 5 Known limits of this test
 
