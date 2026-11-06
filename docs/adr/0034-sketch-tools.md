@@ -13,9 +13,9 @@ affects:
   - 3DEngine.Core/Picking/**
   - 3DEngine.Core/Numeric/**
   - 3DEngine.Core/Sketching/**
-  - 3DEngine/Ui/**
-  - 3DEngine/SketchActions.cs
-  - 3DEngine/SketchOverlay.cs
+  - 3DEngine.App/Ui/**
+  - 3DEngine.App/SketchActions.cs
+  - 3DEngine.App/SketchOverlay.cs
 enforced-by: 3DEngine.Tests/SketchToolTests.cs
 ---
 

@@ -1,5 +1,4 @@
 using System.Collections.Concurrent;
-using Engine.Api.Http;
 using Engine.Contracts;
 using Engine.Core.Queries;
 
@@ -15,13 +14,13 @@ namespace ThreeDEngine.Desktop;
 // sketch on it again.
 internal sealed class SessionSketches : IDisposable
 {
-    private readonly EngineHost _host;
+    private readonly ISessionHost _host;
     private readonly ConcurrentQueue<(Guid SketchId, bool Removed)> _changes = new();
     private readonly ConcurrentQueue<Guid> _datums = new();
     private readonly IDisposable _subscription;
     private readonly Dictionary<Guid, SketchInfo> _live = new();
 
-    public SessionSketches(EngineHost host)
+    public SessionSketches(ISessionHost host)
     {
         _host = host;
         _subscription = host.Session.Read((document, _) =>

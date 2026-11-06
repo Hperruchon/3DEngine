@@ -10,7 +10,7 @@ amends: []
 amended-by: []
 affects:
   - 3DEngine.Core/Measuring/**
-  - 3DEngine/DimensionOverlay.cs
+  - 3DEngine.App/DimensionOverlay.cs
 enforced-by: 3DEngine.Tests/DimensionsTests.cs (TASK-0178 creates it)
 ---
 

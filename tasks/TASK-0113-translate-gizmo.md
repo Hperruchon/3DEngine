@@ -11,7 +11,7 @@ writes:
     - tasks/TASK-0113-translate-gizmo.md
     - docs/adr/0038-translate-gizmo.md
     - 3DEngine.Core/Gizmo/TranslateGizmo.cs
-    - 3DEngine/GizmoActions.cs
+    - 3DEngine.App/GizmoActions.cs
     - 3DEngine.Vulkan/OverlayRenderer.cs
     - 3DEngine.Vulkan/Shaders/overlay.vert
     - 3DEngine.Vulkan/Shaders/overlay.frag
@@ -102,3 +102,5 @@ Weakest:    no touch screen ran the gizmo; its touch path is synthetic, as for t
 - 2026-10-30: the owner said yes to the pictures of the visual check. The commit moves onto main by a cherry-pick on
   the branch r9-gizmo-on-main, with the index of the ADRs and the test floor merged by hand.
 - 2026-10-30: closed at v0.119.
+- 2026-11-06: TASK-0222 moved `3DEngine/GizmoActions.cs` into `3DEngine.App/` (ADR-0072), so the
+  create list names the new path. This task made the file at the old path.

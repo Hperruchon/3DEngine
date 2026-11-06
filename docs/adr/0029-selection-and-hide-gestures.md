@@ -12,6 +12,7 @@ affects:
   - 3DEngine.Core/Input/**
   - 3DEngine.Core/Picking/**
   - 3DEngine/**
+  - 3DEngine.App/**
 enforced-by: 3DEngine.Tests/PickingTests.cs (TASK-0086 creates it)
 ---
 

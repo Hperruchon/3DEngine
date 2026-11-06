@@ -11,7 +11,7 @@ amended-by: ['0061', '0071']
 affects:
   - 3DEngine/DesktopSurface.cs
   - 3DEngine/DesktopEngineHost.cs
-  - 3DEngine/Ui/**
+  - 3DEngine.App/Ui/**
   - Engine.Api.Http/EngineSurface.cs
   - Engine.Api.Http/Endpoints/DocumentEndpoint.cs
 enforced-by: Engine.Tests/Http/DocumentEndpointTests.cs (TASK-0092 creates it)

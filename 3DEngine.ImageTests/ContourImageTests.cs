@@ -60,7 +60,7 @@ public sealed class ContourImageTests : IDisposable
         using var ui = new DesktopUi("http://127.0.0.1:5180", Engine.Contracts.Document.Millimetre);
         var store = new AssetStore(Path.Combine(_folder, "store"));
         var actions = new ImageActions(host.Session, store);
-        using var images = new SessionImages(host, store);
+        using var images = new SessionImages(new HostedSession(host), store);
 
         actions.Place(Part(), Datums.XY.Id);
         var placed = Assert.Single(await host.Session.Read((document, _) => document.Images.ToList()));
@@ -79,7 +79,7 @@ public sealed class ContourImageTests : IDisposable
         using (var device = new GraphicsDevice("3DEngine.ImageTests", enableValidation: true, window: null, synchronizationValidation: true))
         {
             using var target = new OffscreenTarget(device, new VkExtent2D(Width, Height));
-            using var renderer = new SceneRenderer(device, target.RenderPass, host);
+            using var renderer = new SceneRenderer(device, target.RenderPass, new HostedSession(host));
             using var panelRenderer = new UiRenderer(device, target.RenderPass);
             var (atlasWidth, atlasHeight, rgba) = ui.FontAtlas();
             ui.SetFontTexture(panelRenderer.CreateTexture(atlasWidth, atlasHeight, rgba));

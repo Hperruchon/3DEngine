@@ -178,7 +178,7 @@ public sealed class DesktopFormsTests
         var camera = scene.Cameras[0];
         using var device = new GraphicsDevice("3DEngine.ImageTests", enableValidation: true, window: null);
         using var target = new OffscreenTarget(device, new VkExtent2D(320, 240));
-        using var renderer = new SceneRenderer(device, target.RenderPass, host);
+        using var renderer = new SceneRenderer(device, target.RenderPass, new HostedSession(host));
         renderer.Update(scene, camera, 4f / 3);
         var before = renderer.Meshes;
 
@@ -200,7 +200,7 @@ public sealed class DesktopFormsTests
         var camera = scene.Cameras[0];
         using var device = new GraphicsDevice("3DEngine.ImageTests", enableValidation: true, window: null);
         using var target = new OffscreenTarget(device, new VkExtent2D(320, 240));
-        using var renderer = new SceneRenderer(device, target.RenderPass, host);
+        using var renderer = new SceneRenderer(device, target.RenderPass, new HostedSession(host));
         renderer.Update(scene, camera, 4f / 3);
         var before = renderer.Meshes;
 

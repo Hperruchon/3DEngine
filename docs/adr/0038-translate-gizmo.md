@@ -11,7 +11,7 @@ amended-by: []
 affects:
   - 3DEngine.Core/Input/**
   - 3DEngine.Core/Gizmo/**
-  - 3DEngine/GizmoActions.cs
+  - 3DEngine.App/GizmoActions.cs
   - 3DEngine.Vulkan/OverlayRenderer.cs
 enforced-by: 3DEngine.Tests/GizmoTests.cs (TASK-0113 creates it)
 ---

@@ -7,10 +7,10 @@ date: 2026-10-27
 supersedes: []
 superseded-by: []
 amends: ['0026']
-amended-by: ['0029', '0061']
+amended-by: ['0029', '0061', '0072']
 affects:
-  - 3DEngine/Ui/**
-  - 3DEngine/3DEngine.csproj
+  - 3DEngine.App/Ui/**
+  - 3DEngine.App/3DEngine.App.csproj
   - 3DEngine.Vulkan/Ui/**
 enforced-by: Engine.Tests/Governance/UiLibraryGateTests.cs (TASK-0084 creates it)
 ---
@@ -77,6 +77,9 @@ Four facts limit the choice:
    Manifold (`eng/manifold-native/`). Only `3DEngine/Ui/` changes. Nobody patches the package in place.
 
 This record amends ADR-0026 item 1 (item 5 above).
+
+ADR-0072 (TASK-0222) moves the user interface into the library `3DEngine.App`: in items 1, 8 and 9 read
+`3DEngine.App/Ui/` for `3DEngine/Ui/` and `3DEngine.App/3DEngine.App.csproj` for `3DEngine/3DEngine.csproj`.
 
 ## Consequences
 

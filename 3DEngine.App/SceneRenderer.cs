@@ -1,4 +1,3 @@
-using Engine.Api.Http;
 using ThreeDEngine.Core.Models;
 using ThreeDEngine.Core.Picking;
 using ThreeDEngine.Core.Rendering;
@@ -35,7 +34,7 @@ internal sealed unsafe class SceneRenderer : IDisposable
     // The images of the scene, each on a quad (ADR-0043, phase V1a).
     private readonly ImageRenderer _images;
 
-    public SceneRenderer(GraphicsDevice device, VkRenderPass renderPass, EngineHost host)
+    public SceneRenderer(GraphicsDevice device, VkRenderPass renderPass, ISessionHost host)
     {
         _device = device;
         _renderPass = renderPass;

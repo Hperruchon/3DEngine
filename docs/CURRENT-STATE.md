@@ -6175,3 +6175,32 @@ New tests: 15 (12 in `3DEngine.Tests`, 3 in `Engine.Tests`). The test list holds
 `3DEngine.Tests`, 200 in `3DEngine.ImageTests`, 3 in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental`
 gives zero errors and zero warnings. Open entries: 15 of 15. New diagnostic codes: 0. Since the review of v0.198, 3
 product milestones and 8 entries followed it.
+
+## v0.207 — The drawing code of the desktop becomes a library that an Android program can reference (R14e1, TASK-0222)
+
+Phase R14e of the Android order of 2026-11-05 is the Android host. The drawing code, the user interface and the actions
+were in the program `3DEngine`, which takes the framework of ASP.NET Core for the surface, and the drawing code reached
+the session through `EngineHost` of the surface library. A probe built an Android program that references
+`Engine.Api.Http`: the build stopped with NETSDK1082, because no runtime pack of ASP.NET Core exists for
+`android-arm64`. This first slice of R14e makes a library that the phone can reference, with no change of behaviour.
+
+**The change.** ADR-0072 is new; the standing order chose option A. The library `3DEngine.App` holds the scene renderer,
+the projection of the session, the user interface, the overlays and the actions. It reaches the session through
+`ISessionHost` and the files through `IDocumentFiles`. The desktop gives `HostedSession`, an adapter of its
+`EngineHost`, and `DesktopDocument`. The pin of `ImGui.NET` and the folder `Ui/` moved with the library, which amends
+ADR-0027. The new rule `DependencyDirectionGateTests.The_Application_References_No_Surface` permits `Engine.Contracts`,
+`Engine.Core` and the render side only, and no framework reference.
+
+**Proof.** The 200 image tests and the tests of the desktop session pass with the same count. A reference to
+`Engine.Api.Http` and a framework reference of ASP.NET Core in the library each fail the new rule.
+
+**What stays.** No Android program exists yet: R14e2 makes it. The moved files keep the namespace
+`ThreeDEngine.Desktop`. The row R14e closes only after the test of the owner on the phone.
+
+**A correction.** `docs/INDEX.md` named `Alimer.Bindings.SDL` as a pin of the Vulkan layer, false since R14c. Fifteen
+ADRs and four Done tasks (TASK-0113, TASK-0153, TASK-0177, TASK-0178) named a moved path; each one names the new path.
+
+New tests: 2 (the rule of the application, and the row of the application in the list of the packages). The test list holds 1863 (1328 in `Engine.Tests`, 332 in
+`3DEngine.Tests`, 200 in `3DEngine.ImageTests`, 3 in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental`
+gives zero errors and zero warnings. Open entries: 15 of 15. New diagnostic codes: 0. Since the review of v0.198, 4
+product milestones and 9 entries followed it, so the next product milestone needs a codebase review first.

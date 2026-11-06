@@ -114,7 +114,7 @@ public class SketchOnFaceTests
         actions.Close();
         var (_, body) = actions.Extrude(5);
         var top = actions.CreateOnFace(body!.Value, (5, 3, 5), (0, 0, 1))!.Value;
-        using var live = new SessionSketches(host);
+        using var live = new SessionSketches(new HostedSession(host));
         live.Apply();
         Assert.Equal(5, live.Live.Single(sketch => sketch.SketchId == top.Sketch).Frame!.Origin.Z);
 
