@@ -5,7 +5,7 @@ status: Ready
 phase: P0.91
 opened: 2026-11-06
 depends-on: [0230]
-governed-by: [0002, 0015, 0016, 0018, 0019, 0024]
+governed-by: [0002, 0015, 0016, 0018, 0019, 0024, 0074]
 writes:
   create:
     - tasks/TASK-0231-gate-and-engine-forms-of-the-twenty-fifth-review.md
@@ -71,3 +71,4 @@ Weakest:    to be written at the close.
 ## Progress
 
 - 2026-11-06: opened by the codebase review of 2026-11-06 (c).
+- 2026-11-06: governed-by takes ADR-0074, which TASK-0233 made and whose affects hold eng/android/smoke-emulator.sh.
