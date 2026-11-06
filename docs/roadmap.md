@@ -312,6 +312,9 @@ This track removes each condition that blocks other work.
 | P0.97 | The readers of a file, the pin rule, the smoke test and the ledger hold their next forms (E158 to E161, E163, T152, T153, T155 to T159 of the codebase review of 2026-11-06 (d); after the next product phase). TASK-0242. | 2 |
 | P0.98 | A cancelled finger ends, the activity tells its starts, and the face and the texts hold their next forms (V104 to V111 of the codebase review of 2026-11-06 (d); after P0.97). TASK-0243. | 2 |
 | P0.99 | The activity of the phone may start again in its process: the hint of SDL that lets a later create go on, and two more changes of the configuration (V105, the cause of the failures of the emulator job; ADR-0079). TASK-0247. | 1 |
+| P0.100 | A second session of the phone in its process makes its window (V112 of the codebase review of 2026-11-06 (e), high; before the next product phase). TASK-0250. | 1 |
+| P0.101 | A failed delete, an edge of three faces, the ledger, two gates and the smoke test hold their next forms (E164 to E166, T160 to T164 of the codebase review of 2026-11-06 (e); after the next product phase). TASK-0251. | 1–2 |
+| P0.102 | The cache of a face, the fixed controls, the list New, the edges and the safe area hold their next forms (V113 to V118 of the codebase review of 2026-11-06 (e); after P0.101). TASK-0252. | 1–2 |
 | P0.86 | The window keeps no input between sessions, the hook has the cases of one axis, and the next forms of four gates fail (V88 to V90, T141 to T144 of the codebase review of 2026-11-06; after the next product phase). TASK-0198. | 1–2 |
 
 ## Track P — The platform
