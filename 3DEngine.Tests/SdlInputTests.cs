@@ -278,4 +278,36 @@ public unsafe class SdlInputTests
         Assert.DoesNotContain(Window.InputRanges, range => SDL_EventType.SDL_EVENT_QUIT >= range.First && SDL_EventType.SDL_EVENT_QUIT <= range.Last);
         Assert.DoesNotContain(Window.InputRanges, range => SDL_EventType.SDL_EVENT_WINDOW_CLOSE_REQUESTED >= range.First && SDL_EventType.SDL_EVENT_WINDOW_CLOSE_REQUESTED <= range.Last);
     }
+
+    // Finding V94 of the codebase review of 2026-11-06 (b) (TASK-0225): the test of V90 read the table of the ranges only,
+    // so no test failed when the flush went. The queue of SDL, with its events subsystem and no window: a key, a button
+    // and a finger go, and a quit stays.
+    [Fact]
+    public void The_Flush_Removes_Each_Input_Event_And_Keeps_A_Quit()
+    {
+        Assert.True(SDL_InitSubSystem(SDL_InitFlags.SDL_INIT_EVENTS), "SDL did not start its events.");
+        try
+        {
+            SDL_FlushEvents(SDL_EventType.SDL_EVENT_FIRST, SDL_EventType.SDL_EVENT_LAST);
+            foreach (var type in new[] { SDL_EventType.SDL_EVENT_KEY_DOWN, SDL_EventType.SDL_EVENT_MOUSE_BUTTON_DOWN, SDL_EventType.SDL_EVENT_FINGER_DOWN, SDL_EventType.SDL_EVENT_QUIT })
+            {
+                SDL_Event e = default;
+                e.type = (uint)type;
+                Assert.True(SDL_PushEvent(&e), $"SDL refused the event {type}.");
+            }
+
+            Window.FlushInput();
+
+            var events = new SDL_Event[8];
+            int count;
+            fixed (SDL_Event* first = events)
+                count = SDL_PeepEvents(first, events.Length, SDL_EventAction.SDL_PEEKEVENT, (uint)SDL_EventType.SDL_EVENT_FIRST, (uint)SDL_EventType.SDL_EVENT_LAST);
+            Assert.Equal([SDL_EventType.SDL_EVENT_QUIT], events.Take(count).Select(e => e.Type));
+        }
+        finally
+        {
+            SDL_FlushEvents(SDL_EventType.SDL_EVENT_FIRST, SDL_EventType.SDL_EVENT_LAST);
+            SDL_QuitSubSystem(SDL_InitFlags.SDL_INIT_EVENTS);
+        }
+    }
 }

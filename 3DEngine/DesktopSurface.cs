@@ -48,6 +48,9 @@ internal sealed class DesktopSurface : IDisposable
     public const int ExitStartFailed = 5;
     public const int ExitFileNotOpened = 6;
 
+    // Finding V92 of the codebase review of 2026-11-06 (b) (TASK-0225): the window did not open, or its loop failed.
+    public const int ExitWindowFailed = 7;
+
     public const string FileSetting = "file";
 
     public const string UnsavedFolderSetting = "Desktop:UnsavedFolder";
