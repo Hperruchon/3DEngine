@@ -56,7 +56,8 @@ Four facts limit the choice:
    item 2). `3DEngine/Ui/` turns the draw data of the library into this form.
 4. **Input.** The host gives each sample of a frame to the user interface first. A pointer gesture that
    starts over a panel belongs to the panel until it ends; each other gesture goes to the `IntentMachine`
-   (ADR-0026). While a text field is active, keys and text go to the panel. A touch gives the panel the same
+   (ADR-0026). While a list of the panel is open, each press belongs to the panel, so a press outside the list closes
+   it and does not reach the scene (finding V116, TASK-0252). While a text field is active, keys and text go to the panel. A touch gives the panel the same
    events as a mouse, with the source "touch screen" of the library.
 5. **The amendment of ADR-0026 item 1.** A text sample records the text that the keyboard gives, and the
    keys of text editing join the keys of a key sample. The window turns on the text input of SDL.
@@ -103,3 +104,5 @@ the package of the desktop must leave it out. A gesture that starts over a panel
   shows it.
 - 2026-11-05 · TASK-0193 · ADR-0061 amends item 9: this repository builds the native cimgui of ImGui.NET
   1.91.6.1 for `android-arm64` and `android-x64`. R14d applies it.
+- 2026-11-06 · TASK-0252 · Item 4: while a list is open, each press belongs to the panel (finding V116 of the codebase
+  review of 2026-11-06 (e)).

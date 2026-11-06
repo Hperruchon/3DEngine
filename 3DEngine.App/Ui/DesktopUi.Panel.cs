@@ -10,7 +10,14 @@ internal sealed unsafe partial class DesktopUi
 {
     private void Panel(IReadOnlyList<LiveBody> bodies, Guid? selection, Vector2 displaySize, DocumentLine? document)
     {
-        ImGui.SetNextWindowPos(new Vector2(16f, 16f), ImGuiCond.FirstUseEver);
+        // Finding V114 of the codebase review of 2026-11-06 (e) (TASK-0252): a constraint ends the height of the panel above
+        // the anchors, and each frame keeps its place between the top of the safe area and the row of the anchors (see
+        // KeepAboveAnchors), so a drag of the panel or a smaller display does not cover Undo and Redo. Until TASK-0252 the
+        // place and the size took the first frame only, and a panel over the anchors took each tap on them. The person can
+        // still move the panel, which the focus click of ADR-0027 needs (FocusClickTests).
+        // Finding V118 (TASK-0252): the panel starts inside the safe area of the display.
+        ImGui.SetNextWindowPos(new Vector2(16f + _inset.X, 16f + _inset.Y), ImGuiCond.FirstUseEver);
+        ImGui.SetNextWindowSizeConstraints(Vector2.Zero, new Vector2(float.MaxValue, Math.Max(displaySize.Y - 32f - AnchorRow - _inset.Y - _inset.W, 0f)));
         // The first size fits inside a small display too. Since the line of Undo and Redo (TASK-0093)
         // and the line of a new sketch (TASK-0101) the panel is 700 pixels high at most, so that two
         // bodies and Show all fit with no scroll bar.
@@ -20,6 +27,7 @@ internal sealed unsafe partial class DesktopUi
         // name of the file or "unsaved", and the length unit. The identifier of the window stays the name of the panel.
         if (ImGui.Begin($"{Title(document)}###{PanelName}"))
         {
+            KeepAboveAnchors(displaySize);
             if (document is not null)
                 File(document);
 
@@ -243,9 +251,23 @@ internal sealed unsafe partial class DesktopUi
     }
 
     // ADR-0080 item 1 (TASK-0248): the title of the document; a host with no files gives no name.
+    // V114 and V118 (TASK-0252): the top of the panel is at least 16 pixels inside the top and the left inset, and its bottom
+    // at most 16 pixels above the anchors.
+    private void KeepAboveAnchors(Vector2 displaySize)
+    {
+        var (at, extent) = (ImGui.GetWindowPos(), ImGui.GetWindowSize());
+        var top = 16f + _inset.Y;
+        var bottom = displaySize.Y - 32f - _inset.W - AnchorSize;
+        var place = new Vector2(Math.Max(at.X, _inset.X), Math.Clamp(at.Y, top, Math.Max(top, bottom - extent.Y)));
+        if (place != at)
+            ImGui.SetWindowPos(place);
+    }
+
+    // Finding V115 of the codebase review of 2026-11-06 (e) (TASK-0252): the unit comes before the name of the file, so a
+    // long name that the title bar cuts does not cut the unit; until TASK-0252 the unit came last.
     internal string Title(DocumentLine? document)
         => document is { Files: true } files
-            ? $"3DEngine | {files.FileName ?? "unsaved"} | {_unit}"
+            ? $"3DEngine | {_unit} | {files.FileName ?? "unsaved"}"
             : $"3DEngine | {_unit}";
 
     // ADR-0030 item 3: the name of the file, a name field, Save as and Open.
