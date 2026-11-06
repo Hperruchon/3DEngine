@@ -256,6 +256,10 @@ public sealed class NativeThreeDEngine : IThreeDEngine, IDisposable
             : null;
     }
 
+    // Finding V118 (TASK-0252): the insets of the safe area of the window, for the panel and the fixed controls.
+    private static Vector4 Inset((float Left, float Top, float Right, float Bottom) inset)
+        => new(inset.Left, inset.Top, inset.Right, inset.Bottom);
+
     // The nearest visible body under a point of the window, or null (ADR-0029 item 1), with the point and the normal of
     // the hit, so that a second tap names the face (ADR-0075 item 2).
     private PickHit? Pick(double x, double y)
@@ -613,7 +617,7 @@ public sealed class NativeThreeDEngine : IThreeDEngine, IDisposable
                 ringSize = Vector2.Distance(diagonal.A, diagonal.B) / 2f;
         }
 
-        var panel = _ui.Frame((float)_delta.TotalSeconds, display, scale, _renderer.LiveBodies, Selection, LineOf(_document, _host.FileName, _documentMessage), sketches, sketchPanel, imagePanel, dimensions, size, faceLine, ringCentre, ringSize);
+        var panel = _ui.Frame((float)_delta.TotalSeconds, display, scale, _renderer.LiveBodies, Selection, LineOf(_document, _host.FileName, _documentMessage), sketches, sketchPanel, imagePanel, dimensions, size, faceLine, ringCentre, ringSize, Inset(_window.SafeInsets));
         ApplyPanel(_renderer.LiveBodies);
 
         var ui = _uiRenderer;

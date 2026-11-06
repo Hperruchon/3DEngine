@@ -72,17 +72,21 @@ internal sealed class BodyActions(DocumentSession session)
             // side, gives the body again.
             case SelectIntent select:
             {
+                // ADR-0077 item 3: near an edge of the selected face, the tap selects the edge and keeps the face. Finding
+                // V117 of the codebase review of 2026-11-06 (e) (TASK-0252): the host asks for the edge before the pick, so
+                // that a tap within 12 pixels of an edge on the silhouette, outside the body, selects the edge too; until
+                // TASK-0252 such a tap missed the body and cleared the selection.
+                if (Face is not null && edgeAt?.Invoke(select.X, select.Y) is { } edge)
+                {
+                    Edge = edge;
+                    return true;
+                }
+
                 var hit = pick(select.X, select.Y);
                 if (hit is { } on && on.Id == Selection)
                 {
-                    // ADR-0077 item 3: near an edge of the selected face, the tap selects the edge and keeps the face.
-                    if (Face is not null && edgeAt?.Invoke(select.X, select.Y) is { } edge)
-                        Edge = edge;
-                    else
-                    {
-                        Edge = null;
-                        Face = FaceAt(on);
-                    }
+                    Edge = null;
+                    Face = FaceAt(on);
                 }
                 else
                     Selection = hit?.Id;
@@ -244,10 +248,17 @@ internal sealed class BodyActions(DocumentSession session)
 
     // A selected body that left the session, for example one that an agent consumed, is no
     // longer selected.
+    //
+    // Finding V113 of the codebase review of 2026-11-06 (e) (TASK-0252): a rebuild that fails keeps the geometry key and
+    // sets a fault, and GetFaces refuses a body with a fault. The kept entry of such a body is gone, so the next entry
+    // comes from the query, which clears the face and the edge; until TASK-0252 the kept entry gave them until the body
+    // changed again.
     public void Forget(IReadOnlyList<LiveBody> live)
     {
         if (Selection is { } selected && !live.Any(body => body.Id == selected && body.Visible))
             Selection = null;
+        if (_kept is { } kept && live.Any(body => body.Id == kept.Body && body.Fault is not null))
+            _kept = null;
     }
 
     private static void Report(CommandResult result)
