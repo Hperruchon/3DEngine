@@ -205,8 +205,8 @@ public static class StepExport
     }
 
     // Item 2: true when the point is inside the closed shell, by the parity of the faces that a ray from the point crosses.
-    // Each test is exact. A ray that meets an edge, a vertex or the plane of a face at the point goes to the next direction;
-    // null when each direction does.
+    // Each test is exact. A ray that meets an edge or a vertex, or that lies in the plane of a face, goes to the next
+    // direction; null when each direction does, or when the point is on a face of the shell.
     internal static bool? Inside(Brep brep, IReadOnlyList<int> shell, Vector3R point)
     {
         foreach (var direction in Rays)
@@ -233,9 +233,17 @@ public static class StepExport
                 continue;
             }
 
-            var t = height / along;
-            if (t.IsZero)
+            // Finding E152 of the codebase review of 2026-11-06 (b) (TASK-0224): a point on the plane of a face gave t = 0
+            // for each direction, so the test of the next direction could not pass. When the point is outside that face,
+            // the ray leaves the plane at once and never meets the face; only a point on the face itself has no answer.
+            if (height.IsZero)
+            {
+                if (InFace(brep, face, point) == false)
+                    continue;
                 return null;
+            }
+
+            var t = height / along;
             if (t.Sign < 0)
                 continue;
             switch (InFace(brep, face, point + (direction * t)))

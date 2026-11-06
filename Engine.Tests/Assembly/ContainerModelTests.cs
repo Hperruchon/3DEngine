@@ -25,6 +25,9 @@ public sealed class ContainerModelTests : IDisposable
     // items 2 and 3), with the managed backend.
     private const string OldHeader = "{\"format\":\"3dengine-document\",\"formatVersion\":1,\"lengthUnit\":\"mm\"}";
 
+    // Finding E154 of the codebase review of 2026-11-06 (b) (TASK-0224, Q1 A): the header of an assembly since TASK-0224.
+    private const string AssemblyHeader = "{\"format\":\"3dengine-document\",\"formatVersion\":2,\"lengthUnit\":\"mm\",\"kind\":\"assembly\"}";
+
     private const string OldEntry = "{\"version\":1,\"backend\":{\"name\":\"managed\",\"version\":\"1\"},\"command\":{\"name\":\"CreateBox\",\"schemaVersion\":1,"
         + "\"commandId\":\"5b0c1f4e-2a6d-4c1b-9e3f-7a8b9c0d1e2f\",\"expectedDocumentVersion\":null,\"parameters\":{\"sizeX\":10,\"sizeY\":20,\"sizeZ\":30}}}";
 
@@ -168,6 +171,28 @@ public sealed class ContainerModelTests : IDisposable
             events.Snapshot().Select(record => record.Kind).Where(kind => kind.StartsWith("reference.", StringComparison.Ordinal)));
     }
 
+    // Finding E153 of the codebase review of 2026-11-06 (b) (TASK-0224): Replay.ReplayLog made a part, so the replay of an
+    // assembly log refused its first AddPartReference with E-CMD-KIND-REFUSED. With the kind of the header it gives the
+    // references and the events of the live session.
+    [Fact]
+    public async Task The_Replay_Of_An_Assembly_Log_Gives_Its_References_And_Its_Events()
+    {
+        var (session, events) = NewSession(Document.Assembly);
+        await Applied(session, Reference());
+        await Applied(session, Reference(version: 5));
+        await Applied(session, new UndoCommand());
+        await Applied(session, new RedoCommand());
+        var log = await session.Read((document, _) => document.Log.ToList());
+        var live = (await References(session)).References;
+        var backend = new InProcessMeshBackend();
+
+        var replay = await Replay.ReplayLog(log, EngineHosting.CreateDefault(backend, kind: Document.Assembly).CommandRegistry, backend, Document.Assembly);
+
+        Assert.Equal(Document.Assembly, replay.Document.Kind);
+        Assert.Equal(live.Select(reference => reference.Id).Order(), replay.Document.References.Select(reference => reference.Id).Order());
+        Assert.Equal(events.Snapshot().Select(record => record.Kind), replay.Events.Snapshot().Select(record => record.Kind));
+    }
+
     // ADR-0071 item 4: an assembly file has "kind":"assembly" in its header and opens again with its references; a part
     // session refuses it, also with no entry, and a header with another kind does not open.
     [Fact]
@@ -181,7 +206,8 @@ public sealed class ContainerModelTests : IDisposable
         var written = (await References(session)).References;
         session.Close();
 
-        Assert.Equal(OldHeader[..^1] + ",\"kind\":\"assembly\"}", File.ReadLines(path).First());
+        // Finding E154 (TASK-0224, Q1 A): the header of a new assembly has the version 2.
+        Assert.Equal(AssemblyHeader, File.ReadLines(path).First());
         Assert.Equal(Document.Assembly, DocumentFile.ReadKind(path));
         var (again, _) = NewSession(DocumentFile.ReadKind(path));
         await DocumentFile.Open(again, path);
@@ -201,6 +227,43 @@ public sealed class ContainerModelTests : IDisposable
         var other = Path.Combine(_folder, "other" + DocumentFile.Extension);
         File.WriteAllText(other, OldHeader[..^1] + ",\"kind\":\"drawing\"}\n");
         Assert.Equal(DiagnosticCodes.IoLoadFailed, Assert.Throws<DocumentFileException>(() => DocumentFile.ReadKind(other)).Code);
+    }
+
+    // Finding E154 of the codebase review of 2026-11-06 (b) (TASK-0224, Q1 A): an engine before TASK-0202 refuses each
+    // header whose version is not 1, so the version 2 of an assembly stops it before it writes part entries. An assembly
+    // file of TASK-0202 to TASK-0224 has the version 1 with the field kind, and it still opens as an assembly. A header of
+    // the version 2 that is not an assembly, and a header of the version 3, do not open.
+    [Fact]
+    public async Task An_Assembly_Has_The_Version_2_And_An_Assembly_Of_The_Version_1_Still_Opens()
+    {
+        Assert.Equal(AssemblyHeader, EntryCodec.Header(Document.Millimetre, Document.Assembly));
+        Assert.Equal(OldHeader, EntryCodec.Header(Document.Millimetre));
+
+        var earlier = Path.Combine(_folder, "earlier" + DocumentFile.Extension);
+        var (maker, _) = NewSession(Document.Assembly);
+        DocumentFile.Create(maker, earlier);
+        await Applied(maker, Reference());
+        maker.Close();
+        var lines = File.ReadAllLines(earlier);
+        lines[0] = OldHeader[..^1] + ",\"kind\":\"assembly\"}";
+        File.WriteAllText(earlier, string.Join('\n', lines) + "\n");
+        var (again, _) = NewSession(DocumentFile.ReadKind(earlier));
+        await DocumentFile.Open(again, earlier);
+        Assert.Equal(Document.Assembly, again.Kind);
+        Assert.Single((await References(again)).References);
+        again.Close();
+
+        foreach (var header in new[]
+        {
+            "{\"format\":\"3dengine-document\",\"formatVersion\":2,\"lengthUnit\":\"mm\"}",
+            "{\"format\":\"3dengine-document\",\"formatVersion\":2,\"lengthUnit\":\"mm\",\"kind\":\"part\"}",
+            "{\"format\":\"3dengine-document\",\"formatVersion\":3,\"lengthUnit\":\"mm\",\"kind\":\"assembly\"}",
+        })
+        {
+            var file = Path.Combine(_folder, Guid.NewGuid().ToString("N") + DocumentFile.Extension);
+            File.WriteAllText(file, header + "\n");
+            Assert.Equal(DiagnosticCodes.IoLoadFailed, Assert.Throws<DocumentFileException>(() => DocumentFile.ReadKind(file)).Code);
+        }
     }
 
     // ADR-0071 item 6: the snapshot of a reset gives the kind and each reference, and a part gives its kind and none.
@@ -258,6 +321,29 @@ public sealed class ContainerModelTests : IDisposable
         Assert.Equal(0, queryExit);
         Assert.Equal("assembly", JsonDocument.Parse(queryOutput).RootElement.GetProperty("result").GetProperty("kind").GetString());
         Assert.Equal(2, usageExit);
+    }
+
+    // Finding E155 of the codebase review of 2026-11-06 (b) (TASK-0224): the export made a part session, so an export of an
+    // assembly gave E-IO-LOAD-FAILED with the reason "the Document is a part". It gives E-EXPORT-KIND-REFUSED, writes no
+    // file, and leaves the document.
+    [Theory]
+    [InlineData("stl")]
+    [InlineData("step")]
+    public async Task An_Export_Of_An_Assembly_Is_Refused_With_Its_Reason(string format)
+    {
+        var path = Path.Combine(_folder, "assembly" + DocumentFile.Extension);
+        var (session, _) = NewSession(Document.Assembly);
+        DocumentFile.Create(session, path);
+        await Applied(session, Reference());
+        session.Close();
+        var before = File.ReadAllBytes(path);
+        var target = Path.Combine(_folder, "assembly." + format);
+
+        var (exit, output) = Run("export", format, path, target);
+
+        Assert.Equal((1, DiagnosticCodes.ExportKindRefused), (exit, JsonDocument.Parse(output).RootElement.GetProperty("error").GetProperty("code").GetString()));
+        Assert.False(File.Exists(target));
+        Assert.Equal(before, File.ReadAllBytes(path));
     }
 
     private static (int Exit, string Output) Run(params string[] args)
