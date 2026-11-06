@@ -248,9 +248,26 @@ internal sealed unsafe partial class DesktopUi : IDisposable
         style.WindowRounding = 6f;
         style.FrameRounding = 4f;
 
+        // ADR-0078 item 1 (TASK-0246): the colours of the theme of the redesign; the sizes above stay.
+        Theme.Apply(style);
+
         // The atlas is built here: NewFrame refuses a font atlas that is not built, and the
         // native library stops the process on a failed check (TASK-0084).
         _atlas = BuildAtlas(io);
+    }
+
+    // ADR-0078 (TASK-0246): a colour of the style of this panel, and its sizes, for a test that may not name the library.
+    internal Vector4 StyleColour(ImGuiCol slot)
+    {
+        ImGui.SetCurrentContext(_context);
+        return ImGui.GetStyle().Colors[(int)slot];
+    }
+
+    internal (Vector2 FramePadding, float WindowRounding, float FrameRounding) StyleSizes()
+    {
+        ImGui.SetCurrentContext(_context);
+        var style = ImGui.GetStyle();
+        return (style.FramePadding, style.WindowRounding, style.FrameRounding);
     }
 
     // The filter of the panel, as the person typed it.

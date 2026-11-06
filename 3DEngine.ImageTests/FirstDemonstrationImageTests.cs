@@ -295,8 +295,9 @@ public class FirstDemonstrationImageTests
 
     private static bool IsBackground(byte[] pixels, int column, int row)
     {
-        var background = SceneRenderer.Background;
-        return Colour(pixels, column, row) == ((int)(background.R * 255), (int)(background.G * 255), (int)(background.B * 255));
+        // ADR-0078 (TASK-0246): the clear is a colour of bytes, so the bytes compare; R * 255 in float can fall below them.
+        var background = ThreeDEngine.Desktop.Ui.Theme.Clear;
+        return Colour(pixels, column, row) == (background.R, background.G, background.B);
     }
 
     private static (int R, int G, int B) Colour(byte[] pixels, int column, int row)

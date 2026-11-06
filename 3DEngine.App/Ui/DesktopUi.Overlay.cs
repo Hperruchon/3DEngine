@@ -16,13 +16,14 @@ internal sealed unsafe partial class DesktopUi
     // ADR-0034 item 9: a selected item in white and wider, and each sketch that is not active in grey.
     internal const uint SelectedColour = 0xFFFFFFFF;
 
-    // The mark of a snap: a square of 12 pixels in cyan (ABGR).
-    internal const uint SnapColour = 0xFFFFE000;
+    // The mark of a snap: a square of 12 pixels (ABGR). ADR-0078 item 1 (TASK-0246): magenta, the one hue that the chrome,
+    // the sketch and the axes do not use; until TASK-0246 it was cyan.
+    internal const uint SnapColour = Theme.Snap;
     private const float SnapHalfSize = 6f;
-    internal const uint OtherSketchColour = 0xFF909090;
+    internal const uint OtherSketchColour = Theme.OtherSketch;
 
     // ADR-0053 item 8: a line or a point of a reference of the sketch, dim.
-    internal const uint ReferenceColour = 0xFF706048;
+    internal const uint ReferenceColour = Theme.Reference;
     private const float SelectedLineWidth = 4f;
     private const float SelectedPointRadius = 7f;
     private const float RingRadius = 12f;
@@ -33,11 +34,19 @@ internal sealed unsafe partial class DesktopUi
     {
         var list = ImGui.GetBackgroundDrawList();
         foreach (var (a, b) in face.Outline)
-            list.AddLine(a, b, SelectedColour, SelectedLineWidth);
+            Cased(list, a, b, SelectedColour, SelectedLineWidth);
 
         // ADR-0077 item 4 (phase R12b, TASK-0245): the selected edge over the outline, wider.
         foreach (var (a, b) in face.Edge ?? [])
-            list.AddLine(a, b, SelectedColour, SelectedEdgeWidth);
+            Cased(list, a, b, SelectedColour, SelectedEdgeWidth);
+    }
+
+    // ADR-0078 item 2 (TASK-0246): a mark of the viewport over a dark casing of 2 pixels on each side, so that it holds
+    // its contrast on each face and on the clear.
+    private static void Cased(ImDrawListPtr list, Vector2 a, Vector2 b, uint colour, float width)
+    {
+        list.AddLine(a, b, Theme.Casing, width + (2 * Theme.CasingWidth));
+        list.AddLine(a, b, colour, width);
     }
 
     private const float SelectedEdgeWidth = 8f;
@@ -48,14 +57,24 @@ internal sealed unsafe partial class DesktopUi
     {
         var list = ImGui.GetBackgroundDrawList();
         foreach (var line in sketches.Lines)
-            list.AddLine(line.A, line.B, Colour(line.Mark), line.Mark == SketchOverlay.Mark.Selected ? SelectedLineWidth : SketchLineWidth);
+            Cased(list, line.A, line.B, Colour(line.Mark), line.Mark == SketchOverlay.Mark.Selected ? SelectedLineWidth : SketchLineWidth);
         foreach (var point in sketches.Points)
-            list.AddCircleFilled(point.At, point.Mark == SketchOverlay.Mark.Selected ? SelectedPointRadius : SketchPointRadius, Colour(point.Mark));
+        {
+            var radius = point.Mark == SketchOverlay.Mark.Selected ? SelectedPointRadius : SketchPointRadius;
+            list.AddCircleFilled(point.At, radius + Theme.CasingWidth, Theme.Casing);
+            list.AddCircleFilled(point.At, radius, Colour(point.Mark));
+        }
         foreach (var ring in sketches.Rings)
+        {
+            list.AddCircle(ring, RingRadius, Theme.Casing, 0, SketchLineWidth + (2 * Theme.CasingWidth));
             list.AddCircle(ring, RingRadius, SketchColour, 0, SketchLineWidth);
+        }
         // ADR-0041 item 6 (phase R11b): a square at the point that a tap under the mouse would take.
         if (sketches.Snap is { } snap)
+        {
+            list.AddRect(snap - new Vector2(SnapHalfSize), snap + new Vector2(SnapHalfSize), Theme.Casing, 0, ImDrawFlags.None, SketchLineWidth + (2 * Theme.CasingWidth));
             list.AddRect(snap - new Vector2(SnapHalfSize), snap + new Vector2(SnapHalfSize), SnapColour, 0, ImDrawFlags.None, SketchLineWidth);
+        }
         foreach (var label in sketches.Labels)
             list.AddText(label.At, SketchColour, label.Text);
     }
@@ -83,7 +102,7 @@ internal sealed unsafe partial class DesktopUi
         foreach (var line in dimensions.Lines)
         {
             var colour = line.Mark == DimensionOverlay.Mark.Selected ? SelectedColour : DimensionColour;
-            list.AddLine(line.A, line.B, colour, DimensionLineWidth);
+            Cased(list, line.A, line.B, colour, DimensionLineWidth);
             var along = line.B - line.A;
             if (!line.Arrows || !(along.Length() > 2 * ArrowLength))
                 continue;

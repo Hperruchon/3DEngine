@@ -119,7 +119,8 @@ public sealed class PlacedImageImageTests : IDisposable
             ( > 230, > 230, > 230) => "white",
             ( < 60, < 60, > 200) => "blue",
             ( > 200, > 200, < 60) => "yellow",
-            ( < 30, > 230, < 30) => "background",
+            // ADR-0078 (TASK-0246): the clear of the theme, in place of the green key.
+            var (r, g, b) when Math.Abs(r - ThreeDEngine.Desktop.Ui.Theme.Clear.R) <= 2 && Math.Abs(g - ThreeDEngine.Desktop.Ui.Theme.Clear.G) <= 2 && Math.Abs(b - ThreeDEngine.Desktop.Ui.Theme.Clear.B) <= 2 => "background",
             _ => "other",
         };
     }
