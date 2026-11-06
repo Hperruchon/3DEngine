@@ -1,7 +1,7 @@
 ---
 id: 0239
 title: The smoke test of the emulator gives the exception of the program as public annotations
-status: Active
+status: Done
 phase: P0.95
 opened: 2026-11-06
 depends-on: [0235]
@@ -54,21 +54,23 @@ A failure of the program on the emulator gives its exception, and the first line
 
 ## Acceptance criteria
 
-- [ ] The probe of T149 (a fake `adb`) gives the same exit for each case before and after the change.
-- [ ] A case with twelve lines of the hash and twelve lines of the stack gives at most 10 notices, and its failure text
+- [x] The probe of T149 (a fake `adb`) gives the same exit for each case before and after the change.
+- [x] A case with twelve lines of the hash and twelve lines of the stack gives at most 10 notices, and its failure text
       is the line "ended".
 
 ## Outcome
 
-Status: Active
+Status: Done · commit (the merge of the branch p095-smoke-exception) · v0.224
 
 ## Method
 
 Mechanical: the counts of the annotations, and two limits of time.
 Judgement:  the order of the notices: the start, the hash and the end of the program, before the lines that a file holds.
-Weakest:    to be written at the close.
+Weakest:    the run passed, so no real failure showed the new form; the probe with a fake adb is the proof of the
+            failure path, and GitHub may count its limit of annotations in another way than the probe assumes.
 
 ## Progress
 
 - 2026-11-06: the change, and the probe of T149 with two new cases. Before: 28 notices for the case of the stack, and
   the text "see the lines of the program". After: 4 notices, 8 errors of the stack, and the line "ended" as the text.
+- 2026-11-06: run 42274351754 passed, with one notice for the start and the lines of the program. Closed at v0.224.
