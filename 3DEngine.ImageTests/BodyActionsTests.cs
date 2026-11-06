@@ -128,9 +128,11 @@ public class BodyActionsTests
         actions.Apply(new SelectIntent(120, 100), Pick, live);
         Assert.Equal(new DatumReference(A, "+x", null), actions.Face);
 
-        Assert.True(actions.Apply(new CancelIntent(), Pick, live));
+        // Finding 1 of the review of Codex of v0.221 (TASK-0237): the intent comes from the key, through the intent layer.
+        var escape = Assert.Single(new IntentMachine().Step([new KeySample(InputKey.Escape, true, KeyModifiers.None, 0)]));
+        Assert.True(actions.Apply(escape, Pick, live));
         Assert.Equal((A, (DatumReference?)null), (actions.Selection, actions.Face));
-        Assert.False(actions.Apply(new CancelIntent(), Pick, live));
+        Assert.False(actions.Apply(escape, Pick, live));
 
         actions.Apply(new SelectIntent(100, 100), Pick, live);
         actions.Apply(new SelectIntent(300, 100), Pick, live);
