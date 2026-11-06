@@ -82,3 +82,4 @@ gave `Window` a `Dispose`, so a later session of the process makes its own windo
 - 2026-11-06 · TASK-0250 · A session destroys its window at its end, so a new start during a session makes a new one (V112).
 - 2026-11-07 · TASK-0255 · Item 4: a session of a destroyed activity ends before its window, and a session waits for the
   window of an earlier one (the failed run 42308415060 of `main`).
+- 2026-11-07 · TASK-0255 · Item 4 shipped at v0.238.
