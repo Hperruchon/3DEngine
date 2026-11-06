@@ -6204,3 +6204,27 @@ New tests: 2 (the rule of the application, and the row of the application in the
 `3DEngine.Tests`, 200 in `3DEngine.ImageTests`, 3 in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental`
 gives zero errors and zero warnings. Open entries: 15 of 15. New diagnostic codes: 0. Since the review of v0.198, 4
 product milestones and 9 entries followed it, so the next product milestone needs a codebase review first.
+
+## v0.208 — The codebase review of 2026-11-06 (b) (governance, TASK-0223)
+
+The review of 2026-11-06 examined v0.198. After it came 4 product milestones (K6b, P8b1, R14d and R14e1) and 9 ledger
+entries, and R14e2 would be the fifth, so the gate made this review due before R14e2.
+
+**The change.** `docs/reviews/2026-11-06-b-codebase-review.md`, at the merge of v0.207. Two review agents worked at
+`ff59f82`, each one in its own worktree. No new finding is critical or high. Three are medium: a void whose first vertex
+lies on the plane of a face of an outer shell is refused (E152); the rule of ADR-0072 reads the direct framework
+references only (T145); the start again of E150 opens a document of the unsaved folder as a named file (V91). Nine are
+low: E153 to E155, V92 to V96 and T146. The reviews of Codex of v0.201 and v0.202 gave the leads of E152 and E153, and
+the review of v0.196 the lead of V92. TASK-0224 (P0.89) and TASK-0225 (P0.90) hold the new findings, after R14e2
+(TASK-0226), which holds V88. The standing order of 2026-11-05 answers Q1 (the header of an assembly has
+`formatVersion` 2) and Q2 (the start again keeps the kind of the previous document) with A.
+
+**Proof.** `CodebaseReviewGateTests` passes with the new review.
+
+**What stays.** T143 stays open for the owner. The open findings are 0 critical, 4 high, 17 medium and 27 low.
+
+**A correction.** None.
+
+New tests: 0. The test list holds 1863 (1328 in `Engine.Tests`, 332 in `3DEngine.Tests`, 200 in `3DEngine.ImageTests`, 3
+in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
+entries: 15 of 15. New diagnostic codes: 0. Since the review of v0.207, 0 product milestones and 0 entries followed it.
