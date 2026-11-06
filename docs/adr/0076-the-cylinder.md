@@ -6,7 +6,7 @@ topic: Geometry, kernel
 date: 2026-11-06
 supersedes: []
 superseded-by: []
-amends: []
+amends: ['0032']
 amended-by: []
 affects:
   - Engine.Core/Commands/CreateCylinderCommand.cs
@@ -16,6 +16,7 @@ affects:
   - Engine.Core/Features/FeatureList.cs
   - Engine.Core/Features/Regeneration.cs
   - Engine.Core/Sketch/DatumResolver.cs
+  - 3DEngine.App/Ui/DesktopUi.Panel.cs
 enforced-by: Engine.Tests/Commands/CreateCylinderCommandTests.cs
 ---
 
@@ -76,6 +77,21 @@ needs a tolerance setting that the Document does not hold yet. **Recommended: A.
 
 B needs the true surface of Q1 B. **Recommended: A.**
 
+### Q5. The button of the panel (K5b, TASK-0244)
+
+The first line of the panel holds Undo, Redo and "New box" and has no room for a second button of 136 pixels. The
+panel has no room for a new line at 1280 by 720: with a fault line and the controls of a body, Show all goes 16 pixels
+below the panel (finding V50).
+
+- **A.** A list "New" takes the place of the button "New box". Its entries are "Box" and "Cylinder", each at least 44
+  pixels high, and each opens its pad. A box needs two taps.
+- **B.** A button "Cylinder" on a new line, and a panel that scrolls.
+- **C.** A shorter label of each button on the first line.
+
+A keeps the height of the panel, and the cone, the sphere and the torus become more entries of the same list. B moves
+Show all out of view on a small screen. C does not give enough room: the label "Cylinder" alone needs 136 pixels.
+**Recommended: A.**
+
 ## Decision
 
 1. **The command (Q2 A).** `CreateCylinder` has the fields `radius` and `height`, two lengths greater than zero, and
@@ -99,6 +115,11 @@ B needs the true surface of Q1 B. **Recommended: A.**
    a body, so it also changes the creators of `FeatureList`, `Regeneration`, `KernelProjection` and `DatumResolver`, and
    adds one solid to `KernelSolid`. ADR-0028 item 9 gives the same kind of exception. No host names the command, and
    `DispatchSurfaceGateTests` does not change.
+7. **The panel (Q5 A, K5b).** A list "New" takes the place of the button "New box" of ADR-0032 item 4, with the box of
+   the list "Cut with" (ADR-0073 item 1). Its entry "Box" opens the pad of ADR-0032 item 4 with the title "New box",
+   and its entry "Cylinder" opens a pad with the title "New cylinder" and the fields `radius` (5) and `height` (10), in
+   the length unit of the document; its apply sends `CreateCylinder`. The desktop and the phone draw the same panel
+   (ADR-0072). This item amends ADR-0032 item 4.
 
 ## Consequences
 
@@ -116,3 +137,6 @@ the true surface and `CYLINDRICAL_SURFACE` after Q1 B.
 - 2026-11-06 · TASK-0238 · The record, Accepted under the standing order, with the command, the names and the
   references.
 - 2026-11-06 · TASK-0238 · Shipped at v0.223.
+- 2026-11-06 · TASK-0244 · Q5 and item 7: the list "New" of the panel of the desktop and of the phone, with a pad of
+  the radius and the height (section "Next"), Accepted under the standing order of 2026-11-05; it amends ADR-0032
+  item 4.

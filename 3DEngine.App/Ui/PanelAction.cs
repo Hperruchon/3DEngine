@@ -32,6 +32,9 @@ internal sealed record RedoAction : PanelAction;
 // ADR-0032 item 4: the numbers of an apply of the pad, for a new box or a move of a body.
 internal sealed record CreateBoxAction(double X, double Y, double Z) : PanelAction;
 
+// Phase K5b (ADR-0076, TASK-0244): the radius and the height of an apply of the pad, for a new cylinder.
+internal sealed record CreateCylinderAction(double Radius, double Height) : PanelAction;
+
 internal sealed record MoveBodyAction(Guid Body, double Dx, double Dy, double Dz) : PanelAction;
 
 // ADR-0073 item 1 (phase R14e3, TASK-0227): a cut of the body with the tool, the command Subtract.
