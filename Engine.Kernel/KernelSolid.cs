@@ -56,6 +56,33 @@ public sealed class KernelSolid
         return Closed(feature, faces);
     }
 
+    // ADR-0076 item 3 (phase K5a, TASK-0238): a cylinder with its centre at the origin and its axis along +z, as
+    // CreateCylinder makes it, from the polygon of its circle: the faces +z, -z, and side, the facets with one name and
+    // no item. The caller gives the polygon counter-clockwise, as ADR-0040 item 2 computes it.
+    public static KernelSolid Cylinder(Guid feature, IReadOnlyList<(Rational X, Rational Y)> circle, Rational height)
+    {
+        ArgumentNullException.ThrowIfNull(circle);
+        if (circle.Count < 3)
+            throw new ArgumentException("A circle has at least three vertices.", nameof(circle));
+        if (height.Sign <= 0)
+            throw new ArgumentException("A cylinder has a height greater than zero.", nameof(height));
+        var half = height / (Rational)2;
+        var bottom = circle.Select(p => new Vector3R(p.X, p.Y, -half)).ToArray();
+        var top = circle.Select(p => new Vector3R(p.X, p.Y, half)).ToArray();
+        var faces = new List<(string Element, Guid? Item, IReadOnlyList<Vector3R> Vertices)>
+        {
+            ("-z", null, [.. bottom.Reverse()]),
+            ("+z", null, top),
+        };
+        for (var i = 0; i < circle.Count; i++)
+        {
+            var j = (i + 1) % circle.Count;
+            faces.Add(("side", null, [bottom[i], bottom[j], top[j], top[i]]));
+        }
+
+        return Closed(feature, faces);
+    }
+
     // The solid moved by an exact offset; each tag stays.
     public KernelSolid Translate(Vector3R offset) => new([.. Polygons.Select(p => p.Moved(offset))]);
 

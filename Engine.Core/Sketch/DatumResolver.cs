@@ -18,6 +18,9 @@ public static class DatumResolver
 
     public static readonly IReadOnlyList<string> BoxFaces = ["+x", "-x", "+y", "-y", "+z", "-z"];
 
+    // ADR-0076 item 3: the faces of a cylinder. The side is curved, so only +z and -z carry a datum (item 4).
+    public static readonly IReadOnlyList<string> CylinderFaces = ["+z", "-z", "side"];
+
     // ADR-0052 item 1: the names of the edges and the vertices of an extrude. Each one takes an itemId:
     // a line for startEdge and endEdge, and a point for the others.
     public static readonly IReadOnlyList<string> ExtrudeEdges = ["startEdge", "endEdge", "sideEdge"];
@@ -58,7 +61,13 @@ public static class DatumResolver
             $"The element '{reference.Element}' is not a face of a box; the faces are {string.Join(", ", BoxFaces)}. An edge or a vertex is a reference of a sketch (AddSketchReference, ADR-0052).",
         CreateBoxCommand when reference.ItemId is not null =>
             "A face of a box takes no itemId.",
-        ExtrudeCommand or CreateBoxCommand => null,
+        CreateCylinderCommand when !CylinderFaces.Contains(reference.Element) =>
+            $"The element '{reference.Element}' is not a face of a cylinder; the faces are {string.Join(", ", CylinderFaces)}.",
+        CreateCylinderCommand when reference.Element == "side" =>
+            "The face 'side' of a cylinder is curved, so it has no plane for a datum (ADR-0076 item 4).",
+        CreateCylinderCommand when reference.ItemId is not null =>
+            "A face of a cylinder takes no itemId.",
+        ExtrudeCommand or CreateBoxCommand or CreateCylinderCommand => null,
         _ => $"No CreateBox or Extrude in effect has the id '{reference.FeatureId}'.",
     };
 
@@ -79,6 +88,7 @@ public static class DatumResolver
         {
             ExtrudeCommand extrude => Extrude(extrude, reference, state(extrude), frameOf),
             CreateBoxCommand box => (Box(box, reference.Element), null),
+            CreateCylinderCommand cylinder => (Cylinder(cylinder, reference.Element), null),
             _ => (null, $"The command '{feature.Name}' has no faces."),
         };
         if (frame is not { } carrier)
@@ -225,6 +235,8 @@ public static class DatumResolver
             $"The element '{reference.Element}' is not an edge or a vertex of a box: an edge has two signed axes and a vertex three, in the order x, y, z, for example '+x-z' or '+x-y+z'.",
         CreateBoxCommand when reference.ItemId is not null =>
             "An edge or a vertex of a box takes no itemId.",
+        CreateCylinderCommand =>
+            "A cylinder gives no edge and no vertex to a sketch in this slice (ADR-0076 item 4).",
         ExtrudeCommand or CreateBoxCommand => null,
         _ => $"No CreateBox or Extrude in effect has the id '{reference.FeatureId}'.",
     };
@@ -453,6 +465,17 @@ public static class DatumResolver
             "+z" => new DatumFrame(new DatumPoint(0, 0, hz), x, y, z),
             _ => new DatumFrame(new DatumPoint(0, 0, -hz), y, x, Negative(z)),
         };
+    }
+
+    // ADR-0076 item 4: the top or the bottom of a cylinder with its centre at the origin, as the face of a box of the
+    // same height. Form refuses the side before this.
+    private static DatumFrame Cylinder(CreateCylinderCommand cylinder, string element)
+    {
+        var (x, y, z) = (new DatumAxis(1, 0, 0), new DatumAxis(0, 1, 0), new DatumAxis(0, 0, 1));
+        var half = cylinder.Height / 2;
+        return element == "+z"
+            ? new DatumFrame(new DatumPoint(0, 0, half), x, y, z)
+            : new DatumFrame(new DatumPoint(0, 0, -half), y, x, Negative(z));
     }
 
     // ADR-0051 item 2: each Translate in effect before the place, on the chain of consumers of the
