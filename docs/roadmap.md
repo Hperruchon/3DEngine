@@ -179,6 +179,7 @@ Therefore each approved objective must have a track here.
 - R14d — The native builds of Manifold and cimgui for android-arm64 and android-x64 run on GitHub Actions. v0.203, TASK-0196, ADR-0061.
 - P0.85 — Each hole of a face has its owner, the STEP export refuses what a strict reader refuses, and the session of the desktop holds an open. v0.204, TASK-0197.
 - P0.88 — An export of the command line resolves a link of each folder of its paths. v0.205, TASK-0221.
+- P0.86 — The window keeps no input between sessions, the hook has the cases of one axis, and the next forms of three gates fail. v0.206, TASK-0198.
 
 ## Track 0 — Foundations
 
