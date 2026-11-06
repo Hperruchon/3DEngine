@@ -7037,3 +7037,29 @@ window (V112). No new finding is medium. Fourteen are low: E164 to E166, V113 to
 New tests: 0. The test list holds 1967 (1384 in `Engine.Tests`, 337 in `3DEngine.Tests`, 243 in `3DEngine.ImageTests`, 3
 in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
 entries: 15 of 15. New diagnostic codes: 0. Since the review of v0.233, 0 product milestones and 1 entry followed it.
+
+## v0.235 — A second session of the phone in its process makes its window (P0.100, TASK-0250)
+
+The codebase review of 2026-11-06 (e) found V112 (high): with the hint of P0.99 (ADR-0079), a new start of the activity
+during a session runs `PhoneHost.Run` again in its process. `Window` had no `Dispose`, so the first SDL window stayed,
+and SDL on Android permits one window: the second run could not make its window, and each later start of that process
+failed. A high finding comes before the next product phase.
+
+**The change.**
+- `Window` is `IDisposable`: `Dispose` removes the hook of Windows when it holds this window, stops the text input, and
+  destroys the SDL window, one time.
+- `PhoneHost.Run` disposes its window at the end of the session, so a later session of the process makes its own.
+- ADR-0079 says that its consequence held for a new start before a session only, until this task.
+
+**Proof.** One new test makes a window with the video driver "offscreen" of SDL, disposes it two times, sees that SDL no
+longer knows its identifier, and makes a second window. An injection of a `Dispose` with no destroy fails it. The test
+needs Vulkan, so it runs on the Linux runner and on this computer. Run 42302467567 passed on each job.
+
+**What stays.** No device had a new start of the activity during a session; the limit of one window is a rule of SDL on
+Android, which the test does not run.
+
+**A correction.** None.
+
+New tests: 1. The test list holds 1968 (1384 in `Engine.Tests`, 337 in `3DEngine.Tests`, 244 in `3DEngine.ImageTests`, 3
+in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
+entries: 15 of 15. New diagnostic codes: 0. Since the review of v0.233, 0 product milestones and 2 entries followed it.

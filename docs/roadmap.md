@@ -208,6 +208,7 @@ Therefore each approved objective must have a track here.
 - R16a — The desktop and the phone take the theme "Proposed (harmonized)" of the redesign. v0.232, TASK-0246, ADR-0078.
 - R16b1 — The title of the document, Undo, Redo and the status line are fixed controls of the redesign. v0.233, TASK-0248, ADR-0080.
 - Review — The codebase review of 2026-11-06 (e). v0.234, TASK-0249.
+- P0.100 — A second session of the phone in its process makes its window. v0.235, TASK-0250.
 
 ## Track 0 — Foundations
 
