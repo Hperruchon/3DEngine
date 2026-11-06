@@ -96,6 +96,11 @@ if ended=$(grep -m 1 "3DEngine: the session of the phone ended" "$report"); then
   grep "3DEngine: | " "$report" | head -8 | while IFS= read -r line; do echo "::error title=Stack::${line:0:300}"; done || true
   fail "${ended:0:400}"
 fi
+# ADR-0079 (TASK-0247): the activity sets the hint that lets it start again in its process; a refusal of the hint is a
+# failure, because a new start of the activity then ends the process with the code 0 and no line.
+if grep -q "3DEngine: a new start of the activity ends the process" "$report"; then
+  fail "the activity could not set the hint of a new start (ADR-0079)"
+fi
 if grep -A 3 "FATAL EXCEPTION" "$report" | grep -q "Process: org.threedengine.phone"; then
   fail "the process of the program ended with a fatal exception; see the lines of Android"
 fi

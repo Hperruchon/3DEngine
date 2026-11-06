@@ -12,12 +12,14 @@ namespace ThreeDEngine.Android;
 // Phase R14e3 (ADR-0073 item 4, TASK-0227): the screen stays in portrait until the slice of the pre-rotation, because
 // the swapchain takes the transform of the surface and the renderer does not turn its picture yet.
 // Phase R14f3 (ADR-0074, TASK-0233): a fixed name of the activity, so that the pipeline starts it with the extra "probe".
+// ADR-0079 (TASK-0247): the activity may start again in its process, and it names the weight of the font and the
+// grammatical gender as changes that it takes itself.
 [Activity(Name = "org.threedengine.phone.MainActivity", Label = "3DEngine", MainLauncher = true, Exported = true, ScreenOrientation = ScreenOrientation.Portrait,
     ConfigurationChanges = ConfigChanges.Orientation | ConfigChanges.ScreenSize | ConfigChanges.ScreenLayout
         | ConfigChanges.SmallestScreenSize | ConfigChanges.Keyboard | ConfigChanges.KeyboardHidden | ConfigChanges.Navigation
         | ConfigChanges.UiMode | ConfigChanges.Density | ConfigChanges.FontScale | ConfigChanges.Locale
         | ConfigChanges.LayoutDirection | ConfigChanges.ColorMode | ConfigChanges.Touchscreen | ConfigChanges.Mcc
-        | ConfigChanges.Mnc)]
+        | ConfigChanges.Mnc | ConfigChanges.FontWeightAdjustment | ConfigChanges.GrammaticalGender)]
 public sealed class MainActivity : SDLActivity
 {
     protected override string[] GetLibraries() => ["SDL3"];
@@ -30,6 +32,10 @@ public sealed class MainActivity : SDLActivity
     {
         Console.Error.WriteLine($"3DEngine: the activity is created{(savedInstanceState is null ? string.Empty : ", with a saved state")}.");
         base.OnCreate(savedInstanceState);
+
+        // ADR-0079 item 1 (TASK-0247): SDLActivity loaded SDL in base.OnCreate, so the hint can be set now; a later create of
+        // the activity in this process then goes on, where SDL ended the process with the code 0 (run 42289169473).
+        PhoneHost.AllowNewStart();
     }
 
     public override void OnConfigurationChanged(Configuration newConfig)
