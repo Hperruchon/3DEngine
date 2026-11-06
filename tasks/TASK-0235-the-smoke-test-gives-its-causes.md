@@ -1,7 +1,7 @@
 ---
 id: 0235
 title: The smoke test of the emulator gives the cause of a start that fails
-status: Active
+status: Done
 phase: P0.93
 opened: 2026-11-06
 depends-on: [0231]
@@ -52,20 +52,21 @@ A start that fails gives its cause as public annotations, and the next run shows
 
 ## Acceptance criteria
 
-- [ ] The probe of T149 (a fake `adb`) gives the same exits as before the change.
-- [ ] Continuous integration shows the new annotations; the cause of the failure is in the ledger entry.
+- [x] The probe of T149 (a fake `adb`) gives the same exits as before the change.
+- [x] Continuous integration shows the new annotations; the cause of the failure is in the ledger entry.
 
 ## Outcome
 
-Status: Active
+Status: Done · commit (the merge of the branch p093-smoke-causes) · v0.220
 
 ## Method
 
 Mechanical: annotations of the versions and of the lines of Android, with `|| true`, so that a report never fails a job.
 Judgement:  the lines of the log that the failure gives: the package, its process, the runtime of .NET, SDL, and the
             start of an activity or a process.
-Weakest:    to be written at the close.
+Weakest:    the run passed, so the cause of the three failures is still unknown; the next failure gives it.
 
 ## Progress
 
 - 2026-11-06: the annotations, and the probe of T149 on the new script.
+- 2026-11-06: run 42170160013: the workload android 36.1.118 on the SDK 10.0.400, the emulator 37.2.13, the platform tools 37.0.1, the image android-34 google_apis x86_64 14, and am start with Status ok, a cold start, and a total time of 3855 ms. Closed at v0.220.

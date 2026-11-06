@@ -6570,3 +6570,25 @@ passes. Run 42169584195 passed.
 New tests: 0. The test list holds 1921 (1361 in `Engine.Tests`, 333 in `3DEngine.Tests`, 224 in `3DEngine.ImageTests`, 3
 in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
 entries: 15 of 15. New diagnostic codes: 0. Since the review of v0.214, 2 product milestones and 5 entries followed it.
+
+## v0.220 — The smoke test of the emulator gives the cause of a start that fails (P0.93, TASK-0235)
+
+The job "Start the APK on the emulator" failed in 3 of the last 13 runs, each time before the first line of the
+program, and with no change of code (the entry v0.218). The job gave no cause, because the output of the start went to
+`/dev/null`, the inputs of the job have no pin, and no log of a job is public.
+
+**The change.** The build job gives the version of the workload of .NET for Android as an annotation. The emulator job
+gives the versions of the emulator, of the platform tools and of the system image. The smoke test gives the output of
+`am start -W`, with a limit of 60 seconds, and with no line of the start it gives the package, the process and the
+lines of Android about the program and the runtime. Each report ends with `|| true`, so a report never fails a job.
+
+**Proof.** The probe of T149 gives the same exits as before. Run 42170160013 passed and gave the annotations: the workload android 36.1.118 on the SDK 10.0.400, the emulator 37.2.13, the platform tools 37.0.1, the image android-34 google_apis x86_64 14, and am start with Status ok, a cold start, and a total time of 3855 ms.
+
+**What stays.** The cause of the three failures is still unknown, because this run passed; the next failure gives it.
+The inputs of the job still have no pin.
+
+**A correction.** None.
+
+New tests: 0. The test list holds 1921 (1361 in `Engine.Tests`, 333 in `3DEngine.Tests`, 224 in `3DEngine.ImageTests`, 3
+in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
+entries: 15 of 15. New diagnostic codes: 0. Since the review of v0.214, 2 product milestones and 6 entries followed it.
