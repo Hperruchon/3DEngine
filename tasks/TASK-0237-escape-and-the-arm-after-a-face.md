@@ -1,7 +1,7 @@
 ---
 id: 0237
 title: The key Escape goes back from the face, and the button "Sketch on face" ends the arm of Face
-status: Active
+status: Done
 phase: P0.94
 opened: 2026-11-06
 depends-on: [0236]
@@ -57,21 +57,24 @@ The key Escape goes back from the face to its body, and each start of a sketch e
 
 ## Acceptance criteria
 
-- [ ] A key sample of Escape through the intent layer clears the selected face.
-- [ ] The button "Sketch on face" ends the arm.
-- [ ] An injection of each defect fails a test.
+- [x] A key sample of Escape through the intent layer clears the selected face.
+- [x] The button "Sketch on face" ends the arm.
+- [x] An injection of each defect fails a test.
 
 ## Outcome
 
-Status: Active
+Status: Done · commit (the merge of the branch p094-face-escape) · v0.222
 
 ## Method
 
 Mechanical: one case of the key Escape, and one action in the list of the starts of a sketch.
 Judgement:  Escape gives the existing `CancelIntent`, which ADR-0075 names, and no new kind of intent. A lost pointer
             during a press also gives `CancelIntent`, so it also clears the face.
-Weakest:    to be written at the close.
+Weakest:    no person pressed Escape on the desktop with a face selected; the proof is the intent layer and
+            BodyActions together, with no window.
 
 ## Progress
 
 - 2026-11-06: the two fixes; the injection of each defect fails a test.
+- 2026-11-06: run 42265352847 failed on the test floor (3DEngine.Tests 335 and 3DEngine.ImageTests 230 on Linux); the floor gives the new counts.
+- 2026-11-06: run 42266913875 passed. Closed at v0.222.

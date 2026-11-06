@@ -195,6 +195,7 @@ Therefore each approved objective must have a track here.
 - R15 — The user interface of the desktop is one partial file for each region. v0.219, TASK-0234.
 - P0.93 — The smoke test of the emulator gives the cause of a start that fails. v0.220, TASK-0235.
 - R12a — A second tap on the selected body selects the face under the point. v0.221, TASK-0236, ADR-0075.
+- P0.94 — The key Escape goes back from the face, and the button "Sketch on face" ends the arm of Face. v0.222, TASK-0237.
 
 ## Track 0 — Foundations
 
