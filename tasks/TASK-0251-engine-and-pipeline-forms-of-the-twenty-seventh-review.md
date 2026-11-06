@@ -1,7 +1,7 @@
 ---
 id: 0251
 title: A failed delete, an edge of three faces, the ledger, two gates and the smoke test hold their next forms
-status: Active
+status: Done
 phase: P0.101
 opened: 2026-11-06
 depends-on: [0250]
@@ -64,9 +64,9 @@ failed run, the gates read the forms that MSBuild evaluates, and the smoke test 
 
 ## Acceptance criteria
 
-- [ ] Each finding has a test or an injection that fails before the change and passes after it.
-- [ ] A clean build (`--no-incremental`) gives zero errors and zero warnings.
-- [ ] Continuous integration passes on the three runners, on the branch and on `main` after the merge.
+- [x] Each finding has a test or an injection that fails before the change and passes after it.
+- [x] A clean build (`--no-incremental`) gives zero errors and zero warnings.
+- [x] Continuous integration passes on the three runners, on the branch and on `main` after the merge.
 
 ## Decisions
 
@@ -86,15 +86,17 @@ The standing order of 2026-11-05 gives the recommended option for each question.
 
 ## Outcome
 
-Status: Active
+Status: Done · commit (the merge of the branch p0101-engine-forms) · v0.237
 
 ## Method
 
 Mechanical: a test or an injection for each finding, before the change.
 Judgement:  the four decisions above; the forms of the lines of a tombstone come from the format of debuggerd, not from a
             crash on a device.
-Weakest:    to be written at the close.
+Weakest:    no device wrote a tombstone for the test of the patterns; the version of a pin is not compared with the
+            version that MSBuild evaluates; an edge of more than two faces gives pairs that bound no common solid.
 
 ## Progress
 
 - 2026-11-06: opened by the codebase review of 2026-11-06 (e).
+- 2026-11-06: run 42306849941 passed, with the new step of the platforms in the job of the APK. Closed at v0.237.

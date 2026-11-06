@@ -7093,3 +7093,58 @@ inner radius.
 New tests: 6. The test list holds 1974 (1384 in `Engine.Tests`, 337 in `3DEngine.Tests`, 250 in `3DEngine.ImageTests`, 3
 in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
 entries: 15 of 15. New diagnostic codes: 0. Since the review of v0.233, 1 product milestone and 3 entries followed it.
+
+## v0.237 — A failed delete, an edge of more than two faces, two gates and the smoke test hold their next forms (P0.101, TASK-0251)
+
+The codebase review of 2026-11-06 (e) found E164 to E166 and T160 to T164 (low). By `docs/templates.md`, section 7, they
+come after the next product phase, which R16b2 (v0.236) was.
+
+**The change.** The standing order of 2026-11-05 gave the recommended option for each question.
+- E164: a save that cannot delete the old file gives the warning `W-IO-OLD-FILE-KEPT` (new) with the path of that file,
+  and succeeds; the desktop shows it on the status line. A copy that fails cuts the new file to length 0 before its
+  delete, so a new file that stays does not open. ADR-0015 item 9 says so. The HTTP response does not give the warning,
+  because a new field there changes the wire shape; that is a question for the owner on Sunday.
+- E165: ADR-0077 item 6. A B-Rep edge of more than two faces, where two solids touch along a line, belongs to each pair
+  of different names of its faces; an edge of one face is no edge. The outline of a face holds the segments of its edges
+  and no other.
+- E166: the comment of `Engine.Contracts/Sketch/DatumRecord.cs` names the cylinder. It is a comment; no shape changes.
+- T161: a `*` or a `?` in the Update or the Remove of a package item is an offence.
+- T162: a Condition on a `SupportedPlatform` or on an element that holds it, CA1416 in a `NoWarn` or a
+  `WarningsNotAsErrors`, a pragma or an attribute in the code, and an analyzer configuration file that names CA1416 are
+  offences. The new step `eng/android/check-platforms.js` in the job of the APK asks MSBuild for the evaluated item and
+  the properties of each project that the phone reaches; the gate holds that its list names each of them.
+- T163: the patterns of a native crash are the lines of `eng/android/native-crash.ere`, which the smoke test gives to
+  `grep -E -f` and `NativeCrashPatternTests` proves with the forms of the lines of debuggerd. The script reads the log
+  again 5 seconds after the first frame.
+- T164: the affects fields of ADR-0076 and ADR-0077 name the eight files that their tasks changed.
+
+**Proof.** Each finding has a test or an injection that fails before the change and passes after it:
+- E164: a delete that gives no path, and a copy with no cut, fail the two new tests.
+- E165: the new test of a plate with two opposite quarters cut away fails on the old handler.
+- T161 and T162: the three injections of the review (an Update of `Engine.Geometry.Manifold.Nativ?`, `Condition="false"`
+  on the android item of `Engine.Kernel`, and `NoWarn` of CA1416 in `Engine.Core`) fail the gate, and the new script
+  fails on the last two. A list of the script with no `Engine.Kernel` fails the gate. The project file has its SHA-256
+  again after the injection.
+- T163: the old patterns fail the lines of libc and of `Cmdline`.
+Run 42306849941 passed on each job.
+
+**What stays.** No device wrote a tombstone for the patterns. The version of a pin is not compared with the version that
+MSBuild evaluates (the second part of the recommendation of T161), which waits for a later review. At an edge of more
+than two faces, some pairs bound no common solid.
+
+**A correction (T160).** The API gives the failed runs since the entry v0.225: the job "Start the APK on the emulator"
+failed in 42279267538 (the eighth failure), 42280512471 (`main` at `28c89a2`, the merge of v0.225, the ninth, which no
+entry named), 42281585857 (the tenth; the entry v0.227 said the ninth), 42283808971 (the eleventh), 42285027469 (the
+twelfth; the entry v0.228 said the eleventh), 42289169473 (the thirteenth) and 42291677527 (the fourteenth). The entry
+v0.228 said that the job failed in 3 of the 4 runs before 42285931818; it failed in 2 of them. After 42291677527 the job
+failed one time more: 42308415060, the run of `main` at `5b84a10` (the merge of v0.236), the fifteenth. There the activity
+was destroyed 0.7 seconds after its start and created again, a second session started in the process while the first
+one had no window yet, and the first one then could not make its window ("SDL: failed to create window"); the
+hashes agreed. That is a new defect of the phone host, which the next task corrects before the next product phase. The
+write-set job failed in 42270395707 and 42297666769, which the entries v0.225 and v0.233 name. From
+this entry, each entry lists the failed runs from the API before it counts them.
+
+New tests: 13. The test list holds 1987 (1397 in `Engine.Tests`, 337 in `3DEngine.Tests`, 250 in `3DEngine.ImageTests`, 3
+in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
+entries: 15 of 15. New diagnostic codes: 1 (`W-IO-OLD-FILE-KEPT`). Since the review of v0.233, 1 product milestone and 4
+entries followed it.
