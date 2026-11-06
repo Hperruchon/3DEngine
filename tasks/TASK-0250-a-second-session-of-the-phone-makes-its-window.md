@@ -1,7 +1,7 @@
 ---
 id: 0250
 title: A second session of the phone in its process makes its window
-status: Ready
+status: Active
 phase: P0.100
 opened: 2026-11-06
 depends-on: [0249]
@@ -54,14 +54,16 @@ A session of the phone destroys its window at its end, so a later session in the
 
 ## Outcome
 
-Status: Ready
+Status: Active
 
 ## Method
 
 Mechanical: a test or an injection for each finding, before the change.
-Judgement:  to be written in the task.
+Judgement:  the test uses the video driver "offscreen" of SDL and asks SDL for the window by its identifier, because the
+            limit of one window is a rule of SDL on Android only.
 Weakest:    to be written at the close.
 
 ## Progress
 
 - 2026-11-06: opened by the codebase review of 2026-11-06 (e).
+- 2026-11-06: `Window.Dispose` and the `using` of the phone; one test. An injection of a `Dispose` with no destroy fails it.
