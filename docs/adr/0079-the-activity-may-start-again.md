@@ -63,6 +63,8 @@ The standing order of 2026-11-05 gives A for each question.
 ## Consequences
 
 **Good:** the program no longer closes when Android starts its activity again; the next runs of the emulator job show it.
+Finding V112 of the codebase review of 2026-11-06 (e): that held for a new start before a session only, until TASK-0250
+gave `Window` a `Dispose`, so a later session of the process makes its own window.
 
 **Bad:** the document of a running session is lost at such a start, as before; a file of the phone keeps it later.
 
@@ -72,3 +74,4 @@ The standing order of 2026-11-05 gives A for each question.
 
 - 2026-11-06 · TASK-0247 · The record, Accepted under the standing order.
 - 2026-11-06 · TASK-0247 · Shipped at v0.231.
+- 2026-11-06 · TASK-0250 · A session destroys its window at its end, so a new start during a session makes a new one (V112).
