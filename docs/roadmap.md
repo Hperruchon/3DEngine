@@ -196,6 +196,7 @@ Therefore each approved objective must have a track here.
 - P0.93 — The smoke test of the emulator gives the cause of a start that fails. v0.220, TASK-0235.
 - R12a — A second tap on the selected body selects the face under the point. v0.221, TASK-0236, ADR-0075.
 - P0.94 — The key Escape goes back from the face, and the button "Sketch on face" ends the arm of Face. v0.222, TASK-0237.
+- K5a — A command CreateCylinder makes a cylinder of 64 plane facets, with three face names. v0.223, TASK-0238, ADR-0076.
 
 ## Track 0 — Foundations
 
@@ -386,6 +387,7 @@ boundary and each refused rung.
 | K4b | The engine reads the kernel: the B-Rep of each body as a projection of the feature list, and a query of its faces with their names. Beside Manifold, built at the query and cached, one entry for each name, and a split face is one name with its parts (the four answers of the owner of 2026-11-05). ADR-0058, TASK-0184. | 6–10 |
 | K4c | The datums and the references by the identity of a face, and a fault for a face that is gone (ADR-0051 item 8). The existing fault, a check after a cut only, a datum on a hole wall faces into the hole, a split face keeps its plane, and the turn applies to older documents (the five answers of the owner of 2026-11-05). ADR-0059, TASK-0185. | 4–6 |
 | K5 | Add the cylinder, the cone, the sphere and the torus. | 55–85 |
+| K5a | The cylinder: a command CreateCylinder with a radius and a height, the prism of the circle of ADR-0040 with 64 plane facets, the names +z, -z and side in the owned kernel, and a datum on the top or the bottom (the fallback queue of the owner of 2026-11-05, with the recommended answers). ADR-0076, TASK-0238. | 2–3 |
 | K6 | STEP export for the analytic subset. | 6–12 |
 | K6a | The planar B-Rep of the owned kernel of each live body as one STEP file of AP214, with the same bytes on each platform, from the surface and the command line (the engine lane of the order of 2026-11-05). ADR-0070, TASK-0200. | 1–2 |
 | K6b | A void inside a body is a `BREP_WITH_VOIDS` of the smallest solid that holds it, by an exact ray (ADR-0070 item 2; the engine lane of the order of 2026-11-05). TASK-0201. | 1 |
