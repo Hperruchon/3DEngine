@@ -6323,3 +6323,34 @@ New tests: 4 (1 in `3DEngine.Tests`, 3 in `3DEngine.ImageTests`). The test list 
 `3DEngine.Tests`, 206 in `3DEngine.ImageTests`, 3 in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental`
 gives zero errors and zero warnings. Open entries: 15 of 15. New diagnostic codes: 0. Since the review of v0.207, 1
 product milestone and 3 entries followed it.
+
+## v0.212 — A person cuts a body in the panel, and the phone keeps its document through the background (R14e3, TASK-0227)
+
+The goal of R14e is a box, a subtract and the cut on the S23 Ultra. The panel gave a person no subtract, and the phone
+has no surface for an agent. Android destroys the surface of the window in the background, and the program of R14e2 had
+one engine for its whole life.
+
+**The change.** ADR-0073 is new; the standing order chose A for the cut and for the background.
+- The controls of the selected body give a list "Cut with" of the other visible bodies, on the line of Move. A tap on a
+  body sends `Subtract` through `BodyActions.Cut`, and the new body becomes the selection. This is a new control of the
+  desktop too.
+- `PhoneLifecycle` gives a step for each event of SDL. On the phone the engine, with its device and its surface, ends at
+  the first sign of the background; at the return to the foreground a new engine draws the same session.
+- The activity stays in portrait until the pre-rotation.
+- `docs/android-test-sheet.md` gives the owner the build, the install, nine steps and a table of results.
+
+**Proof.** `CutUiTests`: the list shows only with another visible body and lies inside the panel, a tap on a tool gives
+the cut, and the cut of a plate by a box gives one body that becomes the selection. `PhoneLifecycleTests`: nine events
+and their steps. The test of V50 failed when the list took its own line, so it stays on the line of Move. The APK
+builds on this computer with zero warnings.
+
+**What stays.** No device and no emulator ran the program; the owner runs the test sheet. The selection, the pad and
+the camera go at each trip into the background. The picker of Save and Open, the pre-rotation and the layout of the
+phone come later. The row R14e closes only after the test of the owner.
+
+**A correction.** None.
+
+New tests: 12 (in `3DEngine.ImageTests`). The test list holds 1895 (1341 in `Engine.Tests`, 333 in `3DEngine.Tests`, 218
+in `3DEngine.ImageTests`, 3 in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors
+and zero warnings. Open entries: 15 of 15. New diagnostic codes: 0. Since the review of v0.207, 2 product milestones and
+5 entries followed it.
