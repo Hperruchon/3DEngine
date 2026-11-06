@@ -3,8 +3,9 @@
 This document uses Simplified Technical English (ASD-STE100). See `CLAUDE.md`, section "Language".
 
 **Status: the first test of R14e.** Written 2026-11-06 by TASK-0227. The row R14e of `docs/roadmap.md` closes only after
-the owner does this test on the reference device (ADR-0061 items 2 and 9). No device and no emulator ran the program
-before this test.
+the owner does this test on the reference device (ADR-0061 items 2 and 9). No device ran the program before this test.
+Since TASK-0229 the pipeline starts it at each push on the emulator of Android 14 for x86-64, with Vulkan in software,
+up to its first frame; no gesture and no step of section 3 runs there.
 
 ## 1 What you need
 

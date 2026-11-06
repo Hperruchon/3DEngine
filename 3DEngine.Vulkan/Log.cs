@@ -28,6 +28,14 @@ internal static class Log
 
     private static void WriteColored(ConsoleColor color, string message)
     {
+        // Phase R14f2 (TASK-0229): Android has no colour of the console, and Console.ForegroundColor throws
+        // PlatformNotSupportedException there; the third run of the emulator ended on it before the first frame.
+        if (OperatingSystem.IsAndroid())
+        {
+            Console.Write(message);
+            return;
+        }
+
         ConsoleColor currentColor = Console.ForegroundColor;
         Console.ForegroundColor = color;
         Console.Write(message);
