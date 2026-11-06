@@ -181,6 +181,7 @@ Therefore each approved objective must have a track here.
 - P0.88 — An export of the command line resolves a link of each folder of its paths. v0.205, TASK-0221.
 - P0.86 — The window keeps no input between sessions, the hook has the cases of one axis, and the next forms of three gates fail. v0.206, TASK-0198.
 - R14e1 — The drawing code of the desktop becomes a library that an Android program can reference. v0.207, TASK-0222, ADR-0072.
+- Review — The codebase review of 2026-11-06 (b). v0.208, TASK-0223.
 
 ## Track 0 — Foundations
 

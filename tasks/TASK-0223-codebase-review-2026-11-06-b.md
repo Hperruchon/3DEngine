@@ -1,7 +1,7 @@
 ---
 id: 0223
 title: The codebase review of 2026-11-06 (b) is a record
-status: Active
+status: Done
 phase: governance
 opened: 2026-11-06
 depends-on: [0222]
@@ -66,10 +66,23 @@ finding.
 
 ## Acceptance criteria
 
-- [ ] `CodebaseReviewGateTests` passes with the new review.
-- [ ] Continuous integration passes on the three runners, on the branch and on `main` after the merge.
+- [x] `CodebaseReviewGateTests` passes with the new review.
+- [x] Continuous integration passes on the three runners, on the branch and on `main` after the merge.
+
+## Outcome
+
+Status: Done · commit (the merge of the branch codebase-review-2026-11-06-b) · v0.208
+
+## Method
+
+Mechanical: the measures with the methods of the last review, and the line of each earlier finding from the files that
+            it cites and the commits since `ab55b07`.
+Judgement:  the severity of each new finding; V91 is medium, because a person meets it after an open that the next
+            session does not start, which is rare.
+Weakest:    the two review agents ran their probes on Windows x64 only, and nobody started the desktop or an APK.
 
 ## Progress
 
 - 2026-11-06: two review agents at `ff59f82`, the tree of the merge of v0.207; 3 new medium and 9 new low findings;
   the review written.
+- 2026-11-06: closed at v0.208.
