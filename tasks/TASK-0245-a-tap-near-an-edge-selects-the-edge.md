@@ -1,7 +1,7 @@
 ---
 id: 0245
 title: An edge is named by its two faces, and a tap near an edge of the selected face selects it
-status: Active
+status: Done
 phase: R12b
 opened: 2026-11-06
 depends-on: [0236, 0242]
@@ -62,23 +62,25 @@ gives the edge, with its name, its length and its mark.
 
 ## Acceptance criteria
 
-- [ ] A box gives twelve edges, a cylinder two rims of 64 segments, and a cut the rims of its hole.
-- [ ] A tap near an edge of the selected face selects the edge; Escape gives the face, then the body.
-- [ ] The nearest edge on the screen is at most 12 pixels away.
-- [ ] An injection of each rule fails a test.
+- [x] A box gives twelve edges, a cylinder two rims of 64 segments, and a cut the rims of its hole.
+- [x] A tap near an edge of the selected face selects the edge; Escape gives the face, then the body.
+- [x] The nearest edge on the screen is at most 12 pixels away.
+- [x] An injection of each rule fails a test.
 
 ## Outcome
 
-Status: Active
+Status: Done · commit (the merge of the branch r12b-edge-selection) · v0.230
 
 ## Method
 
 Mechanical: the edges from the B-Rep that `GetFaces` keeps; the gesture as the gesture of the face.
 Judgement:  the name as a pair of face names (Q1 A), the edges in `GetFaces` (Q2 A), and a tap near an edge (Q3 A).
-Weakest:    to be written at the close.
+Weakest:    no person tapped an edge on the desktop or on the phone; the curved side of a cylinder cannot be selected,
+            so its rims are selected from the top or the bottom face only.
 
 ## Progress
 
 - 2026-11-06: ADR-0077, the edges of `GetFaces`, the gesture, the mark and the panel; six tests. An injection that keeps
   the edges inside a name, one that removes the step of Escape from the edge, and one that widens the reach of a tap
   each fail a test.
+- 2026-11-06: run 42291699658 passed. Closed at v0.230.
