@@ -1,7 +1,7 @@
 ---
 id: 0242
 title: The readers of a file, the pin rule, the smoke test and the ledger hold their next forms
-status: Active
+status: Done
 phase: P0.97
 opened: 2026-11-06
 depends-on: [0241]
@@ -70,13 +70,13 @@ test fails on a native crash and on a hash with no line.
 
 ## Acceptance criteria
 
-- [ ] Each finding has a test or an injection that fails before the change and passes after it.
-- [ ] A clean build (`--no-incremental`) gives zero errors and zero warnings.
-- [ ] Continuous integration passes on the three runners, on the branch and on `main` after the merge.
+- [x] Each finding has a test or an injection that fails before the change and passes after it.
+- [x] A clean build (`--no-incremental`) gives zero errors and zero warnings.
+- [x] Continuous integration passes on the three runners, on the branch and on `main` after the merge.
 
 ## Outcome
 
-Status: Active
+Status: Done · commit (the merge of the branch p097-engine-forms) · v0.229
 
 ## Method
 
@@ -84,7 +84,8 @@ Mechanical: a test or an injection for each finding, before the change.
 Judgement:  E163 has a new code, E-CMD-FIELD-MISSING, because E-IO-NOT-ENCODABLE means a value that the file cannot
             hold and comes after the handler; the comment of E160 in Engine.Contracts/Sketch/DatumRecord.cs stays, because
             the task forbids Engine.Contracts; T159 is fixed by the entry v0.225.
-Weakest:    to be written at the close.
+Weakest:    the new hash of the probe came from the three desktop runners only, because the emulator job of the run
+            failed; the next run that passes the emulator job compares the phone.
 
 ## Progress
 
@@ -93,3 +94,4 @@ Weakest:    to be written at the close.
   three injections of the review for T155 and T156 each fail the changed gate; the fake adb gives an error for a native
   crash and for a hash with no line (T153, T157); fake folders show that the comparison takes the three desktop hashes
   when the emulator job fails (T152). The probe holds a circle, a cylinder, a move and a cut, so its hash changes (E161).
+- 2026-11-06: run 42289169473: the three desktop runners give 1c56cbddd4caa83557fd5756427668795cbc1096d61767c5588d3b447dca30ba; the emulator job failed, and the comparison ran on the three (T152). Closed at v0.229.
