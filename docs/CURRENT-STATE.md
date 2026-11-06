@@ -6294,3 +6294,32 @@ New tests: 6. The test list holds 1879 (1341 in `Engine.Tests`, 332 in `3DEngine
 in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
 entries: 15 of 15. New diagnostic codes: 1 (`E-EXPORT-KIND-REFUSED`). Since the review of v0.207, 1 product milestone and
 2 entries followed it.
+
+## v0.211 — The start again keeps an unsaved document, a window that does not open gives a code, and the flush holds its place (P0.90, TASK-0225)
+
+The codebase review of 2026-11-06 (b) found V91 (medium) and V92 to V96 (low), to correct after the next product phase
+and after P0.89. The standing order of 2026-11-05 answered Q2 with A.
+
+**The change.**
+- V91 (Q2 A): after a next session that does not start, the desktop keeps the kind of the previous document. A named
+  file opens again by its path; a document of the unsaved folder starts again from its journal with no name, or as a
+  new document when it had no command. `EngineHost` reads the unsaved folder also when the host gives a path.
+- V92: the window is made in a `try`. A window that does not open, or a loop that fails, gives the new exit code
+  `DesktopSurface.ExitWindowFailed` (7) and a line on the standard error; until TASK-0225 it gave an unhandled exception
+  or the exit code 0.
+- V93: the flush of V90 runs after `Initialize` and `LoadScene` of a later session, so the input of that time goes too.
+- V94: a test pushes a key, a button, a finger and a quit into the queue of SDL with no window; the flush keeps the quit.
+- V95 and V96: ADR-0072 names the two actions that still use a path, and gives a true count of what names the library.
+
+**Proof.** Three injections each fail a test: the start again with the path only, a show that fails with the code 0,
+and a flush that removes nothing. The test of the unsaved document has one case with a command and one with none.
+
+**What stays.** No test holds the order of V93. Nobody started the desktop to see a session change in a window.
+
+**A correction.** ADR-0072 said "four test projects" name the library; one program and four test files of
+`Engine.Tests` do.
+
+New tests: 4 (1 in `3DEngine.Tests`, 3 in `3DEngine.ImageTests`). The test list holds 1883 (1341 in `Engine.Tests`, 333 in
+`3DEngine.Tests`, 206 in `3DEngine.ImageTests`, 3 in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental`
+gives zero errors and zero warnings. Open entries: 15 of 15. New diagnostic codes: 0. Since the review of v0.207, 1
+product milestone and 3 entries followed it.
