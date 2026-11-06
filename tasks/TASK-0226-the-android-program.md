@@ -1,7 +1,7 @@
 ---
 id: 0226
 title: The Android program builds an APK that draws a document of its own session
-status: Active
+status: Done
 phase: R14e2
 opened: 2026-11-06
 depends-on: [0223]
@@ -65,18 +65,20 @@ draws its document with `3DEngine.App`.
 
 ## Acceptance criteria
 
-- [ ] The APK builds on this computer with zero warnings, and holds the native libraries of SDL, cimgui and Manifold for both ABIs and no file of x86.
-- [ ] Continuous integration passes on the three runners, on the branch and on `main` after the merge.
+- [x] The APK builds on this computer with zero warnings, and holds the native libraries of SDL, cimgui and Manifold for both ABIs and no file of x86.
+- [x] Continuous integration passes on the three runners, on the branch and on `main` after the merge.
 
 ## Outcome
 
-Status: Active
+Status: Done · commit (the merge of the branch r14e2-android-program) · v0.209
 
 ## Method
 
 Mechanical: the probe APK of the review 24.
-Judgement:  to be written in the task.
-Weakest:    to be written at the close.
+Judgement:  the session of the phone in the library, so that the image tests run it; the program outside the
+            solution until R14f.
+Weakest:    no device and no emulator ran the APK, and the pipeline does not build it. The loop of the phone has
+            no pause, no loss of the surface and no pre-rotation yet.
 
 ## Progress
 
@@ -91,3 +93,4 @@ Weakest:    to be written at the close.
   those of the notices. Five injections each fail a gate: `android-x86` in the runtime identifiers, a reference to
   `Engine.Api.Http`, a framework reference of ASP.NET Core, a wrong checksum of a library of cimgui, and a second binding
   of SDL. No device and no emulator ran the APK.
+- 2026-11-06: closed at v0.209. The row R14e stays open.
