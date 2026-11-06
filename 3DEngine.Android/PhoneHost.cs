@@ -61,6 +61,18 @@ internal static class PhoneHost
     // a default of SDL. The hint comes before the first window. Finding V110 of the codebase review of 2026-11-06 (d)
     // (TASK-0243): this order comes from the code of SDL, which is not in this repository; no run shows it yet, and step 8
     // of the test sheet of the phone shows it.
+    // ADR-0079 item 1 (TASK-0247): a later create of the activity in this process goes on. With the default of SDL, a new
+    // start of the activity ends the process (the strings "activity finished" and exit of SDLActivity, run 42289169473).
+    public static unsafe void AllowNewStart()
+    {
+        fixed (byte* name = SDL_HINT_ANDROID_ALLOW_RECREATE_ACTIVITY)
+        fixed (byte* on = "1"u8)
+        {
+            var set = SDL_SetHint(name, on);
+            Console.Error.WriteLine($"3DEngine: a new start of the activity {(set ? "goes on" : "ends the process; the hint was refused")}.");
+        }
+    }
+
     private static unsafe void BlockOnPause()
     {
         fixed (byte* name = SDL_HINT_ANDROID_BLOCK_ON_PAUSE)
