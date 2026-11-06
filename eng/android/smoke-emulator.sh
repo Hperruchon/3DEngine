@@ -41,7 +41,10 @@ done
 
 timeout 300 "$adb" install -r "$apk" || fail "the install of the APK did not end in 300 seconds"
 "$adb" logcat -c
-"$adb" shell am start -n org.threedengine.phone/org.threedengine.phone.MainActivity --ez probe true > /dev/null
+# TASK-0235: the output of the start is a public annotation; until TASK-0235 it went to /dev/null, and a start that
+# failed gave no cause.
+timeout 60 "$adb" shell am start -W -n org.threedengine.phone/org.threedengine.phone.MainActivity --ez probe true 2>&1 | tr -d '\r' \
+  | while IFS= read -r line; do echo "::notice title=am start::${line:0:300}"; done || true
 
 started=0
 drawn=0
@@ -57,7 +60,14 @@ done
 grep "3DEngine:" "$report" | head -60 | while IFS= read -r line; do echo "::notice title=Program::${line:0:300}"; done || true
 grep -E "FATAL|AndroidRuntime" "$report" | head -12 | while IFS= read -r line; do echo "::warning title=Android::${line:0:300}"; done || true
 echo "started=$started drawn=$drawn"
-[ "$started" = 1 ] || fail "the program did not write its line of the start in 120 seconds"
+if [ "$started" != 1 ]; then
+  # TASK-0235: the lines of Android about the package, its process and the runtime of .NET, as public annotations.
+  "$adb" shell pm list packages org.threedengine.phone 2>&1 | tr -d '\r' | while IFS= read -r line; do echo "::warning title=Package::$line"; done || true
+  echo "::warning title=Process::pid $("$adb" shell pidof org.threedengine.phone 2>/dev/null | tr -d '\r')"
+  grep -iE "threedengine|monodroid|mono-rt|DOTNET|SDL|libc  |DEBUG   |ActivityTaskManager|ActivityManager: (Start|Process|Kill)" "$report" \
+    | head -40 | while IFS= read -r line; do echo "::warning title=Android log::${line:0:300}"; done || true
+  fail "the program did not write its line of the start in 120 seconds"
+fi
 # Finding T149 of the codebase review of 2026-11-06 (c) (TASK-0231): PhoneHost writes the line "ended" only for an
 # exception, and the line of the start comes before the session, the window and the engine. An exception after the start
 # passed the job. Now the line "ended", or a fatal exception of the process of the program, fails it.
