@@ -80,6 +80,7 @@ names. Do not read all of them.
 | [0072](0072-the-drawing-code-is-a-library.md) | The drawing code of a host is a library with no surface | Accepted | Rendering, clients, platform | 0027 | — |
 | [0073](0073-the-phone-cuts-and-keeps-its-document.md) | The person cuts a body in the panel, and the phone keeps its document through the background | Accepted | Clients, platform | — | — |
 | [0074](0074-the-probe-of-determinism-is-in-the-engine.md) | The probe of the determinism hash is a part of the engine, and the phone runs it | Accepted | Determinism, platform | — | — |
+| [0075](0075-a-second-tap-selects-the-face.md) | A second tap on the selected body selects the face under the point | Proposed | Clients, selection | — | — |
 
 ## Topics
 
