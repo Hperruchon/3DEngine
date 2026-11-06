@@ -8,7 +8,8 @@ namespace Engine.Core.Features;
 
 // ADR-0058 items 1 to 3 (phase K4b, TASK-0184): the solid of a body in the owned kernel, as a projection of the steps in
 // effect. Manifold still makes the solid and the mesh of each body; the kernel gives the faces and their names. The
-// walk goes from the body to the command that creates it, as the regeneration does: a CreateBox, an Extrude of the
+// walk goes from the body to the command that creates it, as the regeneration does: a CreateBox, a CreateCylinder
+// (ADR-0076), an Extrude of the
 // sketch and the distance in effect on the frame of its datum, a Translate, or a Subtract of two bodies. The kernel
 // reads each input double exactly, so the projection does not depend on the platform, and it does not enter the log.
 //
@@ -119,6 +120,12 @@ internal static class KernelProjection
         {
             case CreateBoxCommand box:
                 return (KernelSolid.Box(box.CommandId, Rational.FromDouble(box.SizeX), Rational.FromDouble(box.SizeY), Rational.FromDouble(box.SizeZ)), null);
+            // ADR-0076 item 3: the polygon of the handler, read exactly.
+            case CreateCylinderCommand cylinder:
+                return (KernelSolid.Cylinder(
+                    cylinder.CommandId,
+                    [.. CreateCylinderCommandHandler.Circle(cylinder.Radius).Select(p => (Rational.FromDouble(p.X), Rational.FromDouble(p.Y)))],
+                    Rational.FromDouble(cylinder.Height)), null);
             case ExtrudeCommand extrude:
                 return Extrude(extrude, state(extrude), frameOf);
             case TranslateCommand translate:

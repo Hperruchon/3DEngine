@@ -183,7 +183,7 @@ internal static class Regeneration
 
         // ADR-0055 item 2: true when the inputs of the step that creates the handle change with this edit. An extrude
         // that the edit targets changes when its parameters change; a Translate and a Subtract change when an operand
-        // changes; no edit changes a box.
+        // changes; no edit changes a box or a cylinder (ADR-0076).
         private bool Changes(Guid handle)
         {
             switch (list.Creator(handle))
@@ -192,7 +192,7 @@ internal static class Regeneration
                     var previous = Parameters(edit.Before(extrude), before).Parameters;
                     var next = Parameters(edit.After(extrude), after).Parameters;
                     return previous is not { } p || next is not { } n || !ExtrudeProfile.Same(p, n);
-                case ExtrudeCommand or CreateBoxCommand:
+                case ExtrudeCommand or CreateBoxCommand or CreateCylinderCommand:
                     return false;
                 case { } command:
                     return FeatureList.Operands(command).Any(Changes);
@@ -206,7 +206,7 @@ internal static class Regeneration
         private Guid? Through(Guid handle) => list.Creator(handle) switch
         {
             ExtrudeCommand extrude => edit.Through(extrude),
-            CreateBoxCommand or null => null,
+            CreateBoxCommand or CreateCylinderCommand or null => null,
             { } command => FeatureList.Operands(command).Select(Through).FirstOrDefault(id => id is not null),
         };
 
@@ -220,7 +220,7 @@ internal static class Regeneration
             var key = GeometryKeys.Derive(edit.Id, handle);
             switch (list.Creator(handle))
             {
-                case CreateBoxCommand:
+                case CreateBoxCommand or CreateCylinderCommand:
                     return (handle, false, null);
 
                 case ExtrudeCommand extrude:
