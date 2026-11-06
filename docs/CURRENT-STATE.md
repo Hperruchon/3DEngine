@@ -6378,3 +6378,41 @@ both. The job is not a required check of `main`.
 New tests: 0. The test list holds 1895 (1341 in `Engine.Tests`, 333 in `3DEngine.Tests`, 218 in `3DEngine.ImageTests`, 3
 in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open entries:
 15 of 15. New diagnostic codes: 0. Since the review of v0.207, 3 product milestones and 6 entries followed it.
+
+## v0.214 — The APK holds its assemblies, and the pipeline starts it on the emulator up to its first frame (R14f2, TASK-0229)
+
+Phase R14f includes a job that runs the x86-64 emulator with software Vulkan and a smoke test. No device and no emulator
+had run the program.
+
+**The change.**
+- A read of the APK of R14e3 found 38 files and no assembly: a Debug build of .NET for Android leaves them out for the
+  fast deployment of an IDE. `3DEngine.Android.csproj` sets `EmbedAssembliesIntoApk`, and `eng/android/check-apk.sh`
+  requires the eleven assemblies of the program for each ABI.
+- The job "Start the APK on the emulator" gives the emulator KVM, installs the emulator and a system image of Android 14
+  for x86-64 on the runner, starts it with Vulkan in software, and runs `eng/android/smoke-emulator.sh`. The script waits
+  with limits, installs and starts the APK, needs the line of the start, reports the line of the first frame, and gives
+  the lines of the program and the tail of the emulator as public annotations.
+- `PhoneHost` writes a line at the start of the session, a line after the first frame, and each line of an exception.
+- The third run ended on `Console.ForegroundColor`, which Android does not have: `Log.WriteColored` of the Vulkan layer
+  read it in the constructor of `GraphicsDevice`. `Log.cs` writes no colour on Android. Each of the seven projects of
+  the APK names `<SupportedPlatform Include="android" />`, so the analyzer CA1416 refuses such an API, and the new rule
+  `Each_Project_That_The_Phone_Reaches_Supports_Android` holds the item (ADR-0072 item 7).
+
+**Proof.** Five runs of the job: the first reached its limit with no cause shown; the second showed that the emulator
+found no AVD; the third started the program, which ended on the exception; the fourth gave its stack; the fifth
+(42164085778) gave the line of the start and the line of the first frame. With the item in the seven projects, CA1416
+gave exactly the three sites of `Log.cs` and no other. The check refuses the APK of R14e3 with 22 errors. An injection
+with no item in `Engine.Kernel` fails the new rule.
+
+**What stays.** The emulator is not the phone: its Vulkan is in software and its ABI is x86-64. The smoke test passes
+after an exception that follows the start (T149 of the review of 2026-11-06 (c)). The pipeline compares no hash of
+Android yet. The test of the owner on the S23 Ultra stays the condition of the row R14e.
+
+**A correction.** The entries v0.209, v0.212 and v0.213 said that the APK builds and holds its native libraries; that was
+true, but the APK held no assembly, so it could not start when a person installed it, and the APK of the test sheet of
+v0.212 could not start either. The test sheet said that no emulator ran the program; it says now what the emulator runs.
+
+New tests: 1 (`Engine.Tests`). The test list holds 1896 (1342 in `Engine.Tests`, 333 in `3DEngine.Tests`, 218 in
+`3DEngine.ImageTests`, 3 in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero
+warnings. Open entries: 15 of 15. New diagnostic codes: 0. Since the review of v0.207, 4 product milestones and 7 entries
+followed it, so the next product milestone needs a codebase review first.

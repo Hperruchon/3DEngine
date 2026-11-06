@@ -21,4 +21,9 @@
     <PackageReference Include="Engine.Geometry.Manifold.Native" Version="3.5.2.2" />
   </ItemGroup>
 
+  <!-- Phase R14f2 (TASK-0229): the APK of the phone holds this assembly, so the analyzer of platform compatibility (CA1416)
+       refuses an API that Android does not have. The third run of the emulator ended on Console.ForegroundColor. -->
+  <ItemGroup>
+    <SupportedPlatform Include="android" />
+  </ItemGroup>
 </Project>

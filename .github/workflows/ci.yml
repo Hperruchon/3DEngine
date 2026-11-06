@@ -249,6 +249,73 @@ jobs:
           if-no-files-found: error
           retention-days: 14
 
+  # Phase R14f2 (ADR-0061 item 9, TASK-0229): the APK on the x86-64 emulator of Android, with Vulkan in software. The
+  # runner gives the emulator KVM; the job installs the emulator and a system image of Android 14 on the runner only.
+  # eng/android/smoke-emulator.sh needs the line of the start of the program; the line of the first frame is a fact of
+  # the report, because the Vulkan of the emulator can be below the floor of the program (ADR-0061 item 3).
+  android-emulator:
+    name: Start the APK on the emulator
+    needs: android-apk
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    # The second run of the job: avdmanager wrote the AVD outside $HOME/.android/avd, where the emulator looked. Both
+    # tools read ANDROID_AVD_HOME.
+    env:
+      ANDROID_AVD_HOME: ${{ github.workspace }}/../avd
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Take the APK
+        uses: actions/download-artifact@v4
+        with:
+          name: apk-of-the-phone
+          path: ${{ runner.temp }}/apk
+
+      - name: Permit the emulator to use KVM
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+
+      - name: Install the emulator and a system image of Android 14
+        run: |
+          sdkmanager="$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager"
+          yes | "$sdkmanager" --licenses > /dev/null || true
+          mkdir -p "$ANDROID_AVD_HOME"
+          "$sdkmanager" --install "emulator" "platform-tools" "system-images;android-34;google_apis;x86_64" > /dev/null
+          echo no | "$ANDROID_HOME/cmdline-tools/latest/bin/avdmanager" create avd -n smoke -k "system-images;android-34;google_apis;x86_64" -d pixel_6
+
+      - name: Start the emulator
+        run: |
+          nohup "$ANDROID_HOME/emulator/emulator" -avd smoke -no-window -no-audio -no-boot-anim -no-snapshot -gpu swiftshader_indirect \
+            > "$RUNNER_TEMP/emulator.log" 2>&1 &
+          sleep 20
+          # The second run of the job (TASK-0229): a start that fails gives its last lines as annotations.
+          if ! pgrep -f qemu-system > /dev/null; then
+            tail -n 12 "$RUNNER_TEMP/emulator.log" | while IFS= read -r line; do echo "::error title=Emulator::${line:0:300}"; done
+            exit 1
+          fi
+
+      - name: Run the smoke test
+        run: bash eng/android/smoke-emulator.sh "$RUNNER_TEMP/apk/org.threedengine.phone-Signed.apk" "$RUNNER_TEMP/logcat.txt" "$RUNNER_TEMP/emulator.log"
+
+      - name: Keep the log of Android
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: android-log
+          path: |
+            ${{ runner.temp }}/logcat.txt
+            ${{ runner.temp }}/emulator.log
+          if-no-files-found: ignore
+          retention-days: 14
+
   write-set-gate:
     timeout-minutes: 30
     name: Write set of the governing task
