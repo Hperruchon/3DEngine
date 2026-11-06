@@ -1,7 +1,7 @@
 ---
 id: 0231
 title: The review gate counts each product phase, and the export, the host and three checks hold their next forms
-status: Active
+status: Done
 phase: P0.91
 opened: 2026-11-06
 depends-on: [0230]
@@ -55,20 +55,20 @@ reads the file of an Update, and the two checks of the pipeline fail where they 
 
 ## Acceptance criteria
 
-- [ ] Each finding has a test or an injection that fails before the change and passes after it.
-- [ ] A clean build (`--no-incremental`) gives zero errors and zero warnings.
-- [ ] Continuous integration passes on the three runners, on the branch and on `main` after the merge.
+- [x] Each finding has a test or an injection that fails before the change and passes after it.
+- [x] A clean build (`--no-incremental`) gives zero errors and zero warnings.
+- [x] Continuous integration passes on the three runners, on the branch and on `main` after the merge.
 
 ## Outcome
 
-Status: Active
+Status: Done · commit (the merge of the branch p091-review-forms) · v0.217
 
 ## Method
 
 Mechanical: a test or an injection for each finding, before the change.
 Judgement:  T148 names six pinned packages, one row each; T149 fails on the line "ended" and on a fatal exception of
             the process of the program only, not of another process of the emulator.
-Weakest:    to be written at the close.
+Weakest:    the list of T148 names the pinned packages by hand, so a new pin needs a new row.
 
 ## Progress
 
@@ -81,3 +81,4 @@ Weakest:    to be written at the close.
   exit 1 after; a fatal exception of another process and a first frame give exit 0. T150: an APK whose folder x86_64
   holds the libraries of arm64 gave exit 0 before and 3 errors after; the correct APK gives exit 0. T151: the entry
   v0.215 corrected the counts.
+- 2026-11-06: run 42167561638 passed on the three runners and on the emulator. Closed at v0.217.
