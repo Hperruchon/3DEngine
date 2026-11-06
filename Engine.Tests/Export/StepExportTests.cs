@@ -41,26 +41,23 @@ public sealed class StepExportTests : IDisposable
         return content!;
     }
 
-    // The checks of each solid of the file against the B-Reps: the solids of each body in order, and for each body the
-    // counts of its faces, edges and vertices, and the point of each vertex.
+    // The checks of each solid of the file against the B-Reps: the solids of each body in order, with their voids, and for
+    // each body the counts of its faces, edges and vertices, and the point of each vertex.
     private static StepReader Matches(byte[] file, params (Guid Body, Brep Brep)[] solids)
     {
         var step = StepReader.Parse(file);
-        var written = step.Of("MANIFOLD_SOLID_BREP").ToList();
-        Assert.Equal(solids.Sum(solid => solid.Brep.Shells.Count), written.Count);
-        var at = 0;
+        var written = step.Solids();
+        Assert.Equal(solids.Select(solid => $"'{solid.Body:D}'").Distinct(), written.Select(id => (string)step.Instances[id].Attributes[0]).Distinct());
         foreach (var (body, brep) in solids)
         {
-            var (faces, edges, vertices) = (0, 0, 0);
-            foreach (var _ in brep.Shells)
+            var (faces, edges, vertices, shells) = (0, 0, 0, 0);
+            foreach (var solid in written.Where(id => (string)step.Instances[id].Attributes[0] == $"'{body:D}'"))
             {
-                var solid = written[at++];
-                Assert.Equal($"'{body:D}'", step.Instances[solid].Attributes[0]);
                 var counts = step.Solid(solid);
-                (faces, edges, vertices) = (faces + counts.Faces, edges + counts.Edges, vertices + counts.Vertices);
+                (faces, edges, vertices, shells) = (faces + counts.Faces, edges + counts.Edges, vertices + counts.Vertices, shells + 1 + step.Voids(solid).Count);
             }
 
-            Assert.Equal((brep.Faces.Count, brep.Edges.Count, brep.Vertices.Count), (faces, edges, vertices));
+            Assert.Equal((brep.Faces.Count, brep.Edges.Count, brep.Vertices.Count, brep.Shells.Count), (faces, edges, vertices, shells));
         }
 
         Assert.Equal(solids.Sum(solid => solid.Brep.Faces.Count), step.Count("ADVANCED_FACE"));
@@ -71,15 +68,17 @@ public sealed class StepExportTests : IDisposable
             solids.SelectMany(solid => solid.Brep.Vertices).Select(vertex => vertex.ToDoubles()),
             step.Of("VERTEX_POINT").Select(step.Vertex));
 
-        // Each vertex of each face lies on the plane of the face, and the normal of the plane points out of the solid as
-        // the normal of the kernel does.
+        // Each vertex of each face lies on the plane of the face. The normal of the plane points out of the solid as the
+        // normal of the kernel does, and a face of a void points the other way, out of the void.
         var faceIds = step.Of("ADVANCED_FACE").ToList();
         var kernelFaces = solids.SelectMany(solid => solid.Brep.Faces).ToList();
+        var voidFaces = written.SelectMany(step.Voids).SelectMany(shell => shell).ToHashSet();
         for (var f = 0; f < faceIds.Count; f++)
         {
             var (origin, normal) = step.Plane(faceIds[f]);
             var (nx, ny, nz) = kernelFaces[f].Plane.Normal.ToDoubles();
-            Assert.True((normal.X * nx) + (normal.Y * ny) + (normal.Z * nz) > 0, $"The plane of the face {f} faces the wrong side.");
+            var side = voidFaces.Contains(faceIds[f]) ? -1 : 1;
+            Assert.True(side * ((normal.X * nx) + (normal.Y * ny) + (normal.Z * nz)) > 0, $"The plane of the face {f} faces the wrong side.");
             Assert.Equal(1, Math.Sqrt((normal.X * normal.X) + (normal.Y * normal.Y) + (normal.Z * normal.Z)), 12);
             foreach (var (_, uses) in step.Loops(faceIds[f]))
             {
@@ -131,26 +130,78 @@ public sealed class StepExportTests : IDisposable
         Assert.Equal(8, extrude.Faces.Count);
     }
 
-    // Item 3: a void inside a body, a B-Rep that is not closed, and a coordinate that a double does not hold each give
-    // E-EXPORT-BODY-FAILED with the body, and no file.
+    // Item 2 (phase K6b, TASK-0201): a void inside a body is a BREP_WITH_VOIDS whose ORIENTED_CLOSED_SHELL turns the
+    // void; two voids in one solid are two shells of it.
     [Fact]
-    public void A_Void_Is_Refused_With_Its_Code()
+    public void A_Void_Is_A_Brep_With_Voids()
     {
         var body = Guid.NewGuid();
         var hollow = Brep.Of(PlanarBoolean.Subtract(Box(10, 10, 10), Box(2, 2, 2))!);
+        var twice = Brep.Of(PlanarBoolean.Subtract(
+            PlanarBoolean.Subtract(Box(20, 10, 10), Box(2, 2, 2).Translate(new Vector3R(-5, 0, 0)))!,
+            Box(2, 2, 2).Translate(new Vector3R(5, 0, 0)))!);
+        var other = Guid.NewGuid();
+
+        var step = Matches(Written((body, hollow), (other, twice)), (body, hollow), (other, twice));
+
+        Assert.Equal((2, 3), (hollow.Shells.Count, twice.Shells.Count));
+        Assert.Equal([1, 2], step.Solids().Select(solid => step.Voids(solid).Count));
+        Assert.Equal(0, step.Count("MANIFOLD_SOLID_BREP"));
+    }
+
+    // Item 2: a void that holds a solid that holds a void. The inner void belongs to the inner solid, the smallest outer
+    // shell that holds it, so the file has two solids with one void each.
+    [Fact]
+    public void A_Void_Belongs_To_The_Smallest_Solid_That_Holds_It()
+    {
+        // A box of 20 minus a hollow box of 12 with a cavity of 8 leaves a hollow box of 20 with a box of 8 in its cavity;
+        // a box of 2 then makes a void in the box of 8.
+        var body = Guid.NewGuid();
+        var shell = PlanarBoolean.Subtract(Box(12, 12, 12), Box(8, 8, 8))!;
+        var nested = Brep.Of(PlanarBoolean.Subtract(PlanarBoolean.Subtract(Box(20, 20, 20), shell)!, Box(2, 2, 2))!);
+
+        var step = Matches(Written((body, nested)), (body, nested));
+
+        double Largest(IReadOnlyList<int> faces) => faces
+            .SelectMany(face => step.Loops(face).SelectMany(loop => loop.Uses))
+            .Select(use => step.Vertex(step.Ends(use).Start).X)
+            .Max();
+        Assert.Equal(4, nested.Shells.Count);
+        Assert.Equal(
+            [(10.0, 6.0), (4.0, 1.0)],
+            step.Solids().Select(solid => (Largest(step.Faces(solid)), Largest(Assert.Single(step.Voids(solid))))).OrderByDescending(pair => pair.Item1));
+    }
+
+    // Item 2: a ray that meets an edge goes to the next direction. The first ray from (-2, 2, -2) meets the edge of the box
+    // at (5, 5, 0), so it gives no count, and the second ray crosses the face +y once. A point out of the box is outside.
+    [Fact]
+    public void A_Ray_That_Meets_An_Edge_Goes_To_The_Next_Direction()
+    {
+        var box = Brep.Of(Box(10, 10, 10));
+        var shell = Assert.Single(box.Shells);
+        var point = new Vector3R(-2, 2, -2);
+
+        Assert.Equal(new Vector3R(7, 3, 2), StepExport.Rays[0]);
+        Assert.Null(StepExport.Crossings(box, shell, point, StepExport.Rays[0]));
+        Assert.Equal(1, StepExport.Crossings(box, shell, point, StepExport.Rays[1]));
+        Assert.True(StepExport.Inside(box, shell, point));
+        Assert.False(StepExport.Inside(box, shell, new Vector3R(-6, 2, -2)));
+    }
+
+    // Item 3: a B-Rep with a coordinate that a double does not hold gives E-EXPORT-BODY-FAILED with the body, and no
+    // file.
+    [Fact]
+    public void A_Coordinate_Out_Of_The_Range_Of_A_Double_Is_Refused()
+    {
+        var body = Guid.NewGuid();
         var huge = new Rational(new System.Numerics.BigInteger(double.MaxValue) * 4, System.Numerics.BigInteger.One);
         var far = Brep.Of(Box(1, 1, 1).Translate(new Vector3R(huge, 0, 0)));
 
-        var (content, error) = StepExport.Write([(body, hollow)]);
-        var (farContent, farError) = StepExport.Write([(body, far)]);
+        var (content, error) = StepExport.Write([(body, far)]);
 
-        Assert.Equal(2, hollow.Shells.Count);
         Assert.Null(content);
         Assert.Equal(DiagnosticCodes.ExportBodyFailed, error?.Code);
         Assert.Contains(body.ToString(), error!.Message, StringComparison.Ordinal);
-        Assert.Contains("void", error.Message, StringComparison.Ordinal);
-        Assert.Null(farContent);
-        Assert.Equal(DiagnosticCodes.ExportBodyFailed, farError?.Code);
     }
 
     // Item 1: a real has a point and the shortest form that reads back to the same double; minus zero is zero.
@@ -265,7 +316,7 @@ public sealed class StepExportTests : IDisposable
     }
 
     // Item 4: GET /export/step gives the bytes of the writer as model/step, and a body that the export does not write
-    // gives 422 with the envelope.
+    // gives 422 with the envelope. Since K6b a void is written, so a body with a fault is the body that is refused.
     [NativeManifoldFact]
     public async Task The_Route_Gives_The_File_And_422_For_A_Body_It_Does_Not_Write()
     {
@@ -277,9 +328,14 @@ public sealed class StepExportTests : IDisposable
         using var file = await http.GetAsync(app.Urls.First() + "/export/step");
         var expected = (await host.Session.ReadGeometry((document, _) => StepExport.Write(document))).Content;
 
-        var outer = await Body(host.Session, new CreateBoxCommand { SizeX = 10, SizeY = 10, SizeZ = 10 });
-        var inner = await Body(host.Session, new CreateBoxCommand { SizeX = 2, SizeY = 2, SizeZ = 2 });
-        await Body(host.Session, new SubtractCommand { MinuendBodyId = outer, SubtrahendBodyId = inner });
+        var sketch = await Output(host.Session, new CreateSketchCommand { DatumId = Datums.XY.Id }, "sketchId");
+        var points = new List<Guid>();
+        foreach (var (x, y) in new[] { (1.0, 2.0), (11.0, 2.0), (11.0, 8.0), (1.0, 8.0) })
+            points.Add(await Output(host.Session, new AddSketchPointCommand { SketchId = sketch, X = x, Y = y }, "pointId"));
+        for (var i = 0; i < points.Count; i++)
+            await Output(host.Session, new AddSketchLineCommand { SketchId = sketch, StartPointId = points[i], EndPointId = points[(i + 1) % points.Count] }, "lineId");
+        await Body(host.Session, new ExtrudeCommand { SketchId = sketch, Distance = 3 });
+        await host.Session.Apply(new MoveSketchPointCommand { SketchId = sketch, PointId = points[1], X = 5, Y = 12 });
         using var refused = await http.GetAsync(app.Urls.First() + "/export/step");
 
         Assert.Equal(HttpStatusCode.OK, file.StatusCode);
