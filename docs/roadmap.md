@@ -182,6 +182,7 @@ Therefore each approved objective must have a track here.
 - P0.86 — The window keeps no input between sessions, the hook has the cases of one axis, and the next forms of three gates fail. v0.206, TASK-0198.
 - R14e1 — The drawing code of the desktop becomes a library that an Android program can reference. v0.207, TASK-0222, ADR-0072.
 - Review — The codebase review of 2026-11-06 (b). v0.208, TASK-0223.
+- R14e2 — The Android program builds an APK that draws a document of its own session. v0.209, TASK-0226, ADR-0072.
 
 ## Track 0 — Foundations
 

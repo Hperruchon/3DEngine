@@ -8,7 +8,8 @@ namespace ThreeDEngine.ImageTests;
 // throw, by contract; a new sink of the desktop must enter this list with a test that it does not.
 public class DesktopSinkContractTests
 {
-    private static readonly Type[] TestedSinks = [];
+    // Phase R14e2 (TASK-0226): the sink of the local session of the phone; LocalSessionHostTests holds its test.
+    private static readonly Type[] TestedSinks = [typeof(ThreeDEngine.Desktop.FanOutSink)];
 
     [Fact]
     public void Each_Sink_Of_The_Desktop_Has_A_Test_That_It_Does_Not_Throw()

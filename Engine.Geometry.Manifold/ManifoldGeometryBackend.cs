@@ -88,8 +88,9 @@ public sealed class ManifoldGeometryBackend
     // others). The host adds the code E-GEOM-BACKEND-INIT.
     public static string UnavailableReason() => UnavailableReason(RuntimeInformation.RuntimeIdentifier);
 
-    // The platforms of the folder runtimes of the package Engine.Geometry.Manifold.Native 3.5.2.1.
-    internal static readonly string[] PackagedPlatforms = ["win-x64", "linux-x64", "osx-arm64"];
+    // The platforms of the folder runtimes of the package Engine.Geometry.Manifold.Native 3.5.2.2. Phase R14d (ADR-0061
+    // item 7, TASK-0196) added android-arm64 and android-x64; TASK-0226 adopted the package.
+    internal static readonly string[] PackagedPlatforms = ["win-x64", "linux-x64", "osx-arm64", "android-arm64", "android-x64"];
 
     // Finding E38 of the codebase review of 2026-10-08 (TASK-0138): on win-x64 the sentence said that
     // the package holds win-x64, which tells nothing. A platform of the package and a platform with no
@@ -100,7 +101,7 @@ public sealed class ManifoldGeometryBackend
          + (PackagedPlatforms.Contains(platform)
              ? $"The native package holds {platform}, so the file is not in the folder of the program, "
                + "or the system cannot load it. "
-             : "The native package holds the platforms win-x64, linux-x64 and osx-arm64 only. ")
+             : "The native package holds the platforms win-x64, linux-x64, osx-arm64, android-arm64 and android-x64 only. ")
          + "The managed backend holds boxes only and cannot move or cut a solid, therefore the host "
          + "does not start with it.";
 
