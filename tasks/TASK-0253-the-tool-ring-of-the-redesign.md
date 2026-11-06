@@ -1,7 +1,7 @@
 ---
 id: 0253
 title: The tools of the selected body are the segments of a ring that follows it
-status: Active
+status: Done
 phase: R16b2
 opened: 2026-11-06
 depends-on: [0248, 0250]
@@ -55,25 +55,26 @@ gives the tool.
 
 ## Acceptance criteria
 
-- [ ] The ring of a landscape display is around the body, and each segment is at least 44 pixels deep and 54 across.
-- [ ] The ring of a portrait display is in the lower right corner.
-- [ ] A tap and a click on a segment give its tool, and the inside of the ring is the scene.
-- [ ] With no centre or with a pad open, no ring shows.
-- [ ] A picture of the ring on the GPU is kept for the owner.
+- [x] The ring of a landscape display is around the body, and each segment is at least 44 pixels deep and 54 across.
+- [x] The ring of a portrait display is in the lower right corner.
+- [x] A tap and a click on a segment give its tool, and the inside of the ring is the scene.
+- [x] With no centre or with a pad open, no ring shows.
+- [x] A picture of the ring on the GPU is kept for the owner.
 
 ## Outcome
 
-Status: Active
+Status: Done · commit (the merge of the branch redesign-b2-ring) · v0.236
 
 ## Method
 
 Mechanical: the segments as quads on the background list, and a hit test in polar coordinates.
 Judgement:  the tools on the ring (Q1 A) and the buttons that stay (Q2 A); the inner radius that keeps the ring outside
             the body on the screen.
-Weakest:    to be written at the close.
+Weakest:    no person used the ring on a display or on the phone; a body that fills the display lies under the ring.
 
 ## Progress
 
 - 2026-11-06: the ring, five tests with no GPU and one image test. The first picture showed a segment filled as one
   convex path, which a ring segment is not; the segments are now rows of quads. The first ring lay over a body that was
   large on the screen; the inner radius now takes the size of the body.
+- 2026-11-06: run 42304302535 passed. Closed at v0.236.
