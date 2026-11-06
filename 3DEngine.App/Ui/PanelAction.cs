@@ -86,7 +86,9 @@ internal sealed record SketchOnSelectedFaceAction : PanelAction;
 
 // ADR-0075 item 3: the selected face for the panel and the scene: its line, whether a sketch can start on it (a curved
 // face has no one plane), and its outline in pixels of the window.
-internal sealed record FaceLine(string Text, bool CanSketch, IReadOnlyList<(System.Numerics.Vector2 A, System.Numerics.Vector2 B)> Outline);
+// ADR-0077 item 4 (phase R12b, TASK-0245): the text and the segments of the selected edge, or null.
+internal sealed record FaceLine(string Text, bool CanSketch, IReadOnlyList<(System.Numerics.Vector2 A, System.Numerics.Vector2 B)> Outline,
+    string? EdgeText = null, IReadOnlyList<(System.Numerics.Vector2 A, System.Numerics.Vector2 B)>? Edge = null);
 
 // The line of the document file in the panel: the name of the file, or null for an
 // unsaved document, and the result of the last save or open. Finding V99 of the codebase review of 2026-11-06 (c)

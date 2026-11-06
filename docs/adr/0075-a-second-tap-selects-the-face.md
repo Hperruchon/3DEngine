@@ -1,13 +1,13 @@
 ---
 id: 0075
 title: A second tap on the selected body selects the face under the point
-status: Accepted
+status: Amended
 topic: Clients, selection
 date: 2026-11-06
 supersedes: []
 superseded-by: []
 amends: ['0029']
-amended-by: []
+amended-by: ['0077']
 affects:
   - Engine.Core/Queries/GetFacesQuery.cs
   - Engine.Core/Queries/GetFacesQueryHandler.cs
@@ -119,3 +119,4 @@ The standing order of 2026-11-05 gives A for each question.
 - 2026-11-06 · TASK-0243 · Item 2: only the key Escape (`CancelIntent.ByKey`) goes back from the face, and a lost pointer
   keeps it; item 3: the outline follows a drag of the gizmo, and the entry comes again only for a new geometry key. The
   affects field names the six files of items 2 and 3 (finding V111).
+- 2026-11-06 · TASK-0245 · ADR-0077 amends item 2: a tap on the selected face near one of its edges selects the edge.
