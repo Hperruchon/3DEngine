@@ -1,7 +1,7 @@
 ---
 id: 0249
 title: The codebase review of 2026-11-06 (e) is a record
-status: Active
+status: Done
 phase: governance
 opened: 2026-11-06
 depends-on: [0248]
@@ -67,12 +67,12 @@ new finding.
 
 ## Acceptance criteria
 
-- [ ] `CodebaseReviewGateTests` passes with the new review.
-- [ ] Continuous integration passes on the three runners, on the branch and on `main` after the merge.
+- [x] `CodebaseReviewGateTests` passes with the new review.
+- [x] Continuous integration passes on the three runners, on the branch and on `main` after the merge.
 
 ## Outcome
 
-Status: Active
+Status: Done · commit (the merge of the branch codebase-review-2026-11-06-e) · v0.234
 
 ## Method
 
@@ -80,9 +80,10 @@ Mechanical: the measures with the methods of the last review, and the line of ea
             it cites and the changes since `3379675`.
 Judgement:  V112 is high, because a new start of the activity during a session closes the program for each later start
             in its process, where the process ended before P0.99 and the next start worked.
-Weakest:    to be written at the close.
+Weakest:    V112 comes from the files of the package and the code, and no device ran a new start during a session.
 
 ## Progress
 
 - 2026-11-06: two review agents at `4667e4b`; 1 new high and 14 new low findings; the review written. I read the code of
   V112 (`Window` has no `Dispose`) and checked the run of T160 with the public API.
+- 2026-11-06: closed at v0.234.
