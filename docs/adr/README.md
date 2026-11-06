@@ -81,6 +81,7 @@ names. Do not read all of them.
 | [0073](0073-the-phone-cuts-and-keeps-its-document.md) | The person cuts a body in the panel, and the phone keeps its document through the background | Accepted | Clients, platform | — | — |
 | [0074](0074-the-probe-of-determinism-is-in-the-engine.md) | The probe of the determinism hash is a part of the engine, and the phone runs it | Accepted | Determinism, platform | — | — |
 | [0075](0075-a-second-tap-selects-the-face.md) | A second tap on the selected body selects the face under the point | Accepted | Clients, selection | 0029 | — |
+| [0076](0076-the-cylinder.md) | The cylinder is a primitive of plane facets | Accepted | Geometry, kernel | — | — |
 
 ## Topics
 
@@ -89,7 +90,7 @@ names. Do not read all of them.
 - **Workflow** — 0002. Read before adding a client or skipping CLI.
 - **Clients** — 0002, 0007, 0019, 0024, 0026, 0027, 0029, 0030, 0032, 0034, 0060, 0061, 0072. Read before changing UI/CLI/host code.
 - **Deployment** — 0004, 0019, 0030, 0061. Read these before changing where a session runs or which transport a host uses.
-- **Geometry** — 0001, 0012, 0014, 0018, 0021, 0028. Read before adding a capability or backend.
+- **Geometry** — 0001, 0012, 0014, 0018, 0021, 0028, 0076. Read before adding a capability or backend.
 - **Observability** — 0005, 0010, 0013, 0020, 0021. Read before changing event ordering, retention, subscription, or schema endpoints.
 - **Rendering** — 0009, 0017, 0018, 0022, 0023, 0024, 0025, 0026, 0027, 0029, 0061, 0072. Read these before changing `3DEngine.Core`, `3DEngine.Vulkan`, `3DEngine.App` or `3DEngine`.
 
