@@ -9,4 +9,4 @@
 # package_version must be new for each rebuild, because each computer keeps an
 # extracted package in its NuGet cache by its version.
 manifold_ref=v3.5.2
-package_version=3.5.2.1
+package_version=3.5.2.2
