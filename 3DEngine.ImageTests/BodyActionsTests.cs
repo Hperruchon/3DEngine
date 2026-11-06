@@ -223,6 +223,23 @@ public class BodyActionsTests
         Assert.Equal((box, 5.0, 0.0, -2.0), (translate.BodyId, translate.Dx, translate.Dy, translate.Dz));
     }
 
+    // Phase K5b (ADR-0076, TASK-0244): the numbers of the pad become one CreateCylinder, and a size that is not greater
+    // than zero gives its code for the pad.
+    [Fact]
+    public async Task The_Pad_Creates_A_Cylinder_And_A_Rejection_Gives_Its_Code()
+    {
+        using var host = new EngineHost(new ManifoldGeometryBackend());
+        var actions = new BodyActions(host.Session);
+
+        Assert.Null(actions.CreateCylinder(5, 2 * Math.PI));
+        Assert.StartsWith("E-GEOM-INVALID-PARAM: ", actions.CreateCylinder(0, 1), StringComparison.Ordinal);
+
+        var body = Assert.Single(await Live(host));
+        Assert.Equal("Cylinder", body.Kind);
+        var create = await host.Session.Read((document, _) => (CreateCylinderCommand)Assert.Single(document.Log).Command);
+        Assert.Equal((5.0, 2 * Math.PI), (create.Radius, create.Height));
+    }
+
     // ADR-0032 item 8: a rejection gives its code for the pad, and the selection stays.
     [Fact]
     public async Task A_Rejected_Pad_Command_Gives_Its_Code()

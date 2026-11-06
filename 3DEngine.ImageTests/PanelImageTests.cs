@@ -120,11 +120,17 @@ public class PanelImageTests
 
             for (var frame = 0; frame < 2; frame++)
                 ui.Frame(1f / 60f, display, Vector2.One, renderer.LiveBodies);
-            var button = ui.ItemRectangle(DesktopUi.NewBoxLabel)!.Value;
-            var (x, y) = ((button.X + button.Z) / 2, (button.Y + button.W) / 2);
-            foreach (var phase in new[] { PointerPhase.Down, PointerPhase.Up })
+            // Phase K5b (TASK-0244): the list "New", and then its entry Box.
+            foreach (var item in new[] { DesktopUi.NewLabel, DesktopUi.NewBoxLabel })
             {
-                ui.Route([new PointerSample(DeviceKind.Mouse, 1, 0, x, y, 1, PointerButtons.Left, KeyModifiers.None, phase, 0)]);
+                var button = ui.ItemRectangle(item)!.Value;
+                var (x, y) = ((button.X + button.Z) / 2, (button.Y + button.W) / 2);
+                foreach (var phase in new[] { PointerPhase.Down, PointerPhase.Up })
+                {
+                    ui.Route([new PointerSample(DeviceKind.Mouse, 1, 0, x, y, 1, PointerButtons.Left, KeyModifiers.None, phase, 0)]);
+                    ui.Frame(1f / 60f, display, Vector2.One, renderer.LiveBodies);
+                }
+
                 ui.Frame(1f / 60f, display, Vector2.One, renderer.LiveBodies);
             }
 
