@@ -71,3 +71,4 @@ The standing order of 2026-11-05 gives A for each question.
 ## History
 
 - 2026-11-06 · TASK-0247 · The record, Accepted under the standing order.
+- 2026-11-06 · TASK-0247 · Shipped at v0.231.

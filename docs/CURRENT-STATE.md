@@ -6926,3 +6926,30 @@ the close of P0.97, before its merge, gave `1c56cbdd...30ba` on Ubuntu, Windows,
 New tests: 6. The test list holds 1963 (1384 in `Engine.Tests`, 337 in `3DEngine.Tests`, 239 in `3DEngine.ImageTests`, 3
 in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
 entries: 15 of 15. New diagnostic codes: 0. Since the review of v0.223, 2 product milestones and 7 entries followed it.
+
+## v0.231 — The activity of the phone may start again in its process (P0.99, TASK-0247)
+
+The emulator job failed in about a third of its runs with no line of the program (V105). Run 42289169473 gave the cause
+with the lines of P0.98: Android created the activity again in its process, and SDL ended the process with the code 0.
+A phone can do the same, so the program closed with no message.
+
+**The change.** ADR-0079 is new and Accepted under the standing order of 2026-11-05, which gave A for its two questions;
+it amends ADR-0073 item 3.
+- `MainActivity.OnCreate` sets the hint `SDL_ANDROID_ALLOW_RECREATE_ACTIVITY` to 1 after `SDLActivity` loaded SDL, and
+  writes "a new start of the activity goes on". A later create in the same process finds the hint set.
+- `ConfigurationChanges` names the weight of the font and the grammatical gender too.
+- The smoke test fails when the hint is refused.
+
+**Proof.** The APK builds with zero warnings. Runs 42292342902 and 42293786790 passed on each job, and the program wrote the
+line of the hint before its start line.
+
+**What stays.** No run of this branch had a new start of the activity, so the hint is proven to be set, not yet to keep
+a new start on the screen. A session that runs when the activity starts again ends, and its document is lost, because
+the phone has no file of its document.
+
+**A correction.** The run of `main` at v0.229 (42291677527) failed in the emulator job, with the code of v0.229, which does
+not hold this change.
+
+New tests: 0. The test list holds 1963 (1384 in `Engine.Tests`, 337 in `3DEngine.Tests`, 239 in `3DEngine.ImageTests`, 3
+in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
+entries: 15 of 15. New diagnostic codes: 0. Since the review of v0.223, 2 product milestones and 8 entries followed it.
