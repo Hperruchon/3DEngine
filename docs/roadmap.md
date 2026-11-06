@@ -386,6 +386,7 @@ The first objective. Each phase ends with something that a person can observe.
 | R16a | The theme "Proposed (harmonized)" of the brief: the colours of the panels, the clear of the scene, the colours of the marks and a casing under each mark, with no change of layout (ADR-0078). TASK-0246. | 1 |
 | R16b1 | The fixed controls of the redesign: the title of the document in the title bar of the panel, Undo and Redo as round anchors at the bottom left, and the status line on their row (ADR-0080). TASK-0248. | 1 |
 | R16b2 | The tool ring of the redesign: the tools of the selected body that need no text are segments of a ring next to it on a landscape display, and under the thumb on a portrait display (ADR-0081). TASK-0253. | 2 |
+| R16c | The values on the edges of the redesign: the values of a selected extrude that a command changes sit on the edges that they measure, and a tap opens the pad of the value (ADR-0082). TASK-0254. | 2 |
 
 ## Track K — The kernel
 

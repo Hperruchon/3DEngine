@@ -332,6 +332,9 @@ public sealed class NativeThreeDEngine : IThreeDEngine, IDisposable
                 case SetDistanceAction setDistance:
                     _ui.EndPad(_actions.SetDistance(setDistance.Body, setDistance.Distance));
                     break;
+                case SetBodyValueAction bodyValue when _sketchActions is not null:
+                    _ui.EndPad(_sketchActions.SetValueOf(bodyValue.Sketch, bodyValue.Constraint, bodyValue.Value));
+                    break;
                 case PlaceImageAction place:
                     _imageActions?.Place(place.Path, place.Datum);
                     break;
@@ -617,7 +620,17 @@ public sealed class NativeThreeDEngine : IThreeDEngine, IDisposable
                 ringSize = Vector2.Distance(diagonal.A, diagonal.B) / 2f;
         }
 
-        var panel = _ui.Frame((float)_delta.TotalSeconds, display, scale, _renderer.LiveBodies, Selection, LineOf(_document, _host.FileName, _documentMessage), sketches, sketchPanel, imagePanel, dimensions, size, faceLine, ringCentre, ringSize, Inset(_window.SafeInsets));
+        // ADR-0082 (TASK-0254): the values of the selected extrude on its edges, with no drag of the gizmo and no fault.
+        IReadOnlyList<EdgeValues.Value>? values = null;
+        if (_actions is not null && _gizmo.Active is null && Selection is { } valueBody
+            && _renderer.LiveBodies.FirstOrDefault(body => body.Id == valueBody) is { Kind: "Extrude", Fault: null })
+        {
+            var key = _renderer.KeyOf(valueBody);
+            values = EdgeValues.Of(valueBody, _actions.DistanceOf(valueBody, key), _actions.Edges(key), _sketches?.Live ?? [],
+                Camera, window.width, window.height, _host.Session.LengthUnit);
+        }
+
+        var panel = _ui.Frame((float)_delta.TotalSeconds, display, scale, _renderer.LiveBodies, Selection, LineOf(_document, _host.FileName, _documentMessage), sketches, sketchPanel, imagePanel, dimensions, size, faceLine, ringCentre, ringSize, Inset(_window.SafeInsets), values);
         ApplyPanel(_renderer.LiveBodies);
 
         var ui = _uiRenderer;
