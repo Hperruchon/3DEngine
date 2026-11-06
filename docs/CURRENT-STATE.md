@@ -7009,3 +7009,31 @@ file of ADR-0030 with a wrong name. The branch `redesign-b1-fixed-b` holds the c
 New tests: 2. The test list holds 1967 (1384 in `Engine.Tests`, 337 in `3DEngine.Tests`, 243 in `3DEngine.ImageTests`, 3
 in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
 entries: 15 of 15. New diagnostic codes: 0. Since the review of v0.223, 4 product milestones and 10 entries followed it.
+
+## v0.234 — The codebase review of 2026-11-06 (e) (governance, TASK-0249)
+
+The review of 2026-11-06 (d) examined v0.223. After it came 4 product milestones (K5b, R12b, R16a and R16b1) and 10
+ledger entries, and the next product milestone would be the fifth, so this review is due before it.
+
+**The change.** `docs/reviews/2026-11-06-e-codebase-review.md`, at `4667e4b` (v0.233). Two review agents worked there,
+each one in its own worktree. One new finding is high: with the hint of P0.99, a new start of the activity during a
+session runs `PhoneHost.Run` again in its process, and `Window` has no `Dispose`, so the second run cannot make its
+window (V112). No new finding is medium. Fourteen are low: E164 to E166, V113 to V118 and T160 to T164. TASK-0250
+(P0.100) holds V112 before the next product phase; TASK-0251 (P0.101) and TASK-0252 (P0.102) hold the others after it.
+
+**Proof.** `CodebaseReviewGateTests` passes with the new review.
+
+**What stays.** T143 stays open for the owner. The open findings are 0 critical, 5 high, 14 medium and 33 low.
+
+**A correction.**
+- T160: the run of `main` at v0.225 (42280512471) failed in the emulator job, and no entry named it; the session pushed
+  the next branch before it read that run. So the failure that v0.227 calls the ninth is the tenth, the one that v0.228
+  calls the eleventh is the twelfth, and "3 of the 4 runs before it" in v0.228 is 2 of 4.
+- The merge of v0.233 came before the run of `main` at v0.232 ended; that run (42298165211) then passed on each job.
+- V112: ADR-0079 and the entry v0.231 say that the program no longer closes when Android starts its activity again;
+  that holds for a new start before a session, not during one. V113: the entry v0.228 says that the kept entry of a face
+  has the face in its key; the key is the body and the geometry key.
+
+New tests: 0. The test list holds 1967 (1384 in `Engine.Tests`, 337 in `3DEngine.Tests`, 243 in `3DEngine.ImageTests`, 3
+in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
+entries: 15 of 15. New diagnostic codes: 0. Since the review of v0.233, 0 product milestones and 1 entry followed it.
