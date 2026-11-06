@@ -141,26 +141,56 @@ public static class Cli
     //
     //   engine export stl <document.3de> <file.stl>     { file, triangles, warnings }
     //   engine export step <document.3de> <file.step>   { file, bodies, warnings }
-    // True when the two paths name one file: the full paths, after a symbolic link, with no case on Windows and macOS. A
-    // hard link to the document is a second name that this test does not see.
-    private static bool SameFile(string first, string second)
+    // True when the two paths name one file: the full paths after the link of each of their parts, with no case on
+    // Windows and macOS. A hard link to the document is a second name that this test does not see.
+    // The review of Codex of v0.200 (TASK-0221): finding 1, a link of a parent folder passed the compare, because only a
+    // link of the last part was resolved; finding 2, a path that GetFullPath refuses threw out of Cli.Run. A path of the
+    // export that is not valid gives its reason; a path of the document that is not valid is not the same file, so the
+    // read gives its own error.
+    private static bool SameFile(string document, string file, out string? invalid)
     {
-        if (string.IsNullOrWhiteSpace(second))
+        invalid = null;
+        if (string.IsNullOrWhiteSpace(file))
             return false;
-        static string Resolve(string path)
+        string target;
+        try
         {
-            var full = Path.GetFullPath(path);
-            try
-            {
-                return File.Exists(full) && new FileInfo(full).ResolveLinkTarget(returnFinalTarget: true) is { } target ? target.FullName : full;
-            }
-            catch (IOException)
-            {
-                return full;
-            }
+            target = Resolve(file);
+        }
+        catch (Exception ex) when (ex is ArgumentException or NotSupportedException or IOException or UnauthorizedAccessException)
+        {
+            invalid = ex.Message;
+            return false;
         }
 
-        return string.Equals(Resolve(first), Resolve(second), OperatingSystem.IsLinux() ? StringComparison.Ordinal : StringComparison.OrdinalIgnoreCase);
+        try
+        {
+            return string.Equals(Resolve(document), target, OperatingSystem.IsLinux() ? StringComparison.Ordinal : StringComparison.OrdinalIgnoreCase);
+        }
+        catch (Exception ex) when (ex is ArgumentException or NotSupportedException or IOException or UnauthorizedAccessException)
+        {
+            return false;
+        }
+    }
+
+    // The full path after the link of each part, from the root: a symbolic link, or a junction on Windows. A target that
+    // holds a link in one of its folders resolves again, at most 32 times.
+    private static string Resolve(string path, int depth = 0)
+    {
+        if (depth > 32)
+            throw new IOException($"The path {path} holds too many links.");
+        var full = Path.GetFullPath(path);
+        var root = Path.GetPathRoot(full) ?? "";
+        var current = root;
+        foreach (var part in full[root.Length..].Split([Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar], StringSplitOptions.RemoveEmptyEntries))
+        {
+            current = Path.Combine(current, part);
+            FileSystemInfo entry = Directory.Exists(current) ? new DirectoryInfo(current) : new FileInfo(current);
+            if (entry.Exists && entry.LinkTarget is not null && entry.ResolveLinkTarget(returnFinalTarget: true) is { } target)
+                current = Resolve(target.FullName, depth + 1);
+        }
+
+        return current;
     }
 
     private static async Task<int> Export(string[] args, TextWriter stdout, TextWriter stderr, CancellationToken ct, BackendOptions backend)
@@ -174,7 +204,11 @@ public static class Cli
 
         // The review of Codex of v0.198, finding 1 (TASK-0220): the read holds no journal, so an export onto its own
         // document file wrote the STL or STEP bytes over the document, and the document no longer opened.
-        if (SameFile(document, file))
+        var same = SameFile(document, file, out var invalid);
+        if (invalid is not null)
+            return ExportFailure(stdout, new ErrorDetail(DiagnosticCodes.ExportWriteFailed,
+                $"The path of the {(step ? "STEP" : "STL")} file {file} is not valid: {invalid}"));
+        if (same)
             return ExportFailure(stdout, new ErrorDetail(DiagnosticCodes.ExportWriteFailed,
                 $"The {(step ? "STEP" : "STL")} file {file} is the document file {document}, and an export does not write over its document."));
 

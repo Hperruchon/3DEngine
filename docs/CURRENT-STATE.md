@@ -6115,3 +6115,29 @@ New tests: 10 (8 in `Engine.Tests`, 2 in `3DEngine.ImageTests`). The test list h
 `3DEngine.Tests`, 200 in `3DEngine.ImageTests`, 3 in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental`
 gives zero errors and zero warnings. Open entries: 15 of 15. New diagnostic codes: 0. Since the review of v0.198, 3
 product milestones and 6 entries followed it.
+
+## v0.205 — An export of the command line resolves a link of each folder of its paths (P0.88, TASK-0221)
+
+The review of Codex of the merge of v0.200 gives two findings on the compare of P0.87. Finding 1, high: when the folder
+`alias` is a link to the folder `models`, `engine export step models/part.3de alias/part.3de` wrote over the document,
+because the compare resolved a link of the last part of a path only. Finding 2, medium: a path of the export with a NUL
+character threw `ArgumentException` out of `Cli.Run`, because the compare called `Path.GetFullPath` before the handler
+of the export. The order 2 of the owner makes a confirmed high finding a correction task before the next product
+phase, R14e. Finding 2 is in the same lines, so this task corrects it too.
+
+**The change.** `Cli.Resolve` walks the parts of a full path from its root and resolves the link of each part, a
+symbolic link or a junction of Windows. A path of the export that `Path.GetFullPath` refuses gives
+`E-EXPORT-WRITE-FAILED`; a path of the document that is not valid gives the error of the read, as before.
+
+**Proof.** `StlExportTests.An_Export_Onto_Its_Document_Through_A_Link_Of_A_Folder_Is_Refused` makes a junction on
+Windows and a symbolic link on Linux and macOS; `A_Path_Of_The_Export_That_Is_Not_Valid_Gives_Its_Code` passes a NUL
+character. For STL and STEP each one failed before the change and passes after it, and the bytes of the document stay.
+
+**What stays.** A hard link and a short name of Windows (8.3) are second names that a compare of paths does not see.
+
+**A correction.** The ledger entry of v0.200 said that the compare followed "a symbolic link"; it followed only a link
+of the last part of a path.
+
+New tests: 4. The test list holds 1846 (1323 in `Engine.Tests`, 320 in `3DEngine.Tests`, 200 in `3DEngine.ImageTests`,
+3 in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
+entries: 15 of 15. New diagnostic codes: 0. Since the review of v0.198, 3 product milestones and 7 entries followed it.
