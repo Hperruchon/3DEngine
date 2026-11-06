@@ -83,6 +83,7 @@ names. Do not read all of them.
 | [0075](0075-a-second-tap-selects-the-face.md) | A second tap on the selected body selects the face under the point | Amended | Clients, selection | 0029 | 0077 |
 | [0076](0076-the-cylinder.md) | The cylinder is a primitive of plane facets | Accepted | Geometry, kernel | 0032 | — |
 | [0077](0077-a-tap-near-an-edge-selects-the-edge.md) | An edge is named by its two faces, and a tap near an edge of the selected face selects it | Accepted | Clients, selection, kernel | 0075 | — |
+| [0078](0078-the-theme-of-the-redesign.md) | The desktop and the phone take the theme "Proposed (harmonized)" of the redesign | Accepted | Clients, rendering | — | — |
 | [0079](0079-the-activity-may-start-again.md) | The activity of the phone may start again in its process | Accepted | Clients, platform | 0073 | — |
 
 ## Topics
