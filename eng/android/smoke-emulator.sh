@@ -94,6 +94,15 @@ if [ "$started" != 1 ]; then
     | tail -n 3 | while IFS= read -r line; do echo "::warning title=Android log::${line:0:300}"; done || true
   fail "the program did not write its line of the start in 120 seconds"
 fi
+# P0.104 (TASK-0256): in runs 42308415060, 42310351172 and 42313242154 Android destroyed the activity about one second after
+# its create and created it again, and no line said why. When the activity is destroyed, the lines of Android about a
+# relaunch and a change of the configuration, and the lines of each session after its start, are warnings.
+if grep -q "3DEngine: the activity is destroyed" "$report"; then
+  grep -E "Config changes|configChanges|[Rr]elaunch|ActivityTaskManager: .*threedengine" "$report" | head -n 4 \
+    | while IFS= read -r line; do echo "::warning title=Relaunch::${line:0:300}"; done || true
+  grep "3DEngine:" "$report" | grep -v "3DEngine: determinism-line \|3DEngine: | " | tail -n 5 \
+    | while IFS= read -r line; do echo "::warning title=Last lines::${line:0:300}"; done || true
+fi
 # Finding T149 of the codebase review of 2026-11-06 (c) (TASK-0231): PhoneHost writes the line "ended" only for an
 # exception, and the line of the start comes before the session, the window and the engine. An exception after the start
 # passed the job. Now the line "ended", or a fatal exception of the process of the program, fails it.
