@@ -2,7 +2,8 @@
 # Phase R14f1 (ADR-0061 items 5 to 7, TASK-0228): the check of the APK of the phone. The APK holds the ABIs arm64-v8a
 # and x86_64 only, so no file of 32-bit x86 (CLAUDE.md, determinism rule 5), and each ABI holds the native libraries of
 # SDL, cimgui and Manifold. The checksum of each library of cimgui and Manifold is a row of THIRD-PARTY-NOTICES.md, so the
-# APK holds the bytes of the packages of R14d and no other library of the same name.
+# APK holds the bytes of the packages of R14d and no other library of the same name. Each ABI holds the assemblies of
+# the program (TASK-0229).
 # Usage: eng/android/check-apk.sh <file.apk>
 set -euo pipefail
 
@@ -33,6 +34,16 @@ for abi in arm64-v8a x86_64; do
     echo "lib/$abi/$library $sum"
     if [ "$library" != libSDL3.so ] && ! grep -q "\`$sum\`" "$notices"; then
       echo "::error title=APK::lib/$abi/$library has the checksum $sum, which THIRD-PARTY-NOTICES.md does not record"
+      failed=1
+    fi
+  done
+done
+# Phase R14f2 (TASK-0229): the APK holds the assemblies of the program for each ABI. A Debug build left them out for the
+# fast deployment of an IDE, and the APK of R14e2 to R14f1 could not start on a phone.
+for abi in arm64-v8a x86_64; do
+  for assembly in 3DEngine.Android 3DEngine.App 3DEngine.Vulkan 3DEngine.Core Engine.Core Engine.Contracts Engine.Kernel Engine.Geometry.Manifold ImGui.NET SDL3-CS Vortice.Vulkan; do
+    if [ ! -f "$work/lib/$abi/lib_$assembly.dll.so" ]; then
+      echo "::error title=APK::the assembly $assembly is absent for $abi"
       failed=1
     fi
   done
