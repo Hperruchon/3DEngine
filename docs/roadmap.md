@@ -378,6 +378,7 @@ The first objective. Each phase ends with something that a person can observe.
 | R16 | The redesign of the desktop and of the phone, from the designer brief of 2026-11-05 (the "mix" direction): the theme and the fonts, then the layout slice by slice, with no change of the contract (the owner, 2026-11-06, evening). | 20–40 |
 | R16a | The theme "Proposed (harmonized)" of the brief: the colours of the panels, the clear of the scene, the colours of the marks and a casing under each mark, with no change of layout (ADR-0078). TASK-0246. | 1 |
 | R16b1 | The fixed controls of the redesign: the title of the document in the title bar of the panel, Undo and Redo as round anchors at the bottom left, and the status line on their row (ADR-0080). TASK-0248. | 1 |
+| R16b2 | The tool ring of the redesign: the tools of the selected body that need no text are segments of a ring next to it on a landscape display, and under the thumb on a portrait display (ADR-0081). TASK-0253. | 2 |
 
 ## Track K — The kernel
 
