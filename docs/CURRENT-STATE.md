@@ -6754,3 +6754,32 @@ write-set job on a merge commit with no task, which a rebase to the branch `k5a-
 New tests: 0. The test list holds 1944 (1376 in `Engine.Tests`, 335 in `3DEngine.Tests`, 230 in `3DEngine.ImageTests`, 3
 in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
 entries: 15 of 15. New diagnostic codes: 0. Since the review of v0.223, 0 product milestones and 2 entries followed it.
+
+## v0.226 — A save to a new name keeps a handle on the document at each moment (P0.96, TASK-0241)
+
+The codebase review of 2026-11-06 (d) found E162 (high), from the audit of Codex of the persistence: a save to a new
+name closed the file, moved it and opened it again, so for a moment no handle held the document. A second host could
+append a line in that moment; the next line of this journal then gave a version two times, and the document did not
+open. A high finding comes before the next product phase.
+
+**The change.** The standing order of 2026-11-05 answers Q1 of the review with A.
+- `DocumentJournal.MoveTo` makes the file at the new name with the share of a journal, copies each line into it, and
+  flushes it. Only then does it close and delete the old file. A handle holds the document at each moment.
+- A new name that does not open fails the save only: the journal stays whole at its old name, and the next command
+  goes there. Before, E84 broke the journal in that case. A delete of the old file that fails leaves that file.
+- ADR-0015 item 9 and its consequences say that a save copies the lines and deletes the old file.
+
+**Proof.** One new test counts the live handles of the journal through a save: the old `MoveTo` lets the count fall to
+zero, and the new one keeps one. The test of E84 now holds a save that fails with the journal whole. The old `MoveTo`
+fails both tests. Run 42280536874 passed.
+
+**What stays.** No test runs a second process against a save. On Linux and macOS the lock stays advisory. E163, a null
+required field, goes into TASK-0242.
+
+**A correction.** The merge of v0.225 came after run 42279267538 of the branch of the review, whose emulator job failed
+with the signature of V105, the eighth such failure; the three runners and the write set passed, and the change held
+documents only. The entry v0.225 does not say so.
+
+New tests: 1. The test list holds 1945 (1377 in `Engine.Tests`, 335 in `3DEngine.Tests`, 230 in `3DEngine.ImageTests`, 3
+in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
+entries: 15 of 15. New diagnostic codes: 0. Since the review of v0.223, 0 product milestones and 3 entries followed it.

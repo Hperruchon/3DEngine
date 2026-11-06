@@ -199,6 +199,7 @@ Therefore each approved objective must have a track here.
 - K5a — A command CreateCylinder makes a cylinder of 64 plane facets, with three face names. v0.223, TASK-0238, ADR-0076.
 - P0.95 — The smoke test of the emulator gives the exception of the program as public annotations. v0.224, TASK-0239.
 - Review — The codebase review of 2026-11-06 (d). v0.225, TASK-0240.
+- P0.96 — A save to a new name keeps a handle on the document at each moment. v0.226, TASK-0241.
 
 ## Track 0 — Foundations
 
