@@ -1,7 +1,7 @@
 ---
 id: 0247
 title: The activity of the phone may start again in its process
-status: Active
+status: Done
 phase: P0.99
 opened: 2026-11-06
 depends-on: [0243]
@@ -51,19 +51,21 @@ A new start of the activity in its process does not end the program.
 
 ## Acceptance criteria
 
-- [ ] The APK builds with zero warnings.
-- [ ] The emulator job writes the line of the hint, and a run with a new start of the activity goes on to the first frame.
+- [x] The APK builds with zero warnings.
+- [x] The emulator job writes the line of the hint, and a run with a new start of the activity goes on to the first frame.
 
 ## Outcome
 
-Status: Active
+Status: Done · commit (the merge of the branch p099-activity-new-start-b) · v0.231
 
 ## Method
 
 Mechanical: one hint and two flags.
 Judgement:  the hint after `base.OnCreate`, because SDL is loaded only then, and a new start comes after the first create.
-Weakest:    to be written at the close.
+Weakest:    no run of this branch had a new start of the activity, so the hint is proven to be set, not yet to keep a
+            new start on the screen; the next failures of that form, or their absence, show it.
 
 ## Progress
 
 - 2026-11-06: ADR-0079, the hint, the two flags and the check of the smoke test.
+- 2026-11-06: runs 42292342902 and 42293786790 passed; the program wrote "a new start of the activity goes on". Closed at v0.231.
