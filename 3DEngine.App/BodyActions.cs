@@ -1,8 +1,10 @@
 using Engine.Contracts;
+using Engine.Contracts.Sketch;
 using Engine.Core;
 using Engine.Core.Commands;
 using Engine.Core.Queries;
 using ThreeDEngine.Core.Input;
+using ThreeDEngine.Core.Picking;
 
 namespace ThreeDEngine.Desktop;
 
@@ -14,27 +16,59 @@ namespace ThreeDEngine.Desktop;
 // The desktop calls this on its render loop, outside each commit.
 internal sealed class BodyActions(DocumentSession session)
 {
-    // The selected body, or null.
-    public Guid? Selection { get; private set; }
+    private Guid? _selection;
 
-    // Selects a body, or none.
-    public void Select(Guid? body) => Selection = body;
+    // The selected body, or null. A change of the body clears the selected face (ADR-0075 item 2).
+    public Guid? Selection
+    {
+        get => _selection;
+        private set
+        {
+            if (_selection != value)
+                Face = null;
+            _selection = value;
+        }
+    }
+
+    // ADR-0075 item 2 (phase R12a, TASK-0236): the selected face of the selected body, by its name, or null.
+    public DatumReference? Face { get; private set; }
+
+    // Selects a body, or none. The row of a body in the panel gives the body, with no face.
+    public void Select(Guid? body)
+    {
+        Selection = body;
+        Face = null;
+    }
 
     // Applies an intent of the selection or of the visibility, with the pick of a point of the
     // window. It returns false for each other intent, which the host applies to the camera.
-    public bool Apply(Intent intent, Func<double, double, Guid?> pick, IReadOnlyList<LiveBody> live)
+    public bool Apply(Intent intent, Func<double, double, PickHit?> pick, IReadOnlyList<LiveBody> live)
     {
         ArgumentNullException.ThrowIfNull(pick);
         ArgumentNullException.ThrowIfNull(live);
 
         switch (intent)
         {
+            // ADR-0075 item 2: a tap on the selected body selects the face under the point, and a tap on another body or
+            // on no body selects that body or none. A tap on a part of the body that GetFaceAt does not name, as a curved
+            // side, gives the body again.
             case SelectIntent select:
-                Selection = pick(select.X, select.Y);
+            {
+                var hit = pick(select.X, select.Y);
+                if (hit is { } on && on.Id == Selection)
+                    Face = FaceAt(on);
+                else
+                    Selection = hit?.Id;
+                return true;
+            }
+
+            // The key Escape goes back from the face to its body.
+            case CancelIntent when Face is not null:
+                Face = null;
                 return true;
 
             case HideIntent hide:
-                var target = hide.X is { } x && hide.Y is { } y ? pick(x, y) : Selection;
+                var target = hide.X is { } x && hide.Y is { } y ? pick(x, y)?.Id : Selection;
                 if (target is { } body)
                     SetVisible(body, false);
                 return true;
@@ -102,6 +136,19 @@ internal sealed class BodyActions(DocumentSession session)
     // ADR-0049 items 7 and 8: the distance in effect of the extrude whose handle is the body, from
     // GetBodyInfo, or null for another body. A new distance from the pad: the body keeps its
     // handle, so the selection stays.
+    // The name of the face under a hit, from GetFaceAt (ADR-0053 item 1), or null.
+    private DatumReference? FaceAt(PickHit hit)
+        => session.Query<FaceInfo>(new GetFaceAtQuery
+        {
+            BodyId = hit.Id,
+            X = hit.Point.X,
+            Y = hit.Point.Y,
+            Z = hit.Point.Z,
+            Nx = hit.Normal.X,
+            Ny = hit.Normal.Y,
+            Nz = hit.Normal.Z,
+        }).GetAwaiter().GetResult().Result?.Reference;
+
     public double? Distance(Guid body)
         => session.Query<BodyInfo>(new GetBodyInfoQuery { BodyId = body }).GetAwaiter().GetResult().Result?.Distance;
 

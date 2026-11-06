@@ -5,7 +5,7 @@ status: Active
 phase: R12a
 opened: 2026-11-06
 depends-on: [0234]
-governed-by: [0004, 0016, 0018, 0028, 0033, 0037, 0058, 0060]
+governed-by: [0004, 0007, 0016, 0018, 0019, 0025, 0028, 0029, 0032, 0033, 0037, 0058, 0060, 0072, 0073]
 writes:
   create:
     - tasks/TASK-0236-a-second-tap-selects-the-face.md
@@ -14,6 +14,9 @@ writes:
     - Engine.Core/Queries/GetFacesQuery.cs
     - Engine.Core/Queries/GetFacesQueryHandler.cs
     - Engine.Tests/Features/GetFacesTests.cs
+    - 3DEngine.App/BodyActions.cs
+    - 3DEngine.App/NativeThreeDEngine.cs
+    - 3DEngine.ImageTests/BodyActionsTests.cs
     - docs/adr/README.md
     - docs/roadmap.md
     - docs/CURRENT-STATE.md
@@ -71,3 +74,5 @@ Weakest:    to be written at the close.
 
 - 2026-11-06: ADR-0075 is Proposed, with the options. Item 1: GetFaces gives the outline of each face name; two tests,
   and an injection that counts the edges inside a name fails the test of the curve. The gesture and the panel come next.
+- 2026-11-06: item 2, the gesture: a second tap on the selected body selects the face, Escape and the row give the
+  body. Two tests, one with a finger and a mouse; an injection that keeps the old select fails both.

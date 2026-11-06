@@ -11,6 +11,7 @@ amended-by: []
 affects:
   - Engine.Core/Queries/GetFacesQuery.cs
   - Engine.Core/Queries/GetFacesQueryHandler.cs
+  - 3DEngine.App/BodyActions.cs
 enforced-by: Engine.Tests/Features/GetFacesTests.cs
 ---
 
@@ -77,7 +78,13 @@ The standing order of 2026-11-05 gives A for each question. The items take effec
    B-Rep with exactly one face of the name, in the order of the edges of the B-Rep. An edge between two facets of a
    curve, or between two faces of one name, is inside the name. The schema version of the query stays 1: the field is
    new, and no field changes.
-2. **The gesture (Q1 A).** To be written with the change of the desktop.
+2. **The gesture (Q1 A).** `BodyActions` keeps the selected face of the selected body by its name, or none. A select
+   intent on the selected body asks `GetFaceAt` with the point and the normal of the hit, and selects that face; a
+   point that `GetFaceAt` does not name, as a curved side, gives the body with no face. A select intent on another body
+   or on no body selects that body or none, with no face. `CancelIntent`, the key Escape, goes back from the face to its
+   body; with no face it does nothing. The row of a body in the panel gives the body with no face. Each change of the
+   selected body clears the face. The pick of the desktop gives `PickHit`, with its point and its normal (ADR-0053
+   item 5). The face is a state of the client (ADR-0007): no command and no event names it.
 3. **The panel (Q3 A).** To be written with the change of the desktop.
 
 ## Consequences
@@ -91,3 +98,4 @@ The standing order of 2026-11-05 gives A for each question. The items take effec
 ## History
 
 - 2026-11-06 · TASK-0236 · The record, Proposed, with item 1 and its tests.
+- 2026-11-06 · TASK-0236 · Item 2, the gesture, with its tests.
