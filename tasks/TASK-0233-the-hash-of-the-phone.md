@@ -1,7 +1,7 @@
 ---
 id: 0233
 title: The pipeline compares the determinism hash of the phone with the hashes of the desktop runners
-status: Active
+status: Done
 phase: R14f3
 opened: 2026-11-06
 depends-on: [0230]
@@ -54,21 +54,22 @@ a difference fails the pipeline.
 
 ## Acceptance criteria
 
-- [ ] The hash of the desktop does not change with the move of the probe.
-- [ ] The job of the comparison gives one hash for the four platforms.
-- [ ] Continuous integration passes on the three runners, on the branch and on `main` after the merge.
+- [x] The hash of the desktop does not change with the move of the probe.
+- [x] The job of the comparison gives one hash for the four platforms.
+- [x] Continuous integration passes on the three runners, on the branch and on `main` after the merge.
 
 ## Outcome
 
-Status: Active
+Status: Done · commit (the merge of the branch r14f3-android-hash) · v0.216
 
 ## Method
 
 Mechanical: the move of the probe, and the hash file of the phone in the form of the files of the runners.
 Judgement:  the probe in `Engine.Core`, and not a copy in the program of the phone.
-Weakest:    to be written at the close.
+Weakest:    the emulator is x86-64; the hash of arm64, the ABI of the phone, has no run yet.
 
 ## Progress
 
 - 2026-11-06: ADR-0074 with options A, B and C; the standing order chose A. The probe moved; the hash file of the test is
   the same bytes before and after the move (59876e9f...). The APK builds with zero warnings.
+- 2026-11-06: run 42165619443 gave one hash for the four platforms, 59876e9fc860e451302d5c97e47af81db1f59b3d03ab65aeb0c546e9ef4ea4f1. Closed at v0.216.
