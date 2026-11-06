@@ -70,3 +70,6 @@ Weakest:    to be written at the close.
 - 2026-11-06: the APK of R14e3 holds 38 files and no assembly; with `EmbedAssembliesIntoApk` it holds 434 files, among
   them `lib_<assembly>.dll.so` for each assembly and each ABI. The check of the assemblies refuses the APK of R14e3 with
   22 errors (11 assemblies for each of 2 ABIs) and passes the new APK. The new APK builds with zero warnings.
+- 2026-11-06: the first run of the job of the emulator (42157609653) reached the limit of 40 minutes inside the smoke
+  test and showed no cause, because the waits had no limit. Each wait has a limit now, the start of the emulator is
+  checked, and a failure gives the last lines of the emulator as annotations.

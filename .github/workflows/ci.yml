@@ -290,9 +290,15 @@ jobs:
         run: |
           nohup "$ANDROID_HOME/emulator/emulator" -avd smoke -no-window -no-audio -no-boot-anim -no-snapshot -gpu swiftshader_indirect \
             > "$RUNNER_TEMP/emulator.log" 2>&1 &
+          sleep 20
+          # The second run of the job (TASK-0229): a start that fails gives its last lines as annotations.
+          if ! pgrep -f qemu-system > /dev/null; then
+            tail -n 12 "$RUNNER_TEMP/emulator.log" | while IFS= read -r line; do echo "::error title=Emulator::${line:0:300}"; done
+            exit 1
+          fi
 
       - name: Run the smoke test
-        run: bash eng/android/smoke-emulator.sh "$RUNNER_TEMP/apk/org.threedengine.phone-Signed.apk" "$RUNNER_TEMP/logcat.txt"
+        run: bash eng/android/smoke-emulator.sh "$RUNNER_TEMP/apk/org.threedengine.phone-Signed.apk" "$RUNNER_TEMP/logcat.txt" "$RUNNER_TEMP/emulator.log"
 
       - name: Keep the log of Android
         if: always()
