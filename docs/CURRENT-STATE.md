@@ -6002,3 +6002,29 @@ case until this entry.
 New tests: 2. The test list holds 1820 (1299 in `Engine.Tests`, 320 in `3DEngine.Tests`, 198 in `3DEngine.ImageTests`,
 3 in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
 entries: 14 of 15. New diagnostic codes: 0. Since the review of v0.198, 0 product milestones and 2 entries followed it.
+
+## v0.201 — A void inside a body leaves the engine as a BREP_WITH_VOIDS (K6b, TASK-0201)
+
+K6a refused a body with a void, and a `Subtract` of a box inside a box makes such a body. This is the second slice of
+K6, in the engine lane of the order of 2026-11-05; the main session merges it and writes this entry.
+
+**The change.** In `StepExport`, a shell with a negative volume is a void. The void belongs to the smallest outer shell
+that holds its first vertex, by the parity of an exact ray: eight fixed directions, and a ray that meets an edge, a
+vertex or a plane at the point goes to the next one. A solid with voids is a `BREP_WITH_VOIDS`. Each void is an
+`ORIENTED_CLOSED_SHELL` with `.F.` on a `CLOSED_SHELL` whose faces turn, as ISO 10303-42 gives it. ADR-0070 items 2, 3
+and 6 change, with a history line; the standing order chose a `BREP_WITH_VOIDS` and not a refusal, and the smallest
+outer shell as the owner.
+
+**Proof.** One void, two voids in one solid, and a void inside a solid inside a void read back with the counts of their
+B-reps, and each face of a void points out of the void. A ray from (-2, 2, -2) meets an edge of a box, and the next ray
+counts one face. The hash of the fixed body of K6a does not change. Four injections each fail a test.
+
+**What stays.** No reader of STEP outside the repository read a file with a void. The desktop button waits until after
+the Android work on the desktop. The engine lane closes K6 at K6b for now; the rest of row K6 needs the surfaces of K5.
+
+**A correction.** None.
+
+New tests: 3 (one replaced, four added). The test list holds 1823 (1302 in `Engine.Tests`, 320 in `3DEngine.Tests`, 198
+in `3DEngine.ImageTests`, 3 in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors
+and zero warnings. Open entries: 14 of 15. New diagnostic codes: 0. Since the review of v0.198, 1 product milestone and 3
+entries followed it.

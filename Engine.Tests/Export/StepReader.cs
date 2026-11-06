@@ -163,13 +163,36 @@ internal sealed partial class StepReader
         return (string)use.Attributes[4] == ".T." ? (start, end) : (end, start);
     }
 
-    // The faces of a solid, from MANIFOLD_SOLID_BREP through CLOSED_SHELL.
+    // The solids of the file, MANIFOLD_SOLID_BREP and BREP_WITH_VOIDS, in the order of the file.
+    public IReadOnlyList<int> Solids() => [.. Instances.Where(pair => pair.Value.Name is "MANIFOLD_SOLID_BREP" or "BREP_WITH_VOIDS").Select(pair => pair.Key).Order()];
+
+    // The faces of the outer shell of a solid, from MANIFOLD_SOLID_BREP or BREP_WITH_VOIDS through CLOSED_SHELL.
     public IReadOnlyList<int> Faces(int solid)
     {
-        Assert.Equal("MANIFOLD_SOLID_BREP", Instances[solid].Name);
-        var shell = Instances[Id(Instances[solid].Attributes[1])];
-        Assert.Equal("CLOSED_SHELL", shell.Name);
-        return [.. Items(shell.Attributes[1]).Select(Id)];
+        Assert.True(Instances[solid].Name is "MANIFOLD_SOLID_BREP" or "BREP_WITH_VOIDS", $"#{solid} is a {Instances[solid].Name}.");
+        return Shell(Id(Instances[solid].Attributes[1]));
+    }
+
+    // The faces of each void of a solid, through ORIENTED_CLOSED_SHELL with the orientation .F.; none for a
+    // MANIFOLD_SOLID_BREP.
+    public IReadOnlyList<IReadOnlyList<int>> Voids(int solid)
+    {
+        if (Instances[solid].Name == "MANIFOLD_SOLID_BREP")
+            return [];
+        Assert.Equal("BREP_WITH_VOIDS", Instances[solid].Name);
+        return [.. Items(Instances[solid].Attributes[2]).Select(Id).Select(id =>
+        {
+            var oriented = Instances[id];
+            Assert.Equal("ORIENTED_CLOSED_SHELL", oriented.Name);
+            Assert.Equal(("*", ".F."), ((string)oriented.Attributes[1], (string)oriented.Attributes[3]));
+            return Shell(Id(oriented.Attributes[2]));
+        })];
+    }
+
+    private IReadOnlyList<int> Shell(int id)
+    {
+        Assert.Equal("CLOSED_SHELL", Instances[id].Name);
+        return [.. Items(Instances[id].Attributes[1]).Select(Id)];
     }
 
     // The loops of a face, each one the list of its ORIENTED_EDGE, and true for the outer bound.
@@ -197,13 +220,25 @@ internal sealed partial class StepReader
         return (Point(Id(frame.Attributes[1])), Point(Id(frame.Attributes[2])));
     }
 
-    // The checks of a closed solid: each loop is a closed chain of edges, and each EDGE_CURVE of the solid has one use in
-    // each sense. The result is the counts of its faces, its edges and its vertices.
+    // The checks of a closed solid: each loop is a closed chain of edges, and each EDGE_CURVE of each shell has one use in
+    // each sense. The result is the counts of its faces, its edges and its vertices, with those of its voids.
     public (int Faces, int Edges, int Vertices) Solid(int solid)
+    {
+        var (faces, edges, vertices) = Closed(Faces(solid));
+        foreach (var hollow in Voids(solid))
+        {
+            var counts = Closed(hollow);
+            (faces, edges, vertices) = (faces + counts.Faces, edges + counts.Edges, vertices + counts.Vertices);
+        }
+
+        return (faces, edges, vertices);
+    }
+
+    private (int Faces, int Edges, int Vertices) Closed(IReadOnlyList<int> shell)
     {
         var uses = new Dictionary<int, (int Forward, int Backward)>();
         var vertices = new HashSet<int>();
-        foreach (var face in Faces(solid))
+        foreach (var face in shell)
         {
             var loops = Loops(face);
             Assert.Single(loops, loop => loop.Outer);
@@ -223,6 +258,6 @@ internal sealed partial class StepReader
         }
 
         Assert.All(uses, use => Assert.Equal((1, 1), use.Value));
-        return (Faces(solid).Count, uses.Count, vertices.Count);
+        return (shell.Count, uses.Count, vertices.Count);
     }
 }
