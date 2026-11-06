@@ -1,7 +1,7 @@
 ---
 id: 0199
 title: The codebase review of 2026-11-06 is a record
-status: Active
+status: Done
 phase: governance
 opened: 2026-11-06
 depends-on: [0200]
@@ -64,10 +64,24 @@ finding.
 
 ## Acceptance criteria
 
-- [ ] `CodebaseReviewGateTests` passes with the new review.
-- [ ] Continuous integration passes on the three runners, on the branch and on `main` after the merge.
+- [x] `CodebaseReviewGateTests` passes with the new review.
+- [x] Continuous integration passes on the three runners, on the branch and on `main` after the merge.
+
+## Outcome
+
+Status: Done · commit (the merge of the branch codebase-review-2026-11-06) · v0.199
+
+## Method
+
+Mechanical: the measures with the methods of the last review, and the line of each earlier finding from the files that
+            it cites and the commits since `d9292fa`.
+Judgement:  the severity of each new finding; E142 stays medium, because a person meets it only on a face of two regions
+            with a hole that touches its side at its first vertex.
+Weakest:    the two review agents ran their probes on Windows x64 only, and no reader of STEP outside the repository read
+            a file.
 
 ## Progress
 
 - 2026-11-06: two review agents at `2c77991`, the tree of the merge of v0.198; 4 new medium and 13 new low findings; the
   review written.
+- 2026-11-06: closed at v0.199.
