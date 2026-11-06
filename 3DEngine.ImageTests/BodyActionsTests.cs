@@ -1,9 +1,11 @@
 using Engine.Api.Http;
 using Engine.Contracts;
+using Engine.Contracts.Sketch;
 using Engine.Core.Commands;
 using Engine.Core.Geometry;
 using Engine.Geometry.Manifold;
 using ThreeDEngine.Core.Input;
+using ThreeDEngine.Core.Picking;
 using ThreeDEngine.Desktop;
 
 namespace ThreeDEngine.ImageTests;
@@ -18,11 +20,13 @@ public class BodyActionsTests
     private static readonly Guid B = Guid.Parse("bbbbbbbb-0000-0000-0000-000000000000");
     private const ulong Ms = 1_000_000;
 
-    // Body A is under (100, 100) and body B under (300, 100).
-    private static Guid? Pick(double x, double y) => (x, y) switch
+    // Body A is under (100, 100) and body B under (300, 100). Each box has the size 1, so the hit at (100, 100) is on the
+    // face +z of A, and the hit at (120, 100) on its face +x (ADR-0075 item 2).
+    private static PickHit? Pick(double x, double y) => (x, y) switch
     {
-        (100, 100) => A,
-        (300, 100) => B,
+        (100, 100) => new PickHit(A, 1) { Point = (0, 0, 0.5), Normal = (0, 0, 1) },
+        (120, 100) => new PickHit(A, 1) { Point = (0.5, 0, 0), Normal = (1, 0, 0) },
+        (300, 100) => new PickHit(B, 1) { Point = (0, 0, 0.5), Normal = (0, 0, 1) },
         _ => null,
     };
 
@@ -105,6 +109,68 @@ public class BodyActionsTests
         actions.Apply(new SelectIntent(5, 5), Pick, await Live(host));
         Assert.Null(actions.Selection);
         Assert.False(actions.Apply(new OrbitIntent(1, 0), Pick, await Live(host)));
+    }
+
+    // ADR-0075 item 2 (phase R12a, TASK-0236): a second tap on the selected body selects the face under the point, a tap
+    // on another face of the body moves the face, Escape and the row of the body give the body, and a tap on another
+    // body selects that body with no face.
+    [Fact]
+    public async Task A_Second_Tap_On_The_Selected_Body_Selects_The_Face_Under_The_Point()
+    {
+        using var host = await TwoBoxes();
+        var actions = new BodyActions(host.Session);
+        var live = await Live(host);
+
+        actions.Apply(new SelectIntent(100, 100), Pick, live);
+        Assert.Equal((A, (DatumReference?)null), (actions.Selection, actions.Face));
+        actions.Apply(new SelectIntent(100, 100), Pick, live);
+        Assert.Equal(new DatumReference(A, "+z", null), actions.Face);
+        actions.Apply(new SelectIntent(120, 100), Pick, live);
+        Assert.Equal(new DatumReference(A, "+x", null), actions.Face);
+
+        Assert.True(actions.Apply(new CancelIntent(), Pick, live));
+        Assert.Equal((A, (DatumReference?)null), (actions.Selection, actions.Face));
+        Assert.False(actions.Apply(new CancelIntent(), Pick, live));
+
+        actions.Apply(new SelectIntent(100, 100), Pick, live);
+        actions.Apply(new SelectIntent(300, 100), Pick, live);
+        Assert.Equal((B, (DatumReference?)null), (actions.Selection, actions.Face));
+        actions.Apply(new SelectIntent(300, 100), Pick, live);
+        actions.Select(B);
+        Assert.Null(actions.Face);
+    }
+
+    // Objective 9 and anti-objective 7: two taps of a finger and two clicks of the mouse give the same face.
+    [Fact]
+    public async Task Two_Taps_Of_A_Finger_And_Two_Clicks_Give_The_Same_Face()
+    {
+        async Task<DatumReference?> FaceOf(InputSample[][] script)
+        {
+            using var host = await TwoBoxes();
+            var actions = new BodyActions(host.Session);
+            var machine = new IntentMachine();
+            foreach (var frame in script)
+            {
+                foreach (var intent in machine.Step(frame))
+                    actions.Apply(intent, Pick, await Live(host));
+            }
+
+            return actions.Face;
+        }
+
+        var touch = await FaceOf(
+        [
+            [Touch(1, 100, 100, PointerPhase.Down, 0)], [Touch(1, 100, 100, PointerPhase.Up, 100)],
+            [Touch(1, 100, 100, PointerPhase.Down, 1000)], [Touch(1, 100, 100, PointerPhase.Up, 1100)],
+        ]);
+        var mouse = await FaceOf(
+        [
+            [Mouse(100, 100, PointerButtons.Left, PointerPhase.Down, 0)], [Mouse(100, 100, PointerButtons.Left, PointerPhase.Up, 100)],
+            [Mouse(100, 100, PointerButtons.Left, PointerPhase.Down, 1000)], [Mouse(100, 100, PointerButtons.Left, PointerPhase.Up, 1100)],
+        ]);
+
+        Assert.Equal(new DatumReference(A, "+z", null), touch);
+        Assert.Equal(touch, mouse);
     }
 
     // A hidden body cannot stay selected, and a selected body that leaves the session is forgotten.

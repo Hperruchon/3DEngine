@@ -68,6 +68,8 @@ internal sealed unsafe partial class DesktopUi : IDisposable
     public const string DimensionsLabel = "Dimensions";
     public const string HiddenTooLabel = "Hidden too";
     public const string SizeLabel = "Size";
+    public const string FaceLabel = "Face";
+    public const string SketchOnFaceButtonLabel = "Sketch on face";
 
     // ADR-0034 items 6 and 8: the buttons of a new sketch in the panel, and the window of the
     // sketch with its controls. A row of the window has the label of its item (SketchText).
@@ -260,6 +262,9 @@ internal sealed unsafe partial class DesktopUi : IDisposable
     // The text of the size of the selected body for this frame, or null.
     private string? _size;
 
+    // ADR-0075 item 3 (phase R12a, TASK-0236): the selected face for this frame, or null.
+    private FaceLine? _face;
+
     private string? Key(PadScope scope) => scope switch
     {
         PadScope.Body => _bodyKey,
@@ -450,10 +455,11 @@ internal sealed unsafe partial class DesktopUi : IDisposable
         => (body.Name ?? $"{body.Kind}  {body.Id.ToString()[..8]}") + (body.Visible ? string.Empty : "  (hidden)")
         + (body.Fault is null ? string.Empty : "  (fault)");
 
-    public UiDrawData Frame(float deltaSeconds, Vector2 displaySize, Vector2 framebufferScale, IReadOnlyList<LiveBody> bodies, Guid? selection = null, DocumentLine? document = null, SketchOverlay.Strokes? sketches = null, SketchPanel? sketchPanel = null, ImagePanel? imagePanel = null, DimensionOverlay.Strokes? dimensions = null, string? size = null)
+    public UiDrawData Frame(float deltaSeconds, Vector2 displaySize, Vector2 framebufferScale, IReadOnlyList<LiveBody> bodies, Guid? selection = null, DocumentLine? document = null, SketchOverlay.Strokes? sketches = null, SketchPanel? sketchPanel = null, ImagePanel? imagePanel = null, DimensionOverlay.Strokes? dimensions = null, string? size = null, FaceLine? face = null)
     {
         ArgumentNullException.ThrowIfNull(bodies);
         _size = size;
+        _face = face;
         _sketchActive = sketchPanel?.Active is not null;
         ImGui.SetCurrentContext(_context);
         var io = ImGui.GetIO();
@@ -478,6 +484,8 @@ internal sealed unsafe partial class DesktopUi : IDisposable
             Sketches(sketches);
         if (dimensions is not null)
             Dimensions(dimensions, displaySize);
+        if (face is not null)
+            FaceOutline(face);
         Panel(bodies, selection, displaySize, document);
         if (sketchPanel is { } shown && (shown.Active is not null || shown.Live.Count > 0))
             SketchWindow(shown, displaySize);
