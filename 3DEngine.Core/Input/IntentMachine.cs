@@ -294,7 +294,10 @@ public sealed class IntentMachine
                 NoPoint((key.Modifiers & KeyModifiers.Shift) != 0 ? Gesture.ControlShiftZKey : Gesture.ControlZKey, intents);
                 break;
             case InputKey.Y when (key.Modifiers & KeyModifiers.Control) != 0: NoPoint(Gesture.ControlYKey, intents); break;
-            case InputKey.Escape: CancelGizmo(intents); break;
+            // Finding 1 of the review of Codex of v0.221 (TASK-0237): Escape with no press on a handle gives CancelIntent,
+            // which goes back from a selected face to its body (ADR-0075 item 2). Before, Escape gave nothing then.
+            case InputKey.Escape when Dragging: CancelGizmo(intents); break;
+            case InputKey.Escape: intents.Add(new CancelIntent()); break;
         }
     }
 
