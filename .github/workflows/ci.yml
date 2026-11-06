@@ -205,6 +205,50 @@ jobs:
       - name: Compare the hashes
         run: node eng/compare-determinism.js "$RUNNER_TEMP/determinism"
 
+  # Phase R14f1 (ADR-0061 item 9, TASK-0228): the APK of the phone at each push. The solution does not hold
+  # 3DEngine.Android, because the gate on three runners has no workload of .NET for Android, so this job installs the
+  # workload and the Android dependencies on Ubuntu, builds the APK, and checks its native libraries with
+  # eng/android/check-apk.sh. No emulator runs it yet; a later slice of R14f adds that job and the hash of Android.
+  android-apk:
+    name: Build the APK of the phone
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Set up .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          global-json-file: global.json
+
+      - name: Install the workload of .NET for Android
+        run: dotnet workload install android
+
+      - name: Install the Android dependencies of the program
+        run: |
+          dotnet build 3DEngine.Android -t:InstallAndroidDependencies \
+            -p:AndroidSdkDirectory="$ANDROID_HOME" -p:JavaSdkDirectory="$JAVA_HOME_17_X64" -p:AcceptAndroidSDKLicenses=True
+
+      - name: Build the APK
+        run: dotnet build 3DEngine.Android -p:AndroidSdkDirectory="$ANDROID_HOME" -p:JavaSdkDirectory="$JAVA_HOME_17_X64"
+
+      - name: Check the native libraries of the APK
+        run: bash eng/android/check-apk.sh 3DEngine.Android/bin/Debug/net10.0-android/org.threedengine.phone-Signed.apk
+
+      - name: Keep the APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: apk-of-the-phone
+          path: 3DEngine.Android/bin/Debug/net10.0-android/org.threedengine.phone-Signed.apk
+          if-no-files-found: error
+          retention-days: 14
+
   write-set-gate:
     timeout-minutes: 30
     name: Write set of the governing task

@@ -66,6 +66,7 @@ it is not correct and it must not be used.
 | `eng/repo-gates/` | The program that runs each gate class that reads only files of the repository. The pipeline builds it from `main` and runs it on the judged checkout, and a person runs it with `--root .` before a commit (TASK-0064). The gate files stay under `Engine.Tests/`, which also runs them as tests. |
 | `eng/report-failed-tests.js` | Writes the name and the message of each failed test as a public annotation when the step "Test" of the pipeline fails (TASK-0045). |
 | `eng/manifold-native/` | The packaging project for the native Manifold payload. |
+| `eng/android/check-apk.sh` | The check of the APK of the phone: the ABIs `arm64-v8a` and `x86_64` only, and the native libraries of SDL, cimgui and Manifold with the checksums of `THIRD-PARTY-NOTICES.md`. The job "Build the APK of the phone" runs it (TASK-0228). |
 | `eng/manifold-native/manifold-ref.txt` | The pin of the native build: the Manifold reference and the package version. A push that changes it starts `.github/workflows/build-manifold-native.yml`, which pushes the package to the branch native-package/<version> (TASK-0048). |
 | `nuget/` | The local package feed for the native payload: Manifold 3.5.2.2 and the native cimgui of Android 1.91.6.1 (register entry R-0007, TASK-0226). `THIRD-PARTY-NOTICES.md` gives the checksum of each file. |
 | `THIRD-PARTY-NOTICES.md` | Each third-party component, its licence and its checksum. `NativePackageGateTests` reads the checksums. |
