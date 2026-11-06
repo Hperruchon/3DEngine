@@ -340,6 +340,7 @@ The first objective. Each phase ends with something that a person can observe.
 | R14f | The gate of Android: a job builds the APK at each push, a job runs the x86-64 emulator with software Vulkan and a smoke test, and the pipeline compares the hash of Android with the hashes of the desktop runners (ADR-0061 items 1 and 8). | 4–8 |
 | R14f1 | The pipeline builds the APK of the phone at each push, checks its ABIs and its native libraries, and keeps the APK for the owner (ADR-0061 item 9). TASK-0228. | 1 |
 | R14f2 | The APK holds its assemblies, and the pipeline starts it on the x86-64 emulator with Vulkan in software and reads its log (ADR-0061 item 9). TASK-0229. | 1–2 |
+| R14f3 | The probe of the determinism hash moves into `Engine.Core`, the program of the phone runs it on the emulator, and the pipeline compares four platforms (ADR-0061 item 8, ADR-0074). TASK-0233. | 1–2 |
 | R14g | The layout of the phone, inside the redesign of the desktop: each region of the redesign gives its form on the screen of the S23 Ultra (ADR-0061 item 9). | 8–15 |
 
 ## Track K — The kernel
