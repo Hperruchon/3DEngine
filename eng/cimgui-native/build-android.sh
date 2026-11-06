@@ -62,7 +62,10 @@ echo "--- build ---"
 run build cmake --build "$build" --config Release --parallel
 
 echo "--- stage ---"
-cp -v "$build/libcimgui.so" "$staging/libcimgui.so"
+# cimgui sets the prefix of its library to nothing, so the build gives cimgui.so. Android extracts only the files lib*.so
+# of an APK, and .NET finds libcimgui.so by the name cimgui of the DllImport of ImGui.NET.
+[ -f "$build/cimgui.so" ] || { echo "::error title=cimgui $abi stage::the build gave no cimgui.so"; ls -la "$build"; exit 1; }
+cp -v "$build/cimgui.so" "$staging/libcimgui.so"
 ls -la "$staging"
 
 echo "--- check ---"
