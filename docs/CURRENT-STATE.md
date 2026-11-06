@@ -6228,3 +6228,35 @@ the review of v0.196 the lead of V92. TASK-0224 (P0.89) and TASK-0225 (P0.90) ho
 New tests: 0. The test list holds 1863 (1328 in `Engine.Tests`, 332 in `3DEngine.Tests`, 200 in `3DEngine.ImageTests`, 3
 in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
 entries: 15 of 15. New diagnostic codes: 0. Since the review of v0.207, 0 product milestones and 0 entries followed it.
+
+## v0.209 — The Android program builds an APK that draws a document of its own session (R14e2, TASK-0226)
+
+Phase R14e of the Android order of 2026-11-05 is the Android host. R14e1 made the library `3DEngine.App`, and R14d
+published the native packages of Manifold and cimgui for Android. This slice makes the program.
+
+**The change.** `nuget/` holds Manifold 3.5.2.2, with `android-arm64` and `android-x64`, and `Engine.Native.DearImGui`
+1.91.6.1, the native cimgui of Android; 3.5.2.1 goes. `THIRD-PARTY-NOTICES.md` gives the checksum of each package and of
+each file inside it, and `NativePackageGateTests` is a theory over both packages. `LocalSessionHost` in the library
+composes a `DocumentSession` on the native backend with a fan-out of the committed events, `FanOutSink`. The program
+`3DEngine.Android` holds `MainActivity`, an activity of SDL, and `PhoneHost`, the loop of one window. A new rule,
+`A_Host_With_No_Surface_References_No_Surface`, holds ADR-0072 item 1 for the program; it has a row in the list of the
+packages, and no file of it names `IEventSink`.
+
+**Proof.** The APK builds on this computer with zero warnings. It holds for `arm64-v8a` and `x86_64` only the libraries
+`libSDL3.so`, `libcimgui.so`, `libmanifold.so` and `libmanifoldc.so`, and the checksums of `libcimgui.so` and
+`libmanifold.so` are those of the notices. Three tests run the local session and its sink on the desktop. Five injections
+each fail a gate: `android-x86` in the runtime identifiers, a reference to `Engine.Api.Http`, a framework reference of
+ASP.NET Core, a wrong checksum of a library of cimgui, and a second binding of SDL.
+
+**What stays.** No device and no emulator ran the APK, and the pipeline does not build it until R14f. The picker, the
+loss of the surface, the pre-rotation, the pause and the test sheet come in later slices; the row R14e closes only after
+the test of the owner on the phone. The files of `win-x64` and the files `libmanifoldc` of `osx-arm64` of 3.5.2.2 differ
+from 3.5.2.1, from the same source; the three determinism hashes of the pipeline compare them. V88 stays open for the
+build output of the desktop.
+
+**A correction.** None.
+
+New tests: 10 (7 in `Engine.Tests`, 3 in `3DEngine.ImageTests`). The test list holds 1873 (1335 in `Engine.Tests`, 332 in
+`3DEngine.Tests`, 203 in `3DEngine.ImageTests`, 3 in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental`
+gives zero errors and zero warnings. Open entries: 15 of 15. New diagnostic codes: 0. Since the review of v0.207, 1
+product milestone and 1 entry followed it.
