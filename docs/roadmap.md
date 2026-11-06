@@ -198,6 +198,7 @@ Therefore each approved objective must have a track here.
 - P0.94 — The key Escape goes back from the face, and the button "Sketch on face" ends the arm of Face. v0.222, TASK-0237.
 - K5a — A command CreateCylinder makes a cylinder of 64 plane facets, with three face names. v0.223, TASK-0238, ADR-0076.
 - P0.95 — The smoke test of the emulator gives the exception of the program as public annotations. v0.224, TASK-0239.
+- Review — The codebase review of 2026-11-06 (d). v0.225, TASK-0240.
 
 ## Track 0 — Foundations
 
@@ -299,6 +300,9 @@ This track removes each condition that blocks other work.
 | P0.93 | The smoke test of the emulator gives the cause of a start that fails: the versions of the workload, of the emulator and of the image, the output of the start, and the lines of Android about the program (the emulator job of v0.217 failed with no change of code). TASK-0235. | 1 |
 | P0.94 | The key Escape goes back from the face to its body, and the button "Sketch on face" ends the arm of Face (findings 1 and 2 of the review of Codex of v0.221, medium; R12a only just shipped, and its ledger entry states the first as done). TASK-0237. | 1 |
 | P0.95 | The smoke test of the emulator gives the exception of the program as public annotations: one notice for the start, no notice for the lines of the hash, and the line "ended" as the text of the failure (the emulator job of the run of main of v0.222 ended the program with an exception that no annotation showed). TASK-0239. | 1 |
+| P0.96 | A save to a new name keeps a handle on the document at each moment (E162 of the codebase review of 2026-11-06 (d), high; before the next product phase). TASK-0241. | 1 |
+| P0.97 | The readers of a file, the pin rule, the smoke test and the ledger hold their next forms (E158 to E161, E163, T152, T153, T155 to T159 of the codebase review of 2026-11-06 (d); after the next product phase). TASK-0242. | 2 |
+| P0.98 | A cancelled finger ends, the activity tells its starts, and the face and the texts hold their next forms (V104 to V111 of the codebase review of 2026-11-06 (d); after P0.97). TASK-0243. | 2 |
 | P0.86 | The window keeps no input between sessions, the hook has the cases of one axis, and the next forms of four gates fail (V88 to V90, T141 to T144 of the codebase review of 2026-11-06; after the next product phase). TASK-0198. | 1–2 |
 
 ## Track P — The platform
