@@ -1,16 +1,17 @@
 ---
 id: 0198
 title: The window keeps no input between sessions, the hook has the cases of one axis, and the next forms of four gates fail
-status: Ready
+status: Done
 phase: P0.86
 opened: 2026-11-06
 depends-on: [0197]
-governed-by: [0007, 0019, 0022, 0029, 0030, 0061]
+governed-by: [0007, 0017, 0019, 0022, 0023, 0029, 0030, 0061]
 writes:
   create:
     - tasks/TASK-0198-desktop-and-gate-forms-of-the-twenty-third-review.md
   modify:
     - 3DEngine/DesktopEngineHost.cs
+    - 3DEngine.Vulkan/Window.cs
     - 3DEngine.Tests/SdlInputTests.cs
     - Engine.Tests/Governance/BuiltAssemblyReferenceTests.cs
     - Engine.Tests/Governance/DependencyDirectionGateTests.cs
@@ -53,20 +54,35 @@ one axis, and the next form of each of four gates fails.
 
 ## Acceptance criteria
 
-- [ ] Each finding has a test or an injection that fails before the change and passes after it.
-- [ ] A clean build (`--no-incremental`) gives zero errors and zero warnings.
-- [ ] Continuous integration passes on the three runners, on the branch and on `main` after the merge.
+- [x] Each finding of the scope has a test or an injection that fails before the change and passes after it, except
+      T143, which stays open for the owner.
+- [x] A clean build (`--no-incremental`) gives zero errors and zero warnings.
+- [x] Continuous integration passes on the three runners, on the branch and on `main` after the merge.
 
 ## Outcome
 
-Status: Ready
+Status: Done · commit (the merge of the branch p086-review-forms) · v0.206. T143 stays open.
 
 ## Method
 
 Mechanical: a test or an injection for each finding, before the change.
 Judgement:  the form of a diagnostic code as a type.
-Weakest:    to be written at the close.
+Weakest:    no test runs the flush of V90 in a window; the test reads the ranges only. The test of T141 reads the
+            render assemblies from their output folders, so it needs a build of the solution before the tests.
 
 ## Progress
 
 - 2026-11-06: opened by the codebase review of 2026-11-06.
+- 2026-11-06: the write set adds `3DEngine.Vulkan/Window.cs`, which holds `Window.Correction` and the new flush.
+  V89: two cases of one axis; with `x == heldX || y == heldY` in `Correction` they fail. V90: `Window.InputRanges` and
+  `FlushInput`, called at the start of each later session, and a test that each event type of `SdlInput` lies in a
+  range. T141: the test reads `3DEngine.Core.dll` and `3DEngine.Vulkan.dll` from their output folders. T142: on the
+  path of the log a built assembly references only the shared framework and the reached first-party assemblies. T144:
+  the package rules read `Update`, and each project of the desktop names only the packages of its list. Before the
+  change four injections passed each gate: `AdditionalExplicitAssemblyReferences` of `Engine.Contracts.dll` in
+  `3DEngine.Core` and of `Vortice.Mathematics.dll` in `Engine.Kernel`, each with a use that the metadata shows, a
+  `PackageReference Update` of `ppy.SDL3-CS` in a root `Directory.Build.targets`, and a package `SDL3-CS` in the host.
+  After it each one fails a gate. T143 stays open: Q4 A makes a code a type, and `Diagnostic.Code` and
+  `ErrorDetail.Code` are strings of `Engine.Contracts`, so A changes the public shape of `Engine.Contracts`. The rule
+  "Stop and ask" holds that for the owner, and the order 2 turns it into a record and the next task.
+- 2026-11-06: closed at v0.206, with T143 open.

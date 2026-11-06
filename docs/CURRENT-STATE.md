@@ -6141,3 +6141,37 @@ of the last part of a path.
 New tests: 4. The test list holds 1846 (1323 in `Engine.Tests`, 320 in `3DEngine.Tests`, 200 in `3DEngine.ImageTests`,
 3 in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
 entries: 15 of 15. New diagnostic codes: 0. Since the review of v0.198, 3 product milestones and 7 entries followed it.
+
+## v0.206 — The window keeps no input between sessions, the hook has the cases of one axis, and the next forms of three gates fail (P0.86, TASK-0198)
+
+The codebase review of 2026-11-06 found V88 to V90 and T141 to T144 (low), to correct after P0.85. V88 goes into R14e.
+
+**The change.**
+- V89: the theory of `Window.Correction` has two places that differ on one axis only.
+- V90: `Window.FlushInput` reads the events of the system and removes each event of the keys, the mouse, the fingers
+  and the pen. The desktop calls it at the start of each later session, so the first frame gets no input of the time
+  between two sessions.
+- T141: `BuiltAssemblyReferenceTests` reads `3DEngine.Core.dll` and `3DEngine.Vulkan.dll` too, from their output
+  folders. T142: on the path of the log (`Engine.Contracts`, `Engine.Core`, `Engine.Kernel`) a built assembly
+  references only the shared framework and the first-party assemblies that its graph reaches.
+- T144: the package rules read the attribute `Update`, and each project of the desktop names only the packages of its
+  list.
+
+**Proof.** Two cases of V89 fail with `x == heldX || y == heldY` in `Correction`. Four injections passed each gate
+before the change and each fails a gate after it: a property `AdditionalExplicitAssemblyReferences` with
+`Engine.Contracts.dll` in `3DEngine.Core` and with `Vortice.Mathematics.dll` in `Engine.Kernel`, each with a use that
+the metadata of the built assembly shows; a `PackageReference Update` of `ppy.SDL3-CS` in a root
+`Directory.Build.targets`; and a package `SDL3-CS` in the host.
+
+**What stays.** T143 stays open. Q4 A makes a diagnostic code a type, but `Diagnostic.Code` and `ErrorDetail.Code` are
+strings of `Engine.Contracts`, so A changes the public shape of `Engine.Contracts`, with 497 uses in 102 files. The
+rule "Stop and ask" holds that change for the owner; the register is full (15 of 15), so the next codebase review
+carries T143. No test runs the flush of V90 in a window.
+
+**A correction.** The comment of `BuiltAssemblyReferenceTests` said that the test closed the class; it read the Engine
+assemblies only.
+
+New tests: 15 (12 in `3DEngine.Tests`, 3 in `Engine.Tests`). The test list holds 1861 (1326 in `Engine.Tests`, 332 in
+`3DEngine.Tests`, 200 in `3DEngine.ImageTests`, 3 in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental`
+gives zero errors and zero warnings. Open entries: 15 of 15. New diagnostic codes: 0. Since the review of v0.198, 3
+product milestones and 8 entries followed it.
