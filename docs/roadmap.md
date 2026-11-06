@@ -206,6 +206,7 @@ Therefore each approved objective must have a track here.
 - R12b — A tap near an edge of the selected face selects the edge. v0.230, TASK-0245, ADR-0077.
 - P0.99 — The activity of the phone may start again in its process. v0.231, TASK-0247, ADR-0079.
 - R16a — The desktop and the phone take the theme "Proposed (harmonized)" of the redesign. v0.232, TASK-0246, ADR-0078.
+- R16b1 — The title of the document, Undo, Redo and the status line are fixed controls of the redesign. v0.233, TASK-0248, ADR-0080.
 
 ## Track 0 — Foundations
 
@@ -371,6 +372,7 @@ The first objective. Each phase ends with something that a person can observe.
 | R15 | The user interface of the desktop is one partial file for each region: the panel, the overlays, the window of the sketch, the window of the images and the pad, with no change of a line of code (the fallback queue of the owner, 2026-11-05). TASK-0234. | 1 |
 | R16 | The redesign of the desktop and of the phone, from the designer brief of 2026-11-05 (the "mix" direction): the theme and the fonts, then the layout slice by slice, with no change of the contract (the owner, 2026-11-06, evening). | 20–40 |
 | R16a | The theme "Proposed (harmonized)" of the brief: the colours of the panels, the clear of the scene, the colours of the marks and a casing under each mark, with no change of layout (ADR-0078). TASK-0246. | 1 |
+| R16b1 | The fixed controls of the redesign: the title of the document in the title bar of the panel, Undo and Redo as round anchors at the bottom left, and the status line on their row (ADR-0080). TASK-0248. | 1 |
 
 ## Track K — The kernel
 

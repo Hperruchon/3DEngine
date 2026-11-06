@@ -163,6 +163,9 @@ internal sealed unsafe partial class DesktopUi : IDisposable
     private readonly string _unit;
     private readonly UiInputRouter _router = new();
     private readonly List<Vector4> _panels = new();
+
+    // ADR-0080 (TASK-0248): the rectangles of the fixed controls, which a tap does not pass either.
+    private readonly List<Vector4> _fixed = new();
     private readonly Dictionary<string, Vector4> _items = new(StringComparer.Ordinal);
     private readonly List<string> _shown = new();
     private readonly (uint Width, uint Height, byte[] Rgba) _atlas;
@@ -362,9 +365,11 @@ internal sealed unsafe partial class DesktopUi : IDisposable
     // The rectangles (left, top, right, bottom) of the panels of the last frame.
     public IReadOnlyList<Vector4> PanelRectangles => _panels;
 
+    public IReadOnlyList<Vector4> FixedRectangles => _fixed;
+
     // True when a point of the display is over a panel of the last frame.
     public bool OverPanel(double x, double y)
-        => _panels.Any(panel => x >= panel.X && x < panel.Z && y >= panel.Y && y < panel.W);
+        => _panels.Concat(_fixed).Any(panel => x >= panel.X && x < panel.Z && y >= panel.Y && y < panel.W);
 
     // The font atlas as RGBA pixels, for the renderer to upload. It is built once.
     public (uint Width, uint Height, byte[] Rgba) FontAtlas() => _atlas;
@@ -490,6 +495,7 @@ internal sealed unsafe partial class DesktopUi : IDisposable
         io.DeltaTime = deltaSeconds > 0 ? deltaSeconds : 1f / 60f;
 
         _panels.Clear();
+        _fixed.Clear();
         _cutList = null;
         _newList = null;
         _items.Clear();
@@ -510,6 +516,7 @@ internal sealed unsafe partial class DesktopUi : IDisposable
         if (face is not null)
             FaceOutline(face);
         Panel(bodies, selection, displaySize, document);
+        FixedControls(displaySize);
         if (sketchPanel is { } shown && (shown.Active is not null || shown.Live.Count > 0))
             SketchWindow(shown, displaySize);
         if (imagePanel is not null)
