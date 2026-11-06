@@ -1,7 +1,7 @@
 ---
 id: 0220
 title: An export of the command line refuses a file that is its own document file
-status: Active
+status: Done
 phase: P0.87
 opened: 2026-11-06
 depends-on: [0199]
@@ -50,21 +50,22 @@ leaves each byte of the document.
 
 ## Acceptance criteria
 
-- [ ] The test fails before the change and passes after it.
-- [ ] A clean build (`--no-incremental`) gives zero errors and zero warnings.
-- [ ] Continuous integration passes on the three runners, on the branch and on `main` after the merge.
+- [x] The test fails before the change and passes after it.
+- [x] A clean build (`--no-incremental`) gives zero errors and zero warnings.
+- [x] Continuous integration passes on the three runners, on the branch and on `main` after the merge.
 
 ## Outcome
 
-Status: Active
+Status: Done · commit (the merge of the branch p087-export-keeps-document) · v0.200
 
 ## Method
 
 Mechanical: the compare of the paths, as `DesktopDocument.SameFile` does.
 Judgement:  the existing code `E-EXPORT-WRITE-FAILED`, and no new code.
-Weakest:    to be written at the close.
+Weakest:    a hard link to the document passes the compare of the paths.
 
 ## Progress
 
 - 2026-11-06: opened from the review of Codex of v0.198; the test failed for STL and STEP before the change, and an
   injection that compares the raw strings fails it again.
+- 2026-11-06: closed at v0.200.
