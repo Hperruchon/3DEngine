@@ -34,6 +34,9 @@ internal sealed record CreateBoxAction(double X, double Y, double Z) : PanelActi
 
 internal sealed record MoveBodyAction(Guid Body, double Dx, double Dy, double Dz) : PanelAction;
 
+// ADR-0073 item 1 (phase R14e3, TASK-0227): a cut of the body with the tool, the command Subtract.
+internal sealed record CutBodyAction(Guid Body, Guid Tool) : PanelAction;
+
 // ADR-0049 item 8: the button Distance of a selected extrude, which asks the host for the pad with
 // the distance in effect, and the new distance of an apply of that pad.
 internal sealed record EditDistanceAction(Guid Body) : PanelAction;
