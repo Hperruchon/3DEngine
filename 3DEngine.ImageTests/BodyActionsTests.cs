@@ -286,7 +286,9 @@ public class BodyActionsTests
             release.Wait(TimeSpan.FromSeconds(10));
             return 0;
         }));
-        Assert.True(entered.Wait(TimeSpan.FromSeconds(5)), "The read did not start.");
+        // P0.104 (TASK-0256): run 42313242154 on the Windows runner did not start the read in 5 seconds; the start is a
+        // condition of the test, not its claim, so it waits 30 seconds.
+        Assert.True(entered.Wait(TimeSpan.FromSeconds(30)), "The read did not start.");
         try
         {
             var again = Task.Run(() => actions.SelectedFace(key));

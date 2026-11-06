@@ -87,7 +87,7 @@ public sealed unsafe class Window : IDisposable
         _window = SDL_CreateWindow(title, width, height, sdl_flags);
         if (_window == null)
         {
-            throw new Exception("SDL: failed to create window");
+            throw new Exception($"SDL: failed to create window: {Error()}");
         }
 
         _ = SDL_SetWindowPosition(_window, (int)SDL_WINDOWPOS_CENTERED, (int)SDL_WINDOWPOS_CENTERED);
@@ -193,6 +193,10 @@ public sealed unsafe class Window : IDisposable
         }
     }
 
+    // P0.104 (TASK-0256): the text of the last error of SDL, for the message of a failure. Run 42313242154 failed with
+    // "failed to create vulkan surface" and no cause.
+    internal static string Error() => SDL_GetError() is { Length: > 0 } text ? text : "SDL gave no text";
+
     public void Show()
     {
         _ = SDL_ShowWindow(_window);
@@ -224,7 +228,7 @@ public sealed unsafe class Window : IDisposable
         VkSurfaceKHR surface;
         if (!SDL_Vulkan_CreateSurface(_window, (VkInstance_T*)instance.Handle, null, (VkSurfaceKHR_T**)&surface))
         {
-            throw new Exception("SDL: failed to create vulkan surface");
+            throw new Exception($"SDL: failed to create vulkan surface: {Error()}");
         }
 
         return surface;
