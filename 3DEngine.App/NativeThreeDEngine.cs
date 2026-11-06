@@ -232,14 +232,15 @@ public sealed class NativeThreeDEngine : IThreeDEngine, IDisposable
         return null;
     }
 
-    // The nearest visible body under a point of the window, or null (ADR-0029 item 1).
-    private Guid? Pick(double x, double y)
+    // The nearest visible body under a point of the window, or null (ADR-0029 item 1), with the point and the normal of
+    // the hit, so that a second tap names the face (ADR-0075 item 2).
+    private PickHit? Pick(double x, double y)
     {
         var window = _window.Extent;
         if (_renderer is null || window.width == 0 || window.height == 0)
             return null;
 
-        return Picker.Nearest(Picker.RayThrough(Camera, x, y, window.width, window.height), _renderer.PickBodies)?.Id;
+        return Picker.Nearest(Picker.RayThrough(Camera, x, y, window.width, window.height), _renderer.PickBodies);
     }
 
     // The actions of the controls of the panel, as commands or as a change of the selection.
