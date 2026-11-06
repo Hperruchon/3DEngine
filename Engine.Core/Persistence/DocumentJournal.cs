@@ -13,15 +13,17 @@ public sealed class DocumentJournal : IDisposable
     private readonly string _lengthUnit;
     private readonly string _kind;
     private readonly Func<string, FileMode, Stream> _open;
+    private readonly Action<string> _delete;
 
     // ADR-0071 item 4: the kind goes into the header of a new file.
-    private DocumentJournal(string path, string lengthUnit, Stream? stream, Func<string, FileMode, Stream>? open = null, string kind = Document.Part)
+    private DocumentJournal(string path, string lengthUnit, Stream? stream, Func<string, FileMode, Stream>? open = null, string kind = Document.Part, Action<string>? delete = null)
     {
         FilePath = path;
         _lengthUnit = lengthUnit;
         _kind = kind;
         _stream = stream;
         _open = open ?? OpenFile;
+        _delete = delete ?? File.Delete;
     }
 
     // The path of the file. For a document with no name, the file exists from the
@@ -72,9 +74,10 @@ public sealed class DocumentJournal : IDisposable
     }
 
     // A journal on a stream that a test gives, for a write that fails, and an optional
-    // function that opens a file in place of the file system, for an open that fails.
-    internal static DocumentJournal ForTest(string path, string lengthUnit, Stream? stream, Func<string, FileMode, Stream>? open = null)
-        => new(path, lengthUnit, stream, open);
+    // function that opens a file in place of the file system, for an open that fails, and an optional function that
+    // deletes a file, for a delete that fails.
+    internal static DocumentJournal ForTest(string path, string lengthUnit, Stream? stream, Func<string, FileMode, Stream>? open = null, Action<string>? delete = null)
+        => new(path, lengthUnit, stream, open, delete: delete);
 
     // Writes one line and its line feed in one call, then flushes to disk. A failure
     // throws an IOException, after the file is cut back and the journal is broken.
@@ -140,7 +143,12 @@ public sealed class DocumentJournal : IDisposable
     // journal makes the file at the new name with the share of a journal, copies each line into it and flushes it, and
     // only then closes and deletes the old file. A handle holds the document at each moment. A failure before the switch
     // deletes the new file and leaves the journal whole at its old name.
-    internal void MoveTo(string target)
+    //
+    // Finding E164 of the codebase review of 2026-11-06 (e) (TASK-0251): it gives the path of the old file when the delete
+    // of that file fails, and null otherwise, so that the save gives the warning W-IO-OLD-FILE-KEPT; until TASK-0251 the
+    // old file stayed with no report, and it opens as a second document. A failure before the switch cuts the new file
+    // to length 0 before it deletes it, so a new file that the delete leaves holds no part of a document and does not open.
+    internal string? MoveTo(string target)
     {
         if (File.Exists(target))
             throw new IOException($"The file {target} exists. A save chooses a new name only.");
@@ -153,7 +161,7 @@ public sealed class DocumentJournal : IDisposable
             _stream = _open(target, FileMode.CreateNew);
             FilePath = target;
             Append(EntryCodec.Header(_lengthUnit, _kind));
-            return;
+            return null;
         }
 
         Flush(_stream);
@@ -166,6 +174,7 @@ public sealed class DocumentJournal : IDisposable
         }
         catch
         {
+            CutQuietly(copy);
             copy.Dispose();
             DeleteQuietly(target);
             _stream.Seek(0, SeekOrigin.End);
@@ -179,18 +188,33 @@ public sealed class DocumentJournal : IDisposable
 
         // The document is whole at its new name. A program that holds the old file keeps it there, with no effect on
         // this document.
-        DeleteQuietly(old);
+        return DeleteQuietly(old) ? null : old;
     }
 
-    private static void DeleteQuietly(string path)
+    // True when the file is gone.
+    private bool DeleteQuietly(string path)
     {
         try
         {
-            File.Delete(path);
+            _delete(path);
+            return true;
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
         {
             // The file stays; nothing of the journal depends on it.
+            return false;
+        }
+    }
+
+    private static void CutQuietly(Stream stream)
+    {
+        try
+        {
+            stream.SetLength(0);
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or NotSupportedException)
+        {
+            // The delete that comes next can still remove the file.
         }
     }
 

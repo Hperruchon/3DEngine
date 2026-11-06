@@ -629,11 +629,73 @@ public class DependencyDirectionGateTests
                 {
                     if (new[] { "Remove", "Update" }.Any(attribute => Includes(read, "SupportedPlatform", attribute).Any()))
                         offences.Add($"{host} reaches {name}, and {RepositoryFiles.Relative(read)} removes or updates a SupportedPlatform");
+
+                    // Finding T162 of the codebase review of 2026-11-06 (e) (TASK-0251): a Condition on the item or on an
+                    // element that holds it, or CA1416 in a NoWarn or a WarningsNotAsErrors, silenced the analyzer, and
+                    // each gate passed. The step of eng/android/check-platforms.js reads the forms that MSBuild evaluates;
+                    // this rule gives the same answer on the computer, before the pipeline.
+                    var document = XDocument.Load(read);
+                    if (document.Descendants().Where(e => Is(e, "SupportedPlatform")).Any(item => item.AncestorsAndSelf().Any(e => e.Attribute("Condition") is not null)))
+                        offences.Add($"{host} reaches {name}, and {RepositoryFiles.Relative(read)} has a SupportedPlatform under a Condition");
+                    foreach (var property in document.Descendants().Where(e => Is(e, "NoWarn") || Is(e, "WarningsNotAsErrors")))
+                    {
+                        if (property.Value.Contains("CA1416", StringComparison.OrdinalIgnoreCase))
+                            offences.Add($"{host} reaches {name}, and {RepositoryFiles.Relative(read)} has CA1416 in {property.Name.LocalName}");
+                    }
+                }
+
+                // T162: the step of the pipeline asks MSBuild for each project that the phone reaches.
+                if (!PlatformCheckProjects().Contains(name))
+                    offences.Add($"{host} reaches {name}, which eng/android/check-platforms.js does not name");
+
+                // T162: a pragma or an attribute in the code of the project silences the analyzer too.
+                foreach (var source in Directory.EnumerateFiles(Path.GetDirectoryName(file)!, "*.cs", SearchOption.AllDirectories)
+                             .Where(path => !path.Contains($"{Path.DirectorySeparatorChar}obj{Path.DirectorySeparatorChar}", StringComparison.Ordinal)
+                                 && !path.Contains($"{Path.DirectorySeparatorChar}bin{Path.DirectorySeparatorChar}", StringComparison.Ordinal)))
+                {
+                    if (File.ReadLines(source).Any(line => line.Contains("CA1416", StringComparison.OrdinalIgnoreCase)
+                            && (line.Contains("#pragma", StringComparison.Ordinal) || line.Contains("SuppressMessage", StringComparison.Ordinal))))
+                        offences.Add($"{host} reaches {name}, and {RepositoryFiles.Relative(source)} silences CA1416");
                 }
             }
         }
 
+        // T162: an analyzer configuration file can set the severity of CA1416 for each project under its folder.
+        foreach (var config in AnalyzerConfigFiles(RepositoryFiles.Root))
+        {
+            if (File.ReadAllText(config).Contains("CA1416", StringComparison.OrdinalIgnoreCase))
+                offences.Add($"{RepositoryFiles.Relative(config)} names CA1416");
+        }
+
         Assert.True(offences.Count == 0, string.Join("\n  ", offences));
+    }
+
+    // T162: the names of the list "projects" of eng/android/check-platforms.js.
+    private static HashSet<string> PlatformCheckProjects()
+    {
+        var text = RepositoryFiles.Read("eng", "android", "check-platforms.js");
+        var start = text.IndexOf("const projects = [", StringComparison.Ordinal);
+        var end = text.IndexOf("];", start, StringComparison.Ordinal);
+        return Regex.Matches(text[start..end], "'([^']+)'").Select(match => match.Groups[1].Value).ToHashSet(StringComparer.Ordinal);
+    }
+
+    // T162: each .editorconfig and each .globalconfig of the repository, outside the folders of Git and of a build.
+    private static IEnumerable<string> AnalyzerConfigFiles(string directory)
+    {
+        foreach (var file in Directory.EnumerateFiles(directory))
+        {
+            var name = Path.GetFileName(file);
+            if (name == ".editorconfig" || name.EndsWith(".globalconfig", StringComparison.OrdinalIgnoreCase))
+                yield return file;
+        }
+
+        foreach (var folder in Directory.EnumerateDirectories(directory))
+        {
+            if (new[] { ".git", "bin", "obj", "node_modules" }.Contains(Path.GetFileName(folder), StringComparer.OrdinalIgnoreCase))
+                continue;
+            foreach (var file in AnalyzerConfigFiles(folder))
+                yield return file;
+        }
     }
 
     internal static IEnumerable<string> ItemOffences(string file, XDocument document)
@@ -1444,19 +1506,24 @@ public class DependencyDirectionGateTests
     // Finding T155 of the codebase review of 2026-11-06 (d) (TASK-0242): the rule above compares the text of a name, so a
     // property or an item list in the Update or the Remove of a package item named any package and passed. Such a name is
     // an offence in each file that MSBuild reads, as in an Include (ReferenceOffences).
+    //
+    // Finding T161 of the codebase review of 2026-11-06 (e) (TASK-0251): an Update with a wildcard, as
+    // "Engine.Geometry.Manifold.Nativ?", changed the version of a pinned package, and each gate passed. A * or a ? in the
+    // Update or the Remove of a package item is an offence too.
     [Fact]
-    public void No_Package_Item_Updates_Or_Removes_By_A_Property()
+    public void No_Package_Item_Updates_Or_Removes_By_A_Property_Or_A_Wildcard()
     {
         var offences = ProjectFiles()
             .SelectMany(FilesThatMsBuildReads)
             .Distinct(StringComparer.OrdinalIgnoreCase)
             .SelectMany(file => new[] { "PackageReference", "GlobalPackageReference", "PackageVersion" }
                 .SelectMany(item => new[] { "Update", "Remove" }.SelectMany(attribute => Includes(file, item, attribute)
-                    .Where(name => name.Contains("$(", StringComparison.Ordinal) || name.Contains("@(", StringComparison.Ordinal) || name.Contains("%(", StringComparison.Ordinal))
+                    .Where(name => name.Contains("$(", StringComparison.Ordinal) || name.Contains("@(", StringComparison.Ordinal) || name.Contains("%(", StringComparison.Ordinal)
+                        || name.Contains('*', StringComparison.Ordinal) || name.Contains('?', StringComparison.Ordinal))
                     .Select(name => $"{RepositoryFiles.Relative(file)}: {item} {attribute}=\"{name}\""))))
             .ToArray();
 
-        Assert.True(offences.Length == 0, "A package item names its package by a property or an item list: " + string.Join("; ", offences));
+        Assert.True(offences.Length == 0, "A package item names its package by a property, an item list or a wildcard: " + string.Join("; ", offences));
     }
 
     [Fact]

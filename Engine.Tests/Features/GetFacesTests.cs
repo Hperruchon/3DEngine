@@ -271,6 +271,35 @@ public sealed class GetFacesTests
         Assert.All(rims, rim => Assert.Equal((1, 64), (rim.Parts, rim.Segments.Count)));
     }
 
+    // Finding E165 of the codebase review of 2026-11-06 (e) (TASK-0251), ADR-0077 item 6: a plate with two opposite quarters
+    // cut away is two blocks that touch along the z axis, so one B-Rep edge there has four faces. Each pair of different
+    // names of its faces is an edge, and each segment of an outline is a segment of an edge of that face. Until TASK-0251
+    // the outlines of the four faces of the tools each held a segment on the z axis that no edge held.
+    [NativeManifoldFact]
+    public async Task An_Edge_Of_Four_Faces_Is_An_Edge_Of_Each_Pair_And_Each_Outline_Agrees()
+    {
+        using var backend = new ManifoldGeometryBackend();
+        var session = NewSession(backend);
+        var plate = await Box(session, 10, 10, 2);
+        var first = Output(await Applied(session, new TranslateCommand { BodyId = await Box(session, 5, 5, 4), Dx = 2.5, Dy = 2.5, Dz = 0 }), "bodyId");
+        var second = Output(await Applied(session, new TranslateCommand { BodyId = await Box(session, 5, 5, 4), Dx = -2.5, Dy = -2.5, Dz = 0 }), "bodyId");
+        var half = Output(await Applied(session, new SubtractCommand { MinuendBodyId = plate, SubtrahendBodyId = first }), "bodyId");
+        var cut = Output(await Applied(session, new SubtractCommand { MinuendBodyId = half, SubtrahendBodyId = second }), "bodyId");
+
+        var faces = await Faces(session, cut);
+        var edges = await Edges(session, cut);
+
+        static bool OnAxis(FaceSegment segment) => segment.Start.X == 0 && segment.Start.Y == 0 && segment.End.X == 0 && segment.End.Y == 0;
+        Assert.Contains(edges, edge => edge.Segments.Any(OnAxis));
+        string Key(FaceSegment segment) => string.Join(" ", new[] { segment.Start, segment.End }.Select(p => $"{p.X},{p.Y},{p.Z}").Order(StringComparer.Ordinal));
+        Assert.All(faces, face =>
+        {
+            var held = edges.Where(edge => edge.First == face.Reference || edge.Second == face.Reference).SelectMany(edge => edge.Segments).Select(Key).ToHashSet();
+            Assert.All(face.Outline, segment => Assert.True(held.Contains(Key(segment)), $"{face.Reference} {Key(segment)}"));
+            Assert.Equal(held.Count, face.Outline.Select(Key).Distinct().Count());
+        });
+    }
+
     // ADR-0075 item 2 (phase R12a, TASK-0236): the outline of each face name, which a client draws as the mark of a
     // selected face. Each face of a box has its four edges, and each edge of the box is in the outlines of two faces.
     [NativeManifoldFact]

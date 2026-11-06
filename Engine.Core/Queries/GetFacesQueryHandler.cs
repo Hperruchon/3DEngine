@@ -117,10 +117,13 @@ public sealed class GetFacesQueryHandler : IQueryHandler
             var count = (Rational)piece.Count;
             var point = new Vector3R(sum.X / count, sum.Y / count, sum.Z / count).ToDoubles();
 
-            // ADR-0075 item 2: the outline, each edge with one face of the name, in the order of the edges of the B-Rep. An
-            // edge between two facets of a curve, or between two faces of one name, is inside the name.
+            // ADR-0075 item 2: the outline, each edge between a face of the name and a face of another name, in the order of
+            // the edges of the B-Rep. An edge between two facets of a curve, or between two faces of one name, is inside the
+            // name. ADR-0077 item 6 (finding E165, TASK-0251): so the outline holds the segments of the edges of the name and
+            // no other; until TASK-0251 it took each edge with one face of the name, also an edge of one face or of more
+            // than two faces, which no edge held.
             var outline = brep.Edges
-                .Where(edge => edge.Faces.Count(face => brep.Faces[face].Tag == tag) == 1)
+                .Where(edge => edge.Faces.Any(face => brep.Faces[face].Tag == tag) && edge.Faces.Any(face => brep.Faces[face].Tag != tag))
                 .Select(edge => new FaceSegment(Position(brep.Vertices[edge.From]), Position(brep.Vertices[edge.To])))
                 .ToList();
 
@@ -139,22 +142,28 @@ public sealed class GetFacesQueryHandler : IQueryHandler
 
     // ADR-0077 items 1 and 2: one entry for each pair of names that a B-Rep edge bounds. An edge between two faces of one
     // name is inside the name. The parts are the chains of the segments of the pair that share a vertex.
+    //
+    // ADR-0077 item 6 (finding E165 of the codebase review of 2026-11-06 (e), TASK-0251): a B-Rep edge of more than two
+    // faces, where two solids touch along a line, is an edge of each pair of different names of its faces; an edge of one
+    // face is no edge. Until TASK-0251 an edge of more than two faces gave no entry.
     internal static IReadOnlyList<EdgeEntry> Edges(Brep brep)
     {
         var order = new List<(FaceTag First, FaceTag Second)>();
         var members = new Dictionary<(FaceTag First, FaceTag Second), List<BrepEdge>>();
-        foreach (var edge in brep.Edges.Where(edge => edge.Faces.Count == 2))
+        foreach (var edge in brep.Edges)
         {
-            var (a, b) = (brep.Faces[edge.Faces[0]].Tag, brep.Faces[edge.Faces[1]].Tag);
-            if (a == b)
-                continue;
-            var pair = Compare(a, b) < 0 ? (a, b) : (b, a);
-            if (!members.TryGetValue(pair, out var list))
-            {
-                members[pair] = list = [];
-                order.Add(pair);
-            }
-            list.Add(edge);
+            var names = edge.Faces.Select(face => brep.Faces[face].Tag).Distinct().Order(Comparer<FaceTag>.Create(Compare)).ToList();
+            for (var i = 0; i < names.Count; i++)
+                for (var j = i + 1; j < names.Count; j++)
+                {
+                    var pair = (names[i], names[j]);
+                    if (!members.TryGetValue(pair, out var list))
+                    {
+                        members[pair] = list = [];
+                        order.Add(pair);
+                    }
+                    list.Add(edge);
+                }
         }
 
         var entries = new List<EdgeEntry>();
