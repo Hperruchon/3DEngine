@@ -1,7 +1,7 @@
 ---
 id: 0232
 title: The start again sees the commands of the stop, and the panel and the phone hold their next forms
-status: Ready
+status: Done
 phase: P0.92
 opened: 2026-11-06
 depends-on: [0231]
@@ -12,6 +12,8 @@ writes:
   modify:
     - 3DEngine/DesktopEngineHost.cs
     - 3DEngine.App/Ui/DesktopUi.cs
+    - 3DEngine.App/Ui/PanelAction.cs
+    - 3DEngine.App/PhoneLifecycle.cs
     - 3DEngine.App/LocalSessionHost.cs
     - 3DEngine.App/NativeThreeDEngine.cs
     - 3DEngine.Android/PhoneHost.cs
@@ -59,20 +61,29 @@ phone shows the line of the document, the sink of the phone writes outside the c
 
 ## Acceptance criteria
 
-- [ ] Each finding has a test or an injection that fails before the change and passes after it.
-- [ ] A clean build (`--no-incremental`) gives zero errors and zero warnings.
-- [ ] Continuous integration passes on the three runners, on the branch and on `main` after the merge.
+- [x] Each finding has a test or an injection that fails before the change and passes after it.
+- [x] A clean build (`--no-incremental`) gives zero errors and zero warnings.
+- [x] Continuous integration passes on the three runners, on the branch and on `main` after the merge.
 
 ## Outcome
 
-Status: Ready
+Status: Done · commit (the merge of the branch p092-desktop-phone-forms) · v0.218
 
 ## Method
 
 Mechanical: a test or an injection for each finding, before the change.
-Judgement:  to be written in the task.
-Weakest:    to be written at the close.
+Judgement:  V98 keeps the count of lines: the list goes on a new line only when the line has no room, and Show all
+            shares the last line when it fits, so V50 holds. V101 sets the hint to 1, the value that Q1 B keeps.
+Weakest:    V101 has no run: only the test of the owner shows the order of the events of the background.
 
 ## Progress
 
 - 2026-11-06: opened by the codebase review of 2026-11-06 (c).
+- 2026-11-06: the write set takes 3DEngine.App/Ui/PanelAction.cs (the record DocumentLine, V99) and
+  3DEngine.App/PhoneLifecycle.cs (the comments of V101).
+- 2026-11-06: V97, V98 (the list of an extrude and the open list) and V99 have tests that failed before the change, or
+  an injection of the old form that fails them. V100: an injection of the report inside the commit fails the new test.
+  V101 to V103 are texts and one hint; the APK builds with zero warnings.
+- 2026-11-06: run 42168890096 of this branch passed each job but the emulator job, which failed before the first
+  line of the program, as the main run of v0.217 (run 42168252840) did with no change of code. Run 42169584195 of the branch
+  r15-ui-split, whose tree holds this commit and a move of code, passed each job. Closed at v0.218.
