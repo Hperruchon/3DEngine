@@ -1,13 +1,13 @@
 ---
 id: 0073
 title: The person cuts a body in the panel, and the phone keeps its document through the background
-status: Accepted
+status: Amended
 topic: Clients, platform
 date: 2026-11-06
 supersedes: []
 superseded-by: []
 amends: []
-amended-by: []
+amended-by: ['0079']
 affects:
   - 3DEngine.App/PhoneLifecycle.cs
   - 3DEngine.App/Ui/DesktopUi.cs
@@ -91,3 +91,4 @@ the pre-rotation.
   affects field names the files of items 1 and 2 (V102).
 - 2026-11-06 · TASK-0234 · The affects field names `DesktopUi.Panel.cs`, which holds the code of items 1 and 2 since the
   split of the user interface.
+- 2026-11-06 · TASK-0247 · ADR-0079 amends item 3: a new start of the activity starts the program again in its process.
