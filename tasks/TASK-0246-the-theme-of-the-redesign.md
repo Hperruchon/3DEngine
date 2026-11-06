@@ -1,7 +1,7 @@
 ---
 id: 0246
 title: The desktop and the phone take the theme "Proposed (harmonized)" of the redesign
-status: Active
+status: Done
 phase: R16a
 opened: 2026-11-06
 depends-on: [0245]
@@ -58,23 +58,25 @@ a casing; no control changes its size or its place.
 
 ## Acceptance criteria
 
-- [ ] The panel takes the colours of the theme and keeps its sizes.
-- [ ] A line of a sketch lies over a casing.
-- [ ] The image tests pass with the new clear, and the pictures are kept for the owner.
-- [ ] An injection of each item fails a test.
+- [x] The panel takes the colours of the theme and keeps its sizes.
+- [x] A line of a sketch lies over a casing.
+- [x] The image tests pass with the new clear, and the pictures are kept for the owner.
+- [x] An injection of each item fails a test.
 
 ## Outcome
 
-Status: Active
+Status: Done · commit (the merge of the branch redesign-a-theme) · v0.232
 
 ## Method
 
 Mechanical: the tokens of the theme `proposed` of `tokens.json`, as they differ from the first theme.
 Judgement:  which marks take a casing: each line, point, ring and square of the viewport, and no label.
-Weakest:    to be written at the close.
+Weakest:    the pictures come from the image tests at fixed sizes; no person looked at the theme on a display or on
+            the phone yet, and the fonts are still the bitmap font.
 
 ## Progress
 
 - 2026-11-06: the theme, the casing and two tests; an injection that leaves the theme out and one that leaves the casing
   out each fail a test. Four image tests read the new clear or the new colour of a snap. The pictures of the image tests
   before and after the change are kept for the owner.
+- 2026-11-06: run 42296524985 passed. Closed at v0.232.

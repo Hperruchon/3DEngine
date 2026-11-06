@@ -62,3 +62,4 @@ clear from a body compares exact bytes, so it still holds.
 ## History
 
 - 2026-11-06 · TASK-0246 · The record, with the colours and the casing; the fonts wait for the permission of the owner.
+- 2026-11-06 · TASK-0246 · Shipped at v0.232, with the colours and the casing.
