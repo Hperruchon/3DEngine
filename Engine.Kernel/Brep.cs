@@ -250,7 +250,7 @@ public sealed class Brep
         return new Brep([.. used.Select(i => vertices[i])], finalEdges, [.. regions.Select(item => item.Face)], finalShells, valid);
     }
 
-    // The outer loop of the list that contains a vertex of the hole, by an exact count of the crossings of a ray in the
+    // The outer loop of the list that contains the midpoint of an edge of the hole, by an exact count of the crossings of a ray in the
     // plane, or the first outer loop when the list has one.
     // Finding E138 of the codebase review of 2026-11-05 (b) (TASK-0192): the first outer loop that held the hole was its
     // owner, so a hole in an island of a face went to the region around the island. The owner is the outer loop of the
@@ -264,7 +264,12 @@ public sealed class Brep
         var (ax, ay, az) = (Abs(n.X), Abs(n.Y), Abs(n.Z));
         var drop = ax >= ay && ax >= az ? 0 : ay >= az ? 1 : 2;
         (Rational U, Rational V) P(Vector3R p) => drop switch { 0 => (p.Y, p.Z), 1 => (p.Z, p.X), _ => (p.X, p.Y) };
-        var point = P(vertices[hole[0]]);
+        // Finding E142 of the codebase review of 2026-11-06 (TASK-0197): a vertex of the hole can lie on the side of its
+        // region, and the count then gave "outside" for each outer loop. The midpoint of an edge of the hole is on no
+        // other loop, because the loops do not cross and step 2 splits an edge at each vertex on it.
+        var (first, second) = (P(vertices[hole[0]]), P(vertices[hole[1]]));
+        var half = new Rational(1, 2);
+        (Rational U, Rational V) point = ((first.U + second.U) * half, (first.V + second.V) * half);
         List<int>? owner = null;
         foreach (var outer in outers)
         {
@@ -343,10 +348,28 @@ public sealed class Brep
                 left.Remove(next);
                 (from, at) = next;
             }
-            loops.Add(loop);
+            loops.AddRange(Split(loop));
         }
 
         return loops;
+    }
+
+    // Finding E144 of the codebase review of 2026-11-06 (TASK-0197): at a vertex where two regions of a face meet, the
+    // rule of FirstCounterClockwise keeps a hole apart but joins the two regions into one loop that holds the vertex two
+    // times. Such a loop is two loops at that vertex: the part between the two uses, and the rest.
+    private static IEnumerable<List<int>> Split(List<int> loop)
+    {
+        for (var j = 1; j < loop.Count; j++)
+        {
+            var i = loop.IndexOf(loop[j], 0, j);
+            if (i < 0)
+                continue;
+            var inner = loop.GetRange(i, j - i);
+            var rest = loop.GetRange(0, i).Concat(loop.GetRange(j, loop.Count - j)).ToList();
+            return Split(inner).Concat(Split(rest));
+        }
+
+        return [loop];
     }
 
     // The edge whose direction comes first counter-clockwise about the normal from the direction back to the vertex

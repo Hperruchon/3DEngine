@@ -204,6 +204,59 @@ public sealed class StepExportTests : IDisposable
         Assert.Contains(body.ToString(), error!.Message, StringComparison.Ordinal);
     }
 
+    private static void Refused(Brep brep, string reason)
+    {
+        var body = Guid.NewGuid();
+        var (content, error) = StepExport.Write([(body, brep)]);
+
+        Assert.Null(content);
+        Assert.Equal(DiagnosticCodes.ExportBodyFailed, error?.Code);
+        Assert.Equal($"The STEP export does not write the body '{body}': {reason}", error!.Message);
+    }
+
+    // Finding E143 of the codebase review of 2026-11-06 (TASK-0197), item 3: the diamond of E137 touches the side +x of the
+    // plate along the edge x = 5, y = 0. Only the two walls of the diamond hold that edge, and it lies inside the face +x
+    // of the plate, so the solid is pinched along it. Each edge has one coedge in each direction, and the export wrote
+    // the file as a MANIFOLD_SOLID_BREP.
+    [Fact]
+    public void A_Solid_Pinched_Along_An_Edge_Is_Refused()
+    {
+        var diamond = new[] { (5, 0), (3, 1), (1, 0), (3, -1) }.Select(p => new ProfileVertex(p.Item1, p.Item2, Guid.NewGuid())).ToList();
+        var tool = KernelSolid.Extrude(Guid.NewGuid(), diamond, new Vector3R(0, 0, -5), new Vector3R(1, 0, 0), new Vector3R(0, 1, 0), new Vector3R(0, 0, 1), 10);
+        var brep = Brep.Of(PlanarBoolean.Subtract(Box(10, 10, 2), tool)!);
+
+        Assert.True(brep.Valid);
+        Refused(brep, "an edge of its B-Rep lies inside a face that does not hold it, so the solid is pinched along that edge.");
+    }
+
+    // Finding E145 of the codebase review of 2026-11-06 (TASK-0197), item 3: two boxes cut two opposite quadrants out of a
+    // plate, and the two quadrants that stay share the edge x = 0, y = 0. That edge has four faces, and the reason said
+    // "not closed".
+    [Fact]
+    public void An_Edge_Of_Four_Faces_Is_Refused_With_Its_Reason()
+    {
+        var first = Box(6, 6, 4).Translate(new Vector3R(3, 3, 0));
+        var second = Box(6, 6, 4).Translate(new Vector3R(-3, -3, 0));
+        var brep = Brep.Of(PlanarBoolean.Subtract(PlanarBoolean.Subtract(Box(10, 10, 2), first)!, second)!);
+
+        Assert.False(brep.Valid);
+        Refused(brep, "an edge of its B-Rep has more than two faces.");
+    }
+
+    // Finding E146 of the codebase review of 2026-11-06 (TASK-0197), item 3: a tool moved by 3 and then by -2^-60 leaves a
+    // sliver of 2^-60 mm at x = 5. Its exact volume is not zero, but each vertex of the sliver rounds to the double of
+    // a vertex of the box, so the file held a solid of zero thickness.
+    [Fact]
+    public void Two_Vertices_That_Round_To_One_Point_Are_Refused()
+    {
+        var tiny = new Rational(System.Numerics.BigInteger.One, System.Numerics.BigInteger.Pow(2, 60));
+        var tool = Box(4, 20, 20).Translate(new Vector3R(3, 0, 0)).Translate(new Vector3R(-tiny, 0, 0));
+        var brep = Brep.Of(PlanarBoolean.Subtract(Box(10, 10, 10), tool)!);
+
+        Assert.Equal(2, brep.Shells.Count);
+        Refused(brep, "two vertices of its B-Rep round to one point of a double, so the file would hold an edge of no length.");
+    }
+
     // Item 1: a real has a point and the shortest form that reads back to the same double; minus zero is zero.
     [Theory]
     [InlineData(0.0, "0.")]

@@ -21,8 +21,8 @@ public static class DiagnosticCodes
     // over HTTP in engine-api-http.
     public const string ApiNotSupported = "E-API-NOT-SUPPORTED";
 
-    // ADR-0030 item 4: the host accepted an open and starts again, so it refuses each
-    // command, save and open until then (TASK-0099).
+    // ADR-0030 item 4: the host accepted an open, and its next session holds the file,
+    // so it refuses each command, save and open until then (TASK-0099).
     public const string ApiOpenPending = "E-API-OPEN-PENDING";
     public const string GeomCapMissing = "E-GEOM-CAP-MISSING";
     public const string GeomInvalidParam = "E-GEOM-INVALID-PARAM";
