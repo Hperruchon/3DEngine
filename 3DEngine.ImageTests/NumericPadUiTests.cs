@@ -54,10 +54,17 @@ public sealed class NumericPadUiTests
         Step(ui, selection);
     }
 
+    // Phase K5b (ADR-0076 item 7, TASK-0244): a tap on the list "New", and then a tap on its entry.
+    private static void OpenFromNew(DesktopUi ui, DeviceKind kind, string entry, Guid? selection = null)
+    {
+        Tap(ui, kind, DesktopUi.NewLabel, selection);
+        Tap(ui, kind, entry, selection);
+    }
+
     private static DesktopUi WithNewBoxPad()
     {
         var ui = Opened();
-        Tap(ui, DeviceKind.Mouse, DesktopUi.NewBoxLabel);
+        OpenFromNew(ui, DeviceKind.Mouse, DesktopUi.NewBoxLabel);
         Assert.NotNull(ui.Pad);
         Step(ui, null);
         return ui;
@@ -84,7 +91,7 @@ public sealed class NumericPadUiTests
     {
         using var ui = Opened(Body.Id, "in");
 
-        Tap(ui, DeviceKind.Mouse, DesktopUi.NewBoxLabel, Body.Id);
+        OpenFromNew(ui, DeviceKind.Mouse, DesktopUi.NewBoxLabel, Body.Id);
         Assert.Equal(DesktopUi.NewBoxLabel, ui.Pad?.Title);
         Assert.Equal("in", ui.Pad!.Unit);
         Tap(ui, DeviceKind.Mouse, DesktopUi.PadItem("Cancel"), Body.Id);
@@ -213,12 +220,16 @@ public sealed class NumericPadUiTests
             ui.OpenNextPointPad(chainOpen: true);
         else
         {
-            var at = ui.ItemRectangle(DesktopUi.NewBoxLabel) ?? throw new InvalidOperationException("The panel has no New box.");
-            var (x, y) = ((at.X + at.Z) / 2, (at.Y + at.W) / 2);
-            ui.Route([new PointerSample(DeviceKind.Touch, 1, 3, x, y, 1, PointerButtons.None, KeyModifiers.None, PointerPhase.Down, 0)]);
-            Draw();
-            ui.Route([new PointerSample(DeviceKind.Touch, 1, 3, x, y, 1, PointerButtons.None, KeyModifiers.None, PointerPhase.Up, 0)]);
-            Draw();
+            foreach (var item in new[] { DesktopUi.NewLabel, DesktopUi.NewBoxLabel })
+            {
+                var at = ui.ItemRectangle(item) ?? throw new InvalidOperationException($"The panel has no {item}.");
+                var (x, y) = ((at.X + at.Z) / 2, (at.Y + at.W) / 2);
+                ui.Route([new PointerSample(DeviceKind.Touch, 1, 3, x, y, 1, PointerButtons.None, KeyModifiers.None, PointerPhase.Down, 0)]);
+                Draw();
+                ui.Route([new PointerSample(DeviceKind.Touch, 1, 3, x, y, 1, PointerButtons.None, KeyModifiers.None, PointerPhase.Up, 0)]);
+                Draw();
+                Draw();
+            }
         }
 
         Draw();
@@ -268,7 +279,7 @@ public sealed class NumericPadUiTests
         Assert.Null(ui.Pad);
 
         // New box names no selection, so it stays open.
-        Tap(ui, DeviceKind.Mouse, DesktopUi.NewBoxLabel, Body.Id);
+        OpenFromNew(ui, DeviceKind.Mouse, DesktopUi.NewBoxLabel, Body.Id);
         Assert.NotNull(ui.Pad);
         Step(ui, null);
         Assert.NotNull(ui.Pad);
@@ -306,10 +317,13 @@ public sealed class NumericPadUiTests
 
         Draw();
         Draw();
-        var box = Centre(ui, DesktopUi.NewBoxLabel);
-        Draw(new PointerSample(DeviceKind.Mouse, 1, 0, box.X, box.Y, 1, PointerButtons.Left, KeyModifiers.None, PointerPhase.Down, 0));
-        Draw(new PointerSample(DeviceKind.Mouse, 1, 0, box.X, box.Y, 1, PointerButtons.Left, KeyModifiers.None, PointerPhase.Up, 0));
-        Draw();
+        foreach (var item in new[] { DesktopUi.NewLabel, DesktopUi.NewBoxLabel })
+        {
+            var box = Centre(ui, item);
+            Draw(new PointerSample(DeviceKind.Mouse, 1, 0, box.X, box.Y, 1, PointerButtons.Left, KeyModifiers.None, PointerPhase.Down, 0));
+            Draw(new PointerSample(DeviceKind.Mouse, 1, 0, box.X, box.Y, 1, PointerButtons.Left, KeyModifiers.None, PointerPhase.Up, 0));
+            Draw();
+        }
         Assert.NotNull(ui.Pad);
 
         var field = Centre(ui, DesktopUi.FileNameLabel);
@@ -324,6 +338,37 @@ public sealed class NumericPadUiTests
         Assert.Equal([key], ui.Route([key]));
     }
 
+    // Phase K5b (ADR-0076 item 7, TASK-0244): the list "New" holds Box and Cylinder, each at least 44 pixels high; Cylinder
+    // opens a pad of two values, its radius and its height, for a finger and for the mouse, and an apply gives one action
+    // with the typed values.
+    [Theory]
+    [InlineData(DeviceKind.Touch)]
+    [InlineData(DeviceKind.Mouse)]
+    public void New_Cylinder_Opens_A_Pad_Of_Two_Values_And_An_Apply_Gives_Them(DeviceKind kind)
+    {
+        using var ui = Opened();
+        Tap(ui, kind, DesktopUi.NewLabel);
+        foreach (var entry in new[] { DesktopUi.NewBoxLabel, DesktopUi.NewCylinderLabel })
+        {
+            var rectangle = ui.ItemRectangle(entry) ?? throw new InvalidOperationException($"The list has no {entry}.");
+            Assert.True(rectangle.W - rectangle.Y >= DesktopUi.MinimumControlHeight, $"{entry} is {rectangle.W - rectangle.Y} pixels high.");
+
+            // The open list is a rectangle of the panels, so a tap on it does not reach the scene.
+            Assert.True(ui.OverPanel((rectangle.X + rectangle.Z) / 2, (rectangle.Y + rectangle.W) / 2), $"{entry} is outside the panels.");
+        }
+        Tap(ui, kind, DesktopUi.NewCylinderLabel);
+        Assert.Equal(DesktopUi.NewCylinderLabel, ui.Pad?.Title);
+        Step(ui, null);
+
+        foreach (var label in new[] { "Clear", "3", "Next", "Clear", "2", "*", "pi", "Apply" })
+            Tap(ui, kind, DesktopUi.PadItem(label));
+
+        Assert.Equal([new CreateCylinderAction(3, 2 * Math.PI)], ui.TakeActions());
+        Assert.Equal(["radius", "height"], ui.Pad!.Fields.Select(field => field.Name));
+        ui.EndPad(null);
+        Assert.Null(ui.Pad);
+    }
+
     // ADR-0027 item 6 for the controls of ADR-0032 items 4 and 5.
     [Fact]
     public void Each_Control_Of_The_Pad_Is_At_Least_44_Pixels_High()
@@ -332,7 +377,7 @@ public sealed class NumericPadUiTests
 
         var items = DesktopUi.PadRows.SelectMany(row => row).Select(DesktopUi.PadItem)
             .Concat(new[] { "x", "y", "z" }.Select(DesktopUi.PadItem))
-            .Append(DesktopUi.NewBoxLabel);
+            .Append(DesktopUi.NewLabel);
         foreach (var item in items)
         {
             var rectangle = ui.ItemRectangle(item) ?? throw new InvalidOperationException($"The pad has no control {item}.");

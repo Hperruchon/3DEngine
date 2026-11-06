@@ -298,6 +298,9 @@ public sealed class NativeThreeDEngine : IThreeDEngine, IDisposable
                 case CreateBoxAction box:
                     _ui.EndPad(_actions.CreateBox(box.X, box.Y, box.Z));
                     break;
+                case CreateCylinderAction cylinder:
+                    _ui.EndPad(_actions.CreateCylinder(cylinder.Radius, cylinder.Height));
+                    break;
                 case MoveBodyAction move:
                     _ui.EndPad(_actions.Move(move.Body, move.Dx, move.Dy, move.Dz));
                     break;

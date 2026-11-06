@@ -48,10 +48,10 @@ when you can.
 | Step | Do this | Expect this |
 |---|---|---|
 | 1 | Open the app 3DEngine. | A window in portrait, with the panel of the desktop and an empty scene. |
-| 2 | In the panel, tap New box, give 10, 10 and 2, and tap Apply. | One body in the list of the panel, and a box in the scene. |
-| 3 | Tap New box again, give 4, 4 and 4, and tap Apply. | Two bodies in the list, and a second box through the first one. |
+| 2 | In the panel, tap New, then Box, give 10, 10 and 2, and tap Apply. | One body in the list of the panel, and a box in the scene. |
+| 3 | Tap New, then Cylinder, give 2 and 8, and tap Apply. | Two bodies in the list, and a cylinder through the box. |
 | 4 | Tap the first body in the list. | Its controls show: Name, Rename, Hide, Move and "Cut with". |
-| 5 | Tap "Cut with", then tap the second body. | One body in the list: the plate with a square hole. |
+| 5 | Tap "Cut with", then tap the second body. | One body in the list: the plate with a round hole. |
 | 6 | Drag one finger in the scene, and pinch with two fingers. | The camera turns and zooms; the hole shows. |
 | 7 | Tap Undo, then Redo. | Undo gives the two boxes again; Redo gives the plate with the hole. |
 | 8 | Press Home, wait 10 seconds, and open the app again. | The same plate with the hole. The selection is gone. In the log, the line "goes into the background" comes at the return, just before the line "in the foreground again" (ADR-0073 item 3). |

@@ -52,7 +52,11 @@ internal sealed unsafe partial class DesktopUi : IDisposable
     public const string DocumentMessageLabel = "Document message";
     public const string UndoLabel = "Undo";
     public const string RedoLabel = "Redo";
+    // Phase K5b (ADR-0076 item 7, TASK-0244): the list "New" holds one entry for each primitive. The key of an entry is
+    // the title of its pad.
+    public const string NewLabel = "New";
     public const string NewBoxLabel = "New box";
+    public const string NewCylinderLabel = "New cylinder";
     public const string MoveLabel = "Move";
 
     // ADR-0073 item 1 (phase R14e3, TASK-0227): the list of the tools of a cut of the selected body.
@@ -469,6 +473,7 @@ internal sealed unsafe partial class DesktopUi : IDisposable
 
         _panels.Clear();
         _cutList = null;
+        _newList = null;
         _items.Clear();
         _shown.Clear();
         FollowSelection(bodies, selection, sketchPanel);
