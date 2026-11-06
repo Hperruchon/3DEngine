@@ -197,6 +197,21 @@ public sealed unsafe class Window : IDisposable
     // "failed to create vulkan surface" and no cause.
     internal static string Error() => SDL_GetError() is { Length: > 0 } text ? text : "SDL gave no text";
 
+    // Finding V118 of the codebase review of 2026-11-06 (e) (TASK-0252): the insets of the safe area of the window, in the
+    // units of Extent, as left, top, right and bottom. On Android, SDL draws the surface under the system bars and the
+    // cutout, and the safe area is the part outside them; a window of a desktop gives zero.
+    public (float Left, float Top, float Right, float Bottom) SafeInsets
+    {
+        get
+        {
+            SDL_Rect area;
+            int width, height;
+            if (!SDL_GetWindowSafeArea(_window, &area) || !SDL_GetWindowSize(_window, &width, &height) || area.w <= 0 || area.h <= 0)
+                return default;
+            return (area.x, area.y, Math.Max(width - area.x - area.w, 0), Math.Max(height - area.y - area.h, 0));
+        }
+    }
+
     public void Show()
     {
         _ = SDL_ShowWindow(_window);
