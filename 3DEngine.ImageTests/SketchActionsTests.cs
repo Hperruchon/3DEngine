@@ -149,7 +149,7 @@ public class SketchActionsTests
     public async Task An_Undo_Ends_The_Chain_Then_The_Mode()
     {
         using var host = new EngineHost(new InProcessMeshBackend());
-        using var live = new SessionSketches(host);
+        using var live = new SessionSketches(new HostedSession(host));
         var actions = new SketchActions(host.Session);
         actions.Create(Datums.XY.Id);
         actions.Next(1, 1);

@@ -11,9 +11,9 @@ writes:
     - tasks/TASK-0153-image-in-the-desktop.md
     - docs/adr/0046-image-in-the-desktop.md
     - 3DEngine.Core/Imaging/PngReader.cs
-    - 3DEngine/SessionImages.cs
-    - 3DEngine/ImagePlacement.cs
-    - 3DEngine/ImageActions.cs
+    - 3DEngine.App/SessionImages.cs
+    - 3DEngine.App/ImagePlacement.cs
+    - 3DEngine.App/ImageActions.cs
     - 3DEngine.Tests/PngReaderTests.cs
     - 3DEngine.ImageTests/ImageActionsTests.cs
     - 3DEngine.ImageTests/PlacedImageImageTests.cs
@@ -93,3 +93,5 @@ Weakest:    no test drives the host: the taps of a calibration in the live windo
   drew a PNG file of an independent encoder; under the panel the window of the images hid Show all, so it is to the
   right of the panel and closed at the start.
 - 2026-10-31: closed at v0.152.
+- 2026-11-06: TASK-0222 moved `3DEngine/SessionImages.cs`, `3DEngine/ImagePlacement.cs`, `3DEngine/ImageActions.cs` into `3DEngine.App/` (ADR-0072), so the
+  create list names the new path. This task made the file at the old path.

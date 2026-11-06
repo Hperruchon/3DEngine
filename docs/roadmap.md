@@ -321,6 +321,7 @@ The first objective. Each phase ends with something that a person can observe.
 | R14c | `ppy.SDL3-CS` replaces `Alimer.Bindings.SDL` on the desktop, with no change of behaviour and no file of 32-bit x86; the image tests stay green (ADR-0061 item 5). TASK-0195. | 2–4 |
 | R14d | The native builds of Manifold and cimgui for `android-arm64` and `android-x64` on GitHub Actions, with the NDK, serial (ADR-0061 items 6 and 7). TASK-0196. | 3–6 |
 | R14e | The Android host: a `net10.0-android` project, an activity that subclasses `SDLActivity`, the APK, the document picker for Open and Save, a new surface and swapchain after a loss, the pre-rotation, and a pause in the background. A box, a subtract and the cut on the S23 Ultra, and a test sheet for the owner. The row closes only after the test of the owner (ADR-0061 item 9). | 10–20 |
+| R14e1 | The drawing code of the desktop becomes the library `3DEngine.App`, which an Android program can reference: it reaches the session through `ISessionHost` and the files through `IDocumentFiles`, and it references no surface and no ASP.NET Core. No change of behaviour (ADR-0072). TASK-0222. | 2–3 |
 | R14f | The gate of Android: a job builds the APK at each push, a job runs the x86-64 emulator with software Vulkan and a smoke test, and the pipeline compares the hash of Android with the hashes of the desktop runners (ADR-0061 items 1 and 8). | 4–8 |
 | R14g | The layout of the phone, inside the redesign of the desktop: each region of the redesign gives its form on the screen of the S23 Ultra (ADR-0061 item 9). | 8–15 |
 

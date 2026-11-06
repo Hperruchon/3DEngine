@@ -13,7 +13,9 @@ public class DesktopSinkContractTests
     [Fact]
     public void Each_Sink_Of_The_Desktop_Has_A_Test_That_It_Does_Not_Throw()
     {
-        var sinks = typeof(ThreeDEngine.Desktop.SessionImages).Assembly.GetTypes()
+        // ADR-0072 (TASK-0222): the desktop program and its application are two assemblies.
+        var sinks = new[] { typeof(ThreeDEngine.Desktop.HostedSession).Assembly, typeof(ThreeDEngine.Desktop.SessionImages).Assembly }
+            .SelectMany(assembly => assembly.GetTypes())
             .Where(type => type is { IsAbstract: false, IsInterface: false } && typeof(IEventSink).IsAssignableFrom(type))
             .OrderBy(type => type.FullName, StringComparer.Ordinal)
             .ToArray();

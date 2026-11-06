@@ -63,7 +63,7 @@ public class FirstDemonstrationImageTests
         {
             synchronizationChecked = device.SynchronizationValidationEnabled;
             using var target = new OffscreenTarget(device, new VkExtent2D(Width, Height));
-            using var renderer = new SceneRenderer(device, target.RenderPass, host);
+            using var renderer = new SceneRenderer(device, target.RenderPass, new HostedSession(host));
 
             renderer.Update(scene, camera, (float)Width / Height);
             pixels = target.Render((commandBuffer, framebuffer, extent) => renderer.Record(commandBuffer, framebuffer, extent, scene, camera));
@@ -107,7 +107,7 @@ public class FirstDemonstrationImageTests
         using (var device = new GraphicsDevice("3DEngine.ImageTests", enableValidation: true, window: null, synchronizationValidation: true))
         {
             using var target = new OffscreenTarget(device, new VkExtent2D(Width, Height));
-            using var renderer = new SceneRenderer(device, target.RenderPass, host);
+            using var renderer = new SceneRenderer(device, target.RenderPass, new HostedSession(host));
             renderer.Update(scene, camera, (float)Width / Height);
             plain = target.Render((commandBuffer, framebuffer, extent) => renderer.Record(commandBuffer, framebuffer, extent, scene, camera));
             selected = target.Render((commandBuffer, framebuffer, extent) => renderer.Record(commandBuffer, framebuffer, extent, scene, camera, selected: cut));
@@ -154,7 +154,7 @@ public class FirstDemonstrationImageTests
         using (var device = new GraphicsDevice("3DEngine.ImageTests", enableValidation: true, window: null, synchronizationValidation: true))
         {
             using var target = new OffscreenTarget(device, new VkExtent2D(Width, Height));
-            using var renderer = new SceneRenderer(device, target.RenderPass, host);
+            using var renderer = new SceneRenderer(device, target.RenderPass, new HostedSession(host));
             renderer.Update(scene, camera, (float)Width / Height);
             Assert.Equal([cut], renderer.LiveBodies.Select(body => body.Id));
 

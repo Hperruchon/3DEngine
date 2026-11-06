@@ -1,5 +1,4 @@
 using System.Numerics;
-using Engine.Api.Http;
 using Engine.Contracts.Sketch;
 using SDL;
 using ThreeDEngine.Core.Abstractions;
@@ -27,11 +26,11 @@ public sealed class NativeThreeDEngine : IThreeDEngine, IDisposable
     private readonly IntentMachine _intents;
 
     private readonly Window _window;
-    private readonly EngineHost _host;
+    private readonly ISessionHost _host;
 
     // ADR-0030 item 3: the document folder and the open of the desktop, and the result
     // of the last save or open, which the panel shows.
-    private readonly DesktopDocument? _document;
+    private readonly IDocumentFiles? _document;
     private string? _documentMessage;
     private readonly string _address;
     private GraphicsDevice? _graphicsDevice;
@@ -59,7 +58,7 @@ public sealed class NativeThreeDEngine : IThreeDEngine, IDisposable
     private SessionImages? _images;
     private ImageActions? _imageActions;
 
-    internal NativeThreeDEngine(Window window, EngineHost host, IntentSettings? settings = null, bool synchronizationValidation = false, string address = "", DesktopDocument? document = null, Engine.Core.Assets.AssetStore? assets = null)
+    internal NativeThreeDEngine(Window window, ISessionHost host, IntentSettings? settings = null, bool synchronizationValidation = false, string address = "", IDocumentFiles? document = null, Engine.Core.Assets.AssetStore? assets = null)
     {
         _window = window;
         _document = document;
@@ -412,7 +411,7 @@ public sealed class NativeThreeDEngine : IThreeDEngine, IDisposable
     {
         if (_document is null)
             return "The desktop has no document folder.";
-        var path = _document.Folder.Resolve(name, out var refusal);
+        var path = _document.Resolve(name, out var refusal);
         if (path is null)
             return refusal!;
         var error = _host.Session.SaveAs(path).GetAwaiter().GetResult();
@@ -425,7 +424,7 @@ public sealed class NativeThreeDEngine : IThreeDEngine, IDisposable
     {
         if (_document is null)
             return "The desktop has no document folder.";
-        var path = StlPath(_document.Folder, name, out var refusal);
+        var path = StlPath(_document, name, out var refusal);
         if (path is null)
             return refusal!;
         var (content, error) = _host.Session.ReadGeometry(Engine.Core.Export.StlExport.Write).GetAwaiter().GetResult();
@@ -451,11 +450,11 @@ public sealed class NativeThreeDEngine : IThreeDEngine, IDisposable
 
     // The path of the STL file of a name. Finding V72 of the codebase review of 2026-11-01 (TASK-0162):
     // Resolve adds .3de, so until TASK-0162 the name "part.stl" gave the file "part.stl.stl".
-    internal static string? StlPath(DocumentFolder folder, string name, out string? refusal)
+    internal static string? StlPath(IDocumentFiles files, string name, out string? refusal)
     {
         if (name.EndsWith(".stl", StringComparison.OrdinalIgnoreCase))
             name = name[..^4];
-        var path = folder.Resolve(name, out refusal);
+        var path = files.Resolve(name, out refusal);
         return path is null ? null : Path.ChangeExtension(path, ".stl");
     }
 
@@ -465,10 +464,10 @@ public sealed class NativeThreeDEngine : IThreeDEngine, IDisposable
     {
         if (_document is null)
             return "The desktop has no document folder.";
-        var path = _document.Folder.Resolve(name, out var refusal);
+        var path = _document.Resolve(name, out var refusal);
         if (path is null)
             return refusal!;
-        var error = _document.Folder.Open(path, CancellationToken.None).GetAwaiter().GetResult();
+        var error = _document.Open(path, CancellationToken.None).GetAwaiter().GetResult();
         return error is null ? $"Opening {Path.GetFileName(path)}" : $"{error.Code}: {error.Message}";
     }
 

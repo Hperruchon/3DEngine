@@ -1,5 +1,4 @@
 using System.Collections.Concurrent;
-using Engine.Api.Http;
 using Engine.Contracts;
 using Engine.Contracts.Geometry;
 using Engine.Core;
@@ -44,7 +43,7 @@ internal sealed class SessionBodies : IDisposable
     private readonly record struct Pending(
         Change Change, Guid BodyId, string Kind, string? Name, bool Visible, Guid Geometry, BodyFault? Fault);
 
-    private readonly EngineHost _host;
+    private readonly ISessionHost _host;
     private readonly ConcurrentQueue<Pending> _changes = new();
     private readonly IDisposable _subscription;
 
@@ -62,7 +61,7 @@ internal sealed class SessionBodies : IDisposable
     private readonly Dictionary<Guid, (double[] Positions, uint[] Indices)> _triangles = new();
     private readonly BodyVisibility _visibility = new();
 
-    public SessionBodies(EngineHost host)
+    public SessionBodies(ISessionHost host)
     {
         _host = host;
 

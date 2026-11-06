@@ -10,7 +10,7 @@ amends: ['0026', '0034']
 amended-by: []
 affects:
   - 3DEngine.Core/Sketching/**
-  - 3DEngine/SketchOverlay.cs
+  - 3DEngine.App/SketchOverlay.cs
   - 3DEngine.Core/Input/**
 enforced-by: 3DEngine.Tests/SketchToolTests.cs
 ---

@@ -161,7 +161,7 @@ public sealed class SketchGapUiTests
         var sketch = (await host.Session.Apply(new CreateSketchCommand { DatumId = Datums.XY.Id })).Outputs;
         sketch.TryGet<Guid>("sketchId", out var id);
         (await host.Session.Apply(new AddSketchPointCommand { SketchId = id, X = 1, Y = 1 })).Outputs.TryGet<Guid>("pointId", out var point);
-        using var live = new SessionSketches(host);
+        using var live = new SessionSketches(new HostedSession(host));
         live.Apply();
         var before = live.Reads;
 

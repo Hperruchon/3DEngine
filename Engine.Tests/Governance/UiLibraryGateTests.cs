@@ -8,8 +8,8 @@ using Xunit;
 namespace Engine.Tests.Governance;
 
 // The gate of ADR-0027 items 1 and 8 (TASK-0084): the library of the user interface
-// lives in one host folder. Only the files in 3DEngine/Ui/ name the namespace ImGuiNET,
-// and only 3DEngine/3DEngine.csproj pins the package ImGui.NET. A fork or a first-party
+// lives in one host folder. Only the files in 3DEngine.App/Ui/ name the namespace ImGuiNET,
+// and only 3DEngine.App/3DEngine.App.csproj pins the package ImGui.NET. A fork or a first-party
 // user interface then replaces one folder (ADR-0027 item 9).
 //
 // The gate reads text, not the semantic model: a name in a comment, in a string or in a
@@ -17,8 +17,9 @@ namespace Engine.Tests.Governance;
 // the library from another folder.
 public class UiLibraryGateTests
 {
-    private const string UiFolder = "3DEngine/Ui/";
-    private const string PinningProject = "3DEngine/3DEngine.csproj";
+    // ADR-0072 (TASK-0222): the user interface moved with the application into 3DEngine.App.
+    private const string UiFolder = "3DEngine.App/Ui/";
+    private const string PinningProject = "3DEngine.App/3DEngine.App.csproj";
 
     // This file names the namespace in its injected forms, so the scan of the repository
     // leaves it out. The functions that find an offence have no exception.
@@ -42,17 +43,17 @@ public class UiLibraryGateTests
 
         Assert.True(
             offences.Length == 0,
-            "ADR-0027 items 1 and 8: only the files in 3DEngine/Ui/ name the namespace ImGuiNET, and only "
-            + "3DEngine/3DEngine.csproj pins the package ImGui.NET. Offences:\n  " + string.Join("\n  ", offences));
+            "ADR-0027 items 1 and 8: only the files in 3DEngine.App/Ui/ name the namespace ImGuiNET, and only "
+            + "3DEngine.App/3DEngine.App.csproj pins the package ImGui.NET. Offences:\n  " + string.Join("\n  ", offences));
     }
 
     // The forms that the gate must find. Each one is a way to use the library from
     // another folder.
     [Theory]
-    [InlineData("3DEngine/NativeThreeDEngine.cs", "using ImGuiNET;\ninternal static class C { }", "names the namespace ImGuiNET")]
+    [InlineData("3DEngine.App/NativeThreeDEngine.cs", "using ImGuiNET;\ninternal static class C { }", "names the namespace ImGuiNET")]
     [InlineData("3DEngine.Vulkan/Ui/UiRenderer.cs", "internal static class C { static void F() => ImGuiNET.ImGui.NewFrame(); }", "names the namespace ImGuiNET")]
     [InlineData("3DEngine.ImageTests/PanelTests.cs", "using Gui = ImGuiNET.ImGui;\ninternal static class C { }", "names the namespace ImGuiNET")]
-    [InlineData("3DEngine/3DEngine.csproj", "<Project><ItemGroup><Using Include=\"ImGuiNET\" /></ItemGroup></Project>", "names the namespace ImGuiNET")]
+    [InlineData("3DEngine.App/3DEngine.App.csproj", "<Project><ItemGroup><Using Include=\"ImGuiNET\" /></ItemGroup></Project>", "names the namespace ImGuiNET")]
     public void A_Use_Of_The_Namespace_Outside_The_Ui_Folder_Is_An_Offence(string path, string text, string expected)
     {
         var offences = NamespaceOffences([(path, text)]);
@@ -76,9 +77,9 @@ public class UiLibraryGateTests
     // The forms of finding T64 of the codebase review of 2026-10-28 (TASK-0089); each one
     // compiled and passed the gate of main.
     [Theory]
-    [InlineData("3DEngine/NativeThreeDEngine.cs", "using ImGu\\u0069NET;\ninternal static class C { }", "with an escape")]
-    [InlineData("3DEngine/NativeThreeDEngine.cs", "internal static class C { [System.Runtime.InteropServices.DllImport(\"cimgui\")] static extern void igNewFrame(); }", "native library cimgui")]
-    [InlineData("3DEngine/NativeThreeDEngine.cs", "internal static class C { static nint L() => System.Runtime.InteropServices.NativeLibrary.Load(\"CIMGUI.dll\"); }", "native library cimgui")]
+    [InlineData("3DEngine.App/NativeThreeDEngine.cs", "using ImGu\\u0069NET;\ninternal static class C { }", "with an escape")]
+    [InlineData("3DEngine.App/NativeThreeDEngine.cs", "internal static class C { [System.Runtime.InteropServices.DllImport(\"cimgui\")] static extern void igNewFrame(); }", "native library cimgui")]
+    [InlineData("3DEngine.App/NativeThreeDEngine.cs", "internal static class C { static nint L() => System.Runtime.InteropServices.NativeLibrary.Load(\"CIMGUI.dll\"); }", "native library cimgui")]
     public void Each_Form_Of_Finding_T64_In_A_Source_Is_An_Offence(string path, string text, string expected)
     {
         var offences = NamespaceOffences([(path, text)]);
@@ -97,16 +98,16 @@ public class UiLibraryGateTests
     }
 
     // The forms of finding T70 of the second codebase review of 2026-10-28 (TASK-0098): a
-    // global using in 3DEngine/Ui/ opens the namespace to each file of the project, and a
+    // global using in 3DEngine.App/Ui/ opens the namespace to each file of the project, and a
     // constant that the compiler concatenates hides the name of the native library. Each one
     // compiled and passed the gate of main.
     [Theory]
-    [InlineData("3DEngine/Ui/Usings.cs", "global using ImGuiNET;", "a global using")]
-    [InlineData("3DEngine/Ui/Usings.cs", "global using Gui = ImGuiNET.ImGui;", "a global using")]
-    [InlineData("3DEngine/Ui/Usings.cs", "global using static ImGu\\u0069NET.ImGui;", "a global using")]
-    [InlineData("3DEngine/NativeThreeDEngine.cs", "internal static class C { [System.Runtime.InteropServices.DllImport(\"cim\" + \"gui\")] static extern void igNewFrame(); }", "native library cimgui")]
-    [InlineData("3DEngine/NativeThreeDEngine.cs", "internal static class C { const string Part = \"cim\"; const string Name = Part + \"GUI\"; [System.Runtime.InteropServices.DllImport(Name)] static extern void igNewFrame(); }", "native library cimgui")]
-    [InlineData("3DEngine/NativeThreeDEngine.cs", "internal static class C { static nint L() => System.Runtime.InteropServices.NativeLibrary.Load($\"cim{\"gui\"}\"); }", "native library cimgui")]
+    [InlineData("3DEngine.App/Ui/Usings.cs", "global using ImGuiNET;", "a global using")]
+    [InlineData("3DEngine.App/Ui/Usings.cs", "global using Gui = ImGuiNET.ImGui;", "a global using")]
+    [InlineData("3DEngine.App/Ui/Usings.cs", "global using static ImGu\\u0069NET.ImGui;", "a global using")]
+    [InlineData("3DEngine.App/NativeThreeDEngine.cs", "internal static class C { [System.Runtime.InteropServices.DllImport(\"cim\" + \"gui\")] static extern void igNewFrame(); }", "native library cimgui")]
+    [InlineData("3DEngine.App/NativeThreeDEngine.cs", "internal static class C { const string Part = \"cim\"; const string Name = Part + \"GUI\"; [System.Runtime.InteropServices.DllImport(Name)] static extern void igNewFrame(); }", "native library cimgui")]
+    [InlineData("3DEngine.App/NativeThreeDEngine.cs", "internal static class C { static nint L() => System.Runtime.InteropServices.NativeLibrary.Load($\"cim{\"gui\"}\"); }", "native library cimgui")]
     public void Each_Form_Of_Finding_T70_Is_An_Offence(string path, string text, string expected)
     {
         var offences = NamespaceOffences([(path, text)]);
@@ -126,11 +127,11 @@ public class UiLibraryGateTests
     [InlineData("internal static class C { [System.Runtime.InteropServices.DllImport(Names.Part + \"gui\")] static extern void igNewFrame(); }")]
     public void Each_Form_Of_Finding_T82_Is_An_Offence(string text)
     {
-        var offences = NamespaceOffences([("3DEngine/NativeThreeDEngine.cs", text), ("3DEngine/Names.cs", "internal static class Names { internal const string Part = \"cim\"; }")]).ToList();
+        var offences = NamespaceOffences([("3DEngine.App/NativeThreeDEngine.cs", text), ("3DEngine.App/Names.cs", "internal static class Names { internal const string Part = \"cim\"; }")]).ToList();
 
         Assert.True(
-            offences.Any(o => o.StartsWith("3DEngine/NativeThreeDEngine.cs:1 names the native library cimgui", StringComparison.Ordinal)),
-            "Expected an offence in 3DEngine/NativeThreeDEngine.cs. Offences:\n  " + string.Join("\n  ", offences));
+            offences.Any(o => o.StartsWith("3DEngine.App/NativeThreeDEngine.cs:1 names the native library cimgui", StringComparison.Ordinal)),
+            "Expected an offence in 3DEngine.App/NativeThreeDEngine.cs. Offences:\n  " + string.Join("\n  ", offences));
     }
 
     // Finding T89 of the codebase review of 2026-10-30 (TASK-0114): the build on Windows compiles a
@@ -158,7 +159,7 @@ public class UiLibraryGateTests
     [Fact]
     public void The_Ui_Folder_And_The_Project_Of_The_Host_Are_Not_Offences()
     {
-        Assert.Empty(NamespaceOffences([("3DEngine/Ui/DesktopUi.cs", "using ImGuiNET;\ninternal static class C { }")]));
+        Assert.Empty(NamespaceOffences([("3DEngine.App/Ui/DesktopUi.cs", "using ImGuiNET;\ninternal static class C { }")]));
         Assert.Empty(PackageOffences([(PinningProject, "<PackageReference Include=\"ImGui.NET\" Version=\"1.91.6.1\" />")]));
     }
 
@@ -185,7 +186,7 @@ public class UiLibraryGateTests
             static int Line(SyntaxNode node) => node.GetLocation().GetLineSpan().StartLinePosition.Line + 1;
 
             // Finding T70 of the second codebase review of 2026-10-28 (TASK-0098): a global
-            // using applies to each file of the project, so it is an offence in 3DEngine/Ui/ too.
+            // using applies to each file of the project, so it is an offence in 3DEngine.App/Ui/ too.
             foreach (var directive in root.DescendantNodes().OfType<UsingDirectiveSyntax>())
             {
                 if (directive.GlobalKeyword.IsKind(SyntaxKind.GlobalKeyword)

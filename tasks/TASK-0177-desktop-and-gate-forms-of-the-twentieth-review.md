@@ -9,7 +9,7 @@ governed-by: [0004, 0007, 0009, 0019, 0022, 0023, 0025, 0029, 0033, 0034, 0035, 
 writes:
   create:
     - tasks/TASK-0177-desktop-and-gate-forms-of-the-twentieth-review.md
-    - 3DEngine/FaceArm.cs
+    - 3DEngine.App/FaceArm.cs
     - 3DEngine.ImageTests/FaceArmTests.cs
   modify:
     - 3DEngine.Core/Sketching/SketchCamera.cs
@@ -74,3 +74,5 @@ Weakest:    no one opened the desktop window for V76 and V77, and no test drives
 
 - 2026-11-03: opened by the second codebase review of 2026-11-03.
 - 2026-11-05: the six findings, each form before and after the change, four injections; closed at v0.181.
+- 2026-11-06: TASK-0222 moved `3DEngine/FaceArm.cs` into `3DEngine.App/` (ADR-0072), so the
+  create list names the new path. This task made the file at the old path.

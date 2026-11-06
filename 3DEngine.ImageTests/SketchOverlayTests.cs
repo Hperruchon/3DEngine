@@ -91,7 +91,7 @@ public class SketchOverlayTests
     public async Task The_Desktop_Follows_The_Sketch_Events_Of_The_Session()
     {
         using var host = new EngineHost(new InProcessMeshBackend());
-        using var sketches = new SessionSketches(host);
+        using var sketches = new SessionSketches(new HostedSession(host));
         var session = host.Session;
 
         var sketch = (await session.Apply(new CreateSketchCommand { DatumId = Datums.XY.Id })).Outputs.Values["sketchId"];
@@ -120,7 +120,7 @@ public class SketchOverlayTests
         using var host = new EngineHost(new InProcessMeshBackend());
         await host.Session.Apply(new CreateSketchCommand { DatumId = Datums.YZ.Id, SketchName = "Before" });
 
-        using var sketches = new SessionSketches(host);
+        using var sketches = new SessionSketches(new HostedSession(host));
         sketches.Apply();
 
         Assert.Equal("Before", Assert.Single(sketches.Live).Name);

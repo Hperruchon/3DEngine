@@ -12,8 +12,8 @@ affects:
   - 3DEngine.Core/Numeric/**
   - 3DEngine.Core/Input/**
   - 3DEngine.Vulkan/SdlInput.cs
-  - 3DEngine/Ui/**
-  - 3DEngine/BodyActions.cs
+  - 3DEngine.App/Ui/**
+  - 3DEngine.App/BodyActions.cs
 enforced-by: 3DEngine.Tests/ExpressionTests.cs (TASK-0094 creates it)
 ---
 

@@ -10,8 +10,8 @@ amends: ['0042']
 amended-by: []
 affects:
   - 3DEngine.Core/Vision/**
-  - 3DEngine/ImageActions.cs
-  - 3DEngine/ImagePlacement.cs
+  - 3DEngine.App/ImageActions.cs
+  - 3DEngine.App/ImagePlacement.cs
 enforced-by: 3DEngine.ImageTests/ContourAcceptTests.cs
 ---
 

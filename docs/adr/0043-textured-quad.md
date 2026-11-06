@@ -12,7 +12,7 @@ affects:
   - 3DEngine.Core/Rendering/ImageQuad.cs
   - 3DEngine.Vulkan/ImageRenderer.cs
   - 3DEngine.Vulkan/Shaders/image.*
-  - 3DEngine/SceneRenderer.cs
+  - 3DEngine.App/SceneRenderer.cs
 enforced-by: 3DEngine.Tests/ImageQuadTests.cs
 ---
 

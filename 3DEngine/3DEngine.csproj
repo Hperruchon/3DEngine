@@ -19,11 +19,12 @@
   </ItemGroup>
 
   <!--
-    The library of the user interface (ADR-0027 item 1, TASK-0084). This line is its only
-    pin, and only the files in Ui/ name its namespace; UiLibraryGateTests holds both rules.
+    The application of a host that draws: the scene, the user interface and the actions (ADR-0072,
+    TASK-0222). It holds the pin of the library of the user interface (ADR-0027 item 1). The
+    desktop gives it the session of the surface through HostedSession.
   -->
   <ItemGroup>
-    <PackageReference Include="ImGui.NET" Version="1.91.6.1" />
+    <ProjectReference Include="..\3DEngine.App\3DEngine.App.csproj" />
   </ItemGroup>
 
   <!--
