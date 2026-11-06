@@ -98,7 +98,8 @@ answered its questions Q1 to Q8 on 2026-10-28, with option A for each.
    documents, `<local application data>/3DEngine/unsaved/<document identifier>.3de`, which the host can set.
    `DocumentSession.SaveAs` moves the file to a new name in the serial section, and later entries go there. The
    target must not exist. A failure gives `E-IO-SAVE-FAILED`, and the file stays where it was. P8f gives the save
-   to the desktop and to an agent.
+   to the desktop and to an agent. The move holds a handle on the document at each moment: the journal makes the
+   file at the new name, copies each line into it, and then closes and deletes the old file (finding E162, TASK-0241).
 10. **The hosts.** `engine-api-http` opens the file that `--file` names, and makes it with a header when it does not
     exist. A start that makes the file writes one line on the error output that says so, because a save moves the
     file (item 9) and a script that starts again with the same `--file` then gets an empty document. With no
@@ -134,7 +135,7 @@ undo, because undo appends a command (P8c).
 - The snapshot gains a field, and a client that reads it strictly must accept it.
 - A command with a value that is not finite is applied with no file and rejected with a file, so the command line
   and a host can differ for it.
-- `SaveAs` moves the file and does not copy it.
+- `SaveAs` copies the lines into a new file and deletes the old one, so a save reads the file one time (TASK-0241).
 - A failed write leaves the body of the handler in the backend: a leak, not a wrong Document.
 - A flush to disk for each command costs time, which P8a measures.
 
@@ -163,3 +164,5 @@ Register entry R-0025 closes with P8a.
   Q3 A of the owner). Item 10: a start that makes the file of `--file` says so on the error output (finding E77, Q1 A).
 - 2026-11-06 · TASK-0202 · ADR-0071 amends item 2: the header of an assembly gives its kind, and the header of a part
   does not change.
+- 2026-11-06 · TASK-0241 · Item 9: a save holds a handle on the document at each moment; it copies the lines into the
+  new file and then deletes the old one (finding E162 of the codebase review of 2026-11-06 (d), Q1 A).
