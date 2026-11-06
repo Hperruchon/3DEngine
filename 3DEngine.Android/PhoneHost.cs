@@ -33,8 +33,12 @@ internal static class PhoneHost
         }
         catch (Exception ex)
         {
-            // The log of Android receives the standard error of the program.
-            Console.Error.WriteLine($"3DEngine: the session of the phone ended: {ex}");
+            // The log of Android receives the standard error of the program. Each line of the exception has the prefix, so
+            // that the smoke test of the emulator gives the stack as public annotations (TASK-0229: the third run of the
+            // job ended with PlatformNotSupportedException and showed no stack).
+            Console.Error.WriteLine($"3DEngine: the session of the phone ended: {ex.GetType().Name}: {ex.Message}");
+            foreach (var line in ex.ToString().Split('\n'))
+                Console.Error.WriteLine($"3DEngine: | {line.TrimEnd()}");
         }
     }
 

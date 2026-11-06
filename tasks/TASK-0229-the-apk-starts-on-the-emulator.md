@@ -75,3 +75,6 @@ Weakest:    to be written at the close.
   checked, and a failure gives the last lines of the emulator as annotations.
 - 2026-11-06: the second run (42162085333) showed the cause in its annotations: the emulator found no AVD in
   $HOME/.android/avd. The job sets ANDROID_AVD_HOME for avdmanager and the emulator.
+- 2026-11-06: the third run (42162651691) started the program on the emulator: the line of the start came, then the
+  session ended with PlatformNotSupportedException before the first frame, and the job passed (T149 of the review of
+  2026-11-06 (c)). PhoneHost writes each line of the stack with the prefix, so the next run shows it.

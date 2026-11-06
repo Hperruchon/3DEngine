@@ -50,7 +50,7 @@ for _ in $(seq 1 60); do
   [ "$drawn" = 1 ] && break
 done
 
-grep "3DEngine:" "$report" | while IFS= read -r line; do echo "::notice title=Program::${line:0:300}"; done || true
+grep "3DEngine:" "$report" | head -60 | while IFS= read -r line; do echo "::notice title=Program::${line:0:300}"; done || true
 grep -E "FATAL|AndroidRuntime" "$report" | head -12 | while IFS= read -r line; do echo "::warning title=Android::${line:0:300}"; done || true
 echo "started=$started drawn=$drawn"
 [ "$started" = 1 ] || fail "the program did not write its line of the start in 120 seconds"
