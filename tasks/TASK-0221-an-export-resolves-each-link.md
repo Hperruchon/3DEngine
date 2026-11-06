@@ -1,7 +1,7 @@
 ---
 id: 0221
 title: An export of the command line resolves a link of each folder of its paths
-status: Active
+status: Done
 phase: P0.88
 opened: 2026-11-06
 depends-on: [0220]
@@ -54,19 +54,19 @@ the document, and a path of the export that is not valid gives `E-EXPORT-WRITE-F
 
 ## Acceptance criteria
 
-- [ ] Each test fails before the change and passes after it.
-- [ ] A clean build (`--no-incremental`) gives zero errors and zero warnings.
-- [ ] Continuous integration passes on the three runners, on the branch and on `main` after the merge.
+- [x] Each test fails before the change and passes after it.
+- [x] A clean build (`--no-incremental`) gives zero errors and zero warnings.
+- [x] Continuous integration passes on the three runners, on the branch and on `main` after the merge.
 
 ## Outcome
 
-Status: Active
+Status: Done · commit (the merge of the branch p088-export-links) · v0.205
 
 ## Method
 
 Mechanical: the walk of the parts of a path, and the link of a folder as `WriteSetJudgeTests` makes it.
 Judgement:  finding 2 in this task, because it is in the same lines as finding 1.
-Weakest:    to be written at the close.
+Weakest:    a hard link and a short name of Windows (8.3) are second names that the compare does not see.
 
 ## Progress
 
@@ -75,3 +75,4 @@ Weakest:    to be written at the close.
   gives `E-EXPORT-WRITE-FAILED`. Before the change the test of a link of a folder wrote over the document for STL and
   STEP, and the test of a NUL character threw `ArgumentException`; after it each one gives the code and the bytes of the
   document stay.
+- 2026-11-06: closed at v0.205.
