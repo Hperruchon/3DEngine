@@ -1,0 +1,13 @@
+# The pin of the native cimgui build for Android (phase R14d, ADR-0061 item 6, TASK-0196).
+#
+# .github/workflows/build-cimgui-native.yml reads this file. A push that changes it, the build script or the workflow
+# starts a build. On main, the pack job pushes the package to the branch native-package-cimgui/<package_version>.
+#
+# cimgui_ref is the tag of cimgui whose native library ImGui.NET 1.91.6.1 holds: ImGui.NET-nativebuild, tag v1.91.6,
+# pins cimgui at 970c614802935f51f451aa21ae06e838bdcf9349, the tag 1.91.6dock ("pull imgui docking 1.91.6 and
+# generate", imgui at 947aa9c9722bd6ff740dd757da609ff41f4d3ba3). The managed bindings of ImGui.NET call that API, so
+# the commit must not change without a new version of ImGui.NET.
+# package_version must be new for each build, because each computer keeps an extracted package in its NuGet cache.
+cimgui_ref=1.91.6dock
+cimgui_commit=970c614802935f51f451aa21ae06e838bdcf9349
+package_version=1.91.6.1

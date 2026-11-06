@@ -6056,3 +6056,30 @@ New tests: 9. The test list holds 1832 (1311 in `Engine.Tests`, 320 in `3DEngine
 3 in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
 entries: 15 of 15. New diagnostic codes: 3 (`E-CMD-KIND-REFUSED`, `E-ASSEMBLY-REFERENCE-INVALID`,
 `E-ASSEMBLY-ID-IN-USE`). Since the review of v0.198, 2 product milestones and 4 entries followed it.
+
+## v0.203 — The native builds of Manifold and cimgui for android-arm64 and android-x64 run on GitHub Actions (R14d, TASK-0196)
+
+Phase d of the Android order of 2026-11-05 (ADR-0061 items 6 and 7). The native Manifold package held win-x64,
+linux-x64 and osx-arm64 only, and `ImGui.NET` 1.91.6.1 has no Android library. The computer of the owner has no NDK
+(Native Development Kit), so the builds run on the Ubuntu runners of GitHub Actions, which hold one.
+
+**The change.** `eng/manifold-native/build.sh` takes an Android ABI: the toolchain of the NDK, API level 33, pages of
+16 KB and a map of the source folder, so no library holds the path of the build machine. The Manifold workflow builds
+two more rows, and the package becomes 3.5.2.2. `eng/cimgui-native/` pins cimgui at the tag 1.91.6dock
+(`970c614`, which ImGui.NET-nativebuild v1.91.6 pins), and `build-cimgui-native.yml` builds, checks and packs it as
+`Engine.Native.DearImGui` 1.91.6.1. cimgui names its library `cimgui.so`; the script stages it as `libcimgui.so`,
+because Android extracts only `lib*.so` from an APK. The check of each library reads its machine, the alignment of
+each LOAD segment and its dependencies or exports. Only a run on `main` pushes a package to its branch.
+
+**Proof.** On the branch, the Manifold run of `fdaba4c` and the cimgui run of `6a7b0ca` built and checked both ABIs;
+the cimgui run also packed the NuGet. The build script of Manifold did not change after `fdaba4c`.
+
+**What stays.** The first run on `main` pushes `native-package/3.5.2.2` and `native-package-cimgui/1.91.6.1`. R14e
+copies them into `nuget/` with the checksums of the notices, and makes the Android host. No Android device has loaded
+either library.
+
+**A correction.** None.
+
+New tests: 0. The test list holds 1832 (1311 in `Engine.Tests`, 320 in `3DEngine.Tests`, 198 in `3DEngine.ImageTests`,
+3 in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
+entries: 15 of 15. New diagnostic codes: 0. Since the review of v0.198, 3 product milestones and 5 entries followed it.
