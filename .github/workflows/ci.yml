@@ -186,6 +186,9 @@ jobs:
     name: Compare the determinism hashes
     # Phase R14f3 (ADR-0074, TASK-0233): the hash of the phone comes from the job of the emulator.
     needs: [gate, android-emulator]
+    # Finding T152 of the codebase review of 2026-11-06 (d) (TASK-0242): the job runs when the gate passed, also when the
+    # emulator job failed, and the script then compares the three desktop runners.
+    if: ${{ always() && needs.gate.result == 'success' }}
     runs-on: ubuntu-latest
     timeout-minutes: 10
     defaults:
@@ -204,7 +207,7 @@ jobs:
           path: ${{ runner.temp }}/determinism
 
       - name: Compare the hashes
-        run: node eng/compare-determinism.js "$RUNNER_TEMP/determinism"
+        run: node eng/compare-determinism.js "$RUNNER_TEMP/determinism" "${{ needs.android-emulator.result }}"
 
   # Phase R14f1 (ADR-0061 item 9, TASK-0228): the APK of the phone at each push. The solution does not hold
   # 3DEngine.Android, because the gate on three runners has no workload of .NET for Android, so this job installs the

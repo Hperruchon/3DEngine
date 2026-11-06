@@ -75,6 +75,17 @@ public static class CrossPlatformProbe
             new AddSketchReferenceCommand { CommandId = Id(71), SketchId = Id(70), FeatureId = Id(67), Element = "endEdge", ItemId = Id(64) },
             new AddSketchReferenceCommand { CommandId = Id(72), SketchId = Id(70), FeatureId = Id(57), Element = "endVertex", ItemId = Id(53) },
             new MoveSketchPointCommand { CommandId = Id(68), SketchId = Id(50), PointId = Id(53), X = 63.5, Y = 18.25 },
+
+            // Finding E161 of the codebase review of 2026-11-06 (d) (TASK-0242): the polygon of a circle of ADR-0040 item 2
+            // and the cylinder of ADR-0076, with + - * / sqrt only, and a cut of the one by the other after a move, so the
+            // four platforms compare the bits of the 64 vertices.
+            new CreateSketchCommand { CommandId = Id(80), DatumId = Datums.XY.Id },
+            new AddSketchPointCommand { CommandId = Id(81), SketchId = Id(80), X = 90.25, Y = 10.5 },
+            new AddSketchCircleCommand { CommandId = Id(82), SketchId = Id(80), CenterPointId = Id(81), Radius = 6.125 },
+            new ExtrudeCommand { CommandId = Id(83), SketchId = Id(80), Distance = 7.5 },
+            new CreateCylinderCommand { CommandId = Id(84), Radius = 4.75, Height = 20 },
+            new TranslateCommand { CommandId = Id(85), BodyId = Id(84), Dx = 90.25, Dy = 10.5, Dz = 1 },
+            new SubtractCommand { CommandId = Id(86), MinuendBodyId = Id(83), SubtrahendBodyId = Id(85) },
         ];
     }
 

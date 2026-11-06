@@ -95,10 +95,16 @@ public sealed class EngineHost : IDisposable
 
     private readonly string? _unsavedFolder;
 
+    // Finding E159 of the codebase review of 2026-11-06 (d) (TASK-0242): Windows and macOS ignore the case of a path, so a
+    // journal opened by a path of another case is still in the unsaved folder.
+    internal static StringComparison FolderCase => OperatingSystem.IsWindows() || OperatingSystem.IsMacOS()
+        ? StringComparison.OrdinalIgnoreCase
+        : StringComparison.Ordinal;
+
     // ADR-0030 item 4: the name of the document file, or null for a host with no file
     // and for a document that is still in the folder of unsaved documents.
     public string? FileName
-        => Session.FilePath is { } path && !string.Equals(Path.GetDirectoryName(Path.GetFullPath(path)), _unsavedFolder, StringComparison.Ordinal)
+        => Session.FilePath is { } path && !string.Equals(Path.GetDirectoryName(Path.GetFullPath(path)), _unsavedFolder, FolderCase)
             ? Path.GetFileName(path)
             : null;
 

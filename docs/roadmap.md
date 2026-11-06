@@ -202,6 +202,7 @@ Therefore each approved objective must have a track here.
 - P0.96 — A save to a new name keeps a handle on the document at each moment. v0.226, TASK-0241.
 - K5b — A list "New" of the panel of the desktop and of the phone makes a box or a cylinder. v0.227, TASK-0244, ADR-0076.
 - P0.98 — A cancelled finger ends, the activity tells its starts, and the face and the texts hold their next forms. v0.228, TASK-0243.
+- P0.97 — The readers of a file, the pin rule, the smoke test and the comparison hold their next forms. v0.229, TASK-0242.
 
 ## Track 0 — Foundations
 

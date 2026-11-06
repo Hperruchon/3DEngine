@@ -621,6 +621,15 @@ public class DependencyDirectionGateTests
                 var file = ProjectFiles().Single(f => Path.GetFileNameWithoutExtension(f) == name);
                 if (!FilesThatMsBuildReads(file).SelectMany(read => Includes(read, "SupportedPlatform")).Any(platform => string.Equals(platform, "android", StringComparison.OrdinalIgnoreCase)))
                     offences.Add($"{host} reaches {name}, whose project names no SupportedPlatform android");
+
+                // Finding T156 of the codebase review of 2026-11-06 (d) (TASK-0242): an item SupportedPlatform Remove="android"
+                // in a file of the project silenced CA1416, and the Include above still passed. A Remove or an Update of a
+                // SupportedPlatform is an offence, because the gate reads the Include only.
+                foreach (var read in FilesThatMsBuildReads(file))
+                {
+                    if (new[] { "Remove", "Update" }.Any(attribute => Includes(read, "SupportedPlatform", attribute).Any()))
+                        offences.Add($"{host} reaches {name}, and {RepositoryFiles.Relative(read)} removes or updates a SupportedPlatform");
+                }
             }
         }
 
@@ -1421,7 +1430,7 @@ public class DependencyDirectionGateTests
             .Distinct(StringComparer.OrdinalIgnoreCase)
             .Where(file => new[] { "PackageReference", "GlobalPackageReference", "PackageVersion" }
                 .SelectMany(item => new[] { "Include", "Update" }.SelectMany(attribute => Includes(file, item, attribute)))
-                .Any(name => string.Equals(name, package, StringComparison.OrdinalIgnoreCase)))
+                .Any(name => string.Equals(Uri.UnescapeDataString(name), package, StringComparison.OrdinalIgnoreCase)))
             .Select(RepositoryFiles.Relative)
             .Order(StringComparer.Ordinal)
             .ToArray();
@@ -1430,6 +1439,24 @@ public class DependencyDirectionGateTests
             files.SequenceEqual([pin]),
             $"{package} must be named in {pin} only, so that one file gives its version (ADR-0017 rule 4). "
             + $"Files that name it: {(files.Length == 0 ? "none" : string.Join(", ", files))}.");
+    }
+
+    // Finding T155 of the codebase review of 2026-11-06 (d) (TASK-0242): the rule above compares the text of a name, so a
+    // property or an item list in the Update or the Remove of a package item named any package and passed. Such a name is
+    // an offence in each file that MSBuild reads, as in an Include (ReferenceOffences).
+    [Fact]
+    public void No_Package_Item_Updates_Or_Removes_By_A_Property()
+    {
+        var offences = ProjectFiles()
+            .SelectMany(FilesThatMsBuildReads)
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .SelectMany(file => new[] { "PackageReference", "GlobalPackageReference", "PackageVersion" }
+                .SelectMany(item => new[] { "Update", "Remove" }.SelectMany(attribute => Includes(file, item, attribute)
+                    .Where(name => name.Contains("$(", StringComparison.Ordinal) || name.Contains("@(", StringComparison.Ordinal) || name.Contains("%(", StringComparison.Ordinal))
+                    .Select(name => $"{RepositoryFiles.Relative(file)}: {item} {attribute}=\"{name}\""))))
+            .ToArray();
+
+        Assert.True(offences.Length == 0, "A package item names its package by a property or an item list: " + string.Join("; ", offences));
     }
 
     [Fact]

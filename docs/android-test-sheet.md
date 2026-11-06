@@ -56,7 +56,7 @@ when you can.
 | 7 | Tap Undo, then Redo. | Undo gives the two boxes again; Redo gives the plate with the hole. |
 | 8 | Press Home, wait 10 seconds, and open the app again. | The same plate with the hole. The selection is gone. In the log, the line "goes into the background" comes at the return, just before the line "in the foreground again" (ADR-0073 item 3). |
 | 9 | Close the app from the list of recent apps. | The app ends. A new start gives an empty scene: the phone saves no file yet. |
-| 10 | With the cable, start the app with the probe: `"/c/Program Files (x86)/Android/android-sdk/platform-tools/adb.exe" shell am start -n org.threedengine.phone/org.threedengine.phone.MainActivity --ez probe true` | In the log, the line "3DEngine: determinism 59876e9fc860e451302d5c97e47af81db1f59b3d03ab65aeb0c546e9ef4ea4f1", the hash of the desktop runners (ADR-0074). Another hash is a failure of anti-objective 16: copy each line "determinism-line" of the log. |
+| 10 | With the cable, start the app with the probe: `"/c/Program Files (x86)/Android/android-sdk/platform-tools/adb.exe" shell am start -n org.threedengine.phone/org.threedengine.phone.MainActivity --ez probe true` | In the log, the line "3DEngine: determinism 1c56cbddd4caa83557fd5756427668795cbc1096d61767c5588d3b447dca30ba", the hash of the desktop runners (ADR-0074). Another hash is a failure of anti-objective 16: copy each line "determinism-line" of the log. |
 
 ## 4 Results
 
