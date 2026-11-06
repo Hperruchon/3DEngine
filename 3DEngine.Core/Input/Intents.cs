@@ -23,7 +23,7 @@ public sealed record HideIntent(double? X, double? Y) : Intent;
 // Show each hidden body (ADR-0029 items 4 and 5).
 public sealed record ShowAllIntent : Intent;
 
-// Stop the gesture in progress: a pointer was lost.
+// Stop the gesture in progress: a pointer was lost, or the key Escape came with no press on a handle of the gizmo.
 public sealed record CancelIntent : Intent;
 
 // Undo the last step of the document, or redo the last undone step (ADR-0032 item 9).

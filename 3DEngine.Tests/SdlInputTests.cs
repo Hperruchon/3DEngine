@@ -139,12 +139,13 @@ public unsafe class SdlInputTests
     }
 
     // The state machine of intents reads no text and no key of text editing, so a text field
-    // can take them without a move of the camera.
+    // can take them without a move of the camera. Finding 1 of the review of Codex of v0.221 (TASK-0237): Escape gives
+    // CancelIntent, so it is not in the list; while a text field is active, the router gives each key to the panel.
     [Fact]
     public void Text_And_The_Keys_Of_Text_Editing_Give_No_Intent()
     {
         var machine = new IntentMachine();
-        var editing = new[] { InputKey.Backspace, InputKey.Delete, InputKey.Home, InputKey.End, InputKey.Enter, InputKey.Escape, InputKey.Tab };
+        var editing = new[] { InputKey.Backspace, InputKey.Delete, InputKey.Home, InputKey.End, InputKey.Enter, InputKey.Tab };
         var frame = new List<InputSample> { new TextSample("a", 0) };
         frame.AddRange(editing.Select(key => new KeySample(key, true, KeyModifiers.None, 1)));
 

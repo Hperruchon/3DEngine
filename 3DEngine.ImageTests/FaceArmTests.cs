@@ -81,6 +81,8 @@ public class FaceArmTests
         new EditSketchAction(Guid.NewGuid()),
         new AcceptContourAction(),
         new StartCalibrationAction(Guid.NewGuid()),
+        // Finding 2 of the review of Codex of v0.221 (TASK-0237): the button "Sketch on face" of ADR-0075.
+        new SketchOnSelectedFaceAction(),
     ];
 
     [Theory]
@@ -88,6 +90,7 @@ public class FaceArmTests
     [InlineData(1)]
     [InlineData(2)]
     [InlineData(3)]
+    [InlineData(4)]
     public void Each_Start_Of_A_Sketch_Or_A_Calibration_Ends_The_Arm(int start)
     {
         var arm = new FaceArm();
