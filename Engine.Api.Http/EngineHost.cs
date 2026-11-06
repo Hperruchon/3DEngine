@@ -42,7 +42,9 @@ public sealed class EngineHost : IDisposable
         // Each registered handler comes from HandlerCatalog per ADR-0016.
         // Finding V91 of the codebase review of 2026-11-06 (b) (TASK-0225): a journal of the unsaved folder that a host opens
         // by its path is still a document with no name, so FileName reads the unsaved folder also with a path.
-        _unsavedFolder = file?.UnsavedFolder is { } unsaved ? Path.GetFullPath(unsaved) : null;
+        // Finding E157 of the codebase review of 2026-11-06 (c) (TASK-0231): GetDirectoryName gives no final separator, so
+        // the folder keeps none either.
+        _unsavedFolder = file?.UnsavedFolder is { } unsaved ? Path.TrimEndingDirectorySeparator(Path.GetFullPath(unsaved)) : null;
         var opens = file?.Path is { } existing && File.Exists(existing);
         EngineKit kit;
         try

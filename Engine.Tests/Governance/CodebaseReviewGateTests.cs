@@ -298,9 +298,28 @@ public class CodebaseReviewGateTests
     private static readonly Regex LedgerEntry = new(
         @"^## v(\d+)\.(\d+)\b(?<rest>[^\n]*)$", RegexOptions.Compiled | RegexOptions.Multiline);
 
-    // A phase of track R, K, P or V; a phase of track 0 starts with P0.
+    // A phase of track R, K, P or V; a phase of track 0 starts with P0. A slice is a letter with an optional number
+    // (R14e1, P8b1) or a point and a number (finding T147, TASK-0231).
     private static readonly Regex ProductPhase = new(
-        @"^(?:[RKV]\d+|P(?!0\.)\d+)(?:[a-z]|\.\d+)?$", RegexOptions.Compiled);
+        @"^(?:[RKV]\d+|P(?!0\.)\d+)(?:[a-z]\d*|\.\d+)?$", RegexOptions.Compiled);
+
+    internal static bool IsProductPhase(string phase) => ProductPhase.IsMatch(phase);
+
+    // Finding T147 of the codebase review of 2026-11-06 (c) (TASK-0231): the expression read a letter after the number, and
+    // not a letter and then a digit, so the gate counted none of P8b1, R14e1, R14e2, R14e3, R14f1 and R14f2.
+    [Theory]
+    [InlineData("R7", true)]
+    [InlineData("K6b", true)]
+    [InlineData("P8a", true)]
+    [InlineData("P8b1", true)]
+    [InlineData("R14e1", true)]
+    [InlineData("R14f2", true)]
+    [InlineData("V1a", true)]
+    [InlineData("P0.85", false)]
+    [InlineData("P0.91", false)]
+    [InlineData("governance", false)]
+    public void A_Product_Phase_Is_A_Track_A_Number_And_An_Optional_Slice(string phase, bool product)
+        => Assert.Equal(product, IsProductPhase(phase));
 
     // The count of product milestones and the count of entries after the reviewed version.
     // Finding T73 of the second codebase review of 2026-10-28 (TASK-0098): the counter

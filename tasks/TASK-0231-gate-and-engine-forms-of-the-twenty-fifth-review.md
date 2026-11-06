@@ -1,7 +1,7 @@
 ---
 id: 0231
 title: The review gate counts each product phase, and the export, the host and three checks hold their next forms
-status: Ready
+status: Active
 phase: P0.91
 opened: 2026-11-06
 depends-on: [0230]
@@ -15,6 +15,7 @@ writes:
     - Engine.Cli/Cli.cs
     - Engine.Api.Http/EngineHost.cs
     - Engine.Tests/Assembly/ContainerModelTests.cs
+    - Engine.Tests/Http/DocumentEndpointTests.cs
     - eng/android/check-apk.sh
     - eng/android/smoke-emulator.sh
     - eng/test-floor.txt
@@ -60,15 +61,23 @@ reads the file of an Update, and the two checks of the pipeline fail where they 
 
 ## Outcome
 
-Status: Ready
+Status: Active
 
 ## Method
 
 Mechanical: a test or an injection for each finding, before the change.
-Judgement:  to be written in the task.
+Judgement:  T148 names six pinned packages, one row each; T149 fails on the line "ended" and on a fatal exception of
+            the process of the program only, not of another process of the emulator.
 Weakest:    to be written at the close.
 
 ## Progress
 
 - 2026-11-06: opened by the codebase review of 2026-11-06 (c).
 - 2026-11-06: governed-by takes ADR-0074, which TASK-0233 made and whose affects hold eng/android/smoke-emulator.sh.
+- 2026-11-06: the write set takes Engine.Tests/Http/DocumentEndpointTests.cs, which holds the test of E157.
+- 2026-11-06: T147, E156 and E157 have tests that failed before the change. T148: a Directory.Build.targets in
+  3DEngine.Vulkan with an Update of ppy.SDL3-CS fails the new rule, and the two rules before it pass. T149: a fake adb
+  with the line "ended" gave exit 0 before and exit 1 after; a fatal exception of the program gave exit 0 before and
+  exit 1 after; a fatal exception of another process and a first frame give exit 0. T150: an APK whose folder x86_64
+  holds the libraries of arm64 gave exit 0 before and 3 errors after; the correct APK gives exit 0. T151: the entry
+  v0.215 corrected the counts.
