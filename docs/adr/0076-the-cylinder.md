@@ -17,6 +17,10 @@ affects:
   - Engine.Core/Features/Regeneration.cs
   - Engine.Core/Sketch/DatumResolver.cs
   - 3DEngine.App/Ui/DesktopUi.Panel.cs
+  - 3DEngine.App/BodyActions.cs
+  - 3DEngine.App/NativeThreeDEngine.cs
+  - 3DEngine.App/Ui/DesktopUi.cs
+  - 3DEngine.App/Ui/PanelAction.cs
 enforced-by: Engine.Tests/Commands/CreateCylinderCommandTests.cs
 ---
 
@@ -140,3 +144,5 @@ the true surface and `CYLINDRICAL_SURFACE` after Q1 B.
 - 2026-11-06 · TASK-0244 · Q5 and item 7: the list "New" of the panel of the desktop and of the phone, with a pad of
   the radius and the height (section "Next"), Accepted under the standing order of 2026-11-05; it amends ADR-0032
   item 4.
+- 2026-11-06 · TASK-0251 · The affects field names the four files of the list "New" that TASK-0244 changed for item 7
+  (finding T164 of the codebase review of 2026-11-06 (e)).

@@ -47,6 +47,7 @@ public static class DiagnosticCodes
     public const string IoSaveFailed = "E-IO-SAVE-FAILED";
     public const string IoTruncated = "W-IO-TRUNCATED";
     public const string IoBackendVersion = "W-IO-BACKEND-VERSION";
+    public const string IoOldFileKept = "W-IO-OLD-FILE-KEPT";
 
     // ADR-0033 item 6: the refusals of a sketch command.
     public const string SketchNotFound = "E-SKETCH-NOT-FOUND";

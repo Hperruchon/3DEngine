@@ -246,6 +246,11 @@ jobs:
       - name: Build the APK
         run: dotnet build 3DEngine.Android -p:AndroidSdkDirectory="$ANDROID_HOME" -p:JavaSdkDirectory="$JAVA_HOME_17_X64"
 
+      # Finding T162 of the codebase review of 2026-11-06 (e) (TASK-0251): MSBuild evaluates the item SupportedPlatform and
+      # the properties that silence CA1416, for each project that the phone reaches, so no text form escapes the gate.
+      - name: Check the platforms of the projects of the phone
+        run: node eng/android/check-platforms.js
+
       - name: Check the native libraries of the APK
         run: bash eng/android/check-apk.sh 3DEngine.Android/bin/Debug/net10.0-android/org.threedengine.phone-Signed.apk
 

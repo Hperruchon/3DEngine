@@ -14,6 +14,10 @@ affects:
   - 3DEngine.App/BodyActions.cs
   - 3DEngine.App/FaceOverlay.cs
   - 3DEngine.App/NativeThreeDEngine.cs
+  - 3DEngine.App/Ui/DesktopUi.cs
+  - 3DEngine.App/Ui/DesktopUi.Panel.cs
+  - 3DEngine.App/Ui/DesktopUi.Overlay.cs
+  - 3DEngine.App/Ui/PanelAction.cs
 enforced-by: 3DEngine.ImageTests/EdgeSelectionTests.cs
 ---
 
@@ -91,6 +95,10 @@ The standing order of 2026-11-05 gives A for each question.
    The controls of the selected body give one more line: "Edge", the two elements of the pair, and the length.
 5. **The amendment.** This record amends ADR-0075 item 2: a tap on the selected face near one of its edges selects the
    edge.
+6. **An edge of one face or of more than two faces.** Where two solids of a body touch along a line, a B-Rep edge has
+   more than two faces. Such an edge belongs to each pair of different names of its faces. A B-Rep edge of one face is no
+   edge. The outline of a face name (ADR-0075 item 2) holds each B-Rep edge between a face of the name and a face of
+   another name, so each segment of an outline is a segment of an edge of that name (finding E165, TASK-0251).
 
 ## Consequences
 
@@ -98,7 +106,8 @@ The standing order of 2026-11-05 gives A for each question.
 for the faces.
 
 **Bad:** a pair of faces that meet in two places is one edge with two parts; a tap selects both parts. Each entry of
-`GetFaces` is larger by the edges of the body.
+`GetFaces` is larger by the edges of the body. At an edge of more than two faces, some pairs bound no common solid,
+for example two faces in one plane on the two sides of the line (item 6).
 
 **Next:** the values on the edges of the redesign; an edge as a reference of a sketch, which needs the name in
 `Engine.Contracts` and so a question to the owner.
@@ -107,3 +116,6 @@ for the faces.
 
 - 2026-11-06 · TASK-0245 · The record, Accepted under the standing order, with the query, the gesture and the panel.
 - 2026-11-06 · TASK-0245 · Shipped at v0.230.
+- 2026-11-06 · TASK-0251 · Item 6: an edge of one face or of more than two faces, and the outline that agrees with the
+  edges (finding E165 of the codebase review of 2026-11-06 (e), the recommended option under the standing order). The
+  affects field names the four files of the panel and of the mark that TASK-0245 changed (finding T164).

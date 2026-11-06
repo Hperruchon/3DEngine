@@ -448,8 +448,13 @@ public sealed class NativeThreeDEngine : IThreeDEngine, IDisposable
         var path = _document.Resolve(name, out var refusal);
         if (path is null)
             return refusal!;
-        var error = _host.Session.SaveAs(path).GetAwaiter().GetResult();
-        return error is null ? $"Saved as {Path.GetFileName(path)}" : $"{error.Code}: {error.Message}";
+        var warnings = new List<Engine.Contracts.Diagnostic>();
+        var error = _host.Session.SaveAs(path, warnings).GetAwaiter().GetResult();
+        if (error is not null)
+            return $"{error.Code}: {error.Message}";
+        // Finding E164 (TASK-0251): the status line names an old file that stays.
+        var saved = $"Saved as {Path.GetFileName(path)}";
+        return warnings.Count == 0 ? saved : $"{saved}. {string.Join(" ", warnings.Select(w => $"{w.Code}: {w.Message}"))}";
     }
 
     // ADR-0048 item 6: the live bodies as one STL file in the document folder, with the name of the field and the
