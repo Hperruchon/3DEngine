@@ -35,9 +35,12 @@ run() {
   local log="$staging/../cimgui-$name-$abi.log"
   if ! "$@" > "$log" 2>&1; then
     cat "$log"
-    local tail
-    tail=$(tail -n 25 "$log" | sed -e 's/%/%25/g' | awk '{ printf "%s%%0A", $0 }')
-    echo "::error title=cimgui (Android $abi) $name::$tail"
+    local lines
+    lines=$(grep -i -E 'error|fatal|not found' "$log" | tail -n 8 || true)
+    [ -n "$lines" ] || lines=$(tail -n 8 "$log")
+    while IFS= read -r line; do
+      echo "::error title=cimgui $abi $name::${line:0:300}"
+    done <<<"$lines"
     exit 1
   fi
   cat "$log"

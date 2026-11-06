@@ -81,3 +81,5 @@ Weakest:    to be written at the close.
   because the edit of the flags wrote a backslash and the letter r in place of two line continuations.
 - 2026-11-06: the third run of cimgui stopped in cmake with no annotation; a failed step of the script now gives its
   last lines as one annotation. The task file held a lone CR, and the gate of control bytes found it.
+- 2026-11-06: the fourth run gave no annotation of the failed step, probably because the message was too long; the
+  script now gives at most eight lines of the error, each one an annotation of 300 characters at most.
