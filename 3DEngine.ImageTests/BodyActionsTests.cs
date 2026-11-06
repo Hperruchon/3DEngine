@@ -3,8 +3,10 @@ using Engine.Contracts;
 using Engine.Contracts.Sketch;
 using Engine.Core.Commands;
 using Engine.Core.Geometry;
+using Engine.Core.Queries;
 using Engine.Geometry.Manifold;
 using ThreeDEngine.Core.Input;
+using ThreeDEngine.Core.Models;
 using ThreeDEngine.Core.Picking;
 using ThreeDEngine.Desktop;
 
@@ -238,6 +240,80 @@ public class BodyActionsTests
         Assert.Equal("Cylinder", body.Kind);
         var create = await host.Session.Read((document, _) => (CreateCylinderCommand)Assert.Single(document.Log).Command);
         Assert.Equal((5.0, 2 * Math.PI), (create.Radius, create.Height));
+    }
+
+    // Finding V108 of the codebase review of 2026-11-06 (d) (TASK-0243): a lost pointer gives CancelIntent with no key, and
+    // the face stays; only the key Escape goes back to the body.
+    [Fact]
+    public async Task A_Lost_Pointer_Keeps_The_Selected_Face()
+    {
+        using var host = await TwoBoxes();
+        var actions = new BodyActions(host.Session);
+        var live = await Live(host);
+        actions.Apply(new SelectIntent(100, 100), Pick, live);
+        actions.Apply(new SelectIntent(100, 100), Pick, live);
+        var face = actions.Face;
+        Assert.NotNull(face);
+
+        var machine = new IntentMachine();
+        machine.Step([new PointerSample(DeviceKind.Touch, 1, 1, 10, 10, 1, PointerButtons.None, KeyModifiers.None, PointerPhase.Down, 0)]);
+        var lost = Assert.Single(machine.Step([new FocusLostSample(10)]));
+
+        Assert.False(actions.Apply(lost, Pick, live));
+        Assert.Equal(face, actions.Face);
+    }
+
+    // Finding V109 of the codebase review of 2026-11-06 (d) (TASK-0243): with the geometry key of the body, the entry of the
+    // selected face comes from the first query, so a frame does not wait for the serial section that a long command holds.
+    [Fact]
+    public async Task The_Entry_Of_The_Face_Does_Not_Wait_For_A_Long_Command()
+    {
+        using var host = await TwoBoxes();
+        var actions = new BodyActions(host.Session);
+        var live = await Live(host);
+        actions.Apply(new SelectIntent(100, 100), Pick, live);
+        actions.Apply(new SelectIntent(100, 100), Pick, live);
+        var key = Guid.NewGuid();
+        var first = actions.SelectedFace(key);
+        Assert.NotNull(first);
+
+        using var entered = new ManualResetEventSlim();
+        using var release = new ManualResetEventSlim();
+        // The read runs its delegate on the thread that calls it, so the hold runs on a thread of the pool.
+        var held = Task.Run(() => host.Session.Read((_, _) =>
+        {
+            entered.Set();
+            release.Wait(TimeSpan.FromSeconds(10));
+            return 0;
+        }));
+        Assert.True(entered.Wait(TimeSpan.FromSeconds(5)), "The read did not start.");
+        try
+        {
+            var again = Task.Run(() => actions.SelectedFace(key));
+            Assert.Same(again, await Task.WhenAny(again, Task.Delay(TimeSpan.FromSeconds(2))));
+            Assert.Same(first, await again);
+        }
+        finally
+        {
+            release.Set();
+            await held;
+        }
+    }
+
+    // Finding V107 of the codebase review of 2026-11-06 (d) (TASK-0243): the outline of a face with the offset of a drag is
+    // the outline of the moved face, as the renderer moves the mesh; with no offset it does not move.
+    [Fact]
+    public void The_Outline_Of_The_Face_Follows_The_Offset_Of_A_Drag()
+    {
+        var camera = new Camera { YawDegrees = 30, PitchDegrees = 20, Distance = 50, Target = (0, 0, 0) };
+        FaceSegment Segment((double X, double Y, double Z) a, (double X, double Y, double Z) b)
+            => new(new DatumPoint(a.X, a.Y, a.Z), new DatumPoint(b.X, b.Y, b.Z));
+        IReadOnlyList<FaceSegment> outline = [Segment((-1, -1, 1), (1, -1, 1)), Segment((1, -1, 1), (1, 1, 1))];
+        IReadOnlyList<FaceSegment> moved = [Segment((2, -1, 1.5), (4, -1, 1.5)), Segment((4, -1, 1.5), (4, 1, 1.5))];
+
+        Assert.Equal(FaceOverlay.Of(moved, camera, 800, 600), FaceOverlay.Of(outline, camera, 800, 600, (3, 0, 0.5)));
+        Assert.Equal(FaceOverlay.Of(outline, camera, 800, 600), FaceOverlay.Of(outline, camera, 800, 600, default));
+        Assert.NotEqual(FaceOverlay.Of(outline, camera, 800, 600), FaceOverlay.Of(moved, camera, 800, 600));
     }
 
     // ADR-0032 item 8: a rejection gives its code for the pad, and the selection stays.

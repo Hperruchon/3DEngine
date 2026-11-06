@@ -24,7 +24,9 @@ public sealed record HideIntent(double? X, double? Y) : Intent;
 public sealed record ShowAllIntent : Intent;
 
 // Stop the gesture in progress: a pointer was lost, or the key Escape came with no press on a handle of the gizmo.
-public sealed record CancelIntent : Intent;
+// Finding V108 of the codebase review of 2026-11-06 (d) (TASK-0243): ByKey is true for the key Escape only, so a lost
+// pointer does not go back from a selected face (ADR-0075 item 2).
+public sealed record CancelIntent(bool ByKey = false) : Intent;
 
 // Undo the last step of the document, or redo the last undone step (ADR-0032 item 9).
 public sealed record UndoIntent : Intent;

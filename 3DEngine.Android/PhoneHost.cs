@@ -58,7 +58,9 @@ internal static class PhoneHost
     // Finding V101 of the codebase review of 2026-11-06 (c) (TASK-0232), Q1 B: SDL blocks the thread of the program in its
     // event loop while the program is paused, so the loop sees WILL_ENTER_BACKGROUND only at the return, and the engine
     // ends then, just before the new one starts (ADR-0073 item 3). The hint holds that order, so that it does not rest on
-    // a default of SDL. SDL starts its video in SDL_CreateWindow, so the hint comes before the window.
+    // a default of SDL. The hint comes before the first window. Finding V110 of the codebase review of 2026-11-06 (d)
+    // (TASK-0243): this order comes from the code of SDL, which is not in this repository; no run shows it yet, and step 8
+    // of the test sheet of the phone shows it.
     private static unsafe void BlockOnPause()
     {
         fixed (byte* name = SDL_HINT_ANDROID_BLOCK_ON_PAUSE)
@@ -103,9 +105,13 @@ internal static class PhoneHost
             engine.Update(now - lastFrame);
             engine.Render();
             lastFrame = now;
-            if (first)
+            // Finding V106 of the codebase review of 2026-11-06 (d) (TASK-0243): the line comes after the first frame that the
+            // presenter submitted, not after the first call, which draws nothing while the surface has no area.
+            if (first && engine.Drew)
+            {
                 Console.Error.WriteLine("3DEngine: the first frame is drawn.");
-            first = false;
+                first = false;
+            }
         }
     }
 

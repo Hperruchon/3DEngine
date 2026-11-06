@@ -97,6 +97,28 @@ public unsafe class SdlInputTests
         Assert.Equal(PointerPhase.Down, sample.Phase);
     }
 
+    // Finding V104 of the codebase review of 2026-11-06 (d) (TASK-0243): a finger that Android cancels is a touch sample
+    // with the phase Cancel, so the intent layer ends it, and a later tap of a new finger selects again.
+    [Fact]
+    public void A_Cancelled_Finger_Ends_And_A_Later_Tap_Selects()
+    {
+        var input = new SdlInput();
+        var machine = new IntentMachine();
+        IReadOnlyList<Intent> Run(params SDL_Event[] events)
+        {
+            foreach (var e in events)
+                input.Translate(e, 800, 600);
+            return machine.Step(input.TakeFrame());
+        }
+
+        Run(Finger(SDL_EventType.SDL_EVENT_FINGER_DOWN, 4, 0.5f, 0.5f, 0));
+        Run(Finger(SDL_EventType.SDL_EVENT_FINGER_CANCELED, 4, 0.5f, 0.5f, 50));
+        Run(Finger(SDL_EventType.SDL_EVENT_FINGER_DOWN, 5, 0.25f, 0.5f, 2000));
+        var tap = Run(Finger(SDL_EventType.SDL_EVENT_FINGER_UP, 5, 0.25f, 0.5f, 2100));
+
+        Assert.Equal([new SelectIntent(200, 300)], tap);
+    }
+
     // ADR-0027 item 5 (TASK-0084): the text input of SDL becomes one text sample, in UTF-16,
     // and an empty text gives none.
     [Fact]
@@ -273,6 +295,7 @@ public unsafe class SdlInputTests
     [InlineData(SDL_EventType.SDL_EVENT_FINGER_DOWN)]
     [InlineData(SDL_EventType.SDL_EVENT_FINGER_UP)]
     [InlineData(SDL_EventType.SDL_EVENT_FINGER_MOTION)]
+    [InlineData(SDL_EventType.SDL_EVENT_FINGER_CANCELED)]
     public void A_Later_Session_Flushes_Each_Input_Event_That_SdlInput_Reads(SDL_EventType type)
     {
         Assert.Single(Window.InputRanges, range => type >= range.First && type <= range.Last);

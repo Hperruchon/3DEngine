@@ -236,7 +236,7 @@ public sealed class NativeThreeDEngine : IThreeDEngine, IDisposable
     // tap of ADR-0053 item 6 makes it. A curved face has no normal and no button.
     private string? SketchOnSelectedFace()
     {
-        if (_sketchActions is null || Selection is not { } body || _actions?.SelectedFace() is not { Normal: { } normal } face)
+        if (_sketchActions is null || _renderer is null || Selection is not { } body || _actions?.SelectedFace(_renderer.KeyOf(body)) is not { Normal: { } normal } face)
             return null;
         if (_sketchActions.CreateOnFace(body, (face.Point.X, face.Point.Y, face.Point.Z), (normal.X, normal.Y, normal.Z)) is not { } created)
             return _sketchActions.Message;
@@ -499,6 +499,9 @@ public sealed class NativeThreeDEngine : IThreeDEngine, IDisposable
         return error is null ? $"Opening {Path.GetFileName(path)}" : $"{error.Code}: {error.Message}";
     }
 
+    // V106 (TASK-0243): true when the last Render submitted a frame.
+    public bool Drew => _graphicsDevice?.Presenter?.Drew ?? false;
+
     public void Render()
     {
         if (_graphicsDevice?.Presenter is not { } presenter || _renderer is null || _ui is null || _uiRenderer is null || CurrentScene is null)
@@ -569,9 +572,11 @@ public sealed class NativeThreeDEngine : IThreeDEngine, IDisposable
         }
 
         // ADR-0075 item 3 (phase R12a, TASK-0236): the outline and the line of the selected face.
+        // V109 (TASK-0243): the entry comes again only for a new geometry key of the body; V107: the outline follows a drag.
         FaceLine? faceLine = null;
-        if (_actions?.SelectedFace() is { } selectedFace)
-            faceLine = new FaceLine(FaceOverlay.Text(selectedFace, _host.Session.LengthUnit), selectedFace.Normal is not null, FaceOverlay.Of(selectedFace.Outline, Camera, window.width, window.height));
+        if (Selection is { } faceBody && _actions?.SelectedFace(_renderer.KeyOf(faceBody)) is { } selectedFace)
+            faceLine = new FaceLine(FaceOverlay.Text(selectedFace, _host.Session.LengthUnit), selectedFace.Normal is not null,
+                FaceOverlay.Of(selectedFace.Outline, Camera, window.width, window.height, _gizmo.Active is null ? default : _gizmo.Offset));
 
         var panel = _ui.Frame((float)_delta.TotalSeconds, display, scale, _renderer.LiveBodies, Selection, LineOf(_document, _host.FileName, _documentMessage), sketches, sketchPanel, imagePanel, dimensions, size, faceLine);
         ApplyPanel(_renderer.LiveBodies);

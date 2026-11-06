@@ -1,16 +1,21 @@
 ---
 id: 0243
 title: A cancelled finger ends, the activity tells its starts, and the face and the texts hold their next forms
-status: Ready
+status: Active
 phase: P0.98
 opened: 2026-11-06
 depends-on: [0242]
-governed-by: [0007, 0009, 0017, 0019, 0022, 0023, 0025, 0026, 0029, 0032, 0034, 0038, 0041, 0061, 0072, 0073, 0075]
+governed-by: [0007, 0009, 0017, 0019, 0022, 0023, 0025, 0026, 0029, 0031, 0032, 0034, 0038, 0041, 0043, 0061, 0072, 0073, 0074, 0075]
 writes:
   create:
     - tasks/TASK-0243-desktop-and-phone-forms-of-the-twenty-sixth-review.md
   modify:
     - 3DEngine.Vulkan/SdlInput.cs
+    - 3DEngine.Vulkan/Presenter.cs
+    - 3DEngine.App/SceneRenderer.cs
+    - 3DEngine.App/SessionBodies.cs
+    - 3DEngine.App/PhoneLifecycle.cs
+    - eng/android/smoke-emulator.sh
     - 3DEngine.Android/MainActivity.cs
     - 3DEngine.Android/PhoneHost.cs
     - 3DEngine.App/BodyActions.cs
@@ -67,14 +72,21 @@ first frame comes after a frame, the outline follows a drag, a lost pointer keep
 
 ## Outcome
 
-Status: Ready
+Status: Active
 
 ## Method
 
 Mechanical: a test or an injection for each finding, before the change.
-Judgement:  to be written in the task.
+Judgement:  P0.98 before P0.97, because the emulator job failed in 3 of the last 4 runs and V105 holds its probable
+            cause; a flag ByKey on CancelIntent, not a new kind of intent, because each kind needs a touch script
+            (ADR-0026 item 5); the cache of V109 by the geometry key that the client already holds.
 Weakest:    to be written at the close.
 
 ## Progress
 
 - 2026-11-06: opened by the codebase review of 2026-11-06 (d).
+- 2026-11-06: V104 to V111. A cancelled finger ends; the activity writes each create, change and destroy, it holds eight
+  more configuration changes, and the smoke test waits for the launcher; the line of the first frame comes after a
+  submitted frame; the outline follows a drag; a lost pointer keeps the face; the entry of the face waits for no
+  command; the comments and ADR-0075 say what the code holds. An injection of V104, V107, V108 and V109 each fails a
+  test; V105 and V106 have no test on this computer, and the probe of T149 gives the same exits for the smoke test.
