@@ -1,7 +1,7 @@
 ---
 id: 0227
 title: A person cuts a body in the panel, and the phone keeps its document through the background
-status: Active
+status: Done
 phase: R14e3
 opened: 2026-11-06
 depends-on: [0225, 0226]
@@ -60,21 +60,22 @@ test sheet for the S23 Ultra.
 
 ## Acceptance criteria
 
-- [ ] A test of the panel, a test of the cut on a session, and a test of the steps of the life cycle.
-- [ ] The APK builds on this computer with zero warnings.
-- [ ] A clean build (`--no-incremental`) gives zero errors and zero warnings, and each test passes.
-- [ ] Continuous integration passes on the three runners, on the branch and on `main` after the merge.
+- [x] A test of the panel, a test of the cut on a session, and a test of the steps of the life cycle.
+- [x] The APK builds on this computer with zero warnings.
+- [x] A clean build (`--no-incremental`) gives zero errors and zero warnings, and each test passes.
+- [x] Continuous integration passes on the three runners, on the branch and on `main` after the merge.
 
 ## Outcome
 
-Status: Active
+Status: Done · commit (the merge of the branch r14e3-phone-session) · v0.212
 
 ## Method
 
 Mechanical: the list of the panel as the pad of Move, and the loop of the phone as the loop of the desktop.
 Judgement:  a new engine at each return to the foreground, and not a new surface for the same engine; the portrait
             until the pre-rotation.
-Weakest:    to be written at the close.
+Weakest:    no device ran the life cycle; the order of the events of SDL in the background is from its
+            documentation, not from a run.
 
 ## Progress
 
@@ -82,3 +83,4 @@ Weakest:    to be written at the close.
   for each. The list "Cut with" stays on the line of Move, because a new line pushed Show all below the panel at 1024
   by 768 (the test of V50 failed). Three tests of the cut and nine rows of the steps. The APK builds with zero
   warnings. No device ran it.
+- 2026-11-06: closed at v0.212. The row R14e stays open until the test of the owner.

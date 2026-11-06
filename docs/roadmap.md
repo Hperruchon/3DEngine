@@ -184,6 +184,7 @@ Therefore each approved objective must have a track here.
 - Review — The codebase review of 2026-11-06 (b). v0.208, TASK-0223.
 - R14e2 — The Android program builds an APK that draws a document of its own session. v0.209, TASK-0226, ADR-0072.
 - P0.89 — A void on the plane of a distant face is written, a replay and an export know an assembly, and two gates read the transitive form. v0.210, TASK-0224.
+- R14e3 — A person cuts a body in the panel, and the phone keeps its document through the background. v0.212, TASK-0227, ADR-0073.
 - P0.90 — The start again keeps an unsaved document, a window that does not open gives a code, and the flush holds its place. v0.211, TASK-0225.
 
 ## Track 0 — Foundations
