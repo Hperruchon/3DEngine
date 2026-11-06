@@ -15,7 +15,9 @@ namespace ThreeDEngine.Android;
 // the pre-rotation and the test of the owner come later; no device ran this program before the test of the owner.
 internal static class PhoneHost
 {
-    public static void Run(bool probe = false)
+    // ADR-0079 item 4 (TASK-0255): turn is the turn of the create of the activity of this session (SessionTurns); 0 for a
+    // session that takes no turn.
+    public static void Run(bool probe = false, int turn = 0)
     {
         try
         {
@@ -40,6 +42,15 @@ internal static class PhoneHost
 
             using var host = new LocalSessionHost(new ManifoldGeometryBackend());
             BlockOnPause();
+            // ADR-0079 item 4 (P0.103, TASK-0255): a session of a destroyed activity ends before its window, and a session
+            // waits until the window of an earlier session is gone. Run 42308415060: the activity was destroyed during the
+            // probe, the new session made its window, and this session then could not make one.
+            if (Stale(turn))
+                return;
+            using var held = SessionTurns.Phone.HoldWindow(TimeSpan.FromSeconds(10))
+                ?? throw new TimeoutException("The window of an earlier session of this process stayed for 10 seconds.");
+            if (Stale(turn))
+                return;
             // Finding V112 (TASK-0250): the session destroys its window at its end, so a later session of this process, after a
             // new start of the activity (ADR-0079), makes its own; SDL on Android permits one window.
             using var window = new Window("3DEngine", 1080, 2316);
@@ -55,6 +66,15 @@ internal static class PhoneHost
             foreach (var line in ex.ToString().Split('\n'))
                 Console.Error.WriteLine($"3DEngine: | {line.TrimEnd()}");
         }
+    }
+
+    // True, with a line for the smoke test, when a later create of the activity took a turn after this session.
+    private static bool Stale(int turn)
+    {
+        if (turn == 0 || SessionTurns.Phone.IsLast(turn))
+            return false;
+        Console.Error.WriteLine("3DEngine: the activity of this session was destroyed, so the session ends before its window.");
+        return true;
     }
 
     // Finding V101 of the codebase review of 2026-11-06 (c) (TASK-0232), Q1 B: SDL blocks the thread of the program in its

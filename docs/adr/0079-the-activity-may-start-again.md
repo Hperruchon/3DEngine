@@ -11,6 +11,7 @@ amended-by: []
 affects:
   - 3DEngine.Android/MainActivity.cs
   - 3DEngine.Android/PhoneHost.cs
+  - 3DEngine.App/SessionTurns.cs
 enforced-by: eng/android/smoke-emulator.sh
 ---
 
@@ -59,6 +60,10 @@ The standing order of 2026-11-05 gives A for each question.
 2. **The changes (Q2 A).** `ConfigurationChanges` names `FontWeightAdjustment` and `GrammaticalGender` too.
 3. **The amendment.** This record amends ADR-0073 item 3: the phone keeps its document through the background, and a new
    start of the activity starts the program again in its process; the document of a session that ran is lost.
+4. **The turns (TASK-0255).** Each create of the activity takes a turn (`SessionTurns`). A session whose turn is no
+   longer the last one ends before its window, with one line, because its activity was destroyed. A session holds the
+   window from its make to its dispose, and a later session waits for it, for 10 seconds at most; SDL on Android permits
+   one window. Run 42308415060 gave the order: the activity was destroyed during the probe of its session.
 
 ## Consequences
 
@@ -75,3 +80,5 @@ gave `Window` a `Dispose`, so a later session of the process makes its own windo
 - 2026-11-06 · TASK-0247 · The record, Accepted under the standing order.
 - 2026-11-06 · TASK-0247 · Shipped at v0.231.
 - 2026-11-06 · TASK-0250 · A session destroys its window at its end, so a new start during a session makes a new one (V112).
+- 2026-11-07 · TASK-0255 · Item 4: a session of a destroyed activity ends before its window, and a session waits for the
+  window of an earlier one (the failed run 42308415060 of `main`).
