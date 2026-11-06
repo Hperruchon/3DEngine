@@ -6442,3 +6442,28 @@ v0.214 give the true counts.
 New tests: 0. The test list holds 1896 (1342 in `Engine.Tests`, 333 in `3DEngine.Tests`, 218 in `3DEngine.ImageTests`, 3
 in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open entries:
 15 of 15. New diagnostic codes: 0. Since the review of v0.214, 0 product milestones and 1 entry followed it.
+
+## v0.216 — The pipeline compares the determinism hash of the phone with the hashes of the desktop runners (R14f3, TASK-0233)
+
+ADR-0061 item 8 says that the hash of Android must be equal to the hashes of the three desktop runners. The probe of the
+hash was in `Engine.Tests`, which the program of the phone cannot reference.
+
+**The change.** ADR-0074 is new; the standing order chose option A. The log, the state and the replay of the probe move
+into `Engine.Core/Determinism/CrossPlatformProbe.cs`; `CrossPlatformHashTests` calls them. The activity of the phone has
+the fixed name `org.threedengine.phone.MainActivity`, and with the extra `probe` `PhoneHost` runs the probe on its own
+backend before the session and writes the hash and its lines to the log. The smoke test of the emulator starts the
+program with the extra, writes the hash file of the phone and fails with no hash. The job "Compare the determinism
+hashes" waits for the job of the emulator and compares four platforms.
+
+**Proof.** The hash file of the test is the same bytes before and after the move. Run 42165619443 gave one hash for
+Ubuntu, Windows, macOS and Android on x86-64: `59876e9fc860e451302d5c97e47af81db1f59b3d03ab65aeb0c546e9ef4ea4f1`.
+
+**What stays.** The hash of arm64, the ABI of the S23 Ultra, has no run: the emulator of the pipeline is x86-64. The
+smoke test still passes after an exception that follows the line of the start (T149); the hash makes a run of the probe
+a condition now. The test of the owner stays the condition of the row R14e.
+
+**A correction.** None.
+
+New tests: 0. The test list holds 1896 (1342 in `Engine.Tests`, 333 in `3DEngine.Tests`, 218 in `3DEngine.ImageTests`, 3
+in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open entries:
+15 of 15. New diagnostic codes: 0. Since the review of v0.214, 1 product milestone and 2 entries followed it.

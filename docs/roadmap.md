@@ -188,6 +188,7 @@ Therefore each approved objective must have a track here.
 - R14f1 — The pipeline builds the APK of the phone at each push. v0.213, TASK-0228.
 - R14f2 — The APK holds its assemblies, and the pipeline starts it on the emulator up to its first frame. v0.214, TASK-0229, ADR-0072.
 - Review — The codebase review of 2026-11-06 (c). v0.215, TASK-0230.
+- R14f3 — The pipeline compares the determinism hash of the phone with the hashes of the desktop runners. v0.216, TASK-0233, ADR-0074.
 - P0.90 — The start again keeps an unsaved document, a window that does not open gives a code, and the flush holds its place. v0.211, TASK-0225.
 
 ## Track 0 — Foundations
