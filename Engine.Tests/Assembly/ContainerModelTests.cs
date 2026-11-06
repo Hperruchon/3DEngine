@@ -346,6 +346,19 @@ public sealed class ContainerModelTests : IDisposable
         Assert.Equal(before, File.ReadAllBytes(path));
     }
 
+    // Finding E156 of the codebase review of 2026-11-06 (c) (TASK-0231): the read of the kind of E155 was outside the
+    // handler of the export, so a path of the document with a NUL character threw ArgumentException out of Cli.Run.
+    [Theory]
+    [InlineData("stl")]
+    [InlineData("step")]
+    public void An_Export_Of_A_Document_Path_That_Is_Not_Valid_Gives_Its_Code(string format)
+    {
+        var (exit, output) = Run("export", format, Path.Combine(_folder, "a\0b.3de"), Path.Combine(_folder, "out." + format));
+
+        Assert.Equal(1, exit);
+        Assert.Equal(DiagnosticCodes.IoLoadFailed, JsonDocument.Parse(output).RootElement.GetProperty("error").GetProperty("code").GetString());
+    }
+
     private static (int Exit, string Output) Run(params string[] args)
     {
         var stdout = new StringWriter();

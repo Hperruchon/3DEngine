@@ -58,6 +58,15 @@ grep "3DEngine:" "$report" | head -60 | while IFS= read -r line; do echo "::noti
 grep -E "FATAL|AndroidRuntime" "$report" | head -12 | while IFS= read -r line; do echo "::warning title=Android::${line:0:300}"; done || true
 echo "started=$started drawn=$drawn"
 [ "$started" = 1 ] || fail "the program did not write its line of the start in 120 seconds"
+# Finding T149 of the codebase review of 2026-11-06 (c) (TASK-0231): PhoneHost writes the line "ended" only for an
+# exception, and the line of the start comes before the session, the window and the engine. An exception after the start
+# passed the job. Now the line "ended", or a fatal exception of the process of the program, fails it.
+if grep -q "3DEngine: the session of the phone ended" "$report"; then
+  fail "the session of the phone ended with an exception; see the lines of the program"
+fi
+if grep -A 3 "FATAL EXCEPTION" "$report" | grep -q "Process: org.threedengine.phone"; then
+  fail "the process of the program ended with a fatal exception; see the lines of Android"
+fi
 if [ -n "$hash_file" ]; then
   hash=$(grep -o "3DEngine: determinism [0-9a-f]\{64\}" "$report" | head -1 | cut -d' ' -f3 || true)
   [ -n "$hash" ] || fail "the program wrote no determinism hash"

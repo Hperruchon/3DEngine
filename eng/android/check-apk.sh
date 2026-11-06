@@ -23,6 +23,12 @@ trap 'rm -rf "$work"' EXIT
 unzip -q "$apk" -d "$work"
 failed=0
 for abi in arm64-v8a x86_64; do
+  # Finding T150 of the codebase review of 2026-11-06 (c) (TASK-0231): the checksum was accepted from any row, so the
+  # libraries of arm64 in the folder x86_64 passed. Now each library has one row, of its own ABI and its own file.
+  case "$abi" in
+    arm64-v8a) rid=android-arm64 ;;
+    x86_64) rid=android-x64 ;;
+  esac
   for library in libSDL3.so libcimgui.so libmanifold.so libmanifoldc.so; do
     file="$work/lib/$abi/$library"
     if [ ! -f "$file" ]; then
@@ -32,8 +38,10 @@ for abi in arm64-v8a x86_64; do
     fi
     sum=$(sha256sum "$file" | cut -d' ' -f1)
     echo "lib/$abi/$library $sum"
-    if [ "$library" != libSDL3.so ] && ! grep -q "\`$sum\`" "$notices"; then
-      echo "::error title=APK::lib/$abi/$library has the checksum $sum, which THIRD-PARTY-NOTICES.md does not record"
+    row="runtimes/$rid/native/$library"
+    [ "$library" = libcimgui.so ] && row="Engine.Native.DearImGui/$row"
+    if [ "$library" != libSDL3.so ] && ! grep -Fq "| \`$row\` | \`$sum\` |" "$notices"; then
+      echo "::error title=APK::lib/$abi/$library has the checksum $sum, which is not the checksum of the row $row of THIRD-PARTY-NOTICES.md"
       failed=1
     fi
   done

@@ -6467,3 +6467,38 @@ a condition now. The test of the owner stays the condition of the row R14e.
 New tests: 0. The test list holds 1896 (1342 in `Engine.Tests`, 333 in `3DEngine.Tests`, 218 in `3DEngine.ImageTests`, 3
 in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open entries:
 15 of 15. New diagnostic codes: 0. Since the review of v0.214, 1 product milestone and 2 entries followed it.
+
+## v0.217 — The review gate counts each product phase, and the export, the host and three checks hold their next forms (P0.91, TASK-0231)
+
+The codebase review of 2026-11-06 (c) found T147 and T149 (medium) and E156, E157, T148, T150 and T151 (low), to correct
+after the next product phase, R14f3.
+
+**The change.**
+- T147: the expression of a product phase in `CodebaseReviewGateTests` reads a letter and an optional number, so the
+  gate counts R14e1, R14f2 and P8b1. A theory holds ten names.
+- E156: `engine export` reads the kind of the document inside a handler of each exception of a path, so a document path
+  with a NUL character gives `E-IO-LOAD-FAILED` and no exception out of `Cli.Run`.
+- E157: `EngineHost` removes the final separator of the unsaved folder, so a journal of that folder has no name.
+- T148: each file that MSBuild reads for a project names a pinned package only when it is the file of the pin, for six
+  packages.
+- T149: the smoke test of the emulator fails on the line "the session of the phone ended" and on a fatal exception of
+  the process of the program.
+- T150: the check of the APK compares the checksum of each library with the row of its own ABI and its own file.
+- T151: the entry v0.215 corrected the counts of v0.208 to v0.211.
+
+**Proof.** The tests of T147, E156 and E157 failed before the change. T148: a `Directory.Build.targets` in
+`3DEngine.Vulkan` with an Update of `ppy.SDL3-CS` fails the new rule and passes the two rules before it. T149: a fake
+`adb` gives exit 0 before and exit 1 after for the line "ended" and for a fatal exception of the program. T150: an APK
+whose folder `x86_64` holds the libraries of arm64 passed before and gives three errors after. Run 42167561638 passed.
+
+**What stays.** The smoke test exits with no error line when the program writes a hash and no line of the probe, because
+`grep` ends the group under `set -e`; the program always writes the lines, and the next codebase review carries it.
+The review of Codex of v0.214 found that the line of the first frame comes also when `Presenter.RenderFrame` draws
+nothing; the next codebase review carries it.
+
+**A correction.** The shipped list of the roadmap held P0.90 (v0.211) after R14f3 (v0.216), out of the order of the
+versions. It is now between P0.89 and R14e3.
+
+New tests: 19. The test list holds 1915 (1361 in `Engine.Tests`, 333 in `3DEngine.Tests`, 218 in `3DEngine.ImageTests`, 3
+in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
+entries: 15 of 15. New diagnostic codes: 0. Since the review of v0.214, 1 product milestone and 3 entries followed it.
