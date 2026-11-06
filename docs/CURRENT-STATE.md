@@ -6953,3 +6953,31 @@ not hold this change.
 New tests: 0. The test list holds 1963 (1384 in `Engine.Tests`, 337 in `3DEngine.Tests`, 239 in `3DEngine.ImageTests`, 3
 in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
 entries: 15 of 15. New diagnostic codes: 0. Since the review of v0.223, 2 product milestones and 8 entries followed it.
+
+## v0.232 — The desktop and the phone take the theme "Proposed (harmonized)" of the redesign (R16a, TASK-0246)
+
+The owner ordered the redesign of the desktop on 2026-11-06 (evening), from the designer brief of 2026-11-05 (the "mix"
+direction). Its first slice is the theme "Proposed (harmonized)" and the fonts Instrument Sans and JetBrains Mono, with
+no change of layout. The roadmap gets the row R16 for the redesign.
+
+**The change.** ADR-0078 is new and Accepted.
+- Item 1: `Theme` holds the tokens of the theme of the design system that differ from the dark style of Dear ImGui: the
+  ground of the panels, the popup, a solid border, the title, the grab of a scroll bar and the disabled text. The clear
+  of the scene is `viewport-clear` `#3f4955` in place of the green key of the first image tests; the marks of a sketch take
+  `sketch-other`, `sketch-reference` and `sketch-snap`, which is magenta in place of cyan.
+- Item 2: each line, point, ring and square of the viewport, the outline of a face, a selected edge and each line of the
+  dimensions lie over a casing of 2 pixels on each side.
+- Item 3: the fonts wait for the permission of the owner to download their files (asked on 2026-11-06).
+
+**Proof.** Two new tests: the panel takes the colours and keeps its sizes, and a line of a sketch lies over its casing.
+An injection that leaves the theme out and one that leaves the casing out each fail a test. Four image tests read the new
+clear or the new colour of a snap. The pictures of the image tests before and after the change are kept for the owner.
+Run 42296524985 passed.
+
+**What stays.** No person looked at the theme on a display or on the phone. The fonts are still the bitmap font.
+
+**A correction.** None.
+
+New tests: 2. The test list holds 1965 (1384 in `Engine.Tests`, 337 in `3DEngine.Tests`, 241 in `3DEngine.ImageTests`, 3
+in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
+entries: 15 of 15. New diagnostic codes: 0. Since the review of v0.223, 3 product milestones and 9 entries followed it.

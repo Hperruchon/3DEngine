@@ -205,6 +205,7 @@ Therefore each approved objective must have a track here.
 - P0.97 — The readers of a file, the pin rule, the smoke test and the comparison hold their next forms. v0.229, TASK-0242.
 - R12b — A tap near an edge of the selected face selects the edge. v0.230, TASK-0245, ADR-0077.
 - P0.99 — The activity of the phone may start again in its process. v0.231, TASK-0247, ADR-0079.
+- R16a — The desktop and the phone take the theme "Proposed (harmonized)" of the redesign. v0.232, TASK-0246, ADR-0078.
 
 ## Track 0 — Foundations
 
