@@ -1,7 +1,7 @@
 ---
 id: 0240
 title: The codebase review of 2026-11-06 (d) is a record
-status: Active
+status: Done
 phase: governance
 opened: 2026-11-06
 depends-on: [0238]
@@ -67,12 +67,12 @@ finding.
 
 ## Acceptance criteria
 
-- [ ] `CodebaseReviewGateTests` passes with the new review.
-- [ ] Continuous integration passes on the three runners, on the branch and on `main` after the merge.
+- [x] `CodebaseReviewGateTests` passes with the new review.
+- [x] Continuous integration passes on the three runners, on the branch and on `main` after the merge.
 
 ## Outcome
 
-Status: Active
+Status: Done · commit (the merge of the branch codebase-review-2026-11-06-d) · v0.225
 
 ## Method
 
@@ -80,7 +80,8 @@ Mechanical: the measures with the methods of the last review, and the line of ea
             it cites and the changes since `df11d6e`.
 Judgement:  the severity of each new finding; E162 stays high, as the audit of Codex gave it, because its result is a
             document that does not open.
-Weakest:    to be written at the close.
+Weakest:    E162 and E163 are confirmed by reading only, and no probe ran the race of E162; V105 is an inference from
+            the strings of SDL, and no log of a job shows the new start of the activity.
 
 ## Progress
 
@@ -88,3 +89,4 @@ Weakest:    to be written at the close.
   medium and 15 new low findings; the review written.
 - 2026-11-06: the message of the desktop agent named eight findings, and its report held seven; the agent said that
   it had written the title of V110 with no examination. It then examined V110 and wrote it, and I read its cited lines.
+- 2026-11-06: closed at v0.225.
