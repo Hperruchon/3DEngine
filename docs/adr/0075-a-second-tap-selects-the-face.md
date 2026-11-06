@@ -1,18 +1,19 @@
 ---
 id: 0075
 title: A second tap on the selected body selects the face under the point
-status: Proposed
+status: Accepted
 topic: Clients, selection
 date: 2026-11-06
 supersedes: []
 superseded-by: []
-amends: []
+amends: ['0029']
 amended-by: []
 affects:
   - Engine.Core/Queries/GetFacesQuery.cs
   - Engine.Core/Queries/GetFacesQueryHandler.cs
   - 3DEngine.App/BodyActions.cs
-enforced-by: Engine.Tests/Features/GetFacesTests.cs
+  - 3DEngine.App/FaceOverlay.cs
+enforced-by: 3DEngine.ImageTests/FaceSelectionTests.cs
 ---
 
 # ADR-0075 — A second tap on the selected body selects the face under the point
@@ -37,7 +38,7 @@ What exists:
 - The redesign of the owner, still work in progress, has a glow of the edges and values on the edges.
 
 The owner ordered the fallback queue under the standing order of 2026-11-05, which answers each question with the
-recommended option. This record stays Proposed until the change of its slice, R12a, is complete.
+recommended option. This record is Accepted under that order; the owner checks it on 2026-11-08.
 
 ### Q1. The gesture
 
@@ -72,7 +73,7 @@ replay does not depend on it.
 
 ## Decision
 
-The standing order of 2026-11-05 gives A for each question. The items take effect when this record is Accepted.
+The standing order of 2026-11-05 gives A for each question.
 
 1. **The outline (Q2 A).** Each entry of `GetFaces` has `outline`: one segment, a start and an end, for each edge of the
    B-Rep with exactly one face of the name, in the order of the edges of the B-Rep. An edge between two facets of a
@@ -85,7 +86,14 @@ The standing order of 2026-11-05 gives A for each question. The items take effec
    body; with no face it does nothing. The row of a body in the panel gives the body with no face. Each change of the
    selected body clears the face. The pick of the desktop gives `PickHit`, with its point and its normal (ADR-0053
    item 5). The face is a state of the client (ADR-0007): no command and no event names it.
-3. **The panel (Q3 A).** To be written with the change of the desktop.
+3. **The panel and the mark (Q3 A).** `BodyActions.SelectedFace` gives the entry of `GetFaces` with the name of the
+   selected face; a name that the body no longer has, or a body whose faces are not known, clears the face. The
+   overlay draws the outline in the colour and the width of a selected item, over the scene and under the panel. The
+   controls of the selected body give one line: "Face", the element of the name and the area, and, for a face with a
+   normal, the button "Sketch on face", which makes the sketch from the point and the normal of the entry, as the armed
+   tap of ADR-0053 item 6 does. A curved face has no button.
+4. **The amendment.** This record amends ADR-0029 item 1: the desktop selects one body, one face of the selected
+   body, or none.
 
 ## Consequences
 
@@ -99,3 +107,4 @@ The standing order of 2026-11-05 gives A for each question. The items take effec
 
 - 2026-11-06 · TASK-0236 · The record, Proposed, with item 1 and its tests.
 - 2026-11-06 · TASK-0236 · Item 2, the gesture, with its tests.
+- 2026-11-06 · TASK-0236 · Items 3 and 4, the panel and the mark; the record is Accepted under the standing order.

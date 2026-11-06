@@ -78,6 +78,13 @@ internal sealed record DeleteSketchItemsAction(IReadOnlyList<Guid> Items) : Pane
 // ADR-0036 item 9: an extrude of the active sketch by the signed distance of the pad.
 internal sealed record ExtrudeAction(double Distance) : PanelAction;
 
+// ADR-0075 item 3 (phase R12a, TASK-0236): a sketch on the selected face, as the armed tap of ADR-0053 item 6 makes it.
+internal sealed record SketchOnSelectedFaceAction : PanelAction;
+
+// ADR-0075 item 3: the selected face for the panel and the scene: its line, whether a sketch can start on it (a curved
+// face has no one plane), and its outline in pixels of the window.
+internal sealed record FaceLine(string Text, bool CanSketch, IReadOnlyList<(System.Numerics.Vector2 A, System.Numerics.Vector2 B)> Outline);
+
 // The line of the document file in the panel: the name of the file, or null for an
 // unsaved document, and the result of the last save or open. Finding V99 of the codebase review of 2026-11-06 (c)
 // (TASK-0232): a host with no files, as the phone, has a line too, with the message only, so that a rejection shows.

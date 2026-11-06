@@ -144,6 +144,22 @@ internal sealed unsafe partial class DesktopUi
             Item(SizeLabel);
         }
 
+        // ADR-0075 item 3 (phase R12a, TASK-0236): the selected face and a sketch on it, on one line, so that the panel
+        // grows by one line only while a face is selected.
+        if (_face is { } face)
+        {
+            ImGui.AlignTextToFramePadding();
+            ImGui.TextUnformatted(face.Text);
+            Item(FaceLabel);
+            if (face.CanSketch)
+            {
+                ImGui.SameLine();
+                if (ImGui.Button(SketchOnFaceButtonLabel))
+                    _actions.Add(new SketchOnSelectedFaceAction());
+                Item(SketchOnFaceButtonLabel);
+            }
+        }
+
         ImGui.SetNextItemWidth(220f);
         TextField(NameLabel, ref _name, 128);
         Item(NameLabel);
