@@ -590,7 +590,42 @@ public class DependencyDirectionGateTests
     [
         "Compile", "EmbeddedResource", "FrameworkReference", "GlobalPackageReference", "InternalsVisibleTo", "None",
         "PackageReference", "ProjectReference", "Reference", "Using",
+        // Phase R14f2 (TASK-0229): Each_Project_That_The_Phone_Reaches_Supports_Android reads it.
+        "SupportedPlatform",
     ];
+
+    // Phase R14f2 (TASK-0229): the third run of the emulator ended on Console.ForegroundColor, which Android does not have,
+    // because no project of the APK named Android as a platform, so the analyzer CA1416 saw nothing. Each project that the
+    // program of the phone reaches names it, and the rule of zero warnings refuses such an API.
+    [Fact]
+    public void Each_Project_That_The_Phone_Reaches_Supports_Android()
+    {
+        var graph = Graph();
+        var offences = new List<string>();
+        foreach (var host in HostsWithNoSurface)
+        {
+            var reached = new HashSet<string>(StringComparer.Ordinal);
+            var stack = new Stack<string>(graph.GetValueOrDefault(host) ?? []);
+            while (stack.Count > 0)
+            {
+                var next = stack.Pop();
+                if (reached.Add(next))
+                {
+                    foreach (var further in graph.GetValueOrDefault(next) ?? [])
+                        stack.Push(further);
+                }
+            }
+
+            foreach (var name in reached.Order(StringComparer.Ordinal))
+            {
+                var file = ProjectFiles().Single(f => Path.GetFileNameWithoutExtension(f) == name);
+                if (!FilesThatMsBuildReads(file).SelectMany(read => Includes(read, "SupportedPlatform")).Any(platform => string.Equals(platform, "android", StringComparison.OrdinalIgnoreCase)))
+                    offences.Add($"{host} reaches {name}, whose project names no SupportedPlatform android");
+            }
+        }
+
+        Assert.True(offences.Count == 0, string.Join("\n  ", offences));
+    }
 
     internal static IEnumerable<string> ItemOffences(string file, XDocument document)
         => document.Descendants().Where(e => Is(e, "ItemGroup"))
