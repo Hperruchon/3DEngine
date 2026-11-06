@@ -235,6 +235,84 @@ public sealed class StlExportTests : IDisposable
         }
     }
 
+    private static async Task<(string Path, byte[] Bytes)> Part(string folder)
+    {
+        var document = Path.Combine(folder, "part" + DocumentFile.Extension);
+        using (var backend = new ManifoldGeometryBackend())
+        {
+            var session = Session(backend);
+            DocumentFile.Create(session, document);
+            await session.Apply(new CreateBoxCommand { SizeX = 1, SizeY = 2, SizeZ = 3 });
+            session.Close();
+        }
+
+        return (document, File.ReadAllBytes(document));
+    }
+
+    // A link of a folder: a junction on Windows, which needs no right of an administrator, and a symbolic link on Linux and
+    // macOS, as WriteSetJudgeTests makes it.
+    private static void FolderLink(string link, string target)
+    {
+        if (OperatingSystem.IsWindows())
+        {
+            using var mklink = System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo("cmd.exe", $"/c mklink /J \"{link}\" \"{target}\"")
+            {
+                RedirectStandardOutput = true,
+                UseShellExecute = false,
+            })!;
+            mklink.StandardOutput.ReadToEnd();
+            mklink.WaitForExit();
+            Assert.True(mklink.ExitCode == 0, "mklink /J failed");
+        }
+        else
+        {
+            Directory.CreateSymbolicLink(link, target);
+        }
+    }
+
+    // The review of Codex of v0.200, finding 1 (TASK-0221): the folder alias is a link to the folder models, so
+    // alias/part.3de is the document models/part.3de. The compare of P0.87 resolved a link of the last part of a path only,
+    // and the export wrote over the document.
+    [NativeManifoldTheory]
+    [InlineData("stl")]
+    [InlineData("step")]
+    public async Task An_Export_Onto_Its_Document_Through_A_Link_Of_A_Folder_Is_Refused(string format)
+    {
+        var (models, alias) = (Path.Combine(_folder, "models"), Path.Combine(_folder, "alias"));
+        Directory.CreateDirectory(models);
+        var (document, before) = await Part(models);
+        FolderLink(alias, models);
+        try
+        {
+            var (exit, output) = Run("export", format, document, Path.Combine(alias, "part" + DocumentFile.Extension));
+
+            var error = JsonDocument.Parse(output).RootElement.GetProperty("error");
+            Assert.Equal((1, DiagnosticCodes.ExportWriteFailed), (exit, error.GetProperty("code").GetString()));
+            Assert.Equal(before, File.ReadAllBytes(document));
+        }
+        finally
+        {
+            Directory.Delete(alias);
+        }
+    }
+
+    // The review of Codex of v0.200, finding 2 (TASK-0221): the compare of P0.87 called Path.GetFullPath outside the
+    // handler of the export, so a path with a NUL character threw out of Cli.Run. Before P0.87 the write gave
+    // E-EXPORT-WRITE-FAILED, and now the compare gives it.
+    [NativeManifoldTheory]
+    [InlineData("stl")]
+    [InlineData("step")]
+    public async Task A_Path_Of_The_Export_That_Is_Not_Valid_Gives_Its_Code(string format)
+    {
+        var (document, before) = await Part(_folder);
+
+        var (exit, output) = Run("export", format, document, Path.Combine(_folder, "a\0b." + format));
+
+        var error = JsonDocument.Parse(output).RootElement.GetProperty("error");
+        Assert.Equal((1, DiagnosticCodes.ExportWriteFailed), (exit, error.GetProperty("code").GetString()));
+        Assert.Equal(before, File.ReadAllBytes(document));
+    }
+
     // Finding E121: a vertex that is not finite as a float gives E-EXPORT-RANGE and no file, and a control box at the
     // edge of the range of a float gives its file.
     [NativeManifoldFact]
