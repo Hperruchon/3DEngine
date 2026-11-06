@@ -239,6 +239,10 @@ public unsafe class SdlInputTests
     [Theory]
     [InlineData(0x0201u, 300, 200, 300f, 200f, false)]
     [InlineData(0x0201u, 300, 200, 50f, 60f, true)]
+    // Finding V89 of the codebase review of 2026-11-06 (TASK-0198): a place that differs on one axis only. With the test
+    // x == heldX || y == heldY in Correction, each case of the theory passed.
+    [InlineData(0x0201u, 300, 200, 300f, 60f, true)]
+    [InlineData(0x0201u, 300, 200, 50f, 200f, true)]
     [InlineData(0x0202u, 300, 200, 50f, 60f, true)]
     [InlineData(0x0203u, 300, 200, 50f, 60f, true)]
     [InlineData(0x0204u, 300, 200, 50f, 60f, true)]
@@ -252,5 +256,26 @@ public unsafe class SdlInputTests
         var lParam = (nint)(((y & 0xFFFF) << 16) | (x & 0xFFFF));
 
         Assert.Equal(corrected ? ((float X, float Y)?)((float)x, (float)y) : null, Window.Correction(message, lParam, heldX, heldY));
+    }
+
+    // Finding V90 of the codebase review of 2026-11-06 (TASK-0198): a later session flushes the input events of the time
+    // between two sessions. Each type of event that SdlInput reads lies in a range of Window.InputRanges, and each range
+    // holds only the input of one class of device.
+    [Theory]
+    [InlineData(SDL_EventType.SDL_EVENT_KEY_DOWN)]
+    [InlineData(SDL_EventType.SDL_EVENT_KEY_UP)]
+    [InlineData(SDL_EventType.SDL_EVENT_TEXT_INPUT)]
+    [InlineData(SDL_EventType.SDL_EVENT_MOUSE_MOTION)]
+    [InlineData(SDL_EventType.SDL_EVENT_MOUSE_BUTTON_DOWN)]
+    [InlineData(SDL_EventType.SDL_EVENT_MOUSE_BUTTON_UP)]
+    [InlineData(SDL_EventType.SDL_EVENT_MOUSE_WHEEL)]
+    [InlineData(SDL_EventType.SDL_EVENT_FINGER_DOWN)]
+    [InlineData(SDL_EventType.SDL_EVENT_FINGER_UP)]
+    [InlineData(SDL_EventType.SDL_EVENT_FINGER_MOTION)]
+    public void A_Later_Session_Flushes_Each_Input_Event_That_SdlInput_Reads(SDL_EventType type)
+    {
+        Assert.Single(Window.InputRanges, range => type >= range.First && type <= range.Last);
+        Assert.DoesNotContain(Window.InputRanges, range => SDL_EventType.SDL_EVENT_QUIT >= range.First && SDL_EventType.SDL_EVENT_QUIT <= range.Last);
+        Assert.DoesNotContain(Window.InputRanges, range => SDL_EventType.SDL_EVENT_WINDOW_CLOSE_REQUESTED >= range.First && SDL_EventType.SDL_EVENT_WINDOW_CLOSE_REQUESTED <= range.Last);
     }
 }
