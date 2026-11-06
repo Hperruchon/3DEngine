@@ -385,13 +385,13 @@ public class DependencyDirectionGateTests
     // path at a time. An Include may hold several paths with a semicolon, and
     // an attribute may come in any order; XML reading handles both, and it
     // ignores a comment.
-    private static IEnumerable<string> Includes(string file, string itemName)
+    private static IEnumerable<string> Includes(string file, string itemName, string attribute = "Include")
     {
         var document = XDocument.Load(file);
 
         foreach (var item in document.Descendants().Where(e => Is(e, itemName)))
         {
-            var include = Value(item, "Include");
+            var include = Value(item, attribute);
             if (include is null)
                 continue;
 
@@ -448,8 +448,12 @@ public class DependencyDirectionGateTests
     // codebase review of 2026-11-01 (TASK-0161): a GlobalPackageReference of central package management references
     // a package for each project, and the pin rules read PackageReference only, so it pinned the vision library into
     // Engine.Core with no failure.
+    // Finding T144 of the codebase review of 2026-11-06 (TASK-0198): a PackageReference Update in a Directory.Build.targets
+    // changed the version of the pin of ppy.SDL3-CS, and the pin rule passed, because it read Include only. An Update
+    // names a package of the project too.
     private static IEnumerable<string> PackageReferences(string projectFile)
-        => FilesThatMsBuildReads(projectFile).SelectMany(file => Includes(file, "PackageReference").Concat(Includes(file, "GlobalPackageReference")));
+        => FilesThatMsBuildReads(projectFile).SelectMany(file => new[] { "Include", "Update" }
+            .SelectMany(attribute => Includes(file, "PackageReference", attribute).Concat(Includes(file, "GlobalPackageReference", attribute))));
 
     internal static IEnumerable<string> FilesThatMsBuildReads(string projectFile)
     {
@@ -1219,6 +1223,23 @@ public class DependencyDirectionGateTests
             .ToArray();
 
         Assert.True(offences.Length == 0, "ADR-0061 item 5: ppy.SDL3-CS is the binding of SDL.\n  " + string.Join("\n  ", offences));
+    }
+
+    // Finding T144 (TASK-0198): a second binding of SDL with another name, SDL3-CS, in the host passed each gate. Each
+    // project of the desktop names only the packages of its list, in each file that MSBuild reads for it, so a new package
+    // there is a change of this list in review.
+    [Theory]
+    [InlineData("3DEngine/3DEngine.csproj", new[] { "ImGui.NET" })]
+    [InlineData("3DEngine.Vulkan/3DEngine.Vulkan.csproj", new[] { "ppy.SDL3-CS", "Vortice.Vulkan" })]
+    [InlineData("3DEngine.Core/3DEngine.Core.csproj", new string[0])]
+    public void Each_Project_Of_The_Desktop_Names_Only_The_Packages_Of_Its_List(string project, string[] packages)
+    {
+        var others = PackageReferences(RepositoryFiles.Path(project))
+            .Where(name => !packages.Contains(name, StringComparer.OrdinalIgnoreCase))
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToArray();
+
+        Assert.True(others.Length == 0, $"{project} names packages outside its list: {string.Join(", ", others)}.");
     }
 
     [Theory]

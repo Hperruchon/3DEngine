@@ -116,6 +116,26 @@ public sealed unsafe class Window
         return true;
     }
 
+    // Finding V90 of the codebase review of 2026-11-06 (TASK-0198): between two sessions nothing reads the events of the
+    // window, for up to 2 s of the stop of the surface, the replay of the next file and a new device, and the first frame
+    // of the next session got the input of that time. These are the ranges of SDL for the keys and the text, the mouse,
+    // the fingers and the pen. A later session flushes them before its first frame; a quit and a close stay.
+    public static readonly (SDL_EventType First, SDL_EventType Last)[] InputRanges =
+    [
+        (SDL_EventType.SDL_EVENT_KEY_DOWN, (SDL_EventType)((uint)SDL_EventType.SDL_EVENT_KEY_DOWN + 0xFF)),
+        (SDL_EventType.SDL_EVENT_MOUSE_MOTION, (SDL_EventType)((uint)SDL_EventType.SDL_EVENT_MOUSE_MOTION + 0xFF)),
+        (SDL_EventType.SDL_EVENT_FINGER_DOWN, (SDL_EventType)((uint)SDL_EventType.SDL_EVENT_FINGER_DOWN + 0xFF)),
+        (SDL_EventType.SDL_EVENT_PEN_PROXIMITY_IN, (SDL_EventType)((uint)SDL_EventType.SDL_EVENT_PEN_PROXIMITY_IN + 0xFF)),
+    ];
+
+    // Reads the events of the system into the queue of SDL, then removes each input event of InputRanges.
+    public static void FlushInput()
+    {
+        SDL_PumpEvents();
+        foreach (var (first, last) in InputRanges)
+            SDL_FlushEvents(first, last);
+    }
+
     // The place of a button message in the coordinates of the window, when it is not the place that SDL holds; null for
     // another message or the same place. The message gives its place in the low and the high word of lParam, signed.
     public static (float X, float Y)? Correction(uint message, nint lParam, float heldX, float heldY)

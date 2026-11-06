@@ -13,7 +13,15 @@ internal static class DesktopEngineHost
     public static int Run(string[] args)
     {
         Window? window = null;
-        return RunSessions(args, Start, surface => Show(window ??= new Window("3DEngine Desktop", 1280, 720), surface));
+        return RunSessions(args, Start, surface =>
+        {
+            // Finding V90 (TASK-0198): a later session gets no input of the time between two sessions.
+            if (window is null)
+                window = new Window("3DEngine Desktop", 1280, 720);
+            else
+                Window.FlushInput();
+            Show(window, surface);
+        });
     }
 
     // A failure before the start of the surface, for example a configuration that
