@@ -1,7 +1,7 @@
 ---
 id: 0202
 title: A document is a part or an assembly, and an assembly holds references to parts at a fixed version
-status: Active
+status: Done
 phase: P8b1
 opened: 2026-11-06
 depends-on: [0201]
@@ -50,6 +50,7 @@ writes:
     - docs/adr/0060-unit-kind-in-the-command-schema.md
     - docs/adr/README.md
     - docs/diagnostics.md
+    - docs/register.md
     - docs/roadmap.md
     - docs/CURRENT-STATE.md
     - eng/test-floor.txt
@@ -101,11 +102,11 @@ and each part file of an earlier version opens as a part with the same bytes.
 - [x] An assembly refuses each command of a part with `E-CMD-KIND-REFUSED`, and a part refuses `AddPartReference`.
 - [x] An assembly file opens again with its references, and only in a session of its kind.
 - [x] A clean build (`--no-incremental`) gives zero errors and zero warnings.
-- [ ] Continuous integration passes on the three runners, on the branch and on `main` after the merge.
+- [x] Continuous integration passes on the three runners, on the branch and on `main` after the merge.
 
 ## Outcome
 
-Status: Done · commit (the merge of the branch p8b1-container-kind) · v0.TBD
+Status: Done · commit (the integration branch p8b1-integration) · v0.202
 
 ## Method
 
@@ -126,3 +127,6 @@ Weakest:    an engine before TASK-0202 refuses an assembly file only because it 
 - 2026-11-06: replayed on `main` of v0.197. Since TASK-0192 each integer parameter declares a unit, so ADR-0071 adds
   the unit kind `count` to ADR-0060 item 2 for `version`, answered by the standing order of 2026-11-05. The gate of
   the vocabulary failed with `count` in the code only, and passes with the list of item 2.
+- 2026-11-06: integrated by the main session at v0.202, on top of K6b. One conflict in `docs/diagnostics.md`: the row
+  of P0.87 stays, and the two rows of TASK-0202 follow it. Register entry R-0055 holds the question of the resolution of
+  a reference.

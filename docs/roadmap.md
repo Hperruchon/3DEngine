@@ -175,6 +175,7 @@ Therefore each approved objective must have a track here.
 - K6a — The live bodies leave the engine as one STEP file of their planar faces. v0.198, TASK-0200, ADR-0070.
 - P0.87 — An export of the command line refuses a file that is its own document file. v0.200, TASK-0220.
 - K6b — A void inside a body leaves the engine as a BREP_WITH_VOIDS. v0.201, TASK-0201, ADR-0070.
+- P8b1 — A document is a part or an assembly of references to parts at a fixed version. v0.202, TASK-0202, ADR-0071.
 
 ## Track 0 — Foundations
 

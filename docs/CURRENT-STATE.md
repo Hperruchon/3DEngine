@@ -6028,3 +6028,31 @@ New tests: 3 (one replaced, four added). The test list holds 1823 (1302 in `Engi
 in `3DEngine.ImageTests`, 3 in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors
 and zero warnings. Open entries: 14 of 15. New diagnostic codes: 0. Since the review of v0.198, 1 product milestone and 3
 entries followed it.
+
+## v0.202 — A document is a part or an assembly of references to parts at a fixed version (P8b1, TASK-0202)
+
+Roadmap row P8b is the container model. The owner ordered it in the engine lane of the order of 2026-11-05, after K6.
+This is the first slice; the main session integrates it and writes this entry.
+
+**The change.** `Document.Kind` is `part` or `assembly` and is fixed when the Document is made. An assembly records
+`PartReference` records: the name of the bytes of a part file in the store of the assets, a version and a place.
+`AddPartReference` makes one, `GetPartReferences` reads them, and undo and redo apply to them. The bus refuses a
+command of the wrong kind with `E-CMD-KIND-REFUSED`. The header of an assembly file ends with the field `kind`; the
+header of a part has no such field, so each part file keeps its bytes and each earlier file opens as a part. The
+hosts and the command line take `--kind`. ADR-0071 is new and amends ADR-0012, ADR-0015, ADR-0030, ADR-0031 and
+ADR-0060 (the unit kind `count`); the standing order chose each recommended option.
+
+**Proof.** `ContainerModelTests`: a part file in the form of each earlier version opens with the same bytes, a new
+part file with the same command has the same bytes, each kind refuses the commands of the other kind, and an assembly
+file opens again with its references, in a session of its kind only. Four injections each fail a test.
+
+**What stays.** The engine does not resolve a reference: it does not read the part or show its bodies. The charter
+lists "Multi-Document in one runtime" as a non-goal, so register entry R-0055 asks the owner. No desktop change. An
+engine before TASK-0202 opens an assembly with no reference as an empty part.
+
+**A correction.** None.
+
+New tests: 9. The test list holds 1832 (1311 in `Engine.Tests`, 320 in `3DEngine.Tests`, 198 in `3DEngine.ImageTests`,
+3 in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
+entries: 15 of 15. New diagnostic codes: 3 (`E-CMD-KIND-REFUSED`, `E-ASSEMBLY-REFERENCE-INVALID`,
+`E-ASSEMBLY-ID-IN-USE`). Since the review of v0.198, 2 product milestones and 4 entries followed it.
