@@ -284,6 +284,8 @@ This track removes each condition that blocks other work.
 | P0.88 | An export of the command line resolves a link of each folder of its paths, and a path that is not valid gives its code (findings 1 and 2 of the review of Codex of v0.200, high and medium; before the next product phase). TASK-0221. | 1 |
 | P0.89 | A void on the plane of a distant face is written, a replay and an export know an assembly, and two gates read the transitive form (E152 to E155, T145, T146 of the codebase review of 2026-11-06 (b); after the next product phase). TASK-0224. | 2–3 |
 | P0.90 | The start again keeps an unsaved document, a window that does not open gives a code, and the flush holds its place (V91 to V96 of the codebase review of 2026-11-06 (b); after P0.89). TASK-0225. | 1–2 |
+| P0.91 | The review gate counts each product phase, and the export, the host and three checks hold their next forms (E156, E157, T147 to T151 of the codebase review of 2026-11-06 (c); after the next product phase). TASK-0231. | 2 |
+| P0.92 | The start again sees the commands of the stop, and the panel and the phone hold their next forms (V97 to V103 of the codebase review of 2026-11-06 (c); after P0.91). TASK-0232. | 2 |
 | P0.86 | The window keeps no input between sessions, the hook has the cases of one axis, and the next forms of four gates fail (V88 to V90, T141 to T144 of the codebase review of 2026-11-06; after the next product phase). TASK-0198. | 1–2 |
 
 ## Track P — The platform
