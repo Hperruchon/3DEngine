@@ -60,7 +60,11 @@ the dependency graph read items, not conditions. **Recommended: A.**
    a fan-out of the committed events, `FanOutSink`, as `EngineHost` gives them, and no file.
 3. **The files.** `IDocumentFiles` gives the actions Save, Open and Export of the panel a path for a plain name and
    the open of a file. The desktop gives `DesktopDocument`, with the rules of the document folder (ADR-0030 item 2).
-   The phone gives the picker of Android in a later slice of R14e.
+   The phone gives the picker of Android in a later slice of R14e. Two actions of the panel still use a path of the
+   file system: the placement of an image reads the path that the person types, and the STL export writes on the path
+   that `Resolve` gives (finding V95 of the codebase review of 2026-11-06 (b)). A picker gives a stream, so the slice of
+   the picker decides how the phone reads an image and writes an export: a stream through `IDocumentFiles`, or a path
+   in the private storage of the program.
 4. **The user interface.** It moves with the application: `3DEngine.App/Ui/` holds the only files that name the
    namespace `ImGuiNET`, and `3DEngine.App/3DEngine.App.csproj` holds the only pin of `ImGui.NET`. This amends
    ADR-0027 items 1, 8 and 9, which name `3DEngine/Ui/` and `3DEngine/3DEngine.csproj`.
@@ -76,7 +80,8 @@ the dependency graph read items, not conditions. **Recommended: A.**
 gate refuses a reference to the surface or to ASP.NET Core in the application, so the phone cannot lose that path by
 accident.
 
-**Bad:** the desktop is two projects. Four test projects and the program now name the application, and fifteen ADRs
+**Bad:** the desktop is two projects. The program references the application, four test files of `Engine.Tests` and
+the solution name it, and fifteen ADRs
 name its paths in their `affects` fields. The namespace `ThreeDEngine.Desktop` holds code that is not only of the
 desktop.
 
@@ -87,3 +92,5 @@ of its own, and the APK.
 
 - 2026-11-06 · TASK-0222 · The record, under the standing order of 2026-11-05.
 - 2026-11-06 · TASK-0226 · Item 2: the session of the phone is `LocalSessionHost` of the library.
+- 2026-11-06 · TASK-0225 · Item 3 names the two actions that use a path (finding V95), and the count of the
+  consequences is true (finding V96): until TASK-0225 it said "four test projects".
