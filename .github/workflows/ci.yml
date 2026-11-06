@@ -228,8 +228,12 @@ jobs:
         with:
           global-json-file: global.json
 
+      # TASK-0235: the workload has no pin, so the job gives its version as a public annotation; the emulator job of
+      # v0.217 failed with no change of code, and no log of the job is public.
       - name: Install the workload of .NET for Android
-        run: dotnet workload install android
+        run: |
+          dotnet workload install android
+          dotnet workload list | grep -i android | while IFS= read -r line; do echo "::notice title=Workload::$line"; done || true
 
       - name: Install the Android dependencies of the program
         run: |
@@ -291,6 +295,9 @@ jobs:
           mkdir -p "$ANDROID_AVD_HOME"
           "$sdkmanager" --install "emulator" "platform-tools" "system-images;android-34;google_apis;x86_64" > /dev/null
           echo no | "$ANDROID_HOME/cmdline-tools/latest/bin/avdmanager" create avd -n smoke -k "system-images;android-34;google_apis;x86_64" -d pixel_6
+          # TASK-0235: the emulator and the image have no pin, so the job gives their versions as public annotations.
+          "$sdkmanager" --list_installed 2>/dev/null | grep -E "^ *(emulator|platform-tools|system-images)" \
+            | while IFS= read -r line; do echo "::notice title=Android SDK::$line"; done || true
 
       - name: Start the emulator
         run: |
