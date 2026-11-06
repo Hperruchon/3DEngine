@@ -1,7 +1,7 @@
 ---
 id: 0228
 title: The pipeline builds the APK of the phone at each push
-status: Active
+status: Done
 phase: R14f1
 opened: 2026-11-06
 depends-on: [0227]
@@ -49,19 +49,20 @@ Each push builds the APK on Ubuntu, checks its ABIs and its native libraries, an
 
 ## Acceptance criteria
 
-- [ ] The job passes on the branch, and the check refuses an APK with another ABI or a library with another checksum.
-- [ ] Continuous integration passes on the three runners, on the branch and on `main` after the merge.
+- [x] The job passes on the branch, and the check refuses an APK with another ABI or a library with another checksum.
+- [x] Continuous integration passes on the three runners, on the branch and on `main` after the merge.
 
 ## Outcome
 
-Status: Active
+Status: Done · commit (the merge of the branch r14f1-apk-job) · v0.213
 
 ## Method
 
 Mechanical: the steps of the gate on Ubuntu, and the check of the APK of R14e2 as a script.
 Judgement:  the Android dependencies from the target InstallAndroidDependencies, on the runner only.
-Weakest:    to be written at the close.
+Weakest:    the job is not a required check of the branch main; the owner decides that in the settings of GitHub.
 
 ## Progress
 
 - 2026-11-06: the job and the script. The script passes on the APK of R14e3 built on this computer.
+- 2026-11-06: the job passed on the branch in run 42156698951. Closed at v0.213.
