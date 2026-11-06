@@ -6722,3 +6722,35 @@ text of the failure. Run 42274351754 passed, with one notice for the start and t
 New tests: 0. The test list holds 1944 (1376 in `Engine.Tests`, 335 in `3DEngine.Tests`, 230 in `3DEngine.ImageTests`, 3
 in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
 entries: 15 of 15. New diagnostic codes: 0. Since the review of v0.214, 4 product milestones and 10 entries followed it.
+
+## v0.225 — The codebase review of 2026-11-06 (d) (governance, TASK-0240)
+
+The review of 2026-11-06 (c) examined v0.214. After it came 4 product milestones (R14f3, R15, R12a and K5a) and 9 ledger
+entries, and the next product milestone would be the fifth, so this review is due before it.
+
+**The change.** `docs/reviews/2026-11-06-d-codebase-review.md`, at `3379675` (v0.223). Two review agents worked there, each
+one in its own worktree. One new finding is high: a save to a new name releases the lock of the file during the move, so
+a second host can append a line, and the document then does not open (E162, from the audit of Codex of the persistence).
+Six are medium: a cancelled finger stays down (V104), a new start of the activity on the emulator ends the process with
+no line (V105, inferred), a failure of the phone skips the comparison of the desktop hashes (T152), the smoke test passes
+a native crash (T153) and wrote more annotations than GitHub keeps (T154, fixed at v0.224), and a null required field
+gives a document that does not open (E163). Fifteen are low: E158 to E161, V106 to V111 and T155 to T159. TASK-0241
+(P0.96) holds E162 before the next product phase; TASK-0242 (P0.97) and TASK-0243 (P0.98) hold the others after it. The
+standing order of 2026-11-05 answers Q1 (the save copies the lines into a new file and then deletes the old one) with A.
+
+**Proof.** `CodebaseReviewGateTests` passes with the new review.
+
+**What stays.** T143 stays open for the owner. The open findings are 0 critical, 5 high, 20 medium and 33 low. The
+message of the desktop agent named a finding that its report did not hold; the agent then examined it (V110), and I read
+its cited lines.
+
+**A correction.** The ledger counted the failures of the emulator job too low (T159). Seven runs failed in that job with
+no change of the phone: 42166346364 (the close of R14f3), 42168252840 (`main` at v0.217), 42168890096 (P0.92),
+42170647555 (the close of R15), 42172903090 (R12a), 42265352847 (P0.94) and 42270121672 (`main` at v0.222). The entry
+v0.222 said "a fourth time" for the sixth. The entries v0.219 and v0.221 cite a run that passed and do not name the run of
+the same branch that failed. The entry v0.223 does not say that run 42270395707 of the first branch of K5a failed the
+write-set job on a merge commit with no task, which a rebase to the branch `k5a-cylinder-b` corrected.
+
+New tests: 0. The test list holds 1944 (1376 in `Engine.Tests`, 335 in `3DEngine.Tests`, 230 in `3DEngine.ImageTests`, 3
+in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
+entries: 15 of 15. New diagnostic codes: 0. Since the review of v0.223, 0 product milestones and 2 entries followed it.
