@@ -1,7 +1,7 @@
 ---
 id: 0236
 title: A second tap on the selected body selects the face under the point
-status: Active
+status: Done
 phase: R12a
 opened: 2026-11-06
 depends-on: [0234]
@@ -62,20 +62,21 @@ panel, with a finger, a pen or a mouse.
 
 ## Acceptance criteria
 
-- [ ] Each face of a box has an outline of four edges, a hole is in the outline, and no edge inside a curve is.
-- [ ] A test of the gesture with a finger and with a mouse gives the same face.
-- [ ] A clean build (`--no-incremental`) gives zero errors and zero warnings.
-- [ ] Continuous integration passes on the three runners, on the branch and on `main` after the merge.
+- [x] Each face of a box has an outline of four edges, a hole is in the outline, and no edge inside a curve is.
+- [x] A test of the gesture with a finger and with a mouse gives the same face.
+- [x] A clean build (`--no-incremental`) gives zero errors and zero warnings.
+- [x] Continuous integration passes on the three runners, on the branch and on `main` after the merge.
 
 ## Outcome
 
-Status: Active
+Status: Done · commit (the merge of the branch r12a-face-selection) · v0.221
 
 ## Method
 
 Mechanical: the outline from the edges of the B-Rep, and a test of each form before the change.
 Judgement:  the three answers of ADR-0075, which the standing order gave.
-Weakest:    to be written at the close.
+Weakest:    no person tapped a face on the desktop or on the phone, and no image of the GPU shows the outline; a
+            curved face cannot be selected, because GetFaceAt names plane faces only.
 
 ## Progress
 
@@ -85,3 +86,4 @@ Weakest:    to be written at the close.
   body. Two tests, one with a finger and a mouse; an injection that keeps the old select fails both.
 - 2026-11-06: items 3 and 4, the panel and the mark, with three tests; an injection that keeps a face of a body that is
   gone, and an injection that gives a curved face the button, each fail a test. ADR-0075 is Accepted.
+- 2026-11-06: run 42173547034 passed on the three runners and on the emulator. Closed at v0.221.
