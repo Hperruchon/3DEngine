@@ -1,0 +1,31 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!--
+    Phase R14e2 (ADR-0061 item 9, ADR-0072, TASK-0226): the Android program. It composes a session of its own with
+    LocalSessionHost and draws it with the application 3DEngine.App. It mounts no surface (ADR-0061 item 4). The
+    runtime identifiers hold no 32-bit x86 (CLAUDE.md, determinism rule 5; finding V88). The solution does not hold
+    this project, because the runners of the pipeline have no workload of .NET for Android; R14f adds the job.
+  -->
+  <PropertyGroup>
+    <TargetFramework>net10.0-android</TargetFramework>
+    <SupportedOSPlatformVersion>33</SupportedOSPlatformVersion>
+    <OutputType>Exe</OutputType>
+    <RootNamespace>ThreeDEngine.Android</RootNamespace>
+    <ApplicationId>org.threedengine.phone</ApplicationId>
+    <ApplicationTitle>3DEngine</ApplicationTitle>
+    <ApplicationVersion>1</ApplicationVersion>
+    <ApplicationDisplayVersion>0.1</ApplicationDisplayVersion>
+    <RuntimeIdentifiers>android-arm64;android-x64</RuntimeIdentifiers>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <AllowUnsafeBlocks>True</AllowUnsafeBlocks>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\3DEngine.App\3DEngine.App.csproj" />
+    <ProjectReference Include="..\3DEngine.Vulkan\3DEngine.Vulkan.csproj" />
+    <ProjectReference Include="..\Engine.Geometry.Manifold\Engine.Geometry.Manifold.csproj" />
+  </ItemGroup>
+  <!-- The native cimgui of R14d for Android (ADR-0061 item 6). ImGui.NET has no Android library. -->
+  <ItemGroup>
+    <PackageReference Include="Engine.Native.DearImGui" Version="1.91.6.1" />
+  </ItemGroup>
+</Project>

@@ -7,19 +7,22 @@ one. Register entry R-0005 required it. ADR-0014 section 5 requires a checksum f
 A change to the binary that does not change this file fails the build.
 
 Written 2026-09-22 by TASK-0024. Section 4 added 2026-09-23 by TASK-0027. Section 5 added 2026-10-28 by
-TASK-0084.
+TASK-0084. Sections 1 and 2 changed 2026-11-06 by TASK-0226 for the packages of R14d.
 
 ## 1 The native geometry payload
 
-The repository holds one binary artifact:
+The repository holds two binary artifacts:
 
 ```
-nuget/Engine.Geometry.Manifold.Native.3.5.2.1.nupkg
+nuget/Engine.Geometry.Manifold.Native.3.5.2.2.nupkg
+nuget/Engine.Native.DearImGui.1.91.6.1.nupkg
 ```
 
-The package holds the native library for three runtime identifiers: `linux-x64`, `osx-arm64` and
-`win-x64`. `.github/workflows/build-manifold-native.yml` builds it from source. ADR-0014 gives the
-reason and the rules.
+The first package holds the native library of Manifold for five runtime identifiers: `linux-x64`, `osx-arm64`,
+`win-x64`, `android-arm64` and `android-x64`. `.github/workflows/build-manifold-native.yml` builds it from source.
+ADR-0014 gives the reason and the rules. The second package holds the native cimgui of section 5.2 for
+`android-arm64` and `android-x64`, because the package `ImGui.NET` has no Android library;
+`.github/workflows/build-cimgui-native.yml` builds it from source (ADR-0061 item 6). Its licences are in section 5.
 
 ### 1.1 Manifold
 
@@ -57,17 +60,22 @@ finds the name Clipper in each one. The notice above is therefore necessary.
 
 Each value is SHA-256. Compute one with `sha256sum <path>`.
 
-### 2.1 The package
+### 2.1 The packages
 
 | File | SHA-256 |
 |---|---|
-| `nuget/Engine.Geometry.Manifold.Native.3.5.2.1.nupkg` | `ee6a86f16189967490b360129c1f17d905f1212649fbe6a39800a0bc17917b00` |
+| `nuget/Engine.Geometry.Manifold.Native.3.5.2.2.nupkg` | `e595cf524084e4f594da690733e060b2eb0e7d801630f818cc5d2e90e14321f6` |
+| `nuget/Engine.Native.DearImGui.1.91.6.1.nupkg` | `45e35494e5e0b8ff77403d941cf46b0ac8392d9f777fb05791163729c1067337` |
 
-The package version 3.5.2.1 is the second build of the Manifold source 3.5.2 (TASK-0048). The workflow
-`build-manifold-native.yml` built it in run 37538228336 from the commit `27e65b6` of this repository,
-and pushed it to the branch `native-package/3.5.2.1`.
+The package version 3.5.2.2 is the third build of the Manifold source 3.5.2 (TASK-0196). The workflow
+`build-manifold-native.yml` built it in run 42145031039 from the commit `d1a447f` of this repository, the merge of
+v0.203, and pushed it to the branch `native-package/3.5.2.2`. The package 3.5.2.1 of TASK-0048 had no Android library;
+the files of `linux-x64` and the two files `libmanifold` of `osx-arm64` have the same bytes in both versions, and the
+files of `win-x64` and the files `libmanifoldc` of `osx-arm64` differ. The workflow `build-cimgui-native.yml` built
+the package of cimgui in run 42145031007 from the same commit, and pushed it to the branch
+`native-package-cimgui/1.91.6.1`.
 
-### 2.2 The native binaries inside the package
+### 2.2 The native binaries inside the package of Manifold
 
 A file with a version suffix and a file with no suffix hold the same bytes on Linux. On macOS each
 copy is signed again under its own name, so some copies differ. The table gives one row for each
@@ -75,15 +83,28 @@ distinct file.
 
 | File inside the package | SHA-256 |
 |---|---|
-| `runtimes/win-x64/native/manifold.dll` | `898f6ca8993b437e4ae9f7098ffd3324af593af94b2664b79dbc4ccc326a3f45` |
-| `runtimes/win-x64/native/manifoldc.dll` | `7acc59ea545253c5ebfd71aff125b33e37a87dcd6bb32f7f40b07398906283f0` |
+| `runtimes/win-x64/native/manifold.dll` | `44b8a7cd00ae198420d5987ecaf732fbf609f6bd040e0b6a1a10ba2751067f6e` |
+| `runtimes/win-x64/native/manifoldc.dll` | `afe4e9a68a2bf01eee9489fc2ecde8222c3098544ea38dcfefe63a24ef9aed85` |
 | `runtimes/linux-x64/native/libmanifold.so.3.5.2` | `eb3b5a43120826c9124459ef9fb64c6b2f24e39a86cab146fc261b414adba552` |
 | `runtimes/linux-x64/native/libmanifoldc.so.3.5.2` | `c7f5176d5174d71d4cb77513dc1b3b42cda4bc14cbda2709afdcfd9597a2f0b9` |
 | `runtimes/osx-arm64/native/libmanifold.3.5.2.dylib` | `74fceb019c2aed47972109c3dd95b2b06005cc97581abc5cfc4e163a2579f9c2` |
 | `runtimes/osx-arm64/native/libmanifold.dylib` | `c811b0f6de29eabf6c49b6b9718ed7e452243a4634f71aba0afb483a57d6d22e` |
-| `runtimes/osx-arm64/native/libmanifoldc.3.5.2.dylib` | `e0557879572874937a418c04dfee6748281c21b6acded2e2e898fec5ab09d6ad` |
-| `runtimes/osx-arm64/native/libmanifoldc.3.dylib` | `336c8e2d06379136c524fd5d86573abec467909a8ad47869d6de644d3a9c4ffd` |
-| `runtimes/osx-arm64/native/libmanifoldc.dylib` | `cf5ad252ff94203953c55effccb59f69d3767e94eb22eacb88c214151902f440` |
+| `runtimes/osx-arm64/native/libmanifoldc.3.5.2.dylib` | `9e6e7bbddd16ff81ca8bcf683776efffb216cc1fc304497d03e5bece1d2b1927` |
+| `runtimes/osx-arm64/native/libmanifoldc.3.dylib` | `7bd033b52b91435b6c0f2a2c65e55344f74a754cdad5f5da3e2242e4f2831c9b` |
+| `runtimes/osx-arm64/native/libmanifoldc.dylib` | `9ce1629e957e37960bf3b64caa03408a4d8ad7b94607203a80ba452e796cd550` |
+| `runtimes/android-arm64/native/libmanifold.so` | `6b200c318fab7d9fb898ace0e221999572575f9d49ce4fa6f188b06978e2c177` |
+| `runtimes/android-arm64/native/libmanifoldc.so` | `fba36d3d2ac11910d6f8d06e9e57f54db2484991e68c43795189e559365090de` |
+| `runtimes/android-x64/native/libmanifold.so` | `0666994b1c2054a96cac6af9d2bd2cd3215bdcd9cb24f1e606f2e92dc2a37986` |
+| `runtimes/android-x64/native/libmanifoldc.so` | `e7365a0bf015ddd6417261e2c7ad88266c36da67ac5e4fad1767f7cb66563892` |
+
+### 2.3 The native binaries inside the package of cimgui
+
+The name of the package comes before the path, so that the gate keeps the rows of the two packages apart.
+
+| File inside the package | SHA-256 |
+|---|---|
+| `Engine.Native.DearImGui/runtimes/android-arm64/native/libcimgui.so` | `def79c080b50ed53797d856b4456d97654af3848e90e7cb182f6a798699b218c` |
+| `Engine.Native.DearImGui/runtimes/android-x64/native/libcimgui.so` | `6d1be13e88c9e31e98d884b63d008e52b784068b2a36a412a6da194d987465fd` |
 
 ## 3 Two defects of the first package, corrected
 

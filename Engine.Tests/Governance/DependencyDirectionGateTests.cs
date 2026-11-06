@@ -1025,12 +1025,38 @@ public class DependencyDirectionGateTests
 
     // TASK-0027 added the desktop host. Before that task the gate did not read
     // it, and the host referenced the vendored sample framework with no report.
-    private static readonly string[] HostsThatDraw = ["3DEngine"];
+    // Phase R14e2 (ADR-0061 item 4, TASK-0226): the Android program is a host that draws with no surface.
+    private static readonly string[] HostsThatDraw = ["3DEngine", "3DEngine.Android"];
+
+    // The hosts that draw with no surface: Android has no runtime pack of ASP.NET Core (ADR-0072 item 1).
+    private static readonly string[] HostsWithNoSurface = ["3DEngine.Android"];
 
     // ADR-0072 (phase R14e1, TASK-0222): the application of a host that draws, a library of the scene, the user interface
     // and the actions. A host that draws references it. It references the kernel of design truth and the render side
     // only, so that a host with no surface, the phone, can reference it (The_Application_References_No_Surface).
     private static readonly string[] Applications = ["3DEngine.App"];
+
+    [Fact]
+    public void A_Host_With_No_Surface_References_No_Surface()
+    {
+        // ADR-0061 item 4 and ADR-0072 item 1 (TASK-0226): the program of the phone references the kernel, the
+        // native backend at its composition root (ADR-0014 section 4), the render side and the application, and no file
+        // that MSBuild reads for it names a FrameworkReference.
+        string[] permitted = ["Engine.Contracts", "Engine.Core", "Engine.Geometry.Manifold", .. RenderSide, .. Applications];
+        var graph = Graph();
+        var offences = new List<string>();
+        foreach (var host in HostsWithNoSurface)
+        {
+            Assert.True(graph.ContainsKey(host), $"{host}.csproj was not found.");
+            offences.AddRange(graph[host].Where(target => !permitted.Contains(target))
+                .Select(target => $"{host} references {target}; ADR-0072 item 1 permits no surface on a host with no surface"));
+            var file = ProjectFiles().Single(f => Path.GetFileNameWithoutExtension(f) == host);
+            offences.AddRange(FilesThatMsBuildReads(file).SelectMany(read => Includes(read, "FrameworkReference"))
+                .Select(framework => $"{host} references the framework {framework}; ADR-0072 item 1 permits none"));
+        }
+
+        Assert.True(offences.Count == 0, string.Join("\n  ", offences));
+    }
 
     [Fact]
     public void The_Application_References_No_Surface()
@@ -1261,6 +1287,8 @@ public class DependencyDirectionGateTests
     // ADR-0072: the pin of ImGui.NET moved from the desktop program to the application.
     [InlineData("3DEngine/3DEngine.csproj", new string[0])]
     [InlineData("3DEngine.App/3DEngine.App.csproj", new[] { "ImGui.NET" })]
+    // Phase R14e2 (TASK-0226): the native cimgui of R14d for Android.
+    [InlineData("3DEngine.Android/3DEngine.Android.csproj", new[] { "Engine.Native.DearImGui" })]
     [InlineData("3DEngine.Vulkan/3DEngine.Vulkan.csproj", new[] { "ppy.SDL3-CS", "Vortice.Vulkan" })]
     [InlineData("3DEngine.Core/3DEngine.Core.csproj", new string[0])]
     public void Each_Project_Of_The_Desktop_Names_Only_The_Packages_Of_Its_List(string project, string[] packages)
