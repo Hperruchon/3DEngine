@@ -77,6 +77,9 @@ internal sealed unsafe class SceneRenderer : IDisposable
 
     public ((double X, double Y, double Z) Min, (double X, double Y, double Z) Max)? BoxOf(Guid bodyId) => _bodies.BoxOf(bodyId);
 
+    // V109 (TASK-0243): the geometry key of the mesh of a live body, or null.
+    public Guid? KeyOf(Guid bodyId) => _bodies.KeyOf(bodyId);
+
     // V87 (TASK-0191): the box of a body with no offset of a preview.
     public ((double X, double Y, double Z) Min, (double X, double Y, double Z) Max)? RestBoxOf(Guid bodyId) => _bodies.RestBoxOf(bodyId);
 

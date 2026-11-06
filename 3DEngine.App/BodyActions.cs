@@ -63,7 +63,7 @@ internal sealed class BodyActions(DocumentSession session)
             }
 
             // The key Escape goes back from the face to its body.
-            case CancelIntent when Face is not null:
+            case CancelIntent { ByKey: true } when Face is not null:
                 Face = null;
                 return true;
 
@@ -127,16 +127,25 @@ internal sealed class BodyActions(DocumentSession session)
         return Rejection(result);
     }
 
+    // V109 (TASK-0243): the entry of the selected face, with its body, its face and the geometry key of the body.
+    private (Guid Body, DatumReference Face, Guid Key, FaceEntry Entry)? _kept;
+
     // ADR-0075 item 3 (phase R12a, TASK-0236): the entry of GetFaces of the selected face, or null. A face whose name the
     // body no longer has, for example after a cut, or a body whose faces are not known, is no longer selected.
-    public FaceEntry? SelectedFace()
+    // Finding V109 of the codebase review of 2026-11-06 (d) (TASK-0243): the query waits for the serial section, so a long
+    // command of an agent stopped each frame while a face was selected. The entry is kept with the body, the face and the
+    // geometry key of the body, and the query runs again only when one of them changes; a key of null asks each time.
+    public FaceEntry? SelectedFace(Guid? key = null)
     {
         if (Selection is not { } body || Face is not { } face)
             return null;
+        if (key is not null && _kept is { } kept && kept.Body == body && kept.Face == face && kept.Key == key)
+            return kept.Entry;
         var entry = session.Query<FacesInfo>(new GetFacesQuery { BodyId = body }).GetAwaiter().GetResult().Result?
             .Faces.FirstOrDefault(candidate => candidate.Reference == face);
         if (entry is null)
             Face = null;
+        _kept = entry is null || key is null ? null : (body, face, key.Value, entry);
         return entry;
     }
 
@@ -151,9 +160,6 @@ internal sealed class BodyActions(DocumentSession session)
         return Rejection(result);
     }
 
-    // ADR-0049 items 7 and 8: the distance in effect of the extrude whose handle is the body, from
-    // GetBodyInfo, or null for another body. A new distance from the pad: the body keeps its
-    // handle, so the selection stays.
     // The name of the face under a hit, from GetFaceAt (ADR-0053 item 1), or null.
     private DatumReference? FaceAt(PickHit hit)
         => session.Query<FaceInfo>(new GetFaceAtQuery
@@ -167,6 +173,9 @@ internal sealed class BodyActions(DocumentSession session)
             Nz = hit.Normal.Z,
         }).GetAwaiter().GetResult().Result?.Reference;
 
+    // ADR-0049 items 7 and 8: the distance in effect of the extrude whose handle is the body, from
+    // GetBodyInfo, or null for another body. A new distance from the pad: the body keeps its
+    // handle, so the selection stays. Finding V111 (TASK-0243): this comment stood above FaceAt.
     public double? Distance(Guid body)
         => session.Query<BodyInfo>(new GetBodyInfoQuery { BodyId = body }).GetAwaiter().GetResult().Result?.Distance;
 

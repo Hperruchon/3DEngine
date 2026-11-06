@@ -184,12 +184,12 @@ public class IntentParityTests
     public void Escape_With_No_Press_On_A_Handle_Cancels(IntentMode mode)
     {
         var machine = new IntentMachine { Mode = mode };
-        Assert.Equal([new CancelIntent()], machine.Step([new KeySample(InputKey.Escape, true, KeyModifiers.None, 0)]));
+        Assert.Equal([new CancelIntent(ByKey: true)], machine.Step([new KeySample(InputKey.Escape, true, KeyModifiers.None, 0)]));
 
         var onHandle = new IntentMachine { HitTest = (_, _) => GizmoHandle.X };
         onHandle.Step([Mouse(100, 100, PointerButtons.Left, PointerPhase.Down, 0)]);
         Assert.Empty(onHandle.Step([new KeySample(InputKey.Escape, true, KeyModifiers.None, 10 * Ms)]));
-        Assert.Equal([new CancelIntent()], onHandle.Step([new KeySample(InputKey.Escape, true, KeyModifiers.None, 20 * Ms)]));
+        Assert.Equal([new CancelIntent(ByKey: true)], onHandle.Step([new KeySample(InputKey.Escape, true, KeyModifiers.None, 20 * Ms)]));
     }
 
     // Decision D4: the action of a gesture is a setting.

@@ -51,12 +51,17 @@ public sealed unsafe class SdlInput
                 _frame.Add(new WheelSample(steps, time));
                 break;
 
-            case SDL_EventType.SDL_EVENT_FINGER_DOWN or SDL_EventType.SDL_EVENT_FINGER_MOTION or SDL_EventType.SDL_EVENT_FINGER_UP:
+            // Finding V104 of the codebase review of 2026-11-06 (d) (TASK-0243): Android cancels a finger that the system
+            // takes, as for the gesture of the back from the edge. Until TASK-0243 no sample ended it, so the finger stayed
+            // down in the intent layer, and each later finger was a second contact that gave no tap.
+            case SDL_EventType.SDL_EVENT_FINGER_DOWN or SDL_EventType.SDL_EVENT_FINGER_MOTION or SDL_EventType.SDL_EVENT_FINGER_UP
+                or SDL_EventType.SDL_EVENT_FINGER_CANCELED:
                 var finger = sdlEvent.tfinger;
                 var phase = sdlEvent.Type switch
                 {
                     SDL_EventType.SDL_EVENT_FINGER_DOWN => PointerPhase.Down,
                     SDL_EventType.SDL_EVENT_FINGER_UP => PointerPhase.Up,
+                    SDL_EventType.SDL_EVENT_FINGER_CANCELED => PointerPhase.Cancel,
                     _ => PointerPhase.Move,
                 };
                 // SDL gives a finger in the range 0 to 1 of the window.

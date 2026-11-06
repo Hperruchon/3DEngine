@@ -39,6 +39,10 @@ public sealed unsafe class Presenter : IDisposable
     // True after a remake of the swapchain failed; the next frame tries again (V18).
     private bool _remakeFailed;
 
+    // Finding V106 of the codebase review of 2026-11-06 (d) (TASK-0243): true when the last RenderFrame submitted a frame.
+    // A surface with no area, a swapchain that does not come again, or an image that does not come gives false.
+    public bool Drew { get; private set; }
+
     internal Presenter(GraphicsDevice device, VkSurfaceKHR surface, Window window, VkQueue presentQueue)
     {
         _device = device;
@@ -86,6 +90,7 @@ public sealed unsafe class Presenter : IDisposable
     public void RenderFrame(Action<VkCommandBuffer, VkFramebuffer, VkExtent2D> draw)
     {
         var api = _device.DeviceApi;
+        Drew = false;
 
         var extent = SurfaceExtent();
         if (extent.width == 0 || extent.height == 0)
@@ -150,6 +155,7 @@ public sealed unsafe class Presenter : IDisposable
         VkResult submitted = api.vkQueueSubmit(_device.GraphicsQueue, submitInfo, _perFrame[_frameIndex].QueueSubmitFence);
         if (submitted != VkResult.Success)
             throw new InvalidOperationException($"The submit of the frame of swapchain image {_frameIndex} failed: {submitted}.");
+        Drew = true;
 
         result = PresentImage(_frameIndex);
 

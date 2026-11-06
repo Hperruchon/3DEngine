@@ -40,6 +40,16 @@ done
 "$adb" shell getprop ro.build.version.release | tr -d '\r' | sed 's/^/Android /'
 
 timeout 300 "$adb" install -r "$apk" || fail "the install of the APK did not end in 300 seconds"
+# Finding V105 of the codebase review of 2026-11-06 (d) (TASK-0243): the boot flag comes before the launcher shows, and a
+# start in that time gave a process that ended with the code 0 and no line. The start waits until the launcher is the
+# resumed activity, for 120 seconds at most.
+launcher=""
+for _ in $(seq 1 60); do
+  launcher=$(timeout 30 "$adb" shell dumpsys activity activities 2>/dev/null | tr -d '\r' | grep -iE "(mResumedActivity|topResumedActivity).*launcher" | head -1 || true)
+  [ -n "$launcher" ] && break
+  sleep 2
+done
+echo "::notice title=Launcher::${launcher:0:200}"
 "$adb" logcat -c
 # TASK-0235: the output of the start is a public annotation; until TASK-0235 it went to /dev/null, and a start that
 # failed gave no cause.
