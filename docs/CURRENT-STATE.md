@@ -6502,3 +6502,48 @@ versions. It is now between P0.89 and R14e3.
 New tests: 19. The test list holds 1915 (1361 in `Engine.Tests`, 333 in `3DEngine.Tests`, 218 in `3DEngine.ImageTests`, 3
 in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
 entries: 15 of 15. New diagnostic codes: 0. Since the review of v0.214, 1 product milestone and 3 entries followed it.
+
+## v0.218 — The start again sees the commands of the stop, and the panel and the phone hold their next forms (P0.92, TASK-0232)
+
+The codebase review of 2026-11-06 (c) found V97 (medium) and V98 to V103 (low), to correct after P0.91. The review of
+Codex of v0.212 found that the open list "Cut with" is not a rectangle of the panels. The standing order of 2026-11-05
+answered Q1 of the review with B.
+
+**The change.**
+- V97: `RunSessions` chooses the document of the start again after the stop of the surface and the close of the
+  session, so a command of the stop is in it.
+- V98: the list "Cut with" stays on the line of Move when it fits there, else it starts a new line, as for an extrude;
+  Show all shares the last line when it fits, so the panel keeps its height (V50). The open list is a rectangle of the
+  panels, after the panel.
+- V99: a host with no files, as the phone, gives a line of the document with the message only, so the rejection of a
+  cut shows.
+- V100: `FanOutSink` sends the report of a removed action to the thread pool, out of the commit, as
+  `EventBroadcaster` does.
+- V101 (Q1 B): `PhoneHost` sets `SDL_HINT_ANDROID_BLOCK_ON_PAUSE` to 1. ADR-0073 item 3, `PhoneLifecycle` and the
+  test sheet say that the engine ends at the return to the foreground, just before the new engine starts.
+- V102: the affects field of ADR-0073 names `DesktopUi.cs`, `PanelAction.cs` and `BodyActions.cs`.
+- V103: ADR-0072 names the two programs and gives no count of ADRs; the test sheet says what the emulator runs and
+  what it does not run. The test sheet has a step 10: the hash of the phone with the probe of ADR-0074.
+
+**Proof.** The tests of V97, of the list of an extrude and of the open list failed before the change. The test of V99
+fails with the old form of the line, and the test of V100 fails with the report inside the commit. Run 42168890096 of
+the branch passed each job but "Start the APK on the emulator"; run 42169584195 of the branch `r15-ui-split`, whose tree
+holds this commit and a move of code, passed each job.
+
+**The main run of v0.217.** Run 42168252840 of `main` failed in the job "Start the APK on the emulator": the program
+wrote no line in 120 seconds. The merge of v0.217 added only documents to a tree whose branch run passed, and the
+failure comes before the first line of the program, so no code of P0.91 or P0.92 is the cause. The emulator job failed
+in 3 of the last 13 runs, each time with this symptom. The first failure was the run of the close of R14f3 (run
+42166346364, commit `9f3bf95`, documents only), which the merge of v0.216 did not wait for; since R14f3 the script
+starts the program with `am start` in place of `monkey`. The job gave no cause; P0.93 (TASK-0235) adds the causes as
+annotations.
+
+**What stays.** V101 has no run: the test of the owner shows the order of the events of the background. The review of
+Codex of v0.214 found that the line of the first frame comes also when `Presenter.RenderFrame` draws nothing; the next
+codebase review carries it.
+
+**A correction.** None.
+
+New tests: 6. The test list holds 1921 (1361 in `Engine.Tests`, 333 in `3DEngine.Tests`, 224 in `3DEngine.ImageTests`, 3
+in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
+entries: 15 of 15. New diagnostic codes: 0. Since the review of v0.214, 1 product milestone and 4 entries followed it.
