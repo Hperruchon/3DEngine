@@ -6894,3 +6894,35 @@ New tests: 4. The test list holds 1957 (1381 in `Engine.Tests`, 337 in `3DEngine
 in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
 entries: 15 of 15. New diagnostic codes: 1 (`E-CMD-FIELD-MISSING`). Since the review of v0.223, 1 product milestone and 6
 entries followed it.
+
+## v0.230 — A tap near an edge of the selected face selects the edge (R12b, TASK-0245)
+
+The roadmap row R12 gives the escalated selection of faces and edges. R12a (v0.221) gave the face and left the edges to
+R12b, after a name of an edge. The owner put R12 first in the queue of 2026-11-06 (evening).
+
+**The change.** ADR-0077 is new and Accepted under the standing order of 2026-11-05, which gave A for its three questions;
+it amends ADR-0075 item 2.
+- Item 1: an edge is the pair of the names of its two faces, the lower one first. A cut gives the wall of a hole its
+  edges with no new rule, and the 64 segments of the rim of a cylinder are one edge.
+- Item 2: `GetFaces` gives `edges`: the pair, the count of its parts, its length and its segments. The schema version
+  stays 1.
+- Item 3: with a face selected, a tap at most 12 pixels from one of its edges on the screen selects that edge and keeps
+  the face; a tap further away selects the face under the point with no edge. Escape goes back from the edge to the
+  face, then to the body.
+- Item 4: the overlay draws the selected edge over the outline, wider, and the panel gives its line: "Edge", the two
+  elements and the length.
+
+**Proof.** Six new tests: a box gives twelve edges with their lengths, a cylinder two rims of 64 segments, and a plate
+with a round hole fourteen edges; the gesture, the nearest edge on the screen, and the line of the panel. An injection
+that keeps the edges inside a name, one that removes the step of Escape from the edge, and one that widens the reach of
+a tap each fail a test. Run 42291699658 passed.
+
+**What stays.** No person tapped an edge. The curved side of a cylinder cannot be selected (ADR-0075), so its rims come
+from the top or the bottom face only. An edge as a reference of a sketch needs its name in `Engine.Contracts`.
+
+**A correction.** The entry v0.229 says that no run compared the hash of the phone with the new probe. Run 42290937312 of
+the close of P0.97, before its merge, gave `1c56cbdd...30ba` on Ubuntu, Windows, macOS and the phone.
+
+New tests: 6. The test list holds 1963 (1384 in `Engine.Tests`, 337 in `3DEngine.Tests`, 239 in `3DEngine.ImageTests`, 3
+in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
+entries: 15 of 15. New diagnostic codes: 0. Since the review of v0.223, 2 product milestones and 7 entries followed it.

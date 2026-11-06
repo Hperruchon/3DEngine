@@ -106,3 +106,4 @@ for the faces.
 ## History
 
 - 2026-11-06 · TASK-0245 · The record, Accepted under the standing order, with the query, the gesture and the panel.
+- 2026-11-06 · TASK-0245 · Shipped at v0.230.
