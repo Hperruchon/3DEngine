@@ -1,4 +1,5 @@
 using System.Text;
+using Engine.Contracts;
 
 namespace Engine.Core.Persistence;
 
@@ -10,12 +11,15 @@ public sealed class DocumentJournal : IDisposable
 {
     private Stream? _stream;
     private readonly string _lengthUnit;
+    private readonly string _kind;
     private readonly Func<string, FileMode, Stream> _open;
 
-    private DocumentJournal(string path, string lengthUnit, Stream? stream, Func<string, FileMode, Stream>? open = null)
+    // ADR-0071 item 4: the kind goes into the header of a new file.
+    private DocumentJournal(string path, string lengthUnit, Stream? stream, Func<string, FileMode, Stream>? open = null, string kind = Document.Part)
     {
         FilePath = path;
         _lengthUnit = lengthUnit;
+        _kind = kind;
         _stream = stream;
         _open = open ?? OpenFile;
     }
@@ -28,12 +32,12 @@ public sealed class DocumentJournal : IDisposable
     public bool Broken { get; private set; }
 
     // A new file with its header, written now.
-    public static DocumentJournal Create(string path, string lengthUnit)
+    public static DocumentJournal Create(string path, string lengthUnit, string kind = Document.Part)
     {
-        var journal = new DocumentJournal(path, lengthUnit, OpenFile(path, FileMode.CreateNew));
+        var journal = new DocumentJournal(path, lengthUnit, OpenFile(path, FileMode.CreateNew), kind: kind);
         try
         {
-            journal.Append(EntryCodec.Header(lengthUnit));
+            journal.Append(EntryCodec.Header(lengthUnit, kind));
         }
         catch
         {
@@ -46,8 +50,8 @@ public sealed class DocumentJournal : IDisposable
 
     // A document with no name: the file is made in the folder at the first command
     // (ADR-0015 item 9).
-    public static DocumentJournal Unsaved(string folder, Guid documentId, string lengthUnit)
-        => new(Path.Combine(folder, documentId.ToString("D") + DocumentFile.Extension), lengthUnit, null);
+    public static DocumentJournal Unsaved(string folder, Guid documentId, string lengthUnit, string kind = Document.Part)
+        => new(Path.Combine(folder, documentId.ToString("D") + DocumentFile.Extension), lengthUnit, null, kind: kind);
 
     // The file of an open, held with the access and the share of a journal before the
     // open reads it, so that no other program writes to it while the entries apply
@@ -55,7 +59,7 @@ public sealed class DocumentJournal : IDisposable
     internal static FileStream Hold(string path) => OpenFile(path, FileMode.Open);
 
     // The file that an open held and read, with its length cut to the last valid line.
-    internal static DocumentJournal Resume(FileStream stream, string path, string lengthUnit, long length)
+    internal static DocumentJournal Resume(FileStream stream, string path, string lengthUnit, long length, string kind = Document.Part)
     {
         if (stream.Length != length)
         {
@@ -64,7 +68,7 @@ public sealed class DocumentJournal : IDisposable
         }
 
         stream.Seek(0, SeekOrigin.End);
-        return new DocumentJournal(path, lengthUnit, stream);
+        return new DocumentJournal(path, lengthUnit, stream, kind: kind);
     }
 
     // A journal on a stream that a test gives, for a write that fails, and an optional
@@ -95,7 +99,7 @@ public sealed class DocumentJournal : IDisposable
                 throw new IOException($"The document file {FilePath} cannot be made: {ex.Message}", ex);
             }
 
-            Append(EntryCodec.Header(_lengthUnit));
+            Append(EntryCodec.Header(_lengthUnit, _kind));
         }
 
         var length = _stream.Length;
@@ -141,7 +145,7 @@ public sealed class DocumentJournal : IDisposable
         {
             _stream = _open(target, FileMode.CreateNew);
             FilePath = target;
-            Append(EntryCodec.Header(_lengthUnit));
+            Append(EntryCodec.Header(_lengthUnit, _kind));
             return;
         }
 

@@ -45,7 +45,13 @@ public sealed class EngineHost : IDisposable
         EngineKit kit;
         try
         {
-            kit = EngineHosting.CreateDefault(Backend, opens ? DocumentFile.ReadLengthUnit(file!.Path!) : Document.Millimetre);
+            // ADR-0071 item 4: a file gives the kind of its header; a new document gets the kind of the options.
+            if (file?.Kind is { } asked && asked is not (Document.Part or Document.Assembly))
+                throw new DocumentFileException(DiagnosticCodes.IoLoadFailed, $"The kind {asked} is not a kind of document; a document is a {Document.Part} or an {Document.Assembly} (ADR-0071 item 4).");
+            var kind = opens ? DocumentFile.ReadKind(file!.Path!) : file?.Kind ?? Document.Part;
+            if (opens && file!.Kind is { } other && other != kind)
+                throw new DocumentFileException(DiagnosticCodes.IoLoadFailed, $"The file {file.Path} is a document of the kind {kind}, and the host was asked for a {other} (ADR-0071 item 4).");
+            kit = EngineHosting.CreateDefault(Backend, opens ? DocumentFile.ReadLengthUnit(file!.Path!) : Document.Millimetre, kind);
         }
         catch
         {
@@ -149,4 +155,6 @@ public sealed class EngineHost : IDisposable
 // ADR-0015 item 10: the document file of a host. Path names the file, which the host
 // opens, or makes when it does not exist. With no path, UnsavedFolder is the folder of
 // unsaved documents, and with neither the host has no file.
-public sealed record DocumentFileOptions(string? Path, string? UnsavedFolder = null);
+// ADR-0071 item 4: Kind is the kind of a new document, a part when it is null. A file that exists gives its own kind,
+// and another kind here refuses the open.
+public sealed record DocumentFileOptions(string? Path, string? UnsavedFolder = null, string? Kind = null);

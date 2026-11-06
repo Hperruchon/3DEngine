@@ -47,7 +47,8 @@ if (refusal is not null)
 }
 
 builder.Services.AddSingleton(HostBackendOptions.Native);
-builder.Services.AddSingleton(new DocumentFileOptions(builder.Configuration["file"]));
+// ADR-0071 item 4: --kind assembly makes a new document an assembly; a file that exists gives its own kind.
+builder.Services.AddSingleton(new DocumentFileOptions(builder.Configuration["file"], Kind: builder.Configuration["kind"]));
 builder.AddEngineSurface(services => ServerEngine.Create(
     services.GetRequiredService<HostBackendOptions>(),
     services.GetRequiredService<DocumentFileOptions>()));

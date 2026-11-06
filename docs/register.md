@@ -439,6 +439,18 @@ Progress 2026-11-06: TASK-0195 read the native SDL of five versions of `ppy.SDL3
 SDL-3.3.3-8e64411, then SDL-3.5.0 with four commits. Each one is a snapshot of the main branch of SDL, and none is a
 release, so the first exit is not open; the decision is the owner's. R14c keeps 2026.1002.1.
 
+### R-0055 · An assembly records references to parts, and the engine does not resolve them
+- class: question
+- opened: 2026-11-06
+- due: 2027-02-04
+- extended: no
+- refs: `docs/adr/0071-container-model.md`, `docs/CHARTER.md` non-goal "Multi-Document in one runtime", TASK-0202
+Since TASK-0202 an assembly holds references to part files of the store at a fixed version. To show a reference, the
+engine must read the part and replay its log next to the Document of the assembly. The charter lists "Multi-Document
+in one runtime" as a non-goal, so P8b1 records the references and does not resolve them.
+Exit: the owner decides if the engine may hold a second Document in one runtime to resolve a reference, or how else an
+assembly shows its parts, and the charter or ADR-0071 records the decision.
+
 ## Accepted compromises
 
 These are conditions that the project keeps permanently and by decision. They do not age.

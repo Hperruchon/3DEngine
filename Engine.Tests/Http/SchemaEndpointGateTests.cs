@@ -101,7 +101,7 @@ public class SchemaEndpointGateTests : IClassFixture<WebApplicationFactory<Progr
     [Fact]
     public void The_Unit_Vocabulary_Is_The_List_Of_ADR_0060()
         => Assert.Equal(
-            ["length", "pixel", "scale", "cosine", "sine", "sign", "constraint-value", "direction"],
+            ["length", "pixel", "scale", "cosine", "sine", "sign", "constraint-value", "direction", "count"],
             UnitKinds.All);
 
     // The acceptance criteria of TASK-0186: the wire gives the unit of a field, the map
