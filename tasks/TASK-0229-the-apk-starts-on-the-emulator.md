@@ -5,7 +5,7 @@ status: Active
 phase: R14f2
 opened: 2026-11-06
 depends-on: [0228]
-governed-by: [0061, 0073]
+governed-by: [0004, 0007, 0008, 0009, 0014, 0017, 0018, 0019, 0023, 0027, 0029, 0036, 0057, 0061, 0072, 0073]
 writes:
   create:
     - tasks/TASK-0229-the-apk-starts-on-the-emulator.md
@@ -15,12 +15,22 @@ writes:
     - .github/workflows/ci.yml
     - 3DEngine.Android/3DEngine.Android.csproj
     - 3DEngine.Android/PhoneHost.cs
+    - 3DEngine.Vulkan/Log.cs
+    - docs/adr/0072-the-drawing-code-is-a-library.md
+    - 3DEngine.Vulkan/3DEngine.Vulkan.csproj
+    - 3DEngine.App/3DEngine.App.csproj
+    - 3DEngine.Core/3DEngine.Core.csproj
+    - Engine.Core/Engine.Core.csproj
+    - Engine.Contracts/Engine.Contracts.csproj
+    - Engine.Kernel/Engine.Kernel.csproj
+    - Engine.Geometry.Manifold/Engine.Geometry.Manifold.csproj
+    - Engine.Tests/Governance/DependencyDirectionGateTests.cs
+    - eng/test-floor.txt
     - docs/INDEX.md
     - docs/roadmap.md
     - docs/CURRENT-STATE.md
   forbid:
-    - Engine.Contracts/**
-    - Engine.Core/**
+    - Engine.Api.Http/**
 ---
 
 # TASK-0229 — The APK holds its assemblies, and the pipeline starts it on the emulator
@@ -78,3 +88,8 @@ Weakest:    to be written at the close.
 - 2026-11-06: the third run (42162651691) started the program on the emulator: the line of the start came, then the
   session ended with PlatformNotSupportedException before the first frame, and the job passed (T149 of the review of
   2026-11-06 (c)). PhoneHost writes each line of the stack with the prefix, so the next run shows it.
+- 2026-11-06: the fourth run (42163303968) gave the stack: GraphicsDevice calls Log.Info, and Log.WriteColored reads
+  Console.ForegroundColor, which Android does not have. With SupportedPlatform android in the seven projects of the APK,
+  the analyzer CA1416 gave exactly these three sites and no other. Log.cs writes no colour on Android, and the rule
+  Each_Project_That_The_Phone_Reaches_Supports_Android holds the item; an injection with no item in Engine.Kernel
+  fails it.

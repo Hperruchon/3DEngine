@@ -73,6 +73,10 @@ the dependency graph read items, not conditions. **Recommended: A.**
    `ThreeDEngine.Desktop`; a new name is a later change with no cost to the log or to a document.
 6. **No change of behaviour.** The desktop draws and acts as before. The image tests and the tests of the desktop
    session pass with the same count.
+7. **The platform.** Each project that the program of the phone reaches names `<SupportedPlatform Include="android" />`
+   (R14f2, TASK-0229), so the analyzer of platform compatibility (CA1416) refuses an API that Android does not have, and
+   the rule of zero warnings stops the build. `DependencyDirectionGateTests.Each_Project_That_The_Phone_Reaches_Supports_Android`
+   holds the item. The item changes no public type of `Engine.Contracts`.
 
 ## Consequences
 
@@ -92,5 +96,7 @@ of its own, and the APK.
 
 - 2026-11-06 · TASK-0222 · The record, under the standing order of 2026-11-05.
 - 2026-11-06 · TASK-0226 · Item 2: the session of the phone is `LocalSessionHost` of the library.
+- 2026-11-06 · TASK-0229 · Item 7: the platform Android in each project of the APK; the third run of the emulator ended on
+  `Console.ForegroundColor`.
 - 2026-11-06 · TASK-0225 · Item 3 names the two actions that use a path (finding V95), and the count of the
   consequences is true (finding V96): until TASK-0225 it said "four test projects".
