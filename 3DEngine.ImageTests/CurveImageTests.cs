@@ -109,19 +109,19 @@ public class CurveImageTests
 
         Assert.Equal(SketchOverlay.TurnSegments + (SketchOverlay.TurnSegments / 4), seen);
 
-        // The colour 0xFFFFE000 of DesktopUi.SnapColour is (0, 224, 255) in RGBA, on the edge of a square
-        // of 12 pixels about the mark.
-        var cyan = 0;
+        // The colour of DesktopUi.SnapColour is (237, 108, 213) in RGBA since ADR-0078 (TASK-0246), on the edge of a
+        // square of 12 pixels about the mark; until TASK-0246 it was cyan.
+        var magenta = 0;
         for (var row = (int)mark.Y - 8; row <= (int)mark.Y + 8; row++)
         {
             for (var column = (int)mark.X - 8; column <= (int)mark.X + 8; column++)
             {
                 var index = (row * (int)Width + column) * 4;
-                if (pixels[index] < 60 && pixels[index + 1] > 180 && pixels[index + 2] > 200)
-                    cyan++;
+                if (pixels[index] > 200 && pixels[index + 1] < 150 && pixels[index + 2] > 180)
+                    magenta++;
             }
         }
-        Assert.True(cyan >= 20, $"{cyan} pixels of the colour of a snap near {mark} in {picture}.");
+        Assert.True(magenta >= 20, $"{magenta} pixels of the colour of a snap near {mark} in {picture}.");
     }
 
     // A pixel within 2 pixels of (x, y) with the colour of a sketch.
