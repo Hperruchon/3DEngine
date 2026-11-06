@@ -15,7 +15,11 @@ namespace Engine.Tests.Governance;
 // build. A change to the notices that does not match the binary fails too.
 public class NativePackageGateTests
 {
-    private const string Package = "nuget/Engine.Geometry.Manifold.Native.3.5.2.1.nupkg";
+    private const string Package = "nuget/Engine.Geometry.Manifold.Native.3.5.2.2.nupkg";
+
+    // Phase R14e2 (TASK-0226): the native cimgui of R14d for Android. Its rows in the notices name a file inside the
+    // package after the prefix "Engine.Native.DearImGui/", so that the rows of the two packages stay apart.
+    private const string ImGuiPackage = "nuget/Engine.Native.DearImGui.1.91.6.1.nupkg";
 
     // A row of the two checksum tables: | `path` | `sha256` |
     private static readonly Regex Row = new(
@@ -31,33 +35,39 @@ public class NativePackageGateTests
             Assert.Contains(required, notices, StringComparison.Ordinal);
     }
 
-    [Fact]
-    public void The_Package_Matches_Its_Recorded_Checksum()
+    [Theory]
+    [InlineData(Package, "")]
+    [InlineData(ImGuiPackage, "Engine.Native.DearImGui/")]
+    public void The_Package_Matches_Its_Recorded_Checksum(string package, string prefix)
     {
-        var file = RepositoryFiles.Path(Package.Split('/'));
-        Assert.True(File.Exists(file), $"{Package} is absent.");
+        _ = prefix;
+        var file = RepositoryFiles.Path(package.Split('/'));
+        Assert.True(File.Exists(file), $"{package} is absent.");
 
-        var expected = Rows().TryGetValue(Package, out var value) ? value : null;
+        var expected = Rows().TryGetValue(package, out var value) ? value : null;
         Assert.True(
             expected is not null,
-            $"THIRD-PARTY-NOTICES.md gives no checksum for {Package}.");
+            $"THIRD-PARTY-NOTICES.md gives no checksum for {package}.");
 
         Assert.Equal(expected, Sha256(File.ReadAllBytes(file)));
     }
 
-    [Fact]
-    public void Each_Native_Binary_Matches_Its_Recorded_Checksum()
+    [Theory]
+    [InlineData(Package, "")]
+    [InlineData(ImGuiPackage, "Engine.Native.DearImGui/")]
+    public void Each_Native_Binary_Matches_Its_Recorded_Checksum(string package, string prefix)
     {
-        using var archive = ZipFile.OpenRead(RepositoryFiles.Path(Package.Split('/')));
+        using var archive = ZipFile.OpenRead(RepositoryFiles.Path(package.Split('/')));
         var rows = Rows();
         var problems = new List<string>();
         var checked_ = 0;
 
-        foreach (var (path, expected) in rows)
+        foreach (var (row, expected) in rows)
         {
-            if (!path.StartsWith("runtimes/", StringComparison.Ordinal))
+            if (!row.StartsWith(prefix + "runtimes/", StringComparison.Ordinal))
                 continue;
 
+            var path = row[prefix.Length..];
             var entry = archive.GetEntry(path);
             if (entry is null)
             {
@@ -80,16 +90,19 @@ public class NativePackageGateTests
         Assert.True(checked_ > 0, "THIRD-PARTY-NOTICES.md gives no checksum for a file inside the package.");
     }
 
-    [Fact]
-    public void Each_Native_Binary_In_The_Package_Has_A_Recorded_Checksum()
+    [Theory]
+    [InlineData(Package, "")]
+    [InlineData(ImGuiPackage, "Engine.Native.DearImGui/")]
+    public void Each_Native_Binary_In_The_Package_Has_A_Recorded_Checksum(string package, string prefix)
     {
         // The other direction. A new binary that nobody recorded must fail, so
         // that a payload cannot enter the repository without a notice.
         //
         // A file with a version suffix and a file with no suffix hold the same
         // bytes, therefore the gate compares by content and not by name.
-        using var archive = ZipFile.OpenRead(RepositoryFiles.Path(Package.Split('/')));
-        var recorded = Rows().Values.ToHashSet(StringComparer.Ordinal);
+        using var archive = ZipFile.OpenRead(RepositoryFiles.Path(package.Split('/')));
+        var recorded = Rows().Where(row => row.Key.StartsWith(prefix + "runtimes/", StringComparison.Ordinal))
+            .Select(row => row.Value).ToHashSet(StringComparer.Ordinal);
         var missing = new List<string>();
 
         foreach (var entry in archive.Entries)
@@ -116,10 +129,13 @@ public class NativePackageGateTests
     // path of libmanifold in libmanifoldc, so the native backend loaded on no
     // Linux or macOS computer (register entry R-0035, TASK-0048). A library must
     // find its dependency in its own folder.
-    [Fact]
-    public void No_Native_Binary_Holds_A_Path_Of_The_Build_Machine()
+    [Theory]
+    [InlineData(Package, "")]
+    [InlineData(ImGuiPackage, "Engine.Native.DearImGui/")]
+    public void No_Native_Binary_Holds_A_Path_Of_The_Build_Machine(string package, string prefix)
     {
-        using var archive = ZipFile.OpenRead(RepositoryFiles.Path(Package.Split('/')));
+        _ = prefix;
+        using var archive = ZipFile.OpenRead(RepositoryFiles.Path(package.Split('/')));
         var problems = new List<string>();
 
         foreach (var entry in archive.Entries.Where(e => e.FullName.StartsWith("runtimes/", StringComparison.Ordinal)))

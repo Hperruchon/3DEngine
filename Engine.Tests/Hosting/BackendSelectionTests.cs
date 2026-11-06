@@ -76,8 +76,8 @@ public class BackendSelectionTests : IClassFixture<WebApplicationFactory<Program
         var other = ManifoldGeometryBackend.UnavailableReason("linux-arm64");
 
         Assert.Contains("the file is not in the folder of the program", packaged, StringComparison.Ordinal);
-        Assert.DoesNotContain("platforms win-x64, linux-x64 and osx-arm64 only", packaged, StringComparison.Ordinal);
-        Assert.Contains("platforms win-x64, linux-x64 and osx-arm64 only", other, StringComparison.Ordinal);
+        Assert.DoesNotContain("platforms win-x64, linux-x64, osx-arm64, android-arm64 and android-x64 only", packaged, StringComparison.Ordinal);
+        Assert.Contains("platforms win-x64, linux-x64, osx-arm64, android-arm64 and android-x64 only", other, StringComparison.Ordinal);
         Assert.DoesNotContain("the file is not in the folder of the program", other, StringComparison.Ordinal);
     }
 

@@ -56,7 +56,8 @@ the dependency graph read items, not conditions. **Recommended: A.**
 2. **The session.** `ISessionHost` gives the application the `DocumentSession`, the name of the document file and a
    subscription to the committed events, as `EngineHost` gives them (ADR-0024 item 1). The desktop gives
    `HostedSession`, an adapter of its `EngineHost`, so the person and an agent still work on one document
-   (ADR-0019). The phone composes its own session in a later slice of R14e.
+   (ADR-0019). The phone gives `LocalSessionHost` (R14e2, TASK-0226): a `DocumentSession` on the native backend with
+   a fan-out of the committed events, `FanOutSink`, as `EngineHost` gives them, and no file.
 3. **The files.** `IDocumentFiles` gives the actions Save, Open and Export of the panel a path for a plain name and
    the open of a file. The desktop gives `DesktopDocument`, with the rules of the document folder (ADR-0030 item 2).
    The phone gives the picker of Android in a later slice of R14e.
@@ -85,3 +86,4 @@ of its own, and the APK.
 ## History
 
 - 2026-11-06 · TASK-0222 · The record, under the standing order of 2026-11-05.
+- 2026-11-06 · TASK-0226 · Item 2: the session of the phone is `LocalSessionHost` of the library.

@@ -38,6 +38,7 @@ it is not correct and it must not be used.
 | `scripts/first-demonstration.js` | Sends the four commands of the first demonstration over HTTP to the desktop: `node scripts/first-demonstration.js [address]` (ADR-0025 items 1 and 7). |
 | `3DEngine/` | The Vulkan desktop host. Draws through `3DEngine.App` and `3DEngine.Vulkan`, which uses SDL3. It owns a document session and serves the surface library on 127.0.0.1, port 5180 by default, so that an agent works on the document that the person has open (ADR-0019, TASK-0054). It gives the session to the application through `HostedSession` and its document folder through `DesktopDocument` (ADR-0072). Change it only when a task gives that scope. Track R changes it. |
 | `3DEngine.App/` | The application of a host that draws: the scene, the user interface and the actions on the session of a document (ADR-0072, TASK-0222). It references `Engine.Contracts`, `Engine.Core` and the render side only, and no surface, so that a program for Android can reference it. `3DEngine.App/Ui/` holds the user interface: the only files that name the library Dear ImGui (ADR-0027, `UiLibraryGateTests`). Track R changes it. |
+| `3DEngine.Android/` | The Android program (ADR-0061, ADR-0072, TASK-0226): an activity of SDL, and a session of its own with no surface that `3DEngine.App` draws. Its runtime identifiers are `android-arm64` and `android-x64`. The solution does not hold it, because the runners of the pipeline have no workload of .NET for Android; build it with `dotnet build 3DEngine.Android`. Track R changes it. |
 
 ## Docs and process
 
@@ -65,5 +66,5 @@ it is not correct and it must not be used.
 | `eng/report-failed-tests.js` | Writes the name and the message of each failed test as a public annotation when the step "Test" of the pipeline fails (TASK-0045). |
 | `eng/manifold-native/` | The packaging project for the native Manifold payload. |
 | `eng/manifold-native/manifold-ref.txt` | The pin of the native build: the Manifold reference and the package version. A push that changes it starts `.github/workflows/build-manifold-native.yml`, which pushes the package to the branch native-package/<version> (TASK-0048). |
-| `nuget/` | The local package feed for the native payload (register entry R-0007). |
+| `nuget/` | The local package feed for the native payload: Manifold 3.5.2.2 and the native cimgui of Android 1.91.6.1 (register entry R-0007, TASK-0226). `THIRD-PARTY-NOTICES.md` gives the checksum of each file. |
 | `THIRD-PARTY-NOTICES.md` | Each third-party component, its licence and its checksum. `NativePackageGateTests` reads the checksums. |
