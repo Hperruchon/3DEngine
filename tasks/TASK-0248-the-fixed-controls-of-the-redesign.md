@@ -1,7 +1,7 @@
 ---
 id: 0248
 title: The title of the document, Undo, Redo and the status line are fixed controls of the redesign
-status: Active
+status: Done
 phase: R16b1
 opened: 2026-11-06
 depends-on: [0246]
@@ -53,25 +53,27 @@ address is a status line on their row; the panel holds two lines fewer.
 
 ## Acceptance criteria
 
-- [ ] Undo and Redo are anchors of 48 pixels at the bottom left, under no panel, and a tap on them does not reach the
+- [x] Undo and Redo are anchors of 48 pixels at the bottom left, under no panel, and a tap on them does not reach the
       scene.
-- [ ] The title names the program, the file or "unsaved", and the unit.
-- [ ] Each image test passes, and the pictures are kept for the owner.
-- [ ] An injection that removes the fixed controls, and one that lets the panel cover them, each fail a test.
+- [x] The title names the program, the file or "unsaved", and the unit.
+- [x] Each image test passes, and the pictures are kept for the owner.
+- [x] An injection that removes the fixed controls, and one that lets the panel cover them, each fail a test.
 
 ## Outcome
 
-Status: Active
+Status: Done · commit (the merge of the branch redesign-b1-fixed-b) · v0.233
 
 ## Method
 
 Mechanical: three small windows with no decoration and no background.
 Judgement:  the title in the title bar (Q1 A) and the status line on the row of the anchors (Q2 A), because the panel and
             the window of the sketch leave no other room at 1280 by 720.
-Weakest:    to be written at the close.
+Weakest:    no person tapped the anchors on a display or on the phone; on the portrait screen of the phone the panel
+            and the anchors share the left edge, which no picture shows yet.
 
 ## Progress
 
 - 2026-11-06: the fixed controls and two tests; the two injections each fail a test. The bitmap font has no middle dot,
   so the title joins its parts with a bar; the dim colour of a status line gave 2.9:1 on the clear, so it takes the
   colour of the text.
+- 2026-11-06: run 42298401536 passed. Closed at v0.233.
