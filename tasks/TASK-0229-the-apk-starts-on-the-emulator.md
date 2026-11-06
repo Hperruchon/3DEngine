@@ -1,7 +1,7 @@
 ---
 id: 0229
 title: The APK holds its assemblies, and the pipeline starts it on the emulator
-status: Active
+status: Done
 phase: R14f2
 opened: 2026-11-06
 depends-on: [0228]
@@ -27,6 +27,7 @@ writes:
     - Engine.Tests/Governance/DependencyDirectionGateTests.cs
     - eng/test-floor.txt
     - docs/INDEX.md
+    - docs/android-test-sheet.md
     - docs/roadmap.md
     - docs/CURRENT-STATE.md
   forbid:
@@ -61,19 +62,20 @@ its log.
 
 ## Acceptance criteria
 
-- [ ] The check refuses the APK of R14e3, which holds no assembly, and passes the new APK.
-- [ ] The job of the emulator gives the line of the start of the program.
-- [ ] Continuous integration passes on the three runners, on the branch and on `main` after the merge.
+- [x] The check refuses the APK of R14e3, which holds no assembly, and passes the new APK.
+- [x] The job of the emulator gives the line of the start of the program.
+- [x] Continuous integration passes on the three runners, on the branch and on `main` after the merge.
 
 ## Outcome
 
-Status: Active
+Status: Done · commit (the merge of the branch r14f2-emulator) · v0.214
 
 ## Method
 
 Mechanical: the steps of the emulator on Ubuntu with KVM, and the read of the log with adb.
 Judgement:  the line of the start as the condition, and the first frame as a fact of the report.
-Weakest:    to be written at the close.
+Weakest:    the emulator is x86-64 with Vulkan in software, not the Adreno 740 of the phone; the test of the owner
+            stays the proof of the device. The smoke test still passes after an exception that follows the start (T149).
 
 ## Progress
 
@@ -93,3 +95,6 @@ Weakest:    to be written at the close.
   the analyzer CA1416 gave exactly these three sites and no other. Log.cs writes no colour on Android, and the rule
   Each_Project_That_The_Phone_Reaches_Supports_Android holds the item; an injection with no item in Engine.Kernel
   fails it.
+- 2026-11-06: the fifth run (42164085778) gave the line of the start and the line of the first frame on Android 14
+  for x86-64. The test sheet said that no emulator ran the program, which is false now; it says what the emulator ran.
+  Closed at v0.214.
