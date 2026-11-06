@@ -70,6 +70,12 @@ for _ in $(seq 1 60); do
   grep -q "3DEngine: the session of the phone ended" "$report" && break
   [ "$drawn" = 1 ] && break
 done
+# Finding T163 of the codebase review of 2026-11-06 (e) (TASK-0251): a native crash just after the first frame came after
+# the last read of the log. The script reads the log one more time, 5 seconds after the first frame.
+if [ "$drawn" = 1 ]; then
+  sleep 5
+  timeout 30 "$adb" logcat -d > "$report" 2>&1 || true
+fi
 
 # TASK-0239: the lines of the program, with no line of the determinism hash, which the hash file holds. The lines of
 # the stack of an exception go into errors below.
@@ -106,7 +112,10 @@ if grep -A 3 "FATAL EXCEPTION" "$report" | grep -q "Process: org.threedengine.ph
 fi
 # Finding T153 of the codebase review of 2026-11-06 (d) (TASK-0242): a native crash writes "Fatal signal" and a tombstone
 # of DEBUG, and no FATAL EXCEPTION, so it passed the job.
-if signal=$(grep -m 1 -E "Fatal signal .*org\.threedengine\.phone|Fatal signal .*threedengine\.phone|DEBUG +: .*>>> org\.threedengine\.phone" "$report"); then
+# Finding T163 of the codebase review of 2026-11-06 (e) (TASK-0251): the line of libc names the main thread, the last 15
+# characters of the package, so two of the three patterns did not match it. The patterns are the lines of
+# native-crash.ere, which NativeCrashPatternTests proves with the forms of the lines that Android writes.
+if signal=$(grep -m 1 -E -f <(tr -d '\r' < "$(dirname "$0")/native-crash.ere") "$report"); then
   fail "the process of the program ended with a native crash: ${signal:0:300}"
 fi
 if [ -n "$hash_file" ]; then

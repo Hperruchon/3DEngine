@@ -1,8 +1,9 @@
 namespace Engine.Contracts.Sketch;
 
-// ADR-0051 item 1: what a reference names. FeatureId is a CreateBox or an Extrude in effect,
-// Element is a name of the table of item 1, and ItemId is the line or the point of the
-// sketch of an extrude, or null for a name that needs no item.
+// ADR-0051 item 1: what a reference names. FeatureId is a CreateBox, a CreateCylinder (ADR-0076)
+// or an Extrude in effect, Element is a name of the table of item 1, and ItemId is the line or
+// the point of the sketch of an extrude, or null for a name that needs no item. Until TASK-0251
+// this comment did not name the cylinder (finding E166).
 public sealed record DatumReference(Guid FeatureId, string Element, Guid? ItemId);
 
 // A position in the space of the Document, in its length unit.

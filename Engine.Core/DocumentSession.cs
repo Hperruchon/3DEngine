@@ -82,8 +82,14 @@ public sealed class DocumentSession
     // ADR-0015 item 9: moves the document file to a new name, in the serial section,
     // and later entries go there. The target must not exist. It gives null, or the
     // error E-IO-SAVE-FAILED, and the file then stays where it was.
-    public async Task<ErrorDetail?> SaveAs(string path, CancellationToken ct = default)
+    public Task<ErrorDetail?> SaveAs(string path, CancellationToken ct = default)
+        => SaveAs(path, [], ct);
+
+    // The same save; a save that leaves the old file, because its delete failed, adds the warning W-IO-OLD-FILE-KEPT to
+    // the list (finding E164 of the codebase review of 2026-11-06 (e), TASK-0251).
+    public async Task<ErrorDetail?> SaveAs(string path, ICollection<Diagnostic> warnings, CancellationToken ct = default)
     {
+        ArgumentNullException.ThrowIfNull(warnings);
         ArgumentException.ThrowIfNullOrEmpty(path);
 
         RefuseReentry();
@@ -99,7 +105,12 @@ public sealed class DocumentSession
 
             try
             {
-                journal.MoveTo(Path.GetFullPath(path));
+                if (journal.MoveTo(Path.GetFullPath(path)) is { } kept)
+                    warnings.Add(new Diagnostic(
+                        Severity.Warning,
+                        DiagnosticCodes.IoOldFileKept,
+                        $"The document is saved, but the old file {kept} could not be deleted. It opens as a second document.",
+                        kept));
                 return null;
             }
             catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
