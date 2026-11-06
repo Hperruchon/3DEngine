@@ -194,6 +194,7 @@ Therefore each approved objective must have a track here.
 - P0.92 — The start again sees the commands of the stop, and the panel and the phone hold their next forms. v0.218, TASK-0232, ADR-0073.
 - R15 — The user interface of the desktop is one partial file for each region. v0.219, TASK-0234.
 - P0.93 — The smoke test of the emulator gives the cause of a start that fails. v0.220, TASK-0235.
+- R12a — A second tap on the selected body selects the face under the point. v0.221, TASK-0236, ADR-0075.
 
 ## Track 0 — Foundations
 
@@ -334,6 +335,7 @@ The first objective. Each phase ends with something that a person can observe.
 | R11c | A tap of the sketch snaps to the intersection of two lines, of a line and a curve, or of two curves (the owner, 2026-11-02). TASK-0165. | 2–3 |
 | R11 | Escalated selection and a snap engine. Closed after R11c: R11a to R11c give the snaps, and the escalated selection moves to R12 (the owner, 2026-11-02). | 4–6 |
 | R12 | The escalated selection of faces and edges. It needs a stable identity of each face and each edge, so it comes after K4 (ADR-0041 item 5; the owner, 2026-11-02). | 4–6 |
+| R12a | A second tap on the selected body selects the face under the point: the outline of each face name in `GetFaces`, its mark in the scene, and the face in the panel with a button Sketch (ADR-0075). TASK-0236. | 2–3 |
 | R13 | The dimension overlay of the desktop: a toggle in the panel, the overall size of the visible bodies or of each live body, and the size and the thickness of a selected body, as lines with labels in the scene (the owner, 2026-11-03; four answers of 2026-11-04). ADR-0056, TASK-0178. | 2–4 |
 | R14a | Android in the charter: objective 8 and anti-objective 16, the closure of R-0020, ADR-0061 with its amendments of ADR-0017 and ADR-0027, and the rows R14b to R14g (the Android order of the owner, 2026-11-05). TASK-0193. | 1 |
 | R14b | The host owns the document session, the surface mounts on that session as an option, and an open of a file stays in the same process (`3DEngine/DesktopDocument.cs`). The behaviour of the desktop does not change, and tests prove it (ADR-0061 item 9). TASK-0194. | 2–4 |

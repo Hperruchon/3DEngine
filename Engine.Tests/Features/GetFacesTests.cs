@@ -204,6 +204,52 @@ public sealed class GetFacesTests
         Assert.Equal(10, faces.Count);
     }
 
+    // ADR-0075 item 2 (phase R12a, TASK-0236): the outline of each face name, which a client draws as the mark of a
+    // selected face. Each face of a box has its four edges, and each edge of the box is in the outlines of two faces.
+    [NativeManifoldFact]
+    public async Task The_Outline_Of_A_Face_Of_A_Box_Is_Its_Four_Edges()
+    {
+        using var backend = new ManifoldGeometryBackend();
+        var session = NewSession(backend);
+        var box = await Box(session, 10, 6, 4);
+
+        var faces = await Faces(session, box);
+
+        Assert.All(faces, face => Assert.Equal(4, face.Outline.Count));
+        var top = Named(faces, box, "+z").Outline;
+        Assert.All(top, segment => Assert.Equal((2.0, 2.0), (segment.Start.Z, segment.End.Z)));
+        Assert.All(top, segment => Assert.True(Math.Abs(segment.Start.X) == 5 && Math.Abs(segment.Start.Y) == 3, $"{segment}"));
+        string Key(FaceSegment segment) => string.Join(" ", new[] { segment.Start, segment.End }.Select(p => $"{p.X},{p.Y},{p.Z}").Order(StringComparer.Ordinal));
+        var edges = faces.SelectMany(face => face.Outline).GroupBy(Key).ToList();
+        Assert.Equal(12, edges.Count);
+        Assert.All(edges, edge => Assert.Equal(2, edge.Count()));
+    }
+
+    // ADR-0075 item 2: the outline of a face with a hole holds the edges of the hole too, and the outline of the facets
+    // of a circle holds the edges of its two caps and no edge between two facets.
+    [NativeManifoldFact]
+    public async Task The_Outline_Holds_A_Hole_And_Leaves_Out_The_Edges_Inside_A_Curve()
+    {
+        using var backend = new ManifoldGeometryBackend();
+        var session = NewSession(backend);
+        var plate = await Box(session, 10, 10, 2);
+        var tool = await Box(session, 4, 4, 4);
+        var ring = Output(await Applied(session, new SubtractCommand { MinuendBodyId = plate, SubtrahendBodyId = tool }), "bodyId");
+        var sketch = Output(await Applied(session, new CreateSketchCommand { DatumId = Datums.XY.Id }), "sketchId");
+        var centre = Output(await Applied(session, new AddSketchPointCommand { SketchId = sketch, X = 0, Y = 0 }), "pointId");
+        var circle = Output(await Applied(session, new AddSketchCircleCommand { SketchId = sketch, CenterPointId = centre, Radius = 5 }), "circleId");
+        var rod = await Extrude(session, sketch, 10);
+
+        var top = Named(await Faces(session, ring), plate, "+z").Outline;
+        Assert.Equal(8, top.Count);
+        Assert.Equal(4, top.Count(segment => Math.Abs(segment.Start.X) <= 2 && Math.Abs(segment.Start.Y) <= 2));
+
+        var faces = await Faces(session, rod);
+        var side = Named(faces, rod, "side", circle).Outline;
+        Assert.Equal(Named(faces, rod, "start").Outline.Count + Named(faces, rod, "end").Outline.Count, side.Count);
+        Assert.All(side, segment => Assert.True(segment.Start.Z == segment.End.Z, $"An edge between two facets: {segment}"));
+    }
+
     // Item 3: a body that is not live, and a body with a fault, give no faces.
     [NativeManifoldFact]
     public async Task A_Body_That_Is_Not_Live_Or_Has_A_Fault_Gives_No_Faces()

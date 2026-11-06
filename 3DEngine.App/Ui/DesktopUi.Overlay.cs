@@ -27,6 +27,15 @@ internal sealed unsafe partial class DesktopUi
     private const float SelectedPointRadius = 7f;
     private const float RingRadius = 12f;
 
+    // ADR-0075 item 3 (phase R12a, TASK-0236): the outline of the selected face, in the colour and the width of a
+    // selected item, on the background list, over the scene and under each window of the panel.
+    private static void FaceOutline(FaceLine face)
+    {
+        var list = ImGui.GetBackgroundDrawList();
+        foreach (var (a, b) in face.Outline)
+            list.AddLine(a, b, SelectedColour, SelectedLineWidth);
+    }
+
     // ADR-0033 item 13: the sketches, read only, on the background list of ImGui, so they
     // come over the scene and under each window of the panel.
     private static void Sketches(SketchOverlay.Strokes sketches)

@@ -6592,3 +6592,33 @@ The inputs of the job still have no pin.
 New tests: 0. The test list holds 1921 (1361 in `Engine.Tests`, 333 in `3DEngine.Tests`, 224 in `3DEngine.ImageTests`, 3
 in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
 entries: 15 of 15. New diagnostic codes: 0. Since the review of v0.214, 2 product milestones and 6 entries followed it.
+
+## v0.221 — A second tap on the selected body selects the face under the point (R12a, TASK-0236)
+
+The roadmap row R12 gives the escalated selection of faces and edges, after K4. K4b gives a name to each face, and no
+name of an edge exists. The fallback queue of the owner (2026-11-05) gives R12 after the split of the user interface.
+
+**The change.** ADR-0075 is new and Accepted under the standing order of 2026-11-05, which gave A for its three questions;
+it amends ADR-0029 item 1.
+- Item 1: each entry of `GetFaces` has its `outline`, each edge of the B-Rep with exactly one face of the name. The
+  schema version stays 1.
+- Item 2: `BodyActions` keeps the selected face by its name. A select on the selected body asks `GetFaceAt` with the
+  point and the normal of the hit; a select on another body or on no body gives that body or none. The key Escape and the
+  row of the body give the body. The pick of the desktop gives the hit with its point and its normal.
+- Item 3: the overlay draws the outline in the colour of the selection, and the controls of the selected body give one
+  line with the face, its area and, for a face with a normal, the button "Sketch on face".
+
+**Proof.** Seven new tests. An injection that counts the edges inside a name, an injection that keeps the old select, an
+injection that keeps the face of a body that is gone, and an injection that gives a curved face the button each fail
+a test. Two taps of a finger and two clicks of the mouse give the same face. Run 42173547034 passed.
+
+**What stays.** No person tapped a face on the desktop or on the phone, and no image of the GPU shows the outline. A
+curved face cannot be selected, because `GetFaceAt` names plane faces only. The edges are R12b, after a name of an edge
+in track K. The client asks `GetFaces` at each frame while a face is selected; the handler keeps its result for each
+geometry key.
+
+**A correction.** None.
+
+New tests: 7. The test list holds 1928 (1363 in `Engine.Tests`, 333 in `3DEngine.Tests`, 229 in `3DEngine.ImageTests`, 3
+in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
+entries: 15 of 15. New diagnostic codes: 0. Since the review of v0.214, 3 product milestones and 7 entries followed it.

@@ -232,14 +232,27 @@ public sealed class NativeThreeDEngine : IThreeDEngine, IDisposable
         return null;
     }
 
-    // The nearest visible body under a point of the window, or null (ADR-0029 item 1).
-    private Guid? Pick(double x, double y)
+    // ADR-0075 item 3: a sketch on the selected face, from the point and the normal of its entry of GetFaces, as the armed
+    // tap of ADR-0053 item 6 makes it. A curved face has no normal and no button.
+    private string? SketchOnSelectedFace()
+    {
+        if (_sketchActions is null || Selection is not { } body || _actions?.SelectedFace() is not { Normal: { } normal } face)
+            return null;
+        if (_sketchActions.CreateOnFace(body, (face.Point.X, face.Point.Y, face.Point.Z), (normal.X, normal.Y, normal.Z)) is not { } created)
+            return _sketchActions.Message;
+        Face(created.Frame);
+        return null;
+    }
+
+    // The nearest visible body under a point of the window, or null (ADR-0029 item 1), with the point and the normal of
+    // the hit, so that a second tap names the face (ADR-0075 item 2).
+    private PickHit? Pick(double x, double y)
     {
         var window = _window.Extent;
         if (_renderer is null || window.width == 0 || window.height == 0)
             return null;
 
-        return Picker.Nearest(Picker.RayThrough(Camera, x, y, window.width, window.height), _renderer.PickBodies)?.Id;
+        return Picker.Nearest(Picker.RayThrough(Camera, x, y, window.width, window.height), _renderer.PickBodies);
     }
 
     // The actions of the controls of the panel, as commands or as a change of the selection.
@@ -290,6 +303,9 @@ public sealed class NativeThreeDEngine : IThreeDEngine, IDisposable
                     break;
                 case CutBodyAction cut:
                     _documentMessage = _actions.Cut(cut.Body, cut.Tool);
+                    break;
+                case SketchOnSelectedFaceAction:
+                    _documentMessage = SketchOnSelectedFace();
                     break;
                 case EditDistanceAction editDistance when _actions.Distance(editDistance.Body) is { } distance:
                     _ui.OpenDistancePad(editDistance.Body, distance);
@@ -549,7 +565,12 @@ public sealed class NativeThreeDEngine : IThreeDEngine, IDisposable
             }
         }
 
-        var panel = _ui.Frame((float)_delta.TotalSeconds, display, scale, _renderer.LiveBodies, Selection, LineOf(_document, _host.FileName, _documentMessage), sketches, sketchPanel, imagePanel, dimensions, size);
+        // ADR-0075 item 3 (phase R12a, TASK-0236): the outline and the line of the selected face.
+        FaceLine? faceLine = null;
+        if (_actions?.SelectedFace() is { } selectedFace)
+            faceLine = new FaceLine(FaceOverlay.Text(selectedFace, _host.Session.LengthUnit), selectedFace.Normal is not null, FaceOverlay.Of(selectedFace.Outline, Camera, window.width, window.height));
+
+        var panel = _ui.Frame((float)_delta.TotalSeconds, display, scale, _renderer.LiveBodies, Selection, LineOf(_document, _host.FileName, _documentMessage), sketches, sketchPanel, imagePanel, dimensions, size, faceLine);
         ApplyPanel(_renderer.LiveBodies);
 
         var ui = _uiRenderer;

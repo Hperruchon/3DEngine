@@ -115,13 +115,21 @@ public sealed class GetFacesQueryHandler : IQueryHandler
             var count = (Rational)piece.Count;
             var point = new Vector3R(sum.X / count, sum.Y / count, sum.Z / count).ToDoubles();
 
+            // ADR-0075 item 2: the outline, each edge with one face of the name, in the order of the edges of the B-Rep. An
+            // edge between two facets of a curve, or between two faces of one name, is inside the name.
+            var outline = brep.Edges
+                .Where(edge => edge.Faces.Count(face => brep.Faces[face].Tag == tag) == 1)
+                .Select(edge => new FaceSegment(Position(brep.Vertices[edge.From]), Position(brep.Vertices[edge.To])))
+                .ToList();
+
             entries.Add(new FaceEntry(
                 new DatumReference(tag.Feature, tag.Element, tag.Item),
                 parts,
                 holes,
                 area,
                 new DatumPoint(point.X, point.Y, point.Z),
-                normal));
+                normal,
+                outline));
         }
 
         return entries;
@@ -138,6 +146,12 @@ public sealed class GetFacesQueryHandler : IQueryHandler
                 total += brep.Vertices[loop.Vertices[i]].Cross(brep.Vertices[loop.Vertices[(i + 1) % loop.Vertices.Count]]);
         }
         return Math.Sqrt(total.Dot(total).ToDouble()) / 2;
+    }
+
+    private static DatumPoint Position(Vector3R vertex)
+    {
+        var (x, y, z) = vertex.ToDoubles();
+        return new DatumPoint(x, y, z);
     }
 
     private static DatumAxis Unit(Vector3R normal)
