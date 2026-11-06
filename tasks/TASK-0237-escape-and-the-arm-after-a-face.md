@@ -17,6 +17,7 @@ writes:
     - 3DEngine.Tests/SdlInputTests.cs
     - 3DEngine.ImageTests/BodyActionsTests.cs
     - 3DEngine.ImageTests/FaceArmTests.cs
+    - eng/test-floor.txt
     - docs/roadmap.md
     - docs/CURRENT-STATE.md
   forbid:
