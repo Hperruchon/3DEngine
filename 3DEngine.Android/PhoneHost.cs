@@ -40,7 +40,9 @@ internal static class PhoneHost
 
             using var host = new LocalSessionHost(new ManifoldGeometryBackend());
             BlockOnPause();
-            var window = new Window("3DEngine", 1080, 2316);
+            // Finding V112 (TASK-0250): the session destroys its window at its end, so a later session of this process, after a
+            // new start of the activity (ADR-0079), makes its own; SDL on Android permits one window.
+            using var window = new Window("3DEngine", 1080, 2316);
             while (Foreground(window, host) && WaitForForeground())
                 Console.Error.WriteLine("3DEngine: the program is in the foreground again, with the same document.");
         }
