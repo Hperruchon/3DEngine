@@ -15,12 +15,20 @@ internal static class DesktopEngineHost
         Window? window = null;
         return RunSessions(args, Start, surface =>
         {
-            // Finding V90 (TASK-0198): a later session gets no input of the time between two sessions.
-            if (window is null)
-                window = new Window("3DEngine Desktop", 1280, 720);
-            else
-                Window.FlushInput();
-            Show(window, surface);
+            // Finding V92 of the codebase review of 2026-11-06 (b) (TASK-0225): since R14b the window was made here,
+            // outside the try of Show, so a window that SDL cannot create ended the desktop with an unhandled exception.
+            var later = window is not null;
+            try
+            {
+                window ??= new Window("3DEngine Desktop", 1280, 720);
+            }
+            catch (Exception ex)
+            {
+                Console.Error.WriteLine($"The window did not open: {ex.Message}");
+                return false;
+            }
+
+            return Show(window, surface, later);
         });
     }
 
@@ -42,15 +50,29 @@ internal static class DesktopEngineHost
     // other, in one process. An open that a check accepted ends the window loop of a session. The surface stops, so the
     // port is free, the host disposes the session, and the next session holds the file of the open in the same window,
     // on the same port when the port is fixed. Until R14b the program started again with --file. The exit code is the
-    // code of a first session that does not start, or 0.
+    // code of a first session that does not start, ExitWindowFailed when the window or its loop fails (V92), or 0.
     // Finding E150 of the codebase review of 2026-11-06 (TASK-0197), Q3 A: a next session that does not start ended the
     // run, with the first document already closed. ADR-0030 item 5 keeps the person in the window, so a session on the
     // previous file starts again, and the error goes to the standard error. When that session does not start either, the
     // run ends with its code.
+    // Finding V91 of the codebase review of 2026-11-06 (b) (TASK-0225), Q2 A: the start again kept the path of the previous
+    // document only, and opened a document of the unsaved folder as a named file, or ended the window when its journal
+    // did not exist yet. The host keeps the kind of the previous document: a named file opens again by its path, and a
+    // document of the unsaved folder starts again from its journal, as an unsaved document, or as a new one with no command.
     internal static int RunSessions(
         string[] args,
         Func<string[], string?, (DesktopSurface? Surface, int ExitCode, string? Message)> start,
         Action<DesktopSurface> show)
+        => RunSessions(args, start, surface =>
+        {
+            show(surface);
+            return true;
+        });
+
+    internal static int RunSessions(
+        string[] args,
+        Func<string[], string?, (DesktopSurface? Surface, int ExitCode, string? Message)> start,
+        Func<DesktopSurface, bool> show)
     {
         string? file = null;
         string? previous = null;
@@ -70,18 +92,24 @@ internal static class DesktopEngineHost
 
             (first, again) = (false, false);
             string? requested;
+            bool shown;
             using (surface.Session)
             {
                 using (surface)
                 {
                     Console.WriteLine($"3DEngine serves the document at {surface.Address}");
                     Console.WriteLine($"3DEngine document file: {surface.Host.Session.FilePath ?? "none"}");
-                    show(surface);
+                    shown = show(surface);
                     requested = surface.Document.RequestedOpen;
-                    previous = surface.Host.Session.FilePath;
+                    // V91: a document of the unsaved folder has no name; it starts again from its journal when the journal
+                    // exists, and as a new document of the start when it does not.
+                    var path = surface.Host.Session.FilePath;
+                    previous = surface.Host.FileName is null && (path is null || !File.Exists(path)) ? null : path;
                 }
             }
 
+            if (!shown)
+                return DesktopSurface.ExitWindowFailed;
             if (requested is null)
                 return 0;
             Console.WriteLine($"3DEngine opens {requested}");
@@ -89,8 +117,9 @@ internal static class DesktopEngineHost
         }
     }
 
-    // The window loop of one session, until the window closes, the surface stops, or an open is accepted.
-    private static unsafe void Show(Window window, DesktopSurface surface)
+    // The window loop of one session, until the window closes, the surface stops, or an open is accepted. False when the
+    // loop failed (V92): until TASK-0225 the run then gave the exit code 0.
+    private static unsafe bool Show(Window window, DesktopSurface surface, bool later)
     {
         try
         {
@@ -99,6 +128,10 @@ internal static class DesktopEngineHost
 
             engine.Initialize();
             engine.LoadScene(scene);
+            // Finding V93 of the codebase review of 2026-11-06 (b) (TASK-0225): the flush of V90 ran before the new device,
+            // so the input of the time of Initialize still reached the first frame. It runs after the device and the scene.
+            if (later)
+                Window.FlushInput();
             window.Show();
 
             bool running = true;
@@ -141,7 +174,10 @@ internal static class DesktopEngineHost
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"Error: {ex.Message}");
+            Console.Error.WriteLine($"Error: {ex.Message}");
+            return false;
         }
+
+        return true;
     }
 }

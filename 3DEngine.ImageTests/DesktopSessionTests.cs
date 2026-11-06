@@ -155,6 +155,64 @@ public sealed class DesktopSessionTests : IDisposable
         Assert.Equal([(first, 1), (first, 1)], shown);
     }
 
+    private string[] NoFile() =>
+    [
+        "--port", "0",
+        $"--{DesktopSurface.DocumentFolderSetting}={Documents}",
+        $"--{DesktopSurface.UnsavedFolderSetting}={Path.Combine(_folder, "unsaved")}",
+        $"--Engine:AssetFolder={Path.Combine(_folder, "assets")}",
+    ];
+
+    // Finding V91 of the codebase review of 2026-11-06 (b) (TASK-0225), Q2 A: the start again of E150 kept the path of a
+    // document of the unsaved folder and opened it as a named file, or ended the window when its journal did not exist.
+    // A start with no file, an open of a second file, and a next session that does not start: with one command the
+    // document starts again from its journal with no name; with no command it starts again as a new document, and no
+    // empty file stays in the unsaved folder.
+    [Theory]
+    [InlineData(1)]
+    [InlineData(0)]
+    public async Task The_Start_Again_Keeps_A_Document_Of_The_Unsaved_Folder(int boxes)
+    {
+        var second = Path.Combine(Documents, "second.3de");
+        await Made(second, 2);
+        var shown = new List<(string? Name, int Bodies)>();
+        void Show(DesktopSurface surface)
+        {
+            if (shown.Count == 0)
+            {
+                for (var i = 0; i < boxes; i++)
+                    Assert.Equal(CommandStatus.Applied, surface.Host.Session.Apply(new CreateBoxCommand { SizeX = 1, SizeY = 2, SizeZ = 3 }).GetAwaiter().GetResult().Status);
+            }
+            shown.Add((surface.Host.FileName, Bodies(surface.Host).GetAwaiter().GetResult()));
+            if (shown.Count == 1)
+                Assert.Null(surface.Document.Folder.Open(second, CancellationToken.None).GetAwaiter().GetResult());
+        }
+
+        (DesktopSurface?, int, string?) Start(string[] args, string? file)
+            => file == second ? (null, DesktopSurface.ExitStartFailed, "The file is held.") : DesktopEngineHost.Start(args, file);
+
+        var exit = DesktopEngineHost.RunSessions(NoFile(), Start, Show);
+
+        Assert.Equal(0, exit);
+        Assert.Equal([(null, boxes), (null, boxes)], shown);
+        var unsaved = Path.Combine(_folder, "unsaved");
+        Assert.Equal(boxes, Directory.Exists(unsaved) ? Directory.GetFiles(unsaved).Length : 0);
+    }
+
+    // Finding V92 of the codebase review of 2026-11-06 (b) (TASK-0225): a window that does not open, or a loop that fails,
+    // gave an unhandled exception or the exit code 0. A show that fails gives ExitWindowFailed, and the run disposes the
+    // session.
+    [Fact]
+    public void A_Show_That_Fails_Gives_The_Code_Of_The_Window()
+    {
+        var exit = DesktopEngineHost.RunSessions(Arguments(Path.Combine(Documents, "first.3de")), DesktopEngineHost.Start, (Func<DesktopSurface, bool>)(_ => false));
+
+        Assert.Equal(DesktopSurface.ExitWindowFailed, exit);
+        using (File.Open(Path.Combine(Documents, "first.3de"), FileMode.Open, FileAccess.ReadWrite, FileShare.None))
+        {
+        }
+    }
+
     // The surface mounts on the session and does not own it: after the stop of the surface, the session still applies a
     // command, and the host disposes it.
     [Fact]
