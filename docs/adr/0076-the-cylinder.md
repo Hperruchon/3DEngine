@@ -115,3 +115,4 @@ the true surface and `CYLINDRICAL_SURFACE` after Q1 B.
 
 - 2026-11-06 · TASK-0238 · The record, Accepted under the standing order, with the command, the names and the
   references.
+- 2026-11-06 · TASK-0238 · Shipped at v0.223.
