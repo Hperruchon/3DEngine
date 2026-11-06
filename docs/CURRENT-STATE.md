@@ -5946,3 +5946,34 @@ New tests: 17. The test list holds 1818 (1297 in `Engine.Tests`, 320 in `3DEngin
 3 in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
 entries: 14 of 15. New diagnostic codes: 1 (`E-EXPORT-BODY-FAILED`). Since the review of v0.190, 4 product milestones and
 8 entries followed it.
+
+## v0.199 — The codebase review of 2026-11-06 (governance, TASK-0199)
+
+The review of 2026-11-05 (b) examined v0.190, and 4 product milestones (R14a, R14b, R14c and K6a) and 8 entries followed
+it. K6b would be the fifth milestone, so the gate made the review due before it. `docs/reviews/2026-11-06-codebase-review.md`
+examines `main` at `ab55b07` (v0.198). Two review agents worked in parallel, each one in its own worktree, with probes
+and injections that they restored or deleted after the run. I read the cited lines of the medium findings E142 and E146
+and of E149 and E151.
+
+**The result.**
+- The fixes of the last review hold for their forms: E134 to E141, V85 to V87 and T136 to T140. V25 is fixed for its
+  parts by the binding of R14c.
+- No new finding is critical or high.
+- Four new medium findings: E142 (a hole that touches its region at its first vertex has no owner on a face of two
+  regions, so `Brep.Of` throws, `GetFaces` throws and the export refuses the body), E143 (the export writes a solid
+  pinched along an edge as manifold), E146 (two vertices that round to one double give a solid of zero thickness), and
+  E147 (the reader of the tests checks no sense of a loop and no direction of a line).
+- Thirteen new low findings: E144, E145 and E148 to E151 in the kernel, the export and the session of the desktop; V88 to
+  V90 in the desktop (files of 32-bit x86 in the build output, a case of one axis, no pump between sessions); T141 to
+  T144 in the gates.
+- Open findings: 0 critical, 4 high, 18 medium and 29 low.
+- TASK-0197 (P0.85) holds E142 to E151, and TASK-0198 (P0.86) holds V88 to V90 and T141 to T144, after the next product
+  phase, K6b.
+- The standing order of 2026-11-05 answers Q1 to Q4 with the recommended option A. The owner checks the answers on
+  2026-11-08.
+- The reviews of Codex of v0.190 to v0.193 give one finding, a form of V85 that P0.83 fixed at v0.194.
+
+No code changes. The test list holds 1818 (1297 in `Engine.Tests`, 320 in `3DEngine.Tests`, 198 in
+`3DEngine.ImageTests`, 3 in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and
+zero warnings. Open entries: 14 of 15. New diagnostic codes: 0. Since the review of v0.198, 0 product milestones and 1
+entry followed it.
