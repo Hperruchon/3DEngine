@@ -1,7 +1,7 @@
 ---
 id: 0197
 title: Each hole of a face has its owner, the STEP export refuses what a strict reader refuses, and the session of the desktop holds an open
-status: Active
+status: Done
 phase: P0.85
 opened: 2026-11-06
 depends-on: [0199]
@@ -61,19 +61,20 @@ time and keeps the window when a next file does not open.
 
 ## Acceptance criteria
 
-- [ ] Each finding has a test or an injection that fails before the change and passes after it.
-- [ ] A clean build (`--no-incremental`) gives zero errors and zero warnings.
-- [ ] Continuous integration passes on the three runners, on the branch and on `main` after the merge.
+- [x] Each finding has a test or an injection that fails before the change and passes after it.
+- [x] A clean build (`--no-incremental`) gives zero errors and zero warnings.
+- [x] Continuous integration passes on the three runners, on the branch and on `main` after the merge.
 
 ## Outcome
 
-Status: Active
+Status: Done · commit (the merge of the branch p085-review-forms) · v0.204
 
 ## Method
 
 Mechanical: a test or an injection for each finding, before the change.
 Judgement:  the point inside a hole that the owner reads.
-Weakest:    to be written at the close.
+Weakest:    the test of a pinched solid tests each pair of an edge and a face of its plane, so its cost grows with
+            the product of the counts; a body of the engine today has a few hundred faces at most.
 
 ## Progress
 
@@ -86,3 +87,4 @@ Weakest:    to be written at the close.
   checks. E148: the earlier face-gone fault stays whatever end it names (Q2 A). E149: one open at a time. E150: the
   previous file again after a next session that does not start (Q3 A). E151: the texts of the old flow. The standing
   order of 2026-11-05 answered Q1 to Q3 with A.
+- 2026-11-06: closed at v0.204.
