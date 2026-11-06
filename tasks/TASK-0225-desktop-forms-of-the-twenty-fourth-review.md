@@ -1,7 +1,7 @@
 ---
 id: 0225
 title: The start again keeps an unsaved document, a window that does not open gives a code, and the flush holds its place
-status: Active
+status: Done
 phase: P0.90
 opened: 2026-11-06
 depends-on: [0224]
@@ -53,20 +53,20 @@ open gives an exit code, the flush of V90 comes after the new device and has a t
 
 ## Acceptance criteria
 
-- [ ] Each finding has a test or an injection that fails before the change and passes after it.
-- [ ] A clean build (`--no-incremental`) gives zero errors and zero warnings.
-- [ ] Continuous integration passes on the three runners, on the branch and on `main` after the merge.
+- [x] Each finding has a test or an injection that fails before the change and passes after it.
+- [x] A clean build (`--no-incremental`) gives zero errors and zero warnings.
+- [x] Continuous integration passes on the three runners, on the branch and on `main` after the merge.
 
 ## Outcome
 
-Status: Active
+Status: Done · commit (the merge of the branch p090-review-forms) · v0.211
 
 ## Method
 
 Mechanical: a test or an injection for each finding, before the change.
 Judgement:  the unsaved folder of `EngineHost` also with a path, so that a journal of that folder opened by its path
             has no name; the exit code 7 for a window that does not open.
-Weakest:    to be written at the close.
+Weakest:    no test holds the order of V93, and nobody started the desktop to see a session change in a window.
 
 ## Progress
 
@@ -77,3 +77,4 @@ Weakest:    to be written at the close.
   to the standard error. V93: the flush runs after `Initialize` and `LoadScene`. V94: a test with the queue of SDL and
   no window. V95 and V96: ADR-0072. Three injections each fail a test: the start again with the path only, a show that
   fails with the code 0, and a flush that removes nothing. No test holds the order of V93.
+- 2026-11-06: closed at v0.211.
