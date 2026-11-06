@@ -1,0 +1,27 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    A project for the package only (phase R14d, ADR-0061 item 6, TASK-0196). It packs the native cimgui of ImGui.NET
+    1.91.6.1 for Android under runtimes/android-arm64/native/ and runtimes/android-x64/native/. It is not in
+    3DEngine.sln, so the gate of the build ignores it, as for eng/manifold-native/. The workflow build-cimgui-native.yml
+    puts the built libraries into ./runtimes/<rid>/native/ and runs `dotnet pack` on this project.
+  -->
+  <PropertyGroup>
+    <TargetFramework>netstandard2.0</TargetFramework>
+    <IncludeBuildOutput>false</IncludeBuildOutput>
+    <IncludeSymbols>false</IncludeSymbols>
+    <SuppressDependenciesWhenPacking>true</SuppressDependenciesWhenPacking>
+    <NoWarn>$(NoWarn);NU5128</NoWarn>
+    <PackageId>Engine.Native.DearImGui</PackageId>
+    <Authors>3DEngine</Authors>
+    <Description>The native cimgui of ImGui.NET 1.91.6.1 (cimgui 1.91.6dock) for Android arm64 and x64, with pages of 16 KB.</Description>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <None Include="runtimes/**">
+      <Pack>true</Pack>
+      <PackagePath>runtimes/%(RecursiveDir)%(Filename)%(Extension)</PackagePath>
+    </None>
+  </ItemGroup>
+
+</Project>

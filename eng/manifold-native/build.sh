@@ -4,7 +4,11 @@
 # its own folder. The workflow build-manifold-native.yml and a local build call this one script,
 # so the recipe of the pipeline and the recipe of a computer cannot differ (TASK-0049).
 #
-# Usage: eng/manifold-native/build.sh <Manifold source folder> <staging folder>
+# Usage: eng/manifold-native/build.sh <Manifold source folder> <staging folder> [Android ABI]
+#
+# Phase R14d (ADR-0061 item 7, TASK-0196): with a third argument, arm64-v8a or x86_64, the script builds for Android
+# with the NDK of the machine ($ANDROID_NDK_LATEST_HOME, or $ANDROID_NDK_HOME), for API level 33, with pages of 16 KB,
+# and checks the machine, the page alignment and the dependency of each library with llvm-readelf of the NDK.
 #
 # The flags and the checks come from TASK-0048 (register entries R-0035 and R-0018):
 #   - MANIFOLD_CROSS_SECTION must stay ON: MANIFOLD_CBIND is a cmake_dependent_option forced OFF
@@ -19,7 +23,8 @@
 #   - Each failure of the check is also an ::error line, a public annotation in the pipeline.
 set -euo pipefail
 
-[ $# -eq 2 ] || { echo "usage: $0 <Manifold source folder> <staging folder>" >&2; exit 2; }
+[ $# -eq 2 ] || [ $# -eq 3 ] || { echo "usage: $0 <Manifold source folder> <staging folder> [Android ABI]" >&2; exit 2; }
+abi="${3:-}"
 source_dir=$(cd "$1" && pwd)
 mkdir -p "$2"
 staging=$(cd "$2" && pwd)
@@ -35,8 +40,32 @@ case "$(uname -s)" in
   *) echo "build.sh builds Linux and macOS; use build.ps1 on Windows" >&2; exit 2 ;;
 esac
 
+# The Android ABI and the toolchain of the NDK, when the third argument gives an ABI.
+android=()
+if [ -n "$abi" ]; then
+  case "$abi" in
+    arm64-v8a) machine='AArch64' ;;
+    x86_64)    machine='Advanced Micro Devices X86-64' ;;
+    *) echo "the Android ABI must be arm64-v8a or x86_64, and '$abi' is not" >&2; exit 2 ;;
+  esac
+  ndk="${ANDROID_NDK_LATEST_HOME:-${ANDROID_NDK_HOME:-}}"
+  [ -n "$ndk" ] && [ -f "$ndk/build/cmake/android.toolchain.cmake" ] \
+    || { echo "::error title=Native build (Android)::no NDK: set ANDROID_NDK_LATEST_HOME or ANDROID_NDK_HOME"; exit 1; }
+  os="Android $abi"
+  android=(
+    "-DCMAKE_TOOLCHAIN_FILE=$ndk/build/cmake/android.toolchain.cmake"
+    "-DANDROID_ABI=$abi"
+    "-DANDROID_PLATFORM=android-33"
+    "-DCMAKE_SHARED_LINKER_FLAGS=-Wl,-z,max-page-size=16384"
+    # Clang writes the source path into the text of a lambda and of __FILE__; the map keeps the build machine out.
+    "-DCMAKE_C_FLAGS=-ffile-prefix-map=$source_dir=manifold"
+    "-DCMAKE_CXX_FLAGS=-ffile-prefix-map=$source_dir=manifold"
+  )
+fi
+
 echo "--- configure ($os) ---"
 cmake -S "$source_dir" -B "$build" \
+  ${android[@]+"${android[@]}"} \
   -DCMAKE_BUILD_TYPE=Release \
   -DBUILD_SHARED_LIBS=ON \
   -DMANIFOLD_CROSS_SECTION=ON \
@@ -101,7 +130,23 @@ for f in "$staging"/*; do
     failed=1
   fi
 done
-if [ "$os" = Linux ]; then
+if [ -n "$abi" ]; then
+  # Android loads each library of the APK by its name from one folder, so the check reads the machine, the alignment of
+  # each segment (pages of 16 KB, ADR-0061 item 7) and the name of each dependency, with no search path.
+  readelf="$(compgen -G "$ndk/toolchains/llvm/prebuilt/*/bin/llvm-readelf" | head -1)"
+  for f in "$staging"/*.so; do
+    header=$("$readelf" -h "$f")
+    grep -q "Machine: *$machine" <<<"$header" \
+      || { echo "::error title=Native build ($os)::$f is not built for $machine"; failed=1; }
+    segments=$("$readelf" -lW "$f")
+    small=$(awk '$1 == "LOAD" && $NF != "0x4000" { print $NF }' <<<"$segments")
+    [ -z "$small" ] || { echo "::error title=Native build ($os)::$f has a LOAD segment with the alignment $small, not 0x4000"; failed=1; }
+  done
+  dynamic=$("$readelf" -d "$staging/libmanifoldc.so")
+  echo "$dynamic"
+  grep -q 'NEEDED.*\[libmanifold.so\]' <<<"$dynamic" \
+    || { echo "::error title=Native build ($os)::libmanifoldc.so does not name libmanifold.so"; failed=1; }
+elif [ "$os" = Linux ]; then
   dynamic=$(readelf -d "$staging/libmanifoldc.so")
   search=$(grep -E 'RPATH|RUNPATH' <<<"$dynamic" || true)
   echo "search path: $search"
