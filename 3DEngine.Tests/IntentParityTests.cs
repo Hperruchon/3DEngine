@@ -176,6 +176,22 @@ public class IntentParityTests
         Assert.Empty(machine.Step([Touch(1, 140, 100, PointerPhase.Move, 40)]));
     }
 
+    // Finding 1 of the review of Codex of v0.221 (TASK-0237): Escape with no press on a handle gives CancelIntent, in
+    // each mode. Escape during a press on a handle ends the press, and gives no intent before the slop (finding V64).
+    [Theory]
+    [InlineData(IntentMode.Scene)]
+    [InlineData(IntentMode.Sketch)]
+    public void Escape_With_No_Press_On_A_Handle_Cancels(IntentMode mode)
+    {
+        var machine = new IntentMachine { Mode = mode };
+        Assert.Equal([new CancelIntent()], machine.Step([new KeySample(InputKey.Escape, true, KeyModifiers.None, 0)]));
+
+        var onHandle = new IntentMachine { HitTest = (_, _) => GizmoHandle.X };
+        onHandle.Step([Mouse(100, 100, PointerButtons.Left, PointerPhase.Down, 0)]);
+        Assert.Empty(onHandle.Step([new KeySample(InputKey.Escape, true, KeyModifiers.None, 10 * Ms)]));
+        Assert.Equal([new CancelIntent()], onHandle.Step([new KeySample(InputKey.Escape, true, KeyModifiers.None, 20 * Ms)]));
+    }
+
     // Decision D4: the action of a gesture is a setting.
     [Fact]
     public void A_Setting_Moves_An_Action_To_Another_Gesture()
