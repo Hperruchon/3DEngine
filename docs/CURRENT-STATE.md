@@ -6660,3 +6660,37 @@ result code 0" at 17:54:35.650, with no line of the program. The launcher of the
 New tests: 3. The test list holds 1931 (1363 in `Engine.Tests`, 335 in `3DEngine.Tests`, 230 in `3DEngine.ImageTests`, 3
 in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
 entries: 15 of 15. New diagnostic codes: 0. Since the review of v0.214, 3 product milestones and 8 entries followed it.
+
+## v0.223 — A command CreateCylinder makes a cylinder of 64 plane facets (K5a, TASK-0238)
+
+The roadmap row K5 gives the cylinder, the cone, the sphere and the torus. The fallback queue of the owner (2026-11-05)
+gives its first slice, the cylinder, with the recommended answers. Before this version `CreateBox` was the only
+primitive, and an extrude of a circle gave a prism of 64 plane facets (ADR-0040).
+
+**The change.** ADR-0076 is new and Accepted under the standing order of 2026-11-05, which gave A for its four questions.
+- Item 1: `CreateCylinder` has a radius and a height, two lengths greater than zero and finite, and the output
+  `bodyId`. The cylinder has its centre at the origin and its axis along +z; a `Translate` moves it. The log holds the
+  two inputs only.
+- Item 2: the handler gives the circle of ADR-0040 item 2, 64 vertices with `+ - * / sqrt` only, to `IExtrudeOps`.
+  `Engine.Contracts` does not change. No new diagnostic code.
+- Item 3: the owned kernel names the faces `+z`, `-z` and `side`, the 64 facets with one name and no item.
+- Item 4: a datum takes `+z` or `-z`; the side is curved, so a datum on it is refused. A cylinder gives no edge and no
+  vertex to a sketch in this slice.
+- Item 6: the feature list, the regeneration, the kernel projection and the datum resolver know the new creator, as
+  ADR-0028 item 9 allowed for its commands. No host names the command.
+
+**Proof.** Thirteen new tests, and one new row of the file test of each command of the catalog. An injection of each of
+five rules fails a test: the refusal of an infinite height, the names with no item, the refusal of a datum on the side,
+the creator of the feature list, and the creator of the regeneration. A cylinder through a plate cuts a hole whose 64
+walls have the name `side`, and an edit of the extrude of the plate rebuilds the hole. Run 42267638361 passed,
+and the branch passed again after it took v0.222.
+
+**What stays.** No client has a button for the cylinder: the command line, the HTTP surface and a script make one. The
+side is 64 facets, so the volume of a cut differs from a true cylinder by about 0.16 %. The true surface and
+`CYLINDRICAL_SURFACE` in the STEP export wait for a type of algebraic number in the kernel.
+
+**A correction.** None.
+
+New tests: 13. The test list holds 1944 (1376 in `Engine.Tests`, 335 in `3DEngine.Tests`, 230 in `3DEngine.ImageTests`,
+3 in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
+entries: 15 of 15. New diagnostic codes: 0. Since the review of v0.214, 4 product milestones and 9 entries followed it.

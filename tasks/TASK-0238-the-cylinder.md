@@ -1,7 +1,7 @@
 ---
 id: 0238
 title: The cylinder is a primitive of plane facets
-status: Active
+status: Done
 phase: K5a
 opened: 2026-11-06
 depends-on: [0184, 0185]
@@ -64,23 +64,25 @@ its top or its bottom, and with no change of `Engine.Contracts`.
 
 ## Acceptance criteria
 
-- [ ] A size that is not finite and greater than zero gives `E-GEOM-INVALID-PARAM`.
-- [ ] `GetFaces` gives the three names, with the areas of the polygon.
-- [ ] A datum on `+z` of a moved cylinder has the frame of the moved top, and `side` is refused.
-- [ ] A cylinder through a plate cuts a hole whose walls have the name `side`.
-- [ ] An injection of each rule fails a test.
+- [x] A size that is not finite and greater than zero gives `E-GEOM-INVALID-PARAM`.
+- [x] `GetFaces` gives the three names, with the areas of the polygon.
+- [x] A datum on `+z` of a moved cylinder has the frame of the moved top, and `side` is refused.
+- [x] A cylinder through a plate cuts a hole whose walls have the name `side`.
+- [x] An injection of each rule fails a test.
 
 ## Outcome
 
-Status: Active
+Status: Done · commit (the merge of the branch k5a-cylinder) · v0.223
 
 ## Method
 
 Mechanical: one command and its handler, as `CreateBox`; one case in each of the four creator files.
 Judgement:  the names `+z` and `-z` as for a box, and `side` with no item; the loop through `IExtrudeOps`, so the
             contract does not change.
-Weakest:    to be written at the close.
+Weakest:    no client has a button for the cylinder yet, so only the command line, the HTTP surface and the tests
+            make one; the side is 64 facets, so a cut differs from a true cylinder by about 0.16 % of the volume.
 
 ## Progress
 
 - 2026-11-06: ADR-0076, the command, the kernel solid, the creators and thirteen tests; an injection of each of five rules fails a test.
+- 2026-11-06: run 42267638361 passed on the three runners and on the emulator; the branch then took v0.222 from main. Closed at v0.223.
