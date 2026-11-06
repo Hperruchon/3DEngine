@@ -265,6 +265,7 @@ This track removes each condition that blocks other work.
 | P0.83 | A press of a hand keeps its place, the far plane holds the images, and a drag queries no size in each frame (V85 to V87 of the codebase review of 2026-11-05 (b); after the next product phase). TASK-0191. | 1–2 |
 | P0.84 | The kept solids belong to one Document, the faces of the kernel keep their holes, and the next forms of five gates fail (E135 to E141, T136 to T140 of the codebase review of 2026-11-05 (b); after the next product phase). TASK-0192. | 2–3 |
 | P0.85 | Each hole of a face has its owner, the STEP export refuses what a strict reader refuses, and the session of the desktop holds an open (E142 to E151 of the codebase review of 2026-11-06; after the next product phase). TASK-0197. | 2–3 |
+| P0.87 | An export of the command line refuses a file that is its own document file, so the document stays (finding 1 of the review of Codex of v0.198, high; before the next product phase). TASK-0220. | 1 |
 | P0.86 | The window keeps no input between sessions, the hook has the cases of one axis, and the next forms of four gates fail (V88 to V90, T141 to T144 of the codebase review of 2026-11-06; after the next product phase). TASK-0198. | 1–2 |
 
 ## Track P — The platform

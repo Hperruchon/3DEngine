@@ -141,6 +141,28 @@ public static class Cli
     //
     //   engine export stl <document.3de> <file.stl>     { file, triangles, warnings }
     //   engine export step <document.3de> <file.step>   { file, bodies, warnings }
+    // True when the two paths name one file: the full paths, after a symbolic link, with no case on Windows and macOS. A
+    // hard link to the document is a second name that this test does not see.
+    private static bool SameFile(string first, string second)
+    {
+        if (string.IsNullOrWhiteSpace(second))
+            return false;
+        static string Resolve(string path)
+        {
+            var full = Path.GetFullPath(path);
+            try
+            {
+                return File.Exists(full) && new FileInfo(full).ResolveLinkTarget(returnFinalTarget: true) is { } target ? target.FullName : full;
+            }
+            catch (IOException)
+            {
+                return full;
+            }
+        }
+
+        return string.Equals(Resolve(first), Resolve(second), OperatingSystem.IsLinux() ? StringComparison.Ordinal : StringComparison.OrdinalIgnoreCase);
+    }
+
     private static async Task<int> Export(string[] args, TextWriter stdout, TextWriter stderr, CancellationToken ct, BackendOptions backend)
     {
         if (args is not [var format and ("stl" or "step"), var document, var file])
@@ -149,6 +171,12 @@ public static class Cli
 
         if (string.IsNullOrWhiteSpace(document))
             return ExportFailure(stdout, new ErrorDetail(DiagnosticCodes.IoLoadFailed, "The path of the document file is empty."));
+
+        // The review of Codex of v0.198, finding 1 (TASK-0220): the read holds no journal, so an export onto its own
+        // document file wrote the STL or STEP bytes over the document, and the document no longer opened.
+        if (SameFile(document, file))
+            return ExportFailure(stdout, new ErrorDetail(DiagnosticCodes.ExportWriteFailed,
+                $"The {(step ? "STEP" : "STL")} file {file} is the document file {document}, and an export does not write over its document."));
 
         var session = BuildSession(backend, stderr);
         if (session is null)
