@@ -6622,3 +6622,41 @@ geometry key.
 New tests: 7. The test list holds 1928 (1363 in `Engine.Tests`, 333 in `3DEngine.Tests`, 229 in `3DEngine.ImageTests`, 3
 in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
 entries: 15 of 15. New diagnostic codes: 0. Since the review of v0.214, 3 product milestones and 7 entries followed it.
+
+## v0.222 — The key Escape goes back from the face, and "Sketch on face" ends the arm of Face (P0.94, TASK-0237)
+
+The review of Codex of v0.221 (22143bd) gave three findings. The session read the code for each one and confirmed
+findings 1 and 2. R12a shipped one version before, and its ledger entry states finding 1 as done, so this task corrects
+both before the next product phase.
+
+**The change.**
+- Finding 1: the key Escape with no press on a handle of the gizmo gives `CancelIntent` in each mode. ADR-0075 item 2
+  names `CancelIntent` as the key Escape; until now the intent layer gave it only for a lost pointer, so a selected face
+  stayed. While a text field or the pad is open, the router gives each key to the panel, so Escape there reaches no
+  scene.
+- Finding 2: `FaceArm.Panel` ends the arm of the button Face for `SketchOnSelectedFaceAction`, as for each other start
+  of a sketch (finding V77). Before, Face, "Sketch on face" and Finish left the arm, and the next tap on a body started
+  one more sketch.
+- Finding 3, low: the outline of the selected face does not follow a drag of the gizmo. It goes into the next codebase
+  review.
+
+**Proof.** Three new tests. An injection that removes the new case of Escape fails two rows of the intent layer and the
+test of BodyActions, which now takes its intent from a key sample through the intent layer. An injection that removes
+the new action from the arm fails the new row of FaceArmTests. The test of the keys of text editing no longer lists
+Escape. Run 42266913875 passed.
+
+**What stays.** A lost pointer during a press also gives `CancelIntent`, so it also clears a selected face. No person
+pressed Escape on the desktop.
+
+**A correction.** The ledger entry of v0.221 says that the key Escape gives the body. That was false until this
+version: the test of R12a gave `CancelIntent` directly. The first run of this branch (42265352847) failed on the test
+floor, which the task did not change; a second commit sets it.
+
+**The emulator.** The emulator job of run 42265352847 failed a fourth time, with no change of the phone. The diagnostics
+of P0.93 now give a cause: the process of the program started at 17:54:33.777 and the runtime wrote "VM exiting with
+result code 0" at 17:54:35.650, with no line of the program. The launcher of the emulator showed for the first time at
+17:54:33.811, after the start. The lead goes into the next codebase review.
+
+New tests: 3. The test list holds 1931 (1363 in `Engine.Tests`, 335 in `3DEngine.Tests`, 230 in `3DEngine.ImageTests`, 3
+in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
+entries: 15 of 15. New diagnostic codes: 0. Since the review of v0.214, 3 product milestones and 8 entries followed it.
