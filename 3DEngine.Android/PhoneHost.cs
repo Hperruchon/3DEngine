@@ -24,6 +24,8 @@ internal static class PhoneHost
                 return;
             }
 
+            // Phase R14f2 (TASK-0229): the smoke test of the emulator reads this line and the line of the first frame.
+            Console.Error.WriteLine($"3DEngine: the session of the phone starts, with Manifold {ManifoldGeometryBackend.NativeVersion}.");
             using var host = new LocalSessionHost(new ManifoldGeometryBackend());
             var window = new Window("3DEngine", 1080, 2316);
             while (Foreground(window, host) && WaitForForeground())
@@ -45,6 +47,7 @@ internal static class PhoneHost
         window.Show();
 
         var lastFrame = DateTime.UtcNow;
+        var first = true;
         while (true)
         {
             // A frame draws nothing while the window has no area, as on the desktop (finding V23).
@@ -70,6 +73,9 @@ internal static class PhoneHost
             engine.Update(now - lastFrame);
             engine.Render();
             lastFrame = now;
+            if (first)
+                Console.Error.WriteLine("3DEngine: the first frame is drawn.");
+            first = false;
         }
     }
 

@@ -18,6 +18,9 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <AllowUnsafeBlocks>True</AllowUnsafeBlocks>
+    <!-- Phase R14f2 (TASK-0229): the APK holds the assemblies, so that a person installs it with adb or from a file. A Debug
+         build of .NET for Android left them out for the fast deployment of an IDE, and the program could not start. -->
+    <EmbedAssembliesIntoApk>true</EmbedAssembliesIntoApk>
   </PropertyGroup>
   <ItemGroup>
     <ProjectReference Include="..\3DEngine.App\3DEngine.App.csproj" />
