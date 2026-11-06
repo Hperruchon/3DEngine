@@ -258,6 +258,10 @@ jobs:
     needs: android-apk
     runs-on: ubuntu-latest
     timeout-minutes: 40
+    # The second run of the job: avdmanager wrote the AVD outside $HOME/.android/avd, where the emulator looked. Both
+    # tools read ANDROID_AVD_HOME.
+    env:
+      ANDROID_AVD_HOME: ${{ github.workspace }}/../avd
     defaults:
       run:
         shell: bash
@@ -283,6 +287,7 @@ jobs:
         run: |
           sdkmanager="$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager"
           yes | "$sdkmanager" --licenses > /dev/null || true
+          mkdir -p "$ANDROID_AVD_HOME"
           "$sdkmanager" --install "emulator" "platform-tools" "system-images;android-34;google_apis;x86_64" > /dev/null
           echo no | "$ANDROID_HOME/cmdline-tools/latest/bin/avdmanager" create avd -n smoke -k "system-images;android-34;google_apis;x86_64" -d pixel_6
 

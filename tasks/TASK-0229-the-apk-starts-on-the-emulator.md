@@ -73,3 +73,5 @@ Weakest:    to be written at the close.
 - 2026-11-06: the first run of the job of the emulator (42157609653) reached the limit of 40 minutes inside the smoke
   test and showed no cause, because the waits had no limit. Each wait has a limit now, the start of the emulator is
   checked, and a failure gives the last lines of the emulator as annotations.
+- 2026-11-06: the second run (42162085333) showed the cause in its annotations: the emulator found no AVD in
+  $HOME/.android/avd. The job sets ANDROID_AVD_HOME for avdmanager and the emulator.
