@@ -7148,3 +7148,33 @@ New tests: 13. The test list holds 1987 (1397 in `Engine.Tests`, 337 in `3DEngin
 in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
 entries: 15 of 15. New diagnostic codes: 1 (`W-IO-OLD-FILE-KEPT`). Since the review of v0.233, 1 product milestone and 4
 entries followed it.
+
+## v0.238 — The session of a destroyed activity ends before its window (P0.103, TASK-0255)
+
+Run 42308415060, the run of `main` at `5b84a10` (the merge of v0.236), failed in the job "Start the APK on the
+emulator", as the entry v0.237 says. The activity was created, its session started the probe of ADR-0074, and Android
+destroyed the activity 0.7 seconds later and created it again. With the hint of ADR-0079 a second session started in the
+same process. The second session made its window first, and the first one then could not make its window ("SDL: failed
+to create window"). Run 42310351172 of the branch of P0.102 failed in the other order: the session of the destroyed
+activity made its window, and the new one could not. SDL on Android permits one window. A failed run of `main` comes
+before the next product phase, so this task came before P0.102.
+
+**The change.** ADR-0079 item 4.
+- Each create of the activity takes a turn (`SessionTurns`, new, in `3DEngine.App` as `PhoneLifecycle` is). A session
+  whose turn is no longer the last one ends before its window, with the line "the activity of this session was destroyed,
+  so the session ends before its window"; it checks before and after it waits for the window.
+- A session holds the window from its make to its dispose, and a later session waits for it, for 10 seconds at most.
+
+**Proof.** Three new tests: a later create makes the earlier turn stale, a later session waits for the window of the
+earlier one, and the order of the run (the first session in its probe when the second create takes a turn) gives the
+window to the second session only. An injection of a turn that is always the last one and of a hold that does not wait
+fails the three tests. The project of the phone builds on this computer. Run 42311258959 passed, with the emulator job.
+
+**What stays.** No run can force a new create of the activity during the probe. In run 42311258959 Android created the
+activity one time, so that run does not show the new path; the next runs of the emulator show it.
+
+**A correction.** None. The failed runs since the entry v0.237, from the API: 42310351172 (the branch of P0.102, the same defect, named above).
+
+New tests: 3. The test list holds 1990 (1397 in `Engine.Tests`, 337 in `3DEngine.Tests`, 253 in `3DEngine.ImageTests`, 3
+in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
+entries: 15 of 15. New diagnostic codes: 0. Since the review of v0.233, 1 product milestone and 5 entries followed it.

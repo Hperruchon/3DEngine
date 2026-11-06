@@ -3,6 +3,7 @@ using Android.Content.PM;
 using Android.Content.Res;
 using Android.OS;
 using Org.Libsdl.App;
+using ThreeDEngine.Desktop;
 
 namespace ThreeDEngine.Android;
 
@@ -28,8 +29,12 @@ public sealed class MainActivity : SDLActivity
     // with the code 0 and no line, which a new start of the activity explains: SDL ends the process when an activity
     // starts again in it. Each create, change of the configuration and destroy writes a line, so that the next failure
     // names its cause; the configuration changes above hold each change that the emulator gave no line for.
+    // ADR-0079 item 4 (TASK-0255): the turn of this create of the activity, for its session.
+    private int _turn;
+
     protected override void OnCreate(Bundle? savedInstanceState)
     {
+        _turn = SessionTurns.Phone.Begin();
         Console.Error.WriteLine($"3DEngine: the activity is created{(savedInstanceState is null ? string.Empty : ", with a saved state")}.");
         base.OnCreate(savedInstanceState);
 
@@ -51,5 +56,5 @@ public sealed class MainActivity : SDLActivity
     }
 
     // The extra "probe" runs the probe of the determinism hash before the session (ADR-0074 item 3).
-    protected override void Main() => PhoneHost.Run(Intent?.GetBooleanExtra("probe", false) ?? false);
+    protected override void Main() => PhoneHost.Run(Intent?.GetBooleanExtra("probe", false) ?? false, _turn);
 }
