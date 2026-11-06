@@ -184,7 +184,8 @@ jobs:
   # compared with its own constants only (register entry R-0023).
   determinism:
     name: Compare the determinism hashes
-    needs: gate
+    # Phase R14f3 (ADR-0074, TASK-0233): the hash of the phone comes from the job of the emulator.
+    needs: [gate, android-emulator]
     runs-on: ubuntu-latest
     timeout-minutes: 10
     defaults:
@@ -303,7 +304,15 @@ jobs:
           fi
 
       - name: Run the smoke test
-        run: bash eng/android/smoke-emulator.sh "$RUNNER_TEMP/apk/org.threedengine.phone-Signed.apk" "$RUNNER_TEMP/logcat.txt" "$RUNNER_TEMP/emulator.log"
+        run: bash eng/android/smoke-emulator.sh "$RUNNER_TEMP/apk/org.threedengine.phone-Signed.apk" "$RUNNER_TEMP/logcat.txt" "$RUNNER_TEMP/emulator.log" "$RUNNER_TEMP/determinism/hash.txt"
+
+      # The job "Compare the determinism hashes" reads the hash of the phone (TASK-0233).
+      - name: Keep the determinism hash of the phone
+        uses: actions/upload-artifact@v4
+        with:
+          name: determinism-android-x64
+          path: ${{ runner.temp }}/determinism/hash.txt
+          if-no-files-found: error
 
       - name: Keep the log of Android
         if: always()
