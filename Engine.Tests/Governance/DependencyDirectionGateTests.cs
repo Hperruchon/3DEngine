@@ -1402,6 +1402,36 @@ public class DependencyDirectionGateTests
             + $"Pins found: {(pins.Length == 0 ? "none" : string.Join(", ", pins))}");
     }
 
+    // Finding T148 of the codebase review of 2026-11-06 (c) (TASK-0231): the rule above counts projects, and a
+    // Directory.Build.targets inside 3DEngine.Vulkan belongs to that project, so its PackageReference Update changed the
+    // version of the pin and each gate passed. ADR-0017 rule 4: one file gives the version. Each file that MSBuild reads
+    // for a project names a pinned package only when it is the file of the pin, by Include or by Update, in a
+    // PackageReference, a GlobalPackageReference or a PackageVersion.
+    [Theory]
+    [InlineData("Vortice.Vulkan", "3DEngine.Vulkan/3DEngine.Vulkan.csproj")]
+    [InlineData("ppy.SDL3-CS", "3DEngine.Vulkan/3DEngine.Vulkan.csproj")]
+    [InlineData("ImGui.NET", "3DEngine.App/3DEngine.App.csproj")]
+    [InlineData("Engine.Native.DearImGui", "3DEngine.Android/3DEngine.Android.csproj")]
+    [InlineData("Engine.Geometry.Manifold.Native", "Engine.Geometry.Manifold/Engine.Geometry.Manifold.csproj")]
+    [InlineData("OpenCvSharp4", "3DEngine.VisionTests/3DEngine.VisionTests.csproj")]
+    public void Each_Pinned_Package_Is_Named_In_The_File_Of_Its_Pin_Only(string package, string pin)
+    {
+        var files = ProjectFiles()
+            .SelectMany(FilesThatMsBuildReads)
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .Where(file => new[] { "PackageReference", "GlobalPackageReference", "PackageVersion" }
+                .SelectMany(item => new[] { "Include", "Update" }.SelectMany(attribute => Includes(file, item, attribute)))
+                .Any(name => string.Equals(name, package, StringComparison.OrdinalIgnoreCase)))
+            .Select(RepositoryFiles.Relative)
+            .Order(StringComparer.Ordinal)
+            .ToArray();
+
+        Assert.True(
+            files.SequenceEqual([pin]),
+            $"{package} must be named in {pin} only, so that one file gives its version (ADR-0017 rule 4). "
+            + $"Files that name it: {(files.Length == 0 ? "none" : string.Join(", ", files))}.");
+    }
+
     [Fact]
     public void The_Native_Backend_References_Only_Engine_Contracts()
     {

@@ -87,6 +87,20 @@ public sealed class DocumentEndpointTests : IDisposable
         Assert.Equal(2, File.ReadAllLines(Path.Combine(Documents, "plate.3de")).Length);
     }
 
+    // Finding E157 of the codebase review of 2026-11-06 (c) (TASK-0231): the host compared the folder of the journal with
+    // the unsaved folder as given, so a folder with a final separator gave the document the name of its journal.
+    [Fact]
+    public async Task An_Unsaved_Folder_With_A_Final_Separator_Gives_No_Name()
+    {
+        var unsaved = Path.Combine(_folder, "unsaved") + Path.DirectorySeparatorChar;
+        using var host = new EngineHost(new InProcessMeshBackend(), new DocumentFileOptions(null, unsaved));
+
+        await host.Session.Apply(new Engine.Core.Commands.NoOpCommand { Echo = "x" });
+
+        Assert.True(File.Exists(host.Session.FilePath!));
+        Assert.Null(host.FileName);
+    }
+
     [Fact]
     public async Task A_Save_To_A_Name_That_Exists_Gives_A_Conflict()
     {
