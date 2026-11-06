@@ -5,9 +5,11 @@ status: Active
 phase: R12a
 opened: 2026-11-06
 depends-on: [0234]
-governed-by: [0004, 0007, 0016, 0018, 0019, 0025, 0028, 0029, 0032, 0033, 0037, 0058, 0060, 0072, 0073]
+governed-by: [0004, 0007, 0016, 0018, 0019, 0025, 0027, 0028, 0029, 0030, 0032, 0033, 0034, 0037, 0058, 0060, 0072, 0073, 0075]
 writes:
   create:
+    - 3DEngine.App/FaceOverlay.cs
+    - 3DEngine.ImageTests/FaceSelectionTests.cs
     - tasks/TASK-0236-a-second-tap-selects-the-face.md
     - docs/adr/0075-a-second-tap-selects-the-face.md
   modify:
@@ -17,6 +19,11 @@ writes:
     - 3DEngine.App/BodyActions.cs
     - 3DEngine.App/NativeThreeDEngine.cs
     - 3DEngine.ImageTests/BodyActionsTests.cs
+    - 3DEngine.App/Ui/DesktopUi.cs
+    - 3DEngine.App/Ui/DesktopUi.Panel.cs
+    - 3DEngine.App/Ui/DesktopUi.Overlay.cs
+    - 3DEngine.App/Ui/PanelAction.cs
+    - docs/adr/0029-selection-and-hide-gestures.md
     - docs/adr/README.md
     - docs/roadmap.md
     - docs/CURRENT-STATE.md
@@ -76,3 +83,5 @@ Weakest:    to be written at the close.
   and an injection that counts the edges inside a name fails the test of the curve. The gesture and the panel come next.
 - 2026-11-06: item 2, the gesture: a second tap on the selected body selects the face, Escape and the row give the
   body. Two tests, one with a finger and a mouse; an injection that keeps the old select fails both.
+- 2026-11-06: items 3 and 4, the panel and the mark, with three tests; an injection that keeps a face of a body that is
+  gone, and an injection that gives a curved face the button, each fail a test. ADR-0075 is Accepted.

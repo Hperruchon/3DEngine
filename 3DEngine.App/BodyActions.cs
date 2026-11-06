@@ -122,6 +122,19 @@ internal sealed class BodyActions(DocumentSession session)
         return Rejection(result);
     }
 
+    // ADR-0075 item 3 (phase R12a, TASK-0236): the entry of GetFaces of the selected face, or null. A face whose name the
+    // body no longer has, for example after a cut, or a body whose faces are not known, is no longer selected.
+    public FaceEntry? SelectedFace()
+    {
+        if (Selection is not { } body || Face is not { } face)
+            return null;
+        var entry = session.Query<FacesInfo>(new GetFacesQuery { BodyId = body }).GetAwaiter().GetResult().Result?
+            .Faces.FirstOrDefault(candidate => candidate.Reference == face);
+        if (entry is null)
+            Face = null;
+        return entry;
+    }
+
     // ADR-0073 item 2 (phase R14e3, TASK-0227): a cut of the body with the tool. Subtract consumes both bodies and makes a
     // new one, and the new body becomes the selection, as for a move. It returns null when the session applied it, or the
     // rejection for the line of the panel.
