@@ -36,7 +36,7 @@ public class GizmoImageTests
         using (var device = new GraphicsDevice("3DEngine.ImageTests", enableValidation: true, window: null, synchronizationValidation: true))
         {
             using var target = new OffscreenTarget(device, new VkExtent2D(Width, Height));
-            using var renderer = new SceneRenderer(device, target.RenderPass, host);
+            using var renderer = new SceneRenderer(device, target.RenderPass, new HostedSession(host));
             using var overlay = new OverlayRenderer(device, target.RenderPass);
             renderer.Update(scene, camera, (float)Width / Height);
             layout = TranslateGizmo.Layout(camera, Width, Height, renderer.Pivot(box)!.Value)!;

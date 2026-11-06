@@ -1,5 +1,4 @@
 using System.Collections.Concurrent;
-using Engine.Api.Http;
 using Engine.Contracts;
 using Engine.Contracts.Images;
 using Engine.Core.Assets;
@@ -23,7 +22,7 @@ internal sealed class SessionImages : IDisposable
     private readonly HashSet<string> _uploaded = new(StringComparer.Ordinal);
     private readonly HashSet<string> _failed = new(StringComparer.Ordinal);
 
-    public SessionImages(EngineHost host, AssetStore? store)
+    public SessionImages(ISessionHost host, AssetStore? store)
     {
         _store = store;
         _subscription = host.Session.Read((document, _) =>

@@ -38,7 +38,7 @@ public class PanelImageTests
         using (var device = new GraphicsDevice("3DEngine.ImageTests", enableValidation: true, window: null, synchronizationValidation: true))
         {
             using var target = new OffscreenTarget(device, new VkExtent2D(Width, Height));
-            using var renderer = new SceneRenderer(device, target.RenderPass, host);
+            using var renderer = new SceneRenderer(device, target.RenderPass, new HostedSession(host));
             using var panelRenderer = new UiRenderer(device, target.RenderPass);
             var (atlasWidth, atlasHeight, rgba) = ui.FontAtlas();
             ui.SetFontTexture(panelRenderer.CreateTexture(atlasWidth, atlasHeight, rgba));
@@ -112,7 +112,7 @@ public class PanelImageTests
         using (var device = new GraphicsDevice("3DEngine.ImageTests", enableValidation: true, window: null, synchronizationValidation: true))
         {
             using var target = new OffscreenTarget(device, new VkExtent2D(PadWidth, PadHeight));
-            using var renderer = new SceneRenderer(device, target.RenderPass, host);
+            using var renderer = new SceneRenderer(device, target.RenderPass, new HostedSession(host));
             using var panelRenderer = new UiRenderer(device, target.RenderPass);
             var (atlasWidth, atlasHeight, rgba) = ui.FontAtlas();
             ui.SetFontTexture(panelRenderer.CreateTexture(atlasWidth, atlasHeight, rgba));

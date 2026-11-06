@@ -196,7 +196,7 @@ public sealed class ImageActionsTests : IDisposable
         var store = new AssetStore(Path.Combine(_folder, "store"));
         var actions = new ImageActions(host.Session, store);
         actions.Place(Picture("plan.png", 8, 8), Datums.XY.Id);
-        using var images = new SessionImages(host, store);
+        using var images = new SessionImages(new HostedSession(host), store);
         actions.Place(Picture("plan.png", 8, 8), Datums.XZ.Id);
         var (text, _, _) = await store.Put(new MemoryStream("not a picture"u8.ToArray()));
         Assert.Equal(CommandStatus.Applied, (await host.Session.Apply(new PlaceImageCommand { Asset = text!, DatumId = Datums.YZ.Id, Width = 2, Height = 2 })).Status);

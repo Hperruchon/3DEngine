@@ -95,7 +95,7 @@ internal static class DesktopEngineHost
         try
         {
             var scene = SessionScene.Create();
-            using var engine = new NativeThreeDEngine(window, surface.Host, synchronizationValidation: surface.SynchronizationValidation, address: surface.Address, document: surface.Document, assets: surface.Assets);
+            using var engine = new NativeThreeDEngine(window, new HostedSession(surface.Host), synchronizationValidation: surface.SynchronizationValidation, address: surface.Address, document: surface.Document, assets: surface.Assets);
 
             engine.Initialize();
             engine.LoadScene(scene);

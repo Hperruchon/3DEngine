@@ -1,0 +1,38 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!--
+    ADR-0072 (phase R14e1, TASK-0222): the application of a host that draws. The scene, the user interface and the
+    actions on the session of a document, for the desktop and for the phone. It references no surface and no ASP.NET
+    Core, because Android has no runtime pack of ASP.NET Core; a host gives it the session through ISessionHost and its
+    files through IDocumentFiles.
+  -->
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <RootNamespace>ThreeDEngine.Desktop</RootNamespace>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <AllowUnsafeBlocks>True</AllowUnsafeBlocks>
+  </PropertyGroup>
+  <!--
+    The library names no package for Vulkan or for SDL. It receives both bindings
+    through 3DEngine.Vulkan, which holds the only pin of each one (ADR-0017).
+  -->
+  <ItemGroup>
+    <ProjectReference Include="..\3DEngine.Core\3DEngine.Core.csproj" />
+    <ProjectReference Include="..\3DEngine.Vulkan\3DEngine.Vulkan.csproj" />
+    <ProjectReference Include="..\Engine.Contracts\Engine.Contracts.csproj" />
+    <ProjectReference Include="..\Engine.Core\Engine.Core.csproj" />
+  </ItemGroup>
+  <!--
+    The library of the user interface (ADR-0027 item 1, TASK-0084; moved here by ADR-0072). This line is its only
+    pin, and only the files in Ui/ name its namespace; UiLibraryGateTests holds both rules.
+  -->
+  <ItemGroup>
+    <PackageReference Include="ImGui.NET" Version="1.91.6.1" />
+  </ItemGroup>
+  <!-- The hosts compose the application with its internal types: the desktop program, and the image test, which reads
+       the renderer and the projection of the bodies (ADR-0025 item 3, TASK-0076). -->
+  <ItemGroup>
+    <InternalsVisibleTo Include="3DEngine" />
+    <InternalsVisibleTo Include="3DEngine.ImageTests" />
+  </ItemGroup>
+</Project>

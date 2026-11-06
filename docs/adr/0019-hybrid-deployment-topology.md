@@ -12,6 +12,7 @@ affects:
   - Engine.Api.Http/**
   - Engine.Cli/**
   - 3DEngine/**
+  - 3DEngine.App/**
 enforced-by: Engine.Tests/Http/DesktopSurfaceTests.cs
 ---
 

@@ -1027,6 +1027,34 @@ public class DependencyDirectionGateTests
     // it, and the host referenced the vendored sample framework with no report.
     private static readonly string[] HostsThatDraw = ["3DEngine"];
 
+    // ADR-0072 (phase R14e1, TASK-0222): the application of a host that draws, a library of the scene, the user interface
+    // and the actions. A host that draws references it. It references the kernel of design truth and the render side
+    // only, so that a host with no surface, the phone, can reference it (The_Application_References_No_Surface).
+    private static readonly string[] Applications = ["3DEngine.App"];
+
+    [Fact]
+    public void The_Application_References_No_Surface()
+    {
+        // ADR-0072 item 1: Android has no runtime pack of ASP.NET Core, so a program that references the surface
+        // library, or the framework of ASP.NET Core, does not build for android-arm64 (NETSDK1082). The application
+        // references Engine.Contracts, Engine.Core and the render side only, and no file that MSBuild reads for it names
+        // a FrameworkReference.
+        string[] permitted = ["Engine.Contracts", "Engine.Core", .. RenderSide];
+        var graph = Graph();
+        var offences = new List<string>();
+        foreach (var application in Applications)
+        {
+            Assert.True(graph.ContainsKey(application), $"{application}.csproj was not found.");
+            offences.AddRange(graph[application].Where(target => !permitted.Contains(target))
+                .Select(target => $"{application} references {target}; ADR-0072 item 1 permits Engine.Contracts, Engine.Core and the render side only"));
+            var file = ProjectFiles().Single(f => Path.GetFileNameWithoutExtension(f) == application);
+            offences.AddRange(FilesThatMsBuildReads(file).SelectMany(read => Includes(read, "FrameworkReference"))
+                .Select(framework => $"{application} references the framework {framework}; ADR-0072 item 1 permits none"));
+        }
+
+        Assert.True(offences.Count == 0, string.Join("\n  ", offences));
+    }
+
     private static readonly string[] Verifiers = ["Engine.Tests"];
 
     // The tests of the render side, with no GPU (ADR-0022, TASK-0069). They may
@@ -1095,7 +1123,7 @@ public class DependencyDirectionGateTests
         // A new project must enter one of the lists above before the gate can
         // apply a rule to it. Until TASK-0039 an unlisted project passed each
         // test, because no test read it (rules review finding F22).
-        string[] classified = [.. Kernel, .. RenderSide, .. HeadlessClients, .. Surfaces, .. HostsThatDraw, .. Verifiers, .. RenderVerifiers, .. ImageVerifiers, .. Packaging, .. Judges, .. VisionVerifiers];
+        string[] classified = [.. Kernel, .. RenderSide, .. HeadlessClients, .. Surfaces, .. HostsThatDraw, .. Applications, .. Verifiers, .. RenderVerifiers, .. ImageVerifiers, .. Packaging, .. Judges, .. VisionVerifiers];
 
         var unclassified = Graph().Keys
             .Where(p => !classified.Contains(p))
@@ -1105,7 +1133,7 @@ public class DependencyDirectionGateTests
         Assert.True(
             unclassified.Length == 0,
             "Each project must be a kernel, a render-side project, a headless client, a surface library, a host that "
-            + "draws, a verifier, a verifier of the render side, an image verifier, a packaging project, a judge or a vision verifier, so that the dependency rules apply to it. "
+            + "draws, an application, a verifier, a verifier of the render side, an image verifier, a packaging project, a judge or a vision verifier, so that the dependency rules apply to it. "
             + "Add it to one list.\n  " + string.Join("\n  ", unclassified));
     }
 
@@ -1133,7 +1161,8 @@ public class DependencyDirectionGateTests
 
             foreach (var target in graph[client])
             {
-                if (!permitted.Contains(target) && !(draws && RenderSide.Contains(target)) && !Surfaces.Contains(target))
+                // ADR-0072: a host that draws also references the application.
+                if (!permitted.Contains(target) && !(draws && (RenderSide.Contains(target) || Applications.Contains(target))) && !Surfaces.Contains(target))
                     offences.Add($"{client} references {target}, which is not permitted");
 
                 if (clients.Contains(target))
@@ -1182,7 +1211,7 @@ public class DependencyDirectionGateTests
     {
         // ADR-0025 item 3: the projects that a client may reference, the render side,
         // the surface library, and the host that draws.
-        string[] permitted = [.. Kernel, .. RenderSide, .. Surfaces, .. HostsThatDraw];
+        string[] permitted = [.. Kernel, .. RenderSide, .. Surfaces, .. HostsThatDraw, .. Applications];
         var graph = Graph();
         var offences = ImageVerifiers
             .Select(verifier => graph.ContainsKey(verifier) ? null : $"{verifier}.csproj was not found")
@@ -1205,7 +1234,7 @@ public class DependencyDirectionGateTests
         // project and the render kernel, because neither one is a host that draws.
         var offences = Graph()
             .Where(p => p.Value.Contains("3DEngine.Vulkan"))
-            .Where(p => !HostsThatDraw.Contains(p.Key) && !RenderVerifiers.Contains(p.Key) && !ImageVerifiers.Contains(p.Key))
+            .Where(p => !HostsThatDraw.Contains(p.Key) && !Applications.Contains(p.Key) && !RenderVerifiers.Contains(p.Key) && !ImageVerifiers.Contains(p.Key))
             .Select(p => $"{p.Key} references 3DEngine.Vulkan, and it is not a host that draws")
             .ToArray();
 
@@ -1229,7 +1258,9 @@ public class DependencyDirectionGateTests
     // project of the desktop names only the packages of its list, in each file that MSBuild reads for it, so a new package
     // there is a change of this list in review.
     [Theory]
-    [InlineData("3DEngine/3DEngine.csproj", new[] { "ImGui.NET" })]
+    // ADR-0072: the pin of ImGui.NET moved from the desktop program to the application.
+    [InlineData("3DEngine/3DEngine.csproj", new string[0])]
+    [InlineData("3DEngine.App/3DEngine.App.csproj", new[] { "ImGui.NET" })]
     [InlineData("3DEngine.Vulkan/3DEngine.Vulkan.csproj", new[] { "ppy.SDL3-CS", "Vortice.Vulkan" })]
     [InlineData("3DEngine.Core/3DEngine.Core.csproj", new string[0])]
     public void Each_Project_Of_The_Desktop_Names_Only_The_Packages_Of_Its_List(string project, string[] packages)

@@ -12,7 +12,7 @@ affects:
   - Engine.Core/Queries/GetFaceAtQuery.cs
   - Engine.Core/Queries/GetFaceAtQueryHandler.cs
   - Engine.Core/Sketch/FaceFinder.cs
-  - 3DEngine/SketchOverlay.cs
+  - 3DEngine.App/SketchOverlay.cs
 enforced-by: Engine.Tests/Sketch/FaceFinderTests.cs (TASK-0171 creates it)
 ---
 

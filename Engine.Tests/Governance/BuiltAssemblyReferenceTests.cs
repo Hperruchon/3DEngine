@@ -43,7 +43,7 @@ public class BuiltAssemblyReferenceTests
         // not in the output of this project; the pipeline builds the solution before it runs the tests, so their assembly
         // is in their own output folder, with the configuration and the framework of this test run.
         string[] engine = ["Engine.Contracts", "Engine.Core", "Engine.Kernel", "Engine.Geometry.Manifold", "Engine.Api.Http", "Engine.Cli", "Engine.Api.Http.Server"];
-        string[] render = ["3DEngine.Core", "3DEngine.Vulkan"];
+        string[] render = ["3DEngine.Core", "3DEngine.Vulkan", "3DEngine.App"];
         var output = new DirectoryInfo(AppContext.BaseDirectory.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar));
         var (framework, configuration) = (output.Name, output.Parent!.Name);
 
