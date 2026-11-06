@@ -25,6 +25,7 @@ public static class HandlerCatalog
     [
         new NoOpCommandHandler(),
         new CreateBoxCommandHandler(),
+        new CreateCylinderCommandHandler(),
         new TranslateCommandHandler(),
         new SubtractCommandHandler(),
         new RenameBodyCommandHandler(),

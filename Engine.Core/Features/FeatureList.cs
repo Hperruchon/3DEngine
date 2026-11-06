@@ -50,7 +50,9 @@ public sealed class FeatureList
         => Creates(command) || command is CreateDatumCommand or CreateSketchCommand or PlaceImageCommand;
 
     // ADR-0039 item 1: the kinds of command that create a body.
-    public static bool Creates(Command command) => command is CreateBoxCommand or ExtrudeCommand or TranslateCommand or SubtractCommand;
+    // ADR-0076 item 6: CreateCylinder is a creator too.
+    public static bool Creates(Command command)
+        => command is CreateBoxCommand or CreateCylinderCommand or ExtrudeCommand or TranslateCommand or SubtractCommand;
 
     // ADR-0021 item 3: the bodies that a command consumes, in the order of its fields.
     public static IReadOnlyList<Guid> Operands(Command command) => command switch
