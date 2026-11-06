@@ -88,6 +88,17 @@ internal sealed class BodyActions(DocumentSession session)
         return Rejection(result);
     }
 
+    // ADR-0073 item 2 (phase R14e3, TASK-0227): a cut of the body with the tool. Subtract consumes both bodies and makes a
+    // new one, and the new body becomes the selection, as for a move. It returns null when the session applied it, or the
+    // rejection for the line of the panel.
+    public string? Cut(Guid body, Guid tool)
+    {
+        var result = session.Apply(new SubtractCommand { MinuendBodyId = body, SubtrahendBodyId = tool }).GetAwaiter().GetResult();
+        if (result.Status == CommandStatus.Applied && result.Outputs.TryGet<Guid>("bodyId", out var cut))
+            Selection = cut;
+        return Rejection(result);
+    }
+
     // ADR-0049 items 7 and 8: the distance in effect of the extrude whose handle is the body, from
     // GetBodyInfo, or null for another body. A new distance from the pad: the body keeps its
     // handle, so the selection stays.

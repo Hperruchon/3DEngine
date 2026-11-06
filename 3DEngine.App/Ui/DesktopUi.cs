@@ -52,6 +52,12 @@ internal sealed unsafe class DesktopUi : IDisposable
     public const string RedoLabel = "Redo";
     public const string NewBoxLabel = "New box";
     public const string MoveLabel = "Move";
+
+    // ADR-0073 item 1 (phase R14e3, TASK-0227): the list of the tools of a cut of the selected body.
+    public const string CutLabel = "Cut with";
+
+    // The item of one tool in the list of a cut.
+    public static string CutItem(Guid tool) => $"{CutLabel}:{tool}";
     public const string SetDistanceLabel = "Set distance";
     public const string FaultLabel = "Fault";
 
@@ -682,7 +688,7 @@ internal sealed unsafe class DesktopUi : IDisposable
 
             ImGui.Separator();
             if (bodies.FirstOrDefault(body => body.Id == selection) is { } selected)
-                Selected(selected);
+                Selected(selected, bodies);
 
             if (ImGui.Button(ShowAllLabel))
                 _actions.Add(new ShowAllAction());
@@ -697,7 +703,7 @@ internal sealed unsafe class DesktopUi : IDisposable
 
     // The controls of the selected body. The name field starts with the name of the body each
     // time another body is selected.
-    private void Selected(LiveBody body)
+    private void Selected(LiveBody body, IReadOnlyList<LiveBody> bodies)
     {
         if (_nameFor != body.Id)
             (_name, _nameFor) = (body.Name ?? string.Empty, body.Id);
@@ -749,6 +755,27 @@ internal sealed unsafe class DesktopUi : IDisposable
             Item(SetDistanceLabel);
             ImGui.SameLine();
         }
+
+        // ADR-0073 item 1 (phase R14e3, TASK-0227): a cut of the selected body with another visible body, the command
+        // Subtract, so that a person cuts a body with no agent, as on the phone, which has no surface (ADR-0061 item 4).
+        var tools = bodies.Where(other => other.Id != body.Id && other.Visible).ToList();
+        if (tools.Count == 0)
+            return;
+        // The list stays on the line of Move, so that Show all stays in the panel (finding V50).
+        ImGui.SetNextItemWidth(120f);
+        if (ImGui.BeginCombo(CutLabel, string.Empty))
+        {
+            foreach (var tool in tools)
+            {
+                if (ImGui.Selectable($"{RowText(tool)}##cut{tool.Id}", false, ImGuiSelectableFlags.None, new Vector2(0f, MinimumControlHeight)))
+                    _actions.Add(new CutBodyAction(body.Id, tool.Id));
+                Item(CutItem(tool.Id));
+            }
+
+            ImGui.EndCombo();
+        }
+
+        Item(CutLabel);
     }
 
     // ADR-0049 item 8: the pad of the distance of the selected extrude, which starts with the
