@@ -731,6 +731,91 @@ public sealed class DocumentFileTests : IDisposable
         reopened.Close();
     }
 
+    // Finding E164 of the codebase review of 2026-11-06 (e) (TASK-0251): until TASK-0251 a save whose delete of the old file
+    // failed left that file with no report, and it opens as a second document. Now the save gives W-IO-OLD-FILE-KEPT.
+    [Fact]
+    public async Task A_Save_That_Cannot_Delete_The_Old_File_Gives_A_Warning()
+    {
+        var path = FileNamed("kept");
+        static Stream Open(string file, FileMode mode) => new FileStream(file, mode, FileAccess.ReadWrite, FileShare.Read);
+        static void Delete(string file) => throw new IOException("Another program holds the file.");
+        var session = NewSession();
+        session.Attach(DocumentJournal.ForTest(path, Document.Millimetre, null, Open, Delete));
+        await session.Apply(new NoOpCommand { Echo = "one" });
+
+        var warnings = new List<Diagnostic>();
+        var error = await session.SaveAs(FileNamed("new"), warnings);
+        session.Close();
+
+        Assert.Null(error);
+        var warning = Assert.Single(warnings);
+        Assert.Equal((Severity.Warning, DiagnosticCodes.IoOldFileKept, path), (warning.Severity, warning.Code, warning.Path));
+        Assert.True(File.Exists(path));
+    }
+
+    // E164 (TASK-0251): a copy that fails, with a delete of the new file that fails too, leaves a new file of length 0, which
+    // does not open; until TASK-0251 it held the lines that the copy wrote, and it opened as a second document.
+    [Fact]
+    public async Task A_Failed_Copy_That_Cannot_Delete_The_New_File_Leaves_No_Part_Of_The_Document()
+    {
+        var path = FileNamed("source");
+        var target = Path.GetFullPath(FileNamed("partial"));
+        var opens = 0;
+        Stream Open(string file, FileMode mode)
+        {
+            var stream = new FileStream(file, mode, FileAccess.ReadWrite, FileShare.Read);
+            return opens++ == 1 ? new FlushFailsStream(stream) : stream;
+        }
+        void Delete(string file)
+        {
+            if (file == target)
+                throw new IOException("Another program holds the file.");
+            File.Delete(file);
+        }
+        var session = NewSession();
+        session.Attach(DocumentJournal.ForTest(path, Document.Millimetre, null, Open, Delete));
+        await session.Apply(new NoOpCommand { Echo = "one" });
+
+        var error = await session.SaveAs(target);
+        var command = await session.Apply(new NoOpCommand { Echo = "two" });
+        session.Close();
+
+        Assert.Equal(DiagnosticCodes.IoSaveFailed, error!.Code);
+        Assert.Equal(CommandStatus.Applied, command.Status);
+        Assert.Equal(0, new FileInfo(target).Length);
+        var reopened = NewSession();
+        Assert.Equal(DiagnosticCodes.IoLoadFailed, (await Assert.ThrowsAsync<DocumentFileException>(() => DocumentFile.Open(reopened, target))).Code);
+        reopened.Close();
+    }
+
+    // A stream whose flush fails, for a copy that fails after its writes.
+    private sealed class FlushFailsStream(Stream inner) : Stream
+    {
+        public override bool CanRead => inner.CanRead;
+        public override bool CanSeek => inner.CanSeek;
+        public override bool CanWrite => inner.CanWrite;
+        public override long Length => inner.Length;
+
+        public override long Position
+        {
+            get => inner.Position;
+            set => inner.Position = value;
+        }
+
+        public override void Flush() => throw new IOException("The disk is full.");
+        public override int Read(byte[] buffer, int offset, int count) => inner.Read(buffer, offset, count);
+        public override long Seek(long offset, SeekOrigin origin) => inner.Seek(offset, origin);
+        public override void SetLength(long value) => inner.SetLength(value);
+        public override void Write(byte[] buffer, int offset, int count) => inner.Write(buffer, offset, count);
+
+        protected override void Dispose(bool disposing)
+        {
+            if (disposing)
+                inner.Dispose();
+            base.Dispose(disposing);
+        }
+    }
+
     // A stream that counts the live handles of a test, and keeps the count after each close.
     private sealed class CountedStream(Stream inner, int[] live, List<int> lows) : Stream
     {
