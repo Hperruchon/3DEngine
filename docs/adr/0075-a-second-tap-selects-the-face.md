@@ -13,6 +13,12 @@ affects:
   - Engine.Core/Queries/GetFacesQueryHandler.cs
   - 3DEngine.App/BodyActions.cs
   - 3DEngine.App/FaceOverlay.cs
+  - 3DEngine.Core/Input/IntentMachine.cs
+  - 3DEngine.App/FaceArm.cs
+  - 3DEngine.App/NativeThreeDEngine.cs
+  - 3DEngine.App/Ui/DesktopUi.Panel.cs
+  - 3DEngine.App/Ui/DesktopUi.Overlay.cs
+  - 3DEngine.App/Ui/PanelAction.cs
 enforced-by: 3DEngine.ImageTests/FaceSelectionTests.cs
 ---
 
@@ -108,3 +114,8 @@ The standing order of 2026-11-05 gives A for each question.
 - 2026-11-06 · TASK-0236 · The record, Proposed, with item 1 and its tests.
 - 2026-11-06 · TASK-0236 · Item 2, the gesture, with its tests.
 - 2026-11-06 · TASK-0236 · Items 3 and 4, the panel and the mark; the record is Accepted under the standing order.
+- 2026-11-06 · TASK-0237 · Item 2: the key Escape gives `CancelIntent` through the intent layer; the button "Sketch on
+  face" ends the arm of Face.
+- 2026-11-06 · TASK-0243 · Item 2: only the key Escape (`CancelIntent.ByKey`) goes back from the face, and a lost pointer
+  keeps it; item 3: the outline follows a drag of the gizmo, and the entry comes again only for a new geometry key. The
+  affects field names the six files of items 2 and 3 (finding V111).
