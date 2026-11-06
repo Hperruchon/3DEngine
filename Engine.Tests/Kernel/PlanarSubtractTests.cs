@@ -349,4 +349,52 @@ public sealed class PlanarSubtractTests
             .ToList();
         Assert.Equal([(4.0, 1), (10.0, 1)], tops);
     }
+
+    // Finding E142 of the codebase review of 2026-11-06 (TASK-0197): a slot cuts a plate of 20 by 10 into two halves, and
+    // a triangle prism touches the side +x of the right half at (10, 0). Each cap of the right half then has the hole of
+    // the triangle. The owner of a hole read the first vertex of the hole, which can lie on the side of its region, so
+    // for two of the three rotations of the profile the hole had no owner and Brep.Of threw "An edge has no face.".
+    [Theory]
+    [InlineData(0)]
+    [InlineData(1)]
+    [InlineData(2)]
+    public void A_Hole_That_Touches_Its_Region_At_A_Vertex_Has_An_Owner_On_Each_Rotation(int rotation)
+    {
+        (double X, double Y)[] corners = [(10, 0), (8, 1), (8, -1)];
+        ProfileVertex[] triangle = [.. Enumerable.Range(0, 3).Select(i => corners[(i + rotation) % 3])
+            .Select((p, i) => new ProfileVertex(Rational.FromDouble(p.X), Rational.FromDouble(p.Y), Sides[i]))];
+        var tool = KernelSolid.Extrude(C, triangle, V(0, 0, -5), XY.U, XY.V, XY.N, Rational.FromDouble(10));
+        var halves = PlanarBoolean.Subtract(KernelSolid.Box(A, 20, 10, 2), KernelSolid.Box(B, 2, 12, 4))!;
+
+        var brep = Brep.Of(PlanarBoolean.Subtract(halves, tool)!);
+
+        var caps = brep.Faces.Where(face => face.Tag.Feature == A && face.Tag.Element is "+z" or "-z").ToList();
+        Assert.Equal(4, caps.Count);
+        var right = caps.Where(face => face.Loops[0].Vertices.Min(v => brep.Vertices[v].X.ToDouble()) > 0).ToList();
+        Assert.Equal(2, right.Count);
+        Assert.All(right, face => Assert.Equal([true, false], face.Loops.Select(loop => loop.Outer)));
+        Assert.All(caps.Except(right), face => Assert.Single(face.Loops));
+    }
+
+    // Finding E144 of the codebase review of 2026-11-06 (TASK-0197): two wedges along y cut a plate of 10 by 10 by 2. On
+    // the cap +z the first wedge removes x >= 0 for y >= 0 and the second removes x <= 0 for y <= 0, so the cap is two
+    // squares that meet at (0, 0, 1). The sides of the wedges slope, so below the cap the material is one piece. The walk
+    // of the loops joined the two squares into one loop of 8 vertices that holds (0, 0, 1) two times.
+    [Fact]
+    public void Two_Regions_Of_A_Face_That_Meet_At_A_Vertex_Are_Two_Faces()
+    {
+        var (o, u, v, n) = (V(0, 0, 0), V(1, 0, 0), V(0, 0, 1), V(0, -1, 0));
+        ProfileVertex[] Profile(params (double X, double Z)[] points) =>
+            [.. points.Select((p, i) => new ProfileVertex(Rational.FromDouble(p.X), Rational.FromDouble(p.Z), Sides[i]))];
+        var first = KernelSolid.Extrude(B, Profile((-1, 2), (3, -2), (20, 2)), V(0, 6, 0), u, v, n, Rational.FromDouble(6));
+        var second = KernelSolid.Extrude(C, Profile((1, 2), (-20, 2), (-3, -2)), o, u, v, n, Rational.FromDouble(6));
+
+        var brep = Brep.Of(PlanarBoolean.Subtract(PlanarBoolean.Subtract(KernelSolid.Box(A, 10, 10, 2), first)!, second)!);
+
+        Assert.True(brep.Valid);
+        var tops = brep.Faces.Where(face => face.Tag.Feature == A && face.Tag.Element == "+z").ToList();
+        Assert.Equal(2, tops.Count);
+        Assert.All(tops, face => Assert.Equal([4], face.Loops.Select(loop => loop.Vertices.Count)));
+        Assert.All(brep.Faces.SelectMany(face => face.Loops), loop => Assert.Equal(loop.Vertices.Count, loop.Vertices.Distinct().Count()));
+    }
 }

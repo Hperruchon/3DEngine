@@ -140,13 +140,39 @@ public static class StepExport
     // shell that holds its first vertex, so a void inside a solid inside a void belongs to the inner solid.
     private static (IReadOnlyList<Solid>? Solids, string? Reason) Plan(Brep brep)
     {
+        // Finding E145 of the codebase review of 2026-11-06 (TASK-0197): an edge of four faces gave the reason "not closed".
         if (!brep.Valid)
-            return (null, "its B-Rep in the owned kernel is not closed.");
+            return (null, brep.Edges.Any(edge => edge.Faces.Count > 2)
+                ? "an edge of its B-Rep has more than two faces."
+                : "its B-Rep in the owned kernel is not closed.");
+
+        // Finding E146 (TASK-0197): two vertices that differ by less than the precision of a double became one point of
+        // the file, so a sliver of the kernel was a solid of zero thickness.
+        var points = new HashSet<(double, double, double)>();
         foreach (var vertex in brep.Vertices)
         {
             var (vx, vy, vz) = vertex.ToDoubles();
             if (!double.IsFinite(vx) || !double.IsFinite(vy) || !double.IsFinite(vz))
                 return (null, "a vertex has a coordinate that a double does not hold.");
+            if (!points.Add((vx, vy, vz)))
+                return (null, "two vertices of its B-Rep round to one point of a double, so the file would hold an edge of no length.");
+        }
+
+        // Finding E143 (TASK-0197), Q1 A: a face that holds an edge of other faces inside it touches the solid along that
+        // edge, and a reader of ISO 10303-42 refuses such a shell. Each edge has one coedge in each direction there, so
+        // the test of Valid does not see it.
+        var half = new Rational(1, 2);
+        foreach (var edge in brep.Edges)
+        {
+            var (a, b) = (brep.Vertices[edge.From], brep.Vertices[edge.To]);
+            for (var f = 0; f < brep.Faces.Count; f++)
+            {
+                var plane = brep.Faces[f].Plane;
+                if (edge.Faces.Contains(f) || !(plane.Normal.Dot(a) - plane.Offset).IsZero || !(plane.Normal.Dot(b) - plane.Offset).IsZero)
+                    continue;
+                if (InFace(brep, brep.Faces[f], (a + b) * half) == true)
+                    return (null, "an edge of its B-Rep lies inside a face that does not hold it, so the solid is pinched along that edge.");
+            }
         }
 
         var volumes = brep.Shells.Select(shell => Volume(brep, shell)).ToList();

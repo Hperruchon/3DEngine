@@ -94,6 +94,67 @@ public sealed class DesktopSessionTests : IDisposable
         }
     }
 
+    private static async Task Made(string file, int boxes)
+    {
+        using var backend = new ManifoldGeometryBackend();
+        var maker = new DocumentSession(EngineHosting.CreateDefault(backend));
+        DocumentFile.Create(maker, file);
+        for (var i = 0; i < boxes; i++)
+            await maker.Apply(new CreateBoxCommand { SizeX = 1, SizeY = 2, SizeZ = 3 });
+        maker.Close();
+    }
+
+    // Finding E149 of the codebase review of 2026-11-06 (TASK-0197): the open read the pending open, awaited the check and
+    // then wrote, with no lock, so two opens at the same time were both accepted and the second one won. Now exactly one
+    // open is accepted, and the other gives E-IO-LOAD-FAILED.
+    [Fact]
+    public async Task Two_Opens_At_The_Same_Time_Give_One_Accepted_Open()
+    {
+        var (second, third) = (Path.Combine(Documents, "second.3de"), Path.Combine(Documents, "third.3de"));
+        await Made(second, 1);
+        await Made(third, 2);
+        var (surface, code, message) = DesktopEngineHost.Start(Arguments(Path.Combine(Documents, "first.3de")), null);
+        Assert.True(surface is not null, $"{code}: {message}");
+        using var session = surface.Session;
+        using (surface)
+        {
+            var opens = await Task.WhenAll(
+                Task.Run(() => surface.Document.Folder.Open(second, CancellationToken.None)),
+                Task.Run(() => surface.Document.Folder.Open(third, CancellationToken.None)));
+
+            Assert.Single(opens, error => error is null);
+            Assert.Single(opens, error => error?.Code == DiagnosticCodes.IoLoadFailed);
+            Assert.Equal(opens[0] is null ? second : third, surface.Document.RequestedOpen);
+        }
+    }
+
+    // Finding E150 of the codebase review of 2026-11-06 (TASK-0197), Q3 A: the check accepted an open, and then the next
+    // session did not start, for example because another program took the file. The run ended with the code of that
+    // start, and the window closed with the first document already closed. ADR-0030 item 5 keeps the person in the window,
+    // so a session on the previous file starts again, and the error goes to the standard error.
+    [Fact]
+    public async Task A_Next_Session_That_Does_Not_Start_Gives_The_Previous_File_Again()
+    {
+        var (first, second) = (Path.Combine(Documents, "first.3de"), Path.Combine(Documents, "second.3de"));
+        await Made(first, 1);
+        await Made(second, 2);
+        var shown = new List<(string? File, int Bodies)>();
+        void Show(DesktopSurface surface)
+        {
+            shown.Add((surface.Host.Session.FilePath, Bodies(surface.Host).GetAwaiter().GetResult()));
+            if (shown.Count == 1)
+                Assert.Null(surface.Document.Folder.Open(second, CancellationToken.None).GetAwaiter().GetResult());
+        }
+
+        (DesktopSurface?, int, string?) Start(string[] args, string? file)
+            => file == second ? (null, DesktopSurface.ExitStartFailed, "The file is held.") : DesktopEngineHost.Start(args, file);
+
+        var exit = DesktopEngineHost.RunSessions(Arguments(first), Start, Show);
+
+        Assert.Equal(0, exit);
+        Assert.Equal([(first, 1), (first, 1)], shown);
+    }
+
     // The surface mounts on the session and does not own it: after the stop of the surface, the session still applies a
     // command, and the host disposes it.
     [Fact]

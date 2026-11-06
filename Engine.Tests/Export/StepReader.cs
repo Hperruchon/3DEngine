@@ -8,6 +8,10 @@ namespace Engine.Tests.Export;
 // section DATA, one on each line, and checks the topology: each reference names an instance, each loop is closed, and
 // each edge has two uses in opposite senses inside its solid. It is a check of the writer, not an import: the charter
 // refuses an exact STEP import (anti-objective 14).
+// Finding E147 of the codebase review of 2026-11-06 (TASK-0197): the reader checked the counts and not the senses, so a
+// writer that turned each loop or each line passed each test but the hash. Closed also checks the sense of each loop
+// about the normal of its face, the direction of each LINE, the two points of each edge and a loop that repeats a
+// vertex.
 internal sealed partial class StepReader
 {
     // One instance: its name ("" for a complex instance) and its attributes, each one a token or a list of attributes.
@@ -220,8 +224,10 @@ internal sealed partial class StepReader
         return (Point(Id(frame.Attributes[1])), Point(Id(frame.Attributes[2])));
     }
 
-    // The checks of a closed solid: each loop is a closed chain of edges, and each EDGE_CURVE of each shell has one use in
-    // each sense. The result is the counts of its faces, its edges and its vertices, with those of its voids.
+    // The checks of a closed solid: each loop is a closed chain of edges that holds each vertex one time and turns
+    // counter-clockwise about the normal of its face for the outer bound and clockwise for a hole, each EDGE_CURVE of each
+    // shell has one use in each sense, two ends at two points and a LINE from its start in the direction of its end. The
+    // result is the counts of its faces, its edges and its vertices, with those of its voids.
     public (int Faces, int Edges, int Vertices) Solid(int solid)
     {
         var (faces, edges, vertices) = Closed(Faces(solid));
@@ -243,21 +249,64 @@ internal sealed partial class StepReader
             var loops = Loops(face);
             Assert.Single(loops, loop => loop.Outer);
             Assert.True(loops[0].Outer, $"The first bound of the face #{face} is not its outer bound.");
-            foreach (var (_, loop) in loops)
+            Assert.Equal(".T.", Instances[face].Attributes[3]);
+            var (_, normal) = Plane(face);
+            foreach (var (outer, loop) in loops)
             {
+                var starts = new List<int>();
                 for (var i = 0; i < loop.Count; i++)
                 {
                     var (start, end) = Ends(loop[i]);
                     Assert.Equal(end, Ends(loop[(i + 1) % loop.Count]).Start);
+                    Assert.True(Vertex(start) != Vertex(end), $"The two ends of the edge #{Id(Instances[loop[i]].Attributes[3])} are one point.");
+                    starts.Add(start);
                     vertices.Add(start);
                     var curve = Id(Instances[loop[i]].Attributes[3]);
                     var (forward, backward) = uses.GetValueOrDefault(curve);
                     uses[curve] = (string)Instances[loop[i]].Attributes[4] == ".T." ? (forward + 1, backward) : (forward, backward + 1);
                 }
+
+                Assert.True(starts.Distinct().Count() == starts.Count, $"A loop of the face #{face} holds a vertex two times.");
+                var turn = Turn(starts.Select(Vertex).ToList(), normal);
+                Assert.True(outer ? turn > 0 : turn < 0, $"A loop of the face #{face} turns the wrong way about its normal.");
             }
         }
 
         Assert.All(uses, use => Assert.Equal((1, 1), use.Value));
+        foreach (var curve in uses.Keys)
+            Line(curve);
         return (shell.Count, uses.Count, vertices.Count);
+    }
+
+    // The area of a loop along the normal, times two, by the cross products of its points: positive when the loop turns
+    // counter-clockwise about the normal.
+    private static double Turn(List<(double X, double Y, double Z)> points, (double X, double Y, double Z) normal)
+    {
+        var (x, y, z) = (0.0, 0.0, 0.0);
+        for (var i = 0; i < points.Count; i++)
+        {
+            var (a, b) = (points[i], points[(i + 1) % points.Count]);
+            (x, y, z) = (x + ((a.Y * b.Z) - (a.Z * b.Y)), y + ((a.Z * b.X) - (a.X * b.Z)), z + ((a.X * b.Y) - (a.Y * b.X)));
+        }
+
+        return (x * normal.X) + (y * normal.Y) + (z * normal.Z);
+    }
+
+    // An EDGE_CURVE has the sense .T., and its LINE starts at its start and points to its end.
+    private void Line(int curve)
+    {
+        var edge = Instances[curve];
+        Assert.Equal(".T.", edge.Attributes[4]);
+        var (start, end) = (Vertex(Id(edge.Attributes[1])), Vertex(Id(edge.Attributes[2])));
+        var line = Instances[Id(edge.Attributes[3])];
+        Assert.Equal("LINE", line.Name);
+        Assert.Equal(start, Point(Id(line.Attributes[1])));
+        var vector = Instances[Id(line.Attributes[2])];
+        Assert.Equal("VECTOR", vector.Name);
+        var direction = Point(Id(vector.Attributes[1]));
+        var (dx, dy, dz) = (end.X - start.X, end.Y - start.Y, end.Z - start.Z);
+        var length = Math.Sqrt((dx * dx) + (dy * dy) + (dz * dz));
+        var along = ((dx * direction.X) + (dy * direction.Y) + (dz * direction.Z)) / length;
+        Assert.True(along > 1 - 1e-9, $"The LINE of the edge #{curve} does not point from its start to its end.");
     }
 }
