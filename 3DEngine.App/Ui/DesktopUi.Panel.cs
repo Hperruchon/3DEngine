@@ -30,9 +30,25 @@ internal sealed unsafe partial class DesktopUi
                 _actions.Add(new RedoAction());
             Item(RedoLabel);
             ImGui.SameLine();
-            if (ImGui.Button(NewBoxLabel))
-                OpenPad(new NumericPad(NewBoxLabel, _unit, new("x", "10"), new("y", "10"), new("z", "10")), values => new CreateBoxAction(values[0], values[1], values[2]));
-            Item(NewBoxLabel);
+            // Phase K5b (ADR-0076 item 7, TASK-0244): the list "New" takes the place of the button "New box" of ADR-0032
+            // item 4, because the line has no room for a second button and the panel has no room for a new line (finding
+            // V50). Each entry opens its pad.
+            ImGui.SetNextItemWidth(NewListWidth);
+            if (ImGui.BeginCombo(NewLabel, string.Empty))
+            {
+                if (ImGui.Selectable($"Box##{NewBoxLabel}", false, ImGuiSelectableFlags.None, new Vector2(0f, MinimumControlHeight)))
+                    OpenPad(new NumericPad(NewBoxLabel, _unit, new("x", "10"), new("y", "10"), new("z", "10")), values => new CreateBoxAction(values[0], values[1], values[2]));
+                Item(NewBoxLabel);
+                if (ImGui.Selectable($"Cylinder##{NewCylinderLabel}", false, ImGuiSelectableFlags.None, new Vector2(0f, MinimumControlHeight)))
+                    OpenPad(new NumericPad(NewCylinderLabel, _unit, new("radius", "5"), new("height", "10")), values => new CreateCylinderAction(values[0], values[1]));
+                Item(NewCylinderLabel);
+
+                var (at, extent) = (ImGui.GetWindowPos(), ImGui.GetWindowSize());
+                _newList = new Vector4(at.X, at.Y, at.X + extent.X, at.Y + extent.Y);
+                ImGui.EndCombo();
+            }
+
+            Item(NewLabel);
 
             // ADR-0034 item 6: a new sketch on each origin plane.
             ImGui.AlignTextToFramePadding();
@@ -109,10 +125,18 @@ internal sealed unsafe partial class DesktopUi
         // it must not reach the scene. It follows the panel, so that the panel stays the first rectangle.
         if (_cutList is { } list)
             _panels.Add(list);
+        if (_newList is { } created)
+            _panels.Add(created);
     }
 
     // The rectangle of the open list of a cut in this frame, or null.
     private Vector4? _cutList;
+
+    // The rectangle of the open list "New" in this frame, or null (TASK-0244).
+    private Vector4? _newList;
+
+    // The width of the box of the list "New", as the list of a cut.
+    private const float NewListWidth = 80f;
 
     // The width of a button with this label.
     private static float ButtonWidth(string label)

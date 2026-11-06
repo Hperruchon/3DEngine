@@ -200,6 +200,7 @@ Therefore each approved objective must have a track here.
 - P0.95 — The smoke test of the emulator gives the exception of the program as public annotations. v0.224, TASK-0239.
 - Review — The codebase review of 2026-11-06 (d). v0.225, TASK-0240.
 - P0.96 — A save to a new name keeps a handle on the document at each moment. v0.226, TASK-0241.
+- K5b — A list "New" of the panel of the desktop and of the phone makes a box or a cylinder. v0.227, TASK-0244, ADR-0076.
 
 ## Track 0 — Foundations
 
@@ -395,6 +396,7 @@ boundary and each refused rung.
 | K4c | The datums and the references by the identity of a face, and a fault for a face that is gone (ADR-0051 item 8). The existing fault, a check after a cut only, a datum on a hole wall faces into the hole, a split face keeps its plane, and the turn applies to older documents (the five answers of the owner of 2026-11-05). ADR-0059, TASK-0185. | 4–6 |
 | K5 | Add the cylinder, the cone, the sphere and the torus. | 55–85 |
 | K5a | The cylinder: a command CreateCylinder with a radius and a height, the prism of the circle of ADR-0040 with 64 plane facets, the names +z, -z and side in the owned kernel, and a datum on the top or the bottom (the fallback queue of the owner of 2026-11-05, with the recommended answers). ADR-0076, TASK-0238. | 2–3 |
+| K5b | The list "New" of the panel of the desktop and of the phone, with the box and the cylinder, and a pad of the radius and the height (ADR-0076 item 7, which amends ADR-0032 item 4). TASK-0244. | 1 |
 | K6 | STEP export for the analytic subset. | 6–12 |
 | K6a | The planar B-Rep of the owned kernel of each live body as one STEP file of AP214, with the same bytes on each platform, from the surface and the command line (the engine lane of the order of 2026-11-05). ADR-0070, TASK-0200. | 1–2 |
 | K6b | A void inside a body is a `BREP_WITH_VOIDS` of the smallest solid that holds it, by an exact ray (ADR-0070 item 2; the engine lane of the order of 2026-11-05). TASK-0201. | 1 |

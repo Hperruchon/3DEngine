@@ -6783,3 +6783,36 @@ documents only. The entry v0.225 does not say so.
 New tests: 1. The test list holds 1945 (1377 in `Engine.Tests`, 335 in `3DEngine.Tests`, 230 in `3DEngine.ImageTests`, 3
 in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
 entries: 15 of 15. New diagnostic codes: 0. Since the review of v0.223, 0 product milestones and 3 entries followed it.
+
+## v0.227 — A list "New" of the panel makes a box or a cylinder (K5b, TASK-0244)
+
+K5a (v0.223) gives the command `CreateCylinder`, and no client had a button for it. ADR-0076, section "Next", gives the
+button of the desktop and of the phone.
+
+**The change.** ADR-0076 gets Q5 and item 7, Accepted under the standing order of 2026-11-05, which gave A; the item
+amends ADR-0032 item 4.
+- A button "New cylinder" took a new line of the panel, and at 1280 by 720 Show all then went 16 pixels below the panel
+  (DesktopFormsTests) and a tool of the list "Cut with" left it (CutUiTests). The first line holds Undo, Redo and "New
+  box" in 306 pixels and has no room for a second button.
+- So a list "New" takes the place of the button "New box", with the box of the list "Cut with". Its entry "Box" opens the
+  pad of a box, and its entry "Cylinder" opens a pad of the radius (5) and the height (10), whose apply sends
+  `CreateCylinder` through `BodyActions.CreateCylinder`. A box needs two taps now.
+- The desktop and the phone draw the same panel (ADR-0072). Steps 2, 3 and 5 of the test sheet of the phone use the list,
+  and step 5 cuts a round hole.
+
+**Proof.** Three new tests: a tap and a click of "New" and "Cylinder" open the pad of two values, each entry is at least
+44 pixels high, and an apply gives the typed values; `BodyActions.CreateCylinder` sends one command, and a size of zero
+gives its code. Five tests that opened the pad of a box with one tap open it through the list. An injection that swaps
+the radius and the height fails the two rows of the pad. Run 42282849670 passed.
+
+**What stays.** No person tapped the list. An injection that leaves the open list out of the rectangles of the panels
+fails no test, because the list lies inside the panel at this layout. The cone, the sphere and the torus become more
+entries of the list.
+
+**A correction.** The merge of v0.226 came after run 42281585857 of the close of P0.96, whose emulator job failed with the
+signature of V105, the ninth such failure; run 42280536874 of the change of P0.96 passed on each job, and the close held
+documents only.
+
+New tests: 3. The test list holds 1948 (1377 in `Engine.Tests`, 335 in `3DEngine.Tests`, 233 in `3DEngine.ImageTests`, 3
+in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
+entries: 15 of 15. New diagnostic codes: 0. Since the review of v0.223, 1 product milestone and 4 entries followed it.

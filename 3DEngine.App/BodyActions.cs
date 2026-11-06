@@ -112,6 +112,11 @@ internal sealed class BodyActions(DocumentSession session)
     public string? CreateBox(double x, double y, double z)
         => Rejection(session.Apply(new CreateBoxCommand { SizeX = x, SizeY = y, SizeZ = z }).GetAwaiter().GetResult());
 
+    // Phase K5b (ADR-0076, TASK-0244): a cylinder of the radius and the height of the pad. It returns null when the session
+    // applied it, or the rejection for the pad.
+    public string? CreateCylinder(double radius, double height)
+        => Rejection(session.Apply(new CreateCylinderCommand { Radius = radius, Height = height }).GetAwaiter().GetResult());
+
     // ADR-0032 item 4 (Q3 A): a move by the offsets of the pad. Translate consumes the body and
     // makes a new one, and the new body becomes the selection.
     public string? Move(Guid body, double dx, double dy, double dz)

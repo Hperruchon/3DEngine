@@ -7,7 +7,7 @@ date: 2026-10-28
 supersedes: []
 superseded-by: []
 amends: ['0026', '0031']
-amended-by: ['0034']
+amended-by: ['0034', '0076']
 affects:
   - 3DEngine.Core/Numeric/**
   - 3DEngine.Core/Input/**
@@ -84,7 +84,8 @@ The decision sheet does not answer three questions. On 2026-10-28 the owner answ
    sketch are in ADR-0034 items 7 and 8. A pad that names a selection closes when the selection changes: "Move" when
    the selected body changes or leaves the list, and a pad of a sketch when the selection of the sketch changes.
    "New box" and "Next point" name no selection, and they stay open. After an apply, the pad ignores each other apply
-   until the host ends it, so a key repeat or two presses of Enter give one command.
+   until the host ends it, so a key repeat or two presses of Enter give one command. ADR-0076 item 7 amends this
+   item: a list "New" takes the place of the button "New box", and its entry "Box" opens the same pad.
 5. **The display (R10-Q1).** The pad is a second window of the R7b user interface. It shows the three fields, the
    value of the active field or its error, and the buttons `7 8 9 ( )`, `4 5 6 * pi`, `1 2 3 - sqrt(`, `0 . + /`
    and Delete, Clear, Next, Apply and Cancel. Each control is at least 44 pixels high (ADR-0027 item 6).
@@ -133,3 +134,4 @@ R-0041 closes.
   (V34, Q6). Item 6: the text fields are disabled while the pad is open (V33, Q6).
 - 2026-10-30 · TASK-0119 · Item 7: the pad shows the length unit of the session, which the header of the file gives
   (P8e), not the constant `mm`.
+- 2026-11-06 · TASK-0244 · ADR-0076 item 7 amends item 4: the list "New" holds the box and the cylinder.
