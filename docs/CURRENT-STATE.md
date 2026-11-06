@@ -6850,3 +6850,47 @@ the same job, the eleventh such failure.
 New tests: 5. The test list holds 1953 (1377 in `Engine.Tests`, 337 in `3DEngine.Tests`, 236 in `3DEngine.ImageTests`, 3
 in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
 entries: 15 of 15. New diagnostic codes: 0. Since the review of v0.223, 1 product milestone and 5 entries followed it.
+
+## v0.229 — The readers of a file, the pin rule, the smoke test and the comparison hold their next forms (P0.97, TASK-0242)
+
+The codebase review of 2026-11-06 (d) found E163, T152 and T153 (medium) and E158 to E161 and T155 to T159 (low). They
+come after the next product phase, K5b, and after P0.98.
+
+**The change.**
+- E158: each reader of a document file gives `E-IO-LOAD-FAILED` for a path with a NUL character or a device name.
+- E159: the host compares the unsaved folder with no case on Windows and macOS.
+- E160: the reasons of `DatumResolver` name CreateCylinder. The comment of `Engine.Contracts/Sketch/DatumRecord.cs` stays,
+  because the task forbids `Engine.Contracts`.
+- E161: the probe of the determinism hash holds a circle extrude, a cylinder, a move and a cut. Its hash changes on each
+  platform: `1c56cbddd4caa83557fd5756427668795cbc1096d61767c5588d3b447dca30ba`. Step 10 of the test sheet of the phone gives it.
+- E163: the bus refuses a command with no value for a required field, before the handler, with the new code
+  `E-CMD-FIELD-MISSING`; `docs/diagnostics.md` and the schema of the diagnostics list it.
+- T152: the comparison of the hashes runs when the gate passed, also when the emulator job failed, and then compares the
+  three desktop runners with a warning.
+- T153 and T157: the smoke test fails on a native crash of the program and on a hash with no line of the probe, each
+  with its reason. T158: each call of adb has a limit.
+- T155 and T156: the pin rule decodes the escapes of MSBuild; a property or an item list in an Update or a Remove of a
+  package item, and a Remove or an Update of a SupportedPlatform, are offences.
+- T159 is fixed by the entry v0.225.
+
+**Proof.** Four new tests. An injection of E158, E159 and E163 each fails a test. The three injections of the review for
+T155 and T156 each fail the changed gate. The fake `adb` gives an error for a native crash and for a hash with no line;
+fake folders show that the comparison takes the three desktop hashes when the emulator job fails, and still requires the
+phone when its job passed. Run 42289169473 showed T152 at work: its emulator job failed, and the comparison gave one hash
+for Ubuntu, Windows and macOS on arm64, `1c56cbddd4caa83557fd5756427668795cbc1096d61767c5588d3b447dca30ba`.
+
+**The cause of the failures of the emulator job (V105).** The lines of P0.98 give it in run 42289169473: the activity was
+created at 20:35:59.211, destroyed at 20:35:59.596, and created again "with a saved state" at 20:35:59.612; the runtime
+ended the process with the code 0 at 20:35:59.619. Android relaunched the activity with no call of
+`OnConfigurationChanged`, and SDL ends the process when an activity starts again in it. The launcher was resumed before
+the start, so the wait of P0.98 does not prevent it. A phone can relaunch an activity in the same way, so this is a
+defect of the program, not of the emulator. A task after R12b holds it.
+
+**What stays.** No run compared the hash of the phone with the new probe yet.
+
+**A correction.** None.
+
+New tests: 4. The test list holds 1957 (1381 in `Engine.Tests`, 337 in `3DEngine.Tests`, 236 in `3DEngine.ImageTests`, 3
+in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
+entries: 15 of 15. New diagnostic codes: 1 (`E-CMD-FIELD-MISSING`). Since the review of v0.223, 1 product milestone and 6
+entries followed it.

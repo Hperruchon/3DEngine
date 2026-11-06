@@ -127,6 +127,9 @@ public static class DiagnosticCodes
 
     // ADR-0071 (phase P8b1, TASK-0202): the kind of a Document, and a reference of an assembly.
     public const string CommandKindRefused = "E-CMD-KIND-REFUSED";
+
+    // Finding E163 of the codebase review of 2026-11-06 (d) (TASK-0242): a command with no value for a required field.
+    public const string CommandFieldMissing = "E-CMD-FIELD-MISSING";
     public const string AssemblyReferenceInvalid = "E-ASSEMBLY-REFERENCE-INVALID";
     public const string AssemblyIdInUse = "E-ASSEMBLY-ID-IN-USE";
 }
