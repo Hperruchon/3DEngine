@@ -300,6 +300,44 @@ public class BodyActionsTests
         }
     }
 
+    // Finding V113 of the codebase review of 2026-11-06 (e) (TASK-0252): the probe of the review. A rebuild that fails keeps
+    // the geometry key and gives the body a fault; the next frame of the host gives the live bodies to Forget, and the kept
+    // entry of the face is gone, so the face is no longer selected.
+    [Fact]
+    public async Task A_Fault_Of_The_Body_Clears_The_Kept_Face()
+    {
+        static Guid Out(CommandResult result, string name)
+        {
+            Assert.True(result.Outputs.TryGet<Guid>(name, out var value), $"{result.CommandName}: {result.Error?.Code} {result.Error?.Message}");
+            return value;
+        }
+
+        using var host = new EngineHost(new ManifoldGeometryBackend());
+        var sketch = Out(await host.Session.Apply(new CreateSketchCommand { DatumId = Datums.XY.Id }), "sketchId");
+        (double X, double Y)[] corners = [(0, 0), (10, 0), (10, 6), (0, 6)];
+        var points = new List<Guid>();
+        foreach (var (x, y) in corners)
+            points.Add(Out(await host.Session.Apply(new AddSketchPointCommand { SketchId = sketch, X = x, Y = y }), "pointId"));
+        var lines = new List<Guid>();
+        for (var i = 0; i < points.Count; i++)
+            lines.Add(Out(await host.Session.Apply(new AddSketchLineCommand { SketchId = sketch, StartPointId = points[i], EndPointId = points[(i + 1) % points.Count] }), "lineId"));
+        var body = Out(await host.Session.Apply(new ExtrudeCommand { SketchId = sketch, Distance = 3 }), "bodyId");
+        PickHit? Top(double x, double y) => new PickHit(body, 1) { Point = (5, 3, 3), Normal = (0, 0, 1) };
+        var actions = new BodyActions(host.Session);
+        var key = Guid.NewGuid();
+        actions.Apply(new SelectIntent(0, 0), Top, []);
+        actions.Apply(new SelectIntent(0, 0), Top, []);
+        Assert.NotNull(actions.SelectedFace(key));
+
+        Assert.Equal(CommandStatus.Applied, (await host.Session.Apply(new DeleteSketchItemCommand { SketchId = sketch, ItemId = lines[0] })).Status);
+        var fault = await host.Session.Read((document, _) => document.Bodies.Single(candidate => candidate.Handle.Id == body).Fault);
+        Assert.NotNull(fault);
+        actions.Forget([new LiveBody(body, "Extrude", null, true, fault)]);
+
+        Assert.Null(actions.SelectedFace(key));
+        Assert.Equal((body, (DatumReference?)null), (actions.Selection, actions.Face));
+    }
+
     // Finding V107 of the codebase review of 2026-11-06 (d) (TASK-0243): the outline of a face with the offset of a drag is
     // the outline of the moved face, as the renderer moves the mesh; with no offset it does not move.
     [Fact]

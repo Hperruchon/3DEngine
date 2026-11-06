@@ -287,6 +287,9 @@ internal sealed unsafe partial class DesktopUi : IDisposable
     // The text of the size of the selected body for this frame, or null.
     private string? _size;
 
+    // V118 (TASK-0252): the insets of the safe area of the display, as left, top, right and bottom.
+    private Vector4 _inset;
+
     // ADR-0075 item 3 (phase R12a, TASK-0236): the selected face for this frame, or null.
     private FaceLine? _face;
 
@@ -368,8 +371,14 @@ internal sealed unsafe partial class DesktopUi : IDisposable
     public IReadOnlyList<Vector4> FixedRectangles => _fixed;
 
     // True when a point of the display is over a panel of the last frame.
+    //
+    // Finding V116 of the codebase review of 2026-11-06 (e) (TASK-0252): while a list of the panel is open, each point
+    // belongs to the panel, so a press outside the list goes to the library, which closes the list, and the tap does not
+    // reach the scene, as a list of a desktop program does. Until TASK-0252 the press went to the scene, and the list
+    // stayed open.
     public bool OverPanel(double x, double y)
-        => _panels.Concat(_fixed).Any(panel => x >= panel.X && x < panel.Z && y >= panel.Y && y < panel.W) || OverRing(x, y);
+        => _cutList is not null || _newList is not null
+            || _panels.Concat(_fixed).Any(panel => x >= panel.X && x < panel.Z && y >= panel.Y && y < panel.W) || OverRing(x, y);
 
     // The font atlas as RGBA pixels, for the renderer to upload. It is built once.
     public (uint Width, uint Height, byte[] Rgba) FontAtlas() => _atlas;
@@ -482,10 +491,11 @@ internal sealed unsafe partial class DesktopUi : IDisposable
         => (body.Name ?? $"{body.Kind}  {body.Id.ToString()[..8]}") + (body.Visible ? string.Empty : "  (hidden)")
         + (body.Fault is null ? string.Empty : "  (fault)");
 
-    public UiDrawData Frame(float deltaSeconds, Vector2 displaySize, Vector2 framebufferScale, IReadOnlyList<LiveBody> bodies, Guid? selection = null, DocumentLine? document = null, SketchOverlay.Strokes? sketches = null, SketchPanel? sketchPanel = null, ImagePanel? imagePanel = null, DimensionOverlay.Strokes? dimensions = null, string? size = null, FaceLine? face = null, Vector2? ringCentre = null, float ringBody = 0f)
+    public UiDrawData Frame(float deltaSeconds, Vector2 displaySize, Vector2 framebufferScale, IReadOnlyList<LiveBody> bodies, Guid? selection = null, DocumentLine? document = null, SketchOverlay.Strokes? sketches = null, SketchPanel? sketchPanel = null, ImagePanel? imagePanel = null, DimensionOverlay.Strokes? dimensions = null, string? size = null, FaceLine? face = null, Vector2? ringCentre = null, float ringBody = 0f, Vector4 safeInsets = default)
     {
         ArgumentNullException.ThrowIfNull(bodies);
         _size = size;
+        _inset = safeInsets;
         _face = face;
         _sketchActive = sketchPanel?.Active is not null;
         ImGui.SetCurrentContext(_context);

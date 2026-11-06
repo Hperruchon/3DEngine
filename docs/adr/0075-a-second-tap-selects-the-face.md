@@ -93,7 +93,8 @@ The standing order of 2026-11-05 gives A for each question.
    selected body clears the face. The pick of the desktop gives `PickHit`, with its point and its normal (ADR-0053
    item 5). The face is a state of the client (ADR-0007): no command and no event names it.
 3. **The panel and the mark (Q3 A).** `BodyActions.SelectedFace` gives the entry of `GetFaces` with the name of the
-   selected face; a name that the body no longer has, or a body whose faces are not known, clears the face. The
+   selected face; a name that the body no longer has, or a body whose faces are not known, clears the face. A body with
+   a fault keeps its geometry key, so the kept entry of such a body is gone at the next frame (finding V113, TASK-0252). The
    overlay draws the outline in the colour and the width of a selected item, over the scene and under the panel. The
    controls of the selected body give one line: "Face", the element of the name and the area, and, for a face with a
    normal, the button "Sketch on face", which makes the sketch from the point and the normal of the entry, as the armed
@@ -120,3 +121,5 @@ The standing order of 2026-11-05 gives A for each question.
   keeps it; item 3: the outline follows a drag of the gizmo, and the entry comes again only for a new geometry key. The
   affects field names the six files of items 2 and 3 (finding V111).
 - 2026-11-06 · TASK-0245 · ADR-0077 amends item 2: a tap on the selected face near one of its edges selects the edge.
+- 2026-11-06 · TASK-0252 · Item 3: a fault of the body clears the kept entry of its face (finding V113 of the codebase
+  review of 2026-11-06 (e)).
