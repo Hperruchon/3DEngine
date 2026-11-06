@@ -178,6 +178,7 @@ Therefore each approved objective must have a track here.
 - P8b1 — A document is a part or an assembly of references to parts at a fixed version. v0.202, TASK-0202, ADR-0071.
 - R14d — The native builds of Manifold and cimgui for android-arm64 and android-x64 run on GitHub Actions. v0.203, TASK-0196, ADR-0061.
 - P0.85 — Each hole of a face has its owner, the STEP export refuses what a strict reader refuses, and the session of the desktop holds an open. v0.204, TASK-0197.
+- P0.88 — An export of the command line resolves a link of each folder of its paths. v0.205, TASK-0221.
 
 ## Track 0 — Foundations
 
