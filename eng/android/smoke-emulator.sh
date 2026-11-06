@@ -43,8 +43,11 @@ timeout 300 "$adb" install -r "$apk" || fail "the install of the APK did not end
 "$adb" logcat -c
 # TASK-0235: the output of the start is a public annotation; until TASK-0235 it went to /dev/null, and a start that
 # failed gave no cause.
-timeout 60 "$adb" shell am start -W -n org.threedengine.phone/org.threedengine.phone.MainActivity --ez probe true 2>&1 | tr -d '\r' \
-  | while IFS= read -r line; do echo "::notice title=am start::${line:0:300}"; done || true
+# TASK-0239: GitHub keeps 10 annotations of each level for each step. The seven lines of the start took seven notices,
+# and the line of the exception of the program was lost (run 42270121672), so the start is one notice.
+start=$(timeout 60 "$adb" shell am start -W -n org.threedengine.phone/org.threedengine.phone.MainActivity --ez probe true 2>&1 \
+  | tr -d '\r' | paste -sd '|' - || true)
+echo "::notice title=am start::${start:0:600}"
 
 started=0
 drawn=0
@@ -57,22 +60,30 @@ for _ in $(seq 1 60); do
   [ "$drawn" = 1 ] && break
 done
 
-grep "3DEngine:" "$report" | head -60 | while IFS= read -r line; do echo "::notice title=Program::${line:0:300}"; done || true
-grep -E "FATAL|AndroidRuntime" "$report" | head -12 | while IFS= read -r line; do echo "::warning title=Android::${line:0:300}"; done || true
+# TASK-0239: the lines of the program, with no line of the determinism hash, which the hash file holds. The lines of
+# the stack of an exception go into errors below.
+grep "3DEngine:" "$report" | grep -v "3DEngine: determinism-line \|3DEngine: | " | head -8 \
+  | while IFS= read -r line; do echo "::notice title=Program::${line:0:300}"; done || true
+grep -E "FATAL|AndroidRuntime" "$report" | tail -n 4 | while IFS= read -r line; do echo "::warning title=Android::${line:0:300}"; done || true
 echo "started=$started drawn=$drawn"
 if [ "$started" != 1 ]; then
   # TASK-0235: the lines of Android about the package, its process and the runtime of .NET, as public annotations.
-  "$adb" shell pm list packages org.threedengine.phone 2>&1 | tr -d '\r' | while IFS= read -r line; do echo "::warning title=Package::$line"; done || true
-  echo "::warning title=Process::pid $("$adb" shell pidof org.threedengine.phone 2>/dev/null | tr -d '\r')"
-  grep -iE "threedengine|monodroid|mono-rt|DOTNET|SDL|libc  |DEBUG   |ActivityTaskManager|ActivityManager: (Start|Process|Kill)" "$report" \
-    | head -40 | while IFS= read -r line; do echo "::warning title=Android log::${line:0:300}"; done || true
+  # Finding 1 of the review of Codex of v0.220 (TASK-0239): each command has a limit, so a device that does not answer
+  # does not hold the job. Finding 2: the last lines of the filter, which are the lines before the exit, and not the
+  # first 40, because GitHub shows 10 warnings only.
+  timeout 30 "$adb" shell pm list packages org.threedengine.phone 2>&1 | tr -d '\r' | while IFS= read -r line; do echo "::warning title=Package::$line"; done || true
+  echo "::warning title=Process::pid $(timeout 30 "$adb" shell pidof org.threedengine.phone 2>/dev/null | tr -d '\r' || true)"
+  grep -iE "threedengine|monodroid|mono-rt|DOTNET|SDL|libc  |DEBUG   |ActivityManager: (Start|Process|Kill)" "$report" \
+    | tail -n 3 | while IFS= read -r line; do echo "::warning title=Android log::${line:0:300}"; done || true
   fail "the program did not write its line of the start in 120 seconds"
 fi
 # Finding T149 of the codebase review of 2026-11-06 (c) (TASK-0231): PhoneHost writes the line "ended" only for an
 # exception, and the line of the start comes before the session, the window and the engine. An exception after the start
 # passed the job. Now the line "ended", or a fatal exception of the process of the program, fails it.
-if grep -q "3DEngine: the session of the phone ended" "$report"; then
-  fail "the session of the phone ended with an exception; see the lines of the program"
+# TASK-0239: the failure gives the line "ended" itself, and the first lines of the stack as errors.
+if ended=$(grep -m 1 "3DEngine: the session of the phone ended" "$report"); then
+  grep "3DEngine: | " "$report" | head -8 | while IFS= read -r line; do echo "::error title=Stack::${line:0:300}"; done || true
+  fail "${ended:0:400}"
 fi
 if grep -A 3 "FATAL EXCEPTION" "$report" | grep -q "Process: org.threedengine.phone"; then
   fail "the process of the program ended with a fatal exception; see the lines of Android"

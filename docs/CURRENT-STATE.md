@@ -6694,3 +6694,31 @@ side is 64 facets, so the volume of a cut differs from a true cylinder by about 
 New tests: 13. The test list holds 1944 (1376 in `Engine.Tests`, 335 in `3DEngine.Tests`, 230 in `3DEngine.ImageTests`,
 3 in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
 entries: 15 of 15. New diagnostic codes: 0. Since the review of v0.214, 4 product milestones and 9 entries followed it.
+
+## v0.224 — The smoke test of the emulator gives the exception of the program as public annotations (P0.95, TASK-0239)
+
+The run of `main` after the merge of v0.222 (run 42270121672) failed in the emulator job, the fifth such failure with
+no change of the phone. The program wrote its line of the start and the correct determinism hash, and then the runtime
+of Android wrote "VM exiting with result code 0". The script failed on the line "ended" of PhoneHost, but no annotation
+showed that line: GitHub keeps 10 annotations of each level for each step, and the seven lines of `am start` and the
+lines of the hash came first.
+
+**The change.**
+- The output of `am start` is one notice.
+- The notices of the program leave out the lines of the hash, which the hash file holds, and the lines of a stack.
+- The line "ended" is the text of the failure, and the first eight lines of its stack are errors.
+- `pm` and `pidof` have a limit of 30 seconds, and the filter of the log gives its last three lines (findings 1 and 2 of
+  the review of Codex of v0.220).
+
+**Proof.** The probe of T149 runs the script with a fake `adb` for six cases, two of them new. Each case gives the same
+exit before and after the change. The case with twelve lines of the hash and twelve lines of the stack gave 28 notices
+and the text "see the lines of the program"; it now gives 4 notices, 8 errors of the stack, and the line "ended" as the
+text of the failure. Run 42274351754 passed, with one notice for the start and the four lines of the program.
+
+**What stays.** The cause of the five failures is not known. The next failure gives its exception.
+
+**A correction.** None.
+
+New tests: 0. The test list holds 1944 (1376 in `Engine.Tests`, 335 in `3DEngine.Tests`, 230 in `3DEngine.ImageTests`, 3
+in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
+entries: 15 of 15. New diagnostic codes: 0. Since the review of v0.214, 4 product milestones and 10 entries followed it.
