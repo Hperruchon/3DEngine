@@ -214,12 +214,14 @@ public static class Cli
 
         // Finding E155 of the codebase review of 2026-11-06 (b) (TASK-0224): the export made a part session, so an assembly
         // gave E-IO-LOAD-FAILED with the reason "the Document is a part". A file that does not read gives its error later.
+        // Finding E156 of the codebase review of 2026-11-06 (c) (TASK-0231): a path that is not valid threw out of Cli.Run
+        // here, so the read of the kind lets each exception of the read below give its code there.
         string kind;
         try
         {
             kind = Engine.Core.Persistence.DocumentFile.ReadKind(document);
         }
-        catch (Engine.Core.Persistence.DocumentFileException)
+        catch (Exception ex) when (ex is Engine.Core.Persistence.DocumentFileException or IOException or UnauthorizedAccessException or ArgumentException or NotSupportedException)
         {
             kind = Document.Part;
         }

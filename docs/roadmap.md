@@ -184,12 +184,13 @@ Therefore each approved objective must have a track here.
 - Review — The codebase review of 2026-11-06 (b). v0.208, TASK-0223.
 - R14e2 — The Android program builds an APK that draws a document of its own session. v0.209, TASK-0226, ADR-0072.
 - P0.89 — A void on the plane of a distant face is written, a replay and an export know an assembly, and two gates read the transitive form. v0.210, TASK-0224.
+- P0.90 — The start again keeps an unsaved document, a window that does not open gives a code, and the flush holds its place. v0.211, TASK-0225.
 - R14e3 — A person cuts a body in the panel, and the phone keeps its document through the background. v0.212, TASK-0227, ADR-0073.
 - R14f1 — The pipeline builds the APK of the phone at each push. v0.213, TASK-0228.
 - R14f2 — The APK holds its assemblies, and the pipeline starts it on the emulator up to its first frame. v0.214, TASK-0229, ADR-0072.
 - Review — The codebase review of 2026-11-06 (c). v0.215, TASK-0230.
 - R14f3 — The pipeline compares the determinism hash of the phone with the hashes of the desktop runners. v0.216, TASK-0233, ADR-0074.
-- P0.90 — The start again keeps an unsaved document, a window that does not open gives a code, and the flush holds its place. v0.211, TASK-0225.
+- P0.91 — The review gate counts each product phase, and the export, the host and three checks hold their next forms. v0.217, TASK-0231.
 
 ## Track 0 — Foundations
 
