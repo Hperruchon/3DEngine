@@ -23,21 +23,22 @@ fail() {
   if [ -n "$emulator_log" ] && [ -f "$emulator_log" ]; then
     tail -n 12 "$emulator_log" | while IFS= read -r line; do echo "::warning title=Emulator::${line:0:300}"; done
   fi
-  "$adb" devices -l | while IFS= read -r line; do echo "::warning title=adb devices::${line:0:300}"; done
+  # Finding T158 of the codebase review of 2026-11-06 (d) (TASK-0242): each call of adb has a limit.
+  timeout 30 "$adb" devices -l | while IFS= read -r line; do echo "::warning title=adb devices::${line:0:300}"; done || true
   exit 1
 }
 
 timeout 300 "$adb" wait-for-device || fail "no device came in 300 seconds"
 booted=0
 for _ in $(seq 1 150); do
-  if [ "$("$adb" shell getprop sys.boot_completed 2>/dev/null | tr -d '\r')" = "1" ]; then
+  if [ "$(timeout 30 "$adb" shell getprop sys.boot_completed 2>/dev/null | tr -d '\r' || true)" = "1" ]; then
     booted=1
     break
   fi
   sleep 4
 done
 [ "$booted" = 1 ] || fail "the emulator did not complete its boot in 600 seconds"
-"$adb" shell getprop ro.build.version.release | tr -d '\r' | sed 's/^/Android /'
+timeout 30 "$adb" shell getprop ro.build.version.release | tr -d '\r' | sed 's/^/Android /' || true
 
 timeout 300 "$adb" install -r "$apk" || fail "the install of the APK did not end in 300 seconds"
 # Finding V105 of the codebase review of 2026-11-06 (d) (TASK-0243): the boot flag comes before the launcher shows, and a
@@ -50,7 +51,7 @@ for _ in $(seq 1 60); do
   sleep 2
 done
 echo "::notice title=Launcher::${launcher:0:200}"
-"$adb" logcat -c
+timeout 30 "$adb" logcat -c || true
 # TASK-0235: the output of the start is a public annotation; until TASK-0235 it went to /dev/null, and a start that
 # failed gave no cause.
 # TASK-0239: GitHub keeps 10 annotations of each level for each step. The seven lines of the start took seven notices,
@@ -98,10 +99,18 @@ fi
 if grep -A 3 "FATAL EXCEPTION" "$report" | grep -q "Process: org.threedengine.phone"; then
   fail "the process of the program ended with a fatal exception; see the lines of Android"
 fi
+# Finding T153 of the codebase review of 2026-11-06 (d) (TASK-0242): a native crash writes "Fatal signal" and a tombstone
+# of DEBUG, and no FATAL EXCEPTION, so it passed the job.
+if signal=$(grep -m 1 -E "Fatal signal .*org\.threedengine\.phone|Fatal signal .*threedengine\.phone|DEBUG +: .*>>> org\.threedengine\.phone" "$report"); then
+  fail "the process of the program ended with a native crash: ${signal:0:300}"
+fi
 if [ -n "$hash_file" ]; then
   hash=$(grep -o "3DEngine: determinism [0-9a-f]\{64\}" "$report" | head -1 | cut -d' ' -f3 || true)
   [ -n "$hash" ] || fail "the program wrote no determinism hash"
   mkdir -p "$(dirname "$hash_file")"
+  # Finding T157 of the codebase review of 2026-11-06 (d) (TASK-0242): with no line of the probe, grep gave 1 and the
+  # shell left with no reason.
+  grep -q "3DEngine: determinism-line " "$report" || fail "the program wrote the hash and no line of the probe"
   { echo "$hash"; grep -o "3DEngine: determinism-line .*" "$report" | sed 's/^3DEngine: determinism-line //' | tr -d '\r'; } > "$hash_file"
   echo "::notice title=Determinism::android-x64 gives $hash"
 fi

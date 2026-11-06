@@ -279,7 +279,10 @@ public static class DocumentFile
                 stream.ReadExactly(bytes);
             }
         }
-        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        // Finding E158 of the codebase review of 2026-11-06 (d) (TASK-0242): a path with a NUL character or a device name
+        // gives ArgumentException or NotSupportedException, which left Check, ReadKind and ReadLengthUnit; the fix of E156
+        // covered the command line only.
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or ArgumentException or NotSupportedException)
         {
             throw DocumentFileException.Load($"The file {path} cannot be read: {ex.Message}");
         }

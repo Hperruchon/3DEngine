@@ -185,6 +185,15 @@ public sealed class CommandBus
                 DiagnosticCodes.CommandKindRefused,
                 $"The command '{command.Name}' does not apply in a document of the kind '{_document.Kind}' (ADR-0071 item 2)."), stopwatch);
 
+        // Finding E163 of the codebase review of 2026-11-06 (d) (TASK-0242): a caller in the process can give a null value
+        // to a required field, and the file then held an entry that an open refuses. The refusal comes before the handler,
+        // so the backend and the Document do not change.
+        if (handler is Persistence.ICommandEncoder fields
+            && handler.Parameters.FirstOrDefault(field => field.Value.Required && fields.Encode(command).GetValueOrDefault(field.Key) is null) is { Key: { } missing })
+            return Reject(command, new ErrorDetail(
+                DiagnosticCodes.CommandFieldMissing,
+                $"The command '{command.Name}' has no value for its required field '{missing}'."), stopwatch);
+
         // 2. Optimistic version check
         if (command.ExpectedDocumentVersion is { } expected && expected != _document.Version)
         {

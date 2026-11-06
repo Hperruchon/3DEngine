@@ -1,5 +1,9 @@
 // Compares the determinism hashes of the three runners (TASK-0156, anti-objective 16).
-// Usage: node eng/compare-determinism.js <folder>
+// Usage: node eng/compare-determinism.js <folder> [result of the emulator job]
+//
+// Finding T152 of the codebase review of 2026-11-06 (d) (TASK-0242): a failure of the emulator job skipped this job, so
+// seven runs compared no hash at all. The job now runs when the gate passed; the three desktop runners are required, and
+// the phone is required only when its job passed. With no hash of the phone the script compares three and says so.
 //
 // The folder holds one subfolder for each artifact "determinism-<os>" of the job "Gate", each with
 // the file hash.txt that Engine.Tests/ReplayDeterminism/CrossPlatformHashTests.cs writes: the hash on
@@ -11,12 +15,18 @@ const fs = require('fs');
 const path = require('path');
 
 // Phase R14f3 (ADR-0074, TASK-0233): the program of the phone on the emulator of x86-64 is the fourth platform.
-const runners = ['ubuntu-latest', 'windows-latest', 'macos-latest', 'android-x64'];
+const desktop = ['ubuntu-latest', 'windows-latest', 'macos-latest'];
 const folder = process.argv[2];
+const emulator = process.argv[3] ?? 'success';
 if (!folder) {
-  console.error('Usage: node eng/compare-determinism.js <folder>');
+  console.error('Usage: node eng/compare-determinism.js <folder> [result of the emulator job]');
   process.exit(2);
 }
+
+const phone = path.join(folder, 'determinism-android-x64', 'hash.txt');
+const runners = emulator === 'success' || fs.existsSync(phone) ? [...desktop, 'android-x64'] : desktop;
+if (runners.length === desktop.length)
+  console.log(`::warning title=Determinism::the emulator job gave ${emulator} and no hash of the phone, so the three desktop runners are compared`);
 
 const files = {};
 for (const runner of runners) {
@@ -38,7 +48,7 @@ for (const runner of runners) {
 const hashes = runners.map(runner => files[runner][0]);
 for (const runner of runners) console.log(`::notice title=Determinism::${runner} gives ${files[runner][0]}`);
 if (hashes.every(hash => hash === hashes[0])) {
-  console.log('The four platforms give one hash.');
+  console.log(`The ${runners.length} platforms give one hash.`);
   process.exit(0);
 }
 
