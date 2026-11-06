@@ -87,8 +87,9 @@ The standing order of 2026-11-05 gives A for each question.
    and its segments. The length is the sum of the lengths of the segments, each from its exact square, a double before
    its root, as the area of ADR-0058. The schema version of the query stays 1: the field is new, and no field changes.
 3. **The gesture (Q3 A).** `BodyActions` keeps the selected edge by its pair, or none, only while a face is selected. A
-   select intent on the selected body, with a face selected, asks the host for the edge of that face nearest the point
-   of the tap on the screen, at most 12 pixels away; with an edge, it selects that edge and keeps the face. Else the tap
+   select intent, with a face selected, first asks the host for the edge of that face nearest the point of the tap on
+   the screen, at most 12 pixels away, before the pick, so that a tap on each side of an edge on the silhouette selects
+   it (finding V117, TASK-0252); with an edge, it selects that edge and keeps the body and the face. Else the tap
    selects the face under the point, with no edge. `CancelIntent` with `ByKey` goes back from the edge to the face, and
    then to the body. Each change of the face clears the edge. The edge is a state of the client (ADR-0007).
 4. **The panel and the mark.** The overlay draws the segments of the selected edge over the outline of the face, wider.
@@ -119,3 +120,5 @@ for example two faces in one plane on the two sides of the line (item 6).
 - 2026-11-06 · TASK-0251 · Item 6: an edge of one face or of more than two faces, and the outline that agrees with the
   edges (finding E165 of the codebase review of 2026-11-06 (e), the recommended option under the standing order). The
   affects field names the four files of the panel and of the mark that TASK-0245 changed (finding T164).
+- 2026-11-06 · TASK-0252 · Item 3: the host asks for the edge before the pick (finding V117 of the codebase review of
+  2026-11-06 (e)).
