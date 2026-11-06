@@ -74,3 +74,4 @@ are not on the ring yet.
 ## History
 
 - 2026-11-06 · TASK-0253 · The record, Accepted under the standing order.
+- 2026-11-06 · TASK-0253 · Shipped at v0.236.
