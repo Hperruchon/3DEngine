@@ -79,8 +79,9 @@ internal sealed record DeleteSketchItemsAction(IReadOnlyList<Guid> Items) : Pane
 internal sealed record ExtrudeAction(double Distance) : PanelAction;
 
 // The line of the document file in the panel: the name of the file, or null for an
-// unsaved document, and the result of the last save or open.
-internal sealed record DocumentLine(string? FileName, string? Message);
+// unsaved document, and the result of the last save or open. Finding V99 of the codebase review of 2026-11-06 (c)
+// (TASK-0232): a host with no files, as the phone, has a line too, with the message only, so that a rejection shows.
+internal sealed record DocumentLine(string? FileName, string? Message, bool Files = true);
 
 // ADR-0034 item 8: what the window of the sketch shows. Live holds each live sketch; Active is the
 // record of the active sketch, or null in the mode Scene.

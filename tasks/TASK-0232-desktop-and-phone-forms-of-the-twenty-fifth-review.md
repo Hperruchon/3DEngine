@@ -1,7 +1,7 @@
 ---
 id: 0232
 title: The start again sees the commands of the stop, and the panel and the phone hold their next forms
-status: Ready
+status: Active
 phase: P0.92
 opened: 2026-11-06
 depends-on: [0231]
@@ -12,6 +12,8 @@ writes:
   modify:
     - 3DEngine/DesktopEngineHost.cs
     - 3DEngine.App/Ui/DesktopUi.cs
+    - 3DEngine.App/Ui/PanelAction.cs
+    - 3DEngine.App/PhoneLifecycle.cs
     - 3DEngine.App/LocalSessionHost.cs
     - 3DEngine.App/NativeThreeDEngine.cs
     - 3DEngine.Android/PhoneHost.cs
@@ -65,14 +67,20 @@ phone shows the line of the document, the sink of the phone writes outside the c
 
 ## Outcome
 
-Status: Ready
+Status: Active
 
 ## Method
 
 Mechanical: a test or an injection for each finding, before the change.
-Judgement:  to be written in the task.
+Judgement:  V98 keeps the count of lines: the list goes on a new line only when the line has no room, and Show all
+            shares the last line when it fits, so V50 holds. V101 sets the hint to 1, the value that Q1 B keeps.
 Weakest:    to be written at the close.
 
 ## Progress
 
 - 2026-11-06: opened by the codebase review of 2026-11-06 (c).
+- 2026-11-06: the write set takes 3DEngine.App/Ui/PanelAction.cs (the record DocumentLine, V99) and
+  3DEngine.App/PhoneLifecycle.cs (the comments of V101).
+- 2026-11-06: V97, V98 (the list of an extrude and the open list) and V99 have tests that failed before the change, or
+  an injection of the old form that fails them. V100: an injection of the report inside the commit fails the new test.
+  V101 to V103 are texts and one hint; the APK builds with zero warnings.

@@ -33,6 +33,36 @@ public sealed class LocalSessionHostTests
         Assert.Equal(inner.Snapshot(), sink.Snapshot());
     }
 
+    // Finding V100 of the codebase review of 2026-11-06 (c) (TASK-0232): the report of a removed action ran inside the
+    // commit, so a report that threw came out of Append. The report runs out of the commit, and the next action gets the event.
+    [Fact]
+    public async Task A_Report_That_Throws_Does_Not_Stop_The_Commit()
+    {
+        var inner = new InMemoryEventSink();
+        var sink = new FanOutSink(inner) { Report = _ => throw new IOException("probe") };
+        var seen = new List<long>();
+        using var failing = sink.Listen(_ => throw new InvalidOperationException("probe"));
+        using var kept = sink.Listen(record => seen.Add(record.Seq));
+
+        await sink.Append(Event(1));
+
+        Assert.Equal([1L], seen);
+        Assert.Equal(1, inner.Count);
+    }
+
+    // The report still comes, with its code.
+    [Fact]
+    public async Task The_Report_Of_A_Removed_Action_Comes_Out_Of_The_Commit()
+    {
+        var reported = new TaskCompletionSource<string>(TaskCreationOptions.RunContinuationsAsynchronously);
+        var sink = new FanOutSink(new InMemoryEventSink()) { Report = message => reported.TrySetResult(message) };
+        using var failing = sink.Listen(_ => throw new InvalidOperationException("probe"));
+
+        await sink.Append(Event(1));
+
+        Assert.StartsWith(DiagnosticCodes.ApiSubscriptionRemoved, await reported.Task.WaitAsync(TimeSpan.FromSeconds(10)));
+    }
+
     // A subscription after Dispose gets no later event.
     [Fact]
     public async Task A_Disposed_Subscription_Gets_No_Later_Event()

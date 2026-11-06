@@ -60,10 +60,35 @@ internal sealed class FanOutSink(IEventSink inner) : IEventSink
             catch (Exception exception)
             {
                 if (Remove(listener))
-                    Console.Error.WriteLine($"{DiagnosticCodes.ApiSubscriptionRemoved}: the action of a subscription threw "
+                    Announce($"{DiagnosticCodes.ApiSubscriptionRemoved}: the action of a subscription threw "
                         + $"{exception.GetType().Name} at the event {record.Seq} ({record.Kind}), and it receives no later "
                         + $"event: {exception.Message}");
             }
+        }
+    }
+
+    // The channel of the report. The test gives its own, so that it does not change the error output of the process.
+    internal Action<string> Report { get; set; } = message => Console.Error.WriteLine(message);
+
+    // Finding V100 of the codebase review of 2026-11-06 (c) (TASK-0232): the report ran inside the commit, so a report that
+    // threw stopped the commit after the Document held its change, the defect that E67 removed from EventBroadcaster. The
+    // report runs on the thread pool, out of the commit, as EventBroadcaster.Announce does, and a report that throws is lost.
+    private void Announce(string message)
+    {
+        var report = Report;
+        using (ExecutionContext.SuppressFlow())
+        {
+            ThreadPool.QueueUserWorkItem(_ =>
+            {
+                try
+                {
+                    report(message);
+                }
+                catch (Exception)
+                {
+                    // The report is the last channel for this message; no other exists.
+                }
+            });
         }
     }
 
