@@ -85,6 +85,7 @@ internal static class SchemaDiagnosticsEndpoint
         new(DiagnosticCodes.ExportBodyFailed,      "Error",   "EXPORT"), // ADR-0070 item 3, TASK-0200
         new(DiagnosticCodes.ExportKindRefused,     "Error",   "EXPORT"), // finding E155, TASK-0224
         new(DiagnosticCodes.CommandKindRefused,    "Error",   "CMD"), // ADR-0071 item 2, TASK-0202
+        new(DiagnosticCodes.CommandFieldMissing,   "Error",   "CMD"), // finding E163, TASK-0242
         new(DiagnosticCodes.AssemblyReferenceInvalid, "Error", "ASSEMBLY"), // ADR-0071 item 3, TASK-0202
         new(DiagnosticCodes.AssemblyIdInUse,       "Error",   "ASSEMBLY"), // ADR-0071 item 3, TASK-0202
     };

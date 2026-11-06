@@ -1,11 +1,11 @@
 ---
 id: 0242
 title: The readers of a file, the pin rule, the smoke test and the ledger hold their next forms
-status: Ready
+status: Active
 phase: P0.97
 opened: 2026-11-06
 depends-on: [0241]
-governed-by: [0004, 0006, 0015, 0019, 0020, 0021, 0024, 0028, 0031, 0033, 0035, 0037, 0039, 0045, 0051, 0052, 0055, 0059, 0074, 0076]
+governed-by: [0004, 0006, 0013, 0015, 0016, 0019, 0020, 0021, 0024, 0028, 0031, 0033, 0035, 0037, 0039, 0045, 0051, 0052, 0055, 0059, 0074, 0076]
 writes:
   create:
     - tasks/TASK-0242-engine-and-pipeline-forms-of-the-twenty-sixth-review.md
@@ -15,6 +15,15 @@ writes:
     - Engine.Core/Sketch/DatumResolver.cs
     - Engine.Core/Determinism/CrossPlatformProbe.cs
     - Engine.Core/CommandBus.cs
+    - Engine.Core/DiagnosticCodes.cs
+    - docs/diagnostics.md
+    - Engine.Api.Http/Endpoints/SchemaDiagnosticsEndpoint.cs
+    - Engine.Tests/ReplayDeterminism/CrossPlatformHashTests.cs
+    - Engine.Tests/Sketch/SketchReferenceTests.cs
+    - Engine.Tests/Persistence/DocumentFileTests.cs
+    - Engine.Tests/Http/DocumentEndpointTests.cs
+    - eng/compare-determinism.js
+    - docs/android-test-sheet.md
     - Engine.Tests/Governance/DependencyDirectionGateTests.cs
     - eng/android/smoke-emulator.sh
     - .github/workflows/ci.yml
@@ -67,14 +76,20 @@ test fails on a native crash and on a hash with no line.
 
 ## Outcome
 
-Status: Ready
+Status: Active
 
 ## Method
 
 Mechanical: a test or an injection for each finding, before the change.
-Judgement:  to be written in the task.
+Judgement:  E163 has a new code, E-CMD-FIELD-MISSING, because E-IO-NOT-ENCODABLE means a value that the file cannot
+            hold and comes after the handler; the comment of E160 in Engine.Contracts/Sketch/DatumRecord.cs stays, because
+            the task forbids Engine.Contracts; T159 is fixed by the entry v0.225.
 Weakest:    to be written at the close.
 
 ## Progress
 
 - 2026-11-06: opened by the codebase review of 2026-11-06 (d).
+- 2026-11-06: E158 to E161, E163, T152, T153 and T155 to T158. An injection of E158, E159 and E163 each fails a test; the
+  three injections of the review for T155 and T156 each fail the changed gate; the fake adb gives an error for a native
+  crash and for a hash with no line (T153, T157); fake folders show that the comparison takes the three desktop hashes
+  when the emulator job fails (T152). The probe holds a circle, a cylinder, a move and a cut, so its hash changes (E161).

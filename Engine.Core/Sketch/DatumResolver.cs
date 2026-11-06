@@ -68,7 +68,7 @@ public static class DatumResolver
         CreateCylinderCommand when reference.ItemId is not null =>
             "A face of a cylinder takes no itemId.",
         ExtrudeCommand or CreateBoxCommand or CreateCylinderCommand => null,
-        _ => $"No CreateBox or Extrude in effect has the id '{reference.FeatureId}'.",
+        _ => $"No CreateBox, CreateCylinder or Extrude in effect has the id '{reference.FeatureId}'.",
     };
 
     // ADR-0051 item 2: the frame of the reference, or the reason that it does not resolve. Place is
@@ -80,7 +80,7 @@ public static class DatumResolver
     {
         var feature = graph.Creator(reference.FeatureId);
         if (feature is null || graph.Order(feature.CommandId) >= place)
-            return (null, $"No CreateBox or Extrude in effect before the datum has the id '{reference.FeatureId}'.");
+            return (null, $"No CreateBox, CreateCylinder or Extrude in effect before the datum has the id '{reference.FeatureId}'.");
         if (Form(reference, feature) is { } wrong)
             return (null, wrong);
 
@@ -238,7 +238,7 @@ public static class DatumResolver
         CreateCylinderCommand =>
             "A cylinder gives no edge and no vertex to a sketch in this slice (ADR-0076 item 4).",
         ExtrudeCommand or CreateBoxCommand => null,
-        _ => $"No CreateBox or Extrude in effect has the id '{reference.FeatureId}'.",
+        _ => $"No CreateBox, CreateCylinder or Extrude in effect has the id '{reference.FeatureId}'.",
     };
 
     // ADR-0052 items 1 and 3: the positions in the plane of the sketch of the point of a vertex, or of
@@ -249,7 +249,7 @@ public static class DatumResolver
     {
         var feature = graph.Creator(reference.FeatureId);
         if (feature is null || graph.Order(feature.CommandId) >= place)
-            return (null, $"No CreateBox or Extrude in effect before the reference has the id '{reference.FeatureId}'.");
+            return (null, $"No CreateBox, CreateCylinder or Extrude in effect before the reference has the id '{reference.FeatureId}'.");
         if (PointForm(reference, feature) is { } wrong)
             return (null, wrong);
         if (frameOf(sketch.DatumId) is not { } plane)

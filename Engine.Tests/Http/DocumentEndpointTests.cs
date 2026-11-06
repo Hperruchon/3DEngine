@@ -101,6 +101,30 @@ public sealed class DocumentEndpointTests : IDisposable
         Assert.Null(host.FileName);
     }
 
+    // Finding E159 of the codebase review of 2026-11-06 (d) (TASK-0242): on Windows and macOS a journal of the unsaved
+    // folder that a host opens by a path in another case is still a document with no name. Linux keeps the case.
+    [Fact]
+    public async Task A_Journal_Opened_By_A_Path_In_Another_Case_Has_No_Name_Where_The_Case_Does_Not_Count()
+    {
+        var unsaved = Path.Combine(_folder, "unsaved");
+        string journal;
+        using (var first = new EngineHost(new InProcessMeshBackend(), new DocumentFileOptions(null, unsaved)))
+        {
+            await first.Session.Apply(new NoOpCommand { Echo = "x" });
+            journal = first.Session.FilePath!;
+            first.Session.Close();
+        }
+
+        var other = Path.Combine(Path.GetDirectoryName(journal)!.ToUpperInvariant(), Path.GetFileName(journal));
+        if (EngineHost.FolderCase == StringComparison.Ordinal)
+            return;
+
+        Assert.True(File.Exists(other));
+        using var host = new EngineHost(new InProcessMeshBackend(), new DocumentFileOptions(other, unsaved));
+        Assert.Null(host.FileName);
+        host.Session.Close();
+    }
+
     [Fact]
     public async Task A_Save_To_A_Name_That_Exists_Gives_A_Conflict()
     {

@@ -632,6 +632,38 @@ public sealed class DocumentFileTests : IDisposable
         Assert.False(Directory.Exists(blocker));
     }
 
+    // Finding E158 of the codebase review of 2026-11-06 (d) (TASK-0242): a path with a NUL character gives the code of a load
+    // that fails from each reader of a file, not an ArgumentException.
+    [Fact]
+    public async Task Each_Reader_Of_A_File_Gives_A_Code_For_A_Path_That_Is_Not_Valid()
+    {
+        const string path = "a\0b.3de";
+
+        Assert.Equal(DiagnosticCodes.IoLoadFailed, Assert.Throws<DocumentFileException>(() => DocumentFile.ReadKind(path)).Code);
+        Assert.Equal(DiagnosticCodes.IoLoadFailed, Assert.Throws<DocumentFileException>(() => DocumentFile.ReadLengthUnit(path)).Code);
+        Assert.Equal(DiagnosticCodes.IoLoadFailed, (await DocumentFile.Check(path, new InProcessMeshBackend(), hold: false))?.Code);
+    }
+
+    // Finding E163 of the codebase review of 2026-11-06 (d) (TASK-0242): a command with a null value of a required field is
+    // refused before the handler, so the file holds no entry that an open refuses, and the document opens again.
+    [Fact]
+    public async Task A_Null_Required_Field_Is_Refused_And_The_Document_Opens_Again()
+    {
+        var path = FileNamed("null");
+        var session = NewSession();
+        DocumentFile.Create(session, path);
+
+        var refused = await session.Apply(new NoOpCommand { Echo = null! });
+        await session.Apply(new NoOpCommand { Echo = "kept" });
+        session.Close();
+
+        Assert.Equal((CommandStatus.Rejected, DiagnosticCodes.CommandFieldMissing), (refused.Status, refused.Error?.Code));
+        var reopened = NewSession();
+        await DocumentFile.Open(reopened, path);
+        Assert.Equal(1, (await State(reopened)).Version);
+        reopened.Close();
+    }
+
     // E84 and finding E162 of the codebase review of 2026-11-06 (d) (TASK-0241): until TASK-0241 a save closed the file
     // before the new open, so an open that failed left no stream, and E84 broke the journal. Now the old file stays open
     // until the new file holds each line, so a new file that does not open fails the save only: the journal stays whole
