@@ -173,6 +173,7 @@ Therefore each approved objective must have a track here.
 - R14b — The host owns the document session, the surface mounts on it as an option, and an open stays in the same process. v0.196, TASK-0194, ADR-0061.
 - R14c — ppy.SDL3-CS replaces Alimer.Bindings.SDL on the desktop, with no change of behaviour. v0.197, TASK-0195, ADR-0061.
 - K6a — The live bodies leave the engine as one STEP file of their planar faces. v0.198, TASK-0200, ADR-0070.
+- P0.87 — An export of the command line refuses a file that is its own document file. v0.200, TASK-0220.
 
 ## Track 0 — Foundations
 
