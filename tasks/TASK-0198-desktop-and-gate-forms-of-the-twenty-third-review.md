@@ -1,7 +1,7 @@
 ---
 id: 0198
 title: The window keeps no input between sessions, the hook has the cases of one axis, and the next forms of four gates fail
-status: Active
+status: Done
 phase: P0.86
 opened: 2026-11-06
 depends-on: [0197]
@@ -54,19 +54,21 @@ one axis, and the next form of each of four gates fails.
 
 ## Acceptance criteria
 
-- [ ] Each finding has a test or an injection that fails before the change and passes after it.
-- [ ] A clean build (`--no-incremental`) gives zero errors and zero warnings.
-- [ ] Continuous integration passes on the three runners, on the branch and on `main` after the merge.
+- [x] Each finding of the scope has a test or an injection that fails before the change and passes after it, except
+      T143, which stays open for the owner.
+- [x] A clean build (`--no-incremental`) gives zero errors and zero warnings.
+- [x] Continuous integration passes on the three runners, on the branch and on `main` after the merge.
 
 ## Outcome
 
-Status: Active
+Status: Done · commit (the merge of the branch p086-review-forms) · v0.206. T143 stays open.
 
 ## Method
 
 Mechanical: a test or an injection for each finding, before the change.
 Judgement:  the form of a diagnostic code as a type.
-Weakest:    to be written at the close.
+Weakest:    no test runs the flush of V90 in a window; the test reads the ranges only. The test of T141 reads the
+            render assemblies from their output folders, so it needs a build of the solution before the tests.
 
 ## Progress
 
@@ -83,3 +85,4 @@ Weakest:    to be written at the close.
   After it each one fails a gate. T143 stays open: Q4 A makes a code a type, and `Diagnostic.Code` and
   `ErrorDetail.Code` are strings of `Engine.Contracts`, so A changes the public shape of `Engine.Contracts`. The rule
   "Stop and ask" holds that for the owner, and the order 2 turns it into a record and the next task.
+- 2026-11-06: closed at v0.206, with T143 open.
