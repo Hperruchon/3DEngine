@@ -6,12 +6,16 @@
 # the program (ADR-0061 item 3). The log of the program goes to the file of the report for a person to read.
 # Each wait has a limit, and a failure gives the last lines of the emulator as annotations, which a person with no
 # sign-in can read; the first run of the job waited 40 minutes for a device and showed nothing.
-# Usage: eng/android/smoke-emulator.sh <file.apk> <report file> <log of the emulator>
+# Phase R14f3 (ADR-0074, TASK-0233): the program starts with the extra "probe" and writes the determinism hash and its
+# lines; the script writes them to the hash file, in the form of the hash file of the desktop runners, and fails
+# with no hash.
+# Usage: eng/android/smoke-emulator.sh <file.apk> <report file> <log of the emulator> <hash file>
 set -euo pipefail
 
 apk="$1"
 report="$2"
 emulator_log="${3:-}"
+hash_file="${4:-}"
 adb="$ANDROID_HOME/platform-tools/adb"
 
 fail() {
@@ -37,7 +41,7 @@ done
 
 timeout 300 "$adb" install -r "$apk" || fail "the install of the APK did not end in 300 seconds"
 "$adb" logcat -c
-"$adb" shell monkey -p org.threedengine.phone -c android.intent.category.LAUNCHER 1 > /dev/null
+"$adb" shell am start -n org.threedengine.phone/org.threedengine.phone.MainActivity --ez probe true > /dev/null
 
 started=0
 drawn=0
@@ -54,6 +58,13 @@ grep "3DEngine:" "$report" | head -60 | while IFS= read -r line; do echo "::noti
 grep -E "FATAL|AndroidRuntime" "$report" | head -12 | while IFS= read -r line; do echo "::warning title=Android::${line:0:300}"; done || true
 echo "started=$started drawn=$drawn"
 [ "$started" = 1 ] || fail "the program did not write its line of the start in 120 seconds"
+if [ -n "$hash_file" ]; then
+  hash=$(grep -o "3DEngine: determinism [0-9a-f]\{64\}" "$report" | head -1 | cut -d' ' -f3 || true)
+  [ -n "$hash" ] || fail "the program wrote no determinism hash"
+  mkdir -p "$(dirname "$hash_file")"
+  { echo "$hash"; grep -o "3DEngine: determinism-line .*" "$report" | sed 's/^3DEngine: determinism-line //' | tr -d '\r'; } > "$hash_file"
+  echo "::notice title=Determinism::android-x64 gives $hash"
+fi
 if [ "$drawn" != 1 ]; then
   echo "::warning title=Android smoke test::the program started and drew no first frame on the emulator; see the report"
 fi

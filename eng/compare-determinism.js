@@ -10,7 +10,8 @@
 const fs = require('fs');
 const path = require('path');
 
-const runners = ['ubuntu-latest', 'windows-latest', 'macos-latest'];
+// Phase R14f3 (ADR-0074, TASK-0233): the program of the phone on the emulator of x86-64 is the fourth platform.
+const runners = ['ubuntu-latest', 'windows-latest', 'macos-latest', 'android-x64'];
 const folder = process.argv[2];
 if (!folder) {
   console.error('Usage: node eng/compare-determinism.js <folder>');
@@ -37,7 +38,7 @@ for (const runner of runners) {
 const hashes = runners.map(runner => files[runner][0]);
 for (const runner of runners) console.log(`::notice title=Determinism::${runner} gives ${files[runner][0]}`);
 if (hashes.every(hash => hash === hashes[0])) {
-  console.log('The three runners give one hash.');
+  console.log('The four platforms give one hash.');
   process.exit(0);
 }
 

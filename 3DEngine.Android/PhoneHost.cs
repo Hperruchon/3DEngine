@@ -1,3 +1,4 @@
+using Engine.Core.Determinism;
 using Engine.Geometry.Manifold;
 using SDL;
 using ThreeDEngine.Desktop;
@@ -14,7 +15,7 @@ namespace ThreeDEngine.Android;
 // the pre-rotation and the test of the owner come later; no device ran this program before the test of the owner.
 internal static class PhoneHost
 {
-    public static void Run()
+    public static void Run(bool probe = false)
     {
         try
         {
@@ -26,6 +27,17 @@ internal static class PhoneHost
 
             // Phase R14f2 (TASK-0229): the smoke test of the emulator reads this line and the line of the first frame.
             Console.Error.WriteLine($"3DEngine: the session of the phone starts, with Manifold {ManifoldGeometryBackend.NativeVersion}.");
+            // Phase R14f3 (ADR-0074, TASK-0233): the probe of anti-objective 16, on its own backend and its own Document. The
+            // smoke test of the emulator reads these lines, and the pipeline compares the hash with the desktop runners.
+            if (probe)
+            {
+                using var backend = new ManifoldGeometryBackend();
+                var (hash, lines, _) = CrossPlatformProbe.Run(backend).GetAwaiter().GetResult();
+                Console.Error.WriteLine($"3DEngine: determinism {hash}");
+                foreach (var line in lines)
+                    Console.Error.WriteLine($"3DEngine: determinism-line {line}");
+            }
+
             using var host = new LocalSessionHost(new ManifoldGeometryBackend());
             var window = new Window("3DEngine", 1080, 2316);
             while (Foreground(window, host) && WaitForForeground())
