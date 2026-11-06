@@ -77,3 +77,5 @@ Weakest:    to be written at the close.
   docking 1.91.6 and generate", which ImGui.NET-nativebuild v1.91.6 pins.
 - 2026-11-06: the first run built Manifold for both Android ABIs, and the check of the build machine failed: clang
   writes the source path into the text of a lambda. Both Android scripts map the source folder with -ffile-prefix-map.
+- 2026-11-06: the second run built and checked Manifold for both Android ABIs; cimgui stopped with the code 127,
+  because the edit of the flags wrote the characters  in place of two line continuations.

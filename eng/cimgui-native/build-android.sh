@@ -36,8 +36,8 @@ cmake -S "$source_dir" -B "$build" \
   -DANDROID_PLATFORM=android-33 \
   -DCMAKE_BUILD_TYPE=Release \
   -DIMGUI_STATIC=no \
-  "-DCMAKE_SHARED_LINKER_FLAGS=-Wl,-z,max-page-size=16384" \r
-  "-DCMAKE_C_FLAGS=-ffile-prefix-map=$source_dir=cimgui" \r
+  "-DCMAKE_SHARED_LINKER_FLAGS=-Wl,-z,max-page-size=16384" \
+  "-DCMAKE_C_FLAGS=-ffile-prefix-map=$source_dir=cimgui" \
   "-DCMAKE_CXX_FLAGS=-ffile-prefix-map=$source_dir=cimgui"
 
 echo "--- build ---"
