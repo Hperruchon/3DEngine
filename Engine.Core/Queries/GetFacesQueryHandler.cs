@@ -37,6 +37,7 @@ public sealed class GetFacesQueryHandler : IQueryHandler
         new Dictionary<string, FieldSchema>
         {
             ["faces"] = new("array"),
+            ["edges"] = new("array"),
         };
 
     // Per ADR-0016.
@@ -71,7 +72,8 @@ public sealed class GetFacesQueryHandler : IQueryHandler
         var (solid, reason) = KernelProjection.Of(document, faces.BodyId);
         if (solid is null)
             return Task.FromResult(QueryHandlerResult.Failure(new ErrorDetail(DiagnosticCodes.GeomFacesFailed, reason!)));
-        var info = new FacesInfo(Entries(solid, Brep.Of(solid)));
+        var brep = Brep.Of(solid);
+        var info = new FacesInfo(Entries(solid, brep), Edges(brep));
 
         lock (_gate)
         {
@@ -134,6 +136,70 @@ public sealed class GetFacesQueryHandler : IQueryHandler
 
         return entries;
     }
+
+    // ADR-0077 items 1 and 2: one entry for each pair of names that a B-Rep edge bounds. An edge between two faces of one
+    // name is inside the name. The parts are the chains of the segments of the pair that share a vertex.
+    internal static IReadOnlyList<EdgeEntry> Edges(Brep brep)
+    {
+        var order = new List<(FaceTag First, FaceTag Second)>();
+        var members = new Dictionary<(FaceTag First, FaceTag Second), List<BrepEdge>>();
+        foreach (var edge in brep.Edges.Where(edge => edge.Faces.Count == 2))
+        {
+            var (a, b) = (brep.Faces[edge.Faces[0]].Tag, brep.Faces[edge.Faces[1]].Tag);
+            if (a == b)
+                continue;
+            var pair = Compare(a, b) < 0 ? (a, b) : (b, a);
+            if (!members.TryGetValue(pair, out var list))
+            {
+                members[pair] = list = [];
+                order.Add(pair);
+            }
+            list.Add(edge);
+        }
+
+        var entries = new List<EdgeEntry>();
+        foreach (var pair in order)
+        {
+            var edges = members[pair];
+            var part = new Dictionary<int, int>();
+            int Root(int v) => part[v] == v ? v : part[v] = Root(part[v]);
+            foreach (var edge in edges)
+            {
+                part.TryAdd(edge.From, edge.From);
+                part.TryAdd(edge.To, edge.To);
+                part[Root(edge.From)] = Root(edge.To);
+            }
+
+            var length = edges.Sum(edge =>
+            {
+                var d = brep.Vertices[edge.To] - brep.Vertices[edge.From];
+                return Math.Sqrt(d.Dot(d).ToDouble());
+            });
+            entries.Add(new EdgeEntry(
+                Reference(pair.First),
+                Reference(pair.Second),
+                part.Keys.Select(Root).Distinct().Count(),
+                length,
+                [.. edges.Select(edge => new FaceSegment(Position(brep.Vertices[edge.From]), Position(brep.Vertices[edge.To])))]));
+        }
+
+        return entries;
+    }
+
+    // Item 1: the order of two names: the identifier of the feature, then the element as text with no culture, then the
+    // item, with no item first.
+    internal static int Compare(FaceTag a, FaceTag b)
+    {
+        var byFeature = a.Feature.CompareTo(b.Feature);
+        if (byFeature != 0)
+            return byFeature;
+        var byElement = string.CompareOrdinal(a.Element, b.Element);
+        if (byElement != 0)
+            return byElement;
+        return Nullable.Compare(a.Item, b.Item);
+    }
+
+    private static DatumReference Reference(FaceTag tag) => new(tag.Feature, tag.Element, tag.Item);
 
     // The area of a face: half the length of the sum of the cross products of each loop. A hole turns the other way, so
     // its part of the sum is negative. The exact square becomes a double before its root.

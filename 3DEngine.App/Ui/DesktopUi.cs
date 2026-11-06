@@ -74,6 +74,7 @@ internal sealed unsafe partial class DesktopUi : IDisposable
     public const string SizeLabel = "Size";
     public const string FaceLabel = "Face";
     public const string SketchOnFaceButtonLabel = "Sketch on face";
+    public const string EdgeLabel = "Edge";
 
     // ADR-0034 items 6 and 8: the buttons of a new sketch in the panel, and the window of the
     // sketch with its controls. A row of the window has the label of its item (SketchText).
