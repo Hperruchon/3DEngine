@@ -27,10 +27,25 @@ ndk="${ANDROID_NDK_LATEST_HOME:-${ANDROID_NDK_HOME:-}}"
 [ -f "$source_dir/imgui/imgui.cpp" ] || { echo "::error title=cimgui (Android)::the imgui submodule is absent"; exit 1; }
 
 build="$source_dir/build-$abi"
+
+# A step that fails gives its last lines as one annotation, because the log of a job needs a sign-in to read and an
+# annotation does not.
+run() {
+  local name="$1"; shift
+  local log="$staging/../cimgui-$name-$abi.log"
+  if ! "$@" > "$log" 2>&1; then
+    cat "$log"
+    local tail
+    tail=$(tail -n 25 "$log" | sed -e 's/%/%25/g' | awk '{ printf "%s%%0A", $0 }')
+    echo "::error title=cimgui (Android $abi) $name::$tail"
+    exit 1
+  fi
+  cat "$log"
+}
 find "$staging" -mindepth 1 -maxdepth 1 -type f -delete
 
 echo "--- configure (Android $abi) ---"
-cmake -S "$source_dir" -B "$build" \
+run configure cmake -S "$source_dir" -B "$build" \
   "-DCMAKE_TOOLCHAIN_FILE=$ndk/build/cmake/android.toolchain.cmake" \
   "-DANDROID_ABI=$abi" \
   -DANDROID_PLATFORM=android-33 \
@@ -41,7 +56,7 @@ cmake -S "$source_dir" -B "$build" \
   "-DCMAKE_CXX_FLAGS=-ffile-prefix-map=$source_dir=cimgui"
 
 echo "--- build ---"
-cmake --build "$build" --config Release --parallel
+run build cmake --build "$build" --config Release --parallel
 
 echo "--- stage ---"
 cp -v "$build/libcimgui.so" "$staging/libcimgui.so"
