@@ -1,7 +1,7 @@
 ---
 id: 0241
 title: A save to a new name keeps a handle on the document at each moment
-status: Ready
+status: Done
 phase: P0.96
 opened: 2026-11-06
 depends-on: [0240]
@@ -11,7 +11,8 @@ writes:
     - tasks/TASK-0241-a-save-to-a-new-name-keeps-its-handle.md
   modify:
     - Engine.Core/Persistence/DocumentJournal.cs
-    - Engine.Tests/Persistence/DocumentJournalTests.cs
+    - Engine.Tests/Persistence/DocumentFileTests.cs
+    - docs/adr/0015-command-log-persistence.md
     - eng/test-floor.txt
     - docs/roadmap.md
     - docs/CURRENT-STATE.md
@@ -47,20 +48,25 @@ and the new one.
 
 ## Acceptance criteria
 
-- [ ] Each finding has a test or an injection that fails before the change and passes after it.
-- [ ] A clean build (`--no-incremental`) gives zero errors and zero warnings.
-- [ ] Continuous integration passes on the three runners, on the branch and on `main` after the merge.
+- [x] Each finding has a test or an injection that fails before the change and passes after it.
+- [x] A clean build (`--no-incremental`) gives zero errors and zero warnings.
+- [x] Continuous integration passes on the three runners, on the branch and on `main` after the merge.
 
 ## Outcome
 
-Status: Ready
+Status: Done · commit (the merge of the branch p096-save-handle) · v0.226
 
 ## Method
 
 Mechanical: a test or an injection for each finding, before the change.
-Judgement:  to be written in the task.
-Weakest:    to be written at the close.
+Judgement:  a new file that does not open fails the save only, and the journal stays whole at its old name; a delete
+            of the old file that fails leaves that file, because the document is whole at its new name.
+Weakest:    the test counts the handles of the journal, not the lock of the operating system; no test runs a second
+            process against a save, and on Linux and macOS the lock stays advisory (ADR-0015 item 13).
 
 ## Progress
 
 - 2026-11-06: opened by the codebase review of 2026-11-06 (d).
+- 2026-11-06: the copy and the delete; the test of E84 now holds the save that fails with the journal whole, and a new
+  test counts the live handles. The old MoveTo fails both tests. ADR-0015 item 9 and its consequences say so.
+- 2026-11-06: run 42280536874 passed on the three runners and on the emulator. Closed at v0.226.
