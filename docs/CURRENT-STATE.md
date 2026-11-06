@@ -6547,3 +6547,26 @@ codebase review carries it.
 New tests: 6. The test list holds 1921 (1361 in `Engine.Tests`, 333 in `3DEngine.Tests`, 224 in `3DEngine.ImageTests`, 3
 in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
 entries: 15 of 15. New diagnostic codes: 0. Since the review of v0.214, 1 product milestone and 4 entries followed it.
+
+## v0.219 — The user interface of the desktop is one partial file for each region (R15, TASK-0234)
+
+The fallback queue of the owner (2026-11-05) starts with the split of `DesktopUi.cs`, 1365 lines, into one file for each
+region, with no visual change.
+
+**The change.** `DesktopUi` is a partial class. The main file keeps the labels, the state, the constructor, the frame
+and the routing. `DesktopUi.Panel.cs` holds the panel, the controls of the selected body and the line of the document;
+`DesktopUi.Overlay.cs` the overlays of the sketches and of the dimensions; `DesktopUi.Sketch.cs` the window of the
+sketch; `DesktopUi.Image.cs` the window of the images; `DesktopUi.Pad.cs` the numeric pad. Each part keeps only the
+usings that it needs. The affects field of ADR-0073 names `DesktopUi.Panel.cs`.
+
+**Proof.** A script compares the lines: each line of code of the old file is in exactly one new file, and the new files
+add only their usings, their class lines, their braces and their header comments. The tests did not change, and each
+passes. Run 42169584195 passed.
+
+**What stays.** The labels and the fields stay in the main file.
+
+**A correction.** None.
+
+New tests: 0. The test list holds 1921 (1361 in `Engine.Tests`, 333 in `3DEngine.Tests`, 224 in `3DEngine.ImageTests`, 3
+in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
+entries: 15 of 15. New diagnostic codes: 0. Since the review of v0.214, 2 product milestones and 5 entries followed it.

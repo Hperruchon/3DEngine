@@ -1,7 +1,7 @@
 ---
 id: 0234
 title: The user interface of the desktop is one partial file for each region
-status: Active
+status: Done
 phase: R15
 opened: 2026-11-06
 depends-on: [0232]
@@ -57,22 +57,23 @@ and each region has its own file. No line of code changes.
 
 ## Acceptance criteria
 
-- [ ] A script shows that each line of code of the old file is in exactly one new file, and that the new files add only
+- [x] A script shows that each line of code of the old file is in exactly one new file, and that the new files add only
   their usings, their class lines, their braces and their header comments.
-- [ ] A clean build (`--no-incremental`) gives zero errors and zero warnings, and the tests pass with no change.
-- [ ] Continuous integration passes on the three runners, on the branch and on `main` after the merge.
+- [x] A clean build (`--no-incremental`) gives zero errors and zero warnings, and the tests pass with no change.
+- [x] Continuous integration passes on the three runners, on the branch and on `main` after the merge.
 
 ## Outcome
 
-Status: Active
+Status: Done · commit (the merge of the branch r15-ui-split) · v0.219
 
 ## Method
 
 Mechanical: a script cuts the class into its members by the depth of the braces and moves each member of a list to its
             file; a second script removes each using whose removal still builds with no warning.
 Judgement:  the regions, and the labels and the state stay in the main file.
-Weakest:    to be written at the close.
+Weakest:    the main file still holds each label and each field, so a change of a region can touch two files.
 
 ## Progress
 
 - 2026-11-06: the split, the check of the lines, and the removal of the usings that a part does not need.
+- 2026-11-06: run 42169584195 passed on the three runners and on the emulator. Closed at v0.219.

@@ -192,6 +192,7 @@ Therefore each approved objective must have a track here.
 - R14f3 — The pipeline compares the determinism hash of the phone with the hashes of the desktop runners. v0.216, TASK-0233, ADR-0074.
 - P0.91 — The review gate counts each product phase, and the export, the host and three checks hold their next forms. v0.217, TASK-0231.
 - P0.92 — The start again sees the commands of the stop, and the panel and the phone hold their next forms. v0.218, TASK-0232, ADR-0073.
+- R15 — The user interface of the desktop is one partial file for each region. v0.219, TASK-0234.
 
 ## Track 0 — Foundations
 
