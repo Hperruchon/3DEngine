@@ -174,6 +174,7 @@ Therefore each approved objective must have a track here.
 - R14c — ppy.SDL3-CS replaces Alimer.Bindings.SDL on the desktop, with no change of behaviour. v0.197, TASK-0195, ADR-0061.
 - K6a — The live bodies leave the engine as one STEP file of their planar faces. v0.198, TASK-0200, ADR-0070.
 - P0.87 — An export of the command line refuses a file that is its own document file. v0.200, TASK-0220.
+- K6b — A void inside a body leaves the engine as a BREP_WITH_VOIDS. v0.201, TASK-0201, ADR-0070.
 
 ## Track 0 — Foundations
 
@@ -350,6 +351,7 @@ boundary and each refused rung.
 | K5 | Add the cylinder, the cone, the sphere and the torus. | 55–85 |
 | K6 | STEP export for the analytic subset. | 6–12 |
 | K6a | The planar B-Rep of the owned kernel of each live body as one STEP file of AP214, with the same bytes on each platform, from the surface and the command line (the engine lane of the order of 2026-11-05). ADR-0070, TASK-0200. | 1–2 |
+| K6b | A void inside a body is a `BREP_WITH_VOIDS` of the smallest solid that holds it, by an exact ray (ADR-0070 item 2; the engine lane of the order of 2026-11-05). TASK-0201. | 1 |
 | K7 | General extrude and revolve of a simple curve. **Optional.** Year two. | 40–65 |
 
 ## Track V — Machine vision
