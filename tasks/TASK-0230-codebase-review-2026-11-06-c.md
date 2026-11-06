@@ -1,7 +1,7 @@
 ---
 id: 0230
 title: The codebase review of 2026-11-06 (c) is a record
-status: Active
+status: Done
 phase: governance
 opened: 2026-11-06
 depends-on: [0229]
@@ -67,9 +67,23 @@ finding.
 
 ## Acceptance criteria
 
-- [ ] `CodebaseReviewGateTests` passes with the new review.
-- [ ] Continuous integration passes on the three runners, on the branch and on `main` after the merge.
+- [x] `CodebaseReviewGateTests` passes with the new review.
+- [x] Continuous integration passes on the three runners, on the branch and on `main` after the merge.
+
+## Outcome
+
+Status: Done · commit (the merge of the branch codebase-review-2026-11-06-c) · v0.215
+
+## Method
+
+Mechanical: the measures with the methods of the last review, and the line of each earlier finding from the files that
+            it cites and the commits since `41db916`.
+Judgement:  the severity of each new finding; V97 is medium, as V91 of the same class, and as the lead of Codex.
+Weakest:    the two review agents ran their probes on Windows x64 only; the crash of the console colour on Android came
+            after the commit of the review, from the job of the emulator, and no agent found it.
 
 ## Progress
 
 - 2026-11-06: two review agents at `df11d6e`; 3 new medium and 11 new low findings; the review written.
+- 2026-11-06: the lead of the review of Codex of v0.212 (finding 1, the popup of the list of a cut) goes into TASK-0232.
+- 2026-11-06: closed at v0.215.

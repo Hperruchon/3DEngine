@@ -6416,3 +6416,29 @@ New tests: 1 (`Engine.Tests`). The test list holds 1896 (1342 in `Engine.Tests`,
 `3DEngine.ImageTests`, 3 in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero
 warnings. Open entries: 15 of 15. New diagnostic codes: 0. Since the review of v0.207, 4 product milestones and 7 entries
 followed it, so the next product milestone needs a codebase review first.
+
+## v0.215 — The codebase review of 2026-11-06 (c) (governance, TASK-0230)
+
+The review of 2026-11-06 (b) examined v0.207. After it came 4 product milestones (R14e2, R14e3, R14f1 and R14f2) and 7
+ledger entries, and R14f3 would be the fifth, so this review is due before R14f3. The gate does not count these
+milestones (T147), so the count is by hand.
+
+**The change.** `docs/reviews/2026-11-06-c-codebase-review.md`, at `df11d6e`. Two review agents worked there, each one in
+its own worktree. No new finding is critical or high. Three are medium: the review gate counts no phase with a letter
+and then a digit (T147); the smoke test of the emulator passes after an exception that follows the start (T149); the
+start again chooses the previous document before the surface stops (V97). Eleven are low: E156, E157, V98 to V103, T148,
+T150 and T151. The four leads of the reviews of Codex of v0.206 to v0.211 are T147, T148, E156 and V97; the lead of v0.212
+(the popup of the list of a cut) goes into TASK-0232. TASK-0231 (P0.91) and TASK-0232 (P0.92) hold the findings, after
+R14f3. The standing order of 2026-11-05 answers Q1 (the block on a pause of SDL stays until the test of the owner) with B.
+
+**Proof.** `CodebaseReviewGateTests` passes with the new review.
+
+**What stays.** T143 stays open for the owner. The open findings are 0 critical, 4 high, 17 medium and 30 low.
+
+**A correction.** The ledger entries v0.208 to v0.211 gave the count of the entries after the review of v0.207 one too
+low (T151): v0.208, the review itself, is the first of them, so the true counts are 1, 2, 3 and 4. The entries v0.212 to
+v0.214 give the true counts.
+
+New tests: 0. The test list holds 1896 (1342 in `Engine.Tests`, 333 in `3DEngine.Tests`, 218 in `3DEngine.ImageTests`, 3
+in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open entries:
+15 of 15. New diagnostic codes: 0. Since the review of v0.214, 0 product milestones and 1 entry followed it.
