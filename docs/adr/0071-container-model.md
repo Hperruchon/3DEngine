@@ -63,11 +63,12 @@ the obvious alternatives:
    name, a version below 1 and a place that is not finite give `E-ASSEMBLY-REFERENCE-INVALID`; an identifier that the
    log holds gives `E-ASSEMBLY-ID-IN-USE`.
 4. **The file.** The header of a part has no field `kind`, so a part file has the same bytes as before TASK-0202, and
-   each file of an earlier version opens as a part. The header of an assembly is
-   `{"format":"3dengine-document","formatVersion":1,"lengthUnit":"mm","kind":"assembly"}`. Another kind gives
-   `E-IO-LOAD-FAILED`, and an open into a session of another kind gives `E-IO-LOAD-FAILED`. The format version stays 1:
-   an engine before TASK-0202 reads the header of an assembly, then refuses `AddPartReference` as a command that it
-   does not have, with `E-IO-LOAD-FAILED`, so it reads no assembly as a part. A host makes the Document with the kind of
+   each file of an earlier version opens as a part. Since TASK-0224 the header of an assembly is
+   `{"format":"3dengine-document","formatVersion":2,"lengthUnit":"mm","kind":"assembly"}`. An engine before TASK-0202
+   reads the version 1 only, so it refuses each new assembly at its header and writes no part entry after it (finding
+   E154 of the codebase review of 2026-11-06 (b), Q1 A). An assembly file of TASK-0202 to TASK-0224 has the version 1
+   with the field `kind`, and it still opens as an assembly. A header of the version 2 that is not an assembly, another
+   kind, and an open into a session of another kind each give `E-IO-LOAD-FAILED`. A host makes the Document with the kind of
    the header of its file (`DocumentFile.ReadKind`). `engine-api-http --kind assembly` makes a new document an
    assembly; a file that exists keeps its kind, and another `--kind` stops the start with the exit code 6. `engine
    apply` and `engine query` take `--kind assembly` for their one-shot Document. The desktop makes parts only.
@@ -105,3 +106,5 @@ the next slice of P8b, with a fault for a reference whose bytes are absent or ho
 ## History
 
 - 2026-11-06 · TASK-0202 · The record, under the standing order of 2026-11-05.
+- 2026-11-06 · TASK-0224 · Item 4: the header of an assembly has the version 2 (finding E154, Q1 A). Until TASK-0224 the
+  item said that an older engine reads no assembly as a part; it read an assembly with no reference as an empty part.

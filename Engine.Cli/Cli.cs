@@ -212,6 +212,22 @@ public static class Cli
             return ExportFailure(stdout, new ErrorDetail(DiagnosticCodes.ExportWriteFailed,
                 $"The {(step ? "STEP" : "STL")} file {file} is the document file {document}, and an export does not write over its document."));
 
+        // Finding E155 of the codebase review of 2026-11-06 (b) (TASK-0224): the export made a part session, so an assembly
+        // gave E-IO-LOAD-FAILED with the reason "the Document is a part". A file that does not read gives its error later.
+        string kind;
+        try
+        {
+            kind = Engine.Core.Persistence.DocumentFile.ReadKind(document);
+        }
+        catch (Engine.Core.Persistence.DocumentFileException)
+        {
+            kind = Document.Part;
+        }
+
+        if (kind == Document.Assembly)
+            return ExportFailure(stdout, new ErrorDetail(DiagnosticCodes.ExportKindRefused,
+                $"The document file {document} is an {Document.Assembly}. An assembly holds references to parts and no body, and the engine does not resolve a reference yet (ADR-0071 item 7), so the {(step ? "STEP" : "STL")} export has nothing to write."));
+
         var session = BuildSession(backend, stderr);
         if (session is null)
             return ExitBackendUnavailable;
