@@ -340,6 +340,10 @@ internal sealed class SessionBodies : IDisposable
     public ((double X, double Y, double Z) Min, (double X, double Y, double Z) Max)? BoxOf(Guid bodyId)
         => _boxes.ContainsKey(bodyId.ToString()) && IsVisible(bodyId.ToString()) ? Shifted(bodyId.ToString()) : null;
 
+    // Finding V109 of the codebase review of 2026-11-06 (d) (TASK-0243): the geometry key of the mesh of a live body, which
+    // a rebuild changes (ADR-0037 item 2), or null.
+    public Guid? KeyOf(Guid bodyId) => _geometry.TryGetValue(bodyId, out var key) ? key : null;
+
     // Finding V87 of the codebase review of 2026-11-05 (b) (TASK-0191): the box of the mesh of a visible live body with
     // no offset of a preview, or null. A preview does not change the engine, so a query of the body keeps this key.
     public ((double X, double Y, double Z) Min, (double X, double Y, double Z) Max)? RestBoxOf(Guid bodyId)
