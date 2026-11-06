@@ -7,7 +7,7 @@ date: 2026-10-28
 supersedes: []
 superseded-by: []
 amends: ['0006', '0021']
-amended-by: ['0032', '0033', '0037', '0045', '0051', '0071']
+amended-by: ['0032', '0033', '0037', '0045', '0051', '0071', '0080']
 affects:
   - Engine.Contracts/Handlers/ICommandHandler.cs
   - Engine.Core/CommandBus.cs
@@ -124,3 +124,4 @@ are not planned. A register entry records them when a measure shows a need.
   the datum events come after the image events.
 - 2026-11-06 · TASK-0202 · ADR-0071 amends items 3, 4 and 5: a step records its references, an Undo removes them with
   `reference.removed`, and the reference events come after the datum events.
+- 2026-11-06 · TASK-0248 · ADR-0080 amends item 11: Undo and Redo are round anchors at the bottom left, not buttons of the panel.

@@ -14,22 +14,15 @@ internal sealed unsafe partial class DesktopUi
         // The first size fits inside a small display too. Since the line of Undo and Redo (TASK-0093)
         // and the line of a new sketch (TASK-0101) the panel is 700 pixels high at most, so that two
         // bodies and Show all fit with no scroll bar.
-        ImGui.SetNextWindowSize(new Vector2(460f, Math.Clamp(displaySize.Y - 32f, 200f, 700f)), ImGuiCond.FirstUseEver);
-        if (ImGui.Begin(PanelName))
+        // ADR-0080 (TASK-0248): the panel ends above the round anchors of Undo and Redo at the bottom left.
+        ImGui.SetNextWindowSize(new Vector2(460f, Math.Clamp(displaySize.Y - 32f - AnchorRow, 200f, 700f)), ImGuiCond.FirstUseEver);
+        // ADR-0080 item 1 (TASK-0248): the title bar of the panel is the title of the document: the name of the program, the
+        // name of the file or "unsaved", and the length unit. The identifier of the window stays the name of the panel.
+        if (ImGui.Begin($"{Title(document)}###{PanelName}"))
         {
-            ImGui.TextUnformatted(_address);
             if (document is not null)
                 File(document);
 
-            // ADR-0031 item 11: the history of the document. A rejection shows in the line of the file.
-            if (ImGui.Button(UndoLabel))
-                _actions.Add(new UndoAction());
-            Item(UndoLabel);
-            ImGui.SameLine();
-            if (ImGui.Button(RedoLabel))
-                _actions.Add(new RedoAction());
-            Item(RedoLabel);
-            ImGui.SameLine();
             // Phase K5b (ADR-0076 item 7, TASK-0244): the list "New" takes the place of the button "New box" of ADR-0032
             // item 4, because the line has no room for a second button and the panel has no room for a new line (finding
             // V50). Each entry opens its pad.
@@ -249,6 +242,12 @@ internal sealed unsafe partial class DesktopUi
         Item(CutLabel);
     }
 
+    // ADR-0080 item 1 (TASK-0248): the title of the document; a host with no files gives no name.
+    internal string Title(DocumentLine? document)
+        => document is { Files: true } files
+            ? $"3DEngine | {files.FileName ?? "unsaved"} | {_unit}"
+            : $"3DEngine | {_unit}";
+
     // ADR-0030 item 3: the name of the file, a name field, Save as and Open.
     private void File(DocumentLine document)
     {
@@ -265,7 +264,6 @@ internal sealed unsafe partial class DesktopUi
             return;
         }
 
-        ImGui.TextUnformatted(document.FileName is { } name ? $"File: {name}" : "File: unsaved");
         ImGui.SetNextItemWidth(200f);
         TextField(FileNameLabel, ref _fileName, 128);
         Item(FileNameLabel);
