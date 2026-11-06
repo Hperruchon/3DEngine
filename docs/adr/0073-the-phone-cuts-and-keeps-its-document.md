@@ -11,6 +11,7 @@ amended-by: []
 affects:
   - 3DEngine.App/PhoneLifecycle.cs
   - 3DEngine.App/Ui/DesktopUi.cs
+  - 3DEngine.App/Ui/DesktopUi.Panel.cs
   - 3DEngine.App/Ui/PanelAction.cs
   - 3DEngine.App/BodyActions.cs
   - 3DEngine.Android/**
@@ -88,3 +89,5 @@ the pre-rotation.
   and the rectangle of the open list; item 2 gives the line of a host with no files (V99); item 3 gives the order of a
   blocked thread, with the hint of SDL (V101, Q1 B of that review, answered by the standing order of 2026-11-05); the
   affects field names the files of items 1 and 2 (V102).
+- 2026-11-06 · TASK-0234 · The affects field names `DesktopUi.Panel.cs`, which holds the code of items 1 and 2 since the
+  split of the user interface.
