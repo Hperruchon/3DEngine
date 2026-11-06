@@ -167,8 +167,9 @@ public sealed class NativeThreeDEngine : IThreeDEngine, IDisposable
                 continue;
             }
 
-            // A select, a hide and a show all go to the selection and to the session (ADR-0029).
-            if (_actions is not null && _renderer is not null && _actions.Apply(intent, Pick, _renderer.LiveBodies))
+            // A select, a hide and a show all go to the selection and to the session (ADR-0029). ADR-0077 item 3: near an
+            // edge of the selected face, a select gives the edge.
+            if (_actions is not null && _renderer is not null && _actions.Apply(intent, Pick, _renderer.LiveBodies, EdgeAt))
                 continue;
 
             switch (intent)
@@ -242,6 +243,17 @@ public sealed class NativeThreeDEngine : IThreeDEngine, IDisposable
             return _sketchActions.Message;
         Face(created.Frame);
         return null;
+    }
+
+    // ADR-0077 item 3 (phase R12b, TASK-0245): the edge of the selected face nearest the point, at most 12 pixels away.
+    private (DatumReference First, DatumReference Second)? EdgeAt(double x, double y)
+    {
+        var window = _window.Extent;
+        if (_actions is null || _renderer is null || Selection is not { } body || window.width == 0 || window.height == 0)
+            return null;
+        return FaceOverlay.Nearest(_actions.EdgesOfFace(_renderer.KeyOf(body)), Camera, window.width, window.height, x, y) is { } edge
+            ? (edge.First, edge.Second)
+            : null;
     }
 
     // The nearest visible body under a point of the window, or null (ADR-0029 item 1), with the point and the normal of
@@ -575,8 +587,14 @@ public sealed class NativeThreeDEngine : IThreeDEngine, IDisposable
         // V109 (TASK-0243): the entry comes again only for a new geometry key of the body; V107: the outline follows a drag.
         FaceLine? faceLine = null;
         if (Selection is { } faceBody && _actions?.SelectedFace(_renderer.KeyOf(faceBody)) is { } selectedFace)
+        {
+            var drag = _gizmo.Active is null ? default : _gizmo.Offset;
+            var selectedEdge = _actions.SelectedEdge(_renderer.KeyOf(faceBody));
             faceLine = new FaceLine(FaceOverlay.Text(selectedFace, _host.Session.LengthUnit), selectedFace.Normal is not null,
-                FaceOverlay.Of(selectedFace.Outline, Camera, window.width, window.height, _gizmo.Active is null ? default : _gizmo.Offset));
+                FaceOverlay.Of(selectedFace.Outline, Camera, window.width, window.height, drag),
+                selectedEdge is null ? null : FaceOverlay.EdgeText(selectedEdge, _host.Session.LengthUnit),
+                selectedEdge is null ? null : FaceOverlay.Of(selectedEdge.Segments, Camera, window.width, window.height, drag));
+        }
 
         var panel = _ui.Frame((float)_delta.TotalSeconds, display, scale, _renderer.LiveBodies, Selection, LineOf(_document, _host.FileName, _documentMessage), sketches, sketchPanel, imagePanel, dimensions, size, faceLine);
         ApplyPanel(_renderer.LiveBodies);
