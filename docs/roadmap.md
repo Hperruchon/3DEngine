@@ -294,6 +294,7 @@ This track removes each condition that blocks other work.
 | P0.91 | The review gate counts each product phase, and the export, the host and three checks hold their next forms (E156, E157, T147 to T151 of the codebase review of 2026-11-06 (c); after the next product phase). TASK-0231. | 2 |
 | P0.92 | The start again sees the commands of the stop, and the panel and the phone hold their next forms (V97 to V103 of the codebase review of 2026-11-06 (c); after P0.91). TASK-0232. | 2 |
 | P0.93 | The smoke test of the emulator gives the cause of a start that fails: the versions of the workload, of the emulator and of the image, the output of the start, and the lines of Android about the program (the emulator job of v0.217 failed with no change of code). TASK-0235. | 1 |
+| P0.94 | The key Escape goes back from the face to its body, and the button "Sketch on face" ends the arm of Face (findings 1 and 2 of the review of Codex of v0.221, medium; R12a only just shipped, and its ledger entry states the first as done). TASK-0237. | 1 |
 | P0.86 | The window keeps no input between sessions, the hook has the cases of one axis, and the next forms of four gates fail (V88 to V90, T141 to T144 of the codebase review of 2026-11-06; after the next product phase). TASK-0198. | 1–2 |
 
 ## Track P — The platform
