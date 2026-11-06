@@ -6354,3 +6354,27 @@ New tests: 12 (in `3DEngine.ImageTests`). The test list holds 1895 (1341 in `Eng
 in `3DEngine.ImageTests`, 3 in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors
 and zero warnings. Open entries: 15 of 15. New diagnostic codes: 0. Since the review of v0.207, 2 product milestones and
 5 entries followed it.
+
+## v0.213 — The pipeline builds the APK of the phone at each push (R14f1, TASK-0228)
+
+Phase R14f is the gate of Android. The solution does not hold the program of the phone, because the runners of the gate
+have no workload of .NET for Android, so no step of the pipeline built it.
+
+**The change.** The job "Build the APK of the phone" in `.github/workflows/ci.yml` runs on Ubuntu at each push. It
+installs the workload of .NET for Android and, with the target `InstallAndroidDependencies`, the Android dependencies
+of the program on the runner; it builds the APK, runs `eng/android/check-apk.sh`, and keeps the APK for 14 days as the
+artifact "apk-of-the-phone". The script refuses each ABI other than `arm64-v8a` and `x86_64`, an absent library of
+SDL, cimgui or Manifold, and a library of cimgui or Manifold whose checksum the notices do not record.
+`docs/android-test-sheet.md` names the artifact.
+
+**Proof.** The job passed on the branch in run 42156698951. On this computer the script passes on the APK of R14e3, and two
+injections each make it fail: a wrong checksum in the notices, and an APK with a third ABI.
+
+**What stays.** No emulator runs the APK yet, and the pipeline compares no hash of Android; the later slices of R14f add
+both. The job is not a required check of `main`.
+
+**A correction.** None.
+
+New tests: 0. The test list holds 1895 (1341 in `Engine.Tests`, 333 in `3DEngine.Tests`, 218 in `3DEngine.ImageTests`, 3
+in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open entries:
+15 of 15. New diagnostic codes: 0. Since the review of v0.207, 3 product milestones and 6 entries followed it.

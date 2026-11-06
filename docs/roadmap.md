@@ -185,6 +185,7 @@ Therefore each approved objective must have a track here.
 - R14e2 — The Android program builds an APK that draws a document of its own session. v0.209, TASK-0226, ADR-0072.
 - P0.89 — A void on the plane of a distant face is written, a replay and an export know an assembly, and two gates read the transitive form. v0.210, TASK-0224.
 - R14e3 — A person cuts a body in the panel, and the phone keeps its document through the background. v0.212, TASK-0227, ADR-0073.
+- R14f1 — The pipeline builds the APK of the phone at each push. v0.213, TASK-0228.
 - P0.90 — The start again keeps an unsaved document, a window that does not open gives a code, and the flush holds its place. v0.211, TASK-0225.
 
 ## Track 0 — Foundations
@@ -333,6 +334,7 @@ The first objective. Each phase ends with something that a person can observe.
 | R14e2 | The Android program: a `net10.0-android` project for `android-arm64` and `android-x64`, an activity that subclasses `SDLActivity`, a session of its own, and an APK that draws its document with `3DEngine.App` and holds the native libraries of R14d (ADR-0061, ADR-0072). TASK-0226. | 3–5 |
 | R14e3 | A person cuts a body in the panel with no agent, the phone keeps its document through the background with a new engine at each return, the screen stays in portrait, and the owner has a test sheet (ADR-0073). TASK-0227. | 2–3 |
 | R14f | The gate of Android: a job builds the APK at each push, a job runs the x86-64 emulator with software Vulkan and a smoke test, and the pipeline compares the hash of Android with the hashes of the desktop runners (ADR-0061 items 1 and 8). | 4–8 |
+| R14f1 | The pipeline builds the APK of the phone at each push, checks its ABIs and its native libraries, and keeps the APK for the owner (ADR-0061 item 9). TASK-0228. | 1 |
 | R14g | The layout of the phone, inside the redesign of the desktop: each region of the redesign gives its form on the screen of the S23 Ultra (ADR-0061 item 9). | 8–15 |
 
 ## Track K — The kernel

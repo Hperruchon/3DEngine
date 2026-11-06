@@ -30,6 +30,8 @@ before this test.
 
 4. With no cable, copy the file to the phone, open it there, and permit the install of an unknown app for that one
    time.
+   Since TASK-0228 each run of the pipeline also keeps the APK for 14 days, as the artifact "apk-of-the-phone" of the
+   job "Build the APK of the phone"; it is the same program, built on Ubuntu.
 5. Keep the log open in a second terminal while you test:
 
    ```bash
