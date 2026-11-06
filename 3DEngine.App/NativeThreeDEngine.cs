@@ -596,7 +596,19 @@ public sealed class NativeThreeDEngine : IThreeDEngine, IDisposable
                 selectedEdge is null ? null : FaceOverlay.Of(selectedEdge.Segments, Camera, window.width, window.height, drag));
         }
 
-        var panel = _ui.Frame((float)_delta.TotalSeconds, display, scale, _renderer.LiveBodies, Selection, LineOf(_document, _host.FileName, _documentMessage), sketches, sketchPanel, imagePanel, dimensions, size, faceLine);
+        // ADR-0081 (TASK-0253): the centre of the box of the selected body on the screen, for the tool ring.
+        Vector2? ringCentre = null;
+        var ringSize = 0f;
+        if (Selection is { } ringBody && _renderer.BoxOf(ringBody) is { } ringBox)
+        {
+            var middle = ((ringBox.Min.X + ringBox.Max.X) / 2, (ringBox.Min.Y + ringBox.Max.Y) / 2, (ringBox.Min.Z + ringBox.Max.Z) / 2);
+            ringCentre = SketchOverlay.Segment(Camera, window.width, window.height, middle, middle)?.A;
+            // The half of the diagonal of the box on the screen, so the ring stays outside the body.
+            if (SketchOverlay.Segment(Camera, window.width, window.height, ringBox.Min, ringBox.Max) is { } diagonal)
+                ringSize = Vector2.Distance(diagonal.A, diagonal.B) / 2f;
+        }
+
+        var panel = _ui.Frame((float)_delta.TotalSeconds, display, scale, _renderer.LiveBodies, Selection, LineOf(_document, _host.FileName, _documentMessage), sketches, sketchPanel, imagePanel, dimensions, size, faceLine, ringCentre, ringSize);
         ApplyPanel(_renderer.LiveBodies);
 
         var ui = _uiRenderer;

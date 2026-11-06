@@ -7063,3 +7063,33 @@ Android, which the test does not run.
 New tests: 1. The test list holds 1968 (1384 in `Engine.Tests`, 337 in `3DEngine.Tests`, 244 in `3DEngine.ImageTests`, 3
 in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
 entries: 15 of 15. New diagnostic codes: 0. Since the review of v0.233, 0 product milestones and 2 entries followed it.
+
+## v0.236 — The tools of the selected body are the segments of a ring that follows it (R16b2, TASK-0253)
+
+The owner ordered the layout of the redesign slice by slice on 2026-11-06 (evening); after the fixed controls comes the
+tool ring that follows the selection, with the tools that exist today. The designer brief draws it around the part on a
+large display and under the thumb on the phone.
+
+**The change.** ADR-0081 is new and Accepted under the standing order of 2026-11-05, which gave A for its two questions.
+- While a body is selected, with no pad and no active sketch, Move, Distance for an extrude, Hide or Show, and "Sketch on
+  face" for a selected face with a plane are segments of a ring. Rename and "Cut with" stay in the panel, and the buttons
+  of the panel stay.
+- On a landscape display the ring is around the centre of the box of the body on the screen, to its right, with an inner
+  radius of a third of the height, outside the body, from 160 to 375 pixels, and inside the display. On a portrait
+  display it is in the lower right corner, under the thumb.
+- Each segment is 68 pixels deep and wider than 54 at its middle. The band of the ring takes a tap; the inside of the ring
+  is the scene. A press and a release on one segment give its tool.
+
+**Proof.** Six new tests: the layout of a landscape and of a portrait display, a tap and a click on each kind of segment,
+no ring with no centre or with a pad, and a picture of the ring on the GPU, which is kept for the owner. An injection
+that lets a tap pass the band of the ring fails three tests. The first picture showed a segment filled as one convex path,
+which a segment is not, and a ring over a body that was large on the screen; both are corrected. Run 42304302535 passed.
+
+**What stays.** No person used the ring. A body that fills the display lies under the ring, which keeps the largest
+inner radius.
+
+**A correction.** None.
+
+New tests: 6. The test list holds 1974 (1384 in `Engine.Tests`, 337 in `3DEngine.Tests`, 250 in `3DEngine.ImageTests`, 3
+in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
+entries: 15 of 15. New diagnostic codes: 0. Since the review of v0.233, 1 product milestone and 3 entries followed it.
