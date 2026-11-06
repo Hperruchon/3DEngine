@@ -15,8 +15,9 @@ namespace ThreeDEngine.Desktop;
 // what the person sees (TASK-0076).
 internal sealed unsafe class SceneRenderer : IDisposable
 {
-    // The colour of the clear: red, green and blue from 0 to 1.
-    public static readonly (float R, float G, float B) Background = (0.0f, 1.0f, 0.0f);
+    // The colour of the clear: red, green and blue from 0 to 1. ADR-0078 item 1 (TASK-0246): the viewport-clear of the
+    // theme of the redesign, in place of the green key of the first image tests, which read this field.
+    public static readonly (float R, float G, float B) Background = (Ui.Theme.Clear.R / 255f, Ui.Theme.Clear.G / 255f, Ui.Theme.Clear.B / 255f);
 
     private readonly GraphicsDevice _device;
     private readonly VkRenderPass _renderPass;
