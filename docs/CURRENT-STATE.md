@@ -6083,3 +6083,35 @@ either library.
 New tests: 0. The test list holds 1832 (1311 in `Engine.Tests`, 320 in `3DEngine.Tests`, 198 in `3DEngine.ImageTests`,
 3 in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
 entries: 15 of 15. New diagnostic codes: 0. Since the review of v0.198, 3 product milestones and 5 entries followed it.
+
+## v0.204 — Each hole of a face has its owner, the STEP export refuses what a strict reader refuses, and the session of the desktop holds an open (P0.85, TASK-0197)
+
+The codebase review of 2026-11-06 found E142, E143, E146 and E147 (medium) and E144, E145 and E148 to E151 (low), to
+correct after the next product phase, K6b. The standing order of 2026-11-05 answered Q1 to Q3 of the review with A.
+
+**The change.**
+- E142: `Brep.Owner` reads the midpoint of an edge of the hole, not its first vertex, which can lie on the side of its
+  region. E144: a loop that holds a vertex two times is two loops at that vertex, so each region of a face is a face.
+- E143, E145 and E146 (Q1 A): `StepExport.Plan` refuses an edge of more than two faces with that reason, not "not
+  closed"; two vertices that round to one double; and an edge that lies inside a face that does not hold it, which
+  is a solid pinched along that edge. ADR-0070 item 3 and the row of `E-EXPORT-BODY-FAILED` name each case.
+- E147: `StepReader` of the tests checks the sense of each loop about the normal of its face, the direction of each
+  LINE, the two points of each edge and a loop that repeats a vertex.
+- E148 (Q2 A): a datum keeps its earlier face-gone fault, whatever end it names, while the end cannot be built.
+- E149: an open of the desktop takes the pending place before its check, so two opens at one time give one open.
+- E150 (Q3 A): a next session that does not start gives a session on the previous file again, and the error goes to
+  the standard error. E151: the texts of the flow before R14b are correct now.
+
+**Proof.** Each new test failed before its change: E142 for two of the three rotations of the triangle, E144, the three
+refusals, E148, and E149 and E150 three times of three. Four injections each fail a test at one check of the reader:
+each LINE turned, each EDGE_LOOP turned, the sliver of E146 in the file, and the loop of E144 that repeats a vertex.
+
+**What stays.** A query handler that throws still gives HTTP 500 (E17, R-0028). The Codex review of v0.200 found that
+a link of a parent folder passes the compare of P0.87; P0.88 corrects it before the next product phase.
+
+**A correction.** The row of `E-API-OPEN-PENDING` said "until the new program serves", which was false since R14b.
+
+New tests: 10 (8 in `Engine.Tests`, 2 in `3DEngine.ImageTests`). The test list holds 1842 (1319 in `Engine.Tests`, 320 in
+`3DEngine.Tests`, 200 in `3DEngine.ImageTests`, 3 in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental`
+gives zero errors and zero warnings. Open entries: 15 of 15. New diagnostic codes: 0. Since the review of v0.198, 3
+product milestones and 6 entries followed it.

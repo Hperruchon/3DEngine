@@ -313,4 +313,43 @@ public sealed class FaceGoneTests
         Assert.Equal(fault, (await Record(session, side)).Fault);
         Assert.DoesNotContain(mended.Diagnostics, item => item.Code == DiagnosticCodes.DatumReferenceFailed);
     }
+
+    // Finding E148 of the codebase review of 2026-11-06 (TASK-0197), Q2 A: a first cut removes the face of the datum, and a
+    // second cut drills a hole in the result. A bow tie in the sketch of the second tool gives the end of the chain a
+    // body fault. The datum kept its earlier face-gone fault only when the fault named that end, so the fault went away.
+    [NativeManifoldFact]
+    public async Task A_Face_Gone_Fault_Stays_While_A_Later_Cut_Of_Its_Chain_Has_A_Body_Fault()
+    {
+        using var backend = new ManifoldGeometryBackend();
+        var session = NewSession(backend);
+        async Task<(Guid Sketch, Guid[] Points, Guid[] Lines)> Square(params (double X, double Y)[] corners)
+        {
+            var sketch = Output(await Applied(session, new CreateSketchCommand { DatumId = Datums.XY.Id }), "sketchId");
+            var points = new Guid[4];
+            for (var i = 0; i < 4; i++)
+                points[i] = Output(await Applied(session, new AddSketchPointCommand { SketchId = sketch, X = corners[i].X, Y = corners[i].Y }), "pointId");
+            var lines = new Guid[4];
+            for (var i = 0; i < 4; i++)
+                lines[i] = Output(await Applied(session, new AddSketchLineCommand { SketchId = sketch, StartPointId = points[i], EndPointId = points[(i + 1) % 4] }), "lineId");
+            return (sketch, points, lines);
+        }
+
+        var plateSketch = await Square((0, 0), (10, 0), (10, 6), (0, 6));
+        var plate = Output(await Applied(session, new ExtrudeCommand { SketchId = plateSketch.Sketch, Distance = 2 }), "bodyId");
+        var side = await Datum(session, plate, "side", plateSketch.Lines[1]);
+        var firstSketch = await Square((9, -5), (13, -5), (13, 11), (9, 11));
+        var first = Output(await Applied(session, new ExtrudeCommand { SketchId = firstSketch.Sketch, Distance = 2 }), "bodyId");
+        var cut = await Cut(session, plate, first);
+        var secondSketch = await Square((2, 2), (4, 2), (4, 4), (2, 4));
+        var second = Output(await Applied(session, new ExtrudeCommand { SketchId = secondSketch.Sketch, Distance = 2 }), "bodyId");
+        var drilled = await Cut(session, cut, second);
+        var fault = (await Record(session, side)).Fault;
+        Assert.Equal(DiagnosticCodes.DatumReferenceFailed, fault?.Code);
+
+        var bowTie = await Applied(session, new MoveSketchPointCommand { SketchId = secondSketch.Sketch, PointId = secondSketch.Points[2], X = 4, Y = 0 });
+
+        Assert.NotNull((await session.Read((document, _) => document.Bodies.Single(body => body.Handle.Id == drilled))).Fault);
+        Assert.Equal(fault, (await Record(session, side)).Fault);
+        Assert.DoesNotContain(bowTie.Diagnostics, item => item.Code == DiagnosticCodes.DatumReferenceFailed);
+    }
 }

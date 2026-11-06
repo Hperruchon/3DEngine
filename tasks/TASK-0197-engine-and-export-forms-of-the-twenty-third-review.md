@@ -1,7 +1,7 @@
 ---
 id: 0197
 title: Each hole of a face has its owner, the STEP export refuses what a strict reader refuses, and the session of the desktop holds an open
-status: Ready
+status: Done
 phase: P0.85
 opened: 2026-11-06
 depends-on: [0199]
@@ -61,20 +61,30 @@ time and keeps the window when a next file does not open.
 
 ## Acceptance criteria
 
-- [ ] Each finding has a test or an injection that fails before the change and passes after it.
-- [ ] A clean build (`--no-incremental`) gives zero errors and zero warnings.
-- [ ] Continuous integration passes on the three runners, on the branch and on `main` after the merge.
+- [x] Each finding has a test or an injection that fails before the change and passes after it.
+- [x] A clean build (`--no-incremental`) gives zero errors and zero warnings.
+- [x] Continuous integration passes on the three runners, on the branch and on `main` after the merge.
 
 ## Outcome
 
-Status: Ready
+Status: Done · commit (the merge of the branch p085-review-forms) · v0.204
 
 ## Method
 
 Mechanical: a test or an injection for each finding, before the change.
 Judgement:  the point inside a hole that the owner reads.
-Weakest:    to be written at the close.
+Weakest:    the test of a pinched solid tests each pair of an edge and a face of its plane, so its cost grows with
+            the product of the counts; a body of the engine today has a few hundred faces at most.
 
 ## Progress
 
 - 2026-11-06: opened by the codebase review of 2026-11-06.
+- 2026-11-06: each finding has a test that failed before the change, or an injection. E142: the owner of a hole reads
+  the midpoint of an edge of the hole; the test fails for two of the three rotations before the change. E144: a loop that
+  holds a vertex two times is two loops. E143, E145 and E146: three refusals of `StepExport.Plan` with their reasons
+  (Q1 A). E147: `StepReader` checks the sense of each loop, the direction of each LINE, the two points of each edge
+  and a loop that repeats a vertex; four injections in the writer and the kernel each fail a test at one of these
+  checks. E148: the earlier face-gone fault stays whatever end it names (Q2 A). E149: one open at a time. E150: the
+  previous file again after a next session that does not start (Q3 A). E151: the texts of the old flow. The standing
+  order of 2026-11-05 answered Q1 to Q3 with A.
+- 2026-11-06: closed at v0.204.
