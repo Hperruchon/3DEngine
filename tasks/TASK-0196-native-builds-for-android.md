@@ -78,4 +78,6 @@ Weakest:    to be written at the close.
 - 2026-11-06: the first run built Manifold for both Android ABIs, and the check of the build machine failed: clang
   writes the source path into the text of a lambda. Both Android scripts map the source folder with -ffile-prefix-map.
 - 2026-11-06: the second run built and checked Manifold for both Android ABIs; cimgui stopped with the code 127,
-  because the edit of the flags wrote the characters  in place of two line continuations.
+  because the edit of the flags wrote a backslash and the letter r in place of two line continuations.
+- 2026-11-06: the third run of cimgui stopped in cmake with no annotation; a failed step of the script now gives its
+  last lines as one annotation. The task file held a lone CR, and the gate of control bytes found it.
