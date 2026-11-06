@@ -186,6 +186,7 @@ Therefore each approved objective must have a track here.
 - P0.89 — A void on the plane of a distant face is written, a replay and an export know an assembly, and two gates read the transitive form. v0.210, TASK-0224.
 - R14e3 — A person cuts a body in the panel, and the phone keeps its document through the background. v0.212, TASK-0227, ADR-0073.
 - R14f1 — The pipeline builds the APK of the phone at each push. v0.213, TASK-0228.
+- R14f2 — The APK holds its assemblies, and the pipeline starts it on the emulator up to its first frame. v0.214, TASK-0229, ADR-0072.
 - P0.90 — The start again keeps an unsaved document, a window that does not open gives a code, and the flush holds its place. v0.211, TASK-0225.
 
 ## Track 0 — Foundations
