@@ -48,6 +48,7 @@ internal sealed unsafe class DesktopUi : IDisposable
     public const string SaveAsLabel = "Save as";
     public const string OpenLabel = "Open";
     public const string ExportStlLabel = "Export STL";
+    public const string DocumentMessageLabel = "Document message";
     public const string UndoLabel = "Undo";
     public const string RedoLabel = "Redo";
     public const string NewBoxLabel = "New box";
@@ -517,6 +518,7 @@ internal sealed unsafe class DesktopUi : IDisposable
         io.DeltaTime = deltaSeconds > 0 ? deltaSeconds : 1f / 60f;
 
         _panels.Clear();
+        _cutList = null;
         _items.Clear();
         _shown.Clear();
         FollowSelection(bodies, selection, sketchPanel);
@@ -688,7 +690,14 @@ internal sealed unsafe class DesktopUi : IDisposable
 
             ImGui.Separator();
             if (bodies.FirstOrDefault(body => body.Id == selection) is { } selected)
+            {
+                // Selected ends on its last line. Show all goes on that line when it fits there, so that the panel keeps
+                // its height (finding V50); else it starts a new line (finding V98, TASK-0232).
                 Selected(selected, bodies);
+                ImGui.SameLine();
+                if (ImGui.GetContentRegionAvail().X < ButtonWidth(ShowAllLabel))
+                    ImGui.NewLine();
+            }
 
             if (ImGui.Button(ShowAllLabel))
                 _actions.Add(new ShowAllAction());
@@ -699,7 +708,19 @@ internal sealed unsafe class DesktopUi : IDisposable
         var size = ImGui.GetWindowSize();
         _panels.Add(new Vector4(position.X, position.Y, position.X + size.X, position.Y + size.Y));
         ImGui.End();
+
+        // The review of Codex of v0.212, finding 1 (TASK-0232): the open list of a cut is a window of its own, and a tap on
+        // it must not reach the scene. It follows the panel, so that the panel stays the first rectangle.
+        if (_cutList is { } list)
+            _panels.Add(list);
     }
+
+    // The rectangle of the open list of a cut in this frame, or null.
+    private Vector4? _cutList;
+
+    // The width of a button with this label.
+    private static float ButtonWidth(string label)
+        => ImGui.CalcTextSize(label, true).X + 2f * ImGui.GetStyle().FramePadding.X;
 
     // The controls of the selected body. The name field starts with the name of the body each
     // time another body is selected.
@@ -761,8 +782,13 @@ internal sealed unsafe class DesktopUi : IDisposable
         var tools = bodies.Where(other => other.Id != body.Id && other.Visible).ToList();
         if (tools.Count == 0)
             return;
-        // The list stays on the line of Move, so that Show all stays in the panel (finding V50).
-        ImGui.SetNextItemWidth(120f);
+
+        // The list stays on the line of Move when it fits there, so that Show all stays in the panel (finding V50). For an
+        // extrude the line holds Set distance too, and the list starts a new line (finding V98, TASK-0232).
+        const float listWidth = 120f;
+        if (ImGui.GetContentRegionAvail().X < listWidth + ImGui.GetStyle().ItemInnerSpacing.X + ImGui.CalcTextSize(CutLabel, true).X)
+            ImGui.NewLine();
+        ImGui.SetNextItemWidth(listWidth);
         if (ImGui.BeginCombo(CutLabel, string.Empty))
         {
             foreach (var tool in tools)
@@ -772,6 +798,8 @@ internal sealed unsafe class DesktopUi : IDisposable
                 Item(CutItem(tool.Id));
             }
 
+            var (at, extent) = (ImGui.GetWindowPos(), ImGui.GetWindowSize());
+            _cutList = new Vector4(at.X, at.Y, at.X + extent.X, at.Y + extent.Y);
             ImGui.EndCombo();
         }
 
@@ -1233,6 +1261,19 @@ internal sealed unsafe class DesktopUi : IDisposable
     // ADR-0030 item 3: the name of the file, a name field, Save as and Open.
     private void File(DocumentLine document)
     {
+        // V99 (TASK-0232): a host with no files shows the message only.
+        if (!document.Files)
+        {
+            if (document.Message is { } only)
+            {
+                ImGui.TextUnformatted(only);
+                Item(DocumentMessageLabel);
+                ImGui.Separator();
+            }
+
+            return;
+        }
+
         ImGui.TextUnformatted(document.FileName is { } name ? $"File: {name}" : "File: unsaved");
         ImGui.SetNextItemWidth(200f);
         TextField(FileNameLabel, ref _fileName, 128);
@@ -1250,7 +1291,11 @@ internal sealed unsafe class DesktopUi : IDisposable
             _actions.Add(new ExportStlAction(_fileName));
         Item(ExportStlLabel);
         if (document.Message is { } message)
+        {
             ImGui.TextUnformatted(message);
+            Item(DocumentMessageLabel);
+        }
+
         ImGui.Separator();
     }
 

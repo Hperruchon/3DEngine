@@ -451,6 +451,12 @@ public sealed class NativeThreeDEngine : IThreeDEngine, IDisposable
     internal static (double X, double Y)? MarkPoint((double X, double Y)? hover, ImageActions? images)
         => images?.Calibrating is null ? hover : null;
 
+    // The line of the document in the panel. Finding V99 of the codebase review of 2026-11-06 (c) (TASK-0232): with no
+    // IDocumentFiles the panel had no line, so the rejection of a cut, of an Undo or of a sketch on a face showed nothing
+    // on the phone, although ADR-0073 item 2 sends it to the line of the document.
+    internal static DocumentLine LineOf(IDocumentFiles? files, string? fileName, string? message)
+        => new(fileName, message, Files: files is not null);
+
     // The path of the STL file of a name. Finding V72 of the codebase review of 2026-11-01 (TASK-0162):
     // Resolve adds .3de, so until TASK-0162 the name "part.stl" gave the file "part.stl.stl".
     internal static string? StlPath(IDocumentFiles files, string name, out string? refusal)
@@ -543,7 +549,7 @@ public sealed class NativeThreeDEngine : IThreeDEngine, IDisposable
             }
         }
 
-        var panel = _ui.Frame((float)_delta.TotalSeconds, display, scale, _renderer.LiveBodies, Selection, _document is null ? null : new DocumentLine(_host.FileName, _documentMessage), sketches, sketchPanel, imagePanel, dimensions, size);
+        var panel = _ui.Frame((float)_delta.TotalSeconds, display, scale, _renderer.LiveBodies, Selection, LineOf(_document, _host.FileName, _documentMessage), sketches, sketchPanel, imagePanel, dimensions, size);
         ApplyPanel(_renderer.LiveBodies);
 
         var ui = _uiRenderer;

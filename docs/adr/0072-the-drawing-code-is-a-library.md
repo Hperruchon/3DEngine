@@ -84,9 +84,8 @@ the dependency graph read items, not conditions. **Recommended: A.**
 gate refuses a reference to the surface or to ASP.NET Core in the application, so the phone cannot lose that path by
 accident.
 
-**Bad:** the desktop is two projects. The program references the application, four test files of `Engine.Tests` and
-the solution name it, and fifteen ADRs
-name its paths in their `affects` fields. The namespace `ThreeDEngine.Desktop` holds code that is not only of the
+**Bad:** the desktop is two projects. Two programs reference the application, `3DEngine` and `3DEngine.Android`; four
+test files of `Engine.Tests` and the solution name it, and the `affects` fields of other ADRs name its paths. The namespace `ThreeDEngine.Desktop` holds code that is not only of the
 desktop.
 
 **Next:** R14e2, the Android program: a `net10.0-android` project, an activity that subclasses `SDLActivity`, a session
@@ -100,3 +99,5 @@ of its own, and the APK.
   `Console.ForegroundColor`.
 - 2026-11-06 · TASK-0225 · Item 3 names the two actions that use a path (finding V95), and the count of the
   consequences is true (finding V96): until TASK-0225 it said "four test projects".
+- 2026-11-06 · TASK-0232 · The consequences name the two programs and give no count of ADRs (finding V103): the
+  correction of V96 said "the program" and "fifteen ADRs", and the Android project already referenced the application.

@@ -45,19 +45,61 @@ public sealed class CutUiTests
         return ui;
     }
 
-    // The list shows only with a selected body and another visible body, and it lies inside the panel.
-    [Fact]
-    public void The_List_Of_A_Cut_Shows_Only_With_Another_Visible_Body()
+    private static bool Inside(Vector4 item, Vector4 panel)
+        => item.X >= panel.X && item.Z <= panel.Z && item.Y >= panel.Y && item.W <= panel.W;
+
+    // The list shows only with a selected body and another visible body, and it lies inside the panel. Finding V98 of
+    // the codebase review of 2026-11-06 (c) (TASK-0232): for an extrude, Set distance is on the line too, and the list lay
+    // 178 pixels outside the panel. Show all stays inside the panel too (finding V50).
+    [Theory]
+    [InlineData("Box")]
+    [InlineData("Extrude")]
+    public void The_List_Of_A_Cut_Shows_Only_With_Another_Visible_Body(string kind)
     {
-        using (var none = Opened(null, [Plate, Tool]))
+        var plate = Plate with { Kind = kind };
+        using (var none = Opened(null, [plate, Tool]))
             Assert.Null(none.ItemRectangle(DesktopUi.CutLabel));
-        using (var alone = Opened(Plate.Id, [Plate, Hidden]))
+        using (var alone = Opened(plate.Id, [plate, Hidden]))
             Assert.Null(alone.ItemRectangle(DesktopUi.CutLabel));
 
-        using var ui = Opened(Plate.Id, [Plate, Tool]);
+        using var ui = Opened(plate.Id, [plate, Tool]);
         var list = ui.ItemRectangle(DesktopUi.CutLabel)!.Value;
-        var panel = ui.PanelRectangles.First();
-        Assert.True(list.X >= panel.X && list.Z <= panel.Z && list.W <= panel.W, $"The list {list} is outside the panel {panel}.");
+        var showAll = ui.ItemRectangle(DesktopUi.ShowAllLabel)!.Value;
+        var panel = ui.PanelRectangles[0];
+        Assert.True(Inside(list, panel), $"The list {list} is outside the panel {panel}.");
+        Assert.True(Inside(showAll, panel), $"Show all {showAll} is outside the panel {panel}.");
+    }
+
+    // The review of Codex of v0.212, finding 1 (TASK-0232): the popup of the list added no rectangle to the panels, so a tap
+    // on a part of the popup outside the panel reached the scene. The open popup is a panel of the frame.
+    [Fact]
+    public void The_Open_List_Is_A_Panel()
+    {
+        LiveBody[] bodies = [Plate, Tool];
+        using var ui = Opened(Plate.Id, bodies);
+
+        Tap(ui, DesktopUi.CutLabel, Plate.Id, bodies);
+
+        var item = ui.ItemRectangle(DesktopUi.CutItem(Tool.Id)) ?? throw new InvalidOperationException("The list did not open.");
+        Assert.Contains(ui.PanelRectangles.Skip(1), panel => Inside(item, panel));
+    }
+
+    // Finding V99 of the codebase review of 2026-11-06 (c) (TASK-0232): with no IDocumentFiles, as on the phone, the panel
+    // had no line of the document, so a rejected cut showed nothing. The line shows the message and no file control.
+    [Fact]
+    public void A_Host_With_No_Files_Shows_The_Rejection_Of_A_Cut()
+    {
+        var line = NativeThreeDEngine.LineOf(null, null, "E-GEOM-NATIVE-OP: the subtraction gives an empty solid.");
+        LiveBody[] bodies = [Plate, Tool];
+        using var ui = new DesktopUi("http://127.0.0.1:5180", Document.Millimetre);
+        for (var frame = 0; frame < 2; frame++)
+        {
+            ui.Route([]);
+            ui.Frame(1f / 60f, Display, Vector2.One, bodies, Plate.Id, line);
+        }
+
+        Assert.NotNull(ui.ItemRectangle(DesktopUi.DocumentMessageLabel));
+        Assert.Null(ui.ItemRectangle(DesktopUi.SaveAsLabel));
     }
 
     // A tap on the list and a tap on a tool give the cut of the selected body with that tool. A hidden body is no tool.
