@@ -1,7 +1,7 @@
 ---
 id: 0255
 title: The session of a destroyed activity ends before its window
-status: Active
+status: Done
 phase: P0.103
 opened: 2026-11-07
 depends-on: [0251]
@@ -55,23 +55,25 @@ session of the process is gone.
 
 ## Acceptance criteria
 
-- [ ] Each change has a test or an injection that fails before the change and passes after it.
-- [ ] A clean build (`--no-incremental`) gives zero errors and zero warnings, and the phone project builds.
-- [ ] Continuous integration passes on the three runners, on the branch and on `main` after the merge.
+- [x] Each change has a test or an injection that fails before the change and passes after it.
+- [x] A clean build (`--no-incremental`) gives zero errors and zero warnings, and the phone project builds.
+- [x] Continuous integration passes on the three runners, on the branch and on `main` after the merge.
 
 ## Outcome
 
-Status: Active
+Status: Done · commit (the merge of the branch p0103-stale-session-b) · v0.238
 
 ## Method
 
 Mechanical: a test or an injection for each change, before the change.
 Judgement:  the turns and the hold live in `3DEngine.App`, as `PhoneLifecycle` does, so that a test holds them with no
             device; `PhoneHost` and `MainActivity` only call them.
-Weakest:    to be written at the close.
+Weakest:    no run can force a new create of the activity during the probe, so the order of the two failed runs is
+            held by a test of the turns with no device, and the next runs of the emulator show the rest.
 
 ## Progress
 
 - 2026-11-07: opened by the failed run 42308415060 of `main`.
 - 2026-11-07: `SessionTurns`, the check before and after the hold of the window, and the turn of each create; three tests.
   An injection of a turn that is always the last one and of a hold that does not wait fails the three tests.
+- 2026-11-07: run 42311258959 passed. Closed at v0.238.
