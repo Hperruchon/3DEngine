@@ -13,7 +13,7 @@ namespace ThreeDEngine.Desktop;
 // the port, and the next session holds the file; with a fixed port it is the same port, so an
 // agent connects again to the same address. Since R14b (ADR-0061 item 9, TASK-0194) the next
 // session is in the same process; until then the program started again with --file.
-internal sealed class DesktopDocument
+internal sealed class DesktopDocument : IDocumentFiles
 {
     private string? _requested;
 
@@ -26,6 +26,11 @@ internal sealed class DesktopDocument
     }
 
     public DocumentFolder Folder { get; }
+
+    // ADR-0072 item 3 (TASK-0222): the files of the application are the names of the document folder.
+    public string? Resolve(string name, out string? refusal) => Folder.Resolve(name, out refusal);
+
+    public Task<ErrorDetail?> Open(string path, CancellationToken ct) => Folder.Open(path, ct);
 
     // The path of the file to open after the window closes, or null.
     public string? RequestedOpen => Volatile.Read(ref _requested);

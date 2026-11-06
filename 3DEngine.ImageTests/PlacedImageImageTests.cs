@@ -46,7 +46,7 @@ public sealed class PlacedImageImageTests : IDisposable
         ]);
         var store = new AssetStore(Path.Combine(_folder, "store"));
         var actions = new ImageActions(host.Session, store);
-        using var images = new SessionImages(host, store);
+        using var images = new SessionImages(new HostedSession(host), store);
         var camera = Facing();
 
         actions.Place(file, Datums.XY.Id);
@@ -64,7 +64,7 @@ public sealed class PlacedImageImageTests : IDisposable
         using (var device = new GraphicsDevice("3DEngine.ImageTests", enableValidation: true, window: null, synchronizationValidation: true))
         {
             using var target = new OffscreenTarget(device, new VkExtent2D(Width, Height));
-            using var renderer = new SceneRenderer(device, target.RenderPass, host);
+            using var renderer = new SceneRenderer(device, target.RenderPass, new HostedSession(host));
             renderer.Update(scene, scene.Cameras[0], (float)Width / Height);
             images.Apply((asset, picture) =>
             {

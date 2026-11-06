@@ -13,7 +13,7 @@ affects:
   - Engine.Core/CommandBus.cs
   - Engine.Core/Commands/**
   - Engine.Api.Http/Endpoints/SchemaEventsEndpoint.cs
-  - 3DEngine/SessionBodies.cs
+  - 3DEngine.App/SessionBodies.cs
 enforced-by: Engine.Tests/Commands/UndoRedoTests.cs (TASK-0093 creates it)
 ---
 

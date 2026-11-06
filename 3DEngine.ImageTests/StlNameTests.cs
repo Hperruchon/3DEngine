@@ -21,7 +21,7 @@ public sealed class StlNameTests : IDisposable
     [InlineData("part.STL")]
     public void Each_Name_Of_A_Part_Gives_One_Extension(string name)
     {
-        var path = NativeThreeDEngine.StlPath(new DocumentFolder(_folder), name, out var refusal);
+        var path = NativeThreeDEngine.StlPath(new DesktopDocument(_folder), name, out var refusal);
 
         Assert.Equal(Path.Combine(Path.GetFullPath(_folder), "part.stl"), path);
         Assert.Null(refusal);
@@ -31,7 +31,7 @@ public sealed class StlNameTests : IDisposable
     [Fact]
     public void The_Extension_Alone_Is_Not_A_Name()
     {
-        Assert.Null(NativeThreeDEngine.StlPath(new DocumentFolder(_folder), ".stl", out var refusal));
+        Assert.Null(NativeThreeDEngine.StlPath(new DesktopDocument(_folder), ".stl", out var refusal));
         Assert.Equal("A name is required.", refusal);
     }
 }

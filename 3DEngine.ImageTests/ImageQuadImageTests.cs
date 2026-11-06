@@ -47,7 +47,7 @@ public class ImageQuadImageTests
         using (var device = new GraphicsDevice("3DEngine.ImageTests", enableValidation: true, window: null, synchronizationValidation: true))
         {
             using var target = new OffscreenTarget(device, new VkExtent2D(Width, Height));
-            using var renderer = new SceneRenderer(device, target.RenderPass, host);
+            using var renderer = new SceneRenderer(device, target.RenderPass, new HostedSession(host));
             // The first visible body frames the camera that Update gets, so the test keeps its own.
             renderer.Update(scene, scene.Cameras[0], (float)Width / Height);
             renderer.Upload("halves", 2, 1, halves);

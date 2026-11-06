@@ -44,7 +44,7 @@ public class RebuildImageTests
         using (var device = new GraphicsDevice("3DEngine.ImageTests", enableValidation: true, window: null))
         {
             using var target = new OffscreenTarget(device, new VkExtent2D(320, 240));
-            using var renderer = new SceneRenderer(device, target.RenderPass, host);
+            using var renderer = new SceneRenderer(device, target.RenderPass, new HostedSession(host));
             // One entity in the scene at each step: a rebuild replaces the entity of the body.
             double MaxX()
             {

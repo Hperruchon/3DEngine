@@ -11,7 +11,7 @@ writes:
     - tasks/TASK-0178-dimension-overlay.md
     - docs/adr/0056-dimension-overlay.md
     - 3DEngine.Core/Measuring/Dimensions.cs
-    - 3DEngine/DimensionOverlay.cs
+    - 3DEngine.App/DimensionOverlay.cs
     - 3DEngine.Tests/DimensionsTests.cs
     - 3DEngine.ImageTests/DimensionOverlayTests.cs
     - 3DEngine.ImageTests/DimensionImageTests.cs
@@ -88,3 +88,5 @@ Weakest:    no one opened the desktop window; the image test renders the same co
 
 - 2026-11-04: opened with the four answers of the owner. The geometry, the overlay, the toggles and the tests.
 - 2026-11-04: ten injections each fail a test; the picture of the image test goes to the owner; closed at v0.179.
+- 2026-11-06: TASK-0222 moved `3DEngine/DimensionOverlay.cs` into `3DEngine.App/` (ADR-0072), so the
+  create list names the new path. This task made the file at the old path.

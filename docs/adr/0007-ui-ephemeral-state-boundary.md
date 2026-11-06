@@ -10,6 +10,7 @@ amends: []
 amended-by: []
 affects:
   - 3DEngine/**
+  - 3DEngine.App/**
 enforced-by: UNENFORCED (accepted risk)
 notes: No render host wires the projection yet.
 ---

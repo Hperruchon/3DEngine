@@ -10,9 +10,9 @@ amends: []
 amended-by: []
 affects:
   - 3DEngine.Core/Imaging/**
-  - 3DEngine/SessionImages.cs
-  - 3DEngine/ImagePlacement.cs
-  - 3DEngine/ImageActions.cs
+  - 3DEngine.App/SessionImages.cs
+  - 3DEngine.App/ImagePlacement.cs
+  - 3DEngine.App/ImageActions.cs
 enforced-by: 3DEngine.ImageTests/ImageActionsTests.cs
 ---
 

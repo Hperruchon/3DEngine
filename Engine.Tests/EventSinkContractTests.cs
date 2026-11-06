@@ -33,6 +33,8 @@ public sealed class EventSinkContractTests
     private static readonly Dictionary<string, string> ReadElsewhere = new(StringComparer.Ordinal)
     {
         ["3DEngine"] = "3DEngine.ImageTests/DesktopSinkContractTests.cs",
+        // ADR-0072 (TASK-0222): the application of the desktop, which the same test reads.
+        ["3DEngine.App"] = "3DEngine.ImageTests/DesktopSinkContractTests.cs",
     };
 
     [Fact]
