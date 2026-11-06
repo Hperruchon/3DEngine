@@ -5977,3 +5977,28 @@ No code changes. The test list holds 1818 (1297 in `Engine.Tests`, 320 in `3DEng
 `3DEngine.ImageTests`, 3 in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and
 zero warnings. Open entries: 14 of 15. New diagnostic codes: 0. Since the review of v0.198, 0 product milestones and 1
 entry followed it.
+
+## v0.200 — An export of the command line refuses a file that is its own document file (P0.87, TASK-0220)
+
+The review of Codex of the merge of v0.198 gives a high finding: `engine export step part.3de part.3de` wrote the STEP
+text over the document file, and the document no longer opened. The order 2 of the owner says that a confirmed high
+finding of Codex becomes a correction task before the next product phase, K6b. The STL export of P8g had the same
+defect: `DocumentFile.Read` holds no journal, and `Cli.Export` wrote the file with no compare of the two paths.
+
+**The change.** `Cli.Export` compares the full paths of the document and of the export, after a symbolic link and with
+no case on Windows and macOS, and gives `E-EXPORT-WRITE-FAILED` before it reads the document. The row of the code in
+`docs/diagnostics.md` names the case. No new code.
+
+**Proof.** `StlExportTests.An_Export_Onto_Its_Own_Document_File_Is_Refused_And_The_Document_Stays`, for STL and STEP,
+with the same path and with a spelling through `.`: before the change both cases wrote over the document; after it each
+gives the code and the bytes of the document stay. An injection that compares the raw strings fails the test again.
+
+**What stays.** A hard link to the document is a second name that a compare of paths does not see. The other Codex
+findings (a medium one of v0.196 on the window of the desktop, and E146 again) go into the next codebase review.
+
+**A correction.** The row of `E-EXPORT-WRITE-FAILED` said "The document file does not change", which was false for this
+case until this entry.
+
+New tests: 2. The test list holds 1820 (1299 in `Engine.Tests`, 320 in `3DEngine.Tests`, 198 in `3DEngine.ImageTests`,
+3 in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
+entries: 14 of 15. New diagnostic codes: 0. Since the review of v0.198, 0 product milestones and 2 entries followed it.
