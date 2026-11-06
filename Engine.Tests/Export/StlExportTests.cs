@@ -207,6 +207,34 @@ public sealed class StlExportTests : IDisposable
         Assert.Equal((1, DiagnosticCodes.IoLoadFailed, "The path of the document file is empty."), (emptyExit, empty.GetProperty("code").GetString(), empty.GetProperty("message").GetString()));
     }
 
+    // The review of Codex of v0.198, finding 1 (TASK-0220): `engine export step part.3de part.3de` wrote the STEP text over
+    // the document file, and the document no longer opened. An export onto its own document file, also by another spelling
+    // of the path, gives E-EXPORT-WRITE-FAILED and leaves each byte of the document.
+    [NativeManifoldTheory]
+    [InlineData("stl")]
+    [InlineData("step")]
+    public async Task An_Export_Onto_Its_Own_Document_File_Is_Refused_And_The_Document_Stays(string format)
+    {
+        var document = Path.Combine(_folder, "part" + DocumentFile.Extension);
+        using (var backend = new ManifoldGeometryBackend())
+        {
+            var session = Session(backend);
+            DocumentFile.Create(session, document);
+            await session.Apply(new CreateBoxCommand { SizeX = 1, SizeY = 2, SizeZ = 3 });
+            session.Close();
+        }
+        var before = File.ReadAllBytes(document);
+
+        var other = Path.Combine(_folder, ".", "part" + DocumentFile.Extension);
+        foreach (var target in new[] { document, other })
+        {
+            var (exit, output) = Run("export", format, document, target);
+            var error = JsonDocument.Parse(output).RootElement.GetProperty("error");
+            Assert.Equal((1, DiagnosticCodes.ExportWriteFailed), (exit, error.GetProperty("code").GetString()));
+            Assert.Equal(before, File.ReadAllBytes(document));
+        }
+    }
+
     // Finding E121: a vertex that is not finite as a float gives E-EXPORT-RANGE and no file, and a control box at the
     // edge of the range of a float gives its file.
     [NativeManifoldFact]
