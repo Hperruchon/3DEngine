@@ -101,3 +101,4 @@ ADR-0027 item 6 is wide, so a name of more than about nine letters ends with "..
 ## History
 
 - 2026-11-07 · TASK-0267 · The record, Accepted under the standing order.
+- 2026-11-07 · TASK-0267 · Shipped at v0.252.

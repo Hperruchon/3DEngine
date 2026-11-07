@@ -7579,3 +7579,34 @@ Run 42359402926 passed on the three runners and on the emulator.
 New tests: 6. The test list holds 2034 (1410 in `Engine.Tests`, 337 in `3DEngine.Tests`, 284 in `3DEngine.ImageTests`, 3
 in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
 entries: 15 of 15. New diagnostic codes: 0. Since the review of v0.243, 3 product milestones and 8 entries followed it.
+
+## v0.252 — The data of the selected body is in rows with no panel (R16d, TASK-0267)
+
+The owner ordered the layout of the redesign slice by slice, with no change of the contract, and on 2026-11-07 put the next
+redesign slices after the STL demonstration. After the fixed controls, the tool ring and the values on the edges comes
+"the rows without a panel" of the "mix" direction of the designer brief.
+
+**The change.** ADR-0084 is new and Accepted under the standing order (Q1 A, Q2 A, Q3 A). It amends ADR-0081 item 2 and
+ADR-0082 items 2 and 3.
+- On a landscape display, while a body is selected, the rows are a column 360 pixels wide at the upper right, 16 pixels
+  inside the safe area, with no ground and no border. A portrait display shows no rows in this slice.
+- The first row gives the name of the body, and its kind and state: "correct", or "failed" and the code in red, and
+  "hidden". Then one row for each value of ADR-0082, with "Distance", "Length" or "Radius" and the value with its unit.
+- A tap on a value row opens its pad, as its chip does, and the row is pending while that pad is open. A row is drawn
+  over the ring and the chips, so a release on a row gives the row only. A chip that falls on the rows goes under them.
+- The new gate of TASK-0263 found its first case here: `DesktopUi.Rows.cs` cites ADR-0082, so ADR-0082 names it.
+
+**Proof.** Seven new tests with no GPU: the place, the safe area, the state, the tap by touch and by mouse, a row over a
+segment, and a chip on the rows. Injections of a ring with no guard of the rows and of a chip that stays on the rows each
+fail a test. A picture on the GPU, `rows.png`, was sent to the owner. The first picture showed the state past the right
+edge and a chip on the rows; both are corrected, and the column is 360 pixels because the bitmap font cut "Bracket" at
+320. Run 42360390053 passed.
+
+**What stays.** The name of the body shows two times, in the panel and in the rows. The rows on a portrait display, the
+tools of the selection out of the panel and the sketch under its body are later slices. No person used the rows yet.
+
+**A correction.** None. The failed runs since the entry v0.251, from the API: none.
+
+New tests: 8. The test list holds 2042 (1410 in `Engine.Tests`, 337 in `3DEngine.Tests`, 292 in `3DEngine.ImageTests`, 3
+in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
+entries: 15 of 15. New diagnostic codes: 0. Since the review of v0.243, 4 product milestones and 9 entries followed it.
