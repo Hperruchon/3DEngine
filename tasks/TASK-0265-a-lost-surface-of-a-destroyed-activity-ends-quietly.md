@@ -1,7 +1,7 @@
 ---
 id: 0265
 title: A lost surface of a destroyed activity ends the session quietly, and the activity names its change
-status: Ready
+status: Active
 phase: P0.108
 opened: 2026-11-07
 depends-on: [0262]
@@ -50,14 +50,19 @@ change of the configuration that destroys the activity.
 
 ## Outcome
 
-Status: Ready
+Status: Active
 
 ## Method
 
-Mechanical: to be written in the task.
-Judgement:  to be written in the task.
+Mechanical: the phone project builds; the next runs of the emulator show the line of the destroy and the end of a session
+            with a lost surface.
+Judgement:  a lost surface ends the engine as the background does, so a session whose turn stays the last one waits for
+            the foreground and makes a new engine, and a session whose turn is stale ends quietly; the exception is
+            matched by the name of its result, because Vortice gives no result field.
 Weakest:    to be written at the close.
 
 ## Progress
 
 - 2026-11-07: opened by the codebase review of 2026-11-07.
+- 2026-11-07: the catch of a lost surface, the wait that ends a stale session, and the line of the destroy with the change
+  of the configuration; the phone project builds.
