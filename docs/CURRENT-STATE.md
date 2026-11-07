@@ -7631,7 +7631,8 @@ in the code. Eight leads of Codex are confirmed, and two are refuted as current 
 - The two questions of the review (E173: how a change of the reader is versioned; E174: the view after the background)
   have the recommended answer A under the standing order.
 
-**Proof.** `CodebaseReviewGateTests` passes with the new review. The main run of v0.252 (42361368077) passed.
+**Proof.** `CodebaseReviewGateTests` passes with the new review. The main run of v0.252 (42361368077) passed, and run
+42362739671 of the review passed.
 
 **What stays.** The open findings are 0 critical, 9 high, 19 medium and 32 low. The lines of the findings up to T164 are
 carried from the last review.
