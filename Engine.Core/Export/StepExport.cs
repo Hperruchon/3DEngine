@@ -27,6 +27,10 @@ public static class StepExport
         var solids = new List<(Guid Body, Brep Brep)>();
         foreach (var record in document.Bodies.OrderBy(body => body.Handle.Id))
         {
+            // ADR-0083 item 4 (TASK-0258): a mesh body is exported as STL only.
+            if (record.Kind == Commands.ImportStlCommandHandler.MeshKind)
+                return (null, new ErrorDetail(DiagnosticCodes.MeshUnsupported,
+                    $"The body '{record.Handle.Id}' is a mesh body of an STL file, which the STEP export does not write; export it as STL (ADR-0083 item 4)."));
             var (solid, reason) = KernelProjection.OfRecord(document, record);
             if (solid is null)
                 return Refused(record.Handle.Id, reason!);

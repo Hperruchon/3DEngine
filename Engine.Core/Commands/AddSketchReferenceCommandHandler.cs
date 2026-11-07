@@ -72,6 +72,11 @@ public sealed class AddSketchReferenceCommandHandler : ICommandHandler, ICommand
         if (SketchModel.Find(document, add.SketchId) is not { } sketch)
             return Task.FromResult(SketchResults.NotFound(add.SketchId));
 
+        // ADR-0083 item 4 (TASK-0258): a mesh body has no edge and no vertex for a sketch.
+        if (document.Bodies.Any(body => body.Handle.Id == add.FeatureId && body.Kind == ImportStlCommandHandler.MeshKind))
+            return Task.FromResult(SketchResults.Failure(DiagnosticCodes.MeshUnsupported,
+                $"The feature '{add.FeatureId}' is a mesh body of an STL file, which gives no reference to a sketch (ADR-0083 item 4)."));
+
         // Item 7: a feature that depends on the sketch would make the sketch depend on itself.
         var graph = FeatureGraph.Of(document);
         if (DatumResolver.DependsOn(document, graph, add.FeatureId, sketch.Id))

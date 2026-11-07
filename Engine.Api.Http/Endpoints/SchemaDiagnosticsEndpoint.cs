@@ -83,6 +83,13 @@ internal static class SchemaDiagnosticsEndpoint
         new(DiagnosticCodes.ExportRange,           "Error",   "EXPORT"), // finding E121, TASK-0160
         new(DiagnosticCodes.ExportTooLarge,        "Error",   "EXPORT"), // finding E121, TASK-0160
         new(DiagnosticCodes.ExportWriteFailed,     "Error",   "EXPORT"), // finding E122, TASK-0160
+        new(DiagnosticCodes.StlTruncated,          "Error",   "STL"), // ADR-0083, TASK-0258
+        new(DiagnosticCodes.StlSyntax,             "Error",   "STL"), // ADR-0083, TASK-0258
+        new(DiagnosticCodes.StlNotFinite,          "Error",   "STL"), // ADR-0083, TASK-0258
+        new(DiagnosticCodes.StlEmpty,              "Error",   "STL"), // ADR-0083, TASK-0258
+        new(DiagnosticCodes.StlTooLarge,           "Error",   "STL"), // ADR-0083, TASK-0258
+        new(DiagnosticCodes.StlAsset,              "Error",   "STL"), // ADR-0083, TASK-0258
+        new(DiagnosticCodes.MeshUnsupported,       "Error",   "MESH"), // ADR-0083, TASK-0258
         new(DiagnosticCodes.ExportBodyFailed,      "Error",   "EXPORT"), // ADR-0070 item 3, TASK-0200
         new(DiagnosticCodes.ExportKindRefused,     "Error",   "EXPORT"), // finding E155, TASK-0224
         new(DiagnosticCodes.CommandKindRefused,    "Error",   "CMD"), // ADR-0071 item 2, TASK-0202
