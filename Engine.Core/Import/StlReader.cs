@@ -17,7 +17,43 @@ public static class StlReader
     private const int HeaderBytes = 80;
     private const int TriangleBytes = 50;
 
+    // Findings E180 and E181 of the codebase review of 2026-11-07 (c) (TASK-0280): ADR-0083 item 3. A refused import is not in
+    // the log, so only the files that an earlier reader accepted have a result to keep. Each file gets the result of the
+    // first of three rules that accepts it: the rule of v0.243, the rule of HEAD, then the rule of v0.250. The rule of
+    // v0.254 gives the result of HEAD for each file that it accepted. Two classes of files had two earlier results, and this
+    // order keeps the results of v0.243 and of v0.254 (E182, Q1 A). Until TASK-0280 a text file with a zero byte, which
+    // v0.243 read, and a name such as "facet normal 0 0 1 outer", which v0.250 read, were refused.
     public static (float[]? Triangles, ErrorDetail? Error) Read(ReadOnlySpan<byte> bytes)
+    {
+        if (StartsWithSolid(bytes) && !BinaryByLength(bytes))
+        {
+            var first = Text(bytes, NameEndOfV0243);
+            if (first.Item1 is not null)
+                return first;
+        }
+
+        var current = ReadByTheRuleOfHead(bytes);
+        if (current.Triangles is not null || BinaryByLength(bytes))
+            return current;
+
+        var body = bytes.StartsWith(ByteOrderMark) ? bytes[ByteOrderMark.Length..] : bytes;
+        if (StartsWithSolid(body) && (bytes.Length < HeaderBytes + 4 || IsText(body)))
+        {
+            var third = Text(body, NameEndOfV0250);
+            if (third.Item1 is not null)
+                return third;
+        }
+
+        return current;
+    }
+
+    // A file whose length is 84 plus 50 times its count is binary in each rule.
+    private static bool BinaryByLength(ReadOnlySpan<byte> bytes)
+        => bytes.Length >= HeaderBytes + 4
+            && bytes.Length == HeaderBytes + 4 + ((long)BinaryPrimitives.ReadUInt32LittleEndian(bytes.Slice(HeaderBytes, 4)) * TriangleBytes);
+
+    // The rule of HEAD: the format choice of E170 and E178, and the name rule of NameEnd.
+    private static (float[]? Triangles, ErrorDetail? Error) ReadByTheRuleOfHead(ReadOnlySpan<byte> bytes)
     {
         // A file whose length is 84 plus 50 times its count is binary, even when its header starts with "solid", as the
         // header of some programs does.
@@ -38,7 +74,7 @@ public static class StlReader
         {
             var bad = FirstNonText(body);
             if (bytes.Length < HeaderBytes + 4 ? body.IndexOf((byte)0) < 0 : bad < 0 || (bad < HeaderBytes && body[bad] != 0))
-                return Text(body);
+                return Text(body, NameEnd);
         }
 
         return (null, Error(DiagnosticCodes.StlTruncated, bytes.Length >= HeaderBytes + 4
@@ -70,7 +106,7 @@ public static class StlReader
         return (triangles, null);
     }
 
-    private static (float[]?, ErrorDetail?) Text(ReadOnlySpan<byte> bytes)
+    private static (float[]?, ErrorDetail?) Text(ReadOnlySpan<byte> bytes, Func<string, string[], int> nameEnd)
     {
         string text;
         try
@@ -83,7 +119,7 @@ public static class StlReader
         }
 
         var words = text.Split((char[]?)null, StringSplitOptions.RemoveEmptyEntries);
-        var at = NameEnd(text, words);
+        var at = nameEnd(text, words);
 
         var triangles = new List<float>();
         while (true)
@@ -151,6 +187,24 @@ public static class StlReader
         while (end < words.Length && words[end] != "facet" && words[end] != "endsolid")
             end++;
         return end;
+    }
+
+    // E180 (TASK-0280): the name rule of v0.243 to v0.249: the name ends at the first word "facet" or "endsolid".
+    private static int NameEndOfV0243(string text, string[] words)
+    {
+        var end = 1;
+        while (end < words.Length && words[end] != "facet" && words[end] != "endsolid")
+            end++;
+        return end;
+    }
+
+    // E181 (TASK-0280): the name rule of v0.250 to v0.253: the name is the rest of the line of "solid", or, in a file of one
+    // line, the rule of v0.243.
+    private static int NameEndOfV0250(string text, string[] words)
+    {
+        var solid = text.Length - text.TrimStart().Length;
+        var line = text.IndexOfAny(['\r', '\n'], solid);
+        return line < 0 ? NameEndOfV0243(text, words) : text[..line].Split((char[]?)null, StringSplitOptions.RemoveEmptyEntries).Length;
     }
 
     // The byte order mark of UTF-8, which some programs write at the start of a text file (E170).

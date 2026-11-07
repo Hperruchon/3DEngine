@@ -102,12 +102,16 @@ internal sealed unsafe partial class DesktopUi
     // on the screen, its inner radius is 24 pixels more than the half of the diagonal of the sketch, at least 100, and its
     // segments go down on the left side, so the band does not cover the sketch. The centre moves only as far as the band
     // needs to stay 16 pixels to the right of the panel and inside the display.
-    internal static RingLayout SketchLayout(Vector2 display, Vector2 centre, int count, float sketch, float panelRight)
+    // Finding V134 of the codebase review of 2026-11-07 (c) (TASK-0280): the centre stays at or left of the window of the
+    // sketch, so the band, which is on the left of the centre, is not under that window; and the inner radius is at most the
+    // half of the display less the band and 16 pixels, so the band fits the height. Until TASK-0280 a sketch at the right
+    // put segments under the window, and a large sketch put Finish below the display.
+    internal static RingLayout SketchLayout(Vector2 display, Vector2 centre, int count, float sketch, float panelRight, float windowLeft)
     {
         var span = (count * RingSegment) + ((count - 1) * RingGap);
-        var inner = Math.Max(100f, sketch + 24f);
+        var inner = Math.Min(Math.Max(100f, sketch + 24f), Math.Max(100f, (display.Y / 2f) - 16f - RingBand));
         var reach = inner + RingBand + 16f;
-        var x = Math.Min(Math.Max(centre.X, panelRight + reach), display.X - 16f);
+        var x = Math.Min(Math.Min(Math.Max(centre.X, panelRight + reach), windowLeft), display.X - 16f);
         var y = Math.Clamp(centre.Y, reach, Math.Max(reach, display.Y - reach));
         return new RingLayout(new Vector2(x, y), inner, MathF.PI + (span / 2f), -1f);
     }
@@ -149,11 +153,18 @@ internal sealed unsafe partial class DesktopUi
     private string _constrainKey = string.Empty;
     private List<(string Label, Action Press)> _fitting = [];
 
+    // V134 (TASK-0280): the window of the sketch of the last frame, which the ring of this frame must not be under, and true
+    // when the middle of each segment of the ring of this frame is on the display and under no window and no anchor. The
+    // window of the sketch drops the buttons of the ring only then (ADR-0088 item 1).
+    private Vector4? _sketchWindow;
+    private bool _ringReachable;
+
     // The ring of the selected body, or of the active sketch (ADR-0086), or none while a pad is open or with no centre.
     private void Ring(Vector2 displaySize, LiveBody? body, Vector2? centre, float size)
     {
         _ring = null;
         _ringLabels = [];
+        _ringReachable = false;
         if (centre is not { } at || _pad is not null || (body is null && !_sketchActive))
             return;
 
@@ -199,10 +210,14 @@ internal sealed unsafe partial class DesktopUi
         var panelRight = _panels.Count > 0 ? _panels[0].Z : 0f;
         var sketchRing = _sketchActive && displaySize.X >= displaySize.Y;
         var ring = sketchRing
-            ? SketchLayout(displaySize, at, labels.Count, size, panelRight)
+            ? SketchLayout(displaySize, at, labels.Count, size, panelRight, _sketchWindow?.X ?? displaySize.X)
             : Layout(displaySize, at, labels.Count, size, _inset);
         _ring = ring;
         _ringLabels = labels;
+        var covers = _panels.Concat(_fixed).Concat(_sketchActive && _sketchWindow is { } window ? [window] : []).ToList();
+        _ringReachable = ring.Segments(labels).Select(ring.Middle).All(middle =>
+            middle.X >= 0f && middle.Y >= 0f && middle.X < displaySize.X && middle.Y < displaySize.Y
+            && !covers.Any(cover => middle.X >= cover.X && middle.X < cover.Z && middle.Y >= cover.Y && middle.Y < cover.W));
 
         // The press and the release on one segment, with no window of the panels under the mouse, give its tool.
         // Finding V120 of the codebase review of 2026-11-07 (TASK-0264): a chip is drawn over the ring, so a release on a

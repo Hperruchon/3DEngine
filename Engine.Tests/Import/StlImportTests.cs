@@ -135,6 +135,10 @@ public sealed class StlImportTests
             ("one line with no name and a final LF", $"solid {one} endsolid\n", Triangle),
             ("a name and the facets on lines of their own", Text(Facet), Triangle),
             ("facet and normal on two lines", $"solid part facet\nnormal 0 0 1\n outer loop\n  vertex 0 0 0\n  vertex 10 0 0\n  vertex 0 10 0\n endloop\nendfacet\nendsolid part\n", Triangle),
+            // Finding E180 of the codebase review of 2026-11-07 (c) (TASK-0280): v0.243 sent each file that starts with "solid"
+            // to the text reader, and a zero byte is valid UTF-8; v0.250 to v0.262 gave E-STL-TRUNCATED.
+            ("four zero bytes after endsolid", $"solid part\n{Facet}endsolid part\n\0\0\0\0", Triangle),
+            ("a zero byte in the name", $"solid pa\0rt\n{Facet}endsolid part\n", Triangle),
         ];
 
         foreach (var (form, text, triangles) in forms)
@@ -159,6 +163,10 @@ public sealed class StlImportTests
             ("a name of facet normal and two numbers", $"solid facet normal 0 0\n{Facet}endsolid\n"),
             ("a name of facet normal and three numbers", $"solid facet normal 0 0 1\n{Facet}endsolid\n"),
             ("a name of facet normal", $"solid facet normal\n{Facet}endsolid\n"),
+            // Finding E181 of the codebase review of 2026-11-07 (c) (TASK-0280): v0.243 and v0.254 refused these names, and v0.257
+            // to v0.262 refused them too, because the name ended at the start of a whole facet.
+            ("a name of facet normal, three numbers and outer", $"solid facet normal 0 0 1 outer\n{Facet}endsolid\n"),
+            ("a name of facet normal, three numbers and outer loop", $"solid facet normal 0 0 1 outer loop\n{Facet}endsolid\n"),
         ];
 
         foreach (var (form, text) in forms)
@@ -166,6 +174,28 @@ public sealed class StlImportTests
             var (read, error) = StlReader.Read(Encoding.ASCII.GetBytes(text));
             Assert.True(error is null, $"{form}: {error?.Code} {error?.Message}");
             Assert.Equal(Triangle, read);
+        }
+    }
+
+    // Finding E182 of the codebase review of 2026-11-07 (c) (TASK-0280, Q1 A): two classes of files had two earlier results, so
+    // no rule keeps both. The reader keeps the result of v0.243 when v0.243 read the file, and else the result of v0.254 and
+    // later; a document of v0.250 to v0.253 with such a file replays to these results (ADR-0083 item 3).
+    [Fact]
+    public void A_File_That_Two_Earlier_Readers_Read_Gets_The_Result_Of_V0243_Or_Of_V0254()
+    {
+        var one = Facet.Replace("\n", " ", StringComparison.Ordinal);
+        float[] two = [.. Triangle, .. Triangle];
+        (string Form, string Text)[] forms =
+        [
+            ("a whole facet on the line of solid (v0.243: two, v0.250: one)", $"solid {one}\n{Facet}endsolid\n"),
+            ("endsolid and a whole facet on the line of solid (v0.250: one, v0.254: two)", $"solid endsolid {one}\n{Facet}endsolid\n"),
+        ];
+
+        foreach (var (form, text) in forms)
+        {
+            var (read, error) = StlReader.Read(Encoding.ASCII.GetBytes(text));
+            Assert.True(error is null, $"{form}: {error?.Code} {error?.Message}");
+            Assert.Equal(two, read);
         }
     }
 
