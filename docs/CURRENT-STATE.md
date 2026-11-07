@@ -7811,3 +7811,43 @@ Run 42366757388 passed.
 New tests: 7. The test list holds 2068 (1412 in `Engine.Tests`, 337 in `3DEngine.Tests`, 316 in `3DEngine.ImageTests`, 3
 in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
 entries: 15 of 15. New diagnostic codes: 0. Since the review of v0.252, 1 product milestone and 6 entries followed it.
+
+## v0.259 — The phone, engine and gate forms of the twenty-ninth review (P0.112, TASK-0272)
+
+The codebase review of 2026-11-07 (b) found E175 and T168 (medium) and E176 to E179 and T169 to T173 (low). They come after
+the product phase R16e. Two leads of Codex, checked on disk, join them.
+
+**The change.**
+- E175: a lost surface in the frame that took a chosen STL gives the new part, not the background.
+- E176: the host of a phone session comes after the checks of the turn and the window, so each way out disposes it.
+- E177: `check-apk.sh` fails when the APK has no manifest or node cannot read it.
+- E178: a text file whose name is not UTF-8 gives `E-STL-SYNTAX`, and a cut binary file of fewer than 84 bytes gives
+  `E-STL-TRUNCATED`; each was a refusal before.
+- E179: each new window starts with no open dialog.
+- T168: the host of the phone makes CA1416 an error with `WarningsAsErrors`, and `check-platforms.js` reads it.
+- T169: a line of the code of the phone that names CA1416 is an offence.
+- T170: `TreatWarningsAsErrors` under a Condition or with another value, `CodeAnalysisTreatWarningsAsErrors`, an
+  `AnalysisMode` and an `AnalysisLevel` are offences.
+- T171: the affects gate reads the shaders and the PowerShell files, and a citation of an absent ADR is an offence.
+- T173: the list "Shipped" of the roadmap is in the order of the ledger again; each close adds its line at the end.
+- The leads of Codex: a blank folder of the command line is a usage error (v0.250), and a file of more than 84 + 512 times
+  the limit of triangles bytes gives `E-STL-TOO-LARGE` before its read (the review of Codex after v0.243, N2).
+
+**Proof.** Three new tests: the reader, the blank folder and the absent ADR failed with the code of the base. A fourth test,
+of the size, did not compile before. Injections each fail their gate or step:
+- a `SuppressMessage` over two lines;
+- `TreatWarningsAsErrors` under a Condition;
+- a shader that cites ADR-0099;
+- a call that Android does not have in the host (error CA1416);
+- an APK with no manifest, and a run with no node.
+
+Run 42367668204 passed, with the APK build and the step of the platforms.
+
+**What stays.** E175, E176 and E179 run on no computer here, so no test holds them. The register holds 15 of 15 open
+entries, so the question of the affects rule for the ADRs before 0082 has no entry; the owner can close an entry for it.
+
+**A correction.** None. The failed runs since the entry v0.258, from the API: none.
+
+New tests: 3. The test list holds 2071 (1414 in `Engine.Tests`, 337 in `3DEngine.Tests`, 317 in `3DEngine.ImageTests`, 3
+in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
+entries: 15 of 15. New diagnostic codes: 0. Since the review of v0.252, 1 product milestone and 7 entries followed it.

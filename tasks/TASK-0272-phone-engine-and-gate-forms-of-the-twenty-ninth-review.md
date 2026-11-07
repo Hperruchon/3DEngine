@@ -1,7 +1,7 @@
 ---
 id: 0272
 title: The phone, the reader, the APK check, the gates and the roadmap hold their next forms
-status: Active
+status: Done
 phase: P0.112
 opened: 2026-11-07
 depends-on: [0271]
@@ -67,13 +67,13 @@ order.
 
 ## Acceptance criteria
 
-- [ ] Each finding has a test or an injection that fails before the change and passes after it.
-- [ ] A clean build (`--no-incremental`) gives zero errors and zero warnings.
-- [ ] Continuous integration passes on the three runners, on the branch and on `main` after the merge.
+- [x] Each finding has a test or an injection that fails before the change and passes after it.
+- [x] A clean build (`--no-incremental`) gives zero errors and zero warnings.
+- [x] Continuous integration passes on the three runners, on the branch and on `main` after the merge.
 
 ## Outcome
 
-Status: Active
+Status: Done · commit (the merge of the branch p0112-phone-engine-gates-b) · v0.259
 
 ## Method
 
@@ -84,7 +84,8 @@ Judgement:  T168: the host makes CA1416 an error with WarningsAsErrors, not Trea
             limit of triangles. E175, E176 and E179 change the phone and the window, which run on no computer here.
             The register stays full: the question of the affects rule for the ADRs before 0082 needs the owner to
             close an entry.
-Weakest:    to be written at the close.
+Weakest:    E175, E176 and E179 change the phone and the window, which run on no computer here, so no test holds them;
+            the register stays full, so the question of the affects rule for the ADRs before 0082 has no entry.
 
 ## Progress
 
@@ -93,3 +94,5 @@ Weakest:    to be written at the close.
   absent ADR failed with the code of the base; the test of the size did not compile before. Injections: a SuppressMessage
   over two lines, TreatWarningsAsErrors under a Condition and a shader that cites ADR-0099 each fail their gate; a call
   that Android does not have in the host gives error CA1416; the APK check fails with no manifest and with no node.
+- 2026-11-07: rebased on the close of P0.111; run 42367668204 passed, with the APK build and the step of the platforms.
+  Closed at v0.259.
