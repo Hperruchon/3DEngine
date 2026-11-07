@@ -480,11 +480,15 @@ public sealed class NativeThreeDEngine : IThreeDEngine, IDisposable
                 break;
             case EditSketchAction edit:
                 sketch.Edit(edit.Sketch);
-                if (_sketches?.Live.FirstOrDefault(live => live.SketchId == edit.Sketch) is { } info && SketchOverlay.PlaneOf(info) is { } plane)
+                // ADR-0085 items 1 and 2 (TASK-0273): a sketch that makes a live extrude moves under its body, and the camera
+                // does not move; another sketch turns the camera to its plane, as before (ADR-0053 item 6).
+                _lifted = BodyOf(edit.Sketch) is { } made ? (edit.Sketch, made) : null;
+                if (_lifted is null && _sketches?.Live.FirstOrDefault(live => live.SketchId == edit.Sketch) is { } info && SketchOverlay.PlaneOf(info) is { } plane)
                     Face(plane);
                 break;
             case FinishSketchAction:
                 sketch.Finish();
+                _lifted = null;
                 break;
             case SketchToolAction tool:
                 sketch.Tool.Kind = tool.Kind;
@@ -535,6 +539,19 @@ public sealed class NativeThreeDEngine : IThreeDEngine, IDisposable
     {
         if (Datums.Find(datum) is { } plane)
             SketchCamera.Face(Camera, (plane.Normal.X, plane.Normal.Y, plane.Normal.Z), (0, 0, 0));
+    }
+
+    // ADR-0085 item 1 (TASK-0273): the sketch and the body of the edit of a sketch that makes a live extrude, or null.
+    private (Guid Sketch, Guid Body)? _lifted;
+
+    // ADR-0085 item 1: the live extrude that the sketch makes, or null: the feature of the kind Extrude that reads the
+    // sketch, in effect, not consumed, and with a body that the renderer holds.
+    private Guid? BodyOf(Guid sketch)
+    {
+        var features = _host.Session.Query<Engine.Core.Queries.FeaturesInfo>(new Engine.Core.Queries.GetFeaturesQuery()).GetAwaiter().GetResult().Result;
+        var extrude = features?.Features.FirstOrDefault(feature => feature.Kind == "Extrude" && feature.Inputs.Contains(sketch)
+            && feature.ConsumedBy is null && feature.State == "correct");
+        return extrude is not null && _renderer?.BoxOf(extrude.FeatureId) is not null ? extrude.FeatureId : null;
     }
 
     // ADR-0053 item 6: the camera looks along the normal of a frame of the Document too, from the side of its plane
@@ -656,7 +673,18 @@ public sealed class NativeThreeDEngine : IThreeDEngine, IDisposable
             sketchActions.Follow(_sketches.Live);
             var tool = sketchActions.Tool;
             var focus = sketchActions.Active is { } active ? new SketchOverlay.Focus(active, [.. tool.Selection], tool.First) : null;
-            sketches = SketchOverlay.Of(_sketches.Live, Camera, window.width, window.height, focus);
+            // ADR-0085 items 2 to 4 (TASK-0273): the move of the active sketch from the box of its body now, the sketches
+            // with the moved plane, and a line from each moved point to its place on the plane of the record.
+            var record = _lifted is { } lifted && sketchActions.Active == lifted.Sketch
+                ? _sketches.Live.FirstOrDefault(live => live.SketchId == lifted.Sketch)
+                : null;
+            sketchActions.Lift = record is not null && SketchOverlay.PlaneOf(record) is { } recordPlane && _renderer.BoxOf(_lifted!.Value.Body) is { } liftBox
+                ? SketchLift.Under(record.SketchId, recordPlane, liftBox.Min, liftBox.Max)
+                : null;
+            var lift = sketchActions.Lift;
+            sketches = SketchOverlay.Of(lift is null ? _sketches.Live : [.. _sketches.Live.Select(lift.Apply)], Camera, window.width, window.height, focus);
+            if (lift is not null && record is not null)
+                sketches = sketches with { Lines = [.. sketches.Lines, .. lift.Links(record, Camera, window.width, window.height)] };
             if (MarkPoint(_hover, _imageActions) is { } hover && sketchActions.Mark(Camera, hover.X, hover.Y, window.width, window.height) is { } mark)
                 sketches = sketches with { Snap = mark };
             sketchPanel = new SketchPanel(

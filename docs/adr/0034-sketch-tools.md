@@ -7,7 +7,7 @@ date: 2026-10-28
 supersedes: []
 superseded-by: []
 amends: ['0026', '0029', '0032']
-amended-by: ['0041', '0053']
+amended-by: ['0041', '0053', '0085']
 affects:
   - 3DEngine.Core/Input/**
   - 3DEngine.Core/Picking/**
@@ -235,3 +235,5 @@ engine does not change. The tool is a pure state machine, so a test reads it wit
   answer "1 3 4" of the owner).
 - 2026-11-03 · TASK-0171 · ADR-0053 amends item 6: the button `Face` arms a tap on a face of a body, which starts a
   sketch on a datum of that face.
+- 2026-11-07 · TASK-0273 · ADR-0085 amends item 6: "Edit" of a sketch that makes a live extrude keeps the camera, and the
+  sketch moves out of its body along the normal of its plane.

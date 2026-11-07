@@ -419,6 +419,7 @@ The first objective. Each phase ends with something that a person can observe.
 | R16b2 | The tool ring of the redesign: the tools of the selected body that need no text are segments of a ring next to it on a landscape display, and under the thumb on a portrait display (ADR-0081). TASK-0253. | 2 |
 | R16c | The values on the edges of the redesign: the values of a selected extrude that a command changes sit on the edges that they measure, and a tap opens the pad of the value (ADR-0082). TASK-0254. | 2 |
 | R16d | The rows of the redesign: the name, the state and the values of the selected body in rows with no panel at the upper right of a landscape display, and a tap on a value opens its pad (ADR-0084). TASK-0267. | 1 |
+| R16e | The sketch under its body: "Edit" of the sketch of a live extrude keeps the camera and shows the sketch out of the body along the normal of its plane, with a line from each point to its place (ADR-0085). TASK-0273. | 1 |
 
 ## Track K — The kernel
 
