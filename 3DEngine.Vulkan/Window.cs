@@ -24,7 +24,7 @@ public enum WindowFlags
 // Finding V112 of the codebase review of 2026-11-06 (e) (TASK-0250): the window had no Dispose, so its SDL window stayed
 // for the life of the process. SDL on Android permits one window, and since ADR-0079 a new start of the activity runs a
 // second session in the same process, which then could not make its window. Dispose destroys the SDL window one time.
-public sealed unsafe class Window : IDisposable
+public sealed unsafe partial class Window : IDisposable
 {
     private readonly SDL_Window* _window;
     private bool _disposed;

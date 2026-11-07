@@ -30,4 +30,16 @@ internal interface IDocumentFiles
 
     // Checks the file at the path and gives it to the host for its next session, or gives the error (ADR-0030 item 5).
     Task<ErrorDetail?> Open(string path, CancellationToken ct);
+
+    // ADR-0083 D6 (TASK-0259): the names of the newest documents of the folder, newest first, for the home screen.
+    IReadOnlyList<string> Recent(int count);
+
+    // ADR-0083 D1: a new part document for the next session, with the import of an STL file of the store, or none.
+    void RequestNew(StlImport? import);
+
+    // The import that the next session applies first, taken one time.
+    StlImport? TakeImport();
+
+    // ADR-0083 D6: true while the home screen shows; the first session of a program starts with it.
+    bool Home { get; set; }
 }

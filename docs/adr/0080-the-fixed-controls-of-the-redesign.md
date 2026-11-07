@@ -83,3 +83,5 @@ The standing order of 2026-11-05 gives A for each question.
 - 2026-11-06 · TASK-0248 · Shipped at v0.233.
 - 2026-11-06 · TASK-0252 · Item 1: the unit comes before the name (V115). Item 2: the place and the height of the panel
   hold each frame (V114). Item 6: the safe area (V118). Findings of the codebase review of 2026-11-06 (e).
+- 2026-11-07 · TASK-0259 · The row of the anchors holds "Frame" and "Home" of ADR-0083 after Redo, each as high as an
+  anchor; the status line follows them.

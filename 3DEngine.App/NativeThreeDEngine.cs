@@ -113,6 +113,76 @@ public sealed class NativeThreeDEngine : IThreeDEngine, IDisposable
         _sketchActions = new SketchActions(_host.Session);
         _images = new SessionImages(_host, _assets);
         _imageActions = new ImageActions(_host.Session, _assets);
+
+        // ADR-0083 D1 and D6 (TASK-0259): a new part with an import applies it first; else the first session of the
+        // program shows the home screen.
+        if (_document is { } files)
+        {
+            if (files.TakeImport() is { } import)
+                Import(import);
+            else if (files.Home)
+                _ui.ShowHome(files.Recent(RecentCount));
+        }
+    }
+
+    // The count of the recent files of the home screen.
+    private const int RecentCount = 5;
+
+    // ADR-0083 D1: the import of the new part document. The engine reads the bytes of the store again, so its refusal is
+    // the message of the open.
+    private void Import(StlImport import)
+    {
+        var (body, error) = StlOpening.Import(_host.Session, import).GetAwaiter().GetResult();
+        if (body is { } imported)
+        {
+            _actions?.Select(imported);
+            _ui?.ShowDimensionsOn();
+            _documentMessage = $"Opened {import.Name}";
+        }
+        else
+            _ui?.ShowMessage((error?.Code ?? string.Empty, $"{import.Name}: {error?.Message}"));
+    }
+
+    // ADR-0083 D1 and D3: the file that the dialog gave, read through SDL and checked with the reader of the engine. A
+    // fault gives the message with "Choose another file" and no new document; a good file asks for a new part document
+    // with its import.
+    private void TakeOpenedFile()
+    {
+        var (done, path) = Window.TakeOpenedFile();
+        if (!done || path is null || _ui is null)
+            return;
+        var name = StlOpening.FileName(path);
+        var (content, readError) = Window.LoadFile(path);
+        if (content is null)
+        {
+            _ui.ShowMessage((string.Empty, $"The file {name} could not be read: {readError}"));
+            return;
+        }
+
+        if (_assets is null || _document is null)
+        {
+            _ui.ShowMessage((string.Empty, "This program has no store of the assets, so it opens no STL file."));
+            return;
+        }
+
+        var (import, fault) = StlOpening.Prepare(path, content, _assets).GetAwaiter().GetResult();
+        if (import is null)
+        {
+            _ui.ShowMessage((fault?.Code ?? string.Empty, $"{name}: {fault?.Message}"));
+            return;
+        }
+
+        _ui.ShowMessage(null);
+        _document.Home = false;
+        _document.RequestNew(import);
+    }
+
+    // The frame of the camera on the live bodies, as the first body gives it (ADR-0029 item 8).
+    private void FrameBodies()
+    {
+        var window = _window.Extent;
+        if (_renderer?.Bounds is { } box && window.height > 0)
+            Camera.Frame(box.Min, box.Max, (float)window.width / window.height);
     }
 
     public void Update(TimeSpan deltaTime)
@@ -278,6 +348,7 @@ public sealed class NativeThreeDEngine : IThreeDEngine, IDisposable
             return;
 
         // ADR-0053 item 6 and findings V77 and V84: the panel applies each action to the arm of the button Face.
+        TakeOpenedFile();
         var actions = _ui.TakeActions();
         _documentMessage = _ui.ArmMessage ?? _documentMessage;
         foreach (var action in actions)
@@ -301,6 +372,22 @@ public sealed class NativeThreeDEngine : IThreeDEngine, IDisposable
                     break;
                 case OpenDocumentAction open:
                     _documentMessage = OpenDocument(open.Name);
+                    break;
+                // ADR-0083 D1 and D6 (TASK-0259): the dialog of the system, a new part, the home screen and the frame.
+                case OpenFileAction:
+                    if (!_window.OpenFile("STL file", "stl"))
+                        _documentMessage = "A file dialog is open already.";
+                    break;
+                case NewPartAction when _document is not null:
+                    _document.Home = false;
+                    _document.RequestNew(null);
+                    break;
+                case HomeAction when _document is not null:
+                    _document.Home = true;
+                    _ui.ShowHome(_document.Recent(RecentCount));
+                    break;
+                case FrameAction:
+                    FrameBodies();
                     break;
                 case ExportStlAction export:
                     _documentMessage = ExportStl(export.Name);
@@ -587,11 +674,15 @@ public sealed class NativeThreeDEngine : IThreeDEngine, IDisposable
         {
             var unit = _host.Session.LengthUnit;
             var selectedBox = Selection is { } body ? _renderer.BoxOf(body) : null;
+            // ADR-0083 D4 (TASK-0259): STL has no unit, so the size of a mesh body says that millimetres are assumed.
+            var sizeUnit = Selection is { } meshBody && _renderer.LiveBodies.FirstOrDefault(live => live.Id == meshBody)?.Kind == Engine.Core.Commands.ImportStlCommandHandler.MeshKind
+                ? $"{unit} (assumed)"
+                : unit;
             dimensions = DimensionOverlay.Of(_renderer.Union(_ui.HiddenToo), selectedBox, Camera, window.width, window.height, unit);
             if (Selection is { } chosen && selectedBox is { } box && _renderer.RestBoxOf(chosen) is { } rest && _actions is { } actions)
             {
                 _sizeOf = SizeOf(_sizeOf, chosen, rest, actions.Distance);
-                size = DimensionOverlay.SizeText(box, _sizeOf.Value.Distance, unit);
+                size = DimensionOverlay.SizeText(box, _sizeOf.Value.Distance, sizeUnit);
             }
         }
 

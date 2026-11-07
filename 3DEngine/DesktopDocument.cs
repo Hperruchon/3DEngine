@@ -36,8 +36,42 @@ internal sealed class DesktopDocument : IDocumentFiles
 
     public Task<ErrorDetail?> Open(string path, CancellationToken ct) => Folder.Open(path, ct);
 
-    // The path of the file to open after the window closes, or null.
+    // The path of the file to open after the window closes, or null. NewDocument asks for a new part document.
     public string? RequestedOpen => Volatile.Read(ref _requested);
+
+    // ADR-0083 D1 (TASK-0259): the path that asks the next session for a new part document, whatever the setting "file".
+    public const string NewDocument = "";
+
+    // Each session of the program makes its own DesktopDocument, so the import of the next session and the state of the home
+    // screen belong to the process.
+    private static StlImport? _import;
+    private static bool _home = true;
+
+    public IReadOnlyList<string> Recent(int count)
+    {
+        try
+        {
+            return [.. new DirectoryInfo(Folder.FullPath).EnumerateFiles("*" + DocumentFile.Extension)
+                .OrderByDescending(file => file.LastWriteTimeUtc)
+                .Take(count)
+                .Select(file => Path.GetFileNameWithoutExtension(file.Name))];
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+            return [];
+        }
+    }
+
+    public void RequestNew(StlImport? import)
+    {
+        Volatile.Write(ref _import, import);
+        Volatile.Write(ref _requested, NewDocument);
+    }
+
+    public StlImport? TakeImport() => Interlocked.Exchange(ref _import, null);
+
+    // ADR-0083 D6: the first session of the program starts on the home screen; a choice there ends it for the program.
+    public bool Home { get => Volatile.Read(ref _home); set => Volatile.Write(ref _home, value); }
 
     // The file that the session of this desktop holds, or null; the host sets it after it
     // makes the session.
