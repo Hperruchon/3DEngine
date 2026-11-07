@@ -1,7 +1,7 @@
 ---
 id: 0281
 title: The size limit, the lost surface, the taps over a window, the portrait ring and the host warnings hold their next forms
-status: Active
+status: Done
 phase: P0.116
 opened: 2026-11-07
 depends-on: [0280]
@@ -58,13 +58,13 @@ E183, E184, V135, V136 and T174 are fixed, each with a test or an injection.
 
 ## Acceptance criteria
 
-- [ ] Each finding has a test or an injection that fails before the change and passes after it.
-- [ ] A clean build (`--no-incremental`) gives zero errors and zero warnings.
-- [ ] Continuous integration passes on the three runners, on the branch and on `main` after the merge.
+- [x] Each finding has a test or an injection that fails before the change and passes after it.
+- [x] A clean build (`--no-incremental`) gives zero errors and zero warnings.
+- [x] Continuous integration passes on the three runners, on the branch and on `main` after the merge.
 
 ## Outcome
 
-Status: Active
+Status: Done · commit (the merge of the branch p0116-medium-forms) · v0.266
 
 ## Method
 
@@ -72,10 +72,12 @@ Mechanical: a test for each finding; V135 failed on the code before the change, 
             fails its test or the step.
 Judgement:  E184 holds its decision in PhoneLifecycle, because the loop of the phone runs on no computer here; V136
             moves the portrait ring above the anchors, for a body too.
-Weakest:    to be written at the close.
+Weakest:    the loop of the phone runs on no computer here, so the test of E184 holds its decision only; no run on the
+            S23 showed the portrait ring above the anchors.
 
 ## Progress
 - 2026-11-07: E183, E184, V135, V136 and T174, each with a test. Injections of a read with no limit, of no wait after a
   lost surface, of the portrait ring on the anchors, of CA1416 in NoWarn of the host and of a line of the host that names
   CA1416 each fail a test or the step. This task comes before a product phase because K5c waits for the owner (Q2 of the
   review), and the order of the owner takes the next ready row.
+- 2026-11-07: run 42377814424 passed. Closed at v0.266.
