@@ -254,6 +254,8 @@ Therefore each approved objective must have a track here.
   v0.268, TASK-0283, ADR-0089.
 - P0.118 — The ring of a sketch sees the windows that come after it, and a window at the left does not pull it under
   the panel. v0.269, TASK-0284, ADR-0086, ADR-0088.
+- P0.119 — The platform step builds its probe in the phone host, and the proposal gives the volume of the sphere.
+  v0.270, TASK-0285, ADR-0089.
 
 ## Track 0 — Foundations
 

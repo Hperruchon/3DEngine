@@ -1,7 +1,7 @@
 ---
 id: 0285
 title: The platform step builds its probe in the phone host, and the proposal gives the volume of the sphere
-status: Active
+status: Done
 phase: P0.119
 opened: 2026-11-07
 depends-on: [0284]
@@ -49,22 +49,24 @@ The host of the phone has each check of the projects that it reaches, and ADR-00
 
 ## Acceptance criteria
 
-- [ ] With `RunAnalyzersDuringBuild` false in the host, the step and the gate each fail.
-- [ ] On the clean tree, the probe in the host gives the error CA1416.
-- [ ] Continuous integration passes on the three runners, on the branch and on `main` after the merge.
+- [x] With `RunAnalyzersDuringBuild` false in the host, the step and the gate each fail.
+- [x] On the clean tree, the probe in the host gives the error CA1416.
+- [x] Continuous integration passes on the three runners, on the branch and on `main` after the merge.
 
 ## Outcome
 
-Status: Active
+Status: Done · commit (the merge of the branch p0119-host-probe) · v0.270
 
 ## Method
 
 Mechanical: the injection of the switch, against the step and the gate; the ratio of the volume, computed.
 Judgement:  the step takes the paths of the SDKs from the job of the APK when it gives them.
-Weakest:    to be written at the close.
+Weakest:    the probe build of the host takes the time of an Android build in the job of the APK; the volumes of ADR-0089
+            stay estimates of the formula, not measures of a mesh.
 
 ## Progress
 
 - 2026-11-07: the two leads, confirmed. With `RunAnalyzersDuringBuild` false in the host, the step gives two offences (the
   switch, and no error at the probe) and the gate one. On the clean tree the probe in the host gives the error CA1416. The
   ratio sin(π/32)/(π/32) × (1 + cos(π/32))/2 is 0.99599.
+- 2026-11-07: run 42394468160 passed. Closed at v0.270.
