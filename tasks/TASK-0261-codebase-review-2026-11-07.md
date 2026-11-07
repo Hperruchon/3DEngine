@@ -1,7 +1,7 @@
 ---
 id: 0261
 title: The codebase review of 2026-11-07 is a record
-status: Active
+status: Done
 phase: governance
 opened: 2026-11-07
 depends-on: [0258]
@@ -68,12 +68,12 @@ finding.
 
 ## Acceptance criteria
 
-- [ ] `CodebaseReviewGateTests` passes with the new review.
-- [ ] Continuous integration passes on the three runners, on the branch and on `main` after the merge.
+- [x] `CodebaseReviewGateTests` passes with the new review.
+- [x] Continuous integration passes on the three runners, on the branch and on `main` after the merge.
 
 ## Outcome
 
-Status: Active
+Status: Done · commit (the merge of the branch codebase-review-2026-11-07) · v0.244
 
 ## Method
 
@@ -81,8 +81,10 @@ Mechanical: the measures with the methods of the last review, and the line of ea
             it cites and the changes since `4667e4b`.
 Judgement:  three agents examined three areas at one tree; the session checked each finding and set two grades: E167
             high (the agent gave medium) and T166 medium (the agent gave low).
-Weakest:    to be written at the close.
+Weakest:    the lines of the findings up to T159 are carried from the last review with no new examination; V124 comes
+            from the annotations of one run, not from a device.
 
 ## Progress
 
 - 2026-11-07: the review, from the sections of three agents at the tree of v0.243, and the three tasks of its findings.
+- 2026-11-07: run 42324736514 passed. Closed at v0.244.
