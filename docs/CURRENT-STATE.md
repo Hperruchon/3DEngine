@@ -7610,3 +7610,37 @@ tools of the selection out of the panel and the sketch under its body are later 
 New tests: 8. The test list holds 2042 (1410 in `Engine.Tests`, 337 in `3DEngine.Tests`, 292 in `3DEngine.ImageTests`, 3
 in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
 entries: 15 of 15. New diagnostic codes: 0. Since the review of v0.243, 4 product milestones and 9 entries followed it.
+
+## v0.253 — The codebase review of 2026-11-07 (b) (governance, TASK-0268)
+
+The review of 2026-11-07 examined v0.243. After it came 4 product milestones (P9c, P9d, P9e and R16d) and 9 ledger
+entries, and the next product milestone would be the fifth, so this review is due before it. No review draft of Codex
+exists for v0.243; the reviews of Codex of v0.244 to v0.249 gave ten leads.
+
+**The change.** `docs/reviews/2026-11-07-b-codebase-review.md`, at `d233679` (v0.252). Three agents examined the phone
+and the engine, the desktop and the UI, and the gates and the records, at one tree; the session checked the high findings
+in the code. Eight leads of Codex are confirmed, and two are refuted as current findings.
+- Five findings are high: V125 (a chosen STL can reach a named document), V126 (an open by name stays under the home
+  screen), E172 (a stale session of the phone keeps the window), E173 (the fix of E170 changed the result of the STL reader
+  for two forms that v0.243 read, so a recorded import can replay to another body) and E174 (criterion 9 of the test sheet
+  fails as written).
+- Five are medium: V127, V128, V129, E175 and T168. Thirteen are low: V130 to V133, E176 to E179 and T169 to T173.
+- TASK-0269 (P0.109) and TASK-0270 (P0.110) hold the high findings before the next product phase; TASK-0271 (P0.111) and
+  TASK-0272 (P0.112) hold the others after it. Each task names the files of its findings, and the chain of `depends-on`
+  holds the order.
+- The two questions of the review (E173: how a change of the reader is versioned; E174: the view after the background)
+  have the recommended answer A under the standing order.
+
+**Proof.** `CodebaseReviewGateTests` passes with the new review. The main run of v0.252 (42361368077) passed, and run
+42362739671 of the review passed.
+
+**What stays.** The open findings are 0 critical, 9 high, 19 medium and 32 low. The lines of the findings up to T164 are
+carried from the last review.
+
+**A correction.** The entry v0.244 says "Fifteen are low: E168 to E171, V119 to V123, T165 and T167". The list holds
+eleven (T172 of this review); the count of open low findings of that review, 30, was right. The review of 2026-11-07 keeps
+its text, as `docs/templates.md`, section 7, asks. The failed runs since the entry v0.252, from the API: none.
+
+New tests: 0. The test list holds 2042 (1410 in `Engine.Tests`, 337 in `3DEngine.Tests`, 292 in `3DEngine.ImageTests`, 3
+in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
+entries: 15 of 15. New diagnostic codes: 0. Since the review of v0.252, 0 product milestones and 1 entry followed it.
