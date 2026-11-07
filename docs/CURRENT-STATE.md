@@ -7997,3 +7997,38 @@ carried from the last review. The next product phase, K5c, waits for Q2.
 New tests: 0. The test list holds 2077 (1414 in `Engine.Tests`, 337 in `3DEngine.Tests`, 323 in `3DEngine.ImageTests`, 3
 in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
 entries: 15 of 15. New diagnostic codes: 0. Since the review of v0.263, 0 product milestones and 1 entry followed it.
+
+## v0.265 — The reader gives the result of each earlier reader, and the ring of a sketch keeps each tool in reach (P0.115, TASK-0280)
+
+The codebase review of 2026-11-07 (c) found three high findings: E180 and E181 in the STL reader, and V134 in the ring of
+a sketch. A high finding comes before the next product phase. The standing order answers Q1 of the review with A.
+
+**The change.**
+- E180 and E181: each file gets the result of the first of three rules that accepts it: the rule of v0.243, the rule of
+  HEAD, then the rule of v0.250. A text file with a zero byte, which v0.243 read, and a name such as
+  `facet normal 0 0 1 outer`, which only v0.250 read, get their earlier results again. A refused import is not in the log,
+  so a file that each earlier reader refused is free.
+- E182 (Q1 A): the two classes of files with two earlier results keep the results of v0.243 and of v0.254, so a document
+  of v0.250 to v0.253 with such a file replays to them. ADR-0083 item 3 says so; the owner checks it on 2026-11-08.
+- V134: the centre of the ring of a sketch stays at or left of the window of the sketch, and its inner radius fits the
+  height of the display (ADR-0086 item 1). The window drops the buttons of the ring only when the middle of each segment is
+  on the display and under no window and no anchor (ADR-0088 items 1 and 2).
+
+**Proof.**
+- A probe, not in the repository, with the readers of `e903bef`, `45f416d`, `7959c98` and `db0138c`, read 200,000
+  random text files. Of the 114,399 files that an earlier reader accepted, the new reader refuses none, gives each the
+  result of the first rule of the order, and changes no result of v0.254; 17,552 had two earlier results.
+- The new forms of the tests of v0.243 and v0.250 fail with the reader of HEAD. A new test holds the two classes of E182.
+- A new test puts a sketch at the right, two large sketches, a sketch in the corner and a portrait display: each tool has
+  a place that a tap reaches, and a tap on Finish ends the sketch. The old rule of the window fails it, and the old layout
+  fails the test of the layout.
+- Run 42376164236 passed.
+
+**What stays.** A segment counts as reachable by its middle only. The probe and its copies of the earlier readers are not
+in the repository. E183, E184, V135, V136 and T174 come in TASK-0281, and E185 and V137 to V139 in TASK-0282.
+
+**A correction.** None. The failed runs since the entry v0.264, from the API: none.
+
+New tests: 2. The test list holds 2079 (1415 in `Engine.Tests`, 337 in `3DEngine.Tests`, 324 in `3DEngine.ImageTests`, 3
+in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
+entries: 15 of 15. New diagnostic codes: 0. Since the review of v0.263, 0 product milestones and 2 entries followed it.

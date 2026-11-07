@@ -244,6 +244,8 @@ Therefore each approved objective must have a track here.
 - P0.114 — The tests of the home state of the desktop run in one collection. v0.262, TASK-0278.
 - R16h — While the ring of a sketch shows, the window of the sketch does not repeat it. v0.263, TASK-0277, ADR-0088.
 - Review — The codebase review of 2026-11-07 (c). v0.264, TASK-0279.
+- P0.115 — The reader gives the result of each earlier reader that accepted a file, and the ring of a sketch keeps
+  each tool in reach. v0.265, TASK-0280, ADR-0083, ADR-0086, ADR-0088.
 
 ## Track 0 — Foundations
 
