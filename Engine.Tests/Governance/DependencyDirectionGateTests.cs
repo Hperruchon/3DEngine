@@ -276,8 +276,8 @@ public class DependencyDirectionGateTests
     }
 
     // The tracked files that hold bytes and not text. A new binary type fails the gate until
-    // it is in this list.
-    private static readonly string[] BinaryExtensions = [".spv", ".nupkg", ".png", ".ico"];
+    // it is in this list. ADR-0083 (TASK-0258): a binary STL file of the demonstration, testdata/stl, holds bytes.
+    private static readonly string[] BinaryExtensions = [".spv", ".nupkg", ".png", ".ico", ".stl"];
 
     [Fact]
     public void No_Tracked_Text_File_Holds_A_Control_Byte()
