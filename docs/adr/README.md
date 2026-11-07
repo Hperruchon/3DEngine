@@ -57,11 +57,11 @@ names. Do not read all of them.
 | [0041](0041-snap-of-a-sketch-tap.md) | The snap of a tap of the sketch | Accepted | Clients, sketch | 0026, 0034 | — |
 | [0042](0042-vision-library.md) | The vision library and its place | Amended | Vision, boundary | — | 0047 |
 | [0043](0043-textured-quad.md) | An image on a flat rectangle of the scene | Accepted | Rendering, vision | — | — |
-| [0044](0044-asset-store.md) | The store of the assets of an account | Accepted | Vision, persistence | — | — |
-| [0045](0045-image-on-a-datum.md) | An image on a datum, and its calibration | Accepted | Contracts, vision | 0012, 0031, 0033 | — |
+| [0044](0044-asset-store.md) | The store of the assets of an account | Amended | Vision, persistence | — | 0083 |
+| [0045](0045-image-on-a-datum.md) | An image on a datum, and its calibration | Amended | Contracts, vision | 0012, 0031, 0033 | 0083 |
 | [0046](0046-image-in-the-desktop.md) | The image of a datum in the desktop | Accepted | Rendering, vision, clients | — | — |
 | [0047](0047-contour-proposal.md) | The proposal of a contour and its accept as a sketch | Accepted | Vision, clients | 0042 | — |
-| [0048](0048-stl-export.md) | The STL export of the live bodies | Accepted | Persistence, clients | — | — |
+| [0048](0048-stl-export.md) | The STL export of the live bodies | Amended | Persistence, clients | — | 0083 |
 | [0049](0049-edit-of-an-extrude-distance.md) | The edit of the distance of an extrude | Accepted | Geometry, feature graph, clients | 0028, 0037, 0039 | — |
 | [0050](0050-exact-predicates.md) | The exact predicates of the profile of a sketch | Accepted | Geometry, sketch, determinism | 0036, 0040 | — |
 | [0051](0051-references-and-datum-on-a-face.md) | The references to the elements of a feature, and a datum on a face | Amended | Contracts, feature graph, sketch | 0012, 0031, 0033, 0036, 0039 | 0052, 0053, 0059 |
@@ -88,6 +88,7 @@ names. Do not read all of them.
 | [0080](0080-the-fixed-controls-of-the-redesign.md) | The title of the document, Undo, Redo and the status line are fixed controls of the redesign | Accepted | Clients, rendering | 0030, 0031 | — |
 | [0081](0081-the-tool-ring-of-the-redesign.md) | The tools of the selected body are the segments of a ring that follows it | Accepted | Clients, rendering | — | — |
 | [0082](0082-the-values-on-the-edges-of-the-redesign.md) | A value that a command changes sits on the edge of the selected body that it measures | Accepted | Clients, rendering | — | — |
+| [0083](0083-the-mesh-body-and-the-stl-import.md) | An STL file opens as a mesh body of a new part, through one import command | Accepted | Geometry, contract, clients | 0044, 0045, 0048 | — |
 
 ## Topics
 
