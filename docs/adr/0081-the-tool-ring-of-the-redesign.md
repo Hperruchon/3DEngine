@@ -7,7 +7,7 @@ date: 2026-11-06
 supersedes: []
 superseded-by: []
 amends: []
-amended-by: ['0084']
+amended-by: ['0084', '0086']
 affects:
   - 3DEngine.App/Ui/DesktopUi.Ring.cs
   - 3DEngine.App/Ui/DesktopUi.cs
@@ -85,3 +85,5 @@ are not on the ring yet.
 - 2026-11-07 · TASK-0271 · Item 3: a mesh body has no Move on its ring, because no move takes it (ADR-0083 item 4,
   finding V130 of the codebase review of 2026-11-07 (b)). Item 2: a label stays 4 pixels inside the safe area (the review
   of Codex of v0.251).
+- 2026-11-07 · TASK-0275 · ADR-0086 amends item 1: while a sketch is active the ring holds the tools of the sketch, on
+  the left of the sketch on a landscape display; the portrait inner radius grows past 150 pixels when a segment needs it.

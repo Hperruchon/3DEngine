@@ -1,6 +1,7 @@
 using System.Numerics;
 using ImGuiNET;
 using ThreeDEngine.Core.Numeric;
+using ThreeDEngine.Core.Sketching;
 
 namespace ThreeDEngine.Desktop.Ui;
 
@@ -84,7 +85,10 @@ internal sealed unsafe partial class DesktopUi
         if (display.X < display.Y)
         {
             var segment = Math.Min(RingSegment, ((MathF.PI / 2f) - ((count - 1) * RingGap)) / Math.Max(count, 1));
-            return new RingLayout(new Vector2(display.X - 16f - inset.Z, display.Y - 16f - inset.W), 150f, MathF.PI, 1f, segment);
+            // ADR-0086 item 3 (TASK-0275): the inner radius grows when a narrow segment would be less than 44 pixels at it, as
+            // the five tools of a sketch need (0.28 radians).
+            var portraitInner = Math.Max(150f, (ValueSize + 2f) / segment);
+            return new RingLayout(new Vector2(display.X - 16f - inset.Z, display.Y - 16f - inset.W), portraitInner, MathF.PI, 1f, segment);
         }
 
         // The ring is outside the body on the screen: at least the half of the diagonal of its box, and 24 pixels more.
@@ -92,6 +96,20 @@ internal sealed unsafe partial class DesktopUi
         var reach = inner + RingBand + 16f;
         var clamped = new Vector2(Math.Clamp(centre.X, reach, Math.Max(reach, display.X - reach)), Math.Clamp(centre.Y, reach, Math.Max(reach, display.Y - reach)));
         return new RingLayout(clamped, inner, -span / 2f, 1f);
+    }
+
+    // ADR-0086 item 1 (TASK-0275): the ring of an active sketch on a landscape display. Its centre is the centre of the sketch
+    // on the screen, its inner radius is 24 pixels more than the half of the diagonal of the sketch, at least 100, and its
+    // segments go down on the left side, so the band does not cover the sketch. The centre moves only as far as the band
+    // needs to stay 16 pixels to the right of the panel and inside the display.
+    internal static RingLayout SketchLayout(Vector2 display, Vector2 centre, int count, float sketch, float panelRight)
+    {
+        var span = (count * RingSegment) + ((count - 1) * RingGap);
+        var inner = Math.Max(100f, sketch + 24f);
+        var reach = inner + RingBand + 16f;
+        var x = Math.Min(Math.Max(centre.X, panelRight + reach), display.X - 16f);
+        var y = Math.Clamp(centre.Y, reach, Math.Max(reach, display.Y - reach));
+        return new RingLayout(new Vector2(x, y), inner, MathF.PI + (span / 2f), -1f);
     }
 
     public static string RingItem(string label) => $"Ring:{label}";
@@ -106,25 +124,53 @@ internal sealed unsafe partial class DesktopUi
     private bool OverRing(double x, double y)
         => _ring is { } ring && ring.At(_ringLabels, new Vector2((float)x, (float)y)) is not null;
 
-    // The ring of the selected body, or none while a pad is open, a sketch is active, or no body is selected.
+    // ADR-0086 (the redesign, slice f, TASK-0275): the tools of the active sketch, in the order of the window of the sketch,
+    // and the kind of each one; Finish ends the sketch.
+    internal static readonly IReadOnlyList<(string Label, SketchToolKind? Kind)> SketchRingTools =
+    [
+        (LineToolLabel, SketchToolKind.Line),
+        (SelectToolLabel, SketchToolKind.Select),
+        (CircleToolLabel, SketchToolKind.Circle),
+        (ArcToolLabel, SketchToolKind.Arc),
+        (FinishLabel, null),
+    ];
+
+    // The tool of the active sketch in this frame, or null with no active sketch.
+    private SketchToolKind? _sketchTool;
+
+    // The ring of the selected body, or of the active sketch (ADR-0086), or none while a pad is open or with no centre.
     private void Ring(Vector2 displaySize, LiveBody? body, Vector2? centre, float size)
     {
         _ring = null;
         _ringLabels = [];
-        if (body is null || centre is not { } at || _pad is not null || _sketchActive)
+        if (centre is not { } at || _pad is not null || (body is null && !_sketchActive))
             return;
 
-        // Finding V130 of the codebase review of 2026-11-07 (b) (TASK-0271): a mesh body takes no move (ADR-0083 item 4).
         var labels = new List<string>();
-        if (body.Kind != Engine.Core.Commands.ImportStlCommandHandler.MeshKind)
-            labels.Add(MoveLabel);
-        if (body.Kind == "Extrude")
-            labels.Add(SetDistanceLabel);
-        labels.Add(body.Visible ? HideLabel : ShowLabel);
-        if (_face is { CanSketch: true })
-            labels.Add(SketchOnFaceButtonLabel);
+        if (_sketchActive)
+        {
+            // ADR-0086 items 1 and 2: while a sketch is active, the ring holds its tools in the place of the tools of a body.
+            labels.AddRange(SketchRingTools.Select(tool => tool.Label));
+        }
+        else if (body is not null)
+        {
+            // Finding V130 of the codebase review of 2026-11-07 (b) (TASK-0271): a mesh body takes no move (ADR-0083 item 4).
+            if (body.Kind != Engine.Core.Commands.ImportStlCommandHandler.MeshKind)
+                labels.Add(MoveLabel);
+            if (body.Kind == "Extrude")
+                labels.Add(SetDistanceLabel);
+            labels.Add(body.Visible ? HideLabel : ShowLabel);
+            if (_face is { CanSketch: true })
+                labels.Add(SketchOnFaceButtonLabel);
+        }
 
-        var ring = Layout(displaySize, at, labels.Count, size, _inset);
+        // ADR-0086 item 1 (TASK-0275): on a landscape display the ring of a sketch is on the left of the sketch, between the
+        // panel and the sketch, because the window of the sketch is on the right. The first form took the room left of that
+        // window and moved the ring onto the points of the sketch.
+        var panelRight = _panels.Count > 0 ? _panels[0].Z : 0f;
+        var ring = _sketchActive && displaySize.X >= displaySize.Y
+            ? SketchLayout(displaySize, at, labels.Count, size, panelRight)
+            : Layout(displaySize, at, labels.Count, size, _inset);
         _ring = ring;
         _ringLabels = labels;
 
@@ -135,14 +181,21 @@ internal sealed unsafe partial class DesktopUi
         var io = ImGui.GetIO();
         if (ImGui.IsMouseReleased(ImGuiMouseButton.Left) && !ImGui.IsWindowHovered(ImGuiHoveredFlags.AnyWindow) && ChipAt(io.MousePos) is null && RowAt(io.MousePos) is null
             && ring.At(labels, io.MousePos) is { } released && ring.At(labels, io.MouseClickedPos[0]) == released)
-            Use(released, body);
+        {
+            if (_sketchActive)
+                UseSketchTool(released);
+            else if (body is not null)
+                Use(released, body);
+        }
 
         var list = ImGui.GetBackgroundDrawList();
         var colours = ImGui.GetStyle().Colors;
         foreach (var segment in ring.Segments(labels))
         {
             var hovered = ring.At(labels, io.MousePos) == segment.Label && !ImGui.IsWindowHovered(ImGuiHoveredFlags.AnyWindow);
-            var ground = ImGui.GetColorU32(colours[(int)(hovered ? ImGuiCol.ButtonHovered : ImGuiCol.Button)]);
+            // ADR-0086 item 2: the tool in use has the colour of an active control.
+            var inUse = _sketchActive && SketchRingTools.FirstOrDefault(tool => tool.Label == segment.Label).Kind is { } kind && kind == _sketchTool;
+            var ground = ImGui.GetColorU32(colours[(int)(inUse ? ImGuiCol.ButtonActive : hovered ? ImGuiCol.ButtonHovered : ImGuiCol.Button)]);
             // A segment is not convex, so it is filled as a row of small quads.
             const int steps = 12;
             for (var i = 0; i < steps; i++)
@@ -166,6 +219,14 @@ internal sealed unsafe partial class DesktopUi
             _items[RingTextItem(segment.Label)] = new Vector4(place.X, place.Y, place.X + text.X, place.Y + text.Y);
             _items[RingItem(segment.Label)] = new Vector4(middle.X - 4f, middle.Y - 4f, middle.X + 4f, middle.Y + 4f);
         }
+    }
+
+    // ADR-0086 item 2: the tool of a segment of the ring of a sketch, as its button of the window of the sketch does.
+    private void UseSketchTool(string label)
+    {
+        if (SketchRingTools.FirstOrDefault(tool => tool.Label == label) is not ({ } _, var kind))
+            return;
+        _actions.Add(kind is { } tool ? new SketchToolAction(tool) : new FinishSketchAction());
     }
 
     // The tool of a segment, as its button of the panel does.

@@ -770,10 +770,25 @@ public sealed class NativeThreeDEngine : IThreeDEngine, IDisposable
                 selectedEdge is null ? null : FaceOverlay.Of(selectedEdge.Segments, Camera, window.width, window.height, drag));
         }
 
-        // ADR-0081 (TASK-0253): the centre of the box of the selected body on the screen, for the tool ring.
+        // ADR-0081 (TASK-0253): the centre of the box of the selected body on the screen, for the tool ring. ADR-0086 item 1
+        // (TASK-0275): while a sketch is active, the centre of its points as the person sees them, or the middle of the
+        // window for a sketch with no point.
         Vector2? ringCentre = null;
         var ringSize = 0f;
-        if (Selection is { } ringBody && _renderer.BoxOf(ringBody) is { } ringBox)
+        if (_sketchActions?.Active is { } ringSketch && _sketches?.Live.FirstOrDefault(live => live.SketchId == ringSketch) is { } ringRecord)
+        {
+            var seen = _sketchActions.Lift?.Apply(ringRecord) ?? ringRecord;
+            var pixels = seen.Points.Select(point => SketchOverlay.Pixel(seen, Camera, window.width, window.height, (point.X, point.Y))).OfType<Vector2>().ToList();
+            if (pixels.Count == 0)
+                ringCentre = new Vector2(window.width / 2f, window.height / 2f);
+            else
+            {
+                var (low, high) = (pixels.Aggregate(Vector2.Min), pixels.Aggregate(Vector2.Max));
+                ringCentre = (low + high) / 2f;
+                ringSize = Vector2.Distance(low, high) / 2f;
+            }
+        }
+        else if (Selection is { } ringBody && _renderer.BoxOf(ringBody) is { } ringBox)
         {
             var middle = ((ringBox.Min.X + ringBox.Max.X) / 2, (ringBox.Min.Y + ringBox.Max.Y) / 2, (ringBox.Min.Z + ringBox.Max.Z) / 2);
             ringCentre = SketchOverlay.Segment(Camera, window.width, window.height, middle, middle)?.A;
