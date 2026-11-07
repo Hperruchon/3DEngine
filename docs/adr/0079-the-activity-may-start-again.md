@@ -88,3 +88,6 @@ gave `Window` a `Dispose`, so a later session of the process makes its own windo
 - 2026-11-07 · TASK-0269 · Item 4: the wait in the background reads the turn at each return, also at an event, and the
   loop reads it at each pass (finding E172 of the codebase review of 2026-11-07 (b)); until TASK-0269 only a quiet wait of
   500 ms read it, so the code did not do what this item says.
+- 2026-11-07 · TASK-0272 · Item 4: a lost surface in the frame that took a chosen STL keeps its new part, and each way out
+  of a session disposes its host (findings E175 and E176 of the codebase review of 2026-11-07 (b)); each new window starts
+  with no open dialog (E179).
