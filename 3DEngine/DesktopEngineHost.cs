@@ -86,6 +86,9 @@ internal static class DesktopEngineHost
                 if (first || again)
                     return exitCode;
                 Console.Error.WriteLine($"3DEngine opens {previous ?? "the document of the start"} again");
+                // V125 (TASK-0270): the import of a new part that did not start belongs to no session.
+                if (file == DesktopDocument.NewDocument && DesktopDocument.DropImport() is { } dropped)
+                    Console.Error.WriteLine($"3DEngine does not import {dropped.Name}, because its new part did not start");
                 (file, again) = (previous, true);
                 continue;
             }

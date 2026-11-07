@@ -62,15 +62,33 @@ internal sealed class DesktopDocument : IDocumentFiles
         }
     }
 
-    public void RequestNew(StlImport? import)
+    // Finding V125 of the codebase review of 2026-11-07 (b) (TASK-0270): the request takes the place of an open, as Reopen
+    // does (E149), so a request and an open of a file in one session cannot both be accepted, and the import of the request
+    // reaches only its new part. Until TASK-0270 an open of an agent could replace the request and take its import.
+    public ErrorDetail? RequestNew(StlImport? import)
     {
+        if (Interlocked.CompareExchange(ref _pending, NewDocument, null) is { } pending)
+            return InProgress(pending);
+
         Volatile.Write(ref _import, import);
         Volatile.Write(ref _requested, NewDocument);
+        Folder.AcceptRequest();
+        return null;
     }
 
     public StlImport? TakeImport() => Interlocked.Exchange(ref _import, null);
 
-    // ADR-0083 D6: the first session of the program starts on the home screen; a choice there ends it for the program.
+    // V125: the host starts the previous file again when a new part does not start (finding E150), and that session must not
+    // take the import of the new part.
+    internal static StlImport? DropImport() => Interlocked.Exchange(ref _import, null);
+
+    private static ErrorDetail InProgress(string pending)
+        => new(DiagnosticCodes.IoLoadFailed, pending == NewDocument
+            ? "A new part document is already in progress."
+            : $"An open of {pending} is already in progress.");
+
+    // ADR-0083 D6: the first session of the program starts on the home screen; a choice there ends it for the program. A
+    // choice is "Open file", "New part" or an accepted open of a file (V126, TASK-0270).
     public bool Home { get => Volatile.Read(ref _home); set => Volatile.Write(ref _home, value); }
 
     public bool HasFolder => true;
@@ -85,7 +103,7 @@ internal sealed class DesktopDocument : IDocumentFiles
         // and then wrote, so two opens at the same time were both accepted. An open takes the pending place before the
         // check, and gives it back when the check fails.
         if (Interlocked.CompareExchange(ref _pending, path, null) is { } pending)
-            return new ErrorDetail(DiagnosticCodes.IoLoadFailed, $"An open of {pending} is already in progress.");
+            return InProgress(pending);
 
         var accepted = false;
         try
@@ -98,6 +116,9 @@ internal sealed class DesktopDocument : IDocumentFiles
                 return error;
 
             Volatile.Write(ref _requested, path);
+            // Finding V126 of the codebase review of 2026-11-07 (b) (TASK-0270): an accepted open of a file, from a recent
+            // row, the panel or an agent, ends the home screen; until TASK-0270 the document opened under it again.
+            Volatile.Write(ref _home, false);
             accepted = true;
             return null;
         }
