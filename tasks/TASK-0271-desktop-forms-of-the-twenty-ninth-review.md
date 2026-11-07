@@ -4,7 +4,7 @@ title: The home screen, the rows, the chips, the dialog and three comments hold 
 status: Ready
 phase: P0.111
 opened: 2026-11-07
-depends-on: [0270]
+depends-on: [0274]
 governed-by: [0007, 0017, 0019, 0023, 0025, 0027, 0029, 0030, 0032, 0034, 0072, 0073, 0075, 0076, 0077, 0078, 0080, 0081, 0082, 0083, 0084, 0085]
 writes:
   create:
