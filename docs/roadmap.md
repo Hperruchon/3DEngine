@@ -215,6 +215,7 @@ Therefore each approved objective must have a track here.
 - P0.104 — A failure of the window of the phone and a new create of its activity name their cause. v0.239, TASK-0256.
 - P0.102 — The kept face, the panel, the title, the open list, the edge and the safe area hold their next forms. v0.240, TASK-0252.
 - R16c — A value that a command changes sits on the edge of the selected body that it measures. v0.241, TASK-0254, ADR-0082.
+- P9a — An STL file opens as a mesh body of a new part, through one import command (the record). v0.242, TASK-0257, ADR-0083.
 
 ## Track 0 — Foundations
 
