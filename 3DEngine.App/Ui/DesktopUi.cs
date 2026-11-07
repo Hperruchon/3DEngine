@@ -507,6 +507,7 @@ internal sealed unsafe partial class DesktopUi : IDisposable
         _face = face;
         _sketchActive = sketchPanel?.Active is not null;
         _sketchTool = sketchPanel?.Active is not null ? sketchPanel.Tool : null;
+        _sketchPanel = sketchPanel;
         ImGui.SetCurrentContext(_context);
         var io = ImGui.GetIO();
         io.DisplaySize = displaySize;

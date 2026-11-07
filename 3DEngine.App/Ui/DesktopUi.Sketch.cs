@@ -100,6 +100,82 @@ internal sealed unsafe partial class DesktopUi
         }
     }
 
+    // ADR-0087 item 2 (TASK-0276): each kind of constraint that fits the selection, with what its button does: the action of
+    // the constraint, or the pad of its value. The window of the sketch and the ring of a sketch both use it.
+    private List<(string Label, Action Press)> FittingConstraints(SketchInfo sketch, IReadOnlyList<Guid> selection)
+    {
+        var list = new List<(string Label, Action Press)>();
+        if (selection.Count == 0)
+            return list;
+
+        var points = sketch.Points.ToDictionary(point => point.Id);
+        var lines = sketch.Lines.Select(line => line.Id).ToHashSet();
+        var curves = sketch.Circles.Select(circle => circle.Id).Concat(sketch.Arcs.Select(arc => arc.Id)).ToHashSet();
+        int Order(Guid item) => points.ContainsKey(item) ? 0 : lines.Contains(item) ? 1 : curves.Contains(item) ? 2 : 3;
+        Guid[] items = [.. selection.OrderBy(Order)];
+        var shape = string.Concat(items.Select(item => Order(item) switch { 0 => "P", 1 => "L", 2 => "A", _ => "C" }));
+        var origin = selection.Contains(sketch.SketchId);
+
+        foreach (var (label, kind) in ConstraintButtons)
+        {
+            var fits = (kind, shape) switch
+            {
+                ("coincident", "PP") => true,
+                ("horizontal" or "vertical", "L") => true,
+                ("distance", "PP" or "PL" or "L") => true,
+                ("fixed", "P") => !origin,
+                // Finding V59 of the codebase review of 2026-10-31 (TASK-0133): the engine refuses a point
+                // that defines the curve and a line with an end at the centre (SketchConstraints.Refusal).
+                ("pointOn", "PA") => label == OnCurveLabel && !CurvePoints(sketch, items[1]).Contains(items[0]),
+                ("tangent", "LA") => label != InsideTangentLabel && !IsEnd(sketch, CurvePoints(sketch, items[1])[0], items[0]),
+                ("tangent", "AA") => true,
+                ("equal", "AA" or "LL") => true,
+                ("radius", "A") => true,
+                // The kinds of K2c on lines: a point of pointOn and of midpoint is not an end of its
+                // line, as the engine requires (SketchConstraints.Refusal). Symmetric takes two points
+                // that are not ends of the line, since the selection holds three items (K2g, TASK-0127).
+                ("pointOn", "PL") => label == OnLineLabel && !IsEnd(sketch, items[0], items[1]),
+                ("midpoint", "PL") => !IsEnd(sketch, items[0], items[1]),
+                ("parallel" or "perpendicular" or "angle", "LL") => true,
+                ("symmetric", "PPL") => !IsEnd(sketch, items[0], items[2]) && !IsEnd(sketch, items[1], items[2]),
+                _ => false,
+            };
+            if (!fits)
+                continue;
+
+            list.Add((label, () =>
+            {
+                switch (kind)
+                {
+                    case "distance":
+                        var length = SketchText.Distance(sketch, items) ?? 0;
+                        OpenPad(new NumericPad(label, _unit, new PadField("length", SketchText.Number(length))), values => new AddConstraintAction(kind, items, values), bySketch: true, scope: PadScope.Sketch);
+                        break;
+                    case "fixed":
+                        var at = points[items[0]];
+                        OpenPad(new NumericPad(label, _unit, new("x", SketchText.Number(at.X)), new("y", SketchText.Number(at.Y))), values => new AddConstraintAction(kind, items, values), bySketch: true, scope: PadScope.Sketch);
+                        break;
+                    case "radius":
+                        var radius = SketchText.Radius(sketch, items[0]) ?? 0;
+                        OpenPad(new NumericPad(label, _unit, new PadField("radius", SketchText.Number(radius))), values => new AddConstraintAction(kind, items, values), bySketch: true, scope: PadScope.Sketch);
+                        break;
+                    case "angle":
+                        var degrees = SketchText.Angle(sketch, items[0], items[1]) ?? 0;
+                        OpenPad(new NumericPad(label, AngleUnit, new PadField("angle", SketchText.Number(degrees))), values => new AddConstraintAction(kind, items, CosineAndSine(values[0])), bySketch: true, scope: PadScope.Sketch);
+                        break;
+                    case "tangent" when shape == "AA":
+                        _actions.Add(new AddConstraintAction(kind, items, [label == InsideTangentLabel ? -1 : 1]));
+                        break;
+                    default:
+                        _actions.Add(new AddConstraintAction(kind, items, []));
+                        break;
+                }
+            }));
+        }
+
+        return list;
+    }
+
     // The active tool has the colour of a pressed button.
     private void ToolButton(string label, SketchToolKind kind, SketchToolKind active)
     {
@@ -155,62 +231,9 @@ internal sealed unsafe partial class DesktopUi
             Item(SketchItem(label));
         }
 
-        foreach (var (label, kind) in ConstraintButtons)
-        {
-            var fits = (kind, shape) switch
-            {
-                ("coincident", "PP") => true,
-                ("horizontal" or "vertical", "L") => true,
-                ("distance", "PP" or "PL" or "L") => true,
-                ("fixed", "P") => !origin,
-                // Finding V59 of the codebase review of 2026-10-31 (TASK-0133): the engine refuses a point
-                // that defines the curve and a line with an end at the centre (SketchConstraints.Refusal).
-                ("pointOn", "PA") => label == OnCurveLabel && !CurvePoints(sketch, items[1]).Contains(items[0]),
-                ("tangent", "LA") => label != InsideTangentLabel && !IsEnd(sketch, CurvePoints(sketch, items[1])[0], items[0]),
-                ("tangent", "AA") => true,
-                ("equal", "AA" or "LL") => true,
-                ("radius", "A") => true,
-                // The kinds of K2c on lines: a point of pointOn and of midpoint is not an end of its
-                // line, as the engine requires (SketchConstraints.Refusal). Symmetric takes two points
-                // that are not ends of the line, since the selection holds three items (K2g, TASK-0127).
-                ("pointOn", "PL") => label == OnLineLabel && !IsEnd(sketch, items[0], items[1]),
-                ("midpoint", "PL") => !IsEnd(sketch, items[0], items[1]),
-                ("parallel" or "perpendicular" or "angle", "LL") => true,
-                ("symmetric", "PPL") => !IsEnd(sketch, items[0], items[2]) && !IsEnd(sketch, items[1], items[2]),
-                _ => false,
-            };
-            if (!fits)
-                continue;
-
-            Flow(label, () =>
-            {
-                switch (kind)
-                {
-                    case "distance":
-                        var length = SketchText.Distance(sketch, items) ?? 0;
-                        OpenPad(new NumericPad(label, _unit, new PadField("length", SketchText.Number(length))), values => new AddConstraintAction(kind, items, values), bySketch: true, scope: PadScope.Sketch);
-                        break;
-                    case "fixed":
-                        var at = points[items[0]];
-                        OpenPad(new NumericPad(label, _unit, new("x", SketchText.Number(at.X)), new("y", SketchText.Number(at.Y))), values => new AddConstraintAction(kind, items, values), bySketch: true, scope: PadScope.Sketch);
-                        break;
-                    case "radius":
-                        var radius = SketchText.Radius(sketch, items[0]) ?? 0;
-                        OpenPad(new NumericPad(label, _unit, new PadField("radius", SketchText.Number(radius))), values => new AddConstraintAction(kind, items, values), bySketch: true, scope: PadScope.Sketch);
-                        break;
-                    case "angle":
-                        var degrees = SketchText.Angle(sketch, items[0], items[1]) ?? 0;
-                        OpenPad(new NumericPad(label, AngleUnit, new PadField("angle", SketchText.Number(degrees))), values => new AddConstraintAction(kind, items, CosineAndSine(values[0])), bySketch: true, scope: PadScope.Sketch);
-                        break;
-                    case "tangent" when shape == "AA":
-                        _actions.Add(new AddConstraintAction(kind, items, [label == InsideTangentLabel ? -1 : 1]));
-                        break;
-                    default:
-                        _actions.Add(new AddConstraintAction(kind, items, []));
-                        break;
-                }
-            });
-        }
+        // ADR-0087 item 2 (TASK-0276): the window and the ring give the same constraints, from one rule.
+        foreach (var (label, press) in FittingConstraints(sketch, selection))
+            Flow(label, press);
 
         if (shape == "P" && !origin)
         {

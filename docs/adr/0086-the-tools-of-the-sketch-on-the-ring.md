@@ -1,13 +1,13 @@
 ---
 id: 0086
 title: While a sketch is active, the ring holds the tools of the sketch
-status: Accepted
+status: Amended
 topic: Clients, rendering
 date: 2026-11-07
 supersedes: []
 superseded-by: []
 amends: ['0081']
-amended-by: []
+amended-by: ['0087']
 affects:
   - 3DEngine.App/Ui/DesktopUi.Ring.cs
   - 3DEngine.App/Ui/DesktopUi.cs
@@ -83,3 +83,4 @@ the ring yet. On a small portrait display the window of the sketch can cover the
 
 - 2026-11-07 · TASK-0275 · The record, Accepted under the standing order.
 - 2026-11-07 · TASK-0275 · Shipped at v0.260.
+- 2026-11-07 · TASK-0276 · Amended by ADR-0087: "Constrain" comes before Finish when a constraint fits.
