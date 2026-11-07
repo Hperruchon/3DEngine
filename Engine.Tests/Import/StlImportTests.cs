@@ -169,6 +169,22 @@ public sealed class StlImportTests
         }
     }
 
+    // Finding E178 of the codebase review of 2026-11-07 (b) (TASK-0272): a text file whose name is not UTF-8 gives the code of
+    // a text file, and a cut binary file of fewer than 84 bytes whose header starts with "solid" gives the code of a cut file.
+    // Until TASK-0272 they gave the opposite codes.
+    [Fact]
+    public void A_Name_That_Is_Not_Utf8_And_A_Short_Cut_Binary_File_Have_The_Codes_Of_Item_3()
+    {
+        byte[] latin = [.. Encoding.ASCII.GetBytes("solid caf"), 0xE9, .. Encoding.ASCII.GetBytes($"\n{Facet}endsolid\n")];
+        var binary = Binary([.. Triangle, .. Triangle]);
+        new byte[80].CopyTo(binary, 0);
+        Encoding.ASCII.GetBytes("solid exported by a program").CopyTo(binary, 0);
+
+        Assert.True(latin.Length >= 84);
+        Assert.Equal(DiagnosticCodes.StlSyntax, StlReader.Read(latin).Error?.Code);
+        Assert.Equal(DiagnosticCodes.StlTruncated, StlReader.Read(binary[..83]).Error?.Code);
+    }
+
     private static (DocumentSession Session, AssetBytes Assets) Session(IGeometryBackend backend)
     {
         var assets = new AssetBytes();

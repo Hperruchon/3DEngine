@@ -104,3 +104,6 @@ of its own, and the APK.
 - 2026-11-07 · TASK-0263 · Item 7: "the rule of zero warnings stops the build" was false for `3DEngine.App`,
   `3DEngine.Core` and `3DEngine.Vulkan`, which did not set `TreatWarningsAsErrors` (finding T166 of the codebase review
   of 2026-11-07). Each project that the phone reaches sets it now, and the gate and the platform step require it.
+- 2026-11-07 · TASK-0272 · Item 7: the host of the phone makes CA1416 an error with `WarningsAsErrors`, because the
+  Android SDK can give warnings that are not ours; the step of the platforms reads it (finding T168 of the codebase review
+  of 2026-11-07 (b)).

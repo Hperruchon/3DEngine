@@ -200,9 +200,9 @@ public static class Cli
         var folder = AssetStore.Default;
         if (args is [_, _, _, "--folder", var named])
         {
-            if (named.Length == 0)
-                return InvalidUsage(stderr, "--folder requires a path.");
-            folder = named;
+            if (ValidFolder(named) is not { } valid)
+                return InvalidUsage(stderr, $"--folder requires a valid path; '{named}' is not one.");
+            folder = valid;
             args = args[..3];
         }
 
@@ -491,13 +491,30 @@ public static class Cli
             }
             else
             {
-                folder = value;
+                folder = ValidFolder(value) ?? throw new ArgParseException($"--folder requires a valid path; '{value}' is not one.");
             }
 
             at += 2;
         }
 
         return (kind ?? Document.Part, folder ?? AssetStore.Default, args[at..]);
+    }
+
+    // The review of Codex of v0.250 (TASK-0272): a blank folder, or one that is not a path, is a usage error; until TASK-0272
+    // it reached Path.GetFullPath in the store, and the exception ended the program.
+    private static string? ValidFolder(string value)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+            return null;
+        try
+        {
+            _ = Path.GetFullPath(value);
+            return value;
+        }
+        catch (Exception ex) when (ex is ArgumentException or NotSupportedException or PathTooLongException)
+        {
+            return null;
+        }
     }
 
     private static DocumentSession? BuildSession(BackendOptions options, TextWriter stderr, string kind, string folder)
