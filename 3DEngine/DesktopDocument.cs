@@ -20,8 +20,12 @@ internal sealed class DesktopDocument : IDocumentFiles
     // The path of the open that a check examines or that the check accepted, or null.
     private string? _pending;
 
-    public DesktopDocument(string folder)
+    // E167 (TASK-0262): the store of the desktop, which the check of an open reads for an import of ADR-0083.
+    private readonly Engine.Core.Assets.IAssetSource? _assets;
+
+    public DesktopDocument(string folder, Engine.Core.Assets.IAssetSource? assets = null)
     {
+        _assets = assets;
         Folder = new DocumentFolder(folder, Reopen);
     }
 
@@ -54,7 +58,7 @@ internal sealed class DesktopDocument : IDocumentFiles
             // program holds fails it (V31). The file that this desktop holds is the exception: the
             // host disposes the session of that file before the next session holds it.
             using var backend = new ManifoldGeometryBackend();
-            if (await DocumentFile.Check(path, backend, hold: !SameFile(path, HeldFile?.Invoke()), ct) is { } error)
+            if (await DocumentFile.Check(path, backend, hold: !SameFile(path, HeldFile?.Invoke()), ct, _assets) is { } error)
                 return error;
 
             Volatile.Write(ref _requested, path);
