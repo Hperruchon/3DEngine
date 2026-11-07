@@ -235,6 +235,8 @@ Therefore each approved objective must have a track here.
   the phone keeps. v0.254, TASK-0269, ADR-0079, ADR-0083.
 - P0.110 — The import of a chosen STL reaches only its new part, and an open by name ends the home screen. v0.255,
   TASK-0270, ADR-0083.
+- P0.111 — The home screen, the rows, the chips, the dialog and three comments hold their next forms. v0.258,
+  TASK-0271, ADR-0084.
 
 ## Track 0 — Foundations
 

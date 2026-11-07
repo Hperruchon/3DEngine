@@ -16,8 +16,9 @@ internal sealed unsafe partial class DesktopUi
     // The item of the first row: the name and the state of the body.
     public const string RowsTitleItem = "Rows:title";
 
-    // The colour of the word "failed" and its code: the red of the theme for a fault (the brief: red always comes with
-    // the word "failed" and the code).
+    // The colour of the word "failed" and its code (the brief: red always comes with the word "failed" and the code). The
+    // theme of ADR-0078 has no colour of a fault, so this file holds it. Finding V133 (TASK-0271): until TASK-0271 this
+    // comment said that it was a colour of the theme.
     internal const uint FailedColour = 0xFF5C5CE8;
 
     public static string RowItem(string key) => $"Row:{key}";
@@ -50,10 +51,15 @@ internal sealed unsafe partial class DesktopUi
         var left = right - RowsWidth;
         var top = 16f + _inset.Y;
         var y = top + RowHeight;
+        // The review of Codex of v0.252 (TASK-0271): the rows end 16 pixels above the anchors, as the panel does; a value
+        // that has no room keeps its chip only. Until TASK-0271 a long list went past the bottom of the display.
+        var bottom = displaySize.Y - 32f - _inset.W - AnchorSize;
         foreach (var value in values ?? [])
         {
             if (value.Body != body.Id)
                 continue;
+            if (y + RowHeight > bottom)
+                break;
             _rows.Add((value, new Vector4(left, y, right, y + RowHeight)));
             y += RowHeight;
         }
@@ -74,8 +80,10 @@ internal sealed unsafe partial class DesktopUi
             && RowAt(io.MousePos) is { } released && RowAt(io.MouseClickedPos[0]) is { } pressed && pressed.Key == released.Key)
             Use(released);
 
-        // Item 2: no ground and no border; a line under each row. The name at the left, and the kind and the state at the
-        // right in the colour of disabled text, or "failed" and the code in red; a long name ends with "...".
+        // Item 2: no ground and no border; a line under each row. Finding V129 of the codebase review of 2026-11-07 (b)
+        // (TASK-0271): the name is on the first line of the first row, and the kind and the state on its second line, each
+        // in the width of the column; only "failed" and the code are red. Until TASK-0271 the state of a hidden body pushed
+        // the name out to "..." and crossed the left edge of the column.
         var list = ImGui.GetBackgroundDrawList();
         var colours = ImGui.GetStyle().Colors;
         var text = ImGui.GetColorU32(colours[(int)ImGuiCol.Text]);
@@ -83,10 +91,16 @@ internal sealed unsafe partial class DesktopUi
         var line = ImGui.GetColorU32(colours[(int)ImGuiCol.Separator]);
         var (left, top, right) = (area.X, area.Y, area.Z);
         var middle = (RowHeight - ImGui.GetTextLineHeight()) / 2f;
-        var state = RowState(body);
-        var stateWidth = ImGui.CalcTextSize(state).X;
-        list.AddText(new Vector2(right - stateWidth, top + middle), body.Fault is null ? quiet : FailedColour, state);
-        list.AddText(new Vector2(left, top + middle), text, Fit(body.Name ?? body.Kind, RowsWidth - stateWidth - 12f));
+        var (name, parts) = RowTitle(body);
+        var lineHeight = ImGui.GetTextLineHeight();
+        var first = top + ((RowHeight - (2f * lineHeight)) / 2f);
+        list.AddText(new Vector2(left, first), text, name);
+        var x = left;
+        foreach (var (part, red) in parts)
+        {
+            list.AddText(new Vector2(x, first + lineHeight), red ? FailedColour : quiet, part);
+            x += ImGui.CalcTextSize(part).X;
+        }
         list.AddLine(new Vector2(left, top + RowHeight), new Vector2(right, top + RowHeight), line, 1f);
         _items[RowsTitleItem] = new Vector4(left, top, right, top + RowHeight);
 
@@ -105,6 +119,28 @@ internal sealed unsafe partial class DesktopUi
             list.AddLine(new Vector2(min.X, max.Y), max, line, 1f);
             _items[RowItem(value.Key)] = rectangle;
         }
+    }
+
+    // V129 (TASK-0271): the name of the first row, and the parts of its second line: the kind, "failed" and the code (red),
+    // or "correct", and "hidden"; each line fits the width of the column. A state that is too wide loses the kind first,
+    // then "hidden", so that "failed" and the code stay whole; the panel gives the kind and the visibility too.
+    internal (string Name, IReadOnlyList<(string Text, bool Red)> State) RowTitle(LiveBody body)
+    {
+        var name = Fit(body.Name ?? body.Kind, RowsWidth);
+        var state = body.Fault is { } fault ? ($"failed {fault.Code}", true) : ("correct", false);
+        List<(string Text, bool Red)>[] forms =
+        [
+            [($"{body.Kind} · ", false), state, .. body.Visible ? Array.Empty<(string, bool)>() : [(" · hidden", false)]],
+            [state, .. body.Visible ? Array.Empty<(string, bool)>() : [(" · hidden", false)]],
+            [state],
+        ];
+        foreach (var form in forms)
+        {
+            if (ImGui.CalcTextSize(string.Concat(form.Select(part => part.Text))).X <= RowsWidth)
+                return (name, form);
+        }
+
+        return (name, [(Fit(state.Item1, RowsWidth), state.Item2)]);
     }
 
     // The text, or its start and "...", in the width.

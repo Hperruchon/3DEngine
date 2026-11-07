@@ -12,7 +12,7 @@ public sealed unsafe partial class Window
 {
     private static readonly object DialogLock = new();
     private static bool _dialogOpen;
-    private static (bool Done, string? Path) _dialogResult;
+    private static (bool Done, string? Path, string? Failure) _dialogResult;
     private static nint _filterName, _filterPattern, _filter;
 
     // Opens the dialog for one file with the filter, for example "STL file" and "stl". False when a dialog is open already.
@@ -35,8 +35,9 @@ public sealed unsafe partial class Window
     }
 
     // The result of the dialog: Done is true one time after the dialog closes, with the path, or null when the person
-    // closed it with no file or the dialog failed.
-    public static (bool Done, string? Path) TakeOpenedFile()
+    // closed it with no file or the dialog failed. Finding V131 of the codebase review of 2026-11-07 (b) (TASK-0271): Failure
+    // gives the reason of SDL when the dialog failed, and null when the person closed it.
+    public static (bool Done, string? Path, string? Failure) TakeOpenedFile()
     {
         lock (DialogLock)
         {
@@ -51,9 +52,10 @@ public sealed unsafe partial class Window
     private static void Chosen(nint userdata, byte** files, int filter)
     {
         var path = files is not null && files[0] is not null ? Marshal.PtrToStringUTF8((nint)files[0]) : null;
+        var failure = files is null ? Error() : null;
         lock (DialogLock)
         {
-            _dialogResult = (true, path);
+            _dialogResult = (true, path, failure);
             _dialogOpen = false;
             Marshal.FreeCoTaskMem(_filterName);
             Marshal.FreeCoTaskMem(_filterPattern);
