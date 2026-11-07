@@ -24,6 +24,32 @@ affects:
   - 3DEngine.App/StlOpening.cs
   - 3DEngine.App/Ui/DesktopUi.Home.cs
   - 3DEngine/DesktopDocument.cs
+  - 3DEngine/DesktopSession.cs
+  - 3DEngine.Android/PhoneHost.cs
+  - 3DEngine.App/ISessionHost.cs
+  - 3DEngine.App/LocalSessionHost.cs
+  - 3DEngine.App/NativeThreeDEngine.cs
+  - 3DEngine.App/PhoneFiles.cs
+  - 3DEngine.App/Ui/DesktopUi.cs
+  - 3DEngine.App/Ui/DesktopUi.Fixed.cs
+  - 3DEngine.App/Ui/PanelAction.cs
+  - eng/android/check-apk.sh
+  - Engine.Api.Http/EngineHost.cs
+  - Engine.Api.Http/Endpoints/SchemaDiagnosticsEndpoint.cs
+  - Engine.Api.Http.Server/ServerEngine.cs
+  - Engine.Cli/Cli.cs
+  - Engine.Core/DiagnosticCodes.cs
+  - Engine.Core/Assets/IAssetSource.cs
+  - Engine.Core/Commands/AddSketchReferenceCommandHandler.cs
+  - Engine.Core/Commands/CreateDatumCommandHandler.cs
+  - Engine.Core/Commands/SubtractCommandHandler.cs
+  - Engine.Core/Commands/TranslateCommandHandler.cs
+  - Engine.Core/Determinism/CrossPlatformProbe.cs
+  - Engine.Core/Export/StepExport.cs
+  - Engine.Core/Hosting/EngineHosting.cs
+  - Engine.Core/Persistence/DocumentFile.cs
+  - Engine.Core/Queries/GetFaceAtQueryHandler.cs
+  - Engine.Core/Queries/GetFacesQueryHandler.cs
 enforced-by: Engine.Tests/Import/StlImportTests.cs (TASK-0258 creates it)
 ---
 
@@ -140,3 +166,6 @@ desktop row P9c, the phone row P9d, and the test sheet P9e.
 - 2026-11-07 · TASK-0260 · The phone part: the same home screen with no recent file (the phone has no document folder yet),
   the document picker of Android through the dialog of SDL with no permission of storage (the APK check of the pipeline
   holds it), the store in the folder of the application, and a new part as a new session in the same window.
+- 2026-11-07 · TASK-0263 · The affects field names the 26 code files of TASK-0258 to TASK-0260 that cite this ADR: the
+  refusals of item 4, the store of item 2, the codes, the hosts and the clients (finding T167 of the codebase review of
+  2026-11-07). `AffectsCitationGateTests` holds it.

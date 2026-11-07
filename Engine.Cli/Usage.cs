@@ -11,19 +11,22 @@ internal static class Usage
     private const string Header =
 """
 Usage:
-  engine apply <command-name> [--kind part|assembly] [--param k=v ...]
+  engine apply <command-name> [--kind part|assembly] [--folder <path>] [--param k=v ...]
                                                   Apply a command, print CommandResult JSON.
-  engine query <query-name> [--kind part|assembly] [--param k=v ...]
+  engine query <query-name> [--kind part|assembly] [--folder <path>] [--param k=v ...]
                                                   Run a query, print QueryResult JSON.
   engine asset put <file> [--folder <path>]       Put a file into the store of the assets, print its name.
   engine asset get <name> <file> [--folder <path>]  Write an asset of the store to a file.
-  engine export stl <document.3de> <file.stl>     Write the live bodies of a document file as one STL file.
-  engine export step <document.3de> <file.step>   Write the live bodies of a document file as one STEP file.
+  engine export stl <document.3de> <file.stl> [--folder <path>]
+                                                  Write the live bodies of a document file as one STL file.
+  engine export step <document.3de> <file.step> [--folder <path>]
+                                                  Write the live bodies of a document file as one STEP file.
   engine help                                     Print this usage.
 
 Each invocation builds a fresh in-memory engine. There is no persistence
 between invocations. Its document is a part, or an assembly with --kind assembly. The store of the assets is outside the engine, in
-<local application data>/3DEngine/assets unless --folder names another.
+<local application data>/3DEngine/assets unless --folder names another. Each command reads the
+store that its --folder names, also for the import of an STL file.
 
 Exit codes:
   0  Applied
