@@ -31,8 +31,15 @@ public static class StlReader
         // Finding E170 of the codebase review of 2026-11-07 (TASK-0263): a file of at least 84 bytes that starts with
         // "solid" and is not text is a binary file of the wrong length, so it gives E-STL-TRUNCATED, not E-STL-SYNTAX.
         var body = bytes.StartsWith(ByteOrderMark) ? bytes[ByteOrderMark.Length..] : bytes;
-        if (StartsWithSolid(body) && (bytes.Length < HeaderBytes + 4 || IsText(body)))
-            return Text(body);
+        // Finding E178 of the codebase review of 2026-11-07 (b) (TASK-0272): a short file with a zero byte is a cut binary
+        // file, and a file whose first byte that is not text is in its first 80 bytes and is not zero is a text file with a
+        // name that is not UTF-8, which the text reader refuses with its own message.
+        if (StartsWithSolid(body))
+        {
+            var bad = FirstNonText(body);
+            if (bytes.Length < HeaderBytes + 4 ? body.IndexOf((byte)0) < 0 : bad < 0 || (bad < HeaderBytes && body[bad] != 0))
+                return Text(body);
+        }
 
         return (null, Error(DiagnosticCodes.StlTruncated, bytes.Length >= HeaderBytes + 4
             ? $"The file has {bytes.Length} bytes, and a binary STL file with the count of its header has {HeaderBytes + 4 + ((long)BinaryPrimitives.ReadUInt32LittleEndian(bytes.Slice(HeaderBytes, 4)) * TriangleBytes)}. The file is cut or is not an STL file."
@@ -153,6 +160,20 @@ public static class StlReader
     // UTF-8 in nearly each file.
     private static bool IsText(ReadOnlySpan<byte> bytes)
         => bytes.IndexOf((byte)0) < 0 && System.Text.Unicode.Utf8.IsValid(bytes);
+
+    // E178 (TASK-0272): the index of the first byte that is zero or that starts no valid UTF-8 character, or -1.
+    private static int FirstNonText(ReadOnlySpan<byte> bytes)
+    {
+        var at = 0;
+        while (at < bytes.Length)
+        {
+            if (bytes[at] == 0 || Rune.DecodeFromUtf8(bytes[at..], out _, out var length) != System.Buffers.OperationStatus.Done)
+                return at;
+            at += length;
+        }
+
+        return -1;
+    }
 
     private static bool StartsWithSolid(ReadOnlySpan<byte> bytes)
     {

@@ -215,26 +215,26 @@ Therefore each approved objective must have a track here.
 - P0.104 — A failure of the window of the phone and a new create of its activity name their cause. v0.239, TASK-0256.
 - P0.102 — The kept face, the panel, the title, the open list, the edge and the safe area hold their next forms. v0.240, TASK-0252.
 - R16c — A value that a command changes sits on the edge of the selected body that it measures. v0.241, TASK-0254, ADR-0082.
-- R16d — The data of the selected body is in rows with no panel at the upper right. v0.252, TASK-0267, ADR-0084.
-- R16e — The active sketch of a live extrude moves out of its body, and the camera stays. v0.256, TASK-0273, ADR-0085.
-- P0.113 — The name of the solid keeps the results of v0.250, and the test sheet says how the size comes back. v0.257,
-  TASK-0274, ADR-0083.
 - P9a — An STL file opens as a mesh body of a new part, through one import command (the record). v0.242, TASK-0257, ADR-0083.
 - P9b — The engine reads an STL file into a mesh body. v0.243, TASK-0258, ADR-0083.
-- P9c — The desktop opens an STL file from its home screen, and the row waits for the owner. v0.247, TASK-0259, ADR-0083.
-- P9d — The phone opens an STL file from its home screen, and the row waits for the owner. v0.248, TASK-0260, ADR-0083.
-- P9e — The test sheet of the STL demonstration, and the row waits for the owner. v0.249, TASK-0266.
 - Review — The codebase review of 2026-11-07. v0.244, TASK-0261.
 - P0.105 — The check of an open reads the store of the assets. v0.245, TASK-0262.
 - P0.108 — A lost surface of a destroyed activity ends the session quietly. v0.246, TASK-0265, ADR-0079.
+- P9c — The desktop opens an STL file from its home screen, and the row waits for the owner. v0.247, TASK-0259, ADR-0083.
+- P9d — The phone opens an STL file from its home screen, and the row waits for the owner. v0.248, TASK-0260, ADR-0083.
+- P9e — The test sheet of the STL demonstration, and the row waits for the owner. v0.249, TASK-0266.
 - P0.106 — A failed copy, a test of the faces, the STL reader, the command line, two gates and the affects fields hold
   their next forms. v0.250, TASK-0263.
 - P0.107 — The chips, the ring and the collapsed panel hold their next forms. v0.251, TASK-0264, ADR-0081.
+- R16d — The data of the selected body is in rows with no panel at the upper right. v0.252, TASK-0267, ADR-0084.
 - Review — The codebase review of 2026-11-07 (b). v0.253, TASK-0268.
 - P0.109 — The wait of the phone checks its turn, the STL reader keeps the results of v0.243, and the test sheet says what
   the phone keeps. v0.254, TASK-0269, ADR-0079, ADR-0083.
 - P0.110 — The import of a chosen STL reaches only its new part, and an open by name ends the home screen. v0.255,
   TASK-0270, ADR-0083.
+- R16e — The active sketch of a live extrude moves out of its body, and the camera stays. v0.256, TASK-0273, ADR-0085.
+- P0.113 — The name of the solid keeps the results of v0.250, and the test sheet says how the size comes back. v0.257,
+  TASK-0274, ADR-0083.
 
 ## Track 0 — Foundations
 

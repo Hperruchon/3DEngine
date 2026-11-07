@@ -46,6 +46,7 @@ public sealed unsafe partial class Window : IDisposable
 
     public unsafe Window(string title, int width, int height, WindowFlags flags = WindowFlags.None)
     {
+        ResetDialog();
         Title = title;
 
         SDL_WindowFlags sdl_flags = (SDL_WindowFlags)SDL_WINDOW_HIGH_PIXEL_DENSITY | (SDL_WindowFlags)SDL_WINDOW_VULKAN | (SDL_WindowFlags)SDL_WINDOW_HIDDEN;
