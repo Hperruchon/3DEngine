@@ -218,6 +218,7 @@ Therefore each approved objective must have a track here.
 - P9a — An STL file opens as a mesh body of a new part, through one import command (the record). v0.242, TASK-0257, ADR-0083.
 - P9b — The engine reads an STL file into a mesh body. v0.243, TASK-0258, ADR-0083.
 - Review — The codebase review of 2026-11-07. v0.244, TASK-0261.
+- P0.105 — The check of an open reads the store of the assets. v0.245, TASK-0262.
 
 ## Track 0 — Foundations
 
