@@ -1,7 +1,7 @@
 ---
 id: 0274
 title: The name of the solid keeps the results of v0.250, and the test sheet says how the size comes back
-status: Active
+status: Done
 phase: P0.113
 opened: 2026-11-07
 depends-on: [0273]
@@ -52,24 +52,26 @@ back, and TASK-0271 comes after this task.
 
 ## Acceptance criteria
 
-- [ ] A test of the forms that the reader of v0.250 read fails with the rule of TASK-0269 and passes with the reader of
+- [x] A test of the forms that the reader of v0.250 read fails with the rule of TASK-0269 and passes with the reader of
       v0.250 and with the new rule; the test of the forms of v0.243 still passes.
-- [ ] A clean build (`--no-incremental`) gives zero errors and zero warnings.
-- [ ] Continuous integration passes on the three runners, on the branch and on `main` after the merge.
+- [x] A clean build (`--no-incremental`) gives zero errors and zero warnings.
+- [x] Continuous integration passes on the three runners, on the branch and on `main` after the merge.
 
 ## Outcome
 
-Status: Active
+Status: Done · commit (the merge of the branch p0113-solid-name-b) · v0.257
 
 ## Method
 
 Mechanical: the new test runs with the reader of HEAD, of v0.250 (`60a9ea1`) and with the new rule.
 Judgement:  a whole facet on the line of "solid" had two earlier results (v0.243 read it, v0.250 took it as the name);
             the rule gives the result of v0.243, which was in force longer, and the history of ADR-0083 says so.
-Weakest:    to be written at the close.
+Weakest:    a whole facet on the line of "solid" had two earlier results, and the reader keeps one of them (v0.243); a
+            document that recorded such a file between v0.250 and v0.253 replays with one more triangle.
 
 ## Progress
 
 - 2026-11-07: the rule of a whole facet, the test of four forms of v0.250, the sheet and the order of TASK-0271. The new test
   failed with the rule of TASK-0269 (`E-STL-SYNTAX` for "facet normal 0") and passed with the reader of `60a9ea1`; each of
   the 26 tests of the STL import passes with the new rule.
+- 2026-11-07: rebased on the close of R16e; run 42365575281 passed. Closed at v0.257.

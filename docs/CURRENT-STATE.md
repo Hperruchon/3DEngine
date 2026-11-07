@@ -7742,3 +7742,33 @@ needs a window. The tools of the sketch on the ring and the values of the sketch
 New tests: 5. The test list holds 2060 (1411 in `Engine.Tests`, 337 in `3DEngine.Tests`, 309 in `3DEngine.ImageTests`, 3
 in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
 entries: 15 of 15. New diagnostic codes: 0. Since the review of v0.252, 1 product milestone and 4 entries followed it.
+
+## v0.257 — The name of the solid keeps the results of v0.250 (P0.113, TASK-0274)
+
+The review of Codex of v0.254 found a high defect in the fix of E173 (TASK-0269): the name of the solid ended at "facet
+normal" and one number, so a file whose name is "facet normal 0" gave `E-STL-SYNTAX`, and the reader of v0.250 to
+v0.253 read it. ADR-0083 item 3 says that a change of the reader keeps the result of each file that an earlier reader
+accepted. A high defect comes before the next product phase.
+
+**The change.**
+- The name of the solid ends at the start of a whole facet: "facet normal", three numbers and "outer", on any line, or at
+  "facet" or "endsolid" after the line of "solid". ADR-0083 has a history line.
+- The test sheet says to turn on "Dimensions" in the panel and select the body to see its size again, because a new
+  engine starts with "Dimensions" off (the reviews of Codex of v0.253 and v0.254). The review of 2026-11-07 (b) gave the
+  sentence with no "Dimensions"; that review keeps its text.
+- TASK-0271 depends on this task, so P0.111 comes after the product phase R16e (the review of Codex of v0.253).
+
+**Proof.** A new test of four forms that the reader of v0.250 read failed with the rule of TASK-0269 and passed with the
+reader of `60a9ea1`; it passes with the new rule, and each of the 26 tests of the STL import passes, with the forms of
+v0.243 and of E170. Run 42365575281 passed.
+
+**What stays.** A whole facet on the line of "solid" had two earlier results: v0.243 read it, and v0.250 took it as the
+name. The reader gives the result of v0.243, which was in force longer; a document that recorded such a file between
+v0.250 and v0.253 replays with one more triangle.
+
+**A correction.** The test sheet and the review of 2026-11-07 (b) said that a selection brings the size back. The failed
+runs since the entry v0.256, from the API: none.
+
+New tests: 1. The test list holds 2061 (1412 in `Engine.Tests`, 337 in `3DEngine.Tests`, 309 in `3DEngine.ImageTests`, 3
+in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
+entries: 15 of 15. New diagnostic codes: 0. Since the review of v0.252, 1 product milestone and 5 entries followed it.
