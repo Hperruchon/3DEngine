@@ -46,7 +46,8 @@ Do the desktop first, then the phone. Do the same six steps on each device.
 
 On the phone, also do this between step 4 and step 5: put the app in the background for 10 seconds, and come back. The
 bracket is still there and shows whole: the app frames it again from the start view. The turn and the zoom of step 4,
-the selection and the line "Size" go at each trip into the background (ADR-0073); select the body to see its size again.
+the selection and the line "Size" go at each trip into the background (ADR-0073); turn on "Dimensions" in the panel and
+select the body to see its size again.
 
 ## 3 Pass criteria
 

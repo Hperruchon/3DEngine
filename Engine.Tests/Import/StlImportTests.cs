@@ -147,6 +147,28 @@ public sealed class StlImportTests
         Assert.Equal(DiagnosticCodes.StlEmpty, StlReader.Read(Encoding.ASCII.GetBytes("solid part endsolid part")).Error?.Code);
     }
 
+    // The review of Codex of v0.254 (TASK-0274): the reader of v0.250 to v0.253 took the whole line of "solid" as the name, so
+    // it read a name with "facet normal" and fewer than three numbers, which the rule of TASK-0269 refused. Each expected result
+    // below is the result of the reader of v0.250; the rule keeps the results of v0.243 too (the test above).
+    [Fact]
+    public void Each_Text_File_That_The_Reader_Of_V0250_Read_Gives_Its_Result()
+    {
+        (string Form, string Text)[] forms =
+        [
+            ("a name of facet normal and one number", $"solid facet normal 0\n{Facet}endsolid\n"),
+            ("a name of facet normal and two numbers", $"solid facet normal 0 0\n{Facet}endsolid\n"),
+            ("a name of facet normal and three numbers", $"solid facet normal 0 0 1\n{Facet}endsolid\n"),
+            ("a name of facet normal", $"solid facet normal\n{Facet}endsolid\n"),
+        ];
+
+        foreach (var (form, text) in forms)
+        {
+            var (read, error) = StlReader.Read(Encoding.ASCII.GetBytes(text));
+            Assert.True(error is null, $"{form}: {error?.Code} {error?.Message}");
+            Assert.Equal(Triangle, read);
+        }
+    }
+
     private static (DocumentSession Session, AssetBytes Assets) Session(IGeometryBackend backend)
     {
         var assets = new AssetBytes();
