@@ -218,6 +218,7 @@ Therefore each approved objective must have a track here.
 - P9a — An STL file opens as a mesh body of a new part, through one import command (the record). v0.242, TASK-0257, ADR-0083.
 - P9b — The engine reads an STL file into a mesh body. v0.243, TASK-0258, ADR-0083.
 - P9c — The desktop opens an STL file from its home screen, and the row waits for the owner. v0.247, TASK-0259, ADR-0083.
+- P9d — The phone opens an STL file from its home screen, and the row waits for the owner. v0.248, TASK-0260, ADR-0083.
 - Review — The codebase review of 2026-11-07. v0.244, TASK-0261.
 - P0.105 — The check of an open reads the store of the assets. v0.245, TASK-0262.
 - P0.108 — A lost surface of a destroyed activity ends the session quietly. v0.246, TASK-0265, ADR-0079.
