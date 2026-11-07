@@ -39,6 +39,12 @@ internal static class PhoneLifecycle
     // no event): true for the foreground, false for the end of the session, null to wait again. Finding E172 of the codebase
     // review of 2026-11-07 (b) (TASK-0269): a stale turn ends the session at each return, also at a foreground event,
     // because that event belongs to the session of the new activity.
+    // Finding E184 of the codebase review of 2026-11-07 (c) (TASK-0281): a lost surface ends the engine as the background
+    // does, so the session always waits for the foreground before the next engine; with a new part waiting, the host of the
+    // new part comes first. Until TASK-0281 a lost surface with a new part waiting made the next engine at once, on the
+    // window whose surface was just lost.
+    public static (bool NewPart, bool Wait) AfterLostSurface(bool newPartWaiting) => (newPartWaiting, true);
+
     public static bool? AfterWait(PhoneStep? step, bool stale) => stale
         ? false
         : step switch

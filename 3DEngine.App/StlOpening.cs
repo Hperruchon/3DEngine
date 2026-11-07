@@ -17,9 +17,11 @@ internal static class StlOpening
 {
     // Finding N2 of the review of Codex after v0.243 (TASK-0272): the largest file that the client reads, so that a file
     // much larger than the limit of triangles of ADR-0083 item 6 gives its code before the read and not an end of the
-    // session for want of memory. A binary file of the limit has 15,000,084 bytes; a text file of the limit has less than
-    // 512 bytes for each triangle.
-    public const long MaximumBytes = 84 + (512L * StlReader.MaximumTriangles);
+    // session for want of memory. Finding E183 of the codebase review of 2026-11-07 (c) (TASK-0281): the limit is the limit
+    // of the store, because the store refuses a larger file after the read; a binary file of the limit of triangles has
+    // 15,000,084 bytes, which is less. Until TASK-0281 the limit was 153,600,084 bytes, and the reader of a text file near it
+    // took 2,438 MiB.
+    public const long MaximumBytes = AssetStore.MaximumBytes;
 
     // E-STL-TOO-LARGE for a file of more than MaximumBytes, or null.
     public static ErrorDetail? TooLarge(long size)

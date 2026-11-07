@@ -8032,3 +8032,34 @@ in the repository. E183, E184, V135, V136 and T174 come in TASK-0281, and E185 a
 New tests: 2. The test list holds 2079 (1415 in `Engine.Tests`, 337 in `3DEngine.Tests`, 324 in `3DEngine.ImageTests`, 3
 in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
 entries: 15 of 15. New diagnostic codes: 0. Since the review of v0.263, 0 product milestones and 2 entries followed it.
+
+## v0.266 — The medium forms of the thirtieth review (P0.116, TASK-0281)
+
+The codebase review of 2026-11-07 (c) put its medium findings after the next product phase. That phase, K5c, needs a
+change of the contract and waits for the owner (Q2 of the review), and the order of the owner of 2026-11-06 takes the next
+ready row when the queue is empty, so this task came next. E182 has its answer in TASK-0280.
+
+**The change.**
+- E183: the limit of a chosen STL file is the limit of the store, 16 MiB, and the read through SDL stops at it, also
+  when SDL does not know the size. ADR-0083 says so in its history.
+- E184: a lost surface always waits for the foreground before the next engine; a new part that waits gets its host first.
+  `PhoneLifecycle.AfterLostSurface` holds the decision.
+- V135: a release over a window belongs to the window, also while one of its items is active, for the ring, the rows and
+  the chips.
+- V136: the portrait ring stays 8 pixels above the anchors, for a sketch and for a body.
+- T174: the gate and the step of the platforms read `NoWarn`, `WarningsNotAsErrors` and the code of the host of the
+  phone itself.
+
+**Proof.** Five new tests. The test of V135 failed on the code before the change: one tap gave Circle and a toggle of a
+row. Injections of a read with no limit, of no wait after a lost surface, of the portrait ring on the anchors, of CA1416
+in `NoWarn` of the host (the gate and the step) and of a line of the host that names CA1416 each fail a test or the step.
+The phone project builds with zero warnings. Run 42377814424 passed.
+
+**What stays.** The loop of the phone runs on no computer here, so the test of E184 holds its decision only. No run on the
+S23 showed the portrait ring above the anchors. E185 and V137 to V139 come in TASK-0282.
+
+**A correction.** None. The failed runs since the entry v0.265, from the API: none.
+
+New tests: 5. The test list holds 2084 (1415 in `Engine.Tests`, 337 in `3DEngine.Tests`, 329 in `3DEngine.ImageTests`, 3
+in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
+entries: 15 of 15. New diagnostic codes: 0. Since the review of v0.263, 0 product milestones and 3 entries followed it.
