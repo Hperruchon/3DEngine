@@ -237,6 +237,8 @@ Therefore each approved objective must have a track here.
   TASK-0274, ADR-0083.
 - P0.111 — The home screen, the rows, the chips, the dialog and three comments hold their next forms. v0.258,
   TASK-0271, ADR-0084.
+- P0.112 — The phone, the reader, the APK check, the gates and the roadmap hold their next forms. v0.259, TASK-0272,
+  ADR-0072, ADR-0079, ADR-0083.
 
 ## Track 0 — Foundations
 
