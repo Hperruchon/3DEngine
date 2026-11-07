@@ -270,7 +270,7 @@ public sealed class ToolRingTests
         string[] labels = [.. DesktopUi.SketchRingTools.Select(tool => tool.Label)];
         foreach (var (centre, sketch) in new[] { (new Vector2(700, 360), 90f), (new Vector2(500, 300), 60f), (new Vector2(900, 200), 150f) })
         {
-            var layout = DesktopUi.SketchLayout(Display, centre, labels.Length, sketch, 476f);
+            var layout = DesktopUi.SketchLayout(Display, centre, labels.Length, sketch, 476f, Display.X);
 
             Assert.True(layout.Inner >= sketch + 24f, $"The inner radius {layout.Inner} is inside the sketch of {sketch}.");
             Assert.True(layout.Centre.X - layout.Outer >= 476f + 16f - 0.01f, $"The band at {layout.Centre.X - layout.Outer} covers the panel.");
@@ -279,6 +279,15 @@ public sealed class ToolRingTests
                 var middle = layout.Middle(segment);
                 Assert.True(middle.X < layout.Centre.X, $"The segment {segment.Label} at {middle} is not on the left.");
             }
+        }
+
+        // V134 (TASK-0280): the centre stays at or left of the window of the sketch, and a large sketch keeps the band inside
+        // the height of the display.
+        foreach (var (centre, sketch) in new[] { (new Vector2(1000, 360), 60f), (new Vector2(700, 360), 380f), (new Vector2(700, 360), 450f) })
+        {
+            var layout = DesktopUi.SketchLayout(Display, centre, labels.Length, sketch, 476f, 784f);
+            Assert.True(layout.Centre.X <= 784f, $"The centre {layout.Centre} is under the window of the sketch.");
+            Assert.True(layout.Centre.Y - layout.Outer >= 0f && layout.Centre.Y + layout.Outer <= Display.Y, $"The band of {layout.Centre}, {layout.Outer} is outside the display.");
         }
     }
 
@@ -374,6 +383,58 @@ public sealed class ToolRingTests
                 Assert.True(ui.ItemRectangle(DesktopUi.SketchItem(label)) is null == ring, $"{label} in the window with the ring {ring}.");
             foreach (var label in kept)
                 Assert.True(ui.ItemRectangle(DesktopUi.SketchItem(label)) is not null, $"No {label} in the window with the ring {ring}.");
+        }
+    }
+
+    // Finding V134 of the codebase review of 2026-11-07 (c) (TASK-0280): each tool of the ring of a sketch has a place that a
+    // tap reaches, a segment on the display and under no window and no anchor, or its button in the window of the sketch,
+    // and a tap on that place of Finish ends the sketch. Until TASK-0280 a sketch at the right put Line and Finish under the
+    // window, a large sketch put Finish below the display, and the window then held neither.
+    [Fact]
+    public void Each_Tool_Of_The_Ring_Of_A_Sketch_Has_A_Place_That_A_Tap_Reaches()
+    {
+        var cases = new[]
+        {
+            (Display: new Vector2(1280, 720), Centre: new Vector2(1000, 360), Sketch: 60f),
+            (Display: new Vector2(1280, 720), Centre: new Vector2(700, 360), Sketch: 380f),
+            (Display: new Vector2(1280, 720), Centre: new Vector2(700, 360), Sketch: 450f),
+            (Display: new Vector2(1280, 720), Centre: new Vector2(1180, 650), Sketch: 90f),
+            (Display: new Vector2(390, 844), Centre: new Vector2(195, 400), Sketch: 60f),
+        };
+        foreach (var (display, centre, size) in cases)
+        {
+            using var ui = new DesktopUi("http://127.0.0.1:5180", Engine.Contracts.Document.Millimetre);
+            var (start, end, line) = (Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid());
+            var sketch = new Engine.Core.Queries.SketchInfo(Guid.NewGuid(), Engine.Contracts.Sketch.Datums.XY.Id, "Plate",
+                [new(start, 0, 0), new(end, 40, 10)], [new(line, start, end)], [], [], [], true, 4);
+            var panel = new SketchPanel([sketch], sketch, ThreeDEngine.Core.Sketching.SketchToolKind.Select, false, [], null);
+            void Frame(params InputSample[] samples)
+            {
+                ui.Route(samples);
+                ui.Frame(1f / 60f, display, Vector2.One, [], null, null, sketchPanel: panel, ringCentre: centre, ringBody: size);
+            }
+
+            for (var frame = 0; frame < 3; frame++)
+                Frame();
+
+            var covers = ui.PanelRectangles.Concat(ui.FixedRectangles).ToList();
+            bool Free(Vector2 at) => at.X >= 0 && at.Y >= 0 && at.X < display.X && at.Y < display.Y
+                && !covers.Any(cover => at.X >= cover.X && at.X < cover.Z && at.Y >= cover.Y && at.Y < cover.W);
+            Vector2? Place(string label)
+            {
+                if (ui.ItemRectangle(DesktopUi.RingItem(label)) is { } segment && new Vector2((segment.X + segment.Z) / 2, (segment.Y + segment.W) / 2) is var middle && Free(middle))
+                    return middle;
+                return ui.ItemRectangle(DesktopUi.SketchItem(label)) is { } button ? new Vector2((button.X + button.Z) / 2, (button.Y + button.W) / 2) : null;
+            }
+
+            foreach (var (label, _) in DesktopUi.SketchRingTools)
+                Assert.True(Place(label) is not null, $"{label} has no place for a tap at {display} with the sketch at {centre}, {size}.");
+
+            var finish = Place(DesktopUi.FinishLabel) ?? throw new InvalidOperationException("No Finish.");
+            Frame(new PointerSample(DeviceKind.Touch, 1, 3, finish.X, finish.Y, 1, PointerButtons.None, KeyModifiers.None, PointerPhase.Down, 0));
+            Frame(new PointerSample(DeviceKind.Touch, 1, 3, finish.X, finish.Y, 1, PointerButtons.None, KeyModifiers.None, PointerPhase.Up, 0));
+            Frame();
+            Assert.True(ui.TakeActions().Contains(new FinishSketchAction()), $"A tap on Finish at {finish} does not end the sketch at {display} with the sketch at {centre}, {size}.");
         }
     }
 }
