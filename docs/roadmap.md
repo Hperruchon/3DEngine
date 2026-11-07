@@ -214,6 +214,7 @@ Therefore each approved objective must have a track here.
 - P0.103 — The session of a destroyed activity ends before its window. v0.238, TASK-0255, ADR-0079.
 - P0.104 — A failure of the window of the phone and a new create of its activity name their cause. v0.239, TASK-0256.
 - P0.102 — The kept face, the panel, the title, the open list, the edge and the safe area hold their next forms. v0.240, TASK-0252.
+- R16c — A value that a command changes sits on the edge of the selected body that it measures. v0.241, TASK-0254, ADR-0082.
 
 ## Track 0 — Foundations
 
@@ -386,6 +387,7 @@ The first objective. Each phase ends with something that a person can observe.
 | R16a | The theme "Proposed (harmonized)" of the brief: the colours of the panels, the clear of the scene, the colours of the marks and a casing under each mark, with no change of layout (ADR-0078). TASK-0246. | 1 |
 | R16b1 | The fixed controls of the redesign: the title of the document in the title bar of the panel, Undo and Redo as round anchors at the bottom left, and the status line on their row (ADR-0080). TASK-0248. | 1 |
 | R16b2 | The tool ring of the redesign: the tools of the selected body that need no text are segments of a ring next to it on a landscape display, and under the thumb on a portrait display (ADR-0081). TASK-0253. | 2 |
+| R16c | The values on the edges of the redesign: the values of a selected extrude that a command changes sit on the edges that they measure, and a tap opens the pad of the value (ADR-0082). TASK-0254. | 2 |
 
 ## Track K — The kernel
 

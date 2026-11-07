@@ -7239,3 +7239,37 @@ phone can cover; a later slice of the redesign moves it.
 New tests: 9. The test list holds 1999 (1397 in `Engine.Tests`, 337 in `3DEngine.Tests`, 262 in `3DEngine.ImageTests`, 3
 in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
 entries: 15 of 15. New diagnostic codes: 0. Since the review of v0.233, 1 product milestone and 7 entries followed it.
+
+## v0.241 — A value that a command changes sits on the edge of the selected body that it measures (R16c, TASK-0254)
+
+The owner ordered the layout of the redesign slice by slice on 2026-11-06 (evening); after the fixed controls (R16b1) and
+the tool ring (R16b2) come "the values on the edges for 'change a dimension'". The "mix" direction of the designer brief
+puts the values of the selected part on its edges, and the job "change a dimension" ends in one command.
+
+**The change.** ADR-0082 is new and Accepted under the standing order of 2026-11-05, which gave A for its three questions.
+- While an extrude is selected, with no pad of another tool and no active sketch, `EdgeValues.Of` gives its values from
+  the edges of `GetFaces` and its sketch: the distance on an edge between two side faces, and each `distance`
+  constraint of one line (or of the two ends of one line) and each `radius` constraint on the edge between the face
+  `end` and the side face of its item. A box and a cylinder have no chip, because no command changes their sizes.
+- Each value is a chip of at least 44 pixels, 24 pixels away from the middle of the body on the screen; the placement of
+  ADR-0056 moves the chips apart. A tap and a click on a chip open the pad of its value and do not reach the scene. The
+  apply gives `SetExtrudeDistance`, or `SetSketchConstraintValue` with no active sketch (`SketchActions.SetValueOf`).
+- While the pad of a value is open, its chip is pending: a dashed border in the colour of the dimensions. The pad of the
+  distance gives that state from the chip, the ring and the panel.
+- The host keeps the distance with the geometry key, as V109 keeps the faces, so a frame does not wait for the serial
+  section.
+
+**Proof.** Seven new tests: an extrude gives its three values and a box none, a tap and a click on the distance open its
+pad and the chip is pending, a tap on a length opens its pad and the apply gives its new value, no chip shows while the
+pad of another tool is open, and a picture on the GPU, which is kept for the owner and was sent. An injection that drops
+the form of a length by two points, one that takes the chips out of the test of a tap, and one that gives the pad of the
+distance no pending state fail four tests. The first test showed a pending state that started only at the tap of a chip.
+Run 42317291934 passed.
+
+**What stays.** No person used the chips. A chip whose edge is behind the body still shows.
+
+**A correction.** None. The failed runs since the entry v0.240, from the API: none.
+
+New tests: 7. The test list holds 2006 (1397 in `Engine.Tests`, 337 in `3DEngine.Tests`, 269 in `3DEngine.ImageTests`, 3
+in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
+entries: 15 of 15. New diagnostic codes: 0. Since the review of v0.233, 2 product milestones and 8 entries followed it.
