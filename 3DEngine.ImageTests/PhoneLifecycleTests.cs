@@ -35,4 +35,13 @@ public sealed class PhoneLifecycleTests
     [InlineData(PhoneStep.Foreground, true, false)]
     public void A_Stale_Turn_Ends_The_Wait_At_Each_Return(PhoneStep? step, bool stale, bool? result)
         => Assert.Equal(result, PhoneLifecycle.AfterWait(step, stale));
+
+    // Finding E184 of the codebase review of 2026-11-07 (c) (TASK-0281): a lost surface always waits for the foreground before
+    // the next engine, and a new part that waits gets its host first. Until TASK-0281 a lost surface with a new part waiting
+    // made the next engine at once, on the window whose surface was just lost.
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public void A_Lost_Surface_Waits_For_The_Foreground(bool newPartWaiting)
+        => Assert.Equal((newPartWaiting, true), PhoneLifecycle.AfterLostSurface(newPartWaiting));
 }

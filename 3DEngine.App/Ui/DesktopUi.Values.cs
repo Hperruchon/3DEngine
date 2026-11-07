@@ -73,7 +73,7 @@ internal sealed unsafe partial class DesktopUi
         // Item 3: a press and a release on one chip, with no window of the panels under the pointer, open its pad.
         var io = ImGui.GetIO();
         // ADR-0084 item 3 (TASK-0267): a row is drawn over a chip, so a release on a row is the tap of the row only.
-        if (_pad is null && ImGui.IsMouseReleased(ImGuiMouseButton.Left) && !ImGui.IsWindowHovered(ImGuiHoveredFlags.AnyWindow)
+        if (_pad is null && ImGui.IsMouseReleased(ImGuiMouseButton.Left) && !OverWindowAtRelease()
             && RowAt(io.MousePos) is null && ChipAt(io.MousePos) is { } released && ChipAt(io.MouseClickedPos[0]) is { } pressed && pressed.Key == released.Key)
             Use(released);
 

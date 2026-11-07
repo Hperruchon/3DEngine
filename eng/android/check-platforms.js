@@ -82,10 +82,17 @@ for (const name of projects) {
 // Finding T168 of the codebase review of 2026-11-07 (b) (TASK-0272): the host of the phone itself makes CA1416 an error.
 {
   const host = path.join(root, '3DEngine.Android', '3DEngine.Android.csproj');
-  const result = JSON.parse(execFileSync('dotnet', ['msbuild', host, '-getProperty:WarningsAsErrors', '-getProperty:TreatWarningsAsErrors'], { encoding: 'utf8' }));
-  const codes = (result.Properties.WarningsAsErrors || '').split(/[;,\s]+/).map(code => code.toUpperCase());
+  const result = JSON.parse(execFileSync('dotnet', ['msbuild', host, '-getProperty:WarningsAsErrors', '-getProperty:TreatWarningsAsErrors', '-getProperty:NoWarn', '-getProperty:WarningsNotAsErrors'], { encoding: 'utf8' }));
+  const listOf = name => (result.Properties[name] || '').split(/[;,\s]+/).map(code => code.toUpperCase());
+  const codes = listOf('WarningsAsErrors');
   if (!codes.includes('CA1416') && (result.Properties.TreatWarningsAsErrors || '').trim().toLowerCase() !== 'true')
     offences.push('3DEngine.Android: the evaluated properties WarningsAsErrors and TreatWarningsAsErrors do not make CA1416 an error');
+  // Finding T174 of the codebase review of 2026-11-07 (c) (TASK-0281): CA1416 in NoWarn or in WarningsNotAsErrors of the host
+  // silenced the analyzer, and the check above passed.
+  for (const name of ['NoWarn', 'WarningsNotAsErrors']) {
+    if (listOf(name).includes('CA1416'))
+      offences.push(`3DEngine.Android: the evaluated property ${name} holds CA1416`);
+  }
   console.log(`3DEngine.Android: WarningsAsErrors ${result.Properties.WarningsAsErrors || 'none'}`);
 }
 
