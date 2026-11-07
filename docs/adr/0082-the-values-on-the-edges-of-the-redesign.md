@@ -1,13 +1,13 @@
 ---
 id: 0082
 title: A value that a command changes sits on the edge of the selected body that it measures
-status: Accepted
+status: Amended
 topic: Clients, rendering
 date: 2026-11-07
 supersedes: []
 superseded-by: []
 amends: []
-amended-by: []
+amended-by: ['0084']
 affects:
   - 3DEngine.App/EdgeValues.cs
   - 3DEngine.App/Ui/DesktopUi.Values.cs
@@ -17,6 +17,7 @@ affects:
   - 3DEngine.App/BodyActions.cs
   - 3DEngine.App/NativeThreeDEngine.cs
   - 3DEngine.App/Ui/DesktopUi.Pad.cs
+  - 3DEngine.App/Ui/DesktopUi.Rows.cs
 enforced-by: 3DEngine.ImageTests/EdgeValueTests.cs
 ---
 
@@ -106,3 +107,6 @@ and a cylinder show no chip until a command changes their sizes.
 - 2026-11-07 · TASK-0254 · Shipped at v0.241.
 - 2026-11-07 · TASK-0263 · The affects field names `3DEngine.App/Ui/DesktopUi.Pad.cs`, which TASK-0254 changed for the
   pending state of item 4 (finding T167 of the codebase review of 2026-11-07).
+- 2026-11-07 · TASK-0267 · ADR-0084 amends items 2 and 3: a chip that falls on the rows of the selected body goes under them, and a release on
+  a row gives the row only. The affects field names `3DEngine.App/Ui/DesktopUi.Rows.cs`, whose rows open the pad of a
+  value of item 3.
