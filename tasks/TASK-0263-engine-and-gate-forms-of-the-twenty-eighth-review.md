@@ -1,7 +1,7 @@
 ---
 id: 0263
 title: A failed copy, a test of the faces, the STL reader, the command line, two gates and the affects fields hold their next forms
-status: Active
+status: Done
 phase: P0.106
 opened: 2026-11-07
 depends-on: [0262]
@@ -64,13 +64,13 @@ warning fails the build of each project of the phone, and the affects fields nam
 
 ## Acceptance criteria
 
-- [ ] Each finding has a test or an injection that fails before the change and passes after it.
-- [ ] A clean build (`--no-incremental`) gives zero errors and zero warnings.
-- [ ] Continuous integration passes on the three runners, on the branch and on `main` after the merge.
+- [x] Each finding has a test or an injection that fails before the change and passes after it.
+- [x] A clean build (`--no-incremental`) gives zero errors and zero warnings.
+- [x] Continuous integration passes on the three runners, on the branch and on `main` after the merge.
 
 ## Outcome
 
-Status: Active
+Status: Done · commit (the merge of the branch p0106-review-forms) · v0.250
 
 ## Method
 
@@ -82,7 +82,9 @@ Judgement:  E170: a file of 84 bytes or more that starts with "solid" and is not
             form that holds the whole project fails it; the gate refuses a pragma with no code and a category
             severity, which a probe in its own file does not see. T167: a code file that cites an ADR from 0082 on
             must match its affects field; the earlier ADRs have 379 such citations, many in passing.
-Weakest:    to be written at the close.
+Weakest:    the platform step finds a silence that holds a whole project; a file-local silence other than a pragma
+            with no code (an attribute SuppressMessage over two lines) still escapes both rules. 3DEngine.Android
+            itself does not set TreatWarningsAsErrors. The affects rule holds ADR-0082 and later only.
 
 ## Progress
 
@@ -91,3 +93,4 @@ Weakest:    to be written at the close.
   of the faces (an injected list of two axis edges), the reader, the failed copy and the command line; the three
   injections of the review and a project with no TreatWarningsAsErrors fail the dependency gate or the platform step;
   the affects gate found 27 files before the paths were added.
+- 2026-11-07: run 42358673617 passed, with the probe builds of the platform step on Linux. Closed at v0.250.

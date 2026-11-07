@@ -7502,3 +7502,48 @@ The failed runs since the entry v0.248, from the API: none.
 New tests: 0. The test list holds 2023 (1405 in `Engine.Tests`, 337 in `3DEngine.Tests`, 278 in `3DEngine.ImageTests`, 3
 in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
 entries: 15 of 15. New diagnostic codes: 0. Since the review of v0.243, 3 product milestones and 6 entries followed it.
+
+## v0.250 — The engine and gate forms of the twenty-eighth review (P0.106, TASK-0263)
+
+The codebase review of 2026-11-07 found E168 to E171 and T165 to T167. They come after the product phases P9c to P9e.
+
+**The change.**
+- E168: a failed copy whose cut and delete both fail gives an error that names the new file that stays and opens.
+  ADR-0015 item 9 says so.
+- E169: the test of an edge of four faces requires six edges on the axis, one for each pair of the four names.
+- E170: the STL reader gives `E-STL-TRUNCATED` for a cut binary file whose header starts with "solid", reads the name
+  of the solid to the end of its line, and skips a byte order mark of UTF-8.
+- E171: `engine apply`, `query` and `export` take `--folder`, the store of the assets, as `engine asset` does.
+- T165: the gate refuses `#pragma warning disable` with no code, and the severity of a category or of each rule in an
+  analyzer file. `eng/android/check-platforms.js` builds a probe call in each project that the phone reaches, and requires
+  the error CA1416 for it.
+- T166: `3DEngine.App`, `3DEngine.Core` and `3DEngine.Vulkan` set `TreatWarningsAsErrors`. The gate and the step require
+  it. ADR-0072 item 7 has a history line.
+- T167: ADR-0083 names 26 more files and ADR-0082 one more. The new gate `AffectsCitationGateTests` requires that a
+  code file that cites ADR-0082 or a later ADR matches its affects field. `docs/diagnostics.md` names the handlers that
+  raise `E-MESH-UNSUPPORTED`.
+
+**Proof.** Each finding has a test or an injection that failed before the change:
+- E169: an injected list of two axis edges passed the old assert and failed the new one.
+- E168, E170 and E171: their new tests failed before the change.
+- T165 and T166: the injections of the review (a pragma with no code, a category severity, an unsilenced call) passed
+  each gate before. After the change, the dependency gate or the platform step refuses each one, and a project with no
+  `TreatWarningsAsErrors` fails both.
+- T167: the new gate listed 27 files before the paths were added.
+
+Run 42358673617 passed on the three runners and on the emulator.
+
+**What stays.**
+- The platform step holds a silence of a whole project. An attribute `SuppressMessage` over two lines in one file still
+  escapes it.
+- `3DEngine.Android` itself does not set `TreatWarningsAsErrors`, because the Android SDK can give warnings that are not
+  ours. A question for the owner.
+- The affects rule holds ADR-0082 and later. The earlier ADRs have 379 such citations, many in passing. A question for
+  the owner.
+- The register has 15 of 15 open entries, so the two questions are in the final report of order 2, not in the register.
+
+**A correction.** None. The failed runs since the entry v0.249, from the API: none.
+
+New tests: 5. The test list holds 2028 (1410 in `Engine.Tests`, 337 in `3DEngine.Tests`, 278 in `3DEngine.ImageTests`, 3
+in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
+entries: 15 of 15. New diagnostic codes: 0. Since the review of v0.243, 3 product milestones and 7 entries followed it.
