@@ -44,4 +44,31 @@ public sealed class PhoneLifecycleTests
     [InlineData(false)]
     public void A_Lost_Surface_Waits_For_The_Foreground(bool newPartWaiting)
         => Assert.Equal((newPartWaiting, true), PhoneLifecycle.AfterLostSurface(newPartWaiting));
+
+    // The audit of Codex of the phone host at d5209a2 (TASK-0286): a lost surface is known by the result of Vulkan; another
+    // fault is not a lost surface.
+    [Fact]
+    public void A_Lost_Surface_Is_Known_By_Its_Result()
+    {
+        Assert.True(PhoneLifecycle.IsSurfaceLost(new Vortice.Vulkan.VkException(Vortice.Vulkan.VkResult.ErrorSurfaceLostKHR, "vkGetPhysicalDeviceSurfaceCapabilitiesKHR")));
+        Assert.False(PhoneLifecycle.IsSurfaceLost(new Vortice.Vulkan.VkException(Vortice.Vulkan.VkResult.ErrorDeviceLost, "vkQueueSubmit")));
+        Assert.False(PhoneLifecycle.IsSurfaceLost(new InvalidOperationException("ErrorSurfaceLostKHR")));
+    }
+
+    // The audit of Codex of the phone host at d5209a2 (TASK-0286): the start of the engine and each frame on the phone have
+    // the guard of a lost surface. The phone host runs on no computer here, so the test reads its source. Until TASK-0286 only
+    // the frame had the guard, and a surface lost in the start ended the session with its document.
+    [Fact]
+    public void The_Start_And_The_Frames_Of_The_Phone_Have_The_Guard_Of_A_Lost_Surface()
+    {
+        var directory = new DirectoryInfo(AppContext.BaseDirectory);
+        while (directory is not null && !File.Exists(Path.Combine(directory.FullName, "3DEngine.sln")))
+            directory = directory.Parent;
+        var host = File.ReadAllText(Path.Combine(directory?.FullName ?? throw new InvalidOperationException("No 3DEngine.sln."), "3DEngine.Android", "PhoneHost.cs"));
+        foreach (var call in new[] { "engine.Initialize();", "engine.Render();" })
+        {
+            var guarded = new System.Text.RegularExpressions.Regex(@"try\s*\{\s*" + System.Text.RegularExpressions.Regex.Escape(call) + @"\s*\}\s*catch \(Exception ex\) when \(PhoneLifecycle\.IsSurfaceLost\(ex\)\)");
+            Assert.True(guarded.IsMatch(host), $"{call} of the phone host has no guard of a lost surface.");
+        }
+    }
 }
