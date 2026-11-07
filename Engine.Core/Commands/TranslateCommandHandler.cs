@@ -71,6 +71,11 @@ public sealed class TranslateCommandHandler : ICommandHandler, ICommandEncoder
                     $"No body with id '{translate.BodyId}' exists in the Document.")));
         }
 
+        // ADR-0083 item 4 (TASK-0258): a mesh body is viewed, framed and exported as STL only.
+        if (source.Kind == ImportStlCommandHandler.MeshKind)
+            return Task.FromResult(CommandHandlerResult.Failure(new ErrorDetail(
+                DiagnosticCodes.MeshUnsupported, $"The body '{translate.BodyId}' is a mesh body of an STL file, which does not move (ADR-0083 item 4).")));
+
         // 2. Backend must support transforms (the managed stub does not).
         var transform = backend.TryGet<ITransformOps>();
         if (transform is null)

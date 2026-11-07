@@ -482,7 +482,8 @@ public static class Cli
             return null;
         }
 
-        return new DocumentSession(EngineHosting.CreateDefault(backend, kind: kind));
+        // ADR-0083 item 2 (TASK-0258): the store of the account, which the import of an STL file reads.
+        return new DocumentSession(EngineHosting.CreateDefault(backend, kind: kind, assets: new Engine.Core.Assets.AssetStore(Engine.Core.Assets.AssetStore.Default)));
     }
 
     // The CLI dispatches by name only. It has no argument for a schema

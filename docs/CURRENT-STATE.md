@@ -7307,3 +7307,42 @@ since the entry v0.241, from the API: none.
 New tests: 0. The test list holds 2006 (1397 in `Engine.Tests`, 337 in `3DEngine.Tests`, 269 in `3DEngine.ImageTests`, 3
 in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
 entries: 15 of 15. New diagnostic codes: 0. Since the review of v0.233, 3 product milestones and 9 entries followed it.
+
+## v0.243 — The engine reads an STL file into a mesh body (P9b, TASK-0258)
+
+ADR-0083 (v0.242) records the demonstration "Open the same STL on desktop and Android" with the decisions D1 to D6 of the
+owner. This task builds its engine part.
+
+**The change.**
+- `StlReader` reads binary and text STL. A binary file gives the bits of each float, with no arithmetic; a text file
+  gives each number as the nearest 32-bit float. Each fault has its code: `E-STL-TRUNCATED`, `E-STL-SYNTAX`,
+  `E-STL-NOT-FINITE`, `E-STL-EMPTY` and `E-STL-TOO-LARGE` (at most 300,000 triangles).
+- `ImportStl` reads its asset at each apply, open and replay, through the store that the host gives to the engine
+  (`IAssetSource`, new; `EngineHosting`, `HandlerCatalog`, the desktop, the HTTP surface and the command line give
+  it); a host with no store, or an asset that the store does not hold, gives `E-STL-ASSET`. The triangles become a mesh
+  body of the kind `Mesh` in both backends (`IMeshImportOps`), whose `Tessellate` gives each float as a double of the
+  same value.
+- `Translate`, `Subtract` (as the body and as the tool), a datum and a reference of a sketch on its faces, `GetFaces`,
+  `GetFaceAt` and the STEP export refuse a mesh body with `E-MESH-UNSUPPORTED`; its name, its visibility, its box, its
+  tessellation and the STL export take it.
+- The probe of ADR-0074 builds the bracket of the demonstration with the commands of the engine, exports it as STL,
+  imports it and its first half, and its hash holds the mesh body and the code; `testdata/stl` holds `bracket.stl`
+  (27,084 bytes, 540 triangles) and `bracket-damaged.stl` (its first 13,542 bytes), which a test holds equal to the
+  export of the probe. The gate of the control bytes takes `.stl` as a binary type.
+
+**Proof.** Eight new tests: the bits of a binary file, a text file and a binary file whose header starts with "solid",
+each fault, the import on the managed backend, the asset, the refusals with the view that stays, a replay with the store,
+and the two files. An injection of a Translate that moves a mesh body fails a test; the gate of the control bytes still
+finds a byte that an injection put into a tracked document. The file at the limit (300,000 triangles, 15 MB) reads in 32
+ms and imports in 34 ms on this computer. Run 42320677685 passed, and Windows, Linux, macOS and the emulator gave the hash
+06d832c3cc990dcd674ef159dacd0e3899bea41c923e4320e6bd5db510654ea7, which step 10 of the test sheet of the phone now names:
+criterion 10 of the page of the demonstration holds.
+
+**What stays.** The limit is measured on this computer only. A document with a mesh body opens only where the store holds
+its asset. The bytes of the files are the export of the probe, not of a session that a person drove.
+
+**A correction.** None. The failed runs since the entry v0.242, from the API: none.
+
+New tests: 8. The test list holds 2014 (1405 in `Engine.Tests`, 337 in `3DEngine.Tests`, 269 in `3DEngine.ImageTests`, 3
+in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
+entries: 15 of 15. New diagnostic codes: 7. Since the review of v0.233, 4 product milestones and 10 entries followed it.

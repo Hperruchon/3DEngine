@@ -1,21 +1,53 @@
 ---
 id: 0258
 title: The engine reads an STL file into a mesh body
-status: Ready
+status: Done
 phase: P9b
 opened: 2026-11-07
 depends-on: [0257]
-governed-by: [0004, 0012, 0016, 0021, 0028, 0031, 0033, 0037, 0060, 0083]
+governed-by: [0002, 0004, 0007, 0012, 0013, 0014, 0015, 0016, 0018, 0019, 0021, 0024, 0028, 0029, 0031, 0033, 0035, 0036, 0037, 0039, 0044, 0048, 0051, 0052, 0053, 0054, 0055, 0058, 0059, 0060, 0061, 0070, 0074, 0075, 0076, 0077, 0083]
 writes:
   create:
     - tasks/TASK-0258-the-stl-reader-and-the-mesh-body.md
     - Engine.Core/Import/StlReader.cs
+    - Engine.Core/Assets/IAssetSource.cs
     - Engine.Core/Commands/ImportStlCommand.cs
     - Engine.Core/Commands/ImportStlCommandHandler.cs
     - Engine.Tests/Import/StlImportTests.cs
+    - testdata/stl/bracket.stl
+    - testdata/stl/bracket-damaged.stl
   modify:
+    - Engine.Core/Assets/AssetStore.cs
+    - Engine.Core/Commands/AddSketchReferenceCommandHandler.cs
+    - Engine.Core/Commands/CreateDatumCommandHandler.cs
+    - Engine.Core/Commands/SubtractCommandHandler.cs
+    - Engine.Core/Commands/TranslateCommandHandler.cs
+    - Engine.Core/Determinism/CrossPlatformProbe.cs
+    - Engine.Core/DiagnosticCodes.cs
+    - Engine.Core/Export/StepExport.cs
+    - Engine.Core/Features/FeatureList.cs
+    - Engine.Core/Features/KernelProjection.cs
+    - Engine.Core/Features/Regeneration.cs
+    - Engine.Core/Geometry/InProcessMeshBackend.cs
+    - Engine.Core/Hosting/EngineHosting.cs
     - Engine.Core/Hosting/HandlerCatalog.cs
+    - Engine.Core/Queries/GetFaceAtQueryHandler.cs
+    - Engine.Core/Queries/GetFacesQueryHandler.cs
+    - Engine.Core/Sketch/DatumResolver.cs
+    - Engine.Geometry.Manifold/ManifoldGeometryBackend.cs
+    - Engine.Api.Http/EngineHost.cs
+    - Engine.Api.Http/Endpoints/SchemaDiagnosticsEndpoint.cs
+    - Engine.Api.Http.Server/Program.cs
+    - Engine.Api.Http.Server/ServerEngine.cs
+    - Engine.Cli/Cli.cs
+    - 3DEngine/DesktopSession.cs
+    - Engine.Tests/Persistence/DocumentFileTests.cs
+    - Engine.Tests/ReplayDeterminism/CrossPlatformHashTests.cs
+    - Engine.Tests/Governance/DependencyDirectionGateTests.cs
+    - docs/adr/0083-the-mesh-body-and-the-stl-import.md
+    - docs/android-test-sheet.md
     - docs/diagnostics.md
+    - eng/test-floor.txt
     - docs/roadmap.md
     - docs/CURRENT-STATE.md
   forbid:
@@ -52,21 +84,29 @@ macOS and the emulator with the same result.
 
 ## Acceptance criteria
 
-- [ ] Each fault of the reader and each refused operation has a test.
-- [ ] The two files give the same triangle count and the same code on Windows, Linux, macOS and the emulator.
-- [ ] A clean build (`--no-incremental`) gives zero errors and zero warnings.
-- [ ] Continuous integration passes on the three runners, on the branch and on `main` after the merge.
+- [x] Each fault of the reader and each refused operation has a test.
+- [x] The two files give the same triangle count and the same code on Windows, Linux, macOS and the emulator.
+- [x] A clean build (`--no-incremental`) gives zero errors and zero warnings.
+- [x] Continuous integration passes on the three runners, on the branch and on `main` after the merge.
 
 ## Outcome
 
-Status: Ready
+Status: Done · commit (the merge of the branch p9b-stl-reader-b) · v0.243
 
 ## Method
 
-Mechanical: to be written in the task.
-Judgement:  to be written in the task.
-Weakest:    to be written at the close.
+Mechanical: a test for each fault of the reader and each refused operation; the probe of ADR-0074 gives the export and
+            the import of the bracket, so the pipeline compares them on four platforms.
+Judgement:  the store reaches the handler through the composition of the engine (EngineHosting, HandlerCatalog, the
+            hosts); the capability flag of a mesh backend is not added, because it changes the contract and TryGet answers
+            without it; the files are the export of the probe, so a test holds them equal on each platform.
+Weakest:    the limit is measured on this computer only; a document with a mesh body opens only where the store
+            holds its asset; the files are the export of the probe, not of a session that a person drove.
 
 ## Progress
 
 - 2026-11-07: opened by TASK-0257.
+- 2026-11-07: the reader, the import, the mesh body in both backends, the refusals, the store in the hosts, the probe, the
+  two files and eight tests. The first test found that each Document is in millimetres (ADR-0015 item 7), so the unit
+  check of ADR-0083 item 5 could never refuse; TASK-0257 corrected the record, and no code E-STL-UNIT exists.
+- 2026-11-07: run 42320677685 passed, and the four platforms gave the hash 06d832c3...4ea7. Closed at v0.243.
