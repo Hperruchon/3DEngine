@@ -1,7 +1,7 @@
 ---
 id: 0254
 title: A value that a command changes sits on the edge of the selected body that it measures
-status: Active
+status: Done
 phase: R16c
 opened: 2026-11-07
 depends-on: [0252, 0253, 0255]
@@ -59,23 +59,24 @@ its pad, whose apply gives one command.
 
 ## Acceptance criteria
 
-- [ ] An extrude gives its distance and the lengths of its sketch, each once; a box gives none.
-- [ ] Each chip is at least 44 pixels; a tap and a click on a chip open its pad and do not reach the scene.
-- [ ] The apply of the pad of a length gives the new value of that constraint; the chip is pending while its pad is open.
-- [ ] A picture of the values on the GPU is kept for the owner.
+- [x] An extrude gives its distance and the lengths of its sketch, each once; a box gives none.
+- [x] Each chip is at least 44 pixels; a tap and a click on a chip open its pad and do not reach the scene.
+- [x] The apply of the pad of a length gives the new value of that constraint; the chip is pending while its pad is open.
+- [x] A picture of the values on the GPU is kept for the owner.
 
 ## Outcome
 
-Status: Active
+Status: Done · commit (the merge of the branch redesign-c-values) · v0.241
 
 ## Method
 
 Mechanical: the values from the edge entries of GetFaces and the items of the side faces of the extrude.
 Judgement:  the values that a command changes (Q1 A), the pad on a tap (Q2 A), and the pending state (Q3 A).
-Weakest:    to be written at the close.
+Weakest:    no person used the chips on a display or on the phone; a chip whose edge is behind the body still shows.
 
 ## Progress
 
 - 2026-11-07: `EdgeValues`, the chips of `DesktopUi`, the action of a value of a sketch with no active sketch; six tests
   with no GPU and one image test. The first test showed a pending state that started only at the tap of a chip; the pad
   of the distance now gives it from the chip, the ring and the panel.
+- 2026-11-07: run 42317291934 passed. Closed at v0.241.

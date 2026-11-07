@@ -102,3 +102,4 @@ and a cylinder show no chip until a command changes their sizes.
 ## History
 
 - 2026-11-07 · TASK-0254 · The record, Accepted under the standing order.
+- 2026-11-07 · TASK-0254 · Shipped at v0.241.
