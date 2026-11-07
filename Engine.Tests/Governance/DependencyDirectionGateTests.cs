@@ -701,6 +701,13 @@ public class DependencyDirectionGateTests
                     if (property.Value.Contains("CA1416", StringComparison.OrdinalIgnoreCase))
                         offences.Add($"{host}: {RepositoryFiles.Relative(read)} has CA1416 in {property.Name.LocalName}");
                 }
+
+                // The review of Codex of v0.266 (TASK-0285): a switch of the analyzers with the value false in the host.
+                foreach (var property in XDocument.Load(read).Descendants().Where(e => Is(e, "RunAnalyzers") || Is(e, "RunAnalyzersDuringBuild") || Is(e, "EnableNETAnalyzers")))
+                {
+                    if (property.Value.Trim().Equals("false", StringComparison.OrdinalIgnoreCase))
+                        offences.Add($"{host}: {RepositoryFiles.Relative(read)} sets {property.Name.LocalName} to false");
+                }
             }
 
             foreach (var source in Directory.EnumerateFiles(Path.GetDirectoryName(hostFile)!, "*.cs", SearchOption.AllDirectories)
