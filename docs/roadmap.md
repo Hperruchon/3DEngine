@@ -240,6 +240,7 @@ Therefore each approved objective must have a track here.
 - P0.112 — The phone, the reader, the APK check, the gates and the roadmap hold their next forms. v0.259, TASK-0272,
   ADR-0072, ADR-0079, ADR-0083.
 - R16f — While a sketch is active, the ring holds the tools of the sketch. v0.260, TASK-0275, ADR-0086.
+- R16g — "Constrain" on the ring of a sketch opens the constraints that fit the selection. v0.261, TASK-0276, ADR-0087.
 
 ## Track 0 — Foundations
 
@@ -430,6 +431,7 @@ The first objective. Each phase ends with something that a person can observe.
 | R16d | The rows of the redesign: the name, the state and the values of the selected body in rows with no panel at the upper right of a landscape display, and a tap on a value opens its pad (ADR-0084). TASK-0267. | 1 |
 | R16e | The sketch under its body: "Edit" of the sketch of a live extrude keeps the camera and shows the sketch out of the body along the normal of its plane, with a line from each point to its place (ADR-0085). TASK-0273. | 1 |
 | R16f | The tools of the sketch on the ring: while a sketch is active, the ring holds Line, Select, Circle, Arc and Finish beside the sketch (ADR-0086). TASK-0275. | 1 |
+| R16g | "Constrain" on the ring of a sketch: a second ring of the kinds of a constraint that fit the selection, with "Back" (ADR-0087). TASK-0276. | 1 |
 
 ## Track K — The kernel
 

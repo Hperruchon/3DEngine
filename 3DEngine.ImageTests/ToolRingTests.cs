@@ -281,4 +281,68 @@ public sealed class ToolRingTests
             }
         }
     }
+
+    // ADR-0087 (the redesign, slice g, TASK-0276): with a line selected, "Constrain" comes before Finish; it opens the second
+    // ring of the constraints that fit a line, with Back; a tap on Horizontal adds it, and a tap on Distance opens its pad, as
+    // the buttons of the window of the sketch do. With no selection there is no "Constrain".
+    [Fact]
+    public void Constrain_Opens_The_Constraints_That_Fit_The_Selection()
+    {
+        using var ui = new DesktopUi("http://127.0.0.1:5180", Engine.Contracts.Document.Millimetre);
+        var (start, end, line) = (Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid());
+        var sketch = new Engine.Core.Queries.SketchInfo(Guid.NewGuid(), Engine.Contracts.Sketch.Datums.XY.Id, "Plate",
+            [new(start, 0, 0), new(end, 40, 10)], [new(line, start, end)], [], [], [], true, 4);
+        var selection = new List<Guid>();
+        var centre = new Vector2(700, 360);
+        void Frame(params InputSample[] samples)
+        {
+            ui.Route(samples);
+            ui.Frame(1f / 60f, Display, Vector2.One, [], null, null,
+                sketchPanel: new SketchPanel([sketch], sketch, ThreeDEngine.Core.Sketching.SketchToolKind.Select, false, [.. selection], null), ringCentre: centre, ringBody: 60f);
+        }
+
+        void TapOn(string label)
+        {
+            var at = Centre(ui, label);
+            Frame(new PointerSample(DeviceKind.Touch, 1, 3, at.X, at.Y, 1, PointerButtons.None, KeyModifiers.None, PointerPhase.Down, 0));
+            Frame(new PointerSample(DeviceKind.Touch, 1, 3, at.X, at.Y, 1, PointerButtons.None, KeyModifiers.None, PointerPhase.Up, 0));
+
+            // The release counts in the frame after it, and the ring shows its new labels in the frame after that.
+            Frame();
+            Frame();
+        }
+
+        Frame();
+        Frame();
+        Assert.Null(ui.ItemRectangle(DesktopUi.RingItem(DesktopUi.ConstrainLabel)));
+
+        selection.Add(line);
+        Frame();
+        Frame();
+        TapOn(DesktopUi.ConstrainLabel);
+        foreach (var label in new[] { "Horizontal", "Vertical", "Distance", DesktopUi.BackLabel })
+            Assert.NotNull(ui.ItemRectangle(DesktopUi.RingItem(label)));
+        Assert.Null(ui.ItemRectangle(DesktopUi.RingItem(DesktopUi.LineToolLabel)));
+
+        // ADR-0087 item 5: a label wider than the band starts to the right of the panel and ends nearer the panel than a
+        // label centred on its segment, so it covers less of the sketch.
+        var panelRight = ui.PanelRectangles[0].Z;
+        foreach (var label in new[] { "Horizontal", "Vertical", "Distance" })
+        {
+            var text = ui.ItemRectangle(DesktopUi.RingTextItem(label)) ?? throw new InvalidOperationException($"No text of {label}.");
+            var middle = ui.ItemRectangle(DesktopUi.RingItem(label)) ?? throw new InvalidOperationException($"No segment {label}.");
+            Assert.True(text.X >= panelRight + 3.5f, $"{label} starts at {text.X}, on the panel that ends at {panelRight}.");
+            Assert.True(text.Z < ((middle.X + middle.Z) / 2f) + ((text.Z - text.X) / 2f) - 1f, $"{label} at {text} is centred on its segment.");
+        }
+
+        TapOn("Horizontal");
+        var added = Assert.IsType<AddConstraintAction>(Assert.Single(ui.TakeActions()));
+        Assert.Equal("horizontal", added.Kind);
+        Assert.Equal([line], added.Items);
+        Assert.NotNull(ui.ItemRectangle(DesktopUi.RingItem(DesktopUi.LineToolLabel)));
+
+        TapOn(DesktopUi.ConstrainLabel);
+        TapOn("Distance");
+        Assert.Equal("Distance", ui.Pad?.Title);
+    }
 }

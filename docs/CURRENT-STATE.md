@@ -7881,3 +7881,35 @@ yet. The centre of the ring comes from the host, which needs a window, so no tes
 New tests: 3. The test list holds 2074 (1414 in `Engine.Tests`, 337 in `3DEngine.Tests`, 320 in `3DEngine.ImageTests`, 3
 in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
 entries: 15 of 15. New diagnostic codes: 0. Since the review of v0.252, 2 product milestones and 8 entries followed it.
+
+## v0.261 — "Constrain" on the ring of a sketch opens the constraints that fit the selection (R16g, TASK-0276)
+
+The owner ordered the layout of the redesign slice by slice, with no change of the contract. ADR-0086 named the next slice:
+"Constrain" on the ring of a sketch, with a second ring of the kinds of a constraint.
+
+**The change.** ADR-0087 is new and Accepted under the standing order (Q1 A, Q2 A, Q3 A). It amends ADR-0086 item 2.
+- One method gives the kinds of a constraint that fit the selection, with what each button does: the action of the
+  constraint, or the pad of its value. The window of the sketch and the ring both use it.
+- While a sketch is active and a kind fits, the ring holds "Constrain" between Arc and Finish. A tap opens a second ring
+  of the kinds that fit, then "Back". A tap on a kind does what its button does and closes the second ring. A tap on
+  "Back", or a change of the selection, closes it too.
+- On a landscape display, a label wider than the band ends outside the inner edge of its segment, at least 4 pixels to the
+  right of the panel, on a plate in the colour of its segment.
+
+**Proof.** One new test with no GPU: with no selection there is no "Constrain"; with a line selected, a tap opens
+Horizontal, Vertical, Distance and Back; Horizontal adds the constraint; Distance opens its pad; each wide label is right of
+the panel and is not centred on its segment. The tests of the window of the sketch pass with the one method. Injections
+of a ring with no "Constrain", of a "Constrain" that does not open, and of a centred label each fail the test. The first
+picture on the GPU showed "Horizontal" and "Vertical" centred over the points of the sketch; item 5 came from it, and the
+second picture was sent to the owner. Run 42371079980 passed.
+
+**What stays.** On a display of 1280 by 720 the room between the panel and the window of the sketch is about 310 pixels,
+so a label such as "Horizontal" still covers the edge of the sketch; an icon for each kind needs the fonts that wait for
+the owner. Each kind shows two times, on the ring and in the window of the sketch. No test holds the second ring on a
+portrait display.
+
+**A correction.** None. The failed runs since the entry v0.260, from the API: none.
+
+New tests: 1. The test list holds 2075 (1414 in `Engine.Tests`, 337 in `3DEngine.Tests`, 321 in `3DEngine.ImageTests`, 3
+in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
+entries: 15 of 15. New diagnostic codes: 0. Since the review of v0.252, 3 product milestones and 9 entries followed it.
