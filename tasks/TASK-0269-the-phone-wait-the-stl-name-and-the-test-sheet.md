@@ -1,7 +1,7 @@
 ---
 id: 0269
 title: The wait of the phone checks its turn, the STL reader keeps its accepted results, and the test sheet says what the phone keeps
-status: Active
+status: Done
 phase: P0.109
 opened: 2026-11-07
 depends-on: [0268]
@@ -55,13 +55,13 @@ keeps after the background.
 
 ## Acceptance criteria
 
-- [ ] Each finding has a test or an injection that fails before the change and passes after it.
-- [ ] A clean build (`--no-incremental`) gives zero errors and zero warnings.
-- [ ] Continuous integration passes on the three runners, on the branch and on `main` after the merge.
+- [x] Each finding has a test or an injection that fails before the change and passes after it.
+- [x] A clean build (`--no-incremental`) gives zero errors and zero warnings.
+- [x] Continuous integration passes on the three runners, on the branch and on `main` after the merge.
 
 ## Outcome
 
-Status: Active
+Status: Done · commit (the merge of the branch p0109-phone-reader-sheet) · v0.254
 
 ## Method
 
@@ -71,7 +71,8 @@ Judgement:  E172: the decision of one return of the wait is `PhoneLifecycle.Afte
             follow, on any line, or at "facet" or "endsolid" after its line; each file that v0.243 accepted has its
             first "facet" there. The write set named `3DEngine.Tests/SessionTurnsTests.cs`, which does not exist;
             it names the files of the change now.
-Weakest:    to be written at the close.
+Weakest:    the wait of the phone ran on no device and no emulator with a new create of the activity, so the order of the
+            events of SDL at that time is still inferred; the test holds the decision of one return only.
 
 ## Progress
 
@@ -79,3 +80,4 @@ Weakest:    to be written at the close.
 - 2026-11-07: E172, E173 and E174. The test of E173 failed with the reader of HEAD and passed with the reader of
   v0.243, so its expected results are the results of v0.243; it passes with the new rule, with the three forms of E170.
   The test of E172 did not compile before `AfterWait`. The phone project builds with zero warnings.
+- 2026-11-07: run 42363406674 passed. Closed at v0.254.
