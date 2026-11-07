@@ -51,7 +51,9 @@ public sealed class MainActivity : SDLActivity
 
     protected override void OnDestroy()
     {
-        Console.Error.WriteLine("3DEngine: the activity is destroyed.");
+        // Finding V124 of the codebase review of 2026-11-07 (TASK-0265): the line names a change of the configuration that
+        // destroys the activity, so the next run of the emulator names the cause of a new create.
+        Console.Error.WriteLine($"3DEngine: the activity is destroyed (a change of the configuration: {IsChangingConfigurations}, 0x{(int)ChangingConfigurations:x}).");
         base.OnDestroy();
     }
 

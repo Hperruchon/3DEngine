@@ -1,7 +1,7 @@
 ---
 id: 0265
 title: A lost surface of a destroyed activity ends the session quietly, and the activity names its change
-status: Ready
+status: Done
 phase: P0.108
 opened: 2026-11-07
 depends-on: [0262]
@@ -45,19 +45,26 @@ change of the configuration that destroys the activity.
 
 ## Acceptance criteria
 
-- [ ] A clean build (`--no-incremental`) gives zero errors and zero warnings, and the phone project builds.
-- [ ] Continuous integration passes on the three runners, on the branch and on `main` after the merge.
+- [x] A clean build (`--no-incremental`) gives zero errors and zero warnings, and the phone project builds.
+- [x] Continuous integration passes on the three runners, on the branch and on `main` after the merge.
 
 ## Outcome
 
-Status: Ready
+Status: Done · commit (the merge of the branch p0108-lost-surface-b) · v0.246
 
 ## Method
 
-Mechanical: to be written in the task.
-Judgement:  to be written in the task.
-Weakest:    to be written at the close.
+Mechanical: the phone project builds; the next runs of the emulator show the line of the destroy and the end of a session
+            with a lost surface.
+Judgement:  a lost surface ends the engine as the background does, so a session whose turn stays the last one waits for
+            the foreground and makes a new engine, and a session whose turn is stale ends quietly; the exception is
+            matched by the name of its result, because Vortice gives no result field.
+Weakest:    no run since the change had a new create of the activity, so neither the end of a lost surface nor the line
+            of the change of the configuration has run on a device or the emulator yet.
 
 ## Progress
 
 - 2026-11-07: opened by the codebase review of 2026-11-07.
+- 2026-11-07: the catch of a lost surface, the wait that ends a stale session, and the line of the destroy with the change
+  of the configuration; the phone project builds.
+- 2026-11-07: run 42325543893 passed, with one create of the activity. Closed at v0.246.

@@ -219,6 +219,7 @@ Therefore each approved objective must have a track here.
 - P9b — The engine reads an STL file into a mesh body. v0.243, TASK-0258, ADR-0083.
 - Review — The codebase review of 2026-11-07. v0.244, TASK-0261.
 - P0.105 — The check of an open reads the store of the assets. v0.245, TASK-0262.
+- P0.108 — A lost surface of a destroyed activity ends the session quietly. v0.246, TASK-0265, ADR-0079.
 
 ## Track 0 — Foundations
 
