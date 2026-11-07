@@ -51,7 +51,8 @@ A never leaves a tool with no place to tap: with no ring, the window has it. **R
 The standing order of 2026-11-05 gives A for each question.
 
 1. **The window (Q1 A, Q2 A).** In a frame where the ring of the active sketch shows, and the middle of each of its
-   segments is on the display and under no window and no anchor, the window of the sketch holds the
+   segments is on the display and under no window of this frame or of the last frame and no anchor, the window of the
+   sketch holds the
    name and the state of the sketch, Next point, End and Close for the tool Line, Extrude, the buttons of the selection
    that the ring does not hold (Move point, Value and Delete), the message of a rejected command, and the rows. It does
    not hold Line, Select, Circle, Arc, Finish or a kind of a constraint. This amends ADR-0034 item 8.
@@ -78,3 +79,5 @@ a command and the rollback.
 - 2026-11-07 · TASK-0280 · Items 1 and 2: the window drops the buttons of the ring only when a tap reaches each segment
   (finding V134 of the codebase review of 2026-11-07 (c)); until TASK-0280 a ring under the window or below the display
   left no Finish. The affects field names DesktopUi.Ring.cs, which holds the check of each segment.
+- 2026-11-07 · TASK-0284 · Item 1: the windows of the last frame count too, because the Images window and the message come
+  after the ring in the frame (the review of Codex of v0.265).

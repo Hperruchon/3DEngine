@@ -252,6 +252,8 @@ Therefore each approved objective must have a track here.
   TASK-0282.
 - Proposal — The cone, the sphere and the torus are closed meshes that the engine makes (Proposed, for the owner).
   v0.268, TASK-0283, ADR-0089.
+- P0.118 — The ring of a sketch sees the windows that come after it, and a window at the left does not pull it under
+  the panel. v0.269, TASK-0284, ADR-0086, ADR-0088.
 
 ## Track 0 — Foundations
 
@@ -374,6 +376,7 @@ This track removes each condition that blocks other work.
 | P0.115 | The reader gives the result of each earlier reader that accepted a file, and the ring of a sketch keeps each tool in reach (E180, E181 and V134 of the codebase review of 2026-11-07 (c), high; before the next product phase). TASK-0280. | 1–2 |
 | P0.116 | The size limit, the lost surface, the taps over a window, the portrait ring and the host warnings hold their next forms (E183, E184, V135, V136 and T174 of the codebase review of 2026-11-07 (c); after the next product phase). TASK-0281. | 1–2 |
 | P0.117 | The asset verb, the second ring, three comments and the dialog filter hold their next forms (E185, V137, V138 and V139 of the codebase review of 2026-11-07 (c); after P0.116). TASK-0282. | 1 |
+| P0.118 | The ring of a sketch sees the windows that come after it in the frame, and a window of the sketch at the left does not pull it under the panel (two leads of the review of Codex of v0.265, medium). TASK-0284. | 1 |
 | P0.102 | The cache of a face, the fixed controls, the list New, the edges and the safe area hold their next forms (V113 to V118 of the codebase review of 2026-11-06 (e); after P0.101). TASK-0252. | 1–2 |
 | P0.86 | The window keeps no input between sessions, the hook has the cases of one axis, and the next forms of four gates fail (V88 to V90, T141 to T144 of the codebase review of 2026-11-06; after the next product phase). TASK-0198. | 1–2 |
 
