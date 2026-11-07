@@ -73,6 +73,8 @@ internal sealed class DesktopDocument : IDocumentFiles
     // ADR-0083 D6: the first session of the program starts on the home screen; a choice there ends it for the program.
     public bool Home { get => Volatile.Read(ref _home); set => Volatile.Write(ref _home, value); }
 
+    public bool HasFolder => true;
+
     // The file that the session of this desktop holds, or null; the host sets it after it
     // makes the session.
     public Func<string?>? HeldFile { get; set; }

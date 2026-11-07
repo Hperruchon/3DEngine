@@ -1,4 +1,5 @@
 using Engine.Core.Determinism;
+using Engine.Core.Assets;
 using Engine.Geometry.Manifold;
 using SDL;
 using ThreeDEngine.Desktop;
@@ -40,7 +41,11 @@ internal static class PhoneHost
                     Console.Error.WriteLine($"3DEngine: determinism-line {line}");
             }
 
-            using var host = new LocalSessionHost(new ManifoldGeometryBackend());
+            // ADR-0083 D1 and D6 (TASK-0260): the store of the phone, in the folder of the application, and the files of the run:
+            // the home screen at the start, and a new part as a new session in the same window.
+            var assets = new AssetStore(AssetStore.Default);
+            var files = new PhoneFiles();
+            var host = new LocalSessionHost(new ManifoldGeometryBackend(), assets);
             BlockOnPause();
             // ADR-0079 item 4 (P0.103, TASK-0255): a session of a destroyed activity ends before its window, and a session
             // waits until the window of an earlier session is gone. Run 42308415060: the activity was destroyed during the
@@ -54,8 +59,28 @@ internal static class PhoneHost
             // Finding V112 (TASK-0250): the session destroys its window at its end, so a later session of this process, after a
             // new start of the activity (ADR-0079), makes its own; SDL on Android permits one window.
             using var window = new Window("3DEngine", 1080, 2316);
-            while (Foreground(window, host) && WaitForForeground(turn))
-                Console.Error.WriteLine("3DEngine: the program is in the foreground again, with the same document.");
+            try
+            {
+                while (true)
+                {
+                    var step = Foreground(window, host, files, assets);
+                    if (step == Session.NewPart)
+                    {
+                        host.Dispose();
+                        host = new LocalSessionHost(new ManifoldGeometryBackend(), assets);
+                        Console.Error.WriteLine("3DEngine: a new part document.");
+                        continue;
+                    }
+
+                    if (step == Session.Quit || !WaitForForeground(turn))
+                        break;
+                    Console.Error.WriteLine("3DEngine: the program is in the foreground again, with the same document.");
+                }
+            }
+            finally
+            {
+                host.Dispose();
+            }
         }
         catch (Exception ex)
         {
@@ -104,10 +129,18 @@ internal static class PhoneHost
         }
     }
 
-    // The loop of one time in the foreground. False at a quit or a close, true when the program goes into the background.
-    private static unsafe bool Foreground(Window window, LocalSessionHost host)
+    // How one time in the foreground ends (ADR-0083, TASK-0260): a quit, the background, or a new part document.
+    private enum Session
     {
-        using var engine = new NativeThreeDEngine(window, host);
+        Quit,
+        Background,
+        NewPart,
+    }
+
+    // The loop of one time in the foreground.
+    private static unsafe Session Foreground(Window window, LocalSessionHost host, PhoneFiles files, AssetStore assets)
+    {
+        using var engine = new NativeThreeDEngine(window, host, document: files, assets: assets);
         engine.Initialize();
         engine.LoadScene(SessionScene.Create());
         window.Show();
@@ -126,10 +159,10 @@ internal static class PhoneHost
                 switch (PhoneLifecycle.Of(sdlEvent.Type))
                 {
                     case PhoneStep.Quit:
-                        return false;
+                        return Session.Quit;
                     case PhoneStep.Background:
                         Console.Error.WriteLine("3DEngine: the program goes into the background; the document stays.");
-                        return true;
+                        return Session.Background;
                 }
 
                 engine.HandleEvent(sdlEvent);
@@ -148,10 +181,12 @@ internal static class PhoneHost
             catch (Vortice.Vulkan.VkException ex) when (ex.Message.Contains(nameof(Vortice.Vulkan.VkResult.ErrorSurfaceLostKHR), StringComparison.Ordinal))
             {
                 Console.Error.WriteLine("3DEngine: the surface of the window is lost, so the engine ends as in the background.");
-                return true;
+                return Session.Background;
             }
 
             lastFrame = now;
+            if (files.TakeRequestedNew())
+                return Session.NewPart;
             // Finding V106 of the codebase review of 2026-11-06 (d) (TASK-0243): the line comes after the first frame that the
             // presenter submitted, not after the first call, which draws nothing while the surface has no area.
             if (first && engine.Drew)

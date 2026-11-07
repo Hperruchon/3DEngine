@@ -56,4 +56,10 @@ for abi in arm64-v8a x86_64; do
     fi
   done
 done
+# ADR-0083 D1 (TASK-0260): the document picker of Android needs no permission of storage, so the APK asks for none. The
+# manifest of the APK is binary XML, whose string pool holds each name in UTF-16 or in UTF-8.
+if node -e "const b=require('fs').readFileSync(process.argv[1]);const w=['EXTERNAL_STORAGE','READ_MEDIA_'];process.exit(w.some(n=>b.includes(Buffer.from(n,'utf16le'))||b.includes(Buffer.from(n,'utf8')))?0:1)" "$work/AndroidManifest.xml"; then
+  echo "::error title=APK::the manifest of the APK asks for a permission of storage, and the picker needs none (ADR-0083)"
+  failed=1
+fi
 exit $failed

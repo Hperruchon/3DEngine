@@ -7449,3 +7449,28 @@ panel, fail two tests. Run 42355699358 passed on the three runners and on the em
 New tests: 6. The test list holds 2021 (1405 in `Engine.Tests`, 337 in `3DEngine.Tests`, 276 in `3DEngine.ImageTests`, 3
 in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
 entries: 15 of 15. New diagnostic codes: 0. Since the review of v0.243, 1 product milestone and 4 entries followed it.
+
+## v0.248 — The phone opens an STL file from its home screen (P9d, TASK-0260)
+
+Row d of the demonstration "Open the same STL on desktop and Android" (ADR-0083, the owner, 2026-11-07). P9c gave the
+home screen and the dialog of SDL, which on Android opens the document picker. This slice gives the phone part.
+
+**The change.** ADR-0083 D1 and D6, item 7.
+- `PhoneFiles` gives the phone the home screen, a new part and its import for the run of the program. The phone has no
+  document folder yet, so it shows no file controls and no recent file.
+- The phone has a store of the assets. A new part is a new `LocalSessionHost` in the same window, so the rules of
+  ADR-0079 for the window hold, and the engine of each session reads the same store.
+- The loop of `PhoneHost` keeps the wait of P0.108 that knows its turn, and a lost surface gives the background.
+- The APK check of the pipeline fails when the manifest asks for a permission of storage, because the picker needs none.
+
+**Proof.** Two new tests of `PhoneFiles` in `3DEngine.ImageTests`. The APK built on this computer passes the check, and
+the same APK with `READ_EXTERNAL_STORAGE` fails it. Run 42355942601 passed on the three runners and on the emulator.
+
+**What stays.** The row P9d stays open until the run of the owner on the S23 with `docs/demo-stl-test-sheet.md` (P9e).
+The document picker ran on no device and no emulator yet.
+
+**A correction.** None. The failed runs since the entry v0.247, from the API: none.
+
+New tests: 2. The test list holds 2023 (1405 in `Engine.Tests`, 337 in `3DEngine.Tests`, 278 in `3DEngine.ImageTests`, 3
+in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
+entries: 15 of 15. New diagnostic codes: 0. Since the review of v0.243, 2 product milestones and 5 entries followed it.
