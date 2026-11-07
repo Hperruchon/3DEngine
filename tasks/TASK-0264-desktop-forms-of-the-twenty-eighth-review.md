@@ -1,11 +1,11 @@
 ---
 id: 0264
 title: The chips, the ring and the collapsed panel hold their next forms
-status: Ready
+status: Done
 phase: P0.107
 opened: 2026-11-07
 depends-on: [0263]
-governed-by: [0007, 0019, 0027, 0029, 0030, 0032, 0034, 0072, 0073, 0075, 0076, 0077, 0078, 0080, 0081, 0082, 0083]
+governed-by: [0007, 0019, 0025, 0027, 0029, 0030, 0032, 0034, 0072, 0073, 0075, 0076, 0077, 0078, 0080, 0081, 0082, 0083]
 writes:
   create:
     - tasks/TASK-0264-desktop-forms-of-the-twenty-eighth-review.md
@@ -15,6 +15,10 @@ writes:
     - 3DEngine.App/Ui/DesktopUi.Ring.cs
     - 3DEngine.App/Ui/DesktopUi.Values.cs
     - 3DEngine.App/Ui/DesktopUi.Panel.cs
+    - 3DEngine.ImageTests/EdgeValueTests.cs
+    - 3DEngine.ImageTests/ToolRingTests.cs
+    - 3DEngine.ImageTests/FixedControlsTests.cs
+    - docs/adr/0081-the-tool-ring-of-the-redesign.md
     - eng/test-floor.txt
     - docs/roadmap.md
     - docs/CURRENT-STATE.md
@@ -46,20 +50,29 @@ area, and a collapsed panel stays above the anchors.
 
 ## Acceptance criteria
 
-- [ ] Each finding has a test or an injection that fails before the change and passes after it.
-- [ ] A clean build (`--no-incremental`) gives zero errors and zero warnings.
-- [ ] Continuous integration passes on the three runners, on the branch and on `main` after the merge.
+- [x] Each finding has a test or an injection that fails before the change and passes after it.
+- [x] A clean build (`--no-incremental`) gives zero errors and zero warnings.
+- [x] Continuous integration passes on the three runners, on the branch and on `main` after the merge.
 
 ## Outcome
 
-Status: Ready
+Status: Done · commit (the merge of the branch p0107-desktop-forms-b) · v0.251
 
 ## Method
 
 Mechanical: a test or an injection for each finding, before the change.
-Judgement:  to be written in the task.
-Weakest:    to be written at the close.
+Judgement:  V119: a new pad ends the pending state, and the two pads of a value set it again. V120: the chip wins,
+            because it is drawn over the ring; the ring reads the chips of the last frame, which the person sees.
+            V121: the portrait segments narrow to fit a quarter of a turn, not a smaller ring. V122: the inset now,
+            not a register entry, because it is one argument. V123: the left clamp is 16 pixels inside the inset, as
+            the comment said, and the comment of the title moves to Title.
+Weakest:    the portrait ring and its inset are tested as a layout only; no run on the S23 with the navigation of
+            three buttons has shown Move above the bar yet.
 
 ## Progress
 
 - 2026-11-07: opened by the codebase review of 2026-11-07.
+- 2026-11-07: V119 to V123, each with a test that failed before the change: the pending chip after the pad of Move,
+  the chip on Hide that hid the body, the fourth portrait segment at 4.94 radians, the portrait centre with no inset,
+  and the collapsed panel at (-24, 680) over Undo. ADR-0081 items 1 and 2 give the portrait forms.
+- 2026-11-07: rebased on the close of P0.106; run 42359402926 passed. Closed at v0.251.
