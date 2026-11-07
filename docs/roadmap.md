@@ -250,6 +250,8 @@ Therefore each approved objective must have a track here.
   their next forms. v0.266, TASK-0281, ADR-0083.
 - P0.117 — The asset verb, the second ring, three comments and the dialog filter hold their next forms. v0.267,
   TASK-0282.
+- Proposal — The cone, the sphere and the torus are closed meshes that the engine makes (Proposed, for the owner).
+  v0.268, TASK-0283, ADR-0089.
 
 ## Track 0 — Foundations
 
