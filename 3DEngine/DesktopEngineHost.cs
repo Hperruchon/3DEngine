@@ -116,7 +116,7 @@ internal static class DesktopEngineHost
                 return DesktopSurface.ExitWindowFailed;
             if (requested is null)
                 return 0;
-            Console.WriteLine($"3DEngine opens {requested}");
+            Console.WriteLine(requested == DesktopDocument.NewDocument ? "3DEngine opens a new part document" : $"3DEngine opens {requested}");
             file = requested;
         }
     }
