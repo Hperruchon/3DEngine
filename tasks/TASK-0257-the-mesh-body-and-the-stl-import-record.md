@@ -1,7 +1,7 @@
 ---
 id: 0257
 title: An STL file opens as a mesh body of a new part, through one import command (the record)
-status: Active
+status: Done
 phase: P9a
 opened: 2026-11-07
 depends-on: [0254]
@@ -52,22 +52,24 @@ replay and the limit; the contract gets the capability `IMeshImportOps`; the roa
 
 ## Acceptance criteria
 
-- [ ] A clean build (`--no-incremental`) gives zero errors and zero warnings.
-- [ ] Continuous integration passes on the three runners, on the branch and on `main` after the merge.
+- [x] A clean build (`--no-incremental`) gives zero errors and zero warnings.
+- [x] Continuous integration passes on the three runners, on the branch and on `main` after the merge.
 
 ## Outcome
 
-Status: Active
+Status: Done · commit (the merge of the branch p9a-mesh-adr) · v0.242
 
 ## Method
 
 Mechanical: the record from the page of the demonstration and the decisions of the owner.
 Judgement:  the interpretation of D2 (the name and the visibility are a part of the view), the limit of 300,000
             triangles from the bound of the store, and the asset at a replay, which amends ADR-0045 item 4.
-Weakest:    to be written at the close.
+Weakest:    the limit of 300,000 triangles comes from the bound of the store, and only the run of the owner measures the
+            phone; a document with a mesh body opens only where the store holds its asset.
 
 ## Progress
 
 - 2026-11-07: opened by the addition of the owner to the standing order.
 - 2026-11-07: item 5 of ADR-0083 needs no check of the unit: each Document is in millimetres (ADR-0015 item 7), so the
   code E-STL-UNIT could never be raised; TASK-0258 found it.
+- 2026-11-07: run 42319809463 passed. Closed at v0.242.

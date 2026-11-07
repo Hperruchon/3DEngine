@@ -7273,3 +7273,37 @@ Run 42317291934 passed.
 New tests: 7. The test list holds 2006 (1397 in `Engine.Tests`, 337 in `3DEngine.Tests`, 269 in `3DEngine.ImageTests`, 3
 in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
 entries: 15 of 15. New diagnostic codes: 0. Since the review of v0.233, 2 product milestones and 8 entries followed it.
+
+## v0.242 — An STL file opens as a mesh body of a new part, through one import command: the record (P9a, TASK-0257)
+
+On 2026-11-07 the owner added the demonstration "Open the same STL on desktop and Android" to the standing order, with
+its page (https://claude.ai/artifact/NJVBcQYiheLRCcRgx9YQad) and the decisions D1 to D6, each the recommended option. The
+decisions answer the "stop and ask" of `CLAUDE.md` for this change of the contract, so the record goes into the same
+commit as the change. The order: finish the slice in progress (R16c, v0.241), then the rows a to e of the demonstration,
+then the next slices of the redesign, then K5.
+
+**The change.**
+- ADR-0083, Accepted with D1 to D6: the command `ImportStl` (the name of an asset of the store, and the name of the
+  body), the mesh body of the kind `Mesh`, the reader of binary and text STL with no arithmetic on the floats, the codes
+  of each fault, the operations that a mesh body refuses (it is viewed, framed and exported as STL; its name and its
+  visibility are a part of the view), the asset at each replay, and a limit of 300,000 triangles from the bound of the
+  store (16 MiB, 335,542 binary triangles). It amends ADR-0044 item 6, ADR-0045 item 4 (for this command only: the replay
+  of an import needs its bytes) and ADR-0048 (the export holds a mesh body as it is); those three are Amended.
+- `Engine.Contracts/Geometry/IMeshImportOps.cs`: the capability of a backend that holds a mesh body.
+- The roadmap gets the rows P9a to P9e; TASK-0258 (P9b) is the engine part.
+- A second commit corrects item 5: each Document of the engine is in millimetres (ADR-0015 item 7), so the import needs no
+  check of the unit, and the code `E-STL-UNIT` that the first commit named could never be raised. TASK-0258 found it.
+
+**Proof.** The gates of the ADRs and of the tasks: the reciprocal amendments, the statuses, the enforcement of ADR-0083
+by the test that TASK-0258 creates, and the governed-by fields. Run 42319809463 passed.
+
+**What stays.** The limit is a bound and a measure of this computer (TASK-0258), not a measure of the S23. A document with
+a mesh body opens only where the store holds its asset.
+
+**A correction (the owner, 2026-11-07).** The row R1 of the table of the roadmap had no task and no version, so it read as
+open, although the list "Shipped" holds R1 at v0.28 (TASK-0027). The row now names TASK-0027 and v0.28. The failed runs
+since the entry v0.241, from the API: none.
+
+New tests: 0. The test list holds 2006 (1397 in `Engine.Tests`, 337 in `3DEngine.Tests`, 269 in `3DEngine.ImageTests`, 3
+in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
+entries: 15 of 15. New diagnostic codes: 0. Since the review of v0.233, 3 product milestones and 9 entries followed it.
