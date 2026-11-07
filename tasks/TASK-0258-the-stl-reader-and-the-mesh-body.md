@@ -1,7 +1,7 @@
 ---
 id: 0258
 title: The engine reads an STL file into a mesh body
-status: Active
+status: Done
 phase: P9b
 opened: 2026-11-07
 depends-on: [0257]
@@ -84,14 +84,14 @@ macOS and the emulator with the same result.
 
 ## Acceptance criteria
 
-- [ ] Each fault of the reader and each refused operation has a test.
-- [ ] The two files give the same triangle count and the same code on Windows, Linux, macOS and the emulator.
-- [ ] A clean build (`--no-incremental`) gives zero errors and zero warnings.
-- [ ] Continuous integration passes on the three runners, on the branch and on `main` after the merge.
+- [x] Each fault of the reader and each refused operation has a test.
+- [x] The two files give the same triangle count and the same code on Windows, Linux, macOS and the emulator.
+- [x] A clean build (`--no-incremental`) gives zero errors and zero warnings.
+- [x] Continuous integration passes on the three runners, on the branch and on `main` after the merge.
 
 ## Outcome
 
-Status: Active
+Status: Done · commit (the merge of the branch p9b-stl-reader-b) · v0.243
 
 ## Method
 
@@ -100,7 +100,8 @@ Mechanical: a test for each fault of the reader and each refused operation; the 
 Judgement:  the store reaches the handler through the composition of the engine (EngineHosting, HandlerCatalog, the
             hosts); the capability flag of a mesh backend is not added, because it changes the contract and TryGet answers
             without it; the files are the export of the probe, so a test holds them equal on each platform.
-Weakest:    to be written at the close.
+Weakest:    the limit is measured on this computer only; a document with a mesh body opens only where the store
+            holds its asset; the files are the export of the probe, not of a session that a person drove.
 
 ## Progress
 
@@ -108,3 +109,4 @@ Weakest:    to be written at the close.
 - 2026-11-07: the reader, the import, the mesh body in both backends, the refusals, the store in the hosts, the probe, the
   two files and eight tests. The first test found that each Document is in millimetres (ADR-0015 item 7), so the unit
   check of ADR-0083 item 5 could never refuse; TASK-0257 corrected the record, and no code E-STL-UNIT exists.
+- 2026-11-07: run 42320677685 passed, and the four platforms gave the hash 06d832c3...4ea7. Closed at v0.243.

@@ -125,3 +125,4 @@ desktop row P9c, the phone row P9d, and the test sheet P9e.
   (15,000,084 bytes) reads in 32 ms, imports in 34 ms and tessellates in 7 ms, with 55 MiB allocated; the emulator and
   the S23 are slower, and the run of the owner measures the phone. The probe of ADR-0074 holds the export and the import
   of the bracket, so the four platforms compare the reader.
+- 2026-11-07 · TASK-0258 · Shipped at v0.243.
