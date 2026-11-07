@@ -1,7 +1,7 @@
 ---
 id: 0275
 title: While a sketch is active, the ring holds the tools of the sketch
-status: Active
+status: Done
 phase: R16f
 opened: 2026-11-07
 depends-on: [0272]
@@ -49,16 +49,16 @@ While a sketch is active, the ring holds Line, Select, Circle, Arc and Finish be
 
 ## Acceptance criteria
 
-- [ ] While a sketch is active, the ring holds the five tools, and a tap by touch and by mouse gives the tool or Finish.
-- [ ] On a landscape display the ring is on the left of the sketch, outside it and to the right of the panel.
-- [ ] Each of five portrait segments is at least 44 pixels at the inner radius.
-- [ ] A picture of the sketch with its ring on the GPU is kept for the owner.
-- [ ] A clean build (`--no-incremental`) gives zero errors and zero warnings.
-- [ ] Continuous integration passes on the three runners, on the branch and on `main` after the merge.
+- [x] While a sketch is active, the ring holds the five tools, and a tap by touch and by mouse gives the tool or Finish.
+- [x] On a landscape display the ring is on the left of the sketch, outside it and to the right of the panel.
+- [x] Each of five portrait segments is at least 44 pixels at the inner radius.
+- [x] A picture of the sketch with its ring on the GPU is kept for the owner.
+- [x] A clean build (`--no-incremental`) gives zero errors and zero warnings.
+- [x] Continuous integration passes on the three runners, on the branch and on `main` after the merge.
 
 ## Outcome
 
-Status: Active
+Status: Done · commit (the merge of the branch r16f-sketch-ring) · v0.260
 
 ## Method
 
@@ -66,10 +66,12 @@ Mechanical: the tests of the ring of a sketch, of its layout and of five portrai
             old hidden ring and of a ring under the window of the sketch.
 Judgement:  the left of the sketch on a landscape display (Q2 A), because the window of the sketch takes the right side;
             the first form put the ring onto the points of the sketch, which the picture showed.
-Weakest:    to be written at the close.
+Weakest:    the centre of the ring comes from the host, which needs a window, so no test holds it; each tool shows two
+            times, on the ring and in the window of the sketch.
 
 ## Progress
 
 - 2026-11-07: ADR-0086, the ring of a sketch and its layout. The first form kept the ring left of the window of the sketch
   by a narrower display, and the picture showed the ring on the points P2 and P3; the ring is now on the left of the
   sketch. Injections of the hidden ring and of a ring with no room for the window each fail the test of the tap.
+- 2026-11-07: run 42368827245 passed. Closed at v0.260.

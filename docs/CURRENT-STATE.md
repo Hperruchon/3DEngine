@@ -7851,3 +7851,33 @@ entries, so the question of the affects rule for the ADRs before 0082 has no ent
 New tests: 3. The test list holds 2071 (1414 in `Engine.Tests`, 337 in `3DEngine.Tests`, 317 in `3DEngine.ImageTests`, 3
 in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
 entries: 15 of 15. New diagnostic codes: 0. Since the review of v0.252, 1 product milestone and 7 entries followed it.
+
+## v0.260 — While a sketch is active, the ring holds the tools of the sketch (R16f, TASK-0275)
+
+The owner ordered the layout of the redesign slice by slice, with no change of the contract, and on 2026-11-07 put the next
+redesign slices after the STL demonstration. ADR-0085 named the next slice: the tools of the sketch on the ring.
+
+**The change.** ADR-0086 is new and Accepted under the standing order (Q1 A, Q2 A, Q3 A). It amends ADR-0081 item 1.
+- While a sketch is active, the ring holds Line, Select, Circle, Arc and Finish in the place of the tools of a body. A tap
+  gives the tool, as its button of the window of the sketch does, and Finish ends the sketch. The tool in use has the
+  colour of an active control.
+- The host gives the centre of the points of the sketch as the person sees them, with the move of ADR-0085.
+- On a landscape display the ring is on the left of the sketch, with an inner radius of 24 pixels more than the half of
+  the diagonal of the sketch, and to the right of the panel. The window of the sketch takes the right side.
+- On a portrait display the ring is in the corner, and its inner radius grows so that each of five segments is at least
+  44 pixels.
+
+**Proof.** Three new tests with no GPU: the five tools and their taps, by touch and by mouse, and the layout on the left of
+the sketch; the test of the portrait segments now holds five segments too. Injections of the old hidden ring and of a ring with no room for the window each fail
+the test of the tap. The first form kept the ring left of the window by a narrower display, and the picture on the GPU
+showed the ring on the points P2 and P3; the ring is now on the left of the sketch, and the picture was sent to the owner.
+Run 42368827245 passed.
+
+**What stays.** Each tool shows two times, on the ring and in the window of the sketch. "Constrain" has no place on the ring
+yet. The centre of the ring comes from the host, which needs a window, so no test holds it.
+
+**A correction.** None. The failed runs since the entry v0.259, from the API: none.
+
+New tests: 3. The test list holds 2074 (1414 in `Engine.Tests`, 337 in `3DEngine.Tests`, 320 in `3DEngine.ImageTests`, 3
+in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
+entries: 15 of 15. New diagnostic codes: 0. Since the review of v0.252, 2 product milestones and 8 entries followed it.

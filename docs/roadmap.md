@@ -239,6 +239,7 @@ Therefore each approved objective must have a track here.
   TASK-0271, ADR-0084.
 - P0.112 — The phone, the reader, the APK check, the gates and the roadmap hold their next forms. v0.259, TASK-0272,
   ADR-0072, ADR-0079, ADR-0083.
+- R16f — While a sketch is active, the ring holds the tools of the sketch. v0.260, TASK-0275, ADR-0086.
 
 ## Track 0 — Foundations
 
