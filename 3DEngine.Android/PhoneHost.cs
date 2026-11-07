@@ -154,11 +154,30 @@ internal static class PhoneHost
         NewPartInBackground,
     }
 
+    // E184 (TASK-0281): the session after a lost surface, in the start of an engine or in a frame.
+    private static Session AfterLostSurface(PhoneFiles files)
+    {
+        var after = PhoneLifecycle.AfterLostSurface(files.TakeRequestedNew());
+        return !after.NewPart ? Session.Background : after.Wait ? Session.NewPartInBackground : Session.NewPart;
+    }
+
     // The loop of one time in the foreground.
     private static unsafe Session Foreground(Window window, LocalSessionHost host, PhoneFiles files, AssetStore assets)
     {
         using var engine = new NativeThreeDEngine(window, host, document: files, assets: assets);
-        engine.Initialize();
+        // The audit of Codex of the phone host at d5209a2 (TASK-0286): the surface can be lost while the new engine makes
+        // its device, when the activity goes into the background again at once. Until TASK-0286 only a frame had the guard
+        // of V124, so the exception ended the session, and the document of the phone, which has no file, was lost.
+        try
+        {
+            engine.Initialize();
+        }
+        catch (Exception ex) when (PhoneLifecycle.IsSurfaceLost(ex))
+        {
+            Console.Error.WriteLine("3DEngine: the surface of the window is lost while the engine starts, so the engine ends as in the background.");
+            return AfterLostSurface(files);
+        }
+
         engine.LoadScene(SessionScene.Create());
         window.Show();
 
@@ -195,15 +214,14 @@ internal static class PhoneHost
             {
                 engine.Render();
             }
-            catch (Vortice.Vulkan.VkException ex) when (ex.Message.Contains(nameof(Vortice.Vulkan.VkResult.ErrorSurfaceLostKHR), StringComparison.Ordinal))
+            catch (Exception ex) when (PhoneLifecycle.IsSurfaceLost(ex))
             {
                 Console.Error.WriteLine("3DEngine: the surface of the window is lost, so the engine ends as in the background.");
                 // Finding E175 of the codebase review of 2026-11-07 (b) (TASK-0272): the frame that took a chosen STL queued
                 // its new part before the present, so a lost surface in that frame keeps the request; until TASK-0272 the old
                 // session took the import at its return, and the request then replaced it with an empty part.
                 // E184 (TASK-0281): the engine waits for the foreground in each case (PhoneLifecycle.AfterLostSurface).
-                var after = PhoneLifecycle.AfterLostSurface(files.TakeRequestedNew());
-                return !after.NewPart ? Session.Background : after.Wait ? Session.NewPartInBackground : Session.NewPart;
+                return AfterLostSurface(files);
             }
 
             lastFrame = now;
