@@ -75,11 +75,14 @@ internal static class PhoneHost
                     }
 
                     var step = Foreground(window, host, files, assets);
-                    if (step == Session.NewPart)
+                    if (step is Session.NewPart or Session.NewPartInBackground)
                     {
                         host.Dispose();
                         host = new LocalSessionHost(new ManifoldGeometryBackend(), assets);
                         Console.Error.WriteLine("3DEngine: a new part document.");
+                        // E184 (TASK-0281): after a lost surface the next engine waits for the foreground.
+                        if (step == Session.NewPartInBackground && !WaitForForeground(turn))
+                            break;
                         continue;
                     }
 
@@ -146,6 +149,9 @@ internal static class PhoneHost
         Quit,
         Background,
         NewPart,
+
+        // E184 (TASK-0281): a new part whose host comes now and whose engine waits for the foreground.
+        NewPartInBackground,
     }
 
     // The loop of one time in the foreground.
@@ -195,7 +201,9 @@ internal static class PhoneHost
                 // Finding E175 of the codebase review of 2026-11-07 (b) (TASK-0272): the frame that took a chosen STL queued
                 // its new part before the present, so a lost surface in that frame keeps the request; until TASK-0272 the old
                 // session took the import at its return, and the request then replaced it with an empty part.
-                return files.TakeRequestedNew() ? Session.NewPart : Session.Background;
+                // E184 (TASK-0281): the engine waits for the foreground in each case (PhoneLifecycle.AfterLostSurface).
+                var after = PhoneLifecycle.AfterLostSurface(files.TakeRequestedNew());
+                return !after.NewPart ? Session.Background : after.Wait ? Session.NewPartInBackground : Session.NewPart;
             }
 
             lastFrame = now;

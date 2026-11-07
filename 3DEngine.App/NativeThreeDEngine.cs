@@ -167,7 +167,8 @@ public sealed class NativeThreeDEngine : IThreeDEngine, IDisposable
             return;
         }
 
-        var (content, readError) = Window.LoadFile(path);
+        // E183 (TASK-0281): the read stops after the limit, also when SDL does not know the size and FileSize gives -1.
+        var (content, readError) = Window.LoadFile(path, StlOpening.MaximumBytes);
         if (content is null)
         {
             _ui.ShowMessage((string.Empty, $"The file {name} could not be read: {readError}"));

@@ -1,16 +1,22 @@
 ---
 id: 0281
 title: The size limit, the lost surface, the taps over a window, the portrait ring and the host warnings hold their next forms
-status: Ready
+status: Active
 phase: P0.116
 opened: 2026-11-07
 depends-on: [0280]
-governed-by: [0007, 0019, 0025, 0027, 0029, 0030, 0032, 0034, 0061, 0072, 0073, 0075, 0076, 0077, 0079, 0080, 0081, 0082, 0083, 0084, 0085, 0086, 0087, 0088]
+governed-by: [0007, 0017, 0019, 0023, 0025, 0027, 0029, 0030, 0032, 0034, 0061, 0072, 0073, 0075, 0076, 0077, 0079, 0080, 0081, 0082, 0083, 0084, 0085, 0086, 0087, 0088]
 writes:
   create:
     - tasks/TASK-0281-medium-forms-of-the-thirtieth-review.md
   modify:
     - 3DEngine.App/StlOpening.cs
+    - 3DEngine.Vulkan/Window.FileDialog.cs
+    - 3DEngine.App/PhoneLifecycle.cs
+    - 3DEngine.ImageTests/PhoneLifecycleTests.cs
+    - 3DEngine.ImageTests/StlOpenTests.cs
+    - Engine.Tests/Governance/DependencyDirectionGateTests.cs
+    - docs/adr/0083-the-mesh-body-and-the-stl-import.md
     - 3DEngine.App/NativeThreeDEngine.cs
     - 3DEngine.Android/PhoneHost.cs
     - 3DEngine.App/Ui/DesktopUi.Ring.cs
@@ -58,12 +64,18 @@ E183, E184, V135, V136 and T174 are fixed, each with a test or an injection.
 
 ## Outcome
 
-Status: Ready
+Status: Active
 
 ## Method
 
-Mechanical: to be written.
-Judgement:  to be written.
+Mechanical: a test for each finding; V135 failed on the code before the change, and an injection of each other fix
+            fails its test or the step.
+Judgement:  E184 holds its decision in PhoneLifecycle, because the loop of the phone runs on no computer here; V136
+            moves the portrait ring above the anchors, for a body too.
 Weakest:    to be written at the close.
 
 ## Progress
+- 2026-11-07: E183, E184, V135, V136 and T174, each with a test. Injections of a read with no limit, of no wait after a
+  lost surface, of the portrait ring on the anchors, of CA1416 in NoWarn of the host and of a line of the host that names
+  CA1416 each fail a test or the step. This task comes before a product phase because K5c waits for the owner (Q2 of the
+  review), and the order of the owner takes the next ready row.

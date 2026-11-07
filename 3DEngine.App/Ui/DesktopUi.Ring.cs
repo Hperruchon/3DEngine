@@ -79,7 +79,10 @@ internal sealed unsafe partial class DesktopUi
     // and the top for each count, narrower when they must be (four give 0.36 radians, 54 pixels at the inner radius); until
     // TASK-0264 the fourth one went past the top and out of the display. The corner is 16 pixels inside the safe area
     // (left, top, right and bottom), so the navigation bar of the phone does not cover Move.
-    internal static RingLayout Layout(Vector2 display, Vector2 centre, int count, float body = 0f, Vector4 inset = default)
+    // Finding V136 of the codebase review of 2026-11-07 (c) (TASK-0281): the portrait corner is 8 pixels above the top of the
+    // anchors (anchorsTop), so no segment is under Frame; until TASK-0281 the first segment, Line or Move, was under it at 390
+    // by 844.
+    internal static RingLayout Layout(Vector2 display, Vector2 centre, int count, float body = 0f, Vector4 inset = default, float anchorsTop = float.MaxValue)
     {
         var span = (count * RingSegment) + ((count - 1) * RingGap);
         if (display.X < display.Y)
@@ -88,7 +91,7 @@ internal sealed unsafe partial class DesktopUi
             // ADR-0086 item 3 (TASK-0275): the inner radius grows when a narrow segment would be less than 44 pixels at it, as
             // the five tools of a sketch need (0.28 radians).
             var portraitInner = Math.Max(150f, (ValueSize + 2f) / segment);
-            return new RingLayout(new Vector2(display.X - 16f - inset.Z, display.Y - 16f - inset.W), portraitInner, MathF.PI, 1f, segment);
+            return new RingLayout(new Vector2(display.X - 16f - inset.Z, Math.Min(display.Y - 16f - inset.W, anchorsTop - 8f)), portraitInner, MathF.PI, 1f, segment);
         }
 
         // The ring is outside the body on the screen: at least the half of the diagonal of its box, and 24 pixels more.
@@ -115,6 +118,12 @@ internal sealed unsafe partial class DesktopUi
         var y = Math.Clamp(centre.Y, reach, Math.Max(reach, display.Y - reach));
         return new RingLayout(new Vector2(x, y), inner, MathF.PI + (span / 2f), -1f);
     }
+
+    // Finding V135 of the codebase review of 2026-11-07 (c) (TASK-0281): a release over a window belongs to the window. While an
+    // item of a window is active, ImGui counts the window as not hovered unless the flag says so, so until TASK-0281 the ring,
+    // the rows and the chips took a release over a row of a window too, and one tap gave two actions.
+    private static bool OverWindowAtRelease()
+        => ImGui.IsWindowHovered(ImGuiHoveredFlags.AnyWindow | ImGuiHoveredFlags.AllowWhenBlockedByActiveItem);
 
     public static string RingItem(string label) => $"Ring:{label}";
 
@@ -211,7 +220,7 @@ internal sealed unsafe partial class DesktopUi
         var sketchRing = _sketchActive && displaySize.X >= displaySize.Y;
         var ring = sketchRing
             ? SketchLayout(displaySize, at, labels.Count, size, panelRight, _sketchWindow?.X ?? displaySize.X)
-            : Layout(displaySize, at, labels.Count, size, _inset);
+            : Layout(displaySize, at, labels.Count, size, _inset, _fixed.Count > 0 ? _fixed.Min(anchor => anchor.Y) : float.MaxValue);
         _ring = ring;
         _ringLabels = labels;
         var covers = _panels.Concat(_fixed).Concat(_sketchActive && _sketchWindow is { } window ? [window] : []).ToList();
@@ -224,7 +233,7 @@ internal sealed unsafe partial class DesktopUi
         // chip is the tap of the chip only; the chips of the last frame are the chips that the person sees. Until
         // TASK-0264 one tap gave both tools.
         var io = ImGui.GetIO();
-        if (ImGui.IsMouseReleased(ImGuiMouseButton.Left) && !ImGui.IsWindowHovered(ImGuiHoveredFlags.AnyWindow) && ChipAt(io.MousePos) is null && RowAt(io.MousePos) is null
+        if (ImGui.IsMouseReleased(ImGuiMouseButton.Left) && !OverWindowAtRelease() && ChipAt(io.MousePos) is null && RowAt(io.MousePos) is null
             && ring.At(labels, io.MousePos) is { } released && ring.At(labels, io.MouseClickedPos[0]) == released)
         {
             if (_sketchActive)

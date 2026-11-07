@@ -437,4 +437,76 @@ public sealed class ToolRingTests
             Assert.True(ui.TakeActions().Contains(new FinishSketchAction()), $"A tap on Finish at {finish} does not end the sketch at {display} with the sketch at {centre}, {size}.");
         }
     }
+
+    // Finding V135 of the codebase review of 2026-11-07 (c) (TASK-0281): a tap on a segment of the ring that lies over a window
+    // is the tap of the window only. While an item of the window is active, the window counted as not hovered, so until
+    // TASK-0281 the ring took the release too, and one tap gave two actions.
+    [Fact]
+    public void A_Tap_On_A_Segment_Over_A_Window_Is_The_Tap_Of_The_Window_Only()
+    {
+        var display = new Vector2(390, 844);
+        using var ui = new DesktopUi("http://127.0.0.1:5180", Engine.Contracts.Document.Millimetre);
+        var points = Enumerable.Range(0, 12).Select(i => new Engine.Contracts.Sketch.SketchPoint(Guid.NewGuid(), i, i)).ToList();
+        var sketch = new Engine.Core.Queries.SketchInfo(Guid.NewGuid(), Engine.Contracts.Sketch.Datums.XY.Id, "Plate", points, [], [], [], [], true, 24);
+        var panel = new SketchPanel([sketch], sketch, ThreeDEngine.Core.Sketching.SketchToolKind.Select, false, [], null);
+        void Frame(params InputSample[] samples)
+        {
+            ui.Route(samples);
+            ui.Frame(1f / 60f, display, Vector2.One, [], null, null, sketchPanel: panel, ringCentre: new Vector2(195, 400), ringBody: 60f);
+        }
+
+        for (var frame = 0; frame < 3; frame++)
+            Frame();
+
+        var window = ui.PanelRectangles.Last();
+        var covered = DesktopUi.SketchRingTools
+            .Select(tool => (tool.Label, Rectangle: ui.ItemRectangle(DesktopUi.RingItem(tool.Label))))
+            .Where(item => item.Rectangle is { } r && (r.X + r.Z) / 2 >= window.X && (r.X + r.Z) / 2 < window.Z && (r.Y + r.W) / 2 >= window.Y && (r.Y + r.W) / 2 < window.W)
+            .ToList();
+        Assert.NotEmpty(covered);
+        foreach (var (label, rectangle) in covered)
+        {
+            var at = new Vector2((rectangle!.Value.X + rectangle.Value.Z) / 2, (rectangle.Value.Y + rectangle.Value.W) / 2);
+            Frame(new PointerSample(DeviceKind.Touch, 1, 3, at.X, at.Y, 1, PointerButtons.None, KeyModifiers.None, PointerPhase.Down, 0));
+            Frame(new PointerSample(DeviceKind.Touch, 1, 3, at.X, at.Y, 1, PointerButtons.None, KeyModifiers.None, PointerPhase.Up, 0));
+            Frame();
+            var actions = ui.TakeActions();
+            Assert.False(actions.Any(action => action is SketchToolAction or FinishSketchAction), $"A tap on {label} at {at}, over the window, gave {string.Join(", ", actions)}.");
+        }
+    }
+
+    // Finding V136 of the codebase review of 2026-11-07 (c) (TASK-0281): on a portrait display of 390 by 844, no segment of the
+    // ring of a sketch or of a body is under an anchor. Until TASK-0281 Line, and Move of a body, were under "Frame", and a tap
+    // on them gave Frame.
+    [Fact]
+    public void No_Portrait_Segment_Is_Under_An_Anchor()
+    {
+        var display = new Vector2(390, 844);
+        var (start, end, line) = (Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid());
+        var sketch = new Engine.Core.Queries.SketchInfo(Guid.NewGuid(), Engine.Contracts.Sketch.Datums.XY.Id, "Plate",
+            [new(start, 0, 0), new(end, 40, 10)], [new(line, start, end)], [], [], [], true, 4);
+        var panel = new SketchPanel([sketch], sketch, ThreeDEngine.Core.Sketching.SketchToolKind.Select, false, [], null);
+        foreach (var (selection, sketchPanel, labels) in new[]
+        {
+            ((Guid?)null, panel, DesktopUi.SketchRingTools.Select(tool => tool.Label).ToArray()),
+            ((Guid?)Plate, (SketchPanel?)null, new[] { DesktopUi.MoveLabel, DesktopUi.SetDistanceLabel, DesktopUi.HideLabel }),
+        })
+        {
+            using var ui = new DesktopUi("http://127.0.0.1:5180", Engine.Contracts.Document.Millimetre);
+            for (var frame = 0; frame < 3; frame++)
+            {
+                ui.Route([]);
+                ui.Frame(1f / 60f, display, Vector2.One, [Extrude], selection, null, sketchPanel: sketchPanel, ringCentre: new Vector2(195, 400), ringBody: 60f);
+            }
+
+            Assert.NotEmpty(ui.FixedRectangles);
+            foreach (var label in labels)
+            {
+                var segment = ui.ItemRectangle(DesktopUi.RingItem(label)) ?? throw new InvalidOperationException($"No segment {label}.");
+                var middle = new Vector2((segment.X + segment.Z) / 2, (segment.Y + segment.W) / 2);
+                Assert.False(ui.FixedRectangles.Any(anchor => middle.X >= anchor.X && middle.X < anchor.Z && middle.Y >= anchor.Y && middle.Y < anchor.W),
+                    $"The segment {label} at {middle} is under an anchor.");
+            }
+        }
+    }
 }

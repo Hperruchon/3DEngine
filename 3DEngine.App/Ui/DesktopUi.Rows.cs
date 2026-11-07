@@ -76,7 +76,7 @@ internal sealed unsafe partial class DesktopUi
         // Item 3: a press and a release on one value row, with no window of the panels under the pointer and no pad open,
         // open its pad.
         var io = ImGui.GetIO();
-        if (_pad is null && ImGui.IsMouseReleased(ImGuiMouseButton.Left) && !ImGui.IsWindowHovered(ImGuiHoveredFlags.AnyWindow)
+        if (_pad is null && ImGui.IsMouseReleased(ImGuiMouseButton.Left) && !OverWindowAtRelease()
             && RowAt(io.MousePos) is { } released && RowAt(io.MouseClickedPos[0]) is { } pressed && pressed.Key == released.Key)
             Use(released);
 
