@@ -252,6 +252,8 @@ Therefore each approved objective must have a track here.
   TASK-0282.
 - Proposal — The cone, the sphere and the torus are closed meshes that the engine makes (Proposed, for the owner).
   v0.268, TASK-0283, ADR-0089.
+- P0.118 — The ring of a sketch sees the windows that come after it, and a window at the left does not pull it under
+  the panel. v0.269, TASK-0284, ADR-0086, ADR-0088.
 
 ## Track 0 — Foundations
 

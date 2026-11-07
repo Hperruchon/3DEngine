@@ -1,7 +1,7 @@
 ---
 id: 0284
 title: The ring of a sketch sees the windows that come after it, and a window at the left does not pull it under the panel
-status: Active
+status: Done
 phase: P0.118
 opened: 2026-11-07
 depends-on: [0283]
@@ -55,24 +55,26 @@ Each tool of the ring of a sketch keeps a place that a tap reaches, with any win
 
 ## Acceptance criteria
 
-- [ ] With the Images window open over Line, the window of the sketch keeps Line.
-- [ ] A window of the sketch at x 500 does not pull the band under the panel.
-- [ ] A clean build (`--no-incremental`) gives zero errors and zero warnings.
-- [ ] Continuous integration passes on the three runners, on the branch and on `main` after the merge.
+- [x] With the Images window open over Line, the window of the sketch keeps Line.
+- [x] A window of the sketch at x 500 does not pull the band under the panel.
+- [x] A clean build (`--no-incremental`) gives zero errors and zero warnings.
+- [x] Continuous integration passes on the three runners, on the branch and on `main` after the merge.
 
 ## Outcome
 
-Status: Active
+Status: Done · commit (the merge of the branch p0118-ring-windows) · v0.269
 
 ## Method
 
 Mechanical: the two tests, and an injection of each old form.
 Judgement:  the windows of the last frame, because the order of the frame puts the Images window and the message after
             the ring; a window that moves in this frame counts from the next frame.
-Weakest:    to be written at the close.
+Weakest:    a window that moves in this frame counts from the next frame, so for one frame a segment under it can
+            count as reachable; a collapsed window of the sketch still shows no button until the person opens it.
 
 ## Progress
 
 - 2026-11-07: the two leads of Codex of v0.265, confirmed in the code. Two new tests; injections of a check with no windows
   of the last frame and of a centre with no limit each fail a test. A tap on the arrow of the Images window needs the
   button on the release sample of a mouse, or the next move drags the window.
+- 2026-11-07: run 42392648931 passed. Closed at v0.269.

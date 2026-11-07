@@ -8114,3 +8114,29 @@ owner answers.
 New tests: 0. The test list holds 2086 (1415 in `Engine.Tests`, 337 in `3DEngine.Tests`, 331 in `3DEngine.ImageTests`, 3
 in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
 entries: 15 of 15. New diagnostic codes: 0. Since the review of v0.263, 0 product milestones and 5 entries followed it.
+
+## v0.269 — The ring of a sketch sees the windows that come after it (P0.118, TASK-0284)
+
+The review of Codex of v0.265 gave two medium leads in the fix of V134 (TASK-0280), and the session confirmed both in the
+code. A medium finding comes after the next product phase; that phase, K5c, waits for the owner (ADR-0089), so this task
+came now. The lead of Codex of v0.264 (TASK-0281 was Ready before the product phase) is a record of the past, which the
+entry v0.266 explains.
+
+**The change.**
+- The check of the segments of the ring of a sketch reads the windows of the last frame too, because the Images window and
+  the message come after the ring in the frame. With the Images window open over Line, the window of the sketch keeps Line
+  (ADR-0088 item 1).
+- The centre of the ring moves left to the window of the sketch only when the band then stays to the right of the panel, so
+  a window that the person moved or collapsed at the left does not pull each segment under the panel (ADR-0086 item 1).
+
+**Proof.** Two new tests. Injections of a check with no windows of the last frame and of a centre with no limit each fail a
+test. Run 42392648931 passed.
+
+**What stays.** A window that moves in this frame counts from the next frame. A collapsed window of the sketch still shows
+no button until the person opens it.
+
+**A correction.** None. The failed runs since the entry v0.268, from the API: none.
+
+New tests: 2. The test list holds 2088 (1415 in `Engine.Tests`, 337 in `3DEngine.Tests`, 333 in `3DEngine.ImageTests`, 3
+in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
+entries: 15 of 15. New diagnostic codes: 0. Since the review of v0.263, 0 product milestones and 6 entries followed it.
