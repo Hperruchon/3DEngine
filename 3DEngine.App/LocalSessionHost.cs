@@ -14,11 +14,12 @@ internal sealed class LocalSessionHost : ISessionHost, IDisposable
     private readonly IGeometryBackend _backend;
     private readonly FanOutSink _sink;
 
-    public LocalSessionHost(IGeometryBackend backend)
+    // ADR-0083 item 2 (TASK-0260): assets is the store of the phone, which the import of an STL file reads.
+    public LocalSessionHost(IGeometryBackend backend, Engine.Core.Assets.IAssetSource? assets = null)
     {
         ArgumentNullException.ThrowIfNull(backend);
         _backend = backend;
-        var kit = EngineHosting.CreateDefault(backend);
+        var kit = EngineHosting.CreateDefault(backend, assets: assets);
         _sink = new FanOutSink(kit.Events);
         Session = new DocumentSession(kit, _sink);
     }
