@@ -126,3 +126,5 @@ desktop row P9c, the phone row P9d, and the test sheet P9e.
   the S23 are slower, and the run of the owner measures the phone. The probe of ADR-0074 holds the export and the import
   of the bracket, so the four platforms compare the reader.
 - 2026-11-07 · TASK-0258 · Shipped at v0.243.
+- 2026-11-07 · TASK-0262 · Item 2: the check of an open on the desktop reads the asset from the store of the desktop too
+  (finding E167 of the codebase review of 2026-11-07).

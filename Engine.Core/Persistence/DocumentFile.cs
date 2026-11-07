@@ -84,12 +84,16 @@ public static class DocumentFile
     // TASK-0099 the check read with the share of a write and passed for a file of another
     // desktop, and the new program then stopped (finding V31 of the second codebase review
     // of 2026-10-28).
-    public static async Task<ErrorDetail?> Check(string path, Engine.Contracts.Geometry.IGeometryBackend backend, bool hold = true, CancellationToken ct = default)
+    //
+    // Finding E167 of the codebase review of 2026-11-07 (TASK-0262): assets is the store of the host, so the check reads the
+    // asset of an import as the next session does (ADR-0083 item 2); until TASK-0262 the check had no store, and the desktop
+    // refused each saved document with a mesh body.
+    public static async Task<ErrorDetail?> Check(string path, Engine.Contracts.Geometry.IGeometryBackend backend, bool hold = true, CancellationToken ct = default, Assets.IAssetSource? assets = null)
     {
         ArgumentNullException.ThrowIfNull(backend);
         try
         {
-            var session = new DocumentSession(Hosting.EngineHosting.CreateDefault(backend, ReadLengthUnit(path), ReadKind(path)));
+            var session = new DocumentSession(Hosting.EngineHosting.CreateDefault(backend, ReadLengthUnit(path), ReadKind(path), assets));
             try
             {
                 await Load(session, path, attach: false, hold, ct).ConfigureAwait(false);
