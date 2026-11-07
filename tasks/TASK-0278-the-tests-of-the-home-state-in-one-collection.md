@@ -1,7 +1,7 @@
 ---
 id: 0278
 title: The tests of the home state of the desktop run in one collection
-status: Active
+status: Done
 phase: P0.114
 opened: 2026-11-07
 depends-on: [0276]
@@ -51,23 +51,25 @@ Two test classes that change the home state of the process never run at the same
 
 ## Acceptance criteria
 
-- [ ] The new test fails on the code before the change, and names `DesktopSessionTests.cs`.
-- [ ] The new test passes after the change, and the image tests pass.
-- [ ] A clean build (`--no-incremental`) gives zero errors and zero warnings.
-- [ ] Continuous integration passes on the three runners, on the branch and on `main` after the merge.
+- [x] The new test fails on the code before the change, and names `DesktopSessionTests.cs`.
+- [x] The new test passes after the change, and the image tests pass.
+- [x] A clean build (`--no-incremental`) gives zero errors and zero warnings.
+- [x] Continuous integration passes on the three runners, on the branch and on `main` after the merge.
 
 ## Outcome
 
-Status: Active
+Status: Done · commit (the merge of the branch p0114-home-state-tests) · v0.262
 
 ## Method
 
 Mechanical: the new test on the code before and after the change.
 Judgement:  the cause from the code, because no local run gave the failure; the text rules of the test (the names of the
             calls) are a list that a new kind of call can pass.
-Weakest:    to be written at the close.
+Weakest:    no run gave the failure on this computer, so the proof is the cause in the code and the green runs after
+            the change; the new test finds a class by the names of its calls.
 
 ## Progress
 
 - 2026-11-07: the cause from the code; the new test fails before the change with `DesktopSessionTests.cs` and passes after
   it.
+- 2026-11-07: run 42372629922 passed. Closed at v0.262.
