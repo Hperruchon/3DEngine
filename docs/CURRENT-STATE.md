@@ -7711,3 +7711,34 @@ say. The medium and low findings of the review come after the next product phase
 New tests: 4. The test list holds 2055 (1411 in `Engine.Tests`, 337 in `3DEngine.Tests`, 304 in `3DEngine.ImageTests`, 3
 in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
 entries: 15 of 15. New diagnostic codes: 0. Since the review of v0.252, 0 product milestones and 3 entries followed it.
+
+## v0.256 — The active sketch of a live extrude moves out of its body, and the camera stays (R16e, TASK-0273)
+
+The owner ordered the layout of the redesign slice by slice, with no change of the contract, and on 2026-11-07 put the next
+redesign slices after the STL demonstration. After the rows without a panel (R16d) comes "the sketch under its body" of the
+"mix" direction of the designer brief. The two high tasks of the review of 2026-11-07 (b) came first (v0.254, v0.255).
+
+**The change.** ADR-0085 is new and Accepted under the standing order (Q1 A, Q2 A, Q3 A). It amends ADR-0034 item 6.
+- "Edit" of a sketch that makes a live extrude keeps the camera. The body is the feature of the kind `Extrude` in effect
+  that reads the sketch, not consumed, with the state "correct". Each other sketch turns the camera as before.
+- `SketchLift` moves the plane of that sketch along its normal, out of the box of the body, to the side away from the
+  body, a quarter of the diagonal of the box past it. The drawing and `SketchActions.Current` both use the moved plane,
+  so each tap, snap mark and selection uses the plane that the person sees. A move along the normal keeps each position in
+  the plane, so each command is the same as on the plane of the record.
+- A quiet line links each moved point to its place on the plane of the record.
+
+**Proof.** Four new tests with no GPU: the side and the size of the move, the move of its sketch only, the links, and a tap
+on the moved sketch in an oblique view. The first form of the test of the tap read the pixel from `Current`, so an
+injection that left the move out of `Current` still passed; the test now takes the pixel from the record and the move,
+and that injection fails it ((16, 14) for (12, 8)). A picture on the GPU, `sketch-under-body.png`, was sent to the owner.
+Run 42365252084 passed.
+
+**What stays.** The view of the desktop has the axis Y up, so the sketch of a plate on XY moves behind the plate, not
+under it as the brief draws with the axis Z up. The edit with no turn of the camera runs in no test, because the host
+needs a window. The tools of the sketch on the ring and the values of the sketch on its items are later slices.
+
+**A correction.** None. The failed runs since the entry v0.255, from the API: none.
+
+New tests: 5. The test list holds 2060 (1411 in `Engine.Tests`, 337 in `3DEngine.Tests`, 309 in `3DEngine.ImageTests`, 3
+in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
+entries: 15 of 15. New diagnostic codes: 0. Since the review of v0.252, 1 product milestone and 4 entries followed it.
