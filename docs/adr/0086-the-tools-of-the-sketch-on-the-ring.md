@@ -82,3 +82,4 @@ the ring yet. On a small portrait display the window of the sketch can cover the
 ## History
 
 - 2026-11-07 · TASK-0275 · The record, Accepted under the standing order.
+- 2026-11-07 · TASK-0275 · Shipped at v0.260.
