@@ -95,3 +95,4 @@ another feature consumed opens as before.
 ## History
 
 - 2026-11-07 · TASK-0273 · The record, Accepted under the standing order.
+- 2026-11-07 · TASK-0273 · Shipped at v0.256.

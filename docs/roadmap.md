@@ -216,6 +216,7 @@ Therefore each approved objective must have a track here.
 - P0.102 — The kept face, the panel, the title, the open list, the edge and the safe area hold their next forms. v0.240, TASK-0252.
 - R16c — A value that a command changes sits on the edge of the selected body that it measures. v0.241, TASK-0254, ADR-0082.
 - R16d — The data of the selected body is in rows with no panel at the upper right. v0.252, TASK-0267, ADR-0084.
+- R16e — The active sketch of a live extrude moves out of its body, and the camera stays. v0.256, TASK-0273, ADR-0085.
 - P9a — An STL file opens as a mesh body of a new part, through one import command (the record). v0.242, TASK-0257, ADR-0083.
 - P9b — The engine reads an STL file into a mesh body. v0.243, TASK-0258, ADR-0083.
 - P9c — The desktop opens an STL file from its home screen, and the row waits for the owner. v0.247, TASK-0259, ADR-0083.
