@@ -290,7 +290,12 @@ public sealed class GetFacesTests
         var edges = await Edges(session, cut);
 
         static bool OnAxis(FaceSegment segment) => segment.Start.X == 0 && segment.Start.Y == 0 && segment.End.X == 0 && segment.End.Y == 0;
-        Assert.Contains(edges, edge => edge.Segments.Any(OnAxis));
+        // Finding E169 of the codebase review of 2026-11-07 (TASK-0263): one edge on the axis passed, so a handler that gave
+        // two pairs only passed too. Exactly six edges hold the axis, one for each pair of the four names.
+        var onAxis = edges.Where(edge => edge.Segments.Any(OnAxis)).ToList();
+        Assert.Equal(6, onAxis.Count);
+        Assert.Equal(4, onAxis.SelectMany(edge => new[] { edge.First, edge.Second }).Distinct().Count());
+        Assert.Equal(6, onAxis.Select(edge => string.Join("|", new[] { edge.First.ToString(), edge.Second.ToString() }.Order(StringComparer.Ordinal))).Distinct().Count());
         string Key(FaceSegment segment) => string.Join(" ", new[] { segment.Start, segment.End }.Select(p => $"{p.X},{p.Y},{p.Z}").Order(StringComparer.Ordinal));
         Assert.All(faces, face =>
         {

@@ -102,7 +102,8 @@ answered its questions Q1 to Q8 on 2026-10-28, with option A for each.
    file at the new name, copies each line into it, and then closes and deletes the old file (finding E162, TASK-0241).
    A delete of the old file that fails gives the warning `W-IO-OLD-FILE-KEPT` with the path of that file, and the save
    succeeds; a copy that fails cuts the new file to length 0 before its delete, so a new file that stays does not open
-   (finding E164, TASK-0251).
+   (finding E164, TASK-0251). When the cut and the delete both fail, the new file keeps a part of the document and
+   opens, so the error of the save names that file (finding E168, TASK-0263).
 10. **The hosts.** `engine-api-http` opens the file that `--file` names, and makes it with a header when it does not
     exist. A start that makes the file writes one line on the error output that says so, because a save moves the
     file (item 9) and a script that starts again with the same `--file` then gets an empty document. With no
@@ -171,3 +172,5 @@ Register entry R-0025 closes with P8a.
   new file and then deletes the old one (finding E162 of the codebase review of 2026-11-06 (d), Q1 A).
 - 2026-11-06 · TASK-0251 · Item 9: a delete of the old file that fails gives W-IO-OLD-FILE-KEPT, and a copy that fails
   cuts the new file before its delete (finding E164 of the codebase review of 2026-11-06 (e)).
+- 2026-11-07 · TASK-0263 · Item 9: when the cut and the delete of the new file both fail, the error of the save names
+  that file (finding E168 of the codebase review of 2026-11-07).

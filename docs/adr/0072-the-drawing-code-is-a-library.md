@@ -101,3 +101,6 @@ of its own, and the APK.
   consequences is true (finding V96): until TASK-0225 it said "four test projects".
 - 2026-11-06 · TASK-0232 · The consequences name the two programs and give no count of ADRs (finding V103): the
   correction of V96 said "the program" and "fifteen ADRs", and the Android project already referenced the application.
+- 2026-11-07 · TASK-0263 · Item 7: "the rule of zero warnings stops the build" was false for `3DEngine.App`,
+  `3DEngine.Core` and `3DEngine.Vulkan`, which did not set `TreatWarningsAsErrors` (finding T166 of the codebase review
+  of 2026-11-07). Each project that the phone reaches sets it now, and the gate and the platform step require it.

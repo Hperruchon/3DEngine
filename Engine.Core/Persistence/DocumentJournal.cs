@@ -148,6 +148,9 @@ public sealed class DocumentJournal : IDisposable
     // of that file fails, and null otherwise, so that the save gives the warning W-IO-OLD-FILE-KEPT; until TASK-0251 the
     // old file stayed with no report, and it opens as a second document. A failure before the switch cuts the new file
     // to length 0 before it deletes it, so a new file that the delete leaves holds no part of a document and does not open.
+    //
+    // Finding E168 of the codebase review of 2026-11-07 (TASK-0263): when the cut and the delete both fail, the new file
+    // keeps the lines of the copy and opens as a second document, so the failure names that file.
     internal string? MoveTo(string target)
     {
         if (File.Exists(target))
@@ -172,12 +175,14 @@ public sealed class DocumentJournal : IDisposable
             _stream.CopyTo(copy);
             Flush(copy);
         }
-        catch
+        catch (Exception ex)
         {
-            CutQuietly(copy);
+            var cut = CutQuietly(copy);
             copy.Dispose();
-            DeleteQuietly(target);
+            var gone = DeleteQuietly(target);
             _stream.Seek(0, SeekOrigin.End);
+            if (!cut && !gone && ex is IOException or UnauthorizedAccessException)
+                throw new IOException($"{ex.Message} The new file {target} stays with a part of the document, and it opens as a second document.", ex);
             throw;
         }
 
@@ -206,15 +211,18 @@ public sealed class DocumentJournal : IDisposable
         }
     }
 
-    private static void CutQuietly(Stream stream)
+    // True when the file has length 0.
+    private static bool CutQuietly(Stream stream)
     {
         try
         {
             stream.SetLength(0);
+            return true;
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or NotSupportedException)
         {
             // The delete that comes next can still remove the file.
+            return false;
         }
     }
 

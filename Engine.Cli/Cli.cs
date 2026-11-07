@@ -195,8 +195,19 @@ public static class Cli
 
     private static async Task<int> Export(string[] args, TextWriter stdout, TextWriter stderr, CancellationToken ct, BackendOptions backend)
     {
+        // Finding E171 of the codebase review of 2026-11-07 (TASK-0263): the store of the import of an STL file, after the
+        // three words, as "asset" has it. Until TASK-0263 the export read the default store only.
+        var folder = AssetStore.Default;
+        if (args is [_, _, _, "--folder", var named])
+        {
+            if (named.Length == 0)
+                return InvalidUsage(stderr, "--folder requires a path.");
+            folder = named;
+            args = args[..3];
+        }
+
         if (args is not [var format and ("stl" or "step"), var document, var file])
-            return InvalidUsage(stderr, "export requires 'stl <document.3de> <file.stl>' or 'step <document.3de> <file.step>'.");
+            return InvalidUsage(stderr, "export requires 'stl <document.3de> <file.stl>' or 'step <document.3de> <file.step>', and then '--folder <path>' or nothing.");
         var step = format == "step";
 
         if (string.IsNullOrWhiteSpace(document))
@@ -230,7 +241,7 @@ public static class Cli
             return ExportFailure(stdout, new ErrorDetail(DiagnosticCodes.ExportKindRefused,
                 $"The document file {document} is an {Document.Assembly}. An assembly holds references to parts and no body, and the engine does not resolve a reference yet (ADR-0071 item 7), so the {(step ? "STEP" : "STL")} export has nothing to write."));
 
-        var session = BuildSession(backend, stderr);
+        var session = BuildSession(backend, stderr, Document.Part, folder);
         if (session is null)
             return ExitBackendUnavailable;
 
@@ -309,9 +320,10 @@ public static class Cli
         var name = args[0];
         Dictionary<string, string> parameters;
         string kind;
+        string folder;
         try
         {
-            (kind, var rest) = Kind(args[1..]);
+            (kind, folder, var rest) = Options(args[1..]);
             parameters = ArgParser.ParseParams(rest);
         }
         catch (ArgParseException ex)
@@ -343,7 +355,7 @@ public static class Cli
         var command = handler.Create(
             new CommandInput(bound.Values!, Guid.NewGuid(), ExpectedDocumentVersion: null));
 
-        var session = BuildSession(backend, stderr, kind);
+        var session = BuildSession(backend, stderr, kind, folder);
         if (session is null)
             return ExitBackendUnavailable;
 
@@ -366,9 +378,10 @@ public static class Cli
         var name = args[0];
         Dictionary<string, string> parameters;
         string kind;
+        string folder;
         try
         {
-            (kind, var rest) = Kind(args[1..]);
+            (kind, folder, var rest) = Options(args[1..]);
             parameters = ArgParser.ParseParams(rest);
         }
         catch (ArgParseException ex)
@@ -399,7 +412,7 @@ public static class Cli
 
         var query = handler.Create(new QueryInput(bound.Values!, Guid.NewGuid()));
 
-        var session = BuildSession(backend, stderr, kind);
+        var session = BuildSession(backend, stderr, kind, folder);
         if (session is null)
             return ExitBackendUnavailable;
 
@@ -455,17 +468,39 @@ public static class Cli
     // The one-shot process reclaims the native backend on exit. This choice stays
     // here, because only a composition root may name Engine.Geometry.Manifold.
     // ADR-0071 item 4 (phase P8b1, TASK-0202): --kind assembly makes the one-shot Document of apply and query an assembly;
-    // with no --kind it is a part. The option comes before the first --param.
-    private static (string Kind, string[] Others) Kind(string[] args)
+    // with no --kind it is a part. Finding E171 (TASK-0263): --folder names the store of the assets, as "asset" has it.
+    // Each option comes one time, in any order, before the first --param.
+    private static (string Kind, string Folder, string[] Others) Options(string[] args)
     {
-        if (args is not ["--kind", .. var tail])
-            return (Document.Part, args);
-        if (tail is not [var kind and (Document.Part or Document.Assembly), .. var rest])
-            throw new ArgParseException($"'--kind' requires '{Document.Part}' or '{Document.Assembly}'.");
-        return (kind, rest);
+        string? kind = null;
+        string? folder = null;
+        var at = 0;
+        while (at < args.Length && args[at] is "--kind" or "--folder")
+        {
+            var option = args[at];
+            if ((option == "--kind" ? kind : folder) is not null)
+                throw new ArgParseException($"'{option}' comes one time only.");
+            if (at + 1 >= args.Length || args[at + 1].Length == 0)
+                throw new ArgParseException(option == "--kind" ? $"'--kind' requires '{Document.Part}' or '{Document.Assembly}'." : "--folder requires a path.");
+            var value = args[at + 1];
+            if (option == "--kind")
+            {
+                if (value is not (Document.Part or Document.Assembly))
+                    throw new ArgParseException($"'--kind' requires '{Document.Part}' or '{Document.Assembly}'.");
+                kind = value;
+            }
+            else
+            {
+                folder = value;
+            }
+
+            at += 2;
+        }
+
+        return (kind ?? Document.Part, folder ?? AssetStore.Default, args[at..]);
     }
 
-    private static DocumentSession? BuildSession(BackendOptions options, TextWriter stderr, string kind = Document.Part)
+    private static DocumentSession? BuildSession(BackendOptions options, TextWriter stderr, string kind, string folder)
     {
         IGeometryBackend backend;
         if (options.UseManagedBackend)
@@ -483,7 +518,7 @@ public static class Cli
         }
 
         // ADR-0083 item 2 (TASK-0258): the store of the account, which the import of an STL file reads.
-        return new DocumentSession(EngineHosting.CreateDefault(backend, kind: kind, assets: new Engine.Core.Assets.AssetStore(Engine.Core.Assets.AssetStore.Default)));
+        return new DocumentSession(EngineHosting.CreateDefault(backend, kind: kind, assets: new AssetStore(folder)));
     }
 
     // The CLI dispatches by name only. It has no argument for a schema
