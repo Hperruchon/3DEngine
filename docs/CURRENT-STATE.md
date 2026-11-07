@@ -8140,3 +8140,25 @@ no button until the person opens it.
 New tests: 2. The test list holds 2088 (1415 in `Engine.Tests`, 337 in `3DEngine.Tests`, 333 in `3DEngine.ImageTests`, 3
 in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
 entries: 15 of 15. New diagnostic codes: 0. Since the review of v0.263, 0 product milestones and 6 entries followed it.
+
+## v0.270 — The platform step builds its probe in the phone host, and the proposal gives the volume of the sphere (P0.119, TASK-0285)
+
+The reviews of Codex of v0.266 and v0.268 gave two leads, and the session confirmed both. K5c waits for the owner, so this
+task came now.
+
+**The change.**
+- `RunAnalyzersDuringBuild` false in `3DEngine.Android.csproj` stopped the analyzer CA1416 in the host, and the step and
+  the gate passed. The step now reads the switches of the analyzers of the host and builds the probe in it, with the paths
+  of the SDKs that the job of the APK gives. The gate refuses a switch with the value false in the files of the host.
+- ADR-0089, Q4: the volume of the sphere of its mesh is about 0.40 % less than the true volume, not 0.32 %.
+
+**Proof.** With the switch injected, the step gave two offences (the switch, and no error at the probe) and the gate one.
+On the clean tree the probe in the host gives the error CA1416. The ratio sin(π/32)/(π/32) × (1 + cos(π/32))/2 is 0.99599.
+Run 42394468160 passed.
+
+**A correction.** The scope of TASK-0281 named a probe build in the host, and TASK-0281 did not add it; this task adds it.
+The failed runs since the entry v0.269, from the API: none.
+
+New tests: 0. The test list holds 2088 (1415 in `Engine.Tests`, 337 in `3DEngine.Tests`, 333 in `3DEngine.ImageTests`, 3
+in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
+entries: 15 of 15. New diagnostic codes: 0. Since the review of v0.263, 0 product milestones and 7 entries followed it.
