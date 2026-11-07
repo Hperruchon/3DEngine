@@ -1,7 +1,7 @@
 ---
 id: 0259
 title: The desktop opens an STL file from its home screen
-status: Active
+status: Done
 phase: P9c
 opened: 2026-11-07
 depends-on: [0265]
@@ -62,15 +62,16 @@ and its size in "mm (assumed)", frames it again with "Frame", and a damaged file
 
 ## Acceptance criteria
 
-- [ ] The home screen gives "Open file", "New part" and a recent file; "Frame" and "Home" give their actions.
-- [ ] A damaged file gives E-STL-TRUNCATED and no new document; a good file gives a new part with a mesh body.
-- [ ] A clean build (`--no-incremental`) gives zero errors and zero warnings.
-- [ ] Continuous integration passes on the three runners, on the branch and on `main` after the merge.
-- [ ] The run of the owner on the desktop passes the criteria of the page of the demonstration.
+- [x] The home screen gives "Open file", "New part" and a recent file; "Frame" and "Home" give their actions.
+- [x] A damaged file gives E-STL-TRUNCATED and no new document; a good file gives a new part with a mesh body.
+- [x] A clean build (`--no-incremental`) gives zero errors and zero warnings.
+- [x] Continuous integration passes on the three runners, on the branch and on `main` after the merge.
+- [ ] The run of the owner on the desktop passes the criteria of the page of the demonstration. This box waits for the
+      owner: the row P9c of the roadmap stays open until it, as R14e does (`docs/demo-stl-test-sheet.md`).
 
 ## Outcome
 
-Status: Active
+Status: Done · commit (the merge of the branch p9c-desktop-open-b) · v0.247
 
 ## Method
 
@@ -80,7 +81,9 @@ Judgement:  the dialog of SDL for both devices; the client checks the file befor
             the authority at the import; "Frame" and "Home" on the row of the anchors, because the upper right covered
             the panel on a small display; the import and the home screen belong to the process, because each session
             makes its own DesktopDocument.
-Weakest:    to be written at the close.
+Weakest:    no person opened a file through the dialog of Windows yet; the tests reach the dialog only through
+            `TakeOpenedFile`, so the filter, the folder where the dialog opens and the time to the frame are not
+            measured. The run of the owner measures them.
 
 ## Progress
 
@@ -90,3 +93,4 @@ Weakest:    to be written at the close.
   beside the panel fail two tests.
 - 2026-11-07: on v0.246, after the corrections of the review of 2026-11-07 (E167, V124); a picture of the home screen on
   the GPU, kept for the owner.
+- 2026-11-07: run 42355699358 passed. Closed at v0.247; the row waits for the run of the owner.
