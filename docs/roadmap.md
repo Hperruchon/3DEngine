@@ -230,6 +230,8 @@ Therefore each approved objective must have a track here.
 - Review — The codebase review of 2026-11-07 (b). v0.253, TASK-0268.
 - P0.109 — The wait of the phone checks its turn, the STL reader keeps the results of v0.243, and the test sheet says what
   the phone keeps. v0.254, TASK-0269, ADR-0079, ADR-0083.
+- P0.110 — The import of a chosen STL reaches only its new part, and an open by name ends the home screen. v0.255,
+  TASK-0270, ADR-0083.
 
 ## Track 0 — Foundations
 

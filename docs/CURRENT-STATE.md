@@ -7679,3 +7679,35 @@ failed runs since the entry v0.253, from the API: none.
 New tests: 9. The test list holds 2051 (1411 in `Engine.Tests`, 337 in `3DEngine.Tests`, 300 in `3DEngine.ImageTests`, 3
 in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
 entries: 15 of 15. New diagnostic codes: 0. Since the review of v0.252, 0 product milestones and 2 entries followed it.
+
+## v0.255 — The import of a chosen STL and the home screen of the desktop (P0.110, TASK-0270)
+
+The codebase review of 2026-11-07 (b) found two high findings in the desktop: V125 and V126. A high finding comes before
+the next product phase.
+
+**The change.** ADR-0083 D1 and D6 have a history line.
+- V125: a request of a new part takes the place of an open, as an open of a file does (E149), and it marks the open
+  accepted. So an open of another file in the same session, by an agent or by the window, gets a refusal, and the surface
+  refuses each command after the request. The import of a chosen STL reaches only its new part. A new part that does not
+  start drops its import, so the previous file that the host starts again does not take it. A refused request shows its
+  message, and the home screen stays.
+- V126: an accepted open of a file ends the home screen, from a recent row, the panel or an agent. Until now the document
+  opened under the home screen again, and no control led to it.
+
+**Proof.** Four new tests through the sessions of the desktop: an open by an agent after a request, a request after an
+accepted open, a new part that does not start, and an open by name. They did not compile before the change. Injections:
+- no guard of the slot fails the test of the second order;
+- no guard and no accept fail both tests of the race;
+- no drop fails the test of a new part that does not start;
+- no end of the home screen fails its test.
+
+Run 42363880808 passed on the three runners and on the emulator.
+
+**What stays.** Whether a start with `--file` skips the home screen is a question for the owner; ADR-0083 item 7 does not
+say. The medium and low findings of the review come after the next product phase.
+
+**A correction.** None. The failed runs since the entry v0.254, from the API: none.
+
+New tests: 4. The test list holds 2055 (1411 in `Engine.Tests`, 337 in `3DEngine.Tests`, 304 in `3DEngine.ImageTests`, 3
+in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
+entries: 15 of 15. New diagnostic codes: 0. Since the review of v0.252, 0 product milestones and 3 entries followed it.
