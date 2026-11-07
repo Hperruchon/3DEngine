@@ -50,8 +50,13 @@ internal sealed unsafe partial class DesktopUi
 
     // ADR-0049 item 8: the pad of the distance of the selected extrude, which starts with the
     // distance in effect. A change of the selection closes it, as for Move.
+    // ADR-0082 item 4 (TASK-0254): the chip of the distance is pending while this pad is open, from the chip, the ring or
+    // the panel, because each of them changes the same value.
     public void OpenDistancePad(Guid body, double distance)
-        => OpenPad(new NumericPad(SetDistanceLabel, _unit, new PadField("distance", SketchText.Number(distance))), values => new SetDistanceAction(body, values[0]), scope: PadScope.Body);
+    {
+        OpenPad(new NumericPad(SetDistanceLabel, _unit, new PadField("distance", SketchText.Number(distance))), values => new SetDistanceAction(body, values[0]), scope: PadScope.Body);
+        _pendingValue = EdgeValues.DistanceKey(body);
+    }
 
     // ADR-0032 item 5: the window of the pad. A row selects its field; the line under the fields
     // gives the value of the active field, or its error, and the message of the last apply.

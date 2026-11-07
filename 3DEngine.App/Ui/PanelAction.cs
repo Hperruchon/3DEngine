@@ -44,6 +44,10 @@ internal sealed record CutBodyAction(Guid Body, Guid Tool) : PanelAction;
 // the distance in effect, and the new distance of an apply of that pad.
 internal sealed record EditDistanceAction(Guid Body) : PanelAction;
 
+// ADR-0082 item 3 (TASK-0254): the new value of a constraint of the sketch of the selected extrude, from the pad of its chip
+// on an edge, with no active sketch.
+internal sealed record SetBodyValueAction(Guid Sketch, Guid Constraint, double Value) : PanelAction;
+
 internal sealed record SetDistanceAction(Guid Body, double Distance) : PanelAction;
 
 // ADR-0034 item 6: a new sketch on a datum, the edit of a live sketch, and the end of the mode.
