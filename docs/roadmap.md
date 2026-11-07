@@ -215,6 +215,7 @@ Therefore each approved objective must have a track here.
 - P0.104 — A failure of the window of the phone and a new create of its activity name their cause. v0.239, TASK-0256.
 - P0.102 — The kept face, the panel, the title, the open list, the edge and the safe area hold their next forms. v0.240, TASK-0252.
 - R16c — A value that a command changes sits on the edge of the selected body that it measures. v0.241, TASK-0254, ADR-0082.
+- P9a — An STL file opens as a mesh body of a new part, through one import command (the record). v0.242, TASK-0257, ADR-0083.
 
 ## Track 0 — Foundations
 
@@ -342,6 +343,11 @@ This track removes each condition that blocks other work.
 | P8f | The document file in the desktop and for an agent. The desktop opens the file that its command line names, and an open in the window starts the program again (Q5). "Save" moves the file to the name typed in the panel. HTTP save and open on the loopback address, in one folder (Q6, ADR-0002). ADR-0030, TASK-0092. | 2–3 |
 | P8g | An STL export of the live bodies, from the surface, the command line and the desktop (ADR-0048). TASK-0157. | 1 |
 | P8h | The unit kind of each number parameter in the command schema: `Unit` and `UnitBy` on `FieldSchema`, a unit on each of the 25 number parameters, and a gate. From the module-declaration proposal of the desktop redesign; the owner chose `constraint-value`, `scale` and `pixel` on 2026-11-05. ADR-0060, TASK-0186. | 1–2 |
+| P9a | The demonstration "Open the same STL on desktop and Android" (the owner, 2026-11-07): ADR-0083 with the decisions D1 to D6, the mesh body, the command `ImportStl` and the capability `IMeshImportOps`. TASK-0257. | 1 |
+| P9b | The STL reader of the engine, binary and text, with no arithmetic on the floats at the read; the handler, the mesh body in both backends, the codes and the refused operations; the files `bracket.stl` and `bracket-damaged.stl`; a test that opens both on Windows, Linux, macOS and the emulator. | 3–5 |
+| P9c | The desktop: the home screen, the file dialog of Windows with a filter for `.stl`, the frame after an open, a control "Frame", and a message with "Choose another file". The row closes after the run of the owner. | 3–4 |
+| P9d | The phone: the document picker of Android with no permission of storage, the same home screen, and the part kept through the background. The row closes after the run of the owner on the S23. | 3–4 |
+| P9e | The test sheet of the demonstration, from its page. It closes with P9c and P9d after the run of the owner. | 1 |
 
 ## Track R — The renderer
 
@@ -349,7 +355,7 @@ The first objective. Each phase ends with something that a person can observe.
 
 | Phase | Content | Evenings |
 |---|---|---|
-| R1 | Upgrade the Vulkan binding. Move the Vulkan code into a first-party project. | 2–4 |
+| R1 | Upgrade the Vulkan binding. Move the Vulkan code into a first-party project. TASK-0027, shipped at v0.28 (ADR-0017). | 2–4 |
 | R2 | A tessellation capability. A mesh leaves the geometry backend. TASK-0028. | 4–6 |
 | R3 | A pipeline. A triangle, then an indexed mesh. TASK-0069. | 4–6 |
 | R4 | A camera with depth. An orbit camera, reversed depth, and a draw list over the scene graph (ADR-0023). TASK-0070. | 5–7 |

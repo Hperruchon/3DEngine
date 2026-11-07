@@ -1,13 +1,13 @@
 ---
 id: 0048
 title: The STL export of the live bodies
-status: Accepted
+status: Amended
 topic: Persistence, clients
 date: 2026-10-31
 supersedes: []
 superseded-by: []
 amends: []
-amended-by: []
+amended-by: ['0083']
 affects:
   - Engine.Core/Export/**
   - Engine.Api.Http/Endpoints/ExportEndpoint.cs
@@ -65,3 +65,4 @@ event, the Document or the log (`CLAUDE.md`, determinism rule 6). This record is
 - 2026-11-01 · TASK-0160 · Items 3 to 5, from findings E119, E121 and E122 of the codebase review of 2026-11-01:
   the codes of the range and of the size, the status 422, the read with no journal, and the warnings and the code of
   a write of the command line. Until TASK-0160 the verb opened the document file as an edit does.
+- 2026-11-07 · TASK-0257 · ADR-0083 amends the export: it holds the triangles of a mesh body as they are.

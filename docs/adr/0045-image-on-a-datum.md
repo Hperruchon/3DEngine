@@ -1,13 +1,13 @@
 ---
 id: 0045
 title: An image on a datum, and its calibration
-status: Accepted
+status: Amended
 topic: Contracts, vision
 date: 2026-10-31
 supersedes: []
 superseded-by: []
 amends: ['0012', '0031', '0033']
-amended-by: []
+amended-by: ['0083']
 affects:
   - Engine.Contracts/Document.cs
   - Engine.Contracts/Handlers/ICommandHandler.cs
@@ -95,3 +95,4 @@ the command records its width and its height). This record is Accepted.
 
 - 2026-10-31 · TASK-0152 · The record, with the standing answers Q1 A, Q2 A and Q3 A of the codebase review of
   2026-10-31 (c).
+- 2026-11-07 · TASK-0257 · ADR-0083 amends item 4 for the command `ImportStl` only: the replay of an import needs the bytes of its asset.
