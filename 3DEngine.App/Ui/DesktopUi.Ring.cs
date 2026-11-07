@@ -116,7 +116,12 @@ internal sealed unsafe partial class DesktopUi
         var span = (count * RingSegment) + ((count - 1) * RingGap);
         var inner = Math.Min(Math.Max(100f, sketch + 24f), Math.Max(100f, (display.Y / 2f) - 16f - RingBand));
         var reach = inner + RingBand + 16f;
-        var x = Math.Min(Math.Min(Math.Max(centre.X, panelRight + reach), windowLeft), display.X - 16f);
+        var x = Math.Min(Math.Max(centre.X, panelRight + reach), display.X - 16f);
+        // The review of Codex of v0.265 (TASK-0284): the centre moves left to the window of the sketch only when the band then
+        // stays to the right of the panel. Until TASK-0284 a window of the sketch moved to the left, or collapsed there, put
+        // each segment under the panel, and a collapsed window shows no button.
+        if (panelRight + reach <= windowLeft)
+            x = Math.Min(x, windowLeft);
         var y = Math.Clamp(centre.Y, reach, Math.Max(reach, display.Y - reach));
         return new RingLayout(new Vector2(x, y), inner, MathF.PI + (span / 2f), -1f);
     }
@@ -225,7 +230,9 @@ internal sealed unsafe partial class DesktopUi
             : Layout(displaySize, at, labels.Count, size, _inset, _fixed.Count > 0 ? _fixed.Min(anchor => anchor.Y) : float.MaxValue);
         _ring = ring;
         _ringLabels = labels;
-        var covers = _panels.Concat(_fixed).Concat(_sketchActive && _sketchWindow is { } window ? [window] : []).ToList();
+        // The review of Codex of v0.265 (TASK-0284): the windows of the last frame too, because the Images window and the
+        // message come after the ring in the frame; until TASK-0284 a segment under the Images window counted as reachable.
+        var covers = _panels.Concat(_lastPanels).Concat(_fixed).Concat(_sketchActive && _sketchWindow is { } window ? [window] : []).ToList();
         _ringReachable = ring.Segments(labels).Select(ring.Middle).All(middle =>
             middle.X >= 0f && middle.Y >= 0f && middle.X < displaySize.X && middle.Y < displaySize.Y
             && !covers.Any(cover => middle.X >= cover.X && middle.X < cover.Z && middle.Y >= cover.Y && middle.Y < cover.W));

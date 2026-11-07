@@ -164,6 +164,10 @@ internal sealed unsafe partial class DesktopUi : IDisposable
     private readonly UiInputRouter _router = new();
     private readonly List<Vector4> _panels = new();
 
+    // The review of Codex of v0.265 (TASK-0284): the windows of the last frame, so a check in this frame sees the windows that
+    // come after it in the frame, as the Images window and the message after the ring.
+    private readonly List<Vector4> _lastPanels = new();
+
     // ADR-0080 (TASK-0248): the rectangles of the fixed controls, which a tap does not pass either.
     private readonly List<Vector4> _fixed = new();
     private readonly Dictionary<string, Vector4> _items = new(StringComparer.Ordinal);
@@ -514,6 +518,8 @@ internal sealed unsafe partial class DesktopUi : IDisposable
         io.DisplayFramebufferScale = framebufferScale;
         io.DeltaTime = deltaSeconds > 0 ? deltaSeconds : 1f / 60f;
 
+        _lastPanels.Clear();
+        _lastPanels.AddRange(_panels);
         _panels.Clear();
         _fixed.Clear();
         _cutList = null;

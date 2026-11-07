@@ -286,7 +286,11 @@ public sealed class ToolRingTests
         foreach (var (centre, sketch) in new[] { (new Vector2(1000, 360), 60f), (new Vector2(700, 360), 380f), (new Vector2(700, 360), 450f) })
         {
             var layout = DesktopUi.SketchLayout(Display, centre, labels.Length, sketch, 476f, 784f);
-            Assert.True(layout.Centre.X <= 784f, $"The centre {layout.Centre} is under the window of the sketch.");
+            // The review of Codex of v0.265 (TASK-0284): only when the band then stays to the right of the panel.
+            if (476f + layout.Outer + 16f <= 784f)
+                Assert.True(layout.Centre.X <= 784f, $"The centre {layout.Centre} is under the window of the sketch.");
+            else
+                Assert.True(layout.Centre.X - layout.Outer >= 476f + 16f - 0.01f, $"The band of {layout.Centre} covers the panel.");
             Assert.True(layout.Centre.Y - layout.Outer >= 0f && layout.Centre.Y + layout.Outer <= Display.Y, $"The band of {layout.Centre}, {layout.Outer} is outside the display.");
         }
     }
@@ -545,5 +549,53 @@ public sealed class ToolRingTests
         Assert.Null(ui.ItemRectangle(DesktopUi.RingItem("Horizontal")));
         Assert.NotNull(ui.ItemRectangle(DesktopUi.RingItem(DesktopUi.LineToolLabel)));
         Assert.NotNull(ui.ItemRectangle(DesktopUi.RingItem(DesktopUi.ConstrainLabel)));
+    }
+
+    // The review of Codex of v0.265 (TASK-0284): a window of the sketch that the person moved to the left, or collapsed there,
+    // does not pull the band under the panel. Until TASK-0284 a window at x 500 put each segment under the panel.
+    [Fact]
+    public void A_Window_Of_The_Sketch_At_The_Left_Does_Not_Pull_The_Ring_Under_The_Panel()
+    {
+        string[] labels = [.. DesktopUi.SketchRingTools.Select(tool => tool.Label)];
+        var layout = DesktopUi.SketchLayout(Display, new Vector2(700, 360), labels.Length, 60f, 476f, 500f);
+        Assert.True(layout.Centre.X - layout.Outer >= 476f + 16f - 0.01f, $"The band of {layout.Centre}, {layout.Outer} covers the panel.");
+    }
+
+    // The review of Codex of v0.265 (TASK-0284): the Images window comes after the ring in the frame. While it is open over a
+    // segment, the window of the sketch keeps the button of that segment. Until TASK-0284 the check did not see the Images
+    // window, and Line had no place for a tap.
+    [Fact]
+    public void A_Segment_Under_The_Images_Window_Keeps_Its_Button_In_The_Window_Of_The_Sketch()
+    {
+        using var ui = new DesktopUi("http://127.0.0.1:5180", Engine.Contracts.Document.Millimetre);
+        var (start, end, line) = (Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid());
+        var sketch = new Engine.Core.Queries.SketchInfo(Guid.NewGuid(), Engine.Contracts.Sketch.Datums.XY.Id, "Plate",
+            [new(start, 0, 0), new(end, 40, 10)], [new(line, start, end)], [], [], [], true, 4);
+        var panel = new SketchPanel([sketch], sketch, ThreeDEngine.Core.Sketching.SketchToolKind.Select, false, [], null);
+        var images = new ImagePanel([], null, 0, null);
+        void Frame(params InputSample[] samples)
+        {
+            ui.Route(samples);
+            ui.Frame(1f / 60f, Display, Vector2.One, [], null, null, sketchPanel: panel, imagePanel: images, ringCentre: new Vector2(700, 360), ringBody: 60f);
+        }
+
+        for (var frame = 0; frame < 3; frame++)
+            Frame();
+
+        // The Images window starts folded at (492, 16); a tap on the arrow of its title bar opens it.
+        var folded = ui.PanelRectangles.Single(window => Math.Abs(window.X - 492f) < 1f);
+        var arrow = new Vector2(folded.X + 24f, (folded.Y + folded.W) / 2f);
+        Frame(new PointerSample(DeviceKind.Mouse, 1, 0, arrow.X, arrow.Y, 1, PointerButtons.Left, KeyModifiers.None, PointerPhase.Down, 0));
+        Frame(new PointerSample(DeviceKind.Mouse, 1, 0, arrow.X, arrow.Y, 1, PointerButtons.Left, KeyModifiers.None, PointerPhase.Up, 0));
+        Frame(new PointerSample(DeviceKind.Mouse, 1, 0, 1200, 700, 1, PointerButtons.None, KeyModifiers.None, PointerPhase.Move, 0));
+        Frame();
+        Frame();
+
+        var open = ui.PanelRectangles.Single(window => Math.Abs(window.X - 492f) < 1f);
+        Assert.True(open.W - open.Y > 100f, $"The Images window at {open} did not open.");
+        var segment = ui.ItemRectangle(DesktopUi.RingItem(DesktopUi.LineToolLabel)) ?? throw new InvalidOperationException("No segment Line.");
+        var middle = new Vector2((segment.X + segment.Z) / 2, (segment.Y + segment.W) / 2);
+        Assert.True(middle.X >= open.X && middle.X < open.Z && middle.Y >= open.Y && middle.Y < open.W, $"Line at {middle} is not under the Images window at {open}.");
+        Assert.NotNull(ui.ItemRectangle(DesktopUi.SketchItem(DesktopUi.LineToolLabel)));
     }
 }
