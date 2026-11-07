@@ -182,3 +182,6 @@ desktop row P9c, the phone row P9d, and the test sheet P9e.
   the same session gets a refusal, and the import reaches only its new part; a new part that does not start drops its
   import; an accepted open of a file ends the home screen (findings V125 and V126 of the codebase review of 2026-11-07
   (b)).
+- 2026-11-07 · TASK-0274 · Item 3: the name of the solid ends at the start of a whole facet ("facet normal", three
+  numbers and "outer"), so a name that the reader of v0.250 read gives its result again (the review of Codex of v0.254).
+  A whole facet on the line of "solid" had two earlier results; the reader gives the result of v0.243.

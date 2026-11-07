@@ -217,6 +217,8 @@ Therefore each approved objective must have a track here.
 - R16c — A value that a command changes sits on the edge of the selected body that it measures. v0.241, TASK-0254, ADR-0082.
 - R16d — The data of the selected body is in rows with no panel at the upper right. v0.252, TASK-0267, ADR-0084.
 - R16e — The active sketch of a live extrude moves out of its body, and the camera stays. v0.256, TASK-0273, ADR-0085.
+- P0.113 — The name of the solid keeps the results of v0.250, and the test sheet says how the size comes back. v0.257,
+  TASK-0274, ADR-0083.
 - P9a — An STL file opens as a mesh body of a new part, through one import command (the record). v0.242, TASK-0257, ADR-0083.
 - P9b — The engine reads an STL file into a mesh body. v0.243, TASK-0258, ADR-0083.
 - P9c — The desktop opens an STL file from its home screen, and the row waits for the owner. v0.247, TASK-0259, ADR-0083.
@@ -350,6 +352,7 @@ This track removes each condition that blocks other work.
 | P0.110 | The import of a chosen STL reaches only its new part, and an open by name ends the home screen (V125 and V126 of the codebase review of 2026-11-07 (b), high; after P0.109, before the next product phase). TASK-0270. | 1–2 |
 | P0.111 | The home screen, the rows, the chips, the dialog and three comments hold their next forms (V127 to V133 of the codebase review of 2026-11-07 (b); after the next product phase). TASK-0271. | 1–2 |
 | P0.112 | The phone, the reader, the APK check, the gates and the roadmap hold their next forms (E175 to E179, T168 to T173 of the codebase review of 2026-11-07 (b); after P0.111). TASK-0272. | 2 |
+| P0.113 | The name of the solid keeps the results of v0.250, and the test sheet says how the size comes back (the review of Codex of v0.254, high; after R16e, before the next product phase). TASK-0274. | 1 |
 | P0.102 | The cache of a face, the fixed controls, the list New, the edges and the safe area hold their next forms (V113 to V118 of the codebase review of 2026-11-06 (e); after P0.101). TASK-0252. | 1–2 |
 | P0.86 | The window keeps no input between sessions, the hook has the cases of one axis, and the next forms of four gates fail (V88 to V90, T141 to T144 of the codebase review of 2026-11-06; after the next product phase). TASK-0198. | 1–2 |
 
