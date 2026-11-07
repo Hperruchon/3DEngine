@@ -93,6 +93,30 @@ public sealed class StlImportTests
         Assert.Equal(DiagnosticCodes.StlSyntax, Code([.. "solid "u8, 0xFF, 0xFE]));
     }
 
+    // Finding E170 of the codebase review of 2026-11-07 (TASK-0263): three forms of a file gave a code that item 3 does not
+    // give. A cut binary file whose header starts with "solid" gave E-STL-SYNTAX; a name of the solid with the word
+    // "endsolid" or "facet" gave E-STL-EMPTY or E-STL-SYNTAX; a text file with a byte order mark gave E-STL-TRUNCATED.
+    [Fact]
+    public void A_Cut_Binary_File_With_Solid_A_Name_With_A_Keyword_And_A_Byte_Order_Mark_Have_The_Codes_Of_Item_3()
+    {
+        var cut = Binary([.. Triangle, .. Triangle, .. Triangle, .. Triangle]);
+        new byte[80].CopyTo(cut, 0);
+        Encoding.ASCII.GetBytes("solid exported by a program").CopyTo(cut, 0);
+        string? Code(byte[] bytes) => StlReader.Read(bytes).Error?.Code;
+
+        Assert.Equal(DiagnosticCodes.StlTruncated, Code(cut[..150]));
+        foreach (var name in new[] { "old endsolid copy", "facet", "facet normal" })
+        {
+            var (named, error) = StlReader.Read(Encoding.ASCII.GetBytes($"solid {name}\n{Facet}endsolid {name}\n"));
+            Assert.True(error is null, $"{name}: {error?.Code} {error?.Message}");
+            Assert.Equal(Triangle, named);
+        }
+
+        var (marked, markError) = StlReader.Read([0xEF, 0xBB, 0xBF, .. Encoding.ASCII.GetBytes(Text(Facet))]);
+        Assert.Null(markError);
+        Assert.Equal(Triangle, marked);
+    }
+
     private static (DocumentSession Session, AssetBytes Assets) Session(IGeometryBackend backend)
     {
         var assets = new AssetBytes();

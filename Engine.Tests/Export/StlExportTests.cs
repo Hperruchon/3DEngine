@@ -120,6 +120,47 @@ public sealed class StlExportTests : IDisposable
         Assert.Equal(DiagnosticCodes.GeomCapMissing, JsonDocument.Parse(await refused.Content.ReadAsStringAsync()).RootElement.GetProperty("error").GetProperty("code").GetString());
     }
 
+    // Finding E171 of the codebase review of 2026-11-07 (TASK-0263): apply, query and export read the asset of an import
+    // from the default store only, so a document whose asset is in the folder of "asset put --folder" did not export. Now
+    // each takes --folder. The triangle has a new coordinate at each run, so the default store does not hold its asset.
+    [NativeManifoldFact]
+    public async Task The_Command_Line_Reads_The_Asset_Of_An_Import_From_The_Folder_That_It_Names()
+    {
+        var store = Path.Combine(_folder, "store");
+        var source = Path.Combine(_folder, "unique.stl");
+        var stl = new byte[84 + 50];
+        BinaryPrimitives.WriteUInt32LittleEndian(stl.AsSpan(80), 1);
+        float[] triangle = [Random.Shared.Next(1, 1_000_000), 0, 0, 0, 10, 0, 0, 0, 10];
+        for (var i = 0; i < 9; i++)
+            BinaryPrimitives.WriteSingleLittleEndian(stl.AsSpan(84 + 12 + (i * 4)), triangle[i]);
+        File.WriteAllBytes(source, stl);
+
+        var (putExit, putOutput) = Run("asset", "put", source, "--folder", store);
+        var asset = JsonDocument.Parse(putOutput).RootElement.GetProperty("asset").GetString()!;
+        var (applyExit, _) = Run("apply", "ImportStl", "--folder", store, "--param", $"asset={asset}");
+        var (defaultExit, defaultOutput) = Run("apply", "ImportStl", "--param", $"asset={asset}");
+        var (queryExit, _) = Run("query", "GetBodyInfo", "--kind", "part", "--folder", store, "--param", $"bodyId={Guid.NewGuid()}");
+        var document = Path.Combine(_folder, "imported" + DocumentFile.Extension);
+        using (var backend = new ManifoldGeometryBackend())
+        {
+            var session = new DocumentSession(EngineHosting.CreateDefault(backend, assets: new Engine.Core.Assets.AssetStore(store)));
+            DocumentFile.Create(session, document);
+            Assert.Equal(CommandStatus.Applied, (await session.Apply(new ImportStlCommand { Asset = asset })).Status);
+            session.Close();
+        }
+
+        var (exportExit, exportOutput) = Run("export", "stl", document, Path.Combine(_folder, "out.stl"), "--folder", store);
+
+        Assert.Equal(0, putExit);
+        Assert.Equal(0, applyExit);
+        Assert.Equal(1, defaultExit);
+        Assert.Contains(DiagnosticCodes.StlAsset, defaultOutput, StringComparison.Ordinal);
+        // A body that does not exist: the query reads the options and refuses the body (1), not the usage (2).
+        Assert.Equal(1, queryExit);
+        Assert.True(exportExit == 0, exportOutput);
+        Assert.Equal(1, JsonDocument.Parse(exportOutput).RootElement.GetProperty("triangles").GetInt32());
+    }
+
     // ADR-0048 item 5: the command line opens a document file and writes its bodies; a file that does not open
     // gives its code and the exit code 1, and a wrong form gives the exit code 2.
     [NativeManifoldFact]

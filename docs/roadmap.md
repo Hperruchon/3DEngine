@@ -223,6 +223,8 @@ Therefore each approved objective must have a track here.
 - Review — The codebase review of 2026-11-07. v0.244, TASK-0261.
 - P0.105 — The check of an open reads the store of the assets. v0.245, TASK-0262.
 - P0.108 — A lost surface of a destroyed activity ends the session quietly. v0.246, TASK-0265, ADR-0079.
+- P0.106 — A failed copy, a test of the faces, the STL reader, the command line, two gates and the affects fields hold
+  their next forms. v0.250, TASK-0263.
 
 ## Track 0 — Foundations
 
