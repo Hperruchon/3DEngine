@@ -416,6 +416,10 @@ internal sealed unsafe partial class DesktopUi : IDisposable
 
         // ADR-0032 item 6: while the pad is open, it takes each key and each text of the frame.
         var (panel, intents) = _router.Route(samples, OverPanel, _textActive || _pad is not null);
+        // Finding V130 of the codebase review of 2026-11-07 (b) (TASK-0271): the home screen takes the place of the document,
+        // so no sample of the frame reaches the scene or the keys of the document behind it.
+        if (_home is not null)
+            intents = [];
         var io = ImGui.GetIO();
 
         foreach (var sample in panel)
@@ -550,7 +554,9 @@ internal sealed unsafe partial class DesktopUi : IDisposable
             Values(displaySize, selection is null ? null : values);
             // ADR-0084 (TASK-0267): the rows of the selected body, with no panel, over the chips.
             Rows(selectedBody);
-            if (sketchPanel is { } shown && (shown.Active is not null || shown.Live.Count > 0))
+            // The review of Codex of v0.252 (TASK-0271): the window of the live sketches is at the upper right too, so while
+            // the rows show, they take its place (ADR-0084 item 6); the window of an active sketch shows as before.
+            if (sketchPanel is { } shown && (shown.Active is not null || (shown.Live.Count > 0 && _rowsArea is null)))
                 SketchWindow(shown, displaySize);
             if (imagePanel is not null)
                 ImageWindow(imagePanel, displaySize);

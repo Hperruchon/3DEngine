@@ -6,7 +6,7 @@ topic: Clients, rendering
 date: 2026-11-07
 supersedes: []
 superseded-by: []
-amends: ['0081', '0082']
+amends: ['0034', '0081', '0082']
 amended-by: []
 affects:
   - 3DEngine.App/Ui/DesktopUi.Rows.cs
@@ -74,16 +74,21 @@ The standing order of 2026-11-05 gives A for each question.
    sketch is active, the rows are a column 360 pixels wide at the upper right, 16 pixels inside the safe area. A portrait
    display shows no rows.
 2. **The rows (Q3 A).** Each row is 44 pixels high (ADR-0027 item 6), with no ground and no border, and a line under it.
-   The first row gives the name of the body at the left, and its kind and its state at the right: "correct", or "failed"
-   and the code of its fault in red, and "hidden" for a hidden body. A long name ends with "...". Then one row for each
-   value that `EdgeValues.Of` gives, in its order: its label ("Distance", "Length" or "Radius") at the left, and the
-   value with the unit at the right, as its chip gives it.
+   The first row gives the name of the body on its first line, and its kind and its state on its second line:
+   "correct", or "failed" and the code of its fault, and "hidden" for a hidden body; only "failed" and the code are red.
+   Each line fits the column: a long name ends with "...", and a state that is too wide loses the kind, then "hidden",
+   so that "failed" and the code stay whole. Then one row for each value that `EdgeValues.Of` gives, in its order: its
+   label ("Distance", "Length" or "Radius") at the left, and the value with the unit at the right, as its chip gives it.
+   The rows end 16 pixels above the anchors; a value with no room keeps its chip only.
 3. **The tap.** A press and a release on one value row, with no window of the panels under the pointer and no pad open,
    open the pad of its value, as its chip does (ADR-0082 item 3); while that pad is open, the row and the chip are
    pending (ADR-0082 item 4). The rows are a part of the panels for a tap. The rows are drawn over the ring and the
    chips, so a release on a row gives the row only (this amends ADR-0081 item 2 and ADR-0082 item 3).
 4. **The chips.** A chip that the placement of ADR-0082 item 2 puts on the rows goes under them, at the same x (this
-   amends ADR-0082 item 2).
+   amends ADR-0082 item 2), and a chip that then covers an earlier chip goes 4 pixels under it.
+6. **The window of the live sketches.** While the rows show, they take the place of the window that lists the live
+   sketches with "Edit", which is at the upper right too (this amends ADR-0034 item 8). With no selected body, or on a
+   portrait display, the window shows as before; the window of an active sketch shows as before.
 5. **No contract change.** The rows are presentation (ADR-0007): they read the live bodies and the values of ADR-0082,
    and each apply is a command that exists.
 
@@ -102,3 +107,7 @@ ADR-0027 item 6 is wide, so a name of more than about nine letters ends with "..
 
 - 2026-11-07 · TASK-0267 · The record, Accepted under the standing order.
 - 2026-11-07 · TASK-0267 · Shipped at v0.252.
+- 2026-11-07 · TASK-0271 · Items 2, 4 and 6: the state on a second line, with only "failed" and the code in red (finding
+  V129 of the codebase review of 2026-11-07 (b)); the rows end above the anchors, and two chips under the rows stay apart
+  (V128 and the review of Codex of v0.252); the rows take the place of the window of the live sketches, which covered
+  them (the review of Codex of v0.252).

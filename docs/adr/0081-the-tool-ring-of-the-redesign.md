@@ -82,3 +82,6 @@ are not on the ring yet.
   a chip of ADR-0082 that lies on a segment gives the chip only (finding V120).
 - 2026-11-07 · TASK-0267 · ADR-0084 amends item 2: a release on a row of the selected body gives the row only, because the rows are drawn
   over the ring.
+- 2026-11-07 · TASK-0271 · Item 3: a mesh body has no Move on its ring, because no move takes it (ADR-0083 item 4,
+  finding V130 of the codebase review of 2026-11-07 (b)). Item 2: a label stays 4 pixels inside the safe area (the review
+  of Codex of v0.251).

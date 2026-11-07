@@ -25,7 +25,7 @@ public class HomeImageTests
         var scene = SessionScene.Create();
         var camera = scene.Cameras[0];
         byte[] pixels;
-        Vector4 open;
+        Vector4 open, newPart, recent;
 
         using (var device = new GraphicsDevice("3DEngine.ImageTests", enableValidation: true, window: null, synchronizationValidation: true))
         {
@@ -40,6 +40,8 @@ public class HomeImageTests
             for (var frame = 0; frame < 3; frame++)
                 data = ui.Frame(1f / 60f, new Vector2(Width, Height), Vector2.One, renderer.LiveBodies);
             open = ui.ItemRectangle(DesktopUi.OpenFileLabel) ?? throw new InvalidOperationException("No Open file.");
+            newPart = ui.ItemRectangle(DesktopUi.NewPartLabel) ?? throw new InvalidOperationException("No New part.");
+            recent = ui.ItemRectangle(DesktopUi.RecentItem("bracket")) ?? throw new InvalidOperationException("No recent row.");
 
             pixels = target.Render((commandBuffer, framebuffer, frameExtent) =>
                 renderer.Record(commandBuffer, framebuffer, frameExtent, scene, camera,
@@ -50,13 +52,24 @@ public class HomeImageTests
         Assert.True(GraphicsDevice.ValidationMessageCount == messagesBefore,
             $"The validation layer gave {GraphicsDevice.ValidationMessageCount - messagesBefore} messages.");
 
-        // A point inside "Open file", near its left side, is not the clear: the button is drawn there.
-        var (column, row) = ((int)open.X + 4, (int)((open.Y + open.W) / 2));
-        var index = ((row * (int)Width) + column) * 4;
+        // Finding V132 of the codebase review of 2026-11-07 (b) (TASK-0271): each control that the name of the test names is
+        // drawn: its rectangle holds pixels of a colour that is not the clear. Until TASK-0271 the test read "Open file" only.
         var clear = Theme.Clear;
-        var (r, g, b) = (pixels[index], pixels[index + 1], pixels[index + 2]);
-        Assert.False(Math.Abs(r - clear.R) <= 2 && Math.Abs(g - clear.G) <= 2 && Math.Abs(b - clear.B) <= 2,
-            $"The picture {picture}: \"Open file\" at {open} has the colour of the clear.");
+        foreach (var (name, rectangle) in new[] { ("Open file", open), ("New part", newPart), ("the recent file bracket", recent) })
+        {
+            var drawn = 0;
+            for (var y = (int)rectangle.Y; y < (int)rectangle.W; y++)
+            {
+                for (var x = (int)rectangle.X; x < (int)rectangle.Z; x++)
+                {
+                    var index = ((y * (int)Width) + x) * 4;
+                    if (Math.Abs(pixels[index] - clear.R) > 2 || Math.Abs(pixels[index + 1] - clear.G) > 2 || Math.Abs(pixels[index + 2] - clear.B) > 2)
+                        drawn++;
+                }
+            }
+
+            Assert.True(drawn > 20, $"The picture {picture}: {name} at {rectangle} has {drawn} pixels that are not the clear.");
+        }
     }
 
     private static string SavePicture(byte[] pixels)

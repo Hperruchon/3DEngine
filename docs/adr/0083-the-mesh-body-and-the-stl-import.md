@@ -50,6 +50,7 @@ affects:
   - Engine.Core/Persistence/DocumentFile.cs
   - Engine.Core/Queries/GetFaceAtQueryHandler.cs
   - Engine.Core/Queries/GetFacesQueryHandler.cs
+  - 3DEngine.App/Ui/DesktopUi.Ring.cs
 enforced-by: Engine.Tests/Import/StlImportTests.cs (TASK-0258 creates it)
 ---
 
@@ -185,3 +186,7 @@ desktop row P9c, the phone row P9d, and the test sheet P9e.
 - 2026-11-07 · TASK-0274 · Item 3: the name of the solid ends at the start of a whole facet ("facet normal", three
   numbers and "outer"), so a name that the reader of v0.250 read gives its result again (the review of Codex of v0.254).
   A whole facet on the line of "solid" had two earlier results; the reader gives the result of v0.243.
+- 2026-11-07 · TASK-0271 · D6: the home screen gives the scene no sample and no key, and no gizmo shows behind it; a
+  refusal of an open from a recent row and a dialog that fails give a message there (findings V127, V130 and V131 of the
+  codebase review of 2026-11-07 (b)). Item 4: a mesh body shows no gizmo and no Move on its ring; the affects field names
+  3DEngine.App/Ui/DesktopUi.Ring.cs.

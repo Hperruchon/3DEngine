@@ -188,4 +188,40 @@ public sealed class ToolRingTests
         Assert.DoesNotContain(ui.TakeActions(), action => action is SetVisibleAction);
         Assert.Equal(DesktopUi.EdgeValueLabel, ui.Pad?.Title);
     }
+
+    // Finding V130 of the codebase review of 2026-11-07 (b) (TASK-0271): a mesh body takes no move (ADR-0083 item 4), so its
+    // ring has no Move; until TASK-0271 Move gave a refusal only.
+    [Fact]
+    public void The_Ring_Of_A_Mesh_Body_Has_No_Move()
+    {
+        using var ui = new DesktopUi("http://127.0.0.1:5180", Engine.Contracts.Document.Millimetre);
+        var mesh = new LiveBody(Plate, Engine.Core.Commands.ImportStlCommandHandler.MeshKind, "bracket.stl", true);
+        var centre = new Vector2(800, 360);
+        Step(ui, mesh, Display, centre);
+        Step(ui, mesh, Display, centre);
+
+        Assert.Null(ui.ItemRectangle(DesktopUi.RingItem(DesktopUi.MoveLabel)));
+        Assert.NotNull(ui.ItemRectangle(DesktopUi.RingItem(DesktopUi.HideLabel)));
+    }
+
+    // The review of Codex of v0.251 (TASK-0271): on a portrait display of 390 by 844 the label of each of four segments is
+    // inside the display; until TASK-0271 "Sketch on face" went past the right edge.
+    [Fact]
+    public void Each_Label_Of_A_Portrait_Ring_Is_Inside_The_Display()
+    {
+        using var ui = new DesktopUi("http://127.0.0.1:5180", Engine.Contracts.Document.Millimetre);
+        var portrait = new Vector2(390, 844);
+        var face = new FaceLine("Face +z: 1 square mm", true, []);
+        for (var frame = 0; frame < 2; frame++)
+        {
+            ui.Route([]);
+            ui.Frame(1f / 60f, portrait, Vector2.One, [Extrude], Extrude.Id, null, face: face, ringCentre: new Vector2(195, 300));
+        }
+
+        foreach (var label in new[] { DesktopUi.MoveLabel, DesktopUi.SetDistanceLabel, DesktopUi.HideLabel, DesktopUi.SketchOnFaceButtonLabel })
+        {
+            var text = ui.ItemRectangle(DesktopUi.RingTextItem(label)) ?? throw new InvalidOperationException($"No label {label}.");
+            Assert.True(text.X >= 0 && text.Z <= portrait.X, $"The label {label} at {text} is outside the display.");
+        }
+    }
 }
