@@ -22,10 +22,12 @@ internal sealed class PhoneFiles : IDocumentFiles
 
     public IReadOnlyList<string> Recent(int count) => [];
 
-    public void RequestNew(StlImport? import)
+    // The phone opens no document file, so no open competes with a request.
+    public ErrorDetail? RequestNew(StlImport? import)
     {
         Volatile.Write(ref _import, import);
         Volatile.Write(ref _requested, true);
+        return null;
     }
 
     // True one time after a request of a new part; the loop of the phone then makes a new session.

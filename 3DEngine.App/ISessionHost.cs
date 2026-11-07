@@ -34,8 +34,9 @@ internal interface IDocumentFiles
     // ADR-0083 D6 (TASK-0259): the names of the newest documents of the folder, newest first, for the home screen.
     IReadOnlyList<string> Recent(int count);
 
-    // ADR-0083 D1: a new part document for the next session, with the import of an STL file of the store, or none.
-    void RequestNew(StlImport? import);
+    // ADR-0083 D1: a new part document for the next session, with the import of an STL file of the store, or none. Null when
+    // the request is accepted; a refusal when an open of another file is in progress or accepted (finding V125, TASK-0270).
+    Engine.Contracts.ErrorDetail? RequestNew(StlImport? import);
 
     // The import that the next session applies first, taken one time.
     StlImport? TakeImport();

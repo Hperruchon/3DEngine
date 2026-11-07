@@ -172,9 +172,15 @@ public sealed class NativeThreeDEngine : IThreeDEngine, IDisposable
             return;
         }
 
+        // V125 (TASK-0270): a request that an open of another file refuses gives its message, and the home screen stays.
+        if (_document.RequestNew(import) is { } refused)
+        {
+            _ui.ShowMessage((refused.Code, $"{name}: {refused.Message}"));
+            return;
+        }
+
         _ui.ShowMessage(null);
         _document.Home = false;
-        _document.RequestNew(import);
     }
 
     // The frame of the camera on the live bodies, as the first body gives it (ADR-0029 item 8).
@@ -379,8 +385,10 @@ public sealed class NativeThreeDEngine : IThreeDEngine, IDisposable
                         _documentMessage = "A file dialog is open already.";
                     break;
                 case NewPartAction when _document is not null:
-                    _document.Home = false;
-                    _document.RequestNew(null);
+                    if (_document.RequestNew(null) is { } refused)
+                        _ui.ShowMessage((refused.Code, refused.Message));
+                    else
+                        _document.Home = false;
                     break;
                 case HomeAction when _document is not null:
                     _document.Home = true;

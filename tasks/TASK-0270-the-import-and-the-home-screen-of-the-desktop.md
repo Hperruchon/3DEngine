@@ -1,7 +1,7 @@
 ---
 id: 0270
 title: The import of a chosen STL reaches only its new part, and an open by name ends the home screen
-status: Ready
+status: Done
 phase: P0.110
 opened: 2026-11-07
 depends-on: [0269]
@@ -14,6 +14,7 @@ writes:
     - 3DEngine/DesktopEngineHost.cs
     - 3DEngine.App/NativeThreeDEngine.cs
     - 3DEngine.App/ISessionHost.cs
+    - 3DEngine.App/PhoneFiles.cs
     - Engine.Api.Http/DocumentFolder.cs
     - 3DEngine.ImageTests/StlOpenTests.cs
     - 3DEngine.ImageTests/DesktopDocumentTests.cs
@@ -52,20 +53,29 @@ screen.
 
 ## Acceptance criteria
 
-- [ ] Each finding has a test or an injection that fails before the change and passes after it.
-- [ ] A clean build (`--no-incremental`) gives zero errors and zero warnings.
-- [ ] Continuous integration passes on the three runners, on the branch and on `main` after the merge.
+- [x] Each finding has a test or an injection that fails before the change and passes after it.
+- [x] A clean build (`--no-incremental`) gives zero errors and zero warnings.
+- [x] Continuous integration passes on the three runners, on the branch and on `main` after the merge.
 
 ## Outcome
 
-Status: Ready
+Status: Done · commit (the merge of the branch p0110-import-home-b) · v0.255
 
 ## Method
 
 Mechanical: a test or an injection for each finding, before the change.
-Judgement:  to be written in the task.
-Weakest:    to be written at the close.
+Judgement:  V125: the request takes the slot of an open (E149), and it also sets OpenAccepted, so the surface refuses
+            an open and a command after it; two layers, each proved by an injection. The host drops the import when
+            its new part does not start. V126: the home screen ends in Reopen, at each accepted open, so an open by an
+            agent ends it too. Whether a start with --file skips the home screen stays a question for the owner.
+Weakest:    the tests drive the sessions through RunSessions with no window; the frame of the window that takes the
+            chosen file and the HTTP open at the same moment ran in no test with a real window.
 
 ## Progress
 
 - 2026-11-07: opened by the codebase review of 2026-11-07 (b).
+- 2026-11-07: V125 and V126, with four tests through the sessions of the desktop; they did not compile before the change,
+  because RequestNew gave no refusal. Injections: no guard of the slot fails the test of the other order; no guard and no
+  accept fail both tests of the race; no drop fails the test of a new part that does not start; no end of the home screen
+  fails its test.
+- 2026-11-07: rebased on the close of P0.109; run 42363880808 passed. Closed at v0.255.
