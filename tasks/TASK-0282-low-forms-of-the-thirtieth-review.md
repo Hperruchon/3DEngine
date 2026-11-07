@@ -1,7 +1,7 @@
 ---
 id: 0282
 title: The asset verb, the second ring, three comments and the dialog filter hold their next forms
-status: Ready
+status: Active
 phase: P0.117
 opened: 2026-11-07
 depends-on: [0281]
@@ -9,9 +9,10 @@ governed-by: [0002, 0007, 0016, 0017, 0018, 0019, 0023, 0025, 0027, 0029, 0030, 
 writes:
   create:
     - tasks/TASK-0282-low-forms-of-the-thirtieth-review.md
+    - 3DEngine.ImageTests/FileDialogStateTests.cs
   modify:
     - Engine.Cli/Cli.cs
-    - Engine.Tests/Assets/AssetStoreTests.cs
+    - Engine.Tests/Export/StlExportTests.cs
     - 3DEngine.App/Ui/DesktopUi.Ring.cs
     - 3DEngine.App/Ui/DesktopUi.Sketch.cs
     - 3DEngine.ImageTests/ToolRingTests.cs
@@ -54,12 +55,16 @@ E185, V137, V138 and V139 are fixed, each with a test, an injection or a reading
 
 ## Outcome
 
-Status: Ready
+Status: Active
 
 ## Method
 
-Mechanical: to be written.
-Judgement:  to be written.
+Mechanical: E185 failed on the code before the change; injections of a ring that the selection does not close and of
+            a late callback that gives its result each fail a test.
+Judgement:  V139 moves the state of the dialog into FileDialogState, so a test reaches it with no dialog of SDL; the
+            test of the asset verb is beside the tests of the blank folder of the other verbs.
 Weakest:    to be written at the close.
 
 ## Progress
+- 2026-11-07: E185, V137, V138 and V139. The test of E185 failed before the change with ArgumentException. Injections of a
+  ring that the selection does not close and of a late callback that gives its result each fail a test.

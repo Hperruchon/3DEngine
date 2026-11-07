@@ -9,7 +9,9 @@ namespace ThreeDEngine.Desktop.Ui;
 // is selected, its tools are the segments of a ring: on a landscape display to the right of the body, around the centre
 // of its box on the screen; on a portrait display, as the phone, in the lower right corner, under the thumb. The ring
 // holds the tools that exist today and need no text: Move, Distance for an extrude, Hide or Show, and Sketch on the
-// selected face. The band of the ring is a part of the panels for a tap; the inside of the ring is the scene.
+// selected face. The band of the ring is a part of the panels for a tap; the inside of the ring is the scene. While a sketch
+// is active, the ring holds the tools of the sketch, Constrain and Finish (ADR-0086, ADR-0087), and the second ring of the
+// constraints that fit the selection; finding V138 of the codebase review of 2026-11-07 (c) (TASK-0282) added this sentence.
 internal sealed unsafe partial class DesktopUi
 {
     // The depth of a segment, from the inner to the outer radius (size-ring-band of the design system).
@@ -88,8 +90,8 @@ internal sealed unsafe partial class DesktopUi
         if (display.X < display.Y)
         {
             var segment = Math.Min(RingSegment, ((MathF.PI / 2f) - ((count - 1) * RingGap)) / Math.Max(count, 1));
-            // ADR-0086 item 3 (TASK-0275): the inner radius grows when a narrow segment would be less than 44 pixels at it, as
-            // the five tools of a sketch need (0.28 radians).
+            // ADR-0086 item 3 (TASK-0275): the inner radius grows when a narrow segment would be less than 46 pixels at it
+            // (44 and a margin of 2), as the five tools of a sketch need (0.28 radians).
             var portraitInner = Math.Max(150f, (ValueSize + 2f) / segment);
             return new RingLayout(new Vector2(display.X - 16f - inset.Z, Math.Min(display.Y - 16f - inset.W, anchorsTop - 8f)), portraitInner, MathF.PI, 1f, segment);
         }

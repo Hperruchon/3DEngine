@@ -81,7 +81,12 @@ public static class Cli
             {
                 if (i + 1 >= args.Length || args[i + 1].Length == 0)
                     return InvalidUsage(stderr, "--folder requires a path.");
-                folder = args[++i];
+                // Finding E185 of the codebase review of 2026-11-07 (c) (TASK-0282): a blank folder is a usage error here too;
+                // until TASK-0282 the store threw, and the exception ended the program.
+                if (ValidFolder(args[i + 1]) is not { } valid)
+                    return InvalidUsage(stderr, $"--folder requires a valid path; '{args[i + 1]}' is not one.");
+                folder = valid;
+                i++;
             }
             else
             {

@@ -74,8 +74,9 @@ internal sealed unsafe partial class DesktopUi
             ToolButton(ArcToolLabel, SketchToolKind.Arc, panel.Tool);
         }
 
-        // The row of Next point stays the second row, so the pad below it stays inside a display of
-        // 1024 x 768 (finding V42); Finish and Extrude follow it (TASK-0122).
+        // The row of Next point stays near the top: the second row, or the first while the ring holds the tools (ADR-0088),
+        // so the pad below it stays inside a display of 1024 x 768 (finding V42); Finish and Extrude follow it (TASK-0122).
+        // Finding V138 of the codebase review of 2026-11-07 (c) (TASK-0282): the comment said the second row only.
         if (panel.Tool == SketchToolKind.Line)
         {
             if (ImGui.Button(NextPointLabel))

@@ -8,73 +8,118 @@ namespace ThreeDEngine.Vulkan;
 // ADR-0083 D1 and D6 (phases P9c and P9d, TASK-0259): the file dialog of the system, through SDL. On Windows it is the file
 // dialog of Windows, and on Android it is the document picker of Android, which needs no permission of storage. SDL calls
 // the callback on a thread of its own, so the result waits in a field until the loop takes it. One dialog is open at a time.
+// Finding V139 of the codebase review of 2026-11-07 (c) (TASK-0282): the state of the dialog, apart from SDL so that a test
+// reaches it. Each dialog has its own number, which SDL gives back to the callback, and its own filter, which stays until
+// that callback, because SDL may read it until then. A late callback of an earlier dialog frees its own filter and gives no
+// result. Until TASK-0282 a late callback after ResetDialog freed the filter of the next dialog and cleared its flag, and
+// the next OpenFile wrote over the filter of the earlier dialog with no free.
+public static class FileDialogState
+{
+    private static readonly object Lock = new();
+    private static readonly Dictionary<int, (nint Name, nint Pattern, nint Filter)> Filters = [];
+    private static int _open;
+    private static int _last;
+    private static (bool Done, string? Path, string? Failure) _result;
+
+    // The number and the filter of a new dialog, or null when a dialog is open already.
+    public static unsafe (int Number, nint Filter)? Begin(string filterName, string pattern)
+    {
+        lock (Lock)
+        {
+            if (_open != 0)
+                return null;
+            _open = ++_last;
+            _result = default;
+            var name = Marshal.StringToCoTaskMemUTF8(filterName);
+            var patternText = Marshal.StringToCoTaskMemUTF8(pattern);
+            var filter = Marshal.AllocCoTaskMem(sizeof(SDL_DialogFileFilter));
+            *(SDL_DialogFileFilter*)filter = new SDL_DialogFileFilter { name = (byte*)name, pattern = (byte*)patternText };
+            Filters[_open] = (name, patternText, filter);
+            return (_open, filter);
+        }
+    }
+
+    // The callback of the dialog with this number: its filter is freed, and only the open dialog gives a result.
+    public static void Finish(int number, string? path, string? failure)
+    {
+        lock (Lock)
+        {
+            if (Filters.Remove(number, out var memory))
+            {
+                Marshal.FreeCoTaskMem(memory.Name);
+                Marshal.FreeCoTaskMem(memory.Pattern);
+                Marshal.FreeCoTaskMem(memory.Filter);
+            }
+
+            if (number == _open)
+            {
+                _result = (true, path, failure);
+                _open = 0;
+            }
+        }
+    }
+
+    // E179 (TASK-0272): a new window starts with no open dialog; the filter of an earlier dialog stays until its callback.
+    public static void Reset()
+    {
+        lock (Lock)
+        {
+            _open = 0;
+            _result = default;
+        }
+    }
+
+    // Done is true one time after the dialog closes.
+    public static (bool Done, string? Path, string? Failure) Take()
+    {
+        lock (Lock)
+        {
+            var result = _result;
+            if (result.Done)
+                _result = default;
+            return result;
+        }
+    }
+
+    // The filters that wait for their callback.
+    public static int Waiting
+    {
+        get
+        {
+            lock (Lock)
+                return Filters.Count;
+        }
+    }
+}
+
 public sealed unsafe partial class Window
 {
-    private static readonly object DialogLock = new();
-    private static bool _dialogOpen;
-    private static (bool Done, string? Path, string? Failure) _dialogResult;
-    private static nint _filterName, _filterPattern, _filter;
-
     // Opens the dialog for one file with the filter, for example "STL file" and "stl". False when a dialog is open already.
     public bool OpenFile(string filterName, string pattern)
     {
-        lock (DialogLock)
-        {
-            if (_dialogOpen)
-                return false;
-            _dialogOpen = true;
-            _dialogResult = default;
-            _filterName = Marshal.StringToCoTaskMemUTF8(filterName);
-            _filterPattern = Marshal.StringToCoTaskMemUTF8(pattern);
-            _filter = Marshal.AllocCoTaskMem(sizeof(SDL_DialogFileFilter));
-            *(SDL_DialogFileFilter*)_filter = new SDL_DialogFileFilter { name = (byte*)_filterName, pattern = (byte*)_filterPattern };
-        }
-
-        SDL_ShowOpenFileDialog(&Chosen, nint.Zero, _window, (SDL_DialogFileFilter*)_filter, 1, (byte*)null, false);
+        if (FileDialogState.Begin(filterName, pattern) is not { } dialog)
+            return false;
+        SDL_ShowOpenFileDialog(&Chosen, dialog.Number, _window, (SDL_DialogFileFilter*)dialog.Filter, 1, (byte*)null, false);
         return true;
     }
 
     // The result of the dialog: Done is true one time after the dialog closes, with the path, or null when the person
     // closed it with no file or the dialog failed. Finding V131 of the codebase review of 2026-11-07 (b) (TASK-0271): Failure
     // gives the reason of SDL when the dialog failed, and null when the person closed it.
-    public static (bool Done, string? Path, string? Failure) TakeOpenedFile()
-    {
-        lock (DialogLock)
-        {
-            var result = _dialogResult;
-            if (result.Done)
-                _dialogResult = default;
-            return result;
-        }
-    }
+    public static (bool Done, string? Path, string? Failure) TakeOpenedFile() => FileDialogState.Take();
 
     [UnmanagedCallersOnly(CallConvs = [typeof(CallConvCdecl)])]
     private static void Chosen(nint userdata, byte** files, int filter)
     {
         var path = files is not null && files[0] is not null ? Marshal.PtrToStringUTF8((nint)files[0]) : null;
         var failure = files is null ? Error() : null;
-        lock (DialogLock)
-        {
-            _dialogResult = (true, path, failure);
-            _dialogOpen = false;
-            Marshal.FreeCoTaskMem(_filterName);
-            Marshal.FreeCoTaskMem(_filterPattern);
-            Marshal.FreeCoTaskMem(_filter);
-            (_filterName, _filterPattern, _filter) = (0, 0, 0);
-        }
+        FileDialogState.Finish((int)userdata, path, failure);
     }
 
     // Finding E179 of the codebase review of 2026-11-07 (b) (TASK-0272): the state of the dialog belongs to the process, and
     // only the callback cleared it, so a callback that never came blocked "Open file" for the life of the process. Each new
-    // window starts with no dialog; a late callback of an earlier window gives its result to the next take.
-    internal static void ResetDialog()
-    {
-        lock (DialogLock)
-        {
-            _dialogOpen = false;
-            _dialogResult = default;
-        }
-    }
+    // window starts with no dialog.
+    internal static void ResetDialog() => FileDialogState.Reset();
 
     // Finding N2 of the review of Codex after v0.243 (TASK-0272): the size of the file at the path, through SDL, or -1
     // when SDL cannot open it, so that a file that is too large is refused before SDL reads it into memory.

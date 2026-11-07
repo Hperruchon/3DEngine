@@ -169,6 +169,9 @@ public sealed class StlExportTests : IDisposable
         Assert.Equal(2, Run("apply", "NoOp", "--folder", " ", "--param", "echo=hello").Exit);
         Assert.Equal(2, Run("query", "GetBodyInfo", "--folder", " ", "--param", $"bodyId={Guid.NewGuid()}").Exit);
         Assert.Equal(2, Run("export", "stl", Path.Combine(_folder, "a.3de"), Path.Combine(_folder, "b.stl"), "--folder", " ").Exit);
+        // Finding E185 of the codebase review of 2026-11-07 (c) (TASK-0282): the verb asset too; until TASK-0282 it threw.
+        Assert.Equal(2, Run("asset", "put", Path.Combine(_folder, "a.txt"), "--folder", " ").Exit);
+        Assert.Equal(2, Run("asset", "get", "name", Path.Combine(_folder, "b.txt"), "--folder", " ").Exit);
     }
 
     // ADR-0048 item 5: the command line opens a document file and writes its bodies; a file that does not open
