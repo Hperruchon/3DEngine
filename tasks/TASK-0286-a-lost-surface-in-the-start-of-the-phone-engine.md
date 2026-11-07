@@ -1,7 +1,7 @@
 ---
 id: 0286
 title: A surface lost while the phone engine starts ends the engine as the background does
-status: Active
+status: Done
 phase: P0.120
 opened: 2026-11-07
 depends-on: [0285]
@@ -51,22 +51,24 @@ A surface lost in the start of the phone engine ends the engine as the backgroun
 
 ## Acceptance criteria
 
-- [ ] The test of the source fails with the host before the change.
-- [ ] The phone project builds with zero warnings.
-- [ ] Continuous integration passes on the three runners, on the branch and on `main` after the merge.
+- [x] The test of the source fails with the host before the change.
+- [x] The phone project builds with zero warnings.
+- [x] Continuous integration passes on the three runners, on the branch and on `main` after the merge.
 
 ## Outcome
 
-Status: Active
+Status: Done · commit (the merge of the branch p0120-lost-surface-start) · v0.271
 
 ## Method
 
 Mechanical: the test of the source on the old host; an injection of the wrong result in the helper.
 Judgement:  the result of the exception, not its message: the message names the result ("[-1000000000]
             ErrorSurfaceLostKHR - ..."), so the two tests were the same, and the result is typed.
-Weakest:    to be written at the close.
+Weakest:    the phone host runs on no computer here, so the test reads its source for the guards; no run on a device
+            lost the surface in the start of an engine.
 
 ## Progress
 
 - 2026-11-07: the guard of the start, the helper and two tests. The test of the source failed with the old host; an
   injection of the wrong result in the helper fails its test. The phone project builds with zero warnings.
+- 2026-11-07: run 42396688289 passed. Closed at v0.271.

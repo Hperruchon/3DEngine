@@ -8162,3 +8162,31 @@ The failed runs since the entry v0.269, from the API: none.
 New tests: 0. The test list holds 2088 (1415 in `Engine.Tests`, 337 in `3DEngine.Tests`, 333 in `3DEngine.ImageTests`, 3
 in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
 entries: 15 of 15. New diagnostic codes: 0. Since the review of v0.263, 0 product milestones and 7 entries followed it.
+
+## v0.271 — A surface lost while the phone engine starts ends the engine as the background does (P0.120, TASK-0286)
+
+The audit of Codex of the phone host at `d5209a2` gave one high lead, and the session confirmed it in the code: the phone
+host called `engine.Initialize()` with no guard of a lost surface, so a surface lost while the new engine made its device
+ended the session, and the document of the phone, which has no file, was lost. The review of 2026-11-07 (b) named this gap
+in its line of V124, and the counts of that review and of the review of 2026-11-07 (c) took V124 as fixed, so no finding
+held it. A confirmed high lead comes before the next product phase.
+
+**The change.**
+- The start of the phone engine has the guard of a frame, with the same next step: the background, or a new part that
+  waits for the foreground (E184).
+- `PhoneLifecycle.IsSurfaceLost` knows a lost surface by the result of Vulkan. The frame read the message, which names the
+  result ("[-1000000000] ErrorSurfaceLostKHR - ..."), so the two tests were the same.
+
+**Proof.** Two new tests. The test that reads the source of the host for the two guards failed with the host before the
+change. An injection of the wrong result in the helper fails its test. The phone project builds with zero warnings. Run
+42396688289 passed.
+
+**What stays.** The phone host runs on no computer here, so the test reads its source. No run on a device lost the surface
+in the start of an engine. The next codebase review gives this gap its line.
+
+**A correction.** The reviews of 2026-11-07 (b) and (c) counted V124 as fixed, although review (b) named this gap as its
+second part. The failed runs since the entry v0.270, from the API: none.
+
+New tests: 2. The test list holds 2090 (1415 in `Engine.Tests`, 337 in `3DEngine.Tests`, 335 in `3DEngine.ImageTests`, 3
+in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
+entries: 15 of 15. New diagnostic codes: 0. Since the review of v0.263, 0 product milestones and 8 entries followed it.
