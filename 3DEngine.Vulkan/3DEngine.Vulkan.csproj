@@ -11,6 +11,9 @@
     <RootNamespace>ThreeDEngine.Vulkan</RootNamespace>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
+    <!-- Finding T166 of the codebase review of 2026-11-07 (TASK-0263): CA1416 was a warning only here, and no step of
+         the pipeline failed on a warning. The phone reaches this project. -->
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <IsPackable>false</IsPackable>
   </PropertyGroup>

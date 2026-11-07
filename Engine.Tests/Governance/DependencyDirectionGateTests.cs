@@ -644,6 +644,12 @@ public class DependencyDirectionGateTests
                     }
                 }
 
+                // Finding T166 of the codebase review of 2026-11-07 (TASK-0263): with no TreatWarningsAsErrors, CA1416 was a
+                // warning only, and each step of the pipeline passed. Each project that the phone reaches sets it to true.
+                if (!FilesThatMsBuildReads(file).Any(read => XDocument.Load(read).Descendants().Any(e => Is(e, "TreatWarningsAsErrors") && e.Attribute("Condition") is null
+                        && e.Value.Trim().Equals("true", StringComparison.OrdinalIgnoreCase))))
+                    offences.Add($"{host} reaches {name}, whose project does not set TreatWarningsAsErrors to true");
+
                 // T162: the step of the pipeline asks MSBuild for each project that the phone reaches.
                 if (!PlatformCheckProjects().Contains(name))
                     offences.Add($"{host} reaches {name}, which eng/android/check-platforms.js does not name");
@@ -656,6 +662,11 @@ public class DependencyDirectionGateTests
                     if (File.ReadLines(source).Any(line => line.Contains("CA1416", StringComparison.OrdinalIgnoreCase)
                             && (line.Contains("#pragma", StringComparison.Ordinal) || line.Contains("SuppressMessage", StringComparison.Ordinal))))
                         offences.Add($"{host} reaches {name}, and {RepositoryFiles.Relative(source)} silences CA1416");
+
+                    // Finding T165 of the codebase review of 2026-11-07 (TASK-0263): a pragma with no code silences each
+                    // warning below it, CA1416 too, and the rule above read a line that names CA1416 only.
+                    if (File.ReadLines(source).Any(line => BlanketPragma.IsMatch(line)))
+                        offences.Add($"{host} reaches {name}, and {RepositoryFiles.Relative(source)} has a #pragma warning disable with no code");
                 }
             }
         }
@@ -665,10 +676,17 @@ public class DependencyDirectionGateTests
         {
             if (File.ReadAllText(config).Contains("CA1416", StringComparison.OrdinalIgnoreCase))
                 offences.Add($"{RepositoryFiles.Relative(config)} names CA1416");
+
+            // T165 (TASK-0263): the severity of a category, or of each rule, holds CA1416 with no name of it.
+            if (File.ReadLines(config).Any(line => line.TrimStart().StartsWith("dotnet_analyzer_diagnostic.", StringComparison.OrdinalIgnoreCase)))
+                offences.Add($"{RepositoryFiles.Relative(config)} sets the severity of a category or of each rule");
         }
 
         Assert.True(offences.Count == 0, string.Join("\n  ", offences));
     }
+
+    // T165: "#pragma warning disable" with no code after it, or with a comment only.
+    private static readonly Regex BlanketPragma = new(@"^\s*#\s*pragma\s+warning\s+disable\s*(//.*)?$", RegexOptions.Compiled);
 
     // T162: the names of the list "projects" of eng/android/check-platforms.js.
     private static HashSet<string> PlatformCheckProjects()

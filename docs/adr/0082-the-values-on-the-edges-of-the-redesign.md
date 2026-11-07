@@ -16,6 +16,7 @@ affects:
   - 3DEngine.App/SketchActions.cs
   - 3DEngine.App/BodyActions.cs
   - 3DEngine.App/NativeThreeDEngine.cs
+  - 3DEngine.App/Ui/DesktopUi.Pad.cs
 enforced-by: 3DEngine.ImageTests/EdgeValueTests.cs
 ---
 
@@ -103,3 +104,5 @@ and a cylinder show no chip until a command changes their sizes.
 
 - 2026-11-07 · TASK-0254 · The record, Accepted under the standing order.
 - 2026-11-07 · TASK-0254 · Shipped at v0.241.
+- 2026-11-07 · TASK-0263 · The affects field names `3DEngine.App/Ui/DesktopUi.Pad.cs`, which TASK-0254 changed for the
+  pending state of item 4 (finding T167 of the codebase review of 2026-11-07).

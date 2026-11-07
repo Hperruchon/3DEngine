@@ -28,8 +28,11 @@ public static class StlReader
                 return Binary(bytes, count);
         }
 
-        if (StartsWithSolid(bytes))
-            return Text(bytes);
+        // Finding E170 of the codebase review of 2026-11-07 (TASK-0263): a file of at least 84 bytes that starts with
+        // "solid" and is not text is a binary file of the wrong length, so it gives E-STL-TRUNCATED, not E-STL-SYNTAX.
+        var body = bytes.StartsWith(ByteOrderMark) ? bytes[ByteOrderMark.Length..] : bytes;
+        if (StartsWithSolid(body) && (bytes.Length < HeaderBytes + 4 || IsText(body)))
+            return Text(body);
 
         return (null, Error(DiagnosticCodes.StlTruncated, bytes.Length >= HeaderBytes + 4
             ? $"The file has {bytes.Length} bytes, and a binary STL file with the count of its header has {HeaderBytes + 4 + ((long)BinaryPrimitives.ReadUInt32LittleEndian(bytes.Slice(HeaderBytes, 4)) * TriangleBytes)}. The file is cut or is not an STL file."
@@ -72,10 +75,13 @@ public static class StlReader
             return (null, Error(DiagnosticCodes.StlSyntax, "The text STL file is not UTF-8 or ASCII text."));
         }
 
-        var words = text.Split((char[]?)null, StringSplitOptions.RemoveEmptyEntries);
-        var at = 1;
-        // The name of the solid: each word after "solid" until the first facet or the end.
-        while (at < words.Length && words[at] != "facet" && words[at] != "endsolid")
+        // The name of the solid is the rest of the line of "solid" (E170), so a name may hold "facet" or "endsolid". A file
+        // of one line has no end of that line, so its name ends at the first facet or "endsolid".
+        var solid = text.Length - text.TrimStart().Length;
+        var line = text.IndexOfAny(['\r', '\n'], solid);
+        var words = (line < 0 ? text : text[line..]).Split((char[]?)null, StringSplitOptions.RemoveEmptyEntries);
+        var at = line < 0 ? 1 : 0;
+        while (line < 0 && at < words.Length && words[at] != "facet" && words[at] != "endsolid")
             at++;
 
         var triangles = new List<float>();
@@ -110,6 +116,14 @@ public static class StlReader
             return (null, Error(DiagnosticCodes.StlEmpty, "The text STL file holds no triangle."));
         return ([.. triangles], null);
     }
+
+    // The byte order mark of UTF-8, which some programs write at the start of a text file (E170).
+    private static ReadOnlySpan<byte> ByteOrderMark => [0xEF, 0xBB, 0xBF];
+
+    // Text is UTF-8 with no zero byte; the header and the floats of a binary file hold zero bytes or bytes that are not
+    // UTF-8 in nearly each file.
+    private static bool IsText(ReadOnlySpan<byte> bytes)
+        => bytes.IndexOf((byte)0) < 0 && System.Text.Unicode.Utf8.IsValid(bytes);
 
     private static bool StartsWithSolid(ReadOnlySpan<byte> bytes)
     {

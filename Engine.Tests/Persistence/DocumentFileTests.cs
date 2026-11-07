@@ -789,8 +789,40 @@ public sealed class DocumentFileTests : IDisposable
         reopened.Close();
     }
 
-    // A stream whose flush fails, for a copy that fails after its writes.
-    private sealed class FlushFailsStream(Stream inner) : Stream
+    // Finding E168 of the codebase review of 2026-11-07 (TASK-0263): a copy that fails, with a cut and a delete of the new
+    // file that fail too, leaves a new file that opens as a second document. Until TASK-0263 the error of the save named
+    // only the first failure; now it names the new file that stays.
+    [Fact]
+    public async Task A_Failed_Copy_Whose_Cut_And_Delete_Fail_Names_The_New_File_In_The_Error()
+    {
+        var path = FileNamed("source");
+        var target = Path.GetFullPath(FileNamed("kept"));
+        var opens = 0;
+        Stream Open(string file, FileMode mode)
+        {
+            var stream = new FileStream(file, mode, FileAccess.ReadWrite, FileShare.Read);
+            return opens++ == 1 ? new FlushFailsStream(stream, cutFails: true) : stream;
+        }
+        void Delete(string file)
+        {
+            if (file == target)
+                throw new IOException("Another program holds the file.");
+            File.Delete(file);
+        }
+        var session = NewSession();
+        session.Attach(DocumentJournal.ForTest(path, Document.Millimetre, null, Open, Delete));
+        await session.Apply(new NoOpCommand { Echo = "one" });
+
+        var error = await session.SaveAs(target);
+        session.Close();
+
+        Assert.Equal(DiagnosticCodes.IoSaveFailed, error!.Code);
+        Assert.Contains($"The new file {target} stays", error.Message, StringComparison.Ordinal);
+        Assert.True(new FileInfo(target).Length > 0);
+    }
+
+    // A stream whose flush fails, for a copy that fails after its writes, and whose cut fails too when cutFails is true.
+    private sealed class FlushFailsStream(Stream inner, bool cutFails = false) : Stream
     {
         public override bool CanRead => inner.CanRead;
         public override bool CanSeek => inner.CanSeek;
@@ -806,7 +838,13 @@ public sealed class DocumentFileTests : IDisposable
         public override void Flush() => throw new IOException("The disk is full.");
         public override int Read(byte[] buffer, int offset, int count) => inner.Read(buffer, offset, count);
         public override long Seek(long offset, SeekOrigin origin) => inner.Seek(offset, origin);
-        public override void SetLength(long value) => inner.SetLength(value);
+        public override void SetLength(long value)
+        {
+            if (cutFails)
+                throw new IOException("The drive is gone.");
+            inner.SetLength(value);
+        }
+
         public override void Write(byte[] buffer, int offset, int count) => inner.Write(buffer, offset, count);
 
         protected override void Dispose(bool disposing)
