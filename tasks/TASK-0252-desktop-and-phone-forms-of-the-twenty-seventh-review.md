@@ -1,7 +1,7 @@
 ---
 id: 0252
 title: The cache of a face, the fixed controls, the list New, the edges and the safe area hold their next forms
-status: Active
+status: Done
 phase: P0.102
 opened: 2026-11-06
 depends-on: [0251]
@@ -62,9 +62,9 @@ safe area of the phone.
 
 ## Acceptance criteria
 
-- [ ] Each finding has a test or an injection that fails before the change and passes after it.
-- [ ] A clean build (`--no-incremental`) gives zero errors and zero warnings.
-- [ ] Continuous integration passes on the three runners, on the branch and on `main` after the merge.
+- [x] Each finding has a test or an injection that fails before the change and passes after it.
+- [x] A clean build (`--no-incremental`) gives zero errors and zero warnings.
+- [x] Continuous integration passes on the three runners, on the branch and on `main` after the merge.
 
 ## Decisions
 
@@ -84,14 +84,16 @@ The standing order of 2026-11-05 gives the recommended option for each question.
 
 ## Outcome
 
-Status: Active
+Status: Done · commit (the merge of the branch p0102-desktop-forms-c) · v0.240
 
 ## Method
 
 Mechanical: a test or an injection for each finding, before the change.
 Judgement:  the six decisions above; no device ran the safe area, so step 11 of the test sheet of the phone holds it.
-Weakest:    to be written at the close.
+Weakest:    no device ran the safe area; the tool ring keeps its corner under the navigation bar of a phone; a tap on
+            the scene while a list is open does not reach the scene, which a person can find slow.
 
 ## Progress
 
 - 2026-11-06: opened by the codebase review of 2026-11-06 (e).
+- 2026-11-07: run 42316096251 passed. Closed at v0.240.
