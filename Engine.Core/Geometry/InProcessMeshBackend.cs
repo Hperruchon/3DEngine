@@ -7,8 +7,20 @@ namespace Engine.Core.Geometry;
 // interop. Sufficient to wire CreateBox end-to-end and to demonstrate the
 // replay-against-fresh-backend story. Manifold lands in a follow-on TASK
 // (P7b) behind the same capability interfaces.
-public sealed class InProcessMeshBackend : IGeometryBackend, IMeshOps, IGeometryQuery
+public sealed class InProcessMeshBackend : IGeometryBackend, IMeshOps, IGeometryQuery, IMeshImportOps
 {
+    // ADR-0083 item 8 (TASK-0258): the triangles of each mesh body, as the STL file gave them.
+    private readonly Dictionary<Guid, float[]> _meshes = new();
+
+    public void ImportMesh(BodyHandle handle, ReadOnlySpan<float> triangles)
+    {
+        if (triangles.Length == 0 || triangles.Length % 9 != 0)
+            throw new ArgumentException("A mesh holds nine floats for each triangle, and at least one triangle.", nameof(triangles));
+        if (_boxes.ContainsKey(handle.Id) || _meshes.ContainsKey(handle.Id))
+            throw new InvalidOperationException($"Backend already holds a body under handle '{handle.Id}'.");
+        _meshes[handle.Id] = triangles.ToArray();
+    }
+
     private readonly Dictionary<Guid, BoxRecord> _boxes = new();
 
     // ADR-0015 item 5. The hosts call this backend "managed" (ServerEngine).
@@ -36,6 +48,15 @@ public sealed class InProcessMeshBackend : IGeometryBackend, IMeshOps, IGeometry
     // No transforms in V1.
     public Aabb GetBoundingBox(BodyHandle handle)
     {
+        // ADR-0083 item 8: the box of a mesh body, from comparisons of its floats only.
+        if (_meshes.TryGetValue(handle.Id, out var triangles))
+        {
+            var (min, max) = ((float[])[triangles[0], triangles[1], triangles[2]], (float[])[triangles[0], triangles[1], triangles[2]]);
+            for (var i = 0; i < triangles.Length; i++)
+                (min[i % 3], max[i % 3]) = (Math.Min(min[i % 3], triangles[i]), Math.Max(max[i % 3], triangles[i]));
+            return new Aabb(min[0], min[1], min[2], max[0], max[1], max[2]);
+        }
+
         if (!_boxes.TryGetValue(handle.Id, out var record))
             throw new KeyNotFoundException(
                 $"Backend has no body under handle '{handle.Id}'.");
@@ -47,9 +68,9 @@ public sealed class InProcessMeshBackend : IGeometryBackend, IMeshOps, IGeometry
             +halfX, +halfY, +halfZ);
     }
 
-    public bool Contains(BodyHandle handle) => _boxes.ContainsKey(handle.Id);
+    public bool Contains(BodyHandle handle) => _boxes.ContainsKey(handle.Id) || _meshes.ContainsKey(handle.Id);
 
-    public int BodyCount => _boxes.Count;
+    public int BodyCount => _boxes.Count + _meshes.Count;
 
     private sealed record BoxRecord(BodyHandle Handle, BoxParameters Parameters);
 }

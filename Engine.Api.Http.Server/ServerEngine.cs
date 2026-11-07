@@ -19,7 +19,8 @@ namespace Engine.Api.Http;
 // backend, through HostBackendOptions in the service container.
 internal static class ServerEngine
 {
-    public static EngineHost Create(HostBackendOptions options, DocumentFileOptions? file = null)
+    // ADR-0083 item 2 (TASK-0258): assets is the store of the surface, which the import of an STL file reads.
+    public static EngineHost Create(HostBackendOptions options, DocumentFileOptions? file = null, Engine.Core.Assets.IAssetSource? assets = null)
     {
         ArgumentNullException.ThrowIfNull(options);
 
@@ -29,13 +30,13 @@ internal static class ServerEngine
             // version of the assembly Engine.Core, which says nothing. It gives the identity that each
             // entry of the log records (ADR-0015 item 5), and since TASK-0142 the host reads it (E111).
             var managed = new InProcessMeshBackend();
-            return new EngineHost(managed, file);
+            return new EngineHost(managed, file, assets);
         }
 
         if (options.IsNativeAvailable())
         {
             var native = new ManifoldGeometryBackend();
-            return new EngineHost(native, file);
+            return new EngineHost(native, file, assets);
         }
 
         throw new BackendUnavailableException(

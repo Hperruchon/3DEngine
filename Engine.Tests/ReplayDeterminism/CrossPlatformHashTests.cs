@@ -58,10 +58,13 @@ public class CrossPlatformHashTests
         Assert.All(one.Document.Bodies, body => Assert.Null(body.Fault));
         Assert.Equal(hash, State(two.Document, second).Hash);
 
+        // ADR-0083 (TASK-0258): the hash of the file holds the export and the import of the bracket too, as the phone gives.
+        var (complete, all) = await CrossPlatformProbe.WithStl(first, (hash, lines));
+        Assert.Equal(complete, (await CrossPlatformProbe.WithStl(second, State(two.Document, second))).Hash);
         if (Environment.GetEnvironmentVariable("DETERMINISM_HASH_FILE") is { Length: > 0 } file)
         {
             Directory.CreateDirectory(Path.GetDirectoryName(Path.GetFullPath(file))!);
-            File.WriteAllLines(file, [hash, .. lines]);
+            File.WriteAllLines(file, [complete, .. all]);
         }
     }
 }

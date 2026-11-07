@@ -31,7 +31,9 @@ public sealed class EngineHost : IDisposable
     // writes there from the first command. A host with no file keeps the document in
     // memory only, as each test that makes a host. A file that does not open throws
     // a DocumentFileException, and the backend is freed.
-    public EngineHost(IGeometryBackend backend, DocumentFileOptions? file = null)
+    // ADR-0083 item 2 (TASK-0258): assets is the store of the assets of the host, which the import of an STL file reads at
+    // each apply and each open; a host with no store refuses the import.
+    public EngineHost(IGeometryBackend backend, DocumentFileOptions? file = null, Engine.Core.Assets.IAssetSource? assets = null)
     {
         ArgumentNullException.ThrowIfNull(backend);
 
@@ -55,7 +57,7 @@ public sealed class EngineHost : IDisposable
             var kind = opens ? DocumentFile.ReadKind(file!.Path!) : file?.Kind ?? Document.Part;
             if (opens && file!.Kind is { } other && other != kind)
                 throw new DocumentFileException(DiagnosticCodes.IoLoadFailed, $"The file {file.Path} is a document of the kind {kind}, and the host was asked for a {other} (ADR-0071 item 4).");
-            kit = EngineHosting.CreateDefault(Backend, opens ? DocumentFile.ReadLengthUnit(file!.Path!) : Document.Millimetre, kind);
+            kit = EngineHosting.CreateDefault(Backend, opens ? DocumentFile.ReadLengthUnit(file!.Path!) : Document.Millimetre, kind, assets);
         }
         catch
         {

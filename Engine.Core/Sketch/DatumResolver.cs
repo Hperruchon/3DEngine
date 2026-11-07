@@ -68,6 +68,7 @@ public static class DatumResolver
         CreateCylinderCommand when reference.ItemId is not null =>
             "A face of a cylinder takes no itemId.",
         ExtrudeCommand or CreateBoxCommand or CreateCylinderCommand => null,
+        ImportStlCommand => $"The feature '{reference.FeatureId}' is a mesh body of an STL file, which has no named faces (ADR-0083 item 4).",
         _ => $"No CreateBox, CreateCylinder or Extrude in effect has the id '{reference.FeatureId}'.",
     };
 

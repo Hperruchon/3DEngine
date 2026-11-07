@@ -1,4 +1,5 @@
 using Engine.Contracts.Handlers;
+using Engine.Core.Assets;
 using Engine.Core.Commands;
 using Engine.Core.Queries;
 
@@ -21,7 +22,9 @@ namespace Engine.Core.Hosting;
 // catalog for a host and for a gate that must agree with a host.
 public static class HandlerCatalog
 {
-    public static IReadOnlyList<ICommandHandler> CommandHandlers() =>
+    // ADR-0083 item 2 (TASK-0258): assets is the store of the assets of the host, which the handler of ImportStl reads;
+    // a host with no store gives null, and its imports are refused.
+    public static IReadOnlyList<ICommandHandler> CommandHandlers(IAssetSource? assets = null) =>
     [
         new NoOpCommandHandler(),
         new CreateBoxCommandHandler(),
@@ -48,6 +51,7 @@ public static class HandlerCatalog
         new CreateDatumCommandHandler(),
         new AddSketchReferenceCommandHandler(),
         new AddPartReferenceCommandHandler(),
+        new ImportStlCommandHandler(assets),
     ];
 
     public static IReadOnlyList<IQueryHandler> QueryHandlers() =>
@@ -63,9 +67,9 @@ public static class HandlerCatalog
         new GetPartReferencesQueryHandler(),
     ];
 
-    public static void RegisterAll(CommandRegistry commands, QueryRegistry queries)
+    public static void RegisterAll(CommandRegistry commands, QueryRegistry queries, IAssetSource? assets = null)
     {
-        foreach (var handler in CommandHandlers())
+        foreach (var handler in CommandHandlers(assets))
             commands.Register(handler);
 
         foreach (var handler in QueryHandlers())

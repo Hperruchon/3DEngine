@@ -1,5 +1,6 @@
 using Engine.Contracts;
 using Engine.Contracts.Geometry;
+using Engine.Core.Assets;
 using Engine.Core.Queries;
 
 namespace Engine.Core.Hosting;
@@ -31,14 +32,15 @@ public static class EngineHosting
 {
     // ADR-0015 item 8: a host that opens a document file makes the Document with the
     // length unit of its header, and since ADR-0071 item 4 with its kind.
-    public static EngineKit CreateDefault(IGeometryBackend backend, string lengthUnit = Document.Millimetre, string kind = Document.Part)
+    // ADR-0083 item 2 (TASK-0258): assets is the store of the assets of the host, for the import of an STL file.
+    public static EngineKit CreateDefault(IGeometryBackend backend, string lengthUnit = Document.Millimetre, string kind = Document.Part, IAssetSource? assets = null)
     {
         ArgumentNullException.ThrowIfNull(backend);
 
         var document = new Document(lengthUnit: lengthUnit, kind: kind);
         var commands = new CommandRegistry();
         var queries = new QueryRegistry();
-        HandlerCatalog.RegisterAll(commands, queries);
+        HandlerCatalog.RegisterAll(commands, queries, assets);
 
         return new EngineKit(document, commands, queries, new InMemoryEventSink(), backend);
     }
