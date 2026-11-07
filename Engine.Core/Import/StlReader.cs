@@ -117,20 +117,25 @@ public static class StlReader
     // Until TASK-0263 the name ended at the first word "facet" or "endsolid" (v0.243). Finding E170 (TASK-0263): a name may
     // hold those words, so the name became the rest of the line of "solid". Finding E173 of the codebase review of
     // 2026-11-07 (b) (TASK-0269): that rule lost a facet on the line of "solid" and refused a file of one line with a line
-    // end, which v0.243 read. Now the name ends at a word "facet" that "normal" and a number follow, on any line, or at
-    // "facet" or "endsolid" after the line of "solid". Each file that v0.243 accepted has its first "facet" there, so it
-    // gives the result of v0.243; a name on the line of "solid" may still hold "facet" and "endsolid".
+    // end, which v0.243 read. Now the name ends at the start of a whole facet, "facet normal", three numbers and "outer", on
+    // any line, or at "facet" or "endsolid" after the line of "solid". Each file that v0.243 accepted has its first "facet"
+    // there, so it gives the result of v0.243; a name on the line of "solid" may still hold "facet" and "endsolid".
+    //
+    // The review of Codex of v0.254 (TASK-0274): the rule of TASK-0269 ended the name at "facet normal" and one number, so it
+    // refused a name such as "facet normal 0", which the reader of v0.250 to v0.253 read. A whole facet on the line of
+    // "solid" had two earlier results: v0.243 read it, and v0.250 took it as the name; this rule gives the result of v0.243.
     private static int NameEnd(string text, string[] words)
     {
         var solid = text.Length - text.TrimStart().Length;
         var line = text.IndexOfAny(['\r', '\n'], solid);
         var onFirstLine = line < 0 ? words.Length : text[..line].Split((char[]?)null, StringSplitOptions.RemoveEmptyEntries).Length;
+        bool Number(int at) => at < words.Length && float.TryParse(words[at], NumberStyles.Float, CultureInfo.InvariantCulture, out _);
         for (var at = 1; at < words.Length; at++)
         {
             if (at >= onFirstLine && words[at] is "facet" or "endsolid")
                 return at;
-            if (words[at] == "facet" && at + 2 < words.Length && words[at + 1] == "normal"
-                && float.TryParse(words[at + 2], NumberStyles.Float, CultureInfo.InvariantCulture, out _))
+            if (words[at] == "facet" && at + 5 < words.Length && words[at + 1] == "normal"
+                && Number(at + 2) && Number(at + 3) && Number(at + 4) && words[at + 5] == "outer")
                 return at;
         }
 
