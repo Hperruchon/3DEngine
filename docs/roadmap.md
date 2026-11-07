@@ -227,6 +227,7 @@ Therefore each approved objective must have a track here.
 - P0.106 — A failed copy, a test of the faces, the STL reader, the command line, two gates and the affects fields hold
   their next forms. v0.250, TASK-0263.
 - P0.107 — The chips, the ring and the collapsed panel hold their next forms. v0.251, TASK-0264, ADR-0081.
+- Review — The codebase review of 2026-11-07 (b). v0.253, TASK-0268.
 
 ## Track 0 — Foundations
 
@@ -340,6 +341,10 @@ This track removes each condition that blocks other work.
 | P0.106 | A failed copy, a test of the faces, the STL reader, the command line, two gates and the affects fields hold their next forms (E168 to E171, T165 to T167 of the codebase review of 2026-11-07; after P9c). TASK-0263. | 2 |
 | P0.107 | The chips, the ring and the collapsed panel hold their next forms (V119 to V123 of the codebase review of 2026-11-07; after P0.106). TASK-0264. | 2 |
 | P0.108 | A lost surface of a destroyed activity ends the session quietly, and the activity names its change (V124 of the codebase review of 2026-11-07, high; before the close of P9c). TASK-0265. | 1 |
+| P0.109 | The wait of the phone checks its turn, the STL reader keeps the results of v0.243, and the test sheet says what the phone keeps (E172, E173 and E174 of the codebase review of 2026-11-07 (b), high; before the next product phase). TASK-0269. | 1–2 |
+| P0.110 | The import of a chosen STL reaches only its new part, and an open by name ends the home screen (V125 and V126 of the codebase review of 2026-11-07 (b), high; after P0.109, before the next product phase). TASK-0270. | 1–2 |
+| P0.111 | The home screen, the rows, the chips, the dialog and three comments hold their next forms (V127 to V133 of the codebase review of 2026-11-07 (b); after the next product phase). TASK-0271. | 1–2 |
+| P0.112 | The phone, the reader, the APK check, the gates and the roadmap hold their next forms (E175 to E179, T168 to T173 of the codebase review of 2026-11-07 (b); after P0.111). TASK-0272. | 2 |
 | P0.102 | The cache of a face, the fixed controls, the list New, the edges and the safe area hold their next forms (V113 to V118 of the codebase review of 2026-11-06 (e); after P0.101). TASK-0252. | 1–2 |
 | P0.86 | The window keeps no input between sessions, the hook has the cases of one axis, and the next forms of four gates fail (V88 to V90, T141 to T144 of the codebase review of 2026-11-06; after the next product phase). TASK-0198. | 1–2 |
 
