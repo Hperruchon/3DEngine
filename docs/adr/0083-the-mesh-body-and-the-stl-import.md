@@ -137,3 +137,6 @@ desktop row P9c, the phone row P9d, and the test sheet P9e.
   puts it into the store, so a fault gives its code, a message and "Choose another file", and no new document; a good file
   asks for a new part document whose session applies the one import first; the camera frames the first body; the size of
   a mesh body says "mm (assumed)"; "Frame" and "Home" are on the row of the anchors of ADR-0080.
+- 2026-11-07 · TASK-0260 · The phone part: the same home screen with no recent file (the phone has no document folder yet),
+  the document picker of Android through the dialog of SDL with no permission of storage (the APK check of the pipeline
+  holds it), the store in the folder of the application, and a new part as a new session in the same window.

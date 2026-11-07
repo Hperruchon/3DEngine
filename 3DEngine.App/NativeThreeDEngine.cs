@@ -585,7 +585,7 @@ public sealed class NativeThreeDEngine : IThreeDEngine, IDisposable
     // IDocumentFiles the panel had no line, so the rejection of a cut, of an Undo or of a sketch on a face showed nothing
     // on the phone, although ADR-0073 item 2 sends it to the line of the document.
     internal static DocumentLine LineOf(IDocumentFiles? files, string? fileName, string? message)
-        => new(fileName, message, Files: files is not null);
+        => new(fileName, message, Files: files is { HasFolder: true });
 
     // The path of the STL file of a name. Finding V72 of the codebase review of 2026-11-01 (TASK-0162):
     // Resolve adds .3de, so until TASK-0162 the name "part.stl" gave the file "part.stl.stl".
