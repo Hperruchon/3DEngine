@@ -650,6 +650,24 @@ public class DependencyDirectionGateTests
                         && e.Value.Trim().Equals("true", StringComparison.OrdinalIgnoreCase))))
                     offences.Add($"{host} reaches {name}, whose project does not set TreatWarningsAsErrors to true");
 
+                // Finding T170 of the codebase review of 2026-11-07 (b) (TASK-0272): the rule above read one element, so a
+                // Condition on its PropertyGroup, a later false, a property CodeAnalysisTreatWarningsAsErrors, or a mode or a
+                // level of the analysis passed it, and only the step of the pipeline refused them. Each of those forms is an
+                // offence in a file that MSBuild reads for a project that the phone reaches.
+                foreach (var read in FilesThatMsBuildReads(file))
+                {
+                    foreach (var element in XDocument.Load(read).Descendants())
+                    {
+                        var local = element.Name.LocalName;
+                        if (Is(element, "TreatWarningsAsErrors") && (element.AncestorsAndSelf().Any(e => e.Attribute("Condition") is not null)
+                                || !element.Value.Trim().Equals("true", StringComparison.OrdinalIgnoreCase)))
+                            offences.Add($"{host} reaches {name}, and {RepositoryFiles.Relative(read)} sets TreatWarningsAsErrors under a Condition or to a value other than true");
+                        if (local.Equals("CodeAnalysisTreatWarningsAsErrors", StringComparison.OrdinalIgnoreCase)
+                            || local.StartsWith("AnalysisMode", StringComparison.OrdinalIgnoreCase) || local.StartsWith("AnalysisLevel", StringComparison.OrdinalIgnoreCase))
+                            offences.Add($"{host} reaches {name}, and {RepositoryFiles.Relative(read)} sets {local}, which can turn CA1416 into a warning or off");
+                    }
+                }
+
                 // T162: the step of the pipeline asks MSBuild for each project that the phone reaches.
                 if (!PlatformCheckProjects().Contains(name))
                     offences.Add($"{host} reaches {name}, which eng/android/check-platforms.js does not name");
@@ -659,9 +677,11 @@ public class DependencyDirectionGateTests
                              .Where(path => !path.Contains($"{Path.DirectorySeparatorChar}obj{Path.DirectorySeparatorChar}", StringComparison.Ordinal)
                                  && !path.Contains($"{Path.DirectorySeparatorChar}bin{Path.DirectorySeparatorChar}", StringComparison.Ordinal)))
                 {
-                    if (File.ReadLines(source).Any(line => line.Contains("CA1416", StringComparison.OrdinalIgnoreCase)
-                            && (line.Contains("#pragma", StringComparison.Ordinal) || line.Contains("SuppressMessage", StringComparison.Ordinal))))
-                        offences.Add($"{host} reaches {name}, and {RepositoryFiles.Relative(source)} silences CA1416");
+                    // Finding T169 of the codebase review of 2026-11-07 (b) (TASK-0272): a SuppressMessage over two lines, or under
+                    // an alias, passed the rule of a pragma or an attribute on the line. No code of the phone names CA1416, so
+                    // each line that names it is an offence.
+                    if (File.ReadLines(source).Any(line => line.Contains("CA1416", StringComparison.OrdinalIgnoreCase)))
+                        offences.Add($"{host} reaches {name}, and {RepositoryFiles.Relative(source)} names CA1416, which can silence it");
 
                     // Finding T165 of the codebase review of 2026-11-07 (TASK-0263): a pragma with no code silences each
                     // warning below it, CA1416 too, and the rule above read a line that names CA1416 only.

@@ -190,3 +190,7 @@ desktop row P9c, the phone row P9d, and the test sheet P9e.
   refusal of an open from a recent row and a dialog that fails give a message there (findings V127, V130 and V131 of the
   codebase review of 2026-11-07 (b)). Item 4: a mesh body shows no gizmo and no Move on its ring; the affects field names
   3DEngine.App/Ui/DesktopUi.Ring.cs.
+- 2026-11-07 · TASK-0272 · Item 3: a text file whose name is not UTF-8 gives `E-STL-SYNTAX`, and a cut binary file of fewer
+  than 84 bytes gives `E-STL-TRUNCATED` (finding E178 of the codebase review of 2026-11-07 (b)); each was a refusal
+  before and stays one. D3: the client refuses a file of more than 84 + 512 times the limit of triangles bytes with
+  `E-STL-TOO-LARGE` before it reads it (finding N2 of the review of Codex after v0.243).

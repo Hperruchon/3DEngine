@@ -17,7 +17,8 @@ public class AffectsCitationGateTests
 
     private static readonly Regex Citation = new(@"ADR-(\d{4})", RegexOptions.Compiled);
 
-    private static readonly string[] CodeExtensions = [".cs", ".csproj", ".js", ".sh", ".yml", ".props", ".targets"];
+    // Finding T171 of the codebase review of 2026-11-07 (b) (TASK-0272): the shaders and the PowerShell files cite ADRs too.
+    private static readonly string[] CodeExtensions = [".cs", ".csproj", ".js", ".sh", ".yml", ".props", ".targets", ".frag", ".vert", ".ps1"];
 
     private static readonly string[] SkippedFolders = [".git", "bin", "obj", "node_modules", "docs", "tasks"];
 
@@ -50,9 +51,12 @@ public class AffectsCitationGateTests
             ("Engine.Core/Export/StepExport.cs", "// ADR-0083 item 4"),
             ("Engine.Core/Queries/GetFacesQueryHandler.cs", "// ADR-0077 item 6"),
             ("Engine.Tests/Import/StlImportTests.cs", "// ADR-0083 item 3"),
+            ("3DEngine.Vulkan/Shaders/ui.frag", "// ADR-0099 item 1"),
         ];
 
-        Assert.Equal(["Engine.Core/Export/StepExport.cs cites ADR-0083, whose affects field does not match it"], Offences(files, adrs));
+        Assert.Equal(
+            ["Engine.Core/Export/StepExport.cs cites ADR-0083, whose affects field does not match it", "3DEngine.Vulkan/Shaders/ui.frag cites ADR-0099, which has no file"],
+            Offences(files, adrs));
     }
 
     internal static List<string> Offences(IEnumerable<(string Path, string Text)> files, IReadOnlyDictionary<string, IReadOnlyList<string>> adrs)
@@ -62,8 +66,15 @@ public class AffectsCitationGateTests
         {
             foreach (var id in Citation.Matches(text).Select(match => match.Groups[1].Value).Distinct(StringComparer.Ordinal).Order(StringComparer.Ordinal))
             {
-                if (int.Parse(id, System.Globalization.CultureInfo.InvariantCulture) < FirstAdr || !adrs.TryGetValue(id, out var affects))
+                if (int.Parse(id, System.Globalization.CultureInfo.InvariantCulture) < FirstAdr)
                     continue;
+                // T171 (TASK-0272): a citation of an ADR that has no file is an offence.
+                if (!adrs.TryGetValue(id, out var affects))
+                {
+                    offences.Add($"{path} cites ADR-{id}, which has no file");
+                    continue;
+                }
+
                 if (!affects.Any(pattern => RepositoryFiles.PathPattern(pattern).IsMatch(path)))
                     offences.Add($"{path} cites ADR-{id}, whose affects field does not match it");
             }
