@@ -69,3 +69,5 @@ Weakest:    to be written at the close.
 ## Progress
 
 - 2026-11-07: opened by the addition of the owner to the standing order.
+- 2026-11-07: item 5 of ADR-0083 needs no check of the unit: each Document is in millimetres (ADR-0015 item 7), so the
+  code E-STL-UNIT could never be raised; TASK-0258 found it.
