@@ -1,17 +1,20 @@
 ---
 id: 0262
 title: The check of an open reads the store of the assets
-status: Ready
+status: Active
 phase: P0.105
 opened: 2026-11-07
 depends-on: [0261]
-governed-by: [0004, 0007, 0015, 0019, 0029]
+governed-by: [0004, 0007, 0015, 0019, 0025, 0029, 0061]
 writes:
   create:
     - tasks/TASK-0262-the-check-of-an-open-reads-the-store.md
   modify:
     - Engine.Core/Persistence/DocumentFile.cs
     - 3DEngine/DesktopDocument.cs
+    - 3DEngine/DesktopSession.cs
+    - 3DEngine.ImageTests/DesktopDocumentTests.cs
+    - docs/adr/0083-the-mesh-body-and-the-stl-import.md
     - eng/test-floor.txt
     - docs/roadmap.md
     - docs/CURRENT-STATE.md
@@ -49,14 +52,17 @@ The check of an open reads the asset of an import from the store of the host, as
 
 ## Outcome
 
-Status: Ready
+Status: Active
 
 ## Method
 
 Mechanical: a test or an injection for each finding, before the change.
-Judgement:  to be written in the task.
+Judgement:  the store is an optional parameter of the check, as of the composition of the engine, and the desktop gives
+            the store of its session; the HTTP surface does not call the check.
 Weakest:    to be written at the close.
 
 ## Progress
 
 - 2026-11-07: opened by the codebase review of 2026-11-07.
+- 2026-11-07: the store on the check and on the desktop document; one test, which an injection of a check with no store
+  fails.

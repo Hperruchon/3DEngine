@@ -45,11 +45,11 @@ internal sealed class DesktopSession : IDisposable
         if (!ManifoldGeometryBackend.IsNativeAvailable())
             return (null, DesktopSurface.ExitBackendUnavailable, $"{DiagnosticCodes.GeomBackendInit}: {ManifoldGeometryBackend.UnavailableReason()}");
 
-        var document = new DesktopDocument(configuration[DesktopSurface.DocumentFolderSetting] is { Length: > 0 } documents ? documents : DocumentFolder.Default);
+        var assets = new AssetStore(configuration["Engine:AssetFolder"] is { Length: > 0 } folder ? folder : AssetStore.Default);
+        var document = new DesktopDocument(configuration[DesktopSurface.DocumentFolderSetting] is { Length: > 0 } documents ? documents : DocumentFolder.Default, assets);
         var options = new DocumentFileOptions(
             file ?? (configuration[DesktopSurface.FileSetting] is { Length: > 0 } named ? named : null),
             configuration[DesktopSurface.UnsavedFolderSetting] is { Length: > 0 } unsaved ? unsaved : DocumentFile.DefaultUnsavedFolder);
-        var assets = new AssetStore(configuration["Engine:AssetFolder"] is { Length: > 0 } folder ? folder : AssetStore.Default);
 
         EngineHost host;
         try
