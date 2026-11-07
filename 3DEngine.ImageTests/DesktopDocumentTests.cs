@@ -132,6 +132,34 @@ public sealed class DesktopDocumentTests : IDisposable
         Assert.Equal(good, document.RequestedOpen);
     }
 
+    // Finding E167 of the codebase review of 2026-11-07 (TASK-0262): the check of an open reads the asset of an import from the
+    // store of the desktop, so a saved document with a mesh body opens; with no store the check refuses it with the code of
+    // the import, which was the result for each such document until TASK-0262.
+    [Fact]
+    public async Task The_Check_Of_An_Open_Reads_The_Asset_Of_An_Import_From_The_Store()
+    {
+        var part = Path.Combine(_folder, "bracket.3de");
+        var store = new Engine.Core.Assets.AssetStore(Path.Combine(_folder, "assets"));
+        using (var backend = new ManifoldGeometryBackend())
+        {
+            var stl = await Engine.Core.Determinism.CrossPlatformProbe.BracketStl(backend);
+            var (asset, _, _) = await store.Put(new MemoryStream(stl));
+            var session = new DocumentSession(EngineHosting.CreateDefault(backend, assets: store));
+            DocumentFile.Create(session, part);
+            Assert.Equal(Engine.Contracts.CommandStatus.Applied, (await session.Apply(new ImportStlCommand { Asset = asset!, BodyName = "bracket.stl" })).Status);
+            session.Close();
+        }
+
+        var withStore = new DesktopDocument(_folder, store);
+        var withNone = new DesktopDocument(_folder);
+
+        Assert.Null(await withStore.Folder.Reopen!(part, CancellationToken.None));
+        Assert.Equal(part, withStore.RequestedOpen);
+        var refused = await withNone.Folder.Reopen!(part, CancellationToken.None);
+        Assert.Equal(DiagnosticCodes.IoLoadFailed, refused?.Code);
+        Assert.Contains(DiagnosticCodes.StlAsset, refused!.Message, StringComparison.Ordinal);
+    }
+
     // V31 of the second codebase review of 2026-10-28: the check holds the file as a journal
     // does, so a file that another desktop holds fails it and the person keeps the window. The
     // file that this desktop holds passes, because the old process frees it before the start.
