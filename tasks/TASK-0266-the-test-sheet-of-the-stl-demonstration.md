@@ -1,7 +1,7 @@
 ---
 id: 0266
 title: The test sheet of the STL demonstration
-status: Active
+status: Done
 phase: P9e
 opened: 2026-11-07
 depends-on: [0260]
@@ -11,6 +11,7 @@ writes:
     - tasks/TASK-0266-the-test-sheet-of-the-stl-demonstration.md
     - docs/demo-stl-test-sheet.md
   modify:
+    - tasks/TASK-0262-the-check-of-an-open-reads-the-store.md
     - docs/INDEX.md
     - docs/roadmap.md
     - docs/CURRENT-STATE.md
@@ -44,24 +45,28 @@ S23 and the known limits of the run.
 
 ## Acceptance criteria
 
-- [ ] The sheet names each control by the label that the code draws: "Open file", "New part", "Frame", "Home" and
+- [x] The sheet names each control by the label that the code draws: "Open file", "New part", "Frame", "Home" and
       "Choose another file".
-- [ ] The sheet gives the sizes of both files as the repository holds them.
-- [ ] Criterion 10 is ticked, because the pipeline runs the probe of TASK-0258 at each push.
-- [ ] The gates of the repository pass.
-- [ ] The run of the owner on the desktop and on the S23 passes the criteria of the sheet.
+- [x] The sheet gives the sizes of both files as the repository holds them.
+- [x] Criterion 10 is ticked, because the pipeline runs the probe of TASK-0258 at each push.
+- [x] The gates of the repository pass.
+- [ ] The run of the owner on the desktop and on the S23 passes the criteria of the sheet. This box waits for the
+      owner: the rows P9c, P9d and P9e of the roadmap stay open until it, as R14e does.
 
 ## Outcome
 
-Status: Active
+Status: Done · commit (the merge of the branch p9e-demo-sheet-b) · v0.249
 
 ## Method
 
 Mechanical: the labels and the file sizes are read from the code and from `testdata/stl/` of this branch.
 Judgement:  the order of the steps and the criteria come from the page; the known limits come from ADR-0083 and from
             the emulator runs of this session.
-Weakest:    to be written at the close.
+Weakest:    no person did the steps of the sheet yet, so a step can be unclear or in the wrong order; the observation
+            sheet of the first run shows it.
 
 ## Progress
 
 - 2026-11-07: the sheet, its index line and the row P9e.
+- 2026-11-07: rebased on the close of P9d; run 42356325041 passed. A correction of TASK-0262 from the Codex review of
+  v0.245, checked on disk. Closed at v0.249; the row waits for the run of the owner.

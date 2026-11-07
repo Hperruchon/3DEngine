@@ -68,3 +68,7 @@ Weakest:    the HTTP surface opens a file through its own folder and the next se
 - 2026-11-07: the store on the check and on the desktop document; one test, which an injection of a check with no store
   fails.
 - 2026-11-07: run 42325122816 passed. Closed at v0.245.
+- 2026-11-07 (TASK-0266): a correction. The Judgement and the Weakest above say that the HTTP surface does not call
+  the check. That is false: the desktop gives `DesktopDocument.Reopen` to its `DocumentFolder`, and `/document/open`
+  calls `DocumentFolder.Open`, so an open over HTTP runs `DocumentFile.Check` with the store too. No test holds an open
+  over HTTP of a document with a mesh body.
