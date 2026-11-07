@@ -12,7 +12,9 @@ namespace ThreeDEngine.ImageTests;
 
 // Phase R14b (ADR-0061 item 9, TASK-0194): the host owns the document session, the surface mounts on it as an option, and
 // an open of a file stays in the same process. These tests run the session and the surface of the desktop with no window.
-[Collection("desktop sessions")]
+// Phase P0.114 (TASK-0278): the open of a file ends the home screen of the process (a static field of DesktopDocument),
+// so these tests run in the collection of the other tests of that state; until TASK-0278 they ran at the same time.
+[Collection(DearImGui.Collection)]
 public sealed class DesktopSessionTests : IDisposable
 {
     private readonly string _folder = Path.Combine(Path.GetTempPath(), "3de-session-" + Guid.NewGuid().ToString("N"));
