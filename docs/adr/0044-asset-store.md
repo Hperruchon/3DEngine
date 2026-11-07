@@ -1,13 +1,13 @@
 ---
 id: 0044
 title: The store of the assets of an account
-status: Accepted
+status: Amended
 topic: Vision, persistence
 date: 2026-10-31
 supersedes: []
 superseded-by: []
 amends: []
-amended-by: []
+amended-by: ['0083']
 affects:
   - Engine.Core/Assets/**
   - Engine.Api.Http/Endpoints/AssetsEndpoint.cs
@@ -62,3 +62,4 @@ recommendation for each other question, so this record is Accepted.
 
 - 2026-10-31 · TASK-0147 · The record, after the answer of the owner on the place of the bytes.
 - 2026-10-31 · TASK-0149 · Item 2 gains `E-ASSET-READ-FAILED` (finding E114), a put repairs a damaged file (E115), and a route with no length lets the store apply its limit (E118).
+- 2026-11-07 · TASK-0257 · ADR-0083 amends item 6: the handler of `ImportStl` reads the bytes of its asset, at an apply and at a replay.
