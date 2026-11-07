@@ -7913,3 +7913,31 @@ portrait display.
 New tests: 1. The test list holds 2075 (1414 in `Engine.Tests`, 337 in `3DEngine.Tests`, 321 in `3DEngine.ImageTests`, 3
 in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
 entries: 15 of 15. New diagnostic codes: 0. Since the review of v0.252, 3 product milestones and 9 entries followed it.
+
+## v0.262 — The tests of the home state of the desktop run in one collection (P0.114, TASK-0278)
+
+Two runs of the close of R16g failed in `StlOpenTests.An_Accepted_Open_By_Name_Ends_The_Home_Screen`: run 42371538462 on
+macOS, and run 42372112148, of the same commit under a new branch name, on the three runners. The first session showed
+no home screen. The close changed documents only, and the run of its change passed.
+
+**The cause.** The home screen of the desktop is a static field of `DesktopDocument`, so it belongs to the process
+(ADR-0083 D6). The test sets the home screen and then starts its first session. `DesktopSessionTests` had its own
+collection, so xUnit ran it at the same time, and its opens of a file end the home screen through `Reopen`. No test makes
+a `NativeThreeDEngine`, which is the other writer. Twenty local runs of the two classes, and eight local runs of all the
+image tests, did not give the failure, so the cause comes from the code.
+
+**The change.** `DesktopSessionTests` runs in the collection of DearImGui, with `StlOpenTests` and
+`DesktopDocumentTests`. A new test reads the source of each image test class: a class that uses `DesktopDocument` or
+`RunSessions` and changes its state must be in that collection. It failed on the code before the change and named
+`DesktopSessionTests.cs`. Run 42372629922 passed.
+
+**The merge of R16g.** v0.261 merged after the run of the change of P0.114, which holds the tree of the close of R16g and
+this change, passed; the two failed runs of that close are the runs above.
+
+**What stays.** The new test finds a class by the names of its calls, so a new kind of call can pass it.
+
+**A correction.** None. The failed runs since the entry v0.261, from the API: 42371538462 (the close of R16g, macOS gate) and 42372112148 (the same commit, the three gates), each in the test above.
+
+New tests: 1. The test list holds 2076 (1414 in `Engine.Tests`, 337 in `3DEngine.Tests`, 322 in `3DEngine.ImageTests`, 3
+in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
+entries: 15 of 15. New diagnostic codes: 0. Since the review of v0.252, 3 product milestones and 10 entries followed it.
