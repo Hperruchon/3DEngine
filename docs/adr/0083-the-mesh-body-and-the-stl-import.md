@@ -20,6 +20,10 @@ affects:
   - Engine.Core/Sketch/DatumResolver.cs
   - Engine.Geometry.Manifold/ManifoldGeometryBackend.cs
   - Engine.Core/Geometry/InProcessMeshBackend.cs
+  - 3DEngine.Vulkan/Window.FileDialog.cs
+  - 3DEngine.App/StlOpening.cs
+  - 3DEngine.App/Ui/DesktopUi.Home.cs
+  - 3DEngine/DesktopDocument.cs
 enforced-by: Engine.Tests/Import/StlImportTests.cs (TASK-0258 creates it)
 ---
 
@@ -124,3 +128,8 @@ desktop row P9c, the phone row P9d, and the test sheet P9e.
   (15,000,084 bytes) reads in 32 ms, imports in 34 ms and tessellates in 7 ms, with 55 MiB allocated; the emulator and
   the S23 are slower, and the run of the owner measures the phone. The probe of ADR-0074 holds the export and the import
   of the bracket, so the four platforms compare the reader.
+- 2026-11-07 · TASK-0259 · The desktop part: the home screen of item 7 at the first session of the program; "Open file"
+  opens the file dialog of the system through SDL; the client checks the chosen file with the reader of the engine and
+  puts it into the store, so a fault gives its code, a message and "Choose another file", and no new document; a good file
+  asks for a new part document whose session applies the one import first; the camera frames the first body; the size of
+  a mesh body says "mm (assumed)"; "Frame" and "Home" are on the row of the anchors of ADR-0080.
