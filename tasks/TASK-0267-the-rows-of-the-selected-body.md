@@ -1,7 +1,7 @@
 ---
 id: 0267
 title: The data of the selected body is in rows with no panel
-status: Active
+status: Done
 phase: R16d
 opened: 2026-11-07
 depends-on: [0264]
@@ -54,17 +54,17 @@ right, and a tap on a value opens its pad.
 
 ## Acceptance criteria
 
-- [ ] The rows are at the upper right, 16 pixels inside the safe area, each 44 pixels high, and a part of the panels.
-- [ ] A tap on a value row opens its pad, by touch and by mouse, and a row over the ring gives the row only.
-- [ ] The state gives "correct", or "failed" and the code, and "hidden".
-- [ ] A chip on the rows goes under them.
-- [ ] A picture of the rows on the GPU is kept for the owner.
-- [ ] A clean build (`--no-incremental`) gives zero errors and zero warnings.
-- [ ] Continuous integration passes on the three runners, on the branch and on `main` after the merge.
+- [x] The rows are at the upper right, 16 pixels inside the safe area, each 44 pixels high, and a part of the panels.
+- [x] A tap on a value row opens its pad, by touch and by mouse, and a row over the ring gives the row only.
+- [x] The state gives "correct", or "failed" and the code, and "hidden".
+- [x] A chip on the rows goes under them.
+- [x] A picture of the rows on the GPU is kept for the owner.
+- [x] A clean build (`--no-incremental`) gives zero errors and zero warnings.
+- [x] Continuous integration passes on the three runners, on the branch and on `main` after the merge.
 
 ## Outcome
 
-Status: Active
+Status: Done · commit (the merge of the branch r16d-body-rows) · v0.252
 
 ## Method
 
@@ -72,7 +72,8 @@ Mechanical: the tests of the place, the tap, the state and the chips, with no GP
             ring with no guard of the rows and of a chip that stays on the rows.
 Judgement:  the upper right while the panel stays (Q1 A); no rows on a portrait display yet (Q2 A); the data that the
             client has today (Q3 A). The column is 360 pixels, because the bitmap font cut "Bracket" at 320.
-Weakest:    to be written at the close.
+Weakest:    the name of the body shows two times, in the panel and in the rows, until a later slice takes the tools
+            of the selection out of the panel; and no person used the rows on a tablet yet.
 
 ## Progress
 
@@ -80,3 +81,4 @@ Weakest:    to be written at the close.
   showed the state past the right edge and a chip on the rows; the state moved to the right of the first row, the chip
   goes under the rows, and the column is 360 pixels. Injections of a ring with no guard of the rows and of a chip that
   stays on the rows each fail a test.
+- 2026-11-07: run 42360390053 passed. Closed at v0.252.
