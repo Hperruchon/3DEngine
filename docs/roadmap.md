@@ -228,6 +228,8 @@ Therefore each approved objective must have a track here.
   their next forms. v0.250, TASK-0263.
 - P0.107 — The chips, the ring and the collapsed panel hold their next forms. v0.251, TASK-0264, ADR-0081.
 - Review — The codebase review of 2026-11-07 (b). v0.253, TASK-0268.
+- P0.109 — The wait of the phone checks its turn, the STL reader keeps the results of v0.243, and the test sheet says what
+  the phone keeps. v0.254, TASK-0269, ADR-0079, ADR-0083.
 
 ## Track 0 — Foundations
 

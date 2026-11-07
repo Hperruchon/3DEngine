@@ -20,4 +20,19 @@ public sealed class PhoneLifecycleTests
     [InlineData(SDL_EventType.SDL_EVENT_LOW_MEMORY, PhoneStep.None)]
     public void Each_Event_Gives_Its_Step(SDL_EventType type, PhoneStep step)
         => Assert.Equal(step, PhoneLifecycle.Of(type));
+
+    // Finding E172 of the codebase review of 2026-11-07 (b) (TASK-0269), ADR-0079 item 4: the wait in the background ends a
+    // session whose turn is stale at each return, also at the foreground event of the new activity. Until TASK-0269 the wait
+    // checked the turn only after 500 ms with no event, so the stale session took that event and kept the window.
+    [Theory]
+    [InlineData(null, false, null)]
+    [InlineData(PhoneStep.None, false, null)]
+    [InlineData(PhoneStep.Background, false, null)]
+    [InlineData(PhoneStep.Foreground, false, true)]
+    [InlineData(PhoneStep.Quit, false, false)]
+    [InlineData(null, true, false)]
+    [InlineData(PhoneStep.None, true, false)]
+    [InlineData(PhoneStep.Foreground, true, false)]
+    public void A_Stale_Turn_Ends_The_Wait_At_Each_Return(PhoneStep? step, bool stale, bool? result)
+        => Assert.Equal(result, PhoneLifecycle.AfterWait(step, stale));
 }
