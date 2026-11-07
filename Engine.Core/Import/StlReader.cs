@@ -75,14 +75,8 @@ public static class StlReader
             return (null, Error(DiagnosticCodes.StlSyntax, "The text STL file is not UTF-8 or ASCII text."));
         }
 
-        // The name of the solid is the rest of the line of "solid" (E170), so a name may hold "facet" or "endsolid". A file
-        // of one line has no end of that line, so its name ends at the first facet or "endsolid".
-        var solid = text.Length - text.TrimStart().Length;
-        var line = text.IndexOfAny(['\r', '\n'], solid);
-        var words = (line < 0 ? text : text[line..]).Split((char[]?)null, StringSplitOptions.RemoveEmptyEntries);
-        var at = line < 0 ? 1 : 0;
-        while (line < 0 && at < words.Length && words[at] != "facet" && words[at] != "endsolid")
-            at++;
+        var words = text.Split((char[]?)null, StringSplitOptions.RemoveEmptyEntries);
+        var at = NameEnd(text, words);
 
         var triangles = new List<float>();
         while (true)
@@ -115,6 +109,36 @@ public static class StlReader
         if (triangles.Count == 0)
             return (null, Error(DiagnosticCodes.StlEmpty, "The text STL file holds no triangle."));
         return ([.. triangles], null);
+    }
+
+    // The index of the first word after the name of the solid. ADR-0083 item 3: a recorded import reads its asset again at
+    // each replay, so a change of the reader keeps the result of each file that an earlier reader accepted.
+    //
+    // Until TASK-0263 the name ended at the first word "facet" or "endsolid" (v0.243). Finding E170 (TASK-0263): a name may
+    // hold those words, so the name became the rest of the line of "solid". Finding E173 of the codebase review of
+    // 2026-11-07 (b) (TASK-0269): that rule lost a facet on the line of "solid" and refused a file of one line with a line
+    // end, which v0.243 read. Now the name ends at a word "facet" that "normal" and a number follow, on any line, or at
+    // "facet" or "endsolid" after the line of "solid". Each file that v0.243 accepted has its first "facet" there, so it
+    // gives the result of v0.243; a name on the line of "solid" may still hold "facet" and "endsolid".
+    private static int NameEnd(string text, string[] words)
+    {
+        var solid = text.Length - text.TrimStart().Length;
+        var line = text.IndexOfAny(['\r', '\n'], solid);
+        var onFirstLine = line < 0 ? words.Length : text[..line].Split((char[]?)null, StringSplitOptions.RemoveEmptyEntries).Length;
+        for (var at = 1; at < words.Length; at++)
+        {
+            if (at >= onFirstLine && words[at] is "facet" or "endsolid")
+                return at;
+            if (words[at] == "facet" && at + 2 < words.Length && words[at + 1] == "normal"
+                && float.TryParse(words[at + 2], NumberStyles.Float, CultureInfo.InvariantCulture, out _))
+                return at;
+        }
+
+        // No word ends the name: the rule of v0.243, so a file of one line with no facet gives E-STL-EMPTY as before.
+        var end = 1;
+        while (end < words.Length && words[end] != "facet" && words[end] != "endsolid")
+            end++;
+        return end;
     }
 
     // The byte order mark of UTF-8, which some programs write at the start of a text file (E170).

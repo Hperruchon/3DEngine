@@ -45,7 +45,8 @@ Do the desktop first, then the phone. Do the same six steps on each device.
 6. **Try again.** Select "Choose another file" and open `bracket.stl`. The bracket shows, framed, as in step 3.
 
 On the phone, also do this between step 4 and step 5: put the app in the background for 10 seconds, and come back. The
-bracket and the view are still there.
+bracket is still there and shows whole: the app frames it again from the start view. The turn and the zoom of step 4,
+the selection and the line "Size" go at each trip into the background (ADR-0073); select the body to see its size again.
 
 ## 3 Pass criteria
 
@@ -62,7 +63,7 @@ its step.
 | 6 | "Frame" brings back the whole part from each view. | [ ] | [ ] |
 | 7 | The damaged file gives a message in words and a registered code. The app stays open and shows no new part. | [ ] | [ ] |
 | 8 | "Choose another file" leads to a good open of `bracket.stl`. | [ ] | [ ] |
-| 9 | Phone only: the part and the view are the same after 10 seconds in the background. | n/a | [ ] |
+| 9 | Phone only: the same part shows whole, framed again, after 10 seconds in the background. | n/a | [ ] |
 | 10 | The pipeline opens both files on Windows, Linux, macOS and the emulator with one result (the probe of ADR-0074 since TASK-0258). | [x] | [x] |
 
 ## 4 Observation sheet for the S23
@@ -92,5 +93,8 @@ After the run, add one line: the one change that would help most.
 - The phone has no document folder yet, so it shows no recent file and saves no document (ADR-0083 item 7, TASK-0260).
 - The limit of 300,000 triangles is measured on this computer only (ADR-0083 item 6); the S23 is not measured.
 - The size of a mesh body shows only with the toggle "Dimensions" on; an open turns it on.
-- When Android starts the activity again during a session, the program ends that session quietly (ADR-0079 item 4); the
-  emulator showed this, and no device did.
+- When Android starts the activity again during a session, the program ends that session quietly (ADR-0079 item 4). The
+  emulator showed the end before the window; the end after a lost surface ran on no emulator and no device yet.
+- After the background the phone keeps the document only: the view, the selection and the line "Size" start again
+  (ADR-0073). Correction of TASK-0269 (finding E174 of the codebase review of 2026-11-07 (b)): until then the sheet said
+  that the view stays.

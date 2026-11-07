@@ -63,6 +63,14 @@ internal static class PhoneHost
             {
                 while (true)
                 {
+                    // Finding E172 of the codebase review of 2026-11-07 (b) (TASK-0269): the turn at each pass, so a session
+                    // whose activity was destroyed does not make an engine in the window of the new one.
+                    if (turn != 0 && !SessionTurns.Phone.IsLast(turn))
+                    {
+                        Console.Error.WriteLine("3DEngine: the activity of this session was destroyed, so the session ends.");
+                        break;
+                    }
+
                     var step = Foreground(window, host, files, assets);
                     if (step == Session.NewPart)
                     {
@@ -199,28 +207,21 @@ internal static class PhoneHost
 
     // The wait in the background, until the program is in the foreground again (true) or ends (false). V124 (TASK-0265): the
     // wait ends quietly when a later create of the activity took a turn, because the session of that create holds the window.
+    // Finding E172 of the codebase review of 2026-11-07 (b) (TASK-0269): the turn at each return of the wait, also at an
+    // event; until TASK-0269 only a quiet wait of 500 ms read it, so the stale session took the foreground event of the new
+    // activity and kept the window (PhoneLifecycle.AfterWait).
     private static unsafe bool WaitForForeground(int turn)
     {
         SDL_Event sdlEvent;
         while (true)
         {
-            if (!SDL_WaitEventTimeout(&sdlEvent, 500))
+            var step = SDL_WaitEventTimeout(&sdlEvent, 500) ? PhoneLifecycle.Of(sdlEvent.Type) : (PhoneStep?)null;
+            var stale = turn != 0 && !SessionTurns.Phone.IsLast(turn);
+            if (PhoneLifecycle.AfterWait(step, stale) is { } result)
             {
-                if (turn != 0 && !SessionTurns.Phone.IsLast(turn))
-                {
+                if (stale)
                     Console.Error.WriteLine("3DEngine: the activity of this session was destroyed, so the session ends.");
-                    return false;
-                }
-
-                continue;
-            }
-
-            switch (PhoneLifecycle.Of(sdlEvent.Type))
-            {
-                case PhoneStep.Quit:
-                    return false;
-                case PhoneStep.Foreground:
-                    return true;
+                return result;
             }
         }
     }

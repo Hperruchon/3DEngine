@@ -85,3 +85,6 @@ gave `Window` a `Dispose`, so a later session of the process makes its own windo
 - 2026-11-07 · TASK-0255 · Item 4 shipped at v0.238.
 - 2026-11-07 · TASK-0265 · Item 4: a lost surface after a destroy of the activity ends the engine as the background does,
   and the wait for the foreground ends a session whose turn is stale (finding V124 of the codebase review of 2026-11-07).
+- 2026-11-07 · TASK-0269 · Item 4: the wait in the background reads the turn at each return, also at an event, and the
+  loop reads it at each pass (finding E172 of the codebase review of 2026-11-07 (b)); until TASK-0269 only a quiet wait of
+  500 ms read it, so the code did not do what this item says.

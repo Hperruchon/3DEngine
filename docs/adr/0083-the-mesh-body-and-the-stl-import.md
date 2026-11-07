@@ -116,6 +116,11 @@ So the handler of the import reads the bytes of its asset.
      times its count (`E-STL-TRUNCATED`, as `bracket-damaged.stl`); a word or a number of a text file that does not
      read, or a text file that ends before `endsolid` (`E-STL-SYNTAX`); a coordinate that is not finite
      (`E-STL-NOT-FINITE`); no triangle (`E-STL-EMPTY`); more triangles than the limit (`E-STL-TOO-LARGE`, item 6).
+   - **A change of the reader (E173 A, the standing order, 2026-11-07).** A recorded import reads its asset again at each
+     replay (item 2). So a change of the reader keeps the result of each file that an earlier reader accepted, and it
+     may only accept a file that an earlier reader refused, because a rejected command writes no entry. A change that
+     cannot keep a result takes a new schema version of `ImportStl`, whose handler keeps the earlier reader for version 1.
+     A test compares the forms that an earlier reader read with its result.
 4. **What a mesh body permits (D2).** The view: `GetTessellation`, `GetBoundingBox`, `GetBodyInfo`, the frame of the
    camera, and the STL export (ADR-0048 amended: the export holds the triangles of a mesh body as they are). The
    visibility and the name are a part of the view and stay permitted. Each other operation refuses a mesh body with
@@ -169,3 +174,7 @@ desktop row P9c, the phone row P9d, and the test sheet P9e.
 - 2026-11-07 · TASK-0263 · The affects field names the 26 code files of TASK-0258 to TASK-0260 that cite this ADR: the
   refusals of item 4, the store of item 2, the codes, the hosts and the clients (finding T167 of the codebase review of
   2026-11-07). `AffectsCitationGateTests` holds it.
+- 2026-11-07 · TASK-0269 · Item 3: a change of the reader keeps the result of each file that an earlier reader
+  accepted (finding E173 of the codebase review of 2026-11-07 (b), answer A under the standing order). The name of the
+  solid ends at a word "facet" that "normal" and a number follow, or at "facet" or "endsolid" after its line, so each
+  file that v0.243 read gives the result of v0.243.
