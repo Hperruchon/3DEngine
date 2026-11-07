@@ -35,14 +35,17 @@ internal sealed unsafe partial class DesktopUi
             ImGui.SameLine();
             if (Anchor(RedoLabel, back: false))
                 _actions.Add(new RedoAction());
+            // ADR-0083 (TASK-0259): "Frame" and "Home" of the demonstration, on the row of the anchors.
+            ViewButtons();
             AddWindowRectangle();
         }
 
         ImGui.End();
+        var row = _fixed[^1];
 
         // The status line on the row of the anchors, right of Redo: the address of the surface of the session. The brief puts it
         // at the bottom right, where the window of a sketch lies today; the row of the anchors holds no panel.
-        ImGui.SetNextWindowPos(new Vector2(16f + _inset.X + (2 * AnchorSize) + 28f, displaySize.Y - 16f - _inset.W - (AnchorSize / 2f)), ImGuiCond.Always, new Vector2(0f, 0.5f));
+        ImGui.SetNextWindowPos(new Vector2(row.Z + 20f, displaySize.Y - 16f - _inset.W - (AnchorSize / 2f)), ImGuiCond.Always, new Vector2(0f, 0.5f));
         if (ImGui.Begin("##Status", FixedFlags))
         {
             // The text colour of the panels: the dim colour gives 2.9:1 on the clear, below the 3:1 of large text.
