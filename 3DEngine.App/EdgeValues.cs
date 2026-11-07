@@ -12,7 +12,8 @@ namespace ThreeDEngine.Desktop;
 internal static class EdgeValues
 {
     // A value on an edge. Constraint is null for the distance of the extrude; Sketch is the sketch of the constraint.
-    public sealed record Value(string Key, string Text, Vector2 At, double Number, Guid Body, Guid? Sketch, Guid? Constraint);
+    // ADR-0084 item 2 (TASK-0267): Label names the value in its row: "Distance", "Length" or "Radius".
+    public sealed record Value(string Key, string Text, Vector2 At, double Number, Guid Body, Guid? Sketch, Guid? Constraint, string Label = "Value");
 
     // How far the chip is from the middle of its edge, away from the middle of the body on the screen, in pixels.
     public const float Offset = 24f;
@@ -48,7 +49,7 @@ internal static class EdgeValues
                 .Cast<Vector2?>()
                 .FirstOrDefault();
             if (along is { } on)
-                values.Add(new Value(DistanceKey(body), $"{Dimensions.Format(d)} {unit}", Away(on, centre), d, body, null, null));
+                values.Add(new Value(DistanceKey(body), $"{Dimensions.Format(d)} {unit}", Away(on, centre), d, body, null, null, "Distance"));
         }
 
         var items = edges.SelectMany(edge => new[] { edge.First, edge.Second }).Where(Side).Select(face => face.ItemId).OfType<Guid>().ToHashSet();
@@ -59,17 +60,17 @@ internal static class EdgeValues
         {
             if (constraint.Values.Count == 0)
                 continue;
-            var (item, prefix) = constraint.Kind switch
+            var (item, prefix, label) = constraint.Kind switch
             {
-                "distance" => (LineOf(of, constraint.Items), string.Empty),
-                "radius" when constraint.Items.Count == 1 => (constraint.Items[0], "R "),
-                _ => ((Guid?)null, string.Empty),
+                "distance" => (LineOf(of, constraint.Items), string.Empty, "Length"),
+                "radius" when constraint.Items.Count == 1 => (constraint.Items[0], "R ", "Radius"),
+                _ => ((Guid?)null, string.Empty, string.Empty),
             };
             if (item is not { } id)
                 continue;
             var edge = edges.FirstOrDefault(candidate => Pair(candidate, body, id));
             if (edge is not null && Middle(edge, camera, width, height) is { } at)
-                values.Add(new Value(ConstraintKey(constraint.Id), $"{prefix}{Dimensions.Format(constraint.Values[0])} {unit}", Away(at, centre), constraint.Values[0], body, of.SketchId, constraint.Id));
+                values.Add(new Value(ConstraintKey(constraint.Id), $"{prefix}{Dimensions.Format(constraint.Values[0])} {unit}", Away(at, centre), constraint.Values[0], body, of.SketchId, constraint.Id, label));
         }
 
         return values;

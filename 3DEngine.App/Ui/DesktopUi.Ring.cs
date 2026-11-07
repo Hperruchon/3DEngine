@@ -127,7 +127,7 @@ internal sealed unsafe partial class DesktopUi
         // chip is the tap of the chip only; the chips of the last frame are the chips that the person sees. Until
         // TASK-0264 one tap gave both tools.
         var io = ImGui.GetIO();
-        if (ImGui.IsMouseReleased(ImGuiMouseButton.Left) && !ImGui.IsWindowHovered(ImGuiHoveredFlags.AnyWindow) && ChipAt(io.MousePos) is null
+        if (ImGui.IsMouseReleased(ImGuiMouseButton.Left) && !ImGui.IsWindowHovered(ImGuiHoveredFlags.AnyWindow) && ChipAt(io.MousePos) is null && RowAt(io.MousePos) is null
             && ring.At(labels, io.MousePos) is { } released && ring.At(labels, io.MouseClickedPos[0]) == released)
             Use(released, body);
 
