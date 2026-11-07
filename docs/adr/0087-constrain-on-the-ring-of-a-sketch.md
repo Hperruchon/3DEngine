@@ -84,3 +84,4 @@ the count of segments.
 ## History
 
 - 2026-11-07 · TASK-0276 · The record, Accepted under the standing order.
+- 2026-11-07 · TASK-0276 · Shipped at v0.261.

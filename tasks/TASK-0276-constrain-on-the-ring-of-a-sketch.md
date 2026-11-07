@@ -1,7 +1,7 @@
 ---
 id: 0276
 title: "Constrain" on the ring of a sketch opens the constraints that fit the selection
-status: Active
+status: Done
 phase: R16g
 opened: 2026-11-07
 depends-on: [0275]
@@ -50,24 +50,25 @@ ring of the kinds that fit, and a tap on a kind does what its button of the wind
 
 ## Acceptance criteria
 
-- [ ] With no selection the ring holds no "Constrain"; with a line selected it holds "Constrain" before Finish.
-- [ ] A tap on "Constrain" gives Horizontal, Vertical, Distance and Back for a line; Horizontal adds the constraint, and
+- [x] With no selection the ring holds no "Constrain"; with a line selected it holds "Constrain" before Finish.
+- [x] A tap on "Constrain" gives Horizontal, Vertical, Distance and Back for a line; Horizontal adds the constraint, and
       Distance opens the pad of its value.
-- [ ] The tests of the window of the sketch and of its constraints pass with the one method.
-- [ ] A picture of the second ring on the GPU is kept for the owner.
-- [ ] A clean build (`--no-incremental`) gives zero errors and zero warnings.
-- [ ] Continuous integration passes on the three runners, on the branch and on `main` after the merge.
+- [x] The tests of the window of the sketch and of its constraints pass with the one method.
+- [x] A picture of the second ring on the GPU is kept for the owner.
+- [x] A clean build (`--no-incremental`) gives zero errors and zero warnings.
+- [x] Continuous integration passes on the three runners, on the branch and on `main` after the merge.
 
 ## Outcome
 
-Status: Active
+Status: Done · commit (the merge of the branch r16g-constrain-ring) · v0.261
 
 ## Method
 
 Mechanical: the test of the second ring by touch; injections of a ring with no "Constrain" and of a "Constrain" that does
             not open; the tests of the window of the sketch.
 Judgement:  the kinds that fit, from the rule of the window of the sketch (Q2 A), so the two places agree.
-Weakest:    to be written at the close.
+Weakest:    on a display of 1280 by 720 a wide label still covers the edge of the sketch, and no test holds the
+            second ring on a portrait display.
 
 ## Progress
 
@@ -78,3 +79,4 @@ Weakest:    to be written at the close.
 - 2026-11-07: the picture of the second ring on the GPU showed "Horizontal" and "Vertical" centred over the points of
   the sketch, and "Vertical" on the edge of the panel. A wide label now ends outside the inner edge, right of the panel,
   on a plate (ADR-0087 item 5). An injection of a centred label fails the test. The picture constrain-ring.png is kept.
+- 2026-11-07: run 42371079980 passed. Closed at v0.261.
