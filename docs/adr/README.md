@@ -47,7 +47,7 @@ names. Do not read all of them.
 | [0031](0031-undo-and-redo.md) | Undo and redo as commands of the log | Amended | Contracts, runtime | 0006, 0021 | 0032, 0033, 0037, 0045, 0051, 0071, 0080 |
 | [0032](0032-numeric-pad-and-evaluator.md) | The numeric pad, the expression evaluator and the keys of undo and redo | Amended | Clients, rendering | 0026, 0031 | 0034, 0076 |
 | [0033](0033-sketch-model.md) | The sketch model in the engine | Amended | Contracts, sketch | 0012, 0021, 0031 | 0035, 0045, 0051, 0052 |
-| [0034](0034-sketch-tools.md) | The sketch tools of the desktop | Amended | Clients, sketch | 0026, 0029, 0032 | 0041, 0053, 0084, 0085 |
+| [0034](0034-sketch-tools.md) | The sketch tools of the desktop | Amended | Clients, sketch | 0026, 0029, 0032 | 0041, 0053, 0084, 0085, 0088 |
 | [0035](0035-sketch-solver.md) | The constraint solver of a sketch | Amended | Sketch, determinism | 0033 | 0052 |
 | [0036](0036-extrude-of-a-sketch-profile.md) | The extrude of a closed profile of a sketch | Amended | Contracts, geometry, sketch | — | 0037, 0040, 0050, 0051, 0052 |
 | [0037](0037-rebuild-of-an-extrude.md) | The rebuild of an extrude after an edit of its sketch | Amended | Contracts, geometry, sketch | 0012, 0021, 0028, 0031, 0036 | 0039, 0049, 0055 |
@@ -93,6 +93,7 @@ names. Do not read all of them.
 | [0085](0085-the-sketch-under-its-body.md) | The active sketch of a live extrude moves out of its body, and the camera stays | Accepted | Clients, rendering | 0034 | — |
 | [0086](0086-the-tools-of-the-sketch-on-the-ring.md) | While a sketch is active, the ring holds the tools of the sketch | Amended | Clients, rendering | 0081 | 0087 |
 | [0087](0087-constrain-on-the-ring-of-a-sketch.md) | "Constrain" on the ring of a sketch opens the constraints that fit the selection | Accepted | Clients, sketch | 0086 | — |
+| [0088](0088-the-window-of-a-sketch-beside-its-ring.md) | While the ring of a sketch shows, the window of the sketch does not repeat it | Accepted | Clients, sketch | 0034 | — |
 
 ## Topics
 
