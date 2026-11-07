@@ -79,9 +79,15 @@ What exists:
 
 ### Q4. The volume
 
-The facets of A give a volume less than the true volume: about 0.16 % for the cone (as for the cylinder), about 0.32 % for
-the sphere (two polygons of 64), and about 0.8 % for the torus (a tube of 32 and an axis of 64). A later slice with a true surface needs the true surfaces of the kernel (the
-question Q1 B of ADR-0076). This record proposes no change of that.
+The facets of A give a volume less than the true volume:
+
+- about 0.16 % for the cone, as for the cylinder;
+- about 0.40 % for the sphere: the ratio is sin(π/32)/(π/32) × (1 + cos(π/32))/2 for 64 longitudes and 32 bands (the
+  review of Codex of v0.268, TASK-0285; the first form of this record gave 0.32 %);
+- about 0.8 % for the torus, with a tube of 32 and an axis of 64.
+
+A later slice with a true surface needs the true surfaces of the kernel (the question Q1 B of ADR-0076). This record
+proposes no change of that.
 
 ## Decision
 
@@ -101,3 +107,5 @@ primitive is less than the true volume.
 
 - 2026-11-07 · TASK-0283 · The record, Proposed, with the research for the owner (Q2 of the codebase review of 2026-11-07
   (c)).
+- 2026-11-07 · TASK-0285 · Q4: the volume of the sphere is about 0.40 % less than the true volume, not 0.32 % (the review
+  of Codex of v0.268).

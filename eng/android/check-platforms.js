@@ -82,7 +82,7 @@ for (const name of projects) {
 // Finding T168 of the codebase review of 2026-11-07 (b) (TASK-0272): the host of the phone itself makes CA1416 an error.
 {
   const host = path.join(root, '3DEngine.Android', '3DEngine.Android.csproj');
-  const result = JSON.parse(execFileSync('dotnet', ['msbuild', host, '-getProperty:WarningsAsErrors', '-getProperty:TreatWarningsAsErrors', '-getProperty:NoWarn', '-getProperty:WarningsNotAsErrors'], { encoding: 'utf8' }));
+  const result = JSON.parse(execFileSync('dotnet', ['msbuild', host, '-getProperty:WarningsAsErrors', '-getProperty:TreatWarningsAsErrors', ...[...lists, ...switches].map(p => '-getProperty:' + p)], { encoding: 'utf8' }));
   const listOf = name => (result.Properties[name] || '').split(/[;,\s]+/).map(code => code.toUpperCase());
   const codes = listOf('WarningsAsErrors');
   if (!codes.includes('CA1416') && (result.Properties.TreatWarningsAsErrors || '').trim().toLowerCase() !== 'true')
@@ -93,7 +93,29 @@ for (const name of projects) {
     if (listOf(name).includes('CA1416'))
       offences.push(`3DEngine.Android: the evaluated property ${name} holds CA1416`);
   }
-  console.log(`3DEngine.Android: WarningsAsErrors ${result.Properties.WarningsAsErrors || 'none'}`);
+  // The review of Codex of v0.266 (TASK-0285): a switch that stops the analyzers in the host passed each check, and TASK-0281
+  // named a probe build in the host that it did not add. The host now has the checks of the other projects: its switches,
+  // and a build with the probe that must give the error CA1416. The job of the APK gives the paths of the SDKs.
+  for (const property of switches) {
+    if ((result.Properties[property] || '').trim().toLowerCase() === 'false')
+      offences.push(`3DEngine.Android: the evaluated property ${property} is false, so the analyzer CA1416 does not run`);
+  }
+
+  const probeFile = path.join(root, '3DEngine.Android', probeName);
+  const sdks = [['AndroidSdkDirectory', process.env.ANDROID_HOME], ['JavaSdkDirectory', process.env.JAVA_HOME_17_X64]]
+    .filter(([, value]) => value).map(([name, value]) => `-p:${name}=${value}`);
+  fs.writeFileSync(probeFile, probe);
+  let output;
+  try {
+    const build = spawnSync('dotnet', ['build', host, '-p:BuildProjectReferences=false', '-nologo', '-clp:NoSummary', ...sdks], { encoding: 'utf8' });
+    output = (build.stdout || '') + (build.stderr || '');
+  } finally {
+    fs.rmSync(probeFile, { force: true });
+  }
+  const reported = output.split(/\r?\n/).some(line => line.includes(probeName) && /error CA1416/.test(line));
+  if (!reported)
+    offences.push(`3DEngine.Android: the build with ${probeName} gave no error CA1416 at the probe, so a silence or a severity hides it`);
+  console.log(`3DEngine.Android: WarningsAsErrors ${result.Properties.WarningsAsErrors || 'none'}; the probe gives ${reported ? 'the error CA1416' : 'no error CA1416'}`);
 }
 
 if (offences.length > 0) {
