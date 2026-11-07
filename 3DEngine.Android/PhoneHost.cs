@@ -54,7 +54,7 @@ internal static class PhoneHost
             // Finding V112 (TASK-0250): the session destroys its window at its end, so a later session of this process, after a
             // new start of the activity (ADR-0079), makes its own; SDL on Android permits one window.
             using var window = new Window("3DEngine", 1080, 2316);
-            while (Foreground(window, host) && WaitForForeground())
+            while (Foreground(window, host) && WaitForForeground(turn))
                 Console.Error.WriteLine("3DEngine: the program is in the foreground again, with the same document.");
         }
         catch (Exception ex)
@@ -137,7 +137,20 @@ internal static class PhoneHost
 
             var now = DateTime.UtcNow;
             engine.Update(now - lastFrame);
-            engine.Render();
+            // Finding V124 of the codebase review of 2026-11-07 (TASK-0265): Android destroyed the activity after the first
+            // frame (run 42323457861), and the surface was lost before the next event of SDL reached this loop; the session
+            // ended with the exception. A lost surface now ends the engine as the background does, and the wait for the
+            // foreground ends the session quietly when a later create of the activity took a turn (ADR-0079 item 4).
+            try
+            {
+                engine.Render();
+            }
+            catch (Vortice.Vulkan.VkException ex) when (ex.Message.Contains(nameof(Vortice.Vulkan.VkResult.ErrorSurfaceLostKHR), StringComparison.Ordinal))
+            {
+                Console.Error.WriteLine("3DEngine: the surface of the window is lost, so the engine ends as in the background.");
+                return true;
+            }
+
             lastFrame = now;
             // Finding V106 of the codebase review of 2026-11-06 (d) (TASK-0243): the line comes after the first frame that the
             // presenter submitted, not after the first call, which draws nothing while the surface has no area.
@@ -149,12 +162,24 @@ internal static class PhoneHost
         }
     }
 
-    // The wait in the background, until the program is in the foreground again (true) or ends (false).
-    private static unsafe bool WaitForForeground()
+    // The wait in the background, until the program is in the foreground again (true) or ends (false). V124 (TASK-0265): the
+    // wait ends quietly when a later create of the activity took a turn, because the session of that create holds the window.
+    private static unsafe bool WaitForForeground(int turn)
     {
         SDL_Event sdlEvent;
-        while (SDL_WaitEvent(&sdlEvent))
+        while (true)
         {
+            if (!SDL_WaitEventTimeout(&sdlEvent, 500))
+            {
+                if (turn != 0 && !SessionTurns.Phone.IsLast(turn))
+                {
+                    Console.Error.WriteLine("3DEngine: the activity of this session was destroyed, so the session ends.");
+                    return false;
+                }
+
+                continue;
+            }
+
             switch (PhoneLifecycle.Of(sdlEvent.Type))
             {
                 case PhoneStep.Quit:
@@ -163,7 +188,5 @@ internal static class PhoneHost
                     return true;
             }
         }
-
-        return false;
     }
 }
