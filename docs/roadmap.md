@@ -246,6 +246,8 @@ Therefore each approved objective must have a track here.
 - Review — The codebase review of 2026-11-07 (c). v0.264, TASK-0279.
 - P0.115 — The reader gives the result of each earlier reader that accepted a file, and the ring of a sketch keeps
   each tool in reach. v0.265, TASK-0280, ADR-0083, ADR-0086, ADR-0088.
+- P0.116 — The size limit, the lost surface, the taps over a window, the portrait ring and the host warnings hold
+  their next forms. v0.266, TASK-0281, ADR-0083.
 
 ## Track 0 — Foundations
 
