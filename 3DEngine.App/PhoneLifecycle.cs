@@ -45,6 +45,12 @@ internal static class PhoneLifecycle
     // window whose surface was just lost.
     public static (bool NewPart, bool Wait) AfterLostSurface(bool newPartWaiting) => (newPartWaiting, true);
 
+    // V124 (TASK-0265) and the audit of Codex of the phone host at d5209a2 (TASK-0286): the exception of Vulkan for a lost
+    // surface, by its result. The start of an engine and its frames both end as the background does when the surface is lost.
+    // Until TASK-0286 the frame read the message, which names the result ("[-1000000000] ErrorSurfaceLostKHR - ...").
+    public static bool IsSurfaceLost(Exception exception)
+        => exception is Vortice.Vulkan.VkException { Result: Vortice.Vulkan.VkResult.ErrorSurfaceLostKHR };
+
     public static bool? AfterWait(PhoneStep? step, bool stale) => stale
         ? false
         : step switch
