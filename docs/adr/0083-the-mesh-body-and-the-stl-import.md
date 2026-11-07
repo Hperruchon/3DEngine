@@ -178,3 +178,7 @@ desktop row P9c, the phone row P9d, and the test sheet P9e.
   accepted (finding E173 of the codebase review of 2026-11-07 (b), answer A under the standing order). The name of the
   solid ends at a word "facet" that "normal" and a number follow, or at "facet" or "endsolid" after its line, so each
   file that v0.243 read gives the result of v0.243.
+- 2026-11-07 · TASK-0270 · D1 and D6: a request of a new part takes the place of an open, so an open of another file in
+  the same session gets a refusal, and the import reaches only its new part; a new part that does not start drops its
+  import; an accepted open of a file ends the home screen (findings V125 and V126 of the codebase review of 2026-11-07
+  (b)).

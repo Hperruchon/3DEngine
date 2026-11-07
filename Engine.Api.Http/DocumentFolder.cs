@@ -51,6 +51,10 @@ public sealed class DocumentFolder
         return error;
     }
 
+    // Finding V125 of the codebase review of 2026-11-07 (b) (TASK-0270): a request of a new part document by the window is an
+    // accepted open too, so the surface refuses each command, save and open after it, as after an open of a file.
+    public void AcceptRequest() => Volatile.Write(ref _openAccepted, true);
+
     // ADR-0030 item 2: a file name has at most 255 characters on each file system.
     public const int MaximumFileNameLength = 255;
 

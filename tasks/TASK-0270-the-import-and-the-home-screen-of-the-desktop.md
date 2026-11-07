@@ -1,7 +1,7 @@
 ---
 id: 0270
 title: The import of a chosen STL reaches only its new part, and an open by name ends the home screen
-status: Ready
+status: Active
 phase: P0.110
 opened: 2026-11-07
 depends-on: [0269]
@@ -14,6 +14,7 @@ writes:
     - 3DEngine/DesktopEngineHost.cs
     - 3DEngine.App/NativeThreeDEngine.cs
     - 3DEngine.App/ISessionHost.cs
+    - 3DEngine.App/PhoneFiles.cs
     - Engine.Api.Http/DocumentFolder.cs
     - 3DEngine.ImageTests/StlOpenTests.cs
     - 3DEngine.ImageTests/DesktopDocumentTests.cs
@@ -58,14 +59,21 @@ screen.
 
 ## Outcome
 
-Status: Ready
+Status: Active
 
 ## Method
 
 Mechanical: a test or an injection for each finding, before the change.
-Judgement:  to be written in the task.
+Judgement:  V125: the request takes the slot of an open (E149), and it also sets OpenAccepted, so the surface refuses
+            an open and a command after it; two layers, each proved by an injection. The host drops the import when
+            its new part does not start. V126: the home screen ends in Reopen, at each accepted open, so an open by an
+            agent ends it too. Whether a start with --file skips the home screen stays a question for the owner.
 Weakest:    to be written at the close.
 
 ## Progress
 
 - 2026-11-07: opened by the codebase review of 2026-11-07 (b).
+- 2026-11-07: V125 and V126, with four tests through the sessions of the desktop; they did not compile before the change,
+  because RequestNew gave no refusal. Injections: no guard of the slot fails the test of the other order; no guard and no
+  accept fail both tests of the race; no drop fails the test of a new part that does not start; no end of the home screen
+  fails its test.
