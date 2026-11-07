@@ -45,9 +45,85 @@ public sealed class FixedControlsTests
     {
         using var ui = new DesktopUi("http://127.0.0.1:5180", Engine.Contracts.Document.Millimetre);
 
-        Assert.Equal("3DEngine | plate.3de | mm", ui.Title(new DocumentLine("plate.3de", null)));
-        Assert.Equal("3DEngine | unsaved | mm", ui.Title(new DocumentLine(null, null)));
+        Assert.Equal("3DEngine | mm | plate.3de", ui.Title(new DocumentLine("plate.3de", null)));
+        Assert.Equal("3DEngine | mm | unsaved", ui.Title(new DocumentLine(null, null)));
         Assert.Equal("3DEngine | mm", ui.Title(new DocumentLine(null, "Applied", Files: false)));
         Assert.Equal("3DEngine | mm", ui.Title(null));
     }
+
+    // Finding V115 of the codebase review of 2026-11-06 (e) (TASK-0252): with a long name, the program and the unit are
+    // inside the title bar of the panel, before the arrow of the collapse and the padding; the name can be cut.
+    [Fact]
+    public void A_Long_File_Name_Does_Not_Cut_The_Unit()
+    {
+        using var ui = new DesktopUi("http://127.0.0.1:5180", Engine.Contracts.Document.Millimetre);
+        var document = new DocumentLine("bracket-v2-final-for-the-printer.3de", null);
+        Step(ui, document);
+        Step(ui, document);
+
+        var title = ui.Title(document);
+        var unit = title[..(title.IndexOf("mm", StringComparison.Ordinal) + 2)];
+        var panel = ui.PanelRectangles[0];
+        Assert.True(ui.TextSize(unit).X + 64f < panel.Z - panel.X, $"The text \"{unit}\" does not fit in a panel of {panel.Z - panel.X} pixels.");
+        Assert.True(ui.TextSize(title).X > panel.Z - panel.X - 64f, "The name is not long enough for the test.");
+    }
+
+    // Finding V114 of the codebase review of 2026-11-06 (e) (TASK-0252): a drag of the title bar of the panel down to the
+    // anchors, and a display that becomes smaller, do not put the panel over Undo, and a tap on Undo gives its action.
+    [Fact]
+    public void A_Panel_That_The_Person_Drags_Down_Or_A_Smaller_Display_Does_Not_Cover_Undo()
+    {
+        using var ui = new DesktopUi("http://127.0.0.1:5180", Engine.Contracts.Document.Millimetre);
+        var tall = new Vector2(1280, 1024);
+        void Frame(Vector2 display, params InputSample[] samples)
+        {
+            ui.Route(samples);
+            ui.Frame(1f / 60f, display, Vector2.One, [], null, null);
+        }
+
+        Frame(tall);
+        Frame(tall);
+        Frame(tall, Mouse(100, 26, PointerButtons.Left, PointerPhase.Down, 0));
+        Frame(tall, Mouse(100, 600, PointerButtons.Left, PointerPhase.Move, 50));
+        Frame(tall, Mouse(100, 900, PointerButtons.Left, PointerPhase.Move, 100));
+        Frame(tall, Mouse(100, 900, PointerButtons.Left, PointerPhase.Up, 150));
+        Frame(Display);
+        Frame(Display);
+
+        var undo = ui.ItemRectangle(DesktopUi.UndoLabel) ?? throw new InvalidOperationException("No Undo.");
+        var panel = ui.PanelRectangles[0];
+        Assert.True(panel.W <= undo.Y && panel.Y == 16f, $"The panel at {panel} covers Undo at {undo}.");
+        var (x, y) = ((undo.X + undo.Z) / 2, (undo.Y + undo.W) / 2);
+        Frame(Display, Mouse(x, y, PointerButtons.None, PointerPhase.Move, 200));
+        Frame(Display, Mouse(x, y, PointerButtons.Left, PointerPhase.Down, 250));
+        Frame(Display, Mouse(x, y, PointerButtons.Left, PointerPhase.Up, 300));
+        Frame(Display);
+        Frame(Display);
+        Assert.Contains(ui.TakeActions(), action => action is UndoAction);
+    }
+
+    // Finding V118 of the codebase review of 2026-11-06 (e) (TASK-0252): with the insets of the system bars of a phone, the
+    // panel starts under the top inset, and Undo, Redo and the status line are above the bottom inset.
+    [Fact]
+    public void The_Fixed_Controls_And_The_Panel_Are_Inside_The_Safe_Area()
+    {
+        using var ui = new DesktopUi("http://127.0.0.1:5180", Engine.Contracts.Document.Millimetre);
+        var inset = new Vector4(24f, 40f, 0f, 48f);
+        for (var frame = 0; frame < 2; frame++)
+        {
+            ui.Route([]);
+            ui.Frame(1f / 60f, Display, Vector2.One, [], null, null, safeInsets: inset);
+        }
+
+        var undo = ui.ItemRectangle(DesktopUi.UndoLabel) ?? throw new InvalidOperationException("No Undo.");
+        var status = ui.ItemRectangle(DesktopUi.StatusLabel) ?? throw new InvalidOperationException("No status line.");
+        var panel = ui.PanelRectangles[0];
+        Assert.Equal((16f + inset.X, Display.Y - 16f - inset.W - DesktopUi.AnchorSize), (undo.X, undo.Y));
+        Assert.True(status.W <= Display.Y - inset.W, $"The status line at {status} is under the bottom inset.");
+        Assert.Equal((16f + inset.X, 16f + inset.Y), (panel.X, panel.Y));
+        Assert.True(panel.W <= undo.Y, $"The panel at {panel} covers Undo at {undo}.");
+    }
+
+    private static PointerSample Mouse(double x, double y, PointerButtons buttons, PointerPhase phase, ulong ms)
+        => new(DeviceKind.Mouse, 1, 0, x, y, 1, buttons, KeyModifiers.None, phase, ms * 1_000_000);
 }
