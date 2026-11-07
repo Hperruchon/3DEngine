@@ -509,4 +509,41 @@ public sealed class ToolRingTests
             }
         }
     }
+
+    // Finding V137 of the codebase review of 2026-11-07 (c) (TASK-0282): ADR-0087 item 3, a change of the selection closes the
+    // second ring, so the ring holds the tools again. Until TASK-0282 no test held it: a condition that never matched passed
+    // each test of the ring.
+    [Fact]
+    public void A_Change_Of_The_Selection_Closes_The_Second_Ring()
+    {
+        using var ui = new DesktopUi("http://127.0.0.1:5180", Engine.Contracts.Document.Millimetre);
+        var (start, end, line) = (Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid());
+        var sketch = new Engine.Core.Queries.SketchInfo(Guid.NewGuid(), Engine.Contracts.Sketch.Datums.XY.Id, "Plate",
+            [new(start, 0, 0), new(end, 40, 10)], [new(line, start, end)], [], [], [], true, 4);
+        var selection = new List<Guid> { line };
+        void Frame(params InputSample[] samples)
+        {
+            ui.Route(samples);
+            ui.Frame(1f / 60f, Display, Vector2.One, [], null, null,
+                sketchPanel: new SketchPanel([sketch], sketch, ThreeDEngine.Core.Sketching.SketchToolKind.Select, false, [.. selection], null), ringCentre: new Vector2(700, 360), ringBody: 60f);
+        }
+
+        for (var frame = 0; frame < 3; frame++)
+            Frame();
+        var at = Centre(ui, DesktopUi.ConstrainLabel);
+        Frame(new PointerSample(DeviceKind.Touch, 1, 3, at.X, at.Y, 1, PointerButtons.None, KeyModifiers.None, PointerPhase.Down, 0));
+        Frame(new PointerSample(DeviceKind.Touch, 1, 3, at.X, at.Y, 1, PointerButtons.None, KeyModifiers.None, PointerPhase.Up, 0));
+        Frame();
+        Frame();
+        Assert.NotNull(ui.ItemRectangle(DesktopUi.RingItem("Horizontal")));
+
+        // The person selects a point in place of the line: a point fits "Fixed", so "Constrain" stays, and the tools come back.
+        selection.Clear();
+        selection.Add(end);
+        Frame();
+        Frame();
+        Assert.Null(ui.ItemRectangle(DesktopUi.RingItem("Horizontal")));
+        Assert.NotNull(ui.ItemRectangle(DesktopUi.RingItem(DesktopUi.LineToolLabel)));
+        Assert.NotNull(ui.ItemRectangle(DesktopUi.RingItem(DesktopUi.ConstrainLabel)));
+    }
 }
