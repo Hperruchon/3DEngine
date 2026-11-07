@@ -124,6 +124,49 @@ public sealed class FixedControlsTests
         Assert.True(panel.W <= undo.Y, $"The panel at {panel} covers Undo at {undo}.");
     }
 
+    // Finding V123 of the codebase review of 2026-11-07 (TASK-0264): a double click on the title bar collapses the panel,
+    // and a drag of the collapsed panel to the bottom left put it over Undo and out of the display on the left, because
+    // the clamp ran only for a panel that was not collapsed. Now the collapsed panel stays above the anchors and 16 pixels
+    // inside the left edge, and a click on Undo gives its action.
+    [Fact]
+    public void A_Collapsed_Panel_That_The_Person_Drags_Does_Not_Cover_Undo()
+    {
+        using var ui = new DesktopUi("http://127.0.0.1:5180", Engine.Contracts.Document.Millimetre);
+        void Frame(params InputSample[] samples)
+        {
+            ui.Route(samples);
+            ui.Frame(1f / 60f, Display, Vector2.One, [], null, null);
+        }
+
+        Frame();
+        Frame();
+        Frame(Mouse(100, 26, PointerButtons.None, PointerPhase.Move, 0));
+        Frame(Mouse(100, 26, PointerButtons.Left, PointerPhase.Down, 0));
+        Frame(Mouse(100, 26, PointerButtons.Left, PointerPhase.Up, 20));
+        Frame(Mouse(100, 26, PointerButtons.Left, PointerPhase.Down, 40));
+        Frame(Mouse(100, 26, PointerButtons.Left, PointerPhase.Up, 60));
+        Frame();
+        var collapsed = ui.PanelRectangles[0];
+        Assert.True(collapsed.W - collapsed.Y < 100f, $"The double click did not collapse the panel: {collapsed}.");
+        Frame(Mouse(100, 26, PointerButtons.Left, PointerPhase.Down, 600));
+        Frame(Mouse(80, 400, PointerButtons.Left, PointerPhase.Move, 650));
+        Frame(Mouse(60, 690, PointerButtons.Left, PointerPhase.Move, 700));
+        Frame(Mouse(60, 690, PointerButtons.Left, PointerPhase.Up, 750));
+        Frame();
+        Frame();
+
+        var undo = ui.ItemRectangle(DesktopUi.UndoLabel) ?? throw new InvalidOperationException("No Undo.");
+        var panel = ui.PanelRectangles[0];
+        Assert.True(panel.W <= undo.Y && panel.X >= 16f, $"The collapsed panel at {panel} covers Undo at {undo} or leaves the display.");
+        var (x, y) = ((undo.X + undo.Z) / 2, (undo.Y + undo.W) / 2);
+        Frame(Mouse(x, y, PointerButtons.None, PointerPhase.Move, 1200));
+        Frame(Mouse(x, y, PointerButtons.Left, PointerPhase.Down, 1250));
+        Frame(Mouse(x, y, PointerButtons.Left, PointerPhase.Up, 1300));
+        Frame();
+        Frame();
+        Assert.Contains(ui.TakeActions(), action => action is UndoAction);
+    }
+
     private static PointerSample Mouse(double x, double y, PointerButtons buttons, PointerPhase phase, ulong ms)
         => new(DeviceKind.Mouse, 1, 0, x, y, 1, buttons, KeyModifiers.None, phase, ms * 1_000_000);
 }

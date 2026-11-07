@@ -168,4 +168,25 @@ public sealed class EdgeValueTests
         Assert.NotNull(ui.Pad);
         Assert.Null(ui.ItemRectangle(values[0].Key));
     }
+
+    // Finding V119 of the codebase review of 2026-11-07 (TASK-0264), items 1 and 4: the pad of another tool from the panel,
+    // while the pad of a chip is open, ends the pending state, and no chip shows. Until TASK-0264 the chip stayed pending
+    // for a pad that was not open.
+    [Fact]
+    public void The_Pad_Of_Another_Tool_Ends_The_Pending_Chip()
+    {
+        var (body, sketch, constraint) = (Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid());
+        IReadOnlyList<EdgeValues.Value> values = [new EdgeValues.Value(EdgeValues.ConstraintKey(constraint), "10 mm", new Vector2(700, 300), 10, body, sketch, constraint)];
+        using var ui = new DesktopUi("http://127.0.0.1:5180", Document.Millimetre);
+        Step(ui, values, body);
+        Step(ui, values, body);
+        Tap(ui, values, body, DeviceKind.Touch, values[0].Key);
+        Assert.Equal(values[0].Key, ui.PendingValue);
+
+        Tap(ui, values, body, DeviceKind.Touch, DesktopUi.MoveLabel);
+
+        Assert.Equal(DesktopUi.MoveLabel, ui.Pad!.Title);
+        Assert.Null(ui.PendingValue);
+        Assert.Null(ui.ItemRectangle(values[0].Key));
+    }
 }
