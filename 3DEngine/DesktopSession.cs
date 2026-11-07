@@ -48,7 +48,8 @@ internal sealed class DesktopSession : IDisposable
         var assets = new AssetStore(configuration["Engine:AssetFolder"] is { Length: > 0 } folder ? folder : AssetStore.Default);
         var document = new DesktopDocument(configuration[DesktopSurface.DocumentFolderSetting] is { Length: > 0 } documents ? documents : DocumentFolder.Default, assets);
         var options = new DocumentFileOptions(
-            file ?? (configuration[DesktopSurface.FileSetting] is { Length: > 0 } named ? named : null),
+            // ADR-0083 D1 (TASK-0259): NewDocument asks for a new part document, whatever the setting "file".
+            file == DesktopDocument.NewDocument ? null : file ?? (configuration[DesktopSurface.FileSetting] is { Length: > 0 } named ? named : null),
             configuration[DesktopSurface.UnsavedFolderSetting] is { Length: > 0 } unsaved ? unsaved : DocumentFile.DefaultUnsavedFolder);
 
         EngineHost host;
