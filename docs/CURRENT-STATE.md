@@ -7968,3 +7968,32 @@ centre of the ring. The redesign slices that are left need a change of the contr
 New tests: 1. The test list holds 2077 (1414 in `Engine.Tests`, 337 in `3DEngine.Tests`, 323 in `3DEngine.ImageTests`, 3
 in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
 entries: 15 of 15. New diagnostic codes: 0. Since the review of v0.252, 4 product milestones and 11 entries followed it.
+
+## v0.264 — The codebase review of 2026-11-07 (c) (governance, TASK-0279)
+
+The review of 2026-11-07 (b) examined v0.252. After it came 4 product milestones (R16e, R16f, R16g and R16h) and 11 ledger
+entries, and the next product milestone would be the fifth, so this review is due before it. No review draft of Codex
+exists for v0.252.
+
+**The change.** `docs/reviews/2026-11-07-c-codebase-review.md`, at `db0138c` (v0.263). Two agents examined the desktop
+interface, and the reader, the phone, the CLI and the gates, at one tree, and proved their main findings with probes that
+they deleted; the session checked the high findings in the code. Each of the 23 findings of the last review is fixed.
+- Three findings are high: E180 (the reader refuses a text file with a zero byte, which v0.243 read), E181 (the reader
+  refuses a file that only v0.250 read) and V134 (the ring of a sketch can be under the window of the sketch or
+  below the display, and since R16h the window then holds no Finish).
+- Six are medium: E182, E183, E184, V135, V136 and T174. Four are low: E185, V137, V138 and V139.
+- TASK-0280 (P0.115) holds the high findings before the next product phase; TASK-0281 (P0.116) and TASK-0282 (P0.117)
+  hold the others after it.
+- Q1 (E182: two classes of files that two earlier readers read with different results) has the recommended answer A
+  under the standing order, which changes no code. Q2 (the capability of K5c) changes the contract and waits for the owner.
+
+**Proof.** `CodebaseReviewGateTests` passes with the new review. The main run of v0.263 (42374773460) passed.
+
+**What stays.** The open findings are 0 critical, 7 high, 20 medium and 23 low. The lines of the findings up to T167 are
+carried from the last review. The next product phase, K5c, waits for Q2.
+
+**A correction.** None. The failed runs since the entry v0.263, from the API: none.
+
+New tests: 0. The test list holds 2077 (1414 in `Engine.Tests`, 337 in `3DEngine.Tests`, 323 in `3DEngine.ImageTests`, 3
+in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
+entries: 15 of 15. New diagnostic codes: 0. Since the review of v0.263, 0 product milestones and 1 entry followed it.

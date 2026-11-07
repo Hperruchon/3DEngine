@@ -243,6 +243,7 @@ Therefore each approved objective must have a track here.
 - R16g — "Constrain" on the ring of a sketch opens the constraints that fit the selection. v0.261, TASK-0276, ADR-0087.
 - P0.114 — The tests of the home state of the desktop run in one collection. v0.262, TASK-0278.
 - R16h — While the ring of a sketch shows, the window of the sketch does not repeat it. v0.263, TASK-0277, ADR-0088.
+- Review — The codebase review of 2026-11-07 (c). v0.264, TASK-0279.
 
 ## Track 0 — Foundations
 
@@ -362,6 +363,9 @@ This track removes each condition that blocks other work.
 | P0.112 | The phone, the reader, the APK check, the gates and the roadmap hold their next forms (E175 to E179, T168 to T173 of the codebase review of 2026-11-07 (b); after P0.111). TASK-0272. | 2 |
 | P0.113 | The name of the solid keeps the results of v0.250, and the test sheet says how the size comes back (the review of Codex of v0.254, high; after R16e, before the next product phase). TASK-0274. | 1 |
 | P0.114 | The tests of the home state of the desktop run in one collection, so an open of one class does not end the home screen of another (run 42371538462 on macOS). TASK-0278. | 1 |
+| P0.115 | The reader gives the result of each earlier reader that accepted a file, and the ring of a sketch keeps each tool in reach (E180, E181 and V134 of the codebase review of 2026-11-07 (c), high; before the next product phase). TASK-0280. | 1–2 |
+| P0.116 | The size limit, the lost surface, the taps over a window, the portrait ring and the host warnings hold their next forms (E183, E184, V135, V136 and T174 of the codebase review of 2026-11-07 (c); after the next product phase). TASK-0281. | 1–2 |
+| P0.117 | The asset verb, the second ring, three comments and the dialog filter hold their next forms (E185, V137, V138 and V139 of the codebase review of 2026-11-07 (c); after P0.116). TASK-0282. | 1 |
 | P0.102 | The cache of a face, the fixed controls, the list New, the edges and the safe area hold their next forms (V113 to V118 of the codebase review of 2026-11-06 (e); after P0.101). TASK-0252. | 1–2 |
 | P0.86 | The window keeps no input between sessions, the hook has the cases of one axis, and the next forms of four gates fail (V88 to V90, T141 to T144 of the codebase review of 2026-11-06; after the next product phase). TASK-0198. | 1–2 |
 
