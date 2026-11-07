@@ -8063,3 +8063,30 @@ S23 showed the portrait ring above the anchors. E185 and V137 to V139 come in TA
 New tests: 5. The test list holds 2084 (1415 in `Engine.Tests`, 337 in `3DEngine.Tests`, 329 in `3DEngine.ImageTests`, 3
 in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
 entries: 15 of 15. New diagnostic codes: 0. Since the review of v0.263, 0 product milestones and 3 entries followed it.
+
+## v0.267 — The low forms of the thirtieth review (P0.117, TASK-0282)
+
+The codebase review of 2026-11-07 (c) found four low findings. They come after TASK-0281, which came before a product phase
+because K5c waits for the owner.
+
+**The change.**
+- E185: the verb `asset` of the command line refuses a blank `--folder` with the exit code 2, as the other verbs do.
+- V137: a test holds ADR-0087 item 3: a change of the selection closes the second ring of a sketch.
+- V138: three comments say what the code does: the portrait margin of 46 pixels, the head of `DesktopUi.Ring.cs` with the
+  ring of a sketch, and the row of Next point.
+- V139: the state of the file dialog is in `FileDialogState`. Each dialog has its own number, which SDL gives back to the
+  callback, and its own filter, so a late callback of an earlier dialog frees its own filter and gives no result.
+
+**Proof.** Two new tests and two new checks in a test. The checks of E185 failed before the change with
+`ArgumentException`. Injections of a ring that the selection does not close and of a late callback that gives its result
+each fail a test. Run 42379027742 passed.
+
+**What stays.** No run on a computer with a file dialog showed a late callback; the test drives `FileDialogState` with no
+dialog of SDL. Each finding of the review of 2026-11-07 (c) is fixed, except E182, which has its answer A under the
+standing order and waits for the check of the owner.
+
+**A correction.** None. The failed runs since the entry v0.266, from the API: none; run 42379024660 of the close of P0.116 was cancelled in the step that installs lavapipe on Linux, and each other job passed, so the same commit ran again under the name p0116-medium-forms-b.
+
+New tests: 2. The test list holds 2086 (1415 in `Engine.Tests`, 337 in `3DEngine.Tests`, 331 in `3DEngine.ImageTests`, 3
+in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
+entries: 15 of 15. New diagnostic codes: 0. Since the review of v0.263, 0 product milestones and 4 entries followed it.
