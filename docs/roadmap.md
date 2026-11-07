@@ -212,6 +212,7 @@ Therefore each approved objective must have a track here.
 - R16b2 — The tools of the selected body are the segments of a ring that follows it. v0.236, TASK-0253, ADR-0081.
 - P0.101 — A failed delete, an edge of more than two faces, two gates and the smoke test hold their next forms. v0.237, TASK-0251.
 - P0.103 — The session of a destroyed activity ends before its window. v0.238, TASK-0255, ADR-0079.
+- P0.104 — A failure of the window of the phone and a new create of its activity name their cause. v0.239, TASK-0256.
 
 ## Track 0 — Foundations
 
