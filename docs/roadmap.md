@@ -242,6 +242,7 @@ Therefore each approved objective must have a track here.
 - R16f — While a sketch is active, the ring holds the tools of the sketch. v0.260, TASK-0275, ADR-0086.
 - R16g — "Constrain" on the ring of a sketch opens the constraints that fit the selection. v0.261, TASK-0276, ADR-0087.
 - P0.114 — The tests of the home state of the desktop run in one collection. v0.262, TASK-0278.
+- R16h — While the ring of a sketch shows, the window of the sketch does not repeat it. v0.263, TASK-0277, ADR-0088.
 
 ## Track 0 — Foundations
 

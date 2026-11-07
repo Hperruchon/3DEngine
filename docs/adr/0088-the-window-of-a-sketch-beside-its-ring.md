@@ -71,3 +71,4 @@ a command and the rollback.
 ## History
 
 - 2026-11-07 · TASK-0277 · The record, Accepted under the standing order.
+- 2026-11-07 · TASK-0277 · Shipped at v0.263.

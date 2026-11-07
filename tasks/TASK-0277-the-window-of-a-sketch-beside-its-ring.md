@@ -1,7 +1,7 @@
 ---
 id: 0277
 title: While the ring of a sketch shows, the window of the sketch does not repeat it
-status: Active
+status: Done
 phase: R16h
 opened: 2026-11-07
 depends-on: [0278]
@@ -47,25 +47,27 @@ While the ring of a sketch shows, the window of the sketch holds no tool, no Fin
 
 ## Acceptance criteria
 
-- [ ] With the ring, the window holds no Line, Select, Circle, Arc, Finish, Horizontal, Vertical or Distance, and keeps
+- [x] With the ring, the window holds no Line, Select, Circle, Arc, Finish, Horizontal, Vertical or Distance, and keeps
       Extrude, Delete and the rows.
-- [ ] With no ring, the window holds each of them, as before.
-- [ ] The tests of the window of the sketch pass.
-- [ ] A picture of the sketch with its ring and its window on the GPU is kept for the owner.
-- [ ] A clean build (`--no-incremental`) gives zero errors and zero warnings.
-- [ ] Continuous integration passes on the three runners, on the branch and on `main` after the merge.
+- [x] With no ring, the window holds each of them, as before.
+- [x] The tests of the window of the sketch pass.
+- [x] A picture of the sketch with its ring and its window on the GPU is kept for the owner.
+- [x] A clean build (`--no-incremental`) gives zero errors and zero warnings.
+- [x] Continuous integration passes on the three runners, on the branch and on `main` after the merge.
 
 ## Outcome
 
-Status: Active
+Status: Done · commit (the merge of the branch r16h-sketch-window-rows) · v0.263
 
 ## Method
 
 Mechanical: the test of the window with and with no ring; an injection of a window that repeats the ring.
 Judgement:  the window keeps each button when the ring does not show (Q2 A), so a tool always has a place.
-Weakest:    to be written at the close.
+Weakest:    the buttons of the window change when the ring shows or hides, for example while a pad is open; no test
+            holds the host, which gives the centre of the ring.
 
 ## Progress
 
 - 2026-11-07: ADR-0088 and the window of the sketch beside its ring. An injection of a window that repeats the ring fails
   the new test. The picture on the GPU shows the window with its title, its state, Next point, Extrude and the rows.
+- 2026-11-07: run 42373253669 passed. Closed at v0.263.

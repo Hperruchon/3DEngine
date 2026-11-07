@@ -7941,3 +7941,30 @@ this change, passed; the two failed runs of that close are the runs above.
 New tests: 1. The test list holds 2076 (1414 in `Engine.Tests`, 337 in `3DEngine.Tests`, 322 in `3DEngine.ImageTests`, 3
 in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
 entries: 15 of 15. New diagnostic codes: 0. Since the review of v0.252, 3 product milestones and 10 entries followed it.
+
+## v0.263 — While the ring of a sketch shows, the window of the sketch does not repeat it (R16h, TASK-0277)
+
+The owner ordered the layout of the redesign slice by slice, with no change of the contract, and K5 after the slices that
+need no change of the contract. ADR-0087 named this slice. The next phase of K5, the cone, needs a new capability in
+`Engine.Contracts`: `IExtrudeOps` makes a straight prism only, and a mesh body of `IMeshImportOps` takes no other
+operation (ADR-0083 item 4). By the standing order, that question is recorded for the owner, and this slice came first.
+
+**The change.** ADR-0088 is new and Accepted under the standing order (Q1 A, Q2 A). It amends ADR-0034 item 8.
+- In a frame where the ring of the active sketch shows, the window of the sketch holds no Line, Select, Circle, Arc,
+  Finish or kind of a constraint, because the ring holds them. It keeps the name, the state, Next point, End, Close,
+  Extrude, Move point, Value, Delete, the message of a rejected command and the rows.
+- In a frame with no ring, for example while a pad is open, the window holds each button, as before.
+
+**Proof.** One new test with no GPU: with the ring, the window holds none of the eight buttons of the ring and keeps
+Extrude, Delete and the row L1; with no ring, it holds each of them. An injection of a window that repeats the ring fails
+it. The picture on the GPU shows the window with its name, its state, Next point, Extrude and the rows, beside the ring.
+Run 42373253669 passed.
+
+**What stays.** The buttons of the window change when the ring shows or hides. No test holds the host, which gives the
+centre of the ring. The redesign slices that are left need a change of the contract, and wait for the owner.
+
+**A correction.** None. The failed runs since the entry v0.262, from the API: none.
+
+New tests: 1. The test list holds 2077 (1414 in `Engine.Tests`, 337 in `3DEngine.Tests`, 323 in `3DEngine.ImageTests`, 3
+in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
+entries: 15 of 15. New diagnostic codes: 0. Since the review of v0.252, 4 product milestones and 11 entries followed it.
