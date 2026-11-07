@@ -7346,3 +7346,30 @@ its asset. The bytes of the files are the export of the probe, not of a session 
 New tests: 8. The test list holds 2014 (1405 in `Engine.Tests`, 337 in `3DEngine.Tests`, 269 in `3DEngine.ImageTests`, 3
 in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
 entries: 15 of 15. New diagnostic codes: 7. Since the review of v0.233, 4 product milestones and 10 entries followed it.
+
+## v0.244 — The codebase review of 2026-11-07 (governance, TASK-0261)
+
+The review of 2026-11-06 (e) examined v0.233. After it came 4 product milestones (R16b2, R16c, P9a and P9b) and 10 ledger
+entries, and the next product milestone, P9c, would be the fifth, so this review is due before it. No review draft of
+Codex exists for v0.233 (the rule of the owner of 2026-11-07); the review of Codex of v0.237 gave three leads.
+
+**The change.** `docs/reviews/2026-11-07-codebase-review.md`, at `86517c8` (v0.243). Three agents examined the engine and
+the hosts, the desktop and the phone, and the gates and the pipeline, at one tree; the session checked each finding and
+set two grades. Two findings are high: E167 (the check of an open on the desktop has no store of the assets, so a saved
+document with a mesh body does not open; the agent gave medium) and V124 (the run of `main` at v0.243 failed: Android
+destroyed the activity after the first frame, and the session ended with a lost surface). T166 is medium (three projects
+of the phone do not treat a warning as an error; the agent gave low). Fifteen are low: E168 to E171, V119 to V123, T165 and
+T167; E168, E169 and T165 confirm the three leads of Codex. TASK-0262 (P0.105) and TASK-0265 (P0.108) hold the high
+findings before the close of P9c; TASK-0263 (P0.106) and TASK-0264 (P0.107) hold the others after it.
+
+**Proof.** `CodebaseReviewGateTests` passes with the new review. Run 42324736514 passed.
+
+**What stays.** The open findings are 0 critical, 6 high, 15 medium and 30 low. The lines of the findings up to T159 are
+carried from the last review.
+
+**A correction.** None. The failed runs since the entry v0.243, from the API: 42323457861 (`main` at `86517c8`, the
+merge of v0.243), in the job "Start the APK on the emulator", which V124 holds.
+
+New tests: 0. The test list holds 2014 (1405 in `Engine.Tests`, 337 in `3DEngine.Tests`, 269 in `3DEngine.ImageTests`, 3
+in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
+entries: 15 of 15. New diagnostic codes: 0. Since the review of v0.243, 0 product milestones and 1 entry followed it.
