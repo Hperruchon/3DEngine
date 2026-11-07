@@ -102,6 +102,37 @@ public sealed class CutUiTests
         Assert.Null(ui.ItemRectangle(DesktopUi.SaveAsLabel));
     }
 
+    // Finding V116 of the codebase review of 2026-11-06 (e) (TASK-0252): while the list "Cut with" or the list "New" is open,
+    // a tap on the scene, by touch and by mouse, closes the list, gives no sample to the scene and no action. Until TASK-0252
+    // the scene took the tap, and the list stayed open.
+    [Theory]
+    [InlineData("Cut", DeviceKind.Touch)]
+    [InlineData("Cut", DeviceKind.Mouse)]
+    [InlineData("New", DeviceKind.Touch)]
+    [InlineData("New", DeviceKind.Mouse)]
+    public void A_Tap_On_The_Scene_Closes_An_Open_List_And_Does_Not_Reach_The_Scene(string list, DeviceKind kind)
+    {
+        LiveBody[] bodies = [Plate, Tool];
+        using var ui = Opened(Plate.Id, bodies);
+        var (box, entry) = list == "Cut" ? (DesktopUi.CutLabel, DesktopUi.CutItem(Tool.Id)) : (DesktopUi.NewLabel, DesktopUi.NewBoxLabel);
+        Tap(ui, box, Plate.Id, bodies);
+        Assert.NotNull(ui.ItemRectangle(entry));
+
+        var (pointer, buttons) = kind == DeviceKind.Mouse ? (0UL, PointerButtons.Left) : (3UL, PointerButtons.None);
+        var scene = new List<InputSample>();
+        foreach (var phase in new[] { PointerPhase.Down, PointerPhase.Up })
+        {
+            scene.AddRange(ui.Route([new PointerSample(kind, 1, pointer, 900, 400, 1, buttons, KeyModifiers.None, phase, 0)]));
+            ui.Frame(1f / 60f, Display, Vector2.One, bodies, Plate.Id);
+        }
+        Step(ui, Plate.Id, bodies);
+        Step(ui, Plate.Id, bodies);
+
+        Assert.Empty(scene);
+        Assert.Null(ui.ItemRectangle(entry));
+        Assert.Empty(ui.TakeActions());
+    }
+
     // A tap on the list and a tap on a tool give the cut of the selected body with that tool. A hidden body is no tool.
     [Fact]
     public void A_Tap_On_A_Tool_Gives_The_Cut_Of_The_Selected_Body()

@@ -7206,3 +7206,36 @@ has them names their cause, and a task then corrects them.
 New tests: 0. The test list holds 1990 (1397 in `Engine.Tests`, 337 in `3DEngine.Tests`, 253 in `3DEngine.ImageTests`, 3
 in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
 entries: 15 of 15. New diagnostic codes: 0. Since the review of v0.233, 1 product milestone and 6 entries followed it.
+
+## v0.240 — The kept face, the panel, the title, the open list, the edge and the safe area hold their next forms (P0.102, TASK-0252)
+
+The codebase review of 2026-11-06 (e) found V113 to V118 (low). By `docs/templates.md`, section 7, they come after the
+next product phase and after P0.101 (v0.237), P0.103 (v0.238) and P0.104 (v0.239).
+
+**The change.** The standing order of 2026-11-05 gave the recommended option for each question.
+- V113: `BodyActions.Forget`, which the host calls each frame with the live bodies, removes the kept entry of the face of
+  a body with a fault, so the face and the edge clear (ADR-0075 item 3).
+- V114: a constraint ends the height of the panel above the anchors, and each frame keeps its place between the top of
+  the safe area and the row of the anchors (ADR-0080 item 2). The panel still moves, because `FocusClickTests` drags it
+  by its title; the first form, a panel that does not move, failed that test.
+- V115: the title is "3DEngine | unit | name", so a long name does not cut the unit (ADR-0080 item 1).
+- V116: while a list of the panel is open, each press belongs to the panel: the library closes the list, and the tap does
+  not reach the scene (ADR-0027 item 4).
+- V117: the host asks for the edge of the selected face before the pick, so a tap just outside the silhouette selects the
+  edge (ADR-0077 item 3).
+- V118: `Window.SafeInsets` reads `SDL_GetWindowSafeArea`, and the panel, the anchors and the status line start inside
+  the safe area (ADR-0080 item 6, new). Step 11 of `docs/android-test-sheet.md` taps Undo with the navigation of three
+  buttons.
+
+**Proof.** Nine new tests. Each fails on the code before the change: the old `BodyActions` fails the tests of V113 and
+V117, the old panel fails the tests of V114 and V115, the old `OverPanel` fails the four rows of V116 (each list, by touch
+and by mouse), and a frame that drops the insets fails the test of V118. Run 42316096251 passed.
+
+**What stays.** No device ran the safe area. The tool ring of ADR-0081 keeps its corner, which the navigation bar of a
+phone can cover; a later slice of the redesign moves it.
+
+**A correction.** None. The failed runs since the entry v0.239, from the API: none.
+
+New tests: 9. The test list holds 1999 (1397 in `Engine.Tests`, 337 in `3DEngine.Tests`, 262 in `3DEngine.ImageTests`, 3
+in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
+entries: 15 of 15. New diagnostic codes: 0. Since the review of v0.233, 1 product milestone and 7 entries followed it.

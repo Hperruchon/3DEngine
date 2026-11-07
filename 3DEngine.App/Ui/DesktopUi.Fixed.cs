@@ -23,8 +23,10 @@ internal sealed unsafe partial class DesktopUi
 
     private void FixedControls(Vector2 displaySize)
     {
-        // Undo and Redo at the bottom left (ADR-0031 item 11, amended by ADR-0080).
-        ImGui.SetNextWindowPos(new Vector2(16f, displaySize.Y - 16f - AnchorSize), ImGuiCond.Always);
+        // Undo and Redo at the bottom left (ADR-0031 item 11, amended by ADR-0080). Finding V118 of the codebase review of
+        // 2026-11-06 (e) (TASK-0252): inside the safe area of the display, so that the navigation bar of the phone does not
+        // cover them.
+        ImGui.SetNextWindowPos(new Vector2(16f + _inset.X, displaySize.Y - 16f - _inset.W - AnchorSize), ImGuiCond.Always);
         ImGui.PushStyleVar(ImGuiStyleVar.WindowPadding, Vector2.Zero);
         if (ImGui.Begin("##Anchors", FixedFlags))
         {
@@ -40,7 +42,7 @@ internal sealed unsafe partial class DesktopUi
 
         // The status line on the row of the anchors, right of Redo: the address of the surface of the session. The brief puts it
         // at the bottom right, where the window of a sketch lies today; the row of the anchors holds no panel.
-        ImGui.SetNextWindowPos(new Vector2(16f + (2 * AnchorSize) + 28f, displaySize.Y - 16f - (AnchorSize / 2f)), ImGuiCond.Always, new Vector2(0f, 0.5f));
+        ImGui.SetNextWindowPos(new Vector2(16f + _inset.X + (2 * AnchorSize) + 28f, displaySize.Y - 16f - _inset.W - (AnchorSize / 2f)), ImGuiCond.Always, new Vector2(0f, 0.5f));
         if (ImGui.Begin("##Status", FixedFlags))
         {
             // The text colour of the panels: the dim colour gives 2.9:1 on the clear, below the 3:1 of large text.

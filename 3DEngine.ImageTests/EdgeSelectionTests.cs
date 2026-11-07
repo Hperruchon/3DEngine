@@ -63,6 +63,25 @@ public sealed class EdgeSelectionTests
         Assert.Equal((A, (DatumReference?)null), (actions.Selection, actions.Face));
     }
 
+    // Finding V117 of the codebase review of 2026-11-06 (e) (TASK-0252): a tap near an edge on the silhouette, outside the
+    // body, selects the edge and keeps the body and the face; until TASK-0252 the pick missed, and the tap cleared the body.
+    [Fact]
+    public async Task A_Tap_Near_An_Edge_Outside_The_Silhouette_Selects_The_Edge()
+    {
+        using var host = await OneBox();
+        var actions = new BodyActions(host.Session);
+        var near = (First: Face("+y"), Second: Face("+z"));
+        (DatumReference, DatumReference)? Near(double x, double y) => x > 100 ? near : null;
+        PickHit? Miss(double x, double y) => x > 100 ? null : Top(x, y);
+        actions.Apply(new SelectIntent(0, 0), Miss, [], Near);
+        actions.Apply(new SelectIntent(0, 0), Miss, [], Near);
+        Assert.Equal(Face("+z"), actions.Face);
+
+        actions.Apply(new SelectIntent(200, 0), Miss, [], Near);
+
+        Assert.Equal((A, Face("+z"), ((DatumReference, DatumReference)?)near), (actions.Selection, actions.Face, actions.Edge));
+    }
+
     // Item 3: the edge nearest the point on the screen, at most 12 pixels away. A point on the image of an edge gives that
     // edge, and a point far from each edge gives none.
     [Fact]

@@ -1,11 +1,11 @@
 ---
 id: 0252
 title: The cache of a face, the fixed controls, the list New, the edges and the safe area hold their next forms
-status: Ready
+status: Done
 phase: P0.102
 opened: 2026-11-06
 depends-on: [0251]
-governed-by: [0007, 0019, 0025, 0027, 0029, 0030, 0032, 0034, 0072, 0073, 0075, 0076, 0077, 0078, 0080, 0081]
+governed-by: [0007, 0017, 0019, 0023, 0025, 0027, 0029, 0030, 0032, 0034, 0072, 0073, 0075, 0076, 0077, 0078, 0080, 0081]
 writes:
   create:
     - tasks/TASK-0252-desktop-and-phone-forms-of-the-twenty-seventh-review.md
@@ -17,6 +17,14 @@ writes:
     - 3DEngine.App/Ui/DesktopUi.Fixed.cs
     - 3DEngine.ImageTests/FixedControlsTests.cs
     - 3DEngine.ImageTests/EdgeSelectionTests.cs
+    - 3DEngine.ImageTests/BodyActionsTests.cs
+    - 3DEngine.ImageTests/CutUiTests.cs
+    - 3DEngine.Vulkan/Window.cs
+    - docs/adr/0027-text-and-panels.md
+    - docs/adr/0075-a-second-tap-selects-the-face.md
+    - docs/adr/0077-a-tap-near-an-edge-selects-the-edge.md
+    - docs/adr/0080-the-fixed-controls-of-the-redesign.md
+    - docs/android-test-sheet.md
     - eng/test-floor.txt
     - docs/roadmap.md
     - docs/CURRENT-STATE.md
@@ -54,20 +62,38 @@ safe area of the phone.
 
 ## Acceptance criteria
 
-- [ ] Each finding has a test or an injection that fails before the change and passes after it.
-- [ ] A clean build (`--no-incremental`) gives zero errors and zero warnings.
-- [ ] Continuous integration passes on the three runners, on the branch and on `main` after the merge.
+- [x] Each finding has a test or an injection that fails before the change and passes after it.
+- [x] A clean build (`--no-incremental`) gives zero errors and zero warnings.
+- [x] Continuous integration passes on the three runners, on the branch and on `main` after the merge.
+
+## Decisions
+
+The standing order of 2026-11-05 gives the recommended option for each question.
+
+- **V113.** `BodyActions.Forget`, which the host calls each frame with the live bodies, removes the kept entry of a body
+  with a fault (ADR-0075 item 3).
+- **V114.** A constraint ends the height of the panel above the anchors, and each frame keeps its place between the top
+  of the safe area and the row of the anchors (ADR-0080 item 2). The panel still moves, because the proof of the focus
+  click (FocusClickTests) drags it by its title.
+- **V115.** The unit comes before the name of the file in the title (ADR-0080 item 1).
+- **V116.** While a list is open, each press belongs to the panel: the library closes the list, and the tap does not
+  reach the scene (ADR-0027 item 4).
+- **V117.** The host asks for the edge before the pick (ADR-0077 item 3).
+- **V118.** `Window.SafeInsets` reads `SDL_GetWindowSafeArea`, and the panel and the fixed controls start inside the safe
+  area (ADR-0080 item 6). The ring of ADR-0081 keeps its corner; a later slice of the redesign moves it.
 
 ## Outcome
 
-Status: Ready
+Status: Done · commit (the merge of the branch p0102-desktop-forms-c) · v0.240
 
 ## Method
 
 Mechanical: a test or an injection for each finding, before the change.
-Judgement:  to be written in the task.
-Weakest:    to be written at the close.
+Judgement:  the six decisions above; no device ran the safe area, so step 11 of the test sheet of the phone holds it.
+Weakest:    no device ran the safe area; the tool ring keeps its corner under the navigation bar of a phone; a tap on
+            the scene while a list is open does not reach the scene, which a person can find slow.
 
 ## Progress
 
 - 2026-11-06: opened by the codebase review of 2026-11-06 (e).
+- 2026-11-07: run 42316096251 passed. Closed at v0.240.
