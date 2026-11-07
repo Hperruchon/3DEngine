@@ -122,6 +122,13 @@ So the handler of the import reads the bytes of its asset.
      may only accept a file that an earlier reader refused, because a rejected command writes no entry. A change that
      cannot keep a result takes a new schema version of `ImportStl`, whose handler keeps the earlier reader for version 1.
      A test compares the forms that an earlier reader read with its result.
+   - **The order of the rules (E180 to E182, TASK-0280; Q1 A under the standing order, 2026-11-07).** Each file gets the
+     result of the first of three rules that accepts it: the rule of v0.243, the rule of v0.257 and later, then the rule
+     of v0.250. The rule of v0.254 gives the result of v0.257 for each file that it accepted. Two classes of files had two
+     earlier results: a whole facet on the line of `solid`, which v0.243 and v0.250 read, and `endsolid` with a whole
+     facet on that line, which v0.250 and v0.254 read. Such a file gets the result of v0.243, or else of v0.254, so a
+     document of v0.250 to v0.253 with such a file replays to that result. No exporter writes such a file. The owner
+     checks this answer on 2026-11-08.
 4. **What a mesh body permits (D2).** The view: `GetTessellation`, `GetBoundingBox`, `GetBodyInfo`, the frame of the
    camera, and the STL export (ADR-0048 amended: the export holds the triangles of a mesh body as they are). The
    visibility and the name are a part of the view and stay permitted. Each other operation refuses a mesh body with
@@ -194,3 +201,6 @@ desktop row P9c, the phone row P9d, and the test sheet P9e.
   than 84 bytes gives `E-STL-TRUNCATED` (finding E178 of the codebase review of 2026-11-07 (b)); each was a refusal
   before and stays one. D3: the client refuses a file of more than 84 + 512 times the limit of triangles bytes with
   `E-STL-TOO-LARGE` before it reads it (finding N2 of the review of Codex after v0.243).
+- 2026-11-07 · TASK-0280 · Item 3: the order of the rules of the earlier readers (findings E180, E181 and E182 of the
+  codebase review of 2026-11-07 (c)); a text file with a zero byte, which v0.243 read, and a name that only v0.250 read get
+  their earlier results again. Q1 A under the standing order.
