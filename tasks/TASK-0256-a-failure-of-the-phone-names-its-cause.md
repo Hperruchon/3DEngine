@@ -1,7 +1,7 @@
 ---
 id: 0256
 title: A failure of the window of the phone and a new create of its activity name their cause
-status: Active
+status: Done
 phase: P0.104
 opened: 2026-11-07
 depends-on: [0255]
@@ -48,19 +48,21 @@ The next failure names its cause: the text of SDL, and the lines of Android abou
 
 ## Acceptance criteria
 
-- [ ] A clean build (`--no-incremental`) gives zero errors and zero warnings, and the phone project builds.
-- [ ] Continuous integration passes on the three runners, on the branch and on `main` after the merge.
+- [x] A clean build (`--no-incremental`) gives zero errors and zero warnings, and the phone project builds.
+- [x] Continuous integration passes on the three runners, on the branch and on `main` after the merge.
 
 ## Outcome
 
-Status: Active
+Status: Done · commit (the merge of the branch p0104-crash-causes) · v0.239
 
 ## Method
 
 Mechanical: a probe of the new grep on the line form of the task manager of Android.
 Judgement:  diagnostics before a correction, because three runs show the new create and none shows its cause.
-Weakest:    to be written at the close.
+Weakest:    the new lines show only in a run where Android creates the activity again; run 42315180361 had no such
+            create, so no run shows them yet.
 
 ## Progress
 
 - 2026-11-07: opened by the failed run 42313242154.
+- 2026-11-07: the text of SDL, the lines of a relaunch and the wait of 30 seconds. Run 42315180361 passed. Closed at v0.239.
