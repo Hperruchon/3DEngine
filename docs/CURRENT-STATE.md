@@ -7474,3 +7474,31 @@ The document picker ran on no device and no emulator yet.
 New tests: 2. The test list holds 2023 (1405 in `Engine.Tests`, 337 in `3DEngine.Tests`, 278 in `3DEngine.ImageTests`, 3
 in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
 entries: 15 of 15. New diagnostic codes: 0. Since the review of v0.243, 2 product milestones and 5 entries followed it.
+
+## v0.249 — The test sheet of the STL demonstration (P9e, TASK-0266)
+
+Row e of the demonstration "Open the same STL on desktop and Android" (ADR-0083, the owner, 2026-11-07). The rows P9c,
+P9d and P9e close only after the run of the owner on the desktop and on the Galaxy S23 Ultra, as R14e does.
+
+**The change.** `docs/demo-stl-test-sheet.md`, from the page of the demonstration
+(https://claude.ai/artifact/NJVBcQYiheLRCcRgx9YQad):
+- the setup with `testdata/stl/bracket.stl` (27,084 bytes) and `bracket-damaged.stl` (13,542 bytes);
+- six steps on each device, with the labels that the code draws: "Open file", "New part", "Frame", "Home" and "Choose
+  another file";
+- ten pass criteria. Criterion 10 is ticked, because the pipeline opens both files on the three runners and the emulator
+  with one hash (TASK-0258);
+- an observation sheet for the S23 and the known limits of the run.
+
+**Proof.** The labels and the sizes are read from the code and from the files of this branch. Run 42356325041 passed.
+
+**What stays.** The run of the owner. No person did the steps of the sheet yet.
+
+**A correction.** The entry v0.245 says under "What stays" that the HTTP surface does not call the check. That is false.
+The Codex review of v0.245 found it, and this task checked it on disk: the desktop gives `DesktopDocument.Reopen` to its
+`DocumentFolder`, and `/document/open` calls `DocumentFolder.Open`, so an open over HTTP runs `DocumentFile.Check`
+with the store too. No test holds an open over HTTP of a document with a mesh body. TASK-0262 has the same correction.
+The failed runs since the entry v0.248, from the API: none.
+
+New tests: 0. The test list holds 2023 (1405 in `Engine.Tests`, 337 in `3DEngine.Tests`, 278 in `3DEngine.ImageTests`, 3
+in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
+entries: 15 of 15. New diagnostic codes: 0. Since the review of v0.243, 3 product milestones and 6 entries followed it.
