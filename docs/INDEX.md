@@ -54,6 +54,7 @@ it is not correct and it must not be used.
 | `docs/roadmap.md` | The tracks and the phases. The menu, not the ledger. Read it to find the next task. |
 | `docs/CURRENT-STATE.md` | What is built today. The authority for "does X exist". |
 | `docs/android-test-sheet.md` | The test of the owner on the reference phone: build, install, the steps and a table of results (ADR-0061, ADR-0073, TASK-0227). The row R14e closes after it. |
+| `docs/demo-stl-test-sheet.md` | The run of the owner for the demonstration "Open the same STL on desktop and Android": setup, six steps, ten criteria and an observation sheet for the S23 (ADR-0083, TASK-0266). The rows P9c to P9e close after it. |
 | `docs/adr/` | Architectural decisions, the *why*. Start at [adr/README.md](adr/README.md); read only the ones that `governed-by` names. |
 | `docs/reviews/` | Dated reviews of the code and of the rules, one file for each review. A review is a record and not the authority. A task, a register entry or an ADR closes a finding; an edit to the review does not. |
 | `docs/proposals/` | Analyses that precede a decision. Not a rule. |

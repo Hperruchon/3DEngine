@@ -219,6 +219,7 @@ Therefore each approved objective must have a track here.
 - P9b — The engine reads an STL file into a mesh body. v0.243, TASK-0258, ADR-0083.
 - P9c — The desktop opens an STL file from its home screen, and the row waits for the owner. v0.247, TASK-0259, ADR-0083.
 - P9d — The phone opens an STL file from its home screen, and the row waits for the owner. v0.248, TASK-0260, ADR-0083.
+- P9e — The test sheet of the STL demonstration, and the row waits for the owner. v0.249, TASK-0266.
 - Review — The codebase review of 2026-11-07. v0.244, TASK-0261.
 - P0.105 — The check of an open reads the store of the assets. v0.245, TASK-0262.
 - P0.108 — A lost surface of a destroyed activity ends the session quietly. v0.246, TASK-0265, ADR-0079.
@@ -357,7 +358,7 @@ This track removes each condition that blocks other work.
 | P9b | The STL reader of the engine, binary and text, with no arithmetic on the floats at the read; the handler, the mesh body in both backends, the codes and the refused operations; the files `bracket.stl` and `bracket-damaged.stl`; a test that opens both on Windows, Linux, macOS and the emulator. TASK-0258. | 3–5 |
 | P9c | The desktop: the home screen, the file dialog of Windows with a filter for `.stl`, the frame after an open, a control "Frame", and a message with "Choose another file". The row closes after the run of the owner. TASK-0259. | 3–4 |
 | P9d | The phone: the document picker of Android with no permission of storage, the same home screen, and the part kept through the background. The row closes after the run of the owner on the S23. TASK-0260. | 3–4 |
-| P9e | The test sheet of the demonstration, from its page. It closes with P9c and P9d after the run of the owner. | 1 |
+| P9e | The test sheet of the demonstration, from its page. It closes with P9c and P9d after the run of the owner. TASK-0266. | 1 |
 
 ## Track R — The renderer
 
