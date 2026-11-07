@@ -42,4 +42,8 @@ internal interface IDocumentFiles
 
     // ADR-0083 D6: true while the home screen shows; the first session of a program starts with it.
     bool Home { get; set; }
+
+    // ADR-0083 (TASK-0260): true when the host has a document folder, so the panel shows the name, Save as and Open; the
+    // phone has none yet.
+    bool HasFolder { get; }
 }

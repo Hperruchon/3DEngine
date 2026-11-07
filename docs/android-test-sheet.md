@@ -47,7 +47,7 @@ when you can.
 
 | Step | Do this | Expect this |
 |---|---|---|
-| 1 | Open the app 3DEngine. | A window in portrait, with the panel of the desktop and an empty scene. |
+| 1 | Open the app 3DEngine, and tap "New part" on the home screen. | The home screen shows "Open file", "New part" and "No recent file" (ADR-0083, TASK-0260); after "New part", a window in portrait with the panel of the desktop and an empty scene. |
 | 2 | In the panel, tap New, then Box, give 10, 10 and 2, and tap Apply. | One body in the list of the panel, and a box in the scene. |
 | 3 | Tap New, then Cylinder, give 2 and 8, and tap Apply. | Two bodies in the list, and a cylinder through the box. |
 | 4 | Tap the first body in the list. | Its controls show: Name, Rename, Hide, Move and "Cut with". |

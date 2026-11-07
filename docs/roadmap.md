@@ -353,8 +353,8 @@ This track removes each condition that blocks other work.
 | P8h | The unit kind of each number parameter in the command schema: `Unit` and `UnitBy` on `FieldSchema`, a unit on each of the 25 number parameters, and a gate. From the module-declaration proposal of the desktop redesign; the owner chose `constraint-value`, `scale` and `pixel` on 2026-11-05. ADR-0060, TASK-0186. | 1–2 |
 | P9a | The demonstration "Open the same STL on desktop and Android" (the owner, 2026-11-07): ADR-0083 with the decisions D1 to D6, the mesh body, the command `ImportStl` and the capability `IMeshImportOps`. TASK-0257. | 1 |
 | P9b | The STL reader of the engine, binary and text, with no arithmetic on the floats at the read; the handler, the mesh body in both backends, the codes and the refused operations; the files `bracket.stl` and `bracket-damaged.stl`; a test that opens both on Windows, Linux, macOS and the emulator. TASK-0258. | 3–5 |
-| P9c | The desktop: the home screen, the file dialog of Windows with a filter for `.stl`, the frame after an open, a control "Frame", and a message with "Choose another file". The row closes after the run of the owner. | 3–4 |
-| P9d | The phone: the document picker of Android with no permission of storage, the same home screen, and the part kept through the background. The row closes after the run of the owner on the S23. | 3–4 |
+| P9c | The desktop: the home screen, the file dialog of Windows with a filter for `.stl`, the frame after an open, a control "Frame", and a message with "Choose another file". The row closes after the run of the owner. TASK-0259. | 3–4 |
+| P9d | The phone: the document picker of Android with no permission of storage, the same home screen, and the part kept through the background. The row closes after the run of the owner on the S23. TASK-0260. | 3–4 |
 | P9e | The test sheet of the demonstration, from its page. It closes with P9c and P9d after the run of the owner. | 1 |
 
 ## Track R — The renderer
