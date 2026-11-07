@@ -1,7 +1,7 @@
 ---
 id: 0260
 title: The phone opens an STL file from its home screen
-status: Active
+status: Done
 phase: P9d
 opened: 2026-11-07
 depends-on: [0259]
@@ -54,24 +54,29 @@ messages and controls as the desktop, and the part stays through 10 seconds in t
 
 ## Acceptance criteria
 
-- [ ] `PhoneFiles` gives a new part with its import one time, no recent file and no folder.
-- [ ] The APK asks for no permission of storage, and an injected permission fails the check.
-- [ ] A clean build (`--no-incremental`) gives zero errors and zero warnings, and the phone project builds.
-- [ ] Continuous integration passes on the three runners, on the branch and on `main` after the merge.
-- [ ] The run of the owner on the S23 passes the criteria of the page of the demonstration.
+- [x] `PhoneFiles` gives a new part with its import one time, no recent file and no folder.
+- [x] The APK asks for no permission of storage, and an injected permission fails the check.
+- [x] A clean build (`--no-incremental`) gives zero errors and zero warnings, and the phone project builds.
+- [x] Continuous integration passes on the three runners, on the branch and on `main` after the merge.
+- [ ] The run of the owner on the S23 passes the criteria of the page of the demonstration. This box waits for the
+      owner: the row P9d of the roadmap stays open until it, as R14e does (`docs/demo-stl-test-sheet.md`).
 
 ## Outcome
 
-Status: Active
+Status: Done · commit (the merge of the branch p9d-phone-open-b) · v0.248
 
 ## Method
 
 Mechanical: a test of `PhoneFiles`; the APK check, proved with an injected permission on an APK built here.
 Judgement:  the dialog of SDL as the picker; a new part is a new LocalSessionHost in the same window, so the rules of
             ADR-0079 for the window hold; the phone shows no file controls, because it has no document folder yet.
-Weakest:    to be written at the close.
+Weakest:    the document picker of Android ran on no device and on no emulator; the emulator job of the pipeline
+            starts the APK and draws, but it does not pick a file, so the content URI and the name that the
+            picker gives are read from the documentation only. The run of the owner on the S23 measures them.
 
 ## Progress
 
 - 2026-11-07: `PhoneFiles`, the store and the new session of the phone, `HasFolder` for the file controls, and the APK
   check. The APK built here passes the check, and the same APK with `READ_EXTERNAL_STORAGE` fails it.
+- 2026-11-07: rebased on the close of P9c; run 42355942601 passed. Closed at v0.248; the row waits for the run of the
+  owner on the S23.
