@@ -7178,3 +7178,31 @@ activity one time, so that run does not show the new path; the next runs of the 
 New tests: 3. The test list holds 1990 (1397 in `Engine.Tests`, 337 in `3DEngine.Tests`, 253 in `3DEngine.ImageTests`, 3
 in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
 entries: 15 of 15. New diagnostic codes: 0. Since the review of v0.233, 1 product milestone and 5 entries followed it.
+
+## v0.239 — A failure of the window of the phone and a new create of its activity name their cause (P0.104, TASK-0256)
+
+Run 42313242154 of the branch of P0.102 failed in two jobs. On the emulator, Android destroyed the activity about one
+second after its create and created it again, as in runs 42308415060 and 42310351172. The session of the destroyed
+activity made no window, as TASK-0255 (v0.238) makes it, but the new session failed at "SDL: failed to create vulkan
+surface", with no text of SDL; no line of the job said why Android created the activity again. On the Windows runner the
+test `The_Entry_Of_The_Face_Does_Not_Wait_For_A_Long_Command` failed at its condition "The read did not start" in 5
+seconds. A correction of the new create needs its cause, so this task gives the causes first.
+
+**The change.**
+- Each failure of SDL in `Window` gives the text of `SDL_GetError`.
+- When the activity is destroyed, the smoke test gives the lines of Android about a relaunch and a change of the
+  configuration, and the last five lines of the program, as warnings.
+- The condition of the test of V109 waits 30 seconds; it is a condition of the test, not its claim.
+
+**Proof.** A probe of the new grep on the line form of the task manager of Android ("Config changes=... for
+ActivityRecord"). The project of the phone builds on this computer. Run 42315180361 passed; in that run Android created the
+activity one time, so no run shows the new lines yet.
+
+**What stays.** The new create of the activity and the failed surface of the new session are open. The next run that
+has them names their cause, and a task then corrects them.
+
+**A correction.** None. The failed runs since the entry v0.238, from the API: 42313242154 (named above).
+
+New tests: 0. The test list holds 1990 (1397 in `Engine.Tests`, 337 in `3DEngine.Tests`, 253 in `3DEngine.ImageTests`, 3
+in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
+entries: 15 of 15. New diagnostic codes: 0. Since the review of v0.233, 1 product milestone and 6 entries followed it.
