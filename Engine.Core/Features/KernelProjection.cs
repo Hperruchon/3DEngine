@@ -144,6 +144,8 @@ internal static class KernelProjection
                 var result = PlanarBoolean.Subtract(minuend, subtrahend);
                 return result is null ? (null, $"The Subtract '{subtract.CommandId}' leaves no solid in the owned kernel.") : (result, null);
             }
+            case ImportStlCommand:
+                return (null, $"The body '{handle}' is a mesh body of an STL file, which the owned kernel does not build (ADR-0083 item 4).");
             case null:
                 return (null, $"No command in effect creates the body '{handle}'.");
             case var other:

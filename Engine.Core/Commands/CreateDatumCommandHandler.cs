@@ -74,6 +74,11 @@ public sealed class CreateDatumCommandHandler : ICommandHandler, ICommandEncoder
         if (create.DatumName is { } name && BodyNames.Refusal(name) is { } refusal)
             return Task.FromResult(Failure(DiagnosticCodes.DatumNameInvalid, refusal));
 
+        // ADR-0083 item 4 (TASK-0258): a mesh body has no face for a datum.
+        if (document.Bodies.Any(body => body.Handle.Id == create.FeatureId && body.Kind == ImportStlCommandHandler.MeshKind))
+            return Task.FromResult(Failure(DiagnosticCodes.MeshUnsupported,
+                $"The feature '{create.FeatureId}' is a mesh body of an STL file, which has no face for a datum (ADR-0083 item 4)."));
+
         var reference = new DatumReference(create.FeatureId, create.Element, create.ItemId);
         var graph = FeatureGraph.Of(document);
         var (frame, reason) = DatumResolver.Resolve(

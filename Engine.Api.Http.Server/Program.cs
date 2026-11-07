@@ -51,7 +51,8 @@ builder.Services.AddSingleton(HostBackendOptions.Native);
 builder.Services.AddSingleton(new DocumentFileOptions(builder.Configuration["file"], Kind: builder.Configuration["kind"]));
 builder.AddEngineSurface(services => ServerEngine.Create(
     services.GetRequiredService<HostBackendOptions>(),
-    services.GetRequiredService<DocumentFileOptions>()));
+    services.GetRequiredService<DocumentFileOptions>(),
+    services.GetRequiredService<Engine.Core.Assets.AssetStore>()));
 
 WebApplication app;
 try

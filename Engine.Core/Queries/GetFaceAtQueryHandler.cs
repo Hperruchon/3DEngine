@@ -53,9 +53,14 @@ public sealed class GetFaceAtQueryHandler : IQueryHandler
         CancellationToken ct)
     {
         var at = (GetFaceAtQuery)query;
-        if (!document.Bodies.Any(body => body.Handle.Id == at.BodyId))
+        if (document.Bodies.FirstOrDefault(body => body.Handle.Id == at.BodyId) is not { } record)
             return Task.FromResult(QueryHandlerResult.Failure(new ErrorDetail(
                 DiagnosticCodes.GeomBodyNotFound, $"No live body with id '{at.BodyId}' exists in the Document.")));
+
+        // ADR-0083 item 4 (TASK-0258): a mesh body has no named faces.
+        if (record.Kind == Commands.ImportStlCommandHandler.MeshKind)
+            return Task.FromResult(QueryHandlerResult.Failure(new ErrorDetail(
+                DiagnosticCodes.MeshUnsupported, $"The body '{at.BodyId}' is a mesh body of an STL file, which has no named faces (ADR-0083 item 4).")));
 
         var (reference, frame, reason) = FaceFinder.Find(document, at.BodyId, (at.X, at.Y, at.Z), (at.Nx, at.Ny, at.Nz));
         if (reference is null)
