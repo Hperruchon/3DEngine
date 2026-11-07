@@ -345,4 +345,35 @@ public sealed class ToolRingTests
         TapOn("Distance");
         Assert.Equal("Distance", ui.Pad?.Title);
     }
+
+    // ADR-0088 (the redesign, slice h, TASK-0277): while the ring of the sketch shows, the window of the sketch holds no
+    // tool, no Finish and no kind of a constraint, and keeps Extrude, Delete and the rows. With no ring, it holds each of
+    // them as before.
+    [Fact]
+    public void The_Window_Of_The_Sketch_Does_Not_Repeat_The_Ring()
+    {
+        using var ui = new DesktopUi("http://127.0.0.1:5180", Engine.Contracts.Document.Millimetre);
+        var (start, end, line) = (Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid());
+        var sketch = new Engine.Core.Queries.SketchInfo(Guid.NewGuid(), Engine.Contracts.Sketch.Datums.XY.Id, "Plate",
+            [new(start, 0, 0), new(end, 40, 10)], [new(line, start, end)], [], [], [], true, 4);
+        var panel = new SketchPanel([sketch], sketch, ThreeDEngine.Core.Sketching.SketchToolKind.Select, false, [line], null);
+        string[] ringLabels = [DesktopUi.LineToolLabel, DesktopUi.SelectToolLabel, DesktopUi.CircleToolLabel, DesktopUi.ArcToolLabel, DesktopUi.FinishLabel, "Horizontal", "Vertical", "Distance"];
+        string[] kept = [DesktopUi.ExtrudeLabel, DesktopUi.DeleteLabel, "L1"];
+
+        foreach (var ring in new[] { true, false })
+        {
+            for (var frame = 0; frame < 3; frame++)
+            {
+                ui.Route([]);
+                ui.Frame(1f / 60f, Display, Vector2.One, [], null, null, sketchPanel: panel,
+                    ringCentre: ring ? new Vector2(700, 360) : null, ringBody: 60f);
+            }
+
+            Assert.Equal(ring, ui.ItemRectangle(DesktopUi.RingItem(DesktopUi.LineToolLabel)) is not null);
+            foreach (var label in ringLabels)
+                Assert.True(ui.ItemRectangle(DesktopUi.SketchItem(label)) is null == ring, $"{label} in the window with the ring {ring}.");
+            foreach (var label in kept)
+                Assert.True(ui.ItemRectangle(DesktopUi.SketchItem(label)) is not null, $"No {label} in the window with the ring {ring}.");
+        }
+    }
 }
