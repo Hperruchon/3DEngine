@@ -689,6 +689,27 @@ public class DependencyDirectionGateTests
                         offences.Add($"{host} reaches {name}, and {RepositoryFiles.Relative(source)} has a #pragma warning disable with no code");
                 }
             }
+
+            // Finding T174 of the codebase review of 2026-11-07 (c) (TASK-0281): the host itself. CA1416 in a NoWarn or a
+            // WarningsNotAsErrors of the host, or a line of its code that names CA1416, silenced the analyzer in the host, and
+            // each rule above read only the projects that the host reaches.
+            var hostFile = ProjectFiles().Single(f => Path.GetFileNameWithoutExtension(f) == host);
+            foreach (var read in FilesThatMsBuildReads(hostFile))
+            {
+                foreach (var property in XDocument.Load(read).Descendants().Where(e => Is(e, "NoWarn") || Is(e, "WarningsNotAsErrors")))
+                {
+                    if (property.Value.Contains("CA1416", StringComparison.OrdinalIgnoreCase))
+                        offences.Add($"{host}: {RepositoryFiles.Relative(read)} has CA1416 in {property.Name.LocalName}");
+                }
+            }
+
+            foreach (var source in Directory.EnumerateFiles(Path.GetDirectoryName(hostFile)!, "*.cs", SearchOption.AllDirectories)
+                         .Where(path => !path.Contains($"{Path.DirectorySeparatorChar}obj{Path.DirectorySeparatorChar}", StringComparison.Ordinal)
+                             && !path.Contains($"{Path.DirectorySeparatorChar}bin{Path.DirectorySeparatorChar}", StringComparison.Ordinal)))
+            {
+                if (File.ReadLines(source).Any(line => line.Contains("CA1416", StringComparison.OrdinalIgnoreCase) || BlanketPragma.IsMatch(line)))
+                    offences.Add($"{host}: {RepositoryFiles.Relative(source)} names CA1416 or has a #pragma warning disable with no code");
+            }
         }
 
         // T162: an analyzer configuration file can set the severity of CA1416 for each project under its folder.

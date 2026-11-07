@@ -94,24 +94,34 @@ public sealed unsafe partial class Window
     }
 
     // The bytes of the file at the path, through SDL, so a content URI of the document picker of Android reads too; null
-    // with the text of SDL when the read fails.
-    public static (byte[]? Content, string? Error) LoadFile(string path)
+    // with the text of SDL when the read fails. Finding E183 of the codebase review of 2026-11-07 (c) (TASK-0281): the read
+    // stops after maximum bytes and gives null with a text, so a file whose size SDL does not know cannot fill the memory.
+    public static (byte[]? Content, string? Error) LoadFile(string path, long maximum)
     {
-        nuint size;
-        var data = SDL_LoadFile(path, &size);
-        if (data == nint.Zero)
+        var stream = SDL_IOFromFile(path, "rb");
+        if (stream is null)
             return (null, Error());
         try
         {
-            if (size > int.MaxValue)
-                return (null, $"The file has {size} bytes, more than one read holds.");
-            var content = new byte[(int)size];
-            Marshal.Copy(data, content, 0, (int)size);
-            return (content, null);
+            using var content = new MemoryStream();
+            var buffer = new byte[64 * 1024];
+            while (true)
+            {
+                nuint read;
+                fixed (byte* at = buffer)
+                    read = SDL_ReadIO(stream, (nint)at, (nuint)buffer.Length);
+                if (read == 0)
+                    break;
+                content.Write(buffer, 0, (int)read);
+                if (content.Length > maximum)
+                    return (null, $"The file has more than {maximum} bytes.");
+            }
+
+            return SDL_GetIOStatus(stream) == SDL_IOStatus.SDL_IO_STATUS_ERROR ? (null, Error()) : (content.ToArray(), null);
         }
         finally
         {
-            SDL_free(data);
+            SDL_CloseIO(stream);
         }
     }
 }

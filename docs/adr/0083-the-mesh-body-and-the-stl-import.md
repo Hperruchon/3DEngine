@@ -204,3 +204,6 @@ desktop row P9c, the phone row P9d, and the test sheet P9e.
 - 2026-11-07 · TASK-0280 · Item 3: the order of the rules of the earlier readers (findings E180, E181 and E182 of the
   codebase review of 2026-11-07 (c)); a text file with a zero byte, which v0.243 read, and a name that only v0.250 read get
   their earlier results again. Q1 A under the standing order.
+- 2026-11-07 · TASK-0281 · D3: the client refuses a file of more bytes than the store keeps (16 MiB), and its read stops at
+  that limit also when the size is not known (finding E183 of the codebase review of 2026-11-07 (c)); the limit of
+  TASK-0272 was nine times larger.
