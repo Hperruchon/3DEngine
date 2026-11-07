@@ -1,7 +1,7 @@
 ---
 id: 0271
 title: The home screen, the rows, the chips, the dialog and three comments hold their next forms
-status: Ready
+status: Active
 phase: P0.111
 opened: 2026-11-07
 depends-on: [0274]
@@ -21,6 +21,11 @@ writes:
     - 3DEngine.ImageTests/BodyRowsTests.cs
     - 3DEngine.ImageTests/HomeImageTests.cs
     - 3DEngine.ImageTests/StlOpenTests.cs
+    - 3DEngine.ImageTests/ToolRingTests.cs
+    - docs/adr/0034-sketch-tools.md
+    - docs/adr/0081-the-tool-ring-of-the-redesign.md
+    - docs/adr/0083-the-mesh-body-and-the-stl-import.md
+    - docs/adr/README.md
     - docs/adr/0084-the-rows-of-the-selected-body.md
     - eng/test-floor.txt
     - docs/roadmap.md
@@ -46,6 +51,8 @@ name in the rows, the home screen holds the scene, a failed dialog says so, and 
 ## Scope (in)
 
 1. V127 to V133.
+2. Three leads of Codex, checked on disk: the window of the live sketches covers the rows and a long list of values
+   goes past the display (v0.252), and the fourth label of a portrait ring goes past the right edge (v0.251).
 
 ## Scope (out)
 
@@ -59,14 +66,20 @@ name in the rows, the home screen holds the scene, a failed dialog says so, and 
 
 ## Outcome
 
-Status: Ready
+Status: Active
 
 ## Method
 
 Mechanical: a test or an injection for each finding, before the change.
-Judgement:  to be written in the task.
+Judgement:  V129: two lines in the first row, with a fallback that keeps "failed" and the code whole. The window of
+            the live sketches gives way to the rows while a body is selected (the standing order: the rows are the
+            slice of the brief; "Edit" of a sketch stays with no selection). V127 and V131 change the engine, which
+            needs a window, so no test holds them.
 Weakest:    to be written at the close.
 
 ## Progress
 
 - 2026-11-07: opened by the codebase review of 2026-11-07 (b).
+- 2026-11-07: V127 to V133 and three leads of Codex. Seven new tests with no GPU and a stronger picture test of the home
+  screen. Injections: no separation of the chips, no end of the rows, the window over the rows, Move on a mesh body, no
+  clamp of a label and the samples of the home screen each fail their test.

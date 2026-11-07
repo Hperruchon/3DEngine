@@ -148,9 +148,18 @@ public sealed class NativeThreeDEngine : IThreeDEngine, IDisposable
     // with its import.
     private void TakeOpenedFile()
     {
-        var (done, path) = Window.TakeOpenedFile();
-        if (!done || path is null || _ui is null)
+        var (done, path, failure) = Window.TakeOpenedFile();
+        if (!done || _ui is null)
             return;
+        // Finding V131 of the codebase review of 2026-11-07 (b) (TASK-0271): a dialog that fails gives its reason; a dialog
+        // that the person closes with no file gives nothing.
+        if (path is null)
+        {
+            if (failure is not null)
+                _ui.ShowMessage((string.Empty, $"The file dialog did not open: {failure}"));
+            return;
+        }
+
         var name = StlOpening.FileName(path);
         var (content, readError) = Window.LoadFile(path);
         if (content is null)
@@ -291,6 +300,10 @@ public sealed class NativeThreeDEngine : IThreeDEngine, IDisposable
         if (_renderer is null || _ui?.Pad is not null || _sketchActions?.Active is not null || Selection is not { } body
             || window.width == 0 || window.height == 0)
             return null;
+        // Finding V130 of the codebase review of 2026-11-07 (b) (TASK-0271): no gizmo behind the home screen, and none on a
+        // mesh body, which no move takes (ADR-0083 item 4).
+        if (_ui?.HomeShown == true || _renderer.LiveBodies.FirstOrDefault(live => live.Id == body)?.Kind == Engine.Core.Commands.ImportStlCommandHandler.MeshKind)
+            return null;
         return _gizmo.Layout(Camera, window.width, window.height, _renderer.Pivot(body));
     }
 
@@ -377,12 +390,21 @@ public sealed class NativeThreeDEngine : IThreeDEngine, IDisposable
                     _documentMessage = SaveDocument(save.Name);
                     break;
                 case OpenDocumentAction open:
-                    _documentMessage = OpenDocument(open.Name);
+                    _documentMessage = OpenDocument(open.Name, out var openRefused);
+                    // Finding V127 of the codebase review of 2026-11-07 (b) (TASK-0271): the home screen hides the line of the
+                    // document, so a refusal of an open from a recent row shows in the message there.
+                    if (openRefused is not null && _ui.HomeShown)
+                        _ui.ShowMessage(openRefused);
                     break;
                 // ADR-0083 D1 and D6 (TASK-0259): the dialog of the system, a new part, the home screen and the frame.
                 case OpenFileAction:
                     if (!_window.OpenFile("STL file", "stl"))
+                    {
                         _documentMessage = "A file dialog is open already.";
+                        if (_ui.HomeShown)
+                            _ui.ShowMessage((string.Empty, _documentMessage));
+                    }
+
                     break;
                 case NewPartAction when _document is not null:
                     if (_document.RequestNew(null) is { } refused)
@@ -624,14 +646,21 @@ public sealed class NativeThreeDEngine : IThreeDEngine, IDisposable
 
     // The check of the file; when it opens, the window loop ends and the program starts
     // again with it (ADR-0030 items 4 and 5).
-    private string OpenDocument(string name)
+    private string OpenDocument(string name, out (string Code, string Text)? refused)
     {
+        refused = null;
         if (_document is null)
             return "The desktop has no document folder.";
         var path = _document.Resolve(name, out var refusal);
         if (path is null)
+        {
+            refused = (string.Empty, refusal!);
             return refusal!;
+        }
+
         var error = _document.Open(path, CancellationToken.None).GetAwaiter().GetResult();
+        if (error is not null)
+            refused = (error.Code, $"{Path.GetFileName(path)}: {error.Message}");
         return error is null ? $"Opening {Path.GetFileName(path)}" : $"{error.Code}: {error.Message}";
     }
 

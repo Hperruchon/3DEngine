@@ -96,6 +96,9 @@ internal sealed unsafe partial class DesktopUi
 
     public static string RingItem(string label) => $"Ring:{label}";
 
+    // The rectangle of the text of the label of a segment.
+    public static string RingTextItem(string label) => $"RingText:{label}";
+
     private RingLayout? _ring;
     private IReadOnlyList<string> _ringLabels = [];
 
@@ -111,7 +114,10 @@ internal sealed unsafe partial class DesktopUi
         if (body is null || centre is not { } at || _pad is not null || _sketchActive)
             return;
 
-        var labels = new List<string> { MoveLabel };
+        // Finding V130 of the codebase review of 2026-11-07 (b) (TASK-0271): a mesh body takes no move (ADR-0083 item 4).
+        var labels = new List<string>();
+        if (body.Kind != Engine.Core.Commands.ImportStlCommandHandler.MeshKind)
+            labels.Add(MoveLabel);
         if (body.Kind == "Extrude")
             labels.Add(SetDistanceLabel);
         labels.Add(body.Visible ? HideLabel : ShowLabel);
@@ -152,7 +158,12 @@ internal sealed unsafe partial class DesktopUi
 
             var middle = ring.Middle(segment);
             var text = ImGui.CalcTextSize(segment.Label);
-            list.AddText(middle - (text / 2f), ImGui.GetColorU32(colours[(int)ImGuiCol.Text]), segment.Label);
+            // The review of Codex of v0.251 (TASK-0271): a label at the edge of a portrait display stays 4 pixels inside the
+            // safe area; until TASK-0271 the label "Sketch on face" of the fourth segment went past the right edge.
+            var place = middle - (text / 2f);
+            place.X = Math.Clamp(place.X, 4f + _inset.X, Math.Max(4f + _inset.X, displaySize.X - _inset.Z - 4f - text.X));
+            list.AddText(place, ImGui.GetColorU32(colours[(int)ImGuiCol.Text]), segment.Label);
+            _items[RingTextItem(segment.Label)] = new Vector4(place.X, place.Y, place.X + text.X, place.Y + text.Y);
             _items[RingItem(segment.Label)] = new Vector4(middle.X - 4f, middle.Y - 4f, middle.X + 4f, middle.Y + 4f);
         }
     }
