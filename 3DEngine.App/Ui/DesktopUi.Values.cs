@@ -47,13 +47,14 @@ internal sealed unsafe partial class DesktopUi
         for (var i = 0; i < values.Count; i++)
         {
             var size = Size(values[i].Text);
-            _chips.Add((values[i], new Vector4(placed[i].At.X, placed[i].At.Y, placed[i].At.X + size.X, placed[i].At.Y + size.Y)));
+            _chips.Add((values[i], OutOfRows(new Vector4(placed[i].At.X, placed[i].At.Y, placed[i].At.X + size.X, placed[i].At.Y + size.Y))));
         }
 
         // Item 3: a press and a release on one chip, with no window of the panels under the pointer, open its pad.
         var io = ImGui.GetIO();
+        // ADR-0084 item 3 (TASK-0267): a row is drawn over a chip, so a release on a row is the tap of the row only.
         if (_pad is null && ImGui.IsMouseReleased(ImGuiMouseButton.Left) && !ImGui.IsWindowHovered(ImGuiHoveredFlags.AnyWindow)
-            && ChipAt(io.MousePos) is { } released && ChipAt(io.MouseClickedPos[0]) is { } pressed && pressed.Key == released.Key)
+            && RowAt(io.MousePos) is null && ChipAt(io.MousePos) is { } released && ChipAt(io.MouseClickedPos[0]) is { } pressed && pressed.Key == released.Key)
             Use(released);
 
         var list = ImGui.GetBackgroundDrawList();

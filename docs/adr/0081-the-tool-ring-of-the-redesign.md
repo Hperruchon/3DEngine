@@ -1,13 +1,13 @@
 ---
 id: 0081
 title: The tools of the selected body are the segments of a ring that follows it
-status: Accepted
+status: Amended
 topic: Clients, rendering
 date: 2026-11-06
 supersedes: []
 superseded-by: []
 amends: []
-amended-by: []
+amended-by: ['0084']
 affects:
   - 3DEngine.App/Ui/DesktopUi.Ring.cs
   - 3DEngine.App/Ui/DesktopUi.cs
@@ -80,3 +80,5 @@ are not on the ring yet.
   between the left and the top for each count (findings V121 and V122 of the codebase review of 2026-11-07); until
   TASK-0264 the fourth segment went out of the display, and the navigation bar could cover Move. Item 2: a release on
   a chip of ADR-0082 that lies on a segment gives the chip only (finding V120).
+- 2026-11-07 · TASK-0267 · ADR-0084 amends item 2: a release on a row of the selected body gives the row only, because the rows are drawn
+  over the ring.

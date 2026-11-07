@@ -382,7 +382,7 @@ internal sealed unsafe partial class DesktopUi : IDisposable
     public bool OverPanel(double x, double y)
         => _cutList is not null || _newList is not null
             || _panels.Concat(_fixed).Any(panel => x >= panel.X && x < panel.Z && y >= panel.Y && y < panel.W) || OverRing(x, y)
-            || OverValue(x, y);
+            || OverValue(x, y) || OverRows(x, y);
 
     // The font atlas as RGBA pixels, for the renderer to upload. It is built once.
     public (uint Width, uint Height, byte[] Rgba) FontAtlas() => _atlas;
@@ -535,15 +535,21 @@ internal sealed unsafe partial class DesktopUi : IDisposable
             Home(displaySize, recent);
             _ring = null;
             _chips = [];
+            (_rows, _rowsArea) = ([], null);
         }
         else
         {
             Panel(bodies, selection, displaySize, document);
             FixedControls(displaySize);
+            // ADR-0084 (TASK-0267): the rows of the selected body come first, so that the ring and the chips read them.
+            var selectedBody = bodies.FirstOrDefault(body => body.Id == selection);
+            PlaceRows(displaySize, selectedBody, selection is null ? null : values);
             // ADR-0081 (TASK-0253): the tool ring of the selected body, around the centre of its box on the screen.
             Ring(displaySize, bodies.FirstOrDefault(body => body.Id == selection), ringCentre, ringBody);
             // ADR-0082 (TASK-0254): the values of the selected extrude on its edges.
             Values(displaySize, selection is null ? null : values);
+            // ADR-0084 (TASK-0267): the rows of the selected body, with no panel, over the chips.
+            Rows(selectedBody);
             if (sketchPanel is { } shown && (shown.Active is not null || shown.Live.Count > 0))
                 SketchWindow(shown, displaySize);
             if (imagePanel is not null)
