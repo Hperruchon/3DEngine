@@ -117,6 +117,36 @@ public sealed class StlImportTests
         Assert.Equal(Triangle, marked);
     }
 
+    // Finding E173 of the codebase review of 2026-11-07 (b) (TASK-0269): the fix of E170 changed the result of the reader for
+    // files that v0.243 read. A recorded import reads its asset again at each replay, so each file that v0.243 read gives
+    // the result of v0.243 (ADR-0083 item 3). Each expected result below is the result of the reader of v0.243.
+    [Fact]
+    public void Each_Text_File_That_The_Reader_Of_V0243_Read_Gives_Its_Result()
+    {
+        var one = Facet.Replace("\n", " ", StringComparison.Ordinal);
+        var second = Facet.Replace("vertex 10 0 0", "vertex 20 0 0", StringComparison.Ordinal);
+        float[] secondTriangle = [0f, 0f, 0f, 20f, 0f, 0f, 0f, 10f, 0f];
+        (string Form, string Text, float[] Triangles)[] forms =
+        [
+            ("a facet on the line of solid, then a facet on its own lines", $"solid part {one}\n{second}endsolid part\n", [.. Triangle, .. secondTriangle]),
+            ("one line with a final LF", $"solid part {one} endsolid part\n", Triangle),
+            ("one line with a final CRLF", $"solid part {one} endsolid part\r\n", Triangle),
+            ("one line with no line end", $"solid part {one} endsolid part", Triangle),
+            ("one line with no name and a final LF", $"solid {one} endsolid\n", Triangle),
+            ("a name and the facets on lines of their own", Text(Facet), Triangle),
+            ("facet and normal on two lines", $"solid part facet\nnormal 0 0 1\n outer loop\n  vertex 0 0 0\n  vertex 10 0 0\n  vertex 0 10 0\n endloop\nendfacet\nendsolid part\n", Triangle),
+        ];
+
+        foreach (var (form, text, triangles) in forms)
+        {
+            var (read, error) = StlReader.Read(Encoding.ASCII.GetBytes(text));
+            Assert.True(error is null, $"{form}: {error?.Code} {error?.Message}");
+            Assert.Equal(triangles, read);
+        }
+
+        Assert.Equal(DiagnosticCodes.StlEmpty, StlReader.Read(Encoding.ASCII.GetBytes("solid part endsolid part")).Error?.Code);
+    }
+
     private static (DocumentSession Session, AssetBytes Assets) Session(IGeometryBackend backend)
     {
         var assets = new AssetBytes();
