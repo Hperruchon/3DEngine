@@ -138,6 +138,17 @@ internal sealed unsafe partial class DesktopUi
     // The tool of the active sketch in this frame, or null with no active sketch.
     private SketchToolKind? _sketchTool;
 
+    // ADR-0087 (the redesign, slice g, TASK-0276): the segment that opens the second ring of the constraints that fit the
+    // selection of the sketch, and the segment that goes back to the tools.
+    public const string ConstrainLabel = "Constrain";
+    public const string BackLabel = "Back";
+
+    // The panel of the sketch of this frame; true while the second ring is open, and the selection that it belongs to.
+    private SketchPanel? _sketchPanel;
+    private bool _constrainOpen;
+    private string _constrainKey = string.Empty;
+    private List<(string Label, Action Press)> _fitting = [];
+
     // The ring of the selected body, or of the active sketch (ADR-0086), or none while a pad is open or with no centre.
     private void Ring(Vector2 displaySize, LiveBody? body, Vector2? centre, float size)
     {
@@ -150,7 +161,25 @@ internal sealed unsafe partial class DesktopUi
         if (_sketchActive)
         {
             // ADR-0086 items 1 and 2: while a sketch is active, the ring holds its tools in the place of the tools of a body.
-            labels.AddRange(SketchRingTools.Select(tool => tool.Label));
+            // ADR-0087 items 1 and 3: "Constrain" comes before Finish when a constraint fits the selection, and opens the
+            // second ring of those constraints with "Back"; a change of the selection closes the second ring.
+            _fitting = _sketchPanel?.Active is { } active ? FittingConstraints(active, _sketchPanel.Selection) : [];
+            var key = string.Join(",", _sketchPanel?.Selection ?? []);
+            if (key != _constrainKey)
+                (_constrainOpen, _constrainKey) = (false, key);
+            if (_constrainOpen && _fitting.Count > 0)
+            {
+                labels.AddRange(_fitting.Select(fit => fit.Label));
+                labels.Add(BackLabel);
+            }
+            else
+            {
+                _constrainOpen = false;
+                labels.AddRange(SketchRingTools.Where(tool => tool.Kind is not null).Select(tool => tool.Label));
+                if (_fitting.Count > 0)
+                    labels.Add(ConstrainLabel);
+                labels.Add(FinishLabel);
+            }
         }
         else if (body is not null)
         {
@@ -168,7 +197,8 @@ internal sealed unsafe partial class DesktopUi
         // panel and the sketch, because the window of the sketch is on the right. The first form took the room left of that
         // window and moved the ring onto the points of the sketch.
         var panelRight = _panels.Count > 0 ? _panels[0].Z : 0f;
-        var ring = _sketchActive && displaySize.X >= displaySize.Y
+        var sketchRing = _sketchActive && displaySize.X >= displaySize.Y;
+        var ring = sketchRing
             ? SketchLayout(displaySize, at, labels.Count, size, panelRight)
             : Layout(displaySize, at, labels.Count, size, _inset);
         _ring = ring;
@@ -215,6 +245,16 @@ internal sealed unsafe partial class DesktopUi
             // safe area; until TASK-0271 the label "Sketch on face" of the fourth segment went past the right edge.
             var place = middle - (text / 2f);
             place.X = Math.Clamp(place.X, 4f + _inset.X, Math.Max(4f + _inset.X, displaySize.X - _inset.Z - 4f - text.X));
+            // ADR-0087 item 5 (TASK-0276): on the left of a sketch, a label wider than the band ends 6 pixels outside the
+            // inner edge, so it covers less of the sketch, and stays 4 pixels to the right of the panel; a plate of the colour
+            // of its segment keeps it readable over the lines. The first form centred "Horizontal" over the points.
+            if (sketchRing && text.X > RingBand - 12f)
+            {
+                var inner = ring.Centre.X + (MathF.Cos((segment.From + segment.To) / 2f) * ring.Inner);
+                place.X = Math.Max(panelRight + 4f, inner - 6f - text.X);
+                list.AddRectFilled(place - new Vector2(4f, 2f), place + text + new Vector2(4f, 2f), ground, 4f);
+            }
+
             list.AddText(place, ImGui.GetColorU32(colours[(int)ImGuiCol.Text]), segment.Label);
             _items[RingTextItem(segment.Label)] = new Vector4(place.X, place.Y, place.X + text.X, place.Y + text.Y);
             _items[RingItem(segment.Label)] = new Vector4(middle.X - 4f, middle.Y - 4f, middle.X + 4f, middle.Y + 4f);
@@ -224,6 +264,21 @@ internal sealed unsafe partial class DesktopUi
     // ADR-0086 item 2: the tool of a segment of the ring of a sketch, as its button of the window of the sketch does.
     private void UseSketchTool(string label)
     {
+        // ADR-0087 item 3: the second ring opens and closes, and a constraint does what its button of the window does.
+        if (_constrainOpen)
+        {
+            if (label != BackLabel && _fitting.FirstOrDefault(fit => fit.Label == label).Press is { } press)
+                press();
+            _constrainOpen = false;
+            return;
+        }
+
+        if (label == ConstrainLabel)
+        {
+            _constrainOpen = true;
+            return;
+        }
+
         if (SketchRingTools.FirstOrDefault(tool => tool.Label == label) is not ({ } _, var kind))
             return;
         _actions.Add(kind is { } tool ? new SketchToolAction(tool) : new FinishSketchAction());
