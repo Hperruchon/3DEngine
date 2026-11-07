@@ -7395,3 +7395,30 @@ store fails it. Run 42325122816 passed.
 New tests: 1. The test list holds 2015 (1405 in `Engine.Tests`, 337 in `3DEngine.Tests`, 270 in `3DEngine.ImageTests`, 3
 in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
 entries: 15 of 15. New diagnostic codes: 0. Since the review of v0.243, 0 product milestones and 2 entries followed it.
+
+## v0.246 — A lost surface of a destroyed activity ends the session quietly (P0.108, TASK-0265)
+
+The codebase review of 2026-11-07 added V124 (high) from run 42323457861 of `main` at v0.243: Android destroyed the
+activity a second time, 3.6 seconds after the first frame of the new session, and that session ended with
+`ErrorSurfaceLostKHR`, so the emulator job failed. The two earlier forms of a new create (V112, and the window of
+TASK-0255) are fixed; this is the third. A high finding comes before the next product phase, the close of P9c.
+
+**The change.** ADR-0079 item 4.
+- `PhoneHost.Foreground` ends the engine as the background does when a frame finds the surface lost; the exception is
+  matched by the name of its result, because Vortice gives no result field.
+- The wait for the foreground ends the session quietly when a later create of the activity took a turn, with the line
+  "the activity of this session was destroyed, so the session ends".
+- The line of the destroy of the activity names `IsChangingConfigurations` and the mask `ChangingConfigurations`, so the
+  next run with a new create names the change of the configuration.
+
+**Proof.** The phone project builds on this computer. Run 42325543893 passed; in that run Android created the activity one
+time, so the new path has not run yet.
+
+**What stays.** No run since the change had a new create of the activity; the next one shows the end of a lost surface and
+names the change of the configuration.
+
+**A correction.** None. The failed runs since the entry v0.245, from the API: none.
+
+New tests: 0. The test list holds 2015 (1405 in `Engine.Tests`, 337 in `3DEngine.Tests`, 270 in `3DEngine.ImageTests`, 3
+in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
+entries: 15 of 15. New diagnostic codes: 0. Since the review of v0.243, 0 product milestones and 3 entries followed it.
