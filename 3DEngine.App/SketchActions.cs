@@ -66,14 +66,20 @@ internal sealed class SketchActions(DocumentSession session) : ISketchEditor
     public void Edit(Guid sketch)
     {
         Active = sketch;
+        Lift = null;
         Reset();
     }
 
     public void Finish()
     {
         Active = null;
+        Lift = null;
         Reset();
     }
+
+    // ADR-0085 item 2 (TASK-0273): the move of the plane of the active sketch under the body that it makes, or null. Current
+    // gives the sketch with the moved plane, so each pick uses the plane that the person sees.
+    public SketchLift? Lift { get; set; }
 
     private void Reset()
     {
@@ -85,7 +91,9 @@ internal sealed class SketchActions(DocumentSession session) : ISketchEditor
     // The record of the active sketch with the residual of each constraint, read now, so that two
     // taps of one frame each see the point of the other.
     public SketchInfo? Current()
-        => Active is { } sketch ? session.Query<SketchInfo>(new GetSketchQuery { SketchId = sketch }).GetAwaiter().GetResult().Result : null;
+        => Active is { } sketch && session.Query<SketchInfo>(new GetSketchQuery { SketchId = sketch }).GetAwaiter().GetResult().Result is { } info
+            ? Lift?.Apply(info) ?? info
+            : null;
 
     // ADR-0034 items 2 to 4: a sketch point intent at a pixel of a window of this size. The ray of
     // the pixel meets the plane of the datum, and the position is rounded to the step of the zoom.
