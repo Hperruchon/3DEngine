@@ -50,6 +50,26 @@ internal sealed unsafe partial class DesktopUi
             _chips.Add((values[i], OutOfRows(new Vector4(placed[i].At.X, placed[i].At.Y, placed[i].At.X + size.X, placed[i].At.Y + size.Y))));
         }
 
+        // Finding V128 of the codebase review of 2026-11-07 (b) (TASK-0271): the move of ADR-0084 item 4 runs after the
+        // placement, so two chips could go to one place, and a tap on the visible chip opened the pad of the other. A chip
+        // that covers an earlier chip goes 4 pixels under it.
+        for (var i = 1; i < _chips.Count; i++)
+        {
+            var (value, rectangle) = _chips[i];
+            for (var j = 0; j < i; j++)
+            {
+                var other = _chips[j].Rectangle;
+                if (rectangle.X < other.Z && other.X < rectangle.Z && rectangle.Y < other.W && other.Y < rectangle.W)
+                {
+                    var down = other.W + 4f - rectangle.Y;
+                    rectangle = rectangle with { Y = rectangle.Y + down, W = rectangle.W + down };
+                    j = -1;
+                }
+            }
+
+            _chips[i] = (value, rectangle);
+        }
+
         // Item 3: a press and a release on one chip, with no window of the panels under the pointer, open its pad.
         var io = ImGui.GetIO();
         // ADR-0084 item 3 (TASK-0267): a row is drawn over a chip, so a release on a row is the tap of the row only.
