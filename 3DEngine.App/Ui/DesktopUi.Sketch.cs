@@ -56,13 +56,20 @@ internal sealed unsafe partial class DesktopUi
     {
         ImGui.TextUnformatted(SketchTitle(sketch));
         ImGui.TextUnformatted(SketchStatus(sketch));
-        ToolButton(LineToolLabel, SketchToolKind.Line, panel.Tool);
-        ImGui.SameLine();
-        ToolButton(SelectToolLabel, SketchToolKind.Select, panel.Tool);
-        ImGui.SameLine();
-        ToolButton(CircleToolLabel, SketchToolKind.Circle, panel.Tool);
-        ImGui.SameLine();
-        ToolButton(ArcToolLabel, SketchToolKind.Arc, panel.Tool);
+        // ADR-0088 item 1 (the redesign, slice h, TASK-0277): while the ring of the sketch shows in this frame, it holds the
+        // tools, Finish and the kinds of a constraint, so the window does not show them again. The ring comes first in the
+        // frame, so _ring is the ring of this frame.
+        var ringHolds = _ring is not null;
+        if (!ringHolds)
+        {
+            ToolButton(LineToolLabel, SketchToolKind.Line, panel.Tool);
+            ImGui.SameLine();
+            ToolButton(SelectToolLabel, SketchToolKind.Select, panel.Tool);
+            ImGui.SameLine();
+            ToolButton(CircleToolLabel, SketchToolKind.Circle, panel.Tool);
+            ImGui.SameLine();
+            ToolButton(ArcToolLabel, SketchToolKind.Arc, panel.Tool);
+        }
 
         // The row of Next point stays the second row, so the pad below it stays inside a display of
         // 1024 x 768 (finding V42); Finish and Extrude follow it (TASK-0122).
@@ -80,14 +87,18 @@ internal sealed unsafe partial class DesktopUi
             }
         }
 
-        SketchButton(FinishLabel, new FinishSketchAction());
-        ImGui.SameLine();
+        if (!ringHolds)
+        {
+            SketchButton(FinishLabel, new FinishSketchAction());
+            ImGui.SameLine();
+        }
+
         // ADR-0036 item 9 (Q4 A): the pad of one signed distance along the normal of the datum.
         if (ImGui.Button(ExtrudeLabel))
             OpenPad(new NumericPad(ExtrudeLabel, _unit, new PadField("distance", "10")), values => new ExtrudeAction(values[0]), bySketch: true, scope: PadScope.Active);
         Item(SketchItem(ExtrudeLabel));
 
-        SelectionButtons(sketch, panel.Selection);
+        SelectionButtons(sketch, panel.Selection, ringHolds);
         if (panel.Message is { } message)
             ImGui.TextWrapped(message);
 
@@ -197,7 +208,7 @@ internal sealed unsafe partial class DesktopUi
     // ADR-0034 item 8: the buttons of the kinds that fit the selection, Move point, Value and
     // Delete. A kind with a value opens the pad with the current value. The items of a constraint
     // go in the order of its kind: the points first.
-    private void SelectionButtons(SketchInfo sketch, IReadOnlyList<Guid> selection)
+    private void SelectionButtons(SketchInfo sketch, IReadOnlyList<Guid> selection, bool ringHolds)
     {
         if (selection.Count == 0)
             return;
@@ -231,8 +242,9 @@ internal sealed unsafe partial class DesktopUi
             Item(SketchItem(label));
         }
 
-        // ADR-0087 item 2 (TASK-0276): the window and the ring give the same constraints, from one rule.
-        foreach (var (label, press) in FittingConstraints(sketch, selection))
+        // ADR-0087 item 2 (TASK-0276): the window and the ring give the same constraints, from one rule. ADR-0088 item 1: while
+        // the ring shows, the kinds are on the ring only.
+        foreach (var (label, press) in ringHolds ? [] : FittingConstraints(sketch, selection))
             Flow(label, press);
 
         if (shape == "P" && !origin)

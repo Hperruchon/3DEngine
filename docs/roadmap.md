@@ -242,6 +242,7 @@ Therefore each approved objective must have a track here.
 - R16f — While a sketch is active, the ring holds the tools of the sketch. v0.260, TASK-0275, ADR-0086.
 - R16g — "Constrain" on the ring of a sketch opens the constraints that fit the selection. v0.261, TASK-0276, ADR-0087.
 - P0.114 — The tests of the home state of the desktop run in one collection. v0.262, TASK-0278.
+- R16h — While the ring of a sketch shows, the window of the sketch does not repeat it. v0.263, TASK-0277, ADR-0088.
 
 ## Track 0 — Foundations
 
@@ -434,6 +435,7 @@ The first objective. Each phase ends with something that a person can observe.
 | R16e | The sketch under its body: "Edit" of the sketch of a live extrude keeps the camera and shows the sketch out of the body along the normal of its plane, with a line from each point to its place (ADR-0085). TASK-0273. | 1 |
 | R16f | The tools of the sketch on the ring: while a sketch is active, the ring holds Line, Select, Circle, Arc and Finish beside the sketch (ADR-0086). TASK-0275. | 1 |
 | R16g | "Constrain" on the ring of a sketch: a second ring of the kinds of a constraint that fit the selection, with "Back" (ADR-0087). TASK-0276. | 1 |
+| R16h | The window of a sketch beside its ring: while the ring of a sketch shows, the window holds no tool, no Finish and no kind of a constraint (ADR-0088). TASK-0277. | 1 |
 
 ## Track K — The kernel
 
