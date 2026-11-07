@@ -58,6 +58,11 @@ public sealed class GetFacesQueryHandler : IQueryHandler
             return Task.FromResult(QueryHandlerResult.Failure(new ErrorDetail(
                 DiagnosticCodes.GeomBodyNotFound, $"No live body with id '{faces.BodyId}' exists in the Document.")));
 
+        // ADR-0083 item 4 (TASK-0258): a mesh body has no named faces.
+        if (record.Kind == Commands.ImportStlCommandHandler.MeshKind)
+            return Task.FromResult(QueryHandlerResult.Failure(new ErrorDetail(
+                DiagnosticCodes.MeshUnsupported, $"The body '{faces.BodyId}' is a mesh body of an STL file, which has no named faces (ADR-0083 item 4).")));
+
         // Item 3: a body with a fault keeps the solid of an earlier state, which the steps in effect no longer give.
         if (record.Fault is { } fault)
             return Task.FromResult(QueryHandlerResult.Failure(new ErrorDetail(DiagnosticCodes.GeomBodyFaulted,

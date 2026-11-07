@@ -4,7 +4,9 @@ using System.Text;
 using Engine.Contracts;
 using Engine.Contracts.Geometry;
 using Engine.Contracts.Sketch;
+using Engine.Core.Assets;
 using Engine.Core.Commands;
+using Engine.Core.Export;
 using Engine.Core.Hosting;
 
 namespace Engine.Core.Determinism;
@@ -140,14 +142,83 @@ public static class CrossPlatformProbe
         return (Convert.ToHexStringLower(SHA256.HashData(Encoding.UTF8.GetBytes(text.ToString()))), lines);
     }
 
-    // The replay of the log on the backend, and the hash and the lines of its state.
+    // ADR-0083 (phase P9b, TASK-0258): the bracket of the demonstration "Open the same STL on desktop and Android", made
+    // with the commands of the engine: an L profile on the plane YZ (U along +y, V along +z, the normal along +x), extruded
+    // by 60, so the base is 60 by 40 by 4 and the wall is 4 thick and 30 high, and two holes of 6 mm through the base at
+    // x = 15 and x = 45, y = 24. Its STL export is the file testdata/stl/bracket.stl.
+    public static IReadOnlyList<Command> BracketLog()
+    {
+        var sketch = Id(100);
+        (double U, double V)[] profile = [(0, 0), (40, 0), (40, 4), (4, 4), (4, 30), (0, 30)];
+        var log = new List<Command> { new CreateSketchCommand { CommandId = sketch, DatumId = Datums.YZ.Id } };
+        for (var i = 0; i < profile.Length; i++)
+            log.Add(new AddSketchPointCommand { CommandId = Id(101 + i), SketchId = sketch, X = profile[i].U, Y = profile[i].V });
+        for (var i = 0; i < profile.Length; i++)
+            log.Add(new AddSketchLineCommand { CommandId = Id(111 + i), SketchId = sketch, StartPointId = Id(101 + i), EndPointId = Id(101 + ((i + 1) % profile.Length)) });
+        log.Add(new ExtrudeCommand { CommandId = Id(120), SketchId = sketch, Distance = 60 });
+        var body = Id(120);
+        foreach (var (hole, x) in new[] { (130, 15.0), (140, 45.0) })
+        {
+            log.Add(new CreateCylinderCommand { CommandId = Id(hole), Radius = 3, Height = 10 });
+            log.Add(new TranslateCommand { CommandId = Id(hole + 1), BodyId = Id(hole), Dx = x, Dy = 24, Dz = 2 });
+            log.Add(new SubtractCommand { CommandId = Id(hole + 2), MinuendBodyId = body, SubtrahendBodyId = Id(hole + 1) });
+            body = Id(hole + 2);
+        }
+
+        return log;
+    }
+
+    // The STL export of the bracket, the bytes of testdata/stl/bracket.stl.
+    public static async Task<byte[]> BracketStl(IGeometryBackend backend, CancellationToken ct = default)
+    {
+        ArgumentNullException.ThrowIfNull(backend);
+        var registry = new CommandRegistry();
+        HandlerCatalog.RegisterAll(registry, new QueryRegistry());
+        var replay = await Replay.ReplayLog(BracketLog(), registry, backend, ct).ConfigureAwait(false);
+        var (content, error) = StlExport.Write(replay.Document, backend);
+        return content ?? throw new InvalidOperationException($"The export of the bracket failed: {error?.Code} {error?.Message}");
+    }
+
+    // ADR-0083: the import of the bracket and of its first half, the file testdata/stl/bracket-damaged.stl, through a bus
+    // as a host applies them; the first gives a mesh body and the second a refusal. The lines name the triangles and the
+    // code, so the four platforms compare them.
+    public static async Task<(string Hash, IReadOnlyList<string> Lines)> Import(IGeometryBackend backend, byte[] stl, CancellationToken ct = default)
+    {
+        ArgumentNullException.ThrowIfNull(backend);
+        ArgumentNullException.ThrowIfNull(stl);
+        var assets = new AssetBytes();
+        var (good, cut) = (assets.Add(stl), assets.Add(stl[..(stl.Length / 2)]));
+        var kit = EngineHosting.CreateDefault(backend, assets: assets);
+        var bus = kit.CreateCommandBus();
+        var imported = await bus.Apply(new ImportStlCommand { CommandId = Id(200), Asset = good, BodyName = "bracket.stl" }, ct).ConfigureAwait(false);
+        var damaged = await bus.Apply(new ImportStlCommand { CommandId = Id(201), Asset = cut, BodyName = "bracket-damaged.stl" }, ct).ConfigureAwait(false);
+        if (imported.Status != CommandStatus.Applied || damaged.Status != CommandStatus.Rejected)
+            throw new InvalidOperationException($"The import of the bracket gave {imported.Status} {imported.Error?.Code}, and of its half {damaged.Status}.");
+
+        var (hash, lines) = State(kit.Document, backend);
+        var triangles = backend.TryGet<ITessellationOps>()!.Tessellate(new BodyHandle(Id(200))).Indices.Length / 3;
+        var summary = $"stl bracket.stl triangles {triangles} bracket-damaged.stl {damaged.Error?.Code}";
+        return (Convert.ToHexStringLower(SHA256.HashData(Encoding.UTF8.GetBytes($"{hash}\n{summary}\n"))), [.. lines, summary]);
+    }
+
+    // The replay of the log on the backend, and the hash and the lines of its state. Since TASK-0258 the hash holds the
+    // export and the import of the bracket too (ADR-0083), so the pipeline compares the STL reader of each platform.
     public static async Task<(string Hash, IReadOnlyList<string> Lines, ReplayResult Replay)> Run(IGeometryBackend backend, CancellationToken ct = default)
     {
         ArgumentNullException.ThrowIfNull(backend);
         var registry = new CommandRegistry();
         HandlerCatalog.RegisterAll(registry, new QueryRegistry());
         var replay = await Replay.ReplayLog(Log(), registry, backend, ct).ConfigureAwait(false);
-        var (hash, lines) = State(replay.Document, backend);
+        var (hash, lines) = await WithStl(backend, State(replay.Document, backend), ct).ConfigureAwait(false);
         return (hash, lines, replay);
+    }
+
+    // The hash and the lines of a state, with the export and the import of the bracket (ADR-0083): the desktop test and
+    // the program of the phone both take their hash from here, so the four platforms compare the same text.
+    public static async Task<(string Hash, IReadOnlyList<string> Lines)> WithStl(IGeometryBackend backend, (string Hash, IReadOnlyList<string> Lines) state, CancellationToken ct = default)
+    {
+        var (stlHash, stlLines) = await Import(backend, await BracketStl(backend, ct).ConfigureAwait(false), ct).ConfigureAwait(false);
+        var combined = Convert.ToHexStringLower(SHA256.HashData(Encoding.UTF8.GetBytes($"{state.Hash}\n{stlHash}\n")));
+        return (combined, [.. state.Lines, .. stlLines]);
     }
 }

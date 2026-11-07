@@ -119,6 +119,15 @@ public static class DiagnosticCodes
     public const string ExportTooLarge = "E-EXPORT-TOO-LARGE";
     public const string ExportWriteFailed = "E-EXPORT-WRITE-FAILED";
 
+    // ADR-0083 (phase P9b, TASK-0258): the import of an STL file as a mesh body, and the operations that a mesh body refuses.
+    public const string StlTruncated = "E-STL-TRUNCATED";
+    public const string StlSyntax = "E-STL-SYNTAX";
+    public const string StlNotFinite = "E-STL-NOT-FINITE";
+    public const string StlEmpty = "E-STL-EMPTY";
+    public const string StlTooLarge = "E-STL-TOO-LARGE";
+    public const string StlAsset = "E-STL-ASSET";
+    public const string MeshUnsupported = "E-MESH-UNSUPPORTED";
+
     // ADR-0070 (phase K6a, TASK-0200): a body that the STEP export does not write.
     public const string ExportBodyFailed = "E-EXPORT-BODY-FAILED";
 

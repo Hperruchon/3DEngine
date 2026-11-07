@@ -35,9 +35,13 @@ namespace Engine.Geometry.Manifold;
 // InProcessMeshBackend's exception contract (InvalidOperationException on duplicate,
 // KeyNotFoundException on missing) so the existing handlers behave the same.
 public sealed class ManifoldGeometryBackend
-    : IGeometryBackend, IMeshOps, IGeometryQuery, ITransformOps, IBooleanOps, ITessellationOps, IExtrudeOps, IDisposable
+    : IGeometryBackend, IMeshOps, IGeometryQuery, ITransformOps, IBooleanOps, ITessellationOps, IExtrudeOps, IMeshImportOps, IDisposable
 {
     private readonly Dictionary<Guid, ManifoldSolidHandle> _solids = new();
+
+    // ADR-0083 item 8 (TASK-0258): the triangles of each mesh body, as the STL file gave them. A mesh body is not a solid
+    // of Manifold, so it has no native object, and no operation of Manifold takes it.
+    private readonly Dictionary<Guid, float[]> _meshes = new();
     private bool _disposed;
 
     // ADR-0015 item 5: the name and the version of the native library.
@@ -276,11 +280,24 @@ public sealed class ManifoldGeometryBackend
         Marshal.FreeHGlobal(buffer);
     }
 
+    // IMeshImportOps (ADR-0083 item 8). The floats are copied as they are.
+    public void ImportMesh(BodyHandle handle, ReadOnlySpan<float> triangles)
+    {
+        ObjectDisposedException.ThrowIf(_disposed, this);
+        if (triangles.Length == 0 || triangles.Length % 9 != 0)
+            throw new ArgumentException("A mesh holds nine floats for each triangle, and at least one triangle.", nameof(triangles));
+        if (_solids.ContainsKey(handle.Id) || _meshes.ContainsKey(handle.Id))
+            throw new InvalidOperationException($"Backend already holds a body under handle '{handle.Id}'.");
+        _meshes[handle.Id] = triangles.ToArray();
+    }
+
     // IGeometryQuery. Native axis-aligned bounding box. Throws if the handle is unknown
     // to this backend — the query handler surfaces that as a structured error.
     public Aabb GetBoundingBox(BodyHandle handle)
     {
         ObjectDisposedException.ThrowIf(_disposed, this);
+        if (_meshes.TryGetValue(handle.Id, out var triangles))
+            return MeshBox(triangles);
         if (!_solids.TryGetValue(handle.Id, out var solid))
             throw new KeyNotFoundException(
                 $"Backend has no body under handle '{handle.Id}'.");
@@ -308,6 +325,8 @@ public sealed class ManifoldGeometryBackend
     public Tessellation Tessellate(BodyHandle handle)
     {
         ObjectDisposedException.ThrowIf(_disposed, this);
+        if (_meshes.TryGetValue(handle.Id, out var triangles))
+            return MeshTessellation(triangles);
         if (!_solids.TryGetValue(handle.Id, out var solid))
             throw new KeyNotFoundException(
                 $"Backend has no body under handle '{handle.Id}'.");
@@ -397,9 +416,37 @@ public sealed class ManifoldGeometryBackend
         }
     }
 
+    // ADR-0083 item 8: the box of a mesh body, from comparisons of its floats only.
+    internal static Aabb MeshBox(float[] triangles)
+    {
+        var (min, max) = ((float[])[triangles[0], triangles[1], triangles[2]], (float[])[triangles[0], triangles[1], triangles[2]]);
+        for (var i = 0; i < triangles.Length; i++)
+        {
+            var axis = i % 3;
+            min[axis] = Math.Min(min[axis], triangles[i]);
+            max[axis] = Math.Max(max[axis], triangles[i]);
+        }
+
+        return new Aabb(min[0], min[1], min[2], max[0], max[1], max[2]);
+    }
+
+    // ADR-0083 item 8: each float as the double of the same value, and the vertices of each triangle in the order of the
+    // file, with no shared vertex.
+    internal static Tessellation MeshTessellation(float[] triangles)
+    {
+        var positions = new double[triangles.Length];
+        for (var i = 0; i < triangles.Length; i++)
+            positions[i] = triangles[i];
+        var indices = new uint[triangles.Length / 3];
+        for (var i = 0; i < indices.Length; i++)
+            indices[i] = (uint)i;
+        return new Tessellation(positions, indices);
+    }
+
     public void Dispose()
     {
         if (_disposed) return;
+        _meshes.Clear();
         foreach (var solid in _solids.Values)
             solid.Dispose();
         _solids.Clear();

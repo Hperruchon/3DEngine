@@ -87,6 +87,7 @@ public sealed class DocumentFileTests : IDisposable
         ["CreateDatum"] = new CreateDatumCommand { FeatureId = Guid.NewGuid(), Element = "side", ItemId = Guid.NewGuid(), DatumName = "Wall" },
         ["AddSketchReference"] = new AddSketchReferenceCommand { SketchId = Guid.NewGuid(), FeatureId = Guid.NewGuid(), Element = "sideEdge", ItemId = Guid.NewGuid() },
         ["AddPartReference"] = new AddPartReferenceCommand { Part = new string('b', 64), Version = 7, X = -2.5, Y = 0.125, Z = 1e-3 },
+        ["ImportStl"] = new ImportStlCommand { Asset = new string('c', 64), BodyName = "bracket.stl" },
     };
 
     // ADR-0015 item 11: each handler has an encoder, and Create(Encode(c)) gives c.

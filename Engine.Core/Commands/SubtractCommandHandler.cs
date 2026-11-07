@@ -73,6 +73,11 @@ public sealed class SubtractCommandHandler : ICommandHandler, ICommandEncoder
                     $"No body with id '{subtract.SubtrahendBodyId}' exists in the Document.")));
         }
 
+        // ADR-0083 item 4 (TASK-0258): a mesh body is no operand of a cut, as the body or as the tool.
+        if (new[] { minuend, subtrahend }.FirstOrDefault(body => body.Kind == ImportStlCommandHandler.MeshKind) is { } meshBody)
+            return Task.FromResult(CommandHandlerResult.Failure(new ErrorDetail(
+                DiagnosticCodes.MeshUnsupported, $"The body '{meshBody.Handle.Id}' is a mesh body of an STL file, which takes no part in a cut (ADR-0083 item 4).")));
+
         // A subtract consumes both operands, and ADR-0021 item 2 permits a handle one
         // time in the consumed list. A body minus itself is therefore refused before
         // the backend, and the body stays live (TASK-0037).

@@ -9,7 +9,7 @@ namespace Engine.Core.Assets;
 // name holds one content, and a later command records the name only (V2). The store is outside each
 // document session: a save, a Save as and an open do not change it (the answer of the owner of
 // 2026-10-31). It uses no transcendental function, so a name is the same on each platform.
-public sealed partial class AssetStore
+public sealed partial class AssetStore : IAssetSource
 {
     // ADR-0044 item 3: an asset holds at most 16 MiB, under the request limit of Kestrel (30 MB).
     public const int MaximumBytes = 16 * 1024 * 1024;
