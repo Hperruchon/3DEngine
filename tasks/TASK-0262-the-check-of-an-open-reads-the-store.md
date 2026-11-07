@@ -1,7 +1,7 @@
 ---
 id: 0262
 title: The check of an open reads the store of the assets
-status: Active
+status: Done
 phase: P0.105
 opened: 2026-11-07
 depends-on: [0261]
@@ -46,23 +46,25 @@ The check of an open reads the asset of an import from the store of the host, as
 
 ## Acceptance criteria
 
-- [ ] Each finding has a test or an injection that fails before the change and passes after it.
-- [ ] A clean build (`--no-incremental`) gives zero errors and zero warnings.
-- [ ] Continuous integration passes on the three runners, on the branch and on `main` after the merge.
+- [x] Each finding has a test or an injection that fails before the change and passes after it.
+- [x] A clean build (`--no-incremental`) gives zero errors and zero warnings.
+- [x] Continuous integration passes on the three runners, on the branch and on `main` after the merge.
 
 ## Outcome
 
-Status: Active
+Status: Done · commit (the merge of the branch p0105-check-store-b) · v0.245
 
 ## Method
 
 Mechanical: a test or an injection for each finding, before the change.
 Judgement:  the store is an optional parameter of the check, as of the composition of the engine, and the desktop gives
             the store of its session; the HTTP surface does not call the check.
-Weakest:    to be written at the close.
+Weakest:    the HTTP surface opens a file through its own folder and the next session, not through the check, so no test
+            holds an open over HTTP of a document with a mesh body.
 
 ## Progress
 
 - 2026-11-07: opened by the codebase review of 2026-11-07.
 - 2026-11-07: the store on the check and on the desktop document; one test, which an injection of a check with no store
   fails.
+- 2026-11-07: run 42325122816 passed. Closed at v0.245.

@@ -7373,3 +7373,25 @@ merge of v0.243), in the job "Start the APK on the emulator", which V124 holds.
 New tests: 0. The test list holds 2014 (1405 in `Engine.Tests`, 337 in `3DEngine.Tests`, 269 in `3DEngine.ImageTests`, 3
 in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
 entries: 15 of 15. New diagnostic codes: 0. Since the review of v0.243, 0 product milestones and 1 entry followed it.
+
+## v0.245 — The check of an open reads the store of the assets (P0.105, TASK-0262)
+
+The codebase review of 2026-11-07 found E167 (high): `DocumentFile.Check` made its scratch session with no store of the
+assets, so the desktop refused each saved document with a mesh body, also when the store held its asset: the recent files
+of the home screen of ADR-0083, an open by name, and an open by an agent. A high finding comes before the next product
+phase, the close of P9c.
+
+**The change.** `DocumentFile.Check` takes the store of the host, as `EngineHosting.CreateDefault` does, and the desktop
+document gives the store of its session; ADR-0083 says so in its history.
+
+**Proof.** One new test saves a document with the import of the bracket and opens it through the check of the desktop
+document with the store, and with no store gets `E-IO-LOAD-FAILED` with `E-STL-ASSET`. An injection of a check with no
+store fails it. Run 42325122816 passed.
+
+**What stays.** No test holds an open over HTTP of a document with a mesh body; the surface does not call the check.
+
+**A correction.** None. The failed runs since the entry v0.244, from the API: none.
+
+New tests: 1. The test list holds 2015 (1405 in `Engine.Tests`, 337 in `3DEngine.Tests`, 270 in `3DEngine.ImageTests`, 3
+in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
+entries: 15 of 15. New diagnostic codes: 0. Since the review of v0.243, 0 product milestones and 2 entries followed it.
