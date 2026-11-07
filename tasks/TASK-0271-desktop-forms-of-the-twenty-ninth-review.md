@@ -1,7 +1,7 @@
 ---
 id: 0271
 title: The home screen, the rows, the chips, the dialog and three comments hold their next forms
-status: Active
+status: Done
 phase: P0.111
 opened: 2026-11-07
 depends-on: [0274]
@@ -60,13 +60,13 @@ name in the rows, the home screen holds the scene, a failed dialog says so, and 
 
 ## Acceptance criteria
 
-- [ ] Each finding has a test or an injection that fails before the change and passes after it.
-- [ ] A clean build (`--no-incremental`) gives zero errors and zero warnings.
-- [ ] Continuous integration passes on the three runners, on the branch and on `main` after the merge.
+- [x] Each finding has a test or an injection that fails before the change and passes after it.
+- [x] A clean build (`--no-incremental`) gives zero errors and zero warnings.
+- [x] Continuous integration passes on the three runners, on the branch and on `main` after the merge.
 
 ## Outcome
 
-Status: Active
+Status: Done · commit (the merge of the branch p0111-desktop-forms) · v0.258
 
 ## Method
 
@@ -75,7 +75,8 @@ Judgement:  V129: two lines in the first row, with a fallback that keeps "failed
             the live sketches gives way to the rows while a body is selected (the standing order: the rows are the
             slice of the brief; "Edit" of a sketch stays with no selection). V127 and V131 change the engine, which
             needs a window, so no test holds them.
-Weakest:    to be written at the close.
+Weakest:    V127 and V131 change the engine, which needs a window, so no test holds them; while a body is selected,
+            "Edit" of a sketch needs a tap on the empty scene first, because the rows take the place of its window.
 
 ## Progress
 
@@ -83,3 +84,4 @@ Weakest:    to be written at the close.
 - 2026-11-07: V127 to V133 and three leads of Codex. Seven new tests with no GPU and a stronger picture test of the home
   screen. Injections: no separation of the chips, no end of the rows, the window over the rows, Move on a mesh body, no
   clamp of a label and the samples of the home screen each fail their test.
+- 2026-11-07: run 42366757388 passed. Closed at v0.258.

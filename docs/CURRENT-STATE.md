@@ -7772,3 +7772,42 @@ runs since the entry v0.256, from the API: none.
 New tests: 1. The test list holds 2061 (1412 in `Engine.Tests`, 337 in `3DEngine.Tests`, 309 in `3DEngine.ImageTests`, 3
 in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
 entries: 15 of 15. New diagnostic codes: 0. Since the review of v0.252, 1 product milestone and 5 entries followed it.
+
+## v0.258 — The desktop forms of the twenty-ninth review (P0.111, TASK-0271)
+
+The codebase review of 2026-11-07 (b) found V127 to V129 (medium) and V130 to V133 (low) in the desktop. They come after the
+product phase R16e. Three leads of Codex, checked on disk, join them.
+
+**The change.**
+- V127: a refusal of an open from a recent row, and "A file dialog is open already", show in the message of the home
+  screen, which hides the line of the document.
+- V128: a chip that the move under the rows puts on an earlier chip goes 4 pixels under it.
+- V129: the first row gives the name on its first line and the kind and the state on its second line; only "failed" and
+  the code are red, and a state that is too wide loses the kind, then "hidden".
+- V130: the home screen gives the scene no sample and no key, and no gizmo shows behind it; a mesh body has no gizmo and
+  no Move on its ring.
+- V131: a file dialog that fails gives the reason of SDL in the message.
+- V132: the picture of the home screen checks "Open file", "New part" and a recent row.
+- V133: three comments are true.
+- The leads of Codex of v0.251 and v0.252: the rows take the place of the window of the live sketches, which covered them
+  (ADR-0084 item 6, which amends ADR-0034 item 8); the rows end 16 pixels above the anchors; a label of the ring stays
+  inside the display.
+
+**Proof.** Seven new tests with no GPU and a stronger picture test. Injections fail their tests:
+- no separation of the chips;
+- no end of the rows;
+- the window of the live sketches over the rows;
+- Move on a mesh body;
+- no clamp of a label;
+- the samples of the home screen to the scene.
+
+Run 42366757388 passed.
+
+**What stays.** V127 and V131 change the engine, which needs a window, so no test holds them. While a body is selected,
+"Edit" of a sketch needs a tap on the empty scene first, because the rows take the place of the window of the sketches.
+
+**A correction.** None. The failed runs since the entry v0.257, from the API: none.
+
+New tests: 7. The test list holds 2068 (1412 in `Engine.Tests`, 337 in `3DEngine.Tests`, 316 in `3DEngine.ImageTests`, 3
+in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
+entries: 15 of 15. New diagnostic codes: 0. Since the review of v0.252, 1 product milestone and 6 entries followed it.
