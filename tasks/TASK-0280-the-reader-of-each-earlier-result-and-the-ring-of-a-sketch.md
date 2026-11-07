@@ -1,7 +1,7 @@
 ---
 id: 0280
 title: The reader gives the result of each earlier reader that accepted a file, and the ring of a sketch keeps each tool in reach
-status: Ready
+status: Done
 phase: P0.115
 opened: 2026-11-07
 depends-on: [0279]
@@ -18,6 +18,7 @@ writes:
     - docs/adr/0083-the-mesh-body-and-the-stl-import.md
     - docs/adr/0086-the-tools-of-the-sketch-on-the-ring.md
     - docs/adr/0088-the-window-of-a-sketch-beside-its-ring.md
+    - tasks/TASK-0281-medium-forms-of-the-thirtieth-review.md
     - eng/test-floor.txt
     - docs/roadmap.md
     - docs/CURRENT-STATE.md
@@ -56,18 +57,26 @@ each of its tools has a place that a tap reaches.
 
 ## Acceptance criteria
 
-- [ ] Each finding has a test or an injection that fails before the change and passes after it.
-- [ ] A clean build (`--no-incremental`) gives zero errors and zero warnings.
-- [ ] Continuous integration passes on the three runners, on the branch and on `main` after the merge.
+- [x] Each finding has a test or an injection that fails before the change and passes after it.
+- [x] A clean build (`--no-incremental`) gives zero errors and zero warnings.
+- [x] Continuous integration passes on the three runners, on the branch and on `main` after the merge.
 
 ## Outcome
 
-Status: Ready
+Status: Done · commit (the merge of the branch p0115-reader-and-sketch-ring-b) · v0.265
 
 ## Method
 
 Mechanical: a test or an injection for each finding, before the change.
-Judgement:  to be written.
-Weakest:    to be written at the close.
+Judgement:  the order v0.243, HEAD, v0.250 keeps each choice of HEAD for the two classes of conflicts (Q1 A) and
+            gives back each lost result; the window keeps a button when the middle of its segment is under a window,
+            under an anchor or off the display.
+Weakest:    the random files of the probe come from one generator of words, and the probe and its copies of the
+            earlier readers are not in the repository; a segment counts as reachable by its middle only.
 
 ## Progress
+- 2026-11-07: a probe with the readers of e903bef, 45f416d, 7959c98 and db0138c read 200,000 random text files: 114,399
+  were accepted by an earlier reader; the new reader refuses none of them, gives each the result of the first of v0.243,
+  HEAD and v0.250 that accepted it, and changes no result of v0.254. The new forms fail with the reader of HEAD. Injections
+  of the old rule of the window and of the old layout each fail a test of the ring.
+- 2026-11-07: run 42376164236 passed. Closed at v0.265.

@@ -29,6 +29,7 @@ internal sealed unsafe partial class DesktopUi
         var position = ImGui.GetWindowPos();
         var size = ImGui.GetWindowSize();
         _panels.Add(new Vector4(position.X, position.Y, position.X + size.X, position.Y + size.Y));
+        _sketchWindow = _panels[^1];
         ImGui.End();
     }
 
@@ -59,7 +60,9 @@ internal sealed unsafe partial class DesktopUi
         // ADR-0088 item 1 (the redesign, slice h, TASK-0277): while the ring of the sketch shows in this frame, it holds the
         // tools, Finish and the kinds of a constraint, so the window does not show them again. The ring comes first in the
         // frame, so _ring is the ring of this frame.
-        var ringHolds = _ring is not null;
+        // V134 (TASK-0280): only when a tap reaches each segment; until TASK-0280 a ring under the window or below the
+        // display left the person with no Finish.
+        var ringHolds = _ring is not null && _ringReachable;
         if (!ringHolds)
         {
             ToolButton(LineToolLabel, SketchToolKind.Line, panel.Tool);
