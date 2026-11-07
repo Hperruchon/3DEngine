@@ -91,8 +91,9 @@ So the handler of the import reads the bytes of its asset.
    visibility and the name are a part of the view and stay permitted. Each other operation refuses a mesh body with
    `E-MESH-UNSUPPORTED`: `Translate`, `Subtract` (as the body and as the tool), a datum and a reference of a sketch on its
    faces, `GetFaces`, `GetFaceAt`, and the STEP export. No silent result and no conversion.
-5. **The unit (D4).** The coordinates are millimetres. The import refuses a document whose length unit is not millimetres
-   with `E-STL-UNIT`, so that no conversion multiplies the floats. The client shows the size with "mm (assumed)".
+5. **The unit (D4).** The coordinates are millimetres. Each Document of the engine has the length unit millimetres
+   (ADR-0015 item 7), so the import needs no check of the unit, and no conversion multiplies the floats. The client shows
+   the size with "mm (assumed)".
 6. **The limit (D5).** At most 300,000 triangles. The store holds at most 16 MiB in one asset (ADR-0044), which bounds a
    binary file to 335,542 triangles; 300,000 is below that bound, and the engine row (P9b) measures the read and the
    first frame of such a file on this computer and on the emulator. The run of the owner on the S23 can lower it with a
