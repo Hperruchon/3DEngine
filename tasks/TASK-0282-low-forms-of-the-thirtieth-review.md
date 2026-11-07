@@ -1,7 +1,7 @@
 ---
 id: 0282
 title: The asset verb, the second ring, three comments and the dialog filter hold their next forms
-status: Active
+status: Done
 phase: P0.117
 opened: 2026-11-07
 depends-on: [0281]
@@ -49,13 +49,13 @@ E185, V137, V138 and V139 are fixed, each with a test, an injection or a reading
 
 ## Acceptance criteria
 
-- [ ] Each finding has a test, an injection or a reading that fails before the change and passes after it.
-- [ ] A clean build (`--no-incremental`) gives zero errors and zero warnings.
-- [ ] Continuous integration passes on the three runners, on the branch and on `main` after the merge.
+- [x] Each finding has a test, an injection or a reading that fails before the change and passes after it.
+- [x] A clean build (`--no-incremental`) gives zero errors and zero warnings.
+- [x] Continuous integration passes on the three runners, on the branch and on `main` after the merge.
 
 ## Outcome
 
-Status: Active
+Status: Done · commit (the merge of the branch p0117-low-forms) · v0.267
 
 ## Method
 
@@ -63,8 +63,10 @@ Mechanical: E185 failed on the code before the change; injections of a ring that
             a late callback that gives its result each fail a test.
 Judgement:  V139 moves the state of the dialog into FileDialogState, so a test reaches it with no dialog of SDL; the
             test of the asset verb is beside the tests of the blank folder of the other verbs.
-Weakest:    to be written at the close.
+Weakest:    no run on a computer with a file dialog showed a late callback; the test drives FileDialogState with no
+            dialog of SDL.
 
 ## Progress
 - 2026-11-07: E185, V137, V138 and V139. The test of E185 failed before the change with ArgumentException. Injections of a
   ring that the selection does not close and of a late callback that gives its result each fail a test.
+- 2026-11-07: run 42379027742 passed. Closed at v0.267.
