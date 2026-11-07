@@ -44,6 +44,16 @@ internal sealed record CutBodyAction(Guid Body, Guid Tool) : PanelAction;
 // the distance in effect, and the new distance of an apply of that pad.
 internal sealed record EditDistanceAction(Guid Body) : PanelAction;
 
+// ADR-0083 D1 and D6 (TASK-0259): the file dialog of the system for an STL file; a new part document; the home screen; and
+// the frame of the camera on the visible bodies.
+internal sealed record OpenFileAction : PanelAction;
+
+internal sealed record NewPartAction : PanelAction;
+
+internal sealed record HomeAction : PanelAction;
+
+internal sealed record FrameAction : PanelAction;
+
 // ADR-0082 item 3 (TASK-0254): the new value of a constraint of the sketch of the selected extrude, from the pad of its chip
 // on an edge, with no active sketch.
 internal sealed record SetBodyValueAction(Guid Sketch, Guid Constraint, double Value) : PanelAction;

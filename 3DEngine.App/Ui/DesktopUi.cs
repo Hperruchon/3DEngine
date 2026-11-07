@@ -282,6 +282,9 @@ internal sealed unsafe partial class DesktopUi : IDisposable
 
     public bool ShowDimensions => _dimensions;
 
+    // ADR-0083 (TASK-0259): an import turns the dimensions on, so the name and the size of the part show at once.
+    internal void ShowDimensionsOn() => _dimensions = true;
+
     public bool HiddenToo => _hiddenToo;
 
     // The text of the size of the selected body for this frame, or null.
@@ -526,16 +529,29 @@ internal sealed unsafe partial class DesktopUi : IDisposable
             Dimensions(dimensions, displaySize);
         if (face is not null)
             FaceOutline(face);
-        Panel(bodies, selection, displaySize, document);
-        FixedControls(displaySize);
-        // ADR-0081 (TASK-0253): the tool ring of the selected body, around the centre of its box on the screen.
-        Ring(displaySize, bodies.FirstOrDefault(body => body.Id == selection), ringCentre, ringBody);
-        // ADR-0082 (TASK-0254): the values of the selected extrude on its edges.
-        Values(displaySize, selection is null ? null : values);
-        if (sketchPanel is { } shown && (shown.Active is not null || shown.Live.Count > 0))
-            SketchWindow(shown, displaySize);
-        if (imagePanel is not null)
-            ImageWindow(imagePanel, displaySize);
+        // ADR-0083 D6 (TASK-0259): the home screen takes the place of the panel and of the controls of a document.
+        if (_home is { } recent)
+        {
+            Home(displaySize, recent);
+            _ring = null;
+            _chips = [];
+        }
+        else
+        {
+            Panel(bodies, selection, displaySize, document);
+            FixedControls(displaySize);
+            // ADR-0081 (TASK-0253): the tool ring of the selected body, around the centre of its box on the screen.
+            Ring(displaySize, bodies.FirstOrDefault(body => body.Id == selection), ringCentre, ringBody);
+            // ADR-0082 (TASK-0254): the values of the selected extrude on its edges.
+            Values(displaySize, selection is null ? null : values);
+            if (sketchPanel is { } shown && (shown.Active is not null || shown.Live.Count > 0))
+                SketchWindow(shown, displaySize);
+            if (imagePanel is not null)
+                ImageWindow(imagePanel, displaySize);
+        }
+
+        if (_message is { } message)
+            MessageWindow(displaySize, message);
         if (_pad is { } pad)
             PadWindow(pad, displaySize);
         ImGui.Render();

@@ -7422,3 +7422,30 @@ names the change of the configuration.
 New tests: 0. The test list holds 2015 (1405 in `Engine.Tests`, 337 in `3DEngine.Tests`, 270 in `3DEngine.ImageTests`, 3
 in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
 entries: 15 of 15. New diagnostic codes: 0. Since the review of v0.243, 0 product milestones and 3 entries followed it.
+
+## v0.247 — The desktop opens an STL file from its home screen (P9c, TASK-0259)
+
+Row c of the demonstration "Open the same STL on desktop and Android" (ADR-0083, the owner, 2026-11-07). P9b gave the
+engine part: the command `ImportStl` and the reader. This slice gives the part that a person sees on the desktop.
+
+**The change.** ADR-0083 D1, D4 and D6.
+- `Window.OpenFile` opens the file dialog of the system through SDL with the filter "STL file"; on Android the same call
+  opens the document picker. `Window.TakeOpenedFile` and `Window.LoadFile` give the chosen file to the loop.
+- `StlOpening.Prepare` checks the bytes with the reader of the engine before a new document, and puts them in the store.
+  A good file gives a new part document whose session applies the one import first; the engine stays the authority.
+- The home screen gives "Open file", "New part" and the recent files. "Frame" and "Home" are on the row of Undo and
+  Redo. A refusal gives a message with its code and "Choose another file", and no new part.
+- An open selects the body, turns the dimensions on and frames the part. The size of a mesh body says "mm (assumed)".
+
+**Proof.** Six new tests in `3DEngine.ImageTests`: five with no GPU for the actions and one picture of the home screen
+on the GPU, sent to the owner. Injections of a new part that does not end the session, and of a home screen beside the
+panel, fail two tests. Run 42355699358 passed on the three runners and on the emulator.
+
+**What stays.** The row P9c stays open until the run of the owner on the desktop with `docs/demo-stl-test-sheet.md`
+(P9e). No person opened a file through the dialog of Windows yet.
+
+**A correction.** None. The failed runs since the entry v0.246, from the API: none.
+
+New tests: 6. The test list holds 2021 (1405 in `Engine.Tests`, 337 in `3DEngine.Tests`, 276 in `3DEngine.ImageTests`, 3
+in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
+entries: 15 of 15. New diagnostic codes: 0. Since the review of v0.243, 1 product milestone and 4 entries followed it.
