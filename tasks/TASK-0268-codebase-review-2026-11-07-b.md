@@ -1,7 +1,7 @@
 ---
 id: 0268
 title: The codebase review of 2026-11-07 (b) is a record
-status: Active
+status: Done
 phase: governance
 opened: 2026-11-07
 depends-on: [0267]
@@ -68,12 +68,12 @@ finding.
 
 ## Acceptance criteria
 
-- [ ] `CodebaseReviewGateTests` passes with the new review.
-- [ ] Continuous integration passes on the three runners, on the branch and on `main` after the merge.
+- [x] `CodebaseReviewGateTests` passes with the new review.
+- [x] Continuous integration passes on the three runners, on the branch and on `main` after the merge.
 
 ## Outcome
 
-Status: Active
+Status: Done · commit (the merge of the branch codebase-review-2026-11-07-b) · v0.253
 
 ## Method
 
@@ -81,8 +81,10 @@ Mechanical: the measures with the methods of the last review, and the line of ea
             2026-11-07.
 Judgement:  three agents examined three areas at one tree, with the ten leads of Codex of v0.244 to v0.249; the session
             checked the high findings in the code. The standing order answers the two questions (E173 A, E174 A).
-Weakest:    to be written at the close.
+Weakest:    E172 is confirmed by reading only: the order of the events of SDL at a new create is inferred, because the
+            source of SDL is not in the repository. The lines of the findings up to T164 are carried, not examined.
 
 ## Progress
 
 - 2026-11-07: the review, from the sections of three agents at the tree of v0.252, and the four tasks of its findings.
+- 2026-11-07: run 42362739671 passed. Closed at v0.253.
