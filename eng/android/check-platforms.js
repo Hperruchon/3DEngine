@@ -79,6 +79,16 @@ for (const name of projects) {
   console.log(`${name}: ${platforms.join(', ')}; the probe gives ${reported ? 'the error CA1416' : 'no error CA1416'}`);
 }
 
+// Finding T168 of the codebase review of 2026-11-07 (b) (TASK-0272): the host of the phone itself makes CA1416 an error.
+{
+  const host = path.join(root, '3DEngine.Android', '3DEngine.Android.csproj');
+  const result = JSON.parse(execFileSync('dotnet', ['msbuild', host, '-getProperty:WarningsAsErrors', '-getProperty:TreatWarningsAsErrors'], { encoding: 'utf8' }));
+  const codes = (result.Properties.WarningsAsErrors || '').split(/[;,\s]+/).map(code => code.toUpperCase());
+  if (!codes.includes('CA1416') && (result.Properties.TreatWarningsAsErrors || '').trim().toLowerCase() !== 'true')
+    offences.push('3DEngine.Android: the evaluated properties WarningsAsErrors and TreatWarningsAsErrors do not make CA1416 an error');
+  console.log(`3DEngine.Android: WarningsAsErrors ${result.Properties.WarningsAsErrors || 'none'}`);
+}
+
 if (offences.length > 0) {
   console.error('The analyzer CA1416 must see Android in each project that the phone reaches (TASK-0229, TASK-0251, TASK-0263):');
   for (const offence of offences)

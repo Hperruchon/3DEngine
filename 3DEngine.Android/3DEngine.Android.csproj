@@ -17,6 +17,10 @@
     <RuntimeIdentifiers>android-arm64;android-x64</RuntimeIdentifiers>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
+    <!-- Finding T168 of the codebase review of 2026-11-07 (b) (TASK-0272): the host of the phone treated CA1416 as a warning,
+         and no step failed on it. The Android SDK can give warnings that are not ours, so the host makes this one rule an
+         error, as each project that it reaches does with TreatWarningsAsErrors. -->
+    <WarningsAsErrors>$(WarningsAsErrors);CA1416</WarningsAsErrors>
     <AllowUnsafeBlocks>True</AllowUnsafeBlocks>
     <!-- Phase R14f2 (TASK-0229): the APK holds the assemblies, so that a person installs it with adb or from a file. A Debug
          build of .NET for Android left them out for the fast deployment of an IDE, and the program could not start. -->

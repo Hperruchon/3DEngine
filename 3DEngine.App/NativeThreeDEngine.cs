@@ -161,6 +161,12 @@ public sealed class NativeThreeDEngine : IThreeDEngine, IDisposable
         }
 
         var name = StlOpening.FileName(path);
+        if (StlOpening.TooLarge(Window.FileSize(path)) is { } tooLarge)
+        {
+            _ui.ShowMessage((tooLarge.Code, $"{name}: {tooLarge.Message}"));
+            return;
+        }
+
         var (content, readError) = Window.LoadFile(path);
         if (content is null)
         {

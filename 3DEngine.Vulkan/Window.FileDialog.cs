@@ -64,6 +64,35 @@ public sealed unsafe partial class Window
         }
     }
 
+    // Finding E179 of the codebase review of 2026-11-07 (b) (TASK-0272): the state of the dialog belongs to the process, and
+    // only the callback cleared it, so a callback that never came blocked "Open file" for the life of the process. Each new
+    // window starts with no dialog; a late callback of an earlier window gives its result to the next take.
+    internal static void ResetDialog()
+    {
+        lock (DialogLock)
+        {
+            _dialogOpen = false;
+            _dialogResult = default;
+        }
+    }
+
+    // Finding N2 of the review of Codex after v0.243 (TASK-0272): the size of the file at the path, through SDL, or -1
+    // when SDL cannot open it, so that a file that is too large is refused before SDL reads it into memory.
+    public static long FileSize(string path)
+    {
+        var stream = SDL_IOFromFile(path, "rb");
+        if (stream is null)
+            return -1;
+        try
+        {
+            return SDL_GetIOSize(stream);
+        }
+        finally
+        {
+            SDL_CloseIO(stream);
+        }
+    }
+
     // The bytes of the file at the path, through SDL, so a content URI of the document picker of Android reads too; null
     // with the text of SDL when the read fails.
     public static (byte[]? Content, string? Error) LoadFile(string path)

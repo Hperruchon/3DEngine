@@ -58,8 +58,24 @@ for abi in arm64-v8a x86_64; do
 done
 # ADR-0083 D1 (TASK-0260): the document picker of Android needs no permission of storage, so the APK asks for none. The
 # manifest of the APK is binary XML, whose string pool holds each name in UTF-16 or in UTF-8.
-if node -e "const b=require('fs').readFileSync(process.argv[1]);const w=['EXTERNAL_STORAGE','READ_MEDIA_'];process.exit(w.some(n=>b.includes(Buffer.from(n,'utf16le'))||b.includes(Buffer.from(n,'utf8')))?0:1)" "$work/AndroidManifest.xml"; then
-  echo "::error title=APK::the manifest of the APK asks for a permission of storage, and the picker needs none (ADR-0083)"
+# Finding E177 of the codebase review of 2026-11-07 (b) (TASK-0272): the check was the condition of an if, so a manifest
+# that is absent, or no node, passed it. The script gives 0 for no permission, 1 for a permission and 2 for a read that
+# failed; each code other than 0 fails the check.
+manifest="$work/AndroidManifest.xml"
+if [ ! -f "$manifest" ]; then
+  echo "::error title=APK::the APK holds no AndroidManifest.xml, so the check of the permissions cannot read it"
   failed=1
+else
+  set +e
+  node -e "let b;try{b=require('fs').readFileSync(process.argv[1]);}catch(e){process.exit(2);}const w=['EXTERNAL_STORAGE','READ_MEDIA_'];process.exit(w.some(n=>b.includes(Buffer.from(n,'utf16le'))||b.includes(Buffer.from(n,'utf8')))?1:0)" "$manifest"
+  code=$?
+  set -e
+  if [ "$code" -eq 1 ]; then
+    echo "::error title=APK::the manifest of the APK asks for a permission of storage, and the picker needs none (ADR-0083)"
+    failed=1
+  elif [ "$code" -ne 0 ]; then
+    echo "::error title=APK::the check of the permissions could not read the manifest (exit code $code)"
+    failed=1
+  fi
 fi
 exit $failed
