@@ -63,6 +63,8 @@ The standing order of 2026-11-05 gives A for each question.
    person sees them (with the move of ADR-0085), and the half of their diagonal; a sketch with no point is at the middle
    of the window. On a landscape display the segments go down on the left of the centre, with the inner radius of Q2 A;
    the centre moves only as far as the band needs to stay 16 pixels to the right of the panel and inside the display.
+   The centre stays at or left of the window of the sketch, and the inner radius is at most the half of the height of
+   the display less the band and 16 pixels (finding V134 of the codebase review of 2026-11-07 (c), TASK-0280).
 2. **The tools (Q1 A).** Line, Select, Circle, Arc and Finish, in that order. A tap on a tool gives the tool, as its
    button of the window of the sketch does; a tap on Finish ends the sketch. The tool in use has the colour of an active
    control.
@@ -84,3 +86,6 @@ the ring yet. On a small portrait display the window of the sketch can cover the
 - 2026-11-07 · TASK-0275 · The record, Accepted under the standing order.
 - 2026-11-07 · TASK-0275 · Shipped at v0.260.
 - 2026-11-07 · TASK-0276 · Amended by ADR-0087: "Constrain" comes before Finish when a constraint fits.
+- 2026-11-07 · TASK-0280 · Item 1: the centre stays at or left of the window of the sketch, and the inner radius has an
+  upper limit, so the band is not under that window and fits the height (finding V134 of the codebase review of
+  2026-11-07 (c)).
