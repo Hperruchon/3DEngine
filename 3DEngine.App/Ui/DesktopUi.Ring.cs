@@ -21,8 +21,9 @@ internal sealed unsafe partial class DesktopUi
     // One segment of the ring: its label, its angles from the positive x axis of the screen (y down), and its action.
     internal sealed record RingSegmentLayout(string Label, float From, float To);
 
-    // The place and the size of the ring for a display: its centre, its inner radius, and the angle of its first segment.
-    internal sealed record RingLayout(Vector2 Centre, float Inner, float Start, float Direction)
+    // The place and the size of the ring for a display: its centre, its inner radius, the angle of its first segment, and
+    // the angle of one segment.
+    internal sealed record RingLayout(Vector2 Centre, float Inner, float Start, float Direction, float Segment = RingSegment)
     {
         public float Outer => Inner + RingBand;
 
@@ -32,8 +33,8 @@ internal sealed unsafe partial class DesktopUi
             var list = new List<RingSegmentLayout>();
             for (var i = 0; i < labels.Count; i++)
             {
-                var a = Start + (Direction * i * (RingSegment + RingGap));
-                var b = a + (Direction * RingSegment);
+                var a = Start + (Direction * i * (Segment + RingGap));
+                var b = a + (Direction * Segment);
                 list.Add(new RingSegmentLayout(labels[i], Math.Min(a, b), Math.Max(a, b)));
             }
 
@@ -73,11 +74,18 @@ internal sealed unsafe partial class DesktopUi
     // with an inner radius of a third of the height (size-ring-inner: 240 pixels at 720, 375 at 1080), and its segments
     // start above the right side and go down. Portrait: the thumb ring, in the lower right corner, with its segments from
     // the left up to the top.
-    internal static RingLayout Layout(Vector2 display, Vector2 centre, int count, float body = 0f)
+    // Findings V121 and V122 of the codebase review of 2026-11-07 (TASK-0264): the portrait segments fit between the left
+    // and the top for each count, narrower when they must be (four give 0.36 radians, 54 pixels at the inner radius); until
+    // TASK-0264 the fourth one went past the top and out of the display. The corner is 16 pixels inside the safe area
+    // (left, top, right and bottom), so the navigation bar of the phone does not cover Move.
+    internal static RingLayout Layout(Vector2 display, Vector2 centre, int count, float body = 0f, Vector4 inset = default)
     {
         var span = (count * RingSegment) + ((count - 1) * RingGap);
         if (display.X < display.Y)
-            return new RingLayout(new Vector2(display.X - 16f, display.Y - 16f), 150f, MathF.PI, 1f);
+        {
+            var segment = Math.Min(RingSegment, ((MathF.PI / 2f) - ((count - 1) * RingGap)) / Math.Max(count, 1));
+            return new RingLayout(new Vector2(display.X - 16f - inset.Z, display.Y - 16f - inset.W), 150f, MathF.PI, 1f, segment);
+        }
 
         // The ring is outside the body on the screen: at least the half of the diagonal of its box, and 24 pixels more.
         var inner = Math.Clamp(Math.Max(display.Y / 3f, body + 24f), 160f, 375f);
@@ -110,13 +118,16 @@ internal sealed unsafe partial class DesktopUi
         if (_face is { CanSketch: true })
             labels.Add(SketchOnFaceButtonLabel);
 
-        var ring = Layout(displaySize, at, labels.Count, size);
+        var ring = Layout(displaySize, at, labels.Count, size, _inset);
         _ring = ring;
         _ringLabels = labels;
 
         // The press and the release on one segment, with no window of the panels under the mouse, give its tool.
+        // Finding V120 of the codebase review of 2026-11-07 (TASK-0264): a chip is drawn over the ring, so a release on a
+        // chip is the tap of the chip only; the chips of the last frame are the chips that the person sees. Until
+        // TASK-0264 one tap gave both tools.
         var io = ImGui.GetIO();
-        if (ImGui.IsMouseReleased(ImGuiMouseButton.Left) && !ImGui.IsWindowHovered(ImGuiHoveredFlags.AnyWindow)
+        if (ImGui.IsMouseReleased(ImGuiMouseButton.Left) && !ImGui.IsWindowHovered(ImGuiHoveredFlags.AnyWindow) && ChipAt(io.MousePos) is null
             && ring.At(labels, io.MousePos) is { } released && ring.At(labels, io.MouseClickedPos[0]) == released)
             Use(released, body);
 

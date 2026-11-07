@@ -118,4 +118,74 @@ public sealed class ToolRingTests
         Step(ui, Box, Display, centre);
         Assert.Null(ui.ItemRectangle(DesktopUi.RingItem(DesktopUi.MoveLabel)));
     }
+
+    // Finding V121 of the codebase review of 2026-11-07 (TASK-0264), item 1: on a portrait display the segments go from the
+    // left up to the top, for each count. Until TASK-0264 the fourth segment went past the top and out of the display.
+    [Theory]
+    [InlineData(1080, 2316)]
+    [InlineData(390, 844)]
+    public void Each_Segment_Of_A_Portrait_Ring_Is_Between_The_Left_And_The_Top(int width, int height)
+    {
+        var portrait = new Vector2(width, height);
+        for (var count = 1; count <= 4; count++)
+        {
+            var layout = DesktopUi.Layout(portrait, new Vector2(width / 2f, 300), count);
+            foreach (var segment in layout.Segments([.. Enumerable.Range(0, count).Select(i => $"s{i}")]))
+            {
+                Assert.True(segment.From >= MathF.PI - 1e-4f && segment.To <= (1.5f * MathF.PI) + 1e-4f,
+                    $"{count} segments at {portrait}: {segment.Label} goes from {segment.From} to {segment.To}.");
+                foreach (var angle in new[] { segment.From, segment.To })
+                {
+                    var outer = layout.Centre + (new Vector2(MathF.Cos(angle), MathF.Sin(angle)) * layout.Outer);
+                    Assert.True(outer.X <= portrait.X && outer.Y >= 0, $"{count} segments at {portrait}: {segment.Label} reaches {outer}.");
+                }
+
+                Assert.True((segment.To - segment.From) * layout.Inner >= DesktopUi.ValueSize, $"{segment.Label} is narrower than 44 pixels.");
+            }
+        }
+    }
+
+    // Finding V122 of the codebase review of 2026-11-07 (TASK-0264): the portrait ring is 16 pixels inside the safe area,
+    // so the navigation bar of the phone does not cover Move. Until TASK-0264 it read no inset.
+    [Fact]
+    public void The_Portrait_Ring_Is_Inside_The_Safe_Area()
+    {
+        var portrait = new Vector2(390, 844);
+        var inset = new Vector4(0f, 40f, 12f, 48f);
+
+        var layout = DesktopUi.Layout(portrait, new Vector2(195, 300), 3, 0f, inset);
+
+        Assert.Equal(new Vector2(portrait.X - 16 - inset.Z, portrait.Y - 16 - inset.W), layout.Centre);
+    }
+
+    // Finding V120 of the codebase review of 2026-11-07 (TASK-0264): a chip that lies on a segment gives the tool of the chip
+    // only, because the chip is drawn over the ring. Until TASK-0264 one tap on a chip over Hide also hid the body.
+    [Fact]
+    public void A_Tap_On_A_Chip_Over_A_Segment_Gives_The_Chip_Only()
+    {
+        using var ui = new DesktopUi("http://127.0.0.1:5180", Engine.Contracts.Document.Millimetre);
+        var centre = new Vector2(640, 360);
+        var layout = DesktopUi.Layout(Display, centre, 3);
+        var hide = layout.Segments([DesktopUi.MoveLabel, DesktopUi.SetDistanceLabel, DesktopUi.HideLabel])[2];
+        var at = layout.Middle(hide);
+        var (sketch, constraint) = (Guid.NewGuid(), Guid.NewGuid());
+        IReadOnlyList<EdgeValues.Value> values = [new EdgeValues.Value(EdgeValues.ConstraintKey(constraint), "6 mm", at, 6, Plate, sketch, constraint)];
+        void Frame(params InputSample[] samples)
+        {
+            ui.Route(samples);
+            ui.Frame(1f / 60f, Display, Vector2.One, [Extrude], Plate, null, ringCentre: centre, values: values);
+        }
+
+        Frame();
+        Frame();
+        var chip = ui.ItemRectangle(values[0].Key) ?? throw new InvalidOperationException("No chip.");
+        Assert.True(at.X >= chip.X && at.X < chip.Z && at.Y >= chip.Y && at.Y < chip.W, $"The chip {chip} is not on Hide at {at}.");
+        Assert.Equal(DesktopUi.HideLabel, layout.At([DesktopUi.MoveLabel, DesktopUi.SetDistanceLabel, DesktopUi.HideLabel], at));
+        Frame(new PointerSample(DeviceKind.Touch, 1, 3, at.X, at.Y, 1, PointerButtons.None, KeyModifiers.None, PointerPhase.Down, 0));
+        Frame(new PointerSample(DeviceKind.Touch, 1, 3, at.X, at.Y, 1, PointerButtons.None, KeyModifiers.None, PointerPhase.Up, 0));
+        Frame();
+
+        Assert.DoesNotContain(ui.TakeActions(), action => action is SetVisibleAction);
+        Assert.Equal(DesktopUi.EdgeValueLabel, ui.Pad?.Title);
+    }
 }
