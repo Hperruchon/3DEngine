@@ -7644,3 +7644,38 @@ its text, as `docs/templates.md`, section 7, asks. The failed runs since the ent
 New tests: 0. The test list holds 2042 (1410 in `Engine.Tests`, 337 in `3DEngine.Tests`, 292 in `3DEngine.ImageTests`, 3
 in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
 entries: 15 of 15. New diagnostic codes: 0. Since the review of v0.252, 0 product milestones and 1 entry followed it.
+
+## v0.254 — The wait of the phone, the name of the solid and the test sheet (P0.109, TASK-0269)
+
+The codebase review of 2026-11-07 (b) found three high findings: E172, E173 and E174. A high finding comes before the next
+product phase. The standing order answers the two questions of the review with A.
+
+**The change.**
+- E172: the wait of the phone in the background reads the turn at each return, also at an event, and the loop reads it at
+  each pass. `PhoneLifecycle.AfterWait` holds the decision of one return. Until now only a quiet wait of 500 ms read the
+  turn, so a stale session could take the foreground event of a new activity and keep the window. ADR-0079 item 4 has a
+  history line.
+- E173: the name of the solid ends at a word "facet" that "normal" and a number follow, on any line, or at "facet" or
+  "endsolid" after the line of "solid". Each file that v0.243 accepted gives the result of v0.243 again: the fix of E170 had
+  lost a facet on the line of "solid" and refused a file of one line with a line end. ADR-0083 item 3 now says that a change
+  of the reader keeps the result of each file that an earlier reader accepted, or takes a new schema version of
+  `ImportStl` (E173 A).
+- E174: the test sheet says that the phone keeps the document after the background, and that the view, the selection and
+  the line "Size" start again (ADR-0073). Criterion 9 asks for the same part, whole and framed again (E174 A). The sheet
+  also says that the end of a session after a lost surface ran on no emulator and no device yet.
+
+**Proof.**
+- E173: the new test of seven forms failed with the reader of HEAD and passed with the reader of v0.243, so its expected
+  results are the results of v0.243. It passes with the new rule, and the test of the three forms of E170 passes too.
+- E172: its eight cases did not compile before `AfterWait`. The phone project builds with zero warnings.
+- Run 42363406674 passed on the three runners and on the emulator.
+
+**What stays.** The wait of the phone ran on no device and no emulator with a new create of the activity, so the order of
+the events of SDL at that time is still inferred.
+
+**A correction.** E174 corrects `docs/demo-stl-test-sheet.md`, which said that the view stays after the background. The
+failed runs since the entry v0.253, from the API: none.
+
+New tests: 9. The test list holds 2051 (1411 in `Engine.Tests`, 337 in `3DEngine.Tests`, 300 in `3DEngine.ImageTests`, 3
+in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
+entries: 15 of 15. New diagnostic codes: 0. Since the review of v0.252, 0 product milestones and 2 entries followed it.
