@@ -8090,3 +8090,27 @@ standing order and waits for the check of the owner.
 New tests: 2. The test list holds 2086 (1415 in `Engine.Tests`, 337 in `3DEngine.Tests`, 331 in `3DEngine.ImageTests`, 3
 in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
 entries: 15 of 15. New diagnostic codes: 0. Since the review of v0.263, 0 product milestones and 4 entries followed it.
+
+## v0.268 — The cone, the sphere and the torus are a proposal for the owner (governance, TASK-0283)
+
+The order of the owner of 2026-11-06 puts K5 after the redesign slices that need no change of the contract; those slices
+ended at v0.263. The cone needs a new capability in `Engine.Contracts`, so the standing order does not answer it (Q2 of
+the codebase review of 2026-11-07 (c)).
+
+**The change.** ADR-0089, Proposed. It holds the research and the options for the owner, and no code follows it before the
+owner answers.
+- Q1, the capability: A, a closed mesh that the engine makes from the table of the 64-gon of ADR-0040 and stores as a solid
+  through a new capability (recommended); B, a revolve of Manifold; C, booleans of prisms.
+- Q2, the facets (the table of the 64-gon for each angle), Q3, the commands and the names of the faces, and Q4, the volume
+  of each primitive against its true volume.
+
+**Proof.** `AdrGateTests` passes with the Proposed record. The built `manifoldc.dll` of the tests exports
+`manifold_of_meshgl64` and `manifold_revolve`; the source of Manifold is not in the repository. Run 42380985686 passed.
+
+**What stays.** K5c waits for the answers of the owner. Each other open row of the roadmap waits for the owner too.
+
+**A correction.** None. The failed runs since the entry v0.267, from the API: none.
+
+New tests: 0. The test list holds 2086 (1415 in `Engine.Tests`, 337 in `3DEngine.Tests`, 331 in `3DEngine.ImageTests`, 3
+in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
+entries: 15 of 15. New diagnostic codes: 0. Since the review of v0.263, 0 product milestones and 5 entries followed it.

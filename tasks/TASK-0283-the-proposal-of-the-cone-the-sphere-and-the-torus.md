@@ -1,7 +1,7 @@
 ---
 id: 0283
 title: The cone, the sphere and the torus are a proposal for the owner
-status: Active
+status: Done
 phase: governance
 opened: 2026-11-07
 depends-on: [0282]
@@ -48,20 +48,22 @@ The owner finds the research and the options of K5c in one record, and answers i
 
 ## Acceptance criteria
 
-- [ ] `AdrGateTests` passes with the Proposed record.
-- [ ] Continuous integration passes on the three runners, on the branch and on `main` after the merge.
+- [x] `AdrGateTests` passes with the Proposed record.
+- [x] Continuous integration passes on the three runners, on the branch and on `main` after the merge.
 
 ## Outcome
 
-Status: Active
+Status: Done · commit (the merge of the branch k5-proposal) · v0.268
 
 ## Method
 
 Mechanical: the export names in `manifoldc.dll` of the tests; the code of `SketchProfile.Turn` and `KernelSolid.Cylinder`.
 Judgement:  the volume of each primitive is an estimate from the polygons of 64 and 32, not a measure.
-Weakest:    to be written at the close.
+Weakest:    the volumes are estimates, and how a revolve of Manifold computes its steps is not verified, because the
+            source of Manifold is not in the repository.
 
 ## Progress
 
 - 2026-11-07: ADR-0089, Proposed. The built `manifoldc.dll` exports `manifold_of_meshgl64` and `manifold_revolve`; the
   source of Manifold is not in the repository, so how a revolve computes its steps is not verified.
+- 2026-11-07: run 42380985686 passed. Closed at v0.268.
