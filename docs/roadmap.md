@@ -225,6 +225,7 @@ Therefore each approved objective must have a track here.
 - P0.108 — A lost surface of a destroyed activity ends the session quietly. v0.246, TASK-0265, ADR-0079.
 - P0.106 — A failed copy, a test of the faces, the STL reader, the command line, two gates and the affects fields hold
   their next forms. v0.250, TASK-0263.
+- P0.107 — The chips, the ring and the collapsed panel hold their next forms. v0.251, TASK-0264, ADR-0081.
 
 ## Track 0 — Foundations
 

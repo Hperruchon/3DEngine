@@ -53,10 +53,11 @@ The standing order of 2026-11-05 gives A for each question.
    landscape display the ring is around the centre of the box of the body on the screen, with an inner radius of a third
    of the height of the display, at least the half of the diagonal of the box on the screen and 24 pixels more, and from
    160 to 375 pixels; its segments are to the right of the body, and the ring moves inward so that they stay inside the
-   display. On a portrait display, as the phone, the ring is in the lower right corner, with an inner radius of 150
-   pixels, and its segments go from the left up to the top.
+   display. On a portrait display, as the phone, the ring is in the lower right corner, 16 pixels inside the safe area,
+   with an inner radius of 150 pixels, and its segments go from the left up to the top.
 2. **The segments.** Each segment is 68 pixels deep and 0.42 radians wide, with a gap of 0.04 radians, and holds its label
-   at its middle. The band of the ring is a part of the panels for a tap, so a tap on a segment does not reach the scene;
+   at its middle. On a portrait display the segments are narrower when they must be, so that each count fits between
+   the left and the top: four segments are 0.36 radians, 54 pixels at the inner radius. The band of the ring is a part of the panels for a tap, so a tap on a segment does not reach the scene;
    the inside of the ring is the scene.
 3. **The tools (Q1 A, Q2 A).** Move opens the pad of a move, Distance asks the host for the distance of the extrude, Hide or
    Show changes the visibility, and "Sketch on face" makes a sketch on the selected face, as the buttons of the panel do. A
@@ -75,3 +76,7 @@ are not on the ring yet.
 
 - 2026-11-06 · TASK-0253 · The record, Accepted under the standing order.
 - 2026-11-06 · TASK-0253 · Shipped at v0.236.
+- 2026-11-07 · TASK-0264 · Items 1 and 2: the portrait ring is 16 pixels inside the safe area, and its segments fit
+  between the left and the top for each count (findings V121 and V122 of the codebase review of 2026-11-07); until
+  TASK-0264 the fourth segment went out of the display, and the navigation bar could cover Move. Item 2: a release on
+  a chip of ADR-0082 that lies on a segment gives the chip only (finding V120).

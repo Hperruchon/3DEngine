@@ -7547,3 +7547,35 @@ Run 42358673617 passed on the three runners and on the emulator.
 New tests: 5. The test list holds 2028 (1410 in `Engine.Tests`, 337 in `3DEngine.Tests`, 278 in `3DEngine.ImageTests`, 3
 in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
 entries: 15 of 15. New diagnostic codes: 0. Since the review of v0.243, 3 product milestones and 7 entries followed it.
+
+## v0.251 — The desktop forms of the twenty-eighth review (P0.107, TASK-0264)
+
+The codebase review of 2026-11-07 found V119 to V123 (low) in the chips, the tool ring and the panel.
+
+**The change.**
+- V119: a new pad ends the pending state of a chip. The pad of a chip and the pad of the distance set it again.
+- V120: a release on a chip that lies on a segment of the ring gives the chip only, because the chip is drawn over the
+  ring.
+- V121: on a portrait display the segments of the ring fit between the left and the top for each count; four segments
+  are 0.36 radians, 54 pixels at the inner radius.
+- V122: the portrait ring is 16 pixels inside the safe area, so the navigation bar of the phone does not cover Move.
+- V123: the clamp of the panel runs when the panel is collapsed, and its left side is 16 pixels inside the left inset.
+  The comment of the title moves to `Title`.
+- ADR-0081 items 1 and 2 give the portrait forms, with a history line.
+
+**Proof.** Six new tests with no GPU, each failed before the change:
+- the pending chip after the pad of Move;
+- the chip on Hide that hid the body;
+- the fourth portrait segment at 4.94 radians, at 1080 by 2316 and at 390 by 844;
+- the portrait centre with no inset;
+- the collapsed panel at (-24, 680) over Undo.
+
+Run 42359402926 passed on the three runners and on the emulator.
+
+**What stays.** No run on the S23 with the navigation of three buttons has shown Move above the bar yet.
+
+**A correction.** None. The failed runs since the entry v0.250, from the API: none.
+
+New tests: 6. The test list holds 2034 (1410 in `Engine.Tests`, 337 in `3DEngine.Tests`, 284 in `3DEngine.ImageTests`, 3
+in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
+entries: 15 of 15. New diagnostic codes: 0. Since the review of v0.243, 3 product milestones and 8 entries followed it.

@@ -25,9 +25,12 @@ internal sealed unsafe partial class DesktopUi
         ImGui.SetNextWindowSize(new Vector2(460f, Math.Clamp(displaySize.Y - 32f - AnchorRow, 200f, 700f)), ImGuiCond.FirstUseEver);
         // ADR-0080 item 1 (TASK-0248): the title bar of the panel is the title of the document: the name of the program, the
         // name of the file or "unsaved", and the length unit. The identifier of the window stays the name of the panel.
-        if (ImGui.Begin($"{Title(document)}###{PanelName}"))
+        var open = ImGui.Begin($"{Title(document)}###{PanelName}");
+        // Finding V123 of the codebase review of 2026-11-07 (TASK-0264): Begin gives false for a collapsed panel, so the
+        // clamp ran only for an open panel, and a collapsed panel covered Undo. The clamp runs for each state now.
+        KeepAboveAnchors(displaySize);
+        if (open)
         {
-            KeepAboveAnchors(displaySize);
             if (document is not null)
                 File(document);
 
@@ -250,19 +253,20 @@ internal sealed unsafe partial class DesktopUi
         Item(CutLabel);
     }
 
-    // ADR-0080 item 1 (TASK-0248): the title of the document; a host with no files gives no name.
-    // V114 and V118 (TASK-0252): the top of the panel is at least 16 pixels inside the top and the left inset, and its bottom
-    // at most 16 pixels above the anchors.
+    // V114 and V118 (TASK-0252): the top of the panel is at least 16 pixels inside the top inset, and its bottom at most 16
+    // pixels above the anchors. V123 (TASK-0264): its left side is at least 16 pixels inside the left inset too; until
+    // TASK-0264 the code kept it inside the inset only, and the comment said 16 pixels.
     private void KeepAboveAnchors(Vector2 displaySize)
     {
         var (at, extent) = (ImGui.GetWindowPos(), ImGui.GetWindowSize());
         var top = 16f + _inset.Y;
         var bottom = displaySize.Y - 32f - _inset.W - AnchorSize;
-        var place = new Vector2(Math.Max(at.X, _inset.X), Math.Clamp(at.Y, top, Math.Max(top, bottom - extent.Y)));
+        var place = new Vector2(Math.Max(at.X, 16f + _inset.X), Math.Clamp(at.Y, top, Math.Max(top, bottom - extent.Y)));
         if (place != at)
             ImGui.SetWindowPos(place);
     }
 
+    // ADR-0080 item 1 (TASK-0248): the title of the document; a host with no files gives no name.
     // Finding V115 of the codebase review of 2026-11-06 (e) (TASK-0252): the unit comes before the name of the file, so a
     // long name that the title bar cuts does not cut the unit; until TASK-0252 the unit came last.
     internal string Title(DocumentLine? document)
