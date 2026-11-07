@@ -63,11 +63,20 @@ public class SketchLiftImageTests
             var strokes = SketchOverlay.Of([lift.Apply(info)], camera, Width, Height, new SketchOverlay.Focus(sketch, [], null));
             strokes = strokes with { Lines = [.. strokes.Lines, .. lift.Links(info, camera, Width, Height)] };
             corner = SketchOverlay.Pixel(lift.Apply(info), camera, Width, Height, (20, -12)) ?? throw new InvalidOperationException("No pixel.");
+
+            // ADR-0086 (TASK-0275): the window of the active sketch and the ring of its tools around its points, as the host
+            // gives them.
+            var panel = new SketchPanel([info], info, ThreeDEngine.Core.Sketching.SketchToolKind.Line, false, [], null);
+            var seen = lift.Apply(info);
+            var shownPoints = seen.Points.Select(point => SketchOverlay.Pixel(seen, camera, Width, Height, (point.X, point.Y))).OfType<Vector2>().ToList();
+            var (low, high) = (shownPoints.Aggregate(Vector2.Min), shownPoints.Aggregate(Vector2.Max));
+            var (ringCentre, ringSize) = ((low + high) / 2f, Vector2.Distance(low, high) / 2f);
             Assert.True(lift.Dz < -box.Max.Z / 2, $"The sketch at {lift.Dz} is not under the body.");
 
             var data = UiDrawData.Empty;
             for (var frame = 0; frame < 3; frame++)
-                data = ui.Frame(1f / 60f, new Vector2(Width, Height), Vector2.One, renderer.LiveBodies, null, sketches: strokes);
+                data = ui.Frame(1f / 60f, new Vector2(Width, Height), Vector2.One, renderer.LiveBodies, null, sketches: strokes,
+                    sketchPanel: panel, ringCentre: ringCentre, ringBody: ringSize);
 
             pixels = target.Render((commandBuffer, framebuffer, frameExtent) =>
                 renderer.Record(commandBuffer, framebuffer, frameExtent, scene, camera,

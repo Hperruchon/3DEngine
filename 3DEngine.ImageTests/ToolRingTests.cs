@@ -127,7 +127,8 @@ public sealed class ToolRingTests
     public void Each_Segment_Of_A_Portrait_Ring_Is_Between_The_Left_And_The_Top(int width, int height)
     {
         var portrait = new Vector2(width, height);
-        for (var count = 1; count <= 4; count++)
+        // ADR-0086 item 3 (TASK-0275): five segments too, for the tools of a sketch.
+        for (var count = 1; count <= 5; count++)
         {
             var layout = DesktopUi.Layout(portrait, new Vector2(width / 2f, 300), count);
             foreach (var segment in layout.Segments([.. Enumerable.Range(0, count).Select(i => $"s{i}")]))
@@ -222,6 +223,62 @@ public sealed class ToolRingTests
         {
             var text = ui.ItemRectangle(DesktopUi.RingTextItem(label)) ?? throw new InvalidOperationException($"No label {label}.");
             Assert.True(text.X >= 0 && text.Z <= portrait.X, $"The label {label} at {text} is outside the display.");
+        }
+    }
+
+    // ADR-0086 items 1 and 2 (the redesign, slice f, TASK-0275): while a sketch is active, the ring holds its tools in the place
+    // of the tools of the body; a tap on a tool gives it, and a tap on Finish ends the sketch. Until TASK-0275 the ring hid.
+    [Theory]
+    [InlineData(DeviceKind.Touch)]
+    [InlineData(DeviceKind.Mouse)]
+    public void While_A_Sketch_Is_Active_The_Ring_Holds_Its_Tools(DeviceKind kind)
+    {
+        using var ui = new DesktopUi("http://127.0.0.1:5180", Engine.Contracts.Document.Millimetre);
+        var sketch = new Engine.Core.Queries.SketchInfo(Guid.NewGuid(), Engine.Contracts.Sketch.Datums.XY.Id, "Plate", [], [], [], [], [], true, 0);
+        var panel = new SketchPanel([sketch], sketch, ThreeDEngine.Core.Sketching.SketchToolKind.Line, false, [], null);
+        var centre = new Vector2(800, 360);
+        void Frame(params InputSample[] samples)
+        {
+            ui.Route(samples);
+            ui.Frame(1f / 60f, Display, Vector2.One, [Extrude], Extrude.Id, null, sketchPanel: panel, ringCentre: centre);
+        }
+
+        Frame();
+        Frame();
+        foreach (var (label, _) in DesktopUi.SketchRingTools)
+            Assert.NotNull(ui.ItemRectangle(DesktopUi.RingItem(label)));
+        Assert.Null(ui.ItemRectangle(DesktopUi.RingItem(DesktopUi.MoveLabel)));
+
+        var (pointer, buttons) = kind == DeviceKind.Mouse ? (0UL, PointerButtons.Left) : (3UL, PointerButtons.None);
+        foreach (var label in new[] { DesktopUi.CircleToolLabel, DesktopUi.FinishLabel })
+        {
+            var at = Centre(ui, label);
+            Frame(new PointerSample(kind, 1, pointer, at.X, at.Y, 1, buttons, KeyModifiers.None, PointerPhase.Down, 0));
+            Frame(new PointerSample(kind, 1, pointer, at.X, at.Y, 1, buttons, KeyModifiers.None, PointerPhase.Up, 0));
+            Frame();
+        }
+
+        Assert.Equal([new SketchToolAction(ThreeDEngine.Core.Sketching.SketchToolKind.Circle), new FinishSketchAction()], ui.TakeActions());
+    }
+
+    // ADR-0086 item 1: on a landscape display the ring of a sketch is on the left of the sketch, its inner radius is 24 pixels
+    // more than the half of the diagonal of the sketch, and its band stays 16 pixels to the right of the panel. The first form
+    // of TASK-0275 put the ring onto the points of the sketch.
+    [Fact]
+    public void The_Ring_Of_A_Sketch_Is_On_Its_Left_Between_The_Panel_And_The_Sketch()
+    {
+        string[] labels = [.. DesktopUi.SketchRingTools.Select(tool => tool.Label)];
+        foreach (var (centre, sketch) in new[] { (new Vector2(700, 360), 90f), (new Vector2(500, 300), 60f), (new Vector2(900, 200), 150f) })
+        {
+            var layout = DesktopUi.SketchLayout(Display, centre, labels.Length, sketch, 476f);
+
+            Assert.True(layout.Inner >= sketch + 24f, $"The inner radius {layout.Inner} is inside the sketch of {sketch}.");
+            Assert.True(layout.Centre.X - layout.Outer >= 476f + 16f - 0.01f, $"The band at {layout.Centre.X - layout.Outer} covers the panel.");
+            foreach (var segment in layout.Segments(labels))
+            {
+                var middle = layout.Middle(segment);
+                Assert.True(middle.X < layout.Centre.X, $"The segment {segment.Label} at {middle} is not on the left.");
+            }
         }
     }
 }
