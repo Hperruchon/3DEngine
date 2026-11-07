@@ -15,6 +15,18 @@ internal sealed record StlImport(string Asset, string Name);
 // same bytes again at the import, so the check of the client is a convenience and the engine stays the authority.
 internal static class StlOpening
 {
+    // Finding N2 of the review of Codex after v0.243 (TASK-0272): the largest file that the client reads, so that a file
+    // much larger than the limit of triangles of ADR-0083 item 6 gives its code before the read and not an end of the
+    // session for want of memory. A binary file of the limit has 15,000,084 bytes; a text file of the limit has less than
+    // 512 bytes for each triangle.
+    public const long MaximumBytes = 84 + (512L * StlReader.MaximumTriangles);
+
+    // E-STL-TOO-LARGE for a file of more than MaximumBytes, or null.
+    public static ErrorDetail? TooLarge(long size)
+        => size > MaximumBytes
+            ? new ErrorDetail(DiagnosticCodes.StlTooLarge, $"The file has {size} bytes, and the program reads an STL file of at most {MaximumBytes} bytes (ADR-0083 item 6).")
+            : null;
+
     public static async Task<(StlImport? Import, ErrorDetail? Error)> Prepare(string path, byte[] content, AssetStore store, CancellationToken ct = default)
     {
         ArgumentNullException.ThrowIfNull(content);

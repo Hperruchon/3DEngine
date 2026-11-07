@@ -45,7 +45,6 @@ internal static class PhoneHost
             // the home screen at the start, and a new part as a new session in the same window.
             var assets = new AssetStore(AssetStore.Default);
             var files = new PhoneFiles();
-            var host = new LocalSessionHost(new ManifoldGeometryBackend(), assets);
             BlockOnPause();
             // ADR-0079 item 4 (P0.103, TASK-0255): a session of a destroyed activity ends before its window, and a session
             // waits until the window of an earlier session is gone. Run 42308415060: the activity was destroyed during the
@@ -59,6 +58,10 @@ internal static class PhoneHost
             // Finding V112 (TASK-0250): the session destroys its window at its end, so a later session of this process, after a
             // new start of the activity (ADR-0079), makes its own; SDL on Android permits one window.
             using var window = new Window("3DEngine", 1080, 2316);
+            // Finding E176 of the codebase review of 2026-11-07 (b) (TASK-0272): the host comes after the checks of the turn
+            // and the window, so each way out of Run disposes it; until TASK-0272 a stale session and a timeout of the window
+            // left its session and its native backend.
+            var host = new LocalSessionHost(new ManifoldGeometryBackend(), assets);
             try
             {
                 while (true)
@@ -189,7 +192,10 @@ internal static class PhoneHost
             catch (Vortice.Vulkan.VkException ex) when (ex.Message.Contains(nameof(Vortice.Vulkan.VkResult.ErrorSurfaceLostKHR), StringComparison.Ordinal))
             {
                 Console.Error.WriteLine("3DEngine: the surface of the window is lost, so the engine ends as in the background.");
-                return Session.Background;
+                // Finding E175 of the codebase review of 2026-11-07 (b) (TASK-0272): the frame that took a chosen STL queued
+                // its new part before the present, so a lost surface in that frame keeps the request; until TASK-0272 the old
+                // session took the import at its return, and the request then replaced it with an empty part.
+                return files.TakeRequestedNew() ? Session.NewPart : Session.Background;
             }
 
             lastFrame = now;

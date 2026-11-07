@@ -161,6 +161,16 @@ public sealed class StlExportTests : IDisposable
         Assert.Equal(1, JsonDocument.Parse(exportOutput).RootElement.GetProperty("triangles").GetInt32());
     }
 
+    // The review of Codex of v0.250 (TASK-0272): a blank folder is a usage error, with the exit code 2; until TASK-0272 it
+    // reached the store, and the exception ended the program.
+    [Fact]
+    public void A_Blank_Folder_Is_A_Usage_Error()
+    {
+        Assert.Equal(2, Run("apply", "NoOp", "--folder", " ", "--param", "echo=hello").Exit);
+        Assert.Equal(2, Run("query", "GetBodyInfo", "--folder", " ", "--param", $"bodyId={Guid.NewGuid()}").Exit);
+        Assert.Equal(2, Run("export", "stl", Path.Combine(_folder, "a.3de"), Path.Combine(_folder, "b.stl"), "--folder", " ").Exit);
+    }
+
     // ADR-0048 item 5: the command line opens a document file and writes its bodies; a file that does not open
     // gives its code and the exit code 1, and a wrong form gives the exit code 2.
     [NativeManifoldFact]
