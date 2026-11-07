@@ -1,7 +1,7 @@
 ---
 id: 0273
 title: The active sketch of a live extrude moves out of its body, and the camera stays
-status: Active
+status: Done
 phase: R16e
 opened: 2026-11-07
 depends-on: [0270]
@@ -53,23 +53,24 @@ plane, with a line from each point to its place; each tap on the moved sketch gi
 
 ## Acceptance criteria
 
-- [ ] The plane moves to the side away from the body, a quarter of the diagonal of the box past it.
-- [ ] The move changes the origin of its sketch only, and a line links each moved point to its place.
-- [ ] A tap on the moved sketch in an oblique view gives the position that the person sees.
-- [ ] A picture of the sketch out of its body on the GPU is kept for the owner.
-- [ ] A clean build (`--no-incremental`) gives zero errors and zero warnings.
-- [ ] Continuous integration passes on the three runners, on the branch and on `main` after the merge.
+- [x] The plane moves to the side away from the body, a quarter of the diagonal of the box past it.
+- [x] The move changes the origin of its sketch only, and a line links each moved point to its place.
+- [x] A tap on the moved sketch in an oblique view gives the position that the person sees.
+- [x] A picture of the sketch out of its body on the GPU is kept for the owner.
+- [x] A clean build (`--no-incremental`) gives zero errors and zero warnings.
+- [x] Continuous integration passes on the three runners, on the branch and on `main` after the merge.
 
 ## Outcome
 
-Status: Active
+Status: Done · commit (the merge of the branch r16e-sketch-under-body) · v0.256
 
 ## Method
 
 Mechanical: four tests with no GPU and one picture; an injection of the picks on the plane of the record.
 Judgement:  the move of the plane along its normal keeps each position in the plane, so one move serves the drawing and
             the picks, and no command changes; the side and the gap come from the box of each frame (Q3 A).
-Weakest:    to be written at the close.
+Weakest:    the edit with no turn of the camera runs in no test, because the host needs a window; the tests hold the
+            move, the links and the picks. In the view of the desktop, with Y up, the sketch moves behind the body.
 
 ## Progress
 
@@ -78,3 +79,4 @@ Weakest:    to be written at the close.
   now takes the pixel from the record and the move, and that injection fails it ((16, 14) for (12, 8)). The first picture
   used the camera of the session at 40 mm and showed the sketch on the face of the body; the picture now uses an oblique
   view at 150 mm. The view has the axis Y up, so the sketch of a plate on XY moves behind it.
+- 2026-11-07: run 42365252084 passed. Closed at v0.256.
