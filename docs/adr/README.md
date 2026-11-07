@@ -94,6 +94,7 @@ names. Do not read all of them.
 | [0086](0086-the-tools-of-the-sketch-on-the-ring.md) | While a sketch is active, the ring holds the tools of the sketch | Amended | Clients, rendering | 0081 | 0087 |
 | [0087](0087-constrain-on-the-ring-of-a-sketch.md) | "Constrain" on the ring of a sketch opens the constraints that fit the selection | Accepted | Clients, sketch | 0086 | — |
 | [0088](0088-the-window-of-a-sketch-beside-its-ring.md) | While the ring of a sketch shows, the window of the sketch does not repeat it | Accepted | Clients, sketch | 0034 | — |
+| [0089](0089-the-cone-the-sphere-and-the-torus-are-closed-meshes.md) | The cone, the sphere and the torus are closed meshes that the engine makes | Proposed | Geometry, kernel | — | — |
 
 ## Topics
 
