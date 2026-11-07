@@ -34,4 +34,17 @@ internal static class PhoneLifecycle
         SDL_EventType.SDL_EVENT_DID_ENTER_FOREGROUND => PhoneStep.Foreground,
         _ => PhoneStep.None,
     };
+
+    // ADR-0079 item 4: one return of the wait in the background, with the step of its event (null when 500 ms passed with
+    // no event): true for the foreground, false for the end of the session, null to wait again. Finding E172 of the codebase
+    // review of 2026-11-07 (b) (TASK-0269): a stale turn ends the session at each return, also at a foreground event,
+    // because that event belongs to the session of the new activity.
+    public static bool? AfterWait(PhoneStep? step, bool stale) => stale
+        ? false
+        : step switch
+        {
+            PhoneStep.Quit => false,
+            PhoneStep.Foreground => true,
+            _ => null,
+        };
 }
