@@ -284,6 +284,8 @@ Therefore each approved objective must have a track here.
   the width of the main panel hold their next forms. v0.287, TASK-0302, ADR-0089.
 - P0.128 — The filter of a subnormal value, the gate of the host, the stale check, ADR-0079 item 5, the end of an
   engine and the test of V141 hold their next forms. v0.288, TASK-0303, ADR-0079, ADR-0089.
+- R16j — The layout of the mix: a top bar, a panel with no title bar and no ground, and the status line at the lower
+  right. v0.289, TASK-0304, ADR-0093.
 
 ## Track 0 — Foundations
 
