@@ -8509,3 +8509,24 @@ zero warnings. Run 42444399314 passed.
 New tests: 3. The test list holds 2145 (1461 in `Engine.Tests`, 337 in `3DEngine.Tests`, 344 in `3DEngine.ImageTests`, 3
 in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
 entries: 15 of 15. New diagnostic codes: 0. Since the review of v0.275, 3 product milestones and 8 entries followed it.
+
+## v0.284 — The test of a cut by a sphere has a time limit that a slow runner keeps (P0.126, TASK-0300)
+
+The main run of v0.282 (42445348622) failed on the runner of macOS: the cut of a plate by a sphere, with its faces, took
+64 s, and the test of TASK-0289 had a limit of 60 s. The run of the branch passed under the limit, and this computer takes
+about 10 s.
+
+**The change.** The limit is 300 s. The runner of macOS took about six times as long as this computer, so the form of the
+kernel before TASK-0289 (about 3 minutes here) would take about 18 minutes there; the limit keeps that difference.
+
+**Proof.** The test passes on this computer in about 10 s. Run 42446580070 passed.
+
+**What stays.** A limit of time on a shared runner stays a weak guard. A cut by a sphere takes about a minute on a slow
+computer.
+
+**A correction.** The entry v0.283 did not name the failed main run 42445348622 among the failed runs since the entry
+v0.282; its list was written by hand. The failed runs since the entry v0.283, from the API: none.
+
+New tests: 0. The test list holds 2145 (1461 in `Engine.Tests`, 337 in `3DEngine.Tests`, 344 in `3DEngine.ImageTests`, 3
+in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
+entries: 15 of 15. New diagnostic codes: 0. Since the review of v0.275, 3 product milestones and 9 entries followed it.
