@@ -300,6 +300,8 @@ Therefore each approved objective must have a track here.
   (V147, V149, V150 and V151). v0.296, TASK-0311.
 - R16o — The command line of the mix: Control and K, a list of the commands of the state, and Enter or a tap.
   v0.297, TASK-0312, ADR-0098.
+- R16p — The rows of a selected body take the place of the panel at the upper left, as the render "Mix 1".
+  v0.298, TASK-0313, ADR-0099.
 
 ## Track 0 — Foundations
 

@@ -1,7 +1,7 @@
 ---
 id: 0313
 title: The rows of a selected body take the place of the panel at the upper left
-status: Active
+status: Done
 phase: R16p
 opened: 2026-11-08
 depends-on: [0312]
@@ -62,21 +62,23 @@ of the panel keeps a place in the rows or in the command line.
 
 ## Acceptance criteria
 
-- [ ] The tests pass, and the picture at 1440 x 900 shows the rows at the upper left and no panel.
-- [ ] A clean build (`--no-incremental`) gives zero errors and zero warnings.
-- [ ] Continuous integration passes on the three runners, on the branch and on `main` after the merge.
+- [x] The tests pass, and the picture at 1440 x 900 shows the rows at the upper left and no panel.
+- [x] A clean build (`--no-incremental`) gives zero errors and zero warnings.
+- [x] Continuous integration passes on the three runners, on the branch and on `main` after the merge.
 
 ## Outcome
 
-Status: Active
+Status: Done · commit (the merge of the branch r16p-body-rows-left) · v0.298
 
 ## Method
 
 Mechanical: the place of the rows in the render, and the actions of the buttons of the panel.
 Judgement:  the controls of the panel go to the rows and the command line (Q1 A); no row "Made from" (Q2 A).
-Weakest:    to be written at the close.
+Weakest:    the reason of a fault shows on a hover of the first row, and no test reads the tooltip; the tests drive
+            the library with samples, and no person used the name field yet.
 
 ## Progress
 
 - 2026-11-08: the slice and its tests. Thirteen injections each make a test fail. A flag that selects the name on focus
   was not needed: the request of the focus selects it, so the flag was removed.
+- 2026-11-08: run 42524849786 passed. Closed at v0.298.
