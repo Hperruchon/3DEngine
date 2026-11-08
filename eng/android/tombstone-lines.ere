@@ -1,0 +1,4 @@
+DEBUG +: pid: [0-9]+, tid: [0-9]+, name: 
+DEBUG +: signal [0-9]+ 
+DEBUG +: Abort message: 
+DEBUG +: +#0[0-5] pc 
