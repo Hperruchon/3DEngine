@@ -26,6 +26,7 @@ public sealed class Camera : Entity
     private float _nearPlane = 0.1f;
     private float _farPlane = DefaultFarPlane;
     private double _distance = 10.0;
+    private float _frameFill = 1.0f;
 
     /// <summary>The vertical field of view, greater than 0 and less than 180 degrees.</summary>
     public float FieldOfViewDegrees
@@ -34,6 +35,19 @@ public sealed class Camera : Entity
         set => _fieldOfViewDegrees = float.IsFinite(value) && value > 0 && value < 180
             ? value
             : throw new ArgumentOutOfRangeException(nameof(FieldOfViewDegrees), value, "A field of view is greater than 0 and less than 180 degrees.");
+    }
+
+    /// <summary>
+    /// The part of the smaller half angle of the field of view that a framed sphere fills, greater than 0 and at most 1.
+    /// ADR-0094 (the redesign, slice k, TASK-0305): the camera of the session frames a part at 0.45, as the render of the
+    /// designer brief draws it; 1 is the frame of ADR-0025 item 6, the sphere at the edge of the picture.
+    /// </summary>
+    public float FrameFill
+    {
+        get => _frameFill;
+        set => _frameFill = float.IsFinite(value) && value > 0 && value <= 1
+            ? value
+            : throw new ArgumentOutOfRangeException(nameof(FrameFill), value, "A frame fill is greater than 0 and at most 1.");
     }
 
     /// <summary>The distance of the near plane, finite and greater than 0.</summary>
@@ -181,7 +195,7 @@ public sealed class Camera : Entity
     /// <summary>
     /// Frames a box (ADR-0025 item 6): the target goes to the centre of the box, and the
     /// distance puts the sphere around the box inside the smaller half angle of the field
-    /// of view, for the aspect of the picture. The yaw and the pitch do not change.
+    /// of view, for the aspect of the picture, or the part FrameFill of it (ADR-0094). The yaw and the pitch do not change.
     /// </summary>
     /// <returns>
     /// False when the sphere around the box is not between the near plane and the far
@@ -203,8 +217,10 @@ public sealed class Camera : Entity
         var halfVertical = FieldOfViewDegrees * Math.PI / 360.0;
         var halfHorizontal = Math.Atan(Math.Tan(halfVertical) * aspect);
         var half = Math.Min(halfVertical, halfHorizontal);
+        // ADR-0094: the sphere fills FrameFill of the half picture: its tangent is that part of the tangent of the half angle.
+        var filled = Math.Atan(Math.Tan(half) * FrameFill);
 
-        Distance = ClampDistance(radius / Math.Sin(half));
+        Distance = ClampDistance(radius / Math.Sin(filled));
         return Distance - radius >= NearPlane && Distance + radius <= FarPlane;
     }
 
