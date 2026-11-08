@@ -277,6 +277,7 @@ Therefore each approved objective must have a track here.
 - K5d — Commands CreateSphere and CreateTorus make a sphere and a torus, and the exact kernel cuts them in about ten
   seconds. v0.282, TASK-0289, ADR-0089.
 - K5e — The list "New" holds the cone, the sphere and the torus. v0.283, TASK-0298, ADR-0089, ADR-0076.
+- P0.126 — The test of a cut by a sphere has a time limit that a slow runner keeps. v0.284, TASK-0300.
 
 ## Track 0 — Foundations
 

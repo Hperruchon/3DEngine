@@ -1,7 +1,7 @@
 ---
 id: 0300
 title: The test of a cut by a sphere has a time limit that a slow runner keeps
-status: Active
+status: Done
 phase: P0.126
 opened: 2026-11-08
 depends-on: [0298]
@@ -40,20 +40,22 @@ The limit catches the form of the kernel before TASK-0289, and a slow runner pas
 
 ## Acceptance criteria
 
-- [ ] The test passes on this computer.
-- [ ] Continuous integration passes on the three runners, on the branch and on `main` after the merge.
+- [x] The test passes on this computer.
+- [x] Continuous integration passes on the three runners, on the branch and on `main` after the merge.
 
 ## Outcome
 
-Status: Active
+Status: Done · commit (the merge of the branch p0126-sphere-time-limit) · v0.284
 
 ## Method
 
 Mechanical: the times of the run 42445348622 and of this computer.
 Judgement:  the runner of macOS took about six times as long as this computer, so the form before TASK-0289 would take
             about 18 minutes there; 300 s keeps that difference.
-Weakest:    to be written at the close.
+Weakest:    a limit of time on a shared runner stays a weak guard; a count of the exact signs would not depend on the
+            runner.
 
 ## Progress
 
 - 2026-11-08: the limit is 300 s.
+- 2026-11-08: run 42446580070 passed. Closed at v0.284.
