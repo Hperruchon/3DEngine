@@ -44,4 +44,36 @@ public sealed class NativeCrashPatternTests
         Assert.Contains("native-crash.ere", script, StringComparison.Ordinal);
         Assert.DoesNotContain("Fatal signal .*", script, StringComparison.Ordinal);
     }
+
+    // Finding V141 of the codebase review of 2026-11-08 (TASK-0294): run 42433201851 gave the line Cmdline of the tombstone
+    // only. The lines of eng/android/tombstone-lines.ere give the thread, the signal, the abort message and the first frames
+    // of the stack, in the forms of debuggerd with the prefix of logcat -d.
+    private static Regex[] TombstonePatterns()
+        => File.ReadAllLines(RepositoryFiles.Path("eng", "android", "tombstone-lines.ere"))
+            .Select(line => line.TrimEnd('\r'))
+            .Where(line => line.Length > 0)
+            .Select(line => new Regex(line, RegexOptions.CultureInvariant))
+            .ToArray();
+
+    [Theory]
+    [InlineData("11-08 01:16:39.044  4860  4860 F DEBUG   : pid: 3741, tid: 3927, name: SDLThread  >>> org.threedengine.phone <<<")]
+    [InlineData("11-08 01:16:39.044  4860  4860 F DEBUG   : signal 11 (SIGSEGV), code 1 (SEGV_MAPERR), fault addr 0x0000000000000010")]
+    [InlineData("11-08 01:16:39.044  4860  4860 F DEBUG   : Abort message: 'FORTIFY: pthread_mutex_lock called on a destroyed mutex'")]
+    [InlineData("11-08 01:16:39.044  4860  4860 F DEBUG   :       #00 pc 000000000005e1b0  /data/app/~~a/org.threedengine.phone-b/lib/x86_64/libSDL3.so (BuildId: 0123)")]
+    [InlineData("11-08 01:16:39.044  4860  4860 F DEBUG   :       #05 pc 00000000000b2c40  /apex/com.android.runtime/lib64/bionic/libc.so (__start_thread+64)")]
+    public void A_Line_Of_A_Tombstone_That_Names_The_Cause_Matches(string line)
+        => Assert.Contains(TombstonePatterns(), pattern => pattern.IsMatch(line));
+
+    // The controls: the lines of the tombstone that name no cause, a frame after the sixth, and a line of the program.
+    [Theory]
+    [InlineData("11-08 01:16:39.044  4860  4860 F DEBUG   : Build fingerprint: 'google/sdk_gphone64_x86_64/emu64xa:14/UE1A/1:userdebug/dev-keys'")]
+    [InlineData("11-08 01:16:39.044  4860  4860 F DEBUG   :     rax 0000000000000000  rbx 00007b1c8e2f4000  rcx 0000000000000000")]
+    [InlineData("11-08 01:16:39.044  4860  4860 F DEBUG   :       #06 pc 0000000000052a10  /apex/com.android.runtime/lib64/bionic/libc.so")]
+    [InlineData("11-08 01:16:38.238  3741  3927 I DOTNET  : 3DEngine: the surface of the window is lost while the engine starts")]
+    public void A_Line_That_Names_No_Cause_Matches_No_Tombstone_Pattern(string line)
+        => Assert.DoesNotContain(TombstonePatterns(), pattern => pattern.IsMatch(line));
+
+    [Fact]
+    public void The_Smoke_Test_Gives_The_Lines_Of_The_Tombstone()
+        => Assert.Contains("tombstone-lines.ere", RepositoryFiles.Read("eng", "android", "smoke-emulator.sh"), StringComparison.Ordinal);
 }

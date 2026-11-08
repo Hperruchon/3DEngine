@@ -125,6 +125,13 @@ fi
 # characters of the package, so two of the three patterns did not match it. The patterns are the lines of
 # native-crash.ere, which NativeCrashPatternTests proves with the forms of the lines that Android writes.
 if signal=$(grep -m 1 -E -f <(tr -d '\r' < "$(dirname "$0")/native-crash.ere") "$report"); then
+  # Finding V141 of the codebase review of 2026-11-08 (TASK-0294): run 42433201851 gave the line Cmdline only, and the log
+  # of the job needs the rights of an administrator. From the first line of the crash, the lines of the tombstone that
+  # match tombstone-lines.ere (the thread, the signal, the abort message and the first frames) are errors; with the line
+  # of fail, 9 of the 10 errors that GitHub keeps for a step.
+  first=$(grep -n -m 1 -E -f <(tr -d '\r' < "$(dirname "$0")/native-crash.ere") "$report" | cut -d: -f1)
+  tail -n +"$first" "$report" | grep -E -f <(tr -d '\r' < "$(dirname "$0")/tombstone-lines.ere") | head -n 8 \
+    | while IFS= read -r line; do echo "::error title=Tombstone::${line:0:300}"; done || true
   fail "the process of the program ended with a native crash: ${signal:0:300}"
 fi
 if [ -n "$hash_file" ]; then
