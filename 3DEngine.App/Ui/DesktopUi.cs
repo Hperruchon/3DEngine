@@ -45,10 +45,12 @@ internal sealed unsafe partial class DesktopUi : IDisposable
     public const string HideLabel = "Hide";
     public const string ShowLabel = "Show";
     public const string ShowAllLabel = "Show all";
-    public const string FileNameLabel = "File name";
-    public const string SaveAsLabel = "Save as";
-    public const string OpenLabel = "Open";
-    public const string ExportStlLabel = "Export STL";
+    // ADR-0100 item 1 (phase P9g, TASK-0314): each control of a file opens a dialog of the system, so its label ends with
+    // three dots. Until TASK-0314 the panel had a field "File name" and the buttons Save as, Open and Export STL.
+    public const string OpenProjectLabel = "Open project...";
+    public const string ImportStlLabel = "Import STL...";
+    public const string SaveAsLabel = "Save as...";
+    public const string ExportStlLabel = "Export STL...";
     public const string DocumentMessageLabel = "Document message";
     public const string UndoLabel = "Undo";
     public const string RedoLabel = "Redo";
@@ -183,7 +185,8 @@ internal sealed unsafe partial class DesktopUi : IDisposable
     // The text of the name field, and the body that it was filled for.
     private string _name = string.Empty;
 
-    private string _fileName = string.Empty;
+    // ADR-0100 item 1 (TASK-0314): true when the host of this frame has files, so the command line holds their controls.
+    private bool _files;
 
     // ADR-0046: the text of the file field and of the distance field of the window of the images.
     private string _imagePath = string.Empty;
@@ -527,6 +530,7 @@ internal sealed unsafe partial class DesktopUi : IDisposable
         _size = size;
         _inset = safeInsets;
         _face = face;
+        _files = document is { Files: true };
         _sketchActive = sketchPanel?.Active is not null;
         _sketchTool = sketchPanel?.Active is not null ? sketchPanel.Tool : null;
         _sketchPanel = sketchPanel;
@@ -596,6 +600,9 @@ internal sealed unsafe partial class DesktopUi : IDisposable
 
         if (_message is { } message)
             MessageWindow(displaySize, message);
+        // ADR-0100 item 5 (Q3 A, TASK-0314): the question before a change of project, over the other windows.
+        if (_question)
+            QuestionWindow(displaySize);
         if (_pad is { } pad)
             PadWindow(pad, displaySize);
         ImGui.Render();

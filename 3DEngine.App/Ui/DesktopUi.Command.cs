@@ -47,6 +47,16 @@ internal sealed unsafe partial class DesktopUi
         {
             foreach (var label in new[] { NewBoxLabel, NewCylinderLabel, NewConeLabel, NewSphereLabel, NewTorusLabel })
                 commands.Add((label, () => OpenNew(label)));
+            // ADR-0100 item 1 (phase P9g, TASK-0314): the controls of a file, because the rows of a selected body hide the
+            // panel (ADR-0099); a host with no files has none.
+            if (_files)
+            {
+                commands.Add((OpenProjectLabel, () => _actions.Add(new OpenProjectAction())));
+                commands.Add((SaveAsLabel, () => _actions.Add(new SaveAsAction())));
+                commands.Add((ExportStlLabel, () => _actions.Add(new ExportStlAction())));
+            }
+
+            commands.Add((ImportStlLabel, () => _actions.Add(new ImportStlAction())));
             foreach (var (label, datum) in NewSketchButtons)
                 commands.Add((label, () => _actions.Add(new NewSketchAction(datum))));
             // ADR-0099 item 4 (the redesign, slice p, TASK-0313): the controls of the panel that the rows of a selected body

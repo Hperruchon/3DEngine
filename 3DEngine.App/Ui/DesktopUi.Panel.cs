@@ -320,7 +320,9 @@ internal sealed unsafe partial class DesktopUi
             ? ["3DEngine", files.FileName ?? "unsaved", _unit]
             : ["3DEngine", _unit];
 
-    // ADR-0030 item 3: the name of the file, a name field, Save as and Open.
+    // ADR-0030 item 3: the name of the file, a name field, Save as and Open. ADR-0100 item 1 (phase P9g, TASK-0314): four
+    // buttons that each open a dialog of the system, on two lines: "Open project..." and "Save as...", then "Export STL..."
+    // and "Import STL...". Until TASK-0314 a field took a name in the document folder.
     private void File(DocumentLine document)
     {
         // V99 (TASK-0232): a host with no files shows the message only.
@@ -336,21 +338,19 @@ internal sealed unsafe partial class DesktopUi
             return;
         }
 
-        ImGui.SetNextItemWidth(200f);
-        TextField(FileNameLabel, ref _fileName, 128);
-        Item(FileNameLabel);
-        // The buttons have their own line, so that they stay inside the panel.
-        if (ImGui.Button(SaveAsLabel))
-            _actions.Add(new SaveDocumentAction(_fileName));
-        Item(SaveAsLabel);
-        ImGui.SameLine();
-        if (ImGui.Button(OpenLabel))
-            _actions.Add(new OpenDocumentAction(_fileName));
-        Item(OpenLabel);
-        ImGui.SameLine();
-        if (ImGui.Button(ExportStlLabel))
-            _actions.Add(new ExportStlAction(_fileName));
-        Item(ExportStlLabel);
+        foreach (var (label, action, same) in new (string, PanelAction, bool)[]
+        {
+            (OpenProjectLabel, new OpenProjectAction(), false), (SaveAsLabel, new SaveAsAction(), true),
+            (ExportStlLabel, new ExportStlAction(), false), (ImportStlLabel, new ImportStlAction(), true),
+        })
+        {
+            if (same)
+                ImGui.SameLine();
+            if (ImGui.Button(label))
+                _actions.Add(action);
+            Item(label);
+        }
+
         if (document.Message is { } message)
         {
             ImGui.TextUnformatted(message);

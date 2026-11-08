@@ -461,6 +461,7 @@ This track removes each condition that blocks other work.
 | P9d | The phone: the document picker of Android with no permission of storage, the same home screen, and the part kept through the background. The row closes after the run of the owner on the S23. TASK-0260. | 3–4 |
 | P9e | The test sheet of the demonstration, from its page. It closes with P9c and P9d after the run of the owner. TASK-0266. | 1 |
 | P9f | A start of the desktop with the setting file opens that file and shows no home screen (ADR-0083 item 7, the owner, 2026-11-08). TASK-0290. | 1 |
+| P9g | A project in any folder from the window, with no terminal: "Open project..." and "Import STL..." apart, "Save as..." and "Export STL..." through the save dialog of the system, the recent projects in each folder, the folder in the top bar, and the question before a change of a part with no file (ADR-0100; the owner, 2026-11-08, Q1 to Q4 A). The row closes after the run of the owner. TASK-0314. | 2–3 |
 
 ## Track R — The renderer
 
