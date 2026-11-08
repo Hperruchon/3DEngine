@@ -50,6 +50,28 @@ public sealed class Camera : Entity
             : throw new ArgumentOutOfRangeException(nameof(FrameFill), value, "A frame fill is greater than 0 and at most 1.");
     }
 
+    /// <summary>
+    /// True when the z axis is up. ADR-0096 (the redesign, slice m, TASK-0307): the camera of the session has z up, as the
+    /// render of the designer brief draws a part, so a sketch on the plane of x and y lies flat. The yaw then turns about
+    /// the z axis, a yaw of 0 puts the eye on the negative y side of the target, and the pitch is above the plane of x and
+    /// y. False keeps y up. The orbit, the pan and the view use the frame of y up and turn it by a quarter turn about x.
+    /// </summary>
+    public bool ZUp { get; set; }
+
+    /// <summary>A direction of the frame of y up, in the world: the quarter turn about x when z is up.</summary>
+    public (double X, double Y, double Z) ToWorld((double X, double Y, double Z) d)
+        => ZUp ? (d.X, -d.Z, d.Y) : d;
+
+    /// <summary>A direction of the world, in the frame of y up: the inverse of <see cref="ToWorld"/>.</summary>
+    public (double X, double Y, double Z) FromWorld((double X, double Y, double Z) d)
+        => ZUp ? (d.X, d.Z, -d.Y) : d;
+
+    /// <summary>
+    /// The up axis of the world: z when <see cref="ZUp"/>, else y. The view, the ray of a pick, the overlay of a sketch and
+    /// the gizmo take the right of the screen from the cross product of the forward direction and this axis.
+    /// </summary>
+    public (double X, double Y, double Z) UpAxis => ZUp ? (0, 0, 1) : (0, 1, 0);
+
     /// <summary>The distance of the near plane, finite and greater than 0.</summary>
     public float NearPlane
     {
@@ -180,8 +202,8 @@ public sealed class Camera : Entity
         var pitch = PitchDegrees * Math.PI / 180.0;
 
         // The right and up directions of the view, from the eye toward the target.
-        (double X, double Y, double Z) right = (Math.Cos(yaw), 0.0, -Math.Sin(yaw));
-        (double X, double Y, double Z) up = (-Math.Sin(pitch) * Math.Sin(yaw), Math.Cos(pitch), -Math.Sin(pitch) * Math.Cos(yaw));
+        var right = ToWorld((Math.Cos(yaw), 0.0, -Math.Sin(yaw)));
+        var up = ToWorld((-Math.Sin(pitch) * Math.Sin(yaw), Math.Cos(pitch), -Math.Sin(pitch) * Math.Cos(yaw)));
 
         // A drag to the right moves the scene to the right, so the target moves to the left;
         // a drag down (y down on the screen) moves the target up.
@@ -235,10 +257,8 @@ public sealed class Camera : Entity
     {
         var yaw = YawDegrees * Math.PI / 180.0;
         var pitch = PitchDegrees * Math.PI / 180.0;
-        return (
-            Target.X + Distance * Math.Cos(pitch) * Math.Sin(yaw),
-            Target.Y + Distance * Math.Sin(pitch),
-            Target.Z + Distance * Math.Cos(pitch) * Math.Cos(yaw));
+        var d = ToWorld((Math.Cos(pitch) * Math.Sin(yaw), Math.Sin(pitch), Math.Cos(pitch) * Math.Cos(yaw)));
+        return (Target.X + Distance * d.X, Target.Y + Distance * d.Y, Target.Z + Distance * d.Z);
     }
 
     /// <summary>
@@ -251,7 +271,7 @@ public sealed class Camera : Entity
     {
         var eye = Eye();
         var forward = new Vector3((float)(Target.X - eye.X), (float)(Target.Y - eye.Y), (float)(Target.Z - eye.Z));
-        return Matrix4x4.CreateLookAt(Vector3.Zero, forward, Vector3.UnitY);
+        return Matrix4x4.CreateLookAt(Vector3.Zero, forward, ZUp ? Vector3.UnitZ : Vector3.UnitY);
     }
 
     /// <summary>
