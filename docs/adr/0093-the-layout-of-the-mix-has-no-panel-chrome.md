@@ -76,3 +76,4 @@ ground of the theme. The person can no longer move the panel out of the way. The
 - 2026-11-08 · TASK-0304 · Shipped at v0.289.
 - 2026-11-08 · TASK-0310 · Item 3: the status line leaves the anchors free; it drops the address, or does not show, where
   it does not fit (V146).
+- 2026-11-08 · TASK-0310 · Shipped at v0.294.
