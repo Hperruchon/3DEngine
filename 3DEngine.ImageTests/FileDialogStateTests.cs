@@ -5,8 +5,12 @@ namespace ThreeDEngine.ImageTests;
 // Finding V139 of the codebase review of 2026-11-07 (c) (TASK-0282): a late callback of an earlier dialog frees its own filter
 // and gives no result; the next dialog keeps its filter and its result. Until TASK-0282 the late callback freed the filter of
 // the next dialog and cleared its flag, and the next dialog wrote over the earlier filter with no free.
+[Collection(Collection)]
 public sealed class FileDialogStateTests
 {
+    // TASK-0292: the collection of the classes that change the state of the file dialog of the process.
+    public const string Collection = "The state of the file dialog";
+
     [Fact]
     public void A_Late_Callback_Of_An_Earlier_Dialog_Touches_Only_Its_Own_Filter()
     {

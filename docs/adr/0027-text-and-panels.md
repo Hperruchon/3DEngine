@@ -7,7 +7,7 @@ date: 2026-10-27
 supersedes: []
 superseded-by: []
 amends: ['0026']
-amended-by: ['0029', '0061', '0072']
+amended-by: ['0029', '0061', '0072', '0091']
 affects:
   - 3DEngine.App/Ui/**
   - 3DEngine.App/3DEngine.App.csproj
@@ -106,3 +106,5 @@ the package of the desktop must leave it out. A gesture that starts over a panel
   1.91.6.1 for `android-arm64` and `android-x64`. R14d applies it.
 - 2026-11-06 · TASK-0252 · Item 4: while a list is open, each press belongs to the panel (finding V116 of the codebase
   review of 2026-11-06 (e)).
+- 2026-11-08 · TASK-0292 · ADR-0091 amends item 6: the font is Instrument Sans, and a value on an edge uses JetBrains
+  Mono; the two font files and their licences enter the repository.

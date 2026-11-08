@@ -241,9 +241,14 @@ internal sealed unsafe partial class DesktopUi : IDisposable
         io.NativePtr->LogFilename = null;
         io.BackendFlags |= ImGuiBackendFlags.RendererHasVtxOffset;
 
+        // ADR-0091 (the redesign, slice i, TASK-0292): Instrument Sans is the font of the interface, and JetBrains Mono the
+        // font of a value on an edge. The atlas does not own the data, which the interface frees after its context. Until
+        // TASK-0292 the font was the default bitmap font of Dear ImGui at a larger size (ADR-0027 item 6).
+        _fontData = [FontData("InstrumentSans.ttf"), FontData("JetBrainsMono.ttf")];
         ImFontConfigPtr font = ImGuiNative.ImFontConfig_ImFontConfig();
-        font.SizePixels = FontSize;
-        io.Fonts.AddFontDefault(font);
+        font.FontDataOwnedByAtlas = false;
+        io.Fonts.AddFontFromMemoryTTF(_fontData[0].Pointer, _fontData[0].Length, FontSize, font);
+        _monoFont = io.Fonts.AddFontFromMemoryTTF(_fontData[1].Pointer, _fontData[1].Length, FontSize, font);
         font.Destroy();
 
         var style = ImGui.GetStyle();
@@ -642,5 +647,33 @@ internal sealed unsafe partial class DesktopUi : IDisposable
         _ => null,
     };
 
-    public void Dispose() => ImGui.DestroyContext(_context);
+    // ADR-0091: the bytes of a font of the assembly, in memory that the interface frees.
+    private static (nint Pointer, int Length) FontData(string name)
+    {
+        using var stream = typeof(DesktopUi).Assembly.GetManifestResourceStream("ThreeDEngine.Desktop.Fonts." + name)
+            ?? throw new InvalidOperationException($"The assembly holds no font {name}.");
+        var bytes = new byte[stream.Length];
+        stream.ReadExactly(bytes);
+        var pointer = System.Runtime.InteropServices.Marshal.AllocHGlobal(bytes.Length);
+        System.Runtime.InteropServices.Marshal.Copy(bytes, 0, pointer, bytes.Length);
+        return (pointer, bytes.Length);
+    }
+
+    // The two fonts of ADR-0091, and the font of a value.
+    private readonly (nint Pointer, int Length)[] _fontData;
+    private readonly ImFontPtr _monoFont;
+
+    // ADR-0091: the count of the fonts of the atlas, and the widths of a text in the font of the interface and in the font
+    // of a value, for a test.
+    internal int FontCount => ImGui.GetIO().Fonts.Fonts.Size;
+
+    internal (float Sans, float Mono) TextWidths(string text)
+        => (ImGui.GetIO().Fonts.Fonts[0].CalcTextSizeA(FontSize, float.MaxValue, 0f, text).X, _monoFont.CalcTextSizeA(FontSize, float.MaxValue, 0f, text).X);
+
+    public void Dispose()
+    {
+        ImGui.DestroyContext(_context);
+        foreach (var (pointer, _) in _fontData)
+            System.Runtime.InteropServices.Marshal.FreeHGlobal(pointer);
+    }
 }

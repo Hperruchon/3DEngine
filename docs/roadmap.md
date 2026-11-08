@@ -463,6 +463,7 @@ The first objective. Each phase ends with something that a person can observe.
 | R16f | The tools of the sketch on the ring: while a sketch is active, the ring holds Line, Select, Circle, Arc and Finish beside the sketch (ADR-0086). TASK-0275. | 1 |
 | R16g | "Constrain" on the ring of a sketch: a second ring of the kinds of a constraint that fit the selection, with "Back" (ADR-0087). TASK-0276. | 1 |
 | R16h | The window of a sketch beside its ring: while the ring of a sketch shows, the window holds no tool, no Finish and no kind of a constraint (ADR-0088). TASK-0277. | 1 |
+| R16i | The fonts of the redesign: Instrument Sans for the interface and JetBrains Mono for a value on an edge, after the owner allowed their download (ADR-0091). TASK-0292. | 1 |
 
 ## Track K — The kernel
 
