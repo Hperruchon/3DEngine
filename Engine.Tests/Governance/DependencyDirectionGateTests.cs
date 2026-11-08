@@ -709,7 +709,24 @@ public class DependencyDirectionGateTests
                     if (property.Value.Trim().Equals("false", StringComparison.OrdinalIgnoreCase))
                         offences.Add($"{host}: {RepositoryFiles.Relative(read)} sets {property.Name.LocalName} to false");
                 }
+
+                // Finding T175 of the codebase review of 2026-11-08 (TASK-0296): a mode or a level of the analysis, or
+                // CodeAnalysisTreatWarningsAsErrors, in the host, as rule T170 refuses them in the projects that it reaches.
+                foreach (var element in XDocument.Load(read).Descendants())
+                {
+                    var local = element.Name.LocalName;
+                    if (local.Equals("CodeAnalysisTreatWarningsAsErrors", StringComparison.OrdinalIgnoreCase)
+                        || local.StartsWith("AnalysisMode", StringComparison.OrdinalIgnoreCase) || local.StartsWith("AnalysisLevel", StringComparison.OrdinalIgnoreCase))
+                        offences.Add($"{host}: {RepositoryFiles.Relative(read)} sets {local}, which can turn CA1416 into a warning or off");
+                }
             }
+
+            // T175: the host makes CA1416 an error with a WarningsAsErrors under no Condition. Until TASK-0296 the removal of
+            // that line passed each gate of the computer, and only the probe build of the pipeline (TASK-0285) refused it.
+            if (!FilesThatMsBuildReads(hostFile).Any(read => XDocument.Load(read).Descendants().Any(e => Is(e, "WarningsAsErrors")
+                    && !e.AncestorsAndSelf().Any(a => a.Attribute("Condition") is not null)
+                    && e.Value.Contains("CA1416", StringComparison.OrdinalIgnoreCase))))
+                offences.Add($"{host}: no WarningsAsErrors with CA1416 and no Condition makes CA1416 an error");
 
             foreach (var source in Directory.EnumerateFiles(Path.GetDirectoryName(hostFile)!, "*.cs", SearchOption.AllDirectories)
                          .Where(path => !path.Contains($"{Path.DirectorySeparatorChar}obj{Path.DirectorySeparatorChar}", StringComparison.Ordinal)

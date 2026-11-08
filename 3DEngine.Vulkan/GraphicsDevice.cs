@@ -308,8 +308,11 @@ public unsafe sealed class GraphicsDevice : IDisposable
     {
         if (VkDevice.IsNotNull)
         {
-            // Don't release anything until the GPU is completely idle.
-            WaitIdle();
+            // Don't release anything until the GPU is completely idle. Finding E192 of the codebase review of 2026-11-08
+            // (TASK-0296) and the review of Codex of v0.272: on a lost device the wait fails, and the objects go in each
+            // case, as Vulkan permits after a loss. Until TASK-0296 the wait threw, the device and the instance stayed, and
+            // in the catch of the constructor the new exception replaced the first one, which the guard of the phone reads.
+            _ = DeviceApi.vkDeviceWaitIdle();
 
             Presenter?.Dispose();
 

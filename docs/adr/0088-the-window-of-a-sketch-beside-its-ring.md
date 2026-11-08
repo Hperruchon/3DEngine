@@ -55,7 +55,9 @@ The standing order of 2026-11-05 gives A for each question.
    sketch holds the
    name and the state of the sketch, Next point, End and Close for the tool Line, Extrude, the buttons of the selection
    that the ring does not hold (Move point, Value and Delete), the message of a rejected command, and the rows. It does
-   not hold Line, Select, Circle, Arc, Finish or a kind of a constraint. This amends ADR-0034 item 8.
+   not hold Line, Select, Circle, Arc, Finish or a kind of a constraint. This amends ADR-0034 item 8. While the second
+   ring of ADR-0087 is open, it holds the kinds and Back and not the tools, so the window holds Line, Select, Circle, Arc
+   and Finish again (finding V140 of the codebase review of 2026-11-08, TASK-0296).
 2. **No ring.** In a frame with no ring of the sketch, or with a segment that a tap does not reach, the window holds each
    button of ADR-0034 item 8, as before (finding V134 of the codebase review of 2026-11-07 (c), TASK-0280).
 3. **The order of the frame.** The ring comes before the window of the sketch in the frame, so the window reads the ring
@@ -81,3 +83,5 @@ a command and the rollback.
   left no Finish. The affects field names DesktopUi.Ring.cs, which holds the check of each segment.
 - 2026-11-07 · TASK-0284 · Item 1: the windows of the last frame count too, because the Images window and the message come
   after the ring in the frame (the review of Codex of v0.265).
+- 2026-11-08 · TASK-0296 · Item 1: while the second ring is open, the window holds the tools and Finish (finding V140 of
+  the codebase review of 2026-11-08); the window of the sketch is at most as wide as the display (T176).
