@@ -47,6 +47,10 @@ internal sealed class DesktopSession : IDisposable
 
         var assets = new AssetStore(configuration["Engine:AssetFolder"] is { Length: > 0 } folder ? folder : AssetStore.Default);
         var document = new DesktopDocument(configuration[DesktopSurface.DocumentFolderSetting] is { Length: > 0 } documents ? documents : DocumentFolder.Default, assets);
+        // ADR-0083 item 7 (the owner, 2026-11-08, TASK-0290): a start with the setting "file" opens that file and shows no
+        // home screen. Until TASK-0290 the first session showed the home screen over the named file.
+        if (file is null && configuration[DesktopSurface.FileSetting] is { Length: > 0 })
+            document.Home = false;
         var options = new DocumentFileOptions(
             // ADR-0083 D1 (TASK-0259): NewDocument asks for a new part document, whatever the setting "file".
             file == DesktopDocument.NewDocument ? null : file ?? (configuration[DesktopSurface.FileSetting] is { Length: > 0 } named ? named : null),
