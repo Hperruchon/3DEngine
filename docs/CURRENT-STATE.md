@@ -8285,3 +8285,35 @@ disk; the test of a plain save sees an empty list. An injection of an answer wit
 New tests: 1. The test list holds 2105 (1428 in `Engine.Tests`, 337 in `3DEngine.Tests`, 337 in `3DEngine.ImageTests`, 3
 in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
 entries: 15 of 15. New diagnostic codes: 0. Since the review of v0.263, 2 product milestones and 12 entries followed it.
+
+## v0.276 — The codebase review of 2026-11-08 (governance, TASK-0293)
+
+The review of 2026-11-07 (c) examined v0.263. After it came 2 product milestones (K5c and P9f) and 12 ledger entries, and
+the next entry would make the review late. The reviews of Codex of v0.264 to v0.271 gave leads that TASK-0284 to TASK-0287
+fixed.
+
+**The change.** `docs/reviews/2026-11-08-codebase-review.md`, at `2ead6ae` (v0.275). Two agents examined the engine, the
+kernel, the backend, the surface and the reader, and the desktop, the phone, Vulkan and the tests, at one tree, and proved
+their main findings with probes that they deleted. Each finding of the last review is fixed, except E182, whose answer A
+waits for the check of the owner.
+- One finding is high: V141 (the main run of v0.273 ended with a native crash of the program of the phone after a lost
+  surface in the start of the engine; five runs of the same code passed). The review infers the cause from the classes
+  of SDL: the return of the main function of a stale session finishes the newest activity and clears its thread.
+- Two are medium: E186 (a solid mesh with inward triangles passes `CreateSolid`) and E190 (`E-STL-TOO-LARGE` now has a
+  second meaning). Eight are low: E187, E188, E189, E191, E192, V140, T175 and T176.
+- TASK-0294 (P0.123) holds V141 before the next product phase; TASK-0295 (P0.124) and TASK-0296 (P0.125) hold the others
+  after it.
+- Q1 (K5d: a cut with a sphere of 3968 triangles took about 3 minutes in the exact kernel) waits for the owner; the
+  recommended answer is A, a faster exact kernel.
+
+**Proof.** `CodebaseReviewGateTests` passes with the new review. The main run of v0.275 (42435674732) passed.
+
+**What stays.** The open findings are 0 critical, 5 high, 17 medium and 27 low. The lines of the findings up to T173 are
+carried from the last review. The cause of V141 is inferred, not proved: the job gives one line of the crash only.
+
+**A correction.** The reviews of 2026-11-07 (b) and (c) counted V124 as fixed while its second part was open; this review
+says so in the line of V124. The failed runs since the entry v0.275, from the API: none.
+
+New tests: 0. The test list holds 2105 (1428 in `Engine.Tests`, 337 in `3DEngine.Tests`, 337 in `3DEngine.ImageTests`, 3
+in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
+entries: 15 of 15. New diagnostic codes: 0. Since the review of v0.275, 0 product milestones and 1 entry followed it.

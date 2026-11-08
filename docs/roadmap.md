@@ -263,6 +263,7 @@ Therefore each approved objective must have a track here.
   ADR-0089.
 - P9f — A start of the desktop with a file opens it and shows no home screen. v0.274, TASK-0290, ADR-0083.
 - P0.122 — The HTTP answer of a save lists its warnings. v0.275, TASK-0291, ADR-0090.
+- Review — The codebase review of 2026-11-08. v0.276, TASK-0293.
 
 ## Track 0 — Foundations
 
@@ -390,6 +391,9 @@ This track removes each condition that blocks other work.
 | P0.120 | A surface lost while the phone engine starts ends the engine as the background does, and the document stays (the audit of Codex of the phone host at d5209a2, high; before the next product phase). TASK-0286. | 1 |
 | P0.121 | Each query of a surface checks its result, and a device that fails to start frees what it made (the review of Codex of v0.271, high and medium; before the next product phase). TASK-0287. | 1 |
 | P0.122 | The HTTP answer of a save lists its warnings, as W-IO-OLD-FILE-KEPT (finding E164 of the codebase review of 2026-11-06 (e); the owner, 2026-11-08). TASK-0291. | 1 |
+| P0.123 | The main function of a stale session of the phone does not return, and a native crash gives its stack (V141 of the codebase review of 2026-11-08, high; before the next product phase). TASK-0294. | 1 |
+| P0.124 | A solid mesh with inward triangles is refused, and a file too large for the store has its own code (E186 and E190 of the codebase review of 2026-11-08; after the next product phase). TASK-0295. | 1 |
+| P0.125 | Five comments and messages, the cleanup of a failed device, the second ring and two gates hold their next forms (E187 to E189, E191, E192, V140, T175 and T176 of the codebase review of 2026-11-08; after P0.124). TASK-0296. | 1 |
 | P0.102 | The cache of a face, the fixed controls, the list New, the edges and the safe area hold their next forms (V113 to V118 of the codebase review of 2026-11-06 (e); after P0.101). TASK-0252. | 1–2 |
 | P0.86 | The window keeps no input between sessions, the hook has the cases of one axis, and the next forms of four gates fail (V88 to V90, T141 to T144 of the codebase review of 2026-11-06; after the next product phase). TASK-0198. | 1–2 |
 
