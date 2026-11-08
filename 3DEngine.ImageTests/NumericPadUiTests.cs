@@ -332,7 +332,7 @@ public sealed class NumericPadUiTests
         }
         Assert.NotNull(ui.Pad);
 
-        // ADR-0100 item 1 (TASK-0314): the panel has no file name field, so the test uses the filter of the bodies.
+        // ADR-0102 item 1 (TASK-0316): the panel has no file name field, so the test uses the filter of the bodies.
         var field = Centre(ui, DesktopUi.FilterLabel);
         Draw(new PointerSample(DeviceKind.Mouse, 1, 0, field.X, field.Y, 1, PointerButtons.Left, KeyModifiers.None, PointerPhase.Down, 0));
         Draw(new PointerSample(DeviceKind.Mouse, 1, 0, field.X, field.Y, 1, PointerButtons.Left, KeyModifiers.None, PointerPhase.Up, 0));

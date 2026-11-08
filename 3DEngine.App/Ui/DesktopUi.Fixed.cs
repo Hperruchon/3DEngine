@@ -30,7 +30,7 @@ internal sealed unsafe partial class DesktopUi
     public const string TitleItem = "Title";
     internal const float TopBarHeight = 32f;
 
-    // ADR-0100 item 7 (TASK-0314): the item of the folder of the file in the top bar.
+    // ADR-0102 item 7 (TASK-0316): the item of the folder of the file in the top bar.
     public const string TitleFolderItem = "Title:folder";
 
     // ADR-0093 item 1: the top bar: the program, then the file or "unsaved", then the unit, with no ground. A long name is
@@ -39,7 +39,7 @@ internal sealed unsafe partial class DesktopUi
     // 12 pixels from them, so on a narrow window the top bar does not cover their title; at least 48 pixels.
     // ADR-0099 item 5 (the redesign, slice p, TASK-0313): the rows are at the left now, so the name ends 12 pixels left of the
     // command line at the upper right.
-    // ADR-0100 item 7 (phase P9g, TASK-0314): the folder of the file follows its name in the quiet colour, cut at its start so
+    // ADR-0102 item 7 (phase P9g, TASK-0316): the folder of the file follows its name in the quiet colour, cut at its start so
     // that the last folders stay, where the room left of the command line holds at least 48 pixels of it.
     private void TopBar(Vector2 displaySize, DocumentLine? document)
     {

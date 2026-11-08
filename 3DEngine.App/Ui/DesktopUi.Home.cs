@@ -15,12 +15,12 @@ internal sealed unsafe partial class DesktopUi
     public const string ChooseAnotherLabel = "Choose another file";
     public const string CloseMessageLabel = "Close";
 
-    // ADR-0100 item 5 (Q3 A, TASK-0314): the question before a change of project while the document has no file.
+    // ADR-0102 item 5 (Q3 A, TASK-0316): the question before a change of project while the document has no file.
     public const string QuestionItem = "Question";
     public const string DiscardLabel = "Discard";
     public const string CancelLabel = "Cancel";
 
-    // ADR-0100 item 6 (TASK-0314): the item of a recent row is its path.
+    // ADR-0102 item 6 (TASK-0316): the item of a recent row is its path.
     public static string RecentItem(string path) => $"Recent:{path}";
 
     private IReadOnlyList<string>? _home;
@@ -31,11 +31,11 @@ internal sealed unsafe partial class DesktopUi
     // True while the home screen shows.
     internal bool HomeShown => _home is not null;
 
-    // Shows the home screen with the paths of the recent projects, or hides it with null. ADR-0100 item 1: a host with no
+    // Shows the home screen with the paths of the recent projects, or hides it with null. ADR-0102 item 1: a host with no
     // files (the phone) shows no "Open project..." and no recent rows.
     public void ShowHome(IReadOnlyList<string>? recent, bool projects = true) => (_home, _homeProjects) = (recent, projects);
 
-    // ADR-0100 item 5: shows or hides the question before a change of project.
+    // ADR-0102 item 5: shows or hides the question before a change of project.
     public void ShowQuestion(bool shown) => _question = shown;
 
     internal bool QuestionShown => _question;
@@ -53,7 +53,7 @@ internal sealed unsafe partial class DesktopUi
         if (ImGui.Begin("3DEngine###Home", ImGuiWindowFlags.NoMove | ImGuiWindowFlags.NoResize | ImGuiWindowFlags.NoCollapse | ImGuiWindowFlags.NoSavedSettings))
         {
             var full = new Vector2(-1f, MinimumControlHeight);
-            // ADR-0100 item 1 (TASK-0314): "Open project..." and "Import STL..." are two actions, so a person cannot take an
+            // ADR-0102 item 1 (TASK-0316): "Open project..." and "Import STL..." are two actions, so a person cannot take an
             // import for the open of a project.
             if (_homeProjects)
             {
@@ -69,7 +69,7 @@ internal sealed unsafe partial class DesktopUi
                 _actions.Add(new NewPartAction());
             Item(NewPartLabel);
 
-            // ADR-0100 item 6 (Q2 A): the recent projects of this desktop, in each folder, with the name of the file and its
+            // ADR-0102 item 6 (Q2 A): the recent projects of this desktop, in each folder, with the name of the file and its
             // folder in the quiet colour.
             if (_homeProjects)
             {
@@ -123,7 +123,7 @@ internal sealed unsafe partial class DesktopUi
         ImGui.End();
     }
 
-    // ADR-0100 item 5 (Q3 A, TASK-0314): before a change of project while the document has no file and holds a command,
+    // ADR-0102 item 5 (Q3 A, TASK-0316): before a change of project while the document has no file and holds a command,
     // the window asks: "Save as..." saves it first, "Discard" leaves its journal in the folder of unsaved documents (ADR-0030
     // item 6) and changes, and "Cancel" changes nothing.
     private void QuestionWindow(Vector2 displaySize)
@@ -155,7 +155,7 @@ internal sealed unsafe partial class DesktopUi
         ImGui.End();
     }
 
-    // ADR-0100: the end of the text that fits the width, after "...", so the last folders of a path stay.
+    // ADR-0102: the end of the text that fits the width, after "...", so the last folders of a path stay.
     internal static string FitStart(string text, float width)
     {
         if (ImGui.CalcTextSize(text).X <= width)

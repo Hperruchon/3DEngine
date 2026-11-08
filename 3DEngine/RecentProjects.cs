@@ -1,6 +1,6 @@
 namespace ThreeDEngine.Desktop;
 
-// ADR-0100 item 6 (Q2 A, phase P9g, TASK-0314): the last eight projects that this desktop opened or saved, in each folder,
+// ADR-0102 item 6 (Q2 A, phase P9g, TASK-0316): the last eight projects that this desktop opened or saved, in each folder,
 // newest first, one full path on each line of a text file of the local application data. The list is a setting of the
 // desktop and not a part of a Document. A path that no longer exists leaves the list when the list is read. A read or a
 // write that fails gives an empty list or keeps the old list: the recent rows are a help, so their failure stops nothing.

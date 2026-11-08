@@ -13,7 +13,7 @@ namespace ThreeDEngine.Vulkan;
 // that callback, because SDL may read it until then. A late callback of an earlier dialog frees its own filter and gives no
 // result. Until TASK-0282 a late callback after ResetDialog freed the filter of the next dialog and cleared its flag, and
 // the next OpenFile wrote over the filter of the earlier dialog with no free.
-// ADR-0100 item 2 (phase P9g, TASK-0314): each dialog keeps the purpose that the client gives it, and its result gives that
+// ADR-0102 item 2 (phase P9g, TASK-0316): each dialog keeps the purpose that the client gives it, and its result gives that
 // purpose back, so a late result of one action never goes to another action. A save dialog keeps its default location
 // until its callback too, because SDL may read it until then.
 public static class FileDialogState
@@ -103,7 +103,7 @@ public static class FileDialogState
 public sealed unsafe partial class Window
 {
     // Opens the dialog for one file with the filter, for example "STL file" and "stl". False when a dialog is open already.
-    // ADR-0100 item 2 (TASK-0314): the purpose comes back with the result.
+    // ADR-0102 item 2 (TASK-0316): the purpose comes back with the result.
     public bool OpenFile(string filterName, string pattern, int purpose = 0)
     {
         if (FileDialogState.Begin(filterName, pattern, purpose) is not { } dialog)
@@ -112,7 +112,7 @@ public sealed unsafe partial class Window
         return true;
     }
 
-    // ADR-0100 items 3 and 4 (TASK-0314): the save dialog of the system for one file with the filter, in each folder, at the
+    // ADR-0102 items 3 and 4 (TASK-0316): the save dialog of the system for one file with the filter, in each folder, at the
     // default location (a file or a folder), or where the system chooses with null. False when a dialog is open already.
     public bool SaveFile(string filterName, string pattern, int purpose, string? location)
     {
@@ -124,7 +124,7 @@ public sealed unsafe partial class Window
 
     // The result of the dialog: Done is true one time after the dialog closes, with the path, or null when the person
     // closed it with no file or the dialog failed. Finding V131 of the codebase review of 2026-11-07 (b) (TASK-0271): Failure
-    // gives the reason of SDL when the dialog failed, and null when the person closed it. ADR-0100 item 2: Purpose is the
+    // gives the reason of SDL when the dialog failed, and null when the person closed it. ADR-0102 item 2: Purpose is the
     // purpose of the dialog.
     public static (bool Done, string? Path, string? Failure, int Purpose) TakeOpenedFile() => FileDialogState.Take();
 

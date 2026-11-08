@@ -56,8 +56,8 @@ public sealed class DesktopDocumentTests : IDisposable
         Step(ui);
     }
 
-    // ADR-0100 item 1 (phase P9g, TASK-0314): the four controls of a file each give the action of their dialog. Until
-    // TASK-0314 a field took a name, and Save as and Open used it in the document folder.
+    // ADR-0102 item 1 (phase P9g, TASK-0316): the four controls of a file each give the action of their dialog. Until
+    // TASK-0316 a field took a name, and Save as and Open used it in the document folder.
     [Fact]
     public void The_File_Controls_Give_The_Actions_Of_Their_Dialogs()
     {

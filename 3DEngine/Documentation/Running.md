@@ -43,7 +43,7 @@ With no `--file`, the desktop writes into the folder of unsaved documents,
 `Desktop:UnsavedFolder` changes that folder. Each applied command is in the file before its result.
 
 The top bar shows the name of the file and its folder, or "unsaved". From the window, with no
-terminal (ADR-0100):
+terminal (ADR-0102):
 
 - "Open project..." opens the dialog of the system for a `.3de` file in each folder. The desktop
   checks the file, then opens it in a new session on the same port. A file that does not open gives

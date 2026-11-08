@@ -47,7 +47,7 @@ internal sealed unsafe partial class DesktopUi
         {
             foreach (var label in new[] { NewBoxLabel, NewCylinderLabel, NewConeLabel, NewSphereLabel, NewTorusLabel })
                 commands.Add((label, () => OpenNew(label)));
-            // ADR-0100 item 1 (phase P9g, TASK-0314): the controls of a file, because the rows of a selected body hide the
+            // ADR-0102 item 1 (phase P9g, TASK-0316): the controls of a file, because the rows of a selected body hide the
             // panel (ADR-0099); a host with no files has none.
             if (_files)
             {

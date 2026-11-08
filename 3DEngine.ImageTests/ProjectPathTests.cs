@@ -8,8 +8,8 @@ using ThreeDEngine.Desktop.Ui;
 
 namespace ThreeDEngine.ImageTests;
 
-// ADR-0100 (phase P9g, TASK-0314): the project path of the window, with no terminal, with no GPU. The dialogs of the system
-// are samples: a test records each dialog that the path asks for and gives its result as the person would. ADR-0100 names
+// ADR-0102 (phase P9g, TASK-0316): the project path of the window, with no terminal, with no GPU. The dialogs of the system
+// are samples: a test records each dialog that the path asks for and gives its result as the person would. ADR-0102 names
 // this file in its enforced-by field. The open of a file ends the home screen of the process (a static field of
 // DesktopDocument), so these tests run in the collection of the other tests of that state.
 [Collection(DearImGui.Collection)]
@@ -102,7 +102,7 @@ public sealed class ProjectPathTests : IDisposable
         var line = NativeThreeDEngine.LineOf(session.Document, host.FileName, null, Path.GetDirectoryName(session.Host.Session.FilePath));
         Assert.Equal(Path.GetFullPath(Projects), line.Folder);
 
-        // ADR-0100 item 3: the session does not replace a file that exists.
+        // ADR-0102 item 3: the session does not replace a file that exists.
         var other = Path.Combine(Projects, "Other.3de");
         File.WriteAllText(other, "kept");
         Assert.Equal(DiagnosticCodes.IoSaveFailed, projects.Take(other, null, DialogPurpose.SaveProject).Refusal?.Code);
@@ -265,7 +265,7 @@ public sealed class ProjectPathTests : IDisposable
         Assert.Equal(0, changes);
     }
 
-    // ADR-0100 item 6 (Q2 A): the list keeps eight paths, newest first, one time each with no regard to the case on Windows
+    // ADR-0102 item 6 (Q2 A): the list keeps eight paths, newest first, one time each with no regard to the case on Windows
     // and macOS; a path that no longer exists leaves the list.
     [Fact]
     public void The_Recent_Projects_Keep_Eight_Paths_That_Exist()
@@ -286,7 +286,7 @@ public sealed class ProjectPathTests : IDisposable
         Assert.Equal(Path.Combine(_folder, RecentProjects.FileName), RecentProjects.Beside(Path.Combine(_folder, "unsaved")));
     }
 
-    // ADR-0100 item 7: the top bar shows the folder after the name at 1440 x 900, and no folder at 640 x 360, where the
+    // ADR-0102 item 7: the top bar shows the folder after the name at 1440 x 900, and no folder at 640 x 360, where the
     // room left of the command line is less than 48 pixels.
     [Fact]
     public void The_Top_Bar_Shows_The_Folder_Of_The_Project()
@@ -316,7 +316,7 @@ public sealed class ProjectPathTests : IDisposable
         }
     }
 
-    // ADR-0100 item 1: the home screen of a host with no files (the phone) shows "Import STL..." and no project.
+    // ADR-0102 item 1: the home screen of a host with no files (the phone) shows "Import STL..." and no project.
     [Fact]
     public void A_Host_With_No_Files_Shows_No_Project_On_The_Home_Screen()
     {
@@ -332,7 +332,7 @@ public sealed class ProjectPathTests : IDisposable
         Assert.Null(ui.ItemRectangle(DesktopUi.OpenProjectLabel));
     }
 
-    // ADR-0100 items 1 and 5: the command line holds the four controls of a file while the host has files, and the question
+    // ADR-0102 items 1 and 5: the command line holds the four controls of a file while the host has files, and the question
     // gives its answer as an action.
     [Fact]
     public void The_Command_Line_And_The_Question_Give_Their_Actions()

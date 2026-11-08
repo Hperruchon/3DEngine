@@ -8912,15 +8912,16 @@ New tests: 5, and one test left with the old place of the rows. The test list ho
 in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
 entries: 15 of 15. New diagnostic codes: 0. Since the review of v0.292, 3 product milestones and 6 entries followed it.
 
-## v0.299 — The window opens and saves a project in any folder, with no terminal (P9g, TASK-0314)
+## v0.299 — The window opens and saves a project in any folder, with no terminal (P9g, TASK-0316)
 
 On 2026-11-08 the owner asked to use the desktop for the entry hall shelf with no command line and no agent, and answered Q1
 to Q4 with A. At v0.298 "Open file" opened STL files only, a save, an open and an export took a name in the document folder,
 and the home screen gave the newest files of that folder. The advisor session wrote the draft as TASK-0313 with ADR-0099;
-R16p held both numbers, so the task is TASK-0314 and the record ADR-0100. This session checked each fact of its Context on
+R16p held both numbers, and R17a and R17b took TASK-0314, TASK-0315, ADR-0100 and ADR-0101 on main (1a070ad) before the merge,
+so the task is TASK-0316 and the record ADR-0102. This session checked each fact of its Context on
 disk and corrected two: the home screen gave five rows, not eight, and the ledger does not say that Codex opened the shelf.
 
-**The change.** ADR-0100 amends ADR-0030 item 3 and ADR-0083 D1 and D6.
+**The change.** ADR-0102 amends ADR-0030 item 3 and ADR-0083 D1 and D6.
 - "Open project..." and "Import STL..." are two actions on the home screen, in the panel and in the command line. An open
   of a project in each folder uses the check of ADR-0030 item 5 and the next session of R14b.
 - "Save as..." and "Export STL..." open the save dialog of the system (`SDL_ShowSaveFileDialog`). A path gets its
@@ -8945,7 +8946,7 @@ owner saw eight pictures before the merge. No dialog of the system ran. The phon
 42533075534 passed. The failed runs since the entry v0.298, from the API: none.
 
 **What stays.** The row P9g waits for the run of the owner, with the real dialogs and the shelf. The register held 15 of 15
-open entries, so the phone (Q4 A) is in ADR-0100 item 9 until P0.131 gives it an entry. "Save as..." on a project with a
+open entries, so the phone (Q4 A) is in ADR-0102 item 9 until P0.131 gives it an entry. "Save as..." on a project with a
 file moves that file, as before.
 
 New tests: 12. The test list holds 2207 (1472 in `Engine.Tests`, 352 in `3DEngine.Tests`, 380 in `3DEngine.ImageTests`, 3

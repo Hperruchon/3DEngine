@@ -320,9 +320,9 @@ internal sealed unsafe partial class DesktopUi
             ? ["3DEngine", files.FileName ?? "unsaved", _unit]
             : ["3DEngine", _unit];
 
-    // ADR-0030 item 3: the name of the file, a name field, Save as and Open. ADR-0100 item 1 (phase P9g, TASK-0314): four
+    // ADR-0030 item 3: the name of the file, a name field, Save as and Open. ADR-0102 item 1 (phase P9g, TASK-0316): four
     // buttons that each open a dialog of the system, on two lines: "Open project..." and "Save as...", then "Export STL..."
-    // and "Import STL...". Until TASK-0314 a field took a name in the document folder.
+    // and "Import STL...". Until TASK-0316 a field took a name in the document folder.
     private void File(DocumentLine document)
     {
         // V99 (TASK-0232): a host with no files shows the message only.

@@ -16,9 +16,9 @@ internal sealed record SetVisibleAction(Guid Body, bool Visible) : PanelAction;
 
 internal sealed record ShowAllAction : PanelAction;
 
-// ADR-0100 (phase P9g, TASK-0314): the project path of the window. "Open project..." opens the dialog of the system for a
+// ADR-0102 (phase P9g, TASK-0316): the project path of the window. "Open project..." opens the dialog of the system for a
 // project file in each folder; a recent row opens its path; "Save as..." and "Export STL..." open the save dialog of the
-// system. Until TASK-0314 a save, an open and an export took the name of a field in the document folder (ADR-0030 item 3).
+// system. Until TASK-0316 a save, an open and an export took the name of a field in the document folder (ADR-0030 item 3).
 internal sealed record OpenProjectAction : PanelAction;
 
 internal sealed record OpenRecentAction(string Path) : PanelAction;
@@ -27,7 +27,7 @@ internal sealed record SaveAsAction : PanelAction;
 
 internal sealed record ExportStlAction : PanelAction;
 
-// ADR-0100 item 5 (Q3 A): the answer to the question before a change of project while the document has no file.
+// ADR-0102 item 5 (Q3 A): the answer to the question before a change of project while the document has no file.
 internal enum ChangeAnswer
 {
     SaveAs,
@@ -65,8 +65,8 @@ internal sealed record CutBodyAction(Guid Body, Guid Tool) : PanelAction;
 internal sealed record EditDistanceAction(Guid Body) : PanelAction;
 
 // ADR-0083 D1 and D6 (TASK-0259): the file dialog of the system for an STL file; a new part document; the home screen; and
-// the frame of the camera on the visible bodies. ADR-0100 item 1 (TASK-0314): the import has its own name, apart from the
-// open of a project; until TASK-0314 it was OpenFileAction, "Open file".
+// the frame of the camera on the visible bodies. ADR-0102 item 1 (TASK-0316): the import has its own name, apart from the
+// open of a project; until TASK-0316 it was OpenFileAction, "Open file".
 internal sealed record ImportStlAction : PanelAction;
 
 internal sealed record NewPartAction : PanelAction;
@@ -128,7 +128,7 @@ internal sealed record FaceLine(string Text, bool CanSketch, IReadOnlyList<(Syst
 // The line of the document file in the panel: the name of the file, or null for an
 // unsaved document, and the result of the last save or open. Finding V99 of the codebase review of 2026-11-06 (c)
 // (TASK-0232): a host with no files, as the phone, has a line too, with the message only, so that a rejection shows.
-// ADR-0100 item 7 (TASK-0314): the folder of the file, which the top bar shows after its name, or null.
+// ADR-0102 item 7 (TASK-0316): the folder of the file, which the top bar shows after its name, or null.
 internal sealed record DocumentLine(string? FileName, string? Message, bool Files = true, string? Folder = null);
 
 // ADR-0034 item 8: what the window of the sketch shows. Live holds each live sketch; Active is the

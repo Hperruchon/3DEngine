@@ -4,7 +4,7 @@ using ThreeDEngine.Vulkan;
 
 namespace ThreeDEngine.Desktop;
 
-// ADR-0100 item 2 (phase P9g, TASK-0314): what a dialog of the system was opened for. The result of the dialog gives it back,
+// ADR-0102 item 2 (phase P9g, TASK-0316): what a dialog of the system was opened for. The result of the dialog gives it back,
 // so a late result of "Import STL..." never opens a project, and a late result of "Export STL..." never saves one.
 internal enum DialogPurpose
 {
@@ -25,7 +25,7 @@ internal interface IFileDialogs
     bool Save(string filterName, string pattern, DialogPurpose purpose, string? location);
 }
 
-// The dialogs of SDL in the window (ADR-0100 item 2).
+// The dialogs of SDL in the window (ADR-0102 item 2).
 internal sealed class WindowDialogs(Window window) : IFileDialogs
 {
     public bool Open(string filterName, string pattern, DialogPurpose purpose) => window.OpenFile(filterName, pattern, (int)purpose);
@@ -37,7 +37,7 @@ internal sealed class WindowDialogs(Window window) : IFileDialogs
 // shows as its message (finding V127, TASK-0271).
 internal readonly record struct FileOutcome(string? Line, (string Code, string Text)? Refusal = null);
 
-// ADR-0100 (phase P9g, TASK-0314): the project path of the window, with no terminal. A person opens a project in each folder,
+// ADR-0102 (phase P9g, TASK-0316): the project path of the window, with no terminal. A person opens a project in each folder,
 // saves it in the folder that the person chooses, and exports an STL file apart from the project. The surface of an agent
 // keeps the document folder of ADR-0030 item 2.
 internal sealed class ProjectFiles(ISessionHost host, IDocumentFiles files, IFileDialogs dialogs)

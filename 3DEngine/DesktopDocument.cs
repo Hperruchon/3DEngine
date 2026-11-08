@@ -23,7 +23,7 @@ internal sealed class DesktopDocument : IDocumentFiles
     // E167 (TASK-0262): the store of the desktop, which the check of an open reads for an import of ADR-0083.
     private readonly Engine.Core.Assets.IAssetSource? _assets;
 
-    // ADR-0100 item 6 (Q2 A, TASK-0314): the recent projects of this desktop, or null for no list.
+    // ADR-0102 item 6 (Q2 A, TASK-0316): the recent projects of this desktop, or null for no list.
     private readonly RecentProjects? _recent;
 
     public DesktopDocument(string folder, Engine.Core.Assets.IAssetSource? assets = null, RecentProjects? recent = null)
@@ -51,7 +51,7 @@ internal sealed class DesktopDocument : IDocumentFiles
     private static StlImport? _import;
     private static bool _home = true;
 
-    // ADR-0100 item 6 (Q2 A, TASK-0314): the recent projects in each folder. Until TASK-0314 the home screen gave the newest
+    // ADR-0102 item 6 (Q2 A, TASK-0316): the recent projects in each folder. Until TASK-0316 the home screen gave the newest
     // files of the document folder only, so a project in another folder never showed.
     public IReadOnlyList<string> Recent(int count) => _recent?.Paths(count) ?? [];
 

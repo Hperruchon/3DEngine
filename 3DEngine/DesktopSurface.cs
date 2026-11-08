@@ -57,7 +57,7 @@ internal sealed class DesktopSurface : IDisposable
 
     public const string DocumentFolderSetting = "Desktop:DocumentFolder";
 
-    // ADR-0100 item 6 (TASK-0314): the file of the recent projects; by default beside the folder of unsaved documents.
+    // ADR-0102 item 6 (TASK-0316): the file of the recent projects; by default beside the folder of unsaved documents.
     public const string RecentFileSetting = "Desktop:RecentFile";
 
     public const string PortSetting = "Desktop:Port";
