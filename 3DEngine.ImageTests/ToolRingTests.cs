@@ -103,6 +103,37 @@ public sealed class ToolRingTests
         Assert.Null(other.ItemRectangle(DesktopUi.RingItem(DesktopUi.SetDistanceLabel)));
     }
 
+    // ADR-0095 (the redesign, slice l, TASK-0306): on a landscape display each segment of a body ring has its icon above its
+    // label, and the caption is to the right of the ring when it fits inside the display, as at 1440 x 900 and not at 1280 x
+    // 720, as in the renders of the brief; a portrait ring has the icons and no caption.
+    [Theory]
+    [InlineData(1280, 720, 700, 360, false)]
+    [InlineData(1440, 900, 720, 450, true)]
+    [InlineData(390, 844, 195, 400, false)]
+    public void A_Body_Ring_Has_An_Icon_Over_Each_Label_And_A_Caption_On_A_Landscape_Display(int width, int height, int x, int y, bool caption)
+    {
+        var display = new Vector2(width, height);
+        using var ui = new DesktopUi("http://127.0.0.1:5180", Engine.Contracts.Document.Millimetre);
+        Step(ui, Extrude, display, new Vector2(x, y));
+        Step(ui, Extrude, display, new Vector2(x, y));
+
+        foreach (var label in new[] { DesktopUi.MoveLabel, DesktopUi.SetDistanceLabel, DesktopUi.HideLabel })
+        {
+            var icon = ui.ItemRectangle(DesktopUi.RingIconItem(label)) ?? throw new InvalidOperationException($"{label} has no icon.");
+            var text = ui.ItemRectangle(DesktopUi.RingTextItem(label)) ?? throw new InvalidOperationException($"{label} has no label.");
+            Assert.True(icon.W <= text.Y && Math.Abs(((icon.X + icon.Z) / 2) - ((text.X + text.Z) / 2)) <= 1f, $"The icon of {label} at {icon} is not above its label at {text}.");
+        }
+
+        Assert.Equal("Distance", DesktopUi.RingText(DesktopUi.SetDistanceLabel));
+        var place = ui.ItemRectangle(DesktopUi.RingCaptionItem);
+        Assert.Equal(caption, place is not null);
+        if (place is { } shown)
+        {
+            var distance = ui.ItemRectangle(DesktopUi.RingItem(DesktopUi.SetDistanceLabel))!.Value;
+            Assert.True(shown.X > distance.Z && shown.Z <= display.X - 16f, $"The caption at {shown} is not to the right of the ring inside the display.");
+        }
+    }
+
     // Item 1: with no centre, or while a pad is open, there is no ring.
     [Fact]
     public void No_Ring_Shows_With_No_Centre_Or_With_A_Pad()

@@ -253,12 +253,18 @@ internal sealed unsafe partial class DesktopUi
 
         var list = ImGui.GetBackgroundDrawList();
         var colours = ImGui.GetStyle().Colors;
+        // ADR-0095 item 1 (TASK-0306): the guide of a landscape ring, under its segments.
+        var landscape = displaySize.X >= displaySize.Y;
+        if (landscape)
+            RingGuide(list, ring);
         foreach (var segment in ring.Segments(labels))
         {
             var hovered = ring.At(labels, io.MousePos) == segment.Label && !ImGui.IsWindowHovered(ImGuiHoveredFlags.AnyWindow);
             // ADR-0086 item 2: the tool in use has the colour of an active control.
             var inUse = _sketchActive && SketchRingTools.FirstOrDefault(tool => tool.Label == segment.Label).Kind is { } kind && kind == _sketchTool;
-            var ground = ImGui.GetColorU32(colours[(int)(inUse ? ImGuiCol.ButtonActive : hovered ? ImGuiCol.ButtonHovered : ImGuiCol.Button)]);
+            // ADR-0095 item 2: a light ground, so the scene shows through a segment that is not in use or under the pointer.
+            var shade = colours[(int)(inUse ? ImGuiCol.ButtonActive : hovered ? ImGuiCol.ButtonHovered : ImGuiCol.Button)];
+            var ground = ImGui.GetColorU32(inUse ? shade : shade with { W = hovered ? 0.7f : 0.35f });
             // A segment is not convex, so it is filled as a row of small quads.
             const int steps = 12;
             for (var i = 0; i < steps; i++)
@@ -273,7 +279,9 @@ internal sealed unsafe partial class DesktopUi
             list.PathStroke(ImGui.GetColorU32(colours[(int)ImGuiCol.Border]), ImDrawFlags.Closed, 1.5f);
 
             var middle = ring.Middle(segment);
-            var text = ImGui.CalcTextSize(segment.Label);
+            // ADR-0095 item 3: the short label of the render, and a drawn icon above it.
+            var caption = RingText(segment.Label);
+            var text = ImGui.CalcTextSize(caption);
             // The review of Codex of v0.251 (TASK-0271): a label at the edge of a portrait display stays 4 pixels inside the
             // safe area; until TASK-0271 the label "Sketch on face" of the fourth segment went past the right edge.
             var place = middle - (text / 2f);
@@ -281,17 +289,32 @@ internal sealed unsafe partial class DesktopUi
             // ADR-0087 item 5 (TASK-0276): on the left of a sketch, a label wider than the band ends 6 pixels outside the
             // inner edge, so it covers less of the sketch, and stays 4 pixels to the right of the panel; a plate of the colour
             // of its segment keeps it readable over the lines. The first form centred "Horizontal" over the points.
+            var ink = ImGui.GetColorU32(colours[(int)ImGuiCol.Text]);
             if (sketchRing && text.X > RingBand - 12f)
             {
                 var inner = ring.Centre.X + (MathF.Cos((segment.From + segment.To) / 2f) * ring.Inner);
                 place.X = Math.Max(panelRight + 4f, inner - 6f - text.X);
                 list.AddRectFilled(place - new Vector2(4f, 2f), place + text + new Vector2(4f, 2f), ground, 4f);
             }
+            else
+            {
+                var top = middle.Y - (((2f * IconHalf) + IconGap + text.Y) / 2f);
+                var icon = new Vector2(middle.X, top + IconHalf);
+                if (RingIcon(list, segment.Label, icon, ink))
+                {
+                    place.Y = top + (2f * IconHalf) + IconGap;
+                    _items[RingIconItem(segment.Label)] = new Vector4(icon.X - IconHalf, icon.Y - IconHalf, icon.X + IconHalf, icon.Y + IconHalf);
+                }
+            }
 
-            list.AddText(place, ImGui.GetColorU32(colours[(int)ImGuiCol.Text]), segment.Label);
+            list.AddText(place, ink, caption);
             _items[RingTextItem(segment.Label)] = new Vector4(place.X, place.Y, place.X + text.X, place.Y + text.Y);
             _items[RingItem(segment.Label)] = new Vector4(middle.X - 4f, middle.Y - 4f, middle.X + 4f, middle.Y + 4f);
         }
+
+        // ADR-0095 item 4: the caption of a landscape body ring.
+        if (landscape && !_sketchActive && body is not null)
+            RingCaption(list, ring, body.Name ?? body.Kind, displaySize);
     }
 
     // ADR-0086 item 2: the tool of a segment of the ring of a sketch, as its button of the window of the sketch does.
