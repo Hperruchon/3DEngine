@@ -4,8 +4,8 @@ title: A path line from the document to the selection, and the rows of the docum
 status: Ready
 phase: R17a
 opened: 2026-11-08
-depends-on: [0312]
-governed-by: [0007, 0019, 0025, 0027, 0029, 0030, 0032, 0034, 0072, 0073, 0075, 0076, 0077, 0078, 0080, 0081, 0082, 0083, 0084, 0085, 0086, 0087, 0089, 0091, 0093, 0097, 0098]
+depends-on: [0313]
+governed-by: [0007, 0019, 0025, 0027, 0029, 0030, 0032, 0034, 0072, 0073, 0075, 0076, 0077, 0078, 0080, 0081, 0082, 0083, 0084, 0085, 0086, 0087, 0089, 0091, 0093, 0097, 0098, 0099]
 writes:
   create:
     - tasks/TASK-0314-a-path-line-from-the-document-to-the-selection.md
@@ -101,7 +101,7 @@ data of the document when nothing is selected.
 
 ## Notes for the implementer
 
-- Start after TASK-0313 is merged (Q6 A). The rows at the upper left of ADR-0099 are the base of item 5.
+- TASK-0313 is merged (v0.298), as Q6 A asks. The rows at the upper left of ADR-0099 are the base of item 5.
 - The selection is in `3DEngine.App/BodyActions.cs`: `Selection`, `Face`, `Edge`. Escape is `CancelIntent { ByKey:
   true }`; today a body with no face falls to `default` and stays selected.
 - Check the numbers at commit: TASK-0314 and ADR-0100 were free on each branch on 2026-11-08 at `main` 18297b8;
@@ -118,3 +118,4 @@ Weakest:    no person used a path line in this window yet.
 ## Progress
 
 - 2026-11-08: opened from the proposal, with the answers of the owner.
+- 2026-11-09: depends on TASK-0313 and is governed by ADR-0099, after the merge of R16p at v0.298.
