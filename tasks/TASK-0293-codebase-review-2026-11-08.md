@@ -1,7 +1,7 @@
 ---
 id: 0293
 title: The codebase review of 2026-11-08 is a record
-status: Active
+status: Done
 phase: governance
 opened: 2026-11-08
 depends-on: [0291]
@@ -67,12 +67,12 @@ finding.
 
 ## Acceptance criteria
 
-- [ ] `CodebaseReviewGateTests` passes with the new review.
-- [ ] Continuous integration passes on the three runners, on the branch and on `main` after the merge.
+- [x] `CodebaseReviewGateTests` passes with the new review.
+- [x] Continuous integration passes on the three runners, on the branch and on `main` after the merge.
 
 ## Outcome
 
-Status: Active
+Status: Done · commit (the merge of the branch codebase-review-2026-11-08) · v0.276
 
 ## Method
 
@@ -87,3 +87,4 @@ Weakest:    the cause of V141 is inferred from the classes of SDL, because the j
 ## Progress
 
 - 2026-11-08: the review, with 1 high, 2 medium and 8 low new findings, and the three tasks of the fixes.
+- 2026-11-08: run 42436726799 passed. Closed at v0.276.
