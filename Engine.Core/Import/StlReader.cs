@@ -19,10 +19,10 @@ public static class StlReader
 
     // Findings E180 and E181 of the codebase review of 2026-11-07 (c) (TASK-0280): ADR-0083 item 3. A refused import is not in
     // the log, so only the files that an earlier reader accepted have a result to keep. Each file gets the result of the
-    // first of three rules that accepts it: the rule of v0.243, the rule of HEAD, then the rule of v0.250. The rule of
-    // v0.254 gives the result of HEAD for each file that it accepted. Two classes of files had two earlier results, and this
-    // order keeps the results of v0.243 and of v0.254 (E182, Q1 A). Until TASK-0280 a text file with a zero byte, which
-    // v0.243 read, and a name such as "facet normal 0 0 1 outer", which v0.250 read, were refused.
+    // first of three rules that accepts it: the rule of v0.243, the rule of v0.257 and later, then the rule of v0.250. The
+    // rule of v0.254 gives the result of the rule of v0.257 for each file that it accepted. Two classes of files had two
+    // earlier results, and this order keeps the results of v0.243 and of v0.254 (E182, Q1 A). Until TASK-0280 a text file
+    // with a zero byte, which v0.243 read, and a name such as "facet normal 0 0 1 outer", which v0.250 read, were refused.
     public static (float[]? Triangles, ErrorDetail? Error) Read(ReadOnlySpan<byte> bytes)
     {
         if (StartsWithSolid(bytes) && !BinaryByLength(bytes))
@@ -32,7 +32,7 @@ public static class StlReader
                 return first;
         }
 
-        var current = ReadByTheRuleOfHead(bytes);
+        var current = ReadByTheRuleOfV0257(bytes);
         if (current.Triangles is not null || BinaryByLength(bytes))
             return current;
 
@@ -52,8 +52,10 @@ public static class StlReader
         => bytes.Length >= HeaderBytes + 4
             && bytes.Length == HeaderBytes + 4 + ((long)BinaryPrimitives.ReadUInt32LittleEndian(bytes.Slice(HeaderBytes, 4)) * TriangleBytes);
 
-    // The rule of HEAD: the format choice of E170 and E178, and the name rule of NameEnd.
-    private static (float[]? Triangles, ErrorDetail? Error) ReadByTheRuleOfHead(ReadOnlySpan<byte> bytes)
+    // The rule of v0.257 and later (ADR-0083 item 3): the format choice of E170 and E178, and the name rule of NameEnd.
+    // Finding E189 of the codebase review of 2026-11-08 (TASK-0296): until TASK-0296 this rule was named after HEAD, which
+    // moves with each commit.
+    private static (float[]? Triangles, ErrorDetail? Error) ReadByTheRuleOfV0257(ReadOnlySpan<byte> bytes)
     {
         // A file whose length is 84 plus 50 times its count is binary, even when its header starts with "solid", as the
         // header of some programs does.

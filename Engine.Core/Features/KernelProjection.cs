@@ -9,7 +9,7 @@ namespace Engine.Core.Features;
 // ADR-0058 items 1 to 3 (phase K4b, TASK-0184): the solid of a body in the owned kernel, as a projection of the steps in
 // effect. Manifold still makes the solid and the mesh of each body; the kernel gives the faces and their names. The
 // walk goes from the body to the command that creates it, as the regeneration does: a CreateBox, a CreateCylinder
-// (ADR-0076), an Extrude of the
+// (ADR-0076), a CreateCone (ADR-0089; finding E188 of the codebase review of 2026-11-08, TASK-0296), an Extrude of the
 // sketch and the distance in effect on the frame of its datum, a Translate, or a Subtract of two bodies. The kernel
 // reads each input double exactly, so the projection does not depend on the platform, and it does not enter the log.
 //
