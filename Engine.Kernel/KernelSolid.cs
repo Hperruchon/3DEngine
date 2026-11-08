@@ -123,6 +123,20 @@ public sealed class KernelSolid
         return Closed(feature, faces);
     }
 
+    // ADR-0089 item 5 (phase K5d, TASK-0289): a closed mesh of triangles with one name and no item, as CreateSphere and
+    // CreateTorus make it: three indices for each triangle, counter-clockwise when seen from outside.
+    public static KernelSolid Mesh(Guid feature, string element, IReadOnlyList<Vector3R> vertices, IReadOnlyList<int> triangles)
+    {
+        ArgumentNullException.ThrowIfNull(vertices);
+        ArgumentNullException.ThrowIfNull(triangles);
+        if (triangles.Count == 0 || triangles.Count % 3 != 0)
+            throw new ArgumentException("A mesh holds three indices for each triangle.", nameof(triangles));
+        var faces = new List<(string Element, Guid? Item, IReadOnlyList<Vector3R> Vertices)>(triangles.Count / 3);
+        for (var t = 0; t < triangles.Count; t += 3)
+            faces.Add((element, null, [vertices[triangles[t]], vertices[triangles[t + 1]], vertices[triangles[t + 2]]]));
+        return Closed(feature, faces);
+    }
+
     // The faces of a new solid: each one with its plane and its tag, cut into convex pieces, and all of them turned when
     // the volume is negative, so that each normal points out for each sign of the distance and each turn of the profile.
     // Finding E187 of the codebase review of 2026-11-08 (TASK-0296): TASK-0288 put Cone between this comment and its method.
