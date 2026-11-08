@@ -33,7 +33,7 @@ public sealed class NativeThreeDEngine : IThreeDEngine, IDisposable
     private readonly IDocumentFiles? _document;
     private string? _documentMessage;
 
-    // ADR-0100 (phase P9g, TASK-0314): the project path of the window, for a host with files.
+    // ADR-0102 (phase P9g, TASK-0316): the project path of the window, for a host with files.
     private readonly ProjectFiles? _projects;
     private readonly string _address;
     private GraphicsDevice? _graphicsDevice;
@@ -129,8 +129,8 @@ public sealed class NativeThreeDEngine : IThreeDEngine, IDisposable
         }
     }
 
-    // The count of the recent projects of the home screen: each one that the list keeps (ADR-0100 item 6, Q2 A). Until
-    // TASK-0314 the home screen showed five files of the document folder.
+    // The count of the recent projects of the home screen: each one that the list keeps (ADR-0102 item 6, Q2 A). Until
+    // TASK-0316 the home screen showed five files of the document folder.
     // The host keeps eight paths (RecentProjects.Capacity).
     private const int RecentCount = 8;
 
@@ -157,7 +157,7 @@ public sealed class NativeThreeDEngine : IThreeDEngine, IDisposable
         var (done, path, failure, purpose) = Window.TakeOpenedFile();
         if (!done || _ui is null)
             return;
-        // ADR-0100 item 2 (TASK-0314): the result of the open of a project, of a save or of an export goes to the project path.
+        // ADR-0102 item 2 (TASK-0316): the result of the open of a project, of a save or of an export goes to the project path.
         if ((DialogPurpose)purpose != DialogPurpose.ImportStl)
         {
             if (_projects is not null)
@@ -409,7 +409,7 @@ public sealed class NativeThreeDEngine : IThreeDEngine, IDisposable
                 case ShowAllAction:
                     _actions.ShowAll(live);
                     break;
-                // ADR-0100 (phase P9g, TASK-0314): the project path. A change of project asks first while the document has no
+                // ADR-0102 (phase P9g, TASK-0316): the project path. A change of project asks first while the document has no
                 // file (item 5, Q3 A). Finding V127 of the codebase review of 2026-11-07 (b) (TASK-0271): the home screen hides
                 // the line of the document, so a refusal shows in its message there (Report).
                 case OpenProjectAction when _projects is not null:
@@ -609,7 +609,7 @@ public sealed class NativeThreeDEngine : IThreeDEngine, IDisposable
     private void Face(DatumFrame frame)
         => SketchCamera.Face(Camera, (frame.Normal.X, frame.Normal.Y, frame.Normal.Z), (frame.Origin.X, frame.Origin.Y, frame.Origin.Z));
 
-    // ADR-0100 (TASK-0314): the line of the document, and a refusal in the message of the home screen while it shows.
+    // ADR-0102 (TASK-0316): the line of the document, and a refusal in the message of the home screen while it shows.
     private void Report(FileOutcome outcome)
     {
         if (outcome.Line is { } line)
@@ -624,7 +624,7 @@ public sealed class NativeThreeDEngine : IThreeDEngine, IDisposable
             ? default
             : new FileOutcome(ProjectFiles.Busy, (string.Empty, ProjectFiles.Busy));
 
-    // ADR-0083 D1: a new part document for the next session; a refusal shows in the message, as before TASK-0314.
+    // ADR-0083 D1: a new part document for the next session; a refusal shows in the message, as before TASK-0316.
     private FileOutcome NewPart()
     {
         if (_document is null)
@@ -645,7 +645,7 @@ public sealed class NativeThreeDEngine : IThreeDEngine, IDisposable
     // The line of the document in the panel. Finding V99 of the codebase review of 2026-11-06 (c) (TASK-0232): with no
     // IDocumentFiles the panel had no line, so the rejection of a cut, of an Undo or of a sketch on a face showed nothing
     // on the phone, although ADR-0073 item 2 sends it to the line of the document.
-    // ADR-0100 item 7 (TASK-0314): and the folder of the file of a project, which the top bar shows after its name.
+    // ADR-0102 item 7 (TASK-0316): and the folder of the file of a project, which the top bar shows after its name.
     internal static DocumentLine LineOf(IDocumentFiles? files, string? fileName, string? message, string? folder = null)
         => new(fileName, message, Files: files is { HasFolder: true }, Folder: fileName is null ? null : folder);
 
@@ -786,7 +786,7 @@ public sealed class NativeThreeDEngine : IThreeDEngine, IDisposable
                 Camera, window.width, window.height, _host.Session.LengthUnit);
         }
 
-        // ADR-0100 item 5 (Q3 A): the question shows while a change of project waits for its answer.
+        // ADR-0102 item 5 (Q3 A): the question shows while a change of project waits for its answer.
         _ui.ShowQuestion(_projects?.Asking ?? false);
         var panel = _ui.Frame((float)_delta.TotalSeconds, display, scale, _renderer.LiveBodies, Selection, LineOf(_document, _host.FileName, _documentMessage, Path.GetDirectoryName(_host.Session.FilePath)), sketches, sketchPanel, imagePanel, dimensions, size, faceLine, ringCentre, ringSize, Inset(_window.SafeInsets), values);
         ApplyPanel(_renderer.LiveBodies);

@@ -45,8 +45,8 @@ internal sealed unsafe partial class DesktopUi : IDisposable
     public const string HideLabel = "Hide";
     public const string ShowLabel = "Show";
     public const string ShowAllLabel = "Show all";
-    // ADR-0100 item 1 (phase P9g, TASK-0314): each control of a file opens a dialog of the system, so its label ends with
-    // three dots. Until TASK-0314 the panel had a field "File name" and the buttons Save as, Open and Export STL.
+    // ADR-0102 item 1 (phase P9g, TASK-0316): each control of a file opens a dialog of the system, so its label ends with
+    // three dots. Until TASK-0316 the panel had a field "File name" and the buttons Save as, Open and Export STL.
     public const string OpenProjectLabel = "Open project...";
     public const string ImportStlLabel = "Import STL...";
     public const string SaveAsLabel = "Save as...";
@@ -185,7 +185,7 @@ internal sealed unsafe partial class DesktopUi : IDisposable
     // The text of the name field, and the body that it was filled for.
     private string _name = string.Empty;
 
-    // ADR-0100 item 1 (TASK-0314): true when the host of this frame has files, so the command line holds their controls.
+    // ADR-0102 item 1 (TASK-0316): true when the host of this frame has files, so the command line holds their controls.
     private bool _files;
 
     // ADR-0046: the text of the file field and of the distance field of the window of the images.
@@ -600,7 +600,7 @@ internal sealed unsafe partial class DesktopUi : IDisposable
 
         if (_message is { } message)
             MessageWindow(displaySize, message);
-        // ADR-0100 item 5 (Q3 A, TASK-0314): the question before a change of project, over the other windows.
+        // ADR-0102 item 5 (Q3 A, TASK-0316): the question before a change of project, over the other windows.
         if (_question)
             QuestionWindow(displaySize);
         if (_pad is { } pad)

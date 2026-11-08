@@ -36,7 +36,7 @@ public sealed class FileDialogStateTests
         Assert.Equal(waiting, FileDialogState.Waiting);
     }
 
-    // ADR-0100 item 2 (phase P9g, TASK-0314): the result gives back the purpose of its dialog, and a late callback of an
+    // ADR-0102 item 2 (phase P9g, TASK-0316): the result gives back the purpose of its dialog, and a late callback of an
     // earlier dialog with another purpose gives no result; the default location of a save dialog is freed with its filter.
     [Fact]
     public void The_Result_Gives_The_Purpose_Of_Its_Own_Dialog()

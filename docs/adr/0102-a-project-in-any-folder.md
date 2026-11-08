@@ -1,5 +1,5 @@
 ---
-id: 0100
+id: 0102
 title: The window opens and saves a project in any folder, through the dialogs of the system
 status: Accepted
 topic: Persistence, clients
@@ -33,14 +33,14 @@ affects:
 enforced-by: 3DEngine.ImageTests/ProjectPathTests.cs
 ---
 
-# ADR-0100 — The window opens and saves a project in any folder, through the dialogs of the system
+# ADR-0102 — The window opens and saves a project in any folder, through the dialogs of the system
 
 This document uses Simplified Technical English (ASD-STE100). See `CLAUDE.md`, section "Language".
 
 ## Context
 
 On 2026-11-08 the owner asked to use the desktop for a personal project, the entry hall shelf, with no command line and no
-agent (phase P9g, TASK-0314). At v0.298:
+agent (phase P9g, TASK-0316). At v0.298:
 
 - "Open file" on the home screen opened the dialog of the system for an STL file only, and each file of the dialog went to
   the STL import (ADR-0083 D1). No path of the window opened a `.3de` file from a dialog.
@@ -103,5 +103,5 @@ the dialogs of the system need a person: the tests give their results as samples
 
 ## History
 
-- 2026-11-08 · TASK-0314 · The record, with the answers of the owner.
-- 2026-11-09 · TASK-0314 · Shipped at v0.299; the row waits for the run of the owner.
+- 2026-11-08 · TASK-0316 · The record, with the answers of the owner.
+- 2026-11-09 · TASK-0316 · Shipped at v0.299; the row waits for the run of the owner.

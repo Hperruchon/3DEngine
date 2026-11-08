@@ -47,7 +47,7 @@ internal sealed class DesktopSession : IDisposable
 
         var assets = new AssetStore(configuration["Engine:AssetFolder"] is { Length: > 0 } folder ? folder : AssetStore.Default);
         var unsavedFolder = configuration[DesktopSurface.UnsavedFolderSetting] is { Length: > 0 } unsaved ? unsaved : DocumentFile.DefaultUnsavedFolder;
-        // ADR-0100 item 6 (Q2 A, TASK-0314): the recent projects of this desktop.
+        // ADR-0102 item 6 (Q2 A, TASK-0316): the recent projects of this desktop.
         var recent = new RecentProjects(configuration[DesktopSurface.RecentFileSetting] is { Length: > 0 } list ? list : RecentProjects.Beside(unsavedFolder));
         var document = new DesktopDocument(configuration[DesktopSurface.DocumentFolderSetting] is { Length: > 0 } documents ? documents : DocumentFolder.Default, assets, recent);
         // ADR-0083 item 7 (the owner, 2026-11-08, TASK-0290): a start with the setting "file" opens that file and shows no
@@ -80,7 +80,7 @@ internal sealed class DesktopSession : IDisposable
         if (host.NewFileMessage is { } made)
             Console.Error.WriteLine(made);
         document.HeldFile = () => host.Session.FilePath;
-        // ADR-0100 item 6: a project that a session holds, from the window, an agent or the setting "file", is a recent project.
+        // ADR-0102 item 6: a project that a session holds, from the window, an agent or the setting "file", is a recent project.
         if (host.FileName is not null && host.Session.FilePath is { } held)
             document.Remember(held);
         return (new DesktopSession(host, document, assets), 0, null);

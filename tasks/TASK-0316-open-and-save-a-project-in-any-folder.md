@@ -1,5 +1,5 @@
 ---
-id: 0314
+id: 0316
 title: The desktop opens and saves a project in any folder, and a person completes the project path with no terminal
 status: Done
 phase: P9g
@@ -8,12 +8,14 @@ depends-on: [0313]
 governed-by: [0007, 0017, 0019, 0023, 0025, 0027, 0029, 0030, 0032, 0034, 0061, 0072, 0073, 0075, 0076, 0077, 0078, 0080, 0081, 0082, 0083, 0084, 0085, 0086, 0087, 0089, 0091, 0093, 0097, 0098, 0099, 0100]
 writes:
   create:
-    - tasks/TASK-0314-open-and-save-a-project-in-any-folder.md
-    - docs/adr/0100-a-project-in-any-folder.md
+    - tasks/TASK-0316-open-and-save-a-project-in-any-folder.md
+    - docs/adr/0102-a-project-in-any-folder.md
     - 3DEngine.App/ProjectFiles.cs
     - 3DEngine/RecentProjects.cs
     - 3DEngine.ImageTests/ProjectPathTests.cs
   modify:
+    - tasks/TASK-0314-open-and-save-a-project-in-any-folder.md
+    - docs/adr/0100-a-project-in-any-folder.md
     - 3DEngine/DesktopDocument.cs
     - 3DEngine/DesktopSession.cs
     - 3DEngine/DesktopSurface.cs
@@ -37,6 +39,8 @@ writes:
     - docs/adr/0030-document-file-in-the-desktop.md
     - docs/adr/0083-the-mesh-body-and-the-stl-import.md
     - docs/adr/README.md
+    - tasks/TASK-0314-a-path-line-from-the-document-to-the-selection.md
+    - tasks/TASK-0315-a-focus-on-one-body.md
     - eng/test-floor.txt
     - docs/roadmap.md
     - docs/CURRENT-STATE.md
@@ -45,12 +49,13 @@ writes:
     - Engine.Core/**
 ---
 
-# TASK-0314 — The desktop opens and saves a project in any folder, and a person completes the project path with no terminal
+# TASK-0316 — The desktop opens and saves a project in any folder, and a person completes the project path with no terminal
 
 This task uses Simplified Technical English (ASD-STE100). See `CLAUDE.md`, section "Language".
 
 The advisor session wrote the draft as TASK-0313 with ADR-0099. The slice R16p took both numbers on 2026-11-08 (branch
-`r16p-body-rows-left`), so this task is TASK-0314 and its record is ADR-0100. The write set was corrected on 2026-11-08 from
+`r16p-body-rows-left`), and R17a and R17b took TASK-0314, TASK-0315, ADR-0100 and ADR-0101 on main (1a070ad), so this task is
+TASK-0316 and its record is ADR-0102. The write set was corrected on 2026-11-08 from
 a search of the code at v0.297; the governed-by list is set by the gate at the start of the work.
 
 ## Context
@@ -95,7 +100,7 @@ Q1 A, Q2 A, Q3 A, Q4 A.
 
 ## Scope (in)
 
-1. ADR-0100, which amends ADR-0030 items 2 and 3 and ADR-0083 D1:
+1. ADR-0102, which amends ADR-0030 items 2 and 3 and ADR-0083 D1:
    - The home screen and the panel have two separate actions: "Open project…" and "Import STL…".
    - "Open project…" opens the dialog of the system with the filter "3DEngine project" and `3de`, in each folder. It
      uses the check of ADR-0030 item 5 and the start again of R14b.
@@ -114,7 +119,7 @@ Q1 A, Q2 A, Q3 A, Q4 A.
 4. Tests of the library with the dialog result as a sample, for each case of the acceptance criteria.
 5. The visual check of the path, with one picture for each step (see "Visual check").
 6. `3DEngine/Documentation/Running.md`: the project path from the window, with no `--file`.
-7. The phone (Q4 A): ADR-0100 item 9 holds it, because the register is full (15 of 15 entries).
+7. The phone (Q4 A): ADR-0102 item 9 holds it, because the register is full (15 of 15 entries).
 
 ## Scope (out)
 
@@ -195,7 +200,7 @@ Status: Done · commit (the merge of the branch p9g-project-in-any-folder) · v0
 
 Mechanical: the answers Q1 to Q4 A of the owner, and the open, the save and the export that existed.
 Judgement:  the place of the recent list beside the folder of unsaved documents; a refusal of a save over a file that
-            exists; the phone in ADR-0100 item 9, because the register was full.
+            exists; the phone in ADR-0102 item 9, because the register was full.
 Weakest:    no dialog of the system ran in a test or a picture; the owner's run is the first that uses them.
 
 ## Progress
@@ -208,7 +213,7 @@ Weakest:    no dialog of the system ran in a test or a picture; the owner's run 
   `DesktopSurface.cs`, `FileDialogStateTests.cs`, `NumericPadUiTests.cs` and `StlNameTests.cs` were added;
   `Program.cs`, `FixedControlsTests.cs`, `PhoneFilesTests.cs`, `docs/diagnostics.md` and `docs/register.md` were removed,
   because the work did not change them. No new diagnostic code. The register holds 15 of 15 open entries, so the phone
-  (Q4 A) is in ADR-0100 item 9 and not in a register entry; the owner decides which entry it may take.
+  (Q4 A) is in ADR-0102 item 9 and not in a register entry; the owner decides which entry it may take.
 - 2026-11-08: eleven injections each make a test fail. The visual check ran offscreen at 1440 x 900 on a scratch copy of the
   shelf (its hash stayed the same): the home screen, the shelf open, a part after Save as, the home screen after a start
   again, the shelf after a change and a start again, the line after an export, the refusal of a text file and the
@@ -216,3 +221,7 @@ Weakest:    no dialog of the system ran in a test or a picture; the owner's run 
   because a session does not drive the mouse or a dialog of the system while the owner may use the computer.
 - 2026-11-08: run 42533075534 passed. The owner saw the pictures and said to merge (2026-11-09). Merged at v0.299; the
   row waits for the run of the owner, which also checks step 12 with the shelf itself.
+- 2026-11-09: R17a and R17b took TASK-0314, TASK-0315, ADR-0100 and ADR-0101 on main before the merge of this branch, so
+  the branch `p9g-project-in-any-folder-b` merges main and renumbers this task to TASK-0316 and its record to ADR-0102, in
+  the code, the tests and the documents. Until then they were TASK-0314 and ADR-0100. The write set names the two old paths
+  in its modify list, because the rename removes them; the form has no list of removed paths.
