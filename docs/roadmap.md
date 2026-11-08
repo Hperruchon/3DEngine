@@ -517,6 +517,7 @@ The first objective. Each phase ends with something that a person can observe.
 | R16m | The camera of the session has the z axis up, as the render draws a part, with a yaw of 135° and a pitch of 30° at the start (ADR-0096; the first part of the slice "sketch plane" that the owner chose on 2026-11-08). TASK-0307. | 1 |
 | R16n | The rows of an active sketch take the place of the panel at the left, with no chrome, and the ring of the sketch is on the right with icons and its caption, as the render "Mix 3" (ADR-0097; the slice "sketch plane" that the owner chose on 2026-11-08). TASK-0308. | 1 |
 | R16o | The command line of the mix: Control and K give a field at the upper right the keys, a text lists the commands of the state, and Enter or a tap runs one; a command with a number opens its pad (ADR-0098; the last slice that the owner chose on 2026-11-08). TASK-0312. | 1 |
+| R16p | The rows of a selected body take the place of the panel at the upper left, as the render "Mix 1": a tap on the name renames, the lines of the face, the edge, the size and the message and the list of a cut are under the values, and the command line holds the other controls (ADR-0099; the first of the four slices that the owner chose on 2026-11-08 after v0.297). TASK-0313. | 1 |
 
 ## Track K — The kernel
 
