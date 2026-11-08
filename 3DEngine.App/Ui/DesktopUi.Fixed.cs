@@ -58,12 +58,34 @@ internal sealed unsafe partial class DesktopUi
     }
 
     // ADR-0093 item 3: the text of the status line: the count of the live bodies, their state, and the address of the surface.
-    internal string StatusText(IReadOnlyList<LiveBody> bodies)
+    internal string StatusText(IReadOnlyList<LiveBody> bodies, bool address = true)
     {
         var failed = bodies.Count(body => body.Fault is not null);
         var count = bodies.Count == 1 ? "1 body" : $"{bodies.Count} bodies";
         var state = failed == 0 ? "all correct" : $"{failed} failed";
-        return _address.Length == 0 ? $"{count} · {state}" : $"{count} · {state} · {_address}";
+        return !address || _address.Length == 0 ? $"{count} · {state}" : $"{count} · {state} · {_address}";
+    }
+
+    // Finding V146 of the codebase review of 2026-11-08 (c) (TASK-0310): the text of the status line that fits in this room
+    // in the mono font: the whole line, else the line with no address, else none. Until TASK-0310 the line grew to the
+    // left over Frame and Home on a phone, and took each tap on them.
+    internal string? StatusFit(IReadOnlyList<LiveBody> bodies, float room)
+    {
+        ImGui.PushFont(_monoFont);
+        try
+        {
+            foreach (var text in new[] { StatusText(bodies), StatusText(bodies, address: false) })
+            {
+                if (ImGui.CalcTextSize(text).X <= room)
+                    return text;
+            }
+
+            return null;
+        }
+        finally
+        {
+            ImGui.PopFont();
+        }
     }
 
     private void FixedControls(Vector2 displaySize, IReadOnlyList<LiveBody> bodies, DocumentLine? document)
@@ -75,6 +97,7 @@ internal sealed unsafe partial class DesktopUi
         // cover them.
         ImGui.SetNextWindowPos(new Vector2(16f + _inset.X, displaySize.Y - 16f - _inset.W - AnchorSize), ImGuiCond.Always);
         ImGui.PushStyleVar(ImGuiStyleVar.WindowPadding, Vector2.Zero);
+        var anchorsRight = 16f + _inset.X;
         if (ImGui.Begin("##Anchors", FixedFlags))
         {
             if (Anchor(UndoLabel, back: true))
@@ -86,24 +109,35 @@ internal sealed unsafe partial class DesktopUi
             ViewButtons();
             AddWindowRectangle();
             _anchorsTop = _fixed[^1].Y;
+            anchorsRight = _fixed[^1].Z;
         }
 
         ImGui.End();
 
         // ADR-0093 item 3: the status line at the lower right, on the row of the anchors, in the mono font. Until TASK-0304 it
-        // held the address only, right of Redo.
-        ImGui.SetNextWindowPos(new Vector2(displaySize.X - 16f - _inset.Z, displaySize.Y - 16f - _inset.W - (AnchorSize / 2f)), ImGuiCond.Always, new Vector2(1f, 0.5f));
-        if (ImGui.Begin("##Status", FixedFlags))
+        // held the address only, right of Redo. V146 (TASK-0310): it starts at least 12 pixels right of the anchors, with the
+        // text that fits there, or it does not show. Its left edge comes from the width of that text, so the first frame of a
+        // new text is in its place too; a pivot at the right edge used the width of the last frame.
+        var right = displaySize.X - 16f - _inset.Z;
+        if (StatusFit(bodies, right - (anchorsRight + 12f)) is { } status)
         {
-            // The text colour of the panels: the dim colour gives 2.9:1 on the clear, below the 3:1 of large text.
             ImGui.PushFont(_monoFont);
-            ImGui.TextUnformatted(StatusText(bodies));
+            var width = ImGui.CalcTextSize(status).X;
             ImGui.PopFont();
-            Item(StatusLabel);
-            AddWindowRectangle();
+            ImGui.SetNextWindowPos(new Vector2(right - width, displaySize.Y - 16f - _inset.W - (AnchorSize / 2f)), ImGuiCond.Always, new Vector2(0f, 0.5f));
+            if (ImGui.Begin("##Status", FixedFlags))
+            {
+                // The text colour of the panels: the dim colour gives 2.9:1 on the clear, below the 3:1 of large text.
+                ImGui.PushFont(_monoFont);
+                ImGui.TextUnformatted(status);
+                ImGui.PopFont();
+                Item(StatusLabel);
+                AddWindowRectangle();
+            }
+
+            ImGui.End();
         }
 
-        ImGui.End();
         ImGui.PopStyleVar();
     }
 
