@@ -270,6 +270,8 @@ Therefore each approved objective must have a track here.
   ADR-0091.
 - P0.124 — A solid mesh with inward triangles is refused, and a file too large for the store gives the code of the
   store. v0.279, TASK-0295, ADR-0089, ADR-0083.
+- P0.125 — Five comments and messages, the cleanup of a failed device, the second ring and two gates hold their next
+  forms. v0.280, TASK-0296, ADR-0088.
 
 ## Track 0 — Foundations
 

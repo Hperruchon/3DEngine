@@ -100,8 +100,6 @@ public sealed class KernelSolid
         return sum / 6;
     }
 
-    // The faces of a new solid: each one with its plane and its tag, cut into convex pieces, and all of them turned when
-    // the volume is negative, so that each normal points out for each sign of the distance and each turn of the profile.
     // ADR-0089 item 3 (phase K5c, TASK-0288): a cone with its base at -height / 2 and its apex at +height / 2 on the z
     // axis, as CreateCone makes it, from the polygon of its base circle: the faces -z and side, the triangles of the side
     // with one name and no item. The caller gives the polygon counter-clockwise, as ADR-0040 item 2 computes it.
@@ -125,6 +123,9 @@ public sealed class KernelSolid
         return Closed(feature, faces);
     }
 
+    // The faces of a new solid: each one with its plane and its tag, cut into convex pieces, and all of them turned when
+    // the volume is negative, so that each normal points out for each sign of the distance and each turn of the profile.
+    // Finding E187 of the codebase review of 2026-11-08 (TASK-0296): TASK-0288 put Cone between this comment and its method.
     private static KernelSolid Closed(Guid feature, IEnumerable<(string Element, Guid? Item, IReadOnlyList<Vector3R> Vertices)> faces)
     {
         var polygons = new List<KernelPolygon>();

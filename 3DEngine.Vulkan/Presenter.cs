@@ -53,7 +53,8 @@ public sealed unsafe class Presenter : IDisposable
         _format = Swapchain.ChooseSwapSurfaceFormat(Utils.QuerySwapChainSupport(device.InstanceApi, device.PhysicalDevice, surface).Formats);
         RenderPass = RenderPasses.Create(device, _format.format, VkImageLayout.PresentSrcKHR);
         // The review of Codex of v0.271 (TASK-0287): a throw after the render pass, for example a lost surface in the
-        // swapchain, frees what this constructor made; the device then destroys the surface and itself.
+        // swapchain, frees what this constructor made; the device then destroys the surface and itself. CreatePerFrame frees
+        // the objects of the images that it made before its throw (E191, TASK-0296).
         try
         {
             Swapchain = new Swapchain(device, surface, window, RenderPass, _format, VkSwapchainKHR.Null);
@@ -238,18 +239,30 @@ public sealed unsafe class Presenter : IDisposable
     {
         var api = _device.DeviceApi;
         var perFrame = new PerFrame[count];
-        for (int i = 0; i < perFrame.Length; i++)
+        try
         {
-            api.vkCreateFence(VkFenceCreateFlags.Signaled, out perFrame[i].QueueSubmitFence).CheckResult();
-
-            VkCommandPoolCreateInfo poolCreateInfo = new()
+            for (int i = 0; i < perFrame.Length; i++)
             {
-                flags = VkCommandPoolCreateFlags.Transient,
-                queueFamilyIndex = _device.GraphicsFamily,
-            };
-            api.vkCreateCommandPool(&poolCreateInfo, null, out perFrame[i].PrimaryCommandPool).CheckResult();
+                api.vkCreateFence(VkFenceCreateFlags.Signaled, out perFrame[i].QueueSubmitFence).CheckResult();
 
-            api.vkAllocateCommandBuffer(perFrame[i].PrimaryCommandPool, out perFrame[i].PrimaryCommandBuffer).CheckResult();
+                VkCommandPoolCreateInfo poolCreateInfo = new()
+                {
+                    flags = VkCommandPoolCreateFlags.Transient,
+                    queueFamilyIndex = _device.GraphicsFamily,
+                };
+                api.vkCreateCommandPool(&poolCreateInfo, null, out perFrame[i].PrimaryCommandPool).CheckResult();
+
+                api.vkAllocateCommandBuffer(perFrame[i].PrimaryCommandPool, out perFrame[i].PrimaryCommandBuffer).CheckResult();
+            }
+        }
+        catch
+        {
+            // Finding E191 of the codebase review of 2026-11-08 (TASK-0296): a throw after the first image frees the fences,
+            // the pools and the buffers of the earlier images too. A destroy of a null handle does nothing in Vulkan, so the
+            // images after the throw need no check. Until TASK-0296 they stayed.
+            _perFrame = perFrame;
+            DestroyPerFrame();
+            throw;
         }
 
         return perFrame;

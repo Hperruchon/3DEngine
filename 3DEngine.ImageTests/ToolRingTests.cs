@@ -337,6 +337,12 @@ public sealed class ToolRingTests
             Assert.NotNull(ui.ItemRectangle(DesktopUi.RingItem(label)));
         Assert.Null(ui.ItemRectangle(DesktopUi.RingItem(DesktopUi.LineToolLabel)));
 
+        // Finding V140 of the codebase review of 2026-11-08 (TASK-0296): while the second ring is open, the window of the
+        // sketch holds the tools and Finish, and still no kind of a constraint, which the ring holds.
+        foreach (var (label, _) in DesktopUi.SketchRingTools)
+            Assert.True(ui.ItemRectangle(DesktopUi.SketchItem(label)) is not null, $"No {label} in the window while the second ring is open.");
+        Assert.Null(ui.ItemRectangle(DesktopUi.SketchItem("Horizontal")));
+
         // ADR-0087 item 5: a label wider than the band starts to the right of the panel and ends nearer the panel than a
         // label centred on its segment, so it covers less of the sketch.
         var panelRight = ui.PanelRectangles[0].Z;
@@ -353,6 +359,7 @@ public sealed class ToolRingTests
         Assert.Equal("horizontal", added.Kind);
         Assert.Equal([line], added.Items);
         Assert.NotNull(ui.ItemRectangle(DesktopUi.RingItem(DesktopUi.LineToolLabel)));
+        Assert.Null(ui.ItemRectangle(DesktopUi.SketchItem(DesktopUi.LineToolLabel)));
 
         TapOn(DesktopUi.ConstrainLabel);
         TapOn("Distance");
@@ -428,7 +435,12 @@ public sealed class ToolRingTests
             {
                 if (ui.ItemRectangle(DesktopUi.RingItem(label)) is { } segment && new Vector2((segment.X + segment.Z) / 2, (segment.Y + segment.W) / 2) is var middle && Free(middle))
                     return middle;
-                return ui.ItemRectangle(DesktopUi.SketchItem(label)) is { } button ? new Vector2((button.X + button.Z) / 2, (button.Y + button.W) / 2) : null;
+                // Finding T176 of the codebase review of 2026-11-08 (TASK-0296): the middle of a button of the window is on the
+                // display too; until TASK-0296 the test took a button whose middle was outside the display.
+                return ui.ItemRectangle(DesktopUi.SketchItem(label)) is { } button && new Vector2((button.X + button.Z) / 2, (button.Y + button.W) / 2) is var centreOfButton
+                    && centreOfButton.X >= 0 && centreOfButton.Y >= 0 && centreOfButton.X < display.X && centreOfButton.Y < display.Y
+                    ? centreOfButton
+                    : null;
             }
 
             foreach (var (label, _) in DesktopUi.SketchRingTools)
@@ -440,6 +452,54 @@ public sealed class ToolRingTests
             Frame();
             Assert.True(ui.TakeActions().Contains(new FinishSketchAction()), $"A tap on Finish at {finish} does not end the sketch at {display} with the sketch at {centre}, {size}.");
         }
+    }
+
+    // Findings V140 and T176 of the codebase review of 2026-11-08 (TASK-0296): with a line selected, each tool and Finish has a
+    // button in the window of the sketch whose middle is on the display: while the second ring is open, and when the ring is
+    // not reachable. At 1280 x 720 the ring holds the tools, so the test opens the second ring first; at 390 x 844 the ring of
+    // six segments is under the window, which holds each button.
+    [Theory]
+    [InlineData(1280, 720, 700, 360)]
+    [InlineData(390, 844, 195, 400)]
+    public void Each_Tool_Has_A_Place_With_A_Line_Selected(int width, int height, int x, int y)
+    {
+        var display = new Vector2(width, height);
+        using var ui = new DesktopUi("http://127.0.0.1:5180", Engine.Contracts.Document.Millimetre);
+        var (start, end, line) = (Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid());
+        var sketch = new Engine.Core.Queries.SketchInfo(Guid.NewGuid(), Engine.Contracts.Sketch.Datums.XY.Id, "Plate",
+            [new(start, 0, 0), new(end, 40, 10)], [new(line, start, end)], [], [], [], true, 4);
+        var panel = new SketchPanel([sketch], sketch, ThreeDEngine.Core.Sketching.SketchToolKind.Select, false, [line], null);
+        void Frame(params InputSample[] samples)
+        {
+            ui.Route(samples);
+            ui.Frame(1f / 60f, display, Vector2.One, [], null, null, sketchPanel: panel, ringCentre: new Vector2(x, y), ringBody: 60f);
+        }
+
+        for (var frame = 0; frame < 3; frame++)
+            Frame();
+        var ringHolds = ui.ItemRectangle(DesktopUi.SketchItem(DesktopUi.LineToolLabel)) is null;
+        Assert.Equal(width > height, ringHolds);
+        if (ringHolds)
+        {
+            var constrain = Centre(ui, DesktopUi.ConstrainLabel);
+            Frame(new PointerSample(DeviceKind.Touch, 1, 3, constrain.X, constrain.Y, 1, PointerButtons.None, KeyModifiers.None, PointerPhase.Down, 0));
+            Frame(new PointerSample(DeviceKind.Touch, 1, 3, constrain.X, constrain.Y, 1, PointerButtons.None, KeyModifiers.None, PointerPhase.Up, 0));
+            Frame();
+            Frame();
+            Assert.NotNull(ui.ItemRectangle(DesktopUi.RingItem(DesktopUi.BackLabel)));
+        }
+
+        foreach (var (label, _) in DesktopUi.SketchRingTools)
+        {
+            var button = ui.ItemRectangle(DesktopUi.SketchItem(label)) ?? throw new InvalidOperationException($"No {label} in the window at {display}.");
+            var middle = new Vector2((button.X + button.Z) / 2, (button.Y + button.W) / 2);
+            Assert.True(middle.X >= 0 && middle.Y >= 0 && middle.X < display.X && middle.Y < display.Y, $"The middle of {label} at {middle} is outside the display {display}.");
+        }
+
+        // T176: the window of the sketch ends inside the display, so no button of a longer row is outside it. Until TASK-0296
+        // it went from 16 to 496 on a display of 390.
+        var window = ui.SketchWindowRectangle ?? throw new InvalidOperationException("No window of the sketch.");
+        Assert.True(window.Z <= display.X, $"The window of the sketch ends at {window.Z}, outside the display {display}.");
     }
 
     // Finding V135 of the codebase review of 2026-11-07 (c) (TASK-0281): a tap on a segment of the ring that lies over a window

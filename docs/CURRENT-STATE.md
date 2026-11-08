@@ -8404,3 +8404,36 @@ comes from `LoadFile`. The failed runs since the entry v0.278, from the API: non
 New tests: 4. The test list holds 2121 (1442 in `Engine.Tests`, 337 in `3DEngine.Tests`, 339 in `3DEngine.ImageTests`, 3
 in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
 entries: 15 of 15. New diagnostic codes: 0. Since the review of v0.275, 1 product milestone and 4 entries followed it.
+
+## v0.280 — Five comments and messages, the cleanup of a failed device, the second ring and two gates (P0.125, TASK-0296)
+
+The eight low findings of the codebase review of 2026-11-08.
+
+**The change.**
+- E187: the comment of `KernelSolid.Closed` is above `Closed` again.
+- E188: the four messages of `DatumResolver` and the header of `KernelProjection` name `CreateCone`.
+- E189: the reader names its second rule "the rule of v0.257 and later", as ADR-0083 item 3 does, and not after HEAD.
+- E191: `Presenter` frees the fences, the pools and the buffers of the images that it made before a throw.
+- E192: `GraphicsDevice.Dispose` destroys its objects when the wait of a lost device fails, so the catch of the
+  constructor keeps the first exception (also the review of Codex of v0.272, which graded it medium).
+- V140: while the second ring is open, the window of the sketch holds Line, Select, Circle, Arc and Finish (ADR-0088
+  item 1).
+- T175: the gate of the phone host refuses a mode or a level of the analysis and `CodeAnalysisTreatWarningsAsErrors` in
+  the host, and needs its `WarningsAsErrors` with CA1416.
+- T176: the test of the places of the tools checks that each place is on the display. With a line selected at 390 x 844,
+  the ring is under the window, and the window, 480 wide, ended at 496; it is now at most as wide as the display less its
+  margins.
+
+**Proof.** A new test of two cases (1280 x 720 with the second ring open, and 390 x 844) checks each tool and Finish in the
+window, with its middle on the display, and the end of the window. The injections: the tools on the ring while the second
+ring is open fail two tests; the width of 480 fails the case of 390; each of the two forms of T175 fails the gate. E187,
+E188, E189, E191 and E192 are proved by reading. Run 42440367372 passed.
+
+**What stays.** The main panel is 460 wide, also wider than a display of 390; no finding names it yet, and the register is
+full, so the next review takes it.
+
+**A correction.** None. The failed runs since the entry v0.279, from the API: none.
+
+New tests: 2. The test list holds 2123 (1442 in `Engine.Tests`, 337 in `3DEngine.Tests`, 341 in `3DEngine.ImageTests`, 3
+in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
+entries: 15 of 15. New diagnostic codes: 0. Since the review of v0.275, 1 product milestone and 5 entries followed it.
