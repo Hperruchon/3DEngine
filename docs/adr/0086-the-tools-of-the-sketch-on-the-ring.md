@@ -7,7 +7,7 @@ date: 2026-11-07
 supersedes: []
 superseded-by: []
 amends: ['0081']
-amended-by: ['0087']
+amended-by: ['0087', '0095']
 affects:
   - 3DEngine.App/Ui/DesktopUi.Ring.cs
   - 3DEngine.App/Ui/DesktopUi.cs
@@ -92,3 +92,4 @@ the ring yet. On a small portrait display the window of the sketch can cover the
   2026-11-07 (c)).
 - 2026-11-07 · TASK-0284 · Item 1: the centre moves left to the window of the sketch only when the band then stays to the
   right of the panel (the review of Codex of v0.265).
+- 2026-11-08 · TASK-0306 · Amended by ADR-0095: each tool of the sketch draws an icon above its label.
