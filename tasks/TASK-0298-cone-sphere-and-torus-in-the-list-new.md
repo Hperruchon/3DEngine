@@ -1,7 +1,7 @@
 ---
 id: 0298
 title: The list "New" holds the cone, the sphere and the torus
-status: Active
+status: Done
 phase: K5e
 opened: 2026-11-08
 depends-on: [0289]
@@ -52,20 +52,21 @@ A person on the desktop or on the phone makes a cone, a sphere or a torus from t
 
 ## Acceptance criteria
 
-- [ ] Each new test passes, and a test fails with an injection of the change.
-- [ ] A clean build (`--no-incremental`) gives zero errors and zero warnings.
-- [ ] Continuous integration passes on the three runners, on the branch and on `main` after the merge.
+- [x] Each new test passes, and a test fails with an injection of the change.
+- [x] A clean build (`--no-incremental`) gives zero errors and zero warnings.
+- [x] Continuous integration passes on the three runners, on the branch and on `main` after the merge.
 
 ## Outcome
 
-Status: Active
+Status: Done · commit (the merge of the branch k5e-new-list) · v0.283
 
 ## Method
 
 Mechanical: the form of the entry "Cylinder" of ADR-0076 item 7 for each new entry.
 Judgement:  the defaults of the torus keep the tube inside the ring.
-Weakest:    to be written at the close.
+Weakest:    no run on the S23 showed the three entries; a cut by a sphere holds the frame for about 10 s.
 
 ## Progress
 
 - 2026-11-08: the three entries, their actions and their tests; a wrong default of the torus fails the test of the pads.
+- 2026-11-08: run 42444399314 passed. Closed at v0.283.
