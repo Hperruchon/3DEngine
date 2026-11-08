@@ -49,7 +49,8 @@ internal sealed unsafe partial class DesktopUi
 
         var right = displaySize.X - 16f - _inset.Z;
         var left = right - RowsWidth;
-        var top = 16f + _inset.Y;
+        // ADR-0098 item 4 (the redesign, slice o, TASK-0312): the rows start 8 pixels under the command line.
+        var top = Math.Max(16f + _inset.Y, _commandBottom > 0f ? _commandBottom + 8f : 0f);
         var y = top + RowHeight;
         // The review of Codex of v0.252 (TASK-0271): the rows end 16 pixels above the anchors, as the panel does; a value
         // that has no room keeps its chip only. Until TASK-0271 a long list went past the bottom of the display.

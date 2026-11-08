@@ -298,6 +298,8 @@ Therefore each approved objective must have a track here.
   and its caption. v0.295, TASK-0308, ADR-0097.
 - P0.130 — The dimension lines take the up axis of the camera, and the top bar and three comments hold their next forms
   (V147, V149, V150 and V151). v0.296, TASK-0311.
+- R16o — The command line of the mix: Control and K, a list of the commands of the state, and Enter or a tap.
+  v0.297, TASK-0312, ADR-0098.
 
 ## Track 0 — Foundations
 
@@ -514,6 +516,7 @@ The first objective. Each phase ends with something that a person can observe.
 | R16l | The orbit ring of the mix: a guide circle, light segments with drawn icons and the short labels of the render, and a caption "TOOLS FOR" and the name to the right of the ring (ADR-0095; the owner, 2026-11-08). TASK-0306. | 1 |
 | R16m | The camera of the session has the z axis up, as the render draws a part, with a yaw of 135° and a pitch of 30° at the start (ADR-0096; the first part of the slice "sketch plane" that the owner chose on 2026-11-08). TASK-0307. | 1 |
 | R16n | The rows of an active sketch take the place of the panel at the left, with no chrome, and the ring of the sketch is on the right with icons and its caption, as the render "Mix 3" (ADR-0097; the slice "sketch plane" that the owner chose on 2026-11-08). TASK-0308. | 1 |
+| R16o | The command line of the mix: Control and K give a field at the upper right the keys, a text lists the commands of the state, and Enter or a tap runs one; a command with a number opens its pad (ADR-0098; the last slice that the owner chose on 2026-11-08). TASK-0312. | 1 |
 
 ## Track K — The kernel
 

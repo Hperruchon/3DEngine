@@ -48,8 +48,11 @@ public sealed class BodyRowsTests
         Frame(ui, Extrude, Display);
         Frame(ui, Extrude, Display);
 
+        // ADR-0098 item 4 (TASK-0312): the rows start 8 pixels under the command line, which is 16 pixels inside the top.
         var title = ui.ItemRectangle(DesktopUi.RowsTitleItem) ?? throw new InvalidOperationException("No rows.");
-        Assert.Equal(new Vector4(Display.X - 16 - DesktopUi.RowsWidth, 16, Display.X - 16, 16 + DesktopUi.RowHeight), title);
+        var command = ui.ItemRectangle(DesktopUi.CommandItem) ?? throw new InvalidOperationException("No command line.");
+        Assert.Equal(16f, command.Y);
+        Assert.Equal(new Vector4(Display.X - 16 - DesktopUi.RowsWidth, command.W + 8, Display.X - 16, command.W + 8 + DesktopUi.RowHeight), title);
         var top = title.W;
         foreach (var value in Values)
         {
@@ -79,7 +82,9 @@ public sealed class BodyRowsTests
         Frame(ui, Extrude, Display, null, inset);
         Frame(ui, Extrude, Display, null, inset);
         var title = ui.ItemRectangle(DesktopUi.RowsTitleItem) ?? throw new InvalidOperationException("No rows.");
-        Assert.Equal((Display.X - 16 - inset.Z, 16 + inset.Y), (title.Z, title.Y));
+        var command = ui.ItemRectangle(DesktopUi.CommandItem) ?? throw new InvalidOperationException("No command line.");
+        Assert.Equal((Display.X - 16 - inset.Z, 16 + inset.Y), (command.Z, command.Y));
+        Assert.Equal((Display.X - 16 - inset.Z, command.W + 8), (title.Z, title.Y));
     }
 
     // Item 2: the state after the kind: "correct", or "failed" and the code; and "hidden".

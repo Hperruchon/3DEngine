@@ -1,13 +1,13 @@
 ---
 id: 0084
 title: The data of the selected body is in rows with no panel at the upper right
-status: Accepted
+status: Amended
 topic: Clients, rendering
 date: 2026-11-07
 supersedes: []
 superseded-by: []
 amends: ['0034', '0081', '0082']
-amended-by: []
+amended-by: ['0098']
 affects:
   - 3DEngine.App/Ui/DesktopUi.Rows.cs
   - 3DEngine.App/Ui/DesktopUi.cs
@@ -111,3 +111,4 @@ ADR-0027 item 6 is wide, so a name of more than about nine letters ends with "..
   V129 of the codebase review of 2026-11-07 (b)); the rows end above the anchors, and two chips under the rows stay apart
   (V128 and the review of Codex of v0.252); the rows take the place of the window of the live sketches, which covered
   them (the review of Codex of v0.252).
+- 2026-11-08 · TASK-0312 · ADR-0098 item 4 amends item 1: the rows start 8 pixels under the command line.
