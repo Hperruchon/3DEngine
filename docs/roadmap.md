@@ -298,6 +298,8 @@ Therefore each approved objective must have a track here.
   and its caption. v0.295, TASK-0308, ADR-0097.
 - P0.130 — The dimension lines take the up axis of the camera, and the top bar and three comments hold their next forms
   (V147, V149, V150 and V151). v0.296, TASK-0311.
+- R16o — The command line of the mix: Control and K, a list of the commands of the state, and Enter or a tap.
+  v0.297, TASK-0312, ADR-0098.
 
 ## Track 0 — Foundations
 

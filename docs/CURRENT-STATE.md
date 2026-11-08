@@ -8839,3 +8839,36 @@ failed runs since the entry v0.295, from the API: none.
 New tests: 3. The test list holds 2185 (1472 in `Engine.Tests`, 351 in `3DEngine.Tests`, 359 in `3DEngine.ImageTests`, 3
 in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
 entries: 15 of 15. New diagnostic codes: 0. Since the review of v0.292, 1 product milestone and 4 entries followed it.
+
+## v0.297 — The command line at the upper right runs the commands of the state with Control and K (R16o, TASK-0312)
+
+The fifth and last slice that the owner chose on 2026-11-08 is the command line of the render "mix". The brief gives the
+command line (Ctrl K or Cmd K) as the keyboard path to each action.
+
+**The change.** ADR-0098 amends ADR-0032 item 6 and ADR-0084 item 1.
+- `InputKey.K` follows the letter of the layout, as Z and Y. Control and K give the field the keys, except while a pad is
+  open.
+- On a landscape display a field 300 pixels wide is at the upper right, with the hint "Type a command". A text lists at
+  most eight commands of the state whose name holds it: the tools of the active sketch and Next point, or the list "New",
+  a sketch on a plane, Move, Set distance and Hide or Show of the selected body and Show all; and Undo, Redo and Frame.
+  The arrows choose, and Enter or a tap runs one as its button or its segment does. Escape empties the field.
+- A command with a number opens its pad, so the pad stays the only path of a number (Q1 A: no value in the field). The
+  pads of the list "New" are one method of the panel, for the list and for the command line.
+- The rows of a selected body start 8 pixels under the field.
+- While the pad takes the keys, the release of a key reaches the library too.
+
+**A correction in the same task.** A test of a second command after a pad found that a command opens its pad in the frame
+of the press of Enter, so the pad took the release, the library held Enter as down, and the next Enter of a field gave no
+press. The fix covers each path to a pad; the other paths were not tested for the fault.
+
+**Proof.** A test of the key in the input of SDL, and five tests of the command line: Control and K and Enter, a pad from
+the list and the arrows, the commands of a sketch and of a body, Escape and a tap, and no field on a portrait display.
+With no release of a key to the library, one test fails; with no Control and K, four fail. The tests of the rows read the
+field. The phone project builds with zero warnings. Run 42502098809 passed. The failed runs since the entry v0.296, from the
+API: none.
+
+**What stays.** No value in the field, no Command and K on macOS, and no command line on a phone (ADR-0098 Q1 to Q3).
+
+New tests: 6. The test list holds 2191 (1472 in `Engine.Tests`, 352 in `3DEngine.Tests`, 364 in `3DEngine.ImageTests`, 3
+in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
+entries: 15 of 15. New diagnostic codes: 0. Since the review of v0.292, 2 product milestones and 5 entries followed it.

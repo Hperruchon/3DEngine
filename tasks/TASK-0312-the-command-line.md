@@ -1,7 +1,7 @@
 ---
 id: 0312
 title: The command line at the upper right runs the commands of the state with Control and K
-status: Active
+status: Done
 phase: R16o
 opened: 2026-11-08
 depends-on: [0311]
@@ -54,22 +54,24 @@ Control and K give a field at the upper right the keys; a text lists the command
 
 ## Acceptance criteria
 
-- [ ] The tests pass, and the picture at 1440 x 900 shows the field at the upper right and the rows under it.
-- [ ] A clean build (`--no-incremental`) gives zero errors and zero warnings.
-- [ ] Continuous integration passes on the three runners, on the branch and on `main` after the merge.
+- [x] The tests pass, and the picture at 1440 x 900 shows the field at the upper right and the rows under it.
+- [x] A clean build (`--no-incremental`) gives zero errors and zero warnings.
+- [x] Continuous integration passes on the three runners, on the branch and on `main` after the merge.
 
 ## Outcome
 
-Status: Active
+Status: Done · commit (the merge of the branch r16o-command-line-b) · v0.297
 
 ## Method
 
 Mechanical: the place of the field in the render, and the commands of the buttons and the segments that exist.
 Judgement:  commands only, no value (ADR-0098 Q1 A); a landscape display only (Q2 A).
-Weakest:    to be written at the close.
+Weakest:    the tests drive the library with samples, not a real keyboard; the focus of the field takes three frames
+            in a test, and no person used the field yet.
 
 ## Progress
 
 - 2026-11-08: the slice and its tests. A test of a second command after a pad found that the pad took the release of Enter,
   so the library held Enter as down; the release now reaches the library. With no release, one test fails; with no
   Control and K, four tests fail.
+- 2026-11-08: run 42502098809 passed. Closed at v0.297.
