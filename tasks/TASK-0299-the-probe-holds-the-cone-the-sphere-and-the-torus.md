@@ -1,7 +1,7 @@
 ---
 id: 0299
 title: The determinism probe holds the cone, the sphere and the torus
-status: Active
+status: Done
 phase: K5f
 opened: 2026-11-08
 depends-on: [0298]
@@ -47,19 +47,19 @@ emulator of the phone (anti-objective 16).
 
 ## Acceptance criteria
 
-- [ ] The test of the probe passes, and the four platforms give one hash in the pipeline.
-- [ ] A clean build (`--no-incremental`) gives zero errors and zero warnings.
-- [ ] Continuous integration passes on the three runners, on the branch and on `main` after the merge.
+- [x] The test of the probe passes, and the four platforms give one hash in the pipeline.
+- [x] A clean build (`--no-incremental`) gives zero errors and zero warnings.
+- [x] Continuous integration passes on the three runners, on the branch and on `main` after the merge.
 
 ## Outcome
 
-Status: Active
+Status: Done · commit (the merge of the branch k5f-probe-primitives-c) · v0.285
 
 ## Method
 
 Mechanical: the hash on this computer, and the hashes of the four platforms in the job that compares them.
 Judgement:  sizes and moves with fractions of a power of two, as the other entries of the probe.
-Weakest:    to be written at the close.
+Weakest:    the S23 has not run the new probe; step 10 of the test sheet names the hash for that run.
 
 ## Progress
 
@@ -68,3 +68,4 @@ Weakest:    to be written at the close.
   cone by a sphere ran the exact kernel on 3968 triangles (the test took 14 s here, against 0.9 s before). The probe now
   cuts the cone by a cylinder and moves the sphere and the torus: eight bodies, 1 s, and Windows gives
   e67c318bf264fbf291b22e27ee7887b4fcd1943cee58f3e2dd2531d1773fc873.
+- 2026-11-08: run 42445858375 passed, and the four platforms gave e67c318b...c873. Closed at v0.285.
