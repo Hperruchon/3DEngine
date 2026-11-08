@@ -12,7 +12,7 @@ public sealed class SideFilterTests
 
     private static int Filtered(PlaneR plane, Vector3R p)
     {
-        var (x, y, z) = p.ToDoubles();
+        var (x, y, z) = (Bsp.Approximate.Near(p.X), Bsp.Approximate.Near(p.Y), Bsp.Approximate.Near(p.Z));
         return Bsp.Approximate.Of(plane).Side(plane, p, x, y, z);
     }
 
@@ -60,6 +60,22 @@ public sealed class SideFilterTests
             Assert.Equal((0, 1, -1), (Filtered(plane, on), Filtered(plane, front), Filtered(plane, back)));
             Assert.Equal((0, 1, -1), (Exact(plane, on), Exact(plane, front), Exact(plane, back)));
         }
+    }
+
+    // Finding E195 of the codebase review of 2026-11-08 (b) (TASK-0303): a subnormal coefficient times a large coordinate, and a
+    // coordinate below the smallest double times a large coefficient, get the exact side. Until TASK-0303 the first gave 1
+    // where the exact side is -1.
+    [Fact]
+    public void A_Value_That_Is_Not_A_Normal_Double_Gets_The_Exact_Side()
+    {
+        var two = System.Numerics.BigInteger.Pow;
+        var subnormal = new PlaneR(new Vector3R(Rational.One, new Rational(3, two(2, 1076)), Rational.Zero), new Rational(7, two(2, 77)));
+        var far = new Vector3R(Rational.Zero, new Rational(two(2, 1000), 1), Rational.Zero);
+        var large = new PlaneR(new Vector3R(Rational.One, new Rational(two(2, 1000), 1), Rational.Zero), Rational.Zero);
+        var tiny = new Vector3R(-new Rational(1, two(2, 200)), new Rational(1, two(2, 1100)), Rational.Zero);
+
+        Assert.Equal((-1, -1), (Exact(subnormal, far), Filtered(subnormal, far)));
+        Assert.Equal((1, 1), (Exact(large, tiny), Filtered(large, tiny)));
     }
 
     // The sign with no reduction to lowest terms is the sign of the reduced sum.
