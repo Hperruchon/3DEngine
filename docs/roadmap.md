@@ -517,6 +517,8 @@ The first objective. Each phase ends with something that a person can observe.
 | R16m | The camera of the session has the z axis up, as the render draws a part, with a yaw of 135° and a pitch of 30° at the start (ADR-0096; the first part of the slice "sketch plane" that the owner chose on 2026-11-08). TASK-0307. | 1 |
 | R16n | The rows of an active sketch take the place of the panel at the left, with no chrome, and the ring of the sketch is on the right with icons and its caption, as the render "Mix 3" (ADR-0097; the slice "sketch plane" that the owner chose on 2026-11-08). TASK-0308. | 1 |
 | R16o | The command line of the mix: Control and K give a field at the upper right the keys, a text lists the commands of the state, and Enter or a tap runs one; a command with a number opens its pad (ADR-0098; the last slice that the owner chose on 2026-11-08). TASK-0312. | 1 |
+| R17 | The selection of the document and of one body: the person sees where the selection is in the document, goes up to the document, and reviews one body alone. From the proposal `docs/proposals/2026-11-08-document-and-body-selection.md`; the owner accepted each recommended answer on 2026-11-08. The components of an assembly (option C) wait for the decision of the owner on the non-goals "Multi-Document in one runtime" and "Assemblies". | 3–5 |
+| R17a | A path line from the document to the selection: the file, the body, the face and the edge at the upper left, a tap on a segment and Escape go up one level, and the rows of the document with nothing selected (ADR-0100). TASK-0314. | 1–2 |
 
 ## Track K — The kernel
 
@@ -618,6 +620,9 @@ The tracks are not strictly sequential, but three rules hold:
    curve of a profile, and the references by identity in a later slice. So K4a comes first, then K4b, then K4c.
    On 2026-11-05 the owner put P8h (TASK-0186) on the task list for a later session, from the module-declaration
    proposal of the desktop redesign. It comes after K4c, unless the owner gives another order.
+   On 2026-11-08 the owner put R17a (TASK-0314) and R17b (TASK-0315) on the task list, from the proposal on the
+   selection of the document. R17a comes after R16p (Q6 A), and R17b after R17a. They come after the slices of the
+   redesign that the owner ordered before them on 2026-11-08, unless the owner gives another order.
 2. R2 blocks each later phase in track R. No mesh leaves the geometry backend today.
 3. K4 needs K0, K1 and K2. Do not start K4 before the reference model exists.
 4. The path to the milestone "CAD on one part" (the owner, 2026-10-27, KD2): R7b, R8a, R8b, the codebase
