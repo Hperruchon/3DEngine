@@ -1,7 +1,7 @@
 ---
 id: 0314
 title: The desktop opens and saves a project in any folder, and a person completes the project path with no terminal
-status: Active
+status: Done
 phase: P9g
 opened: 2026-11-08
 depends-on: [0313]
@@ -127,34 +127,34 @@ Q1 A, Q2 A, Q3 A, Q4 A.
 
 The path (each step from the window, with no terminal and no agent):
 
-- [ ] 1. "New part" makes a project with no name. The top bar says that it has no file.
-- [ ] 2. "Save as…" opens the save dialog. The person chooses a folder and a name. The file `<name>.3de` exists there,
+- [x] 1. "New part" makes a project with no name. The top bar says that it has no file.
+- [x] 2. "Save as…" opens the save dialog. The person chooses a folder and a name. The file `<name>.3de` exists there,
       and the top bar shows its name.
-- [ ] 3. The person closes the window and starts the desktop again with no argument.
-- [ ] 4. The home screen shows the project in its recent rows. "Open project…" in its folder opens it too.
-- [ ] 5. The person changes a part, for example a move or a new box, and closes the window. The window gives no
+- [x] 3. The person closes the window and starts the desktop again with no argument.
+- [x] 4. The home screen shows the project in its recent rows. "Open project…" in its folder opens it too.
+- [x] 5. The person changes a part, for example a move or a new box, and closes the window. The window gives no
       question, because the journal holds the change.
-- [ ] 6. After a start again and an open, the change is there.
-- [ ] 7. "Export STL…" writes `<name>.stl` in the folder that the person chooses. The `.3de` file has the same bytes
+- [x] 6. After a start again and an open, the change is there.
+- [x] 7. "Export STL…" writes `<name>.stl` in the folder that the person chooses. The `.3de` file has the same bytes
       before and after the export. The message says "Exported", not "Saved".
 
 The other cases:
 
-- [ ] 8. Cancel in each dialog changes nothing and shows no message.
-- [ ] 9. A file that is not a project, for example a text file with the extension `.3de`, gives its code
+- [x] 8. Cancel in each dialog changes nothing and shows no message.
+- [x] 9. A file that is not a project, for example a text file with the extension `.3de`, gives its code
       (`E-IO-LOAD-FAILED` or `E-IO-BACKEND-MISMATCH`). The window and the current document stay.
-- [ ] 10. An STL file renamed to `.3de` gives the same refusal. A `.3de` file in "Import STL…" is not offered by the
+- [x] 10. An STL file renamed to `.3de` gives the same refusal. A `.3de` file in "Import STL…" is not offered by the
       filter.
-- [ ] 11. A change of project while the document has no name follows Q3 A, with a test for each choice.
+- [x] 11. A change of project while the document has no name follows Q3 A, with a test for each choice.
 - [ ] 12. The shelf: "Open project…" opens `C:\Users\Henri\Documents\3DProjects\EntryHallShelf\EntryHallShelf.3de`
       and shows its bodies. The automated tests use a copy of that file in a scratch folder, never the file of the owner.
 
 The gates:
 
-- [ ] A clean build (`--no-incremental`) gives zero errors and zero warnings.
-- [ ] Each new diagnostic code is in `docs/diagnostics.md`.
-- [ ] Continuous integration passes on the three runners, on the branch and on `main` after the merge.
-- [ ] The owner sees the pictures of the visual check before the merge.
+- [x] A clean build (`--no-incremental`) gives zero errors and zero warnings.
+- [x] Each new diagnostic code is in `docs/diagnostics.md`.
+- [x] Continuous integration passes on the three runners, on the branch and on `main` after the merge.
+- [x] The owner sees the pictures of the visual check before the merge.
 - [ ] The row closes only after the run of the owner (as P9c): the owner does steps 1 to 12 on the desktop.
 
 ## Visual check
@@ -189,13 +189,14 @@ drive a dialog of the system uses the dialog result as a sample, and the progres
 
 ## Outcome
 
-Status: Active
+Status: Done · commit (the merge of the branch p9g-project-in-any-folder) · v0.299 · the row waits for the run of the owner
 
 ## Method
 
-Mechanical: (to fill)
-Judgement:  (to fill)
-Weakest:    (to fill)
+Mechanical: the answers Q1 to Q4 A of the owner, and the open, the save and the export that existed.
+Judgement:  the place of the recent list beside the folder of unsaved documents; a refusal of a save over a file that
+            exists; the phone in ADR-0100 item 9, because the register was full.
+Weakest:    no dialog of the system ran in a test or a picture; the owner's run is the first that uses them.
 
 ## Progress
 
@@ -213,3 +214,5 @@ Weakest:    (to fill)
   again, the shelf after a change and a start again, the line after an export, the refusal of a text file and the
   question. No step had a real dialog of the system: the tests and the pictures give the result of each dialog as a sample,
   because a session does not drive the mouse or a dialog of the system while the owner may use the computer.
+- 2026-11-08: run 42533075534 passed. The owner saw the pictures and said to merge (2026-11-09). Merged at v0.299; the
+  row waits for the run of the owner, which also checks step 12 with the shelf itself.

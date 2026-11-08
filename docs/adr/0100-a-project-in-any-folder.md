@@ -104,3 +104,4 @@ the dialogs of the system need a person: the tests give their results as samples
 ## History
 
 - 2026-11-08 · TASK-0314 · The record, with the answers of the owner.
+- 2026-11-09 · TASK-0314 · Shipped at v0.299; the row waits for the run of the owner.
