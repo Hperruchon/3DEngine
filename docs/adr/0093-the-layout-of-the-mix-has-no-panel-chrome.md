@@ -55,6 +55,8 @@ The owner chose the slice and its merge after green CI; the recommendation answe
    to the room above the anchors, and it scrolls past that room. The room under it is the scene.
 3. **The status line (amends ADR-0080).** At the lower right, on the row of the anchors, in JetBrains Mono: the count of
    the live bodies, "all correct" or the count that failed, and the address of the surface.
+   It starts at least 12 pixels right of the anchors (Undo, Redo, Frame and Home) with the text that fits there: the whole
+   line, else the line with no address, else none (finding V146 of the codebase review of 2026-11-08 (c), TASK-0310).
 4. **The rows (Q1 A).** The rows of the selection stay at the upper right in this slice.
 5. **The portrait ring** stays above the row of the anchors; it reads the top of that row, not the top of each fixed window,
    because the top bar is a fixed window too.
@@ -72,3 +74,5 @@ ground of the theme. The person can no longer move the panel out of the way. The
 
 - 2026-11-08 · TASK-0304 · The record, with the slice (the choice of the owner of 2026-11-08).
 - 2026-11-08 · TASK-0304 · Shipped at v0.289.
+- 2026-11-08 · TASK-0310 · Item 3: the status line leaves the anchors free; it drops the address, or does not show, where
+  it does not fit (V146).
