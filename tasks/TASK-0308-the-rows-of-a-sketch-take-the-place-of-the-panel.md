@@ -1,10 +1,10 @@
 ---
 id: 0308
 title: The rows of an active sketch take the place of the panel, and its ring is on the right
-status: Active
+status: Done
 phase: R16n
 opened: 2026-11-08
-depends-on: [0307]
+depends-on: [0310]
 governed-by: [0007, 0019, 0025, 0027, 0029, 0030, 0032, 0034, 0072, 0073, 0076, 0077, 0078, 0080, 0081, 0082, 0083, 0084, 0086, 0087, 0088, 0089, 0091, 0093, 0095, 0097]
 writes:
   create:
@@ -54,21 +54,25 @@ While a sketch is active, its rows are at the left with no chrome, and its ring 
 
 ## Acceptance criteria
 
-- [ ] The tests pass, and the picture of the sketch under its body shows the rows at the left and the ring on the right.
-- [ ] A clean build (`--no-incremental`) gives zero errors and zero warnings.
-- [ ] Continuous integration passes on the three runners, on the branch and on `main` after the merge.
+- [x] The tests pass, and the picture of the sketch under its body shows the rows at the left and the ring on the right.
+- [x] A clean build (`--no-incremental`) gives zero errors and zero warnings.
+- [x] Continuous integration passes on the three runners, on the branch and on `main` after the merge.
 
 ## Outcome
 
-Status: Active
+Status: Done · commit (the merge of the branch r16n-sketch-rows-b) · v0.295
 
 ## Method
 
 Mechanical: the places of the rows and the ring in the render "Mix 3".
 Judgement:  no caption under the sketch (ADR-0097 Q2 A), after the first form crossed the ring at 1280 x 720.
-Weakest:    to be written at the close.
+Weakest:    while a sketch is active the panel does not show, so its controls wait for Finish; no run on the S23 showed
+            the slice yet.
 
 ## Progress
 
 - 2026-11-08: the slice and its tests. With the segments on the left again, three tests fail. The first form of the
   label rule took Select, Circle and Finish as wide labels and drew no icon; a tool with an icon now keeps it.
+- 2026-11-08: the codebase review of 2026-11-08 (c) found V146 (high), so TASK-0310 came first; this task depends on it.
+  The change of this task fixes V148 of that review.
+- 2026-11-08: run 42483436816 passed. Closed at v0.295.

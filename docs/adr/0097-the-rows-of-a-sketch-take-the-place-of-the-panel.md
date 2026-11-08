@@ -75,3 +75,4 @@ back. A long list of rows scrolls inside the room above the anchors.
 ## History
 
 - 2026-11-08 · TASK-0308 · The record, with the slice.
+- 2026-11-08 · TASK-0308 · Shipped at v0.295.

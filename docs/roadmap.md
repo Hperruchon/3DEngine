@@ -294,6 +294,8 @@ Therefore each approved objective must have a track here.
   pick, the overlay of a sketch and the gizmo take the up axis of the camera. v0.292, TASK-0307, ADR-0096.
 - Review — The codebase review of 2026-11-08 (c). v0.293, TASK-0309.
 - P0.129 — The status line leaves Frame and Home free on each display (V146). v0.294, TASK-0310, ADR-0093.
+- R16n — The rows of an active sketch take the place of the panel, and the ring of the sketch is on the right with icons
+  and its caption. v0.295, TASK-0308, ADR-0097.
 
 ## Track 0 — Foundations
 
