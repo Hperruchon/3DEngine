@@ -8607,3 +8607,32 @@ markers in the register, and the old width of the panel. Run 42450705901 passed.
 New tests: 13. The test list holds 2158 (1471 in `Engine.Tests`, 337 in `3DEngine.Tests`, 347 in `3DEngine.ImageTests`, 3
 in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
 entries: 15 of 15. New diagnostic codes: 0. Since the review of v0.285, 0 product milestones and 2 entries followed it.
+
+## v0.288 — A subnormal value, the gate of the host, the stale check and the end of an engine (P0.128, TASK-0303)
+
+The seven low findings of the codebase review of 2026-11-08 (b).
+
+**The change.**
+- E195: the filter of the kernel gives NaN for a value that is not zero and whose double is not a normal double, so the
+  exact sign decides; ADR-0089 item 6 says so.
+- E196: a comment of `GetFacesQueryHandler` says that its cache belongs to the registry of one document session, and why.
+- T178: each `WarningsAsErrors` in a file that MSBuild reads for the phone host keeps `$(WarningsAsErrors)`, and the last
+  one of the host names CA1416 under no Condition.
+- V143 and V144: ADR-0079 item 5 calls the cause of V141 inferred, names a stale session that calls SDL after its destroy as
+  a second possible cause, and names the race between the check of the turn and the return; the comment of the activity
+  says so. They stay open in part.
+- V145: `SceneRenderer.Dispose` goes on when the wait of a lost device fails, as `GraphicsDevice.Dispose` does (E192).
+- T179: the comment of the test of V141 says that it holds the text of the rule, not its behaviour.
+
+**Proof.** A new test gives two planes and points: a subnormal coefficient times a large coordinate, and a coordinate below
+the smallest double times a large coefficient; the plain double in the filter fails it. A later `WarningsAsErrors` with no
+CA1416 in the host fails the gate with both rules. V145 is proved by reading. Run 42450946419 passed.
+
+**What stays.** V143 and V144 are named, not fixed. V141 stays open until a run of a relaunch shows no crash.
+
+**A correction.** The entry v0.277 said that the test of V141 fails when the main function returns after a stale session;
+it fails when the text of the rule changes (T179). The failed runs since the entry v0.287, from the API: none.
+
+New tests: 1. The test list holds 2159 (1472 in `Engine.Tests`, 337 in `3DEngine.Tests`, 347 in `3DEngine.ImageTests`, 3
+in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
+entries: 15 of 15. New diagnostic codes: 0. Since the review of v0.285, 0 product milestones and 3 entries followed it.
