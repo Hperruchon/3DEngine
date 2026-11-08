@@ -1,24 +1,34 @@
 ---
 id: 0089
 title: The cone, the sphere and the torus are closed meshes that the engine makes
-status: Proposed
+status: Accepted
 topic: Geometry, kernel
 date: 2026-11-07
 supersedes: []
 superseded-by: []
 amends: []
 amended-by: []
-affects: []
-enforced-by: none
+affects:
+  - Engine.Contracts/Geometry/ISolidMeshOps.cs
+  - Engine.Geometry.Manifold/ManifoldGeometryBackend.cs
+  - Engine.Geometry.Manifold/Native/ManifoldNative.cs
+  - Engine.Core/Commands/CreateConeCommand.cs
+  - Engine.Core/Commands/CreateConeCommandHandler.cs
+  - Engine.Core/Hosting/HandlerCatalog.cs
+  - Engine.Core/Features/FeatureList.cs
+  - Engine.Core/Features/KernelProjection.cs
+  - Engine.Core/Features/Regeneration.cs
+  - Engine.Core/Sketch/DatumResolver.cs
+  - Engine.Kernel/KernelSolid.cs
+enforced-by: Engine.Tests/Commands/CreateConeCommandTests.cs
 ---
 
 # ADR-0089 — The cone, the sphere and the torus are closed meshes that the engine makes
 
 This document uses Simplified Technical English (ASD-STE100). See `CLAUDE.md`, section "Language".
 
-This record is **Proposed**. It needs a change of `Engine.Contracts`, so the standing order of 2026-11-05 does not answer
-it (`CLAUDE.md`, "Stop and ask"). It holds the research for the decision of the owner. No code follows it before the owner
-accepts it.
+The owner accepted this record on 2026-11-08 with A to Q1, Q2 and Q3 (the form of decisions in the chat). It changes
+`Engine.Contracts`: one new capability, `ISolidMeshOps`.
 
 ## Context
 
@@ -91,16 +101,32 @@ proposes no change of that.
 
 ## Decision
 
-None yet. The owner answers Q1 to Q3. With A to each, the next tasks are: the capability and the Manifold call (with a
-test of the hash of a sphere on the four platforms of anti-objective 16), then each command with its kernel solid, then
-the list "New".
+The owner answered A to Q1, Q2 and Q3 (2026-11-08).
+
+1. **The capability (Q1 A).** `ISolidMeshOps.CreateSolid` stores a closed, oriented triangle mesh as a solid: three
+   doubles for each vertex and three indices for each triangle, counter-clockwise from outside. The Manifold backend makes
+   the solid with `manifold_meshgl64` and `manifold_of_meshgl64`, and a status that is not zero or an empty solid is a
+   fault. A backend with no such capability gives `E-GEOM-CAP-MISSING`. No new diagnostic code, and no new flag of
+   `BackendCapabilities` (as `IMeshImportOps`).
+2. **The cone (Q2 A, Q3 A; phase K5c).** `CreateCone` has the fields `radius` and `height` and the output `bodyId`. The
+   base is the 64-gon of ADR-0040 item 2 at z = -height / 2, the apex is at z = +height / 2, and the base has a centre
+   vertex. The record holds the inputs only (ADR-0007).
+3. **The names (Q3 A).** The owned kernel gives the cone the faces `-z` and `side`, with no item; the side has no
+   normal and no plane, so a datum takes `-z` only, with the frame of the bottom of a cylinder of the same height. A cone
+   gives no edge and no vertex to a sketch in this slice.
+4. **The exception to the rule of a new command.** As ADR-0076 item 6, a new primitive is a new creator of a body, so it
+   also changes `FeatureList`, `Regeneration`, `KernelProjection`, `DatumResolver` and `KernelSolid`.
+5. **Next (phases K5d and K5e).** The sphere (31 rings of the latitudes k × 2π/64 for k from -15 to 15, and two poles) and
+   the torus (64 positions around the axis and 32 around the tube), each with the face `surface`; then the three entries
+   of the list "New" (ADR-0076 item 7). The determinism probe of ADR-0074 takes a primitive of this record in a later slice,
+   with the new hash in the test sheet of the phone.
 
 ## Consequences
 
-**Good (with A):** the three primitives of K5 with no new number type, and each of them is a solid that the person can cut
+**Good:** the three primitives of K5 with no new number type, and each of them is a solid that the person can cut
 and move.
 
-**Bad (with A):** a new capability in `Engine.Contracts`, which each backend must give or refuse. The volume of each
+**Bad:** a new capability in `Engine.Contracts`, which each backend must give or refuse. The volume of each
 primitive is less than the true volume.
 
 ## History
@@ -109,3 +135,4 @@ primitive is less than the true volume.
   (c)).
 - 2026-11-07 · TASK-0285 · Q4: the volume of the sphere is about 0.40 % less than the true volume, not 0.32 % (the review
   of Codex of v0.268).
+- 2026-11-08 · TASK-0288 · Accepted by the owner (A to Q1, Q2 and Q3), with items 1 to 5 and the cone (phase K5c).
