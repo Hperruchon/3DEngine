@@ -35,7 +35,7 @@ namespace Engine.Geometry.Manifold;
 // InProcessMeshBackend's exception contract (InvalidOperationException on duplicate,
 // KeyNotFoundException on missing) so the existing handlers behave the same.
 public sealed class ManifoldGeometryBackend
-    : IGeometryBackend, IMeshOps, IGeometryQuery, ITransformOps, IBooleanOps, ITessellationOps, IExtrudeOps, IMeshImportOps, IDisposable
+    : IGeometryBackend, IMeshOps, IGeometryQuery, ITransformOps, IBooleanOps, ITessellationOps, IExtrudeOps, IMeshImportOps, ISolidMeshOps, IDisposable
 {
     private readonly Dictionary<Guid, ManifoldSolidHandle> _solids = new();
 
@@ -278,6 +278,56 @@ public sealed class ManifoldGeometryBackend
     {
         ManifoldNative.manifold_destruct_manifold(solid);
         Marshal.FreeHGlobal(buffer);
+    }
+
+    // ISolidMeshOps (ADR-0089 item 1, TASK-0288). The mesh of the engine becomes a solid of Manifold, which takes each
+    // operation of a solid. A mesh that is not closed or not manifold gives a status that is not zero, or an empty solid.
+    public unsafe void CreateSolid(BodyHandle handle, ReadOnlySpan<double> positions, ReadOnlySpan<int> triangles)
+    {
+        ObjectDisposedException.ThrowIf(_disposed, this);
+        if (positions.Length == 0 || positions.Length % 3 != 0 || triangles.Length == 0 || triangles.Length % 3 != 0)
+            throw new ArgumentException("A mesh holds three doubles for each vertex and three indices for each triangle.");
+        if (_solids.ContainsKey(handle.Id) || _meshes.ContainsKey(handle.Id))
+            throw new InvalidOperationException($"Backend already holds a body under handle '{handle.Id}'.");
+
+        var vertexCount = positions.Length / 3;
+        var indices = new ulong[triangles.Length];
+        for (var i = 0; i < triangles.Length; i++)
+        {
+            if (triangles[i] < 0 || triangles[i] >= vertexCount)
+                throw new ArgumentException($"Triangle index {triangles[i]} is outside the {vertexCount} vertices.", nameof(triangles));
+            indices[i] = (ulong)triangles[i];
+        }
+
+        var vertices = positions.ToArray();
+        nint meshBuffer = Marshal.AllocHGlobal((nint)ManifoldNative.manifold_meshgl64_size());
+        nint solidBuffer = Marshal.AllocHGlobal((nint)ManifoldNative.manifold_manifold_size());
+        nint mesh = 0;
+        nint solid;
+        try
+        {
+            fixed (double* first = vertices)
+            fixed (ulong* firstIndex = indices)
+            {
+                mesh = ManifoldNative.manifold_meshgl64(meshBuffer, (nint)first, (nuint)vertexCount, 3, (nint)firstIndex, (nuint)(indices.Length / 3));
+                solid = ManifoldNative.manifold_of_meshgl64(solidBuffer, mesh);
+            }
+        }
+        finally
+        {
+            if (mesh != 0) ManifoldNative.manifold_destruct_meshgl64(mesh);
+            Marshal.FreeHGlobal(meshBuffer);
+        }
+
+        int status = ManifoldNative.manifold_status(solid);
+        if (status != 0 || ManifoldNative.manifold_is_empty(solid) != 0)
+        {
+            Release(solid, solidBuffer);
+            throw new ManifoldNativeException(
+                $"manifold_of_meshgl64 failed with status {status}, or gave an empty solid, for handle '{handle.Id}'.");
+        }
+
+        _solids[handle.Id] = new ManifoldSolidHandle(solid, solidBuffer);
     }
 
     // IMeshImportOps (ADR-0083 item 8). The floats are copied as they are.

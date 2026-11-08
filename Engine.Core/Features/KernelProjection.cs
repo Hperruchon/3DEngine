@@ -126,6 +126,12 @@ internal static class KernelProjection
                     cylinder.CommandId,
                     [.. CreateCylinderCommandHandler.Circle(cylinder.Radius).Select(p => (Rational.FromDouble(p.X), Rational.FromDouble(p.Y)))],
                     Rational.FromDouble(cylinder.Height)), null);
+            // ADR-0089 item 3: the polygon of the handler, read exactly.
+            case CreateConeCommand cone:
+                return (KernelSolid.Cone(
+                    cone.CommandId,
+                    [.. CreateCylinderCommandHandler.Circle(cone.Radius).Select(p => (Rational.FromDouble(p.X), Rational.FromDouble(p.Y)))],
+                    Rational.FromDouble(cone.Height)), null);
             case ExtrudeCommand extrude:
                 return Extrude(extrude, state(extrude), frameOf);
             case TranslateCommand translate:
