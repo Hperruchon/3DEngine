@@ -7,7 +7,7 @@ date: 2026-10-28
 supersedes: []
 superseded-by: []
 amends: ['0026', '0029', '0032']
-amended-by: ['0041', '0053', '0084', '0085', '0088', '0096']
+amended-by: ['0041', '0053', '0084', '0085', '0088', '0096', '0097']
 affects:
   - 3DEngine.Core/Input/**
   - 3DEngine.Core/Picking/**
@@ -243,3 +243,5 @@ engine does not change. The tool is a pure state machine, so a test reads it wit
   and no kind of a constraint.
 - 2026-11-08 · TASK-0307 · ADR-0096 amends the context "The camera": the camera of the session has the z axis up, and
   the turn of item 6 looks down on a sketch on the plane of x and y.
+- 2026-11-08 · TASK-0308 · ADR-0097 amends item 8: while a sketch is active, its window is at the left in the place of
+  the panel, with no title bar and no ground.

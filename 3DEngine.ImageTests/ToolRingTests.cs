@@ -292,36 +292,31 @@ public sealed class ToolRingTests
         Assert.Equal([new SketchToolAction(ThreeDEngine.Core.Sketching.SketchToolKind.Circle), new FinishSketchAction()], ui.TakeActions());
     }
 
-    // ADR-0086 item 1: on a landscape display the ring of a sketch is on the left of the sketch, its inner radius is 24 pixels
-    // more than the half of the diagonal of the sketch, and its band stays 16 pixels to the right of the panel. The first form
-    // of TASK-0275 put the ring onto the points of the sketch.
+    // ADR-0086 item 1: the inner radius of the ring of a sketch is 24 pixels more than the half of the diagonal of the sketch.
+    // ADR-0097 item 4 (TASK-0308): the rows of the sketch are at the left, so the segments go down on the right of the centre,
+    // the centre is never left of the rows, and the band stays inside the display. Until TASK-0308 the ring was on the left.
     [Fact]
-    public void The_Ring_Of_A_Sketch_Is_On_Its_Left_Between_The_Panel_And_The_Sketch()
+    public void The_Ring_Of_A_Sketch_Is_On_Its_Right_Beside_The_Rows()
     {
         string[] labels = [.. DesktopUi.SketchRingTools.Select(tool => tool.Label)];
-        foreach (var (centre, sketch) in new[] { (new Vector2(700, 360), 90f), (new Vector2(500, 300), 60f), (new Vector2(900, 200), 150f) })
+        foreach (var (centre, sketch) in new[] { (new Vector2(700, 360), 90f), (new Vector2(500, 300), 60f), (new Vector2(900, 200), 150f), (new Vector2(1200, 360), 60f) })
         {
-            var layout = DesktopUi.SketchLayout(Display, centre, labels.Length, sketch, 476f, Display.X);
+            var layout = DesktopUi.SketchLayout(Display, centre, labels.Length, sketch, 496f);
 
             Assert.True(layout.Inner >= sketch + 24f, $"The inner radius {layout.Inner} is inside the sketch of {sketch}.");
-            Assert.True(layout.Centre.X - layout.Outer >= 476f + 16f - 0.01f, $"The band at {layout.Centre.X - layout.Outer} covers the panel.");
+            Assert.True(layout.Centre.X >= 496f, $"The centre {layout.Centre} is left of the rows.");
+            Assert.True(layout.Centre.X + layout.Outer <= Display.X - 16f + 0.01f, $"The band of {layout.Centre} is outside the display.");
             foreach (var segment in layout.Segments(labels))
             {
                 var middle = layout.Middle(segment);
-                Assert.True(middle.X < layout.Centre.X, $"The segment {segment.Label} at {middle} is not on the left.");
+                Assert.True(middle.X > layout.Centre.X, $"The segment {segment.Label} at {middle} is not on the right.");
             }
         }
 
-        // V134 (TASK-0280): the centre stays at or left of the window of the sketch, and a large sketch keeps the band inside
-        // the height of the display.
-        foreach (var (centre, sketch) in new[] { (new Vector2(1000, 360), 60f), (new Vector2(700, 360), 380f), (new Vector2(700, 360), 450f) })
+        // V134 (TASK-0280): a large sketch keeps the band inside the height of the display.
+        foreach (var sketch in new[] { 380f, 450f })
         {
-            var layout = DesktopUi.SketchLayout(Display, centre, labels.Length, sketch, 476f, 784f);
-            // The review of Codex of v0.265 (TASK-0284): only when the band then stays to the right of the panel.
-            if (476f + layout.Outer + 16f <= 784f)
-                Assert.True(layout.Centre.X <= 784f, $"The centre {layout.Centre} is under the window of the sketch.");
-            else
-                Assert.True(layout.Centre.X - layout.Outer >= 476f + 16f - 0.01f, $"The band of {layout.Centre} covers the panel.");
+            var layout = DesktopUi.SketchLayout(Display, new Vector2(700, 360), labels.Length, sketch, 496f);
             Assert.True(layout.Centre.Y - layout.Outer >= 0f && layout.Centre.Y + layout.Outer <= Display.Y, $"The band of {layout.Centre}, {layout.Outer} is outside the display.");
         }
     }
@@ -374,15 +369,15 @@ public sealed class ToolRingTests
             Assert.True(ui.ItemRectangle(DesktopUi.SketchItem(label)) is not null, $"No {label} in the window while the second ring is open.");
         Assert.Null(ui.ItemRectangle(DesktopUi.SketchItem("Horizontal")));
 
-        // ADR-0087 item 5: a label wider than the band starts to the right of the panel and ends nearer the panel than a
-        // label centred on its segment, so it covers less of the sketch.
-        var panelRight = ui.PanelRectangles[0].Z;
+        // ADR-0087 item 5: a label wider than the band starts farther from the sketch than a label centred on its segment, so
+        // it covers less of the sketch. ADR-0097 item 4 (TASK-0308): the ring is on the right, so the label goes out to the
+        // right and ends inside the display.
         foreach (var label in new[] { "Horizontal", "Vertical", "Distance" })
         {
             var text = ui.ItemRectangle(DesktopUi.RingTextItem(label)) ?? throw new InvalidOperationException($"No text of {label}.");
             var middle = ui.ItemRectangle(DesktopUi.RingItem(label)) ?? throw new InvalidOperationException($"No segment {label}.");
-            Assert.True(text.X >= panelRight + 3.5f, $"{label} starts at {text.X}, on the panel that ends at {panelRight}.");
-            Assert.True(text.Z < ((middle.X + middle.Z) / 2f) + ((text.Z - text.X) / 2f) - 1f, $"{label} at {text} is centred on its segment.");
+            Assert.True(text.Z <= Display.X - 3.5f, $"{label} ends at {text.Z}, outside the display.");
+            Assert.True(text.X > ((middle.X + middle.Z) / 2f) - ((text.Z - text.X) / 2f) + 1f, $"{label} at {text} is centred on its segment.");
         }
 
         TapOn("Horizontal");
@@ -487,8 +482,9 @@ public sealed class ToolRingTests
 
     // Findings V140 and T176 of the codebase review of 2026-11-08 (TASK-0296): with a line selected, each tool and Finish has a
     // button in the window of the sketch whose middle is on the display: while the second ring is open, and when the ring is
-    // not reachable. At 1280 x 720 the ring holds the tools, so the test opens the second ring first; at 390 x 844 the ring of
-    // six segments is under the window, which holds each button.
+    // not reachable. When the ring holds the tools, the test opens the second ring first; when the ring is under the window,
+    // the window holds each button. ADR-0097 (TASK-0308): the rows of the sketch moved to the left, so at 390 x 844 the ring
+    // is now clear of them too; until TASK-0308 the window at the right covered it.
     [Theory]
     [InlineData(1280, 720, 700, 360)]
     [InlineData(390, 844, 195, 400)]
@@ -509,7 +505,6 @@ public sealed class ToolRingTests
         for (var frame = 0; frame < 3; frame++)
             Frame();
         var ringHolds = ui.ItemRectangle(DesktopUi.SketchItem(DesktopUi.LineToolLabel)) is null;
-        Assert.Equal(width > height, ringHolds);
         if (ringHolds)
         {
             var constrain = Centre(ui, DesktopUi.ConstrainLabel);
@@ -642,19 +637,21 @@ public sealed class ToolRingTests
         Assert.NotNull(ui.ItemRectangle(DesktopUi.RingItem(DesktopUi.ConstrainLabel)));
     }
 
-    // The review of Codex of v0.265 (TASK-0284): a window of the sketch that the person moved to the left, or collapsed there,
-    // does not pull the band under the panel. Until TASK-0284 a window at x 500 put each segment under the panel.
+    // The review of Codex of v0.265 (TASK-0284): the rows of the sketch do not pull the band under them. ADR-0097 (TASK-0308):
+    // the rows are at the left, so a sketch left of their edge moves the centre to that edge and no segment is under them.
     [Fact]
-    public void A_Window_Of_The_Sketch_At_The_Left_Does_Not_Pull_The_Ring_Under_The_Panel()
+    public void The_Rows_Of_The_Sketch_Do_Not_Pull_The_Ring_Under_Them()
     {
         string[] labels = [.. DesktopUi.SketchRingTools.Select(tool => tool.Label)];
-        var layout = DesktopUi.SketchLayout(Display, new Vector2(700, 360), labels.Length, 60f, 476f, 500f);
-        Assert.True(layout.Centre.X - layout.Outer >= 476f + 16f - 0.01f, $"The band of {layout.Centre}, {layout.Outer} covers the panel.");
+        var layout = DesktopUi.SketchLayout(Display, new Vector2(300, 360), labels.Length, 60f, 496f);
+        Assert.Equal(496f, layout.Centre.X);
+        Assert.All(layout.Segments(labels), segment => Assert.True(layout.Middle(segment).X > 496f, $"The segment {segment.Label} is under the rows."));
     }
 
     // The review of Codex of v0.265 (TASK-0284): the Images window comes after the ring in the frame. While it is open over a
     // segment, the window of the sketch keeps the button of that segment. Until TASK-0284 the check did not see the Images
-    // window, and Line had no place for a tap.
+    // window, and Line had no place for a tap. ADR-0097 (TASK-0308): the ring is on the right of the sketch, so the sketch is at
+    // x 600 for Line to be under the Images window.
     [Fact]
     public void A_Segment_Under_The_Images_Window_Keeps_Its_Button_In_The_Window_Of_The_Sketch()
     {
@@ -667,7 +664,7 @@ public sealed class ToolRingTests
         void Frame(params InputSample[] samples)
         {
             ui.Route(samples);
-            ui.Frame(1f / 60f, Display, Vector2.One, [], null, null, sketchPanel: panel, imagePanel: images, ringCentre: new Vector2(700, 360), ringBody: 60f);
+            ui.Frame(1f / 60f, Display, Vector2.One, [], null, null, sketchPanel: panel, imagePanel: images, ringCentre: new Vector2(600, 360), ringBody: 60f);
         }
 
         for (var frame = 0; frame < 3; frame++)
