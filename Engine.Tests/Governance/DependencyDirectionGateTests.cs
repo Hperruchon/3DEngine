@@ -762,10 +762,20 @@ public class DependencyDirectionGateTests
 
             // T175: the host makes CA1416 an error with a WarningsAsErrors under no Condition. Until TASK-0296 the removal of
             // that line passed each gate of the computer, and only the probe build of the pipeline (TASK-0285) refused it.
-            if (!FilesThatMsBuildReads(hostFile).Any(read => XDocument.Load(read).Descendants().Any(e => Is(e, "WarningsAsErrors")
-                    && !e.AncestorsAndSelf().Any(a => a.Attribute("Condition") is not null)
-                    && e.Value.Contains("CA1416", StringComparison.OrdinalIgnoreCase))))
-                offences.Add($"{host}: no WarningsAsErrors with CA1416 and no Condition makes CA1416 an error");
+            // Finding T178 of the codebase review of 2026-11-08 (b) (TASK-0303): MSBuild keeps the last assignment, so a later
+            // WarningsAsErrors with no CA1416 turned it back into a warning, and the rule above still passed. Each assignment in
+            // a file that MSBuild reads for the host keeps $(WarningsAsErrors), and the last one of the host names CA1416.
+            foreach (var read in FilesThatMsBuildReads(hostFile))
+            {
+                foreach (var reset in XDocument.Load(read).Descendants().Where(e => Is(e, "WarningsAsErrors")
+                             && !e.Value.Contains("$(WarningsAsErrors)", StringComparison.OrdinalIgnoreCase)))
+                    offences.Add($"{host}: {RepositoryFiles.Relative(read)} sets WarningsAsErrors to '{reset.Value.Trim()}', which drops the earlier codes");
+            }
+
+            if (XDocument.Load(hostFile).Descendants().LastOrDefault(e => Is(e, "WarningsAsErrors")) is not { } last
+                || last.AncestorsAndSelf().Any(a => a.Attribute("Condition") is not null)
+                || !last.Value.Contains("CA1416", StringComparison.OrdinalIgnoreCase))
+                offences.Add($"{host}: the last WarningsAsErrors of the host does not name CA1416 under no Condition");
 
             foreach (var source in Directory.EnumerateFiles(Path.GetDirectoryName(hostFile)!, "*.cs", SearchOption.AllDirectories)
                          .Where(path => !path.Contains($"{Path.DirectorySeparatorChar}obj{Path.DirectorySeparatorChar}", StringComparison.Ordinal)

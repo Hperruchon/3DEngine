@@ -282,6 +282,8 @@ Therefore each approved objective must have a track here.
 - Review — The codebase review of 2026-11-08 (b). v0.286, TASK-0301.
 - P0.127 — The identifier of a reference endpoint, the volume of a very small solid, the markers of a conflict and
   the width of the main panel hold their next forms. v0.287, TASK-0302, ADR-0089.
+- P0.128 — The filter of a subnormal value, the gate of the host, the stale check, ADR-0079 item 5, the end of an
+  engine and the test of V141 hold their next forms. v0.288, TASK-0303, ADR-0079, ADR-0089.
 
 ## Track 0 — Foundations
 
