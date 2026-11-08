@@ -96,3 +96,4 @@ display. The row "Made from" waits.
 ## History
 
 - 2026-11-08 · TASK-0313 · The record, with the slice.
+- 2026-11-08 · TASK-0313 · Shipped at v0.298.
