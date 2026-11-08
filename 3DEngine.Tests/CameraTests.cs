@@ -131,6 +131,34 @@ public class CameraTests
         Assert.InRange(largest, 0.5f, 1f);
     }
 
+    // ADR-0094 (the redesign, slice k, TASK-0305): with a frame fill of 0.45 the sphere around the box fills 45 % of the
+    // half picture, so each corner is inside 0.45 of it and the box is not much smaller; a fill outside (0, 1] is refused.
+    [Theory]
+    [InlineData(16f / 9f)]
+    [InlineData(9f / 16f)]
+    public void A_Frame_Fill_Of_0_45_Keeps_The_Box_In_The_Middle_Of_The_Picture(float aspect)
+    {
+        var camera = new Camera { YawDegrees = 30, PitchDegrees = 20, Distance = 500, FrameFill = 0.45f };
+        (double X, double Y, double Z) min = (-30, -20, 0), max = (30, 20, 10);
+
+        Assert.True(camera.Frame(min, max, aspect));
+
+        var eye = camera.Eye();
+        var viewProjection = camera.View() * camera.Projection(aspect);
+        var largest = 0f;
+        foreach (var x in new[] { min.X, max.X })
+        foreach (var y in new[] { min.Y, max.Y })
+        foreach (var z in new[] { min.Z, max.Z })
+        {
+            var clip = Vector4.Transform(new Vector4((float)(x - eye.X), (float)(y - eye.Y), (float)(z - eye.Z), 1f), viewProjection);
+            largest = Math.Max(largest, Math.Max(Math.Abs(clip.X / clip.W), Math.Abs(clip.Y / clip.W)));
+        }
+
+        Assert.InRange(largest, 0.25f, 0.45f);
+        foreach (var fill in new[] { 0f, -0.5f, 1.01f, float.NaN })
+            Assert.Throws<ArgumentOutOfRangeException>(() => camera.FrameFill = fill);
+    }
+
     // Finding V11 of the codebase review of 2026-10-13 (TASK-0074): each parameter of the
     // camera is checked, and a zoom between close planes does not throw.
     [Fact]

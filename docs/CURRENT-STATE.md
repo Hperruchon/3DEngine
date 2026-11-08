@@ -8663,3 +8663,26 @@ none.
 New tests: 2. The test list holds 2161 (1472 in `Engine.Tests`, 337 in `3DEngine.Tests`, 349 in `3DEngine.ImageTests`, 3
 in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
 entries: 15 of 15. New diagnostic codes: 0. Since the review of v0.285, 1 product milestone and 4 entries followed it.
+
+## v0.290 — A framed part fills 45 % of the half picture, as in the render of the mix (R16k, TASK-0305)
+
+The second slice that the owner chose on 2026-11-08 is the framing. ADR-0025 item 6 framed a box at the edge of the
+picture, so at 1440 x 900 the bracket of the render filled the height of the display, under the panel and the ring.
+
+**The change.** ADR-0094 amends ADR-0025 item 6.
+- `Camera.FrameFill` is the part of the smaller half angle of the field of view that a framed sphere fills, greater than 0
+  and at most 1; 1 is the frame of ADR-0025. A value outside that range throws.
+- The camera of the session has a fill of 0.45, so the bracket is about a third of the width at 1440 x 900, in the
+  middle of the display, with room for the ring and the values.
+
+**Proof.** A new test frames a box with a fill of 0.45 and finds each corner between 25 % and 45 % of the half picture
+from the middle; it also checks that an invalid fill throws. The pictures on the GPU show the part in the middle. The
+phone project builds with zero warnings. Run 42479307642 passed. The failed runs since the entry v0.289, from the API:
+none.
+
+**What stays.** The middle of the projection does not move (ADR-0094 Q1 A). The camera had the y axis up at this version;
+the next slices give it the z axis up.
+
+New tests: 2. The test list holds 2163 (1472 in `Engine.Tests`, 339 in `3DEngine.Tests`, 349 in `3DEngine.ImageTests`, 3
+in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
+entries: 15 of 15. New diagnostic codes: 0. Since the review of v0.285, 2 product milestones and 5 entries followed it.
