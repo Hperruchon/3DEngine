@@ -259,6 +259,8 @@ Therefore each approved objective must have a track here.
 - P0.120 — A surface lost while the phone engine starts ends the engine as the background does. v0.271, TASK-0286.
 - P0.121 — Each query of a surface checks its result, and a device that fails to start frees what it made. v0.272,
   TASK-0287.
+- K5c — A command CreateCone makes a cone, a closed mesh that the engine stores as a solid. v0.273, TASK-0288,
+  ADR-0089.
 
 ## Track 0 — Foundations
 
