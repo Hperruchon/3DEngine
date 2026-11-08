@@ -140,11 +140,12 @@ public sealed class DesktopFormsTests
     }
 
     // V50: the fault of a selected body takes one line, so Show all stays in the panel on a display
-    // of 1024 × 768 with two bodies.
+    // of 1024 × 768 with two bodies. ADR-0099 item 1 (TASK-0313): on a landscape display the rows take the place of the
+    // panel, so the test uses the display of 768 × 1024.
     [Fact]
     public void The_Fault_Takes_One_Line_And_Show_All_Stays_In_The_Panel()
     {
-        var small = new Vector2(1024, 768);
+        var small = new Vector2(768, 1024);
         var fault = new BodyFault("W-SKETCH-REBUILD-FAILED", "The body '0fe4ab0b-8d7a-5381-a0e5-152a7ab115b6' keeps its last solid: the point 'a0000000-0000-0000-0000-000000000000' is the end of 1 line, and a closed profile has 2 lines at each point.");
         LiveBody[] bodies = [new(Guid.NewGuid(), "Extrude", "Plate", true, fault), new(Guid.NewGuid(), "Box", null, true)];
         using var ui = new DesktopUi("http://127.0.0.1:5180", Engine.Contracts.Document.Millimetre);

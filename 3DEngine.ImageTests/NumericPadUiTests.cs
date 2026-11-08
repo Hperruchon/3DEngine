@@ -15,7 +15,9 @@ namespace ThreeDEngine.ImageTests;
 [Collection(DearImGui.Collection)]
 public sealed class NumericPadUiTests
 {
-    private static readonly Vector2 Display = new(1280, 720);
+    // ADR-0099 item 1 (the redesign, slice p, TASK-0313): on a landscape display the rows of a selected body take the place of
+    // the panel, so these tests of the panel use a portrait display, where the panel keeps the controls of the selected body.
+    private static readonly Vector2 Display = new(720, 1280);
 
     private static readonly LiveBody Body = new(Guid.Parse("22222222-0000-0000-0000-000000000000"), "Box", null, true);
 

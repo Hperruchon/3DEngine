@@ -77,12 +77,12 @@ public sealed class FixedControlsTests
     }
 
     // Finding V149 of the codebase review of 2026-11-08 (c) (TASK-0311): on a narrow window the top bar ends 12 pixels left of
-    // the rows of a selected body, which start at the right margin less the width of the rows. Until TASK-0311 it cut the
-    // name to the width of the rows only, and at 844 it ended at 534, over the rows at 468.
+    // the rows of a selected body. Until TASK-0311 it cut the name to the width of the rows only, and at 844 it ended at 534.
+    // ADR-0099 item 5 (TASK-0313): the rows are at the left now, so the top bar ends 12 pixels left of the command line.
     [Theory]
     [InlineData(844, 390)]
     [InlineData(1024, 768)]
-    public void A_Long_File_Name_Ends_Left_Of_The_Rows(int width, int height)
+    public void A_Long_File_Name_Ends_Left_Of_The_Command_Line(int width, int height)
     {
         var display = new Vector2(width, height);
         using var ui = new DesktopUi("http://127.0.0.1:5180", Engine.Contracts.Document.Millimetre);
@@ -94,8 +94,8 @@ public sealed class FixedControlsTests
         }
 
         var title = ui.ItemRectangle(DesktopUi.TitleItem) ?? throw new InvalidOperationException("No top bar.");
-        var rows = display.X - 16f - DesktopUi.RowsWidth;
-        Assert.True(title.Z <= rows - 12f + 0.5f, $"The top bar ends at {title.Z}, over the rows that start at {rows}.");
+        var command = ui.ItemRectangle(DesktopUi.CommandItem) ?? throw new InvalidOperationException("No command line.");
+        Assert.True(title.Z <= command.X - 12f + 0.5f, $"The top bar ends at {title.Z}, over the command line that starts at {command.X}.");
     }
 
     // Finding V114 of the codebase review of 2026-11-06 (e) (TASK-0252): a drag down to the anchors, and a display that
