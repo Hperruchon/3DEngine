@@ -137,3 +137,5 @@ primitive is less than the true volume.
   of Codex of v0.268).
 - 2026-11-08 · TASK-0288 · Accepted by the owner (A to Q1, Q2 and Q3), with items 1 to 5 and the cone (phase K5c).
 - 2026-11-08 · TASK-0288 · The cone shipped at v0.273.
+- 2026-11-08 · TASK-0295 · Item 1: the backend refuses a mesh whose volume is not positive, the volume of a mesh with
+  triangles that are clockwise from outside (finding E186 of the codebase review of 2026-11-08).
