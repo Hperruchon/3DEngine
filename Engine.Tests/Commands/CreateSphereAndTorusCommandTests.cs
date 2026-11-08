@@ -166,8 +166,9 @@ public sealed class CreateSphereAndTorusCommandTests
 
         Assert.Equal((1, 1), (faces.Single(f => f.Reference == new DatumReference(plate, "+z", null)).Holes, faces.Single(f => f.Reference == new DatumReference(plate, "-z", null)).Holes));
         Assert.Contains(faces, f => f.Reference == new DatumReference(tool, "surface", null));
-        // ADR-0089 item 6: about 10 s on the computer of the owner, and about 3 minutes before TASK-0289; the limit leaves room
-        // for a slower runner of the pipeline.
-        Assert.True(clock.Elapsed < TimeSpan.FromSeconds(60), $"The cut and its faces took {clock.Elapsed}.");
+        // ADR-0089 item 6: about 10 s on the computer of the owner, and about 3 minutes before TASK-0289. The runner of macOS
+        // took 64 s in the main run 42445348622, about six times as long, so the form before TASK-0289 would take about 18
+        // minutes there. TASK-0300: the limit of 300 s keeps that difference and leaves room for a slow runner.
+        Assert.True(clock.Elapsed < TimeSpan.FromSeconds(300), $"The cut and its faces took {clock.Elapsed}.");
     }
 }
