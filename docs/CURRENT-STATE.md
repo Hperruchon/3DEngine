@@ -8317,3 +8317,33 @@ says so in the line of V124. The failed runs since the entry v0.275, from the AP
 New tests: 0. The test list holds 2105 (1428 in `Engine.Tests`, 337 in `3DEngine.Tests`, 337 in `3DEngine.ImageTests`, 3
 in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
 entries: 15 of 15. New diagnostic codes: 0. Since the review of v0.275, 0 product milestones and 1 entry followed it.
+
+## v0.277 — The main function of a stale session of the phone does not return (P0.123, TASK-0294)
+
+Finding V141 of the codebase review of 2026-11-08 (high): the main run of v0.273 (42433201851) ended with a native crash
+of the program of the phone on the emulator. Android relaunched the activity; the session of the first activity returned
+from its main function before its window; the second activity lost its surface in the start of its engine and was
+destroyed with no change of the configuration; then the process crashed.
+
+**The change.** ADR-0079 item 5. The bytecode of `SDLMain.run` in `ppy.SDL3-CS` 2026.1002.1 sets `mSDLThread` to null and
+finishes `mSingleton`, the newest activity, when a main function returns; `SDLActivity.onDestroy` then does not wait for
+the thread of the newest session and ends SDL while it runs.
+- `MainActivity.Main`: after its session, the main function of a stale session writes one line and waits; it does not
+  return. The waiting thread holds no window and no engine.
+- The smoke test of the emulator gives the lines of the tombstone after the first line of a crash (the thread, the
+  signal, the abort message and the frames #00 to #05) as errors. `eng/android/tombstone-lines.ere` holds their
+  patterns.
+
+**Proof.** A new test reads `MainActivity.cs` and fails when the main function returns after a stale session; the removal
+of the wait fails it. Ten new cases prove the patterns of the tombstone with the forms of debuggerd; the removal of the
+pattern of the frames fails them. A run of the new lines of the script on a log with a crash of another process gave the
+eight lines of the program only. The phone project builds with zero warnings. Run 42436940645 passed.
+
+**What stays.** No run repeats the relaunch on demand, so no run shows the fix; the cause comes from the bytecode and one
+run. The next crash in the job gives its stack.
+
+**A correction.** None. The failed runs since the entry v0.276, from the API: none.
+
+New tests: 11. The test list holds 2116 (1438 in `Engine.Tests`, 337 in `3DEngine.Tests`, 338 in `3DEngine.ImageTests`, 3
+in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
+entries: 15 of 15. New diagnostic codes: 0. Since the review of v0.275, 0 product milestones and 2 entries followed it.

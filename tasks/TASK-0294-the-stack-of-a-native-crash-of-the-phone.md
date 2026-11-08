@@ -1,7 +1,7 @@
 ---
 id: 0294
 title: The main function of a stale session of the phone does not return, and a native crash gives its stack
-status: Active
+status: Done
 phase: P0.123
 opened: 2026-11-08
 depends-on: [0293]
@@ -56,13 +56,13 @@ crash in the job names its signal, its thread and the frames of its stack.
 
 ## Acceptance criteria
 
-- [ ] Each finding has a test, an injection or a reading that fails before the change and passes after it.
-- [ ] A clean build (`--no-incremental`) gives zero errors and zero warnings.
-- [ ] Continuous integration passes on the three runners, on the branch and on `main` after the merge.
+- [x] Each finding has a test, an injection or a reading that fails before the change and passes after it.
+- [x] A clean build (`--no-incremental`) gives zero errors and zero warnings.
+- [x] Continuous integration passes on the three runners, on the branch and on `main` after the merge.
 
 ## Outcome
 
-Status: Active
+Status: Done · commit (the merge of the branch p0123-stale-main) · v0.277
 
 ## Method
 
@@ -70,9 +70,11 @@ Mechanical: a test, an injection or a reading for each finding, before the chang
 Judgement:  the cause comes from the bytecode of SDLMain.run and SDLActivity.onDestroy, read by a script, and the order
             of the lines of run 42433201851; the waiting thread is the least change that keeps mSingleton and
             mSDLThread of the newest activity.
-Weakest:    to be written at the close.
+Weakest:    the cause comes from the bytecode of SDL and one run; no run repeats the relaunch on demand, so no run
+            shows the fix. The test reads the source of the activity.
 
 ## Progress
 
 - 2026-11-08: the main function of a stale session waits; the smoke test gives the lines of the tombstone. Two
   injections (no wait, no pattern of the frames) fail the new tests.
+- 2026-11-08: run 42436940645 passed. Closed at v0.277.

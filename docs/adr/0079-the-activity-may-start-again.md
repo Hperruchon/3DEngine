@@ -99,3 +99,4 @@ gave `Window` a `Dispose`, so a later session of the process makes its own windo
   with no open dialog (E179).
 - 2026-11-08 · TASK-0294 · Item 5: the main function of a stale session waits and does not return, because SDL finishes the
   newest activity when a main function returns (finding V141 of the codebase review of 2026-11-08).
+- 2026-11-08 · TASK-0294 · Item 5 shipped at v0.277.

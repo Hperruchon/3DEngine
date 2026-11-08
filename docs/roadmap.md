@@ -264,6 +264,8 @@ Therefore each approved objective must have a track here.
 - P9f — A start of the desktop with a file opens it and shows no home screen. v0.274, TASK-0290, ADR-0083.
 - P0.122 — The HTTP answer of a save lists its warnings. v0.275, TASK-0291, ADR-0090.
 - Review — The codebase review of 2026-11-08. v0.276, TASK-0293.
+- P0.123 — The main function of a stale session of the phone does not return, and a native crash gives its stack.
+  v0.277, TASK-0294, ADR-0079.
 
 ## Track 0 — Foundations
 
