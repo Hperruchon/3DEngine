@@ -1,7 +1,7 @@
 ---
 id: 0295
 title: A solid mesh with inward triangles is refused, and a file too large for the store gives the code of the store
-status: Active
+status: Done
 phase: P0.124
 opened: 2026-11-08
 depends-on: [0294]
@@ -56,20 +56,21 @@ E186 and E190 are fixed, each with a test.
 
 ## Acceptance criteria
 
-- [ ] Each finding has a test, an injection or a reading that fails before the change and passes after it.
-- [ ] A clean build (`--no-incremental`) gives zero errors and zero warnings.
-- [ ] Continuous integration passes on the three runners, on the branch and on `main` after the merge.
+- [x] Each finding has a test, an injection or a reading that fails before the change and passes after it.
+- [x] A clean build (`--no-incremental`) gives zero errors and zero warnings.
+- [x] Continuous integration passes on the three runners, on the branch and on `main` after the merge.
 
 ## Outcome
 
-Status: Active
+Status: Done · commit (the merge of the branch p0124-winding-and-size) · v0.279
 
 ## Method
 
 Mechanical: a test, an injection or a reading for each finding, before the change.
 Judgement:  E-ASSET-TOO-LARGE and not a new code, because the chosen file becomes an asset, and that code means more than
             16 MiB in one asset.
-Weakest:    to be written at the close.
+Weakest:    the check reads the volume of Manifold, a sum of floating numbers; a mesh with a volume near zero is not
+            tried. No run on the phone shows the new code of a large file.
 
 ## Progress
 
@@ -77,3 +78,4 @@ Weakest:    to be written at the close.
   pyramid, and the refusal of reversed triangles); the injections (no check, and a reversed mesh in the handler) fail
   them. E190: `E-ASSET-TOO-LARGE` before the read and at a stopped read; the injections (the old code, and no mark at the
   stop) fail the tests of the open.
+- 2026-11-08: run 42439763627 passed. Closed at v0.279.

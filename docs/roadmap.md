@@ -268,6 +268,8 @@ Therefore each approved objective must have a track here.
   v0.277, TASK-0294, ADR-0079.
 - R16i — The interface draws with Instrument Sans, and a value on an edge with JetBrains Mono. v0.278, TASK-0292,
   ADR-0091.
+- P0.124 — A solid mesh with inward triangles is refused, and a file too large for the store gives the code of the
+  store. v0.279, TASK-0295, ADR-0089, ADR-0083.
 
 ## Track 0 — Foundations
 
