@@ -499,6 +499,7 @@ The first objective. Each phase ends with something that a person can observe.
 | R16i | The fonts of the redesign: Instrument Sans for the interface and JetBrains Mono for a value on an edge, after the owner allowed their download (ADR-0091). TASK-0292. | 1 |
 | R16j | The layout of the mix with no panel chrome: the title of the document as a top bar, the panel with no title bar, ground or border under it, and the status line at the lower right in the mono font (ADR-0093; the owner, 2026-11-08). TASK-0304. | 1 |
 | R16k | The framing of the mix: a framed part fills 45 % of the half picture, so it is about a third of the width at 1440 x 900, with room for the ring and the values (ADR-0094; the owner, 2026-11-08). TASK-0305. | 1 |
+| R16l | The orbit ring of the mix: a guide circle, light segments with drawn icons and the short labels of the render, and a caption "TOOLS FOR" and the name to the right of the ring (ADR-0095; the owner, 2026-11-08). TASK-0306. | 1 |
 
 ## Track K — The kernel
 
