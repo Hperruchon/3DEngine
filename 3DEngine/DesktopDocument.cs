@@ -23,9 +23,13 @@ internal sealed class DesktopDocument : IDocumentFiles
     // E167 (TASK-0262): the store of the desktop, which the check of an open reads for an import of ADR-0083.
     private readonly Engine.Core.Assets.IAssetSource? _assets;
 
-    public DesktopDocument(string folder, Engine.Core.Assets.IAssetSource? assets = null)
+    // ADR-0102 item 6 (Q2 A, TASK-0316): the recent projects of this desktop, or null for no list.
+    private readonly RecentProjects? _recent;
+
+    public DesktopDocument(string folder, Engine.Core.Assets.IAssetSource? assets = null, RecentProjects? recent = null)
     {
         _assets = assets;
+        _recent = recent;
         Folder = new DocumentFolder(folder, Reopen);
     }
 
@@ -47,20 +51,11 @@ internal sealed class DesktopDocument : IDocumentFiles
     private static StlImport? _import;
     private static bool _home = true;
 
-    public IReadOnlyList<string> Recent(int count)
-    {
-        try
-        {
-            return [.. new DirectoryInfo(Folder.FullPath).EnumerateFiles("*" + DocumentFile.Extension)
-                .OrderByDescending(file => file.LastWriteTimeUtc)
-                .Take(count)
-                .Select(file => Path.GetFileNameWithoutExtension(file.Name))];
-        }
-        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
-        {
-            return [];
-        }
-    }
+    // ADR-0102 item 6 (Q2 A, TASK-0316): the recent projects in each folder. Until TASK-0316 the home screen gave the newest
+    // files of the document folder only, so a project in another folder never showed.
+    public IReadOnlyList<string> Recent(int count) => _recent?.Paths(count) ?? [];
+
+    public void Remember(string path) => _recent?.Remember(path);
 
     // Finding V125 of the codebase review of 2026-11-07 (b) (TASK-0270): the request takes the place of an open, as Reopen
     // does (E149), so a request and an open of a file in one session cannot both be accepted, and the import of the request

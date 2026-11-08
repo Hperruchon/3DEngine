@@ -8911,3 +8911,47 @@ tap on the scene where no body is. A finger has no hover, so on a touch display 
 New tests: 5, and one test left with the old place of the rows. The test list holds 2195 (1472 in `Engine.Tests`, 352 in `3DEngine.Tests`, 368 in `3DEngine.ImageTests`, 3
 in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
 entries: 15 of 15. New diagnostic codes: 0. Since the review of v0.292, 3 product milestones and 6 entries followed it.
+
+## v0.299 — The window opens and saves a project in any folder, with no terminal (P9g, TASK-0316)
+
+On 2026-11-08 the owner asked to use the desktop for the entry hall shelf with no command line and no agent, and answered Q1
+to Q4 with A. At v0.298 "Open file" opened STL files only, a save, an open and an export took a name in the document folder,
+and the home screen gave the newest files of that folder. The advisor session wrote the draft as TASK-0313 with ADR-0099;
+R16p held both numbers, and R17a and R17b took TASK-0314, TASK-0315, ADR-0100 and ADR-0101 on main (1a070ad) before the merge,
+so the task is TASK-0316 and the record ADR-0102. This session checked each fact of its Context on
+disk and corrected two: the home screen gave five rows, not eight, and the ledger does not say that Codex opened the shelf.
+
+**The change.** ADR-0102 amends ADR-0030 item 3 and ADR-0083 D1 and D6.
+- "Open project..." and "Import STL..." are two actions on the home screen, in the panel and in the command line. An open
+  of a project in each folder uses the check of ADR-0030 item 5 and the next session of R14b.
+- "Save as..." and "Export STL..." open the save dialog of the system (`SDL_ShowSaveFileDialog`). A path gets its
+  extension once. A save over a file that exists is refused with `E-IO-SAVE-FAILED`; the export does not change the
+  project. The panel has no name field.
+- Each dialog keeps its purpose, and its result gives it back, so a late result goes to its own action only.
+- The home screen gives the last eight projects that this desktop opened or saved, in each folder, from
+  `recent-projects.txt` beside the folder of unsaved documents (or the setting `Desktop:RecentFile`). A path that no
+  longer exists leaves the list.
+- The top bar shows the folder of the file after its name.
+- Before a change of project while the document has no file and holds a command, a window asks "Save as...", "Discard" or
+  "Cancel" (Q3 A).
+- The surface of an agent keeps the document folder (ADR-0030 item 2).
+
+**Proof.** Eleven new tests give the results of the dialogs as samples: the save of a new part in a chosen folder and a
+refusal over a file that exists, a start again with the project in the recent rows and a change that stays with no save,
+the export, a closed or failed dialog, a text file and an STL file named `.3de`, the question with each answer, a closed
+save dialog after the question, the list of eight paths, the folder in the top bar, the home screen of a host with no files,
+and the command line with the question. A new test of the state of the dialog holds the purpose. Eleven injections each make
+a test fail. The visual check ran offscreen at 1440 by 900 on a scratch copy of the shelf, whose hash stayed the same; the
+owner saw eight pictures before the merge. No dialog of the system ran. The phone project builds with zero warnings. Run
+42533075534 passed. The failed runs since the entry v0.298, from the API: 42535047803 on main (1a070ad), in the
+job "Write set of the governing task" only: the merge e27bad9 of another session resolved a conflict in the roadmap with
+no TASK trailer, so the judge read it as a change of its own. The merge of main into this branch had no conflict.
+
+**What stays.** The row P9g waits for the run of the owner, with the real dialogs and the shelf. The register held 15 of 15
+open entries, so the phone (Q4 A) is in ADR-0102 item 9 until P0.131 gives it an entry. "Save as..." on a project with a
+file moves that file, as before.
+
+New tests: 12. The test list holds 2207 (1472 in `Engine.Tests`, 352 in `3DEngine.Tests`, 380 in `3DEngine.ImageTests`, 3
+in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
+entries: 15 of 15. New diagnostic codes: 0. Since the review of v0.292, 4 product milestones and 7 entries followed it, so
+a codebase review is due before the next product milestone.

@@ -42,14 +42,24 @@ With no `--file`, the desktop writes into the folder of unsaved documents,
 `<local application data>/3DEngine/unsaved`, from its first command. The setting
 `Desktop:UnsavedFolder` changes that folder. Each applied command is in the file before its result.
 
-The panel shows the name of the file, or "unsaved". Type a name in "File name":
+The top bar shows the name of the file and its folder, or "unsaved". From the window, with no
+terminal (ADR-0102):
 
-- Save as moves the file to that name in the document folder, `<documents>/3DEngine`. The setting
-  `Desktop:DocumentFolder` changes that folder. A file with that name must not exist.
-- Open checks the file, then starts the desktop again with that file on the same port. A file that
-  does not open gives its code in the panel, and the window stays.
+- "Open project..." opens the dialog of the system for a `.3de` file in each folder. The desktop
+  checks the file, then opens it in a new session on the same port. A file that does not open gives
+  its code, and the window stays.
+- "Save as..." opens the save dialog of the system. Choose the folder and the name; the file of the
+  project moves there and takes each later command. A file that exists is not replaced.
+- "Export STL..." writes the bodies into an STL file that you choose. The file of the project does
+  not change.
+- "Import STL..." makes a new part with the mesh of an STL file.
+- The home screen shows the last eight projects that this desktop opened or saved, in each folder.
+  The list is `recent-projects.txt` beside the folder of unsaved documents; the setting
+  `Desktop:RecentFile` changes it.
+- Before an open, a new part or an import, a part with no file and with a command asks: "Save
+  as...", "Discard" (its file stays in the folder of unsaved documents) or "Cancel".
 
-An agent does the same with `GET /document`, `POST /document/save {"name": "plate"}` and
+An agent uses the document folder, `<documents>/3DEngine` (the setting `Desktop:DocumentFolder`), with `GET /document`, `POST /document/save {"name": "plate"}` and
 `POST /document/open {"name": "plate"}`.
 
 Undo reverses the last command that changed the document, and Redo applies it again (ADR-0031). The

@@ -1,13 +1,13 @@
 ---
 id: 0083
 title: An STL file opens as a mesh body of a new part, through one import command
-status: Accepted
+status: Amended
 topic: Geometry, contract, clients
 date: 2026-11-07
 supersedes: []
 superseded-by: []
 amends: ['0044', '0045', '0048']
-amended-by: []
+amended-by: ['0102']
 affects:
   - Engine.Contracts/Geometry/IMeshImportOps.cs
   - Engine.Core/Commands/ImportStlCommand.cs
@@ -212,3 +212,5 @@ desktop row P9c, the phone row P9d, and the test sheet P9e.
   form of decisions).
 - 2026-11-08 · TASK-0295 · D3: the client gives `E-ASSET-TOO-LARGE` for a file of more than 16 MiB, also when its read stops
   at the limit; `E-STL-TOO-LARGE` keeps the meaning of item 6 (finding E190 of the codebase review of 2026-11-08).
+- 2026-11-08 · TASK-0316 · ADR-0102 amends D1 and D6: "Open file" is "Import STL...", apart from "Open project...",
+  and the recent rows are the projects that this desktop opened or saved, in each folder.

@@ -32,6 +32,9 @@ public sealed class NativeThreeDEngine : IThreeDEngine, IDisposable
     // of the last save or open, which the panel shows.
     private readonly IDocumentFiles? _document;
     private string? _documentMessage;
+
+    // ADR-0102 (phase P9g, TASK-0316): the project path of the window, for a host with files.
+    private readonly ProjectFiles? _projects;
     private readonly string _address;
     private GraphicsDevice? _graphicsDevice;
     private SceneRenderer? _renderer;
@@ -62,6 +65,7 @@ public sealed class NativeThreeDEngine : IThreeDEngine, IDisposable
     {
         _window = window;
         _document = document;
+        _projects = document is { HasFolder: true } ? new ProjectFiles(host, document, new WindowDialogs(window)) : null;
         _assets = assets;
         _host = host;
         _address = address;
@@ -121,12 +125,14 @@ public sealed class NativeThreeDEngine : IThreeDEngine, IDisposable
             if (files.TakeImport() is { } import)
                 Import(import);
             else if (files.Home)
-                _ui.ShowHome(files.Recent(RecentCount));
+                _ui.ShowHome(files.Recent(RecentCount), files.HasFolder);
         }
     }
 
-    // The count of the recent files of the home screen.
-    private const int RecentCount = 5;
+    // The count of the recent projects of the home screen: each one that the list keeps (ADR-0102 item 6, Q2 A). Until
+    // TASK-0316 the home screen showed five files of the document folder.
+    // The host keeps eight paths (RecentProjects.Capacity).
+    private const int RecentCount = 8;
 
     // ADR-0083 D1: the import of the new part document. The engine reads the bytes of the store again, so its refusal is
     // the message of the open.
@@ -148,9 +154,17 @@ public sealed class NativeThreeDEngine : IThreeDEngine, IDisposable
     // with its import.
     private void TakeOpenedFile()
     {
-        var (done, path, failure) = Window.TakeOpenedFile();
+        var (done, path, failure, purpose) = Window.TakeOpenedFile();
         if (!done || _ui is null)
             return;
+        // ADR-0102 item 2 (TASK-0316): the result of the open of a project, of a save or of an export goes to the project path.
+        if ((DialogPurpose)purpose != DialogPurpose.ImportStl)
+        {
+            if (_projects is not null)
+                Report(_projects.Take(path, failure, (DialogPurpose)purpose));
+            return;
+        }
+
         // Finding V131 of the codebase review of 2026-11-07 (b) (TASK-0271): a dialog that fails gives its reason; a dialog
         // that the person closes with no file gives nothing.
         if (path is null)
@@ -395,41 +409,37 @@ public sealed class NativeThreeDEngine : IThreeDEngine, IDisposable
                 case ShowAllAction:
                     _actions.ShowAll(live);
                     break;
-                case SaveDocumentAction save:
-                    _documentMessage = SaveDocument(save.Name);
+                // ADR-0102 (phase P9g, TASK-0316): the project path. A change of project asks first while the document has no
+                // file (item 5, Q3 A). Finding V127 of the codebase review of 2026-11-07 (b) (TASK-0271): the home screen hides
+                // the line of the document, so a refusal shows in its message there (Report).
+                case OpenProjectAction when _projects is not null:
+                    Report(_projects.Change(_projects.OpenProject));
                     break;
-                case OpenDocumentAction open:
-                    _documentMessage = OpenDocument(open.Name, out var openRefused);
-                    // Finding V127 of the codebase review of 2026-11-07 (b) (TASK-0271): the home screen hides the line of the
-                    // document, so a refusal of an open from a recent row shows in the message there.
-                    if (openRefused is not null && _ui.HomeShown)
-                        _ui.ShowMessage(openRefused);
+                case OpenRecentAction recent when _projects is not null:
+                    Report(_projects.Change(() => _projects.OpenPath(recent.Path)));
+                    break;
+                case SaveAsAction when _projects is not null:
+                    Report(_projects.SaveAs());
+                    break;
+                case ExportStlAction when _projects is not null:
+                    Report(_projects.Export());
+                    break;
+                case AnswerAction answer when _projects is not null:
+                    Report(_projects.Answer(answer.Answer));
                     break;
                 // ADR-0083 D1 and D6 (TASK-0259): the dialog of the system, a new part, the home screen and the frame.
-                case OpenFileAction:
-                    if (!_window.OpenFile("STL file", "stl"))
-                    {
-                        _documentMessage = "A file dialog is open already.";
-                        if (_ui.HomeShown)
-                            _ui.ShowMessage((string.Empty, _documentMessage));
-                    }
-
+                case ImportStlAction:
+                    Report(_projects is not null ? _projects.Change(_projects.ImportStl) : ImportStl());
                     break;
                 case NewPartAction when _document is not null:
-                    if (_document.RequestNew(null) is { } refused)
-                        _ui.ShowMessage((refused.Code, refused.Message));
-                    else
-                        _document.Home = false;
+                    Report(_projects is not null ? _projects.Change(NewPart) : NewPart());
                     break;
                 case HomeAction when _document is not null:
                     _document.Home = true;
-                    _ui.ShowHome(_document.Recent(RecentCount));
+                    _ui.ShowHome(_document.Recent(RecentCount), _document.HasFolder);
                     break;
                 case FrameAction:
                     FrameBodies();
-                    break;
-                case ExportStlAction export:
-                    _documentMessage = ExportStl(export.Name);
                     break;
                 case UndoAction:
                     _documentMessage = _actions.Undo();
@@ -599,45 +609,31 @@ public sealed class NativeThreeDEngine : IThreeDEngine, IDisposable
     private void Face(DatumFrame frame)
         => SketchCamera.Face(Camera, (frame.Normal.X, frame.Normal.Y, frame.Normal.Z), (frame.Origin.X, frame.Origin.Y, frame.Origin.Z));
 
-    // A save in the serial section of the session, on the render loop (ADR-0030 item 3).
-    private string SaveDocument(string name)
+    // ADR-0102 (TASK-0316): the line of the document, and a refusal in the message of the home screen while it shows.
+    private void Report(FileOutcome outcome)
     {
-        if (_document is null)
-            return "The desktop has no document folder.";
-        var path = _document.Resolve(name, out var refusal);
-        if (path is null)
-            return refusal!;
-        var warnings = new List<Engine.Contracts.Diagnostic>();
-        var error = _host.Session.SaveAs(path, warnings).GetAwaiter().GetResult();
-        if (error is not null)
-            return $"{error.Code}: {error.Message}";
-        // Finding E164 (TASK-0251): the status line names an old file that stays.
-        var saved = $"Saved as {Path.GetFileName(path)}";
-        return warnings.Count == 0 ? saved : $"{saved}. {string.Join(" ", warnings.Select(w => $"{w.Code}: {w.Message}"))}";
+        if (outcome.Line is { } line)
+            _documentMessage = line;
+        if (outcome.Refusal is { } refusal && _ui?.HomeShown == true)
+            _ui.ShowMessage(refusal);
     }
 
-    // ADR-0048 item 6: the live bodies as one STL file in the document folder, with the name of the field and the
-    // extension .stl; the rules of a name are the rules of a document file (ADR-0030 item 2).
-    private string ExportStl(string name)
+    // ADR-0083 D1: the dialog of an STL file, for a host with no project path (the phone).
+    private FileOutcome ImportStl()
+        => _window.OpenFile(ProjectFiles.StlFilter, ProjectFiles.StlPattern, (int)DialogPurpose.ImportStl)
+            ? default
+            : new FileOutcome(ProjectFiles.Busy, (string.Empty, ProjectFiles.Busy));
+
+    // ADR-0083 D1: a new part document for the next session; a refusal shows in the message, as before TASK-0316.
+    private FileOutcome NewPart()
     {
         if (_document is null)
-            return "The desktop has no document folder.";
-        var path = StlPath(_document, name, out var refusal);
-        if (path is null)
-            return refusal!;
-        var (content, error) = _host.Session.ReadGeometry(Engine.Core.Export.StlExport.Write).GetAwaiter().GetResult();
-        if (error is not null)
-            return $"{error.Code}: {error.Message}";
-        try
-        {
-            File.WriteAllBytes(path, content!);
-        }
-        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
-        {
-            return $"{Engine.Core.DiagnosticCodes.IoSaveFailed}: {ex.Message}";
-        }
-
-        return $"Exported {(content!.Length - 84) / 50} triangles to {Path.GetFileName(path)}";
+            return default;
+        if (_document.RequestNew(null) is { } refused)
+            _ui?.ShowMessage((refused.Code, refused.Message));
+        else
+            _document.Home = false;
+        return default;
     }
 
     // ADR-0041 item 6: the mark shows where a tap goes. Finding V74 of the codebase review of 2026-11-03 (TASK-0170):
@@ -649,38 +645,9 @@ public sealed class NativeThreeDEngine : IThreeDEngine, IDisposable
     // The line of the document in the panel. Finding V99 of the codebase review of 2026-11-06 (c) (TASK-0232): with no
     // IDocumentFiles the panel had no line, so the rejection of a cut, of an Undo or of a sketch on a face showed nothing
     // on the phone, although ADR-0073 item 2 sends it to the line of the document.
-    internal static DocumentLine LineOf(IDocumentFiles? files, string? fileName, string? message)
-        => new(fileName, message, Files: files is { HasFolder: true });
-
-    // The path of the STL file of a name. Finding V72 of the codebase review of 2026-11-01 (TASK-0162):
-    // Resolve adds .3de, so until TASK-0162 the name "part.stl" gave the file "part.stl.stl".
-    internal static string? StlPath(IDocumentFiles files, string name, out string? refusal)
-    {
-        if (name.EndsWith(".stl", StringComparison.OrdinalIgnoreCase))
-            name = name[..^4];
-        var path = files.Resolve(name, out refusal);
-        return path is null ? null : Path.ChangeExtension(path, ".stl");
-    }
-
-    // The check of the file; when it opens, the window loop ends and the program starts
-    // again with it (ADR-0030 items 4 and 5).
-    private string OpenDocument(string name, out (string Code, string Text)? refused)
-    {
-        refused = null;
-        if (_document is null)
-            return "The desktop has no document folder.";
-        var path = _document.Resolve(name, out var refusal);
-        if (path is null)
-        {
-            refused = (string.Empty, refusal!);
-            return refusal!;
-        }
-
-        var error = _document.Open(path, CancellationToken.None).GetAwaiter().GetResult();
-        if (error is not null)
-            refused = (error.Code, $"{Path.GetFileName(path)}: {error.Message}");
-        return error is null ? $"Opening {Path.GetFileName(path)}" : $"{error.Code}: {error.Message}";
-    }
+    // ADR-0102 item 7 (TASK-0316): and the folder of the file of a project, which the top bar shows after its name.
+    internal static DocumentLine LineOf(IDocumentFiles? files, string? fileName, string? message, string? folder = null)
+        => new(fileName, message, Files: files is { HasFolder: true }, Folder: fileName is null ? null : folder);
 
     // V106 (TASK-0243): true when the last Render submitted a frame.
     public bool Drew => _graphicsDevice?.Presenter?.Drew ?? false;
@@ -819,7 +786,9 @@ public sealed class NativeThreeDEngine : IThreeDEngine, IDisposable
                 Camera, window.width, window.height, _host.Session.LengthUnit);
         }
 
-        var panel = _ui.Frame((float)_delta.TotalSeconds, display, scale, _renderer.LiveBodies, Selection, LineOf(_document, _host.FileName, _documentMessage), sketches, sketchPanel, imagePanel, dimensions, size, faceLine, ringCentre, ringSize, Inset(_window.SafeInsets), values);
+        // ADR-0102 item 5 (Q3 A): the question shows while a change of project waits for its answer.
+        _ui.ShowQuestion(_projects?.Asking ?? false);
+        var panel = _ui.Frame((float)_delta.TotalSeconds, display, scale, _renderer.LiveBodies, Selection, LineOf(_document, _host.FileName, _documentMessage, Path.GetDirectoryName(_host.Session.FilePath)), sketches, sketchPanel, imagePanel, dimensions, size, faceLine, ringCentre, ringSize, Inset(_window.SafeInsets), values);
         ApplyPanel(_renderer.LiveBodies);
 
         var ui = _uiRenderer;

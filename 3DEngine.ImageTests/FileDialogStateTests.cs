@@ -32,7 +32,28 @@ public sealed class FileDialogStateTests
         Assert.Null(FileDialogState.Begin("STL file", "stl"));
 
         FileDialogState.Finish(second.Number, "new.stl", null);
-        Assert.Equal((true, "new.stl", (string?)null), FileDialogState.Take());
+        Assert.Equal((true, "new.stl", (string?)null, 0), FileDialogState.Take());
+        Assert.Equal(waiting, FileDialogState.Waiting);
+    }
+
+    // ADR-0102 item 2 (phase P9g, TASK-0316): the result gives back the purpose of its dialog, and a late callback of an
+    // earlier dialog with another purpose gives no result; the default location of a save dialog is freed with its filter.
+    [Fact]
+    public void The_Result_Gives_The_Purpose_Of_Its_Own_Dialog()
+    {
+        FileDialogState.Reset();
+        var waiting = FileDialogState.Waiting;
+        var import = FileDialogState.Begin("STL file", "stl", purpose: 0) ?? throw new InvalidOperationException("No import dialog.");
+        FileDialogState.Reset();
+        var save = FileDialogState.Begin("3DEngine project", "3de", purpose: 2, location: "C:/projects/shelf.3de") ?? throw new InvalidOperationException("No save dialog.");
+        Assert.NotEqual(0, save.Location);
+        Assert.Equal(0, import.Location);
+
+        FileDialogState.Finish(import.Number, "late.stl", null);
+        Assert.False(FileDialogState.Take().Done);
+        FileDialogState.Finish(save.Number, "C:/projects/shelf.3de", null);
+
+        Assert.Equal((true, "C:/projects/shelf.3de", (string?)null, 2), FileDialogState.Take());
         Assert.Equal(waiting, FileDialogState.Waiting);
     }
 }

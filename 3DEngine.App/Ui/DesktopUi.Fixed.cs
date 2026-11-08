@@ -30,12 +30,17 @@ internal sealed unsafe partial class DesktopUi
     public const string TitleItem = "Title";
     internal const float TopBarHeight = 32f;
 
+    // ADR-0102 item 7 (TASK-0316): the item of the folder of the file in the top bar.
+    public const string TitleFolderItem = "Title:folder";
+
     // ADR-0093 item 1: the top bar: the program, then the file or "unsaved", then the unit, with no ground. A long name is
     // cut to the width of the rows, so the unit stays.
     // Finding V149 of the codebase review of 2026-11-08 (c) (TASK-0311): and to the room left of the rows of a selected body,
     // 12 pixels from them, so on a narrow window the top bar does not cover their title; at least 48 pixels.
     // ADR-0099 item 5 (the redesign, slice p, TASK-0313): the rows are at the left now, so the name ends 12 pixels left of the
     // command line at the upper right.
+    // ADR-0102 item 7 (phase P9g, TASK-0316): the folder of the file follows its name in the quiet colour, cut at its start so
+    // that the last folders stay, where the room left of the command line holds at least 48 pixels of it.
     private void TopBar(Vector2 displaySize, DocumentLine? document)
     {
         ImGui.SetNextWindowPos(new Vector2(16f + _inset.X, 16f + _inset.Y), ImGuiCond.Always);
@@ -49,6 +54,9 @@ internal sealed unsafe partial class DesktopUi
                 ? commandLeft - 12f - (16f + _inset.X) - ImGui.CalcTextSize(parts[0]).X - ImGui.CalcTextSize(parts[2]).X - 24f
                 : RowsWidth;
             var nameWidth = Math.Clamp(room, 48f, RowsWidth);
+            var folderRoom = parts.Count == 3 && document?.Folder is not null
+                ? room - ImGui.CalcTextSize(Fit(parts[1], nameWidth)).X - 12f
+                : 0f;
             ImGui.TextUnformatted(parts[0]);
             for (var i = 1; i < parts.Count; i++)
             {
@@ -56,6 +64,12 @@ internal sealed unsafe partial class DesktopUi
                 ImGui.PushStyleColor(ImGuiCol.Text, colours[(int)(i == parts.Count - 1 ? ImGuiCol.TextDisabled : ImGuiCol.Text)]);
                 ImGui.TextUnformatted(i == 1 && parts.Count == 3 ? Fit(parts[i], nameWidth) : parts[i]);
                 ImGui.PopStyleColor();
+                if (i == 1 && folderRoom >= 48f && document?.Folder is { } folder)
+                {
+                    ImGui.SameLine(0f, 12f);
+                    ImGui.TextDisabled(FitStart(folder, folderRoom));
+                    _items[TitleFolderItem] = new Vector4(ImGui.GetItemRectMin().X, ImGui.GetItemRectMin().Y, ImGui.GetItemRectMax().X, ImGui.GetItemRectMax().Y);
+                }
             }
 
             AddWindowRectangle();
