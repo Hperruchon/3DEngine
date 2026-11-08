@@ -181,7 +181,16 @@ internal sealed unsafe class SceneRenderer : IDisposable
     {
         // The GPU must be idle before a pipeline or a buffer goes.
         _bodies.Dispose();
-        _device.WaitIdle();
+        // Finding V145 of the codebase review of 2026-11-08 (b) (TASK-0303): on a lost device the wait fails, and the objects
+        // go in each case, as Vulkan permits after a loss (E192). Until TASK-0303 the wait threw, and the renderer of the
+        // interface, the context of ImGui and the device stayed.
+        try
+        {
+            _device.WaitIdle();
+        }
+        catch (VkException exception) when (exception.Result == VkResult.ErrorDeviceLost)
+        {
+        }
         foreach (var mesh in _meshes.Values)
             mesh.Dispose();
         _meshes.Clear();
