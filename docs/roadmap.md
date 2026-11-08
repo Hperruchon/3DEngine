@@ -257,6 +257,8 @@ Therefore each approved objective must have a track here.
 - P0.119 — The platform step builds its probe in the phone host, and the proposal gives the volume of the sphere.
   v0.270, TASK-0285, ADR-0089.
 - P0.120 — A surface lost while the phone engine starts ends the engine as the background does. v0.271, TASK-0286.
+- P0.121 — Each query of a surface checks its result, and a device that fails to start frees what it made. v0.272,
+  TASK-0287.
 
 ## Track 0 — Foundations
 
@@ -382,6 +384,7 @@ This track removes each condition that blocks other work.
 | P0.118 | The ring of a sketch sees the windows that come after it in the frame, and a window of the sketch at the left does not pull it under the panel (two leads of the review of Codex of v0.265, medium). TASK-0284. | 1 |
 | P0.119 | The platform step builds its probe in the host of the phone and reads its analyzer switches, and the proposal of K5c gives the volume of the sphere (the reviews of Codex of v0.266, medium, and v0.268, low). TASK-0285. | 1 |
 | P0.120 | A surface lost while the phone engine starts ends the engine as the background does, and the document stays (the audit of Codex of the phone host at d5209a2, high; before the next product phase). TASK-0286. | 1 |
+| P0.121 | Each query of a surface checks its result, and a device that fails to start frees what it made (the review of Codex of v0.271, high and medium; before the next product phase). TASK-0287. | 1 |
 | P0.102 | The cache of a face, the fixed controls, the list New, the edges and the safe area hold their next forms (V113 to V118 of the codebase review of 2026-11-06 (e); after P0.101). TASK-0252. | 1–2 |
 | P0.86 | The window keeps no input between sessions, the hook has the cases of one axis, and the next forms of four gates fail (V88 to V90, T141 to T144 of the codebase review of 2026-11-06; after the next product phase). TASK-0198. | 1–2 |
 

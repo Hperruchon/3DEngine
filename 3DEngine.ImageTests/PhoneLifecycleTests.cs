@@ -71,4 +71,24 @@ public sealed class PhoneLifecycleTests
             Assert.True(guarded.IsMatch(host), $"{call} of the phone host has no guard of a lost surface.");
         }
     }
+
+    // The review of Codex of v0.271 (TASK-0287): each query of a surface in the code of Vulkan checks its result, so a lost
+    // surface throws the exception that the guard of the phone takes. Until TASK-0287 the query of the support of a queue
+    // ignored its result, the device counted as one that cannot present, and the start ended with no device.
+    [Fact]
+    public void Each_Query_Of_A_Surface_Checks_Its_Result()
+    {
+        var directory = new DirectoryInfo(AppContext.BaseDirectory);
+        while (directory is not null && !File.Exists(Path.Combine(directory.FullName, "3DEngine.sln")))
+            directory = directory.Parent;
+        var vulkan = Path.Combine(directory?.FullName ?? throw new InvalidOperationException("No 3DEngine.sln."), "3DEngine.Vulkan");
+        var queries = Directory.EnumerateFiles(vulkan, "*.cs", SearchOption.AllDirectories)
+            .Where(path => !path.Contains($"{Path.DirectorySeparatorChar}obj{Path.DirectorySeparatorChar}", StringComparison.Ordinal))
+            .SelectMany(path => File.ReadLines(path).Select(line => (File: Path.GetFileName(path), Line: line.Trim())))
+            .Where(item => !item.Line.StartsWith("//", StringComparison.Ordinal) && item.Line.Contains("vkGetPhysicalDeviceSurface", StringComparison.Ordinal))
+            .ToList();
+        Assert.True(queries.Count >= 6, $"The test found {queries.Count} queries of a surface.");
+        var ignored = queries.Where(item => !item.Line.Contains(".CheckResult()", StringComparison.Ordinal)).Select(item => $"{item.File}: {item.Line}").ToList();
+        Assert.True(ignored.Count == 0, "A query of a surface ignores its result: " + string.Join("; ", ignored));
+    }
 }

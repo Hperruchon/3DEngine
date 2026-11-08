@@ -8,4 +8,4 @@ Engine.Tests 1415
 # The verification spike of the vision library (ADR-0042, TASK-0145).
 3DEngine.VisionTests 3
 # The image test runs on Ubuntu only (ADR-0025 item 4, R-0040).
-3DEngine.ImageTests 313 linux=335
+3DEngine.ImageTests 314 linux=336
