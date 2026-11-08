@@ -58,3 +58,4 @@ that size.
 ## History
 
 - 2026-11-08 · TASK-0306 · The record, with the slice (the choice of the owner of 2026-11-08).
+- 2026-11-08 · TASK-0306 · Shipped at v0.291.
