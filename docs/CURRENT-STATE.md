@@ -8737,3 +8737,30 @@ builds with zero warnings. Run 42481019862 passed. The failed runs since the ent
 New tests: 13. The test list holds 2179 (1472 in `Engine.Tests`, 350 in `3DEngine.Tests`, 354 in `3DEngine.ImageTests`, 3
 in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
 entries: 15 of 15. New diagnostic codes: 0. Since the review of v0.285, 4 product milestones and 7 entries followed it.
+
+## v0.293 — The codebase review of 2026-11-08 (c) (governance, TASK-0309)
+
+The review of 2026-11-08 (b) examined v0.285. After it came 4 product milestones (R16j, R16k, R16l and R16m) and 7 ledger
+entries, so the next product milestone would make the review late.
+
+**The change.** `docs/reviews/2026-11-08-c-codebase-review.md`, at `42f85ad` (v0.292). One agent examined the code change
+from v0.288 to the change of R16m and proved its main findings with probes that it deleted; the session read V146 and V147
+again in the code. The owner stopped the reviews of Codex on 2026-11-08, so the review uses no lead of Codex. Each finding of
+the last review is fixed, except V143 and V144, which are named only.
+- V146 is high: on a phone of 390 by 844 the status line of R16j covers Frame and Home, and a tap on them does nothing.
+- Two are medium: V147 (the dimension lines still take the y axis as up) and V148 (a landscape ring of a sketch draws no
+  icon on Select, Circle and Finish).
+- Three are low: V149, V150 and V151.
+- TASK-0310 (P0.129) holds V146, before the next product phase. The change of R16n (TASK-0308) fixes V148. TASK-0311
+  (P0.130) holds V147, V149, V150 and V151, after R16n.
+
+**Proof.** `CodebaseReviewGateTests` passes with the new review. The main run of v0.292 (42488280525) passed.
+
+**What stays.** The open findings are 0 critical, 6 high, 17 medium and 24 low. The lines of the findings up to T176 are
+carried from the last review.
+
+**A correction.** None. The failed runs since the entry v0.292, from the API: none.
+
+New tests: 0. The test list holds 2179 (1472 in `Engine.Tests`, 350 in `3DEngine.Tests`, 354 in `3DEngine.ImageTests`, 3
+in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
+entries: 15 of 15. New diagnostic codes: 0. Since the review of v0.292, 0 product milestones and 1 entry followed it.
