@@ -1,7 +1,7 @@
 ---
 id: 0290
 title: A start of the desktop with a file opens it and shows no home screen
-status: Active
+status: Done
 phase: P9f
 opened: 2026-11-08
 depends-on: [0288]
@@ -46,20 +46,22 @@ A start of the desktop with the setting `file` shows that document at once; a st
 
 ## Acceptance criteria
 
-- [ ] A start with a file shows no home screen; a start with no file shows it.
-- [ ] A clean build (`--no-incremental`) gives zero errors and zero warnings.
-- [ ] Continuous integration passes on the three runners, on the branch and on `main` after the merge.
+- [x] A start with a file shows no home screen; a start with no file shows it.
+- [x] A clean build (`--no-incremental`) gives zero errors and zero warnings.
+- [x] Continuous integration passes on the three runners, on the branch and on `main` after the merge.
 
 ## Outcome
 
-Status: Active
+Status: Done · commit (the merge of the branch p9f-file-skips-home) · v0.274
 
 ## Method
 
 Mechanical: the new test, and an injection of the old rule.
 Judgement:  the rule reads the setting in the session of the first start only; a later session has the file of an open.
-Weakest:    to be written at the close.
+Weakest:    the rule reads the setting in the first session only; a host that names a file with no setting, as a test
+            harness, keeps the home screen.
 
 ## Progress
 
 - 2026-11-08: the rule, two tests and ADR-0083 item 7. An injection of the old rule fails the new test.
+- 2026-11-08: run 42431929751 passed. Closed at v0.274.
