@@ -340,4 +340,37 @@ public class CameraTests
         camera.Pan(0, 50, 100);
         Assert.Equal(2 + 10, camera.Target.Y, 9);
     }
+
+    // ADR-0096 (the redesign, slice m, TASK-0307): with z up, a yaw of 0 puts the eye on the negative y side, a yaw of 90
+    // on the positive x side, and a positive pitch above the plane of x and y; the view draws z up on the screen.
+    [Theory]
+    [InlineData(0.0, 0.0, 0.0, -10.0, 0.0)]
+    [InlineData(90.0, 0.0, 10.0, 0.0, 0.0)]
+    [InlineData(0.0, 30.0, 0.0, -8.660254037844, 5.0)]
+    public void A_Camera_With_Z_Up_Turns_About_The_Z_Axis(double yaw, double pitch, double x, double y, double z)
+    {
+        var camera = new Camera { Target = (1, 2, 3), Distance = 10, YawDegrees = yaw, PitchDegrees = pitch, ZUp = true };
+
+        var eye = camera.Eye();
+
+        Assert.Equal(1 + x, eye.X, 9);
+        Assert.Equal(2 + y, eye.Y, 9);
+        Assert.Equal(3 + z, eye.Z, 9);
+        var up = Vector3.TransformNormal(Vector3.UnitZ, camera.View());
+        Assert.True(up.Y > 0.85f, $"The z axis is {up} in the view, not up on the screen.");
+    }
+
+    // ADR-0096: a pan with z up moves the target in the plane of the view: to the left along x, and up along z.
+    [Fact]
+    public void A_Pan_With_Z_Up_Moves_The_Target_Along_X_And_Z()
+    {
+        var camera = new Camera { Target = (1, 2, 3), Distance = 10, FieldOfViewDegrees = 90f, ZUp = true };
+
+        camera.Pan(50, 0, 100);
+        camera.Pan(0, 50, 100);
+
+        Assert.Equal(1 - 10, camera.Target.X, 9);
+        Assert.Equal(2, camera.Target.Y, 9);
+        Assert.Equal(3 + 10, camera.Target.Z, 9);
+    }
 }
