@@ -69,7 +69,8 @@ found. E13, T32, E84, E160 and V84 are fixed in part and count as open. A findin
 
 The lines up to T173 are the lines of the review of 2026-11-07 (c); this review did not examine them again, except E164
 (the HTTP answer of a save, TASK-0291) and V124 (its second part, TASK-0286 and TASK-0287). The lines of E180 to E185, V134
-to V139 and T174 follow them, with the evidence of this review.
+to V139 and T174 follow them, with the evidence of this review. The draft of Codex at `2a3d55c` gives E57, E160 and T32 as
+fixed; this review did not check them, so they count as open.
 
 - **E1** — Fixed. TASK-0035, v0.43. No change.
 - **E2** — Fixed. TASK-0034, v0.39. No change.
@@ -716,7 +717,9 @@ stay. The comment says that the catch frees what the constructor made.
 
 **[Observed]** `3DEngine.Vulkan/GraphicsDevice.cs:283` to `288` call `Dispose()`, which calls `WaitIdle()` with
 `CheckResult()`. On a lost device that throws in the catch: the device, the messenger and the instance stay, and the new
-exception replaces the first one, so the guard of the phone no longer matches it.
+exception replaces the first one, so the guard of the phone no longer matches it. The review of Codex of v0.272 gives
+the same lead as medium. **[Inferred]** A lost surface does not lose the device, and a lost device ends the engine in each
+case, so this review grades it low.
 
 ### The desktop, the phone and the tests
 
