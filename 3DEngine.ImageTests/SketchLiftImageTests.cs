@@ -78,6 +78,19 @@ public class SketchLiftImageTests
                 data = ui.Frame(1f / 60f, new Vector2(Width, Height), Vector2.One, renderer.LiveBodies, null, sketches: strokes,
                     sketchPanel: panel, ringCentre: ringCentre, ringBody: ringSize);
 
+            // ADR-0097 (the redesign, slice n, TASK-0308): the rows of the sketch are at the left in the place of the panel, the
+            // ring is on the right of the sketch with an icon on each tool.
+            var rows = ui.SketchWindowRectangle ?? throw new InvalidOperationException("No rows of the sketch.");
+            Assert.Equal(16f, rows.X);
+            Assert.Null(ui.ItemRectangle(DesktopUi.NewLabel));
+            foreach (var (label, _) in DesktopUi.SketchRingTools)
+            {
+                var segment = ui.ItemRectangle(DesktopUi.RingItem(label)) ?? throw new InvalidOperationException($"No segment {label}.");
+                Assert.True(segment.X > rows.Z, $"The segment {label} at {segment} is not right of the rows that end at {rows.Z}.");
+                Assert.NotNull(ui.ItemRectangle(DesktopUi.RingIconItem(label)));
+            }
+
+
             pixels = target.Render((commandBuffer, framebuffer, frameExtent) =>
                 renderer.Record(commandBuffer, framebuffer, frameExtent, scene, camera,
                     overlay => panelRenderer.Record(overlay, frameExtent, data, 0), null));
