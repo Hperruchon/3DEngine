@@ -34,6 +34,8 @@ internal sealed unsafe partial class DesktopUi
     // cut to the width of the rows, so the unit stays.
     // Finding V149 of the codebase review of 2026-11-08 (c) (TASK-0311): and to the room left of the rows of a selected body,
     // 12 pixels from them, so on a narrow window the top bar does not cover their title; at least 48 pixels.
+    // ADR-0099 item 5 (the redesign, slice p, TASK-0313): the rows are at the left now, so the name ends 12 pixels left of the
+    // command line at the upper right.
     private void TopBar(Vector2 displaySize, DocumentLine? document)
     {
         ImGui.SetNextWindowPos(new Vector2(16f + _inset.X, 16f + _inset.Y), ImGuiCond.Always);
@@ -42,9 +44,9 @@ internal sealed unsafe partial class DesktopUi
         {
             var colours = ImGui.GetStyle().Colors;
             var parts = TitleParts(document);
-            var rowsLeft = displaySize.X - 16f - _inset.Z - RowsWidth;
+            var commandLeft = displaySize.X - 16f - _inset.Z - CommandWidth;
             var room = parts.Count == 3
-                ? rowsLeft - 12f - (16f + _inset.X) - ImGui.CalcTextSize(parts[0]).X - ImGui.CalcTextSize(parts[2]).X - 24f
+                ? commandLeft - 12f - (16f + _inset.X) - ImGui.CalcTextSize(parts[0]).X - ImGui.CalcTextSize(parts[2]).X - 24f
                 : RowsWidth;
             var nameWidth = Math.Clamp(room, 48f, RowsWidth);
             ImGui.TextUnformatted(parts[0]);

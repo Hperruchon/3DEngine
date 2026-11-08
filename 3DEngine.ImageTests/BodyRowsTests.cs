@@ -7,7 +7,8 @@ using ThreeDEngine.Desktop.Ui;
 namespace ThreeDEngine.ImageTests;
 
 // ADR-0084 (the redesign, slice d, TASK-0267): the rows of the selected body, with no panel and no GPU. ADR-0084 names this
-// file in its enforced-by field.
+// file in its enforced-by field. ADR-0099 (the redesign, slice p, TASK-0313): the rows take the place of the panel at the
+// upper left; ADR-0099 names this file in its enforced-by field too.
 [Collection(DearImGui.Collection)]
 public sealed class BodyRowsTests
 {
@@ -16,6 +17,10 @@ public sealed class BodyRowsTests
     private static readonly Guid Sketch = Guid.Parse("62000000-0000-0000-0000-000000000001");
     private static readonly Guid Width = Guid.Parse("62000000-0000-0000-0000-000000000002");
     private static readonly LiveBody Extrude = new(Plate, "Extrude", "Plate", true);
+    private static readonly LiveBody Box = new(Guid.Parse("62000000-0000-0000-0000-000000000003"), "Box", null, true);
+
+    // The top of the panel, under the top bar of ADR-0093 item 1: 16, the height of the top bar, and 8.
+    private const float PanelTop = 16f + 32f + 8f;
 
     private static readonly IReadOnlyList<EdgeValues.Value> Values =
     [
@@ -39,20 +44,20 @@ public sealed class BodyRowsTests
 
     private static Vector2 Centre(Vector4 rectangle) => new((rectangle.X + rectangle.Z) / 2, (rectangle.Y + rectangle.W) / 2);
 
-    // Items 1 and 2: the rows are at the upper right, 16 pixels inside the display, 360 pixels wide: the name and the state,
-    // then one row for each value, each 44 pixels high, and the rows are a part of the panels for a tap.
+    private static KeySample Key(InputKey key, bool down = true) => new(key, down, KeyModifiers.None, 0);
+
+    // ADR-0099 item 1: the rows are at the upper left in the place of the panel, 16 pixels inside the display and under the
+    // top bar, 360 pixels wide: the name and the state, then one row for each value, each 44 pixels high, and the rows are a
+    // part of the panels for a tap. The panel does not show.
     [Fact]
-    public void The_Rows_Of_A_Selected_Extrude_Are_At_The_Upper_Right()
+    public void The_Rows_Of_A_Selected_Extrude_Take_The_Place_Of_The_Panel()
     {
         using var ui = new DesktopUi("http://127.0.0.1:5180", Document.Millimetre);
         Frame(ui, Extrude, Display);
         Frame(ui, Extrude, Display);
 
-        // ADR-0098 item 4 (TASK-0312): the rows start 8 pixels under the command line, which is 16 pixels inside the top.
         var title = ui.ItemRectangle(DesktopUi.RowsTitleItem) ?? throw new InvalidOperationException("No rows.");
-        var command = ui.ItemRectangle(DesktopUi.CommandItem) ?? throw new InvalidOperationException("No command line.");
-        Assert.Equal(16f, command.Y);
-        Assert.Equal(new Vector4(Display.X - 16 - DesktopUi.RowsWidth, command.W + 8, Display.X - 16, command.W + 8 + DesktopUi.RowHeight), title);
+        Assert.Equal(new Vector4(16, PanelTop, 16 + DesktopUi.RowsWidth, PanelTop + DesktopUi.RowHeight), title);
         var top = title.W;
         foreach (var value in Values)
         {
@@ -62,9 +67,12 @@ public sealed class BodyRowsTests
             Assert.True(ui.OverPanel(centre.X, centre.Y), $"A tap on the row {value.Label} reaches the scene.");
             top = row.W;
         }
+
+        Assert.Empty(ui.PanelRectangles);
+        Assert.Null(ui.ItemRectangle(DesktopUi.ShowAllLabel));
     }
 
-    // Item 1: no rows with no selection and on a portrait display; the safe area moves the rows.
+    // Item 1: no rows with no selection and on a portrait display, and the panel shows; the safe area moves the rows.
     [Fact]
     public void The_Rows_Need_A_Selection_And_A_Landscape_Display_And_Keep_The_Safe_Area()
     {
@@ -72,19 +80,19 @@ public sealed class BodyRowsTests
         Frame(ui, null, Display);
         Frame(ui, null, Display);
         Assert.Null(ui.ItemRectangle(DesktopUi.RowsTitleItem));
+        Assert.NotNull(ui.ItemRectangle(DesktopUi.ShowAllLabel));
 
         var portrait = new Vector2(390, 844);
         Frame(ui, Extrude, portrait);
         Frame(ui, Extrude, portrait);
         Assert.Null(ui.ItemRectangle(DesktopUi.RowsTitleItem));
+        Assert.NotNull(ui.ItemRectangle(DesktopUi.ShowAllLabel));
 
-        var inset = new Vector4(0f, 40f, 24f, 0f);
+        var inset = new Vector4(30f, 40f, 24f, 0f);
         Frame(ui, Extrude, Display, null, inset);
         Frame(ui, Extrude, Display, null, inset);
         var title = ui.ItemRectangle(DesktopUi.RowsTitleItem) ?? throw new InvalidOperationException("No rows.");
-        var command = ui.ItemRectangle(DesktopUi.CommandItem) ?? throw new InvalidOperationException("No command line.");
-        Assert.Equal((Display.X - 16 - inset.Z, 16 + inset.Y), (command.Z, command.Y));
-        Assert.Equal((Display.X - 16 - inset.Z, command.W + 8), (title.Z, title.Y));
+        Assert.Equal((16 + inset.X, PanelTop + inset.Y), (title.X, title.Y));
     }
 
     // Item 2: the state after the kind: "correct", or "failed" and the code; and "hidden".
@@ -116,32 +124,26 @@ public sealed class BodyRowsTests
         Assert.Empty(ui.TakeActions());
     }
 
-    // Item 3: the rows are drawn over the ring, so a release on a row that lies on a segment gives the row only.
+    // ADR-0099 item 1: on a landscape display the ring of a body is right of its centre, and the centre is at least the reach
+    // of the ring from the left edge, so no segment is on the rows at the left. Until TASK-0313 the rows were at the right,
+    // and a tap on a row over a segment gave the row only.
     [Fact]
-    public void A_Tap_On_A_Row_Over_A_Segment_Gives_The_Row_Only()
+    public void No_Segment_Of_The_Ring_Is_On_The_Rows()
     {
         using var ui = new DesktopUi("http://127.0.0.1:5180", Document.Millimetre);
-        var ring = new Vector2(1280, 0);
-        Frame(ui, Extrude, Display, ring);
-        Frame(ui, Extrude, Display, ring);
-        var layout = DesktopUi.Layout(Display, ring, 3);
-        string[] labels = [DesktopUi.MoveLabel, DesktopUi.SetDistanceLabel, DesktopUi.HideLabel];
-        var row = ui.ItemRectangle(DesktopUi.RowItem(Values[1].Key)) ?? throw new InvalidOperationException("No row.");
-        Vector2? both = null;
-        for (var x = row.X + 2; x < row.Z && both is null; x += 4)
+        Frame(ui, Extrude, Display);
+        Frame(ui, Extrude, Display);
+        var rows = ui.RowsArea ?? throw new InvalidOperationException("No rows.");
+        string[] labels = [DesktopUi.MoveLabel, DesktopUi.SetDistanceLabel, DesktopUi.HideLabel, DesktopUi.SketchOnFaceButtonLabel];
+        foreach (var centre in new[] { new Vector2(0, 0), new Vector2(0, 720), new Vector2(200, 300), new Vector2(640, 360) })
         {
-            for (var y = row.Y + 2; y < row.W && both is null; y += 4)
+            var layout = DesktopUi.Layout(Display, centre, labels.Length);
+            for (var x = rows.X; x < rows.Z; x += 4)
             {
-                if (layout.At(labels, new Vector2(x, y)) is not null)
-                    both = new Vector2(x, y);
+                for (var y = rows.Y; y < rows.W; y += 4)
+                    Assert.Null(layout.At(labels, new Vector2(x, y)));
             }
         }
-
-        Assert.True(both is not null, $"No point of the row {row} is on the ring at {layout.Centre}.");
-        Tap(ui, Extrude, both.Value, DeviceKind.Touch, ring);
-
-        Assert.Equal(DesktopUi.EdgeValueLabel, ui.Pad?.Title);
-        Assert.Empty(ui.TakeActions());
     }
 
     // Item 4: a chip that the placement puts on the rows goes under them, at the same x.
@@ -149,7 +151,7 @@ public sealed class BodyRowsTests
     public void A_Chip_On_The_Rows_Goes_Under_Them()
     {
         using var ui = new DesktopUi("http://127.0.0.1:5180", Document.Millimetre);
-        IReadOnlyList<EdgeValues.Value> values = [Values[0] with { At = new Vector2(Display.X - 100, 90) }, Values[1]];
+        IReadOnlyList<EdgeValues.Value> values = [Values[0] with { At = new Vector2(100, 90) }, Values[1]];
         for (var frame = 0; frame < 2; frame++)
         {
             ui.Route([]);
@@ -167,7 +169,7 @@ public sealed class BodyRowsTests
     public void Two_Chips_Under_The_Rows_Stay_Apart_And_A_Tap_Opens_The_Visible_One()
     {
         using var ui = new DesktopUi("http://127.0.0.1:5180", Document.Millimetre);
-        IReadOnlyList<EdgeValues.Value> values = [Values[0] with { At = new Vector2(1100, 70) }, Values[1] with { At = new Vector2(1100, 120) }];
+        IReadOnlyList<EdgeValues.Value> values = [Values[0] with { At = new Vector2(200, 70) }, Values[1] with { At = new Vector2(200, 120) }];
         void Step(params InputSample[] samples)
         {
             ui.Route(samples);
@@ -177,6 +179,8 @@ public sealed class BodyRowsTests
         Step();
         Step();
         var (distance, length) = (ui.ItemRectangle(Values[0].Key)!.Value, ui.ItemRectangle(Values[1].Key)!.Value);
+        var rows = ui.RowsArea!.Value;
+        Assert.True(distance.Y >= rows.W && length.Y >= rows.W, $"The chips {distance} and {length} are on the rows, which end at {rows.W}.");
         Assert.False(distance.X < length.Z && length.X < distance.Z && distance.Y < length.W && length.Y < distance.W, $"The chips {distance} and {length} cover each other.");
         var at = Centre(length);
         Step(new PointerSample(DeviceKind.Touch, 1, 3, at.X, at.Y, 1, PointerButtons.None, KeyModifiers.None, PointerPhase.Down, 0));
@@ -223,10 +227,10 @@ public sealed class BodyRowsTests
         Assert.True(rows.Max(row => row.W) <= Display.Y - 32 - DesktopUi.AnchorSize, $"A row ends at {rows.Max(row => row.W)}.");
     }
 
-    // The review of Codex of v0.252 (TASK-0271), item 6 of ADR-0084: while the rows show, they take the place of the window of
-    // the live sketches, which was over them; with no selection that window shows as before.
+    // ADR-0084 item 6 and ADR-0099 item 1: while the rows show, neither the panel nor the window of the live sketches shows;
+    // with no selection both show again.
     [Fact]
-    public void The_Rows_Take_The_Place_Of_The_Window_Of_The_Live_Sketches()
+    public void The_Rows_Take_The_Place_Of_The_Panel_And_Of_The_Window_Of_The_Live_Sketches()
     {
         using var ui = new DesktopUi("http://127.0.0.1:5180", Document.Millimetre);
         var sketch = new Engine.Core.Queries.SketchInfo(Sketch, Engine.Contracts.Sketch.Datums.XY.Id, "Plate", [], [], [], [], [], true, 0);
@@ -239,12 +243,121 @@ public sealed class BodyRowsTests
 
         Step(Extrude);
         Step(Extrude);
-        var withRows = ui.PanelRectangles.Count;
-        var row = ui.ItemRectangle(DesktopUi.RowItem(Values[0].Key)) ?? throw new InvalidOperationException("No row.");
+        Assert.Empty(ui.PanelRectangles);
+        Assert.NotNull(ui.ItemRectangle(DesktopUi.RowItem(Values[0].Key)));
         Step(null);
         Step(null);
 
-        Assert.Equal(withRows + 1, ui.PanelRectangles.Count);
-        Assert.DoesNotContain(ui.PanelRectangles.Take(withRows), panel => panel.X < row.Z && row.X < panel.Z && panel.Y < row.W && row.Y < panel.W);
+        Assert.Equal(2, ui.PanelRectangles.Count);
+    }
+
+    // ADR-0099 item 2: a tap on the first row opens the name field with the name selected; a typed name and Enter give one
+    // rename, and the field closes.
+    [Fact]
+    public void A_Tap_On_The_Name_Opens_A_Field_And_Enter_Renames_The_Body()
+    {
+        using var ui = new DesktopUi("http://127.0.0.1:5180", Document.Millimetre);
+        Frame(ui, Extrude, Display);
+        Frame(ui, Extrude, Display);
+        Tap(ui, Extrude, Centre(ui.ItemRectangle(DesktopUi.RowsTitleItem)!.Value), DeviceKind.Mouse);
+        Assert.NotNull(ui.ItemRectangle(DesktopUi.RenameItem));
+
+        // The focus of ImGui takes the field in a frame after the request, and the field is active in the frame after that.
+        Frame(ui, Extrude, Display);
+        Frame(ui, Extrude, Display);
+        Frame(ui, Extrude, Display, null, default, new TextSample("Bracket", 0));
+        Frame(ui, Extrude, Display, null, default, Key(InputKey.Enter));
+        Frame(ui, Extrude, Display, null, default, Key(InputKey.Enter, false));
+        Frame(ui, Extrude, Display);
+
+        Assert.Equal([new RenameBodyAction(Plate, "Bracket")], ui.TakeActions());
+        Assert.Null(ui.ItemRectangle(DesktopUi.RenameItem));
+    }
+
+    // ADR-0099 item 2: Escape closes the name field with no command, and the keys go back to the scene.
+    [Fact]
+    public void Escape_Closes_The_Name_Field_With_No_Command()
+    {
+        using var ui = new DesktopUi("http://127.0.0.1:5180", Document.Millimetre);
+        Frame(ui, Extrude, Display);
+        Frame(ui, Extrude, Display);
+        Tap(ui, Extrude, Centre(ui.ItemRectangle(DesktopUi.RowsTitleItem)!.Value), DeviceKind.Touch);
+        Frame(ui, Extrude, Display);
+        Frame(ui, Extrude, Display);
+        Frame(ui, Extrude, Display, null, default, new TextSample("Other", 0));
+        Frame(ui, Extrude, Display, null, default, Key(InputKey.Escape));
+        Frame(ui, Extrude, Display, null, default, Key(InputKey.Escape, false));
+        Frame(ui, Extrude, Display);
+
+        Assert.Empty(ui.TakeActions());
+        Assert.Null(ui.ItemRectangle(DesktopUi.RenameItem));
+        Assert.Contains(ui.Route([Key(InputKey.H)]), sample => sample is KeySample { Key: InputKey.H });
+    }
+
+    // ADR-0099 items 3 and 4: the rows hold the list of a cut while another body is visible, then the lines of the selected
+    // face and edge, the size while the dimensions show, and the message of the document, in the column of the rows; a choice
+    // in the list gives the cut.
+    [Fact]
+    public void The_Rows_Hold_The_Cut_The_Face_The_Edge_And_The_Message_Of_The_Document()
+    {
+        using var ui = new DesktopUi("http://127.0.0.1:5180", Document.Millimetre);
+        var face = new FaceLine("Face +z of Plate", true, [], "Edge 3 of Plate");
+        var document = new DocumentLine("bracket.3de", "Saved bracket.3de");
+        ui.ShowDimensionsOn();
+        void Step(params InputSample[] samples)
+        {
+            ui.Route(samples);
+            ui.Frame(1f / 60f, Display, Vector2.One, [Extrude, Box], Plate, document, face: face, size: "Size 60 x 40 x 10 mm", values: Values);
+        }
+
+        Step();
+        Step();
+        var last = ui.ItemRectangle(DesktopUi.RowItem(Values[1].Key))!.Value;
+        var cut = ui.ItemRectangle(DesktopUi.CutLabel) ?? throw new InvalidOperationException("No list of a cut.");
+        Assert.True(cut.Y >= last.W && cut.X >= last.X && cut.Z <= last.Z + 0.5f, $"The list of a cut at {cut} is not under the rows at {last}.");
+        var below = cut.W;
+        foreach (var item in new[] { DesktopUi.FaceLabel, DesktopUi.EdgeLabel, DesktopUi.SizeLabel, DesktopUi.DocumentMessageLabel })
+        {
+            var line = ui.ItemRectangle(item) ?? throw new InvalidOperationException($"No line {item}.");
+            Assert.True(line.Y >= below && line.X == last.X, $"The line {item} at {line} is not under {below}.");
+            below = line.W;
+        }
+
+        Assert.Empty(ui.PanelRectangles);
+        var at = Centre(cut);
+        Step(new PointerSample(DeviceKind.Touch, 1, 3, at.X, at.Y, 1, PointerButtons.None, KeyModifiers.None, PointerPhase.Down, 0));
+        Step(new PointerSample(DeviceKind.Touch, 1, 3, at.X, at.Y, 1, PointerButtons.None, KeyModifiers.None, PointerPhase.Up, 0));
+        Step();
+        Step();
+        var tool = ui.ItemRectangle(DesktopUi.CutItem(Box.Id)) ?? throw new InvalidOperationException("No open list of a cut.");
+        Assert.True(ui.OverPanel(0, 0), "A tap on the scene reaches it while the list is open.");
+        var choice = Centre(tool);
+        Step(new PointerSample(DeviceKind.Touch, 1, 3, choice.X, choice.Y, 1, PointerButtons.None, KeyModifiers.None, PointerPhase.Down, 0));
+        Step(new PointerSample(DeviceKind.Touch, 1, 3, choice.X, choice.Y, 1, PointerButtons.None, KeyModifiers.None, PointerPhase.Up, 0));
+        Step();
+
+        Assert.Equal([new CutBodyAction(Plate, Box.Id)], ui.TakeActions());
+    }
+
+    // ADR-0099 item 4: the command line holds the controls of the panel that the rows hide: Rename, a cut with each other
+    // visible body, the armed tap on a face, and the toggles of the dimensions; Hidden too only while the dimensions show.
+    [Fact]
+    public void The_Command_Line_Holds_The_Controls_That_The_Rows_Hide()
+    {
+        using var ui = new DesktopUi("http://127.0.0.1:5180", Document.Millimetre);
+        LiveBody[] bodies = [Extrude, Box, Box with { Id = Guid.NewGuid(), Name = "Hidden", Visible = false }];
+        var names = ui.Commands(bodies, Plate).Select(command => command.Name).ToList();
+        Assert.Contains(DesktopUi.RenameLabel, names);
+        Assert.Contains($"{DesktopUi.CutLabel} Box", names);
+        Assert.DoesNotContain($"{DesktopUi.CutLabel} Hidden", names);
+        Assert.Contains(DesktopUi.SketchOnFaceLabel, names);
+        Assert.Contains(DesktopUi.DimensionsLabel, names);
+        Assert.DoesNotContain(DesktopUi.HiddenTooLabel, names);
+
+        ui.Commands(bodies, Plate).Single(command => command.Name == DesktopUi.DimensionsLabel).Run();
+        Assert.True(ui.ShowDimensions);
+        Assert.Contains(DesktopUi.HiddenTooLabel, ui.Commands(bodies, Plate).Select(command => command.Name));
+        ui.Commands(bodies, Plate).Single(command => command.Name == $"{DesktopUi.CutLabel} Box").Run();
+        Assert.Equal([new CutBodyAction(Plate, Box.Id)], ui.TakeActions());
     }
 }

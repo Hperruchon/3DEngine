@@ -20,7 +20,9 @@ public sealed class FaceSelectionTests
 {
     private static readonly Guid A = Guid.Parse("aaaaaaaa-0000-0000-0000-000000000000");
     private static readonly Guid B = Guid.Parse("bbbbbbbb-0000-0000-0000-000000000000");
-    private static readonly Vector2 Display = new(1024, 768);
+    // ADR-0099 item 1 (the redesign, slice p, TASK-0313): on a landscape display the rows of a selected body take the place of
+    // the panel, so these tests of the panel use a portrait display, where the panel keeps the controls of the selected body.
+    private static readonly Vector2 Display = new(768, 1024);
 
     private static PickHit? Top(double x, double y) => new PickHit(A, 1) { Point = (0, 0, 0.5), Normal = (0, 0, 1) };
 

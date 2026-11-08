@@ -14,6 +14,10 @@ public class DimensionOverlayTests
 {
     private static readonly Vector2 Display = new(1280, 720);
 
+    // ADR-0099 item 1 (the redesign, slice p, TASK-0313): on a landscape display the rows of a selected body take the place of
+    // the panel, so the tests of the toggles in the panel use a portrait display, where the panel keeps the controls of the selected body.
+    private static readonly Vector2 Portrait = new(720, 1280);
+
     private static readonly LiveBody[] Bodies =
     [
         new(Guid.Parse("11111111-0000-0000-0000-000000000000"), "Box", null, true),
@@ -27,7 +31,7 @@ public class DimensionOverlayTests
     private static void Step(DesktopUi ui, params InputSample[] frame)
     {
         ui.Route(frame);
-        ui.Frame(1f / 60f, Display, Vector2.One, Bodies, Selected, size: Size);
+        ui.Frame(1f / 60f, Portrait, Vector2.One, Bodies, Selected, size: Size);
     }
 
     private static DesktopUi Opened()
