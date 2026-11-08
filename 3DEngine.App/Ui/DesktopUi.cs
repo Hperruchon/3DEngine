@@ -561,7 +561,9 @@ internal sealed unsafe partial class DesktopUi : IDisposable
         }
         else
         {
-            Panel(bodies, selection, displaySize, document);
+            // ADR-0097 item 1 (the redesign, slice n, TASK-0308): the rows of an active sketch take the place of the panel.
+            if (sketchPanel?.Active is null)
+                Panel(bodies, selection, displaySize, document);
             FixedControls(displaySize, bodies, document);
             // ADR-0084 (TASK-0267): the rows of the selected body come first, so that the ring and the chips read them.
             var selectedBody = bodies.FirstOrDefault(body => body.Id == selection);

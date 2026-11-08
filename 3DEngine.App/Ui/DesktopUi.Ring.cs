@@ -104,26 +104,21 @@ internal sealed unsafe partial class DesktopUi
     }
 
     // ADR-0086 item 1 (TASK-0275): the ring of an active sketch on a landscape display. Its centre is the centre of the sketch
-    // on the screen, its inner radius is 24 pixels more than the half of the diagonal of the sketch, at least 100, and its
-    // segments go down on the left side, so the band does not cover the sketch. The centre moves only as far as the band
-    // needs to stay 16 pixels to the right of the panel and inside the display.
-    // Finding V134 of the codebase review of 2026-11-07 (c) (TASK-0280): the centre stays at or left of the window of the
-    // sketch, so the band, which is on the left of the centre, is not under that window; and the inner radius is at most the
-    // half of the display less the band and 16 pixels, so the band fits the height. Until TASK-0280 a sketch at the right
-    // put segments under the window, and a large sketch put Finish below the display.
-    internal static RingLayout SketchLayout(Vector2 display, Vector2 centre, int count, float sketch, float panelRight, float windowLeft)
+    // on the screen, and its inner radius is 24 pixels more than the half of the diagonal of the sketch, at least 100.
+    // Finding V134 of the codebase review of 2026-11-07 (c) (TASK-0280): the inner radius is at most the half of the display
+    // less the band and 16 pixels, so the band fits the height; until TASK-0280 a large sketch put Finish below the display.
+    // ADR-0097 item 4 (the redesign, slice n, TASK-0308): the rows of the sketch are at the left, so the segments go down on
+    // the right side, as the ring of a body and the render. The centre moves left only as far as the band needs to stay 16
+    // pixels inside the display, and never left of the right edge of the rows, so no segment is under them. Until TASK-0308
+    // the window of the sketch was at the right and the segments went down on the left side.
+    internal static RingLayout SketchLayout(Vector2 display, Vector2 centre, int count, float sketch, float rowsRight)
     {
         var span = (count * RingSegment) + ((count - 1) * RingGap);
         var inner = Math.Min(Math.Max(100f, sketch + 24f), Math.Max(100f, (display.Y / 2f) - 16f - RingBand));
         var reach = inner + RingBand + 16f;
-        var x = Math.Min(Math.Max(centre.X, panelRight + reach), display.X - 16f);
-        // The review of Codex of v0.265 (TASK-0284): the centre moves left to the window of the sketch only when the band then
-        // stays to the right of the panel. Until TASK-0284 a window of the sketch moved to the left, or collapsed there, put
-        // each segment under the panel, and a collapsed window shows no button.
-        if (panelRight + reach <= windowLeft)
-            x = Math.Min(x, windowLeft);
+        var x = Math.Max(Math.Min(centre.X, display.X - reach), rowsRight);
         var y = Math.Clamp(centre.Y, reach, Math.Max(reach, display.Y - reach));
-        return new RingLayout(new Vector2(x, y), inner, MathF.PI + (span / 2f), -1f);
+        return new RingLayout(new Vector2(x, y), inner, -span / 2f, 1f);
     }
 
     // Finding V135 of the codebase review of 2026-11-07 (c) (TASK-0281): a release over a window belongs to the window. While an
@@ -220,13 +215,11 @@ internal sealed unsafe partial class DesktopUi
                 labels.Add(SketchOnFaceButtonLabel);
         }
 
-        // ADR-0086 item 1 (TASK-0275): on a landscape display the ring of a sketch is on the left of the sketch, between the
-        // panel and the sketch, because the window of the sketch is on the right. The first form took the room left of that
-        // window and moved the ring onto the points of the sketch.
-        var panelRight = _panels.Count > 0 ? _panels[0].Z : 0f;
+        // ADR-0097 item 4 (the redesign, slice n, TASK-0308): on a landscape display the ring of a sketch is on the right of the
+        // sketch, and right of the rows of the sketch of the last frame, which are at the left in the place of the panel.
         var sketchRing = _sketchActive && displaySize.X >= displaySize.Y;
         var ring = sketchRing
-            ? SketchLayout(displaySize, at, labels.Count, size, panelRight, _sketchWindow?.X ?? displaySize.X)
+            ? SketchLayout(displaySize, at, labels.Count, size, _sketchWindow?.Z ?? 0f)
             : Layout(displaySize, at, labels.Count, size, _inset, _anchorsTop);
         _ring = ring;
         _ringLabels = labels;
@@ -286,14 +279,16 @@ internal sealed unsafe partial class DesktopUi
             // safe area; until TASK-0271 the label "Sketch on face" of the fourth segment went past the right edge.
             var place = middle - (text / 2f);
             place.X = Math.Clamp(place.X, 4f + _inset.X, Math.Max(4f + _inset.X, displaySize.X - _inset.Z - 4f - text.X));
-            // ADR-0087 item 5 (TASK-0276): on the left of a sketch, a label wider than the band ends 6 pixels outside the
-            // inner edge, so it covers less of the sketch, and stays 4 pixels to the right of the panel; a plate of the colour
-            // of its segment keeps it readable over the lines. The first form centred "Horizontal" over the points.
+            // ADR-0087 item 5 (TASK-0276): a label of a sketch ring wider than the band starts 6 pixels outside the inner edge,
+            // so it covers less of the sketch; a plate of the colour of its segment keeps it readable over the lines. The first
+            // form centred "Horizontal" over the points. ADR-0097 item 4 (TASK-0308): the ring is on the right of the sketch,
+            // so the label goes out to the right and stays 4 pixels inside the display.
             var ink = ImGui.GetColorU32(colours[(int)ImGuiCol.Text]);
-            if (sketchRing && text.X > RingBand - 12f)
+            // ADR-0097 item 4: a tool with an icon keeps its icon and its label in the middle of the segment.
+            if (sketchRing && text.X > RingBand - 12f && !RingIconLabels.Contains(segment.Label))
             {
                 var inner = ring.Centre.X + (MathF.Cos((segment.From + segment.To) / 2f) * ring.Inner);
-                place.X = Math.Max(panelRight + 4f, inner - 6f - text.X);
+                place.X = Math.Min(inner + 6f, displaySize.X - _inset.Z - 4f - text.X);
                 list.AddRectFilled(place - new Vector2(4f, 2f), place + text + new Vector2(4f, 2f), ground, 4f);
             }
             else
@@ -312,9 +307,12 @@ internal sealed unsafe partial class DesktopUi
             _items[RingItem(segment.Label)] = new Vector4(middle.X - 4f, middle.Y - 4f, middle.X + 4f, middle.Y + 4f);
         }
 
-        // ADR-0095 item 4: the caption of a landscape body ring.
+        // ADR-0095 item 4: the caption of a landscape body ring. ADR-0097 item 4 (TASK-0308): a sketch ring on the right has it
+        // too, with the name of the sketch, as the render ("TOOLS FOR PLATE ON XY").
         if (landscape && !_sketchActive && body is not null)
             RingCaption(list, ring, body.Name ?? body.Kind, displaySize);
+        else if (sketchRing && _sketchPanel?.Active is { } shown)
+            RingCaption(list, ring, SketchTitle(shown), displaySize);
     }
 
     // ADR-0086 item 2: the tool of a segment of the ring of a sketch, as its button of the window of the sketch does.

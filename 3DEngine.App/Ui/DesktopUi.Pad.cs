@@ -70,15 +70,17 @@ internal sealed unsafe partial class DesktopUi
         // panel, so the pad stays inside a tablet display. Until TASK-0099 Apply was outside the
         // display at 768 x 1024 and at 1024 x 768 (finding V35 of the second codebase review of
         // 2026-10-28).
+        // ADR-0097 item 3 (the redesign, slice n, TASK-0308): the rows of the sketch are at the left in the place of the panel,
+        // so a pad of the sketch opens to their right. Until TASK-0308 the window was at the right and the pad at its left.
         var width = Math.Min(PadWidth, displaySize.X - 32f);
-        var preferred = _padBySketch ? displaySize.X - SketchWidth - 32f - width : 492f;
+        var preferred = _padBySketch ? 16f + _inset.X + SketchWidth + 16f : 492f;
         var x = Math.Clamp(preferred, 16f, Math.Max(16f, displaySize.X - width - 16f));
 
-        // Finding V42 of the codebase review of 2026-10-29: on a display with no room to the left
-        // of the window of the sketch, as 768 x 1024, the pad covered End and Close. It now opens
+        // Finding V42 of the codebase review of 2026-10-29: on a display with no room beside the
+        // window of the sketch, as 768 x 1024, the pad covered End and Close. It now opens
         // below the row of Next point, End and Close.
         var y = 16f;
-        if (_padBySketch && preferred < 16f && ItemRectangle(SketchItem(NextPointLabel)) is { } nextPoint)
+        if (_padBySketch && preferred + width > displaySize.X - 16f && ItemRectangle(SketchItem(NextPointLabel)) is { } nextPoint)
             y = nextPoint.W + 8f;
         ImGui.SetNextWindowPos(new Vector2(x, y), ImGuiCond.Appearing);
         ImGui.SetNextWindowSize(new Vector2(width, Math.Clamp(displaySize.Y - y - 16f, 200f, PadHeight)), ImGuiCond.Appearing);
