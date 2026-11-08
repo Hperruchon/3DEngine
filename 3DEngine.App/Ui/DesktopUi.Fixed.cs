@@ -32,7 +32,9 @@ internal sealed unsafe partial class DesktopUi
 
     // ADR-0093 item 1: the top bar: the program, then the file or "unsaved", then the unit, with no ground. A long name is
     // cut to the width of the rows, so the unit stays.
-    private void TopBar(DocumentLine? document)
+    // Finding V149 of the codebase review of 2026-11-08 (c) (TASK-0311): and to the room left of the rows of a selected body,
+    // 12 pixels from them, so on a narrow window the top bar does not cover their title; at least 48 pixels.
+    private void TopBar(Vector2 displaySize, DocumentLine? document)
     {
         ImGui.SetNextWindowPos(new Vector2(16f + _inset.X, 16f + _inset.Y), ImGuiCond.Always);
         ImGui.PushStyleVar(ImGuiStyleVar.WindowPadding, Vector2.Zero);
@@ -40,12 +42,17 @@ internal sealed unsafe partial class DesktopUi
         {
             var colours = ImGui.GetStyle().Colors;
             var parts = TitleParts(document);
+            var rowsLeft = displaySize.X - 16f - _inset.Z - RowsWidth;
+            var room = parts.Count == 3
+                ? rowsLeft - 12f - (16f + _inset.X) - ImGui.CalcTextSize(parts[0]).X - ImGui.CalcTextSize(parts[2]).X - 24f
+                : RowsWidth;
+            var nameWidth = Math.Clamp(room, 48f, RowsWidth);
             ImGui.TextUnformatted(parts[0]);
             for (var i = 1; i < parts.Count; i++)
             {
                 ImGui.SameLine(0f, 12f);
                 ImGui.PushStyleColor(ImGuiCol.Text, colours[(int)(i == parts.Count - 1 ? ImGuiCol.TextDisabled : ImGuiCol.Text)]);
-                ImGui.TextUnformatted(i == 1 && parts.Count == 3 ? Fit(parts[i], RowsWidth) : parts[i]);
+                ImGui.TextUnformatted(i == 1 && parts.Count == 3 ? Fit(parts[i], nameWidth) : parts[i]);
                 ImGui.PopStyleColor();
             }
 
@@ -90,7 +97,7 @@ internal sealed unsafe partial class DesktopUi
 
     private void FixedControls(Vector2 displaySize, IReadOnlyList<LiveBody> bodies, DocumentLine? document)
     {
-        TopBar(document);
+        TopBar(displaySize, document);
 
         // Undo and Redo at the bottom left (ADR-0031 item 11, amended by ADR-0080). Finding V118 of the codebase review of
         // 2026-11-06 (e) (TASK-0252): inside the safe area of the display, so that the navigation bar of the phone does not

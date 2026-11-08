@@ -1,10 +1,10 @@
 ---
 id: 0311
 title: The dimension lines take the up axis of the camera, and the top bar and three comments hold their next forms
-status: Ready
+status: Active
 phase: P0.130
 opened: 2026-11-08
-depends-on: [0310]
+depends-on: [0308]
 governed-by: [0007, 0009, 0019, 0022, 0023, 0025, 0027, 0029, 0030, 0032, 0034, 0056, 0072, 0073, 0075, 0076, 0077, 0080, 0083, 0089, 0093, 0094, 0096]
 writes:
   create:
@@ -56,12 +56,15 @@ V147, V149, V150 and V151 are fixed, each with a test or a reading.
 
 ## Outcome
 
-Status: Ready
+Status: Active
 
 ## Method
 
 Mechanical: a test, an injection or a reading for each finding, before the change.
-Judgement:  to be written.
+Judgement:  the dimension lines change the roles of y and z with a flag of the camera, not a turn of the box; the room
+            of the name keeps at least 48 pixels.
 Weakest:    to be written at the close.
 
 ## Progress
+- 2026-11-08: the fixes and their tests. With the lines of y up again, the new test of the dimensions fails; with the
+  name cut to the width of the rows only, the new test of the top bar fails at 844 x 390. V150 and V151 are comments.
