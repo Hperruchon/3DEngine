@@ -11,13 +11,20 @@ namespace ThreeDEngine.Desktop.Ui;
 // DesktopUi.cs; no line changed in the split.
 internal sealed unsafe partial class DesktopUi
 {
+    // The rectangle of the window of the sketch of the last frame, for the tests (T176, TASK-0296).
+    public Vector4? SketchWindowRectangle => _sketchWindow;
+
     // ADR-0034 item 8: the window of the sketch. With no active sketch it lists each live sketch
     // with Edit. With an active sketch it gives the tools, the buttons of the selection and a row
     // for each point, line and constraint; a row selects as a tap of the tool Select does.
     private void SketchWindow(SketchPanel panel, Vector2 displaySize)
     {
         ImGui.SetNextWindowPos(new Vector2(Math.Max(16f, displaySize.X - SketchWidth - 16f), 16f), ImGuiCond.FirstUseEver);
-        ImGui.SetNextWindowSize(new Vector2(SketchWidth, Math.Clamp(displaySize.Y - 32f, 200f, 700f)), ImGuiCond.FirstUseEver);
+        // Finding T176 of the codebase review of 2026-11-08 (TASK-0296): the window is at most as wide as the display less
+        // its margins. Until TASK-0296 it was 480 wide on a display of 390, and Arc was outside the display.
+        var width = Math.Min(SketchWidth, Math.Max(displaySize.X - 32f, 160f));
+        ImGui.SetNextWindowSizeConstraints(Vector2.Zero, new Vector2(width, float.MaxValue));
+        ImGui.SetNextWindowSize(new Vector2(width, Math.Clamp(displaySize.Y - 32f, 200f, 700f)), ImGuiCond.FirstUseEver);
         if (ImGui.Begin(SketchName))
         {
             if (panel.Active is { } sketch)
@@ -63,7 +70,10 @@ internal sealed unsafe partial class DesktopUi
         // V134 (TASK-0280): only when a tap reaches each segment; until TASK-0280 a ring under the window or below the
         // display left the person with no Finish.
         var ringHolds = _ring is not null && _ringReachable;
-        if (!ringHolds)
+        // Finding V140 of the codebase review of 2026-11-08 (TASK-0296): the second ring holds the kinds and Back, not the
+        // tools and Finish, so while it is open the window shows them. Until TASK-0296 the person tapped Back first.
+        var toolsOnRing = ringHolds && !_constrainOpen;
+        if (!toolsOnRing)
         {
             ToolButton(LineToolLabel, SketchToolKind.Line, panel.Tool);
             ImGui.SameLine();
@@ -91,7 +101,7 @@ internal sealed unsafe partial class DesktopUi
             }
         }
 
-        if (!ringHolds)
+        if (!toolsOnRing)
         {
             SketchButton(FinishLabel, new FinishSketchAction());
             ImGui.SameLine();
