@@ -73,3 +73,4 @@ The owner chose the slices and the render as the target; the recommendations ans
 ## History
 
 - 2026-11-08 · TASK-0307 · The record, with the slice.
+- 2026-11-08 · TASK-0307 · Shipped at v0.292.

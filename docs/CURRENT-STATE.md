@@ -8709,3 +8709,31 @@ builds with zero warnings. Run 42479731634 passed. The failed runs since the ent
 New tests: 3. The test list holds 2166 (1472 in `Engine.Tests`, 339 in `3DEngine.Tests`, 352 in `3DEngine.ImageTests`, 3
 in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
 entries: 15 of 15. New diagnostic codes: 0. Since the review of v0.285, 3 product milestones and 6 entries followed it.
+
+## v0.292 — The camera of the session has the z axis up, as the render of the mix draws a part (R16m, TASK-0307)
+
+The fourth slice that the owner chose on 2026-11-08 is the sketch plane under the body. In the render the part and its
+sketch lie flat with the z axis up, and the camera of the session had the y axis up, so a part on the plane of x and y
+stood upright. This task comes first.
+
+**The change.** ADR-0096 amends ADR-0023 item 2 and ADR-0034.
+- `Camera.ZUp`: the yaw, the pitch, the orbit and the pan keep their frame of y up, and the eye, the pan and the view turn
+  it by a quarter turn about x (`ToWorld`, `FromWorld`). `UpAxis` is z or y.
+- `SketchCamera.Face` turns the normal into the frame of y up first, so a camera with z up looks down on a sketch on XY.
+- The camera of the session has z up, a yaw of 135° and a pitch of 30° (Q2 A). A yaw of 30° hid the notch of the first
+  demonstration, and a yaw of 150° gave two faces of the notch one shade.
+
+**A correction in the same task.** The ray of a pick, the overlay of a sketch and the gizmo took the right of the screen
+from a fixed y up. With z up, a pick and a line of a sketch would not agree with the picture, and no test found it; it was
+found by reading. Each now takes `Camera.UpAxis`, and new cases with z up cover the three.
+
+**Proof.** New tests of the eye, the view, the pan, the turn to a sketch, the ray, the overlay and the gizmo with z up.
+With `ToWorld` and `FromWorld` that ignore `ZUp`, six of the seven camera cases fail; with the fixed y up again, five
+cases of the ray, the overlay and the gizmo fail. The picture at 1440 x 900 shows the bracket flat. The phone project
+builds with zero warnings. Run 42481019862 passed. The failed runs since the entry v0.291, from the API: none.
+
+**What stays.** No control changes the up axis. The camera stays out of the Document (ADR-0007).
+
+New tests: 13. The test list holds 2179 (1472 in `Engine.Tests`, 350 in `3DEngine.Tests`, 354 in `3DEngine.ImageTests`, 3
+in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
+entries: 15 of 15. New diagnostic codes: 0. Since the review of v0.285, 4 product milestones and 7 entries followed it.

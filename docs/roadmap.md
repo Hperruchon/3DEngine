@@ -290,6 +290,8 @@ Therefore each approved objective must have a track here.
   v0.290, TASK-0305, ADR-0094.
 - R16l — The orbit ring of the mix: a guide circle, light segments with drawn icons and short labels, and the caption
   "TOOLS FOR" and the name. v0.291, TASK-0306, ADR-0095.
+- R16m — The camera of the session has the z axis up, with a yaw of 135° and a pitch of 30° at the start; the ray of a
+  pick, the overlay of a sketch and the gizmo take the up axis of the camera. v0.292, TASK-0307, ADR-0096.
 
 ## Track 0 — Foundations
 

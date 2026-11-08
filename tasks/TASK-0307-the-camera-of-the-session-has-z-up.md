@@ -1,7 +1,7 @@
 ---
 id: 0307
 title: The camera of the session has the z axis up, as the render of the mix draws a part
-status: Active
+status: Done
 phase: R16m
 opened: 2026-11-08
 depends-on: [0306]
@@ -58,19 +58,20 @@ The camera of the session has the z axis up, and the bracket of the render lies 
 
 ## Acceptance criteria
 
-- [ ] The new tests pass, and the picture at 1440 x 900 shows the bracket flat.
-- [ ] A clean build (`--no-incremental`) gives zero errors and zero warnings.
-- [ ] Continuous integration passes on the three runners, on the branch and on `main` after the merge.
+- [x] The new tests pass, and the picture at 1440 x 900 shows the bracket flat.
+- [x] A clean build (`--no-incremental`) gives zero errors and zero warnings.
+- [x] Continuous integration passes on the three runners, on the branch and on `main` after the merge.
 
 ## Outcome
 
-Status: Active
+Status: Done · commit (the merge of the branch r16m-z-up-b) · v0.292
 
 ## Method
 
 Mechanical: the quarter turn about x between the frame of y up and the world.
 Judgement:  the view at the start (ADR-0096 Q2 A), from the shades of the notch.
-Weakest:    to be written at the close.
+Weakest:    the fixed y up of the ray, the overlay and the gizmo was found by reading, not by a test; a fourth place that
+            builds a frame of the screen by hand would not be found by the tests of this task.
 
 ## Progress
 
@@ -79,3 +80,4 @@ Weakest:    to be written at the close.
 - 2026-11-08: the ray of a pick, the overlay of a sketch and the gizmo had a fixed y up, so with z up a pick would not
   agree with the picture; no test found it. Each now takes `Camera.UpAxis`. With the fixed y up again, five new cases
   fail.
+- 2026-11-08: run 42481019862 passed. Closed at v0.292.
