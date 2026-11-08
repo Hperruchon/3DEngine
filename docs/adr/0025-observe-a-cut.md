@@ -7,7 +7,7 @@ date: 2026-10-14
 supersedes: []
 superseded-by: []
 amends: ['0009', '0017', '0022']
-amended-by: ['0029']
+amended-by: ['0029', '0094']
 affects:
   - 3DEngine.ImageTests/**
   - scripts/first-demonstration.js
@@ -94,3 +94,5 @@ The image test project references the host, so a change of the host can break it
   codebase review of 2026-10-13.
 - 2026-10-28 · TASK-0086 · ADR-0029 amends item 6: the camera frames the visible bodies only when their set
   goes from empty to not empty (decision KD6 of the owner).
+- 2026-11-08 · TASK-0305 · Item 6 amended by ADR-0094: a camera frames a box at its FrameFill, 0.45 for the camera of the
+  session.
