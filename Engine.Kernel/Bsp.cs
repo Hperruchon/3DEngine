@@ -1,3 +1,5 @@
+using System.Runtime.CompilerServices;
+
 namespace Engine.Kernel;
 
 // ADR-0057 item 5: a binary space partition of the polygons of a solid, in the form of the algorithm of csg.js (Evan
@@ -6,6 +8,7 @@ namespace Engine.Kernel;
 internal sealed class Bsp
 {
     private PlaneR? _plane;
+    private Approximate _approximate;
     private Bsp? _front;
     private Bsp? _back;
     private readonly List<KernelPolygon> _polygons = [];
@@ -16,76 +19,133 @@ internal sealed class Bsp
     {
     }
 
+    // ADR-0089 item 6 (TASK-0289): each walk of the tree uses a stack of its own and no recursion. The tree of a convex
+    // solid is a chain with one node for each polygon, so a sphere of 3968 triangles gave a recursion as deep, and the
+    // stack of the thread overflowed. Each walk keeps the order of the recursive form: a node, then its front, then its back.
+
     // Each node turns inside out: each polygon and each plane flips, and the two sides swap.
     public void Invert()
     {
-        for (var i = 0; i < _polygons.Count; i++)
-            _polygons[i] = _polygons[i].Flipped();
-        if (_plane is { } plane)
-            _plane = plane.Flipped();
-        _front?.Invert();
-        _back?.Invert();
-        (_front, _back) = (_back, _front);
+        var stack = new Stack<Bsp>([this]);
+        while (stack.Count > 0)
+        {
+            var node = stack.Pop();
+            for (var i = 0; i < node._polygons.Count; i++)
+                node._polygons[i] = node._polygons[i].Flipped();
+            if (node._plane is { } plane)
+            {
+                node._plane = plane.Flipped();
+                node._approximate = node._approximate.Flipped();
+            }
+            (node._front, node._back) = (node._back, node._front);
+            if (node._front is not null)
+                stack.Push(node._front);
+            if (node._back is not null)
+                stack.Push(node._back);
+        }
     }
 
-    // The parts of the polygons that are outside this solid. A part behind a plane with no back node is inside.
+    // The parts of the polygons that are outside this solid. A part behind a plane with no back node is inside. The parts
+    // come in the order of the recursive form: the parts of the front branch before the parts of the back branch.
     public List<KernelPolygon> Clip(List<KernelPolygon> polygons)
     {
-        if (_plane is not { } plane)
-            return [.. polygons];
-        var front = new List<KernelPolygon>();
-        var back = new List<KernelPolygon>();
-        foreach (var polygon in polygons)
-            Split(plane, polygon, front, back, front, back);
-        front = _front is not null ? _front.Clip(front) : front;
-        back = _back is not null ? _back.Clip(back) : [];
-        return [.. front, .. back];
+        var result = new List<KernelPolygon>();
+        var stack = new Stack<(Bsp? Node, List<KernelPolygon> Polygons, bool Keep)>([(this, polygons, true)]);
+        while (stack.Count > 0)
+        {
+            var (node, parts, keep) = stack.Pop();
+            if (node is null)
+            {
+                // A branch with no node: the front keeps its parts, and the back drops them.
+                if (keep)
+                    result.AddRange(parts);
+                continue;
+            }
+
+            if (node._plane is not { } plane)
+            {
+                result.AddRange(parts);
+                continue;
+            }
+
+            var front = new List<KernelPolygon>();
+            var back = new List<KernelPolygon>();
+            foreach (var polygon in parts)
+                Split(plane, node._approximate, polygon, front, back, front, back);
+            stack.Push((node._back, back, false));
+            stack.Push((node._front, front, true));
+        }
+
+        return result;
     }
 
     // The polygons of this tree that are outside the other tree.
     public void ClipTo(Bsp other)
     {
-        var kept = other.Clip(_polygons);
-        _polygons.Clear();
-        _polygons.AddRange(kept);
-        _front?.ClipTo(other);
-        _back?.ClipTo(other);
+        var stack = new Stack<Bsp>([this]);
+        while (stack.Count > 0)
+        {
+            var node = stack.Pop();
+            var kept = other.Clip(node._polygons);
+            node._polygons.Clear();
+            node._polygons.AddRange(kept);
+            if (node._back is not null)
+                stack.Push(node._back);
+            if (node._front is not null)
+                stack.Push(node._front);
+        }
     }
 
     public List<KernelPolygon> AllPolygons()
     {
-        var all = new List<KernelPolygon>(_polygons);
-        if (_front is not null)
-            all.AddRange(_front.AllPolygons());
-        if (_back is not null)
-            all.AddRange(_back.AllPolygons());
+        var all = new List<KernelPolygon>();
+        var stack = new Stack<Bsp>([this]);
+        while (stack.Count > 0)
+        {
+            var node = stack.Pop();
+            all.AddRange(node._polygons);
+            if (node._back is not null)
+                stack.Push(node._back);
+            if (node._front is not null)
+                stack.Push(node._front);
+        }
+
         return all;
     }
 
     // Adds polygons to the tree: the first polygon of a new node gives its plane.
     public void Build(List<KernelPolygon> polygons)
     {
-        if (polygons.Count == 0)
-            return;
-        _plane ??= polygons[0].Plane;
-        var plane = _plane.Value;
-        var front = new List<KernelPolygon>();
-        var back = new List<KernelPolygon>();
-        foreach (var polygon in polygons)
-            Split(plane, polygon, _polygons, _polygons, front, back);
-        if (front.Count > 0)
-            (_front ??= new Bsp()).Build(front);
-        if (back.Count > 0)
-            (_back ??= new Bsp()).Build(back);
+        var stack = new Stack<(Bsp Node, List<KernelPolygon> Polygons)>([(this, polygons)]);
+        while (stack.Count > 0)
+        {
+            var (node, parts) = stack.Pop();
+            if (parts.Count == 0)
+                continue;
+            if (node._plane is null)
+                (node._plane, node._approximate) = (parts[0].Plane, Approximate.Of(parts[0].Plane));
+            var plane = node._plane.Value;
+            var front = new List<KernelPolygon>();
+            var back = new List<KernelPolygon>();
+            foreach (var polygon in parts)
+                Split(plane, node._approximate, polygon, node._polygons, node._polygons, front, back);
+            if (back.Count > 0)
+                stack.Push((node._back ??= new Bsp(), back));
+            if (front.Count > 0)
+                stack.Push((node._front ??= new Bsp(), front));
+        }
     }
 
     // The split of a polygon by a plane into its parts in front of and behind the plane. A coplanar polygon goes to the
     // coplanar list of the side to which its normal points.
     internal static void Split(
-        PlaneR plane, KernelPolygon polygon,
+        PlaneR plane, Approximate approximate, KernelPolygon polygon,
         List<KernelPolygon> coplanarFront, List<KernelPolygon> coplanarBack, List<KernelPolygon> front, List<KernelPolygon> back)
     {
-        var sides = polygon.Vertices.Select(plane.Side).ToArray();
+        var doubles = Approximations.GetValue(polygon.Vertices, Approximate.Of);
+        var sides = new int[polygon.Vertices.Count];
+        for (var i = 0; i < sides.Length; i++)
+            sides[i] = approximate.Side(plane, polygon.Vertices[i], doubles[3 * i], doubles[(3 * i) + 1], doubles[(3 * i) + 2]);
         var hasFront = sides.Any(side => side > 0);
         var hasBack = sides.Any(side => side < 0);
         if (!hasFront && !hasBack)
@@ -130,5 +190,44 @@ internal sealed class Bsp
             front.Add(polygon with { Vertices = f });
         if (b.Count >= 3)
             back.Add(polygon with { Vertices = b });
+    }
+
+    // ADR-0089 item 6 (K5d, TASK-0289): the doubles of the vertices of each list, made once. A list does not change after
+    // its polygon is made, so the table keys it by its reference.
+    private static readonly ConditionalWeakTable<IReadOnlyList<Vector3R>, double[]> Approximations = new();
+
+    // ADR-0089 item 6 (K5d, TASK-0289): a filter of doubles before the exact sign of a side. The doubles of the plane and of
+    // the vertex are the nearest doubles of the exact values, so each has a relative error of at most 2^-53, and the sum of
+    // three products and a difference adds at most six such errors of the sum of the magnitudes. A double result larger
+    // than 1e-14 times that sum, about ten times the bound, has the exact sign; else the exact sign of Rational decides.
+    // The filter decides only where the exact sign is certain, so each side, each tree and each result stay the same.
+    internal readonly record struct Approximate(double A, double B, double C, double D, bool Known)
+    {
+        public static Approximate Of(PlaneR plane)
+            => new(plane.Normal.X.ToDouble(), plane.Normal.Y.ToDouble(), plane.Normal.Z.ToDouble(), plane.Offset.ToDouble(), true);
+
+        public static double[] Of(IReadOnlyList<Vector3R> vertices)
+        {
+            var doubles = new double[3 * vertices.Count];
+            for (var i = 0; i < vertices.Count; i++)
+                (doubles[3 * i], doubles[(3 * i) + 1], doubles[(3 * i) + 2]) = vertices[i].ToDoubles();
+            return doubles;
+        }
+
+        public Approximate Flipped() => this with { A = -A, B = -B, C = -C, D = -D };
+
+        public int Side(PlaneR plane, Vector3R vertex, double x, double y, double z)
+        {
+            if (Known)
+            {
+                var (ax, by, cz) = (A * x, B * y, C * z);
+                var sum = ax + by + cz - D;
+                var magnitude = Math.Abs(ax) + Math.Abs(by) + Math.Abs(cz) + Math.Abs(D);
+                if (double.IsFinite(sum) && double.IsFinite(magnitude) && magnitude > 1e-280 && Math.Abs(sum) > 1e-14 * magnitude)
+                    return sum > 0 ? 1 : -1;
+            }
+
+            return plane.Side(vertex);
+        }
     }
 }

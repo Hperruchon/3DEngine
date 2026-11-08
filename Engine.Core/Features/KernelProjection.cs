@@ -9,7 +9,8 @@ namespace Engine.Core.Features;
 // ADR-0058 items 1 to 3 (phase K4b, TASK-0184): the solid of a body in the owned kernel, as a projection of the steps in
 // effect. Manifold still makes the solid and the mesh of each body; the kernel gives the faces and their names. The
 // walk goes from the body to the command that creates it, as the regeneration does: a CreateBox, a CreateCylinder
-// (ADR-0076), a CreateCone (ADR-0089; finding E188 of the codebase review of 2026-11-08, TASK-0296), an Extrude of the
+// (ADR-0076), a CreateCone (ADR-0089; finding E188 of the codebase review of 2026-11-08, TASK-0296), a CreateSphere
+// or a CreateTorus (ADR-0089 item 5, TASK-0289), an Extrude of the
 // sketch and the distance in effect on the frame of its datum, a Translate, or a Subtract of two bodies. The kernel
 // reads each input double exactly, so the projection does not depend on the platform, and it does not enter the log.
 //
@@ -132,6 +133,11 @@ internal static class KernelProjection
                     cone.CommandId,
                     [.. CreateCylinderCommandHandler.Circle(cone.Radius).Select(p => (Rational.FromDouble(p.X), Rational.FromDouble(p.Y)))],
                     Rational.FromDouble(cone.Height)), null);
+            // ADR-0089 item 5: the mesh of the handler, read exactly.
+            case CreateSphereCommand sphere:
+                return (Mesh(sphere.CommandId, CreateSphereCommandHandler.Mesh(sphere.Radius)), null);
+            case CreateTorusCommand torus:
+                return (Mesh(torus.CommandId, CreateTorusCommandHandler.Mesh(torus.Radius, torus.TubeRadius)), null);
             case ExtrudeCommand extrude:
                 return Extrude(extrude, state(extrude), frameOf);
             case TranslateCommand translate:
@@ -186,5 +192,14 @@ internal static class KernelProjection
             Vector3R.FromDoubles(frame.V.X, frame.V.Y, frame.V.Z),
             Vector3R.FromDoubles(frame.Normal.X, frame.Normal.Y, frame.Normal.Z),
             Rational.FromDouble(distance)), null);
+    }
+
+    // ADR-0089 item 5: the kernel solid of a closed mesh of a handler, with the face 'surface'.
+    private static KernelSolid Mesh(Guid feature, (double[] Positions, int[] Triangles) mesh)
+    {
+        var vertices = new Vector3R[mesh.Positions.Length / 3];
+        for (var i = 0; i < vertices.Length; i++)
+            vertices[i] = Vector3R.FromDoubles(mesh.Positions[3 * i], mesh.Positions[(3 * i) + 1], mesh.Positions[(3 * i) + 2]);
+        return KernelSolid.Mesh(feature, "surface", vertices, mesh.Triangles);
     }
 }

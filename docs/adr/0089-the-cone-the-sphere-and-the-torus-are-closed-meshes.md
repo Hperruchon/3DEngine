@@ -14,12 +14,15 @@ affects:
   - Engine.Geometry.Manifold/Native/ManifoldNative.cs
   - Engine.Core/Commands/CreateConeCommand.cs
   - Engine.Core/Commands/CreateConeCommandHandler.cs
+  - Engine.Core/Commands/CreateSphereCommand.cs
+  - Engine.Core/Commands/CreateSphereCommandHandler.cs
   - Engine.Core/Hosting/HandlerCatalog.cs
   - Engine.Core/Features/FeatureList.cs
   - Engine.Core/Features/KernelProjection.cs
   - Engine.Core/Features/Regeneration.cs
   - Engine.Core/Sketch/DatumResolver.cs
   - Engine.Kernel/KernelSolid.cs
+  - Engine.Kernel/Bsp.cs
 enforced-by: Engine.Tests/Commands/CreateConeCommandTests.cs
 ---
 
@@ -120,6 +123,11 @@ The owner answered A to Q1, Q2 and Q3 (2026-11-08).
    the torus (64 positions around the axis and 32 around the tube), each with the face `surface`; then the three entries
    of the list "New" (ADR-0076 item 7). The determinism probe of ADR-0074 takes a primitive of this record in a later slice,
    with the new hash in the test sheet of the phone.
+6. **The exact kernel for a mesh of many triangles (phase K5d; Q1 of the codebase review of 2026-11-08, A under the
+   standing order).** A cut by a sphere of 3968 triangles took about 3 minutes, and the recursive tree overflowed the
+   stack. The tree walks with stacks of its own. The side of a vertex comes from a filter of doubles, and from the exact
+   sign of `Rational` only when the doubles are too near zero; that sign sums the fractions with no reduction. Each side,
+   each tree and each result stay the same, so the facets of item 5 stay.
 
 ## Consequences
 

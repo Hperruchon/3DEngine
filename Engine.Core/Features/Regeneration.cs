@@ -192,7 +192,7 @@ internal static class Regeneration
                     var previous = Parameters(edit.Before(extrude), before).Parameters;
                     var next = Parameters(edit.After(extrude), after).Parameters;
                     return previous is not { } p || next is not { } n || !ExtrudeProfile.Same(p, n);
-                case ExtrudeCommand or CreateBoxCommand or CreateCylinderCommand or CreateConeCommand or ImportStlCommand:
+                case ExtrudeCommand or CreateBoxCommand or CreateCylinderCommand or CreateConeCommand or CreateSphereCommand or CreateTorusCommand or ImportStlCommand:
                     return false;
                 case { } command:
                     return FeatureList.Operands(command).Any(Changes);
@@ -206,7 +206,7 @@ internal static class Regeneration
         private Guid? Through(Guid handle) => list.Creator(handle) switch
         {
             ExtrudeCommand extrude => edit.Through(extrude),
-            CreateBoxCommand or CreateCylinderCommand or CreateConeCommand or ImportStlCommand or null => null,
+            CreateBoxCommand or CreateCylinderCommand or CreateConeCommand or CreateSphereCommand or CreateTorusCommand or ImportStlCommand or null => null,
             { } command => FeatureList.Operands(command).Select(Through).FirstOrDefault(id => id is not null),
         };
 
@@ -221,7 +221,7 @@ internal static class Regeneration
             switch (list.Creator(handle))
             {
                 // ADR-0083 item 1 (TASK-0258): no edit changes a mesh body, as no edit changes a box.
-                case CreateBoxCommand or CreateCylinderCommand or CreateConeCommand or ImportStlCommand:
+                case CreateBoxCommand or CreateCylinderCommand or CreateConeCommand or CreateSphereCommand or CreateTorusCommand or ImportStlCommand:
                     return (handle, false, null);
 
                 case ExtrudeCommand extrude:

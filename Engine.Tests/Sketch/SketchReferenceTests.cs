@@ -262,7 +262,7 @@ public sealed class SketchReferenceTests : IDisposable
 
         foreach (var (feature, element, item, reason) in new (Guid, string, Guid?, string)[]
         {
-            (Guid.NewGuid(), "endVertex", base_.Points[0], "No CreateBox, CreateCylinder, CreateCone or Extrude"),
+            (Guid.NewGuid(), "endVertex", base_.Points[0], "No CreateBox, CreateCylinder, CreateCone, CreateSphere, CreateTorus or Extrude"),
             (body, "end", null, "CreateDatum"),
             (body, "endEdge", null, "needs the itemId"),
             (body, "endEdge", base_.Points[0], "not a line of the profile"),
