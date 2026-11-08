@@ -8247,3 +8247,22 @@ change of `Bsp` that is not merged. That is a question for the owner. The entrie
 New tests: 12. The test list holds 2103 (1427 in `Engine.Tests`, 337 in `3DEngine.Tests`, 336 in `3DEngine.ImageTests`, 3
 in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
 entries: 15 of 15. New diagnostic codes: 0. Since the review of v0.263, 1 product milestone and 10 entries followed it.
+
+## v0.274 — A start of the desktop with a file opens it and shows no home screen (P9f, TASK-0290)
+
+ADR-0083 item 7 was silent on a start with the setting `file` (`--file`), and the first session showed the home screen
+over the named file. On 2026-11-08 the owner answered: such a start skips the home screen.
+
+**The change.** The session of the setting `file` ends the home screen before its first frame. A start with no file shows
+the home screen, as before. ADR-0083 item 7 says so.
+
+**Proof.** A new test starts with a file and sees no home screen. The test of V126 now starts with no file, sees the home
+screen, and an open by name ends it. An injection of the old rule fails the new test. Run 42431929751 passed.
+
+**What stays.** The phone has no setting `file`.
+
+**A correction.** None. The failed runs since the entry v0.273, from the API: none.
+
+New tests: 1. The test list holds 2104 (1427 in `Engine.Tests`, 337 in `3DEngine.Tests`, 337 in `3DEngine.ImageTests`, 3
+in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
+entries: 15 of 15. New diagnostic codes: 0. Since the review of v0.263, 2 product milestones and 11 entries followed it.
