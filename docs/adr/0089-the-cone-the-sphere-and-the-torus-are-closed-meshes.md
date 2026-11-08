@@ -147,3 +147,5 @@ primitive is less than the true volume.
 - 2026-11-08 · TASK-0288 · The cone shipped at v0.273.
 - 2026-11-08 · TASK-0295 · Item 1: the backend refuses a mesh whose volume is not positive, the volume of a mesh with
   triangles that are clockwise from outside (finding E186 of the codebase review of 2026-11-08).
+- 2026-11-08 · TASK-0289 · Item 6: the exact kernel for a mesh of many triangles (Q1 of the codebase review of
+  2026-11-08, A under the standing order). The sphere and the torus shipped at v0.282.

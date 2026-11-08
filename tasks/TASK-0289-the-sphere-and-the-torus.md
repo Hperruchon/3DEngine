@@ -1,7 +1,7 @@
 ---
 id: 0289
 title: Commands CreateSphere and CreateTorus make a sphere and a torus, and the exact kernel cuts them in about ten seconds
-status: Active
+status: Done
 phase: K5d
 opened: 2026-11-08
 depends-on: [0288]
@@ -63,19 +63,20 @@ A person makes a sphere and a torus, and a cut by them keeps the names of the fa
 
 ## Acceptance criteria
 
-- [ ] Each new test passes, and a test fails with each injection of the change.
-- [ ] A clean build (`--no-incremental`) gives zero errors and zero warnings.
-- [ ] Continuous integration passes on the three runners, on the branch and on `main` after the merge.
+- [x] Each new test passes, and a test fails with each injection of the change.
+- [x] A clean build (`--no-incremental`) gives zero errors and zero warnings.
+- [x] Continuous integration passes on the three runners, on the branch and on `main` after the merge.
 
 ## Outcome
 
-Status: Active
+Status: Done · commit (the merge of the branch k5d-sphere-torus-b) · v0.282
 
 ## Method
 
 Mechanical: the meshes from the table of the circle; the time of the cut, measured before and after each change.
 Judgement:  the bound of the filter (1e-14 of the sum of the magnitudes, about ten times the bound of the rounding).
-Weakest:    to be written at the close.
+Weakest:    a cut by a sphere still takes about 10 s, too slow for a person who waits; the injection of a recursive
+            tree is not made, because a crash of the test host is not a clean failure.
 
 ## Progress
 
@@ -83,3 +84,4 @@ Weakest:    to be written at the close.
   sign with no reduction gave 16 s, and the filter 2.5 s, with the same 2991 polygons.
 - 2026-11-08: the cut by a sphere in the command takes about 10 s (4.1 s for the subtract, 1.9 s for the faces). The
   injections (a filter that trusts each double, and a sign with no last term) fail the tests of the filter.
+- 2026-11-08: run 42443236726 passed. Closed at v0.282.

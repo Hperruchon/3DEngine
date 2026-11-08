@@ -8457,3 +8457,33 @@ the engine nor the log, and names the slices that follow. No code.
 New tests: 0. The test list holds 2123 (1442 in `Engine.Tests`, 337 in `3DEngine.Tests`, 341 in `3DEngine.ImageTests`, 3
 in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
 entries: 15 of 15. New diagnostic codes: 0. Since the review of v0.275, 1 product milestone and 6 entries followed it.
+
+## v0.282 — CreateSphere and CreateTorus, and an exact kernel that cuts them in about ten seconds (K5d, TASK-0289)
+
+ADR-0089 item 5 names the sphere and the torus. A first try at v0.273 showed that a cut of a plate by a sphere of 3968
+triangles took about 3 minutes in the exact kernel, and that the recursive tree overflowed the stack. Q1 of the codebase
+review of 2026-11-08 asked the owner; the standing order gives its recommended answer A, which changes no contract: make
+the exact kernel faster, and keep the facets of item 5.
+
+**The change.**
+- `CreateSphere` (radius) and `CreateTorus` (radius and tube radius) make the closed meshes of ADR-0089 item 5 from the
+  table of the circle: 31 rings and two poles (3968 triangles), and 64 by 32 positions (4096 triangles). `ISolidMeshOps`
+  stores each as a solid, and the owned kernel names its one face `surface`, with no plane for a datum.
+- ADR-0089 item 6: the tree of the kernel walks with stacks of its own. The side of a vertex comes from a filter of doubles
+  (a result larger than 1e-14 of the sum of the magnitudes, about ten times the bound of the rounding), and from the exact
+  sign of `Rational` only near zero; that sign sums the fractions with no reduction to lowest terms.
+- The messages of `DatumResolver` and the header of `KernelProjection` name the two new creators.
+
+**Proof.** The subtract of a plate and a sphere of radius 6 took 78 s; the sign with no reduction gave 16 s, and the filter
+2.5 s, with the same 2991 polygons. The cut in the command, with its faces, takes about 10 s; its test has a limit of 60 s.
+Three tests hold the filter: about 400,000 sides of the vertices of a sphere, points on a plane and 2^-200 from it, and
+20,000 random sums. A filter that trusts each double fails two of them, and a sign with no last term fails three. Each
+other test of the kernel passes with no change of its numbers. Run 42443236726 passed.
+
+**What stays.** A cut by a sphere still takes about 10 s. K5e (the entries of the list "New") is next.
+
+**A correction.** None. The failed runs since the entry v0.281, from the API: none.
+
+New tests: 19. The test list holds 2142 (1461 in `Engine.Tests`, 337 in `3DEngine.Tests`, 341 in `3DEngine.ImageTests`, 3
+in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
+entries: 15 of 15. New diagnostic codes: 0. Since the review of v0.275, 2 product milestones and 7 entries followed it.

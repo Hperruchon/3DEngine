@@ -274,6 +274,8 @@ Therefore each approved objective must have a track here.
   forms. v0.280, TASK-0296, ADR-0088.
 - Proposal — An agent proposes commands, and the person accepts or rejects them (Proposed, for the owner). v0.281,
   TASK-0297, ADR-0092.
+- K5d — Commands CreateSphere and CreateTorus make a sphere and a torus, and the exact kernel cuts them in about ten
+  seconds. v0.282, TASK-0289, ADR-0089.
 
 ## Track 0 — Foundations
 
