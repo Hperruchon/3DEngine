@@ -10,7 +10,9 @@ internal static class SessionScene
     public static Scene Create()
     {
         var scene = new Scene { Name = "Session" };
-        scene.Cameras.Add(new Camera { Name = "Orbit camera", Distance = 40, YawDegrees = 30, PitchDegrees = 20 });
+        // ADR-0094 (the redesign, slice k, TASK-0305): a framed part fills 45 % of the half picture, as in the render "mix",
+        // so the ring and the values around it have room.
+        scene.Cameras.Add(new Camera { Name = "Orbit camera", Distance = 40, YawDegrees = 30, PitchDegrees = 20, FrameFill = 0.45f });
         return scene;
     }
 }
