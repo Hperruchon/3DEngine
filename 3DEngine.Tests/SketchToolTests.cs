@@ -120,6 +120,23 @@ public class SketchToolTests
         Assert.Equal(25, camera.Distance);
     }
 
+    // ADR-0096 (TASK-0307): a camera with z up looks down on a sketch on the plane of x and y, and looks along y at a
+    // sketch on the plane of x and z, from the side of the eye.
+    [Theory]
+    [InlineData(0.0, 0.0, 1.0, 135.0, 30.0, 135.0, 89.0)]
+    [InlineData(0.0, 1.0, 0.0, 30.0, 10.0, 0.0, 0.0)]
+    [InlineData(0.0, 1.0, 0.0, 135.0, 10.0, 180.0, 0.0)]
+    public void A_Camera_With_Z_Up_Faces_The_Plane_From_The_Side_Of_The_Eye(double nx, double ny, double nz, double yaw, double pitch, double faceYaw, double facePitch)
+    {
+        var camera = new Camera { Target = (1, 2, 3), Distance = 25, YawDegrees = yaw, PitchDegrees = pitch, ZUp = true };
+
+        SketchCamera.Face(camera, (nx, ny, nz), (0, 0, 0));
+
+        Assert.Equal(faceYaw, camera.YawDegrees, 9);
+        Assert.Equal(facePitch, camera.PitchDegrees, 9);
+        Assert.Equal((1.0, 2.0, 3.0), camera.Target);
+    }
+
     // Finding V76 of the second codebase review of 2026-11-03 (TASK-0177): the camera of the review looks at the origin
     // from 100 at the yaw −12°, and the face +x of a body lies at x = −35, so the eye is 14.2 on the outer side of the
     // face and the target 35 on that side. The eye stays on the outer side; up to v0.180 it went to x = −100, behind the

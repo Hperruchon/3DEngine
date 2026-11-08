@@ -23,7 +23,9 @@ public static class SketchCamera
         var eye = camera.Eye();
         var side = (eye.X - origin.X) * normal.X + (eye.Y - origin.Y) * normal.Y + (eye.Z - origin.Z) * normal.Z;
         var sign = side < 0 ? -1.0 : 1.0;
-        var (x, y, z) = (Plain(sign * normal.X / length), sign * normal.Y / length, Plain(sign * normal.Z / length));
+        // ADR-0096 (TASK-0307): the angles are those of the frame of y up, so a camera with z up turns the normal into it.
+        var turned = camera.FromWorld((sign * normal.X / length, sign * normal.Y / length, sign * normal.Z / length));
+        var (x, y, z) = (Plain(turned.X), turned.Y, Plain(turned.Z));
 
         // Camera.Eye: the direction from the target to the eye is
         // (cos pitch · sin yaw, sin pitch, cos pitch · cos yaw). A vertical direction keeps the yaw,

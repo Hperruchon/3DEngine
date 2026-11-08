@@ -7,7 +7,7 @@ date: 2026-10-12
 supersedes: []
 superseded-by: []
 amends: []
-amended-by: ['0024', '0026']
+amended-by: ['0024', '0026', '0096']
 affects:
   - 3DEngine.Core/**
   - 3DEngine.Vulkan/**
@@ -74,3 +74,5 @@ host is replaced in R7. The roadmap line of R4 no longer names flat arrays or in
 - 2026-11-04 · TASK-0179 · The far plane of the camera of the desktop follows the box of the visible bodies: at least
   1000, sixteen times the radius of the box and two times the distance of the eye (register entry R-0051). The reversed
   depth of item 1 keeps its precision at that range.
+- 2026-11-08 · TASK-0307 · ADR-0096 amends item 2: a camera can have the z axis up, and the camera of the session has
+  it.
