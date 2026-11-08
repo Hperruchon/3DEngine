@@ -8686,3 +8686,26 @@ the next slices give it the z axis up.
 New tests: 2. The test list holds 2163 (1472 in `Engine.Tests`, 339 in `3DEngine.Tests`, 349 in `3DEngine.ImageTests`, 3
 in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
 entries: 15 of 15. New diagnostic codes: 0. Since the review of v0.285, 2 product milestones and 5 entries followed it.
+
+## v0.291 — The ring has the look of the orbit of the render, with a guide, icons and a caption (R16l, TASK-0306)
+
+The third slice that the owner chose on 2026-11-08 is the orbit ring. ADR-0081 and ADR-0086 put the segments in the
+places of the render, with a filled ground and a text label only.
+
+**The change.** ADR-0095 amends ADR-0081 and ADR-0086.
+- A landscape ring has a faint guide circle at the inner and at the outer edge of its band.
+- A segment that is not in use has a light ground (35 %, 70 % under the pointer); the tool in use keeps the full colour.
+- Each segment draws an icon above its label, with lines and arcs of the draw list (Q1 A): Move, Distance, Hide, Show,
+  Sketch, Line, Select, Circle, Arc, Constrain, Finish and Back. "Set distance" shows "Distance", and "Sketch on face"
+  shows "Sketch"; the key of each segment stays.
+- A landscape body ring has the caption "TOOLS FOR" and the name in spaced capitals on its right, when it fits.
+
+**Proof.** A new test draws a body ring at 1280 x 720, 1440 x 900 and 390 x 844: each segment has its icon over its
+label, and only 1440 x 900 has room for the caption. With no icon, each of the three cases fails. The phone project
+builds with zero warnings. Run 42479731634 passed. The failed runs since the entry v0.290, from the API: none.
+
+**What stays.** The icons are simple drawings. The places of the segments and the taps do not change.
+
+New tests: 3. The test list holds 2166 (1472 in `Engine.Tests`, 339 in `3DEngine.Tests`, 352 in `3DEngine.ImageTests`, 3
+in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
+entries: 15 of 15. New diagnostic codes: 0. Since the review of v0.285, 3 product milestones and 6 entries followed it.

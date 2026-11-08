@@ -7,7 +7,7 @@ date: 2026-11-06
 supersedes: []
 superseded-by: []
 amends: []
-amended-by: ['0084', '0086']
+amended-by: ['0084', '0086', '0095']
 affects:
   - 3DEngine.App/Ui/DesktopUi.Ring.cs
   - 3DEngine.App/Ui/DesktopUi.cs
@@ -87,3 +87,5 @@ are not on the ring yet.
   of Codex of v0.251).
 - 2026-11-07 · TASK-0275 · ADR-0086 amends item 1: while a sketch is active the ring holds the tools of the sketch, on
   the left of the sketch on a landscape display; the portrait inner radius grows past 150 pixels when a segment needs it.
+- 2026-11-08 · TASK-0306 · Amended by ADR-0095: the look of the orbit of the render (a guide, a light ground, icons and a
+  caption).
