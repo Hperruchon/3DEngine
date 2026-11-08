@@ -8787,3 +8787,31 @@ V150 and V151 wait for TASK-0311, after R16n.
 New tests: 3. The test list holds 2182 (1472 in `Engine.Tests`, 350 in `3DEngine.Tests`, 357 in `3DEngine.ImageTests`, 3
 in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
 entries: 15 of 15. New diagnostic codes: 0. Since the review of v0.292, 0 product milestones and 2 entries followed it.
+
+## v0.295 — The rows of an active sketch take the place of the panel, and its ring is on the right (R16n, TASK-0308)
+
+The fourth slice that the owner chose on 2026-11-08 is the sketch plane. With the z axis up (v0.292), the sketch of
+ADR-0085 is under its body. The window of the sketch, with a title bar and a dark ground at the right, and the ring of the
+sketch on the left were still far from the render "Mix 3".
+
+**The change.** ADR-0097 amends ADR-0034 item 8, ADR-0086 item 1 and ADR-0087 item 5.
+- While a sketch is active, its window is at the left under the top bar, in the place of the panel, with no title bar, no
+  ground, no border and a scrollbar with no ground; its height is its content in the last frame. The panel does not show.
+- The name and the state of the sketch share one line, the state in the dim colour.
+- A pad of the sketch opens to the right of the rows; with no room there, below the row of Next point (V42).
+- On a landscape display the segments of the ring of a sketch go down on the right of the centre, which is never left of
+  the rows. A tool with an icon keeps it (V148 of the codebase review of 2026-11-08 (c)); a kind of a constraint wider than
+  the band goes out to the right. The ring has the caption "TOOLS FOR" and the title of the sketch when it fits.
+- No caption under the sketch (Q2 A): the first form crossed the ring and the rows at 1280 by 720.
+
+**Proof.** The tests of the layout of the ring, of the pad beside the rows and of the picture of the sketch under its body
+changed with the layout; the picture test checks the rows at x 16, no panel, each tool right of the rows with its icon.
+With the segments on the left again, three tests fail. On a phone the ring is now clear of the rows. The phone project
+builds with zero warnings. Run 42483436816 passed. The failed runs since the entry v0.294, from the API: none.
+
+**What stays.** While a sketch is active the controls of the panel wait for Finish. The window of the live sketches, with
+no active sketch, does not change.
+
+New tests: 0. The test list holds 2182 (1472 in `Engine.Tests`, 350 in `3DEngine.Tests`, 357 in `3DEngine.ImageTests`, 3
+in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
+entries: 15 of 15. New diagnostic codes: 0. Since the review of v0.292, 1 product milestone and 3 entries followed it.
