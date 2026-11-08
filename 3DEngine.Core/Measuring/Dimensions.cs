@@ -27,11 +27,14 @@ public static class Dimensions
     // The share of the largest extent by which a dimension line stands out from its edge (item 4).
     public const double Gap = 1.0 / 20.0;
 
-    // Item 4: the three dimensions of the box, along X, Y and Z, seen from the eye. The up axis of the desktop is Y, so
-    // the dimensions of X and Z lie at the lowest Y, on the faces that face the eye, and the dimension of Y lies on the
-    // vertical edge of the side of the eye in X and the far side in Z. A box with no extent gives no dimension.
+    // Item 4: the three dimensions of the box, along X, Y and Z, seen from the eye. With the y axis up, the dimensions of
+    // X and Z lie at the lowest Y, on the faces that face the eye, and the dimension of Y lies on the vertical edge of the
+    // side of the eye in X and the far side in Z. A box with no extent gives no dimension.
+    // Finding V147 of the codebase review of 2026-11-08 (c) (TASK-0311): with the z axis up (the camera of the session
+    // since v0.292), the roles of Y and Z change: the dimensions of X and Y lie at the lowest Z, and the dimension of Z lies on
+    // the vertical edge of the side of the eye in X and the far side in Y. Until TASK-0311 the lines took the y axis as up.
     public static IReadOnlyList<Dimension> Of(
-        (double X, double Y, double Z) min, (double X, double Y, double Z) max, (double X, double Y, double Z) eye)
+        (double X, double Y, double Z) min, (double X, double Y, double Z) max, (double X, double Y, double Z) eye, bool zUp = false)
     {
         var (dx, dy, dz) = (max.X - min.X, max.Y - min.Y, max.Z - min.Z);
         var largest = Math.Max(dx, Math.Max(dy, dz));
@@ -39,6 +42,9 @@ public static class Dimensions
             return [];
 
         var gap = largest * Gap;
+        if (zUp)
+            return ZUp(min, max, eye, gap, (dx, dy, dz));
+
         var (cx, cz) = ((min.X + max.X) / 2, (min.Z + max.Z) / 2);
         var sx = eye.X >= cx ? 1.0 : -1.0;
         var sz = eye.Z >= cz ? 1.0 : -1.0;
@@ -55,6 +61,28 @@ public static class Dimensions
         ];
 
         // An extent of zero, for example of a flat body, has no line.
+        return [.. all.Where(dimension => dimension.Value > 0)];
+    }
+
+    // V147 (TASK-0311): the lines of a box with the z axis up, as Of with the roles of Y and Z changed.
+    private static IReadOnlyList<Dimension> ZUp(
+        (double X, double Y, double Z) min, (double X, double Y, double Z) max, (double X, double Y, double Z) eye, double gap, (double X, double Y, double Z) extent)
+    {
+        var (cx, cy) = ((min.X + max.X) / 2, (min.Y + max.Y) / 2);
+        var sx = eye.X >= cx ? 1.0 : -1.0;
+        var sy = eye.Y >= cy ? 1.0 : -1.0;
+        var nearX = sx > 0 ? max.X : min.X;
+        var nearY = sy > 0 ? max.Y : min.Y;
+        var farY = sy > 0 ? min.Y : max.Y;
+        var low = min.Z;
+
+        Dimension[] all =
+        [
+            Line(Axis.X, (min.X, nearY, low), (max.X, nearY, low), (0, sy * gap, 0), extent.X),
+            Line(Axis.Y, (nearX, min.Y, low), (nearX, max.Y, low), (sx * gap, 0, 0), extent.Y),
+            Line(Axis.Z, (nearX, farY, min.Z), (nearX, farY, max.Z), (sx * gap, 0, 0), extent.Z),
+        ];
+
         return [.. all.Where(dimension => dimension.Value > 0)];
     }
 
