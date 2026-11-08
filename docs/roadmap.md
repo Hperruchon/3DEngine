@@ -280,6 +280,8 @@ Therefore each approved objective must have a track here.
 - P0.126 — The test of a cut by a sphere has a time limit that a slow runner keeps. v0.284, TASK-0300.
 - K5f — The determinism probe holds the cone, the sphere and the torus. v0.285, TASK-0299, ADR-0089, ADR-0074.
 - Review — The codebase review of 2026-11-08 (b). v0.286, TASK-0301.
+- P0.127 — The identifier of a reference endpoint, the volume of a very small solid, the markers of a conflict and
+  the width of the main panel hold their next forms. v0.287, TASK-0302, ADR-0089.
 
 ## Track 0 — Foundations
 

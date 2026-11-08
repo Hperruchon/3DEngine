@@ -8579,3 +8579,31 @@ carried from the last review.
 New tests: 0. The test list holds 2145 (1461 in `Engine.Tests`, 337 in `3DEngine.Tests`, 344 in `3DEngine.ImageTests`, 3
 in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
 entries: 15 of 15. New diagnostic codes: 0. Since the review of v0.285, 0 product milestones and 1 entry followed it.
+
+## v0.287 — An identifier of a sketch, a very small solid, conflict markers and the panel width (P0.127, TASK-0302)
+
+The four medium findings of the codebase review of 2026-11-08 (b).
+
+**The change.**
+- E193: each of the six commands that make an item of a sketch (a point, a line, a circle, an arc, a constraint and a
+  reference) refuses an identifier that an item of the sketch already holds, with `E-SKETCH-ID-IN-USE`; a reference checks
+  the identifiers of its two ends too (`SketchResults.HeldBySketch`).
+- E194: `CreateSolid` refuses a volume below zero only. A volume of zero or NaN comes from a size that underflows or
+  overflows the doubles, and Manifold made those solids before TASK-0295, so a document with one opens again. ADR-0089 says
+  so in its history.
+- T177: the gate `No_Tracked_Text_File_Holds_A_Conflict_Marker` refuses a line of seven `<`, `=` or `>` in a tracked
+  text file.
+- V142: the main panel is at most as wide as the display less its margins and the safe area; a wide display keeps 460.
+
+**Proof.** New tests: a point and a circle with the identifier of an end of a reference are refused, and a reference whose
+end a point holds is refused; a cone of radius 1e-108 is made; seven forms of the markers; the panel on two narrow
+displays and a wide one. The injections fail them: a check that never refuses, the old check of the volume, a block of
+markers in the register, and the old width of the panel. Run 42450705901 passed.
+
+**What stays.** The gate of the markers reads the files of the working tree. No run on the S23 shows the narrower panel.
+
+**A correction.** None. The failed runs since the entry v0.286, from the API: none.
+
+New tests: 13. The test list holds 2158 (1471 in `Engine.Tests`, 337 in `3DEngine.Tests`, 347 in `3DEngine.ImageTests`, 3
+in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
+entries: 15 of 15. New diagnostic codes: 0. Since the review of v0.285, 0 product milestones and 2 entries followed it.
