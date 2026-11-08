@@ -7,7 +7,7 @@ date: 2026-10-28
 supersedes: []
 superseded-by: []
 amends: []
-amended-by: ['0061', '0071', '0080']
+amended-by: ['0061', '0071', '0080', '0090']
 affects:
   - 3DEngine/DesktopSurface.cs
   - 3DEngine/DesktopEngineHost.cs
@@ -104,3 +104,4 @@ HTTP (ADR-0002). An open never leaves the person with no window, because the old
   session of the same process, on the same port and in the same window. It does not start again.
 - 2026-11-06 · TASK-0202 · ADR-0071 amends item 4: `GET /document` gives the kind of the Document.
 - 2026-11-06 · TASK-0248 · ADR-0080 amends item 3: the name of the file is in the title bar of the panel.
+- 2026-11-08 · TASK-0291 · ADR-0090 amends item 4: the answer of a save lists its warnings, as W-IO-OLD-FILE-KEPT.
