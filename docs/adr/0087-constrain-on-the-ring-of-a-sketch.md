@@ -1,13 +1,13 @@
 ---
 id: 0087
 title: "Constrain" on the ring of a sketch opens the constraints that fit the selection
-status: Accepted
+status: Amended
 topic: Clients, sketch
 date: 2026-11-07
 supersedes: []
 superseded-by: []
 amends: ['0086']
-amended-by: []
+amended-by: ['0097']
 affects:
   - 3DEngine.App/Ui/DesktopUi.Ring.cs
   - 3DEngine.App/Ui/DesktopUi.Sketch.cs
@@ -85,3 +85,5 @@ the count of segments.
 
 - 2026-11-07 · TASK-0276 · The record, Accepted under the standing order.
 - 2026-11-07 · TASK-0276 · Shipped at v0.261.
+- 2026-11-08 · TASK-0308 · ADR-0097 amends item 5: the ring is on the right, so a wide label goes out to the right, and a
+  tool with an icon keeps its icon.
