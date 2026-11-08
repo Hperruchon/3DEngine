@@ -88,6 +88,20 @@ public static class CrossPlatformProbe
             new CreateCylinderCommand { CommandId = Id(84), Radius = 4.75, Height = 20 },
             new TranslateCommand { CommandId = Id(85), BodyId = Id(84), Dx = 90.25, Dy = 10.5, Dz = 1 },
             new SubtractCommand { CommandId = Id(86), MinuendBodyId = Id(83), SubtrahendBodyId = Id(85) },
+
+            // ADR-0089 item 5 (phase K5f, TASK-0299): the closed meshes of the cone, the sphere and the torus, from the table of
+            // the circle with + - * / sqrt only, a cut of the cone by a moved cylinder, and a move of each body, so the four
+            // platforms compare the bits of each vertex of the new primitives. A cut by the sphere would run the exact kernel
+            // on 3968 triangles, which took more than two minutes on the emulator (run 42444929625).
+            new CreateConeCommand { CommandId = Id(90), Radius = 3.25, Height = 6.5 },
+            new CreateCylinderCommand { CommandId = Id(91), Radius = 1.25, Height = 10 },
+            new TranslateCommand { CommandId = Id(92), BodyId = Id(91), Dx = 0.5, Dy = 0.25, Dz = 2.125 },
+            new SubtractCommand { CommandId = Id(93), MinuendBodyId = Id(90), SubtrahendBodyId = Id(92) },
+            new TranslateCommand { CommandId = Id(94), BodyId = Id(93), Dx = 120.5, Dy = 4.25, Dz = 3.25 },
+            new CreateTorusCommand { CommandId = Id(95), Radius = 5.5, TubeRadius = 1.25 },
+            new TranslateCommand { CommandId = Id(96), BodyId = Id(95), Dx = 140.75, Dy = -6.5, Dz = 1.25 },
+            new CreateSphereCommand { CommandId = Id(97), Radius = 2.375 },
+            new TranslateCommand { CommandId = Id(98), BodyId = Id(97), Dx = 160.5, Dy = 8.25, Dz = 2.375 },
         ];
     }
 
