@@ -329,9 +329,11 @@ public sealed class ManifoldGeometryBackend
 
         // Finding E186 of the codebase review of 2026-11-08 (TASK-0295): Manifold takes a closed mesh whose triangles are
         // clockwise from outside and gives a solid of negative volume, so a cut by it makes a body larger. ISolidMeshOps asks
-        // for counter-clockwise triangles, and a volume that is not positive is refused.
+        // for counter-clockwise triangles, and a volume below zero is refused. Finding E194 of the codebase review of 2026-11-08
+        // (b) (TASK-0302): a volume of zero or NaN comes from a size that underflows or overflows the doubles, not from the
+        // winding, and Manifold made those solids before TASK-0295, so a document with one still opens.
         double volume = ManifoldNative.manifold_volume(solid);
-        if (!(volume > 0))
+        if (volume < 0)
         {
             Release(solid, solidBuffer);
             throw new ManifoldNativeException(

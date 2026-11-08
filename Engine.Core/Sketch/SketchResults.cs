@@ -85,6 +85,19 @@ public static class SketchResults
             ? Failure(DiagnosticCodes.SketchIdInUse, $"The log holds a command with the id '{command.CommandId}', and a sketch item takes the id of its command.")
             : null;
 
+    // Finding E193 of the codebase review of 2026-11-08 (b) (TASK-0302): an endpoint of a reference takes an identifier
+    // derived from the command of the reference (ADR-0052 item 2), which the log does not hold, so InUse did not see it, and
+    // a point with that identifier gave two items with one identifier. A new item with the identifier of an item of the
+    // sketch is refused.
+    public static CommandHandlerResult? HeldBySketch(SketchRecord sketch, params Guid[] ids)
+    {
+        var held = ids.FirstOrDefault(id => sketch.Points.Any(item => item.Id == id) || sketch.Lines.Any(item => item.Id == id)
+            || sketch.Circles.Any(item => item.Id == id) || sketch.Arcs.Any(item => item.Id == id) || sketch.Constraints.Any(item => item.Id == id));
+        return held == Guid.Empty
+            ? null
+            : Failure(DiagnosticCodes.SketchIdInUse, $"The sketch '{sketch.Id}' holds an item with the id '{held}', and a sketch item takes the id of its command.");
+    }
+
     // ADR-0033 item 2: the origin of the frame has the identifier of its sketch, and no
     // command moves or deletes it.
     public static bool IsOrigin(SketchRecord sketch, Guid id) => sketch.Id == id;
