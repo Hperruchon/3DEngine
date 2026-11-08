@@ -373,6 +373,36 @@ public sealed class NumericPadUiTests
         Assert.Null(ui.Pad);
     }
 
+    // Phase K5e (ADR-0089 item 5, TASK-0298): the list "New" holds Cone, Sphere and Torus too, each at least 44 pixels high
+    // and on the panels; each opens its pad, and an apply of the defaults gives one action with them.
+    [Theory]
+    [InlineData(DeviceKind.Touch)]
+    [InlineData(DeviceKind.Mouse)]
+    public void New_Cone_Sphere_And_Torus_Open_Their_Pads(DeviceKind kind)
+    {
+        var cases = new (string Entry, string[] Fields, PanelAction Action)[]
+        {
+            (DesktopUi.NewConeLabel, ["radius", "height"], new CreateConeAction(5, 10)),
+            (DesktopUi.NewSphereLabel, ["radius"], new CreateSphereAction(5)),
+            (DesktopUi.NewTorusLabel, ["radius", "tube radius"], new CreateTorusAction(10, 3)),
+        };
+        foreach (var (entry, fields, action) in cases)
+        {
+            using var ui = Opened();
+            Tap(ui, kind, DesktopUi.NewLabel);
+            var rectangle = ui.ItemRectangle(entry) ?? throw new InvalidOperationException($"The list has no {entry}.");
+            Assert.True(rectangle.W - rectangle.Y >= DesktopUi.MinimumControlHeight, $"{entry} is {rectangle.W - rectangle.Y} pixels high.");
+            Assert.True(ui.OverPanel((rectangle.X + rectangle.Z) / 2, (rectangle.Y + rectangle.W) / 2), $"{entry} is outside the panels.");
+
+            Tap(ui, kind, entry);
+            Assert.Equal(entry, ui.Pad?.Title);
+            Assert.Equal(fields, ui.Pad!.Fields.Select(field => field.Name));
+            Step(ui, null);
+            Tap(ui, kind, DesktopUi.PadItem("Apply"));
+            Assert.Equal([action], ui.TakeActions());
+        }
+    }
+
     // ADR-0027 item 6 for the controls of ADR-0032 items 4 and 5.
     [Fact]
     public void Each_Control_Of_The_Pad_Is_At_Least_44_Pixels_High()
