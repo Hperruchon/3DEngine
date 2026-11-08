@@ -16,6 +16,9 @@ internal sealed unsafe partial class DesktopUi
     // The item of the first row: the name and the state of the body.
     public const string RowsTitleItem = "Rows:title";
 
+    // ADR-0099 item 2 (the redesign, slice p, TASK-0313): the item of the name field that a tap on the first row opens.
+    public const string RenameItem = "Rows:rename";
+
     // The colour of the word "failed" and its code (the brief: red always comes with the word "failed" and the code). The
     // theme of ADR-0078 has no colour of a fault, so this file holds it. Finding V133 (TASK-0271): until TASK-0271 this
     // comment said that it was a colour of the theme.
@@ -26,6 +29,24 @@ internal sealed unsafe partial class DesktopUi
     // The value rows of this frame, and the rectangle of each row with the first one.
     private List<(EdgeValues.Value Value, Vector4 Rectangle)> _rows = [];
     private Vector4? _rowsArea;
+
+    // ADR-0099 item 3: the lines under the values, each with the item of its line in the panel, and its rectangle.
+    private List<(string Item, string Text, Vector4 Rectangle)> _rowLines = [];
+
+    // ADR-0099 item 4: the row of the list of a cut, and the visible bodies that can cut the selected body.
+    private Vector4? _cutRow;
+    private List<LiveBody> _cutTools = [];
+
+    // ADR-0099 item 2: the body whose name field is open, or null; and the focus of the field in the next frame.
+    private Guid? _renaming;
+    private bool _focusRename;
+
+    // ADR-0099 item 1: true when the rows of this body show, so that the panel does not.
+    private bool RowsShow(Vector2 displaySize, LiveBody? body)
+        => body is not null && !_sketchActive && displaySize.X >= displaySize.Y;
+
+    // The rectangle of the rows of this frame, for a test; null with no rows.
+    internal Vector4? RowsArea => _rowsArea;
 
     // True when the point is on the rows of this frame.
     private bool OverRows(double x, double y)
@@ -38,19 +59,23 @@ internal sealed unsafe partial class DesktopUi
     internal static string RowState(LiveBody body)
         => $"{body.Kind} · {(body.Fault is { } fault ? $"failed {fault.Code}" : "correct")}{(body.Visible ? string.Empty : " · hidden")}";
 
-    // Item 1: on a landscape display, while a body is selected and no sketch is active, the rows are at the upper right,
-    // 16 pixels inside the safe area. A portrait display keeps the data in the panel in this slice. The frame places the
-    // rows before the ring and the chips, so that both read the rows of this frame.
-    private void PlaceRows(Vector2 displaySize, LiveBody? body, IReadOnlyList<EdgeValues.Value>? values)
+    // Item 1: on a landscape display, while a body is selected and no sketch is active, the rows show. A portrait display
+    // keeps the data in the panel in this slice. The frame places the rows before the ring and the chips, so that both read
+    // the rows of this frame.
+    // ADR-0099 item 1 (the redesign, slice p, TASK-0313): the rows are at the upper left, in the place of the panel, which
+    // does not show while they do. Until TASK-0313 they were at the upper right, under the command line.
+    private void PlaceRows(Vector2 displaySize, LiveBody? body, IReadOnlyList<EdgeValues.Value>? values, IReadOnlyList<LiveBody> bodies, DocumentLine? document)
     {
-        (_rows, _rowsArea) = ([], null);
-        if (body is null || _sketchActive || displaySize.X < displaySize.Y)
+        (_rows, _rowsArea, _rowLines, _cutRow, _cutTools) = ([], null, [], null, []);
+        if (!RowsShow(displaySize, body) || body is null)
+        {
+            _renaming = null;
             return;
+        }
 
-        var right = displaySize.X - 16f - _inset.Z;
-        var left = right - RowsWidth;
-        // ADR-0098 item 4 (the redesign, slice o, TASK-0312): the rows start 8 pixels under the command line.
-        var top = Math.Max(16f + _inset.Y, _commandBottom > 0f ? _commandBottom + 8f : 0f);
+        var left = 16f + _inset.X;
+        var right = left + RowsWidth;
+        var top = PanelTop;
         var y = top + RowHeight;
         // The review of Codex of v0.252 (TASK-0271): the rows end 16 pixels above the anchors, as the panel does; a value
         // that has no room keeps its chip only. Until TASK-0271 a long list went past the bottom of the display.
@@ -65,7 +90,74 @@ internal sealed unsafe partial class DesktopUi
             y += RowHeight;
         }
 
+        // ADR-0099 item 4: the row of the list of a cut, while another body is visible, as in the panel (ADR-0073 item 1).
+        _cutTools = [.. bodies.Where(other => other.Id != body.Id && other.Visible)];
+        if (_cutTools.Count > 0 && y + RowHeight <= bottom)
+        {
+            _cutRow = new Vector4(left, y, right, y + RowHeight);
+            y += RowHeight;
+        }
+
+        // ADR-0099 item 3: the lines that the panel gave until TASK-0313, each where it has room: the selected face, the
+        // selected edge, the size while the dimensions show (ADR-0056 item 6), and the message of the document.
+        var step = ImGui.GetTextLineHeight() + 12f;
+        foreach (var (item, text) in new[] { (FaceLabel, _face?.Text), (EdgeLabel, _face?.EdgeText), (SizeLabel, _dimensions ? _size : null), (DocumentMessageLabel, document?.Message) })
+        {
+            if (text is null || y + step > bottom)
+                continue;
+            _rowLines.Add((item, text, new Vector4(left, y, right, y + step)));
+            y += step;
+        }
+
         _rowsArea = new Vector4(left, top, right, y);
+        if (_renaming != body.Id)
+            _renaming = null;
+    }
+
+    // ADR-0099 item 2: a tap on the first row, or the command Rename, opens the name field with the name of the body.
+    private void StartRename(LiveBody body)
+    {
+        (_name, _nameFor) = (body.Name ?? string.Empty, body.Id);
+        (_renaming, _focusRename) = (body.Id, true);
+    }
+
+    // ADR-0099 item 2: the name field in the place of the first row. Enter renames the body with one command; Escape, or a tap
+    // that takes the keys from the field, closes it with no command. An open pad disables it, as each text field (ADR-0032
+    // item 6).
+    private void RenameField(LiveBody body, Vector4 title)
+    {
+        ImGui.SetNextWindowPos(new Vector2(title.X, title.Y), ImGuiCond.Always);
+        ImGui.PushStyleVar(ImGuiStyleVar.WindowPadding, Vector2.Zero);
+        if (ImGui.Begin("##Rename", FixedFlags))
+        {
+            if (_focusRename)
+            {
+                ImGui.SetKeyboardFocusHere();
+                _focusRename = false;
+            }
+
+            ImGui.SetNextItemWidth(title.Z - title.X);
+            ImGui.BeginDisabled(_pad is not null);
+            var enter = ImGui.InputText("##RenameText", ref _name, 128, ImGuiInputTextFlags.EnterReturnsTrue);
+            ImGui.EndDisabled();
+            var active = ImGui.IsItemActive();
+            var left = ImGui.IsItemDeactivated();
+            Item(RenameItem);
+            if (enter)
+            {
+                _actions.Add(new RenameBodyAction(body.Id, _name));
+                (_renaming, _dropFocus) = (null, true);
+            }
+            else if (left || (active && ImGui.IsKeyPressed(ImGuiKey.Escape)))
+            {
+                (_renaming, _dropFocus) = (null, true);
+            }
+
+            AddWindowRectangle();
+        }
+
+        ImGui.End();
+        ImGui.PopStyleVar();
     }
 
     // Items 2 and 3: the rows of this frame, and the tap on a value row.
@@ -81,6 +173,16 @@ internal sealed unsafe partial class DesktopUi
             && RowAt(io.MousePos) is { } released && RowAt(io.MouseClickedPos[0]) is { } pressed && pressed.Key == released.Key)
             Use(released);
 
+        // ADR-0099 item 2: a press and a release on the first row open the name field; a pointer over it gives the reason of a
+        // fault, as the line of the fault in the panel did until TASK-0313.
+        var titleArea = new Vector4(area.X, area.Y, area.Z, area.Y + RowHeight);
+        bool OnTitle(Vector2 point) => point.X >= titleArea.X && point.X < titleArea.Z && point.Y >= titleArea.Y && point.Y < titleArea.W;
+        if (_pad is null && _renaming is null && ImGui.IsMouseReleased(ImGuiMouseButton.Left) && !OverWindowAtRelease()
+            && OnTitle(io.MousePos) && OnTitle(io.MouseClickedPos[0]))
+            StartRename(body);
+        if (body.Fault is { } shownFault && _renaming is null && OnTitle(io.MousePos) && !ImGui.IsWindowHovered(ImGuiHoveredFlags.AnyWindow))
+            ImGui.SetTooltip(shownFault.Message);
+
         // Item 2: no ground and no border; a line under each row. Finding V129 of the codebase review of 2026-11-07 (b)
         // (TASK-0271): the name is on the first line of the first row, and the kind and the state on its second line, each
         // in the width of the column; only "failed" and the code are red. Until TASK-0271 the state of a hidden body pushed
@@ -95,7 +197,10 @@ internal sealed unsafe partial class DesktopUi
         var (name, parts) = RowTitle(body);
         var lineHeight = ImGui.GetTextLineHeight();
         var first = top + ((RowHeight - (2f * lineHeight)) / 2f);
-        list.AddText(new Vector2(left, first), text, name);
+        if (_renaming == body.Id)
+            RenameField(body, titleArea);
+        else
+            list.AddText(new Vector2(left, first), text, name);
         var x = left;
         foreach (var (part, red) in parts)
         {
@@ -103,7 +208,7 @@ internal sealed unsafe partial class DesktopUi
             x += ImGui.CalcTextSize(part).X;
         }
         list.AddLine(new Vector2(left, top + RowHeight), new Vector2(right, top + RowHeight), line, 1f);
-        _items[RowsTitleItem] = new Vector4(left, top, right, top + RowHeight);
+        _items[RowsTitleItem] = titleArea;
 
         foreach (var (value, rectangle) in _rows)
         {
@@ -120,6 +225,56 @@ internal sealed unsafe partial class DesktopUi
             list.AddLine(new Vector2(min.X, max.Y), max, line, 1f);
             _items[RowItem(value.Key)] = rectangle;
         }
+
+        // ADR-0099 item 4: the row of the list of a cut.
+        if (_cutRow is { } cut)
+            CutRow(body, cut);
+
+        // ADR-0099 item 3: the lines under the values, in the quiet colour, with no tap.
+        foreach (var (item, shown, rectangle) in _rowLines)
+        {
+            list.AddText(new Vector2(rectangle.X, rectangle.Y + 6f), quiet, Fit(shown, RowsWidth));
+            _items[item] = rectangle;
+        }
+    }
+
+    // ADR-0099 item 4: the label of the row, and at its right the list of the bodies that can cut the selected body; a choice
+    // gives the command Subtract, as the list of the panel does. The open list belongs to the panels (V116).
+    private void CutRow(LiveBody body, Vector4 row)
+    {
+        var width = 160f;
+        ImGui.SetNextWindowPos(new Vector2(row.X, row.Y + ((RowHeight - ImGui.GetFrameHeight()) / 2f)), ImGuiCond.Always);
+        ImGui.PushStyleVar(ImGuiStyleVar.WindowPadding, Vector2.Zero);
+        if (ImGui.Begin("##RowsCut", FixedFlags))
+        {
+            ImGui.AlignTextToFramePadding();
+            ImGui.TextDisabled(CutLabel);
+            ImGui.SameLine(row.Z - row.X - width);
+            ImGui.SetNextItemWidth(width);
+            if (ImGui.BeginCombo($"##{CutLabel}", "Choose"))
+            {
+                foreach (var tool in _cutTools)
+                {
+                    if (ImGui.Selectable($"{RowText(tool)}##cut{tool.Id}", false, ImGuiSelectableFlags.None, new Vector2(0f, MinimumControlHeight)))
+                        _actions.Add(new CutBodyAction(body.Id, tool.Id));
+                    Item(CutItem(tool.Id));
+                }
+
+                var (at, extent) = (ImGui.GetWindowPos(), ImGui.GetWindowSize());
+                _cutList = new Vector4(at.X, at.Y, at.X + extent.X, at.Y + extent.Y);
+                ImGui.EndCombo();
+            }
+
+            Item(CutLabel);
+            AddWindowRectangle();
+        }
+
+        ImGui.End();
+        ImGui.PopStyleVar();
+        if (_cutList is { } open)
+            _panels.Add(open);
+        var line = ImGui.GetColorU32(ImGui.GetStyle().Colors[(int)ImGuiCol.Separator]);
+        ImGui.GetBackgroundDrawList().AddLine(new Vector2(row.X, row.W), new Vector2(row.Z, row.W), line, 1f);
     }
 
     // V129 (TASK-0271): the name of the first row, and the parts of its second line: the kind, "failed" and the code (red),

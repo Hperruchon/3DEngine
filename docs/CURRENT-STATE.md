@@ -8872,3 +8872,42 @@ API: none.
 New tests: 6. The test list holds 2191 (1472 in `Engine.Tests`, 352 in `3DEngine.Tests`, 364 in `3DEngine.ImageTests`, 3
 in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
 entries: 15 of 15. New diagnostic codes: 0. Since the review of v0.292, 2 product milestones and 5 entries followed it.
+
+## v0.298 — The rows of a selected body take the place of the panel at the upper left (R16p, TASK-0313)
+
+On 2026-11-08, after v0.297, the owner chose four more slices, in this order: the rows of a selected body at the left, the
+history arc, the agent arc and the values on the edges of a sketch. This entry is the first. In the render "Mix 1" the
+upper left holds the rows of the selected part and no panel.
+
+**The change.** ADR-0099 amends ADR-0084 item 1, ADR-0093 items 1 and 4 and ADR-0098 items 3 and 4.
+- On a landscape display, while a body is selected and no sketch is active, the rows are at the upper left, 16 pixels
+  inside the safe area and 8 pixels under the top bar. The panel does not show, nor the window of the live sketches.
+- A tap on the name opens a name field with the name selected; Enter gives one rename, and Escape or a tap away closes it
+  with no command. A pointer over the name of a failed body gives the reason of the fault.
+- Under the values: the list of a cut while another body is visible, then the lines of the selected face, the selected
+  edge, the size while the dimensions show, and the message of the document.
+- The command line also holds Rename, a cut with each other visible body, the sketch on a face, Dimensions and Hidden too.
+- A long name in the top bar ends 12 pixels left of the command line.
+- A portrait display keeps the panel with each control.
+
+**The tests.** The tests of the rows read the new place, and five new tests cover the name field, Escape, the lines and the
+cut, the commands, and that no segment of the ring is on the rows. The tests of the controls of the panel with a selection
+now use a portrait display, where the panel keeps them: `NumericPadUiTests`, `DesktopUiTests`, `FaceSelectionTests`,
+`CutUiTests`, three tests of `DimensionOverlayTests`, one of `DesktopFormsTests` and two of `EdgeValueTests`. The
+picture test of the dimensions taps the toggle before the selection.
+
+**Proof.** Thirteen injections each make a test fail: the panel with the rows, the rows at the right, no rename on Enter, no
+tap on the name, Escape that keeps the field, no list of a cut, no line of the edge, no command Rename, a cut with a hidden
+body, and the top bar cut to the old place. A flag that selects the name on focus made no test fail, because the request of
+the focus selects it; the flag was removed. The picture at 1440 by 900 shows the rows at the upper left. The phone project
+builds with zero warnings. Run 42524849786 passed. The failed runs since the entry v0.297, from the API: none.
+
+**A correction.** The script that waits for a run gave "no run yet" for 45 minutes, because it gave the API the short
+identifier of the commit; the run had passed. The session now gives the full identifier.
+
+**What stays.** No row "Made from" (ADR-0099 Q2). While a body is selected, the file and the list of the bodies show after a
+tap on the scene where no body is. A finger has no hover, so on a touch display the reason of a fault shows in the panel only.
+
+New tests: 5, and one test left with the old place of the rows. The test list holds 2195 (1472 in `Engine.Tests`, 352 in `3DEngine.Tests`, 368 in `3DEngine.ImageTests`, 3
+in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
+entries: 15 of 15. New diagnostic codes: 0. Since the review of v0.292, 3 product milestones and 6 entries followed it.

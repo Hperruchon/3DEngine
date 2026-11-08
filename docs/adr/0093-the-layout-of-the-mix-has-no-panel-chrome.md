@@ -1,13 +1,13 @@
 ---
 id: 0093
 title: The layout of the mix has a top bar, a panel with no chrome and a status line at the lower right
-status: Accepted
+status: Amended
 topic: Clients, rendering
 date: 2026-11-08
 supersedes: []
 superseded-by: []
 amends: ['0080']
-amended-by: []
+amended-by: ['0099']
 affects:
   - 3DEngine.App/Ui/DesktopUi.Fixed.cs
   - 3DEngine.App/Ui/DesktopUi.Panel.cs
@@ -77,3 +77,6 @@ ground of the theme. The person can no longer move the panel out of the way. The
 - 2026-11-08 · TASK-0310 · Item 3: the status line leaves the anchors free; it drops the address, or does not show, where
   it does not fit (V146).
 - 2026-11-08 · TASK-0310 · Shipped at v0.294.
+- 2026-11-08 · TASK-0313 · ADR-0099 item 1 amends item 4: the rows take the left column while a body is selected, and
+  the panel does not show; ADR-0099 items 2 to 5 give the controls of the panel a place. Item 6 amends item 1: a long name
+  ends left of the command line.
