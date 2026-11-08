@@ -130,6 +130,9 @@ public sealed unsafe class SdlInput
             key = InputKey.Z;
         else if ((uint)keycode == SDLK_Y)
             key = InputKey.Y;
+        // ADR-0098 item 1 (the redesign, slice o, TASK-0312): K follows the letter too, so Control and K open the command line.
+        else if ((uint)keycode == SDLK_K)
+            key = InputKey.K;
         if (key is { } known)
             _frame.Add(new KeySample(known, down, _modifiers, time));
     }

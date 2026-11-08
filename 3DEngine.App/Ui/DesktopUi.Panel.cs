@@ -46,24 +46,12 @@ internal sealed unsafe partial class DesktopUi
             ImGui.SetNextItemWidth(NewListWidth);
             if (ImGui.BeginCombo(NewLabel, string.Empty))
             {
-                if (ImGui.Selectable($"Box##{NewBoxLabel}", false, ImGuiSelectableFlags.None, new Vector2(0f, MinimumControlHeight)))
-                    OpenPad(new NumericPad(NewBoxLabel, _unit, new("x", "10"), new("y", "10"), new("z", "10")), values => new CreateBoxAction(values[0], values[1], values[2]));
-                Item(NewBoxLabel);
-                if (ImGui.Selectable($"Cylinder##{NewCylinderLabel}", false, ImGuiSelectableFlags.None, new Vector2(0f, MinimumControlHeight)))
-                    OpenPad(new NumericPad(NewCylinderLabel, _unit, new("radius", "5"), new("height", "10")), values => new CreateCylinderAction(values[0], values[1]));
-                Item(NewCylinderLabel);
-
-                // Phase K5e (ADR-0089 item 5, TASK-0298): the entries of the cone, the sphere and the torus, each with its pad.
-                // The defaults of the torus keep the tube inside the ring.
-                if (ImGui.Selectable($"Cone##{NewConeLabel}", false, ImGuiSelectableFlags.None, new Vector2(0f, MinimumControlHeight)))
-                    OpenPad(new NumericPad(NewConeLabel, _unit, new("radius", "5"), new("height", "10")), values => new CreateConeAction(values[0], values[1]));
-                Item(NewConeLabel);
-                if (ImGui.Selectable($"Sphere##{NewSphereLabel}", false, ImGuiSelectableFlags.None, new Vector2(0f, MinimumControlHeight)))
-                    OpenPad(new NumericPad(NewSphereLabel, _unit, new PadField("radius", "5")), values => new CreateSphereAction(values[0]));
-                Item(NewSphereLabel);
-                if (ImGui.Selectable($"Torus##{NewTorusLabel}", false, ImGuiSelectableFlags.None, new Vector2(0f, MinimumControlHeight)))
-                    OpenPad(new NumericPad(NewTorusLabel, _unit, new("radius", "10"), new("tube radius", "3")), values => new CreateTorusAction(values[0], values[1]));
-                Item(NewTorusLabel);
+                foreach (var (text, label) in new[] { ("Box", NewBoxLabel), ("Cylinder", NewCylinderLabel), ("Cone", NewConeLabel), ("Sphere", NewSphereLabel), ("Torus", NewTorusLabel) })
+                {
+                    if (ImGui.Selectable($"{text}##{label}", false, ImGuiSelectableFlags.None, new Vector2(0f, MinimumControlHeight)))
+                        OpenNew(label);
+                    Item(label);
+                }
 
                 var (at, extent) = (ImGui.GetWindowPos(), ImGui.GetWindowSize());
                 _newList = new Vector4(at.X, at.Y, at.X + extent.X, at.Y + extent.Y);
@@ -168,6 +156,31 @@ internal sealed unsafe partial class DesktopUi
 
     // ADR-0093 item 2: the height of the content of the panel in the last frame, or null before its first frame.
     private float? _panelHeight;
+
+    // The pad of an entry of the list "New", for the list and for the command line (ADR-0098 item 3, TASK-0312). Phase K5e
+    // (ADR-0089 item 5, TASK-0298): the cone, the sphere and the torus each have a pad; the defaults of the torus keep the
+    // tube inside the ring.
+    private void OpenNew(string label)
+    {
+        switch (label)
+        {
+            case NewBoxLabel:
+                OpenPad(new NumericPad(NewBoxLabel, _unit, new("x", "10"), new("y", "10"), new("z", "10")), values => new CreateBoxAction(values[0], values[1], values[2]));
+                break;
+            case NewCylinderLabel:
+                OpenPad(new NumericPad(NewCylinderLabel, _unit, new("radius", "5"), new("height", "10")), values => new CreateCylinderAction(values[0], values[1]));
+                break;
+            case NewConeLabel:
+                OpenPad(new NumericPad(NewConeLabel, _unit, new("radius", "5"), new("height", "10")), values => new CreateConeAction(values[0], values[1]));
+                break;
+            case NewSphereLabel:
+                OpenPad(new NumericPad(NewSphereLabel, _unit, new PadField("radius", "5")), values => new CreateSphereAction(values[0]));
+                break;
+            case NewTorusLabel:
+                OpenPad(new NumericPad(NewTorusLabel, _unit, new("radius", "10"), new("tube radius", "3")), values => new CreateTorusAction(values[0], values[1]));
+                break;
+        }
+    }
 
     // ADR-0093 item 2: the top of the panel, under the top bar.
     private float PanelTop => 16f + _inset.Y + TopBarHeight + 8f;

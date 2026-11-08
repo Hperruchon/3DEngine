@@ -427,6 +427,10 @@ internal sealed unsafe partial class DesktopUi : IDisposable
             _dropFocus = true;
         }
 
+        // ADR-0098 item 1 (the redesign, slice o, TASK-0312): Control and K give the command line the keys; an open pad keeps them.
+        if (_pad is null)
+            WatchCommandKey(samples);
+
         // ADR-0032 item 6: while the pad is open, it takes each key and each text of the frame.
         var (panel, intents) = _router.Route(samples, OverPanel, _textActive || _pad is not null);
         // Finding V130 of the codebase review of 2026-11-07 (b) (TASK-0271): the home screen takes the place of the document,
@@ -440,6 +444,11 @@ internal sealed unsafe partial class DesktopUi : IDisposable
             if (_pad is { } pad && sample is KeySample or TextSample)
             {
                 PadKey(pad, sample);
+                // ADR-0098 item 5 (TASK-0312): the release of a key reaches the library too. A command of the command line
+                // opens its pad in the frame of the press of Enter, so the pad took the release, the library held Enter as
+                // down, and the next Enter of a field gave no press.
+                if (sample is KeySample { Down: false } release && Key(release.Key) is { } released)
+                    io.AddKeyEvent(released, false);
                 continue;
             }
 
@@ -565,6 +574,8 @@ internal sealed unsafe partial class DesktopUi : IDisposable
             if (sketchPanel?.Active is null)
                 Panel(bodies, selection, displaySize, document);
             FixedControls(displaySize, bodies, document);
+            // ADR-0098 (TASK-0312): the command line before the rows, which start under it.
+            CommandLine(displaySize, bodies, selection);
             // ADR-0084 (TASK-0267): the rows of the selected body come first, so that the ring and the chips read them.
             var selectedBody = bodies.FirstOrDefault(body => body.Id == selection);
             PlaceRows(displaySize, selectedBody, selection is null ? null : values);

@@ -7,7 +7,7 @@ date: 2026-10-28
 supersedes: []
 superseded-by: []
 amends: ['0026', '0031']
-amended-by: ['0034', '0076']
+amended-by: ['0034', '0076', '0098']
 affects:
   - 3DEngine.Core/Numeric/**
   - 3DEngine.Core/Input/**
@@ -135,3 +135,5 @@ R-0041 closes.
 - 2026-10-30 · TASK-0119 · Item 7: the pad shows the length unit of the session, which the header of the file gives
   (P8e), not the constant `mm`.
 - 2026-11-06 · TASK-0244 · ADR-0076 item 7 amends item 4: the list "New" holds the box and the cylinder.
+- 2026-11-08 · TASK-0312 · ADR-0098 item 5 amends item 6: while the pad takes the keys, the release of a key also
+  reaches the library.
