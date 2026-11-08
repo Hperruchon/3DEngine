@@ -43,7 +43,7 @@ public readonly record struct PlaneR(Vector3R Normal, Rational Offset)
     public PlaneR Flipped() => new(-Normal, -Offset);
 
     // The sign of n · p - d: +1 in front of the plane, -1 behind it, 0 on it.
-    public int Side(Vector3R p) => (Normal.Dot(p) - Offset).Sign;
+    public int Side(Vector3R p) => Rational.SignOfDotMinus(Normal.X, p.X, Normal.Y, p.Y, Normal.Z, p.Z, Offset);
 }
 
 public static class Predicates

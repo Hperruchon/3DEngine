@@ -112,6 +112,20 @@ public readonly struct Rational : IEquatable<Rational>, IComparable<Rational>
 
     public static Rational operator -(Rational x) => new(-x.Numerator, x.Den, normal: true);
 
+    // The sign of x1 y1 + x2 y2 + x3 y3 - z, exact, with no reduction to lowest terms: each denominator is positive, so the
+    // sign of the sum is the sign of the numerator of the sum over the product of the denominators.
+    internal static int SignOfDotMinus(Rational x1, Rational y1, Rational x2, Rational y2, Rational x3, Rational y3, Rational z)
+    {
+        var (n, d) = (x1.Numerator * y1.Numerator, x1.Den * y1.Den);
+        (n, d) = Sum(n, d, x2.Numerator * y2.Numerator, x2.Den * y2.Den);
+        (n, d) = Sum(n, d, x3.Numerator * y3.Numerator, x3.Den * y3.Den);
+        (n, _) = Sum(n, d, -z.Numerator, z.Den);
+        return n.Sign;
+
+        static (BigInteger N, BigInteger D) Sum(BigInteger n, BigInteger d, BigInteger m, BigInteger e)
+            => d == e ? (n + m, d) : ((n * e) + (m * d), d * e);
+    }
+
     public static Rational operator *(Rational x, Rational y) => new(x.Numerator * y.Numerator, x.Den * y.Den);
 
     public static Rational operator /(Rational x, Rational y) => new(x.Numerator * y.Den, x.Den * y.Numerator);

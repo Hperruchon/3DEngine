@@ -63,6 +63,8 @@ public sealed class DocumentFileTests : IDisposable
         ["CreateBox"] = new CreateBoxCommand { SizeX = 0.1, SizeY = double.MaxValue, SizeZ = double.Epsilon },
         ["CreateCylinder"] = new CreateCylinderCommand { Radius = 0.1, Height = double.Epsilon },
         ["CreateCone"] = new CreateConeCommand { Radius = 0.1, Height = double.Epsilon },
+        ["CreateSphere"] = new CreateSphereCommand { Radius = 0.1 },
+        ["CreateTorus"] = new CreateTorusCommand { Radius = 0.3, TubeRadius = double.Epsilon },
         ["Translate"] = new TranslateCommand { BodyId = Guid.NewGuid(), Dx = -0.0, Dy = -1e-300, Dz = 123456789.125 },
         ["Subtract"] = new SubtractCommand { MinuendBodyId = Guid.NewGuid(), SubtrahendBodyId = Guid.NewGuid() },
         ["RenameBody"] = new RenameBodyCommand { BodyId = Guid.NewGuid(), NewName = "" },
