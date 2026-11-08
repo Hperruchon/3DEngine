@@ -1,13 +1,13 @@
 ---
 id: 0098
 title: The command line at the upper right runs the commands of the state with Control and K
-status: Accepted
+status: Amended
 topic: Clients, rendering
 date: 2026-11-08
 supersedes: []
 superseded-by: []
 amends: ['0032', '0084']
-amended-by: []
+amended-by: ['0099']
 affects:
   - 3DEngine.App/Ui/DesktopUi.Command.cs
   - 3DEngine.App/Ui/DesktopUi.cs
@@ -83,3 +83,5 @@ The owner chose the slice; the recommendations answer Q1 to Q3.
 
 - 2026-11-08 · TASK-0312 · The record, with the slice.
 - 2026-11-08 · TASK-0312 · Shipped at v0.297.
+- 2026-11-08 · TASK-0313 · ADR-0099 item 1 amends item 4: the rows are at the upper left, not under the field. Item 5
+  amends item 3: the list also holds Rename, a cut, the sketch on a face and the toggles of the dimensions.

@@ -25,9 +25,6 @@ internal sealed unsafe partial class DesktopUi
     private int _commandIndex;
     private bool _focusCommand;
 
-    // Item 4: the bottom of the field of this frame, under which the rows of a selected body start; 0 with no field.
-    private float _commandBottom;
-
     // Item 1: Control and K, down, give the field the keys in the next frame.
     private void WatchCommandKey(IReadOnlyList<InputSample> samples)
     {
@@ -52,8 +49,17 @@ internal sealed unsafe partial class DesktopUi
                 commands.Add((label, () => OpenNew(label)));
             foreach (var (label, datum) in NewSketchButtons)
                 commands.Add((label, () => _actions.Add(new NewSketchAction(datum))));
+            // ADR-0099 item 4 (the redesign, slice p, TASK-0313): the controls of the panel that the rows of a selected body
+            // hide: the armed tap on a face, the toggles of the dimensions, and the name field of the selected body.
+            commands.Add((SketchOnFaceLabel, () => _actions.Add(new SketchOnFaceAction())));
+            commands.Add((DimensionsLabel, () => _dimensions = !_dimensions));
+            if (_dimensions)
+                commands.Add((HiddenTooLabel, () => _hiddenToo = !_hiddenToo));
             if (bodies.FirstOrDefault(body => body.Id == selection) is { } body)
             {
+                commands.Add((RenameLabel, () => StartRename(body)));
+                foreach (var tool in bodies.Where(other => other.Id != body.Id && other.Visible))
+                    commands.Add(($"{CutLabel} {tool.Name ?? tool.Kind}", () => _actions.Add(new CutBodyAction(body.Id, tool.Id))));
                 commands.Add((MoveLabel, () => Use(MoveLabel, body)));
                 if (body.Kind == "Extrude")
                     commands.Add((SetDistanceLabel, () => Use(SetDistanceLabel, body)));
@@ -88,7 +94,6 @@ internal sealed unsafe partial class DesktopUi
     // Items 1 to 4: the field at the upper right of a landscape display, and the list of the matches under it.
     private void CommandLine(Vector2 displaySize, IReadOnlyList<LiveBody> bodies, Guid? selection)
     {
-        _commandBottom = 0f;
         if (displaySize.X < displaySize.Y)
             return;
 
@@ -109,7 +114,6 @@ internal sealed unsafe partial class DesktopUi
             var active = ImGui.IsItemActive();
             var left = ImGui.IsItemDeactivated();
             Item(CommandItem);
-            _commandBottom = ImGui.GetItemRectMax().Y;
 
             var matches = Matches(Commands(bodies, selection), _command);
             if (active && ImGui.IsKeyPressed(ImGuiKey.DownArrow))

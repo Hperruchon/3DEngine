@@ -89,6 +89,26 @@ public sealed class EdgeValueTests
         ui.Frame(1f / 60f, Display, Vector2.One, [new LiveBody(body, "Extrude", null, true)], body, values: values);
     }
 
+    // ADR-0099 item 1 (the redesign, slice p, TASK-0313): on a landscape display the rows take the place of the panel, and the
+    // ring does not show while a pad is open; so the other tool of the tests of V119 is the button Move of the panel, on a
+    // portrait display.
+    private static readonly Vector2 Portrait = new(1000, 1280);
+
+    private static void PortraitStep(DesktopUi ui, IReadOnlyList<EdgeValues.Value> values, Guid body, params InputSample[] frame)
+    {
+        ui.Route(frame);
+        ui.Frame(1f / 60f, Portrait, Vector2.One, [new LiveBody(body, "Extrude", null, true)], body, values: values);
+    }
+
+    private static void PortraitTap(DesktopUi ui, IReadOnlyList<EdgeValues.Value> values, Guid body, string item)
+    {
+        var (x, y) = Centre(ui, item);
+        foreach (var phase in new[] { PointerPhase.Down, PointerPhase.Up })
+            PortraitStep(ui, values, body, new PointerSample(DeviceKind.Touch, 1, 3, x, y, 1, PointerButtons.None, KeyModifiers.None, phase, 0));
+        PortraitStep(ui, values, body);
+        PortraitStep(ui, values, body);
+    }
+
     private static (float X, float Y) Centre(DesktopUi ui, string item)
     {
         var rectangle = ui.ItemRectangle(item) ?? throw new InvalidOperationException($"No item {item}.");
@@ -159,11 +179,12 @@ public sealed class EdgeValueTests
     public void No_Chip_Shows_While_The_Pad_Of_Another_Tool_Is_Open()
     {
         var body = Guid.NewGuid();
-        IReadOnlyList<EdgeValues.Value> values = [new EdgeValues.Value(EdgeValues.DistanceKey(body), "3 mm", new Vector2(700, 300), 3, body, null, null)];
+        IReadOnlyList<EdgeValues.Value> values = [new EdgeValues.Value(EdgeValues.DistanceKey(body), "3 mm", new Vector2(400, 700), 3, body, null, null)];
         using var ui = new DesktopUi("http://127.0.0.1:5180", Document.Millimetre);
-        Step(ui, values, body);
-        Step(ui, values, body);
-        Tap(ui, values, body, DeviceKind.Touch, DesktopUi.MoveLabel);
+        PortraitStep(ui, values, body);
+        PortraitStep(ui, values, body);
+        Assert.NotNull(ui.ItemRectangle(values[0].Key));
+        PortraitTap(ui, values, body, DesktopUi.MoveLabel);
 
         Assert.NotNull(ui.Pad);
         Assert.Null(ui.ItemRectangle(values[0].Key));
@@ -176,14 +197,14 @@ public sealed class EdgeValueTests
     public void The_Pad_Of_Another_Tool_Ends_The_Pending_Chip()
     {
         var (body, sketch, constraint) = (Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid());
-        IReadOnlyList<EdgeValues.Value> values = [new EdgeValues.Value(EdgeValues.ConstraintKey(constraint), "10 mm", new Vector2(700, 300), 10, body, sketch, constraint)];
+        IReadOnlyList<EdgeValues.Value> values = [new EdgeValues.Value(EdgeValues.ConstraintKey(constraint), "10 mm", new Vector2(400, 700), 10, body, sketch, constraint)];
         using var ui = new DesktopUi("http://127.0.0.1:5180", Document.Millimetre);
-        Step(ui, values, body);
-        Step(ui, values, body);
-        Tap(ui, values, body, DeviceKind.Touch, values[0].Key);
+        PortraitStep(ui, values, body);
+        PortraitStep(ui, values, body);
+        PortraitTap(ui, values, body, values[0].Key);
         Assert.Equal(values[0].Key, ui.PendingValue);
 
-        Tap(ui, values, body, DeviceKind.Touch, DesktopUi.MoveLabel);
+        PortraitTap(ui, values, body, DesktopUi.MoveLabel);
 
         Assert.Equal(DesktopUi.MoveLabel, ui.Pad!.Title);
         Assert.Null(ui.PendingValue);
