@@ -66,6 +66,9 @@ public enum InputKey
     // With Control: Z undoes, and Y, or Shift and Z, redoes (ADR-0032 item 9).
     Z,
     Y,
+
+    // With Control: the command line takes the keys (ADR-0098 item 1, TASK-0312).
+    K,
 }
 
 // One sample, at a time in nanoseconds of one clock of the host.
