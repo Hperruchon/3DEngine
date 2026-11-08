@@ -410,6 +410,7 @@ This track removes each condition that blocks other work.
 | P9c | The desktop: the home screen, the file dialog of Windows with a filter for `.stl`, the frame after an open, a control "Frame", and a message with "Choose another file". The row closes after the run of the owner. TASK-0259. | 3–4 |
 | P9d | The phone: the document picker of Android with no permission of storage, the same home screen, and the part kept through the background. The row closes after the run of the owner on the S23. TASK-0260. | 3–4 |
 | P9e | The test sheet of the demonstration, from its page. It closes with P9c and P9d after the run of the owner. TASK-0266. | 1 |
+| P9f | A start of the desktop with the setting file opens that file and shows no home screen (ADR-0083 item 7, the owner, 2026-11-08). TASK-0290. | 1 |
 
 ## Track R — The renderer
 
