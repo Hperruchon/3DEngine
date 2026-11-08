@@ -1,7 +1,7 @@
 ---
 id: 0301
 title: The codebase review of 2026-11-08 (b) is a record
-status: Active
+status: Done
 phase: governance
 opened: 2026-11-08
 depends-on: [0299]
@@ -65,12 +65,12 @@ finding.
 
 ## Acceptance criteria
 
-- [ ] `CodebaseReviewGateTests` passes with the new review.
-- [ ] Continuous integration passes on the three runners, on the branch and on `main` after the merge.
+- [x] `CodebaseReviewGateTests` passes with the new review.
+- [x] Continuous integration passes on the three runners, on the branch and on `main` after the merge.
 
 ## Outcome
 
-Status: Active
+Status: Done · commit (the merge of the branch codebase-review-2026-11-08-b) · v0.286
 
 ## Method
 
@@ -83,3 +83,4 @@ Weakest:    V143, V144, V145 and T179 are confirmed by reading only. The lines o
 ## Progress
 
 - 2026-11-08: the review, with 4 medium and 7 low new findings, and the two tasks of the fixes.
+- 2026-11-08: run 42450584188 passed. Closed at v0.286.
