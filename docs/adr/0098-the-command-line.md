@@ -82,3 +82,4 @@ The owner chose the slice; the recommendations answer Q1 to Q3.
 ## History
 
 - 2026-11-08 · TASK-0312 · The record, with the slice.
+- 2026-11-08 · TASK-0312 · Shipped at v0.297.
