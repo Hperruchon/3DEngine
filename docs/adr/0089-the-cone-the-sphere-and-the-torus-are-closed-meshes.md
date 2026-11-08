@@ -131,7 +131,8 @@ The owner answered A to Q1, Q2 and Q3 (2026-11-08).
 6. **The exact kernel for a mesh of many triangles (phase K5d; Q1 of the codebase review of 2026-11-08, A under the
    standing order).** A cut by a sphere of 3968 triangles took about 3 minutes, and the recursive tree overflowed the
    stack. The tree walks with stacks of its own. The side of a vertex comes from a filter of doubles, and from the exact
-   sign of `Rational` only when the doubles are too near zero; that sign sums the fractions with no reduction. Each side,
+   sign of `Rational` only when the doubles are too near zero, or when a value is not zero and its double is not a normal
+   double (finding E195 of the codebase review of 2026-11-08 (b)); that sign sums the fractions with no reduction. Each side,
    each tree and each result stay the same, so the facets of item 5 stay.
 
 ## Consequences
@@ -161,3 +162,5 @@ primitive is less than the true volume.
   field names the probe.
 - 2026-11-08 · TASK-0302 · Item 1: the backend refuses a volume below zero only; a volume of zero or NaN comes from a size
   that underflows or overflows the doubles (finding E194 of the codebase review of 2026-11-08 (b)).
+- 2026-11-08 · TASK-0303 · Item 6: a value whose double is not a normal double goes to the exact sign (finding E195 of the
+  codebase review of 2026-11-08 (b)).

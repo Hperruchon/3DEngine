@@ -66,10 +66,14 @@ The standing order of 2026-11-05 gives A for each question.
    one window. Run 42308415060 gave the order: the activity was destroyed during the probe of its session.
 5. **The main function of a stale session (TASK-0294).** After its session, the main function of an activity whose turn
    is stale waits, with one line, and does not return. When a main function returns, `SDLMain.run` of SDL sets
-   `mSDLThread` to null and finishes `mSingleton`, which is the newest activity. Then the destroy of the newest activity
-   does not wait for the thread of its session and ends SDL while that thread runs: the native crash of run 42433201851
-   (finding V141 of the codebase review of 2026-11-08). The waiting thread holds no window and no engine; Android ends it
-   with the process.
+   `mSDLThread` to null and finishes `mSingleton`, which is the newest activity (read in the bytecode of the package).
+   The probable cause of the native crash of run 42433201851 (finding V141 of the codebase review of 2026-11-08) is that
+   the destroy of the newest activity then did not wait for the thread of its session and ended SDL while that thread ran;
+   the cause is inferred, not proved, because the job gave one line of the tombstone and the source of SDL is not in the
+   repository. A stale session also calls SDL after the destroy of its activity, which can be a second cause (finding V144
+   of the codebase review of 2026-11-08 (b)). The check of the turn and the return are not one step, so a create between
+   them can still finish the new activity (V143). The waiting thread holds no window and no engine; Android ends it with
+   the process.
 
 ## Consequences
 
@@ -100,3 +104,5 @@ gave `Window` a `Dispose`, so a later session of the process makes its own windo
 - 2026-11-08 · TASK-0294 · Item 5: the main function of a stale session waits and does not return, because SDL finishes the
   newest activity when a main function returns (finding V141 of the codebase review of 2026-11-08).
 - 2026-11-08 · TASK-0294 · Item 5 shipped at v0.277.
+- 2026-11-08 · TASK-0303 · Item 5: the cause of V141 is inferred, a stale session also calls SDL after its destroy, and
+  a create between the check and the return stays possible (findings V143 and V144 of the codebase review of 2026-11-08 (b)).
