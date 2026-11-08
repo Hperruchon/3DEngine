@@ -184,6 +184,20 @@ public sealed class CreateConeCommandTests
         Assert.True(backend.Volume(handle) > 0);
     }
 
+    // Finding E194 of the codebase review of 2026-11-08 (b) (TASK-0302): a cone so small that its volume underflows to zero is
+    // made, as before TASK-0295, so a document with it opens. Until TASK-0302 the check of the volume refused it.
+    [NativeManifoldFact]
+    public void A_Cone_Whose_Volume_Underflows_Is_Made()
+    {
+        using var backend = new ManifoldGeometryBackend();
+        var (positions, triangles) = CreateConeCommandHandler.Mesh(1e-108, 1e-108);
+        var handle = new BodyHandle(Guid.NewGuid());
+
+        backend.CreateSolid(handle, positions, triangles);
+
+        Assert.Equal(0.0, backend.Volume(handle));
+    }
+
     // Items 1 and 3 with ADR-0057: a cone through a plate cuts a hole with the name side into +z and -z of the plate.
     [NativeManifoldFact]
     public async Task A_Cone_Cuts_A_Hole_Of_One_Name()

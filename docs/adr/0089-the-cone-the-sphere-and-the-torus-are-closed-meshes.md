@@ -159,3 +159,5 @@ primitive is less than the true volume.
 - 2026-11-08 · TASK-0298 · The entries of the list "New" shipped at v0.283.
 - 2026-11-08 · TASK-0299 · Item 5: the determinism probe of ADR-0074 holds the three primitives (phase K5f); the affects
   field names the probe.
+- 2026-11-08 · TASK-0302 · Item 1: the backend refuses a volume below zero only; a volume of zero or NaN comes from a size
+  that underflows or overflows the doubles (finding E194 of the codebase review of 2026-11-08 (b)).

@@ -124,6 +124,29 @@ public sealed class FixedControlsTests
         Assert.True(panel.W <= undo.Y, $"The panel at {panel} covers Undo at {undo}.");
     }
 
+    // Finding V142 of the codebase review of 2026-11-08 (b) (TASK-0302): on a narrow display the panel ends inside the display,
+    // with the safe area of a phone too; on a wide display it keeps its width of 460. Until TASK-0302 it ended at 476 on a
+    // display of 390.
+    [Theory]
+    [InlineData(390, 844, 0, 0)]
+    [InlineData(390, 844, 24, 0)]
+    [InlineData(1280, 720, 0, 0)]
+    public void The_Panel_Ends_Inside_The_Display(int width, int height, int left, int right)
+    {
+        var display = new Vector2(width, height);
+        using var ui = new DesktopUi("http://127.0.0.1:5180", Engine.Contracts.Document.Millimetre);
+        for (var frame = 0; frame < 3; frame++)
+        {
+            ui.Route([]);
+            ui.Frame(1f / 60f, display, Vector2.One, [], null, null, safeInsets: new Vector4(left, 0f, right, 0f));
+        }
+
+        var panel = ui.PanelRectangles[0];
+        Assert.True(panel.Z <= display.X - right, $"The panel ends at {panel.Z}, outside the display {display}.");
+        if (width >= 500)
+            Assert.Equal(460f, panel.Z - panel.X);
+    }
+
     // Finding V123 of the codebase review of 2026-11-07 (TASK-0264): a double click on the title bar collapses the panel,
     // and a drag of the collapsed panel to the bottom left put it over Undo and out of the display on the left, because
     // the clamp ran only for a panel that was not collapsed. Now the collapsed panel stays above the anchors and 16 pixels
