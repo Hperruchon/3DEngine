@@ -8815,3 +8815,27 @@ no active sketch, does not change.
 New tests: 0. The test list holds 2182 (1472 in `Engine.Tests`, 350 in `3DEngine.Tests`, 357 in `3DEngine.ImageTests`, 3
 in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
 entries: 15 of 15. New diagnostic codes: 0. Since the review of v0.292, 1 product milestone and 3 entries followed it.
+
+## v0.296 — The dimension lines take the up axis of the camera, and the top bar and three comments hold their next forms (P0.130, TASK-0311)
+
+The codebase review of 2026-11-08 (c) found V147 (medium) and V149, V150 and V151 (low). R16n fixed V148.
+
+**The change.**
+- V147: `Dimensions.Of` takes a flag of z up, and `DimensionOverlay` gives it `Camera.ZUp`. With z up the lines of X and
+  Y lie at the lowest Z on the faces that face the eye, and the line of Z on the vertical edge of the side of the eye in X
+  and the far side in Y.
+- V149: the top bar cuts the name of the file to the room left of the rows of a selected body, 12 pixels from them, and at
+  least 48 pixels; at most the width of the rows, as before.
+- V150: the comment of the panel says that the person does not move it since TASK-0304.
+- V151: the comments of the camera, the yaw and the pitch name the up axis of each frame.
+
+**Proof.** A new test of the dimensions with z up, from an eye on the side of +y and of -y; with the lines of y up again it
+fails. A new test of the top bar at 844 by 390 and 1024 by 768; with the name cut to the width of the rows only, it fails at
+844 by 390. V150 and V151 are proved by reading. The phone project builds with zero warnings. Run 42498538732 passed. The
+failed runs since the entry v0.295, from the API: none.
+
+**What stays.** The dimension lines with z up have no test in a picture.
+
+New tests: 3. The test list holds 2185 (1472 in `Engine.Tests`, 351 in `3DEngine.Tests`, 359 in `3DEngine.ImageTests`, 3
+in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
+entries: 15 of 15. New diagnostic codes: 0. Since the review of v0.292, 1 product milestone and 4 entries followed it.

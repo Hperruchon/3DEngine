@@ -1,7 +1,7 @@
 ---
 id: 0311
 title: The dimension lines take the up axis of the camera, and the top bar and three comments hold their next forms
-status: Active
+status: Done
 phase: P0.130
 opened: 2026-11-08
 depends-on: [0308]
@@ -50,21 +50,22 @@ V147, V149, V150 and V151 are fixed, each with a test or a reading.
 
 ## Acceptance criteria
 
-- [ ] Each finding has a test, an injection or a reading that fails before the change and passes after it.
-- [ ] A clean build (`--no-incremental`) gives zero errors and zero warnings.
-- [ ] Continuous integration passes on the three runners, on the branch and on `main` after the merge.
+- [x] Each finding has a test, an injection or a reading that fails before the change and passes after it.
+- [x] A clean build (`--no-incremental`) gives zero errors and zero warnings.
+- [x] Continuous integration passes on the three runners, on the branch and on `main` after the merge.
 
 ## Outcome
 
-Status: Active
+Status: Done · commit (the merge of the branch p0130-forms-b) · v0.296
 
 ## Method
 
 Mechanical: a test, an injection or a reading for each finding, before the change.
 Judgement:  the dimension lines change the roles of y and z with a flag of the camera, not a turn of the box; the room
             of the name keeps at least 48 pixels.
-Weakest:    to be written at the close.
+Weakest:    the dimension lines with z up are tested as numbers, not in a picture; V150 and V151 are comments.
 
 ## Progress
 - 2026-11-08: the fixes and their tests. With the lines of y up again, the new test of the dimensions fails; with the
   name cut to the width of the rows only, the new test of the top bar fails at 844 x 390. V150 and V151 are comments.
+- 2026-11-08: run 42498538732 passed. Closed at v0.296.
