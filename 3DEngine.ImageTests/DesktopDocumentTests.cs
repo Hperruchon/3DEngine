@@ -56,18 +56,19 @@ public sealed class DesktopDocumentTests : IDisposable
         Step(ui);
     }
 
+    // ADR-0100 item 1 (phase P9g, TASK-0314): the four controls of a file each give the action of their dialog. Until
+    // TASK-0314 a field took a name, and Save as and Open used it in the document folder.
     [Fact]
-    public void The_File_Controls_Give_A_Save_And_An_Open_Of_The_Typed_Name()
+    public void The_File_Controls_Give_The_Actions_Of_Their_Dialogs()
     {
         using var ui = Opened();
 
-        Tap(ui, DeviceKind.Mouse, Centre(ui, DesktopUi.FileNameLabel));
-        Step(ui, new TextSample("plate", 0));
-        Step(ui);
+        Tap(ui, DeviceKind.Mouse, Centre(ui, DesktopUi.OpenProjectLabel));
         Tap(ui, DeviceKind.Touch, Centre(ui, DesktopUi.SaveAsLabel));
-        Tap(ui, DeviceKind.Mouse, Centre(ui, DesktopUi.OpenLabel));
+        Tap(ui, DeviceKind.Mouse, Centre(ui, DesktopUi.ExportStlLabel));
+        Tap(ui, DeviceKind.Touch, Centre(ui, DesktopUi.ImportStlLabel));
 
-        Assert.Equal([new SaveDocumentAction("plate"), new OpenDocumentAction("plate")], ui.TakeActions());
+        Assert.Equal([new OpenProjectAction(), new SaveAsAction(), new ExportStlAction(), new ImportStlAction()], ui.TakeActions());
     }
 
     // ADR-0031 item 11 (TASK-0093): a tap and a click give an undo and a redo.
@@ -89,7 +90,7 @@ public sealed class DesktopDocumentTests : IDisposable
     {
         using var ui = Opened();
 
-        foreach (var label in new[] { DesktopUi.FileNameLabel, DesktopUi.SaveAsLabel, DesktopUi.OpenLabel, DesktopUi.UndoLabel, DesktopUi.RedoLabel })
+        foreach (var label in new[] { DesktopUi.OpenProjectLabel, DesktopUi.SaveAsLabel, DesktopUi.ExportStlLabel, DesktopUi.ImportStlLabel, DesktopUi.UndoLabel, DesktopUi.RedoLabel })
         {
             var rectangle = ui.ItemRectangle(label) ?? throw new InvalidOperationException($"The panel has no control {label}.");
             Assert.True(rectangle.W - rectangle.Y >= DesktopUi.MinimumControlHeight, $"{label} is {rectangle.W - rectangle.Y} pixels high.");
