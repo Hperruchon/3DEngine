@@ -69,3 +69,4 @@ minutes. The emulator is x86-64; the hash of arm64, the ABI of the phone, needs 
 ## History
 
 - 2026-11-06 · TASK-0233 · The record, under the standing order of 2026-11-05.
+- 2026-11-08 · TASK-0299 · The log of the probe holds the cone, the sphere and the torus of ADR-0089 (phase K5f).
