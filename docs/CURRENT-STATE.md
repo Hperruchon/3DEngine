@@ -8764,3 +8764,26 @@ carried from the last review.
 New tests: 0. The test list holds 2179 (1472 in `Engine.Tests`, 350 in `3DEngine.Tests`, 354 in `3DEngine.ImageTests`, 3
 in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
 entries: 15 of 15. New diagnostic codes: 0. Since the review of v0.292, 0 product milestones and 1 entry followed it.
+
+## v0.294 — The status line leaves Frame and Home free on each display (P0.129, TASK-0310)
+
+The codebase review of 2026-11-08 (c) found V146 (high): the status line of R16j, at the lower right, grew to the left over
+the row of the anchors. It comes after the anchors in the frame, so on a phone of 390 by 844 it covered Frame and Home and
+took each tap on them.
+
+**The change.** ADR-0093 item 3: the status line starts at least 12 pixels right of the anchors (Undo, Redo, Frame and
+Home), with the text that fits there: the whole line, else the line with no address, else none. Its left edge is the right
+margin less the width of its text, so the first frame of a new text is in its place too.
+
+**Proof.** A new test at 390 by 844 (no address), 844 by 390 and 1280 by 720 checks that the status line starts right of
+Home, that it shows at 1280, and that a tap on Frame and on Home gives its action. With the status code of v0.292 it fails
+at 390 by 844 and at 844 by 390. The first form of the fix kept a pivot at the right edge, which took the width of the
+last frame, and the test found the line over Home in the second frame at 844 by 390. The phone project builds with zero
+warnings. Run 42491097227 passed. The failed runs since the entry v0.293, from the API: none.
+
+**What stays.** On the phone the status line does not show, because the row of the anchors has no room for it. V147, V149,
+V150 and V151 wait for TASK-0311, after R16n.
+
+New tests: 3. The test list holds 2182 (1472 in `Engine.Tests`, 350 in `3DEngine.Tests`, 357 in `3DEngine.ImageTests`, 3
+in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
+entries: 15 of 15. New diagnostic codes: 0. Since the review of v0.292, 0 product milestones and 2 entries followed it.

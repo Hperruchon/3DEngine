@@ -1,7 +1,7 @@
 ---
 id: 0310
 title: The status line leaves Frame and Home free on each display
-status: Ready
+status: Done
 phase: P0.129
 opened: 2026-11-08
 depends-on: [0309]
@@ -46,18 +46,23 @@ The status line never covers an anchor, and a tap on Frame and Home gives its ac
 
 ## Acceptance criteria
 
-- [ ] Each finding has a test, an injection or a reading that fails before the change and passes after it.
-- [ ] A clean build (`--no-incremental`) gives zero errors and zero warnings.
-- [ ] Continuous integration passes on the three runners, on the branch and on `main` after the merge.
+- [x] Each finding has a test, an injection or a reading that fails before the change and passes after it.
+- [x] A clean build (`--no-incremental`) gives zero errors and zero warnings.
+- [x] Continuous integration passes on the three runners, on the branch and on `main` after the merge.
 
 ## Outcome
 
-Status: Ready
+Status: Done · commit (the merge of the branch p0129-status-line-b) · v0.294
 
 ## Method
 
 Mechanical: a test, an injection or a reading for each finding, before the change.
-Judgement:  to be written.
-Weakest:    to be written at the close.
+Judgement:  the line drops its address, then itself, where it does not fit (Q of the review: no row above the anchors,
+            which the portrait ring holds).
+Weakest:    on the phone the status line does not show at all; no run on the S23 showed the fix.
 
 ## Progress
+- 2026-11-08: the fix and its test. With the status code of v0.292 the test fails at 390 x 844 and at 844 x 390. The first
+  form of the fix placed the window by a pivot at its right edge, which took the width of the last frame; on the second
+  frame the line still covered Home at 844 x 390. The window now starts at the right edge less the width of its text.
+- 2026-11-08: run 42491097227 passed. Closed at v0.294.

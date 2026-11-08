@@ -293,6 +293,7 @@ Therefore each approved objective must have a track here.
 - R16m — The camera of the session has the z axis up, with a yaw of 135° and a pitch of 30° at the start; the ray of a
   pick, the overlay of a sketch and the gizmo take the up axis of the camera. v0.292, TASK-0307, ADR-0096.
 - Review — The codebase review of 2026-11-08 (c). v0.293, TASK-0309.
+- P0.129 — The status line leaves Frame and Home free on each display (V146). v0.294, TASK-0310, ADR-0093.
 
 ## Track 0 — Foundations
 
