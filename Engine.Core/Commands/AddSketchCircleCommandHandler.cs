@@ -67,6 +67,10 @@ public sealed class AddSketchCircleCommandHandler : ICommandHandler, ICommandEnc
         if (SketchModel.Find(document, add.SketchId) is not { } sketch)
             return Task.FromResult(SketchResults.NotFound(add.SketchId));
 
+        // Finding E193 of the codebase review of 2026-11-08 (b) (TASK-0302): no two items of a sketch share an identifier.
+        if (SketchResults.HeldBySketch(sketch, command.CommandId) is { } held)
+            return Task.FromResult(held);
+
         if (SketchModel.KindOf(sketch, add.CenterPointId) != SketchModel.ItemKind.Point)
             return Task.FromResult(SketchResults.ItemNotFound(add.SketchId, add.CenterPointId, "point"));
 

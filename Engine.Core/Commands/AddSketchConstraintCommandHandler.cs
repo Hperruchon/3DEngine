@@ -91,6 +91,10 @@ public sealed class AddSketchConstraintCommandHandler : ICommandHandler, IComman
         if (SketchModel.Find(document, add.SketchId) is not { } sketch)
             return Task.FromResult(SketchResults.NotFound(add.SketchId));
 
+        // Finding E193 of the codebase review of 2026-11-08 (b) (TASK-0302): no two items of a sketch share an identifier.
+        if (SketchResults.HeldBySketch(sketch, command.CommandId) is { } held)
+            return Task.FromResult(held);
+
         if (add.Third is not null && add.Second is null || add.SecondValue is not null && add.Value is null)
             return Task.FromResult(SketchResults.Failure(
                 DiagnosticCodes.SketchConstraintInvalid, "A constraint gives its items and its values in order: 'third' needs 'second', and 'secondValue' needs 'value'."));
