@@ -394,7 +394,8 @@ public sealed class SketchWindowUiTests
     }
 
     // ADR-0034 item 7: Next point opens a pad of x and y with no chain, and of dx and dy with a
-    // chain; a pad of the sketch does not cover the window of the sketch.
+    // chain; a pad of the sketch does not cover the window of the sketch. ADR-0097 (TASK-0308): the rows of the active sketch
+    // take the place of the panel at the left, so the panel does not show and the pad opens to the right of the rows.
     [Fact]
     public void Next_Point_Opens_A_Pad_Beside_The_Window_Of_The_Sketch()
     {
@@ -404,9 +405,10 @@ public sealed class SketchWindowUiTests
         Step(ui, panel);
 
         Assert.Equal(["x", "y"], ui.Pad!.Fields.Select(field => field.Name));
-        Assert.Equal(3, ui.PanelRectangles.Count);
-        var (sketchWindow, padWindow) = (ui.PanelRectangles[1], ui.PanelRectangles[2]);
-        Assert.True(padWindow.Z <= sketchWindow.X, $"The pad ends at {padWindow.Z}, and the window of the sketch starts at {sketchWindow.X}.");
+        Assert.Equal(2, ui.PanelRectangles.Count);
+        var (sketchWindow, padWindow) = (ui.PanelRectangles[0], ui.PanelRectangles[1]);
+        Assert.Equal(16f, sketchWindow.X);
+        Assert.True(padWindow.X >= sketchWindow.Z, $"The pad starts at {padWindow.X}, and the window of the sketch ends at {sketchWindow.Z}.");
 
         ui.EndPad(null);
         ui.OpenNextPointPad(chainOpen: true);

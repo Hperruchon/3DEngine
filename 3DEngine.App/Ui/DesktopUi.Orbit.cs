@@ -38,7 +38,7 @@ internal sealed unsafe partial class DesktopUi
     // middle of the band, in the dim colour; none when it does not fit in the display.
     private void RingCaption(ImDrawListPtr list, RingLayout ring, string name, Vector2 displaySize)
     {
-        var caption = string.Join(" ", $"TOOLS FOR {name}".ToUpperInvariant().ToCharArray()).Replace("   ", "  ");
+        var caption = Spaced($"TOOLS FOR {name}");
         var size = ImGui.CalcTextSize(caption);
         var place = new Vector2(ring.Centre.X + ring.Outer + 24f, ring.Centre.Y - (size.Y / 2f));
         if (place.X + size.X > displaySize.X - 16f - _inset.Z)
@@ -46,6 +46,14 @@ internal sealed unsafe partial class DesktopUi
         list.AddText(place, ImGui.GetColorU32(ImGui.GetStyle().Colors[(int)ImGuiCol.TextDisabled]), caption);
         _items[RingCaptionItem] = new Vector4(place.X, place.Y, place.X + size.X, place.Y + size.Y);
     }
+
+    // A caption of the render: capitals with a space after each letter.
+    internal static string Spaced(string text)
+        => string.Join(" ", text.ToUpperInvariant().ToCharArray()).Replace("   ", "  ");
+
+    // The labels that RingIcon draws an icon for. A kind of a constraint has none, so it keeps the plate of a wide label.
+    private static readonly HashSet<string> RingIconLabels =
+        [MoveLabel, SetDistanceLabel, HideLabel, ShowLabel, SketchOnFaceButtonLabel, LineToolLabel, SelectToolLabel, CircleToolLabel, ArcToolLabel, ConstrainLabel, FinishLabel, BackLabel];
 
     // The icon of a segment, drawn with the draw list at its centre: none for a label with no icon.
     private static bool RingIcon(ImDrawListPtr list, string label, Vector2 c, uint ink)
@@ -67,7 +75,6 @@ internal sealed unsafe partial class DesktopUi
 
                 return true;
             case SetDistanceLabel:
-            case "Distance":
                 list.AddLine(c - new Vector2(0f, h), c + new Vector2(0f, h), ink, w);
                 list.AddLine(c + new Vector2(-h * 0.6f, -h), c + new Vector2(h * 0.6f, -h), ink, w);
                 list.AddLine(c + new Vector2(-h * 0.6f, h), c + new Vector2(h * 0.6f, h), ink, w);
