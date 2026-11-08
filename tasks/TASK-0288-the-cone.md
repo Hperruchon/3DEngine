@@ -1,7 +1,7 @@
 ---
 id: 0288
 title: A command CreateCone makes a cone, a closed mesh that the engine stores as a solid
-status: Active
+status: Done
 phase: K5c
 opened: 2026-11-08
 depends-on: [0287]
@@ -69,23 +69,25 @@ The person can make a cone with one command; the cone is a solid that takes each
 
 ## Acceptance criteria
 
-- [ ] A cone has the faces `-z` and `side`, a datum on `-z`, a refusal on the side, and it cuts a plate.
-- [ ] The mesh is closed and oriented, and its base is the circle of a sketch.
-- [ ] A clean build (`--no-incremental`) gives zero errors and zero warnings.
-- [ ] Continuous integration passes on the three runners, on the branch and on `main` after the merge.
+- [x] A cone has the faces `-z` and `side`, a datum on `-z`, a refusal on the side, and it cuts a plate.
+- [x] The mesh is closed and oriented, and its base is the circle of a sketch.
+- [x] A clean build (`--no-incremental`) gives zero errors and zero warnings.
+- [x] Continuous integration passes on the three runners, on the branch and on `main` after the merge.
 
 ## Outcome
 
-Status: Active
+Status: Done · commit (the merge of the branch k5c-cone) · v0.273
 
 ## Method
 
 Mechanical: the tests of the cone; injections of a base with the wrong winding and of a catalog with no cone.
 Judgement:  the mesh with a centre vertex of the base, so each triangle of the base has a fixed shape.
-Weakest:    to be written at the close.
+Weakest:    the cone is not in the determinism probe yet, so no run compares its hash on the four platforms; its mesh
+            uses only + - * / and sqrt.
 
 ## Progress
 
 - 2026-11-08: ADR-0089 Accepted; `ISolidMeshOps`, its Manifold call, `CreateCone` and its kernel solid. The signatures of
   `manifold_meshgl64` and `manifold_of_meshgl64` come from `manifoldc.h` of the tag v3.5.2 on GitHub. An injection of a base
   with the wrong winding fails four tests; an injection of a catalog with no cone fails eleven.
+- 2026-11-08: run 42430465747 passed. Closed at v0.273.

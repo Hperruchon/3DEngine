@@ -8217,3 +8217,33 @@ lost. The per-frame objects of a `Presenter` whose last step throws are not free
 New tests: 1. The test list holds 2091 (1415 in `Engine.Tests`, 337 in `3DEngine.Tests`, 336 in `3DEngine.ImageTests`, 3
 in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
 entries: 15 of 15. New diagnostic codes: 0. Since the review of v0.263, 0 product milestones and 9 entries followed it.
+
+## v0.273 — A command CreateCone makes a cone (K5c, TASK-0288)
+
+On 2026-11-08 the owner answered the open decisions in a form in the chat. ADR-0089 is Accepted with A to Q1, Q2 and Q3.
+The other answers: the agent proposal arc starts; the fonts are downloaded; E164 gets a field with an ADR; a start with
+`--file` skips the home screen; the affects rule stays from ADR-0082; a sketch edit while a body is selected stays as it
+is; the phone host treats CA1416 only as an error. The owner gave no answer to Q1 of the review of 2026-11-07 (c) (E182),
+so its answer A waits for the check of the owner, and named no register entry to close.
+
+**The change.**
+- `ISolidMeshOps` is a new capability in `Engine.Contracts`: it stores a closed, oriented triangle mesh as a solid. The
+  Manifold backend makes the solid with `manifold_meshgl64` and `manifold_of_meshgl64`, whose signatures come from
+  `manifoldc.h` of the tag v3.5.2.
+- `CreateCone` (radius, height) gives the 64-gon of ADR-0040 at -height / 2, a centre of the base and an apex at
+  +height / 2, with `+ - * /` and `sqrt` only. The owned kernel gives the faces `-z` and `side`; a datum takes `-z`,
+  and the side has no plane. The creators of ADR-0089 item 4 take the cone as ADR-0076 item 6 took the cylinder.
+
+**Proof.** Twelve new tests: the refusals, the missing capability, the record, the closed and oriented mesh, the two faces,
+the datum and a cut of a plate. Injections of a base with the wrong winding and of a catalog with no cone fail four and
+eleven tests. Run 42430465747 passed.
+
+**What stays.** The cone is not in the determinism probe yet. The sphere and the torus (K5d) wait: a cut of a plate by a
+sphere of 3968 triangles took about 3 minutes in the exact kernel, and its recursive tree overflowed the stack before a
+change of `Bsp` that is not merged. That is a question for the owner. The entries of the list "New" (K5e) follow K5d.
+
+**A correction.** None. The failed runs since the entry v0.272, from the API: none.
+
+New tests: 12. The test list holds 2103 (1427 in `Engine.Tests`, 337 in `3DEngine.Tests`, 336 in `3DEngine.ImageTests`, 3
+in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
+entries: 15 of 15. New diagnostic codes: 0. Since the review of v0.263, 1 product milestone and 10 entries followed it.

@@ -136,3 +136,4 @@ primitive is less than the true volume.
 - 2026-11-07 · TASK-0285 · Q4: the volume of the sphere is about 0.40 % less than the true volume, not 0.32 % (the review
   of Codex of v0.268).
 - 2026-11-08 · TASK-0288 · Accepted by the owner (A to Q1, Q2 and Q3), with items 1 to 5 and the cone (phase K5c).
+- 2026-11-08 · TASK-0288 · The cone shipped at v0.273.
