@@ -242,6 +242,28 @@ public class BodyActionsTests
         Assert.Equal((5.0, 2 * Math.PI), (create.Radius, create.Height));
     }
 
+    // Phase K5e (ADR-0089 item 5, TASK-0298): the numbers of each pad become one CreateCone, CreateSphere or CreateTorus, and
+    // a size that is not valid gives its code for the pad.
+    [Fact]
+    public async Task The_Pads_Create_A_Cone_A_Sphere_And_A_Torus()
+    {
+        using var host = new EngineHost(new ManifoldGeometryBackend());
+        var actions = new BodyActions(host.Session);
+
+        Assert.Null(actions.CreateCone(5, 10));
+        Assert.Null(actions.CreateSphere(4));
+        Assert.Null(actions.CreateTorus(10, 3));
+        Assert.StartsWith("E-GEOM-INVALID-PARAM: ", actions.CreateCone(0, 1), StringComparison.Ordinal);
+        Assert.StartsWith("E-GEOM-INVALID-PARAM: ", actions.CreateSphere(-1), StringComparison.Ordinal);
+        Assert.StartsWith("E-GEOM-INVALID-PARAM: ", actions.CreateTorus(3, 3), StringComparison.Ordinal);
+
+        Assert.Equal(["Cone", "Sphere", "Torus"], (await Live(host)).Select(body => body.Kind).Order(StringComparer.Ordinal));
+        var log = await host.Session.Read((document, _) => document.Log.Select(entry => entry.Command).ToList());
+        Assert.Equal((5.0, 10.0), (Assert.Single(log.OfType<CreateConeCommand>()).Radius, Assert.Single(log.OfType<CreateConeCommand>()).Height));
+        Assert.Equal(4.0, Assert.Single(log.OfType<CreateSphereCommand>()).Radius);
+        Assert.Equal((10.0, 3.0), (Assert.Single(log.OfType<CreateTorusCommand>()).Radius, Assert.Single(log.OfType<CreateTorusCommand>()).TubeRadius));
+    }
+
     // Finding V108 of the codebase review of 2026-11-06 (d) (TASK-0243): a lost pointer gives CancelIntent with no key, and
     // the face stays; only the key Escape goes back to the body.
     [Fact]
