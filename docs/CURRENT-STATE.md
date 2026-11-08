@@ -8437,3 +8437,23 @@ full, so the next review takes it.
 New tests: 2. The test list holds 2123 (1442 in `Engine.Tests`, 337 in `3DEngine.Tests`, 341 in `3DEngine.ImageTests`, 3
 in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
 entries: 15 of 15. New diagnostic codes: 0. Since the review of v0.275, 1 product milestone and 5 entries followed it.
+
+## v0.281 — The arc of an agent proposal is a proposal for the owner (governance, TASK-0297)
+
+On 2026-11-08 the owner chose the agent proposal arc as the first redesign slice that changes the contract. The arc
+changes the HTTP surface that an agent reads, so the standing order records the shape and does not answer it.
+
+**The change.** ADR-0092, Proposed. Q1: a proposal lives in the HTTP surface, outside the log (A), or in the session with
+new event kinds (B). Q2: the preview shows the commands (A) or a dry run of them (B). Q3: one pending proposal (A) or a
+queue (B). Q4: an accept is N steps of undo (A) or one step (B). The record recommends A to each, which changes neither
+the engine nor the log, and names the slices that follow. No code.
+
+**Proof.** `AdrGateTests` passes with the Proposed record. Run 42441562023 passed.
+
+**What stays.** Each slice of the arc waits for the answers of the owner.
+
+**A correction.** None. The failed runs since the entry v0.280, from the API: none.
+
+New tests: 0. The test list holds 2123 (1442 in `Engine.Tests`, 337 in `3DEngine.Tests`, 341 in `3DEngine.ImageTests`, 3
+in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
+entries: 15 of 15. New diagnostic codes: 0. Since the review of v0.275, 1 product milestone and 6 entries followed it.
