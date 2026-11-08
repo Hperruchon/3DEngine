@@ -22,6 +22,11 @@ internal sealed class PhoneFiles : IDocumentFiles
 
     public IReadOnlyList<string> Recent(int count) => [];
 
+    // ADR-0102 (Q4 A, TASK-0316): the phone keeps no recent projects.
+    public void Remember(string path)
+    {
+    }
+
     // The phone opens no document file, so no open competes with a request.
     public ErrorDetail? RequestNew(StlImport? import)
     {

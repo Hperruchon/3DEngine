@@ -39,7 +39,7 @@ public class HomeImageTests
             var data = UiDrawData.Empty;
             for (var frame = 0; frame < 3; frame++)
                 data = ui.Frame(1f / 60f, new Vector2(Width, Height), Vector2.One, renderer.LiveBodies);
-            open = ui.ItemRectangle(DesktopUi.OpenFileLabel) ?? throw new InvalidOperationException("No Open file.");
+            open = ui.ItemRectangle(DesktopUi.OpenProjectLabel) ?? throw new InvalidOperationException("No Open project.");
             newPart = ui.ItemRectangle(DesktopUi.NewPartLabel) ?? throw new InvalidOperationException("No New part.");
             recent = ui.ItemRectangle(DesktopUi.RecentItem("bracket")) ?? throw new InvalidOperationException("No recent row.");
 

@@ -31,8 +31,13 @@ internal interface IDocumentFiles
     // Checks the file at the path and gives it to the host for its next session, or gives the error (ADR-0030 item 5).
     Task<ErrorDetail?> Open(string path, CancellationToken ct);
 
-    // ADR-0083 D6 (TASK-0259): the names of the newest documents of the folder, newest first, for the home screen.
+    // ADR-0083 D6 (TASK-0259): the recent documents, newest first, for the home screen. ADR-0102 item 6 (Q2 A, TASK-0316):
+    // the full paths of the projects that this desktop opened or saved, in each folder; until TASK-0316 the names of the
+    // newest files of the document folder.
     IReadOnlyList<string> Recent(int count);
+
+    // ADR-0102 item 6: the path of a project that this desktop opened or saved goes to the top of the recent projects.
+    void Remember(string path);
 
     // ADR-0083 D1: a new part document for the next session, with the import of an STL file of the store, or none. Null when
     // the request is accepted; a refusal when an open of another file is in progress or accepted (finding V125, TASK-0270).

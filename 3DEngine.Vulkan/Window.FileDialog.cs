@@ -13,16 +13,19 @@ namespace ThreeDEngine.Vulkan;
 // that callback, because SDL may read it until then. A late callback of an earlier dialog frees its own filter and gives no
 // result. Until TASK-0282 a late callback after ResetDialog freed the filter of the next dialog and cleared its flag, and
 // the next OpenFile wrote over the filter of the earlier dialog with no free.
+// ADR-0102 item 2 (phase P9g, TASK-0316): each dialog keeps the purpose that the client gives it, and its result gives that
+// purpose back, so a late result of one action never goes to another action. A save dialog keeps its default location
+// until its callback too, because SDL may read it until then.
 public static class FileDialogState
 {
     private static readonly object Lock = new();
-    private static readonly Dictionary<int, (nint Name, nint Pattern, nint Filter)> Filters = [];
+    private static readonly Dictionary<int, (nint Name, nint Pattern, nint Filter, nint Location, int Purpose)> Filters = [];
     private static int _open;
     private static int _last;
-    private static (bool Done, string? Path, string? Failure) _result;
+    private static (bool Done, string? Path, string? Failure, int Purpose) _result;
 
-    // The number and the filter of a new dialog, or null when a dialog is open already.
-    public static unsafe (int Number, nint Filter)? Begin(string filterName, string pattern)
+    // The number, the filter and the default location (or 0) of a new dialog, or null when a dialog is open already.
+    public static unsafe (int Number, nint Filter, nint Location)? Begin(string filterName, string pattern, int purpose = 0, string? location = null)
     {
         lock (Lock)
         {
@@ -34,8 +37,9 @@ public static class FileDialogState
             var patternText = Marshal.StringToCoTaskMemUTF8(pattern);
             var filter = Marshal.AllocCoTaskMem(sizeof(SDL_DialogFileFilter));
             *(SDL_DialogFileFilter*)filter = new SDL_DialogFileFilter { name = (byte*)name, pattern = (byte*)patternText };
-            Filters[_open] = (name, patternText, filter);
-            return (_open, filter);
+            var place = location is null ? 0 : Marshal.StringToCoTaskMemUTF8(location);
+            Filters[_open] = (name, patternText, filter, place, purpose);
+            return (_open, filter, place);
         }
     }
 
@@ -44,16 +48,20 @@ public static class FileDialogState
     {
         lock (Lock)
         {
+            var purpose = 0;
             if (Filters.Remove(number, out var memory))
             {
                 Marshal.FreeCoTaskMem(memory.Name);
                 Marshal.FreeCoTaskMem(memory.Pattern);
                 Marshal.FreeCoTaskMem(memory.Filter);
+                if (memory.Location != 0)
+                    Marshal.FreeCoTaskMem(memory.Location);
+                purpose = memory.Purpose;
             }
 
             if (number == _open)
             {
-                _result = (true, path, failure);
+                _result = (true, path, failure, purpose);
                 _open = 0;
             }
         }
@@ -69,8 +77,8 @@ public static class FileDialogState
         }
     }
 
-    // Done is true one time after the dialog closes.
-    public static (bool Done, string? Path, string? Failure) Take()
+    // Done is true one time after the dialog closes, with the purpose of the dialog.
+    public static (bool Done, string? Path, string? Failure, int Purpose) Take()
     {
         lock (Lock)
         {
@@ -95,18 +103,30 @@ public static class FileDialogState
 public sealed unsafe partial class Window
 {
     // Opens the dialog for one file with the filter, for example "STL file" and "stl". False when a dialog is open already.
-    public bool OpenFile(string filterName, string pattern)
+    // ADR-0102 item 2 (TASK-0316): the purpose comes back with the result.
+    public bool OpenFile(string filterName, string pattern, int purpose = 0)
     {
-        if (FileDialogState.Begin(filterName, pattern) is not { } dialog)
+        if (FileDialogState.Begin(filterName, pattern, purpose) is not { } dialog)
             return false;
         SDL_ShowOpenFileDialog(&Chosen, dialog.Number, _window, (SDL_DialogFileFilter*)dialog.Filter, 1, (byte*)null, false);
         return true;
     }
 
+    // ADR-0102 items 3 and 4 (TASK-0316): the save dialog of the system for one file with the filter, in each folder, at the
+    // default location (a file or a folder), or where the system chooses with null. False when a dialog is open already.
+    public bool SaveFile(string filterName, string pattern, int purpose, string? location)
+    {
+        if (FileDialogState.Begin(filterName, pattern, purpose, location) is not { } dialog)
+            return false;
+        SDL_ShowSaveFileDialog(&Chosen, dialog.Number, _window, (SDL_DialogFileFilter*)dialog.Filter, 1, (byte*)dialog.Location);
+        return true;
+    }
+
     // The result of the dialog: Done is true one time after the dialog closes, with the path, or null when the person
     // closed it with no file or the dialog failed. Finding V131 of the codebase review of 2026-11-07 (b) (TASK-0271): Failure
-    // gives the reason of SDL when the dialog failed, and null when the person closed it.
-    public static (bool Done, string? Path, string? Failure) TakeOpenedFile() => FileDialogState.Take();
+    // gives the reason of SDL when the dialog failed, and null when the person closed it. ADR-0102 item 2: Purpose is the
+    // purpose of the dialog.
+    public static (bool Done, string? Path, string? Failure, int Purpose) TakeOpenedFile() => FileDialogState.Take();
 
     [UnmanagedCallersOnly(CallConvs = [typeof(CallConvCdecl)])]
     private static void Chosen(nint userdata, byte** files, int filter)
