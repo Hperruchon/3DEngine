@@ -46,7 +46,9 @@ public class CrossPlatformHashTests
         var (hash, lines) = State(one.Document, first);
         Assert.Equal(Log().Count, one.Document.Log.Count);
         // Finding E161 (TASK-0242): the ring of a circle extrude cut by a moved cylinder is the fifth body and its sketch the fifth.
-        Assert.Equal(5, one.Document.Bodies.Count);
+        // ADR-0089 item 5 (TASK-0299): the cone cut by a cylinder, the torus and the sphere are the sixth to the eighth body.
+        Assert.Equal(8, one.Document.Bodies.Count);
+        Assert.Equal(3, one.Document.Bodies.Count(body => body.Handle.Id == Id(94) || body.Handle.Id == Id(96) || body.Handle.Id == Id(98)));
         Assert.Equal(5, one.Document.Sketches.Count);
         Assert.All(one.Document.Sketches.SelectMany(sketch => sketch.References), reference => Assert.Null(reference.Fault));
         Assert.Equal(2, one.Document.Sketches.Single(sketch => sketch.Id == Id(70)).References.Count);

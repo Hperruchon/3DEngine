@@ -8530,3 +8530,26 @@ v0.282; its list was written by hand. The failed runs since the entry v0.283, fr
 New tests: 0. The test list holds 2145 (1461 in `Engine.Tests`, 337 in `3DEngine.Tests`, 344 in `3DEngine.ImageTests`, 3
 in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
 entries: 15 of 15. New diagnostic codes: 0. Since the review of v0.275, 3 product milestones and 9 entries followed it.
+
+## v0.285 — The determinism probe holds the cone, the sphere and the torus (K5f, TASK-0299)
+
+ADR-0089 item 5 says that the determinism probe of ADR-0074 takes a primitive of the record in a later slice. The cone,
+the sphere and the torus shipped at v0.273 and v0.282.
+
+**The change.** The log of the probe makes a cone, cuts it with a moved cylinder, moves the result, and makes and moves a
+torus and a sphere, so the probe holds eight bodies. Step 10 of the test sheet of the phone names the new hash,
+e67c318bf264fbf291b22e27ee7887b4fcd1943cee58f3e2dd2531d1773fc873. ADR-0074 and ADR-0089 say so in their history.
+
+**Proof.** The test of the probe passes on this computer with two replays and one hash. In run 42445858375, Windows, Linux,
+macOS and the emulator of the phone gave that hash, and the job that compares them passed.
+
+**What stays.** The S23 has not run the new probe.
+
+**A correction.** The first form of the probe cut the cone by a sphere. That cut ran the exact kernel on 3968
+triangles: the test took 14 s on this computer, against 0.9 s before, and in run 42444929625 the emulator wrote no hash in
+the wait of the smoke test. A cut by a sphere on the phone is therefore much slower than on the desktop. The failed runs
+since the entry v0.284, from the API: none.
+
+New tests: 0. The test list holds 2145 (1461 in `Engine.Tests`, 337 in `3DEngine.Tests`, 344 in `3DEngine.ImageTests`, 3
+in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
+entries: 15 of 15. New diagnostic codes: 0. Since the review of v0.275, 4 product milestones and 10 entries followed it.
