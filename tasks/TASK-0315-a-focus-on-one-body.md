@@ -5,7 +5,7 @@ status: Ready
 phase: R17b
 opened: 2026-11-08
 depends-on: [0314]
-governed-by: [0007, 0019, 0025, 0027, 0029, 0030, 0032, 0034, 0043, 0072, 0073, 0075, 0076, 0077, 0078, 0080, 0081, 0082, 0083, 0084, 0085, 0086, 0087, 0088, 0089, 0091, 0093, 0095, 0097, 0098]
+governed-by: [0007, 0019, 0025, 0027, 0029, 0030, 0032, 0034, 0043, 0072, 0073, 0075, 0076, 0077, 0078, 0080, 0081, 0082, 0083, 0084, 0085, 0086, 0087, 0088, 0089, 0091, 0093, 0095, 0097, 0098, 0099]
 writes:
   create:
     - tasks/TASK-0315-a-focus-on-one-body.md
@@ -105,3 +105,4 @@ Weakest:    no person used a focus in this window yet.
 ## Progress
 
 - 2026-11-08: opened from the proposal, with the answers of the owner.
+- 2026-11-09: governed by ADR-0099, after the merge of R16p at v0.298.
