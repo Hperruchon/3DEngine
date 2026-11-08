@@ -1,7 +1,7 @@
 ---
 id: 0296
 title: Five comments and messages, the cleanup of a failed device, the second ring and two gates hold their next forms
-status: Active
+status: Done
 phase: P0.125
 opened: 2026-11-08
 depends-on: [0295]
@@ -59,23 +59,25 @@ Each of the eight findings is fixed, each with a test, an injection or a reading
 
 ## Acceptance criteria
 
-- [ ] Each finding has a test, an injection or a reading that fails before the change and passes after it.
-- [ ] A clean build (`--no-incremental`) gives zero errors and zero warnings.
-- [ ] Continuous integration passes on the three runners, on the branch and on `main` after the merge.
+- [x] Each finding has a test, an injection or a reading that fails before the change and passes after it.
+- [x] A clean build (`--no-incremental`) gives zero errors and zero warnings.
+- [x] Continuous integration passes on the three runners, on the branch and on `main` after the merge.
 
 ## Outcome
 
-Status: Active
+Status: Done · commit (the merge of the branch p0125-low-forms) · v0.280
 
 ## Method
 
 Mechanical: a test, an injection or a reading for each finding, before the change.
 Judgement:  E191, E192, E187, E188 and E189 are proved by reading; a failure of Vulkan in a constructor does not come on
             demand on a computer. E192 lets the wait of a lost device fail and destroys the objects, as Vulkan permits.
-Weakest:    to be written at the close.
+Weakest:    E191 and E192 are proved by reading only. The main panel is 460 wide, also wider than a display of 390;
+            no finding names it yet.
 
 ## Progress
 
 - 2026-11-08: the eight findings. Injections: V140 (the tools on the ring while the second ring is open) fails two
   tests; T176 (the window 480 wide) fails the new test at 390 x 844; T175 (a mode of the analysis in the host, and no
   WarningsAsErrors) fails the gate with each form.
+- 2026-11-08: run 42440367372 passed. Closed at v0.280.
