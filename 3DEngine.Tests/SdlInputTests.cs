@@ -209,6 +209,22 @@ public unsafe class SdlInputTests
             sample => Assert.Equal((InputKey.Y, KeyModifiers.Control), (((KeySample)sample).Key, ((KeySample)sample).Modifiers)));
     }
 
+    // ADR-0098 item 1 (TASK-0312): K follows the letter of the layout, as Z and Y do, so Control and K reach the command line
+    // on each keyboard; the place of K with the letter j gives no sample.
+    [Fact]
+    public void K_Follows_The_Letter_And_Not_The_Place_Of_The_Key()
+    {
+        var input = new SdlInput();
+
+        input.Translate(Key(SDL_EventType.SDL_EVENT_KEY_DOWN, SDL_Scancode.SDL_SCANCODE_LCTRL), 800, 600);
+        input.Translate(Letter(SDL_Scancode.SDL_SCANCODE_SEMICOLON, SDLK_K), 800, 600);
+        input.Translate(Letter(SDL_Scancode.SDL_SCANCODE_K, SDLK_J), 800, 600);
+
+        Assert.Collection(
+            input.TakeFrame(),
+            sample => Assert.Equal((InputKey.K, KeyModifiers.Control), (((KeySample)sample).Key, ((KeySample)sample).Modifiers)));
+    }
+
     private static SDL_Event Letter(SDL_Scancode code, uint letter)
     {
         var e = Key(SDL_EventType.SDL_EVENT_KEY_DOWN, code);
