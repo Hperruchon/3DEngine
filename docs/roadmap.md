@@ -292,6 +292,7 @@ Therefore each approved objective must have a track here.
   "TOOLS FOR" and the name. v0.291, TASK-0306, ADR-0095.
 - R16m — The camera of the session has the z axis up, with a yaw of 135° and a pitch of 30° at the start; the ray of a
   pick, the overlay of a sketch and the gizmo take the up axis of the camera. v0.292, TASK-0307, ADR-0096.
+- Review — The codebase review of 2026-11-08 (c). v0.293, TASK-0309.
 
 ## Track 0 — Foundations
 
@@ -425,6 +426,8 @@ This track removes each condition that blocks other work.
 | P0.126 | The test of a cut by a sphere has a time limit that a slow runner keeps (the failed main run 42445348622 of v0.282). TASK-0300. | 1 |
 | P0.127 | The identifier of a reference endpoint, the volume of a very small solid, the markers of a conflict and the width of the main panel hold their next forms (E193, E194, T177 and V142 of the codebase review of 2026-11-08 (b)). TASK-0302. | 1 |
 | P0.128 | The filter of a subnormal value, the gate of the host, the stale check, ADR-0079 item 5, the end of an engine on a lost device and the test of V141 hold their next forms (E195, E196, T178, V143, V144, V145 and T179 of the codebase review of 2026-11-08 (b); after P0.127). TASK-0303. | 1 |
+| P0.129 | The status line leaves Frame and Home free on each display (V146 of the codebase review of 2026-11-08 (c), high, before the next product phase). TASK-0310. | 1 |
+| P0.130 | The dimension lines take the up axis of the camera, and the top bar, the comment of the panel and the comments of the yaw and the pitch hold their next forms (V147, V149, V150 and V151 of the codebase review of 2026-11-08 (c); after R16n). TASK-0311. | 1 |
 | P0.102 | The cache of a face, the fixed controls, the list New, the edges and the safe area hold their next forms (V113 to V118 of the codebase review of 2026-11-06 (e); after P0.101). TASK-0252. | 1–2 |
 | P0.86 | The window keeps no input between sessions, the hook has the cases of one axis, and the next forms of four gates fail (V88 to V90, T141 to T144 of the codebase review of 2026-11-06; after the next product phase). TASK-0198. | 1–2 |
 
