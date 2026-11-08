@@ -55,3 +55,4 @@ The owner asked for the field; the recommended shape A follows the form of `Diag
 ## History
 
 - 2026-11-08 · TASK-0291 · The record, Accepted by the answer of the owner of 2026-11-08 (E164).
+- 2026-11-08 · TASK-0291 · Shipped at v0.275.
