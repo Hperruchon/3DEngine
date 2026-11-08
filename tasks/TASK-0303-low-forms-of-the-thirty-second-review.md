@@ -1,7 +1,7 @@
 ---
 id: 0303
 title: The filter of a subnormal value, the gate of the host, the stale check, ADR-0079 item 5, the end of an engine and the test of V141 hold their next forms
-status: Active
+status: Done
 phase: P0.128
 opened: 2026-11-08
 depends-on: [0302]
@@ -54,13 +54,13 @@ Each of the seven findings is fixed, or its record says why it stays, each with 
 
 ## Acceptance criteria
 
-- [ ] Each finding has a test, an injection or a reading that fails before the change and passes after it.
-- [ ] A clean build (`--no-incremental`) gives zero errors and zero warnings.
-- [ ] Continuous integration passes on the three runners, on the branch and on `main` after the merge.
+- [x] Each finding has a test, an injection or a reading that fails before the change and passes after it.
+- [x] A clean build (`--no-incremental`) gives zero errors and zero warnings.
+- [x] Continuous integration passes on the three runners, on the branch and on `main` after the merge.
 
 ## Outcome
 
-Status: Active
+Status: Done · commit (the merge of the branch p0128-low-forms-b) · v0.288
 
 ## Method
 
@@ -68,8 +68,10 @@ Mechanical: a test, an injection or a reading for each finding, before the chang
 Judgement:  V143 and V144 stay open in part: the race and the second cause need the source of SDL or a run of a relaunch;
             ADR-0079 item 5 and the comment of the activity name them. E196 is a comment, because no host shares a
             registry.
-Weakest:    to be written at the close.
+Weakest:    V143 and V144 are named, not fixed; V145 is proved by reading only, because a lost device does not come on
+            demand.
 
 ## Progress
 - 2026-11-08: the seven findings. Injections: the plain double in the filter fails the new test of E195; a later
   WarningsAsErrors with no CA1416 in the host fails the gate with both rules of T178. V145 is proved by reading.
+- 2026-11-08: run 42450946419 passed. Closed at v0.288.
