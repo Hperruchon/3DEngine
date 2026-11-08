@@ -151,6 +151,17 @@ internal sealed class BodyActions(DocumentSession session)
     public string? CreateCylinder(double radius, double height)
         => Rejection(session.Apply(new CreateCylinderCommand { Radius = radius, Height = height }).GetAwaiter().GetResult());
 
+    // Phase K5e (ADR-0089 item 5, TASK-0298): a cone, a sphere or a torus of the sizes of the pad. Each returns null when the
+    // session applied it, or the rejection for the pad.
+    public string? CreateCone(double radius, double height)
+        => Rejection(session.Apply(new CreateConeCommand { Radius = radius, Height = height }).GetAwaiter().GetResult());
+
+    public string? CreateSphere(double radius)
+        => Rejection(session.Apply(new CreateSphereCommand { Radius = radius }).GetAwaiter().GetResult());
+
+    public string? CreateTorus(double radius, double tubeRadius)
+        => Rejection(session.Apply(new CreateTorusCommand { Radius = radius, TubeRadius = tubeRadius }).GetAwaiter().GetResult());
+
     // ADR-0032 item 4 (Q3 A): a move by the offsets of the pad. Translate consumes the body and
     // makes a new one, and the new body becomes the selection.
     public string? Move(Guid body, double dx, double dy, double dz)

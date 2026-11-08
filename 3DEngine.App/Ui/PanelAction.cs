@@ -35,6 +35,13 @@ internal sealed record CreateBoxAction(double X, double Y, double Z) : PanelActi
 // Phase K5b (ADR-0076, TASK-0244): the radius and the height of an apply of the pad, for a new cylinder.
 internal sealed record CreateCylinderAction(double Radius, double Height) : PanelAction;
 
+// Phase K5e (ADR-0089 item 5, TASK-0298): the sizes of an apply of the pad, for a new cone, sphere or torus.
+internal sealed record CreateConeAction(double Radius, double Height) : PanelAction;
+
+internal sealed record CreateSphereAction(double Radius) : PanelAction;
+
+internal sealed record CreateTorusAction(double Radius, double TubeRadius) : PanelAction;
+
 internal sealed record MoveBodyAction(Guid Body, double Dx, double Dy, double Dz) : PanelAction;
 
 // ADR-0073 item 1 (phase R14e3, TASK-0227): a cut of the body with the tool, the command Subtract.

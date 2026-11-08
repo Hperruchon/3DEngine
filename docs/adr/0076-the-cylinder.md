@@ -123,7 +123,8 @@ Show all out of view on a small screen. C does not give enough room: the label "
    the list "Cut with" (ADR-0073 item 1). Its entry "Box" opens the pad of ADR-0032 item 4 with the title "New box",
    and its entry "Cylinder" opens a pad with the title "New cylinder" and the fields `radius` (5) and `height` (10), in
    the length unit of the document; its apply sends `CreateCylinder`. The desktop and the phone draw the same panel
-   (ADR-0072). This item amends ADR-0032 item 4.
+   (ADR-0072). This item amends ADR-0032 item 4. The entries Cone (radius 5, height 10), Sphere (radius 5) and Torus
+   (radius 10, tube radius 3) follow, with pads of the same form (ADR-0089 item 5, phase K5e, TASK-0298).
 
 ## Consequences
 
@@ -146,3 +147,4 @@ the true surface and `CYLINDRICAL_SURFACE` after Q1 B.
   item 4.
 - 2026-11-06 · TASK-0251 · The affects field names the four files of the list "New" that TASK-0244 changed for item 7
   (finding T164 of the codebase review of 2026-11-06 (e)).
+- 2026-11-08 · TASK-0298 · Item 7: the entries Cone, Sphere and Torus (ADR-0089 item 5, phase K5e).

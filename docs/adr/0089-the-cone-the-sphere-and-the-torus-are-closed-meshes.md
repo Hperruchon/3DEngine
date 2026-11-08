@@ -23,6 +23,10 @@ affects:
   - Engine.Core/Sketch/DatumResolver.cs
   - Engine.Kernel/KernelSolid.cs
   - Engine.Kernel/Bsp.cs
+  - 3DEngine.App/BodyActions.cs
+  - 3DEngine.App/Ui/DesktopUi.cs
+  - 3DEngine.App/Ui/DesktopUi.Panel.cs
+  - 3DEngine.App/Ui/PanelAction.cs
 enforced-by: Engine.Tests/Commands/CreateConeCommandTests.cs
 ---
 
@@ -149,3 +153,5 @@ primitive is less than the true volume.
   triangles that are clockwise from outside (finding E186 of the codebase review of 2026-11-08).
 - 2026-11-08 · TASK-0289 · Item 6: the exact kernel for a mesh of many triangles (Q1 of the codebase review of
   2026-11-08, A under the standing order). The sphere and the torus shipped at v0.282.
+- 2026-11-08 · TASK-0298 · Item 5: the entries of the list "New" (phase K5e); the affects field names the four files of
+  the panel that cite this record.
