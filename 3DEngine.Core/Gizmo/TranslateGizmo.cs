@@ -264,7 +264,8 @@ public static class TranslateGizmo
         {
             var eye = camera.Eye();
             var forward = Unit((camera.Target.X - eye.X, camera.Target.Y - eye.Y, camera.Target.Z - eye.Z));
-            var right = Unit(Cross(forward, (0, 1, 0)));
+            // ADR-0096 (TASK-0307): the up axis of the camera, as Camera.View takes it.
+            var right = Unit(Cross(forward, camera.UpAxis));
             var up = Cross(right, forward);
             return new View(eye, right, up, forward, Math.Tan(camera.FieldOfViewDegrees * Math.PI / 360.0), width, height, camera.NearPlane);
         }
