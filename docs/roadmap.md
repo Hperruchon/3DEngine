@@ -262,6 +262,7 @@ Therefore each approved objective must have a track here.
 - K5c — A command CreateCone makes a cone, a closed mesh that the engine stores as a solid. v0.273, TASK-0288,
   ADR-0089.
 - P9f — A start of the desktop with a file opens it and shows no home screen. v0.274, TASK-0290, ADR-0083.
+- P0.122 — The HTTP answer of a save lists its warnings. v0.275, TASK-0291, ADR-0090.
 
 ## Track 0 — Foundations
 
@@ -388,6 +389,7 @@ This track removes each condition that blocks other work.
 | P0.119 | The platform step builds its probe in the host of the phone and reads its analyzer switches, and the proposal of K5c gives the volume of the sphere (the reviews of Codex of v0.266, medium, and v0.268, low). TASK-0285. | 1 |
 | P0.120 | A surface lost while the phone engine starts ends the engine as the background does, and the document stays (the audit of Codex of the phone host at d5209a2, high; before the next product phase). TASK-0286. | 1 |
 | P0.121 | Each query of a surface checks its result, and a device that fails to start frees what it made (the review of Codex of v0.271, high and medium; before the next product phase). TASK-0287. | 1 |
+| P0.122 | The HTTP answer of a save lists its warnings, as W-IO-OLD-FILE-KEPT (finding E164 of the codebase review of 2026-11-06 (e); the owner, 2026-11-08). TASK-0291. | 1 |
 | P0.102 | The cache of a face, the fixed controls, the list New, the edges and the safe area hold their next forms (V113 to V118 of the codebase review of 2026-11-06 (e); after P0.101). TASK-0252. | 1–2 |
 | P0.86 | The window keeps no input between sessions, the hook has the cases of one axis, and the next forms of four gates fail (V88 to V90, T141 to T144 of the codebase review of 2026-11-06; after the next product phase). TASK-0198. | 1–2 |
 

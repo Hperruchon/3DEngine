@@ -9,7 +9,7 @@ namespace Engine.Api.Http.Endpoints;
 // ADR-0030 item 4: the document file of the session, for an agent (ADR-0002).
 //
 //   GET  /document                     { name, lengthUnit, version }
-//   POST /document/save { "name": n }  saves the file as n.3de in the document folder
+//   POST /document/save { "name": n }  saves the file as n.3de in the document folder; the answer lists its warnings
 //   POST /document/open { "name": n }  only on a host that opens a file (the desktop)
 internal static class DocumentEndpoint
 {
@@ -36,9 +36,16 @@ internal static class DocumentEndpoint
         if (refused is not null)
             return refused;
 
-        var error = await host.Session.SaveAs(path!, ct);
+        // ADR-0090 (finding E164, the owner, 2026-11-08, TASK-0291): the answer of a save lists its warnings, as
+        // W-IO-OLD-FILE-KEPT; until TASK-0291 only the desktop showed that warning, and an agent did not see it.
+        var warnings = new List<Engine.Contracts.Diagnostic>();
+        var error = await host.Session.SaveAs(path!, warnings, ct);
         return error is null
-            ? Results.Json(new DocumentState(Path.GetFileName(path!), host.Session.LengthUnit, null, host.Session.Kind), ApiJson.Options)
+            ? Results.Json(
+                new SavedState(
+                    Path.GetFileName(path!), host.Session.LengthUnit, null, host.Session.Kind,
+                    [.. warnings.Select(warning => new SaveWarning(warning.Code, warning.Message, warning.Path))]),
+                ApiJson.Options)
             : Failure(error.Code, error.Message, StatusCodes.Status409Conflict);
     }
 
@@ -107,4 +114,10 @@ internal static class DocumentEndpoint
 
     // ADR-0071 item 6: the kind of the Document, part or assembly.
     internal sealed record DocumentState(string? Name, string? LengthUnit, long? Version, string? Kind);
+
+    // ADR-0090: the answer of a save, with the list of its warnings, empty when the save gives none.
+    internal sealed record SavedState(string? Name, string? LengthUnit, long? Version, string? Kind, IReadOnlyList<SaveWarning> Warnings);
+
+    // ADR-0090: one warning of a save: its code, its message, and the file that it names, or null.
+    internal sealed record SaveWarning(string Code, string Message, string? Path);
 }
