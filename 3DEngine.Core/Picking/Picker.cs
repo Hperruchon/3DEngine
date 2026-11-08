@@ -37,7 +37,8 @@ public static class Picker
 
         var eye = camera.Eye();
         var forward = Normal((camera.Target.X - eye.X, camera.Target.Y - eye.Y, camera.Target.Z - eye.Z));
-        var right = Normal(Cross(forward, (0, 1, 0)));
+        // ADR-0096 (TASK-0307): the up axis of the camera, as Camera.View takes it.
+        var right = Normal(Cross(forward, camera.UpAxis));
         var up = Cross(right, forward);
 
         var tanHalf = Math.Tan(camera.FieldOfViewDegrees * Math.PI / 360.0);

@@ -26,7 +26,7 @@ public class PickingTests
         return new PickBody(id, [.. positions], faces, visible);
     }
 
-    private static Camera Looking() => new() { Target = (0, 0, 0), Distance = 10, YawDegrees = 30, PitchDegrees = 20 };
+    private static Camera Looking(bool zUp = false) => new() { Target = (0, 0, 0), Distance = 10, YawDegrees = 30, PitchDegrees = 20, ZUp = zUp };
 
     [Fact]
     public void The_Ray_Of_The_Centre_Points_From_The_Eye_To_The_Target()
@@ -43,14 +43,17 @@ public class PickingTests
     }
 
     // A point that the camera projects to a pixel lies on the ray of that pixel, so the pick
-    // agrees with the picture.
+    // agrees with the picture. ADR-0096 (TASK-0307): the same holds for a camera with z up.
     [Theory]
-    [InlineData(2.0, 1.0, -1.5)]
-    [InlineData(-3.0, 0.5, 2.0)]
-    [InlineData(0.0, -2.0, 0.0)]
-    public void The_Ray_Of_A_Pixel_Passes_Through_The_Point_That_The_Camera_Draws_There(double x, double y, double z)
+    [InlineData(2.0, 1.0, -1.5, false)]
+    [InlineData(-3.0, 0.5, 2.0, false)]
+    [InlineData(0.0, -2.0, 0.0, false)]
+    [InlineData(2.0, 1.0, -1.5, true)]
+    [InlineData(-3.0, 0.5, 2.0, true)]
+    [InlineData(0.0, -2.0, 0.0, true)]
+    public void The_Ray_Of_A_Pixel_Passes_Through_The_Point_That_The_Camera_Draws_There(double x, double y, double z, bool zUp)
     {
-        var camera = Looking();
+        var camera = Looking(zUp);
         var aspect = (float)(Width / Height);
         var eye = camera.Eye();
         var clip = Vector4.Transform(new Vector4((float)(x - eye.X), (float)(y - eye.Y), (float)(z - eye.Z), 1f), camera.View() * camera.Projection(aspect));
