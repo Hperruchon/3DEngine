@@ -8487,3 +8487,25 @@ other test of the kernel passes with no change of its numbers. Run 42443236726 p
 New tests: 19. The test list holds 2142 (1461 in `Engine.Tests`, 337 in `3DEngine.Tests`, 341 in `3DEngine.ImageTests`, 3
 in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
 entries: 15 of 15. New diagnostic codes: 0. Since the review of v0.275, 2 product milestones and 7 entries followed it.
+
+## v0.283 — The list "New" holds the cone, the sphere and the torus (K5e, TASK-0298)
+
+ADR-0089 item 5 names phase K5e: the three entries of the list "New" of ADR-0076 item 7, after the commands of K5c and K5d.
+
+**The change.** The list "New" of the desktop and of the phone holds Cone (radius 5, height 10), Sphere (radius 5) and
+Torus (radius 10, tube radius 3) after Box and Cylinder. Each entry opens a pad of its sizes in the length unit of the
+document, and its apply sends `CreateCone`, `CreateSphere` or `CreateTorus`. ADR-0076 item 7 names the entries, and
+the affects field of ADR-0089 names the four files of the panel that cite it.
+
+**Proof.** A new test taps each entry with a finger and with the mouse: each is at least 44 pixels high and on the panels,
+opens its pad with its fields, and an apply of the defaults gives one action with them; a wrong default of the torus fails
+it. A new test of the actions makes the three bodies and refuses a size that is not valid. The phone project builds with
+zero warnings. Run 42444399314 passed.
+
+**What stays.** No run on the S23 showed the entries. A cut by a sphere holds the frame for about 10 s.
+
+**A correction.** None. The failed runs since the entry v0.282, from the API: none.
+
+New tests: 3. The test list holds 2145 (1461 in `Engine.Tests`, 337 in `3DEngine.Tests`, 344 in `3DEngine.ImageTests`, 3
+in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
+entries: 15 of 15. New diagnostic codes: 0. Since the review of v0.275, 3 product milestones and 8 entries followed it.
