@@ -19,6 +19,15 @@ internal sealed unsafe partial class DesktopUi
     // for each point, line and constraint; a row selects as a tap of the tool Select does.
     private void SketchWindow(SketchPanel panel, Vector2 displaySize)
     {
+        // ADR-0097 item 1 (the redesign, slice n, TASK-0308): the rows of an active sketch take the place of the panel, under
+        // the top bar at the left, with no title bar, no ground and no border, as the panel. The window of the
+        // live sketches stays as before.
+        if (panel.Active is { } active)
+        {
+            ActiveSketchRows(panel, active, displaySize);
+            return;
+        }
+
         ImGui.SetNextWindowPos(new Vector2(Math.Max(16f, displaySize.X - SketchWidth - 16f), 16f), ImGuiCond.FirstUseEver);
         // Finding T176 of the codebase review of 2026-11-08 (TASK-0296): the window is at most as wide as the display less
         // its margins. Until TASK-0296 it was 480 wide on a display of 390, and Arc was outside the display.
@@ -26,11 +35,34 @@ internal sealed unsafe partial class DesktopUi
         ImGui.SetNextWindowSizeConstraints(Vector2.Zero, new Vector2(width, float.MaxValue));
         ImGui.SetNextWindowSize(new Vector2(width, Math.Clamp(displaySize.Y - 32f, 200f, 700f)), ImGuiCond.FirstUseEver);
         if (ImGui.Begin(SketchName))
+            LiveSketches(panel.Live);
+
+        var position = ImGui.GetWindowPos();
+        var size = ImGui.GetWindowSize();
+        _panels.Add(new Vector4(position.X, position.Y, position.X + size.X, position.Y + size.Y));
+        _sketchWindow = _panels[^1];
+        ImGui.End();
+    }
+
+    // ADR-0097 item 1: the window of the active sketch in the place of the panel. Its height is its content in the last frame,
+    // inside the room above the anchors, as the panel.
+    private void ActiveSketchRows(SketchPanel panel, SketchInfo sketch, Vector2 displaySize)
+    {
+        ImGui.SetNextWindowPos(new Vector2(16f + _inset.X, PanelTop), ImGuiCond.Always);
+        var width = Math.Min(SketchWidth, Math.Max(displaySize.X - 32f - _inset.X - _inset.Z, 160f));
+        var room = Math.Max(displaySize.Y - PanelTop - 16f - AnchorRow - _inset.W, 0f);
+        ImGui.SetNextWindowSizeConstraints(Vector2.Zero, new Vector2(width, room));
+        ImGui.SetNextWindowSize(new Vector2(width, Math.Min(_sketchHeight ?? room, room)), ImGuiCond.Always);
+        ImGui.PushStyleVar(ImGuiStyleVar.WindowBorderSize, 0f);
+        // The scrollbar of a long list has no ground, as the window has none.
+        ImGui.PushStyleColor(ImGuiCol.ScrollbarBg, 0u);
+        var open = ImGui.Begin($"{SketchName}###{SketchName}", PanelFlags);
+        ImGui.PopStyleColor();
+        ImGui.PopStyleVar();
+        if (open)
         {
-            if (panel.Active is { } sketch)
-                ActiveSketch(panel, sketch);
-            else
-                LiveSketches(panel.Live);
+            ActiveSketch(panel, sketch);
+            _sketchHeight = ImGui.GetCursorPosY() + ImGui.GetStyle().WindowPadding.Y;
         }
 
         var position = ImGui.GetWindowPos();
@@ -39,6 +71,9 @@ internal sealed unsafe partial class DesktopUi
         _sketchWindow = _panels[^1];
         ImGui.End();
     }
+
+    // The height of the content of the window of the active sketch in the last frame (ADR-0097 item 1).
+    private float? _sketchHeight;
 
     private void LiveSketches(IReadOnlyCollection<SketchInfo> live)
     {
@@ -62,8 +97,10 @@ internal sealed unsafe partial class DesktopUi
 
     private void ActiveSketch(SketchPanel panel, SketchInfo sketch)
     {
+        // ADR-0097 item 2: the name and the state of the sketch on one line, the state in the dim colour, as the render.
         ImGui.TextUnformatted(SketchTitle(sketch));
-        ImGui.TextUnformatted(SketchStatus(sketch));
+        ImGui.SameLine(0f, 12f);
+        ImGui.TextDisabled(SketchStatus(sketch));
         // ADR-0088 item 1 (the redesign, slice h, TASK-0277): while the ring of the sketch shows in this frame, it holds the
         // tools, Finish and the kinds of a constraint, so the window does not show them again. The ring comes first in the
         // frame, so _ring is the ring of this frame.
