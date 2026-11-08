@@ -296,6 +296,8 @@ Therefore each approved objective must have a track here.
 - P0.129 — The status line leaves Frame and Home free on each display (V146). v0.294, TASK-0310, ADR-0093.
 - R16n — The rows of an active sketch take the place of the panel, and the ring of the sketch is on the right with icons
   and its caption. v0.295, TASK-0308, ADR-0097.
+- P0.130 — The dimension lines take the up axis of the camera, and the top bar and three comments hold their next forms
+  (V147, V149, V150 and V151). v0.296, TASK-0311.
 
 ## Track 0 — Foundations
 

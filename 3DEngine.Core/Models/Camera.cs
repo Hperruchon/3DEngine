@@ -9,7 +9,8 @@ namespace ThreeDEngine.Core.Models;
 /// </summary>
 /// <remarks>
 /// The camera looks at <see cref="Target"/> from <see cref="Distance"/>, turned by a
-/// yaw about the y axis and a pitch above the plane of x and z. The renderer works
+/// yaw about the up axis and a pitch above the plane under it: the y axis and the plane of x and z, or with
+/// <see cref="ZUp"/> the z axis and the plane of x and y (V151, TASK-0311). The renderer works
 /// relative to the eye: the eye is at the origin of each matrix, and each position is
 /// first moved by minus the eye in double precision, then narrowed to float.
 /// </remarks>
@@ -146,7 +147,10 @@ public sealed class Camera : Entity
             : throw new ArgumentOutOfRangeException(nameof(Distance), value, "A distance is finite and greater than 0.");
     }
 
-    /// <summary>The turn about the y axis; 0 puts the eye on the positive z side of the target.</summary>
+    /// <summary>
+    /// The turn about the up axis. With y up, 0 puts the eye on the positive z side of the target; with <see cref="ZUp"/>, on
+    /// the negative y side (V151, TASK-0311).
+    /// </summary>
     // V38: a yaw of NaN or of an infinity gave a view of NaN. The setter gives 0 for a value that
     // is not finite, as the setter of the pitch does for NaN.
     public double YawDegrees
@@ -157,7 +161,10 @@ public sealed class Camera : Entity
 
     private double _yawDegrees;
 
-    /// <summary>The angle of the eye above the plane of x and z through the target.</summary>
+    /// <summary>
+    /// The angle of the eye above the plane through the target under the up axis: the plane of x and z, or with
+    /// <see cref="ZUp"/> the plane of x and y (V151, TASK-0311).
+    /// </summary>
     // Finding V30 of the codebase review of 2026-10-28 (TASK-0090): a pitch of 90 degrees put
     // the forward vector on the up vector, and the view was NaN. The setter clamps to the
     // range of Orbit.

@@ -76,6 +76,28 @@ public sealed class FixedControlsTests
         Assert.True(title.Z - title.X <= most && title.Z < Display.X, $"The top bar at {title} is wider than {most}, so a long name pushes the unit out.");
     }
 
+    // Finding V149 of the codebase review of 2026-11-08 (c) (TASK-0311): on a narrow window the top bar ends 12 pixels left of
+    // the rows of a selected body, which start at the right margin less the width of the rows. Until TASK-0311 it cut the
+    // name to the width of the rows only, and at 844 it ended at 534, over the rows at 468.
+    [Theory]
+    [InlineData(844, 390)]
+    [InlineData(1024, 768)]
+    public void A_Long_File_Name_Ends_Left_Of_The_Rows(int width, int height)
+    {
+        var display = new Vector2(width, height);
+        using var ui = new DesktopUi("http://127.0.0.1:5180", Engine.Contracts.Document.Millimetre);
+        var document = new DocumentLine("bracket-v2-final-for-the-printer-and-the-workshop-of-the-second-floor.3de", null);
+        for (var frame = 0; frame < 2; frame++)
+        {
+            ui.Route([]);
+            ui.Frame(1f / 60f, display, Vector2.One, [], null, document);
+        }
+
+        var title = ui.ItemRectangle(DesktopUi.TitleItem) ?? throw new InvalidOperationException("No top bar.");
+        var rows = display.X - 16f - DesktopUi.RowsWidth;
+        Assert.True(title.Z <= rows - 12f + 0.5f, $"The top bar ends at {title.Z}, over the rows that start at {rows}.");
+    }
+
     // Finding V114 of the codebase review of 2026-11-06 (e) (TASK-0252): a drag down to the anchors, and a display that
     // becomes smaller, do not put the panel over Undo, and a tap on Undo gives its action. ADR-0093 item 2 (TASK-0304): the
     // panel has no title bar and stays under the top bar, so a drag from its top or from the top bar moves nothing.
