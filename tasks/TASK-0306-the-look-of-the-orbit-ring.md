@@ -1,7 +1,7 @@
 ---
 id: 0306
 title: The ring has the look of the orbit of the render, with a guide, icons and a caption
-status: Active
+status: Done
 phase: R16l
 opened: 2026-11-08
 depends-on: [0305]
@@ -48,20 +48,21 @@ The ring at 1440 x 900 has the guide circle, the light segments with icons and s
 
 ## Acceptance criteria
 
-- [ ] The new test passes, and the picture at 1440 x 900 shows the ring of the render.
-- [ ] A clean build (`--no-incremental`) gives zero errors and zero warnings.
-- [ ] Continuous integration passes on the three runners, on the branch and on `main` after the merge.
+- [x] The new test passes, and the picture at 1440 x 900 shows the ring of the render.
+- [x] A clean build (`--no-incremental`) gives zero errors and zero warnings.
+- [x] Continuous integration passes on the three runners, on the branch and on `main` after the merge.
 
 ## Outcome
 
-Status: Active
+Status: Done · commit (the merge of the branch r16l-orbit-ring-c) · v0.291
 
 ## Method
 
 Mechanical: the parts of the ring in the render at 1440 x 900.
 Judgement:  icons drawn with the draw list (ADR-0095 Q1 A).
-Weakest:    to be written at the close.
+Weakest:    the icons are simple drawings of lines and arcs, and the test reads their places, not their look.
 
 ## Progress
 
 - 2026-11-08: the slice and its test; with no icon the test fails in each of its three cases.
+- 2026-11-08: run 42479731634 passed. Closed at v0.291.

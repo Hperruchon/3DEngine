@@ -288,6 +288,8 @@ Therefore each approved objective must have a track here.
   right. v0.289, TASK-0304, ADR-0093.
 - R16k — A framed part fills 45 % of the half picture, in the middle of the display, as in the render of the mix.
   v0.290, TASK-0305, ADR-0094.
+- R16l — The orbit ring of the mix: a guide circle, light segments with drawn icons and short labels, and the caption
+  "TOOLS FOR" and the name. v0.291, TASK-0306, ADR-0095.
 
 ## Track 0 — Foundations
 
