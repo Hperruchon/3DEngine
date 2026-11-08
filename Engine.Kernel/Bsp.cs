@@ -201,16 +201,30 @@ internal sealed class Bsp
     // three products and a difference adds at most six such errors of the sum of the magnitudes. A double result larger
     // than 1e-14 times that sum, about ten times the bound, has the exact sign; else the exact sign of Rational decides.
     // The filter decides only where the exact sign is certain, so each side, each tree and each result stay the same.
+    // Finding E195 of the codebase review of 2026-11-08 (b) (TASK-0303): the bound holds for a normal double only. A value
+    // that is not zero and whose double is subnormal, zero or infinite becomes NaN, and the exact sign decides. Until
+    // TASK-0303 a subnormal coefficient times a large coordinate gave the opposite side.
     internal readonly record struct Approximate(double A, double B, double C, double D, bool Known)
     {
         public static Approximate Of(PlaneR plane)
-            => new(plane.Normal.X.ToDouble(), plane.Normal.Y.ToDouble(), plane.Normal.Z.ToDouble(), plane.Offset.ToDouble(), true);
+            => new(Near(plane.Normal.X), Near(plane.Normal.Y), Near(plane.Normal.Z), Near(plane.Offset), true);
+
+        // The nearest double of a value when it is zero or a normal double, else NaN.
+        internal static double Near(Rational value)
+        {
+            if (value.IsZero)
+                return 0;
+            var near = value.ToDouble();
+            return double.IsFinite(near) && Math.Abs(near) >= SmallestNormal ? near : double.NaN;
+        }
+
+        private const double SmallestNormal = 2.2250738585072014E-308;
 
         public static double[] Of(IReadOnlyList<Vector3R> vertices)
         {
             var doubles = new double[3 * vertices.Count];
             for (var i = 0; i < vertices.Count; i++)
-                (doubles[3 * i], doubles[(3 * i) + 1], doubles[(3 * i) + 2]) = vertices[i].ToDoubles();
+                (doubles[3 * i], doubles[(3 * i) + 1], doubles[(3 * i) + 2]) = (Near(vertices[i].X), Near(vertices[i].Y), Near(vertices[i].Z));
             return doubles;
         }
 

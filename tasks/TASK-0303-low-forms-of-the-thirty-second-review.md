@@ -1,7 +1,7 @@
 ---
 id: 0303
 title: The filter of a subnormal value, the gate of the host, the stale check, ADR-0079 item 5, the end of an engine and the test of V141 hold their next forms
-status: Ready
+status: Active
 phase: P0.128
 opened: 2026-11-08
 depends-on: [0302]
@@ -60,12 +60,16 @@ Each of the seven findings is fixed, or its record says why it stays, each with 
 
 ## Outcome
 
-Status: Ready
+Status: Active
 
 ## Method
 
 Mechanical: a test, an injection or a reading for each finding, before the change.
-Judgement:  to be written.
+Judgement:  V143 and V144 stay open in part: the race and the second cause need the source of SDL or a run of a relaunch;
+            ADR-0079 item 5 and the comment of the activity name them. E196 is a comment, because no host shares a
+            registry.
 Weakest:    to be written at the close.
 
 ## Progress
+- 2026-11-08: the seven findings. Injections: the plain double in the filter fails the new test of E195; a later
+  WarningsAsErrors with no CA1416 in the host fails the gate with both rules of T178. V145 is proved by reading.

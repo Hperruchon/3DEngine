@@ -75,6 +75,8 @@ public sealed class PhoneLifecycleTests
     // Finding V141 of the codebase review of 2026-11-08 (TASK-0294, ADR-0079 item 5): SDLMain.run finishes the newest
     // activity when any main function returns, so the main function of a stale session waits after the session and does
     // not return. The activity runs on no computer here, so the test reads its source. Until TASK-0294 the main returned.
+    // Finding T179 of the codebase review of 2026-11-08 (b) (TASK-0303): the test holds the text of the rule, not its
+    // behaviour; it fails when the text changes, and it cannot see the race of V143.
     [Fact]
     public void The_Main_Function_Of_A_Stale_Session_Does_Not_Return()
     {

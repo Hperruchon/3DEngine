@@ -62,7 +62,9 @@ public sealed class MainActivity : SDLActivity
     // SDLMain.run sets mSDLThread to null and finishes mSingleton, which is the newest activity, not the activity of this
     // main. In run 42433201851 the stale session of the first activity returned, SDL finished the second activity, its
     // destroy did not wait for the thread of its session, and the process crashed. So the main function of a stale
-    // session waits and does not return.
+    // session waits and does not return. The cause is inferred (ADR-0079 item 5). Finding V143 of the codebase review of
+    // 2026-11-08 (b) (TASK-0303): the check of the turn and the return are not one step, so a create between them can still
+    // finish the new activity; the window is short, and no run showed it.
     protected override void Main()
     {
         PhoneHost.Run(Intent?.GetBooleanExtra("probe", false) ?? false, _turn);
