@@ -254,3 +254,16 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ```
+
+## 6 The fonts of the interface
+
+TASK-0292 added two fonts to `3DEngine.App/Assets/Fonts` (ADR-0091), downloaded on 2026-11-08 with the permission of the
+owner from the repository `github.com/google/fonts`. The assembly `3DEngine.App` embeds the two fonts, so a package of the
+desktop or of the phone holds them. Each font is under the SIL Open Font License 1.1, whose text is beside it.
+
+| Font | Source | SHA-256 | Licence text |
+|---|---|---|---|
+| Instrument Sans | `ofl/instrumentsans/InstrumentSans[wdth,wght].ttf` at commit `2fc9491da70cf3e1bafd3c3da49244c5a496e9d5` | `b24f1812584816958afcf22e22d08e44318c5e51651e25d2438efdde389b33b1` | `3DEngine.App/Assets/Fonts/InstrumentSans-OFL.txt` (Copyright 2022 The Instrument Sans Project Authors) |
+| JetBrains Mono | `ofl/jetbrainsmono/JetBrainsMono[wght].ttf` at commit `2e05c1cf00a6e4f40a4b931600a90881c26e15cd` | `48715a42ec242c21e9f02692891e147d022299a52e48d5e413e1a942193ffeda` | `3DEngine.App/Assets/Fonts/JetBrainsMono-OFL.txt` (Copyright 2020 The JetBrains Mono Project Authors) |
+
+The repository holds each font as `InstrumentSans.ttf` and `JetBrainsMono.ttf`, with the same bytes.

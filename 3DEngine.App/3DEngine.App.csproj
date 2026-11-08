@@ -32,6 +32,11 @@
   <ItemGroup>
     <PackageReference Include="ImGui.NET" Version="1.91.6.1" />
   </ItemGroup>
+  <!-- ADR-0091 (the redesign, slice i, TASK-0292): the fonts of the interface, Instrument Sans and JetBrains Mono (SIL Open
+       Font License 1.1, with their licence texts beside them). The assembly holds them, so each host has the same fonts. -->
+  <ItemGroup>
+    <EmbeddedResource Include="Assets\Fonts\*.ttf" LogicalName="ThreeDEngine.Desktop.Fonts.%(Filename)%(Extension)" />
+  </ItemGroup>
   <!-- The hosts compose the application with its internal types: the desktop program, and the image test, which reads
        the renderer and the projection of the bodies (ADR-0025 item 3, TASK-0076). -->
   <ItemGroup>
