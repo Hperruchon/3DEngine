@@ -262,6 +262,7 @@ Therefore each approved objective must have a track here.
 - K5c — A command CreateCone makes a cone, a closed mesh that the engine stores as a solid. v0.273, TASK-0288,
   ADR-0089.
 - P9f — A start of the desktop with a file opens it and shows no home screen. v0.274, TASK-0290, ADR-0083.
+- P0.122 — The HTTP answer of a save lists its warnings. v0.275, TASK-0291, ADR-0090.
 
 ## Track 0 — Foundations
 

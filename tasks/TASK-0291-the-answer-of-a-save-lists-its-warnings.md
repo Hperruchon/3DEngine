@@ -1,7 +1,7 @@
 ---
 id: 0291
 title: The HTTP answer of a save lists its warnings
-status: Active
+status: Done
 phase: P0.122
 opened: 2026-11-08
 depends-on: [0290]
@@ -48,20 +48,21 @@ An agent that saves over HTTP sees each warning of the save.
 
 ## Acceptance criteria
 
-- [ ] A save that keeps the old file gives HTTP 200 with `W-IO-OLD-FILE-KEPT` in its list; a plain save gives an empty list.
-- [ ] A clean build (`--no-incremental`) gives zero errors and zero warnings.
-- [ ] Continuous integration passes on the three runners, on the branch and on `main` after the merge.
+- [x] A save that keeps the old file gives HTTP 200 with `W-IO-OLD-FILE-KEPT` in its list; a plain save gives an empty list.
+- [x] A clean build (`--no-incremental`) gives zero errors and zero warnings.
+- [x] Continuous integration passes on the three runners, on the branch and on `main` after the merge.
 
 ## Outcome
 
-Status: Active
+Status: Done · commit (the merge of the branch p0122-save-warnings-b) · v0.275
 
 ## Method
 
 Mechanical: the new test, and an injection of an answer with an empty list.
 Judgement:  a record of the answer of a save only, so the other answers keep their shape.
-Weakest:    to be written at the close.
+Weakest:    the test makes the failed delete with a journal of the tests; no run on a file that another program holds.
 
 ## Progress
 
 - 2026-11-08: ADR-0090, the field and two tests. An injection of an answer with an empty list fails the new test.
+- 2026-11-08: run 42433290350 passed. Closed at v0.275.
