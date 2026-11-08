@@ -58,5 +58,18 @@ public sealed class MainActivity : SDLActivity
     }
 
     // The extra "probe" runs the probe of the determinism hash before the session (ADR-0074 item 3).
-    protected override void Main() => PhoneHost.Run(Intent?.GetBooleanExtra("probe", false) ?? false, _turn);
+    // Finding V141 of the codebase review of 2026-11-08 (TASK-0294, ADR-0079 item 5): when a main function returns,
+    // SDLMain.run sets mSDLThread to null and finishes mSingleton, which is the newest activity, not the activity of this
+    // main. In run 42433201851 the stale session of the first activity returned, SDL finished the second activity, its
+    // destroy did not wait for the thread of its session, and the process crashed. So the main function of a stale
+    // session waits and does not return.
+    protected override void Main()
+    {
+        PhoneHost.Run(Intent?.GetBooleanExtra("probe", false) ?? false, _turn);
+        if (_turn != 0 && !SessionTurns.Phone.IsLast(_turn))
+        {
+            Console.Error.WriteLine("3DEngine: the main function of this stale session waits, so SDL keeps the newest activity.");
+            Thread.Sleep(Timeout.Infinite);
+        }
+    }
 }

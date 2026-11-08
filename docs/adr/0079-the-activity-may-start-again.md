@@ -64,6 +64,12 @@ The standing order of 2026-11-05 gives A for each question.
    longer the last one ends before its window, with one line, because its activity was destroyed. A session holds the
    window from its make to its dispose, and a later session waits for it, for 10 seconds at most; SDL on Android permits
    one window. Run 42308415060 gave the order: the activity was destroyed during the probe of its session.
+5. **The main function of a stale session (TASK-0294).** After its session, the main function of an activity whose turn
+   is stale waits, with one line, and does not return. When a main function returns, `SDLMain.run` of SDL sets
+   `mSDLThread` to null and finishes `mSingleton`, which is the newest activity. Then the destroy of the newest activity
+   does not wait for the thread of its session and ends SDL while that thread runs: the native crash of run 42433201851
+   (finding V141 of the codebase review of 2026-11-08). The waiting thread holds no window and no engine; Android ends it
+   with the process.
 
 ## Consequences
 
@@ -91,3 +97,5 @@ gave `Window` a `Dispose`, so a later session of the process makes its own windo
 - 2026-11-07 · TASK-0272 · Item 4: a lost surface in the frame that took a chosen STL keeps its new part, and each way out
   of a session disposes its host (findings E175 and E176 of the codebase review of 2026-11-07 (b)); each new window starts
   with no open dialog (E179).
+- 2026-11-08 · TASK-0294 · Item 5: the main function of a stale session waits and does not return, because SDL finishes the
+  newest activity when a main function returns (finding V141 of the codebase review of 2026-11-08).
