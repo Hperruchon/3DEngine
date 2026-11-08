@@ -8190,3 +8190,30 @@ second part. The failed runs since the entry v0.270, from the API: none.
 New tests: 2. The test list holds 2090 (1415 in `Engine.Tests`, 337 in `3DEngine.Tests`, 335 in `3DEngine.ImageTests`, 3
 in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
 entries: 15 of 15. New diagnostic codes: 0. Since the review of v0.263, 0 product milestones and 8 entries followed it.
+
+## v0.272 — Each query of a surface checks its result, and a failed device frees what it made (P0.121, TASK-0287)
+
+The review of Codex of v0.271 gave two leads in the fix of TASK-0286, and the session confirmed both in the code. A
+confirmed high lead comes before the next product phase.
+
+**The change.**
+- High: `GraphicsDevice` ignored the result of `vkGetPhysicalDeviceSurfaceSupportKHR`. With a lost surface the device
+  counted as one that cannot present, the start ended with `InvalidOperationException`, and the guard of TASK-0286 did not
+  take it, so the document of the phone was lost. The query now checks its result, so the lost surface throws the
+  exception that the guard takes.
+- Medium: when a step after the instance throws, the constructor of `GraphicsDevice` destroys the surface that no
+  presenter took and disposes itself; until now only the path with no device did so. The constructor of `Presenter` frees
+  its swapchain and its render pass when a later step throws.
+
+**Proof.** One new test reads the code of Vulkan: each query of a surface checks its result. It failed with the old device
+at the support query. The tests of the GPU that make a device pass. The phone project builds with zero warnings. Run
+42427784771 passed.
+
+**What stays.** The cleanup of a failed start has its proof by reading only, because no computer here can make a surface
+lost. The per-frame objects of a `Presenter` whose last step throws are not freed.
+
+**A correction.** None. The failed runs since the entry v0.271, from the API: none.
+
+New tests: 1. The test list holds 2091 (1415 in `Engine.Tests`, 337 in `3DEngine.Tests`, 336 in `3DEngine.ImageTests`, 3
+in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
+entries: 15 of 15. New diagnostic codes: 0. Since the review of v0.263, 0 product milestones and 9 entries followed it.

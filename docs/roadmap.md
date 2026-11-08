@@ -257,6 +257,8 @@ Therefore each approved objective must have a track here.
 - P0.119 — The platform step builds its probe in the phone host, and the proposal gives the volume of the sphere.
   v0.270, TASK-0285, ADR-0089.
 - P0.120 — A surface lost while the phone engine starts ends the engine as the background does. v0.271, TASK-0286.
+- P0.121 — Each query of a surface checks its result, and a device that fails to start frees what it made. v0.272,
+  TASK-0287.
 
 ## Track 0 — Foundations
 
