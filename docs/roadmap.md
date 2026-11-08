@@ -272,6 +272,8 @@ Therefore each approved objective must have a track here.
   store. v0.279, TASK-0295, ADR-0089, ADR-0083.
 - P0.125 — Five comments and messages, the cleanup of a failed device, the second ring and two gates hold their next
   forms. v0.280, TASK-0296, ADR-0088.
+- Proposal — An agent proposes commands, and the person accepts or rejects them (Proposed, for the owner). v0.281,
+  TASK-0297, ADR-0092.
 
 ## Track 0 — Foundations
 
