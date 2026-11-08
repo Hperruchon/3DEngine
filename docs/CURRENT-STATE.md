@@ -8553,3 +8553,29 @@ since the entry v0.284, from the API: none.
 New tests: 0. The test list holds 2145 (1461 in `Engine.Tests`, 337 in `3DEngine.Tests`, 344 in `3DEngine.ImageTests`, 3
 in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
 entries: 15 of 15. New diagnostic codes: 0. Since the review of v0.275, 4 product milestones and 10 entries followed it.
+
+## v0.286 — The codebase review of 2026-11-08 (b) (governance, TASK-0301)
+
+The review of 2026-11-08 examined v0.275. After it came 4 product milestones (R16i, K5d, K5e and K5f) and 10 ledger
+entries, so the next product milestone would make the review late. The review comes early: no task was ready, and the
+night changed the exact kernel and the phone and had two failed runs of `main`.
+
+**The change.** `docs/reviews/2026-11-08-b-codebase-review.md`, at `3339b6b` (v0.285). Two agents examined the engine,
+the kernel and the backend, and the desktop, the phone, Vulkan, the gates and the scripts, at one tree, and proved their
+main findings with probes that they deleted. Each finding of the last review is fixed, except V141, fixed in part.
+- No finding is high. Four are medium: E193 (`AddSketchPoint` takes the identifier of an endpoint of a reference), E194
+  (the check of the volume refuses a very small cone, so an earlier document with it does not open), T177 (no gate refuses
+  the markers of a conflict of git) and V142 (the main panel ends outside a display of 390).
+- Seven are low: E195, E196, T178, V143, V144, V145 and T179.
+- TASK-0302 (P0.127) holds the medium findings, and TASK-0303 (P0.128) the low ones.
+
+**Proof.** `CodebaseReviewGateTests` passes with the new review. The main run of v0.285 (42449577378) passed.
+
+**What stays.** The open findings are 0 critical, 5 high, 19 medium and 26 low. The lines of the findings up to T174 are
+carried from the last review.
+
+**A correction.** None. The failed runs since the entry v0.285, from the API: none.
+
+New tests: 0. The test list holds 2145 (1461 in `Engine.Tests`, 337 in `3DEngine.Tests`, 344 in `3DEngine.ImageTests`, 3
+in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
+entries: 15 of 15. New diagnostic codes: 0. Since the review of v0.285, 0 product milestones and 1 entry followed it.
