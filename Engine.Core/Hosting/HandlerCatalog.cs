@@ -30,6 +30,8 @@ public static class HandlerCatalog
         new CreateBoxCommandHandler(),
         new CreateCylinderCommandHandler(),
         new CreateConeCommandHandler(),
+        new CreateSphereCommandHandler(),
+        new CreateTorusCommandHandler(),
         new TranslateCommandHandler(),
         new SubtractCommandHandler(),
         new RenameBodyCommandHandler(),

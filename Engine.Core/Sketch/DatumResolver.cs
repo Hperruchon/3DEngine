@@ -76,9 +76,13 @@ public static class DatumResolver
             "The face 'side' of a cone is curved, so it has no plane for a datum (ADR-0089 item 3).",
         CreateConeCommand when reference.ItemId is not null =>
             "A face of a cone takes no itemId.",
+        CreateSphereCommand or CreateTorusCommand when reference.Element != "surface" =>
+            $"The element '{reference.Element}' is not a face of a sphere or a torus; the face is surface.",
+        CreateSphereCommand or CreateTorusCommand =>
+            "The face 'surface' is curved, so it has no plane for a datum (ADR-0089 item 5).",
         ExtrudeCommand or CreateBoxCommand or CreateCylinderCommand or CreateConeCommand => null,
         ImportStlCommand => $"The feature '{reference.FeatureId}' is a mesh body of an STL file, which has no named faces (ADR-0083 item 4).",
-        _ => $"No CreateBox, CreateCylinder, CreateCone or Extrude in effect has the id '{reference.FeatureId}'.",
+        _ => $"No CreateBox, CreateCylinder, CreateCone, CreateSphere, CreateTorus or Extrude in effect has the id '{reference.FeatureId}'.",
     };
 
     // ADR-0051 item 2: the frame of the reference, or the reason that it does not resolve. Place is
@@ -90,7 +94,7 @@ public static class DatumResolver
     {
         var feature = graph.Creator(reference.FeatureId);
         if (feature is null || graph.Order(feature.CommandId) >= place)
-            return (null, $"No CreateBox, CreateCylinder, CreateCone or Extrude in effect before the datum has the id '{reference.FeatureId}'.");
+            return (null, $"No CreateBox, CreateCylinder, CreateCone, CreateSphere, CreateTorus or Extrude in effect before the datum has the id '{reference.FeatureId}'.");
         if (Form(reference, feature) is { } wrong)
             return (null, wrong);
 
@@ -251,8 +255,10 @@ public static class DatumResolver
             "A cylinder gives no edge and no vertex to a sketch in this slice (ADR-0076 item 4).",
         CreateConeCommand =>
             "A cone gives no edge and no vertex to a sketch in this slice (ADR-0089 item 3).",
+        CreateSphereCommand or CreateTorusCommand =>
+            "A sphere or a torus gives no edge and no vertex to a sketch (ADR-0089 item 5).",
         ExtrudeCommand or CreateBoxCommand => null,
-        _ => $"No CreateBox, CreateCylinder, CreateCone or Extrude in effect has the id '{reference.FeatureId}'.",
+        _ => $"No CreateBox, CreateCylinder, CreateCone, CreateSphere, CreateTorus or Extrude in effect has the id '{reference.FeatureId}'.",
     };
 
     // ADR-0052 items 1 and 3: the positions in the plane of the sketch of the point of a vertex, or of
@@ -263,7 +269,7 @@ public static class DatumResolver
     {
         var feature = graph.Creator(reference.FeatureId);
         if (feature is null || graph.Order(feature.CommandId) >= place)
-            return (null, $"No CreateBox, CreateCylinder, CreateCone or Extrude in effect before the reference has the id '{reference.FeatureId}'.");
+            return (null, $"No CreateBox, CreateCylinder, CreateCone, CreateSphere, CreateTorus or Extrude in effect before the reference has the id '{reference.FeatureId}'.");
         if (PointForm(reference, feature) is { } wrong)
             return (null, wrong);
         if (frameOf(sketch.DatumId) is not { } plane)

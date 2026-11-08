@@ -274,6 +274,8 @@ Therefore each approved objective must have a track here.
   forms. v0.280, TASK-0296, ADR-0088.
 - Proposal — An agent proposes commands, and the person accepts or rejects them (Proposed, for the owner). v0.281,
   TASK-0297, ADR-0092.
+- K5d — Commands CreateSphere and CreateTorus make a sphere and a torus, and the exact kernel cuts them in about ten
+  seconds. v0.282, TASK-0289, ADR-0089.
 
 ## Track 0 — Foundations
 
@@ -516,6 +518,7 @@ boundary and each refused rung.
 | K5a | The cylinder: a command CreateCylinder with a radius and a height, the prism of the circle of ADR-0040 with 64 plane facets, the names +z, -z and side in the owned kernel, and a datum on the top or the bottom (the fallback queue of the owner of 2026-11-05, with the recommended answers). ADR-0076, TASK-0238. | 2–3 |
 | K5b | The list "New" of the panel of the desktop and of the phone, with the box and the cylinder, and a pad of the radius and the height (ADR-0076 item 7, which amends ADR-0032 item 4). TASK-0244. | 1 |
 | K5c | The cone: a command CreateCone with a radius and a height, a closed mesh of the 64-gon of ADR-0040 and an apex that a new capability ISolidMeshOps stores as a solid, and the faces -z and side (ADR-0089). TASK-0288. | 1–2 |
+| K5d | The sphere and the torus: commands CreateSphere and CreateTorus, closed meshes of ADR-0089 item 5 with the face surface, and an exact kernel that cuts them in about ten seconds (ADR-0089 item 6; Q1 of the codebase review of 2026-11-08, A under the standing order). TASK-0289. | 1–2 |
 | K6 | STEP export for the analytic subset. | 6–12 |
 | K6a | The planar B-Rep of the owned kernel of each live body as one STEP file of AP214, with the same bytes on each platform, from the surface and the command line (the engine lane of the order of 2026-11-05). ADR-0070, TASK-0200. | 1–2 |
 | K6b | A void inside a body is a `BREP_WITH_VOIDS` of the smallest solid that holds it, by an exact ray (ADR-0070 item 2; the engine lane of the order of 2026-11-05). TASK-0201. | 1 |
