@@ -57,6 +57,10 @@ internal sealed unsafe partial class DesktopUi : IDisposable
     public const string NewLabel = "New";
     public const string NewBoxLabel = "New box";
     public const string NewCylinderLabel = "New cylinder";
+    // Phase K5e (ADR-0089 item 5, TASK-0298): the cone, the sphere and the torus.
+    public const string NewConeLabel = "New cone";
+    public const string NewSphereLabel = "New sphere";
+    public const string NewTorusLabel = "New torus";
     public const string MoveLabel = "Move";
 
     // ADR-0073 item 1 (phase R14e3, TASK-0227): the list of the tools of a cut of the selected body.

@@ -47,6 +47,18 @@ internal sealed unsafe partial class DesktopUi
                     OpenPad(new NumericPad(NewCylinderLabel, _unit, new("radius", "5"), new("height", "10")), values => new CreateCylinderAction(values[0], values[1]));
                 Item(NewCylinderLabel);
 
+                // Phase K5e (ADR-0089 item 5, TASK-0298): the entries of the cone, the sphere and the torus, each with its pad.
+                // The defaults of the torus keep the tube inside the ring.
+                if (ImGui.Selectable($"Cone##{NewConeLabel}", false, ImGuiSelectableFlags.None, new Vector2(0f, MinimumControlHeight)))
+                    OpenPad(new NumericPad(NewConeLabel, _unit, new("radius", "5"), new("height", "10")), values => new CreateConeAction(values[0], values[1]));
+                Item(NewConeLabel);
+                if (ImGui.Selectable($"Sphere##{NewSphereLabel}", false, ImGuiSelectableFlags.None, new Vector2(0f, MinimumControlHeight)))
+                    OpenPad(new NumericPad(NewSphereLabel, _unit, new PadField("radius", "5")), values => new CreateSphereAction(values[0]));
+                Item(NewSphereLabel);
+                if (ImGui.Selectable($"Torus##{NewTorusLabel}", false, ImGuiSelectableFlags.None, new Vector2(0f, MinimumControlHeight)))
+                    OpenPad(new NumericPad(NewTorusLabel, _unit, new("radius", "10"), new("tube radius", "3")), values => new CreateTorusAction(values[0], values[1]));
+                Item(NewTorusLabel);
+
                 var (at, extent) = (ImGui.GetWindowPos(), ImGui.GetWindowSize());
                 _newList = new Vector4(at.X, at.Y, at.X + extent.X, at.Y + extent.Y);
                 ImGui.EndCombo();

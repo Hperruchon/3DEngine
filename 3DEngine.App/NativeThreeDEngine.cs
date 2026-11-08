@@ -443,6 +443,15 @@ public sealed class NativeThreeDEngine : IThreeDEngine, IDisposable
                 case CreateCylinderAction cylinder:
                     _ui.EndPad(_actions.CreateCylinder(cylinder.Radius, cylinder.Height));
                     break;
+                case CreateConeAction cone:
+                    _ui.EndPad(_actions.CreateCone(cone.Radius, cone.Height));
+                    break;
+                case CreateSphereAction sphere:
+                    _ui.EndPad(_actions.CreateSphere(sphere.Radius));
+                    break;
+                case CreateTorusAction torus:
+                    _ui.EndPad(_actions.CreateTorus(torus.Radius, torus.TubeRadius));
+                    break;
                 case MoveBodyAction move:
                     _ui.EndPad(_actions.Move(move.Body, move.Dx, move.Dy, move.Dz));
                     break;
