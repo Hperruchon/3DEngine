@@ -58,3 +58,4 @@ lays it flat with Z up; that is a separate decision.
 ## History
 
 - 2026-11-08 · TASK-0305 · The record, with the slice (the choice of the owner of 2026-11-08).
+- 2026-11-08 · TASK-0305 · Shipped at v0.290.
