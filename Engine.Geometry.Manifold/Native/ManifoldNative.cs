@@ -91,6 +91,14 @@ internal static partial class ManifoldNative
         double x1, double y1, double z1, double x2, double y2, double z2,
         double x3, double y3, double z3, double x4, double y4, double z4);
 
+    // ADR-0089 item 1 (TASK-0288): a solid from a closed mesh. manifold_meshgl64 builds a MeshGL64 in `mem` from
+    // n_verts * n_props doubles and n_tris * 3 indices of 64 bits, and manifold_of_meshgl64 builds a Manifold in `mem`
+    // from the mesh (manifoldc.cpp of 3.5.2). The caller keeps its arrays until both return, and then runs the
+    // destructor of the mesh in place, as for the other buffers.
+    [LibraryImport(Lib)]
+    internal static partial nint manifold_meshgl64(nint mem, nint vertProps, nuint nVerts, nuint nProps, nint triVerts, nuint nTris);
+    [LibraryImport(Lib)] internal static partial nint manifold_of_meshgl64(nint mem, nint mesh);
+
     // The volume of a solid, for the test of the winding (ADR-0018 item 9).
     [LibraryImport(Lib)] internal static partial double manifold_volume(nint manifold);
 

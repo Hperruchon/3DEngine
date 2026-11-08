@@ -21,6 +21,9 @@ public static class DatumResolver
     // ADR-0076 item 3: the faces of a cylinder. The side is curved, so only +z and -z carry a datum (item 4).
     public static readonly IReadOnlyList<string> CylinderFaces = ["+z", "-z", "side"];
 
+    // ADR-0089 item 3: the faces of a cone. The side is curved, so only -z carries a datum.
+    public static readonly IReadOnlyList<string> ConeFaces = ["-z", "side"];
+
     // ADR-0052 item 1: the names of the edges and the vertices of an extrude. Each one takes an itemId:
     // a line for startEdge and endEdge, and a point for the others.
     public static readonly IReadOnlyList<string> ExtrudeEdges = ["startEdge", "endEdge", "sideEdge"];
@@ -67,7 +70,13 @@ public static class DatumResolver
             "The face 'side' of a cylinder is curved, so it has no plane for a datum (ADR-0076 item 4).",
         CreateCylinderCommand when reference.ItemId is not null =>
             "A face of a cylinder takes no itemId.",
-        ExtrudeCommand or CreateBoxCommand or CreateCylinderCommand => null,
+        CreateConeCommand when !ConeFaces.Contains(reference.Element) =>
+            $"The element '{reference.Element}' is not a face of a cone; the faces are {string.Join(", ", ConeFaces)}.",
+        CreateConeCommand when reference.Element == "side" =>
+            "The face 'side' of a cone is curved, so it has no plane for a datum (ADR-0089 item 3).",
+        CreateConeCommand when reference.ItemId is not null =>
+            "A face of a cone takes no itemId.",
+        ExtrudeCommand or CreateBoxCommand or CreateCylinderCommand or CreateConeCommand => null,
         ImportStlCommand => $"The feature '{reference.FeatureId}' is a mesh body of an STL file, which has no named faces (ADR-0083 item 4).",
         _ => $"No CreateBox, CreateCylinder or Extrude in effect has the id '{reference.FeatureId}'.",
     };
@@ -90,6 +99,8 @@ public static class DatumResolver
             ExtrudeCommand extrude => Extrude(extrude, reference, state(extrude), frameOf),
             CreateBoxCommand box => (Box(box, reference.Element), null),
             CreateCylinderCommand cylinder => (Cylinder(cylinder, reference.Element), null),
+            // ADR-0089 item 3: the base of a cone is the bottom of a cylinder of the same height.
+            CreateConeCommand cone => (Cylinder(new CreateCylinderCommand { Radius = cone.Radius, Height = cone.Height }, reference.Element), null),
             _ => (null, $"The command '{feature.Name}' has no faces."),
         };
         if (frame is not { } carrier)
@@ -238,6 +249,8 @@ public static class DatumResolver
             "An edge or a vertex of a box takes no itemId.",
         CreateCylinderCommand =>
             "A cylinder gives no edge and no vertex to a sketch in this slice (ADR-0076 item 4).",
+        CreateConeCommand =>
+            "A cone gives no edge and no vertex to a sketch in this slice (ADR-0089 item 3).",
         ExtrudeCommand or CreateBoxCommand => null,
         _ => $"No CreateBox, CreateCylinder or Extrude in effect has the id '{reference.FeatureId}'.",
     };

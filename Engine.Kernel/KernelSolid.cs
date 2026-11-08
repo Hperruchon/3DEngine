@@ -102,6 +102,29 @@ public sealed class KernelSolid
 
     // The faces of a new solid: each one with its plane and its tag, cut into convex pieces, and all of them turned when
     // the volume is negative, so that each normal points out for each sign of the distance and each turn of the profile.
+    // ADR-0089 item 3 (phase K5c, TASK-0288): a cone with its base at -height / 2 and its apex at +height / 2 on the z
+    // axis, as CreateCone makes it, from the polygon of its base circle: the faces -z and side, the triangles of the side
+    // with one name and no item. The caller gives the polygon counter-clockwise, as ADR-0040 item 2 computes it.
+    public static KernelSolid Cone(Guid feature, IReadOnlyList<(Rational X, Rational Y)> circle, Rational height)
+    {
+        ArgumentNullException.ThrowIfNull(circle);
+        if (circle.Count < 3)
+            throw new ArgumentException("A circle has at least three vertices.", nameof(circle));
+        if (height.Sign <= 0)
+            throw new ArgumentException("A cone has a height greater than zero.", nameof(height));
+        var half = height / (Rational)2;
+        var bottom = circle.Select(p => new Vector3R(p.X, p.Y, -half)).ToArray();
+        var apex = new Vector3R(Rational.Zero, Rational.Zero, half);
+        var faces = new List<(string Element, Guid? Item, IReadOnlyList<Vector3R> Vertices)>
+        {
+            ("-z", null, [.. bottom.Reverse()]),
+        };
+        for (var i = 0; i < circle.Count; i++)
+            faces.Add(("side", null, [bottom[i], bottom[(i + 1) % circle.Count], apex]));
+
+        return Closed(feature, faces);
+    }
+
     private static KernelSolid Closed(Guid feature, IEnumerable<(string Element, Guid? Item, IReadOnlyList<Vector3R> Vertices)> faces)
     {
         var polygons = new List<KernelPolygon>();
