@@ -45,7 +45,8 @@ internal static class DimensionOverlay
         {
             if (box is not { } b)
                 return;
-            foreach (var dimension in Dimensions.Of(b.Min, b.Max, eye))
+            // V147 (TASK-0311): the lines take the up axis of the camera.
+            foreach (var dimension in Dimensions.Of(b.Min, b.Max, eye, camera.ZUp))
             {
                 if (SketchOverlay.Segment(camera, width, height, dimension.From, dimension.To) is not { } line)
                     continue;

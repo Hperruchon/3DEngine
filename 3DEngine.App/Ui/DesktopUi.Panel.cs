@@ -13,8 +13,9 @@ internal sealed unsafe partial class DesktopUi
         // Finding V114 of the codebase review of 2026-11-06 (e) (TASK-0252): a constraint ends the height of the panel above
         // the anchors, and each frame keeps its place between the top of the safe area and the row of the anchors (see
         // KeepAboveAnchors), so a drag of the panel or a smaller display does not cover Undo and Redo. Until TASK-0252 the
-        // place and the size took the first frame only, and a panel over the anchors took each tap on them. The person can
-        // still move the panel, which the focus click of ADR-0027 needs (FocusClickTests).
+        // place and the size took the first frame only, and a panel over the anchors took each tap on them. Finding V150 of
+        // the codebase review of 2026-11-08 (c) (TASK-0311): since TASK-0304 the person does not move the panel (NoMove, and
+        // the place of each frame); FocusClickTests holds that a drag at its top moves nothing.
         // Finding V118 (TASK-0252): the panel starts inside the safe area of the display.
         // ADR-0093 item 2 (the redesign, slice j, TASK-0304): the panel has no title bar, no ground and no border, and it stays
         // under the top bar; the person does not move it or fold it. Until TASK-0304 it was a window with a title bar.

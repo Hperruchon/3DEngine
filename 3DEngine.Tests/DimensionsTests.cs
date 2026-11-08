@@ -28,6 +28,27 @@ public class DimensionsTests
         Assert.Equal(((1295.0, 0.0, 0.0), (1295.0, 0.0, 370.0)), (z.From, z.To));
     }
 
+    // Finding V147 of the codebase review of 2026-11-08 (c) (TASK-0311): with the z axis up, from an eye on the side of +X
+    // and +Y, the lines of X and Y lie at the lowest Z on the near faces, out by one twentieth of 1900, and the line of Z
+    // lies on the near X at the far Y; an eye on the side of −Y moves the line of X to the face of −Y. Until TASK-0311 the
+    // lines read only the X and the Z of the eye.
+    [Fact]
+    public void With_Z_Up_Each_Line_Lies_On_The_Side_Of_The_Eye()
+    {
+        var dimensions = Dimensions.Of(Min, Max, (3000, 4000, 1000), zUp: true);
+
+        Assert.Equal([Dimensions.Axis.X, Dimensions.Axis.Y, Dimensions.Axis.Z], dimensions.Select(d => d.Along));
+        Assert.Equal([1200.0, 1900.0, 370.0], dimensions.Select(d => d.Value));
+        var (x, y, z) = (dimensions[0], dimensions[1], dimensions[2]);
+        Assert.Equal(((0.0, 1995.0, 0.0), (1200.0, 1995.0, 0.0)), (x.From, x.To));
+        Assert.Equal(((1295.0, 0.0, 0.0), (1295.0, 1900.0, 0.0)), (y.From, y.To));
+        Assert.Equal(((1200.0, 0.0, 0.0), (1200.0, 0.0, 370.0)), (z.EdgeFrom, z.EdgeTo));
+
+        var front = Dimensions.Of(Min, Max, (3000, -4000, 1000), zUp: true);
+        Assert.Equal(((0.0, -95.0, 0.0), (1200.0, -95.0, 0.0)), (front[0].From, front[0].To));
+        Assert.Equal(((1200.0, 1900.0, 0.0), (1200.0, 1900.0, 370.0)), (front[2].EdgeFrom, front[2].EdgeTo));
+    }
+
     // Item 4: from an eye on the side of −X and −Z, each line moves to the other faces.
     [Fact]
     public void An_Eye_On_The_Other_Side_Moves_Each_Line()
