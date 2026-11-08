@@ -1,11 +1,11 @@
 ---
 id: 0295
-title: A solid mesh with inward triangles is refused, and a file too large for the store has its own code
-status: Ready
+title: A solid mesh with inward triangles is refused, and a file too large for the store gives the code of the store
+status: Done
 phase: P0.124
 opened: 2026-11-08
 depends-on: [0294]
-governed-by: [0007, 0014, 0018, 0019, 0025, 0029, 0036, 0072, 0075, 0076, 0077, 0080, 0081, 0082, 0083, 0085, 0086, 0089]
+governed-by: [0007, 0014, 0017, 0018, 0019, 0023, 0025, 0029, 0036, 0072, 0075, 0076, 0077, 0080, 0081, 0082, 0083, 0085, 0086, 0089]
 writes:
   create:
     - tasks/TASK-0295-the-winding-of-a-solid-mesh-and-the-size-of-an-stl-file.md
@@ -14,6 +14,7 @@ writes:
     - Engine.Tests/Commands/CreateConeCommandTests.cs
     - 3DEngine.App/StlOpening.cs
     - 3DEngine.App/NativeThreeDEngine.cs
+    - 3DEngine.Vulkan/Window.FileDialog.cs
     - 3DEngine.ImageTests/StlOpenTests.cs
     - docs/diagnostics.md
     - docs/adr/0083-the-mesh-body-and-the-stl-import.md
@@ -25,7 +26,7 @@ writes:
     - Engine.Contracts/**
 ---
 
-# TASK-0295 — A solid mesh with inward triangles is refused, and a file too large for the store has its own code
+# TASK-0295 — A solid mesh with inward triangles is refused, and a file too large for the store gives the code of the store
 
 This task uses Simplified Technical English (ASD-STE100). See `CLAUDE.md`, section "Language".
 
@@ -44,8 +45,10 @@ E186 and E190 are fixed, each with a test.
 
 1. E186: `CreateSolid` refuses a mesh whose volume is negative, and a test compares the volume of Manifold with the
    volume of the kernel for the cone.
-2. E190: a new code, registered in `docs/diagnostics.md`, for a file too large for the store and for a size that SDL
-   does not know; `E-STL-TOO-LARGE` keeps its meaning.
+2. E190: the client gives `E-ASSET-TOO-LARGE` (more than 16 MiB in one asset, ADR-0044 item 3) for a file too large for
+   the store, also when the read stops at the limit because SDL does not know the size; `E-STL-TOO-LARGE` keeps its
+   meaning. The review proposed a new code; the code of the store has the right meaning, so no new code is necessary.
+   `Window.LoadFile` says when its read stopped at the limit, so the write set holds `3DEngine.Vulkan/Window.FileDialog.cs`.
 
 ## Scope (out)
 
@@ -53,18 +56,26 @@ E186 and E190 are fixed, each with a test.
 
 ## Acceptance criteria
 
-- [ ] Each finding has a test, an injection or a reading that fails before the change and passes after it.
-- [ ] A clean build (`--no-incremental`) gives zero errors and zero warnings.
-- [ ] Continuous integration passes on the three runners, on the branch and on `main` after the merge.
+- [x] Each finding has a test, an injection or a reading that fails before the change and passes after it.
+- [x] A clean build (`--no-incremental`) gives zero errors and zero warnings.
+- [x] Continuous integration passes on the three runners, on the branch and on `main` after the merge.
 
 ## Outcome
 
-Status: Ready
+Status: Done · commit (the merge of the branch p0124-winding-and-size) · v0.279
 
 ## Method
 
 Mechanical: a test, an injection or a reading for each finding, before the change.
-Judgement:  to be written.
-Weakest:    to be written at the close.
+Judgement:  E-ASSET-TOO-LARGE and not a new code, because the chosen file becomes an asset, and that code means more than
+            16 MiB in one asset.
+Weakest:    the check reads the volume of Manifold, a sum of floating numbers; a mesh with a volume near zero is not
+            tried. No run on the phone shows the new code of a large file.
 
 ## Progress
+
+- 2026-11-08: E186: the backend refuses a volume that is not positive, and two tests (the volume of a cone against its
+  pyramid, and the refusal of reversed triangles); the injections (no check, and a reversed mesh in the handler) fail
+  them. E190: `E-ASSET-TOO-LARGE` before the read and at a stopped read; the injections (the old code, and no mark at the
+  stop) fail the tests of the open.
+- 2026-11-08: run 42439763627 passed. Closed at v0.279.

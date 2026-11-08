@@ -23,11 +23,15 @@ internal static class StlOpening
     // took 2,438 MiB.
     public const long MaximumBytes = AssetStore.MaximumBytes;
 
-    // E-STL-TOO-LARGE for a file of more than MaximumBytes, or null.
+    // E-ASSET-TOO-LARGE for a file of more than MaximumBytes, or null. Finding E190 of the codebase review of 2026-11-08
+    // (TASK-0295): the file becomes an asset, and E-ASSET-TOO-LARGE means more than 16 MiB in one asset; until TASK-0295
+    // the client gave E-STL-TOO-LARGE, whose meaning is more triangles than the limit.
     public static ErrorDetail? TooLarge(long size)
-        => size > MaximumBytes
-            ? new ErrorDetail(DiagnosticCodes.StlTooLarge, $"The file has {size} bytes, and the program reads an STL file of at most {MaximumBytes} bytes (ADR-0083 item 6).")
-            : null;
+        => size > MaximumBytes ? OverLimit($"The file has {size} bytes") : null;
+
+    // E-ASSET-TOO-LARGE for a read that stopped at MaximumBytes, when SDL did not know the size before the read.
+    public static ErrorDetail OverLimit(string fileHas)
+        => new(DiagnosticCodes.AssetTooLarge, $"{fileHas}, and the program reads an STL file of at most {MaximumBytes} bytes (16 MiB), the limit of an asset (ADR-0083 item 6, ADR-0044 item 3).");
 
     public static async Task<(StlImport? Import, ErrorDetail? Error)> Prepare(string path, byte[] content, AssetStore store, CancellationToken ct = default)
     {
