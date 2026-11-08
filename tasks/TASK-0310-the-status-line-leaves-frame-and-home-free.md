@@ -1,7 +1,7 @@
 ---
 id: 0310
 title: The status line leaves Frame and Home free on each display
-status: Ready
+status: Active
 phase: P0.129
 opened: 2026-11-08
 depends-on: [0309]
@@ -52,12 +52,16 @@ The status line never covers an anchor, and a tap on Frame and Home gives its ac
 
 ## Outcome
 
-Status: Ready
+Status: Active
 
 ## Method
 
 Mechanical: a test, an injection or a reading for each finding, before the change.
-Judgement:  to be written.
+Judgement:  the line drops its address, then itself, where it does not fit (Q of the review: no row above the anchors,
+            which the portrait ring holds).
 Weakest:    to be written at the close.
 
 ## Progress
+- 2026-11-08: the fix and its test. With the status code of v0.292 the test fails at 390 x 844 and at 844 x 390. The first
+  form of the fix placed the window by a pivot at its right edge, which took the width of the last frame; on the second
+  frame the line still covered Home at 844 x 390. The window now starts at the right edge less the width of its text.
