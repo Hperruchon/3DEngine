@@ -1,7 +1,7 @@
 ---
 id: 0305
 title: A framed part fills 45 % of the half picture, as in the render of the mix
-status: Active
+status: Done
 phase: R16k
 opened: 2026-11-08
 depends-on: [0304]
@@ -48,20 +48,22 @@ A framed part is about a third of the width at 1440 x 900, in the middle of the 
 
 ## Acceptance criteria
 
-- [ ] The new test passes, and the picture at 1440 x 900 shows the part in the middle.
-- [ ] A clean build (`--no-incremental`) gives zero errors and zero warnings.
-- [ ] Continuous integration passes on the three runners, on the branch and on `main` after the merge.
+- [x] The new test passes, and the picture at 1440 x 900 shows the part in the middle.
+- [x] A clean build (`--no-incremental`) gives zero errors and zero warnings.
+- [x] Continuous integration passes on the three runners, on the branch and on `main` after the merge.
 
 ## Outcome
 
-Status: Active
+Status: Done · commit (the merge of the branch r16k-framing) · v0.290
 
 ## Method
 
 Mechanical: the size of the part in the render at 1440 x 900.
 Judgement:  45 % of the half picture, and no shift of the middle (ADR-0094 Q1 A).
-Weakest:    to be written at the close.
+Weakest:    the fill of 0.45 comes from one render at 1440 x 900; at 1280 x 720 the part is smaller than in the render
+            of that size.
 
 ## Progress
 
 - 2026-11-08: the fill and its test; each test of the camera and each image test passes.
+- 2026-11-08: run 42479307642 passed. Closed at v0.290.

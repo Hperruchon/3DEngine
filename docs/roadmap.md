@@ -286,6 +286,8 @@ Therefore each approved objective must have a track here.
   engine and the test of V141 hold their next forms. v0.288, TASK-0303, ADR-0079, ADR-0089.
 - R16j — The layout of the mix: a top bar, a panel with no title bar and no ground, and the status line at the lower
   right. v0.289, TASK-0304, ADR-0093.
+- R16k — A framed part fills 45 % of the half picture, in the middle of the display, as in the render of the mix.
+  v0.290, TASK-0305, ADR-0094.
 
 ## Track 0 — Foundations
 
