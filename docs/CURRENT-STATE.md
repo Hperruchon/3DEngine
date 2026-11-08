@@ -8375,3 +8375,32 @@ the entry v0.277, from the API: none.
 New tests: 1. The test list holds 2117 (1438 in `Engine.Tests`, 337 in `3DEngine.Tests`, 339 in `3DEngine.ImageTests`, 3
 in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
 entries: 15 of 15. New diagnostic codes: 0. Since the review of v0.275, 1 product milestone and 3 entries followed it.
+
+## v0.279 — A solid mesh with inward triangles is refused, and a large STL file gives the code of the store (P0.124, TASK-0295)
+
+Two medium findings of the codebase review of 2026-11-08. E186: `ISolidMeshOps.CreateSolid` took a closed mesh whose
+triangles are clockwise from outside, and Manifold gave a solid of negative volume, so a cut by it made a plate larger.
+E190: since TASK-0281 the client gave `E-STL-TOO-LARGE` for a file of more than 16 MiB, while that code means more
+triangles than the limit; when SDL did not know the size, the read stopped at the limit with no code.
+
+**The change.**
+- E186: `ManifoldGeometryBackend.CreateSolid` refuses a solid whose volume is not positive, with a message that names the
+  winding, and keeps nothing under the handle. ADR-0089 says so in its history.
+- E190: the client gives `E-ASSET-TOO-LARGE` (more than 16 MiB in one asset, ADR-0044 item 3) before the read, and when
+  the read stops at the limit; `Window.LoadFile` says when it stopped. `E-STL-TOO-LARGE` keeps its meaning. The review
+  proposed a new code; the code of the store has the right meaning, so no code is new. `docs/diagnostics.md` names the
+  client under `E-ASSET-TOO-LARGE`, and says under `E-STL-TOO-LARGE` that the client gave it from TASK-0272 to TASK-0295.
+
+**Proof.** Four new tests: the volume of the Manifold solid of three cones equals the volume of the pyramid on the
+64-gon, and a mesh with reversed triangles is refused. The removal of the check fails the test of the refusal; a reversed
+mesh in the handler of the cone fails seven tests, where each test of the cone passed before. Two tests of the open
+check the code and the mark of a stopped read; the old code, or no mark, fails them. Run 42439763627 passed.
+
+**What stays.** A mesh with a volume near zero is not tried. No run on the phone shows the new code.
+
+**A correction.** The task names `3DEngine.Vulkan/Window.FileDialog.cs` in its write set, because the mark of a stopped read
+comes from `LoadFile`. The failed runs since the entry v0.278, from the API: none.
+
+New tests: 4. The test list holds 2121 (1442 in `Engine.Tests`, 337 in `3DEngine.Tests`, 339 in `3DEngine.ImageTests`, 3
+in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
+entries: 15 of 15. New diagnostic codes: 0. Since the review of v0.275, 1 product milestone and 4 entries followed it.
