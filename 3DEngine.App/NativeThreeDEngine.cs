@@ -168,10 +168,12 @@ public sealed class NativeThreeDEngine : IThreeDEngine, IDisposable
         }
 
         // E183 (TASK-0281): the read stops after the limit, also when SDL does not know the size and FileSize gives -1.
-        var (content, readError) = Window.LoadFile(path, StlOpening.MaximumBytes);
+        // E190 (TASK-0295): a stop at the limit gives the code of a file too large, as a known size does.
+        var (content, readError, overLimit) = Window.LoadFile(path, StlOpening.MaximumBytes);
         if (content is null)
         {
-            _ui.ShowMessage((string.Empty, $"The file {name} could not be read: {readError}"));
+            var over = StlOpening.OverLimit($"The file has more than {StlOpening.MaximumBytes} bytes");
+            _ui.ShowMessage(overLimit ? (over.Code, $"{name}: {over.Message}") : (string.Empty, $"The file {name} could not be read: {readError}"));
             return;
         }
 

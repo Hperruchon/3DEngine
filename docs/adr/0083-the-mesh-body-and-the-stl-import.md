@@ -210,3 +210,5 @@ desktop row P9c, the phone row P9d, and the test sheet P9e.
   TASK-0272 was nine times larger.
 - 2026-11-08 · TASK-0290 · Item 7: a start with the setting `file` shows no home screen (the answer of the owner in the
   form of decisions).
+- 2026-11-08 · TASK-0295 · D3: the client gives `E-ASSET-TOO-LARGE` for a file of more than 16 MiB, also when its read stops
+  at the limit; `E-STL-TOO-LARGE` keeps the meaning of item 6 (finding E190 of the codebase review of 2026-11-08).

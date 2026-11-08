@@ -147,6 +147,43 @@ public sealed class CreateConeCommandTests
         Assert.Contains("curved", side.Error!.Message, StringComparison.Ordinal);
     }
 
+    // Finding E186 of the codebase review of 2026-11-08 (TASK-0295): the volume of the Manifold solid of a cone is the volume
+    // of the pyramid on the 64-gon, (1/3) x 32 r^2 sin(pi/32) x h, and positive. Until TASK-0295 a mesh with each triangle
+    // reversed gave the same volume with the sign minus, and no test of the cone saw it.
+    [NativeManifoldTheory]
+    [InlineData(5.0, 10.0)]
+    [InlineData(0.5, 3.0)]
+    [InlineData(40.0, 2.0)]
+    public async Task The_Volume_Of_A_Cone_Is_Its_Pyramid_And_Positive(double radius, double height)
+    {
+        using var backend = new ManifoldGeometryBackend();
+        var session = NewSession(backend);
+        var body = await Cone(session, radius, height);
+
+        var pyramid = 32 * radius * radius * Math.Sin(Math.PI / 32) * height / 3;
+        var volume = backend.Volume(new BodyHandle(body));
+        Assert.True(Math.Abs(volume - pyramid) < 1e-9 * pyramid, $"{volume} against {pyramid}");
+    }
+
+    // E186: a closed mesh with each triangle clockwise from outside is refused, and the backend holds nothing under the
+    // handle. Until TASK-0295 Manifold took it with the volume -261.379 for the cone of radius 5 and height 10.
+    [NativeManifoldFact]
+    public void A_Mesh_With_Inward_Triangles_Is_Refused()
+    {
+        using var backend = new ManifoldGeometryBackend();
+        var (positions, triangles) = CreateConeCommandHandler.Mesh(5, 10);
+        var reversed = (int[])triangles.Clone();
+        for (var t = 0; t < reversed.Length; t += 3)
+            (reversed[t + 1], reversed[t + 2]) = (reversed[t + 2], reversed[t + 1]);
+        var handle = new BodyHandle(Guid.NewGuid());
+
+        var refusal = Assert.Throws<ManifoldNativeException>(() => backend.CreateSolid(handle, positions, reversed));
+
+        Assert.Contains("counter-clockwise", refusal.Message, StringComparison.Ordinal);
+        backend.CreateSolid(handle, positions, triangles);
+        Assert.True(backend.Volume(handle) > 0);
+    }
+
     // Items 1 and 3 with ADR-0057: a cone through a plate cuts a hole with the name side into +z and -z of the plate.
     [NativeManifoldFact]
     public async Task A_Cone_Cuts_A_Hole_Of_One_Name()

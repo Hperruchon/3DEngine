@@ -141,11 +141,13 @@ public sealed unsafe partial class Window
     // The bytes of the file at the path, through SDL, so a content URI of the document picker of Android reads too; null
     // with the text of SDL when the read fails. Finding E183 of the codebase review of 2026-11-07 (c) (TASK-0281): the read
     // stops after maximum bytes and gives null with a text, so a file whose size SDL does not know cannot fill the memory.
-    public static (byte[]? Content, string? Error) LoadFile(string path, long maximum)
+    // Finding E190 of the codebase review of 2026-11-08 (TASK-0295): OverLimit is true for that stop, so the client gives the
+    // code of a file too large, and not a failed read with no code.
+    public static (byte[]? Content, string? Error, bool OverLimit) LoadFile(string path, long maximum)
     {
         var stream = SDL_IOFromFile(path, "rb");
         if (stream is null)
-            return (null, Error());
+            return (null, Error(), false);
         try
         {
             using var content = new MemoryStream();
@@ -159,10 +161,10 @@ public sealed unsafe partial class Window
                     break;
                 content.Write(buffer, 0, (int)read);
                 if (content.Length > maximum)
-                    return (null, $"The file has more than {maximum} bytes.");
+                    return (null, $"The file has more than {maximum} bytes.", true);
             }
 
-            return SDL_GetIOStatus(stream) == SDL_IOStatus.SDL_IO_STATUS_ERROR ? (null, Error()) : (content.ToArray(), null);
+            return SDL_GetIOStatus(stream) == SDL_IOStatus.SDL_IO_STATUS_ERROR ? (null, Error(), false) : (content.ToArray(), null, false);
         }
         finally
         {

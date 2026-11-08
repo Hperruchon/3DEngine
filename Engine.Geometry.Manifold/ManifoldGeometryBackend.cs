@@ -327,6 +327,17 @@ public sealed class ManifoldGeometryBackend
                 $"manifold_of_meshgl64 failed with status {status}, or gave an empty solid, for handle '{handle.Id}'.");
         }
 
+        // Finding E186 of the codebase review of 2026-11-08 (TASK-0295): Manifold takes a closed mesh whose triangles are
+        // clockwise from outside and gives a solid of negative volume, so a cut by it makes a body larger. ISolidMeshOps asks
+        // for counter-clockwise triangles, and a volume that is not positive is refused.
+        double volume = ManifoldNative.manifold_volume(solid);
+        if (!(volume > 0))
+        {
+            Release(solid, solidBuffer);
+            throw new ManifoldNativeException(
+                $"The mesh for handle '{handle.Id}' has the volume {volume}; its triangles are not counter-clockwise from outside.");
+        }
+
         _solids[handle.Id] = new ManifoldSolidHandle(solid, solidBuffer);
     }
 
