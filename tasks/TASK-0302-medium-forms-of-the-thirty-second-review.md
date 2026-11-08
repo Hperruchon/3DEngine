@@ -1,7 +1,7 @@
 ---
 id: 0302
 title: The identifier of a reference endpoint, the volume of a very small solid, the markers of a conflict and the width of the main panel hold their next forms
-status: Active
+status: Done
 phase: P0.127
 opened: 2026-11-08
 depends-on: [0301]
@@ -56,21 +56,23 @@ E193, E194, T177 and V142 are fixed, each with a test or an injection.
 
 ## Acceptance criteria
 
-- [ ] Each finding has a test, an injection or a reading that fails before the change and passes after it.
-- [ ] A clean build (`--no-incremental`) gives zero errors and zero warnings.
-- [ ] Continuous integration passes on the three runners, on the branch and on `main` after the merge.
+- [x] Each finding has a test, an injection or a reading that fails before the change and passes after it.
+- [x] A clean build (`--no-incremental`) gives zero errors and zero warnings.
+- [x] Continuous integration passes on the three runners, on the branch and on `main` after the merge.
 
 ## Outcome
 
-Status: Active
+Status: Done · commit (the merge of the branch p0127-medium-forms) · v0.287
 
 ## Method
 
 Mechanical: a test, an injection or a reading for each finding, before the change.
 Judgement:  each of the six commands that make an item of a sketch checks the items of the sketch, not only the point, so
             no form of E193 stays; the reference checks the identifiers of its two ends too.
-Weakest:    to be written at the close.
+Weakest:    the gate of the markers reads the files of the working tree, so a marker in the index alone passes it; no
+            run on the S23 shows the narrower panel.
 
 ## Progress
 - 2026-11-08: the four fixes, each with a test. The injections (a check that never refuses, the old check of the volume,
   markers in the register, and the old width of the panel) fail the new tests.
+- 2026-11-08: run 42450705901 passed. Closed at v0.287.
