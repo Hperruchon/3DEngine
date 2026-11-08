@@ -14,6 +14,10 @@ namespace Engine.Core.Queries;
 // a body with a fault gives E-GEOM-BODY-FAULTED, and a body that the kernel cannot build gives E-GEOM-FACES-FAILED.
 public sealed class GetFacesQueryHandler : IQueryHandler
 {
+    // Finding E196 of the codebase review of 2026-11-08 (b) (TASK-0303): the cache keys a result by the geometry key only,
+    // which comes from the identifier of a command, so the cache belongs to the registry of one document session. Each host
+    // makes its own registry for its session (EngineHosting.CreateDefault, Cli); a registry shared by two documents would
+    // give the faces of the other document.
     // Item 5: the count of the results that the cache keeps; the oldest goes first.
     public const int CacheSize = 64;
 
