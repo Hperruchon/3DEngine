@@ -37,7 +37,10 @@ internal sealed unsafe partial class DesktopUi
         var style = ImGui.GetStyle();
         Vector2 Size(string text)
         {
+            // ADR-0091: a value has the font of a value, JetBrains Mono.
+            ImGui.PushFont(_monoFont);
             var extent = ImGui.CalcTextSize(text) + (style.FramePadding * 2f);
+            ImGui.PopFont();
             return new Vector2(Math.Max(extent.X, ValueSize), Math.Max(extent.Y, ValueSize));
         }
 
@@ -89,8 +92,10 @@ internal sealed unsafe partial class DesktopUi
                 Dashed(list, min, max, DimensionColour);
             else
                 list.AddRect(min, max, ImGui.GetColorU32(colours[(int)ImGuiCol.Border]), 6f, ImDrawFlags.None, 1.5f);
+            ImGui.PushFont(_monoFont);
             var text = ImGui.CalcTextSize(value.Text);
-            list.AddText(((min + max) / 2f) - (text / 2f), pending ? DimensionColour : ImGui.GetColorU32(colours[(int)ImGuiCol.Text]), value.Text);
+            ImGui.PopFont();
+            list.AddText(_monoFont, FontSize, ((min + max) / 2f) - (text / 2f), pending ? DimensionColour : ImGui.GetColorU32(colours[(int)ImGuiCol.Text]), value.Text);
             _items[value.Key] = rectangle;
         }
     }

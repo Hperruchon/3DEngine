@@ -7,6 +7,9 @@ namespace ThreeDEngine.ImageTests;
 // Finding V112 of the codebase review of 2026-11-06 (e) (TASK-0250): a window destroys its SDL window at its Dispose, so a
 // later session of the process makes its own. The video driver "offscreen" of SDL needs no display; the window asks for
 // Vulkan, so the test runs where the image tests of the GPU run.
+// TASK-0292: each new window clears the state of the file dialog (E179), so this class and FileDialogStateTests run in one
+// collection; until TASK-0292 they ran at the same time, and the test of the dialog failed when the timing changed.
+[Collection(FileDialogStateTests.Collection)]
 public sealed unsafe class WindowLifecycleTests
 {
     [VulkanImageFact]

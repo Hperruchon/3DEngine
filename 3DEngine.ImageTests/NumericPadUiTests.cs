@@ -229,6 +229,10 @@ public sealed class NumericPadUiTests
                 ui.Route([new PointerSample(DeviceKind.Touch, 1, 3, x, y, 1, PointerButtons.None, KeyModifiers.None, PointerPhase.Up, 0)]);
                 Draw();
                 Draw();
+                // ADR-0091 (TASK-0292): the popup of the list takes two more frames to reach its size; with the fonts of the
+                // redesign, a tap in its second frame fell outside it.
+                Draw();
+                Draw();
             }
         }
 
