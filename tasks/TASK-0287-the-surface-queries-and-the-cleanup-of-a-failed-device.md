@@ -1,7 +1,7 @@
 ---
 id: 0287
 title: Each query of a surface checks its result, and a device that fails to start frees what it made
-status: Active
+status: Done
 phase: P0.121
 opened: 2026-11-08
 depends-on: [0286]
@@ -55,22 +55,24 @@ made.
 
 ## Acceptance criteria
 
-- [ ] The test of the queries fails with the code before the change.
-- [ ] The tests of the GPU that make a device pass.
-- [ ] A clean build (`--no-incremental`) gives zero errors and zero warnings, and the phone project builds.
-- [ ] Continuous integration passes on the three runners, on the branch and on `main` after the merge.
+- [x] The test of the queries fails with the code before the change.
+- [x] The tests of the GPU that make a device pass.
+- [x] A clean build (`--no-incremental`) gives zero errors and zero warnings, and the phone project builds.
+- [x] Continuous integration passes on the three runners, on the branch and on `main` after the merge.
 
 ## Outcome
 
-Status: Active
+Status: Done · commit (the merge of the branch p0121-surface-queries) · v0.272
 
 ## Method
 
 Mechanical: the test of the queries on the code before the change; the tests of the GPU.
 Judgement:  the cleanup by reading only, because no test can make a step after the instance throw.
-Weakest:    to be written at the close.
+Weakest:    the cleanup of a failed start has its proof by reading only, and the per-frame objects of a Presenter whose
+            last step throws are not freed.
 
 ## Progress
 
 - 2026-11-08: the check of the support query, and the cleanup of a failed start in `GraphicsDevice` and `Presenter`. The
   test of the queries failed with the old `GraphicsDevice` at the line of the support query.
+- 2026-11-08: run 42427784771 passed. Closed at v0.272.
