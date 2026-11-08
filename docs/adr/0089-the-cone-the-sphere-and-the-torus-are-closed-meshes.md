@@ -155,3 +155,4 @@ primitive is less than the true volume.
   2026-11-08, A under the standing order). The sphere and the torus shipped at v0.282.
 - 2026-11-08 · TASK-0298 · Item 5: the entries of the list "New" (phase K5e); the affects field names the four files of
   the panel that cite this record.
+- 2026-11-08 · TASK-0298 · The entries of the list "New" shipped at v0.283.
