@@ -79,6 +79,7 @@ public sealed class DocumentEndpointTests : IDisposable
 
         Assert.Equal(HttpStatusCode.OK, status);
         Assert.Equal("plate.3de", body.GetProperty("name").GetString());
+        Assert.Equal(0, body.GetProperty("warnings").GetArrayLength());
         Assert.Equal("plate.3de", state.GetProperty("name").GetString());
         Assert.Equal(1, state.GetProperty("version").GetInt64());
         Assert.False(File.Exists(unsaved));
@@ -220,6 +221,29 @@ public sealed class DocumentEndpointTests : IDisposable
 
         Assert.Equal(Path.Combine(Path.GetFullPath(Documents), "plate.3de"), folder.Resolve("plate", out var refusal));
         Assert.Null(refusal);
+    }
+
+    // ADR-0090 (finding E164, TASK-0291): a save whose delete of the old file fails gives HTTP 200 with the warning
+    // W-IO-OLD-FILE-KEPT in its list; until TASK-0291 only the desktop showed it, and an agent saw a plain success.
+    [Fact]
+    public async Task A_Save_That_Keeps_The_Old_File_Lists_The_Warning()
+    {
+        var old = Path.Combine(_folder, "old.3de");
+        static Stream Open(string file, FileMode mode) => new FileStream(file, mode, FileAccess.ReadWrite, FileShare.Read);
+        static void Delete(string file) => throw new IOException("Another program holds the file.");
+        var host = new EngineHost(new InProcessMeshBackend());
+        host.Session.Attach(Engine.Core.Persistence.DocumentJournal.ForTest(old, Engine.Contracts.Document.Millimetre, null, Open, Delete));
+        await host.Session.Apply(new Engine.Core.Commands.NoOpCommand { Echo = "one" });
+        await using var app = await StartSurface(host, new DocumentFolder(Documents));
+        using var http = new HttpClient { BaseAddress = new Uri(app.Urls.First()) };
+
+        var (status, body) = await Post(http, "/document/save", new { name = "plate" });
+        host.Session.Close();
+
+        Assert.Equal(HttpStatusCode.OK, status);
+        var warning = Assert.Single(body.GetProperty("warnings").EnumerateArray());
+        Assert.Equal((DiagnosticCodes.IoOldFileKept, old), (warning.GetProperty("code").GetString(), warning.GetProperty("path").GetString()));
+        Assert.True(File.Exists(old));
     }
 
     // E85: engine-api-http with no --file refused a save with HTTP 409, and an open with 501.

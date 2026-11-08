@@ -8266,3 +8266,22 @@ screen, and an open by name ends it. An injection of the old rule fails the new 
 New tests: 1. The test list holds 2104 (1427 in `Engine.Tests`, 337 in `3DEngine.Tests`, 337 in `3DEngine.ImageTests`, 3
 in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
 entries: 15 of 15. New diagnostic codes: 0. Since the review of v0.263, 2 product milestones and 11 entries followed it.
+
+## v0.275 — The HTTP answer of a save lists its warnings (P0.122, TASK-0291)
+
+Finding E164 of the codebase review of 2026-11-06 (e): the HTTP answer of a save did not give `W-IO-OLD-FILE-KEPT`, because
+a new field changes the shape on the wire. On 2026-11-08 the owner answered: add the field, with an ADR.
+
+**The change.** ADR-0090 amends ADR-0030 item 4: the answer of `POST /document/save` holds the list `warnings`, each with
+its `code`, its `message` and its `path`; the list is empty when the save gives none. `GET /document` and the open keep
+their shape. `docs/diagnostics.md` says that the HTTP answer lists the warning.
+
+**Proof.** A new test attaches a journal whose delete fails and sees the warning in the answer, with the old file still on
+disk; the test of a plain save sees an empty list. An injection of an answer with an empty list fails the new test. Run
+42433290350 passed.
+
+**A correction.** None. The failed runs since the entry v0.274, from the API: run 42433201851 of `main` at v0.273 (2a3d55c): the job of the emulator failed with a native crash. Android relaunched the activity, the second session lost its surface while the engine started, the engine ended as in the background, and the process crashed. Five runs of the same code passed. The review of v0.276 records it.
+
+New tests: 1. The test list holds 2105 (1428 in `Engine.Tests`, 337 in `3DEngine.Tests`, 337 in `3DEngine.ImageTests`, 3
+in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
+entries: 15 of 15. New diagnostic codes: 0. Since the review of v0.263, 2 product milestones and 12 entries followed it.
