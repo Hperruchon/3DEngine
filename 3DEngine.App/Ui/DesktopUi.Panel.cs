@@ -16,19 +16,21 @@ internal sealed unsafe partial class DesktopUi
         // place and the size took the first frame only, and a panel over the anchors took each tap on them. The person can
         // still move the panel, which the focus click of ADR-0027 needs (FocusClickTests).
         // Finding V118 (TASK-0252): the panel starts inside the safe area of the display.
-        ImGui.SetNextWindowPos(new Vector2(16f + _inset.X, 16f + _inset.Y), ImGuiCond.FirstUseEver);
+        // ADR-0093 item 2 (the redesign, slice j, TASK-0304): the panel has no title bar, no ground and no border, and it stays
+        // under the top bar; the person does not move it or fold it. Until TASK-0304 it was a window with a title bar.
+        ImGui.SetNextWindowPos(new Vector2(16f + _inset.X, PanelTop), ImGuiCond.Always);
         // Finding V142 of the codebase review of 2026-11-08 (b) (TASK-0302): the panel is at most as wide as the display less its
         // margins and the safe area, as the window of a sketch (T176). Until TASK-0302 it was 460 wide on a display of 390.
         var width = Math.Min(PanelWidth, Math.Max(displaySize.X - 32f - _inset.X - _inset.Z, 160f));
-        ImGui.SetNextWindowSizeConstraints(Vector2.Zero, new Vector2(width, Math.Max(displaySize.Y - 32f - AnchorRow - _inset.Y - _inset.W, 0f)));
-        // The first size fits inside a small display too. Since the line of Undo and Redo (TASK-0093)
-        // and the line of a new sketch (TASK-0101) the panel is 700 pixels high at most, so that two
-        // bodies and Show all fit with no scroll bar.
         // ADR-0080 (TASK-0248): the panel ends above the round anchors of Undo and Redo at the bottom left.
-        ImGui.SetNextWindowSize(new Vector2(width, Math.Clamp(displaySize.Y - 32f - AnchorRow, 200f, 700f)), ImGuiCond.FirstUseEver);
-        // ADR-0080 item 1 (TASK-0248): the title bar of the panel is the title of the document: the name of the program, the
-        // name of the file or "unsaved", and the length unit. The identifier of the window stays the name of the panel.
-        var open = ImGui.Begin($"{Title(document)}###{PanelName}");
+        var room = Math.Max(displaySize.Y - PanelTop - 16f - AnchorRow - _inset.W, 0f);
+        ImGui.SetNextWindowSizeConstraints(Vector2.Zero, new Vector2(width, room));
+        // ADR-0093 item 2: the panel is as high as its content in the last frame, so the room under it, with no ground, stays
+        // the scene. A window that sizes itself hides its items in its first frame, which a tap in that frame misses.
+        ImGui.SetNextWindowSize(new Vector2(width, Math.Min(_panelHeight ?? room, room)), ImGuiCond.Always);
+        ImGui.PushStyleVar(ImGuiStyleVar.WindowBorderSize, 0f);
+        var open = ImGui.Begin($"###{PanelName}", PanelFlags);
+        ImGui.PopStyleVar();
         // Finding V123 of the codebase review of 2026-11-07 (TASK-0264): Begin gives false for a collapsed panel, so the
         // clamp ran only for an open panel, and a collapsed panel covered Undo. The clamp runs for each state now.
         KeepAboveAnchors(displaySize);
@@ -135,6 +137,7 @@ internal sealed unsafe partial class DesktopUi
             Item(ShowAllLabel);
         }
 
+        _panelHeight = ImGui.GetCursorPosY() + ImGui.GetStyle().WindowPadding.Y;
         var position = ImGui.GetWindowPos();
         var size = ImGui.GetWindowSize();
         _panels.Add(new Vector4(position.X, position.Y, position.X + size.X, position.Y + size.Y));
@@ -156,6 +159,17 @@ internal sealed unsafe partial class DesktopUi
 
     // The width of the box of the list "New", as the list of a cut.
     private const float NewListWidth = 80f;
+
+    // ADR-0093 item 2: the panel takes the height of its content, up to the room above the anchors, and scrolls past it.
+    // It has no title bar, no ground and no border, and the person does not move, fold or size it.
+    private const ImGuiWindowFlags PanelFlags = ImGuiWindowFlags.NoTitleBar | ImGuiWindowFlags.NoBackground | ImGuiWindowFlags.NoMove
+        | ImGuiWindowFlags.NoResize | ImGuiWindowFlags.NoCollapse | ImGuiWindowFlags.NoSavedSettings;
+
+    // ADR-0093 item 2: the height of the content of the panel in the last frame, or null before its first frame.
+    private float? _panelHeight;
+
+    // ADR-0093 item 2: the top of the panel, under the top bar.
+    private float PanelTop => 16f + _inset.Y + TopBarHeight + 8f;
 
     // The width of the panel on a display that is wide enough (V142, TASK-0302).
     private const float PanelWidth = 460f;
@@ -284,13 +298,13 @@ internal sealed unsafe partial class DesktopUi
             ImGui.SetWindowPos(place);
     }
 
-    // ADR-0080 item 1 (TASK-0248): the title of the document; a host with no files gives no name.
-    // Finding V115 of the codebase review of 2026-11-06 (e) (TASK-0252): the unit comes before the name of the file, so a
-    // long name that the title bar cuts does not cut the unit; until TASK-0252 the unit came last.
-    internal string Title(DocumentLine? document)
+    // ADR-0080 item 1 (TASK-0248): the title of the document; a host with no files gives no name. ADR-0093 item 1 (TASK-0304):
+    // the parts of the top bar, in the order of the render: the program, the file or "unsaved", then the unit; the top bar
+    // cuts a long name, so the unit stays (finding V115). Until TASK-0304 the title was one text in the title bar of the panel.
+    internal IReadOnlyList<string> TitleParts(DocumentLine? document)
         => document is { Files: true } files
-            ? $"3DEngine | {_unit} | {files.FileName ?? "unsaved"}"
-            : $"3DEngine | {_unit}";
+            ? ["3DEngine", files.FileName ?? "unsaved", _unit]
+            : ["3DEngine", _unit];
 
     // ADR-0030 item 3: the name of the file, a name field, Save as and Open.
     private void File(DocumentLine document)
