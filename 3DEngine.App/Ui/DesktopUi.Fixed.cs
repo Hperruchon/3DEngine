@@ -4,9 +4,10 @@ using ImGuiNET;
 namespace ThreeDEngine.Desktop.Ui;
 
 // ADR-0080 (the redesign, slice b1, TASK-0248): the fixed controls of the "mix" direction of the designer brief. Undo
-// and Redo are two round anchors at the bottom left of the display, and the status line, with the address of the
-// surface, is on their row. The title of the document is the title bar of the panel (see Panel). Each window is
-// a rectangle of the panels, so a tap on it does not reach the scene.
+// and Redo are two round anchors at the bottom left of the display. Each window is a rectangle of the panels, so a tap
+// on it does not reach the scene.
+// ADR-0093 (the redesign, slice j, TASK-0304): the title of the document is a top bar at the upper left with no ground,
+// and the status line is at the lower right, in the mono font, as in the render of the brief.
 internal sealed unsafe partial class DesktopUi
 {
     // size-anchor of the design system: the round fixed controls, 48 pixels, at least the 44 of ADR-0027 item 6.
@@ -21,8 +22,54 @@ internal sealed unsafe partial class DesktopUi
 
     public const string StatusLabel = "Status";
 
-    private void FixedControls(Vector2 displaySize)
+    // The top of the row of the anchors in this frame, which the portrait ring stays above (V136). ADR-0093 (TASK-0304): the
+    // top bar is a fixed window too, so the ring reads this field and not the lowest top of the fixed windows.
+    private float _anchorsTop = float.MaxValue;
+
+    // ADR-0093 item 1: the item of the top bar, and the height that it takes above the panel.
+    public const string TitleItem = "Title";
+    internal const float TopBarHeight = 32f;
+
+    // ADR-0093 item 1: the top bar: the program, then the file or "unsaved", then the unit, with no ground. A long name is
+    // cut to the width of the rows, so the unit stays.
+    private void TopBar(DocumentLine? document)
     {
+        ImGui.SetNextWindowPos(new Vector2(16f + _inset.X, 16f + _inset.Y), ImGuiCond.Always);
+        ImGui.PushStyleVar(ImGuiStyleVar.WindowPadding, Vector2.Zero);
+        if (ImGui.Begin("##TopBar", FixedFlags))
+        {
+            var colours = ImGui.GetStyle().Colors;
+            var parts = TitleParts(document);
+            ImGui.TextUnformatted(parts[0]);
+            for (var i = 1; i < parts.Count; i++)
+            {
+                ImGui.SameLine(0f, 12f);
+                ImGui.PushStyleColor(ImGuiCol.Text, colours[(int)(i == parts.Count - 1 ? ImGuiCol.TextDisabled : ImGuiCol.Text)]);
+                ImGui.TextUnformatted(i == 1 && parts.Count == 3 ? Fit(parts[i], RowsWidth) : parts[i]);
+                ImGui.PopStyleColor();
+            }
+
+            AddWindowRectangle();
+            _items[TitleItem] = _fixed[^1];
+        }
+
+        ImGui.End();
+        ImGui.PopStyleVar();
+    }
+
+    // ADR-0093 item 3: the text of the status line: the count of the live bodies, their state, and the address of the surface.
+    internal string StatusText(IReadOnlyList<LiveBody> bodies)
+    {
+        var failed = bodies.Count(body => body.Fault is not null);
+        var count = bodies.Count == 1 ? "1 body" : $"{bodies.Count} bodies";
+        var state = failed == 0 ? "all correct" : $"{failed} failed";
+        return _address.Length == 0 ? $"{count} · {state}" : $"{count} · {state} · {_address}";
+    }
+
+    private void FixedControls(Vector2 displaySize, IReadOnlyList<LiveBody> bodies, DocumentLine? document)
+    {
+        TopBar(document);
+
         // Undo and Redo at the bottom left (ADR-0031 item 11, amended by ADR-0080). Finding V118 of the codebase review of
         // 2026-11-06 (e) (TASK-0252): inside the safe area of the display, so that the navigation bar of the phone does not
         // cover them.
@@ -38,18 +85,20 @@ internal sealed unsafe partial class DesktopUi
             // ADR-0083 (TASK-0259): "Frame" and "Home" of the demonstration, on the row of the anchors.
             ViewButtons();
             AddWindowRectangle();
+            _anchorsTop = _fixed[^1].Y;
         }
 
         ImGui.End();
-        var row = _fixed[^1];
 
-        // The status line on the row of the anchors, right of Redo: the address of the surface of the session. The brief puts it
-        // at the bottom right, where the window of a sketch lies today; the row of the anchors holds no panel.
-        ImGui.SetNextWindowPos(new Vector2(row.Z + 20f, displaySize.Y - 16f - _inset.W - (AnchorSize / 2f)), ImGuiCond.Always, new Vector2(0f, 0.5f));
+        // ADR-0093 item 3: the status line at the lower right, on the row of the anchors, in the mono font. Until TASK-0304 it
+        // held the address only, right of Redo.
+        ImGui.SetNextWindowPos(new Vector2(displaySize.X - 16f - _inset.Z, displaySize.Y - 16f - _inset.W - (AnchorSize / 2f)), ImGuiCond.Always, new Vector2(1f, 0.5f));
         if (ImGui.Begin("##Status", FixedFlags))
         {
             // The text colour of the panels: the dim colour gives 2.9:1 on the clear, below the 3:1 of large text.
-            ImGui.TextUnformatted(_address);
+            ImGui.PushFont(_monoFont);
+            ImGui.TextUnformatted(StatusText(bodies));
+            ImGui.PopFont();
             Item(StatusLabel);
             AddWindowRectangle();
         }

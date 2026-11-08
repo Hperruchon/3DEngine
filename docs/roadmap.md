@@ -284,6 +284,8 @@ Therefore each approved objective must have a track here.
   the width of the main panel hold their next forms. v0.287, TASK-0302, ADR-0089.
 - P0.128 — The filter of a subnormal value, the gate of the host, the stale check, ADR-0079 item 5, the end of an
   engine and the test of V141 hold their next forms. v0.288, TASK-0303, ADR-0079, ADR-0089.
+- R16j — The layout of the mix: a top bar, a panel with no title bar and no ground, and the status line at the lower
+  right. v0.289, TASK-0304, ADR-0093.
 
 ## Track 0 — Foundations
 
@@ -493,6 +495,7 @@ The first objective. Each phase ends with something that a person can observe.
 | R16g | "Constrain" on the ring of a sketch: a second ring of the kinds of a constraint that fit the selection, with "Back" (ADR-0087). TASK-0276. | 1 |
 | R16h | The window of a sketch beside its ring: while the ring of a sketch shows, the window holds no tool, no Finish and no kind of a constraint (ADR-0088). TASK-0277. | 1 |
 | R16i | The fonts of the redesign: Instrument Sans for the interface and JetBrains Mono for a value on an edge, after the owner allowed their download (ADR-0091). TASK-0292. | 1 |
+| R16j | The layout of the mix with no panel chrome: the title of the document as a top bar, the panel with no title bar, ground or border under it, and the status line at the lower right in the mono font (ADR-0093; the owner, 2026-11-08). TASK-0304. | 1 |
 
 ## Track K — The kernel
 

@@ -8636,3 +8636,30 @@ it fails when the text of the rule changes (T179). The failed runs since the ent
 New tests: 1. The test list holds 2159 (1472 in `Engine.Tests`, 337 in `3DEngine.Tests`, 347 in `3DEngine.ImageTests`, 3
 in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
 entries: 15 of 15. New diagnostic codes: 0. Since the review of v0.285, 0 product milestones and 3 entries followed it.
+
+## v0.289 — The layout of the mix has a top bar, a panel with no chrome and a status line at the lower right (R16j, TASK-0304)
+
+On 2026-11-08 the owner judged the desktop too far from the render "mix" of the designer brief, and chose five slices in a
+form in chat: no panel chrome, the framing, the orbit ring, the sketch plane and the command line, judged at 1440 x 900,
+with a merge and a picture for each slice. This entry is the first slice.
+
+**The change.** ADR-0093 amends ADR-0080.
+- A top bar at the upper left gives "3DEngine", the name of the file (or "unsaved") and the unit, in one line; a long name
+  is cut to the width of the rows.
+- The panel has no title bar, no ground and no border. It does not move, fold or change size by a drag; it starts under the
+  top bar, and its height comes from its content in the frame before, inside the room above the anchors.
+- The status line ("N bodies · all correct · address") is at the lower right, in JetBrains Mono, on the row of the anchors.
+- The ring reads the top of the anchors row, not the lowest top of the fixed windows: with the top bar in that list, the
+  first form put the portrait ring above the display, and a test of the ring found it.
+
+**Proof.** The tests of the fixed controls, of the focus and of the panel picture changed with the layout: the top bar is
+at (16, 16), a drag or a double click at the top of the panel moves and folds nothing, and the picture of the panel shows
+the clear colour, not a ground. A new picture test draws the bracket of the render at 1440 x 900 (`mix-selected.png`).
+The phone project builds with zero warnings. Run 42477968134 passed. The failed runs since the entry v0.288, from the API:
+none.
+
+**What stays.** The rows stay at the right in this slice (ADR-0093 Q1 A). No run on the S23 showed the slice yet.
+
+New tests: 2. The test list holds 2161 (1472 in `Engine.Tests`, 337 in `3DEngine.Tests`, 349 in `3DEngine.ImageTests`, 3
+in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
+entries: 15 of 15. New diagnostic codes: 0. Since the review of v0.285, 1 product milestone and 4 entries followed it.

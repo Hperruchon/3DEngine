@@ -34,44 +34,55 @@ public sealed class FixedControlsTests
         var panel = ui.PanelRectangles[0];
         Assert.True(panel.W <= undo.Y, $"The panel ends at {panel.W}, under the top of Undo at {undo.Y}.");
         Assert.True(ui.OverPanel((undo.X + undo.Z) / 2, (undo.Y + undo.W) / 2), "A tap on Undo reaches the scene.");
+        // ADR-0093 item 3 (TASK-0304): the status line is at the lower right, on the row of the anchors.
         var status = ui.ItemRectangle(DesktopUi.StatusLabel) ?? throw new InvalidOperationException("No status line.");
         Assert.True(status.X > redo.Z && status.Y >= undo.Y && status.W <= undo.W, $"The status line at {status} is not on the row of the anchors.");
+        Assert.True(Math.Abs(status.Z - (Display.X - 16f)) <= 1f, $"The status line at {status} does not end 16 pixels inside the right edge.");
+        Assert.Equal("0 bodies · all correct · http://127.0.0.1:5180", ui.StatusText([]));
     }
 
-    // Item 1: the title bar of the panel names the program, the file or "unsaved", and the unit; a host with no files, as
-    // the phone, gives the program and the unit.
+    // Item 1, with ADR-0093 item 1 (TASK-0304): the top bar names the program, the file or "unsaved", and the unit; a host
+    // with no files, as the phone, gives the program and the unit. It is at the upper left, with no ground.
     [Fact]
     public void The_Title_Names_The_Document_And_The_Unit()
     {
         using var ui = new DesktopUi("http://127.0.0.1:5180", Engine.Contracts.Document.Millimetre);
 
-        Assert.Equal("3DEngine | mm | plate.3de", ui.Title(new DocumentLine("plate.3de", null)));
-        Assert.Equal("3DEngine | mm | unsaved", ui.Title(new DocumentLine(null, null)));
-        Assert.Equal("3DEngine | mm", ui.Title(new DocumentLine(null, "Applied", Files: false)));
-        Assert.Equal("3DEngine | mm", ui.Title(null));
+        Assert.Equal(["3DEngine", "plate.3de", "mm"], ui.TitleParts(new DocumentLine("plate.3de", null)));
+        Assert.Equal(["3DEngine", "unsaved", "mm"], ui.TitleParts(new DocumentLine(null, null)));
+        Assert.Equal(["3DEngine", "mm"], ui.TitleParts(new DocumentLine(null, "Applied", Files: false)));
+        Assert.Equal(["3DEngine", "mm"], ui.TitleParts(null));
+        Step(ui, new DocumentLine("plate.3de", null));
+        Step(ui, new DocumentLine("plate.3de", null));
+        var title = ui.ItemRectangle(DesktopUi.TitleItem) ?? throw new InvalidOperationException("No top bar.");
+        Assert.Equal((16f, 16f), (title.X, title.Y));
+        Assert.True(title.W <= ui.PanelRectangles[0].Y, $"The top bar at {title} is under the top of the panel.");
     }
 
-    // Finding V115 of the codebase review of 2026-11-06 (e) (TASK-0252): with a long name, the program and the unit are
-    // inside the title bar of the panel, before the arrow of the collapse and the padding; the name can be cut.
+    // Finding V115 of the codebase review of 2026-11-06 (e) (TASK-0252), with ADR-0093 item 1 (TASK-0304): the top bar cuts a
+    // long name to the width of the rows, so the unit after it stays on the display.
     [Fact]
     public void A_Long_File_Name_Does_Not_Cut_The_Unit()
     {
         using var ui = new DesktopUi("http://127.0.0.1:5180", Engine.Contracts.Document.Millimetre);
-        var document = new DocumentLine("bracket-v2-final-for-the-printer.3de", null);
+        var name = "bracket-v2-final-for-the-printer-and-the-workshop-of-the-second-floor.3de";
+        var document = new DocumentLine(name, null);
         Step(ui, document);
         Step(ui, document);
 
-        var title = ui.Title(document);
-        var unit = title[..(title.IndexOf("mm", StringComparison.Ordinal) + 2)];
-        var panel = ui.PanelRectangles[0];
-        Assert.True(ui.TextSize(unit).X + 64f < panel.Z - panel.X, $"The text \"{unit}\" does not fit in a panel of {panel.Z - panel.X} pixels.");
-        Assert.True(ui.TextSize(title).X > panel.Z - panel.X - 64f, "The name is not long enough for the test.");
+        Assert.True(ui.TextSize(name).X > DesktopUi.RowsWidth, "The name is not long enough for the test.");
+        var title = ui.ItemRectangle(DesktopUi.TitleItem) ?? throw new InvalidOperationException("No top bar.");
+        var most = ui.TextSize("3DEngine").X + DesktopUi.RowsWidth + ui.TextSize("mm").X + 24f + 1f;
+        Assert.True(title.Z - title.X <= most && title.Z < Display.X, $"The top bar at {title} is wider than {most}, so a long name pushes the unit out.");
     }
 
-    // Finding V114 of the codebase review of 2026-11-06 (e) (TASK-0252): a drag of the title bar of the panel down to the
-    // anchors, and a display that becomes smaller, do not put the panel over Undo, and a tap on Undo gives its action.
-    [Fact]
-    public void A_Panel_That_The_Person_Drags_Down_Or_A_Smaller_Display_Does_Not_Cover_Undo()
+    // Finding V114 of the codebase review of 2026-11-06 (e) (TASK-0252): a drag down to the anchors, and a display that
+    // becomes smaller, do not put the panel over Undo, and a tap on Undo gives its action. ADR-0093 item 2 (TASK-0304): the
+    // panel has no title bar and stays under the top bar, so a drag from its top or from the top bar moves nothing.
+    [Theory]
+    [InlineData(26)]
+    [InlineData(64)]
+    public void A_Panel_That_The_Person_Drags_Down_Or_A_Smaller_Display_Does_Not_Cover_Undo(int from)
     {
         using var ui = new DesktopUi("http://127.0.0.1:5180", Engine.Contracts.Document.Millimetre);
         var tall = new Vector2(1280, 1024);
@@ -83,16 +94,16 @@ public sealed class FixedControlsTests
 
         Frame(tall);
         Frame(tall);
-        Frame(tall, Mouse(100, 26, PointerButtons.Left, PointerPhase.Down, 0));
-        Frame(tall, Mouse(100, 600, PointerButtons.Left, PointerPhase.Move, 50));
-        Frame(tall, Mouse(100, 900, PointerButtons.Left, PointerPhase.Move, 100));
-        Frame(tall, Mouse(100, 900, PointerButtons.Left, PointerPhase.Up, 150));
+        Frame(tall, Mouse(300, from, PointerButtons.Left, PointerPhase.Down, 0));
+        Frame(tall, Mouse(300, 600, PointerButtons.Left, PointerPhase.Move, 50));
+        Frame(tall, Mouse(300, 900, PointerButtons.Left, PointerPhase.Move, 100));
+        Frame(tall, Mouse(300, 900, PointerButtons.Left, PointerPhase.Up, 150));
         Frame(Display);
         Frame(Display);
 
         var undo = ui.ItemRectangle(DesktopUi.UndoLabel) ?? throw new InvalidOperationException("No Undo.");
         var panel = ui.PanelRectangles[0];
-        Assert.True(panel.W <= undo.Y && panel.Y == 16f, $"The panel at {panel} covers Undo at {undo}.");
+        Assert.True(panel.W <= undo.Y && panel.Y == 16f + DesktopUi.TopBarHeight + 8f, $"The panel at {panel} covers Undo at {undo}, or it moved.");
         var (x, y) = ((undo.X + undo.Z) / 2, (undo.Y + undo.W) / 2);
         Frame(Display, Mouse(x, y, PointerButtons.None, PointerPhase.Move, 200));
         Frame(Display, Mouse(x, y, PointerButtons.Left, PointerPhase.Down, 250));
@@ -120,7 +131,9 @@ public sealed class FixedControlsTests
         var panel = ui.PanelRectangles[0];
         Assert.Equal((16f + inset.X, Display.Y - 16f - inset.W - DesktopUi.AnchorSize), (undo.X, undo.Y));
         Assert.True(status.W <= Display.Y - inset.W, $"The status line at {status} is under the bottom inset.");
-        Assert.Equal((16f + inset.X, 16f + inset.Y), (panel.X, panel.Y));
+        Assert.Equal((16f + inset.X, 16f + inset.Y + DesktopUi.TopBarHeight + 8f), (panel.X, panel.Y));
+        var title = ui.ItemRectangle(DesktopUi.TitleItem) ?? throw new InvalidOperationException("No top bar.");
+        Assert.Equal((16f + inset.X, 16f + inset.Y), (title.X, title.Y));
         Assert.True(panel.W <= undo.Y, $"The panel at {panel} covers Undo at {undo}.");
     }
 
@@ -147,12 +160,11 @@ public sealed class FixedControlsTests
             Assert.Equal(460f, panel.Z - panel.X);
     }
 
-    // Finding V123 of the codebase review of 2026-11-07 (TASK-0264): a double click on the title bar collapses the panel,
-    // and a drag of the collapsed panel to the bottom left put it over Undo and out of the display on the left, because
-    // the clamp ran only for a panel that was not collapsed. Now the collapsed panel stays above the anchors and 16 pixels
-    // inside the left edge, and a click on Undo gives its action.
+    // Finding V123 of the codebase review of 2026-11-07 (TASK-0264): a double click on the title bar collapsed the panel, and
+    // a drag of the collapsed panel put it over Undo. ADR-0093 item 2 (TASK-0304): the panel has no title bar, so a double
+    // click and a drag at its top neither fold it nor move it, and a click on Undo gives its action.
     [Fact]
-    public void A_Collapsed_Panel_That_The_Person_Drags_Does_Not_Cover_Undo()
+    public void A_Double_Click_And_A_Drag_At_The_Top_Of_The_Panel_Neither_Fold_Nor_Move_It()
     {
         using var ui = new DesktopUi("http://127.0.0.1:5180", Engine.Contracts.Document.Millimetre);
         void Frame(params InputSample[] samples)
@@ -163,15 +175,15 @@ public sealed class FixedControlsTests
 
         Frame();
         Frame();
-        Frame(Mouse(100, 26, PointerButtons.None, PointerPhase.Move, 0));
-        Frame(Mouse(100, 26, PointerButtons.Left, PointerPhase.Down, 0));
-        Frame(Mouse(100, 26, PointerButtons.Left, PointerPhase.Up, 20));
-        Frame(Mouse(100, 26, PointerButtons.Left, PointerPhase.Down, 40));
-        Frame(Mouse(100, 26, PointerButtons.Left, PointerPhase.Up, 60));
+        var before = ui.PanelRectangles[0];
+        var top = before.Y + 4f;
+        Frame(Mouse(300, top, PointerButtons.None, PointerPhase.Move, 0));
+        Frame(Mouse(300, top, PointerButtons.Left, PointerPhase.Down, 0));
+        Frame(Mouse(300, top, PointerButtons.Left, PointerPhase.Up, 20));
+        Frame(Mouse(300, top, PointerButtons.Left, PointerPhase.Down, 40));
+        Frame(Mouse(300, top, PointerButtons.Left, PointerPhase.Up, 60));
         Frame();
-        var collapsed = ui.PanelRectangles[0];
-        Assert.True(collapsed.W - collapsed.Y < 100f, $"The double click did not collapse the panel: {collapsed}.");
-        Frame(Mouse(100, 26, PointerButtons.Left, PointerPhase.Down, 600));
+        Frame(Mouse(300, top, PointerButtons.Left, PointerPhase.Down, 600));
         Frame(Mouse(80, 400, PointerButtons.Left, PointerPhase.Move, 650));
         Frame(Mouse(60, 690, PointerButtons.Left, PointerPhase.Move, 700));
         Frame(Mouse(60, 690, PointerButtons.Left, PointerPhase.Up, 750));
@@ -180,7 +192,8 @@ public sealed class FixedControlsTests
 
         var undo = ui.ItemRectangle(DesktopUi.UndoLabel) ?? throw new InvalidOperationException("No Undo.");
         var panel = ui.PanelRectangles[0];
-        Assert.True(panel.W <= undo.Y && panel.X >= 16f, $"The collapsed panel at {panel} covers Undo at {undo} or leaves the display.");
+        Assert.Equal(before, panel);
+        Assert.True(panel.W <= undo.Y && panel.X >= 16f, $"The panel at {panel} covers Undo at {undo} or leaves the display.");
         var (x, y) = ((undo.X + undo.Z) / 2, (undo.Y + undo.W) / 2);
         Frame(Mouse(x, y, PointerButtons.None, PointerPhase.Move, 1200));
         Frame(Mouse(x, y, PointerButtons.Left, PointerPhase.Down, 1250));
