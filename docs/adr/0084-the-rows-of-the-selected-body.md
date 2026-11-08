@@ -7,7 +7,7 @@ date: 2026-11-07
 supersedes: []
 superseded-by: []
 amends: ['0034', '0081', '0082']
-amended-by: ['0098']
+amended-by: ['0098', '0099']
 affects:
   - 3DEngine.App/Ui/DesktopUi.Rows.cs
   - 3DEngine.App/Ui/DesktopUi.cs
@@ -112,3 +112,5 @@ ADR-0027 item 6 is wide, so a name of more than about nine letters ends with "..
   (V128 and the review of Codex of v0.252); the rows take the place of the window of the live sketches, which covered
   them (the review of Codex of v0.252).
 - 2026-11-08 · TASK-0312 · ADR-0098 item 4 amends item 1: the rows start 8 pixels under the command line.
+- 2026-11-08 · TASK-0313 · ADR-0099 item 1 amends item 1: on a landscape display the rows are at the upper left in the
+  place of the panel. Item 6 holds.

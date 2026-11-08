@@ -14,7 +14,7 @@ namespace ThreeDEngine.ImageTests;
 
 // The image test of the dimension overlay (ADR-0056, TASK-0178): an L-shaped shelf of boxes in millimetres, with Y up,
 // drawn with the dimensions on and one board selected. The picture holds pixels of the orange of the overall dimensions
-// and of the white of the selected board outside the panel, and the validation layer gives no message.
+// and of the white of the selected board outside the panels and the rows, and the validation layer gives no message.
 [Collection(DearImGui.Collection)]
 public class DimensionImageTests
 {
@@ -52,7 +52,7 @@ public class DimensionImageTests
         var display = new Vector2(Width, Height);
         var selected = boards[2];
         byte[] pixels;
-        Vector4 panel;
+        Vector4[] panels;
         string size;
 
         using (var device = new GraphicsDevice("3DEngine.ImageTests", enableValidation: true, window: null, synchronizationValidation: true))
@@ -73,18 +73,20 @@ public class DimensionImageTests
             camera.PitchDegrees = 20;
             camera.Distance *= 1.3;
 
+            // ADR-0099 item 1 (the redesign, slice p, TASK-0313): the rows of a selected body take the place of the panel, so the
+            // tap on the toggle comes before the selection.
             for (var frame = 0; frame < 2; frame++)
-                ui.Frame(1f / 60f, display, Vector2.One, renderer.LiveBodies, selected);
+                ui.Frame(1f / 60f, display, Vector2.One, renderer.LiveBodies, null);
             var toggle = ui.ItemRectangle(DesktopUi.DimensionsLabel)!.Value;
             var (tx, ty) = ((toggle.X + toggle.Z) / 2, (toggle.Y + toggle.W) / 2);
             // A tap is a frame with the press, a frame with the release, and two frames with no sample (DesktopUiTests).
             foreach (var phase in new[] { PointerPhase.Down, PointerPhase.Up })
             {
                 ui.Route([new PointerSample(DeviceKind.Touch, 1, 3, tx, ty, 1, PointerButtons.None, KeyModifiers.None, phase, 0)]);
-                ui.Frame(1f / 60f, display, Vector2.One, renderer.LiveBodies, selected);
+                ui.Frame(1f / 60f, display, Vector2.One, renderer.LiveBodies, null);
             }
             for (var frame = 0; frame < 2; frame++)
-                ui.Frame(1f / 60f, display, Vector2.One, renderer.LiveBodies, selected);
+                ui.Frame(1f / 60f, display, Vector2.One, renderer.LiveBodies, null);
 
             Assert.True(ui.ShowDimensions);
             var box = renderer.BoxOf(selected)!.Value;
@@ -93,7 +95,7 @@ public class DimensionImageTests
             var data = UiDrawData.Empty;
             for (var frame = 0; frame < 3; frame++)
                 data = ui.Frame(1f / 60f, display, Vector2.One, renderer.LiveBodies, selected, dimensions: strokes, size: size);
-            panel = ui.PanelRectangles[0];
+            panels = [.. ui.PanelRectangles, .. ui.FixedRectangles, .. ui.RowsArea is { } rows ? [rows] : Array.Empty<Vector4>()];
 
             pixels = target.Render((commandBuffer, framebuffer, extent) =>
                 renderer.Record(commandBuffer, framebuffer, extent, scene, camera,
@@ -112,7 +114,7 @@ public class DimensionImageTests
         {
             for (var column = 0; column < (int)Width; column++)
             {
-                if (column >= panel.X && column <= panel.Z && row >= panel.Y && row <= panel.W)
+                if (panels.Any(panel => column >= panel.X && column <= panel.Z && row >= panel.Y && row <= panel.W))
                     continue;
                 var (r, g, b) = Pixel(pixels, column, row);
                 if (r > 220 && g > 130 && g < 190 && b < 100)

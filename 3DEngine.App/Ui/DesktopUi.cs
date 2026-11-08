@@ -571,14 +571,15 @@ internal sealed unsafe partial class DesktopUi : IDisposable
         else
         {
             // ADR-0097 item 1 (the redesign, slice n, TASK-0308): the rows of an active sketch take the place of the panel.
-            if (sketchPanel?.Active is null)
+            // ADR-0099 item 1 (the redesign, slice p, TASK-0313): the rows of a selected body take its place too.
+            var selectedBody = bodies.FirstOrDefault(body => body.Id == selection);
+            if (sketchPanel?.Active is null && !RowsShow(displaySize, selectedBody))
                 Panel(bodies, selection, displaySize, document);
             FixedControls(displaySize, bodies, document);
-            // ADR-0098 (TASK-0312): the command line before the rows, which start under it.
+            // ADR-0098 (TASK-0312): the command line.
             CommandLine(displaySize, bodies, selection);
             // ADR-0084 (TASK-0267): the rows of the selected body come first, so that the ring and the chips read them.
-            var selectedBody = bodies.FirstOrDefault(body => body.Id == selection);
-            PlaceRows(displaySize, selectedBody, selection is null ? null : values);
+            PlaceRows(displaySize, selectedBody, selection is null ? null : values, bodies, document);
             // ADR-0081 (TASK-0253): the tool ring of the selected body, around the centre of its box on the screen.
             Ring(displaySize, bodies.FirstOrDefault(body => body.Id == selection), ringCentre, ringBody);
             // ADR-0082 (TASK-0254): the values of the selected extrude on its edges.
