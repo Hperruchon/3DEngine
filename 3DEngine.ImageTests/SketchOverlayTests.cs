@@ -31,14 +31,16 @@ public class SketchOverlayTests
     }
 
     // The overlay is the inverse of Picker.RayThrough: a point on the ray of a pixel projects
-    // back to that pixel.
+    // back to that pixel. ADR-0096 (TASK-0307): the same holds for the camera of the session, with z up.
     [Theory]
-    [InlineData(640, 360)]
-    [InlineData(17, 700)]
-    [InlineData(1200, 40)]
-    public void A_Point_On_The_Ray_Of_A_Pixel_Projects_To_That_Pixel(double x, double y)
+    [InlineData(640, 360, false)]
+    [InlineData(17, 700, false)]
+    [InlineData(1200, 40, false)]
+    [InlineData(17, 700, true)]
+    [InlineData(1200, 40, true)]
+    public void A_Point_On_The_Ray_Of_A_Pixel_Projects_To_That_Pixel(double x, double y, bool session)
     {
-        var camera = Camera();
+        var camera = session ? SessionScene.Create().Cameras[0] : Camera();
         var ray = Picker.RayThrough(camera, x, y, Display.X, Display.Y);
         // A point of the plane XY on the ray: origin.Z + t·direction.Z = 0.
         var t = -ray.Origin.Z / ray.Direction.Z;

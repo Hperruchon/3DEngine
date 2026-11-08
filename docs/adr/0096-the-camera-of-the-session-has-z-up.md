@@ -11,6 +11,9 @@ amended-by: []
 affects:
   - 3DEngine.Core/Models/Camera.cs
   - 3DEngine.Core/Sketching/SketchCamera.cs
+  - 3DEngine.Core/Picking/Picker.cs
+  - 3DEngine.Core/Gizmo/TranslateGizmo.cs
+  - 3DEngine.App/SketchOverlay.cs
   - 3DEngine.App/SessionScene.cs
 enforced-by: 3DEngine.Tests/CameraTests.cs
 ---
@@ -51,11 +54,14 @@ The owner chose the slices and the render as the target; the recommendations ans
 1. **Z up (Q1 A, amends ADR-0023 item 2 and ADR-0034, "The camera").** `Camera.ZUp` is false by default. When it is
    true, a yaw of 0 puts the eye on the negative y side of the target, the yaw turns about the z axis, the pitch is above
    the plane of x and y, a pan moves the target in the plane of the view, and the view draws z up on the screen.
-   `ToWorld` and `FromWorld` turn a direction between the frame of y up and the world.
-2. **The turn to a sketch.** `SketchCamera.Face` turns the normal into the frame of y up first, so a camera with z up looks
+   `ToWorld` and `FromWorld` turn a direction between the frame of y up and the world. `UpAxis` is z or y.
+2. **One up axis for each frame of the screen.** The ray of a pick (`Picker.RayThrough`), the overlay of a sketch and the
+   gizmo take the right of the screen from the forward direction and `UpAxis`, as `Camera.View` does, so a pick, a line
+   of a sketch and a handle agree with the picture.
+3. **The turn to a sketch.** `SketchCamera.Face` turns the normal into the frame of y up first, so a camera with z up looks
    down on a sketch on the plane of x and y, with the pitch limit of the camera (ADR-0034 item 6).
-3. **The camera of the session (Q2 A).** It has z up, a yaw of 135° and a pitch of 30°. The desktop and the phone use it.
-4. **No change of the log.** The camera stays out of the Document (ADR-0007). The trigonometry of the camera is
+4. **The camera of the session (Q2 A).** It has z up, a yaw of 135° and a pitch of 30°. The desktop and the phone use it.
+5. **No change of the log.** The camera stays out of the Document (ADR-0007). The trigonometry of the camera is
    presentation and never reaches the log.
 
 ## Consequences
