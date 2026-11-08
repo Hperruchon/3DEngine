@@ -27,6 +27,7 @@ affects:
   - 3DEngine.App/Ui/DesktopUi.cs
   - 3DEngine.App/Ui/DesktopUi.Panel.cs
   - 3DEngine.App/Ui/PanelAction.cs
+  - Engine.Core/Determinism/CrossPlatformProbe.cs
 enforced-by: Engine.Tests/Commands/CreateConeCommandTests.cs
 ---
 
@@ -155,3 +156,5 @@ primitive is less than the true volume.
   2026-11-08, A under the standing order). The sphere and the torus shipped at v0.282.
 - 2026-11-08 · TASK-0298 · Item 5: the entries of the list "New" (phase K5e); the affects field names the four files of
   the panel that cite this record.
+- 2026-11-08 · TASK-0299 · Item 5: the determinism probe of ADR-0074 holds the three primitives (phase K5f); the affects
+  field names the probe.
