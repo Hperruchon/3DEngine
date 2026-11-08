@@ -1,7 +1,7 @@
 ---
 id: 0304
 title: The layout of the mix has a top bar, a panel with no chrome and a status line at the lower right
-status: Active
+status: Done
 phase: R16j
 opened: 2026-11-08
 depends-on: [0303]
@@ -56,22 +56,24 @@ right, as in the render.
 
 ## Acceptance criteria
 
-- [ ] Each test of the fixed controls passes for the new places, and the picture shows the slice.
-- [ ] A clean build (`--no-incremental`) gives zero errors and zero warnings.
-- [ ] Continuous integration passes on the three runners, on the branch and on `main` after the merge.
+- [x] Each test of the fixed controls passes for the new places, and the picture shows the slice.
+- [x] A clean build (`--no-incremental`) gives zero errors and zero warnings.
+- [x] Continuous integration passes on the three runners, on the branch and on `main` after the merge.
 
 ## Outcome
 
-Status: Active
+Status: Done · commit (the merge of the branch r16j-no-panel-chrome) · v0.289
 
 ## Method
 
 Mechanical: the places of the top bar, the panel and the status line, from the render at 1440 x 900.
 Judgement:  the rows stay at the right in this slice (ADR-0093 Q1 A).
-Weakest:    to be written at the close.
+Weakest:    the height of the panel comes from the frame before, so a new row shows one frame late; no run on the
+            S23 showed the slice yet.
 
 ## Progress
 
 - 2026-11-08: the slice. The first form of the ring read the lowest top of the fixed windows as the top of the anchors; the
   top bar made it 16, and the portrait ring went above the display. A test of the ring found it, and the ring now reads
   the row of the anchors.
+- 2026-11-08: run 42477968134 passed. Closed at v0.289.
