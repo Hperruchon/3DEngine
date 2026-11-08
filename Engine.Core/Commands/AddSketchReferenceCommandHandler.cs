@@ -72,6 +72,10 @@ public sealed class AddSketchReferenceCommandHandler : ICommandHandler, ICommand
         if (SketchModel.Find(document, add.SketchId) is not { } sketch)
             return Task.FromResult(SketchResults.NotFound(add.SketchId));
 
+        // Finding E193 of the codebase review of 2026-11-08 (b) (TASK-0302): no two items of a sketch share an identifier.
+        if (SketchResults.HeldBySketch(sketch, command.CommandId, GeometryKeys.Derive(command.CommandId, DatumResolver.FirstEnd), GeometryKeys.Derive(command.CommandId, DatumResolver.SecondEnd)) is { } held)
+            return Task.FromResult(held);
+
         // ADR-0083 item 4 (TASK-0258): a mesh body has no edge and no vertex for a sketch.
         if (document.Bodies.Any(body => body.Handle.Id == add.FeatureId && body.Kind == ImportStlCommandHandler.MeshKind))
             return Task.FromResult(SketchResults.Failure(DiagnosticCodes.MeshUnsupported,

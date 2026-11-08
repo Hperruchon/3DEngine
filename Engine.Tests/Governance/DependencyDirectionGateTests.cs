@@ -292,6 +292,45 @@ public class DependencyDirectionGateTests
         Assert.True(offences.Length == 0, string.Join("\n  ", offences));
     }
 
+    // Finding T177 of the codebase review of 2026-11-08 (b) (TASK-0302): a block of a conflict of git passed each gate, and in
+    // that night a staged ADR held one. A line that is seven '<' or seven '>', alone or with a space and a name after them, or
+    // seven '=' alone, is an offence in each tracked text file.
+    [Fact]
+    public void No_Tracked_Text_File_Holds_A_Conflict_Marker()
+    {
+        var offences = TrackedFiles()
+            .Where(relative => !BinaryExtensions.Contains(Path.GetExtension(relative), StringComparer.OrdinalIgnoreCase))
+            .Where(relative => File.Exists(RepositoryFiles.Path(relative)))
+            .SelectMany(relative => ConflictMarkerOffences(relative, File.ReadAllText(RepositoryFiles.Path(relative))))
+            .ToArray();
+
+        Assert.True(offences.Length == 0, string.Join("\n  ", offences));
+    }
+
+    internal static IEnumerable<string> ConflictMarkerOffences(string relative, string text)
+    {
+        var lines = text.Split('\n');
+        for (var i = 0; i < lines.Length; i++)
+        {
+            var line = lines[i].TrimEnd('\r');
+            if (line is "<<<<<<<" or ">>>>>>>" or "======="
+                || line.StartsWith("<<<<<<< ", StringComparison.Ordinal) || line.StartsWith(">>>>>>> ", StringComparison.Ordinal))
+                yield return $"{relative}:{i + 1} holds a marker of a conflict of git";
+        }
+    }
+
+    // T177: the forms of the markers that git writes, and lines that are not markers.
+    [Theory]
+    [InlineData("a\r\n<<<<<<< HEAD\r\nb\r\n", true)]
+    [InlineData("a\n=======\nb\n", true)]
+    [InlineData(">>>>>>> 5c3719d (K5d work in progress)\n", true)]
+    [InlineData("<<<<<<< Updated upstream\n", true)]
+    [InlineData("a <<<<<<< HEAD in a sentence\n", false)]
+    [InlineData("========\n", false)]
+    [InlineData("<<<<<<<<\n", false)]
+    public void A_Conflict_Marker_Is_An_Offence(string text, bool offence)
+        => Assert.Equal(offence, ConflictMarkerOffences("probe.md", text).Any());
+
     // The files that git tracks, from the git of PATH outside the checkout, as the judge of the
     // write set finds it (finding T29). No git, or a git that fails, fails the gate: an empty
     // list is not evidence.
