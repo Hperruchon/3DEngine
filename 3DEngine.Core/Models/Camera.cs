@@ -66,6 +66,12 @@ public sealed class Camera : Entity
     public (double X, double Y, double Z) FromWorld((double X, double Y, double Z) d)
         => ZUp ? (d.X, d.Z, -d.Y) : d;
 
+    /// <summary>
+    /// The up axis of the world: z when <see cref="ZUp"/>, else y. The view, the ray of a pick, the overlay of a sketch and
+    /// the gizmo take the right of the screen from the cross product of the forward direction and this axis.
+    /// </summary>
+    public (double X, double Y, double Z) UpAxis => ZUp ? (0, 0, 1) : (0, 1, 0);
+
     /// <summary>The distance of the near plane, finite and greater than 0.</summary>
     public float NearPlane
     {

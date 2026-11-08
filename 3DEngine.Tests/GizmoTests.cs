@@ -42,6 +42,21 @@ public class GizmoTests
         Assert.Equal(100 * PerPoint(distance), TranslateGizmo.WorldLength(Front(distance), Width, Height, Pivot)!.Value, 9);
     }
 
+    // ADR-0096 (TASK-0307): with z up, a camera at the front looks along y, so the arrow z points up on the screen and the
+    // arrow x to the right.
+    [Fact]
+    public void With_Z_Up_The_Arrow_Z_Points_Up_On_The_Screen()
+    {
+        var camera = new Camera { Target = (0, 0, 0), Distance = 10, ZUp = true };
+
+        var layout = TranslateGizmo.Layout(camera, Width, Height, Pivot)!;
+
+        Assert.Equal(500, layout.Ends[GizmoHandle.X].X, 3);
+        Assert.Equal(300, layout.Ends[GizmoHandle.X].Y, 3);
+        Assert.Equal(400, layout.Ends[GizmoHandle.Z].X, 3);
+        Assert.Equal(200, layout.Ends[GizmoHandle.Z].Y, 3);
+    }
+
     // ADR-0038 item 4: a square wins over an arrow, an arrow takes a press within 8 points, and a
     // press far from each handle takes nothing.
     [Theory]
