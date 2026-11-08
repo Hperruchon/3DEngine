@@ -62,3 +62,4 @@ instance of a variable font.
 
 - 2026-11-08 · TASK-0292 · The record, with the download that the owner allowed on 2026-11-08 and Q1 A under the standing
   order.
+- 2026-11-08 · TASK-0292 · Shipped at v0.278.

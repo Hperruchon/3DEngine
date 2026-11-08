@@ -8347,3 +8347,31 @@ run. The next crash in the job gives its stack.
 New tests: 11. The test list holds 2116 (1438 in `Engine.Tests`, 337 in `3DEngine.Tests`, 338 in `3DEngine.ImageTests`, 3
 in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
 entries: 15 of 15. New diagnostic codes: 0. Since the review of v0.275, 0 product milestones and 2 entries followed it.
+
+## v0.278 — The interface draws with Instrument Sans, and a value on an edge with JetBrains Mono (R16i, TASK-0292)
+
+The first slice of the redesign named the fonts Instrument Sans and JetBrains Mono, and ADR-0078 item 3 put them after the
+owner allowed the download of their files. On 2026-11-08 the owner allowed it.
+
+**The change.** ADR-0091 amends ADR-0027 item 6 and ADR-0078 item 3.
+- `3DEngine.App/Assets/Fonts` holds `InstrumentSans.ttf` and `JetBrainsMono.ttf` (SIL Open Font License 1.1, from
+  `github.com/google/fonts`) with their licence texts; the assembly embeds the fonts, so the desktop and the phone draw
+  with them. `THIRD-PARTY-NOTICES.md`, section 6, gives the sources and the checksums.
+- The interface draws with Instrument Sans; a value on an edge (ADR-0082) draws with JetBrains Mono (Q1 A under the
+  standing order).
+- The gate of the control bytes takes `.ttf` as binary; a zero byte in a Markdown file still fails it.
+
+**Proof.** A new test of the atlas: two fonts, JetBrains Mono gives each character one width, Instrument Sans does not; it
+fails with Instrument Sans as the font of a value. The pictures on the GPU show the fonts. The phone project builds with
+zero warnings. Run 42438126203 passed.
+
+**A correction.** Two tests changed for causes that are not the fonts. The pad test tapped the list "New" in its second
+frame, before the popup had its size. The test of the file dialog of TASK-0282 ran at the same time as the test of the
+windows, whose new window clears the state of the dialog; the two classes now run in one collection. The failed runs since
+the entry v0.277, from the API: none.
+
+**What stays.** The fonts draw at the weight 400 only. No run on the S23 showed them yet.
+
+New tests: 1. The test list holds 2117 (1438 in `Engine.Tests`, 337 in `3DEngine.Tests`, 339 in `3DEngine.ImageTests`, 3
+in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
+entries: 15 of 15. New diagnostic codes: 0. Since the review of v0.275, 1 product milestone and 3 entries followed it.

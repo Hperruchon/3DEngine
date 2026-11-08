@@ -1,7 +1,7 @@
 ---
 id: 0292
 title: The interface draws with Instrument Sans, and a value on an edge with JetBrains Mono
-status: Active
+status: Done
 phase: R16i
 opened: 2026-11-08
 depends-on: [0294]
@@ -59,20 +59,20 @@ The desktop and the phone draw their text with the fonts of the redesign.
 
 ## Acceptance criteria
 
-- [ ] The atlas holds the two fonts, and JetBrains Mono gives each character one width.
-- [ ] The image tests pass, and the pictures on the GPU show the fonts.
-- [ ] A clean build (`--no-incremental`) gives zero errors and zero warnings, and the phone project builds.
-- [ ] Continuous integration passes on the three runners, on the branch and on `main` after the merge.
+- [x] The atlas holds the two fonts, and JetBrains Mono gives each character one width.
+- [x] The image tests pass, and the pictures on the GPU show the fonts.
+- [x] A clean build (`--no-incremental`) gives zero errors and zero warnings, and the phone project builds.
+- [x] Continuous integration passes on the three runners, on the branch and on `main` after the merge.
 
 ## Outcome
 
-Status: Active
+Status: Done · commit (the merge of the branch r16i-fonts-b) · v0.278
 
 ## Method
 
 Mechanical: the test of the fonts and an injection of the wrong font of a value; the pictures on the GPU.
 Judgement:  JetBrains Mono for the values on the edges only (Q1 A).
-Weakest:    to be written at the close.
+Weakest:    the fonts draw at the weight 400 only; no run on the S23 showed them yet.
 
 ## Progress
 
@@ -83,3 +83,4 @@ Weakest:    to be written at the close.
 - 2026-11-08: the gate of the control bytes read a font file as text; `.ttf` joins its list of binary extensions, and an
   injection of a zero byte in a Markdown file still fails it. The test of the fonts reads the widths through `DesktopUi`,
   because only the files in `Ui/` name the library of the interface.
+- 2026-11-08: run 42438126203 passed. Closed at v0.278.

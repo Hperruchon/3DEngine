@@ -266,6 +266,8 @@ Therefore each approved objective must have a track here.
 - Review — The codebase review of 2026-11-08. v0.276, TASK-0293.
 - P0.123 — The main function of a stale session of the phone does not return, and a native crash gives its stack.
   v0.277, TASK-0294, ADR-0079.
+- R16i — The interface draws with Instrument Sans, and a value on an edge with JetBrains Mono. v0.278, TASK-0292,
+  ADR-0091.
 
 ## Track 0 — Foundations
 
