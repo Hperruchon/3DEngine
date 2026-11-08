@@ -279,6 +279,7 @@ Therefore each approved objective must have a track here.
 - K5e — The list "New" holds the cone, the sphere and the torus. v0.283, TASK-0298, ADR-0089, ADR-0076.
 - P0.126 — The test of a cut by a sphere has a time limit that a slow runner keeps. v0.284, TASK-0300.
 - K5f — The determinism probe holds the cone, the sphere and the torus. v0.285, TASK-0299, ADR-0089, ADR-0074.
+- Review — The codebase review of 2026-11-08 (b). v0.286, TASK-0301.
 
 ## Track 0 — Foundations
 
@@ -410,6 +411,8 @@ This track removes each condition that blocks other work.
 | P0.124 | A solid mesh with inward triangles is refused, and a file too large for the store gives the code of the store (E186 and E190 of the codebase review of 2026-11-08; after the next product phase). TASK-0295. | 1 |
 | P0.125 | Five comments and messages, the cleanup of a failed device, the second ring and two gates hold their next forms (E187 to E189, E191, E192, V140, T175 and T176 of the codebase review of 2026-11-08; after P0.124). TASK-0296. | 1 |
 | P0.126 | The test of a cut by a sphere has a time limit that a slow runner keeps (the failed main run 42445348622 of v0.282). TASK-0300. | 1 |
+| P0.127 | The identifier of a reference endpoint, the volume of a very small solid, the markers of a conflict and the width of the main panel hold their next forms (E193, E194, T177 and V142 of the codebase review of 2026-11-08 (b)). TASK-0302. | 1 |
+| P0.128 | The filter of a subnormal value, the gate of the host, the stale check, ADR-0079 item 5, the end of an engine on a lost device and the test of V141 hold their next forms (E195, E196, T178, V143, V144, V145 and T179 of the codebase review of 2026-11-08 (b); after P0.127). TASK-0303. | 1 |
 | P0.102 | The cache of a face, the fixed controls, the list New, the edges and the safe area hold their next forms (V113 to V118 of the codebase review of 2026-11-06 (e); after P0.101). TASK-0252. | 1–2 |
 | P0.86 | The window keeps no input between sessions, the hook has the cases of one axis, and the next forms of four gates fail (V88 to V90, T141 to T144 of the codebase review of 2026-11-06; after the next product phase). TASK-0198. | 1–2 |
 
