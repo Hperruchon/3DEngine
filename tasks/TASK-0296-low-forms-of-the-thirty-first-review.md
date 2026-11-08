@@ -1,7 +1,7 @@
 ---
 id: 0296
 title: Five comments and messages, the cleanup of a failed device, the second ring and two gates hold their next forms
-status: Ready
+status: Active
 phase: P0.125
 opened: 2026-11-08
 depends-on: [0295]
@@ -50,7 +50,8 @@ Each of the eight findings is fixed, each with a test, an injection or a reading
 3. V140: while the second ring is open, each tool of the sketch has a place, or ADR-0088 item 1 says why not.
 4. T175: the gate of the host refuses the switches of the analyzers that rule T170 refuses, and checks the line
    `WarningsAsErrors`.
-5. T176: the test of the places of the tools checks that each place is inside the display.
+5. T176: the test of the places of the tools checks that each place is inside the display, and the window of the
+   sketch is at most as wide as the display.
 
 ## Scope (out)
 
@@ -64,12 +65,17 @@ Each of the eight findings is fixed, each with a test, an injection or a reading
 
 ## Outcome
 
-Status: Ready
+Status: Active
 
 ## Method
 
 Mechanical: a test, an injection or a reading for each finding, before the change.
-Judgement:  to be written.
+Judgement:  E191, E192, E187, E188 and E189 are proved by reading; a failure of Vulkan in a constructor does not come on
+            demand on a computer. E192 lets the wait of a lost device fail and destroys the objects, as Vulkan permits.
 Weakest:    to be written at the close.
 
 ## Progress
+
+- 2026-11-08: the eight findings. Injections: V140 (the tools on the ring while the second ring is open) fails two
+  tests; T176 (the window 480 wide) fails the new test at 390 x 844; T175 (a mode of the analysis in the host, and no
+  WarningsAsErrors) fails the gate with each form.
