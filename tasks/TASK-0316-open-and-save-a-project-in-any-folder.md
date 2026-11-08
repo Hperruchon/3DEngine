@@ -1,7 +1,7 @@
 ---
 id: 0316
 title: The desktop opens and saves a project in any folder, and a person completes the project path with no terminal
-status: Done
+status: Active
 phase: P9g
 opened: 2026-11-08
 depends-on: [0313]
@@ -225,3 +225,4 @@ Weakest:    no dialog of the system ran in a test or a picture; the owner's run 
   the branch `p9g-project-in-any-folder-b` merges main and renumbers this task to TASK-0316 and its record to ADR-0102, in
   the code, the tests and the documents. Until then they were TASK-0314 and ADR-0100. The write set names the two old paths
   in its modify list, because the rename removes them; the form has no list of removed paths.
+- 2026-11-09: the ledger entry names the failed run 42535047803 on main, which the API gave after the close.

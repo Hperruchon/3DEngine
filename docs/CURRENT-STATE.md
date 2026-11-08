@@ -8943,7 +8943,9 @@ save dialog after the question, the list of eight paths, the folder in the top b
 and the command line with the question. A new test of the state of the dialog holds the purpose. Eleven injections each make
 a test fail. The visual check ran offscreen at 1440 by 900 on a scratch copy of the shelf, whose hash stayed the same; the
 owner saw eight pictures before the merge. No dialog of the system ran. The phone project builds with zero warnings. Run
-42533075534 passed. The failed runs since the entry v0.298, from the API: none.
+42533075534 passed. The failed runs since the entry v0.298, from the API: 42535047803 on main (1a070ad), in the
+job "Write set of the governing task" only: the merge e27bad9 of another session resolved a conflict in the roadmap with
+no TASK trailer, so the judge read it as a change of its own. The merge of main into this branch had no conflict.
 
 **What stays.** The row P9g waits for the run of the owner, with the real dialogs and the shelf. The register held 15 of 15
 open entries, so the phone (Q4 A) is in ADR-0102 item 9 until P0.131 gives it an entry. "Save as..." on a project with a
