@@ -157,124 +157,134 @@ public unsafe sealed class GraphicsDevice : IDisposable
         }
 
         InstanceApi = GetApi(VkInstance);
-
-        if (ValidationEnabled && DebugUtils)
+        // The review of Codex of v0.271 (TASK-0287): each step after the instance can throw, for example at a lost surface,
+        // so a throw destroys the surface that no presenter took and disposes what the constructor made. Until TASK-0287 only
+        // the path with no device did so, and each failed start of the phone engine left an instance and a surface.
+        VkSurfaceKHR surface = VkSurfaceKHR.Null;
+        try
         {
-            InstanceApi.vkCreateDebugUtilsMessengerEXT(&debugUtilsCreateInfo, null, out _debugMessenger).CheckResult();
-        }
-
-        Log.Info($"Created VkInstance with version: {appInfo.apiVersion.Major}.{appInfo.apiVersion.Minor}.{appInfo.apiVersion.Patch}");
-        foreach (var layer in instanceLayers)
-        {
-            Log.Info($"Instance layer '{layer}'");
-        }
-
-        foreach (var extension in instanceExtensions)
-        {
-            Log.Info($"Instance extension '{extension}'");
-        }
-
-        VkSurfaceKHR surface = window is null ? VkSurfaceKHR.Null : window.CreateSurface(VkInstance);
-
-        // Find physical device, setup queue's and create device.
-        uint physicalDevicesCount = 0;
-        InstanceApi.vkEnumeratePhysicalDevices(&physicalDevicesCount, null).CheckResult();
-
-        VkPhysicalDevice* physicalDevices = stackalloc VkPhysicalDevice[(int)Math.Max(1, physicalDevicesCount)];
-        InstanceApi.vkEnumeratePhysicalDevices(&physicalDevicesCount, physicalDevices).CheckResult();
-
-        List<string> refusals = [];
-        for (int i = 0; i < physicalDevicesCount; i++)
-        {
-            VkPhysicalDevice physicalDevice = physicalDevices[i];
-
-            InstanceApi.vkGetPhysicalDeviceProperties(physicalDevice, out VkPhysicalDeviceProperties checkProperties);
-            if (Refusal(InstanceApi, physicalDevice, surface, checkProperties) is { } refusal)
+            if (ValidationEnabled && DebugUtils)
             {
-                refusals.Add($"'{NativeStrings.Read(checkProperties.deviceName)}' {refusal}");
-                continue;
+                InstanceApi.vkCreateDebugUtilsMessengerEXT(&debugUtilsCreateInfo, null, out _debugMessenger).CheckResult();
             }
 
-            bool discrete = checkProperties.deviceType == VkPhysicalDeviceType.DiscreteGpu;
-
-            if (discrete || PhysicalDevice.IsNull)
+            Log.Info($"Created VkInstance with version: {appInfo.apiVersion.Major}.{appInfo.apiVersion.Minor}.{appInfo.apiVersion.Patch}");
+            foreach (var layer in instanceLayers)
             {
-                PhysicalDevice = physicalDevice;
-                if (discrete)
+                Log.Info($"Instance layer '{layer}'");
+            }
+
+            foreach (var extension in instanceExtensions)
+            {
+                Log.Info($"Instance extension '{extension}'");
+            }
+
+            surface = window is null ? VkSurfaceKHR.Null : window.CreateSurface(VkInstance);
+
+            // Find physical device, setup queue's and create device.
+            uint physicalDevicesCount = 0;
+            InstanceApi.vkEnumeratePhysicalDevices(&physicalDevicesCount, null).CheckResult();
+
+            VkPhysicalDevice* physicalDevices = stackalloc VkPhysicalDevice[(int)Math.Max(1, physicalDevicesCount)];
+            InstanceApi.vkEnumeratePhysicalDevices(&physicalDevicesCount, physicalDevices).CheckResult();
+
+            List<string> refusals = [];
+            for (int i = 0; i < physicalDevicesCount; i++)
+            {
+                VkPhysicalDevice physicalDevice = physicalDevices[i];
+
+                InstanceApi.vkGetPhysicalDeviceProperties(physicalDevice, out VkPhysicalDeviceProperties checkProperties);
+                if (Refusal(InstanceApi, physicalDevice, surface, checkProperties) is { } refusal)
                 {
-                    // If this is discrete GPU, look no further (prioritize discrete GPU)
-                    break;
+                    refusals.Add($"'{NativeStrings.Read(checkProperties.deviceName)}' {refusal}");
+                    continue;
+                }
+
+                bool discrete = checkProperties.deviceType == VkPhysicalDeviceType.DiscreteGpu;
+
+                if (discrete || PhysicalDevice.IsNull)
+                {
+                    PhysicalDevice = physicalDevice;
+                    if (discrete)
+                    {
+                        // If this is discrete GPU, look no further (prioritize discrete GPU)
+                        break;
+                    }
                 }
             }
-        }
 
-        // Until TASK-0076 the loop could end with no device, and the next call gave a
-        // null handle to Vulkan; the process stopped in native code with no message
-        // (R-0030, finding V5).
-        if (PhysicalDevice.IsNull)
+            // Until TASK-0076 the loop could end with no device, and the next call gave a
+            // null handle to Vulkan; the process stopped in native code with no message
+            // (R-0030, finding V5).
+            if (PhysicalDevice.IsNull)
+            {
+                throw new InvalidOperationException(
+                    $"No Vulkan device of the {physicalDevicesCount} found can draw{(window is null ? "" : " and present to the window")}."
+                    + (refusals.Count == 0 ? "" : " " + string.Join("; ", refusals) + "."));
+            }
+
+            InstanceApi.vkGetPhysicalDeviceProperties(PhysicalDevice, out VkPhysicalDeviceProperties properties);
+            Log.Info($"Vulkan device '{NativeStrings.Read(properties.deviceName)}'");
+
+            var queueFamilies = FindQueueFamilies(InstanceApi, PhysicalDevice, surface);
+            GraphicsFamily = queueFamilies.graphicsFamily;
+
+            HashSet<uint> uniqueQueueFamilies = [queueFamilies.graphicsFamily];
+            if (window is not null)
+                uniqueQueueFamilies.Add(queueFamilies.presentFamily);
+
+            float priority = 1.0f;
+            uint queueCount = 0;
+            VkDeviceQueueCreateInfo* queueCreateInfos = stackalloc VkDeviceQueueCreateInfo[2];
+
+            foreach (uint queueFamily in uniqueQueueFamilies)
+            {
+                queueCreateInfos[queueCount++] = new VkDeviceQueueCreateInfo
+                {
+                    queueFamilyIndex = queueFamily,
+                    queueCount = 1,
+                    pQueuePriorities = &priority
+                };
+            }
+
+            using var deviceExtensionNames = new NativeStrings(window is null ? [] : [SwapchainExtension]);
+
+            VkDeviceCreateInfo deviceCreateInfo = new()
+            {
+                queueCreateInfoCount = queueCount,
+                pQueueCreateInfos = queueCreateInfos,
+                enabledExtensionCount = deviceExtensionNames.Count,
+                ppEnabledExtensionNames = deviceExtensionNames.Pointers,
+                pEnabledFeatures = null,
+            };
+
+            result = InstanceApi.vkCreateDevice(PhysicalDevice, &deviceCreateInfo, null, out VkDevice);
+            if (result != VkResult.Success)
+                throw new Exception($"Failed to create Vulkan Logical Device, {result}");
+
+            DeviceApi = GetApi(VkInstance, VkDevice);
+
+            DeviceApi.vkGetDeviceQueue(queueFamilies.graphicsFamily, 0, out GraphicsQueue);
+
+            VkCommandPoolCreateInfo submitPoolInfo = new()
+            {
+                flags = VkCommandPoolCreateFlags.Transient,
+                queueFamilyIndex = GraphicsFamily,
+            };
+            DeviceApi.vkCreateCommandPool(&submitPoolInfo, null, out _submitPool).CheckResult();
+
+            if (window is not null)
+            {
+                DeviceApi.vkGetDeviceQueue(queueFamilies.presentFamily, 0, out VkQueue presentQueue);
+                Presenter = new Presenter(this, surface, window, presentQueue);
+            }
+        }
+        catch
         {
-            if (surface != VkSurfaceKHR.Null)
+            if (Presenter is null && surface != VkSurfaceKHR.Null)
                 InstanceApi.vkDestroySurfaceKHR(surface);
             Dispose();
-            throw new InvalidOperationException(
-                $"No Vulkan device of the {physicalDevicesCount} found can draw{(window is null ? "" : " and present to the window")}."
-                + (refusals.Count == 0 ? "" : " " + string.Join("; ", refusals) + "."));
-        }
-
-        InstanceApi.vkGetPhysicalDeviceProperties(PhysicalDevice, out VkPhysicalDeviceProperties properties);
-        Log.Info($"Vulkan device '{NativeStrings.Read(properties.deviceName)}'");
-
-        var queueFamilies = FindQueueFamilies(InstanceApi, PhysicalDevice, surface);
-        GraphicsFamily = queueFamilies.graphicsFamily;
-
-        HashSet<uint> uniqueQueueFamilies = [queueFamilies.graphicsFamily];
-        if (window is not null)
-            uniqueQueueFamilies.Add(queueFamilies.presentFamily);
-
-        float priority = 1.0f;
-        uint queueCount = 0;
-        VkDeviceQueueCreateInfo* queueCreateInfos = stackalloc VkDeviceQueueCreateInfo[2];
-
-        foreach (uint queueFamily in uniqueQueueFamilies)
-        {
-            queueCreateInfos[queueCount++] = new VkDeviceQueueCreateInfo
-            {
-                queueFamilyIndex = queueFamily,
-                queueCount = 1,
-                pQueuePriorities = &priority
-            };
-        }
-
-        using var deviceExtensionNames = new NativeStrings(window is null ? [] : [SwapchainExtension]);
-
-        VkDeviceCreateInfo deviceCreateInfo = new()
-        {
-            queueCreateInfoCount = queueCount,
-            pQueueCreateInfos = queueCreateInfos,
-            enabledExtensionCount = deviceExtensionNames.Count,
-            ppEnabledExtensionNames = deviceExtensionNames.Pointers,
-            pEnabledFeatures = null,
-        };
-
-        result = InstanceApi.vkCreateDevice(PhysicalDevice, &deviceCreateInfo, null, out VkDevice);
-        if (result != VkResult.Success)
-            throw new Exception($"Failed to create Vulkan Logical Device, {result}");
-
-        DeviceApi = GetApi(VkInstance, VkDevice);
-
-        DeviceApi.vkGetDeviceQueue(queueFamilies.graphicsFamily, 0, out GraphicsQueue);
-
-        VkCommandPoolCreateInfo submitPoolInfo = new()
-        {
-            flags = VkCommandPoolCreateFlags.Transient,
-            queueFamilyIndex = GraphicsFamily,
-        };
-        DeviceApi.vkCreateCommandPool(&submitPoolInfo, null, out _submitPool).CheckResult();
-
-        if (window is not null)
-        {
-            DeviceApi.vkGetDeviceQueue(queueFamilies.presentFamily, 0, out VkQueue presentQueue);
-            Presenter = new Presenter(this, surface, window, presentQueue);
+            throw;
         }
     }
 
@@ -504,7 +514,10 @@ public unsafe sealed class GraphicsDevice : IDisposable
 
             if (surface != VkSurfaceKHR.Null)
             {
-                api.vkGetPhysicalDeviceSurfaceSupportKHR(device, i, surface, out VkBool32 presentSupport);
+                // The review of Codex of v0.271 (TASK-0287): a lost surface gives ErrorSurfaceLostKHR here, and the check
+                // throws it, so the host ends the engine as in the background; until TASK-0287 the result was ignored, the
+                // device counted as one that cannot present, and the start ended with no device.
+                api.vkGetPhysicalDeviceSurfaceSupportKHR(device, i, surface, out VkBool32 presentSupport).CheckResult();
                 if (presentSupport)
                 {
                     presentFamily = i;
