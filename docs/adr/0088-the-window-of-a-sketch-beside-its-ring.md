@@ -85,3 +85,4 @@ a command and the rollback.
   after the ring in the frame (the review of Codex of v0.265).
 - 2026-11-08 · TASK-0296 · Item 1: while the second ring is open, the window holds the tools and Finish (finding V140 of
   the codebase review of 2026-11-08); the window of the sketch is at most as wide as the display (T176).
+- 2026-11-08 · TASK-0296 · Shipped at v0.280.
