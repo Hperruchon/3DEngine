@@ -17,12 +17,15 @@ internal sealed unsafe partial class DesktopUi
         // still move the panel, which the focus click of ADR-0027 needs (FocusClickTests).
         // Finding V118 (TASK-0252): the panel starts inside the safe area of the display.
         ImGui.SetNextWindowPos(new Vector2(16f + _inset.X, 16f + _inset.Y), ImGuiCond.FirstUseEver);
-        ImGui.SetNextWindowSizeConstraints(Vector2.Zero, new Vector2(float.MaxValue, Math.Max(displaySize.Y - 32f - AnchorRow - _inset.Y - _inset.W, 0f)));
+        // Finding V142 of the codebase review of 2026-11-08 (b) (TASK-0302): the panel is at most as wide as the display less its
+        // margins and the safe area, as the window of a sketch (T176). Until TASK-0302 it was 460 wide on a display of 390.
+        var width = Math.Min(PanelWidth, Math.Max(displaySize.X - 32f - _inset.X - _inset.Z, 160f));
+        ImGui.SetNextWindowSizeConstraints(Vector2.Zero, new Vector2(width, Math.Max(displaySize.Y - 32f - AnchorRow - _inset.Y - _inset.W, 0f)));
         // The first size fits inside a small display too. Since the line of Undo and Redo (TASK-0093)
         // and the line of a new sketch (TASK-0101) the panel is 700 pixels high at most, so that two
         // bodies and Show all fit with no scroll bar.
         // ADR-0080 (TASK-0248): the panel ends above the round anchors of Undo and Redo at the bottom left.
-        ImGui.SetNextWindowSize(new Vector2(460f, Math.Clamp(displaySize.Y - 32f - AnchorRow, 200f, 700f)), ImGuiCond.FirstUseEver);
+        ImGui.SetNextWindowSize(new Vector2(width, Math.Clamp(displaySize.Y - 32f - AnchorRow, 200f, 700f)), ImGuiCond.FirstUseEver);
         // ADR-0080 item 1 (TASK-0248): the title bar of the panel is the title of the document: the name of the program, the
         // name of the file or "unsaved", and the length unit. The identifier of the window stays the name of the panel.
         var open = ImGui.Begin($"{Title(document)}###{PanelName}");
@@ -153,6 +156,9 @@ internal sealed unsafe partial class DesktopUi
 
     // The width of the box of the list "New", as the list of a cut.
     private const float NewListWidth = 80f;
+
+    // The width of the panel on a display that is wide enough (V142, TASK-0302).
+    private const float PanelWidth = 460f;
 
     // The width of a button with this label.
     private static float ButtonWidth(string label)

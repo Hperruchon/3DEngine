@@ -1,17 +1,22 @@
 ---
 id: 0302
 title: The identifier of a reference endpoint, the volume of a very small solid, the markers of a conflict and the width of the main panel hold their next forms
-status: Ready
+status: Active
 phase: P0.127
 opened: 2026-11-08
 depends-on: [0301]
-governed-by: [0004, 0007, 0012, 0014, 0016, 0018, 0019, 0021, 0025, 0027, 0028, 0029, 0030, 0031, 0032, 0033, 0034, 0035, 0036, 0037, 0039, 0060, 0072, 0073, 0075, 0076, 0077, 0080, 0083, 0089]
+governed-by: [0004, 0007, 0012, 0014, 0016, 0018, 0019, 0021, 0025, 0027, 0028, 0029, 0030, 0031, 0032, 0033, 0034, 0035, 0036, 0037, 0039, 0052, 0060, 0072, 0073, 0075, 0076, 0077, 0080, 0083, 0089]
 writes:
   create:
     - tasks/TASK-0302-medium-forms-of-the-thirty-second-review.md
   modify:
     - Engine.Core/Sketch/SketchResults.cs
     - Engine.Core/Commands/AddSketchPointCommandHandler.cs
+    - Engine.Core/Commands/AddSketchLineCommandHandler.cs
+    - Engine.Core/Commands/AddSketchCircleCommandHandler.cs
+    - Engine.Core/Commands/AddSketchArcCommandHandler.cs
+    - Engine.Core/Commands/AddSketchConstraintCommandHandler.cs
+    - Engine.Core/Commands/AddSketchReferenceCommandHandler.cs
     - Engine.Tests/Sketch/SketchReferenceTests.cs
     - Engine.Geometry.Manifold/ManifoldGeometryBackend.cs
     - Engine.Tests/Commands/CreateConeCommandTests.cs
@@ -57,12 +62,15 @@ E193, E194, T177 and V142 are fixed, each with a test or an injection.
 
 ## Outcome
 
-Status: Ready
+Status: Active
 
 ## Method
 
 Mechanical: a test, an injection or a reading for each finding, before the change.
-Judgement:  to be written.
+Judgement:  each of the six commands that make an item of a sketch checks the items of the sketch, not only the point, so
+            no form of E193 stays; the reference checks the identifiers of its two ends too.
 Weakest:    to be written at the close.
 
 ## Progress
+- 2026-11-08: the four fixes, each with a test. The injections (a check that never refuses, the old check of the volume,
+  markers in the register, and the old width of the panel) fail the new tests.

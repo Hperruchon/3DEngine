@@ -124,6 +124,30 @@ public sealed class SketchReferenceTests : IDisposable
         Assert.Empty(record.Constraints);
     }
 
+    // Finding E193 of the codebase review of 2026-11-08 (b) (TASK-0302): an endpoint of a reference has an identifier derived
+    // from the reference, which the log does not hold. A point, a line or a constraint with that identifier is refused, and a
+    // reference whose derived identifiers a point holds is refused. Until TASK-0302 a point with the identifier of an endpoint
+    // gave two points with one identifier, through a save and an open.
+    [NativeManifoldFact]
+    public async Task No_Two_Items_Of_A_Sketch_Share_An_Identifier()
+    {
+        using var backend = new ManifoldGeometryBackend();
+        var (session, _) = NewSession(backend);
+        var base_ = await NewSketch(session, Datums.XY.Id, Rectangle);
+        var body = await Extrude(session, base_.Id, 5);
+        var sketch = await EmptySketch(session, Datums.XZ.Id);
+        var top = await Reference(session, sketch, body, "endEdge", base_.Lines[0]);
+        var end = GeometryKeys.Derive(top, DatumResolver.FirstEnd);
+
+        Assert.Equal(DiagnosticCodes.SketchIdInUse, (await Refused(session, new AddSketchPointCommand { CommandId = end, SketchId = sketch, X = 50, Y = 50 })).Code);
+        Assert.Equal(DiagnosticCodes.SketchIdInUse, (await Refused(session, new AddSketchCircleCommand { CommandId = end, SketchId = sketch, CenterPointId = end, Radius = 1 })).Code);
+        Assert.Single((await Record(session, sketch)).Points, point => point.Id == end);
+
+        var next = Guid.NewGuid();
+        await Applied(session, new AddSketchPointCommand { CommandId = GeometryKeys.Derive(next, DatumResolver.SecondEnd), SketchId = sketch, X = 60, Y = 60 });
+        Assert.Equal(DiagnosticCodes.SketchIdInUse, (await Refused(session, new AddSketchReferenceCommand { CommandId = next, SketchId = sketch, FeatureId = body, Element = "endEdge", ItemId = base_.Lines[1] })).Code);
+    }
+
     // Item 1: the edges and the vertices of a box of 40 by 30 by 10 with its centre at the origin. The
     // edge +x-y runs along z, so it projects to one point of XY and is refused there.
     [Fact]
