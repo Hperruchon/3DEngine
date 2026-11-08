@@ -1,7 +1,7 @@
 ---
 id: 0294
 title: The main function of a stale session of the phone does not return, and a native crash gives its stack
-status: Ready
+status: Active
 phase: P0.123
 opened: 2026-11-08
 depends-on: [0293]
@@ -62,12 +62,17 @@ crash in the job names its signal, its thread and the frames of its stack.
 
 ## Outcome
 
-Status: Ready
+Status: Active
 
 ## Method
 
 Mechanical: a test, an injection or a reading for each finding, before the change.
-Judgement:  to be written.
+Judgement:  the cause comes from the bytecode of SDLMain.run and SDLActivity.onDestroy, read by a script, and the order
+            of the lines of run 42433201851; the waiting thread is the least change that keeps mSingleton and
+            mSDLThread of the newest activity.
 Weakest:    to be written at the close.
 
 ## Progress
+
+- 2026-11-08: the main function of a stale session waits; the smoke test gives the lines of the tombstone. Two
+  injections (no wait, no pattern of the frames) fail the new tests.

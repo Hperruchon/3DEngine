@@ -72,6 +72,21 @@ public sealed class PhoneLifecycleTests
         }
     }
 
+    // Finding V141 of the codebase review of 2026-11-08 (TASK-0294, ADR-0079 item 5): SDLMain.run finishes the newest
+    // activity when any main function returns, so the main function of a stale session waits after the session and does
+    // not return. The activity runs on no computer here, so the test reads its source. Until TASK-0294 the main returned.
+    [Fact]
+    public void The_Main_Function_Of_A_Stale_Session_Does_Not_Return()
+    {
+        var directory = new DirectoryInfo(AppContext.BaseDirectory);
+        while (directory is not null && !File.Exists(Path.Combine(directory.FullName, "3DEngine.sln")))
+            directory = directory.Parent;
+        var activity = File.ReadAllText(Path.Combine(directory?.FullName ?? throw new InvalidOperationException("No 3DEngine.sln."), "3DEngine.Android", "MainActivity.cs"));
+        var waits = new System.Text.RegularExpressions.Regex(
+            @"protected override void Main\(\)\s*\{\s*PhoneHost\.Run\([^;]*\);\s*if \(_turn != 0 && !SessionTurns\.Phone\.IsLast\(_turn\)\)\s*\{[^}]*Thread\.Sleep\(Timeout\.Infinite\);\s*\}\s*\}");
+        Assert.True(waits.IsMatch(activity), "The main function of the activity returns after a stale session.");
+    }
+
     // The review of Codex of v0.271 (TASK-0287): each query of a surface in the code of Vulkan checks its result, so a lost
     // surface throws the exception that the guard of the phone takes. Until TASK-0287 the query of the support of a queue
     // ignored its result, the device counted as one that cannot present, and the start ended with no device.
