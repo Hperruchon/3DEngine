@@ -143,7 +143,8 @@ So the handler of the import reads the bytes of its asset.
    new entry of this record.
 7. **The home screen (D6).** The desktop and the phone start on a small screen with "Open file", "New part" and the
    recent files, in the theme of ADR-0078. The rows P9c and P9d give it; its layout can change in a later slice of the
-   redesign.
+   redesign. A start of the desktop with the setting `file` opens that file and shows no home screen (the owner,
+   2026-11-08, TASK-0290).
 8. **The contract.** `Engine.Contracts/Geometry/IMeshImportOps.cs` is new: a capability of a backend that stores the
    triangles of a mesh under a handle and gives them back in `Tessellate` with the exact values of the floats. The
    event of a new body is `body.created`, with the kind `Mesh`; no event kind is new.
@@ -207,3 +208,5 @@ desktop row P9c, the phone row P9d, and the test sheet P9e.
 - 2026-11-07 · TASK-0281 · D3: the client refuses a file of more bytes than the store keeps (16 MiB), and its read stops at
   that limit also when the size is not known (finding E183 of the codebase review of 2026-11-07 (c)); the limit of
   TASK-0272 was nine times larger.
+- 2026-11-08 · TASK-0290 · Item 7: a start with the setting `file` shows no home screen (the answer of the owner in the
+  form of decisions).
