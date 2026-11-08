@@ -1,7 +1,7 @@
 ---
 id: 0297
 title: The arc of an agent proposal is a proposal for the owner
-status: Active
+status: Done
 phase: governance
 opened: 2026-11-08
 depends-on: [0292]
@@ -45,12 +45,12 @@ The owner finds the options of the arc in one record, and answers it in one step
 
 ## Acceptance criteria
 
-- [ ] `AdrGateTests` passes with the Proposed record.
-- [ ] Continuous integration passes on the three runners, on the branch and on `main` after the merge.
+- [x] `AdrGateTests` passes with the Proposed record.
+- [x] Continuous integration passes on the three runners, on the branch and on `main` after the merge.
 
 ## Outcome
 
-Status: Active
+Status: Done · commit (the merge of the branch agent-arc-proposal) · v0.281
 
 ## Method
 
@@ -61,3 +61,4 @@ Weakest:    no agent ran the arc, so the shape of a proposal on the wire is not 
 ## Progress
 
 - 2026-11-08: ADR-0092, Proposed.
+- 2026-11-08: run 42441562023 passed. Closed at v0.281.
