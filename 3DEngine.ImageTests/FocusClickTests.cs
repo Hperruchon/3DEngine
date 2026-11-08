@@ -100,8 +100,10 @@ public class FocusClickTests
 
     private static (float X, float Y) TitleOf(Vector4 panel) => ((panel.X + panel.Z) / 2, panel.Y + 6);
 
+    // ADR-0093 item 2 (TASK-0304): the panel has no title bar and does not move, so the press at the stale place over its top
+    // moves nothing; until TASK-0304 it moved the panel. The test of the camera below keeps a stale press that does harm.
     [Fact]
-    public void A_Press_At_The_Last_Place_Over_The_Title_Moves_The_Panel_And_The_Warp_Of_The_Hook_Does_Not()
+    public void A_Press_At_The_Last_Place_Over_The_Top_Of_The_Panel_Moves_Nothing_And_The_Warp_Of_The_Hook_Gives_The_Viewport()
     {
         Vector4 panel;
         using (var ui = Opened())
@@ -111,7 +113,7 @@ public class FocusClickTests
         Assert.False(panel.X <= viewport.X && viewport.X < panel.Z && panel.Y <= viewport.Y && viewport.Y < panel.W);
 
         var stale = Click(title, viewport, warped: false);
-        Assert.NotEqual(stale.PanelBefore, stale.PanelAfter);
+        Assert.Equal(stale.PanelBefore, stale.PanelAfter);
 
         var warped = Click(title, viewport, warped: true);
         Assert.Equal(warped.PanelBefore, warped.PanelAfter);

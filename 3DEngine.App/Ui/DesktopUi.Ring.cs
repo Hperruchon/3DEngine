@@ -227,7 +227,7 @@ internal sealed unsafe partial class DesktopUi
         var sketchRing = _sketchActive && displaySize.X >= displaySize.Y;
         var ring = sketchRing
             ? SketchLayout(displaySize, at, labels.Count, size, panelRight, _sketchWindow?.X ?? displaySize.X)
-            : Layout(displaySize, at, labels.Count, size, _inset, _fixed.Count > 0 ? _fixed.Min(anchor => anchor.Y) : float.MaxValue);
+            : Layout(displaySize, at, labels.Count, size, _inset, _anchorsTop);
         _ring = ring;
         _ringLabels = labels;
         // The review of Codex of v0.265 (TASK-0284): the windows of the last frame too, because the Images window and the

@@ -13,8 +13,8 @@ namespace ThreeDEngine.ImageTests;
 // the scene and then the panel of the user interface, in one render pass of an offscreen target
 // of a device with no window. The picture is compared by structure, with no reference picture:
 //
-// 1. Inside the panel, most pixels have the dark colour of its background, and some pixels are
-//    bright: the glyphs of the text.
+// 1. Inside the panel, some pixels are bright: the glyphs of the text. ADR-0093 item 2 (TASK-0304): the panel has no
+//    ground, so most of its pixels have the colour of the clear; until TASK-0304 most of them were the dark ground.
 // 2. Outside the panel, the pixels have the colour of the clear.
 //
 // The validation layer checks the synchronization, and each message fails the test.
@@ -65,26 +65,25 @@ public class PanelImageTests
         // The panel lies inside the picture, so that each count below reads it.
         Assert.True(panel.Z <= Width && panel.W <= Height, $"The panel {panel} is not inside the picture {Width} x {Height}.");
 
-        int dark = 0, bright = 0, inside = 0;
+        var clear = SceneRenderer.Background;
+        int ground = 0, bright = 0, inside = 0;
         for (var row = (int)panel.Y + 8; row < (int)panel.W - 8; row++)
         {
             for (var column = (int)panel.X + 8; column < (int)panel.Z - 8; column++)
             {
                 var (r, g, b) = Pixel(pixels, column, row);
                 inside++;
-                if (r < 60 && g < 60 && b < 60)
-                    dark++;
+                if (Math.Abs(r - clear.R * 255) < 2 && Math.Abs(g - clear.G * 255) < 2 && Math.Abs(b - clear.B * 255) < 2)
+                    ground++;
                 if (r > 180 && g > 180 && b > 180)
                     bright++;
             }
         }
 
-        // The buttons are blue and not dark: since the line of a new sketch (TASK-0101) about 70 %
-        // of the panel is dark, so the limit is 60 %. A panel that is absent gives no dark pixel.
-        Assert.True(dark > inside * 0.6, $"The picture {picture}: {dark} of {inside} pixels of the panel are dark.");
+        // The buttons and the fields are filled; the rest of the panel is the clear, because the panel has no ground.
+        Assert.True(ground > inside * 0.4, $"The picture {picture}: {ground} of {inside} pixels of the panel are the clear; the panel has a ground.");
         Assert.True(bright > 100, $"The picture {picture}: {bright} pixels of the panel are bright; the text is absent.");
 
-        var clear = SceneRenderer.Background;
         foreach (var (column, row) in new[] { ((int)Width - 4, (int)Height - 4), ((int)panel.Z + 20, (int)panel.Y + 20) })
         {
             var (r, g, b) = Pixel(pixels, column, row);

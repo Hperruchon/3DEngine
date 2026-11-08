@@ -1,13 +1,13 @@
 ---
 id: 0080
 title: The title of the document, Undo, Redo and the status line are fixed controls of the redesign
-status: Accepted
+status: Amended
 topic: Clients, rendering
 date: 2026-11-06
 supersedes: []
 superseded-by: []
 amends: ['0030', '0031']
-amended-by: []
+amended-by: ['0093']
 affects:
   - 3DEngine.App/Ui/DesktopUi.Fixed.cs
   - 3DEngine.App/Ui/DesktopUi.Panel.cs
@@ -85,3 +85,5 @@ The standing order of 2026-11-05 gives A for each question.
   hold each frame (V114). Item 6: the safe area (V118). Findings of the codebase review of 2026-11-06 (e).
 - 2026-11-07 · TASK-0259 · The row of the anchors holds "Frame" and "Home" of ADR-0083 after Redo, each as high as an
   anchor; the status line follows them.
+- 2026-11-08 · TASK-0304 · Amended by ADR-0093: the title of the document is a top bar at the upper left, and the status
+  line is at the lower right.

@@ -531,6 +531,7 @@ internal sealed unsafe partial class DesktopUi : IDisposable
         _lastPanels.AddRange(_panels);
         _panels.Clear();
         _fixed.Clear();
+        _anchorsTop = float.MaxValue;
         _cutList = null;
         _newList = null;
         _items.Clear();
@@ -561,7 +562,7 @@ internal sealed unsafe partial class DesktopUi : IDisposable
         else
         {
             Panel(bodies, selection, displaySize, document);
-            FixedControls(displaySize);
+            FixedControls(displaySize, bodies, document);
             // ADR-0084 (TASK-0267): the rows of the selected body come first, so that the ring and the chips read them.
             var selectedBody = bodies.FirstOrDefault(body => body.Id == selection);
             PlaceRows(displaySize, selectedBody, selection is null ? null : values);
