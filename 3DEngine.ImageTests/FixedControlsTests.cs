@@ -203,6 +203,48 @@ public sealed class FixedControlsTests
         Assert.Contains(ui.TakeActions(), action => action is UndoAction);
     }
 
+    // Finding V146 of the codebase review of 2026-11-08 (c) (TASK-0310): the status line starts right of Frame and Home, or
+    // does not show, and a tap on each of them gives its action. Until TASK-0310 the status line covered both on a phone of
+    // 390 by 844 (the phone has no address) and took the taps.
+    [Theory]
+    [InlineData(390, 844, "")]
+    [InlineData(844, 390, "http://127.0.0.1:5180")]
+    [InlineData(1280, 720, "http://127.0.0.1:5180")]
+    public void The_Status_Line_Leaves_Frame_And_Home_Free(int width, int height, string address)
+    {
+        var display = new Vector2(width, height);
+        using var ui = new DesktopUi(address, Engine.Contracts.Document.Millimetre);
+        LiveBody[] bodies = [new(Guid.NewGuid(), "Box", null, true), new(Guid.NewGuid(), "Box", null, true), new(Guid.NewGuid(), "Box", null, true)];
+        void Frame(params InputSample[] samples)
+        {
+            ui.Route(samples);
+            ui.Frame(1f / 60f, display, Vector2.One, bodies, null, null);
+        }
+
+        Frame();
+        Frame();
+        var home = ui.ItemRectangle(DesktopUi.HomeLabel) ?? throw new InvalidOperationException("No Home.");
+        var status = ui.ItemRectangle(DesktopUi.StatusLabel);
+        if (status is { } shown)
+            Assert.True(shown.X >= home.Z, $"The status line at {shown} covers Home at {home} on {display}.");
+        if (width == 1280)
+            Assert.NotNull(status);
+
+        ulong ms = 1000;
+        foreach (var label in new[] { DesktopUi.FrameLabel, DesktopUi.HomeLabel })
+        {
+            var button = ui.ItemRectangle(label) ?? throw new InvalidOperationException($"No {label}.");
+            var (x, y) = ((button.X + button.Z) / 2, (button.Y + button.W) / 2);
+            Frame(Mouse(x, y, PointerButtons.None, PointerPhase.Move, ms));
+            Frame(Mouse(x, y, PointerButtons.Left, PointerPhase.Down, ms + 50));
+            Frame(Mouse(x, y, PointerButtons.Left, PointerPhase.Up, ms + 100));
+            Frame();
+            Frame();
+            ms += 1000;
+            Assert.Contains(ui.TakeActions(), action => label == DesktopUi.FrameLabel ? action is FrameAction : action is HomeAction);
+        }
+    }
+
     private static PointerSample Mouse(double x, double y, PointerButtons buttons, PointerPhase phase, ulong ms)
         => new(DeviceKind.Mouse, 1, 0, x, y, 1, buttons, KeyModifiers.None, phase, ms * 1_000_000);
 }
