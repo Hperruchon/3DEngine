@@ -52,8 +52,19 @@ public sealed unsafe class Presenter : IDisposable
 
         _format = Swapchain.ChooseSwapSurfaceFormat(Utils.QuerySwapChainSupport(device.InstanceApi, device.PhysicalDevice, surface).Formats);
         RenderPass = RenderPasses.Create(device, _format.format, VkImageLayout.PresentSrcKHR);
-        Swapchain = new Swapchain(device, surface, window, RenderPass, _format, VkSwapchainKHR.Null);
-        _perFrame = CreatePerFrame(Swapchain.ImageCount);
+        // The review of Codex of v0.271 (TASK-0287): a throw after the render pass, for example a lost surface in the
+        // swapchain, frees what this constructor made; the device then destroys the surface and itself.
+        try
+        {
+            Swapchain = new Swapchain(device, surface, window, RenderPass, _format, VkSwapchainKHR.Null);
+            _perFrame = CreatePerFrame(Swapchain.ImageCount);
+        }
+        catch
+        {
+            Swapchain?.Dispose();
+            device.DeviceApi.vkDestroyRenderPass(RenderPass);
+            throw;
+        }
     }
 
     public Swapchain Swapchain { get; private set; }
