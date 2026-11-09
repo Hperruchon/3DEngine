@@ -313,6 +313,8 @@ Therefore each approved objective must have a track here.
 - Review — The codebase review of 2026-11-09. v0.305, TASK-0323.
 - V0b — The vision spike moves to OpenCvSharp5, and the library stays out of each distributed program. v0.306,
   TASK-0318, ADR-0103.
+- P0.136 — The medium and low findings of the codebase review of 2026-11-09 (V152 to V157, E197). v0.307,
+  TASK-0324.
 
 ## Track 0 — Foundations
 
