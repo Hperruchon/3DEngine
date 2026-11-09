@@ -9291,3 +9291,29 @@ code. The review uses no lead of Codex.
 
 New tests: 0. Open entries: 9 of 15. New diagnostic codes: 0. Since the review of v0.310, 0 product milestones and
 1 entry followed it.
+
+## v0.312 — "Open project..." shows an STL file too, and an STL file goes to the import (P0.137, TASK-0328)
+
+After P9g the owner opened "Open project..." to find an STL file and saw nothing, because the dialog had the filter of a
+project only. On 2026-11-09 the owner asked for a first filter "Project or STL", and a picture of the dialog before the
+merge.
+
+**The change.**
+- ADR-0106 amends ADR-0102 item 1. The dialog of "Open project..." has three filters in this order: "Project or STL" with
+  `3de;stl`, "3DEngine project" with `3de`, and "STL file" with `stl`. "Import STL..." keeps its one filter.
+- A file whose name ends with `.stl`, in each case of the letters, goes from that dialog to the STL import of P9c; each
+  other file goes to the open of a project. The question of a change of project comes before the dialog, as before.
+- The dialog of the window takes a list of filters, and the import of a path is a method apart from the window.
+
+**Proof.** Ten new tests: the three filters in their order, the path of six names, the open of a `.3de` file, the import of
+a `.STL` file into a new part, and the array of the filters that SDL reads. Three injections failed their tests, and each
+file came back byte for byte. A picture of the real dialog, opened by window messages on a scratch folder, shows "Project
+or STL (*.3de;*.stl)" with `bracket.stl` and `EntryHallShelf.3de`; the owner has it. The phone project builds with zero
+warnings. Run 42713798528 passed. The failed runs since the entry v0.311, from the API: none.
+
+**What stays.** No test covers the step of the host that sends the result of the dialog to the import, because it needs a
+window.
+
+New tests: 10. The test list holds 2320 (1528 in `Engine.Tests`, 356 in `3DEngine.Tests`, 433 in `3DEngine.ImageTests`, 3
+in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
+entries: 9 of 15. New diagnostic codes: 0. Since the review of v0.310, 0 product milestones and 2 entries followed it.
