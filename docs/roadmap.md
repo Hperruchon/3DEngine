@@ -309,6 +309,7 @@ Therefore each approved objective must have a track here.
 - P0.132 — The small Vulkan findings of R-0022, R-0030 and R-0027. v0.301, TASK-0319.
 - P0.135 — The test of the window hold of the session turns survives a busy runner. v0.302, TASK-0322.
 - P0.133 — The small gate holes of R-0031. v0.303, TASK-0320.
+- P0.134 — The small engine findings of R-0027, R-0028, R-0033 and R-0036. v0.304, TASK-0321.
 
 ## Track 0 — Foundations
 
