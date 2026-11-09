@@ -2,6 +2,8 @@ using System.Numerics;
 using Engine.Contracts;
 using Engine.Core;
 using Engine.Core.Commands;
+using Engine.Core.Determinism;
+using Engine.Geometry.Manifold;
 using Microsoft.Extensions.Configuration;
 using ThreeDEngine.Desktop;
 using ThreeDEngine.Desktop.Ui;
@@ -41,13 +43,17 @@ public sealed class ProjectPathTests : IDisposable
     {
         public List<(string Filter, string Pattern, DialogPurpose Purpose, string? Location, bool Save)> Asked { get; } = [];
 
+        // ADR-0106 (TASK-0328): each list of filters of an open dialog, in its order; Asked holds the first filter.
+        public List<IReadOnlyList<(string Name, string Pattern)>> Filters { get; } = [];
+
         public bool Busy { get; set; }
 
-        public bool Open(string filterName, string pattern, DialogPurpose purpose)
+        public bool Open(IReadOnlyList<(string Name, string Pattern)> filters, DialogPurpose purpose)
         {
             if (Busy)
                 return false;
-            Asked.Add((filterName, pattern, purpose, null, false));
+            Asked.Add((filters[0].Name, filters[0].Pattern, purpose, null, false));
+            Filters.Add(filters);
             return true;
         }
 
@@ -129,7 +135,7 @@ public sealed class ProjectPathTests : IDisposable
             var dialogs = new Dialogs();
             var projects = new ProjectFiles(new HostedSession(again.Host), again.Document, dialogs);
             Assert.Equal(default, projects.Change(projects.OpenProject));
-            Assert.Equal([(ProjectFiles.ProjectFilter, "3de", DialogPurpose.OpenProject, (string?)null, false)], dialogs.Asked);
+            Assert.Equal([(ProjectFiles.ProjectOrStlFilter, "3de;stl", DialogPurpose.OpenProject, (string?)null, false)], dialogs.Asked);
 
             Assert.Equal("Opening EntryHallShelf.3de", projects.Take(file, null, DialogPurpose.OpenProject).Line);
             Assert.Equal(file, again.Document.RequestedOpen);
@@ -454,5 +460,72 @@ public sealed class ProjectPathTests : IDisposable
         ui.Frame(1f / 60f, new Vector2(1440, 900), Vector2.One, [], null, new DocumentLine(null, null));
         Assert.Equal([new AnswerAction(ChangeAnswer.Discard)], ui.TakeActions());
         Assert.False(ui.QuestionShown);
+    }
+
+    // ADR-0106 (phase P0.137, TASK-0328): "Open project..." shows "Project or STL" first, then a project and an STL file
+    // apart; "Import STL..." keeps its one filter. Until TASK-0328 the dialog of the open showed projects only.
+    [Fact]
+    public void Open_Project_Shows_A_Project_Or_An_Stl_File_First()
+    {
+        using var session = Started(Settings());
+        var dialogs = new Dialogs();
+        var projects = new ProjectFiles(new HostedSession(session.Host), session.Document, dialogs);
+
+        Assert.Equal(default, projects.Change(projects.OpenProject));
+        Assert.Equal(default, projects.Change(projects.ImportStl));
+
+        Assert.Equal([("Project or STL", "3de;stl"), ("3DEngine project", "3de"), ("STL file", "stl")], dialogs.Filters[0]);
+        Assert.Equal([("STL file", "stl")], dialogs.Filters[1]);
+        Assert.Equal([DialogPurpose.OpenProject, DialogPurpose.ImportStl], dialogs.Asked.Select(asked => asked.Purpose));
+    }
+
+    // ADR-0106: the extension of the chosen file gives its path, with no regard to the case of the letters. Only the
+    // dialog of the open sends an STL file to the import; a dialog of the import keeps its purpose for each file.
+    [Theory]
+    [InlineData("C:/Projects/EntryHallShelf.3de", (int)DialogPurpose.OpenProject, (int)DialogPurpose.OpenProject)]
+    [InlineData("C:/Downloads/bracket.stl", (int)DialogPurpose.OpenProject, (int)DialogPurpose.ImportStl)]
+    [InlineData("C:/Downloads/BRACKET.STL", (int)DialogPurpose.OpenProject, (int)DialogPurpose.ImportStl)]
+    [InlineData("C:/parts.stl/EntryHallShelf.3de", (int)DialogPurpose.OpenProject, (int)DialogPurpose.OpenProject)]
+    [InlineData("C:/Downloads/bracket.stl", (int)DialogPurpose.SaveProject, (int)DialogPurpose.SaveProject)]
+    [InlineData("C:/Projects/EntryHallShelf.3de", (int)DialogPurpose.ImportStl, (int)DialogPurpose.ImportStl)]
+    public void The_Extension_Of_The_Chosen_File_Gives_Its_Path(string path, int given, int expected)
+        => Assert.Equal((DialogPurpose)expected, ProjectFiles.PurposeOf(path, (DialogPurpose)given));
+
+    // ADR-0106, the extension .3de: a project file from the dialog of the open is a request to open that project.
+    [Fact]
+    public async Task A_Project_File_From_The_Open_Dialog_Opens_The_Project()
+    {
+        var file = Path.Combine(Projects, "EntryHallShelf.3de");
+        using (var first = Started(Settings(file)))
+            await first.Host.Session.Apply(new CreateBoxCommand { SizeX = 1200, SizeY = 18, SizeZ = 370 });
+
+        using var again = Started(Settings());
+        var projects = new ProjectFiles(new HostedSession(again.Host), again.Document, new Dialogs());
+        var purpose = ProjectFiles.PurposeOf(file, DialogPurpose.OpenProject);
+
+        Assert.Equal(DialogPurpose.OpenProject, purpose);
+        Assert.Equal("Opening EntryHallShelf.3de", projects.Take(file, null, purpose).Line);
+        Assert.Equal(file, again.Document.RequestedOpen);
+        Assert.Null(again.Document.TakeImport());
+    }
+
+    // ADR-0106, the extension .stl: an STL file from the dialog of the open goes to the import of P9c, so the next session
+    // is a new part document with that file, and no project opens.
+    [Fact]
+    public async Task An_Stl_File_From_The_Open_Dialog_Goes_To_The_Import()
+    {
+        byte[] stl;
+        using (var probe = new ManifoldGeometryBackend())
+            stl = await CrossPlatformProbe.BracketStl(probe);
+        var file = Path.Combine(_folder, "Downloads", "BRACKET.STL");
+        Directory.CreateDirectory(Path.GetDirectoryName(file)!);
+        await File.WriteAllBytesAsync(file, stl);
+
+        using var session = Started(Settings());
+        Assert.Equal(DialogPurpose.ImportStl, ProjectFiles.PurposeOf(file, DialogPurpose.OpenProject));
+        Assert.Null(NativeThreeDEngine.ImportFile(file, session.Assets, session.Document));
+
+        Assert.Equal("BRACKET.STL", session.Document.TakeImport()?.Name);
+        Assert.Equal(DesktopDocument.NewDocument, session.Document.RequestedOpen);
     }
 }

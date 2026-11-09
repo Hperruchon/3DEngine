@@ -76,3 +76,5 @@ Weakest:    to be written at the close.
   radius with no fit to the room (the test at 900 by 600).
 - 2026-11-10: a picture of the real window at 1280 by 720, with a sketch and a proposal that a script posted on 127.0.0.1,
   shows the arc right of the panel, Reject and Accept free, and no window of the live sketches.
+- 2026-11-10: main merged in at v0.312 (P0.137): the ADR rows, the test floor and the governed-by fields of TASK-0314,
+  TASK-0315 and TASK-0331 take both sides.
