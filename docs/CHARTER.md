@@ -168,7 +168,6 @@ item is on each line, therefore each item has its own state.
 
 Do not build one of these under a current task.
 
-- Multi-Document in one runtime.
 - Exact booleans with exact arithmetic.
 - Saved views.
 - Presence of many clients, and live collaboration.
