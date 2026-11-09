@@ -9317,3 +9317,40 @@ window.
 New tests: 10. The test list holds 2320 (1528 in `Engine.Tests`, 356 in `3DEngine.Tests`, 433 in `3DEngine.ImageTests`, 3
 in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
 entries: 9 of 15. New diagnostic codes: 0. Since the review of v0.310, 0 product milestones and 2 entries followed it.
+
+## v0.313 — Accept of the agent arc takes a tap in the default window (P0.138, TASK-0330)
+
+The high finding V159 of the codebase review of 2026-11-09 (b), before the next product phase: in the default window of
+1280 by 720, with a live sketch and no selection, the window of the live sketches covered Accept of the agent arc, so a
+tap on Accept gave nothing, and the panel covered the word "Reject".
+
+**The change.**
+- ADR-0107 amends ADR-0092 item 7. With no ring of a body, the ring of the arc is at the middle of the room right of the
+  panel, at the height of a ring of a body. Its inner radius is that of a ring of a body, less where the room is narrow,
+  and at least 100 pixels.
+- While a proposal waits, the window of the live sketches does not show.
+
+**Proof.** Six tests, five of them at 900 by 600, 1024 by 640, 1280 by 720, 1440 by 900 and 1920 by 1080: each end and its
+word are out of each panel, and a tap on each end gives its action. Three injections failed their tests, and each file came
+back byte for byte: the old centre of the ring, the window of the live sketches while a proposal waits, and the radius with
+no fit to the room. A picture of the real window at 1280 by 720, with a sketch and a proposal that a script posted on
+127.0.0.1, shows the arc right of the panel; the owner has it. The phone project builds with zero warnings. Run 42720337581
+passed. The failed runs since the entry v0.312, from the API: 42719821604 (v0.312 on main, the write set, as the correction below says); none after it.
+
+**What stays.** V160 to V163, E198, E199 and T180 wait for TASK-0331, after the pending chip.
+
+**A correction.** The entry v0.312 says that no run failed since the entry v0.311. That was true when it was written, but
+after it two runs of its branch failed, and this session merged P0.137 into `main` on the second one:
+- 42718078659 (`39ef24c`): a push of the merge of `main` into the branch alone, before the field `governed-by` of
+  TASK-0331 had ADR-0106. The gates and the write set failed.
+- 42718392392 (`c65fd3e`): the write set failed, because the merge `39ef24c` names TASK-0328 and adds no line to its
+  file. The gates, the phone and the determinism hashes passed. The merge command of this session printed the result of
+  the run and did not stop on it.
+- So the run of v0.312 on `main`, 42719821604, failed on the write set only, for the same commit. `39ef24c` stays in
+  `main`, because a force push is refused. The next push to `main` is judged on its own range.
+The merge of this task gives its merge commit a line in the task file, its merge command stops on a run that did not
+pass, and `write-set-check --range <main> --strict` passed before each push.
+
+New tests: 6. The test list holds 2326 (1528 in `Engine.Tests`, 356 in `3DEngine.Tests`, 439 in `3DEngine.ImageTests`, 3
+in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
+entries: 9 of 15. New diagnostic codes: 0. Since the review of v0.310, 0 product milestones and 3 entries followed it.

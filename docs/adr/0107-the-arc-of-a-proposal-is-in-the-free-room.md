@@ -50,3 +50,4 @@ room can be too narrow for a ring of 100 pixels, and an end can still be under t
 ## History
 
 - 2026-11-10 · TASK-0330 · The record, for finding V159 of the codebase review of 2026-11-09 (b).
+- 2026-11-10 · TASK-0330 · Shipped at v0.313.
