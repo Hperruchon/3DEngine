@@ -9237,3 +9237,31 @@ phone has no surface, so it shows no proposal.
 New tests: 36. The test list holds 2299 (1528 in `Engine.Tests`, 356 in `3DEngine.Tests`, 412 in `3DEngine.ImageTests`, 3
 in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
 entries: 9 of 15. New diagnostic codes: 3. Since the review of v0.304, 3 product milestones and 5 entries followed it.
+
+## v0.310 — The values of an active sketch show on its edges (R16s, TASK-0327)
+
+The last of the four slices that the owner chose on 2026-11-08 after v0.297, as the render "Mix 3". An agent made the code
+in a worktree; this session wrote the record, reviewed the code and defined the centre of the sketch on the screen.
+
+**The change.**
+- ADR-0105. While a sketch is active, each `distance` constraint of a line or of two points, and each `radius` constraint
+  of a circle or an arc, has a chip on the line or the curve that it measures: "C1  60 mm", or "C4  R 8 mm". A constraint
+  of a reference item, or a place behind the eye, has no chip.
+- The chip is 24 pixels out from the middle of the box of the points of the sketch on the screen, with the placement of
+  ADR-0056. It has at least 44 pixels on each side and the font of a value.
+- A tap on a chip opens the pad of the row of its constraint, with the same apply (`SetSketchConstraintValue`), and the
+  chip is pending while the pad is open. The chips of an extrude (ADR-0082) still do not show while a sketch is active.
+- The host computes the chips from the sketches of the frame, with the move under the body of ADR-0085, and reads no state
+  of the session for them.
+
+**Proof.** Eleven new tests. Four injections failed their tests, and each file came back byte for byte: the place, the tap,
+the connection of the host, and the chips as a part of the panels. The picture of the mix at 1440 by 900 shows the chips
+"C1  60 mm" and "C2  40 mm" on the plate under the bracket. The phone project builds with zero warnings. Run 42572947595
+passed. The failed runs since the entry v0.309, from the API: none.
+
+**What stays.** An angle has no chip. The chips are flat on the screen, and the render writes the values in the plane of
+the sketch. The four slices of 2026-11-08 are done; a codebase review is due before the next product milestone.
+
+New tests: 11. The test list holds 2310 (1528 in `Engine.Tests`, 356 in `3DEngine.Tests`, 423 in `3DEngine.ImageTests`, 3
+in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
+entries: 9 of 15. New diagnostic codes: 0. Since the review of v0.304, 4 product milestones and 6 entries followed it.
