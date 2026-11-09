@@ -315,6 +315,8 @@ Therefore each approved objective must have a track here.
   TASK-0318, ADR-0103.
 - P0.136 — The medium and low findings of the codebase review of 2026-11-09 (V152 to V157, E197). v0.307,
   TASK-0324.
+- R16q — The history arc of the mix: one node for each step that made the selected body, on the band of its ring.
+  v0.308, TASK-0325, ADR-0104.
 
 ## Track 0 — Foundations
 

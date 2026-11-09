@@ -9179,3 +9179,28 @@ The new places of the two windows have no picture yet.
 New tests: 8. The test list holds 2252 (1505 in `Engine.Tests`, 356 in `3DEngine.Tests`, 388 in `3DEngine.ImageTests`, 3
 in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
 entries: 9 of 15. New diagnostic codes: 0. Since the review of v0.304, 1 product milestone and 3 entries followed it.
+
+## v0.308 — The history arc shows the steps that made the selected body (R16q, TASK-0325)
+
+The second of the four slices that the owner chose on 2026-11-08 after v0.297. An agent made it in a worktree; this
+session reviewed it and changed the place of the arc and the read of the version.
+
+**The change.**
+- ADR-0104. On a landscape display, while a body is selected and no pad is open, an arc on the band of its ring, from 135°
+  down to the bottom, holds one node for each step that made the body: its feature and the features that it reads, from the
+  query `GetFeatures`, at most six with the newest at the upper end. The caption "HISTORY" is at the left of the lower end.
+- A tap on a node of a sketch opens the edit of that sketch; a tap on a node of a live body that is not consumed selects it.
+- `HistorySteps` gives the steps with no GPU (graphics processing unit). The host reads the query again only when the
+  session committed events or the selection changed. A subscription counts the events, so the frame takes no lock.
+
+**Proof.** Eleven new tests in `HistoryArcTests`. An injection of the old radius, inside the inner guide circle, failed the
+test of the band and the two tests of a tap, and the file came back byte for byte. The picture of the mix at 1440 by 900
+shows the two nodes "Bracket" and "Plate on XY". The phone project builds with zero warnings. Run 42563351949 passed. The failed
+runs since the entry v0.307, from the API: none.
+
+**What stays.** A change of a value adds no node, because the engine records no step for it. A rollback waits for the
+engine. A portrait display shows no arc (Q3 A).
+
+New tests: 11. The test list holds 2263 (1505 in `Engine.Tests`, 356 in `3DEngine.Tests`, 399 in `3DEngine.ImageTests`, 3
+in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
+entries: 9 of 15. New diagnostic codes: 0. Since the review of v0.304, 2 product milestones and 4 entries followed it.
