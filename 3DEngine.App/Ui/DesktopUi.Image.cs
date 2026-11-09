@@ -15,7 +15,10 @@ internal sealed unsafe partial class DesktopUi
     // pixels wide it stays left of the window of the sketch in a window 1280 pixels wide.
     private void ImageWindow(ImagePanel panel, Vector2 displaySize)
     {
-        ImGui.SetNextWindowPos(new Vector2(492f, 16f), ImGuiCond.FirstUseEver);
+        // Finding V154 of the codebase review of 2026-11-09 (TASK-0324): the window starts under the top bar, at the top of the
+        // panel, so the folder of the file in the top bar has its room. Until TASK-0324 it started at the top of the display,
+        // and the folder ran under its folded title bar.
+        ImGui.SetNextWindowPos(new Vector2(492f, PanelTop), ImGuiCond.FirstUseEver);
         ImGui.SetNextWindowSize(new Vector2(ImagesWidth, Math.Clamp(displaySize.Y - 32f, 120f, ImagesHeight)), ImGuiCond.FirstUseEver);
         ImGui.SetNextWindowCollapsed(true, ImGuiCond.FirstUseEver);
         if (ImGui.Begin(ImagesName))

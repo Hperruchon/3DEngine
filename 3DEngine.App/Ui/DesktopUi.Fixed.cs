@@ -49,7 +49,9 @@ internal sealed unsafe partial class DesktopUi
         {
             var colours = ImGui.GetStyle().Colors;
             var parts = TitleParts(document);
-            var commandLeft = displaySize.X - 16f - _inset.Z - CommandWidth;
+            // Finding V156 of the codebase review of 2026-11-09 (TASK-0324): the command line shows on a landscape display only,
+            // so only there the top bar leaves its width. Until TASK-0324 a portrait display cut the name 300 pixels early.
+            var commandLeft = displaySize.X - 16f - _inset.Z - (displaySize.X >= displaySize.Y ? CommandWidth : 0f);
             var room = parts.Count == 3
                 ? commandLeft - 12f - (16f + _inset.X) - ImGui.CalcTextSize(parts[0]).X - ImGui.CalcTextSize(parts[2]).X - 24f
                 : RowsWidth;

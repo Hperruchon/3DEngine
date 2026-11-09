@@ -140,6 +140,16 @@ internal sealed class DesktopSurface : IDisposable
 
         try
         {
+            // Finding E197 of the codebase review of 2026-11-09 (TASK-0324), ADR-0102 item 6: a request of the surface that
+            // gives the session another named file, as POST /document/save, puts that file in the recent projects, as a save
+            // from the window does. Until TASK-0324 a save of an agent went into the list only at the next start on the file.
+            app.Use(async (context, next) =>
+            {
+                var before = session.Host.Session.FilePath;
+                await next(context);
+                if (session.Host.FileName is not null && session.Host.Session.FilePath is { } after && !string.Equals(before, after, StringComparison.Ordinal))
+                    session.Document.Remember(after);
+            });
             app.MapEngineSurface();
             app.StartAsync().GetAwaiter().GetResult();
         }

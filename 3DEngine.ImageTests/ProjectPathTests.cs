@@ -24,14 +24,17 @@ public sealed class ProjectPathTests : IDisposable
     // A folder that is not the document folder, as the folder of the shelf of the owner.
     private string Projects => Path.Combine(_folder, "EntryHallShelf");
 
-    private IConfiguration Settings(string? file = null) => new ConfigurationBuilder().AddCommandLine(
+    private IConfiguration Settings(string? file = null) => new ConfigurationBuilder().AddCommandLine(Arguments(file)).Build();
+
+    // The arguments of the settings, which the surface of the desktop takes too (E197, TASK-0324).
+    private string[] Arguments(string? file = null) =>
     [
         "--port", "0",
         .. file is null ? Array.Empty<string>() : ["--file", file],
         $"--{DesktopSurface.DocumentFolderSetting}={Path.Combine(_folder, "documents")}",
         $"--{DesktopSurface.UnsavedFolderSetting}={Path.Combine(_folder, "unsaved")}",
         $"--Engine:AssetFolder={Path.Combine(_folder, "assets")}",
-    ]).Build();
+    ];
 
     // The dialogs that the path asks for, and an open dialog that refuses a second one.
     private sealed class Dialogs : IFileDialogs
@@ -265,6 +268,54 @@ public sealed class ProjectPathTests : IDisposable
         Assert.Equal(0, changes);
     }
 
+    // Finding V155 of the codebase review of 2026-11-09 (TASK-0324): a save dialog that the panel or the command line opened
+    // while the question is open keeps the waiting change and the question. A closed dialog drops nothing, so "Discard" then
+    // makes the change; a save saves only, and "Discard" then makes the change.
+    [Fact]
+    public async Task A_Save_From_The_Panel_Keeps_The_Waiting_Change_And_The_Question()
+    {
+        using var session = Started(Settings());
+        await session.Host.Session.Apply(new CreateBoxCommand { SizeX = 1, SizeY = 2, SizeZ = 3 });
+        var projects = new ProjectFiles(new HostedSession(session.Host), session.Document, new Dialogs());
+        var changes = 0;
+        FileOutcome Change() => new($"changed {++changes}");
+
+        projects.Change(Change);
+        Assert.Equal(default, projects.SaveAs());
+        Assert.Equal(default, projects.Take(null, null, DialogPurpose.SaveProject));
+        Assert.True(projects.Asking);
+        Assert.Equal("changed 1", projects.Answer(ChangeAnswer.Discard).Line);
+
+        projects.Change(Change);
+        Assert.True(projects.Asking);
+        Assert.Equal(default, projects.SaveAs());
+        Assert.Equal("Saved as panel.3de", projects.Take(Path.Combine(Projects, "panel.3de"), null, DialogPurpose.SaveProject).Line);
+        Assert.Equal(1, changes);
+        Assert.True(projects.Asking);
+        Assert.Equal("changed 2", projects.Answer(ChangeAnswer.Discard).Line);
+    }
+
+    // Finding E197 of the codebase review of 2026-11-09 (TASK-0324): a save of the surface, POST /document/save, puts the file
+    // into the recent projects, as a save from the window does (ADR-0102 item 6).
+    [Fact]
+    public async Task A_Save_Of_The_Surface_Goes_Into_The_Recent_Projects()
+    {
+        var (surface, code, message) = DesktopSurface.Start(Arguments());
+        Assert.True(surface is not null, $"{code}: {message}");
+        using (surface.Session)
+        using (surface)
+        {
+            await surface.Host.Session.Apply(new CreateBoxCommand { SizeX = 1, SizeY = 2, SizeZ = 3 });
+            Assert.Empty(surface.Document.Recent(8));
+            using var client = new HttpClient { BaseAddress = new Uri(surface.Address) };
+            using var body = new StringContent("{\"name\":\"agent\"}", System.Text.Encoding.UTF8, "application/json");
+            using var response = await client.PostAsync("/document/save", body);
+
+            Assert.Equal(System.Net.HttpStatusCode.OK, response.StatusCode);
+            Assert.Equal([Path.GetFullPath(Path.Combine(_folder, "documents", "agent.3de"))], surface.Document.Recent(8));
+        }
+    }
+
     // ADR-0102 item 6 (Q2 A): the list keeps eight paths, newest first, one time each with no regard to the case on Windows
     // and macOS; a path that no longer exists leaves the list.
     [Fact]
@@ -314,6 +365,46 @@ public sealed class ProjectPathTests : IDisposable
                 Assert.Null(shown);
             }
         }
+    }
+
+    // Finding V154 of the codebase review of 2026-11-09 (TASK-0324): at 1440 x 900 the folded window "Images" starts under the
+    // top bar, so the folder of the top bar does not run under it.
+    [Fact]
+    public void The_Folder_Of_The_Top_Bar_Is_Not_Under_The_Window_Of_The_Images()
+    {
+        using var ui = new DesktopUi(string.Empty, Document.Millimetre);
+        var folder = Path.Combine("C:", "Users", "Henri", "Documents", "3DProjects", "EntryHallShelf");
+        var line = new DocumentLine("EntryHallShelf.3de", null, Files: true, Folder: folder);
+        for (var frame = 0; frame < 2; frame++)
+        {
+            ui.Route([]);
+            ui.Frame(1f / 60f, new Vector2(1440, 900), Vector2.One, [], null, line, imagePanel: new ImagePanel([], null, 0, null));
+        }
+
+        var shown = ui.ItemRectangle(DesktopUi.TitleFolderItem) ?? throw new InvalidOperationException("No folder in the top bar.");
+        var images = ui.PanelRectangles.Single(window => Math.Abs(window.X - 492f) < 1f);
+        var apart = shown.Z <= images.X || shown.X >= images.Z || shown.W <= images.Y || shown.Y >= images.W;
+        Assert.True(apart, $"The folder at {shown} is under the window of the images at {images}.");
+    }
+
+    // Finding V156 of the codebase review of 2026-11-09 (TASK-0324): a portrait display has no command line, so the top bar
+    // keeps its width: at 600 x 900 the folder shows after the name, inside the display.
+    [Fact]
+    public void A_Portrait_Display_Gives_The_Top_Bar_The_Room_Of_The_Command_Line()
+    {
+        using var ui = new DesktopUi(string.Empty, Document.Millimetre);
+        var display = new Vector2(600, 900);
+        var folder = Path.Combine("C:", "Users", "Henri", "Documents", "3DProjects", "EntryHallShelf");
+        var line = new DocumentLine("EntryHallShelf.3de", null, Files: true, Folder: folder);
+        for (var frame = 0; frame < 2; frame++)
+        {
+            ui.Route([]);
+            ui.Frame(1f / 60f, display, Vector2.One, [], null, line);
+        }
+
+        Assert.Null(ui.ItemRectangle(DesktopUi.CommandItem));
+        var shown = ui.ItemRectangle(DesktopUi.TitleFolderItem);
+        Assert.True(shown is { } at && at.Z <= display.X - 16f - 12f + 0.5f, $"The folder at {shown} does not show inside {display}.");
     }
 
     // ADR-0102 item 1: the home screen of a host with no files (the phone) shows "Import STL..." and no project.

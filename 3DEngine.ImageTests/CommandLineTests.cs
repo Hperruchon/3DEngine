@@ -126,4 +126,116 @@ public sealed class CommandLineTests
         Frame(ui, new Vector2(390, 844));
         Assert.Null(ui.ItemRectangle(DesktopUi.CommandItem));
     }
+
+    private static PointerSample Mouse(Vector2 at, PointerPhase phase)
+        => new(DeviceKind.Mouse, 1, 0, at.X, at.Y, 1, phase == PointerPhase.Move ? PointerButtons.None : PointerButtons.Left, KeyModifiers.None, phase, 0);
+
+    // Finding V152 of the codebase review of 2026-11-09 (TASK-0324): with a live sketch and no selection, the window of the
+    // live sketches is under the field, inside the display and above the row of the anchors, and a click on the field and a
+    // text list the commands, as in the probe of the review.
+    [Fact]
+    public void The_Window_Of_The_Live_Sketches_Leaves_The_Command_Line_Free()
+    {
+        using var ui = new DesktopUi("http://127.0.0.1:5180", Engine.Contracts.Document.Millimetre);
+        var sketch = new Engine.Core.Queries.SketchInfo(Guid.NewGuid(), Datums.XY.Id, "Plate", [], [], [], [], [], true, 0);
+        var panel = new SketchPanel([sketch], null, SketchToolKind.Line, false, [], null);
+        void Step(params InputSample[] samples)
+        {
+            ui.Route(samples);
+            ui.Frame(1f / 60f, Display, Vector2.One, [Extrude], null, null, sketchPanel: panel);
+        }
+
+        Step();
+        Step();
+        var field = ui.ItemRectangle(DesktopUi.CommandItem) ?? throw new InvalidOperationException("No command line.");
+        var window = ui.SketchWindowRectangle ?? throw new InvalidOperationException("No window of the live sketches.");
+        Assert.True(window.Y >= field.W, $"The window of the live sketches at {window} covers the command line at {field}.");
+        Assert.True(window.Z <= Display.X - 16f + 0.5f && window.W <= Display.Y - 16f - DesktopUi.AnchorRow + 0.5f, $"The window at {window} is outside its room in {Display}.");
+
+        var centre = new Vector2((field.X + field.Z) / 2, (field.Y + field.W) / 2);
+        Step(Mouse(centre, PointerPhase.Move));
+        Step(Mouse(centre, PointerPhase.Down));
+        Step(Mouse(centre, PointerPhase.Up));
+        Step();
+        Step(new TextSample("fra", 0));
+        Step();
+        Assert.NotNull(ui.ItemRectangle(DesktopUi.CommandListItem(DesktopUi.FrameLabel)));
+    }
+
+    // Finding V153 of the codebase review of 2026-11-09 (TASK-0324): two bodies with no name and of one kind give two commands
+    // of a cut, each with the text of the row of its body, as the list of a cut in the rows.
+    [Fact]
+    public void Each_Command_Of_A_Cut_Names_Its_Body_As_Its_Row()
+    {
+        using var ui = new DesktopUi("http://127.0.0.1:5180", Engine.Contracts.Document.Millimetre);
+        var first = new LiveBody(Guid.Parse("53000001-0000-0000-0000-000000000000"), "Box", null, true);
+        var second = new LiveBody(Guid.Parse("53000002-0000-0000-0000-000000000000"), "Box", null, true);
+
+        var cuts = ui.Commands([Extrude, first, second], Extrude.Id).Select(command => command.Name).Where(name => name.StartsWith(DesktopUi.CutLabel, StringComparison.Ordinal)).ToList();
+
+        Assert.Equal([$"{DesktopUi.CutLabel} {DesktopUi.RowText(first)}", $"{DesktopUi.CutLabel} {DesktopUi.RowText(second)}"], cuts);
+        Assert.NotEqual(cuts[0], cuts[1]);
+    }
+
+    // Finding V153 (TASK-0324): each listed command has an identifier of its own, so a tap on the second of two equal names,
+    // for two bodies with one name, cuts with the second body.
+    [Fact]
+    public void A_Tap_On_The_Second_Of_Two_Equal_Names_Runs_It()
+    {
+        using var ui = new DesktopUi("http://127.0.0.1:5180", Engine.Contracts.Document.Millimetre);
+        var first = new LiveBody(Guid.Parse("53000000-0000-0000-0000-000000000003"), "Box", "Plate", true);
+        var second = new LiveBody(Guid.Parse("53000000-0000-0000-0000-000000000004"), "Box", "Plate", true);
+        void Step(params InputSample[] samples)
+        {
+            ui.Route(samples);
+            ui.Frame(1f / 60f, Display, Vector2.One, [Extrude, first, second], Extrude.Id);
+        }
+
+        Step();
+        Step(Key(InputKey.K, KeyModifiers.Control));
+        Step();
+        Step();
+        Step();
+        Step(new TextSample("cut with", 0));
+        Step();
+        ui.TakeActions();
+
+        // The item of a name holds the rectangle of its last entry: the entry of the second body.
+        var listed = ui.ItemRectangle(DesktopUi.CommandListItem($"{DesktopUi.CutLabel} Plate")) ?? throw new InvalidOperationException("No cut in the list.");
+        var field = ui.ItemRectangle(DesktopUi.CommandItem)!.Value;
+        Assert.True(listed.Y >= field.W + DesktopUi.MinimumControlHeight - 0.5f, $"The entry at {listed} is not the second one.");
+        var centre = new Vector2((listed.X + listed.Z) / 2, (listed.Y + listed.W) / 2);
+        Step(Mouse(centre, PointerPhase.Move));
+        Step(Mouse(centre, PointerPhase.Down));
+        Step(Mouse(centre, PointerPhase.Up));
+        Step();
+
+        Assert.Equal([new CutBodyAction(Extrude.Id, second.Id)], ui.TakeActions().OfType<CutBodyAction>());
+    }
+
+    // Finding V157 of the codebase review of 2026-11-09 (TASK-0324): Control and K on a portrait display, or on the home
+    // screen, leaves no request of the focus, so after a turn of the display or the close of the home screen the key H
+    // reaches the scene.
+    [Fact]
+    public void Control_K_Where_The_Field_Does_Not_Show_Leaves_No_Request()
+    {
+        using var ui = new DesktopUi("http://127.0.0.1:5180", Engine.Contracts.Document.Millimetre);
+        var portrait = new Vector2(390, 844);
+        Frame(ui, portrait);
+        Frame(ui, portrait, null, Key(InputKey.K, KeyModifiers.Control));
+        Frame(ui, portrait);
+        for (var frame = 0; frame < 4; frame++)
+            Frame(ui, Display);
+        Assert.Contains(ui.Route([Key(InputKey.H)]), sample => sample is KeySample { Key: InputKey.H });
+        Frame(ui, Display, null, Up(InputKey.H));
+
+        ui.ShowHome([]);
+        Frame(ui, Display);
+        Frame(ui, Display, null, Key(InputKey.K, KeyModifiers.Control));
+        Frame(ui, Display);
+        ui.ShowHome(null);
+        for (var frame = 0; frame < 4; frame++)
+            Frame(ui, Display);
+        Assert.Contains(ui.Route([Key(InputKey.H)]), sample => sample is KeySample { Key: InputKey.H });
+    }
 }
