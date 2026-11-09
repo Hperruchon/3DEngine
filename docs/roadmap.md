@@ -317,6 +317,8 @@ Therefore each approved objective must have a track here.
   TASK-0324.
 - R16q — The history arc of the mix: one node for each step that made the selected body, on the band of its ring.
   v0.308, TASK-0325, ADR-0104.
+- R16r — The agent arc of the mix: an agent posts a proposal of commands over HTTP, and the person accepts or rejects it
+  on an amber arc above the selected body. v0.309, TASK-0326, ADR-0092.
 
 ## Track 0 — Foundations
 
@@ -543,6 +545,7 @@ The first objective. Each phase ends with something that a person can observe.
 | R16o | The command line of the mix: Control and K give a field at the upper right the keys, a text lists the commands of the state, and Enter or a tap runs one; a command with a number opens its pad (ADR-0098; the last slice that the owner chose on 2026-11-08). TASK-0312. | 1 |
 | R16p | The rows of a selected body take the place of the panel at the upper left, as the render "Mix 1": a tap on the name renames, the lines of the face, the edge, the size and the message and the list of a cut are under the values, and the command line holds the other controls (ADR-0099; the first of the four slices that the owner chose on 2026-11-08 after v0.297). TASK-0313. | 1 |
 | R16q | The history arc of the mix: an arc at the lower left of the ring of a selected body, with one node for each step that made it from the query GetFeatures, and a tap on a node of a sketch opens its edit (ADR-0104; the second of the four slices that the owner chose on 2026-11-08 after v0.297). TASK-0325. | 1 |
+| R16r | The agent arc of the mix: an agent posts a proposal of commands over HTTP, a queue of the host keeps it outside the log, and the desktop shows the oldest one on an amber arc above the selected body with Reject and Accept (ADR-0092, the answers of the owner of 2026-11-08: Q1 A, Q2 A, Q3 B, Q4 A; the third of the four slices). TASK-0326. | 2 |
 | R17 | The selection of the document and of one body: the person sees where the selection is in the document, goes up to the document, and reviews one body alone. From the proposal `docs/proposals/2026-11-08-document-and-body-selection.md`; the owner accepted each recommended answer on 2026-11-08. The components of an assembly (option C) wait for the decision of the owner on the non-goals "Multi-Document in one runtime" and "Assemblies". | 3–5 |
 | R17a | A path line from the document to the selection: the file, the body, the face and the edge at the upper left, a tap on a segment and Escape go up one level, and the rows of the document with nothing selected (ADR-0100). TASK-0314. | 1–2 |
 | R17b | A focus on one body: a state of the client that draws one body and writes nothing to the log, from the ring or the command line, with no double tap (ADR-0101). TASK-0315. | 1 |
