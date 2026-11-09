@@ -8984,3 +8984,36 @@ due; four read-only agents checked each finding on disk on 2026-11-09 for that t
 New tests: 0. The test list holds 2207 (1472 in `Engine.Tests`, 352 in `3DEngine.Tests`, 380 in `3DEngine.ImageTests`, 3
 in `3DEngine.VisionTests`). Open entries: 10 of 15. New diagnostic codes: 0. Since the review of v0.292, 4 product
 milestones and 8 entries followed it, so a codebase review is due before the next product milestone.
+
+## v0.301 — The small Vulkan findings of R-0022, R-0030 and R-0027 are fixed (P0.132, TASK-0319)
+
+On 2026-11-09 the owner chose a cleanup of the old findings before the codebase review that is due, with the small
+findings fixed. Four read-only agents checked each finding on disk; this session read each line again before each change.
+This task holds the Vulkan findings.
+
+**The change.**
+- R-0022: V1 was fixed before (a SUBOPTIMAL result is not a failure). V2: the swapchain takes the special extent only for
+  0xFFFFFFFF, and then the size of the window in pixels (`Window.PixelExtent`, `SDL_GetWindowSizeInPixels`); until this
+  task the check was "greater than 0" and the fallback took logical units. V3: the instance asks for the portability
+  enumeration and the device enables the portability subset when the loader and the device give them.
+- R-0030, V7 parts 1 to 5: one queue family that draws and presents comes first, and two families share the images of the
+  swapchain; the surface format needs the colour space of sRGB; the desktop disposes its window and ends SDL; the resets of
+  a fence and of a command pool check their results; the time step of the desktop and of the phone comes from the monotonic
+  clock.
+- R-0027, the Vulkan parts of V4: the log line of the instance gives the version of the loader; the fallback to the old
+  layers of LunarG and Google is gone; `ISceneLoader` and `SampleSceneFactory`, which nothing called, are gone.
+
+**Proof.** Four tests of the choices in `SwapchainChoiceTests`; five injections each make one fail. Two runs of the desktop
+on Windows with the NVIDIA device drew a scratch copy of the shelf, gave no message of the validation layer, logged "the
+loader gives 1.4.341", and ended with the exit code 0. The phone started on the emulator. Run 42541817912 passed. The failed
+runs since the entry v0.300, from the API: none.
+
+**What stays.** V3 has no proof on macOS: its check is a job that makes an instance and a device through MoltenVK, and no
+runner has it. V7 part 6 (`IList` in `3DEngine.Core`) waits for the owner. R-0022 and R-0030 stay open with those parts.
+A run of the desktop showed that the folded window "Images" covers the folder of P9g in the top bar; the codebase review
+that is due takes it.
+
+New tests: 4. The test list holds 2211 (1472 in `Engine.Tests`, 356 in `3DEngine.Tests`, 380 in `3DEngine.ImageTests`, 3
+in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
+entries: 10 of 15. New diagnostic codes: 0. Since the review of v0.292, 4 product milestones and 9 entries followed it.
+TASK-0318 (V0b) is green and waits for that review, because it would be the fifth product milestone.

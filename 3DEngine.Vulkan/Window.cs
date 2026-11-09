@@ -194,6 +194,19 @@ public sealed unsafe partial class Window : IDisposable
         }
     }
 
+    // Finding V2 of the codebase review of 2026-09-23 (R-0022, TASK-0319): the size of the window in pixels, for a surface
+    // that leaves the extent to the swapchain. Extent is in logical units, which the input and the safe area use; with a
+    // high pixel density (SDL_WINDOW_HIGH_PIXEL_DENSITY) the two differ, and until TASK-0319 the swapchain took Extent.
+    public VkExtent2D PixelExtent
+    {
+        get
+        {
+            int width, height;
+            _ = SDL_GetWindowSizeInPixels(_window, &width, &height);
+            return new(width, height);
+        }
+    }
+
     // P0.104 (TASK-0256): the text of the last error of SDL, for the message of a failure. Run 42313242154 failed with
     // "failed to create vulkan surface" and no cause.
     internal static string Error() => SDL_GetError() is { Length: > 0 } text ? text : "SDL gave no text";
