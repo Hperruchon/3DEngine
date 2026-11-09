@@ -7,11 +7,12 @@ namespace ThreeDEngine.VisionTests;
 // The image is synthetic, so each result is exact in pixels on each platform.
 public sealed class VisionSpikeTests
 {
-    // ADR-0042 item 1: the native library loads and is the version of the pins.
+    // ADR-0042 item 1: the native library loads and is the version of the pins. ADR-0103 item 2 (TASK-0318): OpenCV 5.0;
+    // until TASK-0318 OpenCV 4.13.
     [Fact]
     public void The_Native_Library_Loads_And_Gives_Its_Version()
     {
-        Assert.StartsWith("4.13.", Cv2.GetVersionString(), StringComparison.Ordinal);
+        Assert.StartsWith("5.0.", Cv2.GetVersionString(), StringComparison.Ordinal);
     }
 
     // V3 turns a contour into a sketch. A filled rectangle gives one outer contour, and its polygon has
