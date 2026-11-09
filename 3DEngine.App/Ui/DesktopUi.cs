@@ -398,7 +398,7 @@ internal sealed unsafe partial class DesktopUi : IDisposable
     public bool OverPanel(double x, double y)
         => _cutList is not null || _newList is not null
             || _panels.Concat(_fixed).Any(panel => x >= panel.X && x < panel.Z && y >= panel.Y && y < panel.W) || OverRing(x, y)
-            || OverValue(x, y) || OverRows(x, y);
+            || OverValue(x, y) || OverRows(x, y) || OverHistory(x, y);
 
     // The font atlas as RGBA pixels, for the renderer to upload. It is built once.
     public (uint Width, uint Height, byte[] Rgba) FontAtlas() => _atlas;
@@ -524,7 +524,7 @@ internal sealed unsafe partial class DesktopUi : IDisposable
         => (body.Name ?? $"{body.Kind}  {body.Id.ToString()[..8]}") + (body.Visible ? string.Empty : "  (hidden)")
         + (body.Fault is null ? string.Empty : "  (fault)");
 
-    public UiDrawData Frame(float deltaSeconds, Vector2 displaySize, Vector2 framebufferScale, IReadOnlyList<LiveBody> bodies, Guid? selection = null, DocumentLine? document = null, SketchOverlay.Strokes? sketches = null, SketchPanel? sketchPanel = null, ImagePanel? imagePanel = null, DimensionOverlay.Strokes? dimensions = null, string? size = null, FaceLine? face = null, Vector2? ringCentre = null, float ringBody = 0f, Vector4 safeInsets = default, IReadOnlyList<EdgeValues.Value>? values = null)
+    public UiDrawData Frame(float deltaSeconds, Vector2 displaySize, Vector2 framebufferScale, IReadOnlyList<LiveBody> bodies, Guid? selection = null, DocumentLine? document = null, SketchOverlay.Strokes? sketches = null, SketchPanel? sketchPanel = null, ImagePanel? imagePanel = null, DimensionOverlay.Strokes? dimensions = null, string? size = null, FaceLine? face = null, Vector2? ringCentre = null, float ringBody = 0f, Vector4 safeInsets = default, IReadOnlyList<EdgeValues.Value>? values = null, IReadOnlyList<HistoryStep>? history = null)
     {
         ArgumentNullException.ThrowIfNull(bodies);
         _size = size;
@@ -574,6 +574,7 @@ internal sealed unsafe partial class DesktopUi : IDisposable
             _ring = null;
             _chips = [];
             (_rows, _rowsArea) = ([], null);
+            _historyNodes = [];
         }
         else
         {
@@ -589,6 +590,8 @@ internal sealed unsafe partial class DesktopUi : IDisposable
             PlaceRows(displaySize, selectedBody, selection is null ? null : values, bodies, document);
             // ADR-0081 (TASK-0253): the tool ring of the selected body, around the centre of its box on the screen.
             Ring(displaySize, bodies.FirstOrDefault(body => body.Id == selection), ringCentre, ringBody);
+            // ADR-0104 (TASK-0325): the history arc inside the ring of the selected body, before the chips, which go over it.
+            History(displaySize, selectedBody, history);
             // ADR-0082 (TASK-0254): the values of the selected extrude on its edges.
             Values(displaySize, selection is null ? null : values);
             // ADR-0084 (TASK-0267): the rows of the selected body, with no panel, over the chips.
