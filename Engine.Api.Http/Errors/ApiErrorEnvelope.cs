@@ -21,6 +21,15 @@ internal sealed record ApiErrorEnvelope(ApiErrorBody Error)
             new ApiErrorEnvelope(new ApiErrorBody(DiagnosticCodes.ApiBadRequest, message)),
             ApiJson.Options,
             statusCode: StatusCodes.Status404NotFound);
+
+    // Finding E17 of the codebase review of 2026-09-30 (R-0028, TASK-0321): a request that is not JSON gets
+    // HTTP 415 with the envelope and the code E-API-BAD-REQUEST, which docs/diagnostics.md gives for a wrong
+    // content type. Until TASK-0321 the response had an empty body.
+    public static IResult UnsupportedMediaType()
+        => Results.Json(
+            new ApiErrorEnvelope(new ApiErrorBody(DiagnosticCodes.ApiBadRequest, "The request body must be JSON, with the content type application/json.")),
+            ApiJson.Options,
+            statusCode: StatusCodes.Status415UnsupportedMediaType);
 }
 
 internal sealed record ApiErrorBody(string Code, string Message);

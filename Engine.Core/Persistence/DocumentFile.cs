@@ -221,12 +221,15 @@ public static class DocumentFile
             // entry. The open does not look in the idempotency cache, so an entry whose
             // CommandId came before is applied again, as the live session applied it (E75).
             // An exception of a handler or of the backend gives the code of an open too (E82).
+            // Since TASK-0321 (finding E22 of the codebase review of 2026-10-04) the bus gives
+            // Cancelled only for a cancellation of the caller, so a cancellation exception with a
+            // live token of the caller is an exception of a handler and gives the code of an open.
             CommandResult result;
             try
             {
                 result = await session.ApplyEntry(entry.Command, ct).ConfigureAwait(false);
             }
-            catch (Exception ex) when (ex is not OperationCanceledException)
+            catch (Exception ex) when (ex is not OperationCanceledException || !ct.IsCancellationRequested)
             {
                 throw DocumentFileException.Load($"The entry of version {entry.Version} ({entry.Command.Name}) threw {ex.GetType().Name}: {ex.Message}");
             }

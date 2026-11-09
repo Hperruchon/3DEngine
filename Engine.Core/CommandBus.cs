@@ -140,7 +140,12 @@ public sealed class CommandBus
             // E100 (TASK-0123): an open (ApplyEntry) and a replay (a bus with no cache) apply an
             // entry of a log, which the guard of a repeated identifier does not refuse.
             var (result, events) = await Decide(command, entry: !lookUp || _idempotency is null, stopwatch, ct).ConfigureAwait(false);
-            _idempotency?.Store(command.CommandId, result);
+
+            // Finding E22 of the codebase review of 2026-10-04 (R-0033, TASK-0321): a cancelled result does not go
+            // into the cache, so a retry with the same CommandId runs the handler again. Until TASK-0321 the retry got
+            // Cancelled with no call of the handler until 1,024 other results took the place of the cancellation.
+            if (result.Status != CommandStatus.Cancelled)
+                _idempotency?.Store(command.CommandId, result);
 
             foreach (var record in events)
                 await _events.Append(record, CancellationToken.None).ConfigureAwait(false);
@@ -210,7 +215,10 @@ public sealed class CommandBus
         {
             handlerResult = await handler.Handle(command, _document, _backend, ct).ConfigureAwait(false);
         }
-        catch (OperationCanceledException)
+        // Finding E22 of the codebase review of 2026-10-04 (R-0033, TASK-0321): only a cancellation of the caller is
+        // Cancelled. An OperationCanceledException with a live token of the caller leaves the bus, as each other
+        // exception of a handler does. Until TASK-0321 the bus turned each such exception into Cancelled.
+        catch (OperationCanceledException) when (ct.IsCancellationRequested)
         {
             return Cancel(command, stopwatch);
         }
