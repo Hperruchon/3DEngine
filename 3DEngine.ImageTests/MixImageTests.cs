@@ -13,6 +13,8 @@ namespace ThreeDEngine.ImageTests;
 // ADR-0093 (the redesign, slice j, TASK-0304): the scene of the render "mix" of the designer brief at 1440 x 900, the size
 // at which the owner judges each slice of the redesign: a bracket of 60 x 40 x 10, selected, framed as the button Frame
 // does, with its ring and its values. The picture is kept for the owner, beside the render.
+// Phase R16q (TASK-0325): the sketch has the name "Plate", and the history arc of the bracket shows at the lower left of its
+// ring: "Bracket", then "Plate on XY".
 [Collection(DearImGui.Collection)]
 public class MixImageTests
 {
@@ -30,7 +32,7 @@ public class MixImageTests
     {
         var messagesBefore = GraphicsDevice.ValidationMessageCount;
         using var host = new EngineHost(new Engine.Geometry.Manifold.ManifoldGeometryBackend());
-        var sketch = Out(await host.Session.Apply(new CreateSketchCommand { DatumId = Datums.XY.Id }), "sketchId");
+        var sketch = Out(await host.Session.Apply(new CreateSketchCommand { DatumId = Datums.XY.Id, SketchName = "Plate" }), "sketchId");
         (double X, double Y)[] corners = [(-30, -20), (30, -20), (30, 20), (-30, 20)];
         var points = new List<Guid>();
         foreach (var (x, y) in corners)
@@ -44,6 +46,7 @@ public class MixImageTests
         await host.Session.Apply(new RenameBodyCommand { BodyId = body, NewName = "Bracket" });
         var faces = (await host.Session.Query<FacesInfo>(new GetFacesQuery { BodyId = body })).Result ?? throw new InvalidOperationException("No faces.");
         var info = (await host.Session.Query<SketchInfo>(new GetSketchQuery { SketchId = sketch })).Result!;
+        var features = (await host.Session.Query<FeaturesInfo>(new GetFeaturesQuery())).Result;
 
         using var ui = new DesktopUi("http://127.0.0.1:5180", Engine.Contracts.Document.Millimetre);
         var scene = SessionScene.Create();
@@ -69,10 +72,11 @@ public class MixImageTests
             var diagonal = SketchOverlay.Segment(camera, Width, Height, extent.Min, extent.Max) ?? throw new InvalidOperationException("The body is behind the eye.");
             var size = Vector2.Distance(diagonal.A, diagonal.B) / 2f;
             var values = EdgeValues.Of(body, 10, faces.Edges, [info], camera, Width, Height, "mm");
+            var history = HistorySteps.Of(features, renderer.LiveBodies, [info], body);
             var data = UiDrawData.Empty;
             for (var frame = 0; frame < 3; frame++)
                 data = ui.Frame(1f / 60f, display, Vector2.One, renderer.LiveBodies, body, new DocumentLine("bracket", null),
-                    ringCentre: centre, ringBody: size, values: values);
+                    ringCentre: centre, ringBody: size, values: values, history: history);
 
             pixels = target.Render((commandBuffer, framebuffer, frameExtent) =>
                 renderer.Record(commandBuffer, framebuffer, frameExtent, scene, camera,
@@ -88,5 +92,7 @@ public class MixImageTests
         Assert.True(GraphicsDevice.ValidationMessageCount == messagesBefore,
             $"The validation layer gave {GraphicsDevice.ValidationMessageCount - messagesBefore} messages.");
         Assert.True(pixels.Length == Width * Height * 4, $"The picture {picture} has {pixels.Length} bytes.");
+        Assert.NotNull(ui.ItemRectangle(DesktopUi.HistoryItem(body)));
+        Assert.NotNull(ui.ItemRectangle(DesktopUi.HistoryItem(sketch)));
     }
 }

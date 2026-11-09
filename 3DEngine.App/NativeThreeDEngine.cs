@@ -84,6 +84,15 @@ public sealed class NativeThreeDEngine : IThreeDEngine, IDisposable
 
     private BodyActions? _actions;
 
+    // ADR-0104 item 1 (phase R16q, TASK-0325): the steps of the history arc, which come again only for a new version of the
+    // Document or a new selection.
+    private readonly HistoryCache _history = new();
+
+    // ADR-0104 item 1: the count of the events that the session committed, which a subscription raises inside each commit, so
+    // that the frame reads no version through the lock of the session. A long command does not stop the frame on it.
+    private long _changes;
+    private IDisposable? _changesSubscription;
+
     // ADR-0056 item 6 (phase R13): the distance in effect of the selected body, for its box, so that GetBodyInfo runs one
     // time for each change of the selection or of its solid and not in each frame.
     private (Guid Body, ((double X, double Y, double Z) Min, (double X, double Y, double Z) Max) Still, double? Distance)? _sizeOf;
@@ -113,6 +122,7 @@ public sealed class NativeThreeDEngine : IThreeDEngine, IDisposable
         var (width, height, rgba) = _ui.FontAtlas();
         _ui.SetFontTexture(_uiRenderer.CreateTexture(width, height, rgba));
         _actions = new BodyActions(_host.Session);
+        _changesSubscription = _host.Subscribe(_ => Interlocked.Increment(ref _changes));
         _sketches = new SessionSketches(_host);
         _sketchActions = new SketchActions(_host.Session);
         _images = new SessionImages(_host, _assets);
@@ -666,6 +676,10 @@ public sealed class NativeThreeDEngine : IThreeDEngine, IDisposable
         _images?.Apply((asset, picture) => renderer.Upload(asset, (uint)picture.Width, (uint)picture.Height, picture.Rgba));
         var images = _images?.Quads();
 
+        // ADR-0104 item 1 (TASK-0325): the count of the committed events before the live bodies and the sketches take the events
+        // of the frame, so a commit after this read gives new steps in the next frame. The frame takes no lock of the session.
+        var version = Interlocked.Read(ref _changes);
+
         // Finding V86 of the codebase review of 2026-11-05 (b) (TASK-0191): the far plane holds the live images too.
         _renderer.Update(scene, Camera, (float)extent.width / extent.height, images);
 
@@ -786,9 +800,14 @@ public sealed class NativeThreeDEngine : IThreeDEngine, IDisposable
                 Camera, window.width, window.height, _host.Session.LengthUnit);
         }
 
+        // ADR-0104 item 1: the steps that made the selected body, from GetFeatures, for the history arc.
+        var history = _history.Steps(version, Selection, () => HistorySteps.Of(
+            _host.Session.Query<Engine.Core.Queries.FeaturesInfo>(new Engine.Core.Queries.GetFeaturesQuery()).GetAwaiter().GetResult().Result,
+            _renderer.LiveBodies, _sketches?.Live ?? [], Selection));
+
         // ADR-0102 item 5 (Q3 A): the question shows while a change of project waits for its answer.
         _ui.ShowQuestion(_projects?.Asking ?? false);
-        var panel = _ui.Frame((float)_delta.TotalSeconds, display, scale, _renderer.LiveBodies, Selection, LineOf(_document, _host.FileName, _documentMessage, Path.GetDirectoryName(_host.Session.FilePath)), sketches, sketchPanel, imagePanel, dimensions, size, faceLine, ringCentre, ringSize, Inset(_window.SafeInsets), values);
+        var panel = _ui.Frame((float)_delta.TotalSeconds, display, scale, _renderer.LiveBodies, Selection, LineOf(_document, _host.FileName, _documentMessage, Path.GetDirectoryName(_host.Session.FilePath)), sketches, sketchPanel, imagePanel, dimensions, size, faceLine, ringCentre, ringSize, Inset(_window.SafeInsets), values, history);
         ApplyPanel(_renderer.LiveBodies);
 
         var ui = _uiRenderer;
@@ -828,6 +847,8 @@ public sealed class NativeThreeDEngine : IThreeDEngine, IDisposable
         _overlay = null;
         _sketches?.Dispose();
         _sketches = null;
+        _changesSubscription?.Dispose();
+        _changesSubscription = null;
         _images?.Dispose();
         _images = null;
         _ui?.Dispose();
