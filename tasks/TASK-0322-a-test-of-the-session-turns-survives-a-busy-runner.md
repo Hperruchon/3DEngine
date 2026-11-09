@@ -1,7 +1,7 @@
 ---
 id: 0322
 title: The test of the window hold of the session turns survives a busy runner
-status: Active
+status: Done
 phase: P0.135
 opened: 2026-11-09
 depends-on: [0319]
@@ -44,21 +44,22 @@ The test asserts the wait of the later session with a limit that a late continua
 
 ## Acceptance criteria
 
-- [ ] With a stall of 11 s before the assertion, the test fails with the old limit and passes with the new one.
-- [ ] Continuous integration passes on the branch and on `main` after the merge.
+- [x] With a stall of 11 s before the assertion, the test fails with the old limit and passes with the new one.
+- [x] Continuous integration passes on the branch and on `main` after the merge.
 
 ## Outcome
 
-Status: Active
+Status: Done · commit (the merge of the branch p0135-session-turns-flake) · v0.302
 
 ## Method
 
 Mechanical: the line of the assertion and the limit of the wait.
 Judgement:  the cause is a late continuation on a busy runner, inferred from the code and from the green run of the
             branch; the log of the runner does not show the delay.
-Weakest:    to be written at the close.
+Weakest:    the cause is inferred; the log of the runner gives no time of the delay.
 
 ## Progress
 
 - 2026-11-09: the limit of the later session is 5 minutes. A stall of 11 s before the assertion failed the test with the
   limit of 10 s and passed it with the new limit.
+- 2026-11-09: run 42545015792 passed. Closed at v0.302.
