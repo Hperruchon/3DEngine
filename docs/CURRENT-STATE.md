@@ -9017,3 +9017,21 @@ New tests: 4. The test list holds 2211 (1472 in `Engine.Tests`, 356 in `3DEngine
 in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
 entries: 10 of 15. New diagnostic codes: 0. Since the review of v0.292, 4 product milestones and 9 entries followed it.
 TASK-0318 (V0b) is green and waits for that review, because it would be the fifth product milestone.
+
+## v0.302 — The test of the window hold of the session turns survives a busy runner (P0.135, TASK-0322)
+
+The run on `main` of v0.301 (42543751923) failed on windows-latest in
+`SessionTurnsTests.A_Later_Session_Waits_For_The_Window_Of_The_Earlier_One`, at the assertion that the later session still
+waits 100 ms after its start. The run of the branch on the same tree passed. The later session waited with a limit of 10 s,
+so a continuation of the delay that ran more than 10 s late found the wait at its end. The change of v0.301 did not touch
+`SessionTurns`. The ledger holds no earlier failure of this test.
+
+**The change.** The later session of the test waits up to 5 minutes.
+
+**Proof.** With a stall of 11 s before the assertion, the test fails with the limit of 10 s and passes with the new limit.
+Run 42545015792 passed. The failed runs since the entry v0.301, from the API: 42543751923 on main (f77e9d2), in the job "Gate on
+windows-latest", the cause of this task.
+
+New tests: 0. The test list holds 2211 (1472 in `Engine.Tests`, 356 in `3DEngine.Tests`, 380 in `3DEngine.ImageTests`, 3
+in `3DEngine.VisionTests`). Open entries: 10 of 15. New diagnostic codes: 0. Since the review of v0.292, 4 product
+milestones and 10 entries followed it.
