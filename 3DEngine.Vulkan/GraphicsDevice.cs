@@ -53,6 +53,10 @@ public unsafe sealed class GraphicsDevice : IDisposable
     public readonly VkPhysicalDevice PhysicalDevice;
     public readonly VkDevice VkDevice;
     public readonly uint GraphicsFamily;
+
+    // Finding V7 part 1 (R-0030, TASK-0319): the family that presents to the window, or VK_QUEUE_FAMILY_IGNORED with no
+    // window; the swapchain shares its images when it differs from the graphics family.
+    public readonly uint PresentFamily;
     public readonly VkQueue GraphicsQueue;
     private readonly VkCommandPool _submitPool;
 
@@ -94,6 +98,13 @@ public unsafe sealed class GraphicsDevice : IDisposable
         if (window is not null && availableInstanceExtensions.Contains(SwapchainColorSpaceExtension))
             instanceExtensions.Add(SwapchainColorSpaceExtension);
 
+        // Finding V3 of the codebase review of 2026-09-23 (R-0022, TASK-0319): a current loader lists a device that is not
+        // fully conformant, as MoltenVK on macOS, only when the instance asks for the portability enumeration. No window
+        // ran on macOS by TASK-0319, so this follows the specification and is not proved on that platform.
+        var portability = availableInstanceExtensions.Contains(PortabilityEnumerationExtension);
+        if (portability)
+            instanceExtensions.Add(PortabilityEnumerationExtension);
+
         // The validation layer gives the extension of its features. Without it the
         // layer cannot turn on its checks of synchronization.
         var synchronization = synchronizationValidation && ValidationEnabled
@@ -119,6 +130,7 @@ public unsafe sealed class GraphicsDevice : IDisposable
 
         VkInstanceCreateInfo instanceCreateInfo = new()
         {
+            flags = portability ? VkInstanceCreateFlags.EnumeratePortabilityKHR : VkInstanceCreateFlags.None,
             pApplicationInfo = &appInfo,
             enabledLayerCount = layerNames.Count,
             ppEnabledLayerNames = layerNames.Pointers,
@@ -168,7 +180,11 @@ public unsafe sealed class GraphicsDevice : IDisposable
                 InstanceApi.vkCreateDebugUtilsMessengerEXT(&debugUtilsCreateInfo, null, out _debugMessenger).CheckResult();
             }
 
-            Log.Info($"Created VkInstance with version: {appInfo.apiVersion.Major}.{appInfo.apiVersion.Minor}.{appInfo.apiVersion.Patch}");
+            // Finding V4 of the codebase review of 2026-09-23 (R-0027, TASK-0319): the line gives the version that the instance
+            // asks for and the version that the loader gives; until TASK-0319 it gave the requested version only, as if it
+            // were the version of the loader.
+            VkVersion loader = vkEnumerateInstanceVersion();
+            Log.Info($"Created VkInstance for Vulkan {appInfo.apiVersion.Major}.{appInfo.apiVersion.Minor}; the loader gives {loader.Major}.{loader.Minor}.{loader.Patch}");
             foreach (var layer in instanceLayers)
             {
                 Log.Info($"Instance layer '{layer}'");
@@ -228,6 +244,7 @@ public unsafe sealed class GraphicsDevice : IDisposable
 
             var queueFamilies = FindQueueFamilies(InstanceApi, PhysicalDevice, surface);
             GraphicsFamily = queueFamilies.graphicsFamily;
+            PresentFamily = queueFamilies.presentFamily;
 
             HashSet<uint> uniqueQueueFamilies = [queueFamilies.graphicsFamily];
             if (window is not null)
@@ -247,7 +264,8 @@ public unsafe sealed class GraphicsDevice : IDisposable
                 };
             }
 
-            using var deviceExtensionNames = new NativeStrings(window is null ? [] : [SwapchainExtension]);
+            // V3 (TASK-0319): a device that gives the portability subset must enable it.
+            using var deviceExtensionNames = new NativeStrings(DeviceExtensions(window is not null, GetDeviceExtensions(InstanceApi, PhysicalDevice)));
 
             VkDeviceCreateInfo deviceCreateInfo = new()
             {
@@ -394,32 +412,12 @@ public unsafe sealed class GraphicsDevice : IDisposable
     }
 
     #region Private Methods
+    // V4 (R-0027, TASK-0319): the validation layer of Khronos, or none. Until TASK-0319 about twenty lines fell back to
+    // the LunarG and Google layers, which the current SDKs do not ship.
     private static List<string> GetOptimalValidationLayers(string[] availableLayers)
-    {
-        // The preferred validation layer is "VK_LAYER_KHRONOS_validation". Otherwise
-        // the LunarG meta layer, then the layers that compose it, then its core layer.
-        string[][] candidates =
-        [
-            ["VK_LAYER_KHRONOS_validation"],
-            ["VK_LAYER_LUNARG_standard_validation"],
-            [
-                "VK_LAYER_GOOGLE_threading",
-                "VK_LAYER_LUNARG_parameter_validation",
-                "VK_LAYER_LUNARG_object_tracker",
-                "VK_LAYER_LUNARG_core_validation",
-                "VK_LAYER_GOOGLE_unique_objects",
-            ],
-            ["VK_LAYER_LUNARG_core_validation"],
-        ];
+        => availableLayers.Contains(ValidationLayer) ? [ValidationLayer] : [];
 
-        foreach (var layers in candidates)
-        {
-            if (layers.All(availableLayers.Contains))
-                return [.. layers];
-        }
-
-        return [];
-    }
+    private const string ValidationLayer = "VK_LAYER_KHRONOS_validation";
 
     // The reason that a device cannot serve, or null. Each device needs a graphics
     // queue, the version of the shaders, and the depth format as an attachment of an
@@ -505,39 +503,48 @@ public unsafe sealed class GraphicsDevice : IDisposable
         VkQueueFamilyProperties[] queueFamilies = new VkQueueFamilyProperties[queueFamilyCount];
         api.vkGetPhysicalDeviceQueueFamilyProperties(device, queueFamilies);
 
-        uint graphicsFamily = VK_QUEUE_FAMILY_IGNORED;
-        uint presentFamily = VK_QUEUE_FAMILY_IGNORED;
-        uint i = 0;
-        foreach (VkQueueFamilyProperties queueFamily in queueFamilies)
+        var graphics = new bool[queueFamilies.Length];
+        var present = new bool[queueFamilies.Length];
+        for (uint i = 0; i < queueFamilies.Length; i++)
         {
-            if ((queueFamily.queueFlags & VkQueueFlags.Graphics) != VkQueueFlags.None)
-            {
-                graphicsFamily = i;
-            }
-
+            graphics[i] = (queueFamilies[i].queueFlags & VkQueueFlags.Graphics) != VkQueueFlags.None;
             if (surface != VkSurfaceKHR.Null)
             {
                 // The review of Codex of v0.271 (TASK-0287): a lost surface gives ErrorSurfaceLostKHR here, and the check
                 // throws it, so the host ends the engine as in the background; until TASK-0287 the result was ignored, the
                 // device counted as one that cannot present, and the start ended with no device.
                 api.vkGetPhysicalDeviceSurfaceSupportKHR(device, i, surface, out VkBool32 presentSupport).CheckResult();
-                if (presentSupport)
-                {
-                    presentFamily = i;
-                }
+                present[i] = presentSupport;
             }
-
-            if (graphicsFamily != VK_QUEUE_FAMILY_IGNORED
-                && (surface == VkSurfaceKHR.Null || presentFamily != VK_QUEUE_FAMILY_IGNORED))
-            {
-                break;
-            }
-
-            i++;
         }
 
-        return (graphicsFamily, presentFamily);
+        return ChooseQueueFamilies(graphics, present, surface != VkSurfaceKHR.Null);
     }
+
+    // Finding V7 of the codebase review of 2026-09-30, part 1 (R-0030, TASK-0319): one family that draws and presents comes
+    // first, so the swapchain keeps exclusive images; else the first family of each kind, and the swapchain shares its
+    // images. Until TASK-0319 the search could stop at two families when a later family did both.
+    public static (uint graphicsFamily, uint presentFamily) ChooseQueueFamilies(IReadOnlyList<bool> graphics, IReadOnlyList<bool> present, bool surface)
+    {
+        for (var i = 0; i < graphics.Count; i++)
+        {
+            if (graphics[i] && (!surface || present[i]))
+                return ((uint)i, surface ? (uint)i : VK_QUEUE_FAMILY_IGNORED);
+        }
+
+        var first = Enumerable.Range(0, graphics.Count).FirstOrDefault(i => graphics[i], -1);
+        var presenting = surface ? Enumerable.Range(0, present.Count).FirstOrDefault(i => present[i], -1) : -1;
+        return (first < 0 ? VK_QUEUE_FAMILY_IGNORED : (uint)first, presenting < 0 ? VK_QUEUE_FAMILY_IGNORED : (uint)presenting);
+    }
+
+    // V3 (R-0022, TASK-0319): the extensions of the device: the swapchain for a window, and the portability subset when the
+    // device gives it, as the specification asks of a device that is not fully conformant.
+    public static string[] DeviceExtensions(bool window, IReadOnlyCollection<string> available)
+        => [.. window ? [SwapchainExtension] : Array.Empty<string>(), .. available.Contains(PortabilitySubsetExtension) ? [PortabilitySubsetExtension] : Array.Empty<string>()];
+
+    // V3 (TASK-0319): the names of the two extensions of portability.
+    public const string PortabilityEnumerationExtension = "VK_KHR_portability_enumeration";
+    public const string PortabilitySubsetExtension = "VK_KHR_portability_subset";
     #endregion
 
     private static readonly Lazy<bool> s_isSupported = new(CheckIsSupported);
