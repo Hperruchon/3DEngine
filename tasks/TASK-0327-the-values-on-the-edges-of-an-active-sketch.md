@@ -1,7 +1,7 @@
 ---
 id: 0327
 title: The values of an active sketch show on its edges
-status: Active
+status: Done
 phase: R16s
 opened: 2026-11-09
 depends-on: [0326]
@@ -54,19 +54,21 @@ chip opens the pad of its value.
 
 ## Acceptance criteria
 
-- [ ] The tests pass, and the picture at 1440 by 900 shows a chip on each length of the active sketch.
-- [ ] A clean build (`--no-incremental`) gives zero errors and zero warnings, and the phone project builds.
-- [ ] Continuous integration passes on the three runners, on the branch and on `main` after the merge.
+- [x] The tests pass, and the picture at 1440 by 900 shows a chip on each length of the active sketch.
+- [x] A clean build (`--no-incremental`) gives zero errors and zero warnings, and the phone project builds.
+- [x] Continuous integration passes on the three runners, on the branch and on `main` after the merge.
 
 ## Outcome
 
-Status: Active
+Status: Done · commit (the merge of the branch r16s-sketch-values) · v0.310
 
 ## Method
 
 Mechanical: the chips follow ADR-0082; the labels follow the rows of ADR-0034 item 8.
 Judgement:  the lengths only (Q1 A); a chip flat on the screen (Q2 A); the pad of the row (Q3 A).
-Weakest:    to be written at the close.
+Weakest:    no test covers the argument that passes the chips to the frame, because the frame needs a window; a test
+            covers the method of the host that computes them. An angle has no chip, and the chips are flat on the
+            screen and not in the plane of the sketch, as the render draws them.
 
 ## Progress
 - 2026-11-09: ADR-0105, `SketchValues`, the chips of an active sketch and eleven tests. An agent made the code in this
@@ -75,3 +77,4 @@ Weakest:    to be written at the close.
   the body), and the chips as a part of the panels. The review added to ADR-0105 item 2 the centre of the sketch on the
   screen, which the record did not define. Local: the gates, a clean build with zero warnings, the tests of the solution
   and the phone project.
+- 2026-11-09: run 42572947595 passed. Closed at v0.310.

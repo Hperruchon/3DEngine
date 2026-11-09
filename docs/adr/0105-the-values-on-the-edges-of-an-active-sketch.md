@@ -94,3 +94,4 @@ them.
 ## History
 
 - 2026-11-09 · TASK-0327 · The record, with the slice (the order of the owner of 2026-11-08).
+- 2026-11-09 · TASK-0327 · Shipped at v0.310.

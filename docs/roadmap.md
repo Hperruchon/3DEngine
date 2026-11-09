@@ -319,6 +319,8 @@ Therefore each approved objective must have a track here.
   v0.308, TASK-0325, ADR-0104.
 - R16r — The agent arc of the mix: an agent posts a proposal of commands over HTTP, and the person accepts or rejects it
   on an amber arc above the selected body. v0.309, TASK-0326, ADR-0092.
+- R16s — The values on the edges of an active sketch: a chip on each length, and a tap opens the pad of its value.
+  v0.310, TASK-0327, ADR-0105.
 
 ## Track 0 — Foundations
 
