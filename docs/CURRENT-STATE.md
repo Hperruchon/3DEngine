@@ -9265,3 +9265,29 @@ the sketch. The four slices of 2026-11-08 are done; a codebase review is due bef
 New tests: 11. The test list holds 2310 (1528 in `Engine.Tests`, 356 in `3DEngine.Tests`, 423 in `3DEngine.ImageTests`, 3
 in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
 entries: 9 of 15. New diagnostic codes: 0. Since the review of v0.304, 4 product milestones and 6 entries followed it.
+
+## v0.311 — The codebase review of 2026-11-09 (b) (governance, TASK-0329)
+
+The review of 2026-11-09 examined v0.304. After it came 4 product milestones (V0b, R16q, R16r and R16s) and 6 ledger
+entries, so the next product milestone would make the review late. On 2026-11-09 the owner asked for the review, then the
+pending chip of a proposal.
+
+**The change.** `docs/reviews/2026-11-09-b-codebase-review.md`, at `6f75607` (v0.310). One agent examined the code
+change from v0.304 to v0.310 with probes in a scratch copy; the session ran each probe again and read each finding in the
+code. The review uses no lead of Codex.
+- Seven open findings are fixed: P0.136 fixed V152 to V157 and E197.
+- One new finding is high: V159, in the default window of 1280 by 720 the window of the live sketches covers Accept of the
+  agent arc. Four are medium: V160 (one tap on Accept also uses a ring tool), E198 (a repeated command identifier counts as
+  applied), V161 (the history arc waits for the session after each commit) and V162 (the portrait sheet covers the ring).
+  Three are low: E199, V163 and T180.
+- TASK-0330 (P0.138) holds V159 before the next product phase; TASK-0331 (P0.139) holds the others after it.
+
+**Proof.** `CodebaseReviewGateTests` passes with the new review. The main run of the last merge (42574118816) passed.
+
+**What stays.** The open findings are 0 critical, 5 high, 11 medium and 23 low. Questions Q1 to Q5 of the review of
+2026-11-09 still wait for the owner, and this review repeats them.
+
+**A correction.** None. The failed runs since the last entry, from the API: none.
+
+New tests: 0. Open entries: 9 of 15. New diagnostic codes: 0. Since the review of v0.310, 0 product milestones and
+1 entry followed it.
