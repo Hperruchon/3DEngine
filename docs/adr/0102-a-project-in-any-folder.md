@@ -1,13 +1,13 @@
 ---
 id: 0102
 title: The window opens and saves a project in any folder, through the dialogs of the system
-status: Accepted
+status: Amended
 topic: Persistence, clients
 date: 2026-11-08
 supersedes: []
 superseded-by: []
 amends: ['0030', '0083']
-amended-by: []
+amended-by: ['0106']
 affects:
   - 3DEngine.App/ProjectFiles.cs
   - 3DEngine.App/ISessionHost.cs
@@ -106,3 +106,5 @@ the dialogs of the system need a person: the tests give their results as samples
 - 2026-11-08 · TASK-0316 · The record, with the answers of the owner.
 - 2026-11-09 · TASK-0316 · Shipped at v0.299; the row waits for the run of the owner.
 - 2026-11-09 · TASK-0317 · Item 9: the register entry R-0056 holds the project file of the phone.
+- 2026-11-09 · TASK-0328 · ADR-0106 amends item 1: the dialog of "Open project..." shows "Project or STL" first, and an STL
+  file chosen there goes to the import.
