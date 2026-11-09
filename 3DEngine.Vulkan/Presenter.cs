@@ -187,7 +187,8 @@ public sealed unsafe class Presenter : IDisposable
     private VkExtent2D SurfaceExtent()
     {
         _device.InstanceApi.vkGetPhysicalDeviceSurfaceCapabilitiesKHR(_device.PhysicalDevice, _surface, out VkSurfaceCapabilitiesKHR capabilities).CheckResult();
-        return capabilities.currentExtent.width == uint.MaxValue ? _window.Extent : capabilities.currentExtent;
+        // V2 (R-0022, TASK-0319): the size in pixels; until TASK-0319 the size in logical units.
+        return capabilities.currentExtent.width == uint.MaxValue ? _window.PixelExtent : capabilities.currentExtent;
     }
 
     // Makes the swapchain, its framebuffers, its depth image and the resources of each
@@ -330,12 +331,14 @@ public sealed unsafe class Presenter : IDisposable
             VkResult waited = api.vkWaitForFences(_perFrame[imageIndex].QueueSubmitFence, true, FrameWaitLimitNs);
             if (waited != VkResult.Success)
                 throw new InvalidOperationException($"The last frame of swapchain image {imageIndex} did not end within {FrameWaitLimitNs / 1_000_000_000} s: {waited}.");
-            api.vkResetFences(_perFrame[imageIndex].QueueSubmitFence);
+            // Finding V7 of the codebase review of 2026-09-30, part 4 (R-0030, TASK-0319): the results of the two resets are
+            // checked; until TASK-0319 they were ignored.
+            api.vkResetFences(_perFrame[imageIndex].QueueSubmitFence).CheckResult();
         }
 
         if (_perFrame[imageIndex].PrimaryCommandPool != VkCommandPool.Null)
         {
-            api.vkResetCommandPool(_perFrame[imageIndex].PrimaryCommandPool, VkCommandPoolResetFlags.None);
+            api.vkResetCommandPool(_perFrame[imageIndex].PrimaryCommandPool, VkCommandPoolResetFlags.None).CheckResult();
         }
 
         // Recycle the old semaphore back into the semaphore manager.

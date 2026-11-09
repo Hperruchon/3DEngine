@@ -88,6 +88,11 @@ a current loader on macOS does not list MoltenVK. The host only clears the scree
 defect shows now.
 Exit: each defect is corrected, with the check that the review gives for it, before the first render
 phase that runs on Linux or on macOS.
+Progress 2026-11-09: TASK-0319 found V1 fixed (a SUBOPTIMAL result is not a failure, and the semaphore goes back to the
+pool on a failure only, `Presenter.cs`), fixed the rest of V2 (the swapchain takes the special extent only for
+0xFFFFFFFF, and then the size of the window in pixels) and added the correction of V3 (the portability enumeration of the
+instance and the portability subset of the device, when the loader and the device give them). The check of V3 is a job on
+macOS that makes an instance and a device through MoltenVK; no runner of the pipeline has it, so V3 is not proved.
 
 ### R-0027 · Six findings of the first codebase review have no task
 - class: debt
@@ -106,6 +111,9 @@ stay. P1 costs more, because the snapshot now also holds the session.
 Progress 2026-10-06: TASK-0036 corrected the comment of `Engine.Api.Http/EngineHost.cs` that cited the
 removed clamp, which is the last comment part of C1 (also listed in E24 of R-0033). The empty markers
 and the flags that nothing reads stay.
+Progress 2026-11-09: TASK-0319 fixed the Vulkan parts of V4: the log line of the instance gives the version of the
+loader, the fallback to the old layers of LunarG and Google is gone, and `ISceneLoader` and `SampleSceneFactory`, which
+nothing called, are gone. The other parts of V4 were fixed before (the exit code of a failed start, the results of Vulkan).
 
 ### R-0028 · Nine new findings in the engine and the hosts have no task
 - class: debt
@@ -151,6 +159,11 @@ the condition of R-0022 too.
 Progress 2026-10-16: TASK-0076 corrected V5 and V6 in the split of the device. With no suitable device the
 core throws with a message, and a device that presents must have the swapchain extension; each name
 goes to Vulkan from native memory. The findings of V7 stay.
+Progress 2026-11-09: TASK-0319 fixed parts 1 to 5 of V7: one queue family that draws and presents comes first, and two
+families share the images of the swapchain; the surface format needs the colour space of sRGB; the desktop disposes its
+window and ends SDL; the resets of a fence and of a command pool check their results; the time step of the desktop and of
+the phone comes from the monotonic clock. Part 6 stays: `Scene` and `Entity` of `3DEngine.Core` give `IList`, which a
+second thread could change while the render loop reads it; only the render loop writes them today.
 
 ### R-0031 · A gate can pass while its rule is broken
 - class: debt
