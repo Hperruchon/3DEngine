@@ -306,6 +306,7 @@ Therefore each approved objective must have a track here.
   ADR-0102.
 - P0.131 — The register: R-0007, R-0040 and R-0054 accepted, R-0024, R-0039 and R-0055 closed, R-0056 opened.
   v0.300, TASK-0317.
+- P0.132 — The small Vulkan findings of R-0022, R-0030 and R-0027. v0.301, TASK-0319.
 
 ## Track 0 — Foundations
 
