@@ -1,7 +1,7 @@
 ---
 id: 0328
 title: "Open project..." shows an STL file too, and an STL file goes to the import
-status: Active
+status: Done
 phase: P0.137
 opened: 2026-11-09
 depends-on: [0316]
@@ -23,6 +23,7 @@ writes:
     - docs/CURRENT-STATE.md
     - tasks/TASK-0314-a-path-line-from-the-document-to-the-selection.md
     - tasks/TASK-0315-a-focus-on-one-body.md
+    - tasks/TASK-0331-medium-and-low-findings-of-the-review-of-2026-11-09-b.md
   forbid:
     - Engine.Contracts/**
     - Engine.Core/**
@@ -56,21 +57,23 @@ STL import, and a project file to the open of the project.
 
 ## Acceptance criteria
 
-- [ ] The tests pass, and each new test fails on an injection of the old behaviour.
-- [ ] A picture of the dialog shows the filter "Project or STL (*.3de;*.stl)" with a project and an STL file.
-- [ ] A clean build (`--no-incremental`) gives zero errors and zero warnings, and the phone project builds.
-- [ ] Continuous integration passes on the three runners, on the branch and on `main` after the merge.
+- [x] The tests pass, and each new test fails on an injection of the old behaviour.
+- [x] A picture of the dialog shows the filter "Project or STL (*.3de;*.stl)" with a project and an STL file.
+- [x] A clean build (`--no-incremental`) gives zero errors and zero warnings, and the phone project builds.
+- [x] Continuous integration passes on the three runners, on the branch and on `main` after the merge.
 
 ## Outcome
 
-Status: Active
+Status: Done · commit (the merge of the branch p0137-open-stl) · v0.312
 
 ## Method
 
 Mechanical: the filters and the extensions follow the order of the owner.
 Judgement:  the host, not `ProjectFiles`, sends an STL file to the import, because the import needs the store of the
             assets and the read of SDL; the import of a path becomes a method apart from the window, so a test reaches it.
-Weakest:    to be written at the close.
+Weakest:    no test covers the step of the host that sends the result of the dialog to the import, because it needs a
+            window; a test covers the choice by the extension, and another the import of a path. The picture shows the
+            first filter closed; the list of the three filters is proved by a test of the array that SDL reads.
 
 ## Progress
 
@@ -78,3 +81,4 @@ Weakest:    to be written at the close.
   back byte for byte: an STL file that stays an open (three tests), the old single filter (two tests), and each filter
   written at the first place of the array (one test). A picture of the real dialog at 1200 by 720, opened by window messages
   on a scratch folder, shows "Project or STL (*.3de;*.stl)" with `bracket.stl` and `EntryHallShelf.3de`.
+- 2026-11-09: run 42713798528 passed. Closed at v0.312.

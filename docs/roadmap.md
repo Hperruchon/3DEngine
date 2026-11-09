@@ -322,6 +322,8 @@ Therefore each approved objective must have a track here.
 - R16s — The values on the edges of an active sketch: a chip on each length, and a tap opens the pad of its value.
   v0.310, TASK-0327, ADR-0105.
 - Review — The codebase review of 2026-11-09 (b). v0.311, TASK-0329.
+- P0.137 — "Open project..." shows "Project or STL" first, and an STL file chosen there goes to the import. v0.312,
+  TASK-0328, ADR-0106.
 
 ## Track 0 — Foundations
 

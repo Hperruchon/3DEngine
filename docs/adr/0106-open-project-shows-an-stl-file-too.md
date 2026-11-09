@@ -57,3 +57,4 @@ import of a path.
 ## History
 
 - 2026-11-09 · TASK-0328 · The record, with the order of the owner of 2026-11-09.
+- 2026-11-09 · TASK-0328 · Shipped at v0.312.
