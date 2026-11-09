@@ -70,6 +70,9 @@ public sealed class EngineHost : IDisposable
         QueryRegistry = kit.QueryRegistry;
         Session = new DocumentSession(kit, new BroadcastingEventSink(kit.Events, Broadcaster));
 
+        // ADR-0092 item 1 (TASK-0326): the queue of the proposals of an agent, outside the log.
+        Proposals = new Proposals(Session, Subscribe);
+
         try
         {
             if (file?.Path is { } path)
@@ -121,6 +124,10 @@ public sealed class EngineHost : IDisposable
 
     public DocumentSession Session { get; }
 
+    // ADR-0092 items 1 and 3 (TASK-0326): the open and the kept proposals of an agent. The routes of /proposals post, read and
+    // withdraw them; only the window accepts or rejects one.
+    public Proposals Proposals { get; }
+
     // The name and the version of the backend that the host composed, for
     // /schema/backend. Until TASK-0142 a host gave them as two free strings, and a test
     // host gave "test" for a backend that records "1" (E111).
@@ -159,6 +166,7 @@ public sealed class EngineHost : IDisposable
     // 2026-10-17, TASK-0079). The container of a host calls this after the stop.
     public void Dispose()
     {
+        Proposals.Dispose();
         Session.Close();
         (Backend as IDisposable)?.Dispose();
     }

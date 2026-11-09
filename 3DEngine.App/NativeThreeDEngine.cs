@@ -68,6 +68,9 @@ public sealed class NativeThreeDEngine : IThreeDEngine, IDisposable
         _projects = document is { HasFolder: true } ? new ProjectFiles(host, document, new WindowDialogs(window)) : null;
         _assets = assets;
         _host = host;
+        // ADR-0092 item 8 (TASK-0326): the host of the desktop gives the queue of the proposals with its session; the phone has
+        // no HTTP surface, so it gives none.
+        _proposalDesk = host as IProposalDesk;
         _address = address;
         _intents = new IntentMachine(settings);
         _synchronizationValidation = synchronizationValidation;
@@ -92,6 +95,11 @@ public sealed class NativeThreeDEngine : IThreeDEngine, IDisposable
     // that the frame reads no version through the lock of the session. A long command does not stop the frame on it.
     private long _changes;
     private IDisposable? _changesSubscription;
+
+    // ADR-0092 items 6 and 7 (TASK-0326): the queue of the proposals of an agent, and the accept that applies now. The accept
+    // runs on the thread pool, so the frame does not wait for the session; the frame reads its outcome when it is complete.
+    private readonly IProposalDesk? _proposalDesk;
+    private Task<ProposalOutcome>? _proposalAccept;
 
     // ADR-0056 item 6 (phase R13): the distance in effect of the selected body, for its box, so that GetBodyInfo runs one
     // time for each change of the selection or of its solid and not in each frame.
@@ -451,6 +459,13 @@ public sealed class NativeThreeDEngine : IThreeDEngine, IDisposable
                 case FrameAction:
                     FrameBodies();
                     break;
+                // ADR-0092 item 6 (TASK-0326): the person accepts or rejects the waiting proposal; one accept at a time.
+                case AcceptProposalAction accept when _proposalDesk is { } desk && _proposalAccept is null:
+                    _proposalAccept = Task.Run(() => desk.Accept(accept.Proposal));
+                    break;
+                case RejectProposalAction reject when _proposalDesk is { } desk && _proposalAccept is null:
+                    _ui.ShowProposalOutcome(desk.Reject(reject.Proposal).Text);
+                    break;
                 case UndoAction:
                     _documentMessage = _actions.Undo();
                     break;
@@ -805,9 +820,19 @@ public sealed class NativeThreeDEngine : IThreeDEngine, IDisposable
             _host.Session.Query<Engine.Core.Queries.FeaturesInfo>(new Engine.Core.Queries.GetFeaturesQuery()).GetAwaiter().GetResult().Result,
             _renderer.LiveBodies, _sketches?.Live ?? [], Selection));
 
+        // ADR-0092 items 6 and 7 (TASK-0326): the outcome of a complete accept, and the waiting proposals, which the queue gives
+        // with no read of the session.
+        if (_proposalAccept is { IsCompleted: true } accepted)
+        {
+            _ui.ShowProposalOutcome(accepted.IsCompletedSuccessfully ? accepted.Result.Text : $"The accept failed: {accepted.Exception?.GetBaseException().Message}");
+            _proposalAccept = null;
+        }
+
+        var proposals = _proposalDesk?.Waiting();
+
         // ADR-0102 item 5 (Q3 A): the question shows while a change of project waits for its answer.
         _ui.ShowQuestion(_projects?.Asking ?? false);
-        var panel = _ui.Frame((float)_delta.TotalSeconds, display, scale, _renderer.LiveBodies, Selection, LineOf(_document, _host.FileName, _documentMessage, Path.GetDirectoryName(_host.Session.FilePath)), sketches, sketchPanel, imagePanel, dimensions, size, faceLine, ringCentre, ringSize, Inset(_window.SafeInsets), values, history);
+        var panel = _ui.Frame((float)_delta.TotalSeconds, display, scale, _renderer.LiveBodies, Selection, LineOf(_document, _host.FileName, _documentMessage, Path.GetDirectoryName(_host.Session.FilePath)), sketches, sketchPanel, imagePanel, dimensions, size, faceLine, ringCentre, ringSize, Inset(_window.SafeInsets), values, history, proposals);
         ApplyPanel(_renderer.LiveBodies);
 
         var ui = _uiRenderer;
@@ -856,4 +881,19 @@ public sealed class NativeThreeDEngine : IThreeDEngine, IDisposable
         _graphicsDevice?.Dispose();
         _graphicsDevice = null;
     }
+}
+
+// ADR-0092 items 6 to 8 (TASK-0326): the queue of the proposals of an agent, as the window uses it. A host that serves the
+// HTTP surface gives it with its session (ISessionHost); the phone has no HTTP surface (ADR-0019), so it gives none.
+internal interface IProposalDesk
+{
+    // The open proposals and the proposal that applies now, the oldest first, with no read of the session.
+    IReadOnlyList<ProposalCard> Waiting();
+
+    // Applies the commands of the proposal in their order, as the commands of a person. The window calls it off the thread of
+    // the frame.
+    Task<ProposalOutcome> Accept(Guid id);
+
+    // Closes the proposal with no command.
+    ProposalOutcome Reject(Guid id);
 }
