@@ -17,8 +17,8 @@ internal enum DialogPurpose
 // The dialogs of the system, apart from the window so that a test gives the results as samples.
 internal interface IFileDialogs
 {
-    // Opens the dialog for one file with the filter; false when a dialog is open already.
-    bool Open(string filterName, string pattern, DialogPurpose purpose);
+    // Opens the dialog for one file with the filters in their order; false when a dialog is open already.
+    bool Open(IReadOnlyList<(string Name, string Pattern)> filters, DialogPurpose purpose);
 
     // Opens the save dialog with the filter at the default location, or where the system chooses with null; false when a
     // dialog is open already.
@@ -28,7 +28,7 @@ internal interface IFileDialogs
 // The dialogs of SDL in the window (ADR-0102 item 2).
 internal sealed class WindowDialogs(Window window) : IFileDialogs
 {
-    public bool Open(string filterName, string pattern, DialogPurpose purpose) => window.OpenFile(filterName, pattern, (int)purpose);
+    public bool Open(IReadOnlyList<(string Name, string Pattern)> filters, DialogPurpose purpose) => window.OpenFile(filters, (int)purpose);
 
     public bool Save(string filterName, string pattern, DialogPurpose purpose, string? location) => window.SaveFile(filterName, pattern, (int)purpose, location);
 }
@@ -46,6 +46,16 @@ internal sealed class ProjectFiles(ISessionHost host, IDocumentFiles files, IFil
     public const string ProjectPattern = "3de";
     public const string StlFilter = "STL file";
     public const string StlPattern = "stl";
+    public const string ProjectOrStlFilter = "Project or STL";
+    public const string ProjectOrStlPattern = "3de;stl";
+
+    // ADR-0106 (phase P0.137, TASK-0328): the filters of "Open project...". The first one shows a project and an STL file
+    // together, and the two after it show one kind each. Until TASK-0328 the dialog showed projects only, so a person who
+    // looked there for an STL file saw nothing.
+    public static readonly IReadOnlyList<(string Name, string Pattern)> OpenFilters =
+        [(ProjectOrStlFilter, ProjectOrStlPattern), (ProjectFilter, ProjectPattern), (StlFilter, StlPattern)];
+
+    public static readonly IReadOnlyList<(string Name, string Pattern)> ImportFilters = [(StlFilter, StlPattern)];
     public const string Busy = "A file dialog is open already.";
 
     private static readonly FileOutcome BusyOutcome = new(Busy, (string.Empty, Busy));
@@ -101,9 +111,17 @@ internal sealed class ProjectFiles(ISessionHost host, IDocumentFiles files, IFil
     }
 
     // Item 1: "Open project..." in each folder, and "Import STL..." as before (phase P9c).
-    public FileOutcome OpenProject() => dialogs.Open(ProjectFilter, ProjectPattern, DialogPurpose.OpenProject) ? default : BusyOutcome;
+    public FileOutcome OpenProject() => dialogs.Open(OpenFilters, DialogPurpose.OpenProject) ? default : BusyOutcome;
 
-    public FileOutcome ImportStl() => dialogs.Open(StlFilter, StlPattern, DialogPurpose.ImportStl) ? default : BusyOutcome;
+    public FileOutcome ImportStl() => dialogs.Open(ImportFilters, DialogPurpose.ImportStl) ? default : BusyOutcome;
+
+    // ADR-0106: a file with the extension .stl from the dialog of "Open project..." goes to the import of P9c, as the result
+    // of "Import STL..." does; each other file stays the open of a project. The question of item 5 came before the dialog,
+    // because "Open project..." and "Import STL..." each are a change of project.
+    public static DialogPurpose PurposeOf(string? path, DialogPurpose purpose)
+        => purpose == DialogPurpose.OpenProject && path is not null && path.EndsWith(".stl", StringComparison.OrdinalIgnoreCase)
+            ? DialogPurpose.ImportStl
+            : purpose;
 
     // Items 3 and 4: the save dialog starts at the file of the project, and the export dialog at its name with ".stl".
     public FileOutcome SaveAs()

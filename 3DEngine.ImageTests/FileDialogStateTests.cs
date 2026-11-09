@@ -1,3 +1,4 @@
+using System.Runtime.InteropServices;
 using ThreeDEngine.Vulkan;
 
 namespace ThreeDEngine.ImageTests;
@@ -54,6 +55,27 @@ public sealed class FileDialogStateTests
         FileDialogState.Finish(save.Number, "C:/projects/shelf.3de", null);
 
         Assert.Equal((true, "C:/projects/shelf.3de", (string?)null, 2), FileDialogState.Take());
+        Assert.Equal(waiting, FileDialogState.Waiting);
+    }
+
+    // ADR-0106 (phase P0.137, TASK-0328): a dialog with three filters gives SDL an array of three, in their order, and the
+    // callback frees each name and each pattern with the array.
+    [Fact]
+    public unsafe void A_Dialog_Gives_Its_Filters_In_Their_Order()
+    {
+        FileDialogState.Reset();
+        var waiting = FileDialogState.Waiting;
+        var open = FileDialogState.Begin([("Project or STL", "3de;stl"), ("3DEngine project", "3de"), ("STL file", "stl")], purpose: 1)
+            ?? throw new InvalidOperationException("No open dialog.");
+
+        var filters = (SDL.SDL_DialogFileFilter*)open.Filters;
+        var read = Enumerable.Range(0, open.Count)
+            .Select(index => (Marshal.PtrToStringUTF8((nint)filters[index].name), Marshal.PtrToStringUTF8((nint)filters[index].pattern)))
+            .ToList();
+        Assert.Equal([("Project or STL", "3de;stl"), ("3DEngine project", "3de"), ("STL file", "stl")], read);
+
+        FileDialogState.Finish(open.Number, "C:/Downloads/bracket.stl", null);
+        Assert.Equal((true, "C:/Downloads/bracket.stl", (string?)null, 1), FileDialogState.Take());
         Assert.Equal(waiting, FileDialogState.Waiting);
     }
 }
