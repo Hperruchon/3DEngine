@@ -321,6 +321,7 @@ Therefore each approved objective must have a track here.
   on an amber arc above the selected body. v0.309, TASK-0326, ADR-0092.
 - R16s — The values on the edges of an active sketch: a chip on each length, and a tap opens the pad of its value.
   v0.310, TASK-0327, ADR-0105.
+- Review — The codebase review of 2026-11-09 (b). v0.311, TASK-0329.
 
 ## Track 0 — Foundations
 
@@ -463,6 +464,8 @@ This track removes each condition that blocks other work.
 | P0.135 | The test of the window hold of the session turns survives a busy runner (the failed run 42543751923 on main). TASK-0322. | 1 |
 | P0.136 | The medium and low findings of the codebase review of 2026-11-09 (V152 to V157 and E197; V158 after the answer of the owner), after the next product phase. TASK-0324. | 1 |
 | P0.137 | "Open project..." shows "Project or STL" first, and an STL file chosen there goes to the import (ADR-0106; the order of the owner of 2026-11-09 after P9g). TASK-0328. | 1 |
+| P0.138 | The high finding of the codebase review of 2026-11-09 (b): Accept of the agent arc takes a tap in the default window (V159), before the next product phase. TASK-0330. | 1 |
+| P0.139 | The medium and low findings of the codebase review of 2026-11-09 (b) (V160 to V163, E198, E199 and T180), after the next product phase. TASK-0331. | 1 |
 | P0.102 | The cache of a face, the fixed controls, the list New, the edges and the safe area hold their next forms (V113 to V118 of the codebase review of 2026-11-06 (e); after P0.101). TASK-0252. | 1–2 |
 | P0.86 | The window keeps no input between sessions, the hook has the cases of one axis, and the next forms of four gates fail (V88 to V90, T141 to T144 of the codebase review of 2026-11-06; after the next product phase). TASK-0198. | 1–2 |
 
