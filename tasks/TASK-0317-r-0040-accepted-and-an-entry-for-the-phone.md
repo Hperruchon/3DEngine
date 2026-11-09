@@ -1,7 +1,7 @@
 ---
 id: 0317
 title: The register accepts the image test on Ubuntu only, and an entry holds the project file of the phone
-status: Active
+status: Done
 phase: P0.131
 opened: 2026-11-09
 depends-on: [0316]
@@ -59,20 +59,20 @@ R-0040 is an accepted compromise with the reason of the owner, and a new open en
 
 ## Acceptance criteria
 
-- [ ] The register holds 10 open entries: R-0007, R-0040 and R-0054 are in "Accepted compromises", R-0024, R-0039 and
+- [x] The register holds 10 open entries: R-0007, R-0040 and R-0054 are in "Accepted compromises", R-0024, R-0039 and
       R-0055 are closed, and R-0056 is open.
-- [ ] `repo-gates` passes, and continuous integration passes on the branch and on `main` after the merge.
+- [x] `repo-gates` passes, and continuous integration passes on the branch and on `main` after the merge.
 
 ## Outcome
 
-Status: Active
+Status: Done · commit (the merge of the branch p0131-register-r0040) · v0.300
 
 ## Method
 
 Mechanical: the exit "Accept" of the register (rule 3) and the answer of the owner.
 Judgement:  the class of R-0056 is "question" (90 days), because the owner decides later whether the phone gets a project
             file.
-Weakest:    to be written at the close.
+Weakest:    the closes of R-0024 and R-0039 rest on a reading of the code and the tests on 2026-11-09; no new test.
 
 ## Progress
 
@@ -81,3 +81,4 @@ Weakest:    to be written at the close.
 - 2026-11-09: the owner answered the form on the open entries: R-0007 A, R-0024 A, R-0054 A, R-0053 B, R-0055 B; R-0048
   and the old findings go to the next tasks. The comment of `nuget.config` named the folder an interim bootstrap and only
   the Manifold package; it now names both packages and the acceptance.
+- 2026-11-09: run 42538301855 passed. Closed at v0.300.
