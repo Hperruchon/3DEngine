@@ -1,23 +1,33 @@
 ---
 id: 0092
 title: An agent proposes commands, and the person accepts or rejects them
-status: Proposed
+status: Accepted
 topic: Surface, clients
 date: 2026-11-08
 supersedes: []
 superseded-by: []
 amends: []
 amended-by: []
-affects: []
-enforced-by: none
+affects:
+  - Engine.Api.Http/Proposals.cs
+  - Engine.Api.Http/Endpoints/ProposalsEndpoint.cs
+  - Engine.Api.Http/EngineSurface.cs
+  - Engine.Api.Http/EngineHost.cs
+  - Engine.Tests/Http/ProposalsEndpointTests.cs
+  - 3DEngine.App/Ui/DesktopUi.Proposal.cs
+  - 3DEngine.App/Ui/DesktopUi.cs
+  - 3DEngine.App/NativeThreeDEngine.cs
+  - 3DEngine/HostedSession.cs
+  - 3DEngine.ImageTests/ProposalArcTests.cs
+enforced-by: Engine.Tests/Http/ProposalsEndpointTests.cs
 ---
 
 # ADR-0092 — An agent proposes commands, and the person accepts or rejects them
 
 This document uses Simplified Technical English (ASD-STE100). See `CLAUDE.md`, section "Language".
 
-This record is **Proposed**. On 2026-11-08 the owner chose to start the agent proposal arc of the redesign. The arc changes
-the HTTP surface, which an agent reads, so this record gives the shape for the check of the owner before code.
+This record was **Proposed** on 2026-11-08. On the same day the owner answered Q1 A, Q2 A, Q3 B and Q4 A. Q3 B is not the
+recommendation of the record: the owner chose a queue of proposals. TASK-0326 (phase R16r) accepts the record.
 
 ## Context
 
@@ -71,18 +81,59 @@ B changes the log. **Recommended: A.**
 
 ## Decision
 
-None yet. The owner answers Q1 to Q4. With A to each, the slices are: the routes `POST /proposals`, `GET /proposals` and
-the accept and the reject in the surface, with their codes in `docs/diagnostics.md`; then the arc of the desktop (the line of
-the agent, the summary, the scope, Reject and Accept); then the pending chip for a proposed value.
+The owner chose A for Q1, Q2 and Q4, and B for Q3.
+
+1. **The place (Q1 A).** A proposal lives in the queue of the host, `EngineHost.Proposals`, in `Engine.Api.Http`, outside
+   the log. `Engine.Contracts` does not change, and nothing enters the log before an accept. `Engine.Core` gets only the
+   constants of the three new codes of item 3, beside the other codes of the surface.
+2. **The routes.** The surface serves four routes, with the checks of `POST /commands` (the Host filter and the open of a
+   file, ADR-0030 item 4):
+   - `POST /proposals` takes `{ "summary": string, "commands": [envelope, …] }`. An envelope is the body of
+     `POST /commands`. The summary is required and has at most 120 characters; the list has from 1 to 16 envelopes. The
+     surface checks each envelope at the post, as `POST /commands` does: a known name and version, and parameters that bind.
+     A refusal is HTTP 400 with `E-API-BAD-REQUEST` and the index of the envelope. An accepted post is HTTP 201 with the
+     proposal.
+   - `GET /proposals` gives the open proposals, the oldest first.
+   - `GET /proposals/{id}` gives one proposal, open or closed. The queue keeps the last 32 closed proposals, so an agent
+     reads the outcome of its proposal.
+   - `DELETE /proposals/{id}` withdraws an open proposal; the agent changed its mind.
+   No route accepts or rejects. Only the person in the window does, so an agent cannot accept its own proposal.
+3. **The queue (Q3 B).** The queue holds at most 8 open proposals, first in, first out. The window shows the oldest one, with
+   its place ("1 of 3"). The codes are:
+   - `E-API-PROPOSAL-QUEUE-FULL`: a ninth open proposal, HTTP 409.
+   - `E-API-PROPOSAL-NOT-FOUND`: no open or kept proposal has the identifier, HTTP 404.
+   - `E-API-PROPOSAL-CLOSED`: a withdraw of a closed proposal, HTTP 409.
+4. **A proposal.** A proposal has an identifier, its summary, its envelopes, the version of the Document at the post, and a
+   state: `open`, `applying`, `accepted`, `rejected`, `withdrawn` or `failed`. A closed proposal keeps the results of the
+   commands that ran. When the version of the Document is not the version at the post, the window says "The document
+   changed after the proposal". The accept still runs; an envelope with `expectedDocumentVersion` guards itself.
+5. **The preview (Q2 A).** The window shows the summary, the count of the commands and the text of each command: its name
+   and its parameters, at most four lines, and "and N more". It shows no simulated result. The pending chip of a value of
+   ADR-0082 is a later slice.
+6. **The accept and the undo (Q4 A).** An accept applies the envelopes in their order through the session, as the commands
+   of a person, off the thread of the frame. Each command is one step of undo, and the arc says "N steps of undo". The
+   apply stops at the first command that the engine does not apply: the proposal is `failed`, with the index and the code
+   of that command, and the commands before it stay applied. A reject closes the proposal with no command. The status line
+   gives the outcome.
+7. **The place in the window.** On a landscape display the proposal is an amber arc on the band of the ring of the selected
+   body, above it, from 235° to 305° (y down), with Reject at its left end and Accept at its right end, each a circle of at
+   least 44 pixels. With no selection the arc uses a ring at the centre of the display, with the inner radius of a ring of a
+   body. The caption "AGENT · summary" is above the arc, and the command lines are under it, inside the ring. The tools of
+   the ring stay, but dim, while a proposal waits. The top bar says "AGENT IS WAITING" in amber. On a portrait display the
+   proposal is a sheet above the anchors, with the same lines, Reject and Accept. The arc does not show on the home screen.
+8. **No phone.** The phone has no HTTP surface (ADR-0019), so it shows no proposal.
 
 ## Consequences
 
-**Good (with A):** an agent proposes and the person decides, with no change of the engine and no change of the log.
+**Good:** an agent proposes and the person decides, with no change of the engine contract and no change of the log. Several
+agents, or one agent with several steps, wait in order and none replaces another.
 
-**Bad (with A):** the preview shows the commands and not their result; the phone has no HTTP surface, so it shows no
-proposal; an accept is N steps of undo; the log does not record that an agent proposed a command.
+**Bad:** the preview shows the commands and not their result; the phone shows no proposal; an accept is N steps of undo; the
+log does not record that an agent proposed a command; a queue lets an agent post eight proposals before the person sees the
+first one.
 
 ## History
 
 - 2026-11-08 · TASK-0297 · The record, Proposed, for the check of the owner (the answer of the owner of 2026-11-08: start the
   agent proposal arc).
+- 2026-11-09 · TASK-0326 · Accepted, with the answers of the owner of 2026-11-08 (Q1 A, Q2 A, Q3 B, Q4 A) and the decision.

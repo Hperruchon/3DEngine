@@ -15,6 +15,8 @@ namespace ThreeDEngine.ImageTests;
 // does, with its ring and its values. The picture is kept for the owner, beside the render.
 // Phase R16q (TASK-0325): the sketch has the name "Plate", and the history arc of the bracket shows at the lower left of its
 // ring: "Bracket", then "Plate on XY".
+// Phase R16r (TASK-0326): a second picture holds one open proposal of an agent, "Widen the bracket to 75 mm", with one
+// command SetSketchConstraintValue on the distance of 60 of the sketch: the amber arc above the ring, with Reject and Accept.
 [Collection(DearImGui.Collection)]
 public class MixImageTests
 {
@@ -28,7 +30,18 @@ public class MixImageTests
     }
 
     [VulkanImageFact]
-    public async Task The_Selected_Bracket_Of_The_Render_Draws_At_1440_By_900()
+    public Task The_Selected_Bracket_Of_The_Render_Draws_At_1440_By_900() => Draw("mix-selected.png", null);
+
+    // TASK-0326: the same scene while one proposal of an agent waits. The parameters are the names of the schema of the handler.
+    [VulkanImageFact]
+    public Task The_Bracket_With_A_Proposal_Draws_At_1440_By_900() => Draw("mix-proposal.png", (sketch, constraint) =>
+    {
+        using var parameters = System.Text.Json.JsonDocument.Parse($"{{\"sketchId\":\"{sketch}\",\"constraintId\":\"{constraint}\",\"value\":75}}");
+        var line = ProposalCard.Line("SetSketchConstraintValue", parameters.RootElement.EnumerateObject().Select(member => KeyValuePair.Create(member.Name, member.Value)));
+        return [new ProposalCard(Guid.Parse("74000000-0000-0000-0000-000000000001"), "Widen the bracket to 75 mm", [line])];
+    });
+
+    private static async Task Draw(string name, Func<Guid, Guid, IReadOnlyList<ProposalCard>>? proposal)
     {
         var messagesBefore = GraphicsDevice.ValidationMessageCount;
         using var host = new EngineHost(new Engine.Geometry.Manifold.ManifoldGeometryBackend());
@@ -40,7 +53,7 @@ public class MixImageTests
         var lines = new List<Guid>();
         for (var i = 0; i < points.Count; i++)
             lines.Add(Out(await host.Session.Apply(new AddSketchLineCommand { SketchId = sketch, StartPointId = points[i], EndPointId = points[(i + 1) % points.Count] }), "lineId"));
-        await host.Session.Apply(new AddSketchConstraintCommand { SketchId = sketch, Kind = "distance", First = lines[0], Value = 60 });
+        var width = Out(await host.Session.Apply(new AddSketchConstraintCommand { SketchId = sketch, Kind = "distance", First = lines[0], Value = 60 }), "constraintId");
         await host.Session.Apply(new AddSketchConstraintCommand { SketchId = sketch, Kind = "distance", First = lines[1], Value = 40 });
         var body = Out(await host.Session.Apply(new ExtrudeCommand { SketchId = sketch, Distance = 10 }), "bodyId");
         await host.Session.Apply(new RenameBodyCommand { BodyId = body, NewName = "Bracket" });
@@ -53,6 +66,7 @@ public class MixImageTests
         var camera = scene.Cameras[0];
         var display = new Vector2(Width, Height);
         byte[] pixels;
+        IReadOnlyList<ProposalCard>? proposals;
 
         using (var device = new GraphicsDevice("3DEngine.ImageTests", enableValidation: true, window: null, synchronizationValidation: true))
         {
@@ -73,10 +87,11 @@ public class MixImageTests
             var size = Vector2.Distance(diagonal.A, diagonal.B) / 2f;
             var values = EdgeValues.Of(body, 10, faces.Edges, [info], camera, Width, Height, "mm");
             var history = HistorySteps.Of(features, renderer.LiveBodies, [info], body);
+            proposals = proposal?.Invoke(sketch, width);
             var data = UiDrawData.Empty;
             for (var frame = 0; frame < 3; frame++)
                 data = ui.Frame(1f / 60f, display, Vector2.One, renderer.LiveBodies, body, new DocumentLine("bracket", null),
-                    ringCentre: centre, ringBody: size, values: values, history: history);
+                    ringCentre: centre, ringBody: size, values: values, history: history, proposals: proposals);
 
             pixels = target.Render((commandBuffer, framebuffer, frameExtent) =>
                 renderer.Record(commandBuffer, framebuffer, frameExtent, scene, camera,
@@ -87,12 +102,18 @@ public class MixImageTests
             ? output
             : Path.Combine(AppContext.BaseDirectory, "pictures");
         Directory.CreateDirectory(folder);
-        var picture = Path.Combine(folder, "mix-selected.png");
+        var picture = Path.Combine(folder, name);
         Png.Write(picture, (int)Width, (int)Height, pixels);
         Assert.True(GraphicsDevice.ValidationMessageCount == messagesBefore,
             $"The validation layer gave {GraphicsDevice.ValidationMessageCount - messagesBefore} messages.");
         Assert.True(pixels.Length == Width * Height * 4, $"The picture {picture} has {pixels.Length} bytes.");
         Assert.NotNull(ui.ItemRectangle(DesktopUi.HistoryItem(body)));
         Assert.NotNull(ui.ItemRectangle(DesktopUi.HistoryItem(sketch)));
+        if (proposals is not null)
+        {
+            Assert.NotNull(ui.ItemRectangle(DesktopUi.ProposalRejectItem));
+            Assert.NotNull(ui.ItemRectangle(DesktopUi.ProposalAcceptItem));
+            Assert.StartsWith("SetSketchConstraintValue ", ui.ProposalTexts[DesktopUi.ProposalLineItem(0)], StringComparison.Ordinal);
+        }
     }
 }
