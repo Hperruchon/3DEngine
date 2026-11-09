@@ -6,6 +6,7 @@ namespace ThreeDEngine.Desktop.Ui;
 
 // ADR-0082 (the redesign, slice c, TASK-0254): the values of the selected extrude on its edges. A chip holds the value and
 // the unit; a press and a release on one chip open the pad of its value, and the chip is pending while that pad is open.
+// ADR-0105 (TASK-0327): while a sketch is active, the chips are the values of that sketch on its lines and its curves.
 internal sealed unsafe partial class DesktopUi
 {
     // The smallest side of a chip: the 44 pixels of a target of ADR-0027 item 6.
@@ -24,13 +25,15 @@ internal sealed unsafe partial class DesktopUi
     private bool OverValue(double x, double y)
         => _chips.Any(chip => x >= chip.Rectangle.X && x < chip.Rectangle.Z && y >= chip.Rectangle.Y && y < chip.Rectangle.W);
 
-    // Item 1: no chip while a sketch is active, or while the pad of another tool is open.
-    private void Values(Vector2 displaySize, IReadOnlyList<EdgeValues.Value>? values)
+    // Item 1: no chip of the extrude while a sketch is active, or while the pad of another tool is open. ADR-0105 item 1
+    // (TASK-0327): while a sketch is active, the chips are the values of that sketch.
+    private void Values(Vector2 displaySize, IReadOnlyList<EdgeValues.Value>? edgeValues, IReadOnlyList<EdgeValues.Value>? sketchValues)
     {
         _chips = [];
         if (_pad is null)
             _pendingValue = null;
-        if (values is not { Count: > 0 } || _sketchActive || (_pad is not null && _pendingValue is null))
+        var values = _sketchActive ? sketchValues : edgeValues;
+        if (values is not { Count: > 0 } || (_pad is not null && _pendingValue is null))
             return;
 
         // Item 2: the chip is centred on its place, and the placement of ADR-0056 moves the chips apart.
@@ -107,7 +110,15 @@ internal sealed unsafe partial class DesktopUi
     // pad of its value, whose apply changes the constraint of the sketch of the extrude.
     private void Use(EdgeValues.Value value)
     {
-        if (value.Constraint is { } constraint && value.Sketch is { } sketch)
+        // ADR-0105 item 4 (TASK-0327): a chip of the active sketch opens the pad that the row of its constraint opens
+        // (ADR-0034 item 8), with the same apply, and the chip is pending while that pad is open.
+        if (_sketchActive && value.Constraint is { } sketchConstraint)
+        {
+            OpenPad(new NumericPad(ValueLabel, _unit, new PadField("length", SketchText.Number(value.Number))),
+                numbers => new SetConstraintValueAction(sketchConstraint, numbers), bySketch: true, scope: PadScope.Sketch);
+            _pendingValue = value.Key;
+        }
+        else if (value.Constraint is { } constraint && value.Sketch is { } sketch)
         {
             OpenPad(new NumericPad(EdgeValueLabel, _unit, new PadField("value", SketchText.Number(value.Number))),
                 numbers => new SetBodyValueAction(sketch, constraint, numbers[0]), scope: PadScope.Body);

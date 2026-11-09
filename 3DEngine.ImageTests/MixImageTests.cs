@@ -17,6 +17,8 @@ namespace ThreeDEngine.ImageTests;
 // ring: "Bracket", then "Plate on XY".
 // Phase R16r (TASK-0326): a second picture holds one open proposal of an agent, "Widen the bracket to 75 mm", with one
 // command SetSketchConstraintValue on the distance of 60 of the sketch: the amber arc above the ring, with Reject and Accept.
+// Phase R16s (TASK-0327): a third picture holds the sketch "Plate" active, as a tap on its step of the history arc makes it:
+// under its body, with its rows at the left, its ring, and a chip on each of its two lengths.
 [Collection(DearImGui.Collection)]
 public class MixImageTests
 {
@@ -41,7 +43,11 @@ public class MixImageTests
         return [new ProposalCard(Guid.Parse("74000000-0000-0000-0000-000000000001"), "Widen the bracket to 75 mm", [line])];
     });
 
-    private static async Task Draw(string name, Func<Guid, Guid, IReadOnlyList<ProposalCard>>? proposal)
+    // TASK-0327: the same scene while the sketch of the bracket is active. The values come from the method of the host.
+    [VulkanImageFact]
+    public Task The_Bracket_With_Its_Sketch_Active_Draws_At_1440_By_900() => Draw("mix-sketch.png", null, sketchActive: true);
+
+    private static async Task Draw(string name, Func<Guid, Guid, IReadOnlyList<ProposalCard>>? proposal, bool sketchActive = false)
     {
         var messagesBefore = GraphicsDevice.ValidationMessageCount;
         using var host = new EngineHost(new Engine.Geometry.Manifold.ManifoldGeometryBackend());
@@ -67,6 +73,8 @@ public class MixImageTests
         var display = new Vector2(Width, Height);
         byte[] pixels;
         IReadOnlyList<ProposalCard>? proposals;
+        IReadOnlyList<EdgeValues.Value> sketchValues = [];
+        IReadOnlyList<EdgeValues.Value> values;
 
         using (var device = new GraphicsDevice("3DEngine.ImageTests", enableValidation: true, window: null, synchronizationValidation: true))
         {
@@ -85,13 +93,34 @@ public class MixImageTests
             var centre = SketchOverlay.Segment(camera, Width, Height, middle, middle)?.A ?? throw new InvalidOperationException("The body is behind the eye.");
             var diagonal = SketchOverlay.Segment(camera, Width, Height, extent.Min, extent.Max) ?? throw new InvalidOperationException("The body is behind the eye.");
             var size = Vector2.Distance(diagonal.A, diagonal.B) / 2f;
-            var values = EdgeValues.Of(body, 10, faces.Edges, [info], camera, Width, Height, "mm");
+            values = EdgeValues.Of(body, 10, faces.Edges, [info], camera, Width, Height, "mm");
             var history = HistorySteps.Of(features, renderer.LiveBodies, [info], body);
             proposals = proposal?.Invoke(sketch, width);
+
+            // TASK-0327: as NativeThreeDEngine.Render does for an active sketch that makes a live extrude (ADR-0085 items 2 to 4):
+            // the sketch under its body, its overlay and its window, the ring at the centre of its points, and its values.
+            SketchOverlay.Strokes? strokes = null;
+            SketchPanel? sketchPanel = null;
+            if (sketchActive)
+            {
+                var actions = new SketchActions(host.Session);
+                actions.Edit(sketch);
+                var lift = SketchLift.Under(sketch, SketchOverlay.PlaneOf(info)!, extent.Min, extent.Max) ?? throw new InvalidOperationException("No move.");
+                actions.Lift = lift;
+                var seen = lift.Apply(info);
+                strokes = SketchOverlay.Of([seen], camera, Width, Height, new SketchOverlay.Focus(sketch, [], null));
+                strokes = strokes with { Lines = [.. strokes.Lines, .. lift.Links(info, camera, Width, Height)] };
+                sketchPanel = new SketchPanel([info], info, actions.Tool.Kind, false, [], null);
+                var shown = seen.Points.Select(point => SketchOverlay.Pixel(seen, camera, Width, Height, (point.X, point.Y))).OfType<Vector2>().ToList();
+                var (low, high) = (shown.Aggregate(Vector2.Min), shown.Aggregate(Vector2.Max));
+                (centre, size) = ((low + high) / 2f, Vector2.Distance(low, high) / 2f);
+                sketchValues = NativeThreeDEngine.SketchValuesOf(actions, [info], camera, Width, Height, "mm");
+            }
+
             var data = UiDrawData.Empty;
             for (var frame = 0; frame < 3; frame++)
-                data = ui.Frame(1f / 60f, display, Vector2.One, renderer.LiveBodies, body, new DocumentLine("bracket", null),
-                    ringCentre: centre, ringBody: size, values: values, history: history, proposals: proposals);
+                data = ui.Frame(1f / 60f, display, Vector2.One, renderer.LiveBodies, body, new DocumentLine("bracket", null), sketches: strokes, sketchPanel: sketchPanel,
+                    ringCentre: centre, ringBody: size, values: values, history: history, proposals: proposals, sketchValues: sketchValues);
 
             pixels = target.Render((commandBuffer, framebuffer, frameExtent) =>
                 renderer.Record(commandBuffer, framebuffer, frameExtent, scene, camera,
@@ -107,8 +136,19 @@ public class MixImageTests
         Assert.True(GraphicsDevice.ValidationMessageCount == messagesBefore,
             $"The validation layer gave {GraphicsDevice.ValidationMessageCount - messagesBefore} messages.");
         Assert.True(pixels.Length == Width * Height * 4, $"The picture {picture} has {pixels.Length} bytes.");
-        Assert.NotNull(ui.ItemRectangle(DesktopUi.HistoryItem(body)));
-        Assert.NotNull(ui.ItemRectangle(DesktopUi.HistoryItem(sketch)));
+        if (sketchActive)
+        {
+            // TASK-0327: a chip on each of the two lengths of the sketch, and no chip of the extrude.
+            Assert.Equal(["C1  60 mm", "C2  40 mm"], sketchValues.Select(value => value.Text));
+            Assert.All(sketchValues, value => Assert.NotNull(ui.ItemRectangle(value.Key)));
+            Assert.All(values, value => Assert.Null(ui.ItemRectangle(value.Key)));
+        }
+        else
+        {
+            Assert.NotNull(ui.ItemRectangle(DesktopUi.HistoryItem(body)));
+            Assert.NotNull(ui.ItemRectangle(DesktopUi.HistoryItem(sketch)));
+        }
+
         if (proposals is not null)
         {
             Assert.NotNull(ui.ItemRectangle(DesktopUi.ProposalRejectItem));
