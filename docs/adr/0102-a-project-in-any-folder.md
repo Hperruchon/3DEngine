@@ -105,3 +105,4 @@ the dialogs of the system need a person: the tests give their results as samples
 
 - 2026-11-08 · TASK-0316 · The record, with the answers of the owner.
 - 2026-11-09 · TASK-0316 · Shipped at v0.299; the row waits for the run of the owner.
+- 2026-11-09 · TASK-0317 · Item 9: the register entry R-0056 holds the project file of the phone.

@@ -372,31 +372,6 @@ by the standing answer of 2026-10-31; TASK-0142 records it). E25: no production 
 a document file is the load path that continues live. E27: its refusal needs a change of `Engine.Contracts`, and
 only a test or a script replays a log. E34 and E39 stay.
 
-### R-0039 · No test calls the surface of the desktop host
-- class: debt
-- opened: 2026-10-11
-- due: 2027-04-09
-- extended: no
-- refs: `3DEngine/DesktopSurface.cs`, `3DEngine/DesktopEngineHost.cs`, TASK-0062, findings E50, E52 and E54 of `docs/reviews/2026-10-11-codebase-review.md`
-`DesktopSurface` is internal to the desktop program, and no test project references that program. The
-port setting, the disposal of the session and the end of the window loop at a stop have no automatic
-test. TASK-0062 corrected the three by reading and by one run of the executable before its window.
-Exit: a test calls `DesktopSurface`, or the owner accepts the gap and gives the reason.
-Progress 2026-10-16: TASK-0076 gave the program a test project, `3DEngine.ImageTests`, which tests
-`SessionBodies` and `SceneRenderer` through the image test. No test calls `DesktopSurface` yet.
-
-### R-0040 · The image test does not run on the Windows and macOS runners
-- class: interim
-- opened: 2026-10-14
-- due: 2027-10-14
-- extended: no
-- refs: `3DEngine.ImageTests/VulkanImageFactAttribute.cs`, ADR-0025 item 4, TASK-0076, R-0022
-The images of `windows-latest` and `macos-latest` give no usable Vulkan device, so the image test skips
-there by decision of the owner (question Q2 of the codebase review of 2026-10-13, D3). A defect of the
-Vulkan layer that only Windows or macOS shows passes the pipeline. The computer of the owner runs the test
-on Windows with a GPU, and no computer runs it on macOS.
-Exit: a runner of Windows or macOS gives a Vulkan device and the pipeline requires the test there, or the
-owner accepts Ubuntu alone and moves this entry to the accepted compromises.
 ### R-0048 · The licences of the native vision library in a distributed program have no decision
 - class: question
 - opened: 2026-10-31
@@ -451,6 +426,18 @@ in one runtime" as a non-goal, so P8b1 records the references and does not resol
 Exit: the owner decides if the engine may hold a second Document in one runtime to resolve a reference, or how else an
 assembly shows its parts, and the charter or ADR-0071 records the decision.
 
+### R-0056 · The phone opens and saves no project file
+- class: question
+- opened: 2026-11-09
+- due: 2027-02-07
+- extended: no
+- refs: `docs/adr/0102-a-project-in-any-folder.md` item 9, `3DEngine.App/PhoneFiles.cs`, TASK-0316, TASK-0317
+Since P9g the desktop opens and saves a project in each folder, but the phone has no document folder: `PhoneFiles`
+refuses each save and each open, and the home screen of the phone shows "Import STL..." only. The document picker of
+Android gives a content address, not a path. The owner put the phone out of the scope of P9g (Q4 A, 2026-11-08).
+Exit: a phase gives the phone a project file through the document picker, or the owner accepts a phone with no project
+file and moves this entry to the accepted compromises.
+
 ## Accepted compromises
 
 These are conditions that the project keeps permanently and by decision. They do not age.
@@ -487,10 +474,43 @@ The project keeps the condition. A workflow file is a gate file, so only a task 
 the job. A required review needs pull requests, which changes how the owner merges, for a risk that
 needs a deliberate act.
 
+### R-0040 · The image test does not run on the Windows and macOS runners
+- class: interim
+- opened: 2026-10-14
+- due: 2027-10-14
+- extended: no
+- refs: `3DEngine.ImageTests/VulkanImageFactAttribute.cs`, ADR-0025 item 4, TASK-0076, R-0022
+The images of `windows-latest` and `macos-latest` give no usable Vulkan device, so the image test skips
+there by decision of the owner (question Q2 of the codebase review of 2026-10-13, D3). A defect of the
+Vulkan layer that only Windows or macOS shows passes the pipeline. The computer of the owner runs the test
+on Windows with a GPU, and no computer runs it on macOS.
+Exit: a runner of Windows or macOS gives a Vulkan device and the pipeline requires the test there, or the
+owner accepts Ubuntu alone and moves this entry to the accepted compromises.
+Accepted 2026-11-09 · TASK-0317 · the owner answered "R-0040 accept: Ubuntu is enough"
+The project keeps the condition. The pipeline runs the image test with lavapipe on Ubuntu, and the computer of the owner
+runs it on Windows with a GPU. A defect of the Vulkan layer that only macOS shows can still pass.
+
 
 ---
 
 ## Closed
+
+### R-0039 · No test calls the surface of the desktop host
+- class: debt
+- opened: 2026-10-11
+- due: 2027-04-09
+- extended: no
+- refs: `3DEngine/DesktopSurface.cs`, `3DEngine/DesktopEngineHost.cs`, TASK-0062, findings E50, E52 and E54 of `docs/reviews/2026-10-11-codebase-review.md`
+`DesktopSurface` is internal to the desktop program, and no test project references that program. The
+port setting, the disposal of the session and the end of the window loop at a stop have no automatic
+test. TASK-0062 corrected the three by reading and by one run of the executable before its window.
+Exit: a test calls `DesktopSurface`, or the owner accepts the gap and gives the reason.
+Progress 2026-10-16: TASK-0076 gave the program a test project, `3DEngine.ImageTests`, which tests
+`SessionBodies` and `SceneRenderer` through the image test. No test calls `DesktopSurface` yet.
+Closed 2026-11-09 · resolved · TASK-0194 and TASK-0317. Since TASK-0194 (2026-11-06) `DesktopSessionTests` runs
+`DesktopEngineHost.RunSessions` with `DesktopEngineHost.Start`, which calls `DesktopSurface.Start`: the tests start with
+`--port 0`, open the first file with no share after the next session to prove its disposal, and read the exit code 0 of
+the end of the loop. TASK-0317 found it on 2026-11-09 and closes the entry.
 
 ### R-0020 · The platform list needs a study before objective 8 changes
 - class: question
