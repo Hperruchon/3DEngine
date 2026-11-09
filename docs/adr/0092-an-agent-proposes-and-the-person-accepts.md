@@ -1,13 +1,13 @@
 ---
 id: 0092
 title: An agent proposes commands, and the person accepts or rejects them
-status: Accepted
+status: Amended
 topic: Surface, clients
 date: 2026-11-08
 supersedes: []
 superseded-by: []
 amends: []
-amended-by: []
+amended-by: ['0107']
 affects:
   - Engine.Api.Http/Proposals.cs
   - Engine.Api.Http/Endpoints/ProposalsEndpoint.cs
@@ -138,3 +138,5 @@ first one.
   agent proposal arc).
 - 2026-11-09 · TASK-0326 · Accepted, with the answers of the owner of 2026-11-08 (Q1 A, Q2 A, Q3 B, Q4 A) and the decision.
 - 2026-11-09 · TASK-0326 · Shipped at v0.309.
+- 2026-11-10 · TASK-0330 · ADR-0107 amends item 7: with no ring of a body, the arc is in the room right of the panel, and
+  the window of the live sketches does not show while a proposal waits.

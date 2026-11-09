@@ -61,6 +61,9 @@ internal sealed unsafe partial class DesktopUi
 
     internal IReadOnlyDictionary<string, string> ProposalTexts => _proposalTexts;
 
+    // ADR-0107 (TASK-0330): the rectangles of the words Reject and Accept of the arc of this frame, for a test.
+    internal IReadOnlyList<Vector4> ProposalWords => [.. _proposalTargets.Select(target => target.Word)];
+
     // The ring of the arc of this frame, or null.
     internal RingLayout? ProposalRing { get; private set; }
 
@@ -134,6 +137,34 @@ internal sealed unsafe partial class DesktopUi
         return lines;
     }
 
+    // The smallest inner radius of the ring of FreeRing, as the smallest ring of a sketch.
+    internal const float ProposalInnerMinimum = 100f;
+
+    // ADR-0107 (phase P0.138, TASK-0330): the ring of the arc with no ring of a body. Its centre is at the middle of the room
+    // right of each panel at the left half of the display, at the height of the middle of the display, and its inner radius
+    // is that of a ring of a body (ADR-0081), less where the room is narrow, so that each end and its word stay in the room.
+    // The panels are those of this frame and of the frame before, because the rows of an active sketch draw after the arc.
+    // Finding V159 of the codebase review of 2026-11-09 (b): until TASK-0330 the ring was at the centre of the display, and
+    // at 1280 by 720 the window of the live sketches covered Accept and the panel covered the word "Reject".
+    private RingLayout FreeRing(Vector2 displaySize)
+    {
+        var left = 16f + _inset.X;
+        foreach (var panel in _panels.Concat(_lastPanels))
+        {
+            if (panel.X < displaySize.X / 2f)
+                left = Math.Max(left, panel.Z + 16f);
+        }
+
+        var right = displaySize.X - 16f - _inset.Z;
+        // The layout gives the height and the radius of a ring of a body. The arc draws only the top of the ring, so its centre
+        // stays at the middle of the room, where the layout would move it to keep the whole ring in the display.
+        var ring = Layout(displaySize, new Vector2((left + right) / 2f, displaySize.Y / 2f), 1, 0f, _inset, _anchorsTop);
+        var word = Math.Max(ImGui.CalcTextSize(RejectLabel).X, ImGui.CalcTextSize(AcceptLabel).X);
+        var room = ((right - left) / 2f) - (ProposalButton / 2f) - 8f - word;
+        var fit = (room / MathF.Cos(ProposalTo)) - (RingBand / 2f);
+        return ring with { Centre = new Vector2((left + right) / 2f, ring.Centre.Y), Inner = Math.Clamp(fit, ProposalInnerMinimum, ring.Inner) };
+    }
+
     // A count and its word: "1 command", "3 commands".
     internal static string Counted(int count, string word) => count == 1 ? $"1 {word}" : $"{count} {word}s";
 
@@ -142,11 +173,10 @@ internal sealed unsafe partial class DesktopUi
     // Item 7: the arc on a landscape display.
     private void ProposalArc(Vector2 displaySize, LiveBody? body, ProposalCard card, List<(string Item, string Text, bool Amber)> lines)
     {
-        // The ring of the selected body, or with no body ring a ring at the centre of the display with the inner radius of a
-        // ring of a body.
+        // The ring of the selected body, or with no body ring the ring of FreeRing.
         var ring = body is not null && !_sketchActive && _ring is { } bodyRing
             ? bodyRing
-            : Layout(displaySize, displaySize / 2f, 1, 0f, _inset, _anchorsTop);
+            : FreeRing(displaySize);
         ProposalRing = ring;
         var radius = ring.Inner + (RingBand / 2f);
         Vector2 At(float angle, float distance) => ring.Centre + (new Vector2(MathF.Cos(angle), MathF.Sin(angle)) * distance);
