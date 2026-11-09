@@ -1,7 +1,7 @@
 ---
 id: 0318
 title: The vision spike moves to OpenCvSharp5 and the library stays out of each distributed program
-status: Active
+status: Done
 phase: V0b
 opened: 2026-11-09
 depends-on: [0317]
@@ -51,19 +51,19 @@ the library.
 
 ## Acceptance criteria
 
-- [ ] The three tests of the spike pass on Windows, Linux and macOS in the pipeline.
-- [ ] R-0048 is closed with ADR-0103.
-- [ ] Continuous integration passes on the branch and on `main` after the merge.
+- [x] The three tests of the spike pass on Windows, Linux and macOS in the pipeline.
+- [x] R-0048 is closed with ADR-0103.
+- [x] Continuous integration passes on the branch and on `main` after the merge.
 
 ## Outcome
 
-Status: Active
+Status: Done · commit (the merge of the branch v0b-opencv5) · v0.306
 
 ## Method
 
 Mechanical: the answer of the owner and the names of the packages on nuget.org.
 Judgement:  none.
-Weakest:    to be written at the close.
+Weakest:    the spike tests three operations only; the rest of OpenCV 5 is not used by the project.
 
 ## Progress
 
@@ -71,3 +71,5 @@ Weakest:    to be written at the close.
   test of the version failed with the old text "4.13." before its change.
 - 2026-11-09: the case of the pin of the dependency gate names OpenCvSharp5; with the old name the gate failed, because no
   file names OpenCvSharp4 any more.
+- 2026-11-09: run 42554669161 passed on Windows, Linux and macOS. The close waited for the codebase review of 2026-11-09,
+  because V0b was the fifth product milestone after the review of v0.292. Closed at v0.306.
