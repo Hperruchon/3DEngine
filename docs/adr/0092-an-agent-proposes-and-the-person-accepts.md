@@ -137,3 +137,4 @@ first one.
 - 2026-11-08 · TASK-0297 · The record, Proposed, for the check of the owner (the answer of the owner of 2026-11-08: start the
   agent proposal arc).
 - 2026-11-09 · TASK-0326 · Accepted, with the answers of the owner of 2026-11-08 (Q1 A, Q2 A, Q3 B, Q4 A) and the decision.
+- 2026-11-09 · TASK-0326 · Shipped at v0.309.

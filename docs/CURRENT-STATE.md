@@ -9204,3 +9204,36 @@ engine. A portrait display shows no arc (Q3 A).
 New tests: 11. The test list holds 2263 (1505 in `Engine.Tests`, 356 in `3DEngine.Tests`, 399 in `3DEngine.ImageTests`, 3
 in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
 entries: 9 of 15. New diagnostic codes: 0. Since the review of v0.304, 2 product milestones and 4 entries followed it.
+
+## v0.309 — An agent proposes commands on an arc, and the person accepts or rejects them (R16r, TASK-0326)
+
+The third of the four slices that the owner chose on 2026-11-08 after v0.297. ADR-0092 is Accepted with the answers of the
+owner of 2026-11-08: Q1 A, Q2 A, Q3 B (a queue) and Q4 A. An agent made the code in a worktree; this session wrote the
+decision, reviewed the code and connected the real window to the queue.
+
+**The change.**
+- `EngineHost.Proposals` is a queue outside the log: at most 8 open proposals, first in, first out, and the last 32 closed
+  ones. A proposal has a summary and from 1 to 16 command envelopes, as `POST /commands` takes them.
+- The routes `POST /proposals`, `GET /proposals`, `GET /proposals/{id}` and `DELETE /proposals/{id}`. The post checks each
+  envelope. No route accepts or rejects, so an agent cannot accept its own proposal.
+- Three new codes: `E-API-PROPOSAL-QUEUE-FULL`, `E-API-PROPOSAL-NOT-FOUND` and `E-API-PROPOSAL-CLOSED`.
+- The window shows the oldest proposal on an amber arc on the band of the ring, from 235° to 305°, with Reject and Accept at
+  its ends, the command lines inside the ring, "1 of N" and "N steps of undo". The tools of the ring dim, and the top bar
+  says "AGENT IS WAITING". A portrait display shows a sheet above the anchors.
+- An accept applies the commands in their order as the commands of the person, off the thread of the frame, and stops at
+  the first command that the engine does not apply. Each command is one step of the shared undo.
+- A commit after the post marks an open proposal stale, and the window says "The document changed after the proposal".
+
+**Proof.** 36 new tests. An injection failed each of these tests, and each file came back byte for byte: the place on the
+band, the stop at the first rejected command, the absence of a route that accepts, and the connection of the desktop. The
+last test posts over HTTP to the desktop surface and accepts and rejects through the window side; before the review the
+real window showed no proposal, because `HostedSession` did not give the queue. The phone project builds with zero
+warnings. Run 42568869630 passed. The failed runs since the entry v0.308, from the API: none.
+
+**What stays.** A command line shows values and not names, with an identifier cut to 8 characters. The pending chip of a
+proposed value, a dry run, a group of undo, the author of a command and the glow of the edge wait for later slices. The
+phone has no surface, so it shows no proposal.
+
+New tests: 36. The test list holds 2299 (1528 in `Engine.Tests`, 356 in `3DEngine.Tests`, 412 in `3DEngine.ImageTests`, 3
+in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
+entries: 9 of 15. New diagnostic codes: 3. Since the review of v0.304, 3 product milestones and 5 entries followed it.
