@@ -1,7 +1,7 @@
 ---
 id: 0321
 title: The small engine findings of R-0027, R-0028, R-0033 and R-0036 are fixed
-status: Active
+status: Done
 phase: P0.134
 opened: 2026-11-09
 depends-on: [0319]
@@ -78,21 +78,22 @@ finding.
 
 ## Acceptance criteria
 
-- [ ] Each change has a test, and an injection of the old behaviour makes it fail.
-- [ ] A clean build (`--no-incremental`) gives zero errors and zero warnings, and the replay determinism holds in the
+- [x] Each change has a test, and an injection of the old behaviour makes it fail.
+- [x] A clean build (`--no-incremental`) gives zero errors and zero warnings, and the replay determinism holds in the
       pipeline.
-- [ ] Continuous integration passes on the branch and on `main` after the merge.
+- [x] Continuous integration passes on the branch and on `main` after the merge.
 
 ## Outcome
 
-Status: Active
+Status: Done · commit (the merge of the branch p0134-engine-findings) · v0.304
 
 ## Method
 
 Mechanical: the text of each finding and the code on disk.
 Judgement:  the bind guard now refuses 127.0.0.2, 127.1 and the long form of ::1 (E24 part 6); the command line gives the
             console its earlier encoding back at the end.
-Weakest:    to be written at the close.
+Weakest:    the restore of the encoding of the console has no test, and the parts of E24 that need a run of a client
+            that leaves are tested with a test socket only.
 
 ## Progress
 
@@ -100,3 +101,4 @@ Weakest:    to be written at the close.
   this session repeated the injection of the cache of a cancelled result, and its test failed. The agent set the output
   encoding of the command line; on Windows the code page of the console stayed UTF-8 after the program, so the program now
   restores the earlier encoding at the end. No test reads the code page of a console.
+- 2026-11-09: run 42550718602 passed, with equal determinism hashes. Closed at v0.304.
