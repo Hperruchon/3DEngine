@@ -5,8 +5,12 @@ using System.Net.WebSockets;
 using System.Text.Json;
 using System.Text.RegularExpressions;
 using Engine.Api.Http;
+using Engine.Api.Http.WebSockets;
 using Microsoft.AspNetCore.Mvc.Testing;
+using Microsoft.AspNetCore.TestHost;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 
 namespace Engine.Tests.Http;
 
@@ -109,6 +113,37 @@ public class HostGuardTests : IClassFixture<WebApplicationFactory<Program>>
     public void A_Loopback_Address_Is_Accepted(string? urls)
     {
         Assert.Null(EngineSurface.LoopbackRefusal(urls));
+    }
+
+    // Finding E24 of the codebase review of 2026-10-04 (R-0033, TASK-0321): the guard accepted each loopback
+    // address, and the Host filter accepts three names only, so a host on one of these addresses refused each
+    // request. The guard now refuses them at the start.
+    [Theory]
+    [InlineData("http://127.0.0.2:5000")]
+    [InlineData("http://127.1:5000")]
+    [InlineData("http://[0:0:0:0:0:0:0:1]:5000")]
+    public void A_Loopback_Address_That_The_Host_Filter_Refuses_Is_Refused(string urls)
+    {
+        Assert.NotNull(EngineSurface.LoopbackRefusal(urls));
+    }
+
+    // Finding E24 of the codebase review of 2026-10-04 (R-0033, TASK-0321): the Host filter read
+    // SubscriberOptions.Default, and the Origin check read the instance of the container. Both read the
+    // instance of the container now.
+    [Fact]
+    public async Task The_Host_Filter_Reads_The_List_Of_The_Container()
+    {
+        using var factory = _factory.WithWebHostBuilder(builder => builder.ConfigureTestServices(services =>
+            services.Replace(ServiceDescriptor.Singleton(SubscriberOptions.Default with { PermittedOriginHosts = ["127.0.0.1"] }))));
+        var http = factory.CreateClient();
+
+        var named = new HttpRequestMessage(HttpMethod.Get, "/schema/events");
+        named.Headers.Host = "localhost";
+        var numbered = new HttpRequestMessage(HttpMethod.Get, "/schema/events");
+        numbered.Headers.Host = "127.0.0.1";
+
+        Assert.Equal(HttpStatusCode.BadRequest, (await http.SendAsync(named)).StatusCode);
+        Assert.Equal(HttpStatusCode.OK, (await http.SendAsync(numbered)).StatusCode);
     }
 
     [Fact]

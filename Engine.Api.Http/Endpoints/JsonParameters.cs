@@ -5,8 +5,8 @@ namespace Engine.Api.Http.Endpoints;
 // Per ADR-0016: the transport converts its own wire form into neutral values,
 // and ParameterBinder in Engine.Core coerces them against the declared schema.
 //
-// The conversion keeps a number as a double and does not pass it through a
-// string. A string round-trip loses precision, and CLAUDE.md "Determinism
+// The conversion keeps a whole number as a long and each other number as a
+// double, and does not pass a number through a string. A string round-trip loses precision, and CLAUDE.md "Determinism
 // rules" forbids a path that can change a logged number.
 //
 // Engine.Core therefore needs no reference to System.Text.Json, and the
@@ -61,6 +61,9 @@ internal static class JsonParameters
         public override string ToString() => Description;
     }
 
+    // Findings E5 and E12 of the codebase reviews of 2026-09-23 and 2026-09-30 (R-0027, TASK-0321): a whole
+    // number stays a long, so an integer field gets the exact value, and the binder converts it for a number
+    // field. Until TASK-0321 the two branches had the type double, and 9007199254740993 became 9007199254740992.
     private static object AsNumber(JsonElement element)
-        => element.TryGetInt64(out var whole) ? whole : element.GetDouble();
+        => element.TryGetInt64(out var whole) ? (object)whole : element.GetDouble();
 }

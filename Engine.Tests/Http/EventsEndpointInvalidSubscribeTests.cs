@@ -30,6 +30,22 @@ public class EventsEndpointInvalidSubscribeTests : IClassFixture<WebApplicationF
         Assert.Equal("E-API-WS-INVALID-SUBSCRIBE", msg.CloseStatusDescription);
     }
 
+    // Finding E17 of the codebase review of 2026-09-30 (R-0028, TASK-0321): an unknown member, here a typing
+    // error in lastSeenSeq, was ignored, and the client got a reset with no error.
+    [Fact]
+    public async Task A_Subscribe_Frame_With_An_Unknown_Member_Closes_With_E_API_WS_INVALID_SUBSCRIBE()
+    {
+        using var factory = _baseFactory.WithWebHostBuilder(_ => { });
+        using var socket = await WebSocketTestClient.ConnectAsync(factory);
+
+        await WebSocketTestClient.SendJsonAsync(socket, new { lastSeenSeqq = 3L });
+
+        var msg = await WebSocketTestClient.ReceiveAsync(socket);
+        Assert.True(msg.IsClose);
+        Assert.Equal(WebSocketCloseStatus.InvalidPayloadData, msg.CloseStatus);
+        Assert.Equal("E-API-WS-INVALID-SUBSCRIBE", msg.CloseStatusDescription);
+    }
+
     [Fact]
     public async Task Plain_HTTP_GET_On_Events_Returns_400_With_E_API_BAD_REQUEST()
     {

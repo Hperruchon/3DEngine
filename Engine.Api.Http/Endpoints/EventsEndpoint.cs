@@ -15,7 +15,9 @@ namespace Engine.Api.Http.Endpoints;
 // Per TASK-0010 §4 and ADR-0005 §5:
 //   1. Accept the WebSocket upgrade. Non-WS request → 400 with E-API-BAD-REQUEST.
 //   2. Read one client text frame as a SubscribeRequest. Malformed → close
-//      with status 1003 + reason "E-API-WS-INVALID-SUBSCRIBE".
+//      with status 1007 + reason "E-API-WS-INVALID-SUBSCRIBE" (docs/diagnostics.md;
+//      finding E24 of the codebase review of 2026-10-04, R-0033, TASK-0321: until
+//      TASK-0321 this comment said 1003, and the code sent 1007 from the start).
 //   3. In a read of the document session (TASK-0034), AttachAndPrime on the
 //      broadcaster: under the broadcaster's lock, decide
 //      resume vs reset, enqueue initial response + any replay, then add to the
@@ -56,6 +58,13 @@ internal static class EventsEndpoint
         {
             return;
         }
+        // Finding E24 of the codebase review of 2026-10-04 (R-0033, TASK-0321): a client that leaves before its
+        // subscribe frame ends the read with a WebSocketException. The connection is then gone, and no close
+        // frame can go. Until TASK-0321 the exception left the endpoint, and the log held an error with a stack.
+        catch (WebSocketException)
+        {
+            return;
+        }
 
         if (subscribeRequest is null)
         {
@@ -83,6 +92,10 @@ internal static class EventsEndpoint
                     return true;
                 },
                 context.RequestAborted).ConfigureAwait(false);
+
+            // Finding E24 of the codebase review of 2026-10-04 (R-0033, TASK-0321): the heartbeat starts after the
+            // handshake, so its first frame comes after the subscription message.
+            subscriber.StartHeartbeat();
 
             using (stopping.Register(subscriber.Stop))
                 await subscriber.RunCompleted.ConfigureAwait(false);

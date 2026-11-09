@@ -9,7 +9,11 @@ namespace Engine.Api.Http.WebSockets;
 //
 // Incoming: SubscribeRequest is the single client→server message, expected
 // as the first frame after the WebSocket upgrade.
-
+//
+// Finding E17 of the codebase review of 2026-09-30 (R-0028, TASK-0321): an unknown member is
+// refused, as the request of /commands refuses one (finding E16), and the endpoint closes
+// with E-API-WS-INVALID-SUBSCRIBE. Until TASK-0321 a misspelled "lastSeenSeq" gave a reset.
+[System.Text.Json.Serialization.JsonUnmappedMemberHandling(System.Text.Json.Serialization.JsonUnmappedMemberHandling.Disallow)]
 internal sealed record SubscribeRequest(Guid? DocumentId, long? LastSeenSeq);
 
 internal sealed record SubscriptionResumeMessage(string Kind, long FromSeq)

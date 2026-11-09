@@ -55,6 +55,22 @@ public class TransportErrorTests : IClassFixture<WebApplicationFactory<Program>>
         Assert.Equal(HttpStatusCode.UnsupportedMediaType, response.StatusCode);
     }
 
+    // Finding E17 of the codebase review of 2026-09-30 (R-0028, TASK-0321): HTTP 415 had an empty body.
+    [Theory]
+    [InlineData("/commands")]
+    [InlineData("/queries")]
+    public async Task A_Wrong_Content_Type_Gives_415_With_E_API_BAD_REQUEST(string route)
+    {
+        var client = _factory.CreateClient();
+        var content = new StringContent("{\"name\":\"NoOp\",\"schemaVersion\":1,\"parameters\":{}}", Encoding.UTF8);
+        content.Headers.ContentType = new MediaTypeHeaderValue("text/plain");
+        var response = await client.PostAsync(route, content);
+
+        Assert.Equal(HttpStatusCode.UnsupportedMediaType, response.StatusCode);
+        var body = await ReadJsonAsync(response);
+        Assert.Equal("E-API-BAD-REQUEST", body.GetProperty("error").GetProperty("code").GetString());
+    }
+
     [Fact]
     public async Task GetCommands_Returns_405()
     {

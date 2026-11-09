@@ -74,8 +74,14 @@ public static class ParameterBinder
             // Finding E11 of the codebase review of 2026-09-30 (TASK-0115): the texts Infinity, NaN
             // and 1e999 gave a number that is not finite, the log held it, and a query of the body
             // gave HTTP 500. A number is finite, as the document file of JSON can hold it.
+            //
+            // Finding E12 of the codebase review of 2026-09-30 (R-0027, TASK-0321): the HTTP surface gives a whole
+            // JSON number as a long. The conversion to double rounds to the nearest double, which is the value that
+            // the surface gave before TASK-0321. Until TASK-0321 a number field refused a long and an int.
             case "number":
                 if (supplied is double d && double.IsFinite(d)) { coerced = d; return true; }
+                if (supplied is long wl) { coerced = (double)wl; return true; }
+                if (supplied is int wi) { coerced = (double)wi; return true; }
                 if (text is not null
                     && double.TryParse(text, NumberStyles.Float, CultureInfo.InvariantCulture, out var pd)
                     && double.IsFinite(pd))
@@ -86,9 +92,11 @@ public static class ParameterBinder
                 reason = $"expected a finite number, received '{Describe(supplied)}'.";
                 return false;
 
-            // TASK-0152: the HTTP surface gives each JSON number as a double, so an integer field
+            // TASK-0152: the HTTP surface gave each JSON number as a double, so an integer field
             // refused 800 until PlaceImage, the first command with one. A whole double up to 2^53
-            // is exact, so it is the integer; a larger one or a fraction is refused.
+            // is exact, so it is the integer; a larger one or a fraction is refused. Since TASK-0321
+            // the surface gives a whole JSON number as a long (finding E5), and a JSON number with a
+            // fraction part or an exponent, such as 800.0, still arrives as a double.
             case "integer":
                 if (supplied is long l) { coerced = l; return true; }
                 if (supplied is int i) { coerced = (long)i; return true; }
