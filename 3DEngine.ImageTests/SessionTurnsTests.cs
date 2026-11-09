@@ -30,7 +30,10 @@ public sealed class SessionTurnsTests
         Assert.NotNull(earlier);
         Assert.Null(turns.HoldWindow(TimeSpan.FromMilliseconds(50)));
 
-        var later = Task.Run(() => turns.HoldWindow(TimeSpan.FromSeconds(10)));
+        // P0.135 (TASK-0322): the later session waits up to 5 minutes, so a late continuation of the delay below on a busy
+        // runner does not end its wait. Run 42543751923 on windows-latest failed with a limit of 10 s: the waiter gave up
+        // before the assertion ran, although the earlier session held the window.
+        var later = Task.Run(() => turns.HoldWindow(TimeSpan.FromMinutes(5)));
         await Task.Delay(100);
         Assert.False(later.IsCompleted);
         earlier.Dispose();
