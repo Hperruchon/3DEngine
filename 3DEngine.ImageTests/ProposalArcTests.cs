@@ -110,18 +110,80 @@ public sealed class ProposalArcTests
             $"The caption {caption} is not the first line inside the ring {ring}.");
     }
 
-    // Item 7: with no selection the arc uses a ring at the centre of the display, with the inner radius of a ring of a body.
+    // ADR-0107 (phase P0.138, TASK-0330): with no selection the ring of the arc is at the middle of the room right of the
+    // panel, with the inner radius of a ring of a body where the room is wide. Until TASK-0330 it was at the centre of the
+    // display (ADR-0092 item 7).
     [Fact]
-    public void With_No_Selection_The_Arc_Uses_A_Ring_At_The_Centre()
+    public void With_No_Selection_The_Arc_Is_In_The_Room_Right_Of_The_Panel()
     {
         using var ui = new DesktopUi("http://127.0.0.1:5180", Document.Millimetre);
         Frames(ui, [Card()]);
 
         var ring = ui.ProposalRing ?? throw new InvalidOperationException("No ring.");
-        Assert.Equal(Display / 2f, ring.Centre);
+        var panel = ui.PanelRectangles.Where(rectangle => rectangle.X < Display.X / 2f).Max(rectangle => rectangle.Z);
+        Assert.Equal((panel + 16f + Display.X - 16f) / 2f, ring.Centre.X, 0.01f);
         Assert.Equal(DesktopUi.Layout(Display, Display / 2f, 3).Inner, ring.Inner);
         var accept = Middle(Item(ui, DesktopUi.ProposalAcceptItem));
         Assert.True(Math.Abs(Degrees(accept, ring.Centre) - 305) < 0.5);
+    }
+
+    private static readonly Guid Plate = Guid.Parse("73000000-0000-0000-0000-0000000000a1");
+
+    // ADR-0107: a live sketch and no selection, the state of finding V159 of the codebase review of 2026-11-09 (b).
+    private static void LiveSketchFrame(DesktopUi ui, IReadOnlyList<ProposalCard> cards, Vector2 display, params InputSample[] samples)
+    {
+        var sketch = new Engine.Core.Queries.SketchInfo(Plate, Engine.Contracts.Sketch.Datums.XY.Id, "Plate", [], [], [], [], [], true, 0);
+        ui.Route(samples);
+        ui.Frame(1f / 60f, display, Vector2.One, [BracketBody], null, new DocumentLine("bracket", null),
+            sketchPanel: new SketchPanel([sketch], null, ThreeDEngine.Core.Sketching.SketchToolKind.Select, false, [], null), proposals: cards);
+    }
+
+    // ADR-0107, finding V159: at each display size, with a live sketch and no selection, the window of the live sketches does
+    // not show, each end and its word are out of each panel, and a tap on each end gives its action. Until TASK-0330, at 1280
+    // by 720, the window covered Accept and a tap on it gave nothing, and the panel covered the word "Reject".
+    [Theory]
+    [InlineData(1280, 720)]
+    [InlineData(1440, 900)]
+    [InlineData(1920, 1080)]
+    [InlineData(1024, 640)]
+    [InlineData(900, 600)]
+    public void With_A_Live_Sketch_Each_End_Takes_Its_Tap(int width, int height)
+    {
+        var display = new Vector2(width, height);
+        var card = Card();
+        foreach (var (item, expected) in new[] { (DesktopUi.ProposalAcceptItem, (PanelAction)new AcceptProposalAction(card.Id)), (DesktopUi.ProposalRejectItem, new RejectProposalAction(card.Id)) })
+        {
+            using var ui = new DesktopUi("http://127.0.0.1:5180", Document.Millimetre);
+            LiveSketchFrame(ui, [card], display);
+            LiveSketchFrame(ui, [card], display);
+
+            Assert.DoesNotContain(ui.PanelRectangles, panel => panel.X >= display.X / 2f);
+            var ring = ui.ProposalRing ?? throw new InvalidOperationException("No ring.");
+            Assert.InRange(ring.Inner, DesktopUi.ProposalInnerMinimum, DesktopUi.Layout(display, display / 2f, 3).Inner);
+            foreach (var part in ui.ProposalWords.Append(Item(ui, DesktopUi.ProposalRejectItem)).Append(Item(ui, DesktopUi.ProposalAcceptItem)))
+            {
+                foreach (var panel in ui.PanelRectangles)
+                    Assert.False(part.X < panel.Z && part.Z > panel.X && part.Y < panel.W && part.W > panel.Y, $"{width}x{height}: {part} is under the panel {panel}.");
+                Assert.True(part.X >= 0 && part.Z <= display.X, $"{width}x{height}: {part} is out of the display.");
+            }
+
+            var at = Middle(Item(ui, item));
+            LiveSketchFrame(ui, [card], display, new PointerSample(DeviceKind.Touch, 1, 3UL, at.X, at.Y, 1, PointerButtons.None, KeyModifiers.None, PointerPhase.Down, 0));
+            LiveSketchFrame(ui, [card], display, new PointerSample(DeviceKind.Touch, 1, 3UL, at.X, at.Y, 1, PointerButtons.None, KeyModifiers.None, PointerPhase.Up, 0));
+            LiveSketchFrame(ui, [card], display);
+            Assert.Equal([expected], ui.TakeActions());
+        }
+    }
+
+    // ADR-0107: with no proposal, the window of the live sketches shows as before.
+    [Fact]
+    public void With_No_Proposal_The_Window_Of_The_Live_Sketches_Shows()
+    {
+        using var ui = new DesktopUi("http://127.0.0.1:5180", Document.Millimetre);
+        var display = new Vector2(1280, 720);
+        LiveSketchFrame(ui, [], display);
+        LiveSketchFrame(ui, [], display);
+        Assert.Contains(ui.PanelRectangles, panel => panel.X >= display.X / 2f);
     }
 
     // Item 6: a press and a release on Reject give the reject, on Accept the accept, by touch and by mouse; the tap does not
