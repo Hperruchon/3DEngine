@@ -7,7 +7,7 @@ date: 2026-10-31
 supersedes: []
 superseded-by: []
 amends: []
-amended-by: ['0047']
+amended-by: ['0047', '0103']
 affects:
   - 3DEngine.VisionTests/**
 enforced-by: Engine.Tests/Governance/DependencyDirectionGateTests.cs
@@ -70,3 +70,5 @@ The candidates on 2026-10-31, from nuget.org and the pages of each project:
 - 2026-10-31 · TASK-0145 · The record, Accepted under the standing answer of the owner of 2026-10-31.
 - 2026-10-31 · TASK-0155 · ADR-0047 amends item 3: V3 proposes a contour with its own managed code, and the library
   stays in the spike until the owner answers register entry R-0048 on its licences.
+- 2026-11-09 · TASK-0318 · ADR-0103 amends items 1 and 2: the spike uses OpenCvSharp5 5.0.0.20261018 (OpenCV 5.0), and
+  no distributed program holds the library (R-0048).

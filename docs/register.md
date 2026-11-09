@@ -349,19 +349,6 @@ by the standing answer of 2026-10-31; TASK-0142 records it). E25: no production 
 a document file is the load path that continues live. E27: its refusal needs a change of `Engine.Contracts`, and
 only a test or a script replays a log. E34 and E39 stay.
 
-### R-0048 · The licences of the native vision library in a distributed program have no decision
-- class: question
-- opened: 2026-10-31
-- due: 2027-01-29
-- extended: no
-- refs: `docs/adr/0042-vision-library.md` item 6, `docs/adr/0047-contour-proposal.md` item 1, TASK-0155
-The Windows payload of OpenCvSharp4 4.13.0.20260627 links zlib, libjpeg-turbo, libwebp, libpng, libtiff, OpenJPEG,
-OpenEXR, Protobuf, Flatbuffers, Intel IPP ICV and Tesseract statically, and has a separate FFmpeg file under LGPL v2.1;
-the macOS payload links FFmpeg statically. V3 proposes a contour with its own code, so no distributed program holds the
-library. A phase that needs more vision than one contour needs the library in the desktop.
-Exit: the owner decides if the desktop may hold the library and on which platforms, with or without the FFmpeg file,
-and the phase that does it adds the notices of ADR-0042 item 6.
-
 ### R-0053 · A query result and a command output give a number with no unit
 - class: question
 - opened: 2026-11-05
@@ -479,6 +466,23 @@ change of the pin is a change of ADR-0061 item 5.
 ---
 
 ## Closed
+
+### R-0048 · The licences of the native vision library in a distributed program have no decision
+- class: question
+- opened: 2026-10-31
+- due: 2027-01-29
+- extended: no
+- refs: `docs/adr/0042-vision-library.md` item 6, `docs/adr/0047-contour-proposal.md` item 1, TASK-0155
+The Windows payload of OpenCvSharp4 4.13.0.20260627 links zlib, libjpeg-turbo, libwebp, libpng, libtiff, OpenJPEG,
+OpenEXR, Protobuf, Flatbuffers, Intel IPP ICV and Tesseract statically, and has a separate FFmpeg file under LGPL v2.1;
+the macOS payload links FFmpeg statically. V3 proposes a contour with its own code, so no distributed program holds the
+library. A phase that needs more vision than one contour needs the library in the desktop.
+Exit: the owner decides if the desktop may hold the library and on which platforms, with or without the FFmpeg file,
+and the phase that does it adds the notices of ADR-0042 item 6.
+Closed 2026-11-09 · decided · TASK-0318 · ADR-0103. The owner answered "keep opencv separate and set it to v5": no
+program that the project distributes holds the vision library; it stays in the spike `3DEngine.VisionTests`, now on
+OpenCvSharp5 5.0.0.20261018. A later phase that needs vision in a program writes its own record with the notices of
+ADR-0042 item 6.
 
 ### R-0024 · The render projection may need to read `Engine.Contracts`
 - class: question

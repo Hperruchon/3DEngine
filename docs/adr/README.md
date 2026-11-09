@@ -55,7 +55,7 @@ names. Do not read all of them.
 | [0039](0039-chain-of-a-consumed-extrude.md) | The rebuild of the chain of a consumed extrude | Amended | Geometry, sketch | 0037 | 0049, 0051, 0054, 0055 |
 | [0040](0040-extrude-of-curves.md) | The extrude of a profile with arcs and circles | Amended | Geometry, sketch | 0036 | 0050 |
 | [0041](0041-snap-of-a-sketch-tap.md) | The snap of a tap of the sketch | Accepted | Clients, sketch | 0026, 0034 | — |
-| [0042](0042-vision-library.md) | The vision library and its place | Amended | Vision, boundary | — | 0047 |
+| [0042](0042-vision-library.md) | The vision library and its place | Amended | Vision, boundary | — | 0047, 0103 |
 | [0043](0043-textured-quad.md) | An image on a flat rectangle of the scene | Accepted | Rendering, vision | — | — |
 | [0044](0044-asset-store.md) | The store of the assets of an account | Amended | Vision, persistence | — | 0083 |
 | [0045](0045-image-on-a-datum.md) | An image on a datum, and its calibration | Amended | Contracts, vision | 0012, 0031, 0033 | 0083 |
@@ -106,6 +106,7 @@ names. Do not read all of them.
 | [0098](0098-the-command-line.md) | The command line at the upper right runs the commands of the state with Control and K | Amended | Clients, rendering | 0032, 0084 | 0099 |
 | [0099](0099-the-rows-of-a-selected-body-take-the-place-of-the-panel.md) | The rows of a selected body take the place of the panel at the upper left | Accepted | Clients, rendering | 0084, 0093, 0098 | — |
 | [0102](0102-a-project-in-any-folder.md) | The window opens and saves a project in any folder, through the dialogs of the system | Accepted | Persistence, clients | 0030, 0083 | — |
+| [0103](0103-the-vision-library-stays-in-the-spike-on-opencvsharp5.md) | The vision library stays in the spike, on OpenCvSharp5 | Accepted | Vision | 0042 | — |
 
 ## Topics
 
