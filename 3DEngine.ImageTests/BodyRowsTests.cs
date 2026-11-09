@@ -348,8 +348,10 @@ public sealed class BodyRowsTests
         LiveBody[] bodies = [Extrude, Box, Box with { Id = Guid.NewGuid(), Name = "Hidden", Visible = false }];
         var names = ui.Commands(bodies, Plate).Select(command => command.Name).ToList();
         Assert.Contains(DesktopUi.RenameLabel, names);
-        Assert.Contains($"{DesktopUi.CutLabel} Box", names);
-        Assert.DoesNotContain($"{DesktopUi.CutLabel} Hidden", names);
+        // Finding V153 of the codebase review of 2026-11-09 (TASK-0324): the name of a cut holds the text of the row of its
+        // tool.
+        Assert.Contains($"{DesktopUi.CutLabel} {DesktopUi.RowText(Box)}", names);
+        Assert.DoesNotContain(names, name => name.StartsWith($"{DesktopUi.CutLabel} Hidden", StringComparison.Ordinal));
         Assert.Contains(DesktopUi.SketchOnFaceLabel, names);
         Assert.Contains(DesktopUi.DimensionsLabel, names);
         Assert.DoesNotContain(DesktopUi.HiddenTooLabel, names);
@@ -357,7 +359,7 @@ public sealed class BodyRowsTests
         ui.Commands(bodies, Plate).Single(command => command.Name == DesktopUi.DimensionsLabel).Run();
         Assert.True(ui.ShowDimensions);
         Assert.Contains(DesktopUi.HiddenTooLabel, ui.Commands(bodies, Plate).Select(command => command.Name));
-        ui.Commands(bodies, Plate).Single(command => command.Name == $"{DesktopUi.CutLabel} Box").Run();
+        ui.Commands(bodies, Plate).Single(command => command.Name == $"{DesktopUi.CutLabel} {DesktopUi.RowText(Box)}").Run();
         Assert.Equal([new CutBodyAction(Plate, Box.Id)], ui.TakeActions());
     }
 }

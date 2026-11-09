@@ -9152,3 +9152,30 @@ failed runs since the entry v0.305, from the API: none.
 New tests: 0. The test list holds 2244 (1505 in `Engine.Tests`, 356 in `3DEngine.Tests`, 380 in `3DEngine.ImageTests`, 3
 in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
 entries: 9 of 15. New diagnostic codes: 0. Since the review of v0.304, 1 product milestone and 2 entries followed it.
+
+## v0.307 — The medium and low findings of the review of 2026-11-09 are fixed (P0.136, TASK-0324)
+
+The codebase review of 2026-11-09 found no critical and no high finding; V0b, the next product phase, closed at v0.306. An
+agent made the changes in a worktree; this session reviewed the diff, corrected the write set and wrote the records.
+
+**The change.**
+- V152: the window of the live sketches is at the right edge of the safe area, 8 pixels under the command line, in each
+  frame, and ends above the anchors; the person no longer drags it. Until this task it covered the field.
+- V153: each command of a cut names its body as its row does, and each listed command has its own identifier, so a tap on
+  the second of two equal names runs it.
+- V154: the window of the images starts under the top bar, so the folder of the file has its room.
+- V155: only the save that the question opened takes the waiting change; a save from the panel keeps it and the question.
+- V156: the top bar takes the width of the command line on a landscape display only.
+- V157: a request of the focus of the command line does not wait where the field does not show.
+- E197: a step of the desktop host puts a file that a request of the surface gave the session, as a save of an agent, into
+  the recent projects (ADR-0102 item 6).
+
+**Proof.** Eight new tests; each failed on an injection of the old behaviour, and each file came back byte for byte. The phone
+project builds with zero warnings. Run 42558072228 passed. The failed runs since the entry v0.306, from the API: none.
+
+**What stays.** V158 (a document built with y up shows on its side) waits for the answer of the owner to Q5 of the review.
+The new places of the two windows have no picture yet.
+
+New tests: 8. The test list holds 2252 (1505 in `Engine.Tests`, 356 in `3DEngine.Tests`, 388 in `3DEngine.ImageTests`, 3
+in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
+entries: 9 of 15. New diagnostic codes: 0. Since the review of v0.304, 1 product milestone and 3 entries followed it.

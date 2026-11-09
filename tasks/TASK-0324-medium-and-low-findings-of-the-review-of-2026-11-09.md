@@ -1,11 +1,11 @@
 ---
 id: 0324
 title: The medium and low findings of the review of 2026-11-09 are fixed
-status: Ready
+status: Done
 phase: P0.136
 opened: 2026-11-09
 depends-on: [0323]
-governed-by: [0007, 0019, 0027, 0029, 0030, 0032, 0034, 0072, 0073, 0076, 0077, 0078, 0080, 0081, 0082, 0083, 0084, 0086, 0087, 0088, 0089, 0091, 0093, 0097, 0098, 0099, 0102]
+governed-by: [0007, 0019, 0025, 0027, 0029, 0030, 0032, 0034, 0072, 0073, 0076, 0077, 0078, 0080, 0081, 0082, 0083, 0084, 0086, 0087, 0088, 0089, 0091, 0093, 0097, 0098, 0099, 0102]
 writes:
   create:
     - tasks/TASK-0324-medium-and-low-findings-of-the-review-of-2026-11-09.md
@@ -15,6 +15,12 @@ writes:
     - 3DEngine.App/Ui/DesktopUi.Fixed.cs
     - 3DEngine.App/Ui/DesktopUi.cs
     - 3DEngine.App/ProjectFiles.cs
+    - 3DEngine.App/Ui/DesktopUi.Image.cs
+    - 3DEngine/DesktopSurface.cs
+    - 3DEngine.ImageTests/BodyRowsTests.cs
+    - 3DEngine.ImageTests/CommandLineTests.cs
+    - 3DEngine.ImageTests/ProjectPathTests.cs
+    - eng/test-floor.txt
     - docs/roadmap.md
     - docs/CURRENT-STATE.md
   forbid:
@@ -52,18 +58,24 @@ V152, V153, V154, V155, V156, V157 and E197 are fixed, each with a test; V158 fo
 
 ## Acceptance criteria
 
-- [ ] Each finding fails on an injection before its fix and passes after it.
-- [ ] A clean build (`--no-incremental`) gives zero errors and zero warnings.
-- [ ] Continuous integration passes on the branch and on `main` after the merge.
+- [x] Each finding fails on an injection before its fix and passes after it.
+- [x] A clean build (`--no-incremental`) gives zero errors and zero warnings.
+- [x] Continuous integration passes on the branch and on `main` after the merge.
 
 ## Outcome
 
-Status: Ready
+Status: Done · commit (the merge of the branch p0136-review-findings) · v0.307
 
 ## Method
 
 Mechanical: a test, an injection or a reading for each finding, before the change.
-Judgement:  to be written.
-Weakest:    to be written at the close.
+Judgement:  V152 sets the place of the window of the live sketches in each frame, so the person no longer drags it;
+            V154 moves the window of the images under the top bar, because a cut of the folder at its left edge hid the
+            folder at 1440 pixels; E197 is a step of the desktop host that remembers a file that a request gave the session.
+Weakest:    the new places of the two windows have no picture yet; V158 waits for the owner.
 
 ## Progress
+- 2026-11-09: the fixes and eight tests. An agent made them in a worktree; each test failed on an injection of the old
+  behaviour, and each file came back byte for byte. This session reviewed the diff and corrected the write set, which did not
+  list the window of the images, the surface of the desktop and the three files of tests.
+- 2026-11-09: run 42558072228 passed. Closed at v0.307.
