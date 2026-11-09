@@ -1,7 +1,7 @@
 ---
 id: 0326
 title: An agent proposes commands on an arc, and the person accepts or rejects them
-status: Active
+status: Done
 phase: R16r
 opened: 2026-11-09
 depends-on: [0325]
@@ -65,21 +65,24 @@ person accepts or rejects it. Nothing enters the log before an accept.
 
 ## Acceptance criteria
 
-- [ ] The tests pass, and the picture at 1440 by 900 shows the arc above the ring with Reject, Accept and the command lines.
-- [ ] Each new code is in `docs/diagnostics.md`.
-- [ ] A clean build (`--no-incremental`) gives zero errors and zero warnings, and the phone project builds.
-- [ ] Continuous integration passes on the three runners, on the branch and on `main` after the merge.
+- [x] The tests pass, and the picture at 1440 by 900 shows the arc above the ring with Reject, Accept and the command lines.
+- [x] Each new code is in `docs/diagnostics.md`.
+- [x] A clean build (`--no-incremental`) gives zero errors and zero warnings, and the phone project builds.
+- [x] Continuous integration passes on the three runners, on the branch and on `main` after the merge.
 
 ## Outcome
 
-Status: Active
+Status: Done · commit (the merge of the branch r16r-agent-arc) · v0.309
 
 ## Method
 
 Mechanical: the routes follow `POST /commands`; the place of the arc follows the render "Mix 2".
 Judgement:  no route accepts, so an agent cannot accept its own proposal; the limits 8 open, 32 kept, 16 commands and 120
             characters; an accept stops at the first command that the engine does not apply.
-Weakest:    to be written at the close.
+Weakest:    a command line shows the values of its parameters, and an identifier is cut to 8 characters, so
+            "SetSketchConstraintValue 09e310bf 7611b05a 75" does not say which value changes; the render says "C3". The
+            pending chip of a value (a later slice) is the answer. The arc is a filled band, and the render draws a
+            dashed line; no person has accepted a proposal in the real window yet.
 
 ## Progress
 - 2026-11-09: ADR-0092 Accepted with the answers of the owner; the queue, the four routes, three codes, the arc, the
@@ -91,3 +94,4 @@ Weakest:    to be written at the close.
   stop at the first rejected command and the absence of a route that accepts by injection. Undo is the shared history
   of the engine, so the window undoes each command of an accept. Local: the gates, a clean build with zero warnings, the
   tests of the solution and the phone project.
+- 2026-11-09: run 42568869630 passed. Closed at v0.309.

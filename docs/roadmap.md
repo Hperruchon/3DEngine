@@ -317,6 +317,8 @@ Therefore each approved objective must have a track here.
   TASK-0324.
 - R16q — The history arc of the mix: one node for each step that made the selected body, on the band of its ring.
   v0.308, TASK-0325, ADR-0104.
+- R16r — The agent arc of the mix: an agent posts a proposal of commands over HTTP, and the person accepts or rejects it
+  on an amber arc above the selected body. v0.309, TASK-0326, ADR-0092.
 
 ## Track 0 — Foundations
 
