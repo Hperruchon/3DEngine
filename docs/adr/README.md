@@ -107,6 +107,7 @@ names. Do not read all of them.
 | [0099](0099-the-rows-of-a-selected-body-take-the-place-of-the-panel.md) | The rows of a selected body take the place of the panel at the upper left | Accepted | Clients, rendering | 0084, 0093, 0098 | — |
 | [0102](0102-a-project-in-any-folder.md) | The window opens and saves a project in any folder, through the dialogs of the system | Accepted | Persistence, clients | 0030, 0083 | — |
 | [0103](0103-the-vision-library-stays-in-the-spike-on-opencvsharp5.md) | The vision library stays in the spike, on OpenCvSharp5 | Accepted | Vision | 0042 | — |
+| [0104](0104-the-history-arc.md) | The history arc shows the steps that made the selected body | Accepted | Clients, rendering | — | — |
 
 ## Topics
 
