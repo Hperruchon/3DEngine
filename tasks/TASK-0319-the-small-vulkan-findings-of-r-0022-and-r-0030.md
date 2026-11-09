@@ -1,7 +1,7 @@
 ---
 id: 0319
 title: The small Vulkan findings of R-0022 and R-0030 are fixed
-status: Active
+status: Done
 phase: P0.132
 opened: 2026-11-09
 depends-on: [0317]
@@ -63,20 +63,21 @@ Each small Vulkan finding of R-0022 and R-0030 is fixed with a test, and the reg
 
 ## Acceptance criteria
 
-- [ ] The tests of the choices pass, and a run of the desktop on Windows draws and ends with the exit code 0 and no
+- [x] The tests of the choices pass, and a run of the desktop on Windows draws and ends with the exit code 0 and no
       message of the validation layer.
-- [ ] A clean build (`--no-incremental`) gives zero errors and zero warnings, and the phone project builds.
-- [ ] Continuous integration passes on the branch and on `main` after the merge.
+- [x] A clean build (`--no-incremental`) gives zero errors and zero warnings, and the phone project builds.
+- [x] Continuous integration passes on the branch and on `main` after the merge.
 
 ## Outcome
 
-Status: Active
+Status: Done · commit (the merge of the branch p0132-old-findings) · v0.301
 
 ## Method
 
 Mechanical: the text of each finding and the specification of Vulkan.
 Judgement:  the portability flag goes on each loader that gives the extension, also on Windows.
-Weakest:    to be written at the close.
+Weakest:    V3 has no proof on macOS, and the swapchain with two queue families ran on no device; the tests hold the
+            choices only.
 
 ## Progress
 
@@ -86,3 +87,4 @@ Weakest:    to be written at the close.
 - 2026-11-09: the Vulkan parts of V4 (R-0027). Five injections each make a test of the choices fail: the old extent check,
   no colour space, the first graphics family only, exclusive images always, and no portability subset. A second run of the
   desktop logged "the loader gives 1.4.341", gave no message of the validation layer, and ended with the exit code 0.
+- 2026-11-09: run 42541817912 passed, and the phone started on the emulator. Closed at v0.301.
