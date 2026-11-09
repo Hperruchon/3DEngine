@@ -304,6 +304,8 @@ Therefore each approved objective must have a track here.
   v0.298, TASK-0313, ADR-0099.
 - P9g — The window opens and saves a project in any folder, and the row waits for the owner. v0.299, TASK-0316,
   ADR-0102.
+- P0.131 — The register: R-0007, R-0040 and R-0054 accepted, R-0024, R-0039 and R-0055 closed, R-0056 opened.
+  v0.300, TASK-0317.
 
 ## Track 0 — Foundations
 
@@ -439,6 +441,7 @@ This track removes each condition that blocks other work.
 | P0.128 | The filter of a subnormal value, the gate of the host, the stale check, ADR-0079 item 5, the end of an engine on a lost device and the test of V141 hold their next forms (E195, E196, T178, V143, V144, V145 and T179 of the codebase review of 2026-11-08 (b); after P0.127). TASK-0303. | 1 |
 | P0.129 | The status line leaves Frame and Home free on each display (V146 of the codebase review of 2026-11-08 (c), high, before the next product phase). TASK-0310. | 1 |
 | P0.130 | The dimension lines take the up axis of the camera, and the top bar, the comment of the panel and the comments of the yaw and the pitch hold their next forms (V147, V149, V150 and V151 of the codebase review of 2026-11-08 (c); after R16n). TASK-0311. | 1 |
+| P0.131 | The register accepts the image test on Ubuntu only (R-0040, the owner, 2026-11-09), and R-0056 holds the project file of the phone (Q4 A of P9g). TASK-0317. | 1 |
 | P0.102 | The cache of a face, the fixed controls, the list New, the edges and the safe area hold their next forms (V113 to V118 of the codebase review of 2026-11-06 (e); after P0.101). TASK-0252. | 1–2 |
 | P0.86 | The window keeps no input between sessions, the hook has the cases of one axis, and the next forms of four gates fail (V88 to V90, T141 to T144 of the codebase review of 2026-11-06; after the next product phase). TASK-0198. | 1–2 |
 

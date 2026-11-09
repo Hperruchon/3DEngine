@@ -8955,3 +8955,32 @@ New tests: 12. The test list holds 2207 (1472 in `Engine.Tests`, 352 in `3DEngin
 in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
 entries: 15 of 15. New diagnostic codes: 0. Since the review of v0.292, 4 product milestones and 7 entries followed it, so
 a codebase review is due before the next product milestone.
+
+## v0.300 — The register holds 10 open entries after the answers of the owner (P0.131, TASK-0317)
+
+P9g needed a register entry for the phone (Q4 A), and the register held 15 of 15 open entries. On 2026-11-09 the owner
+answered the open entries one by one.
+
+**The change.**
+- Accepted: R-0040 ("Ubuntu is enough": the image test runs on Ubuntu only), R-0007 (the folder `nuget/` stays the
+  source of the two native packages; a real feed comes beside it when a person outside the repository builds) and R-0054
+  (the snapshot of SDL 3.5.0 in `ppy.SDL3-CS` 2026.1002.1).
+- Closed by a decision: R-0024 (ADR-0009 kept: the projection is in `3DEngine.App`, and `3DEngine.Core` reads no engine
+  project) and R-0055 (a second Document in one runtime is allowed; `docs/CHARTER.md` no longer lists that non-goal, and
+  ADR-0071 records it).
+- Closed as resolved: R-0039. Since TASK-0194 `DesktopSessionTests` starts the surface through `DesktopEngineHost.Start`,
+  with the port setting, the disposal of the session and the exit code of the end of the loop.
+- Opened: R-0056, the project file of the phone, which P9g left out (Q4 A).
+- R-0053 records the answer "an ADR gives the units of results and outputs", which a task of its own writes, because it
+  changes `Engine.Contracts`.
+- The comment of `nuget.config` names both native packages and the acceptance; it called the folder an interim bootstrap.
+
+**What stays.** The owner also answered R-0048 (OpenCV stays in the spike, on OpenCvSharp5; TASK-0318) and chose a cleanup
+task for the old findings of R-0022, R-0027, R-0028, R-0030, R-0031, R-0033 and R-0036 before the codebase review that is
+due; four read-only agents checked each finding on disk on 2026-11-09 for that task.
+
+**Proof.** `repo-gates` passes. Run 42538301855 passed. The failed runs since the entry v0.299, from the API: none.
+
+New tests: 0. The test list holds 2207 (1472 in `Engine.Tests`, 352 in `3DEngine.Tests`, 380 in `3DEngine.ImageTests`, 3
+in `3DEngine.VisionTests`). Open entries: 10 of 15. New diagnostic codes: 0. Since the review of v0.292, 4 product
+milestones and 8 entries followed it, so a codebase review is due before the next product milestone.
