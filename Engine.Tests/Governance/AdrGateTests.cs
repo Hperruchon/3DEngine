@@ -316,6 +316,16 @@ public class AdrGateTests
 
             if (!row.Contains($"| {adr.Status} |", StringComparison.Ordinal))
                 problems.Add($"{adr.Id}: the index row does not give the status {adr.Status}");
+
+            // Finding T7 of the codebase review of 2026-09-30 (R-0031, TASK-0320): the columns
+            // "Amends" and "Amended by" give the fields amends and amended-by in their order, or
+            // "—" for an empty list. Until TASK-0320 the gate compared the status only, and a row
+            // with an empty column "Amended by" passed.
+            var cells = row.Split('|', StringSplitOptions.TrimEntries);
+            if (cells.Length != 8)
+                problems.Add($"{adr.Id}: the index row has {cells.Length - 2} cells; the index has six columns");
+            else if (cells[^3] != AmendColumn(adr.Amends) || cells[^2] != AmendColumn(adr.AmendedBy))
+                problems.Add($"{adr.Id}: the index row gives Amends '{cells[^3]}' and Amended by '{cells[^2]}', and the front matter gives '{AmendColumn(adr.Amends)}' and '{AmendColumn(adr.AmendedBy)}'");
         }
 
         foreach (var id in inForce.Select(RowId))
@@ -368,6 +378,9 @@ public class AdrGateTests
     }
 
     private static string RowId(string row) => Regex.Match(row, @"\[(\d{4})\]").Groups[1].Value;
+
+    // The text of the column "Amends" or "Amended by" for a list of the front matter (T7).
+    private static string AmendColumn(IReadOnlyList<string> ids) => ids.Count == 0 ? "—" : string.Join(", ", ids);
 
     private static IEnumerable<string> AdrFiles()
         => Directory.EnumerateFiles(RepositoryFiles.Path("docs", "adr"), "0*.md").OrderBy(f => f);

@@ -445,6 +445,7 @@ This track removes each condition that blocks other work.
 | P0.130 | The dimension lines take the up axis of the camera, and the top bar, the comment of the panel and the comments of the yaw and the pitch hold their next forms (V147, V149, V150 and V151 of the codebase review of 2026-11-08 (c); after R16n). TASK-0311. | 1 |
 | P0.131 | The register accepts the image test on Ubuntu only (R-0040, the owner, 2026-11-09), and R-0056 holds the project file of the phone (Q4 A of P9g). TASK-0317. | 1 |
 | P0.132 | The small Vulkan findings of R-0022, R-0030 and R-0027 (V2, V3, V4 and V7 parts 1 to 5), the first part of the cleanup that the owner chose on 2026-11-09 before the codebase review. TASK-0319. | 1 |
+| P0.133 | The small gate holes of R-0031 (T4 marker, T5, T7, T10, T13, T17, T23 and the response file), the second part of the cleanup that the owner chose on 2026-11-09. TASK-0320. | 1 |
 | P0.135 | The test of the window hold of the session turns survives a busy runner (the failed run 42543751923 on main). TASK-0322. | 1 |
 | P0.102 | The cache of a face, the fixed controls, the list New, the edges and the safe area hold their next forms (V113 to V118 of the codebase review of 2026-11-06 (e); after P0.101). TASK-0252. | 1–2 |
 | P0.86 | The window keeps no input between sessions, the hook has the cases of one axis, and the next forms of four gates fail (V88 to V90, T141 to T144 of the codebase review of 2026-11-06; after the next product phase). TASK-0198. | 1–2 |

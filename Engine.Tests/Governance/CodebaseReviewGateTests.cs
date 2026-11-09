@@ -189,11 +189,24 @@ public class CodebaseReviewGateTests
         var byName = reviews.ToDictionary(r => r.Name, StringComparer.Ordinal);
         var problems = new List<string>();
 
+        // Finding T7 of the codebase review of 2026-09-30 (R-0031, TASK-0320): 'previous: none'
+        // skipped this check for each review. Only the first review, by date and then by ledger
+        // version, has no previous review. Until TASK-0320 a later review with 'none' passed.
+        var first = reviews
+            .OrderBy(r => r.Date)
+            .ThenBy(r => ParseVersion(r.Fields.GetValueOrDefault("ledger", string.Empty)) ?? (0, 0))
+            .ThenBy(r => r.Name, StringComparer.Ordinal)
+            .FirstOrDefault();
+
         foreach (var review in reviews)
         {
             var previousName = review.Fields.GetValueOrDefault("previous", "none");
             if (previousName == "none")
+            {
+                if (!ReferenceEquals(review, first))
+                    problems.Add($"{review.Name}: 'previous' is none, and only the first review {first?.Name} has no previous review");
                 continue;
+            }
 
             if (!byName.TryGetValue(previousName, out var previous))
             {
