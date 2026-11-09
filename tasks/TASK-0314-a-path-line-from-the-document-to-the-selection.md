@@ -1,11 +1,11 @@
 ---
 id: 0314
 title: A path line from the document to the selection, and the rows of the document
-status: Ready
+status: Active
 phase: R17a
 opened: 2026-11-08
 depends-on: [0313]
-governed-by: [0007, 0019, 0025, 0027, 0029, 0030, 0032, 0034, 0072, 0073, 0075, 0076, 0077, 0078, 0080, 0081, 0082, 0083, 0084, 0085, 0086, 0087, 0089, 0091, 0092, 0093, 0097, 0098, 0099, 0102, 0104, 0105]
+governed-by: [0007, 0019, 0025, 0027, 0029, 0030, 0032, 0034, 0072, 0073, 0075, 0076, 0077, 0078, 0080, 0081, 0082, 0083, 0084, 0085, 0086, 0087, 0089, 0091, 0092, 0093, 0097, 0098, 0099, 0100, 0102, 0104, 0105]
 writes:
   create:
     - tasks/TASK-0314-a-path-line-from-the-document-to-the-selection.md
@@ -24,13 +24,16 @@ writes:
     - 3DEngine.ImageTests/FixedControlsTests.cs
     - 3DEngine.ImageTests/FaceSelectionTests.cs
     - 3DEngine.ImageTests/EdgeSelectionTests.cs
+    - 3DEngine.ImageTests/BodyActionsTests.cs
     - docs/adr/0075-a-second-tap-selects-the-face.md
     - docs/adr/0077-a-tap-near-an-edge-selects-the-edge.md
     - docs/adr/0084-the-rows-of-the-selected-body.md
     - docs/adr/0093-the-layout-of-the-mix-has-no-panel-chrome.md
     - docs/adr/0099-the-rows-of-a-selected-body-take-the-place-of-the-panel.md
+    - docs/adr/0102-a-project-in-any-folder.md
     - docs/adr/README.md
     - eng/test-floor.txt
+    - tasks/TASK-0315-a-focus-on-one-body.md
     - docs/roadmap.md
     - docs/CURRENT-STATE.md
   forbid:
@@ -119,3 +122,8 @@ Weakest:    no person used a path line in this window yet.
 
 - 2026-11-08: opened from the proposal, with the answers of the owner.
 - 2026-11-09: depends on TASK-0313 and is governed by ADR-0099, after the merge of R16p at v0.298.
+- 2026-11-09: started at `main` 6f75607 (v0.310), branch r17a-path-line. The write set adds `BodyActionsTests.cs`, whose
+  test held that Escape stops at the body, and ADR-0102, whose item 7 (the folder in the top bar) this task amends, and
+  the file of TASK-0315, whose `governed-by` must name ADR-0100. ADR-0100 Q1 A: the rows of the document are the first
+  part of the panel, so ADR-0099 Q1 A holds and the image tests of the panel keep their places. The codebase review is
+  due before the close: the close is the fifth product milestone after the review of v0.304.
