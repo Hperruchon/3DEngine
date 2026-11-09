@@ -1,7 +1,7 @@
 ---
 id: 0320
 title: The small gate holes of R-0031 are closed
-status: Active
+status: Done
 phase: P0.133
 opened: 2026-11-09
 depends-on: [0319]
@@ -66,23 +66,24 @@ Each small hole of R-0031 fails on an injection, and the register gives the part
 
 ## Acceptance criteria
 
-- [ ] Each change fails on an injection, and `repo-gates` and `Engine.Tests` pass.
-- [ ] A clean build (`--no-incremental`) gives zero errors and zero warnings.
-- [ ] Continuous integration passes on the branch and on `main` after the merge.
+- [x] Each change fails on an injection, and `repo-gates` and `Engine.Tests` pass.
+- [x] A clean build (`--no-incremental`) gives zero errors and zero warnings.
+- [x] Continuous integration passes on the branch and on `main` after the merge.
 
 ## Outcome
 
-Status: Active
+Status: Done · commit (the merge of the branch p0133-gate-holes) · v0.303
 
 ## Method
 
 Mechanical: the text of each finding and the code of each gate.
 Judgement:  T5 strips the quotes and the brackets and refuses what stays, because a refusal of each bracket would fail
             the empty list `affects: []` of ADR-0092; the judge `eng/write-set-check` does not change.
-Weakest:    to be written at the close.
+Weakest:    each gate holds the forms of its findings only; a later review can find a new form, as each review did.
 
 ## Progress
 
 - 2026-11-09: the eight changes and ten new test cases (eight forms of the path of T23, the folder feed, and the response
   file). Each change failed on an injection first (the record of the agent); this session repeated one: a "TODO" with the
   closed identifier R-0024 passed the old marker gate and fails the new one.
+- 2026-11-09: run 42547791650 passed. Closed at v0.303.
