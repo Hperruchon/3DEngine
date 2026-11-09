@@ -172,14 +172,16 @@ public sealed class NativeThreeDEngine : IThreeDEngine, IDisposable
     // with its import.
     private void TakeOpenedFile()
     {
-        var (done, path, failure, purpose) = Window.TakeOpenedFile();
+        var (done, path, failure, given) = Window.TakeOpenedFile();
         if (!done || _ui is null)
             return;
+        // ADR-0106 (TASK-0328): an STL file from the dialog of "Open project..." goes to the import below.
+        var purpose = ProjectFiles.PurposeOf(path, (DialogPurpose)given);
         // ADR-0102 item 2 (TASK-0316): the result of the open of a project, of a save or of an export goes to the project path.
-        if ((DialogPurpose)purpose != DialogPurpose.ImportStl)
+        if (purpose != DialogPurpose.ImportStl)
         {
             if (_projects is not null)
-                Report(_projects.Take(path, failure, (DialogPurpose)purpose));
+                Report(_projects.Take(path, failure, purpose));
             return;
         }
 
@@ -192,12 +194,24 @@ public sealed class NativeThreeDEngine : IThreeDEngine, IDisposable
             return;
         }
 
-        var name = StlOpening.FileName(path);
-        if (StlOpening.TooLarge(Window.FileSize(path)) is { } tooLarge)
+        if (ImportFile(path, _assets, _document) is { } refusal)
         {
-            _ui.ShowMessage((tooLarge.Code, $"{name}: {tooLarge.Message}"));
+            _ui.ShowMessage(refusal);
             return;
         }
+
+        _ui.ShowMessage(null);
+        _document!.Home = false;
+    }
+
+    // ADR-0083 D1 and D3: the STL file at the path, read through SDL, checked with the reader of the engine and put in the store,
+    // as the import of a new part document for the next session. The result is the message of a refusal, or null when the
+    // next session imports the file. ADR-0106 (TASK-0328): a method apart from the window, so that a test gives it a path.
+    internal static (string Code, string Text)? ImportFile(string path, Engine.Core.Assets.AssetStore? assets, IDocumentFiles? document)
+    {
+        var name = StlOpening.FileName(path);
+        if (StlOpening.TooLarge(Window.FileSize(path)) is { } tooLarge)
+            return (tooLarge.Code, $"{name}: {tooLarge.Message}");
 
         // E183 (TASK-0281): the read stops after the limit, also when SDL does not know the size and FileSize gives -1.
         // E190 (TASK-0295): a stop at the limit gives the code of a file too large, as a known size does.
@@ -205,32 +219,18 @@ public sealed class NativeThreeDEngine : IThreeDEngine, IDisposable
         if (content is null)
         {
             var over = StlOpening.OverLimit($"The file has more than {StlOpening.MaximumBytes} bytes");
-            _ui.ShowMessage(overLimit ? (over.Code, $"{name}: {over.Message}") : (string.Empty, $"The file {name} could not be read: {readError}"));
-            return;
+            return overLimit ? (over.Code, $"{name}: {over.Message}") : (string.Empty, $"The file {name} could not be read: {readError}");
         }
 
-        if (_assets is null || _document is null)
-        {
-            _ui.ShowMessage((string.Empty, "This program has no store of the assets, so it opens no STL file."));
-            return;
-        }
+        if (assets is null || document is null)
+            return (string.Empty, "This program has no store of the assets, so it opens no STL file.");
 
-        var (import, fault) = StlOpening.Prepare(path, content, _assets).GetAwaiter().GetResult();
+        var (import, fault) = StlOpening.Prepare(path, content, assets).GetAwaiter().GetResult();
         if (import is null)
-        {
-            _ui.ShowMessage((fault?.Code ?? string.Empty, $"{name}: {fault?.Message}"));
-            return;
-        }
+            return (fault?.Code ?? string.Empty, $"{name}: {fault?.Message}");
 
         // V125 (TASK-0270): a request that an open of another file refuses gives its message, and the home screen stays.
-        if (_document.RequestNew(import) is { } refused)
-        {
-            _ui.ShowMessage((refused.Code, $"{name}: {refused.Message}"));
-            return;
-        }
-
-        _ui.ShowMessage(null);
-        _document.Home = false;
+        return document.RequestNew(import) is { } refused ? (refused.Code, $"{name}: {refused.Message}") : null;
     }
 
     // The frame of the camera on the live bodies, as the first body gives it (ADR-0029 item 8).
