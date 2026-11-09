@@ -68,8 +68,11 @@ internal sealed unsafe partial class DesktopUi
             if (bodies.FirstOrDefault(body => body.Id == selection) is { } body)
             {
                 commands.Add((RenameLabel, () => StartRename(body)));
+                // Finding V153 of the codebase review of 2026-11-09 (TASK-0324): the name of a cut holds the text of the row of
+                // its tool, as the list of a cut in the rows does, so two bodies with no name and of one kind give two names.
+                // Until TASK-0324 the name held the kind only, and the list showed "Cut with Box" two times.
                 foreach (var tool in bodies.Where(other => other.Id != body.Id && other.Visible))
-                    commands.Add(($"{CutLabel} {tool.Name ?? tool.Kind}", () => _actions.Add(new CutBodyAction(body.Id, tool.Id))));
+                    commands.Add(($"{CutLabel} {RowText(tool)}", () => _actions.Add(new CutBodyAction(body.Id, tool.Id))));
                 commands.Add((MoveLabel, () => Use(MoveLabel, body)));
                 if (body.Kind == "Extrude")
                     commands.Add((SetDistanceLabel, () => Use(SetDistanceLabel, body)));
@@ -104,8 +107,14 @@ internal sealed unsafe partial class DesktopUi
     // Items 1 to 4: the field at the upper right of a landscape display, and the list of the matches under it.
     private void CommandLine(Vector2 displaySize, IReadOnlyList<LiveBody> bodies, Guid? selection)
     {
+        // Finding V157 of the codebase review of 2026-11-09 (TASK-0324): a field that does not show takes no request of the
+        // focus, so Control and K on a portrait display does not give the field the keys later. Until TASK-0324 the request
+        // stayed, and the field took the keys after a turn of the display.
         if (displaySize.X < displaySize.Y)
+        {
+            _focusCommand = false;
             return;
+        }
 
         var right = displaySize.X - 16f - _inset.Z;
         var width = Math.Min(CommandWidth, Math.Max(right - 16f - _inset.X, 0f));
@@ -135,7 +144,9 @@ internal sealed unsafe partial class DesktopUi
             (string Name, Action Run)? chosen = enter && matches.Count > 0 ? matches[_commandIndex] : null;
             for (var index = 0; index < matches.Count; index++)
             {
-                if (ImGui.Selectable($"{matches[index].Name}##Command", index == _commandIndex, ImGuiSelectableFlags.None, new Vector2(width, MinimumControlHeight)))
+                // Finding V153 (TASK-0324): each listed command has an identifier of its own, also when two names are equal.
+                // Until TASK-0324 two equal names shared one identifier, and a tap on the second one gave no action.
+                if (ImGui.Selectable($"{matches[index].Name}##Command{index}", index == _commandIndex, ImGuiSelectableFlags.None, new Vector2(width, MinimumControlHeight)))
                     chosen = matches[index];
                 Item(CommandListItem(matches[index].Name));
             }

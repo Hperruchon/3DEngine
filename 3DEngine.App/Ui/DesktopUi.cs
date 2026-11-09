@@ -568,6 +568,9 @@ internal sealed unsafe partial class DesktopUi : IDisposable
         if (_home is { } recent)
         {
             Home(displaySize, recent);
+            // Finding V157 of the codebase review of 2026-11-09 (TASK-0324): the home screen has no command line, so a request
+            // of its focus does not wait for the document. Until TASK-0324 the field took the keys after the home screen.
+            _focusCommand = false;
             _ring = null;
             _chips = [];
             (_rows, _rowsArea) = ([], null);

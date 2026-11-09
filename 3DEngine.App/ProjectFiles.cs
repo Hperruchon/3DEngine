@@ -56,6 +56,12 @@ internal sealed class ProjectFiles(ISessionHost host, IDocumentFiles files, IFil
     // True while the question before a change of project waits for its answer.
     public bool Asking { get; private set; }
 
+    // Finding V155 of the codebase review of 2026-11-09 (TASK-0324): true while the save dialog that "Save as..." of the
+    // question opened is open. Only the result of that dialog runs or drops the waiting change; a save that the panel or the
+    // command line opened keeps the change and the question. Until TASK-0324 each save dialog ran or dropped the change, and
+    // the question stayed with no change.
+    private bool _saveForChange;
+
     // Item 5 (Q3 A): a change of project asks first while the document has no file and holds at least one command.
     public bool MustAsk()
         => host.FileName is null && host.Session.Read((document, _) => document.Version, CancellationToken.None).GetAwaiter().GetResult() > 0;
@@ -85,6 +91,8 @@ internal sealed class ProjectFiles(ISessionHost host, IDocumentFiles files, IFil
                 var outcome = SaveAs();
                 if (outcome.Line is not null)
                     _waiting = null;
+                else
+                    _saveForChange = true;
                 return outcome;
             default:
                 _waiting = null;
@@ -122,8 +130,8 @@ internal sealed class ProjectFiles(ISessionHost host, IDocumentFiles files, IFil
     {
         if (path is null)
         {
-            if (purpose == DialogPurpose.SaveProject)
-                _waiting = null;
+            if (purpose == DialogPurpose.SaveProject && _saveForChange)
+                (_waiting, _saveForChange) = (null, false);
             return failure is null ? default : new FileOutcome($"The file dialog did not open: {failure}", (string.Empty, $"The file dialog did not open: {failure}"));
         }
 
@@ -133,8 +141,10 @@ internal sealed class ProjectFiles(ISessionHost host, IDocumentFiles files, IFil
                 return OpenPath(path);
             case DialogPurpose.SaveProject:
                 var (saved, done) = Save(path);
+                if (!_saveForChange)
+                    return saved;
                 var waiting = _waiting;
-                _waiting = null;
+                (_waiting, _saveForChange) = (null, false);
                 return done && waiting is not null && waiting() is { Line: not null } next ? next : saved;
             case DialogPurpose.ExportStl:
                 return Write(path);

@@ -28,13 +28,19 @@ internal sealed unsafe partial class DesktopUi
             return;
         }
 
-        ImGui.SetNextWindowPos(new Vector2(Math.Max(16f, displaySize.X - SketchWidth - 16f), 16f), ImGuiCond.FirstUseEver);
+        // Finding V152 of the codebase review of 2026-11-09 (TASK-0324): the window of the live sketches is at the right edge of
+        // the safe area, 8 pixels under the field of the command line when the field shows, else at the top. The frame sets
+        // its place in each frame, as the other windows of the mix, and its height ends above the row of the anchors. Until
+        // TASK-0324 its first frame put it at the upper right, over the command line, and the field took no click.
+        var top = ItemRectangle(CommandItem) is { } field ? field.W + 8f : 16f + _inset.Y;
+        ImGui.SetNextWindowPos(new Vector2(displaySize.X - 16f - _inset.Z, top), ImGuiCond.Always, new Vector2(1f, 0f));
         // Finding T176 of the codebase review of 2026-11-08 (TASK-0296): the window is at most as wide as the display less
         // its margins. Until TASK-0296 it was 480 wide on a display of 390, and Arc was outside the display.
-        var width = Math.Min(SketchWidth, Math.Max(displaySize.X - 32f, 160f));
-        ImGui.SetNextWindowSizeConstraints(Vector2.Zero, new Vector2(width, float.MaxValue));
-        ImGui.SetNextWindowSize(new Vector2(width, Math.Clamp(displaySize.Y - 32f, 200f, 700f)), ImGuiCond.FirstUseEver);
-        if (ImGui.Begin(SketchName))
+        var width = Math.Min(SketchWidth, Math.Max(displaySize.X - 32f - _inset.X - _inset.Z, 160f));
+        var room = Math.Max(displaySize.Y - top - 16f - AnchorRow - _inset.W, 0f);
+        ImGui.SetNextWindowSizeConstraints(Vector2.Zero, new Vector2(width, room));
+        ImGui.SetNextWindowSize(new Vector2(width, Math.Min(Math.Clamp(displaySize.Y - 32f, 200f, 700f), room)), ImGuiCond.FirstUseEver);
+        if (ImGui.Begin(SketchName, ImGuiWindowFlags.NoMove))
             LiveSketches(panel.Live);
 
         var position = ImGui.GetWindowPos();
