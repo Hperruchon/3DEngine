@@ -1,7 +1,7 @@
 ---
 id: 0330
 title: Accept of the agent arc takes a tap in the default window
-status: Active
+status: Done
 phase: P0.138
 opened: 2026-11-09
 depends-on: [0329]
@@ -53,14 +53,14 @@ give their action.
 
 ## Acceptance criteria
 
-- [ ] The test fails on an injection of the old place and passes after the fix.
-- [ ] A picture of the window at 1280 by 720 shows the arc with a live sketch and no selection.
-- [ ] A clean build (`--no-incremental`) gives zero errors and zero warnings, and the phone project builds.
-- [ ] Continuous integration passes on the branch and on `main` after the merge.
+- [x] The test fails on an injection of the old place and passes after the fix.
+- [x] A picture of the window at 1280 by 720 shows the arc with a live sketch and no selection.
+- [x] A clean build (`--no-incremental`) gives zero errors and zero warnings, and the phone project builds.
+- [x] Continuous integration passes on the branch and on `main` after the merge.
 
 ## Outcome
 
-Status: Active
+Status: Done · commit (the merge of the branch p0138-accept-default-window) · v0.313
 
 ## Method
 
@@ -68,7 +68,9 @@ Mechanical: the probe of the review gives the places at the three sizes.
 Judgement:  the window of the live sketches waits while a proposal waits, because the room between it and the panel is
             too narrow for the arc at 1280 by 720; the centre of the ring stays at the middle of the room, because the
             arc draws only the top of the ring.
-Weakest:    to be written at the close.
+Weakest:    on a display narrower than about 900 pixels the room right of the panel can be too narrow for a ring of
+            100 pixels, and an end can still be under the panel; V160 (a tap on Accept that also uses a ring tool)
+            stays for TASK-0331.
 
 ## Progress
 - 2026-11-10: the fix, ADR-0107 and six tests. Three injections failed their tests, and each file came back byte for byte:
@@ -78,3 +80,4 @@ Weakest:    to be written at the close.
   shows the arc right of the panel, Reject and Accept free, and no window of the live sketches.
 - 2026-11-10: main merged in at v0.312 (P0.137): the ADR rows, the test floor and the governed-by fields of TASK-0314,
   TASK-0315 and TASK-0331 take both sides.
+- 2026-11-10: run 42720337581 passed. Closed at v0.313.

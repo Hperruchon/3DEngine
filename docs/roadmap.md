@@ -324,6 +324,7 @@ Therefore each approved objective must have a track here.
 - Review — The codebase review of 2026-11-09 (b). v0.311, TASK-0329.
 - P0.137 — "Open project..." shows "Project or STL" first, and an STL file chosen there goes to the import. v0.312,
   TASK-0328, ADR-0106.
+- P0.138 — Accept of the agent arc takes a tap in the default window (V159). v0.313, TASK-0330, ADR-0107.
 
 ## Track 0 — Foundations
 
