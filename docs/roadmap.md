@@ -306,6 +306,11 @@ Therefore each approved objective must have a track here.
   ADR-0102.
 - P0.131 — The register: R-0007, R-0040 and R-0054 accepted, R-0024, R-0039 and R-0055 closed, R-0056 opened.
   v0.300, TASK-0317.
+- P0.132 — The small Vulkan findings of R-0022, R-0030 and R-0027. v0.301, TASK-0319.
+- P0.135 — The test of the window hold of the session turns survives a busy runner. v0.302, TASK-0322.
+- P0.133 — The small gate holes of R-0031. v0.303, TASK-0320.
+- P0.134 — The small engine findings of R-0027, R-0028, R-0033 and R-0036. v0.304, TASK-0321.
+- Review — The codebase review of 2026-11-09. v0.305, TASK-0323.
 
 ## Track 0 — Foundations
 
@@ -442,6 +447,11 @@ This track removes each condition that blocks other work.
 | P0.129 | The status line leaves Frame and Home free on each display (V146 of the codebase review of 2026-11-08 (c), high, before the next product phase). TASK-0310. | 1 |
 | P0.130 | The dimension lines take the up axis of the camera, and the top bar, the comment of the panel and the comments of the yaw and the pitch hold their next forms (V147, V149, V150 and V151 of the codebase review of 2026-11-08 (c); after R16n). TASK-0311. | 1 |
 | P0.131 | The register accepts the image test on Ubuntu only (R-0040, the owner, 2026-11-09), and R-0056 holds the project file of the phone (Q4 A of P9g). TASK-0317. | 1 |
+| P0.132 | The small Vulkan findings of R-0022, R-0030 and R-0027 (V2, V3, V4 and V7 parts 1 to 5), the first part of the cleanup that the owner chose on 2026-11-09 before the codebase review. TASK-0319. | 1 |
+| P0.133 | The small gate holes of R-0031 (T4 marker, T5, T7, T10, T13, T17, T23 and the response file), the second part of the cleanup that the owner chose on 2026-11-09. TASK-0320. | 1 |
+| P0.134 | The small engine findings of R-0027, R-0028, R-0033 and R-0036 that need no contract change and no new code (E5, E12, T2, E22, parts of E24 and E17), the third part of the cleanup that the owner chose on 2026-11-09. TASK-0321. | 1 |
+| P0.135 | The test of the window hold of the session turns survives a busy runner (the failed run 42543751923 on main). TASK-0322. | 1 |
+| P0.136 | The medium and low findings of the codebase review of 2026-11-09 (V152 to V157 and E197; V158 after the answer of the owner), after the next product phase. TASK-0324. | 1 |
 | P0.102 | The cache of a face, the fixed controls, the list New, the edges and the safe area hold their next forms (V113 to V118 of the codebase review of 2026-11-06 (e); after P0.101). TASK-0252. | 1–2 |
 | P0.86 | The window keeps no input between sessions, the hook has the cases of one axis, and the next forms of four gates fail (V88 to V90, T141 to T144 of the codebase review of 2026-11-06; after the next product phase). TASK-0198. | 1–2 |
 

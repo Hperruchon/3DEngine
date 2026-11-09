@@ -181,7 +181,9 @@ internal static class PhoneHost
         engine.LoadScene(SessionScene.Create());
         window.Show();
 
-        var lastFrame = DateTime.UtcNow;
+        // Finding V7 of the codebase review of 2026-09-30, part 5 (R-0030, TASK-0319): the time step comes from the monotonic
+        // clock; until TASK-0319 a change of the clock of the system gave a wrong or negative step.
+        long lastFrame = System.Diagnostics.Stopwatch.GetTimestamp();
         var first = true;
         while (true)
         {
@@ -204,8 +206,8 @@ internal static class PhoneHost
                 engine.HandleEvent(sdlEvent);
             }
 
-            var now = DateTime.UtcNow;
-            engine.Update(now - lastFrame);
+            long now = System.Diagnostics.Stopwatch.GetTimestamp();
+            engine.Update(System.Diagnostics.Stopwatch.GetElapsedTime(lastFrame, now));
             // Finding V124 of the codebase review of 2026-11-07 (TASK-0265): Android destroyed the activity after the first
             // frame (run 42323457861), and the surface was lost before the next event of SDL reached this loop; the session
             // ended with the exception. A lost surface now ends the engine as the background does, and the wait for the

@@ -139,6 +139,29 @@ public class DependencyDirectionGateTests
         Assert.True(offences.Length == 0, "An assembly name that another project has reads the internals that the project gives to it.\n  " + string.Join("\n  ", offences));
     }
 
+    // R-0031, progress of 2026-10-30 (TASK-0107, TASK-0320): MSBuild reads each
+    // Directory.Build.rsp above a project as arguments of the command line, and a
+    // /p:TargetName= or a /p:AssemblyName= in it sets the property for each project. No
+    // gate reads such a file, so the repository holds no response file. The gate leaves
+    // out the build output in the same way as the project files. Until TASK-0320 no gate
+    // read a response file.
+    [Fact]
+    public void The_Repository_Holds_No_Response_File()
+    {
+        var found = Directory
+            .EnumerateFiles(RepositoryFiles.Root, "*.rsp", SearchOption.AllDirectories)
+            .Where(f => f.EndsWith(".rsp", StringComparison.OrdinalIgnoreCase))
+            .Select(RepositoryFiles.Relative)
+            .Where(relative => !IsOutOfScope(relative, HoldsProject))
+            .Order(StringComparer.Ordinal)
+            .ToArray();
+
+        Assert.True(
+            found.Length == 0,
+            "MSBuild reads a Directory.Build.rsp as arguments of the command line, and no gate reads its "
+            + "properties. Set a property in a project file. Response files:\n  " + string.Join("\n  ", found));
+    }
+
     [Theory]
     [InlineData("3DEngine/3DEngine.csproj", "<Project><PropertyGroup><AssemblyName>Engine.Tests</AssemblyName></PropertyGroup></Project>", "is the name of another project")]
     [InlineData("3DEngine/3DEngine.csproj", "<Project><PropertyGroup><assemblyname>engine.tests</assemblyname></PropertyGroup></Project>", "is the name of another project")]

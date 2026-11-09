@@ -109,8 +109,8 @@ public class TaskGovernanceGateTests
             if (fields is null || NotInForce.Contains(fields.GetValueOrDefault("status", string.Empty)))
                 continue;
 
-            var affects = fields.GetValueOrDefault("affects", string.Empty)
-                .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+            // Finding T5 of the codebase review of 2026-09-30 (R-0031, TASK-0320): one reader for the patterns of each form.
+            var affects = RepositoryFiles.AffectsPatterns(fields.GetValueOrDefault("affects"), Path.GetFileName(file));
 
             adrs.Add(new Adr(fields.GetValueOrDefault("id", Path.GetFileName(file)[..4]), affects));
         }

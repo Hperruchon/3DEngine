@@ -26,8 +26,9 @@ internal static class QueriesEndpoint
 {
     public static async Task<IResult> Handle(HttpContext context, EngineHost host)
     {
+        // Finding E17 of the codebase review of 2026-09-30 (R-0028, TASK-0321): HTTP 415 has the envelope.
         if (!context.Request.HasJsonContentType())
-            return Results.StatusCode(StatusCodes.Status415UnsupportedMediaType);
+            return ApiErrorEnvelope.UnsupportedMediaType();
 
         QueryRequest? body;
         try

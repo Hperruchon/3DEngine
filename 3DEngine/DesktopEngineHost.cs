@@ -10,26 +10,36 @@ internal static class DesktopEngineHost
     // document as soon as the window shows, and it stops when the window closes
     // (ADR-0019 item 6). When the surface stops first, for example at Ctrl+C, the
     // window closes too. The exit code is 0, or a code of DesktopSurface.
+    // Finding V7 of the codebase review of 2026-09-30, part 3 (R-0030, TASK-0319): the run disposes the window and ends SDL;
+    // until TASK-0319 the process ended with the window and SDL open.
     public static int Run(string[] args)
     {
         Window? window = null;
-        return RunSessions(args, Start, surface =>
+        try
         {
-            // Finding V92 of the codebase review of 2026-11-06 (b) (TASK-0225): since R14b the window was made here,
-            // outside the try of Show, so a window that SDL cannot create ended the desktop with an unhandled exception.
-            var later = window is not null;
-            try
+            return RunSessions(args, Start, surface =>
             {
-                window ??= new Window("3DEngine Desktop", 1280, 720);
-            }
-            catch (Exception ex)
-            {
-                Console.Error.WriteLine($"The window did not open: {ex.Message}");
-                return false;
-            }
+                // Finding V92 of the codebase review of 2026-11-06 (b) (TASK-0225): since R14b the window was made here,
+                // outside the try of Show, so a window that SDL cannot create ended the desktop with an unhandled exception.
+                var later = window is not null;
+                try
+                {
+                    window ??= new Window("3DEngine Desktop", 1280, 720);
+                }
+                catch (Exception ex)
+                {
+                    Console.Error.WriteLine($"The window did not open: {ex.Message}");
+                    return false;
+                }
 
-            return Show(window, surface, later);
-        });
+                return Show(window, surface, later);
+            });
+        }
+        finally
+        {
+            window?.Dispose();
+            SDL_Quit();
+        }
     }
 
     // A failure before the start of the surface, for example a configuration that
@@ -142,7 +152,9 @@ internal static class DesktopEngineHost
             window.Show();
 
             bool running = true;
-            DateTime lastFrame = DateTime.UtcNow;
+            // Finding V7 of the codebase review of 2026-09-30, part 5 (R-0030, TASK-0319): the time step comes from the monotonic
+            // clock; until TASK-0319 a change of the clock of the system gave a wrong or negative step.
+            long lastFrame = System.Diagnostics.Stopwatch.GetTimestamp();
 
             // ADR-0030 item 3: an open that a check accepted ends the loop.
             while (running && !surface.Stopping.IsCancellationRequested && surface.Document.RequestedOpen is null)
@@ -173,8 +185,8 @@ internal static class DesktopEngineHost
                     engine.HandleEvent(sdlEvent);
                 }
 
-                DateTime now = DateTime.UtcNow;
-                engine.Update(now - lastFrame);
+                long now = System.Diagnostics.Stopwatch.GetTimestamp();
+                engine.Update(System.Diagnostics.Stopwatch.GetElapsedTime(lastFrame, now));
                 engine.Render();
                 lastFrame = now;
             }

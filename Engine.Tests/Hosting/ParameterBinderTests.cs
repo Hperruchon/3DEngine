@@ -143,6 +143,45 @@ public class ParameterBinderTests
             Assert.Equal((long)supplied, result.Values!["width"]);
     }
 
+    // Findings E5 and E12 (R-0027, TASK-0321): a whole JSON number reaches the binder as a long through
+    // JsonParameters. An integer field keeps it exact above 2^53, and a number field accepts it.
+    [Fact]
+    public void A_Whole_Json_Number_Above_2_53_Stays_Exact_For_An_Integer_Field()
+    {
+        var result = ParameterBinder.Bind(Schema(("count", "integer", true)), FromJson("""{ "count": 9007199254740993 }"""));
+
+        Assert.True(result.IsSuccess, result.FirstMessage);
+        Assert.Equal(9007199254740993L, result.Values!["count"]);
+    }
+
+    [Theory]
+    [InlineData("""{ "size": 42 }""", 42.0)]
+    [InlineData("""{ "size": -7 }""", -7.0)]
+    [InlineData("""{ "size": 42.5 }""", 42.5)]
+    [InlineData("""{ "size": 9007199254740993 }""", 9007199254740992.0)]
+    public void A_Json_Number_Binds_To_A_Number_Field(string json, double expected)
+    {
+        var result = ParameterBinder.Bind(Schema(("size", "number", true)), FromJson(json));
+
+        Assert.True(result.IsSuccess, result.FirstMessage);
+        Assert.Equal(expected, (double)result.Values!["size"]!);
+    }
+
+    [Theory]
+    [InlineData(42L)]
+    [InlineData(42)]
+    public void A_Long_And_An_Int_Bind_To_A_Number_Field(object supplied)
+    {
+        var result = ParameterBinder.Bind(Schema(("size", "number", true)), Raw(("size", supplied)));
+
+        Assert.True(result.IsSuccess, result.FirstMessage);
+        Assert.Equal(42.0, result.Values!["size"]);
+    }
+
+    private static IReadOnlyDictionary<string, object?> FromJson(string json)
+        => Engine.Api.Http.Endpoints.JsonParameters.AsRaw(
+            System.Text.Json.JsonSerializer.Deserialize<Dictionary<string, System.Text.Json.JsonElement>>(json));
+
     [Fact]
     public void A_Number_Parses_With_The_Invariant_Culture()
     {
