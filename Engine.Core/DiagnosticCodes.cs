@@ -24,6 +24,12 @@ public static class DiagnosticCodes
     // ADR-0030 item 4: the host accepted an open, and its next session holds the file,
     // so it refuses each command, save and open until then (TASK-0099).
     public const string ApiOpenPending = "E-API-OPEN-PENDING";
+
+    // TASK-0326: the queue of the proposals of an agent in the HTTP host. A ninth open proposal, an identifier that no open
+    // or kept proposal has, and a withdraw of a proposal that is not open.
+    public const string ApiProposalQueueFull = "E-API-PROPOSAL-QUEUE-FULL";
+    public const string ApiProposalNotFound = "E-API-PROPOSAL-NOT-FOUND";
+    public const string ApiProposalClosed = "E-API-PROPOSAL-CLOSED";
     public const string GeomCapMissing = "E-GEOM-CAP-MISSING";
     public const string GeomInvalidParam = "E-GEOM-INVALID-PARAM";
     public const string GeomBodyNotFound = "E-GEOM-BODY-NOT-FOUND";
