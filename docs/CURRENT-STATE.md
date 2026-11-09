@@ -9101,3 +9101,30 @@ New tests: 23. The test list holds 2244 (1505 in `Engine.Tests`, 356 in `3DEngin
 in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
 entries: 10 of 15. New diagnostic codes: 0. Since the review of v0.292, 4 product milestones and 12 entries followed it, so
 the codebase review comes next.
+
+## v0.305 — The codebase review of 2026-11-09 (governance, TASK-0323)
+
+The review of 2026-11-08 (c) examined v0.292. After it came 4 product milestones (R16n, R16o, R16p and P9g) and 12 ledger
+entries, so the next entry would make the review late. The owner chose on 2026-11-09 to clean up the old findings first.
+
+**The change.** `docs/reviews/2026-11-09-codebase-review.md`, at `3884adf` (v0.304). One agent examined the code change
+from v0.292 to v0.304 with probes in a scratch copy; the session read each finding again in the code. The review uses no lead
+of Codex.
+- Seventeen open findings are closed: the cleanup fixed E5, E12, E22, V2, V4, T2, T5, T10, T13 and T17; the owner closed
+  E182; V146 to V151 are fixed.
+- No new finding is critical or high. Three are medium: V152 (the window of the live sketches covers the command line), V153
+  (two equal commands of a cut, and the second does nothing) and V158 (a document built with y up shows on its side since
+  R16m). Five are low: V154, V155, V156, V157 and E197.
+- TASK-0324 (P0.136) holds the new findings after the next product phase; V158 waits for the answer of the owner to Q5.
+
+**Proof.** `CodebaseReviewGateTests` passes with the new review. The main run of v0.304 (42552704367) passed.
+
+**What stays.** The open findings are 0 critical, 4 high, 9 medium and 25 low. The review asks five questions: the parts of
+R-0031 to accept, the five event kinds of E6 (d), the check of V3 on macOS, the lists of `3DEngine.Core` (V7 part 6), and the
+up axis of a document (V158).
+
+**A correction.** None. The failed runs since the entry v0.304, from the API: none.
+
+New tests: 0. The test list holds 2244 (1505 in `Engine.Tests`, 356 in `3DEngine.Tests`, 380 in `3DEngine.ImageTests`, 3
+in `3DEngine.VisionTests`). Open entries: 10 of 15. New diagnostic codes: 0. Since the review of v0.304, 0 product
+milestones and 1 entry followed it.
