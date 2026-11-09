@@ -524,7 +524,7 @@ internal sealed unsafe partial class DesktopUi : IDisposable
         => (body.Name ?? $"{body.Kind}  {body.Id.ToString()[..8]}") + (body.Visible ? string.Empty : "  (hidden)")
         + (body.Fault is null ? string.Empty : "  (fault)");
 
-    public UiDrawData Frame(float deltaSeconds, Vector2 displaySize, Vector2 framebufferScale, IReadOnlyList<LiveBody> bodies, Guid? selection = null, DocumentLine? document = null, SketchOverlay.Strokes? sketches = null, SketchPanel? sketchPanel = null, ImagePanel? imagePanel = null, DimensionOverlay.Strokes? dimensions = null, string? size = null, FaceLine? face = null, Vector2? ringCentre = null, float ringBody = 0f, Vector4 safeInsets = default, IReadOnlyList<EdgeValues.Value>? values = null, IReadOnlyList<HistoryStep>? history = null, IReadOnlyList<ProposalCard>? proposals = null)
+    public UiDrawData Frame(float deltaSeconds, Vector2 displaySize, Vector2 framebufferScale, IReadOnlyList<LiveBody> bodies, Guid? selection = null, DocumentLine? document = null, SketchOverlay.Strokes? sketches = null, SketchPanel? sketchPanel = null, ImagePanel? imagePanel = null, DimensionOverlay.Strokes? dimensions = null, string? size = null, FaceLine? face = null, Vector2? ringCentre = null, float ringBody = 0f, Vector4 safeInsets = default, IReadOnlyList<EdgeValues.Value>? values = null, IReadOnlyList<HistoryStep>? history = null, IReadOnlyList<ProposalCard>? proposals = null, IReadOnlyList<EdgeValues.Value>? sketchValues = null)
     {
         ArgumentNullException.ThrowIfNull(bodies);
         _size = size;
@@ -598,8 +598,9 @@ internal sealed unsafe partial class DesktopUi : IDisposable
                 ImGui.PopStyleVar();
             // ADR-0104 (TASK-0325): the history arc inside the ring of the selected body, before the chips, which go over it.
             History(displaySize, selectedBody, history);
-            // ADR-0082 (TASK-0254): the values of the selected extrude on its edges.
-            Values(displaySize, selection is null ? null : values);
+            // ADR-0082 (TASK-0254): the values of the selected extrude on its edges. ADR-0105 item 1 (TASK-0327): while a sketch
+            // is active, the values of that sketch on its lines and its curves.
+            Values(displaySize, selection is null ? null : values, sketchValues);
             // ADR-0084 (TASK-0267): the rows of the selected body, with no panel, over the chips.
             Rows(selectedBody);
             // ADR-0092 item 7 (TASK-0326): the proposal of an agent, over the ring, the chips and the rows.

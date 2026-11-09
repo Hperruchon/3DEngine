@@ -661,6 +661,17 @@ public sealed class NativeThreeDEngine : IThreeDEngine, IDisposable
         return default;
     }
 
+    // ADR-0105 item 1 (TASK-0327): the values of the active sketch, as the person sees it: with the move under its body of
+    // ADR-0085 item 2, as the overlay draws it. The record comes from the live sketches of the frame, so the frame reads no
+    // state of the session. With no active sketch, there is no value.
+    internal static IReadOnlyList<EdgeValues.Value> SketchValuesOf(SketchActions? actions, IReadOnlyCollection<Engine.Core.Queries.SketchInfo> live, Camera camera, double width, double height, string unit)
+    {
+        ArgumentNullException.ThrowIfNull(live);
+        if (actions?.Active is not { } active || live.FirstOrDefault(sketch => sketch.SketchId == active) is not { } record)
+            return [];
+        return SketchValues.Of(actions.Lift?.Apply(record) ?? record, camera, width, height, unit);
+    }
+
     // ADR-0041 item 6: the mark shows where a tap goes. Finding V74 of the codebase review of 2026-11-03 (TASK-0170):
     // during a calibration a tap goes to the image as the raw pixel under it, and not to the snap of the sketch tool,
     // so the mark does not show.
@@ -815,6 +826,9 @@ public sealed class NativeThreeDEngine : IThreeDEngine, IDisposable
                 Camera, window.width, window.height, _host.Session.LengthUnit);
         }
 
+        // ADR-0105 item 1 (TASK-0327): the values of the active sketch on its lines and its curves, from the sketches of the frame.
+        var sketchValues = SketchValuesOf(_sketchActions, _sketches?.Live ?? [], Camera, window.width, window.height, _host.Session.LengthUnit);
+
         // ADR-0104 item 1: the steps that made the selected body, from GetFeatures, for the history arc.
         var history = _history.Steps(version, Selection, () => HistorySteps.Of(
             _host.Session.Query<Engine.Core.Queries.FeaturesInfo>(new Engine.Core.Queries.GetFeaturesQuery()).GetAwaiter().GetResult().Result,
@@ -832,7 +846,7 @@ public sealed class NativeThreeDEngine : IThreeDEngine, IDisposable
 
         // ADR-0102 item 5 (Q3 A): the question shows while a change of project waits for its answer.
         _ui.ShowQuestion(_projects?.Asking ?? false);
-        var panel = _ui.Frame((float)_delta.TotalSeconds, display, scale, _renderer.LiveBodies, Selection, LineOf(_document, _host.FileName, _documentMessage, Path.GetDirectoryName(_host.Session.FilePath)), sketches, sketchPanel, imagePanel, dimensions, size, faceLine, ringCentre, ringSize, Inset(_window.SafeInsets), values, history, proposals);
+        var panel = _ui.Frame((float)_delta.TotalSeconds, display, scale, _renderer.LiveBodies, Selection, LineOf(_document, _host.FileName, _documentMessage, Path.GetDirectoryName(_host.Session.FilePath)), sketches, sketchPanel, imagePanel, dimensions, size, faceLine, ringCentre, ringSize, Inset(_window.SafeInsets), values, history, proposals, sketchValues);
         ApplyPanel(_renderer.LiveBodies);
 
         var ui = _uiRenderer;
