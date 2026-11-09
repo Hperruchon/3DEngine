@@ -108,3 +108,5 @@ the next slice of P8b, with a fault for a reference whose bytes are absent or ho
 - 2026-11-06 · TASK-0202 · The record, under the standing order of 2026-11-05.
 - 2026-11-06 · TASK-0224 · Item 4: the header of an assembly has the version 2 (finding E154, Q1 A). Until TASK-0224 the
   item said that an older engine reads no assembly as a part; it read an assembly with no reference as an empty part.
+- 2026-11-09 · TASK-0317 · The owner allows a second Document in one runtime to resolve a reference (R-0055, answer B):
+  the charter no longer lists the non-goal "Multi-Document in one runtime", and its own ADR and task give the design.

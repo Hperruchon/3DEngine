@@ -75,16 +75,6 @@ Exit: state the condition that closes this entry.
 
 ## Open
 
-### R-0007 · Native packages come from a local folder feed
-- class: interim
-- opened: 2026-07-04
-- due: 2027-07-04
-- extended: no
-- refs: `nuget.config:9-11`, `nuget/.gitignore:1-4`, `TASK-0012 §6`
-The configuration calls this feed an interim bootstrap. The publish step in the native workflow is
-inactive. A person commits each package by hand.
-Exit: a real feed exists. Or: accept this mechanism permanently and give the reason.
-
 ### R-0022 · Three Vulkan defects block the first render on Linux and on macOS
 - class: debt
 - opened: 2026-09-25
@@ -98,19 +88,6 @@ a current loader on macOS does not list MoltenVK. The host only clears the scree
 defect shows now.
 Exit: each defect is corrected, with the check that the review gives for it, before the first render
 phase that runs on Linux or on macOS.
-
-### R-0024 · The render projection may need to read `Engine.Contracts`
-- class: question
-- opened: 2026-09-25
-- due: 2026-12-24
-- extended: no
-- refs: ADR-0009 §2 and §4, ADR-0021, `docs/roadmap.md` phase R5, `docs/reviews/2026-09-23-architecture-challenge.md` concern 1
-ADR-0009 §2 forbids a reference in each direction between the two kernels, and ADR-0009 §4 puts the
-projection from events to render state in the host. The desktop host needs a graphics processor, so
-a runner with none cannot test a projection that lives there. The architecture challenge recommends
-this: a projection with no graphics code may read `Engine.Contracts`, and design truth never reads
-render state. The owner did not decide it.
-Exit: the owner decides before phase R5 starts, and ADR-0009 is amended or kept.
 
 ### R-0027 · Six findings of the first codebase review have no task
 - class: debt
@@ -397,34 +374,8 @@ meaning, so a client that shows them still holds the meaning in its own code. `G
 areas inside it need the nested schema that ADR-0013 defers.
 Exit: an ADR gives the units of results and outputs, with the nested schema or without it, or the owner accepts that a
 client holds them.
-
-### R-0054 · The SDL of the pin of ppy.SDL3-CS is probably a development version
-- class: question
-- opened: 2026-11-05
-- due: 2027-02-03
-- extended: no
-- refs: `docs/adr/0061-android-platform.md` item 5, `docs/adr/0017-first-party-vulkan-layer.md` item 4, TASK-0193
-The native library of `ppy.SDL3-CS` 2026.1002.1 holds the string "SDL-3.5.0-ea7a2da". SDL gives an odd minor number
-to a development version, so 3.5.0 is probably not a release; nobody verified that from SDL. The binding of today holds
-SDL 3.2.10, a release. ADR-0061 pins 2026.1002.1, because it is the version that the check of 2026-11-05 built for
-Android.
-Exit: R14c pins a version of `ppy.SDL3-CS` whose SDL is a release, or the owner accepts the development version and
-this entry moves to the accepted compromises.
-Progress 2026-11-06: TASK-0195 read the native SDL of five versions of `ppy.SDL3-CS` from 2025.1205.0 to 2026.1002.1:
-SDL-3.3.3-8e64411, then SDL-3.5.0 with four commits. Each one is a snapshot of the main branch of SDL, and none is a
-release, so the first exit is not open; the decision is the owner's. R14c keeps 2026.1002.1.
-
-### R-0055 · An assembly records references to parts, and the engine does not resolve them
-- class: question
-- opened: 2026-11-06
-- due: 2027-02-04
-- extended: no
-- refs: `docs/adr/0071-container-model.md`, `docs/CHARTER.md` non-goal "Multi-Document in one runtime", TASK-0202
-Since TASK-0202 an assembly holds references to part files of the store at a fixed version. To show a reference, the
-engine must read the part and replay its log next to the Document of the assembly. The charter lists "Multi-Document
-in one runtime" as a non-goal, so P8b1 records the references and does not resolve them.
-Exit: the owner decides if the engine may hold a second Document in one runtime to resolve a reference, or how else an
-assembly shows its parts, and the charter or ADR-0071 records the decision.
+Progress 2026-11-09: the owner chose the first exit: an ADR gives the units of results and outputs (TASK-0317). It changes
+the public shape of `Engine.Contracts`, so a task of its own writes that ADR with the change.
 
 ### R-0056 · The phone opens and saves no project file
 - class: question
@@ -490,10 +441,75 @@ Accepted 2026-11-09 · TASK-0317 · the owner answered "R-0040 accept: Ubuntu is
 The project keeps the condition. The pipeline runs the image test with lavapipe on Ubuntu, and the computer of the owner
 runs it on Windows with a GPU. A defect of the Vulkan layer that only macOS shows can still pass.
 
+### R-0007 · Native packages come from a local folder feed
+- class: interim
+- opened: 2026-07-04
+- due: 2027-07-04
+- extended: no
+- refs: `nuget.config:9-11`, `nuget/.gitignore:1-4`, `TASK-0012 §6`
+The configuration calls this feed an interim bootstrap. The publish step in the native workflow is
+inactive. A person commits each package by hand.
+Exit: a real feed exists. Or: accept this mechanism permanently and give the reason.
+Accepted 2026-11-09 · TASK-0317 · the owner answered "accept local now, real feed beside it when someone else builds"
+The project keeps the folder `nuget/` as the source of the native packages that it builds itself, Manifold and Dear
+ImGui; nuget.org gives each other package. A real feed comes beside the folder, as a further source, when a person who
+does not have this repository must build the project, and a `packageSourceMapping` then names the source of each package.
+
+### R-0054 · The SDL of the pin of ppy.SDL3-CS is probably a development version
+- class: question
+- opened: 2026-11-05
+- due: 2027-02-03
+- extended: no
+- refs: `docs/adr/0061-android-platform.md` item 5, `docs/adr/0017-first-party-vulkan-layer.md` item 4, TASK-0193
+The native library of `ppy.SDL3-CS` 2026.1002.1 holds the string "SDL-3.5.0-ea7a2da". SDL gives an odd minor number
+to a development version, so 3.5.0 is probably not a release; nobody verified that from SDL. The binding of today holds
+SDL 3.2.10, a release. ADR-0061 pins 2026.1002.1, because it is the version that the check of 2026-11-05 built for
+Android.
+Exit: R14c pins a version of `ppy.SDL3-CS` whose SDL is a release, or the owner accepts the development version and
+this entry moves to the accepted compromises.
+Progress 2026-11-06: TASK-0195 read the native SDL of five versions of `ppy.SDL3-CS` from 2025.1205.0 to 2026.1002.1:
+SDL-3.3.3-8e64411, then SDL-3.5.0 with four commits. Each one is a snapshot of the main branch of SDL, and none is a
+release, so the first exit is not open; the decision is the owner's. R14c keeps 2026.1002.1.
+Accepted 2026-11-09 · TASK-0317 · the owner answered "accept the snapshot"
+The project keeps `ppy.SDL3-CS` 2026.1002.1 with its snapshot of SDL 3.5.0. No version of the binding holds a release of
+SDL (TASK-0195), and the pin builds and runs on Windows, Linux, macOS and Android in each run of the pipeline. A later
+change of the pin is a change of ADR-0061 item 5.
+
 
 ---
 
 ## Closed
+
+### R-0024 · The render projection may need to read `Engine.Contracts`
+- class: question
+- opened: 2026-09-25
+- due: 2026-12-24
+- extended: no
+- refs: ADR-0009 §2 and §4, ADR-0021, `docs/roadmap.md` phase R5, `docs/reviews/2026-09-23-architecture-challenge.md` concern 1
+ADR-0009 §2 forbids a reference in each direction between the two kernels, and ADR-0009 §4 puts the
+projection from events to render state in the host. The desktop host needs a graphics processor, so
+a runner with none cannot test a projection that lives there. The architecture challenge recommends
+this: a projection with no graphics code may read `Engine.Contracts`, and design truth never reads
+render state. The owner did not decide it.
+Exit: the owner decides before phase R5 starts, and ADR-0009 is amended or kept.
+Closed 2026-11-09 · decided · TASK-0317 · ADR-0009. The owner keeps ADR-0009 as built: the projection from the events of
+the engine to the render state is in the host library `3DEngine.App`, which reads `Engine.Core` and `Engine.Contracts`,
+and `3DEngine.Core` reads neither. The image test runs that projection with lavapipe on Ubuntu (R-0040).
+
+### R-0055 · An assembly records references to parts, and the engine does not resolve them
+- class: question
+- opened: 2026-11-06
+- due: 2027-02-04
+- extended: no
+- refs: `docs/adr/0071-container-model.md`, `docs/CHARTER.md` non-goal "Multi-Document in one runtime", TASK-0202
+Since TASK-0202 an assembly holds references to part files of the store at a fixed version. To show a reference, the
+engine must read the part and replay its log next to the Document of the assembly. The charter lists "Multi-Document
+in one runtime" as a non-goal, so P8b1 records the references and does not resolve them.
+Exit: the owner decides if the engine may hold a second Document in one runtime to resolve a reference, or how else an
+assembly shows its parts, and the charter or ADR-0071 records the decision.
+Closed 2026-11-09 · decided · TASK-0317 · ADR-0071. The owner allows a second Document in one runtime to resolve a
+reference of an assembly. `docs/CHARTER.md` no longer lists "Multi-Document in one runtime" as a non-goal; the work
+arrives with its own ADR and its own task (R17 option C), as each deferred item does.
 
 ### R-0039 · No test calls the surface of the desktop host
 - class: debt
