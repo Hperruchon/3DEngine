@@ -1,7 +1,7 @@
 ---
 id: 0325
 title: The history arc shows the steps that made the selected body
-status: Active
+status: Done
 phase: R16q
 opened: 2026-11-09
 depends-on: [0324]
@@ -53,19 +53,20 @@ it, and a tap on a node of a sketch opens its edit.
 
 ## Acceptance criteria
 
-- [ ] The tests pass, and the picture at 1440 by 900 shows the arc at the lower left of the ring with its nodes and caption.
-- [ ] A clean build (`--no-incremental`) gives zero errors and zero warnings, and the phone project builds.
-- [ ] Continuous integration passes on the three runners, on the branch and on `main` after the merge.
+- [x] The tests pass, and the picture at 1440 by 900 shows the arc at the lower left of the ring with its nodes and caption.
+- [x] A clean build (`--no-incremental`) gives zero errors and zero warnings, and the phone project builds.
+- [x] Continuous integration passes on the three runners, on the branch and on `main` after the merge.
 
 ## Outcome
 
-Status: Active
+Status: Done · commit (the merge of the branch r16q-history-arc) · v0.308
 
 ## Method
 
 Mechanical: the place of the arc in the render "Mix 1", and the query `GetFeatures`.
 Judgement:  the steps of the selected body only (Q1 A); the tap of ADR-0104 item 2 (Q2 A); a landscape display (Q3 A).
-Weakest:    to be written at the close.
+Weakest:    a change of a value adds no node, because the engine records no step for it; the picture shows a body of two
+            steps only, so six nodes on a small ring have a test and no picture.
 
 ## Progress
 
@@ -77,3 +78,4 @@ Weakest:    to be written at the close.
   three tests of the arc (the band and the two taps). The task files of TASK-0314 and TASK-0315 take ADR-0104 in
   `governed-by`, because its affects meet their write sets. Local: the gates, a clean build with zero warnings, the tests
   of the solution and the phone project.
+- 2026-11-09: run 42563351949 passed. Closed at v0.308.

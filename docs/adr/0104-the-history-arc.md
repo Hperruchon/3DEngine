@@ -87,3 +87,4 @@ The owner chose the slice and its merge after green CI; the recommendations answ
 ## History
 
 - 2026-11-09 · TASK-0325 · The record, with the slice (the order of the owner of 2026-11-08).
+- 2026-11-09 · TASK-0325 · Shipped at v0.308.
