@@ -5,6 +5,7 @@ using Engine.Core.Commands;
 using Engine.Core.Queries;
 using ThreeDEngine.Core.Input;
 using ThreeDEngine.Core.Picking;
+using ThreeDEngine.Desktop.Ui;
 
 namespace ThreeDEngine.Desktop;
 
@@ -55,6 +56,24 @@ internal sealed class BodyActions(DocumentSession session)
         Face = null;
     }
 
+    // ADR-0100 item 2 (phase R17a, TASK-0314): a tap on a segment of the path line selects that level. The document clears
+    // the body, the face and the edge; the body clears the face and the edge; the face clears the edge.
+    public void Up(PathLevel level)
+    {
+        switch (level)
+        {
+            case PathLevel.Document:
+                Selection = null;
+                break;
+            case PathLevel.Body:
+                Face = null;
+                break;
+            case PathLevel.Face:
+                Edge = null;
+                break;
+        }
+    }
+
     // Applies an intent of the selection or of the visibility, with the pick of a point of the
     // window. It returns false for each other intent, which the host applies to the camera.
     // ADR-0077 item 3: edgeAt gives the edge of the selected face nearest a point of the window, at most 12 pixels away, or
@@ -94,11 +113,16 @@ internal sealed class BodyActions(DocumentSession session)
             }
 
             // The key Escape goes back from the edge to its face, and from the face to its body (ADR-0077 item 3).
+            // ADR-0100 item 3 (phase R17a, TASK-0314): and from the body to the document. Until TASK-0314 Escape stopped at the
+            // body.
             case CancelIntent { ByKey: true } when Edge is not null:
                 Edge = null;
                 return true;
             case CancelIntent { ByKey: true } when Face is not null:
                 Face = null;
+                return true;
+            case CancelIntent { ByKey: true } when Selection is not null:
+                Selection = null;
                 return true;
 
             case HideIntent hide:

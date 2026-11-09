@@ -309,6 +309,10 @@ internal sealed unsafe partial class DesktopUi : IDisposable
     // V118 (TASK-0252): the insets of the safe area of the display, as left, top, right and bottom.
     private Vector4 _inset;
 
+    // ADR-0100 item 5 (phase R17a, TASK-0314): true when the display of this frame is portrait, so the path line is under
+    // the top bar and the panel under the path line.
+    private bool _portrait;
+
     // ADR-0075 item 3 (phase R12a, TASK-0236): the selected face for this frame, or null.
     private FaceLine? _face;
 
@@ -529,6 +533,7 @@ internal sealed unsafe partial class DesktopUi : IDisposable
         ArgumentNullException.ThrowIfNull(bodies);
         _size = size;
         _inset = safeInsets;
+        _portrait = displaySize.X < displaySize.Y;
         _face = face;
         _files = document is { Files: true };
         _sketchActive = sketchPanel?.Active is not null;
@@ -585,7 +590,7 @@ internal sealed unsafe partial class DesktopUi : IDisposable
             var selectedBody = bodies.FirstOrDefault(body => body.Id == selection);
             if (sketchPanel?.Active is null && !RowsShow(displaySize, selectedBody))
                 Panel(bodies, selection, displaySize, document);
-            FixedControls(displaySize, bodies, document);
+            FixedControls(displaySize, bodies, document, selectedBody);
             // ADR-0098 (TASK-0312): the command line.
             CommandLine(displaySize, bodies, selection);
             // ADR-0084 (TASK-0267): the rows of the selected body come first, so that the ring and the chips read them.
