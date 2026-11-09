@@ -22,6 +22,12 @@ namespace Engine.Tests.Governance;
 //
 // The identifier must be an entry of docs/register.md. Until TASK-0043 any
 // four digits passed (codebase review of 2026-09-30, finding T4).
+//
+// Finding T4 of the codebase review of 2026-09-30 and finding T13 of the codebase
+// review of 2026-10-04 (R-0031, TASK-0320): the identifier must be an entry of the
+// section "Open" or of the section "Accepted compromises". A closed entry has no
+// limit, and R-0000 is the template of the section "Entry format". Until TASK-0320
+// each R-nnnn anywhere in the register passed.
 public class MarkerGateTests
 {
     private static readonly Regex Marker = new(
@@ -34,10 +40,8 @@ public class MarkerGateTests
     public void Every_Impermanence_Marker_In_Live_Code_Carries_A_Register_Identifier()
     {
         var offences = new List<string>();
-        var known = RegisterId.Matches(RepositoryFiles.Read("docs", "register.md"))
-            .Select(m => m.Value)
-            .ToHashSet(StringComparer.Ordinal);
-        Assert.True(known.Count > 0, "docs/register.md holds no entry identifier.");
+        var known = LiveEntries(RepositoryFiles.Read("docs", "register.md"));
+        Assert.True(known.Count > 0, "docs/register.md holds no entry in the sections \"Open\" and \"Accepted compromises\".");
 
         foreach (var file in LiveFiles())
         {
@@ -58,7 +62,7 @@ public class MarkerGateTests
                 if (cited.Length == 0)
                     offences.Add($"{relative}:{i + 1} says '{match.Value}' with no R-nnnn");
                 else if (!cited.Any(known.Contains))
-                    offences.Add($"{relative}:{i + 1} says '{match.Value}' and cites {string.Join(", ", cited)}, which is not in docs/register.md");
+                    offences.Add($"{relative}:{i + 1} says '{match.Value}' and cites {string.Join(", ", cited)}, which is not an open or an accepted entry of docs/register.md");
             }
         }
 
@@ -68,6 +72,35 @@ public class MarkerGateTests
             + "identifier, therefore the thing has a date and a limit. Add an entry to "
             + "docs/register.md and cite it on the same line or just above it. Offences:\n  "
             + string.Join("\n  ", offences));
+    }
+
+    // The identifier of each entry heading in the sections "Open" and "Accepted
+    // compromises" (TASK-0320). A line in a code block is not a heading.
+    private static HashSet<string> LiveEntries(string register)
+    {
+        var entries = new HashSet<string>(StringComparer.Ordinal);
+        var live = false;
+        var inCodeBlock = false;
+
+        foreach (var raw in register.Split('\n'))
+        {
+            var line = raw.TrimEnd('\r');
+            if (line.TrimStart().StartsWith("```", StringComparison.Ordinal))
+            {
+                inCodeBlock = !inCodeBlock;
+                continue;
+            }
+
+            if (inCodeBlock)
+                continue;
+
+            if (line.StartsWith("## ", StringComparison.Ordinal))
+                live = line.TrimEnd() is "## Open" or "## Accepted compromises";
+            else if (live && Regex.Match(line, @"^### (R-\d{4})\b") is { Success: true } heading)
+                entries.Add(heading.Groups[1].Value);
+        }
+
+        return entries;
     }
 
     private static IEnumerable<string> LiveFiles()
@@ -102,10 +135,12 @@ public class MarkerGateTests
             }
         }
 
-        // Live configuration at the root.
-        foreach (var name in new[] { "nuget.config", "global.json" })
+        // Live configuration. Finding T4 of the codebase review of 2026-09-30
+        // (R-0031, TASK-0320): nuget/.gitignore called the folder feed an interim
+        // bootstrap with no identifier, and until TASK-0320 the gate did not read it.
+        foreach (var name in new[] { "nuget.config", "global.json", "nuget/.gitignore" })
         {
-            var file = RepositoryFiles.Path(name);
+            var file = RepositoryFiles.Path(name.Split('/'));
             if (File.Exists(file))
                 yield return file;
         }

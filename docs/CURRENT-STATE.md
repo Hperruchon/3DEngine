@@ -9035,3 +9035,34 @@ windows-latest", the cause of this task.
 New tests: 0. The test list holds 2211 (1472 in `Engine.Tests`, 356 in `3DEngine.Tests`, 380 in `3DEngine.ImageTests`, 3
 in `3DEngine.VisionTests`). Open entries: 10 of 15. New diagnostic codes: 0. Since the review of v0.292, 4 product
 milestones and 10 entries followed it.
+
+## v0.303 — The small gate holes of R-0031 are closed (P0.133, TASK-0320)
+
+Register entry R-0031 ("A gate can pass while its rule is broken") is due on 2026-12-24. The owner chose the cleanup of the
+old findings before the codebase review that is due, with the small findings fixed. A read-only check of the gates on
+2026-11-09 found T4 (determinism part) and T13 parts 1 and 2 fixed, and the form of PendingTasks with a semaphore fixed by
+TASK-0123. An agent made the changes in a worktree; this session reviewed the diff, resolved the conflicts of the floor and
+the roadmap, and repeated an injection.
+
+**The change.**
+- T4 (marker part) and T13 part 3: the marker gate accepts only the identifiers of open and accepted entries, so a closed
+  identifier and the template R-0000 fail; it reads `nuget/.gitignore`, whose comment now names the acceptance of R-0007.
+- T5: the gates strip the quotes and the brackets of an `affects` list and refuse what stays.
+- T7: the index of the ADRs compares the columns "Amends" and "Amended by"; `previous: none` is for the first review only.
+- T10: the register gate reads the exact heading of an entry and refuses a repeated field.
+- T13 part 4: each reader of the two tests of concurrency ran.
+- T17: the folder feed holds only the packages that the gate reads.
+- T23: the path gate finds the path of a Windows runner.
+- A gate refuses a response file (`*.rsp`) outside `bin` and `obj`.
+
+**Proof.** Each change failed on an injection first. This session repeated one: a "TODO" with the closed identifier R-0024
+passed the old marker gate and fails the new one. `repo-gates` gives 168 checks. Run 42547791650 passed. The failed runs since
+the entry v0.302, from the API: none.
+
+**What stays.** R-0031 stays open with T4 (dispatch part) and the parts for the owner to accept: the clock of the register
+gate and the case of a path on Windows (T7), the provenance of the native binaries (T23), the local mode of the write-set
+check (T25), and the three gates that run engine code in the test process (T31).
+
+New tests: 10. The test list holds 2221 (1482 in `Engine.Tests`, 356 in `3DEngine.Tests`, 380 in `3DEngine.ImageTests`, 3
+in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
+entries: 10 of 15. New diagnostic codes: 0. Since the review of v0.292, 4 product milestones and 11 entries followed it.

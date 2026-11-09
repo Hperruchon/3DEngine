@@ -94,8 +94,8 @@ public class AffectsCitationGateTests
             var fields = RepositoryFiles.ReadFrontMatter(File.ReadAllText(file));
             if (fields is null)
                 continue;
-            adrs[fields.GetValueOrDefault("id", Path.GetFileName(file)[..4])] = fields.GetValueOrDefault("affects", string.Empty)
-                .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+            // Finding T5 of the codebase review of 2026-09-30 (R-0031, TASK-0320): one reader for the patterns of each form.
+            adrs[fields.GetValueOrDefault("id", Path.GetFileName(file)[..4])] = RepositoryFiles.AffectsPatterns(fields.GetValueOrDefault("affects"), Path.GetFileName(file));
         }
 
         return adrs;
