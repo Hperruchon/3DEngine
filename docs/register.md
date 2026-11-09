@@ -306,6 +306,16 @@ finding. T31 stays open in part.
 Progress 2026-10-30: TASK-0114 corrected T89 to T95 for their forms. PendingTasks still does not see a task that waits
 for a signal that nobody gives with a type other than TaskCompletionSource, for example a semaphore. T31 stays open in
 part.
+Progress 2026-11-09: a read-only check found T4 (determinism part) and T13 parts 1 and 2 fixed, and the form of
+PendingTasks with a semaphore fixed by TASK-0123 (T100, T103). TASK-0320 fixed T4 (marker part) and T13 part 3 (the marker
+gate accepts only the identifiers of open and accepted entries, and reads `nuget/.gitignore`), T5 (quotes and brackets of
+`affects`), T7 (the columns "Amends" and "Amended by" of the index; `previous: none` for the first review only), T10 (the
+exact heading of an entry, and a repeated field), T13 part 4 (each reader of the two tests of concurrency ran), T17 (a third
+package in the folder feed), T23 (the path of a Windows runner) and the response file (`*.rsp`). Each change failed on an
+injection first. Open: T4 dispatch part (the dispatch gate does not read the desktop host). For the owner to accept: the clock
+of the register gate (T7), the case of a path on Windows (T7; the Linux job fails on it), the provenance of the native
+binaries (T23; a checksum pins each binary), the local mode of the write-set check (T25; the pipeline judges each commit),
+and the three gates that run engine code in the test process (T31).
 
 ### R-0033 · Seven findings of the third codebase review in the engine and the hosts have no task
 - class: debt

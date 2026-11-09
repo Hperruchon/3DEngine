@@ -52,12 +52,22 @@ public class DocumentSessionConcurrencyTests
             }
         });
 
+        // Finding T13 of the codebase review of 2026-10-04 (R-0031, TASK-0320): no
+        // assertion said that a reader ran, so a test with no query and no copy passed.
+        // Each reader now runs until it made one query, and the test counts the reads.
+        // Until TASK-0320 a reader could end before its first query.
+        var queries = 0;
+        var copies = 0;
+
         var readers = Enumerable.Range(0, ReaderCount).Select(reader => Task.Run(async () =>
         {
-            while (Volatile.Read(ref done) == 0)
+            var queried = false;
+            while (Volatile.Read(ref done) == 0 || (!queried && Volatile.Read(ref newest) is not null))
             {
                 if (Volatile.Read(ref newest) is Guid bodyId)
                 {
+                    queried = true;
+                    Interlocked.Increment(ref queries);
                     try
                     {
                         var result = await session.Query<Aabb>(new GetBoundingBoxQuery { BodyId = bodyId });
@@ -70,6 +80,7 @@ public class DocumentSessionConcurrencyTests
                     }
                 }
 
+                Interlocked.Increment(ref copies);
                 try
                 {
                     _ = await session.Read((document, _) => document.Bodies.ToArray());
@@ -85,6 +96,9 @@ public class DocumentSessionConcurrencyTests
 
         var report = string.Join("; ", failures.OrderBy(f => f.Key).Select(f => $"{f.Key}: {f.Value}"));
         Assert.True(failures.IsEmpty, report);
+        Assert.True(
+            queries >= ReaderCount && copies >= ReaderCount,
+            $"Each of the {ReaderCount} readers must run: the readers made {queries} queries and {copies} snapshot copies.");
         Assert.Equal(CommandCount, kit.Document.Log.Count);
         Assert.Equal(CommandCount, kit.Document.Bodies.Count);
     }
