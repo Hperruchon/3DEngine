@@ -114,6 +114,12 @@ and the flags that nothing reads stay.
 Progress 2026-11-09: TASK-0319 fixed the Vulkan parts of V4: the log line of the instance gives the version of the
 loader, the fallback to the old layers of LunarG and Google is gone, and `ISceneLoader` and `SampleSceneFactory`, which
 nothing called, are gone. The other parts of V4 were fixed before (the exit code of a failed start, the results of Vulkan).
+Progress 2026-11-09: TASK-0321 fixed E5 and E12 (a whole JSON number stays a long, an integer field gets the exact value
+above 2^53, and a number field takes a long or an int) and the open part of T2 (`CommandBusBackendFailureTests`: a backend
+that throws gives `E-GEOM-NATIVE-OP`, and the log, the bodies and the backend do not change). Open: E6 (a) the style of a
+date and time, (b) the queue of the bus, (c) an unknown command outside the bus, (d) five event kinds that no code emits,
+which ADR-0005 defines, so their removal is a contract change, (e) the command line that builds an empty Document; C1, the
+two empty interfaces in `Engine.Contracts`; P1, the snapshot under the lock of the broadcaster.
 
 ### R-0028 · Nine new findings in the engine and the hosts have no task
 - class: debt
@@ -143,6 +149,12 @@ eleven parts of E17 stay.
 Progress 2026-10-05: TASK-0035 corrected E7 (a replay stops at a divergence and names it), closed E10
 (the version is the count of the log, and no code can set it), and corrected the replay part of E17 (a
 replay applies each entry with no cache). E11, E13, E14, E16 and ten parts of E17 stay.
+Progress 2026-11-09: a check found E11, E14 and E16 fixed by TASK-0115. TASK-0321 fixed the rest of E16 (a subscribe frame
+with an unknown member closes with 1007 and `E-API-WS-INVALID-SUBSCRIBE`) and four parts of E17: HTTP 415 gives the error
+envelope with `E-API-BAD-REQUEST`, a negative cursor gets a reset, and the command line writes UTF-8. Open: E13 in part
+(`QueryResult<T>` of `Engine.Contracts` gives a struct of zeros on a failure; the hosts ask for `object`), and E17 parts
+1 and 2 (they need new diagnostic codes), 3 (the text of a JSON exception and an unknown charset), 5 (the pump stops before
+the close frame), 6 (no time limit on the subscribe frame) and 9 (a flag read as a command name).
 
 ### R-0030 · The Vulkan layer continues with a null device and gives unpinned memory to Vulkan
 - class: debt
@@ -340,6 +352,13 @@ Progress 2026-10-08: TASK-0051 corrected E20 (a call back into the session throw
 TASK-0038 now depends on TASK-0051. E18, E19, E21, E22 and seven parts of E24 stay.
 Progress 2026-10-31: TASK-0140 corrects E18 by the answer Q4: `IEventSink` states that a sink must not throw, and
 `Engine.Tests/EventSinkContractTests.cs` finds each sink of the engine and of the surface and tests it.
+Progress 2026-11-09: TASK-0321 fixed E22 (only a cancellation of the caller is Cancelled, and a cancelled result is not
+cached; a replay and an open treat another cancellation exception of a handler as a divergence and a failed open) and E24
+parts 3, 4, 5, 6, 7 and 9 (the comments of the cache give 1,024 results; the heartbeat starts after the handshake; a client
+that leaves before its frame ends quietly; the bind guard accepts only localhost, 127.0.0.1 and [::1], as the Host filter;
+the Host filter reads the options of the container; the close code 1007 and the true order of the locks). Open: E19 in part
+(the read of a session gives the live Document and the sink), E21 (an orphan solid; `IGeometryBackend` has no release, a
+contract change), E24 part 2 (one bus for each Document) and part 8, which TASK-0044 accepted.
 
 ### R-0036 · Fifteen findings of the fourth codebase review in the engine and the hosts have no task
 - class: debt
@@ -371,6 +390,9 @@ Progress 2026-10-31: the owner accepts E25 and E27 (questions Q1 A and Q2 A of t
 by the standing answer of 2026-10-31; TASK-0142 records it). E25: no production code replays a log, and the open of
 a document file is the load path that continues live. E27: its refusal needs a change of `Engine.Contracts`, and
 only a test or a script replays a log. E34 and E39 stay.
+Progress 2026-11-09: a check found E33 fixed by TASK-0140 (a sink must not throw, and each sink is tested), as the codebase
+review of 2026-10-31 (b) said. Open: E34 (the version of the backend is a constant, and the C API of Manifold gives no
+version) and E39 (the hosts choose the backend in three places).
 
 ### R-0048 · The licences of the native vision library in a distributed program have no decision
 - class: question

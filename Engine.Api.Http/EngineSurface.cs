@@ -1,5 +1,3 @@
-using System.Net;
-using System.Net.Sockets;
 using Engine.Api.Http.Endpoints;
 using Engine.Api.Http.WebSockets;
 using Microsoft.AspNetCore.Builder;
@@ -86,9 +84,13 @@ public static class EngineSurface
         // that resolves a name to 127.0.0.1 can post a command from a browser. The
         // host filtering middleware of the framework runs first in the pipeline
         // and answers 400 (TASK-0044).
-        builder.Services.Configure<HostFilteringOptions>(options =>
+        //
+        // Finding E24 of the codebase review of 2026-10-04 (R-0033, TASK-0321): the filter reads the list of the
+        // container, as the Origin check does, so the two checks have one source. Until TASK-0321 the filter read
+        // SubscriberOptions.Default, and a replaced instance changed the Origin check only.
+        builder.Services.AddOptions<HostFilteringOptions>().Configure<SubscriberOptions>((options, subscriber) =>
         {
-            options.AllowedHosts = [.. SubscriberOptions.Default.PermittedOriginHosts];
+            options.AllowedHosts = [.. subscriber.PermittedOriginHosts];
         });
 
         return builder;
@@ -245,21 +247,13 @@ public static class EngineSurface
     // host name and binds each interface. The check removed each bracket at the
     // two ends before it read the address, so it passed "[127.0.0.1]" and
     // "[[::1]]" (finding E48 of the review of 2026-10-11, TASK-0062).
+    //
+    // Finding E24 of the codebase review of 2026-10-04 (R-0033, TASK-0321): the guard accepts only the three
+    // names that the Host filter accepts by default (SubscriberOptions.PermittedOriginHosts). Until TASK-0321 it
+    // accepted each loopback address, for example 127.0.0.2, and the Host filter then refused each request. A
+    // comparison of the full text also refuses each form of E48.
     private static bool IsLoopbackHost(string host)
-    {
-        if (host.Length > 2 && host[0] == '[' && host[^1] == ']')
-        {
-            var inside = host[1..^1];
-            return inside.IndexOfAny(['[', ']']) < 0
-                && IPAddress.TryParse(inside, out var v6)
-                && v6.AddressFamily == AddressFamily.InterNetworkV6
-                && IPAddress.IsLoopback(v6);
-        }
-
-        if (host.IndexOfAny(['[', ']', ':']) >= 0)
-            return false;
-
-        return string.Equals(host, "localhost", StringComparison.OrdinalIgnoreCase)
-            || (IPAddress.TryParse(host, out var v4) && v4.AddressFamily == AddressFamily.InterNetwork && IPAddress.IsLoopback(v4));
-    }
+        => string.Equals(host, "localhost", StringComparison.OrdinalIgnoreCase)
+        || string.Equals(host, "127.0.0.1", StringComparison.Ordinal)
+        || string.Equals(host, "[::1]", StringComparison.Ordinal);
 }

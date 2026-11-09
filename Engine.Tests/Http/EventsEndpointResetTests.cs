@@ -102,6 +102,28 @@ public class EventsEndpointResetTests : IClassFixture<WebApplicationFactory<Prog
         await socket.CloseAsync(WebSocketCloseStatus.NormalClosure, "done", CancellationToken.None);
     }
 
+    // Finding E17 of the codebase review of 2026-09-30 (R-0028, TASK-0321): a negative cursor on an empty ring
+    // gave subscription.resume with a negative fromSeq.
+    [Fact]
+    public async Task Subscribe_With_A_Negative_Cursor_On_An_Empty_Ring_Receives_Reset()
+    {
+        using var factory = _baseFactory.WithWebHostBuilder(_ => { });
+        var host = factory.Services.GetRequiredService<EngineHost>();
+
+        using var socket = await WebSocketTestClient.ConnectAsync(factory);
+        await WebSocketTestClient.SendJsonAsync(socket, new
+        {
+            documentId = host.Document.DocumentId,
+            lastSeenSeq = -5L,
+        });
+
+        var msg = await WebSocketTestClient.ReceiveJsonAsync(socket);
+        Assert.Equal("subscription.reset", msg.GetProperty("kind").GetString());
+        Assert.Equal(0, msg.GetProperty("snapshot").GetProperty("seq").GetInt64());
+
+        await socket.CloseAsync(WebSocketCloseStatus.NormalClosure, "done", CancellationToken.None);
+    }
+
     [Fact]
     public async Task Subscribe_With_Null_DocumentId_Receives_Reset_With_Snapshot()
     {

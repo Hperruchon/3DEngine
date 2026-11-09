@@ -50,8 +50,12 @@ internal sealed class EventBroadcaster
             // Resume is valid when the client matches the running Document,
             // claims a cursor inside the ring, and the replay fits in the
             // subscriber's outbound channel.
+            //
+            // Finding E17 of the codebase review of 2026-09-30 (R-0028, TASK-0321): a negative cursor
+            // is not a cursor, so it gives a reset. Until TASK-0321 a negative cursor on an empty ring
+            // gave subscription.resume with a negative fromSeq.
             var canResume = request.DocumentId == currentDocId
-                && request.LastSeenSeq.HasValue
+                && request.LastSeenSeq is >= 0
                 && request.LastSeenSeq.Value <= latestSeq
                 && (ring.Count == 0 || request.LastSeenSeq.Value >= earliestSeq - 1);
 

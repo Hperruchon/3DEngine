@@ -33,9 +33,14 @@ public sealed class InProcessMeshBackend : IGeometryBackend, IMeshOps, IGeometry
 
     // IMeshOps. Stores the box under the given handle. Throws on duplicate,
     // because the bus computes handles from CommandId. The idempotency cache of
-    // a live bus stops a command that comes again; an open does not look in the
-    // cache (ApplyEntry), and a replay has none, so the handler gives
-    // E-GEOM-NATIVE-OP for the second entry (E31; E110 corrected this comment).
+    // a live bus stops a command that comes again only while the cache holds its
+    // result: the cache keeps the last 1,024 results by default
+    // (IdempotencyCache.DefaultCapacity), and it keeps no cancelled result. An
+    // older command that comes again reaches this method, and the handler gives
+    // E-GEOM-NATIVE-OP. An open does not look in the cache (ApplyEntry), and a
+    // replay has none, so the handler gives E-GEOM-NATIVE-OP for the second entry
+    // too (E31; E110 corrected this comment; finding E24 of the codebase review of
+    // 2026-10-04, R-0033, TASK-0321, gave the limit of the cache).
     public void CreateBox(BodyHandle handle, BoxParameters parameters)
     {
         if (_boxes.ContainsKey(handle.Id))
