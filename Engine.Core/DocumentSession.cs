@@ -13,10 +13,16 @@ namespace Engine.Core;
 // readers had no common lock, and a probe gave thousands of exceptions
 // (DocumentSessionConcurrencyTests).
 //
-// The order of the locks is fixed: this section, then the semaphore of the bus,
-// then the lock of the sink, then the lock of a host (for example the
-// broadcaster of the HTTP host). A host that reads the Document and also takes a
-// lock of its own must do it inside Read, so that it keeps the same order.
+// The order of the locks is fixed: this section first, then the semaphore of the
+// bus. A commit takes the lock of the sink and releases it, and only then takes
+// the lock of a host (for example the broadcaster of the HTTP host), so a commit
+// never holds the two. The handshake of the HTTP host, inside Read, takes the lock
+// of the broadcaster and then the lock of the sink (EventBroadcaster.AttachAndPrime).
+// No deadlock occurs, because only the handshake holds the two locks together. A
+// host that reads the Document and also takes a lock of its own must do it inside
+// Read, after this section. Finding E24 of the codebase review of 2026-10-04
+// (R-0033, TASK-0321): until TASK-0321 this comment gave the order "the sink, then
+// the host", which the handshake does not keep.
 //
 // One queue for each kind of access is the accepted cost: a long query delays a
 // command. TASK-0034, section "Scope (out)", gives the reason not to add a

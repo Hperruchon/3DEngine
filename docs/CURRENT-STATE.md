@@ -9066,3 +9066,38 @@ check (T25), and the three gates that run engine code in the test process (T31).
 New tests: 10. The test list holds 2221 (1482 in `Engine.Tests`, 356 in `3DEngine.Tests`, 380 in `3DEngine.ImageTests`, 3
 in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
 entries: 10 of 15. New diagnostic codes: 0. Since the review of v0.292, 4 product milestones and 11 entries followed it.
+
+## v0.304 — The small engine findings of R-0027, R-0028, R-0033 and R-0036 are fixed (P0.134, TASK-0321)
+
+The third part of the cleanup that the owner chose on 2026-11-09. An agent made the changes in a worktree under these
+limits: no change of `Engine.Contracts`, no new diagnostic code, no change of the meaning of a code, and no change of the
+log. This session reviewed the diff, repeated an injection, and changed one point.
+
+**The change.**
+- E5 and E12: a whole JSON number stays a long, so an integer field gets the exact value above 2^53, and a number field
+  takes a long or an int; the double of a number field is the double that the surface gave before.
+- T2 (open part): `CommandBusBackendFailureTests` holds that a backend that throws gives `E-GEOM-NATIVE-OP` and changes
+  neither the log nor the bodies nor the backend.
+- E22: only a cancellation of the caller is Cancelled, and a cancelled result does not go into the cache; a replay and an
+  open treat another cancellation exception of a handler as a divergence and a failed open.
+- E24: the comments of the cache give 1,024 results; the heartbeat starts after the handshake; a client that leaves before
+  its frame ends quietly; the bind guard accepts only localhost, 127.0.0.1 and [::1], as the Host filter; the Host filter
+  reads the options of the container; the comment of the close code says 1007, and the comment of the locks gives their
+  true order.
+- E16 and E17: a subscribe frame with an unknown member closes with 1007; HTTP 415 gives the error envelope with
+  `E-API-BAD-REQUEST`; a negative cursor gets a reset; the command line writes UTF-8 and gives the console its earlier
+  encoding back at the end (on Windows the code page of a console stays after the process, which the session found in the
+  diff of the agent).
+
+**Proof.** 23 new tests in `Engine.Tests`. Each change failed on an injection of the old behaviour (the record of the agent);
+this session repeated the injection of the cache of a cancelled result, and its test failed. The determinism hashes of the
+pipeline are equal. Run 42550718602 passed. The failed runs since the entry v0.303, from the API: none.
+
+**What stays.** The findings that need the owner: E6 (d), five event kinds that no code emits and that ADR-0005 defines; the
+changes of `Engine.Contracts` (C1, E13, E21, part of E19); E17 parts 1 and 2, which need new codes; and the larger findings
+(E6 b and e, P1, E34, E39). The register gives each part.
+
+New tests: 23. The test list holds 2244 (1505 in `Engine.Tests`, 356 in `3DEngine.Tests`, 380 in `3DEngine.ImageTests`, 3
+in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
+entries: 10 of 15. New diagnostic codes: 0. Since the review of v0.292, 4 product milestones and 12 entries followed it, so
+the codebase review comes next.
