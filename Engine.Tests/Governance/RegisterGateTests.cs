@@ -23,7 +23,8 @@ public class RegisterGateTests
         DateOnly Opened,
         DateOnly Due,
         string Extended,
-        int Line);
+        int Line,
+        IReadOnlyList<string> Repeated);
 
     // Register rule 4. The limit was 20 to hold the entries from the architecture
     // investigation. Register entry R-0016 asked whether 20 is too high to have an
@@ -40,7 +41,14 @@ public class RegisterGateTests
         ["interim"] = 365,
     };
 
-    private static readonly Regex EntryHeading = new(@"^### R-\d{4}", RegexOptions.Compiled | RegexOptions.Multiline);
+    // Finding T10 of the codebase review of 2026-10-04 (R-0031, TASK-0320): the
+    // cross-check used the pattern of the parser, so a heading "#### R-0031" was
+    // hidden from both, and the fields of R-0031 replaced the due date of R-0030.
+    // The cross-check now counts each heading line that holds R- and a number, and
+    // each one must have the exact form. Until TASK-0320 the two used one pattern.
+    private static readonly Regex AnyEntryHeading = new(@"^[ \t]*#[^\n]*\bR-\d+[^\n]*", RegexOptions.Compiled | RegexOptions.Multiline);
+
+    private static readonly Regex ExactEntryHeading = new(@"^### R-\d{4} · \S", RegexOptions.Compiled);
 
     [Fact]
     public void The_Parser_Finds_Each_Entry_Of_The_Open_Section()
@@ -51,12 +59,18 @@ public class RegisterGateTests
 
         var end = text.IndexOf("\n## ", start + 1, StringComparison.Ordinal);
         var section = end < 0 ? text[start..] : text[start..end];
-        var headings = EntryHeading.Matches(section).Count;
+        var headings = AnyEntryHeading.Matches(section).Select(m => m.Value).ToArray();
         var parsed = ParseOpen().Count;
 
+        var wrong = headings.Where(h => !ExactEntryHeading.IsMatch(h)).ToArray();
         Assert.True(
-            headings == parsed,
-            $"The section \"Open\" holds {headings} entry headings and the parser found {parsed}. An "
+            wrong.Length == 0,
+            "Each entry heading has the form \"### R-nnnn · <title>\". The parser does not see these lines:\n  "
+            + string.Join("\n  ", wrong));
+
+        Assert.True(
+            headings.Length == parsed,
+            $"The section \"Open\" holds {headings.Length} entry headings and the parser found {parsed}. An "
             + "open code fence hides an entry from each test below. Close the fence.");
     }
 
@@ -114,6 +128,11 @@ public class RegisterGateTests
 
             if (entry.Due < entry.Opened)
                 problems.Add($"{entry.Id}: the due date is before the opened date");
+
+            // Finding T10 of the codebase review of 2026-10-04 (R-0031, TASK-0320): a second
+            // line of a field replaced the first with no error. Until TASK-0320 the last one counted.
+            foreach (var field in entry.Repeated.Distinct(StringComparer.Ordinal))
+                problems.Add($"{entry.Id} (line {entry.Line}): the field '{field}' occurs more than once; an entry gives each field one time");
         }
 
         Assert.True(problems.Count == 0, string.Join("\n  ", problems));
@@ -162,6 +181,7 @@ public class RegisterGateTests
 
         string? id = null, cls = null, opened = null, due = null, extended = null;
         var startLine = 0;
+        var repeated = new List<string>();
 
         void Flush()
         {
@@ -172,8 +192,18 @@ public class RegisterGateTests
                 ParseDate(opened),
                 ParseDate(due),
                 extended ?? "no",
-                startLine));
+                startLine,
+                repeated));
             id = cls = opened = due = extended = null;
+            repeated = [];
+        }
+
+        // The value of a field, with a note when the entry gave the field before (T10).
+        string Field(string? current, string name, string line)
+        {
+            if (current is not null)
+                repeated.Add(name);
+            return After(line);
         }
 
         for (var i = 0; i < lines.Length; i++)
@@ -207,10 +237,10 @@ public class RegisterGateTests
 
             if (id is null) continue;
 
-            if (line.StartsWith("- class:", StringComparison.Ordinal)) cls = After(line);
-            else if (line.StartsWith("- opened:", StringComparison.Ordinal)) opened = After(line);
-            else if (line.StartsWith("- due:", StringComparison.Ordinal)) due = After(line);
-            else if (line.StartsWith("- extended:", StringComparison.Ordinal)) extended = After(line);
+            if (line.StartsWith("- class:", StringComparison.Ordinal)) cls = Field(cls, "class", line);
+            else if (line.StartsWith("- opened:", StringComparison.Ordinal)) opened = Field(opened, "opened", line);
+            else if (line.StartsWith("- due:", StringComparison.Ordinal)) due = Field(due, "due", line);
+            else if (line.StartsWith("- extended:", StringComparison.Ordinal)) extended = Field(extended, "extended", line);
         }
 
         Flush();

@@ -88,6 +88,11 @@ a current loader on macOS does not list MoltenVK. The host only clears the scree
 defect shows now.
 Exit: each defect is corrected, with the check that the review gives for it, before the first render
 phase that runs on Linux or on macOS.
+Progress 2026-11-09: TASK-0319 found V1 fixed (a SUBOPTIMAL result is not a failure, and the semaphore goes back to the
+pool on a failure only, `Presenter.cs`), fixed the rest of V2 (the swapchain takes the special extent only for
+0xFFFFFFFF, and then the size of the window in pixels) and added the correction of V3 (the portability enumeration of the
+instance and the portability subset of the device, when the loader and the device give them). The check of V3 is a job on
+macOS that makes an instance and a device through MoltenVK; no runner of the pipeline has it, so V3 is not proved.
 
 ### R-0027 · Six findings of the first codebase review have no task
 - class: debt
@@ -106,6 +111,15 @@ stay. P1 costs more, because the snapshot now also holds the session.
 Progress 2026-10-06: TASK-0036 corrected the comment of `Engine.Api.Http/EngineHost.cs` that cited the
 removed clamp, which is the last comment part of C1 (also listed in E24 of R-0033). The empty markers
 and the flags that nothing reads stay.
+Progress 2026-11-09: TASK-0319 fixed the Vulkan parts of V4: the log line of the instance gives the version of the
+loader, the fallback to the old layers of LunarG and Google is gone, and `ISceneLoader` and `SampleSceneFactory`, which
+nothing called, are gone. The other parts of V4 were fixed before (the exit code of a failed start, the results of Vulkan).
+Progress 2026-11-09: TASK-0321 fixed E5 and E12 (a whole JSON number stays a long, an integer field gets the exact value
+above 2^53, and a number field takes a long or an int) and the open part of T2 (`CommandBusBackendFailureTests`: a backend
+that throws gives `E-GEOM-NATIVE-OP`, and the log, the bodies and the backend do not change). Open: E6 (a) the style of a
+date and time, (b) the queue of the bus, (c) an unknown command outside the bus, (d) five event kinds that no code emits,
+which ADR-0005 defines, so their removal is a contract change, (e) the command line that builds an empty Document; C1, the
+two empty interfaces in `Engine.Contracts`; P1, the snapshot under the lock of the broadcaster.
 
 ### R-0028 · Nine new findings in the engine and the hosts have no task
 - class: debt
@@ -135,6 +149,12 @@ eleven parts of E17 stay.
 Progress 2026-10-05: TASK-0035 corrected E7 (a replay stops at a divergence and names it), closed E10
 (the version is the count of the log, and no code can set it), and corrected the replay part of E17 (a
 replay applies each entry with no cache). E11, E13, E14, E16 and ten parts of E17 stay.
+Progress 2026-11-09: a check found E11, E14 and E16 fixed by TASK-0115. TASK-0321 fixed the rest of E16 (a subscribe frame
+with an unknown member closes with 1007 and `E-API-WS-INVALID-SUBSCRIBE`) and four parts of E17: HTTP 415 gives the error
+envelope with `E-API-BAD-REQUEST`, a negative cursor gets a reset, and the command line writes UTF-8. Open: E13 in part
+(`QueryResult<T>` of `Engine.Contracts` gives a struct of zeros on a failure; the hosts ask for `object`), and E17 parts
+1 and 2 (they need new diagnostic codes), 3 (the text of a JSON exception and an unknown charset), 5 (the pump stops before
+the close frame), 6 (no time limit on the subscribe frame) and 9 (a flag read as a command name).
 
 ### R-0030 · The Vulkan layer continues with a null device and gives unpinned memory to Vulkan
 - class: debt
@@ -151,6 +171,11 @@ the condition of R-0022 too.
 Progress 2026-10-16: TASK-0076 corrected V5 and V6 in the split of the device. With no suitable device the
 core throws with a message, and a device that presents must have the swapchain extension; each name
 goes to Vulkan from native memory. The findings of V7 stay.
+Progress 2026-11-09: TASK-0319 fixed parts 1 to 5 of V7: one queue family that draws and presents comes first, and two
+families share the images of the swapchain; the surface format needs the colour space of sRGB; the desktop disposes its
+window and ends SDL; the resets of a fence and of a command pool check their results; the time step of the desktop and of
+the phone comes from the monotonic clock. Part 6 stays: `Scene` and `Entity` of `3DEngine.Core` give `IList`, which a
+second thread could change while the render loop reads it; only the render loop writes them today.
 
 ### R-0031 · A gate can pass while its rule is broken
 - class: debt
@@ -293,6 +318,16 @@ finding. T31 stays open in part.
 Progress 2026-10-30: TASK-0114 corrected T89 to T95 for their forms. PendingTasks still does not see a task that waits
 for a signal that nobody gives with a type other than TaskCompletionSource, for example a semaphore. T31 stays open in
 part.
+Progress 2026-11-09: a read-only check found T4 (determinism part) and T13 parts 1 and 2 fixed, and the form of
+PendingTasks with a semaphore fixed by TASK-0123 (T100, T103). TASK-0320 fixed T4 (marker part) and T13 part 3 (the marker
+gate accepts only the identifiers of open and accepted entries, and reads `nuget/.gitignore`), T5 (quotes and brackets of
+`affects`), T7 (the columns "Amends" and "Amended by" of the index; `previous: none` for the first review only), T10 (the
+exact heading of an entry, and a repeated field), T13 part 4 (each reader of the two tests of concurrency ran), T17 (a third
+package in the folder feed), T23 (the path of a Windows runner) and the response file (`*.rsp`). Each change failed on an
+injection first. Open: T4 dispatch part (the dispatch gate does not read the desktop host). For the owner to accept: the clock
+of the register gate (T7), the case of a path on Windows (T7; the Linux job fails on it), the provenance of the native
+binaries (T23; a checksum pins each binary), the local mode of the write-set check (T25; the pipeline judges each commit),
+and the three gates that run engine code in the test process (T31).
 
 ### R-0033 · Seven findings of the third codebase review in the engine and the hosts have no task
 - class: debt
@@ -317,6 +352,13 @@ Progress 2026-10-08: TASK-0051 corrected E20 (a call back into the session throw
 TASK-0038 now depends on TASK-0051. E18, E19, E21, E22 and seven parts of E24 stay.
 Progress 2026-10-31: TASK-0140 corrects E18 by the answer Q4: `IEventSink` states that a sink must not throw, and
 `Engine.Tests/EventSinkContractTests.cs` finds each sink of the engine and of the surface and tests it.
+Progress 2026-11-09: TASK-0321 fixed E22 (only a cancellation of the caller is Cancelled, and a cancelled result is not
+cached; a replay and an open treat another cancellation exception of a handler as a divergence and a failed open) and E24
+parts 3, 4, 5, 6, 7 and 9 (the comments of the cache give 1,024 results; the heartbeat starts after the handshake; a client
+that leaves before its frame ends quietly; the bind guard accepts only localhost, 127.0.0.1 and [::1], as the Host filter;
+the Host filter reads the options of the container; the close code 1007 and the true order of the locks). Open: E19 in part
+(the read of a session gives the live Document and the sink), E21 (an orphan solid; `IGeometryBackend` has no release, a
+contract change), E24 part 2 (one bus for each Document) and part 8, which TASK-0044 accepted.
 
 ### R-0036 · Fifteen findings of the fourth codebase review in the engine and the hosts have no task
 - class: debt
@@ -348,6 +390,9 @@ Progress 2026-10-31: the owner accepts E25 and E27 (questions Q1 A and Q2 A of t
 by the standing answer of 2026-10-31; TASK-0142 records it). E25: no production code replays a log, and the open of
 a document file is the load path that continues live. E27: its refusal needs a change of `Engine.Contracts`, and
 only a test or a script replays a log. E34 and E39 stay.
+Progress 2026-11-09: a check found E33 fixed by TASK-0140 (a sink must not throw, and each sink is tested), as the codebase
+review of 2026-10-31 (b) said. Open: E34 (the version of the backend is a constant, and the C API of Manifold gives no
+version) and E39 (the hosts choose the backend in three places).
 
 ### R-0053 · A query result and a command output give a number with no unit
 - class: question

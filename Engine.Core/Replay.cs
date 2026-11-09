@@ -94,12 +94,14 @@ public static class Replay
             CommandResult result;
             // Finding E28 of the codebase review of 2026-10-08 (TASK-0136): the bus catches a cancellation
             // only, so an exception of a handler left the replay with no entry and no command. It is a
-            // divergence at that entry, and the exception is its inner exception.
+            // divergence at that entry, and the exception is its inner exception. Since TASK-0321 (finding E22)
+            // the bus gives Cancelled only for a cancellation of the caller, so a cancellation exception with a
+            // live token of the caller is an exception of a handler and a divergence too.
             try
             {
                 result = await bus.Apply(command, ct).ConfigureAwait(false);
             }
-            catch (Exception ex) when (ex is not OperationCanceledException)
+            catch (Exception ex) when (ex is not OperationCanceledException || !ct.IsCancellationRequested)
             {
                 throw new ReplayDivergenceException(index, command, ex);
             }

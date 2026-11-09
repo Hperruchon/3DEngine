@@ -31,6 +31,11 @@ internal sealed class Subscriber : IAsyncDisposable
     private long _lastSendTicks;
     private volatile bool _lagged;
 
+    // Finding E24 of the codebase review of 2026-10-04 (R-0033, TASK-0321): the heartbeat waits for the end of
+    // the handshake. Until TASK-0321 it started in the constructor, so a frame could come before the
+    // subscription message and take a slot of the queue that the check of the replay counts as free.
+    private readonly TaskCompletionSource _handshakeDone = new(TaskCreationOptions.RunContinuationsAsynchronously);
+
     public int ChannelCapacity { get; }
 
     public bool IsLagged => _lagged;
@@ -88,6 +93,9 @@ internal sealed class Subscriber : IAsyncDisposable
     public bool EnqueueDuringHandshake(object message)
         => _outbound.Writer.TryWrite(message);
 
+    // The endpoint calls this after the handshake. The first heartbeat comes one interval later.
+    public void StartHeartbeat() => _handshakeDone.TrySetResult();
+
     private async Task PumpAsync()
     {
         try
@@ -114,6 +122,9 @@ internal sealed class Subscriber : IAsyncDisposable
     {
         try
         {
+            await _handshakeDone.Task.WaitAsync(_cts.Token).ConfigureAwait(false);
+            Interlocked.Exchange(ref _lastSendTicks, DateTime.UtcNow.Ticks);
+
             while (!_cts.IsCancellationRequested)
             {
                 var elapsedTicks = DateTime.UtcNow.Ticks - Interlocked.Read(ref _lastSendTicks);

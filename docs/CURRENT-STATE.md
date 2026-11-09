@@ -8984,3 +8984,147 @@ due; four read-only agents checked each finding on disk on 2026-11-09 for that t
 New tests: 0. The test list holds 2207 (1472 in `Engine.Tests`, 352 in `3DEngine.Tests`, 380 in `3DEngine.ImageTests`, 3
 in `3DEngine.VisionTests`). Open entries: 10 of 15. New diagnostic codes: 0. Since the review of v0.292, 4 product
 milestones and 8 entries followed it, so a codebase review is due before the next product milestone.
+
+## v0.301 — The small Vulkan findings of R-0022, R-0030 and R-0027 are fixed (P0.132, TASK-0319)
+
+On 2026-11-09 the owner chose a cleanup of the old findings before the codebase review that is due, with the small
+findings fixed. Four read-only agents checked each finding on disk; this session read each line again before each change.
+This task holds the Vulkan findings.
+
+**The change.**
+- R-0022: V1 was fixed before (a SUBOPTIMAL result is not a failure). V2: the swapchain takes the special extent only for
+  0xFFFFFFFF, and then the size of the window in pixels (`Window.PixelExtent`, `SDL_GetWindowSizeInPixels`); until this
+  task the check was "greater than 0" and the fallback took logical units. V3: the instance asks for the portability
+  enumeration and the device enables the portability subset when the loader and the device give them.
+- R-0030, V7 parts 1 to 5: one queue family that draws and presents comes first, and two families share the images of the
+  swapchain; the surface format needs the colour space of sRGB; the desktop disposes its window and ends SDL; the resets of
+  a fence and of a command pool check their results; the time step of the desktop and of the phone comes from the monotonic
+  clock.
+- R-0027, the Vulkan parts of V4: the log line of the instance gives the version of the loader; the fallback to the old
+  layers of LunarG and Google is gone; `ISceneLoader` and `SampleSceneFactory`, which nothing called, are gone.
+
+**Proof.** Four tests of the choices in `SwapchainChoiceTests`; five injections each make one fail. Two runs of the desktop
+on Windows with the NVIDIA device drew a scratch copy of the shelf, gave no message of the validation layer, logged "the
+loader gives 1.4.341", and ended with the exit code 0. The phone started on the emulator. Run 42541817912 passed. The failed
+runs since the entry v0.300, from the API: none.
+
+**What stays.** V3 has no proof on macOS: its check is a job that makes an instance and a device through MoltenVK, and no
+runner has it. V7 part 6 (`IList` in `3DEngine.Core`) waits for the owner. R-0022 and R-0030 stay open with those parts.
+A run of the desktop showed that the folded window "Images" covers the folder of P9g in the top bar; the codebase review
+that is due takes it.
+
+New tests: 4. The test list holds 2211 (1472 in `Engine.Tests`, 356 in `3DEngine.Tests`, 380 in `3DEngine.ImageTests`, 3
+in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
+entries: 10 of 15. New diagnostic codes: 0. Since the review of v0.292, 4 product milestones and 9 entries followed it.
+TASK-0318 (V0b) is green and waits for that review, because it would be the fifth product milestone.
+
+## v0.302 — The test of the window hold of the session turns survives a busy runner (P0.135, TASK-0322)
+
+The run on `main` of v0.301 (42543751923) failed on windows-latest in
+`SessionTurnsTests.A_Later_Session_Waits_For_The_Window_Of_The_Earlier_One`, at the assertion that the later session still
+waits 100 ms after its start. The run of the branch on the same tree passed. The later session waited with a limit of 10 s,
+so a continuation of the delay that ran more than 10 s late found the wait at its end. The change of v0.301 did not touch
+`SessionTurns`. The ledger holds no earlier failure of this test.
+
+**The change.** The later session of the test waits up to 5 minutes.
+
+**Proof.** With a stall of 11 s before the assertion, the test fails with the limit of 10 s and passes with the new limit.
+Run 42545015792 passed. The failed runs since the entry v0.301, from the API: 42543751923 on main (f77e9d2), in the job "Gate on
+windows-latest", the cause of this task.
+
+New tests: 0. The test list holds 2211 (1472 in `Engine.Tests`, 356 in `3DEngine.Tests`, 380 in `3DEngine.ImageTests`, 3
+in `3DEngine.VisionTests`). Open entries: 10 of 15. New diagnostic codes: 0. Since the review of v0.292, 4 product
+milestones and 10 entries followed it.
+
+## v0.303 — The small gate holes of R-0031 are closed (P0.133, TASK-0320)
+
+Register entry R-0031 ("A gate can pass while its rule is broken") is due on 2026-12-24. The owner chose the cleanup of the
+old findings before the codebase review that is due, with the small findings fixed. A read-only check of the gates on
+2026-11-09 found T4 (determinism part) and T13 parts 1 and 2 fixed, and the form of PendingTasks with a semaphore fixed by
+TASK-0123. An agent made the changes in a worktree; this session reviewed the diff, resolved the conflicts of the floor and
+the roadmap, and repeated an injection.
+
+**The change.**
+- T4 (marker part) and T13 part 3: the marker gate accepts only the identifiers of open and accepted entries, so a closed
+  identifier and the template R-0000 fail; it reads `nuget/.gitignore`, whose comment now names the acceptance of R-0007.
+- T5: the gates strip the quotes and the brackets of an `affects` list and refuse what stays.
+- T7: the index of the ADRs compares the columns "Amends" and "Amended by"; `previous: none` is for the first review only.
+- T10: the register gate reads the exact heading of an entry and refuses a repeated field.
+- T13 part 4: each reader of the two tests of concurrency ran.
+- T17: the folder feed holds only the packages that the gate reads.
+- T23: the path gate finds the path of a Windows runner.
+- A gate refuses a response file (`*.rsp`) outside `bin` and `obj`.
+
+**Proof.** Each change failed on an injection first. This session repeated one: a "TODO" with the closed identifier R-0024
+passed the old marker gate and fails the new one. `repo-gates` gives 168 checks. Run 42547791650 passed. The failed runs since
+the entry v0.302, from the API: none.
+
+**What stays.** R-0031 stays open with T4 (dispatch part) and the parts for the owner to accept: the clock of the register
+gate and the case of a path on Windows (T7), the provenance of the native binaries (T23), the local mode of the write-set
+check (T25), and the three gates that run engine code in the test process (T31).
+
+New tests: 10. The test list holds 2221 (1482 in `Engine.Tests`, 356 in `3DEngine.Tests`, 380 in `3DEngine.ImageTests`, 3
+in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
+entries: 10 of 15. New diagnostic codes: 0. Since the review of v0.292, 4 product milestones and 11 entries followed it.
+
+## v0.304 — The small engine findings of R-0027, R-0028, R-0033 and R-0036 are fixed (P0.134, TASK-0321)
+
+The third part of the cleanup that the owner chose on 2026-11-09. An agent made the changes in a worktree under these
+limits: no change of `Engine.Contracts`, no new diagnostic code, no change of the meaning of a code, and no change of the
+log. This session reviewed the diff, repeated an injection, and changed one point.
+
+**The change.**
+- E5 and E12: a whole JSON number stays a long, so an integer field gets the exact value above 2^53, and a number field
+  takes a long or an int; the double of a number field is the double that the surface gave before.
+- T2 (open part): `CommandBusBackendFailureTests` holds that a backend that throws gives `E-GEOM-NATIVE-OP` and changes
+  neither the log nor the bodies nor the backend.
+- E22: only a cancellation of the caller is Cancelled, and a cancelled result does not go into the cache; a replay and an
+  open treat another cancellation exception of a handler as a divergence and a failed open.
+- E24: the comments of the cache give 1,024 results; the heartbeat starts after the handshake; a client that leaves before
+  its frame ends quietly; the bind guard accepts only localhost, 127.0.0.1 and [::1], as the Host filter; the Host filter
+  reads the options of the container; the comment of the close code says 1007, and the comment of the locks gives their
+  true order.
+- E16 and E17: a subscribe frame with an unknown member closes with 1007; HTTP 415 gives the error envelope with
+  `E-API-BAD-REQUEST`; a negative cursor gets a reset; the command line writes UTF-8 and gives the console its earlier
+  encoding back at the end (on Windows the code page of a console stays after the process, which the session found in the
+  diff of the agent).
+
+**Proof.** 23 new tests in `Engine.Tests`. Each change failed on an injection of the old behaviour (the record of the agent);
+this session repeated the injection of the cache of a cancelled result, and its test failed. The determinism hashes of the
+pipeline are equal. Run 42550718602 passed. The failed runs since the entry v0.303, from the API: none.
+
+**What stays.** The findings that need the owner: E6 (d), five event kinds that no code emits and that ADR-0005 defines; the
+changes of `Engine.Contracts` (C1, E13, E21, part of E19); E17 parts 1 and 2, which need new codes; and the larger findings
+(E6 b and e, P1, E34, E39). The register gives each part.
+
+New tests: 23. The test list holds 2244 (1505 in `Engine.Tests`, 356 in `3DEngine.Tests`, 380 in `3DEngine.ImageTests`, 3
+in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
+entries: 10 of 15. New diagnostic codes: 0. Since the review of v0.292, 4 product milestones and 12 entries followed it, so
+the codebase review comes next.
+
+## v0.305 — The codebase review of 2026-11-09 (governance, TASK-0323)
+
+The review of 2026-11-08 (c) examined v0.292. After it came 4 product milestones (R16n, R16o, R16p and P9g) and 12 ledger
+entries, so the next entry would make the review late. The owner chose on 2026-11-09 to clean up the old findings first.
+
+**The change.** `docs/reviews/2026-11-09-codebase-review.md`, at `3884adf` (v0.304). One agent examined the code change
+from v0.292 to v0.304 with probes in a scratch copy; the session read each finding again in the code. The review uses no lead
+of Codex.
+- Seventeen open findings are closed: the cleanup fixed E5, E12, E22, V2, V4, T2, T5, T10, T13 and T17; the owner closed
+  E182; V146 to V151 are fixed.
+- No new finding is critical or high. Three are medium: V152 (the window of the live sketches covers the command line), V153
+  (two equal commands of a cut, and the second does nothing) and V158 (a document built with y up shows on its side since
+  R16m). Five are low: V154, V155, V156, V157 and E197.
+- TASK-0324 (P0.136) holds the new findings after the next product phase; V158 waits for the answer of the owner to Q5.
+
+**Proof.** `CodebaseReviewGateTests` passes with the new review. The main run of v0.304 (42552704367) passed.
+
+**What stays.** The open findings are 0 critical, 4 high, 9 medium and 25 low. The review asks five questions: the parts of
+R-0031 to accept, the five event kinds of E6 (d), the check of V3 on macOS, the lists of `3DEngine.Core` (V7 part 6), and the
+up axis of a document (V158).
+
+**A correction.** None. The failed runs since the entry v0.304, from the API: none.
+
+New tests: 0. The test list holds 2244 (1505 in `Engine.Tests`, 356 in `3DEngine.Tests`, 380 in `3DEngine.ImageTests`, 3
+in `3DEngine.VisionTests`). Open entries: 10 of 15. New diagnostic codes: 0. Since the review of v0.304, 0 product
+milestones and 1 entry followed it.

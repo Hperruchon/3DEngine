@@ -38,7 +38,7 @@ public sealed unsafe class Swapchain : IDisposable
         SwapChainSupportDetails swapChainSupport = Utils.QuerySwapChainSupport(device.InstanceApi, device.PhysicalDevice, surface);
 
         VkPresentModeKHR presentMode = ChooseSwapPresentMode(swapChainSupport.PresentModes);
-        Extent = ChooseSwapExtent(swapChainSupport.Capabilities);
+        Extent = ChooseSwapExtent(swapChainSupport.Capabilities, () => window.PixelExtent);
         Depth = new DepthBuffer(device, Extent);
 
         uint imageCount = swapChainSupport.Capabilities.minImageCount + 1;
@@ -48,6 +48,11 @@ public sealed unsafe class Swapchain : IDisposable
             imageCount = swapChainSupport.Capabilities.maxImageCount;
         }
 
+        // Finding V7 of the codebase review of 2026-09-30, part 1 (R-0030, TASK-0319): when the graphics family and the
+        // present family differ, the images of the swapchain are shared by both families; until TASK-0319 they were
+        // exclusive to one family, which the specification does not permit with no transfer of ownership.
+        var sharing = Sharing(device.GraphicsFamily, device.PresentFamily);
+        uint* families = stackalloc uint[2] { device.GraphicsFamily, device.PresentFamily };
         VkSwapchainCreateInfoKHR createInfo = new()
         {
             surface = surface,
@@ -57,7 +62,9 @@ public sealed unsafe class Swapchain : IDisposable
             imageExtent = Extent,
             imageArrayLayers = 1,
             imageUsage = VkImageUsageFlags.ColorAttachment,
-            imageSharingMode = VkSharingMode.Exclusive,
+            imageSharingMode = sharing.Mode,
+            queueFamilyIndexCount = sharing.Count,
+            pQueueFamilyIndices = families,
             preTransform = swapChainSupport.Capabilities.currentTransform,
             compositeAlpha = ChooseCompositeAlpha(swapChainSupport.Capabilities.supportedCompositeAlpha),
             presentMode = presentMode,
@@ -144,15 +151,22 @@ public sealed unsafe class Swapchain : IDisposable
             destroySwapchain(handle);
     }
 
-    private VkExtent2D ChooseSwapExtent(VkSurfaceCapabilitiesKHR capabilities)
+    // Finding V7 part 1 (TASK-0319): exclusive images for one family, and images that two families share for two.
+    public static (VkSharingMode Mode, uint Count) Sharing(uint graphicsFamily, uint presentFamily)
+        => graphicsFamily == presentFamily || presentFamily == VK_QUEUE_FAMILY_IGNORED ? (VkSharingMode.Exclusive, 0u) : (VkSharingMode.Concurrent, 2u);
+
+    // Finding V2 of the codebase review of 2026-09-23 (R-0022, TASK-0319): a surface that leaves the extent to the swapchain
+    // gives 0xFFFFFFFF, and then the size of the window in pixels applies, inside the limits of the surface. Until TASK-0319
+    // the check was "greater than 0", so 0xFFFFFFFF passed, and the fallback took the size in logical units.
+    public static VkExtent2D ChooseSwapExtent(VkSurfaceCapabilitiesKHR capabilities, Func<VkExtent2D> pixels)
     {
-        if (capabilities.currentExtent.width > 0)
+        if (capabilities.currentExtent.width != uint.MaxValue)
         {
             return capabilities.currentExtent;
         }
         else
         {
-            VkExtent2D actualExtent = Window.Extent;
+            VkExtent2D actualExtent = pixels();
 
             actualExtent = new VkExtent2D(
                 Math.Max(capabilities.minImageExtent.width, Math.Min(capabilities.maxImageExtent.width, actualExtent.width)),
@@ -163,7 +177,7 @@ public sealed unsafe class Swapchain : IDisposable
         }
     }
 
-    internal static VkSurfaceFormatKHR ChooseSwapSurfaceFormat(ReadOnlySpan<VkSurfaceFormatKHR> availableFormats)
+    public static VkSurfaceFormatKHR ChooseSwapSurfaceFormat(ReadOnlySpan<VkSurfaceFormatKHR> availableFormats)
     {
         // If the surface format list only includes one entry with VK_FORMAT_UNDEFINED,
         // there is no preferred format, so we assume VK_FORMAT_B8G8R8A8_UNORM
@@ -173,10 +187,12 @@ public sealed unsafe class Swapchain : IDisposable
         }
 
         // iterate over the list of available surface format and
-        // check for the presence of VK_FORMAT_B8G8R8A8_UNORM
+        // check for the presence of VK_FORMAT_B8G8R8A8_UNORM.
+        // Finding V7 of the codebase review of 2026-09-30, part 2 (R-0030, TASK-0319): with the colour space of sRGB, because
+        // the device enables the extension of the colour spaces, and a surface can give the format in another space too.
         foreach (VkSurfaceFormatKHR availableFormat in availableFormats)
         {
-            if (availableFormat.format == VkFormat.B8G8R8A8Unorm)
+            if (availableFormat.format == VkFormat.B8G8R8A8Unorm && availableFormat.colorSpace == VkColorSpaceKHR.SrgbNonLinear)
             {
                 return availableFormat;
             }
