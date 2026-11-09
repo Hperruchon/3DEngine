@@ -50,3 +50,4 @@ OpenCvSharp5, three weeks old, over 5.0.0.20261107, two days old.
 ## History
 
 - 2026-11-09 · TASK-0318 · The record, with the answers of the owner.
+- 2026-11-09 · TASK-0318 · Shipped at v0.306.

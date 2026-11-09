@@ -9128,3 +9128,27 @@ up axis of a document (V158).
 New tests: 0. The test list holds 2244 (1505 in `Engine.Tests`, 356 in `3DEngine.Tests`, 380 in `3DEngine.ImageTests`, 3
 in `3DEngine.VisionTests`). Open entries: 10 of 15. New diagnostic codes: 0. Since the review of v0.304, 0 product
 milestones and 1 entry followed it.
+
+## v0.306 — The vision spike moves to OpenCvSharp5, and the library stays out of each distributed program (V0b, TASK-0318)
+
+Register entry R-0048 asked whether the desktop may hold the vision library, because its native payloads link other
+libraries with their own licences. On 2026-11-09 the owner answered "keep opencv separate and set it to v5", and chose
+OpenCvSharp5 5.0.0.20261018 (three weeks old) over 5.0.0.20261107 (two days old).
+
+**The change.** ADR-0103 amends ADR-0042 items 1 and 2.
+- No program that the project distributes holds the library; it stays in `3DEngine.VisionTests`. R-0048 is closed by
+  this decision.
+- The spike pins OpenCvSharp5 5.0.0.20261018 with `OpenCvSharp5.runtime.win`,
+  `OpenCvSharp5.official.runtime.linux-x64.slim` and `OpenCvSharp5.runtime.osx.arm64`. The test of the version holds
+  5.0.
+- The case of the pin of `DependencyDirectionGateTests` names OpenCvSharp5; with the old name it failed, because no file
+  named OpenCvSharp4 any more.
+
+**Proof.** The three tests of the spike pass on Windows, Linux and macOS: the version 5.0, the four corners of the contour
+of a rectangle, and its edges (run 42541226630). The close waited for the codebase review of 2026-11-09, because V0b was the
+fifth product milestone after the review of v0.292; the codebase review gate refused it before. Run 42554669161 passed. The
+failed runs since the entry v0.305, from the API: none.
+
+New tests: 0. The test list holds 2244 (1505 in `Engine.Tests`, 356 in `3DEngine.Tests`, 380 in `3DEngine.ImageTests`, 3
+in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
+entries: 9 of 15. New diagnostic codes: 0. Since the review of v0.304, 1 product milestone and 2 entries followed it.

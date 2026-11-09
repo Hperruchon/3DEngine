@@ -311,6 +311,8 @@ Therefore each approved objective must have a track here.
 - P0.133 — The small gate holes of R-0031. v0.303, TASK-0320.
 - P0.134 — The small engine findings of R-0027, R-0028, R-0033 and R-0036. v0.304, TASK-0321.
 - Review — The codebase review of 2026-11-09. v0.305, TASK-0323.
+- V0b — The vision spike moves to OpenCvSharp5, and the library stays out of each distributed program. v0.306,
+  TASK-0318, ADR-0103.
 
 ## Track 0 — Foundations
 
