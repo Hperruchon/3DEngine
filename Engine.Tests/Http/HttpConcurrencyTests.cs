@@ -64,10 +64,18 @@ public class HttpConcurrencyTests : IClassFixture<WebApplicationFactory<Program>
             }
         });
 
-        var readers = Enumerable.Range(0, 4).Select(reader => Task.Run(async () =>
+        // Finding T13 of the codebase review of 2026-10-04 (R-0031, TASK-0320): no
+        // assertion said that a reader ran, so a test with no query passed. Each reader
+        // now makes one query at least, and the test counts the queries. Until TASK-0320
+        // a reader could end before its first query.
+        const int readerCount = 4;
+        var queries = 0;
+
+        var readers = Enumerable.Range(0, readerCount).Select(reader => Task.Run(async () =>
         {
-            while (Volatile.Read(ref done) == 0)
+            do
             {
+                Interlocked.Increment(ref queries);
                 var bodyId = (Guid)Volatile.Read(ref newest);
 
                 using var cts = new CancellationTokenSource(OperationLimit);
@@ -79,12 +87,14 @@ public class HttpConcurrencyTests : IClassFixture<WebApplicationFactory<Program>
                 }, cts.Token);
                 statuses.AddOrUpdate((int)response.StatusCode, 1, (_, n) => n + 1);
             }
+            while (Volatile.Read(ref done) == 0);
         })).ToArray();
 
         await Task.WhenAll(readers.Append(writer));
 
         var report = string.Join("; ", statuses.OrderBy(s => s.Key).Select(s => $"HTTP {s.Key}: {s.Value}"));
         Assert.True(statuses.Keys.All(code => code == 200), report);
+        Assert.True(queries >= readerCount, $"Each of the {readerCount} readers must make a query: the readers made {queries}.");
     }
 
     // Finding E9 of the codebase review of 2026-09-30. A subscriber that attached

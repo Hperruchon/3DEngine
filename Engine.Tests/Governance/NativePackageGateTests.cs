@@ -145,12 +145,57 @@ public class NativePackageGateTests
             stream.CopyTo(memory);
 
             var text = System.Text.Encoding.Latin1.GetString(memory.ToArray());
-            var found = Regex.Match(text, @"/(home|Users)/runner/[\x21-\x7e]*");
+            var found = BuildPath.Match(text);
             if (found.Success)
                 problems.Add($"{entry.FullName} holds {found.Value}");
         }
 
         Assert.True(problems.Count == 0, "A native binary holds a path of the build machine:\n  " + string.Join("\n  ", problems));
+    }
+
+    // Finding T23 of the codebase review of 2026-10-08 (R-0031, TASK-0320): the gate found the
+    // folders of a Linux or a macOS runner only, so a library built on Windows passed with a
+    // path of its build machine. The expression also finds the workspace of a Windows runner
+    // (D:\a\), the profile of its user runneradmin, and each other profile folder (C:\Users\),
+    // which is the form of a local build. Until TASK-0320 it found /home/runner/ and
+    // /Users/runner/ only.
+    private static readonly Regex BuildPath = new(
+        @"/(home|Users)/runner/[\x21-\x7e]*|[A-Za-z]:[\\/](a|Users)[\\/][\x21-\x7e]*",
+        RegexOptions.Compiled);
+
+    [Theory]
+    [InlineData("/home/runner/work/3DEngine/build/libmanifold.so", true)]
+    [InlineData("/Users/runner/work/3DEngine/build/libmanifold.dylib", true)]
+    [InlineData(@"D:\a\3DEngine\3DEngine\build\Release\manifold.pdb", true)]
+    [InlineData("D:/a/3DEngine/3DEngine/build/manifold", true)]
+    [InlineData(@"C:\Users\runneradmin\AppData\Local\Temp\manifold.pdb", true)]
+    [InlineData(@"C:\Users\owner\source\repos\3DEngine\build\manifold.pdb", true)]
+    [InlineData("manifold.pdb", false)]
+    [InlineData("runtimes/win-x64/native/manifold.dll", false)]
+    public void Each_Form_Of_Finding_T23_Is_A_Path_Of_The_Build_Machine(string text, bool found)
+    {
+        Assert.Equal(found, BuildPath.IsMatch(text));
+    }
+
+    // Finding T17 of the codebase review of 2026-10-08 (R-0031, TASK-0320): the gate named two
+    // fixed files, and a third package in nuget/ passed with no checksum and no notice. Each
+    // .nupkg file under nuget/ must be one of the packages that this gate reads. Until TASK-0320
+    // the gate did not read the folder.
+    [Fact]
+    public void The_Folder_Feed_Holds_Only_The_Packages_That_This_Gate_Reads()
+    {
+        string[] known = [Package, ImGuiPackage];
+        var unknown = Directory.EnumerateFiles(RepositoryFiles.Path("nuget"), "*", SearchOption.AllDirectories)
+            .Where(file => file.EndsWith(".nupkg", StringComparison.OrdinalIgnoreCase))
+            .Select(RepositoryFiles.Relative)
+            .Where(relative => !known.Contains(relative, StringComparer.Ordinal))
+            .ToArray();
+
+        Assert.True(
+            unknown.Length == 0,
+            "nuget/ holds a package that this gate does not read, so its binaries have no checksum and "
+            + "no notice. Add the package to this gate and its rows to THIRD-PARTY-NOTICES.md, or remove it:\n  "
+            + string.Join("\n  ", unknown));
     }
 
     // The package of 2026-09 recorded a commit of this repository as its source
