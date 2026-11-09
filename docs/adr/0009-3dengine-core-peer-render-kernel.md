@@ -136,3 +136,5 @@ Mechanical enforcement of these rules is out of phase scope — the dependency-d
   and `Engine.Tests` references no project of the render side, as the dependency gate already said.
 - 2026-10-14 · TASK-0076 · ADR-0025 amends §2: the image test project `3DEngine.ImageTests` may reference
   the render kernel, the projects of a host that draws, and that host.
+- 2026-11-09 · TASK-0317 · The owner keeps §2 and §4 (R-0024, answer A): the projection is in the host library
+  `3DEngine.App`, which reads `Engine.Core` and `Engine.Contracts`, and `3DEngine.Core` reads neither.
