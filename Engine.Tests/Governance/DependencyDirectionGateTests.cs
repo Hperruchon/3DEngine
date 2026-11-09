@@ -1617,7 +1617,8 @@ public class DependencyDirectionGateTests
     [InlineData("ImGui.NET", "3DEngine.App/3DEngine.App.csproj")]
     [InlineData("Engine.Native.DearImGui", "3DEngine.Android/3DEngine.Android.csproj")]
     [InlineData("Engine.Geometry.Manifold.Native", "Engine.Geometry.Manifold/Engine.Geometry.Manifold.csproj")]
-    [InlineData("OpenCvSharp4", "3DEngine.VisionTests/3DEngine.VisionTests.csproj")]
+    // ADR-0103 (TASK-0318): the spike uses OpenCvSharp5; until TASK-0318 OpenCvSharp4.
+    [InlineData("OpenCvSharp5", "3DEngine.VisionTests/3DEngine.VisionTests.csproj")]
     public void Each_Pinned_Package_Is_Named_In_The_File_Of_Its_Pin_Only(string package, string pin)
     {
         var files = ProjectFiles()
