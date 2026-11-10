@@ -9528,3 +9528,26 @@ New tests: 9. The test list holds 2393 (1539 in `Engine.Tests`, 356 in `3DEngine
 in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
 entries: 8 of 15. New diagnostic codes: 0. Since the review of v0.310, 4 product milestones and 8 entries followed it. R19 merged first at v0.317, so this
 entry is v0.318.
+
+## v0.319 — The codebase review of 2026-11-10 (governance, TASK-0337)
+
+Four product milestones (R16t, R17a, R19 and K8) and eight entries followed the review of v0.310, and the closes of R18a and
+R18b wait on their branches. The owner chose on 2026-11-10 that this session writes the review first.
+
+**The review.** `docs/reviews/2026-11-10-codebase-review.md` examines `main` at `09f1827`.
+- Eight findings of the last review are fixed (V159 to V163, E198, E199 and T180), and the answers of the owner closed V3,
+  V7, T7, T23, T25, T31 and V158.
+- E200 is high: after a Translate or a Rotate of a body, a pocket from a datum on the moved face can leave the face whole and
+  a closed cavity in the owned kernel. The kernel moves in rationals, and the frame of a datum in doubles. A move of 0.3 along
+  the normal is enough. TASK-0338 (P0.140) holds it, before the next product phase.
+- V164 is medium (a proposal shows a new angle as a length in mm). E201, V165 and T181 are low. TASK-0339 (P0.141) holds
+  them, after the next product phase.
+- Open findings: 0 critical, 3 high, 7 medium and 19 low.
+
+**Proof.** One agent examined the change from v0.310 to v0.318 with probes in a scratch copy. The session ran the probe of
+E200 again, in its own scratch copy, with four turns and nine moves: two turns and four moves gave the closed cavity. The
+scratch copies are gone. `CodebaseReviewGateTests` passes with the new review.
+
+New tests: 0. The test list holds 2393 (1539 in `Engine.Tests`, 356 in `3DEngine.Tests`, 495 in `3DEngine.ImageTests`, 3
+in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
+entries: 8 of 15. New diagnostic codes: 0. This entry is a codebase review, so 0 product milestones and 0 entries follow it.
