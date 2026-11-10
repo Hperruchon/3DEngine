@@ -9551,3 +9551,35 @@ scratch copies are gone. `CodebaseReviewGateTests` passes with the new review.
 New tests: 0. The test list holds 2393 (1539 in `Engine.Tests`, 356 in `3DEngine.Tests`, 495 in `3DEngine.ImageTests`, 3
 in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
 entries: 8 of 15. New diagnostic codes: 0. This entry is a codebase review, so 0 product milestones and 0 entries follow it.
+
+## v0.320 — A pocket from a datum on a moved or turned face opens the face in the owned kernel (P0.140, TASK-0338)
+
+The high finding E200 of the codebase review of 2026-11-10, before the next product phase. The owned kernel moved and turned
+a solid exactly, but it read the frame of a datum as the Document holds it, in doubles. The plane of a sketch on a moved
+face was then about one unit in the last place off the face, and a pocket from it left the face whole and a closed cavity
+under it.
+
+**The change.**
+- The kernel builds the frame of a datum on a face in exact numbers, as it builds the solid of that face: the frame of the
+  face, then each Translate and Rotate of its chain, then the flip of a wall of a hole. A face of an extrude takes the
+  exact frame of the sketch of that extrude, so the build is recursive.
+- `DatumResolver.Placement` gives the frame of the face before its chain, its feature, the steps and the flip.
+  `DatumResolver.SideEnds` gives the two ends of a side; the frame in doubles and the exact frame read the same ends.
+  `FeatureGraph.Datum` finds the CreateDatum of a datum.
+- An origin plane, and a datum that does not resolve, keep the frame of the Document. The Document, its frames and the log
+  do not change, so no ADR changes and the determinism hash stays.
+
+**Proof.** 10 new tests in `RotateCommandTests`. Six cases cut a pocket into a moved or turned top: three moves along the
+normal by a decimal, two general turns, and a turn after a move. Four cases cut a pocket into the end and into a side of a
+post on the top, with no move, a move, a turn, and both. The second form came from a probe of this task: a post of 4.7 on a
+box of 7 failed also with no move, because the datum built the end as 3.5 + 4.7 in doubles. Two injections: the frame of
+the Document for each datum failed five of the six first cases (the mixed case passes either way); the double frame for a
+face of an extrude failed each of the four last cases. The file came back byte for byte each time. The phone project builds
+with zero warnings. Run 42830524805 passed on the branch. The failed runs since the entry v0.319, from the API: none.
+
+**What stays.** The backend keeps its own tolerance, and this task checked the kernel only, not the picture of the pocket.
+V164, E201, V165 and T181 wait for TASK-0339 (P0.141), after the next product phase.
+
+New tests: 10. The test list holds 2403 (1549 in `Engine.Tests`, 356 in `3DEngine.Tests`, 495 in `3DEngine.ImageTests`, 3
+in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
+entries: 8 of 15. New diagnostic codes: 0. Since the review of v0.319, 0 product milestones and 1 entry followed it.

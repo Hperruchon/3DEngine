@@ -26,6 +26,11 @@ public sealed class FeatureGraph
     // The command in effect that consumes the handle, or null.
     public Command? Consumer(Guid handle) => _list.Consumer(handle);
 
+    // Finding E200 of the codebase review of 2026-11-10 (phase P0.140, TASK-0338): the CreateDatum in effect whose datum
+    // has the id, or null; a datum takes the id of its command.
+    public CreateDatumCommand? Datum(Guid datumId)
+        => _list.Order(datumId) == int.MaxValue ? null : _list.Steps.OfType<CreateDatumCommand>().FirstOrDefault(step => step.CommandId == datumId);
+
     // The place of a command among the steps in effect, for an order that a hash set does not give.
     public int Order(Guid commandId) => _list.Order(commandId);
 
