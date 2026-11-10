@@ -1,11 +1,11 @@
 ---
 id: 0335
 title: A command turns a body by a quaternion about the origin of the Document
-status: Active
+status: Done
 phase: K8
 opened: 2026-11-10
 depends-on: [0331]
-governed-by: [0001, 0004, 0008, 0012, 0014, 0016, 0018, 0021, 0028, 0031, 0033, 0035, 0036, 0037, 0039, 0051, 0052, 0054, 0055, 0057, 0058, 0059, 0060, 0074, 0076, 0083, 0089]
+governed-by: [0001, 0004, 0008, 0012, 0014, 0016, 0018, 0021, 0028, 0031, 0033, 0035, 0036, 0037, 0039, 0051, 0052, 0054, 0055, 0057, 0058, 0059, 0060, 0074, 0076, 0083, 0089, 0112]
 writes:
   create:
     - tasks/TASK-0335-a-command-turns-a-body.md
@@ -82,24 +82,26 @@ A client, the command line or an agent turns a body with one command, and each p
 
 ## Acceptance criteria
 
-- [ ] A quarter turn by (1, 1, 0, 0) sets a box with y up upright, and the faces, a datum, a rebuild, an undo and an open
+- [x] A quarter turn by (1, 1, 0, 0) sets a box with y up upright, and the faces, a datum, a rebuild, an undo and an open
       agree with it, each with a test.
-- [ ] Each change of behaviour fails on an injection before its fix, or a reading gives the reason that it cannot.
-- [ ] A clean build (`--no-incremental`) gives zero errors and zero warnings, and the phone project builds.
-- [ ] Continuous integration passes on the branch and on `main` after the merge, and the four determinism hashes agree.
+- [x] Each change of behaviour fails on an injection before its fix, or a reading gives the reason that it cannot.
+- [x] A clean build (`--no-incremental`) gives zero errors and zero warnings, and the phone project builds.
+- [x] Continuous integration passes on the branch and on `main` after the merge, and the four determinism hashes agree.
 
 ## Outcome
 
-Status: Ready
+Status: Done · commit (the merge of the branch r0057-rotate-body) · v0.317
 
 ## Method
 
 Mechanical: the command has the form of `Translate`, and each place that reads a `Translate` reads a `Rotate` too.
 Judgement:  ADR-0112 records the quaternion, the turn about the origin, and the normals of the kernel by cofactors.
-Weakest:    to be written at the close.
+Weakest:    the kernel refuses a map with a determinant of zero or less, and the canonical form of a turned plane,
+            with no test: a quaternion always gives a determinant of 1 within the rounding, and a reading covers both.
 
 ## Progress
 - 2026-11-10: the command Rotate, ADR-0112 (Proposed), the turn in the kernel, the rebuild and the datums, the probe, and
   10 tests. Nine injections each fail a test. The owner accepts ADR-0112 before the merge.
 - 2026-11-10: run 42798565576 passed on the branch, and the four hashes agree (b116685c). The owner accepted ADR-0112.
   Main moved to v0.316 (R17a); its merge into the branch has no conflict.
+- 2026-11-10: run 42798565576 passed. Closed at v0.317.

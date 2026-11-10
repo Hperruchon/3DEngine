@@ -9457,3 +9457,38 @@ next on the track.
 New tests: 14. The test list holds 2370 (1530 in `Engine.Tests`, 356 in `3DEngine.Tests`, 481 in `3DEngine.ImageTests`, 3
 in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
 entries: 9 of 15. New diagnostic codes: 0. Since the review of v0.310, 2 product milestones and 6 entries followed it.
+
+## v0.317 — A command turns a body by a quaternion about the origin of the Document (K8, TASK-0335)
+
+The owner answered Q5 C on 2026-11-10: commands turn the entry hall shelf, which the owner built with y up. No command
+turned a body (R-0057). The owner chose this work for this session while the other session changes the layout of the
+window, so this task changes no file of the window.
+
+**The change.** ADR-0112 amends ADR-0012, 0039, 0051, 0058, 0059 and 0060. The owner accepted it on 2026-11-10.
+- The command `Rotate` takes `bodyId` and a quaternion `qw`, `qx`, `qy`, `qz`, and makes a turned copy of the body
+  about the origin of the Document, as `Translate` makes a moved copy. The log holds the four numbers and no angle.
+  Each quaternion that is not zero is a turn, so no tolerance decides it; (1, 1, 0, 0) turns y to z exactly.
+- `Rotation.FromQuaternion` gives the nine numbers of the turn with `+ - * /` only. The backend (`manifold_transform`),
+  the owned kernel and the frame of a datum take the same nine numbers. The kernel turns each normal by its
+  cofactors, so each plane stays exact.
+- A `Rotate` is a step of the chain of a body: the rebuild runs it again, the check of a gone face passes it, and it
+  turns the origin and the axes of a datum on a face before its place.
+- The unit kind `quaternion` is new. `ITransformOps` has the new member `Rotate`.
+- The determinism probe turns a box by (1, 2, 3, 4) and puts a datum on a face of it. The four platforms give
+  b116685ca5bab4d0, and the test sheet of the phone names the new hash.
+
+**Proof.** 9 new tests in `Engine.Tests/Commands/RotateCommandTests.cs`. Nine injections each failed a test: the kernel
+normal, the kernel turn, the end of the chain, the axes and the origin of a datum, the rebuild, a sign of the
+quaternion, the order of the columns for the backend, and the check of the values. Each file came back byte for byte.
+Two first forms of the injections of the datum did not compile, and a first run of the injections ran no test,
+because the shell read the `|` of the filter; the second forms ran and failed. A `git checkout` of one file during
+the injections removed the uncommitted edits of `DatumResolver.cs`; the edit script applied them again, and the
+tests passed before each later step. The phone project builds with zero warnings.
+Run 42798565576 passed on the branch. The failed runs since the entry v0.316, from the API: none.
+
+**What stays.** No tool of the window turns a body; a client of the surface, the command line or an agent sends
+`Rotate`. The shelf of the owner is not turned yet: it is the file of the owner. The turn is about the origin only.
+
+New tests: 9. The test list holds 2379 (1539 in `Engine.Tests`, 356 in `3DEngine.Tests`, 481 in `3DEngine.ImageTests`, 3
+in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
+entries: 8 of 15. New diagnostic codes: 0. Since the review of v0.310, 3 product milestones and 7 entries followed it.
