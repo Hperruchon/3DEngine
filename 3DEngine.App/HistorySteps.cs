@@ -97,22 +97,47 @@ internal static class HistorySteps
 // ADR-0104 item 1: the host reads GetFeatures again only when the version of the Document or the selection changes. The
 // host reads the version before it applies the events of the frame to its live bodies and sketches, so a commit between
 // the two reads gives a new version in the next frame, and the steps come again.
+//
+// Finding V161 of the codebase review of 2026-11-09 (b) (TASK-0331): a query waits for the serial lock of the session, so
+// the read runs off the thread of the frame, and the frame takes its steps when the read is complete. Until then the frame
+// keeps the steps of the last read of the same selection, or none for a new selection. With no selection there is no read.
+// Until TASK-0331 the frame ran the query and waited for it, also with no selection, so a long command stopped the window.
 internal sealed class HistoryCache
 {
     private (long Version, Guid? Selection)? _key;
+    private Task<IReadOnlyList<HistoryStep>>? _reading;
     private IReadOnlyList<HistoryStep> _steps = [];
 
-    // The number of computations, for a test.
+    // The number of reads that started, for a test.
     public int Computed { get; private set; }
 
-    public IReadOnlyList<HistoryStep> Steps(long version, Guid? selection, Func<IReadOnlyList<HistoryStep>> compute)
+    // The read gives a task that the cache does not wait for; the host starts the query on the thread pool.
+    public IReadOnlyList<HistoryStep> Steps(long version, Guid? selection, Func<Task<IReadOnlyList<HistoryStep>>> read)
     {
-        ArgumentNullException.ThrowIfNull(compute);
-        if (_key == (version, selection))
+        ArgumentNullException.ThrowIfNull(read);
+        if (selection is null)
+        {
+            (_key, _reading, _steps) = ((version, null), null, []);
             return _steps;
-        _steps = compute();
-        _key = (version, selection);
-        Computed++;
+        }
+
+        if (_key != (version, selection))
+        {
+            if (_key?.Selection != selection)
+                _steps = [];
+            _key = (version, selection);
+            _reading = read();
+            Computed++;
+        }
+
+        if (_reading is { IsCompleted: true } done)
+        {
+            // A failed read, for example of a session that closes, gives no steps.
+            _steps = done.IsCompletedSuccessfully ? done.Result : [];
+            _ = done.Exception;
+            _reading = null;
+        }
+
         return _steps;
     }
 }

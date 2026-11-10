@@ -234,8 +234,11 @@ internal sealed unsafe partial class DesktopUi
         // Finding V120 of the codebase review of 2026-11-07 (TASK-0264): a chip is drawn over the ring, so a release on a
         // chip is the tap of the chip only; the chips of the last frame are the chips that the person sees. Until
         // TASK-0264 one tap gave both tools.
+        // Finding V160 of the codebase review of 2026-11-09 (b) (TASK-0331): Reject and Accept of a proposal take the tap before
+        // the ring, at the press and at the release. Until TASK-0331 one tap on Accept also gave the tool of the ring under it.
         var io = ImGui.GetIO();
         if (ImGui.IsMouseReleased(ImGuiMouseButton.Left) && !OverWindowAtRelease() && ChipAt(io.MousePos) is null && RowAt(io.MousePos) is null
+            && !OverLastProposal(io.MousePos) && !OverLastProposal(io.MouseClickedPos[0])
             && ring.At(labels, io.MousePos) is { } released && ring.At(labels, io.MouseClickedPos[0]) == released)
         {
             if (_sketchActive)

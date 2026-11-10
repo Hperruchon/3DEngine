@@ -1,13 +1,13 @@
 ---
 id: 0092
 title: An agent proposes commands, and the person accepts or rejects them
-status: Accepted
+status: Amended
 topic: Surface, clients
 date: 2026-11-08
 supersedes: []
 superseded-by: []
 amends: []
-amended-by: []
+amended-by: ['0107', '0110', '0111']
 affects:
   - Engine.Api.Http/Proposals.cs
   - Engine.Api.Http/Endpoints/ProposalsEndpoint.cs
@@ -138,3 +138,9 @@ first one.
   agent proposal arc).
 - 2026-11-09 · TASK-0326 · Accepted, with the answers of the owner of 2026-11-08 (Q1 A, Q2 A, Q3 B, Q4 A) and the decision.
 - 2026-11-09 · TASK-0326 · Shipped at v0.309.
+- 2026-11-10 · TASK-0330 · ADR-0107 amends item 7: with no ring of a body, the arc is in the room right of the panel, and
+  the window of the live sketches does not show while a proposal waits.
+- 2026-11-10 · TASK-0334 · ADR-0110 amends item 5: a command that changes a value with a chip shows the change on the chip
+  and names the value in its line.
+- 2026-11-10 · TASK-0331 · ADR-0111 amends items 2, 6 and 7: a repeated or known command identifier, the actions held while
+  an accept runs, and the sheet of a portrait display above the ring.

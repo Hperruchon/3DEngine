@@ -16,30 +16,46 @@ namespace ThreeDEngine.Vulkan;
 // ADR-0102 item 2 (phase P9g, TASK-0316): each dialog keeps the purpose that the client gives it, and its result gives that
 // purpose back, so a late result of one action never goes to another action. A save dialog keeps its default location
 // until its callback too, because SDL may read it until then.
+// ADR-0106 (phase P0.137, TASK-0328): a dialog has one or more filters, in their order, and each name and pattern stays until
+// the callback, as the single filter did.
 public static class FileDialogState
 {
     private static readonly object Lock = new();
-    private static readonly Dictionary<int, (nint Name, nint Pattern, nint Filter, nint Location, int Purpose)> Filters = [];
+    private static readonly Dictionary<int, (nint[] Texts, nint Filter, nint Location, int Purpose)> Filters = [];
     private static int _open;
     private static int _last;
     private static (bool Done, string? Path, string? Failure, int Purpose) _result;
 
     // The number, the filter and the default location (or 0) of a new dialog, or null when a dialog is open already.
-    public static unsafe (int Number, nint Filter, nint Location)? Begin(string filterName, string pattern, int purpose = 0, string? location = null)
+    public static (int Number, nint Filter, nint Location)? Begin(string filterName, string pattern, int purpose = 0, string? location = null)
+        => Begin([(filterName, pattern)], purpose, location) is { } dialog ? (dialog.Number, dialog.Filters, dialog.Location) : null;
+
+    // ADR-0106: the number, the array of the filters in their order, their count and the default location (or 0) of a new
+    // dialog, or null when a dialog is open already.
+    public static unsafe (int Number, nint Filters, int Count, nint Location)? Begin(IReadOnlyList<(string Name, string Pattern)> filters, int purpose = 0, string? location = null)
     {
+        ArgumentNullException.ThrowIfNull(filters);
+        if (filters.Count == 0)
+            throw new ArgumentException("A dialog needs at least one filter.", nameof(filters));
         lock (Lock)
         {
             if (_open != 0)
                 return null;
             _open = ++_last;
             _result = default;
-            var name = Marshal.StringToCoTaskMemUTF8(filterName);
-            var patternText = Marshal.StringToCoTaskMemUTF8(pattern);
-            var filter = Marshal.AllocCoTaskMem(sizeof(SDL_DialogFileFilter));
-            *(SDL_DialogFileFilter*)filter = new SDL_DialogFileFilter { name = (byte*)name, pattern = (byte*)patternText };
+            var texts = new nint[filters.Count * 2];
+            var array = Marshal.AllocCoTaskMem(sizeof(SDL_DialogFileFilter) * filters.Count);
+            new Span<byte>((void*)array, sizeof(SDL_DialogFileFilter) * filters.Count).Clear();
+            for (var index = 0; index < filters.Count; index++)
+            {
+                texts[2 * index] = Marshal.StringToCoTaskMemUTF8(filters[index].Name);
+                texts[2 * index + 1] = Marshal.StringToCoTaskMemUTF8(filters[index].Pattern);
+                ((SDL_DialogFileFilter*)array)[index] = new SDL_DialogFileFilter { name = (byte*)texts[2 * index], pattern = (byte*)texts[2 * index + 1] };
+            }
+
             var place = location is null ? 0 : Marshal.StringToCoTaskMemUTF8(location);
-            Filters[_open] = (name, patternText, filter, place, purpose);
-            return (_open, filter, place);
+            Filters[_open] = (texts, array, place, purpose);
+            return (_open, array, filters.Count, place);
         }
     }
 
@@ -51,8 +67,8 @@ public static class FileDialogState
             var purpose = 0;
             if (Filters.Remove(number, out var memory))
             {
-                Marshal.FreeCoTaskMem(memory.Name);
-                Marshal.FreeCoTaskMem(memory.Pattern);
+                foreach (var text in memory.Texts)
+                    Marshal.FreeCoTaskMem(text);
                 Marshal.FreeCoTaskMem(memory.Filter);
                 if (memory.Location != 0)
                     Marshal.FreeCoTaskMem(memory.Location);
@@ -104,11 +120,14 @@ public sealed unsafe partial class Window
 {
     // Opens the dialog for one file with the filter, for example "STL file" and "stl". False when a dialog is open already.
     // ADR-0102 item 2 (TASK-0316): the purpose comes back with the result.
-    public bool OpenFile(string filterName, string pattern, int purpose = 0)
+    public bool OpenFile(string filterName, string pattern, int purpose = 0) => OpenFile([(filterName, pattern)], purpose);
+
+    // ADR-0106 (TASK-0328): the dialog for one file with the filters in their order; the system shows the first one first.
+    public bool OpenFile(IReadOnlyList<(string Name, string Pattern)> filters, int purpose)
     {
-        if (FileDialogState.Begin(filterName, pattern, purpose) is not { } dialog)
+        if (FileDialogState.Begin(filters, purpose) is not { } dialog)
             return false;
-        SDL_ShowOpenFileDialog(&Chosen, dialog.Number, _window, (SDL_DialogFileFilter*)dialog.Filter, 1, (byte*)null, false);
+        SDL_ShowOpenFileDialog(&Chosen, dialog.Number, _window, (SDL_DialogFileFilter*)dialog.Filters, dialog.Count, (byte*)null, false);
         return true;
     }
 

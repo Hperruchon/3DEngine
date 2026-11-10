@@ -1408,8 +1408,10 @@ public class DependencyDirectionGateTests
     [Fact]
     public void Only_The_Vision_Spike_Pins_The_Vision_Library()
     {
-        // ADR-0042 item 5: each package of OpenCvSharp4 has its pin in the vision spike, so no
-        // Engine.* project and no render-side project can reach the library.
+        // ADR-0042 item 5: each package of OpenCvSharp has its pin in the vision spike, so no
+        // Engine.* project and no render-side project can reach the library. Finding T180 of the codebase review of
+        // 2026-11-09 (b) (TASK-0331): the text names the library with no version, because the spike pins OpenCvSharp5
+        // since TASK-0318.
         // Finding T117 of the codebase review of 2026-10-31 (c) (TASK-0150): the rule read the project
         // file only, and an imported .props file pinned the library into Engine.Core with no failure.
         var pins = ProjectFiles()
@@ -1419,7 +1421,7 @@ public class DependencyDirectionGateTests
 
         Assert.True(
             pins.SequenceEqual(["3DEngine.VisionTests/3DEngine.VisionTests.csproj"]),
-            $"OpenCvSharp4 must have its pins in 3DEngine.VisionTests/3DEngine.VisionTests.csproj only. "
+            $"The packages of OpenCvSharp must have their pins in 3DEngine.VisionTests/3DEngine.VisionTests.csproj only. "
             + $"Pins found: {(pins.Length == 0 ? "none" : string.Join(", ", pins))}");
     }
 

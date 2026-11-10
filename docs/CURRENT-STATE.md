@@ -9265,3 +9265,160 @@ the sketch. The four slices of 2026-11-08 are done; a codebase review is due bef
 New tests: 11. The test list holds 2310 (1528 in `Engine.Tests`, 356 in `3DEngine.Tests`, 423 in `3DEngine.ImageTests`, 3
 in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
 entries: 9 of 15. New diagnostic codes: 0. Since the review of v0.304, 4 product milestones and 6 entries followed it.
+
+## v0.311 — The codebase review of 2026-11-09 (b) (governance, TASK-0329)
+
+The review of 2026-11-09 examined v0.304. After it came 4 product milestones (V0b, R16q, R16r and R16s) and 6 ledger
+entries, so the next product milestone would make the review late. On 2026-11-09 the owner asked for the review, then the
+pending chip of a proposal.
+
+**The change.** `docs/reviews/2026-11-09-b-codebase-review.md`, at `6f75607` (v0.310). One agent examined the code
+change from v0.304 to v0.310 with probes in a scratch copy; the session ran each probe again and read each finding in the
+code. The review uses no lead of Codex.
+- Seven open findings are fixed: P0.136 fixed V152 to V157 and E197.
+- One new finding is high: V159, in the default window of 1280 by 720 the window of the live sketches covers Accept of the
+  agent arc. Four are medium: V160 (one tap on Accept also uses a ring tool), E198 (a repeated command identifier counts as
+  applied), V161 (the history arc waits for the session after each commit) and V162 (the portrait sheet covers the ring).
+  Three are low: E199, V163 and T180.
+- TASK-0330 (P0.138) holds V159 before the next product phase; TASK-0331 (P0.139) holds the others after it.
+
+**Proof.** `CodebaseReviewGateTests` passes with the new review. The main run of the last merge (42574118816) passed.
+
+**What stays.** The open findings are 0 critical, 5 high, 11 medium and 23 low. Questions Q1 to Q5 of the review of
+2026-11-09 still wait for the owner, and this review repeats them.
+
+**A correction.** None. The failed runs since the last entry, from the API: none.
+
+New tests: 0. Open entries: 9 of 15. New diagnostic codes: 0. Since the review of v0.310, 0 product milestones and
+1 entry followed it.
+
+## v0.312 — "Open project..." shows an STL file too, and an STL file goes to the import (P0.137, TASK-0328)
+
+After P9g the owner opened "Open project..." to find an STL file and saw nothing, because the dialog had the filter of a
+project only. On 2026-11-09 the owner asked for a first filter "Project or STL", and a picture of the dialog before the
+merge.
+
+**The change.**
+- ADR-0106 amends ADR-0102 item 1. The dialog of "Open project..." has three filters in this order: "Project or STL" with
+  `3de;stl`, "3DEngine project" with `3de`, and "STL file" with `stl`. "Import STL..." keeps its one filter.
+- A file whose name ends with `.stl`, in each case of the letters, goes from that dialog to the STL import of P9c; each
+  other file goes to the open of a project. The question of a change of project comes before the dialog, as before.
+- The dialog of the window takes a list of filters, and the import of a path is a method apart from the window.
+
+**Proof.** Ten new tests: the three filters in their order, the path of six names, the open of a `.3de` file, the import of
+a `.STL` file into a new part, and the array of the filters that SDL reads. Three injections failed their tests, and each
+file came back byte for byte. A picture of the real dialog, opened by window messages on a scratch folder, shows "Project
+or STL (*.3de;*.stl)" with `bracket.stl` and `EntryHallShelf.3de`; the owner has it. The phone project builds with zero
+warnings. Run 42713798528 passed. The failed runs since the entry v0.311, from the API: none.
+
+**What stays.** No test covers the step of the host that sends the result of the dialog to the import, because it needs a
+window.
+
+New tests: 10. The test list holds 2320 (1528 in `Engine.Tests`, 356 in `3DEngine.Tests`, 433 in `3DEngine.ImageTests`, 3
+in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
+entries: 9 of 15. New diagnostic codes: 0. Since the review of v0.310, 0 product milestones and 2 entries followed it.
+
+## v0.313 — Accept of the agent arc takes a tap in the default window (P0.138, TASK-0330)
+
+The high finding V159 of the codebase review of 2026-11-09 (b), before the next product phase: in the default window of
+1280 by 720, with a live sketch and no selection, the window of the live sketches covered Accept of the agent arc, so a
+tap on Accept gave nothing, and the panel covered the word "Reject".
+
+**The change.**
+- ADR-0107 amends ADR-0092 item 7. With no ring of a body, the ring of the arc is at the middle of the room right of the
+  panel, at the height of a ring of a body. Its inner radius is that of a ring of a body, less where the room is narrow,
+  and at least 100 pixels.
+- While a proposal waits, the window of the live sketches does not show.
+
+**Proof.** Six tests, five of them at 900 by 600, 1024 by 640, 1280 by 720, 1440 by 900 and 1920 by 1080: each end and its
+word are out of each panel, and a tap on each end gives its action. Three injections failed their tests, and each file came
+back byte for byte: the old centre of the ring, the window of the live sketches while a proposal waits, and the radius with
+no fit to the room. A picture of the real window at 1280 by 720, with a sketch and a proposal that a script posted on
+127.0.0.1, shows the arc right of the panel; the owner has it. The phone project builds with zero warnings. Run 42720337581
+passed. The failed runs since the entry v0.312, from the API: 42719821604 (v0.312 on main, the write set, as the correction below says); none after it.
+
+**What stays.** V160 to V163, E198, E199 and T180 wait for TASK-0331, after the pending chip.
+
+**A correction.** The entry v0.312 says that no run failed since the entry v0.311. That was true when it was written, but
+after it two runs of its branch failed, and this session merged P0.137 into `main` on the second one:
+- 42718078659 (`39ef24c`): a push of the merge of `main` into the branch alone, before the field `governed-by` of
+  TASK-0331 had ADR-0106. The gates and the write set failed.
+- 42718392392 (`c65fd3e`): the write set failed, because the merge `39ef24c` names TASK-0328 and adds no line to its
+  file. The gates, the phone and the determinism hashes passed. The merge command of this session printed the result of
+  the run and did not stop on it.
+- So the run of v0.312 on `main`, 42719821604, failed on the write set only, for the same commit. `39ef24c` stays in
+  `main`, because a force push is refused. The next push to `main` is judged on its own range.
+The merge of this task gives its merge commit a line in the task file, its merge command stops on a run that did not
+pass, and `write-set-check --range <main> --strict` passed before each push.
+
+New tests: 6. The test list holds 2326 (1528 in `Engine.Tests`, 356 in `3DEngine.Tests`, 439 in `3DEngine.ImageTests`, 3
+in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
+entries: 9 of 15. New diagnostic codes: 0. Since the review of v0.310, 0 product milestones and 3 entries followed it.
+
+## v0.314 — A proposal shows each value that it changes on the chip of that value (R16t, TASK-0334)
+
+The slice that the owner chose on 2026-11-09 after the codebase review: the pending chip of a proposal, which ADR-0092 item
+5 kept for later. An agent made the code in a worktree; this session wrote the record and reviewed the code.
+
+**The change.**
+- ADR-0110 amends ADR-0092 item 5. `ProposedValues` reads the commands of a proposal: each `SetSketchConstraintValue` and
+  each `SetExtrudeDistance` gives a proposed value, a later command for one value replaces the earlier one, and a
+  parameter that does not bind gives no value.
+- While the window shows the proposal, the chip of each proposed value (a value of the selected extrude, or of the active
+  sketch) shows "now → proposed", for example "60 → 75 mm" or "C1  60 → 75 mm", with the dashed amber border of a pending
+  chip. A tap on it opens the pad of the value now, as before.
+- A line of the arc names the value with no identifier: "Plate C1  60 → 75 mm", or "Bracket distance  → 12 mm" with no
+  value now. The host names the values from the sketches, the bodies and the chips of the frame. The fonts have no glyph of
+  the arrow, so the window draws it as a line with a head.
+
+**Proof.** 20 new tests, 19 of them with no GPU. Fifteen injections of the agent failed their tests, and each file came
+back byte for byte; this session repeated two. The picture of the mix at 1440 by 900 shows the chip "60 → 75 mm" on its
+edge and the line "Plate C1  60 → 75 mm"; the owner has it. The phone project builds with zero warnings. Run
+42729734384 passed. The failed runs since the entry v0.313, from the API: none.
+
+**What stays.** Only the two commands have a chip. No test reads the drawn arrow. TASK-0331 (P0.139) holds the medium and
+low findings of the review of 2026-11-09 (b), now after this product phase.
+
+New tests: 20. The test list holds 2346 (1528 in `Engine.Tests`, 356 in `3DEngine.Tests`, 459 in `3DEngine.ImageTests`, 3
+in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
+entries: 9 of 15. New diagnostic codes: 0. Since the review of v0.310, 1 product milestone and 4 entries followed it.
+
+## v0.315 — The medium and low findings of the codebase review of 2026-11-09 (b) are fixed (P0.139, TASK-0331)
+
+The review set these findings after the next product phase, R16t, which shipped at v0.314. The owner asked on 2026-11-10
+for the open questions first and then this task.
+
+**The answers of the owner.** Q1 A, Q2 B, Q3 A, Q4 A and Q5 C of the codebase reviews of 2026-11-09 (a and b), which the
+two reviews repeated. The register records them: R-0031 accepts five small gate parts and stays open for T4 (dispatch);
+R-0027 keeps the five planned event kinds of E6 (d); R-0022 (V3 is proved at the first window on macOS) and R-0030 (V7
+part 6) move to the accepted compromises. Q5 C turns the shelf by commands, but no command turns a body, so the new entry
+R-0057 asks for one. The new entry R-0058 holds a fault that a probe of this task found: at 360 by 780 the panel of the
+bodies covers Move of the ring, with no proposal.
+
+**The change.** ADR-0111 amends ADR-0092 items 2, 6 and 7.
+- V160: Reject and Accept, with their words, take a tap before the ring, at the press and at the release.
+- E198: the post refuses a `commandId` that repeats in a proposal. A command whose identifier the session knows gets a
+  cached result and no `command.applied`, so the accept stops there with the new code `E-API-PROPOSAL-COMMAND-KNOWN`.
+- V161: the history arc runs no query with no selection, and its query runs on the thread pool; the frame keeps the steps
+  of the last read until the new read is complete.
+- V162: on a portrait display the sheet ends 8 pixels above the ring when it fits under the top bar, so each tool of the
+  ring takes its tap; else it ends above the anchors, as before.
+- E199: the refusal of a withdraw names the state of the proposal.
+- V163: while an accept runs, the window holds each action and each intent that can change the Document (`AcceptHold`),
+  and the line of the document says why. An action that the list of free actions does not name is held.
+- T180: the gate of the vision library names the library with no version.
+
+**Proof.** 10 new tests, none with a GPU. Twelve injections failed the final tests: one for V160, three for E198, two for
+E199, two for V161, two for V162 and two for V163. Each file came back byte for byte. Two first forms of a test were weak
+and passed with the fault: the points of the test of V160 were out of each tool of the ring, and the test of E199 accepted
+the old text for the state applying. Both tests are now stricter, and the injections fail them. T180 is a text, proved by
+a reading. The phone project builds with zero warnings.
+Run 42772516188 passed. The failed runs since the entry v0.314, from the API: none.
+
+**What stays.** The wiring of the hold and of the read in `NativeThreeDEngine` has no test, because that class needs the
+window; a reading covers it. On a small portrait display the sheet still covers the ring. R-0057 and R-0058 are open.
+
+New tests: 10. The test list holds 2356 (1530 in `Engine.Tests`, 356 in `3DEngine.Tests`, 467 in `3DEngine.ImageTests`, 3
+in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
+entries: 9 of 15. New diagnostic codes: 1 (`E-API-PROPOSAL-COMMAND-KNOWN`). Since the review of v0.310, 1 product
+milestone and 5 entries followed it.
