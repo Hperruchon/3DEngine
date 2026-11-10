@@ -596,6 +596,10 @@ The first objective. Each phase ends with something that a person can observe.
 | R18i | The proposal in the window: the old value crossed out and the new value in the rows and on the edge, a pending node on the history arc, a glow on the edge of the screen, and a message after Accept (S9). | 2 |
 | R18j | The comparison of R18 at 1280 by 720, 1024 by 768, 768 by 1024 and the phone, and the gaps that it finds (S10). | 1 |
 | R19 | The responsive layout: each control stays in the display and free for a tap at six phone sizes in portrait, three in landscape, a tablet and two windows, with one test over all of them (ADR-0113; the order of the owner of 2026-11-10, after R17a). TASK-0336. | 1 |
+| R20 | The UX test of a project of many pieces on 2026-11-10 (a copy of `Bibliotheque120.3de`, 19 bodies, 1280 by 720): seven problems and three improvements, in the proposal `docs/proposals/2026-11-10-ux-test-of-a-multi-part-project.md`; the owner took the three on 2026-11-10. | 4–6 |
+| R20a | The ring does not take a tap meant for the model: only the icon and the label of a segment take a tap, a tap on a body under the rest of the band selects it, and the ring fades while the view turns or zooms (improvement A, problem 1; amends ADR-0081). TASK-0341. | 1–2 |
+| R20b | The actions on the model are on the ring: "Dimensions" is a segment with the state of a tool in use, the selection stays after a Hide, the status line shows "N hidden · Show", and the ring of the document has "Show hidden" (improvement B, problems 2 and 5). After R20a. | 2 |
+| R20c | Each dimension says what it measures: the selected piece in the colour of the selection with its name, the whole in a neutral colour with "Overall", each label on a plate outside the silhouette, and no label under the status line, the ring or the history arc (improvement C, problems 3 and 4; amends ADR-0056). After R18c. | 1–2 |
 
 ## Track K — The kernel
 
