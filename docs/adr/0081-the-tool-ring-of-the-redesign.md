@@ -7,7 +7,7 @@ date: 2026-11-06
 supersedes: []
 superseded-by: []
 amends: []
-amended-by: ['0084', '0086', '0095', '0113']
+amended-by: ['0084', '0086', '0095', '0101', '0113']
 affects:
   - 3DEngine.App/Ui/DesktopUi.Ring.cs
   - 3DEngine.App/Ui/DesktopUi.cs
@@ -91,3 +91,4 @@ are not on the ring yet.
   caption).
 - 2026-11-10 · TASK-0336 · ADR-0113 item 5: on a short landscape display the inner radius of the ring of a body is at
   most the half of the height above the anchors less the band and 16 pixels, and at least 100.
+- 2026-11-10 · TASK-0315 · Amended by ADR-0101 item 3: "Focus" is a segment of the ring of a selected body, after Hide.

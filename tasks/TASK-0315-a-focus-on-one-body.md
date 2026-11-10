@@ -1,11 +1,11 @@
 ---
 id: 0315
 title: A focus on one body, as a state of the client that writes nothing to the log
-status: Ready
+status: Active
 phase: R17b
 opened: 2026-11-08
 depends-on: [0314]
-governed-by: [0007, 0019, 0025, 0027, 0029, 0030, 0032, 0034, 0043, 0072, 0073, 0075, 0076, 0077, 0078, 0080, 0081, 0082, 0083, 0084, 0085, 0086, 0087, 0088, 0089, 0091, 0092, 0093, 0095, 0097, 0098, 0099, 0100, 0102, 0104, 0105, 0106, 0107, 0110, 0111, 0113]
+governed-by: [0007, 0019, 0025, 0027, 0029, 0030, 0032, 0034, 0043, 0072, 0073, 0075, 0076, 0077, 0078, 0080, 0081, 0082, 0083, 0084, 0085, 0086, 0087, 0088, 0089, 0091, 0092, 0093, 0095, 0097, 0098, 0099, 0100, 0101, 0102, 0104, 0105, 0106, 0107, 0110, 0111, 0113]
 writes:
   create:
     - tasks/TASK-0315-a-focus-on-one-body.md
@@ -24,10 +24,14 @@ writes:
     - 3DEngine.ImageTests/ToolRingTests.cs
     - 3DEngine.ImageTests/CommandLineTests.cs
     - 3DEngine.ImageTests/DocumentPathTests.cs
+    - 3DEngine.ImageTests/RingImageTests.cs
+    - 3DEngine.ImageTests/ProposalArcTests.cs
     - docs/adr/0081-the-tool-ring-of-the-redesign.md
     - docs/adr/0098-the-command-line.md
     - docs/adr/0100-a-path-line-from-the-document-to-the-selection.md
     - docs/adr/README.md
+    - tasks/TASK-0332-the-look-of-the-render.md
+    - tasks/TASK-0333-the-edges-of-the-body.md
     - eng/test-floor.txt
     - docs/roadmap.md
     - docs/CURRENT-STATE.md
@@ -106,3 +110,6 @@ Weakest:    no person used a focus in this window yet.
 
 - 2026-11-08: opened from the proposal, with the answers of the owner.
 - 2026-11-09: governed by ADR-0099, after the merge of R16p at v0.298.
+- 2026-11-10: started on the order of the owner, at `main` aa6c728 (v0.320), while the R18 session holds R18a and R18b.
+  ADR-0101 is free on `main` and on each branch. The focus is in `BodyActions` and its one rule is in `SceneRenderer`; the
+  ring, the command line and the path line show it.

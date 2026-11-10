@@ -217,6 +217,8 @@ internal sealed unsafe partial class DesktopUi
             if (body.Kind == "Extrude")
                 labels.Add(SetDistanceLabel);
             labels.Add(body.Visible ? HideLabel : ShowLabel);
+            // ADR-0101 item 3 (phase R17b, TASK-0315): "Focus" after Hide.
+            labels.Add(FocusLabel);
             if (_face is { CanSketch: true })
                 labels.Add(SketchOnFaceButtonLabel);
         }
@@ -263,7 +265,9 @@ internal sealed unsafe partial class DesktopUi
         {
             var hovered = ring.At(labels, io.MousePos) == segment.Label && !ImGui.IsWindowHovered(ImGuiHoveredFlags.AnyWindow);
             // ADR-0086 item 2: the tool in use has the colour of an active control.
-            var inUse = _sketchActive && SketchRingTools.FirstOrDefault(tool => tool.Label == segment.Label).Kind is { } kind && kind == _sketchTool;
+            // ADR-0101 item 3: while a focus lasts, "Focus" has the colour of an active control too.
+            var inUse = (_sketchActive && SketchRingTools.FirstOrDefault(tool => tool.Label == segment.Label).Kind is { } kind && kind == _sketchTool)
+                || (!_sketchActive && segment.Label == FocusLabel && Focus is not null);
             // ADR-0095 item 2: a light ground, so the scene shows through a segment that is not in use or under the pointer.
             var shade = colours[(int)(inUse ? ImGuiCol.ButtonActive : hovered ? ImGuiCol.ButtonHovered : ImGuiCol.Button)];
             var ground = ImGui.GetColorU32(inUse ? shade : shade with { W = hovered ? 0.7f : 0.35f });
@@ -358,5 +362,8 @@ internal sealed unsafe partial class DesktopUi
             _actions.Add(new SetVisibleAction(body.Id, !body.Visible));
         else if (label == SketchOnFaceButtonLabel)
             _actions.Add(new SketchOnSelectedFaceAction());
+        // ADR-0101 items 3 and 5: "Focus" starts a focus on the body, or ends it.
+        else if (label == FocusLabel)
+            _actions.Add(new FocusAction());
     }
 }

@@ -444,6 +444,13 @@ public sealed class NativeThreeDEngine : IThreeDEngine, IDisposable
                 case PathAction path:
                     _actions.Up(path.Level);
                     break;
+                // ADR-0101 items 3 and 5 (phase R17b, TASK-0315): a focus is a state of the client, so it gives no command.
+                case FocusAction:
+                    _actions.ToggleFocus();
+                    break;
+                case EndFocusAction:
+                    _actions.EndFocus();
+                    break;
                 case RenameBodyAction rename:
                     _actions.Rename(rename.Body, rename.Name);
                     break;
@@ -743,6 +750,10 @@ public sealed class NativeThreeDEngine : IThreeDEngine, IDisposable
             ? new Vector2((float)extent.width / window.width, (float)extent.height / window.height)
             : Vector2.One;
         _actions?.Forget(_renderer.LiveBodies);
+        // ADR-0101 item 2 (phase R17b, TASK-0315): the renderer draws and picks the body of the focus only, and the window shows
+        // the focus on the ring, in the command line and in the path line.
+        _renderer.Focus = _actions?.Focus;
+        _ui.Focus = _actions?.Focus;
         _sketches?.Apply();
         var imagePanel = _images is not null && _imageActions is { } imageActions
             ? new ImagePanel(_images.Live, imageActions.Calibrating, imageActions.Points.Count, imageActions.Message, imageActions.Proposal?.Pixels.Count ?? 0)
@@ -885,6 +896,8 @@ public sealed class NativeThreeDEngine : IThreeDEngine, IDisposable
         _ui.ShowQuestion(_projects?.Asking ?? false);
         var panel = _ui.Frame((float)_delta.TotalSeconds, display, scale, _renderer.LiveBodies, Selection, LineOf(_document, _host.FileName, _documentMessage, Path.GetDirectoryName(_host.Session.FilePath), _host.Session.Kind), sketches, sketchPanel, imagePanel, dimensions, size, faceLine, ringCentre, ringSize, Inset(_window.SafeInsets), values, history, proposals, sketchValues);
         ApplyPanel(_renderer.LiveBodies);
+        // ADR-0101 item 2: a focus that an action of this frame started or ended shows in this frame.
+        _renderer.Focus = _actions?.Focus;
 
         var ui = _uiRenderer;
         var selected = Selection;

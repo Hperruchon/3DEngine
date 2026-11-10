@@ -16,6 +16,12 @@ internal enum PathLevel { Document, Body, Face, Edge }
 // ADR-0100 item 2: a tap on a segment of the path line, which selects that level.
 internal sealed record PathAction(PathLevel Level) : PanelAction;
 
+// ADR-0101 items 3 and 5 (phase R17b, TASK-0315): "Focus" on the ring or in the command line starts a focus on the selected
+// body or ends it; the close mark of the path line ends it. Neither one gives a command.
+internal sealed record FocusAction : PanelAction;
+
+internal sealed record EndFocusAction : PanelAction;
+
 internal sealed record RenameBodyAction(Guid Body, string Name) : PanelAction;
 
 internal sealed record SetVisibleAction(Guid Body, bool Visible) : PanelAction;
