@@ -14,12 +14,28 @@ internal static class AcceptHold
 {
     public const string Text = "The commands of the proposal apply now. Do it again when they are done.";
 
-    // The actions of the panel that change nothing of the Document.
+    // The actions of the panel that change nothing of the Document. ADR-0114 item 3 (finding V165 of the codebase review of
+    // 2026-11-10, TASK-0339): a tap on the path line selects a level, and a focus shows one body; neither writes to the log.
     public static bool Holds(PanelAction action)
     {
         ArgumentNullException.ThrowIfNull(action);
-        return action is not (SelectBodyAction or FrameAction or HomeAction or EditDistanceAction or SketchToolAction
-            or ToggleSketchItemAction or SketchOnFaceAction or CancelCalibrationAction or AcceptProposalAction or RejectProposalAction);
+        return action is not (SelectBodyAction or PathAction or FocusAction or EndFocusAction or FrameAction or HomeAction
+            or EditDistanceAction or SketchToolAction or ToggleSketchItemAction or SketchOnFaceAction or CancelCalibrationAction
+            or AcceptProposalAction or RejectProposalAction);
+    }
+
+    // ADR-0114 item 4 (finding T181, TASK-0339): the decision of the host, out of NativeThreeDEngine, so a test reads it. An
+    // accept runs while the task of the accept is not null; the host sets it to null when it reads the outcome.
+    public static bool Held(PanelAction action, Task? accept) => accept is not null && Holds(action);
+
+    // The intent that the host applies: the intent itself, nothing for a held intent, or a cancel for a held end of a drag of
+    // the gizmo, so the drag stops. Held is true when the host must show Text.
+    public static (Intent? Intent, bool Held) Pass(Intent intent, Task? accept)
+    {
+        ArgumentNullException.ThrowIfNull(intent);
+        if (accept is null || !Holds(intent))
+            return (intent, false);
+        return (intent is GizmoEndIntent ? new GizmoCancelIntent() : null, true);
     }
 
     // The intents that change the Document: a hide, a show of each body, an undo, a redo, a point of a sketch and the end of a

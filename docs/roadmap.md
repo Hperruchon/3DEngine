@@ -344,6 +344,9 @@ Therefore each approved objective must have a track here.
   hidden edges. v0.322, TASK-0333, ADR-0109.
 - R17b — A focus on one body: "Focus" on the ring or in the command line draws the body alone, writes nothing to the
   log, and ends with the close mark of the path line, Escape or "Focus" again. v0.323, TASK-0315, ADR-0101.
+- P0.141 — The medium and low findings of the codebase review of 2026-11-10: a turn refuses a quaternion of very small
+  parts, a proposal shows an angle in degrees, and the path line and the focus are free during an accept. v0.324,
+  TASK-0339, ADR-0114.
 
 ## Track 0 — Foundations
 
