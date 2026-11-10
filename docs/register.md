@@ -386,19 +386,6 @@ Android gives a content address, not a path. The owner put the phone out of the 
 Exit: a phase gives the phone a project file through the document picker, or the owner accepts a phone with no project
 file and moves this entry to the accepted compromises.
 
-### R-0057 · No command turns a body, so a document built with y up stays on its side
-- class: question
-- opened: 2026-11-10
-- due: 2027-02-08
-- extended: no
-- refs: `docs/reviews/2026-11-09-codebase-review.md` finding V158 and Q5, `Engine.Core/Commands/TranslateCommand.cs`, TASK-0331
-The owner answered Q5 C on 2026-11-10: the Document records no up axis, and the entry hall shelf, built with y up, is
-turned by commands. The commands move a body (`Translate`) but do not turn it, so neither the person nor an agent can set
-the shelf upright now. A command that turns a body records a matrix or a quaternion (`CLAUDE.md`, determinism rule 2), so
-it is a change of `Engine.Contracts` with an ADR.
-Exit: a phase adds a command that turns a body, with its ADR, or the owner rebuilds the shelf with z up and closes the entry.
-Progress 2026-11-10: the owner chose the first exit. TASK-0335 (phase K8) adds the command `Rotate` with ADR-0112.
-
 ### R-0058 · On a portrait display of 360 by 780 the panel of the bodies covers Move of the ring
 - class: debt
 - opened: 2026-11-10
@@ -545,6 +532,22 @@ only the render loop writes `Scene` and `Entity` of `3DEngine.Core`. V5, V6 and 
 ---
 
 ## Closed
+
+### R-0057 · No command turns a body, so a document built with y up stays on its side
+- class: question
+- opened: 2026-11-10
+- due: 2027-02-08
+- extended: no
+- refs: `docs/reviews/2026-11-09-codebase-review.md` finding V158 and Q5, `Engine.Core/Commands/TranslateCommand.cs`, TASK-0331
+The owner answered Q5 C on 2026-11-10: the Document records no up axis, and the entry hall shelf, built with y up, is
+turned by commands. The commands move a body (`Translate`) but do not turn it, so neither the person nor an agent can set
+the shelf upright now. A command that turns a body records a matrix or a quaternion (`CLAUDE.md`, determinism rule 2), so
+it is a change of `Engine.Contracts` with an ADR.
+Exit: a phase adds a command that turns a body, with its ADR, or the owner rebuilds the shelf with z up and closes the entry.
+Progress 2026-11-10: the owner chose the first exit. TASK-0335 (phase K8) adds the command `Rotate` with ADR-0112.
+
+Closed 2026-11-10 · resolved · TASK-0335 · ADR-0112. The command `Rotate` turns a copy of a body about the origin by a
+quaternion; (1, 1, 0, 0) turns y to z. The owner turns the shelf in the file of the owner.
 
 ### R-0048 · The licences of the native vision library in a distributed program have no decision
 - class: question

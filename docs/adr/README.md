@@ -114,7 +114,7 @@ names. Do not read all of them.
 | [0107](0107-the-arc-of-a-proposal-is-in-the-free-room.md) | With no ring of a body, the arc of a proposal is in the room right of the panel | Accepted | Clients | 0092 | — |
 | [0110](0110-a-proposal-shows-each-value-on-its-chip.md) | A proposal shows each value that it changes on the chip of that value | Accepted | Clients, surface | 0092 | — |
 | [0111](0111-a-proposal-takes-its-own-taps-and-commands.md) | A proposal takes its own taps, its own command identifiers and its own steps | Accepted | Surface, clients | 0092 | — |
-| [0112](0112-a-command-turns-a-body.md) | A command turns a body by a quaternion about the origin of the Document | Proposed | Contracts, geometry | 0012, 0039, 0051, 0058, 0059, 0060 | — |
+| [0112](0112-a-command-turns-a-body.md) | A command turns a body by a quaternion about the origin of the Document | Accepted | Contracts, geometry | 0012, 0039, 0051, 0058, 0059, 0060 | — |
 
 ## Topics
 

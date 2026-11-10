@@ -331,6 +331,8 @@ Therefore each approved objective must have a track here.
   a proposal, the portrait sheet, and the history arc off the frame. v0.315, TASK-0331, ADR-0111.
 - R17a — A path line from the document to the selection: a tap on a segment and Escape go up one level, and the rows of
   the document show with nothing selected. v0.316, TASK-0314, ADR-0100.
+- K8 — A command turns a body by a quaternion about the origin of the Document; the kernel, the rebuild, the datums and
+  the determinism probe read the turn. v0.317, TASK-0335, ADR-0112.
 
 ## Track 0 — Foundations
 
