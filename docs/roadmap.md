@@ -325,6 +325,8 @@ Therefore each approved objective must have a track here.
 - P0.137 — "Open project..." shows "Project or STL" first, and an STL file chosen there goes to the import. v0.312,
   TASK-0328, ADR-0106.
 - P0.138 — Accept of the agent arc takes a tap in the default window (V159). v0.313, TASK-0330, ADR-0107.
+- R16t — The pending chip of a proposal: a value that an agent changes shows "now → proposed" on its chip, and its line
+  names it. v0.314, TASK-0334, ADR-0110.
 
 ## Track 0 — Foundations
 
@@ -556,6 +558,7 @@ The first objective. Each phase ends with something that a person can observe.
 | R16q | The history arc of the mix: an arc at the lower left of the ring of a selected body, with one node for each step that made it from the query GetFeatures, and a tap on a node of a sketch opens its edit (ADR-0104; the second of the four slices that the owner chose on 2026-11-08 after v0.297). TASK-0325. | 1 |
 | R16r | The agent arc of the mix: an agent posts a proposal of commands over HTTP, a queue of the host keeps it outside the log, and the desktop shows the oldest one on an amber arc above the selected body with Reject and Accept (ADR-0092, the answers of the owner of 2026-11-08: Q1 A, Q2 A, Q3 B, Q4 A; the third of the four slices). TASK-0326. | 2 |
 | R16s | The values on the edges of an active sketch: each length constraint has a chip on the line or the curve that it measures, and a tap opens the pad of its value (ADR-0105; the last of the four slices that the owner chose on 2026-11-08 after v0.297). TASK-0327. | 1 |
+| R16t | The pending chip of a proposal: a command of an agent that changes a value shows "C3  60 → 75 mm" on the chip of that value, and its line in the arc names the value (ADR-0110; the order of the owner of 2026-11-09, after the codebase review). TASK-0334. | 1 |
 | R17 | The selection of the document and of one body: the person sees where the selection is in the document, goes up to the document, and reviews one body alone. From the proposal `docs/proposals/2026-11-08-document-and-body-selection.md`; the owner accepted each recommended answer on 2026-11-08. The components of an assembly (option C) wait for the decision of the owner on the non-goals "Multi-Document in one runtime" and "Assemblies". | 3–5 |
 | R17a | A path line from the document to the selection: the file, the body, the face and the edge at the upper left, a tap on a segment and Escape go up one level, and the rows of the document with nothing selected (ADR-0100). TASK-0314. | 1–2 |
 | R17b | A focus on one body: a state of the client that draws one body and writes nothing to the log, from the ring or the command line, with no double tap (ADR-0101). TASK-0315. | 1 |
