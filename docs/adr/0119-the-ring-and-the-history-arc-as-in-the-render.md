@@ -72,3 +72,4 @@ display the two new tools leave the ring.
 ## History
 
 - 2026-11-11 · TASK-0346 · The record, from slice S5 of the proposal and the judgement of the session.
+- 2026-11-11 · TASK-0346 · Shipped at v0.329.

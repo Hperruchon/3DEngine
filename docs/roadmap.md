@@ -354,6 +354,8 @@ Therefore each approved objective must have a track here.
   P10c. v0.326, TASK-0343, ADR-0118.
 - R18d — The rows of a body as in the render: the name larger and bold with its state, the row "Made from" whose tap
   opens the sketch, and the labels Width, Depth and Height with the name of the constraint. v0.328, TASK-0342, ADR-0117.
+- R18e — "Edit sketch" and "Rename" on the ring, a landscape ring in the span of four segments, and the history arc as a
+  bright line with its nodes on it. v0.329, TASK-0346, ADR-0119.
 
 ## Track 0 — Foundations
 
