@@ -5,7 +5,7 @@ status: Active
 phase: P0.142
 opened: 2026-11-10
 depends-on: [0341]
-governed-by: [0118]
+governed-by: [0055, 0118]
 writes:
   create:
     - tasks/TASK-0343-the-2d-drawing-in-the-charter.md
