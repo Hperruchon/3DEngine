@@ -275,6 +275,43 @@ public sealed class DocumentPathTests
         Assert.Equal([new PathAction(PathLevel.Body)], Tap(ui, portrait, [Plate], A, phone, FaceTop(), DesktopUi.PathSegmentItem(PathLevel.Body)));
     }
 
+    // Item 5: on a portrait display the panel under the path line ends above the ring of the selected body, so a tap on Move
+    // opens its pad. With no such rule the path line moved the panel onto Move at 390 by 844; register entry R-0058 gives
+    // the same fault at 360 by 780.
+    [Theory]
+    [InlineData(360, 780)]
+    [InlineData(390, 844)]
+    [InlineData(393, 873)]
+    [InlineData(412, 915)]
+    public void On_A_Portrait_Display_The_Panel_Ends_Above_The_Ring(int width, int height)
+    {
+        var portrait = new Vector2(width, height);
+        var centre = new Vector2(width / 2f, height * 0.6f);
+        using var ui = new DesktopUi(string.Empty, Document.Millimetre);
+        var phone = new DocumentLine(null, null, Files: false);
+        void Touch(params InputSample[] frame)
+        {
+            ui.Route(frame);
+            ui.Frame(1f / 60f, portrait, Vector2.One, [Plate], A, phone, ringCentre: centre);
+        }
+
+        Touch();
+        Touch();
+        var top = ui.RingTop() ?? throw new InvalidOperationException("No ring.");
+        var move = Rectangle(ui, DesktopUi.RingItem(DesktopUi.MoveLabel));
+        var (x, y) = ((move.X + move.Z) / 2, (move.Y + move.W) / 2);
+        foreach (var panel in ui.PanelRectangles)
+        {
+            Assert.False(panel.W > top - 8f + 0.5f && panel.Y < top, $"{width}x{height}: the panel {panel} goes past the top {top} of the ring.");
+            Assert.False(x >= panel.X && x < panel.Z && y >= panel.Y && y < panel.W, $"{width}x{height}: Move at ({x}, {y}) is under the panel {panel}.");
+        }
+
+        Touch(new PointerSample(DeviceKind.Touch, 1, 3, x, y, 1, PointerButtons.None, KeyModifiers.None, PointerPhase.Down, 0));
+        Touch(new PointerSample(DeviceKind.Touch, 1, 3, x, y, 1, PointerButtons.None, KeyModifiers.None, PointerPhase.Up, 10_000_000));
+        Touch();
+        Assert.NotNull(ui.Pad);
+    }
+
     // Items 1 and 4: the pictures for the owner, at 1440 by 900 and at 844 by 390: the rows of the document with nothing
     // selected, and the path to a face of the selected body.
     [VulkanImageFact]

@@ -25,6 +25,10 @@ internal sealed unsafe partial class DesktopUi
         var width = Math.Min(PanelWidth, Math.Max(displaySize.X - 32f - _inset.X - _inset.Z, 160f));
         // ADR-0080 (TASK-0248): the panel ends above the round anchors of Undo and Redo at the bottom left.
         var room = Math.Max(displaySize.Y - PanelTop - 16f - AnchorRow - _inset.W, 0f);
+        // ADR-0100 item 5 (phase R17a, TASK-0314): on a portrait display the panel ends 8 pixels above the ring of the last
+        // frame, as the sheet of a proposal does, when one row of 44 pixels still fits; so each tool of the ring takes its tap.
+        if (_portrait && RingTop() is { } ringTop && ringTop - 8f - PanelTop >= PathHeight)
+            room = Math.Min(room, ringTop - 8f - PanelTop);
         ImGui.SetNextWindowSizeConstraints(Vector2.Zero, new Vector2(width, room));
         // ADR-0093 item 2: the panel is as high as its content in the last frame, so the room under it, with no ground, stays
         // the scene. A window that sizes itself hides its items in its first frame, which a tap in that frame misses.

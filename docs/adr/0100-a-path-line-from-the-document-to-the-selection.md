@@ -80,7 +80,10 @@ B leaves an empty document with no visible control to make a body, and it change
    The controls of the panel follow: the file, the list "New", "Sketch on", the toggles and "Show all". The count line and
    the list of the panel do not show there. A portrait display keeps the panel as before.
 5. **A portrait display.** The top bar gives the program and the unit. The path line is the first line under the top bar,
-   and the panel is under the path line. A tap on a segment acts as on a landscape display.
+   and the panel is under the path line. A tap on a segment acts as on a landscape display. The panel ends 8 pixels
+   above the highest tool of the ring of the selected body, as the sheet of ADR-0111 item 4, when one row of 44 pixels
+   still fits there. The path line moves the panel down by its height. Without this rule the panel covered Move at
+   390 by 844. The rule also removes the fault of register entry R-0058 at 360 by 780.
 6. **The top bar (amends ADR-0093 item 1 and ADR-0102 item 7).** On a landscape display the file of the top bar is the first
    segment of the path line: the program, the path, then the unit. The window of the top bar is as high as a segment, and
    the text stays in its place. A path that is too wide gives "..." for each middle segment, from the second one, until it
@@ -104,3 +107,5 @@ line in this window yet.
 ## History
 
 - 2026-11-09 · TASK-0314 · The record, with the answers of the owner of 2026-11-08 and Q1 A.
+- 2026-11-10 · TASK-0314 · Item 5: on a portrait display the panel ends above the ring of the selected body, after the
+  merge of P0.139 showed that the path line moved the panel onto Move at 390 by 844.

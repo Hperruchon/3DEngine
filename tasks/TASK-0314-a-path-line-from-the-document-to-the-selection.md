@@ -129,3 +129,9 @@ Weakest:    no person used a path line in this window yet.
   the file of TASK-0315, whose `governed-by` must name ADR-0100. ADR-0100 Q1 A: the rows of the document are the first
   part of the panel, so ADR-0099 Q1 A holds and the image tests of the panel keep their places. The codebase review is
   due before the close: the close is the fifth product milestone after the review of v0.304.
+- 2026-11-10: main at v0.315 (P0.139) merged into the branch. On a portrait display the path line moved the panel 44
+  pixels down, and at 390 by 844 the panel covered Move of the ring, so the portrait test of the proposal sheet failed.
+  ADR-0100 item 5 now ends the panel 8 pixels above the ring, as the sheet of ADR-0111 item 4. A test holds it at 360 by
+  780, 390 by 844, 393 by 873 and 412 by 915; it fails at 360 by 780 with the rule removed. The fault of R-0058 at 360 by
+  780 goes with it, but R-0058 stays open: its exit names each display from 360 by 640. The write set adds the files of
+  TASK-0332 and TASK-0333, whose `governed-by` must name ADR-0100.
