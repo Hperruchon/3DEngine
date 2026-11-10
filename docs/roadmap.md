@@ -346,6 +346,7 @@ Therefore each approved objective must have a track here.
   log, and ends with the close mark of the path line, Escape or "Focus" again. v0.323, TASK-0315, ADR-0101.
 - R18c — The values as in the render: three decimals and the unit on a round outlined pill, on a dimension line with
   extension lines, outside the outline of the body. v0.325, TASK-0340, ADR-0115.
+- Review — The codebase review of 2026-11-11. v0.326, TASK-0344.
 - P0.141 — The medium and low findings of the codebase review of 2026-11-10: a turn refuses a quaternion of very small
   parts, a proposal shows an angle in degrees, and the path line and the focus are free during an accept. v0.324,
   TASK-0339, ADR-0114.
@@ -495,6 +496,7 @@ This track removes each condition that blocks other work.
 | P0.139 | The medium and low findings of the codebase review of 2026-11-09 (b) (V160 to V163, E198, E199 and T180), after the next product phase. TASK-0331. | 1 |
 | P0.140 | The high finding of the codebase review of 2026-11-10: a pocket from a datum on a moved or turned face opens the face in the owned kernel (E200), before the next product phase. TASK-0338. | 1–2 |
 | P0.141 | The medium and low findings of the codebase review of 2026-11-10 (V164, E201, V165 and T181), after the next product phase. TASK-0339. | 1 |
+| P0.143 | The low findings of the codebase review of 2026-11-11 (V166 and V167, the edge lines of R18b), after the next product phase. TASK-0345. | 1 |
 | P0.102 | The cache of a face, the fixed controls, the list New, the edges and the safe area hold their next forms (V113 to V118 of the codebase review of 2026-11-06 (e); after P0.101). TASK-0252. | 1–2 |
 | P0.86 | The window keeps no input between sessions, the hook has the cases of one axis, and the next forms of four gates fail (V88 to V90, T141 to T144 of the codebase review of 2026-11-06; after the next product phase). TASK-0198. | 1–2 |
 
