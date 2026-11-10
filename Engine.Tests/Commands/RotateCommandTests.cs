@@ -252,4 +252,93 @@ public sealed class RotateCommandTests : IDisposable
             opened.Close();
         }
     }
+
+    // Finding E200 of the codebase review of 2026-11-10 (phase P0.140, TASK-0338): after a Translate along the normal by a
+    // decimal, or a general Rotate, a pocket from a datum on the moved +z face opens that face in the owned kernel: +z has
+    // one hole and the area 1100, and no closed cavity stays. Until TASK-0338 the kernel took the frame of the datum in
+    // doubles, one unit in the last place off the exact face, and +z stayed whole with an area of 1200. The first cases are
+    // the probes of the review; the last one turns after a move.
+    [NativeManifoldTheory]
+    [InlineData(7.0, 0.0, 0.0, 0.3, 1.0, 0.0, 0.0, 0.0)]
+    [InlineData(9.7, 0.3, 0.6, 0.1, 1.0, 0.0, 0.0, 0.0)]
+    [InlineData(7.3, 0.37, 0.91, 0.13, 1.0, 0.0, 0.0, 0.0)]
+    [InlineData(10.0, 0.0, 0.0, 0.0, 5.0, 1.0, 2.0, 3.0)]
+    [InlineData(10.0, 0.0, 0.0, 0.0, 2.0, 3.0, 5.0, 7.0)]
+    [InlineData(7.0, 0.1, 0.2, 0.3, 5.0, 1.0, 2.0, 3.0)]
+    public async Task A_Pocket_From_A_Datum_On_A_Moved_Or_Turned_Face_Opens_It(double height, double dx, double dy, double dz, double qw, double qx, double qy, double qz)
+    {
+        using var backend = new ManifoldGeometryBackend();
+        var session = NewSession(backend);
+        var body = await Box(session, 40, 30, height);
+        var box = body;
+        if (dx != 0 || dy != 0 || dz != 0)
+            body = Output(await Applied(session, new TranslateCommand { BodyId = body, Dx = dx, Dy = dy, Dz = dz }), "bodyId");
+        if (qx != 0 || qy != 0 || qz != 0)
+            body = Output(await Applied(session, new RotateCommand { BodyId = body, Qw = qw, Qx = qx, Qy = qy, Qz = qz }), "bodyId");
+        var datum = Output(await Applied(session, new CreateDatumCommand { FeatureId = box, Element = "+z" }), "datumId");
+        var sketch = Output(await Applied(session, new CreateSketchCommand { DatumId = datum }), "sketchId");
+        (double X, double Y)[] corners = [(-5, -5), (5, -5), (5, 5), (-5, 5)];
+        var points = new Guid[4];
+        for (var i = 0; i < 4; i++)
+            points[i] = Output(await Applied(session, new AddSketchPointCommand { SketchId = sketch, X = corners[i].X, Y = corners[i].Y }), "pointId");
+        for (var i = 0; i < 4; i++)
+            await Applied(session, new AddSketchLineCommand { SketchId = sketch, StartPointId = points[i], EndPointId = points[(i + 1) % 4] });
+        var tool = Output(await Applied(session, new ExtrudeCommand { SketchId = sketch, Distance = -2 }), "bodyId");
+        var cut = Output(await Applied(session, new SubtractCommand { MinuendBodyId = body, SubtrahendBodyId = tool }), "bodyId");
+
+        var faces = (await session.Query<FacesInfo>(new GetFacesQuery { BodyId = cut })).Result!.Faces;
+        var text = string.Join("; ", faces.Select(face => $"{face.Reference.Element} holes={face.Holes} area={Math.Round(face.Area, 3)}"));
+        var top = faces.Single(face => face.Reference.Element == "+z");
+        Assert.True(top.Holes == 1 && Math.Abs(top.Area - 1100) < 1e-6, text);
+        Assert.DoesNotContain(faces, face => face.Reference.Element == "start");
+    }
+
+    // A square of the half size on the datum, extruded by the distance.
+    private static async Task<Guid> Square(DocumentSession session, Guid datum, double x, double y, double half, double distance)
+    {
+        var sketch = Output(await Applied(session, new CreateSketchCommand { DatumId = datum }), "sketchId");
+        (double X, double Y)[] corners = [(x - half, y - half), (x + half, y - half), (x + half, y + half), (x - half, y + half)];
+        var points = new Guid[4];
+        for (var i = 0; i < 4; i++)
+            points[i] = Output(await Applied(session, new AddSketchPointCommand { SketchId = sketch, X = corners[i].X, Y = corners[i].Y }), "pointId");
+        for (var i = 0; i < 4; i++)
+            await Applied(session, new AddSketchLineCommand { SketchId = sketch, StartPointId = points[i], EndPointId = points[(i + 1) % 4] });
+        return Output(await Applied(session, new ExtrudeCommand { SketchId = sketch, Distance = distance }), "bodyId");
+    }
+
+    // E200 (TASK-0338): a datum on the end or on a side of a post, which an extrude made on the moved or turned top of a
+    // box, takes its exact frame from the exact frame of the sketch of the post; so a pocket there opens the face. Until
+    // TASK-0338 a post of 4.7 on a box of 7 failed also with no move: the end of the datum was 3.5 + 4.7 in doubles.
+    [NativeManifoldTheory]
+    [InlineData(0.0, 1.0, 0.0, 0.0, 0.0, 4.7)]
+    [InlineData(0.3, 1.0, 0.0, 0.0, 0.0, 4.7)]
+    [InlineData(0.0, 5.0, 1.0, 2.0, 3.0, 4.7)]
+    [InlineData(0.13, 2.0, 3.0, 5.0, 7.0, 3.3)]
+    public async Task A_Pocket_On_The_End_And_On_A_Side_Of_A_Post_Opens_Each_Face(double dz, double qw, double qx, double qy, double qz, double height)
+    {
+        using var backend = new ManifoldGeometryBackend();
+        var session = NewSession(backend);
+        var box = await Box(session, 40, 30, 7);
+        var body = box;
+        if (dz != 0)
+            body = Output(await Applied(session, new TranslateCommand { BodyId = body, Dx = 0, Dy = 0, Dz = dz }), "bodyId");
+        if (qx != 0 || qy != 0 || qz != 0)
+            body = Output(await Applied(session, new RotateCommand { BodyId = body, Qw = qw, Qx = qx, Qy = qy, Qz = qz }), "bodyId");
+        var top = Output(await Applied(session, new CreateDatumCommand { FeatureId = box, Element = "+z" }), "datumId");
+        var post = await Square(session, top, 0, 0, 8, height);
+        var postSketch = (await session.Read((document, _) => document.Sketches.ToList())).Single();
+        var end = Output(await Applied(session, new CreateDatumCommand { FeatureId = post, Element = "end" }), "datumId");
+        var first = await Square(session, end, 0, 0, 3, -2);
+        var once = Output(await Applied(session, new SubtractCommand { MinuendBodyId = post, SubtrahendBodyId = first }), "bodyId");
+        var side = Output(await Applied(session, new CreateDatumCommand { FeatureId = post, Element = "side", ItemId = postSketch.Lines[0].Id }), "datumId");
+        var second = await Square(session, side, 8, height / 2, 1, -1);
+        var twice = Output(await Applied(session, new SubtractCommand { MinuendBodyId = once, SubtrahendBodyId = second }), "bodyId");
+
+        var faces = (await session.Query<FacesInfo>(new GetFacesQuery { BodyId = twice })).Result!.Faces;
+        var text = string.Join("; ", faces.Select(face => $"{face.Reference.Element} holes={face.Holes} area={Math.Round(face.Area, 3)}"));
+        var endFace = faces.Single(face => face.Reference.FeatureId == post && face.Reference.Element == "end");
+        Assert.True(endFace.Holes == 1 && Math.Abs(endFace.Area - 220) < 1e-6, text);
+        var sideFace = faces.Single(face => face.Reference.FeatureId == post && face.Reference.Element == "side" && face.Reference.ItemId == postSketch.Lines[0].Id);
+        Assert.True(sideFace.Holes == 1 && Math.Abs(sideFace.Area - ((16 * height) - 4)) < 1e-6, text);
+    }
 }
