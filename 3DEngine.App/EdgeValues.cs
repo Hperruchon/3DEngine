@@ -4,6 +4,7 @@ using Engine.Contracts.Sketch;
 using Engine.Core.Queries;
 using ThreeDEngine.Core.Measuring;
 using ThreeDEngine.Core.Models;
+using ThreeDEngine.Desktop.Ui;
 
 namespace ThreeDEngine.Desktop;
 
@@ -16,7 +17,7 @@ internal static class EdgeValues
     // ADR-0084 item 2 (TASK-0267): Label names the value in its row: "Distance", "Length" or "Radius".
     // ADR-0115 item 2 (phase R18c, TASK-0340): Line is the measured edge on the screen and the side of its dimension line, or
     // null for a value with no edge.
-    public sealed record Value(string Key, string Text, Vector2 At, double Number, Guid Body, Guid? Sketch, Guid? Constraint, string Label = "Value", Measure? Line = null);
+    public sealed record Value(string Key, string Text, Vector2 At, double Number, Guid Body, Guid? Sketch, Guid? Constraint, string Label = "Value", Measure? Line = null, string? Name = null);
 
     // ADR-0115 item 2: the two ends of the measured edge on the screen (one point, the same two times, for a radius), the
     // unit normal that points away from the outline, and the distance along it from the edge to the outside of the outline
@@ -106,6 +107,8 @@ internal static class EdgeValues
         if (sketches.FirstOrDefault(sketch => sketch.Lines.Any(line => items.Contains(line.Id)) || sketch.Circles.Any(circle => items.Contains(circle.Id)) || sketch.Arcs.Any(arc => items.Contains(arc.Id))) is not { } of)
             return values;
 
+        // ADR-0117 item 3 (phase R18d, TASK-0342): the name of each constraint in its sketch, as "C3".
+        var names = SketchText.Labels(of);
         foreach (var constraint in of.Constraints)
         {
             if (constraint.Values.Count == 0)
@@ -123,7 +126,10 @@ internal static class EdgeValues
             if (edge is not null && Middle(edge, camera, width, height) is { } at)
             {
                 var line = constraint.Kind == "radius" ? Outside(at, at, centre, outline) : MeasureOf(edge, at);
-                values.Add(new Value(ConstraintKey(constraint.Id), $"{prefix}{Exact(constraint.Values[0])} {unit}", Placed(line), constraint.Values[0], body, of.SketchId, constraint.Id, label, line));
+                // ADR-0117 item 3: a length along an axis is a width, a depth or a height.
+                var named = constraint.Kind == "distance" ? Direction(edge) : label;
+                values.Add(new Value(ConstraintKey(constraint.Id), $"{prefix}{Exact(constraint.Values[0])} {unit}", Placed(line), constraint.Values[0], body, of.SketchId, constraint.Id, named, line,
+                    names.TryGetValue(constraint.Id, out var name) ? name : null));
             }
         }
 
@@ -154,6 +160,26 @@ internal static class EdgeValues
         var segment = edge.Segments[edge.Segments.Count / 2];
         var middle = ((segment.Start.X + segment.End.X) / 2, (segment.Start.Y + segment.End.Y) / 2, (segment.Start.Z + segment.End.Z) / 2);
         return SketchOverlay.Segment(camera, width, height, middle, middle)?.A;
+    }
+
+    // ADR-0117 item 3 (phase R18d, TASK-0342): the label of a length from the direction of its edge in the Document: along
+    // the x axis "Width", along the y axis "Depth", along the z axis "Height" (the z axis is up), else "Length".
+    // An edge is along an axis when that part of its direction is at least 0.999 of its length; the test squares both
+    // sides, so it needs no square root.
+    internal static string Direction(EdgeEntry edge)
+    {
+        ArgumentNullException.ThrowIfNull(edge);
+        if (edge.Segments.Count == 0)
+            return "Length";
+        var (a, b) = (edge.Segments[0].Start, edge.Segments[^1].End);
+        var (x, y, z) = (b.X - a.X, b.Y - a.Y, b.Z - a.Z);
+        var length = (x * x) + (y * y) + (z * z);
+        const double along = 0.999 * 0.999;
+        return length <= 0d ? "Length"
+            : x * x >= along * length ? "Width"
+            : y * y >= along * length ? "Depth"
+            : z * z >= along * length ? "Height"
+            : "Length";
     }
 
     // ADR-0115 item 2: the place of a value before the window adds the half of its pill: the middle of the dimension line.

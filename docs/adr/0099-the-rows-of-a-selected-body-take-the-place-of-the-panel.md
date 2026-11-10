@@ -7,7 +7,7 @@ date: 2026-11-08
 supersedes: []
 superseded-by: []
 amends: ['0084', '0093', '0098']
-amended-by: ['0100']
+amended-by: ['0100', '0117']
 affects:
   - 3DEngine.App/Ui/DesktopUi.Rows.cs
   - 3DEngine.App/Ui/DesktopUi.Command.cs
@@ -99,3 +99,5 @@ display. The row "Made from" waits.
 - 2026-11-08 · TASK-0313 · Shipped at v0.298.
 - 2026-11-09 · TASK-0314 · ADR-0100 item 4 amends item 1 and Q1 A: with no selected body on a landscape display, the
   first part of the panel is the rows of the document, and they hold the list of the bodies and its filter.
+- 2026-11-10 · TASK-0342 · ADR-0117 item 2 answers Q2 and amends item 3: the row "Made from" with the sketch of the body,
+  whose tap opens that sketch.

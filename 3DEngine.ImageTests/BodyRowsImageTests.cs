@@ -48,7 +48,7 @@ public class BodyRowsImageTests
         var scene = SessionScene.Create();
         var camera = scene.Cameras[0];
         var values = EdgeValues.Of(body, 10, faces.Edges, [info], camera, Width, Height, "mm");
-        Assert.Equal(["Distance", "Length", "Length"], values.Select(value => value.Label));
+        Assert.Equal(["Distance", "Width", "Depth"], values.Select(value => value.Label));
         byte[] pixels;
         Vector4 title;
 

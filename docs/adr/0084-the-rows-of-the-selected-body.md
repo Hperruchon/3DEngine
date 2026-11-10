@@ -7,7 +7,7 @@ date: 2026-11-07
 supersedes: []
 superseded-by: []
 amends: ['0034', '0081', '0082']
-amended-by: ['0098', '0099']
+amended-by: ['0098', '0099', '0117']
 affects:
   - 3DEngine.App/Ui/DesktopUi.Rows.cs
   - 3DEngine.App/Ui/DesktopUi.cs
@@ -114,3 +114,5 @@ ADR-0027 item 6 is wide, so a name of more than about nine letters ends with "..
 - 2026-11-08 · TASK-0312 · ADR-0098 item 4 amends item 1: the rows start 8 pixels under the command line.
 - 2026-11-08 · TASK-0313 · ADR-0099 item 1 amends item 1: on a landscape display the rows are at the upper left in the
   place of the panel. Item 6 holds.
+- 2026-11-10 · TASK-0342 · ADR-0117 items 1 and 3 amend item 2: the name is larger with its state after it, and a length
+  takes its label from its direction and the name of its constraint.
