@@ -9814,3 +9814,33 @@ task, which the branch r18c-values-b replaced. The drawing record merged first a
 New tests: 0. The test list holds 2440 (1550 in `Engine.Tests`, 356 in `3DEngine.Tests`, 531 in `3DEngine.ImageTests`, 3
 in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
 entries: 11 of 15. New diagnostic codes: 0. This entry is a codebase review, so 0 product milestones and 0 entries follow it.
+
+## v0.328 — The rows of a body show its name larger, the sketch that made it, and the direction of each value (R18d, TASK-0342)
+
+The owner accepted the proposal on the gaps to the render on 2026-11-10 (Q1 to Q7 A) and ordered R18d after R18c. This
+entry is slice S4: the rows of a body. Before it, the rows gave one size of text, the state in grey on a second line, no
+row "Made from" (ADR-0099 Q2 A waited for it), and two rows named "Length".
+
+**The change.** ADR-0117 amends ADR-0084 item 2, ADR-0091 item 2 and ADR-0099 item 3.
+- The name of the selected body is in Instrument Sans at 34 pixels, a third font of the atlas, and it is drawn a second
+  time 1 pixel to the right, because the binding draws the weight 400 only. Its state follows on the same line in green,
+  or in red for a fault; a state with no room goes under the name.
+- A row "Made from" gives the sketch that made the body, from the first step of its history that opens a sketch, as
+  "Plate on XY" in the accent. A tap opens that sketch, as its node of the history arc does. A box has no such row.
+- A length takes its label from the direction of its edge in the Document: x "Width", y "Depth", z "Height", else
+  "Length", with the name of its constraint, as "Width C1". The test of an axis compares squares, with no square root.
+  The value is in the mono font.
+
+**Proof.** 12 new tests in `3DEngine.ImageTests/BodyRowsRenderTests.cs`: the label of each direction, the values of a
+real plate, the first row on one line or two, and the row "Made from" and its tap by mouse and by touch. Nine
+injections each failed a named test; each file came back byte for byte. The picture of the bracket at 1440 by 900
+shows the rows. The phone project builds with zero warnings. Run 42915346671 passed on the branch. The failed runs since the
+entry v0.327, from the API: none. The codebase review of 2026-11-11 (v0.327) came first, because this close is the fifth
+product milestone after the review of v0.318.
+
+**What stays.** The bold is a second draw, not a bold face. The labels of a sketch on a plane that is not an axis plane
+are "Length". The rows of a sketch are slice S6 (R18f).
+
+New tests: 12. The test list holds 2452 (1550 in `Engine.Tests`, 356 in `3DEngine.Tests`, 543 in `3DEngine.ImageTests`, 3
+in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
+entries: 11 of 15. New diagnostic codes: 0. Since the review of v0.327, 1 product milestone and 1 entry followed it.

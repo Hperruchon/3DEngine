@@ -7,6 +7,9 @@ namespace ThreeDEngine.Desktop.Ui;
 // designer brief puts the data of the selected part in rows with no ground and no border: its name and its state, then
 // each value that a command changes, with its label and its exact value. A tap on a value row opens the pad of that value,
 // as its chip on the edge does (ADR-0082).
+// ADR-0117 (phase R18d, TASK-0342): the rows as in the render: the name larger and bold, with its state on the same line
+// when it has room; the row "Made from" with the sketch of the body, whose tap opens that sketch; each value with its label
+// from its direction, the name of its constraint, and the value in the mono font.
 internal sealed unsafe partial class DesktopUi
 {
     // The width of the column of the rows, and the height of one row: the 44 pixels of a target of ADR-0027 item 6.
@@ -25,6 +28,18 @@ internal sealed unsafe partial class DesktopUi
     internal const uint FailedColour = 0xFF5C5CE8;
 
     public static string RowItem(string key) => $"Row:{key}";
+
+    // ADR-0117 item 2: the row of the sketch that made the body, its label, and its step of the history; null with none.
+    public const string MadeFromItem = "Rows:madeFrom";
+    public const string MadeFromLabel = "Made from";
+    private (HistoryStep Step, Vector4 Rectangle)? _madeFrom;
+
+    // ADR-0117 item 1: the height of the first row of this frame: one row, or two lines when the state has no room after the
+    // name.
+    private float _titleHeight = RowHeight;
+
+    // ADR-0117 item 1: the gap between the name and the state on one line.
+    internal const float TitleGap = 12f;
 
     // The value rows of this frame, and the rectangle of each row with the first one.
     private List<(EdgeValues.Value Value, Vector4 Rectangle)> _rows = [];
@@ -64,9 +79,9 @@ internal sealed unsafe partial class DesktopUi
     // the rows of this frame.
     // ADR-0099 item 1 (the redesign, slice p, TASK-0313): the rows are at the upper left, in the place of the panel, which
     // does not show while they do. Until TASK-0313 they were at the upper right, under the command line.
-    private void PlaceRows(Vector2 displaySize, LiveBody? body, IReadOnlyList<EdgeValues.Value>? values, IReadOnlyList<LiveBody> bodies, DocumentLine? document)
+    private void PlaceRows(Vector2 displaySize, LiveBody? body, IReadOnlyList<EdgeValues.Value>? values, IReadOnlyList<LiveBody> bodies, DocumentLine? document, IReadOnlyList<HistoryStep>? history = null)
     {
-        (_rows, _rowsArea, _rowLines, _cutRow, _cutTools) = ([], null, [], null, []);
+        (_rows, _rowsArea, _rowLines, _cutRow, _cutTools, _madeFrom) = ([], null, [], null, [], null);
         if (!RowsShow(displaySize, body) || body is null)
         {
             _renaming = null;
@@ -76,10 +91,20 @@ internal sealed unsafe partial class DesktopUi
         var left = 16f + _inset.X;
         var right = left + RowsWidth;
         var top = PanelTop;
-        var y = top + RowHeight;
+        // ADR-0117 item 1: the first row is one row when the state fits after the name, else the name and a line of the state.
+        _titleHeight = RowTitle(body).OneLine ? RowHeight : RowHeight + ImGui.GetTextLineHeight();
+        var y = top + _titleHeight;
         // The review of Codex of v0.252 (TASK-0271): the rows end 16 pixels above the anchors, as the panel does; a value
         // that has no room keeps its chip only. Until TASK-0271 a long list went past the bottom of the display.
         var bottom = displaySize.Y - 32f - _inset.W - AnchorSize;
+
+        // ADR-0117 item 2 (ADR-0099 Q2): the row "Made from" with the sketch of the body: the first step of its history that
+        // opens a sketch. A body that no sketch made, as a box, has no such row.
+        if (history?.FirstOrDefault(step => step.Tap == HistoryTap.EditSketch) is { } sketchStep && y + RowHeight <= bottom)
+        {
+            _madeFrom = (sketchStep, new Vector4(left, y, right, y + RowHeight));
+            y += RowHeight;
+        }
         foreach (var value in values ?? [])
         {
             if (value.Body != body.Id)
@@ -173,9 +198,14 @@ internal sealed unsafe partial class DesktopUi
             && RowAt(io.MousePos) is { } released && RowAt(io.MouseClickedPos[0]) is { } pressed && pressed.Key == released.Key)
             Use(released);
 
+        // ADR-0117 item 2: a press and a release on the row "Made from" open its sketch, as its node of the history arc does.
+        if (_madeFrom is { } made && _pad is null && ImGui.IsMouseReleased(ImGuiMouseButton.Left) && !OverWindowAtRelease()
+            && Inside(made.Rectangle, io.MousePos) && Inside(made.Rectangle, io.MouseClickedPos[0]))
+            _actions.Add(new EditSketchAction(made.Step.Id));
+
         // ADR-0099 item 2: a press and a release on the first row open the name field; a pointer over it gives the reason of a
         // fault, as the line of the fault in the panel did until TASK-0313.
-        var titleArea = new Vector4(area.X, area.Y, area.Z, area.Y + RowHeight);
+        var titleArea = new Vector4(area.X, area.Y, area.Z, area.Y + _titleHeight);
         bool OnTitle(Vector2 point) => point.X >= titleArea.X && point.X < titleArea.Z && point.Y >= titleArea.Y && point.Y < titleArea.W;
         if (_pad is null && _renaming is null && ImGui.IsMouseReleased(ImGuiMouseButton.Left) && !OverWindowAtRelease()
             && OnTitle(io.MousePos) && OnTitle(io.MouseClickedPos[0]))
@@ -194,22 +224,44 @@ internal sealed unsafe partial class DesktopUi
         var line = ImGui.GetColorU32(colours[(int)ImGuiCol.Separator]);
         var (left, top, right) = (area.X, area.Y, area.Z);
         var middle = (RowHeight - ImGui.GetTextLineHeight()) / 2f;
-        var (name, parts) = RowTitle(body);
+        var (name, parts, oneLine) = RowTitle(body);
         var lineHeight = ImGui.GetTextLineHeight();
-        var first = top + ((RowHeight - (2f * lineHeight)) / 2f);
+        // ADR-0117 item 1: the name in the font of a title, drawn a second time 1 pixel to the right, because the binding draws
+        // the weight 400 only; its state after it on the same line, on the line of the text under it, or under it.
+        var nameAt = new Vector2(left, top + ((RowHeight - TitleSize) / 2f));
         if (_renaming == body.Id)
             RenameField(body, titleArea);
         else
-            list.AddText(new Vector2(left, first), text, name);
-        var x = left;
+        {
+            list.AddText(_titleFont, TitleSize, nameAt, text, name);
+            list.AddText(_titleFont, TitleSize, nameAt + new Vector2(1f, 0f), text, name);
+        }
+
+        var x = oneLine ? left + TitleWidth(name) + TitleGap : left;
+        var stateY = oneLine ? nameAt.Y + TitleSize - lineHeight - 2f : top + RowHeight;
         foreach (var (part, red) in parts)
         {
-            // ADR-0108 item 5 (phase R18a, TASK-0332): "correct" is green, as the render.
-            list.AddText(new Vector2(x, first + lineHeight), red ? FailedColour : part == "correct" ? Theme.Correct : quiet, part);
+            // ADR-0108 item 5 (phase R18a, TASK-0332): "correct" is green, as the render. ADR-0117 item 1: the kind too, as the
+            // render gives "Extrude · correct" in green.
+            var correct = body.Fault is null && !red;
+            list.AddText(new Vector2(x, stateY), red ? FailedColour : correct ? Theme.Correct : quiet, part);
             x += ImGui.CalcTextSize(part).X;
         }
-        list.AddLine(new Vector2(left, top + RowHeight), new Vector2(right, top + RowHeight), line, 1f);
+        list.AddLine(new Vector2(left, top + _titleHeight), new Vector2(right, top + _titleHeight), line, 1f);
         _items[RowsTitleItem] = titleArea;
+
+        // ADR-0117 item 2: "Made from" in the quiet colour, and the name of the sketch in the accent at the right.
+        if (_madeFrom is { } madeFrom)
+        {
+            var (min, max) = (new Vector2(madeFrom.Rectangle.X, madeFrom.Rectangle.Y), new Vector2(madeFrom.Rectangle.Z, madeFrom.Rectangle.W));
+            if (!ImGui.IsWindowHovered(ImGuiHoveredFlags.AnyWindow) && Inside(madeFrom.Rectangle, io.MousePos))
+                list.AddRectFilled(min, max, ImGui.GetColorU32(colours[(int)ImGuiCol.ButtonHovered]), 6f);
+            list.AddText(new Vector2(min.X, min.Y + middle), quiet, MadeFromLabel);
+            var sketch = Fit(madeFrom.Step.Text, RowsWidth - ImGui.CalcTextSize(MadeFromLabel).X - TitleGap);
+            list.AddText(new Vector2(max.X - ImGui.CalcTextSize(sketch).X, min.Y + middle), Theme.Accent, sketch);
+            list.AddLine(new Vector2(min.X, max.Y), max, line, 1f);
+            _items[MadeFromItem] = madeFrom.Rectangle;
+        }
 
         foreach (var (value, rectangle) in _rows)
         {
@@ -220,9 +272,13 @@ internal sealed unsafe partial class DesktopUi
                 list.AddRectFilled(min, max, ImGui.GetColorU32(colours[(int)ImGuiCol.ButtonHovered]), 6f);
             if (pending)
                 Dashed(list, min, max, DimensionColour);
-            list.AddText(new Vector2(min.X, min.Y + middle), quiet, value.Label);
-            var width = ImGui.CalcTextSize(value.Text).X;
-            list.AddText(new Vector2(max.X - width, min.Y + middle), pending ? DimensionColour : text, value.Text);
+            // ADR-0117 item 3: the label in the colour of the text, the name of its constraint in the quiet colour after it, and
+            // the value in the mono font of a value at the right.
+            list.AddText(new Vector2(min.X, min.Y + middle), text, value.Label);
+            if (value.Name is { } constraintName)
+                list.AddText(new Vector2(min.X + ImGui.CalcTextSize(value.Label).X + 8f, min.Y + middle), quiet, constraintName);
+            var width = _monoFont.CalcTextSizeA(FontSize, float.MaxValue, 0f, value.Text).X;
+            list.AddText(_monoFont, FontSize, new Vector2(max.X - width, min.Y + middle), pending ? DimensionColour : text, value.Text);
             list.AddLine(new Vector2(min.X, max.Y), max, line, 1f);
             _items[RowItem(value.Key)] = rectangle;
         }
@@ -281,9 +337,22 @@ internal sealed unsafe partial class DesktopUi
     // V129 (TASK-0271): the name of the first row, and the parts of its second line: the kind, "failed" and the code (red),
     // or "correct", and "hidden"; each line fits the width of the column. A state that is too wide loses the kind first,
     // then "hidden", so that "failed" and the code stay whole; the panel gives the kind and the visibility too.
-    internal (string Name, IReadOnlyList<(string Text, bool Red)> State) RowTitle(LiveBody body)
+    // ADR-0117 item 1 (TASK-0342): the name is in the font of a title, and OneLine is true when the state fits after it.
+    internal (string Name, IReadOnlyList<(string Text, bool Red)> State, bool OneLine) RowTitle(LiveBody body)
     {
-        var name = Fit(body.Name ?? body.Kind, RowsWidth);
+        var (name, state) = TitleParts(body);
+        return (name, state, TitleWidth(name) + TitleGap + ImGui.CalcTextSize(string.Concat(state.Select(part => part.Text))).X <= RowsWidth);
+    }
+
+    // The width of a text in the font of a title.
+    private float TitleWidth(string text) => _titleFont.CalcTextSizeA(TitleSize, float.MaxValue, 0f, text).X;
+
+    private static bool Inside(Vector4 rectangle, Vector2 point)
+        => point.X >= rectangle.X && point.X < rectangle.Z && point.Y >= rectangle.Y && point.Y < rectangle.W;
+
+    private (string Name, IReadOnlyList<(string Text, bool Red)> State) TitleParts(LiveBody body)
+    {
+        var name = FitTitle(body.Name ?? body.Kind, RowsWidth);
         var state = body.Fault is { } fault ? ($"failed {fault.Code}", true) : ("correct", false);
         List<(string Text, bool Red)>[] forms =
         [
@@ -298,6 +367,21 @@ internal sealed unsafe partial class DesktopUi
         }
 
         return (name, [(Fit(state.Item1, RowsWidth), state.Item2)]);
+    }
+
+    // ADR-0117 item 1: the text, or its start and "...", in the width, in the font of a title.
+    private string FitTitle(string text, float width)
+    {
+        if (TitleWidth(text) <= width)
+            return text;
+        for (var length = text.Length - 1; length > 0; length--)
+        {
+            var cut = text[..length] + "...";
+            if (TitleWidth(cut) <= width)
+                return cut;
+        }
+
+        return "...";
     }
 
     // The text, or its start and "...", in the width.
