@@ -1,7 +1,7 @@
 ---
 id: 0343
 title: The 2D drawing of a part has a date in the charter, with ADR-0118 and its roadmap rows
-status: Active
+status: Done
 phase: P0.142
 opened: 2026-11-10
 depends-on: [0341]
@@ -51,9 +51,13 @@ drawing with no question.
 
 ## Acceptance criteria
 
-- [ ] `ObjectiveReferenceGateTests`, `AdrGateTests` and `TaskGovernanceGateTests` pass.
-- [ ] The write-set check and `eng/repo-gates` pass; continuous integration passes on the branch and on `main` after the
+- [x] `ObjectiveReferenceGateTests`, `AdrGateTests` and `TaskGovernanceGateTests` pass.
+- [x] The write-set check and `eng/repo-gates` pass; continuous integration passes on the branch and on `main` after the
       merge.
+
+## Outcome
+
+Status: Done · commit (the merge of the branch drawing-roadmap) · v0.326
 
 ## Method
 
@@ -66,3 +70,4 @@ Weakest:    the estimates of the evenings of P10 and K9 come before their ADRs.
 - 2026-11-10: opened with the record, as TASK-0193 did for Android; the ledger entry waits for the merge of R18c (v0.325). The numbers TASK-0343 and ADR-0118 were
   reserved with the session of R18c and R18d at `main` 6b614f1. ADR-0118 affects `docs/CHARTER.md` only, so no open task
   that writes the roadmap needs it in `governed-by`.
+- 2026-11-10: R18c merged at v0.325, and the merge of `main` kept its row of ADR-0115 in the index. Closed at v0.326.

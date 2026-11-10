@@ -349,6 +349,8 @@ Therefore each approved objective must have a track here.
 - P0.141 — The medium and low findings of the codebase review of 2026-11-10: a turn refuses a quaternion of very small
   parts, a proposal shows an angle in degrees, and the path line and the focus are free during an accept. v0.324,
   TASK-0339, ADR-0114.
+- P0.142 — The 2D drawing of a part has a date in the charter: objective 18, ADR-0118 and the rows R21, K9, R22 and P10 to
+  P10c. v0.326, TASK-0343, ADR-0118.
 
 ## Track 0 — Foundations
 
