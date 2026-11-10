@@ -1,7 +1,7 @@
 ---
 id: 0314
 title: A path line from the document to the selection, and the rows of the document
-status: Active
+status: Done
 phase: R17a
 opened: 2026-11-08
 depends-on: [0313]
@@ -93,16 +93,20 @@ data of the document when nothing is selected.
 
 ## Acceptance criteria
 
-- [ ] ADR-0100 exists and records the answers of the owner of 2026-11-08. ADR-0075, ADR-0077, ADR-0093 and ADR-0099
+- [x] ADR-0100 exists and records the answers of the owner of 2026-11-08. ADR-0075, ADR-0077, ADR-0093 and ADR-0099
       show the amendment.
-- [ ] Escape on a selected body clears the selection; a test fails when Escape stops at the body again.
-- [ ] A tap on the file name clears the body; a tap on the body name clears the face.
-- [ ] With nothing selected on a landscape display, the rows give the kind, the unit and the counts, and a failed body
+- [x] Escape on a selected body clears the selection; a test fails when Escape stops at the body again.
+- [x] A tap on the file name clears the body; a tap on the body name clears the face.
+- [x] With nothing selected on a landscape display, the rows give the kind, the unit and the counts, and a failed body
       shows "failed" and its code.
-- [ ] The pictures at 1440 by 900 and 844 by 390 show the path line and the rows.
-- [ ] A clean build (`--no-incremental`) gives zero errors and zero warnings, and the phone project builds.
-- [ ] `dotnet test`, the write-set check and `eng/repo-gates` pass; continuous integration passes on the branch and on
+- [x] The pictures at 1440 by 900 and 844 by 390 show the path line and the rows.
+- [x] A clean build (`--no-incremental`) gives zero errors and zero warnings, and the phone project builds.
+- [x] `dotnet test`, the write-set check and `eng/repo-gates` pass; continuous integration passes on the branch and on
       `main` after the merge.
+
+## Outcome
+
+Status: Done · commit (the merge of the branch r17a-path-line) · v0.316
 
 ## Notes for the implementer
 
