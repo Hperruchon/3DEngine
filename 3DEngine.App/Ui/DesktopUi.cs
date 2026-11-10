@@ -45,6 +45,8 @@ internal sealed unsafe partial class DesktopUi : IDisposable
     public const string HideLabel = "Hide";
     public const string ShowLabel = "Show";
     public const string ShowAllLabel = "Show all";
+    // ADR-0101 item 3 (phase R17b, TASK-0315): the segment of the ring and the command that start and end a focus.
+    public const string FocusLabel = "Focus";
     // ADR-0102 item 1 (phase P9g, TASK-0316): each control of a file opens a dialog of the system, so its label ends with
     // three dots. Until TASK-0316 the panel had a field "File name" and the buttons Save as, Open and Export STL.
     public const string OpenProjectLabel = "Open project...";
@@ -297,6 +299,9 @@ internal sealed unsafe partial class DesktopUi : IDisposable
     private bool _hiddenToo;
 
     public bool ShowDimensions => _dimensions;
+
+    // ADR-0101 items 3 and 4 (phase R17b, TASK-0315): the body of the focus, which the host gives before each frame, or null.
+    internal Guid? Focus { get; set; }
 
     // ADR-0083 (TASK-0259): an import turns the dimensions on, so the name and the size of the part show at once.
     internal void ShowDimensionsOn() => _dimensions = true;

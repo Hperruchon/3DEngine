@@ -27,9 +27,22 @@ internal sealed class BodyActions(DocumentSession session)
         {
             if (_selection != value)
                 Face = null;
+            // ADR-0101 item 5 (phase R17b, TASK-0315): a selection of another body, or of no body, ends the focus.
+            if (value != Focus)
+                Focus = null;
             _selection = value;
         }
     }
+
+    // ADR-0101 item 1 (phase R17b, TASK-0315): the body of the focus, or null. It is a state of the client: no command, so the
+    // log, Undo and the visibility of each body do not change. While a focus lasts, the selection is its body.
+    public Guid? Focus { get; private set; }
+
+    // ADR-0101 items 3 and 5: "Focus" starts a focus on the selected body, and "Focus" again, or the close mark, ends it. The
+    // body stays selected.
+    public void ToggleFocus() => Focus = Focus is null ? Selection : null;
+
+    public void EndFocus() => Focus = null;
 
     private DatumReference? _face;
 
@@ -107,6 +120,9 @@ internal sealed class BodyActions(DocumentSession session)
                     Edge = null;
                     Face = FaceAt(on);
                 }
+                // ADR-0101 item 7: inside a focus, a tap on no body goes up to the level of the body, and the focus stays.
+                else if (hit is null && Focus is not null)
+                    Face = null;
                 else
                     Selection = hit?.Id;
                 return true;
@@ -120,6 +136,10 @@ internal sealed class BodyActions(DocumentSession session)
                 return true;
             case CancelIntent { ByKey: true } when Face is not null:
                 Face = null;
+                return true;
+            // ADR-0101 item 6 (phase R17b, TASK-0315): at the level of the body, Escape ends the focus first and keeps the body.
+            case CancelIntent { ByKey: true } when Focus is not null:
+                Focus = null;
                 return true;
             case CancelIntent { ByKey: true } when Selection is not null:
                 Selection = null;
@@ -192,7 +212,7 @@ internal sealed class BodyActions(DocumentSession session)
     {
         var result = session.Apply(new TranslateCommand { BodyId = body, Dx = dx, Dy = dy, Dz = dz }).GetAwaiter().GetResult();
         if (result.Status == CommandStatus.Applied && result.Outputs.TryGet<Guid>("bodyId", out var moved))
-            Selection = moved;
+            Follow(body, moved);
         return Rejection(result);
     }
 
@@ -266,8 +286,18 @@ internal sealed class BodyActions(DocumentSession session)
     {
         var result = session.Apply(new SubtractCommand { MinuendBodyId = body, SubtrahendBodyId = tool }).GetAwaiter().GetResult();
         if (result.Status == CommandStatus.Applied && result.Outputs.TryGet<Guid>("bodyId", out var cut))
-            Selection = cut;
+            Follow(body, cut);
         return Rejection(result);
+    }
+
+    // ADR-0101 item 8 (phase R17b, TASK-0315): the new body of a move or a cut becomes the selection, and the focus goes to it
+    // when the source was the body of the focus.
+    private void Follow(Guid source, Guid made)
+    {
+        var focused = Focus == source;
+        Selection = made;
+        if (focused)
+            Focus = made;
     }
 
     // The name of the face under a hit, from GetFaceAt (ADR-0053 item 1), or null.

@@ -54,8 +54,25 @@ internal sealed unsafe class SceneRenderer : IDisposable
     // The count of meshes that the scene uploaded (V48, TASK-0118).
     public int Meshes => _bodies.Meshes;
 
-    // The triangles of each live body for a pick (ADR-0029 item 1).
-    public IEnumerable<PickBody> PickBodies => _bodies.PickBodies;
+    // The triangles of each live body for a pick (ADR-0029 item 1). ADR-0101 item 2: while a focus lasts, a pick finds the
+    // body of the focus only.
+    public IEnumerable<PickBody> PickBodies
+        => Focus is { } focus ? _bodies.PickBodies.Select(body => body.Id == focus ? body : body with { Visible = false }) : _bodies.PickBodies;
+
+    // ADR-0101 item 2 (phase R17b, TASK-0315): the body of the focus, or null. This is the one place of the rule: while a focus
+    // lasts, the renderer draws the body of the focus only, a pick finds it only, and the dimensions take its box only. The
+    // visibility of each body, the box of the far plane and the camera do not change.
+    public Guid? Focus { get; set; }
+
+    // ADR-0101 item 2: a draw list that keeps the draws of the mesh of the focus only.
+    private sealed class FocusList(DrawList list, string meshId) : IDrawList
+    {
+        public void Add(string mesh, System.Numerics.Matrix4x4 modelView)
+        {
+            if (mesh == meshId)
+                list.Add(mesh, modelView);
+        }
+    }
 
     // ADR-0029 item 8 (decision KD6 of the owner): the camera frames the visible bodies only
     // when their set goes from empty to not empty, so a later change of a body, a rename or a
@@ -71,7 +88,9 @@ internal sealed unsafe class SceneRenderer : IDisposable
     public ((double X, double Y, double Z) Min, (double X, double Y, double Z) Max)? Bounds => _bodies.Bounds;
 
     // ADR-0056 items 3 and 6 (phase R13): the boxes of the dimension overlay, kept until a change (V81).
-    public ((double X, double Y, double Z) Min, (double X, double Y, double Z) Max)? Union(bool hiddenToo) => _bodies.Union(hiddenToo);
+    // ADR-0101 item 2: while a focus lasts, the box of the body of the focus only.
+    public ((double X, double Y, double Z) Min, (double X, double Y, double Z) Max)? Union(bool hiddenToo)
+        => Focus is { } focus ? _bodies.BoxOf(focus) : _bodies.Union(hiddenToo);
 
     // The count of the unions that the bodies made, for a test of V81.
     internal int UnionsMade => _bodies.UnionsMade;
@@ -138,7 +157,7 @@ internal sealed unsafe class SceneRenderer : IDisposable
     public void Record(VkCommandBuffer commandBuffer, VkFramebuffer framebuffer, VkExtent2D extent, Scene scene, Camera camera, Action<VkCommandBuffer>? overlay = null, Guid? selected = null, IReadOnlyList<ImageQuad>? images = null)
     {
         _drawList.Clear();
-        SceneWalker.Fill(scene, camera, _drawList);
+        SceneWalker.Fill(scene, camera, Focus is { } focus ? new FocusList(_drawList, focus.ToString()) : _drawList);
 
         // The colour, and the depth of the far plane of the reversed projection.
         VkClearValue* clearValues = stackalloc VkClearValue[2];

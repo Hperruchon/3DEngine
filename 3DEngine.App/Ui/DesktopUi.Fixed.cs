@@ -91,6 +91,15 @@ internal sealed unsafe partial class DesktopUi
 
     public static string PathSegmentItem(PathLevel level) => $"Path:{level}";
 
+    // ADR-0101 item 4 (phase R17b, TASK-0315): the word "Focus" before the name of the body, and the close mark at the end of
+    // the path line, while a focus lasts.
+    public const string FocusMarkItem = "Path:Focus";
+    public const string FocusCloseItem = "Path:Close";
+
+    // ADR-0101 item 4: the room of the word "Focus" and of its space, and the room of the close mark and of its gap.
+    private float FocusRoom(LiveBody? body)
+        => Focus is not null && body is not null ? ImGui.CalcTextSize(FocusLabel).X + 8f + MinimumControlHeight + 8f : 0f;
+
     // ADR-0100 item 1: the height of a segment, the width of the place of a separator between two segments, and the space
     // above the text of a segment.
     internal const float PathHeight = MinimumControlHeight;
@@ -144,7 +153,8 @@ internal sealed unsafe partial class DesktopUi
     private void PathRow(DocumentLine? document, LiveBody? body, float room, float pad)
     {
         var segments = PathSegments(document, body);
-        var texts = PathFit([.. segments.Select(segment => segment.Text)], room);
+        var focus = Focus is not null && body is not null;
+        var texts = PathFit([.. segments.Select(segment => segment.Text)], room - FocusRoom(body));
         var colours = ImGui.GetStyle().Colors;
         var list = ImGui.GetWindowDrawList();
         var quiet = ImGui.GetColorU32(colours[(int)ImGuiCol.TextDisabled]);
@@ -162,6 +172,14 @@ internal sealed unsafe partial class DesktopUi
 
             var size = new Vector2(ImGui.CalcTextSize(texts[i]).X, PathHeight);
             var level = segments[i].Level;
+            // ADR-0101 item 4: "Focus" in the quiet colour before the name of the body; it takes no tap.
+            if (focus && level == PathLevel.Body)
+            {
+                Label(FocusLabel, quiet: true, pad);
+                _items[FocusMarkItem] = new Vector4(ImGui.GetItemRectMin(), ImGui.GetItemRectMax().X, ImGui.GetItemRectMax().Y);
+                ImGui.SameLine(0f, 8f);
+            }
+
             if (i < segments.Count - 1)
             {
                 if (ImGui.InvisibleButton($"##path{level}", size))
@@ -176,6 +194,23 @@ internal sealed unsafe partial class DesktopUi
 
             Item(PathSegmentItem(level));
             list.AddText(ImGui.GetItemRectMin() + new Vector2(0f, pad), ImGui.GetColorU32(colours[(int)ImGuiCol.Text]), texts[i]);
+        }
+
+        // ADR-0101 item 4: the close mark at the end of the line, 44 by 44 pixels, so it does not move when the person selects a
+        // face. A tap on it ends the focus.
+        if (focus)
+        {
+            ImGui.SameLine(0f, 8f);
+            if (ImGui.InvisibleButton("##pathClose", new Vector2(MinimumControlHeight, MinimumControlHeight)))
+                _actions.Add(new EndFocusAction());
+            Item(FocusCloseItem);
+            var (min, max) = (ImGui.GetItemRectMin(), ImGui.GetItemRectMax());
+            if (ImGui.IsItemHovered())
+                list.AddRectFilled(min, max, ImGui.GetColorU32(colours[(int)ImGuiCol.ButtonHovered]), 6f);
+            var middle = (min + max) / 2f;
+            var ink = ImGui.GetColorU32(colours[(int)ImGuiCol.Text]);
+            list.AddLine(middle + new Vector2(-7f, -7f), middle + new Vector2(7f, 7f), ink, 2f);
+            list.AddLine(middle + new Vector2(7f, -7f), middle + new Vector2(-7f, 7f), ink, 2f);
         }
 
         var folderRoom = room - ImGui.CalcTextSize(texts[0]).X - 12f;

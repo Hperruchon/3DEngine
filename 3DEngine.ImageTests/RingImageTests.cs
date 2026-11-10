@@ -46,7 +46,8 @@ public class RingImageTests
             var data = UiDrawData.Empty;
             for (var frame = 0; frame < 3; frame++)
                 data = ui.Frame(1f / 60f, new Vector2(Width, Height), Vector2.One, renderer.LiveBodies, body, ringCentre: centre, ringBody: size);
-            ring = DesktopUi.Layout(new Vector2(Width, Height), centre, 2, size);
+            // ADR-0101 item 3 (TASK-0315): a box has Move, Hide and Focus.
+            ring = DesktopUi.Layout(new Vector2(Width, Height), centre, 3, size);
 
             pixels = target.Render((commandBuffer, framebuffer, frameExtent) =>
                 renderer.Record(commandBuffer, framebuffer, frameExtent, scene, camera,
@@ -58,7 +59,7 @@ public class RingImageTests
             $"The validation layer gave {GraphicsDevice.ValidationMessageCount - messagesBefore} messages.");
 
         // The middle of the segment Move is not the clear: the ring is drawn there.
-        var move = ring.Middle(ring.Segments([DesktopUi.MoveLabel, DesktopUi.HideLabel])[0]);
+        var move = ring.Middle(ring.Segments([DesktopUi.MoveLabel, DesktopUi.HideLabel, DesktopUi.FocusLabel])[0]);
         var index = (((int)move.Y * (int)Width) + (int)move.X + 20) * 4;
         var clear = Theme.Clear;
         var (r, g, b) = (pixels[index], pixels[index + 1], pixels[index + 2]);
