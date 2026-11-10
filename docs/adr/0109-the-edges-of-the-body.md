@@ -78,3 +78,4 @@ frame time on the phone is not measured; register entry R-0061 holds the questio
 ## History
 
 - 2026-11-10 · TASK-0333 · The record, from slice S2 of the proposal of 2026-11-10 and the answers of the owner.
+- 2026-11-10 · TASK-0333 · Shipped at v0.322.
