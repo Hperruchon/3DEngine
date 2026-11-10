@@ -271,8 +271,20 @@ public sealed class NativeThreeDEngine : IThreeDEngine, IDisposable
         var window = _window.Extent;
         var layout = GizmoLayout();
         _intents.HitTest = layout is null ? null : (x, y) => TranslateGizmo.Hit(layout, x, y);
-        foreach (var intent in _intents.Step(_ui is null ? frame : _ui.Route(frame)))
+        // ADR-0111 item 3 (TASK-0331): while an accept runs, an intent that changes the Document is held, and the end of a drag
+        // of the gizmo is a cancel (finding V163).
+        var held = _proposalAccept is not null;
+        foreach (var taken in _intents.Step(_ui is null ? frame : _ui.Route(frame)))
         {
+            var intent = taken;
+            if (held && AcceptHold.Holds(intent))
+            {
+                _documentMessage = AcceptHold.Text;
+                if (intent is not GizmoEndIntent)
+                    continue;
+                intent = new GizmoCancelIntent();
+            }
+
             // ADR-0038 item 2: a drag of the gizmo moves the drawing, and its end sends one Translate.
             if (_actions is not null && _renderer is not null
                 && _gizmo.Apply(intent, Camera, window.width, window.height, Selection, _renderer.Pivot, _renderer.Preview, _actions.Move, out var rejection))
@@ -289,7 +301,7 @@ public sealed class NativeThreeDEngine : IThreeDEngine, IDisposable
             // ADR-0053 item 6: an armed tap of the mode Scene starts a sketch on the face under it.
             if (_ui is not null && _ui.FaceArm.Take(intent, out var face))
             {
-                _documentMessage = SketchOnFace(face.X, face.Y);
+                _documentMessage = held ? AcceptHold.Text : SketchOnFace(face.X, face.Y);
                 continue;
             }
 
@@ -408,11 +420,21 @@ public sealed class NativeThreeDEngine : IThreeDEngine, IDisposable
             return;
 
         // ADR-0053 item 6 and findings V77 and V84: the panel applies each action to the arm of the button Face.
-        TakeOpenedFile();
+        // ADR-0111 item 3 (TASK-0331): while an accept runs, a file that a dialog gave waits, and each action that changes the
+        // Document is held; a pad stays open with the reason (finding V163).
+        if (_proposalAccept is null)
+            TakeOpenedFile();
         var actions = _ui.TakeActions();
         _documentMessage = _ui.ArmMessage ?? _documentMessage;
         foreach (var action in actions)
         {
+            if (_proposalAccept is not null && AcceptHold.Holds(action))
+            {
+                _documentMessage = AcceptHold.Text;
+                _ui.EndPad(AcceptHold.Text);
+                continue;
+            }
+
             switch (action)
             {
                 case SelectBodyAction select:
@@ -829,10 +851,15 @@ public sealed class NativeThreeDEngine : IThreeDEngine, IDisposable
         // ADR-0105 item 1 (TASK-0327): the values of the active sketch on its lines and its curves, from the sketches of the frame.
         var sketchValues = SketchValuesOf(_sketchActions, _sketches?.Live ?? [], Camera, window.width, window.height, _host.Session.LengthUnit);
 
-        // ADR-0104 item 1: the steps that made the selected body, from GetFeatures, for the history arc.
-        var history = _history.Steps(version, Selection, () => HistorySteps.Of(
-            _host.Session.Query<Engine.Core.Queries.FeaturesInfo>(new Engine.Core.Queries.GetFeaturesQuery()).GetAwaiter().GetResult().Result,
-            _renderer.LiveBodies, _sketches?.Live ?? [], Selection));
+        // ADR-0104 item 1: the steps that made the selected body, from GetFeatures, for the history arc. Finding V161 (TASK-0331):
+        // the query runs on the thread pool with the bodies and the sketches of this frame, and the frame does not wait for it.
+        var history = _history.Steps(version, Selection, () =>
+        {
+            var (bodies, sketched, selected) = (_renderer.LiveBodies.ToList(), (_sketches?.Live ?? []).ToList(), Selection);
+            return Task.Run(async () => HistorySteps.Of(
+                (await _host.Session.Query<Engine.Core.Queries.FeaturesInfo>(new Engine.Core.Queries.GetFeaturesQuery()).ConfigureAwait(false)).Result,
+                bodies, sketched, selected));
+        });
 
         // ADR-0092 items 6 and 7 (TASK-0326): the outcome of a complete accept, and the waiting proposals, which the queue gives
         // with no read of the session.

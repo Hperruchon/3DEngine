@@ -70,16 +70,17 @@ public sealed class Proposals : IDisposable
         }
     }
 
-    // Item 2: the agent withdraws an open proposal. A closed proposal, or a proposal that applies now, is refused.
-    internal (Proposal? Proposal, bool Found) Withdraw(Guid id)
+    // Item 2: the agent withdraws an open proposal. A closed proposal, or a proposal that applies now, is refused. The state
+    // is the state of the proposal before the call, or null when no proposal has the identifier.
+    internal (Proposal? Proposal, string? State) Withdraw(Guid id)
     {
         lock (_lock)
         {
             if (Of(id) is not { } entry)
-                return (null, false);
+                return (null, null);
             if (entry.State != ProposalStates.Open)
-                return (null, true);
-            return (CloseLocked(entry, ProposalStates.Withdrawn), true);
+                return (null, entry.State);
+            return (CloseLocked(entry, ProposalStates.Withdrawn), ProposalStates.Open);
         }
     }
 
@@ -88,6 +89,11 @@ public sealed class Proposals : IDisposable
     // apply; the commands before it stay applied, and the proposal is failed with the index and the code of that command.
     // While it applies, the state is applying, and a second accept or a reject of it is refused. The result is null when the
     // proposal is not open. The window calls this off the thread of the frame.
+    //
+    // Finding E198 of the codebase review of 2026-11-09 (b) (TASK-0331): a command whose identifier the session knows gets
+    // the cached result of the bus, and nothing applies. Only a commit sends command.applied, so a result with the status
+    // Applied and no such event of its command did not apply now: the apply stops there, and the proposal is failed with
+    // E-API-PROPOSAL-COMMAND-KNOWN and no result for that command. Until TASK-0331 the proposal counted it as applied.
     public async Task<Proposal?> Accept(Guid id, CancellationToken ct = default)
     {
         Entry entry;
@@ -103,9 +109,18 @@ public sealed class Proposals : IDisposable
         {
             for (var i = 0; i < entry.Commands.Count; i++)
             {
+                lock (_lock)
+                    (entry.Running, entry.Committed) = (entry.Commands[i].CommandId, false);
                 var result = await _session.Apply(entry.Commands[i], ct).ConfigureAwait(false);
                 lock (_lock)
                 {
+                    entry.Running = null;
+                    if (result.Status == CommandStatus.Applied && !entry.Committed)
+                    {
+                        (entry.FailedIndex, entry.FailedCode) = (i, DiagnosticCodes.ApiProposalCommandKnown);
+                        return CloseLocked(entry, ProposalStates.Failed);
+                    }
+
                     entry.Results.Add(result);
                     if (result.Status != CommandStatus.Applied)
                     {
@@ -142,7 +157,8 @@ public sealed class Proposals : IDisposable
     public void Dispose() => _subscription.Dispose();
 
     // Item 4: an applied command after the post changes the version of the Document, so each open proposal is stale. The
-    // action runs inside the commit; it takes only the lock of the queue.
+    // action runs inside the commit; it takes only the lock of the queue. The commit of the command that an accept applies
+    // marks that command as committed (finding E198).
     private void OnEvent(EventRecord record)
     {
         if (record.Kind != CommandApplied)
@@ -153,6 +169,8 @@ public sealed class Proposals : IDisposable
             {
                 if (entry.State == ProposalStates.Open)
                     entry.Stale = true;
+                else if (entry.State == ProposalStates.Applying && entry.Running is { } running && running == record.CauseCommandId)
+                    entry.Committed = true;
             }
         }
     }
@@ -194,6 +212,11 @@ public sealed class Proposals : IDisposable
         public int? FailedIndex { get; set; }
 
         public string? FailedCode { get; set; }
+
+        // The identifier of the command that the accept applies now, and true when its commit sent command.applied.
+        public Guid? Running { get; set; }
+
+        public bool Committed { get; set; }
     }
 }
 

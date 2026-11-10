@@ -64,13 +64,20 @@ internal static class ProposalsEndpoint
         if (envelopes.Count is 0 or > Proposals.MostCommands)
             return ApiErrorEnvelope.BadRequest($"The proposal has {envelopes.Count} envelopes; a proposal has from 1 to {Proposals.MostCommands}.");
 
+        // Finding E198 of the codebase review of 2026-11-09 (b) (TASK-0331): a command identifier that an earlier envelope of
+        // the proposal holds is refused. Until TASK-0331 the bus gave the cached result of the first one for the second one,
+        // and the proposal counted two applied commands for one step of undo.
         var commands = new List<(ProposedCommand, Command)>(envelopes.Count);
+        var first = new Dictionary<Guid, int>();
         for (var i = 0; i < envelopes.Count; i++)
         {
             var (built, refusal) = Build(host, envelopes[i]);
             if (refusal is not null)
                 return Refused(i, refusal);
-            commands.Add(built!.Value);
+            var commandId = built!.Value.Item1.CommandId;
+            if (!first.TryAdd(commandId, i))
+                return Refused(i, $"The commandId {commandId} is the commandId of commands[{first[commandId]}]; each command of a proposal has its own identifier.");
+            commands.Add(built.Value);
         }
 
         // Item 4: the proposal keeps the version of the Document at the post. It enters the queue inside the read, so each
@@ -100,13 +107,17 @@ internal static class ProposalsEndpoint
     {
         if (!Guid.TryParse(id, out var key))
             return NotFound(id);
-        var (withdrawn, found) = host.Proposals.Withdraw(key);
-        if (!found)
+        var (withdrawn, state) = host.Proposals.Withdraw(key);
+        if (state is null)
             return NotFound(id);
+        // Finding E199 of the codebase review of 2026-11-09 (b) (TASK-0331): the refusal names the state of the proposal. Until
+        // TASK-0331 the text of a proposal that applies said that it was closed.
         return withdrawn is null
             ? Failure(
                 DiagnosticCodes.ApiProposalClosed,
-                $"The proposal {key} is not open: the person accepted or rejected it, or it was withdrawn or failed. Read it with GET /proposals/{key}.",
+                state == ProposalStates.Applying
+                    ? $"The proposal {key} is not open: its state is applying, because the person accepted it and its commands apply now. Read it with GET /proposals/{key}."
+                    : $"The proposal {key} is not open: its state is {state}. Read it with GET /proposals/{key}.",
                 StatusCodes.Status409Conflict)
             : Results.Json(withdrawn, ApiJson.Options);
     }
