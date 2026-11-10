@@ -9844,3 +9844,32 @@ are "Length". The rows of a sketch are slice S6 (R18f).
 New tests: 12. The test list holds 2452 (1550 in `Engine.Tests`, 356 in `3DEngine.Tests`, 543 in `3DEngine.ImageTests`, 3
 in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
 entries: 11 of 15. New diagnostic codes: 0. Since the review of v0.327, 1 product milestone and 1 entry followed it.
+
+## v0.329 — The ring gives Edit sketch and Rename, and the history arc is a bright line with its nodes on it (R18e, TASK-0346)
+
+The owner accepted the proposal on the gaps to the render on 2026-11-10 (Q1 to Q7 A) and ordered R18e after R18d. This
+entry is slice S5: the ring and the history arc. Before it, the ring of a body had no "Edit sketch" and no "Rename", and the
+history arc was faint, with a round button of 44 pixels and an icon for each node.
+
+**The change.** ADR-0119 amends ADR-0081 items 1 to 3, ADR-0098 item 3 and ADR-0104 item 3.
+- "Edit sketch", with a pencil, starts the ring of a body that a sketch made, and opens that sketch. "Rename", with a letter
+  T, follows "Focus" on a landscape display and opens the name field of the rows. The command line holds "Edit sketch".
+- A landscape ring spans at most four segments, 1.84 radians, so its top segment ends before Accept of a proposal at 305
+  degrees. More tools get narrower segments, each at least 46 pixels at the inner radius; on a small ring "Rename" and
+  then "Edit sketch" leave it, and the rows still give both. A first form let the ring span 2.6 radians; the layout test
+  at 640 by 360 and the test of the dimmed tools showed that its top segment reached the top bar and the arc of a
+  proposal. A selected face gave an extrude five segments before this entry, with the same fault while a proposal waits.
+- The history arc is the accent with a glow; the node of the selected body is a filled dot, each other node a ring, on
+  the arc; the target of a tap stays 44 pixels.
+
+**Proof.** 7 new tests in `3DEngine.ImageTests/RingToolsTests.cs`: the two tools and their taps, no "Edit sketch" for a
+box and no "Rename" on a portrait ring, the span at three sizes, the command, and the target of a node. Eight injections
+each failed a named test; each file came back byte for byte. The picture of the bracket at 1440 by 900 shows the ring and
+the arc. The phone project builds with zero warnings. Run 42925544590 passed on the branch. The failed runs since the entry
+v0.328, from the API: none.
+
+**What stays.** "Focus" has no icon. On a small display the two new tools are in the rows and the command line only.
+
+New tests: 7. The test list holds 2459 (1550 in `Engine.Tests`, 356 in `3DEngine.Tests`, 550 in `3DEngine.ImageTests`, 3
+in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
+entries: 11 of 15. New diagnostic codes: 0. Since the review of v0.327, 2 product milestones and 2 entries followed it.

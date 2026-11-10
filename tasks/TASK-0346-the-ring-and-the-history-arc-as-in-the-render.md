@@ -1,7 +1,7 @@
 ---
 id: 0346
 title: The ring with Edit sketch and Rename, and the history arc, as in the render
-status: Active
+status: Done
 phase: R18e
 opened: 2026-11-11
 depends-on: [0342]
@@ -64,23 +64,23 @@ proposal.
 
 ## Acceptance criteria
 
-- [ ] ADR-0119 exists. ADR-0081, ADR-0098 and ADR-0104 show the amendment.
-- [ ] A test proves the tap of each new tool; it fails when the tap gives no action.
-- [ ] A test proves the span of a landscape ring; it fails when six segments keep 0.42 radians.
-- [ ] The picture of the bracket at 1440 by 900 shows "Edit sketch", "Rename" and the history arc.
-- [ ] A clean build (`--no-incremental`) gives zero errors and zero warnings, and the phone project builds.
-- [ ] `dotnet test`, the write-set check and `eng/repo-gates` pass; continuous integration passes on the branch and on
+- [x] ADR-0119 exists. ADR-0081, ADR-0098 and ADR-0104 show the amendment.
+- [x] A test proves the tap of each new tool; it fails when the tap gives no action.
+- [x] A test proves the span of a landscape ring; it fails when six segments keep 0.42 radians.
+- [x] The picture of the bracket at 1440 by 900 shows "Edit sketch", "Rename" and the history arc.
+- [x] A clean build (`--no-incremental`) gives zero errors and zero warnings, and the phone project builds.
+- [x] `dotnet test`, the write-set check and `eng/repo-gates` pass; continuous integration passes on the branch and on
       `main` after the merge.
 
 ## Outcome
 
-Status: Active
+Status: Done · commit (the merge of the branch r18e-ring-history) · v0.329
 
 ## Method
 
 Mechanical: the two tools from the actions that exist; the look of the arc.
 Judgement:  the span of four segments; the tools that leave a small ring; no Rename on a portrait ring.
-Weakest:    to be written at the close.
+Weakest:    the look of the arc and of its dots: a test reads the targets and the sizes, and the picture shows the rest.
 
 ## Progress
 
@@ -90,3 +90,9 @@ Weakest:    to be written at the close.
   top bar and the arc of a proposal, so the span is four segments.
 - 2026-11-11: merge of the closed branch of R18d (4deec1d, v0.328): the index of the ADRs keeps the rows of ADR-0118 and
   ADR-0119; TASK-0342 is Done, so it needs no ADR-0119.
+- 2026-11-11: run 42925544590 passed on the work commit. Eight injections each failed a named test: no action of "Edit
+  sketch", no name field from "Rename", "Edit sketch" for each body, "Rename" on a portrait ring, the old span, no tool
+  that leaves a small ring, no command "Edit sketch", and a dot as large as its target. `RingImageTests.cs` and
+  `ProposalArcTests.cs` count the tool "Rename". The comment of the span cites ADR-0119 only, because the gate of
+  citations asks a cited ADR to name the file. R18d merged first; the merge of `main` holds it. Closed at v0.329.
+- 2026-11-11: merge of `main` at dead9f0 (v0.328, R18d), with no change of its own.
