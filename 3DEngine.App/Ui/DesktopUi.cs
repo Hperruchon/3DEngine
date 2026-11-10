@@ -388,6 +388,9 @@ internal sealed unsafe partial class DesktopUi : IDisposable
     // The rectangle (left, top, right, bottom) of a control of the last frame, or null.
     public Vector4? ItemRectangle(string label) => _items.TryGetValue(label, out var rectangle) ? rectangle : null;
 
+    // ADR-0113 item 1 (phase R19, TASK-0336): each control of the last frame with its rectangle, for the test of the layout.
+    internal IReadOnlyDictionary<string, Vector4> ItemRectangles => _items;
+
     // The rectangles (left, top, right, bottom) of the panels of the last frame.
     public IReadOnlyList<Vector4> PanelRectangles => _panels;
 

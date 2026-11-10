@@ -66,7 +66,7 @@ internal sealed unsafe partial class DesktopUi
             {
                 // Finding V156 of the codebase review of 2026-11-09 (TASK-0324): the command line shows on a landscape display
                 // only, so only there the top bar leaves its width.
-                var commandLeft = displaySize.X - 16f - _inset.Z - CommandWidth;
+                var commandLeft = CommandLeft(displaySize);
                 var room = commandLeft - 12f - left - ImGui.CalcTextSize(program).X - ImGui.CalcTextSize(_unit).X - 24f;
                 Label(program, quiet: false, pad);
                 ImGui.SameLine(0f, 12f);

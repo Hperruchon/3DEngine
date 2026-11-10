@@ -21,6 +21,14 @@ internal sealed unsafe partial class DesktopUi
     internal const float CommandWidth = 300f;
     internal const int CommandListLength = 8;
 
+    // ADR-0113 item 4 (phase R19, TASK-0336): on a narrow landscape display the field is 30 percent of the width, at least 200
+    // pixels, so the top bar and the panel keep their room at its left. Until TASK-0336 it was 300 pixels at each width, and
+    // at 640 by 360 it overlapped the top bar and the panel.
+    internal static float CommandLineWidth(Vector2 display) => Math.Min(CommandWidth, Math.Max(display.X * 0.3f, 200f));
+
+    // ADR-0113 item 4: the left side of the field on a landscape display.
+    private float CommandLeft(Vector2 display) => display.X - 16f - _inset.Z - CommandLineWidth(display);
+
     private string _command = string.Empty;
     private int _commandIndex;
     private bool _focusCommand;
@@ -117,7 +125,7 @@ internal sealed unsafe partial class DesktopUi
         }
 
         var right = displaySize.X - 16f - _inset.Z;
-        var width = Math.Min(CommandWidth, Math.Max(right - 16f - _inset.X, 0f));
+        var width = Math.Min(CommandLineWidth(displaySize), Math.Max(right - 16f - _inset.X, 0f));
         ImGui.SetNextWindowPos(new Vector2(right - width, 16f + _inset.Y), ImGuiCond.Always);
         ImGui.PushStyleVar(ImGuiStyleVar.WindowPadding, Vector2.Zero);
         if (ImGui.Begin("##Command", FixedFlags))

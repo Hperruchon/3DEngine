@@ -7,7 +7,7 @@ date: 2026-11-06
 supersedes: []
 superseded-by: []
 amends: []
-amended-by: ['0084', '0086', '0095']
+amended-by: ['0084', '0086', '0095', '0113']
 affects:
   - 3DEngine.App/Ui/DesktopUi.Ring.cs
   - 3DEngine.App/Ui/DesktopUi.cs
@@ -89,3 +89,5 @@ are not on the ring yet.
   the left of the sketch on a landscape display; the portrait inner radius grows past 150 pixels when a segment needs it.
 - 2026-11-08 · TASK-0306 · Amended by ADR-0095: the look of the orbit of the render (a guide, a light ground, icons and a
   caption).
+- 2026-11-10 · TASK-0336 · ADR-0113 item 5: on a short landscape display the inner radius of the ring of a body is at
+  most the half of the height above the anchors less the band and 16 pixels, and at least 100.

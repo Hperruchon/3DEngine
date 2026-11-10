@@ -116,4 +116,4 @@ the frame of a datum on a face (ADR-0051) and the check of a gone face (ADR-0059
 
 - 2026-11-10 · TASK-0335 · The record, for register entry R-0057 and the answer Q5 C of the owner.
 - 2026-11-10 · TASK-0335 · Accepted by the owner: the quaternion, the turn about the origin, and no pivot.
-- 2026-11-10 · TASK-0335 · Shipped at v0.317.
+- 2026-11-10 · TASK-0335 · Shipped at v0.318.
