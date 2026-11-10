@@ -7,7 +7,7 @@ date: 2026-11-05
 supersedes: []
 superseded-by: []
 amends: ['0013']
-amended-by: ['0071']
+amended-by: ['0071', '0112']
 affects:
   - Engine.Contracts/Schema/**
   - Engine.Core/Commands/**
@@ -55,6 +55,8 @@ same date the owner chose `constraint-value` for `SetSketchConstraintValue`, `sc
    - `constraint-value`: see item 4.
    - `direction`: a component of a direction, with no unit (E141, TASK-0192).
    - `count`: a count of items, with no unit, as the version of a reference of an assembly (ADR-0071 item 3).
+   - `quaternion`: a component of the quaternion of a turn, with no unit. A client shows the four components of one
+     command as one turn (ADR-0112 item 2).
 
    The draft of this record had `ratio`, a number with no unit. No parameter uses it, and a later change can add a
    unit at a low cost (`CLAUDE.md`, "Method"), so the vocabulary does not hold it.
@@ -95,3 +97,4 @@ same date the owner chose `constraint-value` for `SetSketchConstraintValue`, `sc
   integer parameter and the parameters of queries, `pixel` names a size too, and item 2 adds `direction` for the
   normal of `GetFaceAt`. Q3 A, answered by the standing order of 2026-11-05.
 - 2026-11-06 · TASK-0202 · ADR-0071 amends item 2: the vocabulary adds `count` for the version of `AddPartReference`.
+- 2026-11-10 · TASK-0335 · ADR-0112 item 2 amends item 2: the vocabulary adds `quaternion` for the four numbers of `Rotate`.

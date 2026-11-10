@@ -249,6 +249,21 @@ internal static class Regeneration
                     return Call(handle, key, () => ops.Translate(new BodyHandle(key), new BodyHandle(source), translate.Dx, translate.Dy, translate.Dz));
                 }
 
+                // ADR-0112 item 6 (TASK-0335): a Rotate with a changed operand runs again, as a Translate does.
+                case RotateCommand rotate:
+                {
+                    var (source, sourceChanged, failure) = Evaluate(rotate.BodyId);
+                    if (failure is not null)
+                        return (handle, false, failure);
+                    if (!sourceChanged)
+                        return (handle, false, null);
+                    if (RotateCommandHandler.Turn(rotate) is not { } turn)
+                        return (handle, false, $"the Rotate '{handle}' has a quaternion that gives no turn");
+                    if (backend.TryGet<ITransformOps>() is not { } ops)
+                        return (handle, false, "the active backend does not implement ITransformOps");
+                    return Call(handle, key, () => ops.Rotate(new BodyHandle(key), new BodyHandle(source), turn));
+                }
+
                 case SubtractCommand subtract:
                 {
                     var (minuend, minuendChanged, minuendFailure) = Evaluate(subtract.MinuendBodyId);

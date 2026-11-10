@@ -46,6 +46,10 @@ public static class UnitKinds
     // A count of items, with no unit, as the count of the entries of a part (ADR-0071 item 3, TASK-0202).
     public const string Count = "count";
 
+    // A component of the quaternion of a turn, with no unit. A client shows the four components of one command as one
+    // turn (ADR-0112 item 2, TASK-0335).
+    public const string Quaternion = "quaternion";
+
     public static IReadOnlyList<string> All { get; } =
-        [Length, Pixel, Scale, Cosine, Sine, Sign, ConstraintValue, Direction, Count];
+        [Length, Pixel, Scale, Cosine, Sine, Sign, ConstraintValue, Direction, Count, Quaternion];
 }

@@ -7,7 +7,7 @@ date: 2026-11-05
 supersedes: []
 superseded-by: []
 amends: ['0057']
-amended-by: ['0059']
+amended-by: ['0059', '0112']
 affects:
   - Engine.Core/Features/KernelProjection.cs
   - Engine.Core/Queries/GetFacesQuery.cs
@@ -49,6 +49,7 @@ query, so this record also makes the topology faster.
      effect. The distance keeps its sign, so `start` is on the plane of the sketch (ADR-0051 item 1).
      `SketchProfile.FindWithItems` gives the item of each side: the line, the arc or the circle.
    - `Translate` moves the solid of its body.
+   - `Rotate` turns the solid of its body about the origin, with the nine doubles of its turn (ADR-0112 item 5).
    - `Subtract` subtracts the solid of the subtrahend from the solid of the minuend.
    The kernel reads each input double exactly. The projection does not enter the log, and Manifold still makes each
    solid that the Document holds.
@@ -86,3 +87,4 @@ query, so this record also makes the topology faster.
 - 2026-11-05 · TASK-0184 · Accepted with the four answers of the owner of 2026-11-05.
 - 2026-11-05 · TASK-0185 · ADR-0059 items 1 and 2 amend item 2: the projection also reads the state of an edit, and
   it keeps the solid of each committed key.
+- 2026-11-10 · TASK-0335 · ADR-0112 item 5 amends item 2: `Rotate` turns the solid of its body in the projection.

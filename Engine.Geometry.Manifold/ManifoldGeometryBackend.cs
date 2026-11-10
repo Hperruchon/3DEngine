@@ -170,6 +170,35 @@ public sealed class ManifoldGeometryBackend
         _solids[result.Id] = new ManifoldSolidHandle(solid, buffer);
     }
 
+    // ITransformOps, ADR-0112 item 4 (TASK-0335). Stores a turned copy of `source` under `result`, with the source intact.
+    // manifold_transform reads the images of the x, y and z axes, then the move, which is zero.
+    public void Rotate(BodyHandle result, BodyHandle source, Rotation rotation)
+    {
+        ObjectDisposedException.ThrowIf(_disposed, this);
+        if (_solids.ContainsKey(result.Id))
+            throw new InvalidOperationException(
+                $"Backend already holds a body under handle '{result.Id}'.");
+        if (!_solids.TryGetValue(source.Id, out var src))
+            throw new KeyNotFoundException(
+                $"Backend has no body under handle '{source.Id}'.");
+
+        var r = rotation;
+        nint buffer = Marshal.AllocHGlobal((nint)ManifoldNative.manifold_manifold_size());
+        // `src` is rooted in _solids for the call, so its raw handle stays alive.
+        nint solid = ManifoldNative.manifold_transform(
+            buffer, src.DangerousGetHandle(), r.Xx, r.Xy, r.Xz, r.Yx, r.Yy, r.Yz, r.Zx, r.Zy, r.Zz, 0, 0, 0);
+
+        int status = ManifoldNative.manifold_status(solid);
+        if (status != 0)
+        {
+            Release(solid, buffer);
+            throw new ManifoldNativeException(
+                $"manifold_transform failed with status {status} for handle '{result.Id}'.");
+        }
+
+        _solids[result.Id] = new ManifoldSolidHandle(solid, buffer);
+    }
+
     // IBooleanOps. Stores (minuend - subtrahend) under `result`, leaving both operands
     // intact (ADR-0012 Amendment 1). Throws on a duplicate result handle, an unknown
     // operand, or an empty/degenerate difference (subtrahend fully contains minuend).

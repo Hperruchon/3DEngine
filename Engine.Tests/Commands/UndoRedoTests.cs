@@ -285,6 +285,8 @@ public class UndoRedoTests
 
         public void Translate(BodyHandle result, BodyHandle source, double dx, double dy, double dz) => _bodies.Add(result.Id);
 
+        public void Rotate(BodyHandle result, BodyHandle source, Rotation rotation) => _bodies.Add(result.Id);
+
         public void Subtract(BodyHandle result, BodyHandle minuend, BodyHandle subtrahend) => _bodies.Add(result.Id);
     }
 

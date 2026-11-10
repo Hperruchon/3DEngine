@@ -7,7 +7,7 @@ date: 2026-05-27
 supersedes: []
 superseded-by: []
 amends: []
-amended-by: ['0018', '0021', '0028', '0015', '0033', '0037', '0045', '0051', '0071']
+amended-by: ['0018', '0021', '0028', '0015', '0033', '0037', '0045', '0051', '0071', '0112']
 affects:
   - Engine.Contracts/Geometry/**
   - Engine.Core/Commands/**
@@ -91,6 +91,9 @@ Two more capability interfaces hold the operations that need a real kernel:
 public interface ITransformOps
 {
     void Translate(BodyHandle result, BodyHandle source, double dx, double dy, double dz);
+
+    // ADR-0112 item 4: a copy turned about the origin of the Document.
+    void Rotate(BodyHandle result, BodyHandle source, Rotation rotation);
 }
 
 public interface IBooleanOps
@@ -259,3 +262,4 @@ This is *not* the Manifold backend — it is the wiring slice. A follow-on TASK 
 - 2026-11-02 · TASK-0166 · ADR-0051 amends §6: the snapshot gives `datums`, each datum in effect with its name.
 - 2026-11-06 · TASK-0202 · ADR-0071 amends §6: the snapshot gives `kind`, the kind of the Document, and `references`,
   each reference of an assembly with each field of its record.
+- 2026-11-10 · TASK-0335 · ADR-0112 item 4 amends item 1: `ITransformOps` gets `Rotate`, a copy of a body turned about the origin.
