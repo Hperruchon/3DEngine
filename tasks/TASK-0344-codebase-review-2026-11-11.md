@@ -1,7 +1,7 @@
 ---
 id: 0344
 title: The codebase review of 2026-11-11 is a record
-status: Done
+status: Active
 phase: governance
 opened: 2026-11-11
 depends-on: [0340]
@@ -72,7 +72,7 @@ The review of `main` at v0.325 is in `docs/reviews/`, and its findings have task
 
 ## Outcome
 
-Status: Done · commit (the merge of the branch codebase-review-2026-11-10-b) · v0.326
+Status: Done · commit (the merge of the branch codebase-review-2026-11-10-b) · v0.327
 
 ## Method
 
@@ -85,3 +85,5 @@ Weakest:    V166 and V167 are proven on the function only; no real mesh gave eit
 - 2026-11-11: written at `main` 60f02a5 (v0.325). One agent examined the change from `09f1827` to `60f02a5` with probes in a
   scratch folder; the session read each finding in the code and corrected three statements of the draft (the file of a test,
   the new register entries and the range of the ADRs). Closed at v0.326.
+- 2026-11-11: the drawing record (TASK-0343) merged first at v0.326, so the merge of `main` renumbers this review to
+  v0.327; the ledger and the roadmap keep both sides. This commit sets the task Active, and the next one Done again.
