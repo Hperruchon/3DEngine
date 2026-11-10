@@ -96,13 +96,15 @@ public sealed class ResponsiveLayoutTests
             }
         }
 
-        var fixedWindows = ui.FixedRectangles.ToList();
+        // ADR-0114 item 4 (finding T181 of the codebase review of 2026-11-10, TASK-0339): each pair of windows, two panels too.
+        // A control is the control of the window that holds its upper left corner, so a panel over a control of another
+        // panel passed the check of the controls; the check of the pairs finds it. The sheet may cover the panel.
         for (var i = 0; i < windows.Count; i++)
         {
-            for (var j = Math.Max(i + 1, panels.Count); j < windows.Count; j++)
+            for (var j = i + 1; j < windows.Count; j++)
             {
-                if (windows[i] != sheet && Overlap(windows[i], windows[j]))
-                    faults.Add($"the window {Text(windows[i])} overlaps the fixed window {Text(windows[j])}");
+                if (windows[i] != sheet && windows[j] != sheet && Overlap(windows[i], windows[j]))
+                    faults.Add($"the window {Text(windows[i])} overlaps the window {Text(windows[j])}");
             }
         }
 

@@ -17,6 +17,15 @@ internal sealed record ProposedValue(Guid? Sketch, Guid? Constraint, Guid? Extru
 
     public double? Now { get; init; }
 
+    // ADR-0114 item 2 (finding V164 of the codebase review of 2026-11-10, TASK-0339): the second value of the command, the
+    // sine of an angle; the proposed value and the unit as the line shows them, when they are not Number and the length
+    // unit of the document. For an angle Now and Shown are in degrees, and Number stays the cosine of the command.
+    public double? Second { get; init; }
+
+    public double? Shown { get; init; }
+
+    public string? Unit { get; init; }
+
     // ADR-0110 item 2: the keys of the chips of this value: the chip of the constraint on the edge of a body and its chip in
     // the active sketch, or the chip of the distance of the extrude.
     public IReadOnlyList<string> Keys => Constraint is { } constraint
@@ -51,7 +60,7 @@ internal static class ProposedValues
         return name switch
         {
             SetConstraintValue when Id(values, "sketchId") is { } sketch && Id(values, "constraintId") is { } constraint && Number(values, "value") is { } number
-                => new ProposedValue(sketch, constraint, null, number),
+                => new ProposedValue(sketch, constraint, null, number) { Second = Number(values, "secondValue") },
             SetExtrudeDistance when Id(values, "extrudeId") is { } extrude && Number(values, "distance") is { } distance
                 => new ProposedValue(null, null, extrude, distance),
             _ => null,
@@ -94,12 +103,16 @@ internal static class ProposedValues
             if (sketches.FirstOrDefault(sketch => sketch.SketchId == sketchId) is not { } sketch
                 || sketch.Constraints.FirstOrDefault(constraint => constraint.Id == constraintId) is not { } constraint)
                 return value;
-            // ADR-0034 item 8: the label of a constraint is its place in the constraints of its sketch, from 1.
-            return value with
+            // ADR-0034 item 8: the label of a constraint is its place in the constraints of its sketch, from 1. ADR-0114 item 2
+            // (finding V164): a distance and a radius are lengths; an angle holds its cosine and its sine (ADR-0033 item 3), so
+            // the line shows it in degrees; each other kind keeps the line of its command.
+            var named = value with { Name = sketch.Name ?? sketch.SketchId.ToString()[..8], Label = SketchText.Labels(sketch)[constraint.Id] };
+            return constraint switch
             {
-                Name = sketch.Name ?? sketch.SketchId.ToString()[..8],
-                Label = SketchText.Labels(sketch)[constraint.Id],
-                Now = constraint.Values.Count > 0 ? constraint.Values[0] : null,
+                { Kind: SketchLength or SketchRadius, Values: [var length] } => named with { Now = length },
+                { Kind: SketchAngle, Values: [var cosine, var sine] } when value.Second is { } second
+                    => named with { Now = Degrees(cosine, sine), Shown = Degrees(value.Number, second), Unit = DesktopUi.AngleUnit },
+                _ => value,
             };
         }
 
@@ -111,6 +124,15 @@ internal static class ProposedValues
 
         return value;
     }
+
+    // The kinds of a constraint whose value the line names (SketchConstraints, ADR-0033 item 3).
+    private const string SketchLength = "distance";
+    private const string SketchRadius = "radius";
+    private const string SketchAngle = "angle";
+
+    // An angle in degrees from its cosine and its sine, as the pad of a sketch shows it. Presentation: nothing of it enters
+    // the log (determinism rule 1 covers code that writes to the log only).
+    private static double Degrees(double cosine, double sine) => Math.Atan2(sine, cosine) * 180 / Math.PI;
 
     private static Guid? Id(Dictionary<string, JsonElement> values, string name)
         => values.TryGetValue(name, out var value) && value.ValueKind == JsonValueKind.String && Guid.TryParse(value.GetString(), out var id) ? id : null;

@@ -1,22 +1,35 @@
 ---
 id: 0339
 title: The medium and low findings of the codebase review of 2026-11-10
-status: Ready
+status: Active
 phase: P0.141
 opened: 2026-11-10
 depends-on: [0338]
-governed-by: [0001, 0007, 0008, 0012, 0018, 0019, 0025, 0029, 0036, 0072, 0092, 0107, 0108, 0110, 0111, 0112, 0113]
+governed-by: [0001, 0004, 0007, 0008, 0012, 0013, 0016, 0018, 0019, 0021, 0025, 0027, 0028, 0029, 0030, 0031, 0032, 0033, 0034, 0036, 0037, 0060, 0072, 0075, 0076, 0077, 0080, 0081, 0082, 0083, 0085, 0086, 0092, 0100, 0101, 0102, 0104, 0105, 0106, 0107, 0108, 0110, 0111, 0112, 0113, 0114]
 writes:
   create:
     - tasks/TASK-0339-medium-and-low-findings-of-the-review-of-2026-11-10.md
+    - docs/adr/0114-the-findings-of-the-review-of-2026-11-10.md
   modify:
     - 3DEngine.App/ProposedValues.cs
     - 3DEngine.App/AcceptHold.cs
+    - 3DEngine.App/NativeThreeDEngine.cs
+    - 3DEngine.App/Ui/DesktopUi.Proposal.cs
     - Engine.Contracts/Geometry/Rotation.cs
+    - Engine.Core/Commands/RotateCommandHandler.cs
+    - Engine.Core/DiagnosticCodes.cs
+    - Engine.Api.Http/Endpoints/SchemaDiagnosticsEndpoint.cs
     - Engine.Tests/Commands/RotateCommandTests.cs
+    - 3DEngine.ImageTests/PendingChipTests.cs
     - 3DEngine.ImageTests/ProposalArcTests.cs
     - 3DEngine.ImageTests/ResponsiveLayoutTests.cs
     - eng/test-floor.txt
+    - docs/adr/0110-a-proposal-shows-each-value-on-its-chip.md
+    - docs/adr/0111-a-proposal-takes-its-own-taps-and-commands.md
+    - docs/adr/0112-a-command-turns-a-body.md
+    - docs/adr/0113-the-layout-at-each-phone-size-and-small-window.md
+    - docs/adr/README.md
+    - docs/diagnostics.md
     - docs/roadmap.md
     - docs/CURRENT-STATE.md
   forbid:
@@ -72,4 +85,14 @@ Weakest:    T181 needs the window, or a seam that the code does not have yet.
 ## Progress
 
 - 2026-11-10: opened from the codebase review of 2026-11-10.
+- 2026-11-10: started at main 7defcec (v0.323), branch p0141-review-findings, by the order of the owner (A). The owner
+  answered E201 with A: the command refuses the quaternion with a new code, E-GEOM-QUATERNION-TOO-SMALL. ADR-0114 records
+  the four fixes and amends ADR-0110, 0111, 0112 and 0113. The write set adds the handler of Rotate and the codes (E201),
+  DesktopUi.Proposal.cs, which forms the line (V164), NativeThreeDEngine.cs, which calls the new decision of AcceptHold
+  (T181), PendingChipTests.cs, which holds the tests of the proposed values, and the ADR files, the index and the registry
+  of the codes; SchemaDiagnosticsEndpoint.cs publishes the new code, as the gate of the schema asks. V165 also frees FocusAction and EndFocusAction of R17b, which came after the review and write nothing to
+  the log. The first test of E201 found that parts of 1e-162 give s = 0, so the code depends on a part that is not zero,
+  not on s > 0. Six injections: the old limit, the old line, PathAction held, the accept ignored, and a second panel at the
+  place of the first, each failed its test; the old check of the layout passed the last one. Each file came back byte
+  for byte.
 - 2026-11-10: `governed-by` adds 0108 (TASK-0332): ADR-0108 affects `3DEngine.ImageTests/ProposalArcTests.cs`.

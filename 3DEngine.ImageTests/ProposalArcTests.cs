@@ -471,6 +471,34 @@ public sealed class ProposalArcTests
             Assert.False(AcceptHold.Holds(intent), $"{intent.GetType().Name} is held.");
     }
 
+    // ADR-0114 item 3 (finding V165 of the codebase review of 2026-11-10, TASK-0339): a tap on the path line and a focus on one
+    // body write nothing to the log, so they stay free while an accept runs. Escape, which goes up one level too, was free.
+    [Fact]
+    public void The_Path_Line_And_The_Focus_Are_Free_During_An_Accept()
+    {
+        foreach (var action in new PanelAction[] { new PathAction(PathLevel.Document), new FocusAction(), new EndFocusAction() })
+            Assert.False(AcceptHold.Holds(action), $"{action.GetType().Name} is held.");
+    }
+
+    // ADR-0114 item 4 (finding T181, TASK-0339): the decision of the host. With no accept each action and each intent passes;
+    // while the task of an accept is not null, an action or an intent that changes the Document is held and the host shows the
+    // text, the end of a drag of the gizmo becomes a cancel, and the camera passes.
+    [Fact]
+    public void The_Host_Holds_Only_While_An_Accept_Runs()
+    {
+        var running = new TaskCompletionSource<ProposalOutcome>().Task;
+        Assert.False(AcceptHold.Held(new UndoAction(), null));
+        Assert.True(AcceptHold.Held(new UndoAction(), running));
+        Assert.False(AcceptHold.Held(new FrameAction(), running));
+
+        Intent undo = new UndoIntent(), end = new GizmoEndIntent(1, 1), orbit = new OrbitIntent(1, 1);
+        Assert.Equal((undo, false), AcceptHold.Pass(undo, null));
+        Assert.Equal(((Intent?)null, true), AcceptHold.Pass(undo, running));
+        Assert.Equal((end, false), AcceptHold.Pass(end, null));
+        Assert.Equal((new GizmoCancelIntent(), true), AcceptHold.Pass(end, running));
+        Assert.Equal((orbit, false), AcceptHold.Pass(orbit, running));
+    }
+
     // Item 7: the arc does not show on the home screen; nothing of a proposal is there, and no tap reaches it.
     [Fact]
     public void Nothing_Shows_On_The_Home_Screen()

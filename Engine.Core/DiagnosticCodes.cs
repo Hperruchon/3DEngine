@@ -37,6 +37,9 @@ public static class DiagnosticCodes
     public const string GeomNativeOp = "E-GEOM-NATIVE-OP";
     public const string GeomBackendInit = "E-GEOM-BACKEND-INIT";
 
+    // ADR-0114 item 1 (finding E201, TASK-0339): a quaternion of finite parts whose sum of squares is below 2^-969.
+    public const string GeomQuaternionTooSmall = "E-GEOM-QUATERNION-TOO-SMALL";
+
     // ADR-0058 item 3: GetFaces of a body with a fault, and of a body that the owned kernel cannot build.
     public const string GeomBodyFaulted = "E-GEOM-BODY-FAULTED";
     public const string GeomFacesFailed = "E-GEOM-FACES-FAILED";

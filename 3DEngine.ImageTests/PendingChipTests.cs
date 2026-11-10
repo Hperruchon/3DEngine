@@ -121,6 +121,40 @@ public sealed class PendingChipTests
     public void A_Parameter_That_Does_Not_Bind_Gives_No_Value(string name, string json)
         => Assert.Null(ProposedValues.Of(name, Parameters(json)));
 
+    // ADR-0114 item 2 (finding V164 of the codebase review of 2026-11-10, TASK-0339): an angle holds its cosine and its sine,
+    // and the line gave "Plate C1  0.5 → 0.71 mm". The line shows an angle in degrees, and a length in the unit of the
+    // document. A tangent, a fixed point and an angle with no second value are not lengths, so they keep the line of their
+    // command.
+    [Fact]
+    public void The_Line_Shows_An_Angle_In_Degrees_And_Names_No_Other_Kind_As_A_Length()
+    {
+        Guid rib = Guid.NewGuid(), angle = Guid.NewGuid(), tangent = Guid.NewGuid(), point = Guid.NewGuid(), length = Guid.NewGuid();
+        var sketch = new SketchInfo(rib, Engine.Contracts.Sketch.Datums.XY.Id, "Rib", [], [], [], [],
+        [
+            new SketchConstraintInfo(angle, "angle", [], [0.5, Math.Sqrt(3) / 2], 0),
+            new SketchConstraintInfo(tangent, "tangent", [], [1], 0),
+            new SketchConstraintInfo(point, "fixed", [], [10, 20], 0),
+            new SketchConstraintInfo(length, "distance", [], [25], 0),
+        ], true, 0);
+        string Set(Guid constraint, string values) => $"{{\"sketchId\":\"{rib}\",\"constraintId\":\"{constraint}\",{values}}}";
+        (string, string)[] commands =
+        [
+            (ProposedValues.SetConstraintValue, Set(angle, "\"value\":0.7071067811865476,\"secondValue\":0.7071067811865476")),
+            (ProposedValues.SetConstraintValue, Set(angle, "\"value\":0.7071067811865476")),
+            (ProposedValues.SetConstraintValue, Set(tangent, "\"value\":-1")),
+            (ProposedValues.SetConstraintValue, Set(point, "\"value\":12,\"secondValue\":20")),
+            (ProposedValues.SetConstraintValue, Set(length, "\"value\":30")),
+        ];
+        var card = ProposedValues.Named([new ProposalCard(Guid.NewGuid(), "Turn the rib",
+            [.. commands.Select(command => ProposalCard.Line(command.Item1, Parameters(command.Item2)))],
+            Values: [.. commands.Select(command => ProposedValues.Of(command.Item1, Parameters(command.Item2)))])], [sketch], [], null)![0];
+
+        Assert.Equal("Rib C1  60 → 45 deg", DesktopUi.ProposalLine(card, 0, "mm"));
+        foreach (var index in new[] { 1, 2, 3 })
+            Assert.Equal(card.Commands[index], DesktopUi.ProposalLine(card, index, "mm"));
+        Assert.Equal("Rib C4  25 → 30 mm", DesktopUi.ProposalLine(card, 4, "mm"));
+    }
+
     // Item 3: the frame names each value: the name of its sketch and the label of its constraint, or the name of its body and
     // the word "distance", and its value now. A value that the frame does not hold has no name.
     [Fact]
