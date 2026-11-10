@@ -7,6 +7,7 @@ namespace ThreeDEngine.Desktop.Ui;
 // ADR-0082 (the redesign, slice c, TASK-0254): the values of the selected extrude on its edges. A chip holds the value and
 // the unit; a press and a release on one chip open the pad of its value, and the chip is pending while that pad is open.
 // ADR-0105 (TASK-0327): while a sketch is active, the chips are the values of that sketch on its lines and its curves.
+// ADR-0108 item 2 (TASK-0332): a chip whose value the shown proposal changes shows the value now and the proposed value.
 internal sealed unsafe partial class DesktopUi
 {
     // The smallest side of a chip: the 44 pixels of a target of ADR-0027 item 6.
@@ -21,6 +22,16 @@ internal sealed unsafe partial class DesktopUi
 
     internal string? PendingValue => _pendingValue;
 
+    // ADR-0108 item 2 (TASK-0332): the keys of the chips of this frame whose value the shown proposal changes.
+    private HashSet<string> _proposedChips = new(StringComparer.Ordinal);
+
+    // The key, the text and the pending style of each chip of this frame, for a test.
+    internal IReadOnlyList<(string Key, string Text, bool Pending)> Chips => [.. _chips.Select(chip => (chip.Value.Key, chip.Value.Text, Pending(chip.Value.Key)))];
+
+    // Item 4: a chip is pending while its pad is open. ADR-0108 item 2 (TASK-0332): a chip is pending too while the shown
+    // proposal changes its value.
+    private bool Pending(string key) => key == _pendingValue || _proposedChips.Contains(key);
+
     // True when the point is on a chip of this frame.
     private bool OverValue(double x, double y)
         => _chips.Any(chip => x >= chip.Rectangle.X && x < chip.Rectangle.Z && y >= chip.Rectangle.Y && y < chip.Rectangle.W);
@@ -30,11 +41,30 @@ internal sealed unsafe partial class DesktopUi
     private void Values(Vector2 displaySize, IReadOnlyList<EdgeValues.Value>? edgeValues, IReadOnlyList<EdgeValues.Value>? sketchValues)
     {
         _chips = [];
+        _proposedChips = new(StringComparer.Ordinal);
         if (_pad is null)
             _pendingValue = null;
         var values = _sketchActive ? sketchValues : edgeValues;
         if (values is not { Count: > 0 } || (_pad is not null && _pendingValue is null))
             return;
+
+        // ADR-0108 item 2 (Q2 A, TASK-0332): while the window shows a proposal, each chip whose key is a key of a proposed
+        // value of that proposal shows "label  now → proposed unit". The value of the chip stays the value now, so a tap on it
+        // opens the pad that it opened before.
+        var proposed = _proposals.Count > 0 && _proposals[0].Values is { } commands ? ProposedValues.Of(commands) : [];
+        var shown = new List<EdgeValues.Value>(values.Count);
+        foreach (var value in values)
+        {
+            if (proposed.FirstOrDefault(change => change.Keys.Contains(value.Key)) is { } change)
+            {
+                _proposedChips.Add(value.Key);
+                shown.Add(value with { Text = PendingText(value.Text, change.Number) });
+            }
+            else
+                shown.Add(value);
+        }
+
+        values = shown;
 
         // Item 2: the chip is centred on its place, and the placement of ADR-0056 moves the chips apart.
         var style = ImGui.GetStyle();
@@ -42,7 +72,7 @@ internal sealed unsafe partial class DesktopUi
         {
             // ADR-0091: a value has the font of a value, JetBrains Mono.
             ImGui.PushFont(_monoFont);
-            var extent = ImGui.CalcTextSize(text) + (style.FramePadding * 2f);
+            var extent = new Vector2(ArrowTextWidth(_monoFont, FontSize, text), ImGui.CalcTextSize(text).Y) + (style.FramePadding * 2f);
             ImGui.PopFont();
             return new Vector2(Math.Max(extent.X, ValueSize), Math.Max(extent.Y, ValueSize));
         }
@@ -88,7 +118,7 @@ internal sealed unsafe partial class DesktopUi
         foreach (var (value, rectangle) in _chips)
         {
             var (min, max) = (new Vector2(rectangle.X, rectangle.Y), new Vector2(rectangle.Z, rectangle.W));
-            var pending = value.Key == _pendingValue;
+            var pending = Pending(value.Key);
             var hovered = !ImGui.IsWindowHovered(ImGuiHoveredFlags.AnyWindow) && ChipAt(io.MousePos)?.Key == value.Key;
             list.AddRectFilled(min, max, ImGui.GetColorU32(colours[(int)(hovered ? ImGuiCol.ButtonHovered : ImGuiCol.Button)]), 6f);
             if (pending)
@@ -96,9 +126,9 @@ internal sealed unsafe partial class DesktopUi
             else
                 list.AddRect(min, max, ImGui.GetColorU32(colours[(int)ImGuiCol.Border]), 6f, ImDrawFlags.None, 1.5f);
             ImGui.PushFont(_monoFont);
-            var text = ImGui.CalcTextSize(value.Text);
+            var text = new Vector2(ArrowTextWidth(_monoFont, FontSize, value.Text), ImGui.CalcTextSize(value.Text).Y);
             ImGui.PopFont();
-            list.AddText(_monoFont, FontSize, ((min + max) / 2f) - (text / 2f), pending ? DimensionColour : ImGui.GetColorU32(colours[(int)ImGuiCol.Text]), value.Text);
+            ArrowText(list, _monoFont, FontSize, ((min + max) / 2f) - (text / 2f), pending ? DimensionColour : ImGui.GetColorU32(colours[(int)ImGuiCol.Text]), value.Text);
             _items[value.Key] = rectangle;
         }
     }

@@ -19,6 +19,9 @@ namespace ThreeDEngine.ImageTests;
 // command SetSketchConstraintValue on the distance of 60 of the sketch: the amber arc above the ring, with Reject and Accept.
 // Phase R16s (TASK-0327): a third picture holds the sketch "Plate" active, as a tap on its step of the history arc makes it:
 // under its body, with its rows at the left, its ring, and a chip on each of its two lengths.
+// Phase R16t (TASK-0332): a fourth picture holds the proposal of the second picture with the proposed value of its command,
+// as the host gives it: the chip of the width shows "60 → 75 mm" as a pending chip, and the line of the arc names the value,
+// "Plate C1  60 → 75 mm".
 [Collection(DearImGui.Collection)]
 public class MixImageTests
 {
@@ -43,11 +46,21 @@ public class MixImageTests
         return [new ProposalCard(Guid.Parse("74000000-0000-0000-0000-000000000001"), "Widen the bracket to 75 mm", [line])];
     });
 
+    // TASK-0332: the same scene as the second picture, with the proposed value of the command, named from the frame.
+    [VulkanImageFact]
+    public Task The_Bracket_With_A_Pending_Chip_Draws_At_1440_By_900() => Draw("mix-pending.png", (sketch, constraint) =>
+    {
+        using var parameters = System.Text.Json.JsonDocument.Parse($"{{\"sketchId\":\"{sketch}\",\"constraintId\":\"{constraint}\",\"value\":75}}");
+        var members = parameters.RootElement.EnumerateObject().Select(member => KeyValuePair.Create(member.Name, member.Value.Clone())).ToList();
+        return [new ProposalCard(Guid.Parse("74000000-0000-0000-0000-000000000001"), "Widen the bracket to 75 mm", [ProposalCard.Line("SetSketchConstraintValue", members)],
+            Values: [ProposedValues.Of("SetSketchConstraintValue", members)])];
+    }, pending: true);
+
     // TASK-0327: the same scene while the sketch of the bracket is active. The values come from the method of the host.
     [VulkanImageFact]
     public Task The_Bracket_With_Its_Sketch_Active_Draws_At_1440_By_900() => Draw("mix-sketch.png", null, sketchActive: true);
 
-    private static async Task Draw(string name, Func<Guid, Guid, IReadOnlyList<ProposalCard>>? proposal, bool sketchActive = false)
+    private static async Task Draw(string name, Func<Guid, Guid, IReadOnlyList<ProposalCard>>? proposal, bool sketchActive = false, bool pending = false)
     {
         var messagesBefore = GraphicsDevice.ValidationMessageCount;
         using var host = new EngineHost(new Engine.Geometry.Manifold.ManifoldGeometryBackend());
@@ -95,7 +108,8 @@ public class MixImageTests
             var size = Vector2.Distance(diagonal.A, diagonal.B) / 2f;
             values = EdgeValues.Of(body, 10, faces.Edges, [info], camera, Width, Height, "mm");
             var history = HistorySteps.Of(features, renderer.LiveBodies, [info], body);
-            proposals = proposal?.Invoke(sketch, width);
+            // TASK-0332: as NativeThreeDEngine.Render does, the proposed values take their names from the frame.
+            proposals = ProposedValues.Named(proposal?.Invoke(sketch, width), [info], renderer.LiveBodies, values);
 
             // TASK-0327: as NativeThreeDEngine.Render does for an active sketch that makes a live extrude (ADR-0085 items 2 to 4):
             // the sketch under its body, its overlay and its window, the ring at the centre of its points, and its values.
@@ -153,7 +167,14 @@ public class MixImageTests
         {
             Assert.NotNull(ui.ItemRectangle(DesktopUi.ProposalRejectItem));
             Assert.NotNull(ui.ItemRectangle(DesktopUi.ProposalAcceptItem));
-            Assert.StartsWith("SetSketchConstraintValue ", ui.ProposalTexts[DesktopUi.ProposalLineItem(0)], StringComparison.Ordinal);
+            if (pending)
+            {
+                // TASK-0332: the chip of the width is pending with the change, and the line names the value.
+                Assert.Contains((EdgeValues.ConstraintKey(width), "60 → 75 mm", true), ui.Chips);
+                Assert.Equal("Plate C1  60 → 75 mm", ui.ProposalTexts[DesktopUi.ProposalLineItem(0)]);
+            }
+            else
+                Assert.StartsWith("SetSketchConstraintValue ", ui.ProposalTexts[DesktopUi.ProposalLineItem(0)], StringComparison.Ordinal);
         }
     }
 }

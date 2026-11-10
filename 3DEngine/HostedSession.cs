@@ -9,6 +9,8 @@ namespace ThreeDEngine.Desktop;
 // The desktop serves the surface on the same host, so the person and an agent work on one document (ADR-0019).
 // ADR-0092 item 7 (TASK-0326): the window reads the queue of the proposals of the host through this class, because the
 // application project does not reference the surface library, which the phone does not have.
+// ADR-0108 item 1 (TASK-0332): each card holds the proposed value of each command too, from the parameters that the queue
+// keeps.
 internal sealed class HostedSession(EngineHost host) : ISessionHost, IProposalDesk
 {
     public EngineHost Host { get; } = host;
@@ -21,7 +23,8 @@ internal sealed class HostedSession(EngineHost host) : ISessionHost, IProposalDe
 
     public IReadOnlyList<ProposalCard> Waiting()
         => [.. Host.Proposals.Waiting().Select(proposal => new ProposalCard(proposal.Id, proposal.Summary,
-            [.. proposal.Commands.Select(command => ProposalCard.Line(command.Name, command.Parameters))], proposal.Stale, proposal.State == ProposalStates.Applying))];
+            [.. proposal.Commands.Select(command => ProposalCard.Line(command.Name, command.Parameters))], proposal.Stale, proposal.State == ProposalStates.Applying,
+            [.. proposal.Commands.Select(command => ProposedValues.Of(command.Name, command.Parameters))]))];
 
     public async Task<ProposalOutcome> Accept(Guid id) => Outcome(await Host.Proposals.Accept(id).ConfigureAwait(false));
 

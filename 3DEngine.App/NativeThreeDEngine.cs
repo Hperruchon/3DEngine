@@ -842,7 +842,9 @@ public sealed class NativeThreeDEngine : IThreeDEngine, IDisposable
             _proposalAccept = null;
         }
 
-        var proposals = _proposalDesk?.Waiting();
+        // ADR-0108 item 3 (TASK-0332): the name, the label and the value now of each proposed value, from the sketches, the
+        // bodies and the values of the frame.
+        var proposals = ProposedValues.Named(_proposalDesk?.Waiting(), _sketches?.Live ?? [], _renderer.LiveBodies, values);
 
         // ADR-0102 item 5 (Q3 A): the question shows while a change of project waits for its answer.
         _ui.ShowQuestion(_projects?.Asking ?? false);

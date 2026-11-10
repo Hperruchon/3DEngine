@@ -7,7 +7,7 @@ date: 2026-11-08
 supersedes: []
 superseded-by: []
 amends: []
-amended-by: ['0107']
+amended-by: ['0107', '0108']
 affects:
   - Engine.Api.Http/Proposals.cs
   - Engine.Api.Http/Endpoints/ProposalsEndpoint.cs
@@ -140,3 +140,5 @@ first one.
 - 2026-11-09 · TASK-0326 · Shipped at v0.309.
 - 2026-11-10 · TASK-0330 · ADR-0107 amends item 7: with no ring of a body, the arc is in the room right of the panel, and
   the window of the live sketches does not show while a proposal waits.
+- 2026-11-10 · TASK-0332 · ADR-0108 amends item 5: a command that changes a value with a chip shows the change on the chip
+  and names the value in its line.
