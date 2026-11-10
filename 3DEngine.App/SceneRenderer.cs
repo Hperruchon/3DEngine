@@ -31,6 +31,21 @@ internal sealed unsafe class SceneRenderer : IDisposable
     private readonly RenderPipeline _highlight;
     private readonly DrawListExecutor _highlighter;
     private readonly List<DrawRecord> _selected = new();
+    private readonly List<DrawRecord> _others = new();
+
+    // ADR-0109 (phase R18b, TASK-0333): the depth of the selected body, its edge lines, and its hidden edge lines.
+    private readonly RenderPipeline _depth;
+    private readonly DrawListExecutor _depthWriter;
+    private readonly EdgePipeline _edges;
+    private readonly EdgePipeline _hiddenEdges;
+
+    // ADR-0109 item 2: the colour and the half width in pixels of the edge lines of a body, and of the selected body; the
+    // dash of a hidden edge of the selected body in pixels (item 3).
+    internal static readonly System.Numerics.Vector4 EdgeColour = new(0.92f, 0.95f, 1.0f, 1.0f);
+    internal static readonly System.Numerics.Vector4 SelectedEdgeColour = new(1.0f, 0.55f, 0.1f, 1.0f);
+    internal const float EdgeHalfWidth = 0.75f;
+    internal const float SelectedEdgeHalfWidth = 1.0f;
+    internal const float HiddenDash = 6f;
 
     // The images of the scene, each on a quad (ADR-0043, phase V1a).
     private readonly ImageRenderer _images;
@@ -43,6 +58,10 @@ internal sealed unsafe class SceneRenderer : IDisposable
         _executor = new DrawListExecutor(device, _pipeline);
         _highlight = new RenderPipeline(device, renderPass, "mesh.vert", "highlight.frag", highlight: true);
         _highlighter = new DrawListExecutor(device, _highlight);
+        _depth = new RenderPipeline(device, renderPass, "mesh.vert", "highlight.frag", depthOnly: true);
+        _depthWriter = new DrawListExecutor(device, _depth);
+        _edges = new EdgePipeline(device, renderPass, hidden: false);
+        _hiddenEdges = new EdgePipeline(device, renderPass, hidden: true);
         _images = new ImageRenderer(device, renderPass);
         _bodies = new SessionBodies(host);
     }
@@ -154,6 +173,10 @@ internal sealed unsafe class SceneRenderer : IDisposable
     // Records the render pass of one frame: the clear, then each draw of the scene, then each image
     // on its quad (ADR-0043 item 3), then the overlay, for example the user interface (ADR-0027
     // item 3), in the same render pass.
+    // ADR-0109 items 2 and 3 (phase R18b, TASK-0333): each body but the selected one draws opaque, then the images, then
+    // the edge lines of those bodies. The selected body draws last: its depth, its transparent fill (the highlight), its
+    // hidden edges dashed, and its visible edges, each in the colour of the selection. So a body behind the selected body
+    // shows through it.
     public void Record(VkCommandBuffer commandBuffer, VkFramebuffer framebuffer, VkExtent2D extent, Scene scene, Camera camera, Action<VkCommandBuffer>? overlay = null, Guid? selected = null, IReadOnlyList<ImageQuad>? images = null)
     {
         _drawList.Clear();
@@ -179,16 +202,24 @@ internal sealed unsafe class SceneRenderer : IDisposable
 
         _device.DeviceApi.vkCmdBeginRenderPass(commandBuffer, &renderPassInfo, VkSubpassContents.Inline);
         var projection = camera.Projection((float)extent.width / extent.height);
-        _executor.Execute(commandBuffer, extent, _drawList.Records, _meshes, projection);
+        _selected.Clear();
+        _others.Clear();
+        var selectedMesh = selected?.ToString();
+        foreach (var record in _drawList.Records)
+            (record.MeshId == selectedMesh ? _selected : _others).Add(record);
+
+        _executor.Execute(commandBuffer, extent, _others, _meshes, projection);
         if (images is { Count: > 0 })
             _images.Record(commandBuffer, extent, images.Select(quad => (quad.ImageId, quad.ModelView(camera))), projection);
+        _edges.Execute(commandBuffer, extent, _others, _meshes, projection, EdgeColour, EdgeHalfWidth, 0f);
 
-        // The selected body again, through the highlight pipeline, after each body.
-        _selected.Clear();
-        if (selected is { } body)
-            _selected.AddRange(_drawList.Records.Where(record => record.MeshId == body.ToString()));
         if (_selected.Count > 0)
+        {
+            _depthWriter.Execute(commandBuffer, extent, _selected, _meshes, projection);
             _highlighter.Execute(commandBuffer, extent, _selected, _meshes, projection);
+            _hiddenEdges.Execute(commandBuffer, extent, _selected, _meshes, projection, SelectedEdgeColour, SelectedEdgeHalfWidth, HiddenDash);
+            _edges.Execute(commandBuffer, extent, _selected, _meshes, projection, SelectedEdgeColour, SelectedEdgeHalfWidth, 0f);
+        }
 
         overlay?.Invoke(commandBuffer);
         _device.DeviceApi.vkCmdEndRenderPass(commandBuffer);
@@ -215,6 +246,9 @@ internal sealed unsafe class SceneRenderer : IDisposable
         _meshes.Clear();
         _pipeline.Dispose();
         _highlight.Dispose();
+        _depth.Dispose();
+        _edges.Dispose();
+        _hiddenEdges.Dispose();
         _images.Dispose();
     }
 }

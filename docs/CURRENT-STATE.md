@@ -9617,3 +9617,72 @@ until R18g. The rows, the values and the history arc keep their look until R18c,
 New tests: 4. The test list holds 2407 (1539 in `Engine.Tests`, 356 in `3DEngine.Tests`, 499 in `3DEngine.ImageTests`, 3
 in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
 entries: 9 of 15. New diagnostic codes: 0. Since the review of v0.319, 1 product milestone and 2 entries followed it.
+
+## v0.322 — A body shows its edges as lines, and the selected body is transparent with dashed hidden edges (R18b, TASK-0333)
+
+The owner accepted the proposal on the gaps to the render on 2026-11-10 (Q1 to Q7 A). This entry is slice S2: the edges
+of the body. Before it, a body had shaded faces and no lines, and the selected body was an opaque orange.
+
+**The change.** ADR-0109 amends ADR-0029 item 2.
+- The renderer finds the feature edges of the triangles of a body one time, when the mesh goes to the GPU: an edge with
+  one triangle, with more than two, or between two triangles whose normals differ by more than 30 degrees. The twelve
+  edges of a box show. The seams between the facets of a cylinder do not show.
+- Each edge is two triangles with a width in pixels, so the phone needs no wide lines. A line is 1.5 pixels and near
+  white, and it wins the depth test against the faces of its own body.
+- The selected body has no opaque draw. It has a transparent orange fill (alpha 0.25), dashed hidden edges and solid
+  visible edges in the colour of the selection. A body behind it shows through it.
+- The lines are presentation, as the tessellation is (ADR-0007): the Document and the log hold none. The limit of 30
+  degrees is a constant cosine, so no transcendental function runs.
+
+**Proof.** 4 new tests in `BodyEdgesImageTests`: two with no GPU (the twelve edges of a box, no seam on a cylinder) and
+two pictures (each visible edge of a box is a bright line; the selected box has solid visible edges and dashed hidden
+edges). `FirstDemonstrationImageTests` now reads the orange of each pixel of the selected body. Three injections failed
+the tests: an edge pass that draws nothing, solid hidden edges, and no hidden pass. The file came back each time. A frame
+of 1440 by 900 took a median of 22.2 ms before and after, with the copy to the CPU. The pictures go to the owner beside
+the renders. The phone project builds with zero warnings. Run 42824773499 passed on the branch, and it started the APK
+on the emulator. The failed runs since the entry v0.321, from the API: 42881797287 on the branch r18b-edges. Its merge
+commit of R18a named TASK-0333 and added no progress line, so the write-set check refused it. A force push is not
+permitted, so the branch r18b-edges-b replaces it, with the same tree and a progress line in the merge.
+
+**What stays.** The soft shadow under the selected body waits for a ground plane (ADR-0109 item 6). R-0061 asks the cost
+of the lines on the phone: no run measured the frame time there. A body with more than 100 000 feature edges
+draws no lines.
+
+New tests: 4. The test list holds 2411 (1549 in `Engine.Tests`, 356 in `3DEngine.Tests`, 503 in `3DEngine.ImageTests`, 3
+in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
+entries: 10 of 15. New diagnostic codes: 0. Since the review of v0.319, 2 product milestones and 3 entries followed it.
+
+## v0.323 — A focus on one body draws the body alone and writes nothing to the log (R17b, TASK-0315)
+
+The owner accepted the proposal on the selection of the document on 2026-11-08 (Q1 to Q7 A). R17a gave the path line
+at v0.316. This entry is option B: the focus. Before it, the person hid each other body to review one body, and each
+hide was the command `SetBodyVisibility` in the log and in Undo.
+
+**The change.** ADR-0101 amends ADR-0081 item 3, ADR-0098 item 3 and ADR-0100 items 1 and 3.
+- The focus is a state of `BodyActions`: one body, or null. It gives no command, so the log, Undo and the visibility of
+  each body do not change. While a focus lasts, the selection is its body.
+- `SceneRenderer` holds the one rule: it draws the body of the focus only, a pick finds it only, and the dimensions
+  take its box only. The camera does not move (Q4 A: the other bodies are not drawn).
+- "Focus" is a segment of the ring of a selected body, after Hide, and a command of the command line (Q5 A: no double
+  tap). While a focus lasts, the segment has the colour of a tool in use.
+- The path line shows "Focus" before the name of the body and a close mark of 44 by 44 pixels at its end.
+- The close mark, "Focus" again and Escape at the level of the body end the focus and keep the body. A hide, a body
+  that leaves the session, a tap on the document and a selection of another body end it too. A tap on no body keeps
+  it. A move or a cut of the body of the focus keeps the focus on the new body. These are the judgement of the session
+  (ADR-0101 items 4 to 8); the owner can change them.
+
+**Proof.** 13 new tests in `3DEngine.ImageTests/BodyFocusTests.cs`, two of them pictures. Twelve injections each failed
+a named test: a focus that sends `SetBodyVisibility`, Escape, a tap on no body, the move, the exit of a body that
+leaves, the pick, the dimensions, the draw, the segment, the command, the close mark and the word "Focus". Each file
+came back byte for byte. `RingImageTests` and `ProposalArcTests` count one more segment of the ring. The phone project
+builds with zero warnings. Runs 42881431641 and 42882376942 passed on the branch, with the start of the APK on the emulator.
+The failed runs since the entry v0.322, from the API: none. R18a (v0.321) and R18b (v0.322) merged first; the merges of
+`main` kept both sides.
+
+**What stays.** The other bodies are not drawn; a dimmed drawing, as in Onshape, needs a pass with transparency (Q4).
+The segment "Focus" has a label and no icon. While an agent proposal is accepted, a tap on "Focus" is held. No person
+used a focus in this window yet.
+
+New tests: 13. The test list holds 2424 (1549 in `Engine.Tests`, 356 in `3DEngine.Tests`, 516 in `3DEngine.ImageTests`, 3
+in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
+entries: 10 of 15. New diagnostic codes: 0. Since the review of v0.319, 3 product milestones and 4 entries followed it.
