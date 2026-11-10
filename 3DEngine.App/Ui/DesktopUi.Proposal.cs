@@ -199,11 +199,13 @@ internal sealed unsafe partial class DesktopUi
         ArgumentNullException.ThrowIfNull(text);
         var unit = text.LastIndexOf(' ');
         return unit < 0
-            ? $"{text} {Arrow} {Measured(proposed)}"
-            : $"{text[..unit]} {Arrow} {Measured(proposed)}{text[unit..]}";
+            ? $"{text} {Arrow} {EdgeValues.Exact(proposed)}"
+            : $"{text[..unit]} {Arrow} {EdgeValues.Exact(proposed)}{text[unit..]}";
     }
 
-    // A value as a chip shows it (Dimensions.Format).
+    // A value in a line of a proposal (Dimensions.Format). ADR-0115 item 1 (phase R18c, TASK-0340): a chip shows the proposed
+    // value with three decimals (EdgeValues.Exact, in PendingText); a line keeps this form until the proposal of R18i, because
+    // the longer form does not fit the sheet of a phone.
     private static string Measured(double value) => ThreeDEngine.Core.Measuring.Dimensions.Format(value);
 
     // ADR-0110 (TASK-0334): the arrow of a change. The atlas of the fonts holds the glyphs of Latin-1 only, so the window draws

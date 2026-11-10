@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Numerics;
 using Engine.Contracts.Sketch;
 using Engine.Core.Queries;
@@ -13,10 +14,51 @@ internal static class EdgeValues
 {
     // A value on an edge. Constraint is null for the distance of the extrude; Sketch is the sketch of the constraint.
     // ADR-0084 item 2 (TASK-0267): Label names the value in its row: "Distance", "Length" or "Radius".
-    public sealed record Value(string Key, string Text, Vector2 At, double Number, Guid Body, Guid? Sketch, Guid? Constraint, string Label = "Value");
+    // ADR-0115 item 2 (phase R18c, TASK-0340): Line is the measured edge on the screen and the side of its dimension line, or
+    // null for a value with no edge.
+    public sealed record Value(string Key, string Text, Vector2 At, double Number, Guid Body, Guid? Sketch, Guid? Constraint, string Label = "Value", Measure? Line = null);
 
-    // How far the chip is from the middle of its edge, away from the middle of the body on the screen, in pixels.
-    public const float Offset = 24f;
+    // ADR-0115 item 2: the two ends of the measured edge on the screen (one point, the same two times, for a radius), the
+    // unit normal that points away from the outline, and the distance along it from the edge to the outside of the outline
+    // and a gap. The window puts the dimension line and the pill farther by the half of the pill.
+    public sealed record Measure(Vector2 A, Vector2 B, Vector2 Normal, float Offset)
+    {
+        public bool Leader => A == B;
+    }
+
+    // ADR-0115 item 2: the gap between the outline of the body and the nearest side of a pill, in pixels.
+    public const float Gap = 16f;
+
+    // ADR-0115 item 1 (Q6 A): a value with three decimals, and more when it has them, as "60.000" or "60.125"; at most 15
+    // significant digits, so 0.1 + 0.2 gives "0.300". Until TASK-0340 a value had at most two decimals, as "60".
+    public static string Exact(double value)
+        => (value == 0d ? 0d : value).ToString("0.000############", CultureInfo.InvariantCulture);
+
+    // ADR-0115 item 2: the dimension line of an edge from a to b is parallel to it, on the side away from the centre, past
+    // each point of the outline. A radius has one point: its leader goes straight out from the centre.
+    internal static Measure Outside(Vector2 a, Vector2 b, Vector2 centre, IReadOnlyList<Vector2> outline)
+    {
+        ArgumentNullException.ThrowIfNull(outline);
+        var along = b - a;
+        var length = along.Length();
+        var middle = (a + b) / 2f;
+        Vector2 normal;
+        if (length < 1f)
+        {
+            var outward = middle - centre;
+            normal = outward.Length() < 1e-3f ? new Vector2(0f, -1f) : Vector2.Normalize(outward);
+            b = a;
+        }
+        else
+        {
+            normal = new Vector2(-along.Y, along.X) / length;
+            if (Vector2.Dot(normal, middle - centre) < 0f)
+                normal = -normal;
+        }
+
+        var reach = outline.Count == 0 ? 0f : Math.Max(0f, outline.Max(point => Vector2.Dot(point - a, normal)));
+        return new Measure(a, b, normal, reach + Gap);
+    }
 
     public static string DistanceKey(Guid body) => $"Value:{body:N}:distance";
 
@@ -38,18 +80,26 @@ internal static class EdgeValues
             return [];
         var centre = middles.Aggregate(Vector2.Zero, (sum, point) => sum + point) / middles.Count;
 
+        // ADR-0115 item 2: the outline of the body on the screen: the ends of each segment of each edge.
+        var outline = edges.SelectMany(edge => edge.Segments).SelectMany(segment => new[] { segment.Start, segment.End })
+            .Select(point => Pixel(point, camera, width, height)).OfType<Vector2>().ToList();
+        Measure MeasureOf(EdgeEntry edge, Vector2 fallback)
+            => Ends(edge, camera, width, height) is { } ends ? Outside(ends.A, ends.B, centre, outline) : Outside(fallback, fallback, centre, outline);
+
         var values = new List<Value>();
         bool Side(DatumReference face) => face.FeatureId == body && face.Element == "side";
         if (distance is { } d)
         {
             var along = edges.Where(edge => Side(edge.First) && Side(edge.Second))
-                .Select(edge => Middle(edge, camera, width, height))
-                .OfType<Vector2>()
-                .OrderByDescending(point => Vector2.DistanceSquared(point, centre))
-                .Cast<Vector2?>()
+                .Select(edge => (Edge: edge, At: Middle(edge, camera, width, height)))
+                .Where(pair => pair.At is not null)
+                .OrderByDescending(pair => Vector2.DistanceSquared(pair.At.GetValueOrDefault(), centre))
                 .FirstOrDefault();
-            if (along is { } on)
-                values.Add(new Value(DistanceKey(body), $"{Dimensions.Format(d)} {unit}", Away(on, centre), d, body, null, null, "Distance"));
+            if (along.At is { } on)
+            {
+                var line = MeasureOf(along.Edge, on);
+                values.Add(new Value(DistanceKey(body), $"{Exact(d)} {unit}", Placed(line), d, body, null, null, "Distance", line));
+            }
         }
 
         var items = edges.SelectMany(edge => new[] { edge.First, edge.Second }).Where(Side).Select(face => face.ItemId).OfType<Guid>().ToHashSet();
@@ -69,8 +119,12 @@ internal static class EdgeValues
             if (item is not { } id)
                 continue;
             var edge = edges.FirstOrDefault(candidate => Pair(candidate, body, id));
+            // ADR-0115 item 2: a radius has a leader from the middle of its edge, straight out from the centre.
             if (edge is not null && Middle(edge, camera, width, height) is { } at)
-                values.Add(new Value(ConstraintKey(constraint.Id), $"{prefix}{Dimensions.Format(constraint.Values[0])} {unit}", Away(at, centre), constraint.Values[0], body, of.SketchId, constraint.Id, label));
+            {
+                var line = constraint.Kind == "radius" ? Outside(at, at, centre, outline) : MeasureOf(edge, at);
+                values.Add(new Value(ConstraintKey(constraint.Id), $"{prefix}{Exact(constraint.Values[0])} {unit}", Placed(line), constraint.Values[0], body, of.SketchId, constraint.Id, label, line));
+            }
         }
 
         return values;
@@ -102,10 +156,15 @@ internal static class EdgeValues
         return SketchOverlay.Segment(camera, width, height, middle, middle)?.A;
     }
 
-    private static Vector2 Away(Vector2 at, Vector2 centre)
-    {
-        var outward = at - centre;
-        var length = outward.Length();
-        return length < 1e-3f ? at + new Vector2(0f, -Offset) : at + (outward / length * Offset);
-    }
+    // ADR-0115 item 2: the place of a value before the window adds the half of its pill: the middle of the dimension line.
+    internal static Vector2 Placed(Measure line) => ((line.A + line.B) / 2f) + (line.Normal * line.Offset);
+
+    // ADR-0115 item 2: the two ends of an edge on the screen, from the start of its first segment to the end of its last, or
+    // null when one of them is behind the eye.
+    private static (Vector2 A, Vector2 B)? Ends(EdgeEntry edge, Camera camera, double width, double height)
+        => edge.Segments.Count > 0 && Pixel(edge.Segments[0].Start, camera, width, height) is { } a
+            && Pixel(edge.Segments[^1].End, camera, width, height) is { } b ? (a, b) : null;
+
+    private static Vector2? Pixel(DatumPoint point, Camera camera, double width, double height)
+        => SketchOverlay.Segment(camera, width, height, (point.X, point.Y, point.Z), (point.X, point.Y, point.Z))?.A;
 }
