@@ -1,13 +1,13 @@
 ---
 id: 0091
 title: The interface draws with Instrument Sans, and a value on an edge with JetBrains Mono
-status: Accepted
+status: Amended
 topic: Clients, rendering
 date: 2026-11-08
 supersedes: []
 superseded-by: []
 amends: ['0027', '0078']
-amended-by: []
+amended-by: ['0117']
 affects:
   - 3DEngine.App/Ui/DesktopUi.cs
   - 3DEngine.App/Ui/DesktopUi.Values.cs
@@ -63,3 +63,5 @@ instance of a variable font.
 - 2026-11-08 · TASK-0292 · The record, with the download that the owner allowed on 2026-11-08 and Q1 A under the standing
   order.
 - 2026-11-08 · TASK-0292 · Shipped at v0.278.
+- 2026-11-10 · TASK-0342 · ADR-0117 item 1 amends item 2: the atlas holds Instrument Sans a third time, at 34 pixels, for
+  the name of a body.

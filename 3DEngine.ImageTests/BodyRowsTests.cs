@@ -200,7 +200,7 @@ public sealed class BodyRowsTests
         var body = Extrude with { Visible = false, Fault = new BodyFault("E-FEATURE-REBUILD", "The profile is open.") };
         Frame(ui, body, Display);
 
-        var (name, state) = ui.RowTitle(body);
+        var (name, state, _) = ui.RowTitle(body);
 
         Assert.Equal("Plate", name);
         Assert.Contains(("failed E-FEATURE-REBUILD", true), state);
