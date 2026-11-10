@@ -80,9 +80,9 @@ names. Do not read all of them.
 | [0072](0072-the-drawing-code-is-a-library.md) | The drawing code of a host is a library with no surface | Accepted | Rendering, clients, platform | 0027 | — |
 | [0073](0073-the-phone-cuts-and-keeps-its-document.md) | The person cuts a body in the panel, and the phone keeps its document through the background | Amended | Clients, platform | — | 0079 |
 | [0074](0074-the-probe-of-determinism-is-in-the-engine.md) | The probe of the determinism hash is a part of the engine, and the phone runs it | Accepted | Determinism, platform | — | — |
-| [0075](0075-a-second-tap-selects-the-face.md) | A second tap on the selected body selects the face under the point | Amended | Clients, selection | 0029 | 0077 |
+| [0075](0075-a-second-tap-selects-the-face.md) | A second tap on the selected body selects the face under the point | Amended | Clients, selection | 0029 | 0077, 0100 |
 | [0076](0076-the-cylinder.md) | The cylinder is a primitive of plane facets | Accepted | Geometry, kernel | 0032 | — |
-| [0077](0077-a-tap-near-an-edge-selects-the-edge.md) | An edge is named by its two faces, and a tap near an edge of the selected face selects it | Accepted | Clients, selection, kernel | 0075 | — |
+| [0077](0077-a-tap-near-an-edge-selects-the-edge.md) | An edge is named by its two faces, and a tap near an edge of the selected face selects it | Amended | Clients, selection, kernel | 0075 | 0100 |
 | [0078](0078-the-theme-of-the-redesign.md) | The desktop and the phone take the theme "Proposed (harmonized)" of the redesign | Amended | Clients, rendering | — | 0091 |
 | [0079](0079-the-activity-may-start-again.md) | The activity of the phone may start again in its process | Accepted | Clients, platform | 0073 | — |
 | [0080](0080-the-fixed-controls-of-the-redesign.md) | The title of the document, Undo, Redo and the status line are fixed controls of the redesign | Amended | Clients, rendering | 0030, 0031 | 0093 |
@@ -98,14 +98,15 @@ names. Do not read all of them.
 | [0090](0090-the-answer-of-a-save-lists-its-warnings.md) | The HTTP answer of a save lists its warnings | Accepted | Surface, persistence | 0030 | — |
 | [0091](0091-the-fonts-of-the-redesign.md) | The interface draws with Instrument Sans, and a value on an edge with JetBrains Mono | Accepted | Clients, rendering | 0027, 0078 | — |
 | [0092](0092-an-agent-proposes-and-the-person-accepts.md) | An agent proposes commands, and the person accepts or rejects them | Amended | Surface, clients | — | 0107, 0110, 0111 |
-| [0093](0093-the-layout-of-the-mix-has-no-panel-chrome.md) | The layout of the mix has a top bar, a panel with no chrome and a status line at the lower right | Amended | Clients, rendering | 0080 | 0099 |
+| [0093](0093-the-layout-of-the-mix-has-no-panel-chrome.md) | The layout of the mix has a top bar, a panel with no chrome and a status line at the lower right | Amended | Clients, rendering | 0080 | 0099, 0100 |
 | [0094](0094-a-framed-part-fills-45-percent-of-the-picture.md) | A framed part fills 45 % of the half picture, as in the render of the mix | Accepted | Clients, rendering | 0025 | — |
 | [0095](0095-the-look-of-the-orbit-ring.md) | The ring has the look of the orbit of the render, with a guide, icons and a caption | Accepted | Clients, rendering | 0081, 0086 | — |
 | [0096](0096-the-camera-of-the-session-has-z-up.md) | The camera of the session has the z axis up, as the render of the mix draws a part | Accepted | Clients, rendering | 0023, 0034 | — |
 | [0097](0097-the-rows-of-a-sketch-take-the-place-of-the-panel.md) | The rows of an active sketch take the place of the panel, and its ring is on the right | Accepted | Clients, sketch | 0034, 0086, 0087 | — |
 | [0098](0098-the-command-line.md) | The command line at the upper right runs the commands of the state with Control and K | Amended | Clients, rendering | 0032, 0084 | 0099 |
-| [0099](0099-the-rows-of-a-selected-body-take-the-place-of-the-panel.md) | The rows of a selected body take the place of the panel at the upper left | Accepted | Clients, rendering | 0084, 0093, 0098 | — |
-| [0102](0102-a-project-in-any-folder.md) | The window opens and saves a project in any folder, through the dialogs of the system | Amended | Persistence, clients | 0030, 0083 | 0106 |
+| [0099](0099-the-rows-of-a-selected-body-take-the-place-of-the-panel.md) | The rows of a selected body take the place of the panel at the upper left | Amended | Clients, rendering | 0084, 0093, 0098 | 0100 |
+| [0100](0100-a-path-line-from-the-document-to-the-selection.md) | A path line from the document to the selection, and the rows of the document | Accepted | Clients, selection | 0075, 0077, 0093, 0099, 0102 | — |
+| [0102](0102-a-project-in-any-folder.md) | The window opens and saves a project in any folder, through the dialogs of the system | Amended | Persistence, clients | 0030, 0083 | 0100, 0106 |
 | [0103](0103-the-vision-library-stays-in-the-spike-on-opencvsharp5.md) | The vision library stays in the spike, on OpenCvSharp5 | Accepted | Vision | 0042 | — |
 | [0104](0104-the-history-arc.md) | The history arc shows the steps that made the selected body | Accepted | Clients, rendering | — | — |
 | [0105](0105-the-values-on-the-edges-of-an-active-sketch.md) | The values of an active sketch show on its edges | Accepted | Clients, rendering | — | — |

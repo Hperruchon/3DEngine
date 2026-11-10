@@ -1,11 +1,11 @@
 ---
 id: 0314
 title: A path line from the document to the selection, and the rows of the document
-status: Ready
+status: Done
 phase: R17a
 opened: 2026-11-08
 depends-on: [0313]
-governed-by: [0007, 0019, 0025, 0027, 0029, 0030, 0032, 0034, 0072, 0073, 0075, 0076, 0077, 0078, 0080, 0081, 0082, 0083, 0084, 0085, 0086, 0087, 0089, 0091, 0092, 0093, 0097, 0098, 0099, 0102, 0104, 0105, 0106, 0107, 0110, 0111]
+governed-by: [0007, 0019, 0025, 0027, 0029, 0030, 0032, 0034, 0072, 0073, 0075, 0076, 0077, 0078, 0080, 0081, 0082, 0083, 0084, 0085, 0086, 0087, 0089, 0091, 0092, 0093, 0097, 0098, 0099, 0100, 0102, 0104, 0105, 0106, 0107, 0110, 0111]
 writes:
   create:
     - tasks/TASK-0314-a-path-line-from-the-document-to-the-selection.md
@@ -24,13 +24,18 @@ writes:
     - 3DEngine.ImageTests/FixedControlsTests.cs
     - 3DEngine.ImageTests/FaceSelectionTests.cs
     - 3DEngine.ImageTests/EdgeSelectionTests.cs
+    - 3DEngine.ImageTests/BodyActionsTests.cs
     - docs/adr/0075-a-second-tap-selects-the-face.md
     - docs/adr/0077-a-tap-near-an-edge-selects-the-edge.md
     - docs/adr/0084-the-rows-of-the-selected-body.md
     - docs/adr/0093-the-layout-of-the-mix-has-no-panel-chrome.md
     - docs/adr/0099-the-rows-of-a-selected-body-take-the-place-of-the-panel.md
+    - docs/adr/0102-a-project-in-any-folder.md
     - docs/adr/README.md
     - eng/test-floor.txt
+    - tasks/TASK-0315-a-focus-on-one-body.md
+    - tasks/TASK-0332-the-look-of-the-render.md
+    - tasks/TASK-0333-the-edges-of-the-body.md
     - docs/roadmap.md
     - docs/CURRENT-STATE.md
   forbid:
@@ -88,16 +93,20 @@ data of the document when nothing is selected.
 
 ## Acceptance criteria
 
-- [ ] ADR-0100 exists and records the answers of the owner of 2026-11-08. ADR-0075, ADR-0077, ADR-0093 and ADR-0099
+- [x] ADR-0100 exists and records the answers of the owner of 2026-11-08. ADR-0075, ADR-0077, ADR-0093 and ADR-0099
       show the amendment.
-- [ ] Escape on a selected body clears the selection; a test fails when Escape stops at the body again.
-- [ ] A tap on the file name clears the body; a tap on the body name clears the face.
-- [ ] With nothing selected on a landscape display, the rows give the kind, the unit and the counts, and a failed body
+- [x] Escape on a selected body clears the selection; a test fails when Escape stops at the body again.
+- [x] A tap on the file name clears the body; a tap on the body name clears the face.
+- [x] With nothing selected on a landscape display, the rows give the kind, the unit and the counts, and a failed body
       shows "failed" and its code.
-- [ ] The pictures at 1440 by 900 and 844 by 390 show the path line and the rows.
-- [ ] A clean build (`--no-incremental`) gives zero errors and zero warnings, and the phone project builds.
-- [ ] `dotnet test`, the write-set check and `eng/repo-gates` pass; continuous integration passes on the branch and on
+- [x] The pictures at 1440 by 900 and 844 by 390 show the path line and the rows.
+- [x] A clean build (`--no-incremental`) gives zero errors and zero warnings, and the phone project builds.
+- [x] `dotnet test`, the write-set check and `eng/repo-gates` pass; continuous integration passes on the branch and on
       `main` after the merge.
+
+## Outcome
+
+Status: Done · commit (the merge of the branch r17a-path-line) · v0.316
 
 ## Notes for the implementer
 
@@ -119,3 +128,14 @@ Weakest:    no person used a path line in this window yet.
 
 - 2026-11-08: opened from the proposal, with the answers of the owner.
 - 2026-11-09: depends on TASK-0313 and is governed by ADR-0099, after the merge of R16p at v0.298.
+- 2026-11-09: started at `main` 6f75607 (v0.310), branch r17a-path-line. The write set adds `BodyActionsTests.cs`, whose
+  test held that Escape stops at the body, and ADR-0102, whose item 7 (the folder in the top bar) this task amends, and
+  the file of TASK-0315, whose `governed-by` must name ADR-0100. ADR-0100 Q1 A: the rows of the document are the first
+  part of the panel, so ADR-0099 Q1 A holds and the image tests of the panel keep their places. The codebase review is
+  due before the close: the close is the fifth product milestone after the review of v0.304.
+- 2026-11-10: main at v0.315 (P0.139) merged into the branch. On a portrait display the path line moved the panel 44
+  pixels down, and at 390 by 844 the panel covered Move of the ring, so the portrait test of the proposal sheet failed.
+  ADR-0100 item 5 now ends the panel 8 pixels above the ring, as the sheet of ADR-0111 item 4. A test holds it at 360 by
+  780, 390 by 844, 393 by 873 and 412 by 915; it fails at 360 by 780 with the rule removed. The fault of R-0058 at 360 by
+  780 goes with it, but R-0058 stays open: its exit names each display from 360 by 640. The write set adds the files of
+  TASK-0332 and TASK-0333, whose `governed-by` must name ADR-0100.

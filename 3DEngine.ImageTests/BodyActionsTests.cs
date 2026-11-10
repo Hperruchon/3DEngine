@@ -134,6 +134,10 @@ public class BodyActionsTests
         var escape = Assert.Single(new IntentMachine().Step([new KeySample(InputKey.Escape, true, KeyModifiers.None, 0)]));
         Assert.True(actions.Apply(escape, Pick, live));
         Assert.Equal((A, (DatumReference?)null), (actions.Selection, actions.Face));
+        // ADR-0100 item 3 (phase R17a, TASK-0314): Escape on the body goes up to the document; with nothing selected it gives
+        // nothing. Until TASK-0314 Escape stopped at the body.
+        Assert.True(actions.Apply(escape, Pick, live));
+        Assert.Null(actions.Selection);
         Assert.False(actions.Apply(escape, Pick, live));
 
         actions.Apply(new SelectIntent(100, 100), Pick, live);
