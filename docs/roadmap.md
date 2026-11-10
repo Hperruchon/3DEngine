@@ -344,6 +344,8 @@ Therefore each approved objective must have a track here.
   hidden edges. v0.322, TASK-0333, ADR-0109.
 - R17b — A focus on one body: "Focus" on the ring or in the command line draws the body alone, writes nothing to the
   log, and ends with the close mark of the path line, Escape or "Focus" again. v0.323, TASK-0315, ADR-0101.
+- R18c — The values as in the render: three decimals and the unit on a round outlined pill, on a dimension line with
+  extension lines, outside the outline of the body. v0.325, TASK-0340, ADR-0115.
 - P0.141 — The medium and low findings of the codebase review of 2026-11-10: a turn refuses a quaternion of very small
   parts, a proposal shows an angle in degrees, and the path line and the focus are free during an accept. v0.324,
   TASK-0339, ADR-0114.
@@ -587,7 +589,7 @@ The first objective. Each phase ends with something that a person can observe.
 | R18 | The look of the render "mix": the gaps between the window at v0.311 and the renders Mix 1 to Mix 4 of the designer brief, in slices S1 to S10 of the proposal `docs/proposals/2026-11-10-gaps-to-the-render.md`; the owner accepted each recommended answer on 2026-11-10. The preview of a proposal (S11, a dry run on a second Document) waits until R18i, and the author of a step (S12, a contract change) waits until after S11. | 12–18 |
 | R18a | The look of the render: an almost black ground, thin outlined controls with no fill, the command line with a search mark and "Ctrl K", the states in green and red, and "AGENT IS WAITING" beside the command line (ADR-0108; S1, Q2 A). TASK-0332. | 1–2 |
 | R18b | The edges of the body: an edge pass draws the edges as lines, the selected body has a transparent fill and dashed hidden edges, and a soft shadow is under it (ADR-0109; S2). TASK-0333. | 2–3 |
-| R18c | The values as in the render: dimension lines with extension lines, pills in the mono font with three decimals and the unit, outside the silhouette of the body (S3, Q6 A). | 2 |
+| R18c | The values as in the render: dimension lines with extension lines, pills in the mono font with three decimals and the unit, outside the silhouette of the body (ADR-0115; S3, Q6 A). TASK-0340. | 2 |
 | R18d | The rows of a body as in the render: the name larger, the state in its colour, the row "Made from" with a tap that opens the sketch (ADR-0099 Q2), and labels from the direction of each value and the name of its constraint (S4). | 1–2 |
 | R18e | "Edit sketch" and "Rename" on the ring of a body, and the history arc drawn with its nodes on the arc (S5). | 1–2 |
 | R18f | The sketch as in the render: rows with the constraints, their residual and "Makes"; "Next point" and "Extrude" on the ring and in the command line; the plate under the body with its label and its caption (S6). | 2 |

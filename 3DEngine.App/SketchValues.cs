@@ -39,6 +39,10 @@ internal static class SketchValues
         var driven = sketch.References.SelectMany(reference => reference.Line is { } line ? reference.Points.Append(line) : reference.Points).ToHashSet();
         var labels = SketchText.Labels(sketch);
 
+        // ADR-0115 item 2 (phase R18c, TASK-0340): the outline of the sketch on the screen: its points and the polylines of its
+        // curves.
+        var outline = pixels.Concat(curves.Values.SelectMany(polyline => polyline).Select(point => PixelOf(point.X, point.Y)).OfType<Vector2>()).ToList();
+
         var values = new List<EdgeValues.Value>();
         foreach (var constraint in sketch.Constraints)
         {
@@ -47,20 +51,23 @@ internal static class SketchValues
 
             // ADR-0105 item 2 (TASK-0327): a distance is at the middle of its line or of its two points, and a radius at the
             // point of its curve farthest from the centre.
-            var (at, prefix, label) = constraint.Kind switch
+            // ADR-0115 item 2 (TASK-0340): a distance measures between the pixels of its two ends, and a radius has a leader.
+            var (from, to, prefix, label) = constraint.Kind switch
             {
-                "distance" => (Ends(constraint.Items) is { } ends ? PixelOf((ends.A.X + ends.B.X) / 2, (ends.A.Y + ends.B.Y) / 2) : null, string.Empty, "Length"),
+                "distance" when Ends(constraint.Items) is { } ends => (PixelOf(ends.A.X, ends.A.Y), PixelOf(ends.B.X, ends.B.Y), string.Empty, "Length"),
                 "radius" when constraint.Items.Count == 1 && curves.TryGetValue(constraint.Items[0], out var polyline)
-                    => (Farthest(polyline), "R ", "Radius"),
-                _ => ((Vector2?)null, string.Empty, string.Empty),
+                    => (Farthest(polyline), Farthest(polyline), "R ", "Radius"),
+                _ => ((Vector2?)null, (Vector2?)null, string.Empty, string.Empty),
             };
-            if (at is not { } place)
+            if (from is not { } a || to is not { } b)
                 continue;
 
-            // ADR-0105 item 3 (TASK-0327): the label of the constraint, two spaces, the value and the unit.
+            // ADR-0105 item 3 (TASK-0327): the label of the constraint, two spaces, the value and the unit. ADR-0115 item 1: the
+            // value has three decimals.
             var number = constraint.Values[0];
-            values.Add(new EdgeValues.Value(Key(constraint.Id), $"{labels[constraint.Id]}  {prefix}{Dimensions.Format(number)} {unit}", Away(place, centre),
-                number, Guid.Empty, sketch.SketchId, constraint.Id, label));
+            var line = EdgeValues.Outside(a, b, centre, outline);
+            values.Add(new EdgeValues.Value(Key(constraint.Id), $"{labels[constraint.Id]}  {prefix}{EdgeValues.Exact(number)} {unit}", EdgeValues.Placed(line),
+                number, Guid.Empty, sketch.SketchId, constraint.Id, label, line));
         }
 
         return values;
@@ -81,12 +88,4 @@ internal static class SketchValues
                 .FirstOrDefault();
     }
 
-    // ADR-0105 item 2 (TASK-0327): the chip goes 24 pixels farther from the centre, as EdgeValues does; a place at the
-    // centre goes up.
-    private static Vector2 Away(Vector2 at, Vector2 centre)
-    {
-        var outward = at - centre;
-        var length = outward.Length();
-        return length < 1e-3f ? at + new Vector2(0f, -EdgeValues.Offset) : at + (outward / length * EdgeValues.Offset);
-    }
 }

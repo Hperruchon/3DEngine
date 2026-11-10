@@ -106,13 +106,14 @@ public sealed class SketchValueTests
     {
         var values = ValuesOf(Plate);
 
-        Assert.Equal(["C1  60 mm", "C2  40 mm", "C4  R 8 mm"], values.Select(value => value.Text));
+        // ADR-0115 item 1 (TASK-0340): three decimals.
+        Assert.Equal(["C1  60.000 mm", "C2  40.000 mm", "C4  R 8.000 mm"], values.Select(value => value.Text));
         Assert.Equal([C1, C2, C4], values.Select(value => value.Constraint!.Value));
         Assert.Equal([60.0, 40.0, 8.0], values.Select(value => value.Number));
         Assert.All(values, value => Assert.Equal(Sketch, value.Sketch));
         Assert.Equal([SketchValues.Key(C1), SketchValues.Key(C2), SketchValues.Key(C4)], values.Select(value => value.Key));
         Assert.DoesNotContain(values, value => value.Key == EdgeValues.ConstraintKey(value.Constraint!.Value));
-        Assert.Equal(["C1  60 in", "C2  40 in", "C4  R 8 in"], SketchValues.Of(Plate, Facing, Display.X, Display.Y, "in").Select(value => value.Text));
+        Assert.Equal(["C1  60.000 in", "C2  40.000 in", "C4  R 8.000 in"], SketchValues.Of(Plate, Facing, Display.X, Display.Y, "in").Select(value => value.Text));
     }
 
     // Item 1: a constraint of a reference item has no value.
@@ -149,29 +150,41 @@ public sealed class SketchValueTests
         Assert.Equal([inFront], ValuesOf(sketch, along).Select(value => value.Constraint!.Value));
     }
 
-    // Item 2: the value of a distance is at the middle of its line, or of its two points, 24 pixels farther from the centre of
-    // the sketch on the screen; the value of a radius is on its curve at the point farthest from that centre, 24 pixels out.
+    // Item 2, as ADR-0115 item 2 (TASK-0340) amends it: the dimension line of a distance is parallel to its line, or to the
+    // segment of its two points, on the side away from the centre of the sketch, at the gap past the outline of the sketch.
+    // The value of a radius has a leader from the point of its curve farthest from that centre, straight out, past the
+    // outline. Until TASK-0340 each value was 24 pixels out from its line, also over the sketch.
     [Fact]
-    public void A_Value_Is_At_The_Middle_Of_Its_Line_And_24_Pixels_Out()
+    public void A_Value_Is_On_Its_Dimension_Line_Past_The_Outline()
     {
         var values = ValuesOf(Plate).ToDictionary(value => value.Constraint!.Value);
         var centre = PixelOf(Plate, 0, 0);
 
+        // The line at the bottom is the lowest part of the sketch, so its dimension line is the gap under it.
         var bottom = PixelOf(Plate, 0, -20);
-        Assert.Equal(bottom.X, values[C1].At.X, 0.01f);
-        Assert.Equal(bottom.Y + EdgeValues.Offset, values[C1].At.Y, 0.01f);
         Assert.True(bottom.Y > centre.Y, "The line at the bottom is not under the centre on the screen.");
+        var c1 = values[C1].Line ?? throw new InvalidOperationException("C1 has no line.");
+        Assert.Equal((PixelOf(Plate, -30, -20), PixelOf(Plate, 30, -20)), (c1.A, c1.B));
+        Assert.Equal(new Vector2(0f, 1f), c1.Normal);
+        Assert.Equal(EdgeValues.Gap, c1.Offset, 0.01f);
+        Assert.Equal(bottom + new Vector2(0f, EdgeValues.Gap), values[C1].At);
 
         var right = PixelOf(Plate, 30, 0);
-        Assert.Equal(right.X + EdgeValues.Offset, values[C2].At.X, 0.01f);
+        var c2 = values[C2].Line ?? throw new InvalidOperationException("C2 has no line.");
+        Assert.Equal(new Vector2(1f, 0f), c2.Normal);
+        Assert.Equal(right.X + EdgeValues.Gap, values[C2].At.X, 0.01f);
         Assert.Equal(right.Y, values[C2].At.Y, 0.01f);
 
-        // The point of the circle farthest from the centre is in the direction of its centre (10, 5) from the origin.
+        // The point of the circle farthest from the centre is in the direction of its centre (10, 5) from the origin. Its
+        // leader goes out along that direction, past the corner (30, 20) of the rectangle, which is farther along it.
         var direction = Vector2.Normalize(new Vector2(10, 5));
         var farthest = PixelOf(Plate, 10 + (8 * direction.X), 5 + (8 * direction.Y));
-        var outward = Vector2.Normalize(farthest - centre);
-        var expected = farthest + (outward * EdgeValues.Offset);
-        Assert.True(Vector2.Distance(expected, values[C4].At) < 3f, $"The radius is at {values[C4].At}, not at {expected}.");
+        var c4 = values[C4].Line ?? throw new InvalidOperationException("C4 has no line.");
+        Assert.True(c4.Leader, "The radius has no leader.");
+        Assert.True(Vector2.Distance(farthest, c4.A) < 3f, $"The leader starts at {c4.A}, not at {farthest}.");
+        var corner = PixelOf(Plate, 30, 20);
+        Assert.Equal(Vector2.Dot(corner - c4.A, c4.Normal) + EdgeValues.Gap, c4.Offset, 0.5f);
+        Assert.Equal(c4.A + (c4.Normal * c4.Offset), values[C4].At);
     }
 
     // Item 3: each chip of the active sketch shows, with at least 44 pixels on each side, and its rectangle is a part of the
@@ -183,8 +196,8 @@ public sealed class SketchValueTests
         var body = Guid.NewGuid();
         IReadOnlyList<EdgeValues.Value> edgeValues =
         [
-            new EdgeValues.Value(EdgeValues.DistanceKey(body), "10 mm", new Vector2(300, 700), 10, body, null, null, "Distance"),
-            new EdgeValues.Value(EdgeValues.ConstraintKey(C1), "60 mm", new Vector2(900, 700), 60, body, Sketch, C1, "Length"),
+            new EdgeValues.Value(EdgeValues.DistanceKey(body), "10.000 mm", new Vector2(300, 700), 10, body, null, null, "Distance"),
+            new EdgeValues.Value(EdgeValues.ConstraintKey(C1), "60.000 mm", new Vector2(900, 700), 60, body, Sketch, C1, "Length"),
         ];
         using var ui = new DesktopUi("http://127.0.0.1:5180", Document.Millimetre);
         Step(ui, Panel(), values, edgeValues, body);
@@ -195,7 +208,12 @@ public sealed class SketchValueTests
             var chip = Item(ui, value.Key);
             Assert.True(chip.Z - chip.X >= DesktopUi.ValueSize && chip.W - chip.Y >= DesktopUi.ValueSize, $"The chip {chip} is smaller than 44 pixels.");
             var middle = Middle(chip);
-            Assert.True(Vector2.Distance(middle, value.At) < 1f, $"The chip of {value.Text} is at {middle}, not at {value.At}.");
+            // ADR-0115 item 2 (TASK-0340): the pill goes out along the normal of its line by the half of the pill, so its middle
+            // is on the line through the place of the value, along that normal, and not nearer the sketch.
+            var line = value.Line ?? throw new InvalidOperationException($"The value {value.Text} has no line.");
+            var out_ = middle - value.At;
+            Assert.True(Math.Abs((out_.X * line.Normal.Y) - (out_.Y * line.Normal.X)) < 1f && Vector2.Dot(out_, line.Normal) >= 0f,
+                $"The chip of {value.Text} is at {middle}, not out from {value.At} along {line.Normal}.");
             Assert.True(ui.OverPanel(middle.X, middle.Y), $"A tap on the chip of {value.Text} reaches the scene.");
         }
 
@@ -320,7 +338,7 @@ public sealed class SketchValueTests
 
         actions.Edit(sketch);
         var values = Host();
-        Assert.Equal(["C1  60 mm", "C3  40 mm"], values.Select(value => value.Text));
+        Assert.Equal(["C1  60.000 mm", "C3  40.000 mm"], values.Select(value => value.Text));
         Assert.Equal(SketchValues.Of(info, Facing, Display.X, Display.Y, "mm").Select(value => (value.Key, value.At)), values.Select(value => (value.Key, value.At)));
 
         // ADR-0085 item 2: the sketch under its body is farther from the eye, so its values are nearer to its centre.
