@@ -23,6 +23,10 @@ internal sealed unsafe partial class DesktopUi
         // Finding V142 of the codebase review of 2026-11-08 (b) (TASK-0302): the panel is at most as wide as the display less its
         // margins and the safe area, as the window of a sketch (T176). Until TASK-0302 it was 460 wide on a display of 390.
         var width = Math.Min(PanelWidth, Math.Max(displaySize.X - 32f - _inset.X - _inset.Z, 160f));
+        // ADR-0113 item 4 (phase R19, TASK-0336): on a landscape display the panel ends 12 pixels left of the command line, so
+        // that the two do not overlap on a narrow display. Until TASK-0336 they overlapped at 640 by 360.
+        if (!_portrait)
+            width = Math.Min(width, Math.Max(CommandLeft(displaySize) - 12f - 16f - _inset.X, 160f));
         // ADR-0080 (TASK-0248): the panel ends above the round anchors of Undo and Redo at the bottom left.
         var room = Math.Max(displaySize.Y - PanelTop - 16f - AnchorRow - _inset.W, 0f);
         // ADR-0100 item 5 (phase R17a, TASK-0314): on a portrait display the panel ends 8 pixels above the ring of the last
@@ -78,13 +82,13 @@ internal sealed unsafe partial class DesktopUi
             ImGui.TextUnformatted(SketchLineLabel);
             foreach (var (label, datum) in NewSketchButtons)
             {
-                ImGui.SameLine();
+                SameLineIfFits(ButtonWidth(label[^2..]));
                 if (ImGui.Button($"{label[^2..]}##{label}"))
                     _actions.Add(new NewSketchAction(datum));
                 Item(label);
             }
 
-            ImGui.SameLine();
+            SameLineIfFits(ButtonWidth("Face"));
             if (ImGui.Button($"Face##{SketchOnFaceLabel}"))
                 _actions.Add(new SketchOnFaceAction());
             Item(SketchOnFaceLabel);
@@ -93,7 +97,7 @@ internal sealed unsafe partial class DesktopUi
             // so that a long list does not push them out of the panel.
             ImGui.Checkbox(DimensionsLabel, ref _dimensions);
             Item(DimensionsLabel);
-            ImGui.SameLine();
+            SameLineIfFits(CheckboxWidth(HiddenTooLabel));
             ImGui.BeginDisabled(!_dimensions);
             ImGui.Checkbox(HiddenTooLabel, ref _hiddenToo);
             ImGui.EndDisabled();
@@ -151,10 +155,10 @@ internal sealed unsafe partial class DesktopUi
     // The filter of the list of the bodies and its button Clear.
     private void FilterLine()
     {
-        ImGui.SetNextItemWidth(220f);
+        ImGui.SetNextItemWidth(FieldWidth(220f, FilterLabel, ClearLabel));
         TextField(FilterLabel, ref _filter, 64);
         Item(FilterLabel);
-        ImGui.SameLine();
+        SameLineIfFits(ButtonWidth(ClearLabel));
         if (ImGui.Button(ClearLabel))
             _filter = string.Empty;
         Item(ClearLabel);
@@ -280,7 +284,8 @@ internal sealed unsafe partial class DesktopUi
 
     // ADR-0093 item 2: the top of the panel, under the top bar. ADR-0100 item 5 (phase R17a, TASK-0314): on a portrait
     // display, under the path line.
-    private float PanelTop => 16f + _inset.Y + TopBarHeight + 8f + (_portrait ? PathHeight : 0f);
+    // ADR-0113 item 3 (phase R19, TASK-0336): and under "AGENT IS WAITING" when it is a line of its own there.
+    private float PanelTop => 16f + _inset.Y + TopBarHeight + 8f + (_portrait ? PathHeight + _waitingLine : 0f);
 
     // The width of the panel on a display that is wide enough (V142, TASK-0302).
     private const float PanelWidth = 460f;
@@ -288,6 +293,33 @@ internal sealed unsafe partial class DesktopUi
     // The width of a button with this label.
     private static float ButtonWidth(string label)
         => ImGui.CalcTextSize(label, true).X + 2f * ImGui.GetStyle().FramePadding.X;
+
+    // The width of a check box with this label: the box, the inner spacing and the text.
+    private static float CheckboxWidth(string label)
+        => ImGui.GetFrameHeight() + ImGui.GetStyle().ItemInnerSpacing.X + ImGui.CalcTextSize(label, true).X;
+
+    // ADR-0113 item 2 (phase R19, TASK-0336): the next item stays on the line when it fits, else it starts a new line, so no
+    // item of the panel goes past its right edge on a narrow display.
+    private static void SameLineIfFits(float width)
+    {
+        ImGui.SameLine();
+        if (ImGui.GetContentRegionAvail().X < width)
+            ImGui.NewLine();
+    }
+
+    // ADR-0113 item 2: the width of a field that its label and a button follow on its line: the preferred width when the line
+    // has room, else the room less the label and the button, and at least the narrowest field; the button then goes on a new
+    // line.
+    private static float FieldWidth(float preferred, string label, string button)
+    {
+        var style = ImGui.GetStyle();
+        var text = ImGui.CalcTextSize(label, true).X;
+        var after = (text > 0f ? style.ItemInnerSpacing.X + text : 0f) + style.ItemSpacing.X + ButtonWidth(button);
+        return Math.Clamp(ImGui.GetContentRegionAvail().X - after, NarrowestField, preferred);
+    }
+
+    // ADR-0113 item 2: the narrowest field of a line of the panel.
+    private const float NarrowestField = 120f;
 
     // The controls of the selected body. The name field starts with the name of the body each
     // time another body is selected.
@@ -324,7 +356,7 @@ internal sealed unsafe partial class DesktopUi
             Item(FaceLabel);
             if (face.CanSketch)
             {
-                ImGui.SameLine();
+                SameLineIfFits(ButtonWidth(SketchOnFaceButtonLabel));
                 if (ImGui.Button(SketchOnFaceButtonLabel))
                     _actions.Add(new SketchOnSelectedFaceAction());
                 Item(SketchOnFaceButtonLabel);
@@ -338,10 +370,10 @@ internal sealed unsafe partial class DesktopUi
             }
         }
 
-        ImGui.SetNextItemWidth(220f);
+        ImGui.SetNextItemWidth(FieldWidth(220f, NameLabel, RenameLabel));
         TextField(NameLabel, ref _name, 128);
         Item(NameLabel);
-        ImGui.SameLine();
+        SameLineIfFits(ButtonWidth(RenameLabel));
         if (ImGui.Button(RenameLabel))
             _actions.Add(new RenameBodyAction(body.Id, _name));
         Item(RenameLabel);
@@ -350,7 +382,7 @@ internal sealed unsafe partial class DesktopUi
         if (ImGui.Button(visibility))
             _actions.Add(new SetVisibleAction(body.Id, !body.Visible));
         Item(visibility);
-        ImGui.SameLine();
+        SameLineIfFits(ButtonWidth(MoveLabel));
 
         // ADR-0032 item 4: a move of the selected body by the offsets of the pad.
         if (ImGui.Button(MoveLabel))
@@ -361,6 +393,8 @@ internal sealed unsafe partial class DesktopUi
         // ADR-0049 item 8: the host reads the distance in effect and opens the pad with it.
         if (body.Kind == "Extrude")
         {
+            if (ImGui.GetContentRegionAvail().X < ButtonWidth(SetDistanceLabel))
+                ImGui.NewLine();
             if (ImGui.Button(SetDistanceLabel))
                 _actions.Add(new EditDistanceAction(body.Id));
             Item(SetDistanceLabel);
