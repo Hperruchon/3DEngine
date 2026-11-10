@@ -335,6 +335,7 @@ Therefore each approved objective must have a track here.
   phone sizes, a tablet and two windows. v0.317, TASK-0336, ADR-0113.
 - K8 — A command turns a body by a quaternion about the origin of the Document; the kernel, the rebuild, the datums and
   the determinism probe read the turn. v0.318, TASK-0335, ADR-0112.
+- Review — The codebase review of 2026-11-10. v0.319, TASK-0337.
 
 ## Track 0 — Foundations
 
@@ -479,6 +480,8 @@ This track removes each condition that blocks other work.
 | P0.137 | "Open project..." shows "Project or STL" first, and an STL file chosen there goes to the import (ADR-0106; the order of the owner of 2026-11-09 after P9g). TASK-0328. | 1 |
 | P0.138 | The high finding of the codebase review of 2026-11-09 (b): Accept of the agent arc takes a tap in the default window (V159), before the next product phase. TASK-0330. | 1 |
 | P0.139 | The medium and low findings of the codebase review of 2026-11-09 (b) (V160 to V163, E198, E199 and T180), after the next product phase. TASK-0331. | 1 |
+| P0.140 | The high finding of the codebase review of 2026-11-10: a pocket from a datum on a moved or turned face opens the face in the owned kernel (E200), before the next product phase. TASK-0338. | 1–2 |
+| P0.141 | The medium and low findings of the codebase review of 2026-11-10 (V164, E201, V165 and T181), after the next product phase. TASK-0339. | 1 |
 | P0.102 | The cache of a face, the fixed controls, the list New, the edges and the safe area hold their next forms (V113 to V118 of the codebase review of 2026-11-06 (e); after P0.101). TASK-0252. | 1–2 |
 | P0.86 | The window keeps no input between sessions, the hook has the cases of one axis, and the next forms of four gates fail (V88 to V90, T141 to T144 of the codebase review of 2026-11-06; after the next product phase). TASK-0198. | 1–2 |
 
