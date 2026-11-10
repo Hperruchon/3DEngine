@@ -5,7 +5,7 @@ status: Ready
 phase: P0.141
 opened: 2026-11-10
 depends-on: [0338]
-governed-by: [0001, 0007, 0008, 0012, 0018, 0019, 0025, 0029, 0036, 0072, 0092, 0107, 0110, 0111, 0112, 0113]
+governed-by: [0001, 0007, 0008, 0012, 0018, 0019, 0025, 0029, 0036, 0072, 0092, 0107, 0108, 0110, 0111, 0112, 0113]
 writes:
   create:
     - tasks/TASK-0339-medium-and-low-findings-of-the-review-of-2026-11-10.md
@@ -72,3 +72,4 @@ Weakest:    T181 needs the window, or a seam that the code does not have yet.
 ## Progress
 
 - 2026-11-10: opened from the codebase review of 2026-11-10.
+- 2026-11-10: `governed-by` adds 0108 (TASK-0332): ADR-0108 affects `3DEngine.ImageTests/ProposalArcTests.cs`.
