@@ -249,7 +249,12 @@ internal sealed class SessionBodies : IDisposable
             return false;
 
         var centre = MeshVertex.Centre(tessellation.Positions);
-        meshes[meshId] = new GpuMesh(device, MeshVertex.Narrow(tessellation.Positions, centre, 1.0), tessellation.Indices);
+        // Phase R18b (TASK-0333): the feature edges of the triangles go up with the mesh, as lines around the same centre,
+        // when they are not too many.
+        var narrowed = MeshVertex.Narrow(tessellation.Positions, centre, 1.0);
+        var feature = EdgeLines.Feature(tessellation.Positions, tessellation.Indices);
+        var edges = feature.Count <= EdgeLines.MostEdges ? EdgeLines.Vertices(narrowed, feature) : null;
+        meshes[meshId] = new GpuMesh(device, narrowed, tessellation.Indices, edges);
         Meshes++;
         _entities[meshId] = new Entity { Name = $"Body {change.BodyId}", MeshId = meshId, Origin = centre };
         _boxes[meshId] = Box(tessellation.Positions);
