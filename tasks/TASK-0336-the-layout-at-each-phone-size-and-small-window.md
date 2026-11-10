@@ -1,7 +1,7 @@
 ---
 id: 0336
 title: The layout keeps each control in the display and free for a tap at each phone size and in a small window
-status: Active
+status: Done
 phase: R19
 opened: 2026-11-10
 depends-on: [0314]
@@ -86,13 +86,17 @@ Each control of the window stays in the display and takes its tap at each size o
 
 ## Acceptance criteria
 
-- [ ] ADR-0113 exists and gives the list of the sizes and the rule.
-- [ ] The test fails for each of faults 1 to 4 when its change is removed.
-- [ ] R-0058 moves to the closed entries, with the test as its proof.
-- [ ] The pictures show each control in the display; the owner gets them.
-- [ ] A clean build (`--no-incremental`) gives zero errors and zero warnings, and the phone project builds.
-- [ ] `dotnet test`, the write-set check and `eng/repo-gates` pass; continuous integration passes on the branch and on
+- [x] ADR-0113 exists and gives the list of the sizes and the rule.
+- [x] The test fails for each of faults 1 to 4 when its change is removed.
+- [x] R-0058 moves to the closed entries, with the test as its proof.
+- [x] The pictures show each control in the display; the owner gets them.
+- [x] A clean build (`--no-incremental`) gives zero errors and zero warnings, and the phone project builds.
+- [x] `dotnet test`, the write-set check and `eng/repo-gates` pass; continuous integration passes on the branch and on
       `main` after the merge.
+
+## Outcome
+
+Status: Done · commit (the merge of the branch responsive-layout) · v0.317
 
 ## Notes for the implementer
 
