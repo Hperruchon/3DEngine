@@ -9723,3 +9723,33 @@ New tests: 4. The test list holds 2428 (1550 in `Engine.Tests`, 356 in `3DEngine
 in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
 entries: 10 of 15. New diagnostic codes: 1 (`E-GEOM-QUATERNION-TOO-SMALL`). Since the review of v0.319, 3 product
 milestones and 5 entries followed it.
+
+## v0.325 — A value shows three decimals on a pill on its dimension line, outside the body (R18c, TASK-0340)
+
+The owner accepted the proposal on the gaps to the render on 2026-11-10 (Q1 to Q7 A) and ordered "start R18c". This
+entry is slice S3: the values on the edges. Before it, a value was a filled box, as "60 mm", 24 pixels out from its
+edge, and two of the boxes of the bracket were over the body.
+
+**The change.** ADR-0115 amends ADR-0082 item 2, ADR-0105 items 2 and 3 and ADR-0110 item 2.
+- A value shows three decimals and its unit, and more decimals when it has them (Q6 A): "60.000 mm". The form has at
+  most 15 significant digits and no "-0.000". A chip of a proposal shows "60.000 → 75.000 mm"; the lines of a proposal
+  keep their form until R18i, because the longer form does not fit the sheet of a phone.
+- The dimension line of a value is parallel to its edge on the screen, on the side away from the centre, past each point
+  of the outline of the body or the sketch by a gap of 16 pixels and the half of the pill. Extension lines go from the
+  ends of the edge. A radius has a leader out from the centre.
+- The pill is round and outlined, in the mono font, centred on the line; its target stays at least 44 pixels.
+- The rows of a body show the text of its values, so they show three decimals too, before slice S4.
+
+**Proof.** 12 new tests in `3DEngine.ImageTests/DimensionLineTests.cs`: the form, the rule of the line on a square, each
+value of a real extrude past its outline, and each pill on its line and outside the outline. `SketchValueTests`,
+`EdgeValueTests`, `PendingChipTests` and `MixImageTests` take the new form and the new place. Ten injections each failed
+a named test; each file came back byte for byte. The picture of the bracket at 1440 by 900 shows the lines and the
+pills. The phone project builds with zero warnings. Run 42905740219 passed on the branch. The failed runs since the entry
+v0.324, from the API: none.
+
+**What stays.** No test reads the pixels of the lines. The extension lines of two values can cross. R-0062 is new: on
+the computer of the owner the image tests crashed the test host in `vkCreateDevice` in some runs, also on `main`.
+
+New tests: 12. The test list holds 2440 (1550 in `Engine.Tests`, 356 in `3DEngine.Tests`, 531 in `3DEngine.ImageTests`, 3
+in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
+entries: 11 of 15. New diagnostic codes: 0. Since the review of v0.319, 4 product milestones and 6 entries followed it.

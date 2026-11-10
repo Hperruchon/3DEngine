@@ -1,7 +1,7 @@
 ---
 id: 0340
 title: The values as in the render, with three decimals on a pill on a dimension line outside the body
-status: Active
+status: Done
 phase: R18c
 opened: 2026-11-10
 depends-on: [0332]
@@ -68,25 +68,32 @@ Each value on an edge looks as in the render, is exact, and never covers the bod
 
 ## Acceptance criteria
 
-- [ ] ADR-0115 exists and records Q6 A. ADR-0082, ADR-0105 and ADR-0110 show the amendment.
-- [ ] A test proves that each pill is outside the outline of the body; it fails when the pill is at the old place.
-- [ ] A test proves the form of three decimals; it fails with the old form.
-- [ ] The picture of the bracket at 1440 by 900 shows the dimension lines, the extension lines and the pills.
-- [ ] A clean build (`--no-incremental`) gives zero errors and zero warnings, and the phone project builds.
-- [ ] `dotnet test`, the write-set check and `eng/repo-gates` pass; continuous integration passes on the branch and on
+- [x] ADR-0115 exists and records Q6 A. ADR-0082, ADR-0105 and ADR-0110 show the amendment.
+- [x] A test proves that each pill is outside the outline of the body; it fails when the pill is at the old place.
+- [x] A test proves the form of three decimals; it fails with the old form.
+- [x] The picture of the bracket at 1440 by 900 shows the dimension lines, the extension lines and the pills.
+- [x] A clean build (`--no-incremental`) gives zero errors and zero warnings, and the phone project builds.
+- [x] `dotnet test`, the write-set check and `eng/repo-gates` pass; continuous integration passes on the branch and on
       `main` after the merge.
 
 ## Outcome
 
-Status: Active
+Status: Done · commit (the merge of the branch r18c-values) · v0.325
 
 ## Method
 
 Mechanical: the form of a value; the lines from the edges that the window has.
 Judgement:  the gap and the place of the pill; the leader of a radius; the form of the lines of a proposal.
-Weakest:    to be written at the close.
+Weakest:    the drawing of the extension lines and of the dimension line: a test checks their ends, and the picture
+            shows them, but no test reads their pixels.
 
 ## Progress
 
 - 2026-11-10: opened and started on the order of the owner, at `main` 6e8d1a7 (v0.324), branch r18c-values. ADR-0115 is
   free on `main` and on each branch; the other session took ADR-0114 for P0.141.
+- 2026-11-10: run 42905740219 passed on the work commit. Ten injections each failed a named test: the old form, a
+  negative zero, the side of the line, the reach past the outline, the old place, the half of the pill, the line through
+  the pill, a pill as high as its target, the old form of a sketch value and a radius with no leader. The first run of
+  the injection of the side was not caught: no case needed the turn of the normal. The case of the top edge now needs
+  it. The image tests crashed the test host in some local runs, also on `main`; R-0062 records it. Closed at v0.325.
+- 2026-11-10: merge of `main` at 6b614f1 (R20, TASK-0341, with no version): no conflict; TASK-0341 needs no ADR-0115.

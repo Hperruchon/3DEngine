@@ -74,3 +74,4 @@ until R18i.
 ## History
 
 - 2026-11-10 · TASK-0340 · The record, with Q6 A of 2026-11-10 and the judgement of the session on items 2 to 4.
+- 2026-11-10 · TASK-0340 · Shipped at v0.325.

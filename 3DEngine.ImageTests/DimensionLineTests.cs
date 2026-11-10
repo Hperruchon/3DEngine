@@ -52,6 +52,11 @@ public sealed class DimensionLineTests
         Assert.Equal((new Vector2(0, 100), new Vector2(100, 100), new Vector2(0, 1), EdgeValues.Gap), (bottom.A, bottom.B, bottom.Normal, bottom.Offset));
         Assert.False(bottom.Leader);
 
+        // The edge at the top, from the left to the right: its first normal points into the square, so the rule turns it
+        // away from the centre, and the line is the gap above the square.
+        var top = EdgeValues.Outside(new(0, 0), new(100, 0), new(50, 50), square);
+        Assert.Equal((new Vector2(0, -1), EdgeValues.Gap), (top.Normal, top.Offset));
+
         // An edge through the middle, with the centre above it, has its line under the whole square.
         var middle = EdgeValues.Outside(new(0, 50), new(100, 50), new(50, 40), square);
         Assert.Equal(new Vector2(0, 1), middle.Normal);
