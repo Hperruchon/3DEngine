@@ -1,13 +1,13 @@
 ---
 id: 0112
 title: A command turns a body by a quaternion about the origin of the Document
-status: Accepted
+status: Amended
 topic: Contracts, geometry
 date: 2026-11-10
 supersedes: []
 superseded-by: []
 amends: ['0012', '0039', '0051', '0058', '0059', '0060']
-amended-by: []
+amended-by: ['0114']
 affects:
   - Engine.Contracts/Geometry/Rotation.cs
   - Engine.Contracts/Geometry/ITransformOps.cs
@@ -117,3 +117,5 @@ the frame of a datum on a face (ADR-0051) and the check of a gone face (ADR-0059
 - 2026-11-10 · TASK-0335 · The record, for register entry R-0057 and the answer Q5 C of the owner.
 - 2026-11-10 · TASK-0335 · Accepted by the owner: the quaternion, the turn about the origin, and no pivot.
 - 2026-11-10 · TASK-0335 · Shipped at v0.318.
+- 2026-11-10 · TASK-0339 · ADR-0114 item 1 amends item 2: a quaternion with s below 2^-969 gives no turn, and Rotate
+  refuses it with E-GEOM-QUATERNION-TOO-SMALL (finding E201, the answer A of the owner).

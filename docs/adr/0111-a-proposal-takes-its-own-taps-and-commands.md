@@ -1,13 +1,13 @@
 ---
 id: 0111
 title: A proposal takes its own taps, its own command identifiers and its own steps
-status: Accepted
+status: Amended
 topic: Surface, clients
 date: 2026-11-10
 supersedes: []
 superseded-by: []
 amends: ['0092']
-amended-by: []
+amended-by: ['0114']
 affects:
   - Engine.Api.Http/Proposals.cs
   - Engine.Api.Http/Endpoints/ProposalsEndpoint.cs
@@ -74,3 +74,5 @@ again. On a small portrait display the sheet still covers the ring.
 
 - 2026-11-10 · TASK-0331 · The record, for findings V160, E198, V162, V163 and E199 of the codebase review of 2026-11-09 (b).
 - 2026-11-10 · TASK-0331 · Shipped at v0.315.
+- 2026-11-10 · TASK-0339 · ADR-0114 item 3 amends item 3: the path line, the focus and the end of a focus are free during an
+  accept (finding V165). ADR-0114 item 4: AcceptHold.Held and AcceptHold.Pass make the decision of the host (T181).

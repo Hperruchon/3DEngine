@@ -57,6 +57,16 @@ public sealed class RotateCommandHandler : ICommandHandler, ICommandEncoder
     // (this handler, the regeneration, the owned kernel and the frame of a datum) takes the turn from here.
     public static Rotation? Turn(RotateCommand rotate) => Rotation.FromQuaternion(rotate.Qw, rotate.Qx, rotate.Qy, rotate.Qz);
 
+    // ADR-0114 item 1 (finding E201, TASK-0339): a quaternion that gives no turn, with four finite parts, one of them not
+    // zero, and a finite sum of squares. With such parts FromQuaternion refuses only a sum below its limit, so the code tells
+    // that case. The sum can round to zero: the square of 1e-162 is below the smallest double.
+    private static bool TooSmall(RotateCommand rotate)
+    {
+        double[] parts = [rotate.Qw, rotate.Qx, rotate.Qy, rotate.Qz];
+        var s = (rotate.Qw * rotate.Qw) + (rotate.Qx * rotate.Qx) + (rotate.Qy * rotate.Qy) + (rotate.Qz * rotate.Qz);
+        return parts.All(double.IsFinite) && parts.Any(part => part != 0) && double.IsFinite(s);
+    }
+
     public Task<CommandHandlerResult> Handle(
         Command command,
         Document document,
@@ -77,9 +87,13 @@ public sealed class RotateCommandHandler : ICommandHandler, ICommandEncoder
                 DiagnosticCodes.MeshUnsupported, $"The body '{rotate.BodyId}' is a mesh body of an STL file, which does not turn (ADR-0112 item 1).")));
 
         if (Turn(rotate) is not { } turn)
-            return Task.FromResult(CommandHandlerResult.Failure(new ErrorDetail(
-                DiagnosticCodes.GeomInvalidParam,
-                "Rotate requires qw, qx, qy and qz finite and not all zero, with a finite turn (ADR-0112 item 2).")));
+            return Task.FromResult(CommandHandlerResult.Failure(TooSmall(rotate)
+                ? new ErrorDetail(
+                    DiagnosticCodes.GeomQuaternionTooSmall,
+                    "Rotate requires qw² + qx² + qy² + qz² of at least 2^-969; smaller parts round the turn into a scale (ADR-0114 item 1).")
+                : new ErrorDetail(
+                    DiagnosticCodes.GeomInvalidParam,
+                    "Rotate requires qw, qx, qy and qz finite and not all zero, with a finite turn (ADR-0112 item 2).")));
 
         if (backend.TryGet<ITransformOps>() is not { } transform)
             return Task.FromResult(CommandHandlerResult.Failure(new ErrorDetail(
