@@ -1,7 +1,7 @@
 ---
 id: 0335
 title: A command turns a body by a quaternion about the origin of the Document
-status: Active
+status: Done
 phase: K8
 opened: 2026-11-10
 depends-on: [0331]
@@ -107,3 +107,4 @@ Weakest:    the kernel refuses a map with a determinant of zero or less, and the
 - 2026-11-10: run 42798565576 passed. Closed at v0.317.
 - 2026-11-10: R19 merged first at v0.317, so K8 closes at v0.318; the merge of main resolves the register, the
   roadmap, the index of the ADRs and the ledger by keeping both sides.
+- 2026-11-10: Done again at v0.318 after the merge of main.
