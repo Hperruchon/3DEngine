@@ -93,22 +93,8 @@ public static class DatumResolver
     public static (DatumFrame? Frame, string? Reason) Resolve(
         DatumReference reference, FeatureGraph graph, int place, Func<ExtrudeCommand, ExtrudeState> state, Func<Guid, DatumFrame?> frameOf)
     {
-        var feature = graph.Creator(reference.FeatureId);
-        if (feature is null || graph.Order(feature.CommandId) >= place)
-            return (null, $"No CreateBox, CreateCylinder, CreateCone, CreateSphere, CreateTorus or Extrude in effect before the datum has the id '{reference.FeatureId}'.");
-        if (Form(reference, feature) is { } wrong)
-            return (null, wrong);
-
-        var (frame, reason) = feature switch
-        {
-            ExtrudeCommand extrude => Extrude(extrude, reference, state(extrude), frameOf),
-            CreateBoxCommand box => (Box(box, reference.Element), null),
-            CreateCylinderCommand cylinder => (Cylinder(cylinder, reference.Element), null),
-            // ADR-0089 item 3: the base of a cone is the bottom of a cylinder of the same height.
-            CreateConeCommand cone => (Cylinder(new CreateCylinderCommand { Radius = cone.Radius, Height = cone.Height }, reference.Element), null),
-            _ => (null, $"The command '{feature.Name}' has no faces."),
-        };
-        if (frame is not { } carrier)
+        var (frame, feature, reason) = Carrier(reference, graph, place, state, frameOf);
+        if (frame is not { } carrier || feature is null)
             return (null, reason);
 
         // Finding E125 of the codebase review of 2026-11-03 (TASK-0169): a sum of the origin can overflow, and a frame
@@ -124,6 +110,72 @@ public static class DatumResolver
         return Finite(resolved)
             ? (resolved, null)
             : (null, $"The element '{reference.Element}' of '{reference.FeatureId}' gives a frame with a value that is not finite or an axis of the length zero.");
+    }
+
+    // Finding E200 of the codebase review of 2026-11-10 (phase P0.140, TASK-0338): the frame of the face before the steps of
+    // its chain, the command that creates the feature, the Translate and Rotate steps in effect before the place, and true
+    // when the face is a wall of a hole, so the owned kernel builds the frame exactly, as it builds the solid. Null when the
+    // reference does not resolve. Until TASK-0338 the kernel read the frame that Resolve builds in doubles, one unit in the
+    // last place away from the exact face, and a pocket from that frame left the face whole and a closed cavity under it.
+    public static (DatumFrame Carrier, Command Feature, IReadOnlyList<Command> Steps, bool Turned)? Placement(
+        DatumReference reference, FeatureGraph graph, int place, Func<ExtrudeCommand, ExtrudeState> state, Func<Guid, DatumFrame?> frameOf)
+    {
+        ArgumentNullException.ThrowIfNull(reference);
+        ArgumentNullException.ThrowIfNull(graph);
+        var (frame, feature, _) = Carrier(reference, graph, place, state, frameOf);
+        if (frame is not { } carrier || feature is null)
+            return null;
+        return (carrier, feature, [.. Chain(graph, feature.CommandId, place)], Turned(graph, feature.CommandId, place));
+    }
+
+    // ADR-0051 item 2: the frame of the face in the place of the command that creates the feature, and that command.
+    private static (DatumFrame? Frame, Command? Feature, string? Reason) Carrier(
+        DatumReference reference, FeatureGraph graph, int place, Func<ExtrudeCommand, ExtrudeState> state, Func<Guid, DatumFrame?> frameOf)
+    {
+        var feature = graph.Creator(reference.FeatureId);
+        if (feature is null || graph.Order(feature.CommandId) >= place)
+            return (null, null, $"No CreateBox, CreateCylinder, CreateCone, CreateSphere, CreateTorus or Extrude in effect before the datum has the id '{reference.FeatureId}'.");
+        if (Form(reference, feature) is { } wrong)
+            return (null, null, wrong);
+
+        var (frame, reason) = feature switch
+        {
+            ExtrudeCommand extrude => Extrude(extrude, reference, state(extrude), frameOf),
+            CreateBoxCommand box => (Box(box, reference.Element), null),
+            CreateCylinderCommand cylinder => (Cylinder(cylinder, reference.Element), null),
+            // ADR-0089 item 3: the base of a cone is the bottom of a cylinder of the same height.
+            CreateConeCommand cone => (Cylinder(new CreateCylinderCommand { Radius = cone.Radius, Height = cone.Height }, reference.Element), null),
+            _ => (null, $"The command '{feature.Name}' has no faces."),
+        };
+        return (frame, feature, reason);
+    }
+
+    // The side of a line: its two ends in the order of the counter-clockwise loop. Each line of a profile is one edge of
+    // the loop, and no two vertices of the loop share a position. Finding E200 (TASK-0338): the owned kernel reads the same
+    // two ends for its exact frame of a side.
+    public static (((double X, double Y) From, (double X, double Y) To)? Ends, string? Reason) SideEnds(
+        ExtrudeCommand extrude, SketchRecord sketch, DatumReference reference, ExtrudeParameters profile)
+    {
+        ArgumentNullException.ThrowIfNull(extrude);
+        ArgumentNullException.ThrowIfNull(sketch);
+        ArgumentNullException.ThrowIfNull(reference);
+        if (sketch.Lines.FirstOrDefault(line => line.Id == reference.ItemId) is not { } side)
+            return (null, $"The item '{reference.ItemId}' is not a line of the sketch '{sketch.Id}'.");
+        var (a, b) = (sketch.Points.First(point => point.Id == side.Start), sketch.Points.First(point => point.Id == side.End));
+        var loop = profile.Loop;
+        (double X, double Y)? from = null, to = null;
+        for (var i = 0; i < loop.Count; i++)
+        {
+            var (here, next) = (loop[i], loop[(i + 1) % loop.Count]);
+            if (here == (a.X, a.Y) && next == (b.X, b.Y))
+                (from, to) = (here, next);
+            else if (here == (b.X, b.Y) && next == (a.X, a.Y))
+                (from, to) = (here, next);
+        }
+
+        return from is { } p && to is { } q
+            ? ((p, q), null)
+            : (null, $"The line '{side.Id}' is not an edge of the profile of the extrude '{extrude.CommandId}'.");
     }
 
     // What a rebuild of the datums and the references gives: the new record of each datum and each
@@ -348,23 +400,9 @@ public static class DatumResolver
             }
         }
 
-        // The side of a line: its two ends in the order of the counter-clockwise loop. Each line of
-        // a profile is one edge of the loop, and no two vertices of the loop share a position.
-        if (sketch.Lines.FirstOrDefault(line => line.Id == reference.ItemId) is not { } side)
-            return (null, $"The item '{reference.ItemId}' is not a line of the sketch '{sketch.Id}'.");
-        var (a, b) = (sketch.Points.First(point => point.Id == side.Start), sketch.Points.First(point => point.Id == side.End));
-        var loop = profile.Loop;
-        (double X, double Y)? from = null, to = null;
-        for (var i = 0; i < loop.Count; i++)
-        {
-            var (here, next) = (loop[i], loop[(i + 1) % loop.Count]);
-            if (here == (a.X, a.Y) && next == (b.X, b.Y))
-                (from, to) = (here, next);
-            else if (here == (b.X, b.Y) && next == (a.X, a.Y))
-                (from, to) = (here, next);
-        }
-        if (from is not { } p || to is not { } q)
-            return (null, $"The line '{side.Id}' is not an edge of the profile of the extrude '{extrude.CommandId}'.");
+        var (ends, sideReason) = SideEnds(extrude, sketch, reference, profile);
+        if (ends is not var (p, q))
+            return (null, sideReason);
 
         var (tx, ty) = (q.X - p.X, q.Y - p.Y);
         var length = Math.Sqrt((tx * tx) + (ty * ty));

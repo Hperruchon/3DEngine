@@ -74,13 +74,17 @@ public class EdgeValueImageTests
         Assert.True(GraphicsDevice.ValidationMessageCount == messagesBefore,
             $"The validation layer gave {GraphicsDevice.ValidationMessageCount - messagesBefore} messages.");
 
-        // A point inside the chip of the distance, near its left side, is not the clear: the chip is drawn there.
-        var (column, row) = ((int)chip.X + 4, (int)((chip.Y + chip.W) / 2));
-        var index = ((row * (int)Width) + column) * 4;
+        // The left side of the chip of the distance is not the clear: the outline of the chip is drawn there. ADR-0108 item 2
+        // (phase R18a, TASK-0332): the chip has the ground of the scene, so its inside on the clear is the clear; until
+        // TASK-0332 a point inside it had a blue ground.
+        var row = (int)((chip.Y + chip.W) / 2);
         var clear = Theme.Clear;
-        var (r, g, b) = (pixels[index], pixels[index + 1], pixels[index + 2]);
-        Assert.False(Math.Abs(r - clear.R) <= 2 && Math.Abs(g - clear.G) <= 2 && Math.Abs(b - clear.B) <= 2,
-            $"The picture {picture}: the chip at {chip} has the colour of the clear.");
+        var drawn = Enumerable.Range((int)chip.X - 1, 4).Any(column =>
+        {
+            var index = ((row * (int)Width) + column) * 4;
+            return Math.Abs(pixels[index] - clear.R) > 2 || Math.Abs(pixels[index + 1] - clear.G) > 2 || Math.Abs(pixels[index + 2] - clear.B) > 2;
+        });
+        Assert.True(drawn, $"The picture {picture}: the outline of the chip at {chip} is not drawn.");
     }
 
     private static string SavePicture(byte[] pixels)
