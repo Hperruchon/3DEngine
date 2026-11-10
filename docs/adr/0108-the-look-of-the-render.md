@@ -82,3 +82,4 @@ the scene waits.
 ## History
 
 - 2026-11-10 · TASK-0332 · The record, from slice S1 of the proposal and the answer Q2 A of the owner of 2026-11-10.
+- 2026-11-10 · TASK-0332 · Shipped at v0.321.

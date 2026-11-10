@@ -1,7 +1,7 @@
 ---
 id: 0332
 title: The look of the render, a dark ground and outlined controls
-status: Active
+status: Done
 phase: R18a
 opened: 2026-11-10
 depends-on: [0330]
@@ -47,6 +47,7 @@ writes:
     - docs/adr/README.md
     - docs/register.md
     - tasks/TASK-0315-a-focus-on-one-body.md
+    - tasks/TASK-0339-medium-and-low-findings-of-the-review-of-2026-11-10.md
     - eng/test-floor.txt
     - docs/roadmap.md
     - docs/CURRENT-STATE.md
@@ -96,11 +97,11 @@ The window has the ground and the controls of the render: an almost black ground
 
 ## Acceptance criteria
 
-- [ ] ADR-0108 exists and records the answer Q2 A of 2026-11-10. The amended ADRs show the amendment.
-- [ ] A test holds the contrast of each colour of the theme on the new ground.
-- [ ] The pictures at 1440 by 900 show the dark ground and the outlined controls; the owner gets them beside the render.
-- [ ] A clean build (`--no-incremental`) gives zero errors and zero warnings, and the phone project builds.
-- [ ] `dotnet test`, the write-set check and `eng/repo-gates` pass; continuous integration passes on the branch and on
+- [x] ADR-0108 exists and records the answer Q2 A of 2026-11-10. The amended ADRs show the amendment.
+- [x] A test holds the contrast of each colour of the theme on the new ground.
+- [x] The pictures at 1440 by 900 show the dark ground and the outlined controls; the owner gets them beside the render.
+- [x] A clean build (`--no-incremental`) gives zero errors and zero warnings, and the phone project builds.
+- [x] `dotnet test`, the write-set check and `eng/repo-gates` pass; continuous integration passes on the branch and on
       `main` after the merge (Q7 A: merge after green CI, with the pictures).
 
 ## Notes for the implementer
@@ -111,6 +112,10 @@ The window has the ground and the controls of the render: an almost black ground
 - Check the numbers at commit: TASK-0332 and ADR-0108 were free on each branch on 2026-11-10 at `main` 0125894.
 - `governed-by` must hold each ADR in force whose `affects` meets the write set. `TaskGovernanceGateTests` gives the
   list. Add a file to the write set when the work needs it, and say why in the progress.
+
+## Outcome
+
+Status: Done · commit (the merge of the branch r18a-look) · v0.321
 
 ## Method
 
@@ -129,3 +134,6 @@ Weakest:    the render is a picture; its exact colours come from a look, not fro
   and Home and the command line draw their outline 1 pixel inside, because the clip of their window cut it.
   Two injections: the outline #3c606c failed the contrast test (2.86:1), and a segment fill at alpha 0.35 failed the
   picture of the ring and the test of the ground; the file came back each time.
+- 2026-11-10: run 42825351334 passed on the work commit. The merge of main at v0.320 brought TASK-0339, which writes
+  `ProposalArcTests.cs`; ADR-0108 affects it, so its `governed-by` adds 0108 and the write set adds its file.
+  Closed at v0.321 after the merge of main at v0.320.
