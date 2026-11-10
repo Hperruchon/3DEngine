@@ -398,17 +398,19 @@ the shelf upright now. A command that turns a body records a matrix or a quatern
 it is a change of `Engine.Contracts` with an ADR.
 Exit: a phase adds a command that turns a body, with its ADR, or the owner rebuilds the shelf with z up and closes the entry.
 
-### R-0058 · On a portrait display of 360 by 780 the panel of the bodies covers Move of the ring
-- class: debt
+### R-0059 · The unit of the size of the window on the phone is not known
+- class: question
 - opened: 2026-11-10
-- due: 2027-05-09
+- due: 2027-02-08
 - extended: no
-- refs: `3DEngine.App/Ui/DesktopUi.Ring.cs`, `3DEngine.ImageTests/ProposalArcTests.cs`, TASK-0331
-A probe of TASK-0331, with no proposal: at 360 by 780 with a selected extrude, the panel of the bodies ends at y 690, and the
-middle of Move is at y 670, so a tap on Move gives nothing. At 390 by 844 the middle of Move is at y 734, below the panel.
-No test of the ring runs at a portrait display this small.
-Exit: the ring of a portrait display stays out of each panel at each display from 360 by 640, with a test, or the owner
-accepts the limit.
+- refs: `3DEngine.Vulkan/Window.cs` (Extent), `docs/adr/0113-the-layout-at-each-phone-size-and-small-window.md` item 7,
+  TASK-0336
+The layout of ADR-0113 holds at sizes in the units of `SDL_GetWindowSize`. At its default resolution the S23 Ultra gives
+1080 by 2316 if that size is in pixels, or about 384 by 824 if it is in points that do not depend on the density. In
+pixels, a control of 44 pixels is about 2 millimetres high on that screen, and the test sizes do not include 1080 by 2316.
+This session did not read the value on the phone or on the emulator; the numbers come from general knowledge.
+Exit: a run on the S23 Ultra or on the emulator records the size that the window gives, and ADR-0113 adds that size to its
+list, with a scale of the user interface if the size is in pixels.
 
 ## Accepted compromises
 
@@ -544,6 +546,21 @@ only the render loop writes `Scene` and `Entity` of `3DEngine.Core`. V5, V6 and 
 ---
 
 ## Closed
+
+### R-0058 · On a portrait display of 360 by 780 the panel of the bodies covers Move of the ring
+- class: debt
+- opened: 2026-11-10
+- due: 2027-05-09
+- extended: no
+- refs: `3DEngine.App/Ui/DesktopUi.Ring.cs`, `3DEngine.ImageTests/ProposalArcTests.cs`, TASK-0331
+A probe of TASK-0331, with no proposal: at 360 by 780 with a selected extrude, the panel of the bodies ends at y 690, and the
+middle of Move is at y 670, so a tap on Move gives nothing. At 390 by 844 the middle of Move is at y 734, below the panel.
+No test of the ring runs at a portrait display this small.
+Exit: the ring of a portrait display stays out of each panel at each display from 360 by 640, with a test, or the owner
+accepts the limit.
+Closed 2026-11-10 · resolved · TASK-0314 · TASK-0336 · ADR-0100 item 5 · ADR-0113. On a portrait display the panel ends 8
+pixels above the ring (TASK-0314, v0.316). `ResponsiveLayoutTests` holds each tool of the ring out of each window at six
+portrait sizes from 360 by 640 to 412 by 915, in four states; with the rule removed, the test fails.
 
 ### R-0048 · The licences of the native vision library in a distributed program have no decision
 - class: question

@@ -97,7 +97,13 @@ internal sealed unsafe partial class DesktopUi
         }
 
         // The ring is outside the body on the screen: at least the half of the diagonal of its box, and 24 pixels more.
+        // ADR-0113 item 5 (phase R19, TASK-0336): the inner radius is at most the half of the height between the top of the
+        // display and 8 pixels above the anchors, less the band and 16 pixels, and at least 100, as the ring of a sketch
+        // (V134). A ring that fits keeps its radius. Until TASK-0336 the ring was at least 160 at each height, and at 640 by
+        // 360 the status line covered Hide and "Sketch on face" went below the display.
+        var height = Math.Min(display.Y - inset.W, anchorsTop - 8f) - inset.Y;
         var inner = Math.Clamp(Math.Max(display.Y / 3f, body + 24f), 160f, 375f);
+        inner = Math.Min(inner, Math.Max(100f, (height / 2f) - RingBand - 16f));
         var reach = inner + RingBand + 16f;
         var clamped = new Vector2(Math.Clamp(centre.X, reach, Math.Max(reach, display.X - reach)), Math.Clamp(centre.Y, reach, Math.Max(reach, display.Y - reach)));
         return new RingLayout(clamped, inner, -span / 2f, 1f);
