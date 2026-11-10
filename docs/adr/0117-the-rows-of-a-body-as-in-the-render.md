@@ -64,3 +64,4 @@ one font. A long name with a long state takes two lines. The labels of a sketch 
 ## History
 
 - 2026-11-10 · TASK-0342 · The record, from slice S4 of the proposal and the judgement of the session on items 1 to 3.
+- 2026-11-10 · TASK-0342 · Shipped at v0.328.

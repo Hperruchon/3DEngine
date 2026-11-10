@@ -346,9 +346,14 @@ Therefore each approved objective must have a track here.
   log, and ends with the close mark of the path line, Escape or "Focus" again. v0.323, TASK-0315, ADR-0101.
 - R18c — The values as in the render: three decimals and the unit on a round outlined pill, on a dimension line with
   extension lines, outside the outline of the body. v0.325, TASK-0340, ADR-0115.
+- Review — The codebase review of 2026-11-11. v0.327, TASK-0344.
 - P0.141 — The medium and low findings of the codebase review of 2026-11-10: a turn refuses a quaternion of very small
   parts, a proposal shows an angle in degrees, and the path line and the focus are free during an accept. v0.324,
   TASK-0339, ADR-0114.
+- P0.142 — The 2D drawing of a part has a date in the charter: objective 18, ADR-0118 and the rows R21, K9, R22 and P10 to
+  P10c. v0.326, TASK-0343, ADR-0118.
+- R18d — The rows of a body as in the render: the name larger and bold with its state, the row "Made from" whose tap
+  opens the sketch, and the labels Width, Depth and Height with the name of the constraint. v0.328, TASK-0342, ADR-0117.
 
 ## Track 0 — Foundations
 
@@ -495,6 +500,8 @@ This track removes each condition that blocks other work.
 | P0.139 | The medium and low findings of the codebase review of 2026-11-09 (b) (V160 to V163, E198, E199 and T180), after the next product phase. TASK-0331. | 1 |
 | P0.140 | The high finding of the codebase review of 2026-11-10: a pocket from a datum on a moved or turned face opens the face in the owned kernel (E200), before the next product phase. TASK-0338. | 1–2 |
 | P0.141 | The medium and low findings of the codebase review of 2026-11-10 (V164, E201, V165 and T181), after the next product phase. TASK-0339. | 1 |
+| P0.142 | The 2D drawing of a part has a date in the charter: objective 18, ADR-0118 and the rows R21, K9, R22 and P10 to P10c (the answers of the owner of 2026-11-10 to Q1 to Q5 of the renders of a drawing). TASK-0343. | 1 |
+| P0.143 | The low findings of the codebase review of 2026-11-11 (V166 and V167, the edge lines of R18b), after the next product phase. TASK-0345. | 1 |
 | P0.102 | The cache of a face, the fixed controls, the list New, the edges and the safe area hold their next forms (V113 to V118 of the codebase review of 2026-11-06 (e); after P0.101). TASK-0252. | 1–2 |
 | P0.86 | The window keeps no input between sessions, the hook has the cases of one axis, and the next forms of four gates fail (V88 to V90, T141 to T144 of the codebase review of 2026-11-06; after the next product phase). TASK-0198. | 1–2 |
 
@@ -520,6 +527,10 @@ This track removes each condition that blocks other work.
 | P9e | The test sheet of the demonstration, from its page. It closes with P9c and P9d after the run of the owner. TASK-0266. | 1 |
 | P9f | A start of the desktop with the setting file opens that file and shows no home screen (ADR-0083 item 7, the owner, 2026-11-08). TASK-0290. | 1 |
 | P9g | A project in any folder from the window, with no terminal: "Open project..." and "Import STL..." apart, "Save as..." and "Export STL..." through the save dialog of the system, the recent projects in each folder, the folder in the top bar, and the question before a change of a part with no file (ADR-0102; the owner, 2026-11-08, Q1 to Q4 A). The row closes after the run of the owner. TASK-0316. | 2–3 |
+| P10 | The sheet in the Document: commands for a sheet, its views (a direction as a matrix, and a scale) and the place of each dimension; ISO first angle by default and third angle as a choice of a sheet; the lines of a view are computed and not stored (ADR-0118 items 3 and 4; Q2 A and Q3 A of 2026-11-10). It changes the public shape of `Engine.Contracts`: an ADR and a question to the owner first. After R22. | 5–8 |
+| P10a | The export of a sheet as SVG, from the exact numbers of the views and the values of the design (Q4 of 2026-11-10, first). After P10. | 1–2 |
+| P10b | The export of a sheet as DXF, for the exchange with a CAD program and a laser cutter (Q4, second). After P10a. | 2 |
+| P10c | The export of a sheet as PDF, for the documentation (Q4, third). After P10b. | 2–3 |
 
 ## Track R — The renderer
 
@@ -602,6 +613,8 @@ The first objective. Each phase ends with something that a person can observe.
 | R20a | The ring does not take a tap meant for the model: only the icon and the label of a segment take a tap, a tap on a body under the rest of the band selects it, and the ring fades while the view turns or zooms (improvement A, problem 1; amends ADR-0081). TASK-0341. | 1–2 |
 | R20b | The actions on the model are on the ring: "Dimensions" is a segment with the state of a tool in use, the selection stays after a Hide, the status line shows "N hidden · Show", and the ring of the document has "Show hidden" (improvement B, problems 2 and 5). After R20a. | 2 |
 | R20c | Each dimension says what it measures: the selected piece in the colour of the selection with its name, the whole in a neutral colour with "Overall", each label on a plate outside the silhouette, and no label under the status line, the ring or the history arc (improvement C, problems 3 and 4; amends ADR-0056). After R18c. | 1–2 |
+| R21 | The flat views in the window: a front, a top, a side and the other three views with no perspective, one tap each, and a return to the 3D view; Frame fills the free part of the scene (ADR-0118 item 2; Q5 A of 2026-11-10; problem 6 of the UX test). After R18. | 2–3 |
+| R22 | The right dimensions on a flat view: the values of the design, each one time in a view where its length is true, a chain with one reference in parentheses, a separate form for a size that no constraint fixes and for a lost value, and the place of each dimension proposed by the agent (ADR-0118 item 5). After K9. It needs a search of the free parts of a sketch in the solver. | 3–5 |
 
 ## Track K — The kernel
 
@@ -646,6 +659,7 @@ boundary and each refused rung.
 | K6b | A void inside a body is a `BREP_WITH_VOIDS` of the smallest solid that holds it, by an exact ray (ADR-0070 item 2; the engine lane of the order of 2026-11-05). TASK-0201. | 1 |
 | K7 | General extrude and revolve of a simple curve. **Optional.** Year two. | 40–65 |
 | K8 | A command turns a body by a quaternion about the origin of the Document, and each reader of a move reads the turn: the owned kernel, the rebuild, the frame of a datum and the determinism probe (R-0057; Q5 C of the owner, 2026-11-10). ADR-0112, TASK-0335. | 1–2 |
+| K9 | The edges of a view: the visible edges and the hidden edges of the live bodies seen along a direction, from the exact faces of the owned kernel, with the circle or the arc of a curved side and not its facets (ADR-0118 items 2 and 6). It needs an ADR on the feature boundary of the charter. After R21. | 4–6 |
 
 ## Track V — Machine vision
 
