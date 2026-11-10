@@ -80,3 +80,4 @@ the history arc.
 ## History
 
 - 2026-11-10 · TASK-0336 · The record, from the probe at v0.316 and the order of the owner of 2026-11-10.
+- 2026-11-10 · TASK-0336 · Shipped at v0.317.
