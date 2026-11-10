@@ -9755,3 +9755,26 @@ the computer of the owner the image tests crashed the test host in `vkCreateDevi
 New tests: 12. The test list holds 2440 (1550 in `Engine.Tests`, 356 in `3DEngine.Tests`, 531 in `3DEngine.ImageTests`, 3
 in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
 entries: 11 of 15. New diagnostic codes: 0. Since the review of v0.319, 4 product milestones and 6 entries followed it.
+
+## v0.326 — The codebase review of 2026-11-11 (governance, TASK-0344)
+
+Four product milestones (R18a, R18b, R17b and R18c) and seven entries followed the review of v0.318, and the close of R18d
+waits on its branch with a green run; it is the fifth product milestone, which the gate of the review refuses.
+
+**The review.** `docs/reviews/2026-11-11-codebase-review.md` examines `main` at `60f02a5`.
+- The five findings of the last review are fixed: E200 (P0.140, an exact frame of a datum on a face) and V164, E201, V165
+  and T181 (P0.141). Each fix has a test that the pipeline runs.
+- No new finding is critical, high or medium. V166 and V167 are low and plausible, both in the edge lines of R18b: a
+  triangle of zero area can add a false line, and a large mesh finds its edges before the limit drops them. TASK-0345
+  (P0.143) holds them, after the next product phase.
+- Open findings: 0 critical, 2 high, 6 medium and 18 low.
+
+**Proof.** One agent examined the change from v0.318 to v0.325 with probes in a scratch folder. The session took the
+measures with a script whose values at v0.318 equal the last review, ran the tests and the gates at `60f02a5`, and read
+each finding in the code. `CodebaseReviewGateTests` passes with the new review. The failed runs since the entry v0.325,
+from the API: 42913629685 on the branch r18c-values (the write-set check of a commit under a Done task), 42912703326 and
+42916527870 on the branches of the drawing record of the other session.
+
+New tests: 0. The test list holds 2440 (1550 in `Engine.Tests`, 356 in `3DEngine.Tests`, 531 in `3DEngine.ImageTests`, 3
+in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
+entries: 11 of 15. New diagnostic codes: 0. This entry is a codebase review, so 0 product milestones and 0 entries follow it.
