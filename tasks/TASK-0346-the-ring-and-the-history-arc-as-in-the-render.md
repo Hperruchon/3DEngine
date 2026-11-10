@@ -88,3 +88,5 @@ Weakest:    to be written at the close.
   (r18d-rows, 53d1d9e). TASK-0346 and ADR-0119 are free on `main` and on each branch. A first form let a landscape ring span
   2.6 radians; the layout test at 640 by 360 and the test of the dimmed tools showed that the top segment then reaches the
   top bar and the arc of a proposal, so the span is four segments.
+- 2026-11-11: merge of the closed branch of R18d (4deec1d, v0.328): the index of the ADRs keeps the rows of ADR-0118 and
+  ADR-0119; TASK-0342 is Done, so it needs no ADR-0119.

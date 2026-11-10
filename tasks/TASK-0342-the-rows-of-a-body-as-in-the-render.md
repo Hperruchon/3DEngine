@@ -1,7 +1,7 @@
 ---
 id: 0342
 title: The rows of a body as in the render, with the name larger, the row "Made from" and the labels of the values
-status: Active
+status: Done
 phase: R18d
 opened: 2026-11-10
 depends-on: [0340]
@@ -63,25 +63,33 @@ The rows of a selected body look as in the render and tell what each value measu
 
 ## Acceptance criteria
 
-- [ ] ADR-0117 exists. ADR-0084, ADR-0091 and ADR-0099 show the amendment.
-- [ ] A test proves each label of a direction; it fails when a width gives "Length".
-- [ ] A test proves the tap on "Made from"; it fails when the row gives no action.
-- [ ] The picture of the bracket at 1440 by 900 shows the name, "Made from", "Width C1" and "Depth C2".
-- [ ] A clean build (`--no-incremental`) gives zero errors and zero warnings, and the phone project builds.
-- [ ] `dotnet test`, the write-set check and `eng/repo-gates` pass; continuous integration passes on the branch and on
+- [x] ADR-0117 exists. ADR-0084, ADR-0091 and ADR-0099 show the amendment.
+- [x] A test proves each label of a direction; it fails when a width gives "Length".
+- [x] A test proves the tap on "Made from"; it fails when the row gives no action.
+- [x] The picture of the bracket at 1440 by 900 shows the name, "Made from", "Width C1" and "Depth C2".
+- [x] A clean build (`--no-incremental`) gives zero errors and zero warnings, and the phone project builds.
+- [x] `dotnet test`, the write-set check and `eng/repo-gates` pass; continuous integration passes on the branch and on
       `main` after the merge.
 
 ## Outcome
 
-Status: Active
+Status: Done · commit (the merge of the branch r18d-rows) · v0.328
 
 ## Method
 
 Mechanical: the row "Made from" from the steps of the history; the labels from the edges that the window has.
 Judgement:  the bold by a second draw; the state on one line or two; the limit of 0.999 for an axis.
-Weakest:    to be written at the close.
+Weakest:    the bold is a second draw of the name, and no test reads its pixels; the picture shows it.
 
 ## Progress
 
 - 2026-11-10: opened and started on the order of the owner, on the branch r18d-rows from the branch of R18c (r18c-values-b,
   10041ee), so that it holds the values of ADR-0115. TASK-0342 and ADR-0117 are free on `main` and on each branch.
+- 2026-11-10: run 42915346671 passed on the work commit. Nine injections each failed a named test: a width as "Length", a
+  height as "Depth", a limit of 0.9 for an axis, no name of the constraint, no action of "Made from", a row "Made from"
+  from each step, two lines always, one line always, and a name at the size of the text. `FontTests.cs` and
+  `BodyRowsImageTests.cs` take the third font and the labels Width and Depth. The comments cite ADR-0117 only, because
+  the gate of citations asks a cited ADR to name the file. R18c (v0.325), the drawing record (v0.326) and the review
+  of 2026-11-11 (v0.327) merged first; the merge of `main` holds them.
+  Closed at v0.328.
+- 2026-11-11: merge of `main` at c261277 (v0.327): the index of the ADRs keeps the rows of ADR-0117 and ADR-0118.
