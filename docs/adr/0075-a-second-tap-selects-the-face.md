@@ -7,7 +7,7 @@ date: 2026-11-06
 supersedes: []
 superseded-by: []
 amends: ['0029']
-amended-by: ['0077']
+amended-by: ['0077', '0100']
 affects:
   - Engine.Core/Queries/GetFacesQuery.cs
   - Engine.Core/Queries/GetFacesQueryHandler.cs
@@ -123,3 +123,5 @@ The standing order of 2026-11-05 gives A for each question.
 - 2026-11-06 · TASK-0245 · ADR-0077 amends item 2: a tap on the selected face near one of its edges selects the edge.
 - 2026-11-06 · TASK-0252 · Item 3: a fault of the body clears the kept entry of its face (finding V113 of the codebase
   review of 2026-11-06 (e)).
+- 2026-11-09 · TASK-0314 · ADR-0100 item 3 amends item 2: Escape on a body with no face goes up to the document and
+  clears the body.

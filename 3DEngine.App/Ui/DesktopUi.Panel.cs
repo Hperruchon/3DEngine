@@ -25,6 +25,10 @@ internal sealed unsafe partial class DesktopUi
         var width = Math.Min(PanelWidth, Math.Max(displaySize.X - 32f - _inset.X - _inset.Z, 160f));
         // ADR-0080 (TASK-0248): the panel ends above the round anchors of Undo and Redo at the bottom left.
         var room = Math.Max(displaySize.Y - PanelTop - 16f - AnchorRow - _inset.W, 0f);
+        // ADR-0100 item 5 (phase R17a, TASK-0314): on a portrait display the panel ends 8 pixels above the ring of the last
+        // frame, as the sheet of a proposal does, when one row of 44 pixels still fits; so each tool of the ring takes its tap.
+        if (_portrait && RingTop() is { } ringTop && ringTop - 8f - PanelTop >= PathHeight)
+            room = Math.Min(room, ringTop - 8f - PanelTop);
         ImGui.SetNextWindowSizeConstraints(Vector2.Zero, new Vector2(width, room));
         // ADR-0093 item 2: the panel is as high as its content in the last frame, so the room under it, with no ground, stays
         // the scene. A window that sizes itself hides its items in its first frame, which a tap in that frame misses.
@@ -35,8 +39,17 @@ internal sealed unsafe partial class DesktopUi
         // Finding V123 of the codebase review of 2026-11-07 (TASK-0264): Begin gives false for a collapsed panel, so the
         // clamp ran only for an open panel, and a collapsed panel covered Undo. The clamp runs for each state now.
         KeepAboveAnchors(displaySize);
+        // ADR-0100 item 4 (phase R17a, TASK-0314): on a landscape display with no selected body, the rows of the document are
+        // first, in the place of the rows of a body, and the list of the bodies is in them.
+        var documentRows = !_portrait && bodies.All(body => body.Id != selection);
         if (open)
         {
+            if (documentRows)
+            {
+                DocumentRows(bodies, document);
+                ImGui.Separator();
+            }
+
             if (document is not null)
                 File(document);
 
@@ -86,31 +99,26 @@ internal sealed unsafe partial class DesktopUi
             ImGui.EndDisabled();
             Item(HiddenTooLabel);
 
-            ImGui.TextUnformatted(bodies.Count == 1 ? "1 live body" : $"{bodies.Count} live bodies");
-
-            ImGui.SetNextItemWidth(220f);
-            TextField(FilterLabel, ref _filter, 64);
-            Item(FilterLabel);
-            ImGui.SameLine();
-            if (ImGui.Button(ClearLabel))
-                _filter = string.Empty;
-            Item(ClearLabel);
-
-            ImGui.Separator();
-            foreach (var body in bodies)
+            if (!documentRows)
             {
-                var row = RowText(body);
-                if (_filter.Length > 0 && !row.Contains(_filter, StringComparison.OrdinalIgnoreCase))
-                    continue;
+                ImGui.TextUnformatted(bodies.Count == 1 ? "1 live body" : $"{bodies.Count} live bodies");
+                FilterLine();
+                ImGui.Separator();
+                foreach (var body in bodies)
+                {
+                    var row = RowText(body);
+                    if (_filter.Length > 0 && !row.Contains(_filter, StringComparison.OrdinalIgnoreCase))
+                        continue;
 
-                // The identifier after ## keeps two rows with one text apart.
-                if (ImGui.Selectable($"{row}##{body.Id}", selection == body.Id, ImGuiSelectableFlags.None, new Vector2(0f, MinimumControlHeight)))
-                    _actions.Add(new SelectBodyAction(body.Id));
-                Item(row);
-                _shown.Add(row);
+                    // The identifier after ## keeps two rows with one text apart.
+                    if (ImGui.Selectable($"{row}##{body.Id}", selection == body.Id, ImGuiSelectableFlags.None, new Vector2(0f, MinimumControlHeight)))
+                        _actions.Add(new SelectBodyAction(body.Id));
+                    Item(row);
+                    _shown.Add(row);
+                }
+
+                ImGui.Separator();
             }
-
-            ImGui.Separator();
             if (bodies.FirstOrDefault(body => body.Id == selection) is { } selected)
             {
                 // Selected ends on its last line. Show all goes on that line when it fits there, so that the panel keeps
@@ -138,6 +146,94 @@ internal sealed unsafe partial class DesktopUi
             _panels.Add(list);
         if (_newList is { } created)
             _panels.Add(created);
+    }
+
+    // The filter of the list of the bodies and its button Clear.
+    private void FilterLine()
+    {
+        ImGui.SetNextItemWidth(220f);
+        TextField(FilterLabel, ref _filter, 64);
+        Item(FilterLabel);
+        ImGui.SameLine();
+        if (ImGui.Button(ClearLabel))
+            _filter = string.Empty;
+        Item(ClearLabel);
+    }
+
+    // ADR-0100 item 4: the item of the first row of the document.
+    public const string DocumentRowItem = "Rows:document";
+
+    // ADR-0100 item 4: the kind of the document with a capital, "Part" or "Assembly".
+    internal static string DocumentKind(DocumentLine? document)
+        => (document?.Kind ?? Engine.Contracts.Document.Part) switch
+        {
+            Engine.Contracts.Document.Assembly => "Assembly",
+            _ => "Part",
+        };
+
+    // ADR-0100 item 4: the parts of the second line of the first row: the unit and the count of the live bodies, then "all
+    // correct", or the count that failed with the word "failed" in red.
+    internal IReadOnlyList<(string Text, bool Red)> DocumentState(IReadOnlyList<LiveBody> bodies)
+    {
+        var failed = bodies.Count(body => body.Fault is not null);
+        var count = bodies.Count == 1 ? "1 body" : $"{bodies.Count} bodies";
+        return failed == 0 ? [($"{_unit} · {count} · all correct", false)] : [($"{_unit} · {count} · ", false), ($"{failed} failed", true)];
+    }
+
+    // ADR-0100 item 4 (phase R17a, TASK-0314): the rows of the document, in the style of the rows of a selected body: the
+    // first row gives the kind on its first line, and the unit and the counts on its second line; then the filter; then one
+    // row for each body that the filter keeps, with its name at the left and its state at the right: "correct", or "failed"
+    // and the code of its fault in red, and "hidden". A tap on a body row selects the body. The key of a body row is its row
+    // text, as in the list of the panel, so a test finds it by the same name.
+    private void DocumentRows(IReadOnlyList<LiveBody> bodies, DocumentLine? document)
+    {
+        var colours = ImGui.GetStyle().Colors;
+        var text = ImGui.GetColorU32(colours[(int)ImGuiCol.Text]);
+        var quiet = ImGui.GetColorU32(colours[(int)ImGuiCol.TextDisabled]);
+        var line = ImGui.GetColorU32(colours[(int)ImGuiCol.Separator]);
+        var list = ImGui.GetWindowDrawList();
+        var lineHeight = ImGui.GetTextLineHeight();
+        var width = ImGui.GetContentRegionAvail().X;
+
+        ImGui.Dummy(new Vector2(width, RowHeight));
+        Item(DocumentRowItem);
+        var (min, max) = (ImGui.GetItemRectMin(), ImGui.GetItemRectMax());
+        var first = min.Y + ((RowHeight - (2f * lineHeight)) / 2f);
+        list.AddText(new Vector2(min.X, first), text, DocumentKind(document));
+        var x = min.X;
+        foreach (var (part, red) in DocumentState(bodies))
+        {
+            list.AddText(new Vector2(x, first + lineHeight), red ? FailedColour : quiet, part);
+            x += ImGui.CalcTextSize(part).X;
+        }
+
+        list.AddLine(new Vector2(min.X, max.Y), max, line, 1f);
+
+        FilterLine();
+        var middle = (RowHeight - lineHeight) / 2f;
+        foreach (var body in bodies)
+        {
+            var row = RowText(body);
+            if (_filter.Length > 0 && !row.Contains(_filter, StringComparison.OrdinalIgnoreCase))
+                continue;
+
+            if (ImGui.Selectable($"##document{body.Id}", false, ImGuiSelectableFlags.None, new Vector2(0f, RowHeight)))
+                _actions.Add(new SelectBodyAction(body.Id));
+            Item(row);
+            _shown.Add(row);
+            // A selectable is half the space between two items wider on each side than the column, so the texts start and end
+            // in the column, under the first row.
+            var inside = ImGui.GetStyle().ItemSpacing.X / 2f;
+            (min, max) = (ImGui.GetItemRectMin() + new Vector2(inside, 0f), ImGui.GetItemRectMax() - new Vector2(inside, 0f));
+            var state = body.Fault is { } fault ? $"failed {fault.Code}" : "correct";
+            var hidden = body.Visible ? string.Empty : " · hidden";
+            var stateWidth = ImGui.CalcTextSize(state + hidden).X;
+            list.AddText(new Vector2(min.X, min.Y + middle), body.Visible ? text : quiet, Fit(body.Name ?? $"{body.Kind}  {body.Id.ToString()[..8]}", Math.Max(max.X - min.X - stateWidth - 12f, 48f)));
+            list.AddText(new Vector2(max.X - stateWidth, min.Y + middle), body.Fault is null ? quiet : FailedColour, state);
+            if (hidden.Length > 0)
+                list.AddText(new Vector2(max.X - ImGui.CalcTextSize(hidden).X, min.Y + middle), quiet, hidden);
+            list.AddLine(new Vector2(min.X, max.Y), max, line, 1f);
+        }
     }
 
     // The rectangle of the open list of a cut in this frame, or null.
@@ -182,8 +278,9 @@ internal sealed unsafe partial class DesktopUi
         }
     }
 
-    // ADR-0093 item 2: the top of the panel, under the top bar.
-    private float PanelTop => 16f + _inset.Y + TopBarHeight + 8f;
+    // ADR-0093 item 2: the top of the panel, under the top bar. ADR-0100 item 5 (phase R17a, TASK-0314): on a portrait
+    // display, under the path line.
+    private float PanelTop => 16f + _inset.Y + TopBarHeight + 8f + (_portrait ? PathHeight : 0f);
 
     // The width of the panel on a display that is wide enough (V142, TASK-0302).
     private const float PanelWidth = 460f;

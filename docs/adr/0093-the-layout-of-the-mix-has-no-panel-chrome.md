@@ -7,7 +7,7 @@ date: 2026-11-08
 supersedes: []
 superseded-by: []
 amends: ['0080']
-amended-by: ['0099']
+amended-by: ['0099', '0100']
 affects:
   - 3DEngine.App/Ui/DesktopUi.Fixed.cs
   - 3DEngine.App/Ui/DesktopUi.Panel.cs
@@ -80,3 +80,5 @@ ground of the theme. The person can no longer move the panel out of the way. The
 - 2026-11-08 · TASK-0313 · ADR-0099 item 1 amends item 4: the rows take the left column while a body is selected, and
   the panel does not show; ADR-0099 items 2 to 5 give the controls of the panel a place. Item 6 amends item 1: a long name
   ends left of the command line.
+- 2026-11-09 · TASK-0314 · ADR-0100 item 6 amends item 1: on a landscape display the file of the top bar is the first
+  segment of the path line; on a portrait display the path line is under the top bar.
