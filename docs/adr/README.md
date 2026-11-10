@@ -86,7 +86,7 @@ names. Do not read all of them.
 | [0078](0078-the-theme-of-the-redesign.md) | The desktop and the phone take the theme "Proposed (harmonized)" of the redesign | Amended | Clients, rendering | — | 0091, 0108 |
 | [0079](0079-the-activity-may-start-again.md) | The activity of the phone may start again in its process | Accepted | Clients, platform | 0073 | — |
 | [0080](0080-the-fixed-controls-of-the-redesign.md) | The title of the document, Undo, Redo and the status line are fixed controls of the redesign | Amended | Clients, rendering | 0030, 0031 | 0093 |
-| [0081](0081-the-tool-ring-of-the-redesign.md) | The tools of the selected body are the segments of a ring that follows it | Amended | Clients, rendering | — | 0084, 0086, 0095, 0101, 0108, 0113 |
+| [0081](0081-the-tool-ring-of-the-redesign.md) | The tools of the selected body are the segments of a ring that follows it | Amended | Clients, rendering | — | 0084, 0086, 0095, 0101, 0108, 0113, 0119 |
 | [0082](0082-the-values-on-the-edges-of-the-redesign.md) | A value that a command changes sits on the edge of the selected body that it measures | Amended | Clients, rendering | — | 0084, 0115 |
 | [0083](0083-the-mesh-body-and-the-stl-import.md) | An STL file opens as a mesh body of a new part, through one import command | Amended | Geometry, contract, clients | 0044, 0045, 0048 | 0102 |
 | [0084](0084-the-rows-of-the-selected-body.md) | The data of the selected body is in rows with no panel at the upper right | Amended | Clients, rendering | 0034, 0081, 0082 | 0098, 0099, 0117 |
@@ -103,13 +103,13 @@ names. Do not read all of them.
 | [0095](0095-the-look-of-the-orbit-ring.md) | The ring has the look of the orbit of the render, with a guide, icons and a caption | Amended | Clients, rendering | 0081, 0086 | 0108 |
 | [0096](0096-the-camera-of-the-session-has-z-up.md) | The camera of the session has the z axis up, as the render of the mix draws a part | Accepted | Clients, rendering | 0023, 0034 | — |
 | [0097](0097-the-rows-of-a-sketch-take-the-place-of-the-panel.md) | The rows of an active sketch take the place of the panel, and its ring is on the right | Accepted | Clients, sketch | 0034, 0086, 0087 | — |
-| [0098](0098-the-command-line.md) | The command line at the upper right runs the commands of the state with Control and K | Amended | Clients, rendering | 0032, 0084 | 0099, 0101, 0108, 0113 |
+| [0098](0098-the-command-line.md) | The command line at the upper right runs the commands of the state with Control and K | Amended | Clients, rendering | 0032, 0084 | 0099, 0101, 0108, 0113, 0119 |
 | [0099](0099-the-rows-of-a-selected-body-take-the-place-of-the-panel.md) | The rows of a selected body take the place of the panel at the upper left | Amended | Clients, rendering | 0084, 0093, 0098 | 0100, 0117 |
 | [0100](0100-a-path-line-from-the-document-to-the-selection.md) | A path line from the document to the selection, and the rows of the document | Amended | Clients, selection | 0075, 0077, 0093, 0099, 0102 | 0101 |
 | [0101](0101-a-focus-on-one-body.md) | A focus on one body is a state of the client that draws one body and writes nothing to the log | Accepted | Clients, selection | 0081, 0098, 0100 | — |
 | [0102](0102-a-project-in-any-folder.md) | The window opens and saves a project in any folder, through the dialogs of the system | Amended | Persistence, clients | 0030, 0083 | 0100, 0106 |
 | [0103](0103-the-vision-library-stays-in-the-spike-on-opencvsharp5.md) | The vision library stays in the spike, on OpenCvSharp5 | Accepted | Vision | 0042 | — |
-| [0104](0104-the-history-arc.md) | The history arc shows the steps that made the selected body | Accepted | Clients, rendering | — | — |
+| [0104](0104-the-history-arc.md) | The history arc shows the steps that made the selected body | Amended | Clients, rendering | — | 0119 |
 | [0105](0105-the-values-on-the-edges-of-an-active-sketch.md) | The values of an active sketch show on its edges | Amended | Clients, rendering | — | 0115 |
 | [0106](0106-open-project-shows-an-stl-file-too.md) | "Open project..." shows an STL file too, and an STL file goes to the import | Accepted | Persistence, clients | 0102 | — |
 | [0107](0107-the-arc-of-a-proposal-is-in-the-free-room.md) | With no ring of a body, the arc of a proposal is in the room right of the panel | Accepted | Clients | 0092 | — |
@@ -122,6 +122,7 @@ names. Do not read all of them.
 | [0114](0114-the-findings-of-the-review-of-2026-11-10.md) | A turn refuses a quaternion of very small parts, a proposal shows an angle in degrees, and an accept holds less | Accepted | Geometry, clients | 0110, 0111, 0112, 0113 | — |
 | [0115](0115-the-values-as-in-the-render.md) | A value shows three decimals on a pill on its dimension line, outside the outline of the body | Accepted | Clients, rendering | 0082, 0105, 0110 | — |
 | [0117](0117-the-rows-of-a-body-as-in-the-render.md) | The rows of a body show its name larger, the sketch that made it, and the direction and the constraint of each value | Accepted | Clients, rendering | 0084, 0091, 0099 | — |
+| [0119](0119-the-ring-and-the-history-arc-as-in-the-render.md) | The ring gives Edit sketch and Rename in the span of four segments, and the history arc is a bright line with its nodes on it | Accepted | Clients, rendering | 0081, 0098, 0104 | — |
 
 ## Topics
 

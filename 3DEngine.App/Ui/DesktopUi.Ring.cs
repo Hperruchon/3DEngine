@@ -21,6 +21,11 @@ internal sealed unsafe partial class DesktopUi
     internal const float RingSegment = 0.42f;
     private const float RingGap = 0.04f;
 
+    // ADR-0119 item 2 (phase R18e, TASK-0346): the largest span of the segments of a landscape ring: the span of four segments,
+    // about 105 degrees, so the top segment ends before Accept of a proposal at 305 degrees and the bottom one above the history
+    // arc.
+    internal const float RingSpan = (4 * RingSegment) + (3 * RingGap);
+
     // One segment of the ring: its label, its angles from the positive x axis of the screen (y down), and its action.
     internal sealed record RingSegmentLayout(string Label, float From, float To);
 
@@ -106,7 +111,11 @@ internal sealed unsafe partial class DesktopUi
         inner = Math.Min(inner, Math.Max(100f, (height / 2f) - RingBand - 16f));
         var reach = inner + RingBand + 16f;
         var clamped = new Vector2(Math.Clamp(centre.X, reach, Math.Max(reach, display.X - reach)), Math.Clamp(centre.Y, reach, Math.Max(reach, display.Y - reach)));
-        return new RingLayout(clamped, inner, -span / 2f, 1f);
+        // ADR-0119 item 2 (phase R18e, TASK-0346): the segments of a landscape ring span at most RingSpan; more than four segments
+        // are narrower, and each keeps at least 46 pixels at the inner radius.
+        var landscapeSegment = Math.Min(RingSegment, Math.Max((RingSpan - ((count - 1) * RingGap)) / Math.Max(count, 1), (ValueSize + 2f) / inner));
+        var landscapeSpan = (count * landscapeSegment) + ((count - 1) * RingGap);
+        return new RingLayout(clamped, inner, -landscapeSpan / 2f, 1f, landscapeSegment);
     }
 
     // ADR-0086 item 1 (TASK-0275): the ring of an active sketch on a landscape display. Its centre is the centre of the sketch
@@ -140,6 +149,11 @@ internal sealed unsafe partial class DesktopUi
 
     private RingLayout? _ring;
     private IReadOnlyList<string> _ringLabels = [];
+
+    // ADR-0119 item 2 (phase R18e, TASK-0346): the layout and the labels of the ring of this frame, for a test.
+    internal RingLayout? RingLayoutOfFrame => _ring;
+
+    internal IReadOnlyList<string> RingLabels => _ringLabels;
 
     // True when the point is on a segment of the ring of this frame.
     private bool OverRing(double x, double y)
@@ -211,6 +225,9 @@ internal sealed unsafe partial class DesktopUi
         }
         else if (body is not null)
         {
+            // ADR-0119 item 1 (phase R18e, TASK-0346): "Edit sketch" first, for a body that a sketch made, as the render.
+            if (SketchStep is not null)
+                labels.Add(EditSketchLabel);
             // Finding V130 of the codebase review of 2026-11-07 (b) (TASK-0271): a mesh body takes no move (ADR-0083 item 4).
             if (body.Kind != Engine.Core.Commands.ImportStlCommandHandler.MeshKind)
                 labels.Add(MoveLabel);
@@ -219,6 +236,10 @@ internal sealed unsafe partial class DesktopUi
             labels.Add(body.Visible ? HideLabel : ShowLabel);
             // ADR-0101 item 3 (phase R17b, TASK-0315): "Focus" after Hide.
             labels.Add(FocusLabel);
+            // ADR-0119 item 1: "Rename" after them on a landscape display, where it opens the name field of the rows; a portrait
+            // display keeps the name field and its button in the panel.
+            if (displaySize.X >= displaySize.Y)
+                labels.Add(RenameLabel);
             if (_face is { CanSketch: true })
                 labels.Add(SketchOnFaceButtonLabel);
         }
@@ -226,6 +247,19 @@ internal sealed unsafe partial class DesktopUi
         // ADR-0097 item 4 (the redesign, slice n, TASK-0308): on a landscape display the ring of a sketch is on the right of the
         // sketch, and right of the rows of the sketch of the last frame, which are at the left in the place of the panel.
         var sketchRing = _sketchActive && displaySize.X >= displaySize.Y;
+
+        // ADR-0119 item 2: on a landscape body ring that has no room for each tool in RingSpan, "Rename" and then "Edit sketch" leave
+        // the ring; the first row of the rows renames the body, and the row "Made from" opens its sketch.
+        if (!_sketchActive && body is not null && displaySize.X >= displaySize.Y)
+        {
+            foreach (var spare in new[] { RenameLabel, EditSketchLabel })
+            {
+                var trial = Layout(displaySize, at, labels.Count, size, _inset, _anchorsTop);
+                if ((labels.Count * trial.Segment) + ((labels.Count - 1) * RingGap) <= RingSpan + 0.001f)
+                    break;
+                labels.Remove(spare);
+            }
+        }
         var ring = sketchRing
             ? SketchLayout(displaySize, at, labels.Count, size, _sketchWindow?.Z ?? 0f)
             : Layout(displaySize, at, labels.Count, size, _inset, _anchorsTop);
@@ -368,5 +402,11 @@ internal sealed unsafe partial class DesktopUi
         // ADR-0101 items 3 and 5: "Focus" starts a focus on the body, or ends it.
         else if (label == FocusLabel)
             _actions.Add(new FocusAction());
+        // ADR-0119 item 1: "Edit sketch" opens the sketch that made the body, as the row "Made from" does; "Rename" opens the
+        // name field of the rows, as a tap on the first row does.
+        else if (label == EditSketchLabel && SketchStep is { } sketch)
+            _actions.Add(new EditSketchAction(sketch.Id));
+        else if (label == RenameLabel)
+            StartRename(body);
     }
 }

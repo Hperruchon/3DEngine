@@ -10,8 +10,16 @@ namespace ThreeDEngine.Desktop.Ui;
 // body that is not consumed, they select that body. The nodes and their texts are a part of the panels for a tap.
 internal sealed unsafe partial class DesktopUi
 {
-    // The diameter of a node: the 44 pixels of a target of ADR-0027 item 6.
+    // The diameter of a node: the 44 pixels of a target of ADR-0027 item 6. ADR-0119 item 3 (phase R18e, TASK-0346): the
+    // target; the drawn node is smaller, on the arc.
     public const float HistoryNode = ValueSize;
+
+    // ADR-0119 item 3: the radius of the drawn node of the selected body, and of each other node.
+    internal const float HistoryDotSelected = 10f;
+    internal const float HistoryDot = 6f;
+
+    // ADR-0119 item 3: the accent of the theme with an alpha from 0 to 1.
+    private static uint AccentAlpha(float alpha) => (Theme.Accent & 0x00FFFFFFu) | ((uint)(alpha * 255f) << 24);
 
     // The space between the edge of a node and the inner guide circle of the ring, and between a node and its text.
     private const float HistoryTextGap = 8f;
@@ -80,24 +88,37 @@ internal sealed unsafe partial class DesktopUi
                 _actions.Add(new SelectBodyAction(released.Id));
         }
 
-        // The look of the ring: a faint arc, a light ground and an outline for each node, the colour of an active
-        // control for the node of the selected body, and the dim caption in spaced capitals.
+        // ADR-0119 item 3 (phase R18e, TASK-0346): the look of the render: the arc in the accent, 2 pixels wide, over two wider
+        // strokes of the accent with less alpha, its glow; each node a dot on the arc: the selected body a filled dot with a
+        // glow, each other step a ring of the accent with the ground of the scene; a fault in red. The target of a tap stays
+        // the circle of 44 pixels. Until TASK-0346 the arc was faint and each node a round button of 44 pixels with an icon.
         var list = ImGui.GetBackgroundDrawList();
         var colours = ImGui.GetStyle().Colors;
-        var faint = ImGui.GetColorU32(colours[(int)ImGuiCol.Border] with { W = 0.35f });
-        list.PathArcTo(ring.Centre, radius, upper, lower, 48);
-        list.PathStroke(faint, ImDrawFlags.None, 1.5f);
+        foreach (var (width, alpha) in new[] { (10f, 0.08f), (5f, 0.18f), (2f, 1f) })
+        {
+            list.PathArcTo(ring.Centre, radius, upper, lower, 48);
+            list.PathStroke(AccentAlpha(alpha), ImDrawFlags.None, width);
+        }
+
         var ink = ImGui.GetColorU32(colours[(int)ImGuiCol.Text]);
         var quiet = ImGui.GetColorU32(colours[(int)ImGuiCol.TextDisabled]);
         foreach (var (shown, centre, text) in _historyNodes)
         {
             var hovered = shown.Tap != HistoryTap.None && !ImGui.IsWindowHovered(ImGuiHoveredFlags.AnyWindow) && HistoryAt(io.MousePos)?.Id == shown.Id;
             var selected = shown.Id == body.Id;
-            var shade = colours[(int)(selected ? ImGuiCol.ButtonActive : hovered ? ImGuiCol.ButtonHovered : ImGuiCol.Button)];
-            list.AddCircleFilled(centre, HistoryNode / 2f, ImGui.GetColorU32(selected ? shade : shade with { W = hovered ? 0.7f : 0.35f }), 32);
-            list.AddCircle(centre, HistoryNode / 2f, shown.Fault ? FailedColour : ImGui.GetColorU32(colours[(int)ImGuiCol.Border]), 32, 1.5f);
-            if (HistoryIcon(shown) is { } icon)
-                RingIcon(list, icon, centre, ink);
+            var mark = shown.Fault ? FailedColour : AccentAlpha(1f);
+            if (hovered)
+                list.AddCircleFilled(centre, HistoryNode / 2f, ImGui.GetColorU32(colours[(int)ImGuiCol.ButtonHovered]), 32);
+            if (selected)
+            {
+                list.AddCircleFilled(centre, HistoryDotSelected + 6f, shown.Fault ? FailedColour & 0x40FFFFFF : AccentAlpha(0.25f), 32);
+                list.AddCircleFilled(centre, HistoryDotSelected, mark, 32);
+            }
+            else
+            {
+                list.AddCircleFilled(centre, HistoryDot, Theme.Plate(1f), 24);
+                list.AddCircle(centre, HistoryDot, mark, 24, 1.5f);
+            }
 
             // The text, and the state of a failed or an unresolved step after it in red, as the rows say it.
             var words = shown.Text;
@@ -122,12 +143,4 @@ internal sealed unsafe partial class DesktopUi
 
     private static string HistoryState(HistoryStep step) => $" · {step.State}{(step.Code is { } code ? $" {code}" : string.Empty)}";
 
-    // The icon of a node: the icon of the ring for the same tool, or none.
-    private static string? HistoryIcon(HistoryStep step) => step.Kind switch
-    {
-        "CreateSketch" => SketchOnFaceButtonLabel,
-        "Extrude" => SetDistanceLabel,
-        "Translate" => MoveLabel,
-        _ => null,
-    };
 }
