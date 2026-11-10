@@ -1,13 +1,13 @@
 ---
 id: 0113
 title: The layout keeps each control in the display and free for a tap at each phone size and in a small window
-status: Accepted
+status: Amended
 topic: Clients, layout
 date: 2026-11-10
 supersedes: []
 superseded-by: []
 amends: ['0081', '0092', '0093', '0098']
-amended-by: []
+amended-by: ['0108']
 affects:
   - 3DEngine.App/Ui/DesktopUi.cs
   - 3DEngine.App/Ui/DesktopUi.Panel.cs
@@ -81,3 +81,5 @@ the history arc.
 
 - 2026-11-10 · TASK-0336 · The record, from the probe at v0.316 and the order of the owner of 2026-11-10.
 - 2026-11-10 · TASK-0336 · Shipped at v0.317.
+- 2026-11-10 · TASK-0332 · ADR-0108 item 4 amends item 4: the field of the command line is at most 400 pixels wide, not
+  300.
