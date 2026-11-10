@@ -1,7 +1,7 @@
 ---
 id: 0331
 title: The medium and low findings of the review of 2026-11-09 (b) are fixed
-status: Active
+status: Done
 phase: P0.139
 opened: 2026-11-09
 depends-on: [0330]
@@ -77,13 +77,13 @@ Questions Q1 to Q5 of the codebase reviews of 2026-11-09 (a and b): Q1 A, Q2 B, 
 
 ## Acceptance criteria
 
-- [ ] Each finding fails on an injection before its fix and passes after it, or a reading gives the reason that it cannot.
-- [ ] A clean build (`--no-incremental`) gives zero errors and zero warnings, and the phone project builds.
-- [ ] Continuous integration passes on the branch and on `main` after the merge.
+- [x] Each finding fails on an injection before its fix and passes after it, or a reading gives the reason that it cannot.
+- [x] A clean build (`--no-incremental`) gives zero errors and zero warnings, and the phone project builds.
+- [x] Continuous integration passes on the branch and on `main` after the merge.
 
 ## Outcome
 
-Status: Ready
+Status: Done · commit (the merge of the branch p0139-review-findings) · v0.315
 
 ## Method
 
@@ -91,8 +91,10 @@ Mechanical: a test, an injection or a reading for each finding, before the chang
 Judgement:  ADR-0111 records the rules that change ADR-0092: the known identifier fails the accept with a new code, and the
             window holds the actions of the person while an accept runs, with a list of free actions so a new action is held.
             The sheet of a portrait display moves above the ring only when it fits; else it covers the ring as before.
-Weakest:    to be written at the close.
+Weakest:    the hold of V163 and the read of V161 are wired in NativeThreeDEngine, which no test runs; the tests read
+            AcceptHold and HistoryCache, and a reading covers the wiring. T180 is a text, with no test.
 
 ## Progress
 - 2026-11-10: the fixes of the seven findings, ADR-0111, E-API-PROPOSAL-COMMAND-KNOWN, and the answers of the owner
   to Q1 to Q5 in the register (R-0022 and R-0030 accepted, R-0057 and R-0058 new).
+- 2026-11-10: run 42772516188 passed. Closed at v0.315.

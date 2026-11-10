@@ -73,3 +73,4 @@ again. On a small portrait display the sheet still covers the ring.
 ## History
 
 - 2026-11-10 · TASK-0331 · The record, for findings V160, E198, V162, V163 and E199 of the codebase review of 2026-11-09 (b).
+- 2026-11-10 · TASK-0331 · Shipped at v0.315.

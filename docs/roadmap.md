@@ -327,6 +327,8 @@ Therefore each approved objective must have a track here.
 - P0.138 — Accept of the agent arc takes a tap in the default window (V159). v0.313, TASK-0330, ADR-0107.
 - R16t — The pending chip of a proposal: a value that an agent changes shows "now → proposed" on its chip, and its line
   names it. v0.314, TASK-0334, ADR-0110.
+- P0.139 — The medium and low findings of the codebase review of 2026-11-09 (b): the taps, the identifiers and the steps of
+  a proposal, the portrait sheet, and the history arc off the frame. v0.315, TASK-0331, ADR-0111.
 
 ## Track 0 — Foundations
 
