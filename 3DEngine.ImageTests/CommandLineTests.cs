@@ -44,6 +44,32 @@ public sealed class CommandLineTests
         Frame(ui, Display, sketch);
     }
 
+    // ADR-0108 item 4 (phase R18a, TASK-0332): the field says "Type a command or a value", and "Ctrl K" is inside its right
+    // end while it is empty and has room; a typed text takes the place of the keys.
+    [Fact]
+    public void The_Empty_Field_Shows_Its_Text_And_Its_Keys()
+    {
+        using var ui = new DesktopUi("http://127.0.0.1:5180", Engine.Contracts.Document.Millimetre);
+        Assert.Equal("Type a command or a value", DesktopUi.CommandHint);
+        Frame(ui, Display);
+        Frame(ui, Display);
+        var field = ui.ItemRectangle(DesktopUi.CommandItem) ?? throw new InvalidOperationException("No command line.");
+        var keys = ui.ItemRectangle(DesktopUi.CommandKeyItem) ?? throw new InvalidOperationException("No keys in the command line.");
+        Assert.True(keys.X > field.X + ((field.Z - field.X) / 2f) && keys.Z < field.Z && keys.Y > field.Y && keys.W < field.W,
+            $"The keys {keys} are not inside the right end of the field {field}.");
+
+        Type(ui, "und");
+        Assert.Null(ui.ItemRectangle(DesktopUi.CommandKeyItem));
+    }
+
+    // ADR-0108 item 5: the status line gives its state in its colour; the count of the failed bodies goes with the word.
+    [Fact]
+    public void The_State_Of_The_Status_Line_Has_Its_Colour()
+    {
+        Assert.Equal(new (string, uint?)[] { ("1 body · ", null), ("all correct", Theme.Correct), (" · 127.0.0.1:5180", null) }, DesktopUi.StatusParts("1 body · all correct · 127.0.0.1:5180"));
+        Assert.Equal(new (string, uint?)[] { ("3 bodies · ", null), ("2 failed", DesktopUi.FailedColour), (string.Empty, null) }, DesktopUi.StatusParts("3 bodies · 2 failed"));
+    }
+
     // Items 1 and 3: Control and K give the field the keys; a text lists the commands whose name holds it, and Enter runs the
     // first one, as its button does.
     [Fact]
