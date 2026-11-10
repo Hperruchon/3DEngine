@@ -338,6 +338,8 @@ Therefore each approved objective must have a track here.
 - Review — The codebase review of 2026-11-10. v0.319, TASK-0337.
 - P0.140 — A pocket from a datum on a moved or turned face, or on a face of an extrude, opens the face in the owned kernel
   (E200). v0.320, TASK-0338.
+- R18a — The look of the render: an almost black ground, thin outlined controls with no fill, the command line with
+  a search mark and "Ctrl K", and the states in green and red. v0.321, TASK-0332, ADR-0108.
 
 ## Track 0 — Foundations
 
