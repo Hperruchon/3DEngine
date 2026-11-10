@@ -1,7 +1,7 @@
 ---
 id: 0333
 title: The edges of the body as lines, the hidden edges dashed, and a transparent selection
-status: Active
+status: Done
 phase: R18b
 opened: 2026-11-10
 depends-on: [0330]
@@ -74,13 +74,13 @@ The body shows its edges as in the render, and the selected body shows its hidde
 
 ## Acceptance criteria
 
-- [ ] ADR-0109 exists, with the source of the edges and its cost.
-- [ ] A test fails when the edge pass draws nothing.
-- [ ] The pictures at 1440 by 900 show the edges, and the dashed hidden edges of the selected body; the owner gets them
+- [x] ADR-0109 exists, with the source of the edges and its cost.
+- [x] A test fails when the edge pass draws nothing.
+- [x] The pictures at 1440 by 900 show the edges, and the dashed hidden edges of the selected body; the owner gets them
       beside the render.
-- [ ] A clean build (`--no-incremental`) gives zero errors and zero warnings, and the phone project builds; the APK
+- [x] A clean build (`--no-incremental`) gives zero errors and zero warnings, and the phone project builds; the APK
       starts on the emulator.
-- [ ] `dotnet test`, the write-set check and `eng/repo-gates` pass; continuous integration passes on the branch and on
+- [x] `dotnet test`, the write-set check and `eng/repo-gates` pass; continuous integration passes on the branch and on
       `main` after the merge (Q7 A).
 
 ## Notes for the implementer
@@ -92,6 +92,10 @@ The body shows its edges as in the render, and the selected body shows its hidde
 - Check the numbers at commit: TASK-0333 and ADR-0109 were free on each branch on 2026-11-10 at `main` 0125894.
 - `governed-by` must hold each ADR in force whose `affects` meets the write set. `TaskGovernanceGateTests` gives the
   list. Add a file to the write set when the work needs it, and say why in the progress.
+
+## Outcome
+
+Status: Done · commit (the merge of the branch r18b-edges-b) · v0.322
 
 ## Method
 
@@ -117,3 +121,5 @@ Weakest:    no measure of the cost of the pass on the phone yet.
   both rows, the register keeps R-0060 and R-0061, the floor of the image tests takes the tests of both slices (473,
   linux 503), and TASK-0315 names ADR-0108 and ADR-0109. The branch r18b-edges-b replaces the branch r18b-edges, whose
   merge commit had no line here and failed the write-set check; a force push is not permitted.
+- 2026-11-10: run 42824773499 passed on the work commit, with the start of the APK on the emulator. The phone project
+  builds with zero warnings. Closed at v0.322.
