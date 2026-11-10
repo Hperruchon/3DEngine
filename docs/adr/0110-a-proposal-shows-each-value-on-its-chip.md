@@ -7,7 +7,7 @@ date: 2026-11-10
 supersedes: []
 superseded-by: []
 amends: ['0092']
-amended-by: ['0114']
+amended-by: ['0114', '0115']
 affects:
   - 3DEngine.App/Ui/DesktopUi.Proposal.cs
   - 3DEngine.App/Ui/DesktopUi.Values.cs
@@ -102,3 +102,5 @@ while that body is selected.
 - 2026-11-10 · TASK-0334 · Shipped at v0.314.
 - 2026-11-10 · TASK-0339 · ADR-0114 item 2 amends item 3: the line shows an angle in degrees, and it names only a value that
   it can show in its unit (finding V164).
+- 2026-11-10 · TASK-0340 · ADR-0115 item 1 amends item 2: a chip shows the proposed value with three decimals; a line of
+  the proposal keeps its form until R18i.
