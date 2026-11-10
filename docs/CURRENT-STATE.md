@@ -9755,3 +9755,36 @@ the computer of the owner the image tests crashed the test host in `vkCreateDevi
 New tests: 12. The test list holds 2440 (1550 in `Engine.Tests`, 356 in `3DEngine.Tests`, 531 in `3DEngine.ImageTests`, 3
 in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
 entries: 11 of 15. New diagnostic codes: 0. Since the review of v0.319, 4 product milestones and 6 entries followed it.
+
+## v0.326 — The 2D drawing of a part has a date in the charter, with ADR-0118 and its roadmap rows (P0.142, TASK-0343)
+
+On 2026-11-10 the owner asked if the app has a 2D drawing export for persons who need a drawing or documentation. It has
+none. The owner asked for renders of a drawing of the Bracket, of the right dimensions on it, and a comparison with the
+app (`https://claude.ai/artifact/Vt9NaHWhekzbHk6nV2HaAn`), then answered the five questions with the recommended
+options, and chose "Drawing roadmap first" before R20a.
+
+**The change.**
+- `docs/CHARTER.md`: objective 18 is "2D drawing and technical drawing of a part have a place in the roadmap after R18
+  (ADR-0118, the decision of the owner of 2026-11-10). Electrical schematics stay a direction. They have no date." The
+  list of the non-goals keeps electrical schematics only.
+- ADR-0118 holds the answers: a date after R18 (Q1 A); the sheet, its views, their scale and the place of each dimension
+  in the Document, with the lines of a view computed and not stored (Q2 A); ISO first angle by default and third angle
+  as a choice of a sheet (Q3 A); the export as SVG, then DXF, then PDF (Q4); and a flat view first (Q5 A). It also holds
+  the rule of the right dimension, and that the edges of a view need an ADR on the feature boundary of the charter.
+- The roadmap holds R21 (the flat views), K9 (the edges of a view), R22 (the right dimensions), P10 (the sheet in the
+  Document, a contract change with its own ADR) and P10a to P10c (SVG, DXF, PDF), in that order, and P0.142 for this
+  record.
+
+**Proof.** `ObjectiveReferenceGateTests`, `AdrGateTests` and `TaskGovernanceGateTests` pass. Run 42912703326 of the first
+commit failed: the task lacked ADR-0055 in `governed-by`, and the command chain of the session did not stop on the failed
+gate. Commit 623bc7e corrected it, and run 42913130011 passed. The failed runs since the entry v0.325, from the API: none.
+
+**What stays.** Each phase of the drawing opens its task, and its ADR when it needs one, at its start. No phase starts
+before R18 ends, by Q1 A.
+
+**A correction.** None.
+
+No code changes. The test list holds 2440 (1550 in `Engine.Tests`, 356 in `3DEngine.Tests`, 531 in `3DEngine.ImageTests`,
+3 in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
+entries: 11 of 15. New diagnostic codes: 0. Since the review of v0.319, 4 product milestones and 7 entries followed it;
+the next product milestone makes the review due.

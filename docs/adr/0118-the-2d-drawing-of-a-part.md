@@ -87,3 +87,4 @@ recommended order, and Q5 A.
 ## History
 
 - 2026-11-10 · TASK-0343 · The record, from the answers of the owner of 2026-11-10 to Q1 to Q5 of the renders of a drawing.
+- 2026-11-10 · TASK-0343 · Shipped at v0.326.
