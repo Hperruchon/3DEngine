@@ -75,25 +75,6 @@ Exit: state the condition that closes this entry.
 
 ## Open
 
-### R-0022 · Three Vulkan defects block the first render on Linux and on macOS
-- class: debt
-- opened: 2026-09-25
-- due: 2027-03-24
-- extended: no
-- refs: `3DEngine.Vulkan/GraphicsDevice.cs:377-379`, `3DEngine.Vulkan/Swapchain.cs:174`, `docs/reviews/2026-09-23-codebase-review.md` findings V1, V2 and V3
-V1: the host treats `VK_SUBOPTIMAL_KHR` as a failure and gives a semaphore back to the pool while its
-signal is pending. V2: the special extent value `0xFFFFFFFF` passes the size check, and the fallback
-reads the window size in logical units. V3: the instance and the device set no portability flag, so
-a current loader on macOS does not list MoltenVK. The host only clears the screen today, therefore no
-defect shows now.
-Exit: each defect is corrected, with the check that the review gives for it, before the first render
-phase that runs on Linux or on macOS.
-Progress 2026-11-09: TASK-0319 found V1 fixed (a SUBOPTIMAL result is not a failure, and the semaphore goes back to the
-pool on a failure only, `Presenter.cs`), fixed the rest of V2 (the swapchain takes the special extent only for
-0xFFFFFFFF, and then the size of the window in pixels) and added the correction of V3 (the portability enumeration of the
-instance and the portability subset of the device, when the loader and the device give them). The check of V3 is a job on
-macOS that makes an instance and a device through MoltenVK; no runner of the pipeline has it, so V3 is not proved.
-
 ### R-0027 · Six findings of the first codebase review have no task
 - class: debt
 - opened: 2026-09-30
@@ -120,6 +101,9 @@ that throws gives `E-GEOM-NATIVE-OP`, and the log, the bodies and the backend do
 date and time, (b) the queue of the bus, (c) an unknown command outside the bus, (d) five event kinds that no code emits,
 which ADR-0005 defines, so their removal is a contract change, (e) the command line that builds an empty Document; C1, the
 two empty interfaces in `Engine.Contracts`; P1, the snapshot under the lock of the broadcaster.
+Progress 2026-11-10: the owner answered Q2 B of the codebase reviews of 2026-11-09 (TASK-0331): the five event kinds of E6
+(d) stay in ADR-0005 and in `/schema/events` as planned kinds, so E6 (d) is no longer open. E6 (a), (b), (c) and (e), C1
+and P1 stay.
 
 ### R-0028 · Nine new findings in the engine and the hosts have no task
 - class: debt
@@ -155,27 +139,6 @@ envelope with `E-API-BAD-REQUEST`, a negative cursor gets a reset, and the comma
 (`QueryResult<T>` of `Engine.Contracts` gives a struct of zeros on a failure; the hosts ask for `object`), and E17 parts
 1 and 2 (they need new diagnostic codes), 3 (the text of a JSON exception and an unknown charset), 5 (the pump stops before
 the close frame), 6 (no time limit on the subscribe frame) and 9 (a flag read as a command name).
-
-### R-0030 · The Vulkan layer continues with a null device and gives unpinned memory to Vulkan
-- class: debt
-- opened: 2026-09-30
-- due: 2027-03-29
-- extended: no
-- refs: `3DEngine.Vulkan/GraphicsDevice.cs:149-170`, `3DEngine.Vulkan/GraphicsDevice.cs:636-639`, `docs/reviews/2026-09-30-codebase-review.md` findings V5, V6 and V7, R-0022
-When no device is suitable, the host calls Vulkan with a null handle, and the process stops in native
-code with no message (V5). Byte arrays and pointers from a `fixed` block go to Vulkan with no pin
-(V6). Six smaller findings are in V7. The host only clears the screen on one computer today, therefore
-no run shows a failure.
-Exit: each finding is corrected before the first render phase that runs on a second computer. This is
-the condition of R-0022 too.
-Progress 2026-10-16: TASK-0076 corrected V5 and V6 in the split of the device. With no suitable device the
-core throws with a message, and a device that presents must have the swapchain extension; each name
-goes to Vulkan from native memory. The findings of V7 stay.
-Progress 2026-11-09: TASK-0319 fixed parts 1 to 5 of V7: one queue family that draws and presents comes first, and two
-families share the images of the swapchain; the surface format needs the colour space of sRGB; the desktop disposes its
-window and ends SDL; the resets of a fence and of a command pool check their results; the time step of the desktop and of
-the phone comes from the monotonic clock. Part 6 stays: `Scene` and `Entity` of `3DEngine.Core` give `IList`, which a
-second thread could change while the render loop reads it; only the render loop writes them today.
 
 ### R-0031 · A gate can pass while its rule is broken
 - class: debt
@@ -328,6 +291,8 @@ injection first. Open: T4 dispatch part (the dispatch gate does not read the des
 of the register gate (T7), the case of a path on Windows (T7; the Linux job fails on it), the provenance of the native
 binaries (T23; a checksum pins each binary), the local mode of the write-set check (T25; the pipeline judges each commit),
 and the three gates that run engine code in the test process (T31).
+Progress 2026-11-10: the owner answered Q1 A of the codebase reviews of 2026-11-09 (TASK-0331): the five parts above are
+accepted. Open: T4, the dispatch part. The entry closes when the dispatch gate reads the desktop host.
 
 ### R-0033 · Seven findings of the third codebase review in the engine and the hosts have no task
 - class: debt
@@ -421,6 +386,30 @@ Android gives a content address, not a path. The owner put the phone out of the 
 Exit: a phase gives the phone a project file through the document picker, or the owner accepts a phone with no project
 file and moves this entry to the accepted compromises.
 
+### R-0057 · No command turns a body, so a document built with y up stays on its side
+- class: question
+- opened: 2026-11-10
+- due: 2027-02-08
+- extended: no
+- refs: `docs/reviews/2026-11-09-codebase-review.md` finding V158 and Q5, `Engine.Core/Commands/TranslateCommand.cs`, TASK-0331
+The owner answered Q5 C on 2026-11-10: the Document records no up axis, and the entry hall shelf, built with y up, is
+turned by commands. The commands move a body (`Translate`) but do not turn it, so neither the person nor an agent can set
+the shelf upright now. A command that turns a body records a matrix or a quaternion (`CLAUDE.md`, determinism rule 2), so
+it is a change of `Engine.Contracts` with an ADR.
+Exit: a phase adds a command that turns a body, with its ADR, or the owner rebuilds the shelf with z up and closes the entry.
+
+### R-0058 · On a portrait display of 360 by 780 the panel of the bodies covers Move of the ring
+- class: debt
+- opened: 2026-11-10
+- due: 2027-05-09
+- extended: no
+- refs: `3DEngine.App/Ui/DesktopUi.Ring.cs`, `3DEngine.ImageTests/ProposalArcTests.cs`, TASK-0331
+A probe of TASK-0331, with no proposal: at 360 by 780 with a selected extrude, the panel of the bodies ends at y 690, and the
+middle of Move is at y 670, so a tap on Move gives nothing. At 390 by 844 the middle of Move is at y 734, below the panel.
+No test of the ring runs at a portrait display this small.
+Exit: the ring of a portrait display stays out of each panel at each display from 360 by 640, with a test, or the owner
+accepts the limit.
+
 ## Accepted compromises
 
 These are conditions that the project keeps permanently and by decision. They do not age.
@@ -507,6 +496,50 @@ The project keeps `ppy.SDL3-CS` 2026.1002.1 with its snapshot of SDL 3.5.0. No v
 SDL (TASK-0195), and the pin builds and runs on Windows, Linux, macOS and Android in each run of the pipeline. A later
 change of the pin is a change of ADR-0061 item 5.
 
+### R-0022 · Three Vulkan defects block the first render on Linux and on macOS
+- class: debt
+- opened: 2026-09-25
+- due: 2027-03-24
+- extended: no
+- refs: `3DEngine.Vulkan/GraphicsDevice.cs:377-379`, `3DEngine.Vulkan/Swapchain.cs:174`, `docs/reviews/2026-09-23-codebase-review.md` findings V1, V2 and V3
+V1: the host treats `VK_SUBOPTIMAL_KHR` as a failure and gives a semaphore back to the pool while its
+signal is pending. V2: the special extent value `0xFFFFFFFF` passes the size check, and the fallback
+reads the window size in logical units. V3: the instance and the device set no portability flag, so
+a current loader on macOS does not list MoltenVK. The host only clears the screen today, therefore no
+defect shows now.
+Exit: each defect is corrected, with the check that the review gives for it, before the first render
+phase that runs on Linux or on macOS.
+Progress 2026-11-09: TASK-0319 found V1 fixed (a SUBOPTIMAL result is not a failure, and the semaphore goes back to the
+pool on a failure only, `Presenter.cs`), fixed the rest of V2 (the swapchain takes the special extent only for
+0xFFFFFFFF, and then the size of the window in pixels) and added the correction of V3 (the portability enumeration of the
+instance and the portability subset of the device, when the loader and the device give them). The check of V3 is a job on
+macOS that makes an instance and a device through MoltenVK; no runner of the pipeline has it, so V3 is not proved.
+Accepted 2026-11-10 · TASK-0331 · the owner answered Q3 A of the codebase reviews of 2026-11-09: V1 and V2 are fixed, and
+V3 is corrected in the code and is proved only when a window first runs on macOS. No runner of the pipeline makes a Vulkan
+device on macOS, and a job with MoltenVK costs more than the check is worth before a phase runs there.
+
+### R-0030 · The Vulkan layer continues with a null device and gives unpinned memory to Vulkan
+- class: debt
+- opened: 2026-09-30
+- due: 2027-03-29
+- extended: no
+- refs: `3DEngine.Vulkan/GraphicsDevice.cs:149-170`, `3DEngine.Vulkan/GraphicsDevice.cs:636-639`, `docs/reviews/2026-09-30-codebase-review.md` findings V5, V6 and V7, R-0022
+When no device is suitable, the host calls Vulkan with a null handle, and the process stops in native
+code with no message (V5). Byte arrays and pointers from a `fixed` block go to Vulkan with no pin
+(V6). Six smaller findings are in V7. The host only clears the screen on one computer today, therefore
+no run shows a failure.
+Exit: each finding is corrected before the first render phase that runs on a second computer. This is
+the condition of R-0022 too.
+Progress 2026-10-16: TASK-0076 corrected V5 and V6 in the split of the device. With no suitable device the
+core throws with a message, and a device that presents must have the swapchain extension; each name
+goes to Vulkan from native memory. The findings of V7 stay.
+Progress 2026-11-09: TASK-0319 fixed parts 1 to 5 of V7: one queue family that draws and presents comes first, and two
+families share the images of the swapchain; the surface format needs the colour space of sRGB; the desktop disposes its
+window and ends SDL; the resets of a fence and of a command pool check their results; the time step of the desktop and of
+the phone comes from the monotonic clock. Part 6 stays: `Scene` and `Entity` of `3DEngine.Core` give `IList`, which a
+second thread could change while the render loop reads it; only the render loop writes them today.
+Accepted 2026-11-10 · TASK-0331 · the owner answered Q4 A of the codebase reviews of 2026-11-09: part 6 of V7 stays, because
+only the render loop writes `Scene` and `Entity` of `3DEngine.Core`. V5, V6 and parts 1 to 5 of V7 are fixed.
 
 ---
 

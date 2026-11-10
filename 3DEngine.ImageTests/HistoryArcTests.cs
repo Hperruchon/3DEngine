@@ -156,7 +156,7 @@ public sealed class HistoryArcTests
     public void The_Steps_Come_Again_Only_For_A_New_Version_Or_Selection()
     {
         var cache = new HistoryCache();
-        IReadOnlyList<HistoryStep> Compute() => HistorySteps.Of(Extruded, [BracketBody], [Plate], Bracket);
+        Task<IReadOnlyList<HistoryStep>> Compute() => Task.FromResult(HistorySteps.Of(Extruded, [BracketBody], [Plate], Bracket));
 
         var first = cache.Steps(4, Bracket, Compute);
         Assert.Same(first, cache.Steps(4, Bracket, Compute));
@@ -164,10 +164,38 @@ public sealed class HistoryArcTests
 
         cache.Steps(5, Bracket, Compute);
         Assert.Equal(2, cache.Computed);
-        cache.Steps(5, null, Compute);
-        Assert.Equal(3, cache.Computed);
-        cache.Steps(5, null, Compute);
-        Assert.Equal(3, cache.Computed);
+        // Finding V161 (TASK-0331): with no selection there is no read.
+        Assert.Empty(cache.Steps(5, null, Compute));
+        Assert.Equal(2, cache.Computed);
+        Assert.Empty(cache.Steps(6, null, Compute));
+        Assert.Equal(2, cache.Computed);
+    }
+
+    // Finding V161 of the codebase review of 2026-11-09 (b) (TASK-0331): the frame does not wait for the read of the features.
+    // While a read runs, the frame keeps the steps of the last read of the same selection, or none for a new selection; the
+    // steps of a complete read come in the next frame, and a failed read gives none. Until TASK-0331 the frame waited for the
+    // query, which waits for the serial lock of the session.
+    [Fact]
+    public void The_Frame_Does_Not_Wait_For_The_Read()
+    {
+        var cache = new HistoryCache();
+        var steps = HistorySteps.Of(Extruded, [BracketBody], [Plate], Bracket);
+        var first = new TaskCompletionSource<IReadOnlyList<HistoryStep>>();
+        Assert.Empty(cache.Steps(4, Bracket, () => first.Task));
+        Assert.Empty(cache.Steps(4, Bracket, () => throw new InvalidOperationException("A second read of one key.")));
+        first.SetResult(steps);
+        Assert.Same(steps, cache.Steps(4, Bracket, () => throw new InvalidOperationException("A second read of one key.")));
+
+        // A new version of the same body keeps the old steps until its read is complete.
+        var second = new TaskCompletionSource<IReadOnlyList<HistoryStep>>();
+        Assert.Same(steps, cache.Steps(5, Bracket, () => second.Task));
+        second.SetException(new InvalidOperationException("The session closed."));
+        Assert.Empty(cache.Steps(5, Bracket, () => throw new InvalidOperationException("A second read of one key.")));
+
+        // A new selection shows no steps of the last body while its read runs.
+        Assert.Same(steps, cache.Steps(6, Bracket, () => Task.FromResult(steps)));
+        Assert.Empty(cache.Steps(6, Guid.NewGuid(), () => new TaskCompletionSource<IReadOnlyList<HistoryStep>>().Task));
+        Assert.Equal(4, cache.Computed);
     }
 
     // Item 3: on a landscape display with a selection, each step has a node of at least 44 pixels at the lower left on the band

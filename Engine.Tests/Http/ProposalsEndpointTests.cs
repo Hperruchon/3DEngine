@@ -264,6 +264,10 @@ public sealed class ProposalsEndpointTests : IAsyncLifetime
             Assert.Equal(DiagnosticCodes.ApiProposalClosed, Code(refusal));
         }
 
+        // Finding E199 (TASK-0331): the refusal names the state of the proposal.
+        Assert.Contains("its state is withdrawn", (await Send(HttpMethod.Delete, $"/proposals/{open}")).Body.GetProperty("error").GetProperty("message").GetString(), StringComparison.Ordinal);
+        Assert.Contains("its state is rejected", (await Send(HttpMethod.Delete, $"/proposals/{rejected}")).Body.GetProperty("error").GetProperty("message").GetString(), StringComparison.Ordinal);
+
         var (missing, missingBody) = await Send(HttpMethod.Delete, $"/proposals/{Guid.NewGuid()}");
         Assert.Equal(HttpStatusCode.NotFound, missing);
         Assert.Equal(DiagnosticCodes.ApiProposalNotFound, Code(missingBody));
@@ -443,6 +447,9 @@ public sealed class ProposalsEndpointTests : IAsyncLifetime
             var (status, body) = await Send(HttpMethod.Delete, $"/proposals/{id}");
             Assert.Equal(HttpStatusCode.Conflict, status);
             Assert.Equal(DiagnosticCodes.ApiProposalClosed, Code(body));
+            // Finding E199 of the codebase review of 2026-11-09 (b) (TASK-0331): the text names the state applying. Until
+            // TASK-0331 it said that the person accepted or rejected the proposal, or that it was withdrawn or failed.
+            Assert.Contains("its state is applying, because the person accepted it and its commands apply now", body.GetProperty("error").GetProperty("message").GetString(), StringComparison.Ordinal);
             Assert.Equal(ProposalStates.Applying, (await Send(HttpMethod.Get, "/proposals")).Body[0].GetProperty("state").GetString());
         }
         finally
@@ -452,6 +459,49 @@ public sealed class ProposalsEndpointTests : IAsyncLifetime
 
         await hold;
         Assert.Equal(ProposalStates.Accepted, (await accept)!.State);
+    }
+
+    private static string Identified(Guid commandId, double x)
+        => $"{{\"name\":\"CreateBox\",\"schemaVersion\":1,\"parameters\":{{\"sizeX\":{x},\"sizeY\":10,\"sizeZ\":10}},\"commandId\":\"{commandId}\"}}";
+
+    // Finding E198 of the codebase review of 2026-11-09 (b) (TASK-0331): a commandId that an earlier envelope of the proposal
+    // holds is refused at the post with its index. Until TASK-0331 the post took it, and the accept gave the cached result of
+    // the first command for the second one: two applied results and one body.
+    [Fact]
+    public async Task A_Command_Identifier_That_Repeats_In_A_Proposal_Gives_400()
+    {
+        var commandId = Guid.NewGuid();
+
+        var (status, body) = await Post(Body("Two boxes, one identifier", NoOp, Identified(commandId, 10), Identified(commandId, 20)));
+
+        Assert.Equal(HttpStatusCode.BadRequest, status);
+        Assert.Equal(DiagnosticCodes.ApiBadRequest, Code(body));
+        Assert.Equal(2, body.GetProperty("error").GetProperty("index").GetInt32());
+        Assert.StartsWith($"commands[2]: The commandId {commandId} is the commandId of commands[1]", body.GetProperty("error").GetProperty("message").GetString(), StringComparison.Ordinal);
+        Assert.Empty(_host.Proposals.Waiting());
+        Assert.Equal(HttpStatusCode.Created, (await Post(Body("Two boxes", Identified(commandId, 10), Identified(Guid.NewGuid(), 20)))).Status);
+    }
+
+    // Finding E198 (TASK-0331): a command whose identifier the session knows applies nothing, so the accept stops there with
+    // E-API-PROPOSAL-COMMAND-KNOWN, and the proposal has no result for it. Until TASK-0331 a later proposal with the
+    // identifier of an applied command was accepted with 1 applied result and no change of the Document.
+    [Fact]
+    public async Task A_Command_That_The_Session_Knows_Fails_The_Accept()
+    {
+        var commandId = Guid.NewGuid();
+        Assert.Equal(ProposalStates.Accepted, (await _host.Proposals.Accept(await Posted("First", Identified(commandId, 10))))!.State);
+        Assert.Equal(1, await Version());
+
+        var again = await Posted("Again", Box(30), Identified(commandId, 20), Box(40));
+        var failed = await _host.Proposals.Accept(again);
+
+        Assert.Equal((ProposalStates.Failed, 1, DiagnosticCodes.ApiProposalCommandKnown), (failed!.State, failed.FailedIndex, failed.FailedCode));
+        Assert.Equal([CommandStatus.Applied], failed.Results.Select(result => result.Status));
+        Assert.Equal(2, await Version());
+        Assert.Equal(2, await _host.Session.Read((document, _) => document.Bodies.Count));
+        var read = await Read(again);
+        Assert.Equal(DiagnosticCodes.ApiProposalCommandKnown, read.GetProperty("failedCode").GetString());
+        Assert.Equal(1, read.GetProperty("results").GetArrayLength());
     }
 
     // ADR-0030 item 4: after an accepted open, the old document takes no proposal, as it takes no command.

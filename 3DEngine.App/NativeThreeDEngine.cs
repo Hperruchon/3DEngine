@@ -172,14 +172,16 @@ public sealed class NativeThreeDEngine : IThreeDEngine, IDisposable
     // with its import.
     private void TakeOpenedFile()
     {
-        var (done, path, failure, purpose) = Window.TakeOpenedFile();
+        var (done, path, failure, given) = Window.TakeOpenedFile();
         if (!done || _ui is null)
             return;
+        // ADR-0106 (TASK-0328): an STL file from the dialog of "Open project..." goes to the import below.
+        var purpose = ProjectFiles.PurposeOf(path, (DialogPurpose)given);
         // ADR-0102 item 2 (TASK-0316): the result of the open of a project, of a save or of an export goes to the project path.
-        if ((DialogPurpose)purpose != DialogPurpose.ImportStl)
+        if (purpose != DialogPurpose.ImportStl)
         {
             if (_projects is not null)
-                Report(_projects.Take(path, failure, (DialogPurpose)purpose));
+                Report(_projects.Take(path, failure, purpose));
             return;
         }
 
@@ -192,12 +194,24 @@ public sealed class NativeThreeDEngine : IThreeDEngine, IDisposable
             return;
         }
 
-        var name = StlOpening.FileName(path);
-        if (StlOpening.TooLarge(Window.FileSize(path)) is { } tooLarge)
+        if (ImportFile(path, _assets, _document) is { } refusal)
         {
-            _ui.ShowMessage((tooLarge.Code, $"{name}: {tooLarge.Message}"));
+            _ui.ShowMessage(refusal);
             return;
         }
+
+        _ui.ShowMessage(null);
+        _document!.Home = false;
+    }
+
+    // ADR-0083 D1 and D3: the STL file at the path, read through SDL, checked with the reader of the engine and put in the store,
+    // as the import of a new part document for the next session. The result is the message of a refusal, or null when the
+    // next session imports the file. ADR-0106 (TASK-0328): a method apart from the window, so that a test gives it a path.
+    internal static (string Code, string Text)? ImportFile(string path, Engine.Core.Assets.AssetStore? assets, IDocumentFiles? document)
+    {
+        var name = StlOpening.FileName(path);
+        if (StlOpening.TooLarge(Window.FileSize(path)) is { } tooLarge)
+            return (tooLarge.Code, $"{name}: {tooLarge.Message}");
 
         // E183 (TASK-0281): the read stops after the limit, also when SDL does not know the size and FileSize gives -1.
         // E190 (TASK-0295): a stop at the limit gives the code of a file too large, as a known size does.
@@ -205,32 +219,18 @@ public sealed class NativeThreeDEngine : IThreeDEngine, IDisposable
         if (content is null)
         {
             var over = StlOpening.OverLimit($"The file has more than {StlOpening.MaximumBytes} bytes");
-            _ui.ShowMessage(overLimit ? (over.Code, $"{name}: {over.Message}") : (string.Empty, $"The file {name} could not be read: {readError}"));
-            return;
+            return overLimit ? (over.Code, $"{name}: {over.Message}") : (string.Empty, $"The file {name} could not be read: {readError}");
         }
 
-        if (_assets is null || _document is null)
-        {
-            _ui.ShowMessage((string.Empty, "This program has no store of the assets, so it opens no STL file."));
-            return;
-        }
+        if (assets is null || document is null)
+            return (string.Empty, "This program has no store of the assets, so it opens no STL file.");
 
-        var (import, fault) = StlOpening.Prepare(path, content, _assets).GetAwaiter().GetResult();
+        var (import, fault) = StlOpening.Prepare(path, content, assets).GetAwaiter().GetResult();
         if (import is null)
-        {
-            _ui.ShowMessage((fault?.Code ?? string.Empty, $"{name}: {fault?.Message}"));
-            return;
-        }
+            return (fault?.Code ?? string.Empty, $"{name}: {fault?.Message}");
 
         // V125 (TASK-0270): a request that an open of another file refuses gives its message, and the home screen stays.
-        if (_document.RequestNew(import) is { } refused)
-        {
-            _ui.ShowMessage((refused.Code, $"{name}: {refused.Message}"));
-            return;
-        }
-
-        _ui.ShowMessage(null);
-        _document.Home = false;
+        return document.RequestNew(import) is { } refused ? (refused.Code, $"{name}: {refused.Message}") : null;
     }
 
     // The frame of the camera on the live bodies, as the first body gives it (ADR-0029 item 8).
@@ -271,8 +271,20 @@ public sealed class NativeThreeDEngine : IThreeDEngine, IDisposable
         var window = _window.Extent;
         var layout = GizmoLayout();
         _intents.HitTest = layout is null ? null : (x, y) => TranslateGizmo.Hit(layout, x, y);
-        foreach (var intent in _intents.Step(_ui is null ? frame : _ui.Route(frame)))
+        // ADR-0111 item 3 (TASK-0331): while an accept runs, an intent that changes the Document is held, and the end of a drag
+        // of the gizmo is a cancel (finding V163).
+        var held = _proposalAccept is not null;
+        foreach (var taken in _intents.Step(_ui is null ? frame : _ui.Route(frame)))
         {
+            var intent = taken;
+            if (held && AcceptHold.Holds(intent))
+            {
+                _documentMessage = AcceptHold.Text;
+                if (intent is not GizmoEndIntent)
+                    continue;
+                intent = new GizmoCancelIntent();
+            }
+
             // ADR-0038 item 2: a drag of the gizmo moves the drawing, and its end sends one Translate.
             if (_actions is not null && _renderer is not null
                 && _gizmo.Apply(intent, Camera, window.width, window.height, Selection, _renderer.Pivot, _renderer.Preview, _actions.Move, out var rejection))
@@ -289,7 +301,7 @@ public sealed class NativeThreeDEngine : IThreeDEngine, IDisposable
             // ADR-0053 item 6: an armed tap of the mode Scene starts a sketch on the face under it.
             if (_ui is not null && _ui.FaceArm.Take(intent, out var face))
             {
-                _documentMessage = SketchOnFace(face.X, face.Y);
+                _documentMessage = held ? AcceptHold.Text : SketchOnFace(face.X, face.Y);
                 continue;
             }
 
@@ -408,11 +420,21 @@ public sealed class NativeThreeDEngine : IThreeDEngine, IDisposable
             return;
 
         // ADR-0053 item 6 and findings V77 and V84: the panel applies each action to the arm of the button Face.
-        TakeOpenedFile();
+        // ADR-0111 item 3 (TASK-0331): while an accept runs, a file that a dialog gave waits, and each action that changes the
+        // Document is held; a pad stays open with the reason (finding V163).
+        if (_proposalAccept is null)
+            TakeOpenedFile();
         var actions = _ui.TakeActions();
         _documentMessage = _ui.ArmMessage ?? _documentMessage;
         foreach (var action in actions)
         {
+            if (_proposalAccept is not null && AcceptHold.Holds(action))
+            {
+                _documentMessage = AcceptHold.Text;
+                _ui.EndPad(AcceptHold.Text);
+                continue;
+            }
+
             switch (action)
             {
                 case SelectBodyAction select:
@@ -837,10 +859,15 @@ public sealed class NativeThreeDEngine : IThreeDEngine, IDisposable
         // ADR-0105 item 1 (TASK-0327): the values of the active sketch on its lines and its curves, from the sketches of the frame.
         var sketchValues = SketchValuesOf(_sketchActions, _sketches?.Live ?? [], Camera, window.width, window.height, _host.Session.LengthUnit);
 
-        // ADR-0104 item 1: the steps that made the selected body, from GetFeatures, for the history arc.
-        var history = _history.Steps(version, Selection, () => HistorySteps.Of(
-            _host.Session.Query<Engine.Core.Queries.FeaturesInfo>(new Engine.Core.Queries.GetFeaturesQuery()).GetAwaiter().GetResult().Result,
-            _renderer.LiveBodies, _sketches?.Live ?? [], Selection));
+        // ADR-0104 item 1: the steps that made the selected body, from GetFeatures, for the history arc. Finding V161 (TASK-0331):
+        // the query runs on the thread pool with the bodies and the sketches of this frame, and the frame does not wait for it.
+        var history = _history.Steps(version, Selection, () =>
+        {
+            var (bodies, sketched, selected) = (_renderer.LiveBodies.ToList(), (_sketches?.Live ?? []).ToList(), Selection);
+            return Task.Run(async () => HistorySteps.Of(
+                (await _host.Session.Query<Engine.Core.Queries.FeaturesInfo>(new Engine.Core.Queries.GetFeaturesQuery()).ConfigureAwait(false)).Result,
+                bodies, sketched, selected));
+        });
 
         // ADR-0092 items 6 and 7 (TASK-0326): the outcome of a complete accept, and the waiting proposals, which the queue gives
         // with no read of the session.
@@ -850,7 +877,9 @@ public sealed class NativeThreeDEngine : IThreeDEngine, IDisposable
             _proposalAccept = null;
         }
 
-        var proposals = _proposalDesk?.Waiting();
+        // ADR-0110 item 3 (TASK-0334): the name, the label and the value now of each proposed value, from the sketches, the
+        // bodies and the values of the frame.
+        var proposals = ProposedValues.Named(_proposalDesk?.Waiting(), _sketches?.Live ?? [], _renderer.LiveBodies, values);
 
         // ADR-0102 item 5 (Q3 A): the question shows while a change of project waits for its answer.
         _ui.ShowQuestion(_projects?.Asking ?? false);

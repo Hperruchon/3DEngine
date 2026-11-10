@@ -612,7 +612,9 @@ internal sealed unsafe partial class DesktopUi : IDisposable
             Proposal(displaySize, selectedBody);
             // The review of Codex of v0.252 (TASK-0271): the window of the live sketches is at the upper right too, so while
             // the rows show, they take its place (ADR-0084 item 6); the window of an active sketch shows as before.
-            if (sketchPanel is { } shown && (shown.Active is not null || (shown.Live.Count > 0 && _rowsArea is null)))
+            // ADR-0107 (TASK-0330): while a proposal waits, the window of the live sketches does not show, so it covers no end
+            // of the arc or of the sheet (finding V159 of the codebase review of 2026-11-09 (b)).
+            if (sketchPanel is { } shown && (shown.Active is not null || (shown.Live.Count > 0 && _rowsArea is null && _proposals.Count == 0)))
                 SketchWindow(shown, displaySize);
             if (imagePanel is not null)
                 ImageWindow(imagePanel, displaySize);

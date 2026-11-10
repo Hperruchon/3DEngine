@@ -7,7 +7,7 @@ date: 2026-11-08
 supersedes: []
 superseded-by: []
 amends: ['0030', '0083']
-amended-by: ['0100']
+amended-by: ['0100', '0106']
 affects:
   - 3DEngine.App/ProjectFiles.cs
   - 3DEngine.App/ISessionHost.cs
@@ -108,3 +108,5 @@ the dialogs of the system need a person: the tests give their results as samples
 - 2026-11-09 · TASK-0317 · Item 9: the register entry R-0056 holds the project file of the phone.
 - 2026-11-09 · TASK-0314 · ADR-0100 item 6 amends item 7: the folder follows the file name only while the path is the
   document only.
+- 2026-11-09 · TASK-0328 · ADR-0106 amends item 1: the dialog of "Open project..." shows "Project or STL" first, and an STL
+  file chosen there goes to the import.
