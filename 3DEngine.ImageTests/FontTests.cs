@@ -13,7 +13,8 @@ public sealed class FontTests
     {
         using var ui = new DesktopUi("http://127.0.0.1:5180", Engine.Contracts.Document.Millimetre);
 
-        Assert.Equal(2, ui.FontCount);
+        // ADR-0117 item 1 (TASK-0342): a third font, Instrument Sans at the size of the name of a body.
+        Assert.Equal(3, ui.FontCount);
         var (wide, narrow, one, eight) = (ui.TextWidths("WWWWWWWWWW"), ui.TextWidths("iiiiiiiiii"), ui.TextWidths("1111111111"), ui.TextWidths("8888888888"));
         Assert.Equal(wide.Mono, narrow.Mono);
         Assert.Equal(one.Mono, eight.Mono);

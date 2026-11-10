@@ -34,6 +34,9 @@ internal sealed unsafe partial class DesktopUi : IDisposable
     // A control is at least 44 pixels high at a display scale of 1, so that a finger can hit
     // it (ADR-0027 item 6): the font size plus two times the vertical frame padding.
     public const float FontSize = 26f;
+
+    // ADR-0117 item 1 (phase R18d, TASK-0342): the size of the name of a selected body, as the render: 1.3 times the text.
+    public const float TitleSize = 34f;
     public const float FramePaddingY = 9f;
     public const float MinimumControlHeight = 44f;
 
@@ -258,6 +261,8 @@ internal sealed unsafe partial class DesktopUi : IDisposable
         font.FontDataOwnedByAtlas = false;
         io.Fonts.AddFontFromMemoryTTF(_fontData[0].Pointer, _fontData[0].Length, FontSize, font);
         _monoFont = io.Fonts.AddFontFromMemoryTTF(_fontData[1].Pointer, _fontData[1].Length, FontSize, font);
+        // ADR-0117 item 1 (phase R18d, TASK-0342): Instrument Sans again at the size of the name of a body, for its first row.
+        _titleFont = io.Fonts.AddFontFromMemoryTTF(_fontData[0].Pointer, _fontData[0].Length, TitleSize, font);
         font.Destroy();
 
         var style = ImGui.GetStyle();
@@ -607,7 +612,7 @@ internal sealed unsafe partial class DesktopUi : IDisposable
             // ADR-0098 (TASK-0312): the command line.
             CommandLine(displaySize, bodies, selection);
             // ADR-0084 (TASK-0267): the rows of the selected body come first, so that the ring and the chips read them.
-            PlaceRows(displaySize, selectedBody, selection is null ? null : values, bodies, document);
+            PlaceRows(displaySize, selectedBody, selection is null ? null : values, bodies, document, history);
             // ADR-0081 (TASK-0253): the tool ring of the selected body, around the centre of its box on the screen.
             // ADR-0092 item 7 (TASK-0326): the tools of the ring dim while a proposal waits.
             var dimmed = DimRing();
@@ -723,6 +728,9 @@ internal sealed unsafe partial class DesktopUi : IDisposable
     // The two fonts of ADR-0091, and the font of a value.
     private readonly (nint Pointer, int Length)[] _fontData;
     private readonly ImFontPtr _monoFont;
+
+    // ADR-0117 item 1: the font of the name of a selected body in its first row.
+    private readonly ImFontPtr _titleFont;
 
     // ADR-0091: the count of the fonts of the atlas, and the widths of a text in the font of the interface and in the font
     // of a value, for a test.
