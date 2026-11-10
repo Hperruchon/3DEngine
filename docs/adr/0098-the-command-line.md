@@ -7,7 +7,7 @@ date: 2026-11-08
 supersedes: []
 superseded-by: []
 amends: ['0032', '0084']
-amended-by: ['0099', '0108', '0113']
+amended-by: ['0099', '0101', '0108', '0113']
 affects:
   - 3DEngine.App/Ui/DesktopUi.Command.cs
   - 3DEngine.App/Ui/DesktopUi.cs
@@ -89,3 +89,4 @@ The owner chose the slice; the recommendations answer Q1 to Q3.
   pixels and at most 300.
 - 2026-11-10 · TASK-0332 · ADR-0108 item 4 amends item 2: a round outlined field 400 pixels wide, with a search mark,
   "Type a command or a value" and "Ctrl K".
+- 2026-11-10 · TASK-0315 · Amended by ADR-0101 item 3: "Focus" is a command of the command line for a selected body.

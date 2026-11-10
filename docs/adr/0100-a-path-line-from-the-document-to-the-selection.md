@@ -1,13 +1,13 @@
 ---
 id: 0100
 title: A path line from the document to the selection, and the rows of the document
-status: Accepted
+status: Amended
 topic: Clients, selection
 date: 2026-11-09
 supersedes: []
 superseded-by: []
 amends: ['0075', '0077', '0093', '0099', '0102']
-amended-by: []
+amended-by: ['0101']
 affects:
   - 3DEngine.App/BodyActions.cs
   - 3DEngine.App/NativeThreeDEngine.cs
@@ -110,3 +110,5 @@ line in this window yet.
 - 2026-11-10 · TASK-0314 · Item 5: on a portrait display the panel ends above the ring of the selected body, after the
   merge of P0.139 showed that the path line moved the panel onto Move at 390 by 844.
 - 2026-11-10 · TASK-0314 · Shipped at v0.316.
+- 2026-11-10 · TASK-0315 · Amended by ADR-0101 items 4 and 6: the path line shows "Focus" and a close mark,
+  and with a focus Escape ends the focus before it clears the body.

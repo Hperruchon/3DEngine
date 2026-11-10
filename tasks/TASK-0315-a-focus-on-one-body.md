@@ -1,11 +1,11 @@
 ---
 id: 0315
 title: A focus on one body, as a state of the client that writes nothing to the log
-status: Ready
+status: Done
 phase: R17b
 opened: 2026-11-08
 depends-on: [0314]
-governed-by: [0007, 0019, 0025, 0027, 0029, 0030, 0032, 0034, 0043, 0072, 0073, 0075, 0076, 0077, 0078, 0080, 0081, 0082, 0083, 0084, 0085, 0086, 0087, 0088, 0089, 0091, 0092, 0093, 0095, 0097, 0098, 0099, 0100, 0102, 0104, 0105, 0106, 0107, 0108, 0109, 0110, 0111, 0113]
+governed-by: [0007, 0019, 0025, 0027, 0029, 0030, 0032, 0034, 0043, 0072, 0073, 0075, 0076, 0077, 0078, 0080, 0081, 0082, 0083, 0084, 0085, 0086, 0087, 0088, 0089, 0091, 0092, 0093, 0095, 0097, 0098, 0099, 0100, 0101, 0102, 0104, 0105, 0106, 0107, 0108, 0109, 0110, 0111, 0113]
 writes:
   create:
     - tasks/TASK-0315-a-focus-on-one-body.md
@@ -24,10 +24,14 @@ writes:
     - 3DEngine.ImageTests/ToolRingTests.cs
     - 3DEngine.ImageTests/CommandLineTests.cs
     - 3DEngine.ImageTests/DocumentPathTests.cs
+    - 3DEngine.ImageTests/RingImageTests.cs
+    - 3DEngine.ImageTests/ProposalArcTests.cs
     - docs/adr/0081-the-tool-ring-of-the-redesign.md
     - docs/adr/0098-the-command-line.md
     - docs/adr/0100-a-path-line-from-the-document-to-the-selection.md
     - docs/adr/README.md
+    - tasks/TASK-0332-the-look-of-the-render.md
+    - tasks/TASK-0333-the-edges-of-the-body.md
     - eng/test-floor.txt
     - docs/roadmap.md
     - docs/CURRENT-STATE.md
@@ -76,13 +80,13 @@ The person shows one body only for a review, and ends the review with one action
 
 ## Acceptance criteria
 
-- [ ] ADR-0101 exists and records the answers Q4 A and Q5 A of 2026-11-08. ADR-0081, ADR-0098 and ADR-0100 show the
+- [x] ADR-0101 exists and records the answers Q4 A and Q5 A of 2026-11-08. ADR-0081, ADR-0098 and ADR-0100 show the
       amendment.
-- [ ] A test proves that a focus and its exit add no entry to the log; it fails when the focus uses `SetBodyVisibility`.
-- [ ] Each exit of item 5 has a test.
-- [ ] The picture at 1440 by 900 shows one body, the path line with "Focus" and the close mark.
-- [ ] A clean build (`--no-incremental`) gives zero errors and zero warnings, and the phone project builds.
-- [ ] `dotnet test`, the write-set check and `eng/repo-gates` pass; continuous integration passes on the branch and on
+- [x] A test proves that a focus and its exit add no entry to the log; it fails when the focus uses `SetBodyVisibility`.
+- [x] Each exit of item 5 has a test.
+- [x] The picture at 1440 by 900 shows one body, the path line with "Focus" and the close mark.
+- [x] A clean build (`--no-incremental`) gives zero errors and zero warnings, and the phone project builds.
+- [x] `dotnet test`, the write-set check and `eng/repo-gates` pass; continuous integration passes on the branch and on
       `main` after the merge.
 
 ## Notes for the implementer
@@ -96,13 +100,31 @@ The person shows one body only for a review, and ends the review with one action
 - `governed-by` must hold each ADR in force whose `affects` meets the write set. `TaskGovernanceGateTests` gives the
   list.
 
+## Outcome
+
+Status: Done · commit (the merge of the branch r17b-focus) · v0.323
+
 ## Method
 
 Mechanical: the filter of the bodies to draw; the segment and the command from those that exist.
 Judgement:  the order of Escape with a focus; the place of the close mark.
-Weakest:    no person used a focus in this window yet.
+Weakest:    no person used a focus in this window yet. While an agent proposal is accepted, a tap on "Focus" is held,
+            as a tap on the path line is.
 
 ## Progress
 
 - 2026-11-08: opened from the proposal, with the answers of the owner.
 - 2026-11-09: governed by ADR-0099, after the merge of R16p at v0.298.
+- 2026-11-10: started on the order of the owner, at `main` aa6c728 (v0.320), while the R18 session holds R18a and R18b.
+  ADR-0101 is free on `main` and on each branch. The focus is in `BodyActions` and its one rule is in `SceneRenderer`; the
+  ring, the command line and the path line show it.
+- 2026-11-10: merge of `main` at v0.321 (R18a, ADR-0108): the ring keeps the look of ADR-0108 and the colour of the focus
+  in use; the picture test of the ring takes the segment "Focus"; the ADRs and the index keep both amendments.
+- 2026-11-10: run 42881431641 passed on the work commit and run 42882376942 on the merge of v0.321, each with the start
+  of the APK on the emulator. Twelve injections each failed a named test of `BodyFocusTests`. `RingImageTests.cs` and
+  `ProposalArcTests.cs` joined the write set: each fixed the count of the segments of the ring of a body, which "Focus"
+  makes one more. `BodyVisibility.cs`, `ToolRingTests.cs`, `CommandLineTests.cs` and `DocumentPathTests.cs` needed no
+  change. The files of TASK-0332 and TASK-0333 joined it, because the governance gate asks their `governed-by` to name
+  ADR-0101 while they are open.
+- 2026-11-10: merge of `main` at v0.322 (R18b, ADR-0109): the floor of the image tests takes the tests of both (484,
+  linux 516), TASK-0315 names ADR-0109, and TASK-0333, now Done, keeps the text of `main`. Closed at v0.323.
