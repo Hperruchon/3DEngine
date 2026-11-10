@@ -7,7 +7,7 @@ date: 2026-10-28
 supersedes: []
 superseded-by: []
 amends: ['0025', '0026', '0027']
-amended-by: ['0034', '0053', '0075']
+amended-by: ['0034', '0053', '0075', '0109']
 affects:
   - 3DEngine.Core/Input/**
   - 3DEngine.Core/Picking/**
@@ -79,3 +79,5 @@ that framed it leaves the camera where it is.
 - 2026-11-03 · TASK-0171 · ADR-0053 amends item 1: a hit gives its point and the normal of the hit triangle toward
   the eye, for the query `GetFaceAt`.
 - 2026-11-06 · TASK-0236 · ADR-0075 amends item 1: a second tap on the selected body selects the face under the point.
+- 2026-11-10 · TASK-0333 · ADR-0109 amends item 2: the selected body has no opaque draw; the highlight is a transparent
+  fill over its depth, with its edges in the colour of the selection and its hidden edges dashed.

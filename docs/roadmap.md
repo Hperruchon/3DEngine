@@ -340,6 +340,8 @@ Therefore each approved objective must have a track here.
   (E200). v0.320, TASK-0338.
 - R18a — The look of the render: an almost black ground, thin outlined controls with no fill, the command line with
   a search mark and "Ctrl K", and the states in green and red. v0.321, TASK-0332, ADR-0108.
+- R18b — The edges of the body: each sharp edge is a line, and the selected body is a transparent orange with dashed
+  hidden edges. v0.322, TASK-0333, ADR-0109.
 
 ## Track 0 — Foundations
 
