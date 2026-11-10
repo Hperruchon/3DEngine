@@ -13,12 +13,56 @@ internal sealed unsafe partial class DesktopUi
 {
     // The item of the field, the item of a listed command, and the text of the empty field.
     public const string CommandItem = "Command";
-    public const string CommandHint = "Type a command";
+    // ADR-0108 item 4 (phase R18a, TASK-0332): the text of the render. A typed value is slice S8 (R18h); until then a number
+    // finds no command. Until TASK-0332 the text was "Type a command".
+    public const string CommandHint = "Type a command or a value";
+
+    // ADR-0108 item 4: the text of a field too narrow for the text of the render, so no letter is cut.
+    public const string CommandHintShort = "Type a command";
+
+    // ADR-0108 item 4: the text of the empty field that fits in this width.
+    private static string CommandHintFor(float width)
+        => (2f * CommandTextLeft) + ImGui.CalcTextSize(CommandHint).X <= width ? CommandHint : CommandHintShort;
+
+    // ADR-0108 item 4: the item of the keys that open the field, and their text. The input has no key of the Command key of
+    // macOS yet (register entry R-0060), so each platform shows "Ctrl K".
+    public const string CommandKeyItem = "Command:key";
+    public const string CommandKeyText = "Ctrl K";
+
+    // ADR-0108 item 4: the left room of the text of the field, which holds the search mark.
+    private const float CommandTextLeft = 34f;
+
+    // ADR-0108 item 4: the search mark at the left of the field, and the keys at its right while it is empty.
+    private void CommandMarks(bool empty, string shown)
+    {
+        var (min, max) = (ImGui.GetItemRectMin(), ImGui.GetItemRectMax());
+        var list = ImGui.GetWindowDrawList();
+        // The field fills its window, whose clip cuts an outline on its edge; so the outline is 1 pixel inside the field.
+        var hovered = ImGui.IsItemHovered() || ImGui.IsItemActive();
+        list.AddRect(min + Vector2.One, max - Vector2.One, ImGui.GetColorU32(hovered ? Theme.Vector(0x30EAFFFF) : ImGui.GetStyle().Colors[(int)ImGuiCol.Border]), ((max.Y - min.Y) / 2f) - 1f, ImDrawFlags.None, Theme.OutlineWidth);
+        var lens = new Vector2(min.X + 16f, ((min.Y + max.Y) / 2f) - 1.5f);
+        list.AddCircle(lens, 5f, Theme.Accent, 0, 1.5f);
+        list.AddLine(lens + new Vector2(3.6f, 3.6f), lens + new Vector2(7.5f, 7.5f), Theme.Accent, 1.5f);
+        var hint = min.X + CommandTextLeft + ImGui.CalcTextSize(shown).X;
+        ImGui.PushFont(_monoFont);
+        var size = ImGui.CalcTextSize(CommandKeyText);
+        ImGui.PopFont();
+        var at = new Vector2(max.X - 18f - size.X, ((min.Y + max.Y) / 2f) - (size.Y / 2f));
+        // The keys show on an empty field that has room for them right of the text, so they never cover a letter.
+        if (!empty || at.X - 8f < hint)
+            return;
+        ImGui.PushFont(_monoFont);
+        list.AddText(at, ImGui.GetColorU32(ImGui.GetStyle().Colors[(int)ImGuiCol.TextDisabled]), CommandKeyText);
+        ImGui.PopFont();
+        _items[CommandKeyItem] = new Vector4(at.X, at.Y, at.X + size.X, at.Y + size.Y);
+    }
 
     public static string CommandListItem(string name) => $"Command:{name}";
 
-    // Item 2: the width of the field, and the count of commands that the list shows at most.
-    internal const float CommandWidth = 300f;
+    // Item 2: the width of the field, and the count of commands that the list shows at most. ADR-0108 item 4 (phase R18a,
+    // TASK-0332): 400 pixels, so the search mark, the text of the render and "Ctrl K" fit in the font of the window. Until
+    // TASK-0332 it was 300 pixels.
+    internal const float CommandWidth = 400f;
     internal const int CommandListLength = 8;
 
     // ADR-0113 item 4 (phase R19, TASK-0336): on a narrow landscape display the field is 30 percent of the width, at least 200
@@ -138,11 +182,18 @@ internal sealed unsafe partial class DesktopUi
                 _focusCommand = false;
             }
 
+            // ADR-0108 item 4 (phase R18a, TASK-0332): a round outlined field, with room for the search mark at its left.
             ImGui.SetNextItemWidth(width);
-            var enter = ImGui.InputTextWithHint("##CommandText", CommandHint, ref _command, 128, ImGuiInputTextFlags.EnterReturnsTrue);
+            ImGui.PushStyleVar(ImGuiStyleVar.FrameRounding, ImGui.GetFrameHeight() / 2f);
+            ImGui.PushStyleVar(ImGuiStyleVar.FramePadding, new Vector2(CommandTextLeft, ImGui.GetStyle().FramePadding.Y));
+            ImGui.PushStyleVar(ImGuiStyleVar.FrameBorderSize, 0f);
+            var shown = CommandHintFor(width);
+            var enter = ImGui.InputTextWithHint("##CommandText", shown, ref _command, 128, ImGuiInputTextFlags.EnterReturnsTrue);
+            ImGui.PopStyleVar(3);
             var active = ImGui.IsItemActive();
             var left = ImGui.IsItemDeactivated();
             Item(CommandItem);
+            CommandMarks(_command.Length == 0, shown);
 
             var matches = Matches(Commands(bodies, selection), _command);
             if (active && ImGui.IsKeyPressed(ImGuiKey.DownArrow))

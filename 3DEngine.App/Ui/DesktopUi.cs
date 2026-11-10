@@ -284,6 +284,11 @@ internal sealed unsafe partial class DesktopUi : IDisposable
         return ImGui.GetStyle().Colors[(int)slot];
     }
 
+    // ADR-0108 (phase R18a, TASK-0332): the colours of the look of a control, for a test that may not name the library.
+    internal (Vector4 Text, Vector4 Quiet, Vector4 Outline, Vector4 AtRest, Vector4 Hover, Vector4 Press, Vector4 Field) LookColours()
+        => (StyleColour(ImGuiCol.Text), StyleColour(ImGuiCol.TextDisabled), StyleColour(ImGuiCol.Border), StyleColour(ImGuiCol.Button),
+            StyleColour(ImGuiCol.ButtonHovered), StyleColour(ImGuiCol.ButtonActive), StyleColour(ImGuiCol.FrameBg));
+
     internal (Vector2 FramePadding, float WindowRounding, float FrameRounding) StyleSizes()
     {
         ImGui.SetCurrentContext(_context);

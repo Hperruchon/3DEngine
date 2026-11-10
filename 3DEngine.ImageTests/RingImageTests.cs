@@ -58,13 +58,34 @@ public class RingImageTests
         Assert.True(GraphicsDevice.ValidationMessageCount == messagesBefore,
             $"The validation layer gave {GraphicsDevice.ValidationMessageCount - messagesBefore} messages.");
 
-        // The middle of the segment Move is not the clear: the ring is drawn there.
-        var move = ring.Middle(ring.Segments([DesktopUi.MoveLabel, DesktopUi.HideLabel, DesktopUi.FocusLabel])[0]);
-        var index = (((int)move.Y * (int)Width) + (int)move.X + 20) * 4;
+        // ADR-0108 item 2 (phase R18a, TASK-0332): the outline of the segment Move is drawn, and the segment has no fill at
+        // rest, so a point inside it, away from its icon and its label, has the colour of the clear. Until TASK-0332 the
+        // middle of the segment had a blue ground.
+        var segment = ring.Segments([DesktopUi.MoveLabel, DesktopUi.HideLabel, DesktopUi.FocusLabel])[0];
+        var angle = (segment.From + segment.To) / 2f;
+        var direction = new Vector2(MathF.Cos(angle), MathF.Sin(angle));
+        var outline = ring.Centre + (direction * ring.Outer);
+        Assert.True(AnyNotClear(pixels, outline, 2), $"The picture {picture}: the outline of the segment Move at {outline} is not drawn.");
+        var inside = segment.From + (0.08f * (segment.To - segment.From));
+        var empty = ring.Centre + (new Vector2(MathF.Cos(inside), MathF.Sin(inside)) * ((ring.Inner + ring.Outer) / 2f));
+        Assert.False(AnyNotClear(pixels, empty, 1), $"The picture {picture}: the segment Move at {empty} has a fill.");
+    }
+
+    // A pixel within this distance of the point is not the clear.
+    private static bool AnyNotClear(byte[] pixels, Vector2 point, int distance)
+    {
         var clear = Theme.Clear;
-        var (r, g, b) = (pixels[index], pixels[index + 1], pixels[index + 2]);
-        Assert.False(Math.Abs(r - clear.R) <= 2 && Math.Abs(g - clear.G) <= 2 && Math.Abs(b - clear.B) <= 2,
-            $"The picture {picture}: the segment Move at {move} has the colour of the clear.");
+        for (var y = (int)point.Y - distance; y <= (int)point.Y + distance; y++)
+        {
+            for (var x = (int)point.X - distance; x <= (int)point.X + distance; x++)
+            {
+                var index = ((y * (int)Width) + x) * 4;
+                if (Math.Abs(pixels[index] - clear.R) > 2 || Math.Abs(pixels[index + 1] - clear.G) > 2 || Math.Abs(pixels[index + 2] - clear.B) > 2)
+                    return true;
+            }
+        }
+
+        return false;
     }
 
     private static string SavePicture(byte[] pixels)

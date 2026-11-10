@@ -315,6 +315,10 @@ public sealed class ProposalArcTests
         var title = Item(ui, DesktopUi.TitleItem);
         Assert.Equal(DesktopUi.AgentWaitingText, ui.ProposalTexts[DesktopUi.ProposalWaitingItem]);
         Assert.True(waiting.X > title.Z && waiting.Y < title.W, $"The word {waiting} is not in the top bar {title}.");
+        // ADR-0108 item 6 (phase R18a, TASK-0332): the word ends 12 pixels left of the command line, in the middle of its height.
+        var command = Item(ui, DesktopUi.CommandItem);
+        Assert.True(Math.Abs(command.X - 12f - waiting.Z) < 1f, $"The word {waiting} does not end 12 pixels left of the command line {command}.");
+        Assert.True(Math.Abs(((waiting.Y + waiting.W) / 2f) - ((command.Y + command.W) / 2f)) < 1f, $"The word {waiting} is not in the middle of the height of the command line {command}.");
 
         var outcome = new ProposalOutcome("failed", 1, 3, 1, "E-GEOM-INVALID-PARAM");
         Assert.Equal("Proposal failed at command 2 of 3 (E-GEOM-INVALID-PARAM): 1 command applied", outcome.Text);

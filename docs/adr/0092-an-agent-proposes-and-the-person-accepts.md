@@ -7,7 +7,7 @@ date: 2026-11-08
 supersedes: []
 superseded-by: []
 amends: []
-amended-by: ['0107', '0110', '0111', '0113']
+amended-by: ['0107', '0108', '0110', '0111', '0113']
 affects:
   - Engine.Api.Http/Proposals.cs
   - Engine.Api.Http/Endpoints/ProposalsEndpoint.cs
@@ -146,3 +146,5 @@ first one.
   an accept runs, and the sheet of a portrait display above the ring.
 - 2026-11-10 · TASK-0336 · ADR-0113 item 3 amends item 7: on a portrait display "AGENT IS WAITING" goes under the path
   line, and the panel starts under it. Item 6: the caption and the lines inside the ring stay out of a fixed window.
+- 2026-11-10 · TASK-0332 · ADR-0108 item 6 amends item 7: on a landscape display "AGENT IS WAITING", after an amber
+  dot, ends 12 pixels left of the command line.
