@@ -93,6 +93,9 @@ public class FirstDemonstrationImageTests
     // selected body tints each pixel of the body. The highlight draws the body again with the
     // depth test GreaterOrEqual, so a depth that differs between the two pipelines leaves a
     // pixel with no tint; mesh.vert declares its position invariant for that reason.
+    // Phase R18b (TASK-0333): the selected body has no opaque draw, only its depth, and the highlight is a transparent
+    // orange fill over the clear; so each pixel of the body is orange (red over blue), and a pixel with no tint has the
+    // colour of the clear. Until TASK-0333 the test read a change from the shaded body of the plain picture.
     [VulkanImageFact]
     public async Task The_Highlight_Tints_Each_Pixel_Of_The_Selected_Body()
     {
@@ -126,8 +129,8 @@ public class FirstDemonstrationImageTests
                 if (IsBackground(plain, column, row))
                     continue;
                 body++;
-                var (before, after) = (Colour(plain, column, row), Colour(selected, column, row));
-                if (after.R - before.R >= 20 && before.B - after.B >= 20)
+                var after = Colour(selected, column, row);
+                if (after.R - after.B >= 20)
                     tinted++;
             }
         }
