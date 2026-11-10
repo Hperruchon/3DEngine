@@ -9745,7 +9745,9 @@ value of a real extrude past its outline, and each pill on its line and outside 
 `EdgeValueTests`, `PendingChipTests` and `MixImageTests` take the new form and the new place. Ten injections each failed
 a named test; each file came back byte for byte. The picture of the bracket at 1440 by 900 shows the lines and the
 pills. The phone project builds with zero warnings. Run 42905740219 passed on the branch. The failed runs since the entry
-v0.324, from the API: none.
+v0.324, from the API: 42908627510 on the branch r18c-values, on Windows only, in the test of the HTTP surface
+`EventsHandshakeTests.No_Heartbeat_Comes_Before_The_Subscription_Message`, which waits for a message with a time
+limit. R18c changes no file of the surface, and the next run passed.
 
 **What stays.** No test reads the pixels of the lines. The extension lines of two values can cross. R-0062 is new: on
 the computer of the owner the image tests crashed the test host in `vkCreateDevice` in some runs, also on `main`.

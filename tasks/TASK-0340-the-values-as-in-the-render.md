@@ -97,3 +97,7 @@ Weakest:    the drawing of the extension lines and of the dimension line: a test
   the injection of the side was not caught: no case needed the turn of the normal. The case of the top edge now needs
   it. The image tests crashed the test host in some local runs, also on `main`; R-0062 records it. Closed at v0.325.
 - 2026-11-10: merge of `main` at 6b614f1 (R20, TASK-0341, with no version): no conflict; TASK-0341 needs no ADR-0115.
+- 2026-11-10: run 42908627510 of the close failed on Windows only, in
+  `EventsHandshakeTests.No_Heartbeat_Comes_Before_The_Subscription_Message` (a `TaskCanceledException` at line 53, the
+  wait for the subscription message). R18c changes no file of the surface; the register and the ledger give earlier
+  failures of the heartbeat tests on Windows with no change of the surface. This commit starts a new run.
