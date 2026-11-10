@@ -88,3 +88,4 @@ narrower. No person used a focus in this window yet.
 
 - 2026-11-10 · TASK-0315 · The record, with the answers Q4 A and Q5 A of 2026-11-08 and the judgement of the session on
   items 4, 6, 7 and 8.
+- 2026-11-10 · TASK-0315 · Shipped at v0.323.
