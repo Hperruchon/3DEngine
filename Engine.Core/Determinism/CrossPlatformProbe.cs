@@ -102,6 +102,13 @@ public static class CrossPlatformProbe
             new TranslateCommand { CommandId = Id(96), BodyId = Id(95), Dx = 140.75, Dy = -6.5, Dz = 1.25 },
             new CreateSphereCommand { CommandId = Id(97), Radius = 2.375 },
             new TranslateCommand { CommandId = Id(98), BodyId = Id(97), Dx = 160.5, Dy = 8.25, Dz = 2.375 },
+
+            // ADR-0112 item 8 (TASK-0335): a turn of a box by a general quaternion, so manifold_transform multiplies the nine
+            // numbers of the turn in native code, and a datum on a face after the turn, whose frame the engine turns.
+            new CreateBoxCommand { CommandId = Id(100), SizeX = 12.5, SizeY = 7.25, SizeZ = 3.5 },
+            new RotateCommand { CommandId = Id(101), BodyId = Id(100), Qw = 1, Qx = 2, Qy = 3, Qz = 4 },
+            new CreateDatumCommand { CommandId = Id(102), FeatureId = Id(100), Element = "+z" },
+            new TranslateCommand { CommandId = Id(103), BodyId = Id(101), Dx = 180.5, Dy = 2.25, Dz = 1.5 },
         ];
     }
 

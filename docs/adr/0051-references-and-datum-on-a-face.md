@@ -7,7 +7,7 @@ date: 2026-11-02
 supersedes: []
 superseded-by: []
 amends: ['0012', '0031', '0033', '0036', '0039']
-amended-by: ['0052', '0053', '0059']
+amended-by: ['0052', '0053', '0059', '0112']
 affects:
   - Engine.Contracts/Sketch/DatumRecord.cs
   - Engine.Core/Sketch/DatumResolver.cs
@@ -64,7 +64,8 @@ The owner gave the order "start K0" on 2026-11-02 and answered eight questions o
    - Each `Translate` in effect on the chain of consumers of the body of the feature, before the place of the
      reference, moves the carrier by its offset. A `Subtract` passes the carrier of its minuend with no change
      (item 8). Since K4c, each `Subtract` before the place that takes the body as its subtrahend turns the frame
-     (ADR-0059 item 4).
+     (ADR-0059 item 4). Since K8, each `Rotate` in effect before the place turns the origin and the axes of the
+     carrier about the origin of the Document (ADR-0112 item 7).
    - A step after the place of the reference does not move it. A reference names only a feature before it, so the
      references form no cycle.
 3. **The frame of a face.** A face gives a right-handed frame: an origin o and the axes u, v and n = u × v, with n
@@ -146,3 +147,4 @@ The owner gave the order "start K0" on 2026-11-02 and answered eight questions o
   datum of the Document (K0i).
 - 2026-11-05 · TASK-0185 · ADR-0059 amends items 2 and 8: a face of a subtrahend turns, and a gone face gives a
   fault.
+- 2026-11-10 · TASK-0335 · ADR-0112 item 7 amends item 2: each `Rotate` before the place turns the origin and the axes of the carrier.

@@ -86,6 +86,15 @@ public sealed class KernelSolid
     // The solid moved by an exact offset; each tag stays.
     public KernelSolid Translate(Vector3R offset) => new([.. Polygons.Select(p => p.Moved(offset))]);
 
+    // ADR-0112 item 5 (TASK-0335): the solid turned about the origin; x, y and z are the images of the axes, and each tag
+    // stays. A map with a determinant of zero or less is not a turn, because it flattens the solid or turns it inside out.
+    public KernelSolid Rotate(Vector3R x, Vector3R y, Vector3R z)
+    {
+        if (x.Dot(y.Cross(z)).Sign <= 0)
+            throw new ArgumentException("A turn has a determinant greater than zero.");
+        return new([.. Polygons.Select(p => p.Mapped(x, y, z))]);
+    }
+
     // The exact volume, by the divergence theorem over a fan of each polygon.
     public Rational Volume()
     {

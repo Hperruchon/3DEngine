@@ -316,6 +316,12 @@ public sealed class RegenerationTests
             inner.TryGet<ITransformOps>()!.Translate(result, source, dx, dy, dz);
         }
 
+        public void Rotate(BodyHandle result, BodyHandle source, Rotation rotation)
+        {
+            Count("Rotate");
+            inner.TryGet<ITransformOps>()!.Rotate(result, source, rotation);
+        }
+
         public void Subtract(BodyHandle result, BodyHandle minuend, BodyHandle subtrahend)
         {
             Count("Subtract");

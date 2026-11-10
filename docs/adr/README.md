@@ -25,7 +25,7 @@ names. Do not read all of them.
 | [0008](0008-command-query-event-triad.md) | Command, query and event triad with structured results | Amended | Contracts | 0006 | 0020 |
 | [0009](0009-3dengine-core-peer-render-kernel.md) | 3DEngine.Core is a peer render kernel | Amended | Boundary, clients | — | 0022, 0025 |
 | [0010](0010-subscription-reset-snapshot-format.md) | subscription.reset snapshot format | Amended | Contracts, observability | — | 0020, 0015 |
-| [0012](0012-geometry-backend-wiring.md) | Geometry backend wiring | Amended | Boundary, geometry, contracts | — | 0018, 0021, 0028, 0015, 0033, 0037, 0045, 0051, 0071 |
+| [0012](0012-geometry-backend-wiring.md) | Geometry backend wiring | Amended | Boundary, geometry, contracts | — | 0018, 0021, 0028, 0015, 0033, 0037, 0045, 0051, 0071, 0112 |
 | [0013](0013-command-query-schema-declaration.md) | Command and query schema declaration | Amended | Contracts, observability | — | 0060 |
 | [0014](0014-manifold-native-interop.md) | Manifold backend native-interop posture | Accepted | Boundary, geometry, native-interop | — | — |
 | [0015](0015-command-log-persistence.md) | The document file | Amended | Persistence, contracts | 0010, 0012 | 0071 |
@@ -52,7 +52,7 @@ names. Do not read all of them.
 | [0036](0036-extrude-of-a-sketch-profile.md) | The extrude of a closed profile of a sketch | Amended | Contracts, geometry, sketch | — | 0037, 0040, 0050, 0051, 0052 |
 | [0037](0037-rebuild-of-an-extrude.md) | The rebuild of an extrude after an edit of its sketch | Amended | Contracts, geometry, sketch | 0012, 0021, 0028, 0031, 0036 | 0039, 0049, 0055 |
 | [0038](0038-translate-gizmo.md) | The translate gizmo of the desktop | Accepted | Rendering, clients | 0026 | — |
-| [0039](0039-chain-of-a-consumed-extrude.md) | The rebuild of the chain of a consumed extrude | Amended | Geometry, sketch | 0037 | 0049, 0051, 0054, 0055 |
+| [0039](0039-chain-of-a-consumed-extrude.md) | The rebuild of the chain of a consumed extrude | Amended | Geometry, sketch | 0037 | 0049, 0051, 0054, 0055, 0112 |
 | [0040](0040-extrude-of-curves.md) | The extrude of a profile with arcs and circles | Amended | Geometry, sketch | 0036 | 0050 |
 | [0041](0041-snap-of-a-sketch-tap.md) | The snap of a tap of the sketch | Accepted | Clients, sketch | 0026, 0034 | — |
 | [0042](0042-vision-library.md) | The vision library and its place | Amended | Vision, boundary | — | 0047, 0103 |
@@ -64,16 +64,16 @@ names. Do not read all of them.
 | [0048](0048-stl-export.md) | The STL export of the live bodies | Amended | Persistence, clients | — | 0083 |
 | [0049](0049-edit-of-an-extrude-distance.md) | The edit of the distance of an extrude | Accepted | Geometry, feature graph, clients | 0028, 0037, 0039 | — |
 | [0050](0050-exact-predicates.md) | The exact predicates of the profile of a sketch | Accepted | Geometry, sketch, determinism | 0036, 0040 | — |
-| [0051](0051-references-and-datum-on-a-face.md) | The references to the elements of a feature, and a datum on a face | Amended | Contracts, feature graph, sketch | 0012, 0031, 0033, 0036, 0039 | 0052, 0053, 0059 |
+| [0051](0051-references-and-datum-on-a-face.md) | The references to the elements of a feature, and a datum on a face | Amended | Contracts, feature graph, sketch | 0012, 0031, 0033, 0036, 0039 | 0052, 0053, 0059, 0112 |
 | [0052](0052-edge-and-vertex-references-in-a-sketch.md) | The edges and the vertices of a feature as references in a sketch | Accepted | Contracts, feature graph, sketch | 0033, 0035, 0036, 0051 | — |
 | [0053](0053-desktop-sketch-on-a-face.md) | The desktop starts a sketch on a face, and draws a sketch on a datum of the Document | Amended | Desktop, sketch, feature graph | 0029, 0034, 0051 | 0059 |
 | [0054](0054-ordered-feature-list.md) | The ordered feature list, a fold of the log | Amended | Feature graph, runtime | 0039 | 0055 |
 | [0055](0055-regeneration.md) | The regeneration of the features after an edit | Amended | Feature graph, geometry, runtime | 0037, 0039, 0054 | 0059 |
 | [0056](0056-dimension-overlay.md) | The dimension overlay of the desktop | Accepted | Desktop, renderer | — | — |
 | [0057](0057-planar-subtract-in-the-owned-kernel.md) | The exact planar subtract of the owned kernel, with the provenance of each face | Amended | Kernel, geometry, determinism | — | 0058 |
-| [0058](0058-the-engine-reads-the-owned-kernel.md) | The engine reads the owned kernel for the faces of a body | Amended | Kernel, geometry, queries | 0057 | 0059 |
-| [0059](0059-references-by-the-identity-of-a-face.md) | The references by the identity of a face, and a datum on a face that a cut removed | Accepted | Kernel, feature graph, sketch | 0051, 0053, 0055, 0058 | — |
-| [0060](0060-unit-kind-in-the-command-schema.md) | The unit kind of each number parameter in the command schema | Amended | Contracts, clients | 0013 | 0071 |
+| [0058](0058-the-engine-reads-the-owned-kernel.md) | The engine reads the owned kernel for the faces of a body | Amended | Kernel, geometry, queries | 0057 | 0059, 0112 |
+| [0059](0059-references-by-the-identity-of-a-face.md) | The references by the identity of a face, and a datum on a face that a cut removed | Amended | Kernel, feature graph, sketch | 0051, 0053, 0055, 0058 | 0112 |
+| [0060](0060-unit-kind-in-the-command-schema.md) | The unit kind of each number parameter in the command schema | Amended | Contracts, clients | 0013 | 0071, 0112 |
 | [0061](0061-android-platform.md) | Android is a platform of the program, with the person on the phone and no surface | Accepted | Platform, clients, rendering | 0017, 0027, 0030 | — |
 | [0070](0070-step-export-of-the-owned-kernel.md) | The STEP export of the planar faces of the owned kernel | Accepted | Kernel, persistence, clients | — | — |
 | [0071](0071-container-model.md) | The container model, a part or an assembly of references at a fixed version | Accepted | Contracts, persistence | 0012, 0015, 0030, 0031, 0060 | — |
@@ -113,15 +113,16 @@ names. Do not read all of them.
 | [0107](0107-the-arc-of-a-proposal-is-in-the-free-room.md) | With no ring of a body, the arc of a proposal is in the room right of the panel | Accepted | Clients | 0092 | — |
 | [0110](0110-a-proposal-shows-each-value-on-its-chip.md) | A proposal shows each value that it changes on the chip of that value | Accepted | Clients, surface | 0092 | — |
 | [0111](0111-a-proposal-takes-its-own-taps-and-commands.md) | A proposal takes its own taps, its own command identifiers and its own steps | Accepted | Surface, clients | 0092 | — |
+| [0112](0112-a-command-turns-a-body.md) | A command turns a body by a quaternion about the origin of the Document | Proposed | Contracts, geometry | 0012, 0039, 0051, 0058, 0059, 0060 | — |
 
 ## Topics
 
-- **Contracts** — 0005, 0006, 0008, 0012, 0013, 0015, 0018, 0020, 0021, 0028, 0033, 0045, 0060, 0071. Read these before changing `Engine.Contracts/**`.
+- **Contracts** — 0005, 0006, 0008, 0012, 0013, 0015, 0018, 0020, 0021, 0028, 0033, 0045, 0060, 0071, 0112. Read these before changing `Engine.Contracts/**`.
 - **Boundary** — 0001, 0004, 0007, 0012, 0014, 0017, 0022, 0025. Read these before changing project references or adding clients.
 - **Workflow** — 0002. Read before adding a client or skipping CLI.
 - **Clients** — 0002, 0007, 0019, 0024, 0026, 0027, 0029, 0030, 0032, 0034, 0060, 0061, 0072. Read before changing UI/CLI/host code.
 - **Deployment** — 0004, 0019, 0030, 0061. Read these before changing where a session runs or which transport a host uses.
-- **Geometry** — 0001, 0012, 0014, 0018, 0021, 0028, 0076. Read before adding a capability or backend.
+- **Geometry** — 0001, 0012, 0014, 0018, 0021, 0028, 0076, 0112. Read before adding a capability or backend.
 - **Observability** — 0005, 0010, 0013, 0020, 0021. Read before changing event ordering, retention, subscription, or schema endpoints.
 - **Rendering** — 0009, 0017, 0018, 0022, 0023, 0024, 0025, 0026, 0027, 0029, 0061, 0072. Read these before changing `3DEngine.Core`, `3DEngine.Vulkan`, `3DEngine.App` or `3DEngine`.
 

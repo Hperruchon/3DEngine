@@ -1,13 +1,13 @@
 ---
 id: 0059
 title: The references by the identity of a face, and a datum on a face that a cut removed
-status: Accepted
+status: Amended
 topic: Kernel, feature graph, sketch
 date: 2026-11-05
 supersedes: []
 superseded-by: []
 amends: ['0051', '0053', '0055', '0058']
-amended-by: []
+amended-by: ['0112']
 affects:
   - Engine.Core/Features/KernelProjection.cs
   - Engine.Core/Features/Regeneration.cs
@@ -49,9 +49,10 @@ of K4. On 2026-11-05 the owner answered five questions:
 2. **The kept solids.** The projection keeps the solid of the last 64 committed geometry keys. A key comes from the
    command and the body (ADR-0037 item 3), so a committed key names one solid in one Document. The projection keeps it
    under the identity of the Document and the key (E135, TASK-0192). A body with a fault gives no solid.
-3. **A gone face.** The chain of a feature is the walk from its body through each consumer, a `Translate` or a
-   `Subtract`, to the live body at its end. A datum with no other fault, whose chain holds a `Subtract`, and whose name
-   is not a face of the kernel solid of that end, gets the fault `W-DATUM-REFERENCE-FAILED`. The message says that the
+3. **A gone face.** The chain of a feature is the walk from its body through each consumer, a `Translate`, a `Rotate`
+   (ADR-0112 item 6) or a `Subtract`, to the live body at its end. A datum with no other fault, whose chain
+   holds a `Subtract`, and whose name is not a face of the kernel solid of that end, gets the fault
+   `W-DATUM-REFERENCE-FAILED`. The message says that the
    face is gone. The datum keeps the frame of its reference (ADR-0051 item 8), so each sketch on it stays. The warning
    comes when the fault is new or changes. The check runs at three places:
    - `Subtract` checks each datum whose chain ends at one of its operands, against the names of the kernel subtract of
@@ -97,3 +98,4 @@ of K4. On 2026-11-05 the owner answered five questions:
 - 2026-11-05 · TASK-0192 · Findings E135 and E139 of the codebase review of 2026-11-05 (b): the kept solids are keyed
   by the Document too, and a face-gone fault stays while the kernel cannot build the end. Q4 A, answered by the standing
   order of 2026-11-05.
+- 2026-11-10 · TASK-0335 · ADR-0112 item 6 amends item 3: a `Rotate` is a step of the chain of a feature.

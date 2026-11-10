@@ -397,6 +397,7 @@ turned by commands. The commands move a body (`Translate`) but do not turn it, s
 the shelf upright now. A command that turns a body records a matrix or a quaternion (`CLAUDE.md`, determinism rule 2), so
 it is a change of `Engine.Contracts` with an ADR.
 Exit: a phase adds a command that turns a body, with its ADR, or the owner rebuilds the shelf with z up and closes the entry.
+Progress 2026-11-10: the owner chose the first exit. TASK-0335 (phase K8) adds the command `Rotate` with ADR-0112.
 
 ### R-0058 · On a portrait display of 360 by 780 the panel of the bodies covers Move of the ring
 - class: debt

@@ -15,4 +15,8 @@ public interface ITransformOps
     // under `result`. Throws if `source` is unknown to the backend, or if
     // `result` is already taken (mirrors IMeshOps.CreateBox's contract).
     void Translate(BodyHandle result, BodyHandle source, double dx, double dy, double dz);
+
+    // ADR-0112 item 4 (TASK-0335): stores a copy of the body under `source`, turned about the origin of the Document by
+    // `rotation`, under `result`. It throws as Translate does.
+    void Rotate(BodyHandle result, BodyHandle source, Rotation rotation);
 }

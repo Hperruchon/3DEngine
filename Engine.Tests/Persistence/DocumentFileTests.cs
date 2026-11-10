@@ -66,6 +66,7 @@ public sealed class DocumentFileTests : IDisposable
         ["CreateSphere"] = new CreateSphereCommand { Radius = 0.1 },
         ["CreateTorus"] = new CreateTorusCommand { Radius = 0.3, TubeRadius = double.Epsilon },
         ["Translate"] = new TranslateCommand { BodyId = Guid.NewGuid(), Dx = -0.0, Dy = -1e-300, Dz = 123456789.125 },
+        ["Rotate"] = new RotateCommand { BodyId = Guid.NewGuid(), Qw = -0.0, Qx = 1e-300, Qy = 123456789.125, Qz = double.Epsilon },
         ["Subtract"] = new SubtractCommand { MinuendBodyId = Guid.NewGuid(), SubtrahendBodyId = Guid.NewGuid() },
         ["RenameBody"] = new RenameBodyCommand { BodyId = Guid.NewGuid(), NewName = "" },
         ["SetBodyVisibility"] = new SetBodyVisibilityCommand { BodyId = Guid.NewGuid(), Visible = false },

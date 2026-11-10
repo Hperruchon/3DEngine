@@ -97,11 +97,11 @@ public class SchemaEndpointGateTests : IClassFixture<WebApplicationFactory<Progr
         Assert.True(problems.Length == 0, "ADR-0060 item 6:\n  " + string.Join("\n  ", problems));
     }
 
-    // ADR-0060 item 2. A new unit needs a change of the record, not only of the code.
+    // ADR-0060 item 2, amended by ADR-0112 item 2 (TASK-0335). A new unit needs a change of the record, not only of the code.
     [Fact]
     public void The_Unit_Vocabulary_Is_The_List_Of_ADR_0060()
         => Assert.Equal(
-            ["length", "pixel", "scale", "cosine", "sine", "sign", "constraint-value", "direction", "count"],
+            ["length", "pixel", "scale", "cosine", "sine", "sign", "constraint-value", "direction", "count", "quaternion"],
             UnitKinds.All);
 
     // The acceptance criteria of TASK-0186: the wire gives the unit of a field, the map
