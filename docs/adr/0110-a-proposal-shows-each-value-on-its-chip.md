@@ -99,3 +99,4 @@ while that body is selected.
 ## History
 
 - 2026-11-10 · TASK-0334 · The record, with the slice (the order of the owner of 2026-11-09).
+- 2026-11-10 · TASK-0334 · Shipped at v0.314.

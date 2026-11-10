@@ -1,7 +1,7 @@
 ---
 id: 0334
 title: A proposal shows each value that it changes on the chip of that value
-status: Active
+status: Done
 phase: R16t
 opened: 2026-11-10
 depends-on: [0330]
@@ -63,22 +63,23 @@ arc names the value.
 
 ## Acceptance criteria
 
-- [ ] The tests pass, and each new test fails on an injection of the old behaviour.
-- [ ] The picture at 1440 by 900 shows a pending chip with "now → proposed" on the edge of the value, and a line that names
+- [x] The tests pass, and each new test fails on an injection of the old behaviour.
+- [x] The picture at 1440 by 900 shows a pending chip with "now → proposed" on the edge of the value, and a line that names
       the value.
-- [ ] A clean build (`--no-incremental`) gives zero errors and zero warnings, and the phone project builds.
-- [ ] Continuous integration passes on the three runners, on the branch and on `main` after the merge.
+- [x] A clean build (`--no-incremental`) gives zero errors and zero warnings, and the phone project builds.
+- [x] Continuous integration passes on the three runners, on the branch and on `main` after the merge.
 
 ## Outcome
 
-Status: Active
+Status: Done · commit (the merge of the branch r16t-pending-chip-b) · v0.314
 
 ## Method
 
 Mechanical: the chips follow ADR-0082 item 4; the labels follow ADR-0034 item 8.
 Judgement:  the two commands with a chip (Q1 A); one chip for one value (Q2 A); a line with no identifier (Q3 A); no change
             of the selection (Q4 A).
-Weakest:    to be written at the close.
+Weakest:    no test reads the drawn arrow, so a fault that drew "?" would pass; the picture shows it. The value now of a
+            distance shows only while its extrude is selected, and a radius chip and a second value are not tested.
 
 ## Progress
 - 2026-11-10: the proposed values, the pending chips, the named lines and 20 tests (19 with no GPU and one picture). An agent
@@ -88,3 +89,4 @@ Weakest:    to be written at the close.
   "60 → 75 mm" on its edge and the line "Plate C1  60 → 75 mm".
 - 2026-11-10: renumbered from TASK-0332 and ADR-0108, because another session put R18a on main (cc51f5a) with those
   numbers. The first branch, r16t-pending-chip (105b111), stays unmerged; this branch takes its change on the new main.
+- 2026-11-10: run 42729734384 passed. Closed at v0.314.
