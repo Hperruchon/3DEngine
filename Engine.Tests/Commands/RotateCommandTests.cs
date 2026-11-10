@@ -122,6 +122,29 @@ public sealed class RotateCommandTests : IDisposable
         Assert.Equal(DiagnosticCodes.GeomCapMissing, stub.Error?.Code);
     }
 
+    // ADR-0114 item 1 (finding E201 of the codebase review of 2026-11-10, TASK-0339): parts near 1e-162 have subnormal squares,
+    // and the entries gave a scale of 5, so a cube of 10 became 50. A sum of squares below 2^-969 gives no turn, and the
+    // command refuses it with its own code, before the capability. A sum of exactly 2^-969 gives the quarter turn exactly.
+    [Fact]
+    public async Task A_Quaternion_Of_Very_Small_Parts_Is_Refused_With_Its_Code()
+    {
+        var half = Math.ScaleB(1.0, -485);
+        Assert.Equal(new Rotation(1, 0, 0, 0, 0, 1, 0, -1, 0), Rotation.FromQuaternion(half, half, 0, 0));
+        Assert.Null(Rotation.FromQuaternion(half, 0, 0, 0));
+        Assert.Null(Rotation.FromQuaternion(1e-162, 1e-162, 1e-162, 1e-162));
+
+        var session = NewSession(new InProcessMeshBackend());
+        var box = await Box(session, 1, 1, 1);
+        var tiny = await session.Apply(new RotateCommand { BodyId = box, Qw = 1e-162, Qx = 1e-162, Qy = 1e-162, Qz = 1e-162 });
+        var below = await session.Apply(new RotateCommand { BodyId = box, Qw = half, Qx = 0, Qy = 0, Qz = 0 });
+        var zero = await session.Apply(new RotateCommand { BodyId = box, Qw = 0, Qx = 0, Qy = 0, Qz = 0 });
+
+        Assert.Equal(DiagnosticCodes.GeomQuaternionTooSmall, tiny.Error?.Code);
+        Assert.Equal(DiagnosticCodes.GeomQuaternionTooSmall, below.Error?.Code);
+        Assert.Equal(DiagnosticCodes.GeomInvalidParam, zero.Error?.Code);
+        Assert.Equal(box, Assert.Single(await session.Read((document, _) => document.Bodies.ToList())).Handle.Id);
+    }
+
     // Item 5: the owned kernel turns the faces with the body, so each face keeps its name, the normal of +z points to -y,
     // and a general turn keeps the area of each face.
     [NativeManifoldFact]

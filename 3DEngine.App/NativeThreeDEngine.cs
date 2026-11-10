@@ -272,18 +272,15 @@ public sealed class NativeThreeDEngine : IThreeDEngine, IDisposable
         var layout = GizmoLayout();
         _intents.HitTest = layout is null ? null : (x, y) => TranslateGizmo.Hit(layout, x, y);
         // ADR-0111 item 3 (TASK-0331): while an accept runs, an intent that changes the Document is held, and the end of a drag
-        // of the gizmo is a cancel (finding V163).
+        // of the gizmo is a cancel (finding V163). ADR-0114 item 4 (finding T181): AcceptHold.Pass makes the decision.
         var held = _proposalAccept is not null;
         foreach (var taken in _intents.Step(_ui is null ? frame : _ui.Route(frame)))
         {
-            var intent = taken;
-            if (held && AcceptHold.Holds(intent))
-            {
+            var (passed, hold) = AcceptHold.Pass(taken, _proposalAccept);
+            if (hold)
                 _documentMessage = AcceptHold.Text;
-                if (intent is not GizmoEndIntent)
-                    continue;
-                intent = new GizmoCancelIntent();
-            }
+            if (passed is not { } intent)
+                continue;
 
             // ADR-0038 item 2: a drag of the gizmo moves the drawing, and its end sends one Translate.
             if (_actions is not null && _renderer is not null
@@ -428,7 +425,7 @@ public sealed class NativeThreeDEngine : IThreeDEngine, IDisposable
         _documentMessage = _ui.ArmMessage ?? _documentMessage;
         foreach (var action in actions)
         {
-            if (_proposalAccept is not null && AcceptHold.Holds(action))
+            if (AcceptHold.Held(action, _proposalAccept))
             {
                 _documentMessage = AcceptHold.Text;
                 _ui.EndPad(AcceptHold.Text);

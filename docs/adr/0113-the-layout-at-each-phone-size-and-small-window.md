@@ -7,7 +7,7 @@ date: 2026-11-10
 supersedes: []
 superseded-by: []
 amends: ['0081', '0092', '0093', '0098']
-amended-by: ['0108']
+amended-by: ['0108', '0114']
 affects:
   - 3DEngine.App/Ui/DesktopUi.cs
   - 3DEngine.App/Ui/DesktopUi.Panel.cs
@@ -83,3 +83,5 @@ the history arc.
 - 2026-11-10 · TASK-0336 · Shipped at v0.317.
 - 2026-11-10 · TASK-0332 · ADR-0108 item 4 amends item 4: the field of the command line is at most 400 pixels wide, not
   300.
+  300.
+- 2026-11-10 · TASK-0339 · ADR-0114 item 4 amends item 1: no two windows overlap, two panels included (finding T181).

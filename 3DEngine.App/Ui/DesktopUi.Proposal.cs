@@ -183,12 +183,12 @@ internal sealed unsafe partial class DesktopUi
 
     // ADR-0110 item 3 (Q3 A, TASK-0334): the line of a command whose value the frame names is the name of the value and its
     // change, "Plate C3  60 → 75 mm" or "Bracket distance  → 30 mm" with no value now. Each other command keeps its line of
-    // ADR-0092 item 5.
+    // ADR-0092 item 5. ADR-0114 item 2 (finding V164, TASK-0339): an angle shows in degrees, "Plate C1  60 → 45 deg".
     internal static string ProposalLine(ProposalCard card, int index, string unit)
     {
         ArgumentNullException.ThrowIfNull(card);
         return card.Values is { } values && index < values.Count && values[index] is { Name: { } name, Label: { } label } value
-            ? $"{name} {label}  {(value.Now is { } now ? $"{Measured(now)} " : string.Empty)}{Arrow} {Measured(value.Number)} {unit}"
+            ? $"{name} {label}  {(value.Now is { } now ? $"{Measured(now)} " : string.Empty)}{Arrow} {Measured(value.Shown ?? value.Number)} {value.Unit ?? unit}"
             : card.Commands[index];
     }
 
