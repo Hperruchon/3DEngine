@@ -400,6 +400,18 @@ This session did not read the value on the phone or on the emulator; the numbers
 Exit: a run on the S23 Ultra or on the emulator records the size that the window gives, and ADR-0113 adds that size to its
 list, with a scale of the user interface if the size is in pixels.
 
+### R-0061 · The cost of the edge lines on the phone is not measured
+- class: question
+- opened: 2026-11-10
+- due: 2027-02-08
+- extended: no
+- refs: `docs/adr/0109-the-edges-of-the-body.md` item 5, `3DEngine.Vulkan/EdgeLines.cs`, TASK-0333
+ADR-0109 measured the edge lines on the computer of the owner only: no change of the frame time at 1440 by 900, and about
+0.5 s to find the edges of a mesh of one million triangles at the upload. The phone draws the same lines and finds the same
+edges on a slower processor. This session did not run the APK with the lines.
+Exit: a run on the S23 Ultra or on the emulator records the frame time and the time of the upload of a large mesh, and
+ADR-0109 adds them, with a lower limit of edges if they are too slow.
+
 ## Accepted compromises
 
 These are conditions that the project keeps permanently and by decision. They do not age.

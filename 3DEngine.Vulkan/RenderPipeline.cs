@@ -22,6 +22,10 @@ namespace ThreeDEngine.Vulkan;
 // keeps a fragment whose depth is greater than or equal to the stored depth, writes no
 // depth, and blends with the alpha of its fragment shader. The constants above are the
 // state of the mesh pipeline.
+//
+// A depth pipeline (ADR-0109 item 3, phase R18b, TASK-0333) writes the depth of a mesh and no colour, so the transparent
+// fill of the selected body (the highlight pipeline after it) tints each pixel one time, and its hidden edges find their
+// depth.
 public sealed unsafe class RenderPipeline : IDisposable
 {
     public const VkPrimitiveTopology Topology = VkPrimitiveTopology.TriangleList;
@@ -32,7 +36,7 @@ public sealed unsafe class RenderPipeline : IDisposable
 
     private readonly GraphicsDevice _device;
 
-    public RenderPipeline(GraphicsDevice device, VkRenderPass renderPass, string vertexShader, string fragmentShader, bool highlight = false)
+    public RenderPipeline(GraphicsDevice device, VkRenderPass renderPass, string vertexShader, string fragmentShader, bool highlight = false, bool depthOnly = false)
     {
         _device = device;
 
@@ -88,7 +92,7 @@ public sealed unsafe class RenderPipeline : IDisposable
                         alphaBlendOp = VkBlendOp.Add,
                         colorWriteMask = VkColorComponentFlags.All,
                     }
-                    : new() { colorWriteMask = VkColorComponentFlags.All };
+                    : new() { colorWriteMask = depthOnly ? VkColorComponentFlags.None : VkColorComponentFlags.All };
                 VkPipelineColorBlendStateCreateInfo colorBlend = new() { attachmentCount = 1, pAttachments = &blendAttachment };
                 VkDynamicState* dynamicStates = stackalloc VkDynamicState[] { VkDynamicState.Viewport, VkDynamicState.Scissor };
                 VkPipelineDynamicStateCreateInfo dynamicState = new() { dynamicStateCount = 2, pDynamicStates = dynamicStates };
