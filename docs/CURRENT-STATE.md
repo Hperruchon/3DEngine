@@ -9686,3 +9686,40 @@ used a focus in this window yet.
 New tests: 13. The test list holds 2424 (1549 in `Engine.Tests`, 356 in `3DEngine.Tests`, 516 in `3DEngine.ImageTests`, 3
 in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
 entries: 10 of 15. New diagnostic codes: 0. Since the review of v0.319, 3 product milestones and 4 entries followed it.
+
+## v0.324 — A turn refuses a quaternion of very small parts, a proposal shows an angle in degrees, and an accept holds less (P0.141, TASK-0339)
+
+The medium finding and the three low findings of the codebase review of 2026-11-10, after the next product phase. The
+owner gave the order to start on 2026-11-10 and answered the question of E201 with A: the command refuses such a
+quaternion with a new code.
+
+**The change.** ADR-0114 amends ADR-0110 item 3, ADR-0111 item 3, ADR-0112 item 2 and ADR-0113 item 1.
+- E201: `Rotation.FromQuaternion` gives no turn when w² + x² + y² + z² is below 2^-969. Below that limit a square that
+  counts in the last bit of an entry can be subnormal, and parts near 1e-162 made a cube of 10 a cube of 50. `Rotate`
+  refuses a quaternion with a part that is not zero and a sum below the limit with the new code
+  `E-GEOM-QUATERNION-TOO-SMALL`, before the check of the capability. The sum of parts of 1e-162 rounds to zero, so the
+  code depends on a part that is not zero. `Rotation` keeps its public shape. A log entry of such a `Rotate` between
+  v0.318 and this entry now gives the refusal on a replay; only the probe of the review sent one.
+- V164: the line of a proposal shows an angle in degrees from its cosine and its sine, "Rib C1  60 → 45 deg". A
+  distance and a radius keep the length unit. A tangent, a fixed point and an angle with no second value keep the line of
+  their command, because they are not lengths.
+- V165: a tap on the path line, a focus and the end of a focus are free while an accept runs. The focus came with R17b
+  after the review, and the entry v0.323 named its hold.
+- T181: `AcceptHold.Held` and `AcceptHold.Pass` make the decision of the host from the task of the accept, so a test
+  reads it with no window. The layout test checks each pair of windows, two panels included; the sheet of a proposal may
+  still cover the panel.
+
+**Proof.** 4 new tests: the limit and the code of `Rotate`, the line of an angle and of the other kinds, the free path
+line and focus, and the decision of the host. Six injections failed their tests: the old limit, the old line, a held
+`PathAction`, an accept that the decision ignores, and a second panel at the place of the first, which failed the layout
+test at eight sizes. The old check of the layout passed that last injection. Each file came back byte for byte. The
+phone project builds with zero warnings. Run 42897717382 passed on the branch. The failed runs since the entry v0.323, from the
+API: none.
+
+**What stays.** The review of the UI that follows this task takes the remark of the owner of 2026-11-10: the actions on a
+model (the dimensions, a hide) belong on the ring, and a hidden piece needs a way back.
+
+New tests: 4. The test list holds 2428 (1550 in `Engine.Tests`, 356 in `3DEngine.Tests`, 519 in `3DEngine.ImageTests`, 3
+in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
+entries: 10 of 15. New diagnostic codes: 1 (`E-GEOM-QUATERNION-TOO-SMALL`). Since the review of v0.319, 3 product
+milestones and 5 entries followed it.

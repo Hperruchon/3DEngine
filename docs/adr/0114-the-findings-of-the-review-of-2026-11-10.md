@@ -91,3 +91,4 @@ other choice (B) was to divide the quaternion by its length first.
 
 - 2026-11-10 · TASK-0339 · The record, for findings E201, V164, V165 and T181 of the codebase review of 2026-11-10, with
   the answer A of the owner for E201.
+- 2026-11-10 · TASK-0339 · Shipped at v0.324.
