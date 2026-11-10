@@ -559,6 +559,17 @@ The first objective. Each phase ends with something that a person can observe.
 | R17 | The selection of the document and of one body: the person sees where the selection is in the document, goes up to the document, and reviews one body alone. From the proposal `docs/proposals/2026-11-08-document-and-body-selection.md`; the owner accepted each recommended answer on 2026-11-08. The components of an assembly (option C) wait for the decision of the owner on the non-goals "Multi-Document in one runtime" and "Assemblies". | 3–5 |
 | R17a | A path line from the document to the selection: the file, the body, the face and the edge at the upper left, a tap on a segment and Escape go up one level, and the rows of the document with nothing selected (ADR-0100). TASK-0314. | 1–2 |
 | R17b | A focus on one body: a state of the client that draws one body and writes nothing to the log, from the ring or the command line, with no double tap (ADR-0101). TASK-0315. | 1 |
+| R18 | The look of the render "mix": the gaps between the window at v0.311 and the renders Mix 1 to Mix 4 of the designer brief, in slices S1 to S10 of the proposal `docs/proposals/2026-11-10-gaps-to-the-render.md`; the owner accepted each recommended answer on 2026-11-10. The preview of a proposal (S11, a dry run on a second Document) waits until R18i, and the author of a step (S12, a contract change) waits until after S11. | 12–18 |
+| R18a | The look of the render: an almost black ground, thin outlined controls with no fill, the command line with a search mark and "Ctrl K", the states in green and red, and "AGENT IS WAITING" beside the command line (ADR-0108; S1, Q2 A). TASK-0332. | 1–2 |
+| R18b | The edges of the body: an edge pass draws the edges as lines, the selected body has a transparent fill and dashed hidden edges, and a soft shadow is under it (ADR-0109; S2). TASK-0333. | 2–3 |
+| R18c | The values as in the render: dimension lines with extension lines, pills in the mono font with three decimals and the unit, outside the silhouette of the body (S3, Q6 A). | 2 |
+| R18d | The rows of a body as in the render: the name larger, the state in its colour, the row "Made from" with a tap that opens the sketch (ADR-0099 Q2), and labels from the direction of each value and the name of its constraint (S4). | 1–2 |
+| R18e | "Edit sketch" and "Rename" on the ring of a body, and the history arc drawn with its nodes on the arc (S5). | 1–2 |
+| R18f | The sketch as in the render: rows with the constraints, their residual and "Makes"; "Next point" and "Extrude" on the ring and in the command line; the plate under the body with its label and its caption (S6). | 2 |
+| R18g | The fixed controls and the status as in the render: Frame and Home leave the row of the anchors (Q3 A), "Undo:" and the last step beside Undo, the log count and the state of the agent in the status line, and "saved" or "not saved" in the top bar (S7). | 1 |
+| R18h | A value typed in the command line goes to the pad of its command, through the evaluator (S8; ADR-0098 Q1 B of 2026-11-08). | 1 |
+| R18i | The proposal in the window: the old value crossed out and the new value in the rows and on the edge, a pending node on the history arc, a glow on the edge of the screen, and a message after Accept (S9). | 2 |
+| R18j | The comparison of R18 at 1280 by 720, 1024 by 768, 768 by 1024 and the phone, and the gaps that it finds (S10). | 1 |
 
 ## Track K — The kernel
 
@@ -664,6 +675,10 @@ The tracks are not strictly sequential, but three rules hold:
    On 2026-11-08 the owner put R17a (TASK-0314) and R17b (TASK-0315) on the task list, from the proposal on the
    selection of the document. R17a comes after R16p (Q6 A), and R17b after R17a. They come after the slices of the
    redesign that the owner ordered before them on 2026-11-08, unless the owner gives another order.
+   On 2026-11-10 the owner put R18 on the roadmap, from the proposal on the gaps to the render (Q1 to Q7 A). R18a
+   (TASK-0332) and R18b (TASK-0333) come after P0.139, R17a and R17b, and they can run at the same time in two
+   worktrees. R18c to R18j follow in their order; each opens its task when it starts. Each slice merges after green
+   continuous integration, and its session sends its picture beside the render (Q7 A).
 2. R2 blocks each later phase in track R. No mesh leaves the geometry backend today.
 3. K4 needs K0, K1 and K2. Do not start K4 before the reference model exists.
 4. The path to the milestone "CAD on one part" (the owner, 2026-10-27, KD2): R7b, R8a, R8b, the codebase
