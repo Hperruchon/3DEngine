@@ -9617,3 +9617,35 @@ until R18g. The rows, the values and the history arc keep their look until R18c,
 New tests: 4. The test list holds 2407 (1539 in `Engine.Tests`, 356 in `3DEngine.Tests`, 499 in `3DEngine.ImageTests`, 3
 in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
 entries: 9 of 15. New diagnostic codes: 0. Since the review of v0.319, 1 product milestone and 2 entries followed it.
+
+## v0.322 — A body shows its edges as lines, and the selected body is transparent with dashed hidden edges (R18b, TASK-0333)
+
+The owner accepted the proposal on the gaps to the render on 2026-11-10 (Q1 to Q7 A). This entry is slice S2: the edges
+of the body. Before it, a body had shaded faces and no lines, and the selected body was an opaque orange.
+
+**The change.** ADR-0109 amends ADR-0029 item 2.
+- The renderer finds the feature edges of the triangles of a body one time, when the mesh goes to the GPU: an edge with
+  one triangle, with more than two, or between two triangles whose normals differ by more than 30 degrees. The twelve
+  edges of a box show. The seams between the facets of a cylinder do not show.
+- Each edge is two triangles with a width in pixels, so the phone needs no wide lines. A line is 1.5 pixels and near
+  white, and it wins the depth test against the faces of its own body.
+- The selected body has no opaque draw. It has a transparent orange fill (alpha 0.25), dashed hidden edges and solid
+  visible edges in the colour of the selection. A body behind it shows through it.
+- The lines are presentation, as the tessellation is (ADR-0007): the Document and the log hold none. The limit of 30
+  degrees is a constant cosine, so no transcendental function runs.
+
+**Proof.** 4 new tests in `BodyEdgesImageTests`: two with no GPU (the twelve edges of a box, no seam on a cylinder) and
+two pictures (each visible edge of a box is a bright line; the selected box has solid visible edges and dashed hidden
+edges). `FirstDemonstrationImageTests` now reads the orange of each pixel of the selected body. Three injections failed
+the tests: an edge pass that draws nothing, solid hidden edges, and no hidden pass. The file came back each time. A frame
+of 1440 by 900 took a median of 22.2 ms before and after, with the copy to the CPU. The pictures go to the owner beside
+the renders. The phone project builds with zero warnings. Run 42824773499 passed, with the start of the APK on the emulator on the branch. The failed runs since the entry
+v0.321, from the API: none.
+
+**What stays.** The soft shadow under the selected body waits for a ground plane (ADR-0109 item 6). R-0061 asks the cost
+of the lines on the phone: this session did not run the APK with the lines. A body with more than 100 000 feature edges
+draws no lines.
+
+New tests: 4. The test list holds 2411 (1549 in `Engine.Tests`, 356 in `3DEngine.Tests`, 503 in `3DEngine.ImageTests`, 3
+in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
+entries: 10 of 15. New diagnostic codes: 0. Since the review of v0.319, 2 product milestones and 3 entries followed it.
