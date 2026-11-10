@@ -130,6 +130,8 @@ internal sealed unsafe partial class DesktopUi
                     commands.Add((SetDistanceLabel, () => Use(SetDistanceLabel, body)));
                 var visible = body.Visible ? HideLabel : ShowLabel;
                 commands.Add((visible, () => Use(visible, body)));
+                // ADR-0101 item 3 (phase R17b, TASK-0315): "Focus" starts a focus on the body, and ends it again.
+                commands.Add((FocusLabel, () => Use(FocusLabel, body)));
             }
 
             commands.Add((ShowAllLabel, () => _actions.Add(new ShowAllAction())));
