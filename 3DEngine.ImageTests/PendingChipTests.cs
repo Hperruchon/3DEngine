@@ -30,8 +30,8 @@ public sealed class PendingChipTests
     // The chips of the selected bracket: its distance of 10 and the width of 60 of its sketch, with no label.
     private static readonly IReadOnlyList<EdgeValues.Value> BodyChips =
     [
-        new(EdgeValues.DistanceKey(Bracket), "10 mm", new Vector2(1100, 760), 10, Bracket, null, null, "Distance"),
-        new(EdgeValues.ConstraintKey(Width), "60 mm", new Vector2(900, 760), 60, Bracket, Plate, Width, "Length"),
+        new(EdgeValues.DistanceKey(Bracket), "10.000 mm", new Vector2(1100, 760), 10, Bracket, null, null, "Distance"),
+        new(EdgeValues.ConstraintKey(Width), "60.000 mm", new Vector2(900, 760), 60, Bracket, Plate, Width, "Length"),
     ];
 
     private static (string Name, string Parameters) SetValue(Guid constraint, string value)
@@ -176,11 +176,11 @@ public sealed class PendingChipTests
         using var ui = new DesktopUi("http://127.0.0.1:5180", Document.Millimetre);
         Frames(ui, [Card(BodyChips, SetValue(Width, "75"))]);
 
-        Assert.Equal((EdgeValues.ConstraintKey(Width), "60 → 75 mm", true), Chip(ui, EdgeValues.ConstraintKey(Width)));
-        Assert.Equal((EdgeValues.DistanceKey(Bracket), "10 mm", false), Chip(ui, EdgeValues.DistanceKey(Bracket)));
+        Assert.Equal((EdgeValues.ConstraintKey(Width), "60.000 → 75.000 mm", true), Chip(ui, EdgeValues.ConstraintKey(Width)));
+        Assert.Equal((EdgeValues.DistanceKey(Bracket), "10.000 mm", false), Chip(ui, EdgeValues.DistanceKey(Bracket)));
 
         Frames(ui, []);
-        Assert.Equal((EdgeValues.ConstraintKey(Width), "60 mm", false), Chip(ui, EdgeValues.ConstraintKey(Width)));
+        Assert.Equal((EdgeValues.ConstraintKey(Width), "60.000 mm", false), Chip(ui, EdgeValues.ConstraintKey(Width)));
     }
 
     // Item 2: the chip of the distance of the selected extrude shows the change of SetExtrudeDistance.
@@ -190,25 +190,25 @@ public sealed class PendingChipTests
         using var ui = new DesktopUi("http://127.0.0.1:5180", Document.Millimetre);
         Frames(ui, [Card(BodyChips, SetDistance(Bracket, "12.5"))]);
 
-        Assert.Equal((EdgeValues.DistanceKey(Bracket), "10 → 12.5 mm", true), Chip(ui, EdgeValues.DistanceKey(Bracket)));
-        Assert.Equal((EdgeValues.ConstraintKey(Width), "60 mm", false), Chip(ui, EdgeValues.ConstraintKey(Width)));
+        Assert.Equal((EdgeValues.DistanceKey(Bracket), "10.000 → 12.500 mm", true), Chip(ui, EdgeValues.DistanceKey(Bracket)));
+        Assert.Equal((EdgeValues.ConstraintKey(Width), "60.000 mm", false), Chip(ui, EdgeValues.ConstraintKey(Width)));
     }
 
-    // Item 2: while the sketch is active, the chip of its constraint keeps its label: "C1  60 → 75 mm".
+    // Item 2: while the sketch is active, the chip of its constraint keeps its label: "C1  60.000 → 75.000 mm".
     [Fact]
     public void A_Sketch_Chip_Shows_Its_Label_And_The_Change()
     {
         IReadOnlyList<EdgeValues.Value> sketchChips =
         [
-            new(SketchValues.Key(Width), "C1  60 mm", new Vector2(900, 760), 60, Guid.Empty, Plate, Width, "Length"),
-            new(SketchValues.Key(Depth), "C2  40 mm", new Vector2(1100, 760), 40, Guid.Empty, Plate, Depth, "Length"),
+            new(SketchValues.Key(Width), "C1  60.000 mm", new Vector2(900, 760), 60, Guid.Empty, Plate, Width, "Length"),
+            new(SketchValues.Key(Depth), "C2  40.000 mm", new Vector2(1100, 760), 40, Guid.Empty, Plate, Depth, "Length"),
         ];
         var panel = new SketchPanel([PlateSketch], PlateSketch, ThreeDEngine.Core.Sketching.SketchToolKind.Select, false, [], null);
         using var ui = new DesktopUi("http://127.0.0.1:5180", Document.Millimetre);
         Frames(ui, [Card(BodyChips, SetValue(Width, "75"))], sketchPanel: panel, sketchValues: sketchChips);
 
-        Assert.Equal((SketchValues.Key(Width), "C1  60 → 75 mm", true), Chip(ui, SketchValues.Key(Width)));
-        Assert.Equal((SketchValues.Key(Depth), "C2  40 mm", false), Chip(ui, SketchValues.Key(Depth)));
+        Assert.Equal((SketchValues.Key(Width), "C1  60.000 → 75.000 mm", true), Chip(ui, SketchValues.Key(Width)));
+        Assert.Equal((SketchValues.Key(Depth), "C2  40.000 mm", false), Chip(ui, SketchValues.Key(Depth)));
     }
 
     // Item 2: a tap on a pending chip does what a tap on the chip does: it opens the pad of the value now, and gives no

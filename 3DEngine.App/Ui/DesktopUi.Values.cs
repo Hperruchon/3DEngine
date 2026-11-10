@@ -8,6 +8,8 @@ namespace ThreeDEngine.Desktop.Ui;
 // the unit; a press and a release on one chip open the pad of its value, and the chip is pending while that pad is open.
 // ADR-0105 (TASK-0327): while a sketch is active, the chips are the values of that sketch on its lines and its curves.
 // ADR-0110 item 2 (TASK-0334): a chip whose value the shown proposal changes shows the value now and the proposed value.
+// ADR-0115 (phase R18c, TASK-0340): each value is drawn as in the render: a dimension line parallel to its edge outside the
+// outline of the body, an extension line from each end of the edge, and an outlined pill on the line.
 internal sealed unsafe partial class DesktopUi
 {
     // The smallest side of a chip: the 44 pixels of a target of ADR-0027 item 6.
@@ -28,6 +30,17 @@ internal sealed unsafe partial class DesktopUi
     // The key, the text and the pending style of each chip of this frame, for a test.
     internal IReadOnlyList<(string Key, string Text, bool Pending)> Chips => [.. _chips.Select(chip => (chip.Value.Key, chip.Value.Text, Pending(chip.Value.Key)))];
 
+    // ADR-0115 item 2: the padding of the text in a pill, and the length of an extension line past the dimension line.
+    internal static readonly Vector2 PillPadding = new(10f, 5f);
+    internal const float ExtensionPast = 6f;
+    internal const float ExtensionGap = 4f;
+
+    // ADR-0115 item 2: the dimension line and the drawn pill of each value of this frame with an edge, for a test: the two
+    // ends of the line (one point for the leader of a radius, with the end at the pill) and the rectangle of the pill.
+    private List<(string Key, Vector2 From, Vector2 To, Vector4 Pill)> _dimensionLines = [];
+
+    internal IReadOnlyList<(string Key, Vector2 From, Vector2 To, Vector4 Pill)> DimensionLines => _dimensionLines;
+
     // Item 4: a chip is pending while its pad is open. ADR-0110 item 2 (TASK-0334): a chip is pending too while the shown
     // proposal changes its value.
     private bool Pending(string key) => key == _pendingValue || _proposedChips.Contains(key);
@@ -41,6 +54,7 @@ internal sealed unsafe partial class DesktopUi
     private void Values(Vector2 displaySize, IReadOnlyList<EdgeValues.Value>? edgeValues, IReadOnlyList<EdgeValues.Value>? sketchValues)
     {
         _chips = [];
+        _dimensionLines = [];
         _proposedChips = new(StringComparer.Ordinal);
         if (_pad is null)
             _pendingValue = null;
@@ -68,14 +82,27 @@ internal sealed unsafe partial class DesktopUi
 
         // Item 2: the chip is centred on its place, and the placement of ADR-0056 moves the chips apart.
         var style = ImGui.GetStyle();
-        Vector2 Size(string text)
+        // ADR-0115 item 3: the drawn pill is the text and its padding; the target around it is at least 44 pixels on each side.
+        Vector2 PillSize(string text)
         {
             // ADR-0091: a value has the font of a value, JetBrains Mono.
             ImGui.PushFont(_monoFont);
-            var extent = new Vector2(ArrowTextWidth(_monoFont, FontSize, text), ImGui.CalcTextSize(text).Y) + (style.FramePadding * 2f);
+            var extent = new Vector2(ArrowTextWidth(_monoFont, FontSize, text), ImGui.CalcTextSize(text).Y) + (PillPadding * 2f);
             ImGui.PopFont();
-            return new Vector2(Math.Max(extent.X, ValueSize), Math.Max(extent.Y, ValueSize));
+            return extent;
         }
+
+        Vector2 Size(string text)
+        {
+            var pill = PillSize(text);
+            return new Vector2(Math.Max(pill.X, ValueSize), Math.Max(pill.Y, ValueSize));
+        }
+
+        // ADR-0115 item 2: the dimension line goes past the outline by the gap and the half of the pill along its normal, so
+        // the pill is outside the outline and centred on the line.
+        values = [.. values.Select(value => value.Line is { } line
+            ? value with { At = EdgeValues.Placed(line) + (line.Normal * Half(PillSize(value.Text), line.Normal)) }
+            : value)];
 
         var placed = DimensionOverlay.Place(
             [.. values.Select(value => new DimensionOverlay.Label(value.At - (Size(value.Text) / 2f), value.Text, DimensionOverlay.Mark.Selected))],
@@ -115,20 +142,49 @@ internal sealed unsafe partial class DesktopUi
 
         var list = ImGui.GetBackgroundDrawList();
         var colours = style.Colors;
+        var lineColour = ImGui.GetColorU32(colours[(int)ImGuiCol.Border]);
         foreach (var (value, rectangle) in _chips)
         {
-            var (min, max) = (new Vector2(rectangle.X, rectangle.Y), new Vector2(rectangle.Z, rectangle.W));
             var pending = Pending(value.Key);
             var hovered = !ImGui.IsWindowHovered(ImGuiHoveredFlags.AnyWindow) && ChipAt(io.MousePos)?.Key == value.Key;
+            // ADR-0115 item 3: the drawn pill is centred in the target of the chip.
+            var middle = new Vector2((rectangle.X + rectangle.Z) / 2f, (rectangle.Y + rectangle.W) / 2f);
+            var pillSize = PillSize(value.Text);
+            var (min, max) = (middle - (pillSize / 2f), middle + (pillSize / 2f));
+            var round = pillSize.Y / 2f;
+            var ink = pending ? DimensionColour : lineColour;
+
+            // ADR-0115 item 2: the extension lines from the ends of the edge, 4 pixels off it and 6 pixels past the dimension
+            // line, and the dimension line through the middle of the pill; a radius has a leader from its curve to the pill.
+            if (value.Line is { } line)
+            {
+                var shift = Vector2.Dot(middle - ((line.A + line.B) / 2f), line.Normal);
+                var (from, to) = (line.A + (line.Normal * shift), line.B + (line.Normal * shift));
+                if (line.Leader)
+                {
+                    list.AddLine(line.A + (line.Normal * ExtensionGap), middle, ink, 1f);
+                    (from, to) = (line.A, middle);
+                }
+                else
+                {
+                    list.AddLine(line.A + (line.Normal * ExtensionGap), from + (line.Normal * ExtensionPast), ink, 1f);
+                    list.AddLine(line.B + (line.Normal * ExtensionGap), to + (line.Normal * ExtensionPast), ink, 1f);
+                    list.AddLine(from, to, ink, 1f);
+                }
+
+                _dimensionLines.Add((value.Key, from, to, new Vector4(min.X, min.Y, max.X, max.Y)));
+            }
+
             // ADR-0108 item 2 (phase R18a, TASK-0332): a chip lies over the body, so it has the ground of the scene and no
             // blue fill, as the render; a hover adds the light fill of the theme. Until TASK-0332 it had a blue ground.
-            list.AddRectFilled(min, max, Theme.Plate(0.85f), 6f);
+            // ADR-0115 item 3: the pill is round at its ends, as the render.
+            list.AddRectFilled(min, max, Theme.Plate(0.85f), round);
             if (hovered)
-                list.AddRectFilled(min, max, ImGui.GetColorU32(colours[(int)ImGuiCol.ButtonHovered]), 6f);
+                list.AddRectFilled(min, max, ImGui.GetColorU32(colours[(int)ImGuiCol.ButtonHovered]), round);
             if (pending)
                 Dashed(list, min, max, DimensionColour);
             else
-                list.AddRect(min, max, ImGui.GetColorU32(colours[(int)ImGuiCol.Border]), 6f, ImDrawFlags.None, 1.5f);
+                list.AddRect(min, max, lineColour, round, ImDrawFlags.None, 1.5f);
             ImGui.PushFont(_monoFont);
             var text = new Vector2(ArrowTextWidth(_monoFont, FontSize, value.Text), ImGui.CalcTextSize(value.Text).Y);
             ImGui.PopFont();
@@ -136,6 +192,9 @@ internal sealed unsafe partial class DesktopUi
             _items[value.Key] = rectangle;
         }
     }
+
+    // ADR-0115 item 2: the half of the extent of a pill along a unit direction.
+    internal static float Half(Vector2 pill, Vector2 direction) => ((Math.Abs(direction.X) * pill.X) + (Math.Abs(direction.Y) * pill.Y)) / 2f;
 
     private EdgeValues.Value? ChipAt(Vector2 point)
         => _chips.FirstOrDefault(chip => point.X >= chip.Rectangle.X && point.X < chip.Rectangle.Z && point.Y >= chip.Rectangle.Y && point.Y < chip.Rectangle.W).Value;
