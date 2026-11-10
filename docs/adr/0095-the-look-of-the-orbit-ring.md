@@ -1,13 +1,13 @@
 ---
 id: 0095
 title: The ring has the look of the orbit of the render, with a guide, icons and a caption
-status: Accepted
+status: Amended
 topic: Clients, rendering
 date: 2026-11-08
 supersedes: []
 superseded-by: []
 amends: ['0081', '0086']
-amended-by: []
+amended-by: ['0108']
 affects:
   - 3DEngine.App/Ui/DesktopUi.Orbit.cs
   - 3DEngine.App/Ui/DesktopUi.Ring.cs
@@ -59,3 +59,5 @@ that size.
 
 - 2026-11-08 · TASK-0306 · The record, with the slice (the choice of the owner of 2026-11-08).
 - 2026-11-08 · TASK-0306 · Shipped at v0.291.
+- 2026-11-10 · TASK-0332 · ADR-0108 item 2 amends item 2: a segment that is not in use and not under the pointer has no
+  fill; its icon is in the accent.

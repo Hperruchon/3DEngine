@@ -1,11 +1,11 @@
 ---
 id: 0332
 title: The look of the render, a dark ground and outlined controls
-status: Ready
+status: Active
 phase: R18a
 opened: 2026-11-10
 depends-on: [0330]
-governed-by: [0007, 0019, 0025, 0027, 0029, 0030, 0032, 0034, 0072, 0073, 0076, 0077, 0078, 0080, 0081, 0082, 0083, 0084, 0086, 0087, 0088, 0089, 0091, 0092, 0093, 0095, 0097, 0098, 0099, 0100, 0102, 0104, 0105, 0107, 0110, 0111, 0113]
+governed-by: [0007, 0019, 0025, 0027, 0029, 0030, 0032, 0034, 0072, 0073, 0076, 0077, 0078, 0080, 0081, 0082, 0083, 0084, 0086, 0087, 0088, 0089, 0091, 0092, 0093, 0095, 0097, 0098, 0099, 0100, 0102, 0104, 0105, 0107, 0108, 0110, 0111, 0113]
 writes:
   create:
     - tasks/TASK-0332-the-look-of-the-render.md
@@ -43,7 +43,10 @@ writes:
     - docs/adr/0095-the-look-of-the-orbit-ring.md
     - docs/adr/0098-the-command-line.md
     - docs/adr/0092-an-agent-proposes-and-the-person-accepts.md
+    - docs/adr/0113-the-layout-at-each-phone-size-and-small-window.md
     - docs/adr/README.md
+    - docs/register.md
+    - tasks/TASK-0315-a-focus-on-one-body.md
     - eng/test-floor.txt
     - docs/roadmap.md
     - docs/CURRENT-STATE.md
@@ -118,3 +121,11 @@ Weakest:    the render is a picture; its exact colours come from a look, not fro
 ## Progress
 
 - 2026-11-10: opened from the proposal, with the answers of the owner.
+- 2026-11-10: started at main 09f1827 (v0.318), branch r18a-look. The colours come from a sample of the pixels of the
+  render Mix 1. The text of the render, the search mark and "Ctrl K" need 394 pixels in the font of the window, so the
+  field of the command line is 400 pixels wide and ADR-0108 also amends ADR-0113 item 4; the write set adds its file. The
+  input has no Command key of macOS, so the field shows "Ctrl K" on each platform; register entry R-0060 holds "Cmd K",
+  and the write set adds `docs/register.md`. The soft light at the middle of the scene waits (ADR-0108 item 1). Frame
+  and Home and the command line draw their outline 1 pixel inside, because the clip of their window cut it.
+  Two injections: the outline #3c606c failed the contrast test (2.86:1), and a segment fill at alpha 0.35 failed the
+  picture of the ring and the test of the ground; the file came back each time.

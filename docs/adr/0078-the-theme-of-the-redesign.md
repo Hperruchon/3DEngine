@@ -7,7 +7,7 @@ date: 2026-11-06
 supersedes: []
 superseded-by: []
 amends: []
-amended-by: ['0091']
+amended-by: ['0091', '0108']
 affects:
   - 3DEngine.App/Ui/Theme.cs
   - 3DEngine.App/Ui/DesktopUi.cs
@@ -64,3 +64,5 @@ clear from a body compares exact bytes, so it still holds.
 - 2026-11-06 · TASK-0246 · The record, with the colours and the casing; the fonts wait for the permission of the owner.
 - 2026-11-06 · TASK-0246 · Shipped at v0.232, with the colours and the casing.
 - 2026-11-08 · TASK-0292 · ADR-0091 amends item 3: the fonts came, after the owner allowed the download on 2026-11-08.
+- 2026-11-10 · TASK-0332 · ADR-0108 item 1 amends item 1: the clear of the scene is `#070d14`, the almost black ground
+  of the render (Q2 A), and the windows take `#0b1219`.
