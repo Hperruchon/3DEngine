@@ -1,13 +1,13 @@
 ---
 id: 0105
 title: The values of an active sketch show on its edges
-status: Accepted
+status: Amended
 topic: Clients, rendering
 date: 2026-11-09
 supersedes: []
 superseded-by: []
 amends: []
-amended-by: []
+amended-by: ['0115']
 affects:
   - 3DEngine.App/SketchValues.cs
   - 3DEngine.App/Ui/DesktopUi.Values.cs
@@ -95,3 +95,5 @@ them.
 
 - 2026-11-09 · TASK-0327 · The record, with the slice (the order of the owner of 2026-11-08).
 - 2026-11-09 · TASK-0327 · Shipped at v0.310.
+- 2026-11-10 · TASK-0340 · ADR-0115 items 1 and 2 amend items 2 and 3: a value shows three decimals, on a pill on a
+  dimension line outside the outline of the sketch; a radius has a leader.

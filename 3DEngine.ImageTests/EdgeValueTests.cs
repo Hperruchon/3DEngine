@@ -66,7 +66,8 @@ public sealed class EdgeValueTests
         var values = await ValuesOf(host, body, 3);
 
         Assert.Equal(3, values.Count);
-        Assert.Equal((3.0, (Guid?)null, "3 mm"), (values[0].Number, values[0].Constraint, values[0].Text));
+        // ADR-0115 item 1 (TASK-0340): three decimals.
+        Assert.Equal((3.0, (Guid?)null, "3.000 mm"), (values[0].Number, values[0].Constraint, values[0].Text));
         Assert.Equal(EdgeValues.DistanceKey(body), values[0].Key);
         var byConstraint = values.Skip(1).ToDictionary(value => value.Constraint!.Value);
         Assert.Equal((10.0, (Guid?)sketch), (byConstraint[length].Number, byConstraint[length].Sketch));
@@ -138,7 +139,7 @@ public sealed class EdgeValueTests
     public void A_Tap_On_The_Distance_Opens_Its_Pad_And_The_Chip_Is_Pending(DeviceKind kind)
     {
         var body = Guid.NewGuid();
-        IReadOnlyList<EdgeValues.Value> values = [new EdgeValues.Value(EdgeValues.DistanceKey(body), "3 mm", new Vector2(700, 300), 3, body, null, null)];
+        IReadOnlyList<EdgeValues.Value> values = [new EdgeValues.Value(EdgeValues.DistanceKey(body), "3.000 mm", new Vector2(700, 300), 3, body, null, null)];
         using var ui = new DesktopUi("http://127.0.0.1:5180", Document.Millimetre);
         Step(ui, values, body);
         Step(ui, values, body);
@@ -160,7 +161,7 @@ public sealed class EdgeValueTests
     public void A_Tap_On_A_Length_Opens_Its_Pad_And_The_Apply_Gives_The_New_Value()
     {
         var (body, sketch, constraint) = (Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid());
-        IReadOnlyList<EdgeValues.Value> values = [new EdgeValues.Value(EdgeValues.ConstraintKey(constraint), "10 mm", new Vector2(700, 300), 10, body, sketch, constraint)];
+        IReadOnlyList<EdgeValues.Value> values = [new EdgeValues.Value(EdgeValues.ConstraintKey(constraint), "10.000 mm", new Vector2(700, 300), 10, body, sketch, constraint)];
         using var ui = new DesktopUi("http://127.0.0.1:5180", Document.Millimetre);
         Step(ui, values, body);
         Step(ui, values, body);
@@ -179,7 +180,7 @@ public sealed class EdgeValueTests
     public void No_Chip_Shows_While_The_Pad_Of_Another_Tool_Is_Open()
     {
         var body = Guid.NewGuid();
-        IReadOnlyList<EdgeValues.Value> values = [new EdgeValues.Value(EdgeValues.DistanceKey(body), "3 mm", new Vector2(400, 700), 3, body, null, null)];
+        IReadOnlyList<EdgeValues.Value> values = [new EdgeValues.Value(EdgeValues.DistanceKey(body), "3.000 mm", new Vector2(400, 700), 3, body, null, null)];
         using var ui = new DesktopUi("http://127.0.0.1:5180", Document.Millimetre);
         PortraitStep(ui, values, body);
         PortraitStep(ui, values, body);
@@ -197,7 +198,7 @@ public sealed class EdgeValueTests
     public void The_Pad_Of_Another_Tool_Ends_The_Pending_Chip()
     {
         var (body, sketch, constraint) = (Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid());
-        IReadOnlyList<EdgeValues.Value> values = [new EdgeValues.Value(EdgeValues.ConstraintKey(constraint), "10 mm", new Vector2(400, 700), 10, body, sketch, constraint)];
+        IReadOnlyList<EdgeValues.Value> values = [new EdgeValues.Value(EdgeValues.ConstraintKey(constraint), "10.000 mm", new Vector2(400, 700), 10, body, sketch, constraint)];
         using var ui = new DesktopUi("http://127.0.0.1:5180", Document.Millimetre);
         PortraitStep(ui, values, body);
         PortraitStep(ui, values, body);

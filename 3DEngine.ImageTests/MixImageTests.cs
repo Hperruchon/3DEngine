@@ -20,8 +20,8 @@ namespace ThreeDEngine.ImageTests;
 // Phase R16s (TASK-0327): a third picture holds the sketch "Plate" active, as a tap on its step of the history arc makes it:
 // under its body, with its rows at the left, its ring, and a chip on each of its two lengths.
 // Phase R16t (TASK-0334): a fourth picture holds the proposal of the second picture with the proposed value of its command,
-// as the host gives it: the chip of the width shows "60 → 75 mm" as a pending chip, and the line of the arc names the value,
-// "Plate C1  60 → 75 mm".
+// as the host gives it: the chip of the width shows "60.000 → 75.000 mm" as a pending chip, and the line of the arc names the value,
+// "Plate C1  60 → 75 mm"; the chip has three decimals (ADR-0115 item 1, TASK-0340), and the line keeps its form.
 [Collection(DearImGui.Collection)]
 public class MixImageTests
 {
@@ -153,7 +153,7 @@ public class MixImageTests
         if (sketchActive)
         {
             // TASK-0327: a chip on each of the two lengths of the sketch, and no chip of the extrude.
-            Assert.Equal(["C1  60 mm", "C2  40 mm"], sketchValues.Select(value => value.Text));
+            Assert.Equal(["C1  60.000 mm", "C2  40.000 mm"], sketchValues.Select(value => value.Text));
             Assert.All(sketchValues, value => Assert.NotNull(ui.ItemRectangle(value.Key)));
             Assert.All(values, value => Assert.Null(ui.ItemRectangle(value.Key)));
         }
@@ -170,7 +170,7 @@ public class MixImageTests
             if (pending)
             {
                 // TASK-0334: the chip of the width is pending with the change, and the line names the value.
-                Assert.Contains((EdgeValues.ConstraintKey(width), "60 → 75 mm", true), ui.Chips);
+                Assert.Contains((EdgeValues.ConstraintKey(width), "60.000 → 75.000 mm", true), ui.Chips);
                 Assert.Equal("Plate C1  60 → 75 mm", ui.ProposalTexts[DesktopUi.ProposalLineItem(0)]);
             }
             else

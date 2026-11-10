@@ -7,7 +7,7 @@ date: 2026-11-07
 supersedes: []
 superseded-by: []
 amends: []
-amended-by: ['0084']
+amended-by: ['0084', '0115']
 affects:
   - 3DEngine.App/EdgeValues.cs
   - 3DEngine.App/Ui/DesktopUi.Values.cs
@@ -110,3 +110,5 @@ and a cylinder show no chip until a command changes their sizes.
 - 2026-11-07 · TASK-0267 · ADR-0084 amends items 2 and 3: a chip that falls on the rows of the selected body goes under them, and a release on
   a row gives the row only. The affects field names `3DEngine.App/Ui/DesktopUi.Rows.cs`, whose rows open the pad of a
   value of item 3.
+- 2026-11-10 · TASK-0340 · ADR-0115 items 1 and 2 amend item 2: a value shows three decimals, on a pill on a dimension
+  line outside the outline of the body, with extension lines.
