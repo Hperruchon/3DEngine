@@ -325,6 +325,8 @@ Therefore each approved objective must have a track here.
 - P0.137 — "Open project..." shows "Project or STL" first, and an STL file chosen there goes to the import. v0.312,
   TASK-0328, ADR-0106.
 - P0.138 — Accept of the agent arc takes a tap in the default window (V159). v0.313, TASK-0330, ADR-0107.
+- R16t — The pending chip of a proposal: a value that an agent changes shows "now → proposed" on its chip, and its line
+  names it. v0.314, TASK-0334, ADR-0110.
 
 ## Track 0 — Foundations
 
