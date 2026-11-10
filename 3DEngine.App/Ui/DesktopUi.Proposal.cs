@@ -125,7 +125,7 @@ internal sealed unsafe partial class DesktopUi
     {
         var lines = new List<(string Item, string Text, bool Amber)>();
         for (var i = 0; i < Math.Min(ProposalLines, card.Commands.Count); i++)
-            lines.Add((ProposalLineItem(i), card.Commands[i], false));
+            lines.Add((ProposalLineItem(i), ProposalLine(card, i, _unit), false));
         if (card.Commands.Count > ProposalLines)
             lines.Add((ProposalMoreItem, $"and {card.Commands.Count - ProposalLines} more", false));
         var count = Counted(card.Commands.Count, "command");
@@ -163,6 +163,65 @@ internal sealed unsafe partial class DesktopUi
         var room = ((right - left) / 2f) - (ProposalButton / 2f) - 8f - word;
         var fit = (room / MathF.Cos(ProposalTo)) - (RingBand / 2f);
         return ring with { Centre = new Vector2((left + right) / 2f, ring.Centre.Y), Inner = Math.Clamp(fit, ProposalInnerMinimum, ring.Inner) };
+    }
+
+    // ADR-0108 item 3 (Q3 A, TASK-0332): the line of a command whose value the frame names is the name of the value and its
+    // change, "Plate C3  60 → 75 mm" or "Bracket distance  → 30 mm" with no value now. Each other command keeps its line of
+    // ADR-0092 item 5.
+    internal static string ProposalLine(ProposalCard card, int index, string unit)
+    {
+        ArgumentNullException.ThrowIfNull(card);
+        return card.Values is { } values && index < values.Count && values[index] is { Name: { } name, Label: { } label } value
+            ? $"{name} {label}  {(value.Now is { } now ? $"{Measured(now)} " : string.Empty)}{Arrow} {Measured(value.Number)} {unit}"
+            : card.Commands[index];
+    }
+
+    // ADR-0108 item 2 (TASK-0332): the text of a chip whose value the proposal changes: the text of the chip with the arrow
+    // and the proposed value before the unit, "C3  60 → 75 mm". The unit is the last word of the text of the chip.
+    internal static string PendingText(string text, double proposed)
+    {
+        ArgumentNullException.ThrowIfNull(text);
+        var unit = text.LastIndexOf(' ');
+        return unit < 0
+            ? $"{text} {Arrow} {Measured(proposed)}"
+            : $"{text[..unit]} {Arrow} {Measured(proposed)}{text[unit..]}";
+    }
+
+    // A value as a chip shows it (Dimensions.Format).
+    private static string Measured(double value) => ThreeDEngine.Core.Measuring.Dimensions.Format(value);
+
+    // ADR-0108 (TASK-0332): the arrow of a change. The atlas of the fonts holds the glyphs of Latin-1 only, so the window draws
+    // the arrow as a line and a head, in the width of the text "->".
+    internal const string Arrow = "→";
+
+    private static float ArrowWidth(ImFontPtr font, float size) => font.CalcTextSizeA(size, float.MaxValue, 0f, "->").X;
+
+    // The width of a text with arrows, in the font at the size.
+    internal static float ArrowTextWidth(ImFontPtr font, float size, string text)
+    {
+        var parts = text.Split(Arrow);
+        return parts.Sum(part => font.CalcTextSizeA(size, float.MaxValue, 0f, part).X) + ((parts.Length - 1) * ArrowWidth(font, size));
+    }
+
+    // A text with arrows on a draw list: each part as a text, and each arrow as a line with a head at the middle of the line.
+    internal static void ArrowText(ImDrawListPtr list, ImFontPtr font, float size, Vector2 at, uint colour, string text)
+    {
+        var parts = text.Split(Arrow);
+        var x = at.X;
+        var arrow = ArrowWidth(font, size);
+        for (var i = 0; i < parts.Length; i++)
+        {
+            list.AddText(font, size, new Vector2(x, at.Y), colour, parts[i]);
+            x += font.CalcTextSizeA(size, float.MaxValue, 0f, parts[i]).X;
+            if (i == parts.Length - 1)
+                break;
+            var (from, to, y) = (x + (arrow * 0.15f), x + (arrow * 0.85f), at.Y + (size * 0.55f));
+            var head = size * 0.2f;
+            list.AddLine(new Vector2(from, y), new Vector2(to, y), colour, 1.5f);
+            list.AddLine(new Vector2(to - head, y - head), new Vector2(to, y), colour, 1.5f);
+            list.AddLine(new Vector2(to - head, y + head), new Vector2(to, y), colour, 1.5f);
+            x += arrow;
+        }
     }
 
     // A count and its word: "1 command", "3 commands".
@@ -259,7 +318,7 @@ internal sealed unsafe partial class DesktopUi
             var d = Math.Abs(y - ring.Centre.Y);
             var chord = d < ring.Inner ? 2f * MathF.Sqrt((ring.Inner * ring.Inner) - (d * d)) - 16f : 0f;
             var shown = FitAt(text, Math.Max(chord, 48f));
-            var width = font.CalcTextSizeA(ProposalTextSize, float.MaxValue, 0f, shown).X;
+            var width = ArrowTextWidth(font, ProposalTextSize, shown);
             placed.Add((item, shown, amber, new Vector2(ring.Centre.X - (width / 2f), y), width));
             y += step;
         }
@@ -272,7 +331,7 @@ internal sealed unsafe partial class DesktopUi
             ImGui.GetColorU32(colours[(int)ImGuiCol.WindowBg] with { W = 0.8f }), 6f);
         foreach (var (item, text, amber, at, width) in placed)
         {
-            list.AddText(font, ProposalTextSize, at, amber ? DimensionColour : ImGui.GetColorU32(colours[(int)ImGuiCol.Text]), text);
+            ArrowText(list, font, ProposalTextSize, at, amber ? DimensionColour : ImGui.GetColorU32(colours[(int)ImGuiCol.Text]), text);
             Shown(item, text, new Vector4(at.X, at.Y, at.X + width, at.Y + ProposalTextSize));
         }
     }
@@ -300,8 +359,16 @@ internal sealed unsafe partial class DesktopUi
             _proposalTexts[ProposalCaptionItem] = Caption(card);
             foreach (var (item, text, isAmber) in lines)
             {
-                var shown = Fit(text, room);
-                if (isAmber)
+                // ADR-0108 item 3 (TASK-0332): a line with an arrow draws its arrow as a line and a head.
+                var arrow = text.Contains(Arrow, StringComparison.Ordinal);
+                var shown = arrow ? FitWith(ImGui.GetFont(), ImGui.GetFontSize(), text, room) : Fit(text, room);
+                if (arrow)
+                {
+                    var at = ImGui.GetCursorScreenPos();
+                    ImGui.Dummy(new Vector2(ArrowTextWidth(ImGui.GetFont(), ImGui.GetFontSize(), shown), ImGui.GetTextLineHeight()));
+                    ArrowText(ImGui.GetWindowDrawList(), ImGui.GetFont(), ImGui.GetFontSize(), at, ImGui.GetColorU32(isAmber ? amber : ImGui.GetStyle().Colors[(int)ImGuiCol.Text]), shown);
+                }
+                else if (isAmber)
                     ImGui.TextColored(amber, shown);
                 else
                     ImGui.TextUnformatted(shown);
@@ -378,10 +445,12 @@ internal sealed unsafe partial class DesktopUi
     }
 
     // The text, or its start and "...", in the width, at the size of the lines inside the ring.
-    private static string FitAt(string text, float width)
+    private static string FitAt(string text, float width) => FitWith(ImGui.GetFont(), ProposalTextSize, text, width);
+
+    // The text, or its start and "...", in the width, in the font at the size. An arrow has the width that ArrowText gives it.
+    private static string FitWith(ImFontPtr font, float size, string text, float width)
     {
-        var font = ImGui.GetFont();
-        float Width(string shown) => font.CalcTextSizeA(ProposalTextSize, float.MaxValue, 0f, shown).X;
+        float Width(string shown) => ArrowTextWidth(font, size, shown);
         if (Width(text) <= width)
             return text;
         for (var length = text.Length - 1; length > 0; length--)
@@ -401,7 +470,10 @@ internal sealed unsafe partial class DesktopUi
 
 // ADR-0092 items 4 and 5 (TASK-0326): one waiting proposal as the window shows it: its identifier, its summary, the text of
 // each command, true when the Document changed after the post, and true while its commands apply.
-internal sealed record ProposalCard(Guid Id, string Summary, IReadOnlyList<string> Commands, bool Stale = false, bool Applying = false)
+// ADR-0108 item 1 (TASK-0332): Values holds the proposed value of each command, in the order of Commands, or null for a
+// command with no value. A card with no Values shows no pending chip.
+internal sealed record ProposalCard(Guid Id, string Summary, IReadOnlyList<string> Commands, bool Stale = false, bool Applying = false,
+    IReadOnlyList<ProposedValue?>? Values = null)
 {
     // Item 5: the text of a command: its name and the value of each parameter, in the order of the envelope. An identifier
     // shows its first 8 characters, as a row of a body does; another value shows its JSON text.
