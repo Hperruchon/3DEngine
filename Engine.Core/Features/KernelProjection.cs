@@ -11,7 +11,7 @@ namespace Engine.Core.Features;
 // walk goes from the body to the command that creates it, as the regeneration does: a CreateBox, a CreateCylinder
 // (ADR-0076), a CreateCone (ADR-0089; finding E188 of the codebase review of 2026-11-08, TASK-0296), a CreateSphere
 // or a CreateTorus (ADR-0089 item 5, TASK-0289), an Extrude of the
-// sketch and the distance in effect on the frame of its datum, a Translate, or a Subtract of two bodies. The kernel
+// sketch and the distance in effect on the frame of its datum, a Translate, a Rotate (ADR-0112 item 5), or a Subtract of two bodies. The kernel
 // reads each input double exactly, so the projection does not depend on the platform, and it does not enter the log.
 //
 // ADR-0059 items 1 and 2 (phase K4c, TASK-0185): the projection also reads a state that is not committed yet, the state
@@ -91,7 +91,7 @@ internal static class KernelProjection
     }
 
     // ADR-0059 item 3: the handle at the end of the chain of consumers of the body of a feature, and true when a Subtract
-    // is on the chain. A consumer that is not a Translate or a Subtract gives no end.
+    // is on the chain. A consumer that is not a Translate, a Rotate (ADR-0112 item 6) or a Subtract gives no end.
     public static (Guid? End, bool Cut) End(FeatureGraph graph, Guid feature)
     {
         ArgumentNullException.ThrowIfNull(graph);
@@ -100,7 +100,7 @@ internal static class KernelProjection
         {
             if (consumer is SubtractCommand)
                 cut = true;
-            else if (consumer is not TranslateCommand)
+            else if (consumer is not (TranslateCommand or RotateCommand))
                 return (null, cut);
             handle = consumer.CommandId;
         }
@@ -144,6 +144,14 @@ internal static class KernelProjection
             {
                 var (solid, reason) = Solid(graph, translate.BodyId, state, frameOf);
                 return (solid?.Translate(Vector3R.FromDoubles(translate.Dx, translate.Dy, translate.Dz)), reason);
+            }
+            // ADR-0112 item 5: the kernel reads the nine doubles of the turn exactly, as the backend takes them.
+            case RotateCommand rotate:
+            {
+                if (RotateCommandHandler.Turn(rotate) is not { } r)
+                    return (null, $"The Rotate '{rotate.CommandId}' has a quaternion that gives no turn.");
+                var (solid, reason) = Solid(graph, rotate.BodyId, state, frameOf);
+                return (solid?.Rotate(Vector3R.FromDoubles(r.Xx, r.Xy, r.Xz), Vector3R.FromDoubles(r.Yx, r.Yy, r.Yz), Vector3R.FromDoubles(r.Zx, r.Zy, r.Zz)), reason);
             }
             case SubtractCommand subtract:
             {

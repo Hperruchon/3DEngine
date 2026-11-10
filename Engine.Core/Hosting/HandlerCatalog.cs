@@ -33,6 +33,7 @@ public static class HandlerCatalog
         new CreateSphereCommandHandler(),
         new CreateTorusCommandHandler(),
         new TranslateCommandHandler(),
+        new RotateCommandHandler(),
         new SubtractCommandHandler(),
         new RenameBodyCommandHandler(),
         new SetBodyVisibilityCommandHandler(),

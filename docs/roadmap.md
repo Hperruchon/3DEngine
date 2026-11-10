@@ -333,6 +333,8 @@ Therefore each approved objective must have a track here.
   the document show with nothing selected. v0.316, TASK-0314, ADR-0100.
 - R19 — The responsive layout: each control stays in the display and free for a tap at six phone sizes, three landscape
   phone sizes, a tablet and two windows. v0.317, TASK-0336, ADR-0113.
+- K8 — A command turns a body by a quaternion about the origin of the Document; the kernel, the rebuild, the datums and
+  the determinism probe read the turn. v0.318, TASK-0335, ADR-0112.
 
 ## Track 0 — Foundations
 
@@ -623,6 +625,7 @@ boundary and each refused rung.
 | K6a | The planar B-Rep of the owned kernel of each live body as one STEP file of AP214, with the same bytes on each platform, from the surface and the command line (the engine lane of the order of 2026-11-05). ADR-0070, TASK-0200. | 1–2 |
 | K6b | A void inside a body is a `BREP_WITH_VOIDS` of the smallest solid that holds it, by an exact ray (ADR-0070 item 2; the engine lane of the order of 2026-11-05). TASK-0201. | 1 |
 | K7 | General extrude and revolve of a simple curve. **Optional.** Year two. | 40–65 |
+| K8 | A command turns a body by a quaternion about the origin of the Document, and each reader of a move reads the turn: the owned kernel, the rebuild, the frame of a datum and the determinism probe (R-0057; Q5 C of the owner, 2026-11-10). ADR-0112, TASK-0335. | 1–2 |
 
 ## Track V — Machine vision
 

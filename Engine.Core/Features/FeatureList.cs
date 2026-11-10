@@ -53,12 +53,13 @@ public sealed class FeatureList
     // ADR-0076 item 6: CreateCylinder is a creator too.
     // ADR-0083 item 1 (TASK-0258): ImportStl creates a mesh body, a feature with no input, as a box is.
     public static bool Creates(Command command)
-        => command is CreateBoxCommand or CreateCylinderCommand or CreateConeCommand or CreateSphereCommand or CreateTorusCommand or ImportStlCommand or ExtrudeCommand or TranslateCommand or SubtractCommand;
+        => command is CreateBoxCommand or CreateCylinderCommand or CreateConeCommand or CreateSphereCommand or CreateTorusCommand or ImportStlCommand or ExtrudeCommand or TranslateCommand or RotateCommand or SubtractCommand;
 
     // ADR-0021 item 3: the bodies that a command consumes, in the order of its fields.
     public static IReadOnlyList<Guid> Operands(Command command) => command switch
     {
         TranslateCommand translate => [translate.BodyId],
+        RotateCommand rotate => [rotate.BodyId],
         SubtractCommand subtract => [subtract.MinuendBodyId, subtract.SubtrahendBodyId],
         _ => [],
     };

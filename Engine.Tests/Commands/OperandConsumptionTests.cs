@@ -249,6 +249,12 @@ public class OperandConsumptionTests
             Store("Translate", result);
         }
 
+        public void Rotate(BodyHandle result, BodyHandle source, Rotation rotation)
+        {
+            Require(source);
+            Store("Rotate", result);
+        }
+
         public void Subtract(BodyHandle result, BodyHandle minuend, BodyHandle subtrahend)
         {
             Require(minuend);

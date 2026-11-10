@@ -15,4 +15,16 @@ public sealed record KernelPolygon(IReadOnlyList<Vector3R> Vertices, PlaneR Plan
     // The normal of the plane does not change, so the plane of the moved polygon keeps its canonical form.
     public KernelPolygon Moved(Vector3R offset)
         => new([.. Vertices.Select(v => v + offset)], new PlaneR(Plane.Normal, Plane.Normal.Dot(Vertices[0] + offset)), Tag);
+
+    // ADR-0112 item 5 (TASK-0335): the polygon under the linear map p -> x p.X + y p.Y + z p.Z, with a determinant
+    // greater than zero. A normal goes by the cofactors (y × z, z × x, x × y), so the plane is exact also when the map is
+    // not exactly a turn; the canonical form makes two equal planes equal values again.
+    public KernelPolygon Mapped(Vector3R x, Vector3R y, Vector3R z)
+    {
+        Vector3R Map(Vector3R p) => (x * p.X) + (y * p.Y) + (z * p.Z);
+        var n = Plane.Normal;
+        var normal = (y.Cross(z) * n.X) + (z.Cross(x) * n.Y) + (x.Cross(y) * n.Z);
+        var vertices = Vertices.Select(Map).ToList();
+        return new([.. vertices], new PlaneR(normal, normal.Dot(vertices[0])).Canonical(), Tag);
+    }
 }
