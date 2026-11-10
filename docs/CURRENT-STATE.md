@@ -9354,3 +9354,31 @@ pass, and `write-set-check --range <main> --strict` passed before each push.
 New tests: 6. The test list holds 2326 (1528 in `Engine.Tests`, 356 in `3DEngine.Tests`, 439 in `3DEngine.ImageTests`, 3
 in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
 entries: 9 of 15. New diagnostic codes: 0. Since the review of v0.310, 0 product milestones and 3 entries followed it.
+
+## v0.314 — A proposal shows each value that it changes on the chip of that value (R16t, TASK-0334)
+
+The slice that the owner chose on 2026-11-09 after the codebase review: the pending chip of a proposal, which ADR-0092 item
+5 kept for later. An agent made the code in a worktree; this session wrote the record and reviewed the code.
+
+**The change.**
+- ADR-0110 amends ADR-0092 item 5. `ProposedValues` reads the commands of a proposal: each `SetSketchConstraintValue` and
+  each `SetExtrudeDistance` gives a proposed value, a later command for one value replaces the earlier one, and a
+  parameter that does not bind gives no value.
+- While the window shows the proposal, the chip of each proposed value (a value of the selected extrude, or of the active
+  sketch) shows "now → proposed", for example "60 → 75 mm" or "C1  60 → 75 mm", with the dashed amber border of a pending
+  chip. A tap on it opens the pad of the value now, as before.
+- A line of the arc names the value with no identifier: "Plate C1  60 → 75 mm", or "Bracket distance  → 12 mm" with no
+  value now. The host names the values from the sketches, the bodies and the chips of the frame. The fonts have no glyph of
+  the arrow, so the window draws it as a line with a head.
+
+**Proof.** 20 new tests, 19 of them with no GPU. Fifteen injections of the agent failed their tests, and each file came
+back byte for byte; this session repeated two. The picture of the mix at 1440 by 900 shows the chip "60 → 75 mm" on its
+edge and the line "Plate C1  60 → 75 mm"; the owner has it. The phone project builds with zero warnings. Run
+42729734384 passed. The failed runs since the entry v0.313, from the API: none.
+
+**What stays.** Only the two commands have a chip. No test reads the drawn arrow. TASK-0331 (P0.139) holds the medium and
+low findings of the review of 2026-11-09 (b), now after this product phase.
+
+New tests: 20. The test list holds 2346 (1528 in `Engine.Tests`, 356 in `3DEngine.Tests`, 459 in `3DEngine.ImageTests`, 3
+in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
+entries: 9 of 15. New diagnostic codes: 0. Since the review of v0.310, 1 product milestone and 4 entries followed it.
