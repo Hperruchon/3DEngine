@@ -9382,3 +9382,43 @@ low findings of the review of 2026-11-09 (b), now after this product phase.
 New tests: 20. The test list holds 2346 (1528 in `Engine.Tests`, 356 in `3DEngine.Tests`, 459 in `3DEngine.ImageTests`, 3
 in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
 entries: 9 of 15. New diagnostic codes: 0. Since the review of v0.310, 1 product milestone and 4 entries followed it.
+
+## v0.315 — The medium and low findings of the codebase review of 2026-11-09 (b) are fixed (P0.139, TASK-0331)
+
+The review set these findings after the next product phase, R16t, which shipped at v0.314. The owner asked on 2026-11-10
+for the open questions first and then this task.
+
+**The answers of the owner.** Q1 A, Q2 B, Q3 A, Q4 A and Q5 C of the codebase reviews of 2026-11-09 (a and b), which the
+two reviews repeated. The register records them: R-0031 accepts five small gate parts and stays open for T4 (dispatch);
+R-0027 keeps the five planned event kinds of E6 (d); R-0022 (V3 is proved at the first window on macOS) and R-0030 (V7
+part 6) move to the accepted compromises. Q5 C turns the shelf by commands, but no command turns a body, so the new entry
+R-0057 asks for one. The new entry R-0058 holds a fault that a probe of this task found: at 360 by 780 the panel of the
+bodies covers Move of the ring, with no proposal.
+
+**The change.** ADR-0111 amends ADR-0092 items 2, 6 and 7.
+- V160: Reject and Accept, with their words, take a tap before the ring, at the press and at the release.
+- E198: the post refuses a `commandId` that repeats in a proposal. A command whose identifier the session knows gets a
+  cached result and no `command.applied`, so the accept stops there with the new code `E-API-PROPOSAL-COMMAND-KNOWN`.
+- V161: the history arc runs no query with no selection, and its query runs on the thread pool; the frame keeps the steps
+  of the last read until the new read is complete.
+- V162: on a portrait display the sheet ends 8 pixels above the ring when it fits under the top bar, so each tool of the
+  ring takes its tap; else it ends above the anchors, as before.
+- E199: the refusal of a withdraw names the state of the proposal.
+- V163: while an accept runs, the window holds each action and each intent that can change the Document (`AcceptHold`),
+  and the line of the document says why. An action that the list of free actions does not name is held.
+- T180: the gate of the vision library names the library with no version.
+
+**Proof.** 10 new tests, none with a GPU. Twelve injections failed the final tests: one for V160, three for E198, two for
+E199, two for V161, two for V162 and two for V163. Each file came back byte for byte. Two first forms of a test were weak
+and passed with the fault: the points of the test of V160 were out of each tool of the ring, and the test of E199 accepted
+the old text for the state applying. Both tests are now stricter, and the injections fail them. T180 is a text, proved by
+a reading. The phone project builds with zero warnings.
+Run 42772516188 passed. The failed runs since the entry v0.314, from the API: none.
+
+**What stays.** The wiring of the hold and of the read in `NativeThreeDEngine` has no test, because that class needs the
+window; a reading covers it. On a small portrait display the sheet still covers the ring. R-0057 and R-0058 are open.
+
+New tests: 10. The test list holds 2356 (1530 in `Engine.Tests`, 356 in `3DEngine.Tests`, 467 in `3DEngine.ImageTests`, 3
+in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
+entries: 9 of 15. New diagnostic codes: 1 (`E-API-PROPOSAL-COMMAND-KNOWN`). Since the review of v0.310, 1 product
+milestone and 5 entries followed it.

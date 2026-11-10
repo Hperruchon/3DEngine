@@ -219,6 +219,52 @@ public sealed class ProposalArcTests
         Assert.Empty(ui.TakeActions());
     }
 
+    // Finding V160 of the codebase review of 2026-11-09 (b) (TASK-0331): the arc is on the band of the ring of the selected
+    // body, over its tools. A tap on each end and around its middle gives only the action of the proposal: no tool of the
+    // ring and no pad. Until TASK-0331 a tap on Accept also gave the tool of the ring under it, and the pad of Move opened.
+    [Theory]
+    [InlineData(DeviceKind.Touch)]
+    [InlineData(DeviceKind.Mouse)]
+    public void A_Tap_On_An_End_Uses_No_Tool_Of_The_Ring(DeviceKind kind)
+    {
+        using var ui = new DesktopUi("http://127.0.0.1:5180", Document.Millimetre);
+        var card = Card();
+        // A selected face that takes a sketch gives the ring a fourth tool, so its band reaches the end of Accept, as in the
+        // probe of the review.
+        var face = new FaceLine("Face +z of Bracket", true, []);
+        var (pointer, buttons) = kind == DeviceKind.Mouse ? (0UL, PointerButtons.Left) : (3UL, PointerButtons.None);
+        void Step(params InputSample[] samples)
+        {
+            ui.Route(samples);
+            ui.Frame(1f / 60f, Display, Vector2.One, [BracketBody], Bracket, new DocumentLine("bracket", null), face: face, ringCentre: Low, proposals: [card]);
+        }
+
+        Step();
+        Step();
+        var ring = ui.ProposalRing ?? throw new InvalidOperationException("No ring.");
+        var onTools = 0;
+        var words = ui.ProposalWords;
+        foreach (var (item, word, expected) in new[] { (DesktopUi.ProposalRejectItem, words[0], (PanelAction)new RejectProposalAction(card.Id)), (DesktopUi.ProposalAcceptItem, words[1], new AcceptProposalAction(card.Id)) })
+        {
+            var middle = Middle(Item(ui, item));
+            var points = new[] { Vector2.Zero, new Vector2(16, 0), new Vector2(-16, 0), new Vector2(0, 16), new Vector2(0, -16) }.Select(offset => middle + offset)
+                .Concat([Middle(word), new Vector2(word.X + 4, Middle(word).Y), new Vector2(word.Z - 4, Middle(word).Y)]);
+            foreach (var at in points)
+            {
+                if (ring.At([DesktopUi.MoveLabel, DesktopUi.SetDistanceLabel, DesktopUi.HideLabel, DesktopUi.SketchOnFaceButtonLabel], at) is not null)
+                    onTools++;
+                Step(new PointerSample(kind, 1, pointer, at.X, at.Y, 1, buttons, KeyModifiers.None, PointerPhase.Down, 0));
+                Step(new PointerSample(kind, 1, pointer, at.X, at.Y, 1, buttons, KeyModifiers.None, PointerPhase.Up, 0));
+                Step();
+                Assert.Equal([expected], ui.TakeActions());
+                Assert.Null(ui.Pad);
+            }
+        }
+
+        // The control: some points are on a tool of the ring.
+        Assert.True(onTools >= 1, "No point is on a tool of the ring.");
+    }
+
     // Items 3 to 6: the four command lines and "and N more", the count and the steps of undo, "1 of 3" when more proposals
     // wait, and the line of a stale proposal.
     [Fact]
@@ -335,6 +381,89 @@ public sealed class ProposalArcTests
         var reject = Middle(Item(ui, DesktopUi.ProposalRejectItem));
         Tap(ui, [card, Card("Second")], reject, reject, kind, portrait);
         Assert.Equal([new RejectProposalAction(card.Id)], ui.TakeActions());
+    }
+
+    // ADR-0111 item 4 (TASK-0331): on a portrait display the sheet ends above the ring of the selected body, so each tool of the
+    // ring is out of the sheet and takes its tap, while the sheet stays under the top bar. Finding V162 of the codebase review
+    // of 2026-11-09 (b): until TASK-0331 the sheet ended above the anchors and covered Move, Set distance and Hide at 390 by 844.
+    [Theory]
+    [InlineData(390, 844)]
+    [InlineData(412, 915)]
+    [InlineData(393, 873)]
+    public void A_Portrait_Sheet_Leaves_The_Tools_Of_The_Ring_Free(int width, int height)
+    {
+        using var ui = new DesktopUi("http://127.0.0.1:5180", Document.Millimetre);
+        var portrait = new Vector2(width, height);
+        var card = Card(commands: 2);
+        Frames(ui, [card], Bracket, portrait);
+        Frames(ui, [card], Bracket, portrait);
+
+        // The sheet is the smallest panel that holds Accept; the panel of the bodies holds it too on a phone.
+        var accept = Item(ui, DesktopUi.ProposalAcceptItem);
+        var sheet = ui.PanelRectangles.Where(panel => panel.Y < accept.Y && panel.W > accept.W).MinBy(panel => panel.W - panel.Y);
+        var top = ui.RingTop() ?? throw new InvalidOperationException("No ring.");
+        Assert.True(sheet.W <= top, $"{width}x{height}: the sheet {sheet} is not above the ring, whose top is {top}.");
+        Assert.True(sheet.Y >= Item(ui, DesktopUi.TitleItem).W, $"{width}x{height}: the sheet {sheet} is under the top bar.");
+        foreach (var label in new[] { DesktopUi.MoveLabel, DesktopUi.SetDistanceLabel, DesktopUi.HideLabel })
+        {
+            var tool = Middle(Item(ui, DesktopUi.RingItem(label)));
+            Assert.False(tool.X >= sheet.X && tool.X < sheet.Z && tool.Y >= sheet.Y && tool.Y < sheet.W, $"{width}x{height}: {label} at {tool} is under the sheet {sheet}.");
+        }
+
+        // A tap on Move opens its pad, as with no proposal; the proposal stays.
+        var move = Middle(Item(ui, DesktopUi.RingItem(DesktopUi.MoveLabel)));
+        Tap(ui, [card], move, move, DeviceKind.Touch, portrait);
+        Assert.DoesNotContain(ui.TakeActions(), action => action is AcceptProposalAction or RejectProposalAction);
+        Assert.NotNull(ui.Pad);
+    }
+
+    // ADR-0111 item 4: when the room between the top bar and the ring is too small for the sheet, the sheet ends above the
+    // anchors and covers the ring, as before; its Reject and Accept still take their taps.
+    [Fact]
+    public void A_Sheet_With_No_Room_Above_The_Ring_Ends_Above_The_Anchors()
+    {
+        using var ui = new DesktopUi("http://127.0.0.1:5180", Document.Millimetre);
+        var portrait = new Vector2(390, 560);
+        var card = Card(commands: 5);
+        Frames(ui, [card], Bracket, portrait);
+        Frames(ui, [card], Bracket, portrait);
+
+        var anchors = Item(ui, DesktopUi.UndoLabel);
+        var accept = Item(ui, DesktopUi.ProposalAcceptItem);
+        Assert.True(accept.W <= anchors.Y && accept.W > (ui.RingTop() ?? 0f), $"Accept {accept} is not between the ring and the anchors {anchors}.");
+        var at = Middle(accept);
+        Tap(ui, [card], at, at, DeviceKind.Touch, portrait);
+        Assert.Equal([new AcceptProposalAction(card.Id)], ui.TakeActions());
+    }
+
+    // ADR-0111 item 3 (TASK-0331): while an accept runs, the host holds each action and each intent that can change the
+    // Document; the selection, the camera, the frame and the tools that open a pad stay free. An action that the list does not
+    // name is held. Finding V163 of the codebase review of 2026-11-09 (b): until TASK-0331 an Undo ran between two commands of
+    // an accept.
+    [Fact]
+    public void The_Actions_That_Change_The_Document_Wait_For_An_Accept()
+    {
+        var body = Guid.NewGuid();
+        PanelAction[] held =
+        [
+            new UndoAction(), new RedoAction(), new CreateBoxAction(10, 10, 10), new MoveBodyAction(body, 1, 0, 0),
+            new SetDistanceAction(body, 20), new RenameBodyAction(body, "Plate"), new SetVisibleAction(body, false),
+            new ShowAllAction(), new OpenProjectAction(), new NewPartAction(), new ImportStlAction(), new FinishSketchAction(),
+        ];
+        foreach (var action in held)
+            Assert.True(AcceptHold.Holds(action), $"{action.GetType().Name} is not held.");
+        PanelAction[] free =
+        [
+            new SelectBodyAction(body), new FrameAction(), new HomeAction(), new EditDistanceAction(body),
+            new AcceptProposalAction(body), new RejectProposalAction(body),
+        ];
+        foreach (var action in free)
+            Assert.False(AcceptHold.Holds(action), $"{action.GetType().Name} is held.");
+
+        foreach (var intent in new Intent[] { new UndoIntent(), new RedoIntent(), new HideIntent(1, 1), new ShowAllIntent(), new SketchPointIntent(1, 1), new GizmoEndIntent(1, 1) })
+            Assert.True(AcceptHold.Holds(intent), $"{intent.GetType().Name} is not held.");
+        foreach (var intent in new Intent[] { new OrbitIntent(1, 1), new PanIntent(1, 1), new ZoomIntent(2), new SelectIntent(1, 1), new GizmoMoveIntent(1, 1) })
+            Assert.False(AcceptHold.Holds(intent), $"{intent.GetType().Name} is held.");
     }
 
     // Item 7: the arc does not show on the home screen; nothing of a proposal is there, and no tap reaches it.
