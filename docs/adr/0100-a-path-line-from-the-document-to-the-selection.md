@@ -109,3 +109,4 @@ line in this window yet.
 - 2026-11-09 · TASK-0314 · The record, with the answers of the owner of 2026-11-08 and Q1 A.
 - 2026-11-10 · TASK-0314 · Item 5: on a portrait display the panel ends above the ring of the selected body, after the
   merge of P0.139 showed that the path line moved the panel onto Move at 390 by 844.
+- 2026-11-10 · TASK-0314 · Shipped at v0.316.
