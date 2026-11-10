@@ -101,3 +101,5 @@ Weakest:    to be written at the close.
 ## Progress
 - 2026-11-10: the command Rotate, ADR-0112 (Proposed), the turn in the kernel, the rebuild and the datums, the probe, and
   10 tests. Nine injections each fail a test. The owner accepts ADR-0112 before the merge.
+- 2026-11-10: run 42798565576 passed on the branch, and the four hashes agree (b116685c). The owner accepted ADR-0112.
+  Main moved to v0.316 (R17a); its merge into the branch has no conflict.

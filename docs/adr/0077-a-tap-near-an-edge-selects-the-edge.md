@@ -1,13 +1,13 @@
 ---
 id: 0077
 title: An edge is named by its two faces, and a tap near an edge of the selected face selects it
-status: Accepted
+status: Amended
 topic: Clients, selection, kernel
 date: 2026-11-06
 supersedes: []
 superseded-by: []
 amends: ['0075']
-amended-by: []
+amended-by: ['0100']
 affects:
   - Engine.Core/Queries/GetFacesQuery.cs
   - Engine.Core/Queries/GetFacesQueryHandler.cs
@@ -122,3 +122,5 @@ for example two faces in one plane on the two sides of the line (item 6).
   affects field names the four files of the panel and of the mark that TASK-0245 changed (finding T164).
 - 2026-11-06 · TASK-0252 · Item 3: the host asks for the edge before the pick (finding V117 of the codebase review of
   2026-11-06 (e)).
+- 2026-11-09 · TASK-0314 · ADR-0100 item 3 amends item 3: after the body, Escape goes up to the document and clears the
+  body.

@@ -440,6 +440,10 @@ public sealed class NativeThreeDEngine : IThreeDEngine, IDisposable
                 case SelectBodyAction select:
                     _actions.Select(select.Body);
                     break;
+                // ADR-0100 item 2 (phase R17a, TASK-0314): a tap on a segment of the path line selects that level.
+                case PathAction path:
+                    _actions.Up(path.Level);
+                    break;
                 case RenameBodyAction rename:
                     _actions.Rename(rename.Body, rename.Name);
                     break;
@@ -704,8 +708,9 @@ public sealed class NativeThreeDEngine : IThreeDEngine, IDisposable
     // IDocumentFiles the panel had no line, so the rejection of a cut, of an Undo or of a sketch on a face showed nothing
     // on the phone, although ADR-0073 item 2 sends it to the line of the document.
     // ADR-0102 item 7 (TASK-0316): and the folder of the file of a project, which the top bar shows after its name.
-    internal static DocumentLine LineOf(IDocumentFiles? files, string? fileName, string? message, string? folder = null)
-        => new(fileName, message, Files: files is { HasFolder: true }, Folder: fileName is null ? null : folder);
+    // ADR-0100 item 4 (phase R17a, TASK-0314): and the kind of the document, for the rows of the document.
+    internal static DocumentLine LineOf(IDocumentFiles? files, string? fileName, string? message, string? folder = null, string? kind = null)
+        => new(fileName, message, Files: files is { HasFolder: true }, Folder: fileName is null ? null : folder, Kind: kind);
 
     // V106 (TASK-0243): true when the last Render submitted a frame.
     public bool Drew => _graphicsDevice?.Presenter?.Drew ?? false;
@@ -808,7 +813,10 @@ public sealed class NativeThreeDEngine : IThreeDEngine, IDisposable
             faceLine = new FaceLine(FaceOverlay.Text(selectedFace, _host.Session.LengthUnit), selectedFace.Normal is not null,
                 FaceOverlay.Of(selectedFace.Outline, Camera, window.width, window.height, drag),
                 selectedEdge is null ? null : FaceOverlay.EdgeText(selectedEdge, _host.Session.LengthUnit),
-                selectedEdge is null ? null : FaceOverlay.Of(selectedEdge.Segments, Camera, window.width, window.height, drag));
+                selectedEdge is null ? null : FaceOverlay.Of(selectedEdge.Segments, Camera, window.width, window.height, drag),
+                // ADR-0100 item 1 (phase R17a, TASK-0314): the short names of the path line.
+                $"Face {selectedFace.Reference.Element}",
+                selectedEdge is null ? null : $"Edge {selectedEdge.First.Element} | {selectedEdge.Second.Element}");
         }
 
         // ADR-0081 (TASK-0253): the centre of the box of the selected body on the screen, for the tool ring. ADR-0086 item 1
@@ -875,7 +883,7 @@ public sealed class NativeThreeDEngine : IThreeDEngine, IDisposable
 
         // ADR-0102 item 5 (Q3 A): the question shows while a change of project waits for its answer.
         _ui.ShowQuestion(_projects?.Asking ?? false);
-        var panel = _ui.Frame((float)_delta.TotalSeconds, display, scale, _renderer.LiveBodies, Selection, LineOf(_document, _host.FileName, _documentMessage, Path.GetDirectoryName(_host.Session.FilePath)), sketches, sketchPanel, imagePanel, dimensions, size, faceLine, ringCentre, ringSize, Inset(_window.SafeInsets), values, history, proposals, sketchValues);
+        var panel = _ui.Frame((float)_delta.TotalSeconds, display, scale, _renderer.LiveBodies, Selection, LineOf(_document, _host.FileName, _documentMessage, Path.GetDirectoryName(_host.Session.FilePath), _host.Session.Kind), sketches, sketchPanel, imagePanel, dimensions, size, faceLine, ringCentre, ringSize, Inset(_window.SafeInsets), values, history, proposals, sketchValues);
         ApplyPanel(_renderer.LiveBodies);
 
         var ui = _uiRenderer;

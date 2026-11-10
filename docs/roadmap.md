@@ -329,6 +329,8 @@ Therefore each approved objective must have a track here.
   names it. v0.314, TASK-0334, ADR-0110.
 - P0.139 — The medium and low findings of the codebase review of 2026-11-09 (b): the taps, the identifiers and the steps of
   a proposal, the portrait sheet, and the history arc off the frame. v0.315, TASK-0331, ADR-0111.
+- R17a — A path line from the document to the selection: a tap on a segment and Escape go up one level, and the rows of
+  the document show with nothing selected. v0.316, TASK-0314, ADR-0100.
 
 ## Track 0 — Foundations
 

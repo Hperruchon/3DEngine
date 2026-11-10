@@ -41,45 +41,176 @@ internal sealed unsafe partial class DesktopUi
     // command line at the upper right.
     // ADR-0102 item 7 (phase P9g, TASK-0316): the folder of the file follows its name in the quiet colour, cut at its start so
     // that the last folders stay, where the room left of the command line holds at least 48 pixels of it.
-    private void TopBar(Vector2 displaySize, DocumentLine? document)
+    // ADR-0100 item 1 (phase R17a, TASK-0314): on a landscape display the file of the top bar is the first segment of the path
+    // line: the file, the selected body, the selected face and the selected edge. Each segment is 44 pixels high (ADR-0027
+    // item 6), so the window of the top bar starts above its text by half the difference, and the text stays in its place. A
+    // portrait display gives the program and the unit here, and the path line under them (item 5).
+    private void TopBar(Vector2 displaySize, DocumentLine? document, LiveBody? body)
     {
-        ImGui.SetNextWindowPos(new Vector2(16f + _inset.X, 16f + _inset.Y), ImGuiCond.Always);
+        var portrait = displaySize.X < displaySize.Y;
+        var (left, top) = (16f + _inset.X, 16f + _inset.Y);
+        var pad = PathPad;
+        ImGui.SetNextWindowPos(new Vector2(left, portrait ? top : top - pad), ImGuiCond.Always);
         ImGui.PushStyleVar(ImGuiStyleVar.WindowPadding, Vector2.Zero);
+        ImGui.PushStyleVar(ImGuiStyleVar.ItemSpacing, Vector2.Zero);
         if (ImGui.Begin("##TopBar", FixedFlags))
         {
-            var colours = ImGui.GetStyle().Colors;
-            var parts = TitleParts(document);
-            // Finding V156 of the codebase review of 2026-11-09 (TASK-0324): the command line shows on a landscape display only,
-            // so only there the top bar leaves its width. Until TASK-0324 a portrait display cut the name 300 pixels early.
-            var commandLeft = displaySize.X - 16f - _inset.Z - (displaySize.X >= displaySize.Y ? CommandWidth : 0f);
-            var room = parts.Count == 3
-                ? commandLeft - 12f - (16f + _inset.X) - ImGui.CalcTextSize(parts[0]).X - ImGui.CalcTextSize(parts[2]).X - 24f
-                : RowsWidth;
-            var nameWidth = Math.Clamp(room, 48f, RowsWidth);
-            var folderRoom = parts.Count == 3 && document?.Folder is not null
-                ? room - ImGui.CalcTextSize(Fit(parts[1], nameWidth)).X - 12f
-                : 0f;
-            ImGui.TextUnformatted(parts[0]);
-            for (var i = 1; i < parts.Count; i++)
+            const string program = "3DEngine";
+            if (portrait)
             {
+                ImGui.TextUnformatted(program);
                 ImGui.SameLine(0f, 12f);
-                ImGui.PushStyleColor(ImGuiCol.Text, colours[(int)(i == parts.Count - 1 ? ImGuiCol.TextDisabled : ImGuiCol.Text)]);
-                ImGui.TextUnformatted(i == 1 && parts.Count == 3 ? Fit(parts[i], nameWidth) : parts[i]);
-                ImGui.PopStyleColor();
-                if (i == 1 && folderRoom >= 48f && document?.Folder is { } folder)
-                {
-                    ImGui.SameLine(0f, 12f);
-                    ImGui.TextDisabled(FitStart(folder, folderRoom));
-                    _items[TitleFolderItem] = new Vector4(ImGui.GetItemRectMin().X, ImGui.GetItemRectMin().Y, ImGui.GetItemRectMax().X, ImGui.GetItemRectMax().Y);
-                }
+                ImGui.TextDisabled(_unit);
+            }
+            else
+            {
+                // Finding V156 of the codebase review of 2026-11-09 (TASK-0324): the command line shows on a landscape display
+                // only, so only there the top bar leaves its width.
+                var commandLeft = displaySize.X - 16f - _inset.Z - CommandWidth;
+                var room = commandLeft - 12f - left - ImGui.CalcTextSize(program).X - ImGui.CalcTextSize(_unit).X - 24f;
+                Label(program, quiet: false, pad);
+                ImGui.SameLine(0f, 12f);
+                PathRow(document, body, room, pad);
+                ImGui.SameLine(0f, 12f);
+                Label(_unit, quiet: true, pad);
             }
 
             AddWindowRectangle();
-            _items[TitleItem] = _fixed[^1];
+            var window = _fixed[^1];
+            _items[TitleItem] = portrait ? window : new Vector4(window.X, top, window.Z, top + ImGui.GetTextLineHeight());
         }
 
         ImGui.End();
-        ImGui.PopStyleVar();
+        ImGui.PopStyleVar(2);
+        if (portrait)
+            PathLine(displaySize, document, body);
+    }
+
+    // ADR-0100 item 1: the item of the path line, and the item of each of its segments.
+    public const string PathItem = "Path";
+
+    public static string PathSegmentItem(PathLevel level) => $"Path:{level}";
+
+    // ADR-0100 item 1: the height of a segment, the width of the place of a separator between two segments, and the space
+    // above the text of a segment.
+    internal const float PathHeight = MinimumControlHeight;
+    internal const float PathSeparator = 24f;
+
+    private static float PathPad => Math.Max((PathHeight - ImGui.GetTextLineHeight()) / 2f, 0f);
+
+    // ADR-0100 item 1: the segments of the path line, each with its level. The document is the file, "unsaved", or "Document"
+    // for a host with no files; then the body, by its name or its kind; then the face and the edge, by their short names.
+    internal IReadOnlyList<(string Text, PathLevel Level)> PathSegments(DocumentLine? document, LiveBody? body)
+    {
+        var segments = new List<(string Text, PathLevel Level)>
+        {
+            (document is { Files: true } files ? files.FileName ?? "unsaved" : "Document", PathLevel.Document),
+        };
+        if (body is null)
+            return segments;
+        segments.Add((body.Name ?? body.Kind, PathLevel.Body));
+        if (_face?.Name is { } face)
+        {
+            segments.Add((face, PathLevel.Face));
+            if (_face.EdgeName is { } edge)
+                segments.Add((edge, PathLevel.Edge));
+        }
+
+        return segments;
+    }
+
+    // ADR-0100 item 1: the texts of the segments in the room. The file name is at most as wide as the rows (V115). A path that
+    // is too wide gives "..." for each middle segment first, from the second one; then it cuts the file name, then the last
+    // segment, each to at least 48 pixels.
+    internal static IReadOnlyList<string> PathFit(IReadOnlyList<string> texts, float room)
+    {
+        var fitted = texts.ToArray();
+        fitted[0] = Fit(fitted[0], RowsWidth);
+        float Width() => fitted.Sum(text => ImGui.CalcTextSize(text).X) + (PathSeparator * (fitted.Length - 1));
+        for (var i = 1; i < fitted.Length - 1 && Width() > room; i++)
+            fitted[i] = "...";
+        foreach (var i in new[] { 0, fitted.Length - 1 }.Distinct())
+        {
+            if (Width() > room)
+                fitted[i] = Fit(fitted[i], Math.Max(48f, room - (Width() - ImGui.CalcTextSize(fitted[i]).X)));
+        }
+
+        return fitted;
+    }
+
+    // ADR-0100 items 1 and 2: the segments in the current window, with a separator between two of them. A press on a segment
+    // that is not the last one selects its level; the last one is the selection, and takes no tap. With nothing selected, the
+    // folder of the file follows its name (ADR-0102 item 7).
+    private void PathRow(DocumentLine? document, LiveBody? body, float room, float pad)
+    {
+        var segments = PathSegments(document, body);
+        var texts = PathFit([.. segments.Select(segment => segment.Text)], room);
+        var colours = ImGui.GetStyle().Colors;
+        var list = ImGui.GetWindowDrawList();
+        var quiet = ImGui.GetColorU32(colours[(int)ImGuiCol.TextDisabled]);
+        for (var i = 0; i < segments.Count; i++)
+        {
+            if (i > 0)
+            {
+                ImGui.SameLine(0f, 0f);
+                ImGui.Dummy(new Vector2(PathSeparator, PathHeight));
+                var middle = (ImGui.GetItemRectMin() + ImGui.GetItemRectMax()) / 2f;
+                list.AddLine(middle + new Vector2(-3f, -6f), middle + new Vector2(3f, 0f), quiet, 2f);
+                list.AddLine(middle + new Vector2(3f, 0f), middle + new Vector2(-3f, 6f), quiet, 2f);
+                ImGui.SameLine(0f, 0f);
+            }
+
+            var size = new Vector2(ImGui.CalcTextSize(texts[i]).X, PathHeight);
+            var level = segments[i].Level;
+            if (i < segments.Count - 1)
+            {
+                if (ImGui.InvisibleButton($"##path{level}", size))
+                    _actions.Add(new PathAction(level));
+                if (ImGui.IsItemHovered())
+                    list.AddRectFilled(ImGui.GetItemRectMin() - new Vector2(4f, 0f), ImGui.GetItemRectMax() + new Vector2(4f, 0f), ImGui.GetColorU32(colours[(int)ImGuiCol.ButtonHovered]), 6f);
+            }
+            else
+            {
+                ImGui.Dummy(size);
+            }
+
+            Item(PathSegmentItem(level));
+            list.AddText(ImGui.GetItemRectMin() + new Vector2(0f, pad), ImGui.GetColorU32(colours[(int)ImGuiCol.Text]), texts[i]);
+        }
+
+        var folderRoom = room - ImGui.CalcTextSize(texts[0]).X - 12f;
+        if (segments.Count == 1 && document?.Folder is { } folder && folderRoom >= 48f)
+        {
+            ImGui.SameLine(0f, 12f);
+            Label(FitStart(folder, folderRoom), quiet: true, pad);
+            _items[TitleFolderItem] = new Vector4(ImGui.GetItemRectMin().X, ImGui.GetItemRectMin().Y + pad, ImGui.GetItemRectMax().X, ImGui.GetItemRectMax().Y - pad);
+        }
+    }
+
+    // A text with no tap, in an item as high as a segment of the path.
+    private static void Label(string text, bool quiet, float pad)
+    {
+        ImGui.Dummy(new Vector2(ImGui.CalcTextSize(text).X, (2f * pad) + ImGui.GetTextLineHeight()));
+        var colours = ImGui.GetStyle().Colors;
+        ImGui.GetWindowDrawList().AddText(ImGui.GetItemRectMin() + new Vector2(0f, pad), ImGui.GetColorU32(colours[(int)(quiet ? ImGuiCol.TextDisabled : ImGuiCol.Text)]), text);
+    }
+
+    // ADR-0100 item 5: on a portrait display the path line is the first line under the top bar, and the panel is under it.
+    private void PathLine(Vector2 displaySize, DocumentLine? document, LiveBody? body)
+    {
+        var left = 16f + _inset.X;
+        ImGui.SetNextWindowPos(new Vector2(left, 16f + _inset.Y + TopBarHeight), ImGuiCond.Always);
+        ImGui.PushStyleVar(ImGuiStyleVar.WindowPadding, Vector2.Zero);
+        ImGui.PushStyleVar(ImGuiStyleVar.ItemSpacing, Vector2.Zero);
+        if (ImGui.Begin("##Path", FixedFlags))
+        {
+            PathRow(document, body, displaySize.X - 16f - _inset.Z - 12f - left, PathPad);
+            AddWindowRectangle();
+            _items[PathItem] = _fixed[^1];
+        }
+
+        ImGui.End();
+        ImGui.PopStyleVar(2);
     }
 
     // ADR-0093 item 3: the text of the status line: the count of the live bodies, their state, and the address of the surface.
@@ -113,9 +244,9 @@ internal sealed unsafe partial class DesktopUi
         }
     }
 
-    private void FixedControls(Vector2 displaySize, IReadOnlyList<LiveBody> bodies, DocumentLine? document)
+    private void FixedControls(Vector2 displaySize, IReadOnlyList<LiveBody> bodies, DocumentLine? document, LiveBody? body)
     {
-        TopBar(displaySize, document);
+        TopBar(displaySize, document, body);
 
         // Undo and Redo at the bottom left (ADR-0031 item 11, amended by ADR-0080). Finding V118 of the codebase review of
         // 2026-11-06 (e) (TASK-0252): inside the safe area of the display, so that the navigation bar of the phone does not
