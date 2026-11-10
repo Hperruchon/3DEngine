@@ -1,7 +1,7 @@
 ---
 id: 0340
 title: The values as in the render, with three decimals on a pill on a dimension line outside the body
-status: Active
+status: Done
 phase: R18c
 opened: 2026-11-10
 depends-on: [0332]
@@ -103,3 +103,4 @@ Weakest:    the drawing of the extension lines and of the dimension line: a test
   failures of the heartbeat tests on Windows with no change of the surface. This commit sets the task Active, and the
   next commit sets it Done again; the branch r18c-values-b replaces r18c-values, whose commit of this record skipped
   that step and failed the write-set check. A force push is not permitted.
+- 2026-11-10: Done again at v0.325.
