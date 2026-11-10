@@ -90,7 +90,8 @@ A change to an objective needs a decision from the owner. See `CLAUDE.md`, secti
 
 17. The engine keeps its current shape. The command log, the event stream and replay determinism
     stay.
-18. 2D drawing, electrical schematics and technical drawing stay directions. They have no date.
+18. 2D drawing and technical drawing of a part have a place in the roadmap after R18 (ADR-0118, the decision
+    of the owner of 2026-11-10). Electrical schematics stay a direction. They have no date.
 19. C# and the .NET platform are the default for the engine. Another language is acceptable when
     learning that language is also a goal.
 20. The project stays open source.
@@ -175,7 +176,7 @@ Do not build one of these under a current task.
 - A bind to an address other than localhost.
 - An authentication design.
 - An event schema from a registry.
-- 2D drawing, technical drawing and electrical schematics.
+- Electrical schematics.
 - Materials, chemistry and biological data.
 - Simulation and analysis.
 - Assemblies. These arrive after the reference model operates.
