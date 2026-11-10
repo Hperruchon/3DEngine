@@ -204,7 +204,8 @@ internal sealed unsafe partial class DesktopUi
         var x = left;
         foreach (var (part, red) in parts)
         {
-            list.AddText(new Vector2(x, first + lineHeight), red ? FailedColour : quiet, part);
+            // ADR-0108 item 5 (phase R18a, TASK-0332): "correct" is green, as the render.
+            list.AddText(new Vector2(x, first + lineHeight), red ? FailedColour : part == "correct" ? Theme.Correct : quiet, part);
             x += ImGui.CalcTextSize(part).X;
         }
         list.AddLine(new Vector2(left, top + RowHeight), new Vector2(right, top + RowHeight), line, 1f);

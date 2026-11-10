@@ -265,12 +265,12 @@ internal sealed unsafe partial class DesktopUi
         {
             var hovered = ring.At(labels, io.MousePos) == segment.Label && !ImGui.IsWindowHovered(ImGuiHoveredFlags.AnyWindow);
             // ADR-0086 item 2: the tool in use has the colour of an active control.
-            // ADR-0101 item 3: while a focus lasts, "Focus" has the colour of an active control too.
+            // ADR-0101 item 3 (phase R17b, TASK-0315): while a focus lasts, "Focus" has the colour of an active control too.
             var inUse = (_sketchActive && SketchRingTools.FirstOrDefault(tool => tool.Label == segment.Label).Kind is { } kind && kind == _sketchTool)
                 || (!_sketchActive && segment.Label == FocusLabel && Focus is not null);
-            // ADR-0095 item 2: a light ground, so the scene shows through a segment that is not in use or under the pointer.
-            var shade = colours[(int)(inUse ? ImGuiCol.ButtonActive : hovered ? ImGuiCol.ButtonHovered : ImGuiCol.Button)];
-            var ground = ImGui.GetColorU32(inUse ? shade : shade with { W = hovered ? 0.7f : 0.35f });
+            // ADR-0108 item 2 (phase R18a, TASK-0332): no fill at rest, and the light fill of the theme under the pointer and
+            // for the tool in use. Until TASK-0332 each segment had a blue ground at alpha 0.35 (ADR-0095 item 2).
+            var ground = ImGui.GetColorU32(colours[(int)(inUse ? ImGuiCol.ButtonActive : hovered ? ImGuiCol.ButtonHovered : ImGuiCol.Button)]);
             // A segment is not convex, so it is filled as a row of small quads.
             const int steps = 12;
             for (var i = 0; i < steps; i++)
@@ -282,7 +282,8 @@ internal sealed unsafe partial class DesktopUi
 
             list.PathArcTo(ring.Centre, ring.Outer, segment.From, segment.To);
             list.PathArcTo(ring.Centre, ring.Inner, segment.To, segment.From);
-            list.PathStroke(ImGui.GetColorU32(colours[(int)ImGuiCol.Border]), ImDrawFlags.Closed, 1.5f);
+            // ADR-0108 item 2: a thin outline; the tool in use has a wider outline in the accent, its clear mark with no fill.
+            list.PathStroke(inUse ? ImGui.GetColorU32(Theme.Accent) : ImGui.GetColorU32(colours[(int)ImGuiCol.Border]), ImDrawFlags.Closed, inUse ? Theme.InUseWidth : 1.5f);
 
             var middle = ring.Middle(segment);
             // ADR-0095 item 3: the short label of the render, and a drawn icon above it.
@@ -302,13 +303,15 @@ internal sealed unsafe partial class DesktopUi
             {
                 var inner = ring.Centre.X + (MathF.Cos((segment.From + segment.To) / 2f) * ring.Inner);
                 place.X = Math.Min(inner + 6f, displaySize.X - _inset.Z - 4f - text.X);
-                list.AddRectFilled(place - new Vector2(4f, 2f), place + text + new Vector2(4f, 2f), ground, 4f);
+                // ADR-0108 item 2: the plate has the ground of the scene, because a segment has no fill at rest.
+                list.AddRectFilled(place - new Vector2(4f, 2f), place + text + new Vector2(4f, 2f), Theme.Plate(0.85f), 4f);
             }
             else
             {
                 var top = middle.Y - (((2f * IconHalf) + IconGap + text.Y) / 2f);
                 var icon = new Vector2(middle.X, top + IconHalf);
-                if (RingIcon(list, segment.Label, icon, ink))
+                // ADR-0108 item 2: the icon is in the accent, as the render, with the alpha of the style, so it dims with the ring.
+                if (RingIcon(list, segment.Label, icon, ImGui.GetColorU32(Theme.Accent)))
                 {
                     place.Y = top + (2f * IconHalf) + IconGap;
                     _items[RingIconItem(segment.Label)] = new Vector4(icon.X - IconHalf, icon.Y - IconHalf, icon.X + IconHalf, icon.Y + IconHalf);
