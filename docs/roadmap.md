@@ -331,8 +331,10 @@ Therefore each approved objective must have a track here.
   a proposal, the portrait sheet, and the history arc off the frame. v0.315, TASK-0331, ADR-0111.
 - R17a — A path line from the document to the selection: a tap on a segment and Escape go up one level, and the rows of
   the document show with nothing selected. v0.316, TASK-0314, ADR-0100.
+- R19 — The responsive layout: each control stays in the display and free for a tap at six phone sizes, three landscape
+  phone sizes, a tablet and two windows. v0.317, TASK-0336, ADR-0113.
 - K8 — A command turns a body by a quaternion about the origin of the Document; the kernel, the rebuild, the datums and
-  the determinism probe read the turn. v0.317, TASK-0335, ADR-0112.
+  the determinism probe read the turn. v0.318, TASK-0335, ADR-0112.
 
 ## Track 0 — Foundations
 
@@ -579,6 +581,7 @@ The first objective. Each phase ends with something that a person can observe.
 | R18h | A value typed in the command line goes to the pad of its command, through the evaluator (S8; ADR-0098 Q1 B of 2026-11-08). | 1 |
 | R18i | The proposal in the window: the old value crossed out and the new value in the rows and on the edge, a pending node on the history arc, a glow on the edge of the screen, and a message after Accept (S9). | 2 |
 | R18j | The comparison of R18 at 1280 by 720, 1024 by 768, 768 by 1024 and the phone, and the gaps that it finds (S10). | 1 |
+| R19 | The responsive layout: each control stays in the display and free for a tap at six phone sizes in portrait, three in landscape, a tablet and two windows, with one test over all of them (ADR-0113; the order of the owner of 2026-11-10, after R17a). TASK-0336. | 1 |
 
 ## Track K — The kernel
 
@@ -689,6 +692,8 @@ The tracks are not strictly sequential, but three rules hold:
    (TASK-0332) and R18b (TASK-0333) come after P0.139, R17a and R17b, and they can run at the same time in two
    worktrees. R18c to R18j follow in their order; each opens its task when it starts. Each slice merges after green
    continuous integration, and its session sends its picture beside the render (Q7 A).
+   On 2026-11-10 the owner asked for the responsive layout of the app, at the phone sizes and in small windows, after
+   the close of R17a and before R18a and R18b. R19 (TASK-0336) does it; a layout that works on the desktop is not a fault.
 2. R2 blocks each later phase in track R. No mesh leaves the geometry backend today.
 3. K4 needs K0, K1 and K2. Do not start K4 before the reference model exists.
 4. The path to the milestone "CAD on one part" (the owner, 2026-10-27, KD2): R7b, R8a, R8b, the codebase

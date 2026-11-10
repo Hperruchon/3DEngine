@@ -1,7 +1,7 @@
 ---
 id: 0335
 title: A command turns a body by a quaternion about the origin of the Document
-status: Done
+status: Active
 phase: K8
 opened: 2026-11-10
 depends-on: [0331]
@@ -90,7 +90,7 @@ A client, the command line or an agent turns a body with one command, and each p
 
 ## Outcome
 
-Status: Done · commit (the merge of the branch r0057-rotate-body) · v0.317
+Status: Done · commit (the merge of the branch r0057-rotate-body) · v0.318
 
 ## Method
 
@@ -105,3 +105,5 @@ Weakest:    the kernel refuses a map with a determinant of zero or less, and the
 - 2026-11-10: run 42798565576 passed on the branch, and the four hashes agree (b116685c). The owner accepted ADR-0112.
   Main moved to v0.316 (R17a); its merge into the branch has no conflict.
 - 2026-11-10: run 42798565576 passed. Closed at v0.317.
+- 2026-11-10: R19 merged first at v0.317, so K8 closes at v0.318; the merge of main resolves the register, the
+  roadmap, the index of the ADRs and the ledger by keeping both sides.

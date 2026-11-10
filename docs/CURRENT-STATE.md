@@ -9458,7 +9458,42 @@ New tests: 14. The test list holds 2370 (1530 in `Engine.Tests`, 356 in `3DEngin
 in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
 entries: 9 of 15. New diagnostic codes: 0. Since the review of v0.310, 2 product milestones and 6 entries followed it.
 
-## v0.317 — A command turns a body by a quaternion about the origin of the Document (K8, TASK-0335)
+## v0.317 — The layout keeps each control in the display at each phone size and in a small window (R19, TASK-0336)
+
+On 2026-11-10 the owner asked for the responsive layout of the app: the phone sizes and the small windows, after the close
+of R17a. A layout that works on the desktop is not a fault. A probe at v0.316 drew the window at eleven sizes in four
+states (nothing selected, a body, a face, a proposal) and found five faults; 768 by 1024 and larger gave none.
+
+**The change.** ADR-0113 amends ADR-0081, ADR-0092, ADR-0093 and ADR-0098.
+- A control of the panel that does not fit on its line starts a new line. The fields of the filter and of the name are
+  narrower when their line has no room. Until this task, at 390 pixels and less, "Face", "Clear", "Hidden too", "Rename"
+  and "Sketch on face" went past the right edge of the panel.
+- On a portrait display "AGENT IS WAITING" goes under the path line, and the panel starts under it. Since R17a the path
+  line covered it.
+- The command line is 30 percent of a narrow landscape display, from 200 to 300 pixels, and the panel ends 12 pixels left
+  of it. At 640 by 360 they overlapped.
+- On a short landscape display the ring of a body has a smaller inner radius, at least 100 pixels, so it fits above the
+  anchors. A ring that fits keeps its radius and its place, so the desktop does not change. At 640 by 360 the status line
+  covered Hide.
+- The caption and the lines of a proposal in the ring stay out of a fixed window, as the rows of the body.
+
+**Proof.** 14 new tests, 13 of them with no GPU: `ResponsiveLayoutTests` reads each control at 13 sizes (six phones in
+portrait, three in landscape, a tablet in both, 1280 by 720 and 1440 by 900) in four states. Six injections, one for each
+change and one for ADR-0100 item 5, each failed the test, and each file came back. A first form of the ring rule moved the
+ring of the desktop up by 72 pixels and failed two tests of the desktop; the final form limits only the radius. The
+pictures at 360 by 780, 390 by 844, 412 by 915, 844 by 390 and 640 by 360 show each control in the display; the owner
+gets them. The phone project builds with zero warnings. Run 42800606946 passed. The failed runs since the entry v0.316, from the
+API: none.
+
+**What stays.** R-0058 is closed. R-0059 asks the unit of the size of the window on the S23 Ultra: if it is in pixels,
+the controls are about 2 millimetres high there and no test size matches the phone. On a portrait display the panel has
+no ground and covers the middle of the scene, so the body shows under its rows. The test does not cover the home screen,
+an active sketch, the pad or the history arc.
+
+New tests: 14. The test list holds 2384 (1530 in `Engine.Tests`, 356 in `3DEngine.Tests`, 495 in `3DEngine.ImageTests`, 3
+in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
+entries: 9 of 15. New diagnostic codes: 0. Since the review of v0.310, 3 product milestones and 7 entries followed it.
+## v0.318 — A command turns a body by a quaternion about the origin of the Document (K8, TASK-0335)
 
 The owner answered Q5 C on 2026-11-10: commands turn the entry hall shelf, which the owner built with y up. No command
 turned a body (R-0057). The owner chose this work for this session while the other session changes the layout of the
@@ -9484,11 +9519,12 @@ Two first forms of the injections of the datum did not compile, and a first run 
 because the shell read the `|` of the filter; the second forms ran and failed. A `git checkout` of one file during
 the injections removed the uncommitted edits of `DatumResolver.cs`; the edit script applied them again, and the
 tests passed before each later step. The phone project builds with zero warnings.
-Run 42798565576 passed on the branch. The failed runs since the entry v0.316, from the API: none.
+Run 42798565576 passed on the branch. The failed runs since the entry v0.317, from the API: none.
 
 **What stays.** No tool of the window turns a body; a client of the surface, the command line or an agent sends
 `Rotate`. The shelf of the owner is not turned yet: it is the file of the owner. The turn is about the origin only.
 
-New tests: 9. The test list holds 2379 (1539 in `Engine.Tests`, 356 in `3DEngine.Tests`, 481 in `3DEngine.ImageTests`, 3
+New tests: 9. The test list holds 2393 (1539 in `Engine.Tests`, 356 in `3DEngine.Tests`, 495 in `3DEngine.ImageTests`, 3
 in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
-entries: 8 of 15. New diagnostic codes: 0. Since the review of v0.310, 3 product milestones and 7 entries followed it.
+entries: 8 of 15. New diagnostic codes: 0. Since the review of v0.310, 4 product milestones and 8 entries followed it. R19 merged first at v0.317, so this
+entry is v0.318.

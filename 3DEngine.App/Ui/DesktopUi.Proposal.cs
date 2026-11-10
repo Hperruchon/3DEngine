@@ -50,6 +50,10 @@ internal sealed unsafe partial class DesktopUi
     // The waiting proposals of this frame, the oldest first; the window shows the first one.
     private IReadOnlyList<ProposalCard> _proposals = [];
 
+    // ADR-0113 item 3 (phase R19, TASK-0336): the height of "AGENT IS WAITING" and its gap when it is a line of its own under
+    // the path line of a portrait display, from the last frame; else zero. The panel starts under it.
+    private float _waitingLine;
+
     // Item 6: the outcome of the last accept or reject, which the status line gives until the next one.
     private string? _proposalOutcome;
 
@@ -98,6 +102,8 @@ internal sealed unsafe partial class DesktopUi
     private void BeginProposal(IReadOnlyList<ProposalCard>? proposals)
     {
         _proposals = _home is null ? proposals ?? [] : [];
+        if (_proposals.Count == 0)
+            _waitingLine = 0f;
         _proposalTexts.Clear();
         _lastProposalTargets = _proposalTargets;
         _proposalTargets = [];
@@ -309,10 +315,14 @@ internal sealed unsafe partial class DesktopUi
             Math.Clamp(ring.Centre.X - (captionWidth / 2f), 16f + _inset.X, Math.Max(16f + _inset.X, displaySize.X - 16f - _inset.Z - captionWidth)),
             ring.Centre.Y - ring.Outer - 8f - lineHeight);
         var inside = new List<(string Item, string Text, bool Amber)>(lines);
-        if (captionAt.Y >= top)
+        var captionBox = new Vector4(captionAt.X, captionAt.Y, captionAt.X + ImGui.CalcTextSize(caption).X, captionAt.Y + lineHeight);
+        // ADR-0113 item 6 (phase R19, TASK-0336): the caption goes inside the ring when a fixed window, as the rows of the body,
+        // covers its place too. Until TASK-0336 the rows covered it at 640 by 360.
+        var covered = _fixed.Any(box => box.X < captionBox.Z && captionBox.X < box.Z && box.Y < captionBox.W && captionBox.Y < box.W);
+        if (captionAt.Y >= top && !covered)
         {
             list.AddText(captionAt, DimensionColour, caption);
-            Shown(ProposalCaptionItem, caption, new Vector4(captionAt.X, captionAt.Y, captionAt.X + ImGui.CalcTextSize(caption).X, captionAt.Y + lineHeight));
+            Shown(ProposalCaptionItem, caption, captionBox);
         }
         else
             inside.Insert(0, (ProposalCaptionItem, Caption(card), true));
@@ -322,6 +332,14 @@ internal sealed unsafe partial class DesktopUi
         var font = ImGui.GetFont();
         var step = ProposalTextSize + 4f;
         var y = Math.Max(ring.Centre.Y - (ring.Inner * 0.6f), Math.Max(reject.Y, accept.Y) + half + 8f);
+        // ADR-0113 item 6 (phase R19, TASK-0336): the lines start under a fixed window, as the rows of the body, that covers
+        // the place of the first line. Until TASK-0336 the rows covered the first line at 640 by 360.
+        foreach (var box in _fixed)
+        {
+            if (box.X < ring.Centre.X + ring.Inner && ring.Centre.X - ring.Inner < box.Z && box.Y < y + step && y - 6f < box.W)
+                y = Math.Max(y, box.W + 6f);
+        }
+
         var placed = new List<(string Item, string Text, bool Amber, Vector2 At, float Width)>();
         foreach (var (item, text, amber) in inside)
         {
@@ -446,10 +464,18 @@ internal sealed unsafe partial class DesktopUi
     {
         var size = ImGui.CalcTextSize(AgentWaitingText);
         var title = _items.TryGetValue(TitleItem, out var bar) ? bar : new Vector4(16f + _inset.X, 16f + _inset.Y, 16f + _inset.X, 16f + _inset.Y + TopBarHeight);
-        var right = displaySize.X - 16f - _inset.Z - (displaySize.X >= displaySize.Y ? CommandWidth + 12f : 0f);
+        var right = displaySize.X - 16f - _inset.Z - (displaySize.X >= displaySize.Y ? CommandLineWidth(displaySize) + 12f : 0f);
         var at = new Vector2(title.Z + 16f, title.Y);
+        _waitingLine = 0f;
         if (at.X + size.X > right)
-            at = new Vector2(title.X, title.W + 4f);
+        {
+            // ADR-0113 item 3 (phase R19, TASK-0336): on a portrait display the word goes under the path line,
+            // and the panel of the next frame starts under the word. Until TASK-0336 the path line covered the word.
+            var under = _portrait && _items.TryGetValue(PathItem, out var path) ? path.W : title.W;
+            at = new Vector2(title.X, under + 4f);
+            _waitingLine = _portrait ? size.Y + 4f : 0f;
+        }
+
         ImGui.GetBackgroundDrawList().AddText(at, DimensionColour, AgentWaitingText);
         Shown(ProposalWaitingItem, AgentWaitingText, new Vector4(at.X, at.Y, at.X + size.X, at.Y + size.Y));
     }
