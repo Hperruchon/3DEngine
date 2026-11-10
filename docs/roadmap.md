@@ -618,6 +618,7 @@ boundary and each refused rung.
 | K6a | The planar B-Rep of the owned kernel of each live body as one STEP file of AP214, with the same bytes on each platform, from the surface and the command line (the engine lane of the order of 2026-11-05). ADR-0070, TASK-0200. | 1–2 |
 | K6b | A void inside a body is a `BREP_WITH_VOIDS` of the smallest solid that holds it, by an exact ray (ADR-0070 item 2; the engine lane of the order of 2026-11-05). TASK-0201. | 1 |
 | K7 | General extrude and revolve of a simple curve. **Optional.** Year two. | 40–65 |
+| K8 | A command turns a body by a quaternion about the origin of the Document, and each reader of a move reads the turn: the owned kernel, the rebuild, the frame of a datum and the determinism probe (R-0057; Q5 C of the owner, 2026-11-10). ADR-0112, TASK-0335. | 1–2 |
 
 ## Track V — Machine vision
 

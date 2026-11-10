@@ -7,7 +7,7 @@ date: 2026-10-30
 supersedes: []
 superseded-by: []
 amends: ['0037']
-amended-by: ['0049', '0051', '0054', '0055']
+amended-by: ['0049', '0051', '0054', '0055', '0112']
 affects:
   - Engine.Core/Sketch/**
 enforced-by: Engine.Tests/Sketch/ChainRebuildTests.cs (TASK-0116 creates it)
@@ -60,7 +60,8 @@ The codebase review of 2026-10-30 (sections 5 and 6) gave the research, and the 
    each for one edit:
    - an extrude of the edited sketch extrudes the solved record of the edit under `GeometryKeys.Derive(edit, body)`;
    - an extrude of another live sketch extrudes the record of that sketch under the same form of key;
-   - a `Translate` or a `Subtract` with a changed operand runs again on the backend under `Derive(edit, body)`;
+   - a `Translate`, a `Rotate` (ADR-0112 item 6) or a `Subtract` with a changed operand runs again on the backend
+     under `Derive(edit, body)`;
    - a step with no changed operand, for example a box, keeps its key and calls no backend.
 4. **An unchanged edit.** An end changes nothing when each extrude of the edited sketch upstream of it has the same
    parameters before and after the edit (`ExtrudeProfile.Same`) and the end has no fault.
@@ -103,3 +104,4 @@ replay and the document file stay as they are.
   the log, and the steps in effect come from the list.
 - 2026-11-03 · TASK-0174 · ADR-0055 item 2 amends item 2: a live extrude that the edit targets is an end too, and one
   regeneration takes the ends of the live and the consumed extrudes in one order.
+- 2026-11-10 · TASK-0335 · ADR-0112 item 6 amends item 3: a `Rotate` with a changed operand runs again, as a `Translate` does.

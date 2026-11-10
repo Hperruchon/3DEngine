@@ -1,4 +1,5 @@
 using Engine.Contracts;
+using Engine.Contracts.Geometry;
 using Engine.Contracts.Sketch;
 using Engine.Core.Commands;
 
@@ -112,7 +113,8 @@ public static class DatumResolver
 
         // Finding E125 of the codebase review of 2026-11-03 (TASK-0169): a sum of the origin can overflow, and a frame
         // with a value that is not finite or an axis of the length zero is not a plane.
-        var resolved = carrier with { Origin = Moved(carrier.Origin, graph, feature.CommandId, place) };
+        // ADR-0112 item 7 (TASK-0335): a Rotate on the chain also turns the axes.
+        var resolved = Moved(carrier, graph, feature.CommandId, place);
 
         // ADR-0059 item 4 (phase K4c, TASK-0185): a face of a subtrahend is a wall of the result, with its normal into the
         // hole. Each Subtract before the place that takes the body as its subtrahend turns the frame, so that n stays out
@@ -500,20 +502,53 @@ public static class DatumResolver
 
     // ADR-0051 item 2: each Translate in effect before the place, on the chain of consumers of the
     // body of the feature, moves the origin, in the order of the chain, as the backend moves the
-    // body. A Subtract passes it with no change (item 8).
+    // body. A Subtract passes it with no change (item 8). ADR-0112 item 7 (TASK-0335): each Rotate
+    // turns the origin about the origin of the Document, with the nine numbers that the backend takes.
     private static DatumPoint Moved(DatumPoint origin, FeatureGraph graph, Guid handle, int place)
     {
         var (x, y, z) = (origin.X, origin.Y, origin.Z);
-        while (graph.Consumer(handle) is { } consumer && graph.Order(consumer.CommandId) < place)
+        foreach (var step in Chain(graph, handle, place))
         {
-            if (consumer is TranslateCommand translate)
+            if (step is TranslateCommand translate)
                 (x, y, z) = (x + translate.Dx, y + translate.Dy, z + translate.Dz);
-            else if (consumer is not SubtractCommand)
-                break;
-            handle = consumer.CommandId;
+            else if (step is RotateCommand rotate && RotateCommandHandler.Turn(rotate) is { } turn)
+                (x, y, z) = turn.Apply(x, y, z);
         }
 
         return new DatumPoint(x, y, z);
+    }
+
+    // ADR-0112 item 7: the frame moved as its origin, and each Rotate on the chain also turns its three axes.
+    private static DatumFrame Moved(DatumFrame frame, FeatureGraph graph, Guid handle, int place)
+    {
+        var (u, v, n) = (frame.U, frame.V, frame.Normal);
+        foreach (var step in Chain(graph, handle, place))
+        {
+            if (step is RotateCommand rotate && RotateCommandHandler.Turn(rotate) is { } turn)
+                (u, v, n) = (Rotated(turn, u), Rotated(turn, v), Rotated(turn, n));
+        }
+
+        return new DatumFrame(Moved(frame.Origin, graph, handle, place), u, v, n);
+    }
+
+    private static DatumAxis Rotated(Rotation turn, DatumAxis a)
+    {
+        var (x, y, z) = turn.Apply(a.X, a.Y, a.Z);
+        return new DatumAxis(x, y, z);
+    }
+
+    // The Translate and Rotate steps in effect before the place, on the chain of consumers of the body of the feature,
+    // in the order of the chain. A Subtract passes with no step; another consumer ends the chain.
+    private static IEnumerable<Command> Chain(FeatureGraph graph, Guid handle, int place)
+    {
+        while (graph.Consumer(handle) is { } consumer && graph.Order(consumer.CommandId) < place)
+        {
+            if (consumer is TranslateCommand or RotateCommand)
+                yield return consumer;
+            else if (consumer is not SubtractCommand)
+                yield break;
+            handle = consumer.CommandId;
+        }
     }
 
     // ADR-0059 item 4: true when an odd count of the Subtract steps in effect before the place, on the chain of consumers
@@ -525,7 +560,7 @@ public static class DatumResolver
         {
             if (consumer is SubtractCommand subtract && subtract.SubtrahendBodyId == handle)
                 turned = !turned;
-            else if (consumer is not (TranslateCommand or SubtractCommand))
+            else if (consumer is not (TranslateCommand or RotateCommand or SubtractCommand))
                 break;
             handle = consumer.CommandId;
         }

@@ -47,16 +47,21 @@ public class CrossPlatformHashTests
         Assert.Equal(Log().Count, one.Document.Log.Count);
         // Finding E161 (TASK-0242): the ring of a circle extrude cut by a moved cylinder is the fifth body and its sketch the fifth.
         // ADR-0089 item 5 (TASK-0299): the cone cut by a cylinder, the torus and the sphere are the sixth to the eighth body.
-        Assert.Equal(8, one.Document.Bodies.Count);
+        // ADR-0112 item 8 (TASK-0335): the turned box is the ninth body.
+        Assert.Equal(9, one.Document.Bodies.Count);
         Assert.Equal(3, one.Document.Bodies.Count(body => body.Handle.Id == Id(94) || body.Handle.Id == Id(96) || body.Handle.Id == Id(98)));
         Assert.Equal(5, one.Document.Sketches.Count);
         Assert.All(one.Document.Sketches.SelectMany(sketch => sketch.References), reference => Assert.Null(reference.Fault));
         Assert.Equal(2, one.Document.Sketches.Single(sketch => sketch.Id == Id(70)).References.Count);
         Assert.All(one.Document.Sketches, sketch => Assert.True(SketchSolver.Status(sketch).Solved, $"The sketch {sketch.Id} of the log is not solved."));
-        // The datum on the side of the slanted line has general axes, and each body has no fault.
-        var datum = Assert.Single(one.Document.Datums);
-        Assert.Null(datum.Fault);
-        Assert.NotEqual(0, datum.Frame.U.X * datum.Frame.U.Y);
+        // The datum on the side of the slanted line and the datum on the turned box have general axes, and each body has no
+        // fault.
+        Assert.Equal([Id(58), Id(102)], one.Document.Datums.Select(datum => datum.Id).Order().ToArray());
+        Assert.All(one.Document.Datums, datum =>
+        {
+            Assert.Null(datum.Fault);
+            Assert.NotEqual(0, datum.Frame.U.X * datum.Frame.U.Y);
+        });
         Assert.All(one.Document.Bodies, body => Assert.Null(body.Fault));
         Assert.Equal(hash, State(two.Document, second).Hash);
 
