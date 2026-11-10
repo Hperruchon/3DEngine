@@ -59,6 +59,9 @@ internal sealed unsafe partial class DesktopUi
     // The targets of Reject and Accept of a landscape arc in this frame: the centre of the circle and the rectangle of its word.
     private List<(bool Accept, Vector2 Centre, Vector4 Word)> _proposalTargets = [];
 
+    // The targets of the last frame, which the person sees while the ring of this frame takes its tap (finding V160).
+    private List<(bool Accept, Vector2 Centre, Vector4 Word)> _lastProposalTargets = [];
+
     internal IReadOnlyDictionary<string, string> ProposalTexts => _proposalTexts;
 
     // ADR-0107 (TASK-0330): the rectangles of the words Reject and Accept of the arc of this frame, for a test.
@@ -73,9 +76,15 @@ internal sealed unsafe partial class DesktopUi
     // Item 7: Reject and Accept are a part of the panels for a tap, as the nodes of the history arc.
     private bool OverProposal(double x, double y) => ProposalTargetAt(new Vector2((float)x, (float)y)) is not null;
 
-    private bool? ProposalTargetAt(Vector2 point)
+    private bool? ProposalTargetAt(Vector2 point) => ProposalTargetAt(_proposalTargets, point);
+
+    // Finding V160 of the codebase review of 2026-11-09 (b) (TASK-0331): the ring draws before the arc, so it reads the targets
+    // of the last frame, as it reads the chips of the last frame (finding V120).
+    private bool OverLastProposal(Vector2 point) => ProposalTargetAt(_lastProposalTargets, point) is not null;
+
+    private static bool? ProposalTargetAt(List<(bool Accept, Vector2 Centre, Vector4 Word)> targets, Vector2 point)
     {
-        foreach (var (accept, centre, word) in _proposalTargets)
+        foreach (var (accept, centre, word) in targets)
         {
             if (Vector2.Distance(point, centre) <= ProposalButton / 2f || (point.X >= word.X && point.X < word.Z && point.Y >= word.Y && point.Y < word.W))
                 return accept;
@@ -90,6 +99,7 @@ internal sealed unsafe partial class DesktopUi
     {
         _proposals = _home is null ? proposals ?? [] : [];
         _proposalTexts.Clear();
+        _lastProposalTargets = _proposalTargets;
         _proposalTargets = [];
         ProposalRing = null;
     }
@@ -336,11 +346,43 @@ internal sealed unsafe partial class DesktopUi
         }
     }
 
+    // The height of the sheet of the last frame, so the sheet of this frame knows if it fits above the ring.
+    private float _sheetHeight;
+
+    // ADR-0111 item 4 (TASK-0331): the highest point of the band of the ring of this frame, or null with no ring. The top of a
+    // segment is at an end of its arc, or at the top of the circle when the segment holds that angle.
+    internal float? RingTop()
+    {
+        if (_ring is not { } ring || _ringLabels.Count == 0)
+            return null;
+        var top = float.MaxValue;
+        foreach (var segment in ring.Segments(_ringLabels))
+        {
+            var angles = new List<float> { segment.From, segment.To };
+            angles.AddRange(new[] { -MathF.PI / 2f, 3f * MathF.PI / 2f }.Where(up => up >= segment.From && up <= segment.To));
+            foreach (var angle in angles)
+            {
+                foreach (var radius in new[] { ring.Inner, ring.Outer })
+                    top = Math.Min(top, ring.Centre.Y + (radius * MathF.Sin(angle)));
+            }
+        }
+
+        return top;
+    }
+
     // Item 7: the sheet on a portrait display, above the anchors, with the same lines, Reject and Accept.
+    // ADR-0111 item 4 (TASK-0331): the sheet ends 8 pixels above the ring, so each tool of the ring takes its tap, when the
+    // sheet of the last frame fits between the top bar and the ring; else it ends above the anchors, as before, and covers the
+    // ring. Finding V162 of the codebase review of 2026-11-09 (b): until TASK-0331 the sheet covered each tool of the ring.
     private void ProposalSheet(Vector2 displaySize, ProposalCard card, List<(string Item, string Text, bool Amber)> lines)
     {
         var width = displaySize.X - 32f - _inset.X - _inset.Z;
         var bottom = Math.Min(_anchorsTop, displaySize.Y - 16f - _inset.W) - 8f;
+        // The top bar, and the word "AGENT IS WAITING" under it on a narrow display, stay above the sheet.
+        var top = Math.Max(_items.TryGetValue(TitleItem, out var title) ? title.W + 4f : 16f + _inset.Y,
+            _items.TryGetValue(ProposalWaitingItem, out var waiting) ? waiting.W + 4f : 0f);
+        if (RingTop() is { } ringTop && ringTop - 8f < bottom && ringTop - 8f - _sheetHeight >= top)
+            bottom = ringTop - 8f;
         ImGui.SetNextWindowPos(new Vector2(16f + _inset.X, bottom), ImGuiCond.Always, new Vector2(0f, 1f));
         ImGui.SetNextWindowSize(new Vector2(width, 0f), ImGuiCond.Always);
         const ImGuiWindowFlags flags = ImGuiWindowFlags.NoTitleBar | ImGuiWindowFlags.NoMove | ImGuiWindowFlags.NoResize
@@ -393,6 +435,7 @@ internal sealed unsafe partial class DesktopUi
             Item(ProposalAcceptItem);
             ImGui.EndDisabled();
             AddPanelRectangle();
+            _sheetHeight = ImGui.GetWindowSize().Y;
         }
 
         ImGui.End();

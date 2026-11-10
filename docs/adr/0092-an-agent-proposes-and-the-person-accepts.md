@@ -7,7 +7,7 @@ date: 2026-11-08
 supersedes: []
 superseded-by: []
 amends: []
-amended-by: ['0107', '0110']
+amended-by: ['0107', '0110', '0111']
 affects:
   - Engine.Api.Http/Proposals.cs
   - Engine.Api.Http/Endpoints/ProposalsEndpoint.cs
@@ -142,3 +142,5 @@ first one.
   the window of the live sketches does not show while a proposal waits.
 - 2026-11-10 · TASK-0334 · ADR-0110 amends item 5: a command that changes a value with a chip shows the change on the chip
   and names the value in its line.
+- 2026-11-10 · TASK-0331 · ADR-0111 amends items 2, 6 and 7: a repeated or known command identifier, the actions held while
+  an accept runs, and the sheet of a portrait display above the ring.
