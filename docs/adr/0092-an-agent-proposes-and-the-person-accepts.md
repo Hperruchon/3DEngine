@@ -7,7 +7,7 @@ date: 2026-11-08
 supersedes: []
 superseded-by: []
 amends: []
-amended-by: ['0107', '0110', '0111']
+amended-by: ['0107', '0110', '0111', '0113']
 affects:
   - Engine.Api.Http/Proposals.cs
   - Engine.Api.Http/Endpoints/ProposalsEndpoint.cs
@@ -144,3 +144,5 @@ first one.
   and names the value in its line.
 - 2026-11-10 · TASK-0331 · ADR-0111 amends items 2, 6 and 7: a repeated or known command identifier, the actions held while
   an accept runs, and the sheet of a portrait display above the ring.
+- 2026-11-10 · TASK-0336 · ADR-0113 item 3 amends item 7: on a portrait display "AGENT IS WAITING" goes under the path
+  line, and the panel starts under it. Item 6: the caption and the lines inside the ring stay out of a fixed window.
