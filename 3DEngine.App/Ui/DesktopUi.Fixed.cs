@@ -262,7 +262,17 @@ internal sealed unsafe partial class DesktopUi
             if (Anchor(RedoLabel, back: false))
                 _actions.Add(new RedoAction());
             // ADR-0083 (TASK-0259): "Frame" and "Home" of the demonstration, on the row of the anchors.
+            // ADR-0108 item 2 (phase R18a, TASK-0332): a button as high as this window has its outline on the edge of the
+            // window, where the clip of the window cuts it; so the outline is drawn 1 pixel inside the button.
+            ImGui.PushStyleVar(ImGuiStyleVar.FrameBorderSize, 0f);
             ViewButtons();
+            ImGui.PopStyleVar();
+            foreach (var label in new[] { FrameLabel, HomeLabel })
+            {
+                if (_items.TryGetValue(label, out var button))
+                    ImGui.GetWindowDrawList().AddRect(new Vector2(button.X + 1f, button.Y + 1f), new Vector2(button.Z - 1f, button.W - 1f), ImGui.GetColorU32(ImGuiCol.Border), ImGui.GetStyle().FrameRounding, ImDrawFlags.None, Theme.OutlineWidth);
+            }
+
             AddWindowRectangle();
             _anchorsTop = _fixed[^1].Y;
             anchorsRight = _fixed[^1].Z;
@@ -277,15 +287,30 @@ internal sealed unsafe partial class DesktopUi
         var right = displaySize.X - 16f - _inset.Z;
         if (StatusFit(bodies, right - (anchorsRight + 12f)) is { } status)
         {
+            // ADR-0108 item 5: the width of the parts, each in its colour, as the window draws them.
+            var parts = StatusParts(status);
             ImGui.PushFont(_monoFont);
-            var width = ImGui.CalcTextSize(status).X;
+            var width = parts.Sum(part => ImGui.CalcTextSize(part.Text).X);
             ImGui.PopFont();
             ImGui.SetNextWindowPos(new Vector2(right - width, displaySize.Y - 16f - _inset.W - (AnchorSize / 2f)), ImGuiCond.Always, new Vector2(0f, 0.5f));
             if (ImGui.Begin("##Status", FixedFlags))
             {
                 // The text colour of the panels: the dim colour gives 2.9:1 on the clear, below the 3:1 of large text.
+                // ADR-0108 item 5 (phase R18a, TASK-0332): the state in its colour, "all correct" in green and "failed" in red.
                 ImGui.PushFont(_monoFont);
-                ImGui.TextUnformatted(status);
+                ImGui.BeginGroup();
+                for (var i = 0; i < parts.Count; i++)
+                {
+                    if (i > 0)
+                        ImGui.SameLine(0f, 0f);
+                    if (parts[i].Colour is { } ink)
+                        ImGui.PushStyleColor(ImGuiCol.Text, ink);
+                    ImGui.TextUnformatted(parts[i].Text);
+                    if (parts[i].Colour is not null)
+                        ImGui.PopStyleColor();
+                }
+
+                ImGui.EndGroup();
                 ImGui.PopFont();
                 Item(StatusLabel);
                 AddWindowRectangle();
@@ -295,6 +320,24 @@ internal sealed unsafe partial class DesktopUi
         }
 
         ImGui.PopStyleVar();
+    }
+
+    // ADR-0108 item 5: the parts of the status line, and the colour of the part of the state; the other parts keep the text
+    // colour of the panels.
+    internal static IReadOnlyList<(string Text, uint? Colour)> StatusParts(string status)
+    {
+        foreach (var (state, colour) in new[] { ("all correct", Theme.Correct), (" failed", FailedColour) })
+        {
+            var at = status.IndexOf(state, StringComparison.Ordinal);
+            if (at < 0)
+                continue;
+            // "2 failed": the count goes with the word, so the red part is "2 failed".
+            var start = state[0] == ' ' ? status.LastIndexOf(' ', Math.Max(at - 1, 0)) + 1 : at;
+            var end = at + state.Length;
+            return [(status[..start], null), (status[start..end], colour), (status[end..], null)];
+        }
+
+        return [(status, null)];
     }
 
     private void AddWindowRectangle()
@@ -317,8 +360,8 @@ internal sealed unsafe partial class DesktopUi
         list.AddCircleFilled(centre, AnchorSize / 2f, ImGui.GetColorU32(ground));
         list.AddCircle(centre, AnchorSize / 2f, ImGui.GetColorU32(colours[(int)ImGuiCol.Border]), 0, 1.5f);
 
-        // The arrow: an arc over the top, and a head at its lower end.
-        var ink = ImGui.GetColorU32(colours[(int)ImGuiCol.Text]);
+        // The arrow: an arc over the top, and a head at its lower end. ADR-0108 item 2: in the accent, as the render.
+        var ink = Theme.Accent;
         var side = back ? -1f : 1f;
         const float radius = 10f;
         list.PathArcTo(centre + new Vector2(0f, 3f), radius, MathF.PI * 1.1f, MathF.PI * 1.9f);

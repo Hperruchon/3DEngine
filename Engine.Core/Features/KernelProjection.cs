@@ -139,7 +139,7 @@ internal static class KernelProjection
             case CreateTorusCommand torus:
                 return (Mesh(torus.CommandId, CreateTorusCommandHandler.Mesh(torus.Radius, torus.TubeRadius)), null);
             case ExtrudeCommand extrude:
-                return Extrude(extrude, state(extrude), frameOf);
+                return Extrude(graph, extrude, state, frameOf);
             case TranslateCommand translate:
             {
                 var (solid, reason) = Solid(graph, translate.BodyId, state, frameOf);
@@ -176,8 +176,10 @@ internal static class KernelProjection
     // Item 2: the profile of the sketch in the state, with the item of each side, on the frame of its datum, by the
     // distance in the state. The distance keeps its sign, so the start face is on the plane of the sketch, as ADR-0051
     // item 1 says.
-    private static (KernelSolid? Solid, string? Reason) Extrude(ExtrudeCommand extrude, DatumResolver.ExtrudeState state, Func<Guid, DatumFrame?> frameOf)
+    private static (KernelSolid? Solid, string? Reason) Extrude(
+        FeatureGraph graph, ExtrudeCommand extrude, Func<ExtrudeCommand, DatumResolver.ExtrudeState> stateOf, Func<Guid, DatumFrame?> frameOf)
     {
+        var state = stateOf(extrude);
         if (state.Sketch is not { } sketch)
             return (null, $"The sketch '{extrude.SketchId}' of the Extrude '{extrude.CommandId}' is not in the Document.");
         if (!SketchSolver.Status(sketch).Solved)
@@ -185,7 +187,7 @@ internal static class KernelProjection
         var (loop, reason) = SketchProfile.FindWithItems(sketch);
         if (loop is null)
             return (null, reason);
-        if (frameOf(sketch.DatumId) is not { } frame)
+        if (ExactFrame(graph, sketch.DatumId, stateOf, frameOf) is not { } frame)
             return (null, $"The datum '{sketch.DatumId}' of the sketch '{sketch.Id}' is not in the Document.");
         var distance = state.Distance;
         if (distance == 0 || !double.IsFinite(distance))
@@ -195,12 +197,85 @@ internal static class KernelProjection
         return (KernelSolid.Extrude(
             extrude.CommandId,
             profile,
-            Vector3R.FromDoubles(frame.Origin.X, frame.Origin.Y, frame.Origin.Z),
-            Vector3R.FromDoubles(frame.U.X, frame.U.Y, frame.U.Z),
-            Vector3R.FromDoubles(frame.V.X, frame.V.Y, frame.V.Z),
-            Vector3R.FromDoubles(frame.Normal.X, frame.Normal.Y, frame.Normal.Z),
+            frame.Origin,
+            frame.U,
+            frame.V,
+            frame.Normal,
             Rational.FromDouble(distance)), null);
     }
+
+    // Finding E200 of the codebase review of 2026-11-10 (phase P0.140, TASK-0338): the frame of a datum on a face in exact
+    // numbers, built as the kernel builds the solid of that face: a face of an extrude from the exact frame of its own
+    // sketch, then the Translate and Rotate steps of its chain; so the start face of a pocket and the face are one plane.
+    // An origin plane, and a datum that does not resolve, keep the frame of the Document. Until TASK-0338 the kernel read
+    // that frame for each datum, which the Document builds in doubles, and a pocket left the face whole and a closed cavity
+    // under it.
+    private static (Vector3R Origin, Vector3R U, Vector3R V, Vector3R Normal)? ExactFrame(
+        FeatureGraph graph, Guid datum, Func<ExtrudeCommand, DatumResolver.ExtrudeState> stateOf, Func<Guid, DatumFrame?> frameOf)
+    {
+        var placed = graph.Datum(datum) is { } create
+            ? DatumResolver.Placement(new DatumReference(create.FeatureId, create.Element, create.ItemId), graph, graph.Order(create.CommandId), stateOf, frameOf)
+            : null;
+        var carrier = placed is { } p
+            ? p.Feature is ExtrudeCommand extrude ? ExtrudeFace(graph, extrude, graph.Datum(datum)!, stateOf, frameOf) : Exact(p.Carrier)
+            : null;
+        if (placed is not { } place || carrier is not { } frame)
+            return frameOf(datum) is { } stored ? Exact(stored) : null;
+
+        var (origin, u, v, n) = frame;
+        foreach (var step in place.Steps)
+        {
+            if (step is TranslateCommand translate)
+            {
+                origin += Vector3R.FromDoubles(translate.Dx, translate.Dy, translate.Dz);
+            }
+            else if (step is RotateCommand rotate && RotateCommandHandler.Turn(rotate) is { } r)
+            {
+                var (x, y, z) = (Vector3R.FromDoubles(r.Xx, r.Xy, r.Xz), Vector3R.FromDoubles(r.Yx, r.Yy, r.Yz), Vector3R.FromDoubles(r.Zx, r.Zy, r.Zz));
+                Vector3R Map(Vector3R q) => (x * q.X) + (y * q.Y) + (z * q.Z);
+                (origin, u, v, n) = (Map(origin), Map(u), Map(v), Map(n));
+            }
+        }
+
+        // ADR-0059 item 4: a face of a subtrahend is a wall of the hole, so (u, v, n) becomes (u, -v, -n).
+        return place.Turned ? (origin, u, -v, -n) : (origin, u, v, n);
+    }
+
+    // E200: the start, the end or a side of an extrude, from the exact frame of its sketch, as DatumResolver gives the face
+    // in doubles. The axis along a side is the exact direction of the side over its length in doubles, so it lies in the
+    // exact plane of the side and has the length 1 within the rounding; a sketch on that side keeps its sizes.
+    private static (Vector3R Origin, Vector3R U, Vector3R V, Vector3R Normal)? ExtrudeFace(
+        FeatureGraph graph, ExtrudeCommand extrude, CreateDatumCommand create, Func<ExtrudeCommand, DatumResolver.ExtrudeState> stateOf, Func<Guid, DatumFrame?> frameOf)
+    {
+        var state = stateOf(extrude);
+        if (state.Sketch is not { } sketch || ExactFrame(graph, sketch.DatumId, stateOf, frameOf) is not var (o, u, v, n)
+            || frameOf(sketch.DatumId) is not { } stored || ExtrudeProfile.Parameters(sketch, state.Distance, stored).Parameters is not { } profile)
+            return null;
+        var d = Rational.FromDouble(state.Distance);
+        var forward = state.Distance > 0;
+        switch (create.Element)
+        {
+            case "start":
+                return forward ? (o, u, -v, -n) : (o, u, v, n);
+            case "end":
+                var top = o + (n * d);
+                return forward ? (top, u, v, n) : (top, u, -v, -n);
+        }
+
+        if (DatumResolver.SideEnds(extrude, sketch, new DatumReference(create.FeatureId, create.Element, create.ItemId), profile).Ends is not var (from, to))
+            return null;
+        var (px, py, qx, qy) = (Rational.FromDouble(from.X), Rational.FromDouble(from.Y), Rational.FromDouble(to.X), Rational.FromDouble(to.Y));
+        var (tx, ty) = (to.X - from.X, to.Y - from.Y);
+        var length = Math.Sqrt((tx * tx) + (ty * ty));
+        if (!(length > 0) || !double.IsFinite(length))
+            return null;
+        var along = ((u * (qx - px)) + (v * (qy - py))) * Rational.FromDouble(1 / length);
+        return (o + (u * px) + (v * py), along, n, along.Cross(n));
+    }
+
+    private static (Vector3R Origin, Vector3R U, Vector3R V, Vector3R Normal) Exact(DatumFrame frame)
+        => (Vector3R.FromDoubles(frame.Origin.X, frame.Origin.Y, frame.Origin.Z), Vector3R.FromDoubles(frame.U.X, frame.U.Y, frame.U.Z),
+            Vector3R.FromDoubles(frame.V.X, frame.V.Y, frame.V.Z), Vector3R.FromDoubles(frame.Normal.X, frame.Normal.Y, frame.Normal.Z));
 
     // ADR-0089 item 5: the kernel solid of a closed mesh of a handler, with the face 'surface'.
     private static KernelSolid Mesh(Guid feature, (double[] Positions, int[] Triangles) mesh)

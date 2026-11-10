@@ -459,26 +459,39 @@ internal sealed unsafe partial class DesktopUi
         ImGui.End();
     }
 
-    // Item 7: "AGENT IS WAITING" in amber in the top bar, right of the title, or under it when the command line leaves no room.
+    // Item 7: "AGENT IS WAITING" in amber with an amber dot, in the top bar, or under it when the top bar has no room.
     private void AgentWaiting(Vector2 displaySize)
     {
         var size = ImGui.CalcTextSize(AgentWaitingText);
         var title = _items.TryGetValue(TitleItem, out var bar) ? bar : new Vector4(16f + _inset.X, 16f + _inset.Y, 16f + _inset.X, 16f + _inset.Y + TopBarHeight);
-        var right = displaySize.X - 16f - _inset.Z - (displaySize.X >= displaySize.Y ? CommandLineWidth(displaySize) + 12f : 0f);
-        var at = new Vector2(title.Z + 16f, title.Y);
+        var landscape = displaySize.X >= displaySize.Y;
+        var right = displaySize.X - 16f - _inset.Z - (landscape ? CommandLineWidth(displaySize) + 12f : 0f);
+        // ADR-0108 item 6 (phase R18a, TASK-0332): on a landscape display the dot and the word end 12 pixels left of the
+        // command line, in the middle of its height, as the render; a portrait display has no command line, so they follow
+        // the title. Until TASK-0332 the word followed the title on each display.
+        var at = landscape
+            ? new Vector2(right - size.X, 16f + _inset.Y + ((ImGui.GetFrameHeight() - size.Y) / 2f))
+            : new Vector2(title.Z + 16f + WaitingDot, title.Y);
+        var dot = WaitingDot;
         _waitingLine = 0f;
-        if (at.X + size.X > right)
+        if (at.X - dot < title.Z + 16f || at.X + size.X > right)
         {
             // ADR-0113 item 3 (phase R19, TASK-0336): on a portrait display the word goes under the path line,
             // and the panel of the next frame starts under the word. Until TASK-0336 the path line covered the word.
             var under = _portrait && _items.TryGetValue(PathItem, out var path) ? path.W : title.W;
-            at = new Vector2(title.X, under + 4f);
+            at = new Vector2(title.X + dot, under + 4f);
             _waitingLine = _portrait ? size.Y + 4f : 0f;
         }
 
-        ImGui.GetBackgroundDrawList().AddText(at, DimensionColour, AgentWaitingText);
-        Shown(ProposalWaitingItem, AgentWaitingText, new Vector4(at.X, at.Y, at.X + size.X, at.Y + size.Y));
+        // ADR-0108 item 6: the amber dot before the word.
+        var list = ImGui.GetBackgroundDrawList();
+        list.AddCircleFilled(new Vector2(at.X - dot + 4f, at.Y + (size.Y / 2f)), 4f, DimensionColour);
+        list.AddText(at, DimensionColour, AgentWaitingText);
+        Shown(ProposalWaitingItem, AgentWaitingText, new Vector4(at.X - dot, at.Y, at.X + size.X, at.Y + size.Y));
     }
+
+    // ADR-0108 item 6: the room of the dot before "AGENT IS WAITING": its width of 8 pixels and a gap of 8 pixels.
+    private const float WaitingDot = 16f;
 
     // Item 6: the outcome of the last accept or reject, at the lower right above the line of the status, in its mono font.
     private void ProposalOutcomeLine(Vector2 displaySize)

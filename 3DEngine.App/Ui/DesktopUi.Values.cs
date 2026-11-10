@@ -120,7 +120,11 @@ internal sealed unsafe partial class DesktopUi
             var (min, max) = (new Vector2(rectangle.X, rectangle.Y), new Vector2(rectangle.Z, rectangle.W));
             var pending = Pending(value.Key);
             var hovered = !ImGui.IsWindowHovered(ImGuiHoveredFlags.AnyWindow) && ChipAt(io.MousePos)?.Key == value.Key;
-            list.AddRectFilled(min, max, ImGui.GetColorU32(colours[(int)(hovered ? ImGuiCol.ButtonHovered : ImGuiCol.Button)]), 6f);
+            // ADR-0108 item 2 (phase R18a, TASK-0332): a chip lies over the body, so it has the ground of the scene and no
+            // blue fill, as the render; a hover adds the light fill of the theme. Until TASK-0332 it had a blue ground.
+            list.AddRectFilled(min, max, Theme.Plate(0.85f), 6f);
+            if (hovered)
+                list.AddRectFilled(min, max, ImGui.GetColorU32(colours[(int)ImGuiCol.ButtonHovered]), 6f);
             if (pending)
                 Dashed(list, min, max, DimensionColour);
             else

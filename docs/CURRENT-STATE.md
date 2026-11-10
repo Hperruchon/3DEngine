@@ -9528,3 +9528,92 @@ New tests: 9. The test list holds 2393 (1539 in `Engine.Tests`, 356 in `3DEngine
 in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
 entries: 8 of 15. New diagnostic codes: 0. Since the review of v0.310, 4 product milestones and 8 entries followed it. R19 merged first at v0.317, so this
 entry is v0.318.
+
+## v0.319 — The codebase review of 2026-11-10 (governance, TASK-0337)
+
+Four product milestones (R16t, R17a, R19 and K8) and eight entries followed the review of v0.310, and the closes of R18a and
+R18b wait on their branches. The owner chose on 2026-11-10 that this session writes the review first.
+
+**The review.** `docs/reviews/2026-11-10-codebase-review.md` examines `main` at `09f1827`.
+- Eight findings of the last review are fixed (V159 to V163, E198, E199 and T180), and the answers of the owner closed V3,
+  V7, T7, T23, T25, T31 and V158.
+- E200 is high: after a Translate or a Rotate of a body, a pocket from a datum on the moved face can leave the face whole and
+  a closed cavity in the owned kernel. The kernel moves in rationals, and the frame of a datum in doubles. A move of 0.3 along
+  the normal is enough. TASK-0338 (P0.140) holds it, before the next product phase.
+- V164 is medium (a proposal shows a new angle as a length in mm). E201, V165 and T181 are low. TASK-0339 (P0.141) holds
+  them, after the next product phase.
+- Open findings: 0 critical, 3 high, 7 medium and 19 low.
+
+**Proof.** One agent examined the change from v0.310 to v0.318 with probes in a scratch copy. The session ran the probe of
+E200 again, in its own scratch copy, with four turns and nine moves: two turns and four moves gave the closed cavity. The
+scratch copies are gone. `CodebaseReviewGateTests` passes with the new review.
+
+New tests: 0. The test list holds 2393 (1539 in `Engine.Tests`, 356 in `3DEngine.Tests`, 495 in `3DEngine.ImageTests`, 3
+in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
+entries: 8 of 15. New diagnostic codes: 0. This entry is a codebase review, so 0 product milestones and 0 entries follow it.
+
+## v0.320 — A pocket from a datum on a moved or turned face opens the face in the owned kernel (P0.140, TASK-0338)
+
+The high finding E200 of the codebase review of 2026-11-10, before the next product phase. The owned kernel moved and turned
+a solid exactly, but it read the frame of a datum as the Document holds it, in doubles. The plane of a sketch on a moved
+face was then about one unit in the last place off the face, and a pocket from it left the face whole and a closed cavity
+under it.
+
+**The change.**
+- The kernel builds the frame of a datum on a face in exact numbers, as it builds the solid of that face: the frame of the
+  face, then each Translate and Rotate of its chain, then the flip of a wall of a hole. A face of an extrude takes the
+  exact frame of the sketch of that extrude, so the build is recursive.
+- `DatumResolver.Placement` gives the frame of the face before its chain, its feature, the steps and the flip.
+  `DatumResolver.SideEnds` gives the two ends of a side; the frame in doubles and the exact frame read the same ends.
+  `FeatureGraph.Datum` finds the CreateDatum of a datum.
+- An origin plane, and a datum that does not resolve, keep the frame of the Document. The Document, its frames and the log
+  do not change, so no ADR changes and the determinism hash stays.
+
+**Proof.** 10 new tests in `RotateCommandTests`. Six cases cut a pocket into a moved or turned top: three moves along the
+normal by a decimal, two general turns, and a turn after a move. Four cases cut a pocket into the end and into a side of a
+post on the top, with no move, a move, a turn, and both. The second form came from a probe of this task: a post of 4.7 on a
+box of 7 failed also with no move, because the datum built the end as 3.5 + 4.7 in doubles. Two injections: the frame of
+the Document for each datum failed five of the six first cases (the mixed case passes either way); the double frame for a
+face of an extrude failed each of the four last cases. The file came back byte for byte each time. The phone project builds
+with zero warnings. Run 42830524805 passed on the branch. The failed runs since the entry v0.319, from the API: none.
+
+**What stays.** The backend keeps its own tolerance, and this task checked the kernel only, not the picture of the pocket.
+V164, E201, V165 and T181 wait for TASK-0339 (P0.141), after the next product phase.
+
+New tests: 10. The test list holds 2403 (1549 in `Engine.Tests`, 356 in `3DEngine.Tests`, 495 in `3DEngine.ImageTests`, 3
+in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
+entries: 8 of 15. New diagnostic codes: 0. Since the review of v0.319, 0 product milestones and 1 entry followed it.
+
+## v0.321 — The window has the look of the render, an almost black ground and outlined controls (R18a, TASK-0332)
+
+The owner accepted the proposal on the gaps to the render on 2026-11-10 (Q1 to Q7 A). This entry is slice S1: Q2 A, the
+ground of the render. The layout was already as in the render; the look was not.
+
+**The change.** ADR-0108 amends ADR-0078, 0081, 0092, 0095, 0098 and 0113.
+- The clear of the scene is `#070d14`, almost black, in place of the cool grey `#3f4955`. A sample of the pixels of the
+  render Mix 1 gave the colours.
+- A segment of the ring, a chip, the command line, an anchor and a button have a thin outline and no fill. A hover and a
+  press give a light fill of the accent `#30eaff`. The tool in use keeps its press fill and has an outline of 2.5 pixels in
+  the accent. The icons of the ring and the arrows of Undo and Redo are in the accent; the icons dim with the ring while a
+  proposal waits. A chip has the ground of the scene, so it reads over the body.
+- The command line is a round field with a search mark, "Type a command or a value" and "Ctrl K". The text, the mark and
+  the keys need 394 pixels in the font of the window, so the field is 400 pixels wide on a large display (it was 300), and
+  30 percent of a smaller display, as before. A narrow field shows "Type a command".
+- "correct" is green in the first row of a body and in the status line; "failed" and its count stay red.
+- On a landscape display "AGENT IS WAITING", after an amber dot, ends 12 pixels left of the command line.
+
+**Proof.** 4 new tests with no GPU: the ground and the fills of the style, the contrast of eleven colours on the ground
+(each text at least 4.5:1, each mark and outline at least 3:1), the text and the keys of the empty field, and the colours
+of the status line. Four tests changed for the new look: the ring and the chip pictures check the outline (the inside of
+a segment at rest is the clear), the place of "AGENT IS WAITING", and the colours of the theme. Two injections failed the
+tests: the outline `#3c606c` (2.86:1) and a fill of the segments at rest. The file came back each time. The pictures of
+`MixImageTests` at 1440 by 900 go to the owner beside the renders. The phone project builds with zero warnings.
+Run 42825351334 passed on the branch. The failed runs since the entry v0.320, from the API: none.
+
+**What stays.** The soft light at the middle of the render waits: the window draws over the scene, so a light there covers
+the body. R-0060 asks for "Cmd K" on macOS: the input has no Command key. Frame and Home stay on the row of the anchors
+until R18g. The rows, the values and the history arc keep their look until R18c, R18d and R18e.
+
+New tests: 4. The test list holds 2407 (1539 in `Engine.Tests`, 356 in `3DEngine.Tests`, 499 in `3DEngine.ImageTests`, 3
+in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
+entries: 9 of 15. New diagnostic codes: 0. Since the review of v0.319, 1 product milestone and 2 entries followed it.

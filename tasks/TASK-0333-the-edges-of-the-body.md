@@ -113,3 +113,7 @@ Weakest:    no measure of the cost of the pass on the phone yet.
   took the same time before and after (median 22.2 ms with the copy to the CPU). The write set adds the file of TASK-0315,
   whose `SceneRenderer.cs` is in the affects of ADR-0109, so its `governed-by` names ADR-0109. The write set adds
   `docs/register.md` for R-0061: the cost of the lines on the phone is not measured.
+- 2026-11-10: the merge of main at v0.321, which holds R18a, resolved four conflicts: the README of the ADRs keeps
+  both rows, the register keeps R-0060 and R-0061, the floor of the image tests takes the tests of both slices (473,
+  linux 503), and TASK-0315 names ADR-0108 and ADR-0109. The branch r18b-edges-b replaces the branch r18b-edges, whose
+  merge commit had no line here and failed the write-set check; a force push is not permitted.
