@@ -1,7 +1,7 @@
 ---
 id: 0338
 title: A pocket from a datum on a moved or turned face opens the face in the owned kernel
-status: Active
+status: Done
 phase: P0.140
 opened: 2026-11-10
 depends-on: [0337]
@@ -54,11 +54,15 @@ After a move or a turn of a body, a pocket from a datum on a moved face opens th
 
 ## Acceptance criteria
 
-- [ ] The tests fail at v0.318 and pass after the fix.
-- [ ] The cross-platform hash of the determinism probe does not change, or the change has its reason in the ledger entry.
-- [ ] A clean build (`--no-incremental`) gives zero errors and zero warnings, and the phone project builds.
-- [ ] `dotnet test`, the write-set check and `eng/repo-gates` pass; continuous integration passes on the branch and on
+- [x] The tests fail at v0.318 and pass after the fix.
+- [x] The cross-platform hash of the determinism probe does not change, or the change has its reason in the ledger entry.
+- [x] A clean build (`--no-incremental`) gives zero errors and zero warnings, and the phone project builds.
+- [x] `dotnet test`, the write-set check and `eng/repo-gates` pass; continuous integration passes on the branch and on
       `main` after the merge.
+
+## Outcome
+
+Status: Done · commit (the merge of the branch p0140-pocket-on-moved-face) · v0.320
 
 ## Notes for the implementer
 
@@ -90,3 +94,4 @@ Weakest:    the backend has its own tolerance; this task checks the kernel only.
   (the mixed case passes either way), and the double frame for a face of an extrude failed each of the four last cases;
   the file came back byte for byte each time. No ADR changes: the Document keeps its frames in doubles, and the log does
   not change.
+- 2026-11-10: run 42830524805 passed on the work commit. Closed at v0.320 after the merge of main at v0.319.

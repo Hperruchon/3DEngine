@@ -336,6 +336,8 @@ Therefore each approved objective must have a track here.
 - K8 — A command turns a body by a quaternion about the origin of the Document; the kernel, the rebuild, the datums and
   the determinism probe read the turn. v0.318, TASK-0335, ADR-0112.
 - Review — The codebase review of 2026-11-10. v0.319, TASK-0337.
+- P0.140 — A pocket from a datum on a moved or turned face, or on a face of an extrude, opens the face in the owned kernel
+  (E200). v0.320, TASK-0338.
 
 ## Track 0 — Foundations
 
