@@ -9422,3 +9422,38 @@ New tests: 10. The test list holds 2356 (1530 in `Engine.Tests`, 356 in `3DEngin
 in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
 entries: 9 of 15. New diagnostic codes: 1 (`E-API-PROPOSAL-COMMAND-KNOWN`). Since the review of v0.310, 1 product
 milestone and 5 entries followed it.
+
+## v0.316 — A path line from the document to the selection, and the rows of the document (R17a, TASK-0314)
+
+The owner put R17a on the task list on 2026-11-08, from the proposal on the selection of the document (Q1 to Q7 A). The
+branch was green on 2026-11-09 and waited; on 2026-11-10 the owner said to close it before the work on the responsive
+layout.
+
+**The change.** ADR-0100 amends ADR-0075, ADR-0077, ADR-0093, ADR-0099 and ADR-0102.
+- The path line: the file name (or "unsaved"), the selected body, the selected face and the selected edge, with a chevron
+  between two segments. On a landscape display it is the line of the top bar, between the program and the unit; on a
+  portrait display it is the first line under the top bar. A long path gives "..." for the middle segments first, then
+  cuts the file name and the last segment, each to at least 48 pixels.
+- A tap on a segment goes up to its level: the file name clears the body, the body clears the face, the face clears the
+  edge. Each segment is 44 pixels high.
+- Escape goes up one level each time: edge, face, body, document. Until this task Escape stopped at the body.
+- With nothing selected on a landscape display, the rows of the document come first in the panel: "Part", the unit, the
+  count of the bodies and "all correct", or the count of the failed bodies in red; then one row for each body, with
+  "correct" or "failed" and the code in red, and a tap on a row selects the body.
+- On a portrait display the panel ends 8 pixels above the ring of the selected body, as the sheet of ADR-0111 item 4. The
+  merge of P0.139 showed that the path line moved the panel onto Move at 390 by 844.
+
+**Proof.** 14 new tests, 13 of them with no GPU: the path for each level, a tap on each segment, Escape from the edge to
+the document, the rows of a document with a failed body, the cut of a long path at 844 by 390 and 1440 by 900, the path
+on a portrait display, and the panel above the ring at 360 by 780, 390 by 844, 393 by 873 and 412 by 915. With the rule
+of the panel removed, the new test fails at 360 by 780 and the test of the proposal sheet fails at 390 by 844. The
+pictures at 1440 by 900 and 844 by 390 show the path line and the rows of the document; the owner gets them. The phone
+project builds with zero warnings. Run 42796395634 passed. The failed runs since the entry v0.315, from the API: none.
+
+**What stays.** No person used the path line yet. The fault of R-0058 at 360 by 780 is gone, but R-0058 stays open: its
+exit names each display from 360 by 640, and the responsive work holds it. R17b (TASK-0315, the focus on one body) comes
+next on the track.
+
+New tests: 14. The test list holds 2370 (1530 in `Engine.Tests`, 356 in `3DEngine.Tests`, 481 in `3DEngine.ImageTests`, 3
+in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
+entries: 9 of 15. New diagnostic codes: 0. Since the review of v0.310, 2 product milestones and 6 entries followed it.

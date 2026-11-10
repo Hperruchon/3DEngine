@@ -10,6 +10,12 @@ internal abstract record PanelAction;
 
 internal sealed record SelectBodyAction(Guid Body) : PanelAction;
 
+// ADR-0100 item 2 (phase R17a, TASK-0314): the levels of the path line, from the document to the selected edge.
+internal enum PathLevel { Document, Body, Face, Edge }
+
+// ADR-0100 item 2: a tap on a segment of the path line, which selects that level.
+internal sealed record PathAction(PathLevel Level) : PanelAction;
+
 internal sealed record RenameBodyAction(Guid Body, string Name) : PanelAction;
 
 internal sealed record SetVisibleAction(Guid Body, bool Visible) : PanelAction;
@@ -122,14 +128,19 @@ internal sealed record SketchOnSelectedFaceAction : PanelAction;
 // ADR-0075 item 3: the selected face for the panel and the scene: its line, whether a sketch can start on it (a curved
 // face has no one plane), and its outline in pixels of the window.
 // ADR-0077 item 4 (phase R12b, TASK-0245): the text and the segments of the selected edge, or null.
+// ADR-0100 item 1 (phase R17a, TASK-0314): the short names of the face and of the edge for the path line, as "Face +z" and
+// "Edge +x | +z", or null.
 internal sealed record FaceLine(string Text, bool CanSketch, IReadOnlyList<(System.Numerics.Vector2 A, System.Numerics.Vector2 B)> Outline,
-    string? EdgeText = null, IReadOnlyList<(System.Numerics.Vector2 A, System.Numerics.Vector2 B)>? Edge = null);
+    string? EdgeText = null, IReadOnlyList<(System.Numerics.Vector2 A, System.Numerics.Vector2 B)>? Edge = null,
+    string? Name = null, string? EdgeName = null);
 
 // The line of the document file in the panel: the name of the file, or null for an
 // unsaved document, and the result of the last save or open. Finding V99 of the codebase review of 2026-11-06 (c)
 // (TASK-0232): a host with no files, as the phone, has a line too, with the message only, so that a rejection shows.
 // ADR-0102 item 7 (TASK-0316): the folder of the file, which the top bar shows after its name, or null.
-internal sealed record DocumentLine(string? FileName, string? Message, bool Files = true, string? Folder = null);
+// ADR-0100 item 4 (phase R17a, TASK-0314): the kind of the document, "part" or "assembly", for the rows of the document;
+// null gives "part".
+internal sealed record DocumentLine(string? FileName, string? Message, bool Files = true, string? Folder = null, string? Kind = null);
 
 // ADR-0034 item 8: what the window of the sketch shows. Live holds each live sketch; Active is the
 // record of the active sketch, or null in the mode Scene.
