@@ -9755,3 +9755,92 @@ the computer of the owner the image tests crashed the test host in `vkCreateDevi
 New tests: 12. The test list holds 2440 (1550 in `Engine.Tests`, 356 in `3DEngine.Tests`, 531 in `3DEngine.ImageTests`, 3
 in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
 entries: 11 of 15. New diagnostic codes: 0. Since the review of v0.319, 4 product milestones and 6 entries followed it.
+
+## v0.326 — The 2D drawing of a part has a date in the charter, with ADR-0118 and its roadmap rows (P0.142, TASK-0343)
+
+On 2026-11-10 the owner asked if the app has a 2D drawing export for persons who need a drawing or documentation. It has
+none. The owner asked for renders of a drawing of the Bracket, of the right dimensions on it, and a comparison with the
+app (`https://claude.ai/artifact/Vt9NaHWhekzbHk6nV2HaAn`), then answered the five questions with the recommended
+options, and chose "Drawing roadmap first" before R20a.
+
+**The change.**
+- `docs/CHARTER.md`: objective 18 is "2D drawing and technical drawing of a part have a place in the roadmap after R18
+  (ADR-0118, the decision of the owner of 2026-11-10). Electrical schematics stay a direction. They have no date." The
+  list of the non-goals keeps electrical schematics only.
+- ADR-0118 holds the answers: a date after R18 (Q1 A); the sheet, its views, their scale and the place of each dimension
+  in the Document, with the lines of a view computed and not stored (Q2 A); ISO first angle by default and third angle
+  as a choice of a sheet (Q3 A); the export as SVG, then DXF, then PDF (Q4); and a flat view first (Q5 A). It also holds
+  the rule of the right dimension, and that the edges of a view need an ADR on the feature boundary of the charter.
+- The roadmap holds R21 (the flat views), K9 (the edges of a view), R22 (the right dimensions), P10 (the sheet in the
+  Document, a contract change with its own ADR) and P10a to P10c (SVG, DXF, PDF), in that order, and P0.142 for this
+  record.
+
+**Proof.** `ObjectiveReferenceGateTests`, `AdrGateTests` and `TaskGovernanceGateTests` pass. Run 42912703326 of the first
+commit failed: the task lacked ADR-0055 in `governed-by`, and the command chain of the session did not stop on the failed
+gate. Commit 623bc7e corrected it, and run 42913130011 passed. The merge of `main` at v0.325 into that branch (cd9cd28)
+named TASK-0343 and gave the task no line of progress, so run 42916527870 failed the write-set check. The branch
+`drawing-roadmap-b` holds the same change in one commit from `main` at v0.325, and the branch `drawing-roadmap` stays
+unmerged. The failed runs since the entry v0.325, from the API: 42916527870, this one.
+
+**What stays.** Each phase of the drawing opens its task, and its ADR when it needs one, at its start. No phase starts
+before R18 ends, by Q1 A.
+
+**A correction.** None.
+
+No code changes. The test list holds 2440 (1550 in `Engine.Tests`, 356 in `3DEngine.Tests`, 531 in `3DEngine.ImageTests`,
+3 in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
+entries: 11 of 15. New diagnostic codes: 0. Since the review of v0.319, 4 product milestones and 7 entries followed it;
+the next product milestone makes the review due.
+
+## v0.327 — The codebase review of 2026-11-11 (governance, TASK-0344)
+
+Four product milestones (R18a, R18b, R17b and R18c) and eight entries followed the review of v0.318, and the close of R18d
+waits on its branch with a green run; it is the fifth product milestone, which the gate of the review refuses.
+
+**The review.** `docs/reviews/2026-11-11-codebase-review.md` examines `main` at `60f02a5`.
+- The five findings of the last review are fixed: E200 (P0.140, an exact frame of a datum on a face) and V164, E201, V165
+  and T181 (P0.141). Each fix has a test that the pipeline runs.
+- No new finding is critical, high or medium. V166 and V167 are low and plausible, both in the edge lines of R18b: a
+  triangle of zero area can add a false line, and a large mesh finds its edges before the limit drops them. TASK-0345
+  (P0.143) holds them, after the next product phase.
+- Open findings: 0 critical, 2 high, 6 medium and 18 low.
+
+**Proof.** One agent examined the change from v0.318 to v0.325 with probes in a scratch folder. The session took the
+measures with a script whose values at v0.318 equal the last review, ran the tests and the gates at `60f02a5`, and read
+each finding in the code. `CodebaseReviewGateTests` passes with the new review. The failed runs since the entry v0.326,
+from the API, that no entry names: 42913629685 on the branch r18c-values, the write-set check of a commit under a Done
+task, which the branch r18c-values-b replaced. The drawing record merged first at v0.326, so this entry is v0.327.
+
+New tests: 0. The test list holds 2440 (1550 in `Engine.Tests`, 356 in `3DEngine.Tests`, 531 in `3DEngine.ImageTests`, 3
+in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
+entries: 11 of 15. New diagnostic codes: 0. This entry is a codebase review, so 0 product milestones and 0 entries follow it.
+
+## v0.328 — The rows of a body show its name larger, the sketch that made it, and the direction of each value (R18d, TASK-0342)
+
+The owner accepted the proposal on the gaps to the render on 2026-11-10 (Q1 to Q7 A) and ordered R18d after R18c. This
+entry is slice S4: the rows of a body. Before it, the rows gave one size of text, the state in grey on a second line, no
+row "Made from" (ADR-0099 Q2 A waited for it), and two rows named "Length".
+
+**The change.** ADR-0117 amends ADR-0084 item 2, ADR-0091 item 2 and ADR-0099 item 3.
+- The name of the selected body is in Instrument Sans at 34 pixels, a third font of the atlas, and it is drawn a second
+  time 1 pixel to the right, because the binding draws the weight 400 only. Its state follows on the same line in green,
+  or in red for a fault; a state with no room goes under the name.
+- A row "Made from" gives the sketch that made the body, from the first step of its history that opens a sketch, as
+  "Plate on XY" in the accent. A tap opens that sketch, as its node of the history arc does. A box has no such row.
+- A length takes its label from the direction of its edge in the Document: x "Width", y "Depth", z "Height", else
+  "Length", with the name of its constraint, as "Width C1". The test of an axis compares squares, with no square root.
+  The value is in the mono font.
+
+**Proof.** 12 new tests in `3DEngine.ImageTests/BodyRowsRenderTests.cs`: the label of each direction, the values of a
+real plate, the first row on one line or two, and the row "Made from" and its tap by mouse and by touch. Nine
+injections each failed a named test; each file came back byte for byte. The picture of the bracket at 1440 by 900
+shows the rows. The phone project builds with zero warnings. Run 42915346671 passed on the branch. The failed runs since the
+entry v0.327, from the API: none. The codebase review of 2026-11-11 (v0.327) came first, because this close is the fifth
+product milestone after the review of v0.318.
+
+**What stays.** The bold is a second draw, not a bold face. The labels of a sketch on a plane that is not an axis plane
+are "Length". The rows of a sketch are slice S6 (R18f).
+
+New tests: 12. The test list holds 2452 (1550 in `Engine.Tests`, 356 in `3DEngine.Tests`, 543 in `3DEngine.ImageTests`, 3
+in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
+entries: 11 of 15. New diagnostic codes: 0. Since the review of v0.327, 1 product milestone and 1 entry followed it.
