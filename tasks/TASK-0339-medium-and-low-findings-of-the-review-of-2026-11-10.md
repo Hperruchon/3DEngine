@@ -1,7 +1,7 @@
 ---
 id: 0339
 title: The medium and low findings of the codebase review of 2026-11-10
-status: Active
+status: Done
 phase: P0.141
 opened: 2026-11-10
 depends-on: [0338]
@@ -64,10 +64,14 @@ Each of V164, E201, V165 and T181 is fixed, or has a register entry with its rea
 
 ## Acceptance criteria
 
-- [ ] Each fix has a test that fails on an injection of the old code.
-- [ ] A clean build (`--no-incremental`) gives zero errors and zero warnings, and the phone project builds.
-- [ ] `dotnet test`, the write-set check and `eng/repo-gates` pass; continuous integration passes on the branch and on
+- [x] Each fix has a test that fails on an injection of the old code.
+- [x] A clean build (`--no-incremental`) gives zero errors and zero warnings, and the phone project builds.
+- [x] `dotnet test`, the write-set check and `eng/repo-gates` pass; continuous integration passes on the branch and on
       `main` after the merge.
+
+## Outcome
+
+Status: Done · commit (the merge of the branch p0141-review-findings) · v0.324
 
 ## Notes for the implementer
 
@@ -96,3 +100,5 @@ Weakest:    T181 needs the window, or a seam that the code does not have yet.
   place of the first, each failed its test; the old check of the layout passed the last one. Each file came back byte
   for byte.
 - 2026-11-10: `governed-by` adds 0108 (TASK-0332): ADR-0108 affects `3DEngine.ImageTests/ProposalArcTests.cs`.
+- 2026-11-10: run 42897717382 passed on the branch. Closed at v0.324: the ledger entry, the roadmap line and the
+  History of ADR-0114.
