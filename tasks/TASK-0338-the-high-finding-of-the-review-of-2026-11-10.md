@@ -1,7 +1,7 @@
 ---
 id: 0338
 title: A pocket from a datum on a moved or turned face opens the face in the owned kernel
-status: Ready
+status: Active
 phase: P0.140
 opened: 2026-11-10
 depends-on: [0337]
@@ -12,6 +12,7 @@ writes:
   modify:
     - Engine.Core/Sketch/DatumResolver.cs
     - Engine.Core/Features/KernelProjection.cs
+    - Engine.Core/Sketch/FeatureGraph.cs
     - Engine.Tests/Commands/RotateCommandTests.cs
     - eng/test-floor.txt
     - docs/adr/README.md
@@ -77,3 +78,15 @@ Weakest:    the backend has its own tolerance; this task checks the kernel only.
 ## Progress
 
 - 2026-11-10: opened from the codebase review of 2026-11-10.
+- 2026-11-10: started from the review branch (044fb09), branch p0140-pocket-on-moved-face. Form (a) of the review: the
+  kernel builds the frame of a datum on a face in exact numbers, as it builds the solid of that face, and reads the frame
+  of the Document only for an origin plane or a datum that does not resolve. `DatumResolver.Placement` gives the frame of
+  the face before its chain, its feature, the steps and the flip; `DatumResolver.SideEnds` gives the two ends of a side.
+  `FeatureGraph.Datum` finds the CreateDatum of a datum, so the write set adds `FeatureGraph.cs`. A probe found a second
+  form with no move at all: a post of 4.7 on a box of 7, and a pocket on the end of the post, failed, because the datum
+  built the end as 3.5 + 4.7 in doubles. So a face of an extrude takes the exact frame of the sketch of the extrude, and
+  the fix is recursive. 10 new tests: six cases of a pocket on a moved or turned top, and four cases of a pocket on the end
+  and on a side of a post. Two injections: the frame of the Document for each datum failed five of the six first cases
+  (the mixed case passes either way), and the double frame for a face of an extrude failed each of the four last cases;
+  the file came back byte for byte each time. No ADR changes: the Document keeps its frames in doubles, and the log does
+  not change.
