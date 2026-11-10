@@ -9583,3 +9583,37 @@ V164, E201, V165 and T181 wait for TASK-0339 (P0.141), after the next product ph
 New tests: 10. The test list holds 2403 (1549 in `Engine.Tests`, 356 in `3DEngine.Tests`, 495 in `3DEngine.ImageTests`, 3
 in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
 entries: 8 of 15. New diagnostic codes: 0. Since the review of v0.319, 0 product milestones and 1 entry followed it.
+
+## v0.321 — The window has the look of the render, an almost black ground and outlined controls (R18a, TASK-0332)
+
+The owner accepted the proposal on the gaps to the render on 2026-11-10 (Q1 to Q7 A). This entry is slice S1: Q2 A, the
+ground of the render. The layout was already as in the render; the look was not.
+
+**The change.** ADR-0108 amends ADR-0078, 0081, 0092, 0095, 0098 and 0113.
+- The clear of the scene is `#070d14`, almost black, in place of the cool grey `#3f4955`. A sample of the pixels of the
+  render Mix 1 gave the colours.
+- A segment of the ring, a chip, the command line, an anchor and a button have a thin outline and no fill. A hover and a
+  press give a light fill of the accent `#30eaff`. The tool in use keeps its press fill and has an outline of 2.5 pixels in
+  the accent. The icons of the ring and the arrows of Undo and Redo are in the accent; the icons dim with the ring while a
+  proposal waits. A chip has the ground of the scene, so it reads over the body.
+- The command line is a round field with a search mark, "Type a command or a value" and "Ctrl K". The text, the mark and
+  the keys need 394 pixels in the font of the window, so the field is 400 pixels wide on a large display (it was 300), and
+  30 percent of a smaller display, as before. A narrow field shows "Type a command".
+- "correct" is green in the first row of a body and in the status line; "failed" and its count stay red.
+- On a landscape display "AGENT IS WAITING", after an amber dot, ends 12 pixels left of the command line.
+
+**Proof.** 4 new tests with no GPU: the ground and the fills of the style, the contrast of eleven colours on the ground
+(each text at least 4.5:1, each mark and outline at least 3:1), the text and the keys of the empty field, and the colours
+of the status line. Four tests changed for the new look: the ring and the chip pictures check the outline (the inside of
+a segment at rest is the clear), the place of "AGENT IS WAITING", and the colours of the theme. Two injections failed the
+tests: the outline `#3c606c` (2.86:1) and a fill of the segments at rest. The file came back each time. The pictures of
+`MixImageTests` at 1440 by 900 go to the owner beside the renders. The phone project builds with zero warnings.
+Run 42825351334 passed on the branch. The failed runs since the entry v0.320, from the API: none.
+
+**What stays.** The soft light at the middle of the render waits: the window draws over the scene, so a light there covers
+the body. R-0060 asks for "Cmd K" on macOS: the input has no Command key. Frame and Home stay on the row of the anchors
+until R18g. The rows, the values and the history arc keep their look until R18c, R18d and R18e.
+
+New tests: 4. The test list holds 2407 (1539 in `Engine.Tests`, 356 in `3DEngine.Tests`, 499 in `3DEngine.ImageTests`, 3
+in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
+entries: 9 of 15. New diagnostic codes: 0. Since the review of v0.319, 1 product milestone and 2 entries followed it.
