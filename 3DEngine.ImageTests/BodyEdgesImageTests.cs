@@ -2,6 +2,7 @@ using System.Numerics;
 using Engine.Api.Http;
 using Engine.Contracts;
 using Engine.Contracts.Geometry;
+using Engine.Contracts.Sketch;
 using Engine.Core.Commands;
 using Engine.Core.Queries;
 using Engine.Geometry.Manifold;
@@ -63,6 +64,128 @@ public sealed class BodyEdgesImageTests
             var (za, zb) = (tessellation.Positions[(3 * edge.A) + 2], tessellation.Positions[(3 * edge.B) + 2]);
             Assert.True(za == zb && (za == bottom || za == top), $"The edge from z = {za} to z = {zb} is not on a rim.");
         });
+    }
+
+    // Finding V166 of the codebase review of 2026-11-11 (TASK-0345): a square of side 2 with a T-vertex 4 at the middle of
+    // its lower side, and a triangle of zero area (0, 4, 1) along that side. Before the fix, the long side (0, 1) of that
+    // triangle had one triangle, so it was a false edge over the two true edges (0, 4) and (4, 1).
+    [Fact]
+    public void A_Triangle_Of_Zero_Area_Across_A_T_Vertex_Adds_No_Edge()
+    {
+        double[] positions = [0, 0, 0, 2, 0, 0, 2, 2, 0, 0, 2, 0, 1, 0, 0];
+        uint[] indices = [0, 4, 3, 4, 2, 3, 4, 1, 2, 0, 4, 1];
+
+        var edges = EdgeLines.Feature(positions, indices);
+
+        Assert.Equal([(0, 3), (0, 4), (1, 2), (1, 4), (2, 3)], edges);
+    }
+
+    // ADR-0121 (finding V167, TASK-0345): a mesh with more triangles than the count of the upload goes up with no lines, and
+    // its edges come from the thread pool to a later frame. A box has 12 triangles, so a count of 11 sends it to the
+    // thread pool, and a count of 12 finds its edges at the upload.
+    [VulkanImageFact]
+    public async Task A_Mesh_Above_The_Count_Of_The_Upload_Finds_Its_Edges_On_The_Thread_Pool()
+    {
+        var messagesBefore = GraphicsDevice.ValidationMessageCount;
+        using var host = new EngineHost(new ManifoldGeometryBackend());
+        var box = await Body(host, new CreateBoxCommand { SizeX = 40, SizeY = 24, SizeZ = 10 });
+        const uint boxLines = 12 * EdgeLines.VerticesPerEdge;
+
+        using (var device = new GraphicsDevice("3DEngine.ImageTests", enableValidation: true, window: null, synchronizationValidation: true))
+        {
+            var meshes = new Dictionary<string, GpuMesh>();
+            try
+            {
+                using (var atUpload = new SessionBodies(new HostedSession(host)) { MostTrianglesAtUpload = 12 })
+                {
+                    atUpload.Apply(SessionScene.Create(), meshes, device);
+                    Assert.Equal(boxLines, meshes[box.ToString()].EdgeVertexCount);
+                }
+
+                foreach (var mesh in meshes.Values)
+                    mesh.Dispose();
+                meshes.Clear();
+
+                using var onThreadPool = new SessionBodies(new HostedSession(host)) { MostTrianglesAtUpload = 11 };
+                var scene = SessionScene.Create();
+                onThreadPool.Apply(scene, meshes, device);
+                Assert.Equal(0u, meshes[box.ToString()].EdgeVertexCount);
+
+                await onThreadPool.Searches;
+                onThreadPool.Apply(scene, meshes, device);
+                Assert.Equal(boxLines, meshes[box.ToString()].EdgeVertexCount);
+                Assert.Equal(1, onThreadPool.Meshes);
+            }
+            finally
+            {
+                foreach (var mesh in meshes.Values)
+                    mesh.Dispose();
+            }
+        }
+
+        Assert.True(GraphicsDevice.ValidationMessageCount == messagesBefore,
+            $"The validation layer gave {GraphicsDevice.ValidationMessageCount - messagesBefore} messages:\n"
+            + string.Join("\n", GraphicsDevice.ValidationMessages.Skip(messagesBefore)));
+    }
+
+    // ADR-0121: a rebuild of a body drops the search of its old mesh. The search of the first mesh is held; the rebuild
+    // finds the edges of the new mesh at the upload; then the old search is complete with one edge. The new mesh keeps
+    // its own lines.
+    [VulkanImageFact]
+    public async Task A_Rebuild_Drops_The_Search_Of_The_Old_Mesh()
+    {
+        var messagesBefore = GraphicsDevice.ValidationMessageCount;
+        using var host = new EngineHost(new ManifoldGeometryBackend());
+        var actions = new SketchActions(host.Session);
+        Assert.NotNull(actions.Create(Datums.XY.Id));
+        foreach (var (x, y) in new[] { (0.0, 0.0), (10, 0), (10, 6), (0, 6) })
+            Assert.Null(actions.Next(x, y));
+        actions.Close();
+        var body = actions.Extrude(5).Body!.Value;
+        var meshId = body.ToString();
+        const uint oneEdge = EdgeLines.VerticesPerEdge;
+
+        using (var device = new GraphicsDevice("3DEngine.ImageTests", enableValidation: true, window: null, synchronizationValidation: true))
+        {
+            var meshes = new Dictionary<string, GpuMesh>();
+            var held = new List<TaskCompletionSource<float[]?>>();
+            try
+            {
+                using var bodies = new SessionBodies(new HostedSession(host))
+                {
+                    MostTrianglesAtUpload = 0,
+                    RunSearch = _ =>
+                    {
+                        var search = new TaskCompletionSource<float[]?>();
+                        held.Add(search);
+                        return search.Task;
+                    },
+                };
+                var scene = SessionScene.Create();
+                bodies.Apply(scene, meshes, device);
+                Assert.Single(held);
+                Assert.Equal(0u, meshes[meshId].EdgeVertexCount);
+
+                bodies.MostTrianglesAtUpload = int.MaxValue;
+                Assert.Equal(CommandStatus.Applied, (await host.Session.Apply(new SetExtrudeDistanceCommand { ExtrudeId = body, Distance = 8 })).Status);
+                bodies.Apply(scene, meshes, device);
+                var lines = meshes[meshId].EdgeVertexCount;
+                Assert.True(lines > oneEdge, $"The rebuilt mesh has {lines} edge vertices.");
+
+                held[0].SetResult(new float[oneEdge * EdgeLines.FloatsPerVertex]);
+                bodies.Apply(scene, meshes, device);
+                Assert.Equal(lines, meshes[meshId].EdgeVertexCount);
+            }
+            finally
+            {
+                foreach (var mesh in meshes.Values)
+                    mesh.Dispose();
+            }
+        }
+
+        Assert.True(GraphicsDevice.ValidationMessageCount == messagesBefore,
+            $"The validation layer gave {GraphicsDevice.ValidationMessageCount - messagesBefore} messages:\n"
+            + string.Join("\n", GraphicsDevice.ValidationMessages.Skip(messagesBefore)));
     }
 
     [VulkanImageFact]

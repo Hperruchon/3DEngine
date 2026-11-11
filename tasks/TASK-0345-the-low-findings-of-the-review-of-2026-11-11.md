@@ -1,15 +1,18 @@
 ---
 id: 0345
 title: The low findings of the codebase review of 2026-11-11
-status: Ready
+status: Active
 phase: P0.143
 opened: 2026-11-11
 depends-on: [0344]
-governed-by: [0007, 0017, 0019, 0023, 0025, 0029, 0031, 0072, 0109]
+governed-by: [0007, 0017, 0019, 0023, 0025, 0029, 0031, 0072, 0109, 0121]
 writes:
   create:
     - tasks/TASK-0345-the-low-findings-of-the-review-of-2026-11-11.md
+    - docs/adr/0121-the-edges-of-a-large-mesh-are-found-on-the-thread-pool.md
   modify:
+    - docs/adr/0109-the-edges-of-the-body.md
+    - docs/adr/README.md
     - 3DEngine.Vulkan/EdgeLines.cs
     - 3DEngine.App/SessionBodies.cs
     - 3DEngine.ImageTests/BodyEdgesImageTests.cs
@@ -67,3 +70,7 @@ Weakest:    to be written at the close.
 ## Progress
 
 - 2026-11-11: opened by the codebase review of 2026-11-11 (TASK-0344).
+- 2026-11-11: the owner ordered "go" after the merge of R20a. V166: `EdgeLines.Feature` skips a triangle whose normal is
+  zero. V167: a mesh of more than 100 000 triangles finds its edges on the thread pool and gets its lines at a later frame
+  (ADR-0121, amends ADR-0109 items 1 and 5); a limit on the triangles before the search would drop the true lines of a
+  fine mesh. Three new tests; three injections each failed a named test, and each file came back byte for byte.
