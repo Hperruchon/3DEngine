@@ -61,6 +61,18 @@ internal sealed class SessionBodies : IDisposable
     private readonly Dictionary<Guid, (double[] Positions, uint[] Indices)> _triangles = new();
     private readonly BodyVisibility _visibility = new();
 
+    // ADR-0121 (finding V167, TASK-0345): the search of the edges of each mesh with more than MostTrianglesAtUpload
+    // triangles, on the thread pool, by the identifier of its mesh. The mesh goes up with no lines; Apply puts it up again
+    // with its lines when the search is complete. RemoveMesh drops the search, so a result of an old mesh is not used.
+    private readonly Dictionary<string, (float[] Narrowed, uint[] Indices, Task<float[]?> Lines)> _searches = new(StringComparer.Ordinal);
+
+    // A test can lower the count to send a small mesh to the thread pool, and hold a search to choose when it is complete.
+    internal int MostTrianglesAtUpload { get; set; } = EdgeLines.MostTrianglesAtUpload;
+    internal Func<Func<float[]?>, Task<float[]?>> RunSearch { get; init; } = search => Task.Run(search);
+
+    // Complete when each search of edges that is in progress is complete.
+    internal Task Searches => Task.WhenAll(_searches.Values.Select(search => search.Lines));
+
     public SessionBodies(ISessionHost host)
     {
         _host = host;
@@ -127,6 +139,10 @@ internal sealed class SessionBodies : IDisposable
     // Until TASK-0074 a throw ended the window and the session (E65).
     public bool Apply(Scene scene, IDictionary<string, GpuMesh> meshes, GraphicsDevice device)
     {
+        // ADR-0121: the lines of a search that an earlier frame started. A search that this frame starts gives its lines
+        // to a later frame, also when it is complete before the end of this one.
+        TakeLines(meshes, device);
+
         var changed = false;
         // Finding V48 of the codebase review of 2026-10-30 (TASK-0118): twenty changes of one body
         // in one frame gave twenty meshes. Each body.changed carries the whole state of the body, so
@@ -161,6 +177,41 @@ internal sealed class SessionBodies : IDisposable
         }
 
         return changed;
+    }
+
+    // ADR-0121: each mesh whose search of edges is complete goes up again with its lines. The scene and the count of meshes
+    // do not change, because the body keeps its entity and its triangles; the next frame draws the lines.
+    private void TakeLines(IDictionary<string, GpuMesh> meshes, GraphicsDevice device)
+    {
+        if (_searches.Count == 0)
+            return;
+
+        foreach (var meshId in _searches.Where(search => search.Value.Lines.IsCompleted).Select(search => search.Key).ToList())
+        {
+            _searches.Remove(meshId, out var search);
+            if (search.Lines.IsFaulted)
+            {
+                Console.WriteLine($"[WARN] No edge lines for body {meshId}: {search.Lines.Exception?.InnerException?.Message}");
+                continue;
+            }
+
+            if (search.Lines.Result is not { } lines || !meshes.TryGetValue(meshId, out var old))
+                continue;
+
+            // The old mesh stays when the new one fails, as a failure of one body in Apply (E65). A frame in flight can still
+            // read the buffers of the old mesh.
+            try
+            {
+                var replacement = new GpuMesh(device, search.Narrowed, search.Indices, lines);
+                device.WaitIdle();
+                old.Dispose();
+                meshes[meshId] = replacement;
+            }
+            catch (Exception exception)
+            {
+                Console.WriteLine($"[WARN] No edge lines for body {meshId}: {exception.GetType().Name}: {exception.Message}");
+            }
+        }
     }
 
     // True when the next event of the same body after the change at the index is a change too.
@@ -250,10 +301,20 @@ internal sealed class SessionBodies : IDisposable
 
         var centre = MeshVertex.Centre(tessellation.Positions);
         // Phase R18b (TASK-0333): the feature edges of the triangles go up with the mesh, as lines around the same centre,
-        // when they are not too many.
+        // when they are not too many. ADR-0121: the edges of a large mesh are found on the thread pool, and the mesh goes up
+        // now with no lines.
         var narrowed = MeshVertex.Narrow(tessellation.Positions, centre, 1.0);
-        var feature = EdgeLines.Feature(tessellation.Positions, tessellation.Indices);
-        var edges = feature.Count <= EdgeLines.MostEdges ? EdgeLines.Vertices(narrowed, feature) : null;
+        float[]? edges = null;
+        if (tessellation.TriangleCount <= MostTrianglesAtUpload)
+        {
+            edges = EdgeLines.Lines(narrowed, tessellation.Positions, tessellation.Indices);
+        }
+        else
+        {
+            var (positions, indices) = (tessellation.Positions, tessellation.Indices);
+            _searches[meshId] = (narrowed, indices, RunSearch(() => EdgeLines.Lines(narrowed, positions, indices)));
+        }
+
         meshes[meshId] = new GpuMesh(device, narrowed, tessellation.Indices, edges);
         Meshes++;
         _entities[meshId] = new Entity { Name = $"Body {change.BodyId}", MeshId = meshId, Origin = centre };
@@ -268,6 +329,7 @@ internal sealed class SessionBodies : IDisposable
     private bool RemoveMesh(Guid bodyId, Scene scene, IDictionary<string, GpuMesh> meshes, GraphicsDevice device)
     {
         var meshId = bodyId.ToString();
+        _searches.Remove(meshId);
         _triangles.Remove(bodyId);
         _boxes.Remove(meshId);
         _visibility.RemoveMesh(meshId);

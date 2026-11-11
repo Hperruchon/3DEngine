@@ -114,7 +114,7 @@ names. Do not read all of them.
 | [0106](0106-open-project-shows-an-stl-file-too.md) | "Open project..." shows an STL file too, and an STL file goes to the import | Accepted | Persistence, clients | 0102 | — |
 | [0107](0107-the-arc-of-a-proposal-is-in-the-free-room.md) | With no ring of a body, the arc of a proposal is in the room right of the panel | Accepted | Clients | 0092 | — |
 | [0108](0108-the-look-of-the-render.md) | The window has the look of the render, an almost black ground and outlined controls with no fill | Accepted | Clients, rendering | 0078, 0081, 0092, 0095, 0098, 0113 | — |
-| [0109](0109-the-edges-of-the-body.md) | The edges of a body are lines, and the selected body is transparent with dashed hidden edges | Accepted | Rendering, clients | 0029 | — |
+| [0109](0109-the-edges-of-the-body.md) | The edges of a body are lines, and the selected body is transparent with dashed hidden edges | Amended | Rendering, clients | 0029 | 0121 |
 | [0110](0110-a-proposal-shows-each-value-on-its-chip.md) | A proposal shows each value that it changes on the chip of that value | Amended | Clients, surface | 0092 | 0114, 0115 |
 | [0111](0111-a-proposal-takes-its-own-taps-and-commands.md) | A proposal takes its own taps, its own command identifiers and its own steps | Amended | Surface, clients | 0092 | 0114 |
 | [0112](0112-a-command-turns-a-body.md) | A command turns a body by a quaternion about the origin of the Document | Amended | Contracts, geometry | 0012, 0039, 0051, 0058, 0059, 0060 | 0114 |
@@ -126,6 +126,7 @@ names. Do not read all of them.
 | [0118](0118-the-2d-drawing-of-a-part.md) | The 2D drawing of a part has a date, and its work starts with a flat view | Accepted | Charter, drawing | — | — |
 | [0119](0119-the-ring-and-the-history-arc-as-in-the-render.md) | The ring gives Edit sketch and Rename in the span of four segments, and the history arc is a bright line with its nodes on it | Accepted | Clients, rendering | 0081, 0098, 0104 | — |
 | [0120](0120-the-sketch-as-in-the-render.md) | The rows of a sketch are its constraints and the body it makes, its ring holds Next point and Extrude, and its plate has a label | Accepted | Clients, sketch | 0085, 0086, 0097, 0098 | — |
+| [0121](0121-the-edges-of-a-large-mesh-are-found-on-the-thread-pool.md) | The edges of a mesh of more than 100 000 triangles are found on the thread pool | Accepted | Rendering, clients | 0109 | — |
 
 ## Topics
 
