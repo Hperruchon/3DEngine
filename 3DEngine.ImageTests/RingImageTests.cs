@@ -47,7 +47,9 @@ public class RingImageTests
             for (var frame = 0; frame < 3; frame++)
                 data = ui.Frame(1f / 60f, new Vector2(Width, Height), Vector2.One, renderer.LiveBodies, body, ringCentre: centre, ringBody: size);
             // ADR-0101 item 3 (TASK-0315): a box has Move, Hide and Focus; ADR-0119 item 1 (TASK-0346): and Rename.
-            ring = DesktopUi.Layout(new Vector2(Width, Height), centre, 4, size);
+            // ADR-0122 item 1 (TASK-0348): and Dimensions.
+            Assert.Equal([DesktopUi.MoveLabel, DesktopUi.HideLabel, DesktopUi.FocusLabel, DesktopUi.DimensionsLabel, DesktopUi.RenameLabel], ui.RingLabels);
+            ring = DesktopUi.Layout(new Vector2(Width, Height), centre, 5, size);
 
             pixels = target.Render((commandBuffer, framebuffer, frameExtent) =>
                 renderer.Record(commandBuffer, framebuffer, frameExtent, scene, camera,
@@ -61,7 +63,7 @@ public class RingImageTests
         // ADR-0108 item 2 (phase R18a, TASK-0332): the outline of the segment Move is drawn, and the segment has no fill at
         // rest, so a point inside it, away from its icon and its label, has the colour of the clear. Until TASK-0332 the
         // middle of the segment had a blue ground.
-        var segment = ring.Segments([DesktopUi.MoveLabel, DesktopUi.HideLabel, DesktopUi.FocusLabel, DesktopUi.RenameLabel])[0];
+        var segment = ring.Segments([DesktopUi.MoveLabel, DesktopUi.HideLabel, DesktopUi.FocusLabel, DesktopUi.DimensionsLabel, DesktopUi.RenameLabel])[0];
         var angle = (segment.From + segment.To) / 2f;
         var direction = new Vector2(MathF.Cos(angle), MathF.Sin(angle));
         var outline = ring.Centre + (direction * ring.Outer);

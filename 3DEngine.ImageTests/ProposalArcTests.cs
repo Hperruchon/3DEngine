@@ -68,7 +68,8 @@ public sealed class ProposalArcTests
         Frames(ui, [Card()], Bracket);
 
         // ADR-0101 item 3 (TASK-0315): an extrude has Move, Distance, Hide and Focus; ADR-0119 item 1 (TASK-0346): and Rename.
-        var ring = DesktopUi.Layout(Display, Low, 5);
+        // ADR-0122 item 1 (TASK-0348): and Dimensions.
+        var ring = DesktopUi.Layout(Display, Low, 6);
         Assert.Equal(ring, ui.ProposalRing);
         var band = ring.Inner + (DesktopUi.RingBand / 2f);
         foreach (var (item, degrees) in new[] { (DesktopUi.ProposalRejectItem, 235.0), (DesktopUi.ProposalAcceptItem, 305.0) })

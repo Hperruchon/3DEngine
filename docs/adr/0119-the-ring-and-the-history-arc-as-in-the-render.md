@@ -1,13 +1,13 @@
 ---
 id: 0119
 title: The ring gives Edit sketch and Rename in the span of four segments, and the history arc is a bright line with its nodes on it
-status: Accepted
+status: Amended
 topic: Clients, rendering
 date: 2026-11-11
 supersedes: []
 superseded-by: []
 amends: ['0081', '0098', '0104']
-amended-by: []
+amended-by: ['0122']
 affects:
   - 3DEngine.App/Ui/DesktopUi.cs
   - 3DEngine.App/Ui/DesktopUi.Ring.cs
@@ -47,13 +47,15 @@ The session gave the choices of this record. The owner can change them.
 
 1. **The tools (amends ADR-0081 item 3 and ADR-0098 item 3).** The ring of a body that a sketch made starts with "Edit
    sketch", with a pencil; its tap opens that sketch, the first step of the history of the body that opens a sketch (as the
-   row "Made from" of ADR-0117 item 2). "Rename", with a letter T, follows "Focus" on a landscape display; its tap opens the
-   name field of the rows (ADR-0099 item 2). A portrait display has no "Rename" on the thumb ring, because its panel keeps the
-   name field and its button. The command line holds "Edit sketch" for a body that a sketch made.
+   row "Made from" of ADR-0117 item 2). "Rename", with a letter T, follows "Dimensions" (ADR-0122) on a landscape display;
+   its tap opens the name field of the rows (ADR-0099 item 2). A portrait display has no "Rename" on the thumb ring,
+   because its panel keeps the name field and its button. The command line holds "Edit sketch" for a body that a sketch
+   made.
 2. **The span (amends ADR-0081 items 1 and 2).** The segments of a landscape body ring span at most the span of four
    segments, 1.84 radians. More than four segments are narrower, and a narrowed segment is at least 46 pixels at the inner
-   radius. When the ring has no room for each tool in that span, "Rename" and then "Edit sketch" leave the ring; the rows
-   still give both. A segment is never wider than 0.42 radians. A ring of a sketch keeps its own layout (ADR-0086).
+   radius. When the ring has no room for each tool in that span, "Rename", then "Edit sketch", then "Dimensions" leave the
+   ring (ADR-0122); the rows still give the first two, and the panel and the command line give the third. A segment is
+   never wider than 0.42 radians. A ring of a sketch keeps its own layout (ADR-0086).
 3. **The history arc (amends ADR-0104 item 3).** The arc is the accent, 2 pixels wide, over two wider strokes of the accent
    with less alpha, its glow. The node of the selected body is a filled dot of the accent with a radius of 10 pixels and a
    glow; each other node is a ring of the accent with a radius of 6 pixels and the ground of the scene; a node of a fault is
@@ -73,3 +75,5 @@ display the two new tools leave the ring.
 
 - 2026-11-11 · TASK-0346 · The record, from slice S5 of the proposal and the judgement of the session.
 - 2026-11-11 · TASK-0346 · Shipped at v0.329.
+- 2026-11-11 · TASK-0348 · Amended by ADR-0122: "Dimensions" is a segment between "Focus" and "Rename", and it leaves a
+  small ring after "Edit sketch".

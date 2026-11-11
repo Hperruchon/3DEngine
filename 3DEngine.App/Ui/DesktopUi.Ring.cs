@@ -188,6 +188,11 @@ internal sealed unsafe partial class DesktopUi
 
     internal IReadOnlyList<string> RingLabels => _ringLabels;
 
+    // ADR-0122 item 2 (phase R20b, TASK-0348): the segments of this frame that have the colour of an active control.
+    private readonly HashSet<string> _ringInUse = [];
+
+    internal bool RingInUse(string label) => _ringInUse.Contains(label);
+
     // ADR-0116 item 1: the target of a tap of a segment of this frame, for a test; null on a ring of a sketch.
     internal Vector4? RingTarget(string label) => _ringTargets is { } targets && targets.TryGetValue(label, out var target) ? target : null;
 
@@ -282,6 +287,7 @@ internal sealed unsafe partial class DesktopUi
         _ringLabels = [];
         _ringTargets = null;
         _ringReachable = false;
+        _ringInUse.Clear();
         RingAlphaOfFrame = ImGui.GetStyle().Alpha;
         if (centre is not { } at || _pad is not null || (body is null && !_sketchActive))
             return;
@@ -328,6 +334,9 @@ internal sealed unsafe partial class DesktopUi
             labels.Add(body.Visible ? HideLabel : ShowLabel);
             // ADR-0101 item 3 (phase R17b, TASK-0315): "Focus" after Hide.
             labels.Add(FocusLabel);
+            // ADR-0122 item 1 (phase R20b, TASK-0348): "Dimensions" after Focus, so a person turns the dimensions on and off with
+            // no visit to the panel. On a small ring it leaves after "Rename" and "Edit sketch" (ADR-0119 item 2).
+            labels.Add(DimensionsLabel);
             // ADR-0119 item 1: "Rename" after them on a landscape display, where it opens the name field of the rows; a portrait
             // display keeps the name field and its button in the panel.
             if (displaySize.X >= displaySize.Y)
@@ -342,9 +351,10 @@ internal sealed unsafe partial class DesktopUi
 
         // ADR-0119 item 2: on a landscape body ring that has no room for each tool in RingSpan, "Rename" and then "Edit sketch" leave
         // the ring; the first row of the rows renames the body, and the row "Made from" opens its sketch.
+        // ADR-0122 item 1 (phase R20b, TASK-0348): then "Dimensions" leaves; the command line and the panel keep its toggle.
         if (!_sketchActive && body is not null && displaySize.X >= displaySize.Y)
         {
-            foreach (var spare in new[] { RenameLabel, EditSketchLabel })
+            foreach (var spare in new[] { RenameLabel, EditSketchLabel, DimensionsLabel })
             {
                 var trial = Layout(displaySize, at, labels.Count, size, _inset, _anchorsTop);
                 if ((labels.Count * trial.Segment) + ((labels.Count - 1) * RingGap) <= RingSpan + 0.001f)
@@ -406,7 +416,11 @@ internal sealed unsafe partial class DesktopUi
             // ADR-0086 item 2: the tool in use has the colour of an active control.
             // ADR-0101 item 3 (phase R17b, TASK-0315): while a focus lasts, "Focus" has the colour of an active control too.
             var inUse = (_sketchActive && SketchRingTools.FirstOrDefault(tool => tool.Label == segment.Label).Kind is { } kind && kind == _sketchTool)
-                || (!_sketchActive && segment.Label == FocusLabel && Focus is not null);
+                || (!_sketchActive && segment.Label == FocusLabel && Focus is not null)
+                // ADR-0122 item 2: while the dimensions are on, "Dimensions" has the colour of an active control too.
+                || (!_sketchActive && segment.Label == DimensionsLabel && _dimensions);
+            if (inUse)
+                _ringInUse.Add(segment.Label);
             // ADR-0108 item 2 (phase R18a, TASK-0332): no fill at rest, and the light fill of the theme under the pointer and
             // for the tool in use. Until TASK-0332 each segment had a blue ground at alpha 0.35 (ADR-0095 item 2).
             var ground = ImGui.GetColorU32(colours[(int)(inUse ? ImGuiCol.ButtonActive : hovered ? ImGuiCol.ButtonHovered : ImGuiCol.Button)]);
@@ -506,5 +520,8 @@ internal sealed unsafe partial class DesktopUi
             _actions.Add(new EditSketchAction(sketch.Id));
         else if (label == RenameLabel)
             StartRename(body);
+        // ADR-0122 item 1: "Dimensions" turns the dimensions on or off, as the toggle of the panel does.
+        else if (label == DimensionsLabel)
+            _dimensions = !_dimensions;
     }
 }
