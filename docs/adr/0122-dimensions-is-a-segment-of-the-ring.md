@@ -63,3 +63,4 @@ order puts "Focus" before "Dimensions", so a small ring keeps "Focus", which has
 ## History
 
 - 2026-11-11 · TASK-0348 · The record, from improvement B of the UX test and the request of the owner of 2026-11-11.
+- 2026-11-12 · TASK-0348 · Shipped at v0.334.

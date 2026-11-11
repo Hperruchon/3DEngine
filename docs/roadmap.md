@@ -363,6 +363,8 @@ Therefore each approved objective must have a track here.
 - P0.143 — The low findings of the codebase review of 2026-11-11: a triangle of zero area adds no edge, and a mesh of
   more than 100 000 triangles finds its edges on the thread pool. v0.332, TASK-0345, ADR-0121.
 - Review — The codebase review of 2026-11-12. v0.333, TASK-0349.
+- R20b1 — "Dimensions" is a segment of the ring of a body, with the state of a tool in use while the dimensions are on.
+  v0.334, TASK-0348, ADR-0122.
 
 ## Track 0 — Foundations
 
