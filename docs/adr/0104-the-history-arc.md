@@ -1,13 +1,13 @@
 ---
 id: 0104
 title: The history arc shows the steps that made the selected body
-status: Accepted
+status: Amended
 topic: Clients, rendering
 date: 2026-11-09
 supersedes: []
 superseded-by: []
 amends: []
-amended-by: []
+amended-by: ['0119']
 affects:
   - 3DEngine.App/Ui/DesktopUi.History.cs
   - 3DEngine.App/Ui/DesktopUi.cs
@@ -88,3 +88,5 @@ The owner chose the slice and its merge after green CI; the recommendations answ
 
 - 2026-11-09 · TASK-0325 · The record, with the slice (the order of the owner of 2026-11-08).
 - 2026-11-09 · TASK-0325 · Shipped at v0.308.
+- 2026-11-11 · TASK-0346 · ADR-0119 item 3 amends item 3: the arc is a bright line with a glow, and each node is a dot on it
+  inside its target of 44 pixels.
