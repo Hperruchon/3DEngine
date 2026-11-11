@@ -78,3 +78,4 @@ so it shows one frame or more after the sketch opens.
 ## History
 
 - 2026-11-11 · TASK-0347 · The record, from slice S6 of the proposal and the judgement of the session.
+- 2026-11-11 · TASK-0347 · Shipped at v0.330.

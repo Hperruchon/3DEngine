@@ -356,6 +356,8 @@ Therefore each approved objective must have a track here.
   opens the sketch, and the labels Width, Depth and Height with the name of the constraint. v0.328, TASK-0342, ADR-0117.
 - R18e — "Edit sketch" and "Rename" on the ring, a landscape ring in the span of four segments, and the history arc as a
   bright line with its nodes on it. v0.329, TASK-0346, ADR-0119.
+- R18f — The sketch as in the render: the rows of its constraints with their value or residual and "Makes", "Next point"
+  and "Extrude" on its ring, and the plate with its label and its caption. v0.330, TASK-0347, ADR-0120.
 
 ## Track 0 — Foundations
 
