@@ -1,13 +1,13 @@
 ---
 id: 0109
 title: The edges of a body are lines, and the selected body is transparent with dashed hidden edges
-status: Accepted
+status: Amended
 topic: Rendering, clients
 date: 2026-11-10
 supersedes: []
 superseded-by: []
 amends: ['0029']
-amended-by: []
+amended-by: ['0121']
 affects:
   - 3DEngine.App/SceneRenderer.cs
   - 3DEngine.App/SessionBodies.cs
@@ -42,10 +42,11 @@ device can have no wide lines.
 
 1. **The source of the edges.** The edges are the feature edges of the triangles of the body: an edge of a triangle with
    one triangle only, with more than two, or with two whose normals differ by more than 30 degrees. Two vertices at the
-   same position are one vertex. So the twelve edges of a box show, and the seams between the facets of a cylinder do not.
-   The renderer finds them one time, when the mesh of the body goes to the GPU. The lines are presentation, as the
-   tessellation is (ADR-0007, determinism rule 6): the Document and the log hold none. The limit is a constant cosine, so
-   no transcendental function runs.
+   same position are one vertex, and a triangle of zero area adds no edge (ADR-0121). So the twelve edges of a box
+   show, and the seams between the facets of a cylinder do not. The renderer finds them one time for each mesh: at the
+   upload for a mesh of at most 100 000 triangles, and on the thread pool for a larger mesh, which draws its lines from a
+   later frame (ADR-0121). The lines are presentation, as the tessellation is (ADR-0007, determinism rule 6): the
+   Document and the log hold none. The limit is a constant cosine, so no transcendental function runs.
 2. **The lines.** Each live, visible body draws its edges as lines of a fixed width in pixels: 1.5 pixels, near white,
    with a soft border of one pixel. Each edge is two triangles, and the shader `edge.vert` gives them their width on the
    screen, so the pass needs no wide lines. A line comes nearer to the eye by 0.2 percent of its depth, so it wins the depth
@@ -61,7 +62,7 @@ device can have no wide lines.
    imported scan with many creases does not take more than about 18 MiB. On the computer of the owner (2026-11-10), a box
    and a cylinder at 1440 by 900 with the box selected gave a median frame of 22.2 ms before and 22.2 ms after, with the
    copy to the CPU; the difference is below the noise. The search of the edges of a mesh of one million triangles takes
-   about 0.5 s, one time, at the upload.
+   about 0.3 to 0.5 s, one time, on the thread pool (ADR-0121).
 6. **The shadow.** The soft shadow under the selected body waits. The scene has no ground plane to receive it, and the
    ground of the render comes with R18a (ADR-0108). A later slice can add it after R18a.
 
@@ -79,3 +80,5 @@ frame time on the phone is not measured; register entry R-0061 holds the questio
 
 - 2026-11-10 · TASK-0333 · The record, from slice S2 of the proposal of 2026-11-10 and the answers of the owner.
 - 2026-11-10 · TASK-0333 · Shipped at v0.322.
+- 2026-11-11 · TASK-0345 · Amended by ADR-0121: the edges of a mesh of more than 100 000 triangles are found on the
+  thread pool (finding V167), and a triangle of zero area adds no edge (finding V166).

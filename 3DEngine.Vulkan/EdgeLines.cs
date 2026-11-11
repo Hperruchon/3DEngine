@@ -23,6 +23,11 @@ public static class EdgeLines
     // 18 MiB; a mesh with more creases, for example an imported scan, draws no lines.
     public const int MostEdges = 100_000;
 
+    // The most triangles of a mesh whose edges are found at the upload, on the thread of the frame (ADR-0121, finding V167
+    // of the codebase review of 2026-11-11, TASK-0345). The review measured 270 ms for 980 000 triangles, so the search
+    // takes about 28 ms at this count. A larger mesh finds its edges on the thread pool.
+    public const int MostTrianglesAtUpload = 100_000;
+
     // The corners of the two triangles of one edge: (fraction along the edge, side).
     private static readonly (float Along, float Side)[] Corners = [(0, -1), (1, -1), (1, 1), (0, -1), (1, 1), (0, 1)];
 
@@ -49,6 +54,11 @@ public static class EdgeLines
             if (a == b || b == c || c == a)
                 continue;
             var normal = Normal(positions, a, b, c);
+
+            // Finding V166 of the codebase review of 2026-11-11 (TASK-0345): a triangle of zero area across a T-vertex has
+            // three different corners, but its long edge is not an edge of the surface. It adds no edge.
+            if (normal == default)
+                continue;
             foreach (var (p, q) in new[] { (a, b), (b, c), (c, a) })
             {
                 var key = p < q ? (p, q) : (q, p);
@@ -68,6 +78,13 @@ public static class EdgeLines
         // The order of a dictionary is not part of its contract; the edges go out in the order of their indices.
         result.Sort();
         return result;
+    }
+
+    // The vertices of the feature edges of a mesh, or null when the mesh has more than MostEdges of them (ADR-0109 item 5).
+    public static float[]? Lines(ReadOnlySpan<float> narrowed, ReadOnlySpan<double> positions, ReadOnlySpan<uint> indices)
+    {
+        var feature = Feature(positions, indices);
+        return feature.Count <= MostEdges ? Vertices(narrowed, feature) : null;
     }
 
     // The vertices of the edges, from the narrowed positions of the mesh (MeshVertex.Narrow), so the edges and the mesh
