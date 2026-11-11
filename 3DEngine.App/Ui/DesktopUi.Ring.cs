@@ -150,14 +150,93 @@ internal sealed unsafe partial class DesktopUi
     private RingLayout? _ring;
     private IReadOnlyList<string> _ringLabels = [];
 
+    // ADR-0116 item 1 (phase R20a, TASK-0341): the target of a tap of each segment of a body ring of this frame, the box of its
+    // icon and its label grown to at least 44 by 44 pixels; null for a ring of a sketch, whose whole band takes a tap.
+    private Dictionary<string, Vector4>? _ringTargets;
+
+    // ADR-0116 item 1: the margin of the box of the icon and the label of a segment, at each side.
+    internal const float RingTargetMargin = 4f;
+
+    // ADR-0116 item 2 (phase R20a, TASK-0341): the alpha of the ring and of the history arc while an orbit, a pan or a zoom runs.
+    internal const float GestureFade = 0.2f;
+
+    // ADR-0116 item 2: true while the host turns, pans or zooms the view (GestureFadeTimer); the host sets it before each frame.
+    public bool CameraGesture { get; set; }
+
+    // ADR-0116 item 2: the alpha of the style when the ring and the history arc of this frame were drawn, for a test.
+    internal float RingAlphaOfFrame { get; private set; } = 1f;
+
+    internal float HistoryAlphaOfFrame { get; private set; } = 1f;
+
+    // ADR-0116 item 2: the fade of a gesture, over the dim of a waiting proposal; true when the caller must pop it.
+    private bool FadeForGesture()
+    {
+        if (!CameraGesture)
+            return false;
+        ImGui.PushStyleVar(ImGuiStyleVar.Alpha, GestureFade);
+        return true;
+    }
+
     // ADR-0119 item 2 (phase R18e, TASK-0346): the layout and the labels of the ring of this frame, for a test.
     internal RingLayout? RingLayoutOfFrame => _ring;
 
     internal IReadOnlyList<string> RingLabels => _ringLabels;
 
-    // True when the point is on a segment of the ring of this frame.
-    private bool OverRing(double x, double y)
-        => _ring is { } ring && ring.At(_ringLabels, new Vector2((float)x, (float)y)) is not null;
+    // ADR-0116 item 1: the target of a tap of a segment of this frame, for a test; null on a ring of a sketch.
+    internal Vector4? RingTarget(string label) => _ringTargets is { } targets && targets.TryGetValue(label, out var target) ? target : null;
+
+    // True when the point is on a segment of the ring of this frame that takes a tap there.
+    private bool OverRing(double x, double y) => RingTapAt(new Vector2((float)x, (float)y)) is not null;
+
+    // ADR-0116 item 1 (phase R20a, TASK-0341): the segment that takes a tap at a point: on a body ring only on the target of its
+    // icon and its label, inside the segment; the rest of the band is the scene. Until TASK-0341 the whole band took a tap, and
+    // a click on a body under it opened a tool of the selected body (problem 1 of the UX test of 2026-11-10).
+    private string? RingTapAt(Vector2 point)
+    {
+        if (_ring is not { } ring || ring.At(_ringLabels, point) is not { } label)
+            return null;
+        if (_ringTargets is null)
+            return label;
+        return _ringTargets.TryGetValue(label, out var target)
+            && point.X >= target.X && point.X < target.Z && point.Y >= target.Y && point.Y < target.W ? label : null;
+    }
+
+    // ADR-0116 item 1: the box of a face of a segment, grown by the margin and then to at least 44 by 44 pixels about its centre.
+    internal static Vector4 TargetOf(Vector2 min, Vector2 max)
+    {
+        var (a, b) = (min - new Vector2(RingTargetMargin), max + new Vector2(RingTargetMargin));
+        var centre = (a + b) / 2f;
+        var half = Vector2.Max((b - a) / 2f, new Vector2(ValueSize / 2f));
+        return new Vector4(centre.X - half.X, centre.Y - half.Y, centre.X + half.X, centre.Y + half.Y);
+    }
+
+    // The place of the label of a segment, the centre of its icon or null, and true when the label has a plate (ADR-0087 item 5).
+    private (Vector2 Place, Vector2? Icon, bool Plate) SegmentFace(RingLayout ring, RingSegmentLayout segment, Vector2 displaySize, bool sketchRing)
+    {
+        var middle = ring.Middle(segment);
+        var text = ImGui.CalcTextSize(RingText(segment.Label));
+        // The review of Codex of v0.251 (TASK-0271): a label at the edge of a portrait display stays 4 pixels inside the
+        // safe area; until TASK-0271 the label "Sketch on face" of the fourth segment went past the right edge.
+        var place = middle - (text / 2f);
+        place.X = Math.Clamp(place.X, 4f + _inset.X, Math.Max(4f + _inset.X, displaySize.X - _inset.Z - 4f - text.X));
+        // ADR-0087 item 5 (TASK-0276): a label of a sketch ring wider than the band starts 6 pixels outside the inner edge,
+        // so it covers less of the sketch; a plate of the colour of its segment keeps it readable over the lines. The first
+        // form centred "Horizontal" over the points. ADR-0097 item 4 (TASK-0308): the ring is on the right of the sketch,
+        // so the label goes out to the right and stays 4 pixels inside the display.
+        // ADR-0097 item 4: a tool with an icon keeps its icon and its label in the middle of the segment.
+        if (sketchRing && text.X > RingBand - 12f && !RingIconLabels.Contains(segment.Label))
+        {
+            var inner = ring.Centre.X + (MathF.Cos((segment.From + segment.To) / 2f) * ring.Inner);
+            place.X = Math.Min(inner + 6f, displaySize.X - _inset.Z - 4f - text.X);
+            return (place, null, true);
+        }
+
+        if (!RingIconLabels.Contains(segment.Label))
+            return (place, null, false);
+        var top = middle.Y - (((2f * IconHalf) + IconGap + text.Y) / 2f);
+        place.Y = top + (2f * IconHalf) + IconGap;
+        return (place, new Vector2(middle.X, top + IconHalf), false);
+    }
 
     // ADR-0086 (the redesign, slice f, TASK-0275): the tools of the active sketch, in the order of the window of the sketch,
     // and the kind of each one; Finish ends the sketch.
@@ -195,7 +274,9 @@ internal sealed unsafe partial class DesktopUi
     {
         _ring = null;
         _ringLabels = [];
+        _ringTargets = null;
         _ringReachable = false;
+        RingAlphaOfFrame = ImGui.GetStyle().Alpha;
         if (centre is not { } at || _pad is not null || (body is null && !_sketchActive))
             return;
 
@@ -265,6 +346,17 @@ internal sealed unsafe partial class DesktopUi
             : Layout(displaySize, at, labels.Count, size, _inset, _anchorsTop);
         _ring = ring;
         _ringLabels = labels;
+        // ADR-0116 item 1 (phase R20a, TASK-0341): the face of each segment, and on a body ring the target of its tap. A ring of a
+        // sketch keeps its whole band as the target (ADR-0086).
+        var faces = ring.Segments(labels).Select(segment => (Segment: segment, Face: SegmentFace(ring, segment, displaySize, sketchRing))).ToList();
+        _ringTargets = _sketchActive ? null : faces.ToDictionary(entry => entry.Segment.Label, entry =>
+        {
+            var text = ImGui.CalcTextSize(RingText(entry.Segment.Label));
+            var (min, max) = (entry.Face.Place, entry.Face.Place + text);
+            if (entry.Face.Icon is { } icon)
+                (min, max) = (Vector2.Min(min, icon - new Vector2(IconHalf)), Vector2.Max(max, icon + new Vector2(IconHalf)));
+            return TargetOf(min, max);
+        });
         // The review of Codex of v0.265 (TASK-0284): the windows of the last frame too, because the Images window and the
         // message come after the ring in the frame; until TASK-0284 a segment under the Images window counted as reachable.
         var covers = _panels.Concat(_lastPanels).Concat(_fixed).Concat(_sketchActive && _sketchWindow is { } window ? [window] : []).ToList();
@@ -278,10 +370,11 @@ internal sealed unsafe partial class DesktopUi
         // TASK-0264 one tap gave both tools.
         // Finding V160 of the codebase review of 2026-11-09 (b) (TASK-0331): Reject and Accept of a proposal take the tap before
         // the ring, at the press and at the release. Until TASK-0331 one tap on Accept also gave the tool of the ring under it.
+        // ADR-0116 item 1: the press and the release are on the target of the segment.
         var io = ImGui.GetIO();
         if (ImGui.IsMouseReleased(ImGuiMouseButton.Left) && !OverWindowAtRelease() && ChipAt(io.MousePos) is null && RowAt(io.MousePos) is null
             && !OverLastProposal(io.MousePos) && !OverLastProposal(io.MouseClickedPos[0])
-            && ring.At(labels, io.MousePos) is { } released && ring.At(labels, io.MouseClickedPos[0]) == released)
+            && RingTapAt(io.MousePos) is { } released && RingTapAt(io.MouseClickedPos[0]) == released)
         {
             if (_sketchActive)
                 UseSketchTool(released);
@@ -295,9 +388,10 @@ internal sealed unsafe partial class DesktopUi
         var landscape = displaySize.X >= displaySize.Y;
         if (landscape)
             RingGuide(list, ring);
-        foreach (var segment in ring.Segments(labels))
+        foreach (var (segment, face) in faces)
         {
-            var hovered = ring.At(labels, io.MousePos) == segment.Label && !ImGui.IsWindowHovered(ImGuiHoveredFlags.AnyWindow);
+            // ADR-0116 item 1: a segment shows the hover only where it takes a tap.
+            var hovered = RingTapAt(io.MousePos) == segment.Label && !ImGui.IsWindowHovered(ImGuiHoveredFlags.AnyWindow);
             // ADR-0086 item 2: the tool in use has the colour of an active control.
             // ADR-0101 item 3 (phase R17b, TASK-0315): while a focus lasts, "Focus" has the colour of an active control too.
             var inUse = (_sketchActive && SketchRingTools.FirstOrDefault(tool => tool.Label == segment.Label).Kind is { } kind && kind == _sketchTool)
@@ -320,37 +414,17 @@ internal sealed unsafe partial class DesktopUi
             list.PathStroke(inUse ? ImGui.GetColorU32(Theme.Accent) : ImGui.GetColorU32(colours[(int)ImGuiCol.Border]), ImDrawFlags.Closed, inUse ? Theme.InUseWidth : 1.5f);
 
             var middle = ring.Middle(segment);
-            // ADR-0095 item 3: the short label of the render, and a drawn icon above it.
+            // ADR-0095 item 3: the short label of the render, and a drawn icon above it. SegmentFace gives their places.
             var caption = RingText(segment.Label);
             var text = ImGui.CalcTextSize(caption);
-            // The review of Codex of v0.251 (TASK-0271): a label at the edge of a portrait display stays 4 pixels inside the
-            // safe area; until TASK-0271 the label "Sketch on face" of the fourth segment went past the right edge.
-            var place = middle - (text / 2f);
-            place.X = Math.Clamp(place.X, 4f + _inset.X, Math.Max(4f + _inset.X, displaySize.X - _inset.Z - 4f - text.X));
-            // ADR-0087 item 5 (TASK-0276): a label of a sketch ring wider than the band starts 6 pixels outside the inner edge,
-            // so it covers less of the sketch; a plate of the colour of its segment keeps it readable over the lines. The first
-            // form centred "Horizontal" over the points. ADR-0097 item 4 (TASK-0308): the ring is on the right of the sketch,
-            // so the label goes out to the right and stays 4 pixels inside the display.
+            var place = face.Place;
             var ink = ImGui.GetColorU32(colours[(int)ImGuiCol.Text]);
-            // ADR-0097 item 4: a tool with an icon keeps its icon and its label in the middle of the segment.
-            if (sketchRing && text.X > RingBand - 12f && !RingIconLabels.Contains(segment.Label))
-            {
-                var inner = ring.Centre.X + (MathF.Cos((segment.From + segment.To) / 2f) * ring.Inner);
-                place.X = Math.Min(inner + 6f, displaySize.X - _inset.Z - 4f - text.X);
-                // ADR-0108 item 2: the plate has the ground of the scene, because a segment has no fill at rest.
+            // ADR-0108 item 2: the plate has the ground of the scene, because a segment has no fill at rest.
+            if (face.Plate)
                 list.AddRectFilled(place - new Vector2(4f, 2f), place + text + new Vector2(4f, 2f), Theme.Plate(0.85f), 4f);
-            }
-            else
-            {
-                var top = middle.Y - (((2f * IconHalf) + IconGap + text.Y) / 2f);
-                var icon = new Vector2(middle.X, top + IconHalf);
-                // ADR-0108 item 2: the icon is in the accent, as the render, with the alpha of the style, so it dims with the ring.
-                if (RingIcon(list, segment.Label, icon, ImGui.GetColorU32(Theme.Accent)))
-                {
-                    place.Y = top + (2f * IconHalf) + IconGap;
-                    _items[RingIconItem(segment.Label)] = new Vector4(icon.X - IconHalf, icon.Y - IconHalf, icon.X + IconHalf, icon.Y + IconHalf);
-                }
-            }
+            // ADR-0108 item 2: the icon is in the accent, as the render, with the alpha of the style, so it dims with the ring.
+            else if (face.Icon is { } icon && RingIcon(list, segment.Label, icon, ImGui.GetColorU32(Theme.Accent)))
+                _items[RingIconItem(segment.Label)] = new Vector4(icon.X - IconHalf, icon.Y - IconHalf, icon.X + IconHalf, icon.Y + IconHalf);
 
             list.AddText(place, ink, caption);
             _items[RingTextItem(segment.Label)] = new Vector4(place.X, place.Y, place.X + text.X, place.Y + text.Y);

@@ -19,7 +19,9 @@ internal sealed unsafe partial class DesktopUi
     internal const float HistoryDot = 6f;
 
     // ADR-0119 item 3: the accent of the theme with an alpha from 0 to 1.
-    private static uint AccentAlpha(float alpha) => (Theme.Accent & 0x00FFFFFFu) | ((uint)(alpha * 255f) << 24);
+    // ADR-0116 item 2 (phase R20a, TASK-0341): ImGui.GetColorU32 multiplies the alpha by the alpha of the style, so the arc fades
+    // with the ring while the view turns, pans or zooms.
+    private static uint AccentAlpha(float alpha) => ImGui.GetColorU32((Theme.Accent & 0x00FFFFFFu) | ((uint)(alpha * 255f) << 24));
 
     // The space between the edge of a node and the inner guide circle of the ring, and between a node and its text.
     private const float HistoryTextGap = 8f;
@@ -46,6 +48,7 @@ internal sealed unsafe partial class DesktopUi
     private void History(Vector2 displaySize, LiveBody? body, IReadOnlyList<HistoryStep>? steps)
     {
         _historyNodes = [];
+        HistoryAlphaOfFrame = ImGui.GetStyle().Alpha;
         if (body is null || steps is not { Count: > 0 } || _ring is not { } ring || _sketchActive || _pad is not null || displaySize.X < displaySize.Y)
             return;
 
@@ -106,17 +109,17 @@ internal sealed unsafe partial class DesktopUi
         {
             var hovered = shown.Tap != HistoryTap.None && !ImGui.IsWindowHovered(ImGuiHoveredFlags.AnyWindow) && HistoryAt(io.MousePos)?.Id == shown.Id;
             var selected = shown.Id == body.Id;
-            var mark = shown.Fault ? FailedColour : AccentAlpha(1f);
+            var mark = shown.Fault ? ImGui.GetColorU32(FailedColour) : AccentAlpha(1f);
             if (hovered)
                 list.AddCircleFilled(centre, HistoryNode / 2f, ImGui.GetColorU32(colours[(int)ImGuiCol.ButtonHovered]), 32);
             if (selected)
             {
-                list.AddCircleFilled(centre, HistoryDotSelected + 6f, shown.Fault ? FailedColour & 0x40FFFFFF : AccentAlpha(0.25f), 32);
+                list.AddCircleFilled(centre, HistoryDotSelected + 6f, shown.Fault ? ImGui.GetColorU32(FailedColour & 0x40FFFFFF) : AccentAlpha(0.25f), 32);
                 list.AddCircleFilled(centre, HistoryDotSelected, mark, 32);
             }
             else
             {
-                list.AddCircleFilled(centre, HistoryDot, Theme.Plate(1f), 24);
+                list.AddCircleFilled(centre, HistoryDot, ImGui.GetColorU32(Theme.Plate(1f)), 24);
                 list.AddCircle(centre, HistoryDot, mark, 24, 1.5f);
             }
 

@@ -619,12 +619,19 @@ internal sealed unsafe partial class DesktopUi : IDisposable
             PlaceRows(displaySize, selectedBody, selection is null ? null : values, bodies, document, history);
             // ADR-0081 (TASK-0253): the tool ring of the selected body, around the centre of its box on the screen.
             // ADR-0092 item 7 (TASK-0326): the tools of the ring dim while a proposal waits.
+            // ADR-0116 item 2 (phase R20a, TASK-0341): the ring and the history arc fade while the view turns, pans or zooms.
             var dimmed = DimRing();
+            var faded = FadeForGesture();
             Ring(displaySize, bodies.FirstOrDefault(body => body.Id == selection), ringCentre, ringBody);
+            if (faded)
+                ImGui.PopStyleVar();
             if (dimmed)
                 ImGui.PopStyleVar();
             // ADR-0104 (TASK-0325): the history arc inside the ring of the selected body, before the chips, which go over it.
+            faded = FadeForGesture();
             History(displaySize, selectedBody, history);
+            if (faded)
+                ImGui.PopStyleVar();
             // ADR-0082 (TASK-0254): the values of the selected extrude on its edges. ADR-0105 item 1 (TASK-0327): while a sketch
             // is active, the values of that sketch on its lines and its curves.
             Values(displaySize, selection is null ? null : values, sketchValues);

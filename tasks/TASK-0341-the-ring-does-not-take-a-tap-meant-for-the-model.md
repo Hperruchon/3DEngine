@@ -1,17 +1,29 @@
 ---
 id: 0341
 title: The ring does not take a tap meant for the model
-status: Ready
+status: Active
 phase: R20a
 opened: 2026-11-10
 depends-on: [0339]
-governed-by: []
+governed-by: [0007, 0019, 0025, 0027, 0029, 0030, 0032, 0034, 0072, 0073, 0075, 0076, 0077, 0078, 0080, 0081, 0082, 0083, 0084, 0085, 0086, 0087, 0088, 0089, 0091, 0092, 0093, 0095, 0097, 0098, 0099, 0100, 0101, 0102, 0104, 0105, 0106, 0107, 0108, 0110, 0111, 0113, 0114, 0116, 0117, 0119]
 writes:
   create:
     - tasks/TASK-0341-the-ring-does-not-take-a-tap-meant-for-the-model.md
     - docs/proposals/2026-11-10-ux-test-of-a-multi-part-project.md
+    - docs/adr/0116-the-ring-takes-a-tap-only-on-its-labels.md
+    - 3DEngine.App/GestureFadeTimer.cs
+    - 3DEngine.ImageTests/RingTapTests.cs
   modify:
     - docs/roadmap.md
+    - 3DEngine.App/Ui/DesktopUi.cs
+    - 3DEngine.App/Ui/DesktopUi.Ring.cs
+    - 3DEngine.App/Ui/DesktopUi.History.cs
+    - 3DEngine.App/NativeThreeDEngine.cs
+    - docs/adr/0081-the-tool-ring-of-the-redesign.md
+    - docs/adr/0104-the-history-arc.md
+    - docs/adr/README.md
+    - eng/test-floor.txt
+    - docs/CURRENT-STATE.md
   forbid:
     - Engine.Contracts/**
     - Engine.Core/**
@@ -56,8 +68,8 @@ A tap on a body under the band of the ring selects that body. Only the icon and 
 
 - [ ] The scenario of improvement A passes in the window at 1280 by 720 on a copy of `Bibliotheque120.3de`: select
       "Fond", zoom three steps, click the module to the right under the band; the module is selected and no pad opens.
-- [ ] Each new test fails on an injection of the old tap.
-- [ ] A clean build (`--no-incremental`) gives zero errors and zero warnings, and the phone project builds.
+- [x] Each new test fails on an injection of the old tap.
+- [x] A clean build (`--no-incremental`) gives zero errors and zero warnings, and the phone project builds.
 - [ ] `dotnet test`, the write-set check and `eng/repo-gates` pass; continuous integration passes on the branch and on
       `main` after the merge.
 
@@ -84,3 +96,15 @@ Weakest:    the test of the window is a simulated mouse; a finger on the phone i
 
 - 2026-11-10: opened from the UX test of 2026-11-10, with the answer "All three" of the owner. The commit of the
   opening also adds the proposal and the roadmap rows R20 to R20c.
+- 2026-11-11: started on the order of the owner, after R18e merged at v0.329 (c11ff56); the session of R18f was told first,
+  because R18f changes the ring of a sketch in `DesktopUi.Ring.cs`. The write set adds the files of the work, as the notes
+  say: the ring, the frame and the history arc of `DesktopUi`, the host (`NativeThreeDEngine.cs`, which tells the window
+  that the view moves), the new timer `GestureFadeTimer.cs`, the new tests `RingTapTests.cs`, ADR-0116 with ADR-0081,
+  ADR-0104 and the index, the floor and the ledger. `RingImageTests.cs` and `ToolRingTests.cs` needed no change: their taps
+  are at the middle of a segment, which is on its target.
+- 2026-11-11: ADR-0116 items 1 to 3; 11 new tests in `RingTapTests.cs`. Six injections each failed a named test, and each
+  file came back byte for byte: the old tap (3 tests), no fade (1), no hold of the gesture (1), no minimum of 44 pixels (5),
+  a target on the ring of a sketch (1), and no fade of the history arc (1). The colour of the arc under the fade has no
+  test of its own; the test reads the alpha of the style when the arc is drawn. Of the 46 ADRs of `governed-by`, the
+  session read ADR-0081, ADR-0104 (its history) and ADR-0119 only. The status is Active: the control of the window of the
+  branch was refused on 2026-11-11, so the scenario of the window waits for the owner.
