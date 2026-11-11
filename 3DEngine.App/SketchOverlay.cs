@@ -37,7 +37,15 @@ internal static class SketchOverlay
     // The part of a line in front of the camera, and each point in front of it, in pixels; the
     // labels of the active sketch, and the ring of the first point of an open chain.
     // Phase R11b (TASK-0134): Snap is the pixel of the point that a tap under the mouse would take.
-    public sealed record Strokes(IReadOnlyList<Stroke> Lines, IReadOnlyList<Spot> Points, IReadOnlyList<Label> Labels, IReadOnlyList<Vector2> Rings, Vector2? Snap = null);
+    // ADR-0120 item 3 (phase R18f, TASK-0347): Plate is the four corners of the plate of the active sketch on the screen, or
+    // null; Under is true while the sketch is under the body that it makes.
+    public sealed record Strokes(IReadOnlyList<Stroke> Lines, IReadOnlyList<Spot> Points, IReadOnlyList<Label> Labels, IReadOnlyList<Vector2> Rings, Vector2? Snap = null,
+        IReadOnlyList<Vector2>? Plate = null, bool Under = false);
+
+    // ADR-0120 item 3: the margin of the plate around the points of the sketch, as a part of the larger side of their box, and
+    // the smallest margin in the units of the sketch.
+    internal const double PlateMargin = 0.12;
+    internal const double PlateMinimum = 2;
 
     // The active sketch, its selected items, and the first point of its open chain.
     public sealed record Focus(Guid Sketch, IReadOnlyCollection<Guid> Selected, Guid? ChainStart);
@@ -57,10 +65,23 @@ internal static class SketchOverlay
             return new Strokes(lines, points, labels, rings);
 
         var frame = Frame.Of(camera, width, height);
+        IReadOnlyList<Vector2>? plate = null;
         foreach (var sketch in sketches)
         {
             if (PlaneOf(sketch) is not { } datum)
                 continue;
+
+            // ADR-0120 item 3 (phase R18f, TASK-0347): the plate of the active sketch: the box of its points in its plane, with
+            // no origin, and a margin; none when a corner is behind the eye or the sketch has no point.
+            if (focus?.Sketch == sketch.SketchId && sketch.Points.Where(point => point.Id != sketch.SketchId).ToList() is { Count: > 0 } drawn)
+            {
+                var (minX, maxX, minY, maxY) = (drawn.Min(point => point.X), drawn.Max(point => point.X), drawn.Min(point => point.Y), drawn.Max(point => point.Y));
+                var margin = Math.Max(PlateMinimum, PlateMargin * Math.Max(maxX - minX, maxY - minY));
+                var corners = new[] { (minX - margin, minY - margin), (maxX + margin, minY - margin), (maxX + margin, maxY + margin), (minX - margin, maxY + margin) }
+                    .Select(corner => frame.ToCamera(World(datum, corner.Item1, corner.Item2))).ToList();
+                if (corners.All(corner => corner.Forward >= Near) && corners.Select(frame.ToPixels).ToList() is { } pixels && pixels.All(Finite))
+                    plate = pixels;
+            }
 
             var active = focus is null || focus.Sketch == sketch.SketchId;
             var driven = Driven(sketch);
@@ -107,7 +128,7 @@ internal static class SketchOverlay
             }
         }
 
-        return new Strokes(lines, points, labels, rings);
+        return new Strokes(lines, points, labels, rings, Plate: plate);
     }
 
     // The place of a label from its point or the middle of its line, in pixels.
