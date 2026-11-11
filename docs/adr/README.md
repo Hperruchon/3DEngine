@@ -124,9 +124,10 @@ names. Do not read all of them.
 | [0116](0116-the-ring-takes-a-tap-only-on-its-labels.md) | Only the icon and the label of a segment of a body ring take a tap, and the ring fades while the view moves | Accepted | Clients, input | 0081, 0104 | — |
 | [0117](0117-the-rows-of-a-body-as-in-the-render.md) | The rows of a body show its name larger, the sketch that made it, and the direction and the constraint of each value | Accepted | Clients, rendering | 0084, 0091, 0099 | — |
 | [0118](0118-the-2d-drawing-of-a-part.md) | The 2D drawing of a part has a date, and its work starts with a flat view | Accepted | Charter, drawing | — | — |
-| [0119](0119-the-ring-and-the-history-arc-as-in-the-render.md) | The ring gives Edit sketch and Rename in the span of four segments, and the history arc is a bright line with its nodes on it | Accepted | Clients, rendering | 0081, 0098, 0104 | — |
+| [0119](0119-the-ring-and-the-history-arc-as-in-the-render.md) | The ring gives Edit sketch and Rename in the span of four segments, and the history arc is a bright line with its nodes on it | Amended | Clients, rendering | 0081, 0098, 0104 | 0122 |
 | [0120](0120-the-sketch-as-in-the-render.md) | The rows of a sketch are its constraints and the body it makes, its ring holds Next point and Extrude, and its plate has a label | Accepted | Clients, sketch | 0085, 0086, 0097, 0098 | — |
 | [0121](0121-the-edges-of-a-large-mesh-are-found-on-the-thread-pool.md) | The edges of a mesh of more than 100 000 triangles are found on the thread pool | Accepted | Rendering, clients | 0109 | — |
+| [0122](0122-dimensions-is-a-segment-of-the-ring.md) | Dimensions is a segment of the ring of a body | Accepted | Clients, rendering | 0119 | — |
 
 ## Topics
 
