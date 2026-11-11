@@ -9907,3 +9907,37 @@ than the sketch. The row "Makes" waits for the read of the features.
 New tests: 6. The test list holds 2465 (1550 in `Engine.Tests`, 356 in `3DEngine.Tests`, 556 in `3DEngine.ImageTests`, 3
 in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
 entries: 11 of 15. New diagnostic codes: 0. Since the review of v0.327, 3 product milestones and 3 entries followed it.
+
+## v0.331 — Only the icon and the label of a segment of a body ring take a tap, and the ring fades while the view moves (R20a, TASK-0341)
+
+The owner took the three improvements of the UX test of 2026-11-10 ("All three") and ordered R20a on 2026-11-11, after R18e.
+This entry is improvement A, for problem 1 of `docs/proposals/2026-11-10-ux-test-of-a-multi-part-project.md`. Before it,
+the whole band of the ring of a body took a tap. On `Bibliotheque120.3de` (19 bodies) at 1280 by 720, with "Fond"
+selected, a click on the module to its right under the band opened the pad of Move of "Fond", and no click selected the
+module.
+
+**The change.** ADR-0116 amends ADR-0081 item 2 and ADR-0104 item 3.
+- On a ring of a body, a segment takes a tap only on its target: the box of its icon and its label, 4 pixels larger at
+  each side and at least 44 by 44 pixels, inside the segment. The press and the release must be on the same target. A tap
+  on the rest of the band goes to the scene and gives a select. A segment shows its hover on its target only.
+- While an orbit, a pan or a zoom runs, the ring and the history arc have an alpha of 0.2; they come back 0.25 seconds
+  after the last intent of the view (`3DEngine.App/GestureFadeTimer.cs`). The colours of the arc now take the alpha of
+  the style.
+- The ring of an active sketch keeps its whole band, because a tap that goes past a segment there puts a point.
+
+**Proof.** 11 new tests in `3DEngine.ImageTests/RingTapTests.cs`: a tap on the band off the label gives a select and no
+pad, with a mouse and with a finger; a tap on the icon and on the label of Move opens its pad; a press on a label and a
+release off it give no tool; the target at five sizes, from 360 by 780 to 1440 by 900; the band of a sketch ring; the fade;
+and the time of a gesture. Six injections each failed a named test; each file came back byte for byte. The tests of
+`ToolRingTests.cs` and `RingImageTests.cs` pass with no change, because their taps are at the middle of a segment. The
+phone project builds with zero warnings. Run 42978522052 passed on the branch after the merge of `main` at v0.330. The
+failed runs since the entry v0.330, from the API: none, and each run passed at its first attempt.
+
+**What stays.** The scenario in the window was not done: the control of the window was refused two times, and the owner
+was not at the computer, so the owner closed the task on the tests (R-0063). The target of a narrow segment is a box, so
+at 45 degrees its corners can be outside the segment. No test checks the colour of the arc under the fade, only the
+alpha of the style when it is drawn. The ring of a sketch keeps its whole band.
+
+New tests: 11. The test list holds 2476 (1550 in `Engine.Tests`, 356 in `3DEngine.Tests`, 567 in `3DEngine.ImageTests`, 3
+in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
+entries: 12 of 15. New diagnostic codes: 0. Since the review of v0.327, 4 product milestones and 4 entries followed it.
