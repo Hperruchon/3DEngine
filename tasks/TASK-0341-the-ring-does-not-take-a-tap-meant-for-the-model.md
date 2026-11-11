@@ -5,7 +5,7 @@ status: Active
 phase: R20a
 opened: 2026-11-10
 depends-on: [0339]
-governed-by: [0007, 0019, 0025, 0027, 0029, 0030, 0032, 0034, 0072, 0073, 0075, 0076, 0077, 0078, 0080, 0081, 0082, 0083, 0084, 0085, 0086, 0087, 0088, 0089, 0091, 0092, 0093, 0095, 0097, 0098, 0099, 0100, 0101, 0102, 0104, 0105, 0106, 0107, 0108, 0110, 0111, 0113, 0114, 0116, 0117, 0119]
+governed-by: [0007, 0019, 0025, 0027, 0029, 0030, 0032, 0034, 0072, 0073, 0075, 0076, 0077, 0078, 0080, 0081, 0082, 0083, 0084, 0085, 0086, 0087, 0088, 0089, 0091, 0092, 0093, 0095, 0097, 0098, 0099, 0100, 0101, 0102, 0104, 0105, 0106, 0107, 0108, 0110, 0111, 0113, 0114, 0116, 0117, 0119, 0120]
 writes:
   create:
     - tasks/TASK-0341-the-ring-does-not-take-a-tap-meant-for-the-model.md
@@ -108,3 +108,6 @@ Weakest:    the test of the window is a simulated mouse; a finger on the phone i
   test of its own; the test reads the alpha of the style when the arc is drawn. Of the 46 ADRs of `governed-by`, the
   session read ADR-0081, ADR-0104 (its history) and ADR-0119 only. The status is Active: the control of the window of the
   branch was refused on 2026-11-11, so the scenario of the window waits for the owner.
+- 2026-11-11: merged `main` at v0.330 (7369ca2, R18f). The floor of `3DEngine.ImageTests` had a conflict: R18f added 6
+  tests and this task 11, so the floor is 535 (567 on Linux). Run 42976032870 passed on the branch before the merge. ADR-0120 of R18f affects the
+  ring and the frame, so `governed-by` holds it; it does not change the tap of the band.

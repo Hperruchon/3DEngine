@@ -403,8 +403,9 @@ public sealed class ToolRingTests
         var sketch = new Engine.Core.Queries.SketchInfo(Guid.NewGuid(), Engine.Contracts.Sketch.Datums.XY.Id, "Plate",
             [new(start, 0, 0), new(end, 40, 10)], [new(line, start, end)], [], [], [], true, 4);
         var panel = new SketchPanel([sketch], sketch, ThreeDEngine.Core.Sketching.SketchToolKind.Select, false, [line], null);
-        string[] ringLabels = [DesktopUi.LineToolLabel, DesktopUi.SelectToolLabel, DesktopUi.CircleToolLabel, DesktopUi.ArcToolLabel, DesktopUi.FinishLabel, "Horizontal", "Vertical", "Distance"];
-        string[] kept = [DesktopUi.ExtrudeLabel, DesktopUi.DeleteLabel, "L1"];
+        // ADR-0120 items 1 and 2 (TASK-0347): Extrude is on the ring too, and the rows hold the constraints only.
+        string[] ringLabels = [DesktopUi.LineToolLabel, DesktopUi.SelectToolLabel, DesktopUi.CircleToolLabel, DesktopUi.ArcToolLabel, DesktopUi.ExtrudeLabel, DesktopUi.FinishLabel, "Horizontal", "Vertical", "Distance"];
+        string[] kept = [DesktopUi.DeleteLabel];
 
         foreach (var ring in new[] { true, false })
         {
@@ -536,8 +537,10 @@ public sealed class ToolRingTests
     {
         var display = new Vector2(390, 844);
         using var ui = new DesktopUi("http://127.0.0.1:5180", Engine.Contracts.Document.Millimetre);
+        // ADR-0120 item 1 (TASK-0347): the rows are the constraints, so twelve fixed points give a window as long as before.
         var points = Enumerable.Range(0, 12).Select(i => new Engine.Contracts.Sketch.SketchPoint(Guid.NewGuid(), i, i)).ToList();
-        var sketch = new Engine.Core.Queries.SketchInfo(Guid.NewGuid(), Engine.Contracts.Sketch.Datums.XY.Id, "Plate", points, [], [], [], [], true, 24);
+        var fixes = points.Select(point => new Engine.Core.Queries.SketchConstraintInfo(Guid.NewGuid(), "fixed", [point.Id], [point.X, point.Y], 0)).ToList();
+        var sketch = new Engine.Core.Queries.SketchInfo(Guid.NewGuid(), Engine.Contracts.Sketch.Datums.XY.Id, "Plate", points, [], [], [], fixes, true, 0);
         var panel = new SketchPanel([sketch], sketch, ThreeDEngine.Core.Sketching.SketchToolKind.Select, false, [], null);
         void Frame(params InputSample[] samples)
         {

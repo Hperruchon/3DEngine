@@ -113,7 +113,8 @@ public sealed class SketchWindowUiTests
         using var line = Opened(new SketchPanel([Sketch], Sketch, SketchToolKind.Line, true, [], null));
         using var select = Opened(Panel());
 
-        string[] lineControls = [DesktopUi.LineToolLabel, DesktopUi.SelectToolLabel, DesktopUi.FinishLabel, DesktopUi.ExtrudeLabel, DesktopUi.NextPointLabel, DesktopUi.EndLabel, DesktopUi.CloseLabel, "O", "P1", "P2", "L1", "C1"];
+        // ADR-0120 item 1 (TASK-0347): the rows are the constraints only, so C1 has a row and O, P1, P2 and L1 have none.
+        string[] lineControls = [DesktopUi.LineToolLabel, DesktopUi.SelectToolLabel, DesktopUi.FinishLabel, DesktopUi.ExtrudeLabel, DesktopUi.NextPointLabel, DesktopUi.EndLabel, DesktopUi.CloseLabel, "C1"];
         foreach (var control in lineControls)
         {
             var rectangle = line.ItemRectangle(DesktopUi.SketchItem(control));
@@ -121,6 +122,8 @@ public sealed class SketchWindowUiTests
         }
 
         Assert.Null(select.ItemRectangle(DesktopUi.SketchItem(DesktopUi.NextPointLabel)));
+        foreach (var item in new[] { "O", "P1", "P2", "L1" })
+            Assert.Null(line.ItemRectangle(DesktopUi.SketchItem(item)));
         Assert.Null(select.ItemRectangle(DesktopUi.SketchItem(DesktopUi.CloseLabel)));
     }
 
@@ -152,14 +155,15 @@ public sealed class SketchWindowUiTests
     [InlineData(DeviceKind.Touch)]
     public void A_Kind_With_No_Value_And_A_Row_Give_Their_Actions(DeviceKind kind)
     {
-        var actions = Taps(kind, Panel(Line), DesktopUi.SketchItem("Horizontal"), DesktopUi.SketchItem("P2"));
+        // ADR-0120 item 1 (TASK-0347): the row of a constraint selects it; a point has no row.
+        var actions = Taps(kind, Panel(Line), DesktopUi.SketchItem("Horizontal"), DesktopUi.SketchItem("C1"));
 
         Assert.Equal(2, actions.Count);
         var horizontal = Assert.IsType<AddConstraintAction>(actions[0]);
         Assert.Equal("horizontal", horizontal.Kind);
         Assert.Equal([Line], horizontal.Items);
         Assert.Empty(horizontal.Values);
-        Assert.Equal(new ToggleSketchItemAction(B), actions[1]);
+        Assert.Equal(new ToggleSketchItemAction(Fix), actions[1]);
     }
 
     // ADR-0034 item 8: Distance opens a pad of one field with the current distance, and its apply

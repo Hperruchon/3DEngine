@@ -53,6 +53,58 @@ internal sealed unsafe partial class DesktopUi
 
     // ADR-0033 item 13: the sketches, read only, on the background list of ImGui, so they
     // come over the scene and under each window of the panel.
+    // ADR-0120 item 3 (phase R18f, TASK-0347): the item of the label of the plate and of its caption, for a test.
+    public const string PlateLabelItem = "Plate:label";
+    public const string PlateCaptionItem = "Plate:caption";
+    internal const string PlateCaption = "SKETCH · UNDER THE BODY IT MAKES";
+
+    // ADR-0120 item 3: the plate of the active sketch, as the render: a fill and an edge of the accent with a glow, under the
+    // lines of the sketch.
+    private static void Plate(SketchOverlay.Strokes sketches, Engine.Core.Queries.SketchInfo? active)
+    {
+        if (sketches.Plate is not { Count: 4 } corners || active is null)
+            return;
+        var list = ImGui.GetBackgroundDrawList();
+        var points = corners.ToArray();
+        list.AddConvexPolyFilled(ref points[0], points.Length, PlateAccent(0.10f));
+        foreach (var (width, alpha) in new[] { (7f, 0.12f), (1.5f, 0.9f) })
+        {
+            for (var i = 0; i < 4; i++)
+                list.AddLine(points[i], points[(i + 1) % 4], PlateAccent(alpha), width);
+        }
+    }
+
+    // ADR-0120 item 3: over the lines of the sketch, under the plate and left of the tools of the ring at the right: the name and
+    // the state of the sketch in capitals in the accent, on the ground of the scene, and, while the sketch is under its body,
+    // the caption under them. Both end at the middle of the plate. The render puts the name along the far edge of the plate;
+    // there the values on the edges and the body cover it, so it is under the plate with the caption.
+    private void PlateText(SketchOverlay.Strokes sketches, Engine.Core.Queries.SketchInfo? active)
+    {
+        if (sketches.Plate is not { Count: 4 } corners || active is null)
+            return;
+        var list = ImGui.GetBackgroundDrawList();
+        var bottom = corners.Max(point => point.Y);
+        var middle = (corners.Min(point => point.X) + corners.Max(point => point.X)) / 2f;
+        var left = 16f + _inset.X;
+
+        var label = $"{SketchTitle(active).ToUpperInvariant()} · {SketchState(active).ToUpperInvariant()}";
+        var size = ImGui.CalcTextSize(label);
+        var at = new Vector2(Math.Max(left, middle - size.X), bottom + 12f);
+        list.AddRectFilled(at - new Vector2(6f, 3f), at + size + new Vector2(6f, 3f), Theme.Plate(0.85f), 4f);
+        list.AddText(at, PlateAccent(0.95f), label);
+        _items[PlateLabelItem] = new Vector4(at.X, at.Y, at.X + size.X, at.Y + size.Y);
+        if (sketches.Under)
+        {
+            var caption = Spaced(PlateCaption);
+            var extent = ImGui.CalcTextSize(caption);
+            var place = new Vector2(Math.Max(left, middle - extent.X), at.Y + size.Y + 8f);
+            list.AddText(place, ImGui.GetColorU32(ImGuiCol.TextDisabled), caption);
+            _items[PlateCaptionItem] = new Vector4(place.X, place.Y, place.X + extent.X, place.Y + extent.Y);
+        }
+    }
+
+    private static uint PlateAccent(float alpha) => (Theme.Accent & 0x00FFFFFFu) | ((uint)(alpha * 255f) << 24);
+
     private static void Sketches(SketchOverlay.Strokes sketches)
     {
         var list = ImGui.GetBackgroundDrawList();
