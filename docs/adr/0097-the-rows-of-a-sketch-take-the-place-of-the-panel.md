@@ -1,13 +1,13 @@
 ---
 id: 0097
 title: The rows of an active sketch take the place of the panel, and its ring is on the right
-status: Accepted
+status: Amended
 topic: Clients, sketch
 date: 2026-11-08
 supersedes: []
 superseded-by: []
 amends: ['0034', '0086', '0087']
-amended-by: []
+amended-by: ['0120']
 affects:
   - 3DEngine.App/Ui/DesktopUi.cs
   - 3DEngine.App/Ui/DesktopUi.Sketch.cs
@@ -76,3 +76,5 @@ back. A long list of rows scrolls inside the room above the anchors.
 
 - 2026-11-08 · TASK-0308 · The record, with the slice.
 - 2026-11-08 · TASK-0308 · Shipped at v0.295.
+- 2026-11-11 · TASK-0347 · ADR-0120 items 1 and 2 amend items 1 and 2: the rows are the constraints with their value or
+  residual, and the row "Makes".

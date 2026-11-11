@@ -7,7 +7,7 @@ date: 2026-11-07
 supersedes: []
 superseded-by: []
 amends: ['0081']
-amended-by: ['0087', '0095', '0097']
+amended-by: ['0087', '0095', '0097', '0120']
 affects:
   - 3DEngine.App/Ui/DesktopUi.Ring.cs
   - 3DEngine.App/Ui/DesktopUi.cs
@@ -95,3 +95,5 @@ the ring yet. On a small portrait display the window of the sketch can cover the
 - 2026-11-08 · TASK-0306 · Amended by ADR-0095: each tool of the sketch draws an icon above its label.
 - 2026-11-08 · TASK-0308 · ADR-0097 amends item 1: the ring of a sketch is on the right of the sketch, because its rows
   are at the left.
+- 2026-11-11 · TASK-0347 · ADR-0120 items 3 and 4 amend items 1 and 2: the ring holds "Next point" and "Extrude", in the span
+  of a body ring, and its inner radius grows for them.
