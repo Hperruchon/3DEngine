@@ -587,8 +587,13 @@ internal sealed unsafe partial class DesktopUi : IDisposable
             _dropFocus = false;
         }
 
+        // ADR-0120 item 3 (phase R18f, TASK-0347): the plate of the active sketch under its lines.
         if (sketches is not null)
+        {
+            Plate(sketches, sketchPanel?.Active);
             Sketches(sketches);
+            PlateText(sketches, sketchPanel?.Active);
+        }
         if (dimensions is not null)
             Dimensions(dimensions, displaySize);
         if (face is not null)

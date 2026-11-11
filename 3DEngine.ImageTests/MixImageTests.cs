@@ -123,8 +123,9 @@ public class MixImageTests
                 actions.Lift = lift;
                 var seen = lift.Apply(info);
                 strokes = SketchOverlay.Of([seen], camera, Width, Height, new SketchOverlay.Focus(sketch, [], null));
-                strokes = strokes with { Lines = [.. strokes.Lines, .. lift.Links(info, camera, Width, Height)] };
-                sketchPanel = new SketchPanel([info], info, actions.Tool.Kind, false, [], null);
+                // ADR-0120 items 2 and 3 (TASK-0347): the sketch is under the body that it makes, and its row "Makes" gives that body.
+                strokes = strokes with { Lines = [.. strokes.Lines, .. lift.Links(info, camera, Width, Height)], Under = true };
+                sketchPanel = new SketchPanel([info], info, actions.Tool.Kind, false, [], null, [new HistoryStep(body, "Extrude", "Bracket", "correct", null, HistoryTap.SelectBody)]);
                 var shown = seen.Points.Select(point => SketchOverlay.Pixel(seen, camera, Width, Height, (point.X, point.Y))).OfType<Vector2>().ToList();
                 var (low, high) = (shown.Aggregate(Vector2.Min), shown.Aggregate(Vector2.Max));
                 (centre, size) = ((low + high) / 2f, Vector2.Distance(low, high) / 2f);
@@ -156,6 +157,9 @@ public class MixImageTests
             Assert.Equal(["C1  60.000 mm", "C2  40.000 mm"], sketchValues.Select(value => value.Text));
             Assert.All(sketchValues, value => Assert.NotNull(ui.ItemRectangle(value.Key)));
             Assert.All(values, value => Assert.Null(ui.ItemRectangle(value.Key)));
+            // ADR-0120 (TASK-0347): the label of the plate, its caption and the row "Makes".
+            foreach (var item in new[] { DesktopUi.PlateLabelItem, DesktopUi.PlateCaptionItem, DesktopUi.MakesItem })
+                Assert.NotNull(ui.ItemRectangle(item));
         }
         else
         {

@@ -91,6 +91,9 @@ public sealed class NativeThreeDEngine : IThreeDEngine, IDisposable
     // Document or a new selection.
     private readonly HistoryCache _history = new();
 
+    // ADR-0120 item 2 (phase R18f, TASK-0347): the bodies that the active sketch makes, read off the frame thread as the history.
+    private readonly HistoryCache _makes = new();
+
     // ADR-0104 item 1: the count of the events that the session committed, which a subscription raises inside each commit, so
     // that the frame reads no version through the lock of the session. A long command does not stop the frame on it.
     private long _changes;
@@ -773,16 +776,26 @@ public sealed class NativeThreeDEngine : IThreeDEngine, IDisposable
             var lift = sketchActions.Lift;
             sketches = SketchOverlay.Of(lift is null ? _sketches.Live : [.. _sketches.Live.Select(lift.Apply)], Camera, window.width, window.height, focus);
             if (lift is not null && record is not null)
-                sketches = sketches with { Lines = [.. sketches.Lines, .. lift.Links(record, Camera, window.width, window.height)] };
+                sketches = sketches with { Lines = [.. sketches.Lines, .. lift.Links(record, Camera, window.width, window.height)], Under = true };
             if (MarkPoint(_hover, _imageActions) is { } hover && sketchActions.Mark(Camera, hover.X, hover.Y, window.width, window.height) is { } mark)
                 sketches = sketches with { Snap = mark };
+            // ADR-0120 item 2 (phase R18f, TASK-0347): the bodies that the active sketch makes, for its row "Makes".
+            var activeSketch = sketchActions.Active;
+            var makes = _makes.Steps(version, activeSketch, () =>
+            {
+                var bodies = _renderer.LiveBodies.ToList();
+                return Task.Run(async () => HistoryCache.Makes(
+                    (await _host.Session.Query<Engine.Core.Queries.FeaturesInfo>(new Engine.Core.Queries.GetFeaturesQuery()).ConfigureAwait(false)).Result,
+                    bodies, activeSketch));
+            });
             sketchPanel = new SketchPanel(
                 _sketches.Live,
                 _sketches.Live.FirstOrDefault(sketch => sketch.SketchId == sketchActions.Active),
                 tool.Kind,
                 tool.Last is not null,
                 tool.Selection,
-                sketchActions.Message);
+                sketchActions.Message,
+                makes);
         }
 
         // ADR-0047 item 3: the lines of a proposal over the scene, as the lines of a sketch.

@@ -94,6 +94,8 @@ internal sealed unsafe partial class DesktopUi
             foreach (var (label, _) in SketchRingTools)
                 commands.Add((label, () => UseSketchTool(label)));
             commands.Add((NextPointLabel, () => OpenNextPointPad(_sketchPanel?.ChainOpen ?? false)));
+            // ADR-0120 item 2 (phase R18f, TASK-0347): the pad of an extrude of the active sketch.
+            commands.Add((ExtrudeLabel, OpenExtrudePad));
         }
         else
         {
