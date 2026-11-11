@@ -9941,3 +9941,35 @@ alpha of the style when it is drawn. The ring of a sketch keeps its whole band.
 New tests: 11. The test list holds 2476 (1550 in `Engine.Tests`, 356 in `3DEngine.Tests`, 567 in `3DEngine.ImageTests`, 3
 in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
 entries: 12 of 15. New diagnostic codes: 0. Since the review of v0.327, 4 product milestones and 4 entries followed it.
+
+## v0.332 — A triangle of zero area adds no edge, and a large mesh finds its edges on the thread pool (P0.143, TASK-0345)
+
+The owner ordered "go" on 2026-11-11, after the merge of R20a. TASK-0345 was the only task with the status Ready. It holds
+the two low findings of the codebase review of 2026-11-11, V166 and V167, in the edge lines of R18b (ADR-0109).
+
+**V166.** `EdgeLines.Feature` skipped a triangle only when two of its corners were one vertex. A triangle of zero area with
+three different corners, a sliver along a T-vertex, added its long side as an edge with one triangle, so a flat face showed
+a false line. A triangle whose normal is zero now adds no edge.
+
+**V167.** `SessionBodies.AddMesh` found the edges of each mesh on the thread of the frame, and only then dropped the lines
+of a mesh with more than 100 000 feature edges. The review measured 270 ms for 980 000 triangles. ADR-0121 amends ADR-0109
+items 1 and 5:
+- A mesh of at most 100 000 triangles (`EdgeLines.MostTrianglesAtUpload`) finds its edges at the upload, as before.
+- A larger mesh goes to the GPU with no lines, and the search runs on the thread pool. At the start of a later frame the
+  mesh goes up again with its lines. The scene, the box and the count of meshes do not change, so the camera does not move.
+- A rebuild or a removal drops the search of the old mesh, so a new mesh never gets old lines.
+A limit on the triangles before the search was refused: a fine mesh with few creases would lose its true lines.
+
+**Proof.** 3 new tests in `3DEngine.ImageTests/BodyEdgesImageTests.cs`: the sliver of a T-vertex adds no edge; a box with
+a lowered count goes up with no lines and gets its 12 edges at the next frame, and with the normal count gets them at the
+upload; a rebuild while the search of the old mesh is held keeps the lines of the new mesh. Three injections each failed a
+named test, and each file came back byte for byte: no check of a zero normal, each mesh at the upload, and no drop of the
+search at a rebuild. The phone project builds with zero warnings. Run 43030295784 passed on the branch.
+
+**What stays.** No test runs the search of a real mesh of 100 000 triangles or more; the tests lower the count on a box. The
+time of a large upload in the window and on the phone is not measured (R-0061). The second upload copies the triangles to
+the GPU again. A sliver whose normal is very small but not zero still adds its edge.
+
+New tests: 3. The test list holds 2479 (1550 in `Engine.Tests`, 356 in `3DEngine.Tests`, 570 in `3DEngine.ImageTests`, 3
+in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
+entries: 12 of 15. New diagnostic codes: 0. Since the review of v0.327, 4 product milestones and 5 entries followed it.
