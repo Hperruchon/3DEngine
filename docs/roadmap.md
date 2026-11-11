@@ -360,6 +360,8 @@ Therefore each approved objective must have a track here.
   ring and the history arc fade while the view moves. v0.331, TASK-0341, ADR-0116.
 - R18f — The sketch as in the render: the rows of its constraints with their value or residual and "Makes", "Next point"
   and "Extrude" on its ring, and the plate with its label and its caption. v0.330, TASK-0347, ADR-0120.
+- P0.143 — The low findings of the codebase review of 2026-11-11: a triangle of zero area adds no edge, and a mesh of
+  more than 100 000 triangles finds its edges on the thread pool. v0.332, TASK-0345, ADR-0121.
 
 ## Track 0 — Foundations
 

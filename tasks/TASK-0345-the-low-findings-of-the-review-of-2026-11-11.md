@@ -1,7 +1,7 @@
 ---
 id: 0345
 title: The low findings of the codebase review of 2026-11-11
-status: Active
+status: Done
 phase: P0.143
 opened: 2026-11-11
 depends-on: [0344]
@@ -50,22 +50,23 @@ The edge lines draw no false line, and a large mesh spends no time on lines that
 
 ## Acceptance criteria
 
-- [ ] A test proves that a triangle of zero area across a T-vertex adds no edge.
-- [ ] A test proves that a mesh above the limit does not run the search of its edges on the upload, or a measure shows the
+- [x] A test proves that a triangle of zero area across a T-vertex adds no edge.
+- [x] A test proves that a mesh above the limit does not run the search of its edges on the upload, or a measure shows the
       new cost.
-- [ ] A clean build (`--no-incremental`) gives zero errors and zero warnings, and the phone project builds.
-- [ ] `dotnet test`, the write-set check and `eng/repo-gates` pass; continuous integration passes on the branch and on
+- [x] A clean build (`--no-incremental`) gives zero errors and zero warnings, and the phone project builds.
+- [x] `dotnet test`, the write-set check and `eng/repo-gates` pass; continuous integration passes on the branch and on
       `main` after the merge.
 
 ## Outcome
 
-Status: Ready
+Status: Done · commit (the merge of the branch p0143-edge-findings) · v0.332
 
 ## Method
 
 Mechanical: the check of a zero normal; the order of the limit and the search.
 Judgement:  the bound of V167, and whether the search moves to the thread pool.
-Weakest:    to be written at the close.
+Weakest:    the time of a large mesh in the window is not measured. The tests use a box and a lowered count, so no
+            test runs a search of 100 000 triangles or more on the thread pool.
 
 ## Progress
 
@@ -74,3 +75,4 @@ Weakest:    to be written at the close.
   zero. V167: a mesh of more than 100 000 triangles finds its edges on the thread pool and gets its lines at a later frame
   (ADR-0121, amends ADR-0109 items 1 and 5); a limit on the triangles before the search would drop the true lines of a
   fine mesh. Three new tests; three injections each failed a named test, and each file came back byte for byte.
+- 2026-11-11: run 43030295784 passed on the branch. Closed at v0.332.
