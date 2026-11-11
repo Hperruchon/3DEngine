@@ -120,6 +120,9 @@ internal sealed unsafe partial class DesktopUi
             if (bodies.FirstOrDefault(body => body.Id == selection) is { } body)
             {
                 commands.Add((RenameLabel, () => StartRename(body)));
+                // ADR-0119 item 1 (phase R18e, TASK-0346): "Edit sketch" for a body that a sketch made.
+                if (SketchStep is { } sketch)
+                    commands.Add((EditSketchLabel, () => _actions.Add(new EditSketchAction(sketch.Id))));
                 // Finding V153 of the codebase review of 2026-11-09 (TASK-0324): the name of a cut holds the text of the row of
                 // its tool, as the list of a cut in the rows does, so two bodies with no name and of one kind give two names.
                 // Until TASK-0324 the name held the kind only, and the list showed "Cut with Box" two times.

@@ -100,7 +100,7 @@ internal sealed unsafe partial class DesktopUi
 
         // ADR-0117 item 2 (ADR-0099 Q2): the row "Made from" with the sketch of the body: the first step of its history that
         // opens a sketch. A body that no sketch made, as a box, has no such row.
-        if (history?.FirstOrDefault(step => step.Tap == HistoryTap.EditSketch) is { } sketchStep && y + RowHeight <= bottom)
+        if (SketchStep is { } sketchStep && y + RowHeight <= bottom)
         {
             _madeFrom = (sketchStep, new Vector4(left, y, right, y + RowHeight));
             y += RowHeight;

@@ -53,7 +53,7 @@ internal sealed unsafe partial class DesktopUi
 
     // The labels that RingIcon draws an icon for. A kind of a constraint has none, so it keeps the plate of a wide label.
     private static readonly HashSet<string> RingIconLabels =
-        [MoveLabel, SetDistanceLabel, HideLabel, ShowLabel, SketchOnFaceButtonLabel, LineToolLabel, SelectToolLabel, CircleToolLabel, ArcToolLabel, ConstrainLabel, FinishLabel, BackLabel];
+        [EditSketchLabel, RenameLabel, MoveLabel, SetDistanceLabel, HideLabel, ShowLabel, SketchOnFaceButtonLabel, LineToolLabel, SelectToolLabel, CircleToolLabel, ArcToolLabel, ConstrainLabel, FinishLabel, BackLabel];
 
     // The icon of a segment, drawn with the draw list at its centre: none for a label with no icon.
     private static bool RingIcon(ImDrawListPtr list, string label, Vector2 c, uint ink)
@@ -87,6 +87,17 @@ internal sealed unsafe partial class DesktopUi
                 list.AddCircle(c, h * 0.35f, ink, 12, w);
                 if (label == HideLabel)
                     list.AddLine(c + new Vector2(-h, h), c + new Vector2(h, -h), ink, w);
+                return true;
+            // ADR-0119 item 1 (phase R18e, TASK-0346): a pencil for "Edit sketch" and a letter T for "Rename", as the render.
+            case EditSketchLabel:
+                list.AddQuad(c + new Vector2(-h, h * 0.55f), c + new Vector2(h * 0.55f, -h), c + new Vector2(h, -h * 0.55f), c + new Vector2(-h * 0.55f, h), ink, w);
+                list.AddLine(c + new Vector2(-h, h * 0.55f), c + new Vector2(-h, h), ink, w);
+                list.AddLine(c + new Vector2(-h, h), c + new Vector2(-h * 0.55f, h), ink, w);
+                return true;
+            case RenameLabel:
+                list.AddLine(c + new Vector2(-h * 0.8f, -h), c + new Vector2(h * 0.8f, -h), ink, w);
+                list.AddLine(c + new Vector2(0f, -h), c + new Vector2(0f, h), ink, w);
+                list.AddLine(c + new Vector2(-h * 0.35f, h), c + new Vector2(h * 0.35f, h), ink, w);
                 return true;
             case SketchOnFaceButtonLabel:
                 list.AddLine(c + new Vector2(-h, h), c + new Vector2(h * 0.6f, -h * 0.6f), ink, w + 1f);

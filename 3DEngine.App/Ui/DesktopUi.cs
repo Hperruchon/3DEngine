@@ -45,6 +45,8 @@ internal sealed unsafe partial class DesktopUi : IDisposable
     public const string ClearLabel = "Clear";
     public const string NameLabel = "Name";
     public const string RenameLabel = "Rename";
+    // ADR-0119 item 1 (phase R18e, TASK-0346): the segment of the ring and the command that open the sketch of the body.
+    public const string EditSketchLabel = "Edit sketch";
     public const string HideLabel = "Hide";
     public const string ShowLabel = "Show";
     public const string ShowAllLabel = "Show all";
@@ -557,6 +559,8 @@ internal sealed unsafe partial class DesktopUi : IDisposable
         _sketchActive = sketchPanel?.Active is not null;
         _sketchTool = sketchPanel?.Active is not null ? sketchPanel.Tool : null;
         _sketchPanel = sketchPanel;
+        // ADR-0119 item 1 (phase R18e, TASK-0346): the steps of the history of the selected body in this frame.
+        _history = history;
         ImGui.SetCurrentContext(_context);
         var io = ImGui.GetIO();
         io.DisplaySize = displaySize;
@@ -728,6 +732,12 @@ internal sealed unsafe partial class DesktopUi : IDisposable
     // The two fonts of ADR-0091, and the font of a value.
     private readonly (nint Pointer, int Length)[] _fontData;
     private readonly ImFontPtr _monoFont;
+
+    // ADR-0119 item 1 (phase R18e, TASK-0346): the steps of the history of this frame, and the step of the sketch that made the
+    // selected body: the first step that opens a sketch, or null, as the row "Made from" of ADR-0117 item 2.
+    private IReadOnlyList<HistoryStep>? _history;
+
+    internal HistoryStep? SketchStep => _history?.FirstOrDefault(step => step.Tap == HistoryTap.EditSketch);
 
     // ADR-0117 item 1: the font of the name of a selected body in its first row.
     private readonly ImFontPtr _titleFont;
