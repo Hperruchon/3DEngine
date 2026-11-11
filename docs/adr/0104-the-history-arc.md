@@ -7,7 +7,7 @@ date: 2026-11-09
 supersedes: []
 superseded-by: []
 amends: []
-amended-by: ['0119']
+amended-by: ['0116', '0119']
 affects:
   - 3DEngine.App/Ui/DesktopUi.History.cs
   - 3DEngine.App/Ui/DesktopUi.cs
@@ -90,3 +90,4 @@ The owner chose the slice and its merge after green CI; the recommendations answ
 - 2026-11-09 · TASK-0325 · Shipped at v0.308.
 - 2026-11-11 · TASK-0346 · ADR-0119 item 3 amends item 3: the arc is a bright line with a glow, and each node is a dot on it
   inside its target of 44 pixels.
+- 2026-11-11 · TASK-0341 · ADR-0116 item 2 amends item 3: the arc fades with the ring while the view turns, pans or zooms.
