@@ -437,6 +437,19 @@ classes created a Vulkan device at the same time. A crash stops the local proof 
 tests on Linux only (R-0040), so it does not see it.
 Exit: a cause is found and fixed, or the tests that create a device run in one collection, and ten runs end with no crash.
 
+### R-0063 · The scenario of R20a in the window was not done
+- class: risk
+- opened: 2026-11-11
+- due: 2026-11-25
+- extended: no
+- refs: `3DEngine.App/Ui/DesktopUi.Ring.cs` (RingTapAt), `docs/adr/0116-the-ring-takes-a-tap-only-on-its-labels.md`,
+  `docs/proposals/2026-11-10-ux-test-of-a-multi-part-project.md` (problem 1), TASK-0341
+The first acceptance criterion of TASK-0341 is a click in the window at 1280 by 720 on a copy of `Bibliotheque120.3de`:
+select "Fond", zoom three steps, and click the module to the right under the band. The control of the window was refused
+two times on 2026-11-11, and the owner was not at the computer, so the owner closed R20a on the tests and continuous
+integration. The tests drive the library with simulated taps; they do not draw the window or pick a body on the GPU.
+Exit: the scenario runs in the window, and the module is selected with no pad open; or it fails, and a task corrects it.
+
 ## Accepted compromises
 
 These are conditions that the project keeps permanently and by decision. They do not age.

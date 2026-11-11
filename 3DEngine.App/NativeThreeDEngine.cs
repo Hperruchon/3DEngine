@@ -24,6 +24,7 @@ public sealed class NativeThreeDEngine : IThreeDEngine, IDisposable
 {
     private readonly SdlInput _input = new();
     private readonly IntentMachine _intents;
+    private readonly GestureFadeTimer _gesture = new();
 
     private readonly Window _window;
     private readonly ISessionHost _host;
@@ -277,7 +278,12 @@ public sealed class NativeThreeDEngine : IThreeDEngine, IDisposable
         // ADR-0111 item 3 (TASK-0331): while an accept runs, an intent that changes the Document is held, and the end of a drag
         // of the gizmo is a cancel (finding V163). ADR-0114 item 4 (finding T181): AcceptHold.Pass makes the decision.
         var held = _proposalAccept is not null;
-        foreach (var taken in _intents.Step(_ui is null ? frame : _ui.Route(frame)))
+        var intents = _intents.Step(_ui is null ? frame : _ui.Route(frame));
+        // ADR-0116 item 2 (phase R20a, TASK-0341): the ring and the history arc fade while an orbit, a pan or a zoom runs.
+        _gesture.Step(intents, _delta.TotalSeconds);
+        if (_ui is not null)
+            _ui.CameraGesture = _gesture.Running;
+        foreach (var taken in intents)
         {
             var (passed, hold) = AcceptHold.Pass(taken, _proposalAccept);
             if (hold)
