@@ -156,7 +156,8 @@ internal sealed record SketchPanel(
     SketchToolKind Tool,
     bool ChainOpen,
     IReadOnlyList<Guid> Selection,
-    string? Message);
+    string? Message,
+    IReadOnlyList<HistoryStep>? Makes = null);
 
 // ADR-0046 items 3 and 4: the place of a PNG file on an origin plane, and the calibration of a live
 // image by two taps on it and a real distance.

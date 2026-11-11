@@ -129,11 +129,17 @@ internal sealed unsafe partial class DesktopUi
     internal static RingLayout SketchLayout(Vector2 display, Vector2 centre, int count, float sketch, float rowsRight)
     {
         var span = (count * RingSegment) + ((count - 1) * RingGap);
-        var inner = Math.Min(Math.Max(100f, sketch + 24f), Math.Max(100f, (display.Y / 2f) - 16f - RingBand));
+        // ADR-0120 item 2 (phase R18f, TASK-0347): the rule of the span of a body ring (ADR-0119 item 2), so the tools of a sketch
+        // end before Accept of a proposal. A sketch needs each of its tools, so the inner radius grows until a narrowed segment is
+        // at least 46 pixels at it, as a portrait ring does (ADR-0086 item 3), up to the half of the display.
+        var target = (RingSpan - ((count - 1) * RingGap)) / Math.Max(count, 1);
+        var inner = Math.Min(Math.Max(Math.Max(100f, sketch + 24f), target < RingSegment ? (ValueSize + 2f) / target : 0f), Math.Max(100f, (display.Y / 2f) - 16f - RingBand));
         var reach = inner + RingBand + 16f;
         var x = Math.Max(Math.Min(centre.X, display.X - reach), rowsRight);
         var y = Math.Clamp(centre.Y, reach, Math.Max(reach, display.Y - reach));
-        return new RingLayout(new Vector2(x, y), inner, -span / 2f, 1f);
+        var segment = Math.Min(RingSegment, Math.Max(target, (ValueSize + 2f) / inner));
+        var narrowed = (count * segment) + ((count - 1) * RingGap);
+        return new RingLayout(new Vector2(x, y), inner, -narrowed / 2f, 1f, segment);
     }
 
     // Finding V135 of the codebase review of 2026-11-07 (c) (TASK-0281): a release over a window belongs to the window. While an
@@ -218,8 +224,13 @@ internal sealed unsafe partial class DesktopUi
             {
                 _constrainOpen = false;
                 labels.AddRange(SketchRingTools.Where(tool => tool.Kind is not null).Select(tool => tool.Label));
+                // ADR-0120 item 2 (phase R18f, TASK-0347): "Next point" while the tool Line is active, and "Extrude" before
+                // Finish, as the window gave them until TASK-0347.
+                if (_sketchTool == SketchToolKind.Line)
+                    labels.Add(NextPointLabel);
                 if (_fitting.Count > 0)
                     labels.Add(ConstrainLabel);
+                labels.Add(ExtrudeLabel);
                 labels.Add(FinishLabel);
             }
         }
@@ -380,6 +391,19 @@ internal sealed unsafe partial class DesktopUi
         if (label == ConstrainLabel)
         {
             _constrainOpen = true;
+            return;
+        }
+
+        // ADR-0120 item 2: the pad of the next point, and the pad of an extrude, as their buttons of the window did.
+        if (label == NextPointLabel)
+        {
+            OpenNextPointPad(_sketchPanel?.ChainOpen ?? false);
+            return;
+        }
+
+        if (label == ExtrudeLabel)
+        {
+            OpenExtrudePad();
             return;
         }
 
