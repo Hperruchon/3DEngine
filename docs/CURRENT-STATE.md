@@ -9998,3 +9998,38 @@ again; each gave the defect. `CodebaseReviewGateTests` passes with the new revie
 New tests: 0. The test list holds 2479 (1550 in `Engine.Tests`, 356 in `3DEngine.Tests`, 570 in `3DEngine.ImageTests`, 3
 in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
 entries: 12 of 15. New diagnostic codes: 0. This entry is a codebase review, so 0 product milestones and 0 entries follow it.
+
+## v0.334 — "Dimensions" is a segment of the ring of a body (R20b1, TASK-0348)
+
+On 2026-11-11 the owner asked: "i want the dimention option on the wheel". The UX test of 2026-11-10 found the same problem
+(problem 2): the toggle of the dimensions was in the panel and in the command line only, so a person opened the panel to
+show them. Roadmap row R20b held the fix with the hidden bodies; this task splits it into R20b1 (the dimensions) and R20b2
+(the hidden bodies).
+
+**The change.** ADR-0122 amends ADR-0119 items 1 and 2.
+- The ring of a body has "Dimensions" after "Focus" and before "Rename", with an icon of a dimension line between two
+  extension lines. A tap turns the dimensions on or off; it changes the same state as the toggle of the panel and the
+  command, and it sends no action to the engine.
+- While the dimensions are on, the segment has the colour and the outline of a tool in use, as "Focus" has during a focus.
+- On a landscape ring with no room in the span of four segments, "Rename" leaves first, then "Edit sketch", then
+  "Dimensions". So the ring of an extrude at 640 by 360, 844 by 390 and 915 by 412 has no "Dimensions"; the ring of a box
+  and a portrait ring keep it. "Focus" stays, because it has no toggle in the panel. The owner can change this order.
+
+**V172.** The codebase review of 2026-11-12 (v0.333) found that ADR-0119 gave the span of four segments as 1.84 radians.
+`RingSpan` is 4 × 0.42 + 3 × 0.04 = 1.80 radians. This task amends ADR-0119, so it corrects the number in the same change.
+
+**Proof.** 6 new tests in `3DEngine.ImageTests/RingDimensionsTests.cs`: a tap turns the dimensions on and off and the segment
+shows the state; the ring shows a state that the panel set; the labels of a small ring at four sizes. `RingToolsTests`,
+`ProposalArcTests` and `RingImageTests` take the new segment, and the span theory adds 915 by 412 and 844 by 390 (2 new
+cases). Four injections each failed a named test, and the file came back byte for byte: no segment, no state of a tool in
+use, "Dimensions" not in the tools that leave a small ring, and no toggle on the tap. The picture of `RingImageTests` at 1280
+by 720 shows the segment with its icon. The phone project builds with zero warnings. Run 43116794483 passed on the branch.
+One local run of the image tests crashed the test host after 145 tests (R-0062); the next run passed 578.
+
+**What stays.** No person used the segment in the window or on the phone; the window scenario of R20a (R-0063) also waits. The
+label "Dimensions" is a little wider than its segment at 1280 by 720. R20b2 (the hidden bodies) and R20c (the labels of the
+dimensions) follow.
+
+New tests: 8. The test list holds 2487 (1550 in `Engine.Tests`, 356 in `3DEngine.Tests`, 578 in `3DEngine.ImageTests`, 3
+in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
+entries: 12 of 15. New diagnostic codes: 0. Since the review of v0.333, 1 product milestone and 1 entry followed it.

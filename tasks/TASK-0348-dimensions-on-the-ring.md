@@ -1,7 +1,7 @@
 ---
 id: 0348
 title: Dimensions on the ring of a body
-status: Active
+status: Done
 phase: R20b1
 opened: 2026-11-11
 depends-on: [0341]
@@ -22,6 +22,7 @@ writes:
     - eng/test-floor.txt
     - docs/roadmap.md
     - docs/CURRENT-STATE.md
+    - tasks/TASK-0350-medium-and-low-findings-of-the-review-of-2026-11-12.md
   forbid:
     - Engine.Contracts/**
     - Engine.Core/**
@@ -57,24 +58,29 @@ A person turns the dimensions on and off on the ring of a body, and the ring sho
 
 ## Acceptance criteria
 
-- [ ] ADR-0122 exists. ADR-0119 shows the amendment.
-- [ ] A test proves the tap of "Dimensions"; it fails when the tap does not change the dimensions.
-- [ ] A test proves the state of a tool in use; it fails when the segment does not show it.
-- [ ] A test proves the order of the tools that leave a small ring; it fails when "Dimensions" does not leave.
-- [ ] A clean build (`--no-incremental`) gives zero errors and zero warnings, and the phone project builds.
-- [ ] `dotnet test`, the write-set check and `eng/repo-gates` pass; continuous integration passes on the branch and on
+- [x] ADR-0122 exists. ADR-0119 shows the amendment.
+- [x] A test proves the tap of "Dimensions"; it fails when the tap does not change the dimensions.
+- [x] A test proves the state of a tool in use; it fails when the segment does not show it.
+- [x] A test proves the order of the tools that leave a small ring; it fails when "Dimensions" does not leave.
+- [x] A clean build (`--no-incremental`) gives zero errors and zero warnings, and the phone project builds.
+- [x] `dotnet test`, the write-set check and `eng/repo-gates` pass; continuous integration passes on the branch and on
       `main` after the merge.
 
 ## Outcome
 
-Status: Active
+Status: Done · commit (the merge of the branch r20b-ring-dimensions) · v0.334
 
 ## Method
 
 Mechanical: the segment, its icon, its state and its tap.
 Judgement:  the place of "Dimensions" in the order of the tools that leave a small ring.
-Weakest:    to be written at the close.
+Weakest:    no person used the segment in the window or on the phone. The tests drive Dear ImGui with no device, and the
+            picture of the ring test shows the label "Dimensions" a little wider than its segment at 1280 by 720.
 
 ## Progress
 
 - 2026-11-11: opened by the request of the owner, after the merge of P0.143.
+- 2026-11-11: the segment, its icon, its state and its tests. The close of R20b1 is the fifth product milestone after the
+  review of v0.327, so the codebase review of 2026-11-12 (TASK-0349, v0.333) came first and merged into this branch.
+- 2026-11-12: corrected V172 of that review in ADR-0119 (1.80 radians, not 1.84). Run 43116794483 passed on the branch. Closed
+  at v0.334. TASK-0350 changes DesktopUi.Ring.cs, so its governed-by now names ADR-0122.

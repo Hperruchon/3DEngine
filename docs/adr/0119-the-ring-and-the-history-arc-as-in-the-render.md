@@ -37,7 +37,7 @@ ordered R18e after R18d. Two facts limit the ring:
   (ADR-0092 item 7). The top segment of a landscape ring must end before that angle.
 - The history arc is on the band from 90 to 135 degrees (ADR-0104). The bottom segment must end before it.
 
-Four segments of 0.42 radians and three gaps span 1.84 radians, from about 307 to 53 degrees, which fits. Five segments
+Four segments of 0.42 radians and three gaps span 1.80 radians, from about 308 to 52 degrees, which fits. Five segments
 reach about 295 degrees, under the arc of a proposal. Before this record a selected face gave an extrude five segments, and
 its top segment was under the arc of a proposal.
 
@@ -52,7 +52,7 @@ The session gave the choices of this record. The owner can change them.
    because its panel keeps the name field and its button. The command line holds "Edit sketch" for a body that a sketch
    made.
 2. **The span (amends ADR-0081 items 1 and 2).** The segments of a landscape body ring span at most the span of four
-   segments, 1.84 radians. More than four segments are narrower, and a narrowed segment is at least 46 pixels at the inner
+   segments, 1.80 radians. More than four segments are narrower, and a narrowed segment is at least 46 pixels at the inner
    radius. When the ring has no room for each tool in that span, "Rename", then "Edit sketch", then "Dimensions" leave the
    ring (ADR-0122); the rows still give the first two, and the panel and the command line give the third. A segment is
    never wider than 0.42 radians. A ring of a sketch keeps its own layout (ADR-0086).
@@ -77,3 +77,5 @@ display the two new tools leave the ring.
 - 2026-11-11 · TASK-0346 · Shipped at v0.329.
 - 2026-11-11 · TASK-0348 · Amended by ADR-0122: "Dimensions" is a segment between "Focus" and "Rename", and it leaves a
   small ring after "Edit sketch".
+- 2026-11-12 · TASK-0348 · Finding V172 of the codebase review of 2026-11-12: the span of four segments is 1.80 radians, from
+  about 308 to 52 degrees, as `RingSpan` gives; the record said 1.84 radians and 307 to 53 degrees.
