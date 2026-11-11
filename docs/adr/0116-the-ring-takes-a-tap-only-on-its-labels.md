@@ -73,3 +73,4 @@ segment, not each corner. A finger on the phone is not tested; the tests simulat
 ## History
 
 - 2026-11-11 · TASK-0341 · The record, from improvement A of the UX test of 2026-11-10 and the judgement of the session.
+- 2026-11-11 · TASK-0341 · Shipped at v0.331. The scenario in the window waits in R-0063.

@@ -1,7 +1,7 @@
 ---
 id: 0341
 title: The ring does not take a tap meant for the model
-status: Active
+status: Done
 phase: R20a
 opened: 2026-11-10
 depends-on: [0339]
@@ -24,6 +24,7 @@ writes:
     - docs/adr/README.md
     - eng/test-floor.txt
     - docs/CURRENT-STATE.md
+    - docs/register.md
   forbid:
     - Engine.Contracts/**
     - Engine.Core/**
@@ -68,10 +69,15 @@ A tap on a body under the band of the ring selects that body. Only the icon and 
 
 - [ ] The scenario of improvement A passes in the window at 1280 by 720 on a copy of `Bibliotheque120.3de`: select
       "Fond", zoom three steps, click the module to the right under the band; the module is selected and no pad opens.
+      Not done: the owner closed the task without it on 2026-11-11, and R-0063 holds it.
 - [x] Each new test fails on an injection of the old tap.
 - [x] A clean build (`--no-incremental`) gives zero errors and zero warnings, and the phone project builds.
-- [ ] `dotnet test`, the write-set check and `eng/repo-gates` pass; continuous integration passes on the branch and on
+- [x] `dotnet test`, the write-set check and `eng/repo-gates` pass; continuous integration passes on the branch and on
       `main` after the merge.
+
+## Outcome
+
+Status: Done · commit (the merge of the branch r20a-ring-tap) · v0.331
 
 ## Notes for the implementer
 
@@ -111,3 +117,6 @@ Weakest:    the test of the window is a simulated mouse; a finger on the phone i
 - 2026-11-11: merged `main` at v0.330 (7369ca2, R18f). The floor of `3DEngine.ImageTests` had a conflict: R18f added 6
   tests and this task 11, so the floor is 535 (567 on Linux). Run 42976032870 passed on the branch before the merge. ADR-0120 of R18f affects the
   ring and the frame, so `governed-by` holds it; it does not change the tap of the band.
+- 2026-11-11: a second request for the control of the window was refused, and the owner was not at the computer. The
+  owner chose to close the task now ("Close now"), with the scenario of the window in R-0063. Run 42978522052 passed on
+  the branch after the merge of `main`. Closed at v0.331.
