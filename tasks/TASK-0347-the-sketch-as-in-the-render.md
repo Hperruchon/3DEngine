@@ -1,7 +1,7 @@
 ---
 id: 0347
 title: The sketch as in the render, with the rows of its constraints, its tools on the ring and its plate
-status: Active
+status: Done
 phase: R18f
 opened: 2026-11-11
 depends-on: [0346]
@@ -70,23 +70,24 @@ The active sketch looks as in the render, and its rows and its ring give each of
 
 ## Acceptance criteria
 
-- [ ] ADR-0120 exists. ADR-0085, ADR-0086, ADR-0097 and ADR-0098 show the amendment.
-- [ ] A test proves the row "Makes" and its tap; it fails when the tap gives no action.
-- [ ] A test proves the two tools of the ring; it fails when Extrude is not on the ring.
-- [ ] The picture of the bracket with its sketch at 1440 by 900 shows the rows, the tools and the plate.
-- [ ] A clean build (`--no-incremental`) gives zero errors and zero warnings, and the phone project builds.
-- [ ] `dotnet test`, the write-set check and `eng/repo-gates` pass; continuous integration passes on the branch and on
+- [x] ADR-0120 exists. ADR-0085, ADR-0086, ADR-0097 and ADR-0098 show the amendment.
+- [x] A test proves the row "Makes" and its tap; it fails when the tap gives no action.
+- [x] A test proves the two tools of the ring; it fails when Extrude is not on the ring.
+- [x] The picture of the bracket with its sketch at 1440 by 900 shows the rows, the tools and the plate.
+- [x] A clean build (`--no-incremental`) gives zero errors and zero warnings, and the phone project builds.
+- [x] `dotnet test`, the write-set check and `eng/repo-gates` pass; continuous integration passes on the branch and on
       `main` after the merge.
 
 ## Outcome
 
-Status: Active
+Status: Done · commit (the merge of the branch r18f-sketch) · v0.330
 
 ## Method
 
 Mechanical: the rows from the constraints; the bodies made from the features, as the history.
 Judgement:  the place of the label of the plate; the ring of a sketch that grows; no row for a point.
-Weakest:    to be written at the close.
+Weakest:    the plate in a real window: the test of the mix draws it with the sketch under its body, but no person used it
+            yet, and the label is under the plate, not along its edge as the render.
 
 ## Progress
 
@@ -95,3 +96,8 @@ Weakest:    to be written at the close.
   the highest) were under a value or over the body in the picture of the mix, so the label is under the plate with the
   caption. The first ring of a small sketch did not narrow, because 46 pixels at its inner radius need more than 0.42
   radians, so its inner radius grows.
+- 2026-11-11: run 42975342375 passed on the work commit. Ten injections each failed a named test: no residual, an angle as a
+  length, no action of "Makes", a row for each point, no follow of a consumed body, no Extrude on the ring, a ring that does
+  not grow, no command Extrude, a plate with no margin, and a caption always. `SketchWindowUiTests.cs`, `ToolRingTests.cs`
+  and `MixImageTests.cs` take the rows of the constraints, Extrude on the ring, and the plate under the body. The comments
+  cite ADR-0120 only, because the gate of citations asks a cited ADR to name the file. Closed at v0.330.

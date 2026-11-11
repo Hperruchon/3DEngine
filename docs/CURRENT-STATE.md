@@ -9873,3 +9873,37 @@ v0.328, from the API: none.
 New tests: 7. The test list holds 2459 (1550 in `Engine.Tests`, 356 in `3DEngine.Tests`, 550 in `3DEngine.ImageTests`, 3
 in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
 entries: 11 of 15. New diagnostic codes: 0. Since the review of v0.327, 2 product milestones and 2 entries followed it.
+
+## v0.330 — The sketch shows the rows of its constraints, its tools on the ring and its plate (R18f, TASK-0347)
+
+The owner accepted the proposal on the gaps to the render on 2026-11-10 (Q1 to Q7 A) and ordered R18f on 2026-11-11. This
+entry is slice S6: the sketch. Before it, the rows of an active sketch gave the buttons "Next point" and "Extrude", then one
+row for each point, line and constraint in a list that scrolled, and the sketch had no plate.
+
+**The change.** ADR-0120 amends ADR-0085 item 2, ADR-0086 items 1 and 2, ADR-0097 items 1 and 2 and ADR-0098 item 3.
+- The rows give the name of the sketch in the font of a title with "solved · N free" in green or "not solved" in red, then
+  one row for each constraint with its value (three decimals and the unit), an angle in degrees, or its residual. A point
+  and a line have no row; the tool Select selects them on the sketch.
+- A row "Makes" gives the live body that the sketch makes: its Extrude, or the feature that consumed that body. The host
+  reads the features off the frame thread, as the history. A tap ends the sketch and selects the body.
+- "Next point" (with the tool Line) and "Extrude" are on the ring of the sketch, and "Extrude" in the command line. The ring
+  of a sketch takes the span of a body ring, and its inner radius grows so that a narrowed segment keeps 46 pixels.
+- The active sketch is a plate: the box of its points with a margin, filled with the accent and edged with a glow. Its name
+  and state, and under its body the caption "SKETCH · UNDER THE BODY IT MAKES", are under the plate, left of the ring.
+
+**Proof.** 6 new tests in `3DEngine.ImageTests/SketchRenderTests.cs`: the text of a row, the rows and their taps, the
+bodies made, the two tools and their pads, the command, and the plate with its label and caption. Ten injections each
+failed a named test; each file came back byte for byte. The picture of the bracket with its sketch at 1440 by 900 shows
+the rows, the tools and the plate. The phone project builds with zero warnings. Run 42975342375 passed on the branch. The
+failed runs since the entry v0.329, from the API: none. A correction: the entry v0.329 says that no run failed since the
+entry v0.328, but the first attempt of run 42927620137 on main at v0.328 failed on Windows in
+EngineHostSubscriptionTests.A_Report_That_Blocks_Does_Not_Hold_The_Session (a time limit of 5 seconds), and the re-run
+of the owner passed. The API gives a run the result of its last attempt, so the script of the failed runs did not list
+it.
+
+**What stays.** The label of the plate is under it, not along its edge as the render. The ring of a small sketch is larger
+than the sketch. The row "Makes" waits for the read of the features.
+
+New tests: 6. The test list holds 2465 (1550 in `Engine.Tests`, 356 in `3DEngine.Tests`, 556 in `3DEngine.ImageTests`, 3
+in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
+entries: 11 of 15. New diagnostic codes: 0. Since the review of v0.327, 3 product milestones and 3 entries followed it.
