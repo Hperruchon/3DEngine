@@ -1,13 +1,13 @@
 ---
 id: 0085
 title: The active sketch of a live extrude moves out of its body, and the camera stays
-status: Accepted
+status: Amended
 topic: Clients, rendering
 date: 2026-11-07
 supersedes: []
 superseded-by: []
 amends: ['0034']
-amended-by: []
+amended-by: ['0120']
 affects:
   - 3DEngine.App/SketchLift.cs
   - 3DEngine.App/SketchActions.cs
@@ -96,3 +96,5 @@ another feature consumed opens as before.
 
 - 2026-11-07 · TASK-0273 · The record, Accepted under the standing order.
 - 2026-11-07 · TASK-0273 · Shipped at v0.256.
+- 2026-11-11 · TASK-0347 · ADR-0120 item 5 amends item 2: the active sketch is a plate with its label, and, under its body,
+  the caption "SKETCH · UNDER THE BODY IT MAKES".

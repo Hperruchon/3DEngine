@@ -104,6 +104,28 @@ internal static class HistorySteps
 // Until TASK-0331 the frame ran the query and waited for it, also with no selection, so a long command stopped the window.
 internal sealed class HistoryCache
 {
+    // ADR-0120 item 2 (phase R18f, TASK-0347): the live bodies that a sketch makes: each Extrude that reads the sketch, and,
+    // when a later feature consumed that body, the feature that consumed it, again and again, to a live body. Each body is a
+    // step that selects it, with its name or its kind.
+    public static IReadOnlyList<HistoryStep> Makes(FeaturesInfo? features, IReadOnlyList<LiveBody> bodies, Guid? sketch)
+    {
+        ArgumentNullException.ThrowIfNull(bodies);
+        if (features is null || sketch is not { } id)
+            return [];
+        var byId = features.Features.ToDictionary(feature => feature.FeatureId);
+        var made = new List<HistoryStep>();
+        foreach (var feature in features.Features.Where(feature => feature.Kind == "Extrude" && feature.Inputs.Contains(id)))
+        {
+            var at = feature;
+            for (var guard = 0; at.ConsumedBy is { } next && byId.TryGetValue(next, out var consumer) && guard < byId.Count; guard++)
+                at = consumer;
+            if (bodies.FirstOrDefault(body => body.Id == at.FeatureId) is { } live && made.All(step => step.Id != live.Id))
+                made.Add(new HistoryStep(live.Id, at.Kind, live.Name ?? live.Kind, at.State, at.Fault?.Code, HistoryTap.SelectBody));
+        }
+
+        return made;
+    }
+
     private (long Version, Guid? Selection)? _key;
     private Task<IReadOnlyList<HistoryStep>>? _reading;
     private IReadOnlyList<HistoryStep> _steps = [];

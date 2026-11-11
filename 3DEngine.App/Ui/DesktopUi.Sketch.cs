@@ -101,12 +101,48 @@ internal sealed unsafe partial class DesktopUi
     public static string SketchStatus(SketchInfo sketch)
         => sketch.Solved ? $"Solved, {sketch.Freedom} free" : "Not solved";
 
+    // ADR-0120 item 1 (phase R18f, TASK-0347): the state of a sketch as the render gives it after its name: "solved · 2 free"
+    // in green, or "not solved" in red.
+    internal static string SketchState(SketchInfo sketch) => sketch.Solved ? $"solved · {sketch.Freedom} free" : "not solved";
+
+    // ADR-0120 item 1: the item of the row "Makes", and of the row of a constraint.
+    public const string MakesItem = "Sketch:makes";
+    public const string MakesLabel = "Makes";
+
+    public static string ConstraintRowItem(Guid constraint) => $"SketchRow:{constraint:N}";
+
+    // ADR-0120 item 1: the text of a row of a constraint at its left and at its right: "C3 distance P1 P2" and "60.000 mm",
+    // or "C1 horizontal L1" and "r 0". An angle shows degrees; a constraint with no value shows its residual.
+    internal (string Left, string Right) ConstraintRow(SketchInfo sketch, SketchConstraintInfo constraint, IReadOnlyDictionary<Guid, string> names)
+    {
+        var items = string.Join(" ", constraint.Items.Select(item => names.TryGetValue(item, out var name) ? name : "?"));
+        var left = $"{names.GetValueOrDefault(constraint.Id, "C")} {constraint.Kind} {items}";
+        var right = constraint switch
+        {
+            { Kind: "angle", Values.Count: 2 } => $"{EdgeValues.Exact(Math.Atan2(constraint.Values[1], constraint.Values[0]) * 180 / Math.PI)} {AngleUnit}",
+            { Kind: "tangent" } or { Values.Count: 0 } => $"r {SketchText.Short(constraint.Residual ?? 0)}",
+            { Values.Count: 1 } => $"{EdgeValues.Exact(constraint.Values[0])} {_unit}",
+            _ => string.Join(", ", constraint.Values.Select(EdgeValues.Exact)) + $" {_unit}",
+        };
+        return (left, right);
+    }
+
     private void ActiveSketch(SketchPanel panel, SketchInfo sketch)
     {
-        // ADR-0097 item 2: the name and the state of the sketch on one line, the state in the dim colour, as the render.
-        ImGui.TextUnformatted(SketchTitle(sketch));
-        ImGui.SameLine(0f, 12f);
-        ImGui.TextDisabled(SketchStatus(sketch));
+        // ADR-0097 item 2: the name and the state of the sketch on one line, as the render. ADR-0120 item 1 (TASK-0347): the
+        // name in the font of a title, drawn a second time 1 pixel to the right, and the state in green or in red.
+        var list = ImGui.GetWindowDrawList();
+        var start = ImGui.GetCursorScreenPos();
+        var title = SketchTitle(sketch);
+        var titleWidth = TitleWidth(title);
+        ImGui.Dummy(new Vector2(titleWidth, TitleSize));
+        list.AddText(_titleFont, TitleSize, start, ImGui.GetColorU32(ImGuiCol.Text), title);
+        list.AddText(_titleFont, TitleSize, start + new Vector2(1f, 0f), ImGui.GetColorU32(ImGuiCol.Text), title);
+        ImGui.SameLine(0f, TitleGap);
+        ImGui.SetCursorPosY(ImGui.GetCursorPosY() + TitleSize - ImGui.GetTextLineHeight() - 2f);
+        ImGui.PushStyleColor(ImGuiCol.Text, sketch.Solved ? Theme.Correct : FailedColour);
+        ImGui.TextUnformatted(SketchState(sketch));
+        ImGui.PopStyleColor();
         // ADR-0088 item 1 (the redesign, slice h, TASK-0277): while the ring of the sketch shows in this frame, it holds the
         // tools, Finish and the kinds of a constraint, so the window does not show them again. The ring comes first in the
         // frame, so _ring is the ring of this frame.
@@ -130,14 +166,17 @@ internal sealed unsafe partial class DesktopUi
         // The row of Next point stays near the top: the second row, or the first while the ring holds the tools (ADR-0088),
         // so the pad below it stays inside a display of 1024 x 768 (finding V42); Finish and Extrude follow it (TASK-0122).
         // Finding V138 of the codebase review of 2026-11-07 (c) (TASK-0282): the comment said the second row only.
-        if (panel.Tool == SketchToolKind.Line)
+        // ADR-0120 item 2: while the ring holds the tools, "Next point" and "Extrude" are on it; End and Close stay here.
+        if (panel.Tool == SketchToolKind.Line && (!toolsOnRing || panel.ChainOpen))
         {
-            if (ImGui.Button(NextPointLabel))
+            if (!toolsOnRing && ImGui.Button(NextPointLabel))
                 OpenNextPointPad(panel.ChainOpen);
-            Item(SketchItem(NextPointLabel));
+            if (!toolsOnRing)
+                Item(SketchItem(NextPointLabel));
             if (panel.ChainOpen)
             {
-                ImGui.SameLine();
+                if (!toolsOnRing)
+                    ImGui.SameLine();
                 SketchButton(EndLabel, new EndChainAction());
                 ImGui.SameLine();
                 SketchButton(CloseLabel, new CloseChainAction());
@@ -150,23 +189,64 @@ internal sealed unsafe partial class DesktopUi
             ImGui.SameLine();
         }
 
-        // ADR-0036 item 9 (Q4 A): the pad of one signed distance along the normal of the datum.
-        if (ImGui.Button(ExtrudeLabel))
-            OpenPad(new NumericPad(ExtrudeLabel, _unit, new PadField("distance", "10")), values => new ExtrudeAction(values[0]), bySketch: true, scope: PadScope.Active);
-        Item(SketchItem(ExtrudeLabel));
+        // ADR-0036 item 9 (Q4 A): the pad of one signed distance along the normal of the datum. ADR-0120 item 2: on the ring
+        // while it holds the tools.
+        if (!toolsOnRing)
+        {
+            if (ImGui.Button(ExtrudeLabel))
+                OpenExtrudePad();
+            Item(SketchItem(ExtrudeLabel));
+        }
 
         SelectionButtons(sketch, panel.Selection, ringHolds);
         if (panel.Message is { } message)
             ImGui.TextWrapped(message);
 
-        ImGui.Separator();
-        foreach (var (id, text) in SketchText.Rows(sketch))
+        // ADR-0120 item 1 (phase R18f, TASK-0347): the rows are the constraints only, as the render, each with its value or its
+        // residual at the right in the mono font, and a line under each; a tap on a row selects the constraint, as before. A
+        // point, a line and a curve are selected on the sketch with the tool Select. Until TASK-0347 the rows listed each point,
+        // each line and each constraint, and the list scrolled.
+        var names = SketchText.Labels(sketch);
+        var colours = ImGui.GetStyle().Colors;
+        var separator = ImGui.GetColorU32(colours[(int)ImGuiCol.Separator]);
+        var pad = (MinimumControlHeight - ImGui.GetTextLineHeight()) / 2f;
+        foreach (var constraint in sketch.Constraints)
         {
-            if (ImGui.Selectable($"{text}##{id}", panel.Selection.Contains(id), ImGuiSelectableFlags.None, new Vector2(0f, MinimumControlHeight)))
-                _actions.Add(new ToggleSketchItemAction(id));
-            Item(SketchItem(text.Split(' ')[0]));
+            var (left, right) = ConstraintRow(sketch, constraint, names);
+            var selected = panel.Selection.Contains(constraint.Id);
+            if (ImGui.Selectable($"##row{constraint.Id}", selected, ImGuiSelectableFlags.None, new Vector2(0f, MinimumControlHeight)))
+                _actions.Add(new ToggleSketchItemAction(constraint.Id));
+            var (min, max) = (ImGui.GetItemRectMin(), ImGui.GetItemRectMax());
+            list.AddText(new Vector2(min.X, min.Y + pad), ImGui.GetColorU32(ImGuiCol.Text), left);
+            var width = _monoFont.CalcTextSizeA(FontSize, float.MaxValue, 0f, right).X;
+            list.AddText(_monoFont, FontSize, new Vector2(max.X - width, min.Y + pad), ImGui.GetColorU32(right.StartsWith("r ", StringComparison.Ordinal) ? ImGuiCol.TextDisabled : ImGuiCol.Text), right);
+            list.AddLine(new Vector2(min.X, max.Y), max, separator, 1f);
+            Item(ConstraintRowItem(constraint.Id));
+            Item(SketchItem(names.GetValueOrDefault(constraint.Id, "C")));
+        }
+
+        // ADR-0120 item 2: the row "Makes" with the bodies that the sketch makes, in the accent; a tap ends the sketch and
+        // selects the body.
+        foreach (var made in panel.Makes ?? [])
+        {
+            if (ImGui.Selectable($"##makes{made.Id}", false, ImGuiSelectableFlags.None, new Vector2(0f, MinimumControlHeight)))
+            {
+                _actions.Add(new FinishSketchAction());
+                _actions.Add(new SelectBodyAction(made.Id));
+            }
+
+            var (min, max) = (ImGui.GetItemRectMin(), ImGui.GetItemRectMax());
+            list.AddText(new Vector2(min.X, min.Y + pad), ImGui.GetColorU32(ImGuiCol.TextDisabled), MakesLabel);
+            var name = Fit(made.Text, max.X - min.X - ImGui.CalcTextSize(MakesLabel).X - TitleGap);
+            list.AddText(new Vector2(max.X - ImGui.CalcTextSize(name).X, min.Y + pad), Theme.Accent, name);
+            list.AddLine(new Vector2(min.X, max.Y), max, separator, 1f);
+            Item(MakesItem);
         }
     }
+
+    // ADR-0120 item 2 (phase R18f, TASK-0347): the pad of an extrude, from the window, the ring or the command line.
+    private void OpenExtrudePad()
+        => OpenPad(new NumericPad(ExtrudeLabel, _unit, new PadField("distance", "10")), values => new ExtrudeAction(values[0]), bySketch: true, scope: PadScope.Active);
 
     // ADR-0087 item 2 (TASK-0276): each kind of constraint that fits the selection, with what its button does: the action of
     // the constraint, or the pad of its value. The window of the sketch and the ring of a sketch both use it.
