@@ -1,7 +1,7 @@
 ---
 id: 0351
 title: The hidden bodies from the status line
-status: Active
+status: Done
 phase: R20b2
 opened: 2026-11-12
 depends-on: [0348]
@@ -64,26 +64,31 @@ line, with no visit to the panel.
 
 ## Acceptance criteria
 
-- [ ] ADR-0124 exists. ADR-0029 and ADR-0093 show the amendment.
-- [ ] A test proves the selection after a Hide; it fails when the selection goes to none while a visible body stays.
-- [ ] A test proves the part "N hidden · Show"; it fails when the status line does not count the hidden bodies.
-- [ ] A test proves that a tap on a row of the list shows that body, and that "Show all" shows each one.
-- [ ] A test proves that the part stays on a phone, where the whole line has no room.
-- [ ] A clean build (`--no-incremental`) gives zero errors and zero warnings, and the phone project builds.
-- [ ] `dotnet test`, the write-set check and `eng/repo-gates` pass; continuous integration passes on the branch and on
+- [x] ADR-0124 exists. ADR-0029 and ADR-0093 show the amendment.
+- [x] A test proves the selection after a Hide; it fails when the selection goes to none while a visible body stays.
+- [x] A test proves the part "N hidden · Show"; it fails when the status line does not count the hidden bodies.
+- [x] A test proves that a tap on a row of the list shows that body, and that "Show all" shows each one.
+- [x] A test proves that the part stays on a phone, where the whole line has no room. The landscape phone keeps the line
+      and the part, a window of 540 pixels keeps the part alone, and a portrait phone of 390 pixels has no room (R-0064).
+- [x] A clean build (`--no-incremental`) gives zero errors and zero warnings, and the phone project builds.
+- [x] `dotnet test`, the write-set check and `eng/repo-gates` pass; continuous integration passes on the branch and on
       `main` after the merge.
 
 ## Outcome
 
-Status: Active
+Status: Done · commit (the merge of the branch r20b2-hidden-bodies) · v0.336
 
 ## Method
 
 Mechanical: the count in the status line, the list of the hidden bodies, and its actions.
 Judgement:  the neighbour after a Hide (the order of the list, not the nearest body on the screen), and a list from the
             status line in place of a ring of the document.
-Weakest:    to be written at the close.
+Weakest:    no person used the change in the window or on the phone; the tests drive Dear ImGui with no device. A
+            portrait phone of 390 pixels shows no part, so the panel stays its way back, and the ring of the document waits
+            for the owner (R-0064).
 
 ## Progress
 
 - 2026-11-12: opened by the order "Go" of the owner, after the merge of P0.144.
+- 2026-11-12: the selection after a hide, the part of the status line, the list, six tests, and register entry R-0064.
+- 2026-11-12: run 43217469649 passed on the branch. Closed at v0.336.

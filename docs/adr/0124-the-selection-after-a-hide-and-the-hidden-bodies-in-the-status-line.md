@@ -77,3 +77,4 @@ phone of 390 pixels does not show the part, so there the way back is still the p
 ## History
 
 - 2026-11-12 · TASK-0351 · The record, from improvement B of the UX test of 2026-11-10.
+- 2026-11-12 · TASK-0351 · Shipped at v0.336.
