@@ -96,3 +96,4 @@ session, not a rule of the trade. No person used the change in the window.
 ## History
 
 - 2026-11-12 · TASK-0352 · The record, from improvement C of the UX test of 2026-11-10.
+- 2026-11-12 · TASK-0352 · Shipped at v0.337.

@@ -1,7 +1,7 @@
 ---
 id: 0352
 title: Each dimension says what it measures
-status: Active
+status: Done
 phase: R20c
 opened: 2026-11-12
 depends-on: [0340, 0351]
@@ -22,6 +22,7 @@ writes:
     - eng/test-floor.txt
     - docs/roadmap.md
     - docs/CURRENT-STATE.md
+    - docs/register.md
   forbid:
     - Engine.Contracts/**
     - Engine.Core/**
@@ -63,28 +64,32 @@ control covers a value.
 
 ## Acceptance criteria
 
-- [ ] ADR-0125 exists. ADR-0056 shows the amendment.
-- [ ] A test proves the word and the name of each plate; it fails when a plate has no word.
-- [ ] A test proves the colour of the selection and the grey of the whole.
-- [ ] A test proves that each plate is outside the outline of its box; it fails when a plate is on its edge.
-- [ ] A test proves that no plate is under the status line, the ring or the history arc, in a scene where a plate starts
+- [x] ADR-0125 exists. ADR-0056 shows the amendment.
+- [x] A test proves the word and the name of each plate; it fails when a plate has no word.
+- [x] A test proves the colour of the selection and the grey of the whole.
+- [x] A test proves that each plate is outside the outline of its box; it fails when a plate is on its edge.
+- [x] A test proves that no plate is under the status line, the ring or the history arc, in a scene where a plate starts
       under one of them.
-- [ ] A test proves that a cube and a bar show no thickness, and a panel does.
-- [ ] A clean build (`--no-incremental`) gives zero errors and zero warnings, and the phone project builds.
-- [ ] `dotnet test`, the write-set check and `eng/repo-gates` pass; continuous integration passes on the branch and on
+- [x] A test proves that a cube and a bar show no thickness, and a panel does.
+- [x] A clean build (`--no-incremental`) gives zero errors and zero warnings, and the phone project builds.
+- [x] `dotnet test`, the write-set check and `eng/repo-gates` pass; continuous integration passes on the branch and on
       `main` after the merge.
 
 ## Outcome
 
-Status: Active
+Status: Done · commit (the merge of the branch r20c-dimension-labels) · v0.337
 
 ## Method
 
 Mechanical: the word, the colour and the plate of each label, and the covers of the placement.
 Judgement:  the grey of the whole, the width of a name, the ratio of a board (a quarter of the middle extent), the order
             of the moves of a plate, and the covers (the icons and the labels of the ring, not its band).
-Weakest:    to be written at the close.
+Weakest:    no person used the change in the window, and the scenario of the UX test (less than two seconds to say which
+            value is of the panel) was not run with a person. A picture of the niche at 1280 by 720 shows the plates;
+            there "X 18 mm" of the panel moves about 150 pixels down, so its extension lines cross the model (R-0065).
 
 ## Progress
 
 - 2026-11-12: opened by the order "Go" of the owner, after the merge of R20b2.
+- 2026-11-12: the words, the colours, the plates, the covers of the placement, the thickness of a board, six tests.
+- 2026-11-12: run 43282178387 passed on the branch. Closed at v0.337.
