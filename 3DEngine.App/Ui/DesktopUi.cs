@@ -599,8 +599,13 @@ internal sealed unsafe partial class DesktopUi : IDisposable
             Sketches(sketches);
             PlateText(sketches, sketchPanel?.Active);
         }
-        if (dimensions is not null)
-            Dimensions(dimensions, displaySize);
+        // ADR-0125 item 4 (phase R20c, TASK-0352): the background list has two channels until the end of the frame. The
+        // dimensions go on the first one after the ring and the history arc, so their placement knows the rectangles of
+        // those, and they still show under the outline of the face, the ring, the arc, the chips and the rows.
+        var background = ImGui.GetBackgroundDrawList();
+        background.ChannelsSplit(2);
+        background.ChannelsSetCurrent(1);
+        (_dimensionPlates, PlacedLabels) = ([], []);
         if (face is not null)
             FaceOutline(face);
         // ADR-0083 D6 (TASK-0259): the home screen takes the place of the panel and of the controls of a document.
@@ -642,6 +647,13 @@ internal sealed unsafe partial class DesktopUi : IDisposable
             History(displaySize, selectedBody, history);
             if (faded)
                 ImGui.PopStyleVar();
+            // ADR-0125 item 4: the dimensions on the first channel, with the rectangles of the controls drawn so far.
+            if (dimensions is not null)
+            {
+                background.ChannelsSetCurrent(0);
+                Dimensions(dimensions, displaySize, selectedBody);
+                background.ChannelsSetCurrent(1);
+            }
             // ADR-0082 (TASK-0254): the values of the selected extrude on its edges. ADR-0105 item 1 (TASK-0327): while a sketch
             // is active, the values of that sketch on its lines and its curves.
             Values(displaySize, selection is null ? null : values, sketchValues);
@@ -668,6 +680,7 @@ internal sealed unsafe partial class DesktopUi : IDisposable
             QuestionWindow(displaySize);
         if (_pad is { } pad)
             PadWindow(pad, displaySize);
+        background.ChannelsMerge();
         ImGui.Render();
 
         _textActive = io.WantTextInput;
