@@ -10141,3 +10141,32 @@ overlay keep their form ("X 18 mm"), not the three decimals of ADR-0115.
 New tests: 6. The test list holds 2506 (1550 in `Engine.Tests`, 356 in `3DEngine.Tests`, 597 in `3DEngine.ImageTests`, 3
 in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
 entries: 14 of 15. New diagnostic codes: 0. Since the review of v0.333, 3 product milestones and 4 entries followed it.
+
+## v0.338 — Assemblies with joints and their geometric checks have a date in the charter (P0.145, TASK-0353)
+
+On 2026-11-12 the owner asked to plan a work package "design and validate an assembly with the AI", with the tilting
+support of a light as the reference case: two fixing points that exist, a tilt down from 0 to 150 degrees, a lock under the
+weight of the lamp, an envelope of 60 mm under the crossbar, and printable parts. A view at 45 degrees had shown neither the
+collisions during the turn nor the absence of a real locking link. The charter listed assemblies and simulation as
+non-goals. The owner answered D1 to D7 on 2026-11-12.
+
+**The change.**
+- `docs/CHARTER.md`: objective 11 gives assemblies of the bodies of one part with joints, and the geometric checks of their
+  motion, a place after P10c; objective 16 gives a load check of a printed part a place after them. The non-goals no longer
+  name assemblies, and "Simulation and analysis" excepts these checks.
+- ADR-0126 holds D1 to D7: one part Document; a move is a `Rotate`, one at the end of a move, and the ADR of P11 studies the
+  effect on the log first; the travel sampled with a margin so that no contact between two samples is missed; requirements
+  and roles in the Document; one STL for each part with a check of the mesh, and 3MF later.
+- `docs/proposals/2026-11-12-assembly-with-ai.md` gives what exists, the phases, their order and their acceptance. No
+  command gives a revolve, a union, a fillet, a hole or a thread, and a mesh body takes no edit, so K10 models the case first.
+- The roadmap holds K10 to K14, P11 to P14, R23 and R24 after P10c, and their order.
+
+**Proof.** `ObjectiveReferenceGateTests`, `AdrGateTests` and `TaskGovernanceGateTests` pass, with each gate of
+`eng/repo-gates`. The failed runs since the entry v0.337, from the API: none.
+
+**What stays.** No code changes. R18g and the current queue continue in their order. R-0063, R-0064 and R-0065 keep their
+state.
+
+No code changes. The test list holds 2506 (1550 in `Engine.Tests`, 356 in `3DEngine.Tests`, 597 in `3DEngine.ImageTests`, 3
+in `3DEngine.VisionTests`). Open entries: 14 of 15. New diagnostic codes: 0. Since the review of v0.333, 3 product
+milestones and 5 entries followed it.

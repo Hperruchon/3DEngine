@@ -352,6 +352,8 @@ Therefore each approved objective must have a track here.
   TASK-0339, ADR-0114.
 - P0.142 — The 2D drawing of a part has a date in the charter: objective 18, ADR-0118 and the rows R21, K9, R22 and P10 to
   P10c. v0.326, TASK-0343, ADR-0118.
+- P0.145 — Assemblies with joints and their geometric checks have a date in the charter: objectives 11 and 16, ADR-0126
+  and the rows K10 to K14, P11 to P14, R23 and R24. v0.338, TASK-0353, ADR-0126.
 - R18d — The rows of a body as in the render: the name larger and bold with its state, the row "Made from" whose tap
   opens the sketch, and the labels Width, Depth and Height with the name of the constraint. v0.328, TASK-0342, ADR-0117.
 - R18e — "Edit sketch" and "Rename" on the ring, a landscape ring in the span of four segments, and the history arc as a
@@ -523,6 +525,7 @@ This track removes each condition that blocks other work.
 | P0.142 | The 2D drawing of a part has a date in the charter: objective 18, ADR-0118 and the rows R21, K9, R22 and P10 to P10c (the answers of the owner of 2026-11-10 to Q1 to Q5 of the renders of a drawing). TASK-0343. | 1 |
 | P0.143 | The low findings of the codebase review of 2026-11-11 (V166 and V167, the edge lines of R18b), after the next product phase. TASK-0345. | 1 |
 | P0.144 | The medium and low findings of the codebase review of 2026-11-12 (V168 to V171: the sketch of a body after three cuts, one tap with two actions, two colours that do not fade, and a T-vertex inside a closed flat face), after the next product phase. TASK-0350. | 1 |
+| P0.145 | Assemblies with joints and their geometric checks have a date in the charter: objectives 11 and 16, ADR-0126, the proposal `docs/proposals/2026-11-12-assembly-with-ai.md`, and the rows K10 to K14, P11 to P14, R23 and R24 (the answers D1 to D7 of the owner of 2026-11-12). TASK-0353. | 1 |
 | P0.102 | The cache of a face, the fixed controls, the list New, the edges and the safe area hold their next forms (V113 to V118 of the codebase review of 2026-11-06 (e); after P0.101). TASK-0252. | 1–2 |
 | P0.86 | The window keeps no input between sessions, the hook has the cases of one axis, and the next forms of four gates fail (V88 to V90, T141 to T144 of the codebase review of 2026-11-06; after the next product phase). TASK-0198. | 1–2 |
 
@@ -552,6 +555,10 @@ This track removes each condition that blocks other work.
 | P10a | The export of a sheet as SVG, from the exact numbers of the views and the values of the design (Q4 of 2026-11-10, first). After P10. | 1–2 |
 | P10b | The export of a sheet as DXF, for the exchange with a CAD program and a laser cutter (Q4, second). After P10a. | 2 |
 | P10c | The export of a sheet as PDF, for the documentation (Q4, third). After P10b. | 2–3 |
+| P11 | Joints in the Document: a fixed joint and a pivot between two bodies of one part, an axis from the geometry by identity, limits, the states tight and loose, and the angle set by `Rotate` commands, one at the end of a move (ADR-0126 items 2 and 3; its ADR studies the effect on the log first). Commands and queries for the AI. After K10. | 3–4 |
+| P12 | The parametric loop: the missing edits that K10 found, and the checks that run again after a rebuild, in one window, with no STL and no manual history (capability 3). After K12 and K13. | 1–2 |
+| P13 | Requirements and assumptions in the Document: text, value, unit, references to bodies, faces or joints, and a status: measured, estimated, to verify physically, verified physically with a date and a result (ADR-0126 item 5). After P0.145; it can run with P11. | 2–3 |
+| P14 | The role of a body (to print, context, excluded from an envelope) and the print export: one STL for each chosen part, in millimetres, with a check that its mesh is closed and has no degenerate triangle; 3MF later (ADR-0126 items 6 and 7). After P11. | 1–2 |
 
 ## Track R — The renderer
 
@@ -638,6 +645,8 @@ The first objective. Each phase ends with something that a person can observe.
 | R20c | Each dimension says what it measures: the selected piece in the colour of the selection with its name, the whole in a neutral colour with "Overall", each label on a plate outside the silhouette, and no label under the status line, the ring or the history arc (improvement C, problems 3 and 4; amends ADR-0056). After R18c. TASK-0352 (ADR-0125). | 1–2 |
 | R21 | The flat views in the window: a front, a top, a side and the other three views with no perspective, one tap each, and a return to the 3D view; Frame fills the free part of the scene (ADR-0118 item 2; Q5 A of 2026-11-10; problem 6 of the UX test). After R18. | 2–3 |
 | R22 | The right dimensions on a flat view: the values of the design, each one time in a view where its length is true, a chain with one reference in parentheses, a separate form for a size that no constraint fixes and for a lost value, and the place of each dimension proposed by the agent (ADR-0118 item 5). After K9. It needs a search of the free parts of a sketch in the solver. | 3–5 |
+| R23 | A joint in the window: a rotation handle on a pivot and a pad for the angle, one `Rotate` at the end of a drag, and the contact and the envelope of the checks in the view. After P11. | 2 |
+| R24 | The end-to-end scenario of the tilting support of a light: the AI finds the contact of the knob with the arm, proposes a new value, runs the checks again, and shows the envelope within 60 mm; the physical load test has its own recorded result (ADR-0126). After each phase of the assembly work. | 1–2 |
 
 ## Track K — The kernel
 
@@ -683,6 +692,11 @@ boundary and each refused rung.
 | K7 | General extrude and revolve of a simple curve. **Optional.** Year two. | 40–65 |
 | K8 | A command turns a body by a quaternion about the origin of the Document, and each reader of a move reads the turn: the owned kernel, the rebuild, the frame of a datum and the determinism probe (R-0057; Q5 C of the owner, 2026-11-10). ADR-0112, TASK-0335. | 1–2 |
 | K9 | The edges of a view: the visible edges and the hidden edges of the live bodies seen along a direction, from the exact faces of the owned kernel, with the circle or the arc of a curved side and not its facets (ADR-0118 items 2 and 6). It needs an ADR on the feature boundary of the charter. After R21. | 4–6 |
+| K10 | The reference case in the engine: the crossbar with its two fixing points, the bracket, the arm and the knob, and the volumes of the lamp, the housing and the cable, with the commands that exist; each missing feature (a revolve, a union, the size of a primitive, a hole) gets its row (ADR-0126). After P10c. | 1–2 |
+| K11 | Interference at one position: a query gives each pair of bodies that touch or overlap, where, and how deep. After P11. | 2–3 |
+| K12 | The travel: a query checks a pivot from one limit to the other, sampled with a margin so that no contact between two samples is missed, and gives the first contact angle to a stated tolerance (ADR-0126 item 4). After K11. | 2–3 |
+| K13 | The envelope: a query gives the extent below a reference face over the travel, and names the bodies that the roles exclude. After K12 and P14. | 1–2 |
+| K14 | The load check of a printed part (ADR-0126 item 1). Its own ADR decides the method. After R24. | to estimate |
 
 ## Track V — Machine vision
 
@@ -751,6 +765,9 @@ The tracks are not strictly sequential, but three rules hold:
    continuous integration, and its session sends its picture beside the render (Q7 A).
    On 2026-11-10 the owner asked for the responsive layout of the app, at the phone sizes and in small windows, after
    the close of R17a and before R18a and R18b. R19 (TASK-0336) does it; a layout that works on the desktop is not a fault.
+   On 2026-11-12 the owner put the assembly work on the roadmap (ADR-0126, answers D1 to D7), after the current queue and
+   the 2D drawing track up to P10c: K10, then P11 and P13 (P13 can run with P11), R23, K11, K12, P14, K13, P12, R24,
+   and K14 after them. Each phase opens its task, and its ADR when it changes the Document or the contract, at its start.
 2. R2 blocks each later phase in track R. No mesh leaves the geometry backend today.
 3. K4 needs K0, K1 and K2. Do not start K4 before the reference model exists.
 4. The path to the milestone "CAD on one part" (the owner, 2026-10-27, KD2): R7b, R8a, R8b, the codebase
