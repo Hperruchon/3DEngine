@@ -749,7 +749,8 @@ internal sealed unsafe partial class DesktopUi : IDisposable
     // selected body: the first step that opens a sketch, or null, as the row "Made from" of ADR-0117 item 2.
     private IReadOnlyList<HistoryStep>? _history;
 
-    internal HistoryStep? SketchStep => _history?.FirstOrDefault(step => step.Tap == HistoryTap.EditSketch);
+    // ADR-0123 item 1 (finding V168, TASK-0350): the step of the sketch that made the selected body, which the history marks.
+    internal HistoryStep? SketchStep => _history?.FirstOrDefault(step => step.MadeFrom);
 
     // ADR-0117 item 1: the font of the name of a selected body in its first row.
     private readonly ImFontPtr _titleFont;

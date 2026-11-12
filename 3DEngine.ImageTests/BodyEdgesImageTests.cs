@@ -80,6 +80,34 @@ public sealed class BodyEdgesImageTests
         Assert.Equal([(0, 3), (0, 4), (1, 2), (1, 4), (2, 3)], edges);
     }
 
+    // Finding V171 of the codebase review of 2026-11-12 (TASK-0350): a square 2 by 2 split at y = 1 by the line A-C (4-6). The
+    // lower half has A-C whole; the upper half has a T-vertex B (5) at the middle of A-C, and a sliver (C, B, A) closes the
+    // crack, so each side of the sliver has one triangle more, as a closed mesh has. On a flat face only the border is an
+    // edge. Until TASK-0350 the line A-C and its two parts were edges.
+    [Fact]
+    public void A_T_Vertex_Inside_A_Closed_Flat_Face_Adds_No_Edge()
+    {
+        double[] positions = [0, 0, 0, 2, 0, 0, 2, 2, 0, 0, 2, 0, 0, 1, 0, 1, 1, 0, 2, 1, 0];
+        uint[] indices = [0, 1, 6, 0, 6, 4, 4, 5, 3, 5, 2, 3, 5, 6, 2, 6, 5, 4];
+
+        var edges = EdgeLines.Feature(positions, indices);
+
+        Assert.Equal([(0, 1), (0, 4), (1, 6), (2, 3), (2, 6), (3, 4)], edges);
+    }
+
+    // V171: the same mesh with the upper half turned up by 45 degrees about the line A-C. The crease is an edge, so its two
+    // parts A-B and B-C show, and the long side A-C of the sliver does not show a second time.
+    [Fact]
+    public void A_T_Vertex_On_A_Crease_Keeps_The_Two_Parts_Of_The_Crease()
+    {
+        double[] positions = [0, 0, 0, 2, 0, 0, 2, 2, 1, 0, 2, 1, 0, 1, 0, 1, 1, 0, 2, 1, 0];
+        uint[] indices = [0, 1, 6, 0, 6, 4, 4, 5, 3, 5, 2, 3, 5, 6, 2, 6, 5, 4];
+
+        var edges = EdgeLines.Feature(positions, indices);
+
+        Assert.Equal([(0, 1), (0, 4), (1, 6), (2, 3), (2, 6), (3, 4), (4, 5), (5, 6)], edges);
+    }
+
     // ADR-0121 (finding V167, TASK-0345): a mesh with more triangles than the count of the upload goes up with no lines, and
     // its edges come from the thread pool to a later frame. A box has 12 triangles, so a count of 11 sends it to the
     // thread pool, and a count of 12 finds its edges at the upload.

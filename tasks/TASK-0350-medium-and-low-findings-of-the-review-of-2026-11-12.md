@@ -1,15 +1,20 @@
 ---
 id: 0350
 title: The medium and low findings of the codebase review of 2026-11-12
-status: Ready
+status: Active
 phase: P0.144
 opened: 2026-11-12
 depends-on: [0349]
-governed-by: [0007, 0017, 0019, 0023, 0025, 0027, 0029, 0030, 0032, 0034, 0072, 0073, 0076, 0077, 0078, 0080, 0081, 0082, 0083, 0084, 0086, 0087, 0088, 0089, 0091, 0092, 0093, 0095, 0097, 0098, 0099, 0100, 0101, 0102, 0104, 0105, 0107, 0108, 0109, 0111, 0113, 0116, 0117, 0119, 0120, 0121, 0122]
+governed-by: [0007, 0017, 0019, 0023, 0025, 0027, 0029, 0030, 0032, 0034, 0072, 0073, 0076, 0077, 0078, 0080, 0081, 0082, 0083, 0084, 0086, 0087, 0088, 0089, 0091, 0092, 0093, 0095, 0097, 0098, 0099, 0100, 0101, 0102, 0104, 0105, 0107, 0108, 0109, 0111, 0113, 0116, 0117, 0119, 0120, 0121, 0122, 0123]
 writes:
   create:
     - tasks/TASK-0350-medium-and-low-findings-of-the-review-of-2026-11-12.md
+    - docs/adr/0123-the-sketch-that-made-a-body-is-found-along-the-first-input.md
   modify:
+    - docs/adr/0104-the-history-arc.md
+    - docs/adr/0117-the-rows-of-a-body-as-in-the-render.md
+    - docs/adr/0119-the-ring-and-the-history-arc-as-in-the-render.md
+    - docs/adr/README.md
     - 3DEngine.App/HistorySteps.cs
     - 3DEngine.App/Ui/DesktopUi.cs
     - 3DEngine.App/Ui/DesktopUi.Ring.cs
@@ -17,7 +22,10 @@ writes:
     - 3DEngine.Vulkan/EdgeLines.cs
     - 3DEngine.ImageTests/BodyEdgesImageTests.cs
     - 3DEngine.ImageTests/RingTapTests.cs
-    - 3DEngine.ImageTests/BodyRowsTests.cs
+    - 3DEngine.ImageTests/HistoryArcTests.cs
+    - 3DEngine.ImageTests/BodyRowsRenderTests.cs
+    - 3DEngine.ImageTests/RingToolsTests.cs
+    - 3DEngine.ImageTests/RingDimensionsTests.cs
     - eng/test-floor.txt
     - docs/roadmap.md
     - docs/CURRENT-STATE.md
@@ -78,3 +86,6 @@ Weakest:    to be written at the close.
 ## Progress
 
 - 2026-11-12: opened by the codebase review of 2026-11-12 (TASK-0349).
+- 2026-11-12: the owner ordered "go" after the merge of R20b1. V168: the history marks the sketch along the first input
+  (ADR-0123). V169: the ring skips a release on the rows area. V170: the two colours go through GetColorU32. V171: a sliver
+  joins its two short edges to the triangle across its long edge. Seven new tests; six injections each failed a named test.
