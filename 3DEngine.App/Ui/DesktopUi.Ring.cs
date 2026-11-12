@@ -392,8 +392,11 @@ internal sealed unsafe partial class DesktopUi
         // Finding V160 of the codebase review of 2026-11-09 (b) (TASK-0331): Reject and Accept of a proposal take the tap before
         // the ring, at the press and at the release. Until TASK-0331 one tap on Accept also gave the tool of the ring under it.
         // ADR-0116 item 1: the press and the release are on the target of the segment.
+        // Finding V169 of the codebase review of 2026-11-12 (TASK-0350): a release on any row of the rows (the first row, "Made
+        // from", a value, the cut and the lines) is the tap of the rows only. Until TASK-0350 the ring skipped a value row only, so
+        // one tap on "Made from" over a segment gave the tool of the ring, or two actions.
         var io = ImGui.GetIO();
-        if (ImGui.IsMouseReleased(ImGuiMouseButton.Left) && !OverWindowAtRelease() && ChipAt(io.MousePos) is null && RowAt(io.MousePos) is null
+        if (ImGui.IsMouseReleased(ImGuiMouseButton.Left) && !OverWindowAtRelease() && ChipAt(io.MousePos) is null && !OverRows(io.MousePos.X, io.MousePos.Y)
             && !OverLastProposal(io.MousePos) && !OverLastProposal(io.MouseClickedPos[0])
             && RingTapAt(io.MousePos) is { } released && RingTapAt(io.MouseClickedPos[0]) == released)
         {
@@ -445,8 +448,10 @@ internal sealed unsafe partial class DesktopUi
             var place = face.Place;
             var ink = ImGui.GetColorU32(colours[(int)ImGuiCol.Text]);
             // ADR-0108 item 2: the plate has the ground of the scene, because a segment has no fill at rest.
+            // Finding V170 of the codebase review of 2026-11-12 (TASK-0350): the plate goes through GetColorU32, so it fades with
+            // the ring (ADR-0116 item 2); until TASK-0350 it kept its alpha during a gesture.
             if (face.Plate)
-                list.AddRectFilled(place - new Vector2(4f, 2f), place + text + new Vector2(4f, 2f), Theme.Plate(0.85f), 4f);
+                list.AddRectFilled(place - new Vector2(4f, 2f), place + text + new Vector2(4f, 2f), ImGui.GetColorU32(Theme.Plate(0.85f)), 4f);
             // ADR-0108 item 2: the icon is in the accent, as the render, with the alpha of the style, so it dims with the ring.
             else if (face.Icon is { } icon && RingIcon(list, segment.Label, icon, ImGui.GetColorU32(Theme.Accent)))
                 _items[RingIconItem(segment.Label)] = new Vector4(icon.X - IconHalf, icon.Y - IconHalf, icon.X + IconHalf, icon.Y + IconHalf);

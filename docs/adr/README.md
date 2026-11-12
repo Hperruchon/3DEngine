@@ -109,7 +109,7 @@ names. Do not read all of them.
 | [0101](0101-a-focus-on-one-body.md) | A focus on one body is a state of the client that draws one body and writes nothing to the log | Accepted | Clients, selection | 0081, 0098, 0100 | — |
 | [0102](0102-a-project-in-any-folder.md) | The window opens and saves a project in any folder, through the dialogs of the system | Amended | Persistence, clients | 0030, 0083 | 0100, 0106 |
 | [0103](0103-the-vision-library-stays-in-the-spike-on-opencvsharp5.md) | The vision library stays in the spike, on OpenCvSharp5 | Accepted | Vision | 0042 | — |
-| [0104](0104-the-history-arc.md) | The history arc shows the steps that made the selected body | Amended | Clients, rendering | — | 0116, 0119 |
+| [0104](0104-the-history-arc.md) | The history arc shows the steps that made the selected body | Amended | Clients, rendering | — | 0116, 0119, 0123 |
 | [0105](0105-the-values-on-the-edges-of-an-active-sketch.md) | The values of an active sketch show on its edges | Amended | Clients, rendering | — | 0115 |
 | [0106](0106-open-project-shows-an-stl-file-too.md) | "Open project..." shows an STL file too, and an STL file goes to the import | Accepted | Persistence, clients | 0102 | — |
 | [0107](0107-the-arc-of-a-proposal-is-in-the-free-room.md) | With no ring of a body, the arc of a proposal is in the room right of the panel | Accepted | Clients | 0092 | — |
@@ -122,12 +122,13 @@ names. Do not read all of them.
 | [0114](0114-the-findings-of-the-review-of-2026-11-10.md) | A turn refuses a quaternion of very small parts, a proposal shows an angle in degrees, and an accept holds less | Accepted | Geometry, clients | 0110, 0111, 0112, 0113 | — |
 | [0115](0115-the-values-as-in-the-render.md) | A value shows three decimals on a pill on its dimension line, outside the outline of the body | Accepted | Clients, rendering | 0082, 0105, 0110 | — |
 | [0116](0116-the-ring-takes-a-tap-only-on-its-labels.md) | Only the icon and the label of a segment of a body ring take a tap, and the ring fades while the view moves | Accepted | Clients, input | 0081, 0104 | — |
-| [0117](0117-the-rows-of-a-body-as-in-the-render.md) | The rows of a body show its name larger, the sketch that made it, and the direction and the constraint of each value | Accepted | Clients, rendering | 0084, 0091, 0099 | — |
+| [0117](0117-the-rows-of-a-body-as-in-the-render.md) | The rows of a body show its name larger, the sketch that made it, and the direction and the constraint of each value | Amended | Clients, rendering | 0084, 0091, 0099 | 0123 |
 | [0118](0118-the-2d-drawing-of-a-part.md) | The 2D drawing of a part has a date, and its work starts with a flat view | Accepted | Charter, drawing | — | — |
-| [0119](0119-the-ring-and-the-history-arc-as-in-the-render.md) | The ring gives Edit sketch and Rename in the span of four segments, and the history arc is a bright line with its nodes on it | Amended | Clients, rendering | 0081, 0098, 0104 | 0122 |
+| [0119](0119-the-ring-and-the-history-arc-as-in-the-render.md) | The ring gives Edit sketch and Rename in the span of four segments, and the history arc is a bright line with its nodes on it | Amended | Clients, rendering | 0081, 0098, 0104 | 0122, 0123 |
 | [0120](0120-the-sketch-as-in-the-render.md) | The rows of a sketch are its constraints and the body it makes, its ring holds Next point and Extrude, and its plate has a label | Accepted | Clients, sketch | 0085, 0086, 0097, 0098 | — |
 | [0121](0121-the-edges-of-a-large-mesh-are-found-on-the-thread-pool.md) | The edges of a mesh of more than 100 000 triangles are found on the thread pool | Accepted | Rendering, clients | 0109 | — |
 | [0122](0122-dimensions-is-a-segment-of-the-ring.md) | Dimensions is a segment of the ring of a body | Accepted | Clients, rendering | 0119 | — |
+| [0123](0123-the-sketch-that-made-a-body-is-found-along-the-first-input.md) | The sketch that made a body is found along the first input, and the history keeps it after the six newest steps | Accepted | Clients, rendering | 0104, 0117, 0119 | — |
 
 ## Topics
 

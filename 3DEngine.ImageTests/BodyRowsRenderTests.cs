@@ -27,7 +27,7 @@ public sealed class BodyRowsRenderTests
     private static readonly IReadOnlyList<HistoryStep> History =
     [
         new(Body, "Extrude", "Plate", "correct", null, HistoryTap.None),
-        new(SketchStep, "CreateSketch", "Plate on XY", "correct", null, HistoryTap.EditSketch),
+        new(SketchStep, "CreateSketch", "Plate on XY", "correct", null, HistoryTap.EditSketch, MadeFrom: true),
     ];
 
     private static EdgeEntry Edge(double x, double y, double z)

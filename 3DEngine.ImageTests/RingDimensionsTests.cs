@@ -20,7 +20,7 @@ public sealed class RingDimensionsTests
     private static readonly IReadOnlyList<HistoryStep> Made =
     [
         new(Body, "Extrude", "Bracket", "correct", null, HistoryTap.None),
-        new(SketchStep, "CreateSketch", "Plate on XY", "correct", null, HistoryTap.EditSketch),
+        new(SketchStep, "CreateSketch", "Plate on XY", "correct", null, HistoryTap.EditSketch, MadeFrom: true),
     ];
 
     private static void Step(DesktopUi ui, Vector2 display, LiveBody body, params InputSample[] frame)

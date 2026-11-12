@@ -7,7 +7,7 @@ date: 2026-11-11
 supersedes: []
 superseded-by: []
 amends: ['0081', '0098', '0104']
-amended-by: ['0122']
+amended-by: ['0122', '0123']
 affects:
   - 3DEngine.App/Ui/DesktopUi.cs
   - 3DEngine.App/Ui/DesktopUi.Ring.cs
@@ -46,9 +46,9 @@ The session gave the choices of this record. The owner can change them.
 ## Decision
 
 1. **The tools (amends ADR-0081 item 3 and ADR-0098 item 3).** The ring of a body that a sketch made starts with "Edit
-   sketch", with a pencil; its tap opens that sketch, the first step of the history of the body that opens a sketch (as the
-   row "Made from" of ADR-0117 item 2). "Rename", with a letter T, follows "Dimensions" (ADR-0122) on a landscape display;
-   its tap opens the name field of the rows (ADR-0099 item 2). A portrait display has no "Rename" on the thumb ring,
+   sketch", with a pencil; its tap opens that sketch, the sketch along the first input of each step from the body
+   (ADR-0123), as the row "Made from" of ADR-0117 item 2. "Rename", with a letter T, follows "Dimensions" (ADR-0122) on a
+   landscape display; its tap opens the name field of the rows (ADR-0099 item 2). A portrait display has no "Rename" on the thumb ring,
    because its panel keeps the name field and its button. The command line holds "Edit sketch" for a body that a sketch
    made.
 2. **The span (amends ADR-0081 items 1 and 2).** The segments of a landscape body ring span at most the span of four
@@ -79,3 +79,4 @@ display the two new tools leave the ring.
   small ring after "Edit sketch".
 - 2026-11-12 · TASK-0348 · Finding V172 of the codebase review of 2026-11-12: the span of four segments is 1.80 radians, from
   about 308 to 52 degrees, as `RingSpan` gives; the record said 1.84 radians and 307 to 53 degrees.
+- 2026-11-12 · TASK-0350 · Amended by ADR-0123: "Edit sketch" opens the sketch along the first input (finding V168).

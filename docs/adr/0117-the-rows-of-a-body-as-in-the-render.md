@@ -1,13 +1,13 @@
 ---
 id: 0117
 title: The rows of a body show its name larger, the sketch that made it, and the direction and the constraint of each value
-status: Accepted
+status: Amended
 topic: Clients, rendering
 date: 2026-11-10
 supersedes: []
 superseded-by: []
 amends: ['0084', '0091', '0099']
-amended-by: []
+amended-by: ['0123']
 affects:
   - 3DEngine.App/EdgeValues.cs
   - 3DEngine.App/Ui/DesktopUi.cs
@@ -41,9 +41,9 @@ R18d. The session gave the choices of this record. The owner can change them.
    name, and the first row is higher by that line.
 2. **The row "Made from" (ADR-0099 Q2, amends ADR-0099 item 3).** Under the first row, a row gives "Made from" in the
    quiet colour and the sketch that made the body in the accent at its right, as "Plate on XY". It comes from the history
-   of the body (ADR-0104): the first step that opens a sketch. A press and a release on the row open that sketch, as its
-   node of the history arc does. A body that no sketch made, as a box, has no such row. The row is at least 44 pixels
-   high.
+   of the body (ADR-0104): the step that the history marks, the sketch along the first input of each step (ADR-0123). A
+   press and a release on the row open that sketch, as its node of the history arc does. A body that no sketch made, as a
+   box, has no such row. The row is at least 44 pixels high.
 3. **The label of a value (amends ADR-0084 item 2).** A length of the sketch of an extrude takes its label from the
    direction of its edge in the Document: along the x axis "Width", along the y axis "Depth", along the z axis "Height"
    (the z axis is up, ADR-0096), and in another direction "Length". An edge is along an axis when that part of its
@@ -65,3 +65,5 @@ one font. A long name with a long state takes two lines. The labels of a sketch 
 
 - 2026-11-10 · TASK-0342 · The record, from slice S4 of the proposal and the judgement of the session on items 1 to 3.
 - 2026-11-10 · TASK-0342 · Shipped at v0.328.
+- 2026-11-12 · TASK-0350 · Amended by ADR-0123: the row "Made from" takes the sketch along the first input, which the history
+  keeps after the six newest steps (finding V168).
