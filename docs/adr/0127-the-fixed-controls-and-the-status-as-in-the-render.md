@@ -116,3 +116,4 @@ change in the window.
 
 - 2026-11-12 · TASK-0354 · The record, from slice S7 of the study of the gaps to the render and the answers of the owner of
   2026-11-12.
+- 2026-11-12 · TASK-0354 · Shipped at v0.339.

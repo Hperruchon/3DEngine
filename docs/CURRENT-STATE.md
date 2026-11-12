@@ -10170,3 +10170,38 @@ state.
 No code changes. The test list holds 2506 (1550 in `Engine.Tests`, 356 in `3DEngine.Tests`, 597 in `3DEngine.ImageTests`, 3
 in `3DEngine.VisionTests`). Open entries: 14 of 15. New diagnostic codes: 0. Since the review of v0.333, 3 product
 milestones and 5 entries followed it.
+
+## v0.339 — The row of the anchors holds Undo, Redo and the step of Undo, and the status gives the log, the agent and the save (R18g, TASK-0354)
+
+The owner accepted the proposal on the gaps to the render on 2026-11-10 (Q1 to Q7 A) and ordered R18g in the order of the
+queue. This entry is slice S7: the fixed controls and the status. Before it, "Frame" and "Home" were beside Undo and Redo,
+the status line was "1 body · all correct · address", and the top bar ended with "mm". The owner answered four questions
+on 2026-11-12, each with the recommended option.
+
+**The change.** ADR-0127 amends ADR-0083 (the desktop part of TASK-0259), ADR-0093 items 1 and 3, and ADR-0098 item 3.
+- Right of Redo, "Undo: " and the text of the step that the next Undo reverses. The window keeps the steps as the command
+  bus keeps its history, from the log of one read and the later events (`StepTexts`). A value edit of the window and an
+  accepted proposal give "C3 = 75" or "distance = 30"; each other command gives its name in words, "Create box".
+- The status line starts with "log N", the count of the entries of the log, in place of the count of the bodies, and gives
+  "agent connected" while a client listens to the event stream: `EngineHost.Listeners`, a new read-only member of the
+  surface library. A narrow room drops the address, then the agent.
+- The top bar gives "mm · saved" when the document has its own file, "mm · not saved" in the folder of the unsaved
+  documents, and "mm" on the phone.
+- On a landscape display Frame and Home leave the row; the command line holds both, and F frames. F is a key of the window
+  and not an intent, because a touch has no gesture for it (`IntentParityTests`). A portrait display keeps both buttons.
+
+**Proof.** 6 new tests in `3DEngine.ImageTests/FixedStatusTests.cs`, one picture in `FixedStatusImageTests.cs`, two tests
+in `Engine.Tests/Http/EngineHostListenersTests.cs` and one in `3DEngine.Tests/SdlInputTests.cs`. Four tests changed for
+the new row. Fourteen injections each failed a named test; each file came back byte for byte. The picture at 1280 by 720
+shows the step, the status line and the top bar. The phone project builds with zero warnings. Run 43321621619 passed on
+the branch. The failed runs since the entry v0.338, from the API: none.
+
+**What stays.** The window knows the text of its value edits and of the accepted proposals only. A step of the log of a
+file that the host opens shows its name. A client that listens is not always an agent. No person used the change in the
+window. Since the review of v0.333 four product milestones followed it, so the next product milestone needs a codebase
+review first.
+
+New tests: 10, and one case of a theory less. The test list holds 2515 (1552 in `Engine.Tests`, 357 in
+`3DEngine.Tests`, 603 in `3DEngine.ImageTests`, 3 in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental`
+gives zero errors and zero warnings. Open entries: 14 of 15. New diagnostic codes: 0. Since the review of v0.333, 4 product
+milestones and 6 entries followed it.

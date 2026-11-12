@@ -1,7 +1,7 @@
 ---
 id: 0354
 title: The row of the anchors holds Undo, Redo and the step of Undo, and the status gives the log, the agent and the save
-status: Active
+status: Done
 phase: R18g
 opened: 2026-11-12
 depends-on: [0347, 0353]
@@ -75,23 +75,23 @@ whether an agent listens, and whether the document has its own file.
 
 ## Acceptance criteria
 
-- [ ] ADR-0127 exists. ADR-0083, ADR-0093 and ADR-0098 show the amendment.
-- [ ] A test proves the count of the log and the step of Undo through Undo, Redo, a new step, an expected text and a
+- [x] ADR-0127 exists. ADR-0083, ADR-0093 and ADR-0098 show the amendment.
+- [x] A test proves the count of the log and the step of Undo through Undo, Redo, a new step, an expected text and a
       rejected command; it fails when an Undo is a step.
-- [ ] A test proves the text of a value, of an angle, of a distance and of a proposal.
-- [ ] A test proves the status line with the log, the state and the agent, and the order in which a narrow room drops its
+- [x] A test proves the text of a value, of an angle, of a distance and of a proposal.
+- [x] A test proves the status line with the log, the state and the agent, and the order in which a narrow room drops its
       parts.
-- [ ] A test proves that a landscape row has the step of Undo and no Frame and no Home, and a portrait row has Frame and
+- [x] A test proves that a landscape row has the step of Undo and no Frame and no Home, and a portrait row has Frame and
       Home.
-- [ ] A test proves that F frames, and that F with Control or in a field does not.
-- [ ] A test proves that a client of the event stream is a listener until it closes, and that the host is not.
-- [ ] A clean build (`--no-incremental`) gives zero errors and zero warnings, and the phone project builds.
-- [ ] `dotnet test`, the write-set check and `eng/repo-gates` pass; continuous integration passes on the branch and on
+- [x] A test proves that F frames, and that F with Control or in a field does not.
+- [x] A test proves that a client of the event stream is a listener until it closes, and that the host is not.
+- [x] A clean build (`--no-incremental`) gives zero errors and zero warnings, and the phone project builds.
+- [x] `dotnet test`, the write-set check and `eng/repo-gates` pass; continuous integration passes on the branch and on
       `main` after the merge.
 
 ## Outcome
 
-Status: Active
+Status: Done · commit (the merge of the branch r18g-fixed-status) · v0.339
 
 ## Method
 
@@ -107,3 +107,6 @@ Weakest:    the window knows the text of its value edits and of the accepted pro
   with the answers of the owner of 2026-11-12. TASK-0354, ADR-0127 and the phase R18g are free on `main` and on each branch.
 - 2026-11-12: the key F is a key of the window and not an intent: an intent needs a touch script (`IntentParityTests`), and
   a touch has no gesture for it. 14 injections each failed a named test; each file came back byte for byte.
+- 2026-11-12: run 43321621619 passed on the work commit. The picture of `FixedStatusImageTests` at 1280 by 720 shows "Undo:
+  C3 = 75" right of Redo, "log 2 · all correct · agent connected · address" and "mm · saved". The row of R18g in the roadmap names TASK-0354, so the review counter counts it.
+  Closed at v0.339.
