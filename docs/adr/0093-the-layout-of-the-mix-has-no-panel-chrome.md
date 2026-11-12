@@ -7,7 +7,7 @@ date: 2026-11-08
 supersedes: []
 superseded-by: []
 amends: ['0080']
-amended-by: ['0099', '0100', '0113', '0124']
+amended-by: ['0099', '0100', '0113', '0124', '0127']
 affects:
   - 3DEngine.App/Ui/DesktopUi.Fixed.cs
   - 3DEngine.App/Ui/DesktopUi.Panel.cs
@@ -50,6 +50,8 @@ The owner chose the slice and its merge after green CI; the recommendation answe
 1. **The top bar (amends ADR-0080 item 1).** At the upper left, 16 pixels inside the safe area, with no ground: the
    program, then the file or "unsaved", then the unit in the dim colour. A name wider than the rows is cut with "...", so
    the unit stays. A host with no files gives the program and the unit.
+   ADR-0127 item 5 amends this item: the unit is followed by "· saved" when the document has its own file, and by "· not
+   saved" while it is in the folder of the unsaved documents; a host with no folder of documents gives the unit alone.
 2. **The panel with no chrome.** The panel has no title bar, no ground and no border. It stays under the top bar, 8 pixels
    below it; the person does not move it, fold it or size it. Its height is the height of its content in the last frame, up
    to the room above the anchors, and it scrolls past that room. The room under it is the scene.
@@ -59,6 +61,10 @@ The owner chose the slice and its merge after green CI; the recommendation answe
    line, else the line with no address, else none (finding V146 of the codebase review of 2026-11-08 (c), TASK-0310).
    While a live body is hidden, the line ends with "N hidden · Show", which opens the list of the hidden bodies; when the
    line has no room, that part shows alone (ADR-0124 items 2 and 3).
+   ADR-0127 items 1 and 3 amend this item: the line starts with "log N", the count of the entries of the log, in place of
+   the count of the live bodies, and "agent connected" follows the state while a client listens to the event stream; a
+   narrow room drops the address, then "agent connected". On a landscape display the anchors are Undo, Redo and the step
+   of Undo (ADR-0127 items 2 and 4).
 4. **The rows (Q1 A).** The rows of the selection stay at the upper right in this slice.
 5. **The portrait ring** stays above the row of the anchors; it reads the top of that row, not the top of each fixed window,
    because the top bar is a fixed window too.
@@ -88,3 +94,5 @@ ground of the theme. The person can no longer move the panel out of the way. The
   new line. Item 4: on a landscape display the panel ends 12 pixels left of the command line.
 - 2026-11-12 · TASK-0351 · ADR-0124 items 2 and 3 amend item 3: the part "N hidden · Show" at the end of the status line,
   and the list of the hidden bodies that it opens.
+- 2026-11-12 · TASK-0354 · ADR-0127 amends items 1 and 3: "saved" or "not saved" in the top bar, and the log and the
+  agent in the status line.

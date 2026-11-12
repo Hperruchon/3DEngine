@@ -21,6 +21,8 @@ internal sealed class HostedSession(EngineHost host) : ISessionHost, IProposalDe
 
     public IDisposable Subscribe(Action<EventRecord> action) => Host.Subscribe(action);
 
+    public int Listeners => Host.Listeners;
+
     public IReadOnlyList<ProposalCard> Waiting()
         => [.. Host.Proposals.Waiting().Select(proposal => new ProposalCard(proposal.Id, proposal.Summary,
             [.. proposal.Commands.Select(command => ProposalCard.Line(command.Name, command.Parameters))], proposal.Stale, proposal.State == ProposalStates.Applying,
