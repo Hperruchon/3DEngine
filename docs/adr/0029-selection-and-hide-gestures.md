@@ -7,7 +7,7 @@ date: 2026-10-28
 supersedes: []
 superseded-by: []
 amends: ['0025', '0026', '0027']
-amended-by: ['0034', '0053', '0075', '0109']
+amended-by: ['0034', '0053', '0075', '0109', '0124']
 affects:
   - 3DEngine.Core/Input/**
   - 3DEngine.Core/Picking/**
@@ -36,7 +36,8 @@ selection and no pick (ADR-0009, ADR-0028 item 4).
 2. **The highlight.** A second pipeline draws the selected body again over itself in one colour, with
    blending and a depth test that passes on equal depth. The mesh pipeline does not change.
 3. **A hidden body.** The desktop does not draw a hidden body, cannot pick it, and leaves it out of the box
-   that the camera frames. The engine still holds it (ADR-0028 item 4).
+   that the camera frames. The engine still holds it (ADR-0028 item 4). When the selected body hides, the selection goes
+   to a visible neighbour in the order of the list, or to none (ADR-0124 item 1).
 4. **The gestures (R8-Q7).** A long press of a finger or a pen, or a right click, hides the body under the
    point. The key H hides the selected body. A tap of two fingers, or Shift and H, shows each hidden body. Each
    gesture is a setting of the map of ADR-0026 item 3. In the mode `Sketch` of the intent layer these gestures, and
@@ -81,3 +82,5 @@ that framed it leaves the camera where it is.
 - 2026-11-06 · TASK-0236 · ADR-0075 amends item 1: a second tap on the selected body selects the face under the point.
 - 2026-11-10 · TASK-0333 · ADR-0109 amends item 2: the selected body has no opaque draw; the highlight is a transparent
   fill over its depth, with its edges in the colour of the selection and its hidden edges dashed.
+- 2026-11-12 · TASK-0351 · ADR-0124 item 1 amends item 3: when the selected body hides, the selection goes to the next
+  visible body in the order of the list, else to the one before it, else to none.
