@@ -75,7 +75,9 @@ A change to an objective needs a decision from the owner. See `CLAUDE.md`, secti
 9. Each operation works by touch. Each operation also works by mouse and keyboard. Neither method is
    secondary.
 10. Learning and usefulness are both objectives. One does not have priority.
-11. Editable parametric CAD is an objective, not an option.
+11. Editable parametric CAD is an objective, not an option. Assemblies of the bodies of one part with joints, and the
+    geometric checks of their motion, have a place in the roadmap after P10c (ADR-0126, the decision of the owner of
+    2026-11-12).
 12. Time is irregular and limited. Each milestone must end in one session. A person must be able to
     continue it after three weeks.
 
@@ -84,7 +86,8 @@ A change to an objective needs a decision from the owner. See `CLAUDE.md`, secti
 13. Scenes become very large.
 14. Materials, chemistry and DNA are directions. They have no dataset and no workflow now.
 15. Machine vision comes before materials, chemistry and DNA.
-16. Simulation is a long-term ambition. Examples are airflow over a car and molecular data.
+16. Simulation is a long-term ambition. Examples are airflow over a car and molecular data. A load check of a printed
+    part follows the assembly work (ADR-0126).
 
 ### The shape of the work
 
@@ -178,8 +181,7 @@ Do not build one of these under a current task.
 - An event schema from a registry.
 - Electrical schematics.
 - Materials, chemistry and biological data.
-- Simulation and analysis.
-- Assemblies. These arrive after the reference model operates.
+- Simulation and analysis, other than the geometric checks and the load check of ADR-0126.
 - Mesh shaders, and culling on the graphics processor.
 - A renderer that uses WebGPU, for a web client.
 
