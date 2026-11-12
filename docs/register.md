@@ -463,6 +463,20 @@ show, and the way back is the panel. The owner decides the place of the ring of 
 portrait phone.
 Exit: the owner chooses, and a task gives the ring of the document or a place of the part on a portrait phone; or the owner
 accepts the panel as the way back on a portrait phone, and drops the ring of the document.
+### R-0065 · The scenario of R20c in the window was not done, and a far plate has long lines
+- class: risk
+- opened: 2026-11-12
+- due: 2026-11-26
+- extended: no
+- refs: `3DEngine.App/Ui/DesktopUi.Overlay.cs` (Dimensions), `docs/adr/0125-each-dimension-says-what-it-measures.md`,
+  `docs/proposals/2026-11-10-ux-test-of-a-multi-part-project.md` (problems 3 and 4), TASK-0352
+The scenario of improvement C is a person at 1280 by 720 with Dimensions on and "Cote gauche" selected: each label can
+be read, no element covers it, and the person says in less than two seconds which value is of the panel and which is of
+the whole. No person ran it; the tests drive the library, and a picture of a niche of nine boxes shows the plates. In
+that picture "X 18 mm" of the panel moves about 150 pixels down to leave the other plates, so its extension lines cross
+the model.
+Exit: the scenario runs in the window and passes; or it fails, or the long lines confuse the person, and a task
+corrects it.
 
 ## Accepted compromises
 

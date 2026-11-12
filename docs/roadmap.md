@@ -371,6 +371,9 @@ Therefore each approved objective must have a track here.
 - R20b2 — After a Hide the selection goes to a visible neighbour, and the status line shows "N hidden · Show", which lists
   the hidden bodies and shows one or each. The ring of the document waits for the owner (R-0064). v0.336, TASK-0351,
   ADR-0124.
+- R20c — Each dimension says what it measures: "Overall" in a grey for the whole, the name of the selected body in the
+  colour of the selection, each label on a plate outside its box, and no plate under the status line, the ring or the
+  history arc. Only a board shows its thickness. v0.337, TASK-0352, ADR-0125.
 
 ## Track 0 — Foundations
 
