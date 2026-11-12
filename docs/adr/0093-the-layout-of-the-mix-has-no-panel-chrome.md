@@ -7,7 +7,7 @@ date: 2026-11-08
 supersedes: []
 superseded-by: []
 amends: ['0080']
-amended-by: ['0099', '0100', '0113']
+amended-by: ['0099', '0100', '0113', '0124']
 affects:
   - 3DEngine.App/Ui/DesktopUi.Fixed.cs
   - 3DEngine.App/Ui/DesktopUi.Panel.cs
@@ -57,6 +57,8 @@ The owner chose the slice and its merge after green CI; the recommendation answe
    the live bodies, "all correct" or the count that failed, and the address of the surface.
    It starts at least 12 pixels right of the anchors (Undo, Redo, Frame and Home) with the text that fits there: the whole
    line, else the line with no address, else none (finding V146 of the codebase review of 2026-11-08 (c), TASK-0310).
+   While a live body is hidden, the line ends with "N hidden · Show", which opens the list of the hidden bodies; when the
+   line has no room, that part shows alone (ADR-0124 items 2 and 3).
 4. **The rows (Q1 A).** The rows of the selection stay at the upper right in this slice.
 5. **The portrait ring** stays above the row of the anchors; it reads the top of that row, not the top of each fixed window,
    because the top bar is a fixed window too.
@@ -84,3 +86,5 @@ ground of the theme. The person can no longer move the panel out of the way. The
   segment of the path line; on a portrait display the path line is under the top bar.
 - 2026-11-10 · TASK-0336 · ADR-0113 item 2 amends item 2: a control of the panel that does not fit on its line starts a
   new line. Item 4: on a landscape display the panel ends 12 pixels left of the command line.
+- 2026-11-12 · TASK-0351 · ADR-0124 items 2 and 3 amend item 3: the part "N hidden · Show" at the end of the status line,
+  and the list of the hidden bodies that it opens.

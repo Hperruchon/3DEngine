@@ -148,7 +148,7 @@ internal sealed class BodyActions(DocumentSession session)
             case HideIntent hide:
                 var target = hide.X is { } x && hide.Y is { } y ? pick(x, y)?.Id : Selection;
                 if (target is { } body)
-                    SetVisible(body, false);
+                    SetVisible(body, false, live);
                 return true;
 
             case ShowAllIntent:
@@ -164,15 +164,30 @@ internal sealed class BodyActions(DocumentSession session)
     public void ShowAll(IReadOnlyList<LiveBody> live)
     {
         foreach (var body in live.Where(body => !body.Visible).ToArray())
-            SetVisible(body.Id, true);
+            SetVisible(body.Id, true, live);
     }
 
-    // A hidden body cannot stay selected, because the desktop does not draw it.
-    public void SetVisible(Guid body, bool visible)
+    // A hidden body cannot stay selected, because the desktop does not draw it. ADR-0124 item 1 (phase R20b2, TASK-0351):
+    // the selection goes to a neighbour in the order of the list (Neighbour). Until TASK-0351 it went to none, and the list
+    // of the bodies came back over the model.
+    public void SetVisible(Guid body, bool visible, IReadOnlyList<LiveBody> live)
     {
-        Report(session.Apply(new SetBodyVisibilityCommand { BodyId = body, Visible = visible }).GetAwaiter().GetResult());
-        if (!visible && Selection == body)
-            Selection = null;
+        ArgumentNullException.ThrowIfNull(live);
+        var result = session.Apply(new SetBodyVisibilityCommand { BodyId = body, Visible = visible }).GetAwaiter().GetResult();
+        Report(result);
+        if (!visible && Selection == body && result.Status == CommandStatus.Applied)
+            Selection = Neighbour(body, live);
+    }
+
+    // ADR-0124 item 1: the next visible body after this body in the order of the list, else the nearest visible body before
+    // it, else none.
+    internal static Guid? Neighbour(Guid body, IReadOnlyList<LiveBody> live)
+    {
+        var at = live.Select(entry => entry.Id).ToList().IndexOf(body);
+        if (at < 0)
+            return null;
+        var after = live.Skip(at + 1).FirstOrDefault(entry => entry.Visible && entry.Id != body);
+        return after?.Id ?? live.Take(at).LastOrDefault(entry => entry.Visible && entry.Id != body)?.Id;
     }
 
     public void Rename(Guid body, string name)

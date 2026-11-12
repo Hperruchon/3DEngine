@@ -454,6 +454,11 @@ internal sealed unsafe partial class DesktopUi : IDisposable
             _dropFocus = true;
         }
 
+        // ADR-0124 item 3 (phase R20b2, TASK-0351): a release outside the list of the hidden bodies and the part of the status
+        // line closes the list. A release on the scene does not reach the library, so the check is here.
+        if (_hiddenOpen && samples.Any(sample => sample is PointerSample { Phase: PointerPhase.Up } release && !OverHidden(release.X, release.Y)))
+            _hiddenOpen = false;
+
         // ADR-0098 item 1 (the redesign, slice o, TASK-0312): Control and K give the command line the keys; an open pad keeps them.
         if (_pad is null)
             WatchCommandKey(samples);
@@ -652,6 +657,8 @@ internal sealed unsafe partial class DesktopUi : IDisposable
                 SketchWindow(shown, displaySize);
             if (imagePanel is not null)
                 ImageWindow(imagePanel, displaySize);
+            // ADR-0124 item 3 (phase R20b2, TASK-0351): the list of the hidden bodies, over the ring, the rows and the windows.
+            HiddenList(displaySize, bodies);
         }
 
         if (_message is { } message)
