@@ -7,7 +7,7 @@ date: 2026-11-09
 supersedes: []
 superseded-by: []
 amends: []
-amended-by: ['0116', '0119']
+amended-by: ['0116', '0119', '0123']
 affects:
   - 3DEngine.App/Ui/DesktopUi.History.cs
   - 3DEngine.App/Ui/DesktopUi.cs
@@ -68,7 +68,8 @@ The owner chose the slice and its merge after green CI; the recommendations answ
 1. **The steps (Q1 A).** The host reads `GetFeatures` again only when the session committed events or the selection changed,
    and counts the events through a subscription, so the frame takes no lock of the session. It gives the
    window the steps of the selected body: its feature and the features that it reads, by the inputs, in the order of the
-   log, at most six with the newest. A step has the identifier of its feature, its kind and its text: the name of a body, or
+   log, at most six with the newest; the step of the sketch that made the body is marked, and it comes after the six when
+   it is not one of them (ADR-0123). A step has the identifier of its feature, its kind and its text: the name of a body, or
    its kind; the name of a sketch, or "Sketch", with "on" and the plane (XY, XZ, YZ, or "a face"); and the kind of another
    step. A step that is failed or unresolved says so, as the rows do.
 2. **The tap (Q2 A).** A press and a release on one node of a sketch give the edit of that sketch; on one node of a live body
@@ -91,3 +92,5 @@ The owner chose the slice and its merge after green CI; the recommendations answ
 - 2026-11-11 · TASK-0346 · ADR-0119 item 3 amends item 3: the arc is a bright line with a glow, and each node is a dot on it
   inside its target of 44 pixels.
 - 2026-11-11 · TASK-0341 · ADR-0116 item 2 amends item 3: the arc fades with the ring while the view turns, pans or zooms.
+- 2026-11-12 · TASK-0350 · ADR-0123 item 1 amends item 1: the history marks the sketch that made the body, found along the
+  first input, and gives it after the six newest steps when it is not one of them (finding V168).

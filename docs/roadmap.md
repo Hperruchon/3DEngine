@@ -365,6 +365,9 @@ Therefore each approved objective must have a track here.
 - Review — The codebase review of 2026-11-12. v0.333, TASK-0349.
 - R20b1 — "Dimensions" is a segment of the ring of a body, with the state of a tool in use while the dimensions are on.
   v0.334, TASK-0348, ADR-0122.
+- P0.144 — The medium and low findings of the codebase review of 2026-11-12: the sketch that made a body stays after
+  three cuts, one tap on a row gives one action, two colours fade with the ring, and a T-vertex inside a closed flat face
+  draws no line. v0.335, TASK-0350, ADR-0123.
 
 ## Track 0 — Foundations
 

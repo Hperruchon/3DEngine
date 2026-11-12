@@ -14,8 +14,9 @@ internal enum HistoryTap
 
 // ADR-0104 item 1: one step of the selected body. Id is the identifier of its feature, Kind the kind of the feature (the
 // name of its command), Text the text beside its node, State the state of the feature (correct, failed, consumed or
-// unresolved) and Code the code of a fault, or null.
-internal sealed record HistoryStep(Guid Id, string Kind, string Text, string State, string? Code, HistoryTap Tap)
+// unresolved) and Code the code of a fault, or null. ADR-0123 item 1 (finding V168, TASK-0350): MadeFrom is true for the step
+// of the sketch that made the body, which the row "Made from" and "Edit sketch" open.
+internal sealed record HistoryStep(Guid Id, string Kind, string Text, string State, string? Code, HistoryTap Tap, bool MadeFrom = false)
 {
     // A failed or an unresolved step says so, as the rows of a body do.
     public bool Fault => State is GetFeaturesQueryHandler.Failed or GetFeaturesQueryHandler.Unresolved;
@@ -56,7 +57,32 @@ internal static class HistorySteps
         }
 
         var names = sketches.ToDictionary(sketch => sketch.SketchId, sketch => sketch.Name);
-        return [.. chain.OrderByDescending(id => order[id]).Take(Most).Select(id => Step(features.Features[order[id]], bodies, names))];
+        var madeFrom = MadeFrom(features, order, selected);
+        var newest = chain.OrderByDescending(id => order[id]).Take(Most).ToList();
+        // ADR-0123 item 1: the step of the sketch that made the body is marked; when it is not one of the six newest, it comes
+        // after them, and the arc does not draw it. Until TASK-0350 the row "Made from" took the first step of the six that
+        // opens a sketch, so a plate cut three times lost it, and a cut by an extrude of a newer sketch gave the sketch of the tool.
+        if (madeFrom is { } sketch && !newest.Contains(sketch))
+            newest.Add(sketch);
+        return [.. newest.Select(id => Step(features.Features[order[id]], bodies, names) with { MadeFrom = id == madeFrom })];
+    }
+
+    // ADR-0123 item 1: the sketch that made a body, along the first input of each step from the body: an extrude reads its
+    // sketch, a cut the body that it cuts, a move or a turn the body that it moves. Null for a body that no sketch made.
+    private static Guid? MadeFrom(FeaturesInfo features, IReadOnlyDictionary<Guid, int> order, Guid selected)
+    {
+        var at = selected;
+        for (var guard = 0; guard < features.Features.Count; guard++)
+        {
+            var feature = features.Features[order[at]];
+            if (feature.Kind == "CreateSketch")
+                return at;
+            if (feature.Inputs.Count == 0 || !order.ContainsKey(feature.Inputs[0]))
+                return null;
+            at = feature.Inputs[0];
+        }
+
+        return null;
     }
 
     private static HistoryStep Step(FeatureInfo feature, IReadOnlyList<LiveBody> bodies, IReadOnlyDictionary<Guid, string?> names)

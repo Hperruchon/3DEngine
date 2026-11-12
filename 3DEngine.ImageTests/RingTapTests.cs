@@ -3,6 +3,7 @@ using Engine.Contracts;
 using ThreeDEngine.Core.Input;
 using ThreeDEngine.Desktop;
 using ThreeDEngine.Desktop.Ui;
+using ThreeDEngine.Vulkan;
 
 namespace ThreeDEngine.ImageTests;
 
@@ -176,6 +177,102 @@ public sealed class RingTapTests
         ui.CameraGesture = false;
         Step(ui, Display);
         Assert.Equal((1f, 1f), (ui.RingAlphaOfFrame, ui.HistoryAlphaOfFrame));
+    }
+
+    // Finding V169 of the codebase review of 2026-11-12 (TASK-0350): with the body at the upper left of a small display, the
+    // target of a segment of the ring is under the row "Made from". A tap there opens the sketch one time, and no pad opens.
+    // Until TASK-0350 the tap opened the pad of Move, or gave two actions.
+    [Theory]
+    [InlineData(640, 360)]
+    [InlineData(1024, 576)]
+    public void A_Tap_On_Made_From_Over_A_Segment_Gives_One_Action(int width, int height)
+    {
+        var display = new Vector2(width, height);
+        var sketch = Guid.Parse("65000000-0000-0000-0000-000000000001");
+        IReadOnlyList<HistoryStep> history =
+            [new(Body, "Extrude", "Fond", "correct", null, HistoryTap.None), new(sketch, "CreateSketch", "Plate on XY", "correct", null, HistoryTap.EditSketch, MadeFrom: true)];
+        using var ui = new DesktopUi("http://127.0.0.1:5180", Document.Millimetre);
+        void Frame(params InputSample[] samples)
+        {
+            ui.Route(samples);
+            ui.Frame(1f / 60f, display, Vector2.One, [Extrude], Body, null, ringCentre: Vector2.Zero, ringBody: 40f, history: history);
+        }
+
+        Frame();
+        Frame();
+        var row = ui.ItemRectangle(DesktopUi.MadeFromItem) ?? throw new InvalidOperationException("No row Made from.");
+        var ring = ui.RingLayoutOfFrame ?? throw new InvalidOperationException("No ring.");
+        Vector2? over = null;
+        for (var y = row.Y + 1; y < row.W - 1 && over is null; y += 2)
+        {
+            for (var x = row.X + 1; x < row.Z - 1 && over is null; x += 2)
+            {
+                if (ring.At(ui.RingLabels, new Vector2(x, y)) is { } label && ui.RingTarget(label) is { } target && Inside(target, new Vector2(x, y)))
+                    over = new Vector2(x, y);
+            }
+        }
+
+        var at = over ?? throw new InvalidOperationException($"{width}x{height}: no target of the ring is under the row Made from.");
+        ui.TakeActions();
+        Frame(Pointer(DeviceKind.Mouse, at, PointerPhase.Move, 0));
+        Frame(Pointer(DeviceKind.Mouse, at, PointerPhase.Down, 10));
+        Frame(Pointer(DeviceKind.Mouse, at, PointerPhase.Up, 20));
+        Frame();
+        Assert.Equal([new EditSketchAction(sketch)], ui.TakeActions());
+        Assert.Null(ui.Pad);
+    }
+
+    // Finding V170 of the codebase review of 2026-11-12 (TASK-0350): the red state of a failed step of the arc and the plate of
+    // a wide label of the ring of a sketch fade with the rest. Until TASK-0350 both kept their alpha during a gesture.
+    [Fact]
+    public void The_State_Of_A_Failed_Step_And_The_Plate_Of_A_Label_Fade_During_A_Gesture()
+    {
+        static bool Faded(uint colour, uint full) => (colour & 0x00FFFFFF) == (full & 0x00FFFFFF) && colour >> 24 < full >> 24;
+
+        using var ui = new DesktopUi("http://127.0.0.1:5180", Document.Millimetre);
+        IReadOnlyList<HistoryStep> failed =
+            [new(Body, "Extrude", "Fond", Engine.Core.Queries.GetFeaturesQueryHandler.Failed, "E-KERNEL-EXTRUDE-OPEN", HistoryTap.SelectBody)];
+        UiVertex[] Arc()
+        {
+            ui.Route([]);
+            return ui.Frame(1f / 60f, Display, Vector2.One, [Extrude], Body, null, ringCentre: Centre, ringBody: 120f, history: failed).Vertices;
+        }
+
+        Arc();
+        Assert.Contains(Arc(), vertex => vertex.Colour == DesktopUi.FailedColour);
+        ui.CameraGesture = true;
+        var arc = Arc();
+        Assert.DoesNotContain(arc, vertex => vertex.Colour == DesktopUi.FailedColour);
+        Assert.Contains(arc, vertex => Faded(vertex.Colour, DesktopUi.FailedColour));
+        ui.CameraGesture = false;
+
+        // The ring of the constraints of a selected line holds "Horizontal", a label wider than the band, on a plate.
+        var (start, end, line) = (Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid());
+        var sketch = new Engine.Core.Queries.SketchInfo(Guid.NewGuid(), Engine.Contracts.Sketch.Datums.XY.Id, "Plate",
+            [new(start, 0, 0), new(end, 40, 10)], [new(line, start, end)], [], [], [], true, 4);
+        UiVertex[] Sketch(params InputSample[] samples)
+        {
+            ui.Route(samples);
+            return ui.Frame(1f / 60f, Display, Vector2.One, [], null, null,
+                sketchPanel: new SketchPanel([sketch], sketch, ThreeDEngine.Core.Sketching.SketchToolKind.Select, false, [line], null), ringCentre: Centre, ringBody: 60f).Vertices;
+        }
+
+        Sketch();
+        Sketch();
+        var constrain = Mid(ui.ItemRectangle(DesktopUi.RingItem(DesktopUi.ConstrainLabel)) ?? throw new InvalidOperationException("No Constrain."));
+        Sketch(Pointer(DeviceKind.Touch, constrain, PointerPhase.Down, 0));
+        Sketch(Pointer(DeviceKind.Touch, constrain, PointerPhase.Up, 10));
+
+        // The release counts in the frame after it, and the ring shows its new labels in the frame after that.
+        Sketch();
+        Sketch();
+        Assert.NotNull(ui.ItemRectangle(DesktopUi.RingItem("Horizontal")));
+        var plate = Theme.Plate(0.85f);
+        Assert.Contains(Sketch(), vertex => vertex.Colour == plate);
+        ui.CameraGesture = true;
+        var ring = Sketch();
+        Assert.DoesNotContain(ring, vertex => vertex.Colour == plate);
+        Assert.Contains(ring, vertex => Faded(vertex.Colour, plate));
     }
 
     // Item 2: an orbit, a pan or a zoom starts the gesture; it runs while such intents come and for the hold after the last one;

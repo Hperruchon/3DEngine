@@ -62,7 +62,8 @@ internal sealed unsafe partial class DesktopUi
         Vector2 At(float angle) => ring.Centre + (new Vector2(MathF.Cos(angle), MathF.Sin(angle)) * radius);
         var lineHeight = ImGui.GetTextLineHeight();
         var left = 16f + _inset.X;
-        for (var i = 0; i < steps.Count; i++)
+        // ADR-0123 item 1 (TASK-0350): the arc draws the six newest steps; a step after them is the sketch that made the body.
+        for (var i = 0; i < Math.Min(steps.Count, HistorySteps.Most); i++)
         {
             var angle = upper - (i * step);
             if (angle < lower - 0.001f)
@@ -126,8 +127,10 @@ internal sealed unsafe partial class DesktopUi
             // The text, and the state of a failed or an unresolved step after it in red, as the rows say it.
             var words = shown.Text;
             list.AddText(new Vector2(text.X, text.Y), shown.State == Engine.Core.Queries.GetFeaturesQueryHandler.Consumed ? quiet : ink, words);
+            // Finding V170 of the codebase review of 2026-11-12 (TASK-0350): the red goes through GetColorU32, so it fades with
+            // the arc (ADR-0116 item 2); until TASK-0350 it kept its full alpha during a gesture.
             if (shown.Fault)
-                list.AddText(new Vector2(text.X + ImGui.CalcTextSize(words).X, text.Y), FailedColour, HistoryState(shown));
+                list.AddText(new Vector2(text.X + ImGui.CalcTextSize(words).X, text.Y), ImGui.GetColorU32(FailedColour), HistoryState(shown));
             _items[HistoryItem(shown.Id)] = new Vector4(centre.X - (HistoryNode / 2f), centre.Y - (HistoryNode / 2f), centre.X + (HistoryNode / 2f), centre.Y + (HistoryNode / 2f));
             _items[HistoryTextItem(shown.Id)] = text;
         }
