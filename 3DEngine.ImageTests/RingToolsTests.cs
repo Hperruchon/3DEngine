@@ -52,7 +52,8 @@ public sealed class RingToolsTests
         using var ui = new DesktopUi("http://127.0.0.1:5180", Document.Millimetre);
         Step(ui, Landscape, Extrude, Made);
         Step(ui, Landscape, Extrude, Made);
-        Assert.Equal([DesktopUi.EditSketchLabel, DesktopUi.MoveLabel, DesktopUi.SetDistanceLabel, DesktopUi.HideLabel, DesktopUi.FocusLabel, DesktopUi.RenameLabel], ui.RingLabels);
+        // ADR-0122 item 1 (phase R20b, TASK-0348): "Dimensions" is before "Rename".
+        Assert.Equal([DesktopUi.EditSketchLabel, DesktopUi.MoveLabel, DesktopUi.SetDistanceLabel, DesktopUi.HideLabel, DesktopUi.FocusLabel, DesktopUi.DimensionsLabel, DesktopUi.RenameLabel], ui.RingLabels);
 
         Assert.Equal([new EditSketchAction(SketchStep)], Tap(ui, Landscape, Extrude, Made, DesktopUi.RingItem(DesktopUi.EditSketchLabel)));
         Assert.Null(ui.ItemRectangle(DesktopUi.RenameItem));
@@ -68,20 +69,22 @@ public sealed class RingToolsTests
         using var ui = new DesktopUi("http://127.0.0.1:5180", Document.Millimetre);
         Step(ui, Landscape, Box, [Made[0]]);
         Step(ui, Landscape, Box, [Made[0]]);
-        Assert.Equal([DesktopUi.MoveLabel, DesktopUi.HideLabel, DesktopUi.FocusLabel, DesktopUi.RenameLabel], ui.RingLabels);
+        Assert.Equal([DesktopUi.MoveLabel, DesktopUi.HideLabel, DesktopUi.FocusLabel, DesktopUi.DimensionsLabel, DesktopUi.RenameLabel], ui.RingLabels);
 
         var portrait = new Vector2(390, 844);
         Step(ui, portrait, Extrude, Made);
         Step(ui, portrait, Extrude, Made);
-        Assert.Equal([DesktopUi.EditSketchLabel, DesktopUi.MoveLabel, DesktopUi.SetDistanceLabel, DesktopUi.HideLabel, DesktopUi.FocusLabel], ui.RingLabels);
+        Assert.Equal([DesktopUi.EditSketchLabel, DesktopUi.MoveLabel, DesktopUi.SetDistanceLabel, DesktopUi.HideLabel, DesktopUi.FocusLabel, DesktopUi.DimensionsLabel], ui.RingLabels);
     }
 
     // Item 2: the segments of a landscape ring span at most four segments, so the top one ends before Accept of a proposal at
     // 305 degrees; six segments are narrower, and each narrowed one is at least 46 pixels at the inner radius. On a small ring with no room,
     // "Rename" and then "Edit sketch" leave the ring.
     [Theory]
-    [InlineData(1440, 900, 6)]
-    [InlineData(1280, 720, 6)]
+    [InlineData(1440, 900, 7)]
+    [InlineData(1280, 720, 7)]
+    [InlineData(915, 412, 4)]
+    [InlineData(844, 390, 4)]
     [InlineData(640, 360, 4)]
     public void A_Landscape_Ring_Spans_At_Most_Four_Segments(int width, int height, int count)
     {
