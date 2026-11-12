@@ -59,3 +59,4 @@ that a cut made from a box and an extrude, in that order, has no sketch that mad
 ## History
 
 - 2026-11-12 · TASK-0350 · The record, from finding V168 of the codebase review of 2026-11-12.
+- 2026-11-12 · TASK-0350 · Shipped at v0.335.

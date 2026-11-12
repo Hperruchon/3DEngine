@@ -10033,3 +10033,40 @@ dimensions) follow.
 New tests: 8. The test list holds 2487 (1550 in `Engine.Tests`, 356 in `3DEngine.Tests`, 578 in `3DEngine.ImageTests`, 3
 in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
 entries: 12 of 15. New diagnostic codes: 0. Since the review of v0.333, 1 product milestone and 1 entry followed it.
+
+## v0.335 — The sketch that made a body stays after three cuts, and three low findings of the review (P0.144, TASK-0350)
+
+The owner ordered "go" on 2026-11-12, after the merge of R20b1. TASK-0350 holds the findings V168 to V171 of the codebase
+review of 2026-11-12, after the next product phase.
+
+**V168 (medium).** The row "Made from", "Edit sketch" on the ring and the command took the first sketch of the six newest
+steps of the history. A plate cut three times by boxes has eight steps, so it lost them; and a cut by an extrude of a newer
+sketch gave the sketch of the tool. ADR-0123 amends ADR-0104 item 1, ADR-0117 item 2 and ADR-0119 item 1:
+- The sketch that made a body is found along the first input of each step from the body: an extrude reads its sketch, a
+  cut the body that it cuts, a move or a turn the body that it moves.
+- The history marks that step (`HistoryStep.MadeFrom`). When it is not one of the six newest steps, the history gives it
+  after them; the arc draws the six newest only.
+
+**V169 (low).** The ring skipped a release on a value row only, so one tap on "Made from" over a segment of the ring opened
+the pad of the segment, or gave two actions. The ring now skips a release anywhere on the rows.
+
+**V170 (low).** The red state of a failed step of the arc and the plate of a wide label of the ring of a sketch now go
+through `GetColorU32`, so they fade with the ring and the arc during a gesture (ADR-0116 item 2).
+
+**V171 (low).** The fix of V166 skips a triangle of zero area, so a T-vertex inside a closed flat face still gave the false
+line of its sliver. Now each sliver joins its two short edges to the triangle across its long edge, when each of the three
+has one triangle, and the long edge goes. A flat face draws no line, and a crease along that line draws its two parts.
+
+**Proof.** 7 new tests: two in `HistoryArcTests` (a plate cut two and three times, and the sketch of the cut body and not of
+the tool), two in `RingTapTests` for V169 (at 640 by 360 and 1024 by 576), one in `RingTapTests` for V170, and two in
+`BodyEdgesImageTests` for V171 (a flat face and a crease). Three tests that build a history by hand mark their sketch. Six
+injections each failed a named test, and each file came back byte for byte: no sketch after the six, the newest sketch of
+the chain, a ring that skips a value row only, each of the two colours without the fade, and no join of a sliver. The phone
+project builds with zero warnings. Run 43174549126 passed on the branch.
+
+**What stays.** V171 is proven on a mesh written by hand; no probe showed that the backend or an STL file gives such a mesh.
+A chain of slivers along one line is not joined. No person used the change in the window.
+
+New tests: 7. The test list holds 2494 (1550 in `Engine.Tests`, 356 in `3DEngine.Tests`, 585 in `3DEngine.ImageTests`, 3
+in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
+entries: 12 of 15. New diagnostic codes: 0. Since the review of v0.333, 1 product milestone and 2 entries followed it.
