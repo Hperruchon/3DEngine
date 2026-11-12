@@ -463,6 +463,10 @@ internal sealed unsafe partial class DesktopUi : IDisposable
         if (_pad is null)
             WatchCommandKey(samples);
 
+        // ADR-0127 item 4 (phase R18g, TASK-0354): F frames, while no field, no pad and no home screen takes the keys.
+        if (_pad is null && !_textActive && _home is null)
+            WatchFrameKey(samples);
+
         // ADR-0032 item 6: while the pad is open, it takes each key and each text of the frame.
         var (panel, intents) = _router.Route(samples, OverPanel, _textActive || _pad is not null);
         // Finding V130 of the codebase review of 2026-11-07 (b) (TASK-0271): the home screen takes the place of the document,

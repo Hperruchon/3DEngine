@@ -7,7 +7,7 @@ date: 2026-11-07
 supersedes: []
 superseded-by: []
 amends: ['0044', '0045', '0048']
-amended-by: ['0102']
+amended-by: ['0102', '0127']
 affects:
   - Engine.Contracts/Geometry/IMeshImportOps.cs
   - Engine.Core/Commands/ImportStlCommand.cs
@@ -214,3 +214,5 @@ desktop row P9c, the phone row P9d, and the test sheet P9e.
   at the limit; `E-STL-TOO-LARGE` keeps the meaning of item 6 (finding E190 of the codebase review of 2026-11-08).
 - 2026-11-08 · TASK-0316 · ADR-0102 amends D1 and D6: "Open file" is "Import STL...", apart from "Open project...",
   and the recent rows are the projects that this desktop opened or saved, in each folder.
+- 2026-11-12 · TASK-0354 · ADR-0127 item 4 amends the desktop part of TASK-0259: on a landscape display "Frame" and
+  "Home" leave the row of the anchors; the command line holds them, and the key F frames. A portrait display keeps them.

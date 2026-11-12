@@ -165,7 +165,8 @@ public sealed class HiddenBodiesTests
         Step(ui, display, bodies);
         Step(ui, display, bodies);
 
-        var home = ui.ItemRectangle(DesktopUi.HomeLabel) ?? throw new InvalidOperationException("No Home.");
+        // ADR-0127 item 4 (TASK-0354): a landscape display has no Home on the row, so the part stays right of Redo there.
+        var home = ui.ItemRectangle(DesktopUi.HomeLabel) ?? ui.ItemRectangle(DesktopUi.RedoLabel) ?? throw new InvalidOperationException("No Home and no Redo.");
         var (count, part) = (ui.ItemRectangle(DesktopUi.StatusLabel), ui.ItemRectangle(DesktopUi.HiddenItem));
         Assert.Equal(shows, (count, part) switch
         {
