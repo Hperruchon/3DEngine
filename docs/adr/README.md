@@ -69,7 +69,7 @@ names. Do not read all of them.
 | [0053](0053-desktop-sketch-on-a-face.md) | The desktop starts a sketch on a face, and draws a sketch on a datum of the Document | Amended | Desktop, sketch, feature graph | 0029, 0034, 0051 | 0059 |
 | [0054](0054-ordered-feature-list.md) | The ordered feature list, a fold of the log | Amended | Feature graph, runtime | 0039 | 0055 |
 | [0055](0055-regeneration.md) | The regeneration of the features after an edit | Amended | Feature graph, geometry, runtime | 0037, 0039, 0054 | 0059 |
-| [0056](0056-dimension-overlay.md) | The dimension overlay of the desktop | Accepted | Desktop, renderer | — | — |
+| [0056](0056-dimension-overlay.md) | The dimension overlay of the desktop | Amended | Desktop, renderer | — | 0125 |
 | [0057](0057-planar-subtract-in-the-owned-kernel.md) | The exact planar subtract of the owned kernel, with the provenance of each face | Amended | Kernel, geometry, determinism | — | 0058 |
 | [0058](0058-the-engine-reads-the-owned-kernel.md) | The engine reads the owned kernel for the faces of a body | Amended | Kernel, geometry, queries | 0057 | 0059, 0112 |
 | [0059](0059-references-by-the-identity-of-a-face.md) | The references by the identity of a face, and a datum on a face that a cut removed | Amended | Kernel, feature graph, sketch | 0051, 0053, 0055, 0058 | 0112 |
@@ -130,6 +130,7 @@ names. Do not read all of them.
 | [0122](0122-dimensions-is-a-segment-of-the-ring.md) | Dimensions is a segment of the ring of a body | Accepted | Clients, rendering | 0119 | — |
 | [0123](0123-the-sketch-that-made-a-body-is-found-along-the-first-input.md) | The sketch that made a body is found along the first input, and the history keeps it after the six newest steps | Accepted | Clients, rendering | 0104, 0117, 0119 | — |
 | [0124](0124-the-selection-after-a-hide-and-the-hidden-bodies-in-the-status-line.md) | The selection after a hide, and the hidden bodies in the status line | Accepted | Clients, rendering | 0029, 0093 | — |
+| [0125](0125-each-dimension-says-what-it-measures.md) | Each dimension says what it measures, on a plate outside its box, and no control covers it | Accepted | Clients, rendering | 0056 | — |
 
 ## Topics
 
