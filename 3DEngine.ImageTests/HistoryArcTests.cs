@@ -67,7 +67,7 @@ public sealed class HistoryArcTests
         Assert.Equal(
             [
                 new HistoryStep(Bracket, "Extrude", "Bracket", GetFeaturesQueryHandler.Correct, null, HistoryTap.SelectBody),
-                new HistoryStep(Sketch, "CreateSketch", "Plate on XY", GetFeaturesQueryHandler.Correct, null, HistoryTap.EditSketch),
+                new HistoryStep(Sketch, "CreateSketch", "Plate on XY", GetFeaturesQueryHandler.Correct, null, HistoryTap.EditSketch, MadeFrom: true),
             ],
             steps);
 
@@ -131,6 +131,84 @@ public sealed class HistoryArcTests
 
         Assert.Equal(HistorySteps.Most, steps.Count);
         Assert.Equal(ids.Reverse().Take(HistorySteps.Most), steps.Select(step => step.Id));
+    }
+
+    // Finding V168 of the codebase review of 2026-11-12 (ADR-0123 item 1, TASK-0350): a plate from a sketch cut three times by
+    // boxes has a chain of eight steps. The six newest go on the arc, and the sketch that made the plate comes after them,
+    // marked; the arc draws six nodes, and the row "Made from" and "Edit sketch" still give the sketch. With two cuts the
+    // sketch is one of the six. Until TASK-0350 a third cut lost the row and the tool.
+    [Fact]
+    public void A_Plate_Cut_Three_Times_Keeps_The_Sketch_That_Made_It()
+    {
+        var ids = Enumerable.Range(0, 6).Select(i => Guid.Parse($"73000000-0000-0000-0000-00000000000{i}")).ToArray();
+        var (box1, cut1, box2, cut2, box3, cut3) = (ids[0], ids[1], ids[2], ids[3], ids[4], ids[5]);
+        FeaturesInfo Cuts(int count)
+        {
+            var features = new List<FeatureInfo> { Feature(Sketch, "CreateSketch", inputs: Datums.XY.Id), Feature(Bracket, "Extrude", consumedBy: cut1, inputs: Sketch) };
+            var (boxes, cuts) = (new[] { box1, box2, box3 }, new[] { cut1, cut2, cut3 });
+            for (var i = 0; i < count; i++)
+            {
+                features.Add(Feature(boxes[i], "CreateBox", consumedBy: cuts[i]));
+                features.Add(Feature(cuts[i], "Subtract", consumedBy: i + 1 < count ? cuts[i + 1] : null, inputs: [i == 0 ? Bracket : cuts[i - 1], boxes[i]]));
+            }
+
+            return new FeaturesInfo(features);
+        }
+
+        var two = HistorySteps.Of(Cuts(2), [new LiveBody(cut2, "Solid", "Plate", true)], [Plate], cut2);
+        Assert.Equal(HistorySteps.Most, two.Count);
+        Assert.Equal(Sketch, Assert.Single(two, step => step.MadeFrom).Id);
+
+        var three = HistorySteps.Of(Cuts(3), [new LiveBody(cut3, "Solid", "Plate", true)], [Plate], cut3);
+        Assert.Equal(HistorySteps.Most + 1, three.Count);
+        Assert.Equal([cut3, box3, cut2, box2, cut1, box1], three.Take(HistorySteps.Most).Select(step => step.Id));
+        Assert.Equal(new HistoryStep(Sketch, "CreateSketch", "Plate on XY", GetFeaturesQueryHandler.Correct, null, HistoryTap.EditSketch, MadeFrom: true), three[^1]);
+
+        using var ui = new DesktopUi("http://127.0.0.1:5180", Document.Millimetre);
+        var plate = new LiveBody(cut3, "Solid", "Plate", true);
+        Frame(ui, [plate], cut3, three, Display);
+        Frame(ui, [plate], cut3, three, Display);
+        Assert.Equal(three[^1], ui.SketchStep);
+        Assert.NotNull(ui.ItemRectangle(DesktopUi.MadeFromItem));
+        Assert.Contains(DesktopUi.EditSketchLabel, ui.RingLabels);
+        Assert.Null(ui.ItemRectangle(DesktopUi.HistoryItem(Sketch)));
+
+        // The arc draws the same nodes as for the six newest steps alone; a small radius drops a node past the bottom.
+        var drawn = three.Where(step => ui.ItemRectangle(DesktopUi.HistoryItem(step.Id)) is not null).Select(step => step.Id).ToList();
+        using var six = new DesktopUi("http://127.0.0.1:5180", Document.Millimetre);
+        var newest = three.Take(HistorySteps.Most).ToList();
+        Frame(six, [plate], cut3, newest, Display);
+        Frame(six, [plate], cut3, newest, Display);
+        Assert.Equal(newest.Where(step => six.ItemRectangle(DesktopUi.HistoryItem(step.Id)) is not null).Select(step => step.Id), drawn);
+        Assert.NotEmpty(drawn);
+    }
+
+    // V168: a cut whose tool is an extrude of a newer sketch is made from the sketch of the body that it cuts, not from the
+    // sketch of the tool; a box cut by an extrude has no sketch that made it. Until TASK-0350 the row "Made from" gave the
+    // newest sketch of the chain, the sketch of the tool.
+    [Fact]
+    public void A_Cut_Is_Made_From_The_Sketch_Of_The_Body_That_It_Cuts()
+    {
+        var (toolSketch, tool, cut) = (Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid());
+        var features = new FeaturesInfo(
+        [
+            Feature(Sketch, "CreateSketch", inputs: Datums.XY.Id),
+            Feature(Bracket, "Extrude", consumedBy: cut, inputs: Sketch),
+            Feature(toolSketch, "CreateSketch", inputs: Datums.XY.Id),
+            Feature(tool, "Extrude", consumedBy: cut, inputs: toolSketch),
+            Feature(cut, "Subtract", inputs: [Bracket, tool]),
+        ]);
+        var steps = HistorySteps.Of(features, [new LiveBody(cut, "Solid", "Plate", true)], [Plate], cut);
+        Assert.Equal(Sketch, Assert.Single(steps, step => step.MadeFrom).Id);
+
+        var boxed = new FeaturesInfo(
+        [
+            Feature(Base, "CreateBox", consumedBy: cut),
+            Feature(toolSketch, "CreateSketch", inputs: Datums.XY.Id),
+            Feature(tool, "Extrude", consumedBy: cut, inputs: toolSketch),
+            Feature(cut, "Subtract", inputs: [Base, tool]),
+        ]);
+        Assert.DoesNotContain(HistorySteps.Of(boxed, [new LiveBody(cut, "Solid", null, true)], [], cut), step => step.MadeFrom);
     }
 
     // Item 1: a failed step and an unresolved step say so with the code of their fault, as the rows do.

@@ -48,6 +48,7 @@ public static class EdgeLines
 
         // For each edge: the count of its triangles and the normals of the first two.
         var edges = new Dictionary<(int, int), (int Count, (double X, double Y, double Z) First, (double X, double Y, double Z) Second)>();
+        var slivers = new List<(int A, int B, int C)>();
         for (var t = 0; t + 2 < indices.Length; t += 3)
         {
             var (a, b, c) = (canonical[indices[t]], canonical[indices[t + 1]], canonical[indices[t + 2]]);
@@ -58,13 +59,34 @@ public static class EdgeLines
             // Finding V166 of the codebase review of 2026-11-11 (TASK-0345): a triangle of zero area across a T-vertex has
             // three different corners, but its long edge is not an edge of the surface. It adds no edge.
             if (normal == default)
+            {
+                slivers.Add((a, b, c));
                 continue;
+            }
+
             foreach (var (p, q) in new[] { (a, b), (b, c), (c, a) })
             {
-                var key = p < q ? (p, q) : (q, p);
+                var key = Key(p, q);
                 edges[key] = edges.TryGetValue(key, out var seen)
                     ? (seen.Count + 1, seen.First, seen.Count == 1 ? normal : seen.Second)
                     : (1, normal, default);
+            }
+        }
+
+        // Finding V171 of the codebase review of 2026-11-12 (TASK-0350): a sliver closes a T-vertex M on the long side P-Q, so the
+        // triangle across P-Q is also the triangle across P-M and across M-Q. When each of the three sides has one triangle,
+        // the two short sides take the triangle of the long side, and the long side is not an edge. So a T-vertex inside a
+        // flat face draws no line, and a crease along P-Q still draws its two parts.
+        foreach (var (a, b, c) in slivers)
+        {
+            var (p, m, q) = Ends(positions, a, b, c);
+            var (pm, mq, pq) = (Key(p, m), Key(m, q), Key(p, q));
+            if (edges.TryGetValue(pq, out var across) && across.Count == 1
+                && edges.TryGetValue(pm, out var near) && near.Count == 1 && edges.TryGetValue(mq, out var far) && far.Count == 1)
+            {
+                edges[pm] = (2, near.First, across.First);
+                edges[mq] = (2, far.First, across.First);
+                edges.Remove(pq);
             }
         }
 
@@ -109,6 +131,22 @@ public static class EdgeLines
         }
 
         return result;
+    }
+
+    private static (int, int) Key(int p, int q) => p < q ? (p, q) : (q, p);
+
+    // The ends P and Q of the longest side of a triangle of zero area, and its middle corner M, which is on that side.
+    private static (int P, int M, int Q) Ends(ReadOnlySpan<double> positions, int a, int b, int c)
+    {
+        var (ab, bc, ca) = (Square(positions, a, b), Square(positions, b, c), Square(positions, c, a));
+        return ab >= bc && ab >= ca ? (a, c, b) : bc >= ca ? (b, a, c) : (c, b, a);
+    }
+
+    // The square of the distance between two vertices, with no square root.
+    private static double Square(ReadOnlySpan<double> positions, int a, int b)
+    {
+        var (x, y, z) = (positions[3 * b] - positions[3 * a], positions[(3 * b) + 1] - positions[(3 * a) + 1], positions[(3 * b) + 2] - positions[(3 * a) + 2]);
+        return (x * x) + (y * y) + (z * z);
     }
 
     // The unit normal of a triangle, or zero for a triangle with no area.
