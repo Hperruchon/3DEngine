@@ -363,6 +363,8 @@ Therefore each approved objective must have a track here.
 - P0.143 — The low findings of the codebase review of 2026-11-11: a triangle of zero area adds no edge, and a mesh of
   more than 100 000 triangles finds its edges on the thread pool. v0.332, TASK-0345, ADR-0121.
 - Review — The codebase review of 2026-11-12. v0.333, TASK-0349.
+- R20b1 — "Dimensions" is a segment of the ring of a body, with the state of a tool in use while the dimensions are on.
+  v0.334, TASK-0348, ADR-0122.
 
 ## Track 0 — Foundations
 
@@ -621,7 +623,9 @@ The first objective. Each phase ends with something that a person can observe.
 | R19 | The responsive layout: each control stays in the display and free for a tap at six phone sizes in portrait, three in landscape, a tablet and two windows, with one test over all of them (ADR-0113; the order of the owner of 2026-11-10, after R17a). TASK-0336. | 1 |
 | R20 | The UX test of a project of many pieces on 2026-11-10 (a copy of `Bibliotheque120.3de`, 19 bodies, 1280 by 720): seven problems and three improvements, in the proposal `docs/proposals/2026-11-10-ux-test-of-a-multi-part-project.md`; the owner took the three on 2026-11-10. | 4–6 |
 | R20a | The ring does not take a tap meant for the model: only the icon and the label of a segment take a tap, a tap on a body under the rest of the band selects it, and the ring fades while the view turns or zooms (improvement A, problem 1; amends ADR-0081). TASK-0341. | 1–2 |
-| R20b | The actions on the model are on the ring: "Dimensions" is a segment with the state of a tool in use, the selection stays after a Hide, the status line shows "N hidden · Show", and the ring of the document has "Show hidden" (improvement B, problems 2 and 5). After R20a. | 2 |
+| R20b | The actions on the model are on the ring: "Dimensions" is a segment with the state of a tool in use, the selection stays after a Hide, the status line shows "N hidden · Show", and the ring of the document has "Show hidden" (improvement B, problems 2 and 5). After R20a. The owner asked for the dimensions first on 2026-11-11, so the row has two parts. | 2 |
+| R20b1 | "Dimensions" is a segment of the ring of a body, with the state of a tool in use while the dimensions are on (ADR-0122). TASK-0348. | 1 |
+| R20b2 | The selection stays after a Hide, the status line shows "N hidden · Show", and the ring of the document has "Show hidden". After R20b1. | 1 |
 | R20c | Each dimension says what it measures: the selected piece in the colour of the selection with its name, the whole in a neutral colour with "Overall", each label on a plate outside the silhouette, and no label under the status line, the ring or the history arc (improvement C, problems 3 and 4; amends ADR-0056). After R18c. | 1–2 |
 | R21 | The flat views in the window: a front, a top, a side and the other three views with no perspective, one tap each, and a return to the 3D view; Frame fills the free part of the scene (ADR-0118 item 2; Q5 A of 2026-11-10; problem 6 of the UX test). After R18. | 2–3 |
 | R22 | The right dimensions on a flat view: the values of the design, each one time in a view where its length is true, a chain with one reference in parentheses, a separate form for a size that no constraint fixes and for a lost value, and the place of each dimension proposed by the agent (ADR-0118 item 5). After K9. It needs a search of the free parts of a sketch in the solver. | 3–5 |
