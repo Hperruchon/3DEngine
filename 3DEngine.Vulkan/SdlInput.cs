@@ -133,6 +133,9 @@ public sealed unsafe class SdlInput
         // ADR-0098 item 1 (the redesign, slice o, TASK-0312): K follows the letter too, so Control and K open the command line.
         else if ((uint)keycode == SDLK_K)
             key = InputKey.K;
+        // ADR-0127 item 4 (phase R18g, TASK-0354): F follows the letter too.
+        else if ((uint)keycode == SDLK_F)
+            key = InputKey.F;
         if (key is { } known)
             _frame.Add(new KeySample(known, down, _modifiers, time));
     }

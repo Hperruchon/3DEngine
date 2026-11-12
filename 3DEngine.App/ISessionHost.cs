@@ -19,6 +19,10 @@ internal interface ISessionHost
     // EngineHost.Subscribe gives it (ADR-0024 item 1). The action runs inside the commit, so it must not call the session
     // and must not block. Dispose the result to stop.
     IDisposable Subscribe(Action<EventRecord> action);
+
+    // ADR-0127 item 3 (phase R18g, TASK-0354): the count of the clients that listen to the event stream of the surface now;
+    // zero for a host with no surface, as the phone.
+    int Listeners => 0;
 }
 
 // ADR-0072 item 3: the files of a host that draws, for the actions Save, Open and Export of the panel. The desktop

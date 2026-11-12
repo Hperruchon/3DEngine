@@ -225,6 +225,21 @@ public unsafe class SdlInputTests
             sample => Assert.Equal((InputKey.K, KeyModifiers.Control), (((KeySample)sample).Key, ((KeySample)sample).Modifiers)));
     }
 
+    // ADR-0127 item 4 (TASK-0354): F follows the letter of the layout too, so F frames on each keyboard; the place of F with
+    // the letter g gives no sample.
+    [Fact]
+    public void F_Follows_The_Letter_And_Not_The_Place_Of_The_Key()
+    {
+        var input = new SdlInput();
+
+        input.Translate(Letter(SDL_Scancode.SDL_SCANCODE_SEMICOLON, SDLK_F), 800, 600);
+        input.Translate(Letter(SDL_Scancode.SDL_SCANCODE_F, SDLK_G), 800, 600);
+
+        Assert.Collection(
+            input.TakeFrame(),
+            sample => Assert.Equal((InputKey.F, KeyModifiers.None), (((KeySample)sample).Key, ((KeySample)sample).Modifiers)));
+    }
+
     private static SDL_Event Letter(SDL_Scancode code, uint letter)
     {
         var e = Key(SDL_EventType.SDL_EVENT_KEY_DOWN, code);

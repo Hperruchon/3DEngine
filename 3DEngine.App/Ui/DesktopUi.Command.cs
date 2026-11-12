@@ -84,6 +84,14 @@ internal sealed unsafe partial class DesktopUi
             _focusCommand = true;
     }
 
+    // ADR-0127 item 4 (phase R18g, TASK-0354): F, down and with no Control, does what the command Frame does. The key is not
+    // an intent, because a touch has no gesture for it (objective 9); the command line and a portrait display keep Frame.
+    private void WatchFrameKey(IReadOnlyList<InputSample> samples)
+    {
+        if (samples.Any(sample => sample is KeySample { Key: InputKey.F, Down: true } key && (key.Modifiers & KeyModifiers.Control) == 0))
+            _actions.Add(new FrameAction());
+    }
+
     // Item 3: the commands of this state, in the order of the list: the commands of the active sketch, or of the document
     // and of the selected body.
     internal IReadOnlyList<(string Name, Action Run)> Commands(IReadOnlyList<LiveBody> bodies, Guid? selection)
@@ -145,6 +153,9 @@ internal sealed unsafe partial class DesktopUi
         commands.Add((UndoLabel, () => _actions.Add(new UndoAction())));
         commands.Add((RedoLabel, () => _actions.Add(new RedoAction())));
         commands.Add((FrameLabel, () => _actions.Add(new FrameAction())));
+        // ADR-0127 item 4 (phase R18g, TASK-0354): Home left the row of the anchors on a landscape display, so the command
+        // line holds it, as it holds Frame.
+        commands.Add((HomeLabel, () => _actions.Add(new HomeAction())));
         return commands;
     }
 

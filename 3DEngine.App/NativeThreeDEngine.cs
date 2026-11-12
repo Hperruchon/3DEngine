@@ -100,6 +100,12 @@ public sealed class NativeThreeDEngine : IThreeDEngine, IDisposable
     private long _changes;
     private IDisposable? _changesSubscription;
 
+    // ADR-0127 items 1 and 2 (phase R18g, TASK-0354): the count of the log and the text of the step that Undo reverses, and
+    // the named proposals of the last frame, for the text of an accept.
+    private readonly StepTexts _steps = new();
+    private IDisposable? _stepsSubscription;
+    private IReadOnlyList<ProposalCard>? _cards;
+
     // ADR-0092 items 6 and 7 (TASK-0326): the queue of the proposals of an agent, and the accept that applies now. The accept
     // runs on the thread pool, so the frame does not wait for the session; the frame reads its outcome when it is complete.
     private readonly IProposalDesk? _proposalDesk;
@@ -135,6 +141,13 @@ public sealed class NativeThreeDEngine : IThreeDEngine, IDisposable
         _ui.SetFontTexture(_uiRenderer.CreateTexture(width, height, rgba));
         _actions = new BodyActions(_host.Session);
         _changesSubscription = _host.Subscribe(_ => Interlocked.Increment(ref _changes));
+        // ADR-0127 item 1: the log at the start and each later event, in one read of the session, so no event is lost and no
+        // event counts two times (EngineHost.Subscribe). A document that the host opened holds the log of its file.
+        _stepsSubscription = _host.Session.Read((document, _) =>
+        {
+            _steps.Seed([.. document.Log.Select(entry => entry.Command.Name)]);
+            return _host.Subscribe(_steps.Take);
+        }).GetAwaiter().GetResult();
         _sketches = new SessionSketches(_host);
         _sketchActions = new SketchActions(_host.Session);
         _images = new SessionImages(_host, _assets);
@@ -335,7 +348,6 @@ public sealed class NativeThreeDEngine : IThreeDEngine, IDisposable
                 case RedoIntent when _actions is not null:
                     _documentMessage = _actions.Redo();
                     break;
-
                 // ADR-0034 items 2 to 4: a tap or a click of the mode Sketch goes to the active tool.
                 case SketchPointIntent point when _sketchActions is not null:
                     _sketchActions.Tap(Camera, point.X, point.Y, _window.Extent.width, _window.Extent.height);
@@ -500,6 +512,13 @@ public sealed class NativeThreeDEngine : IThreeDEngine, IDisposable
                     break;
                 // ADR-0092 item 6 (TASK-0326): the person accepts or rejects the waiting proposal; one accept at a time.
                 case AcceptProposalAction accept when _proposalDesk is { } desk && _proposalAccept is null:
+                    // ADR-0127 item 2: each named value of the card gives the text of its step.
+                    if (_cards?.FirstOrDefault(card => card.Id == accept.Proposal) is { } card)
+                    {
+                        foreach (var (command, text) in StepTexts.ProposalTexts(card))
+                            _steps.Expect(command, text);
+                    }
+
                     _proposalAccept = Task.Run(() => desk.Accept(accept.Proposal));
                     break;
                 case RejectProposalAction reject when _proposalDesk is { } desk && _proposalAccept is null:
@@ -538,11 +557,17 @@ public sealed class NativeThreeDEngine : IThreeDEngine, IDisposable
                 case EditDistanceAction editDistance when _actions.Distance(editDistance.Body) is { } distance:
                     _ui.OpenDistancePad(editDistance.Body, distance);
                     break;
+                // ADR-0127 item 2: a value of the window gives the text of its step, as "C3 = 75".
                 case SetDistanceAction setDistance:
+                    _steps.Expect(ProposedValues.SetExtrudeDistance, StepTexts.DistanceText(setDistance.Distance));
                     _ui.EndPad(_actions.SetDistance(setDistance.Body, setDistance.Distance));
+                    _steps.Forget();
                     break;
                 case SetBodyValueAction bodyValue when _sketchActions is not null:
+                    if (StepTexts.ValueText(_sketches?.Live ?? [], bodyValue.Constraint, [bodyValue.Value]) is { } bodyText)
+                        _steps.Expect(ProposedValues.SetConstraintValue, bodyText);
                     _ui.EndPad(_sketchActions.SetValueOf(bodyValue.Sketch, bodyValue.Constraint, bodyValue.Value));
+                    _steps.Forget();
                     break;
                 case PlaceImageAction place:
                     _imageActions?.Place(place.Path, place.Datum);
@@ -629,7 +654,10 @@ public sealed class NativeThreeDEngine : IThreeDEngine, IDisposable
                     _ui.EndPad(refused);
                 break;
             case SetConstraintValueAction value:
+                if (StepTexts.ValueText(_sketches?.Live ?? [], value.Constraint, value.Values) is { } valueText)
+                    _steps.Expect(ProposedValues.SetConstraintValue, valueText);
                 _ui.EndPad(sketch.SetValue(value.Constraint, value.Values));
+                _steps.Forget();
                 break;
             case MoveSketchPointAction move:
                 _ui.EndPad(sketch.MovePoint(move.Point, move.X, move.Y));
@@ -902,6 +930,7 @@ public sealed class NativeThreeDEngine : IThreeDEngine, IDisposable
         {
             _ui.ShowProposalOutcome(accepted.IsCompletedSuccessfully ? accepted.Result.Text : $"The accept failed: {accepted.Exception?.GetBaseException().Message}");
             _proposalAccept = null;
+            _steps.Forget();
         }
 
         // ADR-0110 item 3 (TASK-0334): the name, the label and the value now of each proposed value, from the sketches, the
@@ -910,6 +939,10 @@ public sealed class NativeThreeDEngine : IThreeDEngine, IDisposable
 
         // ADR-0102 item 5 (Q3 A): the question shows while a change of project waits for its answer.
         _ui.ShowQuestion(_projects?.Asking ?? false);
+        // ADR-0127 items 1 to 3 (phase R18g, TASK-0354): the log, the agent, the step of Undo, and "saved" when the document has
+        // its own file; a host with no folder of documents says nothing of a save.
+        _ui.ShowStatus(new SessionStatus(_steps.LogCount, _host.Listeners > 0, _steps.Undo, _projects is null ? null : _host.FileName is not null));
+        _cards = proposals;
         var panel = _ui.Frame((float)_delta.TotalSeconds, display, scale, _renderer.LiveBodies, Selection, LineOf(_document, _host.FileName, _documentMessage, Path.GetDirectoryName(_host.Session.FilePath), _host.Session.Kind), sketches, sketchPanel, imagePanel, dimensions, size, faceLine, ringCentre, ringSize, Inset(_window.SafeInsets), values, history, proposals, sketchValues);
         ApplyPanel(_renderer.LiveBodies);
         // ADR-0101 item 2: a focus that an action of this frame started or ended shows in this frame.
@@ -954,6 +987,8 @@ public sealed class NativeThreeDEngine : IThreeDEngine, IDisposable
         _sketches = null;
         _changesSubscription?.Dispose();
         _changesSubscription = null;
+        _stepsSubscription?.Dispose();
+        _stepsSubscription = null;
         _images?.Dispose();
         _images = null;
         _ui?.Dispose();

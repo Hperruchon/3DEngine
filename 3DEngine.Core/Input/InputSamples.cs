@@ -69,6 +69,9 @@ public enum InputKey
 
     // With Control: the command line takes the keys (ADR-0098 item 1, TASK-0312).
     K,
+
+    // With no Control: the view shows each visible body (ADR-0127 item 4, TASK-0354).
+    F,
 }
 
 // One sample, at a time in nanoseconds of one clock of the host.
