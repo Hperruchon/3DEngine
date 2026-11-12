@@ -38,7 +38,9 @@ public sealed class FixedControlsTests
         var status = ui.ItemRectangle(DesktopUi.StatusLabel) ?? throw new InvalidOperationException("No status line.");
         Assert.True(status.X > redo.Z && status.Y >= undo.Y && status.W <= undo.W, $"The status line at {status} is not on the row of the anchors.");
         Assert.True(Math.Abs(status.Z - (Display.X - 16f)) <= 1f, $"The status line at {status} does not end 16 pixels inside the right edge.");
-        Assert.Equal("0 bodies · all correct · http://127.0.0.1:5180", ui.StatusText([]));
+        // ADR-0127 item 1 (TASK-0354): the count of the log replaces the count of the bodies; before the first state of the
+        // session the line has no count.
+        Assert.Equal("all correct · http://127.0.0.1:5180", ui.StatusText([]));
     }
 
     // Item 1, with ADR-0093 item 1 (TASK-0304): the top bar names the program, the file or "unsaved", and the unit; a host
@@ -227,11 +229,11 @@ public sealed class FixedControlsTests
 
     // Finding V146 of the codebase review of 2026-11-08 (c) (TASK-0310): the status line starts right of Frame and Home, or
     // does not show, and a tap on each of them gives its action. Until TASK-0310 the status line covered both on a phone of
-    // 390 by 844 (the phone has no address) and took the taps.
+    // 390 by 844 (the phone has no address) and took the taps. ADR-0127 item 4 (TASK-0354): Frame and Home are on the row of
+    // a portrait display only, so the landscape cases are in FixedStatusTests.
     [Theory]
     [InlineData(390, 844, "")]
-    [InlineData(844, 390, "http://127.0.0.1:5180")]
-    [InlineData(1280, 720, "http://127.0.0.1:5180")]
+    [InlineData(720, 1280, "http://127.0.0.1:5180")]
     public void The_Status_Line_Leaves_Frame_And_Home_Free(int width, int height, string address)
     {
         var display = new Vector2(width, height);
@@ -249,7 +251,7 @@ public sealed class FixedControlsTests
         var status = ui.ItemRectangle(DesktopUi.StatusLabel);
         if (status is { } shown)
             Assert.True(shown.X >= home.Z, $"The status line at {shown} covers Home at {home} on {display}.");
-        if (width == 1280)
+        if (width == 720)
             Assert.NotNull(status);
 
         ulong ms = 1000;

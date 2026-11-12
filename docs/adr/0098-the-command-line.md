@@ -7,7 +7,7 @@ date: 2026-11-08
 supersedes: []
 superseded-by: []
 amends: ['0032', '0084']
-amended-by: ['0099', '0101', '0108', '0113', '0119', '0120']
+amended-by: ['0099', '0101', '0108', '0113', '0119', '0120', '0127']
 affects:
   - 3DEngine.App/Ui/DesktopUi.Command.cs
   - 3DEngine.App/Ui/DesktopUi.cs
@@ -93,3 +93,5 @@ The owner chose the slice; the recommendations answer Q1 to Q3.
 - 2026-11-11 · TASK-0346 · ADR-0119 item 1 amends item 3: the command line holds "Edit sketch" for a body that a sketch
   made.
 - 2026-11-11 · TASK-0347 · ADR-0120 item 3 amends item 3: the command line holds "Extrude" while a sketch is active.
+- 2026-11-12 · TASK-0354 · ADR-0127 item 4 amends item 3: the command line holds "Home" beside "Frame", because both
+  leave the row of the anchors of a landscape display; the key F frames.

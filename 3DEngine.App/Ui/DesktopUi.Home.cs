@@ -170,7 +170,8 @@ internal sealed unsafe partial class DesktopUi
         return "...";
     }
 
-    // "Frame" and "Home" after Redo, in the window of the anchors (see FixedControls), each as high as an anchor.
+    // "Frame" and "Home" after Redo, in the window of the anchors (see FixedControls), each as high as an anchor. ADR-0127
+    // item 4 (phase R18g, TASK-0354): on a portrait display only, which has no command line.
     private void ViewButtons()
     {
         var size = new Vector2(0f, AnchorSize);

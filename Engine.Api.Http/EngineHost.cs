@@ -161,6 +161,10 @@ public sealed class EngineHost : IDisposable
     // an event of a commit in progress can still arrive after Dispose returns.
     public IDisposable Subscribe(Action<EventRecord> action) => Broadcaster.Listen(action);
 
+    // ADR-0127 item 3 (phase R18g, TASK-0354): the count of the clients that listen to the event stream of the surface now.
+    // A subscription of Subscribe is not a client, so the window of the desktop does not count itself.
+    public int Listeners => Broadcaster.SubscriberCount;
+
     // The session closes first and waits for a command that still runs, so the
     // backend is never freed under it (finding E66 of the codebase review of
     // 2026-10-17, TASK-0079). The container of a host calls this after the stop.

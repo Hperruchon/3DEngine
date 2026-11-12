@@ -60,19 +60,19 @@ internal sealed unsafe partial class DesktopUi
             {
                 ImGui.TextUnformatted(program);
                 ImGui.SameLine(0f, 12f);
-                ImGui.TextDisabled(_unit);
+                ImGui.TextDisabled(UnitText);
             }
             else
             {
                 // Finding V156 of the codebase review of 2026-11-09 (TASK-0324): the command line shows on a landscape display
                 // only, so only there the top bar leaves its width.
                 var commandLeft = CommandLeft(displaySize);
-                var room = commandLeft - 12f - left - ImGui.CalcTextSize(program).X - ImGui.CalcTextSize(_unit).X - 24f;
+                var room = commandLeft - 12f - left - ImGui.CalcTextSize(program).X - ImGui.CalcTextSize(UnitText).X - 24f;
                 Label(program, quiet: false, pad);
                 ImGui.SameLine(0f, 12f);
                 PathRow(document, body, room, pad);
                 ImGui.SameLine(0f, 12f);
-                Label(_unit, quiet: true, pad);
+                Label(UnitText, quiet: true, pad);
             }
 
             AddWindowRectangle();
@@ -248,14 +248,39 @@ internal sealed unsafe partial class DesktopUi
         ImGui.PopStyleVar(2);
     }
 
-    // ADR-0093 item 3: the text of the status line: the count of the live bodies, their state, and the address of the surface.
-    internal string StatusText(IReadOnlyList<LiveBody> bodies, bool address = true)
+    // ADR-0093 item 3: the text of the status line: the state of the live bodies and the address of the surface. ADR-0127
+    // items 1 and 3 (phase R18g, TASK-0354): the count of the entries of the log first, in place of the count of the bodies,
+    // which the rows show, and "agent connected" while a client listens to the event stream of the surface.
+    internal string StatusText(IReadOnlyList<LiveBody> bodies, bool address = true, bool agent = true)
     {
         var failed = bodies.Count(body => body.Fault is not null);
-        var count = bodies.Count == 1 ? "1 body" : $"{bodies.Count} bodies";
-        var state = failed == 0 ? "all correct" : $"{failed} failed";
-        return !address || _address.Length == 0 ? $"{count} · {state}" : $"{count} · {state} · {_address}";
+        var parts = new List<string>(4);
+        if (_status.Log is { } log)
+            parts.Add($"log {log}");
+        parts.Add(failed == 0 ? "all correct" : $"{failed} failed");
+        if (agent && _status.Agent)
+            parts.Add(AgentText);
+        if (address && _address.Length > 0)
+            parts.Add(_address);
+        return string.Join(StatusSeparator, parts);
     }
+
+    // ADR-0127 item 3: the part of the status line while a client listens.
+    public const string AgentText = "agent connected";
+
+    // ADR-0127 items 1 to 3: the state of the session that the host gives for each frame.
+    private SessionStatus _status = SessionStatus.None;
+
+    public void ShowStatus(SessionStatus status) => _status = status ?? SessionStatus.None;
+
+    // ADR-0127 item 5: the unit of the top bar, with "saved" when the document has its own file and "not saved" while it is
+    // in the folder of the unsaved documents; the unit alone for a host with no folder of documents.
+    internal string UnitText => _status.Saved switch
+    {
+        true => $"{_unit} · saved",
+        false => $"{_unit} · not saved",
+        null => _unit,
+    };
 
     // ADR-0124 item 2 (phase R20b2, TASK-0351): the part of the hidden bodies at the end of the status line, or null when no
     // live body is hidden.
@@ -276,7 +301,8 @@ internal sealed unsafe partial class DesktopUi
         try
         {
             var tail = hidden is null ? 0f : ImGui.CalcTextSize(StatusSeparator + hidden).X;
-            foreach (var text in new[] { StatusText(bodies), StatusText(bodies, address: false) })
+            // ADR-0127 item 3: then the line with no address and no agent.
+            foreach (var text in new[] { StatusText(bodies), StatusText(bodies, address: false), StatusText(bodies, address: false, agent: false) })
             {
                 if (ImGui.CalcTextSize(text).X + tail <= room)
                     return (text, hidden);
@@ -309,16 +335,25 @@ internal sealed unsafe partial class DesktopUi
             ImGui.SameLine();
             if (Anchor(RedoLabel, back: false))
                 _actions.Add(new RedoAction());
-            // ADR-0083 (TASK-0259): "Frame" and "Home" of the demonstration, on the row of the anchors.
+            // ADR-0083 (TASK-0259): "Frame" and "Home" of the demonstration, on the row of the anchors. ADR-0127 item 4
+            // (phase R18g, TASK-0354): on a portrait display only; a landscape display has them in the command line, and F
+            // frames, so the row holds Undo, Redo and the step of Undo, as the render.
             // ADR-0108 item 2 (phase R18a, TASK-0332): a button as high as this window has its outline on the edge of the
             // window, where the clip of the window cuts it; so the outline is drawn 1 pixel inside the button.
-            ImGui.PushStyleVar(ImGuiStyleVar.FrameBorderSize, 0f);
-            ViewButtons();
-            ImGui.PopStyleVar();
-            foreach (var label in new[] { FrameLabel, HomeLabel })
+            if (displaySize.X < displaySize.Y)
             {
-                if (_items.TryGetValue(label, out var button))
-                    ImGui.GetWindowDrawList().AddRect(new Vector2(button.X + 1f, button.Y + 1f), new Vector2(button.Z - 1f, button.W - 1f), ImGui.GetColorU32(ImGuiCol.Border), ImGui.GetStyle().FrameRounding, ImDrawFlags.None, Theme.OutlineWidth);
+                ImGui.PushStyleVar(ImGuiStyleVar.FrameBorderSize, 0f);
+                ViewButtons();
+                ImGui.PopStyleVar();
+                foreach (var label in new[] { FrameLabel, HomeLabel })
+                {
+                    if (_items.TryGetValue(label, out var button))
+                        ImGui.GetWindowDrawList().AddRect(new Vector2(button.X + 1f, button.Y + 1f), new Vector2(button.Z - 1f, button.W - 1f), ImGui.GetColorU32(ImGuiCol.Border), ImGui.GetStyle().FrameRounding, ImDrawFlags.None, Theme.OutlineWidth);
+                }
+            }
+            else if (_status.Undo is { } step)
+            {
+                UndoStep(step, displaySize);
             }
 
             AddWindowRectangle();
@@ -334,6 +369,7 @@ internal sealed unsafe partial class DesktopUi
         // new text is in its place too; a pivot at the right edge used the width of the last frame.
         var right = displaySize.X - 16f - _inset.Z;
         var (status, hidden) = StatusFit(bodies, right - (anchorsRight + 12f));
+        StatusShown = status;
         _statusRight = right;
         if (status is not null || hidden is not null)
         {
@@ -401,6 +437,22 @@ internal sealed unsafe partial class DesktopUi
         ImGui.PopStyleVar();
     }
 
+    // ADR-0127 item 2 (phase R18g, TASK-0354): the item of the text of the step that Undo reverses, its word, and its largest
+    // width as a part of the width of the display.
+    public const string UndoStepItem = "Undo:step";
+    public const string UndoStepWord = "Undo:";
+    internal const float UndoStepShare = 0.25f;
+
+    // ADR-0127 item 2: "Undo: C3 = 75" right of Redo, in the middle of the height of the anchors. A long text keeps its start.
+    private void UndoStep(string step, Vector2 displaySize)
+    {
+        ImGui.SameLine(0f, 16f);
+        ImGui.SetCursorPosY((AnchorSize - ImGui.GetTextLineHeight()) / 2f);
+        var text = Fit($"{UndoStepWord} {step}", displaySize.X * UndoStepShare);
+        ImGui.TextUnformatted(text);
+        Item(UndoStepItem);
+    }
+
     // ADR-0124 items 2 and 3 (phase R20b2, TASK-0351): the part of the hidden bodies in the status line, and the list that it
     // opens, with a row for each hidden body and "Show all".
     public const string HiddenItem = "Status:hidden";
@@ -411,6 +463,9 @@ internal sealed unsafe partial class DesktopUi
 
     private bool _hiddenOpen;
     private float _statusRight;
+
+    // ADR-0127 item 3: the text of the status line in the last frame, or null when it did not show, for a test.
+    internal string? StatusShown { get; private set; }
 
     internal bool HiddenListOpen => _hiddenOpen;
 
@@ -506,4 +561,13 @@ internal sealed unsafe partial class DesktopUi
         list.AddTriangleFilled(tip + new Vector2(0f, 6f), tip + new Vector2(-side * 6f, -2f), tip + new Vector2(side * 6f, -2f), ink);
         return pressed;
     }
+}
+
+// ADR-0127 items 1 to 3 and 5 (phase R18g, TASK-0354): the state of the session for the fixed controls: the count of the
+// entries of the log (null before the first read), true while a client listens to the event stream of the surface, the
+// text of the step that Undo reverses (null when no step is left), and true when the document has its own file, false
+// while it is in the folder of the unsaved documents, null for a host with no folder of documents.
+internal sealed record SessionStatus(int? Log, bool Agent, string? Undo, bool? Saved)
+{
+    public static SessionStatus None { get; } = new(null, false, null, null);
 }
