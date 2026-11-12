@@ -103,10 +103,10 @@ public class DimensionOverlayTests
         Assert.NotNull(ui.ItemRectangle(DesktopUi.SizeLabel));
     }
 
-    // Items 4 and 6: the overall box gives three dimension lines with arrows, six extension lines and three labels with
-    // the unit, and the selected body gives the same set with its mark.
+    // Items 4 and 6: the overall box gives three dimensions with the unit, and the selected body gives the same set with its
+    // mark. ADR-0125 item 3 (TASK-0352): each one is a measured edge, a unit normal and an offset past the outline of its box.
     [Fact]
-    public void A_Box_Gives_Three_Dimension_Lines_Six_Extension_Lines_And_Three_Labels()
+    public void A_Box_Gives_Three_Dimensions()
     {
         var camera = new Camera { FarPlane = 20000f };
         ((double X, double Y, double Z) Min, (double X, double Y, double Z) Max) overall = ((0, 0, 0), (1200, 1900, 370));
@@ -115,16 +115,15 @@ public class DimensionOverlayTests
 
         var strokes = DimensionOverlay.Of(overall, board, camera, 1280, 720, "mm");
 
-        Assert.Equal(6, strokes.Lines.Count(line => line.Arrows));
-        Assert.Equal(12, strokes.Lines.Count(line => !line.Arrows));
         Assert.Equal(
             ["X 1200 mm", "Y 1900 mm", "Z 370 mm", "X 1200 mm", "Y 18 mm", "Z 370 mm"],
-            strokes.Labels.Select(label => label.Text));
+            strokes.Measures.Select(measured => measured.Text));
         Assert.Equal(
             [.. Enumerable.Repeat(DimensionOverlay.Mark.Overall, 3), .. Enumerable.Repeat(DimensionOverlay.Mark.Selected, 3)],
-            strokes.Labels.Select(label => label.Mark));
-        Assert.All(strokes.Lines, line => Assert.True(float.IsFinite(line.A.X) && float.IsFinite(line.B.Y)));
-        Assert.Empty(DimensionOverlay.Of(null, null, camera, 1280, 720, "mm").Lines);
+            strokes.Measures.Select(measured => measured.Mark));
+        Assert.All(strokes.Measures, measured => Assert.True(float.IsFinite(measured.Line.A.X) && float.IsFinite(measured.Line.B.Y)
+            && Math.Abs(measured.Line.Normal.Length() - 1f) < 1e-4f && measured.Line.Offset >= EdgeValues.Gap));
+        Assert.Empty(DimensionOverlay.Of(null, null, camera, 1280, 720, "mm").Measures);
     }
 
     // Item 6 (Q1 A): the size and the thickness of the selected body for the panel.
@@ -146,12 +145,10 @@ public class DimensionOverlayTests
         return camera;
     }
 
-    private static bool Overlap(DimensionOverlay.Label a, Vector2 aSize, DimensionOverlay.Label b, Vector2 bSize)
-        => a.At.X < b.At.X + bSize.X && a.At.X + aSize.X > b.At.X && a.At.Y < b.At.Y + bSize.Y && a.At.Y + aSize.Y > b.At.Y;
+    private static bool Overlap(Vector4 a, Vector4 b) => a.X < b.Z && a.Z > b.X && a.Y < b.W && a.W > b.Y;
 
     // Finding V79 of the codebase review of 2026-11-05 (TASK-0181): with the camera of the image test, the labels of the
-    // thin board overlap where the overlay puts them. The panel places them apart, in the font of the panel, and inside
-    // the window.
+    // thin board are near each other. The window places their plates apart and inside the window (ADR-0125, TASK-0352).
     [Fact]
     public void The_Labels_Of_A_Thin_Board_Do_Not_Overlap()
     {
@@ -159,19 +156,17 @@ public class DimensionOverlayTests
         ((double X, double Y, double Z) Min, (double X, double Y, double Z) Max) shelf = ((-18, 0, 0), (1200, 1900, 650));
         ((double X, double Y, double Z) Min, (double X, double Y, double Z) Max) board = ((0, 280, 18), (1200, 298, 388));
         var strokes = DimensionOverlay.Of(shelf, board, ShelfCamera(shelf), Display.X, Display.Y, "mm");
-        var raw = strokes.Labels;
-        Assert.Contains(raw, a => raw.Any(b => !ReferenceEquals(a, b) && Overlap(a, ui.TextSize(a.Text), b, ui.TextSize(b.Text))));
 
         ui.Frame(1f / 60f, Display, Vector2.One, Bodies, Selected, dimensions: strokes, size: Size);
 
-        var placed = ui.PlacedLabels;
-        Assert.Equal(raw.Select(label => label.Text), placed.Select(label => label.Text));
-        for (var i = 0; i < placed.Count; i++)
+        var plates = ui.DimensionPlates;
+        Assert.Equal(strokes.Measures.Count, plates.Count);
+        for (var i = 0; i < plates.Count; i++)
         {
-            var size = ui.TextSize(placed[i].Text);
-            Assert.True(placed[i].At.X >= 0 && placed[i].At.Y >= 0 && placed[i].At.X + size.X <= Display.X && placed[i].At.Y + size.Y <= Display.Y, $"{placed[i].Text} at {placed[i].At} leaves the window.");
+            var plate = plates[i].Plate;
+            Assert.True(plate.X >= 0 && plate.Y >= 0 && plate.Z <= Display.X && plate.W <= Display.Y, $"{plates[i].Text} at {plate} leaves the window.");
             for (var j = 0; j < i; j++)
-                Assert.False(Overlap(placed[i], size, placed[j], ui.TextSize(placed[j].Text)), $"{placed[i].Text} meets {placed[j].Text}.");
+                Assert.False(Overlap(plate, plates[j].Plate), $"{plates[i].Text} meets {plates[j].Text}.");
         }
     }
 
@@ -198,6 +193,7 @@ public class DimensionOverlayTests
 
     // Finding V80 of the codebase review of 2026-11-05 (TASK-0181): the camera of the review is close to the shelf, so the
     // dimension line of X runs out of the window. Its label is at the middle of the part inside the window.
+    // ADR-0125 item 3 (TASK-0352): the measured edge is the part inside the window.
     [Fact]
     public void A_Label_Is_At_The_Middle_Of_The_Part_Of_Its_Line_In_The_Window()
     {
@@ -205,8 +201,9 @@ public class DimensionOverlayTests
 
         var strokes = DimensionOverlay.Of(((0, 0, 0), (1200, 1900, 650)), null, camera, Display.X, Display.Y, "mm");
 
-        var x = Assert.Single(strokes.Labels, label => label.Text == "X 1200 mm");
-        Assert.True(x.At.X is >= 0 and < 1280 && x.At.Y is >= -40 and < 720, $"The label of X is at {x.At}.");
+        var x = Assert.Single(strokes.Measures, measured => measured.Text == "X 1200 mm");
+        var middle = (x.Line.A + x.Line.B) / 2f;
+        Assert.True(middle.X is >= 0 and <= 1280 && middle.Y is >= 0 and <= 720, $"The middle of the edge of X is at {middle}.");
         Assert.Equal((new Vector2(0, 10), new Vector2(100, 10)), DimensionOverlay.Inside(new Vector2(-100, 10), new Vector2(100, 10), 1280, 720));
         Assert.Null(DimensionOverlay.Inside(new Vector2(-100, -10), new Vector2(-50, -20), 1280, 720));
     }

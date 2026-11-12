@@ -1,13 +1,13 @@
 ---
 id: 0056
 title: The dimension overlay of the desktop
-status: Accepted
+status: Amended
 topic: Desktop, renderer
 date: 2026-11-04
 supersedes: []
 superseded-by: []
 amends: []
-amended-by: []
+amended-by: ['0125']
 affects:
   - 3DEngine.Core/Measuring/**
   - 3DEngine.App/DimensionOverlay.cs
@@ -57,13 +57,19 @@ On 2026-11-04 the owner answered four questions:
    Y, on the faces of the box that face the eye; the dimension of Y lies on the vertical edge of the side of the eye in
    X and the far side in Z. Each dimension line is out from its edge by one twentieth of the largest extent, with two
    extension lines from the edge and an arrow at each end. Its label is at its middle.
+   ADR-0125 item 3 amends this item: each label is on a plate outside the outline of its box on the screen, and the
+   dimension line goes through the plate, parallel to its edge.
 5. **The labels.** A label gives the axis, the value and the length unit of the document, for example "X 1200 mm". It
    does not say width, height or depth, because a model can use Z or Y as its up axis. A value has at most two
    decimals, in the invariant culture.
+   ADR-0125 item 2 amends this item: each label starts with the word of its box, "Overall" or the name of the selected
+   body, and " · ".
 6. **The selected body (Q1).** With "Dimensions" on, the selected body also gets its three dimensions, in the colour of
    the selection, and the panel gives its size and its thickness: the absolute value of the distance in effect for a
    live extrude, else the smallest extent of its box. The desktop reads the distance once for each change of the
    selection or of the bodies, not in each frame.
+   ADR-0125 items 1 and 5 amend this item: the dimensions of the selected body have the colour of its edges in the
+   scene, those of the whole a neutral grey, and only a board shows its thickness.
 7. **The cost.** Each box gives three dimension lines and six extension lines, so the overlay draws up to 18 segments
    and six labels in each frame. It reads the union of the boxes that the desktop keeps until a change of the bodies.
    No dimension calls the engine in a frame.
@@ -85,3 +91,6 @@ On 2026-11-04 the owner answered four questions:
 - 2026-11-05 · TASK-0181 · Items 2 and 7 follow the code (finding V83, Q2 A of the codebase review of 2026-11-05): the
   toggles are on a line of their own, a box draws up to 18 segments, and the union of the boxes is kept (V81). The
   labels stay inside the window and apart (V79, V80), and the boxes follow the preview of a drag (V82).
+- 2026-11-12 · TASK-0352 · ADR-0125 amends items 4, 5 and 6: the colour of the selection and a grey, the word of the
+  box on each label, a plate outside the outline of the box, no plate under a control, and the thickness of a board
+  only.

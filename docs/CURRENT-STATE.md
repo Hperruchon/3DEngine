@@ -10102,3 +10102,42 @@ so it was not done.
 New tests: 6. The test list holds 2500 (1550 in `Engine.Tests`, 356 in `3DEngine.Tests`, 591 in `3DEngine.ImageTests`, 3
 in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
 entries: 13 of 15. New diagnostic codes: 0. Since the review of v0.333, 2 product milestones and 3 entries followed it.
+
+## v0.337 — Each dimension says what it measures, on a plate outside its box (R20c, TASK-0352)
+
+The owner ordered "Go" on 2026-11-12, after the merge of R20b2. TASK-0352 is roadmap row R20c, improvement C of the UX
+test of 2026-11-10 (problem 3: a value does not say what it measures; problem 4: the labels cover each other and the
+controls). ADR-0125 amends ADR-0056 items 4, 5 and 6.
+
+**The words and the colours.** Each label starts with the word of its box: "Overall · X 3400 mm" in a grey (#8a939f) for
+the whole, and "Cote gauche · X 18 mm" in the colour of the selected edges (1.0, 0.55, 0.1) for the selected body. A
+body with no name has its kind and a short identifier. Until this entry the whole was orange and the selected body
+white, with no word.
+
+**The plates.** Each label is on a plate, as a value on an edge: the mono font, round ends, the ground of the scene and
+an outline in the colour of its box. The plate is past each corner of its box on the screen by 16 pixels, and the
+dimension line goes through it with an extension line from each end of the edge. The lines come first, then the plates;
+the plates of the selected body are placed first and drawn last.
+
+**The covers.** The placement moves a plate off the fixed controls with the status line, the panels, the rows, the
+icons, labels and caption of the ring, and the nodes, texts and caption of the history arc: down, else up, else right,
+else left. To know those rectangles, the frame places the dimensions after the ring and the arc, on the lower of two
+channels of the background list, so they still show under them.
+
+**The thickness.** Only a board shows its thickness: the thickness is at most a quarter of the middle extent of its box.
+A cube of 400 no longer shows "Thickness 400 mm".
+
+**Proof.** 6 new tests in `DimensionLabelsTests`; `DimensionOverlayTests` and `DimensionImageTests` follow the new model
+and colours. Seven injections each failed a named test, and each file came back byte for byte: no word, no name, a white
+selection, a plate centred on its edge, no covers, no move right of a cover, and a thickness for each body. A picture of
+the niche at 1280 by 720 with the ring and the arc shows the words and the colours, and no plate under a control. The
+phone project builds with zero warnings. Run 43282178387 passed on the branch.
+
+**What stays.** No person used the change in the window, so the scenario of two seconds was not run. In the picture,
+"X 18 mm" of the panel moves about 150 pixels down, so its extension lines cross the model. A plate that no move frees
+stays under the control. Register entry R-0065 (due 2026-11-26) holds the scenario and the long lines. The values of the
+overlay keep their form ("X 18 mm"), not the three decimals of ADR-0115.
+
+New tests: 6. The test list holds 2506 (1550 in `Engine.Tests`, 356 in `3DEngine.Tests`, 597 in `3DEngine.ImageTests`, 3
+in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
+entries: 14 of 15. New diagnostic codes: 0. Since the review of v0.333, 3 product milestones and 4 entries followed it.
