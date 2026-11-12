@@ -13,8 +13,9 @@ using Vortice.Vulkan;
 namespace ThreeDEngine.ImageTests;
 
 // The image test of the dimension overlay (ADR-0056, TASK-0178): an L-shaped shelf of boxes in millimetres, with Y up,
-// drawn with the dimensions on and one board selected. The picture holds pixels of the orange of the overall dimensions
-// and of the white of the selected board outside the panels and the rows, and the validation layer gives no message.
+// drawn with the dimensions on and one board selected. The picture holds pixels of the grey of the overall dimensions
+// and of the orange of the selected board (ADR-0125, TASK-0352) outside the panels and the rows, and the validation layer
+// gives no message.
 [Collection(DearImGui.Collection)]
 public class DimensionImageTests
 {
@@ -54,6 +55,7 @@ public class DimensionImageTests
         byte[] pixels;
         Vector4[] panels;
         string size;
+        Vector4 boardArea, wholeArea;
 
         using (var device = new GraphicsDevice("3DEngine.ImageTests", enableValidation: true, window: null, synchronizationValidation: true))
         {
@@ -96,6 +98,9 @@ public class DimensionImageTests
             for (var frame = 0; frame < 3; frame++)
                 data = ui.Frame(1f / 60f, display, Vector2.One, renderer.LiveBodies, selected, dimensions: strokes, size: size);
             panels = [.. ui.PanelRectangles, .. ui.FixedRectangles, .. ui.RowsArea is { } rows ? [rows] : Array.Empty<Vector4>()];
+            // ADR-0125 (TASK-0352): the board and the whole on the screen, so that the test counts the colours of the
+            // dimensions outside them, where the tint of the selection and the grey of the bodies are not.
+            (boardArea, wholeArea) = (Area(camera, box), Area(camera, renderer.Union(ui.HiddenToo)!.Value));
 
             pixels = target.Render((commandBuffer, framebuffer, extent) =>
                 renderer.Record(commandBuffer, framebuffer, extent, scene, camera,
@@ -108,24 +113,39 @@ public class DimensionImageTests
             + string.Join("\n", GraphicsDevice.ValidationMessages.Skip(messagesBefore)));
         Assert.Equal("Size 1200 x 18 x 370 mm\nThickness 18 mm", size);
 
-        // DimensionColour is (255, 160, 64) and the selection is white; the bodies are grey and the clear is dark.
-        int orange = 0, white = 0;
+        // ADR-0125 item 1 (TASK-0352): the dimensions of the board have the orange of the selection (255, 140, 26), and those
+        // of the whole the grey (138, 147, 159). The test counts the orange outside the board, where the tint of the selection
+        // is not, and the grey outside the whole, where no body is; the clear is dark. Until TASK-0352 the whole was orange
+        // and the board white.
+        static bool In(Vector4 area, int column, int row) => column >= area.X && column <= area.Z && row >= area.Y && row <= area.W;
+        int orange = 0, grey = 0;
         for (var row = 0; row < (int)Height; row++)
         {
             for (var column = 0; column < (int)Width; column++)
             {
-                if (panels.Any(panel => column >= panel.X && column <= panel.Z && row >= panel.Y && row <= panel.W))
+                if (panels.Any(panel => In(panel, column, row)))
                     continue;
                 var (r, g, b) = Pixel(pixels, column, row);
-                if (r > 220 && g > 130 && g < 190 && b < 100)
+                if (!In(boardArea, column, row) && r > 235 && g > 115 && g < 165 && b < 60)
                     orange++;
-                if (r > 235 && g > 235 && b > 235)
-                    white++;
+                if (!In(wholeArea, column, row) && Math.Abs(r - 138) < 16 && Math.Abs(g - 147) < 16 && Math.Abs(b - 159) < 16)
+                    grey++;
             }
         }
 
-        Assert.True(orange > 300, $"The picture {picture}: {orange} pixels are orange; the overall dimensions are absent.");
-        Assert.True(white > 100, $"The picture {picture}: {white} pixels are white; the dimensions of the board are absent.");
+        Assert.True(orange > 300, $"The picture {picture}: {orange} pixels are orange outside the board; the dimensions of the board are absent.");
+        Assert.True(grey > 300, $"The picture {picture}: {grey} pixels are grey outside the whole; the overall dimensions are absent.");
+    }
+
+    // The rectangle of a box on the screen: the smallest one that holds its corners in front of the eye.
+    private static Vector4 Area(Camera camera, ((double X, double Y, double Z) Min, (double X, double Y, double Z) Max) box)
+    {
+        var points = new[] { box.Min.X, box.Max.X }
+            .SelectMany(x => new[] { box.Min.Y, box.Max.Y }.SelectMany(y => new[] { box.Min.Z, box.Max.Z }.Select(z => (x, y, z))))
+            .Select(corner => SketchOverlay.Segment(camera, Width, Height, corner, corner)?.A)
+            .OfType<Vector2>()
+            .ToList();
+        return new Vector4(points.Min(p => p.X), points.Min(p => p.Y), points.Max(p => p.X), points.Max(p => p.Y));
     }
 
     // Findings V78, V81 and V82 of the codebase review of 2026-11-05 (TASK-0181), on the renderer of the desktop: a box A

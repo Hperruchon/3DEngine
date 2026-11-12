@@ -131,16 +131,32 @@ internal sealed unsafe partial class DesktopUi
             list.AddText(label.At, SketchColour, label.Text);
     }
 
-    // ADR-0056 item 4: the dimension lines in orange, and those of the selected body in the colour of the selection, on
-    // the background list, under each window of the panel.
+    // ADR-0056 item 4: the dimension lines on the background list, under each window of the panel.
+    // DimensionColour stays the colour of a pending value and of a proposal (ADR-0125 item 1).
     internal const uint DimensionColour = 0xFF40A0FF;
     private const float DimensionLineWidth = 1.5f;
     private const float ArrowLength = 12f;
     private const float ArrowHalfWidth = 5f;
 
+    // ADR-0125 item 1 (phase R20c, TASK-0352): the dimensions of the selected body have the colour of the selection, the
+    // colour of its edges in the scene (SceneRenderer.SelectedEdgeColour, 1.0, 0.55, 0.1), and the overall dimensions have
+    // a neutral grey, the colour of a quiet text of the chrome (#8a939f). Until TASK-0352 the overall dimensions were
+    // orange, near the colour of the selection, and those of the selected body were white.
+    internal const uint SelectionDimensionColour = 0xFF1A8CFF;
+    internal const uint OverallDimensionColour = 0xFF9F938A;
+
+    // ADR-0125 item 2: the word before each overall value, and the widest name of the selected body on a plate, in pixels.
+    internal const string OverallWord = "Overall";
+    internal const float DimensionNameWidth = 180f;
+
     // V79 (TASK-0181): the labels of the last frame where the placement put them, and the size of a text in the font of
     // the panel, for a test.
     internal IReadOnlyList<DimensionOverlay.Label> PlacedLabels { get; private set; } = [];
+
+    // ADR-0125 items 3 and 4: the plate and the dimension line of each dimension of this frame, for a test.
+    private List<(string Text, DimensionOverlay.Mark Mark, Vector2 From, Vector2 To, Vector4 Plate)> _dimensionPlates = [];
+
+    internal IReadOnlyList<(string Text, DimensionOverlay.Mark Mark, Vector2 From, Vector2 To, Vector4 Plate)> DimensionPlates => _dimensionPlates;
 
     internal Vector2 TextSize(string text)
     {
@@ -148,26 +164,118 @@ internal sealed unsafe partial class DesktopUi
         return ImGui.CalcTextSize(text);
     }
 
-    private void Dimensions(DimensionOverlay.Strokes dimensions, Vector2 displaySize)
+    // ADR-0125 item 3: the size of the plate of a text: the text in the mono font of a value at the size of the panel, and the
+    // padding of a pill. It asks the font, not the stack of fonts, so a test can call it outside a frame.
+    internal Vector2 PlateSize(string text)
     {
+        ImGui.SetCurrentContext(_context);
+        return _monoFont.CalcTextSizeA(FontSize, float.MaxValue, 0f, text) + (PillPadding * 2f);
+    }
+
+    // ADR-0125 item 2: the text of a plate: "Overall · X 1200 mm" for the overall box, and the name of the selected body, or
+    // its kind and a short identifier as its row, before the value of its box.
+    private string PlateText(DimensionOverlay.Measured measured, LiveBody? selected)
+    {
+        if (measured.Mark == DimensionOverlay.Mark.Overall || selected is null)
+            return $"{OverallWord} · {measured.Text}";
+        var name = selected.Name ?? $"{selected.Kind} {selected.Id.ToString()[..8]}";
+        return $"{FitWith(_monoFont, FontSize, name, DimensionNameWidth)} · {measured.Text}";
+    }
+
+    // ADR-0125 item 4: the controls that a plate must not go under: the fixed controls with the status line, the panels,
+    // the rows, the icons, the labels and the caption of the ring, and the nodes and the texts of the history arc.
+    private List<Vector4> DimensionCovers()
+    {
+        var covers = new List<Vector4>(_fixed);
+        covers.AddRange(_panels);
+        if (_rowsArea is { } rows)
+            covers.Add(rows);
+        // The items of the ring ("Ring", "RingText", "RingIcon") and of the history arc ("History", "HistoryText", its caption)
+        // hold the rectangles of their icons, labels, nodes and texts.
+        covers.AddRange(_items
+            .Where(item => item.Key.StartsWith("Ring", StringComparison.Ordinal) || item.Key.StartsWith("History", StringComparison.Ordinal))
+            .Select(item => item.Value));
+        covers.AddRange(_ringTargets?.Values ?? Enumerable.Empty<Vector4>());
+        return covers;
+    }
+
+    // ADR-0125 items 1 to 4 (phase R20c, TASK-0352): each dimension as a value on an edge: a plate outside the outline of its
+    // box, the dimension line through the plate, parallel to the measured edge, with an arrow at each end, and an extension
+    // line from each end of the edge. The frame draws them after the ring and the history arc, so that the placement knows
+    // their rectangles, but on the first channel of the background list, under them.
+    private void Dimensions(DimensionOverlay.Strokes dimensions, Vector2 displaySize, LiveBody? selected)
+    {
+        _dimensionPlates = [];
         var list = ImGui.GetBackgroundDrawList();
-        foreach (var line in dimensions.Lines)
+        var measures = dimensions.Measures;
+        var texts = measures.Select(measured => PlateText(measured, selected)).ToList();
+        var labels = new List<DimensionOverlay.Label>(measures.Count);
+        for (var i = 0; i < measures.Count; i++)
         {
-            var colour = line.Mark == DimensionOverlay.Mark.Selected ? SelectedColour : DimensionColour;
-            Cased(list, line.A, line.B, colour, DimensionLineWidth);
-            var along = line.B - line.A;
-            if (!line.Arrows || !(along.Length() > 2 * ArrowLength))
-                continue;
-            var unit = Vector2.Normalize(along);
-            var side = new Vector2(-unit.Y, unit.X) * ArrowHalfWidth;
-            list.AddTriangleFilled(line.A, line.A + (unit * ArrowLength) + side, line.A + (unit * ArrowLength) - side, colour);
-            list.AddTriangleFilled(line.B, line.B - (unit * ArrowLength) + side, line.B - (unit * ArrowLength) - side, colour);
+            var line = measures[i].Line;
+            var plate = PlateSize(texts[i]);
+            labels.Add(new DimensionOverlay.Label(EdgeValues.Placed(line) + (line.Normal * Half(plate, line.Normal)) - (plate / 2f), texts[i], measures[i].Mark));
         }
 
-        // Finding V79 of the codebase review of 2026-11-05: the labels go apart, with the size of the text of this font.
-        PlacedLabels = DimensionOverlay.Place(dimensions.Labels, text => ImGui.CalcTextSize(text), displaySize);
-        foreach (var label in PlacedLabels)
-            list.AddText(label.At, label.Mark == DimensionOverlay.Mark.Selected ? SelectedColour : DimensionColour, label.Text);
+        // Finding V79 of the codebase review of 2026-11-05: the labels go apart, with the size of their plates.
+        // ADR-0125 item 4: the plates of the selected body are placed first, so they stay nearest to their body, and the
+        // plates of the whole move when they meet them. PlacedLabels keeps the order of the measures.
+        var order = Enumerable.Range(0, measures.Count).OrderBy(i => measures[i].Mark == DimensionOverlay.Mark.Selected ? 0 : 1).ToList();
+        var placed = DimensionOverlay.Place([.. order.Select(i => labels[i])], PlateSize, displaySize, DimensionCovers());
+        var inOrder = new DimensionOverlay.Label[measures.Count];
+        for (var k = 0; k < order.Count; k++)
+            inOrder[order[k]] = placed[k];
+        PlacedLabels = inOrder;
+
+        for (var i = 0; i < measures.Count; i++)
+        {
+            var (label, line) = (PlacedLabels[i], measures[i].Line);
+            var colour = Ink(label.Mark);
+            var plate = PlateSize(label.Text);
+            var (min, max) = (label.At, label.At + plate);
+            var middle = (min + max) / 2f;
+
+            // ADR-0125 item 3: the dimension line goes through the middle of the plate, so it follows a plate that the
+            // placement moves along the normal. A leader goes from its point to the plate.
+            Vector2 from, to;
+            if (line.Leader)
+            {
+                (from, to) = (line.A + (line.Normal * ExtensionGap), middle);
+                Cased(list, from, to, colour, DimensionLineWidth);
+            }
+            else
+            {
+                var shift = Vector2.Dot(middle - ((line.A + line.B) / 2f), line.Normal);
+                (from, to) = (line.A + (line.Normal * shift), line.B + (line.Normal * shift));
+                Cased(list, line.A + (line.Normal * ExtensionGap), from + (line.Normal * ExtensionPast), colour, DimensionLineWidth);
+                Cased(list, line.B + (line.Normal * ExtensionGap), to + (line.Normal * ExtensionPast), colour, DimensionLineWidth);
+                Cased(list, from, to, colour, DimensionLineWidth);
+                var along = to - from;
+                if (along.Length() > 2 * ArrowLength)
+                {
+                    var unit = Vector2.Normalize(along);
+                    var side = new Vector2(-unit.Y, unit.X) * ArrowHalfWidth;
+                    list.AddTriangleFilled(from, from + (unit * ArrowLength) + side, from + (unit * ArrowLength) - side, colour);
+                    list.AddTriangleFilled(to, to - (unit * ArrowLength) + side, to - (unit * ArrowLength) - side, colour);
+                }
+            }
+
+            _dimensionPlates.Add((label.Text, label.Mark, from, to, new Vector4(min.X, min.Y, max.X, max.Y)));
+        }
+
+        // ADR-0125 item 3: the plate is the pill of a value on an edge, with the ground of the scene and an outline of the colour
+        // of its box; it takes no tap. The plates come after each line, so no line crosses a plate, and the plates of the
+        // selected body come last, over those of the whole.
+        foreach (var (text, mark, _, _, plate) in _dimensionPlates.OrderBy(entry => entry.Mark == DimensionOverlay.Mark.Selected ? 1 : 0))
+        {
+            var (min, max) = (new Vector2(plate.X, plate.Y), new Vector2(plate.Z, plate.W));
+            var round = (max.Y - min.Y) / 2f;
+            list.AddRectFilled(min, max, Theme.Plate(0.85f), round);
+            list.AddRect(min, max, Ink(mark), round, ImDrawFlags.None, 1.5f);
+            list.AddText(_monoFont, FontSize, min + PillPadding, Ink(mark), text);
+        }
+
+        static uint Ink(DimensionOverlay.Mark mark) => mark == DimensionOverlay.Mark.Selected ? SelectionDimensionColour : OverallDimensionColour;
     }
 
     private static uint Colour(SketchOverlay.Mark mark) => mark switch
