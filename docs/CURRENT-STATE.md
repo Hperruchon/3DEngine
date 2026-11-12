@@ -9973,3 +9973,28 @@ the GPU again. A sliver whose normal is very small but not zero still adds its e
 New tests: 3. The test list holds 2479 (1550 in `Engine.Tests`, 356 in `3DEngine.Tests`, 570 in `3DEngine.ImageTests`, 3
 in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
 entries: 12 of 15. New diagnostic codes: 0. Since the review of v0.327, 4 product milestones and 5 entries followed it.
+
+## v0.333 — The codebase review of 2026-11-12 (governance, TASK-0349)
+
+Four product milestones (R18d, R18e, R18f and R20a) and five entries followed the review of v0.327. The owner asked for
+"Dimensions" on the ring on 2026-11-11, and the close of R20b1 (TASK-0348) waits on its branch; it is the fifth product
+milestone, which the gate of the review refuses.
+
+**The review.** `docs/reviews/2026-11-12-codebase-review.md` examines `main` at `65a26d7`.
+- V166 and V167 of the last review are fixed for the form that they name (P0.143). Each fix has a test that the pipeline
+  runs.
+- No new finding is critical or high. V168 is medium: the row "Made from" and "Edit sketch" go after a third cut, because
+  the history keeps the six newest steps.
+- Four new findings are low: V169 (one tap reaches a segment of the ring and the row "Made from"), V170 (two colours do not
+  fade with the ring), V171 (a T-vertex inside a closed flat face still gives false lines, a form of V166 that its fix does
+  not cover) and V172 (ADR-0119 gives a span of 1.84 radians, and the code gives 1.80).
+- TASK-0350 (P0.144) holds V168 to V171, after the next product phase. TASK-0348 corrects V172, because it amends ADR-0119.
+- Open findings: 0 critical, 2 high, 7 medium and 20 low.
+
+**Proof.** One agent examined the change from v0.325 to v0.332 with probes in a copy of the commit. The session took the
+measures with a script whose values at v0.325 equal the last review, read each finding in the code and ran the four probes
+again; each gave the defect. `CodebaseReviewGateTests` passes with the new review.
+
+New tests: 0. The test list holds 2479 (1550 in `Engine.Tests`, 356 in `3DEngine.Tests`, 570 in `3DEngine.ImageTests`, 3
+in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
+entries: 12 of 15. New diagnostic codes: 0. This entry is a codebase review, so 0 product milestones and 0 entries follow it.

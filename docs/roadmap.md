@@ -362,6 +362,7 @@ Therefore each approved objective must have a track here.
   and "Extrude" on its ring, and the plate with its label and its caption. v0.330, TASK-0347, ADR-0120.
 - P0.143 — The low findings of the codebase review of 2026-11-11: a triangle of zero area adds no edge, and a mesh of
   more than 100 000 triangles finds its edges on the thread pool. v0.332, TASK-0345, ADR-0121.
+- Review — The codebase review of 2026-11-12. v0.333, TASK-0349.
 
 ## Track 0 — Foundations
 
@@ -510,6 +511,7 @@ This track removes each condition that blocks other work.
 | P0.141 | The medium and low findings of the codebase review of 2026-11-10 (V164, E201, V165 and T181), after the next product phase. TASK-0339. | 1 |
 | P0.142 | The 2D drawing of a part has a date in the charter: objective 18, ADR-0118 and the rows R21, K9, R22 and P10 to P10c (the answers of the owner of 2026-11-10 to Q1 to Q5 of the renders of a drawing). TASK-0343. | 1 |
 | P0.143 | The low findings of the codebase review of 2026-11-11 (V166 and V167, the edge lines of R18b), after the next product phase. TASK-0345. | 1 |
+| P0.144 | The medium and low findings of the codebase review of 2026-11-12 (V168 to V171: the sketch of a body after three cuts, one tap with two actions, two colours that do not fade, and a T-vertex inside a closed flat face), after the next product phase. TASK-0350. | 1 |
 | P0.102 | The cache of a face, the fixed controls, the list New, the edges and the safe area hold their next forms (V113 to V118 of the codebase review of 2026-11-06 (e); after P0.101). TASK-0252. | 1–2 |
 | P0.86 | The window keeps no input between sessions, the hook has the cases of one axis, and the next forms of four gates fail (V88 to V90, T141 to T144 of the codebase review of 2026-11-06; after the next product phase). TASK-0198. | 1–2 |
 
