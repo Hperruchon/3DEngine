@@ -449,6 +449,20 @@ select "Fond", zoom three steps, and click the module to the right under the ban
 two times on 2026-11-11, and the owner was not at the computer, so the owner closed R20a on the tests and continuous
 integration. The tests drive the library with simulated taps; they do not draw the window or pick a body on the GPU.
 Exit: the scenario runs in the window, and the module is selected with no pad open; or it fails, and a task corrects it.
+### R-0064 · No ring of the document, and no part of the hidden bodies on a portrait phone
+- class: question
+- opened: 2026-11-12
+- due: 2026-11-26
+- extended: no
+- refs: `docs/adr/0124-the-selection-after-a-hide-and-the-hidden-bodies-in-the-status-line.md` items 2 and 4,
+  `docs/proposals/2026-11-10-ux-test-of-a-multi-part-project.md` (improvement B), TASK-0351
+Improvement B of the UX test of 2026-11-10 puts "Show hidden" on a ring of the document. No ring shows with nothing
+selected, and its place on the screen is not decided: the centre of the scene, the path line, or the top bar. On a portrait
+phone of 390 pixels the status line has 38 pixels of room right of Home, so the part "N hidden · Show" of ADR-0124 does not
+show, and the way back is the panel. The owner decides the place of the ring of the document, and the place of the part on a
+portrait phone.
+Exit: the owner chooses, and a task gives the ring of the document or a place of the part on a portrait phone; or the owner
+accepts the panel as the way back on a portrait phone, and drops the ring of the document.
 
 ## Accepted compromises
 

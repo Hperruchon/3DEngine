@@ -257,27 +257,40 @@ internal sealed unsafe partial class DesktopUi
         return !address || _address.Length == 0 ? $"{count} · {state}" : $"{count} · {state} · {_address}";
     }
 
+    // ADR-0124 item 2 (phase R20b2, TASK-0351): the part of the hidden bodies at the end of the status line, or null when no
+    // live body is hidden.
+    internal static string? HiddenText(IReadOnlyList<LiveBody> bodies)
+    {
+        var hidden = bodies.Count(body => !body.Visible);
+        return hidden == 0 ? null : $"{hidden} hidden · Show";
+    }
+
     // Finding V146 of the codebase review of 2026-11-08 (c) (TASK-0310): the text of the status line that fits in this room
     // in the mono font: the whole line, else the line with no address, else none. Until TASK-0310 the line grew to the
     // left over Frame and Home on a phone, and took each tap on them.
-    internal string? StatusFit(IReadOnlyList<LiveBody> bodies, float room)
+    // ADR-0124 item 2: with the part of the hidden bodies after each, and then the part alone, so a phone keeps the way back.
+    internal (string? Status, string? Hidden) StatusFit(IReadOnlyList<LiveBody> bodies, float room)
     {
+        var hidden = HiddenText(bodies);
         ImGui.PushFont(_monoFont);
         try
         {
+            var tail = hidden is null ? 0f : ImGui.CalcTextSize(StatusSeparator + hidden).X;
             foreach (var text in new[] { StatusText(bodies), StatusText(bodies, address: false) })
             {
-                if (ImGui.CalcTextSize(text).X <= room)
-                    return text;
+                if (ImGui.CalcTextSize(text).X + tail <= room)
+                    return (text, hidden);
             }
 
-            return null;
+            return hidden is not null && ImGui.CalcTextSize(hidden).X <= room ? (null, hidden) : (null, null);
         }
         finally
         {
             ImGui.PopFont();
         }
     }
+
+    private const string StatusSeparator = " · ";
 
     private void FixedControls(Vector2 displaySize, IReadOnlyList<LiveBody> bodies, DocumentLine? document, LiveBody? body)
     {
@@ -320,12 +333,15 @@ internal sealed unsafe partial class DesktopUi
         // text that fits there, or it does not show. Its left edge comes from the width of that text, so the first frame of a
         // new text is in its place too; a pivot at the right edge used the width of the last frame.
         var right = displaySize.X - 16f - _inset.Z;
-        if (StatusFit(bodies, right - (anchorsRight + 12f)) is { } status)
+        var (status, hidden) = StatusFit(bodies, right - (anchorsRight + 12f));
+        _statusRight = right;
+        if (status is not null || hidden is not null)
         {
             // ADR-0108 item 5: the width of the parts, each in its colour, as the window draws them.
-            var parts = StatusParts(status);
+            var parts = status is null ? [] : StatusParts(status);
+            var separator = status is not null && hidden is not null ? StatusSeparator : string.Empty;
             ImGui.PushFont(_monoFont);
-            var width = parts.Sum(part => ImGui.CalcTextSize(part.Text).X);
+            var width = parts.Sum(part => ImGui.CalcTextSize(part.Text).X) + ImGui.CalcTextSize(separator).X + (hidden is null ? 0f : ImGui.CalcTextSize(hidden).X);
             ImGui.PopFont();
             ImGui.SetNextWindowPos(new Vector2(right - width, displaySize.Y - 16f - _inset.W - (AnchorSize / 2f)), ImGuiCond.Always, new Vector2(0f, 0.5f));
             if (ImGui.Begin("##Status", FixedFlags))
@@ -333,29 +349,114 @@ internal sealed unsafe partial class DesktopUi
                 // The text colour of the panels: the dim colour gives 2.9:1 on the clear, below the 3:1 of large text.
                 // ADR-0108 item 5 (phase R18a, TASK-0332): the state in its colour, "all correct" in green and "failed" in red.
                 ImGui.PushFont(_monoFont);
-                ImGui.BeginGroup();
-                for (var i = 0; i < parts.Count; i++)
+                // ADR-0124 item 2: the part of the hidden bodies is as high as the anchors, so the text is in the middle of it.
+                var top = hidden is null ? 0f : (AnchorSize - ImGui.GetTextLineHeight()) / 2f;
+                if (parts.Count > 0)
                 {
-                    if (i > 0)
-                        ImGui.SameLine(0f, 0f);
-                    if (parts[i].Colour is { } ink)
-                        ImGui.PushStyleColor(ImGuiCol.Text, ink);
-                    ImGui.TextUnformatted(parts[i].Text);
-                    if (parts[i].Colour is not null)
-                        ImGui.PopStyleColor();
+                    ImGui.SetCursorPosY(top);
+                    ImGui.BeginGroup();
+                    for (var i = 0; i < parts.Count; i++)
+                    {
+                        if (i > 0)
+                            ImGui.SameLine(0f, 0f);
+                        if (parts[i].Colour is { } ink)
+                            ImGui.PushStyleColor(ImGuiCol.Text, ink);
+                        ImGui.TextUnformatted(parts[i].Text);
+                        if (parts[i].Colour is not null)
+                            ImGui.PopStyleColor();
+                    }
+
+                    ImGui.EndGroup();
+                    Item(StatusLabel);
                 }
 
-                ImGui.EndGroup();
+                if (hidden is not null)
+                {
+                    if (separator.Length > 0)
+                    {
+                        ImGui.SameLine(0f, 0f);
+                        ImGui.SetCursorPosY(top);
+                        ImGui.TextUnformatted(separator);
+                        ImGui.SameLine(0f, 0f);
+                    }
+
+                    ImGui.SetCursorPosY(0f);
+                    var at = ImGui.GetCursorScreenPos();
+                    if (ImGui.InvisibleButton(HiddenItem, new Vector2(ImGui.CalcTextSize(hidden).X, AnchorSize)))
+                        _hiddenOpen = !_hiddenOpen;
+                    Item(HiddenItem);
+                    ImGui.GetWindowDrawList().AddText(at + new Vector2(0f, top), Theme.Accent, hidden);
+                }
+
                 ImGui.PopFont();
-                Item(StatusLabel);
                 AddWindowRectangle();
             }
 
             ImGui.End();
         }
 
+        // ADR-0124 item 3: the list closes when no body is hidden, or when the part does not show.
+        if (hidden is null)
+            _hiddenOpen = false;
         ImGui.PopStyleVar();
     }
+
+    // ADR-0124 items 2 and 3 (phase R20b2, TASK-0351): the part of the hidden bodies in the status line, and the list that it
+    // opens, with a row for each hidden body and "Show all".
+    public const string HiddenItem = "Status:hidden";
+    public const string HiddenListItem = "Status:hidden list";
+    public const string HiddenShowAllItem = "Status:show all";
+
+    internal static string HiddenRowItem(Guid body) => $"Status:hidden {body}";
+
+    private bool _hiddenOpen;
+    private float _statusRight;
+
+    internal bool HiddenListOpen => _hiddenOpen;
+
+    // ADR-0124 item 3: the list above the status line, with its right edge on the right edge of the status line. A tap on a
+    // row shows that body; a release outside the list and the part closes it. The list is a rectangle of the panels.
+    private void HiddenList(Vector2 displaySize, IReadOnlyList<LiveBody> bodies)
+    {
+        if (!_hiddenOpen)
+            return;
+        var hidden = bodies.Where(body => !body.Visible).ToList();
+        var labels = hidden.Select(body => body.Name ?? $"{body.Kind}  {body.Id.ToString()[..8]}").ToList();
+        if (hidden.Count > 1)
+            labels.Add(ShowAllLabel);
+        var padding = ImGui.GetStyle().FramePadding.X * 2f;
+        var width = Math.Min(labels.Max(label => ImGui.CalcTextSize(label).X) + padding, displaySize.X - 32f - _inset.X - _inset.Z);
+        var bottom = _anchorsTop - 8f;
+        var top = 16f + _inset.Y + TopBarHeight;
+        ImGui.SetNextWindowPos(new Vector2(_statusRight, bottom), ImGuiCond.Always, new Vector2(1f, 1f));
+        ImGui.SetNextWindowSizeConstraints(Vector2.Zero, new Vector2(displaySize.X, Math.Max(bottom - top, MinimumControlHeight)));
+        if (ImGui.Begin("##HiddenList", FixedFlags & ~ImGuiWindowFlags.NoBackground))
+        {
+            for (var i = 0; i < hidden.Count; i++)
+            {
+                if (ImGui.Button($"{labels[i]}##{hidden[i].Id}", new Vector2(width, MinimumControlHeight)))
+                    _actions.Add(new SetVisibleAction(hidden[i].Id, true));
+                Item(HiddenRowItem(hidden[i].Id));
+            }
+
+            if (hidden.Count > 1)
+            {
+                if (ImGui.Button($"{ShowAllLabel}##hidden", new Vector2(width, MinimumControlHeight)))
+                    _actions.Add(new ShowAllAction());
+                Item(HiddenShowAllItem);
+            }
+
+            AddWindowRectangle();
+            _items[HiddenListItem] = _fixed[^1];
+        }
+
+        ImGui.End();
+    }
+
+    // ADR-0124 item 3: true when a point of the window is on the list of the hidden bodies or on the part of the status line,
+    // in the last frame. Route closes the list on a release elsewhere.
+    private bool OverHidden(double x, double y)
+        => new[] { HiddenListItem, HiddenItem }.Any(item => _items.TryGetValue(item, out var r) && x >= r.X && x < r.Z && y >= r.Y && y < r.W);
 
     // ADR-0108 item 5: the parts of the status line, and the colour of the part of the state; the other parts keep the text
     // colour of the panels.

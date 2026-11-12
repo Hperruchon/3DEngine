@@ -181,7 +181,8 @@ public class BodyActionsTests
         Assert.Equal(touch, mouse);
     }
 
-    // A hidden body cannot stay selected, and a selected body that leaves the session is forgotten.
+    // A hidden body cannot stay selected, and a selected body that leaves the session is forgotten. ADR-0124 item 1 (phase
+    // R20b2, TASK-0351): the selection goes to the visible neighbour, B; with no visible body it goes to none.
     [Fact]
     public async Task A_Hidden_Or_Consumed_Body_Is_No_Longer_Selected()
     {
@@ -190,7 +191,10 @@ public class BodyActionsTests
 
         actions.Select(A);
         actions.Apply(new HideIntent(null, null), Pick, await Live(host));
+        Assert.Equal(B, actions.Selection);
+        actions.Apply(new HideIntent(null, null), Pick, await Live(host));
         Assert.Null(actions.Selection);
+        actions.ShowAll(await Live(host));
 
         actions.Select(B);
         actions.Forget((await Live(host)).Where(body => body.Id != B).ToArray());

@@ -461,7 +461,7 @@ public sealed class NativeThreeDEngine : IThreeDEngine, IDisposable
                     _actions.Rename(rename.Body, rename.Name);
                     break;
                 case SetVisibleAction visible:
-                    _actions.SetVisible(visible.Body, visible.Visible);
+                    _actions.SetVisible(visible.Body, visible.Visible, live);
                     break;
                 case ShowAllAction:
                     _actions.ShowAll(live);

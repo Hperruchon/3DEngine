@@ -10070,3 +10070,35 @@ A chain of slivers along one line is not joined. No person used the change in th
 New tests: 7. The test list holds 2494 (1550 in `Engine.Tests`, 356 in `3DEngine.Tests`, 585 in `3DEngine.ImageTests`, 3
 in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
 entries: 12 of 15. New diagnostic codes: 0. Since the review of v0.333, 1 product milestone and 2 entries followed it.
+
+## v0.336 — The selection after a hide goes to a neighbour, and the status line lists the hidden bodies (R20b2, TASK-0351)
+
+The owner ordered "Go" on 2026-11-12, after the merge of P0.144. TASK-0351 is the second part of roadmap row R20b, from
+improvement B of the UX test of 2026-11-10 (problem 5: a hidden body is hard to bring back). ADR-0124 amends ADR-0029 item 3
+and ADR-0093 item 3.
+
+**The selection after a hide.** When the selected body hides, the selection goes to the next visible body in the order of
+the list, else to the one before it, else to none. Until this entry it went to none, so the list of the bodies came back over
+the model. A hide of a body that is not selected keeps the selection.
+
+**The status line.** While a live body is hidden, the status line ends with "N hidden · Show" in the accent colour, with a
+target as high as the anchors. A tap opens a list above it: a row for each hidden body, and "Show all" with two or more. A
+tap on a row shows that body; the list closes on a second tap on the part, on a release elsewhere, and when no body is
+hidden. Where the line has no room, the part shows alone.
+
+**What waits.** No ring shows with nothing selected, so "Show hidden" on a ring of the document is not done. A portrait
+phone of 390 pixels has 38 pixels of room right of Home, so the part does not show there. Register entry R-0064 (due
+2026-11-26) gives both questions to the owner.
+
+**Proof.** 6 new tests in `HiddenBodiesTests`: the neighbour after a hide, the part of the status line, the list and its
+actions, and the part at 844 by 390, 540 by 900 and 390 by 844. `BodyActionsTests` now expects the neighbour. Six
+injections each failed a named test, and each file came back byte for byte: a selection that goes to none, no count, a row
+with no action, no part alone, no close on a release elsewhere, and a list that is not a part of the panels. The phone
+project builds with zero warnings. Run 43217469649 passed on the branch.
+
+**What stays.** No person used the change in the window or on the phone. A window check needs a click on the home screen,
+so it was not done.
+
+New tests: 6. The test list holds 2500 (1550 in `Engine.Tests`, 356 in `3DEngine.Tests`, 591 in `3DEngine.ImageTests`, 3
+in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
+entries: 13 of 15. New diagnostic codes: 0. Since the review of v0.333, 2 product milestones and 3 entries followed it.
