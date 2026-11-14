@@ -221,11 +221,41 @@ internal sealed unsafe partial class DesktopUi
         return new Vector4(centre.X - half.X, centre.Y - half.Y, centre.X + half.X, centre.Y + half.Y);
     }
 
+    // ADR-0132 item 1 (phase R18l, TASK-0363): on the corner ring of a portrait display the segments near its top are side by
+    // side, so a label is drawn smaller, down to RingTextMinimum of the size of the font, until it is no wider than the
+    // horizontal distance to the middle of each neighbour that is at its height, and until its half fits between its middle and
+    // the right edge of the display. Thus no label lies on another, and the clamp to the edge moves none. Until TASK-0363
+    // "Dimensions" lay on "Focus". A landscape ring keeps the size of the font.
+    internal const float RingTextMinimum = 0.5f;
+
+    private (Vector2 Text, float Size) RingTextSize(RingLayout ring, RingSegmentLayout segment, Vector2 displaySize, IReadOnlyList<string> labels)
+    {
+        var size = ImGui.GetFontSize();
+        var text = ImGui.CalcTextSize(RingText(segment.Label));
+        if (displaySize.X >= displaySize.Y || text.X <= 0f)
+            return (text, size);
+        var segments = ring.Segments(labels);
+        var at = segments.ToList().FindIndex(other => other.Label == segment.Label);
+        var middle = ring.Middle(segment);
+        var room = 2f * (displaySize.X - _inset.Z - 4f - middle.X);
+        foreach (var index in new[] { at - 1, at + 1 })
+        {
+            if (index < 0 || index >= segments.Count)
+                continue;
+            var other = ring.Middle(segments[index]);
+            if (Math.Abs(other.Y - middle.Y) < text.Y + 2f)
+                room = Math.Min(room, Math.Abs(other.X - middle.X) - 4f);
+        }
+
+        var scale = Math.Clamp(room / text.X, RingTextMinimum, 1f);
+        return (text * scale, size * scale);
+    }
+
     // The place of the label of a segment, the centre of its icon or null, and true when the label has a plate (ADR-0087 item 5).
     private (Vector2 Place, Vector2? Icon, bool Plate) SegmentFace(RingLayout ring, RingSegmentLayout segment, Vector2 displaySize, bool sketchRing)
     {
         var middle = ring.Middle(segment);
-        var text = ImGui.CalcTextSize(RingText(segment.Label));
+        var text = RingTextSize(ring, segment, displaySize, _ringLabels).Text;
         // The review of Codex of v0.251 (TASK-0271): a label at the edge of a portrait display stays 4 pixels inside the
         // safe area; until TASK-0271 the label "Sketch on face" of the fourth segment went past the right edge.
         var place = middle - (text / 2f);
@@ -373,7 +403,7 @@ internal sealed unsafe partial class DesktopUi
         var faces = ring.Segments(labels).Select(segment => (Segment: segment, Face: SegmentFace(ring, segment, displaySize, sketchRing))).ToList();
         _ringTargets = _sketchActive ? null : faces.ToDictionary(entry => entry.Segment.Label, entry =>
         {
-            var text = ImGui.CalcTextSize(RingText(entry.Segment.Label));
+            var text = RingTextSize(ring, entry.Segment, displaySize, labels).Text;
             var (min, max) = (entry.Face.Place, entry.Face.Place + text);
             if (entry.Face.Icon is { } icon)
                 (min, max) = (Vector2.Min(min, icon - new Vector2(IconHalf)), Vector2.Max(max, icon + new Vector2(IconHalf)));
@@ -445,7 +475,7 @@ internal sealed unsafe partial class DesktopUi
             var middle = ring.Middle(segment);
             // ADR-0095 item 3: the short label of the render, and a drawn icon above it. SegmentFace gives their places.
             var caption = RingText(segment.Label);
-            var text = ImGui.CalcTextSize(caption);
+            var (text, captionSize) = RingTextSize(ring, segment, displaySize, _ringLabels);
             var place = face.Place;
             var ink = ImGui.GetColorU32(colours[(int)ImGuiCol.Text]);
             // ADR-0108 item 2: the plate has the ground of the scene, because a segment has no fill at rest.
@@ -457,7 +487,7 @@ internal sealed unsafe partial class DesktopUi
             else if (face.Icon is { } icon && RingIcon(list, segment.Label, icon, ImGui.GetColorU32(Theme.Accent)))
                 _items[RingIconItem(segment.Label)] = new Vector4(icon.X - IconHalf, icon.Y - IconHalf, icon.X + IconHalf, icon.Y + IconHalf);
 
-            list.AddText(place, ink, caption);
+            list.AddText(ImGui.GetFont(), captionSize, place, ink, caption);
             _items[RingTextItem(segment.Label)] = new Vector4(place.X, place.Y, place.X + text.X, place.Y + text.Y);
             _items[RingItem(segment.Label)] = new Vector4(middle.X - 4f, middle.Y - 4f, middle.X + 4f, middle.Y + 4f);
         }
