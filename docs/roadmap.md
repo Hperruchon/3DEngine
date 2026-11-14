@@ -370,6 +370,9 @@ Therefore each approved objective must have a track here.
   v0.339, TASK-0354, ADR-0127.
 - R18h — A value typed in the command line goes to the pad of its value, through the evaluator: "40+35" lists each value
   of the frame as "C3 = 75.000 mm", and Enter opens its pad with the typed text. v0.341, TASK-0357, ADR-0128.
+- R18i — The proposal in the window: the value now crossed out and the proposed value in amber in the rows, a pending node
+  on the history arc, a glow on the edges, and "Applied · Bracket rebuilt" with Undo after an accept. v0.343,
+  TASK-0358, ADR-0130.
 - P0.143 — The low findings of the codebase review of 2026-11-11: a triangle of zero area adds no edge, and a mesh of
   more than 100 000 triangles finds its edges on the thread pool. v0.332, TASK-0345, ADR-0121.
 - Review — The codebase review of 2026-11-12. v0.333, TASK-0349.
