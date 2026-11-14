@@ -11021,3 +11021,25 @@ used the change.
 New tests: 7. The test list holds 2678 (1580 in `Engine.Tests`, 380 in `3DEngine.Tests`, 715 in `3DEngine.ImageTests`, 3
 in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
 entries: 14 of 15. New diagnostic codes: 0. Since the review of v0.363, 3 product milestones and 6 entries followed it.
+
+## v0.370 — On macOS the Command key gives the modifier of the shortcuts, and the command line shows "Cmd K" (P0.154, TASK-0385)
+
+Register entry R-0060: the command line showed "Ctrl K" on macOS, where the render gives "Cmd K", because the input had no
+Command key. After R22c each product row waits for P10, which needs the owner.
+
+**The change.** ADR-0150 amends ADR-0108 item 4.
+- `SdlInput` on macOS: the Command key gives the modifier `Control` to the keys after it, so Command and K open the command
+  line, and each shortcut that reads Control reads the Command key too. The other platforms leave the key of the system out.
+- The command line shows "Cmd K" on macOS and "Ctrl K" on the other platforms (`DesktopUi.CommandKeyTextFor`).
+- R-0060 closes by its exit.
+
+**Proof.** A theory proves the Command key with the mapping of macOS and without it; a test proves the text of each platform
+and of the platform of the run. Three injections each failed a named test; each file came back byte for byte. The phone
+project builds with zero warnings. Run 43580359832 passed on the branch, with the tests on the runner of macOS. The failed runs
+since the entry v0.369, from the API: none on a branch; 43562165193 on `main` stays red until the owner runs it again.
+
+**What stays.** No person used it on a Mac. On macOS a shortcut cannot tell the Command key from the key Control.
+
+New tests: 3. The test list holds 2681 (1580 in `Engine.Tests`, 382 in `3DEngine.Tests`, 716 in `3DEngine.ImageTests`, 3
+in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
+entries: 13 of 15. New diagnostic codes: 0. Since the review of v0.363, 3 product milestones and 7 entries followed it.
