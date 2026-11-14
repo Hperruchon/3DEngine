@@ -1,7 +1,7 @@
 ---
 id: 0379
 title: The high findings of the codebase review of 2026-11-14 (e)
-status: Active
+status: Done
 phase: P0.151
 opened: 2026-11-14
 depends-on: [0378]
@@ -55,17 +55,17 @@ The outline of a cut side ends at its body, a turned cylinder gives a view, and 
 
 ## Acceptance criteria
 
-- [ ] A test proves the outline of a hole through a plate from face to face.
-- [ ] A test proves the view of a cylinder that a Rotate of 180 degrees turned, at the origin and moved.
-- [ ] A test proves that the free part leaves the window of the live sketches.
-- [ ] A test proves the circle of radius 5 of a cone cut at its middle, and the outline of the cut cone to its cut.
-- [ ] A clean build (`--no-incremental`) gives zero errors and zero warnings, and the phone project builds.
-- [ ] `dotnet test`, the write-set check and `eng/repo-gates` pass; continuous integration passes on the branch and on
+- [x] A test proves the outline of a hole through a plate from face to face.
+- [x] A test proves the view of a cylinder that a Rotate of 180 degrees turned, at the origin and moved.
+- [x] A test proves that the free part leaves the window of the live sketches.
+- [x] A test proves the circle of radius 5 of a cone cut at its middle, and the outline of the cut cone to its cut.
+- [x] A clean build (`--no-incremental`) gives zero errors and zero warnings, and the phone project builds.
+- [x] `dotnet test`, the write-set check and `eng/repo-gates` pass; continuous integration passes on the branch and on
       `main` after the merge.
 
 ## Outcome
 
-Status: Active
+Status: Done · commit (the merge of the branch p0151-review-findings) · v0.364
 
 ## Method
 
@@ -80,3 +80,4 @@ Weakest:    a tolerance of 1e-9 for an axis along the view.
   tolerance of an axis along the view and the window at the right. A first change with "the ends only" failed the test of the
   circles of a Document: each rim of a hole is a cut of its cylinder, so E204 came into this task. A guard of values that are
   not finite went, because no input reaches it. Seven injections each failed a named test; each file came back byte for byte.
+- 2026-11-14: run 43574459809 passed on the work commit. Closed at v0.364.
