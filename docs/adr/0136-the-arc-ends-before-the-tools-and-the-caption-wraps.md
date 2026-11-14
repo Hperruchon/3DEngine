@@ -59,3 +59,4 @@ summary takes several lines over the part.
 
 - 2026-11-14 · TASK-0367 · The record, from the findings V181 and V184 of the codebase review of 2026-11-14 (c), under the
   order of the owner of 2026-11-14.
+- 2026-11-14 · TASK-0367 · Shipped at v0.353.
