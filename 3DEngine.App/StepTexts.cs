@@ -28,6 +28,10 @@ internal sealed class StepTexts
     private readonly List<string> _done = [];
     private readonly List<string> _undone = [];
     private readonly List<(Guid Command, string Text)> _expected = [];
+
+    // Finding V182 of the codebase review of 2026-11-14 (c) (TASK-0367): the count of the log right after the applied event of
+    // each of the last commands, the newest last, at most ExpectedLimit of them.
+    private readonly List<(Guid Command, int Count)> _counts = [];
     private bool _seeded;
     private int _log;
 
@@ -59,11 +63,31 @@ internal sealed class StepTexts
         lock (_lock)
         {
             (_log, _seeded) = (0, true);
+            _counts.Clear();
             _done.Clear();
             _undone.Clear();
             foreach (var name in log)
                 Count(name, Readable(name));
         }
+    }
+
+    // Finding V182: the count of the log right after the newest applied command of the list, or null when none of them
+    // applied since the seed. The host gives it to the line after an accept, so a command of another client that commits
+    // after the last command of the proposal, and before the frame that sees the end of the accept, takes Undo away.
+    public int? CountAfter(IEnumerable<Guid> commands)
+    {
+        ArgumentNullException.ThrowIfNull(commands);
+        var wanted = commands.ToHashSet();
+        lock (_lock)
+        {
+            for (var i = _counts.Count - 1; i >= 0; i--)
+            {
+                if (wanted.Contains(_counts[i].Command))
+                    return _counts[i].Count;
+            }
+        }
+
+        return null;
     }
 
     // The window gives the text of the command with this identifier, before it sends the command.
@@ -159,6 +183,12 @@ internal sealed class StepTexts
             if (at >= 0)
                 _expected.RemoveAt(at);
             Count(name, text);
+            if (record.CauseCommandId is { } cause)
+            {
+                _counts.Add((cause, _log));
+                if (_counts.Count > ExpectedLimit)
+                    _counts.RemoveAt(0);
+            }
         }
         else if (record.Kind is Rejected or Cancelled && _expected.FindIndex(expected => expected.Command == record.CauseCommandId) is var gone and >= 0)
         {

@@ -387,6 +387,9 @@ Therefore each approved objective must have a track here.
   the tools of the ring. v0.350, TASK-0365, ADR-0134.
 - R18o — On a portrait display the arc of a proposal is at the top with Reject and Accept, a sheet of its lines is under
   it, and the chips keep off them. v0.352, TASK-0368, ADR-0135.
+- P0.148 — The medium and low findings of the codebase review of 2026-11-14 (c): the whole caption under the arc wraps,
+  Undo of the line holds the count of the last command of the proposal, a moved block of lines stays inside the circle,
+  and the arc ends before each tool of the ring. v0.353, TASK-0367, ADR-0136.
 - Review — The codebase review of 2026-11-14 (c). v0.351, TASK-0366.
 - P0.143 — The low findings of the codebase review of 2026-11-11: a triangle of zero area adds no edge, and a mesh of
   more than 100 000 triangles finds its edges on the thread pool. v0.332, TASK-0345, ADR-0121.

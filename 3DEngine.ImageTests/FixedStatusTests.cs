@@ -220,4 +220,29 @@ public sealed class FixedStatusTests
         Step(ui, Desktop);
         Assert.DoesNotContain(ui.TakeActions(), action => action is FrameAction);
     }
+
+    // Finding V182 of the codebase review of 2026-11-14 (c) (TASK-0367): the count after the last command of a proposal is the
+    // count right after its applied event, so a command of another client that commits later does not move it; a command that
+    // did not apply gives no count.
+    [Fact]
+    public async Task The_Count_After_A_Proposal_Is_The_Count_At_Its_Last_Command()
+    {
+        using var host = new EngineHost(new InProcessMeshBackend());
+        var steps = new StepTexts();
+        using var subscription = await host.Session.Read((document, _) =>
+        {
+            steps.Seed([.. document.Log.Select(entry => entry.Command.Name)]);
+            return host.Subscribe(steps.Take);
+        });
+
+        var (first, last, other) = (Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid());
+        Assert.Equal(CommandStatus.Applied, (await host.Session.Apply(new NoOpCommand { CommandId = first, Echo = "a" })).Status);
+        Assert.Equal(CommandStatus.Applied, (await host.Session.Apply(new NoOpCommand { CommandId = last, Echo = "b" })).Status);
+        Assert.Equal(CommandStatus.Applied, (await host.Session.Apply(new NoOpCommand { CommandId = other, Echo = "c" })).Status);
+
+        Assert.Equal(3, steps.LogCount);
+        Assert.Equal(2, steps.CountAfter([first, last]));
+        Assert.Equal(1, steps.CountAfter([first]));
+        Assert.Null(steps.CountAfter([Guid.NewGuid()]));
+    }
 }
