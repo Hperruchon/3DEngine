@@ -408,6 +408,9 @@ Therefore each approved objective must have a track here.
 - K9c — An end at a slant to the view is an ellipse, and the outline of a cylinder and a cone comes from its axis.
   v0.362, TASK-0377, ADR-0144.
 - Review — The codebase review of 2026-11-14 (e). v0.363, TASK-0378.
+- P0.151 — The high findings of the codebase review of 2026-11-14 (e), with E204: a line of a curved side keeps its place
+  along the axis, an axis within 1e-9 of the view is along it, and Frame leaves a window at the right. v0.364, TASK-0379,
+  ADR-0145.
 - Review — The codebase review of 2026-11-14 (c). v0.351, TASK-0366.
 - P0.143 — The low findings of the codebase review of 2026-11-11: a triangle of zero area adds no edge, and a mesh of
   more than 100 000 triangles finds its edges on the thread pool. v0.332, TASK-0345, ADR-0121.
