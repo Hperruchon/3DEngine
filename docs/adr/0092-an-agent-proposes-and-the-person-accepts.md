@@ -7,7 +7,7 @@ date: 2026-11-08
 supersedes: []
 superseded-by: []
 amends: []
-amended-by: ['0107', '0108', '0110', '0111', '0113', '0130']
+amended-by: ['0107', '0108', '0110', '0111', '0113', '0130', '0133']
 affects:
   - Engine.Api.Http/Proposals.cs
   - Engine.Api.Http/Endpoints/ProposalsEndpoint.cs
@@ -150,3 +150,5 @@ first one.
   dot, ends 12 pixels left of the command line.
 - 2026-11-14 · TASK-0358 · ADR-0130 amends items 6 and 7: a glow of amber on the edges of the display while a proposal
   waits, and after an accept "Applied · Bracket rebuilt" with the button Undo.
+- 2026-11-14 · TASK-0364 · ADR-0133 item 1 amends item 7: the caption is on the band of the arc, along its top, and a cut
+  caption is whole as the first line under the arc; item 2: the command lines lie on no chip.

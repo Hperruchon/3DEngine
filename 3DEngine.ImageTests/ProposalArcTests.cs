@@ -60,7 +60,7 @@ public sealed class ProposalArcTests
     }
 
     // Item 7: the arc is on the band of the ring of the selected body, above its centre, with Reject at 235 degrees and Accept
-    // at 305 degrees, each a circle of at least 44 pixels that is a part of the panels for a tap; the caption is above the arc.
+    // at 305 degrees, each a circle of at least 44 pixels that is a part of the panels for a tap; the caption is on the arc.
     [Fact]
     public void The_Arc_Is_On_The_Band_Of_The_Ring_From_235_To_305_Degrees()
     {
@@ -85,10 +85,12 @@ public sealed class ProposalArcTests
 
         Assert.True(Middle(Item(ui, DesktopUi.ProposalRejectItem)).X < Middle(Item(ui, DesktopUi.ProposalAcceptItem)).X, "Reject is not at the left end.");
 
-        // The caption is above the outer edge of the arc and says AGENT and the summary; the lines are inside the ring.
+        // The caption is on the band of the arc, between its two ends, and says AGENT and the summary (ADR-0133 item 1, phase
+        // R18m, TASK-0364; until TASK-0364 it was above the outer edge of the arc); the lines are inside the ring.
         var caption = Item(ui, DesktopUi.ProposalCaptionItem);
         Assert.Equal("AGENT · Widen the bracket to 75 mm", ui.ProposalTexts[DesktopUi.ProposalCaptionItem]);
-        Assert.True(caption.W <= ring.Centre.Y - ring.Outer, $"The caption {caption} is not above the arc of {ring}.");
+        Assert.True(caption.Y >= ring.Centre.Y - ring.Outer && caption.X >= Item(ui, DesktopUi.ProposalRejectItem).Z && caption.Z <= Item(ui, DesktopUi.ProposalAcceptItem).X,
+            $"The caption {caption} is not on the band of the arc of {ring}.");
         var line = Item(ui, DesktopUi.ProposalLineItem(0));
         Assert.True(Vector2.Distance(new Vector2(line.X, line.Y), ring.Centre) < ring.Inner && Vector2.Distance(new Vector2(line.Z, line.Y), ring.Centre) < ring.Inner,
             $"The command line {line} is not inside the ring.");
