@@ -400,19 +400,6 @@ This session did not read the value on the phone or on the emulator; the numbers
 Exit: a run on the S23 Ultra or on the emulator records the size that the window gives, and ADR-0113 adds that size to its
 list, with a scale of the user interface if the size is in pixels.
 
-### R-0060 · The command line shows "Ctrl K" on macOS, where the render gives "Cmd K"
-- class: debt
-- opened: 2026-11-10
-- due: 2027-05-09
-- extended: no
-- refs: `3DEngine.App/Ui/DesktopUi.Command.cs` (CommandKeyText), `3DEngine.Core/Input/InputSamples.cs` (KeyModifiers),
-  `docs/adr/0108-the-look-of-the-render.md` item 4, TASK-0332
-The render and the designer brief give "Ctrl K or Cmd K". The input of the window has no modifier for the Command key of
-macOS: `KeyModifiers` holds Shift, Control and Alt only. So the field opens with Control and K on each platform and
-shows "Ctrl K"; a person on macOS does not get the key of the platform.
-Exit: the input gives the Command key, the field opens with Command and K on macOS and shows "Cmd K" there, or the owner
-accepts "Ctrl K" on each platform.
-
 ### R-0061 · The cost of the edge lines on the phone is not measured
 - class: question
 - opened: 2026-11-10
@@ -612,6 +599,22 @@ only the render loop writes `Scene` and `Entity` of `3DEngine.Core`. V5, V6 and 
 ---
 
 ## Closed
+
+### R-0060 · The command line shows "Ctrl K" on macOS, where the render gives "Cmd K"
+- class: debt
+- opened: 2026-11-10
+- due: 2027-05-09
+- extended: no
+- refs: `3DEngine.App/Ui/DesktopUi.Command.cs` (CommandKeyText), `3DEngine.Core/Input/InputSamples.cs` (KeyModifiers),
+  `docs/adr/0108-the-look-of-the-render.md` item 4, TASK-0332
+The render and the designer brief give "Ctrl K or Cmd K". The input of the window has no modifier for the Command key of
+macOS: `KeyModifiers` holds Shift, Control and Alt only. So the field opens with Control and K on each platform and
+shows "Ctrl K"; a person on macOS does not get the key of the platform.
+Exit: the input gives the Command key, the field opens with Command and K on macOS and shows "Cmd K" there, or the owner
+accepts "Ctrl K" on each platform.
+
+Closed 2026-11-14 · resolved · TASK-0385 · ADR-0150. On macOS the Command key gives the modifier of the shortcuts, so
+Command and K open the field, and the field shows "Cmd K" there.
 
 ### R-0062 · The image tests crash the test host at times on the computer of the owner, in vkCreateDevice
 - class: risk
