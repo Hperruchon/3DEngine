@@ -71,3 +71,4 @@ sagitta of one facet.
 ## History
 
 - 2026-11-14 · TASK-0376 · The record, from row K9b and ADR-0142 item 7, under the order of the owner of 2026-11-14.
+- 2026-11-14 · TASK-0376 · Shipped at v0.361.

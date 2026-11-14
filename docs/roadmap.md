@@ -403,6 +403,8 @@ Therefore each approved objective must have a track here.
   a far plane behind the box, and the rows of a portrait proposal stay under the middle. v0.359, TASK-0374, ADR-0141.
 - K9a — The visible and the hidden edges of the live bodies along a view, exact, from the faces and the edges of the
   owned kernel, computed outside the kernel. v0.360, TASK-0375, ADR-0142.
+- K9b — A view shows the circle of the design for a curved side, the outline of a sphere as its circle, and an end seen
+  from the side as one line. v0.361, TASK-0376, ADR-0143.
 - Review — The codebase review of 2026-11-14 (c). v0.351, TASK-0366.
 - P0.143 — The low findings of the codebase review of 2026-11-11: a triangle of zero area adds no edge, and a mesh of
   more than 100 000 triangles finds its edges on the thread pool. v0.332, TASK-0345, ADR-0121.

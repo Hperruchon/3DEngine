@@ -1,7 +1,7 @@
 ---
 id: 0376
 title: A view shows the circle of the design for a curved side, and an end seen from the side as one line
-status: Active
+status: Done
 phase: K9b
 opened: 2026-11-14
 depends-on: [0375]
@@ -52,17 +52,17 @@ A view shows a hole or a cylinder as one circle with the radius of the design, a
 
 ## Acceptance criteria
 
-- [ ] ADR-0143 exists, and ADR-0142 shows the amendment.
-- [ ] Tests prove a cylinder from the top as one circle, from the front as four lines, a visible and a hidden arc under a box,
+- [x] ADR-0143 exists, and ADR-0142 shows the amendment.
+- [x] Tests prove a cylinder from the top as one circle, from the front as four lines, a visible and a hidden arc under a box,
       the outline of a sphere as one circle, a frame of another length with its facets, and the circles of the design
       through an extrude, a cylinder, a translate and a subtract.
-- [ ] A clean build (`--no-incremental`) gives zero errors and zero warnings, and the phone project builds.
-- [ ] `dotnet test`, the write-set check and `eng/repo-gates` pass; continuous integration passes on the branch and on
+- [x] A clean build (`--no-incremental`) gives zero errors and zero warnings, and the phone project builds.
+- [x] `dotnet test`, the write-set check and `eng/repo-gates` pass; continuous integration passes on the branch and on
       `main` after the merge.
 
 ## Outcome
 
-Status: Active
+Status: Done · commit (the merge of the branch k9b-view-curves) · v0.361
 
 ## Method
 
@@ -75,3 +75,4 @@ Weakest:    an ellipse and a turned body keep their facets; the ends of an arc a
 - 2026-11-14: opened under the order of the owner of 2026-11-14, after K9a, branch k9b-view-curves. TASK-0376 and ADR-0143
   are free. Ten injections each failed a named test; each file came back byte for byte. The test of a frame of another
   length came after the first run, because no test held the guard of the length.
+- 2026-11-14: run 43570185151 passed on the work commit. Closed at v0.361.
