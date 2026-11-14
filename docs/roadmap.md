@@ -385,6 +385,7 @@ Therefore each approved objective must have a track here.
   chip; the arc on a portrait display is row R18o. v0.349, TASK-0364, ADR-0133.
 - R18n — The ring of the arc of a proposal moves right of the rows of the selected body, and the command lines keep off
   the tools of the ring. v0.350, TASK-0365, ADR-0134.
+- Review — The codebase review of 2026-11-14 (c). v0.351, TASK-0366.
 - P0.143 — The low findings of the codebase review of 2026-11-11: a triangle of zero area adds no edge, and a mesh of
   more than 100 000 triangles finds its edges on the thread pool. v0.332, TASK-0345, ADR-0121.
 - Review — The codebase review of 2026-11-12. v0.333, TASK-0349.
@@ -551,6 +552,7 @@ This track removes each condition that blocks other work.
 | P0.145 | Assemblies with joints and their geometric checks have a date in the charter: objectives 11 and 16, ADR-0126, the proposal `docs/proposals/2026-11-12-assembly-with-ai.md`, and the rows K10 to K14, P11 to P14, R23 and R24 (the answers D1 to D7 of the owner of 2026-11-12). TASK-0353. | 1 |
 | P0.146 | The medium and low findings of the codebase review of 2026-11-14 (V173 to V177: plates under later windows, the list of the hidden bodies on a small landscape display, the edge lines of a turned T-vertex, a stuck plate at the top edge, and the text of a step by the name of its command), after the next product phase. TASK-0356. | 1 |
 | P0.147 | The medium and low findings of the codebase review of 2026-11-14 (b) (V178 to V180: "Undo" of the line after an accept, plates under the arc of a proposal, and the checks of Reject and Accept of the mix test), after the next product phase. TASK-0362. | 1 |
+| P0.148 | The medium and low findings of the codebase review of 2026-11-14 (c) (V181 to V184: the whole caption under the arc is cut, the count for "Undo" one frame late, the corners of a moved block of lines, and the ends of the arc on "Edit sketch"), after the next product phase. TASK-0367. | 1 |
 | P0.102 | The cache of a face, the fixed controls, the list New, the edges and the safe area hold their next forms (V113 to V118 of the codebase review of 2026-11-06 (e); after P0.101). TASK-0252. | 1–2 |
 | P0.86 | The window keeps no input between sessions, the hook has the cases of one axis, and the next forms of four gates fail (V88 to V90, T141 to T144 of the codebase review of 2026-11-06; after the next product phase). TASK-0198. | 1–2 |
 

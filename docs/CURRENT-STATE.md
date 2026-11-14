@@ -10497,3 +10497,25 @@ New tests: 6. The test list holds 2562 (1552 in `Engine.Tests`, 357 in `3DEngine
 in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
 entries: 15 of 15. New diagnostic codes: 0. Since the review of v0.346, 4 product milestones and 4 entries followed it, so
 the next product milestone needs a codebase review first.
+
+## v0.351 — The codebase review of 2026-11-14 (c) (governance, TASK-0366)
+
+Four product milestones (R18l, P0.147, R18m and R18n) and four entries followed the review of v0.346, so the next product
+milestone needs a review first.
+
+**The review.** `docs/reviews/2026-11-14-c-codebase-review.md` examines `main` at `a9cf69e`.
+- V178 to V180 of the last review are fixed (P0.147). Each fix has a test that the pipeline runs.
+- No new finding is critical or high. V181 is medium: the whole caption under the arc of a proposal is cut to the chord of
+  the ring too, so a long summary loses its end in both places, against ADR-0133 item 1. V182 (the count for "Undo" one
+  frame late), V183 (the corners of a moved block of lines) and V184 (the ends of the arc on the target of "Edit sketch")
+  are low.
+- TASK-0367 (P0.148) holds V181 to V184, after the next product phase (R18o).
+- Open findings: 0 critical, 2 high, 7 medium and 19 low.
+
+**Proof.** One agent examined the change from v0.346 to the work commit of R18n with probes in a copy of the commit. The
+session took the measures with the script of the last review and read each finding in the code at its line.
+`CodebaseReviewGateTests` passes with the new review.
+
+New tests: 0. The test list holds 2562 (1552 in `Engine.Tests`, 357 in `3DEngine.Tests`, 650 in `3DEngine.ImageTests`, 3
+in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
+entries: 15 of 15. New diagnostic codes: 0. This entry is a codebase review, so 0 product milestones and 0 entries follow it.
