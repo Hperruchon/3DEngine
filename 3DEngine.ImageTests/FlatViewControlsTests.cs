@@ -94,4 +94,35 @@ public sealed class FlatViewControlsTests
         Frame(ui, display, null, Key(InputKey.Digit1));
         Assert.DoesNotContain(ui.TakeActions(), action => action is FlatViewAction);
     }
+
+    // The review of the branch: in the frame of Control and K and in the two frames after it, before the field takes the keys,
+    // a digit gives no view.
+    [Fact]
+    public void A_Digit_Right_After_Control_K_Gives_No_View()
+    {
+        var display = new Vector2(1280, 720);
+        using var ui = new DesktopUi("http://127.0.0.1:5180", Engine.Contracts.Document.Millimetre);
+        Frame(ui, display, null);
+        ui.TakeActions();
+        Frame(ui, display, null, new KeySample(InputKey.K, true, KeyModifiers.Control, 0), new KeySample(InputKey.Digit1, true, KeyModifiers.None, 1));
+        Frame(ui, display, null, new KeySample(InputKey.Digit3, true, KeyModifiers.None, 2));
+        Frame(ui, display, null, new KeySample(InputKey.Digit7, true, KeyModifiers.None, 3));
+        Assert.DoesNotContain(ui.TakeActions(), action => action is FlatViewAction);
+    }
+
+    // The review of the branch: on a portrait display the top bar ends 12 pixels left of the button "Views", also with "not
+    // saved" on a phone of 360 pixels.
+    [Theory]
+    [InlineData(360, 640)]
+    [InlineData(390, 844)]
+    public void The_Top_Bar_Ends_Left_Of_The_Button_Views(int width, int height)
+    {
+        var display = new Vector2(width, height);
+        using var ui = new DesktopUi("http://127.0.0.1:5180", Engine.Contracts.Document.Millimetre);
+        ui.ShowStatus(new SessionStatus(4, false, null, false));
+        Frame(ui, display, null);
+        Frame(ui, display, null);
+        var (title, button) = (Item(ui, DesktopUi.TitleItem), Item(ui, DesktopUi.ViewsLabel));
+        Assert.True(title.Z <= button.X - 12f + 0.5f, $"{width}x{height}: the top bar {title} reaches the button {button}.");
+    }
 }

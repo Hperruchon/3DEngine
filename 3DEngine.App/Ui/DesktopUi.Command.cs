@@ -83,7 +83,7 @@ internal sealed unsafe partial class DesktopUi
     private void WatchCommandKey(IReadOnlyList<InputSample> samples)
     {
         if (samples.Any(sample => sample is KeySample { Key: InputKey.K, Down: true } key && (key.Modifiers & KeyModifiers.Control) != 0))
-            _focusCommand = true;
+            (_focusCommand, _quietViewKeys) = (true, 3);
     }
 
     // ADR-0127 item 4 (phase R18g, TASK-0354): F, down and with no Control, does what the command Frame does. The key is not

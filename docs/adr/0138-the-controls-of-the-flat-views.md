@@ -44,12 +44,14 @@ On 2026-11-14 the owner ordered work alone until Sunday, with the recommended op
    The cell of the view of the camera has the colour of a tool in use.
 2. **The button "Views" (amends ADR-0127 item 4 and ADR-0100 item 1).** "Views" opens and closes the net. On a landscape
    display it is on the row of the anchors after Redo, before the step of Undo, and the net opens above the anchors. On a
-   portrait display, which has no command line, it is at the upper right; the path line ends 12 pixels left of it, and the
-   net opens under the button and the path line. A tap on a cell gives its view and closes the net. So a view takes two
-   taps, not one (amends the phrase "one tap each" of row R21 and ADR-0137 item 5).
+   portrait display, which has no command line, it is at the upper right; the top bar and the path line end 12 pixels left
+   of it, with the unit text cut to the room, and the net opens under the button and the path line. A tap on a cell gives
+   its view and closes the net. So a view takes two taps, not one (amends the phrase "one tap each" of row R21 and ADR-0137
+   item 5).
 3. **The keys.** With no field, no pad and no home screen that takes the keys, as F of ADR-0127 item 4: 1 gives Front, 3
    Right and 7 Top; with Control, 1 gives Back, 3 Left and 7 Bottom; 0 gives the 3D view. The keys follow the place of the
-   key on the top row and on the pad, so an AZERTY keyboard needs no Shift.
+   key on the top row and on the pad, so an AZERTY keyboard needs no Shift. The keys rest in the frame of Control and K and in
+   the two frames after it, before the field takes the keys.
 4. **No contract change.** The controls are presentation (ADR-0007).
 
 ## Consequences
@@ -70,3 +72,4 @@ is closed.
 
 - 2026-11-14 · TASK-0370 · The record, from row R21b and ADR-0137 item 5, under the order of the owner of 2026-11-14.
 - 2026-11-14 · TASK-0370 · Shipped at v0.355.
+- 2026-11-14 · TASK-0370 · Before the merge: the top bar ends left of the button, and the keys rest after Control and K.

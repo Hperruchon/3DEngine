@@ -44,6 +44,9 @@ internal sealed unsafe partial class DesktopUi
     // True while the net of a portrait display is open.
     private bool _viewsOpen;
 
+    // The count of frames in which the keys of the views rest after Control and K (see Frame).
+    private int _quietViewKeys;
+
     // The host gives the view of the camera before each frame.
     public void ShowView(FlatView? view) => _view = view;
 

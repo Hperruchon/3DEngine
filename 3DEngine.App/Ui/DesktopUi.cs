@@ -470,8 +470,13 @@ internal sealed unsafe partial class DesktopUi : IDisposable
         if (_pad is null && !_textActive && _home is null)
         {
             WatchFrameKey(samples);
-            // ADR-0138 (phase R21b, TASK-0370): the keys of the flat views, under the same guard.
-            WatchViewKeys(samples);
+            // ADR-0138 (phase R21b, TASK-0370): the keys of the flat views, under the same guard. The review of the branch found
+            // that a digit in the two frames after Control and K gave a view, before the field took the keys; so the keys of the
+            // views rest in the frame of Control and K and in the two frames after it.
+            if (_quietViewKeys > 0)
+                _quietViewKeys--;
+            else
+                WatchViewKeys(samples);
         }
 
         // ADR-0032 item 6: while the pad is open, it takes each key and each text of the frame.
