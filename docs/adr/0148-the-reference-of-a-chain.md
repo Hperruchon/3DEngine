@@ -7,7 +7,7 @@ date: 2026-11-14
 supersedes: []
 superseded-by: []
 amends: ['0146']
-amended-by: ['0149']
+amended-by: ['0149', '0151']
 affects:
   - 3DEngine.App/EdgeValues.cs
   - 3DEngine.App/Ui/DesktopUi.Values.cs
@@ -61,3 +61,5 @@ they fix by the total, in parentheses, so a drawing has no gap and no extra valu
   2026-11-14.
 - 2026-11-14 · TASK-0383 · Shipped at v0.368.
 - 2026-11-14 · TASK-0384 · ADR-0149 item 3 amends item 2: a line closes a chain only when the design fixes its length.
+- 2026-11-14 · TASK-0387 · ADR-0151 item 1 amends item 2: a reference on the line of a value that the view shows does not
+  show.
