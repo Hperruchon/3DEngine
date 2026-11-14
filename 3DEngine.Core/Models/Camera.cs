@@ -3,6 +3,21 @@ using System.Numerics;
 namespace ThreeDEngine.Core.Models;
 
 /// <summary>
+/// ADR-0137 (phase R21a, TASK-0369): a flat view of the camera, along an axis of the world, with no perspective. Front looks
+/// from the side of negative y with z up (the yaw of 0), Right from positive x, Back from positive y, Left from negative x,
+/// Top from above and Bottom from below.
+/// </summary>
+public enum FlatView
+{
+    Front,
+    Right,
+    Back,
+    Left,
+    Top,
+    Bottom,
+}
+
+/// <summary>
 /// The orbit camera of a host that draws (ADR-0023 item 2). It is render state: a
 /// person moves it, it never enters the Document, and two hosts may hold different
 /// cameras (ADR-0007, ADR-0009 §3).
@@ -176,9 +191,66 @@ public sealed class Camera : Entity
 
     private double _pitchDegrees;
 
-    /// <summary>Turns the camera about its target. The pitch stays between -89 and 89 degrees.</summary>
+    /// <summary>
+    /// ADR-0137 item 1 (phase R21a, TASK-0369): the flat view of the camera, or null for the view with perspective. A flat
+    /// view has its exact axes, a pitch of 90 or -90 degrees for Top and Bottom, and a projection with no perspective, at
+    /// the scale that the perspective gives at the target, so the part keeps its size on the screen.
+    /// </summary>
+    public FlatView? Flat => _flat;
+
+    private FlatView? _flat;
+
+    // The yaw and the pitch of the view with perspective before the first flat view, which the return to it gives back.
+    private (double Yaw, double Pitch)? _perspective;
+
+    /// <summary>ADR-0137 item 1: shows the flat view. The target and the distance do not change.</summary>
+    public void ShowFlat(FlatView view)
+    {
+        _perspective ??= (YawDegrees, PitchDegrees);
+        _flat = view;
+        YawDegrees = view switch { FlatView.Right => 90.0, FlatView.Back => 180.0, FlatView.Left => 270.0, _ => 0.0 };
+        PitchDegrees = view switch { FlatView.Top => MaximumPitchDegrees, FlatView.Bottom => MinimumPitchDegrees, _ => 0.0 };
+    }
+
+    /// <summary>ADR-0137 item 2: the return to the view with perspective, with the yaw and the pitch before the flat views.</summary>
+    public void ShowPerspective()
+    {
+        if (_perspective is { } before)
+            (YawDegrees, PitchDegrees) = before;
+        (_flat, _perspective) = (null, null);
+    }
+
+    // The exact pitch of the view: 90 or -90 degrees for Top and Bottom, else the pitch.
+    private double ViewPitchDegrees => _flat switch { FlatView.Top => 90.0, FlatView.Bottom => -90.0, _ => PitchDegrees };
+
+    /// <summary>
+    /// ADR-0137 item 3: the right, the up and the forward direction of the screen in the world, from the yaw and the pitch
+    /// of the view. The view, the ray of a pick, the overlay of a sketch and the gizmo take their axes from here; at a pitch
+    /// of 90 degrees the up of the screen is the direction away from the eye of the front view.
+    /// </summary>
+    public ((double X, double Y, double Z) Right, (double X, double Y, double Z) Up, (double X, double Y, double Z) Forward) Axes()
+    {
+        var yaw = YawDegrees * Math.PI / 180.0;
+        var pitch = ViewPitchDegrees * Math.PI / 180.0;
+        var forward = ToWorld((-Math.Cos(pitch) * Math.Sin(yaw), -Math.Sin(pitch), -Math.Cos(pitch) * Math.Cos(yaw)));
+        var right = ToWorld((Math.Cos(yaw), 0.0, -Math.Sin(yaw)));
+        var up = ToWorld((-Math.Sin(pitch) * Math.Sin(yaw), Math.Cos(pitch), -Math.Sin(pitch) * Math.Cos(yaw)));
+        return (right, up, forward);
+    }
+
+    /// <summary>
+    /// ADR-0137 item 3: the size in the world of one unit of the screen at the target, the tangent of the half field of view
+    /// times the distance. A flat view projects each point at this scale, whatever its depth.
+    /// </summary>
+    public double HalfHeight => Distance * Math.Tan(FieldOfViewDegrees * Math.PI / 360.0);
+
+    /// <summary>
+    /// Turns the camera about its target. The pitch stays between -89 and 89 degrees. ADR-0137 item 2: an orbit leaves a
+    /// flat view and turns from its direction.
+    /// </summary>
     public void Orbit(double yawDegrees, double pitchDegrees)
     {
+        (_flat, _perspective) = (null, null);
         YawDegrees = (YawDegrees + yawDegrees) % 360.0;
         PitchDegrees = Math.Clamp(PitchDegrees + pitchDegrees, MinimumPitchDegrees, MaximumPitchDegrees);
     }
@@ -205,12 +277,9 @@ public sealed class Camera : Entity
         // The size of one pixel at the depth of the target.
         var scale = 2.0 * Distance * Math.Tan(FieldOfViewDegrees * Math.PI / 360.0) / pictureHeight;
 
-        var yaw = YawDegrees * Math.PI / 180.0;
-        var pitch = PitchDegrees * Math.PI / 180.0;
-
-        // The right and up directions of the view, from the eye toward the target.
-        var right = ToWorld((Math.Cos(yaw), 0.0, -Math.Sin(yaw)));
-        var up = ToWorld((-Math.Sin(pitch) * Math.Sin(yaw), Math.Cos(pitch), -Math.Sin(pitch) * Math.Cos(yaw)));
+        // The right and up directions of the view, from the eye toward the target (ADR-0137 item 3: from Axes, so a flat
+        // view from the top pans along its exact axes).
+        var (right, up, _) = Axes();
 
         // A drag to the right moves the scene to the right, so the target moves to the left;
         // a drag down (y down on the screen) moves the target up.
@@ -262,10 +331,8 @@ public sealed class Camera : Entity
     /// <summary>The position of the eye, in double precision.</summary>
     public (double X, double Y, double Z) Eye()
     {
-        var yaw = YawDegrees * Math.PI / 180.0;
-        var pitch = PitchDegrees * Math.PI / 180.0;
-        var d = ToWorld((Math.Cos(pitch) * Math.Sin(yaw), Math.Sin(pitch), Math.Cos(pitch) * Math.Cos(yaw)));
-        return (Target.X + Distance * d.X, Target.Y + Distance * d.Y, Target.Z + Distance * d.Z);
+        var forward = Axes().Forward;
+        return (Target.X - Distance * forward.X, Target.Y - Distance * forward.Y, Target.Z - Distance * forward.Z);
     }
 
     /// <summary>
@@ -276,9 +343,9 @@ public sealed class Camera : Entity
     /// </summary>
     public Matrix4x4 View()
     {
-        var eye = Eye();
-        var forward = new Vector3((float)(Target.X - eye.X), (float)(Target.Y - eye.Y), (float)(Target.Z - eye.Z));
-        return Matrix4x4.CreateLookAt(Vector3.Zero, forward, ZUp ? Vector3.UnitZ : Vector3.UnitY);
+        // ADR-0137 item 3: the up of the screen from Axes, so a flat view from the top has a view.
+        var (_, up, forward) = Axes();
+        return Matrix4x4.CreateLookAt(Vector3.Zero, new Vector3((float)forward.X, (float)forward.Y, (float)forward.Z), new Vector3((float)up.X, (float)up.Y, (float)up.Z));
     }
 
     /// <summary>
@@ -295,6 +362,18 @@ public sealed class Camera : Entity
         var yScale = 1.0f / MathF.Tan(FieldOfViewDegrees * MathF.PI / 360.0f);
         var near = NearPlane;
         var far = FarPlane;
+
+        // ADR-0137 item 3: a flat view has no perspective. The half height of the picture at each depth is HalfHeight, and
+        // the depth is reversed as in the perspective: 1 on the near plane and 0 on the far plane.
+        if (_flat is not null)
+        {
+            var half = (float)HalfHeight;
+            return new Matrix4x4(
+                1f / (half * aspect), 0, 0, 0,
+                0, 1f / half, 0, 0,
+                0, 0, 1f / (far - near), 0,
+                0, 0, far / (far - near), 1);
+        }
 
         return new Matrix4x4(
             yScale / aspect, 0, 0, 0,

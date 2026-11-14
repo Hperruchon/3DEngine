@@ -36,7 +36,7 @@ names. Do not read all of them.
 | [0020](0020-document-version-meaning.md) | The meaning of the document version | Accepted | Contracts, runtime, observability | 0006, 0008, 0010 | — |
 | [0021](0021-operand-consumption.md) | Operand consumption and the live body set | Amended | Contracts, geometry, observability | 0012 | 0028, 0031, 0033, 0037 |
 | [0022](0022-first-render-pipeline.md) | The first render pipeline | Amended | Rendering, boundary | 0009, 0017 | 0025 |
-| [0023](0023-camera-depth-and-draw-list.md) | The camera, the depth and the draw list of the renderer | Amended | Rendering | — | 0024, 0026, 0096 |
+| [0023](0023-camera-depth-and-draw-list.md) | The camera, the depth and the draw list of the renderer | Amended | Rendering | — | 0024, 0026, 0096, 0137 |
 | [0024](0024-in-process-events-and-body-origin.md) | The events of a session in its host, and the origin of a body in double precision | Accepted | Rendering, clients | 0019, 0023 | — |
 | [0025](0025-observe-a-cut.md) | The first demonstration, a device with no window, and an image test | Amended | Rendering, boundary | 0009, 0017, 0022 | 0029, 0094 |
 | [0026](0026-intent-layer.md) | Device-tagged pointer samples, an intent layer, and a parity test of touch and mouse | Amended | Rendering, clients | 0023 | 0027, 0029, 0032, 0034, 0038, 0041 |
@@ -142,6 +142,7 @@ names. Do not read all of them.
 | [0134](0134-the-arc-of-a-proposal-right-of-the-rows.md) | The arc of a proposal moves right of the rows of the selected body, and its lines keep off the tools of the ring | Accepted | Clients, rendering | 0092, 0133 | — |
 | [0135](0135-the-arc-of-a-proposal-on-a-portrait-display.md) | On a portrait display the arc of a proposal is at the top, and a sheet of its lines is under it | Accepted | Clients, rendering | 0092, 0111, 0131 | — |
 | [0136](0136-the-arc-ends-before-the-tools-and-the-caption-wraps.md) | The arc of a proposal ends before each tool of the ring, and the whole caption under it wraps | Accepted | Clients, rendering | 0092, 0133 | — |
+| [0137](0137-the-flat-views-of-the-camera.md) | The camera has six flat views with no perspective, and the command line gives each one | Accepted | Rendering, clients | 0023 | — |
 
 ## Topics
 

@@ -1,6 +1,7 @@
 using System.Numerics;
 using ImGuiNET;
 using ThreeDEngine.Core.Input;
+using ThreeDEngine.Core.Models;
 using ThreeDEngine.Core.Numeric;
 
 namespace ThreeDEngine.Desktop.Ui;
@@ -157,8 +158,25 @@ internal sealed unsafe partial class DesktopUi
         // ADR-0127 item 4 (phase R18g, TASK-0354): Home left the row of the anchors on a landscape display, so the command
         // line holds it, as it holds Frame.
         commands.Add((HomeLabel, () => _actions.Add(new HomeAction())));
+        // ADR-0137 item 4 (phase R21a, TASK-0369): the six flat views and the return to the view with perspective.
+        foreach (var (label, view) in FlatViews)
+            commands.Add((label, () => _actions.Add(new FlatViewAction(view))));
         return commands;
     }
+
+    // ADR-0137 item 4: the name of each flat view in the command line, and of the return to the view with perspective.
+    public const string PerspectiveViewLabel = "3D view";
+
+    internal static readonly IReadOnlyList<(string Label, FlatView? View)> FlatViews =
+    [
+        ("Front view", FlatView.Front),
+        ("Back view", FlatView.Back),
+        ("Left view", FlatView.Left),
+        ("Right view", FlatView.Right),
+        ("Top view", FlatView.Top),
+        ("Bottom view", FlatView.Bottom),
+        (PerspectiveViewLabel, null),
+    ];
 
     // ADR-0128 item 1 (phase R18h, TASK-0357): a text that the evaluator of the pad reads as a number gives, first, one
     // command for each value that the frame shows, and "Extrude" while a sketch is active, each named with the result. A
