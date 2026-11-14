@@ -7,7 +7,7 @@ date: 2026-11-08
 supersedes: []
 superseded-by: []
 amends: []
-amended-by: ['0107', '0108', '0110', '0111', '0113', '0130', '0133', '0134', '0135']
+amended-by: ['0107', '0108', '0110', '0111', '0113', '0130', '0133', '0134', '0135', '0136']
 affects:
   - Engine.Api.Http/Proposals.cs
   - Engine.Api.Http/Endpoints/ProposalsEndpoint.cs
@@ -156,3 +156,5 @@ first one.
   rows, its ring moves right of them, if the arc stays in the display.
 - 2026-11-14 · TASK-0368 · ADR-0135 item 1 amends item 7: on a portrait display the proposal is an arc at the top, and a
   sheet of its lines with no buttons is under it.
+- 2026-11-14 · TASK-0367 · ADR-0136 item 1 amends item 7: the arc ends at 305 degrees or earlier, where Accept and its
+  word lie on no target of a tool of the ring.

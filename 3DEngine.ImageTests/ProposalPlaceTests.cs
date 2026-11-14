@@ -88,4 +88,51 @@ public sealed class ProposalPlaceTests
         if (width == 1024)
             Assert.True(moved > 0, "No ring of the arc moved right of the rows at 1024 by 768.");
     }
+
+    // Finding V183 of the codebase review of 2026-11-14 (c) (TASK-0367): with the chip of the width at each place inside the
+    // ring, each block of lines that moved left has the left corners of its plate inside the inner circle (ADR-0134 item 2).
+    // The plate is 10 pixels wider than the widest line on each side, 6 pixels higher than the first line and 6 pixels lower
+    // than the last.
+    [Theory]
+    [InlineData(1024, 768)]
+    [InlineData(1280, 720)]
+    [InlineData(1440, 900)]
+    public void A_Block_That_Moves_Left_Stays_Inside_The_Inner_Circle(int width, int height)
+    {
+        var display = new Vector2(width, height);
+        var centre = new Vector2(width * 0.55f, height * 0.55f);
+        var faults = new List<string>();
+        var moved = 0;
+        for (var dx = -240; dx <= 240; dx += 30)
+        {
+            for (var dy = -240; dy <= 60; dy += 15)
+            {
+                IReadOnlyList<EdgeValues.Value> values = [new(EdgeValues.ConstraintKey(Width), "60.000 mm", centre + new Vector2(dx, dy), 60, Bracket, Sketch, Width, "Width", Name: "C1")];
+                using var ui = new DesktopUi("http://127.0.0.1:5180", Engine.Contracts.Document.Millimetre);
+                for (var frame = 0; frame < 3; frame++)
+                {
+                    ui.Route([]);
+                    ui.Frame(1f / 60f, display, Vector2.One, [Body], Bracket, null, ringCentre: centre, values: values, history: Steps, proposals: [Card]);
+                }
+
+                var ring = ui.ProposalRing ?? throw new InvalidOperationException("No ring.");
+                var lines = ui.ProposalTexts.Keys.Where(item => item.StartsWith("Proposal:line:", StringComparison.Ordinal) || item is DesktopUi.ProposalCountItem or DesktopUi.ProposalWholeCaptionItem)
+                    .Select(item => ui.ItemRectangle(item)).Where(box => box is not null).Select(box => box!.Value).ToList();
+                if (lines.Count == 0)
+                    continue;
+                var plate = new Vector4(lines.Min(box => box.X) - 10f, lines.Min(box => box.Y) - 6f, lines.Max(box => box.Z) + 10f, lines.Max(box => box.W) + 6f);
+                if ((plate.X + plate.Z) / 2f >= ring.Centre.X - 1f)
+                    continue;
+                moved++;
+                foreach (var corner in new[] { new Vector2(plate.X, plate.Y), new Vector2(plate.X, plate.W) })
+                {
+                    if (Vector2.Distance(corner, ring.Centre) > ring.Inner + 0.5f)
+                        faults.Add($"chip at {dx}/{dy}: the corner {corner} of the plate {plate} is {Vector2.Distance(corner, ring.Centre) - ring.Inner} pixels past the inner circle");
+                }
+            }
+        }
+
+        Assert.True(moved > 0, "No block moved left.");
+        Assert.True(faults.Count == 0, string.Join("; ", faults));
+    }
 }
