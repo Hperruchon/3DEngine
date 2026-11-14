@@ -10549,3 +10549,32 @@ New tests: 13, and 6 cases of the old sheet went. The test list holds 2569 (1552
 657 in `3DEngine.ImageTests`, 3 in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and
 zero warnings. Open entries: 15 of 15. New diagnostic codes: 0. Since the review of v0.351, 1 product milestone and 1 entry
 followed it.
+
+## v0.353 — The whole caption under the arc wraps, and the arc ends before each tool of the ring (P0.148, TASK-0367)
+
+The codebase review of 2026-11-14 (c) (v0.351) gave one medium finding, V181, and three low findings, V182 to V184, after the
+next product phase, R18o.
+
+**The change.** ADR-0136 amends ADR-0092 item 7 and ADR-0133 item 1.
+- V181: the whole caption under the arc wraps at its spaces into lines that each fit the chord at their height; only a word
+  wider than the chord is cut.
+- V182: the step texts keep the count of the log right after the applied event of each of the last commands, and the host
+  gives "Undo" of the line the count after the last command of the proposal, not the count of the frame that sees the end
+  of the accept.
+- V183: the left limit of a moved block of lines tests the circle at the edge of its plate farther from the centre.
+- V184: the arc ends at 305 degrees or earlier, down to 255 degrees, at the first angle where Accept and its word lie on no
+  target of a tool of the ring; the caption has its middle at the middle of the arc.
+
+**Proof.** A theory at two sizes proves that a summary longer than the chord shows whole in lines. A test with the session
+proves the count after the last command of a proposal with a later command of another client. A theory at three sizes over
+a sweep of chips proves the corners of each moved block inside the circle. The test of the angles of the arc proves that
+neither Accept nor its word lies on a tool target. Four injections each failed a named test; each file came back byte for
+byte. The test of V160 no longer finds an end on a tool, so its control went; the guard stays. The phone project builds with
+zero warnings. Run 43559073792 passed on the branch. The failed runs since the entry v0.352, from the API: none.
+
+**What stays.** On most landscape layouts the arc is shorter than 70 degrees, so less of the caption fits on the band. No
+person saw the change.
+
+New tests: 6. The test list holds 2575 (1552 in `Engine.Tests`, 357 in `3DEngine.Tests`, 663 in `3DEngine.ImageTests`, 3
+in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
+entries: 15 of 15. New diagnostic codes: 0. Since the review of v0.351, 2 product milestones and 2 entries followed it.

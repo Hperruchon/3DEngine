@@ -1,7 +1,7 @@
 ---
 id: 0367
 title: The medium and low findings of the codebase review of 2026-11-14 (c)
-status: Active
+status: Done
 phase: P0.148
 opened: 2026-11-14
 depends-on: [0366]
@@ -58,17 +58,17 @@ block of lines stays inside the inner circle, and "Edit sketch" takes a tap whil
 
 ## Acceptance criteria
 
-- [ ] A test proves with a summary longer than the chord that each word of it shows.
-- [ ] A test proves that a command of another client after the accept takes "Undo" away.
-- [ ] A test proves that the plate of a moved block is inside the inner circle.
-- [ ] A test proves that no end of the arc lies on the target of a tool of the ring.
-- [ ] A clean build (`--no-incremental`) gives zero errors and zero warnings, and the phone project builds.
-- [ ] `dotnet test`, the write-set check and `eng/repo-gates` pass; continuous integration passes on the branch and on
+- [x] A test proves with a summary longer than the chord that each word of it shows.
+- [x] A test proves that a command of another client after the accept takes "Undo" away.
+- [x] A test proves that the plate of a moved block is inside the inner circle.
+- [x] A test proves that no end of the arc lies on the target of a tool of the ring.
+- [x] A clean build (`--no-incremental`) gives zero errors and zero warnings, and the phone project builds.
+- [x] `dotnet test`, the write-set check and `eng/repo-gates` pass; continuous integration passes on the branch and on
       `main` after the merge.
 
 ## Outcome
 
-Status: Active
+Status: Done · commit (the merge of the branch p0148-review-findings) · v0.353
 
 ## Method
 
@@ -88,3 +88,5 @@ Weakest:    on most landscape layouts the arc is shorter, so less of the caption
   its control went; the guard of V160 stays for a ring with no free angle. The box of a turned letter at an end passes the
   box of the round circle by up to a pixel, so the caption test allows 2 pixels. Four injections each failed a named test.
   Each file came back byte for byte.
+- 2026-11-14: run 43559073792 passed on the work commit. The picture of the mix test at 1280 by 720 shows Accept above
+  "Edit sketch", which is free. Closed at v0.353.
