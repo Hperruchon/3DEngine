@@ -1,13 +1,13 @@
 ---
 id: 0146
 title: In a flat view a value shows only where its length is true, and row R22 splits into four slices
-status: Accepted
+status: Amended
 topic: Clients, drawing
 date: 2026-11-14
 supersedes: []
 superseded-by: []
 amends: ['0082']
-amended-by: []
+amended-by: ['0148']
 affects:
   - 3DEngine.App/EdgeValues.cs
   - 3DEngine.ImageTests/FlatViewValuesTests.cs
@@ -62,3 +62,5 @@ sheet (P10) needs its own rule for such a value.
 
 - 2026-11-14 · TASK-0381 · The record, from row R22 and ADR-0118 item 5, under the order of the owner of 2026-11-14.
 - 2026-11-14 · TASK-0381 · Shipped at v0.365.
+- 2026-11-14 · TASK-0383 · ADR-0148 item 1 amends item 1: a value whose length the view does not show true keeps its row
+  and has no chip.
