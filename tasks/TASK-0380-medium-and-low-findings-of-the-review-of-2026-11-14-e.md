@@ -1,7 +1,7 @@
 ---
 id: 0380
 title: The medium and low findings of the codebase review of 2026-11-14 (e)
-status: Active
+status: Done
 phase: P0.152
 opened: 2026-11-14
 depends-on: [0379, 0381]
@@ -50,15 +50,15 @@ The test of the circles reads its hidden lines, and a flat end draws one line.
 
 ## Acceptance criteria
 
-- [ ] The test of the circles of a Document asserts the ends of its hidden lines.
-- [ ] A test proves one line for an end of a cylinder that two turns laid on its side.
-- [ ] A clean build (`--no-incremental`) gives zero errors and zero warnings, and the phone project builds.
-- [ ] `dotnet test`, the write-set check and `eng/repo-gates` pass; continuous integration passes on the branch and on
+- [x] The test of the circles of a Document asserts the ends of its hidden lines.
+- [x] A test proves one line for an end of a cylinder that two turns laid on its side.
+- [x] A clean build (`--no-incremental`) gives zero errors and zero warnings, and the phone project builds.
+- [x] `dotnet test`, the write-set check and `eng/repo-gates` pass; continuous integration passes on the branch and on
       `main` after the merge.
 
 ## Outcome
 
-Status: Active
+Status: Done · commit (the merge of the branch p0152-review-findings) · v0.366
 
 ## Method
 
@@ -74,3 +74,4 @@ Weakest:    a second tolerance of 1e-9.
   the rounding. A first rule removed only the hidden pieces under the visible ones; both halves of a flat end were visible, so
   the end was 64 lines. The rule now takes the pieces as intervals on the diameter. Five injections each failed a named test;
   each file came back byte for byte.
+- 2026-11-14: run 43576533842 passed on the work commit. Closed at v0.366.

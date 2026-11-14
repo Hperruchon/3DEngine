@@ -412,6 +412,8 @@ Therefore each approved objective must have a track here.
   along the axis, an axis within 1e-9 of the view is along it, and Frame leaves a window at the right. v0.364, TASK-0379,
   ADR-0145.
 - R22a — In a flat view a value shows only where its length is true. v0.365, TASK-0381, ADR-0146.
+- P0.152 — The medium and low findings of the codebase review of 2026-11-14 (e): an end within 1e-9 of across the view is
+  one line on its diameter, and the test of the circles reads its hidden lines. v0.366, TASK-0380, ADR-0147.
 - Review — The codebase review of 2026-11-14 (c). v0.351, TASK-0366.
 - P0.143 — The low findings of the codebase review of 2026-11-11: a triangle of zero area adds no edge, and a mesh of
   more than 100 000 triangles finds its edges on the thread pool. v0.332, TASK-0345, ADR-0121.
