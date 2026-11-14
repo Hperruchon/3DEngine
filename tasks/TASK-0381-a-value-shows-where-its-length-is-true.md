@@ -1,7 +1,7 @@
 ---
 id: 0381
 title: In a flat view a value shows only where its length is true
-status: Active
+status: Done
 phase: R22a
 opened: 2026-11-14
 depends-on: [0379]
@@ -49,16 +49,16 @@ A flat view shows only the values whose length it shows true.
 
 ## Acceptance criteria
 
-- [ ] ADR-0146 exists, and ADR-0082 shows the amendment.
-- [ ] Tests prove the values of a plate in the six flat views and with perspective, the radius of a disc and of a half arc,
+- [x] ADR-0146 exists, and ADR-0082 shows the amendment.
+- [x] Tests prove the values of a plate in the six flat views and with perspective, the radius of a disc and of a half arc,
       and the rule of the circle of a radius against its chord.
-- [ ] A clean build (`--no-incremental`) gives zero errors and zero warnings, and the phone project builds.
-- [ ] `dotnet test`, the write-set check and `eng/repo-gates` pass; continuous integration passes on the branch and on
+- [x] A clean build (`--no-incremental`) gives zero errors and zero warnings, and the phone project builds.
+- [x] `dotnet test`, the write-set check and `eng/repo-gates` pass; continuous integration passes on the branch and on
       `main` after the merge.
 
 ## Outcome
 
-Status: Active
+Status: Done · commit (the merge of the branch r22a-true-values) · v0.365
 
 ## Method
 
@@ -74,3 +74,4 @@ Weakest:    no person used it in the window.
   for byte. A fifth injection passed the rule of a length for a radius at its call; on the edges of GetFaces the segments of
   an arc are not in the order of a chain, so the chord leans and the rule of a length hides that radius too. A direct test
   holds the rule of the circle.
+- 2026-11-14: run 43575434859 passed on the work commit. Closed at v0.365.

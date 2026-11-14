@@ -61,3 +61,4 @@ sheet (P10) needs its own rule for such a value.
 ## History
 
 - 2026-11-14 · TASK-0381 · The record, from row R22 and ADR-0118 item 5, under the order of the owner of 2026-11-14.
+- 2026-11-14 · TASK-0381 · Shipped at v0.365.
