@@ -10205,3 +10205,29 @@ New tests: 10, and one case of a theory less. The test list holds 2515 (1552 in 
 `3DEngine.Tests`, 603 in `3DEngine.ImageTests`, 3 in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental`
 gives zero errors and zero warnings. Open entries: 14 of 15. New diagnostic codes: 0. Since the review of v0.333, 4 product
 milestones and 6 entries followed it.
+
+## v0.340 — The codebase review of 2026-11-14 (governance, TASK-0355)
+
+Four product milestones (R20b1, R20b2, R20c and R18g) and six entries followed the review of v0.333, so the next product
+milestone needs a review first. On 2026-11-14 the owner ordered work alone until Sunday, with the rules of the order of
+2026-11-05.
+
+**The review.** `docs/reviews/2026-11-14-codebase-review.md` examines `main` at `af78473`.
+- V168 to V172 of the last review are fixed (P0.144 and R20b1). Each fix has a test that the pipeline runs.
+- No new finding is critical or high. V173 is medium: a plate of the dimensions goes under the window of the live sketches,
+  the card of a proposal and the window of the images, because those windows come later in the frame. V174 is medium:
+  "Show all" and the last rows of the list of the hidden bodies are outside the list on a small landscape display.
+- Three new findings are low: V175 (the fix of V171 holds for one exact sliver only), V176 (a plate that no move frees ends
+  at the top edge, on the other plates) and V177 (the text of a step goes to the first applied command with its name).
+- TASK-0356 (P0.146) holds V173 to V177, after the next product phase (R18h).
+- Open findings: 0 critical, 2 high, 8 medium and 19 low.
+
+**Proof.** One agent examined the change from v0.332 to v0.339 with probes in a copy of the commit. The session took the
+measures with a script whose values at v0.332 equal the last review, ran each probe again and read each finding in the
+code. Two corrections of the report of the agent: the stuck plate is in a consequence of ADR-0125, so V176 is its place on
+the other plates; and an accept holds each value edit, so V177 has no form in which an edit clears the texts of an accept.
+`CodebaseReviewGateTests` passes with the new review.
+
+New tests: 0. The test list holds 2515 (1552 in `Engine.Tests`, 357 in `3DEngine.Tests`, 603 in `3DEngine.ImageTests`, 3
+in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
+entries: 14 of 15. New diagnostic codes: 0. This entry is a codebase review, so 0 product milestones and 0 entries follow it.
