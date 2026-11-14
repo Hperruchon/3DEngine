@@ -1,13 +1,13 @@
 ---
 id: 0140
 title: Frame fits the bodies in the free part of the scene, and the centre of the picture moves there
-status: Accepted
+status: Amended
 topic: Rendering, clients
 date: 2026-11-14
 supersedes: []
 superseded-by: []
 amends: ['0023', '0137']
-amended-by: []
+amended-by: ['0145']
 affects:
   - 3DEngine.Core/Models/Camera.cs
   - 3DEngine.Core/Picking/Picker.cs
@@ -70,3 +70,5 @@ it.
 - 2026-11-14 · TASK-0372 · The record, from row R21c and problem 6 of the UX test of 2026-11-10, under the order of the owner
   of 2026-11-14.
 - 2026-11-14 · TASK-0372 · Shipped at v0.358.
+- 2026-11-14 · TASK-0379 · ADR-0145 item 3 amends item 3: a tall window at the right edge cuts the free part, as the panel
+  at the left does.

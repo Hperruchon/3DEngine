@@ -12,16 +12,36 @@ public sealed class FrameFreePartWindowTests
 {
     private static readonly LiveBody Body = new(Guid.Parse("7b000000-0000-0000-0000-000000000001"), "Box", "Block", true);
 
-    private static DesktopUi Shown(Vector2 display, Guid? selection)
+    private static DesktopUi Shown(Vector2 display, Guid? selection, SketchPanel? sketches = null)
     {
         var ui = new DesktopUi("http://127.0.0.1:5180", Engine.Contracts.Document.Millimetre);
         for (var frame = 0; frame < 3; frame++)
         {
             ui.Route([]);
-            ui.Frame(1f / 60f, display, Vector2.One, [Body], selection, new DocumentLine("block", null), ringCentre: selection is null ? null : display / 2f, ringBody: 80f);
+            ui.Frame(1f / 60f, display, Vector2.One, [Body], selection, new DocumentLine("block", null), ringCentre: selection is null ? null : display / 2f, ringBody: 80f,
+                sketchPanel: sketches);
         }
 
         return ui;
+    }
+
+    // Finding V191 of the codebase review of 2026-11-14 (e) (TASK-0379): with a live sketch and no selection, the window of the
+    // live sketches is at the right edge, and the free part lies on no window, that one too.
+    [Theory]
+    [InlineData(1280, 720)]
+    [InlineData(1440, 900)]
+    public void The_Free_Part_Leaves_The_Window_Of_The_Live_Sketches(int width, int height)
+    {
+        var sketch = new Engine.Core.Queries.SketchInfo(Guid.Parse("7b000000-0000-0000-0000-000000000002"), Engine.Contracts.Sketch.Datums.XY.Id, "Plate", [], [], [], [], [], true, 0);
+        var panel = new SketchPanel([sketch], null, ThreeDEngine.Core.Sketching.SketchToolKind.Line, false, [], null);
+        using var ui = Shown(new Vector2(width, height), null, panel);
+        var (x0, y0, x1, y1) = ui.FreePart();
+        var free = new Vector4((float)((x0 + 1) / 2 * width), (float)((1 - y1) / 2 * height), (float)((x1 + 1) / 2 * width), (float)((1 - y0) / 2 * height));
+        static bool Meets(Vector4 a, Vector4 b) => a.X < b.Z - 0.5f && b.X < a.Z - 0.5f && a.Y < b.W - 0.5f && b.Y < a.W - 0.5f;
+
+        Assert.Contains(ui.PanelRectangles, box => box.Z > width * 0.75f && box.X > width * 0.4f);
+        Assert.True(free.Z - free.X >= 100 && free.W - free.Y >= 100, $"{width}x{height}: the free part {free} is too small.");
+        Assert.DoesNotContain(ui.PanelRectangles.Concat(ui.FixedRectangles), cover => Meets(cover, free));
     }
 
     // Item 1: with a shift, the overlay puts a point where the projection of the renderer puts it.
