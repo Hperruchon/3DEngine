@@ -184,10 +184,15 @@ internal sealed unsafe partial class DesktopUi
 
     // ADR-0125 item 4: the controls that a plate must not go under: the fixed controls with the status line, the panels,
     // the rows, the icons, the labels and the caption of the ring, and the nodes and the texts of the history arc.
+    // Finding V173 of the codebase review of 2026-11-14 (TASK-0356): the window of the live sketches, the card of a proposal,
+    // the window of the images and the list of the hidden bodies come after the dimensions in the frame, so the covers hold
+    // the panels and the fixed rectangles of the last frame too, as the ring does.
     private List<Vector4> DimensionCovers()
     {
         var covers = new List<Vector4>(_fixed);
+        covers.AddRange(_lastFixed);
         covers.AddRange(_panels);
+        covers.AddRange(_lastPanels);
         if (_rowsArea is { } rows)
             covers.Add(rows);
         // The items of the ring ("Ring", "RingText", "RingIcon") and of the history arc ("History", "HistoryText", its caption)

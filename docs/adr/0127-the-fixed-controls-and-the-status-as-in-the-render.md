@@ -1,13 +1,13 @@
 ---
 id: 0127
 title: The row of the anchors holds Undo, Redo and the step of Undo, and the status gives the log, the agent and the save
-status: Accepted
+status: Amended
 topic: Clients, rendering
 date: 2026-11-12
 supersedes: []
 superseded-by: []
 amends: ['0083', '0093', '0098']
-amended-by: []
+amended-by: ['0129']
 affects:
   - 3DEngine.App/StepTexts.cs
   - 3DEngine.App/NativeThreeDEngine.cs
@@ -117,3 +117,5 @@ change in the window.
 - 2026-11-12 · TASK-0354 · The record, from slice S7 of the study of the gaps to the render and the answers of the owner of
   2026-11-12.
 - 2026-11-12 · TASK-0354 · Shipped at v0.339.
+- 2026-11-14 · TASK-0356 · ADR-0129 item 3 amends item 2: the window expects the text of a step for the identifier of its
+  command, not for its name (finding V177 of the codebase review of 2026-11-14).

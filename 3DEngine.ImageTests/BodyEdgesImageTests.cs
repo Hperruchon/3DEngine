@@ -108,6 +108,49 @@ public sealed class BodyEdgesImageTests
         Assert.Equal([(0, 1), (0, 4), (1, 6), (2, 3), (2, 6), (3, 4), (4, 5), (5, 6)], edges);
     }
 
+    // Finding V175 of the codebase review of 2026-11-14 (TASK-0356): three forms that the fix of V171 did not cover give only
+    // the border of the flat square: a T-vertex with no sliver, two T-vertices side by side with two slivers, and the mesh of
+    // V171 with its T-vertex at x = 2/3, turned about an oblique axis, where the rounding gives the sliver a small area.
+    [Fact]
+    public void A_T_Vertex_With_No_Sliver_Or_Two_T_Vertices_Add_No_Edge()
+    {
+        double[] none = [0, 0, 0, 2, 0, 0, 2, 2, 0, 0, 2, 0, 0, 1, 0, 1, 1, 0, 2, 1, 0];
+        uint[] noneIndices = [0, 1, 6, 0, 6, 4, 4, 5, 3, 5, 2, 3, 5, 6, 2];
+        Assert.Equal([(0, 1), (0, 4), (1, 6), (2, 3), (2, 6), (3, 4)], EdgeLines.Feature(none, noneIndices));
+
+        double[] two = [0, 0, 0, 2, 0, 0, 2, 2, 0, 0, 2, 0, 0, 1, 0, 0.5, 1, 0, 2, 1, 0, 1.5, 1, 0];
+        uint[] twoIndices = [0, 1, 6, 0, 6, 4, 4, 5, 3, 5, 7, 3, 7, 2, 3, 7, 6, 2, 6, 7, 4, 7, 5, 4];
+        Assert.Equal([(0, 1), (0, 4), (1, 6), (2, 3), (2, 6), (3, 4)], EdgeLines.Feature(two, twoIndices));
+    }
+
+    [Theory]
+    [InlineData(1.0)]
+    [InlineData(2.0 / 3.0)]
+    public void A_Turned_T_Vertex_Inside_A_Flat_Face_Adds_No_Edge(double middle)
+    {
+        double[] flat = [0, 0, 0, 2, 0, 0, 2, 2, 0, 0, 2, 0, 0, 1, 0, middle, 1, 0, 2, 1, 0];
+        // A turn about the axis (1, 2, 3) with a cosine of 0.6 and a sine of 0.8: the numbers of a Rotate command.
+        var (c, s) = (0.6, 0.8);
+        var n = Math.Sqrt(14.0);
+        var (x, y, z) = (1 / n, 2 / n, 3 / n);
+        double[,] r =
+        {
+            { c + (x * x * (1 - c)), (x * y * (1 - c)) - (z * s), (x * z * (1 - c)) + (y * s) },
+            { (y * x * (1 - c)) + (z * s), c + (y * y * (1 - c)), (y * z * (1 - c)) - (x * s) },
+            { (z * x * (1 - c)) - (y * s), (z * y * (1 - c)) + (x * s), c + (z * z * (1 - c)) },
+        };
+        var positions = new double[flat.Length];
+        for (var i = 0; i < flat.Length / 3; i++)
+        {
+            for (var row = 0; row < 3; row++)
+                positions[(3 * i) + row] = (r[row, 0] * flat[3 * i]) + (r[row, 1] * flat[(3 * i) + 1]) + (r[row, 2] * flat[(3 * i) + 2]);
+        }
+
+        uint[] indices = [0, 1, 6, 0, 6, 4, 4, 5, 3, 5, 2, 3, 5, 6, 2, 6, 5, 4];
+
+        Assert.Equal([(0, 1), (0, 4), (1, 6), (2, 3), (2, 6), (3, 4)], EdgeLines.Feature(positions, indices));
+    }
+
     // ADR-0121 (finding V167, TASK-0345): a mesh with more triangles than the count of the upload goes up with no lines, and
     // its edges come from the thread pool to a later frame. A box has 12 triangles, so a count of 11 sends it to the
     // thread pool, and a count of 12 finds its edges at the upload.

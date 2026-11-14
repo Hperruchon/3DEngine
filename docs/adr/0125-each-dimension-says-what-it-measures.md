@@ -1,13 +1,13 @@
 ---
 id: 0125
 title: Each dimension says what it measures, on a plate outside its box, and no control covers it
-status: Accepted
+status: Amended
 topic: Clients, rendering
 date: 2026-11-12
 supersedes: []
 superseded-by: []
 amends: ['0056']
-amended-by: []
+amended-by: ['0129']
 affects:
   - 3DEngine.App/DimensionOverlay.cs
   - 3DEngine.App/Ui/DesktopUi.Overlay.cs
@@ -97,3 +97,5 @@ session, not a rule of the trade. No person used the change in the window.
 
 - 2026-11-12 · TASK-0352 · The record, from improvement C of the UX test of 2026-11-10.
 - 2026-11-12 · TASK-0352 · Shipped at v0.337.
+- 2026-11-14 · TASK-0356 · ADR-0129 item 2 amends item 4: a plate that no move frees stays at its place, and the covers
+  hold the windows of the last frame (findings V173 and V176 of the codebase review of 2026-11-14).
