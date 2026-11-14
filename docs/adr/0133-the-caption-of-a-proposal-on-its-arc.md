@@ -7,7 +7,7 @@ date: 2026-11-14
 supersedes: []
 superseded-by: []
 amends: ['0092']
-amended-by: ['0134']
+amended-by: ['0134', '0136']
 affects:
   - 3DEngine.App/Ui/DesktopUi.Proposal.cs
   - 3DEngine.ImageTests/ProposalCaptionTests.cs
@@ -69,3 +69,5 @@ it shows two times. The lines still have a plate over the part. No person read t
 - 2026-11-14 · TASK-0364 · Shipped at v0.349.
 - 2026-11-14 · TASK-0365 · ADR-0134 item 2 amends item 2: the tools of the ring are obstacles of the block of the
   lines too, and the block moves left of an obstacle at its height.
+- 2026-11-14 · TASK-0367 · ADR-0136 items 2 and 3 amend item 1: the caption has its middle at the middle of the arc,
+  and the whole caption under the arc wraps at its spaces.

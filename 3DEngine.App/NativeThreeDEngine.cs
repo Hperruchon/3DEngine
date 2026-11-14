@@ -114,6 +114,9 @@ public sealed class NativeThreeDEngine : IThreeDEngine, IDisposable
     // ADR-0130 item 4 (phase R18i, TASK-0358): the name of the body that was selected at the accept, for "Applied · Bracket rebuilt".
     private string? _acceptedBody;
 
+    // Finding V182 (TASK-0367): the identifiers of the commands of the running accept, or null.
+    private IReadOnlyList<Guid>? _acceptedCommands;
+
     // ADR-0056 item 6 (phase R13): the distance in effect of the selected body, for its box, so that GetBodyInfo runs one
     // time for each change of the selection or of its solid and not in each frame.
     private (Guid Body, ((double X, double Y, double Z) Min, (double X, double Y, double Z) Max) Still, double? Distance)? _sizeOf;
@@ -523,6 +526,7 @@ public sealed class NativeThreeDEngine : IThreeDEngine, IDisposable
                     }
 
                     _acceptedBody = _renderer?.LiveBodies.FirstOrDefault(live => live.Id == Selection) is { } chosen ? chosen.Name ?? chosen.Kind : null;
+                    _acceptedCommands = _cards?.FirstOrDefault(card => card.Id == accept.Proposal)?.CommandIds;
                     _proposalAccept = Task.Run(() => desk.Accept(accept.Proposal));
                     break;
                 case RejectProposalAction reject when _proposalDesk is { } desk && _proposalAccept is null:
@@ -937,9 +941,10 @@ public sealed class NativeThreeDEngine : IThreeDEngine, IDisposable
         if (_proposalAccept is { IsCompleted: true } accepted)
         {
             // ADR-0130 item 4: an applied proposal gives "Applied · Bracket rebuilt" and the button Undo. Finding V178 (TASK-0362):
-            // the button holds the count of the log at the end of the accept; the events of its commands came inside their commits.
+            // the button holds the count of the log at the end of the accept. Finding V182 (TASK-0367): that count is the count
+            // right after the last command of the proposal, from its events, not the count of this frame.
             if (accepted.IsCompletedSuccessfully && accepted.Result is { State: "accepted" } done)
-                _ui.ShowProposalOutcome(done.AppliedText(_acceptedBody), undoAt: _steps.LogCount);
+                _ui.ShowProposalOutcome(done.AppliedText(_acceptedBody), undoAt: _acceptedCommands is { } commands ? _steps.CountAfter(commands) ?? _steps.LogCount : _steps.LogCount);
             else
                 _ui.ShowProposalOutcome(accepted.IsCompletedSuccessfully ? accepted.Result.Text : $"The accept failed: {accepted.Exception?.GetBaseException().Message}");
             _proposalAccept = null;

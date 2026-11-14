@@ -57,9 +57,16 @@ public sealed class ProposalCaptionTests
         var caption = Item(ui, DesktopUi.ProposalCaptionItem);
 
         Assert.StartsWith("AGENT · Widen", ui.ProposalTexts[DesktopUi.ProposalCaptionItem], StringComparison.Ordinal);
-        Assert.True(Math.Abs(((caption.X + caption.Z) / 2f) - ring.Centre.X) < 4f, $"The middle of the caption {caption} is not at the top of the ring {ring}.");
+        // Finding V184 (TASK-0367): the middle of the caption is at the middle of the arc, which can end before 305 degrees.
+        var (reject, accept) = (Item(ui, DesktopUi.ProposalRejectItem), Item(ui, DesktopUi.ProposalAcceptItem));
+        var from = MathF.Atan2(((reject.Y + reject.W) / 2f) - ring.Centre.Y, ((reject.X + reject.Z) / 2f) - ring.Centre.X);
+        var to = MathF.Atan2(((accept.Y + accept.W) / 2f) - ring.Centre.Y, ((accept.X + accept.Z) / 2f) - ring.Centre.X);
+        var half = (from + to) / 2f;
+        var radius = ring.Inner + (DesktopUi.RingBand / 2f);
+        Assert.True(Math.Abs(((caption.X + caption.Z) / 2f) - (ring.Centre.X + (MathF.Cos(half) * radius))) < 6f, $"The middle of the caption {caption} is not at the middle of the arc of {ring}.");
         Assert.True(caption.Y >= ring.Centre.Y - ring.Outer && caption.Y < ring.Centre.Y - ring.Inner, $"The caption {caption} is not on the band of {ring}.");
-        Assert.True(caption.X >= Item(ui, DesktopUi.ProposalRejectItem).Z && caption.Z <= Item(ui, DesktopUi.ProposalAcceptItem).X,
+        // The box of a turned letter at an end of a slanted arc can pass the box of the round circle by a pixel, so 2 pixels pass.
+        Assert.True(caption.X >= Item(ui, DesktopUi.ProposalRejectItem).Z - 2f && caption.Z <= Item(ui, DesktopUi.ProposalAcceptItem).X + 2f,
             $"The caption {caption} is not between Reject and Accept.");
         Assert.True(caption.W - caption.Y > DesktopUi.ProposalTextSize * 1.2f, $"The caption {caption} is a straight line, not along the arc.");
     }
@@ -83,6 +90,25 @@ public sealed class ProposalCaptionTests
         using var whole = Shown(display, centre, Card());
         Assert.Equal("AGENT · Widen the bracket to 75 mm", whole.ProposalTexts[DesktopUi.ProposalCaptionItem]);
         Assert.False(whole.ProposalTexts.ContainsKey(DesktopUi.ProposalWholeCaptionItem));
+    }
+
+    // Finding V181 of the codebase review of 2026-11-14 (c) (TASK-0367): a summary longer than the chord of the ring shows whole
+    // under the arc, in lines at its spaces, each one in the chord and none cut. Until TASK-0367 the whole caption was one line
+    // cut to the chord, so its end was lost in both places.
+    [Theory]
+    [InlineData(1440, 900)]
+    [InlineData(1280, 720)]
+    public void A_Caption_Longer_Than_The_Chord_Shows_Whole_Under_The_Arc(int width, int height)
+    {
+        const string summary = "Widen the bracket to 75 mm, round each of its outer edges by 2 mm and thicken the base plate to 12 mm";
+        using var ui = Shown(new Vector2(width, height), new Vector2(width / 2f, height * 0.55f), Card(summary));
+        var parts = new List<string>();
+        for (var i = 0; ui.ProposalTexts.TryGetValue(i == 0 ? DesktopUi.ProposalWholeCaptionItem : $"{DesktopUi.ProposalWholeCaptionItem}:{i}", out var part); i++)
+            parts.Add(part);
+
+        Assert.True(parts.Count > 1, $"The caption is in {parts.Count} line.");
+        Assert.DoesNotContain(parts, part => part.EndsWith("...", StringComparison.Ordinal));
+        Assert.Equal($"AGENT · {summary}", string.Join(' ', parts));
     }
 
     // Item 2 (gap H1): with the chip of the width at each place inside the ring, no line of the proposal lies on the chip or on
