@@ -148,7 +148,7 @@ internal sealed unsafe partial class DesktopUi
         {
             // ADR-0148 items 1 and 2 (phase R22b, TASK-0383): each value of the design has its row in each view; the reference
             // of a chain is not a value of the design, so it has no row.
-            if (value.Body != body.Id || value.Reference)
+            if (value.Body != body.Id || value.Reference || value.Free)
                 continue;
             if (y + RowHeight > bottom)
                 break;

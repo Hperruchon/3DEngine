@@ -1,13 +1,13 @@
 ---
 id: 0148
 title: A line that closes a chain of the design shows its reference in parentheses, and each value keeps its row in each view
-status: Accepted
+status: Amended
 topic: Clients, drawing
 date: 2026-11-14
 supersedes: []
 superseded-by: []
 amends: ['0146']
-amended-by: []
+amended-by: ['0149']
 affects:
   - 3DEngine.App/EdgeValues.cs
   - 3DEngine.App/Ui/DesktopUi.Values.cs
@@ -60,3 +60,4 @@ they fix by the total, in parentheses, so a drawing has no gap and no extra valu
 - 2026-11-14 · TASK-0383 · The record, from row R22b and the renders of 2026-11-10, under the order of the owner of
   2026-11-14.
 - 2026-11-14 · TASK-0383 · Shipped at v0.368.
+- 2026-11-14 · TASK-0384 · ADR-0149 item 3 amends item 2: a line closes a chain only when the design fixes its length.

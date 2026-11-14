@@ -161,7 +161,10 @@ internal sealed unsafe partial class DesktopUi
             var pillSize = PillSize(value.Text);
             var (min, max) = (middle - (pillSize / 2f), middle + (pillSize / 2f));
             var round = pillSize.Y / 2f;
-            var ink = pending ? DimensionColour : lineColour;
+            // ADR-0149 item 2 (phase R22c, TASK-0384): a length that no constraint fixes is amber with a dashed border, as the
+            // render of 2026-11-10.
+            var amber = pending || value.Free;
+            var ink = amber ? DimensionColour : lineColour;
 
             // ADR-0115 item 2: the extension lines from the ends of the edge, 4 pixels off it and 6 pixels past the dimension
             // line, and the dimension line through the middle of the pill; a radius has a leader from its curve to the pill.
@@ -190,14 +193,14 @@ internal sealed unsafe partial class DesktopUi
             list.AddRectFilled(min, max, Theme.Plate(0.85f), round);
             if (hovered)
                 list.AddRectFilled(min, max, ImGui.GetColorU32(colours[(int)ImGuiCol.ButtonHovered]), round);
-            if (pending)
+            if (amber)
                 Dashed(list, min, max, DimensionColour);
             else
                 list.AddRect(min, max, lineColour, round, ImDrawFlags.None, 1.5f);
             ImGui.PushFont(_monoFont);
             var text = new Vector2(ArrowTextWidth(_monoFont, FontSize, value.Text), ImGui.CalcTextSize(value.Text).Y);
             ImGui.PopFont();
-            ArrowText(list, _monoFont, FontSize, ((min + max) / 2f) - (text / 2f), pending ? DimensionColour : ImGui.GetColorU32(colours[(int)ImGuiCol.Text]), value.Text);
+            ArrowText(list, _monoFont, FontSize, ((min + max) / 2f) - (text / 2f), amber ? DimensionColour : ImGui.GetColorU32(colours[(int)ImGuiCol.Text]), value.Text);
             _items[value.Key] = rectangle;
         }
     }
@@ -215,7 +218,8 @@ internal sealed unsafe partial class DesktopUi
     private void Use(EdgeValues.Value value, string? typed = null)
     {
         // ADR-0148 item 2: the reference of a chain is computed from the design, so it has no pad.
-        if (value.Reference)
+        // ADR-0149 item 2: a length that no constraint fixes has no pad: the person or the agent adds its constraint.
+        if (value.Reference || value.Free)
             return;
         var start = typed ?? SketchText.Number(value.Number);
         // ADR-0105 item 4 (TASK-0327): a chip of the active sketch opens the pad that the row of its constraint opens

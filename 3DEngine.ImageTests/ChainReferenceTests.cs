@@ -51,6 +51,13 @@ public sealed class ChainReferenceTests
             lines.Add(Out(await host.Session.Apply(new AddSketchLineCommand { SketchId = sketch, StartPointId = points[i], EndPointId = points[(i + 1) % points.Count] }), "lineId"));
         foreach (var (line, value) in valued)
             Out(await host.Session.Apply(new AddSketchConstraintCommand { SketchId = sketch, Kind = "distance", First = lines[line], Value = value }), "constraintId");
+
+        // ADR-0149 (TASK-0384): each line is horizontal or vertical, so the design fixes the length of each free line.
+        for (var i = 0; i < lines.Count; i++)
+        {
+            var (a, b) = (corners[i], corners[(i + 1) % corners.Length]);
+            Out(await host.Session.Apply(new AddSketchConstraintCommand { SketchId = sketch, Kind = a.Y == b.Y ? "horizontal" : "vertical", First = lines[i] }), "constraintId");
+        }
         var body = Out(await host.Session.Apply(new ExtrudeCommand { SketchId = sketch, Distance = 5 }), "bodyId");
 
         var faces = (await host.Session.Query<FacesInfo>(new GetFacesQuery { BodyId = body })).Result ?? throw new InvalidOperationException("No faces.");

@@ -20,7 +20,10 @@ internal static class EdgeValues
     // ADR-0148 item 1 (phase R22b, TASK-0383): InView is false for a value whose length the flat view does not show true; it
     // keeps its row and has no chip. Reference is true for the reference of a chain, which has a chip and no row and no pad.
     public sealed record Value(string Key, string Text, Vector2 At, double Number, Guid Body, Guid? Sketch, Guid? Constraint, string Label = "Value", Measure? Line = null, string? Name = null,
-        bool InView = true, bool Reference = false);
+        bool InView = true, bool Reference = false, bool Free = false);
+
+    // ADR-0149 item 2 (phase R22c, TASK-0384): the key of a length that no constraint fixes, on the line of a sketch.
+    public static string FreeKey(Guid line) => $"Free:{line:N}";
 
     // ADR-0148 item 2: the key of the reference of a chain on the line of a sketch.
     public static string ReferenceKey(Guid line) => $"Reference:{line:N}";
@@ -147,6 +150,18 @@ internal static class EdgeValues
         return values;
     }
 
+    // ADR-0149 item 2: the length of a line of the sketch, from its two points, or null.
+    private static double? SketchLength(SketchInfo sketch, Guid line)
+    {
+        if (sketch.Lines.FirstOrDefault(candidate => candidate.Id == line) is not { } found)
+            return null;
+        var points = sketch.Points.ToDictionary(point => point.Id);
+        if (!points.TryGetValue(found.Start, out var a) || !points.TryGetValue(found.End, out var b))
+            return null;
+        var (dx, dy) = (b.X - a.X, b.Y - a.Y);
+        return Math.Sqrt((dx * dx) + (dy * dy));
+    }
+
     // ADR-0148 item 2 (phase R22b, TASK-0383): in a flat view a line of the sketch with no value of its own closes a chain when,
     // along its direction, it and the lines with a value tile exactly the interval of one other line with a value, the total:
     // each part one after the other, with no gap and no overlap. Its reference is the total less the sum of the parts, from
@@ -165,12 +180,27 @@ internal static class EdgeValues
                 lines.Add((line.Id, edge));
         }
 
+        var fixedLengths = sketch.FixedLengths.ToHashSet();
         foreach (var (free, edge) in lines.Where(entry => !measured.ContainsKey(entry.Line)))
         {
             var d = Minus(edge.Segments[^1].End, edge.Segments[0].Start);
             var length = Math.Sqrt(Dot(d, d));
             if (!(length > 0))
                 continue;
+
+            // ADR-0149 item 2: a line whose length the design does not fix shows that length in amber, "not fixed", so the
+            // view does not hide a gap in the design. Its length is the length of the line in the sketch.
+            if (!fixedLengths.Contains(free))
+            {
+                if (middleOf(edge) is { } at && SketchLength(sketch, free) is { } sketched)
+                {
+                    var measure = measureOf(edge, at);
+                    yield return new Value(FreeKey(free), $"{Exact(sketched)} {unit} not fixed", Placed(measure), sketched, body, sketch.SketchId, null, "Not fixed", measure, Free: true);
+                }
+
+                continue;
+            }
+
             var unitD = (d.X / length, d.Y / length, d.Z / length);
             (double A, double B)? Interval(EdgeEntry other)
             {
