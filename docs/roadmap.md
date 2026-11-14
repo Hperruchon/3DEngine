@@ -601,6 +601,7 @@ This track removes each condition that blocks other work.
 | P0.154 | On macOS the Command key gives the modifier of the shortcuts, and the command line shows "Cmd K" (R-0060, ADR-0150). TASK-0385. | 1 |
 | P0.155 | The questions before P10 are a record (`docs/proposals/2026-11-14-the-sheet-in-the-document.md`), and register entry R-0067 holds them for the owner. TASK-0386. | 1 |
 | P0.156 | A free size or a reference on the line of a value that the view shows does not show again (ADR-0151), from the picture of the Bracket from the front after R22c. TASK-0387. | 1 |
+| P0.157 | On a small landscape display the arc of a proposal is right of the rows on a smaller ring, and each part of a proposal hides the tools under it (R-0066, ADR-0152). TASK-0388. | 1 |
 | P0.102 | The cache of a face, the fixed controls, the list New, the edges and the safe area hold their next forms (V113 to V118 of the codebase review of 2026-11-06 (e); after P0.101). TASK-0252. | 1–2 |
 | P0.86 | The window keeps no input between sessions, the hook has the cases of one axis, and the next forms of four gates fail (V88 to V90, T141 to T144 of the codebase review of 2026-11-06; after the next product phase). TASK-0198. | 1–2 |
 
