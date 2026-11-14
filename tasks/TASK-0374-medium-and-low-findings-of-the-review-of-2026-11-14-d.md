@@ -1,7 +1,7 @@
 ---
 id: 0374
 title: The medium and low findings of the codebase review of 2026-11-14 (d)
-status: Active
+status: Done
 phase: P0.150
 opened: 2026-11-14
 depends-on: [0372, 0373]
@@ -59,16 +59,16 @@ arc of a portrait display in its first frame.
 
 ## Acceptance criteria
 
-- [ ] A test proves that a zoom of ten times in a flat view keeps the eye out of the box of the scene.
-- [ ] A test or a picture proves the pull of the edge lines in a flat view.
-- [ ] A test proves that the rows are under the arc in the first frame of a proposal.
-- [ ] A clean build (`--no-incremental`) gives zero errors and zero warnings, and the phone project builds.
-- [ ] `dotnet test`, the write-set check and `eng/repo-gates` pass; continuous integration passes on the branch and on
+- [x] A test proves that a zoom of ten times in a flat view keeps the eye out of the box of the scene.
+- [x] A test or a picture proves the pull of the edge lines in a flat view.
+- [x] A test proves that the rows are under the arc in the first frame of a proposal.
+- [x] A clean build (`--no-incremental`) gives zero errors and zero warnings, and the phone project builds.
+- [x] `dotnet test`, the write-set check and `eng/repo-gates` pass; continuous integration passes on the branch and on
       `main` after the merge.
 
 ## Outcome
 
-Status: Active
+Status: Done · commit (the merge of the branch p0150-review-findings) · v0.359
 
 ## Method
 
@@ -85,3 +85,4 @@ Weakest:    the pull of the edge lines is computed, not seen on a GPU in a flat 
   flat view is just behind the box, and Frame in a flat view is not held at half of it. V190: the floor of the rows is the
   middle of the display while a proposal waits on a portrait display, so the field of the bottom of the sheet went. Eight
   injections each failed a named test. Each file came back byte for byte.
+- 2026-11-14: run 43567561680 passed on the work commit. Closed at v0.359.
