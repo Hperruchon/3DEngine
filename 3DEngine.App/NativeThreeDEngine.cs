@@ -516,6 +516,13 @@ public sealed class NativeThreeDEngine : IThreeDEngine, IDisposable
                 case FrameAction:
                     FrameBodies();
                     break;
+                // ADR-0137 item 4 (phase R21a, TASK-0369): a flat view, or the return to the view with perspective.
+                case FlatViewAction { View: { } view }:
+                    Camera.ShowFlat(view);
+                    break;
+                case FlatViewAction:
+                    Camera.ShowPerspective();
+                    break;
                 // ADR-0092 item 6 (TASK-0326): the person accepts or rejects the waiting proposal; one accept at a time.
                 case AcceptProposalAction accept when _proposalDesk is { } desk && _proposalAccept is null:
                     // ADR-0127 item 2: each named value of the card gives the text of its step.

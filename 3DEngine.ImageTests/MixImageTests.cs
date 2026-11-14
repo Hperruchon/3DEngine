@@ -82,7 +82,16 @@ public class MixImageTests
             Values: [ProposedValues.Of("SetSketchConstraintValue", members)])];
     }, pending: true, frameWidth: frameWidth, frameHeight: frameHeight);
 
-    private static async Task Draw(string name, Func<Guid, Guid, IReadOnlyList<ProposalCard>>? proposal, bool sketchActive = false, bool pending = false, uint frameWidth = Width, uint frameHeight = Height)
+    // ADR-0137 (phase R21a, TASK-0369): the selected bracket in the flat view from the front and from the top, with the values on
+    // its edges, at 1440 by 900.
+    [VulkanImageFact]
+    public Task The_Selected_Bracket_Draws_In_The_Front_View() => Draw("mix-front.png", null, flat: ThreeDEngine.Core.Models.FlatView.Front);
+
+    [VulkanImageFact]
+    public Task The_Selected_Bracket_Draws_In_The_Top_View() => Draw("mix-top.png", null, flat: ThreeDEngine.Core.Models.FlatView.Top);
+
+    private static async Task Draw(string name, Func<Guid, Guid, IReadOnlyList<ProposalCard>>? proposal, bool sketchActive = false, bool pending = false, uint frameWidth = Width, uint frameHeight = Height,
+        ThreeDEngine.Core.Models.FlatView? flat = null)
     {
         var messagesBefore = GraphicsDevice.ValidationMessageCount;
         using var host = new EngineHost(new Engine.Geometry.Manifold.ManifoldGeometryBackend());
@@ -121,6 +130,8 @@ public class MixImageTests
             renderer.Update(scene, camera, (float)frameWidth / frameHeight);
             var bounds = renderer.Bounds ?? throw new InvalidOperationException("No bounds.");
             camera.Frame(bounds.Min, bounds.Max, (float)frameWidth / frameHeight);
+            if (flat is { } view)
+                camera.ShowFlat(view);
             renderer.Update(scene, camera, (float)frameWidth / frameHeight);
 
             var extent = renderer.BoxOf(body) ?? throw new InvalidOperationException("The body has no mesh.");
