@@ -375,6 +375,8 @@ Therefore each approved objective must have a track here.
   TASK-0358, ADR-0130.
 - R18j — The window and the render at the other sizes of the brief: four pictures of the step of the proposal, the gaps
   H1 to H7, and the slices R18k to R18n. v0.344, TASK-0359.
+- R18k — On a portrait display the rows of a selected body are under the part, above the corner ring and the sheet of a
+  proposal, with a row "Hidden too"; the panel has no controls of a selected body. v0.345, TASK-0360, ADR-0131.
 - P0.143 — The low findings of the codebase review of 2026-11-11: a triangle of zero area adds no edge, and a mesh of
   more than 100 000 triangles finds its edges on the thread pool. v0.332, TASK-0345, ADR-0121.
 - Review — The codebase review of 2026-11-12. v0.333, TASK-0349.

@@ -1,7 +1,7 @@
 ---
 id: 0360
 title: On a portrait display the rows of a selected body are under the part, and the panel has no controls of a selected body
-status: Active
+status: Done
 phase: R18k
 opened: 2026-11-14
 depends-on: [0359]
@@ -70,19 +70,19 @@ selected body has one place in each orientation.
 
 ## Acceptance criteria
 
-- [ ] ADR-0131 exists. ADR-0084 and ADR-0099 show the amendment.
-- [ ] A test proves the rows under the part on a portrait display at the full width, with no panel.
-- [ ] A test proves the row "Hidden too" and its toggle.
-- [ ] The layout test proves at each size that no tool of the ring is under the rows and no window of the rows under the sheet.
-- [ ] Each test that reached the panel of a selected body passes through the rows, the ring or the panel with no selection;
+- [x] ADR-0131 exists. ADR-0084 and ADR-0099 show the amendment.
+- [x] A test proves the rows under the part on a portrait display at the full width, with no panel.
+- [x] A test proves the row "Hidden too" and its toggle.
+- [x] The layout test proves at each size that no tool of the ring is under the rows and no window of the rows under the sheet.
+- [x] Each test that reached the panel of a selected body passes through the rows, the ring or the panel with no selection;
       no test is deleted.
-- [ ] A clean build (`--no-incremental`) gives zero errors and zero warnings, and the phone project builds.
-- [ ] `dotnet test`, the write-set check and `eng/repo-gates` pass; continuous integration passes on the branch and on
+- [x] A clean build (`--no-incremental`) gives zero errors and zero warnings, and the phone project builds.
+- [x] `dotnet test`, the write-set check and `eng/repo-gates` pass; continuous integration passes on the branch and on
       `main` after the merge.
 
 ## Outcome
 
-Status: Active
+Status: Done · commit (the merge of the branch r18k-rows-under-part) · v0.345
 
 ## Method
 
@@ -98,3 +98,7 @@ Weakest:    on a portrait phone the room under the part is small, so the rows sh
   panel with no selection, and deleted none; the session reviewed each change. The layout test found two faults that the
   scrolled panel hid before: the rows under the sheet of a proposal, and the first row on a tool of the ring at 360 by 640;
   the rows now end above the sheet and move up when the room is lower than the first row.
+- 2026-11-14: five injections each failed a named test; the first form of the chip injection was caught by no test, so
+  `BodyRowsTests.A_Chip_On_Rows_Under_The_Part_Goes_Above_Them` came in. Each file came back byte for byte.
+- 2026-11-14: run 43545274637 passed on the work commit. The picture of the layout test at 390 by 844 shows the part, its rows
+  under it and the corner ring. Closed at v0.345.
