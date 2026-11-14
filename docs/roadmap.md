@@ -377,6 +377,8 @@ Therefore each approved objective must have a track here.
   H1 to H7, and the slices R18k to R18n. v0.344, TASK-0359.
 - R18k — On a portrait display the rows of a selected body are under the part, above the corner ring and the sheet of a
   proposal, with a row "Hidden too"; the panel has no controls of a selected body. v0.345, TASK-0360, ADR-0131.
+- R18l — On the corner ring of a portrait display a label is drawn smaller, down to half of the size of the font, until it
+  lies on no other label and fits inside the display. v0.347, TASK-0363, ADR-0132.
 - P0.143 — The low findings of the codebase review of 2026-11-11: a triangle of zero area adds no edge, and a mesh of
   more than 100 000 triangles finds its edges on the thread pool. v0.332, TASK-0345, ADR-0121.
 - Review — The codebase review of 2026-11-12. v0.333, TASK-0349.

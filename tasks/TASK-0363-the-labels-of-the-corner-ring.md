@@ -1,7 +1,7 @@
 ---
 id: 0363
 title: A label of the corner ring is drawn smaller until it lies on no other label and fits inside the display
-status: Active
+status: Done
 phase: R18l
 opened: 2026-11-14
 depends-on: [0360, 0361]
@@ -51,15 +51,15 @@ Each label of the corner ring is in its segment, on no other label and inside th
 
 ## Acceptance criteria
 
-- [ ] ADR-0132 exists. ADR-0081 shows the amendment.
-- [ ] A test proves at five portrait sizes that no label of the corner ring lies on another and each is in the display.
-- [ ] A clean build (`--no-incremental`) gives zero errors and zero warnings, and the phone project builds.
-- [ ] `dotnet test`, the write-set check and `eng/repo-gates` pass; continuous integration passes on the branch and on
+- [x] ADR-0132 exists. ADR-0081 shows the amendment.
+- [x] A test proves at five portrait sizes that no label of the corner ring lies on another and each is in the display.
+- [x] A clean build (`--no-incremental`) gives zero errors and zero warnings, and the phone project builds.
+- [x] `dotnet test`, the write-set check and `eng/repo-gates` pass; continuous integration passes on the branch and on
       `main` after the merge.
 
 ## Outcome
 
-Status: Active
+Status: Done · commit (the merge of the branch r18l-ring-labels) · v0.347
 
 ## Method
 
@@ -74,3 +74,7 @@ Weakest:    "Dimensions" is in a text of half the size on a phone; no person rea
   each other, because near the top the segments are side by side and the clamp to the edge moved "Dimensions"; a floor of
   0.6 of the size left "Dimensions" 70 pixels wide for a room of 57. The rule of the neighbours and the edge, with a floor of
   half of the size, holds at each size.
+- 2026-11-14: four injections each failed `CornerRingLabelsTests.No_Label_Of_The_Corner_Ring_Lies_On_Another`: no scale,
+  no neighbour, a floor of 0.6 and a target of the full size. Each file came back byte for byte.
+- 2026-11-14: run 43548384969 passed on the work commit. The picture of the corner ring at 390 by 844 shows each label in
+  its segment. Closed at v0.347.
