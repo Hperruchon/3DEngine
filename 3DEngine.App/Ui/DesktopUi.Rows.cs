@@ -185,6 +185,14 @@ internal sealed unsafe partial class DesktopUi
         ImGui.PopStyleVar();
     }
 
+    // ADR-0130 item 1 (phase R18i, TASK-0358): the gap between the crossed value now and the proposed value of a row, and the
+    // two texts of each row that a proposal changes in this frame, for a test.
+    private const float RowProposalGap = 10f;
+
+    private readonly Dictionary<string, (string Now, string Proposed)> _rowProposals = new(StringComparer.Ordinal);
+
+    internal IReadOnlyDictionary<string, (string Now, string Proposed)> RowProposals => _rowProposals;
+
     // Items 2 and 3: the rows of this frame, and the tap on a value row.
     private void Rows(LiveBody? body)
     {
@@ -263,9 +271,32 @@ internal sealed unsafe partial class DesktopUi
             _items[MadeFromItem] = madeFrom.Rectangle;
         }
 
+        // ADR-0130 item 1 (phase R18i, TASK-0358): while the window shows a proposal, a row whose value the proposal changes
+        // gives the value now crossed out in the quiet colour and the proposed value in amber at the right, as the render.
+        var proposed = _proposals.Count > 0 && _proposals[0].Values is { } commands ? ProposedValues.Of(commands) : [];
+        _rowProposals.Clear();
         foreach (var (value, rectangle) in _rows)
         {
             var (min, max) = (new Vector2(rectangle.X, rectangle.Y), new Vector2(rectangle.Z, rectangle.W));
+            if (proposed.FirstOrDefault(change => change.Keys.Contains(value.Key)) is { } change)
+            {
+                var next = $"{EdgeValues.Exact(change.Shown ?? change.Number)} {change.Unit ?? _unit}";
+                var nextWidth = _monoFont.CalcTextSizeA(FontSize, float.MaxValue, 0f, next).X;
+                var nowWidth = _monoFont.CalcTextSizeA(FontSize, float.MaxValue, 0f, value.Text).X;
+                var nowAt = new Vector2(max.X - nextWidth - RowProposalGap - nowWidth, min.Y + middle);
+                list.AddText(new Vector2(min.X, min.Y + middle), text, value.Label);
+                if (value.Name is { } proposedName)
+                    list.AddText(new Vector2(min.X + ImGui.CalcTextSize(value.Label).X + 8f, min.Y + middle), quiet, proposedName);
+                list.AddText(_monoFont, FontSize, nowAt, quiet, value.Text);
+                var strike = nowAt.Y + (FontSize / 2f);
+                list.AddLine(new Vector2(nowAt.X, strike), new Vector2(nowAt.X + nowWidth, strike), quiet, 1.5f);
+                list.AddText(_monoFont, FontSize, new Vector2(max.X - nextWidth, min.Y + middle), ImGui.GetColorU32(DimensionColour), next);
+                list.AddLine(new Vector2(min.X, max.Y), max, line, 1f);
+                _items[RowItem(value.Key)] = rectangle;
+                _rowProposals[value.Key] = (value.Text, next);
+                continue;
+            }
+
             var pending = value.Key == _pendingValue;
             var hovered = !ImGui.IsWindowHovered(ImGuiHoveredFlags.AnyWindow) && RowAt(io.MousePos)?.Key == value.Key;
             if (hovered)
