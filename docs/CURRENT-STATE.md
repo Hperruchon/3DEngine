@@ -11043,3 +11043,25 @@ since the entry v0.369, from the API: none on a branch; 43562165193 on `main` st
 New tests: 3. The test list holds 2681 (1580 in `Engine.Tests`, 382 in `3DEngine.Tests`, 716 in `3DEngine.ImageTests`, 3
 in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
 entries: 13 of 15. New diagnostic codes: 0. Since the review of v0.363, 3 product milestones and 7 entries followed it.
+
+## v0.371 — The questions before P10 are a record, and the register holds them for the owner (P0.155, TASK-0386)
+
+After R22c (v0.369) each product row waits for P10, the sheet in the Document: R22d needs a place on a sheet, P10a to P10c
+need the sheet, and the assembly work comes after P10c. P10 adds a collection, records, commands and event kinds to
+`Engine.Contracts`, so its ADR and a question to the owner come first. Under the order of 2026-11-14 a change of the contract
+is recorded and not done.
+
+**The change.** `docs/proposals/2026-11-14-the-sheet-in-the-document.md` gives what is decided already (ADR-0118 items 3 and
+4) and eight questions, each with a recommended option: the record of a sheet, the paper, the direction and the scale of a
+view, a dimension and a lost dimension, the commands, and the source of a view. Register entry R-0067 (a question, due
+2026-12-14) holds them. Row P10 names R-0067.
+
+**Proof.** The branch started on the work commit of P0.154, before its close, so a merge (e80c9e8) brought the close of
+v0.370; `write-set-check --range origin/main --strict` passed with it. Run 43581017728 passed on the branch. The failed runs since
+the entry v0.370, from the API: none on a branch; 43562165193 on `main` stays red until the owner runs it again.
+
+**What stays.** No answer is taken in the place of the owner, so P10 and the rows after it wait.
+
+New tests: 0. The test list holds 2681 (1580 in `Engine.Tests`, 382 in `3DEngine.Tests`, 716 in `3DEngine.ImageTests`, 3
+in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
+entries: 14 of 15. New diagnostic codes: 0. Since the review of v0.363, 3 product milestones and 8 entries followed it.
