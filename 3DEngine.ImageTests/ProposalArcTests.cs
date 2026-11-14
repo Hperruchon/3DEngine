@@ -10,7 +10,7 @@ namespace ThreeDEngine.ImageTests;
 
 // ADR-0092 item 7 (the agent arc, phase R16r, TASK-0326): a proposal of an agent in the window, with no GPU. On a landscape
 // display it is an amber arc on the band of a ring from 235 to 305 degrees, with Reject and Accept at its ends; on a
-// portrait display a sheet above the anchors; nothing on the home screen.
+// portrait display the arc at the top and a sheet of the lines under it (ADR-0135); nothing on the home screen.
 [Collection(DearImGui.Collection)]
 public sealed class ProposalArcTests
 {
@@ -355,33 +355,56 @@ public sealed class ProposalArcTests
         Assert.NotNull(ui.ItemRectangle(DesktopUi.RingItem(DesktopUi.MoveLabel)));
     }
 
-    // Item 7: on a portrait display the proposal is a sheet above the anchors, with the same lines, Reject and Accept.
+    // ADR-0135 item 2: the sheet of a portrait display is the smallest panel that holds the top left of its first text.
+    private static Vector4 Sheet(DesktopUi ui)
+    {
+        var first = new[] { DesktopUi.ProposalWholeCaptionItem, DesktopUi.ProposalCaptionItem, DesktopUi.ProposalLineItem(0) }
+            .Select(ui.ItemRectangle).Where(box => box is not null).Select(box => box!.Value).Where(box => ui.PanelRectangles.Any(panel => Holds(panel, box))).MinBy(box => box.Y);
+        return ui.PanelRectangles.Where(panel => Holds(panel, first)).MinBy(panel => panel.W - panel.Y);
+    }
+
+    private static bool Holds(Vector4 panel, Vector4 box) => box.X >= panel.X && box.X < panel.Z && box.Y >= panel.Y && box.Y < panel.W;
+
+    // ADR-0135 items 1 and 2 (phase R18o, TASK-0368): on a portrait display the arc is at the top, under the top bar, with Reject
+    // and Accept, and the sheet under it holds the lines. Until TASK-0368 the proposal was a sheet above the anchors with the two
+    // buttons (ADR-0092 item 7).
     [Theory]
     [InlineData(DeviceKind.Touch)]
     [InlineData(DeviceKind.Mouse)]
-    public void A_Portrait_Display_Shows_A_Sheet_Above_The_Anchors(DeviceKind kind)
+    public void A_Portrait_Display_Shows_The_Arc_At_The_Top_And_The_Lines_Under_It(DeviceKind kind)
     {
         using var ui = new DesktopUi("http://127.0.0.1:5180", Document.Millimetre);
         var portrait = new Vector2(390, 844);
         var card = Card(commands: 5);
         Frames(ui, [card, Card("Second")], Bracket, portrait);
 
-        Assert.Null(ui.ProposalRing);
-        var anchors = Item(ui, DesktopUi.UndoLabel);
+        var ring = ui.ProposalRing ?? throw new InvalidOperationException("No ring of the arc.");
+        Assert.True(Math.Abs(ring.Centre.X - (portrait.X / 2f)) < 0.5f, $"The arc {ring} is not at the middle across.");
+        var bar = Math.Max(Item(ui, DesktopUi.TitleItem).W, Item(ui, DesktopUi.ProposalWaitingItem).W);
+        Assert.True(ring.Centre.Y - ring.Outer >= bar, $"The arc {ring} is under the top bar, which ends at {bar}.");
         foreach (var item in new[] { DesktopUi.ProposalRejectItem, DesktopUi.ProposalAcceptItem })
         {
             var button = Item(ui, item);
             Assert.True(button.W - button.Y >= DesktopUi.MinimumControlHeight && button.Z - button.X >= DesktopUi.MinimumControlHeight, $"{item} {button} is less than 44 pixels.");
-            Assert.True(button.W <= anchors.Y, $"{item} {button} is not above the anchors {anchors}.");
+            Assert.True(button.X >= 0f && button.Z <= portrait.X, $"{item} {button} is out of the display.");
             Assert.True(ui.OverPanel(Middle(button).X, Middle(button).Y), $"A tap on {item} reaches the scene.");
         }
 
+        Assert.True(ui.ProposalWords.All(word => word.X >= 0f && word.Z <= portrait.X), "A word of an end is out of the display.");
         var texts = ui.ProposalTexts;
-        Assert.Equal("AGENT · Widen the bracket to 75 mm", texts[DesktopUi.ProposalCaptionItem]);
+        // The small arc of a phone cuts the caption, so the sheet gives it whole.
+        Assert.StartsWith("AGENT · ", texts[DesktopUi.ProposalCaptionItem], StringComparison.Ordinal);
+        Assert.EndsWith("...", texts[DesktopUi.ProposalCaptionItem], StringComparison.Ordinal);
+        Assert.Equal("AGENT · Widen the bracket to 75 mm", texts[DesktopUi.ProposalWholeCaptionItem]);
         Assert.Equal("NoOp 4", texts[DesktopUi.ProposalLineItem(3)]);
         Assert.Equal("and 1 more", texts[DesktopUi.ProposalMoreItem]);
         Assert.Equal("1 of 2", texts[DesktopUi.ProposalPlaceItem]);
         Assert.Equal(DesktopUi.AgentWaitingText, texts[DesktopUi.ProposalWaitingItem]);
+
+        // The sheet is under the arc and ends above the middle of the display, where the rows start.
+        var sheet = Sheet(ui);
+        Assert.True(sheet.Y >= Item(ui, DesktopUi.ProposalAcceptItem).W && sheet.Y >= Item(ui, DesktopUi.ProposalCaptionItem).W, $"The sheet {sheet} is not under the arc.");
+        Assert.True(sheet.W <= portrait.Y / 2f, $"The sheet {sheet} passes the middle of the display.");
 
         var accept = Middle(Item(ui, DesktopUi.ProposalAcceptItem));
         Tap(ui, [card, Card("Second")], accept, accept, kind, portrait);
@@ -391,14 +414,15 @@ public sealed class ProposalArcTests
         Assert.Equal([new RejectProposalAction(card.Id)], ui.TakeActions());
     }
 
-    // ADR-0111 item 4 (TASK-0331): on a portrait display the sheet ends above the ring of the selected body, so each tool of the
-    // ring is out of the sheet and takes its tap, while the sheet stays under the top bar. Finding V162 of the codebase review
-    // of 2026-11-09 (b): until TASK-0331 the sheet ended above the anchors and covered Move, Set distance and Hide at 390 by 844.
+    // ADR-0135 item 3: on a portrait display the arc and the sheet are at the top, so each tool of the corner ring is free and
+    // takes its tap; the proposal stays. ADR-0111 item 4 and finding V162 of the codebase review of 2026-11-09 (b) asked the
+    // same of the sheet above the ring.
     [Theory]
     [InlineData(390, 844)]
     [InlineData(412, 915)]
     [InlineData(393, 873)]
-    public void A_Portrait_Sheet_Leaves_The_Tools_Of_The_Ring_Free(int width, int height)
+    [InlineData(360, 640)]
+    public void A_Portrait_Proposal_Leaves_The_Tools_Of_The_Ring_Free(int width, int height)
     {
         using var ui = new DesktopUi("http://127.0.0.1:5180", Document.Millimetre);
         var portrait = new Vector2(width, height);
@@ -406,16 +430,14 @@ public sealed class ProposalArcTests
         Frames(ui, [card], Bracket, portrait);
         Frames(ui, [card], Bracket, portrait);
 
-        // The sheet is the smallest panel that holds Accept; the panel of the bodies holds it too on a phone.
-        var accept = Item(ui, DesktopUi.ProposalAcceptItem);
-        var sheet = ui.PanelRectangles.Where(panel => panel.Y < accept.Y && panel.W > accept.W).MinBy(panel => panel.W - panel.Y);
+        var sheet = Sheet(ui);
+        var covers = new[] { sheet, Item(ui, DesktopUi.ProposalRejectItem), Item(ui, DesktopUi.ProposalAcceptItem), Item(ui, DesktopUi.ProposalCaptionItem) };
         var top = ui.RingTop() ?? throw new InvalidOperationException("No ring.");
-        Assert.True(sheet.W <= top, $"{width}x{height}: the sheet {sheet} is not above the ring, whose top is {top}.");
-        Assert.True(sheet.Y >= Item(ui, DesktopUi.TitleItem).W, $"{width}x{height}: the sheet {sheet} is under the top bar.");
+        Assert.All(covers, cover => Assert.True(cover.W <= top, $"{width}x{height}: {cover} is not above the ring, whose top is {top}."));
         foreach (var label in new[] { DesktopUi.MoveLabel, DesktopUi.SetDistanceLabel, DesktopUi.HideLabel })
         {
             var tool = Middle(Item(ui, DesktopUi.RingItem(label)));
-            Assert.False(tool.X >= sheet.X && tool.X < sheet.Z && tool.Y >= sheet.Y && tool.Y < sheet.W, $"{width}x{height}: {label} at {tool} is under the sheet {sheet}.");
+            Assert.DoesNotContain(covers, cover => tool.X >= cover.X && tool.X < cover.Z && tool.Y >= cover.Y && tool.Y < cover.W);
         }
 
         // A tap on Move opens its pad, as with no proposal; the proposal stays.
@@ -425,10 +447,11 @@ public sealed class ProposalArcTests
         Assert.NotNull(ui.Pad);
     }
 
-    // ADR-0111 item 4: when the room between the top bar and the ring is too small for the sheet, the sheet ends above the
-    // anchors and covers the ring, as before; its Reject and Accept still take their taps.
+    // ADR-0135 item 3: on a small portrait display the sheet ends above the middle of the display, and lines that do not fit
+    // scroll in it; Accept on the arc takes its tap. Until TASK-0368 the sheet with no room above the ring ended above the
+    // anchors and covered the ring (ADR-0111 item 4).
     [Fact]
-    public void A_Sheet_With_No_Room_Above_The_Ring_Ends_Above_The_Anchors()
+    public void On_A_Small_Portrait_Display_The_Sheet_Ends_Above_The_Middle()
     {
         using var ui = new DesktopUi("http://127.0.0.1:5180", Document.Millimetre);
         var portrait = new Vector2(390, 560);
@@ -436,10 +459,10 @@ public sealed class ProposalArcTests
         Frames(ui, [card], Bracket, portrait);
         Frames(ui, [card], Bracket, portrait);
 
-        var anchors = Item(ui, DesktopUi.UndoLabel);
-        var accept = Item(ui, DesktopUi.ProposalAcceptItem);
-        Assert.True(accept.W <= anchors.Y && accept.W > (ui.RingTop() ?? 0f), $"Accept {accept} is not between the ring and the anchors {anchors}.");
-        var at = Middle(accept);
+        var sheet = Sheet(ui);
+        Assert.True(sheet.W <= (portrait.Y / 2f) + 0.5f, $"The sheet {sheet} passes the middle of the display.");
+        Assert.True(Item(ui, DesktopUi.ProposalCountItem).Y > sheet.W, "The lines do not need to scroll, so the test does not see the limit.");
+        var at = Middle(Item(ui, DesktopUi.ProposalAcceptItem));
         Tap(ui, [card], at, at, DeviceKind.Touch, portrait);
         Assert.Equal([new AcceptProposalAction(card.Id)], ui.TakeActions());
     }
