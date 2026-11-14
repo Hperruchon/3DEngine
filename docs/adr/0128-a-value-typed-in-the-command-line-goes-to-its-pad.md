@@ -72,3 +72,4 @@ a box, has no entry. A command with a pad of two or three fields (Move, Next poi
 
 - 2026-11-14 · TASK-0357 · The record, from slice S8 of the study of the gaps to the render, with the recommended option
   under the order of the owner of 2026-11-14.
+- 2026-11-14 · TASK-0357 · Shipped at v0.341.
