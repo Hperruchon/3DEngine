@@ -936,9 +936,10 @@ public sealed class NativeThreeDEngine : IThreeDEngine, IDisposable
         // with no read of the session.
         if (_proposalAccept is { IsCompleted: true } accepted)
         {
-            // ADR-0130 item 4: an applied proposal gives "Applied · Bracket rebuilt" and the button Undo.
+            // ADR-0130 item 4: an applied proposal gives "Applied · Bracket rebuilt" and the button Undo. Finding V178 (TASK-0362):
+            // the button holds the count of the log at the end of the accept; the events of its commands came inside their commits.
             if (accepted.IsCompletedSuccessfully && accepted.Result is { State: "accepted" } done)
-                _ui.ShowProposalOutcome(done.AppliedText(_acceptedBody), undo: true);
+                _ui.ShowProposalOutcome(done.AppliedText(_acceptedBody), undoAt: _steps.LogCount);
             else
                 _ui.ShowProposalOutcome(accepted.IsCompletedSuccessfully ? accepted.Result.Text : $"The accept failed: {accepted.Exception?.GetBaseException().Message}");
             _proposalAccept = null;

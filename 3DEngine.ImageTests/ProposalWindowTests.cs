@@ -106,7 +106,8 @@ public sealed class ProposalWindowTests
         Assert.Equal("Applied · 2 commands", outcome.AppliedText(null));
 
         using var ui = new DesktopUi("http://127.0.0.1:5180", Engine.Contracts.Document.Millimetre);
-        ui.ShowProposalOutcome(outcome.AppliedText("Bracket"), undo: true);
+        ui.ShowStatus(new SessionStatus(7, false, "C1 = 75", true));
+        ui.ShowProposalOutcome(outcome.AppliedText("Bracket"), undoAt: 7);
         Frame(ui, null);
         Frame(ui, null);
         Assert.Equal("Applied · Bracket rebuilt", ui.ProposalTexts[DesktopUi.ProposalOutcomeItem]);
@@ -124,6 +125,33 @@ public sealed class ProposalWindowTests
 
         // A reject keeps the line with no Undo.
         ui.ShowProposalOutcome(new ProposalOutcome("rejected", 0, 2).Text);
+        Frame(ui, null);
+        Frame(ui, null);
+        Assert.Null(ui.ItemRectangle(DesktopUi.ProposalUndoItem));
+    }
+
+    // Finding V178 of the codebase review of 2026-11-14 (b) (TASK-0362): Undo of the line shows only while the newest step is
+    // the last step of the proposal. A later step takes it away and the line stays; an Undo of the anchors, which adds an
+    // entry to the log, takes it away too, and it does not come back.
+    [Theory]
+    [InlineData(8)]
+    [InlineData(9)]
+    public void A_Step_After_An_Accept_Takes_Undo_Away(int later)
+    {
+        using var ui = new DesktopUi("http://127.0.0.1:5180", Engine.Contracts.Document.Millimetre);
+        ui.ShowStatus(new SessionStatus(7, false, "C1 = 75", true));
+        ui.ShowProposalOutcome(new ProposalOutcome("accepted", 1, 1).AppliedText("Bracket"), undoAt: 7);
+        Frame(ui, null);
+        Frame(ui, null);
+        Assert.NotNull(ui.ItemRectangle(DesktopUi.ProposalUndoItem));
+
+        ui.ShowStatus(new SessionStatus(later, false, "Move", true));
+        Frame(ui, null);
+        Frame(ui, null);
+        Assert.Null(ui.ItemRectangle(DesktopUi.ProposalUndoItem));
+        Assert.Equal("Applied · Bracket rebuilt", ui.ProposalTexts[DesktopUi.ProposalOutcomeItem]);
+
+        ui.ShowStatus(new SessionStatus(7, false, "C1 = 75", true));
         Frame(ui, null);
         Frame(ui, null);
         Assert.Null(ui.ItemRectangle(DesktopUi.ProposalUndoItem));
