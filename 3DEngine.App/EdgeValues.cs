@@ -91,7 +91,7 @@ internal static class EdgeValues
         bool Side(DatumReference face) => face.FeatureId == body && face.Element == "side";
         if (distance is { } d)
         {
-            var along = edges.Where(edge => Side(edge.First) && Side(edge.Second))
+            var along = edges.Where(edge => Side(edge.First) && Side(edge.Second) && TrueLength(edge, camera, radius: false))
                 .Select(edge => (Edge: edge, At: Middle(edge, camera, width, height)))
                 .Where(pair => pair.At is not null)
                 .OrderByDescending(pair => Vector2.DistanceSquared(pair.At.GetValueOrDefault(), centre))
@@ -122,6 +122,8 @@ internal static class EdgeValues
             if (item is not { } id)
                 continue;
             var edge = edges.FirstOrDefault(candidate => Pair(candidate, body, id));
+            if (edge is not null && !TrueLength(edge, camera, constraint.Kind == "radius"))
+                continue;
             // ADR-0115 item 2: a radius has a leader from the middle of its edge, straight out from the centre.
             if (edge is not null && Middle(edge, camera, width, height) is { } at)
             {
@@ -134,6 +136,40 @@ internal static class EdgeValues
         }
 
         return values;
+    }
+
+    // ADR-0146 item 1 (phase R22a, TASK-0381): in a flat view a value shows only where its length is true, as on a drawing:
+    // the edge of a length or of a distance is across the direction of the view, and the circle of a radius faces the view.
+    // With perspective each value shows. An edge is across the view when the part of its direction
+    // along the view is at most 0.001 of its length; a circle faces the view when the normal of its plane is along the view
+    // within the same limit. Each test squares both sides, so it needs no square root.
+    internal static bool TrueLength(EdgeEntry edge, Camera camera, bool radius)
+    {
+        ArgumentNullException.ThrowIfNull(edge);
+        ArgumentNullException.ThrowIfNull(camera);
+        if (camera.Flat is null || edge.Segments.Count == 0)
+            return true;
+        var forward = camera.Axes().Forward;
+        static (double X, double Y, double Z) Minus(DatumPoint a, DatumPoint b) => (a.X - b.X, a.Y - b.Y, a.Z - b.Z);
+        static double Dot((double X, double Y, double Z) a, (double X, double Y, double Z) b) => (a.X * b.X) + (a.Y * b.Y) + (a.Z * b.Z);
+        static (double X, double Y, double Z) Cross((double X, double Y, double Z) a, (double X, double Y, double Z) b)
+            => ((a.Y * b.Z) - (a.Z * b.Y), (a.Z * b.X) - (a.X * b.Z), (a.X * b.Y) - (a.Y * b.X));
+        const double limit = 1e-6;
+        if (!radius)
+        {
+            var d = Minus(edge.Segments[^1].End, edge.Segments[0].Start);
+            var part = Dot(d, forward);
+            return part * part <= limit * Dot(d, d) * Dot(forward, forward);
+        }
+
+        // The normal of the plane of the circle, from two chords of its segments.
+        var count = edge.Segments.Count;
+        if (count < 3)
+            return true;
+        var origin = edge.Segments[0].Start;
+        var normal = Cross(Minus(edge.Segments[count / 3].Start, origin), Minus(edge.Segments[2 * count / 3].Start, origin));
+        var off = Cross(normal, forward);
+        return Dot(off, off) <= limit * Dot(normal, normal) * Dot(forward, forward);
     }
 
     // A distance of one line, or of the start and the end of one line, measures that line.

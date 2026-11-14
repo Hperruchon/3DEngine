@@ -7,7 +7,7 @@ date: 2026-11-07
 supersedes: []
 superseded-by: []
 amends: []
-amended-by: ['0084', '0115']
+amended-by: ['0084', '0115', '0146']
 affects:
   - 3DEngine.App/EdgeValues.cs
   - 3DEngine.App/Ui/DesktopUi.Values.cs
@@ -112,3 +112,4 @@ and a cylinder show no chip until a command changes their sizes.
   value of item 3.
 - 2026-11-10 · TASK-0340 · ADR-0115 items 1 and 2 amend item 2: a value shows three decimals, on a pill on a dimension
   line outside the outline of the body, with extension lines.
+- 2026-11-14 · TASK-0381 · ADR-0146 item 1 amends item 1: in a flat view a value shows only where its length is true.
