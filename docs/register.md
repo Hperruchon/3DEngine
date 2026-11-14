@@ -425,18 +425,6 @@ edges on a slower processor. This session did not run the APK with the lines.
 Exit: a run on the S23 Ultra or on the emulator records the frame time and the time of the upload of a large mesh, and
 ADR-0109 adds them, with a lower limit of edges if they are too slow.
 
-### R-0062 · The image tests crash the test host at times on the computer of the owner, in vkCreateDevice
-- class: risk
-- opened: 2026-11-10
-- due: 2026-12-10
-- extended: no
-- refs: `3DEngine.Vulkan/GraphicsDevice.cs`, `3DEngine.ImageTests/GizmoImageTests.cs`, TASK-0340
-On 2026-11-10 a run of `3DEngine.ImageTests` on Windows stopped after about 145 tests in 5 of 9 runs of one branch and in
-1 of 6 runs of `main` 6e8d1a7: an access violation (0xC0000005) in `vkCreateDevice` of the driver, while several
-classes created a Vulkan device at the same time. A crash stops the local proof of a change. The pipeline runs these
-tests on Linux only (R-0040), so it does not see it.
-Exit: a cause is found and fixed, or the tests that create a device run in one collection, and ten runs end with no crash.
-
 ### R-0063 · The scenario of R20a in the window was not done
 - class: risk
 - opened: 2026-11-11
@@ -624,6 +612,22 @@ only the render loop writes `Scene` and `Entity` of `3DEngine.Core`. V5, V6 and 
 ---
 
 ## Closed
+
+### R-0062 · The image tests crash the test host at times on the computer of the owner, in vkCreateDevice
+- class: risk
+- opened: 2026-11-10
+- due: 2026-12-10
+- extended: no
+- refs: `3DEngine.Vulkan/GraphicsDevice.cs`, `3DEngine.ImageTests/GizmoImageTests.cs`, TASK-0340
+On 2026-11-10 a run of `3DEngine.ImageTests` on Windows stopped after about 145 tests in 5 of 9 runs of one branch and in
+1 of 6 runs of `main` 6e8d1a7: an access violation (0xC0000005) in `vkCreateDevice` of the driver, while several
+classes created a Vulkan device at the same time. A crash stops the local proof of a change. The pipeline runs these
+tests on Linux only (R-0040), so it does not see it.
+Exit: a cause is found and fixed, or the tests that create a device run in one collection, and ten runs end with no crash.
+Progress 2026-11-14: a run stopped after 131 tests (TASK-0377). Seven classes that create a device were in no collection.
+
+Closed 2026-11-14 · resolved · TASK-0382. Each class that creates a device runs in the collection of Dear ImGui, and
+`DeviceCollectionTests` holds the rule. Ten runs of 3DEngine.ImageTests in a row on the computer of the owner ran 706 tests each, with each test passed and no stop.
 
 ### R-0057 · No command turns a body, so a document built with y up stays on its side
 - class: question

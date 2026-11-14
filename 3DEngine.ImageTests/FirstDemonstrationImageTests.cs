@@ -26,6 +26,8 @@ namespace ThreeDEngine.ImageTests;
 //
 // The validation layer checks the synchronization, and each message fails the test.
 // ADR-0025 names this file in enforced-by.
+// R-0062 (TASK-0382): the class creates a Vulkan device, so it runs in the collection of the devices.
+[Collection(DearImGui.Collection)]
 public class FirstDemonstrationImageTests
 {
     private const uint Width = 320;

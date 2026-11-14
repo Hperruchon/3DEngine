@@ -17,6 +17,8 @@ namespace ThreeDEngine.ImageTests;
 // of the images. Two taps on its upper edge and a distance of 80 mm calibrate it to 20 mm for each
 // pixel. The projection of the session gives its quad, and a box of 20 at the origin hides its
 // lower-left corner. The file placed-image.png is the picture of the visual check.
+// R-0062 (TASK-0382): the class creates a Vulkan device, so it runs in the collection of the devices.
+[Collection(DearImGui.Collection)]
 public sealed class PlacedImageImageTests : IDisposable
 {
     private const uint Width = 640;

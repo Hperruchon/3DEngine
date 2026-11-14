@@ -15,6 +15,8 @@ namespace ThreeDEngine.ImageTests;
 // a box, and the overlay draws the gizmo of its centre in front of it, with no depth test. The
 // middle of the arrow X is red and the middle of the arrow Y is green, also where the body is under
 // them. The validation layer checks the synchronization, and each message fails the test.
+// R-0062 (TASK-0382): the class creates a Vulkan device, so it runs in the collection of the devices.
+[Collection(DearImGui.Collection)]
 public class GizmoImageTests
 {
     private const uint Width = 320;
