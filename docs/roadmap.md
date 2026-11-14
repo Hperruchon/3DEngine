@@ -420,6 +420,8 @@ Therefore each approved objective must have a track here.
   each view. v0.368, TASK-0383, ADR-0148.
 - R22c — The solver finds the lengths that the constraints fix, and a flat view shows a length that no constraint fixes
   in amber. v0.369, TASK-0384, ADR-0149.
+- P0.154 — On macOS the Command key gives the modifier of the shortcuts, and the command line shows "Cmd K"; R-0060
+  closes. v0.370, TASK-0385, ADR-0150.
 - Review — The codebase review of 2026-11-14 (c). v0.351, TASK-0366.
 - P0.143 — The low findings of the codebase review of 2026-11-11: a triangle of zero area adds no edge, and a mesh of
   more than 100 000 triangles finds its edges on the thread pool. v0.332, TASK-0345, ADR-0121.

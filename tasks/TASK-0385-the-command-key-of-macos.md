@@ -1,7 +1,7 @@
 ---
 id: 0385
 title: On macOS the Command key gives the modifier of the shortcuts, and the command line shows "Cmd K"
-status: Active
+status: Done
 phase: P0.154
 opened: 2026-11-14
 depends-on: [0384]
@@ -53,16 +53,16 @@ On macOS Command and K open the command line, and the field shows "Cmd K".
 
 ## Acceptance criteria
 
-- [ ] ADR-0150 exists, and ADR-0108 shows the amendment.
-- [ ] Tests prove the Command key on macOS and on the other platforms, and the text of each platform.
-- [ ] R-0060 is closed with its exit.
-- [ ] A clean build (`--no-incremental`) gives zero errors and zero warnings, and the phone project builds.
-- [ ] `dotnet test`, the write-set check and `eng/repo-gates` pass; continuous integration passes on the branch and on
+- [x] ADR-0150 exists, and ADR-0108 shows the amendment.
+- [x] Tests prove the Command key on macOS and on the other platforms, and the text of each platform.
+- [x] R-0060 is closed with its exit.
+- [x] A clean build (`--no-incremental`) gives zero errors and zero warnings, and the phone project builds.
+- [x] `dotnet test`, the write-set check and `eng/repo-gates` pass; continuous integration passes on the branch and on
       `main` after the merge.
 
 ## Outcome
 
-Status: Active
+Status: Done · commit (the merge of the branch p0154-command-key) · v0.370
 
 ## Method
 
@@ -74,3 +74,4 @@ Weakest:    no person used it on a Mac; the runner of macOS runs the tests with 
 
 - 2026-11-14: opened after R22c, branch p0154-command-key. TASK-0385 and ADR-0150 are free. Three injections each failed a
   named test; each file came back byte for byte.
+- 2026-11-14: run 43580359832 passed on the work commit, with the tests on the runner of macOS. Closed at v0.370.
