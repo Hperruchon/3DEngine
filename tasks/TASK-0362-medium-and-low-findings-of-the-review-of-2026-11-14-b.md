@@ -1,15 +1,21 @@
 ---
 id: 0362
 title: The medium and low findings of the codebase review of 2026-11-14 (b)
-status: Ready
+status: Active
 phase: P0.147
 opened: 2026-11-14
 depends-on: [0361]
-governed-by: []
+governed-by: [0007, 0019, 0025, 0027, 0029, 0030, 0032, 0034, 0072, 0075, 0076, 0077, 0078, 0080, 0081, 0082, 0083, 0085, 0086, 0092, 0100, 0101, 0102, 0104, 0105, 0106, 0107, 0108, 0110, 0111, 0113, 0114, 0115, 0116, 0120, 0124, 0125, 0127, 0129, 0130, 0131]
 writes:
   create:
     - tasks/TASK-0362-medium-and-low-findings-of-the-review-of-2026-11-14-b.md
   modify:
+    - 3DEngine.App/NativeThreeDEngine.cs
+    - 3DEngine.App/Ui/DesktopUi.Proposal.cs
+    - 3DEngine.App/Ui/DesktopUi.Overlay.cs
+    - 3DEngine.ImageTests/ProposalWindowTests.cs
+    - 3DEngine.ImageTests/DimensionLabelsTests.cs
+    - 3DEngine.ImageTests/MixImageTests.cs
     - eng/test-floor.txt
     - docs/roadmap.md
     - docs/CURRENT-STATE.md
@@ -36,7 +42,8 @@ proposal, and the mix test checks Reject and Accept at each size.
 ## Scope (in)
 
 1. V178: the button "Undo" of the line shows only while the newest step is the last step of the proposal.
-2. V179: the covers of the plates hold the targets and the plate of the lines of the arc of the last frame.
+2. V179: the covers of the plates hold the targets, the caption and the plate of the lines of the arc of the last frame,
+   and "AGENT IS WAITING".
 3. V180: the checks of Reject and Accept at each size of the mix test.
 4. A test for V178 and V179, which fails before the fix.
 
@@ -55,14 +62,26 @@ proposal, and the mix test checks Reject and Accept at each size.
 
 ## Outcome
 
-Status: Ready
+Status: Active
 
 ## Method
 
 Mechanical: the count of the log at the accept; the covers; the two checks.
-Judgement:  when the button goes.
-Weakest:    to be written at the close.
+Judgement:  when the button goes: at the first change of the count of the log, for good.
+Weakest:    a command of another client in the same frame as the end of the accept takes the button away; no person used
+            the change.
 
 ## Progress
 
 - 2026-11-14: opened by the codebase review of 2026-11-14 (b) (TASK-0361).
+- 2026-11-14: started after R18l, branch p0147-review-findings. V178: the host gives the count of the log at the end of the
+  accept, and the line shows "Undo" only while the count of the status is that count; once the count changes, the button
+  goes for good. V179: the arc keeps the boxes of the circles of Reject and Accept, their words, the caption and the plate
+  of the lines, and the plates of the next frame take them as covers. The test of V179 found a third form: a plate under
+  "AGENT IS WAITING", which is no window either; the word is a cover too. A first form of the test read the covers from
+  the list that the fix fills, so it did not see a missing target; it reads the drawn items now. The ring stays inside the
+  display in height, so the test moves it across under each plate to bring the lines onto a plate. V180: the mix test
+  checks Reject and Accept at each size.
+- 2026-11-14: six injections each failed a named test: no change of the button, no covers of the arc, no plate of the
+  lines, no targets, no word "AGENT IS WAITING", and no Accept in the sheet at 390 by 844. Each file came back byte for
+  byte.

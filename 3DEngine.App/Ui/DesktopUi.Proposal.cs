@@ -66,6 +66,12 @@ internal sealed unsafe partial class DesktopUi
     // The targets of the last frame, which the person sees while the ring of this frame takes its tap (finding V160).
     private List<(bool Accept, Vector2 Centre, Vector4 Word)> _lastProposalTargets = [];
 
+    // Finding V179 of the codebase review of 2026-11-14 (b) (TASK-0362): the rectangles of a landscape arc in this frame and in
+    // the last frame: the box of the circle of Reject and of Accept, their words, the caption and the plate of the lines. The
+    // plates of the dimensions draw before the arc, so they read the rectangles of the last frame.
+    private List<Vector4> _proposalCovers = [];
+    private List<Vector4> _lastProposalCovers = [];
+
     internal IReadOnlyDictionary<string, string> ProposalTexts => _proposalTexts;
 
     // ADR-0107 (TASK-0330): the rectangles of the words Reject and Accept of the arc of this frame, for a test.
@@ -74,11 +80,15 @@ internal sealed unsafe partial class DesktopUi
     // The ring of the arc of this frame, or null.
     internal RingLayout? ProposalRing { get; private set; }
 
-    // Item 6: the host gives the outcome of an accept or a reject. ADR-0130 item 4 (phase R18i, TASK-0358): with undo, the line
-    // has a button "Undo" after the text.
-    public void ShowProposalOutcome(string? text, bool undo = false) => (_proposalOutcome, _proposalUndo) = (text, undo && text is not null);
+    // Item 6: the host gives the outcome of an accept or a reject. ADR-0130 item 4 (phase R18i, TASK-0358): after an accept, the
+    // line has a button "Undo" after the text. Finding V178 of the codebase review of 2026-11-14 (b) (TASK-0362): the host gives
+    // the count of the log at the end of the accept, and the button shows only while the count of the status is that count, so
+    // the newest step is the last step of the proposal. A later step, an Undo of the anchors or another Document takes it away.
+    public void ShowProposalOutcome(string? text, int? undoAt = null) => (_proposalOutcome, _proposalUndo, _proposalUndoAt) = (text, undoAt is not null && text is not null, undoAt);
 
     private bool _proposalUndo;
+
+    private int? _proposalUndoAt;
 
     // Item 7: Reject and Accept are a part of the panels for a tap, as the nodes of the history arc.
     private bool OverProposal(double x, double y) => ProposalTargetAt(new Vector2((float)x, (float)y)) is not null;
@@ -110,6 +120,8 @@ internal sealed unsafe partial class DesktopUi
         _proposalTexts.Clear();
         _lastProposalTargets = _proposalTargets;
         _proposalTargets = [];
+        _lastProposalCovers = _proposalCovers;
+        _proposalCovers = [];
         ProposalRing = null;
         ProposalGlowRectangle = null;
     }
@@ -271,6 +283,11 @@ internal sealed unsafe partial class DesktopUi
         var rejectWord = new Vector4(reject.X - (ProposalButton / 2f) - 8f - rejectWidth, reject.Y - (lineHeight / 2f), reject.X - (ProposalButton / 2f) - 8f, reject.Y + (lineHeight / 2f));
         var acceptWord = new Vector4(accept.X + (ProposalButton / 2f) + 8f, accept.Y - (lineHeight / 2f), accept.X + (ProposalButton / 2f) + 8f + ImGui.CalcTextSize(AcceptLabel).X, accept.Y + (lineHeight / 2f));
         _proposalTargets = [(false, reject, rejectWord), (true, accept, acceptWord)];
+        foreach (var (_, centre, word) in _proposalTargets)
+        {
+            var box = new Vector4(centre.X - (ProposalButton / 2f), centre.Y - (ProposalButton / 2f), centre.X + (ProposalButton / 2f), centre.Y + (ProposalButton / 2f));
+            _proposalCovers.AddRange([box, word]);
+        }
 
         // Item 6: a press and a release on one end, with no window, no chip and no row under the pointer, give its action. A
         // proposal that applies takes no tap.
@@ -331,6 +348,7 @@ internal sealed unsafe partial class DesktopUi
         {
             list.AddText(captionAt, DimensionColour, caption);
             Shown(ProposalCaptionItem, caption, captionBox);
+            _proposalCovers.Add(captionBox);
         }
         else
             inside.Insert(0, (ProposalCaptionItem, Caption(card), true));
@@ -365,6 +383,7 @@ internal sealed unsafe partial class DesktopUi
         var plateTop = placed[0].At.Y - 6f;
         list.AddRectFilled(new Vector2(ring.Centre.X - (widest / 2f) - 10f, plateTop), new Vector2(ring.Centre.X + (widest / 2f) + 10f, y + 2f),
             ImGui.GetColorU32(colours[(int)ImGuiCol.WindowBg] with { W = 0.8f }), 6f);
+        _proposalCovers.Add(new Vector4(ring.Centre.X - (widest / 2f) - 10f, plateTop, ring.Centre.X + (widest / 2f) + 10f, y + 2f));
         foreach (var (item, text, amber, at, width) in placed)
         {
             ArrowText(list, font, ProposalTextSize, at, amber ? DimensionColour : ImGui.GetColorU32(colours[(int)ImGuiCol.Text]), text);
@@ -501,6 +520,8 @@ internal sealed unsafe partial class DesktopUi
         list.AddCircleFilled(new Vector2(at.X - dot + 4f, at.Y + (size.Y / 2f)), 4f, DimensionColour);
         list.AddText(at, DimensionColour, AgentWaitingText);
         Shown(ProposalWaitingItem, AgentWaitingText, new Vector4(at.X - dot, at.Y, at.X + size.X, at.Y + size.Y));
+        // Finding V179 (TASK-0362): the word is no window either, so it is a cover of the plates of the next frame.
+        _proposalCovers.Add(new Vector4(at.X - dot, at.Y, at.X + size.X, at.Y + size.Y));
     }
 
     // ADR-0108 item 6: the room of the dot before "AGENT IS WAITING": its width of 8 pixels and a gap of 8 pixels.
@@ -537,6 +558,8 @@ internal sealed unsafe partial class DesktopUi
     {
         if (_proposalOutcome is not { } outcome)
             return;
+        if (_proposalUndo && _status.Log != _proposalUndoAt)
+            _proposalUndo = false;
         var right = displaySize.X - 16f - _inset.Z;
         ImGui.PushFont(_monoFont);
         var undo = _proposalUndo ? StatusSeparator + ProposalUndoLabel : string.Empty;

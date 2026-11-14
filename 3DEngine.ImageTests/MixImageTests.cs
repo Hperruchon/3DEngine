@@ -192,11 +192,10 @@ public class MixImageTests
 
         if (proposals is not null)
         {
-            if (frameWidth >= frameHeight)
-            {
-                Assert.NotNull(ui.ItemRectangle(DesktopUi.ProposalRejectItem));
-                Assert.NotNull(ui.ItemRectangle(DesktopUi.ProposalAcceptItem));
-            }
+            // Finding V180 of the codebase review of 2026-11-14 (b) (TASK-0362): the arc of a landscape display and the sheet
+            // of a portrait display both give Reject and Accept.
+            Assert.NotNull(ui.ItemRectangle(DesktopUi.ProposalRejectItem));
+            Assert.NotNull(ui.ItemRectangle(DesktopUi.ProposalAcceptItem));
 
             if (pending)
             {
