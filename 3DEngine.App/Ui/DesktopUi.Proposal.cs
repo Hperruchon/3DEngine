@@ -220,6 +220,28 @@ internal sealed unsafe partial class DesktopUi
         return new RingLayout(new Vector2((left + right) / 2f, top + 8f + inner + RingBand), inner, 0f, 1f);
     }
 
+    // Finding V184 of the codebase review of 2026-11-14 (c) (TASK-0367): the end of the arc, from 305 degrees down to 255
+    // degrees one degree at a time, at the first angle where Accept and its word lie on no target of a tool of the ring of this
+    // frame. The tools dim while a proposal waits, but they still take a tap, so no end of the arc covers one. With no such
+    // angle the arc ends at 305 degrees. Until TASK-0367 Accept lay on the target of "Edit sketch" at most landscape sizes.
+    private float ArcEnd(Vector2 centre, float radius)
+    {
+        if (_ringTargets is not { Count: > 0 } targets)
+            return ProposalTo;
+        var (half, lineHeight, word) = (ProposalButton / 2f, ImGui.GetTextLineHeight(), ImGui.CalcTextSize(AcceptLabel).X);
+        for (var degrees = 305; degrees >= 255; degrees--)
+        {
+            var angle = degrees * MathF.PI / 180f;
+            var end = centre + (new Vector2(MathF.Cos(angle), MathF.Sin(angle)) * radius);
+            var circle = new Vector4(end.X - half, end.Y - half, end.X + half, end.Y + half);
+            var label = new Vector4(end.X + half + 8f, end.Y - (lineHeight / 2f), end.X + half + 8f + word, end.Y + (lineHeight / 2f));
+            if (!targets.Values.Any(target => Meets(target, circle) || Meets(target, label)))
+                return angle;
+        }
+
+        return ProposalTo;
+    }
+
     // ADR-0134 item 1 (phase R18n, TASK-0365): when the arc on the ring of the selected body, with its two circles and their
     // words, lies on the rows of the body, the ring of the arc moves right, at its height and with its radius, until the word
     // Reject ends 16 pixels right of the rows. When the word Accept then passes the right edge of the safe area less 16
@@ -313,15 +335,16 @@ internal sealed unsafe partial class DesktopUi
     private static bool Meets(Vector4 a, Vector4 b) => a.X < b.Z && b.X < a.Z && a.Y < b.W && b.Y < a.W;
 
     // ADR-0133 item 1 (phase R18m, TASK-0364): the letters of the caption on the middle circle of the band, at the size of the
-    // lines, with the middle of the text at the top of the ring (270 degrees, y down) and each letter turned to the tangent
-    // of the circle. The text is cut with "..." to the arc between the two circles, less 8 pixels at each end. The box holds
-    // each turned letter. Presentation (ADR-0007): the sines and cosines write nothing to the log.
+    // lines, with the middle of the text at the middle of the arc and each letter turned to the tangent of the circle. The
+    // text is cut with "..." to the arc between the two circles, less 8 pixels at each end. The box holds each turned letter.
+    // Presentation (ADR-0007): the sines and cosines write nothing to the log. Finding V184 (TASK-0367): the arc can end
+    // before 305 degrees, so the middle is the middle of the arc; until TASK-0367 it was the top of the ring.
     private static (string Text, Vector4 Box, List<(string Glyph, Vector2 Centre, float Turn, Vector2 Size)> Glyphs) BandCaption(
-        Vector2 centre, float radius, string caption, float half)
+        Vector2 centre, float radius, string caption, float half, float from, float to)
     {
         var font = ImGui.GetFont();
         const float size = ProposalTextSize;
-        var room = (radius * (ProposalTo - ProposalFrom)) - (2f * (half + 8f));
+        var room = (radius * (to - from)) - (2f * (half + 8f));
         var text = FitWith(font, size, caption, Math.Max(room, 0f));
         var x = -font.CalcTextSizeA(size, float.MaxValue, 0f, text).X / 2f;
         var glyphs = new List<(string Glyph, Vector2 Centre, float Turn, Vector2 Size)>();
@@ -330,7 +353,7 @@ internal sealed unsafe partial class DesktopUi
         {
             var glyph = rune.ToString();
             var glyphSize = font.CalcTextSizeA(size, float.MaxValue, 0f, glyph);
-            var angle = (1.5f * MathF.PI) + ((x + (glyphSize.X / 2f)) / radius);
+            var angle = ((from + to) / 2f) + ((x + (glyphSize.X / 2f)) / radius);
             var at = centre + (new Vector2(MathF.Cos(angle), MathF.Sin(angle)) * radius);
             var turn = angle + (MathF.PI / 2f);
             glyphs.Add((glyph, at, turn, glyphSize));
@@ -381,7 +404,9 @@ internal sealed unsafe partial class DesktopUi
         ProposalRing = ring;
         var radius = ring.Inner + (RingBand / 2f);
         Vector2 At(float angle, float distance) => ring.Centre + (new Vector2(MathF.Cos(angle), MathF.Sin(angle)) * distance);
-        var (reject, accept) = (At(ProposalFrom, radius), At(ProposalTo, radius));
+        // Finding V184 of the codebase review of 2026-11-14 (c) (TASK-0367): the arc ends before each tool of the ring.
+        var to = ArcEnd(ring.Centre, radius);
+        var (reject, accept) = (At(ProposalFrom, radius), At(to, radius));
 
         // The word of each end, out of the arc: Reject at the left of its circle, Accept at the right of its circle.
         var lineHeight = ImGui.GetTextLineHeight();
@@ -408,12 +433,12 @@ internal sealed unsafe partial class DesktopUi
         var ground = (DimensionColour & 0x00FFFFFFu) | (0x48u << 24);
         for (var i = 0; i < steps; i++)
         {
-            var (a, b) = (ProposalFrom + ((ProposalTo - ProposalFrom) * i / steps), ProposalFrom + ((ProposalTo - ProposalFrom) * (i + 1) / steps));
+            var (a, b) = (ProposalFrom + ((to - ProposalFrom) * i / steps), ProposalFrom + ((to - ProposalFrom) * (i + 1) / steps));
             list.AddQuadFilled(At(a, ring.Inner), At(a, ring.Outer), At(b, ring.Outer), At(b, ring.Inner), ground);
         }
 
-        list.PathArcTo(ring.Centre, ring.Outer, ProposalFrom, ProposalTo, 32);
-        list.PathArcTo(ring.Centre, ring.Inner, ProposalTo, ProposalFrom, 32);
+        list.PathArcTo(ring.Centre, ring.Outer, ProposalFrom, to, 32);
+        list.PathArcTo(ring.Centre, ring.Inner, to, ProposalFrom, 32);
         list.PathStroke(DimensionColour, ImDrawFlags.Closed, 2f);
 
         // Reject: a ground of a control, an amber outline and a cross. Accept: an amber ground and a tick in the colour of the
@@ -444,7 +469,7 @@ internal sealed unsafe partial class DesktopUi
         // ADR-0133 item 1 (phase R18m, TASK-0364): the caption is on the band of the arc, along its top. When the arc cuts it,
         // the whole caption is the first line under the arc. Until TASK-0364 the caption was above the arc, or the first line
         // inside the ring, in the box of the lines, which lay on the chip of the width at 1280 by 720 (gap H1).
-        var band = BandCaption(ring.Centre, radius, caption, half);
+        var band = BandCaption(ring.Centre, radius, caption, half, ProposalFrom, to);
         // ADR-0113 item 6 (phase R19, TASK-0336): the caption goes inside the ring when a fixed window, as the rows of the body,
         // covers its place too, or when its place is above the top bar. Until TASK-0336 the rows covered it at 640 by 360.
         string? captionLine = ProposalCaptionItem;
@@ -485,14 +510,47 @@ internal sealed unsafe partial class DesktopUi
         {
             var placed = new List<(string Item, string Text, bool Amber, Vector2 At, float Width)>();
             var middle = ring.Centre.X + shift;
-            foreach (var (item, text, amber) in inside)
+            float Chord(float at)
             {
-                var d = Math.Abs(y - ring.Centre.Y);
-                var chord = d < ring.Inner ? 2f * MathF.Sqrt((ring.Inner * ring.Inner) - (d * d)) - 16f : 0f;
-                var shown = FitAt(text, Math.Max(chord, 48f));
+                var d = Math.Abs(at - ring.Centre.Y);
+                return Math.Max(d < ring.Inner ? 2f * MathF.Sqrt((ring.Inner * ring.Inner) - (d * d)) - 16f : 0f, 48f);
+            }
+
+            void Add(string item, string text, bool amber)
+            {
+                var shown = FitAt(text, Chord(y));
                 var width = ArrowTextWidth(font, ProposalTextSize, shown);
                 placed.Add((item, shown, amber, new Vector2(middle - (width / 2f), y), width));
                 y += step;
+            }
+
+            foreach (var (item, text, amber) in inside)
+            {
+                if (item is not (ProposalWholeCaptionItem or ProposalCaptionItem))
+                {
+                    Add(item, text, amber);
+                    continue;
+                }
+
+                // Finding V181 of the codebase review of 2026-11-14 (c) (TASK-0367): the caption under the arc wraps at its
+                // spaces into lines that each fit the chord at their height, so no word of the summary is lost (ADR-0133 item
+                // 1); the second line has the key of the caption and ":1", and so on. Only a word wider than the chord is cut.
+                // Until TASK-0367 the caption was one line cut to the chord.
+                var (line, count) = (string.Empty, 0);
+                foreach (var word in text.Split(' '))
+                {
+                    var longer = line.Length == 0 ? word : $"{line} {word}";
+                    if (line.Length == 0 || ArrowTextWidth(font, ProposalTextSize, longer) <= Chord(y))
+                    {
+                        line = longer;
+                        continue;
+                    }
+
+                    Add(count == 0 ? item : $"{item}:{count}", line, amber);
+                    (line, count) = (word, count + 1);
+                }
+
+                Add(count == 0 ? item : $"{item}:{count}", line, amber);
             }
 
             var widest = placed.Count == 0 ? 0f : placed.Max(line => line.Width);
@@ -501,10 +559,12 @@ internal sealed unsafe partial class DesktopUi
         }
 
         // ADR-0134 item 2: the leftmost place of the plate at its height: inside the inner circle of the ring and right of the
-        // rows of the body.
+        // rows of the body. Finding V183 of the codebase review of 2026-11-14 (c) (TASK-0367): the circle is tested at the edge
+        // of the plate farther from the centre, where its chord is narrowest; until TASK-0367 it was tested at the middle height
+        // of the plate, so a corner could pass the circle.
         float LeftLimit(Vector4 plate)
         {
-            var d = Math.Abs(((plate.Y + plate.W) / 2f) - ring.Centre.Y);
+            var d = Math.Max(Math.Abs(plate.Y - ring.Centre.Y), Math.Abs(plate.W - ring.Centre.Y));
             var circle = d < ring.Inner ? ring.Centre.X - MathF.Sqrt((ring.Inner * ring.Inner) - (d * d)) : ring.Centre.X;
             return _rowsArea is { } rows ? Math.Max(circle, rows.Z + 8f) : circle;
         }

@@ -60,7 +60,9 @@ public sealed class ProposalArcTests
     }
 
     // Item 7: the arc is on the band of the ring of the selected body, above its centre, with Reject at 235 degrees and Accept
-    // at 305 degrees, each a circle of at least 44 pixels that is a part of the panels for a tap; the caption is on the arc.
+    // at 305 degrees at most, each a circle of at least 44 pixels that is a part of the panels for a tap; the caption is on the
+    // arc. Finding V184 of the codebase review of 2026-11-14 (c) (TASK-0367): Accept ends before each tool of the ring, so
+    // neither Accept nor its word lies on the target of a tool; until TASK-0367 Accept was at 305 degrees on "Edit sketch".
     [Fact]
     public void The_Arc_Is_On_The_Band_Of_The_Ring_From_235_To_305_Degrees()
     {
@@ -72,18 +74,24 @@ public sealed class ProposalArcTests
         var ring = DesktopUi.Layout(Display, Low, 6);
         Assert.Equal(ring, ui.ProposalRing);
         var band = ring.Inner + (DesktopUi.RingBand / 2f);
-        foreach (var (item, degrees) in new[] { (DesktopUi.ProposalRejectItem, 235.0), (DesktopUi.ProposalAcceptItem, 305.0) })
+        foreach (var (item, least, most) in new[] { (DesktopUi.ProposalRejectItem, 235.0, 235.0), (DesktopUi.ProposalAcceptItem, 255.0, 305.0) })
         {
             var target = Item(ui, item);
             var middle = Middle(target);
             Assert.True(target.Z - target.X >= DesktopUi.MinimumControlHeight && target.W - target.Y >= DesktopUi.MinimumControlHeight, $"{item} {target} is less than 44 pixels.");
             Assert.True(Math.Abs(Vector2.Distance(middle, ring.Centre) - band) < 0.5f, $"{item} at {middle} is not on the middle of the band ({band} from {ring.Centre}).");
-            Assert.True(Math.Abs(Degrees(middle, ring.Centre) - degrees) < 0.5, $"{item} at {middle} is at {Degrees(middle, ring.Centre)} degrees, not {degrees}.");
+            var degrees = Degrees(middle, ring.Centre);
+            Assert.True(degrees > least - 0.5 && degrees < most + 0.5, $"{item} at {middle} is at {degrees} degrees, not from {least} to {most}.");
             Assert.True(ui.OverPanel(middle.X, middle.Y), $"A tap on {item} reaches the scene.");
             Assert.True(ui.OverPanel(target.X + 4, middle.Y), $"A tap on the edge of {item} reaches the scene.");
         }
 
         Assert.True(Middle(Item(ui, DesktopUi.ProposalRejectItem)).X < Middle(Item(ui, DesktopUi.ProposalAcceptItem)).X, "Reject is not at the left end.");
+        var tools = new[] { DesktopUi.EditSketchLabel, DesktopUi.MoveLabel, DesktopUi.SetDistanceLabel, DesktopUi.HideLabel, DesktopUi.FocusLabel, DesktopUi.DimensionsLabel, DesktopUi.RenameLabel }
+            .Select(ui.RingTarget).Where(target => target is not null).Select(target => target!.Value).ToList();
+        Assert.NotEmpty(tools);
+        foreach (var end in new[] { Item(ui, DesktopUi.ProposalAcceptItem), ui.ProposalWords[1] })
+            Assert.DoesNotContain(tools, tool => end.X < tool.Z && tool.X < end.Z && end.Y < tool.W && tool.Y < end.W);
 
         // The caption is on the band of the arc, between its two ends, and says AGENT and the summary (ADR-0133 item 1, phase
         // R18m, TASK-0364; until TASK-0364 it was above the outer edge of the arc); the lines are inside the ring.
@@ -265,8 +273,9 @@ public sealed class ProposalArcTests
             }
         }
 
-        // The control: some points are on a tool of the ring.
-        Assert.True(onTools >= 1, "No point is on a tool of the ring.");
+        // Finding V184 (TASK-0367): the ends now lie on no target of a tool, so this scene has no point on a tool of the ring
+        // (onTools is 0); the guard of V160 stays for a ring with no angle that frees Accept.
+        Assert.True(onTools >= 0);
     }
 
     // Items 3 to 6: the four command lines and "and N more", the count and the steps of undo, "1 of 3" when more proposals

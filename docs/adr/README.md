@@ -97,7 +97,7 @@ names. Do not read all of them.
 | [0089](0089-the-cone-the-sphere-and-the-torus-are-closed-meshes.md) | The cone, the sphere and the torus are closed meshes that the engine makes | Accepted | Geometry, kernel | — | — |
 | [0090](0090-the-answer-of-a-save-lists-its-warnings.md) | The HTTP answer of a save lists its warnings | Accepted | Surface, persistence | 0030 | — |
 | [0091](0091-the-fonts-of-the-redesign.md) | The interface draws with Instrument Sans, and a value on an edge with JetBrains Mono | Amended | Clients, rendering | 0027, 0078 | 0117 |
-| [0092](0092-an-agent-proposes-and-the-person-accepts.md) | An agent proposes commands, and the person accepts or rejects them | Amended | Surface, clients | — | 0107, 0108, 0110, 0111, 0113, 0130, 0133, 0134, 0135 |
+| [0092](0092-an-agent-proposes-and-the-person-accepts.md) | An agent proposes commands, and the person accepts or rejects them | Amended | Surface, clients | — | 0107, 0108, 0110, 0111, 0113, 0130, 0133, 0134, 0135, 0136 |
 | [0093](0093-the-layout-of-the-mix-has-no-panel-chrome.md) | The layout of the mix has a top bar, a panel with no chrome and a status line at the lower right | Amended | Clients, rendering | 0080 | 0099, 0100, 0113, 0124, 0127 |
 | [0094](0094-a-framed-part-fills-45-percent-of-the-picture.md) | A framed part fills 45 % of the half picture, as in the render of the mix | Accepted | Clients, rendering | 0025 | — |
 | [0095](0095-the-look-of-the-orbit-ring.md) | The ring has the look of the orbit of the render, with a guide, icons and a caption | Amended | Clients, rendering | 0081, 0086 | 0108 |
@@ -138,9 +138,10 @@ names. Do not read all of them.
 | [0130](0130-the-proposal-in-the-window-as-in-the-render.md) | A proposal shows its values in the rows, a pending node on the history arc, a glow on the edges and Undo after an accept | Accepted | Clients, rendering | 0092, 0104, 0110 | — |
 | [0131](0131-the-rows-under-the-part-on-a-portrait-display.md) | On a portrait display the rows of a selected body are under the part, and the panel has no controls of a selected body | Amended | Clients, rendering | 0084, 0099 | 0135 |
 | [0132](0132-the-labels-of-the-corner-ring.md) | A label of the corner ring is drawn smaller until it lies on no other label and fits inside the display | Accepted | Clients, rendering | 0081 | — |
-| [0133](0133-the-caption-of-a-proposal-on-its-arc.md) | The caption of a proposal is on the band of its arc, and the command lines under the arc lie on no chip | Amended | Clients, rendering | 0092 | 0134 |
+| [0133](0133-the-caption-of-a-proposal-on-its-arc.md) | The caption of a proposal is on the band of its arc, and the command lines under the arc lie on no chip | Amended | Clients, rendering | 0092 | 0134, 0136 |
 | [0134](0134-the-arc-of-a-proposal-right-of-the-rows.md) | The arc of a proposal moves right of the rows of the selected body, and its lines keep off the tools of the ring | Accepted | Clients, rendering | 0092, 0133 | — |
 | [0135](0135-the-arc-of-a-proposal-on-a-portrait-display.md) | On a portrait display the arc of a proposal is at the top, and a sheet of its lines is under it | Accepted | Clients, rendering | 0092, 0111, 0131 | — |
+| [0136](0136-the-arc-ends-before-the-tools-and-the-caption-wraps.md) | The arc of a proposal ends before each tool of the ring, and the whole caption under it wraps | Accepted | Clients, rendering | 0092, 0133 | — |
 
 ## Topics
 
