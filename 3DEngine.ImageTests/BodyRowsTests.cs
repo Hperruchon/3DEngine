@@ -72,9 +72,11 @@ public sealed class BodyRowsTests
         Assert.Null(ui.ItemRectangle(DesktopUi.ShowAllLabel));
     }
 
-    // Item 1: no rows with no selection and on a portrait display, and the panel shows; the safe area moves the rows.
+    // Item 1: no rows with no selection, and the panel shows; the safe area moves the rows. ADR-0131 item 1 (phase R18k,
+    // TASK-0360): on a portrait display the rows show too, under the part, at the full width less the margins, and the panel
+    // does not show. Until TASK-0360 a portrait display gave no rows and showed the panel.
     [Fact]
-    public void The_Rows_Need_A_Selection_And_A_Landscape_Display_And_Keep_The_Safe_Area()
+    public void The_Rows_Need_A_Selection_Show_Under_The_Part_On_A_Portrait_Display_And_Keep_The_Safe_Area()
     {
         using var ui = new DesktopUi("http://127.0.0.1:5180", Document.Millimetre);
         Frame(ui, null, Display);
@@ -85,14 +87,41 @@ public sealed class BodyRowsTests
         var portrait = new Vector2(390, 844);
         Frame(ui, Extrude, portrait);
         Frame(ui, Extrude, portrait);
-        Assert.Null(ui.ItemRectangle(DesktopUi.RowsTitleItem));
-        Assert.NotNull(ui.ItemRectangle(DesktopUi.ShowAllLabel));
+        var under = ui.ItemRectangle(DesktopUi.RowsTitleItem) ?? throw new InvalidOperationException("No rows on a portrait display.");
+        Assert.Equal((16f, portrait.X - 16f), (under.X, under.Z));
+        Assert.True(under.Y >= portrait.Y / 2f, $"The rows at {under} are not under the middle of the display.");
+        Assert.Null(ui.ItemRectangle(DesktopUi.ShowAllLabel));
+        Assert.Empty(ui.PanelRectangles);
 
         var inset = new Vector4(30f, 40f, 24f, 0f);
         Frame(ui, Extrude, Display, null, inset);
         Frame(ui, Extrude, Display, null, inset);
         var title = ui.ItemRectangle(DesktopUi.RowsTitleItem) ?? throw new InvalidOperationException("No rows.");
         Assert.Equal((16 + inset.X, PanelTop + inset.Y), (title.X, title.Y));
+    }
+
+    // ADR-0131 item 2 (phase R18k, TASK-0360): a chip that the placement puts on rows under the part goes above them, because
+    // the ring and the anchors are under them; on a landscape display a chip on the rows goes under them.
+    [Fact]
+    public void A_Chip_On_Rows_Under_The_Part_Goes_Above_Them()
+    {
+        var portrait = new Vector2(768, 1024);
+        using var ui = new DesktopUi("http://127.0.0.1:5180", Document.Millimetre);
+        Frame(ui, Extrude, portrait);
+        Frame(ui, Extrude, portrait);
+        var rows = ui.RowsArea ?? throw new InvalidOperationException("No rows on a portrait display.");
+
+        // A chip of the width whose place is in the middle of the rows.
+        IReadOnlyList<EdgeValues.Value> values = [new(EdgeValues.ConstraintKey(Width), "60.000 mm", new Vector2((rows.X + rows.Z) / 2f, (rows.Y + rows.W) / 2f), 60, Plate, Sketch, Width, "Width", Name: "C1")];
+        for (var frame = 0; frame < 2; frame++)
+        {
+            ui.Route([]);
+            ui.Frame(1f / 60f, portrait, Vector2.One, [Extrude], Plate, null, values: values);
+        }
+
+        var chip = ui.ItemRectangle(values[0].Key) ?? throw new InvalidOperationException("No chip.");
+        var area = ui.RowsArea!.Value;
+        Assert.True(chip.W <= area.Y, $"The chip {chip} is not above the rows {area}.");
     }
 
     // Item 2: the state after the kind: "correct", or "failed" and the code; and "hidden".

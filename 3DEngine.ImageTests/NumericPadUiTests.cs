@@ -15,9 +15,14 @@ namespace ThreeDEngine.ImageTests;
 [Collection(DearImGui.Collection)]
 public sealed class NumericPadUiTests
 {
-    // ADR-0099 item 1 (the redesign, slice p, TASK-0313): on a landscape display the rows of a selected body take the place of
-    // the panel, so these tests of the panel use a portrait display, where the panel keeps the controls of the selected body.
+    // ADR-0131 item 1 (phase R18k, TASK-0360): on this portrait display the panel, with the list "New", shows with no selected
+    // body; with a selected body, Move and Set distance are segments of the ring of the body. Until TASK-0360 the panel kept
+    // them on a portrait display.
     private static readonly Vector2 Display = new(720, 1280);
+
+    // The centre and the size of the body on the display, for the ring of the selected body.
+    private static readonly Vector2 RingCentre = Display / 2f;
+    private const float RingBody = 120f;
 
     private static readonly LiveBody Body = new(Guid.Parse("22222222-0000-0000-0000-000000000000"), "Box", null, true);
 
@@ -28,7 +33,7 @@ public sealed class NumericPadUiTests
     private static IReadOnlyList<InputSample> Step(DesktopUi ui, Guid? selection, params InputSample[] frame)
     {
         var intents = ui.Route(frame);
-        ui.Frame(1f / 60f, Display, Vector2.One, selection == Extruded.Id ? [Body, Extruded] : [Body], selection);
+        ui.Frame(1f / 60f, Display, Vector2.One, selection == Extruded.Id ? [Body, Extruded] : [Body], selection, ringCentre: RingCentre, ringBody: RingBody);
         return intents;
     }
 
@@ -87,19 +92,22 @@ public sealed class NumericPadUiTests
     }
 
     // P8e (TASK-0119): the pad shows the length unit that the host gives, not a constant. The
-    // engine permits the millimetre only (ADR-0015 item 7), so the test gives another text.
+    // engine permits the millimetre only (ADR-0015 item 7), so the test gives another text. ADR-0131 item 1 (phase R18k,
+    // TASK-0360): the list "New" is in the panel with no selection, and Move is on the ring of the selected body.
     [Fact]
     public void Each_Pad_Shows_The_Length_Unit_Of_The_Document()
     {
-        using var ui = Opened(Body.Id, "in");
+        using var ui = Opened(null, "in");
 
-        OpenFromNew(ui, DeviceKind.Mouse, DesktopUi.NewBoxLabel, Body.Id);
+        OpenFromNew(ui, DeviceKind.Mouse, DesktopUi.NewBoxLabel);
         Assert.Equal(DesktopUi.NewBoxLabel, ui.Pad?.Title);
         Assert.Equal("in", ui.Pad!.Unit);
-        Tap(ui, DeviceKind.Mouse, DesktopUi.PadItem("Cancel"), Body.Id);
+        Tap(ui, DeviceKind.Mouse, DesktopUi.PadItem("Cancel"));
         Assert.Null(ui.Pad);
 
-        Tap(ui, DeviceKind.Mouse, DesktopUi.MoveLabel, Body.Id);
+        Step(ui, Body.Id);
+        Step(ui, Body.Id);
+        Tap(ui, DeviceKind.Mouse, DesktopUi.RingItem(DesktopUi.MoveLabel), Body.Id);
         Assert.Equal(DesktopUi.MoveLabel, ui.Pad?.Title);
         Assert.Equal("in", ui.Pad!.Unit);
     }
@@ -145,14 +153,15 @@ public sealed class NumericPadUiTests
         Assert.Equal([arrow, undo], Step(ui, null, arrow, undo));
     }
 
+    // ADR-0131 item 1 (phase R18k, TASK-0360): Move is a segment of the ring of the selected body on each display.
     [Fact]
     public void Move_Shows_Only_With_A_Selection_And_Gives_The_Offsets_Of_The_Selected_Body()
     {
         using var none = Opened();
-        Assert.Null(none.ItemRectangle(DesktopUi.MoveLabel));
+        Assert.Null(none.ItemRectangle(DesktopUi.RingItem(DesktopUi.MoveLabel)));
 
         using var ui = Opened(Body.Id);
-        Tap(ui, DeviceKind.Touch, DesktopUi.MoveLabel, Body.Id);
+        Tap(ui, DeviceKind.Touch, DesktopUi.RingItem(DesktopUi.MoveLabel), Body.Id);
         Assert.Equal(["dx", "dy", "dz"], ui.Pad!.Fields.Select(field => field.Name));
         Step(ui, Body.Id);
         foreach (var label in new[] { "Clear", "5", "Next", "Next", "Clear", "-", "2", "Apply" })
@@ -162,15 +171,16 @@ public sealed class NumericPadUiTests
     }
 
     // ADR-0049 item 8 (TASK-0163): Set distance shows only for a selected extrude and asks the host
-    // for the pad; the pad starts with the distance in effect, and an apply gives the new distance.
+    // for the pad; the pad starts with the distance in effect, and an apply gives the new distance. ADR-0131 item 1 (phase
+    // R18k, TASK-0360): Set distance is a segment of the ring of the selected body on each display.
     [Fact]
     public void Set_Distance_Shows_Only_For_An_Extrude_And_Gives_The_New_Distance()
     {
         using var box = Opened(Body.Id);
-        Assert.Null(box.ItemRectangle(DesktopUi.SetDistanceLabel));
+        Assert.Null(box.ItemRectangle(DesktopUi.RingItem(DesktopUi.SetDistanceLabel)));
 
         using var ui = Opened(Extruded.Id);
-        Tap(ui, DeviceKind.Touch, DesktopUi.SetDistanceLabel, Extruded.Id);
+        Tap(ui, DeviceKind.Touch, DesktopUi.RingItem(DesktopUi.SetDistanceLabel), Extruded.Id);
         Assert.Equal([new EditDistanceAction(Extruded.Id)], ui.TakeActions());
 
         ui.OpenDistancePad(Extruded.Id, 5);
@@ -251,16 +261,17 @@ public sealed class NumericPadUiTests
     }
 
     // V32 of the second codebase review of 2026-10-28: the Move pad moved the body that was
-    // selected when it opened. It closes when the selection changes or its body leaves the list.
+    // selected when it opened. It closes when the selection changes or its body leaves the list. ADR-0131 item 1 (phase
+    // R18k, TASK-0360): Move is on the ring of the selected body, and the list "New" is in the panel with no selection.
     [Fact]
     public void The_Move_Pad_Closes_When_The_Selection_Changes()
     {
         var other = new LiveBody(Guid.Parse("33333333-0000-0000-0000-000000000000"), "Box", null, true);
         using var ui = new DesktopUi("http://127.0.0.1:5180", Engine.Contracts.Document.Millimetre);
-        void Draw(Guid? selection, params LiveBody[] bodies) => ui.Frame(1f / 60f, Display, Vector2.One, bodies, selection);
+        void Draw(Guid? selection, params LiveBody[] bodies) => ui.Frame(1f / 60f, Display, Vector2.One, bodies, selection, ringCentre: RingCentre, ringBody: RingBody);
         Draw(Body.Id, Body, other);
         Draw(Body.Id, Body, other);
-        var at = Centre(ui, DesktopUi.MoveLabel);
+        var at = Centre(ui, DesktopUi.RingItem(DesktopUi.MoveLabel));
         ui.Route([new PointerSample(DeviceKind.Mouse, 1, 0, at.X, at.Y, 1, PointerButtons.Left, KeyModifiers.None, PointerPhase.Down, 0)]);
         Draw(Body.Id, Body, other);
         ui.Route([new PointerSample(DeviceKind.Mouse, 1, 0, at.X, at.Y, 1, PointerButtons.Left, KeyModifiers.None, PointerPhase.Up, 0)]);
@@ -275,7 +286,7 @@ public sealed class NumericPadUiTests
 
         // A body that leaves the list ends the pad too, also when the host keeps its selection.
         Draw(other.Id, Body, other);
-        at = Centre(ui, DesktopUi.MoveLabel);
+        at = Centre(ui, DesktopUi.RingItem(DesktopUi.MoveLabel));
         ui.Route([new PointerSample(DeviceKind.Touch, 1, 3, at.X, at.Y, 1, PointerButtons.None, KeyModifiers.None, PointerPhase.Down, 0)]);
         Draw(other.Id, Body, other);
         ui.Route([new PointerSample(DeviceKind.Touch, 1, 3, at.X, at.Y, 1, PointerButtons.None, KeyModifiers.None, PointerPhase.Up, 0)]);
@@ -284,10 +295,12 @@ public sealed class NumericPadUiTests
         Draw(other.Id, Body);
         Assert.Null(ui.Pad);
 
-        // New box names no selection, so it stays open.
-        OpenFromNew(ui, DeviceKind.Mouse, DesktopUi.NewBoxLabel, Body.Id);
-        Assert.NotNull(ui.Pad);
+        // New box names no selection, so it stays open when a body is selected.
         Step(ui, null);
+        Step(ui, null);
+        OpenFromNew(ui, DeviceKind.Mouse, DesktopUi.NewBoxLabel);
+        Assert.NotNull(ui.Pad);
+        Step(ui, Body.Id);
         Assert.NotNull(ui.Pad);
     }
 
