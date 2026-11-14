@@ -461,6 +461,18 @@ internal sealed unsafe partial class DesktopUi
 
     internal static string HiddenRowItem(Guid body) => $"Status:hidden {body}";
 
+    // ADR-0129 item 1 (finding V174, TASK-0356): the line of the hidden bodies that the list has no room for.
+    public const string HiddenMoreItem = "Status:hidden more";
+
+    internal static string HiddenMoreText(int count) => count == 1 ? "1 more" : $"{count} more";
+
+    private void ShowAllRow(float width)
+    {
+        if (ImGui.Button($"{ShowAllLabel}##hidden", new Vector2(width, MinimumControlHeight)))
+            _actions.Add(new ShowAllAction());
+        Item(HiddenShowAllItem);
+    }
+
     private bool _hiddenOpen;
     private float _statusRight;
 
@@ -485,20 +497,34 @@ internal sealed unsafe partial class DesktopUi
         var top = 16f + _inset.Y + TopBarHeight;
         ImGui.SetNextWindowPos(new Vector2(_statusRight, bottom), ImGuiCond.Always, new Vector2(1f, 1f));
         ImGui.SetNextWindowSizeConstraints(Vector2.Zero, new Vector2(displaySize.X, Math.Max(bottom - top, MinimumControlHeight)));
+
+        // Finding V174 of the codebase review of 2026-11-14 (TASK-0356, ADR-0129 item 1): the list has no scroll bar, and a
+        // touch does not scroll it, so the rows that do not fit went under the display. When the rows do not fit, "Show all"
+        // comes first, then the hidden bodies that fit, then the count of the others; each row shows in the display.
+        var style = ImGui.GetStyle();
+        var room = (int)((bottom - top - (2f * style.WindowPadding.Y) + style.ItemSpacing.Y) / (MinimumControlHeight + style.ItemSpacing.Y));
+        var fits = hidden.Count + (hidden.Count > 1 ? 1 : 0) <= room;
+        var shown = fits ? hidden.Count : Math.Max(room - 2, 0);
         if (ImGui.Begin("##HiddenList", FixedFlags & ~ImGuiWindowFlags.NoBackground))
         {
-            for (var i = 0; i < hidden.Count; i++)
+            if (!fits)
+                ShowAllRow(width);
+            for (var i = 0; i < shown; i++)
             {
                 if (ImGui.Button($"{labels[i]}##{hidden[i].Id}", new Vector2(width, MinimumControlHeight)))
                     _actions.Add(new SetVisibleAction(hidden[i].Id, true));
                 Item(HiddenRowItem(hidden[i].Id));
             }
 
-            if (hidden.Count > 1)
+            if (!fits)
             {
-                if (ImGui.Button($"{ShowAllLabel}##hidden", new Vector2(width, MinimumControlHeight)))
-                    _actions.Add(new ShowAllAction());
-                Item(HiddenShowAllItem);
+                ImGui.Dummy(new Vector2(width, (MinimumControlHeight - ImGui.GetTextLineHeight()) / 2f));
+                ImGui.TextDisabled(HiddenMoreText(hidden.Count - shown));
+                Item(HiddenMoreItem);
+            }
+            else if (hidden.Count > 1)
+            {
+                ShowAllRow(width);
             }
 
             AddWindowRectangle();

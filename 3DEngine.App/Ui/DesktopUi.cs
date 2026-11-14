@@ -183,6 +183,10 @@ internal sealed unsafe partial class DesktopUi : IDisposable
 
     // ADR-0080 (TASK-0248): the rectangles of the fixed controls, which a tap does not pass either.
     private readonly List<Vector4> _fixed = new();
+
+    // Finding V173 of the codebase review of 2026-11-14 (TASK-0356): the fixed rectangles of the last frame, as _lastPanels,
+    // so the plates of the dimensions see the list of the hidden bodies, which comes after them in the frame.
+    private readonly List<Vector4> _lastFixed = new();
     private readonly Dictionary<string, Vector4> _items = new(StringComparer.Ordinal);
     private readonly List<string> _shown = new();
     private readonly (uint Width, uint Height, byte[] Rgba) _atlas;
@@ -579,6 +583,8 @@ internal sealed unsafe partial class DesktopUi : IDisposable
         _lastPanels.Clear();
         _lastPanels.AddRange(_panels);
         _panels.Clear();
+        _lastFixed.Clear();
+        _lastFixed.AddRange(_fixed);
         _fixed.Clear();
         _anchorsTop = float.MaxValue;
         _cutList = null;

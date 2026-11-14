@@ -134,14 +134,17 @@ internal static class DimensionOverlay
                 at = Clamp(new Vector2(start.X, Math.Min(at.Y, other.Min.Y) - extent.Y - LabelGap), extent, window);
             if (Meets(at, extent) is not null)
             {
-                var stuck = at;
                 at = start;
                 for (var step = 0; step <= steps && Meets(at, extent) is { } other; step++)
                     at = Clamp(new Vector2(Math.Max(at.X, other.Max.X) + LabelGap, start.Y), extent, window);
                 for (var step = 0; step <= steps && Meets(at, extent) is { } other; step++)
                     at = Clamp(new Vector2(Math.Min(at.X, other.Min.X) - extent.X - LabelGap, start.Y), extent, window);
+
+                // Finding V176 of the codebase review of 2026-11-14 (TASK-0356): a label that no move frees stays at its place,
+                // under the control (ADR-0125, consequences). Until TASK-0356 it stayed where the moves up ended, at the top
+                // edge, on the other labels of the same case.
                 if (Meets(at, extent) is not null)
-                    at = stuck;
+                    at = start;
             }
 
             placed.Add((label with { At = at }, at, at + extent));

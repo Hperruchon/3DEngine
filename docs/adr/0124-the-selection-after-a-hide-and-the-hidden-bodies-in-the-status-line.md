@@ -1,13 +1,13 @@
 ---
 id: 0124
 title: The selection after a hide, and the hidden bodies in the status line
-status: Accepted
+status: Amended
 topic: Clients, rendering
 date: 2026-11-12
 supersedes: []
 superseded-by: []
 amends: ['0029', '0093']
-amended-by: []
+amended-by: ['0129']
 affects:
   - 3DEngine.App/BodyActions.cs
   - 3DEngine.App/NativeThreeDEngine.cs
@@ -78,3 +78,5 @@ phone of 390 pixels does not show the part, so there the way back is still the p
 
 - 2026-11-12 · TASK-0351 · The record, from improvement B of the UX test of 2026-11-10.
 - 2026-11-12 · TASK-0351 · Shipped at v0.336.
+- 2026-11-14 · TASK-0356 · ADR-0129 item 1 amends item 3: when the rows of the list do not fit, "Show all" comes first,
+  then the hidden bodies that fit, then "N more" (finding V174 of the codebase review of 2026-11-14).

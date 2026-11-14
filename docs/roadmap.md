@@ -354,6 +354,9 @@ Therefore each approved objective must have a track here.
   P10c. v0.326, TASK-0343, ADR-0118.
 - P0.145 — Assemblies with joints and their geometric checks have a date in the charter: objectives 11 and 16, ADR-0126
   and the rows K10 to K14, P11 to P14, R23 and R24. v0.338, TASK-0353, ADR-0126.
+- P0.146 — The medium and low findings of the codebase review of 2026-11-14: plates under later windows, the list of the
+  hidden bodies on a small display, the edge lines of a turned T-vertex, a stuck plate, and a step text by its command.
+  v0.342, TASK-0356, ADR-0129.
 - R18d — The rows of a body as in the render: the name larger and bold with its state, the row "Made from" whose tap
   opens the sketch, and the labels Width, Depth and Height with the name of the constraint. v0.328, TASK-0342, ADR-0117.
 - R18e — "Edit sketch" and "Rename" on the ring, a landscape ring in the span of four segments, and the history arc as a
