@@ -10608,3 +10608,32 @@ person used the views; the controls of one tap are R21b.
 New tests: 16. The test list holds 2591 (1552 in `Engine.Tests`, 369 in `3DEngine.Tests`, 667 in `3DEngine.ImageTests`, 3
 in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
 entries: 15 of 15. New diagnostic codes: 0. Since the review of v0.351, 3 product milestones and 3 entries followed it.
+
+## v0.355 — A button "Views" opens a net of the six flat views and the 3D view, and the keys 1, 3, 7 and 0 give them (R21b, TASK-0370)
+
+R21a (v0.354) gave the camera six flat views and the command line their commands. Row R21b gives their controls and keys.
+
+**The change.** ADR-0138 amends ADR-0100 item 1, ADR-0127 item 4 and ADR-0137 item 5.
+- A net of a cube holds the views: Top over Left, Front, Right and Back, Bottom under Front, and "3D" at the right of Top;
+  the cell of the view of the camera has the colour of a tool in use.
+- "Views" opens and closes the net: on a landscape display after Redo on the row of the anchors, with the net above them; on
+  a portrait display at the upper right, with the net under the button and the path line, which ends left of the button. A
+  tap on a cell gives its view and closes the net, so a view takes two taps, not one.
+- The keys 1, 3 and 7 give Front, Right and Top, with Control Back, Left and Bottom, and 0 the 3D view, by the place of the
+  key, under the guard of F.
+
+**Proof.** A theory at five sizes proves the place of the button, the net inside the display and on no other fixed control,
+and that a view gives its action and closes the net. Tests prove the keys with the guard of the home screen and the mapping of
+the digits. The mix test draws the net at 1440 by 900 and on a phone. A first form drew the net all the time; the layout test
+found it on the arc of a proposal and on the tools of the ring. Seven injections each failed a named test; each file came back
+byte for byte. The phone project builds with zero warnings. Run 43562594395 passed on the branch. The failed runs since the
+entry v0.354, from the API: 43562165193 on `main` (the merge of v0.354), in the gate on Windows, where
+`HttpConcurrencyTests.Queries_And_Commands_In_Parallel_Get_No_Http_500` failed with a cancel of the HTTP client; the same commit
+passed on its branch, and the owner was asked to run it again.
+
+**What stays.** A view takes two taps. No person used the net.
+
+New tests: 9. The test list holds 2600 (1552 in `Engine.Tests`, 370 in `3DEngine.Tests`, 675 in `3DEngine.ImageTests`, 3
+in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
+entries: 15 of 15. New diagnostic codes: 0. Since the review of v0.351, 4 product milestones and 4 entries followed it, so
+the next product milestone needs a codebase review first.

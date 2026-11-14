@@ -69,3 +69,4 @@ is closed.
 ## History
 
 - 2026-11-14 · TASK-0370 · The record, from row R21b and ADR-0137 item 5, under the order of the owner of 2026-11-14.
+- 2026-11-14 · TASK-0370 · Shipped at v0.355.

@@ -392,6 +392,8 @@ Therefore each approved objective must have a track here.
   and the arc ends before each tool of the ring. v0.353, TASK-0367, ADR-0136.
 - R21a — The six flat views of the camera with no perspective, one source of the axes for the view, the pick, the overlay
   and the gizmo, and the commands of the views in the command line. v0.354, TASK-0369, ADR-0137.
+- R21b — A button "Views" opens a net of the six flat views and the 3D view, and the keys 1, 3, 7 and 0 give them.
+  v0.355, TASK-0370, ADR-0138.
 - Review — The codebase review of 2026-11-14 (c). v0.351, TASK-0366.
 - P0.143 — The low findings of the codebase review of 2026-11-11: a triangle of zero area adds no edge, and a mesh of
   more than 100 000 triangles finds its edges on the thread pool. v0.332, TASK-0345, ADR-0121.
