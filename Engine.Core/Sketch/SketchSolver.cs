@@ -53,6 +53,31 @@ public static class SketchSolver
         return (system.WithinTolerance() && system.CurvesHaveRadius(x), system.Variables - rank);
     }
 
+    // ADR-0149 item 1 (phase R22c, TASK-0384): the lines of the sketch whose length the constraints fix at the positions of
+    // the record. A length is fixed when its gradient lies in the space of the rows of the Jacobian of the constraints: the
+    // rank of the Jacobian with the gradient as one more row is the rank of the Jacobian. A move that the constraints permit
+    // is then a move along which the length does not change. The rank comes from the elimination of the solver, with its
+    // limit of a pivot, so the code uses + - * / and sqrt only. A line whose two ends are fixed points has a gradient of zero,
+    // and its length is fixed.
+    public static IReadOnlySet<Guid> FixedLengths(SketchRecord sketch)
+    {
+        ArgumentNullException.ThrowIfNull(sketch);
+        var system = new EquationSystem(sketch, null);
+        system.Evaluate(system.Start());
+        var rank = system.Rows == 0 ? 0 : Eliminate(system.Product(), new double[system.Rows], out _);
+        var lines = new HashSet<Guid>();
+        foreach (var line in sketch.Lines)
+        {
+            if (system.LengthGradient(line) is not { } gradient)
+                continue;
+            if (gradient.All(value => value == 0)
+                || Eliminate(system.ProductWith(gradient), new double[system.Rows + 1], out _) == rank)
+                lines.Add(line.Id);
+        }
+
+        return lines;
+    }
+
     // The values and the derivatives of the equations at the positions of the record, for a
     // test that compares each derivative with a central difference (TASK-0110). The columns are
     // the x and the y of each point other than the origin, in the order of the record.
@@ -313,6 +338,42 @@ public static class SketchSolver
         public double[] Residuals() => (double[])Values.Clone();
 
         // J·Jᵀ, with the sum of each entry in the order of the columns.
+        // ADR-0149 item 1: the product of the Jacobian with one more row and its transpose.
+        public double[,] ProductWith(double[] extra)
+        {
+            var size = Rows + 1;
+            double Entry(int row, int column) => row < Rows ? Jacobian[row, column] : extra[column];
+            var product = new double[size, size];
+            for (var i = 0; i < size; i++)
+            {
+                for (var j = 0; j < size; j++)
+                {
+                    var sum = 0.0;
+                    for (var k = 0; k < Variables; k++)
+                        sum += Entry(i, k) * Entry(j, k);
+                    product[i, j] = sum;
+                }
+            }
+            return product;
+        }
+
+        // ADR-0149 item 1: the gradient of the length of the line in the variables: -u at its start and u at its end, with u
+        // the unit direction from the start to the end; a fixed end has no column. Null for a line of no length.
+        public double[]? LengthGradient(SketchLine line)
+        {
+            var (a, b) = (Point(_sketch, line.Start), Point(_sketch, line.End));
+            var (dx, dy) = (b.X - a.X, b.Y - a.Y);
+            var length = Math.Sqrt((dx * dx) + (dy * dy));
+            if (!(length > 0))
+                return null;
+            var gradient = new double[Variables];
+            if (_index.TryGetValue(line.Start, out var start))
+                (gradient[start], gradient[start + 1]) = (-dx / length, -dy / length);
+            if (_index.TryGetValue(line.End, out var end))
+                (gradient[end], gradient[end + 1]) = (dx / length, dy / length);
+            return gradient;
+        }
+
         public double[,] Product()
         {
             var product = new double[Rows, Rows];

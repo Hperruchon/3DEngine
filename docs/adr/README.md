@@ -151,9 +151,10 @@ names. Do not read all of them.
 | [0143](0143-the-circles-of-a-view.md) | A view shows the circle of the design for a curved side, and an end seen from the side as one line | Amended | Kernel, drawing | 0142 | 0144, 0145, 0147 |
 | [0144](0144-the-ellipses-and-the-outline-of-a-view.md) | An end at a slant to the view is an ellipse, and the outline of a cylinder and a cone comes from its axis | Amended | Kernel, drawing | 0143 | 0145 |
 | [0145](0145-the-place-of-a-line-along-the-axis.md) | A line of a curved side keeps its place along the axis, an axis within 1e-9 of the view is along it, and Frame leaves a window at the right | Amended | Kernel, drawing, clients | 0140, 0143, 0144 | 0147 |
-| [0146](0146-a-value-shows-where-its-length-is-true.md) | In a flat view a value shows only where its length is true, and row R22 splits into four slices | Amended | Clients, drawing | 0082 | 0148 |
+| [0146](0146-a-value-shows-where-its-length-is-true.md) | In a flat view a value shows only where its length is true, and row R22 splits into four slices | Amended | Clients, drawing | 0082 | 0148, 0149 |
 | [0147](0147-an-end-within-1e-9-of-across-the-view.md) | An end within 1e-9 of across the view is one line on its diameter | Accepted | Kernel, drawing | 0143, 0145 | — |
-| [0148](0148-the-reference-of-a-chain.md) | A line that closes a chain of the design shows its reference in parentheses, and each value keeps its row in each view | Accepted | Clients, drawing | 0146 | — |
+| [0148](0148-the-reference-of-a-chain.md) | A line that closes a chain of the design shows its reference in parentheses, and each value keeps its row in each view | Amended | Clients, drawing | 0146 | 0149 |
+| [0149](0149-a-size-that-no-constraint-fixes.md) | The solver finds the lengths that the constraints fix, and a flat view shows a length that no constraint fixes in amber | Accepted | Kernel, clients, drawing | 0146, 0148 | — |
 
 ## Topics
 

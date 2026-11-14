@@ -68,8 +68,11 @@ public sealed class FlatViewValuesTests
         var values = await ValuesOf(host, body, 3, Camera(view));
 
         // ADR-0148 item 1 (TASK-0383): each value keeps its row in each view; only its chip depends on the view.
-        Assert.Equal(3, values.Count);
-        Assert.Equal(expected, values.Where(value => value.InView).Select(value => value.Number).Order());
+        // ADR-0149 (TASK-0384): the plate has no direction constraint, so its top and its left are free sizes in a flat
+        // view; the values of the design are the other ones.
+        var design = values.Where(value => !value.Free).ToArray();
+        Assert.Equal(3, design.Length);
+        Assert.Equal(expected, design.Where(value => value.InView).Select(value => value.Number).Order());
     }
 
     // Item 1: a radius takes the rule of its circle, not of its chord. A half circle in the plane XY has a chord along x, which

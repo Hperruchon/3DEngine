@@ -34,6 +34,9 @@ public sealed record SketchInfo(
     // ADR-0053 item 7: the frame of the datum of the sketch now, an origin plane or the last frame of a datum of the
     // Document, or null when the datum does not exist. A position (x, y) of the sketch is the point O + x U + y V.
     public DatumFrame? Frame { get; init; }
+
+    // ADR-0149 item 1 (phase R22c, TASK-0384): the lines whose length the constraints fix, in the order of the lines.
+    public IReadOnlyList<Guid> FixedLengths { get; init; } = [];
 }
 
 // Residual is null when it is not finite, for example for points near the largest double

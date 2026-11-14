@@ -7,7 +7,7 @@ date: 2026-11-14
 supersedes: []
 superseded-by: []
 amends: ['0082']
-amended-by: ['0148']
+amended-by: ['0148', '0149']
 affects:
   - 3DEngine.App/EdgeValues.cs
   - 3DEngine.ImageTests/FlatViewValuesTests.cs
@@ -64,3 +64,5 @@ sheet (P10) needs its own rule for such a value.
 - 2026-11-14 · TASK-0381 · Shipped at v0.365.
 - 2026-11-14 · TASK-0383 · ADR-0148 item 1 amends item 1: a value whose length the view does not show true keeps its row
   and has no chip.
+- 2026-11-14 · TASK-0384 · ADR-0149 items 2 and 4 amend item 2: R22c gives a size that no constraint fixes; a lost value
+  waits for the sheet of P10.

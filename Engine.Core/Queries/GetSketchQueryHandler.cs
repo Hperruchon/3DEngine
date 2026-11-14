@@ -35,6 +35,7 @@ public sealed class GetSketchQueryHandler : IQueryHandler
             ["freedom"] = new("integer"),
             ["references"] = new("array"),
             ["frame"] = new("object"),
+            ["fixedLengths"] = new("array"),
         };
 
     // Per ADR-0016.
@@ -66,6 +67,11 @@ public sealed class GetSketchQueryHandler : IQueryHandler
         static double? Finite(double value) => double.IsFinite(value) ? value : null;
         return Task.FromResult(QueryHandlerResult.Success(new SketchInfo(
             sketch.Id, sketch.DatumId, sketch.Name, sketch.Points, sketch.Lines, sketch.Circles, sketch.Arcs, constraints,
-            solved, freedom) { References = sketch.References, Frame = DatumResolver.Frame(document, sketch.DatumId) }));
+            solved, freedom)
+        {
+            References = sketch.References,
+            Frame = DatumResolver.Frame(document, sketch.DatumId),
+            FixedLengths = [.. SketchSolver.FixedLengths(sketch) is var fixedLengths ? sketch.Lines.Select(line => line.Id).Where(fixedLengths.Contains) : []],
+        }));
     }
 }
