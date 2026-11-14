@@ -256,12 +256,13 @@ public sealed class NativeThreeDEngine : IThreeDEngine, IDisposable
         return document.RequestNew(import) is { } refused ? (refused.Code, $"{name}: {refused.Message}") : null;
     }
 
-    // The frame of the camera on the live bodies, as the first body gives it (ADR-0029 item 8).
+    // The frame of the camera on the live bodies, as the first body gives it (ADR-0029 item 8). ADR-0140 item 2 (phase R21c,
+    // TASK-0372): in the free part of the scene of the last frame of the window.
     private void FrameBodies()
     {
         var window = _window.Extent;
         if (_renderer?.Bounds is { } box && window.height > 0)
-            Camera.Frame(box.Min, box.Max, (float)window.width / window.height);
+            Camera.Frame(box.Min, box.Max, (float)window.width / window.height, _ui?.FreePart() ?? (-1.0, -1.0, 1.0, 1.0));
     }
 
     public void Update(TimeSpan deltaTime)
