@@ -1,7 +1,7 @@
 ---
 id: 0372
 title: Frame fits the bodies in the free part of the scene, and the centre of the picture moves there
-status: Active
+status: Done
 phase: R21c
 opened: 2026-11-14
 depends-on: [0370, 0373]
@@ -59,17 +59,17 @@ After Frame the bodies are in the part of the scene that the person sees.
 
 ## Acceptance criteria
 
-- [ ] ADR-0140 exists. ADR-0023 and ADR-0137 show the amendment.
-- [ ] Tests prove that a frame in a part puts the target at its centre and the box and its sphere in it, with and without
+- [x] ADR-0140 exists. ADR-0023 and ADR-0137 show the amendment.
+- [x] Tests prove that a frame in a part puts the target at its centre and the box and its sphere in it, with and without
       perspective, that the pick and the gizmo agree with the projection, and that a frame of the whole picture has no shift.
-- [ ] A test proves that the free part lies on no window of the last frame at four states.
-- [ ] A clean build (`--no-incremental`) gives zero errors and zero warnings, and the phone project builds.
-- [ ] `dotnet test`, the write-set check and `eng/repo-gates` pass; continuous integration passes on the branch and on
+- [x] A test proves that the free part lies on no window of the last frame at four states.
+- [x] A clean build (`--no-incremental`) gives zero errors and zero warnings, and the phone project builds.
+- [x] `dotnet test`, the write-set check and `eng/repo-gates` pass; continuous integration passes on the branch and on
       `main` after the merge.
 
 ## Outcome
 
-Status: Active
+Status: Done · commit (the merge of the branch r21c-frame-free-part) · v0.358
 
 ## Method
 
@@ -85,3 +85,4 @@ Weakest:    no person used it; the free part comes from fixed bands of the displ
   to the whole picture was caught by no test with the corners of the box only, so the test checks the sphere too. Eight
   injections each failed a named test. Each file came back byte for byte. The merges wait for the owner, who must run the
   red main run of v0.354 again.
+- 2026-11-14: run 43566591043 passed on the work commit. Closed at v0.358.
