@@ -201,22 +201,27 @@ internal sealed unsafe partial class DesktopUi
 
     // Item 3: the distance asks the host for its pad, as the segment Distance of the ring does; a constraint opens the
     // pad of its value, whose apply changes the constraint of the sketch of the extrude.
-    private void Use(EdgeValues.Value value)
+    // ADR-0128 item 2 (phase R18h, TASK-0357): a value typed in the command line is the start text of the pad, and the
+    // distance opens its pad here with that text; with no typed text the pad starts at the value now.
+    private void Use(EdgeValues.Value value, string? typed = null)
     {
+        var start = typed ?? SketchText.Number(value.Number);
         // ADR-0105 item 4 (TASK-0327): a chip of the active sketch opens the pad that the row of its constraint opens
         // (ADR-0034 item 8), with the same apply, and the chip is pending while that pad is open.
         if (_sketchActive && value.Constraint is { } sketchConstraint)
         {
-            OpenPad(new NumericPad(ValueLabel, _unit, new PadField("length", SketchText.Number(value.Number))),
+            OpenPad(new NumericPad(ValueLabel, _unit, new PadField("length", start)),
                 numbers => new SetConstraintValueAction(sketchConstraint, numbers), bySketch: true, scope: PadScope.Sketch);
             _pendingValue = value.Key;
         }
         else if (value.Constraint is { } constraint && value.Sketch is { } sketch)
         {
-            OpenPad(new NumericPad(EdgeValueLabel, _unit, new PadField("value", SketchText.Number(value.Number))),
+            OpenPad(new NumericPad(EdgeValueLabel, _unit, new PadField("value", start)),
                 numbers => new SetBodyValueAction(sketch, constraint, numbers[0]), scope: PadScope.Body);
             _pendingValue = value.Key;
         }
+        else if (typed is not null)
+            OpenDistancePad(value.Body, typed);
         else
             _actions.Add(new EditDistanceAction(value.Body));
     }
