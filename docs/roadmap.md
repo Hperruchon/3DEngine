@@ -365,6 +365,8 @@ Therefore each approved objective must have a track here.
 - R18g — The fixed controls and the status as in the render: "Undo:" and the step beside Undo, the log and the agent in the
   status line, "saved" or "not saved" in the top bar, and Frame and Home in the command line of a landscape display.
   v0.339, TASK-0354, ADR-0127.
+- R18h — A value typed in the command line goes to the pad of its value, through the evaluator: "40+35" lists each value
+  of the frame as "C3 = 75.000 mm", and Enter opens its pad with the typed text. v0.341, TASK-0357, ADR-0128.
 - P0.143 — The low findings of the codebase review of 2026-11-11: a triangle of zero area adds no edge, and a mesh of
   more than 100 000 triangles finds its edges on the thread pool. v0.332, TASK-0345, ADR-0121.
 - Review — The codebase review of 2026-11-12. v0.333, TASK-0349.
@@ -637,7 +639,7 @@ The first objective. Each phase ends with something that a person can observe.
 | R18e | "Edit sketch" and "Rename" on the ring of a body, and the history arc drawn with its nodes on the arc (ADR-0119; S5). TASK-0346. | 1–2 |
 | R18f | The sketch as in the render: rows with the constraints, their residual and "Makes"; "Next point" and "Extrude" on the ring and in the command line; the plate under the body with its label and its caption (ADR-0120; S6). TASK-0347. | 2 |
 | R18g | The fixed controls and the status as in the render: Frame and Home leave the row of the anchors (Q3 A), "Undo:" and the last step beside Undo, the log count and the state of the agent in the status line, and "saved" or "not saved" in the top bar (S7). TASK-0354. | 1 |
-| R18h | A value typed in the command line goes to the pad of its command, through the evaluator (S8; ADR-0098 Q1 B of 2026-11-08). | 1 |
+| R18h | A value typed in the command line goes to the pad of its command, through the evaluator (S8; ADR-0098 Q1 B of 2026-11-08). TASK-0357. | 1 |
 | R18i | The proposal in the window: the old value crossed out and the new value in the rows and on the edge, a pending node on the history arc, a glow on the edge of the screen, and a message after Accept (S9). | 2 |
 | R18j | The comparison of R18 at 1280 by 720, 1024 by 768, 768 by 1024 and the phone, and the gaps that it finds (S10). | 1 |
 | R19 | The responsive layout: each control stays in the display and free for a tap at six phone sizes in portrait, three in landscape, a tablet and two windows, with one test over all of them (ADR-0113; the order of the owner of 2026-11-10, after R17a). TASK-0336. | 1 |
