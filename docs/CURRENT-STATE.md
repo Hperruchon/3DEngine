@@ -10445,3 +10445,28 @@ change.
 New tests: 3. The test list holds 2550 (1552 in `Engine.Tests`, 357 in `3DEngine.Tests`, 638 in `3DEngine.ImageTests`, 3
 in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
 entries: 14 of 15. New diagnostic codes: 0. Since the review of v0.346, 2 product milestones and 2 entries followed it.
+
+## v0.349 — The caption of a proposal is on the band of its arc, and the command lines under the arc lie on no chip (R18m, TASK-0364)
+
+Gap H1 of the comparison at the other sizes (v0.344): at 1280 by 720 the box of the caption and the command lines of a
+proposal lay on the chip of the width, so "60.000 → 75.000 mm" could not be read.
+
+**The change.** ADR-0133 amends ADR-0092 item 7.
+- The caption is on the band of the arc, along its top: each letter is on the middle circle of the band, turned to its
+  tangent, at the size of the lines. It is cut with "..." to the arc between the two circles; then the whole caption is the
+  first line under the arc.
+- The block of the lines goes down one line at a time until it lies on no chip, inside the ring.
+- Gap H5, the arc on a portrait display, is the new row R18o after R18n, because it changes the sheet and its tests.
+
+**Proof.** A theory at three sizes proves that the caption is on the band, between Reject and Accept, and along the arc. A
+test proves the cut and the whole line. A theory at two sizes, with the chip of the width at each of 135 places, proves that
+no line lies on the chip. Four injections each failed a named test; each file came back byte for byte. A rule that kept the
+lines off the history arc was caught by no injection, so it went. The phone project builds with zero warnings. Run
+43552026024 passed on the branch. The failed runs since the entry v0.348, from the API: none.
+
+**What stays.** A summary of more than about 35 characters shows two times: cut on the arc and whole under it. The lines
+still have a plate over the part. No person read the caption on the arc.
+
+New tests: 6. The test list holds 2556 (1552 in `Engine.Tests`, 357 in `3DEngine.Tests`, 644 in `3DEngine.ImageTests`, 3
+in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
+entries: 14 of 15. New diagnostic codes: 0. Since the review of v0.346, 3 product milestones and 3 entries followed it.
