@@ -10806,3 +10806,35 @@ the owner runs it again.
 New tests: 6. The test list holds 2639 (1566 in `Engine.Tests`, 380 in `3DEngine.Tests`, 690 in `3DEngine.ImageTests`, 3
 in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
 entries: 15 of 15. New diagnostic codes: 0. Since the review of v0.356, 3 product milestones and 5 entries followed it.
+
+## v0.362 — An end at a slant to the view is an ellipse, and the outline of a cylinder and a cone comes from its axis (K9c, TASK-0377)
+
+Row K9c of the roadmap (ADR-0143 item 4): after K9b an end at a slant to the view, a body that a quaternion turned, and the
+outline of a cylinder and a cone keep their facets.
+
+**The change.** ADR-0144 amends ADR-0143 item 4.
+- An end of a cylinder or a cone whose axis is neither exactly along nor exactly across the view is arcs of an ellipse: the
+  exact projection of the centre of the end, and the half axes R P and R Q with P = a × e over its length and Q = a × P. A
+  piece goes to the end whose ellipse is nearer to its first point.
+- When the axis is not along the view, the outline of a cylinder is the two lines at the radius of the design from its axis,
+  and the outline of a cone is the two lines from its apex to the points where a tangent from the apex meets its base; the
+  points come from the square root, with no angle. Each piece of the outline of the facets goes to its place on the nearer
+  line, and the first and the last end go to the ends of that line.
+- The half axes and the outline use + − × ÷ and the square root on doubles; the visibility stays exact.
+
+**Proof.** Tests prove the ellipses of a cylinder at a slant (the near end whole, the far end a visible and a hidden arc), its
+outline at its radius, the outline of a cone tangent to its base with exact numbers and in three views of a turn with no
+symmetry, and the ellipses of a cylinder that a quaternion turns in a Document. Nine injections each failed a named test;
+each file came back byte for byte. One injection of the sign of the tangent was equivalent: the apex of a right circular cone
+is on the minor axis of its base. One local run of all tests stopped the host of `3DEngine.ImageTests` after 131 of 690 tests;
+the next two runs passed, and the cause is not known. The phone project builds with zero warnings. Run 43571885970 passed on the
+branch. The failed runs since the entry v0.361, from the API: none on a branch; 43562165193 on `main` stays red until the
+owner runs it again.
+
+**What stays.** A torus keeps its facets. An interior cut of an outline is at the place of the facets. No client reads the
+lines yet.
+
+New tests: 5. The test list holds 2644 (1571 in `Engine.Tests`, 380 in `3DEngine.Tests`, 690 in `3DEngine.ImageTests`, 3
+in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
+entries: 15 of 15. New diagnostic codes: 0. Since the review of v0.356, 4 product milestones and 6 entries followed it, so the
+next product milestone needs a codebase review first.
