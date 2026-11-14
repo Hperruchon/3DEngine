@@ -421,7 +421,11 @@ internal sealed unsafe partial class DesktopUi
         _hiddenTools = [];
         if (_ringTargets is { } reachable && _proposals.Count > 0)
         {
-            var ends = _lastProposalTargets.SelectMany(end => new[] { new Vector4(end.Centre.X - (ProposalButton / 2f), end.Centre.Y - (ProposalButton / 2f), end.Centre.X + (ProposalButton / 2f), end.Centre.Y + (ProposalButton / 2f)), end.Word }).ToList();
+            // ADR-0152 item 3 (phase P0.157, TASK-0388): each rectangle of the proposal of the last frame, its ends, their
+            // words, its caption and the plate of its lines, hides the tools under it. Until TASK-0388 the ends and their words
+            // only, so the lines lay on a tool at 800 by 600 (R-0066).
+            var ends = _lastProposalTargets.SelectMany(end => new[] { new Vector4(end.Centre.X - (ProposalButton / 2f), end.Centre.Y - (ProposalButton / 2f), end.Centre.X + (ProposalButton / 2f), end.Centre.Y + (ProposalButton / 2f)), end.Word })
+                .Concat(_lastProposalCovers).ToList();
             foreach (var (label, target) in reachable.ToList())
             {
                 if (ends.Any(end => Meets(end, target)))

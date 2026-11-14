@@ -32,13 +32,13 @@ public sealed class ProposalPlaceTests
     private static bool Meets(Vector4 a, Vector4 b) => a.X < b.Z && b.X < a.Z && a.Y < b.W && b.Y < a.W;
 
     // Items 1 and 2 (gap H2): at each landscape size, with the body at three places, each item of the arc is inside the
-    // display. From 1024 pixels wide no item of the arc lies on the rows of the body, and neither the caption nor a line lies
-    // on the target of a tool of the ring. Under that, the moved arc passes the right edge, so it stays on the ring of the body,
-    // and that ring is too small to keep its lines off the tools (R-0066).
-    // Until TASK-0365 the arc and Reject lay on the rows "Made from" and "Distance" at 1024 by 768.
+    // display, no item of the arc lies on the rows of the body, and neither the caption nor a line lies on the target of a tool
+    // of the ring that shows. Until TASK-0365 the arc and Reject lay on the rows "Made from" and "Distance" at 1024 by 768.
+    // ADR-0152 (phase P0.157, TASK-0388): under 1024 pixels wide a smaller ring of the arc is right of the rows; until
+    // TASK-0388 the arc stayed on the ring of the body at 800 by 600 and 900 by 600 and lay on the rows (R-0066).
     [Theory]
-    [InlineData(800, 600, false)]
-    [InlineData(900, 600, false)]
+    [InlineData(800, 600, true)]
+    [InlineData(900, 600, true)]
     [InlineData(1024, 768, true)]
     [InlineData(1280, 720, true)]
     [InlineData(1440, 900, true)]
@@ -71,6 +71,23 @@ public sealed class ProposalPlaceTests
                 .Concat(ui.ProposalWords.Select(word => (Item: "word", Box: word))).ToList();
             var tools = Tools.Select(label => (Label: label, Target: ui.RingTarget(label))).Where(entry => entry.Target is not null).Select(entry => (entry.Label, Target: entry.Target!.Value)).ToList();
             Assert.NotEmpty(tools);
+
+            // ADR-0152 item 3: no tool that shows lies under a rectangle of the proposal: its ends, their words, its band and
+            // the plate of its lines.
+            faults.AddRange(tools.Where(tool => ui.ProposalCovers.Any(cover => Meets(cover, tool.Target))).Select(tool => $"{across}: {tool.Label} {tool.Target} is under the proposal"));
+
+            // The box of the band of the arc, from its ring and the directions of its two end circles at the inner and the outer
+            // radius, has no tool that shows under it.
+            if (ui.ItemRectangle(DesktopUi.ProposalRejectItem) is { } reject && ui.ItemRectangle(DesktopUi.ProposalAcceptItem) is { } accept)
+            {
+                var corners = new[] { reject, accept }.SelectMany(end =>
+                {
+                    var direction = Vector2.Normalize(new Vector2((end.X + end.Z) / 2, (end.Y + end.W) / 2) - ring.Centre);
+                    return new[] { ring.Centre + (direction * ring.Inner), ring.Centre + (direction * ring.Outer) };
+                }).ToArray();
+                var band = new Vector4(corners.Min(corner => corner.X), ring.Centre.Y - ring.Outer, corners.Max(corner => corner.X), corners.Max(corner => corner.Y));
+                faults.AddRange(tools.Where(tool => Meets(band, tool.Target)).Select(tool => $"{across}: {tool.Label} {tool.Target} is under the band {band}"));
+            }
             foreach (var (item, box) in arc)
             {
                 if (large && Meets(box, rows))
@@ -85,8 +102,8 @@ public sealed class ProposalPlaceTests
         }
 
         Assert.True(faults.Count == 0, string.Join("; ", faults));
-        if (width == 1024)
-            Assert.True(moved > 0, "No ring of the arc moved right of the rows at 1024 by 768.");
+        if (width <= 1024)
+            Assert.True(moved > 0, $"No ring of the arc moved right of the rows at {width} by {height}.");
     }
 
     // Finding V183 of the codebase review of 2026-11-14 (c) (TASK-0367): with the chip of the width at each place inside the

@@ -1,13 +1,13 @@
 ---
 id: 0139
 title: A sketch leaves a flat view, and a tool under an end of the arc of a proposal hides while the proposal waits
-status: Accepted
+status: Amended
 topic: Clients, rendering
 date: 2026-11-14
 supersedes: []
 superseded-by: []
 amends: ['0136', '0137']
-amended-by: []
+amended-by: ['0152']
 affects:
   - 3DEngine.Core/Models/Camera.cs
   - 3DEngine.Core/Sketching/SketchCamera.cs
@@ -64,3 +64,4 @@ types the command. No person used it.
 - 2026-11-14 · TASK-0373 · The record, from the findings V185 and V186 of the codebase review of 2026-11-14 (d), under the
   order of the owner of 2026-11-14.
 - 2026-11-14 · TASK-0373 · Shipped at v0.357.
+- 2026-11-14 · TASK-0388 · ADR-0152 item 2 amends item 2: each rectangle of a proposal hides the tools under it.
