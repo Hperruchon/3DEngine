@@ -74,8 +74,11 @@ internal sealed unsafe partial class DesktopUi
     // The ring of the arc of this frame, or null.
     internal RingLayout? ProposalRing { get; private set; }
 
-    // Item 6: the host gives the outcome of an accept or a reject.
-    public void ShowProposalOutcome(string? text) => _proposalOutcome = text;
+    // Item 6: the host gives the outcome of an accept or a reject. ADR-0130 item 4 (phase R18i, TASK-0358): with undo, the line
+    // has a button "Undo" after the text.
+    public void ShowProposalOutcome(string? text, bool undo = false) => (_proposalOutcome, _proposalUndo) = (text, undo && text is not null);
+
+    private bool _proposalUndo;
 
     // Item 7: Reject and Accept are a part of the panels for a tap, as the nodes of the history arc.
     private bool OverProposal(double x, double y) => ProposalTargetAt(new Vector2((float)x, (float)y)) is not null;
@@ -108,6 +111,7 @@ internal sealed unsafe partial class DesktopUi
         _lastProposalTargets = _proposalTargets;
         _proposalTargets = [];
         ProposalRing = null;
+        ProposalGlowRectangle = null;
     }
 
     // Item 7: the tools of the ring dim while a proposal waits; they still take a tap.
@@ -128,6 +132,7 @@ internal sealed unsafe partial class DesktopUi
 
         var card = _proposals[0];
         AgentWaiting(displaySize);
+        ProposalGlow(displaySize);
         var lines = ProposalLinesOf(card);
         if (displaySize.X < displaySize.Y)
             ProposalSheet(displaySize, card, lines);
@@ -495,15 +500,42 @@ internal sealed unsafe partial class DesktopUi
     // ADR-0108 item 6: the room of the dot before "AGENT IS WAITING": its width of 8 pixels and a gap of 8 pixels.
     private const float WaitingDot = 16f;
 
+    // ADR-0130 item 3 (phase R18i, TASK-0358): while a proposal waits, a glow of amber along the edges of the display, inside
+    // the safe area: four frames from the edge inward, each wider and fainter. It takes no tap, so it is not an item of the
+    // window; the rectangle of this frame is for a test.
+    internal Vector4? ProposalGlowRectangle { get; private set; }
+
+    internal static readonly (float Width, float Alpha)[] GlowFrames = [(2f, 0.9f), (6f, 0.35f), (12f, 0.15f), (20f, 0.06f)];
+
+    private void ProposalGlow(Vector2 displaySize)
+    {
+        var (min, max) = (new Vector2(_inset.X, _inset.Y), new Vector2(displaySize.X - _inset.Z, displaySize.Y - _inset.W));
+        var list = ImGui.GetBackgroundDrawList();
+        foreach (var (width, alpha) in GlowFrames)
+        {
+            var half = new Vector2(width / 2f, width / 2f);
+            list.AddRect(min + half, max - half, ImGui.GetColorU32(Faded(DimensionColour, alpha)), 0f, ImDrawFlags.None, width);
+        }
+
+        ProposalGlowRectangle = new Vector4(min.X, min.Y, max.X, max.Y);
+    }
+
+    // ADR-0130 item 4: the word of the button of the outcome of an accept, which undoes the steps of the proposal one by one.
+    public const string ProposalUndoLabel = "Undo";
+    public const string ProposalUndoItem = "Proposal:undo";
+
     // Item 6: the outcome of the last accept or reject, at the lower right above the line of the status, in its mono font.
+    // ADR-0130 item 4 (phase R18i, TASK-0358): after an accept, "Applied · Bracket rebuilt" and a button "Undo", as the render;
+    // a tap on Undo gives the Undo of the anchors, and the line goes.
     private void ProposalOutcomeLine(Vector2 displaySize)
     {
         if (_proposalOutcome is not { } outcome)
             return;
         var right = displaySize.X - 16f - _inset.Z;
         ImGui.PushFont(_monoFont);
-        var text = Fit(outcome, displaySize.X - 32f - _inset.X - _inset.Z);
-        var size = ImGui.CalcTextSize(text);
+        var undo = _proposalUndo ? StatusSeparator + ProposalUndoLabel : string.Empty;
+        var text = Fit(outcome, displaySize.X - 32f - _inset.X - _inset.Z - ImGui.CalcTextSize(undo).X);
+        var size = ImGui.CalcTextSize(text + undo);
         ImGui.PopFont();
         var statusTop = _items.TryGetValue(StatusLabel, out var status) ? status.Y : displaySize.Y - 16f - _inset.W - AnchorSize;
         ImGui.SetNextWindowPos(new Vector2(right - size.X, statusTop - 6f), ImGuiCond.Always, new Vector2(0f, 1f));
@@ -511,10 +543,31 @@ internal sealed unsafe partial class DesktopUi
         if (ImGui.Begin("##ProposalOutcome", FixedFlags))
         {
             ImGui.PushFont(_monoFont);
+            // With the button the line is as high as a target of ADR-0027 item 6, and each text is in its middle.
+            var top = _proposalUndo ? (MinimumControlHeight - ImGui.GetTextLineHeight()) / 2f : 0f;
+            ImGui.SetCursorPosY(top);
             ImGui.TextUnformatted(text);
-            ImGui.PopFont();
             Item(ProposalOutcomeItem);
             _proposalTexts[ProposalOutcomeItem] = text;
+            if (_proposalUndo)
+            {
+                ImGui.SameLine(0f, 0f);
+                ImGui.SetCursorPosY(top);
+                ImGui.TextUnformatted(StatusSeparator);
+                ImGui.SameLine(0f, 0f);
+                ImGui.SetCursorPosY(0f);
+                var at = ImGui.GetCursorScreenPos();
+                if (ImGui.InvisibleButton(ProposalUndoItem, new Vector2(ImGui.CalcTextSize(ProposalUndoLabel).X, MinimumControlHeight)))
+                {
+                    _actions.Add(new UndoAction());
+                    (_proposalOutcome, _proposalUndo) = (null, false);
+                }
+
+                Item(ProposalUndoItem);
+                ImGui.GetWindowDrawList().AddText(new Vector2(at.X, at.Y + top), ImGui.GetColorU32(Theme.Accent), ProposalUndoLabel);
+            }
+
+            ImGui.PopFont();
             AddWindowRectangle();
         }
 
@@ -600,6 +653,10 @@ internal sealed record ProposalOutcome(string? State, int Applied, int Count, in
         "failed" => $"Proposal failed at command {(FailedIndex ?? Applied) + 1} of {Count}{(FailedCode is { } code ? $" ({code})" : string.Empty)}: {DesktopUi.Counted(Applied, "command")} applied",
         _ => "The proposal is no longer open",
     };
+
+    // ADR-0130 item 4 (phase R18i, TASK-0358): the line after an accept, as the render: "Applied · Bracket rebuilt" with the
+    // name of the body that was selected at the accept, or "Applied · 2 commands" with no body.
+    public string AppliedText(string? body) => body is not null ? $"Applied · {body} rebuilt" : $"Applied · {DesktopUi.Counted(Applied, "command")}";
 }
 
 // ADR-0092 item 6: Reject and Accept of the waiting proposal. The host applies them; no route of the surface does.
