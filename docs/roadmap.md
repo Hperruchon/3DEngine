@@ -373,6 +373,8 @@ Therefore each approved objective must have a track here.
 - R18i — The proposal in the window: the value now crossed out and the proposed value in amber in the rows, a pending node
   on the history arc, a glow on the edges, and "Applied · Bracket rebuilt" with Undo after an accept. v0.343,
   TASK-0358, ADR-0130.
+- R18j — The window and the render at the other sizes of the brief: four pictures of the step of the proposal, the gaps
+  H1 to H7, and the slices R18k to R18n. v0.344, TASK-0359.
 - P0.143 — The low findings of the codebase review of 2026-11-11: a triangle of zero area adds no edge, and a mesh of
   more than 100 000 triangles finds its edges on the thread pool. v0.332, TASK-0345, ADR-0121.
 - Review — The codebase review of 2026-11-12. v0.333, TASK-0349.
@@ -648,7 +650,7 @@ The first objective. Each phase ends with something that a person can observe.
 | R18h | A value typed in the command line goes to the pad of its command, through the evaluator (S8; ADR-0098 Q1 B of 2026-11-08). TASK-0357. | 1 |
 | R18i | The proposal in the window: the old value crossed out and the new value in the rows and on the edge, a pending node on the history arc, a glow on the edge of the screen, and a message after Accept (S9). TASK-0358. | 2 |
 | R18j | The comparison of R18 at 1280 by 720, 1024 by 768, 768 by 1024 and the phone, and the gaps that it finds (S10). TASK-0359. | 1 |
-| R18k | The rows under the part on a portrait display: the rows of the selected body take the place of the panel, under the part, at the full width, and no chip lies over them (gap H3 of `docs/proposals/2026-11-14-the-render-at-other-sizes.md`). After R18j. | 1–2 |
+| R18k | The rows under the part on a portrait display: the rows of the selected body take the place of the panel, under the part, at the full width, and no chip lies over them; the controls of a selected body leave the panel, because it then shows in no orientation (gap H3 and Q4 A of `docs/proposals/2026-11-14-the-render-at-other-sizes.md`). After R18j. | 2–3 |
 | R18l | The labels of the corner ring of a portrait display: each label in its segment, with a narrower segment or a smaller text where a label does not fit (gap H4). After R18k. | 1 |
 | R18m | The caption of a proposal along the top of its arc, the command lines under the arc and off each chip, and on a portrait display the arc above the part in place of the sheet (gaps H1 and H5). After R18l. | 1–2 |
 | R18n | The arc of a proposal right of the rows of the selected body at 1024 by 768, as the free ring stays right of the panel (gap H2). After R18m. | 1 |
@@ -782,7 +784,7 @@ The tracks are not strictly sequential, but three rules hold:
    On 2026-11-10 the owner asked for the responsive layout of the app, at the phone sizes and in small windows, after
    the close of R17a and before R18a and R18b. R19 (TASK-0336) does it; a layout that works on the desktop is not a fault.
    On 2026-11-14 R18j (TASK-0359) compared the window with the render at the other sizes of the brief; R18k to R18n follow
-   in that order, under the recommended answers of the order of the owner of 2026-11-14 (Q1 A, Q2 A, Q3 B).
+   in that order, under the recommended answers of the order of the owner of 2026-11-14 (Q1 A, Q2 A, Q3 B, Q4 A).
    On 2026-11-12 the owner put the assembly work on the roadmap (ADR-0126, answers D1 to D7), after the current queue and
    the 2D drawing track up to P10c: K10, then P11 and P13 (P13 can run with P11), R23, K11, K12, P14, K13, P12, R24,
    and K14 after them. Each phase opens its task, and its ADR when it changes the Document or the contract, at its start.

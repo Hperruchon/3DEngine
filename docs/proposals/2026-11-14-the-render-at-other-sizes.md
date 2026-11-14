@@ -44,7 +44,7 @@ This document uses Simplified Technical English (ASD-STE100). See `CLAUDE.md`, s
 
 | Slice | Gaps | What it does | Size | Decision |
 | --- | --- | --- | --- | --- |
-| R18k The rows under the part | H3 | On a portrait display the rows of the selected body take the place of the panel, under the part, at the full width; no chip over them | 1–2 | Amends ADR-0099, ADR-0100 |
+| R18k The rows under the part | H3 | On a portrait display the rows of the selected body take the place of the panel, under the part, at the full width; no chip over them; the controls of a selected body leave the panel (Q4) | 2–3 | Amends ADR-0099, ADR-0100 |
 | R18l The labels of the corner ring | H4 | Each label of the corner ring in its segment, and a narrower segment or a smaller text where a label does not fit | 1 | Amends ADR-0081 |
 | R18m The caption on the arc | H1, H5 | The caption of a proposal along the top of its arc, not in a box inside the ring; the command lines under the arc and off each chip; on a portrait display the arc above the part in place of the sheet | 1–2 | Amends ADR-0092, ADR-0107 |
 | R18n The arc right of the rows | H2 | The ring of the arc of a proposal stays right of the rows of the selected body, as the free ring of ADR-0107 stays right of the panel | 1 | Amends ADR-0107 |
@@ -57,6 +57,7 @@ H6 and H7 are decisions, not slices (section 5).
 | --- | --- | --- |
 | Q1 Do R18k to R18n go on the roadmap, after R18j, in that order? | A. Yes. B. Another order or a subset. | **A.** R18k gives the largest change of a portrait display; R18l to R18n are small. |
 | Q2 The command line on a portrait display (H6) | A. Keep ADR-0098 Q2 A: no command line on a portrait display. B. A field at the bottom on a portrait display wider than 600 pixels. | **A** for now. A phone has no keyboard of its own; the owner can take B for a tablet after the run of the owner on the S23 (R-0064 holds the portrait phone). |
+| Q4 The panel of a selected body (R18k) | A. Remove the controls of a selected body from the panel, and move their tests to the rows and the ring. B. Keep the panel on a portrait display. | **A.** A trial of R18k on its branch showed that with the rows on a portrait display, the panel of a selected body shows in no orientation: a landscape display has the rows since R16p, and an active sketch has its own rows. About twenty tests reach that part of the panel through a portrait display only. Each of its controls has a place on the ring, in the rows or in the status line, except "Hidden too" of the dimensions, which R18k gives the rows. |
 | Q3 The tool ring of a tablet on its side (H7) | A. A thumb ring at the corner on a landscape display narrower than 1100 pixels. B. Keep the ring around the body. | **B** for now. The window does not know a tablet from a small laptop window; a mouse needs the ring near the body. |
 
 ## 6. What I did not verify

@@ -10312,3 +10312,29 @@ selected body. No person used the change in the window.
 New tests: 4. The test list holds 2532 (1552 in `Engine.Tests`, 357 in `3DEngine.Tests`, 620 in `3DEngine.ImageTests`, 3
 in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
 entries: 14 of 15. New diagnostic codes: 0. Since the review of v0.340, 2 product milestones and 3 entries followed it.
+
+## v0.344 — The window and the render at the other sizes of the brief, and the slices that close the gaps (R18j, TASK-0359)
+
+Slice S10 of the proposal on the gaps to the render, under the order of the owner of 2026-11-14. The study of 2026-11-10
+compared 1440 by 900 only.
+
+**The change.**
+- `3DEngine.ImageTests/MixImageTests.cs` draws the step of the proposal at 1280 by 720, 1024 by 768, 768 by 1024 and 390
+  by 844; the checks of the history arc and of the arc of the proposal hold on a landscape display only.
+- `docs/proposals/2026-11-14-the-render-at-other-sizes.md` compares them with the pictures of the brief and names seven
+  gaps: H1 the box of the caption over a chip at 1280 by 720; H2 the arc over the rows at 1024 by 768; H3 the panel of the
+  document in place of the rows on a portrait display; H4 two labels of the corner ring on each other; H5 the sheet of a
+  proposal in place of the arc; H6 no command line on a portrait display; H7 the ring around the body on a tablet.
+- The roadmap gets R18k (the rows under the part, and the controls of a selected body leave the panel), R18l (the labels
+  of the corner ring), R18m (the caption on the arc) and R18n (the arc right of the rows). The answers under the order:
+  Q1 A, Q2 A (no command line on a portrait display), Q3 B (keep the ring around the body), Q4 A.
+
+**Proof.** 4 new picture tests; the image tests run on the GPU here. Run 43542039250 passed on the branch. The failed runs
+since the entry v0.343, from the API: none.
+
+**What stays.** The pictures come from the image tests, not from a run on a tablet or on the S23. 1920 by 1080 and the
+other workflows of the brief are not compared.
+
+New tests: 4. The test list holds 2536 (1552 in `Engine.Tests`, 357 in `3DEngine.Tests`, 624 in `3DEngine.ImageTests`, 3
+in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
+entries: 14 of 15. New diagnostic codes: 0. Since the review of v0.340, 3 product milestones and 4 entries followed it.
