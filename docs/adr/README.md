@@ -89,7 +89,7 @@ names. Do not read all of them.
 | [0081](0081-the-tool-ring-of-the-redesign.md) | The tools of the selected body are the segments of a ring that follows it | Amended | Clients, rendering | — | 0084, 0086, 0095, 0101, 0108, 0113, 0116, 0119 |
 | [0082](0082-the-values-on-the-edges-of-the-redesign.md) | A value that a command changes sits on the edge of the selected body that it measures | Amended | Clients, rendering | — | 0084, 0115 |
 | [0083](0083-the-mesh-body-and-the-stl-import.md) | An STL file opens as a mesh body of a new part, through one import command | Amended | Geometry, contract, clients | 0044, 0045, 0048 | 0102, 0127 |
-| [0084](0084-the-rows-of-the-selected-body.md) | The data of the selected body is in rows with no panel at the upper right | Amended | Clients, rendering | 0034, 0081, 0082 | 0098, 0099, 0117 |
+| [0084](0084-the-rows-of-the-selected-body.md) | The data of the selected body is in rows with no panel at the upper right | Amended | Clients, rendering | 0034, 0081, 0082 | 0098, 0099, 0117, 0131 |
 | [0085](0085-the-sketch-under-its-body.md) | The active sketch of a live extrude moves out of its body, and the camera stays | Amended | Clients, rendering | 0034 | 0120 |
 | [0086](0086-the-tools-of-the-sketch-on-the-ring.md) | While a sketch is active, the ring holds the tools of the sketch | Amended | Clients, rendering | 0081 | 0087, 0095, 0097, 0120 |
 | [0087](0087-constrain-on-the-ring-of-a-sketch.md) | "Constrain" on the ring of a sketch opens the constraints that fit the selection | Amended | Clients, sketch | 0086 | 0097 |
@@ -104,7 +104,7 @@ names. Do not read all of them.
 | [0096](0096-the-camera-of-the-session-has-z-up.md) | The camera of the session has the z axis up, as the render of the mix draws a part | Accepted | Clients, rendering | 0023, 0034 | — |
 | [0097](0097-the-rows-of-a-sketch-take-the-place-of-the-panel.md) | The rows of an active sketch take the place of the panel, and its ring is on the right | Amended | Clients, sketch | 0034, 0086, 0087 | 0120 |
 | [0098](0098-the-command-line.md) | The command line at the upper right runs the commands of the state with Control and K | Amended | Clients, rendering | 0032, 0084 | 0099, 0101, 0108, 0113, 0119, 0120, 0127, 0128 |
-| [0099](0099-the-rows-of-a-selected-body-take-the-place-of-the-panel.md) | The rows of a selected body take the place of the panel at the upper left | Amended | Clients, rendering | 0084, 0093, 0098 | 0100, 0117 |
+| [0099](0099-the-rows-of-a-selected-body-take-the-place-of-the-panel.md) | The rows of a selected body take the place of the panel at the upper left | Amended | Clients, rendering | 0084, 0093, 0098 | 0100, 0117, 0131 |
 | [0100](0100-a-path-line-from-the-document-to-the-selection.md) | A path line from the document to the selection, and the rows of the document | Amended | Clients, selection | 0075, 0077, 0093, 0099, 0102 | 0101 |
 | [0101](0101-a-focus-on-one-body.md) | A focus on one body is a state of the client that draws one body and writes nothing to the log | Accepted | Clients, selection | 0081, 0098, 0100 | — |
 | [0102](0102-a-project-in-any-folder.md) | The window opens and saves a project in any folder, through the dialogs of the system | Amended | Persistence, clients | 0030, 0083 | 0100, 0106 |
@@ -136,6 +136,7 @@ names. Do not read all of them.
 | [0128](0128-a-value-typed-in-the-command-line-goes-to-its-pad.md) | A value typed in the command line goes to the pad of its value, through the evaluator | Accepted | Clients, rendering | 0098 | — |
 | [0129](0129-the-findings-of-the-review-of-2026-11-14.md) | The list of the hidden bodies fits the display, a stuck plate stays at its place, and a step text follows its command | Accepted | Clients, rendering | 0109, 0124, 0125, 0127 | — |
 | [0130](0130-the-proposal-in-the-window-as-in-the-render.md) | A proposal shows its values in the rows, a pending node on the history arc, a glow on the edges and Undo after an accept | Accepted | Clients, rendering | 0092, 0104, 0110 | — |
+| [0131](0131-the-rows-under-the-part-on-a-portrait-display.md) | On a portrait display the rows of a selected body are under the part, and the panel has no controls of a selected body | Accepted | Clients, rendering | 0084, 0099 | — |
 
 ## Topics
 

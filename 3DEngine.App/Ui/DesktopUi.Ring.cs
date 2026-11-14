@@ -337,8 +337,9 @@ internal sealed unsafe partial class DesktopUi
             // ADR-0122 item 1 (phase R20b, TASK-0348): "Dimensions" after Focus, so a person turns the dimensions on and off with
             // no visit to the panel. On a small ring it leaves after "Rename" and "Edit sketch" (ADR-0119 item 2).
             labels.Add(DimensionsLabel);
-            // ADR-0119 item 1: "Rename" after them on a landscape display, where it opens the name field of the rows; a portrait
-            // display keeps the name field and its button in the panel.
+            // ADR-0119 item 1: "Rename" after them on a landscape display, where it opens the name field of the rows. ADR-0131
+            // item 1 (phase R18k, TASK-0360): a portrait display has no "Rename" on the thumb ring; a tap on the first row of the
+            // rows under the part opens the name field. Until TASK-0360 the panel kept the name field on a portrait display.
             if (displaySize.X >= displaySize.Y)
                 labels.Add(RenameLabel);
             if (_face is { CanSketch: true })

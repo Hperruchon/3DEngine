@@ -15,8 +15,9 @@ namespace ThreeDEngine.ImageTests;
 [Collection(DearImGui.Collection)]
 public class DesktopUiTests
 {
-    // ADR-0099 item 1 (the redesign, slice p, TASK-0313): on a landscape display the rows of a selected body take the place of
-    // the panel, so these tests of the panel use a portrait display, where the panel keeps the controls of the selected body.
+    // ADR-0131 item 1 (phase R18k, TASK-0360): on this portrait display the panel shows with no selected body, and the rows of
+    // a selected body show under the part, with the ring of the body under them. Until TASK-0360 the panel kept the controls
+    // of the selected body on a portrait display.
     private static readonly Vector2 Display = new(720, 1280);
 
     private static readonly LiveBody[] Bodies =
@@ -31,7 +32,7 @@ public class DesktopUiTests
     private static IReadOnlyList<InputSample> StepWith(DesktopUi ui, Guid? selection, params InputSample[] frame)
     {
         var intents = ui.Route(frame);
-        ui.Frame(1f / 60f, Display, Vector2.One, Bodies, selection);
+        ui.Frame(1f / 60f, Display, Vector2.One, Bodies, selection, ringCentre: Display / 2f, ringBody: 120f);
         return intents;
     }
 
@@ -181,7 +182,9 @@ public class DesktopUiTests
     }
 
     // ADR-0037 item 6 (K0c, TASK-0109): a body whose last rebuild failed has the word "fault" in
-    // its row, and the selected body gives the reason; a body with no fault gives none.
+    // its row, and the selected body gives the reason; a body with no fault gives none. ADR-0131 item 1 (phase R18k,
+    // TASK-0360): the first row of the rows of the selected body gives "failed" and the code in red, and a pointer over it
+    // gives the reason. Until TASK-0360 the panel gave a line "Fault" on a portrait display.
     [Fact]
     public void A_Body_With_A_Fault_Shows_The_Word_And_The_Reason()
     {
@@ -201,8 +204,10 @@ public class DesktopUiTests
             withNone.Frame(1f / 60f, Display, Vector2.One, sound, id);
         }
 
-        Assert.NotNull(withFault.ItemRectangle(DesktopUi.FaultLabel));
-        Assert.Null(withNone.ItemRectangle(DesktopUi.FaultLabel));
+        Assert.NotNull(withFault.ItemRectangle(DesktopUi.RowsTitleItem));
+        Assert.NotNull(withNone.ItemRectangle(DesktopUi.RowsTitleItem));
+        Assert.Contains(withFault.RowTitle(faulty[0]).State, part => part.Red && part.Text.StartsWith("failed W-SKETCH", StringComparison.Ordinal));
+        Assert.DoesNotContain(withNone.RowTitle(sound[0]).State, part => part.Red || part.Text.StartsWith("failed", StringComparison.Ordinal));
     }
 
     // A tap of a finger and a click of the mouse on a row select its body.
@@ -219,7 +224,9 @@ public class DesktopUiTests
     }
 
     // The controls of the selected body give a rename, a hide and a show all, and the panel
-    // changes nothing itself.
+    // changes nothing itself. ADR-0131 item 1 (phase R18k, TASK-0360): a tap on the first row of the rows opens the name
+    // field, Hide is a segment of the ring, and Show all is in the panel with no selection. Until TASK-0360 the panel gave
+    // the name field, Rename and Hide on a portrait display.
     [Fact]
     public void The_Controls_Of_The_Selected_Body_Give_A_Rename_A_Hide_And_A_Show_All()
     {
@@ -228,10 +235,11 @@ public class DesktopUiTests
         StepWith(ui, selected);
         StepWith(ui, selected);
 
-        Type(ui, "Plate", DesktopUi.NameLabel, selected);
-        Tap(ui, DeviceKind.Touch, Centre(ui, DesktopUi.RenameLabel), selected);
-        Tap(ui, DeviceKind.Mouse, Centre(ui, DesktopUi.HideLabel), selected);
-        Tap(ui, DeviceKind.Mouse, Centre(ui, DesktopUi.ShowAllLabel), selected);
+        Rename(ui, "Plate", selected);
+        Tap(ui, DeviceKind.Mouse, Centre(ui, DesktopUi.RingItem(DesktopUi.HideLabel)), selected);
+        Step(ui);
+        Step(ui);
+        Tap(ui, DeviceKind.Mouse, Centre(ui, DesktopUi.ShowAllLabel));
 
         Assert.Equal(
             [new RenameBodyAction(selected, "Plate"), new SetVisibleAction(selected, false), new ShowAllAction()],
@@ -239,19 +247,39 @@ public class DesktopUiTests
         Assert.Empty(ui.TakeActions());
     }
 
-    // ADR-0027 item 6 for the controls of ADR-0029 item 7.
+    // ADR-0099 item 2: a tap on the first row of the rows opens the name field; the text and Enter rename the body. The focus
+    // of ImGui takes the field in a frame after the request, and the field is active in the frame after that.
+    private static void Rename(DesktopUi ui, string text, Guid selection)
+    {
+        Tap(ui, DeviceKind.Touch, Centre(ui, DesktopUi.RowsTitleItem), selection);
+        StepWith(ui, selection);
+        if (text.Length > 0)
+            StepWith(ui, selection, new TextSample(text, 0));
+        StepWith(ui, selection, new KeySample(InputKey.Enter, true, KeyModifiers.None, 0));
+        StepWith(ui, selection, new KeySample(InputKey.Enter, false, KeyModifiers.None, 0));
+        StepWith(ui, selection);
+    }
+
+    // ADR-0027 item 6 for the controls of ADR-0029 item 7. ADR-0131 item 1 (phase R18k, TASK-0360): the row of a body and
+    // Show all are in the panel with no selection; with a selected body the first row of the rows, the list of a cut and the
+    // segment Hide of the ring are at least 44 pixels high.
     [Fact]
     public void Each_Row_And_Each_Control_Of_The_Selection_Is_At_Least_44_Pixels_High()
     {
         using var ui = Opened();
-        var selected = Bodies[0].Id;
-        StepWith(ui, selected);
-        StepWith(ui, selected);
-
-        foreach (var label in new[] { DesktopUi.RowText(Bodies[0]), DesktopUi.NameLabel, DesktopUi.RenameLabel, DesktopUi.HideLabel, DesktopUi.ShowAllLabel })
+        foreach (var label in new[] { DesktopUi.RowText(Bodies[0]), DesktopUi.ShowAllLabel })
         {
             var rectangle = ui.ItemRectangle(label) ?? throw new InvalidOperationException($"The panel has no control {label}.");
             Assert.True(rectangle.W - rectangle.Y >= DesktopUi.MinimumControlHeight, $"{label} is {rectangle.W - rectangle.Y} pixels high.");
+        }
+
+        var selected = Bodies[0].Id;
+        StepWith(ui, selected);
+        StepWith(ui, selected);
+        foreach (var (label, rectangle) in new[] { (DesktopUi.RowsTitleItem, ui.ItemRectangle(DesktopUi.RowsTitleItem)), (DesktopUi.CutLabel, ui.ItemRectangle(DesktopUi.CutLabel)), (DesktopUi.HideLabel, ui.RingTarget(DesktopUi.HideLabel)) })
+        {
+            var shown = rectangle ?? throw new InvalidOperationException($"The window has no control {label}.");
+            Assert.True(shown.W - shown.Y >= DesktopUi.MinimumControlHeight, $"{label} is {shown.W - shown.Y} pixels high.");
         }
     }
 
@@ -282,7 +310,8 @@ public class DesktopUiTests
     }
 
     // Finding V26: a name typed for one body and a click on another body gives no rename of
-    // the second body with the typed name.
+    // the second body with the typed name. ADR-0131 item 1 (phase R18k, TASK-0360): the name field is in the rows; the click
+    // on the scene closes it with no command. Until TASK-0360 the panel had the name field on a portrait display.
     [Fact]
     public void A_Name_Typed_For_One_Body_Does_Not_Rename_The_Body_That_A_Click_Selects()
     {
@@ -291,12 +320,16 @@ public class DesktopUiTests
         var second = Bodies[1].Id;
         StepWith(ui, first);
         StepWith(ui, first);
-        Type(ui, "X", DesktopUi.NameLabel, first);
+        Tap(ui, DeviceKind.Touch, Centre(ui, DesktopUi.RowsTitleItem), first);
+        StepWith(ui, first);
+        StepWith(ui, first, new TextSample("X", 0));
+        StepWith(ui, first);
 
-        Tap(ui, DeviceKind.Mouse, (1200, 600), first);
+        Tap(ui, DeviceKind.Mouse, (360, 300), first);
+        Assert.Null(ui.ItemRectangle(DesktopUi.RenameItem));
         StepWith(ui, second);
         StepWith(ui, second);
-        Tap(ui, DeviceKind.Mouse, Centre(ui, DesktopUi.RenameLabel), second);
+        Rename(ui, string.Empty, second);
 
         Assert.Equal([new RenameBodyAction(second, string.Empty)], ui.TakeActions());
     }

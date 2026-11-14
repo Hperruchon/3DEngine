@@ -255,7 +255,8 @@ public sealed class DocumentPathTests
     }
 
     // Item 5: on a portrait display the path line is the first line under the top bar, the panel is under it, and a tap on a
-    // segment acts as on the desktop.
+    // segment acts as on the desktop. ADR-0131 item 1 (phase R18k, TASK-0360): with a selected body the rows under the part
+    // take the place of the panel, so they are under the path line. Until TASK-0360 the panel showed with a selected body.
     [Fact]
     public void On_A_Portrait_Display_The_Path_Line_Is_Under_The_Top_Bar()
     {
@@ -267,8 +268,9 @@ public sealed class DocumentPathTests
 
         var title = Rectangle(ui, DesktopUi.TitleItem);
         var path = Rectangle(ui, DesktopUi.PathItem);
-        var panel = ui.PanelRectangles[0];
-        Assert.True(path.Y >= title.W - 0.5f && path.W <= panel.Y, $"The path line at {path} is not between the top bar at {title} and the panel at {panel}.");
+        var rows = ui.RowsArea ?? throw new InvalidOperationException("No rows.");
+        Assert.Empty(ui.PanelRectangles);
+        Assert.True(path.Y >= title.W - 0.5f && path.W <= rows.Y, $"The path line at {path} is not between the top bar at {title} and the rows at {rows}.");
         Assert.True(path.W - path.Y >= DesktopUi.MinimumControlHeight, $"The path line at {path} is lower than 44 pixels.");
         Assert.True(path.Z <= portrait.X - 16f, $"The path line at {path} goes past the right margin.");
         Assert.Null(ui.ItemRectangle(DesktopUi.DocumentRowItem));
@@ -277,7 +279,8 @@ public sealed class DocumentPathTests
 
     // Item 5: on a portrait display the panel under the path line ends above the ring of the selected body, so a tap on Move
     // opens its pad. With no such rule the path line moved the panel onto Move at 390 by 844; register entry R-0058 gives
-    // the same fault at 360 by 780.
+    // the same fault at 360 by 780. ADR-0131 item 1 (phase R18k, TASK-0360): with a selected body the rows under the part show
+    // in the place of the panel, and they end 8 pixels above the ring too.
     [Theory]
     [InlineData(360, 780)]
     [InlineData(390, 844)]
@@ -300,7 +303,7 @@ public sealed class DocumentPathTests
         var top = ui.RingTop() ?? throw new InvalidOperationException("No ring.");
         var move = Rectangle(ui, DesktopUi.RingItem(DesktopUi.MoveLabel));
         var (x, y) = ((move.X + move.Z) / 2, (move.Y + move.W) / 2);
-        foreach (var panel in ui.PanelRectangles)
+        foreach (var panel in ui.PanelRectangles.Append(ui.RowsArea ?? throw new InvalidOperationException("No rows.")))
         {
             Assert.False(panel.W > top - 8f + 0.5f && panel.Y < top, $"{width}x{height}: the panel {panel} goes past the top {top} of the ring.");
             Assert.False(x >= panel.X && x < panel.Z && y >= panel.Y && y < panel.W, $"{width}x{height}: Move at ({x}, {y}) is under the panel {panel}.");

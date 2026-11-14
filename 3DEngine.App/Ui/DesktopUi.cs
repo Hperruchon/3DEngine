@@ -19,8 +19,9 @@ namespace ThreeDEngine.Desktop.Ui;
 // the events of its session (ADR-0024), with a text field that filters them. The filter is a
 // state of the client (ADR-0007). The panel reads no state of the engine. A row selects its
 // body, and the selected body has a name field and the buttons Rename and Hide or Show, beside
-// Show all (ADR-0029 item 7). The panel changes nothing itself: each press of a control gives
-// a PanelAction, which the host applies as a command or as a change of the selection.
+// Show all (ADR-0029 item 7). ADR-0131 item 1 (phase R18k, TASK-0360): the rows of a selected body and the tool ring hold
+// those controls now, and the panel shows only with no selected body. The panel changes nothing itself: each press of a
+// control gives a PanelAction, which the host applies as a command or as a change of the selection.
 //
 // Dear ImGui keeps one current context for the whole process, not one for each thread, so each
 // public method makes this context current first, and only one thread may use the library at a
@@ -43,7 +44,6 @@ internal sealed unsafe partial class DesktopUi : IDisposable
     public const string PanelName = "Document";
     public const string FilterLabel = "Filter";
     public const string ClearLabel = "Clear";
-    public const string NameLabel = "Name";
     public const string RenameLabel = "Rename";
     // ADR-0119 item 1 (phase R18e, TASK-0346): the segment of the ring and the command that open the sketch of the body.
     public const string EditSketchLabel = "Edit sketch";
@@ -78,7 +78,6 @@ internal sealed unsafe partial class DesktopUi : IDisposable
     // The item of one tool in the list of a cut.
     public static string CutItem(Guid tool) => $"{CutLabel}:{tool}";
     public const string SetDistanceLabel = "Set distance";
-    public const string FaultLabel = "Fault";
 
     // ADR-0056 item 2 (phase R13, TASK-0178): the toggles of the dimension overlay, and the line of the size of the
     // selected body.
@@ -193,7 +192,8 @@ internal sealed unsafe partial class DesktopUi : IDisposable
     private string _filter = string.Empty;
     private readonly List<PanelAction> _actions = new();
 
-    // The text of the name field, and the body that it was filled for.
+    // The text of the name field of the rows (ADR-0099 item 2). ADR-0131 item 1 (phase R18k, TASK-0360): until TASK-0360 the
+    // panel had a name field too, and a field held the body that it was filled for.
     private string _name = string.Empty;
 
     // ADR-0102 item 1 (TASK-0316): true when the host of this frame has files, so the command line holds their controls.
@@ -202,7 +202,6 @@ internal sealed unsafe partial class DesktopUi : IDisposable
     // ADR-0046: the text of the file field and of the distance field of the window of the images.
     private string _imagePath = string.Empty;
     private string _distance = "100";
-    private Guid? _nameFor;
     private bool _textActive;
 
     // Finding V26 of the codebase review of 2026-10-28 (TASK-0090): a press that starts

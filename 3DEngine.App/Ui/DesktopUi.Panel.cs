@@ -44,8 +44,9 @@ internal sealed unsafe partial class DesktopUi
         // clamp ran only for an open panel, and a collapsed panel covered Undo. The clamp runs for each state now.
         KeepAboveAnchors(displaySize);
         // ADR-0100 item 4 (phase R17a, TASK-0314): on a landscape display with no selected body, the rows of the document are
-        // first, in the place of the rows of a body, and the list of the bodies is in them.
-        var documentRows = !_portrait && bodies.All(body => body.Id != selection);
+        // first, in the place of the rows of a body, and the list of the bodies is in them. ADR-0131 item 1 (phase R18k,
+        // TASK-0360): the panel shows only with no selected body, so the orientation alone decides.
+        var documentRows = !_portrait;
         if (open)
         {
             if (documentRows)
@@ -123,16 +124,11 @@ internal sealed unsafe partial class DesktopUi
 
                 ImGui.Separator();
             }
-            if (bodies.FirstOrDefault(body => body.Id == selection) is { } selected)
-            {
-                // Selected ends on its last line. Show all goes on that line when it fits there, so that the panel keeps
-                // its height (finding V50); else it starts a new line (finding V98, TASK-0232).
-                Selected(selected, bodies);
-                ImGui.SameLine();
-                if (ImGui.GetContentRegionAvail().X < ButtonWidth(ShowAllLabel))
-                    ImGui.NewLine();
-            }
 
+            // ADR-0131 item 1 (phase R18k, TASK-0360): the panel shows only with no selected body, because the rows of a
+            // selected body show on each display. Until TASK-0360 the panel gave the controls of a selected body on a portrait
+            // display: the fault, the size, the face, the name field, Rename, Hide, Move, Set distance and the list of a cut.
+            // The rows and the tool ring hold them now, and the command line too on a landscape display.
             if (ImGui.Button(ShowAllLabel))
                 _actions.Add(new ShowAllAction());
             Item(ShowAllLabel);
@@ -144,10 +140,9 @@ internal sealed unsafe partial class DesktopUi
         _panels.Add(new Vector4(position.X, position.Y, position.X + size.X, position.Y + size.Y));
         ImGui.End();
 
-        // The review of Codex of v0.212, finding 1 (TASK-0232): the open list of a cut is a window of its own, and a tap on
-        // it must not reach the scene. It follows the panel, so that the panel stays the first rectangle.
-        if (_cutList is { } list)
-            _panels.Add(list);
+        // The review of Codex of v0.212, finding 1 (TASK-0232): an open list is a window of its own, and a tap on it must not
+        // reach the scene. It follows the panel, so that the panel stays the first rectangle. ADR-0131 item 1 (TASK-0360): the
+        // list of a cut is in the rows only, and CutRow adds it.
         if (_newList is { } created)
             _panels.Add(created);
     }
@@ -320,115 +315,6 @@ internal sealed unsafe partial class DesktopUi
 
     // ADR-0113 item 2: the narrowest field of a line of the panel.
     private const float NarrowestField = 120f;
-
-    // The controls of the selected body. The name field starts with the name of the body each
-    // time another body is selected.
-    private void Selected(LiveBody body, IReadOnlyList<LiveBody> bodies)
-    {
-        if (_nameFor != body.Id)
-            (_name, _nameFor) = (body.Name ?? string.Empty, body.Id);
-
-        // ADR-0037 item 6 (Q2 A): the body keeps its last solid, and the panel gives the reason.
-        // Finding V50 of the codebase review of 2026-10-30 (TASK-0118): the full reason with the
-        // identifiers took 208 pixels and pushed Show all out of the panel. One line gives the code,
-        // and a hover or a press on it gives the reason.
-        if (body.Fault is { } fault)
-        {
-            ImGui.TextUnformatted($"{FaultLabel}: {fault.Code}");
-            Item(FaultLabel);
-            if (ImGui.IsItemHovered() || ImGui.IsItemActive())
-                ImGui.SetTooltip(fault.Message);
-        }
-
-        // ADR-0056 item 6: the size and the thickness of the selected body while the dimensions show.
-        if (_dimensions && _size is { } size)
-        {
-            ImGui.TextUnformatted(size);
-            Item(SizeLabel);
-        }
-
-        // ADR-0075 item 3 (phase R12a, TASK-0236): the selected face and a sketch on it, on one line, so that the panel
-        // grows by one line only while a face is selected.
-        if (_face is { } face)
-        {
-            ImGui.AlignTextToFramePadding();
-            ImGui.TextUnformatted(face.Text);
-            Item(FaceLabel);
-            if (face.CanSketch)
-            {
-                SameLineIfFits(ButtonWidth(SketchOnFaceButtonLabel));
-                if (ImGui.Button(SketchOnFaceButtonLabel))
-                    _actions.Add(new SketchOnSelectedFaceAction());
-                Item(SketchOnFaceButtonLabel);
-            }
-
-            // ADR-0077 item 4 (phase R12b, TASK-0245): the selected edge, on its own line.
-            if (face.EdgeText is { } edgeText)
-            {
-                ImGui.TextUnformatted(edgeText);
-                Item(EdgeLabel);
-            }
-        }
-
-        ImGui.SetNextItemWidth(FieldWidth(220f, NameLabel, RenameLabel));
-        TextField(NameLabel, ref _name, 128);
-        Item(NameLabel);
-        SameLineIfFits(ButtonWidth(RenameLabel));
-        if (ImGui.Button(RenameLabel))
-            _actions.Add(new RenameBodyAction(body.Id, _name));
-        Item(RenameLabel);
-
-        var visibility = body.Visible ? HideLabel : ShowLabel;
-        if (ImGui.Button(visibility))
-            _actions.Add(new SetVisibleAction(body.Id, !body.Visible));
-        Item(visibility);
-        SameLineIfFits(ButtonWidth(MoveLabel));
-
-        // ADR-0032 item 4: a move of the selected body by the offsets of the pad.
-        if (ImGui.Button(MoveLabel))
-            OpenPad(new NumericPad(MoveLabel, _unit, new("dx", "0"), new("dy", "0"), new("dz", "0")), values => new MoveBodyAction(body.Id, values[0], values[1], values[2]), scope: PadScope.Body);
-        Item(MoveLabel);
-        ImGui.SameLine();
-
-        // ADR-0049 item 8: the host reads the distance in effect and opens the pad with it.
-        if (body.Kind == "Extrude")
-        {
-            if (ImGui.GetContentRegionAvail().X < ButtonWidth(SetDistanceLabel))
-                ImGui.NewLine();
-            if (ImGui.Button(SetDistanceLabel))
-                _actions.Add(new EditDistanceAction(body.Id));
-            Item(SetDistanceLabel);
-            ImGui.SameLine();
-        }
-
-        // ADR-0073 item 1 (phase R14e3, TASK-0227): a cut of the selected body with another visible body, the command
-        // Subtract, so that a person cuts a body with no agent, as on the phone, which has no surface (ADR-0061 item 4).
-        var tools = bodies.Where(other => other.Id != body.Id && other.Visible).ToList();
-        if (tools.Count == 0)
-            return;
-
-        // The list stays on the line of Move when it fits there, so that Show all stays in the panel (finding V50). For an
-        // extrude the line holds Set distance too, and the list starts a new line (finding V98, TASK-0232).
-        const float listWidth = 120f;
-        if (ImGui.GetContentRegionAvail().X < listWidth + ImGui.GetStyle().ItemInnerSpacing.X + ImGui.CalcTextSize(CutLabel, true).X)
-            ImGui.NewLine();
-        ImGui.SetNextItemWidth(listWidth);
-        if (ImGui.BeginCombo(CutLabel, string.Empty))
-        {
-            foreach (var tool in tools)
-            {
-                if (ImGui.Selectable($"{RowText(tool)}##cut{tool.Id}", false, ImGuiSelectableFlags.None, new Vector2(0f, MinimumControlHeight)))
-                    _actions.Add(new CutBodyAction(body.Id, tool.Id));
-                Item(CutItem(tool.Id));
-            }
-
-            var (at, extent) = (ImGui.GetWindowPos(), ImGui.GetWindowSize());
-            _cutList = new Vector4(at.X, at.Y, at.X + extent.X, at.Y + extent.Y);
-            ImGui.EndCombo();
-        }
-
-        Item(CutLabel);
-    }
 
     // V114 and V118 (TASK-0252): the top of the panel is at least 16 pixels inside the top inset, and its bottom at most 16
     // pixels above the anchors. V123 (TASK-0264): its left side is at least 16 pixels inside the left inset too; until
