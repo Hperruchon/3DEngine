@@ -104,9 +104,15 @@ internal sealed unsafe partial class DesktopUi
             ? value with { At = EdgeValues.Placed(line) + (line.Normal * Half(PillSize(value.Text), line.Normal)) }
             : value)];
 
+        // ADR-0135 item 4 (phase R18o, TASK-0368): while a proposal waits on a portrait display, the chips keep off the arc,
+        // the sheet and the rows of the last frame, which do not move for a chip, so the person reads the value that the
+        // proposal changes. A landscape display moves the lines of the arc off the chips instead.
+        IReadOnlyList<Vector4>? covers = displaySize.X < displaySize.Y && _proposals.Count > 0
+            ? [.. _lastProposalCovers, .. _lastSheetBox is { } sheet ? [sheet] : Array.Empty<Vector4>(), .. _rowsArea is { } rows ? [rows] : Array.Empty<Vector4>()]
+            : null;
         var placed = DimensionOverlay.Place(
             [.. values.Select(value => new DimensionOverlay.Label(value.At - (Size(value.Text) / 2f), value.Text, DimensionOverlay.Mark.Selected))],
-            Size, displaySize);
+            Size, displaySize, covers);
         for (var i = 0; i < values.Count; i++)
         {
             var size = Size(values[i].Text);

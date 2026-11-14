@@ -385,6 +385,8 @@ Therefore each approved objective must have a track here.
   chip; the arc on a portrait display is row R18o. v0.349, TASK-0364, ADR-0133.
 - R18n — The ring of the arc of a proposal moves right of the rows of the selected body, and the command lines keep off
   the tools of the ring. v0.350, TASK-0365, ADR-0134.
+- R18o — On a portrait display the arc of a proposal is at the top with Reject and Accept, a sheet of its lines is under
+  it, and the chips keep off them. v0.352, TASK-0368, ADR-0135.
 - Review — The codebase review of 2026-11-14 (c). v0.351, TASK-0366.
 - P0.143 — The low findings of the codebase review of 2026-11-11: a triangle of zero area adds no edge, and a mesh of
   more than 100 000 triangles finds its edges on the thread pool. v0.332, TASK-0345, ADR-0121.
@@ -667,7 +669,7 @@ The first objective. Each phase ends with something that a person can observe.
 | R18l | The labels of the corner ring of a portrait display: each label in its segment, with a narrower segment or a smaller text where a label does not fit (gap H4). After R18k. TASK-0363. | 1 |
 | R18m | The caption of a proposal along the top of its arc, and the command lines under the arc and off each chip (gap H1). After R18l. TASK-0364. | 1 |
 | R18n | The arc of a proposal right of the rows of the selected body at 1024 by 768, as the free ring stays right of the panel (gap H2). After R18m. TASK-0365. | 1 |
-| R18o | On a portrait display the arc of a proposal above the part in place of the sheet (gap H5), split from R18m by ADR-0133 item 4. After R18n. | 1 |
+| R18o | On a portrait display the arc of a proposal above the part in place of the sheet (gap H5), split from R18m by ADR-0133 item 4. After R18n. TASK-0368. | 1 |
 | R19 | The responsive layout: each control stays in the display and free for a tap at six phone sizes in portrait, three in landscape, a tablet and two windows, with one test over all of them (ADR-0113; the order of the owner of 2026-11-10, after R17a). TASK-0336. | 1 |
 | R20 | The UX test of a project of many pieces on 2026-11-10 (a copy of `Bibliotheque120.3de`, 19 bodies, 1280 by 720): seven problems and three improvements, in the proposal `docs/proposals/2026-11-10-ux-test-of-a-multi-part-project.md`; the owner took the three on 2026-11-10. | 4–6 |
 | R20a | The ring does not take a tap meant for the model: only the icon and the label of a segment take a tap, a tap on a body under the rest of the band selects it, and the ring fades while the view turns or zooms (improvement A, problem 1; amends ADR-0081). TASK-0341. | 1–2 |

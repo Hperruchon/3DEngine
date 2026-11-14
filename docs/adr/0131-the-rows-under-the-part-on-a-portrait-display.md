@@ -1,13 +1,13 @@
 ---
 id: 0131
 title: On a portrait display the rows of a selected body are under the part, and the panel has no controls of a selected body
-status: Accepted
+status: Amended
 topic: Clients, rendering
 date: 2026-11-14
 supersedes: []
 superseded-by: []
 amends: ['0084', '0099']
-amended-by: []
+amended-by: ['0135']
 affects:
   - 3DEngine.App/Ui/DesktopUi.Rows.cs
   - 3DEngine.App/Ui/DesktopUi.Panel.cs
@@ -90,3 +90,5 @@ No person used the change on a tablet or on the S23.
 - 2026-11-14 · TASK-0360 · Shipped at v0.345.
 - 2026-11-14 · TASK-0360 · Item 1: the row of a cut and the row "Hidden too" come right after the first row on a portrait
   display and always show; the review of the branch found no room for the cut on a phone with a ring and a value.
+- 2026-11-14 · TASK-0368 · ADR-0135 item 3 amends item 1: the rows no longer end above the sheet of a proposal, which is
+  under the arc at the top; while a proposal waits they do not go above the bottom of the sheet.

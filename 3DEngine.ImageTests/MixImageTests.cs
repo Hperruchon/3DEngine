@@ -202,6 +202,15 @@ public class MixImageTests
                 // TASK-0334: the chip of the width is pending with the change, and the line names the value.
                 Assert.Contains((EdgeValues.ConstraintKey(width), "60.000 → 75.000 mm", true), ui.Chips);
                 Assert.Equal("Plate C1  60 → 75 mm", ui.ProposalTexts[DesktopUi.ProposalLineItem(0)]);
+
+                // ADR-0135 item 4 (phase R18o, TASK-0368): on a portrait display the chip of the width lies on no window and
+                // on no row, so the person reads the change. Until TASK-0368 the sheet lay on it.
+                if (frameWidth < frameHeight && ui.ItemRectangle(EdgeValues.ConstraintKey(width)) is { } chip)
+                {
+                    static bool Meets(Vector4 a, Vector4 b) => a.X < b.Z && b.X < a.Z && a.Y < b.W && b.Y < a.W;
+                    Assert.DoesNotContain(ui.PanelRectangles, panel => Meets(chip, panel));
+                    Assert.False(ui.RowsArea is { } rows && Meets(chip, rows), $"The chip {chip} lies on the rows {ui.RowsArea}.");
+                }
             }
             else
                 Assert.StartsWith("SetSketchConstraintValue ", ui.ProposalTexts[DesktopUi.ProposalLineItem(0)], StringComparison.Ordinal);
