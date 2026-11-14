@@ -1,7 +1,7 @@
 ---
 id: 0375
 title: The visible and the hidden edges of a view, exact, from the faces and the edges of the owned kernel
-status: Active
+status: Done
 phase: K9a
 opened: 2026-11-14
 depends-on: [0372, 0374]
@@ -50,17 +50,17 @@ The engine gives the visible and the hidden lines of the live bodies along a vie
 
 ## Acceptance criteria
 
-- [ ] ADR-0142 exists, and the charter does not change.
-- [ ] Tests prove a box from three views, the hidden walls of a hole and a body seen through it, a body behind another one
+- [x] ADR-0142 exists, and the charter does not change.
+- [x] Tests prove a box from three views, the hidden walls of a hole and a body seen through it, a body behind another one
       with the cut at the outline, an edge behind a seam of a curved side, the tags of each line, the outline of a curved
       side with no seam, the frames, and the lines of a Document.
-- [ ] A clean build (`--no-incremental`) gives zero errors and zero warnings, and the phone project builds.
-- [ ] `dotnet test`, the write-set check and `eng/repo-gates` pass; continuous integration passes on the branch and on
+- [x] A clean build (`--no-incremental`) gives zero errors and zero warnings, and the phone project builds.
+- [x] `dotnet test`, the write-set check and `eng/repo-gates` pass; continuous integration passes on the branch and on
       `main` after the merge.
 
 ## Outcome
 
-Status: Active
+Status: Done · commit (the merge of the branch k9a-view-edges) · v0.360
 
 ## Method
 
@@ -79,3 +79,5 @@ Weakest:    no client reads the lines yet; a sphere takes about 2 s.
   curved side is on the border of each facet, so it showed as visible; the rule is now "inside or on the border, and strictly
   nearer", with a test. Nine injections each failed a named test; one was first caught by no test (no body was seen
   through a hole), so the test of the hole has a body under the plate. Each file came back byte for byte.
+- 2026-11-14: run 43568967248 passed on the work commit. The ledger entry corrects the review counter of nine
+  earlier entries. Closed at v0.360.

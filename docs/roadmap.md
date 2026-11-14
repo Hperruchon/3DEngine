@@ -401,6 +401,8 @@ Therefore each approved objective must have a track here.
   the centre of the picture moves there. v0.358, TASK-0372, ADR-0140.
 - P0.150 — The medium and low findings of the codebase review of 2026-11-14 (d): a flat view has a scale of its own and
   a far plane behind the box, and the rows of a portrait proposal stay under the middle. v0.359, TASK-0374, ADR-0141.
+- K9a — The visible and the hidden edges of the live bodies along a view, exact, from the faces and the edges of the
+  owned kernel, computed outside the kernel. v0.360, TASK-0375, ADR-0142.
 - Review — The codebase review of 2026-11-14 (c). v0.351, TASK-0366.
 - P0.143 — The low findings of the codebase review of 2026-11-11: a triangle of zero area adds no edge, and a mesh of
   more than 100 000 triangles finds its edges on the thread pool. v0.332, TASK-0345, ADR-0121.
