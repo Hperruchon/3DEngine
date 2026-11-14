@@ -1,6 +1,7 @@
 using System.Numerics;
 using ImGuiNET;
 using ThreeDEngine.Core.Input;
+using ThreeDEngine.Core.Numeric;
 
 namespace ThreeDEngine.Desktop.Ui;
 
@@ -159,6 +160,31 @@ internal sealed unsafe partial class DesktopUi
         return commands;
     }
 
+    // ADR-0128 item 1 (phase R18h, TASK-0357): a text that the evaluator of the pad reads as a number gives, first, one
+    // command for each value that the frame shows, and "Extrude" while a sketch is active, each named with the result. A
+    // run opens the pad of that value with the typed text, so the pad and its evaluator apply it (ADR-0032 item 1). The
+    // values are the chips of the last frame, the ones that the person sees.
+    internal IReadOnlyList<(string Name, Action Run)> ValueCommands(string text)
+    {
+        var typed = text.Trim();
+        if (typed.Length == 0 || Expression.Evaluate(typed) is not { IsValue: true } result)
+            return [];
+        var shown = $"{EdgeValues.Exact(result.Value)} {_unit}";
+        var commands = new List<(string Name, Action Run)>();
+        foreach (var (value, _) in _chips)
+            commands.Add(($"{ValueName(value)} = {shown}", () => Use(value, typed)));
+        if (_sketchActive)
+            commands.Add(($"{ExtrudeLabel} {shown}", () => OpenExtrudePad(typed)));
+        return commands;
+    }
+
+    // ADR-0128 item 1: the name of a value in the list: its label in its sketch ("C3"), else the word of its row ("Distance").
+    private string ValueName(EdgeValues.Value value)
+        => value.Name
+            ?? (value.Constraint is { } constraint && _sketchPanel?.Active is { } active && SketchText.Labels(active).TryGetValue(constraint, out var label)
+                ? label
+                : value.Label);
+
     // Item 3: the commands whose name holds the text, with no regard to the case; a name that starts with it comes first.
     internal static IReadOnlyList<(string Name, Action Run)> Matches(IReadOnlyList<(string Name, Action Run)> commands, string text)
     {
@@ -211,7 +237,8 @@ internal sealed unsafe partial class DesktopUi
             Item(CommandItem);
             CommandMarks(_command.Length == 0, shown);
 
-            var matches = Matches(Commands(bodies, selection), _command);
+            // ADR-0128 item 1: the values that the typed number can set come before the commands whose name holds it.
+            IReadOnlyList<(string Name, Action Run)> matches = [.. ValueCommands(_command).Concat(Matches(Commands(bodies, selection), _command)).Take(CommandListLength)];
             if (active && ImGui.IsKeyPressed(ImGuiKey.DownArrow))
                 _commandIndex++;
             if (active && ImGui.IsKeyPressed(ImGuiKey.UpArrow))

@@ -55,9 +55,12 @@ internal sealed unsafe partial class DesktopUi
     // distance in effect. A change of the selection closes it, as for Move.
     // ADR-0082 item 4 (TASK-0254): the chip of the distance is pending while this pad is open, from the chip, the ring or
     // the panel, because each of them changes the same value.
-    public void OpenDistancePad(Guid body, double distance)
+    public void OpenDistancePad(Guid body, double distance) => OpenDistancePad(body, SketchText.Number(distance));
+
+    // ADR-0128 item 2 (phase R18h, TASK-0357): the same pad with a start text, which a value typed in the command line gives.
+    private void OpenDistancePad(Guid body, string start)
     {
-        OpenPad(new NumericPad(SetDistanceLabel, _unit, new PadField("distance", SketchText.Number(distance))), values => new SetDistanceAction(body, values[0]), scope: PadScope.Body);
+        OpenPad(new NumericPad(SetDistanceLabel, _unit, new PadField("distance", start)), values => new SetDistanceAction(body, values[0]), scope: PadScope.Body);
         _pendingValue = EdgeValues.DistanceKey(body);
     }
 
