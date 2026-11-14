@@ -245,8 +245,11 @@ internal sealed unsafe partial class DesktopUi
     }
 
     // ADR-0120 item 2 (phase R18f, TASK-0347): the pad of an extrude, from the window, the ring or the command line.
-    private void OpenExtrudePad()
-        => OpenPad(new NumericPad(ExtrudeLabel, _unit, new PadField("distance", "10")), values => new ExtrudeAction(values[0]), bySketch: true, scope: PadScope.Active);
+    private void OpenExtrudePad() => OpenExtrudePad("10");
+
+    // ADR-0128 item 2 (phase R18h, TASK-0357): the same pad with a start text, which a value typed in the command line gives.
+    private void OpenExtrudePad(string start)
+        => OpenPad(new NumericPad(ExtrudeLabel, _unit, new PadField("distance", start)), values => new ExtrudeAction(values[0]), bySketch: true, scope: PadScope.Active);
 
     // ADR-0087 item 2 (TASK-0276): each kind of constraint that fits the selection, with what its button does: the action of
     // the constraint, or the pad of its value. The window of the sketch and the ring of a sketch both use it.
