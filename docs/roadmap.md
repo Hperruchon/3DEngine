@@ -594,6 +594,7 @@ This track removes each condition that blocks other work.
 | P0.152 | The medium and low findings of the codebase review of 2026-11-14 (e) (T182 and E205: the test of the circles of a Document, and a flat end; E204 went to TASK-0379), after the next product phase. TASK-0380. | 1 |
 | P0.153 | Each class of the image tests that creates a Vulkan device runs in one collection, so no two devices are created at the same time (R-0062). TASK-0382. | 1 |
 | P0.154 | On macOS the Command key gives the modifier of the shortcuts, and the command line shows "Cmd K" (R-0060, ADR-0150). TASK-0385. | 1 |
+| P0.155 | The questions before P10 are a record (`docs/proposals/2026-11-14-the-sheet-in-the-document.md`), and register entry R-0067 holds them for the owner. TASK-0386. | 1 |
 | P0.102 | The cache of a face, the fixed controls, the list New, the edges and the safe area hold their next forms (V113 to V118 of the codebase review of 2026-11-06 (e); after P0.101). TASK-0252. | 1–2 |
 | P0.86 | The window keeps no input between sessions, the hook has the cases of one axis, and the next forms of four gates fail (V88 to V90, T141 to T144 of the codebase review of 2026-11-06; after the next product phase). TASK-0198. | 1–2 |
 
@@ -619,7 +620,7 @@ This track removes each condition that blocks other work.
 | P9e | The test sheet of the demonstration, from its page. It closes with P9c and P9d after the run of the owner. TASK-0266. | 1 |
 | P9f | A start of the desktop with the setting file opens that file and shows no home screen (ADR-0083 item 7, the owner, 2026-11-08). TASK-0290. | 1 |
 | P9g | A project in any folder from the window, with no terminal: "Open project..." and "Import STL..." apart, "Save as..." and "Export STL..." through the save dialog of the system, the recent projects in each folder, the folder in the top bar, and the question before a change of a part with no file (ADR-0102; the owner, 2026-11-08, Q1 to Q4 A). The row closes after the run of the owner. TASK-0316. | 2–3 |
-| P10 | The sheet in the Document: commands for a sheet, its views (a direction as a matrix, and a scale) and the place of each dimension; ISO first angle by default and third angle as a choice of a sheet; the lines of a view are computed and not stored (ADR-0118 items 3 and 4; Q2 A and Q3 A of 2026-11-10). It changes the public shape of `Engine.Contracts`: an ADR and a question to the owner first. After R22. | 5–8 |
+| P10 | The sheet in the Document: commands for a sheet, its views (a direction as a matrix, and a scale) and the place of each dimension; ISO first angle by default and third angle as a choice of a sheet; the lines of a view are computed and not stored (ADR-0118 items 3 and 4; Q2 A and Q3 A of 2026-11-10). It changes the public shape of `Engine.Contracts`: an ADR and a question to the owner first. After R22. The questions Q1 to Q8 wait for the owner (R-0067). | 5–8 |
 | P10a | The export of a sheet as SVG, from the exact numbers of the views and the values of the design (Q4 of 2026-11-10, first). After P10. | 1–2 |
 | P10b | The export of a sheet as DXF, for the exchange with a CAD program and a laser cutter (Q4, second). After P10a. | 2 |
 | P10c | The export of a sheet as PDF, for the documentation (Q4, third). After P10b. | 2–3 |
