@@ -1,7 +1,7 @@
 ---
 id: 0356
 title: The medium and low findings of the codebase review of 2026-11-14
-status: Active
+status: Done
 phase: P0.146
 opened: 2026-11-14
 depends-on: [0355]
@@ -71,18 +71,18 @@ T-vertex of a turned body adds no line, a stuck plate stays at its start, and a 
 
 ## Acceptance criteria
 
-- [ ] A test proves that no plate is under the window of the live sketches in the scene of the probe.
-- [ ] A test proves that "Show all" and the last hidden body are inside the display at 844 by 390.
-- [ ] A test proves that a turned mesh with a T-vertex and two T-vertices side by side give no false line.
-- [ ] A test proves that a stuck plate stays at its start.
-- [ ] A test proves that a command of another client with the same name does not take the text of the window.
-- [ ] A clean build (`--no-incremental`) gives zero errors and zero warnings, and the phone project builds.
-- [ ] `dotnet test`, the write-set check and `eng/repo-gates` pass; continuous integration passes on the branch and on
+- [x] A test proves that no plate is under the window of the live sketches in the scene of the probe.
+- [x] A test proves that "Show all" and the last hidden body are inside the display at 844 by 390.
+- [x] A test proves that a turned mesh with a T-vertex and two T-vertices side by side give no false line.
+- [x] A test proves that a stuck plate stays at its start.
+- [x] A test proves that a command of another client with the same name does not take the text of the window.
+- [x] A clean build (`--no-incremental`) gives zero errors and zero warnings, and the phone project builds.
+- [x] `dotnet test`, the write-set check and `eng/repo-gates` pass; continuous integration passes on the branch and on
       `main` after the merge.
 
 ## Outcome
 
-Status: Active
+Status: Done · commit (the merge of the branch p0146-review-findings) · v0.342
 
 ## Method
 
@@ -100,3 +100,4 @@ Weakest:    a plate that a move along one axis cannot free stays under its contr
   last frame as covers; at 1280 by 720 the plates under a window went from 118 to 3, each a plate that no move of
   ADR-0125 item 4 frees. At 1280 by 720 the room above the anchors holds ten rows, so ten hidden bodies and "Show all" did
   not fit before this task either. Seven injections each failed a named test; each file came back byte for byte.
+- 2026-11-14: run 43538951652 passed on the work commit. Closed at v0.342.
