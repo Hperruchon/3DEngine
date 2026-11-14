@@ -37,6 +37,9 @@ internal sealed unsafe partial class DesktopUi
     public const string ProposalRejectItem = "Proposal:reject";
     public const string ProposalAcceptItem = "Proposal:accept";
     public const string ProposalCaptionItem = "Proposal:caption";
+
+    // ADR-0133 item 1 (phase R18m, TASK-0364): the whole caption as the first line under the arc, when the band cuts it.
+    public const string ProposalWholeCaptionItem = "Proposal:caption:whole";
     public const string ProposalMoreItem = "Proposal:more";
     public const string ProposalCountItem = "Proposal:count";
     public const string ProposalPlaceItem = "Proposal:place";
@@ -265,6 +268,63 @@ internal sealed unsafe partial class DesktopUi
 
     private static string Caption(ProposalCard card) => $"AGENT · {card.Summary}";
 
+    private static bool Meets(Vector4 a, Vector4 b) => a.X < b.Z && b.X < a.Z && a.Y < b.W && b.Y < a.W;
+
+    // ADR-0133 item 1 (phase R18m, TASK-0364): the letters of the caption on the middle circle of the band, at the size of the
+    // lines, with the middle of the text at the top of the ring (270 degrees, y down) and each letter turned to the tangent
+    // of the circle. The text is cut with "..." to the arc between the two circles, less 8 pixels at each end. The box holds
+    // each turned letter. Presentation (ADR-0007): the sines and cosines write nothing to the log.
+    private static (string Text, Vector4 Box, List<(string Glyph, Vector2 Centre, float Turn, Vector2 Size)> Glyphs) BandCaption(
+        Vector2 centre, float radius, string caption, float half)
+    {
+        var font = ImGui.GetFont();
+        const float size = ProposalTextSize;
+        var room = (radius * (ProposalTo - ProposalFrom)) - (2f * (half + 8f));
+        var text = FitWith(font, size, caption, Math.Max(room, 0f));
+        var x = -font.CalcTextSizeA(size, float.MaxValue, 0f, text).X / 2f;
+        var glyphs = new List<(string Glyph, Vector2 Centre, float Turn, Vector2 Size)>();
+        var (min, max) = (new Vector2(float.MaxValue), new Vector2(float.MinValue));
+        foreach (var rune in text.EnumerateRunes())
+        {
+            var glyph = rune.ToString();
+            var glyphSize = font.CalcTextSizeA(size, float.MaxValue, 0f, glyph);
+            var angle = (1.5f * MathF.PI) + ((x + (glyphSize.X / 2f)) / radius);
+            var at = centre + (new Vector2(MathF.Cos(angle), MathF.Sin(angle)) * radius);
+            var turn = angle + (MathF.PI / 2f);
+            glyphs.Add((glyph, at, turn, glyphSize));
+            foreach (var corner in new[] { new Vector2(-1f, -1f), new Vector2(1f, -1f), new Vector2(1f, 1f), new Vector2(-1f, 1f) })
+            {
+                var point = at + Turned(corner * glyphSize / 2f, turn);
+                (min, max) = (Vector2.Min(min, point), Vector2.Max(max, point));
+            }
+
+            x += glyphSize.X;
+        }
+
+        return (text, glyphs.Count == 0 ? new Vector4(centre.X, centre.Y - radius, centre.X, centre.Y - radius) : new Vector4(min.X, min.Y, max.X, max.Y), glyphs);
+    }
+
+    private static Vector2 Turned(Vector2 offset, float turn)
+    {
+        var (cosine, sine) = (MathF.Cos(turn), MathF.Sin(turn));
+        return new Vector2((offset.X * cosine) - (offset.Y * sine), (offset.X * sine) + (offset.Y * cosine));
+    }
+
+    // Each letter is drawn upright with its middle on its place, then its vertices turn about that place.
+    private static unsafe void DrawBandCaption(ImDrawListPtr list, List<(string Glyph, Vector2 Centre, float Turn, Vector2 Size)> glyphs, uint colour)
+    {
+        var font = ImGui.GetFont();
+        const float size = ProposalTextSize;
+        foreach (var (glyph, at, turn, glyphSize) in glyphs)
+        {
+            var first = list.VtxBuffer.Size;
+            list.AddText(font, size, at - (glyphSize / 2f), colour, glyph);
+            var vertices = (ImDrawVert*)list.VtxBuffer.Data;
+            for (var i = first; i < list.VtxBuffer.Size; i++)
+                vertices[i].pos = at + Turned(vertices[i].pos - at, turn);
+        }
+    }
+
     // Item 7: the arc on a landscape display.
     private void ProposalArc(Vector2 displaySize, LiveBody? body, ProposalCard card, List<(string Item, string Text, bool Amber)> lines)
     {
@@ -334,57 +394,78 @@ internal sealed unsafe partial class DesktopUi
         // line inside the ring.
         var caption = Caption(card);
         var top = _items.TryGetValue(TitleItem, out var title) ? title.W + 4f : 16f + _inset.Y;
-        var captionWidth = Math.Min(ImGui.CalcTextSize(caption).X, displaySize.X - 32f - _inset.X - _inset.Z);
-        caption = Fit(caption, captionWidth);
-        var captionAt = new Vector2(
-            Math.Clamp(ring.Centre.X - (captionWidth / 2f), 16f + _inset.X, Math.Max(16f + _inset.X, displaySize.X - 16f - _inset.Z - captionWidth)),
-            ring.Centre.Y - ring.Outer - 8f - lineHeight);
         var inside = new List<(string Item, string Text, bool Amber)>(lines);
-        var captionBox = new Vector4(captionAt.X, captionAt.Y, captionAt.X + ImGui.CalcTextSize(caption).X, captionAt.Y + lineHeight);
+        // ADR-0133 item 1 (phase R18m, TASK-0364): the caption is on the band of the arc, along its top. When the arc cuts it,
+        // the whole caption is the first line under the arc. Until TASK-0364 the caption was above the arc, or the first line
+        // inside the ring, in the box of the lines, which lay on the chip of the width at 1280 by 720 (gap H1).
+        var band = BandCaption(ring.Centre, radius, caption, half);
         // ADR-0113 item 6 (phase R19, TASK-0336): the caption goes inside the ring when a fixed window, as the rows of the body,
-        // covers its place too. Until TASK-0336 the rows covered it at 640 by 360.
-        var covered = _fixed.Any(box => box.X < captionBox.Z && captionBox.X < box.Z && box.Y < captionBox.W && captionBox.Y < box.W);
-        if (captionAt.Y >= top && !covered)
+        // covers its place too, or when its place is above the top bar. Until TASK-0336 the rows covered it at 640 by 360.
+        if (band.Box.Y >= top && !_fixed.Any(box => Meets(box, band.Box)))
         {
-            list.AddText(captionAt, DimensionColour, caption);
-            Shown(ProposalCaptionItem, caption, captionBox);
-            _proposalCovers.Add(captionBox);
+            DrawBandCaption(list, band.Glyphs, DimensionColour);
+            Shown(ProposalCaptionItem, band.Text, band.Box);
+            _proposalCovers.Add(band.Box);
+            if (band.Text != caption)
+                inside.Insert(0, (ProposalWholeCaptionItem, caption, true));
         }
         else
-            inside.Insert(0, (ProposalCaptionItem, Caption(card), true));
+            inside.Insert(0, (ProposalCaptionItem, caption, true));
 
         // The lines inside the ring, under the arc, from 0.6 of the inner radius above the centre, each one cut to the chord of
         // the inner circle at its top, on a plate of the colour of the windows.
         var font = ImGui.GetFont();
         var step = ProposalTextSize + 4f;
-        var y = Math.Max(ring.Centre.Y - (ring.Inner * 0.6f), Math.Max(reject.Y, accept.Y) + half + 8f);
+        var start = Math.Max(ring.Centre.Y - (ring.Inner * 0.6f), Math.Max(reject.Y, accept.Y) + half + 8f);
         // ADR-0113 item 6 (phase R19, TASK-0336): the lines start under a fixed window, as the rows of the body, that covers
         // the place of the first line. Until TASK-0336 the rows covered the first line at 640 by 360.
         foreach (var box in _fixed)
         {
-            if (box.X < ring.Centre.X + ring.Inner && ring.Centre.X - ring.Inner < box.Z && box.Y < y + step && y - 6f < box.W)
-                y = Math.Max(y, box.W + 6f);
+            if (box.X < ring.Centre.X + ring.Inner && ring.Centre.X - ring.Inner < box.Z && box.Y < start + step && start - 6f < box.W)
+                start = Math.Max(start, box.W + 6f);
         }
 
-        var placed = new List<(string Item, string Text, bool Amber, Vector2 At, float Width)>();
-        foreach (var (item, text, amber) in inside)
+        (List<(string Item, string Text, bool Amber, Vector2 At, float Width)> Placed, Vector4 Plate) Block(float y)
         {
-            var d = Math.Abs(y - ring.Centre.Y);
-            var chord = d < ring.Inner ? 2f * MathF.Sqrt((ring.Inner * ring.Inner) - (d * d)) - 16f : 0f;
-            var shown = FitAt(text, Math.Max(chord, 48f));
-            var width = ArrowTextWidth(font, ProposalTextSize, shown);
-            placed.Add((item, shown, amber, new Vector2(ring.Centre.X - (width / 2f), y), width));
-            y += step;
+            var placed = new List<(string Item, string Text, bool Amber, Vector2 At, float Width)>();
+            foreach (var (item, text, amber) in inside)
+            {
+                var d = Math.Abs(y - ring.Centre.Y);
+                var chord = d < ring.Inner ? 2f * MathF.Sqrt((ring.Inner * ring.Inner) - (d * d)) - 16f : 0f;
+                var shown = FitAt(text, Math.Max(chord, 48f));
+                var width = ArrowTextWidth(font, ProposalTextSize, shown);
+                placed.Add((item, shown, amber, new Vector2(ring.Centre.X - (width / 2f), y), width));
+                y += step;
+            }
+
+            var widest = placed.Count == 0 ? 0f : placed.Max(line => line.Width);
+            var first = placed.Count == 0 ? y : placed[0].At.Y;
+            return (placed, new Vector4(ring.Centre.X - (widest / 2f) - 10f, first - 6f, ring.Centre.X + (widest / 2f) + 10f, y + 2f));
         }
 
-        if (placed.Count == 0)
+        // ADR-0133 item 2: the block of the lines goes down from its start, one line at a time, until it lies on no chip of this
+        // frame, while its plate ends above 0.6 of the inner radius under the centre of the ring. With no such place it stays
+        // at its start. The history arc is at the lower left of the ring, out of the reach of the block.
+        var obstacles = _chips.Select(chip => chip.Rectangle).ToList();
+        var block = Block(start);
+        for (var y = start; ; y += step)
+        {
+            var candidate = Block(y);
+            if (candidate.Plate.W > ring.Centre.Y + (ring.Inner * 0.6f))
+                break;
+            if (!obstacles.Any(obstacle => Meets(obstacle, candidate.Plate)))
+            {
+                block = candidate;
+                break;
+            }
+        }
+
+        if (block.Placed.Count == 0)
             return;
-        var widest = placed.Max(line => line.Width);
-        var plateTop = placed[0].At.Y - 6f;
-        list.AddRectFilled(new Vector2(ring.Centre.X - (widest / 2f) - 10f, plateTop), new Vector2(ring.Centre.X + (widest / 2f) + 10f, y + 2f),
-            ImGui.GetColorU32(colours[(int)ImGuiCol.WindowBg] with { W = 0.8f }), 6f);
-        _proposalCovers.Add(new Vector4(ring.Centre.X - (widest / 2f) - 10f, plateTop, ring.Centre.X + (widest / 2f) + 10f, y + 2f));
-        foreach (var (item, text, amber, at, width) in placed)
+        var plate = block.Plate;
+        list.AddRectFilled(new Vector2(plate.X, plate.Y), new Vector2(plate.Z, plate.W), ImGui.GetColorU32(colours[(int)ImGuiCol.WindowBg] with { W = 0.8f }), 6f);
+        _proposalCovers.Add(plate);
+        foreach (var (item, text, amber, at, width) in block.Placed)
         {
             ArrowText(list, font, ProposalTextSize, at, amber ? DimensionColour : ImGui.GetColorU32(colours[(int)ImGuiCol.Text]), text);
             Shown(item, text, new Vector4(at.X, at.Y, at.X + width, at.Y + ProposalTextSize));
