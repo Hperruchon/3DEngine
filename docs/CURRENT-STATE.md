@@ -10687,3 +10687,29 @@ warnings. Run 43565441937 passed on the branch. The failed runs since the entry 
 New tests: 6. The test list holds 2609 (1552 in `Engine.Tests`, 371 in `3DEngine.Tests`, 683 in `3DEngine.ImageTests`, 3
 in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
 entries: 15 of 15. New diagnostic codes: 0. Since the review of v0.356, 1 product milestone and 1 entry followed it.
+
+## v0.358 — Frame fits the bodies in the free part of the scene, and the centre of the picture moves there (R21c, TASK-0372)
+
+Row R21c of the roadmap: Frame fills the free part of the scene (ADR-0118 item 2; problem 6 of the UX test of 2026-11-10).
+
+**The change.** ADR-0140 amends ADR-0023 item 1 and ADR-0137 item 3.
+- The camera has a shift: the centre of the picture in normalized coordinates. The projection with and without perspective,
+  the ray of a pick, the overlay of the window and the gizmo take it. A frame of the whole picture sets it to 0.
+- `Camera.Frame` takes a part of the picture: the box goes to the centre of the part, and its sphere fills the part.
+- The window gives the free part from its windows of the last frame (`DesktopUi.FreePart`): right of the panel or the rows,
+  under the bars of the top and above the anchors. A part of less than 100 pixels on a side gives the whole picture.
+- Frame of the window and the key F frame the bodies in the free part. The first frame after an open keeps the whole picture.
+
+**Proof.** Tests prove that a frame in a part puts the target at the centre of the part and the box and its sphere in it,
+with and without perspective, that the pick and the gizmo agree with the projection, and that a frame of the whole picture
+has no shift. A window test proves that the free part lies on no window of the last frame at four states. Eight injections
+each failed a named test; each file came back byte for byte. The phone project builds with zero warnings. Run 43566591043
+passed on the branch. The failed runs since the entry v0.357, from the API: none on a branch; 43562165193 on `main` stays
+red until the owner runs it again.
+
+**What stays.** The free part comes from fixed bands of the display. While the panels change after a Frame, the bodies stay
+where Frame put them. No person used the change.
+
+New tests: 12. The test list holds 2621 (1552 in `Engine.Tests`, 378 in `3DEngine.Tests`, 688 in `3DEngine.ImageTests`, 3
+in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
+entries: 15 of 15. New diagnostic codes: 0. Since the review of v0.356, 2 product milestones and 2 entries followed it.

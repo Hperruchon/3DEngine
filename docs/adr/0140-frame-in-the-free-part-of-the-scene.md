@@ -69,3 +69,4 @@ it.
 
 - 2026-11-14 · TASK-0372 · The record, from row R21c and problem 6 of the UX test of 2026-11-10, under the order of the owner
   of 2026-11-14.
+- 2026-11-14 · TASK-0372 · Shipped at v0.358.
