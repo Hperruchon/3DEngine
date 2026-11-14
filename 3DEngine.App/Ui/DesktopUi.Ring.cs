@@ -194,6 +194,11 @@ internal sealed unsafe partial class DesktopUi
     internal bool RingInUse(string label) => _ringInUse.Contains(label);
 
     // ADR-0116 item 1: the target of a tap of a segment of this frame, for a test; null on a ring of a sketch.
+    // Finding V186 (TASK-0373): the tools of this frame that hide under an end of the arc of a proposal.
+    private HashSet<string> _hiddenTools = [];
+
+    internal IReadOnlySet<string> HiddenTools => _hiddenTools;
+
     internal Vector4? RingTarget(string label) => _ringTargets is { } targets && targets.TryGetValue(label, out var target) ? target : null;
 
     // True when the point is on a segment of the ring of this frame that takes a tap there.
@@ -409,6 +414,24 @@ internal sealed unsafe partial class DesktopUi
                 (min, max) = (Vector2.Min(min, icon - new Vector2(IconHalf)), Vector2.Max(max, icon + new Vector2(IconHalf)));
             return TargetOf(min, max);
         });
+        // Finding V186 of the codebase review of 2026-11-14 (d) (TASK-0373): while a proposal waits, a tool whose target lies on an
+        // end of the arc of the last frame, or on its word, does not show and takes no tap; it shows again after the accept or
+        // the reject. The arc takes the tap there first (finding V160), so the tool took no tap before either, and its picture
+        // said that it did.
+        _hiddenTools = [];
+        if (_ringTargets is { } reachable && _proposals.Count > 0)
+        {
+            var ends = _lastProposalTargets.SelectMany(end => new[] { new Vector4(end.Centre.X - (ProposalButton / 2f), end.Centre.Y - (ProposalButton / 2f), end.Centre.X + (ProposalButton / 2f), end.Centre.Y + (ProposalButton / 2f)), end.Word }).ToList();
+            foreach (var (label, target) in reachable.ToList())
+            {
+                if (ends.Any(end => Meets(end, target)))
+                {
+                    _hiddenTools.Add(label);
+                    reachable.Remove(label);
+                }
+            }
+        }
+
         // The review of Codex of v0.265 (TASK-0284): the windows of the last frame too, because the Images window and the
         // message come after the ring in the frame; until TASK-0284 a segment under the Images window counted as reachable.
         var covers = _panels.Concat(_lastPanels).Concat(_fixed).Concat(_sketchActive && _sketchWindow is { } window ? [window] : []).ToList();
@@ -445,6 +468,8 @@ internal sealed unsafe partial class DesktopUi
             RingGuide(list, ring);
         foreach (var (segment, face) in faces)
         {
+            if (_hiddenTools.Contains(segment.Label))
+                continue;
             // ADR-0116 item 1: a segment shows the hover only where it takes a tap.
             var hovered = RingTapAt(io.MousePos) == segment.Label && !ImGui.IsWindowHovered(ImGuiHoveredFlags.AnyWindow);
             // ADR-0086 item 2: the tool in use has the colour of an active control.

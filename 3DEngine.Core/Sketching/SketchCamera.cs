@@ -20,6 +20,9 @@ public static class SketchCamera
         if (!(length > 0))
             throw new ArgumentOutOfRangeException(nameof(normal), "A normal has a length.");
 
+        // Finding V185 of the codebase review of 2026-11-14 (d) (TASK-0373): the view of a sketch has perspective, so it leaves a
+        // flat view first. Until TASK-0373 a sketch from the view of the top kept that view, and its plane was edge-on.
+        camera.LeaveFlat();
         var eye = camera.Eye();
         var side = (eye.X - origin.X) * normal.X + (eye.Y - origin.Y) * normal.Y + (eye.Z - origin.Z) * normal.Z;
         var sign = side < 0 ? -1.0 : 1.0;

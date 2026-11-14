@@ -1,13 +1,13 @@
 ---
 id: 0136
 title: The arc of a proposal ends before each tool of the ring, and the whole caption under it wraps
-status: Accepted
+status: Amended
 topic: Clients, rendering
 date: 2026-11-14
 supersedes: []
 superseded-by: []
 amends: ['0092', '0133']
-amended-by: []
+amended-by: ['0139']
 affects:
   - 3DEngine.App/Ui/DesktopUi.Proposal.cs
   - 3DEngine.ImageTests/ProposalArcTests.cs
@@ -60,3 +60,5 @@ summary takes several lines over the part.
 - 2026-11-14 · TASK-0367 · The record, from the findings V181 and V184 of the codebase review of 2026-11-14 (c), under the
   order of the owner of 2026-11-14.
 - 2026-11-14 · TASK-0367 · Shipped at v0.353.
+- 2026-11-14 · TASK-0373 · ADR-0139 items 2 and 3 amend item 1: Reject starts at 235 degrees or later, and a tool under
+  an end hides while the proposal waits.
