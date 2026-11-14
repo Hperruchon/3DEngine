@@ -1,7 +1,7 @@
 ---
 id: 0370
 title: A button "Views" opens a net of the six flat views and the 3D view, and the keys 1, 3, 7 and 0 give them
-status: Active
+status: Done
 phase: R21b
 opened: 2026-11-14
 depends-on: [0369]
@@ -70,7 +70,7 @@ Each flat view and the 3D view have a control at each size and on each device, a
 
 ## Outcome
 
-Status: Active
+Status: Done · commit (the merge of the branch r21b-view-controls) · v0.355
 
 ## Method
 
@@ -96,3 +96,4 @@ Weakest:    no person used the net; a view takes two taps, not one.
   that gave a view before the field took the keys. The unit text is cut to the room left of the button, and the keys of the
   views rest in the frame of Control and K and in the two frames after it. Two tests came in; two injections each failed
   them. The main run of v0.354 is red on a flaky test, so the merge waits for the owner.
+- 2026-11-14: closed again at v0.355, after the fixes of the review of the branch.
