@@ -10838,3 +10838,27 @@ New tests: 5. The test list holds 2644 (1571 in `Engine.Tests`, 380 in `3DEngine
 in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
 entries: 15 of 15. New diagnostic codes: 0. Since the review of v0.356, 4 product milestones and 6 entries followed it, so the
 next product milestone needs a codebase review first.
+
+## v0.363 — The codebase review of 2026-11-14 (e) (governance, TASK-0378)
+
+Four product milestones (R21c, K9a, K9b and K9c) followed v0.355, the version that the review of 2026-11-14 (d) examined, so
+the next product milestone needs a review first.
+
+**The review.** `docs/reviews/2026-11-14-e-codebase-review.md` examines `16eeb3e`, the close of K9c at v0.362.
+- V185 to V190 of the last review are fixed (P0.149 and P0.150).
+- E202, E203 and V191 are high: the outline of a side that a Subtract cut runs to the ends of the uncut side; a cylinder
+  that a Rotate of 180 degrees turned makes the view throw when it moves, and gives arcs that do not join at the origin; and
+  Frame puts the bodies under the window of the live sketches. E204 (an edge of a cut side on the circle of an end) and
+  T182 (a test of the circles that does not read its hidden lines) are medium; E205 (a flat end drawn twice) is low.
+- E202 to E204 have one cause: the circles and the outlines of K9b and K9c do not know where an edge is along the axis.
+- TASK-0379 (P0.151) holds E202, E203 and V191 before the next product phase, R22; TASK-0380 (P0.152) holds E204, T182 and
+  E205 after it.
+- Open findings: 0 critical, 5 high, 8 medium and 17 low. The last review gave 16 low findings, but its list held 17.
+
+**Proof.** One agent examined the change from v0.355 to the work commit of K9c with probes in its own copy of the commit,
+and removed that copy. The session took the measures with the script of the last review and read each finding in the code
+at its line. `CodebaseReviewGateTests` passes with the new review.
+
+New tests: 0. The test list holds 2644 (1571 in `Engine.Tests`, 380 in `3DEngine.Tests`, 690 in `3DEngine.ImageTests`, 3
+in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
+entries: 15 of 15. New diagnostic codes: 0. This entry is a codebase review, so 0 product milestones and 0 entries follow it.
