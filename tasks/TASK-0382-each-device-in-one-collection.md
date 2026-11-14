@@ -1,7 +1,7 @@
 ---
 id: 0382
 title: Each class of the image tests that creates a Vulkan device runs in one collection
-status: Active
+status: Done
 phase: P0.153
 opened: 2026-11-14
 depends-on: [0380]
@@ -60,16 +60,16 @@ No two Vulkan devices are created at the same time in the image tests, and ten r
 
 ## Acceptance criteria
 
-- [ ] A test proves that each file that creates a device puts its class in the collection.
-- [ ] Ten runs of `3DEngine.ImageTests` in a row end with each test passed and no stop.
-- [ ] R-0062 is closed with its exit.
-- [ ] A clean build (`--no-incremental`) gives zero errors and zero warnings, and the phone project builds.
-- [ ] `dotnet test`, the write-set check and `eng/repo-gates` pass; continuous integration passes on the branch and on
+- [x] A test proves that each file that creates a device puts its class in the collection.
+- [x] Ten runs of `3DEngine.ImageTests` in a row end with each test passed and no stop.
+- [x] R-0062 is closed with its exit.
+- [x] A clean build (`--no-incremental`) gives zero errors and zero warnings, and the phone project builds.
+- [x] `dotnet test`, the write-set check and `eng/repo-gates` pass; continuous integration passes on the branch and on
       `main` after the merge.
 
 ## Outcome
 
-Status: Active
+Status: Done · commit (the merge of the branch p0153-device-collection) · v0.367
 
 ## Method
 
@@ -83,3 +83,5 @@ Weakest:    ten runs prove a low rate, not the cause in the driver.
   same time as the collection of Dear ImGui, whose classes create devices too, so the seven classes join that collection.
   The first version of the test found its own text "new GraphicsDevice(", so the test builds that text in two parts. One
   injection failed the test; the file came back byte for byte.
+- 2026-11-14: ten runs of 3DEngine.ImageTests in a row ran 706 tests each, each passed, with no stop. Run 43577525046 passed on
+  the work commit. Closed at v0.367.
