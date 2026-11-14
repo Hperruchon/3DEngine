@@ -297,7 +297,8 @@ internal static class SketchOverlay
         double Aspect,
         double Width,
         double Height,
-        double? FlatDepth)
+        double? FlatDepth,
+        (double X, double Y) Shift)
     {
         // The same axes as Picker.RayThrough. ADR-0137 item 3 (phase R21a, TASK-0369): the axes of the camera, and for a flat
         // view the distance of the target as the depth of each point, so a point projects with no perspective.
@@ -305,7 +306,7 @@ internal static class SketchOverlay
         {
             var (right, up, forward) = camera.Axes();
             return new Frame(camera.Eye(), right, up, forward, Math.Tan(camera.FieldOfViewDegrees * Math.PI / 360.0), width / height, width, height,
-                camera.Flat is null ? null : camera.Distance);
+                camera.Flat is null ? null : camera.Distance, camera.Shift);
         }
 
         public CameraPoint ToCamera((double X, double Y, double Z) p)
@@ -323,8 +324,9 @@ internal static class SketchOverlay
         private (double X, double Y) Pixels(CameraPoint p)
         {
             var depth = FlatDepth ?? p.Forward;
-            var nx = p.Right / depth / (TanHalf * Aspect);
-            var ny = p.Up / depth / TanHalf;
+            // ADR-0140 item 1 (phase R21c, TASK-0372): the centre of the picture is at the shift of the camera.
+            var nx = (p.Right / depth / (TanHalf * Aspect)) + Shift.X;
+            var ny = (p.Up / depth / TanHalf) + Shift.Y;
             return ((nx + 1) / 2 * Width, (1 - ny) / 2 * Height);
         }
 

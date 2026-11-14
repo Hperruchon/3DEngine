@@ -260,7 +260,8 @@ public static class TranslateGizmo
         double Width,
         double Height,
         double Near,
-        double? FlatDepth)
+        double? FlatDepth,
+        (double X, double Y) Shift)
     {
         // ADR-0137 item 3 (phase R21a, TASK-0369): the axes of the camera, and for a flat view the distance of the target as the
         // depth of each point.
@@ -268,7 +269,7 @@ public static class TranslateGizmo
         {
             var (right, up, forward) = camera.Axes();
             return new View(camera.Eye(), right, up, forward, Math.Tan(camera.FieldOfViewDegrees * Math.PI / 360.0), width, height, camera.NearPlane,
-                camera.Flat is null ? null : camera.Distance);
+                camera.Flat is null ? null : camera.Distance, camera.Shift);
         }
 
         public double Depth((double X, double Y, double Z) p) => Dot(Minus(p, Eye), Forward);
@@ -282,8 +283,9 @@ public static class TranslateGizmo
                 return null;
             var aspect = Width / Height;
             var depth = FlatDepth ?? forward;
-            var nx = Dot(d, Right) / depth / (TanHalf * aspect);
-            var ny = Dot(d, Up) / depth / TanHalf;
+            // ADR-0140 item 1 (phase R21c, TASK-0372): the centre of the picture is at the shift of the camera.
+            var nx = (Dot(d, Right) / depth / (TanHalf * aspect)) + Shift.X;
+            var ny = (Dot(d, Up) / depth / TanHalf) + Shift.Y;
             var pixel = new Vector2((float)((nx + 1) / 2 * Width), (float)((1 - ny) / 2 * Height));
             return float.IsFinite(pixel.X) && float.IsFinite(pixel.Y) && Math.Abs(pixel.X) < 1e7 && Math.Abs(pixel.Y) < 1e7 ? pixel : null;
         }

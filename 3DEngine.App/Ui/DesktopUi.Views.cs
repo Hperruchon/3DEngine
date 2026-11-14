@@ -132,6 +132,38 @@ internal sealed unsafe partial class DesktopUi
         ImGui.PopStyleVar();
     }
 
+    // ADR-0140 item 2 (phase R21c, TASK-0372): the display of the last frame, for the free part of the scene.
+    private Vector2 _frameDisplay;
+
+    // ADR-0140 item 2: the free part of the scene in the windows of the last frame, in normalized coordinates (left, bottom,
+    // right, top): inside the safe area less 16 pixels; right of the panel or the rows at the left of a landscape display, 16
+    // pixels from them; under the windows of the upper band (the top bar, the path line and the command line) and above the
+    // windows of the lower band (the anchors), 8 pixels from them; on a portrait display above the rows under the part. A
+    // part of less than 100 pixels on a side gives the whole picture.
+    internal (double X0, double Y0, double X1, double Y1) FreePart()
+    {
+        var (width, height) = (_frameDisplay.X, _frameDisplay.Y);
+        if (!(width > 0 && height > 0))
+            return (-1.0, -1.0, 1.0, 1.0);
+        var portrait = width < height;
+        var (left, top, right, bottom) = (16f + _inset.X, 16f + _inset.Y, width - 16f - _inset.Z, height - 16f - _inset.W);
+        foreach (var box in _panels.Concat(_fixed).Concat(_rowsArea is { } rows ? [rows] : Array.Empty<Vector4>()))
+        {
+            if (!portrait && box.X < width * 0.25f && box.Z < width * 0.6f && box.Y < height * 0.6f && box.W > height * 0.2f)
+                left = Math.Max(left, box.Z + 16f);
+            if (box.W < height * 0.2f)
+                top = Math.Max(top, box.W + 8f);
+            if (box.Y > height * 0.8f)
+                bottom = Math.Min(bottom, box.Y - 8f);
+        }
+
+        if (portrait && _rowsUnder && _rowsArea is { } under)
+            bottom = Math.Min(bottom, under.Y - 8f);
+        if (right - left < 100f || bottom - top < 100f)
+            return (-1.0, -1.0, 1.0, 1.0);
+        return ((2.0 * left / width) - 1.0, 1.0 - (2.0 * bottom / height), (2.0 * right / width) - 1.0, 1.0 - (2.0 * top / height));
+    }
+
     // The keys of the views: 1, 3 and 7 give Front, Right and Top, and with Control Back, Left and Bottom; 0 gives the 3D view.
     private void WatchViewKeys(IReadOnlyList<InputSample> samples)
     {

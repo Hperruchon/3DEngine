@@ -41,8 +41,9 @@ public static class Picker
 
         var tanHalf = Math.Tan(camera.FieldOfViewDegrees * Math.PI / 360.0);
         var aspect = width / height;
-        var nx = (2 * x / width - 1) * tanHalf * aspect;
-        var ny = (1 - 2 * y / height) * tanHalf;
+        // ADR-0140 item 1 (phase R21c, TASK-0372): the centre of the picture is at the shift of the camera.
+        var nx = (2 * x / width - 1 - camera.Shift.X) * tanHalf * aspect;
+        var ny = (1 - 2 * y / height - camera.Shift.Y) * tanHalf;
 
         // A flat view has no perspective: each ray goes along the forward direction, from the point of the plane of the eye
         // under the pixel, at the scale of the target.
