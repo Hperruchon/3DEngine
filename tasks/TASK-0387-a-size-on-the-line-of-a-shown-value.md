@@ -1,7 +1,7 @@
 ---
 id: 0387
 title: A free size or a reference on the line of a value that the view shows does not show again
-status: Active
+status: Done
 phase: P0.156
 opened: 2026-11-14
 depends-on: [0386]
@@ -50,16 +50,16 @@ A flat view gives one number for each line that it shows.
 
 ## Acceptance criteria
 
-- [ ] ADR-0151 exists, and ADR-0148 and ADR-0149 show the amendment.
-- [ ] Tests prove no free size on the line of a shown value from the front and from the back, two free sizes from the top,
+- [x] ADR-0151 exists, and ADR-0148 and ADR-0149 show the amendment.
+- [x] Tests prove no free size on the line of a shown value from the front and from the back, two free sizes from the top,
       and one free size where two free sides are one line.
-- [ ] A clean build (`--no-incremental`) gives zero errors and zero warnings, and the phone project builds.
-- [ ] `dotnet test`, the write-set check and `eng/repo-gates` pass; continuous integration passes on the branch and on
+- [x] A clean build (`--no-incremental`) gives zero errors and zero warnings, and the phone project builds.
+- [x] `dotnet test`, the write-set check and `eng/repo-gates` pass; continuous integration passes on the branch and on
       `main` after the merge.
 
 ## Outcome
 
-Status: Active
+Status: Done · commit (the merge of the branch p0156-coincident-free) · v0.372
 
 ## Method
 
@@ -72,3 +72,4 @@ Weakest:    only the pictures of the Bracket were seen.
 - 2026-11-14: opened after P0.155, branch p0156-coincident-free, from the picture of the Bracket from the front. TASK-0387 and
   ADR-0151 are free. Three injections each failed a named test; each file came back byte for byte. One injection first did not
   compile, because an unused local function is an error of the build, so it keeps the call.
+- 2026-11-14: run 43582236221 passed on the work commit. Closed at v0.372.

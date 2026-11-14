@@ -11065,3 +11065,25 @@ the entry v0.370, from the API: none on a branch; 43562165193 on `main` stays re
 New tests: 0. The test list holds 2681 (1580 in `Engine.Tests`, 382 in `3DEngine.Tests`, 716 in `3DEngine.ImageTests`, 3
 in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
 entries: 14 of 15. New diagnostic codes: 0. Since the review of v0.363, 3 product milestones and 8 entries followed it.
+
+## v0.372 — A free size or a reference on the line of a value that the view shows does not show again (P0.156, TASK-0387)
+
+The picture of the Bracket from the front after R22c (`mix-front.png`) showed "60.000 mm not fixed" inside the plate: its free
+far side lies behind its near side, and from the front both are one line, whose value 60.000 shows above the plate.
+
+**The change.** ADR-0151 amends ADR-0148 item 2 and ADR-0149 item 2. Two edges are one line on the view when their ends differ
+only along the direction of the view, within 1e-6 of the length. A free size or a reference on the line of a value that shows,
+or of one that the view already gives, does not show. The pictures of the Bracket from the front (60.000 and 10.000 only) and
+from the top (the two values and the two free sides) are in the session.
+
+**Proof.** A theory proves no free size from the front and from the back and two from the top, for a plate with two values
+and no directions; a test proves one free size where two free sides are one line from the right. Three injections each failed a
+named test; each file came back byte for byte. The phone project builds with zero warnings. Run 43582236221 passed on the branch.
+The failed runs since the entry v0.371, from the API: none on a branch; 43562165193 on `main` stays red until the owner runs
+it again.
+
+**What stays.** A free side behind a valued side shows only in a view where the two are not one line.
+
+New tests: 4. The test list holds 2685 (1580 in `Engine.Tests`, 382 in `3DEngine.Tests`, 720 in `3DEngine.ImageTests`, 3
+in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
+entries: 14 of 15. New diagnostic codes: 0. Since the review of v0.363, 3 product milestones and 9 entries followed it.
