@@ -1,7 +1,7 @@
 ---
 id: 0370
 title: A button "Views" opens a net of the six flat views and the 3D view, and the keys 1, 3, 7 and 0 give them
-status: Active
+status: Done
 phase: R21b
 opened: 2026-11-14
 depends-on: [0369]
@@ -58,18 +58,18 @@ Each flat view and the 3D view have a control at each size and on each device, a
 
 ## Acceptance criteria
 
-- [ ] ADR-0138 exists. ADR-0100, ADR-0127 and ADR-0137 show the amendment.
-- [ ] A test proves at five sizes that "Views" opens the net inside the display, on no other fixed control, and that a view
+- [x] ADR-0138 exists. ADR-0100, ADR-0127 and ADR-0137 show the amendment.
+- [x] A test proves at five sizes that "Views" opens the net inside the display, on no other fixed control, and that a view
       gives its action and closes the net.
-- [ ] A test proves the keys and the guard of the home screen; a test proves the mapping of the digits by the place of the
+- [x] A test proves the keys and the guard of the home screen; a test proves the mapping of the digits by the place of the
       key.
-- [ ] A clean build (`--no-incremental`) gives zero errors and zero warnings, and the phone project builds.
-- [ ] `dotnet test`, the write-set check and `eng/repo-gates` pass; continuous integration passes on the branch and on
+- [x] A clean build (`--no-incremental`) gives zero errors and zero warnings, and the phone project builds.
+- [x] `dotnet test`, the write-set check and `eng/repo-gates` pass; continuous integration passes on the branch and on
       `main` after the merge.
 
 ## Outcome
 
-Status: Active
+Status: Done · commit (the merge of the branch r21b-view-controls) · v0.355
 
 ## Method
 
@@ -88,3 +88,5 @@ Weakest:    no person used the net; a view takes two taps, not one.
   quarter of the safe width, and the net of a phone is under the path line. A rule that kept "AGENT IS WAITING" left of the
   button was caught by no injection, because the word goes under the path line on each tested phone, so it went. Seven
   injections each failed a named test. Each file came back byte for byte.
+- 2026-11-14: run 43562594395 passed on the work commit. The pictures show the net open over the front view at 1440 by
+  900 and on a phone. Closed at v0.355.
