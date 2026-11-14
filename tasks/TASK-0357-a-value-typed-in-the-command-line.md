@@ -1,7 +1,7 @@
 ---
 id: 0357
 title: A value typed in the command line goes to the pad of its value, through the evaluator
-status: Active
+status: Done
 phase: R18h
 opened: 2026-11-14
 depends-on: [0354, 0355]
@@ -57,19 +57,19 @@ pad applies it.
 
 ## Acceptance criteria
 
-- [ ] ADR-0128 exists. ADR-0098 shows the amendment.
-- [ ] A test proves that an expression lists each value with its result, and that Enter opens the pad of the first one with
+- [x] ADR-0128 exists. ADR-0098 shows the amendment.
+- [x] A test proves that an expression lists each value with its result, and that Enter opens the pad of the first one with
       the typed text, whose apply gives the result.
-- [ ] A test proves that the arrows choose a value of a constraint.
-- [ ] A test proves that an active sketch lists its values with their labels and "Extrude".
-- [ ] A test proves that a text that is not a number lists no value.
-- [ ] A clean build (`--no-incremental`) gives zero errors and zero warnings, and the phone project builds.
-- [ ] `dotnet test`, the write-set check and `eng/repo-gates` pass; continuous integration passes on the branch and on
+- [x] A test proves that the arrows choose a value of a constraint.
+- [x] A test proves that an active sketch lists its values with their labels and "Extrude".
+- [x] A test proves that a text that is not a number lists no value.
+- [x] A clean build (`--no-incremental`) gives zero errors and zero warnings, and the phone project builds.
+- [x] `dotnet test`, the write-set check and `eng/repo-gates` pass; continuous integration passes on the branch and on
       `main` after the merge.
 
 ## Outcome
 
-Status: Active
+Status: Done · commit (the merge of the branch r18h-typed-value) · v0.341
 
 ## Method
 
@@ -82,3 +82,5 @@ Weakest:    a value needs two times Enter, and a value with no chip has no entry
 - 2026-11-14: opened under the order of the owner of 2026-11-14, after the codebase review of 2026-11-14 (TASK-0355), at
   `main` 78d0096 (v0.340), branch r18h-typed-value. TASK-0357 and ADR-0128 are free. Seven injections each failed a named
   test; each file came back byte for byte.
+- 2026-11-14: run 43536120912 passed on the work commit. A picture of the bracket at 1280 by 720 with "40+35" typed shows the
+  list "Distance = 75.000 mm", "C1 = 75.000 mm" and "C2 = 75.000 mm". Closed at v0.341.

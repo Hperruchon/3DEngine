@@ -10231,3 +10231,28 @@ the other plates; and an accept holds each value edit, so V177 has no form in wh
 New tests: 0. The test list holds 2515 (1552 in `Engine.Tests`, 357 in `3DEngine.Tests`, 603 in `3DEngine.ImageTests`, 3
 in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
 entries: 14 of 15. New diagnostic codes: 0. This entry is a codebase review, so 0 product milestones and 0 entries follow it.
+
+## v0.341 — A value typed in the command line goes to the pad of its value, through the evaluator (R18h, TASK-0357)
+
+The owner chose ADR-0098 Q1 B, a value in the command line, on 2026-11-08, and the field says "Type a command or a value"
+since R18a; until this entry a typed number found no command. This entry is slice S8 of the proposal on the gaps to the
+render, under the order of the owner of 2026-11-14 (work alone until Sunday, the recommended option for each question).
+
+**The change.** ADR-0128 amends ADR-0098 item 3.
+- When the evaluator of the pad reads the typed text as a number, the list gives first one entry for each value that the
+  frame shows, "C3 = 75.000 mm" or "Distance = 75.000 mm", and "Extrude 75.000 mm" while a sketch is active.
+- Enter, or a tap, opens the pad of that value with the typed text ("40+35"), as a tap on its chip does; Enter in the pad
+  applies the result. So the pad and its evaluator stay the only path of a number (ADR-0032 item 1).
+- A text that the evaluator does not read, as "fra", "2*" or "40 mm", lists commands only.
+
+**Proof.** 4 new tests in `3DEngine.ImageTests/TypedValueTests.cs`: an expression and its pad, the arrows to a constraint,
+a sketch with its values and Extrude, and a text that is not a number. Seven injections each failed a named test; each
+file came back byte for byte. A picture of the bracket at 1280 by 720 shows the list. The phone project builds with zero
+warnings. Run 43536120912 passed on the branch. The failed runs since the entry v0.340, from the API: none.
+
+**What stays.** A value needs two times Enter. A value with no chip, as the size of a box, and a pad of two or three
+fields have no entry. No person used the change in the window.
+
+New tests: 4. The test list holds 2519 (1552 in `Engine.Tests`, 357 in `3DEngine.Tests`, 607 in `3DEngine.ImageTests`, 3
+in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
+entries: 14 of 15. New diagnostic codes: 0. Since the review of v0.340, 1 product milestone and 1 entry followed it.

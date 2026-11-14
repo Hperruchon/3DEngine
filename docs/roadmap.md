@@ -365,6 +365,8 @@ Therefore each approved objective must have a track here.
 - R18g — The fixed controls and the status as in the render: "Undo:" and the step beside Undo, the log and the agent in the
   status line, "saved" or "not saved" in the top bar, and Frame and Home in the command line of a landscape display.
   v0.339, TASK-0354, ADR-0127.
+- R18h — A value typed in the command line goes to the pad of its value, through the evaluator: "40+35" lists each value
+  of the frame as "C3 = 75.000 mm", and Enter opens its pad with the typed text. v0.341, TASK-0357, ADR-0128.
 - P0.143 — The low findings of the codebase review of 2026-11-11: a triangle of zero area adds no edge, and a mesh of
   more than 100 000 triangles finds its edges on the thread pool. v0.332, TASK-0345, ADR-0121.
 - Review — The codebase review of 2026-11-12. v0.333, TASK-0349.
