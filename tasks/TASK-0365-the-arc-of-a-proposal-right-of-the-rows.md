@@ -1,7 +1,7 @@
 ---
 id: 0365
 title: The arc of a proposal moves right of the rows of the selected body, and its lines keep off the tools of the ring
-status: Active
+status: Done
 phase: R18n
 opened: 2026-11-14
 depends-on: [0364]
@@ -55,17 +55,17 @@ The arc of a proposal lies on no row of the selected body, and its caption and l
 
 ## Acceptance criteria
 
-- [ ] ADR-0134 exists. ADR-0092 and ADR-0133 show the amendment.
-- [ ] A test proves from 1024 pixels wide that no item of the arc lies on the rows, and that neither the caption nor a line
+- [x] ADR-0134 exists. ADR-0092 and ADR-0133 show the amendment.
+- [x] A test proves from 1024 pixels wide that no item of the arc lies on the rows, and that neither the caption nor a line
       lies on a tool of the ring; at each size each item is inside the display.
-- [ ] R-0066 records the sizes under 1024 pixels wide.
-- [ ] A clean build (`--no-incremental`) gives zero errors and zero warnings, and the phone project builds.
-- [ ] `dotnet test`, the write-set check and `eng/repo-gates` pass; continuous integration passes on the branch and on
+- [x] R-0066 records the sizes under 1024 pixels wide.
+- [x] A clean build (`--no-incremental`) gives zero errors and zero warnings, and the phone project builds.
+- [x] `dotnet test`, the write-set check and `eng/repo-gates` pass; continuous integration passes on the branch and on
       `main` after the merge.
 
 ## Outcome
 
-Status: Active
+Status: Done · commit (the merge of the branch r18n-arc-right-of-rows) · v0.350
 
 ## Method
 
@@ -83,3 +83,5 @@ Weakest:    the band of a moved arc is not on the band of the tools; under 1024 
   the arc takes the tap first (finding V160), so the test checks the caption and the lines only. Four injections each failed
   the test: no move, no limit at the right edge, no tools as obstacles and no move to the left. Each file came back byte for
   byte.
+- 2026-11-14: run 43553796087 passed on the work commit. The picture of the mix test at 1024 by 768 shows the rows free,
+  the arc right of them and the lines off the tools. Closed at v0.350.

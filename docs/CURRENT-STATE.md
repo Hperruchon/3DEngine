@@ -10470,3 +10470,30 @@ still have a plate over the part. No person read the caption on the arc.
 New tests: 6. The test list holds 2556 (1552 in `Engine.Tests`, 357 in `3DEngine.Tests`, 644 in `3DEngine.ImageTests`, 3
 in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
 entries: 14 of 15. New diagnostic codes: 0. Since the review of v0.346, 3 product milestones and 3 entries followed it.
+
+## v0.350 — The arc of a proposal moves right of the rows of the selected body, and its lines keep off the tools of the ring (R18n, TASK-0365)
+
+Gap H2 of the comparison at the other sizes (v0.344): at 1024 by 768 the arc of a proposal and Reject lay on the rows "Made
+from" and "Distance", so Reject covered "Plate on XY", a target of the rows.
+
+**The change.** ADR-0134 amends ADR-0092 item 7 and ADR-0133 item 2.
+- When the arc on the ring of the selected body lies on the rows, its ring moves right, with its height and its radius,
+  until the word Reject ends 16 pixels right of the rows. When the word Accept then passes the right edge, the arc stays on
+  the ring of the body.
+- The targets of the tools of the ring are obstacles of the block of the lines, as the chips; the block moves down, and at
+  each height it can move left of an obstacle, inside the inner circle and right of the rows.
+- R-0066 records the sizes under 1024 pixels wide, where the arc stays on the rows and its lines can lie on the tools.
+
+**Proof.** A theory at six landscape sizes, with the body at three places, proves that each item of the arc is inside the
+display, and from 1024 pixels wide that no item lies on the rows and neither the caption nor a line lies on a tool. A first
+form with a smaller ring put the lines on the tools at 800 by 600 and 900 by 600, so it went. Four injections each failed the
+theory; each file came back byte for byte. The phone project builds with zero warnings. Run 43553796087 passed on the
+branch. The failed runs since the entry v0.349, from the API: none.
+
+**What stays.** The band of a moved arc is not on the band of the tools. The circle of Accept lies on the target of "Edit
+sketch" at each size, as before; the arc takes the tap first. Under 1024 pixels wide nothing changed (R-0066).
+
+New tests: 6. The test list holds 2562 (1552 in `Engine.Tests`, 357 in `3DEngine.Tests`, 650 in `3DEngine.ImageTests`, 3
+in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
+entries: 15 of 15. New diagnostic codes: 0. Since the review of v0.346, 4 product milestones and 4 entries followed it, so
+the next product milestone needs a codebase review first.
