@@ -219,6 +219,66 @@ public sealed class DimensionLabelsTests
         Assert.All(under, item => Assert.StartsWith("0/", item, StringComparison.Ordinal));
     }
 
+    // Finding V179 of the codebase review of 2026-11-14 (b) (TASK-0362): while a proposal waits on a landscape display, no plate
+    // is under Reject, Accept, their words, the caption, the lines of the arc or "AGENT IS WAITING". The arc is no window, so
+    // the placement reads its rectangles of the last frame. From 24 sides and four heights of the eye, with the panel selected
+    // and its ring at its centre, at seven places around it and under each plate.
+    [Fact]
+    public void No_Plate_Is_Under_The_Arc_Of_A_Proposal()
+    {
+        var card = new ProposalCard(Guid.Parse("72000000-0000-0000-0000-000000000010"), "Make the panel thicker", ["Extrude 72000000 18"]);
+        LiveBody[] bodies = [Panel, new(Guid.Parse("72000000-0000-0000-0000-000000000009"), "Extrude", "Fond", true)];
+        Vector2[] shifts = [Vector2.Zero, new(0, 200), new(0, -150), new(-250, 0), new(250, 0), new(0, -220), new(-250, -180), new(250, -180)];
+        var under = new List<string>();
+        var arcs = 0;
+        void Check(Camera camera, Vector2 centre, string view)
+        {
+            var strokes = DimensionOverlay.Of(Whole, Board, camera, Display.X, Display.Y, "mm");
+            using var ui = new DesktopUi("http://127.0.0.1:5180", Engine.Contracts.Document.Millimetre);
+            for (var frame = 0; frame < 3; frame++)
+            {
+                ui.Route([]);
+                ui.Frame(1f / 60f, Display, Vector2.One, bodies, Panel.Id, dimensions: strokes, ringCentre: centre, history: Steps, proposals: [card]);
+            }
+
+            // The circles of Reject and Accept, their words, the caption and each line, as the frame drew them.
+            var arc = new[] { DesktopUi.ProposalRejectItem, DesktopUi.ProposalAcceptItem }.Concat(ui.ProposalTexts.Keys)
+                .Select(item => (Item: item, Box: ui.ItemRectangle(item))).Where(entry => entry.Box is not null)
+                .Select(entry => (entry.Item, Box: entry.Box!.Value)).Concat(ui.ProposalWords.Select(word => (Item: "word", Box: word))).ToList();
+            arcs += arc.Count > 0 ? 1 : 0;
+            under.AddRange(ui.DimensionPlates.SelectMany(plate => arc.Where(cover => Overlap(plate.Plate, cover.Box))
+                .Select(cover => $"{view}: {plate.Text} at {plate.Plate} under {cover.Item} {cover.Box}")));
+        }
+
+        foreach (var pitch in new[] { 10f, 20f, 35f, 50f })
+        {
+            for (var yaw = 0; yaw < 360; yaw += 15)
+            {
+                var camera = new Camera { ZUp = true, YawDegrees = yaw, PitchDegrees = pitch, FarPlane = 50000f };
+                camera.Frame(Whole.Min, Whole.Max, Display.X / Display.Y);
+                var centre = Centre(camera, Board);
+                foreach (var shift in shifts)
+                    Check(camera, centre + shift, $"{yaw}/{pitch}{shift}");
+
+                // The lines inside the ring: the ring goes across to the place of each plate with no proposal, so that its
+                // lines can come onto that place. The ring stays inside the display, so it does not go up or down.
+                using var alone = new DesktopUi("http://127.0.0.1:5180", Engine.Contracts.Document.Millimetre);
+                var strokes = DimensionOverlay.Of(Whole, Board, camera, Display.X, Display.Y, "mm");
+                for (var frame = 0; frame < 3; frame++)
+                {
+                    alone.Route([]);
+                    alone.Frame(1f / 60f, Display, Vector2.One, bodies, Panel.Id, dimensions: strokes, ringCentre: centre, history: Steps);
+                }
+
+                foreach (var plate in alone.DimensionPlates.Select(placed => placed.Plate))
+                    Check(camera, new Vector2((plate.X + plate.Z) / 2f, centre.Y), $"{yaw}/{pitch} across to {plate}");
+            }
+        }
+
+        Assert.True(arcs > 0, "No view shows the arc.");
+        Assert.True(under.Count == 0, string.Join("; ", under));
+    }
+
     // Finding V176 of the codebase review of 2026-11-14 (TASK-0356): when no move frees a label, it stays at its place, so
     // three labels under one cover of the whole window stay apart and do not go to the top edge.
     [Fact]

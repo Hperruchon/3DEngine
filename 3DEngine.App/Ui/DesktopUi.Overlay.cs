@@ -201,6 +201,9 @@ internal sealed unsafe partial class DesktopUi
             .Where(item => item.Key.StartsWith("Ring", StringComparison.Ordinal) || item.Key.StartsWith("History", StringComparison.Ordinal))
             .Select(item => item.Value));
         covers.AddRange(_ringTargets?.Values ?? Enumerable.Empty<Vector4>());
+        // Finding V179 of the codebase review of 2026-11-14 (b) (TASK-0362): the arc of a proposal on a landscape display is no
+        // window, so its targets, its caption and the plate of its lines of the last frame are covers too.
+        covers.AddRange(_lastProposalCovers);
         return covers;
     }
 

@@ -10418,3 +10418,30 @@ on a portrait display is still a sheet (R18m).
 New tests: 5. The test list holds 2547 (1552 in `Engine.Tests`, 357 in `3DEngine.Tests`, 635 in `3DEngine.ImageTests`, 3
 in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
 entries: 14 of 15. New diagnostic codes: 0. Since the review of v0.346, 1 product milestone and 1 entry followed it.
+
+## v0.348 — Undo of the line after an accept goes at the next step, and no plate is under the arc of a proposal (P0.147, TASK-0362)
+
+The codebase review of 2026-11-14 (b) (v0.346) gave one medium finding, V178, and two low findings, V179 and V180, after the
+next product phase, R18l.
+
+**The change.** No ADR: each fix keeps the rule of its ADR.
+- V178 (ADR-0130 item 4): the host gives the count of the log at the end of an accept. The line shows "Undo" only while
+  the count of the status is that count; at the first change, by a step, an Undo of the anchors or another Document, the
+  button goes for good, and the line stays.
+- V179 (ADR-0125 item 4): the arc of a proposal on a landscape display keeps the boxes of the circles of Reject and Accept,
+  their words, the caption and the plate of the lines. "AGENT IS WAITING" keeps its box too, because the test found a plate
+  under it. The plates of the next frame take these boxes as covers.
+- V180: the mix test checks Reject and Accept at each size, because the sheet of a portrait display gives both.
+
+**Proof.** A theory proves that a later step takes "Undo" away and that it does not come back. A test of 96 views, with the
+ring of the panel at eight places and under each plate, proves that no plate is under an item of the arc. A first form of
+that test read the covers from the list that the fix fills, so it did not see a missing target. Six injections each failed a
+named test; each file came back byte for byte. The phone project builds with zero warnings. Run 43550335599 passed on the
+branch. The failed runs since the entry v0.347, from the API: none.
+
+**What stays.** A command of another client in the frame where an accept ends takes the button away. No person used the
+change.
+
+New tests: 3. The test list holds 2550 (1552 in `Engine.Tests`, 357 in `3DEngine.Tests`, 638 in `3DEngine.ImageTests`, 3
+in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
+entries: 14 of 15. New diagnostic codes: 0. Since the review of v0.346, 2 product milestones and 2 entries followed it.
