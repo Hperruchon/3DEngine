@@ -1,7 +1,7 @@
 ---
 id: 0362
 title: The medium and low findings of the codebase review of 2026-11-14 (b)
-status: Active
+status: Done
 phase: P0.147
 opened: 2026-11-14
 depends-on: [0361]
@@ -53,16 +53,16 @@ proposal, and the mix test checks Reject and Accept at each size.
 
 ## Acceptance criteria
 
-- [ ] A test proves that a step after an accept takes the button "Undo" away.
-- [ ] A test proves that no plate is under Accept or the lines of the arc of a proposal.
-- [ ] The mix test checks Reject and Accept at each size.
-- [ ] A clean build (`--no-incremental`) gives zero errors and zero warnings, and the phone project builds.
-- [ ] `dotnet test`, the write-set check and `eng/repo-gates` pass; continuous integration passes on the branch and on
+- [x] A test proves that a step after an accept takes the button "Undo" away.
+- [x] A test proves that no plate is under Accept or the lines of the arc of a proposal.
+- [x] The mix test checks Reject and Accept at each size.
+- [x] A clean build (`--no-incremental`) gives zero errors and zero warnings, and the phone project builds.
+- [x] `dotnet test`, the write-set check and `eng/repo-gates` pass; continuous integration passes on the branch and on
       `main` after the merge.
 
 ## Outcome
 
-Status: Active
+Status: Done · commit (the merge of the branch p0147-review-findings) · v0.348
 
 ## Method
 
@@ -85,3 +85,4 @@ Weakest:    a command of another client in the same frame as the end of the acce
 - 2026-11-14: six injections each failed a named test: no change of the button, no covers of the arc, no plate of the
   lines, no targets, no word "AGENT IS WAITING", and no Accept in the sheet at 390 by 844. Each file came back byte for
   byte.
+- 2026-11-14: run 43550335599 passed on the work commit. Closed at v0.348.
