@@ -127,6 +127,7 @@ internal sealed unsafe partial class DesktopUi
     private void Proposal(Vector2 displaySize, LiveBody? body)
     {
         ProposalOutcomeLine(displaySize);
+        _sheetTop = null;
         if (_proposals.Count == 0)
             return;
 
@@ -374,6 +375,10 @@ internal sealed unsafe partial class DesktopUi
     // The height of the sheet of the last frame, so the sheet of this frame knows if it fits above the ring.
     private float _sheetHeight;
 
+    // ADR-0131 item 1 (phase R18k, TASK-0360): the top of the sheet of the last frame, or null with no sheet, so the rows under
+    // the part end above it.
+    private float? _sheetTop;
+
     // ADR-0111 item 4 (TASK-0331): the highest point of the band of the ring of this frame, or null with no ring. The top of a
     // segment is at an end of its arc, or at the top of the circle when the segment holds that angle.
     internal float? RingTop()
@@ -464,6 +469,7 @@ internal sealed unsafe partial class DesktopUi
         }
 
         ImGui.End();
+        _sheetTop = bottom - _sheetHeight;
     }
 
     // Item 7: "AGENT IS WAITING" in amber with an amber dot, in the top bar, or under it when the top bar has no room.

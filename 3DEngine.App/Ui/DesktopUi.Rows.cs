@@ -52,13 +52,22 @@ internal sealed unsafe partial class DesktopUi
     private Vector4? _cutRow;
     private List<LiveBody> _cutTools = [];
 
+    // ADR-0131 item 3 (phase R18k, TASK-0360): the row of "Hidden too" while the dimensions show, and its item. A portrait
+    // display has no command line, and the panel does not show with a selected body, so this row keeps the toggle reachable.
+    public const string HiddenTooItem = "Row:hidden too";
+    private Vector4? _hiddenTooRow;
+
     // ADR-0099 item 2: the body whose name field is open, or null; and the focus of the field in the next frame.
     private Guid? _renaming;
     private bool _focusRename;
 
-    // ADR-0099 item 1: true when the rows of this body show, so that the panel does not.
+    // ADR-0099 item 1: true when the rows of this body show, so that the panel does not. ADR-0131 item 1 (phase R18k,
+    // TASK-0360): on a portrait display too, under the part.
     private bool RowsShow(Vector2 displaySize, LiveBody? body)
-        => body is not null && !_sketchActive && displaySize.X >= displaySize.Y;
+        => body is not null && !_sketchActive;
+
+    // ADR-0131 item 1: true when the rows of this frame are under the part, on a portrait display.
+    private bool _rowsUnder;
 
     // The rectangle of the rows of this frame, for a test; null with no rows.
     internal Vector4? RowsArea => _rowsArea;
@@ -74,14 +83,14 @@ internal sealed unsafe partial class DesktopUi
     internal static string RowState(LiveBody body)
         => $"{body.Kind} · {(body.Fault is { } fault ? $"failed {fault.Code}" : "correct")}{(body.Visible ? string.Empty : " · hidden")}";
 
-    // Item 1: on a landscape display, while a body is selected and no sketch is active, the rows show. A portrait display
-    // keeps the data in the panel in this slice. The frame places the rows before the ring and the chips, so that both read
-    // the rows of this frame.
+    // Item 1: on a landscape display, while a body is selected and no sketch is active, the rows show. Until TASK-0360 a
+    // portrait display kept the data in the panel (ADR-0131 item 1). The frame places the rows before the ring and the
+    // chips, so that both read the rows of this frame.
     // ADR-0099 item 1 (the redesign, slice p, TASK-0313): the rows are at the upper left, in the place of the panel, which
     // does not show while they do. Until TASK-0313 they were at the upper right, under the command line.
     private void PlaceRows(Vector2 displaySize, LiveBody? body, IReadOnlyList<EdgeValues.Value>? values, IReadOnlyList<LiveBody> bodies, DocumentLine? document, IReadOnlyList<HistoryStep>? history = null)
     {
-        (_rows, _rowsArea, _rowLines, _cutRow, _cutTools, _madeFrom) = ([], null, [], null, [], null);
+        (_rows, _rowsArea, _rowLines, _cutRow, _cutTools, _madeFrom, _rowsUnder, _hiddenTooRow) = ([], null, [], null, [], null, false, null);
         if (!RowsShow(displaySize, body) || body is null)
         {
             _renaming = null;
@@ -91,12 +100,44 @@ internal sealed unsafe partial class DesktopUi
         var left = 16f + _inset.X;
         var right = left + RowsWidth;
         var top = PanelTop;
+        var bottom = displaySize.Y - 32f - _inset.W - AnchorSize;
+
+        // ADR-0131 item 1 (phase R18k, TASK-0360): on a portrait display the rows are under the part, at the full width, with
+        // their last row 8 pixels above the ring of the last frame (or above the anchors), as the render at 768 by 1024. They
+        // take the room from the middle of the display down, so the part, which the camera frames at the middle, stays free.
+        _rowsUnder = displaySize.X < displaySize.Y;
+        if (_rowsUnder)
+        {
+            right = displaySize.X - 16f - _inset.Z;
+            top = displaySize.Y / 2f;
+            bottom = Math.Min(bottom, (RingTop() ?? float.MaxValue) - 8f);
+            // The sheet of a proposal is above the ring too (ADR-0131 item 1). While it shows, the rows end 8 pixels above
+            // the sheet of the last frame, so the sheet covers no window of the rows, as the list of a cut.
+            if (_proposals.Count > 0 && _sheetTop is { } sheetTop)
+                bottom = Math.Min(bottom, sheetTop - 8f);
+        }
         // ADR-0117 item 1: the first row is one row when the state fits after the name, else the name and a line of the state.
         _titleHeight = RowTitle(body).OneLine ? RowHeight : RowHeight + ImGui.GetTextLineHeight();
         var y = top + _titleHeight;
         // The review of Codex of v0.252 (TASK-0271): the rows end 16 pixels above the anchors, as the panel does; a value
         // that has no room keeps its chip only. Until TASK-0271 a long list went past the bottom of the display.
-        var bottom = displaySize.Y - 32f - _inset.W - AnchorSize;
+
+        // ADR-0131 item 1 (phase R18k, TASK-0360): on a portrait display the room under the part is small, and the ring and the
+        // command line hold no cut, so the row of a cut and the row of "Hidden too" come right after the first row and always
+        // show, as the first row does; a value row that has no room keeps its chip. The review of the branch found that the
+        // cut had no room on a phone with a ring and a value.
+        _cutTools = [.. bodies.Where(other => other.Id != body.Id && other.Visible)];
+        if (_rowsUnder && _cutTools.Count > 0)
+        {
+            _cutRow = new Vector4(left, y, right, y + RowHeight);
+            y += RowHeight;
+        }
+
+        if (_rowsUnder && _dimensions)
+        {
+            _hiddenTooRow = new Vector4(left, y, right, y + RowHeight);
+            y += RowHeight;
+        }
 
         // ADR-0117 item 2 (ADR-0099 Q2): the row "Made from" with the sketch of the body: the first step of its history that
         // opens a sketch. A body that no sketch made, as a box, has no such row.
@@ -116,10 +157,16 @@ internal sealed unsafe partial class DesktopUi
         }
 
         // ADR-0099 item 4: the row of the list of a cut, while another body is visible, as in the panel (ADR-0073 item 1).
-        _cutTools = [.. bodies.Where(other => other.Id != body.Id && other.Visible)];
-        if (_cutTools.Count > 0 && y + RowHeight <= bottom)
+        if (!_rowsUnder && _cutTools.Count > 0 && y + RowHeight <= bottom)
         {
             _cutRow = new Vector4(left, y, right, y + RowHeight);
+            y += RowHeight;
+        }
+
+        // ADR-0131 item 3 (phase R18k, TASK-0360): the row of "Hidden too" while the dimensions show, where it has room.
+        if (!_rowsUnder && _dimensions && y + RowHeight <= bottom)
+        {
+            _hiddenTooRow = new Vector4(left, y, right, y + RowHeight);
             y += RowHeight;
         }
 
@@ -135,6 +182,12 @@ internal sealed unsafe partial class DesktopUi
         }
 
         _rowsArea = new Vector4(left, top, right, y);
+
+        // ADR-0131 item 1: the rows under the part move down, so their last row is on the bottom of their room. The first rows
+        // always show, so when the room is lower than it, it moves up above the bottom of the room, and not above the top of
+        // the panel. Thus it covers no tool of the ring and no part of the sheet of a proposal.
+        if (_rowsUnder && y != bottom)
+            Shift(Math.Max(bottom - y, PanelTop - top));
         if (_renaming != body.Id)
             _renaming = null;
     }
@@ -142,7 +195,7 @@ internal sealed unsafe partial class DesktopUi
     // ADR-0099 item 2: a tap on the first row, or the command Rename, opens the name field with the name of the body.
     private void StartRename(LiveBody body)
     {
-        (_name, _nameFor) = (body.Name ?? string.Empty, body.Id);
+        _name = body.Name ?? string.Empty;
         (_renaming, _focusRename) = (body.Id, true);
     }
 
@@ -210,6 +263,11 @@ internal sealed unsafe partial class DesktopUi
         if (_madeFrom is { } made && _pad is null && ImGui.IsMouseReleased(ImGuiMouseButton.Left) && !OverWindowAtRelease()
             && Inside(made.Rectangle, io.MousePos) && Inside(made.Rectangle, io.MouseClickedPos[0]))
             _actions.Add(new EditSketchAction(made.Step.Id));
+
+        // ADR-0131 item 3 (phase R18k, TASK-0360): a press and a release on the row of "Hidden too" toggle it.
+        if (_hiddenTooRow is { } hiddenToo && _pad is null && ImGui.IsMouseReleased(ImGuiMouseButton.Left) && !OverWindowAtRelease()
+            && Inside(hiddenToo, io.MousePos) && Inside(hiddenToo, io.MouseClickedPos[0]))
+            _hiddenToo = !_hiddenToo;
 
         // ADR-0099 item 2: a press and a release on the first row open the name field; a pointer over it gives the reason of a
         // fault, as the line of the fault in the panel did until TASK-0313.
@@ -318,6 +376,20 @@ internal sealed unsafe partial class DesktopUi
         if (_cutRow is { } cut)
             CutRow(body, cut);
 
+        // ADR-0131 item 3: "Hidden too" in the colour of the text, and its state "on" in the accent or "off" in the quiet colour
+        // at the right.
+        if (_hiddenTooRow is { } hiddenTooRow)
+        {
+            var (min, max) = (new Vector2(hiddenTooRow.X, hiddenTooRow.Y), new Vector2(hiddenTooRow.Z, hiddenTooRow.W));
+            if (!ImGui.IsWindowHovered(ImGuiHoveredFlags.AnyWindow) && Inside(hiddenTooRow, io.MousePos))
+                list.AddRectFilled(min, max, ImGui.GetColorU32(colours[(int)ImGuiCol.ButtonHovered]), 6f);
+            list.AddText(new Vector2(min.X, min.Y + middle), text, HiddenTooLabel);
+            var state = _hiddenToo ? "on" : "off";
+            list.AddText(new Vector2(max.X - ImGui.CalcTextSize(state).X, min.Y + middle), _hiddenToo ? Theme.Accent : quiet, state);
+            list.AddLine(new Vector2(min.X, max.Y), max, line, 1f);
+            _items[HiddenTooItem] = hiddenTooRow;
+        }
+
         // ADR-0099 item 3: the lines under the values, in the quiet colour, with no tap.
         foreach (var (item, shown, rectangle) in _rowLines)
         {
@@ -332,8 +404,12 @@ internal sealed unsafe partial class DesktopUi
     {
         var width = 160f;
         ImGui.SetNextWindowPos(new Vector2(row.X, row.Y + ((RowHeight - ImGui.GetFrameHeight()) / 2f)), ImGuiCond.Always);
+        // ADR-0131 item 1 (phase R18k, TASK-0360): the window of the row has no padding, but the open list keeps the padding of
+        // the style, as the list of the panel did, so each entry is inside the list. A window reads the padding at its Begin.
         ImGui.PushStyleVar(ImGuiStyleVar.WindowPadding, Vector2.Zero);
-        if (ImGui.Begin("##RowsCut", FixedFlags))
+        var shown = ImGui.Begin("##RowsCut", FixedFlags);
+        ImGui.PopStyleVar();
+        if (shown)
         {
             ImGui.AlignTextToFramePadding();
             ImGui.TextDisabled(CutLabel);
@@ -358,7 +434,6 @@ internal sealed unsafe partial class DesktopUi
         }
 
         ImGui.End();
-        ImGui.PopStyleVar();
         if (_cutList is { } open)
             _panels.Add(open);
         var line = ImGui.GetColorU32(ImGui.GetStyle().Colors[(int)ImGuiCol.Separator]);
@@ -431,12 +506,29 @@ internal sealed unsafe partial class DesktopUi
     }
 
     // Item 4: a chip that the placement put on the rows goes under them, at the same x, so that a value shows once in
-    // each place and a tap finds one of them.
+    // each place and a tap finds one of them. ADR-0131 item 2 (phase R18k, TASK-0360): above them when the rows are under the
+    // part, because the ring and the anchors are under the rows.
     private Vector4 OutOfRows(Vector4 chip)
     {
         if (_rowsArea is not { } area || chip.Z <= area.X || chip.X >= area.Z || chip.W <= area.Y || chip.Y >= area.W)
             return chip;
-        var down = area.W + 8f - chip.Y;
-        return chip with { Y = chip.Y + down, W = chip.W + down };
+        var move = _rowsUnder ? area.Y - 8f - chip.W : area.W + 8f - chip.Y;
+        return chip with { Y = chip.Y + move, W = chip.W + move };
+    }
+
+    // ADR-0131 item 1: moves each rectangle of the rows of this frame down by the distance.
+    private void Shift(float down)
+    {
+        static Vector4 By(Vector4 rectangle, float distance) => rectangle with { Y = rectangle.Y + distance, W = rectangle.W + distance };
+        _rows = [.. _rows.Select(row => (row.Value, By(row.Rectangle, down)))];
+        _rowLines = [.. _rowLines.Select(row => (row.Item, row.Text, By(row.Rectangle, down)))];
+        if (_cutRow is { } cut)
+            _cutRow = By(cut, down);
+        if (_madeFrom is { } made)
+            _madeFrom = (made.Step, By(made.Rectangle, down));
+        if (_hiddenTooRow is { } hiddenToo)
+            _hiddenTooRow = By(hiddenToo, down);
+        if (_rowsArea is { } area)
+            _rowsArea = By(area, down);
     }
 }

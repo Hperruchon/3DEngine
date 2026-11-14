@@ -14,8 +14,9 @@ public class DimensionOverlayTests
 {
     private static readonly Vector2 Display = new(1280, 720);
 
-    // ADR-0099 item 1 (the redesign, slice p, TASK-0313): on a landscape display the rows of a selected body take the place of
-    // the panel, so the tests of the toggles in the panel use a portrait display, where the panel keeps the controls of the selected body.
+    // ADR-0131 items 1 and 3 (phase R18k, TASK-0360): on this portrait display, with a selected body, "Dimensions" is a segment
+    // of the ring and "Hidden too" is a row of the rows under the part; with no selection both are check boxes of the panel.
+    // Until TASK-0360 the panel kept the toggles with a selected body on a portrait display.
     private static readonly Vector2 Portrait = new(720, 1280);
 
     private static readonly LiveBody[] Bodies =
@@ -26,19 +27,24 @@ public class DimensionOverlayTests
 
     private static readonly Guid Selected = Bodies[0].Id;
 
+    // A selection that names no live body: the panel shows, as with no selection.
+    private static readonly Guid NoBody = Guid.Empty;
+
     private const string Size = "Size 1200 x 18 x 370 mm\nThickness 18 mm";
 
-    private static void Step(DesktopUi ui, params InputSample[] frame)
+    private static void Step(DesktopUi ui, params InputSample[] frame) => StepWith(ui, Selected, frame);
+
+    private static void StepWith(DesktopUi ui, Guid? selection, params InputSample[] frame)
     {
         ui.Route(frame);
-        ui.Frame(1f / 60f, Portrait, Vector2.One, Bodies, Selected, size: Size);
+        ui.Frame(1f / 60f, Portrait, Vector2.One, Bodies, selection, size: Size, ringCentre: Portrait / 2f, ringBody: 120f);
     }
 
-    private static DesktopUi Opened()
+    private static DesktopUi Opened(Guid? selection = null)
     {
         var ui = new DesktopUi("http://127.0.0.1:5180", Engine.Contracts.Document.Millimetre);
-        Step(ui);
-        Step(ui);
+        StepWith(ui, selection ?? Selected);
+        StepWith(ui, selection ?? Selected);
         return ui;
     }
 
@@ -46,42 +52,58 @@ public class DimensionOverlayTests
         => new(kind, 1, kind == DeviceKind.Mouse ? 0UL : 3UL, at.X, at.Y, 1,
             kind == DeviceKind.Mouse ? PointerButtons.Left : PointerButtons.None, KeyModifiers.None, phase, 0);
 
-    private static void Tap(DesktopUi ui, DeviceKind kind, string label)
+    private static void Tap(DesktopUi ui, DeviceKind kind, string label, Guid? selection = null)
     {
-        var rectangle = ui.ItemRectangle(label) ?? throw new InvalidOperationException($"The panel has no control {label}.");
+        var rectangle = ui.ItemRectangle(label) ?? throw new InvalidOperationException($"The window has no control {label}.");
         var at = ((rectangle.X + rectangle.Z) / 2.0, (rectangle.Y + rectangle.W) / 2.0);
-        Step(ui, Pointer(kind, at, PointerPhase.Down));
-        Step(ui, Pointer(kind, at, PointerPhase.Up));
-        Step(ui);
-        Step(ui);
+        StepWith(ui, selection ?? Selected, Pointer(kind, at, PointerPhase.Down));
+        StepWith(ui, selection ?? Selected, Pointer(kind, at, PointerPhase.Up));
+        StepWith(ui, selection ?? Selected);
+        StepWith(ui, selection ?? Selected);
     }
 
     // Item 2: the toggles are off at each start, a tap and a click change each one, and Hidden too waits for Dimensions.
+    // ADR-0131 items 1 and 3 (phase R18k, TASK-0360): with no selection the check boxes of the panel take the tap; with a
+    // selected body the segment "Dimensions" of the ring and the row "Hidden too" take it, and the row shows only while the
+    // dimensions show.
     [Theory]
     [InlineData(DeviceKind.Mouse)]
     [InlineData(DeviceKind.Touch)]
     public void The_Toggles_Are_Off_At_The_Start_And_Take_A_Tap_And_A_Click(DeviceKind kind)
     {
-        using var ui = Opened();
+        using var ui = Opened(NoBody);
         Assert.False(ui.ShowDimensions);
         Assert.False(ui.HiddenToo);
 
-        Tap(ui, kind, DesktopUi.HiddenTooLabel);
+        Tap(ui, kind, DesktopUi.HiddenTooLabel, NoBody);
         Assert.False(ui.HiddenToo);
-
-        Tap(ui, kind, DesktopUi.DimensionsLabel);
+        Tap(ui, kind, DesktopUi.DimensionsLabel, NoBody);
         Assert.True(ui.ShowDimensions);
-        Tap(ui, kind, DesktopUi.HiddenTooLabel);
+        Tap(ui, kind, DesktopUi.HiddenTooLabel, NoBody);
         Assert.True(ui.HiddenToo);
-        Tap(ui, kind, DesktopUi.DimensionsLabel);
+        Tap(ui, kind, DesktopUi.HiddenTooLabel, NoBody);
+        Assert.False(ui.HiddenToo);
+        Tap(ui, kind, DesktopUi.DimensionsLabel, NoBody);
         Assert.False(ui.ShowDimensions);
+
+        Step(ui);
+        Step(ui);
+        Assert.Null(ui.ItemRectangle(DesktopUi.HiddenTooItem));
+        Tap(ui, kind, DesktopUi.RingItem(DesktopUi.DimensionsLabel));
+        Assert.True(ui.ShowDimensions);
+        Tap(ui, kind, DesktopUi.HiddenTooItem);
+        Assert.True(ui.HiddenToo);
+        Tap(ui, kind, DesktopUi.RingItem(DesktopUi.DimensionsLabel));
+        Assert.False(ui.ShowDimensions);
+        Assert.Null(ui.ItemRectangle(DesktopUi.HiddenTooItem));
     }
 
-    // Item 2 and ADR-0027 item 6: each toggle is at least 44 pixels high and inside the panel.
+    // Item 2 and ADR-0027 item 6: each toggle is at least 44 pixels high and inside the panel. ADR-0131 item 3 (phase R18k,
+    // TASK-0360): with a selected body, the row "Hidden too" is at least 44 pixels high and inside the rows and the display.
     [Fact]
     public void Each_Toggle_Is_At_Least_44_Pixels_High_And_Inside_The_Panel()
     {
-        using var ui = Opened();
+        using var ui = Opened(NoBody);
         var panel = ui.PanelRectangles[0];
         foreach (var label in new[] { DesktopUi.DimensionsLabel, DesktopUi.HiddenTooLabel })
         {
@@ -89,16 +111,26 @@ public class DimensionOverlayTests
             Assert.True(rectangle.W - rectangle.Y >= DesktopUi.MinimumControlHeight, $"{label} is {rectangle.W - rectangle.Y} pixels high.");
             Assert.True(rectangle.X >= panel.X && rectangle.Z <= panel.Z && rectangle.Y >= panel.Y && rectangle.W <= panel.W, $"{label} at {rectangle} is not inside the panel {panel}.");
         }
+
+        ui.ShowDimensionsOn();
+        Step(ui);
+        Step(ui);
+        var row = ui.ItemRectangle(DesktopUi.HiddenTooItem) ?? throw new InvalidOperationException("The rows have no row Hidden too.");
+        var rows = ui.RowsArea ?? throw new InvalidOperationException("No rows.");
+        Assert.True(row.W - row.Y >= DesktopUi.MinimumControlHeight, $"The row Hidden too is {row.W - row.Y} pixels high.");
+        Assert.True(row.X >= rows.X && row.Z <= rows.Z && row.Y >= rows.Y && row.W <= rows.W, $"The row Hidden too at {row} is not inside the rows {rows}.");
+        Assert.True(row.X >= 0 && row.Z <= Portrait.X && row.W <= Portrait.Y, $"The row Hidden too at {row} leaves the display.");
     }
 
-    // Item 6: the line of the size of the selected body shows while the dimensions show, and not before.
+    // Item 6: the line of the size of the selected body shows while the dimensions show, and not before. ADR-0131 item 1
+    // (phase R18k, TASK-0360): the line is in the rows, and the segment "Dimensions" of the ring turns the dimensions on.
     [Fact]
     public void The_Size_Of_The_Selected_Body_Shows_With_The_Dimensions_Only()
     {
         using var ui = Opened();
         Assert.Null(ui.ItemRectangle(DesktopUi.SizeLabel));
 
-        Tap(ui, DeviceKind.Mouse, DesktopUi.DimensionsLabel);
+        Tap(ui, DeviceKind.Mouse, DesktopUi.RingItem(DesktopUi.DimensionsLabel));
 
         Assert.NotNull(ui.ItemRectangle(DesktopUi.SizeLabel));
     }

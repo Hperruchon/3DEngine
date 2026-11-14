@@ -20,8 +20,8 @@ public sealed class FaceSelectionTests
 {
     private static readonly Guid A = Guid.Parse("aaaaaaaa-0000-0000-0000-000000000000");
     private static readonly Guid B = Guid.Parse("bbbbbbbb-0000-0000-0000-000000000000");
-    // ADR-0099 item 1 (the redesign, slice p, TASK-0313): on a landscape display the rows of a selected body take the place of
-    // the panel, so these tests of the panel use a portrait display, where the panel keeps the controls of the selected body.
+    // ADR-0131 item 1 (phase R18k, TASK-0360): on this portrait display the rows of a selected body are under the part. Until
+    // TASK-0360 the panel kept the controls of the selected body on a portrait display.
     private static readonly Vector2 Display = new(768, 1024);
 
     private static PickHit? Top(double x, double y) => new PickHit(A, 1) { Point = (0, 0, 0.5), Normal = (0, 0, 1) };
@@ -57,7 +57,8 @@ public sealed class FaceSelectionTests
     }
 
     // The line of the face and its button are in the panel; a curved face has no button; a tap on the button gives a
-    // sketch on the selected face.
+    // sketch on the selected face. ADR-0131 item 1 (phase R18k, TASK-0360): the line of the face is in the rows, and the
+    // button is the segment "Sketch on face" of the ring. Until TASK-0360 both were in the panel on a portrait display.
     [Fact]
     public void The_Panel_Shows_The_Face_And_A_Sketch_On_It()
     {
@@ -66,19 +67,19 @@ public sealed class FaceSelectionTests
         void Step(FaceLine? face, params InputSample[] frame)
         {
             ui.Route(frame);
-            ui.Frame(1f / 60f, Display, Vector2.One, bodies, A, face: face);
+            ui.Frame(1f / 60f, Display, Vector2.One, bodies, A, face: face, ringCentre: Display / 2f, ringBody: 120f);
         }
 
         var curved = new FaceLine("Face side: 314 square mm", false, []);
         Step(curved);
         Step(curved);
         Assert.NotNull(ui.ItemRectangle(DesktopUi.FaceLabel));
-        Assert.Null(ui.ItemRectangle(DesktopUi.SketchOnFaceButtonLabel));
+        Assert.Null(ui.ItemRectangle(DesktopUi.RingItem(DesktopUi.SketchOnFaceButtonLabel)));
 
         var flat = new FaceLine("Face +z: 1 square mm", true, [(new Vector2(500, 300), new Vector2(600, 300))]);
         Step(flat);
         Step(flat);
-        var button = ui.ItemRectangle(DesktopUi.SketchOnFaceButtonLabel) ?? throw new InvalidOperationException("The panel has no button for the sketch on the face.");
+        var button = ui.ItemRectangle(DesktopUi.RingItem(DesktopUi.SketchOnFaceButtonLabel)) ?? throw new InvalidOperationException("The ring has no segment for the sketch on the face.");
         var (x, y) = ((button.X + button.Z) / 2, (button.Y + button.W) / 2);
         Step(flat, new PointerSample(DeviceKind.Touch, 1, 3, x, y, 1, PointerButtons.None, KeyModifiers.None, PointerPhase.Down, 0));
         Step(flat, new PointerSample(DeviceKind.Touch, 1, 3, x, y, 1, PointerButtons.None, KeyModifiers.None, PointerPhase.Up, 0));
