@@ -1,7 +1,7 @@
 ---
 id: 0388
 title: On a small landscape display the arc of a proposal is right of the rows on a smaller ring, and each part of a proposal hides the tools under it
-status: Active
+status: Done
 phase: P0.157
 opened: 2026-11-14
 depends-on: [0387]
@@ -52,17 +52,17 @@ At 800 by 600 and 900 by 600 no row and no tool that shows is under the arc of a
 
 ## Acceptance criteria
 
-- [ ] ADR-0152 exists, and ADR-0134 and ADR-0139 show the amendment.
-- [ ] The theory proves at six landscape sizes that no item of the arc lies on the rows, that no tool that shows lies under a
+- [x] ADR-0152 exists, and ADR-0134 and ADR-0139 show the amendment.
+- [x] The theory proves at six landscape sizes that no item of the arc lies on the rows, that no tool that shows lies under a
       rectangle of the proposal or under the band, and that the ring of the arc moves right of the rows under 1025 pixels wide.
-- [ ] R-0066 is closed with its exit.
-- [ ] A clean build (`--no-incremental`) gives zero errors and zero warnings, and the phone project builds.
-- [ ] `dotnet test`, the write-set check and `eng/repo-gates` pass; continuous integration passes on the branch and on
+- [x] R-0066 is closed with its exit.
+- [x] A clean build (`--no-incremental`) gives zero errors and zero warnings, and the phone project builds.
+- [x] `dotnet test`, the write-set check and `eng/repo-gates` pass; continuous integration passes on the branch and on
       `main` after the merge.
 
 ## Outcome
 
-Status: Active
+Status: Done · commit (the merge of the branch p0157-small-landscape-arc) · v0.373
 
 ## Method
 
@@ -78,3 +78,4 @@ Weakest:    the pictures at two sizes only were seen.
   the band read the covers of the code; the test now builds the band from the ring and the end circles. Three injections each
   failed a named test; each file came back byte for byte. A run after the injections used the last injected build; a rebuild
   gave 720 of 720.
+- 2026-11-14: run 43583302921 passed on the work commit. Closed at v0.373.

@@ -53,3 +53,4 @@ tool shows under the proposal.
 
 - 2026-11-14 · TASK-0388 · The record, from register entry R-0066 and the pictures at 800 by 600 and 900 by 600, under the order
   of the owner of 2026-11-14.
+- 2026-11-14 · TASK-0388 · Shipped at v0.373.

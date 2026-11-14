@@ -425,6 +425,8 @@ Therefore each approved objective must have a track here.
 - P0.155 — The questions before P10 are a record, and register entry R-0067 holds them for the owner. v0.371, TASK-0386.
 - P0.156 — A free size or a reference on the line of a value that the view shows does not show again. v0.372,
   TASK-0387, ADR-0151.
+- P0.157 — On a small landscape display the arc of a proposal is right of the rows on a smaller ring, and each part of
+  a proposal hides the tools under it; R-0066 closes. v0.373, TASK-0388, ADR-0152.
 - Review — The codebase review of 2026-11-14 (c). v0.351, TASK-0366.
 - P0.143 — The low findings of the codebase review of 2026-11-11: a triangle of zero area adds no edge, and a mesh of
   more than 100 000 triangles finds its edges on the thread pool. v0.332, TASK-0345, ADR-0121.
