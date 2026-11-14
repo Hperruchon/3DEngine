@@ -1,7 +1,7 @@
 ---
 id: 0369
 title: The camera has six flat views with no perspective, and the command line gives each one
-status: Active
+status: Done
 phase: R21a
 opened: 2026-11-14
 depends-on: [0367, 0368]
@@ -63,17 +63,17 @@ plate agrees with the picture.
 
 ## Acceptance criteria
 
-- [ ] ADR-0137 exists. ADR-0023 shows the amendment.
-- [ ] Tests prove the axes of each flat view, the projection with no perspective at the scale of the target, the reversed
+- [x] ADR-0137 exists. ADR-0023 shows the amendment.
+- [x] Tests prove the axes of each flat view, the projection with no perspective at the scale of the target, the reversed
       depth, the return, the parallel rays of a pick, the pan from the top and the length of the gizmo.
-- [ ] A test proves the commands of the views and the overlay with no perspective.
-- [ ] A clean build (`--no-incremental`) gives zero errors and zero warnings, and the phone project builds.
-- [ ] `dotnet test`, the write-set check and `eng/repo-gates` pass; continuous integration passes on the branch and on
+- [x] A test proves the commands of the views and the overlay with no perspective.
+- [x] A clean build (`--no-incremental`) gives zero errors and zero warnings, and the phone project builds.
+- [x] `dotnet test`, the write-set check and `eng/repo-gates` pass; continuous integration passes on the branch and on
       `main` after the merge.
 
 ## Outcome
 
-Status: Active
+Status: Done · commit (the merge of the branch r21a-flat-views) · v0.354
 
 ## Method
 
@@ -90,3 +90,4 @@ Weakest:    no person used the views; a value along the view still has its chip 
   of the depth, an edge along the view, stays on one point. Nine injections each failed a named test: the projection with
   perspective, a pitch of 89 degrees, no return, an orbit that stays flat, a pan with the pitch, a pick, a gizmo and an
   overlay with perspective, and no commands. Each file came back byte for byte.
+- 2026-11-14: run 43560822457 passed on the work commit. Closed at v0.354.
