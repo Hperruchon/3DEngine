@@ -145,11 +145,12 @@ names. Do not read all of them.
 | [0137](0137-the-flat-views-of-the-camera.md) | The camera has six flat views with no perspective, and the command line gives each one | Amended | Rendering, clients | 0023 | 0138, 0139, 0140, 0141 |
 | [0138](0138-the-controls-of-the-flat-views.md) | A button "Views" opens a net of the six flat views and the 3D view, and the keys 1, 3, 7 and 0 give them | Accepted | Clients | 0100, 0127, 0137 | — |
 | [0139](0139-a-sketch-leaves-a-flat-view-and-no-tool-hides-under-the-arc.md) | A sketch leaves a flat view, and a tool under an end of the arc of a proposal hides while the proposal waits | Accepted | Clients, rendering | 0136, 0137 | — |
-| [0140](0140-frame-in-the-free-part-of-the-scene.md) | Frame fits the bodies in the free part of the scene, and the centre of the picture moves there | Accepted | Rendering, clients | 0023, 0137 | — |
+| [0140](0140-frame-in-the-free-part-of-the-scene.md) | Frame fits the bodies in the free part of the scene, and the centre of the picture moves there | Amended | Rendering, clients | 0023, 0137 | 0145 |
 | [0141](0141-the-scale-and-the-depth-of-a-flat-view.md) | A flat view has a scale of its own and a far plane behind the box, and the rows of a portrait proposal stay under the middle | Accepted | Rendering, clients | 0135, 0137 | — |
 | [0142](0142-the-edges-of-a-view-outside-the-kernel.md) | The visible and the hidden edges of a view are computed outside the owned kernel, from its faces and its edges | Amended | Kernel, drawing | — | 0143 |
-| [0143](0143-the-circles-of-a-view.md) | A view shows the circle of the design for a curved side, and an end seen from the side as one line | Amended | Kernel, drawing | 0142 | 0144 |
-| [0144](0144-the-ellipses-and-the-outline-of-a-view.md) | An end at a slant to the view is an ellipse, and the outline of a cylinder and a cone comes from its axis | Accepted | Kernel, drawing | 0143 | — |
+| [0143](0143-the-circles-of-a-view.md) | A view shows the circle of the design for a curved side, and an end seen from the side as one line | Amended | Kernel, drawing | 0142 | 0144, 0145 |
+| [0144](0144-the-ellipses-and-the-outline-of-a-view.md) | An end at a slant to the view is an ellipse, and the outline of a cylinder and a cone comes from its axis | Amended | Kernel, drawing | 0143 | 0145 |
+| [0145](0145-the-place-of-a-line-along-the-axis.md) | A line of a curved side keeps its place along the axis, an axis within 1e-9 of the view is along it, and Frame leaves a window at the right | Accepted | Kernel, drawing, clients | 0140, 0143, 0144 | — |
 
 ## Topics
 

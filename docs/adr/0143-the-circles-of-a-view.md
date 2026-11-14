@@ -7,7 +7,7 @@ date: 2026-11-14
 supersedes: []
 superseded-by: []
 amends: ['0142']
-amended-by: ['0144']
+amended-by: ['0144', '0145']
 affects:
   - Engine.Core/Drawing/ViewEdges.cs
   - Engine.Core/Features/KernelProjection.cs
@@ -74,3 +74,5 @@ sagitta of one facet.
 - 2026-11-14 · TASK-0376 · Shipped at v0.361.
 - 2026-11-14 · TASK-0377 · ADR-0144 items 1 and 2 amend item 4: an end at a slant to the view is an ellipse, and the
   outline of a cylinder and a cone comes from its axis.
+- 2026-11-14 · TASK-0379 · ADR-0145 items 1 and 2 amend items 2 to 4: a line has its place along the axis, and an axis within
+  1e-9 of the view is along it.
