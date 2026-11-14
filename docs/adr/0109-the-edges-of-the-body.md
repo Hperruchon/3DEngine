@@ -7,7 +7,7 @@ date: 2026-11-10
 supersedes: []
 superseded-by: []
 amends: ['0029']
-amended-by: ['0121']
+amended-by: ['0121', '0129']
 affects:
   - 3DEngine.App/SceneRenderer.cs
   - 3DEngine.App/SessionBodies.cs
@@ -47,6 +47,8 @@ device can have no wide lines.
    upload for a mesh of at most 100 000 triangles, and on the thread pool for a larger mesh, which draws its lines from a
    later frame (ADR-0121). The lines are presentation, as the tessellation is (ADR-0007, determinism rule 6): the
    Document and the log hold none. The limit is a constant cosine, so no transcendental function runs.
+   ADR-0129 item 4 amends this item: a triangle whose area is zero within 1e-9 of the square of its longest side adds no
+   edge, and a side of one triangle with a chain of collinear sides of one triangle each from end to end is one edge.
 2. **The lines.** Each live, visible body draws its edges as lines of a fixed width in pixels: 1.5 pixels, near white,
    with a soft border of one pixel. Each edge is two triangles, and the shader `edge.vert` gives them their width on the
    screen, so the pass needs no wide lines. A line comes nearer to the eye by 0.2 percent of its depth, so it wins the depth
@@ -82,3 +84,5 @@ frame time on the phone is not measured; register entry R-0061 holds the questio
 - 2026-11-10 · TASK-0333 · Shipped at v0.322.
 - 2026-11-11 · TASK-0345 · Amended by ADR-0121: the edges of a mesh of more than 100 000 triangles are found on the
   thread pool (finding V167), and a triangle of zero area adds no edge (finding V166).
+- 2026-11-14 · TASK-0356 · ADR-0129 item 4 amends item 1: a T-vertex with no sliver, two T-vertices side by side and a
+  turned T-vertex add no line (finding V175 of the codebase review of 2026-11-14).

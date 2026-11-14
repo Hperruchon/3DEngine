@@ -9,7 +9,9 @@ namespace ThreeDEngine.Desktop;
 // reverses, from the events of the session. Each applied command other than Undo and Redo is a step, as in the history of
 // the command bus (ADR-0031 item 2): a new step clears the undone steps, an Undo moves the last step to the undone steps,
 // and a Redo moves it back. The engine gives the name of a command only, so the text of a step is the text that the window
-// expected for that command (Expect), else the name of the command in words. The texts are presentation (ADR-0007): they
+// expected for that command (Expect), else the name of the command in words. ADR-0129 item 3 (finding V177 of the codebase
+// review of 2026-11-14, TASK-0356): the window expects a text for the identifier of its command, which each event of that
+// command carries (CauseCommandId), so a command of another client with the same name does not take it. The texts are presentation (ADR-0007): they
 // send nothing. The events come inside the commit of the session, on its thread, so each member takes the lock.
 internal sealed class StepTexts
 {
@@ -25,7 +27,7 @@ internal sealed class StepTexts
     private readonly Lock _lock = new();
     private readonly List<string> _done = [];
     private readonly List<string> _undone = [];
-    private readonly List<(string Command, string Text)> _expected = [];
+    private readonly List<(Guid Command, string Text)> _expected = [];
     private bool _seeded;
     private int _log;
 
@@ -64,10 +66,9 @@ internal sealed class StepTexts
         }
     }
 
-    // The window gives the text of the next applied command with this name, before it sends the command.
-    public void Expect(string command, string text)
+    // The window gives the text of the command with this identifier, before it sends the command.
+    public void Expect(Guid command, string text)
     {
-        ArgumentNullException.ThrowIfNull(command);
         ArgumentNullException.ThrowIfNull(text);
         lock (_lock)
         {
@@ -133,16 +134,16 @@ internal sealed class StepTexts
     // The text of a new distance of an extrude: "distance = 30", with the word of the lines of a proposal.
     internal static string DistanceText(double distance) => $"{ProposedValues.DistanceLabel} = {SketchText.Short(distance)}";
 
-    // The command and the text of each command of a proposal whose value the frame names (ProposedValues.Named). A line of a
-    // card starts with the name of its command (ProposalCard.Line).
-    internal static IEnumerable<(string Command, string Text)> ProposalTexts(ProposalCard card)
+    // The identifier and the text of each command of a proposal whose value the frame names (ProposedValues.Named).
+    internal static IEnumerable<(Guid Command, string Text)> ProposalTexts(ProposalCard card)
     {
         ArgumentNullException.ThrowIfNull(card);
         for (var i = 0; i < card.Commands.Count; i++)
         {
-            if (card.Values is not { } values || i >= values.Count || values[i] is not { Label: { } label } value)
+            if (card.Values is not { } values || i >= values.Count || values[i] is not { Label: { } label } value
+                || card.CommandIds is not { } ids || i >= ids.Count)
                 continue;
-            var command = card.Commands[i].Split(' ', 2)[0];
+            var command = ids[i];
             yield return (command, $"{label} = {SketchText.Short(value.Shown ?? value.Number)}{(value.Unit is { } unit ? $" {unit}" : string.Empty)}");
         }
     }
@@ -153,13 +154,13 @@ internal sealed class StepTexts
             return;
         if (record.Kind == Applied)
         {
-            var at = _expected.FindIndex(expected => expected.Command == name);
+            var at = _expected.FindIndex(expected => expected.Command == record.CauseCommandId);
             var text = at < 0 ? Readable(name) : _expected[at].Text;
             if (at >= 0)
                 _expected.RemoveAt(at);
             Count(name, text);
         }
-        else if (record.Kind is Rejected or Cancelled && _expected.FindIndex(expected => expected.Command == name) is var gone and >= 0)
+        else if (record.Kind is Rejected or Cancelled && _expected.FindIndex(expected => expected.Command == record.CauseCommandId) is var gone and >= 0)
         {
             _expected.RemoveAt(gone);
         }

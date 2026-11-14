@@ -46,8 +46,9 @@ public sealed class FixedStatusTests
         async Task Apply(Command command, CommandStatus status = CommandStatus.Applied)
             => Assert.Equal(status, (await host.Session.Apply(command)).Status);
 
-        steps.Expect("CreateBox", "Box 2");
-        await Apply(new CreateBoxCommand { SizeX = 2, SizeY = 2, SizeZ = 2 });
+        var second = Guid.NewGuid();
+        steps.Expect(second, "Box 2");
+        await Apply(new CreateBoxCommand { CommandId = second, SizeX = 2, SizeY = 2, SizeZ = 2 });
         Assert.Equal((2, "Box 2"), (steps.LogCount, steps.Undo));
 
         await Apply(new UndoCommand());
@@ -64,20 +65,26 @@ public sealed class FixedStatusTests
         await Apply(new RedoCommand(), CommandStatus.Rejected);
         Assert.Equal(7, steps.LogCount);
 
-        steps.Expect("NoOp", "never");
-        await Apply(new NoOpCommand { Echo = "b", ExpectedDocumentVersion = 999 }, CommandStatus.Rejected);
+        var refused = Guid.NewGuid();
+        steps.Expect(refused, "never");
+        await Apply(new NoOpCommand { CommandId = refused, Echo = "b", ExpectedDocumentVersion = 999 }, CommandStatus.Rejected);
         await Apply(new NoOpCommand { Echo = "c" });
         Assert.Equal((8, "No op"), (steps.LogCount, steps.Undo));
 
-        // A text for another command waits for its command.
-        steps.Expect("CreateBox", "Box 3");
+        // A text waits for its own command. Finding V177 of the codebase review of 2026-11-14 (TASK-0356, ADR-0129 item 3): a
+        // command of another client with the same name does not take it.
+        var third = Guid.NewGuid();
+        steps.Expect(third, "Box 3");
         await Apply(new NoOpCommand { Echo = "d" });
         Assert.Equal("No op", steps.Undo);
-        await Apply(new CreateBoxCommand { SizeX = 3, SizeY = 3, SizeZ = 3 });
-        Assert.Equal((10, "Box 3"), (steps.LogCount, steps.Undo));
-        steps.Expect("CreateBox", "gone");
+        await Apply(new CreateBoxCommand { SizeX = 5, SizeY = 5, SizeZ = 5 });
+        Assert.Equal((10, "Create box"), (steps.LogCount, steps.Undo));
+        await Apply(new CreateBoxCommand { CommandId = third, SizeX = 3, SizeY = 3, SizeZ = 3 });
+        Assert.Equal((11, "Box 3"), (steps.LogCount, steps.Undo));
+        var gone = Guid.NewGuid();
+        steps.Expect(gone, "gone");
         steps.Forget();
-        await Apply(new CreateBoxCommand { SizeX = 4, SizeY = 4, SizeZ = 4 });
+        await Apply(new CreateBoxCommand { CommandId = gone, SizeX = 4, SizeY = 4, SizeZ = 4 });
         Assert.Equal("Create box", steps.Undo);
     }
 
@@ -98,13 +105,15 @@ public sealed class FixedStatusTests
         Assert.Equal("Set sketch constraint value", StepTexts.Readable("SetSketchConstraintValue"));
         Assert.Equal("No op", StepTexts.Readable("NoOp"));
 
+        Guid[] ids = [Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid()];
         var card = new ProposalCard(Guid.NewGuid(), "Wider plate", ["SetSketchConstraintValue a b 75", "NoOp x", "SetExtrudeDistance e 30"], Values:
         [
             new ProposedValue(sketchId, length, null, 75) { Name = "Plate", Label = "C3" },
             null,
             new ProposedValue(null, null, Guid.NewGuid(), 30) { Name = "Bracket", Label = ProposedValues.DistanceLabel },
-        ]);
-        Assert.Equal([("SetSketchConstraintValue", "C3 = 75"), ("SetExtrudeDistance", "distance = 30")], StepTexts.ProposalTexts(card).ToList());
+        ], CommandIds: ids);
+        Assert.Equal([(ids[0], "C3 = 75"), (ids[2], "distance = 30")], StepTexts.ProposalTexts(card).ToList());
+        Assert.Empty(StepTexts.ProposalTexts(card with { CommandIds = null }));
     }
 
     // Items 1 and 3: the status line gives the log, the state, the agent while a client listens, and the address; a narrow room

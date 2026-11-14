@@ -177,12 +177,13 @@ internal sealed class SketchActions(DocumentSession session) : ISketchEditor
 
     // ADR-0082 item 3 (TASK-0254): the value of a constraint of a sketch that is not active, from a chip on an edge of its
     // extrude. One command; the rebuild of the extrude follows in the engine.
-    public string? SetValueOf(Guid sketch, Guid constraint, double value)
-        => Rejection(Run(new SetSketchConstraintValueCommand { SketchId = sketch, ConstraintId = constraint, Value = value }));
+    // ADR-0129 item 3 (finding V177, TASK-0356): the caller can give the identifier of the command, for the text of its step.
+    public string? SetValueOf(Guid sketch, Guid constraint, double value, Guid? command = null)
+        => Rejection(Run(new SetSketchConstraintValueCommand { CommandId = command ?? Guid.NewGuid(), SketchId = sketch, ConstraintId = constraint, Value = value }));
 
-    public string? SetValue(Guid constraint, IReadOnlyList<double> values)
+    public string? SetValue(Guid constraint, IReadOnlyList<double> values, Guid? command = null)
         => Active is { } sketch && values.Count > 0
-            ? Rejection(Run(new SetSketchConstraintValueCommand { SketchId = sketch, ConstraintId = constraint, Value = values[0], SecondValue = values.Count > 1 ? values[1] : null }))
+            ? Rejection(Run(new SetSketchConstraintValueCommand { CommandId = command ?? Guid.NewGuid(), SketchId = sketch, ConstraintId = constraint, Value = values[0], SecondValue = values.Count > 1 ? values[1] : null }))
             : null;
 
     public string? MovePoint(Guid point, double x, double y)

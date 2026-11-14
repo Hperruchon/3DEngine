@@ -183,6 +183,61 @@ public sealed class DimensionLabelsTests
         Assert.Equal(new Vector2(202, 300), placed[2].At);
     }
 
+    // Finding V173 of the codebase review of 2026-11-14 (TASK-0356): the window of the live sketches comes after the dimensions
+    // in the frame. With one live sketch, nothing selected and the dimensions of the whole on, at 1280 by 720, from 24 sides and
+    // four heights of the eye, a plate is under a window or a fixed control only in the three views from the side 0 at the
+    // heights 20, 35 and 50: there "Z 2350 mm" meets the plate "Y 400 mm" when it moves left, then the panel, so no move of
+    // ADR-0125 item 4 frees it, and it stays at its place. Until TASK-0356 118 plates were under the window of the sketches.
+    [Fact]
+    public void No_Plate_Is_Under_The_Window_Of_The_Live_Sketches()
+    {
+        ((double X, double Y, double Z) Min, (double X, double Y, double Z) Max) whole = ((0, 0, 0), (3400, 400, 2350));
+        var sketch = new SketchInfo(Sketch, Engine.Contracts.Sketch.Datums.XY.Id, "Plate", [], [], [], [], [], true, 0);
+        var sketches = new SketchPanel([sketch], null, ThreeDEngine.Core.Sketching.SketchToolKind.Line, false, [], null);
+        static bool Overlap(Vector4 a, Vector4 b) => a.X < b.Z && a.Z > b.X && a.Y < b.W && a.W > b.Y;
+        var under = new List<string>();
+        foreach (var pitch in new[] { 10f, 20f, 35f, 50f })
+        {
+            for (var yaw = 0; yaw < 360; yaw += 15)
+            {
+                var camera = new Camera { ZUp = true, YawDegrees = yaw, PitchDegrees = pitch, FarPlane = 50000f };
+                camera.Frame(whole.Min, whole.Max, Display.X / Display.Y);
+                var strokes = DimensionOverlay.Of(whole, null, camera, Display.X, Display.Y, "mm");
+                using var ui = new DesktopUi("http://127.0.0.1:5180", Engine.Contracts.Document.Millimetre);
+                for (var frame = 0; frame < 3; frame++)
+                {
+                    ui.Route([]);
+                    ui.Frame(1f / 60f, Display, Vector2.One, [Panel], null, sketchPanel: sketches, dimensions: strokes);
+                }
+
+                var covers = ui.PanelRectangles.Concat(ui.FixedRectangles).ToList();
+                under.AddRange(ui.DimensionPlates.SelectMany(plate => covers.Where(cover => Overlap(plate.Plate, cover)).Select(cover => $"{yaw}/{pitch}: {plate.Text} at {plate.Plate} under {cover}")));
+            }
+        }
+
+        Assert.True(under.Count <= 3, string.Join("; ", under));
+        Assert.All(under, item => Assert.StartsWith("0/", item, StringComparison.Ordinal));
+    }
+
+    // Finding V176 of the codebase review of 2026-11-14 (TASK-0356): when no move frees a label, it stays at its place, so
+    // three labels under one cover of the whole window stay apart and do not go to the top edge.
+    [Fact]
+    public void A_Label_That_No_Move_Frees_Stays_At_Its_Place()
+    {
+        static Vector2 Size(string _) => new(100, 20);
+        DimensionOverlay.Label[] labels =
+        [
+            new(new Vector2(300, 200), "A", DimensionOverlay.Mark.Overall),
+            new(new Vector2(600, 400), "B", DimensionOverlay.Mark.Overall),
+            new(new Vector2(900, 600), "C", DimensionOverlay.Mark.Overall),
+        ];
+        Vector4[] covers = [new(0, 0, 1280, 720)];
+
+        var placed = DimensionOverlay.Place(labels, Size, Display, covers);
+
+        Assert.Equal(labels.Select(label => label.At), placed.Select(label => label.At));
+    }
+
     // Item 5: a body that is not a board has no thickness line.
     [Fact]
     public void A_Body_That_Is_Not_A_Board_Has_No_Thickness()

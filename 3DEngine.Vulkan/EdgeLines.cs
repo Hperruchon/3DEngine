@@ -48,21 +48,18 @@ public static class EdgeLines
 
         // For each edge: the count of its triangles and the normals of the first two.
         var edges = new Dictionary<(int, int), (int Count, (double X, double Y, double Z) First, (double X, double Y, double Z) Second)>();
-        var slivers = new List<(int A, int B, int C)>();
         for (var t = 0; t + 2 < indices.Length; t += 3)
         {
             var (a, b, c) = (canonical[indices[t]], canonical[indices[t + 1]], canonical[indices[t + 2]]);
             if (a == b || b == c || c == a)
                 continue;
-            var normal = Normal(positions, a, b, c);
 
             // Finding V166 of the codebase review of 2026-11-11 (TASK-0345): a triangle of zero area across a T-vertex has
-            // three different corners, but its long edge is not an edge of the surface. It adds no edge.
-            if (normal == default)
-            {
-                slivers.Add((a, b, c));
+            // three different corners, but its long edge is not an edge of the surface. It adds no edge. Finding V175 of the
+            // codebase review of 2026-11-14 (TASK-0356): the rounding of a turned body gives such a triangle a small area, so
+            // the area is zero within a tolerance relative to the square of its longest side.
+            if (Normal(positions, a, b, c) is not { } normal)
                 continue;
-            }
 
             foreach (var (p, q) in new[] { (a, b), (b, c), (c, a) })
             {
@@ -73,21 +70,28 @@ public static class EdgeLines
             }
         }
 
-        // Finding V171 of the codebase review of 2026-11-12 (TASK-0350): a sliver closes a T-vertex M on the long side P-Q, so the
-        // triangle across P-Q is also the triangle across P-M and across M-Q. When each of the three sides has one triangle,
-        // the two short sides take the triangle of the long side, and the long side is not an edge. So a T-vertex inside a
-        // flat face draws no line, and a crease along P-Q still draws its two parts.
-        foreach (var (a, b, c) in slivers)
+        // Finding V171 of the codebase review of 2026-11-12 (TASK-0350), and V175: a T-vertex M on the side P-Q of a triangle
+        // splits the other side of the crack into P-M and M-Q, with a sliver or with no sliver. So the triangle across P-Q is
+        // also the triangle across each part. When P-Q has one triangle and a chain of collinear edges of one triangle each
+        // goes from P to Q, each part takes the triangle of P-Q, and P-Q is not an edge. So a T-vertex inside a flat face
+        // draws no line, also two T-vertices side by side, and a crease along P-Q still draws its parts.
+        var single = new Dictionary<int, List<int>>();
+        foreach (var ((p, q), edge) in edges)
         {
-            var (p, m, q) = Ends(positions, a, b, c);
-            var (pm, mq, pq) = (Key(p, m), Key(m, q), Key(p, q));
-            if (edges.TryGetValue(pq, out var across) && across.Count == 1
-                && edges.TryGetValue(pm, out var near) && near.Count == 1 && edges.TryGetValue(mq, out var far) && far.Count == 1)
-            {
-                edges[pm] = (2, near.First, across.First);
-                edges[mq] = (2, far.First, across.First);
-                edges.Remove(pq);
-            }
+            if (edge.Count != 1)
+                continue;
+            (single.TryGetValue(p, out var fromP) ? fromP : single[p] = []).Add(q);
+            (single.TryGetValue(q, out var fromQ) ? fromQ : single[q] = []).Add(p);
+        }
+
+        foreach (var key in edges.Where(edge => edge.Value.Count == 1).Select(edge => edge.Key).Order().ToList())
+        {
+            if (!edges.TryGetValue(key, out var across) || across.Count != 1
+                || Chain(positions, single, edges, key.Item1, key.Item2) is not { Count: > 1 } parts)
+                continue;
+            foreach (var part in parts)
+                edges[part] = (2, edges[part].First, across.First);
+            edges.Remove(key);
         }
 
         var result = new List<(int A, int B)>();
@@ -135,28 +139,59 @@ public static class EdgeLines
 
     private static (int, int) Key(int p, int q) => p < q ? (p, q) : (q, p);
 
-    // The ends P and Q of the longest side of a triangle of zero area, and its middle corner M, which is on that side.
-    private static (int P, int M, int Q) Ends(ReadOnlySpan<double> positions, int a, int b, int c)
+    // V175 (TASK-0356): a cross product whose length is at most this part of the square of the longest side is zero, so the
+    // three points are on one line. The rounding of a turned body gives about 1e-16 of it; a real face of a thin sliver
+    // of 1e-9 of its length is a choice of the window, not of the model.
+    internal const double Collinear = 1e-9;
+
+    // The edges of one triangle each from P to Q along the segment P-Q, in their order, or null. Each step takes the
+    // neighbour on the segment that is nearest after the last one, so a chain of two or more T-vertices is one chain.
+    private static List<(int, int)>? Chain(ReadOnlySpan<double> positions, Dictionary<int, List<int>> single,
+        Dictionary<(int, int), (int Count, (double X, double Y, double Z) First, (double X, double Y, double Z) Second)> edges, int p, int q)
     {
-        var (ab, bc, ca) = (Square(positions, a, b), Square(positions, b, c), Square(positions, c, a));
-        return ab >= bc && ab >= ca ? (a, c, b) : bc >= ca ? (b, a, c) : (c, b, a);
+        var (dx, dy, dz) = Difference(positions, p, q);
+        var length = (dx * dx) + (dy * dy) + (dz * dz);
+        var parts = new List<(int, int)>();
+        var (at, along) = (p, 0d);
+        while (at != q && parts.Count < single.Count)
+        {
+            var next = -1;
+            var nearest = double.MaxValue;
+            foreach (var n in single.GetValueOrDefault(at) ?? [])
+            {
+                if (Key(at, n) == Key(p, q) || !edges.TryGetValue(Key(at, n), out var edge) || edge.Count != 1)
+                    continue;
+                var (ex, ey, ez) = Difference(positions, p, n);
+                var t = ((ex * dx) + (ey * dy) + (ez * dz)) / length;
+                var (cx, cy, cz) = ((ey * dz) - (ez * dy), (ez * dx) - (ex * dz), (ex * dy) - (ey * dx));
+                var off = Math.Sqrt((cx * cx) + (cy * cy) + (cz * cz));
+                if (t > along && (n == q || t < 1) && off <= Collinear * length && t < nearest)
+                    (next, nearest) = (n, t);
+            }
+
+            if (next < 0)
+                return null;
+            parts.Add(Key(at, next));
+            (at, along) = (next, nearest);
+        }
+
+        return at == q ? parts : null;
     }
 
-    // The square of the distance between two vertices, with no square root.
-    private static double Square(ReadOnlySpan<double> positions, int a, int b)
-    {
-        var (x, y, z) = (positions[3 * b] - positions[3 * a], positions[(3 * b) + 1] - positions[(3 * a) + 1], positions[(3 * b) + 2] - positions[(3 * a) + 2]);
-        return (x * x) + (y * y) + (z * z);
-    }
+    private static (double X, double Y, double Z) Difference(ReadOnlySpan<double> positions, int a, int b)
+        => (positions[3 * b] - positions[3 * a], positions[(3 * b) + 1] - positions[(3 * a) + 1], positions[(3 * b) + 2] - positions[(3 * a) + 2]);
 
-    // The unit normal of a triangle, or zero for a triangle with no area.
-    private static (double X, double Y, double Z) Normal(ReadOnlySpan<double> positions, int a, int b, int c)
+    // The unit normal of a triangle, or null for a triangle with no area: a cross product whose length is at most Collinear
+    // times the square of the longest side (V175).
+    private static (double X, double Y, double Z)? Normal(ReadOnlySpan<double> positions, int a, int b, int c)
     {
-        var (ux, uy, uz) = (positions[3 * b] - positions[3 * a], positions[(3 * b) + 1] - positions[(3 * a) + 1], positions[(3 * b) + 2] - positions[(3 * a) + 2]);
-        var (vx, vy, vz) = (positions[3 * c] - positions[3 * a], positions[(3 * c) + 1] - positions[(3 * a) + 1], positions[(3 * c) + 2] - positions[(3 * a) + 2]);
+        var (ux, uy, uz) = Difference(positions, a, b);
+        var (vx, vy, vz) = Difference(positions, a, c);
+        var (wx, wy, wz) = Difference(positions, b, c);
         var (nx, ny, nz) = ((uy * vz) - (uz * vy), (uz * vx) - (ux * vz), (ux * vy) - (uy * vx));
         var length = Math.Sqrt((nx * nx) + (ny * ny) + (nz * nz));
-        return length > 0 ? (nx / length, ny / length, nz / length) : (0, 0, 0);
+        var longest = Math.Max((ux * ux) + (uy * uy) + (uz * uz), Math.Max((vx * vx) + (vy * vy) + (vz * vz), (wx * wx) + (wy * wy) + (wz * wz)));
+        return length > Collinear * longest ? (nx / length, ny / length, nz / length) : null;
     }
 
     private static double Dot((double X, double Y, double Z) p, (double X, double Y, double Z) q) => (p.X * q.X) + (p.Y * q.Y) + (p.Z * q.Z);
