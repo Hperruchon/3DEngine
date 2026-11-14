@@ -89,3 +89,4 @@ less than 1e-9 of its length draws no line.
 ## History
 
 - 2026-11-14 · TASK-0356 · The record, from the findings V173 to V177 of the codebase review of 2026-11-14.
+- 2026-11-14 · TASK-0356 · Shipped at v0.342.
