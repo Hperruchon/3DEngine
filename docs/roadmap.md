@@ -383,6 +383,8 @@ Therefore each approved objective must have a track here.
   at the next step, no plate is under the arc of a proposal, and the mix test checks Reject and Accept. v0.348, TASK-0362.
 - R18m — The caption of a proposal on the band of its arc, along its top, and the command lines under the arc off each
   chip; the arc on a portrait display is row R18o. v0.349, TASK-0364, ADR-0133.
+- R18n — The ring of the arc of a proposal moves right of the rows of the selected body, and the command lines keep off
+  the tools of the ring. v0.350, TASK-0365, ADR-0134.
 - P0.143 — The low findings of the codebase review of 2026-11-11: a triangle of zero area adds no edge, and a mesh of
   more than 100 000 triangles finds its edges on the thread pool. v0.332, TASK-0345, ADR-0121.
 - Review — The codebase review of 2026-11-12. v0.333, TASK-0349.
@@ -662,7 +664,7 @@ The first objective. Each phase ends with something that a person can observe.
 | R18k | The rows under the part on a portrait display: the rows of the selected body take the place of the panel, under the part, at the full width, and no chip lies over them; the controls of a selected body leave the panel, because it then shows in no orientation (gap H3 and Q4 A of `docs/proposals/2026-11-14-the-render-at-other-sizes.md`). After R18j. TASK-0360. | 2–3 |
 | R18l | The labels of the corner ring of a portrait display: each label in its segment, with a narrower segment or a smaller text where a label does not fit (gap H4). After R18k. TASK-0363. | 1 |
 | R18m | The caption of a proposal along the top of its arc, and the command lines under the arc and off each chip (gap H1). After R18l. TASK-0364. | 1 |
-| R18n | The arc of a proposal right of the rows of the selected body at 1024 by 768, as the free ring stays right of the panel (gap H2). After R18m. | 1 |
+| R18n | The arc of a proposal right of the rows of the selected body at 1024 by 768, as the free ring stays right of the panel (gap H2). After R18m. TASK-0365. | 1 |
 | R18o | On a portrait display the arc of a proposal above the part in place of the sheet (gap H5), split from R18m by ADR-0133 item 4. After R18n. | 1 |
 | R19 | The responsive layout: each control stays in the display and free for a tap at six phone sizes in portrait, three in landscape, a tablet and two windows, with one test over all of them (ADR-0113; the order of the owner of 2026-11-10, after R17a). TASK-0336. | 1 |
 | R20 | The UX test of a project of many pieces on 2026-11-10 (a copy of `Bibliotheque120.3de`, 19 bodies, 1280 by 720): seven problems and three improvements, in the proposal `docs/proposals/2026-11-10-ux-test-of-a-multi-part-project.md`; the owner took the three on 2026-11-10. | 4–6 |

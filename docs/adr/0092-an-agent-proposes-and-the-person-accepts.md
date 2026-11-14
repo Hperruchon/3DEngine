@@ -7,7 +7,7 @@ date: 2026-11-08
 supersedes: []
 superseded-by: []
 amends: []
-amended-by: ['0107', '0108', '0110', '0111', '0113', '0130', '0133']
+amended-by: ['0107', '0108', '0110', '0111', '0113', '0130', '0133', '0134']
 affects:
   - Engine.Api.Http/Proposals.cs
   - Engine.Api.Http/Endpoints/ProposalsEndpoint.cs
@@ -152,3 +152,5 @@ first one.
   waits, and after an accept "Applied · Bracket rebuilt" with the button Undo.
 - 2026-11-14 · TASK-0364 · ADR-0133 item 1 amends item 7: the caption is on the band of the arc, along its top, and a cut
   caption is whole as the first line under the arc; item 2: the command lines lie on no chip.
+- 2026-11-14 · TASK-0365 · ADR-0134 item 1 amends item 7: when the arc on the ring of the selected body lies on the
+  rows, its ring moves right of them, if the arc stays in the display.
