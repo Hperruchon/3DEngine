@@ -26,10 +26,13 @@ internal sealed unsafe partial class DesktopUi
     private static string CommandHintFor(float width)
         => (2f * CommandTextLeft) + ImGui.CalcTextSize(CommandHint).X <= width ? CommandHint : CommandHintShort;
 
-    // ADR-0108 item 4: the item of the keys that open the field, and their text. The input has no key of the Command key of
-    // macOS yet (register entry R-0060), so each platform shows "Ctrl K".
+    // ADR-0108 item 4: the item of the keys that open the field, and their text. ADR-0150 item 2 (phase P0.154, TASK-0385):
+    // macOS shows "Cmd K", because its Command key gives the modifier of the shortcuts (R-0060); the other platforms show
+    // "Ctrl K".
     public const string CommandKeyItem = "Command:key";
-    public const string CommandKeyText = "Ctrl K";
+    public static string CommandKeyText { get; } = CommandKeyTextFor(OperatingSystem.IsMacOS());
+
+    public static string CommandKeyTextFor(bool macOS) => macOS ? "Cmd K" : "Ctrl K";
 
     // ADR-0108 item 4: the left room of the text of the field, which holds the search mark.
     private const float CommandTextLeft = 34f;

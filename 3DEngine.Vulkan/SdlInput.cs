@@ -18,6 +18,18 @@ public sealed unsafe class SdlInput
     private readonly List<InputSample> _frame = new();
     private KeyModifiers _modifiers;
 
+    // ADR-0150 item 1 (phase P0.154, TASK-0385): on macOS the Command key gives the modifier of the shortcuts, Control, as the
+    // key Control does on the other platforms, so Command and K open the command line there. The other platforms leave the
+    // key of the system out, as before.
+    private readonly bool _macOS;
+
+    public SdlInput()
+        : this(OperatingSystem.IsMacOS())
+    {
+    }
+
+    public SdlInput(bool macOS) => _macOS = macOS;
+
     // The samples since the last call of TakeFrame, in their order.
     public IReadOnlyList<InputSample> TakeFrame()
     {
@@ -99,7 +111,8 @@ public sealed unsafe class SdlInput
             return;
         }
 
-        if (code is SDL_Scancode.SDL_SCANCODE_LCTRL or SDL_Scancode.SDL_SCANCODE_RCTRL)
+        if (code is SDL_Scancode.SDL_SCANCODE_LCTRL or SDL_Scancode.SDL_SCANCODE_RCTRL
+            || (_macOS && code is SDL_Scancode.SDL_SCANCODE_LGUI or SDL_Scancode.SDL_SCANCODE_RGUI))
         {
             _modifiers = down ? _modifiers | KeyModifiers.Control : _modifiers & ~KeyModifiers.Control;
             return;

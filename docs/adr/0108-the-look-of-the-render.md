@@ -1,13 +1,13 @@
 ---
 id: 0108
 title: The window has the look of the render, an almost black ground and outlined controls with no fill
-status: Accepted
+status: Amended
 topic: Clients, rendering
 date: 2026-11-10
 supersedes: []
 superseded-by: []
 amends: ['0078', '0081', '0092', '0095', '0098', '0113']
-amended-by: []
+amended-by: ['0150']
 affects:
   - 3DEngine.App/Ui/Theme.cs
   - 3DEngine.App/Ui/DesktopUi.cs
@@ -83,3 +83,5 @@ the scene waits.
 
 - 2026-11-10 · TASK-0332 · The record, from slice S1 of the proposal and the answer Q2 A of the owner of 2026-11-10.
 - 2026-11-10 · TASK-0332 · Shipped at v0.321.
+- 2026-11-14 · TASK-0385 · ADR-0150 items 1 and 2 amend item 4: on macOS the Command key opens the field, which shows
+  "Cmd K" there.
