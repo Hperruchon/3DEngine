@@ -10637,3 +10637,28 @@ New tests: 9. The test list holds 2600 (1552 in `Engine.Tests`, 370 in `3DEngine
 in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
 entries: 15 of 15. New diagnostic codes: 0. Since the review of v0.351, 4 product milestones and 4 entries followed it, so
 the next product milestone needs a codebase review first.
+
+## v0.356 — The codebase review of 2026-11-14 (d) (governance, TASK-0371)
+
+Four product milestones (R18o, P0.148, R21a and R21b) and four entries followed the review of v0.351, so the next product
+milestone needs a review first.
+
+**The review.** `docs/reviews/2026-11-14-d-codebase-review.md` examines `89e8666`, the head of R21b at v0.355.
+- V181 to V183 of the last review are fixed, and V184 for its form at 1440 by 900 (P0.148).
+- The agent of the review found two faults of R21b before its merge: "not saved" under the button "Views" at 360 pixels
+  wide, and a digit after Control and K that gave a view. TASK-0370 corrected both on its branch, with a test each; the
+  entry v0.355 came before that fix, and this entry records it. The test list then holds 2603 (1552, 370, 678 and 3).
+- V185 and V186 are high: a sketch that starts in a flat view keeps the flat view, and the ends of the arc of a proposal
+  lie on the tools of the ring on a small landscape display. V187 (the test of V160 proves nothing), V188 (a zoom in a flat
+  view puts the eye inside the part) and V189 (the edge lines of a flat view pull through faces) are medium; V190 (the rows
+  in the first frame of a proposal) is low.
+- TASK-0373 (P0.149) holds V185 to V187 before the next product phase, R21c; TASK-0374 (P0.150) holds V188 to V190 after it.
+- Open findings: 0 critical, 4 high, 9 medium and 16 low.
+
+**Proof.** One agent examined the change from v0.351 to the work commit of R21b with probes in a copy of the commit. The
+session took the measures with the script of the last review and read each finding in the code at its line.
+`CodebaseReviewGateTests` passes with the new review.
+
+New tests: 0. The test list holds 2603 (1552 in `Engine.Tests`, 370 in `3DEngine.Tests`, 678 in `3DEngine.ImageTests`, 3
+in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
+entries: 15 of 15. New diagnostic codes: 0. This entry is a codebase review, so 0 product milestones and 0 entries follow it.

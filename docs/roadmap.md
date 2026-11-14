@@ -394,6 +394,7 @@ Therefore each approved objective must have a track here.
   and the gizmo, and the commands of the views in the command line. v0.354, TASK-0369, ADR-0137.
 - R21b — A button "Views" opens a net of the six flat views and the 3D view, and the keys 1, 3, 7 and 0 give them.
   v0.355, TASK-0370, ADR-0138.
+- Review — The codebase review of 2026-11-14 (d). v0.356, TASK-0371.
 - Review — The codebase review of 2026-11-14 (c). v0.351, TASK-0366.
 - P0.143 — The low findings of the codebase review of 2026-11-11: a triangle of zero area adds no edge, and a mesh of
   more than 100 000 triangles finds its edges on the thread pool. v0.332, TASK-0345, ADR-0121.
@@ -562,6 +563,8 @@ This track removes each condition that blocks other work.
 | P0.146 | The medium and low findings of the codebase review of 2026-11-14 (V173 to V177: plates under later windows, the list of the hidden bodies on a small landscape display, the edge lines of a turned T-vertex, a stuck plate at the top edge, and the text of a step by the name of its command), after the next product phase. TASK-0356. | 1 |
 | P0.147 | The medium and low findings of the codebase review of 2026-11-14 (b) (V178 to V180: "Undo" of the line after an accept, plates under the arc of a proposal, and the checks of Reject and Accept of the mix test), after the next product phase. TASK-0362. | 1 |
 | P0.148 | The medium and low findings of the codebase review of 2026-11-14 (c) (V181 to V184: the whole caption under the arc is cut, the count for "Undo" one frame late, the corners of a moved block of lines, and the ends of the arc on "Edit sketch"), after the next product phase. TASK-0367. | 1 |
+| P0.149 | The high findings of the codebase review of 2026-11-14 (d) (V185 to V187: a sketch in a flat view, the ends of the arc on the tools of a small landscape display, and the test of V160), before the next product phase. TASK-0373. | 1 |
+| P0.150 | The medium and low findings of the codebase review of 2026-11-14 (d) (V188 to V190: a zoom in a flat view, the pull of the edge lines of a flat view, and the rows in the first frame of a proposal), after the next product phase. TASK-0374. | 1 |
 | P0.102 | The cache of a face, the fixed controls, the list New, the edges and the safe area hold their next forms (V113 to V118 of the codebase review of 2026-11-06 (e); after P0.101). TASK-0252. | 1–2 |
 | P0.86 | The window keeps no input between sessions, the hook has the cases of one axis, and the next forms of four gates fail (V88 to V90, T141 to T144 of the codebase review of 2026-11-06; after the next product phase). TASK-0198. | 1–2 |
 
