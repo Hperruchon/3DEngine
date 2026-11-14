@@ -10338,3 +10338,34 @@ other workflows of the brief are not compared.
 New tests: 4. The test list holds 2536 (1552 in `Engine.Tests`, 357 in `3DEngine.Tests`, 624 in `3DEngine.ImageTests`, 3
 in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
 entries: 14 of 15. New diagnostic codes: 0. Since the review of v0.340, 3 product milestones and 4 entries followed it.
+
+## v0.345 — On a portrait display the rows of a selected body are under the part, and the panel has no controls of a selected body (R18k, TASK-0360)
+
+Gap H3 of the comparison at the other sizes (v0.344): a portrait display showed the panel of the document over the part
+while a body was selected. The study took Q4 A under the order of the owner of 2026-11-14.
+
+**The change.** ADR-0131 amends ADR-0084 item 4 and ADR-0099 items 1 and 7.
+- On a portrait display the rows of the selected body show under the part, at the full width, with their last row 8
+  pixels above the corner ring; while a proposal shows, above its sheet. The first row always shows; when the room is
+  lower than it, it moves up, so it covers no tool of the ring.
+- A chip that the placement puts on rows under the part goes above them.
+- While the dimensions show, the rows have a row "Hidden too" with its state; a portrait display has no command line.
+- The panel shows only with no selected body and no active sketch, so its controls of a selected body go: the name
+  field, Rename, Hide and Show, Move, Set distance, the cut list, the fault line, the size, the face and the edge. Each
+  has a place on the ring, in the rows or in the status line.
+
+**Proof.** An agent moved the 29 tests that reached the panel of a selected body through a portrait display to the rows,
+the ring and the panel with no selection; no test was deleted, and the session reviewed each change. The layout test
+gained a check that no tool of the ring is under the rows; it found the rows under the sheet and the first row on a tool
+at 360 by 640, which the scrolled panel hid before. One new test for the chip above the rows. Five injections each failed
+a named test; each file came back byte for byte. The phone project builds with zero warnings. Run 43545274637 passed on the
+branch. The failed runs since the entry v0.344, from the API: none.
+
+**What stays.** On a portrait phone the room under the part is small, so the rows show few values; with a proposal the
+sheet takes the room, until R18m puts the arc above the part. The labels of the corner ring still lie on each other at
+the top end (R18l). No person used the change on a tablet or on the S23.
+
+New tests: 1. The test list holds 2537 (1552 in `Engine.Tests`, 357 in `3DEngine.Tests`, 625 in `3DEngine.ImageTests`, 3
+in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
+entries: 14 of 15. New diagnostic codes: 0. Since the review of v0.340, 4 product milestones and 5 entries followed it, so
+the next product milestone needs a codebase review first.
