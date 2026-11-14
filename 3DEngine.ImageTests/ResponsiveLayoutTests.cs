@@ -13,8 +13,8 @@ namespace ThreeDEngine.ImageTests;
 // ADR-0113 (phase R19, TASK-0336): at each size of the list and in each state, each control stays in the display, no
 // control goes past the right edge of its panel, no window covers a control of another window or a tool of the ring, and
 // no two fixed windows overlap. A control that its panel scrolls out of view is not a fault. The sheet of a proposal may
-// cover the panel (ADR-0092 item 7), but not a tool of the ring (ADR-0111 item 4). ADR-0113 names this file in its
-// enforced-by field.
+// cover the panel (ADR-0092 item 7), but not a tool of the ring (ADR-0111 item 4) when the sheet fits above the ring.
+// ADR-0113 names this file in its enforced-by field.
 [Collection(DearImGui.Collection)]
 public sealed class ResponsiveLayoutTests
 {
@@ -69,6 +69,10 @@ public sealed class ResponsiveLayoutTests
         // The sheet is the smallest panel that holds Accept; on a phone the panel of the bodies holds it too.
         Vector4? sheet = accept is { } a ? panels.Where(panel => Holds(panel, a)).Cast<Vector4?>().MinBy(panel => panel!.Value.W - panel.Value.Y) : null;
         var windows = panels.Concat(ui.FixedRectangles).ToList();
+        // ADR-0111 item 4: a sheet that does not fit between the top bar and the ring ends above the anchors and covers the
+        // ring. ADR-0131 item 1 (phase R18k, TASK-0360): at 360 by 640 the sheet does not fit. Until TASK-0360 the panel of
+        // the selected body showed there, and its rule of the scrolled controls hid the tools of the ring under the sheet.
+        var sheetOnRing = sheet is { } covering && ui.RingTop() is { } ringTop && covering.W > ringTop - 8f + 0.5f;
         var faults = new List<string>();
         foreach (var (name, r) in ui.ItemRectangles)
         {
@@ -77,6 +81,10 @@ public sealed class ResponsiveLayoutTests
             if (r.X < -0.5f || r.Y < -0.5f || r.Z > width + 0.5f || r.W > height + 0.5f)
                 faults.Add($"{name} {Text(r)} goes out of the display");
             var middle = new Vector2((r.X + r.Z) / 2f, (r.Y + r.W) / 2f);
+            // ADR-0131 item 1 (phase R18k, TASK-0360): the rows take each tap on them (finding V169), and they are no window,
+            // so a tool of the ring on the rows is a fault too.
+            if (name.StartsWith("Ring", StringComparison.Ordinal) && ui.RowsArea is { } rows && Inside(rows, middle))
+                faults.Add($"{name} {Text(r)} is under the rows {Text(rows)}");
             foreach (var window in windows)
             {
                 if (!Inside(window, middle))
@@ -90,7 +98,7 @@ public sealed class ResponsiveLayoutTests
                     continue;
                 }
 
-                if (window == sheet && !ring)
+                if (window == sheet && (!ring || sheetOnRing))
                     continue;
                 faults.Add($"{name} {Text(r)} is under the window {Text(window)}");
             }

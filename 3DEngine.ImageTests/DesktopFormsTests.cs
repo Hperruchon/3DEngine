@@ -141,7 +141,9 @@ public sealed class DesktopFormsTests
 
     // V50: the fault of a selected body takes one line, so Show all stays in the panel on a display
     // of 1024 × 768 with two bodies. ADR-0099 item 1 (TASK-0313): on a landscape display the rows take the place of the
-    // panel, so the test uses the display of 768 × 1024.
+    // panel, so the test uses the display of 768 × 1024. ADR-0131 item 1 (phase R18k, TASK-0360): the rows of the selected
+    // body show on this display too, and their first row gives the code of the fault on one line under the name, with the
+    // reason in its tooltip. Until TASK-0360 the panel gave a line "Fault". Show all is in the panel with no selection.
     [Fact]
     public void The_Fault_Takes_One_Line_And_Show_All_Stays_In_The_Panel()
     {
@@ -155,8 +157,16 @@ public sealed class DesktopFormsTests
             ui.Frame(1f / 60f, small, Vector2.One, bodies, bodies[0].Id);
         }
 
-        var line = ui.ItemRectangle(DesktopUi.FaultLabel)!.Value;
-        Assert.True(line.W - line.Y < 2 * ui.ControlHeight, $"The fault takes {line.W - line.Y} pixels.");
+        var line = ui.ItemRectangle(DesktopUi.RowsTitleItem)!.Value;
+        Assert.True(line.W - line.Y < 2 * ui.ControlHeight, $"The name and the fault take {line.W - line.Y} pixels.");
+        Assert.Contains(ui.RowTitle(bodies[0]).State, part => part.Red && part.Text.StartsWith("failed W-SKETCH", StringComparison.Ordinal));
+
+        for (var frame = 0; frame < 3; frame++)
+        {
+            ui.Route([]);
+            ui.Frame(1f / 60f, small, Vector2.One, bodies, null);
+        }
+
         var showAll = ui.ItemRectangle(DesktopUi.ShowAllLabel)!.Value;
         Assert.True(showAll.W <= ui.PanelRectangles.First().W, $"Show all ends at {showAll.W}, below the panel at {ui.PanelRectangles.First().W}.");
     }

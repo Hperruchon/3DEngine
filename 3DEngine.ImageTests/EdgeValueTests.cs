@@ -91,14 +91,15 @@ public sealed class EdgeValueTests
     }
 
     // ADR-0099 item 1 (the redesign, slice p, TASK-0313): on a landscape display the rows take the place of the panel, and the
-    // ring does not show while a pad is open; so the other tool of the tests of V119 is the button Move of the panel, on a
-    // portrait display.
+    // ring does not show while a pad is open. ADR-0131 item 1 (phase R18k, TASK-0360): on a portrait display the rows show
+    // too, so the other tool of the tests of V119 is the segment Move of the ring, or the pad of the distance that the host
+    // opens. Until TASK-0360 it was the button Move of the panel on a portrait display.
     private static readonly Vector2 Portrait = new(1000, 1280);
 
     private static void PortraitStep(DesktopUi ui, IReadOnlyList<EdgeValues.Value> values, Guid body, params InputSample[] frame)
     {
         ui.Route(frame);
-        ui.Frame(1f / 60f, Portrait, Vector2.One, [new LiveBody(body, "Extrude", null, true)], body, values: values);
+        ui.Frame(1f / 60f, Portrait, Vector2.One, [new LiveBody(body, "Extrude", null, true)], body, values: values, ringCentre: Portrait / 2f, ringBody: 120f);
     }
 
     private static void PortraitTap(DesktopUi ui, IReadOnlyList<EdgeValues.Value> values, Guid body, string item)
@@ -185,15 +186,17 @@ public sealed class EdgeValueTests
         PortraitStep(ui, values, body);
         PortraitStep(ui, values, body);
         Assert.NotNull(ui.ItemRectangle(values[0].Key));
-        PortraitTap(ui, values, body, DesktopUi.MoveLabel);
+        PortraitTap(ui, values, body, DesktopUi.RingItem(DesktopUi.MoveLabel));
 
-        Assert.NotNull(ui.Pad);
+        Assert.Equal(DesktopUi.MoveLabel, ui.Pad?.Title);
         Assert.Null(ui.ItemRectangle(values[0].Key));
     }
 
     // Finding V119 of the codebase review of 2026-11-07 (TASK-0264), items 1 and 4: the pad of another tool from the panel,
     // while the pad of a chip is open, ends the pending state, and no chip shows. Until TASK-0264 the chip stayed pending
-    // for a pad that was not open.
+    // for a pad that was not open. ADR-0131 item 1 (phase R18k, TASK-0360): the panel does not show with a selected body, and
+    // the ring, the rows and the chips take no tap while a pad is open; so the other pad is the pad of the distance that the
+    // host opens, and the chip of the length is no longer pending.
     [Fact]
     public void The_Pad_Of_Another_Tool_Ends_The_Pending_Chip()
     {
@@ -205,10 +208,10 @@ public sealed class EdgeValueTests
         PortraitTap(ui, values, body, values[0].Key);
         Assert.Equal(values[0].Key, ui.PendingValue);
 
-        PortraitTap(ui, values, body, DesktopUi.MoveLabel);
+        ui.OpenDistancePad(body, 3);
+        PortraitStep(ui, values, body);
 
-        Assert.Equal(DesktopUi.MoveLabel, ui.Pad!.Title);
-        Assert.Null(ui.PendingValue);
-        Assert.Null(ui.ItemRectangle(values[0].Key));
+        Assert.Equal(DesktopUi.SetDistanceLabel, ui.Pad!.Title);
+        Assert.Equal(EdgeValues.DistanceKey(body), ui.PendingValue);
     }
 }

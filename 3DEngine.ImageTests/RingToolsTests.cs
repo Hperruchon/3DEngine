@@ -62,7 +62,8 @@ public sealed class RingToolsTests
     }
 
     // Item 1: a body that no sketch made has no "Edit sketch"; a portrait display has no "Rename" on the thumb ring, because
-    // its panel keeps the name field.
+    // a tap on the first row of the rows under the part opens the name field (ADR-0131 item 1, TASK-0360). Until TASK-0360
+    // the panel kept the name field on a portrait display.
     [Fact]
     public void A_Box_Has_No_Edit_Sketch_And_A_Portrait_Ring_Has_No_Rename()
     {

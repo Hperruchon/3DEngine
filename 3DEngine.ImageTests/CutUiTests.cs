@@ -9,12 +9,13 @@ using ThreeDEngine.Desktop.Ui;
 namespace ThreeDEngine.ImageTests;
 
 // ADR-0073 (phase R14e3, TASK-0227): a person cuts the selected body with another visible body in the panel, with no
-// agent, as on the phone. The panel with no GPU, and the action on a session of its own.
+// agent, as on the phone. The panel with no GPU, and the action on a session of its own. ADR-0131 item 1 (phase R18k,
+// TASK-0360): the list of a cut is in the rows of the selected body on each display, and the panel has none.
 [Collection(DearImGui.Collection)]
 public sealed class CutUiTests
 {
-    // ADR-0099 item 1 (the redesign, slice p, TASK-0313): on a landscape display the rows of a selected body take the place of
-    // the panel, so these tests of the panel use a portrait display, where the panel keeps the controls of the selected body.
+    // ADR-0131 item 1 (phase R18k, TASK-0360): on this portrait display the rows of a selected body are under the part, and
+    // they hold the list of a cut. Until TASK-0360 the panel held the list on a portrait display.
     private static readonly Vector2 Display = new(768, 1024);
 
     private static readonly LiveBody Plate = new(Guid.Parse("51000000-0000-0000-0000-000000000000"), "Box", "Plate", true);
@@ -50,9 +51,10 @@ public sealed class CutUiTests
     private static bool Inside(Vector4 item, Vector4 panel)
         => item.X >= panel.X && item.Z <= panel.Z && item.Y >= panel.Y && item.W <= panel.W;
 
-    // The list shows only with a selected body and another visible body, and it lies inside the panel. Finding V98 of
+    // The list shows only with a selected body and another visible body, and it lies inside its container. Finding V98 of
     // the codebase review of 2026-11-06 (c) (TASK-0232): for an extrude, Set distance is on the line too, and the list lay
-    // 178 pixels outside the panel. Show all stays inside the panel too (finding V50).
+    // 178 pixels outside the panel. ADR-0131 item 1 (phase R18k, TASK-0360): the container is the rows of the selected body,
+    // inside the display; Show all is in the panel with no selection (DesktopFormsTests) and in the list of the hidden bodies.
     [Theory]
     [InlineData("Box")]
     [InlineData("Extrude")]
@@ -66,14 +68,14 @@ public sealed class CutUiTests
 
         using var ui = Opened(plate.Id, [plate, Tool]);
         var list = ui.ItemRectangle(DesktopUi.CutLabel)!.Value;
-        var showAll = ui.ItemRectangle(DesktopUi.ShowAllLabel)!.Value;
-        var panel = ui.PanelRectangles[0];
-        Assert.True(Inside(list, panel), $"The list {list} is outside the panel {panel}.");
-        Assert.True(Inside(showAll, panel), $"Show all {showAll} is outside the panel {panel}.");
+        var rows = ui.RowsArea ?? throw new InvalidOperationException("No rows.");
+        Assert.True(Inside(list, rows), $"The list {list} is outside the rows {rows}.");
+        Assert.True(Inside(rows, new Vector4(0, 0, Display.X, Display.Y)), $"The rows {rows} are outside the display.");
     }
 
     // The review of Codex of v0.212, finding 1 (TASK-0232): the popup of the list added no rectangle to the panels, so a tap
-    // on a part of the popup outside the panel reached the scene. The open popup is a panel of the frame.
+    // on a part of the popup outside the panel reached the scene. The open popup is a panel of the frame. ADR-0131 item 1
+    // (phase R18k, TASK-0360): the list is in the rows, and no panel shows with a selected body, so the popup is the only panel.
     [Fact]
     public void The_Open_List_Is_A_Panel()
     {
@@ -83,7 +85,7 @@ public sealed class CutUiTests
         Tap(ui, DesktopUi.CutLabel, Plate.Id, bodies);
 
         var item = ui.ItemRectangle(DesktopUi.CutItem(Tool.Id)) ?? throw new InvalidOperationException("The list did not open.");
-        Assert.Contains(ui.PanelRectangles.Skip(1), panel => Inside(item, panel));
+        Assert.Contains(ui.PanelRectangles, panel => Inside(item, panel));
     }
 
     // Finding V99 of the codebase review of 2026-11-06 (c) (TASK-0232): with no IDocumentFiles, as on the phone, the panel
@@ -106,7 +108,8 @@ public sealed class CutUiTests
 
     // Finding V116 of the codebase review of 2026-11-06 (e) (TASK-0252): while the list "Cut with" or the list "New" is open,
     // a tap on the scene, by touch and by mouse, closes the list, gives no sample to the scene and no action. Until TASK-0252
-    // the scene took the tap, and the list stayed open.
+    // the scene took the tap, and the list stayed open. ADR-0131 item 1 (phase R18k, TASK-0360): the list "New" is in the panel,
+    // which shows with no selected body only, so its cases have no selection.
     [Theory]
     [InlineData("Cut", DeviceKind.Touch)]
     [InlineData("Cut", DeviceKind.Mouse)]
@@ -115,9 +118,10 @@ public sealed class CutUiTests
     public void A_Tap_On_The_Scene_Closes_An_Open_List_And_Does_Not_Reach_The_Scene(string list, DeviceKind kind)
     {
         LiveBody[] bodies = [Plate, Tool];
-        using var ui = Opened(Plate.Id, bodies);
+        Guid? selection = list == "Cut" ? Plate.Id : null;
+        using var ui = Opened(selection, bodies);
         var (box, entry) = list == "Cut" ? (DesktopUi.CutLabel, DesktopUi.CutItem(Tool.Id)) : (DesktopUi.NewLabel, DesktopUi.NewBoxLabel);
-        Tap(ui, box, Plate.Id, bodies);
+        Tap(ui, box, selection, bodies);
         Assert.NotNull(ui.ItemRectangle(entry));
 
         var (pointer, buttons) = kind == DeviceKind.Mouse ? (0UL, PointerButtons.Left) : (3UL, PointerButtons.None);
@@ -125,10 +129,10 @@ public sealed class CutUiTests
         foreach (var phase in new[] { PointerPhase.Down, PointerPhase.Up })
         {
             scene.AddRange(ui.Route([new PointerSample(kind, 1, pointer, 900, 400, 1, buttons, KeyModifiers.None, phase, 0)]));
-            ui.Frame(1f / 60f, Display, Vector2.One, bodies, Plate.Id);
+            ui.Frame(1f / 60f, Display, Vector2.One, bodies, selection);
         }
-        Step(ui, Plate.Id, bodies);
-        Step(ui, Plate.Id, bodies);
+        Step(ui, selection, bodies);
+        Step(ui, selection, bodies);
 
         Assert.Empty(scene);
         Assert.Null(ui.ItemRectangle(entry));

@@ -7,7 +7,7 @@ date: 2026-11-08
 supersedes: []
 superseded-by: []
 amends: ['0084', '0093', '0098']
-amended-by: ['0100', '0117']
+amended-by: ['0100', '0117', '0131']
 affects:
   - 3DEngine.App/Ui/DesktopUi.Rows.cs
   - 3DEngine.App/Ui/DesktopUi.Command.cs
@@ -82,7 +82,8 @@ The owner chose the slice and its merge after green CI; the recommendations answ
    show, Hidden too.
 6. **The top bar (amends ADR-0093 item 1).** A long name of the file ends 12 pixels left of the command line, which is now
    the only control at the upper right.
-7. **A portrait display** keeps the panel with each control, as before.
+7. **A portrait display** keeps the panel with each control, as before. ADR-0131 item 1 amends this item: a portrait
+   display shows the rows under the part, and the panel has no controls of a selected body.
 8. **No contract change.** Each control gives the same action as its button in the panel.
 
 ## Consequences
@@ -101,3 +102,4 @@ display. The row "Made from" waits.
   first part of the panel is the rows of the document, and they hold the list of the bodies and its filter.
 - 2026-11-10 · TASK-0342 · ADR-0117 item 2 answers Q2 and amends item 3: the row "Made from" with the sketch of the body,
   whose tap opens that sketch.
+- 2026-11-14 · TASK-0360 · ADR-0131 amends items 1 and 7: the rows show on a portrait display too, under the part.
