@@ -1,13 +1,13 @@
 ---
 id: 0145
 title: A line of a curved side keeps its place along the axis, an axis within 1e-9 of the view is along it, and Frame leaves a window at the right
-status: Accepted
+status: Amended
 topic: Kernel, drawing, clients
 date: 2026-11-14
 supersedes: []
 superseded-by: []
 amends: ['0140', '0143', '0144']
-amended-by: []
+amended-by: ['0147']
 affects:
   - Engine.Core/Drawing/ViewEdges.cs
   - Engine.Tests/Drawing/ViewPlaceTests.cs
@@ -68,3 +68,4 @@ its cut; a cylinder turned by a quaternion gives one circle; Frame leaves the wi
 - 2026-11-14 · TASK-0379 · The record, from the findings E202 to E204 and V191 of the codebase review of 2026-11-14 (e),
   under the order of the owner of 2026-11-14.
 - 2026-11-14 · TASK-0379 · Shipped at v0.364.
+- 2026-11-14 · TASK-0380 · ADR-0147 item 1 amends item 2: an axis within 1e-9 of across the view has a rule too.

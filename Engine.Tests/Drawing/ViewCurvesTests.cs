@@ -145,9 +145,18 @@ public sealed class ViewCurvesTests
         Assert.Equal(new[] { new ViewCircle((20, 0), 3), new ViewCircle((20, 0), 7) }, top.Select(line => line.Circle).OrderBy(circle => circle!.Radius));
         Assert.All(top, line => Assert.True(line.Visible && line.From == line.To));
 
-        // From the front the disc is a rectangle, and the walls of the hole are two hidden lines.
+        // From the front the disc is a rectangle, and the walls of the hole are two hidden lines from face to face of the disc.
+        // Finding T182 of the codebase review of 2026-11-14 (e) (TASK-0380): until TASK-0380 the test counted the hidden lines
+        // only, and they ran to the ends of the cylinder of 20.
         Assert.Equal(6, front.Count);
-        Assert.Equal(2, front.Count(line => !line.Visible));
+        var hidden = front.Where(line => !line.Visible).OrderBy(line => line.From.X).ToArray();
+        Assert.Equal(2, hidden.Length);
+        foreach (var (line, x) in hidden.Zip(new[] { 17.0, 23.0 }))
+        {
+            var ends = new[] { line.From, line.To }.Select(D).OrderBy(p => p.Y).ToArray();
+            Assert.True(Math.Abs(ends[0].X - x) < Close && Math.Abs(ends[0].Y) < Close && Math.Abs(ends[1].X - x) < Close && Math.Abs(ends[1].Y - 5) < Close,
+                $"the hidden line {ends[0]} to {ends[1]} is not at x = {x} from z = 0 to 5");
+        }
     }
 
     private static async Task<Guid> Output(DocumentSession session, Command command, string name)

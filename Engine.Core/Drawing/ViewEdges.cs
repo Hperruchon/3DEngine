@@ -241,6 +241,7 @@ internal static class ViewEdges
         var groups = new Dictionary<object, (int First, List<ViewLine> Members, bool Arc)>();
         var output = new List<(int Order, ViewLine Line)>();
         var outline = new List<(int Order, ViewLine Line, int Which, ((double X, double Y) Start, (double X, double Y) End) Segment, SideCurve Side)>();
+        var across = new List<(int Order, ViewLine Line, object Key, double A, double B, (double X, double Y) Centre, (double X, double Y) Major)>();
         for (var i = 0; i < lines.Count; i++)
         {
             var line = lines[i];
@@ -260,6 +261,10 @@ internal static class ViewEdges
                 case { Kind: SideCurveKind.Cylinder or SideCurveKind.Cone } end when line.Kind == ViewLineKind.Edge && Level(end, line) is not null && end.Axis.Dot(frame.TowardEye).IsZero:
                     key = (line.Body, line.Visible, line.Kind, Tags(line), Support(line));
                     break;
+                case { Kind: SideCurveKind.Cylinder or SideCurveKind.Cone } end when line.Kind == ViewLineKind.Edge && Level(end, line) is { } level
+                    && RadiusAt(end, line) is not null && AcrossView(end, frame):
+                    across.Add(OnDiameter(i, line, end, frame, level));
+                    continue;
                 case { Kind: SideCurveKind.Cylinder or SideCurveKind.Cone } end when line.Kind == ViewLineKind.Edge && RadiusAt(end, line) is not null && Level(end, line) is { } h:
                     line = Arc(line, EndEllipse(end, frame, h));
                     break;
@@ -289,6 +294,8 @@ internal static class ViewEdges
             output.AddRange((arc ? Chains(members) : Runs(members)).Select(line => (first, line)));
         foreach (var entry in outline)
             output.Add((entry.Order, OnOutline(entry.Line, entry.Segment, entry.Side)));
+        foreach (var end in across.GroupBy(entry => entry.Key))
+            output.AddRange(Diameter([.. end]));
 
         // ADR-0145 item 2: a whole visible circle is drawn one time, and each other arc of that circle lies under it, as a
         // hidden line under a line (ADR-0142 item 5): the far end of a side along the view within the rounding of a turn.
@@ -320,6 +327,75 @@ internal static class ViewEdges
             return null;
         var radius = side.Kind == SideCurveKind.Cone ? side.Radius * (Rational.One - h) : side.Radius;
         return radius.Sign > 0 ? radius : null;
+    }
+
+    // ADR-0147 item 1 (finding E205 of the codebase review of 2026-11-14 (e), TASK-0380): an end is across the view within the
+    // rounding of a turn when the cosine of the angle between the axis and the view is at most 1e-9 and not exactly 0. Until
+    // TASK-0380 such an end was a flat ellipse, and its hidden half lay under its visible half.
+    private static bool AcrossView(SideCurve side, ViewFrame frame)
+    {
+        var (a, e) = (side.Axis.ToDoubles(), frame.TowardEye.ToDoubles());
+        var part = Dot(a, e);
+        return part * part <= 1e-18 * Dot(a, a) * Dot(e, e);
+    }
+
+    // ADR-0147 item 1: a piece of such an end goes onto the diameter of its circle on the view, the line from C - Major to C +
+    // Major at its place h along the axis, by the place t of each end along Major, from -1 to 1.
+    private static (int Order, ViewLine Line, object Key, double A, double B, (double X, double Y) Centre, (double X, double Y) Major) OnDiameter(
+        int order, ViewLine line, SideCurve end, ViewFrame frame, Rational h)
+    {
+        var (major, _) = HalfAxes(end, frame);
+        major = Scale(major, end.Kind == SideCurveKind.Cone ? 1 - h.ToDouble() : 1);
+        var c = D(Project(end.Base + (end.Axis * h), frame));
+        var mm = Dot2(major, major);
+        double Place((Rational X, Rational Y) q) => (((q.X.ToDouble() - c.X) * major.X) + ((q.Y.ToDouble() - c.Y) * major.Y)) / mm;
+        var (from, to) = (Place(line.From), Place(line.To));
+        return (order, line, (line.Body, Tags(line), h), Math.Min(from, to), Math.Max(from, to), c, major);
+    }
+
+    // ADR-0147 item 1: the pieces of one end as intervals on its diameter. Both halves of a flat end lie on the diameter, so
+    // the union of the visible pieces is the visible line, and each part of a hidden piece outside that union, within 1e-9
+    // of the radius, is a hidden line; a hidden line under a line is not drawn (ADR-0142 item 5).
+    private static IEnumerable<(int Order, ViewLine Line)> Diameter(
+        List<(int Order, ViewLine Line, object Key, double A, double B, (double X, double Y) Centre, (double X, double Y) Major)> pieces)
+    {
+        var (centre, major) = (pieces[0].Centre, pieces[0].Major);
+        var limit = 1e-9;
+        (Rational, Rational) At(double s) => (Rational.FromDouble(centre.X + (s * major.X)), Rational.FromDouble(centre.Y + (s * major.Y)));
+        static List<(double A, double B)> Union(IEnumerable<(double A, double B)> ranges, double limit)
+        {
+            var union = new List<(double A, double B)>();
+            foreach (var (a, b) in ranges.OrderBy(range => range.A))
+            {
+                if (union.Count > 0 && a <= union[^1].B + limit)
+                    union[^1] = (union[^1].A, Math.Max(union[^1].B, b));
+                else
+                    union.Add((a, b));
+            }
+
+            return union;
+        }
+
+        var order = pieces.Min(piece => piece.Order);
+        var visible = Union(pieces.Where(piece => piece.Line.Visible).Select(piece => (piece.A, piece.B)), limit);
+        var shown = pieces.FirstOrDefault(piece => piece.Line.Visible).Line;
+        foreach (var (a, b) in visible)
+            yield return (order, shown! with { From = At(a), To = At(b), World = null });
+
+        var hidden = pieces.FirstOrDefault(piece => !piece.Line.Visible).Line;
+        foreach (var (a, b) in Union(pieces.Where(piece => !piece.Line.Visible).Select(piece => (piece.A, piece.B)), limit))
+        {
+            var start = a;
+            foreach (var (c, d) in visible.Where(range => range.B > a + limit && range.A < b - limit))
+            {
+                if (c > start + limit)
+                    yield return (order, hidden! with { From = At(start), To = At(c), World = null });
+                start = Math.Max(start, d);
+            }
+
+            if (b > start + limit)
+                yield return (order, hidden! with { From = At(start), To = At(b), World = null });
+        }
     }
 
     // ADR-0145 item 2: the axis is along the view when the sine of the angle between them is at most 1e-9: exactly, or within
