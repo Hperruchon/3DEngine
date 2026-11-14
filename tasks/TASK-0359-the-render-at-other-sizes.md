@@ -1,7 +1,7 @@
 ---
 id: 0359
 title: The window and the render at the other sizes of the brief, and the slices that close the gaps
-status: Active
+status: Done
 phase: R18j
 opened: 2026-11-14
 depends-on: [0358]
@@ -51,16 +51,16 @@ change of the window closes.
 
 ## Acceptance criteria
 
-- [ ] The four pictures draw on the GPU, with no message of the validation layer.
-- [ ] The study names each gap with the render and the window, and each slice with its gaps.
-- [ ] The roadmap holds R18k to R18n after R18j.
-- [ ] A clean build (`--no-incremental`) gives zero errors and zero warnings, and the phone project builds.
-- [ ] `dotnet test`, the write-set check and `eng/repo-gates` pass; continuous integration passes on the branch and on
+- [x] The four pictures draw on the GPU, with no message of the validation layer.
+- [x] The study names each gap with the render and the window, and each slice with its gaps.
+- [x] The roadmap holds R18k to R18n after R18j.
+- [x] A clean build (`--no-incremental`) gives zero errors and zero warnings, and the phone project builds.
+- [x] `dotnet test`, the write-set check and `eng/repo-gates` pass; continuous integration passes on the branch and on
       `main` after the merge.
 
 ## Outcome
 
-Status: Active
+Status: Done · commit (the merge of the branch r18j-sizes) · v0.344
 
 ## Method
 
@@ -73,3 +73,6 @@ Weakest:    the pictures come from the image tests, not from a run of the progra
 - 2026-11-14: opened under the order of the owner of 2026-11-14, after R18i, at the commit of R18i (bb85833), branch
   r18j-sizes. TASK-0359 is free. A portrait display has no history arc and shows a proposal as a sheet, so the checks of the
   arc in the mix test hold on a landscape display only.
+- 2026-11-14: run 43542039250 passed on the work commit. A trial of R18k on its own branch showed that with the rows on a
+  portrait display, the panel of a selected body shows in no orientation, and about twenty tests reach it through a
+  portrait display only; the study gets Q4 (A, under the order), and R18k the size 2–3. Closed at v0.344.
