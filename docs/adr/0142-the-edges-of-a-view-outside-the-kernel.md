@@ -87,3 +87,4 @@ primitives about 2 s. Bodies that cross each other with no boolean give no line 
 ## History
 
 - 2026-11-14 · TASK-0375 · The record, from row K9 and ADR-0118 item 6, under the order of the owner of 2026-11-14.
+- 2026-11-14 · TASK-0375 · Shipped at v0.360.

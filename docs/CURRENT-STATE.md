@@ -10740,3 +10740,41 @@ inside the part keeps that eye until a Frame. No person used the change.
 New tests: 4. The test list holds 2625 (1552 in `Engine.Tests`, 380 in `3DEngine.Tests`, 690 in `3DEngine.ImageTests`, 3
 in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
 entries: 15 of 15. New diagnostic codes: 0. Since the review of v0.356, 3 product milestones and 3 entries followed it.
+
+## v0.360 — The visible and the hidden edges of a view, exact, from the faces and the edges of the owned kernel (K9a, TASK-0375)
+
+Row K9 of the roadmap (ADR-0118 items 2 and 6) comes after R21. It splits into K9a and K9b.
+
+**The change.** ADR-0142 answers ADR-0118 item 6 with the recommended option, under the order of the owner of 2026-11-14:
+the lines of a view are computed outside the owned kernel, so the six operations of the charter stay and the charter does
+not change.
+- `Engine.Core/Drawing/ViewEdges.cs` gives the visible and the hidden lines of the live bodies along a view: three exact
+  directions, with the six standard views of the flat views of the window.
+- A line is an edge between faces of two tags, or an outline where a facet that looks toward the eye meets one that does not.
+- Each line is cut where another edge crosses it or lies on it. A piece is hidden when its middle is inside a face that looks
+  toward the eye or on its border, and that face is strictly nearer. Each test is exact on rational numbers.
+- Pieces with the same ends are one line, a visible piece and the nearest piece first. Each line keeps its body and the
+  tags of its two faces.
+- A mesh body of an STL file and a body with a fault give no line, with a reason. No client reads the lines yet.
+
+**Proof.** Tests give the exact lines of a box from three views, a hole with its hidden walls and a body seen through it, a
+body behind another one with the cut at the outline, an edge behind a seam of a curved side, the tags of a line, the outline
+of a curved side with no seam, the frames, and the lines of a Document. Nine injections each failed a named test; each file
+came back byte for byte. The first rule ("strictly inside") showed an edge behind a seam as visible, and one injection was
+first caught by no test; both are corrected. The measure on the computer of the owner: a cylinder about 0.15 s, a sphere or
+a torus of the primitives 1.0 to 1.9 s. The phone project builds with zero warnings. Run 43568967248 passed on the branch.
+The failed runs since the entry v0.359, from the API: none on a branch; 43562165193 on `main` stays red until the owner
+runs it again.
+
+**A correction.** `docs/templates.md`, section 7, says that a phase of track 0 is not a product milestone. Nine earlier
+entries counted P0.147 to P0.150 as product milestones. The correct counts after the review that each line names: v0.348 1
+product milestone and 2 entries (not 2 and 2); v0.349 2 and 3; v0.350 3 and 4; v0.353 1 and 2; v0.354 2 and 3; v0.355 3 and
+4; v0.357 0 and 1; v0.358 1 and 2; v0.359 1 and 3. So the reviews of v0.351 and v0.356 came one product milestone before
+the gate asked for them. An early review breaks no rule.
+
+**What stays.** A curved side gives the outline of its facets and an end of short lines until K9b. Bodies that cross with no
+boolean give no line where they cross.
+
+New tests: 8. The test list holds 2633 (1560 in `Engine.Tests`, 380 in `3DEngine.Tests`, 690 in `3DEngine.ImageTests`, 3
+in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
+entries: 15 of 15. New diagnostic codes: 0. Since the review of v0.356, 2 product milestones and 4 entries followed it.
