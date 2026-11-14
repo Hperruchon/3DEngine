@@ -416,6 +416,8 @@ Therefore each approved objective must have a track here.
   one line on its diameter, and the test of the circles reads its hidden lines. v0.366, TASK-0380, ADR-0147.
 - P0.153 — Each class of the image tests that creates a Vulkan device runs in one collection; R-0062 closes.
   v0.367, TASK-0382.
+- R22b — A line that closes a chain of the design shows its reference in parentheses, and each value keeps its row in
+  each view. v0.368, TASK-0383, ADR-0148.
 - Review — The codebase review of 2026-11-14 (c). v0.351, TASK-0366.
 - P0.143 — The low findings of the codebase review of 2026-11-11: a triangle of zero area adds no edge, and a mesh of
   more than 100 000 triangles finds its edges on the thread pool. v0.332, TASK-0345, ADR-0121.

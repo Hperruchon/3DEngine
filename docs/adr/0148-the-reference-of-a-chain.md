@@ -59,3 +59,4 @@ they fix by the total, in parentheses, so a drawing has no gap and no extra valu
 
 - 2026-11-14 · TASK-0383 · The record, from row R22b and the renders of 2026-11-10, under the order of the owner of
   2026-11-14.
+- 2026-11-14 · TASK-0383 · Shipped at v0.368.

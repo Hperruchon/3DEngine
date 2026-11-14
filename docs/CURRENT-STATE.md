@@ -10964,3 +10964,29 @@ on a branch; 43562165193 on `main` stays red until the owner runs it again.
 New tests: 1. The test list holds 2666 (1577 in `Engine.Tests`, 380 in `3DEngine.Tests`, 706 in `3DEngine.ImageTests`, 3
 in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
 entries: 14 of 15. New diagnostic codes: 0. Since the review of v0.363, 1 product milestone and 4 entries followed it.
+
+## v0.368 — A line that closes a chain of the design shows its reference in parentheses, and each value keeps its row in each view (R22b, TASK-0383)
+
+Row R22b (ADR-0146 item 2): a chain of n parts gets n − 1 values of the design and one reference in parentheses, as the renders
+of 2026-11-10 show.
+
+**The change.** ADR-0148 amends ADR-0146 item 1.
+- A correction of R22a (v0.365): `EdgeValues.Of` removed a value whose length is not true from its list, and the rows of the
+  body read that list, so in a flat view the rows lost those values. Each value now stays in the list with the flag
+  `InView`: it keeps its row, and only its chip depends on the view.
+- In a flat view a line of the sketch with no value of its own closes a chain when, along its direction, it and the lines with
+  a value tile exactly the interval of one other line with a value. Its reference is the total less the parts, from the
+  values of the design, as "(20.000 mm)", with a chip, no row and no pad.
+
+**Proof.** A theory proves the references of an L from the top (two), from the front (one) and with perspective (none), and
+the five values of the design in the list in each view; a test proves no reference where a line leaves a gap; a test proves a
+reference with a chip, no row, no pad and no action. Eight injections each failed a named test; each file came back byte for
+byte. The phone project builds with zero warnings. Run 43578376204 passed on the branch. The failed runs since the entry v0.367,
+from the API: none on a branch; 43562165193 on `main` stays red until the owner runs it again.
+
+**What stays.** A value between two points that are not the ends of one line has no chip, so the chain of the Bracket gives
+no reference yet. No person used the change.
+
+New tests: 5. The test list holds 2671 (1577 in `Engine.Tests`, 380 in `3DEngine.Tests`, 711 in `3DEngine.ImageTests`, 3
+in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
+entries: 14 of 15. New diagnostic codes: 0. Since the review of v0.363, 2 product milestones and 5 entries followed it.
