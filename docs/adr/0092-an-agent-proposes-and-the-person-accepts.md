@@ -7,7 +7,7 @@ date: 2026-11-08
 supersedes: []
 superseded-by: []
 amends: []
-amended-by: ['0107', '0108', '0110', '0111', '0113', '0130', '0133', '0134']
+amended-by: ['0107', '0108', '0110', '0111', '0113', '0130', '0133', '0134', '0135']
 affects:
   - Engine.Api.Http/Proposals.cs
   - Engine.Api.Http/Endpoints/ProposalsEndpoint.cs
@@ -154,3 +154,5 @@ first one.
   caption is whole as the first line under the arc; item 2: the command lines lie on no chip.
 - 2026-11-14 · TASK-0365 · ADR-0134 item 1 amends item 7: when the arc on the ring of the selected body lies on the
   rows, its ring moves right of them, if the arc stays in the display.
+- 2026-11-14 · TASK-0368 · ADR-0135 item 1 amends item 7: on a portrait display the proposal is an arc at the top, and a
+  sheet of its lines with no buttons is under it.

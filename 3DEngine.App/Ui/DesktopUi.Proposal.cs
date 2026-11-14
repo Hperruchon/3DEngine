@@ -125,6 +125,8 @@ internal sealed unsafe partial class DesktopUi
         _proposalTargets = [];
         _lastProposalCovers = _proposalCovers;
         _proposalCovers = [];
+        _lastSheetBox = _sheetBox;
+        _sheetBox = null;
         ProposalRing = null;
         ProposalGlowRectangle = null;
     }
@@ -142,7 +144,7 @@ internal sealed unsafe partial class DesktopUi
     private void Proposal(Vector2 displaySize, LiveBody? body)
     {
         ProposalOutcomeLine(displaySize);
-        _sheetTop = null;
+        _arcBottom = null;
         if (_proposals.Count == 0)
             return;
 
@@ -150,10 +152,7 @@ internal sealed unsafe partial class DesktopUi
         AgentWaiting(displaySize);
         ProposalGlow(displaySize);
         var lines = ProposalLinesOf(card);
-        if (displaySize.X < displaySize.Y)
-            ProposalSheet(displaySize, card, lines);
-        else
-            ProposalArc(displaySize, body, card, lines);
+        ProposalArc(displaySize, body, card, lines);
     }
 
     // Item 5: at most four command lines and "and N more"; the count and the steps of undo (item 6); "1 of 3" when more
@@ -200,6 +199,25 @@ internal sealed unsafe partial class DesktopUi
         var room = ((right - left) / 2f) - (ProposalButton / 2f) - 8f - word;
         var fit = (room / MathF.Cos(ProposalTo)) - (RingBand / 2f);
         return ring with { Centre = new Vector2((left + right) / 2f, ring.Centre.Y), Inner = Math.Clamp(fit, ProposalInnerMinimum, ring.Inner) };
+    }
+
+    // ADR-0135 item 1 (phase R18o, TASK-0368): the ring of the arc on a portrait display. Its centre is at the middle of the safe
+    // area across, and the top of its band is 8 pixels under the top bar, the path line and "AGENT IS WAITING". Its inner
+    // radius fits the width, as FreeRing, so that each end and its word stay in the display, from 100 to 160 pixels.
+    private RingLayout PortraitRing(Vector2 displaySize)
+    {
+        var (left, right) = (16f + _inset.X, displaySize.X - 16f - _inset.Z);
+        var word = Math.Max(ImGui.CalcTextSize(RejectLabel).X, ImGui.CalcTextSize(AcceptLabel).X);
+        var room = ((right - left) / 2f) - (ProposalButton / 2f) - 8f - word;
+        var inner = Math.Clamp((room / MathF.Cos(ProposalTo)) - (RingBand / 2f), ProposalInnerMinimum, 160f);
+        var top = 16f + _inset.Y;
+        foreach (var item in new[] { TitleItem, PathItem, ProposalWaitingItem })
+        {
+            if (_items.TryGetValue(item, out var box))
+                top = Math.Max(top, box.W);
+        }
+
+        return new RingLayout(new Vector2((left + right) / 2f, top + 8f + inner + RingBand), inner, 0f, 1f);
     }
 
     // ADR-0134 item 1 (phase R18n, TASK-0365): when the arc on the ring of the selected body, with its two circles and their
@@ -352,10 +370,14 @@ internal sealed unsafe partial class DesktopUi
     // Item 7: the arc on a landscape display.
     private void ProposalArc(Vector2 displaySize, LiveBody? body, ProposalCard card, List<(string Item, string Text, bool Amber)> lines)
     {
-        // The ring of the selected body, or with no body ring the ring of FreeRing.
-        var ring = body is not null && !_sketchActive && _ring is { } bodyRing
-            ? RightOfRows(bodyRing, displaySize)
-            : FreeRing(displaySize);
+        // The ring of the selected body, or with no body ring the ring of FreeRing. ADR-0135 item 1 (phase R18o, TASK-0368): on a
+        // portrait display the ring of PortraitRing, at the top.
+        var portrait = displaySize.X < displaySize.Y;
+        var ring = portrait
+            ? PortraitRing(displaySize)
+            : body is not null && !_sketchActive && _ring is { } bodyRing
+                ? RightOfRows(bodyRing, displaySize)
+                : FreeRing(displaySize);
         ProposalRing = ring;
         var radius = ring.Inner + (RingBand / 2f);
         Vector2 At(float angle, float distance) => ring.Centre + (new Vector2(MathF.Cos(angle), MathF.Sin(angle)) * distance);
@@ -425,16 +447,26 @@ internal sealed unsafe partial class DesktopUi
         var band = BandCaption(ring.Centre, radius, caption, half);
         // ADR-0113 item 6 (phase R19, TASK-0336): the caption goes inside the ring when a fixed window, as the rows of the body,
         // covers its place too, or when its place is above the top bar. Until TASK-0336 the rows covered it at 640 by 360.
+        string? captionLine = ProposalCaptionItem;
         if (band.Box.Y >= top && !_fixed.Any(box => Meets(box, band.Box)))
         {
             DrawBandCaption(list, band.Glyphs, DimensionColour);
             Shown(ProposalCaptionItem, band.Text, band.Box);
             _proposalCovers.Add(band.Box);
-            if (band.Text != caption)
-                inside.Insert(0, (ProposalWholeCaptionItem, caption, true));
+            captionLine = band.Text != caption ? ProposalWholeCaptionItem : null;
         }
-        else
-            inside.Insert(0, (ProposalCaptionItem, caption, true));
+
+        // ADR-0135 item 2: on a portrait display the lines are in the sheet above the ring of the corner, with the whole caption
+        // first when the arc does not hold it.
+        if (portrait)
+        {
+            _arcBottom = _proposalCovers.Max(cover => cover.W);
+            ProposalSheet(displaySize, card, lines, captionLine, _arcBottom.Value);
+            return;
+        }
+
+        if (captionLine is not null)
+            inside.Insert(0, (captionLine, caption, true));
 
         // The lines inside the ring, under the arc, from 0.6 of the inner radius above the centre, each one cut to the chord of
         // the inner circle at its top, on a plate of the colour of the windows.
@@ -521,9 +553,13 @@ internal sealed unsafe partial class DesktopUi
     // The height of the sheet of the last frame, so the sheet of this frame knows if it fits above the ring.
     private float _sheetHeight;
 
-    // ADR-0131 item 1 (phase R18k, TASK-0360): the top of the sheet of the last frame, or null with no sheet, so the rows under
-    // the part end above it.
-    private float? _sheetTop;
+    // ADR-0135 item 3 (phase R18o, TASK-0368): the bottom of the arc of a portrait display of the last frame, or null, so the
+    // rows under the part stay under it.
+    private float? _arcBottom;
+
+    // ADR-0135 item 4: the box of the sheet of this frame and of the last frame, or null with no sheet.
+    private Vector4? _sheetBox;
+    private Vector4? _lastSheetBox;
 
     // ADR-0111 item 4 (TASK-0331): the highest point of the band of the ring of this frame, or null with no ring. The top of a
     // segment is at an end of its arc, or at the top of the circle when the segment holds that angle.
@@ -546,21 +582,22 @@ internal sealed unsafe partial class DesktopUi
         return top;
     }
 
-    // Item 7: the sheet on a portrait display, above the anchors, with the same lines, Reject and Accept.
-    // ADR-0111 item 4 (TASK-0331): the sheet ends 8 pixels above the ring, so each tool of the ring takes its tap, when the
-    // sheet of the last frame fits between the top bar and the ring; else it ends above the anchors, as before, and covers the
-    // ring. Finding V162 of the codebase review of 2026-11-09 (b): until TASK-0331 the sheet covered each tool of the ring.
-    private void ProposalSheet(Vector2 displaySize, ProposalCard card, List<(string Item, string Text, bool Amber)> lines)
+    // ADR-0135 item 3: the least height of the sheet, one line and its padding.
+    internal const float ProposalSheetLeast = 40f;
+
+    // Item 7: the sheet on a portrait display, with the command lines. ADR-0135 items 2 and 3 (phase R18o, TASK-0368): Reject
+    // and Accept are on the arc at the top, so the sheet has no buttons; it gives the whole caption, wrapped, only when the arc
+    // does not hold it (captionItem). The sheet is 8 pixels under the arc and ends at most 8 pixels above the middle of the
+    // display, where the rows of the selected body start (ADR-0131 item 1); lines that do not fit scroll. So it covers no tool
+    // of the corner ring, and the place above the ring of ADR-0111 item 4 goes.
+    private void ProposalSheet(Vector2 displaySize, ProposalCard card, List<(string Item, string Text, bool Amber)> lines, string? captionItem, float arcBottom)
     {
         var width = displaySize.X - 32f - _inset.X - _inset.Z;
-        var bottom = Math.Min(_anchorsTop, displaySize.Y - 16f - _inset.W) - 8f;
-        // The top bar, and the word "AGENT IS WAITING" under it on a narrow display, stay above the sheet.
-        var top = Math.Max(_items.TryGetValue(TitleItem, out var title) ? title.W + 4f : 16f + _inset.Y,
-            _items.TryGetValue(ProposalWaitingItem, out var waiting) ? waiting.W + 4f : 0f);
-        if (RingTop() is { } ringTop && ringTop - 8f < bottom && ringTop - 8f - _sheetHeight >= top)
-            bottom = ringTop - 8f;
-        ImGui.SetNextWindowPos(new Vector2(16f + _inset.X, bottom), ImGuiCond.Always, new Vector2(0f, 1f));
+        var top = arcBottom + 8f;
+        var bottom = Math.Max((displaySize.Y / 2f) - 8f, top + ProposalSheetLeast);
+        ImGui.SetNextWindowPos(new Vector2(16f + _inset.X, top), ImGuiCond.Always, Vector2.Zero);
         ImGui.SetNextWindowSize(new Vector2(width, 0f), ImGuiCond.Always);
+        ImGui.SetNextWindowSizeConstraints(new Vector2(width, 0f), new Vector2(width, bottom - top));
         const ImGuiWindowFlags flags = ImGuiWindowFlags.NoTitleBar | ImGuiWindowFlags.NoMove | ImGuiWindowFlags.NoResize
             | ImGuiWindowFlags.NoCollapse | ImGuiWindowFlags.NoSavedSettings | ImGuiWindowFlags.NoFocusOnAppearing;
         if (ImGui.Begin($"{ProposalSheetName}###ProposalSheet", flags))
@@ -568,13 +605,17 @@ internal sealed unsafe partial class DesktopUi
             var room = ImGui.GetContentRegionAvail().X;
             var amber = ImGui.ColorConvertU32ToFloat4(DimensionColour);
             // The caption wraps, so a summary of 120 characters shows whole on a phone; each other line is cut to the width.
-            ImGui.PushStyleColor(ImGuiCol.Text, amber);
-            ImGui.PushTextWrapPos(0f);
-            ImGui.TextUnformatted(Caption(card));
-            ImGui.PopTextWrapPos();
-            ImGui.PopStyleColor();
-            Item(ProposalCaptionItem);
-            _proposalTexts[ProposalCaptionItem] = Caption(card);
+            if (captionItem is not null)
+            {
+                ImGui.PushStyleColor(ImGuiCol.Text, amber);
+                ImGui.PushTextWrapPos(0f);
+                ImGui.TextUnformatted(Caption(card));
+                ImGui.PopTextWrapPos();
+                ImGui.PopStyleColor();
+                Item(captionItem);
+                _proposalTexts[captionItem] = Caption(card);
+            }
+
             foreach (var (item, text, isAmber) in lines)
             {
                 // ADR-0110 item 3 (TASK-0334): a line with an arrow draws its arrow as a line and a head.
@@ -594,28 +635,14 @@ internal sealed unsafe partial class DesktopUi
                 _proposalTexts[item] = shown;
             }
 
-            // Item 6: a proposal that applies takes no tap.
-            ImGui.BeginDisabled(card.Applying);
-            var button = new Vector2((room - ImGui.GetStyle().ItemSpacing.X) / 2f, MinimumControlHeight);
-            if (ImGui.Button($"{RejectLabel}##Proposal", button))
-                _actions.Add(new RejectProposalAction(card.Id));
-            Item(ProposalRejectItem);
-            ImGui.SameLine();
-            ImGui.PushStyleColor(ImGuiCol.Button, amber);
-            ImGui.PushStyleColor(ImGuiCol.ButtonHovered, amber with { W = 0.85f });
-            ImGui.PushStyleColor(ImGuiCol.ButtonActive, amber with { W = 0.7f });
-            ImGui.PushStyleColor(ImGuiCol.Text, ImGui.ColorConvertU32ToFloat4(Theme.Casing));
-            if (ImGui.Button($"{AcceptLabel}##Proposal", button))
-                _actions.Add(new AcceptProposalAction(card.Id));
-            ImGui.PopStyleColor(4);
-            Item(ProposalAcceptItem);
-            ImGui.EndDisabled();
             AddPanelRectangle();
+            _sheetBox = _panels[^1];
             _sheetHeight = ImGui.GetWindowSize().Y;
         }
 
         ImGui.End();
-        _sheetTop = bottom - _sheetHeight;
+        // The rows under the part do not go above the sheet (ADR-0135 item 3).
+        _arcBottom = top + _sheetHeight;
     }
 
     // Item 7: "AGENT IS WAITING" in amber with an amber dot, in the top bar, or under it when the top bar has no room.
