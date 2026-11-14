@@ -7,7 +7,7 @@ date: 2026-11-09
 supersedes: []
 superseded-by: []
 amends: []
-amended-by: ['0116', '0119', '0123']
+amended-by: ['0116', '0119', '0123', '0130']
 affects:
   - 3DEngine.App/Ui/DesktopUi.History.cs
   - 3DEngine.App/Ui/DesktopUi.cs
@@ -94,3 +94,5 @@ The owner chose the slice and its merge after green CI; the recommendations answ
 - 2026-11-11 · TASK-0341 · ADR-0116 item 2 amends item 3: the arc fades with the ring while the view turns, pans or zooms.
 - 2026-11-12 · TASK-0350 · ADR-0123 item 1 amends item 1: the history marks the sketch that made the body, found along the
   first input, and gives it after the six newest steps when it is not one of them (finding V168).
+- 2026-11-14 · TASK-0358 · ADR-0130 item 2: while a proposal with a named value shows, a pending node "C1 to 75 ?" one step
+  above the newest node.

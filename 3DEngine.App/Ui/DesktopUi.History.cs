@@ -135,6 +135,25 @@ internal sealed unsafe partial class DesktopUi
             _items[HistoryTextItem(shown.Id)] = text;
         }
 
+        // ADR-0130 item 2 (phase R18i, TASK-0358): while the window shows a proposal with a named value, a pending node one step
+        // above the newest node, a ring of amber with its glow and the text "C1 to 75 ?" in amber, as the render. It takes no
+        // tap; Accept and Reject are on the arc of the proposal.
+        if (PendingStepText() is { } pendingText)
+        {
+            var centre = At(upper + step);
+            var amber = ImGui.GetColorU32(DimensionColour);
+            list.AddCircleFilled(centre, HistoryDotSelected + 6f, ImGui.GetColorU32(Faded(DimensionColour, 0.25f)), 32);
+            list.AddCircleFilled(centre, HistoryDot, ImGui.GetColorU32(Theme.Plate(1f)), 24);
+            list.AddCircle(centre, HistoryDot, amber, 24, 2f);
+            var width = ImGui.CalcTextSize(pendingText).X;
+            var at = new Vector2(centre.X - (HistoryNode / 2f) - HistoryTextGap - width, centre.Y - (lineHeight / 2f));
+            if (at.X < left)
+                at = new Vector2(centre.X + (HistoryNode / 2f) + HistoryTextGap, at.Y);
+            list.AddText(at, amber, pendingText);
+            _items[HistoryPendingItem] = new Vector4(centre.X - (HistoryNode / 2f), centre.Y - (HistoryNode / 2f), centre.X + (HistoryNode / 2f), centre.Y + (HistoryNode / 2f));
+            _proposalTexts[HistoryPendingItem] = pendingText;
+        }
+
         var caption = Spaced("HISTORY");
         var size = ImGui.CalcTextSize(caption);
         var end = At(lower);
@@ -143,6 +162,16 @@ internal sealed unsafe partial class DesktopUi
         list.AddText(place, quiet, caption);
         _items[HistoryCaptionItem] = new Vector4(place.X, place.Y, place.X + size.X, place.Y + size.Y);
     }
+
+    // ADR-0130 item 2: the item of the pending node, and its text from the first named value of the shown proposal: "C1 to
+    // 75 ?", or "distance to 30 ?"; null with no proposal or with no named value.
+    public const string HistoryPendingItem = "History:pending";
+
+    private string? PendingStepText()
+        => _proposals.Count > 0 && _proposals[0].Values is { } values
+            && ProposedValues.Of(values).FirstOrDefault(value => value.Label is not null) is { Label: { } label } first
+            ? $"{label} to {Measured(first.Shown ?? first.Number)} ?"
+            : null;
 
     // The whole text of a step: its text, and the state of a fault.
     private static string HistoryText(HistoryStep step) => step.Fault ? step.Text + HistoryState(step) : step.Text;

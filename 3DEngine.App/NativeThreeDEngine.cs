@@ -111,6 +111,9 @@ public sealed class NativeThreeDEngine : IThreeDEngine, IDisposable
     private readonly IProposalDesk? _proposalDesk;
     private Task<ProposalOutcome>? _proposalAccept;
 
+    // ADR-0130 item 4 (phase R18i, TASK-0358): the name of the body that was selected at the accept, for "Applied · Bracket rebuilt".
+    private string? _acceptedBody;
+
     // ADR-0056 item 6 (phase R13): the distance in effect of the selected body, for its box, so that GetBodyInfo runs one
     // time for each change of the selection or of its solid and not in each frame.
     private (Guid Body, ((double X, double Y, double Z) Min, (double X, double Y, double Z) Max) Still, double? Distance)? _sizeOf;
@@ -519,6 +522,7 @@ public sealed class NativeThreeDEngine : IThreeDEngine, IDisposable
                             _steps.Expect(command, text);
                     }
 
+                    _acceptedBody = _renderer?.LiveBodies.FirstOrDefault(live => live.Id == Selection) is { } chosen ? chosen.Name ?? chosen.Kind : null;
                     _proposalAccept = Task.Run(() => desk.Accept(accept.Proposal));
                     break;
                 case RejectProposalAction reject when _proposalDesk is { } desk && _proposalAccept is null:
@@ -932,7 +936,11 @@ public sealed class NativeThreeDEngine : IThreeDEngine, IDisposable
         // with no read of the session.
         if (_proposalAccept is { IsCompleted: true } accepted)
         {
-            _ui.ShowProposalOutcome(accepted.IsCompletedSuccessfully ? accepted.Result.Text : $"The accept failed: {accepted.Exception?.GetBaseException().Message}");
+            // ADR-0130 item 4: an applied proposal gives "Applied · Bracket rebuilt" and the button Undo.
+            if (accepted.IsCompletedSuccessfully && accepted.Result is { State: "accepted" } done)
+                _ui.ShowProposalOutcome(done.AppliedText(_acceptedBody), undo: true);
+            else
+                _ui.ShowProposalOutcome(accepted.IsCompletedSuccessfully ? accepted.Result.Text : $"The accept failed: {accepted.Exception?.GetBaseException().Message}");
             _proposalAccept = null;
             _steps.Forget();
         }
