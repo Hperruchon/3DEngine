@@ -1,7 +1,7 @@
 ---
 id: 0377
 title: An end at a slant to the view is an ellipse, and the outline of a cylinder and a cone comes from its axis
-status: Active
+status: Done
 phase: K9c
 opened: 2026-11-14
 depends-on: [0376]
@@ -51,16 +51,16 @@ radius of the design.
 
 ## Acceptance criteria
 
-- [ ] ADR-0144 exists, and ADR-0143 shows the amendment.
-- [ ] Tests prove the ellipses of a cylinder at a slant, its outline at its radius, the outline of a cone tangent to its base
+- [x] ADR-0144 exists, and ADR-0143 shows the amendment.
+- [x] Tests prove the ellipses of a cylinder at a slant, its outline at its radius, the outline of a cone tangent to its base
       with exact numbers and in three views of a turn with no symmetry, and the ellipses of a cylinder that a quaternion turns.
-- [ ] A clean build (`--no-incremental`) gives zero errors and zero warnings, and the phone project builds.
-- [ ] `dotnet test`, the write-set check and `eng/repo-gates` pass; continuous integration passes on the branch and on
+- [x] A clean build (`--no-incremental`) gives zero errors and zero warnings, and the phone project builds.
+- [x] `dotnet test`, the write-set check and `eng/repo-gates` pass; continuous integration passes on the branch and on
       `main` after the merge.
 
 ## Outcome
 
-Status: Active
+Status: Done · commit (the merge of the branch k9c-view-ellipses) · v0.362
 
 ## Method
 
@@ -77,4 +77,6 @@ Weakest:    an interior cut of an outline is at the place of the facets.
   one. The other changed the sign of the tangent. For a right circular cone the apex is on the minor axis of its base, so
   that sign gives the same two points for each input. It is equivalent, and a change of the square root replaced it.
 - 2026-11-14: one local run of all tests stopped the host of 3DEngine.ImageTests after 131 of 690 tests, with exit code 1;
-  the output was not kept. The next run of 3DEngine.ImageTests alone and the next run of all tests passed. The cause is not known.
+  the output was not kept. The next run of 3DEngine.ImageTests alone and the next run of all tests passed. The cause is
+  not known.
+- 2026-11-14: run 43571885970 passed on the work commit. Closed at v0.362.

@@ -405,6 +405,8 @@ Therefore each approved objective must have a track here.
   owned kernel, computed outside the kernel. v0.360, TASK-0375, ADR-0142.
 - K9b — A view shows the circle of the design for a curved side, the outline of a sphere as its circle, and an end seen
   from the side as one line. v0.361, TASK-0376, ADR-0143.
+- K9c — An end at a slant to the view is an ellipse, and the outline of a cylinder and a cone comes from its axis.
+  v0.362, TASK-0377, ADR-0144.
 - Review — The codebase review of 2026-11-14 (c). v0.351, TASK-0366.
 - P0.143 — The low findings of the codebase review of 2026-11-11: a triangle of zero area adds no edge, and a mesh of
   more than 100 000 triangles finds its edges on the thread pool. v0.332, TASK-0345, ADR-0121.

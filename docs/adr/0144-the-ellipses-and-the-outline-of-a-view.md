@@ -63,3 +63,4 @@ but at the place of the facets. An end at a slant is an ellipse also when the tu
 ## History
 
 - 2026-11-14 · TASK-0377 · The record, from row K9c and ADR-0143 item 4, under the order of the owner of 2026-11-14.
+- 2026-11-14 · TASK-0377 · Shipped at v0.362.
