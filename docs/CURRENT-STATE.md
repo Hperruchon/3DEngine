@@ -10519,3 +10519,33 @@ session took the measures with the script of the last review and read each findi
 New tests: 0. The test list holds 2562 (1552 in `Engine.Tests`, 357 in `3DEngine.Tests`, 650 in `3DEngine.ImageTests`, 3
 in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
 entries: 15 of 15. New diagnostic codes: 0. This entry is a codebase review, so 0 product milestones and 0 entries follow it.
+
+## v0.352 — On a portrait display the arc of a proposal is at the top, and a sheet of its lines is under it (R18o, TASK-0368)
+
+Gap H5 of the comparison at the other sizes (v0.344): on a portrait display the proposal was a sheet with Reject and Accept
+over the part and its chips. The render gives the arc above the part. The review of v0.351 came first, as the gate asks.
+
+**The change.** ADR-0135 amends ADR-0092 item 7, ADR-0111 item 4 and ADR-0131 item 1.
+- On a portrait display the proposal is an arc at the top, at the middle across and 8 pixels under the top bar, with its
+  caption on the band, Reject and Accept; its inner radius fits the width, from 100 to 160 pixels.
+- A sheet with no buttons holds the lines, 8 pixels under the arc, and ends at most 8 pixels above the middle of the
+  display, where the rows start; lines that do not fit scroll. The sheet gives the whole caption first when the arc cuts it.
+- The rows under the part no longer end above the sheet; while a proposal waits they do not go above it. The code that read
+  the top of the old sheet went.
+- While a proposal waits on a portrait display, the placement of the chips takes the arc, the sheet and the rows of the last
+  frame as covers.
+
+**Proof.** The three tests of the old sheet now test the arc at the top with its taps, the free tools of the corner ring at
+four phone sizes, and the limit of the sheet on a small display. A new class proves that no chip lies on the arc, the sheet
+or the rows, and that the rows stay under the sheet; the mix test at 390 by 844 checks the chip of the width too. A first
+form kept the sheet above the ring; on a phone it had no room while the rows showed and covered Move. Seven injections each
+failed a named test; each file came back byte for byte. The phone project builds with zero warnings. Run 43557358502 passed
+on the branch. The failed runs since the entry v0.351, from the API: none.
+
+**What stays.** Reject and Accept are at the top of a phone, far from the thumb; no person used them on the S23. The small
+arc of a phone cuts most captions, so the caption shows two times.
+
+New tests: 13, and 6 cases of the old sheet went. The test list holds 2569 (1552 in `Engine.Tests`, 357 in `3DEngine.Tests`,
+657 in `3DEngine.ImageTests`, 3 in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and
+zero warnings. Open entries: 15 of 15. New diagnostic codes: 0. Since the review of v0.351, 1 product milestone and 1 entry
+followed it.

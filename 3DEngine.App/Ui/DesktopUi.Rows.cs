@@ -111,10 +111,8 @@ internal sealed unsafe partial class DesktopUi
             right = displaySize.X - 16f - _inset.Z;
             top = displaySize.Y / 2f;
             bottom = Math.Min(bottom, (RingTop() ?? float.MaxValue) - 8f);
-            // The sheet of a proposal is above the ring too (ADR-0131 item 1). While it shows, the rows end 8 pixels above
-            // the sheet of the last frame, so the sheet covers no window of the rows, as the list of a cut.
-            if (_proposals.Count > 0 && _sheetTop is { } sheetTop)
-                bottom = Math.Min(bottom, sheetTop - 8f);
+            // ADR-0135 item 3 (phase R18o, TASK-0368): the sheet of a proposal is under the arc at the top, so the rows no
+            // longer end above it, as ADR-0131 item 1 said.
         }
         // ADR-0117 item 1: the first row is one row when the state fits after the name, else the name and a line of the state.
         _titleHeight = RowTitle(body).OneLine ? RowHeight : RowHeight + ImGui.GetTextLineHeight();
@@ -186,8 +184,11 @@ internal sealed unsafe partial class DesktopUi
         // ADR-0131 item 1: the rows under the part move down, so their last row is on the bottom of their room. The first rows
         // always show, so when the room is lower than it, it moves up above the bottom of the room, and not above the top of
         // the panel. Thus it covers no tool of the ring and no part of the sheet of a proposal.
+        // ADR-0135 item 3 (phase R18o, TASK-0368): while a proposal waits on a portrait display, they do not go above the arc of
+        // the last frame either, which is at the top.
+        var floor = _rowsUnder && _proposals.Count > 0 && _arcBottom is { } arc ? Math.Max(PanelTop, arc + 8f) : PanelTop;
         if (_rowsUnder && y != bottom)
-            Shift(Math.Max(bottom - y, PanelTop - top));
+            Shift(Math.Max(bottom - y, floor - top));
         if (_renaming != body.Id)
             _renaming = null;
     }

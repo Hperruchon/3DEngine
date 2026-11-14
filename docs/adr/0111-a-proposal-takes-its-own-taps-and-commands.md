@@ -7,7 +7,7 @@ date: 2026-11-10
 supersedes: []
 superseded-by: []
 amends: ['0092']
-amended-by: ['0114']
+amended-by: ['0114', '0135']
 affects:
   - Engine.Api.Http/Proposals.cs
   - Engine.Api.Http/Endpoints/ProposalsEndpoint.cs
@@ -76,3 +76,5 @@ again. On a small portrait display the sheet still covers the ring.
 - 2026-11-10 · TASK-0331 · Shipped at v0.315.
 - 2026-11-10 · TASK-0339 · ADR-0114 item 3 amends item 3: the path line, the focus and the end of a focus are free during an
   accept (finding V165). ADR-0114 item 4: AcceptHold.Held and AcceptHold.Pass make the decision of the host (T181).
+- 2026-11-14 · TASK-0368 · ADR-0135 item 3 amends item 4: the sheet of a portrait display is under the arc at the top, so
+  it no longer ends above the ring or above the anchors.
