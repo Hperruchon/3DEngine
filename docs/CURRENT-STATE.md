@@ -10395,3 +10395,26 @@ and read each other finding; it rejected one, a second form of V177 that the hol
 New tests: 0. The test list holds 2542 (1552 in `Engine.Tests`, 357 in `3DEngine.Tests`, 630 in `3DEngine.ImageTests`, 3
 in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
 entries: 14 of 15. New diagnostic codes: 0. This entry is a codebase review, so 0 product milestones and 0 entries follow it.
+
+## v0.347 — A label of the corner ring is drawn smaller until it lies on no other label and fits inside the display (R18l, TASK-0363)
+
+Gap H4 of the comparison at the other sizes (v0.344): on the corner ring of a portrait display, "Focus" and "Dimensions"
+lay on each other. The review of v0.346 came first, as the gate asks.
+
+**The change.** ADR-0132 amends ADR-0081.
+- On a portrait display a label of the corner ring is drawn smaller, down to half of the size of the font, until it is no
+  wider than the distance to the middle of each neighbour at its height, less 4 pixels, and its half fits between its
+  middle and the right edge of the display.
+- The target of a tap follows the drawn label and its icon. A landscape ring keeps the size of the font.
+
+**Proof.** A theory at five portrait sizes (390 by 844, 360 by 640, 384 by 824, 412 by 915 and 768 by 1024) proves that no
+label lies on another and that each is inside the display. A first rule, the room across the band, and a floor of 0.6 both
+failed it. Four injections each failed the theory; each file came back byte for byte. The phone project builds with zero
+warnings. Run 43548384969 passed on the branch. The failed runs since the entry v0.346, from the API: none.
+
+**What stays.** "Dimensions" is in a text of half the size on a phone; no person read it on the S23. The arc of a proposal
+on a portrait display is still a sheet (R18m).
+
+New tests: 5. The test list holds 2547 (1552 in `Engine.Tests`, 357 in `3DEngine.Tests`, 635 in `3DEngine.ImageTests`, 3
+in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
+entries: 14 of 15. New diagnostic codes: 0. Since the review of v0.346, 1 product milestone and 1 entry followed it.
