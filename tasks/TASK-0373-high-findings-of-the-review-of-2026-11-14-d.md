@@ -1,7 +1,7 @@
 ---
 id: 0373
 title: The high findings of the codebase review of 2026-11-14 (d)
-status: Active
+status: Done
 phase: P0.149
 opened: 2026-11-14
 depends-on: [0371]
@@ -58,16 +58,16 @@ guard of V160 has a test again.
 
 ## Acceptance criteria
 
-- [ ] A test proves that a sketch from the top view and from the front view leaves the flat view.
-- [ ] A test proves at the small landscape sizes that no end of the arc lies on a tool target.
-- [ ] The test of V160 has a scene with an end on a tool and a control that fails without it.
-- [ ] A clean build (`--no-incremental`) gives zero errors and zero warnings, and the phone project builds.
-- [ ] `dotnet test`, the write-set check and `eng/repo-gates` pass; continuous integration passes on the branch and on
+- [x] A test proves that a sketch from the top view and from the front view leaves the flat view.
+- [x] A test proves at the small landscape sizes that no end of the arc lies on a tool target.
+- [x] The test of V160 has a scene with an end on a tool and a control that fails without it.
+- [x] A clean build (`--no-incremental`) gives zero errors and zero warnings, and the phone project builds.
+- [x] `dotnet test`, the write-set check and `eng/repo-gates` pass; continuous integration passes on the branch and on
       `main` after the merge.
 
 ## Outcome
 
-Status: Active
+Status: Done · commit (the merge of the branch p0149-review-findings) · v0.357
 
 ## Method
 
@@ -85,3 +85,4 @@ Weakest:    on a small landscape display a tool can be away while a proposal wai
   layouts, and 28 without it. V187: the test of V160 runs at 640 by 360, where no angle frees an end, with the control
   that a point is on a tool and that a tool hides; the rows lie on the word Reject there (R-0066), so the test skips the
   points on a window. Five injections each failed a named test. Each file came back byte for byte.
+- 2026-11-14: run 43565441937 passed on the work commit. Closed at v0.357.
