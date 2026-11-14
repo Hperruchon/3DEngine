@@ -1,7 +1,7 @@
 ---
 id: 0383
 title: A line that closes a chain of the design shows its reference in parentheses, and each value keeps its row in each view
-status: Active
+status: Done
 phase: R22b
 opened: 2026-11-14
 depends-on: [0381, 0382]
@@ -55,16 +55,16 @@ A flat view shows the reference of each chain that the design closes, and the ro
 
 ## Acceptance criteria
 
-- [ ] ADR-0148 exists, and ADR-0146 shows the amendment.
-- [ ] Tests prove the references of an L profile from the top, from the front and with perspective, no reference where a
+- [x] ADR-0148 exists, and ADR-0146 shows the amendment.
+- [x] Tests prove the references of an L profile from the top, from the front and with perspective, no reference where a
       line leaves a gap, each value in the list in each view, and a reference with a chip, no row and no pad.
-- [ ] A clean build (`--no-incremental`) gives zero errors and zero warnings, and the phone project builds.
-- [ ] `dotnet test`, the write-set check and `eng/repo-gates` pass; continuous integration passes on the branch and on
+- [x] A clean build (`--no-incremental`) gives zero errors and zero warnings, and the phone project builds.
+- [x] `dotnet test`, the write-set check and `eng/repo-gates` pass; continuous integration passes on the branch and on
       `main` after the merge.
 
 ## Outcome
 
-Status: Active
+Status: Done · commit (the merge of the branch r22b-chain-reference) · v0.368
 
 ## Method
 
@@ -79,3 +79,4 @@ Weakest:    the chain of the Bracket waits for a value between two points; no pe
   first test of a tap counted no pad only, and a tap with no guard sends an edit of the distance, so the test asserts no
   action too. The tiling check had no test with the L alone, so a U with a gap holds it. Eight injections each failed a named
   test; each file came back byte for byte.
+- 2026-11-14: run 43578376204 passed on the work commit. Closed at v0.368.
