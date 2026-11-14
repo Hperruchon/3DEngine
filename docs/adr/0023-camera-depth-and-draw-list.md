@@ -7,7 +7,7 @@ date: 2026-10-12
 supersedes: []
 superseded-by: []
 amends: []
-amended-by: ['0024', '0026', '0096']
+amended-by: ['0024', '0026', '0096', '0137']
 affects:
   - 3DEngine.Core/**
   - 3DEngine.Vulkan/**
@@ -76,3 +76,5 @@ host is replaced in R7. The roadmap line of R4 no longer names flat arrays or in
   depth of item 1 keeps its precision at that range.
 - 2026-11-08 · TASK-0307 · ADR-0096 amends item 2: a camera can have the z axis up, and the camera of the session has
   it.
+- 2026-11-14 · TASK-0369 · ADR-0137 item 1 amends item 1: a flat view of the camera has a projection with no perspective,
+  with the same reversed depth.

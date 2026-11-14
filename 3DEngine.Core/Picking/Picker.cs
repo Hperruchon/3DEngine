@@ -36,15 +36,21 @@ public static class Picker
             throw new ArgumentOutOfRangeException(nameof(width), "A picture has a positive size.");
 
         var eye = camera.Eye();
-        var forward = Normal((camera.Target.X - eye.X, camera.Target.Y - eye.Y, camera.Target.Z - eye.Z));
-        // ADR-0096 (TASK-0307): the up axis of the camera, as Camera.View takes it.
-        var right = Normal(Cross(forward, camera.UpAxis));
-        var up = Cross(right, forward);
+        // ADR-0137 item 3 (phase R21a, TASK-0369): the axes of the camera, as Camera.View takes them.
+        var (right, up, forward) = camera.Axes();
 
         var tanHalf = Math.Tan(camera.FieldOfViewDegrees * Math.PI / 360.0);
         var aspect = width / height;
         var nx = (2 * x / width - 1) * tanHalf * aspect;
         var ny = (1 - 2 * y / height) * tanHalf;
+
+        // A flat view has no perspective: each ray goes along the forward direction, from the point of the plane of the eye
+        // under the pixel, at the scale of the target.
+        if (camera.Flat is not null)
+        {
+            var (sx, sy) = (nx * camera.Distance, ny * camera.Distance);
+            return new Ray((eye.X + right.X * sx + up.X * sy, eye.Y + right.Y * sx + up.Y * sy, eye.Z + right.Z * sx + up.Z * sy), forward);
+        }
 
         var direction = Normal((
             forward.X + right.X * nx + up.X * ny,

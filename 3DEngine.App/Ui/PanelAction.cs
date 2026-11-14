@@ -1,4 +1,5 @@
 using Engine.Contracts.Images;
+using ThreeDEngine.Core.Models;
 using ThreeDEngine.Core.Sketching;
 
 namespace ThreeDEngine.Desktop.Ui;
@@ -86,6 +87,9 @@ internal sealed record NewPartAction : PanelAction;
 internal sealed record HomeAction : PanelAction;
 
 internal sealed record FrameAction : PanelAction;
+
+// ADR-0137 item 4 (phase R21a, TASK-0369): a flat view of the camera, or with no view the return to the view with perspective.
+internal sealed record FlatViewAction(FlatView? View) : PanelAction;
 
 // ADR-0082 item 3 (TASK-0254): the new value of a constraint of the sketch of the selected extrude, from the pad of its chip
 // on an edge, with no active sketch.
