@@ -1,7 +1,7 @@
 ---
 id: 0360
 title: On a portrait display the rows of a selected body are under the part, and the panel has no controls of a selected body
-status: Active
+status: Done
 phase: R18k
 opened: 2026-11-14
 depends-on: [0359]
@@ -82,7 +82,7 @@ selected body has one place in each orientation.
 
 ## Outcome
 
-Status: Active
+Status: Done · commit (the merge of the branch r18k-rows-under-part) · v0.345
 
 ## Method
 
@@ -106,3 +106,4 @@ Weakest:    on a portrait phone the room under the part is small, so the rows sh
   with the corner ring and a value, the rows had no room for the cut row, and the ring and the command line hold no cut.
   The row of a cut and the row "Hidden too" now come right after the first row and always show; a theory of five sizes
   in `BodyRowsTests` holds it, and two injections each failed it.
+- 2026-11-14: closed again at v0.345; the entry v0.345 of the ledger came before this fix, and the next entry records it.
