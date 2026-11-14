@@ -49,7 +49,7 @@ public static class Picker
         // under the pixel, at the scale of the target.
         if (camera.Flat is not null)
         {
-            var (sx, sy) = (nx * camera.Distance, ny * camera.Distance);
+            var (sx, sy) = (nx * camera.ScaleDistance, ny * camera.ScaleDistance);
             return new Ray((eye.X + right.X * sx + up.X * sy, eye.Y + right.Y * sx + up.Y * sy, eye.Z + right.Z * sx + up.Z * sy), forward);
         }
 

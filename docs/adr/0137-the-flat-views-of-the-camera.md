@@ -7,7 +7,7 @@ date: 2026-11-14
 supersedes: []
 superseded-by: []
 amends: ['0023']
-amended-by: ['0138', '0139', '0140']
+amended-by: ['0138', '0139', '0140', '0141']
 affects:
   - 3DEngine.Core/Models/Camera.cs
   - 3DEngine.Core/Picking/Picker.cs
@@ -85,3 +85,5 @@ R21b.
 - 2026-11-14 · TASK-0373 · ADR-0139 item 1 amends item 2: a sketch leaves a flat view, as an orbit does.
 - 2026-11-14 · TASK-0372 · ADR-0140 item 1 amends item 3: the projection, the pick, the overlay and the gizmo take the
   shift of the centre of the picture too.
+- 2026-11-14 · TASK-0374 · ADR-0141 items 1 and 2 amend item 3: a flat view has a scale of its own, which a zoom changes,
+  and a far plane behind the box.

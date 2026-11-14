@@ -186,7 +186,10 @@ internal sealed unsafe partial class DesktopUi
         // the panel. Thus it covers no tool of the ring and no part of the sheet of a proposal.
         // ADR-0135 item 3 (phase R18o, TASK-0368): while a proposal waits on a portrait display, they do not go above the arc of
         // the last frame either, which is at the top.
-        var floor = _rowsUnder && _proposals.Count > 0 && _arcBottom is { } arc ? Math.Max(PanelTop, arc + 8f) : PanelTop;
+        // Finding V190 of the codebase review of 2026-11-14 (d) (TASK-0374): the sheet of a portrait display ends at most 8 pixels
+        // above the middle of the display (ADR-0135 item 3), so the rows do not go above the middle, also in the first frame of
+        // a proposal. Until TASK-0374 the floor came from the sheet of the last frame, which the first frame does not have.
+        var floor = _rowsUnder && _proposals.Count > 0 ? Math.Max(PanelTop, displaySize.Y / 2f) : PanelTop;
         if (_rowsUnder && y != bottom)
             Shift(Math.Max(bottom - y, floor - top));
         if (_renaming != body.Id)

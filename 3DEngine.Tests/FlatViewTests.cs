@@ -157,4 +157,42 @@ public sealed class FlatViewTests
         Assert.Null(camera.Flat);
         Assert.True(camera.PitchDegrees > 80, $"The view of the sketch has a pitch of {camera.PitchDegrees}.");
     }
+
+    // Finding V188 of the codebase review of 2026-11-14 (d) (TASK-0374): a zoom of ten times in a flat view makes the part ten
+    // times larger and keeps the eye out of the box, so the front face is not cut and a pick starts in front of it.
+    [Fact]
+    public void A_Zoom_In_A_Flat_View_Keeps_The_Eye_Out_Of_The_Box()
+    {
+        var camera = new Camera { ZUp = true, FarPlane = 5000f, FrameFill = 0.45f };
+        camera.Frame((-50, -50, -50), (50, 50, 50), 1.5f);
+        camera.ShowFlat(FlatView.Front);
+        var half = camera.HalfHeight;
+        camera.Zoom(0.1);
+        Assert.Equal(half * 0.1, camera.HalfHeight, 9);
+        Assert.True(camera.Eye().Y < -50, $"The eye is at {camera.Eye()}, inside the box.");
+        Assert.True(Picker.RayThrough(camera, 300, 200, 600, 400).Origin.Y < -50, "A pick starts inside the box.");
+
+        // The pick, the gizmo and the pan take the scale of the zoom.
+        Assert.Equal(-camera.HalfHeight * 1.5, Picker.RayThrough(camera, 0, 0, 600, 400).Origin.X, 6);
+        var length = ThreeDEngine.Core.Gizmo.TranslateGizmo.WorldLength(camera, 600, 400, camera.Target) ?? throw new InvalidOperationException("No length.");
+        Assert.Equal(ThreeDEngine.Core.Gizmo.TranslateGizmo.WorldLength(camera, 600, 400, (0, 30, 0)) ?? 0, length, 9);
+        Assert.True(length < camera.HalfHeight, $"The gizmo is {length} long for a half height of {camera.HalfHeight}.");
+        camera.Pan(100, 0, 400);
+        Assert.Equal(-100 * 2 * camera.HalfHeight / 400, camera.Target.X, 6);
+    }
+
+    // Finding V189 (TASK-0374): in a flat view the far plane is just behind the box, so the pull of the edge lines, 0.002 of the
+    // distance to the far plane, is less than a quarter of a millimetre on a part of 20 mm.
+    [Fact]
+    public void The_Far_Plane_Of_A_Flat_View_Is_Behind_The_Box()
+    {
+        var camera = new Camera { ZUp = true, FarPlane = 5000f, FrameFill = 0.45f };
+        var box = ((-10.0, -10.0, -10.0), (10.0, 10.0, 10.0));
+        camera.Frame(box.Item1, box.Item2, 1.5f);
+        camera.ShowFlat(FlatView.Front);
+        camera.FarPlane = camera.FarPlaneFor(box.Item1, box.Item2);
+        var front = camera.Distance - 10;
+        Assert.True(0.002 * (camera.FarPlane - front) < 0.25, $"The pull at the front face is {0.002 * (camera.FarPlane - front)}.");
+        Assert.True(camera.FarPlane > camera.Distance + 17.3, $"The far plane {camera.FarPlane} cuts the box.");
+    }
 }

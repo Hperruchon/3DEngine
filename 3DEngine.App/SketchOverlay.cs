@@ -306,7 +306,7 @@ internal static class SketchOverlay
         {
             var (right, up, forward) = camera.Axes();
             return new Frame(camera.Eye(), right, up, forward, Math.Tan(camera.FieldOfViewDegrees * Math.PI / 360.0), width / height, width, height,
-                camera.Flat is null ? null : camera.Distance, camera.Shift);
+                camera.Flat is null ? null : camera.ScaleDistance, camera.Shift);
         }
 
         public CameraPoint ToCamera((double X, double Y, double Z) p)

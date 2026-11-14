@@ -97,4 +97,26 @@ public sealed class ProposalPortraitTests
         var sheet = Sheet(ui);
         Assert.True(rows.Y >= sheet.W, $"{width}x{height}: the rows {rows} go above the bottom of the sheet {sheet}.");
     }
+
+    // Finding V190 of the codebase review of 2026-11-14 (d) (TASK-0374): in the first frame of a proposal the rows are already
+    // under the sheet. Until TASK-0374 the floor of the rows came from the sheet of the last frame.
+    [Theory]
+    [InlineData(360, 640)]
+    [InlineData(390, 844)]
+    public void In_The_First_Frame_Of_A_Proposal_The_Rows_Are_Under_The_Sheet(int width, int height)
+    {
+        var display = new Vector2(width, height);
+        using var ui = new DesktopUi("http://127.0.0.1:5180", Engine.Contracts.Document.Millimetre);
+        for (var frame = 0; frame < 3; frame++)
+        {
+            ui.Route([]);
+            ui.Frame(1f / 60f, display, Vector2.One, [Body], Bracket, null, ringCentre: new Vector2(width / 2f, height * 0.4f), history: Steps);
+        }
+
+        ui.Route([]);
+        ui.Frame(1f / 60f, display, Vector2.One, [Body], Bracket, null, ringCentre: new Vector2(width / 2f, height * 0.4f), history: Steps, proposals: [Card]);
+        var rows = ui.RowsArea ?? throw new InvalidOperationException("No rows.");
+        var sheet = Sheet(ui);
+        Assert.True(rows.Y >= sheet.W, $"{width}x{height}: the rows {rows} go above the bottom of the sheet {sheet} in the first frame.");
+    }
 }
