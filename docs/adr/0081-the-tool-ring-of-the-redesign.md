@@ -7,7 +7,7 @@ date: 2026-11-06
 supersedes: []
 superseded-by: []
 amends: []
-amended-by: ['0084', '0086', '0095', '0101', '0108', '0113', '0116', '0119']
+amended-by: ['0084', '0086', '0095', '0101', '0108', '0113', '0116', '0119', '0132']
 affects:
   - 3DEngine.App/Ui/DesktopUi.Ring.cs
   - 3DEngine.App/Ui/DesktopUi.cs
@@ -98,3 +98,5 @@ are not on the ring yet.
   landscape ring spans at most four segments, so its top segment ends before Accept of a proposal.
 - 2026-11-11 · TASK-0341 · ADR-0116 items 1 and 2 amend item 2: on a ring of a body only the icon and the label of a segment
   take a tap, the rest of the band is the scene, and the ring fades while the view turns, pans or zooms.
+- 2026-11-14 · TASK-0363 · ADR-0132 item 1: on the corner ring a label is drawn smaller, down to half of the size of the
+  font, until it lies on no other label and fits inside the display.
