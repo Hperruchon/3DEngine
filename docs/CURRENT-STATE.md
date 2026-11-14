@@ -10369,3 +10369,29 @@ New tests: 1. The test list holds 2537 (1552 in `Engine.Tests`, 357 in `3DEngine
 in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
 entries: 14 of 15. New diagnostic codes: 0. Since the review of v0.340, 4 product milestones and 5 entries followed it, so
 the next product milestone needs a codebase review first.
+
+## v0.346 — The codebase review of 2026-11-14 (b) (governance, TASK-0361)
+
+Four product milestones (R18h, R18i, R18j and R18k) and five entries followed the review of v0.340, so the next product
+milestone needs a review first.
+
+**The review.** `docs/reviews/2026-11-14-b-codebase-review.md` examines `main` at `94f5ea9`.
+- V173 to V177 of the last review are fixed (P0.146). Each fix has a test that the pipeline runs.
+- The agent of the review read the work commit of R18k before its merge and found that on a portrait phone with the corner
+  ring and a value the rows had no room for the cut row, and nothing else held the cut. TASK-0360 put the row of a cut and
+  the row "Hidden too" right after the first row before the merge; the entry v0.345 came before that fix, and this entry
+  records it.
+- No new finding is critical or high. V178 is medium: "Undo" of the line after an accept stays after later steps, so a
+  tap on it can undo a step that is not the step of the proposal. V179 (a plate under the arc of a proposal) and V180 (the
+  mix test drops its checks of Reject and Accept on a portrait display) are low.
+- TASK-0362 (P0.147) holds V178 to V180, after the next product phase (R18l).
+- Open findings: 0 critical, 2 high, 7 medium and 18 low.
+
+**Proof.** One agent examined the change from v0.339 to the work commit of R18k with probes in a copy of the commit. The
+session took the measures with a script whose values at v0.339 equal the last review, ran the probe of the cut row again
+and read each other finding; it rejected one, a second form of V177 that the hold of an accept prevents.
+`CodebaseReviewGateTests` passes with the new review.
+
+New tests: 0. The test list holds 2542 (1552 in `Engine.Tests`, 357 in `3DEngine.Tests`, 630 in `3DEngine.ImageTests`, 3
+in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
+entries: 14 of 15. New diagnostic codes: 0. This entry is a codebase review, so 0 product milestones and 0 entries follow it.
