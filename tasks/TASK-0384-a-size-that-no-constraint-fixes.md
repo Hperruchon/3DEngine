@@ -1,7 +1,7 @@
 ---
 id: 0384
 title: The solver finds the lengths that the constraints fix, and a flat view shows a length that no constraint fixes in amber
-status: Active
+status: Done
 phase: R22c
 opened: 2026-11-14
 depends-on: [0383]
@@ -59,17 +59,17 @@ A flat view shows each length of the sketch that the design does not fix, and a 
 
 ## Acceptance criteria
 
-- [ ] ADR-0149 exists, and ADR-0146 and ADR-0148 show the amendment.
-- [ ] Tests prove the fixed lengths of a rectangle with and without its directions and of a line between fixed points, the
+- [x] ADR-0149 exists, and ADR-0146 and ADR-0148 show the amendment.
+- [x] Tests prove the fixed lengths of a rectangle with and without its directions and of a line between fixed points, the
       free sizes of an L from the top and from the front, no free size where the design fixes each length, and a free size
       with a chip, no row and no pad.
-- [ ] A clean build (`--no-incremental`) gives zero errors and zero warnings, and the phone project builds.
-- [ ] `dotnet test`, the write-set check and `eng/repo-gates` pass; continuous integration passes on the branch and on
+- [x] A clean build (`--no-incremental`) gives zero errors and zero warnings, and the phone project builds.
+- [x] `dotnet test`, the write-set check and `eng/repo-gates` pass; continuous integration passes on the branch and on
       `main` after the merge.
 
 ## Outcome
 
-Status: Active
+Status: Done · commit (the merge of the branch r22c-free-sizes) · v0.369
 
 ## Method
 
@@ -84,3 +84,5 @@ Weakest:    a length near the limit of a pivot; no person used it.
   add the directions. The plate of the tests of R22a has free sides too, so that test counts the values of the design only.
   A `sed -i` dropped the CRLF of a file; node restored it. Seven injections each failed a named test; each file came back
   byte for byte.
+- 2026-11-14: run 43579344685 passed on the work commit. Row R22d now comes after P10: the place of a dimension is a command
+  on a sheet (ADR-0118 item 3), and the sheet comes with P10. Closed at v0.369.

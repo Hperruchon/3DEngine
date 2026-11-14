@@ -10990,3 +10990,34 @@ no reference yet. No person used the change.
 New tests: 5. The test list holds 2671 (1577 in `Engine.Tests`, 380 in `3DEngine.Tests`, 711 in `3DEngine.ImageTests`, 3
 in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
 entries: 14 of 15. New diagnostic codes: 0. Since the review of v0.363, 2 product milestones and 5 entries followed it.
+
+## v0.369 — The solver finds the lengths that the constraints fix, and a flat view shows a length that no constraint fixes in amber (R22c, TASK-0384)
+
+Row R22c (ADR-0146 item 2): a size that no constraint fixes shows in a separate form, so the drawing does not hide a gap in
+the design.
+
+**The change.** ADR-0149 amends ADR-0146 item 2 and ADR-0148 item 2.
+- `SketchSolver.FixedLengths` gives the lines whose length the constraints fix: the gradient of the length lies in the space
+  of the rows of the Jacobian, by the rank of the elimination of the solver. `GetSketch` gives them in the new field
+  `fixedLengths` of its result, in `Engine.Core`; no contract changed.
+- In a flat view a line with no value, across the view, whose length the design does not fix, shows "20.000 mm not fixed" in
+  amber with a dashed border: a chip, no row and no pad.
+- A reference of a chain needs a line whose length the design fixes. The tests of R22a and R22b had no direction
+  constraint, so their free lines were not fixed; the L now has its directions, and the plate counts the values of the design.
+- Row R22d comes after P10: the place of a dimension is a command on a sheet (ADR-0118 item 3). A lost value comes with the
+  sheet too.
+
+**Proof.** Tests prove the fixed lengths of a rectangle with two lengths (two fixed), with its directions (four fixed) and of a
+line between fixed points; the free sizes of an L with no directions from the top (two) and from the front (one); no free size
+where the design fixes each length; and a free size with a chip, no row, no pad and no action. Seven injections each failed a
+named test; each file came back byte for byte. The phone project builds with zero warnings. Run 43579344685 passed on the branch.
+The failed runs since the entry v0.368, from the API: none on a branch; 43562165193 on `main` stays red until the owner runs
+it again.
+
+**What stays.** A length near the limit of a pivot can be called fixed or free. The next product rows (R22d, P10 and the
+assembly work after P10c) wait for P10, which changes `Engine.Contracts` and needs a question to the owner first. No person
+used the change.
+
+New tests: 7. The test list holds 2678 (1580 in `Engine.Tests`, 380 in `3DEngine.Tests`, 715 in `3DEngine.ImageTests`, 3
+in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
+entries: 14 of 15. New diagnostic codes: 0. Since the review of v0.363, 3 product milestones and 6 entries followed it.
