@@ -122,6 +122,23 @@ internal sealed unsafe partial class DesktopUi
         // The review of Codex of v0.252 (TASK-0271): the rows end 16 pixels above the anchors, as the panel does; a value
         // that has no room keeps its chip only. Until TASK-0271 a long list went past the bottom of the display.
 
+        // ADR-0131 item 1 (phase R18k, TASK-0360): on a portrait display the room under the part is small, and the ring and the
+        // command line hold no cut, so the row of a cut and the row of "Hidden too" come right after the first row and always
+        // show, as the first row does; a value row that has no room keeps its chip. The review of the branch found that the
+        // cut had no room on a phone with a ring and a value.
+        _cutTools = [.. bodies.Where(other => other.Id != body.Id && other.Visible)];
+        if (_rowsUnder && _cutTools.Count > 0)
+        {
+            _cutRow = new Vector4(left, y, right, y + RowHeight);
+            y += RowHeight;
+        }
+
+        if (_rowsUnder && _dimensions)
+        {
+            _hiddenTooRow = new Vector4(left, y, right, y + RowHeight);
+            y += RowHeight;
+        }
+
         // ADR-0117 item 2 (ADR-0099 Q2): the row "Made from" with the sketch of the body: the first step of its history that
         // opens a sketch. A body that no sketch made, as a box, has no such row.
         if (SketchStep is { } sketchStep && y + RowHeight <= bottom)
@@ -140,15 +157,14 @@ internal sealed unsafe partial class DesktopUi
         }
 
         // ADR-0099 item 4: the row of the list of a cut, while another body is visible, as in the panel (ADR-0073 item 1).
-        _cutTools = [.. bodies.Where(other => other.Id != body.Id && other.Visible)];
-        if (_cutTools.Count > 0 && y + RowHeight <= bottom)
+        if (!_rowsUnder && _cutTools.Count > 0 && y + RowHeight <= bottom)
         {
             _cutRow = new Vector4(left, y, right, y + RowHeight);
             y += RowHeight;
         }
 
         // ADR-0131 item 3 (phase R18k, TASK-0360): the row of "Hidden too" while the dimensions show, where it has room.
-        if (_dimensions && y + RowHeight <= bottom)
+        if (!_rowsUnder && _dimensions && y + RowHeight <= bottom)
         {
             _hiddenTooRow = new Vector4(left, y, right, y + RowHeight);
             y += RowHeight;
@@ -167,8 +183,8 @@ internal sealed unsafe partial class DesktopUi
 
         _rowsArea = new Vector4(left, top, right, y);
 
-        // ADR-0131 item 1: the rows under the part move down, so their last row is on the bottom of their room. The first row
-        // always shows, so when the room is lower than it, it moves up above the bottom of the room, and not above the top of
+        // ADR-0131 item 1: the rows under the part move down, so their last row is on the bottom of their room. The first rows
+        // always show, so when the room is lower than it, it moves up above the bottom of the room, and not above the top of
         // the panel. Thus it covers no tool of the ring and no part of the sheet of a proposal.
         if (_rowsUnder && y != bottom)
             Shift(Math.Max(bottom - y, PanelTop - top));

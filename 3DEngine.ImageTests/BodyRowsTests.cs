@@ -124,6 +124,38 @@ public sealed class BodyRowsTests
         Assert.True(chip.W <= area.Y, $"The chip {chip} is not above the rows {area}.");
     }
 
+    // ADR-0131 item 1 (phase R18k, TASK-0360): on a portrait phone with the corner ring and values, the row of a cut and the row
+    // of "Hidden too" show right after the first row, because the ring and the command line hold no cut. The review of the
+    // branch found no cut row at 390 by 844 with one value and at 360 by 640.
+    [Theory]
+    [InlineData(390, 844, 0)]
+    [InlineData(390, 844, 2)]
+    [InlineData(360, 640, 0)]
+    [InlineData(412, 915, 2)]
+    [InlineData(768, 1024, 2)]
+    public void The_Cut_Row_Shows_On_A_Portrait_Display_With_A_Ring_And_Values(int width, int height, int count)
+    {
+        var display = new Vector2(width, height);
+        var tool = new LiveBody(Guid.Parse("62000000-0000-0000-0000-000000000009"), "Box", "Tool", true);
+        IReadOnlyList<EdgeValues.Value> all =
+        [
+            new(EdgeValues.DistanceKey(Plate), "10.000 mm", new Vector2(width / 2f, height / 3f), 10, Plate, null, null, "Distance"),
+            new(EdgeValues.ConstraintKey(Width), "60.000 mm", new Vector2(width / 3f, height / 3f), 60, Plate, Sketch, Width, "Width", Name: "C1"),
+        ];
+        using var ui = new DesktopUi("http://127.0.0.1:5180", Document.Millimetre);
+        ui.ShowDimensionsOn();
+        for (var frame = 0; frame < 4; frame++)
+        {
+            ui.Route([]);
+            ui.Frame(1f / 60f, display, Vector2.One, [Extrude, tool], Plate, null, ringCentre: display / 2f, ringBody: 80f, values: [.. all.Take(count)]);
+        }
+
+        var cut = ui.ItemRectangle(DesktopUi.CutLabel) ?? throw new InvalidOperationException($"No cut row at {display}.");
+        var hidden = ui.ItemRectangle(DesktopUi.HiddenTooItem) ?? throw new InvalidOperationException($"No row of Hidden too at {display}.");
+        foreach (var row in new[] { cut, hidden })
+            Assert.True(row.Y >= 0f && row.W <= display.Y && (ui.RingTop() is not { } ring || row.W <= ring - 8f + 0.5f), $"The row {row} is out of the display or on the ring at {display}.");
+    }
+
     // Item 2: the state after the kind: "correct", or "failed" and the code; and "hidden".
     [Fact]
     public void The_State_Gives_Correct_Or_Failed_With_The_Code_And_Hidden()
