@@ -10578,3 +10578,33 @@ person saw the change.
 New tests: 6. The test list holds 2575 (1552 in `Engine.Tests`, 357 in `3DEngine.Tests`, 663 in `3DEngine.ImageTests`, 3
 in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
 entries: 15 of 15. New diagnostic codes: 0. Since the review of v0.351, 2 product milestones and 2 entries followed it.
+
+## v0.354 — The camera has six flat views with no perspective, and the command line gives each one (R21a, TASK-0369)
+
+Row R21 (ADR-0118 item 2) starts the 2D drawing with the flat views in the window. The camera had a projection with
+perspective only and no view from the top (finding V30 stopped the pitch at 89 degrees), and four places computed the axes
+of the screen each in its own way.
+
+**The change.** ADR-0137 amends ADR-0023 item 1.
+- The camera holds a flat view: Front, Back, Left, Right, Top or Bottom, along the axes of the world, with an exact pitch of
+  90 and -90 degrees for Top and Bottom. "3D view" gives back the yaw and the pitch before the first flat view, and an orbit
+  leaves a flat view.
+- The camera gives its axes (`Axes`), and the view, the ray of a pick, the overlay of the window, the gizmo and the pan take
+  them. A flat view projects at the scale of the target (`HalfHeight`), with the same reversed depth; a ray of a pick goes
+  along the view.
+- The command line has "Front view" to "Bottom view" and "3D view".
+- Row R21 splits into R21a (this entry), R21b (the controls and the keys) and R21c (Frame in the free part of the scene).
+
+**Proof.** Twelve tests with no GPU prove the axes of each view, the projection with no perspective at the scale of the
+target, the reversed depth, the return, the orbit, the parallel rays of a pick, the pan from the top and the length of the
+gizmo; two window tests prove the commands and the overlay. The mix test draws the bracket from the front, a rectangle of
+60 by 10, and from the top, 60 by 40. Nine injections each failed a named test; each file came back byte for byte. The phone
+project builds with zero warnings. Run 43560822457 passed on the branch. The failed runs since the entry v0.353, from the
+API: none.
+
+**What stays.** A value whose edge runs along the view, as the depth from the front, has its chip on one point until R22. No
+person used the views; the controls of one tap are R21b.
+
+New tests: 16. The test list holds 2591 (1552 in `Engine.Tests`, 369 in `3DEngine.Tests`, 667 in `3DEngine.ImageTests`, 3
+in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
+entries: 15 of 15. New diagnostic codes: 0. Since the review of v0.351, 3 product milestones and 3 entries followed it.

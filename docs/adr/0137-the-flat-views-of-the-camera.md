@@ -79,3 +79,4 @@ R21b.
 ## History
 
 - 2026-11-14 · TASK-0369 · The record, from row R21 and ADR-0118 item 2, under the order of the owner of 2026-11-14.
+- 2026-11-14 · TASK-0369 · Shipped at v0.354.
