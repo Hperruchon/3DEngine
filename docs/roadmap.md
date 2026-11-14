@@ -418,6 +418,8 @@ Therefore each approved objective must have a track here.
   v0.367, TASK-0382.
 - R22b — A line that closes a chain of the design shows its reference in parentheses, and each value keeps its row in
   each view. v0.368, TASK-0383, ADR-0148.
+- R22c — The solver finds the lengths that the constraints fix, and a flat view shows a length that no constraint fixes
+  in amber. v0.369, TASK-0384, ADR-0149.
 - Review — The codebase review of 2026-11-14 (c). v0.351, TASK-0366.
 - P0.143 — The low findings of the codebase review of 2026-11-11: a triangle of zero area adds no edge, and a mesh of
   more than 100 000 triangles finds its edges on the thread pool. v0.332, TASK-0345, ADR-0121.
@@ -721,7 +723,7 @@ The first objective. Each phase ends with something that a person can observe.
 | R22a | In a flat view a value shows only where its length is true (ADR-0118 item 5, ADR-0146). After K9 and P0.151. TASK-0381. | 1 |
 | R22b | A chain of n parts gives n − 1 values of the design and one reference in parentheses (ADR-0118 item 5, ADR-0146 item 2, ADR-0148). After R22a. TASK-0383. | 1–2 |
 | R22c | A size that no constraint fixes and a lost value show in a separate form, from a search of the free parts of a sketch in the solver (ADR-0118 item 5, ADR-0146 item 2, ADR-0149; a lost value waits for P10). After R22b. TASK-0384. | 2 |
-| R22d | The agent proposes the place of each dimension, and the person accepts or rejects it (ADR-0092, ADR-0118 item 5, ADR-0146 item 2). After R22c. | 1–2 |
+| R22d | The agent proposes the place of each dimension, and the person accepts or rejects it (ADR-0092, ADR-0118 item 5, ADR-0146 item 2). After R22c and P10: the place of a dimension is a command on a sheet (ADR-0118 item 3). | 1–2 |
 | R23 | A joint in the window: a rotation handle on a pivot and a pad for the angle, one `Rotate` at the end of a drag, and the contact and the envelope of the checks in the view. After P11. | 2 |
 | R24 | The end-to-end scenario of the tilting support of a light: the AI finds the contact of the knob with the arm, proposes a new value, runs the checks again, and shows the envelope within 60 mm; the physical load test has its own recorded result (ADR-0126). After each phase of the assembly work. | 1–2 |
 
