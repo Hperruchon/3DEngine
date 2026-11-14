@@ -477,6 +477,18 @@ that picture "X 18 mm" of the panel moves about 150 pixels down to leave the oth
 the model.
 Exit: the scenario runs in the window and passes; or it fails, or the long lines confuse the person, and a task
 corrects it.
+### R-0066 · Under 1024 pixels wide the arc of a proposal lies on the rows, and its lines on the tools of the ring
+- class: debt
+- opened: 2026-11-14
+- due: 2027-05-13
+- extended: no
+- refs: `3DEngine.App/Ui/DesktopUi.Proposal.cs` (RightOfRows, ProposalArc), `docs/adr/0134-the-arc-of-a-proposal-right-of-the-rows.md`,
+  TASK-0365
+At 800 by 600 and 900 by 600 the ring of the arc cannot move right of the rows of the selected body and stay in the display,
+so the arc stays on the ring of the body and lies on the rows. That ring is small, so the block of the command lines finds
+no place free of the tools of the ring, and lies on "Move" or "Set distance". A tap on the plate then reaches a dim tool.
+Exit: a slice places the arc and its lines on a small landscape display with no row and no tool under them, with a test;
+or the owner accepts the compromise.
 
 ## Accepted compromises
 

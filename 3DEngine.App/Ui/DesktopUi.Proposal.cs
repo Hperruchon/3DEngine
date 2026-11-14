@@ -202,6 +202,30 @@ internal sealed unsafe partial class DesktopUi
         return ring with { Centre = new Vector2((left + right) / 2f, ring.Centre.Y), Inner = Math.Clamp(fit, ProposalInnerMinimum, ring.Inner) };
     }
 
+    // ADR-0134 item 1 (phase R18n, TASK-0365): when the arc on the ring of the selected body, with its two circles and their
+    // words, lies on the rows of the body, the ring of the arc moves right, at its height and with its radius, until the word
+    // Reject ends 16 pixels right of the rows. When the word Accept then passes the right edge of the safe area less 16
+    // pixels, as at 900 by 600, the arc stays on the ring of the body: a smaller ring there put the caption and the lines on
+    // the tools of the ring. Until TASK-0365 the arc and Reject lay on the rows "Made from" and "Distance" at 1024 by 768
+    // (gap H2).
+    private RingLayout RightOfRows(RingLayout ring, Vector2 displaySize)
+    {
+        if (_rowsArea is not { } rows)
+            return ring;
+        var (half, rejectWidth, acceptWidth) = (ProposalButton / 2f, ImGui.CalcTextSize(RejectLabel).X, ImGui.CalcTextSize(AcceptLabel).X);
+        var reach = MathF.Cos(ProposalTo);
+        float Left(RingLayout layout) => layout.Centre.X - (reach * (layout.Inner + (RingBand / 2f))) - half - 8f - rejectWidth;
+        float Right(RingLayout layout) => layout.Centre.X + (reach * (layout.Inner + (RingBand / 2f))) + half + 8f + acceptWidth;
+        // The box of the arc: from the top of the band down to the bottom of the circles, from the word Reject to the word Accept.
+        var lowest = ring.Centre.Y + (MathF.Sin(ProposalTo) * (ring.Inner + (RingBand / 2f))) + half;
+        var arc = new Vector4(Left(ring), ring.Centre.Y - ring.Outer, Right(ring), lowest);
+        if (!Meets(arc, rows))
+            return ring;
+        var edge = rows.Z + 16f;
+        var moved = ring with { Centre = ring.Centre with { X = ring.Centre.X + (edge - Left(ring)) } };
+        return Right(moved) <= displaySize.X - 16f - _inset.Z ? moved : ring;
+    }
+
     // ADR-0110 item 3 (Q3 A, TASK-0334): the line of a command whose value the frame names is the name of the value and its
     // change, "Plate C3  60 → 75 mm" or "Bracket distance  → 30 mm" with no value now. Each other command keeps its line of
     // ADR-0092 item 5. ADR-0114 item 2 (finding V164, TASK-0339): an angle shows in degrees, "Plate C1  60 → 45 deg".
@@ -330,7 +354,7 @@ internal sealed unsafe partial class DesktopUi
     {
         // The ring of the selected body, or with no body ring the ring of FreeRing.
         var ring = body is not null && !_sketchActive && _ring is { } bodyRing
-            ? bodyRing
+            ? RightOfRows(bodyRing, displaySize)
             : FreeRing(displaySize);
         ProposalRing = ring;
         var radius = ring.Inner + (RingBand / 2f);
@@ -425,37 +449,59 @@ internal sealed unsafe partial class DesktopUi
                 start = Math.Max(start, box.W + 6f);
         }
 
-        (List<(string Item, string Text, bool Amber, Vector2 At, float Width)> Placed, Vector4 Plate) Block(float y)
+        (List<(string Item, string Text, bool Amber, Vector2 At, float Width)> Placed, Vector4 Plate) Block(float y, float shift = 0f)
         {
             var placed = new List<(string Item, string Text, bool Amber, Vector2 At, float Width)>();
+            var middle = ring.Centre.X + shift;
             foreach (var (item, text, amber) in inside)
             {
                 var d = Math.Abs(y - ring.Centre.Y);
                 var chord = d < ring.Inner ? 2f * MathF.Sqrt((ring.Inner * ring.Inner) - (d * d)) - 16f : 0f;
                 var shown = FitAt(text, Math.Max(chord, 48f));
                 var width = ArrowTextWidth(font, ProposalTextSize, shown);
-                placed.Add((item, shown, amber, new Vector2(ring.Centre.X - (width / 2f), y), width));
+                placed.Add((item, shown, amber, new Vector2(middle - (width / 2f), y), width));
                 y += step;
             }
 
             var widest = placed.Count == 0 ? 0f : placed.Max(line => line.Width);
             var first = placed.Count == 0 ? y : placed[0].At.Y;
-            return (placed, new Vector4(ring.Centre.X - (widest / 2f) - 10f, first - 6f, ring.Centre.X + (widest / 2f) + 10f, y + 2f));
+            return (placed, new Vector4(middle - (widest / 2f) - 10f, first - 6f, middle + (widest / 2f) + 10f, y + 2f));
+        }
+
+        // ADR-0134 item 2: the leftmost place of the plate at its height: inside the inner circle of the ring and right of the
+        // rows of the body.
+        float LeftLimit(Vector4 plate)
+        {
+            var d = Math.Abs(((plate.Y + plate.W) / 2f) - ring.Centre.Y);
+            var circle = d < ring.Inner ? ring.Centre.X - MathF.Sqrt((ring.Inner * ring.Inner) - (d * d)) : ring.Centre.X;
+            return _rowsArea is { } rows ? Math.Max(circle, rows.Z + 8f) : circle;
         }
 
         // ADR-0133 item 2: the block of the lines goes down from its start, one line at a time, until it lies on no chip of this
         // frame, while its plate ends above 0.6 of the inner radius under the centre of the ring. With no such place it stays
-        // at its start. The history arc is at the lower left of the ring, out of the reach of the block.
-        var obstacles = _chips.Select(chip => chip.Rectangle).ToList();
+        // at its start. The history arc is at the lower left of the ring, out of the reach of the block. ADR-0134 item 2 (phase
+        // R18n, TASK-0365): the target of each tool of the ring is an obstacle too, because a ring of the arc right of the rows
+        // has its middle nearer to the tools. At each height the block first has its middle at the centre of the ring; when it
+        // lies on an obstacle, it moves left until it ends 8 pixels left of each obstacle that it meets, while it stays inside the
+        // inner circle and right of the rows.
+        var obstacles = _chips.Select(chip => chip.Rectangle).Concat(_ringTargets?.Values ?? Enumerable.Empty<Vector4>()).ToList();
         var block = Block(start);
         for (var y = start; ; y += step)
         {
             var candidate = Block(y);
             if (candidate.Plate.W > ring.Centre.Y + (ring.Inner * 0.6f))
                 break;
-            if (!obstacles.Any(obstacle => Meets(obstacle, candidate.Plate)))
+            var met = obstacles.Where(obstacle => Meets(obstacle, candidate.Plate)).ToList();
+            if (met.Count == 0)
             {
                 block = candidate;
+                break;
+            }
+
+            var left = Block(y, met.Min(obstacle => obstacle.X) - 8f - candidate.Plate.Z);
+            if (left.Plate.X >= LeftLimit(left.Plate) && !obstacles.Any(obstacle => Meets(obstacle, left.Plate)))
+            {
+                block = left;
                 break;
             }
         }

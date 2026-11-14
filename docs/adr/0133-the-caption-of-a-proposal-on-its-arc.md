@@ -1,13 +1,13 @@
 ---
 id: 0133
 title: The caption of a proposal is on the band of its arc, and the command lines under the arc lie on no chip
-status: Accepted
+status: Amended
 topic: Clients, rendering
 date: 2026-11-14
 supersedes: []
 superseded-by: []
 amends: ['0092']
-amended-by: []
+amended-by: ['0134']
 affects:
   - 3DEngine.App/Ui/DesktopUi.Proposal.cs
   - 3DEngine.ImageTests/ProposalCaptionTests.cs
@@ -67,3 +67,5 @@ it shows two times. The lines still have a plate over the part. No person read t
 - 2026-11-14 · TASK-0364 · The record, from gap H1 of the comparison at the other sizes, under the order of the owner of
   2026-11-14.
 - 2026-11-14 · TASK-0364 · Shipped at v0.349.
+- 2026-11-14 · TASK-0365 · ADR-0134 item 2 amends item 2: the tools of the ring are obstacles of the block of the
+  lines too, and the block moves left of an obstacle at its height.
