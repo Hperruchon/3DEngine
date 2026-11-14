@@ -62,10 +62,15 @@ internal enum ViewLineKind
 // a circle is the arc of that circle from From to To, counter-clockwise on the view; From equal to To is the whole circle.
 internal sealed record ViewLine(
     Guid Body, (Rational X, Rational Y) From, (Rational X, Rational Y) To, bool Visible, ViewLineKind Kind, FaceTag First, FaceTag Second,
-    ViewCircle? Circle = null);
+    ViewCircle? Circle = null, ViewEllipse? Ellipse = null);
 
 // ADR-0143 item 2: a circle on the plane of the view, with the centre and the radius of the design.
 internal sealed record ViewCircle((Rational X, Rational Y) Centre, Rational Radius);
+
+// ADR-0144 item 1: an ellipse on the plane of the view: its centre, and its two half axes at a right angle, Major with the
+// length of the radius of the design and Minor. A line with an ellipse is the arc of it from From to To, counter-clockwise
+// on the view; From equal to To is the whole ellipse.
+internal sealed record ViewEllipse((Rational X, Rational Y) Centre, (double X, double Y) Major, (double X, double Y) Minor);
 
 // ADR-0143 item 1: the kind of a curved side of the design.
 internal enum SideCurveKind
@@ -232,6 +237,7 @@ internal static class ViewEdges
             return lines;
         var groups = new Dictionary<object, (int First, List<ViewLine> Members, bool Arc)>();
         var output = new List<(int Order, ViewLine Line)>();
+        var outline = new List<(int Order, ViewLine Line, int Which, ((double X, double Y) Start, (double X, double Y) End) Segment)>();
         for (var i = 0; i < lines.Count; i++)
         {
             var line = lines[i];
@@ -247,10 +253,20 @@ internal static class ViewEdges
                 case { Kind: SideCurveKind.Cylinder or SideCurveKind.Cone } end when line.Kind == ViewLineKind.Edge && end.Axis.Dot(frame.TowardEye).IsZero:
                     key = (line.Body, line.Visible, line.Kind, Tags(line), Support(line));
                     break;
+                case { Kind: SideCurveKind.Cylinder or SideCurveKind.Cone } end when line.Kind == ViewLineKind.Edge:
+                    line = Arc(line, EndEllipse(end, frame, line.From));
+                    break;
+                case { Kind: SideCurveKind.Cylinder or SideCurveKind.Cone } side when line.Kind == ViewLineKind.Outline && !side.Axis.Cross(frame.TowardEye).IsZero
+                    && Outlines(side, frame) is { } outlines:
+                    var which = Nearer(outlines, line.From, line.To);
+                    outline.Add((i, line, which, outlines[which]));
+                    continue;
             }
 
             if (line.Circle is { } circle)
                 key = (line.Body, line.Visible, line.Kind, Tags(line), circle);
+            if (line.Ellipse is { } ellipse)
+                key = (line.Body, line.Visible, line.Kind, Tags(line), ellipse);
             if (key is null)
             {
                 output.Add((i, line));
@@ -258,14 +274,140 @@ internal static class ViewEdges
             }
 
             if (!groups.TryGetValue(key, out var group))
-                groups[key] = group = (i, [], line.Circle is not null);
+                groups[key] = group = (i, [], line.Circle is not null || line.Ellipse is not null);
             group.Members.Add(line);
         }
 
         foreach (var (first, members, arc) in groups.Values)
             output.AddRange((arc ? Chains(members) : Runs(members)).Select(line => (first, line)));
+        foreach (var side in outline.GroupBy(entry => (entry.Line.Body, entry.Line.First, entry.Which)))
+            output.AddRange(OnOutline([.. side]));
         return [.. output.OrderBy(entry => entry.Order).Select(entry => entry.Line)];
     }
+
+    // ADR-0144 item 1: the ellipse of an end of a cylinder or a cone at a slant to the view. With a the unit axis and e the
+    // unit direction toward the eye, P = a x e over its length lies on the plane of the end and across the view, and Q = a x
+    // P lies on that plane too; the end is C + R cos t P + R sin t Q, so on the view Major = R P and Minor = R Q, at a
+    // right angle. A cylinder has two ends; the end of a piece is the one whose ellipse is nearer to its first point.
+    private static ViewEllipse EndEllipse(SideCurve end, ViewFrame frame, (Rational X, Rational Y) at)
+    {
+        var (major, minor) = HalfAxes(end, frame);
+        var ellipses = new List<ViewEllipse> { new(Project(end.Base, frame), major, minor) };
+        if (end.Kind == SideCurveKind.Cylinder)
+            ellipses.Add(new(Project(end.Base + end.Axis, frame), major, minor));
+        return ellipses.MinBy(ellipse => Math.Abs(Level(ellipse, at) - 1))!;
+    }
+
+    // The two half axes of the ends of a side on the view, in doubles with + - * / and the square root only.
+    private static ((double X, double Y) Major, (double X, double Y) Minor) HalfAxes(SideCurve side, ViewFrame frame)
+    {
+        var a = Unit(side.Axis.ToDoubles());
+        var e = Unit(frame.TowardEye.ToDoubles());
+        var p = Unit(Cross(a, e));
+        var q = Cross(a, p);
+        var (r, u, radius) = (frame.Right.ToDoubles(), frame.Up.ToDoubles(), side.Radius.ToDouble());
+        return ((radius * Dot(p, r), radius * Dot(p, u)), (radius * Dot(q, r), radius * Dot(q, u)));
+    }
+
+    // The value of the equation of the ellipse at the point: 1 on the ellipse. A flat ellipse gives a large value away from
+    // its line.
+    private static double Level(ViewEllipse ellipse, (Rational X, Rational Y) at)
+    {
+        var (dx, dy) = (at.X.ToDouble() - ellipse.Centre.X.ToDouble(), at.Y.ToDouble() - ellipse.Centre.Y.ToDouble());
+        var (mm, nn) = (Dot2(ellipse.Major, ellipse.Major), Dot2(ellipse.Minor, ellipse.Minor));
+        var alpha = ((dx * ellipse.Major.X) + (dy * ellipse.Major.Y)) / mm;
+        var beta = nn > 0 ? ((dx * ellipse.Minor.X) + (dy * ellipse.Minor.Y)) / nn : 0;
+        return (alpha * alpha) + (beta * beta);
+    }
+
+    // ADR-0144 item 2: the two lines of the outline of a side at a slant to the view, each from its start to its end. A
+    // cylinder has the lines from C0 + s Major to C1 + s Major, for s = 1 and -1. A cone has the lines from its apex to the
+    // two points where a tangent from the apex meets the ellipse of its base: in the coordinates (alpha, beta) of the
+    // ellipse the apex is q with |q|² = ρ² > 1, and the points are (q ± sqrt(ρ² - 1) q⊥) / ρ². Null when the apex is inside the
+    // ellipse, so the cone has no outline.
+    private static ((double X, double Y) Start, (double X, double Y) End)[]? Outlines(SideCurve side, ViewFrame frame)
+    {
+        var (major, minor) = HalfAxes(side, frame);
+        var c0 = D(Project(side.Base, frame));
+        var c1 = D(Project(side.Base + side.Axis, frame));
+        if (side.Kind == SideCurveKind.Cylinder)
+            return [(Add(c0, major), Add(c1, major)), (Add(c0, Scale(major, -1)), Add(c1, Scale(major, -1)))];
+
+        var (mm, nn) = (Dot2(major, major), Dot2(minor, minor));
+        var d = (c1.X - c0.X, c1.Y - c0.Y);
+        if (nn == 0)
+            return [(c1, Add(c0, major)), (c1, Add(c0, Scale(major, -1)))];
+        var q = (Dot2(d, major) / mm, Dot2(d, minor) / nn);
+        var rho = Dot2(q, q);
+        if (rho <= 1)
+            return null;
+        var s = Math.Sqrt(rho - 1);
+        (double X, double Y) Point(double sign)
+        {
+            var (tx, ty) = ((q.Item1 - (sign * s * q.Item2)) / rho, (q.Item2 + (sign * s * q.Item1)) / rho);
+            return Add(c0, Add(Scale(major, tx), Scale(minor, ty)));
+        }
+
+        return [(c1, Point(1)), (c1, Point(-1))];
+    }
+
+    // The index of the line of the outline nearer to the middle of the piece.
+    private static int Nearer(((double X, double Y) Start, (double X, double Y) End)[] outlines, (Rational X, Rational Y) from, (Rational X, Rational Y) to)
+    {
+        var middle = ((from.X.ToDouble() + to.X.ToDouble()) / 2, (from.Y.ToDouble() + to.Y.ToDouble()) / 2);
+        double Distance(((double X, double Y) Start, (double X, double Y) End) line)
+        {
+            var d = (line.End.X - line.Start.X, line.End.Y - line.Start.Y);
+            var w = (middle.Item1 - line.Start.X, middle.Item2 - line.Start.Y);
+            var cross = (w.Item1 * d.Item2) - (w.Item2 * d.Item1);
+            return cross * cross / Dot2(d, d);
+        }
+
+        return Distance(outlines[0]) <= Distance(outlines[1]) ? 0 : 1;
+    }
+
+    // ADR-0144 item 2: the pieces of the outline of the facets of one side on one line of the outline of the design: each
+    // end goes to its place along that line, the first end to the start of the line and the last end to its end. K9a joins
+    // the pieces of one edge, so each piece stays one line.
+    private static IEnumerable<(int Order, ViewLine Line)> OnOutline(List<(int Order, ViewLine Line, int Which, ((double X, double Y) Start, (double X, double Y) End) Segment)> pieces)
+    {
+        var (start, end) = pieces[0].Segment;
+        var d = (end.X - start.X, end.Y - start.Y);
+        var length = Dot2(d, d);
+        double Along((Rational X, Rational Y) p) => (((p.X.ToDouble() - start.X) * d.Item1) + ((p.Y.ToDouble() - start.Y) * d.Item2)) / length;
+        var placed = pieces.Select(piece =>
+        {
+            var (a, b) = (Along(piece.Line.From), Along(piece.Line.To));
+            return a <= b ? (piece.Order, piece.Line, A: a, B: b) : (piece.Order, piece.Line, A: b, B: a);
+        }).OrderBy(piece => piece.A).ToList();
+        var (low, high) = (placed[0].A, placed.Max(piece => piece.B));
+        (Rational X, Rational Y) At(double f)
+        {
+            var g = f == low ? 0 : f == high ? 1 : Math.Clamp(f, 0, 1);
+            return (Rational.FromDouble(start.X + (g * d.Item1)), Rational.FromDouble(start.Y + (g * d.Item2)));
+        }
+
+        return placed.Select(piece => (piece.Order, piece.Line with { From = At(piece.A), To = At(piece.B) }));
+    }
+
+    private static (double X, double Y, double Z) Cross((double X, double Y, double Z) a, (double X, double Y, double Z) b)
+        => ((a.Y * b.Z) - (a.Z * b.Y), (a.Z * b.X) - (a.X * b.Z), (a.X * b.Y) - (a.Y * b.X));
+
+    private static double Dot((double X, double Y, double Z) a, (double X, double Y, double Z) b) => (a.X * b.X) + (a.Y * b.Y) + (a.Z * b.Z);
+
+    private static (double X, double Y, double Z) Unit((double X, double Y, double Z) a)
+    {
+        var length = Math.Sqrt(Dot(a, a));
+        return (a.X / length, a.Y / length, a.Z / length);
+    }
+
+    private static double Dot2((double X, double Y) a, (double X, double Y) b) => (a.X * b.X) + (a.Y * b.Y);
+
+    private static (double X, double Y) Add((double X, double Y) a, (double X, double Y) b) => (a.X + b.X, a.Y + b.Y);
+
+    private static (double X, double Y) Scale((double X, double Y) a, double s) => (a.X * s, a.Y * s);
+
+    private static (double X, double Y) D((Rational X, Rational Y) p) => (p.X.ToDouble(), p.Y.ToDouble());
 
     // The curve of the curved side of a line: the one curved tag of an edge, or the tag of an outline.
     private static SideCurve? CurveOf(ViewLine line, IReadOnlyDictionary<FaceTag, SideCurve> curves)
@@ -296,16 +438,24 @@ internal static class ViewEdges
 
     // The piece as an arc counter-clockwise from From to To about the centre; a piece through the centre stays a line.
     private static ViewLine Arc(ViewLine line, ViewCircle circle)
-    {
-        var (c, from, to) = (circle.Centre, line.From, line.To);
-        var turn = ((from.X - c.X) * (to.Y - c.Y)) - ((from.Y - c.Y) * (to.X - c.X));
-        return turn.Sign switch
+        => Turn(line, circle.Centre) switch
         {
             > 0 => line with { Circle = circle },
-            < 0 => line with { From = to, To = from, Circle = circle },
+            < 0 => line with { From = line.To, To = line.From, Circle = circle },
             _ => line,
         };
-    }
+
+    // ADR-0144 item 1: the piece as an arc of the ellipse, as for a circle: an ellipse goes once about its centre.
+    private static ViewLine Arc(ViewLine line, ViewEllipse ellipse)
+        => Turn(line, ellipse.Centre) switch
+        {
+            > 0 => line with { Ellipse = ellipse },
+            < 0 => line with { From = line.To, To = line.From, Ellipse = ellipse },
+            _ => line,
+        };
+
+    private static int Turn(ViewLine line, (Rational X, Rational Y) c)
+        => (((line.From.X - c.X) * (line.To.Y - c.Y)) - ((line.From.Y - c.Y) * (line.To.X - c.X))).Sign;
 
     // The arcs of one circle, joined where one ends and the next one starts: an open chain from its first arc to its last,
     // and a closed chain as the whole circle.
