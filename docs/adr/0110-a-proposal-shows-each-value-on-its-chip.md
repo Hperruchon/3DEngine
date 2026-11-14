@@ -7,7 +7,7 @@ date: 2026-11-10
 supersedes: []
 superseded-by: []
 amends: ['0092']
-amended-by: ['0114', '0115']
+amended-by: ['0114', '0115', '0130']
 affects:
   - 3DEngine.App/Ui/DesktopUi.Proposal.cs
   - 3DEngine.App/Ui/DesktopUi.Values.cs
@@ -104,3 +104,5 @@ while that body is selected.
   it can show in its unit (finding V164).
 - 2026-11-10 · TASK-0340 · ADR-0115 item 1 amends item 2: a chip shows the proposed value with three decimals; a line of
   the proposal keeps its form until R18i.
+- 2026-11-14 · TASK-0358 · ADR-0130 item 1 amends item 2: the row of a proposed value gives the value now crossed out and
+  the proposed value in amber.

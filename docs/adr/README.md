@@ -97,7 +97,7 @@ names. Do not read all of them.
 | [0089](0089-the-cone-the-sphere-and-the-torus-are-closed-meshes.md) | The cone, the sphere and the torus are closed meshes that the engine makes | Accepted | Geometry, kernel | — | — |
 | [0090](0090-the-answer-of-a-save-lists-its-warnings.md) | The HTTP answer of a save lists its warnings | Accepted | Surface, persistence | 0030 | — |
 | [0091](0091-the-fonts-of-the-redesign.md) | The interface draws with Instrument Sans, and a value on an edge with JetBrains Mono | Amended | Clients, rendering | 0027, 0078 | 0117 |
-| [0092](0092-an-agent-proposes-and-the-person-accepts.md) | An agent proposes commands, and the person accepts or rejects them | Amended | Surface, clients | — | 0107, 0108, 0110, 0111, 0113 |
+| [0092](0092-an-agent-proposes-and-the-person-accepts.md) | An agent proposes commands, and the person accepts or rejects them | Amended | Surface, clients | — | 0107, 0108, 0110, 0111, 0113, 0130 |
 | [0093](0093-the-layout-of-the-mix-has-no-panel-chrome.md) | The layout of the mix has a top bar, a panel with no chrome and a status line at the lower right | Amended | Clients, rendering | 0080 | 0099, 0100, 0113, 0124, 0127 |
 | [0094](0094-a-framed-part-fills-45-percent-of-the-picture.md) | A framed part fills 45 % of the half picture, as in the render of the mix | Accepted | Clients, rendering | 0025 | — |
 | [0095](0095-the-look-of-the-orbit-ring.md) | The ring has the look of the orbit of the render, with a guide, icons and a caption | Amended | Clients, rendering | 0081, 0086 | 0108 |
@@ -109,13 +109,13 @@ names. Do not read all of them.
 | [0101](0101-a-focus-on-one-body.md) | A focus on one body is a state of the client that draws one body and writes nothing to the log | Accepted | Clients, selection | 0081, 0098, 0100 | — |
 | [0102](0102-a-project-in-any-folder.md) | The window opens and saves a project in any folder, through the dialogs of the system | Amended | Persistence, clients | 0030, 0083 | 0100, 0106 |
 | [0103](0103-the-vision-library-stays-in-the-spike-on-opencvsharp5.md) | The vision library stays in the spike, on OpenCvSharp5 | Accepted | Vision | 0042 | — |
-| [0104](0104-the-history-arc.md) | The history arc shows the steps that made the selected body | Amended | Clients, rendering | — | 0116, 0119, 0123 |
+| [0104](0104-the-history-arc.md) | The history arc shows the steps that made the selected body | Amended | Clients, rendering | — | 0116, 0119, 0123, 0130 |
 | [0105](0105-the-values-on-the-edges-of-an-active-sketch.md) | The values of an active sketch show on its edges | Amended | Clients, rendering | — | 0115 |
 | [0106](0106-open-project-shows-an-stl-file-too.md) | "Open project..." shows an STL file too, and an STL file goes to the import | Accepted | Persistence, clients | 0102 | — |
 | [0107](0107-the-arc-of-a-proposal-is-in-the-free-room.md) | With no ring of a body, the arc of a proposal is in the room right of the panel | Accepted | Clients | 0092 | — |
 | [0108](0108-the-look-of-the-render.md) | The window has the look of the render, an almost black ground and outlined controls with no fill | Accepted | Clients, rendering | 0078, 0081, 0092, 0095, 0098, 0113 | — |
 | [0109](0109-the-edges-of-the-body.md) | The edges of a body are lines, and the selected body is transparent with dashed hidden edges | Amended | Rendering, clients | 0029 | 0121, 0129 |
-| [0110](0110-a-proposal-shows-each-value-on-its-chip.md) | A proposal shows each value that it changes on the chip of that value | Amended | Clients, surface | 0092 | 0114, 0115 |
+| [0110](0110-a-proposal-shows-each-value-on-its-chip.md) | A proposal shows each value that it changes on the chip of that value | Amended | Clients, surface | 0092 | 0114, 0115, 0130 |
 | [0111](0111-a-proposal-takes-its-own-taps-and-commands.md) | A proposal takes its own taps, its own command identifiers and its own steps | Amended | Surface, clients | 0092 | 0114 |
 | [0112](0112-a-command-turns-a-body.md) | A command turns a body by a quaternion about the origin of the Document | Amended | Contracts, geometry | 0012, 0039, 0051, 0058, 0059, 0060 | 0114 |
 | [0113](0113-the-layout-at-each-phone-size-and-small-window.md) | The layout keeps each control in the display and free for a tap at each phone size and in a small window | Amended | Clients, layout | 0081, 0092, 0093, 0098 | 0108, 0114 |
@@ -135,6 +135,7 @@ names. Do not read all of them.
 | [0127](0127-the-fixed-controls-and-the-status-as-in-the-render.md) | The row of the anchors holds Undo, Redo and the step of Undo, and the status gives the log, the agent and the save | Amended | Clients, rendering | 0083, 0093, 0098 | 0129 |
 | [0128](0128-a-value-typed-in-the-command-line-goes-to-its-pad.md) | A value typed in the command line goes to the pad of its value, through the evaluator | Accepted | Clients, rendering | 0098 | — |
 | [0129](0129-the-findings-of-the-review-of-2026-11-14.md) | The list of the hidden bodies fits the display, a stuck plate stays at its place, and a step text follows its command | Accepted | Clients, rendering | 0109, 0124, 0125, 0127 | — |
+| [0130](0130-the-proposal-in-the-window-as-in-the-render.md) | A proposal shows its values in the rows, a pending node on the history arc, a glow on the edges and Undo after an accept | Accepted | Clients, rendering | 0092, 0104, 0110 | — |
 
 ## Topics
 
