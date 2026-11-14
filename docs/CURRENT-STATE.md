@@ -10916,3 +10916,28 @@ stays red until the owner runs it again.
 New tests: 13. The test list holds 2664 (1576 in `Engine.Tests`, 380 in `3DEngine.Tests`, 705 in `3DEngine.ImageTests`, 3
 in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
 entries: 15 of 15. New diagnostic codes: 0. Since the review of v0.363, 1 product milestone and 2 entries followed it.
+
+## v0.366 — An end within 1e-9 of across the view is one line on its diameter, and the test of the circles reads its hidden lines (P0.152, TASK-0380)
+
+The codebase review of 2026-11-14 (e) (v0.363) gave the medium finding T182 and the low finding E205 after the next product
+phase, R22a. E204 went to P0.151.
+
+**The change.** ADR-0147 amends ADR-0143 item 3 and ADR-0145 item 2.
+- E205: an end whose axis is across the view within a cosine of 1e-9, and not exactly, goes onto the diameter of its circle on
+  the view. Both halves of a flat end lie on that diameter: the union of the visible pieces is the visible line, and each part
+  of a hidden piece outside that union is a hidden line. A first rule removed only the hidden pieces, and both halves were
+  visible, so the end was 64 lines; the rule now takes the pieces as intervals.
+- T182: the test of the circles of a Document asserts the place and the ends of its two hidden lines.
+
+**Proof.** A test proves that a cylinder that turns of 30 and 60 degrees about x laid on its side shows from the top four
+visible lines, each end one line from x = -10 to 10. Five injections each failed a named test; each file came back byte for
+byte. The stop of the host of `3DEngine.ImageTests` after 131 tests in TASK-0377 has the form of R-0062 (a stop after about
+145 tests, in vkCreateDevice); TASK-0382 takes R-0062. The phone project builds with zero warnings. Run 43576533842 passed on the
+branch. The failed runs since the entry v0.365, from the API: none on a branch; 43562165193 on `main` stays red until the
+owner runs it again.
+
+**What stays.** No client reads the lines of a view yet.
+
+New tests: 1. The test list holds 2665 (1577 in `Engine.Tests`, 380 in `3DEngine.Tests`, 705 in `3DEngine.ImageTests`, 3
+in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
+entries: 15 of 15. New diagnostic codes: 0. Since the review of v0.363, 1 product milestone and 3 entries followed it.
