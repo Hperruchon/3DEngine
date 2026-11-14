@@ -10,6 +10,8 @@ namespace ThreeDEngine.ImageTests;
 
 // Findings V86 and V87 of the codebase review of 2026-11-05 (b) (TASK-0191): the far plane holds the live images, and a
 // drag of the gizmo queries the size of the selected body one time.
+// R-0062 (TASK-0382): the class creates a Vulkan device, so it runs in the collection of the devices.
+[Collection(DearImGui.Collection)]
 public class TwentySecondReviewDesktopTests
 {
     // An image of 4000 by 3000 units on the plane XY, and a camera that looks at its centre from 20000 units away.

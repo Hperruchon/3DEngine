@@ -15,6 +15,8 @@ namespace ThreeDEngine.ImageTests;
 // the renderer takes the new mesh when the geometry key of a body changes, the panel gets the
 // fault, and an undo gives back the old mesh. The test runs the renderer on a GPU with the
 // validation layer, and reads the box of the scene and the live bodies.
+// R-0062 (TASK-0382): the class creates a Vulkan device, so it runs in the collection of the devices.
+[Collection(DearImGui.Collection)]
 public class RebuildImageTests
 {
     private static async Task<Guid> Applied(EngineHost host, Command command, string output)

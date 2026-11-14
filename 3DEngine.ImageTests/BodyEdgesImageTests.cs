@@ -18,6 +18,8 @@ namespace ThreeDEngine.ImageTests;
 // box is selected, each visible edge is a solid line in the colour of the selection, and each hidden edge is dashed. The
 // test projects each edge of the box on the CPU and reads the pixels on the line, with no reference picture. ADR-0109
 // names this file in its enforced-by field.
+// R-0062 (TASK-0382): the class creates a Vulkan device, so it runs in the collection of the devices.
+[Collection(DearImGui.Collection)]
 public sealed class BodyEdgesImageTests
 {
     private const uint Width = 800;
