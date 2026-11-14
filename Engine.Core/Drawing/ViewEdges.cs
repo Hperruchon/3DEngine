@@ -58,9 +58,26 @@ internal enum ViewLineKind
 }
 
 // ADR-0142 items 3 to 5: one line of a view, on the plane of the view, visible or hidden, with the body and the tags of the
-// two faces of its edge, so a later phase finds the values of the design that the line shows.
+// two faces of its edge, so a later phase finds the values of the design that the line shows. ADR-0143 item 2: a line with
+// a circle is the arc of that circle from From to To, counter-clockwise on the view; From equal to To is the whole circle.
 internal sealed record ViewLine(
-    Guid Body, (Rational X, Rational Y) From, (Rational X, Rational Y) To, bool Visible, ViewLineKind Kind, FaceTag First, FaceTag Second);
+    Guid Body, (Rational X, Rational Y) From, (Rational X, Rational Y) To, bool Visible, ViewLineKind Kind, FaceTag First, FaceTag Second,
+    ViewCircle? Circle = null);
+
+// ADR-0143 item 2: a circle on the plane of the view, with the centre and the radius of the design.
+internal sealed record ViewCircle((Rational X, Rational Y) Centre, Rational Radius);
+
+// ADR-0143 item 1: the kind of a curved side of the design.
+internal enum SideCurveKind
+{
+    Cylinder,
+    Cone,
+    Sphere,
+}
+
+// ADR-0143 item 1: the curve of the design of a curved side: for a cylinder or a cone the centre of its base, the axis from
+// the base to the other end or to the apex, and the radius of the base; for a sphere the centre and the radius.
+internal sealed record SideCurve(SideCurveKind Kind, Vector3R Base, Vector3R Axis, Rational Radius);
 
 // ADR-0142 (phase K9a, TASK-0375): the visible and the hidden lines of the live bodies seen along a view, computed outside
 // the owned kernel from the faces and the edges that it gives (Brep), so the six operations of the closed feature boundary
@@ -76,6 +93,7 @@ internal static class ViewEdges
         ArgumentNullException.ThrowIfNull(document);
         var bodies = new List<(Guid Body, Brep Brep)>();
         var skipped = new List<(Guid Body, string Reason)>();
+        var curves = new Dictionary<FaceTag, SideCurve>();
         foreach (var record in document.Bodies.OrderBy(body => body.Handle.Id))
         {
             if (record.Kind == Commands.ImportStlCommandHandler.MeshKind)
@@ -94,6 +112,8 @@ internal static class ViewEdges
             try
             {
                 bodies.Add((record.Handle.Id, Brep.Of(solid)));
+                foreach (var (tag, curve) in KernelProjection.Curves(document, record.Handle.Id))
+                    curves.TryAdd(tag, curve);
             }
             catch (InvalidOperationException ex)
             {
@@ -101,12 +121,12 @@ internal static class ViewEdges
             }
         }
 
-        return (Of(bodies, frame), skipped);
+        return (Of(bodies, frame, curves), skipped);
     }
 
     // ADR-0142 items 3 to 5: the lines of the bodies along the frame, in the order of the bodies, their edges and the
-    // place on each edge.
-    public static IReadOnlyList<ViewLine> Of(IReadOnlyList<(Guid Body, Brep Brep)> bodies, ViewFrame frame)
+    // place on each edge. ADR-0143: with the curves of the design, the edges of a curved side become circles and arcs.
+    public static IReadOnlyList<ViewLine> Of(IReadOnlyList<(Guid Body, Brep Brep)> bodies, ViewFrame frame, IReadOnlyDictionary<FaceTag, SideCurve>? curves = null)
     {
         ArgumentNullException.ThrowIfNull(bodies);
         if (!frame.IsValid)
@@ -199,7 +219,145 @@ internal static class ViewEdges
             lines.Add(new ViewLine(segment.Body, (start.From.X, start.From.Y), (end.To.X, end.To.Y), start.Visible, segment.Kind!.Value, segment.First, segment.Second));
         }
 
-        return lines;
+        return curves is null || curves.Count == 0 ? lines : Curved(lines, frame, curves);
+    }
+
+    // ADR-0143 items 2 and 3: with a frame of length 1, a piece of an end of a cylinder or a cone whose axis is along the
+    // view, and a piece of the outline of a sphere, is an arc of the circle of the design; the arcs of one circle with one
+    // visibility that follow each other are one arc, or the whole circle. The pieces of an end whose axis is across the
+    // view lie on one line, and the pieces that follow each other with one visibility are one line. Each other line stays.
+    private static List<ViewLine> Curved(List<ViewLine> lines, ViewFrame frame, IReadOnlyDictionary<FaceTag, SideCurve> curves)
+    {
+        if (frame.Right.Dot(frame.Right) != Rational.One)
+            return lines;
+        var groups = new Dictionary<object, (int First, List<ViewLine> Members, bool Arc)>();
+        var output = new List<(int Order, ViewLine Line)>();
+        for (var i = 0; i < lines.Count; i++)
+        {
+            var line = lines[i];
+            object? key = null;
+            switch (CurveOf(line, curves))
+            {
+                case { Kind: SideCurveKind.Sphere } sphere when line.Kind == ViewLineKind.Outline:
+                    line = Arc(line, new ViewCircle(Project(sphere.Base, frame), sphere.Radius));
+                    break;
+                case { Kind: SideCurveKind.Cylinder or SideCurveKind.Cone } end when line.Kind == ViewLineKind.Edge && end.Axis.Cross(frame.TowardEye).IsZero:
+                    line = Arc(line, new ViewCircle(Project(end.Base, frame), end.Radius));
+                    break;
+                case { Kind: SideCurveKind.Cylinder or SideCurveKind.Cone } end when line.Kind == ViewLineKind.Edge && end.Axis.Dot(frame.TowardEye).IsZero:
+                    key = (line.Body, line.Visible, line.Kind, Tags(line), Support(line));
+                    break;
+            }
+
+            if (line.Circle is { } circle)
+                key = (line.Body, line.Visible, line.Kind, Tags(line), circle);
+            if (key is null)
+            {
+                output.Add((i, line));
+                continue;
+            }
+
+            if (!groups.TryGetValue(key, out var group))
+                groups[key] = group = (i, [], line.Circle is not null);
+            group.Members.Add(line);
+        }
+
+        foreach (var (first, members, arc) in groups.Values)
+            output.AddRange((arc ? Chains(members) : Runs(members)).Select(line => (first, line)));
+        return [.. output.OrderBy(entry => entry.Order).Select(entry => entry.Line)];
+    }
+
+    // The curve of the curved side of a line: the one curved tag of an edge, or the tag of an outline.
+    private static SideCurve? CurveOf(ViewLine line, IReadOnlyDictionary<FaceTag, SideCurve> curves)
+    {
+        if (line.Kind == ViewLineKind.Outline)
+            return curves.TryGetValue(line.First, out var outline) ? outline : null;
+        var (first, second) = (curves.TryGetValue(line.First, out var a) ? a : null, curves.TryGetValue(line.Second, out var b) ? b : null);
+        return (first, second) switch
+        {
+            ({ } only, null) => only,
+            (null, { } only) => only,
+            _ => null,
+        };
+    }
+
+    private static (Rational X, Rational Y) Project(Vector3R p, ViewFrame frame) => (p.Dot(frame.Right), p.Dot(frame.Up));
+
+    private static (FaceTag, FaceTag) Tags(ViewLine line)
+        => string.CompareOrdinal(line.First.ToString(), line.Second.ToString()) <= 0 ? (line.First, line.Second) : (line.Second, line.First);
+
+    // The line through a piece as a x + b y = c, scaled so that its first coefficient that is not zero is 1.
+    private static (Rational A, Rational B, Rational C) Support(ViewLine line)
+    {
+        var (a, b) = (line.To.Y - line.From.Y, line.From.X - line.To.X);
+        var scale = Rational.One / (!a.IsZero ? a : b);
+        return (a * scale, b * scale, ((a * line.From.X) + (b * line.From.Y)) * scale);
+    }
+
+    // The piece as an arc counter-clockwise from From to To about the centre; a piece through the centre stays a line.
+    private static ViewLine Arc(ViewLine line, ViewCircle circle)
+    {
+        var (c, from, to) = (circle.Centre, line.From, line.To);
+        var turn = ((from.X - c.X) * (to.Y - c.Y)) - ((from.Y - c.Y) * (to.X - c.X));
+        return turn.Sign switch
+        {
+            > 0 => line with { Circle = circle },
+            < 0 => line with { From = to, To = from, Circle = circle },
+            _ => line,
+        };
+    }
+
+    // The arcs of one circle, joined where one ends and the next one starts: an open chain from its first arc to its last,
+    // and a closed chain as the whole circle.
+    private static IEnumerable<ViewLine> Chains(List<ViewLine> arcs)
+    {
+        var next = new Dictionary<(Rational, Rational), int>();
+        var ends = new HashSet<(Rational, Rational)>();
+        for (var i = 0; i < arcs.Count; i++)
+        {
+            next.TryAdd(arcs[i].From, i);
+            ends.Add(arcs[i].To);
+        }
+
+        var used = new bool[arcs.Count];
+        var starts = Enumerable.Range(0, arcs.Count).Where(i => !ends.Contains(arcs[i].From)).Concat(Enumerable.Range(0, arcs.Count));
+        foreach (var start in starts)
+        {
+            if (used[start])
+                continue;
+            var (first, last) = (arcs[start], arcs[start]);
+            used[start] = true;
+            while (next.TryGetValue(last.To, out var follow) && !used[follow])
+            {
+                used[follow] = true;
+                last = arcs[follow];
+            }
+
+            yield return first with { To = last.To };
+        }
+    }
+
+    // The pieces on one line, in their order along it, joined where one ends and the next one starts.
+    private static IEnumerable<ViewLine> Runs(List<ViewLine> pieces)
+    {
+        var (dx, dy) = (pieces[0].To.X - pieces[0].From.X, pieces[0].To.Y - pieces[0].From.Y);
+        Rational Along((Rational X, Rational Y) p) => (p.X * dx) + (p.Y * dy);
+        var ordered = pieces.Select(piece => Along(piece.From) <= Along(piece.To) ? piece : piece with { From = piece.To, To = piece.From })
+            .OrderBy(piece => Along(piece.From)).ToList();
+        var current = ordered[0];
+        foreach (var piece in ordered.Skip(1))
+        {
+            if (piece.From == current.To)
+            {
+                current = current with { To = piece.To };
+                continue;
+            }
+
+            yield return current;
+            current = piece;
+        }
+
+        yield return current;
     }
 
     // The places in (0, 1) on the segment where the other one crosses it, or where an end of the other one lies on it.
