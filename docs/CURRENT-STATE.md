@@ -10256,3 +10256,35 @@ fields have no entry. No person used the change in the window.
 New tests: 4. The test list holds 2519 (1552 in `Engine.Tests`, 357 in `3DEngine.Tests`, 607 in `3DEngine.ImageTests`, 3
 in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
 entries: 14 of 15. New diagnostic codes: 0. Since the review of v0.340, 1 product milestone and 1 entry followed it.
+
+## v0.342 — The medium and low findings of the codebase review of 2026-11-14 (P0.146, TASK-0356)
+
+The codebase review of 2026-11-14 (v0.340) gave two medium findings, V173 and V174, and three low findings, V175 to V177,
+after the next product phase, R18h (v0.341). ADR-0129 records the decisions that change.
+
+**The change.**
+- V173: the covers of the plates of the dimensions hold the panels and the fixed rectangles of the last frame, so the
+  window of the live sketches, the card of a proposal, the window of the images and the list of the hidden bodies are
+  covers too. At 1280 by 720 the plates under a window went from 118 to 3 in 96 views; each of the three is a plate that
+  no move of ADR-0125 item 4 frees.
+- V174: when the rows of the list of the hidden bodies do not fit, "Show all" comes first, then the bodies that fit, then
+  "N more". At 1280 by 720 the room holds ten rows, so ten hidden bodies did not fit before either.
+- V175: a triangle whose area is zero within 1e-9 of the square of its longest side adds no edge, and a side of one
+  triangle with a chain of collinear sides from end to end is one edge. A T-vertex with no sliver, two side by side and a
+  turned T-vertex add no line.
+- V176: a plate that no move frees stays at its place, not at the top edge on the other plates.
+- V177: the window expects the text of a step for the identifier of its command; the card of a proposal holds the
+  identifiers, so a command of another client with the same name does not take the text.
+
+**Proof.** 9 new tests: three in `BodyEdgesImageTests` (V175), two in `DimensionLabelsTests` (V173, V176), four cases in
+`HiddenBodiesTests` (V174); `FixedStatusTests` and `FixedStatusImageTests` expect texts by identifier. Seven injections each
+failed a named test; each file came back byte for byte. The phone project builds with zero warnings. Run 43538951652 passed
+on the branch. The failed runs since the entry v0.341, from the API: none.
+
+**What stays.** A plate that a move along one axis cannot free stays under its control, also when a free place exists in
+another direction. With a long list on a small display, the bodies that do not fit have no row. No real mesh of the
+backend gave a T-vertex yet.
+
+New tests: 9. The test list holds 2528 (1552 in `Engine.Tests`, 357 in `3DEngine.Tests`, 616 in `3DEngine.ImageTests`, 3
+in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
+entries: 14 of 15. New diagnostic codes: 0. Since the review of v0.340, 1 product milestone and 2 entries followed it.

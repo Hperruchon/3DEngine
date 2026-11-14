@@ -29,8 +29,9 @@ public class FixedStatusImageTests
             return host.Subscribe(steps.Take);
         });
         await host.Session.Apply(new CreateBoxCommand { SizeX = 40, SizeY = 24, SizeZ = 10 });
-        steps.Expect("CreateBox", "C3 = 75");
-        await host.Session.Apply(new CreateBoxCommand { SizeX = 10, SizeY = 10, SizeZ = 30 });
+        var second = Guid.NewGuid();
+        steps.Expect(second, "C3 = 75");
+        await host.Session.Apply(new CreateBoxCommand { CommandId = second, SizeX = 10, SizeY = 10, SizeZ = 30 });
         Assert.Equal((2, "C3 = 75"), (steps.LogCount, steps.Undo));
 
         using var ui = new DesktopUi("http://127.0.0.1:5180", Engine.Contracts.Document.Millimetre);

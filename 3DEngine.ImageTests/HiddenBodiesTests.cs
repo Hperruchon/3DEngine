@@ -184,4 +184,37 @@ public sealed class HiddenBodiesTests
         var row = ui.ItemRectangle(DesktopUi.HiddenRowItem(B)) ?? throw new InvalidOperationException($"No row on {display}.");
         Assert.True(row.X >= 0f && row.Z <= display.X, $"The row at {row} is outside the display {display}.");
     }
+
+    // Finding V174 of the codebase review of 2026-11-14 (TASK-0356, ADR-0129 item 1): on a small landscape display the rows of
+    // a long list do not fit, so "Show all" comes first, then the hidden bodies that fit, then the count of the others; each row
+    // is inside the list and the display, and a tap on "Show all" shows each body. At 1280 by 720 ten rows fit, so eight bodies
+    // and "Show all" keep their order, and ten bodies do not fit. Until TASK-0356 "Show all" was under the display at 844 by 390.
+    [Theory]
+    [InlineData(844, 390, 6, true)]
+    [InlineData(640, 360, 5, true)]
+    [InlineData(1280, 720, 8, false)]
+    [InlineData(1280, 720, 10, true)]
+    public void Show_All_And_Each_Row_Of_A_Long_List_Are_In_The_Display(int width, int height, int count, bool cut)
+    {
+        var display = new Vector2(width, height);
+        var bodies = Enumerable.Range(0, count + 1)
+            .Select(i => new LiveBody(Guid.Parse($"67000000-0000-0000-0000-{i:D12}"), "Box", $"Part {i}", i == 0))
+            .ToArray();
+        using var ui = new DesktopUi("http://127.0.0.1:5180", Document.Millimetre);
+        Step(ui, display, bodies);
+        Step(ui, display, bodies);
+        Tap(ui, display, bodies, DesktopUi.HiddenItem);
+        Assert.True(ui.HiddenListOpen);
+
+        var list = ui.ItemRectangle(DesktopUi.HiddenListItem) ?? throw new InvalidOperationException("No list.");
+        var all = ui.ItemRectangle(DesktopUi.HiddenShowAllItem) ?? throw new InvalidOperationException("No Show all.");
+        var rows = bodies.Skip(1).Select(body => ui.ItemRectangle(DesktopUi.HiddenRowItem(body.Id))).OfType<Vector4>().ToList();
+        foreach (var row in rows.Append(all))
+            Assert.True(row.Y >= list.Y - 0.5f && row.W <= list.W + 0.5f && row.W <= display.Y, $"The row {row} is outside the list {list} or the display {display}.");
+        Assert.Equal(cut, ui.ItemRectangle(DesktopUi.HiddenMoreItem) is not null);
+        Assert.Equal(cut, all.Y < rows[0].Y);
+        Assert.True(cut ? rows.Count < count : rows.Count == count, $"{rows.Count} rows of {count} on {display}.");
+
+        Assert.Contains(Tap(ui, display, bodies, DesktopUi.HiddenShowAllItem), action => action is ShowAllAction);
+    }
 }

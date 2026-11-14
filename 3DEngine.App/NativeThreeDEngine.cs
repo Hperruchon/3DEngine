@@ -557,16 +557,19 @@ public sealed class NativeThreeDEngine : IThreeDEngine, IDisposable
                 case EditDistanceAction editDistance when _actions.Distance(editDistance.Body) is { } distance:
                     _ui.OpenDistancePad(editDistance.Body, distance);
                     break;
-                // ADR-0127 item 2: a value of the window gives the text of its step, as "C3 = 75".
+                // ADR-0127 item 2: a value of the window gives the text of its step, as "C3 = 75". ADR-0129 item 3 (V177): for the
+                // identifier of its command.
                 case SetDistanceAction setDistance:
-                    _steps.Expect(ProposedValues.SetExtrudeDistance, StepTexts.DistanceText(setDistance.Distance));
-                    _ui.EndPad(_actions.SetDistance(setDistance.Body, setDistance.Distance));
+                    var distanceCommand = Guid.NewGuid();
+                    _steps.Expect(distanceCommand, StepTexts.DistanceText(setDistance.Distance));
+                    _ui.EndPad(_actions.SetDistance(setDistance.Body, setDistance.Distance, distanceCommand));
                     _steps.Forget();
                     break;
                 case SetBodyValueAction bodyValue when _sketchActions is not null:
+                    var bodyCommand = Guid.NewGuid();
                     if (StepTexts.ValueText(_sketches?.Live ?? [], bodyValue.Constraint, [bodyValue.Value]) is { } bodyText)
-                        _steps.Expect(ProposedValues.SetConstraintValue, bodyText);
-                    _ui.EndPad(_sketchActions.SetValueOf(bodyValue.Sketch, bodyValue.Constraint, bodyValue.Value));
+                        _steps.Expect(bodyCommand, bodyText);
+                    _ui.EndPad(_sketchActions.SetValueOf(bodyValue.Sketch, bodyValue.Constraint, bodyValue.Value, bodyCommand));
                     _steps.Forget();
                     break;
                 case PlaceImageAction place:
@@ -654,9 +657,10 @@ public sealed class NativeThreeDEngine : IThreeDEngine, IDisposable
                     _ui.EndPad(refused);
                 break;
             case SetConstraintValueAction value:
+                var valueCommand = Guid.NewGuid();
                 if (StepTexts.ValueText(_sketches?.Live ?? [], value.Constraint, value.Values) is { } valueText)
-                    _steps.Expect(ProposedValues.SetConstraintValue, valueText);
-                _ui.EndPad(sketch.SetValue(value.Constraint, value.Values));
+                    _steps.Expect(valueCommand, valueText);
+                _ui.EndPad(sketch.SetValue(value.Constraint, value.Values, valueCommand));
                 _steps.Forget();
                 break;
             case MoveSketchPointAction move:

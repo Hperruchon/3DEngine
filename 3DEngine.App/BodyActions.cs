@@ -334,8 +334,9 @@ internal sealed class BodyActions(DocumentSession session)
     public double? Distance(Guid body)
         => session.Query<BodyInfo>(new GetBodyInfoQuery { BodyId = body }).GetAwaiter().GetResult().Result?.Distance;
 
-    public string? SetDistance(Guid body, double distance)
-        => Rejection(session.Apply(new SetExtrudeDistanceCommand { ExtrudeId = body, Distance = distance }).GetAwaiter().GetResult());
+    // ADR-0129 item 3 (finding V177, TASK-0356): the caller can give the identifier of the command, for the text of its step.
+    public string? SetDistance(Guid body, double distance, Guid? command = null)
+        => Rejection(session.Apply(new SetExtrudeDistanceCommand { CommandId = command ?? Guid.NewGuid(), ExtrudeId = body, Distance = distance }).GetAwaiter().GetResult());
 
     private static string? Rejection(CommandResult result)
     {

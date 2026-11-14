@@ -556,8 +556,10 @@ internal sealed unsafe partial class DesktopUi
 // each command, true when the Document changed after the post, and true while its commands apply.
 // ADR-0110 item 1 (TASK-0334): Values holds the proposed value of each command, in the order of Commands, or null for a
 // command with no value. A card with no Values shows no pending chip.
+// ADR-0129 item 3 (finding V177, TASK-0356): CommandIds holds the identifier of each command, in the order of Commands, so
+// the text of the step of an accepted value goes to its own command.
 internal sealed record ProposalCard(Guid Id, string Summary, IReadOnlyList<string> Commands, bool Stale = false, bool Applying = false,
-    IReadOnlyList<ProposedValue?>? Values = null)
+    IReadOnlyList<ProposedValue?>? Values = null, IReadOnlyList<Guid>? CommandIds = null)
 {
     // Item 5: the text of a command: its name and the value of each parameter, in the order of the envelope. An identifier
     // shows its first 8 characters, as a row of a body does; another value shows its JSON text.
