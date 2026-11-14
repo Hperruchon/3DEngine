@@ -73,3 +73,4 @@ change in the window.
 
 - 2026-11-14 · TASK-0358 · The record, from slice S9 of the study of the gaps to the render, with the recommended option
   under the order of the owner of 2026-11-14.
+- 2026-11-14 · TASK-0358 · Shipped at v0.343.

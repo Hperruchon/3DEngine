@@ -10288,3 +10288,27 @@ backend gave a T-vertex yet.
 New tests: 9. The test list holds 2528 (1552 in `Engine.Tests`, 357 in `3DEngine.Tests`, 616 in `3DEngine.ImageTests`, 3
 in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
 entries: 14 of 15. New diagnostic codes: 0. Since the review of v0.340, 1 product milestone and 2 entries followed it.
+
+## v0.343 — A proposal shows its values in the rows, a pending node, a glow on the edges and Undo after an accept (R18i, TASK-0358)
+
+Slice S9 of the proposal on the gaps to the render, under the order of the owner of 2026-11-14. Before it, a proposal
+showed its arc with Reject and Accept, its command lines and each chip as "60.000 → 75.000 mm"; an accept gave "Proposal
+accepted: 1 command applied, 1 step of undo".
+
+**The change.** ADR-0130 amends ADR-0092 items 6 and 7, ADR-0104 and ADR-0110 item 2.
+- The row of a proposed value gives the value now crossed out in the quiet colour and the proposed value in amber.
+- The history arc has a pending node "C1 to 75 ?" one step above its newest node, from the first named value.
+- Four frames of amber go along the edges of the display while a proposal waits.
+- After an accept the line says "Applied · Bracket rebuilt", with the name of the body selected at the accept, and a button
+  "Undo" of 44 pixels that gives the Undo of the anchors.
+
+**Proof.** 4 new tests in `3DEngine.ImageTests/ProposalWindowTests.cs`. Six injections each failed a named test; each file
+came back byte for byte. The picture of the mix with a pending value at 1440 by 900 shows the four parts. The phone project
+builds with zero warnings. Run 43540455164 passed on the branch. The failed runs since the entry v0.342, from the API: none.
+
+**What stays.** "Undo" undoes one step, so a proposal of several commands needs one tap for each; "rebuilt" names the
+selected body. No person used the change in the window.
+
+New tests: 4. The test list holds 2532 (1552 in `Engine.Tests`, 357 in `3DEngine.Tests`, 620 in `3DEngine.ImageTests`, 3
+in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
+entries: 14 of 15. New diagnostic codes: 0. Since the review of v0.340, 2 product milestones and 3 entries followed it.

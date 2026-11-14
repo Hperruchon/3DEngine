@@ -1,7 +1,7 @@
 ---
 id: 0358
 title: A proposal shows its values in the rows, a pending node on the history arc, a glow on the edges and Undo after an accept
-status: Active
+status: Done
 phase: R18i
 opened: 2026-11-14
 depends-on: [0356, 0357]
@@ -59,18 +59,18 @@ accept one tap undoes the change.
 
 ## Acceptance criteria
 
-- [ ] ADR-0130 exists. ADR-0092, ADR-0104 and ADR-0110 show the amendment.
-- [ ] A test proves the value now and the proposed value of a row, and no change of another row.
-- [ ] A test proves the pending node above the newest node, with its text.
-- [ ] A test proves the glow on a landscape and a portrait display while a proposal waits, and no glow with none.
-- [ ] A test proves the line after an accept, Undo as a target of 44 pixels, its action, and no Undo after a reject.
-- [ ] A clean build (`--no-incremental`) gives zero errors and zero warnings, and the phone project builds.
-- [ ] `dotnet test`, the write-set check and `eng/repo-gates` pass; continuous integration passes on the branch and on
+- [x] ADR-0130 exists. ADR-0092, ADR-0104 and ADR-0110 show the amendment.
+- [x] A test proves the value now and the proposed value of a row, and no change of another row.
+- [x] A test proves the pending node above the newest node, with its text.
+- [x] A test proves the glow on a landscape and a portrait display while a proposal waits, and no glow with none.
+- [x] A test proves the line after an accept, Undo as a target of 44 pixels, its action, and no Undo after a reject.
+- [x] A clean build (`--no-incremental`) gives zero errors and zero warnings, and the phone project builds.
+- [x] `dotnet test`, the write-set check and `eng/repo-gates` pass; continuous integration passes on the branch and on
       `main` after the merge.
 
 ## Outcome
 
-Status: Active
+Status: Done · commit (the merge of the branch r18i-proposal) · v0.343
 
 ## Method
 
@@ -84,3 +84,6 @@ Weakest:    "Undo" undoes one step, so a proposal of several commands needs one 
 - 2026-11-14: opened under the order of the owner of 2026-11-14, after R18h (v0.341) and P0.146, at the commit of P0.146
   (e602df8), branch r18i-proposal. TASK-0358 and ADR-0130 are free. Six injections each failed a named test; each file came
   back byte for byte. The picture of the mix with a pending value shows the four parts.
+- 2026-11-14: the glow was first an item of the window, so the responsive layout test (R19) took it for a control under
+  each window; it takes no tap, so it is a rectangle for a test only.
+- 2026-11-14: run 43540455164 passed on the work commit. Closed at v0.343.
