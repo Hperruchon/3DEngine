@@ -717,7 +717,7 @@ The first objective. Each phase ends with something that a person can observe.
 | R21c | Frame fills the free part of the scene, between the panels, the rows and the ring (ADR-0118 item 2; problem 6 of the UX test). After R21b. TASK-0372. | 1 |
 | R22 | The right dimensions on a flat view: the values of the design, each one time in a view where its length is true, a chain with one reference in parentheses, a separate form for a size that no constraint fixes and for a lost value, and the place of each dimension proposed by the agent (ADR-0118 item 5). After K9. It needs a search of the free parts of a sketch in the solver. | 3–5 |
 | R22a | In a flat view a value shows only where its length is true (ADR-0118 item 5, ADR-0146). After K9 and P0.151. TASK-0381. | 1 |
-| R22b | A chain of n parts gives n − 1 values of the design and one reference in parentheses (ADR-0118 item 5, ADR-0146 item 2). After R22a. | 1–2 |
+| R22b | A chain of n parts gives n − 1 values of the design and one reference in parentheses (ADR-0118 item 5, ADR-0146 item 2, ADR-0148). After R22a. TASK-0383. | 1–2 |
 | R22c | A size that no constraint fixes and a lost value show in a separate form, from a search of the free parts of a sketch in the solver (ADR-0118 item 5, ADR-0146 item 2). After R22b. | 2 |
 | R22d | The agent proposes the place of each dimension, and the person accepts or rejects it (ADR-0092, ADR-0118 item 5, ADR-0146 item 2). After R22c. | 1–2 |
 | R23 | A joint in the window: a rotation handle on a pivot and a pad for the angle, one `Rotate` at the end of a drag, and the contact and the envelope of the checks in the view. After P11. | 2 |

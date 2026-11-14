@@ -69,6 +69,9 @@ internal sealed unsafe partial class DesktopUi
         var shown = new List<EdgeValues.Value>(values.Count);
         foreach (var value in values)
         {
+            // ADR-0148 item 1 (phase R22b, TASK-0383): a value whose length the flat view does not show true has no chip.
+            if (!value.InView)
+                continue;
             if (proposed.FirstOrDefault(change => change.Keys.Contains(value.Key)) is { } change)
             {
                 _proposedChips.Add(value.Key);
@@ -211,6 +214,9 @@ internal sealed unsafe partial class DesktopUi
     // distance opens its pad here with that text; with no typed text the pad starts at the value now.
     private void Use(EdgeValues.Value value, string? typed = null)
     {
+        // ADR-0148 item 2: the reference of a chain is computed from the design, so it has no pad.
+        if (value.Reference)
+            return;
         var start = typed ?? SketchText.Number(value.Number);
         // ADR-0105 item 4 (TASK-0327): a chip of the active sketch opens the pad that the row of its constraint opens
         // (ADR-0034 item 8), with the same apply, and the chip is pending while that pad is open.
