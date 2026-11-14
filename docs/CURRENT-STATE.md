@@ -11087,3 +11087,31 @@ it again.
 New tests: 4. The test list holds 2685 (1580 in `Engine.Tests`, 382 in `3DEngine.Tests`, 720 in `3DEngine.ImageTests`, 3
 in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
 entries: 14 of 15. New diagnostic codes: 0. Since the review of v0.363, 3 product milestones and 9 entries followed it.
+
+## v0.373 — On a small landscape display the arc of a proposal is right of the rows on a smaller ring, and each part of a proposal hides the tools under it (P0.157, TASK-0388)
+
+Register entry R-0066: at 800 by 600 and 900 by 600 the arc of a proposal stayed on the ring of the body and lay on the rows,
+and its lines could lie on a tool. The pictures of the pending proposal at those sizes showed Reject on the row "Made from"
+and the plate of the lines on the values of the rows.
+
+**The change.** ADR-0152 amends ADR-0134 item 1 and ADR-0139 item 2.
+- When the moved ring of the arc does not fit right of the rows, a ring with the same height and a smaller inner radius does,
+  from the word Reject 16 pixels right of the rows to the word Accept 16 pixels inside the right edge, with an inner radius of
+  at least 90 pixels.
+- While a proposal waits, a tool under any rectangle of the proposal of the last frame does not show and takes no tap: the ends
+  and their words, the box of the band, the caption and the plate of the lines. A first rule left the icon of "Edit sketch"
+  under the band at 900 by 600, so the box of the band is one of the rectangles.
+- R-0066 closes by its exit.
+
+**Proof.** The theory of the place of the arc runs at six landscape sizes with no exception: no item of the arc lies on the
+rows, no tool that shows lies under a rectangle of the proposal or under the band, which the test builds from the ring and the
+end circles, and under 1025 pixels wide the ring of the arc moves right of the rows. Three injections each failed the theory;
+each file came back byte for byte. A run after the injections used the last injected build; a rebuild gave 720 of 720. The
+phone project builds with zero warnings. Run 43583302921 passed on the branch. The failed runs since the entry v0.372, from the API:
+none on a branch; 43562165193 on `main` stays red until the owner runs it again.
+
+**What stays.** More tools hide while a proposal waits. Only the pictures at 800 by 600 and 900 by 600 were seen.
+
+New tests: 0. The test list holds 2685 (1580 in `Engine.Tests`, 382 in `3DEngine.Tests`, 720 in `3DEngine.ImageTests`, 3
+in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
+entries: 13 of 15. New diagnostic codes: 0. Since the review of v0.363, 3 product milestones and 10 entries followed it.
