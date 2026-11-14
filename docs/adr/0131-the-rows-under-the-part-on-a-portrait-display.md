@@ -55,7 +55,8 @@ its Q4 A: the controls of a selected body leave the panel.
    area. They take the room from the middle of the display down to 8 pixels above the top of the corner ring of the last
    frame, or above the anchors with no ring, and their last row is on the bottom of that room. While a proposal shows,
    the room ends 8 pixels above the sheet of the last frame (ADR-0111 item 4). A row that has no room does not show, as on
-   a landscape display; its chip stays. The first row always shows: when the room is lower than it, it moves up, and not
+   a landscape display; its chip stays. The row of a cut and the row "Hidden too" (item 3) come right after the first row
+   and always show, because the ring and the command line of a portrait display hold no cut. The first rows always show: when the room is lower than it, it moves up, and not
    above the top of the panel, so it covers no tool of the ring and no part of the sheet. A sheet that has no room above the
    ring covers the ring, as ADR-0111 item 4 permits.
 2. **The chips (amends ADR-0084 item 4).** A chip that the placement puts on rows under the part goes above them, because
@@ -87,3 +88,5 @@ No person used the change on a tablet or on the S23.
 - 2026-11-14 · TASK-0360 · The record, from gap H3 and Q4 A of the comparison at the other sizes, under the order of the
   owner of 2026-11-14.
 - 2026-11-14 · TASK-0360 · Shipped at v0.345.
+- 2026-11-14 · TASK-0360 · Item 1: the row of a cut and the row "Hidden too" come right after the first row on a portrait
+  display and always show; the review of the branch found no room for the cut on a phone with a ring and a value.
