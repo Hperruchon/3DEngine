@@ -381,6 +381,8 @@ Therefore each approved objective must have a track here.
   lies on no other label and fits inside the display. v0.347, TASK-0363, ADR-0132.
 - P0.147 — The medium and low findings of the codebase review of 2026-11-14 (b): "Undo" of the line after an accept goes
   at the next step, no plate is under the arc of a proposal, and the mix test checks Reject and Accept. v0.348, TASK-0362.
+- R18m — The caption of a proposal on the band of its arc, along its top, and the command lines under the arc off each
+  chip; the arc on a portrait display is row R18o. v0.349, TASK-0364, ADR-0133.
 - P0.143 — The low findings of the codebase review of 2026-11-11: a triangle of zero area adds no edge, and a mesh of
   more than 100 000 triangles finds its edges on the thread pool. v0.332, TASK-0345, ADR-0121.
 - Review — The codebase review of 2026-11-12. v0.333, TASK-0349.
