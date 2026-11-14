@@ -1,11 +1,11 @@
 ---
 id: 0370
 title: A button "Views" opens a net of the six flat views and the 3D view, and the keys 1, 3, 7 and 0 give them
-status: Done
+status: Active
 phase: R21b
 opened: 2026-11-14
 depends-on: [0369]
-governed-by: [0007, 0009, 0017, 0019, 0022, 0023, 0025, 0026, 0027, 0029, 0030, 0032, 0034, 0038, 0041, 0072, 0073, 0075, 0076, 0077, 0078, 0080, 0081, 0082, 0083, 0084, 0085, 0086, 0087, 0089, 0091, 0092, 0093, 0097, 0098, 0099, 0100, 0101, 0102, 0104, 0105, 0106, 0107, 0108, 0110, 0111, 0113, 0114, 0116, 0117, 0119, 0120, 0123, 0124, 0125, 0127, 0129, 0130, 0131, 0135, 0137, 0138]
+governed-by: [0007, 0009, 0017, 0019, 0022, 0023, 0025, 0026, 0027, 0029, 0030, 0032, 0034, 0038, 0041, 0072, 0073, 0075, 0076, 0077, 0078, 0080, 0081, 0082, 0083, 0084, 0085, 0086, 0087, 0089, 0091, 0092, 0093, 0097, 0098, 0099, 0100, 0101, 0102, 0104, 0105, 0106, 0107, 0108, 0110, 0111, 0113, 0114, 0116, 0117, 0119, 0120, 0123, 0124, 0125, 0127, 0128, 0129, 0130, 0131, 0135, 0137, 0138]
 writes:
   create:
     - tasks/TASK-0370-the-controls-of-the-flat-views.md
@@ -15,6 +15,7 @@ writes:
   modify:
     - 3DEngine.App/Ui/DesktopUi.Fixed.cs
     - 3DEngine.App/Ui/DesktopUi.cs
+    - 3DEngine.App/Ui/DesktopUi.Command.cs
     - 3DEngine.App/NativeThreeDEngine.cs
     - 3DEngine.Core/Input/InputSamples.cs
     - 3DEngine.Vulkan/SdlInput.cs
@@ -69,7 +70,7 @@ Each flat view and the 3D view have a control at each size and on each device, a
 
 ## Outcome
 
-Status: Done · commit (the merge of the branch r21b-view-controls) · v0.355
+Status: Active
 
 ## Method
 
@@ -90,3 +91,8 @@ Weakest:    no person used the net; a view takes two taps, not one.
   injections each failed a named test. Each file came back byte for byte.
 - 2026-11-14: run 43562594395 passed on the work commit. The pictures show the net open over the front view at 1440 by
   900 and on a phone. Closed at v0.355.
+- 2026-11-14: reopened before the merge. The agent of the codebase review of 2026-11-14 (d) read the work commit and found
+  "not saved" of the top bar under the button "Views" at 360 pixels wide, and a digit in the two frames after Control and K
+  that gave a view before the field took the keys. The unit text is cut to the room left of the button, and the keys of the
+  views rest in the frame of Control and K and in the two frames after it. Two tests came in; two injections each failed
+  them. The main run of v0.354 is red on a flaky test, so the merge waits for the owner.

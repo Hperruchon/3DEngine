@@ -60,7 +60,9 @@ internal sealed unsafe partial class DesktopUi
             {
                 ImGui.TextUnformatted(program);
                 ImGui.SameLine(0f, 12f);
-                ImGui.TextDisabled(UnitText);
+                // ADR-0138 (phase R21b, TASK-0370): the top bar ends 12 pixels left of the button "Views"; the review of the branch
+                // found "not saved" under the button at 360 pixels wide.
+                ImGui.TextDisabled(Fit(UnitText, displaySize.X - 16f - _inset.Z - ViewsButtonWidth - 12f - left - ImGui.CalcTextSize(program).X - 12f));
             }
             else
             {
