@@ -1,7 +1,7 @@
 ---
 id: 0368
 title: On a portrait display the arc of a proposal is at the top, and a sheet of its lines is under it
-status: Active
+status: Done
 phase: R18o
 opened: 2026-11-14
 depends-on: [0365, 0366]
@@ -58,17 +58,17 @@ each tool of the corner ring is free.
 
 ## Acceptance criteria
 
-- [ ] ADR-0135 exists. ADR-0092, ADR-0111 and ADR-0131 show the amendment.
-- [ ] A test proves at 390 by 844 the arc at the top with Reject and Accept that take their taps, and the sheet under it.
-- [ ] A test proves at four phone sizes that each tool of the corner ring is free and takes its tap.
-- [ ] A test proves that no chip lies on the arc, the sheet or the rows, and that the rows stay under the sheet.
-- [ ] A clean build (`--no-incremental`) gives zero errors and zero warnings, and the phone project builds.
-- [ ] `dotnet test`, the write-set check and `eng/repo-gates` pass; continuous integration passes on the branch and on
+- [x] ADR-0135 exists. ADR-0092, ADR-0111 and ADR-0131 show the amendment.
+- [x] A test proves at 390 by 844 the arc at the top with Reject and Accept that take their taps, and the sheet under it.
+- [x] A test proves at four phone sizes that each tool of the corner ring is free and takes its tap.
+- [x] A test proves that no chip lies on the arc, the sheet or the rows, and that the rows stay under the sheet.
+- [x] A clean build (`--no-incremental`) gives zero errors and zero warnings, and the phone project builds.
+- [x] `dotnet test`, the write-set check and `eng/repo-gates` pass; continuous integration passes on the branch and on
       `main` after the merge.
 
 ## Outcome
 
-Status: Active
+Status: Done · commit (the merge of the branch r18o-portrait-arc) · v0.352
 
 ## Method
 
@@ -86,3 +86,5 @@ Weakest:    Reject and Accept are at the top of a phone, far from the thumb; no 
   sheet and the rows. The rows no longer read the top of the sheet, so that code went. Seven injections each failed a named
   test; the cover of the rows was caught only by the mix test at 390 by 844, with the dimension lines of the bracket. Each
   file came back byte for byte.
+- 2026-11-14: run 43557358502 passed on the work commit. The pictures of the mix test at 390 by 844 and 768 by 1024 show
+  the arc at the top, the sheet under it, the chip of the width free and the corner ring free. Closed at v0.352.
