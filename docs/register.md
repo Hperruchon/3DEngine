@@ -465,6 +465,18 @@ no place free of the tools of the ring, and lies on "Move" or "Set distance". A 
 Exit: a slice places the arc and its lines on a small landscape display with no row and no tool under them, with a test;
 or the owner accepts the compromise.
 
+
+### R-0067 · P10 changes the contract, and its eight questions wait for the owner
+- class: question
+- opened: 2026-11-14
+- due: 2026-12-14
+- extended: no
+- refs: `docs/proposals/2026-11-14-the-sheet-in-the-document.md`, `docs/adr/0118-the-2d-drawing-of-a-part.md` item 3, TASK-0386
+After R22c (v0.369) each product row waits for P10, the sheet in the Document. P10 adds a collection, records, commands and
+event kinds to `Engine.Contracts`, so its ADR and a question to the owner come first. The proposal gives Q1 to Q8, each with a
+recommended option: the record of a sheet, the paper, the direction and the scale of a view, a dimension and a lost dimension,
+the commands, and the source of a view.
+Exit: the owner answers Q1 to Q8, and the first commit of P10 records the answers with its ADR.
 ## Accepted compromises
 
 These are conditions that the project keeps permanently and by decision. They do not age.
