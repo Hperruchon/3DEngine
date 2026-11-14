@@ -1,7 +1,7 @@
 ---
 id: 0386
 title: The questions before P10 are a record, and the register holds them for the owner
-status: Active
+status: Done
 phase: P0.155
 opened: 2026-11-14
 depends-on: [0385]
@@ -47,13 +47,13 @@ The owner finds the questions of P10, each with a recommended option, in one pla
 
 ## Acceptance criteria
 
-- [ ] The proposal exists, and R-0067 names it.
-- [ ] `dotnet test`, the write-set check and `eng/repo-gates` pass; continuous integration passes on the branch and on
+- [x] The proposal exists, and R-0067 names it.
+- [x] `dotnet test`, the write-set check and `eng/repo-gates` pass; continuous integration passes on the branch and on
       `main` after the merge.
 
 ## Outcome
 
-Status: Active
+Status: Done · commit (the merge of the branch p0155-sheet-proposal) · v0.371
 
 ## Method
 
@@ -64,3 +64,5 @@ Weakest:    no answer is taken in the place of the owner, so P10 waits.
 ## Progress
 
 - 2026-11-14: opened after P0.154, branch p0155-sheet-proposal. R-0067 is free; the register holds 13 of 15 before it.
+- 2026-11-14: the branch started on the work commit of P0.154, before its close, so a merge (e80c9e8) brought that close;
+  the write-set check over the range passed with it. Run 43581017728 passed. Closed at v0.371.
