@@ -1,7 +1,7 @@
 ---
 id: 0364
 title: The caption of a proposal is on the band of its arc, and the command lines under the arc lie on no chip
-status: Active
+status: Done
 phase: R18m
 opened: 2026-11-14
 depends-on: [0362, 0363]
@@ -54,17 +54,17 @@ The caption of a proposal is on its arc, as the render, and no command line lies
 
 ## Acceptance criteria
 
-- [ ] ADR-0133 exists. ADR-0092 shows the amendment.
-- [ ] A test proves at three sizes that the caption is on the band, between Reject and Accept, along the arc.
-- [ ] A test proves that a long caption is cut on the arc and whole under it.
-- [ ] A test proves at two sizes, with the chip of the width at each place inside the ring, that no line lies on the chip.
-- [ ] A clean build (`--no-incremental`) gives zero errors and zero warnings, and the phone project builds.
-- [ ] `dotnet test`, the write-set check and `eng/repo-gates` pass; continuous integration passes on the branch and on
+- [x] ADR-0133 exists. ADR-0092 shows the amendment.
+- [x] A test proves at three sizes that the caption is on the band, between Reject and Accept, along the arc.
+- [x] A test proves that a long caption is cut on the arc and whole under it.
+- [x] A test proves at two sizes, with the chip of the width at each place inside the ring, that no line lies on the chip.
+- [x] A clean build (`--no-incremental`) gives zero errors and zero warnings, and the phone project builds.
+- [x] `dotnet test`, the write-set check and `eng/repo-gates` pass; continuous integration passes on the branch and on
       `main` after the merge.
 
 ## Outcome
 
-Status: Active
+Status: Done · commit (the merge of the branch r18m-caption-on-arc) · v0.349
 
 ## Method
 
@@ -79,3 +79,7 @@ Weakest:    a summary longer than about 35 characters shows two times; no person
   is cut at "75..." there and is whole at 1440 by 900. A rule that kept the lines off the history arc too was caught by no
   injection, because the history arc is out of the reach of the block, so the rule went. The arc on a portrait display (H5)
   changes the sheet and its tests, so it is row R18o.
+- 2026-11-14: four injections each failed a named test: no chips as obstacles, letters on a straight line, no whole
+  caption under the arc, and no cut. Each file came back byte for byte.
+- 2026-11-14: run 43552026024 passed on the work commit. The pictures of the mix test at 1280 by 720 and 1440 by 900 show the
+  caption on the arc and the chip of the width free. Closed at v0.349.
