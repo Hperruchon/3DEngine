@@ -67,3 +67,4 @@ view; the pull is computed.
 
 - 2026-11-14 · TASK-0374 · The record, from the findings V188 to V190 of the codebase review of 2026-11-14 (d), under the
   order of the owner of 2026-11-14.
+- 2026-11-14 · TASK-0374 · Shipped at v0.359.
