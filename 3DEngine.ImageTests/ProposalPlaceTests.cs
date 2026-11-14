@@ -135,4 +135,50 @@ public sealed class ProposalPlaceTests
         Assert.True(moved > 0, "No block moved left.");
         Assert.True(faults.Count == 0, string.Join("; ", faults));
     }
+
+    // Finding V186 of the codebase review of 2026-11-14 (d) (TASK-0373): on a small landscape display, with a selected face that
+    // gives the ring a tool more, and the body at sixteen places, no end of the arc and no word of an end lies on the target of
+    // a tool that shows; a tool under an end hides. Reject moves up from 235 degrees
+    // before a tool hides: at 832 by 384 and 915 by 412 it moves in at least one layout. Until TASK-0373 Reject lay on Move or
+    // Set distance at 832 by 384.
+    [Theory]
+    [InlineData(640, 360, false)]
+    [InlineData(800, 480, false)]
+    [InlineData(832, 384, true)]
+    [InlineData(915, 412, true)]
+    [InlineData(1280, 720, false)]
+    public void No_End_Of_The_Arc_Lies_On_A_Tool_That_Shows(int width, int height, bool rejectMoves)
+    {
+        var display = new Vector2(width, height);
+        var face = new FaceLine("Face +z of Bracket", true, []);
+        var faults = new List<string>();
+        var moved = 0;
+        for (var across = 0.35f; across <= 0.66f; across += 0.1f)
+        {
+            for (var down = 0.4f; down <= 0.71f; down += 0.1f)
+            {
+                using var ui = new DesktopUi("http://127.0.0.1:5180", Engine.Contracts.Document.Millimetre);
+                for (var frame = 0; frame < 3; frame++)
+                {
+                    ui.Route([]);
+                    ui.Frame(1f / 60f, display, Vector2.One, [Body], Bracket, null, face: face, ringCentre: new Vector2(width * across, height * down), history: Steps, proposals: [Card]);
+                }
+
+                var ends = new[] { DesktopUi.ProposalRejectItem, DesktopUi.ProposalAcceptItem }.Select(item => ui.ItemRectangle(item) ?? throw new InvalidOperationException($"No {item}."))
+                    .Concat(ui.ProposalWords).ToList();
+                var tools = Tools.Concat([DesktopUi.SketchOnFaceButtonLabel]).Select(label => (Label: label, Target: ui.RingTarget(label))).Where(entry => entry.Target is not null).ToList();
+                faults.AddRange(tools.SelectMany(tool => ends.Where(end => Meets(end, tool.Target!.Value)).Select(end => $"{across}/{down}: {tool.Label} {tool.Target} under {end}")));
+                // A tool that hides is not drawn: it has no label.
+                faults.AddRange(ui.HiddenTools.Where(label => ui.ItemRectangle(DesktopUi.RingTextItem(label)) is not null).Select(label => $"{across}/{down}: the hidden {label} is drawn"));
+                var ring = ui.ProposalRing ?? throw new InvalidOperationException("No ring.");
+                var reject = ends[0];
+                var angle = Math.Atan2(((reject.Y + reject.W) / 2) - ring.Centre.Y, ((reject.X + reject.Z) / 2) - ring.Centre.X) * 180 / Math.PI;
+                moved += angle < 0 && angle + 360 > 235.5 ? 1 : 0;
+            }
+        }
+
+        Assert.True(faults.Count == 0, string.Join("; ", faults));
+        if (rejectMoves)
+            Assert.True(moved > 0, $"{width}x{height}: Reject stays at 235 degrees in each layout.");
+    }
 }

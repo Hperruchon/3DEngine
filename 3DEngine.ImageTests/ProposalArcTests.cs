@@ -17,6 +17,9 @@ public sealed class ProposalArcTests
     private static readonly Vector2 Display = new(1440, 900);
     private static readonly Vector2 Low = new(720, 520);
 
+    // A small landscape display, as a phone turned on its side, where no angle of the arc frees its ends (finding V186).
+    private static readonly Vector2 Small = new(640, 360);
+
     private static readonly Guid Bracket = Guid.Parse("73000000-0000-0000-0000-000000000001");
     private static readonly LiveBody BracketBody = new(Bracket, "Extrude", "Bracket", true);
 
@@ -248,12 +251,14 @@ public sealed class ProposalArcTests
         void Step(params InputSample[] samples)
         {
             ui.Route(samples);
-            ui.Frame(1f / 60f, Display, Vector2.One, [BracketBody], Bracket, new DocumentLine("bracket", null), face: face, ringCentre: Low, proposals: [card]);
+            ui.Frame(1f / 60f, Small, Vector2.One, [BracketBody], Bracket, new DocumentLine("bracket", null), face: face, ringCentre: Small / 2f, proposals: [card]);
         }
 
         Step();
         Step();
         var ring = ui.ProposalRing ?? throw new InvalidOperationException("No ring.");
+        // Finding V186 (TASK-0373): at 640 by 360 no angle frees an end, so the tools under the ends hide.
+        Assert.NotEmpty(ui.HiddenTools);
         var onTools = 0;
         var words = ui.ProposalWords;
         foreach (var (item, word, expected) in new[] { (DesktopUi.ProposalRejectItem, words[0], (PanelAction)new RejectProposalAction(card.Id)), (DesktopUi.ProposalAcceptItem, words[1], new AcceptProposalAction(card.Id)) })
@@ -263,6 +268,10 @@ public sealed class ProposalArcTests
                 .Concat([Middle(word), new Vector2(word.X + 4, Middle(word).Y), new Vector2(word.Z - 4, Middle(word).Y)]);
             foreach (var at in points)
             {
+                // At 640 by 360 the rows lie on the word Reject (R-0066); a tap there is the tap of the rows.
+                static bool Inside(Vector4 box, Vector2 point) => point.X >= box.X && point.X < box.Z && point.Y >= box.Y && point.Y < box.W;
+                if (ui.PanelRectangles.Concat(ui.FixedRectangles).Concat(ui.RowsArea is { } rows ? [rows] : Array.Empty<Vector4>()).Any(box => Inside(box, at)))
+                    continue;
                 if (ring.At([DesktopUi.MoveLabel, DesktopUi.SetDistanceLabel, DesktopUi.HideLabel, DesktopUi.SketchOnFaceButtonLabel], at) is not null)
                     onTools++;
                 Step(new PointerSample(kind, 1, pointer, at.X, at.Y, 1, buttons, KeyModifiers.None, PointerPhase.Down, 0));
@@ -273,9 +282,9 @@ public sealed class ProposalArcTests
             }
         }
 
-        // Finding V184 (TASK-0367): the ends now lie on no target of a tool, so this scene has no point on a tool of the ring
-        // (onTools is 0); the guard of V160 stays for a ring with no angle that frees Accept.
-        Assert.True(onTools >= 0);
+        // The control: some points are on a tool of the ring. Finding V187 of the codebase review of 2026-11-14 (d) (TASK-0373):
+        // since ADR-0136 no end lies on a tool at 1440 by 900, so the scene is a display of 640 by 360, where no angle frees an end.
+        Assert.True(onTools >= 1, "No point is on a tool of the ring.");
     }
 
     // Items 3 to 6: the four command lines and "and N more", the count and the steps of undo, "1 of 3" when more proposals

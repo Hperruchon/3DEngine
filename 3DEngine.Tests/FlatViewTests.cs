@@ -138,4 +138,23 @@ public sealed class FlatViewTests
         var low = ThreeDEngine.Core.Gizmo.TranslateGizmo.WorldLength(camera, 600, 400, (10, 20, -100)) ?? throw new InvalidOperationException("No length.");
         Assert.Equal(high, low, 9);
     }
+
+    // Finding V185 of the codebase review of 2026-11-14 (d) (TASK-0373): a sketch that starts in a flat view leaves it, so the view
+    // of the sketch looks at its plane: from the top view, a sketch on the plane of x and z takes a point at the centre of the
+    // picture; from the front view, a sketch on the plane of x and y gives no flat view "Front" that looks down.
+    [Fact]
+    public void A_Sketch_Leaves_A_Flat_View()
+    {
+        var camera = Camera();
+        camera.ShowFlat(FlatView.Top);
+        ThreeDEngine.Core.Sketching.SketchCamera.Face(camera, (0, 1, 0), (0, 0, 0));
+        Assert.Null(camera.Flat);
+        var ray = Picker.RayThrough(camera, 300, 200, 600, 400);
+        Assert.NotNull(Picker.OnPlane(ray, (0, 0, 0), (1, 0, 0), (0, 0, 1)));
+
+        camera.ShowFlat(FlatView.Front);
+        ThreeDEngine.Core.Sketching.SketchCamera.Face(camera, (0, 0, 1), (0, 0, 0));
+        Assert.Null(camera.Flat);
+        Assert.True(camera.PitchDegrees > 80, $"The view of the sketch has a pitch of {camera.PitchDegrees}.");
+    }
 }
