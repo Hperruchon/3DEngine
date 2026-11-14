@@ -123,6 +123,15 @@ public sealed class Camera : Entity
         var eye = Eye();
         var (cx, cy, cz) = ((min.X + max.X) / 2.0 - eye.X, (min.Y + max.Y) / 2.0 - eye.Y, (min.Z + max.Z) / 2.0 - eye.Z);
         var reach = Math.Sqrt(cx * cx + cy * cy + cz * cz) + radius;
+        // Finding V189 of the codebase review of 2026-11-14 (d) (TASK-0374): the depth of a flat view is linear, and the edge
+        // lines pull by 0.002 of the distance to the far plane, so a flat view has its far plane just behind the box. Until
+        // TASK-0374 the far plane of at least 1000 gave a pull of about 2 mm on a part of 20 mm.
+        if (_flat is not null)
+        {
+            var behind = Math.Max(reach * 1.05, NearPlane * 4.0);
+            return double.IsFinite(behind) && behind < float.MaxValue ? (float)behind : float.MaxValue;
+        }
+
         var far = Math.Max(DefaultFarPlane, Math.Max(16.0 * radius, Math.Max(2.0 * reach, 2.0 * Distance)));
         return double.IsFinite(far) && far < float.MaxValue ? (float)far : float.MaxValue;
     }
@@ -207,6 +216,8 @@ public sealed class Camera : Entity
     public void ShowFlat(FlatView view)
     {
         _perspective ??= (YawDegrees, PitchDegrees);
+        if (_flat is null)
+            _flatScale = Distance;
         _flat = view;
         YawDegrees = view switch { FlatView.Right => 90.0, FlatView.Back => 180.0, FlatView.Left => 270.0, _ => 0.0 };
         PitchDegrees = view switch { FlatView.Top => MaximumPitchDegrees, FlatView.Bottom => MinimumPitchDegrees, _ => 0.0 };
@@ -248,7 +259,16 @@ public sealed class Camera : Entity
     /// ADR-0137 item 3: the size in the world of one unit of the screen at the target, the tangent of the half field of view
     /// times the distance. A flat view projects each point at this scale, whatever its depth.
     /// </summary>
-    public double HalfHeight => Distance * Math.Tan(FieldOfViewDegrees * Math.PI / 360.0);
+    public double HalfHeight => ScaleDistance * Math.Tan(FieldOfViewDegrees * Math.PI / 360.0);
+
+    /// <summary>
+    /// Finding V188 of the codebase review of 2026-11-14 (d) (TASK-0374): the distance whose field of view gives the scale of the
+    /// picture: the distance with perspective, and in a flat view a scale of its own, which a zoom changes while the eye stays
+    /// where Frame put it. Until TASK-0374 a zoom of ten times in a flat view put the eye inside the part.
+    /// </summary>
+    public double ScaleDistance => _flat is null ? Distance : _flatScale;
+
+    private double _flatScale = 10.0;
 
     /// <summary>
     /// Turns the camera about its target. The pitch stays between -89 and 89 degrees. ADR-0137 item 2: an orbit leaves a
@@ -267,6 +287,13 @@ public sealed class Camera : Entity
         if (!(double.IsFinite(factor) && factor > 0))
             throw new ArgumentOutOfRangeException(nameof(factor), factor, "A zoom factor is finite and positive.");
 
+        // Finding V188: in a flat view a zoom changes the scale only.
+        if (_flat is not null)
+        {
+            _flatScale = Math.Max(_flatScale * factor, NearPlane * 0.01);
+            return;
+        }
+
         Distance = ClampDistance(Distance * factor);
     }
 
@@ -281,7 +308,7 @@ public sealed class Camera : Entity
             throw new ArgumentOutOfRangeException(nameof(pictureHeight), "A picture height is positive.");
 
         // The size of one pixel at the depth of the target.
-        var scale = 2.0 * Distance * Math.Tan(FieldOfViewDegrees * Math.PI / 360.0) / pictureHeight;
+        var scale = 2.0 * HalfHeight / pictureHeight;
 
         // The right and up directions of the view, from the eye toward the target (ADR-0137 item 3: from Axes, so a flat
         // view from the top pans along its exact axes).
@@ -343,6 +370,7 @@ public sealed class Camera : Entity
         var filled = Math.Atan(half * FrameFill);
 
         Distance = ClampDistance(radius / Math.Sin(filled));
+        _flatScale = Distance;
         return Distance - radius >= NearPlane && Distance + radius <= FarPlane;
     }
 
@@ -350,7 +378,7 @@ public sealed class Camera : Entity
     // two planes are close, the lower limit wins; until TASK-0074 Math.Clamp threw
     // there, and the throw in the event loop ended the desktop (V11).
     private double ClampDistance(double distance)
-        => Math.Max(NearPlane * 2.0, Math.Min(distance, FarPlane / 2.0));
+        => _flat is not null ? Math.Max(NearPlane * 2.0, distance) : Math.Max(NearPlane * 2.0, Math.Min(distance, FarPlane / 2.0));
 
     /// <summary>The position of the eye, in double precision.</summary>
     public (double X, double Y, double Z) Eye()

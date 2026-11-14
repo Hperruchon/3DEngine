@@ -269,7 +269,7 @@ public static class TranslateGizmo
         {
             var (right, up, forward) = camera.Axes();
             return new View(camera.Eye(), right, up, forward, Math.Tan(camera.FieldOfViewDegrees * Math.PI / 360.0), width, height, camera.NearPlane,
-                camera.Flat is null ? null : camera.Distance, camera.Shift);
+                camera.Flat is null ? null : camera.ScaleDistance, camera.Shift);
         }
 
         public double Depth((double X, double Y, double Z) p) => Dot(Minus(p, Eye), Forward);
