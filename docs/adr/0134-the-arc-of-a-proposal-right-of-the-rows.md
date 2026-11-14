@@ -60,3 +60,4 @@ the tools. Under 1024 pixels wide, as at 900 by 600, the arc still lies on the r
 
 - 2026-11-14 · TASK-0365 · The record, from gap H2 of the comparison at the other sizes, under the order of the owner of
   2026-11-14.
+- 2026-11-14 · TASK-0365 · Shipped at v0.350.

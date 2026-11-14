@@ -383,6 +383,8 @@ Therefore each approved objective must have a track here.
   at the next step, no plate is under the arc of a proposal, and the mix test checks Reject and Accept. v0.348, TASK-0362.
 - R18m — The caption of a proposal on the band of its arc, along its top, and the command lines under the arc off each
   chip; the arc on a portrait display is row R18o. v0.349, TASK-0364, ADR-0133.
+- R18n — The ring of the arc of a proposal moves right of the rows of the selected body, and the command lines keep off
+  the tools of the ring. v0.350, TASK-0365, ADR-0134.
 - P0.143 — The low findings of the codebase review of 2026-11-11: a triangle of zero area adds no edge, and a mesh of
   more than 100 000 triangles finds its edges on the thread pool. v0.332, TASK-0345, ADR-0121.
 - Review — The codebase review of 2026-11-12. v0.333, TASK-0349.
