@@ -91,6 +91,30 @@ public sealed class FreeSizeTests
         Assert.DoesNotContain(rectangle, value => value.Free || value.Reference);
     }
 
+    // ADR-0151 item 1 (phase P0.156, TASK-0387): a plate of 60 by 40 with values on its bottom and its right side and no
+    // direction constraint has two free sides. From the top both show "not fixed". From the front the free top side lies
+    // behind the bottom side, whose value shows, so it does not show again, and the free left side is along the view.
+    [Theory]
+    [InlineData(FlatView.Top, new[] { 40.0, 60.0 })]
+    [InlineData(FlatView.Front, new double[0])]
+    [InlineData(FlatView.Back, new double[0])]
+    public async Task A_Free_Size_On_The_Line_Of_A_Shown_Value_Does_Not_Show(FlatView view, double[] expected)
+    {
+        var values = await ValuesOf(view, [(0, 0), (60, 0), (60, 40), (0, 40)], [(0, 60.0), (1, 40.0)], directions: false);
+
+        Assert.Equal(expected, values.Where(value => value.Free).Select(value => value.Number).Order());
+    }
+
+    // ADR-0151 item 1: with a value on its bottom only, the left side and the right side of the plate are free and lie on one
+    // line from the right, so that view gives one free size, not two.
+    [Fact]
+    public async Task Two_Free_Sizes_On_One_Line_Show_One_Time()
+    {
+        var values = await ValuesOf(FlatView.Right, [(0, 0), (60, 0), (60, 40), (0, 40)], [(0, 60.0)], directions: false);
+
+        Assert.Equal(new[] { 40.0 }, values.Where(value => value.Free).Select(value => value.Number));
+    }
+
     // Item 2: in the window a free size has a chip and no row, and a tap on it opens no pad and sends nothing.
     [Fact]
     public void A_Free_Size_Has_A_Chip_And_No_Row_And_No_Pad()

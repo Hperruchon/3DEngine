@@ -153,9 +153,10 @@ names. Do not read all of them.
 | [0145](0145-the-place-of-a-line-along-the-axis.md) | A line of a curved side keeps its place along the axis, an axis within 1e-9 of the view is along it, and Frame leaves a window at the right | Amended | Kernel, drawing, clients | 0140, 0143, 0144 | 0147 |
 | [0146](0146-a-value-shows-where-its-length-is-true.md) | In a flat view a value shows only where its length is true, and row R22 splits into four slices | Amended | Clients, drawing | 0082 | 0148, 0149 |
 | [0147](0147-an-end-within-1e-9-of-across-the-view.md) | An end within 1e-9 of across the view is one line on its diameter | Accepted | Kernel, drawing | 0143, 0145 | — |
-| [0148](0148-the-reference-of-a-chain.md) | A line that closes a chain of the design shows its reference in parentheses, and each value keeps its row in each view | Amended | Clients, drawing | 0146 | 0149 |
-| [0149](0149-a-size-that-no-constraint-fixes.md) | The solver finds the lengths that the constraints fix, and a flat view shows a length that no constraint fixes in amber | Accepted | Kernel, clients, drawing | 0146, 0148 | — |
+| [0148](0148-the-reference-of-a-chain.md) | A line that closes a chain of the design shows its reference in parentheses, and each value keeps its row in each view | Amended | Clients, drawing | 0146 | 0149, 0151 |
+| [0149](0149-a-size-that-no-constraint-fixes.md) | The solver finds the lengths that the constraints fix, and a flat view shows a length that no constraint fixes in amber | Amended | Kernel, clients, drawing | 0146, 0148 | 0151 |
 | [0150](0150-the-command-key-of-macos.md) | On macOS the Command key gives the modifier of the shortcuts, and the command line shows "Cmd K" | Accepted | Clients, input | 0108 | — |
+| [0151](0151-a-size-on-the-line-of-a-shown-value.md) | A free size or a reference on the line of a value that the view shows does not show again | Accepted | Clients, drawing | 0148, 0149 | — |
 
 ## Topics
 

@@ -1,13 +1,13 @@
 ---
 id: 0149
 title: The solver finds the lengths that the constraints fix, and a flat view shows a length that no constraint fixes in amber
-status: Accepted
+status: Amended
 topic: Kernel, clients, drawing
 date: 2026-11-14
 supersedes: []
 superseded-by: []
 amends: ['0146', '0148']
-amended-by: []
+amended-by: ['0151']
 affects:
   - Engine.Core/Sketch/SketchSolver.cs
   - Engine.Core/Queries/GetSketchQuery.cs
@@ -67,3 +67,5 @@ A free size of a point between two lines that is not a line has no chip.
 - 2026-11-14 · TASK-0384 · The record, from row R22c and the renders of 2026-11-10, under the order of the owner of
   2026-11-14.
 - 2026-11-14 · TASK-0384 · Shipped at v0.369.
+- 2026-11-14 · TASK-0387 · ADR-0151 item 1 amends item 2: a free size on the line of a value that the view shows, or of a
+  free size already given, does not show.
