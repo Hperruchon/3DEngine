@@ -7,7 +7,7 @@ date: 2026-11-12
 supersedes: []
 superseded-by: []
 amends: ['0083', '0093', '0098']
-amended-by: ['0129']
+amended-by: ['0129', '0138']
 affects:
   - 3DEngine.App/StepTexts.cs
   - 3DEngine.App/NativeThreeDEngine.cs
@@ -119,3 +119,5 @@ change in the window.
 - 2026-11-12 · TASK-0354 · Shipped at v0.339.
 - 2026-11-14 · TASK-0356 · ADR-0129 item 3 amends item 2: the window expects the text of a step for the identifier of its
   command, not for its name (finding V177 of the codebase review of 2026-11-14).
+- 2026-11-14 · TASK-0370 · ADR-0138 item 2 amends item 4: on a landscape display the row of the anchors holds "Views"
+  after Redo, before the step of Undo.

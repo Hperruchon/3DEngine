@@ -121,6 +121,11 @@ public sealed unsafe class SdlInput
             SDL_Scancode.SDL_SCANCODE_ESCAPE => InputKey.Escape,
             SDL_Scancode.SDL_SCANCODE_TAB => InputKey.Tab,
             SDL_Scancode.SDL_SCANCODE_H => InputKey.H,
+            // ADR-0138 (phase R21b, TASK-0370): the digits of the views by the place of the key, on the top row and on the pad.
+            SDL_Scancode.SDL_SCANCODE_0 or SDL_Scancode.SDL_SCANCODE_KP_0 => InputKey.Digit0,
+            SDL_Scancode.SDL_SCANCODE_1 or SDL_Scancode.SDL_SCANCODE_KP_1 => InputKey.Digit1,
+            SDL_Scancode.SDL_SCANCODE_3 or SDL_Scancode.SDL_SCANCODE_KP_3 => InputKey.Digit3,
+            SDL_Scancode.SDL_SCANCODE_7 or SDL_Scancode.SDL_SCANCODE_KP_7 => InputKey.Digit7,
             _ => null,
         };
 

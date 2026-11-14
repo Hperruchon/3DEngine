@@ -90,8 +90,16 @@ public class MixImageTests
     [VulkanImageFact]
     public Task The_Selected_Bracket_Draws_In_The_Top_View() => Draw("mix-top.png", null, flat: ThreeDEngine.Core.Models.FlatView.Top);
 
+    // ADR-0138 (phase R21b, TASK-0370): the net of the views open over the bracket in the view from the front, at 1440 by 900 and
+    // on a phone.
+    [VulkanImageFact]
+    public Task The_Net_Of_The_Views_Draws_Over_The_Front_View() => Draw("mix-views.png", null, flat: ThreeDEngine.Core.Models.FlatView.Front, views: true);
+
+    [VulkanImageFact]
+    public Task The_Net_Of_The_Views_Draws_On_A_Phone() => Draw("mix-views-390x844.png", null, frameWidth: 390, frameHeight: 844, flat: ThreeDEngine.Core.Models.FlatView.Front, views: true);
+
     private static async Task Draw(string name, Func<Guid, Guid, IReadOnlyList<ProposalCard>>? proposal, bool sketchActive = false, bool pending = false, uint frameWidth = Width, uint frameHeight = Height,
-        ThreeDEngine.Core.Models.FlatView? flat = null)
+        ThreeDEngine.Core.Models.FlatView? flat = null, bool views = false)
     {
         var messagesBefore = GraphicsDevice.ValidationMessageCount;
         using var host = new EngineHost(new Engine.Geometry.Manifold.ManifoldGeometryBackend());
@@ -132,6 +140,9 @@ public class MixImageTests
             camera.Frame(bounds.Min, bounds.Max, (float)frameWidth / frameHeight);
             if (flat is { } view)
                 camera.ShowFlat(view);
+            ui.ShowView(camera.Flat);
+            if (views)
+                ui.OpenViews();
             renderer.Update(scene, camera, (float)frameWidth / frameHeight);
 
             var extent = renderer.BoxOf(body) ?? throw new InvalidOperationException("The body has no mesh.");

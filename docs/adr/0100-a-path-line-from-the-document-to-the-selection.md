@@ -7,7 +7,7 @@ date: 2026-11-09
 supersedes: []
 superseded-by: []
 amends: ['0075', '0077', '0093', '0099', '0102']
-amended-by: ['0101']
+amended-by: ['0101', '0138']
 affects:
   - 3DEngine.App/BodyActions.cs
   - 3DEngine.App/NativeThreeDEngine.cs
@@ -112,3 +112,5 @@ line in this window yet.
 - 2026-11-10 · TASK-0314 · Shipped at v0.316.
 - 2026-11-10 · TASK-0315 · Amended by ADR-0101 items 4 and 6: the path line shows "Focus" and a close mark,
   and with a focus Escape ends the focus before it clears the body.
+- 2026-11-14 · TASK-0370 · ADR-0138 item 2 amends item 1: on a portrait display the path line ends 12 pixels left of the
+  button "Views" at the upper right.

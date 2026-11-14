@@ -1,13 +1,13 @@
 ---
 id: 0137
 title: The camera has six flat views with no perspective, and the command line gives each one
-status: Accepted
+status: Amended
 topic: Rendering, clients
 date: 2026-11-14
 supersedes: []
 superseded-by: []
 amends: ['0023']
-amended-by: []
+amended-by: ['0138']
 affects:
   - 3DEngine.Core/Models/Camera.cs
   - 3DEngine.Core/Picking/Picker.cs
@@ -80,3 +80,5 @@ R21b.
 
 - 2026-11-14 · TASK-0369 · The record, from row R21 and ADR-0118 item 2, under the order of the owner of 2026-11-14.
 - 2026-11-14 · TASK-0369 · Shipped at v0.354.
+- 2026-11-14 · TASK-0370 · ADR-0138 item 2 amends item 5: the controls of R21b are a button "Views" and a net, so a view
+  takes two taps.

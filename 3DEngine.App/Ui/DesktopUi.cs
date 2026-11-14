@@ -468,7 +468,11 @@ internal sealed unsafe partial class DesktopUi : IDisposable
 
         // ADR-0127 item 4 (phase R18g, TASK-0354): F frames, while no field, no pad and no home screen takes the keys.
         if (_pad is null && !_textActive && _home is null)
+        {
             WatchFrameKey(samples);
+            // ADR-0138 (phase R21b, TASK-0370): the keys of the flat views, under the same guard.
+            WatchViewKeys(samples);
+        }
 
         // ADR-0032 item 6: while the pad is open, it takes each key and each text of the frame.
         var (panel, intents) = _router.Route(samples, OverPanel, _textActive || _pad is not null);
@@ -639,6 +643,9 @@ internal sealed unsafe partial class DesktopUi : IDisposable
             FixedControls(displaySize, bodies, document, selectedBody);
             // ADR-0098 (TASK-0312): the command line.
             CommandLine(displaySize, bodies, selection);
+            // ADR-0138 (phase R21b, TASK-0370): the net of the flat views, under the command line, before the rows, the ring and
+            // the chips, so that they read its rectangle.
+            Views(displaySize);
             // ADR-0084 (TASK-0267): the rows of the selected body come first, so that the ring and the chips read them.
             PlaceRows(displaySize, selectedBody, selection is null ? null : values, bodies, document, history);
             // ADR-0081 (TASK-0253): the tool ring of the selected body, around the centre of its box on the screen.

@@ -72,6 +72,13 @@ public enum InputKey
 
     // With no Control: the view shows each visible body (ADR-0127 item 4, TASK-0354).
     F,
+
+    // ADR-0138 (phase R21b, TASK-0370): the keys of the flat views, by the place of the key, so an AZERTY keyboard needs no
+    // Shift: 1 Front, 3 Right and 7 Top, with Control the opposite view, and 0 the 3D view.
+    Digit0,
+    Digit1,
+    Digit3,
+    Digit7,
 }
 
 // One sample, at a time in nanoseconds of one clock of the host.

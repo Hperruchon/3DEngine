@@ -240,6 +240,18 @@ public unsafe class SdlInputTests
             sample => Assert.Equal((InputKey.F, KeyModifiers.None), (((KeySample)sample).Key, ((KeySample)sample).Modifiers)));
     }
 
+    // ADR-0138 (phase R21b, TASK-0370): the digits of the views follow the place of the key, on the top row and on the pad, so
+    // an AZERTY keyboard gives them with no Shift; 2 gives no sample.
+    [Fact]
+    public void The_Digits_Of_The_Views_Follow_The_Place_Of_The_Key()
+    {
+        var input = new SdlInput();
+        foreach (var code in new[] { SDL_Scancode.SDL_SCANCODE_1, SDL_Scancode.SDL_SCANCODE_KP_3, SDL_Scancode.SDL_SCANCODE_7, SDL_Scancode.SDL_SCANCODE_KP_0, SDL_Scancode.SDL_SCANCODE_2 })
+            input.Translate(Key(SDL_EventType.SDL_EVENT_KEY_DOWN, code), 800, 600);
+
+        Assert.Equal([InputKey.Digit1, InputKey.Digit3, InputKey.Digit7, InputKey.Digit0], input.TakeFrame().Select(sample => ((KeySample)sample).Key));
+    }
+
     private static SDL_Event Letter(SDL_Scancode code, uint letter)
     {
         var e = Key(SDL_EventType.SDL_EVENT_KEY_DOWN, code);

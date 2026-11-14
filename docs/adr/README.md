@@ -105,7 +105,7 @@ names. Do not read all of them.
 | [0097](0097-the-rows-of-a-sketch-take-the-place-of-the-panel.md) | The rows of an active sketch take the place of the panel, and its ring is on the right | Amended | Clients, sketch | 0034, 0086, 0087 | 0120 |
 | [0098](0098-the-command-line.md) | The command line at the upper right runs the commands of the state with Control and K | Amended | Clients, rendering | 0032, 0084 | 0099, 0101, 0108, 0113, 0119, 0120, 0127, 0128 |
 | [0099](0099-the-rows-of-a-selected-body-take-the-place-of-the-panel.md) | The rows of a selected body take the place of the panel at the upper left | Amended | Clients, rendering | 0084, 0093, 0098 | 0100, 0117, 0131 |
-| [0100](0100-a-path-line-from-the-document-to-the-selection.md) | A path line from the document to the selection, and the rows of the document | Amended | Clients, selection | 0075, 0077, 0093, 0099, 0102 | 0101 |
+| [0100](0100-a-path-line-from-the-document-to-the-selection.md) | A path line from the document to the selection, and the rows of the document | Amended | Clients, selection | 0075, 0077, 0093, 0099, 0102 | 0101, 0138 |
 | [0101](0101-a-focus-on-one-body.md) | A focus on one body is a state of the client that draws one body and writes nothing to the log | Accepted | Clients, selection | 0081, 0098, 0100 | — |
 | [0102](0102-a-project-in-any-folder.md) | The window opens and saves a project in any folder, through the dialogs of the system | Amended | Persistence, clients | 0030, 0083 | 0100, 0106 |
 | [0103](0103-the-vision-library-stays-in-the-spike-on-opencvsharp5.md) | The vision library stays in the spike, on OpenCvSharp5 | Accepted | Vision | 0042 | — |
@@ -132,7 +132,7 @@ names. Do not read all of them.
 | [0124](0124-the-selection-after-a-hide-and-the-hidden-bodies-in-the-status-line.md) | The selection after a hide, and the hidden bodies in the status line | Amended | Clients, rendering | 0029, 0093 | 0129 |
 | [0125](0125-each-dimension-says-what-it-measures.md) | Each dimension says what it measures, on a plate outside its box, and no control covers it | Amended | Clients, rendering | 0056 | 0129 |
 | [0126](0126-assemblies-with-joints-and-geometric-checks.md) | Assemblies with joints and their geometric checks have a date after P10c, and a load check follows them | Accepted | Charter, assembly | — | — |
-| [0127](0127-the-fixed-controls-and-the-status-as-in-the-render.md) | The row of the anchors holds Undo, Redo and the step of Undo, and the status gives the log, the agent and the save | Amended | Clients, rendering | 0083, 0093, 0098 | 0129 |
+| [0127](0127-the-fixed-controls-and-the-status-as-in-the-render.md) | The row of the anchors holds Undo, Redo and the step of Undo, and the status gives the log, the agent and the save | Amended | Clients, rendering | 0083, 0093, 0098 | 0129, 0138 |
 | [0128](0128-a-value-typed-in-the-command-line-goes-to-its-pad.md) | A value typed in the command line goes to the pad of its value, through the evaluator | Accepted | Clients, rendering | 0098 | — |
 | [0129](0129-the-findings-of-the-review-of-2026-11-14.md) | The list of the hidden bodies fits the display, a stuck plate stays at its place, and a step text follows its command | Accepted | Clients, rendering | 0109, 0124, 0125, 0127 | — |
 | [0130](0130-the-proposal-in-the-window-as-in-the-render.md) | A proposal shows its values in the rows, a pending node on the history arc, a glow on the edges and Undo after an accept | Accepted | Clients, rendering | 0092, 0104, 0110 | — |
@@ -142,7 +142,8 @@ names. Do not read all of them.
 | [0134](0134-the-arc-of-a-proposal-right-of-the-rows.md) | The arc of a proposal moves right of the rows of the selected body, and its lines keep off the tools of the ring | Accepted | Clients, rendering | 0092, 0133 | — |
 | [0135](0135-the-arc-of-a-proposal-on-a-portrait-display.md) | On a portrait display the arc of a proposal is at the top, and a sheet of its lines is under it | Accepted | Clients, rendering | 0092, 0111, 0131 | — |
 | [0136](0136-the-arc-ends-before-the-tools-and-the-caption-wraps.md) | The arc of a proposal ends before each tool of the ring, and the whole caption under it wraps | Accepted | Clients, rendering | 0092, 0133 | — |
-| [0137](0137-the-flat-views-of-the-camera.md) | The camera has six flat views with no perspective, and the command line gives each one | Accepted | Rendering, clients | 0023 | — |
+| [0137](0137-the-flat-views-of-the-camera.md) | The camera has six flat views with no perspective, and the command line gives each one | Amended | Rendering, clients | 0023 | 0138 |
+| [0138](0138-the-controls-of-the-flat-views.md) | A button "Views" opens a net of the six flat views and the 3D view, and the keys 1, 3, 7 and 0 give them | Accepted | Clients | 0100, 0127, 0137 | — |
 
 ## Topics
 
