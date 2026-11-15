@@ -966,6 +966,8 @@ public sealed class NativeThreeDEngine : IThreeDEngine, IDisposable
         _ui.ShowQuestion(_projects?.Asking ?? false);
         // ADR-0127 items 1 to 3 (phase R18g, TASK-0354): the log, the agent, the step of Undo, and "saved" when the document has
         // its own file; a host with no folder of documents says nothing of a save.
+        // ADR-0138 (phase R21b, TASK-0370): the view of the camera, for the cell of the net that has the colour of a tool in use.
+        _ui.ShowView(Camera.Flat);
         _ui.ShowStatus(new SessionStatus(_steps.LogCount, _host.Listeners > 0, _steps.Undo, _projects is null ? null : _host.FileName is not null));
         _cards = proposals;
         var panel = _ui.Frame((float)_delta.TotalSeconds, display, scale, _renderer.LiveBodies, Selection, LineOf(_document, _host.FileName, _documentMessage, Path.GetDirectoryName(_host.Session.FilePath), _host.Session.Kind), sketches, sketchPanel, imagePanel, dimensions, size, faceLine, ringCentre, ringSize, Inset(_window.SafeInsets), values, history, proposals, sketchValues);

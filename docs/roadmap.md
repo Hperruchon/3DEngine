@@ -392,6 +392,8 @@ Therefore each approved objective must have a track here.
   and the arc ends before each tool of the ring. v0.353, TASK-0367, ADR-0136.
 - R21a — The six flat views of the camera with no perspective, one source of the axes for the view, the pick, the overlay
   and the gizmo, and the commands of the views in the command line. v0.354, TASK-0369, ADR-0137.
+- R21b — A button "Views" opens a net of the six flat views and the 3D view, and the keys 1, 3, 7 and 0 give them.
+  v0.355, TASK-0370, ADR-0138.
 - Review — The codebase review of 2026-11-14 (c). v0.351, TASK-0366.
 - P0.143 — The low findings of the codebase review of 2026-11-11: a triangle of zero area adds no edge, and a mesh of
   more than 100 000 triangles finds its edges on the thread pool. v0.332, TASK-0345, ADR-0121.
@@ -684,7 +686,7 @@ The first objective. Each phase ends with something that a person can observe.
 | R20c | Each dimension says what it measures: the selected piece in the colour of the selection with its name, the whole in a neutral colour with "Overall", each label on a plate outside the silhouette, and no label under the status line, the ring or the history arc (improvement C, problems 3 and 4; amends ADR-0056). After R18c. TASK-0352 (ADR-0125). | 1–2 |
 | R21 | The flat views in the window: a front, a top, a side and the other three views with no perspective, one tap each, and a return to the 3D view; Frame fills the free part of the scene (ADR-0118 item 2; Q5 A of 2026-11-10; problem 6 of the UX test). After R18. | 2–3 |
 | R21a | The flat views of the camera with no perspective, one source of the axes for the view, the pick, the overlay and the gizmo, and the commands of the views in the command line (ADR-0137). After R18. TASK-0369. | 1 |
-| R21b | The controls of one tap for the six flat views and the return to the 3D view, and the keys of the views (ADR-0137 item 5). After R21a. | 1 |
+| R21b | The controls of the six flat views and of the return to the 3D view, a button "Views" and a net, and the keys of the views (ADR-0137 item 5, ADR-0138). After R21a. TASK-0370. | 1 |
 | R21c | Frame fills the free part of the scene, between the panels, the rows and the ring (ADR-0118 item 2; problem 6 of the UX test). After R21b. | 1 |
 | R22 | The right dimensions on a flat view: the values of the design, each one time in a view where its length is true, a chain with one reference in parentheses, a separate form for a size that no constraint fixes and for a lost value, and the place of each dimension proposed by the agent (ADR-0118 item 5). After K9. It needs a search of the free parts of a sketch in the solver. | 3–5 |
 | R23 | A joint in the window: a rotation handle on a pivot and a pad for the angle, one `Rotate` at the end of a drag, and the contact and the envelope of the checks in the view. After P11. | 2 |
