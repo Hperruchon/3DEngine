@@ -92,6 +92,9 @@ public sealed class DocumentFileTests : IDisposable
         ["AddSketchReference"] = new AddSketchReferenceCommand { SketchId = Guid.NewGuid(), FeatureId = Guid.NewGuid(), Element = "sideEdge", ItemId = Guid.NewGuid() },
         ["AddPartReference"] = new AddPartReferenceCommand { Part = new string('b', 64), Version = 7, X = -2.5, Y = 0.125, Z = 1e-3 },
         ["ImportStl"] = new ImportStlCommand { Asset = new string('c', 64), BodyName = "bracket.stl" },
+        ["CreateSheet"] = new CreateSheetCommand { SheetName = "Sheet 1", Paper = "A3", Landscape = false, ThirdAngle = true },
+        ["RenameSheet"] = new RenameSheetCommand { SheetId = Guid.NewGuid(), SheetName = "Bracket" },
+        ["RemoveSheet"] = new RemoveSheetCommand { SheetId = Guid.NewGuid() },
     };
 
     // ADR-0015 item 11: each handler has an encoder, and Create(Encode(c)) gives c.

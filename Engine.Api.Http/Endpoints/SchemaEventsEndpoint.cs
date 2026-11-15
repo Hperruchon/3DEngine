@@ -60,6 +60,11 @@ internal static class SchemaEventsEndpoint
         ("imageId", "guid"), ("asset", "string"), ("datumId", "guid"), ("originU", "number"), ("originV", "number"),
         ("width", "integer"), ("height", "integer"), ("scale", "number"));
 
+    // ADR-0153 item 1 (phase P10.1, TASK-0389): sheet.created and sheet.changed carry the whole record of the sheet.
+    private static readonly IReadOnlyDictionary<string, FieldSchema> SheetFields = Fields(
+        ("sheetId", "guid"), ("name", "string"), ("paper", "string"), ("landscape", "boolean"), ("thirdAngle", "boolean"),
+        ("views", "array"), ("dimensions", "array"));
+
     // ADR-0051 item 9: a datum can have no name, so the name can be null.
     private static readonly IReadOnlyDictionary<string, FieldSchema> DatumCreatedFields = new Dictionary<string, FieldSchema>(Fields(("datumId", "guid")), StringComparer.Ordinal)
     {
@@ -98,6 +103,9 @@ internal static class SchemaEventsEndpoint
         new("datum.removed", Fields(("datumId", "guid"))), // ADR-0051 item 9, TASK-0166
         new("reference.created", Fields(("referenceId", "guid"), ("part", "string"), ("version", "integer"), ("x", "number"), ("y", "number"), ("z", "number"))), // ADR-0071 item 5, TASK-0202
         new("reference.removed", Fields(("referenceId", "guid"))), // ADR-0071 item 5, TASK-0202
+        new("sheet.created", SheetFields), // ADR-0153 item 1, TASK-0389
+        new("sheet.changed", SheetFields), // ADR-0153 item 1, TASK-0389
+        new("sheet.removed", Fields(("sheetId", "guid"))), // ADR-0153 item 1, TASK-0389
     };
 
     public static IResult Handle() => Results.Json(Kinds, ApiJson.Options);

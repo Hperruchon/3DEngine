@@ -152,4 +152,9 @@ public static class DiagnosticCodes
     public const string CommandFieldMissing = "E-CMD-FIELD-MISSING";
     public const string AssemblyReferenceInvalid = "E-ASSEMBLY-REFERENCE-INVALID";
     public const string AssemblyIdInUse = "E-ASSEMBLY-ID-IN-USE";
+
+    // ADR-0153 item 6 (phase P10.1, TASK-0389): the commands of a sheet.
+    public const string SheetNotFound = "E-SHEET-NOT-FOUND";
+    public const string SheetInvalid = "E-SHEET-INVALID";
+    public const string SheetIdInUse = "E-SHEET-ID-IN-USE";
 }
