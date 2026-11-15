@@ -47,3 +47,4 @@ On 2026-11-15 the owner ordered the run of TASK-0391, P10.2 and TASK-0392.
 ## History
 
 - 2026-11-15 · TASK-0392 · The record, from finding E207 of the codebase review of 2026-11-15.
+- 2026-11-15 · TASK-0392 · Shipped at v0.378.
