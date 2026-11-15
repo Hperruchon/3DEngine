@@ -1,13 +1,13 @@
 ---
 id: 0144
 title: An end at a slant to the view is an ellipse, and the outline of a cylinder and a cone comes from its axis
-status: Accepted
+status: Amended
 topic: Kernel, drawing
 date: 2026-11-14
 supersedes: []
 superseded-by: []
 amends: ['0143']
-amended-by: []
+amended-by: ['0145']
 affects:
   - Engine.Core/Drawing/ViewEdges.cs
   - Engine.Tests/Drawing/ViewEllipsesTests.cs
@@ -64,3 +64,5 @@ but at the place of the facets. An end at a slant is an ellipse also when the tu
 
 - 2026-11-14 · TASK-0377 · The record, from row K9c and ADR-0143 item 4, under the order of the owner of 2026-11-14.
 - 2026-11-14 · TASK-0377 · Shipped at v0.362.
+- 2026-11-14 · TASK-0379 · ADR-0145 items 1 and 2 amend items 1, 2 and 4: the ellipse of a piece and the place of each end of
+  an outline come from the place along the axis.

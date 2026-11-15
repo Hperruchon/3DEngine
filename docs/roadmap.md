@@ -408,6 +408,9 @@ Therefore each approved objective must have a track here.
 - K9c — An end at a slant to the view is an ellipse, and the outline of a cylinder and a cone comes from its axis.
   v0.362, TASK-0377, ADR-0144.
 - Review — The codebase review of 2026-11-14 (e). v0.363, TASK-0378.
+- P0.151 — The high findings of the codebase review of 2026-11-14 (e), with E204: a line of a curved side keeps its place
+  along the axis, an axis within 1e-9 of the view is along it, and Frame leaves a window at the right. v0.364, TASK-0379,
+  ADR-0145.
 - Review — The codebase review of 2026-11-14 (c). v0.351, TASK-0366.
 - P0.143 — The low findings of the codebase review of 2026-11-11: a triangle of zero area adds no edge, and a mesh of
   more than 100 000 triangles finds its edges on the thread pool. v0.332, TASK-0345, ADR-0121.
@@ -578,8 +581,8 @@ This track removes each condition that blocks other work.
 | P0.148 | The medium and low findings of the codebase review of 2026-11-14 (c) (V181 to V184: the whole caption under the arc is cut, the count for "Undo" one frame late, the corners of a moved block of lines, and the ends of the arc on "Edit sketch"), after the next product phase. TASK-0367. | 1 |
 | P0.149 | The high findings of the codebase review of 2026-11-14 (d) (V185 to V187: a sketch in a flat view, the ends of the arc on the tools of a small landscape display, and the test of V160), before the next product phase. TASK-0373. | 1 |
 | P0.150 | The medium and low findings of the codebase review of 2026-11-14 (d) (V188 to V190: a zoom in a flat view, the pull of the edge lines of a flat view, and the rows in the first frame of a proposal), after the next product phase. TASK-0374. | 1 |
-| P0.151 | The high findings of the codebase review of 2026-11-14 (e) (E202, E203 and V191: the outline of a cut side, a cylinder turned by 180 degrees, and Frame under the window of the live sketches), before the next product phase. TASK-0379. | 1 |
-| P0.152 | The medium and low findings of the codebase review of 2026-11-14 (e) (E204, T182 and E205: the circle of an edge of a cut side, the test of the circles of a Document, and a flat end), after the next product phase. TASK-0380. | 1 |
+| P0.151 | The high findings of the codebase review of 2026-11-14 (e) (E202, E203 and V191: the outline of a cut side, a cylinder turned by 180 degrees, and Frame under the window of the live sketches; with E204, the circle of an edge of a cut side, which the same fix needs), before the next product phase. TASK-0379. | 1 |
+| P0.152 | The medium and low findings of the codebase review of 2026-11-14 (e) (T182 and E205: the test of the circles of a Document, and a flat end; E204 went to TASK-0379), after the next product phase. TASK-0380. | 1 |
 | P0.102 | The cache of a face, the fixed controls, the list New, the edges and the safe area hold their next forms (V113 to V118 of the codebase review of 2026-11-06 (e); after P0.101). TASK-0252. | 1–2 |
 | P0.86 | The window keeps no input between sessions, the hook has the cases of one axis, and the next forms of four gates fail (V88 to V90, T141 to T144 of the codebase review of 2026-11-06; after the next product phase). TASK-0198. | 1–2 |
 
