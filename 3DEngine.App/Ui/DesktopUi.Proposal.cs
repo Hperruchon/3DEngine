@@ -144,7 +144,6 @@ internal sealed unsafe partial class DesktopUi
     private void Proposal(Vector2 displaySize, LiveBody? body)
     {
         ProposalOutcomeLine(displaySize);
-        _arcBottom = null;
         if (_proposals.Count == 0)
             return;
 
@@ -514,8 +513,7 @@ internal sealed unsafe partial class DesktopUi
         // first when the arc does not hold it.
         if (portrait)
         {
-            _arcBottom = _proposalCovers.Max(cover => cover.W);
-            ProposalSheet(displaySize, card, lines, captionLine, _arcBottom.Value);
+            ProposalSheet(displaySize, card, lines, captionLine, _proposalCovers.Max(cover => cover.W));
             return;
         }
 
@@ -642,9 +640,6 @@ internal sealed unsafe partial class DesktopUi
     // The height of the sheet of the last frame, so the sheet of this frame knows if it fits above the ring.
     private float _sheetHeight;
 
-    // ADR-0135 item 3 (phase R18o, TASK-0368): the bottom of the arc of a portrait display of the last frame, or null, so the
-    // rows under the part stay under it.
-    private float? _arcBottom;
 
     // ADR-0135 item 4: the box of the sheet of this frame and of the last frame, or null with no sheet.
     private Vector4? _sheetBox;
@@ -730,8 +725,6 @@ internal sealed unsafe partial class DesktopUi
         }
 
         ImGui.End();
-        // The rows under the part do not go above the sheet (ADR-0135 item 3).
-        _arcBottom = top + _sheetHeight;
     }
 
     // Item 7: "AGENT IS WAITING" in amber with an amber dot, in the top bar, or under it when the top bar has no room.
