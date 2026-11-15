@@ -429,6 +429,7 @@ Therefore each approved objective must have a track here.
   a proposal hides the tools under it; R-0066 closes. v0.373, TASK-0388, ADR-0152.
 - P10.1 — A drawing sheet is one record of the Document, and CreateSheet, RenameSheet and RemoveSheet change it; R-0067
   closes. v0.374, TASK-0389, ADR-0153.
+- Review — The codebase review of 2026-11-15. v0.375, TASK-0390.
 - Review — The codebase review of 2026-11-14 (c). v0.351, TASK-0366.
 - P0.143 — The low findings of the codebase review of 2026-11-11: a triangle of zero area adds no edge, and a mesh of
   more than 100 000 triangles finds its edges on the thread pool. v0.332, TASK-0345, ADR-0121.
@@ -606,6 +607,8 @@ This track removes each condition that blocks other work.
 | P0.155 | The questions before P10 are a record (`docs/proposals/2026-11-14-the-sheet-in-the-document.md`), and register entry R-0067 holds them for the owner. TASK-0386. | 1 |
 | P0.156 | A free size or a reference on the line of a value that the view shows does not show again (ADR-0151), from the picture of the Bracket from the front after R22c. TASK-0387. | 1 |
 | P0.157 | On a small landscape display the arc of a proposal is right of the rows on a smaller ring, and each part of a proposal hides the tools under it (R-0066, ADR-0152). TASK-0388. | 1 |
+| P0.158 | The high finding of the codebase review of 2026-11-15 (E206: the fixed lengths of a sketch at each read, at a cost that grows with the fourth power of its size), before the next product phase. TASK-0391. | 1 |
+| P0.159 | The low findings of the codebase review of 2026-11-15 (E207 to E210, V192 and V193: the scale of the fixed lengths, the reader of the lines of K9, two faults of form, the ends of an edge in two parts, and the modifier keys of macOS), after the next product phase. TASK-0392. | 1 |
 | P0.102 | The cache of a face, the fixed controls, the list New, the edges and the safe area hold their next forms (V113 to V118 of the codebase review of 2026-11-06 (e); after P0.101). TASK-0252. | 1–2 |
 | P0.86 | The window keeps no input between sessions, the hook has the cases of one axis, and the next forms of four gates fail (V88 to V90, T141 to T144 of the codebase review of 2026-11-06; after the next product phase). TASK-0198. | 1–2 |
 
