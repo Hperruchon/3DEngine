@@ -432,6 +432,8 @@ Therefore each approved objective must have a track here.
 - Review — The codebase review of 2026-11-15. v0.375, TASK-0390.
 - P0.158 — The status and the fixed lengths of a sketch come from one elimination, and a read of a sketch of 100 lines
   takes about 9 ms in place of 5.4 s. v0.376, TASK-0391, ADR-0154.
+- P10.2 — A view of a sheet has an exact frame, a scale and a place on the paper, and GetSheet gives its lines on the
+  paper. v0.377, TASK-0393, ADR-0155.
 - Review — The codebase review of 2026-11-14 (c). v0.351, TASK-0366.
 - P0.143 — The low findings of the codebase review of 2026-11-11: a triangle of zero area adds no edge, and a mesh of
   more than 100 000 triangles finds its edges on the thread pool. v0.332, TASK-0345, ADR-0121.

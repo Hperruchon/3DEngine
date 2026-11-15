@@ -81,3 +81,4 @@ session for that time. The centre of a view moves when the part grows on one sid
 ## History
 
 - 2026-11-15 · TASK-0393 · The record, from the plan of P10.2 and the answers of the owner of 2026-11-15 to Q1 to Q7.
+- 2026-11-15 · TASK-0393 · Shipped at v0.377.
