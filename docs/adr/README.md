@@ -131,7 +131,7 @@ names. Do not read all of them.
 | [0123](0123-the-sketch-that-made-a-body-is-found-along-the-first-input.md) | The sketch that made a body is found along the first input, and the history keeps it after the six newest steps | Accepted | Clients, rendering | 0104, 0117, 0119 | — |
 | [0124](0124-the-selection-after-a-hide-and-the-hidden-bodies-in-the-status-line.md) | The selection after a hide, and the hidden bodies in the status line | Amended | Clients, rendering | 0029, 0093 | 0129 |
 | [0125](0125-each-dimension-says-what-it-measures.md) | Each dimension says what it measures, on a plate outside its box, and no control covers it | Amended | Clients, rendering | 0056 | 0129 |
-| [0126](0126-assemblies-with-joints-and-geometric-checks.md) | Assemblies with joints and their geometric checks have a date after P10c, and a load check follows them | Accepted | Charter, assembly | — | — |
+| [0126](0126-assemblies-with-joints-and-geometric-checks.md) | Assemblies with joints and their geometric checks have a date after P10c, and a load check follows them | Amended | Charter, assembly | — | 0157 |
 | [0127](0127-the-fixed-controls-and-the-status-as-in-the-render.md) | The row of the anchors holds Undo, Redo and the step of Undo, and the status gives the log, the agent and the save | Amended | Clients, rendering | 0083, 0093, 0098 | 0129, 0138 |
 | [0128](0128-a-value-typed-in-the-command-line-goes-to-its-pad.md) | A value typed in the command line goes to the pad of its value, through the evaluator | Accepted | Clients, rendering | 0098 | — |
 | [0129](0129-the-findings-of-the-review-of-2026-11-14.md) | The list of the hidden bodies fits the display, a stuck plate stays at its place, and a step text follows its command | Accepted | Clients, rendering | 0109, 0124, 0125, 0127 | — |
@@ -162,6 +162,7 @@ names. Do not read all of them.
 | [0154](0154-the-fixed-lengths-from-one-elimination.md) | The status and the fixed lengths of a sketch come from one elimination, and the product J·Jᵀ takes the columns with a value | Amended | Kernel | 0149 | 0156 |
 | [0155](0155-the-views-of-a-sheet.md) | A view of a sheet has an exact frame, a scale and a place on the paper, and GetSheet gives its lines on the paper | Accepted | Drawing | 0153 | — |
 | [0156](0156-the-rank-of-a-sketch-at-each-size.md) | The rank of a sketch comes from the rows of its Jacobian at unit length, so the freedom and the fixed lengths do not depend on its size | Accepted | Sketch | 0035, 0154 | — |
+| [0157](0157-the-foundations-and-the-order-of-the-assembly-track.md) | The assembly track has shared foundations, the checks and the preview of a proposal come before the joints, and the model of a move waits for a measure | Accepted | Assembly, agent | 0126 | — |
 
 ## Topics
 

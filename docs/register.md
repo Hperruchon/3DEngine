@@ -474,6 +474,26 @@ GetSheet computes the lines of each view at each read, with no cache (Q7 A). Thr
 the computer of the owner, and the query holds the session for that time, so a command of the person or the agent waits.
 Exit: a read of three views of a sphere takes less than 1 s, with a test, or the owner accepts the time.
 
+### R-0070 · K10 waits for the sizes of the two validation cases, and the model of a move of a part is not decided
+- class: question
+- opened: 2026-11-15
+- due: 2027-02-13
+- extended: no
+- refs: `docs/adr/0157-the-foundations-and-the-order-of-the-assembly-track.md` items 2 and 12,
+  `docs/adr/0126-assemblies-with-joints-and-geometric-checks.md` item 3, `docs/adr/0112-a-command-turns-a-body.md` items 5
+  and 9, `docs/proposals/2026-11-15-assembly-and-agent-design.md` section 4,
+  `docs/proposals/2026-11-15-plan-k10-the-first-assembly-row.md` section 3, TASK-0394
+Two open points block the assembly track. First, K10 builds the tilting support of a light from measured sizes, and the
+bookcase `Bibliotheque120` as a second case (answers K1 and A12 of 2026-11-15); the sizes of the crossbar, of its two fixing
+points and of the volumes of the lamp are not in a file of the repository, and the file of the bookcase is on the computer of
+the owner. Second, ADR-0126 item 3 says that a joint moves a body with `Rotate` commands; a `Rotate` makes a new body, and the
+owned kernel reads the nine doubles of a turn exactly, so many turns can make the numbers of a body longer and change its
+shape by a very small amount. No test measured this. The owner chose to measure first (A2, option C). One entry holds both,
+on the choice of the owner of 2026-11-15, because the register held 14 of its 15 entries.
+Exit: the owner gives the sizes and a table of K10 holds them (or the owner chooses another case), and K10 measures 150 turns
+of the arm (the time of a rebuild and of a replay, the size of the numbers, the change of one length), and the ADR of P11.0
+decides the model of a move.
+
 ## Accepted compromises
 
 These are conditions that the project keeps permanently and by decision. They do not age.
