@@ -427,6 +427,8 @@ Therefore each approved objective must have a track here.
   TASK-0387, ADR-0151.
 - P0.157 — On a small landscape display the arc of a proposal is right of the rows on a smaller ring, and each part of
   a proposal hides the tools under it; R-0066 closes. v0.373, TASK-0388, ADR-0152.
+- P10.1 — A drawing sheet is one record of the Document, and CreateSheet, RenameSheet and RemoveSheet change it; R-0067
+  closes. v0.374, TASK-0389, ADR-0153.
 - Review — The codebase review of 2026-11-14 (c). v0.351, TASK-0366.
 - P0.143 — The low findings of the codebase review of 2026-11-11: a triangle of zero area adds no edge, and a mesh of
   more than 100 000 triangles finds its edges on the thread pool. v0.332, TASK-0345, ADR-0121.
