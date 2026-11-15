@@ -1,13 +1,13 @@
 ---
 id: 0118
 title: The 2D drawing of a part has a date, and its work starts with a flat view
-status: Accepted
+status: Amended
 topic: Charter, drawing
 date: 2026-11-10
 supersedes: []
 superseded-by: []
 amends: []
-amended-by: []
+amended-by: ['0153']
 affects:
   - docs/CHARTER.md
 enforced-by: Engine.Tests/Governance/ObjectiveReferenceGateTests.cs
@@ -88,3 +88,4 @@ recommended order, and Q5 A.
 
 - 2026-11-10 · TASK-0343 · The record, from the answers of the owner of 2026-11-10 to Q1 to Q5 of the renders of a drawing.
 - 2026-11-10 · TASK-0343 · Shipped at v0.326.
+- 2026-11-15 · TASK-0389 · Amended by ADR-0153: the record of a sheet, its views and its dimensions, and the commands that change it (the answers of the owner of 2026-11-14 to Q1 to Q8).

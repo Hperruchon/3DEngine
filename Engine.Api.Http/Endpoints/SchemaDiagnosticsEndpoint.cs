@@ -101,6 +101,9 @@ internal static class SchemaDiagnosticsEndpoint
         new(DiagnosticCodes.CommandFieldMissing,   "Error",   "CMD"), // finding E163, TASK-0242
         new(DiagnosticCodes.AssemblyReferenceInvalid, "Error", "ASSEMBLY"), // ADR-0071 item 3, TASK-0202
         new(DiagnosticCodes.AssemblyIdInUse,       "Error",   "ASSEMBLY"), // ADR-0071 item 3, TASK-0202
+        new(DiagnosticCodes.SheetNotFound,         "Error",   "SHEET"), // ADR-0153 item 6, TASK-0389
+        new(DiagnosticCodes.SheetInvalid,          "Error",   "SHEET"), // ADR-0153 item 6, TASK-0389
+        new(DiagnosticCodes.SheetIdInUse,          "Error",   "SHEET"), // ADR-0153 item 6, TASK-0389
     };
 
     public static IResult Handle() => Results.Json(Codes, ApiJson.Options);

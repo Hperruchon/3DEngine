@@ -101,6 +101,16 @@ public sealed record CommandHandlerResult(
     // gives no changed reference; the bus refuses an identifier that it created before. Empty by default.
     public IReadOnlyList<Assembly.PartReference> CreatedReferences { get; init; } = Array.Empty<Assembly.PartReference>();
 
+    // ADR-0153 item 1 (phase P10.1, TASK-0389): the record of each sheet that the command creates, the new record of each live
+    // sheet that it changes, and the identifier of each live sheet that it removes. The commit emits sheet.created,
+    // sheet.changed and sheet.removed after the reference events. A handler gives each sheet one time in the three lists and
+    // keeps the identifier of a changed sheet; the bus refuses a list that breaks the rule. Empty by default.
+    public IReadOnlyList<Drawing.SheetRecord> CreatedSheets { get; init; } = Array.Empty<Drawing.SheetRecord>();
+
+    public IReadOnlyList<Drawing.SheetRecord> ChangedSheets { get; init; } = Array.Empty<Drawing.SheetRecord>();
+
+    public IReadOnlyList<Guid> RemovedSheets { get; init; } = Array.Empty<Guid>();
+
     public static CommandHandlerResult Success(
         Outputs outputs,
         IReadOnlyList<Diagnostic>? diagnostics = null,
@@ -113,7 +123,10 @@ public sealed record CommandHandlerResult(
         IReadOnlyList<Images.ImageRecord>? changedImages = null,
         IReadOnlyList<Sketch.DatumRecord>? createdDatums = null,
         IReadOnlyList<Sketch.DatumRecord>? changedDatums = null,
-        IReadOnlyList<Assembly.PartReference>? createdReferences = null)
+        IReadOnlyList<Assembly.PartReference>? createdReferences = null,
+        IReadOnlyList<Drawing.SheetRecord>? createdSheets = null,
+        IReadOnlyList<Drawing.SheetRecord>? changedSheets = null,
+        IReadOnlyList<Guid>? removedSheets = null)
         => new(
             outputs,
             diagnostics ?? Array.Empty<Diagnostic>(),
@@ -129,6 +142,9 @@ public sealed record CommandHandlerResult(
             CreatedDatums = createdDatums ?? Array.Empty<Sketch.DatumRecord>(),
             ChangedDatums = changedDatums ?? Array.Empty<Sketch.DatumRecord>(),
             CreatedReferences = createdReferences ?? Array.Empty<Assembly.PartReference>(),
+            CreatedSheets = createdSheets ?? Array.Empty<Drawing.SheetRecord>(),
+            ChangedSheets = changedSheets ?? Array.Empty<Drawing.SheetRecord>(),
+            RemovedSheets = removedSheets ?? Array.Empty<Guid>(),
         };
 
     public static CommandHandlerResult Failure(
