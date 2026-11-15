@@ -87,7 +87,7 @@ names. Do not read all of them.
 | [0079](0079-the-activity-may-start-again.md) | The activity of the phone may start again in its process | Accepted | Clients, platform | 0073 | — |
 | [0080](0080-the-fixed-controls-of-the-redesign.md) | The title of the document, Undo, Redo and the status line are fixed controls of the redesign | Amended | Clients, rendering | 0030, 0031 | 0093 |
 | [0081](0081-the-tool-ring-of-the-redesign.md) | The tools of the selected body are the segments of a ring that follows it | Amended | Clients, rendering | — | 0084, 0086, 0095, 0101, 0108, 0113, 0116, 0119, 0132 |
-| [0082](0082-the-values-on-the-edges-of-the-redesign.md) | A value that a command changes sits on the edge of the selected body that it measures | Amended | Clients, rendering | — | 0084, 0115 |
+| [0082](0082-the-values-on-the-edges-of-the-redesign.md) | A value that a command changes sits on the edge of the selected body that it measures | Amended | Clients, rendering | — | 0084, 0115, 0146 |
 | [0083](0083-the-mesh-body-and-the-stl-import.md) | An STL file opens as a mesh body of a new part, through one import command | Amended | Geometry, contract, clients | 0044, 0045, 0048 | 0102, 0127 |
 | [0084](0084-the-rows-of-the-selected-body.md) | The data of the selected body is in rows with no panel at the upper right | Amended | Clients, rendering | 0034, 0081, 0082 | 0098, 0099, 0117, 0131 |
 | [0085](0085-the-sketch-under-its-body.md) | The active sketch of a live extrude moves out of its body, and the camera stays | Amended | Clients, rendering | 0034 | 0120 |
@@ -151,6 +151,7 @@ names. Do not read all of them.
 | [0143](0143-the-circles-of-a-view.md) | A view shows the circle of the design for a curved side, and an end seen from the side as one line | Amended | Kernel, drawing | 0142 | 0144, 0145 |
 | [0144](0144-the-ellipses-and-the-outline-of-a-view.md) | An end at a slant to the view is an ellipse, and the outline of a cylinder and a cone comes from its axis | Amended | Kernel, drawing | 0143 | 0145 |
 | [0145](0145-the-place-of-a-line-along-the-axis.md) | A line of a curved side keeps its place along the axis, an axis within 1e-9 of the view is along it, and Frame leaves a window at the right | Accepted | Kernel, drawing, clients | 0140, 0143, 0144 | — |
+| [0146](0146-a-value-shows-where-its-length-is-true.md) | In a flat view a value shows only where its length is true, and row R22 splits into four slices | Accepted | Clients, drawing | 0082 | — |
 
 ## Topics
 

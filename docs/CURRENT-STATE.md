@@ -10890,3 +10890,29 @@ stays red until the owner runs it again.
 New tests: 7. The test list holds 2651 (1576 in `Engine.Tests`, 380 in `3DEngine.Tests`, 692 in `3DEngine.ImageTests`, 3
 in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
 entries: 15 of 15. New diagnostic codes: 0. Since the review of v0.363, 0 product milestones and 1 entry followed it.
+
+## v0.365 — In a flat view a value shows only where its length is true (R22a, TASK-0381)
+
+Row R22 of the roadmap gives the right dimensions on a flat view (ADR-0118 item 5). ADR-0146 splits it into R22a to R22d by
+the rules of ADR-0118 item 5, under the order of the owner of 2026-11-14 (the recommended option).
+
+**The change.** ADR-0146 amends ADR-0082 item 1.
+- In a flat view `EdgeValues.Of` gives a value only where its length is true: the edge of a length or of the distance of an
+  extrude is across the direction of the view within 0.001 of its length, and the circle of a radius faces the view, by the
+  normal of the plane of its edge and not by its chord. With perspective each value shows, as before.
+- The roadmap has the rows R22a to R22d: the true length, a chain with one reference, a separate form for a free size and a
+  lost value, and the place of each dimension from the agent.
+
+**Proof.** A theory proves the values of a plate of 10 by 6 by 3 in the six flat views and with perspective; theories prove the
+radius of a disc and of a half arc of a profile in the shape of a D; a test proves the rule of the circle of a radius against
+its chord. Four injections each failed a named test; each file came back byte for byte. A fifth injection, the rule of a
+length for a radius at its call, is equivalent on the edges of GetFaces: the segments of an arc are not in the order of a
+chain, so its chord leans and the rule of a length hides that radius too. The phone project builds with zero warnings. Run
+43575434859 passed on the branch. The failed runs since the entry v0.364, from the API: none on a branch; 43562165193 on `main`
+stays red until the owner runs it again.
+
+**What stays.** A value whose edge is at a slant to each flat view shows in no flat view. No person used the change.
+
+New tests: 13. The test list holds 2664 (1576 in `Engine.Tests`, 380 in `3DEngine.Tests`, 705 in `3DEngine.ImageTests`, 3
+in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
+entries: 15 of 15. New diagnostic codes: 0. Since the review of v0.363, 1 product milestone and 2 entries followed it.
