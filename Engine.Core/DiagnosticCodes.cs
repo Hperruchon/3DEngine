@@ -157,4 +157,8 @@ public static class DiagnosticCodes
     public const string SheetNotFound = "E-SHEET-NOT-FOUND";
     public const string SheetInvalid = "E-SHEET-INVALID";
     public const string SheetIdInUse = "E-SHEET-ID-IN-USE";
+
+    // ADR-0155 item 6 (phase P10.2, TASK-0393): the commands of a view of a sheet.
+    public const string SheetViewNotFound = "E-SHEET-VIEW-NOT-FOUND";
+    public const string SheetViewInvalid = "E-SHEET-VIEW-INVALID";
 }

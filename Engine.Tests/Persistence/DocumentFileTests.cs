@@ -95,6 +95,9 @@ public sealed class DocumentFileTests : IDisposable
         ["CreateSheet"] = new CreateSheetCommand { SheetName = "Sheet 1", Paper = "A3", Landscape = false, ThirdAngle = true },
         ["RenameSheet"] = new RenameSheetCommand { SheetId = Guid.NewGuid(), SheetName = "Bracket" },
         ["RemoveSheet"] = new RemoveSheetCommand { SheetId = Guid.NewGuid() },
+        ["AddSheetView"] = new AddSheetViewCommand { SheetId = Guid.NewGuid(), RightX = 1, RightY = 0, RightZ = 0, UpX = 0, UpY = 0, UpZ = 1, EyeX = 0, EyeY = -1, EyeZ = 0.5, ScaleNumerator = 1, ScaleDenominator = 2, X = 100.5, Y = 80 },
+        ["MoveSheetView"] = new MoveSheetViewCommand { SheetId = Guid.NewGuid(), ViewId = Guid.NewGuid(), X = 50, Y = 60.25 },
+        ["RemoveSheetView"] = new RemoveSheetViewCommand { SheetId = Guid.NewGuid(), ViewId = Guid.NewGuid() },
     };
 
     // ADR-0015 item 11: each handler has an encoder, and Create(Encode(c)) gives c.
