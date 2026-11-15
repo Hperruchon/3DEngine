@@ -90,3 +90,6 @@ primitives about 2 s. Bodies that cross each other with no boolean give no line 
 - 2026-11-14 · TASK-0375 · Shipped at v0.360.
 - 2026-11-14 · TASK-0376 · ADR-0143 items 1 to 3 amend items 5 and 7: the curves of the design give the circles and the
   arcs of a curved side, and an end seen from the side is one line.
+- 2026-11-15 · TASK-0392 · Finding E208 of the codebase review of 2026-11-15: R22a to R22c took the values of a flat view
+  from the edges of `GetFaces` and the camera, and read no line of item 7. P10.2 (TASK-0393, ADR-0155) is the first reader:
+  the query GetSheet gives the lines of each view of a sheet on the paper. No contract changed (item 8).

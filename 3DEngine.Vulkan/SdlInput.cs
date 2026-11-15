@@ -18,6 +18,10 @@ public sealed unsafe class SdlInput
     private readonly List<InputSample> _frame = new();
     private KeyModifiers _modifiers;
 
+    // TASK-0392 (finding V193 of the codebase review of 2026-11-15): the keys of a modifier that are down. A flag holds while
+    // any key of it is down, so the release of one of two keys does not clear it.
+    private readonly HashSet<SDL_Scancode> _modifierKeys = [];
+
     // ADR-0150 item 1 (phase P0.154, TASK-0385): on macOS the Command key gives the modifier of the shortcuts, Control, as the
     // key Control does on the other platforms, so Command and K open the command line there. The other platforms leave the
     // key of the system out, as before.
@@ -95,6 +99,7 @@ public sealed unsafe class SdlInput
 
             case SDL_EventType.SDL_EVENT_WINDOW_FOCUS_LOST:
                 _modifiers = KeyModifiers.None;
+                _modifierKeys.Clear();
                 _frame.Add(new FocusLostSample(time));
                 break;
         }
@@ -105,16 +110,20 @@ public sealed unsafe class SdlInput
 
     private void Key(SDL_Scancode code, SDL_Keycode keycode, bool down, ulong time)
     {
-        if (code is SDL_Scancode.SDL_SCANCODE_LSHIFT or SDL_Scancode.SDL_SCANCODE_RSHIFT)
+        var shift = code is SDL_Scancode.SDL_SCANCODE_LSHIFT or SDL_Scancode.SDL_SCANCODE_RSHIFT;
+        var control = code is SDL_Scancode.SDL_SCANCODE_LCTRL or SDL_Scancode.SDL_SCANCODE_RCTRL
+            || (_macOS && code is SDL_Scancode.SDL_SCANCODE_LGUI or SDL_Scancode.SDL_SCANCODE_RGUI);
+        if (shift || control)
         {
-            _modifiers = down ? _modifiers | KeyModifiers.Shift : _modifiers & ~KeyModifiers.Shift;
-            return;
-        }
-
-        if (code is SDL_Scancode.SDL_SCANCODE_LCTRL or SDL_Scancode.SDL_SCANCODE_RCTRL
-            || (_macOS && code is SDL_Scancode.SDL_SCANCODE_LGUI or SDL_Scancode.SDL_SCANCODE_RGUI))
-        {
-            _modifiers = down ? _modifiers | KeyModifiers.Control : _modifiers & ~KeyModifiers.Control;
+            if (down)
+                _modifierKeys.Add(code);
+            else
+                _modifierKeys.Remove(code);
+            var flag = shift ? KeyModifiers.Shift : KeyModifiers.Control;
+            var held = shift
+                ? _modifierKeys.Contains(SDL_Scancode.SDL_SCANCODE_LSHIFT) || _modifierKeys.Contains(SDL_Scancode.SDL_SCANCODE_RSHIFT)
+                : _modifierKeys.Overlaps([SDL_Scancode.SDL_SCANCODE_LCTRL, SDL_Scancode.SDL_SCANCODE_RCTRL, SDL_Scancode.SDL_SCANCODE_LGUI, SDL_Scancode.SDL_SCANCODE_RGUI]);
+            _modifiers = held ? _modifiers | flag : _modifiers & ~flag;
             return;
         }
 

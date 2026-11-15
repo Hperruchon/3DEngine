@@ -7,7 +7,7 @@ date: 2026-10-29
 supersedes: []
 superseded-by: []
 amends: ['0033']
-amended-by: ['0052']
+amended-by: ['0052', '0156']
 affects:
   - Engine.Core/Sketch/**
   - Engine.Core/Queries/GetSketchQuery.cs
@@ -194,3 +194,5 @@ equations of the kinds 6 to 14.
   difference, also by a radius, and a fixed solve with constant bits. The answer Q2 A of the plan of 2026-10-30 permits
   this line with no new record.
 - 2026-11-03 · TASK-0167 · ADR-0052 amends items 3 and 4: a point of a reference has no variable, as the origin.
+- 2026-11-15 · TASK-0392 · ADR-0156 item 1 amends item 8: the rank comes from the rows of J at unit length, so it does
+  not depend on the size of a part of the sketch.

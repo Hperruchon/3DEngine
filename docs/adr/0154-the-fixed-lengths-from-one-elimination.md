@@ -1,13 +1,13 @@
 ---
 id: 0154
 title: The status and the fixed lengths of a sketch come from one elimination, and the product J·Jᵀ takes the columns with a value
-status: Accepted
+status: Amended
 topic: Kernel
 date: 2026-11-15
 supersedes: []
 superseded-by: []
 amends: ['0149']
-amended-by: []
+amended-by: ['0156']
 affects:
   - Engine.Core/Sketch/SketchSolver.cs
   - Engine.Core/Queries/GetSketchQueryHandler.cs
@@ -60,3 +60,4 @@ free, as ADR-0149 says of the old test. The test of the time can fail on a very 
 - 2026-11-15 · TASK-0391 · The record, from finding E206 of the codebase review of 2026-11-15, under the order of the owner of
   2026-11-15.
 - 2026-11-15 · TASK-0391 · Shipped at v0.376.
+- 2026-11-15 · TASK-0392 · ADR-0156 item 1 amends item 1: the elimination takes the rows of J at unit length.
