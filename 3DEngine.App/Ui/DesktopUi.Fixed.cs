@@ -60,7 +60,9 @@ internal sealed unsafe partial class DesktopUi
             {
                 ImGui.TextUnformatted(program);
                 ImGui.SameLine(0f, 12f);
-                ImGui.TextDisabled(UnitText);
+                // ADR-0138 (phase R21b, TASK-0370): the top bar ends 12 pixels left of the button "Views"; the review of the branch
+                // found "not saved" under the button at 360 pixels wide.
+                ImGui.TextDisabled(Fit(UnitText, displaySize.X - 16f - _inset.Z - ViewsButtonWidth - 12f - left - ImGui.CalcTextSize(program).X - 12f));
             }
             else
             {
@@ -239,7 +241,8 @@ internal sealed unsafe partial class DesktopUi
         ImGui.PushStyleVar(ImGuiStyleVar.ItemSpacing, Vector2.Zero);
         if (ImGui.Begin("##Path", FixedFlags))
         {
-            PathRow(document, body, displaySize.X - 16f - _inset.Z - 12f - left, PathPad);
+            // ADR-0138 (phase R21b, TASK-0370): the button "Views" is at the upper right, so the path line ends 12 pixels left of it.
+            PathRow(document, body, displaySize.X - 16f - _inset.Z - 12f - left - ViewsButtonWidth - 12f, PathPad);
             AddWindowRectangle();
             _items[PathItem] = _fixed[^1];
         }
@@ -351,9 +354,15 @@ internal sealed unsafe partial class DesktopUi
                         ImGui.GetWindowDrawList().AddRect(new Vector2(button.X + 1f, button.Y + 1f), new Vector2(button.Z - 1f, button.W - 1f), ImGui.GetColorU32(ImGuiCol.Border), ImGui.GetStyle().FrameRounding, ImDrawFlags.None, Theme.OutlineWidth);
                 }
             }
-            else if (_status.Undo is { } step)
+            else
             {
-                UndoStep(step, displaySize);
+                // ADR-0138 (phase R21b, TASK-0370): "Views" after Redo opens the net of the flat views above the anchors.
+                ImGui.SameLine(0f, 16f);
+                ImGui.PushStyleVar(ImGuiStyleVar.FrameBorderSize, 0f);
+                ViewsButton();
+                ImGui.PopStyleVar();
+                if (_status.Undo is { } step)
+                    UndoStep(step, displaySize);
             }
 
             AddWindowRectangle();
