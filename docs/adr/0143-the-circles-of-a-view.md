@@ -1,13 +1,13 @@
 ---
 id: 0143
 title: A view shows the circle of the design for a curved side, and an end seen from the side as one line
-status: Accepted
+status: Amended
 topic: Kernel, drawing
 date: 2026-11-14
 supersedes: []
 superseded-by: []
 amends: ['0142']
-amended-by: []
+amended-by: ['0144']
 affects:
   - Engine.Core/Drawing/ViewEdges.cs
   - Engine.Core/Features/KernelProjection.cs
@@ -72,3 +72,5 @@ sagitta of one facet.
 
 - 2026-11-14 · TASK-0376 · The record, from row K9b and ADR-0142 item 7, under the order of the owner of 2026-11-14.
 - 2026-11-14 · TASK-0376 · Shipped at v0.361.
+- 2026-11-14 · TASK-0377 · ADR-0144 items 1 and 2 amend item 4: an end at a slant to the view is an ellipse, and the
+  outline of a cylinder and a cone comes from its axis.
