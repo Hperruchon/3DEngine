@@ -11195,3 +11195,38 @@ The time test can fail on a very slow computer.
 New tests: 1. The test list holds 2690 (1585 in `Engine.Tests`, 382 in `3DEngine.Tests`, 720 in `3DEngine.ImageTests`, 3
 in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
 entries: 12 of 15. New diagnostic codes: 0. Since the review of v0.375, 0 product milestones and 1 entry followed it.
+
+## v0.377 — A view of a sheet has an exact frame, a scale and a place on the paper, and GetSheet gives its lines on the paper (P10.2, TASK-0393)
+
+Row P10.2: the views of a sheet (ADR-0153 items 4 and 6). The owner answered Q1 to Q7 of the plan of P10.2 with A on
+2026-11-15, in the chat of the main session and in the side session of the plans of P10.3 and K10.
+
+**The change.** ADR-0155 amends ADR-0153.
+- AddSheetView takes the sheet, nine numbers of an exact frame (unit Direction), the two parts of the scale (unit Count) and
+  the place of the centre on the paper (unit Length). The view takes the identifier of the command. A frame with no right
+  angle, two lengths, the eye on the wrong side, a value that is not finite, a part of the scale that is not greater than
+  zero, or a place off the paper is refused with `E-SHEET-VIEW-INVALID`.
+- MoveSheetView gives a view a new place; RemoveSheetView removes a view and its dimensions in one step. A view that is not
+  on the sheet gives `E-SHEET-VIEW-NOT-FOUND`.
+- GetSheet gives the paper in millimetres (ISO 216, with the orientation), the dimensions, and for each view the lines of
+  K9 on the paper and each body with no lines. The centre of the box of the lines goes to the place of the view; a view with
+  no line puts the origin of the part there. This is the first reader of the lines of K9 outside the tests.
+- Register entry R-0068: a pictorial view is not an exact frame, so it waits. R-0069: three views of a sphere take about 5 s.
+- No contract change.
+
+**Proof.** Nine tests in `SheetViewTests` give 14 cases (one theory of the six standard views), and the test of the
+document file has three new samples.
+A box at 1 : 2 and 2 : 1, with a frame of length 2, and from the top gives its corners at the exact places on the paper.
+Fifteen injections each failed a test: the frame, the scale, the place, the identifier, the move, the remove, the
+dimensions, the scale and the length of the frame in the read, the swap of x and y, the centre, the orientation of the
+paper, the skipped bodies, the size of a circle, and the encoding of the ninth number; each file came back byte for byte.
+The phone project builds with zero warnings. Run 43757001185 passed on the branch. The failed runs since the entry v0.376, from
+the API: none.
+
+**What stays.** A client does not show a sheet yet. The JSON of a view in an event has no test of the HTTP surface. A read
+of a curved body takes seconds and holds the session.
+
+New tests: 14. The test list holds 2704 (1599 in `Engine.Tests`, 382 in `3DEngine.Tests`, 720 in `3DEngine.ImageTests`, 3
+in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
+entries: 14 of 15. New diagnostic codes: 2 (`E-SHEET-VIEW-NOT-FOUND`, `E-SHEET-VIEW-INVALID`). Since the review of v0.375,
+1 product milestone and 2 entries followed it.
