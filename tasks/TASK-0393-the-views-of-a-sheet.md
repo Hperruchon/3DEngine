@@ -1,7 +1,7 @@
 ---
 id: 0393
 title: The views of a sheet, and a read of a sheet with the lines of each view on the paper
-status: Active
+status: Done
 phase: P10.2
 opened: 2026-11-15
 depends-on: [0391]
