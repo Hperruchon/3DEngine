@@ -1,7 +1,7 @@
 ---
 id: 0391
 title: The status and the fixed lengths of a sketch come from one elimination
-status: Active
+status: Done
 phase: P0.158
 opened: 2026-11-15
 depends-on: [0390]
@@ -57,12 +57,12 @@ A read of a sketch of 100 lines takes less time than one frame, and the fixed le
 - [x] Each test of the fixed lengths passes with the new computation.
 - [x] A test proves that a read of a sketch of 100 lines takes less time than its limit.
 - [x] A clean build (`--no-incremental`) gives zero errors and zero warnings, and the phone project builds.
-- [ ] `dotnet test`, the write-set check and `eng/repo-gates` pass; continuous integration passes on the branch and on
+- [x] `dotnet test`, the write-set check and `eng/repo-gates` pass; continuous integration passes on the branch and on
       `main` after the merge.
 
 ## Outcome
 
-Status: Ready
+Status: Done · commit (the merge of the branch p0158-review-findings) · v0.376
 
 ## Method
 
@@ -79,3 +79,4 @@ Weakest:    the residual and the old pivot are equal in exact arithmetic only; t
   elimination took 85 ms: the status alone took 28 ms, from the full product J·Jᵀ. With the product of the columns with a
   value: status 0.9 ms, analysis 7.7 ms. An injection of 1e-15 in the product failed `SketchSolverTests`,
   `LineConstraintTests` and `CircleArcTests`; the file came back byte for byte.
+- 2026-11-15: run 43753428670 passed on the branch. Closed at v0.376.

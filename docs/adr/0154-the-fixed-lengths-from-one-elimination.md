@@ -59,3 +59,4 @@ free, as ADR-0149 says of the old test. The test of the time can fail on a very 
 
 - 2026-11-15 · TASK-0391 · The record, from finding E206 of the codebase review of 2026-11-15, under the order of the owner of
   2026-11-15.
+- 2026-11-15 · TASK-0391 · Shipped at v0.376.
