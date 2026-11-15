@@ -11258,3 +11258,38 @@ v0.377, from the API: none.
 New tests: 9. The test list holds 2713 (1603 in `Engine.Tests`, 386 in `3DEngine.Tests`, 721 in `3DEngine.ImageTests`, 3
 in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
 entries: 14 of 15. New diagnostic codes: 0. Since the review of v0.375, 1 product milestone and 3 entries followed it.
+
+## v0.379 — The answers of the owner on the assemblies and the work with an agent are a record (P0.160, TASK-0394)
+
+On 2026-11-15 the owner asked for a design file on the design of assemblies and the work with an agent, for a modular
+furniture, a fixed mount with screws, a moving mechanism and a multi-level assembly. A side session wrote it, with a
+comparison with Plasticity, a plan of K10 and an answer sheet. The owner answered its fifteen decisions on 2026-11-15:
+option A for each, and option C for the model of a move. The owner chose the main session to record them, and one joined
+register entry, because the register held 14 of its 15 entries.
+
+**The change.**
+- ADR-0157 holds the answers: three stages (bodies and groups, instances, part references); connectors and joints in a
+  kinematic tree with no solver; intended contacts in the Document; a class for each result of a check; the preview of a
+  proposal on a fork, an accept that applies each command or none, and one step of undo for one proposal; the measures,
+  the pair check and the preview before the joints.
+- ADR-0126 is amended in items 4 and 8. Item 3 stays: a move is a `Rotate` until K10 measures 150 turns.
+- The roadmap holds 19 new rows (K15 to K22, P15 to P20, R25 to R29), the new text of K10, K11, K12, P11, P13 and R24, and
+  the new order.
+- Register entry R-0070 holds the sizes of the two cases and the model of a move. Open entries: 15 of 15.
+- Four proposal files hold the analysis, the comparison with Plasticity, the plan of K10 and the answer sheet.
+
+**Corrected.** The proposed text of the side session dated from v0.375. The session corrected: the words "Not committed";
+the lines that said that no task records the answers; two files that the answer sheet names and that the repository does
+not hold (the plan of P10.3 and the sheet of the questions of P10.2); the statement that the owner did not answer the
+questions of P10.2 (ADR-0155 records them); the numbers; and the count of open register entries.
+
+**Proof.** `eng/repo-gates` gives 488 runs of 168 checks and 0 failed, the write-set check passes, and each test project
+passes (2713 tests). Run 43763940067 passed on the branch. The failed runs since the entry v0.378, from the API: none.
+
+**What stays.** No code changes. P10.3 and P10a to P10c continue in their order. K10 needs the sizes of the owner first
+(R-0070). The web sources of the design file were read by research agents, not by the session that wrote the file. The
+register is full, so the next new entry needs a close first.
+
+New tests: 0. The test list holds 2713 (1603 in `Engine.Tests`, 386 in `3DEngine.Tests`, 721 in `3DEngine.ImageTests`, 3
+in `3DEngine.VisionTests`). Open entries: 15 of 15. New diagnostic codes: 0. Since the review of v0.375, 1 product
+milestone and 4 entries followed it.

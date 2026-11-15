@@ -436,6 +436,8 @@ Therefore each approved objective must have a track here.
   paper. v0.377, TASK-0393, ADR-0155.
 - P0.159 — The freedom and the fixed lengths do not depend on the size of a sketch, the ends of an edge in two parts are
   its farthest points, and a modifier stays while one of its keys is down. v0.378, TASK-0392, ADR-0156.
+- P0.160 — The answers of the owner of 2026-11-15 to the design file of the assemblies and of the work with an agent are a
+  record: ADR-0157, 19 new rows and the new order. v0.379, TASK-0394.
 - Review — The codebase review of 2026-11-14 (c). v0.351, TASK-0366.
 - P0.143 — The low findings of the codebase review of 2026-11-11: a triangle of zero area adds no edge, and a mesh of
   more than 100 000 triangles finds its edges on the thread pool. v0.332, TASK-0345, ADR-0121.
@@ -615,6 +617,7 @@ This track removes each condition that blocks other work.
 | P0.157 | On a small landscape display the arc of a proposal is right of the rows on a smaller ring, and each part of a proposal hides the tools under it (R-0066, ADR-0152). TASK-0388. | 1 |
 | P0.158 | The high finding of the codebase review of 2026-11-15 (E206: the fixed lengths of a sketch at each read, at a cost that grows with the fourth power of its size), before the next product phase. TASK-0391. | 1 |
 | P0.159 | The low findings of the codebase review of 2026-11-15 (E207 to E210, V192 and V193: the scale of the fixed lengths, the reader of the lines of K9, two faults of form, the ends of an edge in two parts, and the modifier keys of macOS), after the next product phase. TASK-0392. | 1 |
+| P0.160 | The answers of the owner of 2026-11-15 to the design file of the assemblies and of the work with an agent (`docs/proposals/2026-11-15-assembly-and-agent-design.md`): ADR-0157, the rows K15 to K22, P15 to P20 and R25 to R29, the new order, and the one register entry R-0070 of the model of a move and of the sizes of the two cases. TASK-0394. | 1 |
 | P0.102 | The cache of a face, the fixed controls, the list New, the edges and the safe area hold their next forms (V113 to V118 of the codebase review of 2026-11-06 (e); after P0.101). TASK-0252. | 1–2 |
 | P0.86 | The window keeps no input between sessions, the hook has the cases of one axis, and the next forms of four gates fail (V88 to V90, T141 to T144 of the codebase review of 2026-11-06; after the next product phase). TASK-0198. | 1–2 |
 
@@ -647,10 +650,16 @@ This track removes each condition that blocks other work.
 | P10a | The export of a sheet as SVG, from the exact numbers of the views and the values of the design (Q4 of 2026-11-10, first). After P10. | 1–2 |
 | P10b | The export of a sheet as DXF, for the exchange with a CAD program and a laser cutter (Q4, second). After P10a. | 2 |
 | P10c | The export of a sheet as PDF, for the documentation (Q4, third). After P10b. | 2–3 |
-| P11 | Joints in the Document: a fixed joint and a pivot between two bodies of one part, an axis from the geometry by identity, limits, the states tight and loose, and the angle set by `Rotate` commands, one at the end of a move (ADR-0126 items 2 and 3; its ADR studies the effect on the log first). Commands and queries for the AI. After K10. | 3–4 |
+| P11 | Joints in the Document: connectors, a fixed joint, a pivot and a slider between two bodies of one part, in a kinematic tree with no solver; limits as a cosine and a sine; the states tight and loose; a refusal of a joint that closes a loop; a joint declares its two parts as an intended contact; a command places a body by two connectors one time. P11.0 is its ADR: it decides the model of a move from the measure of K10 (ADR-0126 items 2 and 3, ADR-0157 items 2 to 5, R-0070). Commands and queries for the AI. After K10 and K17. | 3–5 |
 | P12 | The parametric loop: the missing edits that K10 found, and the checks that run again after a rebuild, in one window, with no STL and no manual history (capability 3). After K12 and K13. | 1–2 |
-| P13 | Requirements and assumptions in the Document: text, value, unit, references to bodies, faces or joints, and a status: measured, estimated, to verify physically, verified physically with a date and a result (ADR-0126 item 5). After P0.145; it can run with P11. | 2–3 |
+| P13 | Requirements and assumptions in the Document: text, value, unit, references to bodies, faces or joints, and a status: measured, estimated, to verify physically, verified physically with a date and a result; the intended contacts that no joint declares; and the rule of a gap as a requirement with a value of the process (ADR-0126 item 5, ADR-0157 items 5 and 7). After P0.145; it can run with P11. | 2–3 |
 | P14 | The role of a body (to print, context, excluded from an envelope) and the print export: one STL for each chosen part, in millimetres, with a check that its mesh is closed and has no degenerate triangle; 3MF later (ADR-0126 items 6 and 7). After P11. | 1–2 |
+| P15 | The preview of a proposal (S11 of `docs/proposals/2026-11-10-gaps-to-the-render.md`): the host runs the commands of a proposal on a fork of the Document, with no change of the first Document or of its log, and gives the outcome of each command and four differences: the bodies, the state of the solver, the measures (K15) and the checks (K11). Its ADR gives the design of the second Document (R-0055, ADR-0157 item 8). After K11. | 3–5 |
+| P16 | The accept after a preview: the accept runs the dry run again; it applies when the result equals the result that the person saw, shows the new preview when it differs, and applies each command or none; one proposal is one step of undo. Its ADR amends ADR-0092 items 4 and 6, ADR-0130 item 4 and ADR-0031 (ADR-0157 items 9 and 10). After P15. | 2–3 |
+| P17 | The guide for an agent in `docs/`: the loop read, measure, propose and check, with the SVG of a view (P10a) as its picture (ADR-0157 item 13). After K11 and P10a. | 1 |
+| P18 | Groups of bodies in the Document: a named set of parts by identity, which can hold groups, rigid by default (ADR-0157 item 1). Its ADR gives the record. After P11. | 1–2 |
+| P19 | A screw as data in the Document: a standard, a size, a pitch, a length and a head, on an axis (ADR-0157). Its ADR gives the record and the tables. After P13. | 2 |
+| P20 | Instances of a body inside one Document: a source and its instances, each with a place and no geometry of its own, and a copy as a new source (ADR-0157 item 1, the second stage). Its ADR decides the model with the result of P11.0. After R24. | to estimate |
 
 ## Track R — The renderer
 
@@ -750,7 +759,12 @@ The first objective. Each phase ends with something that a person can observe.
 | R22c | A size that no constraint fixes and a lost value show in a separate form, from a search of the free parts of a sketch in the solver (ADR-0118 item 5, ADR-0146 item 2, ADR-0149; a lost value waits for P10). After R22b. TASK-0384. | 2 |
 | R22d | The agent proposes the place of each dimension, and the person accepts or rejects it (ADR-0092, ADR-0118 item 5, ADR-0146 item 2). After R22c and P10: the place of a dimension is a command on a sheet (ADR-0118 item 3). | 1–2 |
 | R23 | A joint in the window: a rotation handle on a pivot and a pad for the angle, one `Rotate` at the end of a drag, and the contact and the envelope of the checks in the view. After P11. | 2 |
-| R24 | The end-to-end scenario of the tilting support of a light: the AI finds the contact of the knob with the arm, proposes a new value, runs the checks again, and shows the envelope within 60 mm; the physical load test has its own recorded result (ADR-0126). After each phase of the assembly work. | 1–2 |
+| R24 | The end-to-end scenario of the tilting support of a light: the AI finds the contact of the knob with the arm, proposes a new value, runs the checks again, and shows the envelope within 60 mm; the physical load test has its own recorded result, with the criteria C1 to C11 of the design file (ADR-0126, ADR-0157 item 12). After each phase of the assembly work. | 1–2 |
+| R25 | The preview of a proposal in the window: the new shape in dashed amber lines on the present shape, a switch "before, after, both", a table "measure, before, after", and the state of the solver after (gap G12 of the render, ADR-0157 item 8). Desktop first. After P15. | 2 |
+| R26 | The section view: a cut plane on an origin plane or on a datum, a pad for its offset, and a cap on the cut faces; presentation only (kernel boundary: section by a plane). After K10. | 1–2 |
+| R27 | A tool of the window that turns a body, and the snap of a body to a body by two connectors (ADR-0157 items 3 and 4). After P11. | 2 |
+| R28 | The end-to-end scenario of the bookcase: the agent places the panels of a module by connectors, uses one module several times, checks the gaps and the screws, and proposes a change of a width, with the criteria C1 to C11 of the design file (ADR-0157 item 12). After P20 and K18. | 1–2 |
+| R29 | The drag of a face as a change of the value that owns the face: the distance of an extrude or the size of a primitive (ADR-0157 item 15). After P12. | to estimate |
 
 ## Track K — The kernel
 
@@ -799,11 +813,19 @@ boundary and each refused rung.
 | K9a | The visible and the hidden edges of the live bodies along a view, exact, from the faces and the edges of the owned kernel, computed outside the kernel; a curved side gives the outline of its facets (ADR-0142). After R21c. TASK-0375. | 2 |
 | K9b | The circle or the arc of a curved side in place of its facets, the outline of a sphere as its circle, and an end seen from the side as one line, from the curves of the design (ADR-0142 item 7, ADR-0143). After K9a. TASK-0376. | 2–3 |
 | K9c | An ellipse for an end whose axis is neither along nor across the view, the circles of a turned body, and the outline of a cylinder and a cone from its axis (ADR-0143 item 4, ADR-0144). After K9b. TASK-0377. | 1–2 |
-| K10 | The reference case in the engine: the crossbar with its two fixing points, the bracket, the arm and the knob, and the volumes of the lamp, the housing and the cable, with the commands that exist; each missing feature (a revolve, a union, the size of a primitive, a hole) gets its row (ADR-0126). After P10c. | 1–2 |
-| K11 | Interference at one position: a query gives each pair of bodies that touch or overlap, where, and how deep. After P11. | 2–3 |
-| K12 | The travel: a query checks a pivot from one limit to the other, sampled with a margin so that no contact between two samples is missed, and gives the first contact angle to a stated tolerance (ADR-0126 item 4). After K11. | 2–3 |
+| K10 | The reference case in the engine: the crossbar with its two fixing points, the bracket, the arm and the knob, and the volumes of the lamp, the housing and the cable, with the commands that exist, as a builder in `Engine.Tests`; each missing feature (a revolve, the size of a primitive, a hole) gets its row; a test measures 150 turns of the arm for register entry R-0070; the bookcase of the owner is a second builder (ADR-0126, ADR-0157 items 2 and 12). After P10c. | 2–3 |
+| K11 | The pair check at one position: for each pair of bodies a query gives the class (apart, touching or overlapping), the volume and the box of the overlap, the minimum gap, a mark for an intended contact, and a mark when the answer is exact for a mesh only (ADR-0157 items 5 to 7). The intended pairs are a parameter of the query until P11 and P13 put them in the Document. After K15 and K16. | 2–3 |
+| K12 | The travel: a query checks a pivot from one limit to the other on a fork of the Document, sampled with a margin so that no contact between two samples is missed, with the intended contacts exempt, and gives the first contact angle to a stated tolerance; a slider gets one exact sweep (ADR-0126 item 4, ADR-0157 items 5 and 8). After K11, P11 and P15. | 2–3 |
 | K13 | The envelope: a query gives the extent below a reference face over the travel, and names the bodies that the roles exclude. After K12 and P14. | 1–2 |
 | K14 | The load check of a printed part (ADR-0126 item 1). Its own ADR decides the method. After R24. | to estimate |
+| K15 | Measure queries in the engine, so that the window and an agent measure by one path: `GetMassProperties` gives the exact volume and the centre of a body; `GetDistance` gives the minimum distance between two bodies, faces, edges or vertices, with its two points; `GetAngle` gives the cosine and the sine between two faces (ADR-0157). First the bodies of plane faces, then the curved faces. After K10. | 2–3 |
+| K16 | `Union` and `Intersect`, in the form of `Subtract`: each consumes two bodies and makes one. The union gives the knob with a collar of K10; the intersection gives the overlap volume of K11 (kernel boundary: boolean). After K10. | 2 |
+| K17 | The connectors of a body: a query gives each named datum of the body, and the implicit frames of its faces: the centre and the normal of a plane face, and the axis of a cylinder face (ADR-0157 item 4). After K10. | 1 |
+| K18 | The check of a screw: for a screw of P19 a query gives each body that its axis crosses, the class of each hole from a table (clearance, tapped or overlap), the length of engagement, the seat of the head, and a tip that reaches the end of a blind hole. After P19 and K11. | 2 |
+| K19 | The order of assembly along the axes: a query moves a part or a group along each of the six axis directions and each screw axis on a fork, and gives an order in which each part can leave, or says that this family of moves has none (ADR-0157 item 14). After K12. | to estimate |
+| K20 | The access of a tool: a query checks that a cylinder on the axis of a screw is free at a stated state of the assembly (ADR-0157 item 14). After K18. | to estimate |
+| K21 | A linear and a grid pattern of a body; a radial pattern records a quaternion for each copy, as `Rotate` does. With P20 each copy is an instance. After P20. | 2 |
+| K22 | The flat chamfer of one edge between two plane faces (kernel boundary: flat chamfer; no edge chain, anti-objective 11). After R24. | to estimate |
 
 ## Track V — Machine vision
 
@@ -877,6 +899,12 @@ The tracks are not strictly sequential, but three rules hold:
    On 2026-11-12 the owner put the assembly work on the roadmap (ADR-0126, answers D1 to D7), after the current queue and
    the 2D drawing track up to P10c: K10, then P11 and P13 (P13 can run with P11), R23, K11, K12, P14, K13, P12, R24,
    and K14 after them. Each phase opens its task, and its ADR when it changes the Document or the contract, at its start.
+
+   On 2026-11-15 the owner answered the decisions of the design file of the assemblies and of the work with an agent
+   (ADR-0157, which amends ADR-0126 item 8). After P10c: K10; then K15, K16 and R26, which can run at the same time, then K11
+   and P17; then P15, P16 and R25; then K17, P11 (P11.0 first), P18, R23 and R27, with P13 at the same time as P11; then K12,
+   P14, K13, P12 and R24; then P20, K21, P19, K18 and R28; then K19, K20, K22, R29 and P8b, each on its own decision, and
+   K14 after R24. The model of a move of a part waits for the measure of K10 (R-0070).
 2. R2 blocks each later phase in track R. No mesh leaves the geometry backend today.
 3. K4 needs K0, K1 and K2. Do not start K4 before the reference model exists.
 4. The path to the milestone "CAD on one part" (the owner, 2026-10-27, KD2): R7b, R8a, R8b, the codebase
