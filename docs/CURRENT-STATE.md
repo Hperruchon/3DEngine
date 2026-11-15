@@ -10862,3 +10862,31 @@ at its line. `CodebaseReviewGateTests` passes with the new review.
 New tests: 0. The test list holds 2644 (1571 in `Engine.Tests`, 380 in `3DEngine.Tests`, 690 in `3DEngine.ImageTests`, 3
 in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
 entries: 15 of 15. New diagnostic codes: 0. This entry is a codebase review, so 0 product milestones and 0 entries follow it.
+
+## v0.364 — A line of a curved side keeps its place along the axis, and Frame leaves a window at the right (P0.151, TASK-0379)
+
+The codebase review of 2026-11-14 (e) (v0.363) gave the high findings E202, E203 and V191 before the next product phase, R22.
+The medium finding E204 came into this task, because the fix of E202 and E203 drops the circle of each rim of a hole without it.
+
+**The change.** ADR-0145 amends ADR-0140 item 3, ADR-0143 items 2 to 4 and ADR-0144 items 1, 2 and 4.
+- Each line of a view keeps the exact ends in the world of its piece. A line whose two ends have one exact place h along the
+  axis is on the circle at Base + h Axis, with the radius R for a cylinder and R (1 − h) for a cone (E204); each other line
+  keeps its facets.
+- A piece of an outline goes onto the line of the design at the place of each end, so the outline of a cut side ends where
+  the side ends (E202), and no length on the view divides a value (E203).
+- An axis within 1e-9 of the view is along it: its lines are circles, its side has no outline, and a whole visible circle
+  hides each other arc of that circle (E203).
+- `FreePart` cuts the free part at a tall window at the right edge, as the window of the live sketches (V191).
+
+**Proof.** Tests prove the outline of a hole from face to face, the outline of a cut cone to its cut, the circles of radius
+5 and 10 of a cut cone from the top, one circle for a cylinder that a Rotate of 180 degrees turned at the origin and moved
+(the input that threw), and a free part that leaves the window of the live sketches at 1280 by 720 and 1440 by 900. Seven
+injections each failed a named test; each file came back byte for byte. The phone project builds with zero warnings. Run
+43574459809 passed on the branch. The failed runs since the entry v0.363, from the API: none on a branch; 43562165193 on `main`
+stays red until the owner runs it again.
+
+**What stays.** T182 and E205 are in TASK-0380 after R22. No client reads the lines of a view yet.
+
+New tests: 7. The test list holds 2651 (1576 in `Engine.Tests`, 380 in `3DEngine.Tests`, 692 in `3DEngine.ImageTests`, 3
+in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
+entries: 15 of 15. New diagnostic codes: 0. Since the review of v0.363, 0 product milestones and 1 entry followed it.

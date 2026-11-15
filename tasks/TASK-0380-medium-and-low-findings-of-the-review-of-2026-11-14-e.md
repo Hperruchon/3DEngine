@@ -29,22 +29,20 @@ and the low finding E205. Section 7 of `docs/templates.md` puts them after the n
 
 ## Goal
 
-An edge of a cut side shows its own circle, the test of the circles reads its hidden lines, and a flat end draws one line.
+The test of the circles reads its hidden lines, and a flat end draws one line.
 
 ## Scope (in)
 
-1. E204: the circle or the ellipse at the place of the edge along the axis.
-2. T182: the ends of the hidden lines in the test.
-3. E205: an ellipse with a minor half axis near zero as an end across the view.
-4. A test for each, which fails before the fix.
+1. T182: the ends of the hidden lines in the test.
+2. E205: an ellipse with a minor half axis near zero as an end across the view.
+3. A test for each, which fails before the fix.
 
 ## Scope (out)
 
-- E202, E203 and V191 (TASK-0379).
+- E202, E203, E204 and V191 (TASK-0379).
 
 ## Acceptance criteria
 
-- [ ] A test proves the circle of radius 5 of a cone cut at its middle.
 - [ ] The test of the circles of a Document asserts the ends of its hidden lines.
 - [ ] A test proves one line for an end of a cylinder that two turns laid on its side.
 - [ ] A clean build (`--no-incremental`) gives zero errors and zero warnings, and the phone project builds.
@@ -64,3 +62,4 @@ Weakest:    to be written at the close.
 ## Progress
 
 - 2026-11-14: opened by the codebase review of 2026-11-14 (e) (TASK-0378).
+- 2026-11-14: E204 went to TASK-0379, because the fix of E202 and E203 drops the circle of each rim of a hole without it.

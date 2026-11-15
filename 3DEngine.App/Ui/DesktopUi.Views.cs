@@ -151,6 +151,12 @@ internal sealed unsafe partial class DesktopUi
         {
             if (!portrait && box.X < width * 0.25f && box.Z < width * 0.6f && box.Y < height * 0.6f && box.W > height * 0.2f)
                 left = Math.Max(left, box.Z + 16f);
+
+            // Finding V191 of the codebase review of 2026-11-14 (e) (TASK-0379): a tall window at the right edge, as the
+            // window of the live sketches, cuts the part as the panel at the left does. Until TASK-0379 Frame put the part
+            // under it.
+            if (!portrait && box.Z > width * 0.75f && box.X > width * 0.4f && box.Y < height * 0.6f && box.W > height * 0.2f)
+                right = Math.Min(right, box.X - 16f);
             if (box.W < height * 0.2f)
                 top = Math.Max(top, box.W + 8f);
             if (box.Y > height * 0.8f)
