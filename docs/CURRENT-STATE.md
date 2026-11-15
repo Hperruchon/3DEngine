@@ -10941,3 +10941,26 @@ owner runs it again.
 New tests: 1. The test list holds 2665 (1577 in `Engine.Tests`, 380 in `3DEngine.Tests`, 705 in `3DEngine.ImageTests`, 3
 in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
 entries: 15 of 15. New diagnostic codes: 0. Since the review of v0.363, 1 product milestone and 3 entries followed it.
+
+## v0.367 — Each class of the image tests that creates a Vulkan device runs in one collection, and R-0062 closes (P0.153, TASK-0382)
+
+R-0062 (opened 2026-11-10): on the computer of the owner a run of `3DEngine.ImageTests` stopped at times after about 145
+tests, with an access violation in `vkCreateDevice`, while several classes created a Vulkan device at the same time. On
+2026-11-14 a run stopped after 131 tests (TASK-0377).
+
+**The change.** Fifteen classes that create a device were in the collection of Dear ImGui, which xunit runs one test after the
+other; seven were in no collection, so they ran at the same time as each other and as that collection. The seven classes now
+join the collection, and `DearImGui` says why. `DeviceCollectionTests` reads the source files of the project and fails when a
+file that creates a device puts its class in no such collection. A second collection for the devices would run at the same
+time as the collection of Dear ImGui, whose classes create devices too, so it is not used.
+
+**Proof.** One injection, the attribute removed from `GizmoImageTests`, failed the test; the file came back byte for byte. Ten
+runs of `3DEngine.ImageTests` in a row ran 706 tests each, each passed, with no stop. R-0062 closes by its exit. The phone
+project builds with zero warnings. Run 43577525046 passed on the branch. The failed runs since the entry v0.366, from the API: none
+on a branch; 43562165193 on `main` stays red until the owner runs it again.
+
+**What stays.** The cause in the driver is not known; the tests no longer create two devices at the same time.
+
+New tests: 1. The test list holds 2666 (1577 in `Engine.Tests`, 380 in `3DEngine.Tests`, 706 in `3DEngine.ImageTests`, 3
+in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
+entries: 14 of 15. New diagnostic codes: 0. Since the review of v0.363, 1 product milestone and 4 entries followed it.
