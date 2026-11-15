@@ -15,6 +15,8 @@ namespace ThreeDEngine.ImageTests;
 // origin stands between two quads: one behind it, red on its left half and blue on its right half,
 // and one small white quad in front of it. The picture is compared by structure at the pixels of
 // known points. The file image-quad.png is the picture of the visual check.
+// R-0062 (TASK-0382): the class creates a Vulkan device, so it runs in the collection of the devices.
+[Collection(DearImGui.Collection)]
 public class ImageQuadImageTests
 {
     private const uint Width = 640;
