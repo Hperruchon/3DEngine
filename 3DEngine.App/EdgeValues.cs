@@ -181,11 +181,34 @@ internal static class EdgeValues
         }
 
         var fixedLengths = sketch.FixedLengths.ToHashSet();
+
+        // ADR-0151 item 1 (phase P0.156, TASK-0387): two edges are one line on the view when their ends differ only along the
+        // direction of the view, within 1e-6 of the length. A free size or a reference on the line of a value that shows, or
+        // on the line of one that this view already gives, says again what the view shows, so it does not show. Until
+        // TASK-0387 the far side of a plate gave "not fixed" over the near side and its value, from the front.
+        var forward = camera.Axes().Forward;
+        var forwardSquare = Dot(forward, forward);
+        bool Same(DatumPoint p, DatumPoint q, double limit)
+        {
+            var w = Minus(p, q);
+            var along = Dot(w, forward);
+            return Dot(w, w) - (along * along / forwardSquare) <= limit * limit;
+        }
+
+        bool Coincide(EdgeEntry a, EdgeEntry b)
+        {
+            var (a0, a1, b0, b1) = (a.Segments[0].Start, a.Segments[^1].End, b.Segments[0].Start, b.Segments[^1].End);
+            var size = Math.Sqrt(Dot(Minus(a1, a0), Minus(a1, a0)));
+            var limit = 1e-6 * size;
+            return (Same(a0, b0, limit) && Same(a1, b1, limit)) || (Same(a0, b1, limit) && Same(a1, b0, limit));
+        }
+
+        var given = measured.Values.Select(entry => entry.Edge).Where(other => other.Segments.Count > 0 && TrueLength(other, camera, radius: false)).ToList();
         foreach (var (free, edge) in lines.Where(entry => !measured.ContainsKey(entry.Line)))
         {
             var d = Minus(edge.Segments[^1].End, edge.Segments[0].Start);
             var length = Math.Sqrt(Dot(d, d));
-            if (!(length > 0))
+            if (!(length > 0) || given.Any(other => Coincide(edge, other)))
                 continue;
 
             // ADR-0149 item 2: a line whose length the design does not fix shows that length in amber, "not fixed", so the
@@ -195,6 +218,7 @@ internal static class EdgeValues
                 if (middleOf(edge) is { } at && SketchLength(sketch, free) is { } sketched)
                 {
                     var measure = measureOf(edge, at);
+                    given.Add(edge);
                     yield return new Value(FreeKey(free), $"{Exact(sketched)} {unit} not fixed", Placed(measure), sketched, body, sketch.SketchId, null, "Not fixed", measure, Free: true);
                 }
 
@@ -233,6 +257,7 @@ internal static class EdgeValues
                 if (middle is not { } at)
                     break;
                 var measure = measureOf(edge, at);
+                given.Add(edge);
                 yield return new Value(ReferenceKey(free), $"({Exact(number)} {unit})", Placed(measure), number, body, sketch.SketchId, null, "Reference", measure, Reference: true);
                 break;
             }
