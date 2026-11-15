@@ -588,6 +588,7 @@ internal sealed unsafe partial class DesktopUi : IDisposable
         io.DisplayFramebufferScale = framebufferScale;
         io.DeltaTime = deltaSeconds > 0 ? deltaSeconds : 1f / 60f;
 
+        _frameDisplay = displaySize;
         _lastPanels.Clear();
         _lastPanels.AddRange(_panels);
         _panels.Clear();
