@@ -11167,3 +11167,31 @@ review and read each finding in the code at its line. `CodebaseReviewGateTests` 
 New tests: 0. The test list holds 2689 (1584 in `Engine.Tests`, 382 in `3DEngine.Tests`, 720 in `3DEngine.ImageTests`, 3
 in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
 entries: 12 of 15. New diagnostic codes: 0. This entry is a codebase review, so 0 product milestones and 0 entries follow it.
+
+## v0.376 — The status and the fixed lengths of a sketch come from one elimination (P0.158, TASK-0391)
+
+Finding E206 of the codebase review of 2026-11-15 (high): since R22c each read of a sketch eliminated J·Jᵀ with the gradient
+of each line as one more row, and the window reads the active sketch in each frame while the pointer is over it.
+
+**The change.** ADR-0154 amends ADR-0149 item 1.
+- One elimination of J·Jᵀ takes J·g of each line as one more column of its right side. The residual g − Jᵀ·λ is the part of
+  the gradient outside the space of the rows of J, and its square is the last pivot of the old test, with the same limit.
+- `GetSketch` takes the status and the fixed lengths from that one elimination.
+- The product J·Jᵀ sums the columns where both rows have a value. With finite entries this gives the same bits as the sum over
+  each column, so the solver and a replay keep their results; an entry that is not finite takes the full sum.
+- The change removes `ProductWith` and the pattern `is var`, so E209 and E210 of TASK-0392 are fixed too.
+- No contract change: the result of `GetSketch` keeps its fields and their meaning.
+
+**Proof.** A new test of a stair of 100 lines asserts the fixed lines, the freedom and a limit of 1 s. On the old code it
+failed at 5.4 s with the correct lines and freedom. On the computer of the owner the status now takes 0.9 ms and the
+analysis 7.7 ms; the status alone took 28 ms before. An injection of 1e-15 in the product failed `SketchSolverTests`,
+`LineConstraintTests` and `CircleArcTests`, and the file came back byte for byte; `BuiltAssemblyReferenceTests` failed in
+that run too and passed in the next full run. The phone project builds with zero warnings. Run 43753428670 passed on the branch.
+The failed runs since the entry v0.375, from the API: none.
+
+**What stays.** The residual and the old pivot are equal in exact arithmetic only, and no test compares them near the limit.
+The time test can fail on a very slow computer.
+
+New tests: 1. The test list holds 2690 (1585 in `Engine.Tests`, 382 in `3DEngine.Tests`, 720 in `3DEngine.ImageTests`, 3
+in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
+entries: 12 of 15. New diagnostic codes: 0. Since the review of v0.375, 0 product milestones and 1 entry followed it.
