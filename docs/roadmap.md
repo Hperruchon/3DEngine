@@ -397,6 +397,8 @@ Therefore each approved objective must have a track here.
 - Review — The codebase review of 2026-11-14 (d). v0.356, TASK-0371.
 - P0.149 — The high findings of the codebase review of 2026-11-14 (d): a sketch leaves a flat view, Reject searches its
   angle, and a tool under an end of the arc of a proposal hides while the proposal waits. v0.357, TASK-0373, ADR-0139.
+- R21c — Frame fits the bodies in the free part of the scene, between the panel, the rows, the bars and the anchors, and
+  the centre of the picture moves there. v0.358, TASK-0372, ADR-0140.
 - Review — The codebase review of 2026-11-14 (c). v0.351, TASK-0366.
 - P0.143 — The low findings of the codebase review of 2026-11-11: a triangle of zero area adds no edge, and a mesh of
   more than 100 000 triangles finds its edges on the thread pool. v0.332, TASK-0345, ADR-0121.
@@ -692,7 +694,7 @@ The first objective. Each phase ends with something that a person can observe.
 | R21 | The flat views in the window: a front, a top, a side and the other three views with no perspective, one tap each, and a return to the 3D view; Frame fills the free part of the scene (ADR-0118 item 2; Q5 A of 2026-11-10; problem 6 of the UX test). After R18. | 2–3 |
 | R21a | The flat views of the camera with no perspective, one source of the axes for the view, the pick, the overlay and the gizmo, and the commands of the views in the command line (ADR-0137). After R18. TASK-0369. | 1 |
 | R21b | The controls of the six flat views and of the return to the 3D view, a button "Views" and a net, and the keys of the views (ADR-0137 item 5, ADR-0138). After R21a. TASK-0370. | 1 |
-| R21c | Frame fills the free part of the scene, between the panels, the rows and the ring (ADR-0118 item 2; problem 6 of the UX test). After R21b. | 1 |
+| R21c | Frame fills the free part of the scene, between the panels, the rows and the ring (ADR-0118 item 2; problem 6 of the UX test). After R21b. TASK-0372. | 1 |
 | R22 | The right dimensions on a flat view: the values of the design, each one time in a view where its length is true, a chain with one reference in parentheses, a separate form for a size that no constraint fixes and for a lost value, and the place of each dimension proposed by the agent (ADR-0118 item 5). After K9. It needs a search of the free parts of a sketch in the solver. | 3–5 |
 | R23 | A joint in the window: a rotation handle on a pivot and a pad for the angle, one `Rotate` at the end of a drag, and the contact and the envelope of the checks in the view. After P11. | 2 |
 | R24 | The end-to-end scenario of the tilting support of a light: the AI finds the contact of the knob with the arm, proposes a new value, runs the checks again, and shows the envelope within 60 mm; the physical load test has its own recorded result (ADR-0126). After each phase of the assembly work. | 1–2 |

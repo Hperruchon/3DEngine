@@ -309,20 +309,38 @@ public sealed class Camera : Entity
     /// nothing said so.
     /// </returns>
     public bool Frame((double X, double Y, double Z) min, (double X, double Y, double Z) max, float aspect)
+        => Frame(min, max, aspect, (-1.0, -1.0, 1.0, 1.0));
+
+    /// <summary>
+    /// ADR-0140 item 1 (phase R21c, TASK-0372): the centre of the picture in normalized coordinates, from -1 to 1 with y up.
+    /// The projection, the ray of a pick, the overlay and the gizmo move the picture by it, so the target shows there. Frame
+    /// sets it; it is 0 for a frame of the whole picture.
+    /// </summary>
+    public (double X, double Y) Shift { get; private set; }
+
+    /// <summary>
+    /// ADR-0140 item 1: frames a box in a part of the picture, a rectangle in normalized coordinates (left, bottom, right,
+    /// top), as Frame does in the whole picture: the target shows at the centre of the part, and the sphere around the box
+    /// fills FrameFill of the smaller half of the part.
+    /// </summary>
+    public bool Frame((double X, double Y, double Z) min, (double X, double Y, double Z) max, float aspect, (double X0, double Y0, double X1, double Y1) part)
     {
         // NaN passed the old check "aspect <= 0" and gave a distance of NaN (V22).
         if (!(float.IsFinite(aspect) && aspect > 0))
             throw new ArgumentOutOfRangeException(nameof(aspect), aspect, "An aspect is finite and positive.");
+        if (!(part.X0 >= -1 && part.X1 <= 1 && part.Y0 >= -1 && part.Y1 <= 1 && part.X1 > part.X0 && part.Y1 > part.Y0))
+            throw new ArgumentOutOfRangeException(nameof(part), part, "A part of the picture is a rectangle inside it.");
 
         Target = ((min.X + max.X) / 2.0, (min.Y + max.Y) / 2.0, (min.Z + max.Z) / 2.0);
+        Shift = ((part.X0 + part.X1) / 2.0, (part.Y0 + part.Y1) / 2.0);
 
         var (dx, dy, dz) = (max.X - min.X, max.Y - min.Y, max.Z - min.Z);
         var radius = Math.Sqrt(dx * dx + dy * dy + dz * dz) / 2.0;
-        var halfVertical = FieldOfViewDegrees * Math.PI / 360.0;
-        var halfHorizontal = Math.Atan(Math.Tan(halfVertical) * aspect);
-        var half = Math.Min(halfVertical, halfHorizontal);
+        var tangent = Math.Tan(FieldOfViewDegrees * Math.PI / 360.0);
+        // The tangent of the smaller half angle of the part: its half height and its half width, in units of the half picture.
+        var half = Math.Min(tangent * (part.Y1 - part.Y0) / 2.0, tangent * aspect * (part.X1 - part.X0) / 2.0);
         // ADR-0094: the sphere fills FrameFill of the half picture: its tangent is that part of the tangent of the half angle.
-        var filled = Math.Atan(Math.Tan(half) * FrameFill);
+        var filled = Math.Atan(half * FrameFill);
 
         Distance = ClampDistance(radius / Math.Sin(filled));
         return Distance - radius >= NearPlane && Distance + radius <= FarPlane;
@@ -378,13 +396,14 @@ public sealed class Camera : Entity
                 1f / (half * aspect), 0, 0, 0,
                 0, 1f / half, 0, 0,
                 0, 0, 1f / (far - near), 0,
-                0, 0, far / (far - near), 1);
+                (float)Shift.X, (float)Shift.Y, far / (far - near), 1);
         }
 
         return new Matrix4x4(
             yScale / aspect, 0, 0, 0,
             0, yScale, 0, 0,
-            0, 0, near / (far - near), -1,
+            // ADR-0140 item 1: the shift moves each point of the picture; w is minus z, so the third row carries it.
+            -(float)Shift.X, -(float)Shift.Y, near / (far - near), -1,
             0, 0, near * far / (far - near), 0);
     }
 }
