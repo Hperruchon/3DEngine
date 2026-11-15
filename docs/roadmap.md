@@ -395,6 +395,8 @@ Therefore each approved objective must have a track here.
 - R21b — A button "Views" opens a net of the six flat views and the 3D view, and the keys 1, 3, 7 and 0 give them.
   v0.355, TASK-0370, ADR-0138.
 - Review — The codebase review of 2026-11-14 (d). v0.356, TASK-0371.
+- P0.149 — The high findings of the codebase review of 2026-11-14 (d): a sketch leaves a flat view, Reject searches its
+  angle, and a tool under an end of the arc of a proposal hides while the proposal waits. v0.357, TASK-0373, ADR-0139.
 - Review — The codebase review of 2026-11-14 (c). v0.351, TASK-0366.
 - P0.143 — The low findings of the codebase review of 2026-11-11: a triangle of zero area adds no edge, and a mesh of
   more than 100 000 triangles finds its edges on the thread pool. v0.332, TASK-0345, ADR-0121.

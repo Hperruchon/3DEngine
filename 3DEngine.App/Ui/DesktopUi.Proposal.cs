@@ -224,17 +224,46 @@ internal sealed unsafe partial class DesktopUi
     // degrees one degree at a time, at the first angle where Accept and its word lie on no target of a tool of the ring of this
     // frame. The tools dim while a proposal waits, but they still take a tap, so no end of the arc covers one. With no such
     // angle the arc ends at 305 degrees. Until TASK-0367 Accept lay on the target of "Edit sketch" at most landscape sizes.
+    // Finding V186 of the codebase review of 2026-11-14 (d) (TASK-0373): the same for Reject and its word, from 235 degrees up,
+    // while the arc keeps at least 40 degrees. With no such angle the arc starts at 235 degrees. Until TASK-0373 Reject was not
+    // tested, and lay on Move or Set distance on a small landscape display.
+    private (float From, float To) ArcEnds(Vector2 centre, float radius)
+    {
+        var to = ArcEnd(centre, radius);
+        if (_ringTargets is not { Count: > 0 } targets)
+            return (ProposalFrom, to);
+        for (var degrees = 235; degrees * MathF.PI / 180f <= to - (40f * MathF.PI / 180f); degrees++)
+        {
+            var angle = degrees * MathF.PI / 180f;
+            var (circle, label) = EndBoxes(centre, radius, angle, accept: false);
+            if (!targets.Values.Any(target => Meets(target, circle) || Meets(target, label)))
+                return (angle, to);
+        }
+
+        return (ProposalFrom, to);
+    }
+
+    // The box of the circle of an end of the arc at an angle, and the box of its word: Reject at the left, Accept at the right.
+    private static (Vector4 Circle, Vector4 Word) EndBoxes(Vector2 centre, float radius, float angle, bool accept)
+    {
+        var (half, lineHeight) = (ProposalButton / 2f, ImGui.GetTextLineHeight());
+        var word = ImGui.CalcTextSize(accept ? AcceptLabel : RejectLabel).X;
+        var end = centre + (new Vector2(MathF.Cos(angle), MathF.Sin(angle)) * radius);
+        var circle = new Vector4(end.X - half, end.Y - half, end.X + half, end.Y + half);
+        var label = accept
+            ? new Vector4(end.X + half + 8f, end.Y - (lineHeight / 2f), end.X + half + 8f + word, end.Y + (lineHeight / 2f))
+            : new Vector4(end.X - half - 8f - word, end.Y - (lineHeight / 2f), end.X - half - 8f, end.Y + (lineHeight / 2f));
+        return (circle, label);
+    }
+
     private float ArcEnd(Vector2 centre, float radius)
     {
         if (_ringTargets is not { Count: > 0 } targets)
             return ProposalTo;
-        var (half, lineHeight, word) = (ProposalButton / 2f, ImGui.GetTextLineHeight(), ImGui.CalcTextSize(AcceptLabel).X);
         for (var degrees = 305; degrees >= 255; degrees--)
         {
             var angle = degrees * MathF.PI / 180f;
-            var end = centre + (new Vector2(MathF.Cos(angle), MathF.Sin(angle)) * radius);
-            var circle = new Vector4(end.X - half, end.Y - half, end.X + half, end.Y + half);
-            var label = new Vector4(end.X + half + 8f, end.Y - (lineHeight / 2f), end.X + half + 8f + word, end.Y + (lineHeight / 2f));
+            var (circle, label) = EndBoxes(centre, radius, angle, accept: true);
             if (!targets.Values.Any(target => Meets(target, circle) || Meets(target, label)))
                 return angle;
         }
@@ -405,8 +434,8 @@ internal sealed unsafe partial class DesktopUi
         var radius = ring.Inner + (RingBand / 2f);
         Vector2 At(float angle, float distance) => ring.Centre + (new Vector2(MathF.Cos(angle), MathF.Sin(angle)) * distance);
         // Finding V184 of the codebase review of 2026-11-14 (c) (TASK-0367): the arc ends before each tool of the ring.
-        var to = ArcEnd(ring.Centre, radius);
-        var (reject, accept) = (At(ProposalFrom, radius), At(to, radius));
+        var (from, to) = ArcEnds(ring.Centre, radius);
+        var (reject, accept) = (At(from, radius), At(to, radius));
 
         // The word of each end, out of the arc: Reject at the left of its circle, Accept at the right of its circle.
         var lineHeight = ImGui.GetTextLineHeight();
@@ -433,12 +462,12 @@ internal sealed unsafe partial class DesktopUi
         var ground = (DimensionColour & 0x00FFFFFFu) | (0x48u << 24);
         for (var i = 0; i < steps; i++)
         {
-            var (a, b) = (ProposalFrom + ((to - ProposalFrom) * i / steps), ProposalFrom + ((to - ProposalFrom) * (i + 1) / steps));
+            var (a, b) = (from + ((to - from) * i / steps), from + ((to - from) * (i + 1) / steps));
             list.AddQuadFilled(At(a, ring.Inner), At(a, ring.Outer), At(b, ring.Outer), At(b, ring.Inner), ground);
         }
 
-        list.PathArcTo(ring.Centre, ring.Outer, ProposalFrom, to, 32);
-        list.PathArcTo(ring.Centre, ring.Inner, to, ProposalFrom, 32);
+        list.PathArcTo(ring.Centre, ring.Outer, from, to, 32);
+        list.PathArcTo(ring.Centre, ring.Inner, to, from, 32);
         list.PathStroke(DimensionColour, ImDrawFlags.Closed, 2f);
 
         // Reject: a ground of a control, an amber outline and a cross. Accept: an amber ground and a tick in the colour of the
@@ -469,7 +498,7 @@ internal sealed unsafe partial class DesktopUi
         // ADR-0133 item 1 (phase R18m, TASK-0364): the caption is on the band of the arc, along its top. When the arc cuts it,
         // the whole caption is the first line under the arc. Until TASK-0364 the caption was above the arc, or the first line
         // inside the ring, in the box of the lines, which lay on the chip of the width at 1280 by 720 (gap H1).
-        var band = BandCaption(ring.Centre, radius, caption, half, ProposalFrom, to);
+        var band = BandCaption(ring.Centre, radius, caption, half, from, to);
         // ADR-0113 item 6 (phase R19, TASK-0336): the caption goes inside the ring when a fixed window, as the rows of the body,
         // covers its place too, or when its place is above the top bar. Until TASK-0336 the rows covered it at 640 by 360.
         string? captionLine = ProposalCaptionItem;

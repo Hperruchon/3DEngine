@@ -10662,3 +10662,28 @@ session took the measures with the script of the last review and read each findi
 New tests: 0. The test list holds 2603 (1552 in `Engine.Tests`, 370 in `3DEngine.Tests`, 678 in `3DEngine.ImageTests`, 3
 in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
 entries: 15 of 15. New diagnostic codes: 0. This entry is a codebase review, so 0 product milestones and 0 entries follow it.
+
+## v0.357 — A sketch leaves a flat view, and a tool under an end of the arc of a proposal hides while the proposal waits (P0.149, TASK-0373)
+
+The codebase review of 2026-11-14 (d) (v0.356) gave two high findings, V185 and V186, and the medium finding V187, before the
+next product phase, R21c.
+
+**The change.** ADR-0139 amends ADR-0136 item 1 and ADR-0137 item 2.
+- V185: the view of a sketch leaves a flat view first, as an orbit does (`Camera.LeaveFlat`). Until P0.149 a sketch from the
+  view of the top kept that view, and its plane was edge-on.
+- V186: Reject searches its angle up from 235 degrees, as Accept searches down from 305, while the arc keeps 40 degrees; and
+  while a proposal waits, a tool under an end of the arc of the last frame, or under its word, is not drawn and takes no tap.
+- V187: the test of V160 runs at 640 by 360, where no angle frees an end, with its control again.
+
+**Proof.** A test proves the exit of a flat view from the top and from the front. A theory at five landscape sizes, with a
+selected face and sixteen places of the body, proves that no end and no word lies on a tool that shows, that a hidden tool is
+not drawn, and that Reject moves at 832 by 384 and 915 by 412; with the search 20 tools hide at 915 by 412, and 28 without
+it. Five injections each failed a named test; each file came back byte for byte. The phone project builds with zero
+warnings. Run 43565441937 passed on the branch. The failed runs since the entry v0.356, from the API: none on a branch;
+43562165193 on `main` stays red until the owner runs it again.
+
+**What stays.** On a small landscape display a tool can be away while a proposal waits. No person used the change.
+
+New tests: 6. The test list holds 2609 (1552 in `Engine.Tests`, 371 in `3DEngine.Tests`, 683 in `3DEngine.ImageTests`, 3
+in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
+entries: 15 of 15. New diagnostic codes: 0. Since the review of v0.356, 1 product milestone and 1 entry followed it.

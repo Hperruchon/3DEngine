@@ -220,6 +220,12 @@ public sealed class Camera : Entity
         (_flat, _perspective) = (null, null);
     }
 
+    /// <summary>
+    /// Finding V185 of the codebase review of 2026-11-14 (d) (TASK-0373): leaves a flat view, with the yaw and the pitch of
+    /// that view, as an orbit does. A writer of the yaw and the pitch, as the view of a sketch, calls it first.
+    /// </summary>
+    public void LeaveFlat() => (_flat, _perspective) = (null, null);
+
     // The exact pitch of the view: 90 or -90 degrees for Top and Bottom, else the pitch.
     private double ViewPitchDegrees => _flat switch { FlatView.Top => 90.0, FlatView.Bottom => -90.0, _ => PitchDegrees };
 
