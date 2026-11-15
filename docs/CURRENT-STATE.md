@@ -11221,7 +11221,9 @@ Fifteen injections each failed a test: the frame, the scale, the place, the iden
 dimensions, the scale and the length of the frame in the read, the swap of x and y, the centre, the orientation of the
 paper, the skipped bodies, the size of a circle, and the encoding of the ninth number; each file came back byte for byte.
 The phone project builds with zero warnings. Run 43757001185 passed on the branch. The failed runs since the entry v0.376, from
-the API: none.
+the API: 43758079840 on this branch (the close commit), in the gate on Windows, where
+`HttpConcurrencyTests.Queries_And_Commands_In_Parallel_Get_No_Http_500` failed with a cancel of the HTTP client, as at
+v0.355; the work commit with the same code passed there, and this correction of the entry ran the gates again.
 
 **What stays.** A client does not show a sheet yet. The JSON of a view in an event has no test of the HTTP surface. A read
 of a curved body takes seconds and holds the session.
