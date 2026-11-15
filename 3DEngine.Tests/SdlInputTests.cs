@@ -252,6 +252,23 @@ public unsafe class SdlInputTests
         Assert.Equal([InputKey.Digit1, InputKey.Digit3, InputKey.Digit7, InputKey.Digit0], input.TakeFrame().Select(sample => ((KeySample)sample).Key));
     }
 
+    // ADR-0150 item 1 (phase P0.154, TASK-0385): on macOS the Command key gives Control to the keys after it, so Command and K
+    // open the command line; on the other platforms the key of the system gives no modifier.
+    [Theory]
+    [InlineData(true, KeyModifiers.Control)]
+    [InlineData(false, KeyModifiers.None)]
+    public void The_Command_Key_Of_MacOS_Gives_The_Modifier_Of_The_Shortcuts(bool macOS, KeyModifiers expected)
+    {
+        var input = new SdlInput(macOS);
+        input.Translate(Key(SDL_EventType.SDL_EVENT_KEY_DOWN, SDL_Scancode.SDL_SCANCODE_LGUI), 800, 600);
+        input.Translate(Letter(SDL_Scancode.SDL_SCANCODE_K, 'k'), 800, 600);
+        input.Translate(Key(SDL_EventType.SDL_EVENT_KEY_UP, SDL_Scancode.SDL_SCANCODE_LGUI), 800, 600);
+        input.Translate(Letter(SDL_Scancode.SDL_SCANCODE_K, 'k'), 800, 600);
+
+        var keys = input.TakeFrame().OfType<KeySample>().ToArray();
+        Assert.Equal([(InputKey.K, expected), (InputKey.K, KeyModifiers.None)], keys.Select(sample => (sample.Key, sample.Modifiers)));
+    }
+
     private static SDL_Event Letter(SDL_Scancode code, uint letter)
     {
         var e = Key(SDL_EventType.SDL_EVENT_KEY_DOWN, code);
