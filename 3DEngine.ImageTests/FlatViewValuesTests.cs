@@ -67,7 +67,9 @@ public sealed class FlatViewValuesTests
 
         var values = await ValuesOf(host, body, 3, Camera(view));
 
-        Assert.Equal(expected, values.Select(value => value.Number).Order());
+        // ADR-0148 item 1 (TASK-0383): each value keeps its row in each view; only its chip depends on the view.
+        Assert.Equal(3, values.Count);
+        Assert.Equal(expected, values.Where(value => value.InView).Select(value => value.Number).Order());
     }
 
     // Item 1: a radius takes the rule of its circle, not of its chord. A half circle in the plane XY has a chord along x, which
@@ -105,7 +107,7 @@ public sealed class FlatViewValuesTests
 
         var values = await ValuesOf(host, body, 2, Camera(view));
 
-        Assert.Equal(shown, values.Any(value => value.Label == "Radius"));
+        Assert.Equal(shown, values.Any(value => value.Label == "Radius" && value.InView));
     }
 
     // Item 1: the radius of a disc shows with perspective and from the top, where its circle faces the view, and not from the
@@ -125,6 +127,6 @@ public sealed class FlatViewValuesTests
 
         var values = await ValuesOf(host, body, 2, Camera(view));
 
-        Assert.Equal(expected, values.Select(value => value.Number).Order());
+        Assert.Equal(expected, values.Where(value => value.InView).Select(value => value.Number).Order());
     }
 }
