@@ -11232,3 +11232,29 @@ New tests: 14. The test list holds 2704 (1599 in `Engine.Tests`, 382 in `3DEngin
 in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
 entries: 14 of 15. New diagnostic codes: 2 (`E-SHEET-VIEW-NOT-FOUND`, `E-SHEET-VIEW-INVALID`). Since the review of v0.375,
 1 product milestone and 2 entries followed it.
+
+## v0.378 — The freedom and the fixed lengths do not depend on the size of a sketch, the ends of an edge in two parts are its farthest points, and a modifier stays while one of its keys is down (P0.159, TASK-0392)
+
+The low findings of the codebase review of 2026-11-15, after P10.2.
+
+**The change.**
+- E207: the status and the analysis of `GetSketch` divide each row of the Jacobian by its length before the elimination
+  (ADR-0156, amends ADR-0035 item 8 and ADR-0154 item 1). A rectangle of 1e5 mm and one of 0.001 mm in one sketch now give
+  the freedom and the fixed lengths of each rectangle alone. The steps of the solver keep their rows, so a replay gives
+  the same positions.
+- E208: the history of ADR-0142 says that R22 read no line of K9 and that P10.2 is the first reader.
+- E209 and E210 were fixed by TASK-0391 (v0.376).
+- V192: one helper gives the ends of an edge. An edge in more than one part goes between its two points that are farthest
+  apart; an edge in one part keeps the start of its first segment and the end of its last, as before.
+- V193: the input keeps the state of each modifier key, so a flag stays while one of its keys is down.
+
+**Proof.** The theory of the sizes (four pairs) and the theory of the modifier keys (four pairs) failed on the old code;
+the test of the ends of an edge in two parts is new. Three injections each failed their test, and each file came back byte
+for byte. The phone project builds with zero warnings. Run 43758966329 passed on the branch. The failed runs since the entry
+v0.377, from the API: none.
+
+**What stays.** No path of the window gives an edge in two parts now, so the test of V192 builds the edge by hand.
+
+New tests: 9. The test list holds 2713 (1603 in `Engine.Tests`, 386 in `3DEngine.Tests`, 721 in `3DEngine.ImageTests`, 3
+in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
+entries: 14 of 15. New diagnostic codes: 0. Since the review of v0.375, 1 product milestone and 3 entries followed it.

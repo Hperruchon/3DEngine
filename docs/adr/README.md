@@ -48,7 +48,7 @@ names. Do not read all of them.
 | [0032](0032-numeric-pad-and-evaluator.md) | The numeric pad, the expression evaluator and the keys of undo and redo | Amended | Clients, rendering | 0026, 0031 | 0034, 0076, 0098 |
 | [0033](0033-sketch-model.md) | The sketch model in the engine | Amended | Contracts, sketch | 0012, 0021, 0031 | 0035, 0045, 0051, 0052 |
 | [0034](0034-sketch-tools.md) | The sketch tools of the desktop | Amended | Clients, sketch | 0026, 0029, 0032 | 0041, 0053, 0084, 0085, 0088, 0096, 0097 |
-| [0035](0035-sketch-solver.md) | The constraint solver of a sketch | Amended | Sketch, determinism | 0033 | 0052 |
+| [0035](0035-sketch-solver.md) | The constraint solver of a sketch | Amended | Sketch, determinism | 0033 | 0052, 0156 |
 | [0036](0036-extrude-of-a-sketch-profile.md) | The extrude of a closed profile of a sketch | Amended | Contracts, geometry, sketch | — | 0037, 0040, 0050, 0051, 0052 |
 | [0037](0037-rebuild-of-an-extrude.md) | The rebuild of an extrude after an edit of its sketch | Amended | Contracts, geometry, sketch | 0012, 0021, 0028, 0031, 0036 | 0039, 0049, 0055 |
 | [0038](0038-translate-gizmo.md) | The translate gizmo of the desktop | Accepted | Rendering, clients | 0026 | — |
@@ -159,8 +159,9 @@ names. Do not read all of them.
 | [0151](0151-a-size-on-the-line-of-a-shown-value.md) | A free size or a reference on the line of a value that the view shows does not show again | Accepted | Clients, drawing | 0148, 0149 | — |
 | [0152](0152-the-arc-on-a-small-landscape-display.md) | On a small landscape display the arc of a proposal is right of the rows on a smaller ring, and each part of a proposal hides the tools under it | Accepted | Clients, rendering | 0134, 0139 | — |
 | [0153](0153-the-sheet-in-the-document.md) | A drawing sheet is one record of the Document, with its views and its dimensions, and small commands change it | Amended | Contracts, drawing | 0118 | 0155 |
-| [0154](0154-the-fixed-lengths-from-one-elimination.md) | The status and the fixed lengths of a sketch come from one elimination, and the product J·Jᵀ takes the columns with a value | Accepted | Kernel | 0149 | — |
+| [0154](0154-the-fixed-lengths-from-one-elimination.md) | The status and the fixed lengths of a sketch come from one elimination, and the product J·Jᵀ takes the columns with a value | Amended | Kernel | 0149 | 0156 |
 | [0155](0155-the-views-of-a-sheet.md) | A view of a sheet has an exact frame, a scale and a place on the paper, and GetSheet gives its lines on the paper | Accepted | Drawing | 0153 | — |
+| [0156](0156-the-rank-of-a-sketch-at-each-size.md) | The rank of a sketch comes from the rows of its Jacobian at unit length, so the freedom and the fixed lengths do not depend on its size | Accepted | Sketch | 0035, 0154 | — |
 
 ## Topics
 

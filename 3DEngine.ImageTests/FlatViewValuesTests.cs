@@ -75,6 +75,24 @@ public sealed class FlatViewValuesTests
         Assert.Equal(expected, design.Where(value => value.InView).Select(value => value.Number).Order());
     }
 
+    // TASK-0392 (finding V192 of the codebase review of 2026-11-15): the lower edge of an L profile that a box cut is one edge
+    // in two parts, from x = 5 to 30 and from x = -30 to -5. Its ends are the two points farthest apart, so its length on the
+    // view is 60 and not the 10 from the first start to the last end. An edge in one part keeps the start of its first segment
+    // and the end of its last.
+    [Fact]
+    public void The_Ends_Of_An_Edge_In_Two_Parts_Are_Its_Farthest_Points()
+    {
+        static DatumPoint P(double x) => new(x, 0, 0);
+        var reference = new DatumReference(Guid.NewGuid(), "end", null);
+        var cut = new EdgeEntry(reference, reference with { Element = "side" }, 2, 50, [new FaceSegment(P(5), P(30)), new FaceSegment(P(-30), P(-5))]);
+        var whole = cut with { Parts = 1, Segments = [new FaceSegment(P(5), P(30)), new FaceSegment(P(30), P(40))] };
+
+        Assert.Equal((P(30), P(-30)), EdgeValues.Ends(cut));
+        Assert.Equal((P(5), P(40)), EdgeValues.Ends(whole));
+        Assert.Equal("Width", EdgeValues.Direction(cut));
+        Assert.True(EdgeValues.TrueLength(cut, Camera(FlatView.Front), radius: false));
+    }
+
     // Item 1: a radius takes the rule of its circle, not of its chord. A half circle in the plane XY has a chord along x, which
     // is across the front view, but its circle does not face the front view; from the top it does.
     [Fact]

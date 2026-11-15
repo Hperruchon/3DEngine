@@ -95,4 +95,39 @@ public sealed class FixedLengthsTests
         Assert.Equal((2 * (count + 1)) - count - constraints.Count(c => c.Kind == "distance"), freedom);
         Assert.True(clock.Elapsed < TimeSpan.FromSeconds(1), $"The status and the fixed lengths took {clock.Elapsed}.");
     }
+
+    // TASK-0392 (finding E207 of the codebase review of 2026-11-15): the freedom and the fixed lengths do not depend on the
+    // size of a part of the sketch. A rigid rectangle (a right angle, two pairs of parallel sides and two lengths) fixes each
+    // side and has 3 free degrees; a loose one (a right angle, one pair of parallel sides and one length) fixes its bottom only
+    // and has 5. A row of an angle has no unit, and a row of a length has millimetres, so before TASK-0392 a ratio of sizes of
+    // about 1e6 hid rows of the small or of the large rectangle.
+    [Theory]
+    [InlineData(1e5, 0.001)]
+    [InlineData(0.001, 1e5)]
+    [InlineData(1, 1e-6)]
+    [InlineData(1e-6, 1)]
+    public void The_Freedom_And_The_Fixed_Lengths_Do_Not_Depend_On_The_Size(double rigid, double loose)
+    {
+        static ((double X, double Y)[] Points, (int, int)[] Lines, (string Kind, int[] Items, double[] Values)[] Constraints) Rectangle(
+            double size, double left, int first, bool isRigid)
+        {
+            var points = new (double X, double Y)[] { (left, 0), (left + (10 * size), 0), (left + (10 * size), 6 * size), (left, 6 * size) };
+            var lines = new (int, int)[] { (first, first + 1), (first + 1, first + 2), (first + 2, first + 3), (first + 3, first) };
+            var line = 100 + first;
+            var constraints = new List<(string Kind, int[] Items, double[] Values)>
+            {
+                ("perpendicular", [line, line + 1], []), ("parallel", [line, line + 2], []), ("distance", [line], [10 * size]),
+            };
+            if (isRigid)
+                constraints.AddRange([("parallel", [line + 1, line + 3], []), ("distance", [line + 1], [6 * size])]);
+            return (points, lines, [.. constraints]);
+        }
+
+        var a = Rectangle(rigid, 0, 0, isRigid: true);
+        var b = Rectangle(loose, 20 * Math.Max(rigid, loose), 4, isRigid: false);
+        var record = Record([.. a.Points, .. b.Points], [.. a.Lines, .. b.Lines], [.. a.Constraints, .. b.Constraints]);
+
+        Assert.Equal(new[] { 0, 1, 2, 3, 4 }, Fixed(record));
+        Assert.Equal((true, 3 + 5), SketchSolver.Status(record));
+    }
 }
