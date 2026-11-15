@@ -20,7 +20,10 @@ internal sealed record Step(
     IReadOnlyList<(Engine.Contracts.Images.ImageRecord Before, Engine.Contracts.Images.ImageRecord After)> ChangedImages,
     IReadOnlyList<Engine.Contracts.Sketch.DatumRecord> CreatedDatums,
     IReadOnlyList<(Engine.Contracts.Sketch.DatumRecord Before, Engine.Contracts.Sketch.DatumRecord After)> ChangedDatums,
-    IReadOnlyList<Engine.Contracts.Assembly.PartReference> CreatedReferences);
+    IReadOnlyList<Engine.Contracts.Assembly.PartReference> CreatedReferences,
+    IReadOnlyList<Engine.Contracts.Drawing.SheetRecord> CreatedSheets,
+    IReadOnlyList<(Engine.Contracts.Drawing.SheetRecord Before, Engine.Contracts.Drawing.SheetRecord After)> ChangedSheets,
+    IReadOnlyList<Engine.Contracts.Drawing.SheetRecord> RemovedSheets);
 
 // ADR-0031 item 2: one history for the Document. The command bus owns it and changes
 // it only in its commit, so a rejected Undo or Redo leaves it as it was. The history
