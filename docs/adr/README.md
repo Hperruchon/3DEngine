@@ -154,11 +154,12 @@ names. Do not read all of them.
 | [0146](0146-a-value-shows-where-its-length-is-true.md) | In a flat view a value shows only where its length is true, and row R22 splits into four slices | Amended | Clients, drawing | 0082 | 0148, 0149 |
 | [0147](0147-an-end-within-1e-9-of-across-the-view.md) | An end within 1e-9 of across the view is one line on its diameter | Accepted | Kernel, drawing | 0143, 0145 | — |
 | [0148](0148-the-reference-of-a-chain.md) | A line that closes a chain of the design shows its reference in parentheses, and each value keeps its row in each view | Amended | Clients, drawing | 0146 | 0149, 0151 |
-| [0149](0149-a-size-that-no-constraint-fixes.md) | The solver finds the lengths that the constraints fix, and a flat view shows a length that no constraint fixes in amber | Amended | Kernel, clients, drawing | 0146, 0148 | 0151 |
+| [0149](0149-a-size-that-no-constraint-fixes.md) | The solver finds the lengths that the constraints fix, and a flat view shows a length that no constraint fixes in amber | Amended | Kernel, clients, drawing | 0146, 0148 | 0151, 0154 |
 | [0150](0150-the-command-key-of-macos.md) | On macOS the Command key gives the modifier of the shortcuts, and the command line shows "Cmd K" | Accepted | Clients, input | 0108 | — |
 | [0151](0151-a-size-on-the-line-of-a-shown-value.md) | A free size or a reference on the line of a value that the view shows does not show again | Accepted | Clients, drawing | 0148, 0149 | — |
 | [0152](0152-the-arc-on-a-small-landscape-display.md) | On a small landscape display the arc of a proposal is right of the rows on a smaller ring, and each part of a proposal hides the tools under it | Accepted | Clients, rendering | 0134, 0139 | — |
 | [0153](0153-the-sheet-in-the-document.md) | A drawing sheet is one record of the Document, with its views and its dimensions, and small commands change it | Accepted | Contracts, drawing | 0118 | — |
+| [0154](0154-the-fixed-lengths-from-one-elimination.md) | The status and the fixed lengths of a sketch come from one elimination, and the product J·Jᵀ takes the columns with a value | Accepted | Kernel | 0149 | — |
 
 ## Topics
 

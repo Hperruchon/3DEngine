@@ -63,7 +63,8 @@ public sealed class GetSketchQueryHandler : IQueryHandler
             .Select(constraint => new SketchConstraintInfo(
                 constraint.Id, constraint.Kind, constraint.Items, constraint.Values, Finite(SketchConstraints.Residual(sketch, constraint))))
             .ToList();
-        var (solved, freedom) = SketchSolver.Status(sketch);
+        // TASK-0391: the status and the fixed lengths from one elimination (finding E206).
+        var (solved, freedom, fixedLengths) = SketchSolver.Analyse(sketch);
         static double? Finite(double value) => double.IsFinite(value) ? value : null;
         return Task.FromResult(QueryHandlerResult.Success(new SketchInfo(
             sketch.Id, sketch.DatumId, sketch.Name, sketch.Points, sketch.Lines, sketch.Circles, sketch.Arcs, constraints,
@@ -71,7 +72,7 @@ public sealed class GetSketchQueryHandler : IQueryHandler
         {
             References = sketch.References,
             Frame = DatumResolver.Frame(document, sketch.DatumId),
-            FixedLengths = [.. SketchSolver.FixedLengths(sketch) is var fixedLengths ? sketch.Lines.Select(line => line.Id).Where(fixedLengths.Contains) : []],
+            FixedLengths = [.. sketch.Lines.Select(line => line.Id).Where(fixedLengths.Contains)],
         }));
     }
 }

@@ -66,4 +66,33 @@ public sealed class FixedLengthsTests
         var record = Record([(0, 0), (4, 3)], [(0, 1)], ("fixed", [0], [0, 0]), ("fixed", [1], [4, 3]));
         Assert.Equal(new[] { 0 }, Fixed(record));
     }
+
+    // TASK-0391 (finding E206 of the codebase review of 2026-11-15): a stair of 100 lines, each horizontal or vertical, with
+    // a length on two lines of three. A length fixes its line only, so the lines with a length are the fixed lines.
+    // GetSketch reads the status and the fixed lengths, and the window reads the active sketch in each frame. On the
+    // computer of the owner, one full elimination for each line took 5.4 s; after TASK-0391 the status takes about 1 ms
+    // and the analysis of GetSketch about 8 ms. The limit of 1 s leaves room for a slow runner of continuous integration.
+    [Fact]
+    public void The_Status_And_The_Fixed_Lengths_Of_A_Stair_Of_100_Lines_Take_Less_Than_One_Second()
+    {
+        const int count = 100;
+        var points = Enumerable.Range(0, count + 1).Select(k => (X: 5.0 * ((k + 1) / 2), Y: 4.0 * (k / 2))).ToArray();
+        var lines = Enumerable.Range(0, count).Select(n => (n, n + 1)).ToArray();
+        var constraints = Enumerable.Range(0, count)
+            .Select(n => (Kind: n % 2 == 0 ? "horizontal" : "vertical", Items: new[] { 100 + n }, Values: Array.Empty<double>()))
+            .Concat(Enumerable.Range(0, count).Where(n => n % 3 != 2)
+                .Select(n => (Kind: "distance", Items: new[] { 100 + n }, Values: new[] { n % 2 == 0 ? 5.0 : 4.0 })))
+            .ToArray();
+        var record = Record(points, lines, constraints);
+
+        var clock = System.Diagnostics.Stopwatch.StartNew();
+        var (solved, freedom) = SketchSolver.Status(record);
+        var fixedLines = Fixed(record);
+        clock.Stop();
+
+        Assert.True(solved);
+        Assert.Equal(Enumerable.Range(0, count).Where(n => n % 3 != 2).ToArray(), fixedLines);
+        Assert.Equal((2 * (count + 1)) - count - constraints.Count(c => c.Kind == "distance"), freedom);
+        Assert.True(clock.Elapsed < TimeSpan.FromSeconds(1), $"The status and the fixed lengths took {clock.Elapsed}.");
+    }
 }

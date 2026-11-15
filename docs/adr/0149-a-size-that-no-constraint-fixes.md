@@ -7,7 +7,7 @@ date: 2026-11-14
 supersedes: []
 superseded-by: []
 amends: ['0146', '0148']
-amended-by: ['0151']
+amended-by: ['0151', '0154']
 affects:
   - Engine.Core/Sketch/SketchSolver.cs
   - Engine.Core/Queries/GetSketchQuery.cs
@@ -69,3 +69,5 @@ A free size of a point between two lines that is not a line has no chip.
 - 2026-11-14 · TASK-0384 · Shipped at v0.369.
 - 2026-11-14 · TASK-0387 · ADR-0151 item 1 amends item 2: a free size on the line of a value that the view shows, or of a
   free size already given, does not show.
+- 2026-11-15 · TASK-0391 · ADR-0154 item 1 amends item 1: the same test of a fixed length comes from one elimination of
+  J·Jᵀ for the sketch, in place of one elimination for each line (finding E206).
