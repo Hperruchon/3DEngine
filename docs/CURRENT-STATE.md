@@ -10713,3 +10713,30 @@ where Frame put them. No person used the change.
 New tests: 12. The test list holds 2621 (1552 in `Engine.Tests`, 378 in `3DEngine.Tests`, 688 in `3DEngine.ImageTests`, 3
 in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
 entries: 15 of 15. New diagnostic codes: 0. Since the review of v0.356, 2 product milestones and 2 entries followed it.
+
+## v0.359 — A flat view has a scale of its own and a far plane behind the box, and the rows of a portrait proposal stay under the middle (P0.150, TASK-0374)
+
+The codebase review of 2026-11-14 (d) (v0.356) gave the medium findings V188 and V189 and the low finding V190, after the
+next product phase, R21c.
+
+**The change.** ADR-0141 amends ADR-0135 item 3 and ADR-0137 item 3.
+- V188: a flat view has a scale of its own (`Camera.ScaleDistance`): the distance of the eye when the flat view starts, and
+  the distance that Frame gives. A zoom in a flat view changes the scale only, so the eye stays out of the part. The pick, the
+  overlay, the gizmo and the pan take the scale. Until P0.150 a zoom of ten times put the eye inside the part.
+- V189: in a flat view the far plane is 1.05 times the distance to the far side of the box of the scene, so the pull of the
+  edge lines is a small part of the box. Frame in a flat view is not held at half of the far plane.
+- V190: while a proposal waits on a portrait display, the rows under the part do not go above the middle of the display,
+  also in the first frame of the proposal. The window keeps no bottom of the sheet of the last frame.
+
+**Proof.** Tests prove that a zoom of ten times in a flat view keeps the eye out of the box and keeps the pick on the part,
+that the far plane of a flat view is behind the box, and that the rows are under the sheet in the first frame of a proposal
+at two portrait sizes. Eight injections each failed a named test; each file came back byte for byte. The phone project
+builds with zero warnings. Run 43567561680 passed on the branch. The failed runs since the entry v0.358, from the API: none
+on a branch; 43562165193 on `main` stays red until the owner runs it again.
+
+**What stays.** The pull of the edge lines in a flat view is computed, not seen on a GPU. A flat view that starts from an eye
+inside the part keeps that eye until a Frame. No person used the change.
+
+New tests: 4. The test list holds 2625 (1552 in `Engine.Tests`, 380 in `3DEngine.Tests`, 690 in `3DEngine.ImageTests`, 3
+in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
+entries: 15 of 15. New diagnostic codes: 0. Since the review of v0.356, 3 product milestones and 3 entries followed it.

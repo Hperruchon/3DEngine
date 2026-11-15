@@ -50,5 +50,11 @@ public sealed class FlatViewWindowTests
         var pixels = 40 / camera.HalfHeight * height / 2;
         Assert.Equal(pixels, Vector2.Distance(near.A, near.B), 3);
         Assert.Equal(pixels, Vector2.Distance(far.A, far.B), 3);
+
+        // Finding V188 (TASK-0374): a zoom in a flat view changes the scale of the overlay as the scale of the picture.
+        camera.Zoom(0.5);
+        var zoomed = SketchOverlay.Segment(camera, width, height, (0, -80, 0), (40, -80, 0)) ?? throw new InvalidOperationException("No segment.");
+        Assert.Equal(40 / camera.HalfHeight * height / 2, Vector2.Distance(zoomed.A, zoomed.B), 3);
+        Assert.Equal(pixels * 2, Vector2.Distance(zoomed.A, zoomed.B), 2);
     }
 }

@@ -1,13 +1,13 @@
 ---
 id: 0135
 title: On a portrait display the arc of a proposal is at the top, and a sheet of its lines is under it
-status: Accepted
+status: Amended
 topic: Clients, rendering
 date: 2026-11-14
 supersedes: []
 superseded-by: []
 amends: ['0092', '0111', '0131']
-amended-by: []
+amended-by: ['0141']
 affects:
   - 3DEngine.App/Ui/DesktopUi.Proposal.cs
   - 3DEngine.App/Ui/DesktopUi.Values.cs
@@ -74,3 +74,5 @@ and whole in the sheet. On a small display the lines scroll.
 - 2026-11-14 · TASK-0368 · The record, from gap H5 of the comparison at the other sizes, under the order of the owner of
   2026-11-14.
 - 2026-11-14 · TASK-0368 · Shipped at v0.352.
+- 2026-11-14 · TASK-0374 · ADR-0141 item 3 amends item 3: while a proposal waits on a portrait display, the rows do not go
+  above the middle of the display, also in the first frame.
