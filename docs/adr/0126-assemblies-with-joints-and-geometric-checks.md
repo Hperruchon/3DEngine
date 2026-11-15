@@ -1,13 +1,13 @@
 ---
 id: 0126
 title: Assemblies with joints and their geometric checks have a date after P10c, and a load check follows them
-status: Accepted
+status: Amended
 topic: Charter, assembly
 date: 2026-11-12
 supersedes: []
 superseded-by: []
 amends: []
-amended-by: []
+amended-by: ['0157']
 affects:
   - docs/CHARTER.md
 enforced-by: Engine.Tests/Governance/ObjectiveReferenceGateTests.cs
@@ -48,17 +48,21 @@ On 2026-11-12 the owner answered seven questions, D1 to D7.
 4. **The guarantee of a travel (D4).** The check samples the angle with a margin: at each sample the gap between two bodies
    must be more than the largest movement of a point of the bodies that turn before the next sample, so no contact between
    two samples is missed. The first contact angle is found to a stated tolerance, and the report states the step, the
-   radius and the tolerance.
+   radius and the tolerance. A pair of parts whose contact is intended, as the two parts of a joint, is exempt
+   (ADR-0157 item 5).
 5. **Requirements in the Document (D5).** A requirement or an assumption is an entry of the Document: text, value, unit, its
    references, and a status: measured, estimated, to verify physically, or verified physically with a date and a result.
 6. **The role of a body (D6).** An attribute of a body in the Document says that it is a part to print, a context volume, or
    excluded from an envelope.
 7. **The print export (D7).** One STL file for each chosen part, in millimetres, after a check that its mesh is closed and has
    no degenerate triangle. A 3MF export comes later.
-8. **The order.** The roadmap holds K10 (the reference case and its missing features), P11 (joints), P13 (requirements),
-   R23 (a joint in the window), K11 (interference), K12 (the travel), P14 (roles and print export), K13 (the envelope),
-   P12 (the parametric loop), R24 (the end-to-end scenario) and K14 (the load check), after P10c. Each phase opens its task,
-   and its ADR when it changes the Document or the contract, at its start.
+8. **The order.** After P10c the roadmap holds K10 (the reference case and its missing features); K15 (measures), K16
+   (union and intersection) and R26 (the section view), then K11 (the pair check) and P17 (the guide for an agent); P15,
+   P16 and R25 (the preview of a proposal and its accept); K17 (connectors), P11 (joints), P18 (groups), R23 and R27,
+   with P13 (requirements) at the same time as P11; K12 (the travel), P14 (roles and print export), K13 (the envelope),
+   P12 (the parametric loop) and R24 (the end-to-end scenario); then the rows of the later stages, and K14 (the load
+   check) after R24 (ADR-0157 item 11). Each phase opens its task, and its ADR when it changes the Document or the
+   contract, at its start.
 9. **No code in this record.** The record changes the charter, the roadmap and the index of the ADRs only.
 
 ## Consequences
@@ -73,3 +77,5 @@ adds a body to the log for each move. The reference case may need features that 
 
 - 2026-11-12 · TASK-0353 · The record, with the answers D1 to D7 of the owner of 2026-11-12.
 - 2026-11-12 · TASK-0353 · Shipped at v0.338.
+- 2026-11-15 · TASK-0394 · ADR-0157 amends items 4 and 8: a pair whose contact is intended is exempt from the check of a
+  travel, and the measures, the pair check and the preview of a proposal come before the joints.
