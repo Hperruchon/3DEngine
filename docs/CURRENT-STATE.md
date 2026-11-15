@@ -11143,3 +11143,27 @@ has no view and no dimension until P10.2 and P10.3, and the window does not show
 New tests: 4. The test list holds 2689 (1584 in `Engine.Tests`, 382 in `3DEngine.Tests`, 720 in `3DEngine.ImageTests`, 3
 in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
 entries: 12 of 15. New diagnostic codes: 3. Since the review of v0.363, 4 product milestones and 11 entries followed it.
+
+## v0.375 — The codebase review of 2026-11-15 (governance, TASK-0390)
+
+Four product milestones (R22a, R22b, R22c and P10.1) and twelve entries followed v0.362, the version that the review of
+2026-11-14 (e) examined, so the next product milestone needs a review first.
+
+**The review.** `docs/reviews/2026-11-15-codebase-review.md` examines `a87c8bf`, the close of P10.1 at v0.374.
+- E202 to E205, V191 and T182 of the last review are fixed (P0.151 and P0.152).
+- E206 is high: since R22c each read of a sketch finds its fixed lengths with one full elimination for each line, and the
+  window reads the active sketch in each frame while the pointer is over it. A sketch of 25 lines costs 23 ms for each
+  read, and one of 100 lines 5.5 s.
+- E207 to E210, V192 and V193 are low: the fixed lengths at a ratio of sizes of about 1e6, the lines of K9 with no reader,
+  two faults of form, the ends of an edge in two parts, and one flag for the Control and the Command keys.
+- The sheet of P10.1 holds: seven sequences with undo, redo and an open of the file gave the same sheets.
+- TASK-0391 (P0.158) holds E206 before the next product phase, P10.2; TASK-0392 (P0.159) holds the others after it.
+- Open findings: 0 critical, 3 high, 6 medium and 22 low.
+
+**Proof.** A sub-session listed the candidates from the change. One agent examined the change from v0.362 to the close of
+P10.1 with probes in its own copy of the commit, and removed them. The session took the measures with the script of the last
+review and read each finding in the code at its line. `CodebaseReviewGateTests` passes with the new review.
+
+New tests: 0. The test list holds 2689 (1584 in `Engine.Tests`, 382 in `3DEngine.Tests`, 720 in `3DEngine.ImageTests`, 3
+in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
+entries: 12 of 15. New diagnostic codes: 0. This entry is a codebase review, so 0 product milestones and 0 entries follow it.
