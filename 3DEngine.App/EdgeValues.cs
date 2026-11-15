@@ -197,7 +197,7 @@ internal static class EdgeValues
 
         bool Coincide(EdgeEntry a, EdgeEntry b)
         {
-            var (a0, a1, b0, b1) = (a.Segments[0].Start, a.Segments[^1].End, b.Segments[0].Start, b.Segments[^1].End);
+            var ((a0, a1), (b0, b1)) = (Ends(a), Ends(b));
             var size = Math.Sqrt(Dot(Minus(a1, a0), Minus(a1, a0)));
             var limit = 1e-6 * size;
             return (Same(a0, b0, limit) && Same(a1, b1, limit)) || (Same(a0, b1, limit) && Same(a1, b0, limit));
@@ -206,7 +206,8 @@ internal static class EdgeValues
         var given = measured.Values.Select(entry => entry.Edge).Where(other => other.Segments.Count > 0 && TrueLength(other, camera, radius: false)).ToList();
         foreach (var (free, edge) in lines.Where(entry => !measured.ContainsKey(entry.Line)))
         {
-            var d = Minus(edge.Segments[^1].End, edge.Segments[0].Start);
+            var (start, end) = Ends(edge);
+            var d = Minus(end, start);
             var length = Math.Sqrt(Dot(d, d));
             if (!(length > 0) || given.Any(other => Coincide(edge, other)))
                 continue;
@@ -228,12 +229,13 @@ internal static class EdgeValues
             var unitD = (d.X / length, d.Y / length, d.Z / length);
             (double A, double B)? Interval(EdgeEntry other)
             {
-                var o = Minus(other.Segments[^1].End, other.Segments[0].Start);
+                var (otherStart, otherEnd) = Ends(other);
+                var o = Minus(otherEnd, otherStart);
                 var along = Dot(o, unitD);
                 if (Dot(o, o) - (along * along) > 1e-12 * Dot(o, o))
                     return null;
-                var a = Dot(Minus(other.Segments[0].Start, edge.Segments[0].Start), unitD);
-                var b = Dot(Minus(other.Segments[^1].End, edge.Segments[0].Start), unitD);
+                var a = Dot(Minus(otherStart, start), unitD);
+                var b = Dot(Minus(otherEnd, start), unitD);
                 return (Math.Min(a, b), Math.Max(a, b));
             }
 
@@ -283,7 +285,8 @@ internal static class EdgeValues
         const double limit = 1e-6;
         if (!radius)
         {
-            var d = Minus(edge.Segments[^1].End, edge.Segments[0].Start);
+            var (start, end) = Ends(edge);
+            var d = Minus(end, start);
             var part = Dot(d, forward);
             return part * part <= limit * Dot(d, d) * Dot(forward, forward);
         }
@@ -333,7 +336,7 @@ internal static class EdgeValues
         ArgumentNullException.ThrowIfNull(edge);
         if (edge.Segments.Count == 0)
             return "Length";
-        var (a, b) = (edge.Segments[0].Start, edge.Segments[^1].End);
+        var (a, b) = Ends(edge);
         var (x, y, z) = (b.X - a.X, b.Y - a.Y, b.Z - a.Z);
         var length = (x * x) + (y * y) + (z * z);
         const double along = 0.999 * 0.999;
@@ -347,11 +350,41 @@ internal static class EdgeValues
     // ADR-0115 item 2: the place of a value before the window adds the half of its pill: the middle of the dimension line.
     internal static Vector2 Placed(Measure line) => ((line.A + line.B) / 2f) + (line.Normal * line.Offset);
 
-    // ADR-0115 item 2: the two ends of an edge on the screen, from the start of its first segment to the end of its last, or
-    // null when one of them is behind the eye.
+    // ADR-0115 item 2: the two ends of an edge on the screen (Ends), or null when one of them is behind the eye.
     private static (Vector2 A, Vector2 B)? Ends(EdgeEntry edge, Camera camera, double width, double height)
-        => edge.Segments.Count > 0 && Pixel(edge.Segments[0].Start, camera, width, height) is { } a
-            && Pixel(edge.Segments[^1].End, camera, width, height) is { } b ? (a, b) : null;
+        => edge.Segments.Count > 0 && Ends(edge) is var (start, end) && Pixel(start, camera, width, height) is { } a
+            && Pixel(end, camera, width, height) is { } b ? (a, b) : null;
+
+    // TASK-0392 (finding V192 of the codebase review of 2026-11-15): the two ends of an edge with at least one segment. An
+    // edge in one part goes from the start of its first segment to the end of its last. The parts of an edge in more than one
+    // part need not follow each other, as the lower edge of an L that a box cut, from x = 5 to 30 and from x = -30 to -5; its
+    // ends are then the two points of its segments that are farthest apart: the point farthest from the first start, and the
+    // point farthest from that one, with the end nearer to the first start as the start. The first point of the largest
+    // distance wins a tie.
+    internal static (DatumPoint Start, DatumPoint End) Ends(EdgeEntry edge)
+    {
+        ArgumentNullException.ThrowIfNull(edge);
+        var (first, last) = (edge.Segments[0].Start, edge.Segments[^1].End);
+        if (edge.Parts <= 1)
+            return (first, last);
+
+        static double Square(DatumPoint a, DatumPoint b) => ((a.X - b.X) * (a.X - b.X)) + ((a.Y - b.Y) * (a.Y - b.Y)) + ((a.Z - b.Z) * (a.Z - b.Z));
+        var points = edge.Segments.SelectMany(segment => new[] { segment.Start, segment.End }).ToList();
+        DatumPoint Farthest(DatumPoint from)
+        {
+            var best = points[0];
+            foreach (var point in points)
+            {
+                if (Square(point, from) > Square(best, from))
+                    best = point;
+            }
+            return best;
+        }
+
+        var one = Farthest(first);
+        var other = Farthest(one);
+        return Square(other, first) <= Square(one, first) ? (other, one) : (one, other);
+    }
 
     private static Vector2? Pixel(DatumPoint point, Camera camera, double width, double height)
         => SketchOverlay.Segment(camera, width, height, (point.X, point.Y, point.Z), (point.X, point.Y, point.Z))?.A;

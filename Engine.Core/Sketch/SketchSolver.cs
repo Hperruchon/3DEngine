@@ -43,12 +43,14 @@ public static class SketchSolver
     }
 
     // ADR-0035 item 8: true when each equation is within the tolerance, and the number of
-    // free degrees at the positions of the record.
+    // free degrees at the positions of the record. TASK-0392: the rank comes from the rows of J at unit length
+    // (ADR-0156), so it does not depend on the size of a part of the sketch.
     public static (bool Solved, int Freedom) Status(SketchRecord sketch)
     {
         var system = new EquationSystem(sketch, null);
         var x = system.Start();
         system.Evaluate(x);
+        system.NormaliseRows();
         var rank = system.Rows == 0 ? 0 : Eliminate(system.Product(), new double[system.Rows], out _);
         return (system.WithinTolerance() && system.CurvesHaveRadius(x), system.Variables - rank);
     }
@@ -73,6 +75,7 @@ public static class SketchSolver
         var system = new EquationSystem(sketch, null);
         var x = system.Start();
         system.Evaluate(x);
+        system.NormaliseRows();
         var (rows, variables) = (system.Rows, system.Variables);
 
         var lines = new HashSet<Guid>();
@@ -412,6 +415,27 @@ public static class SketchSolver
         }
 
         public double[] Residuals() => (double[])Values.Clone();
+
+        // ADR-0156 item 1 (TASK-0392, finding E207 of the codebase review of 2026-11-15): each row of J with a value other
+        // than zero to the length 1. A row of an angle has no unit and goes as 1 / L for a line of the length L, and a row of
+        // a length has no such factor, so with a ratio of sizes of about 1e6 the limit of a pivot hid rows of one part of the
+        // sketch. A scale of a row keeps the space of the rows, so the rank and the test of a fixed length keep their meaning.
+        // Only the status and the analysis call it: the steps of the solver keep the rows of the equations, so a replay gives
+        // the same positions.
+        public void NormaliseRows()
+        {
+            for (var row = 0; row < Rows; row++)
+            {
+                var square = 0.0;
+                for (var column = 0; column < Variables; column++)
+                    square += Jacobian[row, column] * Jacobian[row, column];
+                if (!(square > 0) || !double.IsFinite(square))
+                    continue;
+                var length = Math.Sqrt(square);
+                for (var column = 0; column < Variables; column++)
+                    Jacobian[row, column] /= length;
+            }
+        }
 
         // ADR-0149 item 1: the gradient of the length of the line in the variables: -u at its start and u at its end, with u
         // the unit direction from the start to the end; a fixed end has no column. Null for a line of no length.

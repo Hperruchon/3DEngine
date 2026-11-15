@@ -394,4 +394,34 @@ public unsafe class SdlInputTests
             SDL_QuitSubSystem(SDL_InitFlags.SDL_INIT_EVENTS);
         }
     }
+
+    // TASK-0392 (finding V193 of the codebase review of 2026-11-15): a flag of a modifier stays while one of its keys is down.
+    // On macOS the two Control keys and the two Command keys give Control; the two Shift keys give Shift. Before TASK-0392
+    // the release of one key cleared the flag while another key of it was down.
+    [Theory]
+    [InlineData(true, SDL_Scancode.SDL_SCANCODE_LCTRL, SDL_Scancode.SDL_SCANCODE_LGUI, KeyModifiers.Control)]
+    [InlineData(true, SDL_Scancode.SDL_SCANCODE_RGUI, SDL_Scancode.SDL_SCANCODE_LGUI, KeyModifiers.Control)]
+    [InlineData(false, SDL_Scancode.SDL_SCANCODE_LCTRL, SDL_Scancode.SDL_SCANCODE_RCTRL, KeyModifiers.Control)]
+    [InlineData(false, SDL_Scancode.SDL_SCANCODE_LSHIFT, SDL_Scancode.SDL_SCANCODE_RSHIFT, KeyModifiers.Shift)]
+    public void A_Modifier_Stays_While_One_Of_Its_Keys_Is_Down(bool macOS, SDL_Scancode first, SDL_Scancode second, KeyModifiers flag)
+    {
+        var input = new SdlInput(macOS);
+        KeyModifiers After(params SDL_Event[] events)
+        {
+            foreach (var e in events)
+                input.Translate(e, 800, 600);
+            SDL_Event motion = default;
+            motion.type = (uint)SDL_EventType.SDL_EVENT_MOUSE_MOTION;
+            motion.motion.which = (SDL_MouseID)1;
+            input.Translate(motion, 800, 600);
+            return Assert.IsType<PointerSample>(input.TakeFrame().Last()).Modifiers;
+        }
+
+        Assert.Equal(flag, After(Key(SDL_EventType.SDL_EVENT_KEY_DOWN, first), Key(SDL_EventType.SDL_EVENT_KEY_DOWN, second)));
+        Assert.Equal(flag, After(Key(SDL_EventType.SDL_EVENT_KEY_UP, first)));
+        Assert.Equal(KeyModifiers.None, After(Key(SDL_EventType.SDL_EVENT_KEY_UP, second)));
+        Assert.Equal(flag, After(Key(SDL_EventType.SDL_EVENT_KEY_DOWN, second)));
+        Assert.Equal(KeyModifiers.None, After(new SDL_Event { type = (uint)SDL_EventType.SDL_EVENT_WINDOW_FOCUS_LOST }));
+        Assert.Equal(KeyModifiers.None, After(Key(SDL_EventType.SDL_EVENT_KEY_UP, second)));
+    }
 }
