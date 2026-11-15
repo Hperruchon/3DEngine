@@ -5,6 +5,7 @@ using Engine.Contracts;
 using Engine.Contracts.Geometry;
 using Engine.Contracts.Handlers;
 using Engine.Contracts.Assembly;
+using Engine.Contracts.Drawing;
 using Engine.Contracts.Images;
 using Engine.Contracts.Sketch;
 using Engine.Core.Geometry;
@@ -54,6 +55,9 @@ public sealed class CommandBus
 
     // ADR-0045 item 7: each image identifier that a commit of this bus created.
     private readonly HashSet<Guid> _createdImages = [];
+
+    // ADR-0153 item 1: the identifier of each sheet that this bus created, as for an image.
+    private readonly HashSet<Guid> _createdSheets = [];
     private readonly HashSet<Guid> _createdDatums = [];
 
     // ADR-0071 item 5: each reference identifier that a commit of this bus created.
@@ -234,6 +238,7 @@ public sealed class CommandBus
         RefuseWrongImageLists(command, handlerResult);
         RefuseWrongDatumLists(command, handlerResult);
         RefuseWrongReferenceLists(command, handlerResult);
+        RefuseWrongSheetLists(command, handlerResult);
 
         if (Journal is { } journal && Write(journal, command, handler, handlerResult, stopwatch) is { } refused)
             return refused;
@@ -251,7 +256,10 @@ public sealed class CommandBus
             handlerResult.ChangedImages.Select(image => (LiveImage(image.Id), image)).ToList(),
             handlerResult.CreatedDatums,
             handlerResult.ChangedDatums.Select(datum => (LiveDatum(datum.Id), datum)).ToList(),
-            handlerResult.CreatedReferences);
+            handlerResult.CreatedReferences,
+            handlerResult.CreatedSheets,
+            handlerResult.ChangedSheets.Select(sheet => (LiveSheet(sheet.Id), sheet)).ToList(),
+            handlerResult.RemovedSheets.Select(LiveSheet).ToList());
         var committed = Commit(
             command,
             new Effect(
@@ -259,7 +267,8 @@ public sealed class CommandBus
                 handlerResult.CreatedSketches, [], handlerResult.ChangedSketches,
                 handlerResult.CreatedImages, [], handlerResult.ChangedImages,
                 handlerResult.CreatedDatums, [], handlerResult.ChangedDatums,
-                handlerResult.CreatedReferences, []),
+                handlerResult.CreatedReferences, [],
+                handlerResult.CreatedSheets, handlerResult.RemovedSheets, handlerResult.ChangedSheets),
             handlerResult.Outputs, handlerResult.Diagnostics, stopwatch);
         _history.Record(step);
         return committed;
@@ -281,6 +290,9 @@ public sealed class CommandBus
     private DatumRecord LiveDatum(Guid id)
         => _document.Datums.First(datum => datum.Id == id);
 
+    private SheetRecord LiveSheet(Guid id)
+        => _document.Sheets.First(sheet => sheet.Id == id);
+
     // ADR-0031 items 4, 7 and 8: an Undo or a Redo. The bus makes the lists from the
     // step, so RefuseWrongBodyLists does not judge them: a reversal makes a consumed body
     // live again, which ADR-0021 item 1, as amended, permits only here. No call of the
@@ -296,7 +308,8 @@ public sealed class CommandBus
                 + handlerResult.CreatedSketches.Count + handlerResult.ChangedSketches.Count
                 + handlerResult.CreatedImages.Count + handlerResult.ChangedImages.Count
                 + handlerResult.CreatedDatums.Count + handlerResult.ChangedDatums.Count
-                + handlerResult.CreatedReferences.Count > 0)
+                + handlerResult.CreatedReferences.Count
+                + handlerResult.CreatedSheets.Count + handlerResult.ChangedSheets.Count + handlerResult.RemovedSheets.Count > 0)
             throw new InvalidOperationException(
                 $"The handler of '{command.Name}'@{command.SchemaVersion} gives the move {handlerResult.History} and a list of "
                 + "bodies, sketches, images, datums or references, or a move that does not exist. ADR-0031 item 7: the bus computes the changes of a move.");
@@ -325,7 +338,9 @@ public sealed class CommandBus
                     step.ChangedImages.Select(change => change.Before).ToList(),
                     [], step.CreatedDatums.Select(datum => datum.Id).ToList(),
                     step.ChangedDatums.Select(change => change.Before).ToList(),
-                    [], step.CreatedReferences.Select(reference => reference.Id).ToList()),
+                    [], step.CreatedReferences.Select(reference => reference.Id).ToList(),
+                    step.RemovedSheets, step.CreatedSheets.Select(sheet => sheet.Id).ToList(),
+                    step.ChangedSheets.Select(change => change.Before).ToList()),
                 outputs, handlerResult.Diagnostics, stopwatch);
             _history.Undone();
             return reversed;
@@ -339,7 +354,9 @@ public sealed class CommandBus
                 step.CreatedSketches, [], step.ChangedSketches.Select(change => change.After).ToList(),
                 step.CreatedImages, [], step.ChangedImages.Select(change => change.After).ToList(),
                 step.CreatedDatums, [], step.ChangedDatums.Select(change => change.After).ToList(),
-                step.CreatedReferences, []),
+                step.CreatedReferences, [],
+                step.CreatedSheets, step.RemovedSheets.Select(sheet => sheet.Id).ToList(),
+                step.ChangedSheets.Select(change => change.After).ToList()),
             outputs, handlerResult.Diagnostics, stopwatch);
         _history.Redone();
         return applied;
@@ -517,6 +534,29 @@ public sealed class CommandBus
         }
     }
 
+    // ADR-0153 item 1 (phase P10.1, TASK-0389): the rule of the images, for the sheets. A sheet is in one of the three lists
+    // one time; a created identifier is new to this bus; a changed or a removed sheet is live; a changed sheet keeps its
+    // identifier, which the record gives.
+    private void RefuseWrongSheetLists(Command command, CommandHandlerResult result)
+    {
+        var seen = new HashSet<Guid>();
+        foreach (var sheet in result.CreatedSheets)
+        {
+            if (_createdSheets.Contains(sheet.Id) || !seen.Add(sheet.Id))
+                throw new InvalidOperationException(
+                    $"The handler of '{command.Name}'@{command.SchemaVersion} creates sheet {sheet.Id}, which this bus "
+                    + "created before or which is in a list two times. ADR-0153 item 1: an identifier is given one time.");
+        }
+
+        foreach (var id in result.ChangedSheets.Select(sheet => sheet.Id).Concat(result.RemovedSheets))
+        {
+            if (!_document.Sheets.Any(sheet => sheet.Id == id) || !seen.Add(id))
+                throw new InvalidOperationException(
+                    $"The handler of '{command.Name}'@{command.SchemaVersion} changes or removes sheet {id}, which is not live "
+                    + "or which is in a list two times. ADR-0153 item 1 permits one change or one removal of a live sheet.");
+        }
+    }
+
     // The changes of one commit to the live bodies, sketches, images, datums and references. Only an
     // Undo removes a body, a sketch, an image, a datum or a reference.
     private sealed record Effect(
@@ -534,7 +574,10 @@ public sealed class CommandBus
         IReadOnlyList<Guid> RemovedDatums,
         IReadOnlyList<DatumRecord> ChangedDatums,
         IReadOnlyList<PartReference> CreatedReferences,
-        IReadOnlyList<Guid> RemovedReferences);
+        IReadOnlyList<Guid> RemovedReferences,
+        IReadOnlyList<SheetRecord> CreatedSheets,
+        IReadOnlyList<Guid> RemovedSheets,
+        IReadOnlyList<SheetRecord> ChangedSheets);
 
     // 4. Commit: compute each Seq, append the log, register the created bodies,
     // remove the consumed and the removed bodies, then the same for the sketches. The
@@ -559,6 +602,7 @@ public sealed class CommandBus
         var count = 1 + created.Count + consumed.Count + removed.Count + changed.Count
             + effect.CreatedSketches.Count + effect.RemovedSketches.Count + effect.ChangedSketches.Count
             + effect.CreatedImages.Count + effect.RemovedImages.Count + effect.ChangedImages.Count
+            + effect.CreatedSheets.Count + effect.RemovedSheets.Count + effect.ChangedSheets.Count
             + effect.CreatedDatums.Count + effect.RemovedDatums.Count + effect.ChangedDatums.Count
             + effect.CreatedReferences.Count + effect.RemovedReferences.Count;
         var appliedSeq = TakeSeqs(count);
@@ -745,6 +789,33 @@ public sealed class CommandBus
             }));
         }
 
+        // ADR-0153 item 1 (phase P10.1, TASK-0389): each sheet.created, each sheet.removed and each sheet.changed, after the
+        // reference events.
+        foreach (var sheet in effect.CreatedSheets)
+        {
+            _document.AddSheet(sheet);
+            _createdSheets.Add(sheet.Id);
+            lastSeq++;
+            events.Add(Event(lastSeq, command, "sheet.created", SheetFields(sheet)));
+        }
+
+        foreach (var id in effect.RemovedSheets)
+        {
+            _document.RemoveSheet(id);
+            lastSeq++;
+            events.Add(Event(lastSeq, command, "sheet.removed", new Dictionary<string, object?>
+            {
+                ["sheetId"] = id,
+            }));
+        }
+
+        foreach (var sheet in effect.ChangedSheets)
+        {
+            _document.ReplaceSheet(sheet);
+            lastSeq++;
+            events.Add(Event(lastSeq, command, "sheet.changed", SheetFields(sheet)));
+        }
+
         var result = new CommandResult(
             CommandId: command.CommandId,
             CommandName: command.Name,
@@ -757,6 +828,18 @@ public sealed class CommandBus
             DurationMs: stopwatch.ElapsedMilliseconds);
         return (result, events);
     }
+
+    // ADR-0153 item 1: the record of a sheet is small, so its event carries it.
+    private static Dictionary<string, object?> SheetFields(SheetRecord sheet) => new()
+    {
+        ["sheetId"] = sheet.Id,
+        ["name"] = sheet.Name,
+        ["paper"] = sheet.Paper,
+        ["landscape"] = sheet.Landscape,
+        ["thirdAngle"] = sheet.ThirdAngle,
+        ["views"] = sheet.Views,
+        ["dimensions"] = sheet.Dimensions,
+    };
 
     private static Dictionary<string, object?> ImageFields(ImageRecord image) => new()
     {

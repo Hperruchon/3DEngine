@@ -56,6 +56,10 @@ public static class HandlerCatalog
         new AddSketchReferenceCommandHandler(),
         new AddPartReferenceCommandHandler(),
         new ImportStlCommandHandler(assets),
+        // ADR-0153 item 6 (phase P10.1, TASK-0389): the commands of a sheet.
+        new CreateSheetCommandHandler(),
+        new RenameSheetCommandHandler(),
+        new RemoveSheetCommandHandler(),
     ];
 
     public static IReadOnlyList<IQueryHandler> QueryHandlers() =>

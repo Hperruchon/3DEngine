@@ -70,6 +70,10 @@ public sealed class Document
     private readonly Dictionary<Guid, Assembly.PartReference> _references = new();
     public IReadOnlyCollection<Assembly.PartReference> References => _references.Values;
 
+    // ADR-0153 item 1 (phase P10.1, TASK-0389): one record for each live drawing sheet, as for an image.
+    private readonly Dictionary<Guid, Drawing.SheetRecord> _sheets = new();
+    public IReadOnlyCollection<Drawing.SheetRecord> Sheets => _sheets.Values;
+
     public Document(Guid? projectId = null, int schemaVersion = 1, string lengthUnit = Millimetre, string kind = Part)
     {
         if (lengthUnit != Millimetre)
@@ -123,6 +127,18 @@ public sealed class Document
     }
 
     internal void AddImage(Images.ImageRecord image) => _images[image.Id] = image;
+
+    // ADR-0153 item 1: a sheet is added, replaced by a new record with the same identifier, or removed.
+    internal void AddSheet(Drawing.SheetRecord sheet) => _sheets[sheet.Id] = sheet;
+
+    internal void RemoveSheet(Guid id) => _sheets.Remove(id);
+
+    internal void ReplaceSheet(Drawing.SheetRecord sheet)
+    {
+        if (!_sheets.ContainsKey(sheet.Id))
+            throw new InvalidOperationException($"No live sheet {sheet.Id} to replace.");
+        _sheets[sheet.Id] = sheet;
+    }
 
     internal void RemoveImage(Guid id) => _images.Remove(id);
 

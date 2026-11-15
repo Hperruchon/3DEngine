@@ -427,6 +427,8 @@ Therefore each approved objective must have a track here.
   TASK-0387, ADR-0151.
 - P0.157 — On a small landscape display the arc of a proposal is right of the rows on a smaller ring, and each part of
   a proposal hides the tools under it; R-0066 closes. v0.373, TASK-0388, ADR-0152.
+- P10.1 — A drawing sheet is one record of the Document, and CreateSheet, RenameSheet and RemoveSheet change it; R-0067
+  closes. v0.374, TASK-0389, ADR-0153.
 - Review — The codebase review of 2026-11-14 (c). v0.351, TASK-0366.
 - P0.143 — The low findings of the codebase review of 2026-11-11: a triangle of zero area adds no edge, and a mesh of
   more than 100 000 triangles finds its edges on the thread pool. v0.332, TASK-0345, ADR-0121.
@@ -629,7 +631,10 @@ This track removes each condition that blocks other work.
 | P9e | The test sheet of the demonstration, from its page. It closes with P9c and P9d after the run of the owner. TASK-0266. | 1 |
 | P9f | A start of the desktop with the setting file opens that file and shows no home screen (ADR-0083 item 7, the owner, 2026-11-08). TASK-0290. | 1 |
 | P9g | A project in any folder from the window, with no terminal: "Open project..." and "Import STL..." apart, "Save as..." and "Export STL..." through the save dialog of the system, the recent projects in each folder, the folder in the top bar, and the question before a change of a part with no file (ADR-0102; the owner, 2026-11-08, Q1 to Q4 A). The row closes after the run of the owner. TASK-0316. | 2–3 |
-| P10 | The sheet in the Document: commands for a sheet, its views (a direction as a matrix, and a scale) and the place of each dimension; ISO first angle by default and third angle as a choice of a sheet; the lines of a view are computed and not stored (ADR-0118 items 3 and 4; Q2 A and Q3 A of 2026-11-10). It changes the public shape of `Engine.Contracts`: an ADR and a question to the owner first. After R22. The questions Q1 to Q8 wait for the owner (R-0067). | 5–8 |
+| P10 | The sheet in the Document: commands for a sheet, its views (a direction as a matrix, and a scale) and the place of each dimension; ISO first angle by default and third angle as a choice of a sheet; the lines of a view are computed and not stored (ADR-0118 items 3 and 4; Q2 A and Q3 A of 2026-11-10). It changes the public shape of `Engine.Contracts`: an ADR and a question to the owner first. After R22. The owner answered Q1 to Q8 on 2026-11-14 (ADR-0153), and the row has three parts. | 5–8 |
+| P10.1 | The record of a sheet in the Document, the events of a sheet, and the commands CreateSheet, RenameSheet and RemoveSheet, with undo and redo (ADR-0153 items 1 to 3, 6 and 7). TASK-0389. | 1–2 |
+| P10.2 | The views of a sheet: AddSheetView, MoveSheetView and RemoveSheetView, and a read of a sheet with the lines of each view from K9 (ADR-0153 item 4). After P10.1. | 1–2 |
+| P10.3 | The dimensions of a sheet: PlaceSheetDimension and RemoveSheetDimension, the value from the design at each read, and a lost dimension (ADR-0153 item 5). After P10.2. | 1–2 |
 | P10a | The export of a sheet as SVG, from the exact numbers of the views and the values of the design (Q4 of 2026-11-10, first). After P10. | 1–2 |
 | P10b | The export of a sheet as DXF, for the exchange with a CAD program and a laser cutter (Q4, second). After P10a. | 2 |
 | P10c | The export of a sheet as PDF, for the documentation (Q4, third). After P10b. | 2–3 |

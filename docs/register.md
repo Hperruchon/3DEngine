@@ -452,17 +452,6 @@ that picture "X 18 mm" of the panel moves about 150 pixels down to leave the oth
 the model.
 Exit: the scenario runs in the window and passes; or it fails, or the long lines confuse the person, and a task
 corrects it.
-### R-0067 · P10 changes the contract, and its eight questions wait for the owner
-- class: question
-- opened: 2026-11-14
-- due: 2026-12-14
-- extended: no
-- refs: `docs/proposals/2026-11-14-the-sheet-in-the-document.md`, `docs/adr/0118-the-2d-drawing-of-a-part.md` item 3, TASK-0386
-After R22c (v0.369) each product row waits for P10, the sheet in the Document. P10 adds a collection, records, commands and
-event kinds to `Engine.Contracts`, so its ADR and a question to the owner come first. The proposal gives Q1 to Q8, each with a
-recommended option: the record of a sheet, the paper, the direction and the scale of a view, a dimension and a lost dimension,
-the commands, and the source of a view.
-Exit: the owner answers Q1 to Q8, and the first commit of P10 records the answers with its ADR.
 ## Accepted compromises
 
 These are conditions that the project keeps permanently and by decision. They do not age.
@@ -597,6 +586,21 @@ only the render loop writes `Scene` and `Entity` of `3DEngine.Core`. V5, V6 and 
 ---
 
 ## Closed
+
+### R-0067 · P10 changes the contract, and its eight questions wait for the owner
+- class: question
+- opened: 2026-11-14
+- due: 2026-12-14
+- extended: no
+- refs: `docs/proposals/2026-11-14-the-sheet-in-the-document.md`, `docs/adr/0118-the-2d-drawing-of-a-part.md` item 3, TASK-0386
+After R22c (v0.369) each product row waits for P10, the sheet in the Document. P10 adds a collection, records, commands and
+event kinds to `Engine.Contracts`, so its ADR and a question to the owner come first. The proposal gives Q1 to Q8, each with a
+recommended option: the record of a sheet, the paper, the direction and the scale of a view, a dimension and a lost dimension,
+the commands, and the source of a view.
+Exit: the owner answers Q1 to Q8, and the first commit of P10 records the answers with its ADR.
+
+Closed 2026-11-15 · resolved · TASK-0389 · ADR-0153. On 2026-11-14 the owner took option A for each of Q1 to Q8. ADR-0153
+records the answers, and P10.1 adds the record of a sheet and its first three commands.
 
 ### R-0066 · Under 1024 pixels wide the arc of a proposal lies on the rows, and its lines on the tools of the ring
 - class: debt
