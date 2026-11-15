@@ -1,13 +1,13 @@
 ---
 id: 0153
 title: A drawing sheet is one record of the Document, with its views and its dimensions, and small commands change it
-status: Accepted
+status: Amended
 topic: Contracts, drawing
 date: 2026-11-15
 supersedes: []
 superseded-by: []
 amends: ['0118']
-amended-by: []
+amended-by: ['0155']
 affects:
   - Engine.Contracts/Drawing/SheetRecord.cs
   - Engine.Contracts/Document.cs
@@ -80,3 +80,5 @@ The engine gives the exact lines of a view (ADR-0142 to ADR-0145, ADR-0147) and 
 
 - 2026-11-15 · TASK-0389 · The record, from the answers of the owner of 2026-11-14 to Q1 to Q8 (R-0067).
 - 2026-11-15 · TASK-0389 · Shipped at v0.374.
+- 2026-11-15 · TASK-0393 · ADR-0155 amends items 4 and 6: the exact frame, the place on the paper, the commands of a view,
+  the read GetSheet and two codes of a view.

@@ -452,6 +452,28 @@ that picture "X 18 mm" of the panel moves about 150 pixels down to leave the oth
 the model.
 Exit: the scenario runs in the window and passes; or it fails, or the long lines confuse the person, and a task
 corrects it.
+### R-0068 · A view of a sheet takes an exact frame only, so no pictorial view exists
+- class: question
+- opened: 2026-11-15
+- due: 2027-02-13
+- extended: no
+- refs: `Engine.Core/Drawing/SheetLayout.cs` (Frame), `docs/adr/0155-the-views-of-a-sheet.md` item 1, TASK-0393
+AddSheetView takes nine numbers that give an exact frame with no tolerance (Q1 A of 2026-11-15). An isometric or another
+pictorial view comes from a sine and a cosine, so its right and its up are not of one length in exact arithmetic, and the
+command refuses it. A drawing often has one pictorial view.
+Exit: a slice gives a pictorial view with a test, or the owner accepts the six standard views and the frames of whole numbers.
+
+### R-0069 · A read of a sheet with three views of a sphere takes about 5 s
+- class: debt
+- opened: 2026-11-15
+- due: 2027-05-14
+- extended: no
+- refs: `Engine.Core/Queries/GetSheetQueryHandler.cs`, `Engine.Tests/Drawing/SheetViewTests.cs`
+  (A_Read_Of_Three_Views_Of_A_Sphere_Gives_Its_Circles), `docs/adr/0155-the-views-of-a-sheet.md` item 7, TASK-0393
+GetSheet computes the lines of each view at each read, with no cache (Q7 A). Three views of a sphere took 4.6 s and 5.1 s on
+the computer of the owner, and the query holds the session for that time, so a command of the person or the agent waits.
+Exit: a read of three views of a sphere takes less than 1 s, with a test, or the owner accepts the time.
+
 ## Accepted compromises
 
 These are conditions that the project keeps permanently and by decision. They do not age.

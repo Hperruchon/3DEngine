@@ -60,6 +60,9 @@ public static class HandlerCatalog
         new CreateSheetCommandHandler(),
         new RenameSheetCommandHandler(),
         new RemoveSheetCommandHandler(),
+        new AddSheetViewCommandHandler(),
+        new MoveSheetViewCommandHandler(),
+        new RemoveSheetViewCommandHandler(),
     ];
 
     public static IReadOnlyList<IQueryHandler> QueryHandlers() =>
@@ -73,6 +76,7 @@ public static class HandlerCatalog
         new GetFacesQueryHandler(),
         new GetFeaturesQueryHandler(),
         new GetPartReferencesQueryHandler(),
+        new GetSheetQueryHandler(),
     ];
 
     public static void RegisterAll(CommandRegistry commands, QueryRegistry queries, IAssetSource? assets = null)
