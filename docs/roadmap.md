@@ -420,6 +420,8 @@ Therefore each approved objective must have a track here.
   each view. v0.368, TASK-0383, ADR-0148.
 - R22c — The solver finds the lengths that the constraints fix, and a flat view shows a length that no constraint fixes
   in amber. v0.369, TASK-0384, ADR-0149.
+- P0.154 — On macOS the Command key gives the modifier of the shortcuts, and the command line shows "Cmd K"; R-0060
+  closes. v0.370, TASK-0385, ADR-0150.
 - Review — The codebase review of 2026-11-14 (c). v0.351, TASK-0366.
 - P0.143 — The low findings of the codebase review of 2026-11-11: a triangle of zero area adds no edge, and a mesh of
   more than 100 000 triangles finds its edges on the thread pool. v0.332, TASK-0345, ADR-0121.
@@ -593,6 +595,7 @@ This track removes each condition that blocks other work.
 | P0.151 | The high findings of the codebase review of 2026-11-14 (e) (E202, E203 and V191: the outline of a cut side, a cylinder turned by 180 degrees, and Frame under the window of the live sketches; with E204, the circle of an edge of a cut side, which the same fix needs), before the next product phase. TASK-0379. | 1 |
 | P0.152 | The medium and low findings of the codebase review of 2026-11-14 (e) (T182 and E205: the test of the circles of a Document, and a flat end; E204 went to TASK-0379), after the next product phase. TASK-0380. | 1 |
 | P0.153 | Each class of the image tests that creates a Vulkan device runs in one collection, so no two devices are created at the same time (R-0062). TASK-0382. | 1 |
+| P0.154 | On macOS the Command key gives the modifier of the shortcuts, and the command line shows "Cmd K" (R-0060, ADR-0150). TASK-0385. | 1 |
 | P0.102 | The cache of a face, the fixed controls, the list New, the edges and the safe area hold their next forms (V113 to V118 of the codebase review of 2026-11-06 (e); after P0.101). TASK-0252. | 1–2 |
 | P0.86 | The window keeps no input between sessions, the hook has the cases of one axis, and the next forms of four gates fail (V88 to V90, T141 to T144 of the codebase review of 2026-11-06; after the next product phase). TASK-0198. | 1–2 |
 

@@ -113,7 +113,7 @@ names. Do not read all of them.
 | [0105](0105-the-values-on-the-edges-of-an-active-sketch.md) | The values of an active sketch show on its edges | Amended | Clients, rendering | — | 0115 |
 | [0106](0106-open-project-shows-an-stl-file-too.md) | "Open project..." shows an STL file too, and an STL file goes to the import | Accepted | Persistence, clients | 0102 | — |
 | [0107](0107-the-arc-of-a-proposal-is-in-the-free-room.md) | With no ring of a body, the arc of a proposal is in the room right of the panel | Accepted | Clients | 0092 | — |
-| [0108](0108-the-look-of-the-render.md) | The window has the look of the render, an almost black ground and outlined controls with no fill | Accepted | Clients, rendering | 0078, 0081, 0092, 0095, 0098, 0113 | — |
+| [0108](0108-the-look-of-the-render.md) | The window has the look of the render, an almost black ground and outlined controls with no fill | Amended | Clients, rendering | 0078, 0081, 0092, 0095, 0098, 0113 | 0150 |
 | [0109](0109-the-edges-of-the-body.md) | The edges of a body are lines, and the selected body is transparent with dashed hidden edges | Amended | Rendering, clients | 0029 | 0121, 0129 |
 | [0110](0110-a-proposal-shows-each-value-on-its-chip.md) | A proposal shows each value that it changes on the chip of that value | Amended | Clients, surface | 0092 | 0114, 0115, 0130 |
 | [0111](0111-a-proposal-takes-its-own-taps-and-commands.md) | A proposal takes its own taps, its own command identifiers and its own steps | Amended | Surface, clients | 0092 | 0114, 0135 |
@@ -155,6 +155,7 @@ names. Do not read all of them.
 | [0147](0147-an-end-within-1e-9-of-across-the-view.md) | An end within 1e-9 of across the view is one line on its diameter | Accepted | Kernel, drawing | 0143, 0145 | — |
 | [0148](0148-the-reference-of-a-chain.md) | A line that closes a chain of the design shows its reference in parentheses, and each value keeps its row in each view | Amended | Clients, drawing | 0146 | 0149 |
 | [0149](0149-a-size-that-no-constraint-fixes.md) | The solver finds the lengths that the constraints fix, and a flat view shows a length that no constraint fixes in amber | Accepted | Kernel, clients, drawing | 0146, 0148 | — |
+| [0150](0150-the-command-key-of-macos.md) | On macOS the Command key gives the modifier of the shortcuts, and the command line shows "Cmd K" | Accepted | Clients, input | 0108 | — |
 
 ## Topics
 
