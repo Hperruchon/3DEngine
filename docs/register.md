@@ -452,20 +452,6 @@ that picture "X 18 mm" of the panel moves about 150 pixels down to leave the oth
 the model.
 Exit: the scenario runs in the window and passes; or it fails, or the long lines confuse the person, and a task
 corrects it.
-### R-0066 · Under 1024 pixels wide the arc of a proposal lies on the rows, and its lines on the tools of the ring
-- class: debt
-- opened: 2026-11-14
-- due: 2027-05-13
-- extended: no
-- refs: `3DEngine.App/Ui/DesktopUi.Proposal.cs` (RightOfRows, ProposalArc), `docs/adr/0134-the-arc-of-a-proposal-right-of-the-rows.md`,
-  TASK-0365
-At 800 by 600 and 900 by 600 the ring of the arc cannot move right of the rows of the selected body and stay in the display,
-so the arc stays on the ring of the body and lies on the rows. That ring is small, so the block of the command lines finds
-no place free of the tools of the ring, and lies on "Move" or "Set distance". A tap on the plate then reaches a dim tool.
-Exit: a slice places the arc and its lines on a small landscape display with no row and no tool under them, with a test;
-or the owner accepts the compromise.
-
-
 ### R-0067 · P10 changes the contract, and its eight questions wait for the owner
 - class: question
 - opened: 2026-11-14
@@ -611,6 +597,23 @@ only the render loop writes `Scene` and `Entity` of `3DEngine.Core`. V5, V6 and 
 ---
 
 ## Closed
+
+### R-0066 · Under 1024 pixels wide the arc of a proposal lies on the rows, and its lines on the tools of the ring
+- class: debt
+- opened: 2026-11-14
+- due: 2027-05-13
+- extended: no
+- refs: `3DEngine.App/Ui/DesktopUi.Proposal.cs` (RightOfRows, ProposalArc), `docs/adr/0134-the-arc-of-a-proposal-right-of-the-rows.md`,
+  TASK-0365
+At 800 by 600 and 900 by 600 the ring of the arc cannot move right of the rows of the selected body and stay in the display,
+so the arc stays on the ring of the body and lies on the rows. That ring is small, so the block of the command lines finds
+no place free of the tools of the ring, and lies on "Move" or "Set distance". A tap on the plate then reaches a dim tool.
+Exit: a slice places the arc and its lines on a small landscape display with no row and no tool under them, with a test;
+or the owner accepts the compromise.
+
+Closed 2026-11-14 · resolved · TASK-0388 · ADR-0152. At 800 by 600 and 900 by 600 the arc is right of the rows on a
+smaller ring, and each rectangle of a proposal hides the tools under it; the theory of the place of the arc holds at six
+landscape sizes with no exception.
 
 ### R-0060 · The command line shows "Ctrl K" on macOS, where the render gives "Cmd K"
 - class: debt
