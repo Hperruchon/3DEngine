@@ -79,3 +79,4 @@ The engine gives the exact lines of a view (ADR-0142 to ADR-0145, ADR-0147) and 
 ## History
 
 - 2026-11-15 · TASK-0389 · The record, from the answers of the owner of 2026-11-14 to Q1 to Q8 (R-0067).
+- 2026-11-15 · TASK-0389 · Shipped at v0.374.

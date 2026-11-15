@@ -1,7 +1,7 @@
 ---
 id: 0389
 title: A drawing sheet is one record of the Document, and CreateSheet, RenameSheet and RemoveSheet change it
-status: Active
+status: Done
 phase: P10.1
 opened: 2026-11-15
 depends-on: [0386]
@@ -74,20 +74,20 @@ that gives the same sheet.
 
 ## Acceptance criteria
 
-- [ ] ADR-0153 exists, and ADR-0118 shows the amendment.
-- [ ] A created sheet has the identifier of its command, its name, its paper, its orientation and its projection, and the
+- [x] ADR-0153 exists, and ADR-0118 shows the amendment.
+- [x] A created sheet has the identifier of its command, its name, its paper, its orientation and its projection, and the
       event `sheet.created` carries the record.
-- [ ] The default paper is A4 landscape with ISO first angle; a wrong paper, an empty name and a sheet that is not live each
+- [x] The default paper is A4 landscape with ISO first angle; a wrong paper, an empty name and a sheet that is not live each
       give their code.
-- [ ] A rename and a remove give their events, and an undo and a redo of each give the record before and the record after.
-- [ ] An open of the document file gives the same sheet.
-- [ ] A clean build (`--no-incremental`) gives zero errors and zero warnings, and the phone project builds.
-- [ ] `dotnet test`, the write-set check and `eng/repo-gates` pass; continuous integration passes on the branch and on
+- [x] A rename and a remove give their events, and an undo and a redo of each give the record before and the record after.
+- [x] An open of the document file gives the same sheet.
+- [x] A clean build (`--no-incremental`) gives zero errors and zero warnings, and the phone project builds.
+- [x] `dotnet test`, the write-set check and `eng/repo-gates` pass; continuous integration passes on the branch and on
       `main` after the merge.
 
 ## Outcome
 
-Status: Active
+Status: Done · commit (the merge of the branch p10-1-sheet-contract) · v0.374
 
 ## Method
 
@@ -103,3 +103,4 @@ Weakest:    the lists of the views and the dimensions have no command until P10.
   injections each failed a named test: no event sheet.created, no check of the paper, an undo that gives the record after,
   no check of an identifier in use, and no sample of RemoveSheet in the test of the file. Each file came back byte for byte.
   The guard of the lists of the sheets in the bus has no test, as the guard of the images has none.
+- 2026-11-15: run 43718200348 passed on the work commit. Closed at v0.374.

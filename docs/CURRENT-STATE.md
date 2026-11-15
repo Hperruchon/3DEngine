@@ -11115,3 +11115,31 @@ none on a branch; 43562165193 on `main` stays red until the owner runs it again.
 New tests: 0. The test list holds 2685 (1580 in `Engine.Tests`, 382 in `3DEngine.Tests`, 720 in `3DEngine.ImageTests`, 3
 in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
 entries: 13 of 15. New diagnostic codes: 0. Since the review of v0.363, 3 product milestones and 10 entries followed it.
+
+## v0.374 — A drawing sheet is one record of the Document, and CreateSheet, RenameSheet and RemoveSheet change it (P10.1, TASK-0389)
+
+Register entry R-0067 held the eight questions of the sheet in the Document for the owner. On 2026-11-14 the owner took option A
+for each of Q1 to Q8.
+
+**The change.** ADR-0153 records the answers and amends ADR-0118.
+- `SheetRecord`, `SheetView` and `SheetDimension` are in `Engine.Contracts`. A sheet has the identifier of its command, a name, a
+  paper (A4 to A0), an orientation, a projection (ISO first angle by default), and lists of views and dimensions.
+- An edit gives a new record with the same identifier. The events `sheet.created`, `sheet.changed` and `sheet.removed` carry
+  the record, and an undo and a redo give each record back.
+- The commands `CreateSheet`, `RenameSheet` and `RemoveSheet`, and the codes `E-SHEET-NOT-FOUND`, `E-SHEET-INVALID` and
+  `E-SHEET-ID-IN-USE`. The views and the dimensions get their commands in P10.2 and P10.3.
+- R-0067 closes by its exit.
+
+**Proof.** Four tests: the record and its event, the default paper and each code, the events of a rename and a remove with
+undo and redo, and the open of the document file. The test of the file reads back a sample of each new command. Five
+injections each failed a named test; each file came back byte for byte. A first test of `E-SHEET-ID-IN-USE` got the result of
+the cache of the session; it fills the cache first now, as the test of an assembly reference does. The phone project builds
+with zero warnings. Run 43718200348 passed on the branch. The failed runs since the entry v0.373, from the API: none.
+Run 43562165193 on `main` passed at its second attempt after the owner ran it again.
+
+**What stays.** The guard of the lists of the sheets in the bus has no test, as the guard of the images has none. A sheet
+has no view and no dimension until P10.2 and P10.3, and the window does not show a sheet.
+
+New tests: 4. The test list holds 2689 (1584 in `Engine.Tests`, 382 in `3DEngine.Tests`, 720 in `3DEngine.ImageTests`, 3
+in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
+entries: 12 of 15. New diagnostic codes: 3. Since the review of v0.363, 4 product milestones and 11 entries followed it.
