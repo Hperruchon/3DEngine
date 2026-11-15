@@ -110,6 +110,31 @@ public sealed class ViewPlaceTests
         Near((dx, dy), line.Circle.Centre);
     }
 
+    // ADR-0147 item 1 (finding E205 of the codebase review of 2026-11-14 (e), TASK-0380): a cylinder that turns of 30 and 60
+    // degrees about x laid on its side is across the top view within the rounding of the turns, so each end is one visible
+    // line from x = -10 to 10, with no hidden half under it and no ellipse; the outline is two lines.
+    [NativeManifoldFact]
+    public async Task A_Cylinder_That_Two_Turns_Laid_On_Its_Side_Shows_Each_End_As_One_Line()
+    {
+        using var backend = new ManifoldGeometryBackend();
+        var session = new DocumentSession(EngineHosting.CreateDefault(backend));
+        var body = await Body(session, new CreateCylinderCommand { Radius = 10, Height = 20 });
+        body = await Body(session, new RotateCommand { BodyId = body, Qw = Math.Cos(Math.PI / 12), Qx = Math.Sin(Math.PI / 12), Qy = 0, Qz = 0 });
+        await Body(session, new RotateCommand { BodyId = body, Qw = Math.Cos(Math.PI / 6), Qx = Math.Sin(Math.PI / 6), Qy = 0, Qz = 0 });
+
+        var (lines, _) = await session.ReadGeometry((document, _) => ViewEdges.Of(document, ViewFrame.Of(StandardView.Top)));
+
+        Assert.Equal(4, lines.Count);
+        Assert.All(lines, line => Assert.True(line.Visible && line.Ellipse is null && line.Circle is null));
+        var ends = lines.Where(line => line.Kind == ViewLineKind.Edge).ToArray();
+        Assert.Equal(2, ends.Length);
+        foreach (var end in ends)
+        {
+            var xs = new[] { end.From.X.ToDouble(), end.To.X.ToDouble() }.Order().ToArray();
+            Assert.True(Math.Abs(xs[0] + 10) < Close && Math.Abs(xs[1] - 10) < Close, $"an end runs from {xs[0]} to {xs[1]}");
+        }
+    }
+
     private static async Task<Guid> Body(DocumentSession session, Command command)
     {
         var result = await session.Apply(command);
