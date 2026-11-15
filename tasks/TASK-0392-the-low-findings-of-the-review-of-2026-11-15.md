@@ -1,7 +1,7 @@
 ---
 id: 0392
 title: The low findings of the codebase review of 2026-11-15
-status: Active
+status: Done
 phase: P0.159
 opened: 2026-11-15
 depends-on: [0391]
@@ -61,12 +61,12 @@ The fixed lengths do not depend on the scale, the ends of an edge come from all 
 - [x] A test proves the ends of an edge in two parts.
 - [x] A test proves that the flag of the modifier stays while one of two keys is down.
 - [x] A clean build (`--no-incremental`) gives zero errors and zero warnings, and the phone project builds.
-- [ ] `dotnet test`, the write-set check and `eng/repo-gates` pass; continuous integration passes on the branch and on
+- [x] `dotnet test`, the write-set check and `eng/repo-gates` pass; continuous integration passes on the branch and on
       `main` after the merge.
 
 ## Outcome
 
-Status: Active
+Status: Done · commit (the merge of the branch p0159-review-findings) · v0.378
 
 ## Method
 
@@ -83,3 +83,5 @@ Weakest:    no path of the window gives an edge in two parts now, so the test of
   old code: the four sizes of the rectangles (a fixed side lost, or a freedom of 9 in place of 8), and the four pairs of
   modifier keys. Three injections each failed their test, and each file came back byte for byte; two first injections
   did not compile (code that the compiler cannot reach), so the session used forms that compile.
+- 2026-11-15: run 43758966329 passed on the branch. The merge c28dc97 took P10.2 (v0.377) from main, with no conflict.
+  Closed at v0.378.
