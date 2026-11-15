@@ -158,8 +158,9 @@ names. Do not read all of them.
 | [0150](0150-the-command-key-of-macos.md) | On macOS the Command key gives the modifier of the shortcuts, and the command line shows "Cmd K" | Accepted | Clients, input | 0108 | — |
 | [0151](0151-a-size-on-the-line-of-a-shown-value.md) | A free size or a reference on the line of a value that the view shows does not show again | Accepted | Clients, drawing | 0148, 0149 | — |
 | [0152](0152-the-arc-on-a-small-landscape-display.md) | On a small landscape display the arc of a proposal is right of the rows on a smaller ring, and each part of a proposal hides the tools under it | Accepted | Clients, rendering | 0134, 0139 | — |
-| [0153](0153-the-sheet-in-the-document.md) | A drawing sheet is one record of the Document, with its views and its dimensions, and small commands change it | Accepted | Contracts, drawing | 0118 | — |
+| [0153](0153-the-sheet-in-the-document.md) | A drawing sheet is one record of the Document, with its views and its dimensions, and small commands change it | Amended | Contracts, drawing | 0118 | 0155 |
 | [0154](0154-the-fixed-lengths-from-one-elimination.md) | The status and the fixed lengths of a sketch come from one elimination, and the product J·Jᵀ takes the columns with a value | Accepted | Kernel | 0149 | — |
+| [0155](0155-the-views-of-a-sheet.md) | A view of a sheet has an exact frame, a scale and a place on the paper, and GetSheet gives its lines on the paper | Accepted | Drawing | 0153 | — |
 
 ## Topics
 
