@@ -17,7 +17,13 @@ internal static class EdgeValues
     // ADR-0084 item 2 (TASK-0267): Label names the value in its row: "Distance", "Length" or "Radius".
     // ADR-0115 item 2 (phase R18c, TASK-0340): Line is the measured edge on the screen and the side of its dimension line, or
     // null for a value with no edge.
-    public sealed record Value(string Key, string Text, Vector2 At, double Number, Guid Body, Guid? Sketch, Guid? Constraint, string Label = "Value", Measure? Line = null, string? Name = null);
+    // ADR-0148 item 1 (phase R22b, TASK-0383): InView is false for a value whose length the flat view does not show true; it
+    // keeps its row and has no chip. Reference is true for the reference of a chain, which has a chip and no row and no pad.
+    public sealed record Value(string Key, string Text, Vector2 At, double Number, Guid Body, Guid? Sketch, Guid? Constraint, string Label = "Value", Measure? Line = null, string? Name = null,
+        bool InView = true, bool Reference = false);
+
+    // ADR-0148 item 2: the key of the reference of a chain on the line of a sketch.
+    public static string ReferenceKey(Guid line) => $"Reference:{line:N}";
 
     // ADR-0115 item 2: the two ends of the measured edge on the screen (one point, the same two times, for a radius), the
     // unit normal that points away from the outline, and the distance along it from the edge to the outside of the outline
@@ -91,7 +97,7 @@ internal static class EdgeValues
         bool Side(DatumReference face) => face.FeatureId == body && face.Element == "side";
         if (distance is { } d)
         {
-            var along = edges.Where(edge => Side(edge.First) && Side(edge.Second) && TrueLength(edge, camera, radius: false))
+            var along = edges.Where(edge => Side(edge.First) && Side(edge.Second))
                 .Select(edge => (Edge: edge, At: Middle(edge, camera, width, height)))
                 .Where(pair => pair.At is not null)
                 .OrderByDescending(pair => Vector2.DistanceSquared(pair.At.GetValueOrDefault(), centre))
@@ -99,7 +105,7 @@ internal static class EdgeValues
             if (along.At is { } on)
             {
                 var line = MeasureOf(along.Edge, on);
-                values.Add(new Value(DistanceKey(body), $"{Exact(d)} {unit}", Placed(line), d, body, null, null, "Distance", line));
+                values.Add(new Value(DistanceKey(body), $"{Exact(d)} {unit}", Placed(line), d, body, null, null, "Distance", line, InView: TrueLength(along.Edge, camera, radius: false)));
             }
         }
 
@@ -109,6 +115,7 @@ internal static class EdgeValues
 
         // ADR-0117 item 3 (phase R18d, TASK-0342): the name of each constraint in its sketch, as "C3".
         var names = SketchText.Labels(of);
+        var measured = new Dictionary<Guid, (EdgeEntry Edge, double Number)>();
         foreach (var constraint in of.Constraints)
         {
             if (constraint.Values.Count == 0)
@@ -122,8 +129,6 @@ internal static class EdgeValues
             if (item is not { } id)
                 continue;
             var edge = edges.FirstOrDefault(candidate => Pair(candidate, body, id));
-            if (edge is not null && !TrueLength(edge, camera, constraint.Kind == "radius"))
-                continue;
             // ADR-0115 item 2: a radius has a leader from the middle of its edge, straight out from the centre.
             if (edge is not null && Middle(edge, camera, width, height) is { } at)
             {
@@ -131,11 +136,77 @@ internal static class EdgeValues
                 // ADR-0117 item 3: a length along an axis is a width, a depth or a height.
                 var named = constraint.Kind == "distance" ? Direction(edge) : label;
                 values.Add(new Value(ConstraintKey(constraint.Id), $"{prefix}{Exact(constraint.Values[0])} {unit}", Placed(line), constraint.Values[0], body, of.SketchId, constraint.Id, named, line,
-                    names.TryGetValue(constraint.Id, out var name) ? name : null));
+                    names.TryGetValue(constraint.Id, out var name) ? name : null, InView: TrueLength(edge, camera, constraint.Kind == "radius")));
+                if (constraint.Kind == "distance")
+                    measured[id] = (edge, constraint.Values[0]);
             }
         }
 
+        if (camera.Flat is not null)
+            values.AddRange(References(body, of, edges, measured, camera, MeasureOf, edge => Middle(edge, camera, width, height), unit));
         return values;
+    }
+
+    // ADR-0148 item 2 (phase R22b, TASK-0383): in a flat view a line of the sketch with no value of its own closes a chain when,
+    // along its direction, it and the lines with a value tile exactly the interval of one other line with a value, the total:
+    // each part one after the other, with no gap and no overlap. Its reference is the total less the sum of the parts, from
+    // the values of the design, in parentheses (ISO 129-1), on its edge. Each line is across the view, and each direction and
+    // interval comes from the edge of the line; the test of a direction and of an end uses a limit of 1e-6 of the length.
+    private static IEnumerable<Value> References(Guid body, SketchInfo sketch, IReadOnlyList<EdgeEntry> edges,
+        Dictionary<Guid, (EdgeEntry Edge, double Number)> measured, Camera camera, Func<EdgeEntry, Vector2, Measure> measureOf,
+        Func<EdgeEntry, Vector2?> middleOf, string unit)
+    {
+        static (double X, double Y, double Z) Minus(DatumPoint a, DatumPoint b) => (a.X - b.X, a.Y - b.Y, a.Z - b.Z);
+        static double Dot((double X, double Y, double Z) a, (double X, double Y, double Z) b) => (a.X * b.X) + (a.Y * b.Y) + (a.Z * b.Z);
+        var lines = new List<(Guid Line, EdgeEntry Edge)>();
+        foreach (var line in sketch.Lines)
+        {
+            if (edges.FirstOrDefault(candidate => Pair(candidate, body, line.Id)) is { } edge && edge.Segments.Count > 0 && TrueLength(edge, camera, radius: false))
+                lines.Add((line.Id, edge));
+        }
+
+        foreach (var (free, edge) in lines.Where(entry => !measured.ContainsKey(entry.Line)))
+        {
+            var d = Minus(edge.Segments[^1].End, edge.Segments[0].Start);
+            var length = Math.Sqrt(Dot(d, d));
+            if (!(length > 0))
+                continue;
+            var unitD = (d.X / length, d.Y / length, d.Z / length);
+            (double A, double B)? Interval(EdgeEntry other)
+            {
+                var o = Minus(other.Segments[^1].End, other.Segments[0].Start);
+                var along = Dot(o, unitD);
+                if (Dot(o, o) - (along * along) > 1e-12 * Dot(o, o))
+                    return null;
+                var a = Dot(Minus(other.Segments[0].Start, edge.Segments[0].Start), unitD);
+                var b = Dot(Minus(other.Segments[^1].End, edge.Segments[0].Start), unitD);
+                return (Math.Min(a, b), Math.Max(a, b));
+            }
+
+            var limit = 1e-6 * length;
+            var valued = lines.Where(entry => measured.ContainsKey(entry.Line)).Select(entry => (entry.Line, Range: Interval(entry.Edge)))
+                .Where(entry => entry.Range is not null).Select(entry => (entry.Line, Range: entry.Range!.Value, Number: measured[entry.Line].Number)).ToList();
+            var own = Interval(edge)!.Value;
+            foreach (var total in valued)
+            {
+                var parts = valued.Where(entry => entry.Line != total.Line && entry.Range.A >= total.Range.A - limit && entry.Range.B <= total.Range.B + limit
+                    && !(Math.Abs(entry.Range.A - total.Range.A) <= limit && Math.Abs(entry.Range.B - total.Range.B) <= limit)).ToList();
+                if (parts.Count == 0)
+                    continue;
+                var chain = parts.Select(entry => entry.Range).Append(own).OrderBy(range => range.A).ToList();
+                var tiles = Math.Abs(chain[0].A - total.Range.A) <= limit && Math.Abs(chain[^1].B - total.Range.B) <= limit
+                    && chain.Zip(chain.Skip(1)).All(pair => Math.Abs(pair.First.B - pair.Second.A) <= limit);
+                if (!tiles)
+                    continue;
+                var number = total.Number - parts.Sum(entry => entry.Number);
+                var middle = middleOf(edge);
+                if (middle is not { } at)
+                    break;
+                var measure = measureOf(edge, at);
+                yield return new Value(ReferenceKey(free), $"({Exact(number)} {unit})", Placed(measure), number, body, sketch.SketchId, null, "Reference", measure, Reference: true);
+                break;
+            }
+        }
     }
 
     // ADR-0146 item 1 (phase R22a, TASK-0381): in a flat view a value shows only where its length is true, as on a drawing:
