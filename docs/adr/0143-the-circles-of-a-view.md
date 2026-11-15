@@ -7,7 +7,7 @@ date: 2026-11-14
 supersedes: []
 superseded-by: []
 amends: ['0142']
-amended-by: ['0144', '0145']
+amended-by: ['0144', '0145', '0147']
 affects:
   - Engine.Core/Drawing/ViewEdges.cs
   - Engine.Core/Features/KernelProjection.cs
@@ -76,3 +76,4 @@ sagitta of one facet.
   outline of a cylinder and a cone comes from its axis.
 - 2026-11-14 · TASK-0379 · ADR-0145 items 1 and 2 amend items 2 to 4: a line has its place along the axis, and an axis within
   1e-9 of the view is along it.
+- 2026-11-14 · TASK-0380 · ADR-0147 item 1 amends item 3: an end within 1e-9 of across the view is one line on its diameter.
