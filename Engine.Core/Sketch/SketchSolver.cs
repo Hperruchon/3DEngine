@@ -54,28 +54,84 @@ public static class SketchSolver
     }
 
     // ADR-0149 item 1 (phase R22c, TASK-0384): the lines of the sketch whose length the constraints fix at the positions of
-    // the record. A length is fixed when its gradient lies in the space of the rows of the Jacobian of the constraints: the
-    // rank of the Jacobian with the gradient as one more row is the rank of the Jacobian. A move that the constraints permit
-    // is then a move along which the length does not change. The rank comes from the elimination of the solver, with its
-    // limit of a pivot, so the code uses + - * / and sqrt only. A line whose two ends are fixed points has a gradient of zero,
-    // and its length is fixed.
-    public static IReadOnlySet<Guid> FixedLengths(SketchRecord sketch)
+    // the record. A length is fixed when its gradient lies in the space of the rows of the Jacobian of the constraints. A
+    // move that the constraints permit is then a move along which the length does not change. A line whose two ends are
+    // fixed points has a gradient of zero, and its length is fixed.
+    public static IReadOnlySet<Guid> FixedLengths(SketchRecord sketch) => Analyse(sketch).FixedLengths;
+
+    // The status of ADR-0035 item 8 and the fixed lengths of ADR-0149 item 1 from one elimination, for GetSketch. TASK-0391
+    // (finding E206 of the codebase review of 2026-11-15): R22c eliminated J·Jᵀ with the gradient of each line as one more
+    // row, so a read cost one full elimination for each line, and the window reads the active sketch in each frame. Here
+    // one elimination of J·Jᵀ takes J·g of each gradient g as one more column of its right side, and gives λ with J·Jᵀ·λ =
+    // J·g. The residual r = g − Jᵀ·λ is the part of g outside the space of the rows of J, and r·r is the last pivot that
+    // the elimination with g as one more row gives. The length is fixed when r·r is at most the limit of that pivot:
+    // PivotRatio times the largest diagonal entry of the product with g, which is the larger of the largest diagonal
+    // entry of J·Jᵀ and g·g. The code uses + - * / and sqrt only.
+    internal static (bool Solved, int Freedom, IReadOnlySet<Guid> FixedLengths) Analyse(SketchRecord sketch)
     {
         ArgumentNullException.ThrowIfNull(sketch);
         var system = new EquationSystem(sketch, null);
-        system.Evaluate(system.Start());
-        var rank = system.Rows == 0 ? 0 : Eliminate(system.Product(), new double[system.Rows], out _);
+        var x = system.Start();
+        system.Evaluate(x);
+        var (rows, variables) = (system.Rows, system.Variables);
+
         var lines = new HashSet<Guid>();
+        var open = new List<(Guid Line, double[] Gradient)>();
         foreach (var line in sketch.Lines)
         {
             if (system.LengthGradient(line) is not { } gradient)
                 continue;
-            if (gradient.All(value => value == 0)
-                || Eliminate(system.ProductWith(gradient), new double[system.Rows + 1], out _) == rank)
+            if (gradient.All(value => value == 0))
                 lines.Add(line.Id);
+            else
+                open.Add((line.Id, gradient));
         }
 
-        return lines;
+        // J·g of each gradient, with the sum in the order of the columns. A gradient has a value at the four columns of the
+        // ends of its line at most, and a row of J at a few columns, so the sums and Jᵀ·λ take those columns only, as
+        // Product does; each column of a Jacobian with an entry that is not finite.
+        var product = system.Product();
+        var largest = 0.0;
+        for (var i = 0; i < rows; i++)
+            largest = Math.Max(largest, Math.Abs(product[i, i]));
+        var every = Enumerable.Range(0, variables).ToArray();
+        var columns = system.NonZeroColumns();
+        var right = new double[rows, open.Count];
+        for (var k = 0; k < open.Count; k++)
+        {
+            var gradient = open[k].Gradient;
+            var values = columns is null ? every : every.Where(column => gradient[column] != 0).ToArray();
+            for (var i = 0; i < rows; i++)
+            {
+                var sum = 0.0;
+                foreach (var column in values)
+                    sum += system.Jacobian[i, column] * gradient[column];
+                right[i, k] = sum;
+            }
+        }
+        var rank = Eliminate(product, right, out var lambda);
+
+        var residual = new double[variables];
+        for (var k = 0; k < open.Count; k++)
+        {
+            var gradient = open[k].Gradient;
+            Array.Copy(gradient, residual, variables);
+            for (var i = 0; i < rows; i++)
+            {
+                foreach (var column in columns is null ? every : columns[i])
+                    residual[column] -= system.Jacobian[i, column] * lambda[i, k];
+            }
+            var (square, norm) = (0.0, 0.0);
+            for (var column = 0; column < variables; column++)
+            {
+                square += residual[column] * residual[column];
+                norm += gradient[column] * gradient[column];
+            }
+            if (square <= PivotRatio * Math.Max(largest, norm))
+                lines.Add(open[k].Line);
+        }
+
+        return (system.WithinTolerance() && system.CurvesHaveRadius(x), variables - rank, lines);
     }
 
     // The values and the derivatives of the equations at the positions of the record, for a
@@ -112,12 +168,27 @@ public static class SketchSolver
         }
     }
 
-    // Solves a·λ = b in row echelon form with partial pivoting, and gives the rank. A
-    // column with no pivot above the limit gets λ = 0, so a redundant row adds nothing. The
-    // search takes the first row of the largest absolute value, so a tie has one result.
+    // Solves a·λ = b for one right side. The operations on b and λ are those of the form with columns, so the solve gives
+    // the same bits as before TASK-0391.
     private static int Eliminate(double[,] a, double[] b, out double[] lambda)
     {
-        var size = b.Length;
+        var right = new double[b.Length, 1];
+        for (var i = 0; i < b.Length; i++)
+            right[i, 0] = b[i];
+        var rank = Eliminate(a, right, out var solution);
+        lambda = new double[b.Length];
+        for (var i = 0; i < b.Length; i++)
+            lambda[i] = solution[i, 0];
+        return rank;
+    }
+
+    // Solves a·λ = b in row echelon form with partial pivoting, for each column of b, and gives the rank. A
+    // column with no pivot above the limit gets λ = 0, so a redundant row adds nothing. The
+    // search takes the first row of the largest absolute value, so a tie has one result.
+    private static int Eliminate(double[,] a, double[,] b, out double[,] lambda)
+    {
+        var size = a.GetLength(0);
+        var sides = b.GetLength(1);
         var largest = 0.0;
         for (var i = 0; i < size; i++)
             largest = Math.Max(largest, Math.Abs(a[i, i]));
@@ -140,7 +211,8 @@ public static class SketchSolver
             {
                 for (var j = 0; j < size; j++)
                     (a[row, j], a[best, j]) = (a[best, j], a[row, j]);
-                (b[row], b[best]) = (b[best], b[row]);
+                for (var k = 0; k < sides; k++)
+                    (b[row, k], b[best, k]) = (b[best, k], b[row, k]);
             }
             for (var i = row + 1; i < size; i++)
             {
@@ -149,20 +221,24 @@ public static class SketchSolver
                     continue;
                 for (var j = column; j < size; j++)
                     a[i, j] -= factor * a[row, j];
-                b[i] -= factor * b[row];
+                for (var k = 0; k < sides; k++)
+                    b[i, k] -= factor * b[row, k];
             }
             pivots.Add((row, column));
             row++;
         }
 
-        lambda = new double[size];
-        for (var p = pivots.Count - 1; p >= 0; p--)
+        lambda = new double[size, sides];
+        for (var k = 0; k < sides; k++)
         {
-            var (pivotRow, pivotColumn) = pivots[p];
-            var sum = b[pivotRow];
-            for (var j = pivotColumn + 1; j < size; j++)
-                sum -= a[pivotRow, j] * lambda[j];
-            lambda[pivotColumn] = sum / a[pivotRow, pivotColumn];
+            for (var p = pivots.Count - 1; p >= 0; p--)
+            {
+                var (pivotRow, pivotColumn) = pivots[p];
+                var sum = b[pivotRow, k];
+                for (var j = pivotColumn + 1; j < size; j++)
+                    sum -= a[pivotRow, j] * lambda[j, k];
+                lambda[pivotColumn, k] = sum / a[pivotRow, pivotColumn];
+            }
         }
         return pivots.Count;
     }
@@ -337,26 +413,6 @@ public static class SketchSolver
 
         public double[] Residuals() => (double[])Values.Clone();
 
-        // J·Jᵀ, with the sum of each entry in the order of the columns.
-        // ADR-0149 item 1: the product of the Jacobian with one more row and its transpose.
-        public double[,] ProductWith(double[] extra)
-        {
-            var size = Rows + 1;
-            double Entry(int row, int column) => row < Rows ? Jacobian[row, column] : extra[column];
-            var product = new double[size, size];
-            for (var i = 0; i < size; i++)
-            {
-                for (var j = 0; j < size; j++)
-                {
-                    var sum = 0.0;
-                    for (var k = 0; k < Variables; k++)
-                        sum += Entry(i, k) * Entry(j, k);
-                    product[i, j] = sum;
-                }
-            }
-            return product;
-        }
-
         // ADR-0149 item 1: the gradient of the length of the line in the variables: -u at its start and u at its end, with u
         // the unit direction from the start to the end; a fixed end has no column. Null for a line of no length.
         public double[]? LengthGradient(SketchLine line)
@@ -374,20 +430,67 @@ public static class SketchSolver
             return gradient;
         }
 
+        // J·Jᵀ, with the sum of each entry in the order of the columns. TASK-0391 (finding E206): a row of J has a value in
+        // a few columns only, so the sum takes the columns where both rows have a value. That gives the same bits as the sum
+        // over each column when each entry is finite: a term with a zero factor is then +0 or −0, and the sum is never −0,
+        // because it starts at +0 and x + (−x) is +0, so such a term does not change it. A term 0 · ∞ is NaN, so a Jacobian
+        // with an entry that is not finite takes the sum over each column.
         public double[,] Product()
         {
             var product = new double[Rows, Rows];
+            var columns = NonZeroColumns();
             for (var i = 0; i < Rows; i++)
             {
                 for (var j = 0; j < Rows; j++)
                 {
                     var sum = 0.0;
-                    for (var k = 0; k < Variables; k++)
-                        sum += Jacobian[i, k] * Jacobian[j, k];
+                    if (columns is null)
+                    {
+                        for (var k = 0; k < Variables; k++)
+                            sum += Jacobian[i, k] * Jacobian[j, k];
+                    }
+                    else
+                    {
+                        var (a, b) = (columns[i], columns[j]);
+                        var (p, q) = (0, 0);
+                        while (p < a.Length && q < b.Length)
+                        {
+                            if (a[p] < b[q])
+                                p++;
+                            else if (a[p] > b[q])
+                                q++;
+                            else
+                            {
+                                sum += Jacobian[i, a[p]] * Jacobian[j, a[p]];
+                                p++;
+                                q++;
+                            }
+                        }
+                    }
                     product[i, j] = sum;
                 }
             }
             return product;
+        }
+
+        // The columns of each row of J with a value other than zero, in their order, or null when an entry is not finite.
+        public int[][]? NonZeroColumns()
+        {
+            var columns = new int[Rows][];
+            var row = new List<int>();
+            for (var i = 0; i < Rows; i++)
+            {
+                row.Clear();
+                for (var k = 0; k < Variables; k++)
+                {
+                    if (!double.IsFinite(Jacobian[i, k]))
+                        return null;
+                    if (Jacobian[i, k] != 0)
+                        row.Add(k);
+                }
+                columns[i] = [.. row];
+            }
+            return columns;
         }
 
         // The value and the derivatives of each equation at the positions x.
