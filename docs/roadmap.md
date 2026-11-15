@@ -436,6 +436,8 @@ Therefore each approved objective must have a track here.
   paper. v0.377, TASK-0393, ADR-0155.
 - P0.159 — The freedom and the fixed lengths do not depend on the size of a sketch, the ends of an edge in two parts are
   its farthest points, and a modifier stays while one of its keys is down. v0.378, TASK-0392, ADR-0156.
+- P0.160 — The answers of the owner of 2026-11-15 to the design file of the assemblies and of the work with an agent are a
+  record: ADR-0157, 19 new rows and the new order. v0.379, TASK-0394.
 - Review — The codebase review of 2026-11-14 (c). v0.351, TASK-0366.
 - P0.143 — The low findings of the codebase review of 2026-11-11: a triangle of zero area adds no edge, and a mesh of
   more than 100 000 triangles finds its edges on the thread pool. v0.332, TASK-0345, ADR-0121.

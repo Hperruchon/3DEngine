@@ -121,3 +121,4 @@ record and is not in that field. So the code of a later phase cites the ADR of i
 ## History
 
 - 2026-11-15 · TASK-0394 · The record, from the answers of the owner of 2026-11-15 to A1 to A15 of the design file.
+- 2026-11-15 · TASK-0394 · Shipped at v0.379.

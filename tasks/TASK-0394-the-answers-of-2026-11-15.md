@@ -1,7 +1,7 @@
 ---
 id: 0394
 title: The answers of the owner of 2026-11-15 on the assemblies and the work with an agent are a record, with ADR-0157, its roadmap rows and the new order
-status: Active
+status: Done
 phase: P0.160
 opened: 2026-11-15
 depends-on: [0393]
@@ -68,12 +68,12 @@ with no question on the scope or the order.
 
 ## Acceptance criteria
 
-- [ ] ADR-0157 exists and records A1 to A15, and ADR-0126 shows the amendment in its items 4 and 8.
-- [ ] Each new row of the roadmap names ADR-0157 or its own later ADR, and the section "Order" holds the new paragraph.
-- [ ] `docs/register.md` holds R-0070 with its dates, and at most 15 entries are open.
-- [ ] `AdrGateTests`, `AdrEnforcementExistsGateTests`, `TaskGovernanceGateTests`, `ObjectiveReferenceGateTests` and
+- [x] ADR-0157 exists and records A1 to A15, and ADR-0126 shows the amendment in its items 4 and 8.
+- [x] Each new row of the roadmap names ADR-0157 or its own later ADR, and the section "Order" holds the new paragraph.
+- [x] `docs/register.md` holds R-0070 with its dates, and at most 15 entries are open.
+- [x] `AdrGateTests`, `AdrEnforcementExistsGateTests`, `TaskGovernanceGateTests`, `ObjectiveReferenceGateTests` and
       `MarkerGateTests` pass.
-- [ ] `dotnet test`, the write-set check and `eng/repo-gates` pass; continuous integration passes on the branch and on
+- [x] `dotnet test`, the write-set check and `eng/repo-gates` pass; continuous integration passes on the branch and on
       `main` after the merge.
 
 ## Notes for the implementer
@@ -97,7 +97,7 @@ with no question on the scope or the order.
 
 ## Outcome
 
-Status: Active
+Status: Done · commit (the merge of the branch p0160-assembly-record) · v0.379
 
 ## Method
 
@@ -115,3 +115,4 @@ Weakest:    the web sources of the design file were read by research agents only
   committed", the lines that said no task records the answers, the two files that the answer sheet names and that the
   repository does not hold, the answer of the owner to the questions of P10.2, the numbers (TASK-0394, ADR-0157, R-0070),
   and the count of open register entries.
+- 2026-11-15: run 43763940067 passed on the branch. Closed at v0.379.
