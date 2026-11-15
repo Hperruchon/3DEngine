@@ -403,6 +403,8 @@ Therefore each approved objective must have a track here.
   a far plane behind the box, and the rows of a portrait proposal stay under the middle. v0.359, TASK-0374, ADR-0141.
 - K9a — The visible and the hidden edges of the live bodies along a view, exact, from the faces and the edges of the
   owned kernel, computed outside the kernel. v0.360, TASK-0375, ADR-0142.
+- K9b — A view shows the circle of the design for a curved side, the outline of a sphere as its circle, and an end seen
+  from the side as one line. v0.361, TASK-0376, ADR-0143.
 - Review — The codebase review of 2026-11-14 (c). v0.351, TASK-0366.
 - P0.143 — The low findings of the codebase review of 2026-11-11: a triangle of zero area adds no edge, and a mesh of
   more than 100 000 triangles finds its edges on the thread pool. v0.332, TASK-0345, ADR-0121.
@@ -748,7 +750,8 @@ boundary and each refused rung.
 | K8 | A command turns a body by a quaternion about the origin of the Document, and each reader of a move reads the turn: the owned kernel, the rebuild, the frame of a datum and the determinism probe (R-0057; Q5 C of the owner, 2026-11-10). ADR-0112, TASK-0335. | 1–2 |
 | K9 | The edges of a view: the visible edges and the hidden edges of the live bodies seen along a direction, from the exact faces of the owned kernel, with the circle or the arc of a curved side and not its facets (ADR-0118 items 2 and 6). It needs an ADR on the feature boundary of the charter. After R21. | 4–6 |
 | K9a | The visible and the hidden edges of the live bodies along a view, exact, from the faces and the edges of the owned kernel, computed outside the kernel; a curved side gives the outline of its facets (ADR-0142). After R21c. TASK-0375. | 2 |
-| K9b | The circle or the arc of a curved side in place of its facets, and the outline of a cylinder, a cone and a sphere from its axis and its radius (ADR-0142 item 7). After K9a. | 2–3 |
+| K9b | The circle or the arc of a curved side in place of its facets, the outline of a sphere as its circle, and an end seen from the side as one line, from the curves of the design (ADR-0142 item 7, ADR-0143). After K9a. TASK-0376. | 2–3 |
+| K9c | An ellipse for an end whose axis is neither along nor across the view, the circles of a turned body, and the outline of a cylinder and a cone from its axis (ADR-0143 item 4). After K9b. | 1–2 |
 | K10 | The reference case in the engine: the crossbar with its two fixing points, the bracket, the arm and the knob, and the volumes of the lamp, the housing and the cable, with the commands that exist; each missing feature (a revolve, a union, the size of a primitive, a hole) gets its row (ADR-0126). After P10c. | 1–2 |
 | K11 | Interference at one position: a query gives each pair of bodies that touch or overlap, where, and how deep. After P11. | 2–3 |
 | K12 | The travel: a query checks a pivot from one limit to the other, sampled with a margin so that no contact between two samples is missed, and gives the first contact angle to a stated tolerance (ADR-0126 item 4). After K11. | 2–3 |

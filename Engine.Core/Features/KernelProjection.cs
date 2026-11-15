@@ -108,6 +108,94 @@ internal static class KernelProjection
         return (handle, cut);
     }
 
+    // ADR-0143 item 1 (phase K9b, TASK-0376): the curve of the design of each curved side of the live body, under the tag
+    // of its faces: the base, the axis and the radius of a cylinder or a cone, and the centre and the radius of a sphere. The
+    // walk is the walk of the solid: a Translate moves each curve, a Rotate turns it with the exact turn of the solid, and a
+    // Subtract keeps the curves of the two bodies, as it keeps their tags. A torus and a box give no curve.
+    public static IReadOnlyDictionary<FaceTag, Drawing.SideCurve> Curves(Document document, Guid body)
+    {
+        ArgumentNullException.ThrowIfNull(document);
+        return CurvesOf(FeatureGraph.Of(document), body, Committed(document), id => DatumResolver.Frame(document, id));
+    }
+
+    private static Dictionary<FaceTag, Drawing.SideCurve> CurvesOf(
+        FeatureGraph graph, Guid handle, Func<ExtrudeCommand, DatumResolver.ExtrudeState> state, Func<Guid, DatumFrame?> frameOf)
+    {
+        var two = (Rational)2;
+        switch (graph.Creator(handle))
+        {
+            case CreateCylinderCommand cylinder:
+            {
+                var height = Rational.FromDouble(cylinder.Height);
+                return new() { [new FaceTag(cylinder.CommandId, "side")] = new(Drawing.SideCurveKind.Cylinder,
+                    new Vector3R(Rational.Zero, Rational.Zero, -height / two), new Vector3R(Rational.Zero, Rational.Zero, height), Rational.FromDouble(cylinder.Radius)) };
+            }
+            case CreateConeCommand cone:
+            {
+                var height = Rational.FromDouble(cone.Height);
+                return new() { [new FaceTag(cone.CommandId, "side")] = new(Drawing.SideCurveKind.Cone,
+                    new Vector3R(Rational.Zero, Rational.Zero, -height / two), new Vector3R(Rational.Zero, Rational.Zero, height), Rational.FromDouble(cone.Radius)) };
+            }
+            case CreateSphereCommand sphere:
+                return new() { [new FaceTag(sphere.CommandId, "surface")] = new(Drawing.SideCurveKind.Sphere,
+                    new Vector3R(Rational.Zero, Rational.Zero, Rational.Zero), new Vector3R(Rational.Zero, Rational.Zero, Rational.Zero), Rational.FromDouble(sphere.Radius)) };
+            case ExtrudeCommand extrude:
+                return ExtrudeCurves(graph, extrude, state, frameOf);
+            case TranslateCommand translate:
+            {
+                var offset = Vector3R.FromDoubles(translate.Dx, translate.Dy, translate.Dz);
+                return CurvesOf(graph, translate.BodyId, state, frameOf).ToDictionary(entry => entry.Key, entry => entry.Value with { Base = entry.Value.Base + offset });
+            }
+            case RotateCommand rotate when RotateCommandHandler.Turn(rotate) is { } r:
+            {
+                var (x, y, z) = (Vector3R.FromDoubles(r.Xx, r.Xy, r.Xz), Vector3R.FromDoubles(r.Yx, r.Yy, r.Yz), Vector3R.FromDoubles(r.Zx, r.Zy, r.Zz));
+                Vector3R Map(Vector3R q) => (x * q.X) + (y * q.Y) + (z * q.Z);
+                return CurvesOf(graph, rotate.BodyId, state, frameOf).ToDictionary(entry => entry.Key, entry => entry.Value with { Base = Map(entry.Value.Base), Axis = Map(entry.Value.Axis) });
+            }
+            case SubtractCommand subtract:
+            {
+                var curves = CurvesOf(graph, subtract.MinuendBodyId, state, frameOf);
+                foreach (var (tag, curve) in CurvesOf(graph, subtract.SubtrahendBodyId, state, frameOf))
+                    curves.TryAdd(tag, curve);
+                return curves;
+            }
+            default:
+                return [];
+        }
+    }
+
+    // ADR-0143 item 1: each circle and each arc of the sketch of an extrude is a cylinder: its centre on the exact frame of
+    // the datum, the axis along the normal by the distance in effect, and the radius of the circle, or of the arc from its
+    // centre to its start.
+    private static Dictionary<FaceTag, Drawing.SideCurve> ExtrudeCurves(
+        FeatureGraph graph, ExtrudeCommand extrude, Func<ExtrudeCommand, DatumResolver.ExtrudeState> stateOf, Func<Guid, DatumFrame?> frameOf)
+    {
+        var state = stateOf(extrude);
+        if (state.Sketch is not { } sketch || ExactFrame(graph, sketch.DatumId, stateOf, frameOf) is not var (origin, u, v, n)
+            || state.Distance == 0 || !double.IsFinite(state.Distance))
+            return [];
+        var axis = n * Rational.FromDouble(state.Distance);
+        var points = sketch.Points.ToDictionary(point => point.Id);
+        Vector3R At(SketchPoint p) => origin + (u * Rational.FromDouble(p.X)) + (v * Rational.FromDouble(p.Y));
+        var curves = new Dictionary<FaceTag, Drawing.SideCurve>();
+        foreach (var circle in sketch.Circles)
+        {
+            if (points.TryGetValue(circle.Center, out var c))
+                curves[new FaceTag(extrude.CommandId, "side", circle.Id)] = new(Drawing.SideCurveKind.Cylinder, At(c), axis, Rational.FromDouble(circle.Radius));
+        }
+
+        foreach (var arc in sketch.Arcs)
+        {
+            if (points.TryGetValue(arc.Center, out var c) && points.TryGetValue(arc.Start, out var s))
+            {
+                var (dx, dy) = (s.X - c.X, s.Y - c.Y);
+                curves[new FaceTag(extrude.CommandId, "side", arc.Id)] = new(Drawing.SideCurveKind.Cylinder, At(c), axis, Rational.FromDouble(Math.Sqrt((dx * dx) + (dy * dy))));
+            }
+        }
+
+        return curves;
+    }
+
     // The state of the committed Document: the sketch and the distance in effect of an extrude.
     private static Func<ExtrudeCommand, DatumResolver.ExtrudeState> Committed(Document document)
         => extrude => new DatumResolver.ExtrudeState(

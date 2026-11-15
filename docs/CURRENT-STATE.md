@@ -10778,3 +10778,31 @@ boolean give no line where they cross.
 New tests: 8. The test list holds 2633 (1560 in `Engine.Tests`, 380 in `3DEngine.Tests`, 690 in `3DEngine.ImageTests`, 3
 in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
 entries: 15 of 15. New diagnostic codes: 0. Since the review of v0.356, 2 product milestones and 4 entries followed it.
+
+## v0.361 — A view shows the circle of the design for a curved side, and an end seen from the side as one line (K9b, TASK-0376)
+
+Row K9b of the roadmap (ADR-0142 item 7): in K9a an end of a cylinder is 64 short lines from the top, and 32 short lines on
+one line from the front.
+
+**The change.** ADR-0143 amends ADR-0142 items 5 and 7.
+- `KernelProjection.Curves` walks the commands of a live body as the walk of its solid does, and gives the curve of the design
+  of each curved side under the tag of its faces: CreateCylinder, CreateCone, CreateSphere, and each circle and arc of the
+  sketch of an extrude. A Translate moves it, a Rotate turns it, and a Subtract keeps the curves of the two bodies.
+- With a frame of length 1, an end whose axis is exactly along the view is arcs of the circle of the design, with the exact
+  centre and radius; the arcs that follow each other with one visibility are one arc, or the whole circle. The outline of a
+  sphere is its circle.
+- An end whose axis is exactly across the view is one line for each run with one visibility.
+- An end at a slant, a turned body and the outline of a cylinder keep their facets until K9c (row K9c, ADR-0143 item 4).
+
+**Proof.** Tests prove a cylinder from the top as one whole circle and from the front as four lines, a visible and a hidden
+arc under a box, the outline of a sphere as one circle in two views, a frame of length 2 that keeps the facets, and the
+circles of the design of a Document through an extrude of a circle, a cylinder, a translate and a subtract. Ten injections
+each failed a named test; each file came back byte for byte. The phone project builds with zero warnings. Run 43570185151 passed
+on the branch. The failed runs since the entry v0.360, from the API: none on a branch; 43562165193 on `main` stays red until
+the owner runs it again.
+
+**What stays.** The ends of an arc are on the facets, within the sagitta of one facet. No client reads the lines yet.
+
+New tests: 6. The test list holds 2639 (1566 in `Engine.Tests`, 380 in `3DEngine.Tests`, 690 in `3DEngine.ImageTests`, 3
+in `3DEngine.VisionTests`). `dotnet build 3DEngine.sln --no-incremental` gives zero errors and zero warnings. Open
+entries: 15 of 15. New diagnostic codes: 0. Since the review of v0.356, 3 product milestones and 5 entries followed it.

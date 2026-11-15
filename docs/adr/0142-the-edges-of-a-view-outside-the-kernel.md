@@ -1,13 +1,13 @@
 ---
 id: 0142
 title: The visible and the hidden edges of a view are computed outside the owned kernel, from its faces and its edges
-status: Accepted
+status: Amended
 topic: Kernel, drawing
 date: 2026-11-14
 supersedes: []
 superseded-by: []
 amends: []
-amended-by: []
+amended-by: ['0143']
 affects:
   - Engine.Core/Drawing/ViewEdges.cs
   - Engine.Tests/Drawing/ViewEdgesTests.cs
@@ -88,3 +88,5 @@ primitives about 2 s. Bodies that cross each other with no boolean give no line 
 
 - 2026-11-14 · TASK-0375 · The record, from row K9 and ADR-0118 item 6, under the order of the owner of 2026-11-14.
 - 2026-11-14 · TASK-0375 · Shipped at v0.360.
+- 2026-11-14 · TASK-0376 · ADR-0143 items 1 to 3 amend items 5 and 7: the curves of the design give the circles and the
+  arcs of a curved side, and an end seen from the side is one line.
