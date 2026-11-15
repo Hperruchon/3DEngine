@@ -1,7 +1,7 @@
 ---
 id: 0393
 title: The views of a sheet, and a read of a sheet with the lines of each view on the paper
-status: Done
+status: Active
 phase: P10.2
 opened: 2026-11-15
 depends-on: [0391]
@@ -93,3 +93,5 @@ Weakest:    the time of a read of a curved body (R-0069); the JSON of a view in 
   the document file compares commands by value, so the command has nine number properties. Fifteen injections each failed a
   test, and each file came back byte for byte. Three views of a sphere took 4.6 s and 5.1 s on the computer of the owner.
 - 2026-11-15: run 43757001185 passed on the branch. Closed at v0.377.
+- 2026-11-15: run 43758079840 of the close failed in the gate on Windows: HttpConcurrencyTests.Queries_And_Commands_In_Parallel_Get_No_Http_500
+  had a cancel of the HTTP client, as at v0.355. The entry v0.377 now names it.
