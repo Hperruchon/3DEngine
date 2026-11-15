@@ -139,12 +139,12 @@ names. Do not read all of them.
 | [0131](0131-the-rows-under-the-part-on-a-portrait-display.md) | On a portrait display the rows of a selected body are under the part, and the panel has no controls of a selected body | Amended | Clients, rendering | 0084, 0099 | 0135 |
 | [0132](0132-the-labels-of-the-corner-ring.md) | A label of the corner ring is drawn smaller until it lies on no other label and fits inside the display | Accepted | Clients, rendering | 0081 | — |
 | [0133](0133-the-caption-of-a-proposal-on-its-arc.md) | The caption of a proposal is on the band of its arc, and the command lines under the arc lie on no chip | Amended | Clients, rendering | 0092 | 0134, 0136 |
-| [0134](0134-the-arc-of-a-proposal-right-of-the-rows.md) | The arc of a proposal moves right of the rows of the selected body, and its lines keep off the tools of the ring | Accepted | Clients, rendering | 0092, 0133 | — |
+| [0134](0134-the-arc-of-a-proposal-right-of-the-rows.md) | The arc of a proposal moves right of the rows of the selected body, and its lines keep off the tools of the ring | Amended | Clients, rendering | 0092, 0133 | 0152 |
 | [0135](0135-the-arc-of-a-proposal-on-a-portrait-display.md) | On a portrait display the arc of a proposal is at the top, and a sheet of its lines is under it | Amended | Clients, rendering | 0092, 0111, 0131 | 0141 |
 | [0136](0136-the-arc-ends-before-the-tools-and-the-caption-wraps.md) | The arc of a proposal ends before each tool of the ring, and the whole caption under it wraps | Amended | Clients, rendering | 0092, 0133 | 0139 |
 | [0137](0137-the-flat-views-of-the-camera.md) | The camera has six flat views with no perspective, and the command line gives each one | Amended | Rendering, clients | 0023 | 0138, 0139, 0140, 0141 |
 | [0138](0138-the-controls-of-the-flat-views.md) | A button "Views" opens a net of the six flat views and the 3D view, and the keys 1, 3, 7 and 0 give them | Accepted | Clients | 0100, 0127, 0137 | — |
-| [0139](0139-a-sketch-leaves-a-flat-view-and-no-tool-hides-under-the-arc.md) | A sketch leaves a flat view, and a tool under an end of the arc of a proposal hides while the proposal waits | Accepted | Clients, rendering | 0136, 0137 | — |
+| [0139](0139-a-sketch-leaves-a-flat-view-and-no-tool-hides-under-the-arc.md) | A sketch leaves a flat view, and a tool under an end of the arc of a proposal hides while the proposal waits | Amended | Clients, rendering | 0136, 0137 | 0152 |
 | [0140](0140-frame-in-the-free-part-of-the-scene.md) | Frame fits the bodies in the free part of the scene, and the centre of the picture moves there | Amended | Rendering, clients | 0023, 0137 | 0145 |
 | [0141](0141-the-scale-and-the-depth-of-a-flat-view.md) | A flat view has a scale of its own and a far plane behind the box, and the rows of a portrait proposal stay under the middle | Accepted | Rendering, clients | 0135, 0137 | — |
 | [0142](0142-the-edges-of-a-view-outside-the-kernel.md) | The visible and the hidden edges of a view are computed outside the owned kernel, from its faces and its edges | Amended | Kernel, drawing | — | 0143 |
@@ -157,6 +157,7 @@ names. Do not read all of them.
 | [0149](0149-a-size-that-no-constraint-fixes.md) | The solver finds the lengths that the constraints fix, and a flat view shows a length that no constraint fixes in amber | Amended | Kernel, clients, drawing | 0146, 0148 | 0151 |
 | [0150](0150-the-command-key-of-macos.md) | On macOS the Command key gives the modifier of the shortcuts, and the command line shows "Cmd K" | Accepted | Clients, input | 0108 | — |
 | [0151](0151-a-size-on-the-line-of-a-shown-value.md) | A free size or a reference on the line of a value that the view shows does not show again | Accepted | Clients, drawing | 0148, 0149 | — |
+| [0152](0152-the-arc-on-a-small-landscape-display.md) | On a small landscape display the arc of a proposal is right of the rows on a smaller ring, and each part of a proposal hides the tools under it | Accepted | Clients, rendering | 0134, 0139 | — |
 
 ## Topics
 

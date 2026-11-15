@@ -1,13 +1,13 @@
 ---
 id: 0134
 title: The arc of a proposal moves right of the rows of the selected body, and its lines keep off the tools of the ring
-status: Accepted
+status: Amended
 topic: Clients, rendering
 date: 2026-11-14
 supersedes: []
 superseded-by: []
 amends: ['0092', '0133']
-amended-by: []
+amended-by: ['0152']
 affects:
   - 3DEngine.App/Ui/DesktopUi.Proposal.cs
   - 3DEngine.ImageTests/ProposalPlaceTests.cs
@@ -61,3 +61,4 @@ the tools. Under 1024 pixels wide, as at 900 by 600, the arc still lies on the r
 - 2026-11-14 · TASK-0365 · The record, from gap H2 of the comparison at the other sizes, under the order of the owner of
   2026-11-14.
 - 2026-11-14 · TASK-0365 · Shipped at v0.350.
+- 2026-11-14 · TASK-0388 · ADR-0152 item 1 amends item 1: when the moved ring does not fit, a smaller ring right of the rows does.

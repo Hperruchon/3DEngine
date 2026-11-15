@@ -77,6 +77,12 @@ internal sealed unsafe partial class DesktopUi
 
     internal IReadOnlyDictionary<string, string> ProposalTexts => _proposalTexts;
 
+    // ADR-0152 (phase P0.157, TASK-0388): the rectangles of the arc of this frame, for a test.
+    internal IReadOnlyList<Vector4> ProposalCovers => _proposalCovers;
+
+    // ADR-0152 item 1: the smallest inner radius of a ring of the arc right of the rows, in pixels.
+    internal const float SmallestArcInner = 90f;
+
     // ADR-0107 (TASK-0330): the rectangles of the words Reject and Accept of the arc of this frame, for a test.
     internal IReadOnlyList<Vector4> ProposalWords => [.. _proposalTargets.Select(target => target.Word)];
 
@@ -290,8 +296,22 @@ internal sealed unsafe partial class DesktopUi
         if (!Meets(arc, rows))
             return ring;
         var edge = rows.Z + 16f;
+        var limit = displaySize.X - 16f - _inset.Z;
         var moved = ring with { Centre = ring.Centre with { X = ring.Centre.X + (edge - Left(ring)) } };
-        return Right(moved) <= displaySize.X - 16f - _inset.Z ? moved : ring;
+        if (Right(moved) <= limit)
+            return moved;
+
+        // ADR-0152 item 1 (phase P0.157, TASK-0388): when the ring of the body does not fit right of the rows, a smaller ring
+        // with the same centre height does, from the word Reject 16 pixels right of the rows to the word Accept 16 pixels
+        // inside the right edge, with an inner radius of at least SmallestArcInner. Until TASK-0388 the arc stayed on the ring
+        // of the body at 800 by 600 and 900 by 600, and lay on the rows (R-0066).
+        var words = (2f * (half + 8f)) + rejectWidth + acceptWidth;
+        var inner = ((limit - edge - words) / (2f * reach)) - (RingBand / 2f);
+        if (inner < SmallestArcInner)
+            return ring;
+        var smaller = ring with { Inner = Math.Min(inner, ring.Inner) };
+        smaller = smaller with { Centre = smaller.Centre with { X = smaller.Centre.X + (edge - Left(smaller)) } };
+        return Right(smaller) <= limit + 0.5f ? smaller : ring;
     }
 
     // ADR-0110 item 3 (Q3 A, TASK-0334): the line of a command whose value the frame names is the name of the value and its
@@ -435,6 +455,12 @@ internal sealed unsafe partial class DesktopUi
         // Finding V184 of the codebase review of 2026-11-14 (c) (TASK-0367): the arc ends before each tool of the ring.
         var (from, to) = ArcEnds(ring.Centre, radius);
         var (reject, accept) = (At(from, radius), At(to, radius));
+
+        // ADR-0152 item 3 (phase P0.157, TASK-0388): the box of the band of the arc, from the end of Reject to the end of Accept,
+        // is a rectangle of the proposal, so a tool under the band hides while the proposal waits; the caption alone left the
+        // icon of a tool under the band at 900 by 600.
+        var corners = new[] { At(from, ring.Inner), At(from, ring.Outer), At(to, ring.Inner), At(to, ring.Outer) };
+        _proposalCovers.Add(new Vector4(corners.Min(corner => corner.X), ring.Centre.Y - ring.Outer, corners.Max(corner => corner.X), corners.Max(corner => corner.Y)));
 
         // The word of each end, out of the arc: Reject at the left of its circle, Accept at the right of its circle.
         var lineHeight = ImGui.GetTextLineHeight();
