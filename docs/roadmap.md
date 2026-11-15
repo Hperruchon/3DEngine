@@ -430,6 +430,8 @@ Therefore each approved objective must have a track here.
 - P10.1 — A drawing sheet is one record of the Document, and CreateSheet, RenameSheet and RemoveSheet change it; R-0067
   closes. v0.374, TASK-0389, ADR-0153.
 - Review — The codebase review of 2026-11-15. v0.375, TASK-0390.
+- P0.158 — The status and the fixed lengths of a sketch come from one elimination, and a read of a sketch of 100 lines
+  takes about 9 ms in place of 5.4 s. v0.376, TASK-0391, ADR-0154.
 - Review — The codebase review of 2026-11-14 (c). v0.351, TASK-0366.
 - P0.143 — The low findings of the codebase review of 2026-11-11: a triangle of zero area adds no edge, and a mesh of
   more than 100 000 triangles finds its edges on the thread pool. v0.332, TASK-0345, ADR-0121.

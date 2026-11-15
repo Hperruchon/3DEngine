@@ -35,7 +35,7 @@ The fixed lengths do not depend on the scale, the ends of an edge come from all 
 
 1. E207: the rows of an angle scaled by a length, or a register entry for the limit.
 2. E208: the history of ADR-0142.
-3. E209 and E210: the comment of the product and the local variable.
+3. E209 and E210: TASK-0391 removed `ProductWith` and the pattern `is var`, so they are fixed there.
 4. V192: one helper of the ends of an edge.
 5. V193: the state of each modifier key.
 6. A test for E207, V192 and V193, which fails before the fix.
@@ -66,3 +66,4 @@ Weakest:    to be written at the close.
 ## Progress
 
 - 2026-11-15: opened by the codebase review of 2026-11-15 (TASK-0390).
+- 2026-11-15: TASK-0391 fixed E209 and E210 with its change of the same lines.
