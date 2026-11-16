@@ -43,4 +43,23 @@ internal static class ExportEndpoint
             _ => StatusCodes.Status500InternalServerError,
         });
     }
+
+    // ADR-0159 item 7 (phase P10a, TASK-0396): one live sheet as one SVG file. The query parameter sheetId names the sheet.
+    //
+    //   GET /export/svg?sheetId=<id>   the bytes of the file, image/svg+xml
+    public static async Task<IResult> Svg(HttpRequest request, EngineHost host, CancellationToken ct)
+    {
+        if (!Guid.TryParse(request.Query["sheetId"], out var sheetId))
+            return ApiErrorEnvelope.BadRequest("The route /export/svg needs the query parameter sheetId with the id of a sheet.");
+
+        var (content, _, error) = await host.Session.Read((document, _) => SvgExport.Write(document, sheetId, ct), ct);
+        if (error is null)
+            return Results.File(content!, "image/svg+xml", "sheet.svg");
+
+        return Results.Json(new ApiErrorEnvelope(new ApiErrorBody(error.Code, error.Message)), ApiJson.Options, statusCode: error.Code switch
+        {
+            DiagnosticCodes.SheetNotFound => StatusCodes.Status404NotFound,
+            _ => StatusCodes.Status500InternalServerError,
+        });
+    }
 }

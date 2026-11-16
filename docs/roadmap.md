@@ -440,6 +440,8 @@ Therefore each approved objective must have a track here.
   record: ADR-0157, 19 new rows and the new order. v0.379, TASK-0394.
 - P10.3 — A dimension of a sheet shows a length or a radius of a sketch or the distance of an extrude, and a read gives
   its value from the design or "lost". v0.380, TASK-0395, ADR-0158.
+- P10a — A sheet exports as one SVG file in millimetres of the paper, with exact arcs and the value of each dimension.
+  v0.381, TASK-0396, ADR-0159.
 - Review — The codebase review of 2026-11-14 (c). v0.351, TASK-0366.
 - P0.143 — The low findings of the codebase review of 2026-11-11: a triangle of zero area adds no edge, and a mesh of
   more than 100 000 triangles finds its edges on the thread pool. v0.332, TASK-0345, ADR-0121.
@@ -649,7 +651,7 @@ This track removes each condition that blocks other work.
 | P10.1 | The record of a sheet in the Document, the events of a sheet, and the commands CreateSheet, RenameSheet and RemoveSheet, with undo and redo (ADR-0153 items 1 to 3, 6 and 7). TASK-0389. | 1–2 |
 | P10.2 | The views of a sheet: AddSheetView, MoveSheetView and RemoveSheetView, and a read of a sheet with the lines of each view from K9 (ADR-0153 item 4). After P10.1. TASK-0393, ADR-0155. | 1–2 |
 | P10.3 | The dimensions of a sheet: PlaceSheetDimension and RemoveSheetDimension, the value from the design at each read, and a lost dimension (ADR-0153 item 5). After P10.2. TASK-0395, ADR-0158. | 1–2 |
-| P10a | The export of a sheet as SVG, from the exact numbers of the views and the values of the design (Q4 of 2026-11-10, first). After P10. | 1–2 |
+| P10a | The export of a sheet as SVG, from the exact numbers of the views and the values of the design (Q4 of 2026-11-10, first). After P10. TASK-0396, ADR-0159. | 1–2 |
 | P10b | The export of a sheet as DXF, for the exchange with a CAD program and a laser cutter (Q4, second). After P10a. | 2 |
 | P10c | The export of a sheet as PDF, for the documentation (Q4, third). After P10b. | 2–3 |
 | P11 | Joints in the Document: connectors, a fixed joint, a pivot and a slider between two bodies of one part, in a kinematic tree with no solver; limits as a cosine and a sine; the states tight and loose; a refusal of a joint that closes a loop; a joint declares its two parts as an intended contact; a command places a body by two connectors one time. P11.0 is its ADR: it decides the model of a move from the measure of K10 (ADR-0126 items 2 and 3, ADR-0157 items 2 to 5, R-0070). Commands and queries for the AI. After K10 and K17. | 3–5 |
@@ -759,7 +761,7 @@ The first objective. Each phase ends with something that a person can observe.
 | R22a | In a flat view a value shows only where its length is true (ADR-0118 item 5, ADR-0146). After K9 and P0.151. TASK-0381. | 1 |
 | R22b | A chain of n parts gives n − 1 values of the design and one reference in parentheses (ADR-0118 item 5, ADR-0146 item 2, ADR-0148). After R22a. TASK-0383. | 1–2 |
 | R22c | A size that no constraint fixes and a lost value show in a separate form, from a search of the free parts of a sketch in the solver (ADR-0118 item 5, ADR-0146 item 2, ADR-0149; a lost value waits for P10). After R22b. TASK-0384. | 2 |
-| R22d | The agent proposes the place of each dimension, and the person accepts or rejects it (ADR-0092, ADR-0118 item 5, ADR-0146 item 2). After R22c and P10: the place of a dimension is a command on a sheet (ADR-0118 item 3). | 1–2 |
+| R22d | The agent proposes the place of each dimension, and the person accepts or rejects it (ADR-0092, ADR-0118 item 5, ADR-0146 item 2). After R22c and P10: the place of a dimension is a command on a sheet (ADR-0118 item 3). It also gives the dimension line of a sheet: the ends of the measured edge on the paper and the flag "true length", in GetSheet and in the SVG (answer D7 A of 2026-11-15, ADR-0159 item 5). | 1–2 |
 | R23 | A joint in the window: a rotation handle on a pivot and a pad for the angle, one `Rotate` at the end of a drag, and the contact and the envelope of the checks in the view. After P11. | 2 |
 | R24 | The end-to-end scenario of the tilting support of a light: the AI finds the contact of the knob with the arm, proposes a new value, runs the checks again, and shows the envelope within 60 mm; the physical load test has its own recorded result, with the criteria C1 to C11 of the design file (ADR-0126, ADR-0157 item 12). After each phase of the assembly work. | 1–2 |
 | R25 | The preview of a proposal in the window: the new shape in dashed amber lines on the present shape, a switch "before, after, both", a table "measure, before, after", and the state of the solver after (gap G12 of the render, ADR-0157 item 8). Desktop first. After P15. | 2 |

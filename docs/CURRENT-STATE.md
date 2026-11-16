@@ -11330,3 +11330,38 @@ shows a sheet yet. The register is full (15 of 15).
 New tests: 12. The test list holds 2725 (1615 in `Engine.Tests`, 386 in `3DEngine.Tests`, 721 in `3DEngine.ImageTests`, 3
 in `3DEngine.VisionTests`). Open entries: 15 of 15. New diagnostic codes: 3. Since the review of v0.375, 2 product
 milestones and 5 entries followed it.
+
+## v0.381 — A sheet exports as one SVG file, with exact arcs and the value of each dimension (P10a, TASK-0396)
+
+Row P10a of the roadmap: the export of a sheet as SVG, the first of the three formats of ADR-0118 item 2. P10.2 gave the
+lines of each view on the paper and P10.3 the value of each dimension. On 2026-11-16 the owner ordered "then start P10a,
+merge when green". No plan asked questions; ADR-0159 records the options that the session took, and the owner can change
+each one.
+
+**The change.**
+- `SvgExport` in `Engine.Core/Export` writes one live sheet from the same read as GetSheet: the view box is the paper in
+  millimetres with y down; a frame 10 mm inside the edge and a title block of 120 by 20 mm with the name, the paper, the
+  projection, the scale and the unit; the lines of each view (visible 0.5 mm, hidden 0.25 mm with dashes, ISO 128-20);
+  and the value of each dimension at its place, with "R" for a radius, or "lost".
+- An arc of a circle is an exact SVG arc. An arc of an ellipse is an SVG arc in the frame of its unit half axes with a
+  transform that rotates or reflects, so it needs no arc tangent and changes no width or dash. Each number is the
+  shortest text of its double, with the culture of no country.
+- `GET /export/svg?sheetId=<id>` gives the file (404 for a sheet that is not live, 400 with no valid id), and
+  `engine export svg <document.3de> <file.svg> --sheet <id>` writes it. No new diagnostic code.
+- Row R22d also takes the dimension line of a sheet (answer D7 A of 2026-11-15: "P10a or R22d").
+
+**Found.** A drawing of a plate with a through-hole showed the hole in the top view as one hidden circle. The read gives
+the circle of the top face as hidden: the lines of a view (K9, `ViewEdges`) give it, not the export. The cause is outside
+the write set of P10a, and the register is full, so a separate task holds it (a chip of the session of 2026-11-16).
+
+**Proof.** Twenty-three injections each failed a test, and each file came back byte for byte (SHA-256). A clean build
+gives 0 warnings, the phone project builds, `eng/repo-gates` gives 488 runs of 168 checks and 0 failed, the write-set
+check passes, and each test project passes (2734 tests). Run 43969315034 passed on the branch. The failed runs since the entry
+v0.380, from the API: none.
+
+**What stays.** A dimension is a number at a place, with no line and no arrow (R22d). The DXF export (P10b) and the PDF
+export (P10c) follow. No button of the desktop exports a sheet. The register is full (15 of 15).
+
+New tests: 9. The test list holds 2734 (1624 in `Engine.Tests`, 386 in `3DEngine.Tests`, 721 in `3DEngine.ImageTests`, 3
+in `3DEngine.VisionTests`). Open entries: 15 of 15. New diagnostic codes: 0. Since the review of v0.375, 3 product
+milestones and 6 entries followed it.
