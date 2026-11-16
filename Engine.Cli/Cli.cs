@@ -202,18 +202,30 @@ public static class Cli
     {
         // Finding E171 of the codebase review of 2026-11-07 (TASK-0263): the store of the import of an STL file, after the
         // three words, as "asset" has it. Until TASK-0263 the export read the default store only.
+        // ADR-0159 item 7 (TASK-0396): an SVG export names its sheet with --sheet, before or after --folder.
         var folder = AssetStore.Default;
-        if (args is [_, _, _, "--folder", var named])
+        Guid? sheet = null;
+        while (args.Length >= 5 && args[3] is "--folder" or "--sheet")
         {
-            if (ValidFolder(named) is not { } valid)
-                return InvalidUsage(stderr, $"--folder requires a valid path; '{named}' is not one.");
-            folder = valid;
-            args = args[..3];
+            if (args[3] == "--folder")
+            {
+                if (ValidFolder(args[4]) is not { } valid)
+                    return InvalidUsage(stderr, $"--folder requires a valid path; '{args[4]}' is not one.");
+                folder = valid;
+            }
+            else
+            {
+                if (!Guid.TryParse(args[4], out var id))
+                    return InvalidUsage(stderr, $"--sheet requires the id of a sheet; '{args[4]}' is not one.");
+                sheet = id;
+            }
+            args = [.. args[..3], .. args[5..]];
         }
 
-        if (args is not [var format and ("stl" or "step"), var document, var file])
-            return InvalidUsage(stderr, "export requires 'stl <document.3de> <file.stl>' or 'step <document.3de> <file.step>', and then '--folder <path>' or nothing.");
+        if (args is not [var format and ("stl" or "step" or "svg"), var document, var file] || (format == "svg") != sheet.HasValue)
+            return InvalidUsage(stderr, "export requires 'stl <document.3de> <file.stl>', 'step <document.3de> <file.step>' or 'svg <document.3de> <file.svg> --sheet <id>', and then '--folder <path>' or nothing.");
         var step = format == "step";
+        var label = format.ToUpperInvariant();
 
         if (string.IsNullOrWhiteSpace(document))
             return ExportFailure(stdout, new ErrorDetail(DiagnosticCodes.IoLoadFailed, "The path of the document file is empty."));
@@ -223,10 +235,10 @@ public static class Cli
         var same = SameFile(document, file, out var invalid);
         if (invalid is not null)
             return ExportFailure(stdout, new ErrorDetail(DiagnosticCodes.ExportWriteFailed,
-                $"The path of the {(step ? "STEP" : "STL")} file {file} is not valid: {invalid}"));
+                $"The path of the {label} file {file} is not valid: {invalid}"));
         if (same)
             return ExportFailure(stdout, new ErrorDetail(DiagnosticCodes.ExportWriteFailed,
-                $"The {(step ? "STEP" : "STL")} file {file} is the document file {document}, and an export does not write over its document."));
+                $"The {label} file {file} is the document file {document}, and an export does not write over its document."));
 
         // Finding E155 of the codebase review of 2026-11-06 (b) (TASK-0224): the export made a part session, so an assembly
         // gave E-IO-LOAD-FAILED with the reason "the Document is a part". A file that does not read gives its error later.
@@ -244,7 +256,7 @@ public static class Cli
 
         if (kind == Document.Assembly)
             return ExportFailure(stdout, new ErrorDetail(DiagnosticCodes.ExportKindRefused,
-                $"The document file {document} is an {Document.Assembly}. An assembly holds references to parts and no body, and the engine does not resolve a reference yet (ADR-0071 item 7), so the {(step ? "STEP" : "STL")} export has nothing to write."));
+                $"The document file {document} is an {Document.Assembly}. An assembly holds references to parts and no body, and the engine does not resolve a reference yet (ADR-0071 item 7), so the {label} export has nothing to write."));
 
         var session = BuildSession(backend, stderr, Document.Part, folder);
         if (session is null)
@@ -253,6 +265,7 @@ public static class Cli
         ErrorDetail? error;
         byte[]? content = null;
         var bodies = 0;
+        IReadOnlyList<Engine.Core.Queries.SheetSkippedBody> skipped = [];
         IReadOnlyList<Diagnostic> warnings = [];
         var writing = false;
         try
@@ -260,6 +273,12 @@ public static class Cli
             warnings = await Engine.Core.Persistence.DocumentFile.Read(session, document, ct).ConfigureAwait(false);
             (content, error, bodies) = await session.ReadGeometry((read, geometry) =>
             {
+                if (sheet is { } id)
+                {
+                    var (svg, unshown, refused) = Engine.Core.Export.SvgExport.Write(read, id, ct);
+                    skipped = unshown;
+                    return (svg, refused, read.Bodies.Count);
+                }
                 var (bytes, failure) = step ? Engine.Core.Export.StepExport.Write(read) : Engine.Core.Export.StlExport.Write(read, geometry);
                 return (bytes, failure, read.Bodies.Count);
             }, ct).ConfigureAwait(false);
@@ -275,7 +294,7 @@ public static class Cli
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or ArgumentException or NotSupportedException)
         {
             error = writing
-                ? new ErrorDetail(DiagnosticCodes.ExportWriteFailed, $"The {(step ? "STEP" : "STL")} file of {document} could not be written at {file}: {ex.Message}")
+                ? new ErrorDetail(DiagnosticCodes.ExportWriteFailed, $"The {label} file of {document} could not be written at {file}: {ex.Message}")
                 : new ErrorDetail(DiagnosticCodes.IoLoadFailed, $"The document file {document} could not be read: {ex.Message}");
         }
         finally
@@ -287,7 +306,9 @@ public static class Cli
             return ExportFailure(stdout, error);
 
         var written = warnings.Select(warning => new { code = warning.Code, message = warning.Message }).ToArray();
-        if (step)
+        if (sheet is not null)
+            JsonRenderer.WriteValue(new { file, skipped = skipped.Select(body => new { body = body.Body, reason = body.Reason }).ToArray(), warnings = written }, stdout);
+        else if (step)
             JsonRenderer.WriteValue(new { file, bodies, warnings = written }, stdout);
         else
             JsonRenderer.WriteValue(new { file, triangles = (content!.Length - 84) / 50, warnings = written }, stdout);
