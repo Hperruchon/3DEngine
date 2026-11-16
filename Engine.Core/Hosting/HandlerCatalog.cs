@@ -63,6 +63,8 @@ public static class HandlerCatalog
         new AddSheetViewCommandHandler(),
         new MoveSheetViewCommandHandler(),
         new RemoveSheetViewCommandHandler(),
+        new PlaceSheetDimensionCommandHandler(),
+        new RemoveSheetDimensionCommandHandler(),
     ];
 
     public static IReadOnlyList<IQueryHandler> QueryHandlers() =>

@@ -106,6 +106,9 @@ internal static class SchemaDiagnosticsEndpoint
         new(DiagnosticCodes.SheetIdInUse,          "Error",   "SHEET"), // ADR-0153 item 6, TASK-0389
         new(DiagnosticCodes.SheetViewNotFound,     "Error",   "SHEET"), // ADR-0155 item 6, TASK-0393
         new(DiagnosticCodes.SheetViewInvalid,      "Error",   "SHEET"), // ADR-0155 item 6, TASK-0393
+        new(DiagnosticCodes.SheetDimensionNotFound, "Error",  "SHEET"), // ADR-0158 item 5, TASK-0395
+        new(DiagnosticCodes.SheetDimensionInvalid, "Error",   "SHEET"), // ADR-0158 item 5, TASK-0395
+        new(DiagnosticCodes.SheetSourceNotFound,   "Error",   "SHEET"), // ADR-0158 item 5, TASK-0395
     };
 
     public static IResult Handle() => Results.Json(Codes, ApiJson.Options);

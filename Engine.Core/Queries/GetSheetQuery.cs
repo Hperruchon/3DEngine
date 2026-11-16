@@ -13,7 +13,8 @@ public sealed record GetSheetQuery : Query
 }
 
 // The result of GetSheet. Width and Height are the size of the paper in millimetres with its orientation. Each place is in
-// millimetres from the lower left corner of the paper. The dimensions are the records of the sheet until P10.3.
+// millimetres from the lower left corner of the paper. Since TASK-0395 each dimension has its value from the design
+// (ADR-0158 item 4).
 public sealed record SheetInfo(
     Guid SheetId,
     string Name,
@@ -23,7 +24,7 @@ public sealed record SheetInfo(
     double Width,
     double Height,
     IReadOnlyList<SheetViewInfo> Views,
-    IReadOnlyList<SheetDimension> Dimensions);
+    IReadOnlyList<SheetDimensionInfo> Dimensions);
 
 // One view: its record, its lines on the paper in the order of ViewEdges, and each body that gives no lines with
 // its reason (ADR-0155 item 5).
@@ -54,3 +55,17 @@ public sealed record SheetEllipse(double X, double Y, double MajorX, double Majo
 
 // A body that gives no lines, with the reason.
 public sealed record SheetSkippedBody(Guid Body, string Reason);
+
+// ADR-0158 item 4 (phase P10.3, TASK-0395): one dimension of a sheet, its record and its value from the design at the time of
+// the read. Label is "length" (a constraint "distance"), "radius" (a constraint "radius") or "distance" (an extrude). A
+// dimension whose source is not in the design is lost: Lost is true, and Label and Value are null.
+public sealed record SheetDimensionInfo(
+    Guid DimensionId,
+    Guid ViewId,
+    Guid Source,
+    string SourceKind,
+    double X,
+    double Y,
+    bool Lost,
+    string? Label,
+    double? Value);

@@ -2,9 +2,9 @@
 
 This document uses Simplified Technical English (ASD-STE100). See `CLAUDE.md`, section "Language".
 
-- Prepared by a side session. Two files that this sheet names are not in the repository: the plan of P10.3 (the task of
-  P10.3 copies it) and the sheet of the questions of P10.2 (ADR-0155 records the answers). `prep-p10-2.md` was a working
-  file of the main session.
+- Prepared by a side session. One file that this sheet names is not in the repository: the sheet of the questions of P10.2
+  (ADR-0155 records the answers). `prep-p10-2.md` was a working file of the main session. TASK-0395 copied the plan of
+  P10.3 to the repository.
 - Each question has its options. Option A is the recommended option, unless the line says a different thing.
 - To answer, write one letter for each question. "All A" is a valid answer for a block.
 - The detail of each question is in the file that the block names.
