@@ -77,3 +77,4 @@ of the viewer. The read of a curved body takes seconds (R-0069), and the export 
 ## History
 
 - 2026-11-16 · TASK-0396 · The record.
+- 2026-11-16 · TASK-0396 · Shipped at v0.381.

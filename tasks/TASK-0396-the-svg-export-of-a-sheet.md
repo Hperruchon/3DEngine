@@ -1,7 +1,7 @@
 ---
 id: 0396
 title: The export of a sheet as one SVG file
-status: Active
+status: Done
 phase: P10a
 opened: 2026-11-16
 depends-on: [0395]
@@ -58,15 +58,15 @@ each view, the frame, the title block and the value of each dimension.
 
 ## Acceptance criteria
 
-- [ ] Each part of the file, the route and the command line has a test, and each rule has an injection that a test catches.
-- [ ] A drawing of a real part shows in a browser with its views, its hidden lines and its values.
-- [ ] A clean build (`--no-incremental`) gives zero errors and zero warnings, and the phone project builds.
-- [ ] `dotnet test`, the write-set check and `eng/repo-gates` pass; continuous integration passes on the branch and on
+- [x] Each part of the file, the route and the command line has a test, and each rule has an injection that a test catches.
+- [x] A drawing of a real part shows in a browser with its views, its hidden lines and its values.
+- [x] A clean build (`--no-incremental`) gives zero errors and zero warnings, and the phone project builds.
+- [x] `dotnet test`, the write-set check and `eng/repo-gates` pass; continuous integration passes on the branch and on
       `main` after the merge.
 
 ## Outcome
 
-Status: Active
+Status: Done · commit (the merge of the branch p10a-sheet-svg) · v0.381
 
 ## Method
 
@@ -81,3 +81,4 @@ Weakest:    a dimension has no line, so a reader must know which edge it measure
   top face hidden. The cause is outside this write set; a separate task holds it.
   Twenty-three injections each failed a test, and each file came back byte for byte; two first did not (one did not compile,
   and one met no arc whose end is off the axes), and a new case and a new form fixed them.
+- 2026-11-16: run 43969315034 passed on the branch. Closed at v0.381.
