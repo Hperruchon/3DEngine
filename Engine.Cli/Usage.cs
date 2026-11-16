@@ -21,6 +21,8 @@ Usage:
                                                   Write the live bodies of a document file as one STL file.
   engine export step <document.3de> <file.step> [--folder <path>]
                                                   Write the live bodies of a document file as one STEP file.
+  engine export svg <document.3de> <file.svg> --sheet <id> [--folder <path>]
+                                                  Write one sheet of a document file as one SVG file.
   engine help                                     Print this usage.
 
 Each invocation builds a fresh in-memory engine. There is no persistence

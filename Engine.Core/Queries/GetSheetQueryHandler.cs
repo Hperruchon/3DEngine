@@ -1,4 +1,5 @@
 using Engine.Contracts;
+using Engine.Contracts.Drawing;
 using Engine.Contracts.Geometry;
 using Engine.Contracts.Handlers;
 using Engine.Contracts.Schema;
@@ -50,6 +51,13 @@ public sealed class GetSheetQueryHandler : IQueryHandler
                 new ErrorDetail(DiagnosticCodes.SheetNotFound, $"No live sheet with id '{get.SheetId}' exists in the document.")));
         }
 
+        return Task.FromResult(QueryHandlerResult.Success(Read(document, sheet, ct)));
+    }
+
+    // ADR-0155 item 5 and ADR-0158 item 4: the read of a live sheet. Since TASK-0396 the SVG export reads the same result
+    // (ADR-0159 item 1).
+    internal static SheetInfo Read(Document document, SheetRecord sheet, CancellationToken ct)
+    {
         var views = new List<SheetViewInfo>(sheet.Views.Count);
         foreach (var view in sheet.Views)
         {
@@ -71,7 +79,6 @@ public sealed class GetSheetQueryHandler : IQueryHandler
         }
 
         var (width, height) = SheetLayout.PaperSize(sheet);
-        return Task.FromResult(QueryHandlerResult.Success(new SheetInfo(
-            sheet.Id, sheet.Name, sheet.Paper, sheet.Landscape, sheet.ThirdAngle, width, height, views, dimensions)));
+        return new SheetInfo(sheet.Id, sheet.Name, sheet.Paper, sheet.Landscape, sheet.ThirdAngle, width, height, views, dimensions);
     }
 }

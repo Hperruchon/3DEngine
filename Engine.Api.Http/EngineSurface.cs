@@ -158,6 +158,9 @@ public static class EngineSurface
         // ADR-0070 item 4: the live bodies as one STEP file.
         app.MapGet("/export/step", ExportEndpoint.Step);
 
+        // ADR-0159 item 7: one sheet as one SVG file.
+        app.MapGet("/export/svg", ExportEndpoint.Svg);
+
         // ADR-0092 item 2 (TASK-0326): the proposals of an agent. No route accepts or rejects a proposal.
         app.MapPost("/proposals", ProposalsEndpoint.Post);
         app.MapGet("/proposals", ProposalsEndpoint.List);
