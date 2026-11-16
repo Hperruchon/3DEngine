@@ -7,7 +7,7 @@ date: 2026-11-15
 supersedes: []
 superseded-by: []
 amends: ['0118']
-amended-by: ['0155']
+amended-by: ['0155', '0158']
 affects:
   - Engine.Contracts/Drawing/SheetRecord.cs
   - Engine.Contracts/Document.cs
@@ -82,3 +82,5 @@ The engine gives the exact lines of a view (ADR-0142 to ADR-0145, ADR-0147) and 
 - 2026-11-15 · TASK-0389 · Shipped at v0.374.
 - 2026-11-15 · TASK-0393 · ADR-0155 amends items 4 and 6: the exact frame, the place on the paper, the commands of a view,
   the read GetSheet and two codes of a view.
+- 2026-11-16 · TASK-0395 · ADR-0158 amends items 5 and 6: the two kinds of a source, the place again of a dimension, one
+  dimension of a source on a sheet, the read of the value or "lost", and three codes of a dimension.

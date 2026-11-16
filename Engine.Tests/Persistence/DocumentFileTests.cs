@@ -98,6 +98,8 @@ public sealed class DocumentFileTests : IDisposable
         ["AddSheetView"] = new AddSheetViewCommand { SheetId = Guid.NewGuid(), RightX = 1, RightY = 0, RightZ = 0, UpX = 0, UpY = 0, UpZ = 1, EyeX = 0, EyeY = -1, EyeZ = 0.5, ScaleNumerator = 1, ScaleDenominator = 2, X = 100.5, Y = 80 },
         ["MoveSheetView"] = new MoveSheetViewCommand { SheetId = Guid.NewGuid(), ViewId = Guid.NewGuid(), X = 50, Y = 60.25 },
         ["RemoveSheetView"] = new RemoveSheetViewCommand { SheetId = Guid.NewGuid(), ViewId = Guid.NewGuid() },
+        ["PlaceSheetDimension"] = new PlaceSheetDimensionCommand { SheetId = Guid.NewGuid(), ViewId = Guid.NewGuid(), Source = Guid.NewGuid(), SourceKind = "distance", X = 120.5, Y = 33.25, DimensionId = Guid.NewGuid() },
+        ["RemoveSheetDimension"] = new RemoveSheetDimensionCommand { SheetId = Guid.NewGuid(), DimensionId = Guid.NewGuid() },
     };
 
     // ADR-0015 item 11: each handler has an encoder, and Create(Encode(c)) gives c.
