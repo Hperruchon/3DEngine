@@ -161,4 +161,9 @@ public static class DiagnosticCodes
     // ADR-0155 item 6 (phase P10.2, TASK-0393): the commands of a view of a sheet.
     public const string SheetViewNotFound = "E-SHEET-VIEW-NOT-FOUND";
     public const string SheetViewInvalid = "E-SHEET-VIEW-INVALID";
+
+    // ADR-0158 item 5 (phase P10.3, TASK-0395): the commands of a dimension of a sheet.
+    public const string SheetDimensionNotFound = "E-SHEET-DIMENSION-NOT-FOUND";
+    public const string SheetDimensionInvalid = "E-SHEET-DIMENSION-INVALID";
+    public const string SheetSourceNotFound = "E-SHEET-SOURCE-NOT-FOUND";
 }

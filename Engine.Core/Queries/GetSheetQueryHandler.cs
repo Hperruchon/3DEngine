@@ -3,6 +3,7 @@ using Engine.Contracts.Geometry;
 using Engine.Contracts.Handlers;
 using Engine.Contracts.Schema;
 using Engine.Core.Drawing;
+using Engine.Core.Features;
 
 namespace Engine.Core.Queries;
 
@@ -57,8 +58,20 @@ public sealed class GetSheetQueryHandler : IQueryHandler
             views.Add(new SheetViewInfo(view.Id, view.Direction, view.ScaleNumerator, view.ScaleDenominator, view.X, view.Y, lines, skipped));
         }
 
+        // ADR-0158 item 4: the value of each dimension from the design now, in the order of the record. A dimension whose source
+        // is not in the design is lost; no diagnostic code comes with it (Q6 A).
+        var features = FeatureList.Of(document);
+        var dimensions = new List<SheetDimensionInfo>(sheet.Dimensions.Count);
+        foreach (var dimension in sheet.Dimensions)
+        {
+            var value = SheetSources.Value(document, features, dimension.Source, dimension.SourceKind);
+            dimensions.Add(new SheetDimensionInfo(
+                dimension.Id, dimension.ViewId, dimension.Source, dimension.SourceKind, dimension.X, dimension.Y,
+                value is null, value?.Label, value?.Value));
+        }
+
         var (width, height) = SheetLayout.PaperSize(sheet);
         return Task.FromResult(QueryHandlerResult.Success(new SheetInfo(
-            sheet.Id, sheet.Name, sheet.Paper, sheet.Landscape, sheet.ThirdAngle, width, height, views, sheet.Dimensions)));
+            sheet.Id, sheet.Name, sheet.Paper, sheet.Landscape, sheet.ThirdAngle, width, height, views, dimensions)));
     }
 }

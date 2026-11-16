@@ -42,8 +42,26 @@ internal static class SheetResults
     public static CommandHandlerResult? PlaceRefused(SheetRecord sheet, double x, double y)
     {
         var (width, height) = SheetLayout.PaperSize(sheet);
-        return x >= 0 && x <= width && y >= 0 && y <= height
+        return OnPaper(sheet, x, y)
             ? null
             : ViewInvalid($"The centre of a view is on the paper, from 0 to {width} mm across and from 0 to {height} mm up, and the command gives ({x}, {y}) (ADR-0155 item 4).");
     }
+
+    // ADR-0155 item 4 and ADR-0158 item 1: a place from 0 to the width and from 0 to the height of the paper, with its
+    // orientation.
+    public static bool OnPaper(SheetRecord sheet, double x, double y)
+    {
+        var (width, height) = SheetLayout.PaperSize(sheet);
+        return x >= 0 && x <= width && y >= 0 && y <= height;
+    }
+
+    // ADR-0158 item 5 (phase P10.3, TASK-0395, Q5 A): a dimension that is not on the sheet.
+    public static CommandHandlerResult DimensionNotFound(Guid sheet, Guid dimension)
+        => Failure(DiagnosticCodes.SheetDimensionNotFound, $"The sheet '{sheet}' has no dimension with id '{dimension}'.");
+
+    // ADR-0158 item 5: a source kind, a constraint kind, a place or a second dimension of a source that is not valid.
+    public static CommandHandlerResult DimensionInvalid(string message) => Failure(DiagnosticCodes.SheetDimensionInvalid, message);
+
+    // ADR-0158 item 5: the source of a new dimension is not in the design.
+    public static CommandHandlerResult SourceNotFound(string message) => Failure(DiagnosticCodes.SheetSourceNotFound, message);
 }

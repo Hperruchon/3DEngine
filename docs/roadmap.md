@@ -438,6 +438,8 @@ Therefore each approved objective must have a track here.
   its farthest points, and a modifier stays while one of its keys is down. v0.378, TASK-0392, ADR-0156.
 - P0.160 — The answers of the owner of 2026-11-15 to the design file of the assemblies and of the work with an agent are a
   record: ADR-0157, 19 new rows and the new order. v0.379, TASK-0394.
+- P10.3 — A dimension of a sheet shows a length or a radius of a sketch or the distance of an extrude, and a read gives
+  its value from the design or "lost". v0.380, TASK-0395, ADR-0158.
 - Review — The codebase review of 2026-11-14 (c). v0.351, TASK-0366.
 - P0.143 — The low findings of the codebase review of 2026-11-11: a triangle of zero area adds no edge, and a mesh of
   more than 100 000 triangles finds its edges on the thread pool. v0.332, TASK-0345, ADR-0121.
@@ -646,7 +648,7 @@ This track removes each condition that blocks other work.
 | P10 | The sheet in the Document: commands for a sheet, its views (a direction as a matrix, and a scale) and the place of each dimension; ISO first angle by default and third angle as a choice of a sheet; the lines of a view are computed and not stored (ADR-0118 items 3 and 4; Q2 A and Q3 A of 2026-11-10). It changes the public shape of `Engine.Contracts`: an ADR and a question to the owner first. After R22. The owner answered Q1 to Q8 on 2026-11-14 (ADR-0153), and the row has three parts. | 5–8 |
 | P10.1 | The record of a sheet in the Document, the events of a sheet, and the commands CreateSheet, RenameSheet and RemoveSheet, with undo and redo (ADR-0153 items 1 to 3, 6 and 7). TASK-0389. | 1–2 |
 | P10.2 | The views of a sheet: AddSheetView, MoveSheetView and RemoveSheetView, and a read of a sheet with the lines of each view from K9 (ADR-0153 item 4). After P10.1. TASK-0393, ADR-0155. | 1–2 |
-| P10.3 | The dimensions of a sheet: PlaceSheetDimension and RemoveSheetDimension, the value from the design at each read, and a lost dimension (ADR-0153 item 5). After P10.2. | 1–2 |
+| P10.3 | The dimensions of a sheet: PlaceSheetDimension and RemoveSheetDimension, the value from the design at each read, and a lost dimension (ADR-0153 item 5). After P10.2. TASK-0395, ADR-0158. | 1–2 |
 | P10a | The export of a sheet as SVG, from the exact numbers of the views and the values of the design (Q4 of 2026-11-10, first). After P10. | 1–2 |
 | P10b | The export of a sheet as DXF, for the exchange with a CAD program and a laser cutter (Q4, second). After P10a. | 2 |
 | P10c | The export of a sheet as PDF, for the documentation (Q4, third). After P10b. | 2–3 |

@@ -11293,3 +11293,40 @@ register is full, so the next new entry needs a close first.
 New tests: 0. The test list holds 2713 (1603 in `Engine.Tests`, 386 in `3DEngine.Tests`, 721 in `3DEngine.ImageTests`, 3
 in `3DEngine.VisionTests`). Open entries: 15 of 15. New diagnostic codes: 0. Since the review of v0.375, 1 product
 milestone and 4 entries followed it.
+
+## v0.380 — A dimension of a sheet shows a value of the design, and a read gives its value or "lost" (P10.3, TASK-0395)
+
+Row P10.3 of the roadmap: the dimensions of a sheet (ADR-0153 items 5 and 6). P10.2 gave the views and the read GetSheet,
+with the dimensions as records only. A side session wrote the plan of P10.3 with seven questions, and on 2026-11-15 the
+owner answered them with option A (D1 to D7 of the answer sheet). On 2026-11-16 the owner ordered "yes, start P10.3, merge
+when green".
+
+**The change.**
+- `PlaceSheetDimension` places a dimension of a constraint `distance` or `radius` of a live sketch, or of the distance of an
+  Extrude in effect, in a view of a sheet, at a place on the paper. With a `dimensionId` it places that dimension again: a
+  new view, source or place, the same identifier at the same index, one step of undo. A sheet shows each source one time.
+- `RemoveSheetDimension` removes a dimension, also a lost one. RemoveSheetView removes the dimensions of its view.
+- `GetSheet` gives each dimension with `lost`, `label` ("length", "radius" or "distance") and `value` from the design at
+  the time of the read. A change of a source changes no sheet record and raises no sheet event.
+- Three new codes: `E-SHEET-DIMENSION-NOT-FOUND`, `E-SHEET-DIMENSION-INVALID` and `E-SHEET-SOURCE-NOT-FOUND`, and new raise
+  sites of `E-SHEET-NOT-FOUND`, `E-SHEET-ID-IN-USE` and `E-SHEET-VIEW-NOT-FOUND`. ADR-0158 records the answers and amends
+  ADR-0153 items 5 and 6. No change of `Engine.Contracts`.
+- A test of the HTTP surface reads the JSON names: `id` for a view and a dimension in the event `sheet.changed`, and
+  `dimensionId` in the read.
+
+**Corrected.** The plan said that an undo of the Extrude makes its dimension lost. Undo is linear, so an undo of a source
+first removes each later dimension, and no command removes an extrude: only a removed constraint makes a dimension lost
+now. The test of a lost extrude gives the read a Document with a source that is not in it. The answer sheet said that the
+plan of P10.3 is not in the repository; the task copied it to `docs/proposals/` with a note of what changed.
+
+**Proof.** Twenty injections each failed a test, and each file came back byte for byte (SHA-256). A clean build gives 0
+warnings, the phone project builds, `eng/repo-gates` gives 488 runs of 168 checks and 0 failed, the write-set check
+passes, and each test project passes (2725 tests). Run 43964781981 passed on the branch. The failed runs since the entry v0.379,
+from the API: none.
+
+**What stays.** The read gives no geometry of the dimension line and no flag "true length" (D7 A: P10a or R22d). No client
+shows a sheet yet. The register is full (15 of 15).
+
+New tests: 12. The test list holds 2725 (1615 in `Engine.Tests`, 386 in `3DEngine.Tests`, 721 in `3DEngine.ImageTests`, 3
+in `3DEngine.VisionTests`). Open entries: 15 of 15. New diagnostic codes: 3. Since the review of v0.375, 2 product
+milestones and 5 entries followed it.
