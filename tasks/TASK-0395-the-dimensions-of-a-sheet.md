@@ -1,7 +1,7 @@
 ---
 id: 0395
 title: The dimensions of a sheet, and a read of a sheet with the value of each dimension from the design
-status: Active
+status: Done
 phase: P10.3
 opened: 2026-11-16
 depends-on: [0393]
@@ -72,17 +72,17 @@ of the sheet gives the value of each dimension from the design at the time of th
 
 ## Acceptance criteria
 
-- [ ] Each command, each refusal, the place again, undo, redo and the document file have a test, and each check has an
+- [x] Each command, each refusal, the place again, undo, redo and the document file have a test, and each check has an
       injection that a test catches.
-- [ ] A read gives the value of a constraint and of an extrude after a change of the design with no sheet command, and a
+- [x] A read gives the value of a constraint and of an extrude after a change of the design with no sheet command, and a
       dimension whose source is not in the design as lost.
-- [ ] A clean build (`--no-incremental`) gives zero errors and zero warnings, and the phone project builds.
-- [ ] `dotnet test`, the write-set check and `eng/repo-gates` pass; continuous integration passes on the branch and on
+- [x] A clean build (`--no-incremental`) gives zero errors and zero warnings, and the phone project builds.
+- [x] `dotnet test`, the write-set check and `eng/repo-gates` pass; continuous integration passes on the branch and on
       `main` after the merge.
 
 ## Outcome
 
-Status: Active
+Status: Done · commit (the merge of the branch p103-sheet-dimensions) · v0.380
 
 ## Method
 
@@ -97,3 +97,4 @@ Weakest:    a dimension of a distance becomes lost only in a Document that the t
   Document with a source that is not in it. The JSON name of the identifier of a view and of a dimension in the event
   `sheet.changed` is `id`.
   Twenty injections each failed a test, and each file came back byte for byte.
+- 2026-11-16: run 43964781981 passed on the branch. Closed at v0.380.

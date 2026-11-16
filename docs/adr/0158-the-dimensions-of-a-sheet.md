@@ -88,3 +88,4 @@ keeps them apart.
 ## History
 
 - 2026-11-16 · TASK-0395 · The record, from the plan of P10.3 and the answers of the owner of 2026-11-15 to D1 to D7.
+- 2026-11-16 · TASK-0395 · Shipped at v0.380.
