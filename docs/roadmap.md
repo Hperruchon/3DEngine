@@ -627,6 +627,7 @@ This track removes each condition that blocks other work.
 | P0.159 | The low findings of the codebase review of 2026-11-15 (E207 to E210, V192 and V193: the scale of the fixed lengths, the reader of the lines of K9, two faults of form, the ends of an edge in two parts, and the modifier keys of macOS), after the next product phase. TASK-0392. | 1 |
 | P0.160 | The answers of the owner of 2026-11-15 to the design file of the assemblies and of the work with an agent (`docs/proposals/2026-11-15-assembly-and-agent-design.md`): ADR-0157, the rows K15 to K22, P15 to P20 and R25 to R29, the new order, and the one register entry R-0070 of the model of a move and of the sizes of the two cases. TASK-0394. | 1 |
 | P0.161 | The hidden circle of a hole in the top view of v0.381 (P10a) is the floor of a blind hole: CreateCylinder centres the cylinder on the origin. A test through GetSheet holds a hole in a plate from the top and from the bottom. TASK-0397. | 1 |
+| P0.162 | The medium and low findings of the codebase review of 2026-11-17 (E211 to E217: the curves of a frame of a length other than 1, a frame that gives a read that is not finite, the time of the fixed lengths of a large sketch, the freedom of joined sizes, a number that is not finite in the DXF file, an almost closed arc of an ellipse, and a name that XML does not permit), after the next product phase, P10c. TASK-0400. | 1–2 |
 | P0.102 | The cache of a face, the fixed controls, the list New, the edges and the safe area hold their next forms (V113 to V118 of the codebase review of 2026-11-06 (e); after P0.101). TASK-0252. | 1–2 |
 | P0.86 | The window keeps no input between sessions, the hook has the cases of one axis, and the next forms of four gates fail (V88 to V90, T141 to T144 of the codebase review of 2026-11-06; after the next product phase). TASK-0198. | 1–2 |
 
@@ -914,6 +915,8 @@ The tracks are not strictly sequential, but three rules hold:
    and P17; then P15, P16 and R25; then K17, P11 (P11.0 first), P18, R23 and R27, with P13 at the same time as P11; then K12,
    P14, K13, P12 and R24; then P20, K21, P19, K18 and R28; then K19, K20, K22, R29 and P8b, each on its own decision, and
    K14 after R24. The model of a move of a part waits for the measure of K10 (R-0070).
+   The codebase review of 2026-11-17 puts P0.162, which holds medium and low findings, after the next product phase, P10c,
+   by the rule of `docs/templates.md`, section 7.
 2. R2 blocks each later phase in track R. No mesh leaves the geometry backend today.
 3. K4 needs K0, K1 and K2. Do not start K4 before the reference model exists.
 4. The path to the milestone "CAD on one part" (the owner, 2026-10-27, KD2): R7b, R8a, R8b, the codebase
