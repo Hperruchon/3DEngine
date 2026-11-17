@@ -123,7 +123,7 @@ names. Do not read all of them.
 | [0115](0115-the-values-as-in-the-render.md) | A value shows three decimals on a pill on its dimension line, outside the outline of the body | Accepted | Clients, rendering | 0082, 0105, 0110 | — |
 | [0116](0116-the-ring-takes-a-tap-only-on-its-labels.md) | Only the icon and the label of a segment of a body ring take a tap, and the ring fades while the view moves | Accepted | Clients, input | 0081, 0104 | — |
 | [0117](0117-the-rows-of-a-body-as-in-the-render.md) | The rows of a body show its name larger, the sketch that made it, and the direction and the constraint of each value | Amended | Clients, rendering | 0084, 0091, 0099 | 0123 |
-| [0118](0118-the-2d-drawing-of-a-part.md) | The 2D drawing of a part has a date, and its work starts with a flat view | Amended | Charter, drawing | — | 0153 |
+| [0118](0118-the-2d-drawing-of-a-part.md) | The 2D drawing of a part has a date, and its work starts with a flat view | Amended | Charter, drawing | — | 0153, 0162 |
 | [0119](0119-the-ring-and-the-history-arc-as-in-the-render.md) | The ring gives Edit sketch and Rename in the span of four segments, and the history arc is a bright line with its nodes on it | Amended | Clients, rendering | 0081, 0098, 0104 | 0122, 0123 |
 | [0120](0120-the-sketch-as-in-the-render.md) | The rows of a sketch are its constraints and the body it makes, its ring holds Next point and Extrude, and its plate has a label | Accepted | Clients, sketch | 0085, 0086, 0097, 0098 | — |
 | [0121](0121-the-edges-of-a-large-mesh-are-found-on-the-thread-pool.md) | The edges of a mesh of more than 100 000 triangles are found on the thread pool | Accepted | Rendering, clients | 0109 | — |
@@ -162,11 +162,12 @@ names. Do not read all of them.
 | [0154](0154-the-fixed-lengths-from-one-elimination.md) | The status and the fixed lengths of a sketch come from one elimination, and the product J·Jᵀ takes the columns with a value | Amended | Kernel | 0149 | 0156 |
 | [0155](0155-the-views-of-a-sheet.md) | A view of a sheet has an exact frame, a scale and a place on the paper, and GetSheet gives its lines on the paper | Accepted | Drawing | 0153 | — |
 | [0156](0156-the-rank-of-a-sketch-at-each-size.md) | The rank of a sketch comes from the rows of its Jacobian at unit length, so the freedom and the fixed lengths do not depend on its size | Accepted | Sketch | 0035, 0154 | — |
-| [0157](0157-the-foundations-and-the-order-of-the-assembly-track.md) | The assembly track has shared foundations, the checks and the preview of a proposal come before the joints, and the model of a move waits for a measure | Accepted | Assembly, agent | 0126 | — |
+| [0157](0157-the-foundations-and-the-order-of-the-assembly-track.md) | The assembly track has shared foundations, the checks and the preview of a proposal come before the joints, and the model of a move waits for a measure | Amended | Assembly, agent | 0126 | 0162 |
 | [0158](0158-the-dimensions-of-a-sheet.md) | A dimension of a sheet shows a length or a radius of a sketch or the distance of an extrude, and a read gives its value from the design or "lost" | Accepted | Drawing | 0153 | — |
 | [0159](0159-the-svg-export-of-a-sheet.md) | A sheet exports as one SVG file in millimetres of the paper, from the read GetSheet, with exact arcs and the value of each dimension | Accepted | Drawing, export | — | — |
 | [0160](0160-the-dxf-export-of-a-sheet.md) | A sheet exports as one DXF file of release 12, from the read GetSheet, with arcs as bulges and ellipses as arcs within 0.001 mm | Accepted | Drawing, export | — | — |
 | [0161](0161-the-pdf-export-of-a-sheet.md) | A sheet exports as one PDF file of version 1.4, from the read GetSheet, with arcs as Bézier curves within 0.001 mm | Accepted | Drawing, export | — | — |
+| [0162](0162-the-workflow-of-the-2d-views.md) | A person sees and designs the 2D views of a part in the window and on a sheet page, with the section view, the centre lines and the title block of ISO 7200 | Accepted | Drawing, window | 0118, 0157 | — |
 
 ## Topics
 

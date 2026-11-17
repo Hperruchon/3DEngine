@@ -449,6 +449,8 @@ Therefore each approved objective must have a track here.
 - Review — The codebase review of 2026-11-17. v0.384, TASK-0399.
 - P10c — A sheet exports as one PDF file of version 1.4, with each arc as Bézier curves within 0.001 mm and no date in
   the file. v0.385, TASK-0401, ADR-0161.
+- P0.163 — The answers of the owner of 2026-11-18 on the 2D views are a record: ADR-0162, the rows R30a to R30i and the
+  new order. v0.386, TASK-0403.
 - Review — The codebase review of 2026-11-14 (c). v0.351, TASK-0366.
 - P0.143 — The low findings of the codebase review of 2026-11-11: a triangle of zero area adds no edge, and a mesh of
   more than 100 000 triangles finds its edges on the thread pool. v0.332, TASK-0345, ADR-0121.
@@ -631,6 +633,7 @@ This track removes each condition that blocks other work.
 | P0.160 | The answers of the owner of 2026-11-15 to the design file of the assemblies and of the work with an agent (`docs/proposals/2026-11-15-assembly-and-agent-design.md`): ADR-0157, the rows K15 to K22, P15 to P20 and R25 to R29, the new order, and the one register entry R-0070 of the model of a move and of the sizes of the two cases. TASK-0394. | 1 |
 | P0.161 | The hidden circle of a hole in the top view of v0.381 (P10a) is the floor of a blind hole: CreateCylinder centres the cylinder on the origin. A test through GetSheet holds a hole in a plate from the top and from the bottom. TASK-0397. | 1 |
 | P0.162 | The medium and low findings of the codebase review of 2026-11-17 (E211 to E217: the curves of a frame of a length other than 1, a frame that gives a read that is not finite, the time of the fixed lengths of a large sketch, the freedom of joined sizes, a number that is not finite in the DXF file, an almost closed arc of an ellipse, and a name that XML does not permit), after the next product phase, P10c. TASK-0400. | 1–2 |
+| P0.163 | The answers of the owner of 2026-11-18 to the design file of the 2D views (`docs/proposals/2026-11-18-2d-view-workflow.md`): ADR-0162, which amends ADR-0118 item 7 and ADR-0157 item 11, the rows R30a to R30i, and the new order. TASK-0403. | 1 |
 | P0.102 | The cache of a face, the fixed controls, the list New, the edges and the safe area hold their next forms (V113 to V118 of the codebase review of 2026-11-06 (e); after P0.101). TASK-0252. | 1–2 |
 | P0.86 | The window keeps no input between sessions, the hook has the cases of one axis, and the next forms of four gates fail (V88 to V90, T141 to T144 of the codebase review of 2026-11-06; after the next product phase). TASK-0198. | 1–2 |
 
@@ -778,6 +781,15 @@ The first objective. Each phase ends with something that a person can observe.
 | R27 | A tool of the window that turns a body, and the snap of a body to a body by two connectors (ADR-0157 items 3 and 4). After P11. | 2 |
 | R28 | The end-to-end scenario of the bookcase: the agent places the panels of a module by connectors, uses one module several times, checks the gaps and the screws, and proposes a change of a width, with the criteria C1 to C11 of the design file (ADR-0157 item 12). After P20 and K18. | 1–2 |
 | R29 | The drag of a face as a change of the value that owns the face: the distance of an extrude or the size of a primitive (ADR-0157 item 15). After P12. | to estimate |
+| R30a | The lines of the sheet in a flat view: a query of the lines of one frame from the code of GetSheet, read off the frame thread; a switch "Lines" (key L) with a light background, dashed hidden lines, no fill and no outline of a sketch; Frame fills the free part (ADR-0162 items 2 and 3). After P0.162. | 2 |
+| R30b | "Add to sheet" and "Standard views" in the net of the views and in the command line; the pad of the paper and the scale; the place of a new view from the projection; the command ScaleSheetView (ADR-0162 items 4 to 6). After R30a. | 2 |
+| R30c | The sheet page on the desktop and the phone: the paper, the frame, the title block, the views and the values from GetSheet; a tap on a view gives "Go to", "Scale" and "Remove"; a tap on the paper places a new view; a drag keeps the alignment and sends MoveSheetViews (ADR-0162 items 1, 5 and 10). After R30b. | 2–3 |
+| R30d | The button "Export" on the sheet page: PDF, SVG and DXF, with the save dialog of the desktop and the save or share of the phone (ADR-0162 item 9). After R30h. | 1 |
+| R30e | "Put on sheet" on a value chip of a flat view (ADR-0162 item 7). After R30h. | 1 |
+| R30f | The proposal of the agent on the sheet page: amber boxes and amber values, Accept and Reject on the arc (ADR-0162 item 8). After R30h. | 1–2 |
+| R30g | The flag of the hidden lines and the centre lines of each view, the centre lines and centre marks in GetSheet and the three files, and ⌀ for a whole circle; a contract change with its ADR (ADR-0162 items 11, 12, 14 and 17). After P0.162; it can run beside R30a to R30c. | 1–2 |
+| R30h | The section view of a sheet: the cut line, the cut plane and its letter, the hatch and the label "A–A", in GetSheet, the files and the sheet page; a contract change with its ADR (ADR-0162 items 13 and 17). After R30c and R30g. | 2–3 |
+| R30i | The title block of ISO 7200 by one command, the symbol of the projection and the centring marks; a contract change with its ADR (ADR-0162 items 15 and 17). After R30h. | 1 |
 
 ## Track K — The kernel
 
@@ -920,6 +932,9 @@ The tracks are not strictly sequential, but three rules hold:
    K14 after R24. The model of a move of a part waits for the measure of K10 (R-0070).
    The codebase review of 2026-11-17 puts P0.162, which holds medium and low findings, after the next product phase, P10c,
    by the rule of `docs/templates.md`, section 7.
+   On 2026-11-18 the owner answered the design file of the 2D views (ADR-0162, which amends ADR-0157 item 11). After P10c:
+   P0.162; R30g beside R30a, R30b and R30c; then R30h; then R30d, R30e, R30f and R30i; then K10 and the rest of the order
+   of 2026-11-15.
 2. R2 blocks each later phase in track R. No mesh leaves the geometry backend today.
 3. K4 needs K0, K1 and K2. Do not start K4 before the reference model exists.
 4. The path to the milestone "CAD on one part" (the owner, 2026-10-27, KD2): R7b, R8a, R8b, the codebase

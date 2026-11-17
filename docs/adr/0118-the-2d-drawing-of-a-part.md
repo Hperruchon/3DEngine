@@ -7,7 +7,7 @@ date: 2026-11-10
 supersedes: []
 superseded-by: []
 amends: []
-amended-by: ['0153']
+amended-by: ['0153', '0162']
 affects:
   - docs/CHARTER.md
 enforced-by: Engine.Tests/Governance/ObjectiveReferenceGateTests.cs
@@ -67,8 +67,9 @@ recommended order, and Q5 A.
 6. **The kernel boundary.** A view of the edges with the hidden edges is not one of the six operations of the closed
    feature boundary of the charter. K9 needs an ADR that adds it, or that computes it outside the kernel from the faces
    that the kernel gives.
-7. **Out of this record.** Electrical schematics, a drawing of an assembly, a hatch of a section, a tolerance, and a
-   symbol of a surface finish.
+7. **Out of this record.** Electrical schematics, a drawing of an assembly, a tolerance on a dimension, and a symbol of a
+   surface finish. The hatch of a section and a note of the general tolerances in the title block are in the scope
+   (ADR-0162 items 13, 15 and 20).
 
 ## Consequences
 
@@ -89,3 +90,4 @@ recommended order, and Q5 A.
 - 2026-11-10 · TASK-0343 · The record, from the answers of the owner of 2026-11-10 to Q1 to Q5 of the renders of a drawing.
 - 2026-11-10 · TASK-0343 · Shipped at v0.326.
 - 2026-11-15 · TASK-0389 · Amended by ADR-0153: the record of a sheet, its views and its dimensions, and the commands that change it (the answers of the owner of 2026-11-14 to Q1 to Q8).
+- 2026-11-18 · TASK-0403 · Amended by ADR-0162: the hatch of a section and a note of the general tolerances come into the scope of item 7 (the answers of the owner of 2026-11-18 to Q16 and Q18).
