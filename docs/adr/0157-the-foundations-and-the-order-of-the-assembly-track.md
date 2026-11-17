@@ -1,13 +1,13 @@
 ---
 id: 0157
 title: The assembly track has shared foundations, the checks and the preview of a proposal come before the joints, and the model of a move waits for a measure
-status: Accepted
+status: Amended
 topic: Assembly, agent
 date: 2026-11-15
 supersedes: []
 superseded-by: []
 amends: ['0126']
-amended-by: []
+amended-by: ['0162']
 affects:
   - docs/proposals/2026-11-15-assembly-and-agent-design.md
 enforced-by: Engine.Tests/Governance/TaskGovernanceGateTests.cs
@@ -79,7 +79,8 @@ for A2. The owner accepted the order of the features of the Plasticity file.
    and the person answers again.
 10. **The accept (A10).** The accept applies each command or none. One proposal is one step of undo. The ADR of P16 amends
     ADR-0092 items 4 and 6 and ADR-0130 item 4, and gives the group of steps in the history (ADR-0031).
-11. **The order (A11).** This amends ADR-0126 item 8. After P10c:
+11. **The order (A11).** This amends ADR-0126 item 8, and ADR-0162 item 19 amends this item. After P10c:
+    - P0.162; R30g beside R30a, R30b and R30c; then R30h; then R30d, R30e, R30f and R30i;
     - K10;
     - K15, K16, R26, then K11 and P17;
     - P15, P16 and R25;
@@ -122,3 +123,4 @@ record and is not in that field. So the code of a later phase cites the ADR of i
 
 - 2026-11-15 · TASK-0394 · The record, from the answers of the owner of 2026-11-15 to A1 to A15 of the design file.
 - 2026-11-15 · TASK-0394 · Shipped at v0.379.
+- 2026-11-18 · TASK-0403 · Amended by ADR-0162: P0.162 and the slices R30a to R30i of the 2D views come after P10c and before K10 (the answer of the owner of 2026-11-18 to Q19).
