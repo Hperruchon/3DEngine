@@ -62,4 +62,23 @@ internal static class ExportEndpoint
             _ => StatusCodes.Status500InternalServerError,
         });
     }
+
+    // ADR-0160 item 8 (phase P10b, TASK-0398): one live sheet as one DXF file of release 12, as for the SVG file.
+    //
+    //   GET /export/dxf?sheetId=<id>   the bytes of the file, image/vnd.dxf
+    public static async Task<IResult> Dxf(HttpRequest request, EngineHost host, CancellationToken ct)
+    {
+        if (!Guid.TryParse(request.Query["sheetId"], out var sheetId))
+            return ApiErrorEnvelope.BadRequest("The route /export/dxf needs the query parameter sheetId with the id of a sheet.");
+
+        var (content, _, error) = await host.Session.Read((document, _) => DxfExport.Write(document, sheetId, ct), ct);
+        if (error is null)
+            return Results.File(content!, "image/vnd.dxf", "sheet.dxf");
+
+        return Results.Json(new ApiErrorEnvelope(new ApiErrorBody(error.Code, error.Message)), ApiJson.Options, statusCode: error.Code switch
+        {
+            DiagnosticCodes.SheetNotFound => StatusCodes.Status404NotFound,
+            _ => StatusCodes.Status500InternalServerError,
+        });
+    }
 }
