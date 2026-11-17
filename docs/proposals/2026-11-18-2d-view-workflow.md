@@ -12,7 +12,7 @@ This document uses Simplified Technical English (ASD-STE100). See `CLAUDE.md`, s
   answers. No ADR and no roadmap row record them yet.
 - Later on 2026-11-18 the owner asked for one coherent view, a drag to move the views, a section view, hidden and
   construction lines for a cylinder and a circle, and a check of the usual conventions. Section 13 answers, with the
-  questions Q13 to Q19. The prototype is at `https://claude.ai/artifact/CRvuRqUYisC4EA2vanCVHC` (private to the owner).
+  questions Q13 to Q19. The owner answered "13a 14a 15a 16a 17a 18a 19a" on 2026-11-18, so Q16 A replaces Q12 A. The prototype is at `https://claude.ai/artifact/CRvuRqUYisC4EA2vanCVHC` (private to the owner).
 
 **How to read the sources.** I read each repository statement in the file that it names, in this session. A web source has
 a mark: **[S]** a search result or its summary, **[M]** from memory. No agent and no person used a page of a web product

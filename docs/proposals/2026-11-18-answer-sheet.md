@@ -45,15 +45,18 @@ After the first visual page, the owner asked for one coherent view, a drag to mo
 construction lines for a cylinder and a circle, and a check of the usual conventions. Section 13 of the design file gives
 the detail. Q16 replaces Q12 if the owner takes A.
 
+The owner answered on 2026-11-18, in the chat of the side session: "13a 14a 15a 16a 17a 18a 19a". So Q16 A replaces
+Q12 A: the section view comes now, as R30h, before R26, and ADR-0118 item 7 changes for the hatch of a section.
+
 | Q | D | The question | A (recommended) | B | C | Answer |
 |---|---|---|---|---|---|---|
-| Q13 | D13 | How does a view move | A drag, aligned with Front; one command MoveSheetViews, one step of undo | A parent field in the record (contract change) | Each view alone | |
-| Q14 | D14 | Hidden lines | A flag of each view, off for a section (contract change) | One flag for the sheet | Always on | |
-| Q15 | D15 | Centre lines and centre marks | In GetSheet and the three files, with a flag of each view | In the window only | None | |
-| Q16 | D16 | The section view | R30h now, before R26: a cut line on a view, the hatch, A–A (replaces Q12 A, changes ADR-0118 item 7) | Keep Q12 A: after R26 | — | |
-| Q17 | D17 | A whole circle | ⌀ and the diameter ("⌀16"); R for an arc | The value of the constraint ("R8") | — | |
-| Q18 | D18 | The title block | The fields of ISO 7200 by one command, the symbol of the projection, the centring marks | The symbol and the marks only | No change | |
-| Q19 | — | The order | P0.162; R30g beside R30a to R30c; then R30h; then R30d, R30e, R30f, R30i; then K10 | R30a to R30f first; R30g to R30i after K10 | — | |
+| Q13 | D13 | How does a view move | A drag, aligned with Front; one command MoveSheetViews, one step of undo | A parent field in the record (contract change) | Each view alone | A |
+| Q14 | D14 | Hidden lines | A flag of each view, off for a section (contract change) | One flag for the sheet | Always on | A |
+| Q15 | D15 | Centre lines and centre marks | In GetSheet and the three files, with a flag of each view | In the window only | None | A |
+| Q16 | D16 | The section view | R30h now, before R26: a cut line on a view, the hatch, A–A (replaces Q12 A, changes ADR-0118 item 7) | Keep Q12 A: after R26 | — | A |
+| Q17 | D17 | A whole circle | ⌀ and the diameter ("⌀16"); R for an arc | The value of the constraint ("R8") | — | A |
+| Q18 | D18 | The title block | The fields of ISO 7200 by one command, the symbol of the projection, the centring marks | The symbol and the marks only | No change | A |
+| Q19 | — | The order | P0.162; R30g beside R30a to R30c; then R30h; then R30d, R30e, R30f, R30i; then K10 | R30a to R30f first; R30g to R30i after K10 | — | A |
 
 ## The slices with all A
 
