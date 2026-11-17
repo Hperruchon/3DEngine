@@ -11365,3 +11365,34 @@ export (P10c) follow. No button of the desktop exports a sheet. The register is 
 New tests: 9. The test list holds 2734 (1624 in `Engine.Tests`, 386 in `3DEngine.Tests`, 721 in `3DEngine.ImageTests`, 3
 in `3DEngine.VisionTests`). Open entries: 15 of 15. New diagnostic codes: 0. Since the review of v0.375, 3 product
 milestones and 6 entries followed it.
+
+## v0.382 — The hidden circle of v0.381 is the floor of a blind hole, and a test holds a hole from the top and the bottom (P0.161, TASK-0397)
+
+The entry v0.381 says, under "Found", that the top view of a plate with a through-hole gives the circle of the top face
+as hidden, from the lines of a view (K9, `ViewEdges`). On 2026-11-17 the owner ordered a task that finds the cause,
+corrects it and adds a test from the top and from the bottom. This entry corrects that statement of v0.381.
+
+**Found.** The statement of v0.381 is false. The fault is not in `ViewEdges`, and no engine file changes.
+CreateCylinder puts the cylinder from z = -height / 2 to z = +height / 2. In the reproduction, a cylinder of height 20 moved
+by (20, 20, -5) goes from z = -15 to z = 5, so the Subtract makes a hole of depth 5 that is open at the bottom face. Its
+floor at z = 5 and its edge at z = 0 have one place in the top view, and both lie under the top face (ADR-0142 items 4
+and 5): one hidden circle is correct. A move of 0 or +5 makes a through-hole, and each of the two views gives one visible
+whole circle. The SVG export of the two cases on A3 shows the floor of the hole in the front view.
+
+**The change.**
+- `Engine.Tests/Drawing/ViewEdgesTests.cs`: the test `A_Hole_In_A_Plate_Is_One_Whole_Circle_From_The_Top_And_From_The_Bottom`
+  reads GetSheet with a Top view and a Bottom view (eye (0,0,-1), up (0,-1,0)), for the case of the owner (hidden from the
+  top, visible from the bottom) and for a through-hole (visible from each side).
+- The task file holds the table of the probe of the engine.
+
+**Proof.** Three injections in `ViewEdges.cs` each failed the test (a face that covers a point at its own depth, a hidden
+piece before a visible one, no face that covers a point), and the file came back byte for byte (SHA-256). A clean build
+gives 0 warnings, the phone project builds, `eng/repo-gates` gives 488 runs of 168 checks and 0 failed, the write-set
+check passes, and each test project passes (2736 tests). Run 44159241574 passed on the branch. The failed runs since the
+entry v0.381, from the API: none.
+
+**What stays.** The DXF export (P10b) is next in order. The register is full (15 of 15).
+
+New tests: 2. The test list holds 2736 (1626 in `Engine.Tests`, 386 in `3DEngine.Tests`, 721 in `3DEngine.ImageTests`, 3
+in `3DEngine.VisionTests`). Open entries: 15 of 15. New diagnostic codes: 0. Since the review of v0.375, 3 product
+milestones and 7 entries followed it.
