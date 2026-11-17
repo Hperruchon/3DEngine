@@ -1,7 +1,7 @@
 ---
 id: 0398
 title: The export of a sheet as one DXF file
-status: Active
+status: Done
 phase: P10b
 opened: 2026-11-17
 depends-on: [0396]
@@ -63,11 +63,13 @@ each view, the frame, the title block and the value of each dimension.
 
 - [x] Each part of the file, the route and the command line has a test, and each rule has an injection that a test catches.
 - [x] Each arc of an ellipse is within 0.001 mm of the ellipse, at 17 points of each arc of the chain.
-- [ ] A clean build (`--no-incremental`) gives zero errors and zero warnings, and the phone project builds.
-- [ ] `dotnet test`, the write-set check and `eng/repo-gates` pass; continuous integration passes on the branch and on
+- [x] A clean build (`--no-incremental`) gives zero errors and zero warnings, and the phone project builds.
+- [x] `dotnet test`, the write-set check and `eng/repo-gates` pass; continuous integration passes on the branch and on
       `main` after the merge.
 
 ## Outcome
+
+Status: Done · commit (the merge of the branch p10b-sheet-dxf) · v0.383
 
 ## Method
 
@@ -82,3 +84,4 @@ Weakest:    no CAD program opened the file in this task; the test reads it with 
   route and the command line), and each file came back byte for byte. Four first did not: a lost start of an ellipse arc
   passed, because each start of the test was on an axis of the frame (the test now starts off the axes); two did not
   compile (code that cannot be reached); one did not apply, because a heredoc lost a backslash.
+- 2026-11-17: run 44165659996 passed on the branch. The owner ordered "Close and merge". Closed at v0.383.
