@@ -23,6 +23,8 @@ Usage:
                                                   Write the live bodies of a document file as one STEP file.
   engine export svg <document.3de> <file.svg> --sheet <id> [--folder <path>]
                                                   Write one sheet of a document file as one SVG file.
+  engine export dxf <document.3de> <file.dxf> --sheet <id> [--folder <path>]
+                                                  Write one sheet of a document file as one DXF file.
   engine help                                     Print this usage.
 
 Each invocation builds a fresh in-memory engine. There is no persistence

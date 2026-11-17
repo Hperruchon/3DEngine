@@ -11396,3 +11396,42 @@ entry v0.381, from the API: none.
 New tests: 2. The test list holds 2736 (1626 in `Engine.Tests`, 386 in `3DEngine.Tests`, 721 in `3DEngine.ImageTests`, 3
 in `3DEngine.VisionTests`). Open entries: 15 of 15. New diagnostic codes: 0. Since the review of v0.375, 3 product
 milestones and 7 entries followed it.
+
+## v0.383 — A sheet exports as one DXF file of release 12, with arcs as bulges and ellipses as arcs within 0.001 mm (P10b, TASK-0398)
+
+Row P10b of the roadmap: the export of a sheet as DXF, the second of the three formats of ADR-0118 item 2, for the exchange
+with a CAD program and a laser cutter. P10a gave the SVG file from the read GetSheet. On 2026-11-17 the owner ordered "start
+P10b", then "Close and merge". No plan asked questions; ADR-0160 records the options that the session took, and the owner can
+change each one.
+
+**The change.**
+- `DxfExport` in `Engine.Core/Export` writes one live sheet from the same read as GetSheet, as DXF of release 12 (AC1009)
+  with no handles: the header with the extent of the paper and the millimetre, the line types CONTINUOUS and HIDDEN (dashes
+  of 3 mm, gaps of 0.75 mm), the layers FRAME, VISIBLE, HIDDEN (colour 8) and TEXT, and the entities. The frame, the title
+  block and the value of each dimension are those of the SVG file, at the same places.
+- A straight line is a LINE and a whole circle a CIRCLE. An arc of a circle is a POLYLINE whose vertex carries the bulge
+  h / (r + d), with d = sqrt(r² − h²), so the file needs no angle: `DeterminismCallGateTests` refuses `Atan2` in
+  `Engine.Core`. An arc of a half turn or more is two arcs, so each bulge is at most 1.
+- Release 12 has no ellipse, so an arc of an ellipse is a chain of arcs of circles. The arc is halved at the unit vector
+  (a + b) / |a + b| in the frame of its half axes until each arc is within 0.0005 mm of the ellipse at two points; a test
+  measures 17 points of each arc within 0.001 mm.
+- The file is ASCII: a character outside ASCII is `\U+XXXX`, and a number with an exponent is in fixed notation.
+- `GET /export/dxf?sheetId=<id>` gives the file as `image/vnd.dxf` (404 for a sheet that is not live, 400 with no valid
+  id), and `engine export dxf <document.3de> <file.dxf> --sheet <id>` writes it. No new diagnostic code; two rows of
+  `docs/diagnostics.md` name the new sources.
+- The scale text of `SvgExport` is public, so the two files give the same title block.
+
+**Proof.** Fifteen injections each failed a test (twelve in `DxfExport.cs`, three in the route and the command line), and
+each file came back byte for byte (SHA-256). Four first did not: a lost start of an ellipse arc passed, because each start
+of the test was on an axis of the frame (the test now starts off the axes); two did not compile; one did not apply, because
+a heredoc lost a backslash. A clean build gives 0 warnings, the phone project builds, `eng/repo-gates` gives 488 runs of 168
+checks and 0 failed, the write-set check passes, and each test project passes (2753 tests). Run 44165659996 passed on the
+branch. The failed runs since the entry v0.382, from the API: none.
+
+**What stays.** No CAD program and no laser program on the computer of the owner opened the file in this task; the test
+reads it with its own reader of the pairs. An ellipse is a chain of arcs, not one ellipse. The PDF export (P10c) follows.
+The register is full (15 of 15).
+
+New tests: 17. The test list holds 2753 (1643 in `Engine.Tests`, 386 in `3DEngine.Tests`, 721 in `3DEngine.ImageTests`, 3
+in `3DEngine.VisionTests`). Open entries: 15 of 15. New diagnostic codes: 0. Since the review of v0.375, 4 product
+milestones and 8 entries followed it.
