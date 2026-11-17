@@ -162,6 +162,8 @@ public static class EngineSurface
         app.MapGet("/export/svg", ExportEndpoint.Svg);
         // ADR-0160 item 8: one sheet as one DXF file.
         app.MapGet("/export/dxf", ExportEndpoint.Dxf);
+        // ADR-0161 item 8: one sheet as one PDF file.
+        app.MapGet("/export/pdf", ExportEndpoint.Pdf);
 
         // ADR-0092 item 2 (TASK-0326): the proposals of an agent. No route accepts or rejects a proposal.
         app.MapPost("/proposals", ProposalsEndpoint.Post);

@@ -166,6 +166,7 @@ names. Do not read all of them.
 | [0158](0158-the-dimensions-of-a-sheet.md) | A dimension of a sheet shows a length or a radius of a sketch or the distance of an extrude, and a read gives its value from the design or "lost" | Accepted | Drawing | 0153 | — |
 | [0159](0159-the-svg-export-of-a-sheet.md) | A sheet exports as one SVG file in millimetres of the paper, from the read GetSheet, with exact arcs and the value of each dimension | Accepted | Drawing, export | — | — |
 | [0160](0160-the-dxf-export-of-a-sheet.md) | A sheet exports as one DXF file of release 12, from the read GetSheet, with arcs as bulges and ellipses as arcs within 0.001 mm | Accepted | Drawing, export | — | — |
+| [0161](0161-the-pdf-export-of-a-sheet.md) | A sheet exports as one PDF file of version 1.4, from the read GetSheet, with arcs as Bézier curves within 0.001 mm | Accepted | Drawing, export | — | — |
 
 ## Topics
 

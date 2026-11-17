@@ -81,4 +81,23 @@ internal static class ExportEndpoint
             _ => StatusCodes.Status500InternalServerError,
         });
     }
+
+    // ADR-0161 item 8 (phase P10c, TASK-0401): one live sheet as one PDF file of version 1.4, as for the SVG and the DXF file.
+    //
+    //   GET /export/pdf?sheetId=<id>   the bytes of the file, application/pdf
+    public static async Task<IResult> Pdf(HttpRequest request, EngineHost host, CancellationToken ct)
+    {
+        if (!Guid.TryParse(request.Query["sheetId"], out var sheetId))
+            return ApiErrorEnvelope.BadRequest("The route /export/pdf needs the query parameter sheetId with the id of a sheet.");
+
+        var (content, _, error) = await host.Session.Read((document, _) => PdfExport.Write(document, sheetId, ct), ct);
+        if (error is null)
+            return Results.File(content!, "application/pdf", "sheet.pdf");
+
+        return Results.Json(new ApiErrorEnvelope(new ApiErrorBody(error.Code, error.Message)), ApiJson.Options, statusCode: error.Code switch
+        {
+            DiagnosticCodes.SheetNotFound => StatusCodes.Status404NotFound,
+            _ => StatusCodes.Status500InternalServerError,
+        });
+    }
 }
