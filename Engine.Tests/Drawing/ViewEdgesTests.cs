@@ -1,9 +1,12 @@
 using Engine.Contracts;
+using Engine.Contracts.Drawing;
 using Engine.Contracts.Geometry;
+using Engine.Contracts.Sketch;
 using Engine.Core;
 using Engine.Core.Commands;
 using Engine.Core.Drawing;
 using Engine.Core.Hosting;
+using Engine.Core.Queries;
 using Engine.Geometry.Manifold;
 using Engine.Kernel;
 using Engine.Tests.Geometry;
@@ -172,6 +175,63 @@ public sealed class ViewEdgesTests
         // The small box is in the hole, behind the front face of the plate: its sides are hidden, as the walls of the hole are.
         Assert.Equal(new[] { "hidden -1,-1 -1,1", "hidden -2,-1 -2,1", "hidden 1,-1 1,1", "hidden 2,-1 2,1" }, Texts(lines.Where(line => !line.Visible)));
         Assert.Equal(before, await session.Read((document, _) => (document.Version, document.Log.Count)));
+    }
+
+    // Items 4 and 5, and ADR-0145 item 2 (TASK-0397): a plate of 60 x 40 x 10 from a sketch on XY, with a cylinder of radius 8
+    // and height 20 at (20, 20) subtracted. CreateCylinder centres the cylinder on the origin, so a move of 5 along z makes a
+    // through-hole (z = -5 to 15), and a move of -5 makes a hole of depth 5 that is open at the bottom face (z = -15 to 5).
+    // From the top and from the bottom, GetSheet gives the four lines of the plate and one whole circle of radius 8: a
+    // through-hole is visible from each side; the floor of the other hole (z = 5) and its edge on the bottom face (z = 0) lie
+    // under the top face, so the top view gives one hidden circle, and the bottom view gives the edge as one visible circle.
+    [NativeManifoldTheory]
+    [InlineData(5, true, true)]
+    [InlineData(-5, false, true)]
+    public async Task A_Hole_In_A_Plate_Is_One_Whole_Circle_From_The_Top_And_From_The_Bottom(double dz, bool visibleFromTop, bool visibleFromBottom)
+    {
+        using var backend = new ManifoldGeometryBackend();
+        var session = new DocumentSession(EngineHosting.CreateDefault(backend));
+        var sketch = await Applied(session, new CreateSketchCommand { DatumId = Datums.XY.Id }, "sketchId");
+        var points = new List<Guid>();
+        foreach (var (x, y) in new[] { (0.0, 0.0), (60.0, 0.0), (60.0, 40.0), (0.0, 40.0) })
+            points.Add(await Applied(session, new AddSketchPointCommand { SketchId = sketch, X = x, Y = y }, "pointId"));
+        for (var i = 0; i < 4; i++)
+            await Applied(session, new AddSketchLineCommand { SketchId = sketch, StartPointId = points[i], EndPointId = points[(i + 1) % 4] }, "lineId");
+        var plate = await Body(session, new ExtrudeCommand { SketchId = sketch, Distance = 10 });
+        var tool = await Body(session, new CreateCylinderCommand { Radius = 8, Height = 20 });
+        tool = await Body(session, new TranslateCommand { BodyId = tool, Dx = 20, Dy = 20, Dz = dz });
+        await Body(session, new SubtractCommand { MinuendBodyId = plate, SubtrahendBodyId = tool });
+        var sheet = await Applied(session, new CreateSheetCommand { SheetName = "Plate" }, "sheetId");
+        await Applied(session, SheetView(sheet, [1, 0, 0, 0, 1, 0, 0, 0, 1], 100), "viewId");
+        await Applied(session, SheetView(sheet, [1, 0, 0, 0, -1, 0, 0, 0, -1], 250), "viewId");
+
+        var read = await session.Query<SheetInfo>(new GetSheetQuery { SheetId = sheet });
+
+        Assert.Null(read.Error);
+        Assert.Equal(2, read.Result!.Views.Count);
+        foreach (var (view, visible) in read.Result.Views.Zip(new[] { visibleFromTop, visibleFromBottom }))
+        {
+            Assert.Empty(view.Skipped);
+            Assert.Equal(5, view.Lines.Count);
+            Assert.All(view.Lines.Where(line => line.Circle is null), line => Assert.True(line.Visible));
+            var circle = Assert.Single(view.Lines, line => line.Circle is not null);
+            Assert.Equal(visible, circle.Visible);
+            Assert.Equal(8, circle.Circle!.Radius);
+            Assert.Equal((circle.FromX, circle.FromY), (circle.ToX, circle.ToY));
+        }
+    }
+
+    // A view of the sheet at 1 : 1 with its right, its up and its direction toward the eye, at (x, 100) on the paper.
+    private static AddSheetViewCommand SheetView(Guid sheet, double[] d, double x) => new()
+    {
+        SheetId = sheet, RightX = d[0], RightY = d[1], RightZ = d[2], UpX = d[3], UpY = d[4], UpZ = d[5], EyeX = d[6], EyeY = d[7], EyeZ = d[8],
+        ScaleNumerator = 1, ScaleDenominator = 1, X = x, Y = 100,
+    };
+
+    private static async Task<Guid> Applied(DocumentSession session, Command command, string output)
+    {
+        var result = await session.Apply(command);
+        Assert.True(result.Status == CommandStatus.Applied, $"{command.Name}: {result.Error?.Code} {result.Error?.Message}");
+        return result.Outputs.TryGet<Guid>(output, out var id) ? id : throw new InvalidOperationException($"No output {output}.");
     }
 
     private static async Task<Guid> Body(DocumentSession session, Command command)
