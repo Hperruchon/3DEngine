@@ -39,6 +39,22 @@ record. The column "Answer" below repeats it.
 | Q11 | D11 | How does a pictorial view come | An exact frame of whole numbers of one length, after E211; it closes R-0068 | A sine and a cosine with a tolerance, and an ADR | No pictorial view | A |
 | Q12 | D12 | How does a section view come | After R26, from the cut plane of the window, with an ADR and a contract question | A cut line on a view of the sheet, before R26 | — | A |
 
+## Block 2 — drag, section, lines, conventions (later on 2026-11-18)
+
+After the first visual page, the owner asked for one coherent view, a drag to move the views, a section view, hidden and
+construction lines for a cylinder and a circle, and a check of the usual conventions. Section 13 of the design file gives
+the detail. Q16 replaces Q12 if the owner takes A.
+
+| Q | D | The question | A (recommended) | B | C | Answer |
+|---|---|---|---|---|---|---|
+| Q13 | D13 | How does a view move | A drag, aligned with Front; one command MoveSheetViews, one step of undo | A parent field in the record (contract change) | Each view alone | |
+| Q14 | D14 | Hidden lines | A flag of each view, off for a section (contract change) | One flag for the sheet | Always on | |
+| Q15 | D15 | Centre lines and centre marks | In GetSheet and the three files, with a flag of each view | In the window only | None | |
+| Q16 | D16 | The section view | R30h now, before R26: a cut line on a view, the hatch, A–A (replaces Q12 A, changes ADR-0118 item 7) | Keep Q12 A: after R26 | — | |
+| Q17 | D17 | A whole circle | ⌀ and the diameter ("⌀16"); R for an arc | The value of the constraint ("R8") | — | |
+| Q18 | D18 | The title block | The fields of ISO 7200 by one command, the symbol of the projection, the centring marks | The symbol and the marks only | No change | |
+| Q19 | — | The order | P0.162; R30g beside R30a to R30c; then R30h; then R30d, R30e, R30f, R30i; then K10 | R30a to R30f first; R30g to R30i after K10 | — | |
+
 ## The slices with all A
 
 | Slice | Content | Size |
@@ -51,7 +67,11 @@ record. The column "Answer" below repeats it.
 | R30e | "Put on sheet" on a value chip | 1 |
 | R30f | The proposal of the agent on the sheet page | 1–2 |
 
-R30d, R30e and R30f can run at the same time after R30c.
+| R30g | Hidden lines on or off for each view, centre lines, ⌀ for a whole circle | 1–2 |
+| R30h | The section view | 2–3 |
+| R30i | The title block of ISO 7200 | 1 |
+
+R30d, R30e and R30f can run at the same time after R30c. R30g to R30i depend on block 2.
 
 What the answers change, with all A:
 

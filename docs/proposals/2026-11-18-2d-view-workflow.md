@@ -10,6 +10,9 @@ This document uses Simplified Technical English (ASD-STE100). See `CLAUDE.md`, s
 - Answered on 2026-11-18, in the chat of the side session: option A for Q1 to Q4 and Q6 to Q12, and options A and B
   together for Q5 (the app computes the place, and the person can also tap the paper). The answer sheet holds the
   answers. No ADR and no roadmap row record them yet.
+- Later on 2026-11-18 the owner asked for one coherent view, a drag to move the views, a section view, hidden and
+  construction lines for a cylinder and a circle, and a check of the usual conventions. Section 13 answers, with the
+  questions Q13 to Q19. The prototype is at `https://claude.ai/artifact/CRvuRqUYisC4EA2vanCVHC` (private to the owner).
 
 **How to read the sources.** I read each repository statement in the file that it names, in this session. A web source has
 a mark: **[S]** a search result or its summary, **[M]** from memory. No agent and no person used a page of a web product
@@ -426,3 +429,149 @@ The web, by search (**[S]**):
 - Shapr3D product page, 2D drawings: https://www.shapr3d.com/product/2d-drawings
 - Plasticity, Export Hidden Line (third-party copy): https://plasticity-document-revisions.vercel.app/plasticity-essentials/export-hidden-line
 - Zoo glossary, drawing: https://zoo.dev/docs/glossary/drawing
+- ISO 128-24 sample (line types 02.1 and 04.1): https://cdn.standards.iteh.ai/samples/29095/b2e50c3f669649ae9387373c7a73346d/ISO-128-24-1999.pdf
+- ISO 7200 sample (fields of a title block): https://cdn.standards.iteh.ai/samples/35446/d3b0887cb4fa47f49f8718807d3b8903/ISO-7200-2004.pdf
+- Lines, lettering and dimensions (centre marks, ⌀, sections): https://pressbooks.atlanticoer-relatlantique.ca/lined/?p=78
+- ISO 2768 status: https://www.wevolver.com/article/iso-2768-general-tolerances-tables-classes-current-status
+
+---
+
+## 13 The second request of 2026-11-18: drag, section, lines and conventions
+
+After the first visual page, the owner asked for one coherent view and a drag to move the views. The owner also asked for
+a section view, hidden and construction lines for a cylinder and a circle, and a check of the usual conventions.
+
+**The coherent view.** The page is now one working prototype: the window mode and the sheet mode share one state, a view
+added in the window shows on the sheet, and "Go to" on the sheet opens that flat view. The same page shows the desktop and
+the phone layout. Each action names the command that the app sends, and Undo works on each step.
+
+**How I read "construction line".** For a cylinder and a circle, a drawing shows centre lines: the axis of a cylinder and
+a cross on the centre of a circle, as a long-dash-dot thin line. A construction line of a sketch is a help to design, and
+a drawing does not print it. The engine prints none today, which is correct.
+
+### 13.1 The conventions that the sheet misses
+
+The rules come from search summaries and memory (**[S]**, **[M]**), not from the paid standards.
+
+| Convention | The rule | The engine today | Where |
+|---|---|---|---|
+| Visible and hidden lines | ISO 128: visible thick 0.5; hidden dashed thin 0.25, type 02.1 **[S]** | Yes, in the three files | Have |
+| Hidden lines on or off for each view | A hidden line shows only where it adds information; a section shows none **[M]** | Each view shows them | D14 |
+| Centre lines and centre marks | Type 04.1, long-dash-dot thin, on each axis and as a cross on each circle, 2 to 3 mm past the outline **[S]** | None | D15 |
+| ⌀ for a whole circle | ISO 129-1: a whole circle takes ⌀ and its diameter; R is for an arc **[S]** | A radius constraint on a hole prints "R8" | D17 |
+| Dimension lines | Thin dimension and extension lines, arrows, text 3.5 mm **[M]** | A number at a place | R22d |
+| Hole callout | "⌀16" for a through-hole; "2× ⌀8 ↧12" for a pattern and a depth **[S]** | None | After D17 |
+| Section view | A cut line (chain, thick ends, arrows, letters), a hatch at 45°, the label A–A, no hidden lines **[S]** | None; ADR-0118 item 7 puts the hatch out | D16 |
+| Views on lines of projection | A projected view stays aligned with its parent **[M]** | The place is free | D13 |
+| Symbol of the projection | ISO 5456-2 symbol in the title block **[M]** | The text "First angle" | D18 |
+| Title block | ISO 7200: legal owner, identification number, date of issue and sheet number are mandatory; revision and others optional **[S]** | Name, paper, projection, scale, unit | D18 |
+| General tolerances | A note such as "ISO 2768-1 m" **[S]**; ISO 2768-2 is withdrawn **[S]** | None; ADR-0118 item 7 puts tolerances out | D18, as a field |
+| Centring marks | A mark at the middle of each side of the frame **[M]** | Frame only | D18 |
+| Scale of a view | The scale under a view whose scale is not the scale of the sheet **[M]** | Title block only, or "as shown" | R30b |
+| Pictorial view | One pictorial view helps the reader **[M]** | None (R-0068) | D11 |
+| Detail view, surface texture, threads | ISO 21920, ISO 6410 **[M]** | None | Later; out of the record |
+
+### 13.2 The new decisions
+
+**D13 The drag of a view.**
+
+- **A. The client keeps the alignment, and one drag is one command.** Top and a section slide on the vertical line of
+  Front, and Right slides on its horizontal line. A drag of Front takes its projected views with it. Shift, or "Keep
+  aligned" off, moves a view free. A drag sends one new command, MoveSheetViews, with each moved view and its place: one
+  step of undo. The command lives in `Engine.Core`; no contract change.
+- B. The record holds the parent of each projected view (a new field of `SheetView`, a contract change), and the read
+  places a child from its parent. The engine keeps the alignment for the agent too.
+- C. Each view moves alone, with MoveSheetView for each, and nothing keeps the alignment.
+
+**Recommendation: A.** The agent uses the same command. B can come later if the agent breaks the alignment.
+
+**D14 The hidden lines of each view.**
+
+- **A. A flag of each view, on by default and off for a section.** A new field of `SheetView` and a command that sets it:
+  a contract change, an ADR and a question first. GetSheet and the three files leave out the hidden lines of a view with
+  the flag off.
+- B. One flag for the whole sheet.
+- C. Always on, as today.
+
+**Recommendation: A.** A drawing often shows the hidden lines in one view only.
+
+**D15 Centre lines and centre marks.**
+
+- **A. GetSheet gives them, and the three files draw them.** A new kind of line, "centre", from each whole circle that
+  faces the view (a cross) and from each cylinder seen from the side (its axis), 3 mm of paper past the outline. The
+  curves of the design already give the centre and the axis (ADR-0143). A flag of each view, as in D14, turns them off.
+- B. The window draws them, and the files do not.
+- C. None.
+
+**Recommendation: A.** One source for the window, the page and the files, as in D2.
+
+**D16 The section view.** This question replaces Q12 if the owner agrees.
+
+- **A. A section of a sheet now, as R30h, before R26.** On the sheet page a person taps a view, then "Section", and
+  drags the cut line; it snaps to the centre of a circle. A section view takes a cut plane (a point, and a normal along
+  the right or the up of its parent, exact) and a letter: new fields of `SheetView`, a contract change, an ADR, and a
+  change of ADR-0118 item 7, which puts the hatch out. GetSheet gives the cut faces as hatch regions and the lines behind
+  the plane. "Section by a plane" is one of the six operations of the charter (`docs/CHARTER.md` line 161); no code gives
+  it yet. R26 later uses the same cut in the window.
+- B. Keep Q12 A: a section comes after R26, from the cut of the window.
+
+**Recommendation: A.** The owner asked for it, and a part with a hole is clear only in a section.
+
+**D17 The diameter of a whole circle.**
+
+- **A. A dimension of a radius whose edge is a whole circle prints ⌀ and the diameter.** "⌀16" for the hole. An arc
+  keeps "R". The label of the read changes from "radius" to "diameter" for such a dimension.
+- B. Print the value of the constraint, as today.
+
+**Recommendation: A.** "R8" on a hole is wrong by ISO 129-1.
+
+**D18 The title block.**
+
+- **A. The fields of ISO 7200 in the sheet record, set by one command, and the symbol of the projection.** Title,
+  identification number, revision, date of issue, sheet number, legal owner, material, creator and a note of the general
+  tolerances. A contract change and an ADR. The frame gets the centring marks.
+- B. The symbol of the projection and the centring marks only; the fields later.
+- C. No change.
+
+**Recommendation: A.** A workshop cannot file a drawing that has no number and no date.
+
+### 13.3 The slices again
+
+| Slice | Content | After | Size |
+|---|---|---|---|
+| R30a to R30f | As in section 8; R30c adds MoveSheetViews and the alignment (D13) | — | 9–11 |
+| R30g | The flag of each view (D14), the centre lines (D15), and ⌀ for a whole circle (D17), in GetSheet and the three files | P0.162 | 1–2 |
+| R30h | The section view (D16): the cut, the hatch and the label, in GetSheet, the files and the page | R30c, R30g | 2–3 |
+| R30i | The title block of ISO 7200, the symbol and the centring marks (D18) | R30c | 1 |
+
+R30g changes only the engine and the files, so it can run beside R30a to R30c. The contract changes of D14, D16 and D18
+can share one ADR and one question to the owner.
+
+### 13.4 The questions
+
+13. **Q13 (D13).** How does a view move? A: a drag, aligned with Front, one command MoveSheetViews. B: a parent field
+    in the record. C: each view alone.
+14. **Q14 (D14).** Hidden lines? A: a flag of each view (contract change). B: one flag for the sheet. C: always on.
+15. **Q15 (D15).** Centre lines and centre marks? A: in GetSheet and the three files, with a flag of each view. B: in the
+    window only. C: none.
+16. **Q16 (D16).** The section view? A: R30h now, before R26 (replaces Q12 A, changes ADR-0118 item 7). B: keep Q12 A.
+17. **Q17 (D17).** A whole circle? A: ⌀ and the diameter. B: the value of the constraint.
+18. **Q18 (D18).** The title block? A: the fields of ISO 7200 by one command, the symbol and the centring marks. B: the
+    symbol and the marks only. C: no change.
+19. **Q19.** The order? A: P0.162; R30g beside R30a to R30c; then R30h; then R30d, R30e, R30f and R30i; then K10. B: R30a
+    to R30f first, then R30g to R30i after K10.
+
+### 13.5 Not verified in this section
+
+- The rules of the standards come from search summaries and memory.
+- The prototype computes its lines in the page; the engine gives none of the new lines yet.
+- I did not measure the cost of a section in the owned kernel.
+
+### 13.6 Out of this file: the size of the desktop window
+
+The owner asked why the desktop window has a fixed size. `3DEngine/DesktopEngineHost.cs` line 27 creates the window with
+`new Window("3DEngine Desktop", 1280, 720)` and no flag. `3DEngine.Vulkan/Window.cs` lines 64 to 66 add
+`SDL_WINDOW_RESIZABLE` only for the flag `WindowFlags.Resizable`. So the window has no maximize button and no resize
+border. `3DEngine.Vulkan/Presenter.cs` makes the swapchain again when the surface changes (lines 113 to 121 and 174 to
+176). ADR-0113 tested the layout at fixed sizes with pictures, not with a live resize. This is a separate task, not a
+part of the 2D work.
