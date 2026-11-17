@@ -25,6 +25,8 @@ Usage:
                                                   Write one sheet of a document file as one SVG file.
   engine export dxf <document.3de> <file.dxf> --sheet <id> [--folder <path>]
                                                   Write one sheet of a document file as one DXF file.
+  engine export pdf <document.3de> <file.pdf> --sheet <id> [--folder <path>]
+                                                  Write one sheet of a document file as one PDF file.
   engine help                                     Print this usage.
 
 Each invocation builds a fresh in-memory engine. There is no persistence

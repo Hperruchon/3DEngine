@@ -203,7 +203,7 @@ public static class Cli
         // Finding E171 of the codebase review of 2026-11-07 (TASK-0263): the store of the import of an STL file, after the
         // three words, as "asset" has it. Until TASK-0263 the export read the default store only.
         // ADR-0159 item 7 (TASK-0396): an SVG export names its sheet with --sheet, before or after --folder. ADR-0160 item 8
-        // (TASK-0398): a DXF export too.
+        // (TASK-0398): a DXF export too, and ADR-0161 item 8 (TASK-0401) a PDF export.
         var folder = AssetStore.Default;
         Guid? sheet = null;
         while (args.Length >= 5 && args[3] is "--folder" or "--sheet")
@@ -223,8 +223,8 @@ public static class Cli
             args = [.. args[..3], .. args[5..]];
         }
 
-        if (args is not [var format and ("stl" or "step" or "svg" or "dxf"), var document, var file] || (format is "svg" or "dxf") != sheet.HasValue)
-            return InvalidUsage(stderr, "export requires 'stl <document.3de> <file.stl>', 'step <document.3de> <file.step>', 'svg <document.3de> <file.svg> --sheet <id>' or 'dxf <document.3de> <file.dxf> --sheet <id>', and then '--folder <path>' or nothing.");
+        if (args is not [var format and ("stl" or "step" or "svg" or "dxf" or "pdf"), var document, var file] || (format is "svg" or "dxf" or "pdf") != sheet.HasValue)
+            return InvalidUsage(stderr, "export requires 'stl <document.3de> <file.stl>', 'step <document.3de> <file.step>', 'svg <document.3de> <file.svg> --sheet <id>', 'dxf <document.3de> <file.dxf> --sheet <id>' or 'pdf <document.3de> <file.pdf> --sheet <id>', and then '--folder <path>' or nothing.");
         var step = format == "step";
         var label = format.ToUpperInvariant();
 
@@ -276,7 +276,12 @@ public static class Cli
             {
                 if (sheet is { } id)
                 {
-                    var (drawing, unshown, refused) = format == "dxf" ? Engine.Core.Export.DxfExport.Write(read, id, ct) : Engine.Core.Export.SvgExport.Write(read, id, ct);
+                    var (drawing, unshown, refused) = format switch
+                    {
+                        "dxf" => Engine.Core.Export.DxfExport.Write(read, id, ct),
+                        "pdf" => Engine.Core.Export.PdfExport.Write(read, id, ct),
+                        _ => Engine.Core.Export.SvgExport.Write(read, id, ct),
+                    };
                     skipped = unshown;
                     return (drawing, refused, read.Bodies.Count);
                 }
