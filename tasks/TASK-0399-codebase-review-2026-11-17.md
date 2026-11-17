@@ -1,7 +1,7 @@
 ---
 id: 0399
 title: The codebase review of 2026-11-17 is a record
-status: Active
+status: Done
 phase: governance
 opened: 2026-11-17
 depends-on: [0398]
@@ -48,10 +48,12 @@ A review of the code at `059ec7d` (v0.383) is in `docs/reviews/`, and a task hol
 
 - [x] Each finding of the review has its place and its evidence, and the session read it at its line.
 - [x] The measures use the method of the last review, and the script gives the values of the last review at `a87c8bf`.
-- [ ] `CodebaseReviewGateTests`, `dotnet test`, the write-set check and `eng/repo-gates` pass; continuous integration passes on
+- [x] `CodebaseReviewGateTests`, `dotnet test`, the write-set check and `eng/repo-gates` pass; continuous integration passes on
       the branch and on `main` after the merge.
 
 ## Outcome
+
+Status: Done · commit (the merge of the branch review-2026-11-17) · v0.384
 
 ## Method
 
@@ -64,3 +66,4 @@ Weakest:    the times of E213 come from one computer, the probe of the agent.
 - 2026-11-17: opened under the order of the owner of 2026-11-17, branch review-2026-11-17 after the merge of P10b (run
   44168699302 on `main` passed). Two agents examined the change from `a87c8bf` to `059ec7d` in their own copies with probes,
   and removed them. The session read each finding at its line.
+- 2026-11-17: run 44175870465 passed on the branch. Closed at v0.384.

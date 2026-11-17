@@ -11435,3 +11435,33 @@ The register is full (15 of 15).
 New tests: 17. The test list holds 2753 (1643 in `Engine.Tests`, 386 in `3DEngine.Tests`, 721 in `3DEngine.ImageTests`, 3
 in `3DEngine.VisionTests`). Open entries: 15 of 15. New diagnostic codes: 0. Since the review of v0.375, 4 product
 milestones and 8 entries followed it.
+
+## v0.384 — The codebase review of 2026-11-17 (governance, TASK-0399)
+
+Four product milestones (P10.2, P10.3, P10a and P10b) and nine entries followed v0.374, the version that the review of
+2026-11-15 examined, so the next product milestone needs a review first. On 2026-11-17 the owner ordered "start the review,
+then P10c".
+
+**The review.** `docs/reviews/2026-11-17-codebase-review.md` examines `059ec7d`, the merge of P10b at v0.383.
+- E206 to E210, V192 and V193 of the last review are fixed (P0.158 and P0.159), and P10.2 gave the lines of K9 a reader.
+- No new finding is critical or high.
+- E211 to E214 are medium: a view whose exact frame has a length other than 1, which is each exact view at a slant, shows no
+  circle and no ellipse; a frame of a length near 1e-200 or 1e200 gives a read that is not finite, which the HTTP surface
+  cannot write; the fixed lengths of a sketch of 600 lines take 1.8 s for each read; and the freedom is wrong when one
+  constraint joins sizes in a ratio of about 1e6, a form of E207 that its test did not reach.
+- E215 to E217 are low: the DXF writer throws for a number that is not finite, an almost closed DXF arc of an ellipse becomes
+  a line through the centre, and a sheet name with U+FFFE or U+FFFF gives an SVG file that is not XML.
+- The commands and the read of a sheet hold: a sequence with a remove, a move, undo, redo and a place again gave the same
+  GetSheet before a save and after an open.
+- TASK-0400 (P0.162) holds E211 to E217 after the next product phase, P10c.
+- Open findings: 0 critical, 2 high, 10 medium and 19 low.
+
+**Proof.** Two agents examined the change from v0.374 to the merge of P10b, each in its own copy of the commit, with probes
+that they removed. The session read each finding in the code at its line, and took the measures with one script that gives
+the values of the last review at its commit. `CodebaseReviewGateTests` passes with the new review, the write-set check and
+`eng/repo-gates` (488 runs of 168 checks) pass, and run 44175870465 passed on the branch. The failed runs since the entry
+v0.383, from the API: none.
+
+New tests: 0. The test list holds 2753 (1643 in `Engine.Tests`, 386 in `3DEngine.Tests`, 721 in `3DEngine.ImageTests`, 3
+in `3DEngine.VisionTests`). Open entries: 15 of 15. New diagnostic codes: 0. This entry is a codebase review, so 0 product
+milestones and 0 entries follow it.
