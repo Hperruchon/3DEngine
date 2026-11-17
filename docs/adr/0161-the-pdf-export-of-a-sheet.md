@@ -90,3 +90,4 @@ WinAnsiEncoding shows "?". The centre of a text with a character outside the lis
 ## History
 
 - 2026-11-17 · TASK-0401 · The record.
+- 2026-11-17 · TASK-0401 · Shipped at v0.385.

@@ -1,7 +1,7 @@
 ---
 id: 0401
 title: The export of a sheet as one PDF file
-status: Active
+status: Done
 phase: P10c
 opened: 2026-11-17
 depends-on: [0399]
@@ -64,11 +64,13 @@ each view, the frame, the title block and the value of each dimension.
 - [x] Each part of the file, the route and the command line has a test, and each rule has an injection that a test catches.
 - [x] Each Bézier curve of an arc is within 0.001 mm of the circle or the ellipse, at 17 points of each curve.
 - [x] A reader of PDF opens a sample of the engine with its views, its hidden lines and its title block.
-- [ ] A clean build (`--no-incremental`) gives zero errors and zero warnings, and the phone project builds.
-- [ ] `dotnet test`, the write-set check and `eng/repo-gates` pass; continuous integration passes on the branch and on
+- [x] A clean build (`--no-incremental`) gives zero errors and zero warnings, and the phone project builds.
+- [x] `dotnet test`, the write-set check and `eng/repo-gates` pass; continuous integration passes on the branch and on
       `main` after the merge.
 
 ## Outcome
+
+Status: Done · commit (the merge of the branch p10c-sheet-pdf) · v0.385
 
 ## Method
 
@@ -87,3 +89,4 @@ Weakest:    the bound 0.1 · a · t⁶ of the error of a curve comes from the kn
   the direction of an arc; the test now checks the parameter of each point. One (the last stop of a quarter) changed only
   the rounding, so the code lost that expression. One first did not apply, because the Write tool turned the escapes
   `\u00a0` and `\u00ff` into their characters; the file now has the escapes. Each file came back byte for byte.
+- 2026-11-17: run 44180590636 passed on the branch. Closed at v0.385, and merged under the order "merge P10c when green".

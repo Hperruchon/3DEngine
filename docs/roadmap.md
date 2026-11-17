@@ -447,6 +447,8 @@ Therefore each approved objective must have a track here.
 - P10b — A sheet exports as one DXF file of release 12, with each arc of a circle as a bulge and each ellipse as arcs
   within 0.001 mm. v0.383, TASK-0398, ADR-0160.
 - Review — The codebase review of 2026-11-17. v0.384, TASK-0399.
+- P10c — A sheet exports as one PDF file of version 1.4, with each arc as Bézier curves within 0.001 mm and no date in
+  the file. v0.385, TASK-0401, ADR-0161.
 - Review — The codebase review of 2026-11-14 (c). v0.351, TASK-0366.
 - P0.143 — The low findings of the codebase review of 2026-11-11: a triangle of zero area adds no edge, and a mesh of
   more than 100 000 triangles finds its edges on the thread pool. v0.332, TASK-0345, ADR-0121.
