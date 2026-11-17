@@ -1,7 +1,7 @@
 ---
 id: 0402
 title: A design file gives the workflow to see and design the 2D views of a part, with questions for the owner
-status: Active
+status: Done
 phase: governance
 opened: 2026-11-18
 depends-on: [0401]
@@ -66,3 +66,4 @@ order with their size, and numbered questions with the recommended answer A; and
 - 2026-11-18 · The design file and the answer sheet, with twelve questions (commit b9f70ec).
 - 2026-11-18 · The owner answered in the chat of the side session: "1a 2a 3a 4a 5a/b 6a 7a 8a 9a 10a 11a 12a". The answer
   sheet and the design file hold the answers; Q5 reads as A and B together. No ADR and no roadmap row record them yet.
+- 2026-11-18 · The task is Done again after the record of the answers (commit fb35f47).
