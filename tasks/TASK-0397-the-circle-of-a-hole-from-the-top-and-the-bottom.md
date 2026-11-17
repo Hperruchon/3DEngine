@@ -1,7 +1,7 @@
 ---
 id: 0397
 title: A hole in a plate is one whole circle from the top and from the bottom, and the hidden circle of v0.381 is a blind hole
-status: Active
+status: Done
 phase: P0.161
 opened: 2026-11-17
 depends-on: [0396]
@@ -60,8 +60,8 @@ hidden circle of v0.381.
 - [x] The cause of the hidden circle has a proof from the engine.
 - [x] A test of the two cases fails on each injection of a fault in the visibility of a piece of an edge, and each file
       comes back byte for byte.
-- [ ] A clean build (`--no-incremental`) gives zero errors and zero warnings, and the phone project builds.
-- [ ] `dotnet test`, the write-set check and `eng/repo-gates` pass; continuous integration passes on the branch and on
+- [x] A clean build (`--no-incremental`) gives zero errors and zero warnings, and the phone project builds.
+- [x] `dotnet test`, the write-set check and `eng/repo-gates` pass; continuous integration passes on the branch and on
       `main` after the merge.
 
 ## Findings
@@ -89,6 +89,8 @@ second view of the fault: the hole there is a notch through the whole height, an
 
 ## Outcome
 
+Status: Done · commit (the merge of the branch p0161-hole-circle) · v0.382
+
 ## Method
 
 Mechanical: the test of the two cases through GetSheet, with the helpers of the other tests of a session.
@@ -103,3 +105,4 @@ Weakest:    the test reads one circle and its visibility; it does not read the c
   `A_Hole_In_A_Plate_Is_One_Whole_Circle_From_The_Top_And_From_The_Bottom` holds the two cases. Three injections in
   `ViewEdges.cs` each failed it (a face that covers a point at its own depth, a hidden piece before a visible one, no face
   that covers a point), and the file came back byte for byte (SHA-256).
+- 2026-11-17: run 44159241574 passed on the branch. The owner approved the push and the merge. Closed at v0.382.

@@ -442,6 +442,8 @@ Therefore each approved objective must have a track here.
   its value from the design or "lost". v0.380, TASK-0395, ADR-0158.
 - P10a — A sheet exports as one SVG file in millimetres of the paper, with exact arcs and the value of each dimension.
   v0.381, TASK-0396, ADR-0159.
+- P0.161 — The hidden circle of a hole in the top view of v0.381 is the floor of a blind hole, and a test holds a hole in
+  a plate from the top and from the bottom. v0.382, TASK-0397.
 - Review — The codebase review of 2026-11-14 (c). v0.351, TASK-0366.
 - P0.143 — The low findings of the codebase review of 2026-11-11: a triangle of zero area adds no edge, and a mesh of
   more than 100 000 triangles finds its edges on the thread pool. v0.332, TASK-0345, ADR-0121.
