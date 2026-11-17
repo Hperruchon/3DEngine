@@ -84,8 +84,9 @@ public static class SvgExport
     public static string Value(SheetDimensionInfo dimension)
         => dimension.Value is not { } value ? "lost" : (dimension.Label == "radius" ? "R" : "") + N(value);
 
-    // ADR-0159 item 4: the scale of the title block: the scale of each view when they have one scale, or "as shown".
-    private static string Scale(SheetInfo sheet)
+    // ADR-0159 item 4: the scale of the title block: the scale of each view when they have one scale, or "as shown". The DXF
+    // file gives the same text (ADR-0160 item 5).
+    public static string Scale(SheetInfo sheet)
     {
         var scales = sheet.Views.Select(view => Reduced(view.ScaleNumerator, view.ScaleDenominator)).Distinct().ToList();
         return scales.Count == 1 ? $"{scales[0].Numerator}:{scales[0].Denominator}" : "as shown";

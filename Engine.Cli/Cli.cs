@@ -202,7 +202,8 @@ public static class Cli
     {
         // Finding E171 of the codebase review of 2026-11-07 (TASK-0263): the store of the import of an STL file, after the
         // three words, as "asset" has it. Until TASK-0263 the export read the default store only.
-        // ADR-0159 item 7 (TASK-0396): an SVG export names its sheet with --sheet, before or after --folder.
+        // ADR-0159 item 7 (TASK-0396): an SVG export names its sheet with --sheet, before or after --folder. ADR-0160 item 8
+        // (TASK-0398): a DXF export too.
         var folder = AssetStore.Default;
         Guid? sheet = null;
         while (args.Length >= 5 && args[3] is "--folder" or "--sheet")
@@ -222,8 +223,8 @@ public static class Cli
             args = [.. args[..3], .. args[5..]];
         }
 
-        if (args is not [var format and ("stl" or "step" or "svg"), var document, var file] || (format == "svg") != sheet.HasValue)
-            return InvalidUsage(stderr, "export requires 'stl <document.3de> <file.stl>', 'step <document.3de> <file.step>' or 'svg <document.3de> <file.svg> --sheet <id>', and then '--folder <path>' or nothing.");
+        if (args is not [var format and ("stl" or "step" or "svg" or "dxf"), var document, var file] || (format is "svg" or "dxf") != sheet.HasValue)
+            return InvalidUsage(stderr, "export requires 'stl <document.3de> <file.stl>', 'step <document.3de> <file.step>', 'svg <document.3de> <file.svg> --sheet <id>' or 'dxf <document.3de> <file.dxf> --sheet <id>', and then '--folder <path>' or nothing.");
         var step = format == "step";
         var label = format.ToUpperInvariant();
 
@@ -275,9 +276,9 @@ public static class Cli
             {
                 if (sheet is { } id)
                 {
-                    var (svg, unshown, refused) = Engine.Core.Export.SvgExport.Write(read, id, ct);
+                    var (drawing, unshown, refused) = format == "dxf" ? Engine.Core.Export.DxfExport.Write(read, id, ct) : Engine.Core.Export.SvgExport.Write(read, id, ct);
                     skipped = unshown;
-                    return (svg, refused, read.Bodies.Count);
+                    return (drawing, refused, read.Bodies.Count);
                 }
                 var (bytes, failure) = step ? Engine.Core.Export.StepExport.Write(read) : Engine.Core.Export.StlExport.Write(read, geometry);
                 return (bytes, failure, read.Bodies.Count);
