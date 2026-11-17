@@ -1,7 +1,7 @@
 ---
 id: 0403
 title: The answers of the owner of 2026-11-18 on the 2D views are a record, with ADR-0162, the rows R30a to R30i and the new order
-status: Active
+status: Done
 phase: P0.163
 opened: 2026-11-18
 depends-on: [0402]
@@ -59,10 +59,12 @@ The answers are a record: one ADR, the roadmap rows of the slices, and the new o
 
 - [x] ADR-0162 holds each answer, with Q5 read as A and B together and Q16 A in place of Q12 A.
 - [x] Each slice of the design file has its roadmap row, with its size and its place in the order.
-- [ ] The write-set check and `eng/repo-gates` pass, and continuous integration passes on the branch and on `main` after
+- [x] The write-set check and `eng/repo-gates` pass, and continuous integration passes on the branch and on `main` after
       the merge.
 
 ## Outcome
+
+Status: Done · commit (the merge of the branch p0163-2d-view-answers) · v0.386
 
 ## Method
 
@@ -76,3 +78,4 @@ Weakest:    the reading of "5a/b" as both options together; the design session a
 - 2026-11-18: opened under the answers of the owner of 2026-11-18, branch p0163-2d-view-answers from `main` at v0.385. The
   session read the answers of the owner in the transcript of the design session before it started. The branch of the
   design file merged into this branch first, with no conflict.
+- 2026-11-18: run 44200951503 passed on the branch. Closed at v0.386.
