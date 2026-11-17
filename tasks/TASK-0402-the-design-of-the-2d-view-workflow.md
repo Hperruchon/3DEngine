@@ -1,7 +1,7 @@
 ---
 id: 0402
 title: A design file gives the workflow to see and design the 2D views of a part, with questions for the owner
-status: Done
+status: Active
 phase: governance
 opened: 2026-11-18
 depends-on: [0401]
@@ -60,3 +60,9 @@ order with their size, and numbered questions with the recommended answer A; and
 - `dotnet run --project eng/write-set-check -- --staged --task TASK-0402` and `dotnet run --project eng/repo-gates -- --root .`
   pass.
 - The branch is pushed, not merged.
+
+## Progress
+
+- 2026-11-18 · The design file and the answer sheet, with twelve questions (commit b9f70ec).
+- 2026-11-18 · The owner answered in the chat of the side session: "1a 2a 3a 4a 5a/b 6a 7a 8a 9a 10a 11a 12a". The answer
+  sheet and the design file hold the answers; Q5 reads as A and B together. No ADR and no roadmap row record them yet.
