@@ -11505,3 +11505,40 @@ the order of 2026-11-15. The register is full (15 of 15).
 New tests: 17. The test list holds 2770 (1660 in `Engine.Tests`, 386 in `3DEngine.Tests`, 721 in `3DEngine.ImageTests`, 3
 in `3DEngine.VisionTests`). Open entries: 15 of 15. New diagnostic codes: 0. Since the review of v0.384, 1 product
 milestone and 1 entry followed it.
+
+## v0.386 — The answers of the owner on the 2D views are a record, with the rows R30a to R30i (P0.163, TASK-0403)
+
+On 2026-11-17 the owner compared the sheet of a plate with a hole and the flat views of the window, and asked for a workflow
+to see and design the 2D views. A side session wrote the design file `docs/proposals/2026-11-18-2d-view-workflow.md`, a
+visual prototype and an answer sheet (TASK-0402). On 2026-11-18 the owner answered "1a 2a 3a 4a 5a/b 6a 7a 8a 9a 10a 11a
+12a" and "13a 14a 15a 16a 17a 18a 19a", said "Main session" for the place of the record, and chose to merge the branch of the
+design file with it.
+
+**The change.**
+- The branch `claude/design-2d-views-8762fa` (TASK-0402) merged into this branch: the design file, the answer sheet and its
+  task.
+- ADR-0162 records the answers: a sheet page that replaces the scene on both devices; the lines of the sheet in a flat view
+  with a switch "Lines"; "Add to sheet" and "Standard views" in the net of the views; the place of a new view from the
+  projection, or by a tap on the paper (Q5 read as A and B together); ScaleSheetView; "Put on sheet"; the proposal of the
+  agent as amber boxes; one button "Export"; a drag that keeps the alignment as one command MoveSheetViews; a flag of the
+  hidden lines of each view; centre lines and centre marks in GetSheet and the three files; the section view now, before R26
+  (Q16 A replaces Q12 A); ⌀ for a whole circle; the title block of ISO 7200; and the frame of whole numbers for a
+  pictorial view, the exit of R-0068.
+- ADR-0162 amends ADR-0118 item 7 (the hatch of a section and a note of the general tolerances come into the scope) and
+  ADR-0157 item 11 (the order after P10c).
+- The roadmap has the rows R30a to R30i (13 to 17 evenings) and the order: P0.162; R30g beside R30a to R30c; then R30h; then
+  R30d, R30e, R30f and R30i; then K10.
+- Three answers change `Engine.Contracts` (the flag of a view, the section, the title block); the slice of each writes the
+  ADR that states the exact shape, in the same commit as the code. No code changed in this record.
+
+**Proof.** The session read the answers of the owner in the transcript of the design session before it wrote the record.
+The governance tests (524) pass, the write-set check passes on the whole range with the commits of TASK-0402, and
+`eng/repo-gates` gives 488 runs of 168 checks and 0 failed. Run 44200951503 passed on the branch. The failed runs since the
+entry v0.385, from the API: none.
+
+**What stays.** The register is full (15 of 15), so R-0068 keeps its text until a slice proves a pictorial view. The next
+task in the order is P0.162 (TASK-0400). A separate session works on the size of the desktop window.
+
+New tests: 0. The test list holds 2770 (1660 in `Engine.Tests`, 386 in `3DEngine.Tests`, 721 in `3DEngine.ImageTests`, 3
+in `3DEngine.VisionTests`). Open entries: 15 of 15. New diagnostic codes: 0. Since the review of v0.384, 1 product
+milestone and 2 entries followed it.

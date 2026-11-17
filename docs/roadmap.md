@@ -449,6 +449,8 @@ Therefore each approved objective must have a track here.
 - Review — The codebase review of 2026-11-17. v0.384, TASK-0399.
 - P10c — A sheet exports as one PDF file of version 1.4, with each arc as Bézier curves within 0.001 mm and no date in
   the file. v0.385, TASK-0401, ADR-0161.
+- P0.163 — The answers of the owner of 2026-11-18 on the 2D views are a record: ADR-0162, the rows R30a to R30i and the
+  new order. v0.386, TASK-0403.
 - Review — The codebase review of 2026-11-14 (c). v0.351, TASK-0366.
 - P0.143 — The low findings of the codebase review of 2026-11-11: a triangle of zero area adds no edge, and a mesh of
   more than 100 000 triangles finds its edges on the thread pool. v0.332, TASK-0345, ADR-0121.
