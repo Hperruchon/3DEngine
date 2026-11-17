@@ -7,6 +7,9 @@ This document uses Simplified Technical English (ASD-STE100). See `CLAUDE.md`, s
   questions for the owner. `docs/proposals/2026-11-18-answer-sheet.md` gives the same questions in one table.
 - State of the repository: `origin/main` at v0.385 (`22931ad`), the merge of P10c.
 - TASK-0402 holds this file and the answer sheet.
+- Answered on 2026-11-18, in the chat of the side session: option A for Q1 to Q4 and Q6 to Q12, and options A and B
+  together for Q5 (the app computes the place, and the person can also tap the paper). The answer sheet holds the
+  answers. No ADR and no roadmap row record them yet.
 
 **How to read the sources.** I read each repository statement in the file that it names, in this session. A web source has
 a mark: **[S]** a search result or its summary, **[M]** from memory. No agent and no person used a page of a web product
@@ -327,8 +330,8 @@ Each slice opens its task and its ADR at its start. Sizes are in evenings, as in
 |---|---|---|---|---|
 | P0.162 | E211 to E217 of the review of 2026-11-17, as the roadmap row says. E211 and E212 first. | — | P10c | 1–2 |
 | R30a | The lines of a view in the window: a query of the lines of one frame (code of GetSheet); a read off the frame thread; the switch "Lines" in the net, and the key L (a new key of `InputKey`); no sketch outline and no fill while it is on; Frame fills the free part (check G11 first). | D2, D3 | P0.162 | 2 |
-| R30b | "Add to sheet" and "Standard views" in the net and in the command line; the pad of the paper and the scale for a first view; the place by the projection; the command ScaleSheetView. | D4, D5, D6 | R30a | 2 |
-| R30c | The sheet page: the button "Sheet"; the paper, the frame, the title block, the views and the values from GetSheet, read off the frame thread; a tap on a view gives "Go to", "Scale", "Remove"; a drag gives MoveSheetView; the list of the sheets in the panel; the phone layout. | D1 | R30b | 2–3 |
+| R30b | "Add to sheet" and "Standard views" in the net and in the command line; the pad of the paper and the scale for a first view; the place by the projection; the command ScaleSheetView. With the answer Q5 A and B, the tap on the paper that places a view comes in R30c, because it needs the sheet page. | D4, D5, D6 | R30a | 2 |
+| R30c | The sheet page: the button "Sheet"; the paper, the frame, the title block, the views and the values from GetSheet, read off the frame thread; a tap on a view gives "Go to", "Scale", "Remove"; a drag gives MoveSheetView; a tap on the free paper places a new view (Q5 B); the list of the sheets in the panel; the phone layout. | D1 | R30b | 2–3 |
 | R30d | The button "Export" on the sheet page: PDF, SVG, DXF; the save dialog of the desktop and the save or share of the phone; three words of the command line. | D9 | R30c | 1 |
 | R30e | "Put on sheet" on a value chip of a flat view. | D7 | R30c | 1 |
 | R30f | The proposal of the agent on the sheet page: amber boxes and values. | D8 | R30c | 1–2 |
