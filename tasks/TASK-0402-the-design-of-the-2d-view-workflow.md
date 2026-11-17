@@ -1,7 +1,7 @@
 ---
 id: 0402
 title: A design file gives the workflow to see and design the 2D views of a part, with questions for the owner
-status: Active
+status: Done
 phase: governance
 opened: 2026-11-18
 depends-on: [0401]
@@ -68,3 +68,4 @@ order with their size, and numbered questions with the recommended answer A; and
   sheet and the design file hold the answers; Q5 reads as A and B together. No ADR and no roadmap row record them yet.
 - 2026-11-18 · The task is Done again after the record of the answers (commit fb35f47).
 - 2026-11-18 · The owner asked for one coherent view, a drag, a section view, hidden and centre lines, and the conventions. Section 13 of the design file and block 2 of the answer sheet hold Q13 to Q19; the visual page is one working prototype.
+- 2026-11-18 · The task is Done again after section 13.
