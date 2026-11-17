@@ -90,3 +90,4 @@ its own reader of the pairs.
 ## History
 
 - 2026-11-17 · TASK-0398 · The record.
+- 2026-11-17 · TASK-0398 · Shipped at v0.383.
