@@ -447,6 +447,8 @@ Therefore each approved objective must have a track here.
 - P10b — A sheet exports as one DXF file of release 12, with each arc of a circle as a bulge and each ellipse as arcs
   within 0.001 mm. v0.383, TASK-0398, ADR-0160.
 - Review — The codebase review of 2026-11-17. v0.384, TASK-0399.
+- P10c — A sheet exports as one PDF file of version 1.4, with each arc as Bézier curves within 0.001 mm and no date in
+  the file. v0.385, TASK-0401, ADR-0161.
 - Review — The codebase review of 2026-11-14 (c). v0.351, TASK-0366.
 - P0.143 — The low findings of the codebase review of 2026-11-11: a triangle of zero area adds no edge, and a mesh of
   more than 100 000 triangles finds its edges on the thread pool. v0.332, TASK-0345, ADR-0121.
@@ -660,7 +662,7 @@ This track removes each condition that blocks other work.
 | P10.3 | The dimensions of a sheet: PlaceSheetDimension and RemoveSheetDimension, the value from the design at each read, and a lost dimension (ADR-0153 item 5). After P10.2. TASK-0395, ADR-0158. | 1–2 |
 | P10a | The export of a sheet as SVG, from the exact numbers of the views and the values of the design (Q4 of 2026-11-10, first). After P10. TASK-0396, ADR-0159. | 1–2 |
 | P10b | The export of a sheet as DXF, for the exchange with a CAD program and a laser cutter (Q4, second). After P10a. TASK-0398, ADR-0160. | 2 |
-| P10c | The export of a sheet as PDF, for the documentation (Q4, third). After P10b. | 2–3 |
+| P10c | The export of a sheet as PDF, for the documentation (Q4, third). After P10b. TASK-0401, ADR-0161. | 2–3 |
 | P11 | Joints in the Document: connectors, a fixed joint, a pivot and a slider between two bodies of one part, in a kinematic tree with no solver; limits as a cosine and a sine; the states tight and loose; a refusal of a joint that closes a loop; a joint declares its two parts as an intended contact; a command places a body by two connectors one time. P11.0 is its ADR: it decides the model of a move from the measure of K10 (ADR-0126 items 2 and 3, ADR-0157 items 2 to 5, R-0070). Commands and queries for the AI. After K10 and K17. | 3–5 |
 | P12 | The parametric loop: the missing edits that K10 found, and the checks that run again after a rebuild, in one window, with no STL and no manual history (capability 3). After K12 and K13. | 1–2 |
 | P13 | Requirements and assumptions in the Document: text, value, unit, references to bodies, faces or joints, and a status: measured, estimated, to verify physically, verified physically with a date and a result; the intended contacts that no joint declares; and the rule of a gap as a requirement with a value of the process (ADR-0126 item 5, ADR-0157 items 5 and 7). After P0.145; it can run with P11. | 2–3 |

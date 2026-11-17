@@ -11465,3 +11465,43 @@ v0.383, from the API: none.
 New tests: 0. The test list holds 2753 (1643 in `Engine.Tests`, 386 in `3DEngine.Tests`, 721 in `3DEngine.ImageTests`, 3
 in `3DEngine.VisionTests`). Open entries: 15 of 15. New diagnostic codes: 0. This entry is a codebase review, so 0 product
 milestones and 0 entries follow it.
+
+## v0.385 — A sheet exports as one PDF file of version 1.4, with arcs as Bézier curves within 0.001 mm (P10c, TASK-0401)
+
+Row P10c of the roadmap: the export of a sheet as PDF, for the documentation, the third of the three formats of ADR-0118
+item 2. The codebase review of 2026-11-17 (v0.384) came first. On 2026-11-17 the owner ordered "start the review, then P10c"
+and "merge P10c when green". No plan asked questions; ADR-0161 records the options that the session took, and the owner can
+change each one.
+
+**The change.**
+- `PdfExport` in `Engine.Core/Export` writes one live sheet from the same read as GetSheet, as PDF of version 1.4 with six
+  objects: the catalog, the page tree, one page of the size of the paper, the standard font Helvetica in WinAnsiEncoding,
+  the content, and an Info dictionary with no date, so one sheet gives the same bytes on each platform and at each time.
+- The content starts with the matrix of 72 / 25.4, so each number is in millimetres of the paper. The frame, the title
+  block, the widths and the dashes are those of the SVG file.
+- An arc of a circle or an ellipse is a chain of cubic Bézier curves made with + − × ÷ and sqrt only: a stop at each quarter
+  turn from the start, then halving until the bound of the error of each curve is within half of 0.001 mm. The stops of
+  each quarter turn keep an almost closed arc around the centre, the case of E216 in the DXF writer.
+- A value of a dimension is centred with the widths of Helvetica. A string is ASCII in WinAnsiEncoding, with the middle dot
+  as its byte in octal, and a number that is not finite is 0, the case of E215 in the DXF writer.
+- `GET /export/pdf?sheetId=<id>` gives the file as `application/pdf` (404 for a sheet that is not live, 400 with no valid
+  id), and `engine export pdf <document.3de> <file.pdf> --sheet <id>` writes it. No new diagnostic code; two rows of
+  `docs/diagnostics.md` name the new sources.
+
+**Proof.** The Read tool of the session opened a sample PDF of the engine, a plate with a through-hole and a turned cylinder in
+a front and a top view on A3: the frame, the title block, the hidden lines, the circle and the ellipses were correct.
+Fourteen injections in `PdfExport.cs`: twelve each failed a test at once. One (the minor axis not turned) passed, because
+the test did not check the direction of an arc; the test now checks the parameter of each point, and the injection fails
+it. One changed only the rounding of the last stop, so the code lost that expression. Each file came back byte for byte
+(SHA-256). The Write tool turned two escapes of the code into their characters; the file has the escapes again. A clean
+build gives 0 warnings, the phone project builds, `eng/repo-gates` gives 488 runs of 168 checks and 0 failed, the
+write-set check passes, and each test project passes (2770 tests). Run 44180590636 passed on the branch. The failed runs
+since the entry v0.384, from the API: none.
+
+**What stays.** A curve is a chain of Bézier curves, not an exact arc. A character outside WinAnsiEncoding shows "?". The
+2D drawing track up to P10c is complete; P0.162 (TASK-0400) holds the findings E211 to E217 of the review, and K10 follows in
+the order of 2026-11-15. The register is full (15 of 15).
+
+New tests: 17. The test list holds 2770 (1660 in `Engine.Tests`, 386 in `3DEngine.Tests`, 721 in `3DEngine.ImageTests`, 3
+in `3DEngine.VisionTests`). Open entries: 15 of 15. New diagnostic codes: 0. Since the review of v0.384, 1 product
+milestone and 1 entry followed it.
