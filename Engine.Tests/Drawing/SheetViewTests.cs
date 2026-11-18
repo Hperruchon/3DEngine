@@ -432,4 +432,47 @@ public sealed class SheetViewTests(ITestOutputHelper output) : IDisposable
         Assert.Equal(["189,100 211,100", "200,89 200,111"], Centres(undone.Views[1]));
         Assert.False(undone.Views[0].HiddenLines);
     }
+
+    // ADR-0165 item 3 and finding E218 of the codebase review of 2026-11-18 (TASK-0410): a plate of 60 by 40 by 10 with two
+    // through-holes of radius 5 at (15, 20) and (45, 20), and a block of 15 by 40 by 10 on the plate over the right half of the
+    // second hole. In the Top view the circle of the second hole is a visible arc and a hidden arc, and each hole has its
+    // cross. Until TASK-0410 the second hole had no cross.
+    [NativeManifoldFact]
+    public async Task A_Hole_That_A_Body_Covers_In_Part_Keeps_Its_Cross()
+    {
+        using var backend = new ManifoldGeometryBackend();
+        var session = new DocumentSession(EngineHosting.CreateDefault(backend));
+        async Task<Guid> Block(double x0, double y0, double x1, double y1)
+        {
+            var sketch = await Applied(session, new CreateSketchCommand { DatumId = Datums.XY.Id }, "sketchId");
+            var points = new List<Guid>();
+            foreach (var (x, y) in new[] { (x0, y0), (x1, y0), (x1, y1), (x0, y1) })
+                points.Add(await Applied(session, new AddSketchPointCommand { SketchId = sketch, X = x, Y = y }, "pointId"));
+            for (var i = 0; i < 4; i++)
+                await Applied(session, new AddSketchLineCommand { SketchId = sketch, StartPointId = points[i], EndPointId = points[(i + 1) % 4] }, "lineId");
+            return await Applied(session, new ExtrudeCommand { SketchId = sketch, Distance = 10 }, "bodyId");
+        }
+
+        var plate = await Block(0, 0, 60, 40);
+        foreach (var x in new[] { 15.0, 45.0 })
+        {
+            var tool = await Applied(session, new CreateCylinderCommand { Radius = 5, Height = 20 }, "bodyId");
+            tool = await Applied(session, new TranslateCommand { BodyId = tool, Dx = x, Dy = 20, Dz = 5 }, "bodyId");
+            plate = await Applied(session, new SubtractCommand { MinuendBodyId = plate, SubtrahendBodyId = tool }, "bodyId");
+        }
+
+        var cover = await Block(45, 0, 60, 40);
+        await Applied(session, new TranslateCommand { BodyId = cover, Dx = 0, Dy = 0, Dz = 10 }, "bodyId");
+        var sheet = await Applied(session, new CreateSheetCommand { SheetName = "Plate", Paper = "A3" }, "sheetId");
+        await Applied(session, View(sheet, Top, x: 200, y: 100), "viewId");
+
+        var view = Assert.Single((await Read(session, sheet)).Views);
+        var circles = view.Lines.Where(line => line.Kind != "centre" && line.Circle is { Radius: 5 }).ToList();
+        output.WriteLine(string.Join(Environment.NewLine, circles.Select(line => $"{line.Visible} {line.Circle} {line.FromX},{line.FromY} {line.ToX},{line.ToY}")));
+        Assert.Contains(circles, line => !line.Visible && line.Circle!.X == 215);
+        var centres = view.Lines.Where(line => line.Kind == "centre")
+            .Select(line => string.Create(CultureInfo.InvariantCulture, $"{Math.Round(line.FromX, 9)},{Math.Round(line.FromY, 9)} {Math.Round(line.ToX, 9)},{Math.Round(line.ToY, 9)}"))
+            .Order(StringComparer.Ordinal);
+        Assert.Equal(["177,100 193,100", "185,92 185,108", "207,100 223,100", "215,92 215,108"], centres);
+    }
 }

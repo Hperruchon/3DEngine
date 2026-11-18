@@ -11969,3 +11969,42 @@ branch is in the progress of TASK-0415. The failed runs since the entry v0.397, 
 New tests: 1. The test list holds 2884 (1703 in `Engine.Tests`, 390 in `3DEngine.Tests`, 788 in `3DEngine.ImageTests`, 3
 in `3DEngine.VisionTests`). Open entries: 14 of 15. New diagnostic codes: 0. Since the review of v0.397, 0 product milestones
 and 1 entry followed it.
+
+## v0.399 — The findings of the first codebase review of 2026-11-18: the cross of a covered hole, the centre lines of a flat view, and the work on a sheet off the frame thread (P0.165, TASK-0410)
+
+The medium and low findings of the codebase review of 2026-11-18 (E218 to E220, V194 to V201). The owner ordered "then start
+TASK-0410" after the merge of TASK-0415. The task file holds the answers of the owner of 2026-11-18, "1a 2a": Q1 A for E220
+and Q2 A for V200.
+
+**The change.**
+- E218: a circle whose arcs, visible and hidden, follow each other once about its centre gives its cross. A hole that another
+  body covers in part keeps its cross. ADR-0165 item 3.
+- E219: the comment of the label of a dimension names "diameter".
+- E220 (Q1 A): GetViewLines gives the centre lines of the sheet, 3 units of the design past their ends, as 3 mm on a sheet
+  at 1 : 1. A flat view draws each one as a chain of ink. ADR-0166 items 1 and 3.
+- V194: a new sheet adds only the views whose place is inside the area. The message names each view that does not fit, with
+  the paper and the scale, and a refusal names the views that went on before it. ADR-0167 item 3.
+- V195 and V199: R30c fixed them (TASK-0408, v0.393). This task changes nothing for them.
+- V196: "Add to sheet" and the new sheet of the pad go on the queue of the commands of a sheet, and an Add reads the sheet
+  again first. An event of a sheet does not start a new read of the lines of a flat view. ADR-0166 item 2, ADR-0167 item 2.
+- V197: the box of a new view is the box of each live body that is not a mesh body, the hidden bodies too. ADR-0167 item 3.
+- V198: the gizmo does not show while the paper of the lines shows. ADR-0166 item 3.
+- V200 (Q2 A): ADR-0167 item 3 states the order of the code: the place next to each view with a shared axis, in the order
+  of the sheet, before the grid. A test holds it.
+- V201: the paper names each body that the view skips, with the reason of the engine. ADR-0166 item 2.
+
+**Proof.** Each finding with code has a test, and 21 injections (one for each rule) each made a named test fail; each file
+came back byte for byte. The injection of the whole turn is the code of v0.398, so the test of E218 fails on it. Two
+injections first gave a compile error, which proves nothing; their second form compiled, and a test caught each one. The
+tests of E219 and V200 are a comment and a text: the test of V200 passes on the code before the task too. The frame needs a
+window, so three tests read `NativeThreeDEngine.cs` for the queue, the box, the key of the read, the notes and the guard of
+the gizmo. No test runs `SessionBodies.SheetBox` with bodies in a session. A clean build gives 0 warnings, the phone project
+builds, `dotnet test` passes 2893 tests, and the write-set check and `eng/repo-gates` pass. The run on the branch is in the
+progress of TASK-0410. The failed runs since the entry v0.398, from the API: run 44409491212 on `main` at `fa2ff0d`, the merge of
+TASK-0415. The job on Windows failed in `EngineHostSubscriptionTests.A_Report_That_Blocks_Does_Not_Hold_The_Session`, which
+passed its time limit of 5 seconds, as the entry v0.330 records for run 42927620137. Each other job passed. The test is on the
+host of the HTTP surface, and TASK-0415 did not change it.
+
+New tests: 9. The test list holds 2893 (1704 in `Engine.Tests`, 390 in `3DEngine.Tests`, 796 in `3DEngine.ImageTests`, 3
+in `3DEngine.VisionTests`). Open entries: 14 of 15. New diagnostic codes: 0. Since the review of v0.397, 0 product milestones
+and 2 entries followed it.

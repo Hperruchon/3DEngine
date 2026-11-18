@@ -63,6 +63,8 @@ gives the same views with the default.
    (amends ADR-0159 item 3, ADR-0160 item 3 and ADR-0161 item 3).
    ADR-0169 item 3: an edge between the side of a cylinder or a cone and a face of another tag along its axis, as the edge
    of a cut face, also gives the axis.
+   A circle is whole when one of its lines is the whole circle, or when its arcs, visible and hidden, follow each other once
+   about its centre, so a hole that another body covers in part keeps its cross (finding E218, TASK-0410).
 4. **The diameter (D17 A; amends ADR-0158 item 4).** A dimension whose source is a constraint `radius` on a whole circle of
    its sketch reads with the label "diameter" and twice the radius; on an arc it stays "radius" with the radius. The SVG file
    prints ⌀ and the value, the DXF file "%%c" and the value (the code of AutoCAD for the sign), and the PDF file Ø and the
@@ -84,3 +86,4 @@ centre lines; a pattern of holes gets one cross for each hole and no line betwee
 - 2026-11-18 · TASK-0405 · The record, for row R30g and ADR-0162 items 11, 12 and 14.
 - 2026-11-18 · TASK-0405 · Shipped at v0.390, after R30a took v0.389.
 - 2026-11-18 · TASK-0411 · Amended by ADR-0169 item 3: an edge along the axis of a side, as the edge of a cut face, gives the axis (R30h).
+- 2026-11-18 · TASK-0410 · Item 3: the arcs of a circle that cover the whole turn give its cross (finding E218).

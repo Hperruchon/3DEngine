@@ -32,7 +32,8 @@ public sealed record ViewLinesInfo(
     IReadOnlyList<ViewLineInfo> Lines,
     IReadOnlyList<ViewSkippedBody> Skipped);
 
-// One line of the view. Kind is "edge" or "outline", as in GetSheet. A line with a circle or an ellipse is its arc from the
+// One line of the view. Kind is "edge" or "outline", or "centre" for a centre line, as in GetSheet (finding E220, TASK-0410).
+// A line with a circle or an ellipse is its arc from the
 // start to the end, counter-clockwise on the view; a start equal to the end is the whole curve.
 public sealed record ViewLineInfo(Guid Body, double FromX, double FromY, double ToX, double ToY, bool Visible, string Kind)
 {

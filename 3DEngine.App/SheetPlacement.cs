@@ -12,6 +12,25 @@ internal static class SheetPlacement
 {
     public sealed record Box((double X, double Y, double Z) Min, (double X, double Y, double Z) Max);
 
+    // Finding V197 of the codebase review of 2026-11-18 (TASK-0410): the box of the bodies that a sheet draws: each live body
+    // that is not a mesh body, the hidden ones too, as ViewEdges reads them. Each box is the box of the body with no offset of a
+    // preview. Null when no such body has a box. Until TASK-0410 the box was that of the visible bodies, mesh bodies too.
+    public static Box? Drawn(IEnumerable<(LiveBody Body, Box Box)> bodies)
+    {
+        ArgumentNullException.ThrowIfNull(bodies);
+        Box? union = null;
+        foreach (var (body, box) in bodies)
+        {
+            if (body.Kind == Engine.Core.Commands.ImportStlCommandHandler.MeshKind)
+                continue;
+            union = union is not { } u ? box : new Box(
+                (Math.Min(u.Min.X, box.Min.X), Math.Min(u.Min.Y, box.Min.Y), Math.Min(u.Min.Z, box.Min.Z)),
+                (Math.Max(u.Max.X, box.Max.X), Math.Max(u.Max.Y, box.Max.Y), Math.Max(u.Max.Z, box.Max.Z)));
+        }
+
+        return union;
+    }
+
     // ADR-0167 item 3: the gap between two views on the paper, in millimetres (D5 A).
     public const double Gap = 10;
 
@@ -105,7 +124,7 @@ internal static class SheetPlacement
 
     // ADR-0167 item 3: the place of a new view on a sheet. First the place that the projection gives next to each view of the
     // sheet with a shared axis, in the order of the sheet, with a gap of 10 mm; the first that is inside the area and meets no
-    // view wins. Else the free place on a grid of 5 mm that is nearest to the first place of the projection, or to the centre
+    // view wins (finding V200, TASK-0410: the answer Q2 A of the owner keeps this order, and ADR-0167 item 3 states it). Else the free place on a grid of 5 mm that is nearest to the first place of the projection, or to the centre
     // of the area. Else the centre of the area: the view then meets another view or leaves the area, and the result says so.
     public static ((double X, double Y) Place, bool Fits) Place(SheetRecord sheet, IReadOnlyList<double> frame, long numerator, long denominator, Box box)
     {
@@ -179,6 +198,13 @@ internal static class SheetPlacement
         var (bottom, top) = (rects.Min(rect => rect.Y - rect.HalfHeight), rects.Max(rect => rect.Y + rect.HalfHeight));
         var (dx, dy) = (((area.X0 + area.X1) / 2) - ((left + right) / 2), ((area.Y0 + area.Y1) / 2) - ((bottom + top) / 2));
         return [.. rects.Select(rect => (rect.X + dx, rect.Y + dy))];
+    }
+
+    // Finding V194 of the codebase review of 2026-11-18 (TASK-0410): true when a view at the place is inside the area of the paper.
+    public static bool Fits(string paper, bool landscape, IReadOnlyList<double> frame, long numerator, long denominator, (double X, double Y) place, Box box)
+    {
+        var (width, height) = Paper(paper, landscape);
+        return RectOf(frame, numerator, denominator, place.X, place.Y, box).Inside(Area(width, height));
     }
 
     // ADR-0167 item 4: the largest scale of ISO 5455 at which the standard views fit the area of the paper, or the smallest

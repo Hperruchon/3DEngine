@@ -35,9 +35,15 @@ internal sealed unsafe partial class DesktopUi
     // frame.
     private IReadOnlyList<ViewLines.Stroke>? _viewLines;
     private bool _linesPending;
+    private IReadOnlyList<string> _linesNotes = [];
 
-    public void ShowLines(IReadOnlyList<ViewLines.Stroke>? strokes, bool pending = false)
-        => (_viewLines, _linesPending) = (strokes, strokes is not null && pending);
+    // Finding V201 of the codebase review of 2026-11-18 (TASK-0410): notes are the texts of the bodies that the view skips
+    // (ViewLines.Notes), at the lower left of the paper.
+    public void ShowLines(IReadOnlyList<ViewLines.Stroke>? strokes, bool pending = false, IReadOnlyList<string>? notes = null)
+        => (_viewLines, _linesPending, _linesNotes) = (strokes, strokes is not null && pending, strokes is null ? [] : notes ?? []);
+
+    // The notes on the paper in this frame, for a test.
+    internal IReadOnlyList<string> PaperNotes { get; private set; } = [];
 
     // The paper of the lines in this frame, in pixels (left, top, right, bottom), for a test.
     internal Vector4? PaperShown { get; private set; }
@@ -235,7 +241,7 @@ internal sealed unsafe partial class DesktopUi
     // covers the shaded bodies, their edges and the images, so the view has no fill.
     private void Paper()
     {
-        PaperShown = null;
+        (PaperShown, PaperNotes) = (null, []);
         if (_viewLines is not { } strokes || _home is not null)
             return;
         var display = _frameDisplay;
@@ -247,7 +253,13 @@ internal sealed unsafe partial class DesktopUi
         list.PushClipRect(low, high, true);
         foreach (var stroke in strokes)
         {
-            if (stroke.Visible)
+            // ADR-0166 item 3 and finding E220 (TASK-0410): a centre line is a thin chain, as on the sheet.
+            if (stroke.Centre)
+            {
+                foreach (var (a, b) in ViewLines.Dashes(stroke.Points, CentreChain))
+                    list.AddLine(a, b, Theme.Ink, HiddenLineWidth);
+            }
+            else if (stroke.Visible)
             {
                 var points = stroke.Points.ToArray();
                 list.AddPolyline(ref points[0], points.Length, Theme.Ink, ImDrawFlags.None, VisibleLineWidth);
@@ -261,6 +273,10 @@ internal sealed unsafe partial class DesktopUi
 
         if (_linesPending)
             list.AddText(low + new Vector2(12f, 8f), Theme.Ink, LinesReading);
+        var line = ImGui.GetTextLineHeightWithSpacing();
+        for (var i = 0; i < _linesNotes.Count; i++)
+            list.AddText(new Vector2(low.X + 12f, high.Y - 8f - ((_linesNotes.Count - i) * line)), Theme.Ink, _linesNotes[i]);
+        PaperNotes = _linesNotes;
         list.PopClipRect();
     }
 
@@ -270,6 +286,9 @@ internal sealed unsafe partial class DesktopUi
     internal const float HiddenLineWidth = 1f;
     internal const float HiddenDashOn = 6f;
     internal const float HiddenDashOff = 4f;
+
+    // Finding E220 (TASK-0410): the chain of a centre line in pixels: a long dash, a gap, a short dash and a gap.
+    internal static readonly IReadOnlyList<float> CentreChain = [12f, 3f, 2f, 3f];
     private const float PaperRounding = 6f;
 
     // The keys of the views: 1, 3 and 7 give Front, Right and Top, and with Control Back, Left and Bottom; 0 gives the 3D view.

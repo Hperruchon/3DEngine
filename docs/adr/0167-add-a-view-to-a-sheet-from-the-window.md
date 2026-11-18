@@ -55,18 +55,23 @@ command line with nine numbers, the HTTP surface or an agent made a view of a sh
    The command line has "Add view to sheet" in a flat view, "Standard views", and "Scale the sheet views" when the first live
    sheet has a view. The views go to the first live sheet, at the scale of its first view (D6 A); a view whose frame the
    sheet holds is not added again. The window follows the live sheets from the events `sheet.created`, `sheet.changed` and
-   `sheet.removed`, which carry the whole record, and sends AddSheetView, one command for each view, as an agent does. The
+   `sheet.removed`, which carry the whole record, and sends AddSheetView, one command for each view, as an agent does, on the
+   queue of the commands of a sheet (ADR-0168 item 4), so the frame does not wait (finding V196, TASK-0410). The
    panel shows the result, for example "Added the top and the right view to Sheet 1 at 2:1. Sheet 1 has the front view
    already."; the message of the document now wraps inside the panel.
-3. **The place (D5 A).** The size of a view on the paper is the box of the live bodies along the right and the up of its
-   frame, times its scale. The area of the views is the frame of the files, 10 mm inside the paper, less the band of the
-   title block at its bottom (ADR-0159 item 4). A new view goes next to the first view of the sheet with which it shares an
-   axis, as the projection of the sheet puts it, with a gap of 10 mm: in first angle a view from the right of the reference
-   goes at its left and a view from above goes under it; third angle is the other way. When that place leaves the area or
-   meets a view, the view goes to the free place on a grid of 5 mm that is nearest to it. With no free place, the view goes
+3. **The place (D5 A).** The size of a view on the paper is the box of the bodies that the sheet draws along the right and
+   the up of its frame, times its scale: each live body that is not a mesh body, the hidden ones too (finding V197,
+   TASK-0410). The area of the views is the frame of the files, 10 mm inside the paper, less the band of the
+   title block at its bottom (ADR-0159 item 4). A new view goes next to a view of the sheet with which it shares an axis, as
+   the projection of the sheet puts it, with a gap of 10 mm: in first angle a view from the right of the reference goes at
+   its left and a view from above goes under it; third angle is the other way. The window tries the place next to each such
+   view, in the order of the sheet, and the first place that is inside the area and meets no view wins (the answer Q2 A of
+   the owner to finding V200, TASK-0410). When no such place is free, the view goes to the free place on a grid of 5 mm that
+   is nearest to the first of those places. With no free place, the view goes
    to the centre of the area, and the message says so. On a new sheet the views of the pad and the standard views are one
    group, and the box of the group goes to the centre of the area, so a first front view leaves room for its top and side
-   view. The code uses + - * / only. The numbers go into the command, so a replay reads them from the log.
+   view. A view of the pad whose place in the group leaves the area does not go on the new sheet, and the message names it
+   with the paper and the scale (finding V194, TASK-0410). The code uses + - * / only. The numbers go into the command, so a replay reads them from the log.
 4. **The scale that fits (D6 A).** The first scale is the largest of the series of ISO 5455 (50:1 to 1:1000) at which the
    front, the top and the side view fit the area of the paper, as one group. Each next view takes the scale of the first view
    of the sheet.
@@ -105,3 +110,6 @@ the places, so larger views can meet; the sheet page of R30c moves them. The vie
 - 2026-11-18 · TASK-0407 · Shipped at v0.391.
 - 2026-11-18 · TASK-0408 · The owner chose the nearest free place for a view that does not fit, not the largest free part of
   D5 A (ADR-0168 item 7). ADR-0168 item 6 amends item 5: the pad holds its keys, also its Escape, and the home screen closes it.
+- 2026-11-18 · TASK-0410 · Item 2: the commands go on the queue (V196). Item 3: the box of the drawn bodies (V197), the place
+  next to each view with a shared axis in their order (the answer Q2 A, V200), and a view of a new sheet that does not fit
+  (V194).
