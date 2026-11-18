@@ -7,7 +7,7 @@ date: 2026-11-14
 supersedes: []
 superseded-by: []
 amends: ['0100', '0127', '0137']
-amended-by: ['0166']
+amended-by: ['0166', '0167']
 affects:
   - 3DEngine.App/Ui/DesktopUi.Views.cs
   - 3DEngine.App/Ui/DesktopUi.Fixed.cs
@@ -75,3 +75,4 @@ is closed.
 - 2026-11-14 · TASK-0370 · Before the merge: the top bar ends left of the button, and the keys rest after Control and K.
 - 2026-11-18 · TASK-0406 · ADR-0166 item 3 amends items 1 and 3: the net has the switch "Lines" at its lower right, and the
   key L changes it.
+- 2026-11-18 · TASK-0407 · ADR-0167 item 2 amends item 1: a fourth row of the net holds "Add to sheet" and "Standard views".
