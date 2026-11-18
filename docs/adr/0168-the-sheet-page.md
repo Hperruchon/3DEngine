@@ -69,7 +69,9 @@ centre lines (ADR-0165), and asks for their control on the page if it fits.
    has a list parameter (the unit gate, the file and the HTTP surface read plain fields), so the command finds the aligned
    views from the record; D13 A gave each moved view and its place, and the result is the same. The checks come in the order
    of the record with the codes of a view: the sheet is live, the view is on it, and each new place is on the paper. One drag
-   is one command and one step of undo. The places compare with no tolerance; the window keeps them equal.
+   is one command and one step of undo. The places compare with no tolerance; the window keeps them equal. A read that comes
+   without the dragged view, after an undo, an agent or a command of the queue, ends the drag, and its release gives no
+   command, no selection and no place (finding V202 of the codebase review of 2026-11-18 (b), TASK-0415).
 4. **The commands off the frame thread (finding V196).** Each command of the page and of the pad of the scale goes to a queue
    that sends it on the thread pool, one at a time in their order, so a frame never waits for the serial lock of the session.
    The panel shows the text of each command when it ends.
@@ -108,3 +110,4 @@ offers each other sheet by name only. The texts of the title block need a paper 
 - 2026-11-18 · TASK-0408 · Shipped at v0.393.
 - 2026-11-18 · TASK-0412 · ADR-0170 item 1 amends items 1 and 6: the header has "Export", and Escape closes its row first.
 - 2026-11-18 · TASK-0413 · Amended by ADR-0171 item 2: "Section" of a selected view (R30h).
+- 2026-11-18 · TASK-0415 · Item 3: a read without the dragged view ends the drag (finding V202, P0.166).

@@ -53,8 +53,9 @@ This task uses Simplified Technical English (ASD-STE100). See `CLAUDE.md`, secti
 
 The second codebase review of 2026-11-18 (`docs/reviews/2026-11-18-b-codebase-review.md`) gives the medium findings E221, E222,
 V203, V204, V206 and V207, and the low findings E223, E224, E225, V205, V208 and V209. Section 7 of `docs/templates.md` puts
-them after the next product phase, R30e. E223 is a decision that is not clear for a cone; the answer Q1 of the owner says
-which side changes.
+them after the next product phase, R30e. E223 is a decision that is not clear for a cone. The owner answered Q1 A on 2026-11-18
+(TASK-0415 records it): a section through the axis of a cone shows the axis in each look, because an edge of a cut face that
+lies in one plane with the axis of a cone gives the axis. The code changes, and ADR-0169 item 3 states it.
 
 ## Goal
 
@@ -65,7 +66,7 @@ Each of the twelve findings has a correction or a recorded answer, and a test th
 1. E221: no line of a cut with a number that is not finite; a point whose place on the paper is not finite is refused or
    skipped.
 2. E222: the cut of a section in a time near the time of the view without it.
-3. E223 (Q1): the axis of a cone in a section, and the text of ADR-0169 item 3.
+3. E223 (Q1 A): the axis of a cone in a section from an edge in one plane with the axis, and the text of ADR-0169 item 3.
 4. E224: one meaning of the size of a text in the three files.
 5. E225: no step of undo for a move with no change.
 6. V203: the Escape of a pad reaches no watcher of the page.

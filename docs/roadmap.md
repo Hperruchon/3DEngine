@@ -471,6 +471,8 @@ Therefore each approved objective must have a track here.
 - R30h — On the sheet page a person cuts a view with "Section", a look and two taps, and the page draws the section.
   v0.396, TASK-0413, ADR-0171.
 - Review — The second codebase review of 2026-11-18. v0.397, TASK-0414.
+- P0.166 — A read without the dragged view ends a drag of the sheet page, and its release gives nothing (V202). v0.398,
+  TASK-0415, ADR-0168.
 - Review — The codebase review of 2026-11-14 (c). v0.351, TASK-0366.
 - P0.143 — The low findings of the codebase review of 2026-11-11: a triangle of zero area adds no edge, and a mesh of
   more than 100 000 triangles finds its edges on the thread pool. v0.332, TASK-0345, ADR-0121.

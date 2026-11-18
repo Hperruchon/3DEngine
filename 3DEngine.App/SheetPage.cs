@@ -117,11 +117,12 @@ internal static class SheetPage
     // ADR-0168 item 3 (D13 A): the new place of a dragged view and the flag Aligned of MoveSheetViews. The first view of the sheet
     // is the base: with "Keep aligned" on and no Shift, it moves free and takes the views on its lines of projection. A view on a
     // line of projection through the base slides on that line only. Each other drag, and each drag with Shift or "Keep
-    // aligned" off, moves the view free and alone.
-    public static (double X, double Y, bool Aligned) Drag(SheetInfo sheet, Guid viewId, double dx, double dy, bool keepAligned, bool shift)
+    // aligned" off, moves the view free and alone. A view that is not on the sheet gives null (finding V202, TASK-0415).
+    public static (double X, double Y, bool Aligned)? Drag(SheetInfo sheet, Guid viewId, double dx, double dy, bool keepAligned, bool shift)
     {
         ArgumentNullException.ThrowIfNull(sheet);
-        var view = sheet.Views.First(candidate => candidate.ViewId == viewId);
+        if (sheet.Views.FirstOrDefault(candidate => candidate.ViewId == viewId) is not { } view)
+            return null;
         if (!keepAligned || shift)
             return (view.X + dx, view.Y + dy, false);
         var first = sheet.Views[0];

@@ -58,6 +58,10 @@ internal sealed unsafe partial class DesktopUi
     private (double X, double Y)? _pagePlace;
     private bool _keepAligned = true;
     private (Guid View, Vector2 From, bool Moving)? _pageDrag;
+
+    // ADR-0168 item 3 (finding V202 of the codebase review of 2026-11-18 (b), TASK-0415): true from a read without the dragged
+    // view to the release, which then gives nothing.
+    private bool _pageDragLost;
     private bool _pointerShift;
 
     // ADR-0171 items 2 to 4: the open section: its view, its look in the word of the command, and the place of its cut across its
@@ -90,7 +94,7 @@ internal sealed unsafe partial class DesktopUi
 
     internal void OpenPage() => _pageOpen = true;
 
-    private void ClosePage() => (_pageOpen, _pageView, _pagePlace, _pageDrag, _exportOpen, _pageSection) = (false, null, null, null, false, null);
+    private void ClosePage() => (_pageOpen, _pageView, _pagePlace, _pageDrag, _pageDragLost, _exportOpen, _pageSection) = (false, null, null, null, false, false, null);
 
     // ADR-0168 item 1: the button "Sheet" beside "Views" while a live sheet exists; a tap opens or closes the page.
     private void SheetButton()
@@ -346,6 +350,9 @@ internal sealed unsafe partial class DesktopUi
         ImGui.InvisibleButton("##Paper", new Vector2(Math.Max(1f, rect.Z - rect.X), Math.Max(1f, rect.W - rect.Y)));
         Item(PageItem("Paper"));
         var mouse = ImGui.GetIO().MousePos;
+        // ADR-0168 item 3 (finding V202, TASK-0415): a read without the dragged view ends the drag.
+        if (_pageDrag is { } lost && sheet.Views.All(view => view.ViewId != lost.View))
+            (_pageDrag, _pageDragLost) = (null, true);
         // ADR-0171 item 4 (TASK-0413): no drag while a section is open.
         if (ImGui.IsItemActivated())
             _pageDrag = _pageSection is null && SheetPage.Hit(sheet, paper.Millimetres(mouse)) is { } hit ? (hit, mouse, false) : null;
@@ -375,15 +382,18 @@ internal sealed unsafe partial class DesktopUi
                 (_pageSection, _pageView) = (null, null);
             }
 
-            _pageDrag = null;
+            (_pageDrag, _pageDragLost) = (null, false);
         }
         else if (ImGui.IsItemDeactivated())
         {
             var at = paper.Millimetres(mouse);
-            if (_pageDrag is { Moving: true } done)
+            if (_pageDragLost)
             {
-                var delta = mouse - done.From;
-                var (x, y, aligned) = SheetPage.Drag(sheet, done.View, delta.X / paper.Scale, -delta.Y / paper.Scale, _keepAligned, _pointerShift);
+                // The release of a drag that a read ended gives nothing.
+            }
+            else if (_pageDrag is { Moving: true } done
+                && SheetPage.Drag(sheet, done.View, (mouse - done.From).X / paper.Scale, -(mouse - done.From).Y / paper.Scale, _keepAligned, _pointerShift) is var (x, y, aligned))
+            {
                 _actions.Add(new SheetMoveAction(sheet.SheetId, done.View, x, y, aligned));
                 _pageView = done.View;
             }
@@ -391,7 +401,7 @@ internal sealed unsafe partial class DesktopUi
                 (_pageView, _pagePlace, _exportOpen) = (_pageView == view ? null : view, null, false);
             else if (at.X >= 0 && at.X <= sheet.Width && at.Y >= 0 && at.Y <= sheet.Height)
                 (_pageView, _pagePlace, _exportOpen) = (null, at, false);
-            _pageDrag = null;
+            (_pageDrag, _pageDragLost) = (null, false);
         }
 
         // The frame and the title block, as the files draw them.
