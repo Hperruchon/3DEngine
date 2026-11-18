@@ -10,33 +10,50 @@ namespace ThreeDEngine.Desktop.Ui;
 // line changed in the split.
 internal sealed unsafe partial class DesktopUi
 {
-    // ADR-0046 items 3 and 4: the window of the images, to the right of the panel and closed until
-    // the person opens it. Under the panel it hid Show all in a window 720 pixels high, and at 280
-    // pixels wide it stays left of the window of the sketch in a window 1280 pixels wide.
+    // ADR-0046 items 3 and 4: the controls of the images.
+    // ADR-0172 item 4 (TASK-0418): the images are a fixed part of the layout. Folded, they are the button "Images..." in the
+    // file group of the panel and the command "Images". Open, they take the place of the panel, or of the rows of a selected
+    // body, under the top bar, with "Close"; the person does not move them. On a landscape display they end 12 pixels left of
+    // the command line, and on a portrait display 8 pixels above the ring. They do not show while a sketch is active or a pad is open, and they
+    // come back after. Until TASK-0418 they were a window that the person moved, which started folded at x 492: on a narrow
+    // display its bar covered the buttons of the panel, and open it covered the ring.
     private void ImageWindow(ImagePanel panel, Vector2 displaySize)
     {
-        // Finding V154 of the codebase review of 2026-11-09 (TASK-0324): the window starts under the top bar, at the top of the
-        // panel, so the folder of the file in the top bar has its room. Until TASK-0324 it started at the top of the display,
-        // and the folder ran under its folded title bar.
-        // ADR-0163 item 5 (TASK-0404): the person places the window, and a smaller display moves it back inside. Until
-        // TASK-0404 it kept its place after a resize, so at 680 by 600 the right edge cut it.
-        if (_imagesBox is { } box && KeepInside(box, displaySize, PanelTop) is { } inside)
-            ImGui.SetNextWindowPos(inside, ImGuiCond.Always);
-        else
-            ImGui.SetNextWindowPos(new Vector2(492f, PanelTop), ImGuiCond.FirstUseEver);
-        ImGui.SetNextWindowSize(new Vector2(ImagesWidth, Math.Clamp(displaySize.Y - 32f, 120f, ImagesHeight)), ImGuiCond.FirstUseEver);
-        ImGui.SetNextWindowCollapsed(true, ImGuiCond.FirstUseEver);
-        if (ImGui.Begin(ImagesName))
+        _imagesBox = null;
+        if (!_imagesShown)
+            return;
+
+        var left = 16f + _inset.X;
+        var top = PanelTop;
+        var width = Math.Min(PanelWidth, Math.Max(displaySize.X - 32f - _inset.X - _inset.Z, 160f));
+        if (!_portrait)
+            width = Math.Min(width, Math.Max(CommandLeft(displaySize) - 12f - 16f - _inset.X, 160f));
+        var bottom = displaySize.Y - 16f - AnchorRow - _inset.W;
+        if (_portrait && RingTop() is { } ringTop && ringTop - 8f - top >= PathHeight)
+            bottom = Math.Min(bottom, ringTop - 8f);
+        ImGui.SetNextWindowPos(new Vector2(left, top), ImGuiCond.Always);
+        ImGui.SetNextWindowSizeConstraints(Vector2.Zero, new Vector2(width, Math.Max(bottom - top, MinimumControlHeight)));
+        ImGui.SetNextWindowSize(new Vector2(width, Math.Min(_imagesHeight ?? (bottom - top), Math.Max(bottom - top, MinimumControlHeight))), ImGuiCond.Always);
+        if (ImGui.Begin($"###{ImagesName}", PadFlags))
         {
+            ImGui.AlignTextToFramePadding();
+            ImGui.TextUnformatted(ImagesName);
+            Item(ImagesName);
+            ImGui.SameLine();
+            if (ImGui.GetContentRegionAvail().X - ButtonWidth(CloseImagesLabel) is var room and > 0f)
+                ImGui.SetCursorPosX(ImGui.GetCursorPosX() + room);
+            if (ImGui.Button(CloseImagesLabel))
+                _imagesOpen = false;
+            Item(CloseImagesLabel);
             ImGui.TextUnformatted(ImageFileLabel);
-            ImGui.SetNextItemWidth(ImagesWidth - 24f);
+            ImGui.SetNextItemWidth(-1f);
             TextField($"##{ImageFileLabel}", ref _imagePath, 260);
             Item(ImageFileLabel);
             ImGui.AlignTextToFramePadding();
             ImGui.TextUnformatted(PlaceLineLabel);
             foreach (var (label, datum) in PlaceImageButtons)
             {
-                ImGui.SameLine();
+                SameLineIfFits(ButtonWidth(label[^2..]));
                 if (ImGui.Button($"{label[^2..]}##{label}"))
                     _actions.Add(new PlaceImageAction(_imagePath, datum));
                 Item(label);
@@ -50,7 +67,7 @@ internal sealed unsafe partial class DesktopUi
                 if (ImGui.Button($"{CalibrateLabel}##{image.Id}"))
                     _actions.Add(new StartCalibrationAction(image.Id));
                 Item(label);
-                ImGui.SameLine();
+                SameLineIfFits(ButtonWidth(ProposeLabel));
                 if (ImGui.Button($"{ProposeLabel}##{image.Id}"))
                     _actions.Add(new ProposeContourAction(image.Id));
                 Item($"{ProposeLabel} {ImageTitle(image)}");
@@ -63,7 +80,7 @@ internal sealed unsafe partial class DesktopUi
                 if (ImGui.Button(AcceptLabel))
                     _actions.Add(new AcceptContourAction());
                 Item(AcceptLabel);
-                ImGui.SameLine();
+                SameLineIfFits(ButtonWidth(RejectLabel));
                 if (ImGui.Button(RejectLabel))
                     _actions.Add(new RejectContourAction());
                 Item(RejectLabel);
@@ -77,7 +94,7 @@ internal sealed unsafe partial class DesktopUi
                 Item(DistanceLabel);
                 ImGui.SameLine();
                 ImGui.TextUnformatted(_unit);
-                ImGui.SameLine();
+                SameLineIfFits(ButtonWidth(ApplyCalibrationLabel));
                 // A text that is not a number gives NaN, and the engine refuses it with its reason.
                 if (ImGui.Button(ApplyCalibrationLabel))
                     _actions.Add(new CalibrateImageAction(double.TryParse(_distance, NumberStyles.Float, CultureInfo.InvariantCulture, out var distance) ? distance : double.NaN));
@@ -89,6 +106,7 @@ internal sealed unsafe partial class DesktopUi
 
             if (panel.Message is { } message)
                 ImGui.TextWrapped(message);
+            _imagesHeight = ImGui.GetCursorPosY() + ImGui.GetStyle().WindowPadding.Y;
         }
 
         var position = ImGui.GetWindowPos();
@@ -98,19 +116,27 @@ internal sealed unsafe partial class DesktopUi
         ImGui.End();
     }
 
-    // ADR-0163 item 5 (TASK-0404): the window of the images in the last frame, as left, top, right and bottom.
+    // ADR-0172 item 4 (TASK-0418): the label of the button that opens the images and of the button that closes them.
+    public const string OpenImagesLabel = "Images...";
+    public const string CloseImagesLabel = "Close##Images";
+
+    // ADR-0172 item 4: true while the person keeps the images open; true while the host has images (an image panel).
+    private bool _imagesOpen;
+    private bool _imagesAvailable;
+
+    // ADR-0172 item 4: true when the images show in this frame: open, with no active sketch and no open pad.
+    private bool _imagesShown;
+
+    // ADR-0172 item 4: the height of the content of the images in the last frame, so the view is as high as its content.
+    private float? _imagesHeight;
+
+    // ADR-0172 item 4: open the images, as the button "Images..." and the command "Images" do; for a test too.
+    internal void OpenImages() => _imagesOpen = true;
+
+    // ADR-0172 item 4: the view of the images in this frame, as left, top, right and bottom; null when it does not show.
     private Vector4? _imagesBox;
 
     public Vector4? ImagesRectangle => _imagesBox;
-
-    // ADR-0163 item 5 (TASK-0404): the place that keeps a window 16 pixels inside the right and the bottom edge of the
-    // display, and not left of 16 or above the top; null when the window is inside already.
-    internal static Vector2? KeepInside(Vector4 box, Vector2 displaySize, float top)
-    {
-        var x = Math.Max(Math.Min(box.X, displaySize.X - 16f - (box.Z - box.X)), 16f);
-        var y = Math.Max(Math.Min(box.Y, displaySize.Y - 16f - (box.W - box.Y)), top);
-        return x == box.X && y == box.Y ? null : new Vector2(x, y);
-    }
 
     // The short name of the asset of an image, its size in pixels, its datum and its scale.
     public static string ImageTitle(ImageRecord image)

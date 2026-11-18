@@ -362,10 +362,19 @@ internal sealed unsafe partial class DesktopUi
         })
         {
             if (same)
-                ImGui.SameLine();
+                SameLineIfFits(ButtonWidth(label));
             if (ImGui.Button(label))
                 _actions.Add(action);
             Item(label);
+        }
+
+        // ADR-0172 item 4 (TASK-0418): the images, folded, are a button of the file group.
+        if (_imagesAvailable)
+        {
+            SameLineIfFits(ButtonWidth(OpenImagesLabel));
+            if (ImGui.Button(OpenImagesLabel))
+                _imagesOpen = true;
+            Item(OpenImagesLabel);
         }
 
         if (document.Message is { } message)

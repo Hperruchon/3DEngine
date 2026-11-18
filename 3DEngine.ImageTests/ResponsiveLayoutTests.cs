@@ -3,6 +3,7 @@ using Engine.Api.Http;
 using Engine.Contracts;
 using Engine.Core.Commands;
 using Engine.Geometry.Manifold;
+using ThreeDEngine.Core.Input;
 using ThreeDEngine.Desktop;
 using ThreeDEngine.Desktop.Ui;
 using ThreeDEngine.Vulkan;
@@ -24,13 +25,20 @@ public sealed class ResponsiveLayoutTests
     private static readonly LiveBody Rib = new(B, "Extrude", "Rib", true, new BodyFault("E-KERNEL-EXTRUDE-OPEN", "The profile is not closed."));
     private static readonly DocumentLine Shelf = new("entry-hall-shelf.3de", null, Kind: Document.Part);
 
-    // The states of the probe of TASK-0336.
+    // The states of the probe of TASK-0336. ADR-0172 item 5 (TASK-0418): and the home screen, an active sketch, an open pad,
+    // the history arc, the button "Images..." in the panel, and the open images with a selected body.
     public enum State
     {
         Nothing,
         Body,
         Face,
         Proposal,
+        Home,
+        Sketch,
+        Pad,
+        History,
+        Images,
+        ImagesOpen,
     }
 
     // The sizes of ADR-0113 item 1: the phones in portrait and in landscape, a tablet in both, and two windows.
@@ -79,27 +87,73 @@ public sealed class ResponsiveLayoutTests
         Assert.True(faults.Count == 0, $"{faults.Count} faults:{Environment.NewLine}{string.Join(Environment.NewLine, faults.Take(20))}");
     }
 
-    // ADR-0163 item 5 (TASK-0404): the window of the images starts at x 492 in a window of 1280 by 720. After a resize to
-    // 680 by 600 it is 16 pixels inside the right edge, and after a resize back it stays where the smaller window put it.
-    [Fact]
-    public void The_Images_Window_Moves_Inside_A_Smaller_Display()
+    // ADR-0172 item 4 (TASK-0418): a tap on "Images..." opens the images in the place of the panel, under the top bar at the
+    // left, and a tap on Close gives the panel back. Until TASK-0418 the images were a window that the person moved, which
+    // started folded at x 492 (ADR-0163 item 5).
+    [Theory]
+    [InlineData(1280, 720)]
+    [InlineData(360, 640)]
+    public void The_Images_Take_The_Place_Of_The_Panel_Until_Close(int width, int height)
     {
         using var ui = new DesktopUi(string.Empty, Document.Millimetre);
         var images = new ImagePanel([], null, 0, null);
-        Vector4 Frames(float width, float height)
+        var display = new Vector2(width, height);
+        void Step(params InputSample[] samples)
         {
-            for (var i = 0; i < 3; i++)
-                ui.Frame(1f / 60f, new Vector2(width, height), Vector2.One, [Plate, Rib], imagePanel: images);
-            return ui.ImagesRectangle ?? throw new InvalidOperationException("The window of the images was not drawn.");
+            ui.Route(samples);
+            ui.Frame(1f / 60f, display, Vector2.One, [Plate, Rib], null, Shelf, imagePanel: images);
         }
 
-        var large = Frames(1280, 720);
-        Assert.Equal(492f, large.X);
-        var small = Frames(680, 600);
-        Assert.Equal(680f - 16f, small.Z, 0.5f);
-        Assert.Equal(large.Y, small.Y);
-        Assert.Equal(large.Z - large.X, small.Z - small.X, 0.5f);
-        Assert.Equal(small.X, Frames(1280, 720).X);
+        void Tap(string item)
+        {
+            var box = ui.ItemRectangle(item) ?? throw new InvalidOperationException($"{width}x{height}: no control {item}.");
+            var (x, y) = ((box.X + box.Z) / 2, (box.Y + box.W) / 2);
+            Step(new PointerSample(DeviceKind.Touch, 1, 3, x, y, 1, PointerButtons.None, KeyModifiers.None, PointerPhase.Down, 0));
+            Step(new PointerSample(DeviceKind.Touch, 1, 3, x, y, 1, PointerButtons.None, KeyModifiers.None, PointerPhase.Up, 10));
+            Step();
+            Step();
+        }
+
+        Step();
+        Step();
+        Assert.Null(ui.ImagesRectangle);
+        var panel = ui.PanelRectangles[0];
+        Tap(DesktopUi.OpenImagesLabel);
+        var open = ui.ImagesRectangle ?? throw new InvalidOperationException($"{width}x{height}: the images did not open.");
+        Assert.Equal(panel.X, open.X, 0.5f);
+        Assert.Equal(panel.Y, open.Y, 0.5f);
+        Assert.Null(ui.ItemRectangle(DesktopUi.OpenProjectLabel));
+        Assert.NotNull(ui.ItemRectangle(DesktopUi.ImageFileLabel));
+        Tap(DesktopUi.CloseImagesLabel);
+        Assert.Null(ui.ImagesRectangle);
+        Assert.NotNull(ui.ItemRectangle(DesktopUi.OpenProjectLabel));
+    }
+
+    // ADR-0172 item 2 (TASK-0418): on a landscape phone each key of an open pad shows inside the pad, with no scroll, because
+    // the keys go on lines of ten. A pad that scrolls is not a fault of the rule of ADR-0113 item 1, so this test holds the
+    // lines of ten. Until TASK-0418 the keys were 108 pixels wide, and three columns were outside the display.
+    [Theory]
+    [InlineData(640, 360)]
+    [InlineData(844, 390)]
+    [InlineData(915, 412)]
+    public void Each_Key_Of_The_Pad_Shows_On_A_Landscape_Phone(int width, int height)
+    {
+        using var ui = new DesktopUi(string.Empty, Document.Millimetre);
+        var display = new Vector2(width, height);
+        for (var i = 0; i < 3; i++)
+        {
+            if (i == 1)
+                ui.OpenDistancePad(A, 10);
+            ui.Frame(1f / 60f, display, Vector2.One, [Plate, Rib], A, Shelf, ringCentre: new Vector2(width / 2f, height * 0.55f), ringBody: 120f);
+        }
+
+        var pad = ui.PanelRectangles[^1];
+        foreach (var key in DesktopUi.PadRows.SelectMany(row => row))
+        {
+            var box = ui.ItemRectangle(DesktopUi.PadItem(key)) ?? throw new InvalidOperationException($"{width}x{height}: the pad has no key {key}.");
+            Assert.True(box.X >= pad.X - 0.5f && box.Y >= pad.Y - 0.5f && box.Z <= pad.Z + 0.5f && box.W <= pad.W + 0.5f,
+                $"{width}x{height}: the key {key} at {box} is not inside the pad at {pad}.");
+        }
     }
 
     // The faults of the layout at one size in one state, after three frames.
@@ -107,13 +161,32 @@ public sealed class ResponsiveLayoutTests
     {
         using var ui = new DesktopUi(string.Empty, Document.Millimetre);
         var display = new Vector2(width, height);
-        Guid? selection = state == State.Nothing ? null : A;
+        Guid? selection = state is State.Nothing or State.Images ? null : A;
         var face = state == State.Face ? new FaceLine("Face +z: 100 square mm", true, [], null, null, "Face +z", null) : null;
         IReadOnlyList<ProposalCard>? cards = state == State.Proposal
             ? [new ProposalCard(Guid.NewGuid(), "Widen the plate to 75 mm", ["SetExtrudeDistance 1", "SetExtrudeDistance 2"])]
             : null;
+        if (state == State.Home)
+        {
+            ui.ShowHome(["entry-hall-shelf", "bracket"]);
+            selection = null;
+        }
+        if (state == State.Sketch)
+            selection = null;
+        var sketchInfo = new Engine.Core.Queries.SketchInfo(Guid.NewGuid(), Engine.Contracts.Sketch.Datums.XY.Id, "Plate", [], [], [], [], [], true, 0);
+        var sketchPanel = state == State.Sketch ? new SketchPanel([sketchInfo], sketchInfo, ThreeDEngine.Core.Sketching.SketchToolKind.Line, false, [], null) : null;
+        IReadOnlyList<HistoryStep>? history = state == State.History
+            ? [new HistoryStep(A, "Extrude", "Plate", "correct", null, HistoryTap.SelectBody), new HistoryStep(B, "CreateSketch", "Plate on XY", "correct", null, HistoryTap.EditSketch, MadeFrom: true)]
+            : null;
+        var images = state is State.Images or State.ImagesOpen ? new ImagePanel([], null, 0, null) : null;
         for (var i = 0; i < 3; i++)
-            ui.Frame(1f / 60f, display, Vector2.One, [Plate, Rib], selection, Shelf, face: face, ringCentre: selection is null ? null : new Vector2(width / 2f, height * 0.55f), ringBody: 120f, proposals: cards);
+        {
+            if (state == State.Pad && i == 1)
+                ui.OpenDistancePad(A, 10);
+            if (state == State.ImagesOpen && i == 1)
+                ui.OpenImages();
+            ui.Frame(1f / 60f, display, Vector2.One, [Plate, Rib], selection, Shelf, sketchPanel: sketchPanel, imagePanel: images, face: face, ringCentre: selection is null && sketchPanel is null ? null : new Vector2(width / 2f, height * 0.55f), ringBody: 120f, history: history, proposals: cards);
+        }
 
         var panels = ui.PanelRectangles.ToList();
         var accept = ui.ItemRectangle(DesktopUi.ProposalAcceptItem);

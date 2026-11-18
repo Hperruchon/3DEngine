@@ -1,13 +1,13 @@
 ---
 id: 0163
-title: The desktop window resizes and maximizes, down to 360 by 600, and the layout follows each step of a drag
-status: Accepted
+title: The desktop window resizes and maximizes, down to a minimum size, and the layout follows each step of a drag
+status: Amended
 topic: Clients, layout
 date: 2026-11-18
 supersedes: []
 superseded-by: []
 amends: ['0113']
-amended-by: []
+amended-by: ['0172']
 affects:
   - 3DEngine/DesktopEngineHost.cs
   - 3DEngine.Vulkan/Window.cs
@@ -19,7 +19,7 @@ affects:
 enforced-by: 3DEngine.ImageTests/ResponsiveLayoutTests.cs
 ---
 
-# ADR-0163 — The desktop window resizes and maximizes, down to 360 by 600, and the layout follows each step of a drag
+# ADR-0163 — The desktop window resizes and maximizes, down to a minimum size, and the layout follows each step of a drag
 
 This document uses Simplified Technical English (ASD-STE100). See `CLAUDE.md`, section "Language".
 
@@ -48,10 +48,11 @@ A probe of TASK-0404 found four more facts:
 
 1. **Resize and maximize.** The desktop host makes its window with `WindowFlags.Resizable`. A person can drag each
    border, maximize, minimize and restore. The window starts at 1280 by 720, centred, as before.
-2. **The minimum size.** The window is at least 360 by 600 in the units of the window (`SDL_SetWindowMinimumSize`).
+2. **The minimum size.** The window is at least 360 by 560 in the units of the window (`SDL_SetWindowMinimumSize`).
    `DesktopUi.MinimumWindowWidth` and `DesktopUi.MinimumWindowHeight` hold the two numbers, and the host and the test
    read them. The width is the smallest width of ADR-0113 item 1, so a narrow window beside a terminal stays possible.
-   The height is the edge of fact 1 (570) and a margin of 30 pixels. The other choice was 750 by 360, which keeps a
+   Until TASK-0418 the height was 600: the edge of fact 1 (570) and a margin of 30 pixels. ADR-0172 fixed the faults
+   below 570 in each state, and the owner chose 560 (ADR-0172 item 5). The other choice was 750 by 360, which keeps a
    short wide window and refuses a narrow one.
 3. **Each step of a drag draws a frame.** The host gives its frame to `Window.FollowLiveResize`, which adds an event
    watch of SDL. SDL sends `SDL_EVENT_WINDOW_EXPOSED` with `data1 = 1` (a live resize) from the modal loop, and the watch
@@ -62,9 +63,9 @@ A probe of TASK-0404 found four more facts:
    window. A second test applies the rule at each step of 8 pixels on three lines of a resize: the minimum height from
    the minimum width to 2560, the minimum width up to a height of 1440, and the width 1920 up to 1440. A control with its
    top in its panel and its middle at or below the bottom of the panel is scrolled out of view (fact 2).
-5. **The window of the images stays inside the display.** The person places the window. When a smaller display puts
-   its right or its bottom edge outside, the window moves back to 16 pixels inside that edge, and not left of 16 or
-   above the top of the panel.
+5. **The images stay inside the display.** The images are a fixed part of the layout, in the place of the panel or of
+   the rows (ADR-0172 item 4), so they stay inside the display at each size. Until TASK-0418 the person placed the
+   window, and a smaller display moved it back to 16 pixels inside its edge.
 
 ## Consequences
 
@@ -81,3 +82,5 @@ events of the queue only after the drag.
 ## History
 
 - 2026-11-18 · TASK-0404 · The record, from the question of the owner of 2026-11-18 and the probe of TASK-0404.
+- 2026-11-18 · TASK-0418 · ADR-0172 items 4 and 5 amend items 2 and 5: the minimum size is 360 by 560, and the images are
+  a fixed part of the layout. The title no longer gives the number.

@@ -102,14 +102,14 @@ names. Do not read all of them.
 | [0094](0094-a-framed-part-fills-45-percent-of-the-picture.md) | A framed part fills 45 % of the half picture, as in the render of the mix | Accepted | Clients, rendering | 0025 | — |
 | [0095](0095-the-look-of-the-orbit-ring.md) | The ring has the look of the orbit of the render, with a guide, icons and a caption | Amended | Clients, rendering | 0081, 0086 | 0108 |
 | [0096](0096-the-camera-of-the-session-has-z-up.md) | The camera of the session has the z axis up, as the render of the mix draws a part | Accepted | Clients, rendering | 0023, 0034 | — |
-| [0097](0097-the-rows-of-a-sketch-take-the-place-of-the-panel.md) | The rows of an active sketch take the place of the panel, and its ring is on the right | Amended | Clients, sketch | 0034, 0086, 0087 | 0120 |
+| [0097](0097-the-rows-of-a-sketch-take-the-place-of-the-panel.md) | The rows of an active sketch take the place of the panel, and its ring is on the right | Amended | Clients, sketch | 0034, 0086, 0087 | 0120, 0172 |
 | [0098](0098-the-command-line.md) | The command line at the upper right runs the commands of the state with Control and K | Amended | Clients, rendering | 0032, 0084 | 0099, 0101, 0108, 0113, 0119, 0120, 0127, 0128 |
-| [0099](0099-the-rows-of-a-selected-body-take-the-place-of-the-panel.md) | The rows of a selected body take the place of the panel at the upper left | Amended | Clients, rendering | 0084, 0093, 0098 | 0100, 0117, 0131 |
+| [0099](0099-the-rows-of-a-selected-body-take-the-place-of-the-panel.md) | The rows of a selected body take the place of the panel at the upper left | Amended | Clients, rendering | 0084, 0093, 0098 | 0100, 0117, 0131, 0172 |
 | [0100](0100-a-path-line-from-the-document-to-the-selection.md) | A path line from the document to the selection, and the rows of the document | Amended | Clients, selection | 0075, 0077, 0093, 0099, 0102 | 0101, 0138 |
 | [0101](0101-a-focus-on-one-body.md) | A focus on one body is a state of the client that draws one body and writes nothing to the log | Accepted | Clients, selection | 0081, 0098, 0100 | — |
 | [0102](0102-a-project-in-any-folder.md) | The window opens and saves a project in any folder, through the dialogs of the system | Amended | Persistence, clients | 0030, 0083 | 0100, 0106 |
 | [0103](0103-the-vision-library-stays-in-the-spike-on-opencvsharp5.md) | The vision library stays in the spike, on OpenCvSharp5 | Accepted | Vision | 0042 | — |
-| [0104](0104-the-history-arc.md) | The history arc shows the steps that made the selected body | Amended | Clients, rendering | — | 0116, 0119, 0123, 0130 |
+| [0104](0104-the-history-arc.md) | The history arc shows the steps that made the selected body | Amended | Clients, rendering | — | 0116, 0119, 0123, 0130, 0172 |
 | [0105](0105-the-values-on-the-edges-of-an-active-sketch.md) | The values of an active sketch show on its edges | Amended | Clients, rendering | — | 0115 |
 | [0106](0106-open-project-shows-an-stl-file-too.md) | "Open project..." shows an STL file too, and an STL file goes to the import | Accepted | Persistence, clients | 0102 | — |
 | [0107](0107-the-arc-of-a-proposal-is-in-the-free-room.md) | With no ring of a body, the arc of a proposal is in the room right of the panel | Accepted | Clients | 0092 | — |
@@ -118,7 +118,7 @@ names. Do not read all of them.
 | [0110](0110-a-proposal-shows-each-value-on-its-chip.md) | A proposal shows each value that it changes on the chip of that value | Amended | Clients, surface | 0092 | 0114, 0115, 0130 |
 | [0111](0111-a-proposal-takes-its-own-taps-and-commands.md) | A proposal takes its own taps, its own command identifiers and its own steps | Amended | Surface, clients | 0092 | 0114, 0135 |
 | [0112](0112-a-command-turns-a-body.md) | A command turns a body by a quaternion about the origin of the Document | Amended | Contracts, geometry | 0012, 0039, 0051, 0058, 0059, 0060 | 0114 |
-| [0113](0113-the-layout-at-each-phone-size-and-small-window.md) | The layout keeps each control in the display and free for a tap at each phone size and in a small window | Amended | Clients, layout | 0081, 0092, 0093, 0098 | 0108, 0114, 0163 |
+| [0113](0113-the-layout-at-each-phone-size-and-small-window.md) | The layout keeps each control in the display and free for a tap at each phone size and in a small window | Amended | Clients, layout | 0081, 0092, 0093, 0098 | 0108, 0114, 0163, 0172 |
 | [0114](0114-the-findings-of-the-review-of-2026-11-10.md) | A turn refuses a quaternion of very small parts, a proposal shows an angle in degrees, and an accept holds less | Accepted | Geometry, clients | 0110, 0111, 0112, 0113 | — |
 | [0115](0115-the-values-as-in-the-render.md) | A value shows three decimals on a pill on its dimension line, outside the outline of the body | Accepted | Clients, rendering | 0082, 0105, 0110 | — |
 | [0116](0116-the-ring-takes-a-tap-only-on-its-labels.md) | Only the icon and the label of a segment of a body ring take a tap, and the ring fades while the view moves | Accepted | Clients, input | 0081, 0104 | — |
@@ -168,7 +168,7 @@ names. Do not read all of them.
 | [0160](0160-the-dxf-export-of-a-sheet.md) | A sheet exports as one DXF file of release 12, from the read GetSheet, with arcs as bulges and ellipses as arcs within 0.001 mm | Amended | Drawing, export | — | 0164, 0165, 0169 |
 | [0161](0161-the-pdf-export-of-a-sheet.md) | A sheet exports as one PDF file of version 1.4, from the read GetSheet, with arcs as Bézier curves within 0.001 mm | Amended | Drawing, export | — | 0165, 0169 |
 | [0162](0162-the-workflow-of-the-2d-views.md) | A person sees and designs the 2D views of a part in the window and on a sheet page, with the section view, the centre lines and the title block of ISO 7200 | Accepted | Drawing, window | 0118, 0157 | — |
-| [0163](0163-the-desktop-window-resizes-and-maximizes.md) | The desktop window resizes and maximizes, down to 360 by 600, and the layout follows each step of a drag | Accepted | Clients, layout | 0113 | — |
+| [0163](0163-the-desktop-window-resizes-and-maximizes.md) | The desktop window resizes and maximizes, down to a minimum size, and the layout follows each step of a drag | Amended | Clients, layout | 0113 | 0172 |
 | [0164](0164-the-findings-of-the-review-of-2026-11-17.md) | A view of a frame of any length gives the curves of the design, the files of a sheet guard each number and each name, and the analysis of a sketch keeps its time | Accepted | Drawing, sketch | 0143, 0144, 0154, 0155, 0156, 0159, 0160 | — |
 | [0165](0165-the-hidden-and-centre-lines-of-a-view.md) | Each view of a sheet has a flag for its hidden lines and one for its centre lines, the read gives the centre lines, and a whole circle reads as a diameter | Amended | Contracts, drawing | 0153, 0155, 0158, 0159, 0160, 0161 | 0169 |
 | [0166](0166-the-lines-of-the-sheet-in-a-flat-view.md) | A flat view of the window shows the lines of the sheet on a light paper, with the switch "Lines" and the key L, and Frame fills the free part | Accepted | Drawing, window | 0138, 0140 | — |
@@ -177,6 +177,7 @@ names. Do not read all of them.
 | [0169](0169-the-section-view-of-a-sheet.md) | A section of a sheet is a view with a cut plane, a parent and a letter, and the read gives its hatch, its cut line and its label | Amended | Contracts, drawing | 0153, 0155, 0159, 0160, 0161, 0165 | 0171 |
 | [0170](0170-export-a-sheet-from-the-window.md) | The sheet page and the command line export a sheet as PDF, SVG or DXF through the save dialog of the system, off the frame thread | Accepted | Drawing, window, export | 0168 | — |
 | [0171](0171-the-section-action-of-the-sheet-page.md) | On the sheet page a person cuts a view with "Section", a look and two taps, and the page draws the section as the files do | Accepted | Drawing, window | 0155, 0168, 0169 | — |
+| [0172](0172-the-layout-of-small-windows-and-of-each-state.md) | The layout of small windows and of each state, down to 360 by 560 | Accepted | Clients, layout | 0097, 0099, 0104, 0113, 0163 | — |
 
 ## Topics
 
