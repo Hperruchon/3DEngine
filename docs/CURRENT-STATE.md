@@ -11898,8 +11898,8 @@ e20ef20 of its branch, which holds them, did not merge). The list of shipped row
 sheet page, selected the top view, pressed "Section", tapped 2 mm from the centre of the hole (the cut snapped to it) and
 tapped the free paper: the panel said "Added the section A-A.", and the page showed the section with its hatch, the axis of
 the hole and its label, and the top view showed the cut line with its arrows and letters. Fifteen injections each failed a named test, and each file came back byte for byte (SHA-256); the first run found two gaps, the look of the action and the slide of a view while a section is open, and the test closes both. A clean build gives 0
-warnings, the phone project builds, and the write-set check and `eng/repo-gates` pass. The run on the branch is in the progress
-of TASK-0413.
+warnings, the phone project builds, and the write-set check and `eng/repo-gates` pass. Run 44339619025 passed on the branch
+`r30h-section-page`.
 
 **What stays.** The snap uses whole circles only. The place of a section is a tap; the page proposes no place of the
 projection. A cut line that exists does not move; a new section and Remove replace it.

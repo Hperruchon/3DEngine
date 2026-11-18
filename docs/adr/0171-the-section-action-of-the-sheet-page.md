@@ -76,3 +76,4 @@ no place of the projection is proposed.
 ## History
 
 - 2026-11-18 · TASK-0413 · The record, for the action of the page of row R30h (ADR-0169 item 8).
+- 2026-11-18 · TASK-0413 · Shipped at v0.396.
