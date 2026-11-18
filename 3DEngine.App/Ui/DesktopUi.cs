@@ -473,7 +473,8 @@ internal sealed unsafe partial class DesktopUi : IDisposable
             WatchCommandKey(samples);
 
         // ADR-0127 item 4 (phase R18g, TASK-0354): F frames, while no field, no pad and no home screen takes the keys.
-        if (_pad is null && !_textActive && _home is null)
+        WatchSheetPadKeys(samples);
+        if (_pad is null && _sheetPad is null && !_textActive && _home is null)
         {
             WatchFrameKey(samples);
             // ADR-0138 (phase R21b, TASK-0370): the keys of the flat views, under the same guard. The review of the branch found
@@ -715,6 +716,9 @@ internal sealed unsafe partial class DesktopUi : IDisposable
             QuestionWindow(displaySize);
         if (_pad is { } pad)
             PadWindow(pad, displaySize);
+        // ADR-0167 item 5 (phase R30b, TASK-0407): the pad of the paper and the scale of a sheet.
+        if (_sheetPad is { } sheetPad && _home is null)
+            SheetPadWindow(sheetPad, displaySize);
         background.ChannelsMerge();
         ImGui.Render();
 

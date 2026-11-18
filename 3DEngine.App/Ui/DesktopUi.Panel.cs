@@ -370,7 +370,10 @@ internal sealed unsafe partial class DesktopUi
 
         if (document.Message is { } message)
         {
+            // ADR-0167 item 2 (TASK-0407): a message of a sheet is longer than a line of the panel, so the message wraps.
+            ImGui.PushTextWrapPos(0f);
             ImGui.TextUnformatted(message);
+            ImGui.PopTextWrapPos();
             Item(DocumentMessageLabel);
         }
 

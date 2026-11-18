@@ -1,0 +1,111 @@
+using Engine.Contracts;
+using Engine.Contracts.Drawing;
+using Engine.Core;
+using Engine.Core.Commands;
+using ThreeDEngine.Core.Models;
+
+namespace ThreeDEngine.Desktop;
+
+// ADR-0167 (phase R30b, TASK-0407): "Add to sheet", "Standard views" and the scale of the views, as commands of the session,
+// the same commands that an agent sends, so the log records each one. Each method gives the text that the window shows.
+internal sealed class SheetActions(DocumentSession session)
+{
+    // ADR-0167 item 2: the views of a flat view and of "Standard views" go on the first live sheet, at the scale of its first
+    // view, each at the place of the projection. A view whose frame the sheet holds is not added again. With no live sheet the
+    // window opens the pad of the paper and the scale first, so this method needs a sheet.
+    public string Add(SheetRecord sheet, IReadOnlyList<FlatView> views, SheetPlacement.Box box)
+    {
+        ArgumentNullException.ThrowIfNull(sheet);
+        ArgumentNullException.ThrowIfNull(views);
+        var scale = sheet.Views.Count > 0
+            ? (sheet.Views[0].ScaleNumerator, sheet.Views[0].ScaleDenominator)
+            : SheetPlacement.FitScale(sheet.Paper, sheet.Landscape, sheet.ThirdAngle, box);
+        var added = new List<string>();
+        var held = new List<string>();
+        var outside = new List<string>();
+        foreach (var view in views)
+        {
+            var frame = SheetPlacement.FrameOf(view);
+            if (sheet.Views.Any(existing => existing.Direction.SequenceEqual(frame)))
+            {
+                held.Add(Name(view));
+                continue;
+            }
+
+            var (place, fits) = SheetPlacement.Place(sheet, frame, scale.Item1, scale.Item2, box);
+            if (Apply(View(sheet.Id, frame, scale, place)) is { } refusal)
+                return refusal;
+            added.Add(Name(view));
+            if (!fits)
+                outside.Add(Name(view));
+            sheet = Read(sheet.Id) ?? sheet;
+        }
+
+        return Text(sheet.Name, scale, added, held, outside);
+    }
+
+    // ADR-0167 items 3 and 5: the pad gives the paper and the scale; CreateSheet makes the sheet, and each view goes at its
+    // place in the group of the views, centred on the area of the paper.
+    public string Create(string name, string paper, bool landscape, (long Numerator, long Denominator) scale, IReadOnlyList<FlatView> views, SheetPlacement.Box box)
+    {
+        ArgumentNullException.ThrowIfNull(views);
+        var create = new CreateSheetCommand { SheetName = name, Paper = paper, Landscape = landscape };
+        if (Apply(create) is { } refusal)
+            return refusal;
+        var sheet = Read(create.CommandId) ?? throw new InvalidOperationException("The new sheet is not live.");
+
+        // ADR-0167 item 3: a first view takes its place in the group of the standard views, so the next views fit beside it.
+        IReadOnlyList<FlatView> group = [.. views.Concat(SheetPlacement.Standard.Where(view => !views.Contains(view)))];
+        var places = SheetPlacement.Group(paper, landscape, sheet.ThirdAngle, [.. group.Select(SheetPlacement.FrameOf)], scale.Numerator, scale.Denominator, box);
+        var added = new List<string>();
+        for (var i = 0; i < views.Count; i++)
+        {
+            if (Apply(View(sheet.Id, SheetPlacement.FrameOf(views[i]), scale, places[i])) is { } failed)
+                return failed;
+            added.Add(Name(views[i]));
+        }
+
+        return Text(name, scale, added, [], []);
+    }
+
+    // ADR-0167 item 5: ScaleSheetView for each view of the sheet, in one step of undo. The places stay.
+    public string Scale(SheetRecord sheet, (long Numerator, long Denominator) scale)
+    {
+        ArgumentNullException.ThrowIfNull(sheet);
+        return Apply(new ScaleSheetViewCommand { SheetId = sheet.Id, ScaleNumerator = scale.Numerator, ScaleDenominator = scale.Denominator })
+            ?? $"Each view of {sheet.Name} is at {SheetPlacement.Text(scale)}.";
+    }
+
+    // The word of a flat view in a text, as "front".
+    public static string Name(FlatView view) => view.ToString().ToLowerInvariant();
+
+    private static AddSheetViewCommand View(Guid sheet, IReadOnlyList<double> d, (long Numerator, long Denominator) scale, (double X, double Y) place) => new()
+    {
+        SheetId = sheet, RightX = d[0], RightY = d[1], RightZ = d[2], UpX = d[3], UpY = d[4], UpZ = d[5], EyeX = d[6], EyeY = d[7], EyeZ = d[8],
+        ScaleNumerator = scale.Numerator, ScaleDenominator = scale.Denominator, X = place.X, Y = place.Y,
+    };
+
+    // The text of an add: "Added the front and the top view to Sheet 1 at 2:1.", with the views that the sheet already holds and
+    // the views that do not fit.
+    private static string Text(string sheet, (long, long) scale, List<string> added, List<string> held, List<string> outside)
+    {
+        static string List(List<string> names) => names.Count == 1 ? $"the {names[0]} view" : $"the {string.Join(", the ", names.Take(names.Count - 1))} and the {names[^1]} view";
+        var parts = new List<string>();
+        if (added.Count > 0)
+            parts.Add($"Added {List(added)} to {sheet} at {SheetPlacement.Text(scale)}.");
+        if (held.Count > 0)
+            parts.Add($"{sheet} has {List(held)} already.");
+        if (outside.Count > 0)
+            parts.Add($"No free place fits {List(outside)}: move it on the sheet.");
+        return string.Join(" ", parts);
+    }
+
+    private string? Apply(Command command)
+    {
+        var result = session.Apply(command).GetAwaiter().GetResult();
+        return result.Status == CommandStatus.Applied ? null : $"{command.Name}: {result.Error?.Message}";
+    }
+
+    private SheetRecord? Read(Guid id)
+        => session.Read((document, _) => document.Sheets.FirstOrDefault(sheet => sheet.Id == id)).GetAwaiter().GetResult();
+}

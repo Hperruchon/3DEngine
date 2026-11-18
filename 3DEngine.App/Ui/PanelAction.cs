@@ -91,6 +91,25 @@ internal sealed record FrameAction : PanelAction;
 // ADR-0137 item 4 (phase R21a, TASK-0369): a flat view of the camera, or with no view the return to the view with perspective.
 internal sealed record FlatViewAction(FlatView? View) : PanelAction;
 
+// ADR-0167 items 2 and 5 (phase R30b, TASK-0407): "Add to sheet" with a flat view, "Standard views", the pad of a new sheet,
+// and the scale of each view of the sheet.
+internal sealed record AddToSheetAction(IReadOnlyList<FlatView> Views) : PanelAction
+{
+    public bool Equals(AddToSheetAction? other) => other is not null && Views.SequenceEqual(other.Views);
+
+    public override int GetHashCode() => Views.Count;
+}
+
+internal sealed record CreateSheetAction(string Paper, bool Landscape, long ScaleNumerator, long ScaleDenominator, IReadOnlyList<FlatView> Views) : PanelAction
+{
+    public bool Equals(CreateSheetAction? other)
+        => other is not null && (Paper, Landscape, ScaleNumerator, ScaleDenominator) == (other.Paper, other.Landscape, other.ScaleNumerator, other.ScaleDenominator) && Views.SequenceEqual(other.Views);
+
+    public override int GetHashCode() => HashCode.Combine(Paper, Landscape, ScaleNumerator, ScaleDenominator);
+}
+
+internal sealed record ScaleSheetAction(long ScaleNumerator, long ScaleDenominator) : PanelAction;
+
 // ADR-0082 item 3 (TASK-0254): the new value of a constraint of the sketch of the selected extrude, from the pad of its chip
 // on an edge, with no active sketch.
 internal sealed record SetBodyValueAction(Guid Sketch, Guid Constraint, double Value) : PanelAction;

@@ -45,6 +45,8 @@ internal sealed unsafe partial class DesktopUi
     private void OpenPad(NumericPad pad, Func<double[], PanelAction> apply, bool bySketch = false, PadScope scope = PadScope.None, string? key = null)
     {
         (_pad, _padApply, _padBySketch, _padApplied) = (pad, apply, bySketch, false);
+        // ADR-0167 item 5 (TASK-0407): one pad at a time.
+        _sheetPad = null;
         (_padScope, _padKey) = (scope, key ?? Key(scope));
         _pendingValue = null;
     }
