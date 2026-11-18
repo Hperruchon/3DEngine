@@ -2,6 +2,7 @@ using System.Diagnostics;
 using System.Globalization;
 using Engine.Contracts;
 using Engine.Contracts.Drawing;
+using Engine.Contracts.Sketch;
 using Engine.Core;
 using Engine.Core.Commands;
 using Engine.Core.Geometry;
@@ -366,7 +367,7 @@ public sealed class SheetViewTests(ITestOutputHelper output) : IDisposable
         Assert.All(view.Lines, line => Assert.True(double.IsFinite(line.FromX) && double.IsFinite(line.FromY) && double.IsFinite(line.ToX) && double.IsFinite(line.ToY)));
         if (ez == 1)
         {
-            var circle = Assert.Single(view.Lines).Circle;
+            var circle = Assert.Single(view.Lines, line => line.Kind != "centre").Circle;
             Assert.NotNull(circle);
             Assert.Equal((200.0, 150.0), (circle!.X, circle.Y));
             Assert.Equal(10, circle.Radius, 12);
@@ -380,5 +381,55 @@ public sealed class SheetViewTests(ITestOutputHelper output) : IDisposable
             Assert.Equal(10, Math.Sqrt((e.MajorX * e.MajorX) + (e.MajorY * e.MajorY)), 9);
             Assert.Equal(20.0 / 3, Math.Sqrt((e.MinorX * e.MinorX) + (e.MinorY * e.MinorY)), 9);
         });
+    }
+
+    // ADR-0165 items 1 to 3 (phase R30g, TASK-0405): a plate of 60 by 40 by 10 with a through-hole of radius 8 in its middle. At
+    // 1 : 1 the Top view gives the cross of the hole, 3 mm of paper past the circle, and the Front view the axis of the hole
+    // from the bottom face to the top face, 3 mm past each. SetSheetViewLines takes the hidden lines out of the Front view and
+    // keeps its axis, takes the centre lines out of the Top view, refuses a sheet or a view that is not there, and an undo
+    // gives the flags back. A flag never moves a view.
+    [NativeManifoldFact]
+    public async Task A_Hole_Gives_Its_Centre_Lines_And_The_Flags_Hide_The_Lines()
+    {
+        using var backend = new ManifoldGeometryBackend();
+        var session = new DocumentSession(EngineHosting.CreateDefault(backend));
+        var sketch = await Applied(session, new CreateSketchCommand { DatumId = Datums.XY.Id }, "sketchId");
+        var points = new List<Guid>();
+        foreach (var (x, y) in new[] { (0.0, 0.0), (60.0, 0.0), (60.0, 40.0), (0.0, 40.0) })
+            points.Add(await Applied(session, new AddSketchPointCommand { SketchId = sketch, X = x, Y = y }, "pointId"));
+        for (var i = 0; i < 4; i++)
+            await Applied(session, new AddSketchLineCommand { SketchId = sketch, StartPointId = points[i], EndPointId = points[(i + 1) % 4] }, "lineId");
+        var plate = await Applied(session, new ExtrudeCommand { SketchId = sketch, Distance = 10 }, "bodyId");
+        var tool = await Applied(session, new CreateCylinderCommand { Radius = 8, Height = 20 }, "bodyId");
+        tool = await Applied(session, new TranslateCommand { BodyId = tool, Dx = 30, Dy = 20, Dz = 5 }, "bodyId");
+        await Applied(session, new SubtractCommand { MinuendBodyId = plate, SubtrahendBodyId = tool }, "bodyId");
+        var sheet = await Applied(session, new CreateSheetCommand { SheetName = "Plate", Paper = "A3" }, "sheetId");
+        var front = await Applied(session, View(sheet, Front, x: 200, y: 200), "viewId");
+        var top = await Applied(session, View(sheet, Top, x: 200, y: 100), "viewId");
+
+        static string[] Centres(SheetViewInfo view) => [.. view.Lines.Where(line => line.Kind == "centre")
+            .Select(line => string.Create(CultureInfo.InvariantCulture, $"{Math.Round(line.FromX, 9)},{Math.Round(line.FromY, 9)} {Math.Round(line.ToX, 9)},{Math.Round(line.ToY, 9)}"))];
+        var before = await Read(session, sheet);
+        Assert.Equal(["200,192 200,208"], Centres(before.Views[0]));
+        Assert.Equal(["189,100 211,100", "200,89 200,111"], Centres(before.Views[1]));
+        Assert.Equal(2, before.Views[0].Lines.Count(line => !line.Visible));
+        Assert.All(before.Views, view => Assert.True(view.HiddenLines && view.CentreLines));
+
+        await Applied(session, new SetSheetViewLinesCommand { SheetId = sheet, ViewId = front, HiddenLines = false, CentreLines = true }, "viewId");
+        await Applied(session, new SetSheetViewLinesCommand { SheetId = sheet, ViewId = top, HiddenLines = true, CentreLines = false }, "viewId");
+        var after = await Read(session, sheet);
+
+        Assert.DoesNotContain(after.Views[0].Lines, line => !line.Visible);
+        Assert.Equal(["200,192 200,208"], Centres(after.Views[0]));
+        Assert.Empty(Centres(after.Views[1]));
+        Assert.Equal((false, true, true, false), (after.Views[0].HiddenLines, after.Views[0].CentreLines, after.Views[1].HiddenLines, after.Views[1].CentreLines));
+        Assert.Equal(before.Views[0].Lines.Where(line => line.Visible && line.Kind != "centre").Select(line => (line.FromX, line.FromY)), after.Views[0].Lines.Where(line => line.Kind != "centre").Select(line => (line.FromX, line.FromY)));
+        Assert.Equal(DiagnosticCodes.SheetNotFound, await Refused(session, new SetSheetViewLinesCommand { SheetId = Guid.NewGuid(), ViewId = top, HiddenLines = true, CentreLines = true }));
+        Assert.Equal(DiagnosticCodes.SheetViewNotFound, await Refused(session, new SetSheetViewLinesCommand { SheetId = sheet, ViewId = Guid.NewGuid(), HiddenLines = true, CentreLines = true }));
+
+        await Applied(session, new UndoCommand(), "commandId");
+        var undone = await Read(session, sheet);
+        Assert.Equal(["189,100 211,100", "200,89 200,111"], Centres(undone.Views[1]));
+        Assert.False(undone.Views[0].HiddenLines);
     }
 }

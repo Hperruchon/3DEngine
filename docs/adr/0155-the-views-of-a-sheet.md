@@ -7,7 +7,7 @@ date: 2026-11-15
 supersedes: []
 superseded-by: []
 amends: ['0153']
-amended-by: ['0164']
+amended-by: ['0164', '0165']
 affects:
   - Engine.Core/Commands/AddSheetViewCommand.cs
   - Engine.Core/Commands/AddSheetViewCommandHandler.cs
@@ -63,6 +63,8 @@ and gave the same answer in the side session that prepared the plans of P10.3 an
    centre of the box of the lines of the view, from their ends and the whole circle or ellipse of a line that has one. A view
    with no line has its centre at the origin of the part. A circle and an ellipse on the paper have the size of the view
    times f. The numbers become doubles before the place, and the code uses + − × ÷ and sqrt only.
+   ADR-0165 items 1 and 3: a view with `HiddenLines` false gives no hidden line, and a view with `CentreLines` true also
+   gives its centre lines, of the kind "centre", 3 mm of paper past their ends; the box of the view leaves them out.
 6. **The codes (Q5 A).** `E-SHEET-VIEW-NOT-FOUND` is a view that is not on the sheet. `E-SHEET-VIEW-INVALID` is a direction, a
    scale or a place of a view that is not valid. `E-SHEET-NOT-FOUND` is raised for a sheet that is not live by the three
    commands and by GetSheet, and `E-SHEET-ID-IN-USE` by AddSheetView, because a view takes the identifier of its command.
@@ -84,3 +86,4 @@ session for that time. The centre of a view moves when the part grows on one sid
 - 2026-11-15 · TASK-0393 · The record, from the plan of P10.2 and the answers of the owner of 2026-11-15 to Q1 to Q7.
 - 2026-11-15 · TASK-0393 · Shipped at v0.377.
 - 2026-11-18 · TASK-0400 · Amended by ADR-0164 item 1: the length of the frame never squares a double, so a frame of a length near 1e-200 or 1e200 gives a read that is finite (finding E212).
+- 2026-11-18 · TASK-0405 · Amended by ADR-0165 items 1 and 3: the flags of a view and its centre lines in GetSheet (R30g).

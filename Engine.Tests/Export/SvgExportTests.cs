@@ -304,4 +304,25 @@ public sealed class SvgExportTests : IDisposable
         Assert.Equal("M 0 190 L 30.5 190", (string?)Paths(text)[0].Attribute("d"));
         Assert.Equal(["0", "0"], new[] { double.NaN, double.NegativeInfinity }.Select(SvgExport.N));
     }
+
+    // ADR-0165 items 3 and 4 (phase R30g, TASK-0405): a centre line is a thin path with the long dash and the dot of ISO 128,
+    // after the hidden lines and before the visible lines, and a diameter has the sign \u2300.
+    [Fact]
+    public void A_Centre_Line_Has_Its_Dashes_And_A_Diameter_Its_Sign()
+    {
+        var lines = new[]
+        {
+            new SheetLine(Guid.NewGuid(), 10, 20, 30, 20, true, "edge"),
+            new SheetLine(Guid.NewGuid(), 15, 10, 15, 30, true, "centre"),
+            new SheetLine(Guid.NewGuid(), 12, 10, 12, 30, false, "edge"),
+        };
+        var dimension = new SheetDimensionInfo(Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid(), "constraint", 120, 30, false, "diameter", 16);
+
+        var text = SvgExport.Text(Sheet(lines, [dimension]));
+
+        var paths = Paths(text);
+        Assert.Equal(["3 0.75", "6 0.75 0.125 0.75", null], paths.Select(path => (string?)path.Attribute("stroke-dasharray")));
+        Assert.Equal(("0.25", "M 15 200 L 15 180"), ((string?)paths[1].Attribute("stroke-width"), (string?)paths[1].Attribute("d")));
+        Assert.Contains(">\u230016<", text, StringComparison.Ordinal);
+    }
 }
