@@ -645,6 +645,7 @@ This track removes each condition that blocks other work.
 | P0.162 | The medium and low findings of the codebase review of 2026-11-17 (E211 to E217: the curves of a frame of a length other than 1, a frame that gives a read that is not finite, the time of the fixed lengths of a large sketch, the freedom of joined sizes, a number that is not finite in the DXF file, an almost closed arc of an ellipse, and a name that XML does not permit), after the next product phase, P10c. TASK-0400. | 1–2 |
 | P0.163 | The answers of the owner of 2026-11-18 to the design file of the 2D views (`docs/proposals/2026-11-18-2d-view-workflow.md`): ADR-0162, which amends ADR-0118 item 7 and ADR-0157 item 11, the rows R30a to R30i, and the new order. TASK-0403. | 1 |
 | P0.164 | The desktop window resizes and maximizes, down to 360 by 600, and the layout follows each step of a drag (the question of the owner of 2026-11-18, ADR-0163). TASK-0404. | 1 |
+| P0.165 | The medium and low findings of the codebase review of 2026-11-18 (E218 to E220, V194 to V201: the cross of a circle that is part hidden, a comment, the centre lines of a flat view, the group of a new sheet, the keys of the pad of a sheet, the commands of a sheet on the frame thread, the box of a new view, the gizmo under the paper, the place of a new view, and a skipped body in a flat view), after the next product phase, R30c. TASK-0410. | 1–2 |
 | P0.102 | The cache of a face, the fixed controls, the list New, the edges and the safe area hold their next forms (V113 to V118 of the codebase review of 2026-11-06 (e); after P0.101). TASK-0252. | 1–2 |
 | P0.86 | The window keeps no input between sessions, the hook has the cases of one axis, and the next forms of four gates fail (V88 to V90, T141 to T144 of the codebase review of 2026-11-06; after the next product phase). TASK-0198. | 1–2 |
 
@@ -946,6 +947,8 @@ The tracks are not strictly sequential, but three rules hold:
    On 2026-11-18 the owner answered the design file of the 2D views (ADR-0162, which amends ADR-0157 item 11). After P10c:
    P0.162; R30g beside R30a, R30b and R30c; then R30h; then R30d, R30e, R30f and R30i; then K10 and the rest of the order
    of 2026-11-15.
+   The codebase review of 2026-11-18 comes after R30b (the order of the owner "review after R30b") and puts P0.165, which
+   holds medium and low findings, after the next product phase, R30c, by the rule of `docs/templates.md`, section 7.
 2. R2 blocks each later phase in track R. No mesh leaves the geometry backend today.
 3. K4 needs K0, K1 and K2. Do not start K4 before the reference model exists.
 4. The path to the milestone "CAD on one part" (the owner, 2026-10-27, KD2): R7b, R8a, R8b, the codebase
