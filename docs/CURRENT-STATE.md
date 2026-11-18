@@ -11908,3 +11908,39 @@ New tests: 5. The test list holds 2883 (1703 in `Engine.Tests`, 390 in `3DEngine
 in `3DEngine.VisionTests`). Open entries: 14 of 15. New diagnostic codes: 0. Since the review of v0.392, 4 product milestones
 (R30c, R30h, R30d and this part of R30h) and 4 entries followed it, so the next product milestone needs a codebase review
 first.
+
+## v0.397 — The second codebase review of 2026-11-18 (governance, TASK-0414)
+
+Four product milestones (R30c, R30h, R30d and the Section action of R30h) and four entries followed v0.391, the version that the
+first review of 2026-11-18 examined, so the next product milestone, R30e, needs a review first. On 2026-11-18 the owner
+answered "Start the review" after the merge of v0.396.
+
+**The review.** `docs/reviews/2026-11-18-b-codebase-review.md` examines `8b2619a`, the merge of the Section action at v0.396.
+- Of the eleven findings of the last review, R30c (TASK-0408) fixed V195 and V199 and a part of V196; TASK-0410 (P0.165) holds
+  the others, and its context now says so.
+- V202 is high: a view that leaves the sheet during a drag of the sheet page stops the window with an exception on the frame
+  thread.
+- E221, E222, V203, V204, V206 and V207 are medium: a large finite point of a section gives infinite numbers in GetSheet; a
+  section of a body with many facets makes the read about 14 times slower under the serial lock; the Escape of a pad also acts
+  on the page; a section stays open when its view goes and blocks each drag; two changes of one view before the read lose the
+  first; and on a phone the paper moves when the header grows.
+- E223, E224, E225, V205, V208 and V209 are low: the axis of a cone in a section depends on the look; the size of a text has
+  two meanings in the three files; a move to the same place is a step of undo; the row of the formats and a section are open
+  together; "Section" shows for a view that the engine refuses; and on the phone the message of an export shows an encoded
+  name.
+- TASK-0415 (P0.166) holds V202 before R30e. TASK-0416 (P0.167) holds the twelve medium and low findings after R30e; E223 waits
+  for the answer Q1 of the owner.
+- Open findings: 0 critical, 3 high, 17 medium and 26 low.
+
+**Proof.** Two agents examined the change from v0.391 to the merge of v0.396, each in its own copy of the commit, with probes
+that they removed. The session read each finding in the code at its line, and removed one report of an agent that did not
+hold: a command of the queue after a change of project. Each session has its own engine and its own queue. The measures come
+from the script of the last review, which gives its values at `1bdd376`. A clean build gives 0 warnings, and `dotnet test`
+passes 2883 tests. `CodebaseReviewGateTests`, the write-set check and `eng/repo-gates` pass. The run on the branch is in the
+progress of TASK-0414. The failed runs since the entry v0.396, from the API: run 44342738663 on `8175eca`, the close commit
+of TASK-0413 on its branch, where GitHub cancelled the job on macOS because no runner took it; each other job passed. The
+merge went to `main` before a run on that commit was green; run 44374038396 on the merge passed on the three systems.
+
+New tests: 0. The test list holds 2883 (1703 in `Engine.Tests`, 390 in `3DEngine.Tests`, 787 in `3DEngine.ImageTests`, 3
+in `3DEngine.VisionTests`). Open entries: 14 of 15. New diagnostic codes: 0. This entry is a codebase review, so 0 product
+milestones and 0 entries follow it.

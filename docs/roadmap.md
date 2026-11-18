@@ -470,6 +470,7 @@ Therefore each approved objective must have a track here.
   off the frame thread. v0.395, TASK-0412, ADR-0170.
 - R30h — On the sheet page a person cuts a view with "Section", a look and two taps, and the page draws the section.
   v0.396, TASK-0413, ADR-0171.
+- Review — The second codebase review of 2026-11-18. v0.397, TASK-0414.
 - Review — The codebase review of 2026-11-14 (c). v0.351, TASK-0366.
 - P0.143 — The low findings of the codebase review of 2026-11-11: a triangle of zero area adds no edge, and a mesh of
   more than 100 000 triangles finds its edges on the thread pool. v0.332, TASK-0345, ADR-0121.
@@ -655,6 +656,8 @@ This track removes each condition that blocks other work.
 | P0.163 | The answers of the owner of 2026-11-18 to the design file of the 2D views (`docs/proposals/2026-11-18-2d-view-workflow.md`): ADR-0162, which amends ADR-0118 item 7 and ADR-0157 item 11, the rows R30a to R30i, and the new order. TASK-0403. | 1 |
 | P0.164 | The desktop window resizes and maximizes, down to 360 by 600, and the layout follows each step of a drag (the question of the owner of 2026-11-18, ADR-0163). TASK-0404. | 1 |
 | P0.165 | The medium and low findings of the codebase review of 2026-11-18 (E218 to E220, V194 to V201: the cross of a circle that is part hidden, a comment, the centre lines of a flat view, the group of a new sheet, the keys of the pad of a sheet, the commands of a sheet on the frame thread, the box of a new view, the gizmo under the paper, the place of a new view, and a skipped body in a flat view), after the next product phase, R30c. TASK-0410. | 1–2 |
+| P0.166 | The high finding of the codebase review of 2026-11-18 (b) (V202: a view that leaves the sheet during a drag of the sheet page stops the window), before the next product phase, R30e. TASK-0415. | 1 |
+| P0.167 | The medium and low findings of the codebase review of 2026-11-18 (b) (E221 to E225, V203 to V209: a cut point that gives infinite numbers, the time of a section of many facets, the axis of a cone, the size of a text, a move with no change, the Escape of a pad on the page, a section after its view goes, the row of the formats and a section together, two changes before a read, the paper of the phone, "Section" on a view that the engine refuses, and the name of an export on the phone), after the next product phase, R30e. TASK-0416. | 1–2 |
 | P0.102 | The cache of a face, the fixed controls, the list New, the edges and the safe area hold their next forms (V113 to V118 of the codebase review of 2026-11-06 (e); after P0.101). TASK-0252. | 1–2 |
 | P0.86 | The window keeps no input between sessions, the hook has the cases of one axis, and the next forms of four gates fail (V88 to V90, T141 to T144 of the codebase review of 2026-11-06; after the next product phase). TASK-0198. | 1–2 |
 
@@ -958,6 +961,9 @@ The tracks are not strictly sequential, but three rules hold:
    of 2026-11-15.
    The codebase review of 2026-11-18 comes after R30b (the order of the owner "review after R30b") and puts P0.165, which
    holds medium and low findings, after the next product phase, R30c, by the rule of `docs/templates.md`, section 7.
+   The second codebase review of 2026-11-18 comes after the Section action of R30h (v0.396, the answer of the owner "Start
+   the review"). It puts P0.166, which holds a high finding, before the next product phase, R30e, and P0.167, which holds
+   medium and low findings, after R30e, by the rule of `docs/templates.md`, section 7. P0.165 can come before R30e.
 2. R2 blocks each later phase in track R. No mesh leaves the geometry backend today.
 3. K4 needs K0, K1 and K2. Do not start K4 before the reference model exists.
 4. The path to the milestone "CAD on one part" (the owner, 2026-10-27, KD2): R7b, R8a, R8b, the codebase

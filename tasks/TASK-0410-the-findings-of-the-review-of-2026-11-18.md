@@ -48,6 +48,10 @@ owner say which side changes. The owner answered on 2026-11-18 "1a 2a": Q1 A, Ge
 ADR-0165 too, so a flat view shows what the sheet prints; Q2 A, the code keeps its place of a new view, and ADR-0167 item 3
 states it.
 
+The second codebase review of 2026-11-18 (TASK-0414) found that R30c (TASK-0408, v0.393) fixed V195 and V199, and sent the
+commands of the sheet page, of the pad of the scale, of a section and of an export off the frame thread (a part of V196).
+Open in V196: "Add to sheet" and a new sheet from the pad on the frame thread, and a new read of the lines at each version.
+
 ## Goal
 
 Each of the eleven findings has a correction or a recorded answer, and a test that fails on the code before the correction.
