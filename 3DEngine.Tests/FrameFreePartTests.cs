@@ -49,16 +49,39 @@ public sealed class FrameFreePartTests
         var centre = Normalized(camera, camera.Target);
         Assert.Equal((float)((Part.X0 + Part.X1) / 2), centre.X, 4);
         Assert.Equal((float)((Part.Y0 + Part.Y1) / 2), centre.Y, 4);
-        // The sphere around the box, along the right and the up of the screen, is inside the part too.
+        // The sphere around the box, along the right and the up of the screen, is inside the part too. ADR-0165 item 4 (TASK-0405):
+        // in a flat view only the box is inside the part, which it fills.
         var (right, up, _) = camera.Axes();
         var radius = Math.Sqrt((60 * 60) + (40 * 40) + (10 * 10)) / 2;
         var target = camera.Target;
-        var sphere = new[] { right, up }.SelectMany(axis => new[] { 1.0, -1.0 }.Select(sign => (target.X + (sign * radius * axis.X), target.Y + (sign * radius * axis.Y), target.Z + (sign * radius * axis.Z))));
+        var sphere = flat is not null ? [] : new[] { right, up }.SelectMany(axis => new[] { 1.0, -1.0 }.Select(sign => (target.X + (sign * radius * axis.X), target.Y + (sign * radius * axis.Y), target.Z + (sign * radius * axis.Z))));
         foreach (var corner in Corners().Concat(sphere))
         {
             var at = Normalized(camera, corner);
             Assert.True(at.X >= Part.X0 && at.X <= Part.X1 && at.Y >= Part.Y0 && at.Y <= Part.Y1, $"The corner {corner} is at {at}, out of the part.");
         }
+    }
+
+    // ADR-0165 item 4 (phase R30a, TASK-0405): in a flat view the box, as the view shows it, fills 0.9 of the part on its tighter
+    // side, whatever FrameFill is: the plate of 60 x 40 x 10 from the front is 60 wide and 10 high, from the top 60 by 40, and
+    // from the right 40 by 10. Until TASK-0405 the sphere of the perspective at FrameFill 0.45 gave 0.25, 0.25 and 0.17 of the part.
+    [Theory]
+    [InlineData(FlatView.Front, 60.0, 10.0)]
+    [InlineData(FlatView.Top, 60.0, 40.0)]
+    [InlineData(FlatView.Right, 40.0, 10.0)]
+    public void A_Frame_In_A_Flat_View_Fills_The_Part(FlatView view, double across, double high)
+    {
+        var camera = new Camera { ZUp = true, YawDegrees = 135, PitchDegrees = 30, FarPlane = 5000f, FrameFill = 0.45f };
+        camera.Frame(Box.Min, Box.Max, Aspect, Part);
+        camera.ShowFlat(view);
+        camera.Frame(Box.Min, Box.Max, Aspect, Part);
+
+        var (low, top) = (Normalized(camera, Box.Min), Normalized(camera, Box.Max));
+        var (width, height) = (Math.Abs(top.X - low.X), Math.Abs(top.Y - low.Y));
+        var (partWidth, partHeight) = (Part.X1 - Part.X0, Part.Y1 - Part.Y0);
+        Assert.Equal(across / high, width / height * Aspect, 3);
+        Assert.Equal(Camera.FlatFill, Math.Max(width / partWidth, height / partHeight), 3);
+        Assert.True(width <= partWidth && height <= partHeight, $"The box is {width} by {height} in a part of {partWidth} by {partHeight}.");
     }
 
     // Item 1: a frame of the whole picture has no shift and keeps the distance of Frame, as before the part.

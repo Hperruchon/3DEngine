@@ -48,6 +48,10 @@ internal static class Theme
     internal const float OutlineWidth = 1f;
     internal const float InUseWidth = 2.5f;
 
+    // ADR-0165 item 3 (phase R30a, TASK-0405): the light paper of the lines of a flat view, and the ink of its lines.
+    internal const uint Paper = 0xFFEBF0F2;         // #f2f0eb
+    internal const uint Ink = 0xFF261F1A;           // #1a1f26
+
     // stroke-casing: the width of the casing on each side of a mark.
     internal const float CasingWidth = 2f;
 

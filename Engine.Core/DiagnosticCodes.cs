@@ -166,4 +166,7 @@ public static class DiagnosticCodes
     public const string SheetDimensionNotFound = "E-SHEET-DIMENSION-NOT-FOUND";
     public const string SheetDimensionInvalid = "E-SHEET-DIMENSION-INVALID";
     public const string SheetSourceNotFound = "E-SHEET-SOURCE-NOT-FOUND";
+
+    // ADR-0165 item 1 (phase R30a, TASK-0405): the query of the lines of one frame.
+    public const string SheetFrameInvalid = "E-SHEET-FRAME-INVALID";
 }

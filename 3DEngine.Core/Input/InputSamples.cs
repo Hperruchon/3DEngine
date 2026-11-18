@@ -79,6 +79,9 @@ public enum InputKey
     Digit1,
     Digit3,
     Digit7,
+
+    // ADR-0165 item 3 (phase R30a, TASK-0405): with no Control, the switch "Lines" of a flat view.
+    L,
 }
 
 // One sample, at a time in nanoseconds of one clock of the host.

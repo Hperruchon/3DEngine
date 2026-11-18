@@ -370,8 +370,43 @@ public sealed class Camera : Entity
         var filled = Math.Atan(half * FrameFill);
 
         Distance = ClampDistance(radius / Math.Sin(filled));
-        _flatScale = Distance;
+        // ADR-0165 item 4 (phase R30a, TASK-0405): in a flat view the box as the view shows it fills the part. Until TASK-0405 a
+        // flat view took the sphere of the perspective, so a plate of 60 x 40 x 10 filled about a quarter of the part.
+        _flatScale = _flat is not null && FlatScale(min, max, aspect, part, tangent) is { } flat ? flat : Distance;
         return Distance - radius >= NearPlane && Distance + radius <= FarPlane;
+    }
+
+    /// <summary>
+    /// ADR-0165 item 4 (phase R30a, TASK-0405): the part of a part of the picture that a box in a flat view fills, on its tighter
+    /// side: its width along the right of the view or its height along the up.
+    /// </summary>
+    public const double FlatFill = 0.9;
+
+    // ADR-0165 item 4: the scale of a flat view that puts the box, along the right and the up of the view, inside FlatFill of the
+    // part. Null for a box of no size on the screen.
+    private double? FlatScale((double X, double Y, double Z) min, (double X, double Y, double Z) max, float aspect, (double X0, double Y0, double X1, double Y1) part, double tangent)
+    {
+        var (right, up, _) = Axes();
+        double Extent((double X, double Y, double Z) axis)
+        {
+            var (low, high) = (double.PositiveInfinity, double.NegativeInfinity);
+            foreach (var x in new[] { min.X, max.X })
+            {
+                foreach (var y in new[] { min.Y, max.Y })
+                {
+                    foreach (var z in new[] { min.Z, max.Z })
+                    {
+                        var along = (x * axis.X) + (y * axis.Y) + (z * axis.Z);
+                        (low, high) = (Math.Min(low, along), Math.Max(high, along));
+                    }
+                }
+            }
+
+            return high - low;
+        }
+
+        var half = Math.Max(Extent(right) / (FlatFill * aspect * (part.X1 - part.X0)), Extent(up) / (FlatFill * (part.Y1 - part.Y0)));
+        return half > 0 && double.IsFinite(half) ? Math.Max(half / tangent, NearPlane * 0.01) : null;
     }
 
     // Keeps the eye between two times the near plane and half the far plane. When the
