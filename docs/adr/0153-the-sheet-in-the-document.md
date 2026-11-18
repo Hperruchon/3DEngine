@@ -7,7 +7,7 @@ date: 2026-11-15
 supersedes: []
 superseded-by: []
 amends: ['0118']
-amended-by: ['0155', '0158']
+amended-by: ['0155', '0158', '0165']
 affects:
   - Engine.Contracts/Drawing/SheetRecord.cs
   - Engine.Contracts/Document.cs
@@ -59,6 +59,8 @@ The engine gives the exact lines of a view (ADR-0142 to ADR-0145, ADR-0147) and 
    direction toward the eye, as `ViewFrame` of ADR-0142 item 2; determinism rule 2), its scale as two whole numbers greater
    than zero (`ScaleNumerator` : `ScaleDenominator`), and the place of its centre on the paper in millimetres. A view shows
    each live body of the part. The client gives the six standard views as named matrices.
+   ADR-0165 items 1 and 2: `SheetView` also holds `HiddenLines` and `CentreLines`, each true by default, and the command
+   SetSheetViewLines changes them.
 5. **A dimension (Q5 A, Q6 A).** `SheetDimension` holds its identifier, its view, its source (the identifier of a constraint
    of a sketch, or of an extrude for its distance) with the kind of the source, and the place of its line on the paper in
    millimetres. The number comes from the design at each read. When the source is not in the Document, a read gives the
@@ -84,3 +86,4 @@ The engine gives the exact lines of a view (ADR-0142 to ADR-0145, ADR-0147) and 
   the read GetSheet and two codes of a view.
 - 2026-11-16 · TASK-0395 · ADR-0158 amends items 5 and 6: the two kinds of a source, the place again of a dimension, one
   dimension of a source on a sheet, the read of the value or "lost", and three codes of a dimension.
+- 2026-11-18 · TASK-0405 · Amended by ADR-0165 items 1 and 2: the flags of the hidden lines and of the centre lines of a view (R30g).

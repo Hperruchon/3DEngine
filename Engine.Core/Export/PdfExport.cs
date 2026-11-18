@@ -21,11 +21,12 @@ public static class PdfExport
     private const int MaxDepth = 12;
 
     // ADR-0161 item 6: the widths of the characters of Helvetica in thousandths of the size of the font, from its metrics,
-    // for the characters of the value of a dimension; each other character takes the width of a digit.
+    // for the characters of the value of a dimension; each other character takes the width of a digit. ADR-0165 item 4: the
+    // sign Ø of a diameter, which WinAnsiEncoding holds in place of ⌀.
     private static readonly Dictionary<char, int> Widths = new()
     {
         ['0'] = 556, ['1'] = 556, ['2'] = 556, ['3'] = 556, ['4'] = 556, ['5'] = 556, ['6'] = 556, ['7'] = 556, ['8'] = 556, ['9'] = 556,
-        ['.'] = 278, ['-'] = 333, ['+'] = 584, ['R'] = 722, ['l'] = 222, ['o'] = 556, ['s'] = 500, ['t'] = 278, [' '] = 278,
+        ['.'] = 278, ['-'] = 333, ['+'] = 584, ['R'] = 722, ['\u00d8'] = 778, ['l'] = 222, ['o'] = 556, ['s'] = 500, ['t'] = 278, [' '] = 278,
     };
 
     private const int DigitWidth = 556;
@@ -97,8 +98,12 @@ public static class PdfExport
             w.Append(CultureInfo.InvariantCulture, $"{N(SvgExport.Thin)} w [{SvgExport.Dashes}] 0 d\n");
             foreach (var line in view.Lines.Where(line => !line.Visible))
                 Path(w, line);
+            // ADR-0165 item 3 (phase R30g, TASK-0405): the centre lines, thin with a long dash and a dot, as in the SVG file.
+            w.Append(CultureInfo.InvariantCulture, $"{N(SvgExport.Thin)} w [{SvgExport.CentreDashes}] 0 d\n");
+            foreach (var line in view.Lines.Where(line => line.Kind == "centre"))
+                Path(w, line);
             w.Append(CultureInfo.InvariantCulture, $"{N(SvgExport.Thick)} w [] 0 d\n");
-            foreach (var line in view.Lines.Where(line => line.Visible))
+            foreach (var line in view.Lines.Where(line => line.Visible && line.Kind != "centre"))
                 Path(w, line);
             foreach (var skipped in view.Skipped)
                 w.Append(CultureInfo.InvariantCulture, $"% The body {skipped.Body} gives no lines: {OneLine(skipped.Reason)}\n");
@@ -106,7 +111,7 @@ public static class PdfExport
 
         // Item 6: the value of each dimension, centred at its place, or "lost", as in the SVG file.
         foreach (var dimension in sheet.Dimensions)
-            Label(w, SvgExport.Value(dimension), dimension.X, dimension.Y, 3.5, centred: true);
+            Label(w, SvgExport.Value(dimension, "\u00d8"), dimension.X, dimension.Y, 3.5, centred: true);
         return w.ToString();
     }
 

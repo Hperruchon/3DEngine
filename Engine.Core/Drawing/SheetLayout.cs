@@ -9,6 +9,9 @@ namespace Engine.Core.Drawing;
 // lines are presentation (ADR-0155 item 5): a read computes them, and no command, event or Document holds them.
 internal static class SheetLayout
 {
+    // ADR-0165 item 3: the length of paper in millimetres by which a centre line goes past its ends.
+    public const double CentreOverrun = 3;
+
     // ADR-0155 item 4: the size of the paper in millimetres with its orientation, ISO 216.
     public static (double Width, double Height) PaperSize(SheetRecord sheet)
     {
@@ -47,7 +50,7 @@ internal static class SheetLayout
         ArgumentNullException.ThrowIfNull(view);
         var frame = Frame(view.Direction)
             ?? throw new InvalidOperationException($"The view '{view.Id}' has a direction that is not a valid frame (ADR-0155 item 1).");
-        var (lines, skipped) = ViewEdges.Of(document, frame);
+        var (lines, skipped, curves) = ViewEdges.WithCurves(document, frame);
         // ADR-0164 item 1 (TASK-0400, finding E212 of the codebase review of 2026-11-17): the length of the frame comes from
         // ViewFrame.Length, which never squares a double. Until TASK-0400 a frame of a length near 1e-200 gave the factor +∞
         // and a read that JSON cannot write, and one near 1e200 gave 0 and a view of one point.
@@ -83,17 +86,36 @@ internal static class SheetLayout
         (double X, double Y) Paper(double u, double v) => (view.X + (factor * (u - cu)), view.Y + (factor * (v - cv)));
         (double X, double Y) Point((Rational X, Rational Y) p) => Paper(p.X.ToDouble(), p.Y.ToDouble());
 
-        var placed = new List<SheetLine>(lines.Count);
-        foreach (var line in lines)
+        // ADR-0165 items 1 and 3 (phase R30g, TASK-0405): the box and the centre come from the edges and the outlines, so a flag
+        // never moves a view. A view with HiddenLines false leaves out its hidden lines; a view with CentreLines true adds its
+        // centre lines, from each line, the hidden lines too, so the axis of a hole stays when its walls do not show.
+        var shown = lines.Where(line => view.HiddenLines || line.Visible).ToList();
+        if (view.CentreLines)
+            shown.AddRange(ViewEdges.Centres(lines, frame, curves));
+
+        var placed = new List<SheetLine>(shown.Count);
+        foreach (var line in shown)
         {
             var (from, to) = (Point(line.From), Point(line.To));
+            if (line.Kind == ViewLineKind.Centre)
+            {
+                // ADR-0165 item 3: a centre line goes 3 mm of paper past its ends (ISO 128).
+                var (dx, dy) = (to.X - from.X, to.Y - from.Y);
+                var length = Math.Sqrt((dx * dx) + (dy * dy));
+                if (length > 0)
+                {
+                    var (ux, uy) = (CentreOverrun * dx / length, CentreOverrun * dy / length);
+                    (from, to) = ((from.X - ux, from.Y - uy), (to.X + ux, to.Y + uy));
+                }
+            }
+
             var circle = line.Circle is { } c
                 ? new SheetCircle(Point(c.Centre).X, Point(c.Centre).Y, factor * c.Radius.ToDouble())
                 : null;
             var ellipse = line.Ellipse is { } e
                 ? new SheetEllipse(Point(e.Centre).X, Point(e.Centre).Y, factor * e.Major.X, factor * e.Major.Y, factor * e.Minor.X, factor * e.Minor.Y)
                 : null;
-            placed.Add(new SheetLine(line.Body, from.X, from.Y, to.X, to.Y, line.Visible, line.Kind == ViewLineKind.Outline ? "outline" : "edge")
+            placed.Add(new SheetLine(line.Body, from.X, from.Y, to.X, to.Y, line.Visible, line.Kind switch { ViewLineKind.Outline => "outline", ViewLineKind.Centre => "centre", _ => "edge" })
             {
                 Circle = circle,
                 Ellipse = ellipse,

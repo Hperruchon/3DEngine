@@ -1,13 +1,13 @@
 ---
 id: 0161
 title: A sheet exports as one PDF file of version 1.4, from the read GetSheet, with arcs as Bézier curves within 0.001 mm
-status: Accepted
+status: Amended
 topic: Drawing, export
 date: 2026-11-17
 supersedes: []
 superseded-by: []
 amends: []
-amended-by: []
+amended-by: ['0165']
 affects:
   - Engine.Core/Export/PdfExport.cs
   - Engine.Api.Http/Endpoints/ExportEndpoint.cs
@@ -53,6 +53,7 @@ keeps the numbers of the read. The owner can change each one.
    hidden line of 0.25 mm with dashes of 3 mm and gaps of 0.75 mm, flat ends and mitred corners. The hidden lines of a view
    come before its visible lines, and a comment gives the identifier of each view and the reason of each body that gives
    no lines.
+   ADR-0165 item 3: the centre lines are thin, with the dashes of the SVG file, between the hidden and the visible lines.
 4. **The curves.** A straight line is a path from its start to its end. An arc of a circle or of an ellipse, counter-clockwise
    on the paper, is a chain of cubic Bézier curves in the frame of its two half axes, with the minor axis turned to the
    counter-clockwise side. The arc has a stop at each quarter turn from its start, so each part is a quarter turn or less;
@@ -67,6 +68,7 @@ keeps the numbers of the read. The owner can change each one.
 6. **The dimensions.** Each dimension is a text of 3.5 mm, centred at its place on its base line, with the text of the SVG
    file (ADR-0159 item 5). The width of the text comes from the widths of Helvetica in its metrics for the characters of a
    value (the digits, the point, the signs, R and the letters of "lost"); each other character takes the width of a digit.
+   ADR-0165 item 4: a diameter has the prefix Ø of WinAnsiEncoding, which holds no ⌀, with its width of 778 thousandths.
 7. **The text and the numbers.** A string is in WinAnsiEncoding: a parenthesis and a backslash have a backslash before them,
    a character from U+00A0 to U+00FF is its byte in octal (the middle dot is \267), and each other character outside
    printable ASCII is "?". A number is the shortest text that reads back as the same double, with the culture of no country,
@@ -91,3 +93,4 @@ WinAnsiEncoding shows "?". The centre of a text with a character outside the lis
 
 - 2026-11-17 · TASK-0401 · The record.
 - 2026-11-17 · TASK-0401 · Shipped at v0.385.
+- 2026-11-18 · TASK-0405 · Amended by ADR-0165 items 3 and 4: the centre lines and the sign of a diameter (R30g).

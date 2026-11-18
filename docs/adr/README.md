@@ -158,18 +158,19 @@ names. Do not read all of them.
 | [0150](0150-the-command-key-of-macos.md) | On macOS the Command key gives the modifier of the shortcuts, and the command line shows "Cmd K" | Accepted | Clients, input | 0108 | — |
 | [0151](0151-a-size-on-the-line-of-a-shown-value.md) | A free size or a reference on the line of a value that the view shows does not show again | Accepted | Clients, drawing | 0148, 0149 | — |
 | [0152](0152-the-arc-on-a-small-landscape-display.md) | On a small landscape display the arc of a proposal is right of the rows on a smaller ring, and each part of a proposal hides the tools under it | Accepted | Clients, rendering | 0134, 0139 | — |
-| [0153](0153-the-sheet-in-the-document.md) | A drawing sheet is one record of the Document, with its views and its dimensions, and small commands change it | Amended | Contracts, drawing | 0118 | 0155, 0158 |
+| [0153](0153-the-sheet-in-the-document.md) | A drawing sheet is one record of the Document, with its views and its dimensions, and small commands change it | Amended | Contracts, drawing | 0118 | 0155, 0158, 0165 |
 | [0154](0154-the-fixed-lengths-from-one-elimination.md) | The status and the fixed lengths of a sketch come from one elimination, and the product J·Jᵀ takes the columns with a value | Amended | Kernel | 0149 | 0156, 0164 |
-| [0155](0155-the-views-of-a-sheet.md) | A view of a sheet has an exact frame, a scale and a place on the paper, and GetSheet gives its lines on the paper | Amended | Drawing | 0153 | 0164 |
+| [0155](0155-the-views-of-a-sheet.md) | A view of a sheet has an exact frame, a scale and a place on the paper, and GetSheet gives its lines on the paper | Amended | Drawing | 0153 | 0164, 0165 |
 | [0156](0156-the-rank-of-a-sketch-at-each-size.md) | The rank of a sketch comes from the rows of its Jacobian at unit length, so the freedom and the fixed lengths do not depend on its size | Amended | Sketch | 0035, 0154 | 0164 |
 | [0157](0157-the-foundations-and-the-order-of-the-assembly-track.md) | The assembly track has shared foundations, the checks and the preview of a proposal come before the joints, and the model of a move waits for a measure | Amended | Assembly, agent | 0126 | 0162 |
-| [0158](0158-the-dimensions-of-a-sheet.md) | A dimension of a sheet shows a length or a radius of a sketch or the distance of an extrude, and a read gives its value from the design or "lost" | Accepted | Drawing | 0153 | — |
-| [0159](0159-the-svg-export-of-a-sheet.md) | A sheet exports as one SVG file in millimetres of the paper, from the read GetSheet, with exact arcs and the value of each dimension | Amended | Drawing, export | — | 0164 |
-| [0160](0160-the-dxf-export-of-a-sheet.md) | A sheet exports as one DXF file of release 12, from the read GetSheet, with arcs as bulges and ellipses as arcs within 0.001 mm | Amended | Drawing, export | — | 0164 |
-| [0161](0161-the-pdf-export-of-a-sheet.md) | A sheet exports as one PDF file of version 1.4, from the read GetSheet, with arcs as Bézier curves within 0.001 mm | Accepted | Drawing, export | — | — |
+| [0158](0158-the-dimensions-of-a-sheet.md) | A dimension of a sheet shows a length or a radius of a sketch or the distance of an extrude, and a read gives its value from the design or "lost" | Amended | Drawing | 0153 | 0165 |
+| [0159](0159-the-svg-export-of-a-sheet.md) | A sheet exports as one SVG file in millimetres of the paper, from the read GetSheet, with exact arcs and the value of each dimension | Amended | Drawing, export | — | 0164, 0165 |
+| [0160](0160-the-dxf-export-of-a-sheet.md) | A sheet exports as one DXF file of release 12, from the read GetSheet, with arcs as bulges and ellipses as arcs within 0.001 mm | Amended | Drawing, export | — | 0164, 0165 |
+| [0161](0161-the-pdf-export-of-a-sheet.md) | A sheet exports as one PDF file of version 1.4, from the read GetSheet, with arcs as Bézier curves within 0.001 mm | Amended | Drawing, export | — | 0165 |
 | [0162](0162-the-workflow-of-the-2d-views.md) | A person sees and designs the 2D views of a part in the window and on a sheet page, with the section view, the centre lines and the title block of ISO 7200 | Accepted | Drawing, window | 0118, 0157 | — |
 | [0163](0163-the-desktop-window-resizes-and-maximizes.md) | The desktop window resizes and maximizes, down to 360 by 600, and the layout follows each step of a drag | Accepted | Clients, layout | 0113 | — |
 | [0164](0164-the-findings-of-the-review-of-2026-11-17.md) | A view of a frame of any length gives the curves of the design, the files of a sheet guard each number and each name, and the analysis of a sketch keeps its time | Accepted | Drawing, sketch | 0143, 0144, 0154, 0155, 0156, 0159, 0160 | — |
+| [0165](0165-the-hidden-and-centre-lines-of-a-view.md) | Each view of a sheet has a flag for its hidden lines and one for its centre lines, the read gives the centre lines, and a whole circle reads as a diameter | Accepted | Contracts, drawing | 0153, 0155, 0158, 0159, 0160, 0161 | — |
 
 ## Topics
 
