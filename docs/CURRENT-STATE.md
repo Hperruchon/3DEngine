@@ -11582,3 +11582,40 @@ first rows of the panel. The register is full (15 of 15), so neither has an entr
 New tests: 3. The test list holds 2773 (1660 in `Engine.Tests`, 386 in `3DEngine.Tests`, 724 in `3DEngine.ImageTests`, 3
 in `3DEngine.VisionTests`). Open entries: 15 of 15. New diagnostic codes: 0. Since the review of v0.384, 1 product
 milestone and 3 entries followed it.
+
+## v0.388 — A view of a frame of any length gives the curves of the design, and the files of a sheet guard each number and each name (P0.162, TASK-0400)
+
+The medium findings E211 to E214 and the low findings E215 to E217 of the codebase review of 2026-11-17, after P10c. On
+2026-11-18 the owner ordered "Start P0.162". ADR-0164 records the corrections and amends ADR-0143, ADR-0144, ADR-0154,
+ADR-0155, ADR-0156, ADR-0159 and ADR-0160.
+
+**The change.**
+- E211 and E212: `ViewFrame.Length` gives the length of the right of a frame, exact when its square is the square of a
+  rational number, else a double; the square never becomes a double, so a length near 1e-200 or 1e200 stays finite. A
+  circle on a view has L times the radius of the design, and GetSheet divides by the same L. Each exact view at a slant now
+  shows its circles and ellipses, and the frame of whole numbers right (2, 2, −1), up (−1, 2, 2), eye (2, −1, 2) is the
+  pictorial view (ADR-0162 item 16): register entry R-0068 closes.
+- E213: with several right sides, the back-substitution of the analysis of a sketch takes the entries that are not zero.
+  The fixed lengths of a stair of 600 lines take about 100 ms in place of about 930 ms. The solve of one right side, the
+  path of the solver and of a replay, keeps its bits.
+- E214: ADR-0156 now gives the limit: when one constraint joins sizes in a ratio above about 1e5, the freedom of the status
+  can be wrong by one. No code changed for it.
+- E215 to E217: the SVG and the DXF file write 0 for a number that is not finite, the DXF chain of an ellipse has a stop at
+  each quarter turn as the PDF chain does, and the SVG file writes U+FFFD for a character that XML does not permit. The
+  rules of a name do not change.
+- The window session merged first as P0.164 (v0.387) with ADR-0163, so the ADR of this task is ADR-0164. The message of
+  commit 21d1490 still names ADR-0163; a pushed commit does not change.
+
+**Proof.** Each new test failed on the code of v0.386. Twelve injections: ten failed a test at once; one (no `ScaleB`)
+passed because √2 needs no shift, and a frame of length 4√2 now catches it; one (no guard in the DXF number) passed because
+the SVG number already gives 0, and the code lost that guard. Each file came back byte for byte (SHA-256). The full run also
+found the test of the old rule of ADR-0143 item 4, which now asserts the new rule. A clean build gives 0 warnings, the phone
+project builds, `eng/repo-gates` gives 488 runs of 168 checks and 0 failed, the write-set check passes, and each test
+project passes. Run 44276399803 passed on the code of the branch. The failed runs since the entry v0.387, from the API: none.
+
+**What stays.** The freedom of a sketch with joined sizes in a ratio above about 1e5 (ADR-0164 item 6). Next in the order:
+R30g beside R30a to R30c.
+
+New tests: 12. The test list holds 2785 (1672 in `Engine.Tests`, 386 in `3DEngine.Tests`, 724 in `3DEngine.ImageTests`, 3
+in `3DEngine.VisionTests`). Open entries: 14 of 15. New diagnostic codes: 0. Since the review of v0.384, 1 product
+milestone and 4 entries followed it.

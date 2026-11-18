@@ -232,17 +232,52 @@ public static class SketchSolver
         }
 
         lambda = new double[size, sides];
+        if (sides == 1)
+        {
+            // One right side, the solve of the solver and of a replay: each entry of the row, as before TASK-0400, so the
+            // solve keeps its bits.
+            for (var p = pivots.Count - 1; p >= 0; p--)
+            {
+                var (pivotRow, pivotColumn) = pivots[p];
+                var sum = b[pivotRow, 0];
+                for (var j = pivotColumn + 1; j < size; j++)
+                    sum -= a[pivotRow, j] * lambda[j, 0];
+                lambda[pivotColumn, 0] = sum / a[pivotRow, pivotColumn];
+            }
+
+            return pivots.Count;
+        }
+
+        // TASK-0400 (finding E213 of the codebase review of 2026-11-17): several right sides, the analysis of GetSketch. The
+        // back-substitution takes the entries of each pivot row that are not zero, found one time, so its cost is the right
+        // sides times those entries and not the right sides times the square of the size. A term with an entry of zero is
+        // zero, so the sums keep their values; only the sign of a sum of zero can differ, and the analysis reads no sign.
+        var entries = new int[pivots.Count][];
+        for (var p = 0; p < pivots.Count; p++)
+        {
+            var (pivotRow, pivotColumn) = pivots[p];
+            var list = new List<int>();
+            for (var j = pivotColumn + 1; j < size; j++)
+            {
+                if (a[pivotRow, j] != 0)
+                    list.Add(j);
+            }
+
+            entries[p] = [.. list];
+        }
+
         for (var k = 0; k < sides; k++)
         {
             for (var p = pivots.Count - 1; p >= 0; p--)
             {
                 var (pivotRow, pivotColumn) = pivots[p];
                 var sum = b[pivotRow, k];
-                for (var j = pivotColumn + 1; j < size; j++)
+                foreach (var j in entries[p])
                     sum -= a[pivotRow, j] * lambda[j, k];
                 lambda[pivotColumn, k] = sum / a[pivotRow, pivotColumn];
             }
         }
+
         return pivots.Count;
     }
 

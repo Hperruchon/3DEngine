@@ -96,6 +96,43 @@ public sealed class FixedLengthsTests
         Assert.True(clock.Elapsed < TimeSpan.FromSeconds(1), $"The status and the fixed lengths took {clock.Elapsed}.");
     }
 
+    // TASK-0400 (finding E213 of the codebase review of 2026-11-17): a stair of 600 lines with 1,000 constraints. Before
+    // TASK-0400 the back-substitution of the analysis took each column for each line: on the computer of the owner the
+    // analysis took about 930 ms and the status about 40 ms. Now the analysis takes about 100 ms. The test compares the two
+    // on one computer, so a slow runner does not change the result: the analysis takes at most six times the status and
+    // 100 ms. The points, the lines and the constraints have identifiers from 1, 10,001, 20,001 and 30,001, so 600 lines fit.
+    [Fact]
+    public void The_Fixed_Lengths_Of_A_Stair_Of_600_Lines_Take_A_Time_Near_The_Status()
+    {
+        const int count = 600;
+        var record = SketchModel.New(SketchId, Datums.XY.Id, null);
+        var lineIds = Enumerable.Range(0, count).Select(n => Id(10_001 + n)).ToArray();
+        record = record with
+        {
+            Points = [.. record.Points, .. Enumerable.Range(0, count + 1).Select(k => new SketchPoint(Id(k + 1), 5.0 * ((k + 1) / 2), 4.0 * (k / 2)))],
+            Lines = [.. Enumerable.Range(0, count).Select(n => new SketchLine(lineIds[n], Id(n + 1), Id(n + 2)))],
+            Constraints =
+            [
+                .. Enumerable.Range(0, count).Select(n => new SketchConstraint(Id(20_001 + n), n % 2 == 0 ? "horizontal" : "vertical", [lineIds[n]], [])),
+                .. Enumerable.Range(0, count).Where(n => n % 3 != 2)
+                    .Select(n => new SketchConstraint(Id(30_001 + n), "distance", [lineIds[n]], [n % 2 == 0 ? 5.0 : 4.0])),
+            ],
+        };
+        SketchSolver.FixedLengths(record);
+        SketchSolver.Status(record);
+
+        var status = System.Diagnostics.Stopwatch.StartNew();
+        SketchSolver.Status(record);
+        status.Stop();
+        var clock = System.Diagnostics.Stopwatch.StartNew();
+        var fixedLines = SketchSolver.FixedLengths(record);
+        clock.Stop();
+
+        Assert.Equal(1_000, record.Constraints.Count);
+        Assert.Equal(Enumerable.Range(0, count).Where(n => n % 3 != 2).Select(n => lineIds[n]).ToHashSet(), fixedLines.ToHashSet());
+        Assert.True(clock.Elapsed < (6 * status.Elapsed) + TimeSpan.FromMilliseconds(100), $"The fixed lengths took {clock.Elapsed}, and the status {status.Elapsed}.");
+    }
+
     // TASK-0392 (finding E207 of the codebase review of 2026-11-15): the freedom and the fixed lengths do not depend on the
     // size of a part of the sketch. A rigid rectangle (a right angle, two pairs of parallel sides and two lengths) fixes each
     // side and has 3 free degrees; a loose one (a right angle, one pair of parallel sides and one length) fixes its bottom only
