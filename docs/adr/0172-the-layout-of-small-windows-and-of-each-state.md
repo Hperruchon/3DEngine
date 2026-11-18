@@ -46,10 +46,12 @@ it by hand and by a script, and probed a grid of sizes from 360 by 360. It found
 4. **The corner near 360 by 360.** Below a height of about 480, the top bar, the rows, the anchors and a ring of five
    tools of 46 pixels do not fit together. A layout for that corner needs a new design (a "compact layout").
 
-The owner answered four questions on 2026-11-18, each with the recommended option A: fix the six states in this task
-(Q1); fix the faults now, put the edge of the window at 360 by 560, and propose a compact layout for a smaller window
-later (Q2); make the images a fixed part of the layout (Q3); and open the images from the panel or the command line, in
-the place of the rows (Q4).
+The review gave the owner four questions on 2026-11-18, each with a recommended option A. The owner answered "Q1 A, Q2
+A": fix the six states in this task (Q1); fix the faults now, put the edge of the window at 360 by 560, and propose a
+compact layout for a smaller window later (Q2). Before that answer, the owner chose a new left panel for a later task
+(the tools of the part on the ring and a structure view in the place of the rows). The session told the owner that this
+choice gives A for Q3 and Q4, and the owner did not object: the images are a fixed part of the layout (Q3), and they open
+from the panel or the command line, in the place of the rows (Q4).
 
 With a window of at least 560 pixels high, each landscape display is more than 560 pixels wide. A rule for the path line
 on a narrow landscape display (fact 1) then had no case at a size of the window or of a phone, so this record has none.
