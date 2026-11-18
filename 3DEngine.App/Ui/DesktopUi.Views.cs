@@ -120,7 +120,8 @@ internal sealed unsafe partial class DesktopUi
         if (!_viewsOpen || !_items.TryGetValue(ViewsLabel, out var opener))
             return;
         var cell = new Vector2(ViewCellWidth(displaySize), MinimumControlHeight);
-        var size = new Vector2((4f * cell.X) + (3f * ViewGap), (3f * cell.Y) + (2f * ViewGap));
+        // ADR-0167 item 2 (phase R30b, TASK-0407): a fourth row holds "Add to sheet" and "Standard views".
+        var size = new Vector2((4f * cell.X) + (3f * ViewGap), (4f * cell.Y) + (3f * ViewGap));
         var at = portrait
             ? new Vector2(displaySize.X - 16f - _inset.Z - size.X, Math.Max(opener.W, _items.TryGetValue(PathItem, out var path) ? path.W : 0f) + 8f)
             : new Vector2(16f + _inset.X, opener.Y - 8f - size.Y);
@@ -167,6 +168,7 @@ internal sealed unsafe partial class DesktopUi
             Item(LinesItem);
             if (_items.TryGetValue(LinesItem, out var switchBox))
                 ImGui.GetWindowDrawList().AddRect(new Vector2(switchBox.X + 1f, switchBox.Y + 1f), new Vector2(switchBox.Z - 1f, switchBox.W - 1f), ImGui.GetColorU32(on ? ImGuiCol.ButtonActive : ImGuiCol.Border), ImGui.GetStyle().FrameRounding, ImDrawFlags.None, Theme.OutlineWidth);
+            SheetRow(cell);
 
             ImGui.PopStyleVar();
 

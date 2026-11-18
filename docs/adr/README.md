@@ -143,7 +143,7 @@ names. Do not read all of them.
 | [0135](0135-the-arc-of-a-proposal-on-a-portrait-display.md) | On a portrait display the arc of a proposal is at the top, and a sheet of its lines is under it | Amended | Clients, rendering | 0092, 0111, 0131 | 0141 |
 | [0136](0136-the-arc-ends-before-the-tools-and-the-caption-wraps.md) | The arc of a proposal ends before each tool of the ring, and the whole caption under it wraps | Amended | Clients, rendering | 0092, 0133 | 0139 |
 | [0137](0137-the-flat-views-of-the-camera.md) | The camera has six flat views with no perspective, and the command line gives each one | Amended | Rendering, clients | 0023 | 0138, 0139, 0140, 0141 |
-| [0138](0138-the-controls-of-the-flat-views.md) | A button "Views" opens a net of the six flat views and the 3D view, and the keys 1, 3, 7 and 0 give them | Amended | Clients | 0100, 0127, 0137 | 0166 |
+| [0138](0138-the-controls-of-the-flat-views.md) | A button "Views" opens a net of the six flat views and the 3D view, and the keys 1, 3, 7 and 0 give them | Amended | Clients | 0100, 0127, 0137 | 0166, 0167 |
 | [0139](0139-a-sketch-leaves-a-flat-view-and-no-tool-hides-under-the-arc.md) | A sketch leaves a flat view, and a tool under an end of the arc of a proposal hides while the proposal waits | Amended | Clients, rendering | 0136, 0137 | 0152 |
 | [0140](0140-frame-in-the-free-part-of-the-scene.md) | Frame fits the bodies in the free part of the scene, and the centre of the picture moves there | Amended | Rendering, clients | 0023, 0137 | 0145, 0166 |
 | [0141](0141-the-scale-and-the-depth-of-a-flat-view.md) | A flat view has a scale of its own and a far plane behind the box, and the rows of a portrait proposal stay under the middle | Accepted | Rendering, clients | 0135, 0137 | — |
@@ -160,7 +160,7 @@ names. Do not read all of them.
 | [0152](0152-the-arc-on-a-small-landscape-display.md) | On a small landscape display the arc of a proposal is right of the rows on a smaller ring, and each part of a proposal hides the tools under it | Accepted | Clients, rendering | 0134, 0139 | — |
 | [0153](0153-the-sheet-in-the-document.md) | A drawing sheet is one record of the Document, with its views and its dimensions, and small commands change it | Amended | Contracts, drawing | 0118 | 0155, 0158 |
 | [0154](0154-the-fixed-lengths-from-one-elimination.md) | The status and the fixed lengths of a sketch come from one elimination, and the product J·Jᵀ takes the columns with a value | Amended | Kernel | 0149 | 0156, 0164 |
-| [0155](0155-the-views-of-a-sheet.md) | A view of a sheet has an exact frame, a scale and a place on the paper, and GetSheet gives its lines on the paper | Amended | Drawing | 0153 | 0164 |
+| [0155](0155-the-views-of-a-sheet.md) | A view of a sheet has an exact frame, a scale and a place on the paper, and GetSheet gives its lines on the paper | Amended | Drawing | 0153 | 0164, 0167 |
 | [0156](0156-the-rank-of-a-sketch-at-each-size.md) | The rank of a sketch comes from the rows of its Jacobian at unit length, so the freedom and the fixed lengths do not depend on its size | Amended | Sketch | 0035, 0154 | 0164 |
 | [0157](0157-the-foundations-and-the-order-of-the-assembly-track.md) | The assembly track has shared foundations, the checks and the preview of a proposal come before the joints, and the model of a move waits for a measure | Amended | Assembly, agent | 0126 | 0162 |
 | [0158](0158-the-dimensions-of-a-sheet.md) | A dimension of a sheet shows a length or a radius of a sketch or the distance of an extrude, and a read gives its value from the design or "lost" | Accepted | Drawing | 0153 | — |
@@ -171,6 +171,7 @@ names. Do not read all of them.
 | [0163](0163-the-desktop-window-resizes-and-maximizes.md) | The desktop window resizes and maximizes, down to 360 by 600, and the layout follows each step of a drag | Accepted | Clients, layout | 0113 | — |
 | [0164](0164-the-findings-of-the-review-of-2026-11-17.md) | A view of a frame of any length gives the curves of the design, the files of a sheet guard each number and each name, and the analysis of a sketch keeps its time | Accepted | Drawing, sketch | 0143, 0144, 0154, 0155, 0156, 0159, 0160 | — |
 | [0166](0166-the-lines-of-the-sheet-in-a-flat-view.md) | A flat view of the window shows the lines of the sheet on a light paper, with the switch "Lines" and the key L, and Frame fills the free part | Accepted | Drawing, window | 0138, 0140 | — |
+| [0167](0167-add-a-view-to-a-sheet-from-the-window.md) | A person adds the flat view or the standard views to a sheet from the window, at the place of the projection and the scale that fits, and ScaleSheetView changes the scale | Accepted | Drawing, window | 0138, 0155 | — |
 
 ## Topics
 
