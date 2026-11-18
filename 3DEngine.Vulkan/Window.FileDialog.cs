@@ -210,4 +210,25 @@ public sealed unsafe partial class Window
             SDL_CloseIO(stream);
         }
     }
+
+    // ADR-0170 item 3 (phase R30d, TASK-0412): writes the bytes to the path through SDL, so a content URI of the document picker
+    // of Android takes them too, as LoadFile reads one. Null when the write and the close are complete; else the text of SDL.
+    public static string? WriteFile(string path, byte[] content)
+    {
+        ArgumentNullException.ThrowIfNull(content);
+        var stream = SDL_IOFromFile(path, "wb");
+        if (stream is null)
+            return Error();
+        nuint written = 0;
+        if (content.Length > 0)
+        {
+            fixed (byte* at = content)
+                written = SDL_WriteIO(stream, (nint)at, (nuint)content.Length);
+        }
+
+        var failure = written == (nuint)content.Length ? null : Error();
+        if (!SDL_CloseIO(stream))
+            failure ??= Error();
+        return failure;
+    }
 }

@@ -173,8 +173,9 @@ names. Do not read all of them.
 | [0165](0165-the-hidden-and-centre-lines-of-a-view.md) | Each view of a sheet has a flag for its hidden lines and one for its centre lines, the read gives the centre lines, and a whole circle reads as a diameter | Amended | Contracts, drawing | 0153, 0155, 0158, 0159, 0160, 0161 | 0169 |
 | [0166](0166-the-lines-of-the-sheet-in-a-flat-view.md) | A flat view of the window shows the lines of the sheet on a light paper, with the switch "Lines" and the key L, and Frame fills the free part | Accepted | Drawing, window | 0138, 0140 | — |
 | [0167](0167-add-a-view-to-a-sheet-from-the-window.md) | A person adds the flat view or the standard views to a sheet from the window, at the place of the projection and the scale that fits, and ScaleSheetView changes the scale | Amended | Drawing, window | 0138, 0155 | 0168 |
-| [0168](0168-the-sheet-page.md) | A sheet page replaces the scene with the paper of a sheet, where a tap on a view gives its actions, a drag keeps the alignment with one MoveSheetViews, and a tap on the paper places a view | Accepted | Drawing, window | 0138, 0155, 0167 | — |
+| [0168](0168-the-sheet-page.md) | A sheet page replaces the scene with the paper of a sheet, where a tap on a view gives its actions, a drag keeps the alignment with one MoveSheetViews, and a tap on the paper places a view | Amended | Drawing, window | 0138, 0155, 0167 | 0170 |
 | [0169](0169-the-section-view-of-a-sheet.md) | A section of a sheet is a view with a cut plane, a parent and a letter, and the read gives its hatch, its cut line and its label | Accepted | Contracts, drawing | 0153, 0155, 0159, 0160, 0161, 0165 | — |
+| [0170](0170-export-a-sheet-from-the-window.md) | The sheet page and the command line export a sheet as PDF, SVG or DXF through the save dialog of the system, off the frame thread | Accepted | Drawing, window, export | 0168 | — |
 
 ## Topics
 

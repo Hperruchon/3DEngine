@@ -60,6 +60,9 @@ public sealed class NativeThreeDEngine : IThreeDEngine, IDisposable
     private readonly SheetReadCache _sheetRead = new();
     private readonly SheetCommandQueue _sheetQueue = new();
 
+    // ADR-0170 item 2 (phase R30d, TASK-0412): the sheet and the format of the save dialog that is open, or null.
+    private (Guid Sheet, SheetFormat Format)? _exportWaiting;
+
     // ADR-0034: the active sketch, its tool, and the commands of the sketch mode.
     private SketchActions? _sketchActions;
 
@@ -213,6 +216,28 @@ public sealed class NativeThreeDEngine : IThreeDEngine, IDisposable
             return;
         // ADR-0106 (TASK-0328): an STL file from the dialog of "Open project..." goes to the import below.
         var purpose = ProjectFiles.PurposeOf(path, (DialogPurpose)given);
+        // ADR-0170 items 2 and 3 (phase R30d, TASK-0412): the path of the export of a sheet; the file is read and written off the
+        // frame thread, in the queue of the commands of the sheet page.
+        if (SheetExports.FormatOf(purpose) is { } format)
+        {
+            var waiting = _exportWaiting;
+            _exportWaiting = null;
+            if (path is null)
+            {
+                if (failure is not null)
+                    _documentMessage = $"The file dialog did not open: {failure}";
+                return;
+            }
+
+            if (waiting is { } export && export.Format == format)
+            {
+                var session = _host.Session;
+                _sheetQueue.Send(() => SheetExports.Write(session, export.Sheet, format, path, Window.WriteFile));
+            }
+
+            return;
+        }
+
         // ADR-0102 item 2 (TASK-0316): the result of the open of a project, of a save or of an export goes to the project path.
         if (purpose != DialogPurpose.ImportStl)
         {
@@ -558,6 +583,17 @@ public sealed class NativeThreeDEngine : IThreeDEngine, IDisposable
                     break;
                 case SheetLinesAction lines when _sheetActions is { } lineActions:
                     _sheetQueue.Send(() => lineActions.Lines(lines.Sheet, lines.View, lines.HiddenLines, lines.CentreLines));
+                    break;
+                // ADR-0170 item 2 (phase R30d, TASK-0412): the save dialog of the system for the file of the sheet, also on the phone,
+                // where it is the document picker of Android.
+                case SheetExportAction export:
+                    var exportName = _sheets?.Live.FirstOrDefault(live => live.Id == export.Sheet)?.Name ?? "Sheet";
+                    var (exportFilter, exportPattern) = SheetExports.Filter(export.Format);
+                    var exportProject = _host.FileName is not null ? _host.Session.FilePath : null;
+                    if (_window.SaveFile(exportFilter, exportPattern, (int)SheetExports.Purpose(export.Format), SheetExports.Location(exportProject, exportName, export.Format)))
+                        _exportWaiting = (export.Sheet, export.Format);
+                    else
+                        _documentMessage = ProjectFiles.Busy;
                     break;
                 case SheetAddAtAction addAt when _sheetActions is { } addActions:
                     var addBox = _renderer?.Bounds is { } atBounds ? new SheetPlacement.Box(atBounds.Min, atBounds.Max) : null;

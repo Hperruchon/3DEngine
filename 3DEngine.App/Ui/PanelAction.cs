@@ -119,6 +119,9 @@ internal sealed record SheetLinesAction(Guid Sheet, Guid View, bool HiddenLines,
 
 internal sealed record SheetAddAtAction(Guid Sheet, FlatView View, double X, double Y) : PanelAction;
 
+// ADR-0170 item 1 (phase R30d, TASK-0412): "Export" of the sheet page and of the command line, in one format.
+internal sealed record SheetExportAction(Guid Sheet, SheetFormat Format) : PanelAction;
+
 // ADR-0082 item 3 (TASK-0254): the new value of a constraint of the sketch of the selected extrude, from the pad of its chip
 // on an edge, with no active sketch.
 internal sealed record SetBodyValueAction(Guid Sketch, Guid Constraint, double Value) : PanelAction;
