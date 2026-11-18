@@ -1,7 +1,7 @@
 ---
 id: 0412
 title: The sheet page and the command line export a sheet as PDF, SVG or DXF through the save dialog of the system
-status: Active
+status: Done
 phase: R30d
 opened: 2026-11-18
 depends-on: [0408]
@@ -62,16 +62,16 @@ system, on the desktop and on the phone.
 
 ## Acceptance criteria
 
-- [ ] The page and the command line give the three formats, PDF first, with 44 pixels high controls on a desktop and a phone.
-- [ ] Each format writes the bytes of the engine at the chosen path with its extension; a content URI keeps its name; each
+- [x] The page and the command line give the three formats, PDF first, with 44 pixels high controls on a desktop and a phone.
+- [x] Each format writes the bytes of the engine at the chosen path with its extension; a content URI keeps its name; each
       failure gives its code and its reason.
-- [ ] A run of the desktop exports the sheet of the plate as PDF and SVG through the dialog of Windows.
-- [ ] A clean build (`--no-incremental`) gives zero errors and zero warnings, and the phone project builds.
-- [ ] `dotnet test`, the write-set check and `eng/repo-gates` pass, and continuous integration passes on the branch.
+- [x] A run of the desktop exports the sheet of the plate as PDF and SVG through the dialog of Windows.
+- [x] A clean build (`--no-incremental`) gives zero errors and zero warnings, and the phone project builds.
+- [x] `dotnet test`, the write-set check and `eng/repo-gates` pass, and continuous integration passes on the branch.
 
 ## Outcome
 
-Status: Active
+Status: Done · branch r30d-sheet-export · v0.394
 
 ## Method
 
@@ -87,3 +87,4 @@ Weakest:    no test on a phone; a share sheet waits.
   of the plate; "SVG" gave `r30d-out2.svg` (2413 bytes). The panel said "Exported Sheet 1 as PDF to r30d-out.pdf, 2470 bytes."
 - 2026-11-18: ten injections each failed a test, and each file came back byte for byte (SHA-256). A clean build gives 0
   warnings, the phone project builds, and each test project passes (2868 tests). Pushed as `r30d-sheet-export`.
+- 2026-11-18: run 44327710142 passed on the branch with its seven jobs. Closed at v0.394; the merge waits for the owner.
