@@ -784,6 +784,8 @@ public sealed class NativeThreeDEngine : IThreeDEngine, IDisposable
         }
 
         ApplyIntents();
+        // ADR-0163 item 3 (TASK-0404): the swapchain follows a new size before the frame reads its extent.
+        presenter.Follow();
         var extent = presenter.Swapchain.Extent;
         var scene = CurrentScene;
         var renderer = _renderer;

@@ -451,6 +451,8 @@ Therefore each approved objective must have a track here.
   the file. v0.385, TASK-0401, ADR-0161.
 - P0.163 — The answers of the owner of 2026-11-18 on the 2D views are a record: ADR-0162, the rows R30a to R30i and the
   new order. v0.386, TASK-0403.
+- P0.164 — The desktop window resizes and maximizes, down to 360 by 600, and the layout follows each step of a drag.
+  v0.387, TASK-0404, ADR-0163.
 - Review — The codebase review of 2026-11-14 (c). v0.351, TASK-0366.
 - P0.143 — The low findings of the codebase review of 2026-11-11: a triangle of zero area adds no edge, and a mesh of
   more than 100 000 triangles finds its edges on the thread pool. v0.332, TASK-0345, ADR-0121.
@@ -634,6 +636,7 @@ This track removes each condition that blocks other work.
 | P0.161 | The hidden circle of a hole in the top view of v0.381 (P10a) is the floor of a blind hole: CreateCylinder centres the cylinder on the origin. A test through GetSheet holds a hole in a plate from the top and from the bottom. TASK-0397. | 1 |
 | P0.162 | The medium and low findings of the codebase review of 2026-11-17 (E211 to E217: the curves of a frame of a length other than 1, a frame that gives a read that is not finite, the time of the fixed lengths of a large sketch, the freedom of joined sizes, a number that is not finite in the DXF file, an almost closed arc of an ellipse, and a name that XML does not permit), after the next product phase, P10c. TASK-0400. | 1–2 |
 | P0.163 | The answers of the owner of 2026-11-18 to the design file of the 2D views (`docs/proposals/2026-11-18-2d-view-workflow.md`): ADR-0162, which amends ADR-0118 item 7 and ADR-0157 item 11, the rows R30a to R30i, and the new order. TASK-0403. | 1 |
+| P0.164 | The desktop window resizes and maximizes, down to 360 by 600, and the layout follows each step of a drag (the question of the owner of 2026-11-18, ADR-0163). TASK-0404. | 1 |
 | P0.102 | The cache of a face, the fixed controls, the list New, the edges and the safe area hold their next forms (V113 to V118 of the codebase review of 2026-11-06 (e); after P0.101). TASK-0252. | 1–2 |
 | P0.86 | The window keeps no input between sessions, the hook has the cases of one axis, and the next forms of four gates fail (V88 to V90, T141 to T144 of the codebase review of 2026-11-06; after the next product phase). TASK-0198. | 1–2 |
 

@@ -99,6 +99,19 @@ public sealed unsafe class Presenter : IDisposable
         _device.InstanceApi.vkDestroySurfaceKHR(_surface);
     }
 
+    // ADR-0163 item 3 (TASK-0404): makes the swapchain again when the surface has a new extent, before a frame reads
+    // Swapchain.Extent for the aspect of the camera and the scale of the window. Until TASK-0404 only RenderFrame did it,
+    // so the first frame after each change of size drew the scene with the aspect of the old size. A remake that failed
+    // stays for RenderFrame, which tries again once in each frame.
+    public void Follow()
+    {
+        var extent = SurfaceExtent();
+        if (extent.width == 0 || extent.height == 0 || _remakeFailed)
+            return;
+        if (extent.width != Swapchain.Extent.width || extent.height != Swapchain.Extent.height)
+            Recreate(extent);
+    }
+
     public void RenderFrame(Action<VkCommandBuffer, VkFramebuffer, VkExtent2D> draw)
     {
         var api = _device.DeviceApi;
