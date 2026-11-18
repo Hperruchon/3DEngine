@@ -11733,3 +11733,34 @@ comes before R30c.
 New tests: 25. The test list holds 2841 (1689 in `Engine.Tests`, 390 in `3DEngine.Tests`, 759 in `3DEngine.ImageTests`, 3
 in `3DEngine.VisionTests`). Open entries: 14 of 15. New diagnostic codes: 0. Since the review of v0.384, 4 product
 milestones and 7 entries followed it.
+
+## v0.392 — The codebase review of 2026-11-18 (governance, TASK-0409)
+
+Four product milestones (P10c, R30a, R30g and R30b) and eight entries followed v0.383, the version that the review of
+2026-11-17 examined, so the next product milestone, R30c, needs a review first. On 2026-11-18 the owner ordered "review after
+R30b", then "start the review", and answered its two questions "1a 2a" with "merge the review when green".
+
+**The review.** `docs/reviews/2026-11-18-codebase-review.md` examines `1bdd376`, the merge of R30b at v0.391.
+- E211 to E217 of the last review are closed: P0.162 fixed six of them, and ADR-0164 item 6 records the limit of E214.
+- No new finding is critical or high.
+- E218 and V194 to V198 are medium: a hole whose circle is part hidden gets no centre cross; a new sheet at a scale larger than
+  the scale that fits sends places off the paper, and the first refusal hides the views that went on; Enter on the home
+  screen makes a sheet from a hidden pad; the actions of a sheet wait on the frame thread behind a read of the lines of a flat
+  view; the size of a new view comes from the visible bodies while the sheet draws each live body; and with "Lines" on the
+  paper covers the gizmo, which still takes a drag.
+- E219, E220 and V199 to V201 are low: a comment and ADR-0166 item 1 that the centre lines made false, Escape that also cancels
+  the selection, a place of a new view that ADR-0167 item 3 does not state, and a skipped body that disappears under the paper.
+- The answers: Q1 A, a flat view shows the centre lines of the sheet too; Q2 A, ADR-0167 item 3 states the place of the code.
+  TASK-0410 records them.
+- TASK-0410 (P0.165) holds the eleven findings after the next product phase, R30c.
+- Open findings: 0 critical, 2 high, 12 medium and 21 low.
+
+**Proof.** Two agents examined the change from v0.383 to the merge of R30b, each in its own copy of the commit, with probes
+that they removed. The session read each finding in the code at its line, and took the measures with one script that gives
+the values of the last review at its commit. `CodebaseReviewGateTests` passes with the new review, the write-set check and
+`eng/repo-gates` (488 runs of 168 checks) pass, and run 44310445035 passed on the branch. The failed runs since the entry
+v0.391, from the API: none.
+
+New tests: 0. The test list holds 2841 (1689 in `Engine.Tests`, 390 in `3DEngine.Tests`, 759 in `3DEngine.ImageTests`, 3
+in `3DEngine.VisionTests`). Open entries: 14 of 15. New diagnostic codes: 0. This entry is a codebase review, so 0 product
+milestones and 0 entries follow it.
