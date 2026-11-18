@@ -164,6 +164,12 @@ internal sealed unsafe partial class DesktopUi
         // ADR-0137 item 4 (phase R21a, TASK-0369): the six flat views and the return to the view with perspective.
         foreach (var (label, view) in FlatViews)
             commands.Add((label, () => _actions.Add(new FlatViewAction(view))));
+        // ADR-0167 item 2 (phase R30b, TASK-0407): the commands of a sheet, as in the net of the views.
+        if (_view is { } flat)
+            commands.Add((AddViewToSheetLabel, () => _actions.Add(new AddToSheetAction([flat]))));
+        commands.Add((StandardViewsLabel, () => _actions.Add(new AddToSheetAction(SheetPlacement.Standard))));
+        if (_sheet is { Views.Count: > 0 })
+            commands.Add((ScaleSheetLabel, OpenScalePad));
         return commands;
     }
 

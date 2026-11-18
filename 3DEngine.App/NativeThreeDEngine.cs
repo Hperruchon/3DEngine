@@ -52,6 +52,10 @@ public sealed class NativeThreeDEngine : IThreeDEngine, IDisposable
     // ADR-0033 item 13: the live sketches, which the panel draws over the scene.
     private SessionSketches? _sketches;
 
+    // ADR-0167 (phase R30b, TASK-0407): the live sheets, and the commands of "Add to sheet".
+    private SessionSheets? _sheets;
+    private SheetActions? _sheetActions;
+
     // ADR-0034: the active sketch, its tool, and the commands of the sketch mode.
     private SketchActions? _sketchActions;
 
@@ -158,6 +162,8 @@ public sealed class NativeThreeDEngine : IThreeDEngine, IDisposable
             return _host.Subscribe(_steps.Take);
         }).GetAwaiter().GetResult();
         _sketches = new SessionSketches(_host);
+        _sheets = new SessionSheets(_host);
+        _sheetActions = new SheetActions(_host.Session);
         _sketchActions = new SketchActions(_host.Session);
         _images = new SessionImages(_host, _assets);
         _imageActions = new ImageActions(_host.Session, _assets);
@@ -516,6 +522,24 @@ public sealed class NativeThreeDEngine : IThreeDEngine, IDisposable
                 case HomeAction when _document is not null:
                     _document.Home = true;
                     _ui.ShowHome(_document.Recent(RecentCount), _document.HasFolder);
+                    break;
+                // ADR-0167 items 2 and 5 (phase R30b, TASK-0407): a view to the first live sheet, or the pad of a new sheet; the
+                // pad gives the new sheet or the scale of each view.
+                case AddToSheetAction add when _sheetActions is not null:
+                    _sheets?.Apply();
+                    if (_renderer?.Bounds is not { } bounds)
+                        _documentMessage = "A view of a sheet needs a body.";
+                    else if (_sheets?.Live.FirstOrDefault() is { } first)
+                        _documentMessage = _sheetActions.Add(first, add.Views, new SheetPlacement.Box(bounds.Min, bounds.Max));
+                    else
+                        _ui.OpenSheetPad(add.Views, new SheetPlacement.Box(bounds.Min, bounds.Max));
+                    break;
+                case CreateSheetAction create when _sheetActions is not null && _renderer?.Bounds is { } box:
+                    _documentMessage = _sheetActions.Create($"Sheet {(_sheets?.Live.Count ?? 0) + 1}", create.Paper, create.Landscape,
+                        (create.ScaleNumerator, create.ScaleDenominator), create.Views, new SheetPlacement.Box(box.Min, box.Max));
+                    break;
+                case ScaleSheetAction scale when _sheetActions is not null && _sheets?.Live.FirstOrDefault() is { } scaled:
+                    _documentMessage = _sheetActions.Scale(scaled, (scale.ScaleNumerator, scale.ScaleDenominator));
                     break;
                 case FrameAction:
                     FrameBodies();
@@ -974,6 +998,9 @@ public sealed class NativeThreeDEngine : IThreeDEngine, IDisposable
         // its own file; a host with no folder of documents says nothing of a save.
         // ADR-0138 (phase R21b, TASK-0370): the view of the camera, for the cell of the net that has the colour of a tool in use.
         _ui.ShowView(Camera.Flat);
+        // ADR-0167 item 2 (TASK-0407): the first live sheet, for the commands of a sheet.
+        _sheets?.Apply();
+        _ui.ShowSheet(_sheets?.Live.FirstOrDefault());
         // ADR-0166 items 2 and 3 (phase R30a, TASK-0406): with the switch "Lines" on in a flat view, the lines of its exact frame
         // from GetViewLines, read on the thread pool; the frame does not wait, and keeps the last lines until the new ones come.
         if (_ui.LinesOn && ViewLines.FrameOf(Camera) is { } lineFrame)
@@ -1029,6 +1056,8 @@ public sealed class NativeThreeDEngine : IThreeDEngine, IDisposable
         _overlay = null;
         _sketches?.Dispose();
         _sketches = null;
+        _sheets?.Dispose();
+        _sheets = null;
         _changesSubscription?.Dispose();
         _changesSubscription = null;
         _stepsSubscription?.Dispose();
