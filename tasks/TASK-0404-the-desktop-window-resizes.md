@@ -1,7 +1,7 @@
 ---
 id: 0404
 title: The desktop window resizes and maximizes, and the layout follows a live resize
-status: Active
+status: Done
 phase: P0.164
 opened: 2026-11-18
 depends-on: [0403]
@@ -64,7 +64,19 @@ A person resizes, maximizes, minimizes and restores the desktop window, and the 
 - [x] A maximize, a minimize and a restore give a correct frame.
 - [x] The layout test passes at each step of 8 pixels on three lines of a resize, and an injection fails it.
 - [x] A clean build (`--no-incremental`) gives zero errors and zero warnings, and the phone project builds.
-- [ ] `dotnet test`, the write-set check and `eng/repo-gates` pass, and continuous integration passes on the branch.
+- [x] `dotnet test`, the write-set check and `eng/repo-gates` pass, and continuous integration passes on the branch.
+
+## Outcome
+
+Status: Done · commit 0487d42 · v0.387
+
+## Method
+
+Mechanical: the flag, the minimum size, the swapchain before the extent, the window of the images inside the display.
+Judgement:  the minimum 360 by 600 from a grid of sizes, not 750 by 360; a frame from an event watch of SDL during a drag;
+            a row cut by the bottom of its panel counts as scrolled out of view.
+Weakest:    the frame of a live resize runs inside SDL_PollEvent, between two events of the queue; the run of 40 steps
+            and the test of 486 sizes cover the layout, but no test runs the event watch itself.
 
 ## Progress
 
@@ -80,3 +92,5 @@ A person resizes, maximizes, minimizes and restores the desktop window, and the 
   run 44202716779 passed. Before its merge, the answers of 2026-11-18 on the 2D views took those numbers on `main`
   (`94ecd61`). This task takes TASK-0404, ADR-0163, P0.164 and v0.387 on the branch `p0164-resizable-window`, from
   `origin/main`, with the same code. The old branch is not merged.
+- 2026-11-18: run 44274419842 passed on the branch with its seven jobs. Closed at v0.387, and merged under the order of
+  the owner "merge when green".
