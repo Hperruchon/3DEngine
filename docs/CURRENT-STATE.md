@@ -11619,8 +11619,47 @@ R30g beside R30a to R30c.
 New tests: 12. The test list holds 2785 (1672 in `Engine.Tests`, 386 in `3DEngine.Tests`, 724 in `3DEngine.ImageTests`, 3
 in `3DEngine.VisionTests`). Open entries: 14 of 15. New diagnostic codes: 0. Since the review of v0.384, 1 product
 milestone and 4 entries followed it.
+## v0.389 — A flat view of the window shows the lines of the sheet on a light paper, with the switch "Lines" and the key L, and Frame fills the free part (R30a, TASK-0406)
 
-## v0.389 — Each view of a sheet shows or hides its hidden and centre lines, and a whole circle reads as a diameter (R30g, TASK-0405)
+Row R30a of ADR-0162 (the answers D2 A and D3 A of the owner of 2026-11-18). On 2026-11-18 the owner ordered "Start them"
+for R30g and R30a; R30g runs in another session. ADR-0166 records the decisions and amends ADR-0138 and ADR-0140.
+
+**The change.**
+- The new query GetViewLines takes the nine numbers of an exact frame and gives the lines of `ViewEdges`, the code of
+  GetSheet, in units of the design on the plane of the view, with no sheet. A direction that is not a valid exact frame
+  gives the new code `E-SHEET-FRAME-INVALID`. `Engine.Contracts` does not change.
+- The net of the views has the switch "Lines" at its lower right, and the key L changes it, under the guard of the keys of
+  the views. In a flat view with the switch on, the window reads GetViewLines for the frame of the view on the thread pool,
+  one read at a time, keeps the last lines until the new ones come, and shows "Lines…" while a read runs.
+- The window draws a light paper on the free part of the scene, the visible lines in ink of 2 pixels and the hidden lines
+  in ink of 1 pixel with dashes. The paper covers the shaded bodies, so the view has no fill, and the outline of a sketch
+  does not show. With the switch off, the flat view is shaded, as before.
+- The check of F (gap G11 of the design file): the key reached the window, but Frame in a flat view took the sphere of the
+  perspective at the fill 0.45 of the session, so the plate kept the size of the load. Frame in a flat view now puts the
+  box, as the view shows it, inside 0.9 of the free part on its tighter side.
+
+**Proof.** The new tests of the frame failed on the code of v0.388 (0.25, 0.25 and 0.17 of the part, not 0.9); the other
+new tests name types that v0.388 does not have. A picture test of the front view of the plate of 2026-11-17 finds the paper
+inside the plate, solid ink on the visible lines and dashes on the two walls of the hole, and the shaded plate with the
+switch off (criterion C1 of the design file). A run of the desktop with `plate.3de` and the keys L, 1, 7, 3 and F gave the
+Front, Top and Right views with their lines, each part at 0.9 of the free part, and a log with no warning. Eleven
+injections each failed a test, and each file came back byte for byte (SHA-256); a first injection in the map of SDL changed
+M into L, which the pair of keys of the test cancels, so a second one maps L to F. A clean build gives 0 warnings, the
+phone project builds, `eng/repo-gates` gives 488 runs of 168 checks and 0 failed, the write-set check passes, and each test
+project passes. The same code passed runs 44285835681 and 44287000956 as TASK-0405 on the branch `r30a-view-lines`. R30g,
+in the main session, takes TASK-0405 and ADR-0165, so this work takes TASK-0406 and ADR-0166 on the branch `r30a-lines`,
+where run 44288276887 passed. The failed runs since the entry v0.388, from the API: none.
+
+**What stays.** Each new frame or new version reads the lines again with no cache (R-0069). The paper is the free part of
+the scene, so it is narrow while the window of the live sketches is open, and a pan cuts a part at its edge. Next in the
+order: R30b, beside R30g.
+
+New tests: 26. The test list holds 2811 (1680 in `Engine.Tests`, 390 in `3DEngine.Tests`, 738 in `3DEngine.ImageTests`, 3
+in `3DEngine.VisionTests`). Open entries: 14 of 15. New diagnostic codes: 1 (`E-SHEET-FRAME-INVALID`). Since the review of
+v0.384, 2 product milestones and 5 entries followed it.
+
+
+## v0.390 — Each view of a sheet shows or hides its hidden and centre lines, and a whole circle reads as a diameter (R30g, TASK-0405)
 
 Row R30g of the roadmap, from ADR-0162 items 11, 12 and 14 (the answers D14 A, D15 A and D17 A of the owner of 2026-11-18).
 On 2026-11-18 the owner ordered "Start them" for R30g and R30a, then "start R30g". R30a runs in its own session. ADR-0165
@@ -11643,12 +11682,14 @@ records the shape of the contract change and amends ADR-0153, ADR-0155, ADR-0158
 **Proof.** Twelve injections each failed a test at once, and each file came back byte for byte (SHA-256). The tests that
 counted the lines of a view and the two tests of a radius on a circle take the centre lines and the diameter into account.
 A clean build gives 0 warnings, the phone project builds, `eng/repo-gates` gives 488 runs of 168 checks and 0 failed, the
-write-set check passes, and each test project passes (2790 tests). Run 44285305081 passed on the branch. The failed runs
+write-set check passes, and each test project passes (2790 tests before the merge of R30a). Run 44285305081 passed on
+the branch. R30a merged first as v0.389, so this entry is v0.390, after a merge of `main` into the branch. The failed runs
 since the entry v0.388, from the API: none.
 
-**What stays.** No control of the window sets the flags yet (R30c). A section (R30h) turns the hidden lines off by default.
+**What stays.** No control of the window sets the flags yet (R30c), and a flat view of the window (R30a) shows no centre
+line yet; the test of R30a that compares a flat view with a sheet leaves the centre lines of the sheet out. A section (R30h) turns the hidden lines off by default.
 A centre mark of an arc, of a sphere from the side, and the line between the holes of a pattern do not exist.
 
-New tests: 5. The test list holds 2790 (1677 in `Engine.Tests`, 386 in `3DEngine.Tests`, 724 in `3DEngine.ImageTests`, 3
-in `3DEngine.VisionTests`). Open entries: 14 of 15. New diagnostic codes: 0. Since the review of v0.384, 2 product
-milestones and 5 entries followed it.
+New tests: 5. The test list holds 2816 (1685 in `Engine.Tests`, 390 in `3DEngine.Tests`, 738 in `3DEngine.ImageTests`, 3
+in `3DEngine.VisionTests`). Open entries: 14 of 15. New diagnostic codes: 0. Since the review of v0.384, 3 product
+milestones and 6 entries followed it.

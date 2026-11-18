@@ -80,4 +80,4 @@ centre lines; a pattern of holes gets one cross for each hole and no line betwee
 ## History
 
 - 2026-11-18 · TASK-0405 · The record, for row R30g and ADR-0162 items 11, 12 and 14.
-- 2026-11-18 · TASK-0405 · Shipped at v0.389.
+- 2026-11-18 · TASK-0405 · Shipped at v0.390, after R30a took v0.389.
