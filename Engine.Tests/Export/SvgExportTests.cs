@@ -286,4 +286,22 @@ public sealed class SvgExportTests : IDisposable
         var exit = global::Engine.Cli.Cli.Run(args, stdout, new StringWriter());
         return (exit, stdout.ToString());
     }
+
+    // ADR-0164 items 2 and 4 (TASK-0400, findings E215 and E217 of the codebase review of 2026-11-17): a name with U+FFFE and
+    // U+FFFF, which the rules of a name accept, gives a file that is XML, with U+FFFD in their place, and a pair of surrogates
+    // stays; a number that is not
+    // finite is 0. Until TASK-0400 the parse of the file threw, and the file held "NaN".
+    [Fact]
+    public void A_Name_With_A_Character_That_Xml_Does_Not_Permit_Gives_Xml()
+    {
+        var name = "Plate " + (char)0xFFFE + (char)0xFFFF + " A&B " + (char)0xD83D + (char)0xDE00;
+        Assert.Null(BodyNames.Refusal(name));
+
+        var text = SvgExport.Text(Sheet([new SheetLine(Guid.NewGuid(), double.NaN, 20, 30.5, 20, true, "edge")], null, name));
+
+        var file = XDocument.Parse(text);
+        Assert.Equal("Plate " + (char)0xFFFD + (char)0xFFFD + " A&B " + (char)0xD83D + (char)0xDE00, file.Root!.Element(Svg + "title")!.Value);
+        Assert.Equal("M 0 190 L 30.5 190", (string?)Paths(text)[0].Attribute("d"));
+        Assert.Equal(["0", "0"], new[] { double.NaN, double.NegativeInfinity }.Select(SvgExport.N));
+    }
 }

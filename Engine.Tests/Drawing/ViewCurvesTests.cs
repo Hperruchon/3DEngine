@@ -90,18 +90,21 @@ public sealed class ViewCurvesTests
         Assert.Equal((Rational.Zero, Rational.Zero), (visible.From.X, visible.To.X));
     }
 
-    // Item 2: a frame of another length scales the view, so the radius of the design is not the radius on it: the facets
-    // stay, and no line has a circle.
+    // Item 2, amended by ADR-0164 item 1 (TASK-0400, finding E211 of the codebase review of 2026-11-17): a frame of length 2
+    // scales the view by 2, so the cylinder of radius 10 from the top is one whole circle of the exact radius 20 on the view.
+    // Until TASK-0400 the facets stayed, and no line had a circle.
     [Fact]
-    public void A_Frame_Of_Another_Length_Keeps_The_Facets()
+    public void A_Frame_Of_Another_Length_Gives_The_Circle_At_Its_Scale()
     {
         var (solid, tag, curve) = Cylinder(10, 20);
         var frame = new ViewFrame(new(2, 0, 0), new(0, 2, 0), new(0, 0, 1));
         var lines = ViewEdges.Of([(Guid.NewGuid(), Brep.Of(solid))], frame, new Dictionary<FaceTag, SideCurve> { [tag] = curve });
 
         Assert.True(frame.IsValid);
-        Assert.Equal(64, lines.Count);
-        Assert.All(lines, line => Assert.Null(line.Circle));
+        Assert.Equal((Rational?)2, frame.Length.Exact);
+        var line = Assert.Single(lines);
+        Assert.Equal(line.From, line.To);
+        Assert.Equal(new ViewCircle((0, 0), 20), line.Circle);
     }
 
     // Item 2: the outline of a sphere is one whole circle with the centre and the radius of the design.

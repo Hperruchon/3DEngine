@@ -335,4 +335,50 @@ public sealed class SheetViewTests(ITestOutputHelper output) : IDisposable
             Assert.Equal((view.X, view.Y, 5.0), (circle.X, circle.Y, circle.Radius));
         }
     }
+
+    // ADR-0164 item 1 (TASK-0400, findings E211 and E212 of the codebase review of 2026-11-17): a view of an exact frame of
+    // any length gives the curves of the design at the scale of the view. A cylinder of radius 10 along z at 1 : 1 is one
+    // whole circle of radius 10 from the top with a frame of length 1, 2, 5, √2 or 4√2 (top views turned in their plane), 1e-200
+    // or 1e200, and two ellipses with a major half axis of 10 and a minor one of 10 · 2/3 in the pictorial view of whole
+    // numbers of length 3 (ADR-0162 item 16), also with a direction toward the eye of length 3e200. Until TASK-0400 a frame of
+    // length 2 gave 64 straight lines and no circle, and the frames of 1e-200 and 1e200 gave numbers that are not finite and
+    // one point.
+    [NativeManifoldTheory]
+    [InlineData(1, 0, 0, 0, 1, 0, 0, 0, 1)]
+    [InlineData(2, 0, 0, 0, 2, 0, 0, 0, 1)]
+    [InlineData(3, 4, 0, -4, 3, 0, 0, 0, 1)]
+    [InlineData(1e-200, 0, 0, 0, 1e-200, 0, 0, 0, 1)]
+    [InlineData(1e200, 0, 0, 0, 1e200, 0, 0, 0, 1)]
+    [InlineData(1, 1, 0, -1, 1, 0, 0, 0, 1)]
+    [InlineData(4, 4, 0, -4, 4, 0, 0, 0, 1)]
+    [InlineData(2, 2, -1, -1, 2, 2, 2, -1, 2)]
+    [InlineData(2, 2, -1, -1, 2, 2, 2e200, -1e200, 2e200)]
+    public async Task A_View_Of_Any_Length_Gives_The_Curves_Of_The_Design(double rx, double ry, double rz, double ux, double uy, double uz, double ex, double ey, double ez)
+    {
+        using var backend = new ManifoldGeometryBackend();
+        var session = new DocumentSession(EngineHosting.CreateDefault(backend));
+        await Applied(session, new CreateCylinderCommand { Radius = 10, Height = 20 }, "bodyId");
+        var sheet = await Applied(session, new CreateSheetCommand { SheetName = "Sheet 1", Paper = "A3" }, "sheetId");
+        await Applied(session, View(sheet, [rx, ry, rz, ux, uy, uz, ex, ey, ez], 1, 1, 200, 150), "viewId");
+
+        var view = Assert.Single((await Read(session, sheet)).Views);
+
+        Assert.All(view.Lines, line => Assert.True(double.IsFinite(line.FromX) && double.IsFinite(line.FromY) && double.IsFinite(line.ToX) && double.IsFinite(line.ToY)));
+        if (ez == 1)
+        {
+            var circle = Assert.Single(view.Lines).Circle;
+            Assert.NotNull(circle);
+            Assert.Equal((200.0, 150.0), (circle!.X, circle.Y));
+            Assert.Equal(10, circle.Radius, 12);
+            return;
+        }
+
+        var ellipses = view.Lines.Where(line => line.Ellipse is not null).Select(line => line.Ellipse!).ToArray();
+        Assert.NotEmpty(ellipses);
+        Assert.All(ellipses, e =>
+        {
+            Assert.Equal(10, Math.Sqrt((e.MajorX * e.MajorX) + (e.MajorY * e.MajorY)), 9);
+            Assert.Equal(20.0 / 3, Math.Sqrt((e.MinorX * e.MinorX) + (e.MinorY * e.MinorY)), 9);
+        });
+    }
 }

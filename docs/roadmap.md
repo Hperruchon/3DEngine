@@ -453,6 +453,8 @@ Therefore each approved objective must have a track here.
   new order. v0.386, TASK-0403.
 - P0.164 — The desktop window resizes and maximizes, down to 360 by 600, and the layout follows each step of a drag.
   v0.387, TASK-0404, ADR-0163.
+- P0.162 — A view of an exact frame of any length gives the curves of the design, the files of a sheet guard each number
+  and each name, and the analysis of a sketch of 600 lines keeps its time; R-0068 closes. v0.388, TASK-0400, ADR-0164.
 - Review — The codebase review of 2026-11-14 (c). v0.351, TASK-0366.
 - P0.143 — The low findings of the codebase review of 2026-11-11: a triangle of zero area adds no edge, and a mesh of
   more than 100 000 triangles finds its edges on the thread pool. v0.332, TASK-0345, ADR-0121.
