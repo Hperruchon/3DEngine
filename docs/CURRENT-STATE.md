@@ -11693,3 +11693,43 @@ A centre mark of an arc, of a sphere from the side, and the line between the hol
 New tests: 5. The test list holds 2816 (1685 in `Engine.Tests`, 390 in `3DEngine.Tests`, 738 in `3DEngine.ImageTests`, 3
 in `3DEngine.VisionTests`). Open entries: 14 of 15. New diagnostic codes: 0. Since the review of v0.384, 3 product
 milestones and 6 entries followed it.
+
+## v0.391 — A person adds the flat view or the standard views to a sheet from the window, at the place of the projection and the scale that fits, and ScaleSheetView changes the scale (R30b, TASK-0407)
+
+Row R30b of ADR-0162 (the answers D4 A, D5 A and B, and D6 A of the owner of 2026-11-18). On 2026-11-18 the owner ordered
+"Start R30b". ADR-0167 records the decisions and amends ADR-0138 and ADR-0155.
+
+**The change.**
+- The new command ScaleSheetView changes the scale of one view, or of each view when it names no view, in one step of undo.
+  The places and the dimensions stay, and the codes of a view keep their meanings.
+- A fourth row of the net of the views holds "Add to sheet", which adds the flat view of the camera and is dim in the 3D
+  view, and "Standard views", which adds the front view, the top view and the view from the right. The command line has
+  "Add view to sheet", "Standard views" and "Scale the sheet views". The window follows the live sheets from the events of a
+  sheet, and the views go to the first live sheet at the scale of its first view; a view that the sheet holds is not added
+  again.
+- A new view goes where the projection of the sheet puts it next to a view with a shared axis, with a gap of 10 mm, inside
+  the frame and above the band of the title block; else to the nearest free place on a grid of 5 mm. The size of a view
+  comes from the box of the live bodies along its frame.
+- With no sheet, a pad gives the paper (A4 to A0, landscape or portrait) and the scale: the scales of ISO 5455 from 10:1 to
+  1:10, the scale in effect and a free ratio "n:d". It starts on A3 landscape at the largest scale at which the standard
+  views fit. "Add" sends CreateSheet and AddSheetView for each view; Enter gives Add and Escape gives Cancel.
+- The message of the document wraps inside the panel; until this task a long message went past its right edge.
+
+**Proof.** Each new test names a type or a command that v0.389 does not have. A run of the desktop with the plate of
+2026-11-17 and its sheet removed made a new sheet by clicks on "Views", "Add to sheet", "Add" and "Standard views": the log
+has CreateSheet and three AddSheetView at (255, 203.5), (255, 143.5) and (145, 203.5) at 2:1 on A3, and the PDF of that
+sheet shows the top view under the front view and the view from the right at its left (criterion C2 of the design file).
+SendKeys lost keys of the command line in two runs, so the run used clicks. Thirteen injections each failed a test, and each
+file came back byte for byte (SHA-256). A clean build gives 0 warnings, the phone project builds, `eng/repo-gates` gives 488
+runs of 168 checks and 0 failed, and the write-set check passes. Run 44297261851 passed on the branch `r30b-add-to-sheet`.
+R30g merged first at v0.390, so the branch merged `main` (conflicts in lists only), and each test project passes on the
+merged tree; run 44298508423 passed on it. The failed runs since the entry v0.390, from the API: none.
+
+**What stays.** The views go to the first live sheet only, and a new sheet with its views is one step of undo for each
+command. A new scale keeps the places, so larger views can meet; the sheet page of R30c moves them. The size of a view
+comes from the box of the mesh. The next product milestone is the fifth after the review of v0.384, so a codebase review
+comes before R30c.
+
+New tests: 25. The test list holds 2841 (1689 in `Engine.Tests`, 390 in `3DEngine.Tests`, 759 in `3DEngine.ImageTests`, 3
+in `3DEngine.VisionTests`). Open entries: 14 of 15. New diagnostic codes: 0. Since the review of v0.384, 4 product
+milestones and 7 entries followed it.
