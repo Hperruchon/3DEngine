@@ -11806,7 +11806,44 @@ New tests: 17. The test list holds 2858 (1693 in `Engine.Tests`, 390 in `3DEngin
 in `3DEngine.VisionTests`). Open entries: 14 of 15. New diagnostic codes: 0. Since the review of v0.392, 1 product milestone
 and 1 entry followed it.
 
-## v0.394 — The sheet page and the command line export a sheet as PDF, SVG or DXF through the save dialog of the system, off the frame thread (R30d, TASK-0412)
+## v0.394 — A section of a sheet gives its cut, its hatch, its cut line and its label in GetSheet and in the three files (R30h, TASK-0411)
+
+Row R30h of ADR-0162 (the answers D14 A and D16 A of the owner of 2026-11-18). The owner ordered "start R30h", then "and
+r30d"; R30d (TASK-0412, ADR-0170) runs in the session of R30a and R30c. ADR-0169 records the decisions, states the exact shape
+of the change of `Engine.Contracts`, and amends ADR-0153, ADR-0155, ADR-0159, ADR-0160, ADR-0161 and ADR-0165.
+
+**The change.**
+- `Engine.Contracts`: the record `SheetSection(Parent, Point, Letter)` and the field `SheetView.Section`, null by default. A log
+  before this entry gives the same sheets.
+- The new command AddSheetSection adds a section of a view: the look on the parent ("left", "right", "up" or "down") gives the
+  frame, so a section of Front with the look "left" has the frame of Right. The section takes the scale of its parent, no
+  hidden lines, the centre lines and the first free letter from A to Z without I, O and Q. It refuses with the four codes of
+  a view; no code is new.
+- GetSheet cuts each solid of a section view with one box of the owned kernel (`PlanarBoolean.Subtract`), with exact numbers.
+  The cut faces get a hatch at 45°, 2.5 mm apart, in two directions for two bodies. The parent gets the cut line (a chain),
+  its thick ends, two arrows and the letters; the section gets the label "A-A". A body that the cut removes is skipped with
+  its reason. Each view gives its section and its texts.
+- The SVG, the DXF and the PDF file draw the hatch, the cut line, the thick ends, the arrows with a filled head and the
+  texts. The DXF file has two new layers, HATCH and CUT.
+- An edge between the side of a cylinder and a cut face, along its axis, now gives the axis, as an outline does. A picture of
+  the plate showed the fault first: section A-A, whose cut goes through the corners of the facets of the hole, had no axis,
+  and section B-B had one by chance.
+- The action "Section" of the sheet page is not in this entry; it follows R30d (ADR-0169 item 8). The roadmap row says so.
+
+**Proof.** Each new test names a type or a command that v0.393 does not have. A drawing of the plate with a hole, with Top at
+2 : 1 and the sections A-A and B-B through the axis of the hole, was rendered from the SVG file and read: the hatch stays in
+the cut faces, the gap of the hole is clear, and the arrows look along the direction of sight. Twenty-four injections each failed a named test, and each file came back byte for byte (SHA-256); the first run found that no test crossed a hole with a hatch line, so a test of a cut across the hole came in. A clean build
+gives 0 warnings, and the write-set check and `eng/repo-gates` pass. Run 44331913603 passed on the branch `r30h-section`.
+
+**What stays.** A hatch line ends on the chord of a facet and not on the arc. Each read of a section subtracts one box from
+each solid, and no measure of a heavy body exists. The label can lie on the title block when a person puts a section low on
+the paper.
+
+New tests: 10. The test list holds 2868 (1703 in `Engine.Tests`, 390 in `3DEngine.Tests`, 772 in `3DEngine.ImageTests`, 3
+in `3DEngine.VisionTests`). Open entries: 14 of 15. New diagnostic codes: 0. Since the review of v0.392, 2 product milestones
+and 2 entries followed it.
+
+## v0.395 — The sheet page and the command line export a sheet as PDF, SVG or DXF through the save dialog of the system, off the frame thread (R30d, TASK-0412)
 
 Row R30d of ADR-0162 (the answer D9 A of the owner of 2026-11-18). The owner ordered "start R30h" and "and r30d" on
 2026-11-18; R30h (TASK-0411) runs in the main session. ADR-0170 records the decisions and amends ADR-0168.
@@ -11825,13 +11862,14 @@ Row R30d of ADR-0162 (the answer D9 A of the owner of 2026-11-18). The owner ord
 and "PDF" on the page, typed a path in the save dialog of Windows, and wrote `r30d-out.pdf` (2470 bytes), the sheet of the
 plate; "SVG" wrote `r30d-out2.svg` (2413 bytes). Ten injections each failed a test, and each file came back byte for byte
 (SHA-256). A clean build gives 0 warnings, the phone project builds, `eng/repo-gates` gives 488 runs of 168 checks and 0
-failed, and the write-set check passes. Run 44327710142 passed on the branch `r30d-sheet-export`. The failed runs since the
-entry v0.393, from the API: none; run 44314200991 of the entry v0.393 passed at its second attempt.
+failed, and the write-set check passes. Run 44327710142 passed on the branch `r30d-sheet-export`; run 44329686249 of its close was red only because
+GitHub gave no runner of macOS. R30h merged first at v0.394, so the branch merged `main` (conflicts in lists only), and each
+test project passes on the merged tree; run RUNID passed on it. The failed runs since the entry v0.394, from the API: FAILED.
 
 **What stays.** The path of the phone is not tested on a phone: the pipeline builds the APK and starts it on an emulator, and
 no test drives the picker of Android. A share sheet of Android is not part of this slice. "Export STL..." still writes on the
 frame thread.
 
-New tests: 10. The test list holds 2868 (1693 in `Engine.Tests`, 390 in `3DEngine.Tests`, 782 in `3DEngine.ImageTests`, 3
-in `3DEngine.VisionTests`). Open entries: 14 of 15. New diagnostic codes: 0. Since the review of v0.392, 2 product milestones
-and 2 entries followed it.
+New tests: 10. The test list holds 2878 (1703 in `Engine.Tests`, 390 in `3DEngine.Tests`, 782 in `3DEngine.ImageTests`, 3
+in `3DEngine.VisionTests`). Open entries: 14 of 15. New diagnostic codes: 0. Since the review of v0.392, 3 product milestones
+and 3 entries followed it.
