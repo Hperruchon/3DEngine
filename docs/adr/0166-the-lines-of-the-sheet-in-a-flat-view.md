@@ -50,15 +50,18 @@ v0.388: in its part, the plate fills 0.25 of the tighter side from the front and
 
 1. **The query GetViewLines.** The query takes the nine numbers of an exact frame, as AddSheetView (ADR-0155 item 1), and
    gives each line of `ViewEdges` in units of the design on the plane of the view: a point p goes to (p · Right / L,
-   p · Up / L), where L is the length of Right (ADR-0164 item 1). A line keeps its body, its visibility, its kind ("edge" or
-   "outline"), and its circle or ellipse, as GetSheet gives them. The lines are those of GetSheet for a view of the same
-   frame at 1 : 1, moved by one shift. A direction that is not a valid exact frame gives the new code
+   p · Up / L), where L is the length of Right (ADR-0164 item 1). A line keeps its body, its visibility, its kind ("edge",
+   "outline" or "centre"), and its circle or ellipse, as GetSheet gives them. The lines are those of GetSheet for a view of
+   the same frame at 1 : 1 with its centre lines (ADR-0165 item 3), moved by one shift; a centre line goes 3 units of the
+   design past its ends, as 3 mm on the sheet at 1 : 1 (the answer Q1 A of the owner to finding E220, TASK-0410). A direction that is not a valid exact frame gives the new code
    `E-SHEET-FRAME-INVALID`. The result records live in `Engine.Core`, as those of GetSheet, so `Engine.Contracts` does not
    change. As GetSheet, the query has no cache (ADR-0155 item 7, R-0069).
 2. **The read in the window.** With the switch on and a flat view, the window gives GetViewLines the frame of the flat view:
    nine whole numbers from the axes of the camera, equal to the frame of the standard view of the engine (ADR-0142 item 2).
-   The read runs on the thread pool, one read at a time, for a new frame or a new version of the Document. Until it ends,
-   the window keeps the last lines, and shows "Lines…" on the paper. Lines of another frame do not show. The window
+   The read runs on the thread pool, one read at a time, for a new frame or a new version of the bodies: an event of a
+   sheet (`sheet.created`, `sheet.changed`, `sheet.removed`) does not start a read (finding V196, TASK-0410). Until it
+   ends, the window keeps the last lines, and shows "Lines…" on the paper. The paper names each body that the view skips,
+   with the reason of the engine, at its lower left (finding V201, TASK-0410). Lines of another frame do not show. The window
    projects each point of a line with the camera, at the depth of the target, so a pan and a zoom move the lines with the
    view. An arc of a circle or an ellipse is 96 straight parts for a whole curve, counter-clockwise from its start.
 3. **The switch "Lines" and its look (amends ADR-0138 items 1 and 3).** The net of the views has an eighth cell, "Lines", at
@@ -68,8 +71,10 @@ v0.388: in its part, the plate fills 0.25 of the tighter side from the front and
    paper (#f2f0eb) with a corner of 6 pixels on the free part of the scene (ADR-0140 item 3) of the last frame, before each
    other mark of the scene. The paper covers the shaded bodies, their edges and the images, so the view has no fill. On the
    paper each visible line is ink (#1a1f26) of 2 pixels, and each hidden line is ink of 1 pixel in dashes of 6 pixels with
-   gaps of 4, along the whole line. The lines stop at the edge of the paper. The outline of a sketch does not show. The
-   scene has no grid, so nothing hides one. With the switch off, a flat view is shaded, as before.
+   gaps of 4, along the whole line. Each centre line is ink of 1 pixel in a chain of a dash of 12 pixels, a gap of 3, a dash
+   of 2 and a gap of 3 (finding E220, TASK-0410). The lines stop at the edge of the paper. The outline of a sketch does not
+   show, and the gizmo of a move does not show, because the paper covers the body (finding V198, TASK-0410). The scene has
+   no grid, so nothing hides one. With the switch off, a flat view is shaded, as before.
 4. **Frame in a flat view (amends ADR-0140 item 2).** In a flat view, Frame puts the box, as the view shows it, inside 0.9
    of the free part, on its tighter side: the width of the box along the right of the view, or its height along the up.
    The target and the distance of the eye stay as ADR-0140 gives them; only the scale of the flat view changes. With
@@ -99,3 +104,6 @@ narrow, and so is the paper. Only the six flat views have lines; a view at a sla
 
 - 2026-11-18 · TASK-0406 · The query, the switch, the paper and the frame of a flat view (phase R30a).
 - 2026-11-18 · TASK-0406 · Shipped at v0.389.
+- 2026-11-18 · TASK-0410 · Item 1: GetViewLines gives the centre lines (the answer Q1 A, finding E220). Item 2: a read for a
+  new version of the bodies only (V196), and the names of the skipped bodies (V201). Item 3: the chain of a centre line, and
+  no gizmo on the paper (V198).

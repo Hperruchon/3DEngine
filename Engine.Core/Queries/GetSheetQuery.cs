@@ -79,8 +79,10 @@ public sealed record SheetEllipse(double X, double Y, double MajorX, double Majo
 public sealed record SheetSkippedBody(Guid Body, string Reason);
 
 // ADR-0158 item 4 (phase P10.3, TASK-0395): one dimension of a sheet, its record and its value from the design at the time of
-// the read. Label is "length" (a constraint "distance"), "radius" (a constraint "radius") or "distance" (an extrude). A
-// dimension whose source is not in the design is lost: Lost is true, and Label and Value are null.
+// the read. Label is "length" (a constraint "distance"), "radius" (a constraint "radius"), "diameter" (a constraint "radius"
+// of a whole circle, with twice its value, ADR-0165 item 4) or "distance" (an extrude). Finding E219 of the codebase review of
+// 2026-11-18 (TASK-0410): until TASK-0410 this text did not name "diameter". A dimension whose source is not in the design is
+// lost: Lost is true, and Label and Value are null.
 public sealed record SheetDimensionInfo(
     Guid DimensionId,
     Guid ViewId,

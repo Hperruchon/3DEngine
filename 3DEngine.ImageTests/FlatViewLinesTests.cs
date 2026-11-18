@@ -294,9 +294,11 @@ public sealed class FlatViewLinesTests
         static bool Near((byte R, byte G, byte B) a, uint abgr)
             => Math.Abs(a.R - (int)(abgr & 0xFF)) <= 24 && Math.Abs(a.G - (int)((abgr >> 8) & 0xFF)) <= 24 && Math.Abs(a.B - (int)((abgr >> 16) & 0xFF)) <= 24;
 
-        // Six lines: four visible lines of the plate and the two hidden walls of the hole.
-        Assert.Equal(4, strokes.Count(stroke => stroke.Visible));
+        // Six lines: four visible lines of the plate and the two hidden walls of the hole; and the axis of the hole (finding
+        // E220, TASK-0410).
+        Assert.Equal(4, strokes.Count(stroke => stroke.Visible && !stroke.Centre));
         Assert.Equal(2, strokes.Count(stroke => !stroke.Visible));
+        Assert.Equal(1, strokes.Count(stroke => stroke.Centre));
 
         // The plate fills 0.9 of the free part on its tighter side (ADR-0166 item 4).
         var (left, right) = (Pixel((0, 0, 5)), Pixel((60, 0, 5)));
@@ -331,6 +333,15 @@ public sealed class FlatViewLinesTests
             Assert.True(ink > samples.Count / 4 && paper > samples.Count / 5, $"The picture {picture}: the wall at x = {x} has {ink} ink and {paper} paper of {samples.Count}.");
         }
 
+        // Finding E220 (TASK-0410): the axis of the hole at x = 20 is a chain past the plate: ink and paper along it, and ink
+        // 2 mm under the bottom edge.
+        var (axisLow, axisHigh) = (Pixel((20, 0, 0.5)), Pixel((20, 0, 9.5)));
+        var axis = Enumerable.Range(0, (int)Vector2.Distance(axisLow, axisHigh)).Select(i => Vector2.Lerp(axisLow, axisHigh, i / Vector2.Distance(axisLow, axisHigh))).ToList();
+        var axisInk = axis.Count(p => Darkest(lined, p) is var c && c.R + c.G + c.B < 550);
+        var axisPaper = axis.Count(p => Near(Darkest(lined, p), Theme.Paper));
+        Assert.True(axisInk > axis.Count / 2 && axisPaper > 0, $"The picture {picture}: the axis has {axisInk} ink and {axisPaper} paper of {axis.Count}.");
+        Assert.True(Enumerable.Range(1, 4).Any(i => Darkest(lined, Pixel((20, 0, -0.5 * i))) is var c && c.R + c.G + c.B < 550), $"The picture {picture}: the axis does not go past the bottom edge.");
+
         // The darkest pixel within one pixel across, so a line of 1 pixel between two pixels is found.
         (byte R, byte G, byte B) Darkest(byte[] pixels, Vector2 p)
         {
@@ -358,5 +369,91 @@ public sealed class FlatViewLinesTests
         var path = Path.Combine(folder, name);
         Png.Write(path, (int)Width, (int)Height, pixels);
         return path;
+    }
+
+    // Findings V196 and V201 of the codebase review of 2026-11-18 (TASK-0410): an event of a sheet does not start a new read of
+    // the lines, and each other event does, so a new view of a sheet does not read the lines of the bodies again. The frame keys
+    // the read on the count of those events, and gives the paper the notes of the skipped bodies; the test reads the file of the
+    // frame for that, because the frame needs a window.
+    [Fact]
+    public void An_Event_Of_A_Sheet_Does_Not_Start_A_New_Read()
+    {
+        foreach (var kind in new[] { "sheet.created", "sheet.changed", "sheet.removed" })
+            Assert.False(ViewLines.ChangesLines(kind), kind);
+        foreach (var kind in new[] { "body.created", "body.changed", "sketch.changed", "sheets" })
+            Assert.True(ViewLines.ChangesLines(kind), kind);
+
+        var frame = FrameSource();
+        Assert.Matches(@"if \(ViewLines\.ChangesLines\(record\.Kind\)\)\s*Interlocked\.Increment\(ref _lineChanges\);", frame);
+        Assert.Contains("_viewLines.Lines(Interlocked.Read(ref _lineChanges), lineFrame,", frame, StringComparison.Ordinal);
+        Assert.Contains("ViewLines.Notes(lines, _renderer.LiveBodies)", frame, StringComparison.Ordinal);
+    }
+
+    private static string FrameSource()
+    {
+        var directory = new DirectoryInfo(AppContext.BaseDirectory);
+        while (directory is not null && !File.Exists(Path.Combine(directory.FullName, "3DEngine.sln")))
+            directory = directory.Parent;
+        return File.ReadAllText(Path.Combine(directory?.FullName ?? throw new InvalidOperationException("No 3DEngine.sln."), "3DEngine.App", "NativeThreeDEngine.cs"));
+    }
+
+    // Finding V198 of the codebase review of 2026-11-18 (TASK-0410): the paper shows with the switch "Lines" on in a flat view
+    // only, and the frame shows no gizmo then. The test reads the file of the frame for the guard of the gizmo, because the frame
+    // needs a window.
+    [Fact]
+    public void The_Gizmo_Does_Not_Show_While_The_Paper_Shows()
+    {
+        var camera = SessionScene.Create().Cameras[0];
+        Assert.False(ViewLines.PaperShows(true, camera));
+        camera.ShowFlat(FlatView.Front);
+        Assert.False(ViewLines.PaperShows(false, camera));
+        Assert.True(ViewLines.PaperShows(true, camera));
+
+        var frame = FrameSource();
+        var start = frame.IndexOf("private GizmoLayout? GizmoLayout()", StringComparison.Ordinal);
+        Assert.True(start >= 0, "NativeThreeDEngine.cs has no method GizmoLayout.");
+        var body = frame[start..frame.IndexOf("\n    }", start, StringComparison.Ordinal)];
+        Assert.Matches(@"if \(ViewLines\.PaperShows\(_ui\?\.LinesOn == true, Camera\)\)\s*return null;", body);
+    }
+
+    // Findings E220 and V201 of the codebase review of 2026-11-18 (TASK-0410): a centre line of the read is a stroke with Centre
+    // true, and the paper names each body that the view skips, with the name of the body and the reason of the engine; a body
+    // with no live record is "A body". With no lines there is no note.
+    [Fact]
+    public void The_Paper_Has_The_Centre_Lines_And_Names_Each_Skipped_Body()
+    {
+        var camera = SessionScene.Create().Cameras[0];
+        camera.ShowFlat(FlatView.Front);
+        double[] front = [1, 0, 0, 0, 0, 1, 0, -1, 0];
+        var scan = new LiveBody(Guid.NewGuid(), Engine.Core.Commands.ImportStlCommandHandler.MeshKind, "Scan", true);
+        var lines = new ViewLinesInfo(front,
+            [new ViewLineInfo(Body.Id, 0, 0, 10, 0, true, "edge"), new ViewLineInfo(Body.Id, 5, -3, 5, 13, true, "centre")],
+            [new ViewSkippedBody(scan.Id, "a mesh body has no faces of the kernel"), new ViewSkippedBody(Guid.NewGuid(), "a fault")]);
+
+        var strokes = ViewLines.Of(lines, camera, Width, Height);
+        Assert.Equal([false, true], strokes.Select(stroke => stroke.Centre));
+        var notes = ViewLines.Notes(lines, [Body, scan]);
+        Assert.Equal(["Scan gives no lines: a mesh body has no faces of the kernel", "A body gives no lines: a fault"], notes);
+
+        var display = new Vector2(Width, Height);
+        using var ui = new DesktopUi("http://127.0.0.1:5180", Document.Millimetre);
+        ui.ShowLines(strokes, notes: notes);
+        Frame(ui, display);
+        Assert.Equal(notes, ui.PaperNotes);
+        ui.ShowLines(null, notes: notes);
+        Frame(ui, display);
+        Assert.Empty(ui.PaperNotes);
+    }
+
+    // Finding E220 (TASK-0410): the chain of a centre line: a long dash, a gap, a short dash and a gap, along the whole path. A
+    // pattern with no pair of lengths greater than zero is refused.
+    [Fact]
+    public void A_Centre_Line_Is_A_Chain()
+    {
+        var dashes = ViewLines.Dashes([new Vector2(0, 0), new Vector2(30, 0)], DesktopUi.CentreChain);
+
+        Assert.Equal([(new Vector2(0, 0), new Vector2(12, 0)), (new Vector2(15, 0), new Vector2(17, 0)), (new Vector2(20, 0), new Vector2(30, 0))], dashes);
+        Assert.Throws<ArgumentException>(() => ViewLines.Dashes([new Vector2(0, 0), new Vector2(30, 0)], [12f, 3f, 2f]));
+        Assert.Throws<ArgumentException>(() => ViewLines.Dashes([new Vector2(0, 0), new Vector2(30, 0)], [12f, 0f]));
     }
 }

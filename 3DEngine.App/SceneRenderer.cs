@@ -106,6 +106,9 @@ internal sealed unsafe class SceneRenderer : IDisposable
     // The box around the live bodies that the scene holds, or null.
     public ((double X, double Y, double Z) Min, (double X, double Y, double Z) Max)? Bounds => _bodies.Bounds;
 
+    // Finding V197 (TASK-0410): the box of the bodies that a sheet draws.
+    public SheetPlacement.Box? SheetBox => _bodies.SheetBox;
+
     // ADR-0056 items 3 and 6 (phase R13): the boxes of the dimension overlay, kept until a change (V81).
     // ADR-0101 item 2: while a focus lasts, the box of the body of the focus only.
     public ((double X, double Y, double Z) Min, (double X, double Y, double Z) Max)? Union(bool hiddenToo)

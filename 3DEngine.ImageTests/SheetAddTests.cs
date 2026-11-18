@@ -153,6 +153,7 @@ public sealed class SheetAddTests
 
         Assert.Equal("Added the front view to Sheet 1 at 2:1.", actions.Create("Sheet 1", "A3", true, (2, 1), [FlatView.Front], Plate));
         var sheet = Assert.Single(await Sheets(host));
+        var stale = sheet;
         Assert.Equal((255.0, 203.5, 2L, 1L), (sheet.Views[0].X, sheet.Views[0].Y, sheet.Views[0].ScaleNumerator, sheet.Views[0].ScaleDenominator));
 
         var before = await host.Session.Read((document, _) => document.Log.Count);
@@ -166,6 +167,12 @@ public sealed class SheetAddTests
 
         Assert.Equal("Sheet 1 has the top view already.", actions.Add(sheet, [FlatView.Top], Plate));
         Assert.Equal(3, Assert.Single(await Sheets(host)).Views.Count);
+
+        // Finding V196 (TASK-0410): an Add runs on the queue of the sheet after earlier works, so it reads the sheet again. A
+        // record from before the add of the top view still holds the top view.
+        Assert.Equal("Sheet 1 has the top view already.", actions.Add(stale, [FlatView.Top], Plate));
+        Assert.Equal(3, Assert.Single(await Sheets(host)).Views.Count);
+        Assert.Equal($"No live sheet with id '{Guid.Empty}' exists.", actions.Add(stale with { Id = Guid.Empty }, [FlatView.Top], Plate));
     }
 
     // Item 5: the scale of each view is one command and one step of undo, and the places stay.
@@ -345,5 +352,89 @@ public sealed class SheetAddTests
         Frame(ui, display, new KeySample(InputKey.Escape, true, KeyModifiers.None, 0));
         Assert.Null(ui.SheetPadShown);
         Assert.Empty(ui.TakeActions().OfType<CreateSheetAction>());
+    }
+
+    // Finding V194 of the codebase review of 2026-11-18 (TASK-0410): a view whose place in the group is not inside the area does
+    // not go on the new sheet, and the text names it. A box of 400 mm on A4 at 1 : 1 and the plate on A3 at 10 : 1 give a sheet
+    // with no view and no refusal of the engine; the plate at 2 : 1 gives each view. Until TASK-0410 the engine refused the
+    // first place off the paper, and the text was the refusal only.
+    [Fact]
+    public async Task A_New_Sheet_Names_Each_View_That_Does_Not_Fit()
+    {
+        using var host = new EngineHost(new ManifoldGeometryBackend());
+        await Box(host);
+        var actions = new SheetActions(host.Session);
+
+        Assert.Equal("Made Sheet 1 with no view. The front, the top and the right view do not fit A4 at 1:1: choose a smaller scale.",
+            actions.Create("Sheet 1", "A4", true, (1, 1), SheetPlacement.Standard, new SheetPlacement.Box((0, 0, 0), (400, 400, 400))));
+        Assert.Equal("Made Sheet 2 with no view. The front view does not fit A3 at 10:1: choose a smaller scale.",
+            actions.Create("Sheet 2", "A3", true, (10, 1), [FlatView.Front], Plate));
+        Assert.Equal("Added the front, the top and the right view to Sheet 3 at 2:1.", actions.Create("Sheet 3", "A3", true, (2, 1), SheetPlacement.Standard, Plate));
+        Assert.Equal([0, 0, 3], (await Sheets(host)).Select(sheet => sheet.Views.Count));
+        Assert.False(SheetPlacement.Fits("A3", true, SheetPlacement.FrameOf(FlatView.Front), 10, 1, (210, 158.5), Plate));
+        Assert.True(SheetPlacement.Fits("A3", true, SheetPlacement.FrameOf(FlatView.Front), 2, 1, (255, 203.5), Plate));
+    }
+
+    // Finding V200 of the codebase review of 2026-11-18 (TASK-0410, the answer Q2 A of the owner): the view from the right shares
+    // its up with the front view and with the back view. The place left of the front view holds the left view, so the new view
+    // goes right of the back view, the next view with a shared axis, before the grid.
+    [Fact]
+    public void A_View_Goes_Next_To_Each_View_With_A_Shared_Axis_In_Their_Order()
+    {
+        var sheet = SheetWith(ViewOf(FlatView.Front, 255, 203.5), ViewOf(FlatView.Left, 145, 203.5), ViewOf(FlatView.Back, 255, 100));
+
+        Assert.Equal(((365.0, 100.0), true), SheetPlacement.Place(sheet, SheetPlacement.FrameOf(FlatView.Right), 2, 1, Plate));
+    }
+
+    // Finding V197 of the codebase review of 2026-11-18 (TASK-0410): the box of a new view is the box of the bodies that the sheet
+    // draws: a hidden body is in it, and a mesh body of an STL file is not. With a mesh body only, there is no box.
+    [Fact]
+    public void The_Box_Of_A_New_View_Is_The_Box_Of_The_Bodies_That_The_Sheet_Draws()
+    {
+        var plate = (Body, Plate);
+        var hidden = (new LiveBody(Guid.NewGuid(), "Extrude", "Far", false), new SheetPlacement.Box((500, 0, 0), (600, 40, 10)));
+        var mesh = (new LiveBody(Guid.NewGuid(), Engine.Core.Commands.ImportStlCommandHandler.MeshKind, "Scan", true), new SheetPlacement.Box((-900, -900, -900), (900, 900, 900)));
+
+        Assert.Equal(new SheetPlacement.Box((0, 0, 0), (600, 40, 10)), SheetPlacement.Drawn([plate, hidden, mesh]));
+        Assert.Equal(Plate, SheetPlacement.Drawn([mesh, plate]));
+        Assert.Null(SheetPlacement.Drawn([mesh]));
+    }
+
+    // Findings V196 and V197 of the codebase review of 2026-11-18 (TASK-0410): the frame sends each method of SheetActions through
+    // the queue of the sheet, so no command of a sheet waits on the frame thread, and each box of a new view is the box of the
+    // bodies that the sheet draws. The test reads the file of the frame, because the frame needs a window.
+    [Fact]
+    public void The_Frame_Sends_The_Commands_Of_A_Sheet_To_The_Queue_With_The_Box_Of_The_Drawn_Bodies()
+    {
+        var directory = new DirectoryInfo(AppContext.BaseDirectory);
+        while (directory is not null && !File.Exists(Path.Combine(directory.FullName, "3DEngine.sln")))
+            directory = directory.Parent;
+        var frame = File.ReadAllLines(Path.Combine(directory?.FullName ?? throw new InvalidOperationException("No 3DEngine.sln."), "3DEngine.App", "NativeThreeDEngine.cs"));
+        var names = new HashSet<string>(StringComparer.Ordinal) { "_sheetActions" };
+        foreach (var line in frame)
+        {
+            foreach (System.Text.RegularExpressions.Match bound in System.Text.RegularExpressions.Regex.Matches(line, @"_sheetActions is \{ \} (\w+)"))
+                names.Add(bound.Groups[1].Value);
+        }
+
+        var methods = typeof(SheetActions).GetMethods(System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.DeclaredOnly)
+            .Select(method => method.Name).ToHashSet(StringComparer.Ordinal);
+        var call = new System.Text.RegularExpressions.Regex(@"\b(\w+)\.(\w+)\(");
+        var calls = 0;
+        for (var i = 0; i < frame.Length; i++)
+        {
+            foreach (System.Text.RegularExpressions.Match match in call.Matches(frame[i]))
+            {
+                if (!names.Contains(match.Groups[1].Value) || !methods.Contains(match.Groups[2].Value))
+                    continue;
+                calls++;
+                Assert.True(frame[i].Contains("_sheetQueue.Send(() =>", StringComparison.Ordinal) || (i > 0 && frame[i - 1].TrimEnd().EndsWith("_sheetQueue.Send(() =>", StringComparison.Ordinal)),
+                    $"Line {i + 1} of NativeThreeDEngine.cs calls SheetActions.{match.Groups[2].Value} on the frame thread: {frame[i].Trim()}");
+            }
+        }
+
+        Assert.True(calls >= 9, $"The test found {calls} calls of SheetActions, fewer than the nine commands of a sheet.");
+        Assert.DoesNotContain(frame, line => line.Contains("SheetPlacement.Box(", StringComparison.Ordinal) && line.Contains("Bounds", StringComparison.Ordinal));
+        Assert.Contains(frame, line => line.Contains("_renderer?.SheetBox", StringComparison.Ordinal));
     }
 }
