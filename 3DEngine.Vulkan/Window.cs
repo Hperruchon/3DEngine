@@ -40,6 +40,7 @@ public sealed unsafe partial class Window : IDisposable
             s_hooked = null;
         }
 
+        FollowLiveResize(null);
         _ = SDL_StopTextInput(_window);
         SDL_DestroyWindow(_window);
     }
@@ -229,6 +230,66 @@ public sealed unsafe partial class Window : IDisposable
     public void Show()
     {
         _ = SDL_ShowWindow(_window);
+    }
+
+    // ADR-0163 item 2 (TASK-0404): a person cannot make the window smaller than this size, in the units of Extent.
+    public void SetMinimumSize(int width, int height)
+    {
+        if (!SDL_SetWindowMinimumSize(_window, width, height))
+            throw new Exception($"SDL: failed to set the minimum size of the window: {Error()}");
+    }
+
+    // ADR-0163 item 3 (TASK-0404): the frame of the host while a person drags the border of the window, or null to stop.
+    // On Windows the drag runs a modal loop of the system, and SDL_PollEvent does not return until the drag ends. In that
+    // loop SDL sends SDL_EVENT_WINDOW_EXPOSED with data1 = 1 (a live resize) to each event watch at once, on the thread of
+    // the loop. The watch runs the frame, so the layout follows the drag. Until TASK-0404 the window showed its last frame,
+    // cut or with a band of no picture, until the drag ended. The process has one window, so the watch is static.
+    public void FollowLiveResize(Action? frame)
+    {
+        if (frame is not null && s_liveFrame is null)
+        {
+            if (!SDL_AddEventWatch(&LiveResize, IntPtr.Zero))
+                throw new Exception($"SDL: failed to add the event watch of a live resize: {Error()}");
+        }
+        else if (frame is null && s_liveFrame is not null)
+        {
+            SDL_RemoveEventWatch(&LiveResize, IntPtr.Zero);
+        }
+
+        s_liveFrame = frame;
+        s_liveWindow = frame is null ? default : Id;
+    }
+
+    private static Action? s_liveFrame;
+    private static SDL_WindowID s_liveWindow;
+    private static bool s_inLiveFrame;
+
+    // True for the event of a live resize of the window: an expose with data1 = 1.
+    public static bool IsLiveResize(in SDL_Event sdlEvent, SDL_WindowID window)
+        => sdlEvent.Type == SDL_EventType.SDL_EVENT_WINDOW_EXPOSED && sdlEvent.window.windowID == window && sdlEvent.window.data1 == 1;
+
+    // An exception must not leave a callback of SDL, so the frame of the host keeps its own failure (see DesktopEngineHost).
+    [System.Runtime.InteropServices.UnmanagedCallersOnly(CallConvs = [typeof(System.Runtime.CompilerServices.CallConvCdecl)])]
+    private static SDLBool LiveResize(IntPtr userdata, SDL_Event* sdlEvent)
+    {
+        if (sdlEvent is null || s_liveFrame is not { } frame || s_inLiveFrame || !IsLiveResize(*sdlEvent, s_liveWindow))
+            return true;
+
+        s_inLiveFrame = true;
+        try
+        {
+            frame();
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"The frame of a live resize failed: {ex.Message}");
+        }
+        finally
+        {
+            s_inLiveFrame = false;
+        }
+
+        return true;
     }
 
     // True while the window is minimised or has no area, so that a frame draws nothing
