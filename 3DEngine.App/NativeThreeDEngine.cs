@@ -584,6 +584,10 @@ public sealed class NativeThreeDEngine : IThreeDEngine, IDisposable
                 case SheetLinesAction lines when _sheetActions is { } lineActions:
                     _sheetQueue.Send(() => lineActions.Lines(lines.Sheet, lines.View, lines.HiddenLines, lines.CentreLines));
                     break;
+                // ADR-0171 item 4 (TASK-0413): "Section" of the sheet page, off the frame thread.
+                case SheetSectionAction section when _sheetActions is { } sectionActions:
+                    _sheetQueue.Send(() => sectionActions.Section(section.Sheet, section.View, section.Look, (section.PointX, section.PointY, section.PointZ), section.X, section.Y));
+                    break;
                 // ADR-0170 item 2 (phase R30d, TASK-0412): the save dialog of the system for the file of the sheet, also on the phone,
                 // where it is the document picker of Android.
                 case SheetExportAction export:
