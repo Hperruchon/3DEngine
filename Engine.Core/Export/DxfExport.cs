@@ -17,6 +17,9 @@ public static class DxfExport
     public const string HiddenLayer = "HIDDEN";
     public const string TextLayer = "TEXT";
 
+    // ADR-0165 item 3 (phase R30g, TASK-0405): the layer of the centre lines, with the colour 8 and the line type CENTER.
+    public const string CentreLayer = "CENTER";
+
     // ADR-0160 item 4: an arc of an ellipse is a chain of arcs of circles, each within this distance of the ellipse, in
     // millimetres of the paper. The chain stops at MaxDepth halvings of a quarter of a turn.
     public const double Tolerance = 0.001;
@@ -54,12 +57,14 @@ public static class DxfExport
 
         // Item 3: the line types, the layers and the style of the text.
         w.Pair(0, "SECTION").Pair(2, "TABLES");
-        w.Pair(0, "TABLE").Pair(2, "LTYPE").Pair(70, "2");
+        w.Pair(0, "TABLE").Pair(2, "LTYPE").Pair(70, "3");
         w.Pair(0, "LTYPE").Pair(2, "CONTINUOUS").Pair(70, "0").Pair(3, "Solid line").Pair(72, "65").Pair(73, "0").Pair(40, 0);
         w.Pair(0, "LTYPE").Pair(2, "HIDDEN").Pair(70, "0").Pair(3, "Hidden 3 0.75").Pair(72, "65").Pair(73, "2").Pair(40, 3.75).Pair(49, 3).Pair(49, -0.75);
+        // ADR-0165 item 3 (phase R30g, TASK-0405): the line type of a centre line, as in the SVG file.
+        w.Pair(0, "LTYPE").Pair(2, "CENTER").Pair(70, "0").Pair(3, "Center 6 0.75 0.125 0.75").Pair(72, "65").Pair(73, "4").Pair(40, 7.625).Pair(49, 6).Pair(49, -0.75).Pair(49, 0.125).Pair(49, -0.75);
         w.Pair(0, "ENDTAB");
-        w.Pair(0, "TABLE").Pair(2, "LAYER").Pair(70, "5");
-        foreach (var (name, colour, type) in new[] { ("0", "7", "CONTINUOUS"), (FrameLayer, "7", "CONTINUOUS"), (VisibleLayer, "7", "CONTINUOUS"), (HiddenLayer, "8", "HIDDEN"), (TextLayer, "7", "CONTINUOUS") })
+        w.Pair(0, "TABLE").Pair(2, "LAYER").Pair(70, "6");
+        foreach (var (name, colour, type) in new[] { ("0", "7", "CONTINUOUS"), (FrameLayer, "7", "CONTINUOUS"), (VisibleLayer, "7", "CONTINUOUS"), (HiddenLayer, "8", "HIDDEN"), (CentreLayer, "8", "CENTER"), (TextLayer, "7", "CONTINUOUS") })
             w.Pair(0, "LAYER").Pair(2, name).Pair(70, "0").Pair(62, colour).Pair(6, type);
         w.Pair(0, "ENDTAB");
         w.Pair(0, "TABLE").Pair(2, "STYLE").Pair(70, "1");
@@ -85,7 +90,9 @@ public static class DxfExport
             w.Comment($"View {view.ViewId}.");
             foreach (var line in view.Lines.Where(line => !line.Visible))
                 Entity(w, line, HiddenLayer);
-            foreach (var line in view.Lines.Where(line => line.Visible))
+            foreach (var line in view.Lines.Where(line => line.Kind == "centre"))
+                Entity(w, line, CentreLayer);
+            foreach (var line in view.Lines.Where(line => line.Visible && line.Kind != "centre"))
                 Entity(w, line, VisibleLayer);
             foreach (var skipped in view.Skipped)
                 w.Comment($"The body {skipped.Body} gives no lines: {skipped.Reason}");
@@ -93,7 +100,7 @@ public static class DxfExport
 
         // Item 6: the value of each dimension, centred at its place, or "lost", as in the SVG file.
         foreach (var dimension in sheet.Dimensions)
-            Label(w, SvgExport.Value(dimension), dimension.X, dimension.Y, 3.5, centred: true);
+            Label(w, SvgExport.Value(dimension, "%%c"), dimension.X, dimension.Y, 3.5, centred: true);
 
         w.Pair(0, "ENDSEC");
         w.Pair(0, "EOF");

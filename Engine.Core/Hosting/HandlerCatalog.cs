@@ -62,6 +62,7 @@ public static class HandlerCatalog
         new RemoveSheetCommandHandler(),
         new AddSheetViewCommandHandler(),
         new MoveSheetViewCommandHandler(),
+        new SetSheetViewLinesCommandHandler(),
         new ScaleSheetViewCommandHandler(),
         new RemoveSheetViewCommandHandler(),
         new PlaceSheetDimensionCommandHandler(),

@@ -7,7 +7,7 @@ date: 2026-11-16
 supersedes: []
 superseded-by: []
 amends: []
-amended-by: ['0164']
+amended-by: ['0164', '0165']
 affects:
   - Engine.Core/Export/SvgExport.cs
   - Engine.Core/Queries/GetSheetQueryHandler.cs
@@ -50,6 +50,8 @@ options below, each the smallest one that keeps the exact numbers. The owner can
    of 3 mm and gaps of 0.75 mm. The hidden lines of a view come before its visible lines, so a visible line covers a hidden
    line. Each view is one group with the identifier of the view. A body that gives no lines has a `desc` with its reason,
    and the writer returns the list of such bodies.
+   ADR-0165 item 3: a centre line is a thin line of 0.25 mm with a long dash of 6 mm, a gap of 0.75 mm, a dot of 0.125 mm
+   and a gap of 0.75 mm (ISO 128, type 04), between the hidden and the visible lines.
 4. **The frame and the title block.** A frame 10 mm inside the edge of the paper, and a title block of 120 by 20 mm in the
    lower right corner of the frame, with the name of the sheet, the paper and its orientation, the projection, the scale
    and the unit. The scale is the scale of the views in lowest terms when they have one scale, or "as shown".
@@ -57,6 +59,7 @@ options below, each the smallest one that keeps the exact numbers. The owner can
    "R" for a radius (ISO 129-1), or "lost" when its source is not in the design. The file gives no dimension line and no
    arrow: the ends of the measured edge on the paper and the flag "true length" wait for R22d (answer D7 A of 2026-11-15:
    "P10a or R22d").
+   ADR-0165 item 4: a diameter has the prefix ⌀.
 6. **The numbers.** Each number is the shortest text that reads back as the same double, with the culture of no country,
    and a negative zero is 0. A number that is not finite is 0, and a character that XML 1.0 does not permit is U+FFFD
    (ADR-0164 items 2 and 4). The code uses + − × ÷ and sqrt only, so the file is the same on each platform.
@@ -80,3 +83,4 @@ of the viewer. The read of a curved body takes seconds (R-0069), and the export 
 - 2026-11-16 · TASK-0396 · The record.
 - 2026-11-16 · TASK-0396 · Shipped at v0.381.
 - 2026-11-18 · TASK-0400 · Amended by ADR-0164 items 2 and 4: a number that is not finite is 0, and a character that XML does not permit is U+FFFD (findings E215 and E217).
+- 2026-11-18 · TASK-0405 · Amended by ADR-0165 items 3 and 4: the centre lines and the sign of a diameter (R30g).

@@ -6,7 +6,8 @@ using Engine.Core.Sketch;
 namespace Engine.Core.Drawing;
 
 // ADR-0158 items 1 and 4 (phase P10.3, TASK-0395): the source of a dimension of a sheet in the design now. The read copies the
-// number of the design and uses no arithmetic, so nothing here can change a replay.
+// number of the design, or doubles a radius into a diameter (ADR-0165 item 4), and no command reads it, so nothing here can
+// change a replay.
 internal static class SheetSources
 {
     public const string Constraint = "constraint";
@@ -30,10 +31,19 @@ internal static class SheetSources
 
     // ADR-0158 item 4: the label and the number of the source in the design now, or null when the source is not in the design
     // (the dimension is lost). "Lost" is never stored: an undo that gives the source back gives the number back.
+    // ADR-0165 item 4 (phase R30g, TASK-0405): a radius on a whole circle of its sketch is a diameter, with the label "diameter"
+    // and twice the radius, for the sign ⌀ of ISO 129-1; a radius on an arc stays a radius.
     public static (string Label, double Value)? Value(Document document, FeatureList features, Guid source, string kind)
     {
         if (kind == Constraint)
-            return FindConstraint(document, source) is { } constraint && Label(constraint.Kind) is { } label ? (label, constraint.Values[0]) : null;
+        {
+            var sketch = document.Sketches.FirstOrDefault(sketch => sketch.Constraints.Any(constraint => constraint.Id == source));
+            if (sketch?.Constraints.First(constraint => constraint.Id == source) is not { } constraint || Label(constraint.Kind) is not { } label)
+                return null;
+            return label == "radius" && constraint.Items.Count == 1 && sketch.Circles.Any(circle => circle.Id == constraint.Items[0])
+                ? ("diameter", 2 * constraint.Values[0])
+                : (label, constraint.Values[0]);
+        }
         if (kind == Distance)
             return features.DistanceInEffect(source) is { } distance ? ("distance", distance) : null;
         return null;

@@ -106,6 +106,9 @@ internal enum ViewLineKind
 {
     Edge,
     Outline,
+
+    // ADR-0165 item 3 (phase R30g, TASK-0405): a centre line, a cross on a whole circle or the axis of a curved side.
+    Centre,
 }
 
 // ADR-0142 items 3 to 5: one line of a view, on the plane of the view, visible or hidden, with the body and the tags of the
@@ -147,6 +150,14 @@ internal static class ViewEdges
     // gives no faces of the kernel with its reason: a mesh body of an STL file, or a body with a fault.
     public static (IReadOnlyList<ViewLine> Lines, IReadOnlyList<(Guid Body, string Reason)> Skipped) Of(Document document, ViewFrame frame)
     {
+        var (lines, skipped, _) = WithCurves(document, frame);
+        return (lines, skipped);
+    }
+
+    // ADR-0165 item 3 (phase R30g, TASK-0405): the lines and the skipped bodies of Of, with the curves of the design, so a read
+    // can add the centre lines of the view.
+    public static (IReadOnlyList<ViewLine> Lines, IReadOnlyList<(Guid Body, string Reason)> Skipped, IReadOnlyDictionary<FaceTag, SideCurve> Curves) WithCurves(Document document, ViewFrame frame)
+    {
         ArgumentNullException.ThrowIfNull(document);
         var bodies = new List<(Guid Body, Brep Brep)>();
         var skipped = new List<(Guid Body, string Reason)>();
@@ -178,7 +189,7 @@ internal static class ViewEdges
             }
         }
 
-        return (Of(bodies, frame, curves), skipped);
+        return (Of(bodies, frame, curves), skipped, curves);
     }
 
     // ADR-0142 items 3 to 5: the lines of the bodies along the frame, in the order of the bodies, their edges and the
@@ -796,5 +807,47 @@ internal static class ViewEdges
         }
 
         return inside ? 1 : -1;
+    }
+
+    // ADR-0165 item 3 (phase R30g, TASK-0405): the centre lines of a view, before the place on the paper. A whole circle gives a
+    // cross: its diameter along the right and along the up of the view. A cylinder or a cone with lines of its outline on the
+    // view gives its axis, from the lowest to the highest place of those lines along the axis, so the axis of a hole ends
+    // where the hole ends. Each centre line has the kind Centre, is visible, and has the tags of its curve; the place on the
+    // paper adds 3 mm at each end. The order is the order of the lines, and the code uses + − × ÷ on exact numbers only.
+    public static IReadOnlyList<ViewLine> Centres(IReadOnlyList<ViewLine> lines, ViewFrame frame, IReadOnlyDictionary<FaceTag, SideCurve> curves)
+    {
+        ArgumentNullException.ThrowIfNull(lines);
+        ArgumentNullException.ThrowIfNull(curves);
+        var centres = new List<ViewLine>();
+        var circles = new HashSet<ViewCircle>();
+        var axes = new List<(Guid Body, FaceTag Tag, SideCurve Side, Rational Low, Rational High)>();
+        foreach (var line in lines)
+        {
+            if (line.Circle is { } circle && line.From == line.To && circles.Add(circle))
+            {
+                var ((x, y), r) = (circle.Centre, circle.Radius);
+                centres.Add(new ViewLine(line.Body, (x - r, y), (x + r, y), true, ViewLineKind.Centre, line.First, line.Second));
+                centres.Add(new ViewLine(line.Body, (x, y - r), (x, y + r), true, ViewLineKind.Centre, line.First, line.Second));
+            }
+
+            if (line.Kind != ViewLineKind.Outline || line.World is not var (from, to) || !curves.TryGetValue(line.First, out var side)
+                || side.Kind == SideCurveKind.Sphere || side.Axis.IsZero)
+                continue;
+            var (a, b) = (Along(side, from), Along(side, to));
+            var (low, high) = a <= b ? (a, b) : (b, a);
+            var index = axes.FindIndex(axis => axis.Tag == line.First);
+            if (index < 0)
+                axes.Add((line.Body, line.First, side, low, high));
+            else
+                axes[index] = axes[index] with { Low = low < axes[index].Low ? low : axes[index].Low, High = high > axes[index].High ? high : axes[index].High };
+        }
+
+        foreach (var (body, tag, side, low, high) in axes)
+        {
+            if (low < high)
+                centres.Add(new ViewLine(body, Project(side.Base + (side.Axis * low), frame), Project(side.Base + (side.Axis * high), frame), true, ViewLineKind.Centre, tag, tag));
+        }
+
+        return centres;
     }
 }

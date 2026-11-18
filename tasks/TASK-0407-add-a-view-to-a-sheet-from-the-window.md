@@ -103,3 +103,7 @@ Weakest:    the first live sheet only; the free place is a search on a grid of 5
   message went past the panel, so the message now wraps.
 - 2026-11-18: thirteen injections each failed a test, and each file came back byte for byte (SHA-256). A clean build gives
   0 warnings, the phone project builds, and each test project passes (2836 tests). Pushed as `r30b-add-to-sheet`.
+- 2026-11-18: run 44297261851 passed on the branch with its seven jobs. R30g merged first at v0.390, so this branch merges
+  `main`: the conflicts were lists only (the catalog of the handlers, the codes of the sheet, the index of the ADRs and the
+  amended-by of ADR-0155, and the count of `Engine.Tests`, now 1689). The views of a sheet now carry the flags of R30g with
+  their defaults, and each test project passes on the merged tree (2841 tests).
