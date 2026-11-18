@@ -7,7 +7,7 @@ date: 2026-11-15
 supersedes: []
 superseded-by: []
 amends: ['0149']
-amended-by: ['0156']
+amended-by: ['0156', '0163']
 affects:
   - Engine.Core/Sketch/SketchSolver.cs
   - Engine.Core/Queries/GetSketchQueryHandler.cs
@@ -45,7 +45,8 @@ On 2026-11-15 the owner ordered TASK-0391 for E206.
    zero factor is +0 or −0, and the sum is never −0. A Jacobian with an entry that is not finite takes the sum over each
    column. The solver uses the same product, so a replay gives the same bits as before this record.
 4. **A test of the time.** The status and the fixed lengths of a stair of 100 lines take less than 1 s. On the computer of the
-   owner they take about 9 ms.
+   owner they take about 9 ms. ADR-0163 item 5: the fixed lengths of a stair of 600 lines take at most six times its status
+   and 100 ms, with a back-substitution on the entries that are not zero.
 5. **No contract change.** The result of `GetSketch` keeps its fields and their meaning.
 
 ## Consequences
@@ -61,3 +62,4 @@ free, as ADR-0149 says of the old test. The test of the time can fail on a very 
   2026-11-15.
 - 2026-11-15 · TASK-0391 · Shipped at v0.376.
 - 2026-11-15 · TASK-0392 · ADR-0156 item 1 amends item 1: the elimination takes the rows of J at unit length.
+- 2026-11-18 · TASK-0400 · Amended by ADR-0163 item 5: the back-substitution of several right sides takes the entries that are not zero (finding E213).

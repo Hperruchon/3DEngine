@@ -47,6 +47,57 @@ internal readonly record struct ViewFrame(Vector3R Right, Vector3R Up, Vector3R 
                 && cross.Cross(TowardEye).IsZero && cross.Dot(TowardEye).Sign > 0;
         }
     }
+
+    // ADR-0163 item 1 (TASK-0400, findings E211 and E212 of the codebase review of 2026-11-17): the length L of Right and of
+    // Up. It is exact when Right · Right is the square of a rational number, as for each frame of whole numbers; else it is
+    // the double of sqrt(Right · Right). The square never becomes a double: the numerator and the denominator move by an
+    // even power of two to a quotient near 1, so a length of 1e-200 or 1e200 does not underflow or overflow.
+    public (Rational? Exact, double Value) Length
+    {
+        get
+        {
+            var square = Right.Dot(Right);
+            var (n, d) = (square.Numerator, square.Denominator);
+            var (rootN, rootD) = (Root(n), Root(d));
+            if (rootN * rootN == n && rootD * rootD == d)
+            {
+                var exact = new Rational(rootN, rootD);
+                return (exact, exact.ToDouble());
+            }
+
+            var shift = (int)((n.GetBitLength() - d.GetBitLength()) / 2);
+            var near = shift >= 0 ? new Rational(n, d << (2 * shift)) : new Rational(n << (-2 * shift), d);
+            return (null, Math.ScaleB(Math.Sqrt(near.ToDouble()), shift));
+        }
+    }
+
+    // ADR-0163 item 1: the unit direction toward the eye in doubles, from TowardEye divided first by the largest absolute
+    // value of its coordinates, an exact step, so a frame of any length gives a finite direction.
+    public (double X, double Y, double Z) Eye
+    {
+        get
+        {
+            var largest = new[] { TowardEye.X, TowardEye.Y, TowardEye.Z }.Select(value => value.Sign < 0 ? Rational.Zero - value : value).Max()!;
+            var (x, y, z) = ((TowardEye.X / largest).ToDouble(), (TowardEye.Y / largest).ToDouble(), (TowardEye.Z / largest).ToDouble());
+            var length = Math.Sqrt((x * x) + (y * y) + (z * z));
+            return (x / length, y / length, z / length);
+        }
+    }
+
+    // The integer square root of a value that is not negative, by Newton's method on whole numbers.
+    private static System.Numerics.BigInteger Root(System.Numerics.BigInteger value)
+    {
+        if (value.Sign <= 0)
+            return System.Numerics.BigInteger.Zero;
+        var x = System.Numerics.BigInteger.One << (int)((value.GetBitLength() + 1) / 2);
+        while (true)
+        {
+            var y = (x + (value / x)) >> 1;
+            if (y >= x)
+                return x;
+            x = y;
+        }
+    }
 }
 
 // ADR-0142 item 3: an edge between faces of two tags, or the outline of a curved side: an edge between two faces of one
@@ -230,14 +281,17 @@ internal static class ViewEdges
         return curves is null || curves.Count == 0 ? lines : Curved(lines, frame, curves);
     }
 
-    // ADR-0143 items 2 and 3: with a frame of length 1, a piece of an end of a cylinder or a cone whose axis is along the
-    // view, and a piece of the outline of a sphere, is an arc of the circle of the design; the arcs of one circle with one
-    // visibility that follow each other are one arc, or the whole circle. The pieces of an end whose axis is across the
-    // view lie on one line, and the pieces that follow each other with one visibility are one line. Each other line stays.
+    // ADR-0143 items 2 and 3: a piece of an end of a cylinder or a cone whose axis is along the view, and a piece of the
+    // outline of a sphere, is an arc of the circle of the design; the arcs of one circle with one visibility that follow each
+    // other are one arc, or the whole circle. The pieces of an end whose axis is across the view lie on one line, and the
+    // pieces that follow each other with one visibility are one line. Each other line stays. ADR-0163 item 1 (TASK-0400,
+    // finding E211 of the codebase review of 2026-11-17): a frame of length L projects a length of the design to L times it,
+    // so the radius of a circle on the view is L times the radius of the design. Until TASK-0400 a frame of another length
+    // than 1 kept the facets, and each exact view at a slant has such a frame.
     private static List<ViewLine> Curved(List<ViewLine> lines, ViewFrame frame, IReadOnlyDictionary<FaceTag, SideCurve> curves)
     {
-        if (frame.Right.Dot(frame.Right) != Rational.One)
-            return lines;
+        var length = frame.Length;
+        Rational OnView(Rational radius) => length.Exact is { } exact ? radius * exact : Rational.FromDouble(radius.ToDouble() * length.Value);
         var groups = new Dictionary<object, (int First, List<ViewLine> Members, bool Arc)>();
         var output = new List<(int Order, ViewLine Line)>();
         var outline = new List<(int Order, ViewLine Line, int Which, ((double X, double Y) Start, (double X, double Y) End) Segment, SideCurve Side)>();
@@ -249,14 +303,14 @@ internal static class ViewEdges
             switch (CurveOf(line, curves))
             {
                 case { Kind: SideCurveKind.Sphere } sphere when line.Kind == ViewLineKind.Outline:
-                    line = Arc(line, new ViewCircle(Project(sphere.Base, frame), sphere.Radius));
+                    line = Arc(line, new ViewCircle(Project(sphere.Base, frame), OnView(sphere.Radius)));
                     break;
                 case { Kind: SideCurveKind.Cylinder or SideCurveKind.Cone } side when line.Kind == ViewLineKind.Outline && AlongView(side, frame):
                     // ADR-0145 item 2: a side whose axis is along the view has no outline; an outline of its facets there is
                     // a line of no length within the rounding of a turn.
                     continue;
                 case { Kind: SideCurveKind.Cylinder or SideCurveKind.Cone } end when line.Kind == ViewLineKind.Edge && RadiusAt(end, line) is { } radius && AlongView(end, frame):
-                    line = Arc(line, new ViewCircle(Project(end.Base, frame), radius));
+                    line = Arc(line, new ViewCircle(Project(end.Base, frame), OnView(radius)));
                     break;
                 case { Kind: SideCurveKind.Cylinder or SideCurveKind.Cone } end when line.Kind == ViewLineKind.Edge && Level(end, line) is not null && end.Axis.Dot(frame.TowardEye).IsZero:
                     key = (line.Body, line.Visible, line.Kind, Tags(line), Support(line));
@@ -334,7 +388,7 @@ internal static class ViewEdges
     // TASK-0380 such an end was a flat ellipse, and its hidden half lay under its visible half.
     private static bool AcrossView(SideCurve side, ViewFrame frame)
     {
-        var (a, e) = (side.Axis.ToDoubles(), frame.TowardEye.ToDoubles());
+        var (a, e) = (side.Axis.ToDoubles(), frame.Eye);
         var part = Dot(a, e);
         return part * part <= 1e-18 * Dot(a, a) * Dot(e, e);
     }
@@ -404,7 +458,7 @@ internal static class ViewEdges
     {
         if (side.Axis.Cross(frame.TowardEye).IsZero)
             return true;
-        var (a, e) = (side.Axis.ToDoubles(), frame.TowardEye.ToDoubles());
+        var (a, e) = (side.Axis.ToDoubles(), frame.Eye);
         var c = Cross(a, e);
         return Dot(c, c) <= 1e-18 * Dot(a, a) * Dot(e, e);
     }
@@ -425,7 +479,7 @@ internal static class ViewEdges
     private static ((double X, double Y) Major, (double X, double Y) Minor) HalfAxes(SideCurve side, ViewFrame frame)
     {
         var a = Unit(side.Axis.ToDoubles());
-        var e = Unit(frame.TowardEye.ToDoubles());
+        var e = frame.Eye;
         var p = Unit(Cross(a, e));
         var q = Cross(a, p);
         var (r, u, radius) = (frame.Right.ToDoubles(), frame.Up.ToDoubles(), side.Radius.ToDouble());

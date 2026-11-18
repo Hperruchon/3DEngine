@@ -1,13 +1,13 @@
 ---
 id: 0160
 title: A sheet exports as one DXF file of release 12, from the read GetSheet, with arcs as bulges and ellipses as arcs within 0.001 mm
-status: Accepted
+status: Amended
 topic: Drawing, export
 date: 2026-11-17
 supersedes: []
 superseded-by: []
 amends: []
-amended-by: []
+amended-by: ['0163']
 affects:
   - Engine.Core/Export/DxfExport.cs
   - Engine.Core/Export/SvgExport.cs
@@ -56,8 +56,8 @@ smallest one that keeps the numbers of the read. The owner can change each one.
    its end, whose vertex carries the bulge, the tangent of a quarter of the angle of the arc, positive counter-clockwise.
    With the half chord h and d = sqrt(r² − h²), the bulge is h / (r + d), so it needs no angle; an arc of a half turn or more
    is two arcs at its middle, so each bulge is at most 1. Release 12 has no ellipse, so an arc of an ellipse or a whole
-   ellipse is a POLYLINE of arcs of circles. In the frame of the two half axes, the arc is cut into parts of less than a half
-   turn, and each part is halved at the unit vector (a + b) / |a + b| until the arc of a circle through its two ends and its
+   ellipse is a POLYLINE of arcs of circles. In the frame of the two half axes, the arc has a stop at each quarter turn from its
+   start (ADR-0163 item 3), and each part is halved at the unit vector (a + b) / |a + b| until the arc of a circle through its two ends and its
    middle is within 0.0005 mm of the ellipse at a quarter and three quarters of the part, at most 12 halvings. A test
    measures each arc at 17 points: each point is within 0.001 mm of the ellipse. The first and the last vertex are the
    ends of the line of the read, so the chain meets the lines next to it.
@@ -68,8 +68,8 @@ smallest one that keeps the numbers of the read. The owner can change each one.
    (R22d).
 7. **The text and the numbers.** The file is ASCII, with one line feed after each line. A character outside printable ASCII
    is `\U+XXXX`, as AutoCAD reads it; a character of control is a space, and a pair of surrogates is "?". A number is the
-   shortest text that reads back as the same double, with the culture of no country; a negative zero is 0, and a number
-   with an exponent has its digits in fixed notation. The code uses + − × ÷ and sqrt only.
+   shortest text that reads back as the same double, with the culture of no country; a negative zero and a number that is not finite are
+   0 (ADR-0163 item 2), and a number with an exponent has its digits in fixed notation. The code uses + − × ÷ and sqrt only.
 8. **The surface.** `GET /export/dxf?sheetId=<id>` gives the file as `image/vnd.dxf`, 404 with `E-SHEET-NOT-FOUND` for a
    sheet that is not live, and 400 with `E-API-BAD-REQUEST` with no valid `sheetId`. The command line
    `engine export dxf <document.3de> <file.dxf> --sheet <id> [--folder <path>]` writes the file and prints
@@ -91,3 +91,4 @@ its own reader of the pairs.
 
 - 2026-11-17 · TASK-0398 · The record.
 - 2026-11-17 · TASK-0398 · Shipped at v0.383.
+- 2026-11-18 · TASK-0400 · Amended by ADR-0163 items 2 and 3: a number that is not finite is 0, and the chain of an ellipse has a stop at each quarter turn (findings E215 and E216).

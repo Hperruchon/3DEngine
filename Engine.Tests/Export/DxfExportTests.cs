@@ -278,13 +278,16 @@ public sealed class DxfExportTests : IDisposable
     [Fact]
     public void A_Text_And_A_Number_Are_Ascii()
     {
-        Assert.Equal("a b\\U+00E9?", DxfExport.Escape("a\tbé😀"));
+        Assert.Equal("a b\\U+00E9?", DxfExport.Escape("a\tb\u00e9\ud83d\ude00"));
         Assert.Equal("0.0000001", DxfExport.N(1e-7));
         Assert.Equal("-0.00000123", DxfExport.N(-1.23e-6));
         Assert.Equal("12300000000000000000000", DxfExport.N(1.23e22));
         Assert.Equal(1.23e-6, double.Parse(DxfExport.N(1.23e-6), CultureInfo.InvariantCulture));
         Assert.Equal("-12.5", DxfExport.N(-12.5));
         Assert.Equal("0", DxfExport.N(-0.0));
+        // ADR-0163 item 2 (TASK-0400, finding E215): a number that is not finite is 0; until TASK-0400 the writer threw.
+        Assert.Equal(["0", "0", "0"], new[] { double.NaN, double.PositiveInfinity, double.NegativeInfinity }.Select(DxfExport.N));
+        Assert.Contains("10\n0\n20\n20\n30\n0\n", DxfExport.Text(Sheet([new SheetLine(Guid.NewGuid(), double.NaN, 20, 30.5, 20, true, "edge")])), StringComparison.Ordinal);
     }
 
     // Item 7: the text of the file does not depend on the culture of the computer.
@@ -468,5 +471,23 @@ public sealed class DxfExportTests : IDisposable
         var stdout = new StringWriter();
         var exit = global::Engine.Cli.Cli.Run(args, stdout, new StringWriter());
         return (exit, stdout.ToString());
+    }
+
+    // ADR-0163 item 3 (TASK-0400, finding E216 of the codebase review of 2026-11-17): an arc whose end is in the direction of
+    // its start, but not equal to it, is a whole turn less the rounding, as in the PDF file. Until TASK-0400 its last part was
+    // a half turn whose middle was the unit of (0, 0), and the chain was a line through the centre.
+    [Fact]
+    public void An_Almost_Closed_Arc_Of_An_Ellipse_Goes_Around_The_Centre()
+    {
+        var ellipse = new SheetEllipse(50, 60, 8, 0, 0, 4);
+        var line = new SheetLine(Guid.NewGuid(), 58, 60, 57.99999999999999, 60, true, "edge") { Ellipse = ellipse };
+
+        var vertices = Assert.Single(Polylines(Entities(Sheet([line])))).Vertices;
+
+        Assert.Equal((57.99999999999999, 60.0), At(vertices[^1]));
+        Assert.All(vertices.SkipLast(1), vertex => Assert.InRange(vertex.Bulge!.Value, 1e-9, 1));
+        Assert.Contains(vertices, vertex => At(vertex).X < 42.01);
+        Assert.Contains(vertices, vertex => At(vertex).Y < 56.01);
+        Assert.All(vertices, vertex => Assert.True(FromEllipse(ellipse, At(vertex)) < 1e-9));
     }
 }

@@ -7,7 +7,7 @@ date: 2026-11-14
 supersedes: []
 superseded-by: []
 amends: ['0142']
-amended-by: ['0144', '0145', '0147']
+amended-by: ['0144', '0145', '0147', '0163']
 affects:
   - Engine.Core/Drawing/ViewEdges.cs
   - Engine.Core/Features/KernelProjection.cs
@@ -39,16 +39,16 @@ On 2026-11-14 the owner ordered work alone until Sunday, with the recommended op
    CreateCylinder, CreateCone, CreateSphere, and each circle and each arc of the sketch of an extrude give a curve. A
    Translate moves it, a Rotate turns it with the exact turn of the solid, and a Subtract keeps the curves of the two
    bodies. A torus gives no curve.
-2. **A circle along the view (amends ADR-0142 item 5).** When the frame has a length of 1 and the axis of a cylinder or a
-   cone is exactly along the direction of the view, each piece of an end is an arc of the circle of the design, from its
+2. **A circle along the view (amends ADR-0142 item 5).** When the axis of a cylinder or a cone is exactly along the
+   direction of the view, each piece of an end is an arc of the circle of the design, from its
    first end to its second end counter-clockwise on the view. Each piece of the outline of a sphere is an arc of its circle
    too. The arcs of one circle, one body, one visibility and one pair of tags that follow each other are one arc; a closed
-   chain is the whole circle, with its two ends at one point. The centre and the radius are exact; the ends of an arc are
+   chain is the whole circle, with its two ends at one point. With a frame of length L the radius on the view is L times the radius of the design (ADR-0163 item 1). The centre and
+   the radius are exact when L is exact; the ends of an arc are
    the exact ends of the pieces of K9a, so they are on the facets, within the rounding of the turn.
 3. **An end from the side.** When the axis is exactly across the direction of the view, the pieces of an end lie on one
    line; the pieces of one line, one visibility and one pair of tags that follow each other are one line.
-4. **What stays.** An end whose axis is neither along nor across the view is an ellipse: it keeps its facets. A frame of
-   another length keeps the facets, because the radius of the design is not the radius on that view. A turn from a
+4. **What stays.** An end whose axis is neither along nor across the view is an ellipse: it keeps its facets. A turn from a
    quaternion in doubles is seldom exactly along an axis, so a turned cylinder keeps its facets too. The outline of a
    cylinder and a cone stays the outline of its facets.
 5. **No contract change.** The curves and the circles are internal to `Engine.Core`, as the lines of ADR-0142 are.
@@ -77,3 +77,4 @@ sagitta of one facet.
 - 2026-11-14 · TASK-0379 · ADR-0145 items 1 and 2 amend items 2 to 4: a line has its place along the axis, and an axis within
   1e-9 of the view is along it.
 - 2026-11-14 · TASK-0380 · ADR-0147 item 1 amends item 3: an end within 1e-9 of across the view is one line on its diameter.
+- 2026-11-18 · TASK-0400 · Amended by ADR-0163 item 1: a frame of any length gives the circles, with L times the radius of the design (finding E211).

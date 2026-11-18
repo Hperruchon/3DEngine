@@ -452,17 +452,6 @@ that picture "X 18 mm" of the panel moves about 150 pixels down to leave the oth
 the model.
 Exit: the scenario runs in the window and passes; or it fails, or the long lines confuse the person, and a task
 corrects it.
-### R-0068 · A view of a sheet takes an exact frame only, so no pictorial view exists
-- class: question
-- opened: 2026-11-15
-- due: 2027-02-13
-- extended: no
-- refs: `Engine.Core/Drawing/SheetLayout.cs` (Frame), `docs/adr/0155-the-views-of-a-sheet.md` item 1, TASK-0393
-AddSheetView takes nine numbers that give an exact frame with no tolerance (Q1 A of 2026-11-15). An isometric or another
-pictorial view comes from a sine and a cosine, so its right and its up are not of one length in exact arithmetic, and the
-command refuses it. A drawing often has one pictorial view.
-Exit: a slice gives a pictorial view with a test, or the owner accepts the six standard views and the frames of whole numbers.
-
 ### R-0069 · A read of a sheet with three views of a sphere takes about 5 s
 - class: debt
 - opened: 2026-11-15
@@ -628,6 +617,20 @@ only the render loop writes `Scene` and `Entity` of `3DEngine.Core`. V5, V6 and 
 ---
 
 ## Closed
+
+### R-0068 · A view of a sheet takes an exact frame only, so no pictorial view exists
+- class: question
+- opened: 2026-11-15
+- due: 2027-02-13
+- extended: no
+- refs: `Engine.Core/Drawing/SheetLayout.cs` (Frame), `docs/adr/0155-the-views-of-a-sheet.md` item 1, TASK-0393
+AddSheetView takes nine numbers that give an exact frame with no tolerance (Q1 A of 2026-11-15). An isometric or another
+pictorial view comes from a sine and a cosine, so its right and its up are not of one length in exact arithmetic, and the
+command refuses it. A drawing often has one pictorial view.
+Exit: a slice gives a pictorial view with a test, or the owner accepts the six standard views and the frames of whole numbers.
+Closed 2026-11-18 · resolved · TASK-0400 · ADR-0163. The owner chose the frame of whole numbers as the pictorial view (ADR-0162
+item 16), and the theory `SheetViewTests.A_View_Of_Any_Length_Gives_The_Curves_Of_The_Design` gives the view right (2, 2, −1), up
+(−1, 2, 2) and toward the eye (2, −1, 2) with the ellipses of a cylinder at their exact half axes.
 
 ### R-0067 · P10 changes the contract, and its eight questions wait for the owner
 - class: question
