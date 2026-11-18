@@ -1,7 +1,7 @@
 ---
 id: 0411
 title: A section of a sheet gives its cut, its hatch, its cut line and its label in GetSheet and in the three files
-status: Active
+status: Done
 phase: R30h
 opened: 2026-11-18
 depends-on: [0405, 0408]
@@ -79,15 +79,15 @@ hatch, its cut line with its arrows and its letters on the parent, and its label
 
 ## Acceptance criteria
 
-- [ ] Each rule has a test, each new test fails on the code before the change, and each rule has an injection that a test
+- [x] Each rule has a test, each new test fails on the code before the change, and each rule has an injection that a test
       catches.
-- [ ] A clean build (`--no-incremental`) gives zero errors and zero warnings, and the phone project builds.
-- [ ] `dotnet test`, the write-set check and `eng/repo-gates` pass; continuous integration passes on the branch and on
+- [x] A clean build (`--no-incremental`) gives zero errors and zero warnings, and the phone project builds.
+- [x] `dotnet test`, the write-set check and `eng/repo-gates` pass; continuous integration passes on the branch and on
       `main` after the merge.
 
 ## Outcome
 
-Status: Active
+Status: Done · commit (the merge of the branch r30h-section) · v0.394
 
 ## Method
 
@@ -104,3 +104,4 @@ Weakest:    the cost of a read with a section on a heavy body is not measured.
   through the corners of the facets and only an outline gave an axis; an edge of a cut face along the axis now gives it
   (ADR-0169 item 3, amends ADR-0165 item 3). Twenty-four injections each failed a named test after a test of a cut across
   the hole came in, and each file came back byte for byte.
+- 2026-11-18: run 44331913603 passed on the branch. The owner ordered "merge R30h when green". Closed at v0.394.
