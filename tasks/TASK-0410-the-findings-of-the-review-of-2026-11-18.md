@@ -1,28 +1,32 @@
 ---
 id: 0410
 title: The medium and low findings of the codebase review of 2026-11-18
-status: Ready
+status: Active
 phase: P0.165
 opened: 2026-11-18
 depends-on: [0409]
-governed-by: [0004, 0007, 0016, 0018, 0019, 0025, 0027, 0028, 0029, 0030, 0031, 0032, 0033, 0034, 0037, 0060, 0072, 0073, 0075, 0076, 0077, 0078, 0080, 0081, 0082, 0083, 0084, 0085, 0086, 0087, 0089, 0091, 0092, 0093, 0097, 0098, 0099, 0100, 0101, 0102, 0104, 0105, 0106, 0107, 0108, 0109, 0110, 0111, 0113, 0114, 0116, 0117, 0119, 0120, 0121, 0123, 0124, 0125, 0127, 0129, 0130, 0131, 0137, 0138, 0140, 0142, 0143, 0144, 0145, 0147, 0155, 0158, 0163, 0164, 0165, 0166, 0167, 0168, 0169, 0170, 0171]
+governed-by: [0004, 0007, 0016, 0018, 0019, 0025, 0027, 0028, 0029, 0030, 0031, 0032, 0033, 0034, 0037, 0043, 0060, 0072, 0073, 0075, 0076, 0077, 0078, 0080, 0081, 0082, 0083, 0084, 0085, 0086, 0087, 0089, 0091, 0092, 0093, 0097, 0098, 0099, 0100, 0101, 0102, 0104, 0105, 0106, 0107, 0108, 0109, 0110, 0111, 0113, 0114, 0116, 0117, 0119, 0120, 0121, 0123, 0124, 0125, 0127, 0129, 0130, 0131, 0137, 0138, 0140, 0142, 0143, 0144, 0145, 0147, 0155, 0158, 0163, 0164, 0165, 0166, 0167, 0168, 0169, 0170, 0171]
 writes:
   create:
     - tasks/TASK-0410-the-findings-of-the-review-of-2026-11-18.md
   modify:
     - Engine.Core/Drawing/ViewEdges.cs
     - Engine.Core/Queries/GetSheetQuery.cs
+    - Engine.Core/Queries/GetViewLinesQuery.cs
     - Engine.Core/Queries/GetViewLinesQueryHandler.cs
     - 3DEngine.App/SheetActions.cs
     - 3DEngine.App/SheetPlacement.cs
     - 3DEngine.App/NativeThreeDEngine.cs
     - 3DEngine.App/SessionBodies.cs
+    - 3DEngine.App/SceneRenderer.cs
+    - 3DEngine.App/ViewLines.cs
     - 3DEngine.App/Ui/DesktopUi.cs
     - 3DEngine.App/Ui/DesktopUi.Sheet.cs
     - 3DEngine.App/Ui/DesktopUi.Views.cs
     - Engine.Tests/Drawing/SheetViewTests.cs
     - Engine.Tests/Drawing/ViewLinesTests.cs
     - 3DEngine.ImageTests/SheetAddTests.cs
+    - 3DEngine.ImageTests/FlatViewLinesTests.cs
     - docs/adr/0165-the-hidden-and-centre-lines-of-a-view.md
     - docs/adr/0166-the-lines-of-the-sheet-in-a-flat-view.md
     - docs/adr/0167-add-a-view-to-a-sheet-from-the-window.md
@@ -75,9 +79,10 @@ Each of the eleven findings has a correction or a recorded answer, and a test th
 
 ## Acceptance criteria
 
-- [ ] Each finding has a test that failed on the code of v0.391 or of the version before this task, and each rule has an
-      injection that a test catches.
-- [ ] A clean build (`--no-incremental`) gives zero errors and zero warnings, and the phone project builds.
+- [x] Each finding has a test that failed on the code of v0.391 or of the version before this task, and each rule has an
+      injection that a test catches. Except: E219 is a comment and V200 is a text, so their tests pass on the code before
+      the task too (see Method).
+- [x] A clean build (`--no-incremental`) gives zero errors and zero warnings, and the phone project builds.
 - [ ] `dotnet test`, the write-set check and `eng/repo-gates` pass; continuous integration passes on the branch and on
       `main` after the merge.
 
@@ -85,3 +90,20 @@ Each of the eleven findings has a correction or a recorded answer, and a test th
 
 Read the section of each finding in the review: its place, its probe and its recommended correction. R30c may change the same
 files of the window first; read them on `main` at the start, and keep the commands of R30c off the frame thread too.
+
+## Method
+
+Mechanical: a test for each finding with code, and an injection for each rule (`inject0410.js` of the session): E218, E220,
+            V194, V196, V197, V198 and V201. V195 and V199 keep the test of R30c,
+            `SheetPageTests.The_Page_And_The_Pad_Hold_Their_Keys`.
+Judgement:  E219 is a comment, and V200 is the text of ADR-0167 item 3 with the code of v0.391; their tests pass on the code
+            before the task too. A new sheet whose views do not fit stays with no view, so "Add to sheet" then takes the scale
+            that fits. An event whose kind starts with `sheet.` does not start a new read of the lines; each other event does.
+Weakest:    the frame needs a window, so three tests read `NativeThreeDEngine.cs` for the queue, the box, the key of the read,
+            the notes and the guard of the gizmo. No test runs `SessionBodies.SheetBox` with bodies in a session.
+
+## Progress
+
+- 2026-11-18: opened under the order of the owner "then start TASK-0410", branch p0165-review-findings from `main` at
+  `fa2ff0d` (v0.398). The write set adds `GetViewLinesQuery.cs`, `SceneRenderer.cs`, `ViewLines.cs` and
+  `FlatViewLinesTests.cs`, and governed-by adds ADR-0043, which affects `SceneRenderer.cs`. Ledger entry v0.399.

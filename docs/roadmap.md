@@ -473,6 +473,10 @@ Therefore each approved objective must have a track here.
 - Review — The second codebase review of 2026-11-18. v0.397, TASK-0414.
 - P0.166 — A read without the dragged view ends a drag of the sheet page, and its release gives nothing (V202). v0.398,
   TASK-0415, ADR-0168.
+- P0.165 — The findings of the first codebase review of 2026-11-18: the cross of a hole that a body covers in part,
+  the centre lines of a flat view, a new sheet that names each view that does not fit, the commands of a sheet off the
+  frame thread, the box of the drawn bodies, no gizmo on the paper, and the names of the skipped bodies. v0.399, TASK-0410,
+  ADR-0165, ADR-0166, ADR-0167.
 - Review — The codebase review of 2026-11-14 (c). v0.351, TASK-0366.
 - P0.143 — The low findings of the codebase review of 2026-11-11: a triangle of zero area adds no edge, and a mesh of
   more than 100 000 triangles finds its edges on the thread pool. v0.332, TASK-0345, ADR-0121.

@@ -13,10 +13,15 @@ internal sealed class SheetActions(DocumentSession session)
     // ADR-0167 item 2: the views of a flat view and of "Standard views" go on the first live sheet, at the scale of its first
     // view, each at the place of the projection. A view whose frame the sheet holds is not added again. With no live sheet the
     // window opens the pad of the paper and the scale first, so this method needs a sheet.
+    // Finding V196 of the codebase review of 2026-11-18 (TASK-0410): the method runs on the queue of the sheet, so it reads the
+    // sheet again first; an earlier work of the queue can have changed it.
     public string Add(SheetRecord sheet, IReadOnlyList<FlatView> views, SheetPlacement.Box box)
     {
         ArgumentNullException.ThrowIfNull(sheet);
         ArgumentNullException.ThrowIfNull(views);
+        if (Read(sheet.Id) is not { } live)
+            return $"No live sheet with id '{sheet.Id}' exists.";
+        sheet = live;
         var scale = sheet.Views.Count > 0
             ? (sheet.Views[0].ScaleNumerator, sheet.Views[0].ScaleDenominator)
             : SheetPlacement.FitScale(sheet.Paper, sheet.Landscape, sheet.ThirdAngle, box);
@@ -45,7 +50,10 @@ internal sealed class SheetActions(DocumentSession session)
     }
 
     // ADR-0167 items 3 and 5: the pad gives the paper and the scale; CreateSheet makes the sheet, and each view goes at its
-    // place in the group of the views, centred on the area of the paper.
+    // place in the group of the views, centred on the area of the paper. Finding V194 of the codebase review of 2026-11-18
+    // (TASK-0410): a view whose place is not inside the area does not go on the sheet, and the text names it; a refusal names
+    // the views that went on before it. Until TASK-0410 the engine refused a place off the paper, and the text hid the views
+    // that went on.
     public string Create(string name, string paper, bool landscape, (long Numerator, long Denominator) scale, IReadOnlyList<FlatView> views, SheetPlacement.Box box)
     {
         ArgumentNullException.ThrowIfNull(views);
@@ -58,14 +66,25 @@ internal sealed class SheetActions(DocumentSession session)
         IReadOnlyList<FlatView> group = [.. views.Concat(SheetPlacement.Standard.Where(view => !views.Contains(view)))];
         var places = SheetPlacement.Group(paper, landscape, sheet.ThirdAngle, [.. group.Select(SheetPlacement.FrameOf)], scale.Numerator, scale.Denominator, box);
         var added = new List<string>();
+        var outside = new List<string>();
         for (var i = 0; i < views.Count; i++)
         {
-            if (Apply(View(sheet.Id, SheetPlacement.FrameOf(views[i]), scale, places[i])) is { } failed)
-                return failed;
+            var frame = SheetPlacement.FrameOf(views[i]);
+            if (!SheetPlacement.Fits(paper, landscape, frame, scale.Numerator, scale.Denominator, places[i], box))
+            {
+                outside.Add(Name(views[i]));
+                continue;
+            }
+
+            if (Apply(View(sheet.Id, frame, scale, places[i])) is { } failed)
+                return added.Count == 0 ? failed : $"{Text(name, scale, added, [], [])} {failed}";
             added.Add(Name(views[i]));
         }
 
-        return Text(name, scale, added, [], []);
+        if (outside.Count == 0)
+            return Text(name, scale, added, [], []);
+        var made = added.Count == 0 ? $"Made {name} with no view." : Text(name, scale, added, [], []);
+        return $"{made} {Capital(List(outside))} {(outside.Count == 1 ? "does" : "do")} not fit {paper} at {SheetPlacement.Text(scale)}: choose a smaller scale.";
     }
 
     // ADR-0167 item 5: ScaleSheetView for each view of the sheet, in one step of undo. The places stay.
@@ -132,9 +151,12 @@ internal sealed class SheetActions(DocumentSession session)
 
     // The text of an add: "Added the front and the top view to Sheet 1 at 2:1.", with the views that the sheet already holds and
     // the views that do not fit.
+    private static string List(List<string> names) => names.Count == 1 ? $"the {names[0]} view" : $"the {string.Join(", the ", names.Take(names.Count - 1))} and the {names[^1]} view";
+
+    private static string Capital(string text) => text.Length == 0 ? text : char.ToUpperInvariant(text[0]) + text[1..];
+
     private static string Text(string sheet, (long, long) scale, List<string> added, List<string> held, List<string> outside)
     {
-        static string List(List<string> names) => names.Count == 1 ? $"the {names[0]} view" : $"the {string.Join(", the ", names.Take(names.Count - 1))} and the {names[^1]} view";
         var parts = new List<string>();
         if (added.Count > 0)
             parts.Add($"Added {List(added)} to {sheet} at {SheetPlacement.Text(scale)}.");
