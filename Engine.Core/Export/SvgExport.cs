@@ -101,11 +101,11 @@ public static class SvgExport
     }
 
     // ADR-0159 item 6: a number as the shortest text that reads back as the same double, with the culture of no country. A
-    // negative zero is 0. ADR-0163 item 2 (TASK-0400, finding E215 of the codebase review of 2026-11-17): a number that is not
+    // negative zero is 0. ADR-0164 item 2 (TASK-0400, finding E215 of the codebase review of 2026-11-17): a number that is not
     // finite is 0, as in the DXF and the PDF file.
     public static string N(double value) => value == 0 || !double.IsFinite(value) ? "0" : value.ToString("R", CultureInfo.InvariantCulture);
 
-    // ADR-0163 item 4 (TASK-0400, finding E217 of the codebase review of 2026-11-17): a character that XML 1.0 does not permit
+    // ADR-0164 item 4 (TASK-0400, finding E217 of the codebase review of 2026-11-17): a character that XML 1.0 does not permit
     // is the replacement character U+FFFD: a character of control other than the tab, the line feed and the return, U+FFFE,
     // U+FFFF, and a surrogate with no pair. The rules of a name accept U+FFFE and U+FFFF, so until TASK-0400 such a name gave
     // a file that was not XML.

@@ -7,7 +7,7 @@ date: 2026-11-15
 supersedes: []
 superseded-by: []
 amends: ['0153']
-amended-by: ['0163']
+amended-by: ['0164']
 affects:
   - Engine.Core/Commands/AddSheetViewCommand.cs
   - Engine.Core/Commands/AddSheetViewCommandHandler.cs
@@ -58,7 +58,7 @@ and gave the same answer in the side session that prepared the plans of P10.3 an
    0 to the height. No command changes the paper, so a valid place stays valid.
 5. **GetSheet (Q2 A).** The query gives the sheet, the size of its paper, its dimensions, and for each view its record, its
    lines on the paper and each body that gives no lines with its reason (ADR-0142 item 6). A point (u, v) of the view goes to
-   (X + f (u − cu), Y + f (v − cv)): f is the scale divided by the length of the right of the frame, a length that never squares a double (ADR-0163 item 1),
+   (X + f (u − cu), Y + f (v − cv)): f is the scale divided by the length of the right of the frame, a length that never squares a double (ADR-0164 item 1),
    and (cu, cv) is the
    centre of the box of the lines of the view, from their ends and the whole circle or ellipse of a line that has one. A view
    with no line has its centre at the origin of the part. A circle and an ellipse on the paper have the size of the view
@@ -83,4 +83,4 @@ session for that time. The centre of a view moves when the part grows on one sid
 
 - 2026-11-15 · TASK-0393 · The record, from the plan of P10.2 and the answers of the owner of 2026-11-15 to Q1 to Q7.
 - 2026-11-15 · TASK-0393 · Shipped at v0.377.
-- 2026-11-18 · TASK-0400 · Amended by ADR-0163 item 1: the length of the frame never squares a double, so a frame of a length near 1e-200 or 1e200 gives a read that is finite (finding E212).
+- 2026-11-18 · TASK-0400 · Amended by ADR-0164 item 1: the length of the frame never squares a double, so a frame of a length near 1e-200 or 1e200 gives a read that is finite (finding E212).

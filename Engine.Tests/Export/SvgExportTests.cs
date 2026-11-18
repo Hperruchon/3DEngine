@@ -287,7 +287,7 @@ public sealed class SvgExportTests : IDisposable
         return (exit, stdout.ToString());
     }
 
-    // ADR-0163 items 2 and 4 (TASK-0400, findings E215 and E217 of the codebase review of 2026-11-17): a name with U+FFFE and
+    // ADR-0164 items 2 and 4 (TASK-0400, findings E215 and E217 of the codebase review of 2026-11-17): a name with U+FFFE and
     // U+FFFF, which the rules of a name accept, gives a file that is XML, with U+FFFD in their place, and a pair of surrogates
     // stays; a number that is not
     // finite is 0. Until TASK-0400 the parse of the file threw, and the file held "NaN".

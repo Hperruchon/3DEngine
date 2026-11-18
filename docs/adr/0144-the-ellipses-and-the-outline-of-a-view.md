@@ -7,7 +7,7 @@ date: 2026-11-14
 supersedes: []
 superseded-by: []
 amends: ['0143']
-amended-by: ['0145', '0163']
+amended-by: ['0145', '0164']
 affects:
   - Engine.Core/Drawing/ViewEdges.cs
   - Engine.Tests/Drawing/ViewEllipsesTests.cs
@@ -29,7 +29,7 @@ On 2026-11-14 the owner ordered work alone until Sunday, with the recommended op
 
 ## Decision
 
-1. **The ellipse of an end (amends ADR-0143 item 4).** With a frame of any length (ADR-0163 item 1), an end of a cylinder or a cone whose axis
+1. **The ellipse of an end (amends ADR-0143 item 4).** With a frame of any length (ADR-0164 item 1), an end of a cylinder or a cone whose axis
    is neither exactly along nor exactly across the view is an ellipse. With a the unit axis and e the unit direction toward
    the eye, P = a × e over its length and Q = a × P lie on the plane of the end, so on the view the half axes are Major = R P
    and Minor = R Q, at a right angle, with R the radius of the design. The centre is the exact projection of the centre of
@@ -66,4 +66,4 @@ but at the place of the facets. An end at a slant is an ellipse also when the tu
 - 2026-11-14 · TASK-0377 · Shipped at v0.362.
 - 2026-11-14 · TASK-0379 · ADR-0145 items 1 and 2 amend items 1, 2 and 4: the ellipse of a piece and the place of each end of
   an outline come from the place along the axis.
-- 2026-11-18 · TASK-0400 · Amended by ADR-0163 item 1: the ellipses come with a frame of any length (finding E211).
+- 2026-11-18 · TASK-0400 · Amended by ADR-0164 item 1: the ellipses come with a frame of any length (finding E211).

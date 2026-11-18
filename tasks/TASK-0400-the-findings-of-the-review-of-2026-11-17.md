@@ -5,10 +5,11 @@ status: Active
 phase: P0.162
 opened: 2026-11-17
 depends-on: [0399]
-governed-by: [0004, 0033, 0035, 0037, 0039, 0048, 0142, 0143, 0144, 0145, 0147, 0149, 0154, 0155, 0156, 0159, 0160, 0163]
+governed-by: [0004, 0033, 0035, 0037, 0039, 0048, 0142, 0143, 0144, 0145, 0147, 0149, 0154, 0155, 0156, 0159, 0160, 0164]
 writes:
   create:
     - tasks/TASK-0400-the-findings-of-the-review-of-2026-11-17.md
+    - docs/adr/0164-the-findings-of-the-review-of-2026-11-17.md
     - docs/adr/0163-the-findings-of-the-review-of-2026-11-17.md
   modify:
     - Engine.Core/Drawing/ViewEdges.cs
@@ -92,7 +93,7 @@ Weakest:    the time test of E213 compares the analysis with the status on one c
 ## Progress
 
 - 2026-11-18: opened under the order of the owner "Start P0.162", branch p0162-review-findings from `main` at v0.386. The
-  write set adds ADR-0143 and ADR-0144, whose decision held the limit of a frame of length 1, ADR-0163, and the register for
+  write set adds ADR-0143 and ADR-0144, whose decision held the limit of a frame of length 1, ADR-0164, and the register for
   R-0068; it drops `AddSheetViewCommandHandler.cs`, because no refusal changed. Each new test failed on the code of v0.386.
   Twelve injections: ten failed a test at once. One (no `ScaleB`) passed, because √2 needs no shift; a frame of length 4√2
   now catches it. One (no guard in the DXF number) passed, because the SVG number already gives 0, so the DXF guard could
@@ -100,3 +101,6 @@ Weakest:    the time test of E213 compares the analysis with the status on one c
   `String.fromCharCode(92)` wrote those lines again.
 - 2026-11-18: the full run found `ViewCurvesTests.A_Frame_Of_Another_Length_Keeps_The_Facets`, the test of the old decision of
   ADR-0143 item 4. It now asserts the new rule: a frame of length 2 gives one circle of the exact radius 20.
+- 2026-11-18: run 44276399803 passed on the branch. The session of the desktop window merged first, as P0.164 (TASK-0404,
+  v0.387), with its ADR-0163, so the ADR of this task is ADR-0164. The commit 21d1490 still names ADR-0163 in its message;
+  the history keeps it, because a pushed commit does not change.

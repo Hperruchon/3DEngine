@@ -336,7 +336,7 @@ public sealed class SheetViewTests(ITestOutputHelper output) : IDisposable
         }
     }
 
-    // ADR-0163 item 1 (TASK-0400, findings E211 and E212 of the codebase review of 2026-11-17): a view of an exact frame of
+    // ADR-0164 item 1 (TASK-0400, findings E211 and E212 of the codebase review of 2026-11-17): a view of an exact frame of
     // any length gives the curves of the design at the scale of the view. A cylinder of radius 10 along z at 1 : 1 is one
     // whole circle of radius 10 from the top with a frame of length 1, 2, 5, √2 or 4√2 (top views turned in their plane), 1e-200
     // or 1e200, and two ellipses with a major half axis of 10 and a minor one of 10 · 2/3 in the pictorial view of whole

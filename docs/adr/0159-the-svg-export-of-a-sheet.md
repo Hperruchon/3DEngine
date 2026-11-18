@@ -7,7 +7,7 @@ date: 2026-11-16
 supersedes: []
 superseded-by: []
 amends: []
-amended-by: ['0163']
+amended-by: ['0164']
 affects:
   - Engine.Core/Export/SvgExport.cs
   - Engine.Core/Queries/GetSheetQueryHandler.cs
@@ -59,7 +59,7 @@ options below, each the smallest one that keeps the exact numbers. The owner can
    "P10a or R22d").
 6. **The numbers.** Each number is the shortest text that reads back as the same double, with the culture of no country,
    and a negative zero is 0. A number that is not finite is 0, and a character that XML 1.0 does not permit is U+FFFD
-   (ADR-0163 items 2 and 4). The code uses + − × ÷ and sqrt only, so the file is the same on each platform.
+   (ADR-0164 items 2 and 4). The code uses + − × ÷ and sqrt only, so the file is the same on each platform.
 7. **The surface.** `GET /export/svg?sheetId=<id>` gives the file as `image/svg+xml`, 404 with `E-SHEET-NOT-FOUND` for a
    sheet that is not live, and 400 with `E-API-BAD-REQUEST` with no valid `sheetId`. The command line
    `engine export svg <document.3de> <file.svg> --sheet <id> [--folder <path>]` writes the file and prints
@@ -79,4 +79,4 @@ of the viewer. The read of a curved body takes seconds (R-0069), and the export 
 
 - 2026-11-16 · TASK-0396 · The record.
 - 2026-11-16 · TASK-0396 · Shipped at v0.381.
-- 2026-11-18 · TASK-0400 · Amended by ADR-0163 items 2 and 4: a number that is not finite is 0, and a character that XML does not permit is U+FFFD (findings E215 and E217).
+- 2026-11-18 · TASK-0400 · Amended by ADR-0164 items 2 and 4: a number that is not finite is 0, and a character that XML does not permit is U+FFFD (findings E215 and E217).
