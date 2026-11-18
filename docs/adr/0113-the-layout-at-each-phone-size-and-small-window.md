@@ -7,7 +7,7 @@ date: 2026-11-10
 supersedes: []
 superseded-by: []
 amends: ['0081', '0092', '0093', '0098']
-amended-by: ['0108', '0114']
+amended-by: ['0108', '0114', '0163']
 affects:
   - 3DEngine.App/Ui/DesktopUi.cs
   - 3DEngine.App/Ui/DesktopUi.Panel.cs
@@ -46,7 +46,9 @@ A probe of TASK-0336 at v0.316 drew the window at eleven sizes in four states an
    window, no window covers a control of another window or a tool of the ring, and no two fixed windows overlap, at each
    of these sizes in pixels of the window: 360 by 640, 360 by 780, 384 by 824, 390 by 844, 393 by 873, 412 by 915
    (phones in portrait), 640 by 360, 844 by 390, 915 by 412 (phones in landscape), 768 by 1024, 1024 by 768 (a tablet),
-   1280 by 720 and 1440 by 900 (windows). A control that its panel scrolls out of view is not a fault. The sheet of a
+   1280 by 720 and 1440 by 900 (windows). A control that its panel scrolls out of view is not a fault: its top is below the bottom of the panel, or its top is
+   in the panel and its middle is at or below the bottom (ADR-0163 item 4). The minimum window of the desktop, 360 by 600,
+   is a size too, and a second test applies the rule at each step of a resize (ADR-0163 items 2 and 4). The sheet of a
    proposal may cover the panel (ADR-0092 item 7), but not a tool of the ring (ADR-0111 item 4). The test reads each
    control of the last frame through `DesktopUi.ItemRectangles`.
 2. **A row that does not fit (fault 1, amends ADR-0093 item 2).** A control of the panel stays on its line when it fits
@@ -85,3 +87,5 @@ the history arc.
   300.
   300.
 - 2026-11-10 · TASK-0339 · ADR-0114 item 4 amends item 1: no two windows overlap, two panels included (finding T181).
+- 2026-11-18 · TASK-0404 · ADR-0163 item 4 amends item 1: a control cut by the bottom of its panel is scrolled out of view,
+  the minimum window of the desktop is a size, and a second test applies the rule at each step of a resize.

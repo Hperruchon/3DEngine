@@ -24,7 +24,13 @@ internal static class DesktopEngineHost
                 var later = window is not null;
                 try
                 {
-                    window ??= new Window("3DEngine Desktop", 1280, 720);
+                    // ADR-0163 items 1 and 2 (TASK-0404): a person can resize and maximize the window, down to the
+                    // smallest size of the layout test. Until TASK-0404 the window had a fixed size of 1280 by 720.
+                    if (window is null)
+                    {
+                        window = new Window("3DEngine Desktop", 1280, 720, WindowFlags.Resizable);
+                        window.SetMinimumSize(Ui.DesktopUi.MinimumWindowWidth, Ui.DesktopUi.MinimumWindowHeight);
+                    }
                 }
                 catch (Exception ex)
                 {
@@ -156,39 +162,70 @@ internal static class DesktopEngineHost
             // clock; until TASK-0319 a change of the clock of the system gave a wrong or negative step.
             long lastFrame = System.Diagnostics.Stopwatch.GetTimestamp();
 
-            // ADR-0030 item 3: an open that a check accepted ends the loop.
-            while (running && !surface.Stopping.IsCancellationRequested && surface.Document.RequestedOpen is null)
+            // ADR-0163 item 3 (TASK-0404): the same frame runs from the event watch of a live resize, inside SDL_PollEvent,
+            // so the layout follows a drag of the border. A failure there stays for the loop, which throws it.
+            Exception? liveFailure = null;
+            void Frame()
             {
-                // A frame draws nothing while the window has no area, so the loop
-                // waits for an event, at most 100 ms so that a stop of the surface
-                // still closes the window. Until TASK-0079 the loop polled again at
-                // once, and a minimised window took one processor core (finding V23
-                // of the codebase review of 2026-10-17).
-                if (window.HasNoArea)
-                    Window.WaitForEvent(100);
-
-                SDL_Event sdlEvent;
-                while (SDL_PollEvent(&sdlEvent))
-                {
-                    if (sdlEvent.Type == SDL_EventType.SDL_EVENT_QUIT)
-                    {
-                        running = false;
-                        break;
-                    }
-
-                    if (sdlEvent.Type == SDL_EventType.SDL_EVENT_WINDOW_CLOSE_REQUESTED)
-                    {
-                        running = false;
-                        break;
-                    }
-
-                    engine.HandleEvent(sdlEvent);
-                }
-
                 long now = System.Diagnostics.Stopwatch.GetTimestamp();
                 engine.Update(System.Diagnostics.Stopwatch.GetElapsedTime(lastFrame, now));
                 engine.Render();
                 lastFrame = now;
+            }
+
+            window.FollowLiveResize(() =>
+            {
+                if (liveFailure is not null)
+                    return;
+                try
+                {
+                    Frame();
+                }
+                catch (Exception ex)
+                {
+                    liveFailure = ex;
+                }
+            });
+            try
+            {
+                // ADR-0030 item 3: an open that a check accepted ends the loop.
+                while (running && !surface.Stopping.IsCancellationRequested && surface.Document.RequestedOpen is null)
+                {
+                    // A frame draws nothing while the window has no area, so the loop
+                    // waits for an event, at most 100 ms so that a stop of the surface
+                    // still closes the window. Until TASK-0079 the loop polled again at
+                    // once, and a minimised window took one processor core (finding V23
+                    // of the codebase review of 2026-10-17).
+                    if (window.HasNoArea)
+                        Window.WaitForEvent(100);
+
+                    SDL_Event sdlEvent;
+                    while (SDL_PollEvent(&sdlEvent))
+                    {
+                        if (sdlEvent.Type == SDL_EventType.SDL_EVENT_QUIT)
+                        {
+                            running = false;
+                            break;
+                        }
+
+                        if (sdlEvent.Type == SDL_EventType.SDL_EVENT_WINDOW_CLOSE_REQUESTED)
+                        {
+                            running = false;
+                            break;
+                        }
+
+                        engine.HandleEvent(sdlEvent);
+                    }
+
+                    if (liveFailure is not null)
+                        System.Runtime.ExceptionServices.ExceptionDispatchInfo.Throw(liveFailure);
+                    Frame();
+                }
+            }
+            finally
+            {
+                // The engine of this session ends here; the next session gives its own frame.
+                window.FollowLiveResize(null);
             }
         }
         catch (Exception ex)

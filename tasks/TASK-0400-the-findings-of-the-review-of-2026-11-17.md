@@ -104,3 +104,5 @@ Weakest:    the time test of E213 compares the analysis with the status on one c
 - 2026-11-18: run 44276399803 passed on the branch. The session of the desktop window merged first, as P0.164 (TASK-0404,
   v0.387), with its ADR-0163, so the ADR of this task is ADR-0164. The commit 21d1490 still names ADR-0163 in its message;
   the history keeps it, because a pushed commit does not change.
+- 2026-11-18: the merge of `main` at v0.387 into this branch: the index of the ADRs holds the row of ADR-0163 of P0.164
+  and the row of ADR-0164 of this task, in their order; the test floor takes 1672 for `Engine.Tests` and the image counts of `main`.
