@@ -158,7 +158,17 @@ internal static class ViewEdges
     // can add the centre lines of the view.
     public static (IReadOnlyList<ViewLine> Lines, IReadOnlyList<(Guid Body, string Reason)> Skipped, IReadOnlyDictionary<FaceTag, SideCurve> Curves) WithCurves(Document document, ViewFrame frame)
     {
+        var (lines, skipped, curves, _) = Section(document, frame, null);
+        return (lines, skipped, curves);
+    }
+
+    // ADR-0169 item 3 (phase R30h, TASK-0411): the lines of WithCurves, with each solid cut by the plane through the point whose
+    // normal is the direction toward the eye when a cut is given, and the loops of the cut faces of each body on the view.
+    public static (IReadOnlyList<ViewLine> Lines, IReadOnlyList<(Guid Body, string Reason)> Skipped, IReadOnlyDictionary<FaceTag, SideCurve> Curves,
+        IReadOnlyList<(Guid Body, IReadOnlyList<IReadOnlyList<(Rational X, Rational Y)>> Loops)> CutFaces) Section(Document document, ViewFrame frame, (Vector3R Point, Guid View)? cut)
+    {
         ArgumentNullException.ThrowIfNull(document);
+        var cutFaces = new List<(Guid Body, IReadOnlyList<IReadOnlyList<(Rational X, Rational Y)>> Loops)>();
         var bodies = new List<(Guid Body, Brep Brep)>();
         var skipped = new List<(Guid Body, string Reason)>();
         var curves = new Dictionary<FaceTag, SideCurve>();
@@ -179,7 +189,29 @@ internal static class ViewEdges
 
             try
             {
-                bodies.Add((record.Handle.Id, Brep.Of(solid)));
+                if (cut is { } plane)
+                {
+                    if (SectionCut.Apply(solid, plane.Point, frame, plane.View) is not { } kept)
+                    {
+                        skipped.Add((record.Handle.Id, "The cut plane of the section leaves no material of the body (ADR-0169 item 3)."));
+                        continue;
+                    }
+
+                    solid = kept;
+                }
+
+                var brep = Brep.Of(solid);
+                bodies.Add((record.Handle.Id, brep));
+                if (cut is { } faces)
+                {
+                    var tag = SectionCut.Tag(faces.View);
+                    var loops = brep.Faces.Where(face => face.Tag == tag).SelectMany(face => face.Loops)
+                        .Select(loop => (IReadOnlyList<(Rational X, Rational Y)>)[.. loop.Vertices.Select(v => (brep.Vertices[v].Dot(frame.Right), brep.Vertices[v].Dot(frame.Up)))])
+                        .ToList();
+                    if (loops.Count > 0)
+                        cutFaces.Add((record.Handle.Id, loops));
+                }
+
                 foreach (var (tag, curve) in KernelProjection.Curves(document, record.Handle.Id))
                     curves.TryAdd(tag, curve);
             }
@@ -189,7 +221,7 @@ internal static class ViewEdges
             }
         }
 
-        return (Of(bodies, frame, curves), skipped, curves);
+        return (Of(bodies, frame, curves), skipped, curves, cutFaces);
     }
 
     // ADR-0142 items 3 to 5: the lines of the bodies along the frame, in the order of the bodies, their edges and the
@@ -830,14 +862,13 @@ internal static class ViewEdges
                 centres.Add(new ViewLine(line.Body, (x, y - r), (x, y + r), true, ViewLineKind.Centre, line.First, line.Second));
             }
 
-            if (line.Kind != ViewLineKind.Outline || line.World is not var (from, to) || !curves.TryGetValue(line.First, out var side)
-                || side.Kind == SideCurveKind.Sphere || side.Axis.IsZero)
+            if (line.World is not var (from, to) || AxisSide(line, curves) is not var (tag, side))
                 continue;
             var (a, b) = (Along(side, from), Along(side, to));
             var (low, high) = a <= b ? (a, b) : (b, a);
-            var index = axes.FindIndex(axis => axis.Tag == line.First);
+            var index = axes.FindIndex(axis => axis.Tag == tag);
             if (index < 0)
-                axes.Add((line.Body, line.First, side, low, high));
+                axes.Add((line.Body, tag, side, low, high));
             else
                 axes[index] = axes[index] with { Low = low < axes[index].Low ? low : axes[index].Low, High = high > axes[index].High ? high : axes[index].High };
         }
@@ -849,5 +880,26 @@ internal static class ViewEdges
         }
 
         return centres;
+    }
+
+    // ADR-0165 item 3 and ADR-0169 item 3 (phase R30h, TASK-0411): the tag and the curve of a cylinder or a cone that a line shows
+    // from the side: a line of its outline, or an edge between its side and a face of another tag along its axis, as the edge
+    // of a cut face. Until TASK-0411 only an outline gave the axis, so a section through the axis of a hole, whose cut goes
+    // through the corners of the facets, had no axis. Else null.
+    private static (FaceTag Tag, SideCurve Side)? AxisSide(ViewLine line, IReadOnlyDictionary<FaceTag, SideCurve> curves)
+    {
+        if (line.World is not var (from, to))
+            return null;
+        var (first, second) = (curves.TryGetValue(line.First, out var a) ? a : null, curves.TryGetValue(line.Second, out var b) ? b : null);
+        (FaceTag Tag, SideCurve Side)? found = line.Kind switch
+        {
+            ViewLineKind.Outline when first is not null => (line.First, first),
+            ViewLineKind.Edge when first is not null && second is null => (line.First, first),
+            ViewLineKind.Edge when first is null && second is not null => (line.Second, second),
+            _ => null,
+        };
+        if (found is not var (_, side) || side.Kind == SideCurveKind.Sphere || side.Axis.IsZero)
+            return null;
+        return line.Kind == ViewLineKind.Edge && !(to - from).Cross(side.Axis).IsZero ? null : found;
     }
 }

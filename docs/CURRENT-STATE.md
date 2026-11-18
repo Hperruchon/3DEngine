@@ -11805,3 +11805,40 @@ title block are small on a small paper. The commands of R30b still run on the fr
 New tests: 17. The test list holds 2858 (1693 in `Engine.Tests`, 390 in `3DEngine.Tests`, 772 in `3DEngine.ImageTests`, 3
 in `3DEngine.VisionTests`). Open entries: 14 of 15. New diagnostic codes: 0. Since the review of v0.392, 1 product milestone
 and 1 entry followed it.
+
+## v0.394 — A section of a sheet gives its cut, its hatch, its cut line and its label in GetSheet and in the three files (R30h, TASK-0411)
+
+Row R30h of ADR-0162 (the answers D14 A and D16 A of the owner of 2026-11-18). The owner ordered "start R30h", then "and
+r30d"; R30d (TASK-0412, ADR-0170) runs in the session of R30a and R30c. ADR-0169 records the decisions, states the exact shape
+of the change of `Engine.Contracts`, and amends ADR-0153, ADR-0155, ADR-0159, ADR-0160, ADR-0161 and ADR-0165.
+
+**The change.**
+- `Engine.Contracts`: the record `SheetSection(Parent, Point, Letter)` and the field `SheetView.Section`, null by default. A log
+  before this entry gives the same sheets.
+- The new command AddSheetSection adds a section of a view: the look on the parent ("left", "right", "up" or "down") gives the
+  frame, so a section of Front with the look "left" has the frame of Right. The section takes the scale of its parent, no
+  hidden lines, the centre lines and the first free letter from A to Z without I, O and Q. It refuses with the four codes of
+  a view; no code is new.
+- GetSheet cuts each solid of a section view with one box of the owned kernel (`PlanarBoolean.Subtract`), with exact numbers.
+  The cut faces get a hatch at 45°, 2.5 mm apart, in two directions for two bodies. The parent gets the cut line (a chain),
+  its thick ends, two arrows and the letters; the section gets the label "A-A". A body that the cut removes is skipped with
+  its reason. Each view gives its section and its texts.
+- The SVG, the DXF and the PDF file draw the hatch, the cut line, the thick ends, the arrows with a filled head and the
+  texts. The DXF file has two new layers, HATCH and CUT.
+- An edge between the side of a cylinder and a cut face, along its axis, now gives the axis, as an outline does. A picture of
+  the plate showed the fault first: section A-A, whose cut goes through the corners of the facets of the hole, had no axis,
+  and section B-B had one by chance.
+- The action "Section" of the sheet page is not in this entry; it follows R30d (ADR-0169 item 8). The roadmap row says so.
+
+**Proof.** Each new test names a type or a command that v0.393 does not have. A drawing of the plate with a hole, with Top at
+2 : 1 and the sections A-A and B-B through the axis of the hole, was rendered from the SVG file and read: the hatch stays in
+the cut faces, the gap of the hole is clear, and the arrows look along the direction of sight. Twenty-four injections each failed a named test, and each file came back byte for byte (SHA-256); the first run found that no test crossed a hole with a hatch line, so a test of a cut across the hole came in. A clean build
+gives 0 warnings, and the write-set check and `eng/repo-gates` pass. Run 44331913603 passed on the branch `r30h-section`.
+
+**What stays.** A hatch line ends on the chord of a facet and not on the arc. Each read of a section subtracts one box from
+each solid, and no measure of a heavy body exists. The label can lie on the title block when a person puts a section low on
+the paper.
+
+New tests: 10. The test list holds 2868 (1703 in `Engine.Tests`, 390 in `3DEngine.Tests`, 772 in `3DEngine.ImageTests`, 3
+in `3DEngine.VisionTests`). Open entries: 14 of 15. New diagnostic codes: 0. Since the review of v0.392, 2 product milestones
+and 2 entries followed it.
