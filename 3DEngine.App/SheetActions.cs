@@ -76,6 +76,39 @@ internal sealed class SheetActions(DocumentSession session)
             ?? $"Each view of {sheet.Name} is at {SheetPlacement.Text(scale)}.";
     }
 
+    // ADR-0168 item 3 (phase R30c, TASK-0408): a drag of the sheet page, one MoveSheetViews.
+    public string Move(Guid sheet, Guid view, double x, double y, bool aligned)
+        => Apply(new MoveSheetViewsCommand { SheetId = sheet, ViewId = view, X = x, Y = y, Aligned = aligned }) ?? (aligned ? "Moved the view and its aligned views." : "Moved the view.");
+
+    // ADR-0168 item 2: "Remove" of the sheet page.
+    public string Remove(Guid sheet, Guid view)
+        => Apply(new RemoveSheetViewCommand { SheetId = sheet, ViewId = view }) ?? "Removed the view. Undo gives it back.";
+
+    // ADR-0168 item 2: the switches of the hidden lines and the centre lines of a view, as SetSheetViewLines sets them.
+    public string Lines(Guid sheet, Guid view, bool hidden, bool centre)
+        => Apply(new SetSheetViewLinesCommand { SheetId = sheet, ViewId = view, HiddenLines = hidden, CentreLines = centre })
+            ?? $"Hidden lines {(hidden ? "on" : "off")}, centre lines {(centre ? "on" : "off")}.";
+
+    // ADR-0168 item 2: "Scale" of one view of the sheet page.
+    public string ScaleView(Guid sheet, Guid view, (long Numerator, long Denominator) scale)
+        => Apply(new ScaleSheetViewCommand { SheetId = sheet, ViewId = view, ScaleNumerator = scale.Numerator, ScaleDenominator = scale.Denominator })
+            ?? $"The view is at {SheetPlacement.Text(scale)}.";
+
+    // ADR-0168 item 5 (D5 B): a tap on the free paper places a view at that point, at the scale of the first view of the sheet,
+    // or at the scale that fits for a sheet with no view.
+    public string AddAt(Guid sheetId, FlatView view, double x, double y, SheetPlacement.Box? box)
+    {
+        if (Read(sheetId) is not { } sheet)
+            return $"No live sheet with id '{sheetId}' exists.";
+        var frame = SheetPlacement.FrameOf(view);
+        if (sheet.Views.Any(existing => existing.Direction.SequenceEqual(frame)))
+            return $"{sheet.Name} has the {Name(view)} view already.";
+        var scale = sheet.Views.Count > 0
+            ? (sheet.Views[0].ScaleNumerator, sheet.Views[0].ScaleDenominator)
+            : box is { } b ? SheetPlacement.FitScale(sheet.Paper, sheet.Landscape, sheet.ThirdAngle, b) : (1L, 1L);
+        return Apply(View(sheet.Id, frame, scale, (x, y))) ?? $"Added the {Name(view)} view to {sheet.Name} at {SheetPlacement.Text(scale)}.";
+    }
+
     // The word of a flat view in a text, as "front".
     public static string Name(FlatView view) => view.ToString().ToLowerInvariant();
 
