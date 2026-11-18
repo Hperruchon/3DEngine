@@ -163,6 +163,9 @@ public sealed unsafe class SdlInput
         // ADR-0127 item 4 (phase R18g, TASK-0354): F follows the letter too.
         else if ((uint)keycode == SDLK_F)
             key = InputKey.F;
+        // ADR-0166 item 3 (phase R30a, TASK-0406): L follows the letter too.
+        else if ((uint)keycode == SDLK_L)
+            key = InputKey.L;
         if (key is { } known)
             _frame.Add(new KeySample(known, down, _modifiers, time));
     }

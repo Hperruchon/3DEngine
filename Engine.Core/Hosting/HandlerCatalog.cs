@@ -80,6 +80,7 @@ public static class HandlerCatalog
         new GetFeaturesQueryHandler(),
         new GetPartReferencesQueryHandler(),
         new GetSheetQueryHandler(),
+        new GetViewLinesQueryHandler(),
     ];
 
     public static void RegisterAll(CommandRegistry commands, QueryRegistry queries, IAssetSource? assets = null)

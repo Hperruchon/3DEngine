@@ -1,7 +1,7 @@
 ---
 id: 0405
 title: Each view of a sheet shows or hides its hidden lines and its centre lines, and a whole circle reads as a diameter
-status: Done
+status: Active
 phase: R30g
 opened: 2026-11-18
 depends-on: [0403]
@@ -26,6 +26,7 @@ writes:
     - Engine.Tests/Drawing/SheetViewTests.cs
     - Engine.Tests/Drawing/SheetDimensionTests.cs
     - Engine.Tests/Drawing/ViewEdgesTests.cs
+    - Engine.Tests/Drawing/ViewLinesTests.cs
     - Engine.Tests/Persistence/DocumentFileTests.cs
     - Engine.Tests/Export/SvgExportTests.cs
     - Engine.Tests/Export/DxfExportTests.cs
@@ -83,7 +84,7 @@ and a hole prints ⌀ and its diameter.
 
 ## Outcome
 
-Status: Done · commit (the merge of the branch r30g-centre-lines) · v0.389
+Status: Done · commit (the merge of the branch r30g-centre-lines) · v0.390
 
 ## Method
 
@@ -100,3 +101,8 @@ Weakest:    a centre line of an arc, of a sphere from the side and between the h
   radius on a circle now take the centre lines and the diameter into account.
 - 2026-11-18: twelve injections each failed a test at once, and each file came back byte for byte. Run 44285305081 passed
   on the branch. Closed at v0.389.
+- 2026-11-18: R30a merged first as v0.389 (TASK-0406, ADR-0166). The merge of `main` into this branch keeps both sets of
+  lines in the list files, and this task closes at v0.390.
+- 2026-11-18: with R30a merged, `ViewLinesTests.The_Lines_Are_The_Lines_Of_The_Sheet_Moved_By_One_Shift` compared the lines
+  of a sheet view, now with the axis of a hole, with the lines of a flat view, which has no centre line. The test now leaves
+  the centre lines of the sheet out; a flat view shows no centre line yet.

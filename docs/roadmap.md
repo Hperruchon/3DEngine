@@ -455,8 +455,10 @@ Therefore each approved objective must have a track here.
   v0.387, TASK-0404, ADR-0163.
 - P0.162 — A view of an exact frame of any length gives the curves of the design, the files of a sheet guard each number
   and each name, and the analysis of a sketch of 600 lines keeps its time; R-0068 closes. v0.388, TASK-0400, ADR-0164.
+- R30a — A flat view of the window shows the lines of the sheet on a light paper, with the switch "Lines" and the key L,
+  and Frame fills the free part. v0.389, TASK-0406, ADR-0166.
 - R30g — Each view of a sheet shows or hides its hidden lines and its centre lines, the read gives a cross on each whole
-  circle and the axis of each round side, and a whole circle reads as a diameter. v0.389, TASK-0405, ADR-0165.
+  circle and the axis of each round side, and a whole circle reads as a diameter. v0.390, TASK-0405, ADR-0165.
 - Review — The codebase review of 2026-11-14 (c). v0.351, TASK-0366.
 - P0.143 — The low findings of the codebase review of 2026-11-11: a triangle of zero area adds no edge, and a mesh of
   more than 100 000 triangles finds its edges on the thread pool. v0.332, TASK-0345, ADR-0121.
@@ -788,7 +790,7 @@ The first objective. Each phase ends with something that a person can observe.
 | R27 | A tool of the window that turns a body, and the snap of a body to a body by two connectors (ADR-0157 items 3 and 4). After P11. | 2 |
 | R28 | The end-to-end scenario of the bookcase: the agent places the panels of a module by connectors, uses one module several times, checks the gaps and the screws, and proposes a change of a width, with the criteria C1 to C11 of the design file (ADR-0157 item 12). After P20 and K18. | 1–2 |
 | R29 | The drag of a face as a change of the value that owns the face: the distance of an extrude or the size of a primitive (ADR-0157 item 15). After P12. | to estimate |
-| R30a | The lines of the sheet in a flat view: a query of the lines of one frame from the code of GetSheet, read off the frame thread; a switch "Lines" (key L) with a light background, dashed hidden lines, no fill and no outline of a sketch; Frame fills the free part (ADR-0162 items 2 and 3). After P0.162. | 2 |
+| R30a | The lines of the sheet in a flat view: a query of the lines of one frame from the code of GetSheet, read off the frame thread; a switch "Lines" (key L) with a light background, dashed hidden lines, no fill and no outline of a sketch; Frame fills the free part (ADR-0162 items 2 and 3). After P0.162. TASK-0406, ADR-0166. | 2 |
 | R30b | "Add to sheet" and "Standard views" in the net of the views and in the command line; the pad of the paper and the scale; the place of a new view from the projection; the command ScaleSheetView (ADR-0162 items 4 to 6). After R30a. | 2 |
 | R30c | The sheet page on the desktop and the phone: the paper, the frame, the title block, the views and the values from GetSheet; a tap on a view gives "Go to", "Scale" and "Remove"; a tap on the paper places a new view; a drag keeps the alignment and sends MoveSheetViews (ADR-0162 items 1, 5 and 10). After R30b. | 2–3 |
 | R30d | The button "Export" on the sheet page: PDF, SVG and DXF, with the save dialog of the desktop and the save or share of the phone (ADR-0162 item 9). After R30h. | 1 |
