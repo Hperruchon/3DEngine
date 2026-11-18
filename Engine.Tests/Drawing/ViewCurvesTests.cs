@@ -90,7 +90,7 @@ public sealed class ViewCurvesTests
         Assert.Equal((Rational.Zero, Rational.Zero), (visible.From.X, visible.To.X));
     }
 
-    // Item 2, amended by ADR-0163 item 1 (TASK-0400, finding E211 of the codebase review of 2026-11-17): a frame of length 2
+    // Item 2, amended by ADR-0164 item 1 (TASK-0400, finding E211 of the codebase review of 2026-11-17): a frame of length 2
     // scales the view by 2, so the cylinder of radius 10 from the top is one whole circle of the exact radius 20 on the view.
     // Until TASK-0400 the facets stayed, and no line had a circle.
     [Fact]

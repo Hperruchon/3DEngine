@@ -7,7 +7,7 @@ date: 2026-11-15
 supersedes: []
 superseded-by: []
 amends: ['0035', '0154']
-amended-by: ['0163']
+amended-by: ['0164']
 affects:
   - Engine.Core/Sketch/SketchSolver.cs
   - Engine.Tests/Sketch/FixedLengthsTests.cs
@@ -33,7 +33,7 @@ On 2026-11-15 the owner ordered the run of TASK-0391, P10.2 and TASK-0392.
 1. **Rows at unit length (amends ADR-0035 item 8 and ADR-0154 item 1).** The status and the analysis of `GetSketch` divide
    each row of J with a value other than zero by its length before the elimination. A scale of a row keeps the space of the
    rows, so the rank and the test of a fixed length keep their meaning, and a part of the sketch with a size of 1e-6 or 1e5
-   gives the same answer as at a size of 1 when no constraint joins it to a part of another size. ADR-0163 item 6 gives the
+   gives the same answer as at a size of 1 when no constraint joins it to a part of another size. ADR-0164 item 6 gives the
    limit of joined sizes. The code uses + − × ÷ and sqrt only.
 2. **The solver keeps its rows.** The steps of the solve use the rows of the equations as before, so a replay gives the same
    positions and `solved` does not change.
@@ -49,4 +49,4 @@ On 2026-11-15 the owner ordered the run of TASK-0391, P10.2 and TASK-0392.
 
 - 2026-11-15 · TASK-0392 · The record, from finding E207 of the codebase review of 2026-11-15.
 - 2026-11-15 · TASK-0392 · Shipped at v0.378.
-- 2026-11-18 · TASK-0400 · Amended by ADR-0163 item 6: the limit of a constraint that joins sizes in a ratio above about 1e5 (finding E214).
+- 2026-11-18 · TASK-0400 · Amended by ADR-0164 item 6: the limit of a constraint that joins sizes in a ratio above about 1e5 (finding E214).

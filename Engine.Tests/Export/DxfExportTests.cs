@@ -285,7 +285,7 @@ public sealed class DxfExportTests : IDisposable
         Assert.Equal(1.23e-6, double.Parse(DxfExport.N(1.23e-6), CultureInfo.InvariantCulture));
         Assert.Equal("-12.5", DxfExport.N(-12.5));
         Assert.Equal("0", DxfExport.N(-0.0));
-        // ADR-0163 item 2 (TASK-0400, finding E215): a number that is not finite is 0; until TASK-0400 the writer threw.
+        // ADR-0164 item 2 (TASK-0400, finding E215): a number that is not finite is 0; until TASK-0400 the writer threw.
         Assert.Equal(["0", "0", "0"], new[] { double.NaN, double.PositiveInfinity, double.NegativeInfinity }.Select(DxfExport.N));
         Assert.Contains("10\n0\n20\n20\n30\n0\n", DxfExport.Text(Sheet([new SheetLine(Guid.NewGuid(), double.NaN, 20, 30.5, 20, true, "edge")])), StringComparison.Ordinal);
     }
@@ -473,7 +473,7 @@ public sealed class DxfExportTests : IDisposable
         return (exit, stdout.ToString());
     }
 
-    // ADR-0163 item 3 (TASK-0400, finding E216 of the codebase review of 2026-11-17): an arc whose end is in the direction of
+    // ADR-0164 item 3 (TASK-0400, finding E216 of the codebase review of 2026-11-17): an arc whose end is in the direction of
     // its start, but not equal to it, is a whole turn less the rounding, as in the PDF file. Until TASK-0400 its last part was
     // a half turn whose middle was the unit of (0, 0), and the chain was a line through the centre.
     [Fact]

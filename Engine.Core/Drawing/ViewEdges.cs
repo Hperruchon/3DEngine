@@ -48,7 +48,7 @@ internal readonly record struct ViewFrame(Vector3R Right, Vector3R Up, Vector3R 
         }
     }
 
-    // ADR-0163 item 1 (TASK-0400, findings E211 and E212 of the codebase review of 2026-11-17): the length L of Right and of
+    // ADR-0164 item 1 (TASK-0400, findings E211 and E212 of the codebase review of 2026-11-17): the length L of Right and of
     // Up. It is exact when Right · Right is the square of a rational number, as for each frame of whole numbers; else it is
     // the double of sqrt(Right · Right). The square never becomes a double: the numerator and the denominator move by an
     // even power of two to a quotient near 1, so a length of 1e-200 or 1e200 does not underflow or overflow.
@@ -71,7 +71,7 @@ internal readonly record struct ViewFrame(Vector3R Right, Vector3R Up, Vector3R 
         }
     }
 
-    // ADR-0163 item 1: the unit direction toward the eye in doubles, from TowardEye divided first by the largest absolute
+    // ADR-0164 item 1: the unit direction toward the eye in doubles, from TowardEye divided first by the largest absolute
     // value of its coordinates, an exact step, so a frame of any length gives a finite direction.
     public (double X, double Y, double Z) Eye
     {
@@ -284,7 +284,7 @@ internal static class ViewEdges
     // ADR-0143 items 2 and 3: a piece of an end of a cylinder or a cone whose axis is along the view, and a piece of the
     // outline of a sphere, is an arc of the circle of the design; the arcs of one circle with one visibility that follow each
     // other are one arc, or the whole circle. The pieces of an end whose axis is across the view lie on one line, and the
-    // pieces that follow each other with one visibility are one line. Each other line stays. ADR-0163 item 1 (TASK-0400,
+    // pieces that follow each other with one visibility are one line. Each other line stays. ADR-0164 item 1 (TASK-0400,
     // finding E211 of the codebase review of 2026-11-17): a frame of length L projects a length of the design to L times it,
     // so the radius of a circle on the view is L times the radius of the design. Until TASK-0400 a frame of another length
     // than 1 kept the facets, and each exact view at a slant has such a frame.

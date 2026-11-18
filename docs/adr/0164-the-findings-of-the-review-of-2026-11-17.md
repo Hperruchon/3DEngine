@@ -1,5 +1,5 @@
 ---
-id: 0163
+id: 0164
 title: A view of a frame of any length gives the curves of the design, the files of a sheet guard each number and each name, and the analysis of a sketch keeps its time
 status: Accepted
 topic: Drawing, sketch
@@ -21,7 +21,7 @@ affects:
 enforced-by: Engine.Tests/Drawing/SheetViewTests.cs
 ---
 
-# ADR-0163 — A view of a frame of any length gives the curves of the design, the files of a sheet guard each number and each name, and the analysis of a sketch keeps its time
+# ADR-0164 — A view of a frame of any length gives the curves of the design, the files of a sheet guard each number and each name, and the analysis of a sketch keeps its time
 
 This document uses Simplified Technical English (ASD-STE100). See `CLAUDE.md`, section "Language".
 

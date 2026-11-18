@@ -628,7 +628,7 @@ AddSheetView takes nine numbers that give an exact frame with no tolerance (Q1 A
 pictorial view comes from a sine and a cosine, so its right and its up are not of one length in exact arithmetic, and the
 command refuses it. A drawing often has one pictorial view.
 Exit: a slice gives a pictorial view with a test, or the owner accepts the six standard views and the frames of whole numbers.
-Closed 2026-11-18 · resolved · TASK-0400 · ADR-0163. The owner chose the frame of whole numbers as the pictorial view (ADR-0162
+Closed 2026-11-18 · resolved · TASK-0400 · ADR-0164. The owner chose the frame of whole numbers as the pictorial view (ADR-0162
 item 16), and the theory `SheetViewTests.A_View_Of_Any_Length_Gives_The_Curves_Of_The_Design` gives the view right (2, 2, −1), up
 (−1, 2, 2) and toward the eye (2, −1, 2) with the ellipses of a cylinder at their exact half axes.
 
