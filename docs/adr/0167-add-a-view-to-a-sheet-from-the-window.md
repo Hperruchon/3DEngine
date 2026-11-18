@@ -102,3 +102,4 @@ the places, so larger views can meet; the sheet page of R30c moves them. The vie
 ## History
 
 - 2026-11-18 · TASK-0407 · The command, the controls, the place, the scale and the pad (phase R30b).
+- 2026-11-18 · TASK-0407 · Shipped at v0.391.

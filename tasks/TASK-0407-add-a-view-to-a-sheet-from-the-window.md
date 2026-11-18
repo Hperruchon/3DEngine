@@ -1,7 +1,7 @@
 ---
 id: 0407
 title: A person adds the flat view or the standard views to a sheet from the window, and ScaleSheetView changes the scale
-status: Active
+status: Done
 phase: R30b
 opened: 2026-11-18
 depends-on: [0406]
@@ -73,19 +73,19 @@ that fits, makes the first sheet with a pad of the paper and the scale, and chan
 
 ## Acceptance criteria
 
-- [ ] ScaleSheetView changes the scale of one view or of each view in one step of undo, and refuses each wrong input with its
+- [x] ScaleSheetView changes the scale of one view or of each view in one step of undo, and refuses each wrong input with its
       code; the places and the dimensions stay.
-- [ ] The net and the command line have the controls of a sheet; the pad gives the paper and the scale, with Enter and
+- [x] The net and the command line have the controls of a sheet; the pad gives the paper and the scale, with Enter and
       Escape.
-- [ ] The plate of 2026-11-17 gets the front, the top and the side view at 2:1 on A3 at the places of first angle, and a view
+- [x] The plate of 2026-11-17 gets the front, the top and the side view at 2:1 on A3 at the places of first angle, and a view
       that the sheet holds is not added again.
-- [ ] A run of the desktop with the plate makes the sheet with the controls, and its PDF shows the views of first angle.
-- [ ] A clean build (`--no-incremental`) gives zero errors and zero warnings, and the phone project builds.
-- [ ] `dotnet test`, the write-set check and `eng/repo-gates` pass, and continuous integration passes on the branch.
+- [x] A run of the desktop with the plate makes the sheet with the controls, and its PDF shows the views of first angle.
+- [x] A clean build (`--no-incremental`) gives zero errors and zero warnings, and the phone project builds.
+- [x] `dotnet test`, the write-set check and `eng/repo-gates` pass, and continuous integration passes on the branch.
 
 ## Outcome
 
-Status: Active
+Status: Done · branch r30b-add-to-sheet · v0.391
 
 ## Method
 
@@ -107,3 +107,4 @@ Weakest:    the first live sheet only; the free place is a search on a grid of 5
   `main`: the conflicts were lists only (the catalog of the handlers, the codes of the sheet, the index of the ADRs and the
   amended-by of ADR-0155, and the count of `Engine.Tests`, now 1689). The views of a sheet now carry the flags of R30g with
   their defaults, and each test project passes on the merged tree (2841 tests).
+- 2026-11-18: run 44298508423 passed on the merged tree with its seven jobs. Closed at v0.391; the merge waits for the owner.
