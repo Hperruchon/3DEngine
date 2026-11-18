@@ -11764,3 +11764,44 @@ v0.391, from the API: none.
 New tests: 0. The test list holds 2841 (1689 in `Engine.Tests`, 390 in `3DEngine.Tests`, 759 in `3DEngine.ImageTests`, 3
 in `3DEngine.VisionTests`). Open entries: 14 of 15. New diagnostic codes: 0. This entry is a codebase review, so 0 product
 milestones and 0 entries follow it.
+
+## v0.393 — A sheet page replaces the scene with the paper of a sheet, where a tap on a view gives its actions, a drag keeps the alignment with one MoveSheetViews, and a tap on the paper places a view (R30c, TASK-0408)
+
+Row R30c of ADR-0162 (the answers D1 A, D5 A and B, and D13 A of the owner of 2026-11-18). The owner ordered "start R30b and
+R30c", then "review after R30b". ADR-0168 records the decisions and amends ADR-0138, ADR-0155 and ADR-0167.
+
+**The change.**
+- A button "Sheet" beside "Views" opens a page in the free part of the scene, and on a portrait display in the place of the
+  panel too. The page draws the paper of the sheet with its frame, its title block, the visible, hidden and centre lines of
+  each view and the value of each dimension, from GetSheet, read off the frame thread. With several live sheets the header
+  has a button for each sheet.
+- A tap on a view selects it and gives "Go to", "Scale" (one ScaleSheetView for that view), "Remove" and the switches
+  "Hidden lines" and "Centre lines" (SetSheetViewLines).
+- The new command MoveSheetViews moves a view and, with the flag `aligned`, each view on a line of projection through it, in
+  one step of undo. A drag of the first view takes its aligned views, a drag of an aligned view slides on its line, and Shift
+  or "Keep aligned" off moves a view free. No command has a list parameter, so the flag replaces the list of D13 A.
+- A tap on the free paper marks the place and gives the six views; a view goes there at the scale of the first view.
+- The commands of the page run on the thread pool, one at a time (finding V196). The page and the pad of a sheet hold the
+  keys of the frame in which they show, also the Escape that closes them (V199), and the home screen closes both (V195).
+- The owner chose the free place nearest to the place of the projection for a view that does not fit; the design file has a
+  note, and the history of ADR-0167 records it. TASK-0410 now lists ADR-0168, whose files its write set holds.
+
+**Proof.** Each new test names a type or a command that v0.392 does not have. A run of the desktop with the plate of R30b
+opened the page, selected the front view, dragged it (MoveSheetViews with `aligned`, so the top and the side view went with
+it) and dragged the top view, which slid on the vertical line of the front view only, and a window of 420 by 860 showed the
+page in the place of the panel. The runs found three faults, each corrected: a colour of ImGui popped that the button had not
+pushed, the paper moved when the header grew, and the panel covered the page on a portrait display. The test of the keys
+found that the Escape that closed the pad still reached the intents. Thirteen injections each failed a test after three
+tests were made stronger, and each file came back byte for byte (SHA-256). A clean build gives 0 warnings, the phone project
+builds, `eng/repo-gates` gives 488 runs of 168 checks and 0 failed, and the write-set check passes. Run 44317950501 passed
+on the branch `r30c-sheet-page`. The failed runs since the entry v0.392, from the API: run 44314200991 on `main` (the merge
+of the review, 5e30902), where GitHub gave no runner of macOS ("The job was not acquired by Runner of type hosted even after
+multiple attempts"), so the gate of macOS was cancelled and the comparison of the hashes skipped; no test failed, and the run
+of this branch holds the same commit and passed on macOS. The owner can run it again.
+
+**What stays.** The alignment rests on exact places, and a new scale keeps the places, so views can meet. The texts of the
+title block are small on a small paper. The commands of R30b still run on the frame thread (TASK-0410).
+
+New tests: 17. The test list holds 2858 (1693 in `Engine.Tests`, 390 in `3DEngine.Tests`, 772 in `3DEngine.ImageTests`, 3
+in `3DEngine.VisionTests`). Open entries: 14 of 15. New diagnostic codes: 0. Since the review of v0.392, 1 product milestone
+and 1 entry followed it.

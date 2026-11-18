@@ -360,6 +360,8 @@ internal sealed unsafe partial class DesktopUi
                 ImGui.SameLine(0f, 16f);
                 ImGui.PushStyleVar(ImGuiStyleVar.FrameBorderSize, 0f);
                 ViewsButton();
+                // ADR-0168 item 1 (phase R30c, TASK-0408): "Sheet" beside "Views".
+                SheetButton();
                 ImGui.PopStyleVar();
                 if (_status.Undo is { } step)
                     UndoStep(step, displaySize);

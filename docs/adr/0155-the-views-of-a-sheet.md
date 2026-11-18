@@ -7,7 +7,7 @@ date: 2026-11-15
 supersedes: []
 superseded-by: []
 amends: ['0153']
-amended-by: ['0164', '0165', '0167']
+amended-by: ['0164', '0165', '0167', '0168']
 affects:
   - Engine.Core/Commands/AddSheetViewCommand.cs
   - Engine.Core/Commands/AddSheetViewCommandHandler.cs
@@ -88,3 +88,4 @@ session for that time. The centre of a view moves when the part grows on one sid
 - 2026-11-18 · TASK-0400 · Amended by ADR-0164 item 1: the length of the frame never squares a double, so a frame of a length near 1e-200 or 1e200 gives a read that is finite (finding E212).
 - 2026-11-18 · TASK-0405 · Amended by ADR-0165 items 1 and 3: the flags of a view and its centre lines in GetSheet (R30g).
 - 2026-11-18 · TASK-0407 · ADR-0167 item 1 amends item 6: ScaleSheetView is a fourth command of a view, with the same codes.
+- 2026-11-18 · TASK-0408 · ADR-0168 item 3 amends item 6: MoveSheetViews is a command of a view, with the same codes.

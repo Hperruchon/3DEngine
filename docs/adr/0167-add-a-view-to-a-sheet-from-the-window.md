@@ -1,13 +1,13 @@
 ---
 id: 0167
 title: A person adds the flat view or the standard views to a sheet from the window, at the place of the projection and the scale that fits, and ScaleSheetView changes the scale
-status: Accepted
+status: Amended
 topic: Drawing, window
 date: 2026-11-18
 supersedes: []
 superseded-by: []
 amends: ['0138', '0155']
-amended-by: []
+amended-by: ['0168']
 affects:
   - Engine.Core/Commands/ScaleSheetViewCommand.cs
   - Engine.Core/Commands/ScaleSheetViewCommandHandler.cs
@@ -103,3 +103,5 @@ the places, so larger views can meet; the sheet page of R30c moves them. The vie
 
 - 2026-11-18 · TASK-0407 · The command, the controls, the place, the scale and the pad (phase R30b).
 - 2026-11-18 · TASK-0407 · Shipped at v0.391.
+- 2026-11-18 · TASK-0408 · The owner chose the nearest free place for a view that does not fit, not the largest free part of
+  D5 A (ADR-0168 item 7). ADR-0168 item 6 amends item 5: the pad holds its keys, also its Escape, and the home screen closes it.

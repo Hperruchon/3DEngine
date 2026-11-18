@@ -56,6 +56,10 @@ public sealed class NativeThreeDEngine : IThreeDEngine, IDisposable
     private SessionSheets? _sheets;
     private SheetActions? _sheetActions;
 
+    // ADR-0168 items 1 and 4 (phase R30c, TASK-0408): the read of the sheet page and its commands, off the frame thread.
+    private readonly SheetReadCache _sheetRead = new();
+    private readonly SheetCommandQueue _sheetQueue = new();
+
     // ADR-0034: the active sketch, its tool, and the commands of the sketch mode.
     private SketchActions? _sketchActions;
 
@@ -538,8 +542,26 @@ public sealed class NativeThreeDEngine : IThreeDEngine, IDisposable
                     _documentMessage = _sheetActions.Create($"Sheet {(_sheets?.Live.Count ?? 0) + 1}", create.Paper, create.Landscape,
                         (create.ScaleNumerator, create.ScaleDenominator), create.Views, new SheetPlacement.Box(box.Min, box.Max));
                     break;
-                case ScaleSheetAction scale when _sheetActions is not null && _sheets?.Live.FirstOrDefault() is { } scaled:
-                    _documentMessage = _sheetActions.Scale(scaled, (scale.ScaleNumerator, scale.ScaleDenominator));
+                // ADR-0168 items 2 to 5 (phase R30c, TASK-0408): the commands of the sheet page and of the pad of the scale go to
+                // the queue, which sends them on the thread pool (finding V196 of the codebase review of 2026-11-18).
+                case ScaleSheetAction { Sheet: { } sheetOfView, View: { } scaledView } scale when _sheetActions is { } viewActions:
+                    _sheetQueue.Send(() => viewActions.ScaleView(sheetOfView, scaledView, (scale.ScaleNumerator, scale.ScaleDenominator)));
+                    break;
+                case ScaleSheetAction scale when _sheetActions is { } scaleActions && _sheets?.Live.FirstOrDefault() is { } scaled:
+                    _sheetQueue.Send(() => scaleActions.Scale(scaled, (scale.ScaleNumerator, scale.ScaleDenominator)));
+                    break;
+                case SheetMoveAction move when _sheetActions is { } moveActions:
+                    _sheetQueue.Send(() => moveActions.Move(move.Sheet, move.View, move.X, move.Y, move.Aligned));
+                    break;
+                case SheetRemoveAction remove when _sheetActions is { } removeActions:
+                    _sheetQueue.Send(() => removeActions.Remove(remove.Sheet, remove.View));
+                    break;
+                case SheetLinesAction lines when _sheetActions is { } lineActions:
+                    _sheetQueue.Send(() => lineActions.Lines(lines.Sheet, lines.View, lines.HiddenLines, lines.CentreLines));
+                    break;
+                case SheetAddAtAction addAt when _sheetActions is { } addActions:
+                    var addBox = _renderer?.Bounds is { } atBounds ? new SheetPlacement.Box(atBounds.Min, atBounds.Max) : null;
+                    _sheetQueue.Send(() => addActions.AddAt(addAt.Sheet, addAt.View, addAt.X, addAt.Y, addBox));
                     break;
                 case FrameAction:
                     FrameBodies();
@@ -1000,7 +1022,17 @@ public sealed class NativeThreeDEngine : IThreeDEngine, IDisposable
         _ui.ShowView(Camera.Flat);
         // ADR-0167 item 2 (TASK-0407): the first live sheet, for the commands of a sheet.
         _sheets?.Apply();
-        _ui.ShowSheet(_sheets?.Live.FirstOrDefault());
+        _ui.ShowSheets(_sheets?.Live ?? []);
+        // ADR-0168 items 1 and 4 (TASK-0408): the texts of the ended commands of the page, and the read of the sheet of the page.
+        foreach (var text in _sheetQueue.Poll())
+            _documentMessage = text;
+        var pageShown = _ui.PageOpen;
+        if (pageShown && _ui.PageSheetId is { } pageSheet)
+        {
+            var (pageInfo, pagePending) = _sheetRead.Read(version, pageSheet, () => Task.Run(async () =>
+                (await _host.Session.Query<Engine.Core.Queries.SheetInfo>(new Engine.Core.Queries.GetSheetQuery { SheetId = pageSheet }).ConfigureAwait(false)).Result));
+            _ui.ShowPage(pageInfo, pagePending || _sheetQueue.Busy);
+        }
         // ADR-0166 items 2 and 3 (phase R30a, TASK-0406): with the switch "Lines" on in a flat view, the lines of its exact frame
         // from GetViewLines, read on the thread pool; the frame does not wait, and keeps the last lines until the new ones come.
         if (_ui.LinesOn && ViewLines.FrameOf(Camera) is { } lineFrame)
@@ -1014,7 +1046,10 @@ public sealed class NativeThreeDEngine : IThreeDEngine, IDisposable
             _ui.ShowLines(null);
         _ui.ShowStatus(new SessionStatus(_steps.LogCount, _host.Listeners > 0, _steps.Undo, _projects is null ? null : _host.FileName is not null));
         _cards = proposals;
-        var panel = _ui.Frame((float)_delta.TotalSeconds, display, scale, _renderer.LiveBodies, Selection, LineOf(_document, _host.FileName, _documentMessage, Path.GetDirectoryName(_host.Session.FilePath), _host.Session.Kind), sketches, sketchPanel, imagePanel, dimensions, size, faceLine, ringCentre, ringSize, Inset(_window.SafeInsets), values, history, proposals, sketchValues);
+        // ADR-0168 item 1: the sheet page replaces the scene, so the frame gets no selection, ring, values or dimensions of it.
+        var panel = pageShown
+            ? _ui.Frame((float)_delta.TotalSeconds, display, scale, _renderer.LiveBodies, null, LineOf(_document, _host.FileName, _documentMessage, Path.GetDirectoryName(_host.Session.FilePath), _host.Session.Kind), null, null, null, null, null, null, null, 0f, Inset(_window.SafeInsets), null, null, proposals, null)
+            : _ui.Frame((float)_delta.TotalSeconds, display, scale, _renderer.LiveBodies, Selection, LineOf(_document, _host.FileName, _documentMessage, Path.GetDirectoryName(_host.Session.FilePath), _host.Session.Kind), sketches, sketchPanel, imagePanel, dimensions, size, faceLine, ringCentre, ringSize, Inset(_window.SafeInsets), values, history, proposals, sketchValues);
         ApplyPanel(_renderer.LiveBodies);
         // ADR-0101 item 2: a focus that an action of this frame started or ended shows in this frame.
         _renderer.Focus = _actions?.Focus;
