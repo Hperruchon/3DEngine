@@ -11542,3 +11542,43 @@ task in the order is P0.162 (TASK-0400). A separate session works on the size of
 New tests: 0. The test list holds 2770 (1660 in `Engine.Tests`, 386 in `3DEngine.Tests`, 721 in `3DEngine.ImageTests`, 3
 in `3DEngine.VisionTests`). Open entries: 15 of 15. New diagnostic codes: 0. Since the review of v0.384, 1 product
 milestone and 2 entries followed it.
+
+## v0.387 — The desktop window resizes and maximizes, down to 360 by 600, and the layout follows each step of a drag (P0.164, TASK-0404)
+
+On 2026-11-18 the owner asked why the desktop window has a fixed size, when the responsive work (R19, ADR-0113) was done to
+support each size. The design session of the 2D views (TASK-0402) found the cause and started this task. The
+host made the window with no flags, so it had no resize border and no maximize button. ADR-0163 records the decisions.
+
+**The change.**
+- The host makes the window with `WindowFlags.Resizable`, and SDL keeps it at 360 by 600 or more
+  (`DesktopUi.MinimumWindowWidth` and `MinimumWindowHeight`). A grid of sizes found faults of the layout in small windows
+  that are almost square (width less than 750 and height less than 570), so the height has a margin of 30 pixels.
+- On Windows a drag of the border runs a modal loop, and `SDL_PollEvent` did not return until the drag ended. An event
+  watch of SDL (`Window.FollowLiveResize`) runs the frame of the host at each live-resize expose, so each step of a drag
+  draws its layout. A failure in that frame stays for the loop, which throws it.
+- `Presenter.Follow` makes the swapchain again before a frame reads its extent; until this task the first frame after each
+  change of size drew the scene with the aspect of the old size.
+- The window of the images moves back inside a smaller display; until this task the right edge cut it at 680 by 600.
+- The layout test has the minimum window, and a second test applies the rule of ADR-0113 at 486 sizes of a resize. A row
+  that the bottom of the panel cuts in two is scrolled out of view (ADR-0113 item 1 amended); before, a row whose middle
+  was under Undo and Redo was a fault at some height of each width, for example 1280 by 500.
+
+**Proof.** A script on Windows started the desktop, made a box through the HTTP surface, and dragged the lower right
+corner in 40 steps with the mouse. Before the event watch, a picture with the button down showed the last frame of 1280 by
+720, cut; after it, the log has 40 remakes of the swapchain and the picture has the layout of 980 by 620. A maximize gave
+2560 by 1369, a minimize and a restore gave the maximized window again, a request for 200 by 200 gave 360 by 600, and the
+log has no warning and no error. Injections: the old rule of a scrolled row fails the sweep (1920 by 608), a minimum height
+of 540 fails it, and no move of the window of the images fails its test (772 for 664). Each file came back byte for byte.
+A clean build gives 0 warnings, the phone project builds, `eng/repo-gates` gives 488 runs of 168 checks and 0 failed,
+the write-set check passes, and each test project passes (2773 tests). The same code passed run 44202716779 as TASK-0403
+on the branch `claude/kind-joliot-0a6460`. Before its merge, the answers on the 2D views took TASK-0403, ADR-0162, P0.163
+and v0.386 on `main`, so this work takes the next numbers on the branch `p0164-resizable-window`, where run 44274419842 passed.
+The failed runs since the entry v0.386, from the API: none.
+
+**What stays.** A window less than 750 wide cannot be less than 600 high. The faults of the layout in a small window that is
+almost square stay, outside the minimum. On a narrow display the window of the images can cover the right part of the
+first rows of the panel. The register is full (15 of 15), so neither has an entry; the owner decides.
+
+New tests: 3. The test list holds 2773 (1660 in `Engine.Tests`, 386 in `3DEngine.Tests`, 724 in `3DEngine.ImageTests`, 3
+in `3DEngine.VisionTests`). Open entries: 15 of 15. New diagnostic codes: 0. Since the review of v0.384, 1 product
+milestone and 3 entries followed it.
