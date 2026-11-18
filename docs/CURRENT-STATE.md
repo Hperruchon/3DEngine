@@ -11619,3 +11619,36 @@ R30g beside R30a to R30c.
 New tests: 12. The test list holds 2785 (1672 in `Engine.Tests`, 386 in `3DEngine.Tests`, 724 in `3DEngine.ImageTests`, 3
 in `3DEngine.VisionTests`). Open entries: 14 of 15. New diagnostic codes: 0. Since the review of v0.384, 1 product
 milestone and 4 entries followed it.
+
+## v0.389 — Each view of a sheet shows or hides its hidden and centre lines, and a whole circle reads as a diameter (R30g, TASK-0405)
+
+Row R30g of the roadmap, from ADR-0162 items 11, 12 and 14 (the answers D14 A, D15 A and D17 A of the owner of 2026-11-18).
+On 2026-11-18 the owner ordered "Start them" for R30g and R30a, then "start R30g". R30a runs in its own session. ADR-0165
+records the shape of the contract change and amends ADR-0153, ADR-0155, ADR-0158, ADR-0159, ADR-0160 and ADR-0161.
+
+**The change.**
+- The contract: `SheetView` gets `HiddenLines` and `CentreLines` at its end, each true by default, so each log before this
+  entry gives the same views. The events carry them in each view of a sheet. No field is required and no event kind is new.
+- The command SetSheetViewLines sets the two flags of a view in one step of undo, and refuses a sheet or a view that is not
+  there with the codes of MoveSheetView.
+- GetSheet gives each view its flags. A view with `HiddenLines` false gives no hidden line. A view with `CentreLines` true
+  also gives its centre lines, of the kind "centre": a cross on each whole circle, and the axis of each cylinder and cone
+  between the extreme places of its outline, so the axis of a hole ends where the hole ends; on the paper each goes 3 mm past
+  its ends. The box of a view leaves them out, so a flag never moves a view.
+- The SVG, the DXF and the PDF file draw a centre line thin with a long dash and a dot (ISO 128, type 04), between the
+  hidden and the visible lines; the DXF file has a layer and a line type CENTER.
+- A radius on a whole circle of its sketch reads as a diameter of twice its value: ⌀ in the SVG file, "%%c" in the DXF
+  file, and Ø in the PDF file, because WinAnsiEncoding has no ⌀. A radius on an arc stays "R".
+
+**Proof.** Twelve injections each failed a test at once, and each file came back byte for byte (SHA-256). The tests that
+counted the lines of a view and the two tests of a radius on a circle take the centre lines and the diameter into account.
+A clean build gives 0 warnings, the phone project builds, `eng/repo-gates` gives 488 runs of 168 checks and 0 failed, the
+write-set check passes, and each test project passes (2790 tests). Run 44285305081 passed on the branch. The failed runs
+since the entry v0.388, from the API: none.
+
+**What stays.** No control of the window sets the flags yet (R30c). A section (R30h) turns the hidden lines off by default.
+A centre mark of an arc, of a sphere from the side, and the line between the holes of a pattern do not exist.
+
+New tests: 5. The test list holds 2790 (1677 in `Engine.Tests`, 386 in `3DEngine.Tests`, 724 in `3DEngine.ImageTests`, 3
+in `3DEngine.VisionTests`). Open entries: 14 of 15. New diagnostic codes: 0. Since the review of v0.384, 2 product
+milestones and 5 entries followed it.

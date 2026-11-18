@@ -1,7 +1,7 @@
 ---
 id: 0405
 title: Each view of a sheet shows or hides its hidden lines and its centre lines, and a whole circle reads as a diameter
-status: Active
+status: Done
 phase: R30g
 opened: 2026-11-18
 depends-on: [0403]
@@ -77,11 +77,13 @@ and a hole prints ⌀ and its diameter.
 
 - [x] Each rule has a test, each new test fails on the code before the change, and each rule has an injection that a test
       catches.
-- [ ] A clean build (`--no-incremental`) gives zero errors and zero warnings, and the phone project builds.
-- [ ] `dotnet test`, the write-set check and `eng/repo-gates` pass; continuous integration passes on the branch and on
+- [x] A clean build (`--no-incremental`) gives zero errors and zero warnings, and the phone project builds.
+- [x] `dotnet test`, the write-set check and `eng/repo-gates` pass; continuous integration passes on the branch and on
       `main` after the merge.
 
 ## Outcome
+
+Status: Done · commit (the merge of the branch r30g-centre-lines) · v0.389
 
 ## Method
 
@@ -96,3 +98,5 @@ Weakest:    a centre line of an arc, of a sphere from the side and between the h
 - 2026-11-18: opened under the order of the owner "start R30g", branch r30g-centre-lines from `main` at v0.388. The session
   told the R30a session to take TASK-0406 and ADR-0166. Each test that counted the lines of a view and the two tests of a
   radius on a circle now take the centre lines and the diameter into account.
+- 2026-11-18: twelve injections each failed a test at once, and each file came back byte for byte. Run 44285305081 passed
+  on the branch. Closed at v0.389.
