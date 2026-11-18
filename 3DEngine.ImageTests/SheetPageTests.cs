@@ -295,6 +295,48 @@ public sealed class SheetPageTests
         Assert.Null(ui.PagePlace);
     }
 
+    // Item 3 (finding V202 of the codebase review of 2026-11-18 (b), TASK-0415): a read that comes without the dragged view ends
+    // the drag; the next frames do not throw, and the release gives no move, no selection and no place.
+    [Fact]
+    public async Task A_Read_Without_The_Dragged_View_Ends_The_Drag()
+    {
+        var (host, sheet, record) = await Setup();
+        using var _ = host;
+        var display = new Vector2(1280, 720);
+        using var ui = new DesktopUi("http://127.0.0.1:5180", Document.Millimetre);
+        Frame(ui, display, sheet, record);
+        ui.OpenPage();
+        Frame(ui, display, sheet, record);
+        Frame(ui, display, sheet, record);
+        ui.TakeActions();
+        var paper = ui.PagePaper!.Value;
+        var top = sheet.Views[1];
+        var from = paper.Pixel(top.X, top.Y);
+        Frame(ui, display, sheet, record, Pointer(from, PointerButtons.None, PointerPhase.Move, 0));
+        Frame(ui, display, sheet, record, Pointer(from, PointerButtons.Left, PointerPhase.Down, 10_000_000));
+        Frame(ui, display, sheet, record, Pointer(from + new Vector2(20f, 0f), PointerButtons.Left, PointerPhase.Move, 20_000_000));
+        Assert.True(ui.PageDragging);
+
+        Assert.Equal("Removed the view. Undo gives it back.", new SheetActions(host.Session).Remove(record.Id, top.ViewId));
+        var (removed, removedRecord) = await Read(host);
+        Assert.DoesNotContain(removed.Views, view => view.ViewId == top.ViewId);
+        Frame(ui, display, removed, removedRecord, Pointer(from + new Vector2(40f, 0f), PointerButtons.Left, PointerPhase.Move, 30_000_000));
+        Assert.False(ui.PageDragging);
+        Frame(ui, display, removed, removedRecord, Pointer(from + new Vector2(60f, 0f), PointerButtons.Left, PointerPhase.Move, 40_000_000));
+        Frame(ui, display, removed, removedRecord, Pointer(from + new Vector2(60f, 0f), PointerButtons.Left, PointerPhase.Up, 50_000_000));
+        Frame(ui, display, removed, removedRecord);
+
+        Assert.Empty(ui.TakeActions().OfType<SheetMoveAction>());
+        Assert.Null(ui.PageView);
+        Assert.Null(ui.PagePlace);
+        Assert.Null(SheetPage.Drag(removed, top.ViewId, 1, 1, true, false));
+
+        // The next tap acts again: it selects the front view.
+        var front = removed.Views[0];
+        Tap(ui, display, removed, removedRecord, paper.Pixel(front.X, front.Y));
+        Assert.Equal(front.ViewId, ui.PageView);
+    }
+
     // Item 3: a drag of the front view gives one aligned move; a drag of the top view slides on the vertical line; with Shift the
     // top view moves free.
     [Fact]
