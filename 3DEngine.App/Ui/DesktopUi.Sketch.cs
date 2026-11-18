@@ -56,7 +56,25 @@ internal sealed unsafe partial class DesktopUi
     {
         ImGui.SetNextWindowPos(new Vector2(16f + _inset.X, PanelTop), ImGuiCond.Always);
         var width = Math.Min(SketchWidth, Math.Max(displaySize.X - 32f - _inset.X - _inset.Z, 160f));
+        // ADR-0172 item 3 (TASK-0418): the rows of a sketch follow the rules of the panel: on a landscape display they end 12
+        // pixels left of the command line, and on a portrait display 8 pixels above the ring of the last frame when one row
+        // still fits. Until TASK-0418 they covered the command line at 640 by 360 and
+        // the tools of the ring on a phone.
+        if (!_portrait)
+            width = Math.Min(width, Math.Max(CommandLeft(displaySize) - 12f - 16f - _inset.X, 160f));
+        // On a landscape display the rows end 12 pixels left of the band of the ring of the last frame, as the rows of a body.
+        if (!_portrait && _ring is { } ring && _ringLabels.Count > 0)
+        {
+            var end = ring.Start + (_ringLabels.Count * ring.Segment) + ((_ringLabels.Count - 1) * RingGap);
+            if (ring.Start > -MathF.PI / 2f && end < MathF.PI / 2f)
+            {
+                var bandLeft = ring.Centre.X + (ring.Inner * Math.Min(MathF.Cos(ring.Start), MathF.Cos(end)));
+                width = Math.Min(width, Math.Max(MathF.Floor(bandLeft - 12f - 16f - _inset.X), 160f));
+            }
+        }
         var room = Math.Max(displaySize.Y - PanelTop - 16f - AnchorRow - _inset.W, 0f);
+        if (_portrait && RingTop() is { } ringTop && ringTop - 8f - PanelTop >= PathHeight)
+            room = Math.Min(room, ringTop - 8f - PanelTop);
         ImGui.SetNextWindowSizeConstraints(Vector2.Zero, new Vector2(width, room));
         ImGui.SetNextWindowSize(new Vector2(width, Math.Min(_sketchHeight ?? room, room)), ImGuiCond.Always);
         ImGui.PushStyleVar(ImGuiStyleVar.WindowBorderSize, 0f);

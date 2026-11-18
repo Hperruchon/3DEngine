@@ -68,51 +68,83 @@ internal sealed unsafe partial class DesktopUi
 
     // ADR-0032 item 5: the window of the pad. A row selects its field; the line under the fields
     // gives the value of the active field, or its error, and the message of the last apply.
+    // ADR-0172 item 2 (TASK-0418): the pad is a fixed part of the layout, as the panel. It has no title bar, the person does
+    // not move it, and the frame sets its place and its size in each frame. Its keys fill its width. It takes the place of
+    // the panel and of the rows, which do not show while it is open, under the top bar and above the anchors; a pad of a
+    // sketch opens beside the rows of the sketch when it has room there, else under them. When five lines of keys do not
+    // fit in its height on a landscape display, the keys go on lines of ten (PadWide), and the pad goes under the command
+    // line at the full width. Until TASK-0418 it opened at x 492 with keys of 108 pixels, so on a phone three columns of keys
+    // were outside the display, and it covered the top bar, the command line and the anchors.
     private void PadWindow(NumericPad pad, Vector2 displaySize)
     {
-        // A pad of the sketch opens to the left of the window of the sketch, so that End and Close
-        // stay visible (ADR-0034 item 8). The place and the size come from the display, as for the
-        // panel, so the pad stays inside a tablet display. Until TASK-0099 Apply was outside the
-        // display at 768 x 1024 and at 1024 x 768 (finding V35 of the second codebase review of
-        // 2026-10-28).
-        // ADR-0097 item 3 (the redesign, slice n, TASK-0308): the rows of the sketch are at the left in the place of the panel,
-        // so a pad of the sketch opens to their right. Until TASK-0308 the window was at the right and the pad at its left.
-        var width = Math.Min(PadWidth, displaySize.X - 32f);
-        var preferred = _padBySketch ? 16f + _inset.X + SketchWidth + 16f : 492f;
-        var x = Math.Clamp(preferred, 16f, Math.Max(16f, displaySize.X - width - 16f));
-
-        // Finding V42 of the codebase review of 2026-10-29: on a display with no room beside the
-        // window of the sketch, as 768 x 1024, the pad covered End and Close. It now opens
-        // below the row of Next point, End and Close.
-        var y = 16f;
-        if (_padBySketch && preferred + width > displaySize.X - 16f && ItemRectangle(SketchItem(NextPointLabel)) is { } nextPoint)
-            y = nextPoint.W + 8f;
-        ImGui.SetNextWindowPos(new Vector2(x, y), ImGuiCond.Appearing);
-        ImGui.SetNextWindowSize(new Vector2(width, Math.Clamp(displaySize.Y - y - 16f, 200f, PadHeight)), ImGuiCond.Appearing);
-        if (ImGui.Begin(PadName))
+        var portrait = Portrait(displaySize);
+        var left = 16f + _inset.X;
+        var right = displaySize.X - 16f - _inset.Z;
+        var top = PanelTop;
+        var bottom = displaySize.Y - 16f - AnchorRow - _inset.W;
+        var commandBottom = 16f + _inset.Y + MinimumControlHeight + 8f;
+        if (_padBySketch && _sketchWindow is { } sketch)
         {
-            ImGui.TextUnformatted(pad.Title);
+            if (right - (sketch.Z + 16f) >= PadLeast)
+                left = sketch.Z + 16f;
+            else
+                top = sketch.W + 8f;
+        }
+
+        var width = right - left;
+        var rows = _padWide ? PadWide : PadRows;
+        if (_padWide)
+        {
+            // The anchors do not show (FixedControls), so the pad goes down to the bottom margin.
+            top = Math.Max(top, commandBottom);
+            bottom = displaySize.Y - 16f - _inset.W;
+        }
+        else if (!portrait)
+        {
+            // The pad beside the command line ends 12 pixels left of it, as the panel does.
+            var beside = Math.Min(PadWidth, CommandLeft(displaySize) - 12f - left);
+            if (beside >= PadLeast)
+                width = beside;
+            else
+                top = Math.Max(top, commandBottom);
+        }
+
+        var height = Math.Max(Math.Min(PadNeed(pad, rows.Length, _padWide), bottom - top), MinimumControlHeight);
+        ImGui.SetNextWindowPos(new Vector2(left, top), ImGuiCond.Always);
+        ImGui.SetNextWindowSize(new Vector2(width, height), ImGuiCond.Always);
+        if (ImGui.Begin(PadName, PadFlags))
+        {
+            // ADR-0172 item 2: a wide pad has its fields on one line, and its title and its value on the next line.
+            if (!_padWide)
+                ImGui.TextUnformatted(pad.Title);
             var fields = pad.Fields;
+            var fieldWidth = _padWide ? MathF.Floor((ImGui.GetContentRegionAvail().X - ((fields.Count - 1) * ImGui.GetStyle().ItemSpacing.X)) / fields.Count) : 0f;
             for (var index = 0; index < fields.Count; index++)
             {
-                if (ImGui.Selectable($"{fields[index].Name} = {fields[index].Text}  {pad.Unit}##field{index}", pad.Active == index, ImGuiSelectableFlags.None, new Vector2(0f, MinimumControlHeight)))
+                if (_padWide && index > 0)
+                    ImGui.SameLine();
+                if (ImGui.Selectable($"{fields[index].Name} = {fields[index].Text}  {pad.Unit}##field{index}", pad.Active == index, ImGuiSelectableFlags.None, new Vector2(fieldWidth, MinimumControlHeight)))
                     pad.Select(index);
                 Item(PadItem(fields[index].Name));
             }
 
             var preview = pad.Preview;
-            ImGui.TextUnformatted(preview.IsValue ? $"= {preview.Value.ToString("G15", CultureInfo.InvariantCulture)} {pad.Unit}" : preview.Error!);
+            var value = preview.IsValue ? $"= {preview.Value.ToString("G15", CultureInfo.InvariantCulture)} {pad.Unit}" : preview.Error!;
+            ImGui.TextUnformatted(_padWide ? $"{pad.Title}   {value}" : value);
             if (pad.Message is { } message)
                 ImGui.TextUnformatted(message);
             ImGui.Separator();
 
-            foreach (var row in PadRows)
+            var columns = rows.Max(row => row.Length);
+            var spacing = ImGui.GetStyle().ItemSpacing.X;
+            var key = MathF.Floor((ImGui.GetContentRegionAvail().X - ((columns - 1) * spacing)) / columns);
+            foreach (var row in rows)
             {
                 for (var column = 0; column < row.Length; column++)
                 {
                     if (column > 0)
                         ImGui.SameLine();
-                    if (ImGui.Button(row[column], new Vector2(108f, 0f)))
+                    if (ImGui.Button(row[column], new Vector2(key, MinimumControlHeight)))
                         Press(pad, row[column]);
                     Item(PadItem(row[column]));
                 }
@@ -124,6 +156,42 @@ internal sealed unsafe partial class DesktopUi
         _panels.Add(new Vector4(position.X, position.Y, position.X + size.X, position.Y + size.Y));
         ImGui.End();
     }
+
+    // ADR-0172 item 2 (TASK-0418): the pad has no title bar and no move, and a long pad scrolls.
+    private const ImGuiWindowFlags PadFlags = ImGuiWindowFlags.NoTitleBar | ImGuiWindowFlags.NoMove | ImGuiWindowFlags.NoResize
+        | ImGuiWindowFlags.NoCollapse | ImGuiWindowFlags.NoSavedSettings;
+
+    // ADR-0172 item 2: the least width of a pad beside the rows of a sketch or the command line, five keys of 52 pixels.
+    internal const float PadLeast = (5f * 52f) + (4f * 12f) + (2f * 14f);
+
+    // ADR-0172 item 2: the keys on lines of ten, two lines of PadRows on one line, for a display with little height.
+    public static readonly string[][] PadWide =
+    [
+        [.. PadRows[0], .. PadRows[1]],
+        [.. PadRows[2], .. PadRows[3]],
+        PadRows[4],
+    ];
+
+    // ADR-0172 item 2: the height of the pad with a number of lines of keys: the padding, the title, a row of each field,
+    // the line of the value, the line of a message, the separator, and the lines of keys, each with the gap of an item. A
+    // wide pad has one line of fields and no line of its own for the title.
+    private float PadNeed(NumericPad pad, int lines, bool wide = false)
+    {
+        var style = ImGui.GetStyle();
+        var gap = style.ItemSpacing.Y;
+        var text = ImGui.GetTextLineHeight() + gap;
+        var fields = wide ? MinimumControlHeight + gap : text + (pad.Fields.Count * (MinimumControlHeight + gap));
+        return (2f * style.WindowPadding.Y) + fields + text
+            + (pad.Message is null ? 0f : text) + 1f + gap + (lines * (MinimumControlHeight + gap)) - gap;
+    }
+
+    // ADR-0172 item 2 (TASK-0418): true when an open pad on a landscape display has no room for five lines of keys above the
+    // anchors. The pad is then wide: its keys go on lines of ten, and the anchors and the status line do not show while it
+    // is open. Until TASK-0418 the pad covered the anchors on a landscape phone.
+    private bool _padWide;
+
+    private bool PadIsWide(Vector2 displaySize)
+        => _pad is { } pad && !Portrait(displaySize) && PanelTop + PadNeed(pad, PadRows.Length) > displaySize.Y - 16f - AnchorRow - _inset.W;
 
     // A button of the pad: an edit, an apply, a cancel, or the text of its label.
     private void Press(NumericPad pad, string label)

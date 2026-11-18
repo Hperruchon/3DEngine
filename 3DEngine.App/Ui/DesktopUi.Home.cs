@@ -59,6 +59,9 @@ internal sealed unsafe partial class DesktopUi
         var width = Math.Min(420f, displaySize.X - 32f - _inset.X - _inset.Z);
         ImGui.SetNextWindowPos(new Vector2(displaySize.X / 2f, displaySize.Y / 2f), ImGuiCond.Always, new Vector2(0.5f, 0.5f));
         ImGui.SetNextWindowSize(new Vector2(width, 0f), ImGuiCond.Always);
+        // ADR-0172 item 3 (TASK-0418): the home screen is at most as high as the display less its margins, and a long list of
+        // recent projects scrolls. Until TASK-0418 the last recent project was under the bottom edge at 640 by 360.
+        ImGui.SetNextWindowSizeConstraints(new Vector2(width, 0f), new Vector2(width, Math.Max(displaySize.Y - 32f - _inset.Y - _inset.W, MinimumControlHeight)));
         if (ImGui.Begin("3DEngine###Home", ImGuiWindowFlags.NoMove | ImGuiWindowFlags.NoResize | ImGuiWindowFlags.NoCollapse | ImGuiWindowFlags.NoSavedSettings))
         {
             var full = new Vector2(-1f, MinimumControlHeight);

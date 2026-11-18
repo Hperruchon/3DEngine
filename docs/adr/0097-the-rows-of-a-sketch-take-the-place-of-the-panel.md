@@ -7,7 +7,7 @@ date: 2026-11-08
 supersedes: []
 superseded-by: []
 amends: ['0034', '0086', '0087']
-amended-by: ['0120']
+amended-by: ['0120', '0172']
 affects:
   - 3DEngine.App/Ui/DesktopUi.cs
   - 3DEngine.App/Ui/DesktopUi.Sketch.cs
@@ -52,13 +52,17 @@ The owner chose the slice and the render as the target; the recommendations answ
 1. **The rows (Q1 A, amends ADR-0034 item 8).** While a sketch is active, its window is at the left under the top bar,
    in the place of the panel, as wide as the window of the sketch was, with no title bar, no ground, no border and a
    scrollbar with no ground. Its height is its content in the last frame, inside the room above the anchors (as the
-   panel of ADR-0093). The panel does not show. The window of the live sketches, with no active sketch, does not change.
+   panel of ADR-0093). On a landscape display it ends 12 pixels left of the command line and of the band of the ring of
+   the last frame; on a portrait display it ends 8 pixels above the ring when one row still fits (ADR-0172 item 3). The
+   panel does not show. The window of the live sketches, with no active sketch, does not change.
 2. **The heading.** The name of the sketch and its state are on one line, the state in the dim colour.
-3. **The pad.** A pad of the sketch opens to the right of the rows; when it has no room there, below the row of Next
-   point, as before (finding V42).
+3. **The pad.** A pad of the sketch opens to the right of the rows when five keys of 52 pixels fit there; else it opens
+   under the rows (finding V42, ADR-0172 item 2).
 4. **The ring (amends ADR-0086 item 1 and ADR-0087 item 5).** On a landscape display the segments of the ring of a
    sketch go down on the right of its centre, as the ring of a body. The centre moves left only as far as the band needs
-   to stay 16 pixels inside the display, and it is never left of the right edge of the rows of the last frame. A tool
+   to stay 16 pixels inside the display, and it is never left of the right edge of the rows of the last frame unless the
+   band then goes past the display: the ring then stays inside, and the rows end left of it. On a landscape display the
+   first tool starts under the command line (ADR-0172 item 3). A tool
    with an icon (ADR-0095) keeps its icon and its label in the middle of its segment; a kind of a constraint wider than
    the band starts 6 pixels outside the inner edge and goes out to the right, inside the display. The ring has the caption
    "TOOLS FOR" and the title of the sketch when it fits.
@@ -78,3 +82,6 @@ back. A long list of rows scrolls inside the room above the anchors.
 - 2026-11-08 · TASK-0308 · Shipped at v0.295.
 - 2026-11-11 · TASK-0347 · ADR-0120 items 1 and 2 amend items 1 and 2: the rows are the constraints with their value or
   residual, and the row "Makes".
+- 2026-11-18 · TASK-0418 · ADR-0172 items 2 and 3 amend items 1, 3 and 4: the rows end left of the command line and of
+  the ring, and above a portrait ring; the pad opens under the rows when it has no room at their right; the ring stays
+  inside the display, with its first tool under the command line.
