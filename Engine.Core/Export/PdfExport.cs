@@ -29,6 +29,11 @@ public static class PdfExport
         ['.'] = 278, ['-'] = 333, ['+'] = 584, ['R'] = 722, ['\u00d8'] = 778, ['l'] = 222, ['o'] = 556, ['s'] = 500, ['t'] = 278, [' '] = 278,
     };
 
+    // ADR-0169 item 6 (phase R30h, TASK-0411): the widths of the capital letters A to Z of Helvetica, in their order, for the
+    // letters of a section. They are an array, because the gate of the codes refuses a literal of one capital letter that
+    // begins a code (finding T91).
+    private static readonly int[] Capitals = [667, 667, 722, 722, 667, 611, 778, 722, 278, 500, 667, 556, 833, 722, 778, 667, 778, 722, 667, 611, 722, 667, 944, 667, 667, 611];
+
     private const int DigitWidth = 556;
 
     // The file of the live sheet with the identifier, with each body that gives no lines, or E-SHEET-NOT-FOUND.
@@ -96,15 +101,37 @@ public static class PdfExport
         {
             w.Append(CultureInfo.InvariantCulture, $"% View {view.ViewId}.\n");
             w.Append(CultureInfo.InvariantCulture, $"{N(SvgExport.Thin)} w [{SvgExport.Dashes}] 0 d\n");
-            foreach (var line in view.Lines.Where(line => !line.Visible))
+            foreach (var line in view.Lines.Where(line => SvgExport.Stroke(line) == SvgExport.LineStroke.Hidden))
                 Path(w, line);
             // ADR-0165 item 3 (phase R30g, TASK-0405): the centre lines, thin with a long dash and a dot, as in the SVG file.
+            // ADR-0169 item 6 (phase R30h, TASK-0411): the cut lines with them, then the hatch, the visible lines and the thick
+            // ends, the arrows and the texts, in the order of the SVG file.
             w.Append(CultureInfo.InvariantCulture, $"{N(SvgExport.Thin)} w [{SvgExport.CentreDashes}] 0 d\n");
-            foreach (var line in view.Lines.Where(line => line.Kind == "centre"))
+            foreach (var line in view.Lines.Where(line => SvgExport.Stroke(line) == SvgExport.LineStroke.Chain))
                 Path(w, line);
+            if (view.Lines.Any(line => SvgExport.Stroke(line) == SvgExport.LineStroke.Thin))
+            {
+                w.Append(CultureInfo.InvariantCulture, $"{N(SvgExport.Thin)} w [] 0 d\n");
+                foreach (var line in view.Lines.Where(line => SvgExport.Stroke(line) == SvgExport.LineStroke.Thin))
+                    Path(w, line);
+            }
+
             w.Append(CultureInfo.InvariantCulture, $"{N(SvgExport.Thick)} w [] 0 d\n");
-            foreach (var line in view.Lines.Where(line => line.Visible && line.Kind != "centre"))
+            foreach (var line in view.Lines.Where(line => SvgExport.Stroke(line) == SvgExport.LineStroke.Thick))
                 Path(w, line);
+            if (view.Lines.Any(line => SvgExport.Stroke(line) == SvgExport.LineStroke.Arrow))
+            {
+                w.Append(CultureInfo.InvariantCulture, $"{N(SvgExport.Thin)} w\n");
+                foreach (var line in view.Lines.Where(line => SvgExport.Stroke(line) == SvgExport.LineStroke.Arrow))
+                {
+                    Path(w, line);
+                    var head = SvgExport.Head(line);
+                    w.Append(CultureInfo.InvariantCulture, $"{N(head[0].X)} {N(head[0].Y)} m {N(head[1].X)} {N(head[1].Y)} l {N(head[2].X)} {N(head[2].Y)} l h f\n");
+                }
+            }
+
+            foreach (var text in view.Texts)
+                Label(w, text.Text, text.X, text.Y, text.Size, centred: true);
             foreach (var skipped in view.Skipped)
                 w.Append(CultureInfo.InvariantCulture, $"% The body {skipped.Body} gives no lines: {OneLine(skipped.Reason)}\n");
         }
@@ -220,7 +247,8 @@ public static class PdfExport
     }
 
     // The width of a text in thousandths of the size of the font.
-    public static int Width(string text) => text.Sum(ch => Widths.TryGetValue(ch, out var width) ? width : DigitWidth);
+    public static int Width(string text)
+        => text.Sum(ch => ch is >= 'A' and <= 'Z' ? Capitals[ch - 'A'] : Widths.TryGetValue(ch, out var width) ? width : DigitWidth);
 
     // ADR-0161 item 7: a string of PDF in WinAnsiEncoding, in ASCII: a parenthesis and a backslash have a backslash before them,
     // a character from U+00A0 to U+00FF is its byte in octal, and each other character outside printable ASCII is "?".

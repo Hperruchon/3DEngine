@@ -7,7 +7,7 @@ date: 2026-11-17
 supersedes: []
 superseded-by: []
 amends: []
-amended-by: ['0164', '0165']
+amended-by: ['0164', '0165', '0169']
 affects:
   - Engine.Core/Export/DxfExport.cs
   - Engine.Core/Export/SvgExport.cs
@@ -54,6 +54,8 @@ smallest one that keeps the numbers of the read. The owner can change each one.
    before its visible lines, and a comment of group 999 gives the identifier of each view.
    ADR-0165 item 3: the layer CENTER, with the colour 8 and the line type CENTER of the dashes of the SVG file, holds the
    centre lines.
+   ADR-0169 item 6: the layer HATCH, with the colour 8, holds the hatch, and the layer CUT, with the colour 7 and the line
+   type CENTER, the cut lines; the thick ends are on VISIBLE, and the arrows (a LINE and a SOLID) and the texts on TEXT.
 4. **The geometry.** A straight line is a LINE. A whole circle is a CIRCLE. An arc of a circle is a POLYLINE from its start to
    its end, whose vertex carries the bulge, the tangent of a quarter of the angle of the arc, positive counter-clockwise.
    With the half chord h and d = sqrt(r² − h²), the bulge is h / (r + d), so it needs no angle; an arc of a half turn or more
@@ -96,3 +98,4 @@ its own reader of the pairs.
 - 2026-11-17 · TASK-0398 · Shipped at v0.383.
 - 2026-11-18 · TASK-0400 · Amended by ADR-0164 items 2 and 3: a number that is not finite is 0, and the chain of an ellipse has a stop at each quarter turn (findings E215 and E216).
 - 2026-11-18 · TASK-0405 · Amended by ADR-0165 items 3 and 4: the layer of the centre lines and the code of a diameter (R30g).
+- 2026-11-18 · TASK-0411 · Amended by ADR-0169 item 6: the layers HATCH and CUT, the arrows and the texts of a section (R30h).

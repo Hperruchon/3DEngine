@@ -7,7 +7,7 @@ date: 2026-11-17
 supersedes: []
 superseded-by: []
 amends: []
-amended-by: ['0165']
+amended-by: ['0165', '0169']
 affects:
   - Engine.Core/Export/PdfExport.cs
   - Engine.Api.Http/Endpoints/ExportEndpoint.cs
@@ -54,6 +54,8 @@ keeps the numbers of the read. The owner can change each one.
    come before its visible lines, and a comment gives the identifier of each view and the reason of each body that gives
    no lines.
    ADR-0165 item 3: the centre lines are thin, with the dashes of the SVG file, between the hidden and the visible lines.
+   ADR-0169 item 6: the cut lines, the hatch, the thick ends, the arrows with a filled head and the texts, in the order of
+   the SVG file; the widths of Helvetica hold the capital letters.
 4. **The curves.** A straight line is a path from its start to its end. An arc of a circle or of an ellipse, counter-clockwise
    on the paper, is a chain of cubic Bézier curves in the frame of its two half axes, with the minor axis turned to the
    counter-clockwise side. The arc has a stop at each quarter turn from its start, so each part is a quarter turn or less;
@@ -94,3 +96,4 @@ WinAnsiEncoding shows "?". The centre of a text with a character outside the lis
 - 2026-11-17 · TASK-0401 · The record.
 - 2026-11-17 · TASK-0401 · Shipped at v0.385.
 - 2026-11-18 · TASK-0405 · Amended by ADR-0165 items 3 and 4: the centre lines and the sign of a diameter (R30g).
+- 2026-11-18 · TASK-0411 · Amended by ADR-0169 item 6: the hatch, the cut line, the arrows and the texts of a section (R30h).

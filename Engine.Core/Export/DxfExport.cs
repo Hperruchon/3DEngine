@@ -20,6 +20,11 @@ public static class DxfExport
     // ADR-0165 item 3 (phase R30g, TASK-0405): the layer of the centre lines, with the colour 8 and the line type CENTER.
     public const string CentreLayer = "CENTER";
 
+    // ADR-0169 item 6 (phase R30h, TASK-0411): the layer of the hatch, with the colour 8, and the layer of the cut lines, with
+    // the colour 7 and the line type CENTER.
+    public const string HatchLayer = "HATCH";
+    public const string CutLayer = "CUT";
+
     // ADR-0160 item 4: an arc of an ellipse is a chain of arcs of circles, each within this distance of the ellipse, in
     // millimetres of the paper. The chain stops at MaxDepth halvings of a quarter of a turn.
     public const double Tolerance = 0.001;
@@ -63,8 +68,8 @@ public static class DxfExport
         // ADR-0165 item 3 (phase R30g, TASK-0405): the line type of a centre line, as in the SVG file.
         w.Pair(0, "LTYPE").Pair(2, "CENTER").Pair(70, "0").Pair(3, "Center 6 0.75 0.125 0.75").Pair(72, "65").Pair(73, "4").Pair(40, 7.625).Pair(49, 6).Pair(49, -0.75).Pair(49, 0.125).Pair(49, -0.75);
         w.Pair(0, "ENDTAB");
-        w.Pair(0, "TABLE").Pair(2, "LAYER").Pair(70, "6");
-        foreach (var (name, colour, type) in new[] { ("0", "7", "CONTINUOUS"), (FrameLayer, "7", "CONTINUOUS"), (VisibleLayer, "7", "CONTINUOUS"), (HiddenLayer, "8", "HIDDEN"), (CentreLayer, "8", "CENTER"), (TextLayer, "7", "CONTINUOUS") })
+        w.Pair(0, "TABLE").Pair(2, "LAYER").Pair(70, "8");
+        foreach (var (name, colour, type) in new[] { ("0", "7", "CONTINUOUS"), (FrameLayer, "7", "CONTINUOUS"), (VisibleLayer, "7", "CONTINUOUS"), (HiddenLayer, "8", "HIDDEN"), (CentreLayer, "8", "CENTER"), (HatchLayer, "8", "CONTINUOUS"), (CutLayer, "7", "CENTER"), (TextLayer, "7", "CONTINUOUS") })
             w.Pair(0, "LAYER").Pair(2, name).Pair(70, "0").Pair(62, colour).Pair(6, type);
         w.Pair(0, "ENDTAB");
         w.Pair(0, "TABLE").Pair(2, "STYLE").Pair(70, "1");
@@ -88,12 +93,26 @@ public static class DxfExport
         foreach (var view in sheet.Views)
         {
             w.Comment($"View {view.ViewId}.");
-            foreach (var line in view.Lines.Where(line => !line.Visible))
+            foreach (var line in view.Lines.Where(line => SvgExport.Stroke(line) == SvgExport.LineStroke.Hidden))
                 Entity(w, line, HiddenLayer);
-            foreach (var line in view.Lines.Where(line => line.Kind == "centre"))
-                Entity(w, line, CentreLayer);
-            foreach (var line in view.Lines.Where(line => line.Visible && line.Kind != "centre"))
+            // ADR-0169 item 6 (phase R30h, TASK-0411): the cut lines after the centre lines, then the hatch, the visible lines and
+            // the thick ends, the arrows and the texts, in the order of the SVG file.
+            foreach (var line in view.Lines.Where(line => SvgExport.Stroke(line) == SvgExport.LineStroke.Chain))
+                Entity(w, line, line.Kind == "cut" ? CutLayer : CentreLayer);
+            foreach (var line in view.Lines.Where(line => SvgExport.Stroke(line) == SvgExport.LineStroke.Thin))
+                Entity(w, line, HatchLayer);
+            foreach (var line in view.Lines.Where(line => SvgExport.Stroke(line) == SvgExport.LineStroke.Thick))
                 Entity(w, line, VisibleLayer);
+            foreach (var line in view.Lines.Where(line => SvgExport.Stroke(line) == SvgExport.LineStroke.Arrow))
+            {
+                Entity(w, line, TextLayer);
+                var head = SvgExport.Head(line);
+                // A SOLID of three corners repeats its third corner as its fourth.
+                w.Pair(0, "SOLID").Pair(8, TextLayer).Point(head[0].X, head[0].Y).Point(head[1].X, head[1].Y, 11).Point(head[2].X, head[2].Y, 12).Point(head[2].X, head[2].Y, 13);
+            }
+
+            foreach (var text in view.Texts)
+                Label(w, text.Text, text.X, text.Y, text.Size, centred: true);
             foreach (var skipped in view.Skipped)
                 w.Comment($"The body {skipped.Body} gives no lines: {skipped.Reason}");
         }
