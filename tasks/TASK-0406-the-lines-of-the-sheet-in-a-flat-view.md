@@ -1,7 +1,7 @@
 ---
 id: 0406
 title: A flat view of the window shows the lines of the sheet, with the switch "Lines" and the key L
-status: Done
+status: Active
 phase: R30a
 opened: 2026-11-18
 depends-on: [0400, 0403]
@@ -85,7 +85,7 @@ and F makes the part fill the free part of the scene.
 
 ## Outcome
 
-Status: Done · branch r30a-lines · v0.389
+Status: Active
 
 ## Method
 
@@ -107,3 +107,5 @@ Weakest:    no test runs the read of the host in a frame of the desktop; the run
   those numbers, so this task takes TASK-0406 and ADR-0166 on the branch `r30a-lines`, from `origin/main`, with the same
   code. The old branch is not merged. The first of R30a and R30g to merge closes at v0.389; the second closes at v0.390
   after it merges `main`. The merge waits for the owner.
+- 2026-11-18: the commit of the renumbered work (b14cce2) set the status to Done before the close, so this commit sets
+  it to Active for the close (docs/templates.md, section 3).
