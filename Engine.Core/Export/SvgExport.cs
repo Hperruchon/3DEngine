@@ -21,6 +21,10 @@ public static class SvgExport
     // dot of half a width, and a gap of 3.
     public const string CentreDashes = "6 0.75 0.125 0.75";
 
+    // ADR-0169 item 6 (phase R30h, TASK-0411): the head of an arrow, 3 mm long and 1.6 mm wide at its base, filled.
+    public const double ArrowHead = 3;
+    public const double ArrowWidth = 1.6;
+
     // ADR-0159 item 4: the frame is 10 mm inside the edge of the paper, and the title block is 120 by 20 mm in the lower right
     // corner of the frame.
     public const double Margin = 10;
@@ -66,17 +70,34 @@ public static class SvgExport
         foreach (var view in sheet.Views)
         {
             w.Append($"<g id=\"view-{view.ViewId}\" fill=\"none\" stroke=\"black\">\n");
-            foreach (var line in view.Lines.Where(line => !line.Visible))
+            foreach (var line in view.Lines.Where(line => Stroke(line) == LineStroke.Hidden))
                 w.Append($"<path stroke-width=\"{N(Thin)}\" stroke-dasharray=\"{Dashes}\" {svg.Path(line)}/>\n");
             // ADR-0165 item 3 (phase R30g, TASK-0405): the centre lines, thin with a long dash and a dot, between the hidden and
-            // the visible lines.
-            foreach (var line in view.Lines.Where(line => line.Kind == "centre"))
+            // the visible lines. ADR-0169 item 6 (phase R30h, TASK-0411): the cut lines with them, then the hatch, the visible
+            // lines and the thick ends, the arrows and the texts.
+            foreach (var line in view.Lines.Where(line => Stroke(line) == LineStroke.Chain))
                 w.Append($"<path stroke-width=\"{N(Thin)}\" stroke-dasharray=\"{CentreDashes}\" {svg.Path(line)}/>\n");
-            foreach (var line in view.Lines.Where(line => line.Visible && line.Kind != "centre"))
+            foreach (var line in view.Lines.Where(line => Stroke(line) == LineStroke.Thin))
+                w.Append($"<path stroke-width=\"{N(Thin)}\" {svg.Path(line)}/>\n");
+            foreach (var line in view.Lines.Where(line => Stroke(line) == LineStroke.Thick))
                 w.Append($"<path stroke-width=\"{N(Thick)}\" {svg.Path(line)}/>\n");
+            foreach (var line in view.Lines.Where(line => Stroke(line) == LineStroke.Arrow))
+            {
+                w.Append($"<path stroke-width=\"{N(Thin)}\" {svg.Path(line)}/>\n");
+                var head = Head(line);
+                w.Append($"<path fill=\"black\" stroke=\"none\" d=\"M {N(head[0].X)} {N(svg.Y(head[0].Y))} L {N(head[1].X)} {N(svg.Y(head[1].Y))} L {N(head[2].X)} {N(svg.Y(head[2].Y))} Z\"/>\n");
+            }
+
             foreach (var skipped in view.Skipped)
                 w.Append($"<desc>The body {skipped.Body} gives no lines: {Escape(skipped.Reason)}</desc>\n");
             w.Append("</g>\n");
+            if (view.Texts.Count > 0)
+            {
+                w.Append($"<g id=\"texts-{view.ViewId}\" font-family=\"sans-serif\" fill=\"black\" text-anchor=\"middle\">\n");
+                foreach (var text in view.Texts)
+                    w.Append($"<text x=\"{N(text.X)}\" y=\"{N(svg.Y(text.Y))}\" font-size=\"{N(text.Size)}\">{Escape(text.Text)}</text>\n");
+                w.Append("</g>\n");
+            }
         }
 
         // Item 5: the value of each dimension at its place, or "lost".
@@ -86,6 +107,44 @@ public static class SvgExport
         w.Append("</g>\n");
         w.Append("</svg>\n");
         return w.ToString();
+    }
+
+    // ADR-0169 item 6 (phase R30h, TASK-0411): the five strokes of a line in the three files.
+    public enum LineStroke
+    {
+        Hidden,
+        Chain,
+        Thin,
+        Thick,
+        Arrow,
+    }
+
+    // ADR-0169 item 6: the stroke of a line: a hidden line; a centre line or a cut line, thin with a long dash and a dot; a line
+    // of a hatch, thin; an edge, an outline or a thick end of a cut line, thick; an arrow.
+    public static LineStroke Stroke(SheetLine line)
+    {
+        ArgumentNullException.ThrowIfNull(line);
+        return line.Kind switch
+        {
+            "centre" or "cut" => LineStroke.Chain,
+            "hatch" => LineStroke.Thin,
+            "arrow" => LineStroke.Arrow,
+            "cut-end" => LineStroke.Thick,
+            _ => line.Visible ? LineStroke.Thick : LineStroke.Hidden,
+        };
+    }
+
+    // ADR-0169 item 6: the three corners of the head of an arrow: its point at the end of the line, and the two corners of its
+    // base, ArrowHead back along the line and ArrowWidth / 2 to each side. An arrow of no length has its head at its end.
+    public static IReadOnlyList<(double X, double Y)> Head(SheetLine line)
+    {
+        ArgumentNullException.ThrowIfNull(line);
+        var (dx, dy) = (line.ToX - line.FromX, line.ToY - line.FromY);
+        var length = Math.Sqrt((dx * dx) + (dy * dy));
+        var (ux, uy) = length > 0 ? (dx / length, dy / length) : (0.0, 0.0);
+        var (bx, by) = (line.ToX - (ArrowHead * ux), line.ToY - (ArrowHead * uy));
+        var (sx, sy) = (-uy * ArrowWidth / 2, ux * ArrowWidth / 2);
+        return [(line.ToX, line.ToY), (bx + sx, by + sy), (bx - sx, by - sy)];
     }
 
     // ADR-0159 item 5: the text of a dimension. A radius has the prefix "R" (ISO 129-1); a lost dimension shows "lost". ADR-0165

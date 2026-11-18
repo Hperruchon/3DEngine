@@ -803,7 +803,7 @@ The first objective. Each phase ends with something that a person can observe.
 | R30e | "Put on sheet" on a value chip of a flat view (ADR-0162 item 7). After R30h. | 1 |
 | R30f | The proposal of the agent on the sheet page: amber boxes and amber values, Accept and Reject on the arc (ADR-0162 item 8). After R30h. | 1–2 |
 | R30g | The flag of the hidden lines and the centre lines of each view, the centre lines and centre marks in GetSheet and the three files, and ⌀ for a whole circle; a contract change with its ADR (ADR-0162 items 11, 12, 14 and 17). After P0.162; it can run beside R30a to R30c. TASK-0405, ADR-0165. | 1–2 |
-| R30h | The section view of a sheet: the cut line, the cut plane and its letter, the hatch and the label "A–A", in GetSheet, the files and the sheet page; a contract change with its ADR (ADR-0162 items 13 and 17). After R30c and R30g. | 2–3 |
+| R30h | The section view of a sheet: the cut line, the cut plane and its letter, the hatch and the label "A–A", in GetSheet, the files and the sheet page; a contract change with its ADR (ADR-0162 items 13 and 17). After R30c and R30g. TASK-0411 gives the engine, GetSheet and the files (ADR-0169); the action "Section" of the sheet page follows R30d (ADR-0169 item 8). | 2–3 |
 | R30i | The title block of ISO 7200 by one command, the symbol of the projection and the centring marks; a contract change with its ADR (ADR-0162 items 15 and 17). After R30h. | 1 |
 
 ## Track K — The kernel

@@ -31,7 +31,13 @@ public sealed record SheetView(
     double X,
     double Y,
     bool HiddenLines = true,
-    bool CentreLines = true);
+    bool CentreLines = true,
+    SheetSection? Section = null);
+
+// ADR-0169 item 1 (phase R30h, TASK-0411): the cut of a section view. The cut plane goes through Point, the x, y and z of the
+// design in millimetres, and its normal is the direction toward the eye of the view; the cut removes the material on the side
+// of the eye. Parent is the view that shows the cut line, and Letter is one capital letter from A to Z.
+public sealed record SheetSection(Guid Parent, IReadOnlyList<double> Point, string Letter);
 
 // ADR-0153 item 5 (Q5 A, Q6 A): one dimension of a sheet, in a view. Source is the identifier of a constraint of a sketch
 // (SourceKind "constraint") or of an extrude for its distance (SourceKind "distance"). X and Y are the place of its line on

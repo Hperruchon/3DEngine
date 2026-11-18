@@ -27,7 +27,8 @@ public sealed record SheetInfo(
     IReadOnlyList<SheetDimensionInfo> Dimensions);
 
 // One view: its record, its lines on the paper in the order of ViewEdges, and each body that gives no lines with
-// its reason (ADR-0155 item 5).
+// its reason (ADR-0155 item 5). ADR-0169 item 7 (phase R30h, TASK-0411): the section of a section view, null for each other
+// view, and the texts of the view: the letters of the cut line of each section of the view, and the label of a section.
 public sealed record SheetViewInfo(
     Guid ViewId,
     IReadOnlyList<double> Direction,
@@ -38,9 +39,21 @@ public sealed record SheetViewInfo(
     IReadOnlyList<SheetLine> Lines,
     IReadOnlyList<SheetSkippedBody> Skipped,
     bool HiddenLines = true,
-    bool CentreLines = true);
+    bool CentreLines = true)
+{
+    public SheetSection? Section { get; init; }
 
-// One line of a view on the paper. Kind is "edge" or "outline", or "centre" for a centre line (ADR-0165 item 3). A line with a circle or an ellipse is its
+    public IReadOnlyList<SheetText> Texts { get; init; } = [];
+}
+
+// ADR-0169 item 5 (phase R30h, TASK-0411): a text of a view on the paper: X is the middle of the text and Y its base line, in
+// millimetres, and Size is the height of a capital letter in millimetres.
+public sealed record SheetText(double X, double Y, string Text, double Size);
+
+// One line of a view on the paper. Kind is "edge" or "outline", or "centre" for a centre line (ADR-0165 item 3). ADR-0169 items 4
+// and 5 (phase R30h, TASK-0411): "hatch" for a line of the hatch of a cut face, "cut" for the cut line of a section on its
+// parent, "cut-end" for a thick end of it, and "arrow" for an arrow from its start to its head; the body of a line of a cut is
+// the section view. A line with a circle or an ellipse is its
 // arc from the start to the end, counter-clockwise on the paper; a start equal to the end is the whole curve (ADR-0155 item 5).
 public sealed record SheetLine(Guid Body, double FromX, double FromY, double ToX, double ToY, bool Visible, string Kind)
 {
