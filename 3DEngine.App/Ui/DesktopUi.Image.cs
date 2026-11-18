@@ -18,7 +18,12 @@ internal sealed unsafe partial class DesktopUi
         // Finding V154 of the codebase review of 2026-11-09 (TASK-0324): the window starts under the top bar, at the top of the
         // panel, so the folder of the file in the top bar has its room. Until TASK-0324 it started at the top of the display,
         // and the folder ran under its folded title bar.
-        ImGui.SetNextWindowPos(new Vector2(492f, PanelTop), ImGuiCond.FirstUseEver);
+        // ADR-0163 item 5 (TASK-0404): the person places the window, and a smaller display moves it back inside. Until
+        // TASK-0404 it kept its place after a resize, so at 680 by 600 the right edge cut it.
+        if (_imagesBox is { } box && KeepInside(box, displaySize, PanelTop) is { } inside)
+            ImGui.SetNextWindowPos(inside, ImGuiCond.Always);
+        else
+            ImGui.SetNextWindowPos(new Vector2(492f, PanelTop), ImGuiCond.FirstUseEver);
         ImGui.SetNextWindowSize(new Vector2(ImagesWidth, Math.Clamp(displaySize.Y - 32f, 120f, ImagesHeight)), ImGuiCond.FirstUseEver);
         ImGui.SetNextWindowCollapsed(true, ImGuiCond.FirstUseEver);
         if (ImGui.Begin(ImagesName))
@@ -89,7 +94,22 @@ internal sealed unsafe partial class DesktopUi
         var position = ImGui.GetWindowPos();
         var size = ImGui.GetWindowSize();
         _panels.Add(new Vector4(position.X, position.Y, position.X + size.X, position.Y + size.Y));
+        _imagesBox = _panels[^1];
         ImGui.End();
+    }
+
+    // ADR-0163 item 5 (TASK-0404): the window of the images in the last frame, as left, top, right and bottom.
+    private Vector4? _imagesBox;
+
+    public Vector4? ImagesRectangle => _imagesBox;
+
+    // ADR-0163 item 5 (TASK-0404): the place that keeps a window 16 pixels inside the right and the bottom edge of the
+    // display, and not left of 16 or above the top; null when the window is inside already.
+    internal static Vector2? KeepInside(Vector4 box, Vector2 displaySize, float top)
+    {
+        var x = Math.Max(Math.Min(box.X, displaySize.X - 16f - (box.Z - box.X)), 16f);
+        var y = Math.Max(Math.Min(box.Y, displaySize.Y - 16f - (box.W - box.Y)), top);
+        return x == box.X && y == box.Y ? null : new Vector2(x, y);
     }
 
     // The short name of the asset of an image, its size in pixels, its datum and its scale.

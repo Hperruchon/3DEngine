@@ -41,6 +41,12 @@ internal sealed unsafe partial class DesktopUi : IDisposable
     public const float FramePaddingY = 9f;
     public const float MinimumControlHeight = 44f;
 
+    // ADR-0163 item 2 (TASK-0404): the smallest size of the window of the desktop, in the units of the window. The width is
+    // the smallest width of ADR-0113 item 1. A probe of TASK-0404 found faults of the layout below a height of 570 when the
+    // width is less than 750, so the height keeps a margin of 30 pixels. The test of the layout reads both numbers.
+    public const int MinimumWindowWidth = 360;
+    public const int MinimumWindowHeight = 600;
+
     public const string PanelName = "Document";
     public const string FilterLabel = "Filter";
     public const string ClearLabel = "Clear";
