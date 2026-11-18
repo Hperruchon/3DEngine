@@ -11944,3 +11944,28 @@ merge went to `main` before a run on that commit was green; run 44374038396 on t
 New tests: 0. The test list holds 2883 (1703 in `Engine.Tests`, 390 in `3DEngine.Tests`, 787 in `3DEngine.ImageTests`, 3
 in `3DEngine.VisionTests`). Open entries: 14 of 15. New diagnostic codes: 0. This entry is a codebase review, so 0 product
 milestones and 0 entries follow it.
+
+## v0.398 — A read without the dragged view ends a drag of the sheet page, and its release gives nothing (P0.166, TASK-0415)
+
+The high finding V202 of the second codebase review of 2026-11-18. The owner answered "A, and merge" to the review and its
+question, then ordered "then start TASK-0415". This first commit of the next task records the answer: Q1 A, a section through
+the axis of a cone shows the axis in each look (E223); TASK-0416 states it in ADR-0169 item 3 with its code. The review merged
+to `main` at `a5adcf6`.
+
+**The change.**
+- At each frame of the paper, a read that does not hold the dragged view ends the drag. Its release then gives no
+  MoveSheetViews, no selection and no place; the next press acts again.
+- `SheetPage.Drag` gives null for a view that the read does not hold, in place of an exception.
+- ADR-0168 item 3 states the rule.
+
+**Proof.** The new test starts a drag of the top view, removes that view with RemoveSheetView, gives the new read between two
+moves and releases. On the code of v0.396 it failed with `InvalidOperationException: Sequence contains no matching element`
+from `DesktopUi.Frame`, as the probe of the review did. Four injections (the step that ends the drag, the release of an ended
+drag, the reset of its flag at the release, and the null of `SheetPage.Drag`) each made
+`A_Read_Without_The_Dragged_View_Ends_The_Drag` fail, and each file came back byte for byte. A clean build gives 0 warnings,
+the phone project builds, `dotnet test` passes 2884 tests, and the write-set check and `eng/repo-gates` pass. The run on the
+branch is in the progress of TASK-0415. The failed runs since the entry v0.397, from the API: none.
+
+New tests: 1. The test list holds 2884 (1703 in `Engine.Tests`, 390 in `3DEngine.Tests`, 788 in `3DEngine.ImageTests`, 3
+in `3DEngine.VisionTests`). Open entries: 14 of 15. New diagnostic codes: 0. Since the review of v0.397, 0 product milestones
+and 1 entry followed it.
