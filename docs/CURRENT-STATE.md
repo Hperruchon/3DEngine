@@ -11864,7 +11864,7 @@ plate; "SVG" wrote `r30d-out2.svg` (2413 bytes). Ten injections each failed a te
 (SHA-256). A clean build gives 0 warnings, the phone project builds, `eng/repo-gates` gives 488 runs of 168 checks and 0
 failed, and the write-set check passes. Run 44327710142 passed on the branch `r30d-sheet-export`; run 44329686249 of its close was red only because
 GitHub gave no runner of macOS. R30h merged first at v0.394, so the branch merged `main` (conflicts in lists only), and each
-test project passes on the merged tree; run RUNID passed on it. The failed runs since the entry v0.394, from the API: FAILED.
+test project passes on the merged tree; run 44335110377 passed on it. The failed runs since the entry v0.394, from the API: none.
 
 **What stays.** The path of the phone is not tested on a phone: the pipeline builds the APK and starts it on an emulator, and
 no test drives the picker of Android. A share sheet of Android is not part of this slice. "Export STL..." still writes on the
