@@ -1,7 +1,7 @@
 ---
 id: 0414
 title: The second codebase review of 2026-11-18 is a record
-status: Active
+status: Done
 phase: governance
 opened: 2026-11-18
 depends-on: [0413]
@@ -53,12 +53,12 @@ A review of the code at `8b2619a` (v0.396) is in `docs/reviews/`, and a task hol
 
 - [x] Each finding of the review has its place and its evidence, and the session read it at its line.
 - [x] The measures use the method of the last review, and the script gives the values of the last review at `1bdd376`.
-- [ ] `CodebaseReviewGateTests`, `dotnet test`, the write-set check and `eng/repo-gates` pass; continuous integration passes on
+- [x] `CodebaseReviewGateTests`, `dotnet test`, the write-set check and `eng/repo-gates` pass; continuous integration passes on
       the branch and on `main` after the merge.
 
 ## Outcome
 
-Status: Active
+Status: Done · commit (the merge of the branch review-2026-11-18-b) · v0.397
 
 ## Method
 
@@ -73,3 +73,4 @@ Weakest:    E224, V208 and V209 come from a reading of the lines; no run on the 
   44374038396 on `main` passed). Two agents examine the change from `1bdd376` to `8b2619a` in their own copies with probes.
 - 2026-11-18: the session read each finding of the agents at its line, and removed one that did not hold (a command of the
   queue after a change of project: each session has its own engine and its own queue). Ledger entry v0.397.
+- 2026-11-18: run 44381592014 passed on the branch on each job. Closed at v0.397; the merge and the answer Q1 wait for the owner.
