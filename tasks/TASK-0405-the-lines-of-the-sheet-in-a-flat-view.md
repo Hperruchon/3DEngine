@@ -1,7 +1,7 @@
 ---
 id: 0405
 title: A flat view of the window shows the lines of the sheet, with the switch "Lines" and the key L
-status: Active
+status: Done
 phase: R30a
 opened: 2026-11-18
 depends-on: [0400, 0403]
@@ -73,19 +73,19 @@ and F makes the part fill the free part of the scene.
 
 ## Acceptance criteria
 
-- [ ] GetViewLines gives the lines of the plate of 2026-11-17 in units of the design: from the front, four visible lines and
+- [x] GetViewLines gives the lines of the plate of 2026-11-17 in units of the design: from the front, four visible lines and
       two hidden walls at x = 12 and x = 28; the lines of GetSheet at 1 : 1 are the same lines moved by one shift.
-- [ ] The switch "Lines" is in the net and on the key L; a field, Control and the home screen keep L.
-- [ ] A picture of the front view of the plate with "Lines" on has the paper inside the plate, solid ink on the visible
+- [x] The switch "Lines" is in the net and on the key L; a field, Control and the home screen keep L.
+- [x] A picture of the front view of the plate with "Lines" on has the paper inside the plate, solid ink on the visible
       lines and dashes on the hidden walls; with "Lines" off it has the shaded plate.
-- [ ] In a flat view Frame fills 0.9 of the free part; the test fails on the code of v0.388.
-- [ ] A capture of the desktop with `plate.3de` in the Front, Top and Right views with "Lines" on, shown to the owner.
-- [ ] A clean build (`--no-incremental`) gives zero errors and zero warnings, and the phone project builds.
-- [ ] `dotnet test`, the write-set check and `eng/repo-gates` pass, and continuous integration passes on the branch.
+- [x] In a flat view Frame fills 0.9 of the free part; the test fails on the code of v0.388.
+- [x] A capture of the desktop with `plate.3de` in the Front, Top and Right views with "Lines" on, shown to the owner.
+- [x] A clean build (`--no-incremental`) gives zero errors and zero warnings, and the phone project builds.
+- [x] `dotnet test`, the write-set check and `eng/repo-gates` pass, and continuous integration passes on the branch.
 
 ## Outcome
 
-Status: Active
+Status: Done · commit e705e00 · v0.389
 
 ## Method
 
@@ -98,3 +98,8 @@ Weakest:    no test runs the read of the host in a frame of the desktop; the run
 
 - 2026-11-18: opened from row R30a under the order of the owner of 2026-11-18. The check of F: the key reaches the window,
   and Frame in a flat view took the sphere of the perspective at FrameFill 0.45, so the plate kept its size after the load.
+- 2026-11-18: the query, the switch, the paper and the frame. Each new test of the frame failed on the code of v0.388; the
+  other new tests name types that v0.388 does not have. Eleven injections each failed a test; a first injection in the map
+  of SDL changed M into L, which the pair of keys of the test cancels, so a second one maps L to F. A run of the desktop
+  with `plate.3de` and the keys L, 1, 7, 3 and F gave the three views with their lines. Pushed as `r30a-view-lines`.
+- 2026-11-18: run 44285835681 passed on the branch. Closed at v0.389; the merge waits for the owner.
