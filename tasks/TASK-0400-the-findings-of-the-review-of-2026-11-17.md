@@ -1,7 +1,7 @@
 ---
 id: 0400
 title: The medium and low findings of the codebase review of 2026-11-17
-status: Active
+status: Done
 phase: P0.162
 opened: 2026-11-17
 depends-on: [0399]
@@ -10,7 +10,6 @@ writes:
   create:
     - tasks/TASK-0400-the-findings-of-the-review-of-2026-11-17.md
     - docs/adr/0164-the-findings-of-the-review-of-2026-11-17.md
-    - docs/adr/0163-the-findings-of-the-review-of-2026-11-17.md
   modify:
     - Engine.Core/Drawing/ViewEdges.cs
     - Engine.Core/Drawing/SheetLayout.cs
@@ -70,9 +69,9 @@ Each of the seven findings has a correction or a recorded limit, and a test that
 
 ## Acceptance criteria
 
-- [ ] Each finding has a test that failed on the code of v0.383, and each rule has an injection that a test catches.
-- [ ] A clean build (`--no-incremental`) gives zero errors and zero warnings, and the phone project builds.
-- [ ] `dotnet test`, the write-set check and `eng/repo-gates` pass; continuous integration passes on the branch and on
+- [x] Each finding has a test that failed on the code of v0.383, and each rule has an injection that a test catches.
+- [x] A clean build (`--no-incremental`) gives zero errors and zero warnings, and the phone project builds.
+- [x] `dotnet test`, the write-set check and `eng/repo-gates` pass; continuous integration passes on the branch and on
       `main` after the merge.
 
 ## Notes for the implementer
@@ -81,6 +80,8 @@ Read the section of each finding in the review: its place, its probe and its rec
 the same factor of `SheetLayout.Place`. E213 and E214 touch the same elimination; keep the bits of a replay of the solver.
 
 ## Outcome
+
+Status: Done · commit (the merge of the branch p0162-review-findings) · v0.388
 
 ## Method
 
@@ -106,3 +107,5 @@ Weakest:    the time test of E213 compares the analysis with the status on one c
   the history keeps it, because a pushed commit does not change.
 - 2026-11-18: the merge of `main` at v0.387 into this branch: the index of the ADRs holds the row of ADR-0163 of P0.164
   and the row of ADR-0164 of this task, in their order; the test floor takes 1672 for `Engine.Tests` and the image counts of `main`.
+- 2026-11-18: closed at v0.388. The old path of ADR-0163 leaves the write set: the commit of the rename needed it, and the
+  gate of the numbers of the ADRs reads it as a plan for a number that P0.164 has.
