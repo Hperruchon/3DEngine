@@ -52,7 +52,8 @@ public sealed class ViewLinesTests
 
     // Criterion C1 of the design file: from the front, the four lines of the plate are visible at the places of the design, and
     // the two walls of the hole are hidden, at x = 12 and x = 28. From the top, the hole is one visible whole circle of radius 8
-    // at (20, 20). The read does not change the Document.
+    // at (20, 20). Finding E220 (TASK-0410): the axis of the hole goes from z = -3 to z = 13 in the front view, and its cross is
+    // 11 to each side of (20, 20) in the top view, as on a sheet at 1 : 1. The read does not change the Document.
     [NativeManifoldFact]
     public async Task The_Plate_Gives_Its_Lines_In_Units_Of_The_Design()
     {
@@ -67,7 +68,8 @@ public sealed class ViewLinesTests
         Assert.Empty(front.Result.Skipped);
         Assert.Equal(
             new[] { "hidden 12,0 12,10", "hidden 28,0 28,10", "visible 0,0 0,10", "visible 0,0 60,0", "visible 0,10 60,10", "visible 60,0 60,10" },
-            front.Result.Lines.Select(Text).Order(StringComparer.Ordinal));
+            front.Result.Lines.Where(line => line.Kind != "centre").Select(Text).Order(StringComparer.Ordinal));
+        Assert.Equal(["visible 20,-3 20,13"], front.Result.Lines.Where(line => line.Kind == "centre").Select(Text));
 
         var top = await session.Query<ViewLinesInfo>(Query(Top));
 
@@ -76,13 +78,14 @@ public sealed class ViewLinesTests
         Assert.True(circle.Visible);
         Assert.Equal(new ViewCircleInfo(20, 20, 8), circle.Circle);
         Assert.Equal((circle.FromX, circle.FromY), (circle.ToX, circle.ToY));
-        Assert.Equal(4, top.Result.Lines.Count(line => line.Circle is null && line.Visible));
+        Assert.Equal(4, top.Result.Lines.Count(line => line.Circle is null && line.Visible && line.Kind != "centre"));
+        Assert.Equal(["visible 9,20 31,20", "visible 20,9 20,31"], top.Result.Lines.Where(line => line.Kind == "centre").Select(Text));
         Assert.Equal(before, await session.Read((document, _) => (document.Version, document.Log.Count)));
     }
 
     // Item 1: the lines are those of GetSheet for a view of the same frame at 1 : 1, moved by one shift: the sheet puts the
-    // centre of the box of the lines at the place of the view. The centre lines of the sheet (ADR-0165 item 3, TASK-0405) are
-    // not lines of a flat view, so the test leaves them out.
+    // centre of the box of the lines at the place of the view. Finding E220 (TASK-0410, the answer Q1 A of the owner): the
+    // centre lines of the sheet (ADR-0165 item 3) are lines of a flat view too. Until TASK-0410 the test left them out.
     [NativeManifoldFact]
     public async Task The_Lines_Are_The_Lines_Of_The_Sheet_Moved_By_One_Shift()
     {
@@ -98,10 +101,10 @@ public sealed class ViewLinesTests
         var view = Assert.Single((await session.Query<SheetInfo>(new GetSheetQuery { SheetId = sheet })).Result!.Views);
         var lines = (await session.Query<ViewLinesInfo>(Query(Front))).Result!.Lines;
 
-        var edges = view.Lines.Where(line => line.Kind != "centre").ToList();
-        Assert.Equal(edges.Count, lines.Count);
+        Assert.Contains(view.Lines, line => line.Kind == "centre");
+        Assert.Equal(view.Lines.Count, lines.Count);
         var (dx, dy) = (150.0 - 30.0, 100.0 - 5.0);
-        foreach (var (paper, line) in edges.Zip(lines))
+        foreach (var (paper, line) in view.Lines.Zip(lines))
         {
             Assert.Equal((paper.Body, paper.Visible, paper.Kind), (line.Body, line.Visible, line.Kind));
             Assert.Equal((paper.FromX, paper.FromY, paper.ToX, paper.ToY), (line.FromX + dx, line.FromY + dy, line.ToX + dx, line.ToY + dy));

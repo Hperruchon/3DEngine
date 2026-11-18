@@ -846,16 +846,20 @@ internal static class ViewEdges
     // view gives its axis, from the lowest to the highest place of those lines along the axis, so the axis of a hole ends
     // where the hole ends. Each centre line has the kind Centre, is visible, and has the tags of its curve; the place on the
     // paper adds 3 mm at each end. The order is the order of the lines, and the code uses + − × ÷ on exact numbers only.
+    // Finding E218 of the codebase review of 2026-11-18 (TASK-0410): a circle gives its cross when its arcs, visible and hidden,
+    // cover the whole turn (Whole), so a hole that another body covers in part keeps its cross. Until TASK-0410 only one line
+    // that was the whole circle gave a cross.
     public static IReadOnlyList<ViewLine> Centres(IReadOnlyList<ViewLine> lines, ViewFrame frame, IReadOnlyDictionary<FaceTag, SideCurve> curves)
     {
         ArgumentNullException.ThrowIfNull(lines);
         ArgumentNullException.ThrowIfNull(curves);
         var centres = new List<ViewLine>();
+        var whole = Whole(lines);
         var circles = new HashSet<ViewCircle>();
         var axes = new List<(Guid Body, FaceTag Tag, SideCurve Side, Rational Low, Rational High)>();
         foreach (var line in lines)
         {
-            if (line.Circle is { } circle && line.From == line.To && circles.Add(circle))
+            if (line.Circle is { } circle && whole.Contains(circle) && circles.Add(circle))
             {
                 var ((x, y), r) = (circle.Centre, circle.Radius);
                 centres.Add(new ViewLine(line.Body, (x - r, y), (x + r, y), true, ViewLineKind.Centre, line.First, line.Second));
@@ -880,6 +884,42 @@ internal static class ViewEdges
         }
 
         return centres;
+    }
+
+    // Finding E218 (TASK-0410): the circles whose arcs cover the whole turn. Each arc goes counter-clockwise from From to To
+    // (Arc), and a start equal to the end is the whole circle. A circle is whole when a line of it is the whole circle, or when
+    // the arcs that follow each other from the end of one arc come back to its start: the arc and that path then go once about
+    // the centre or more. The test compares exact points only.
+    private static HashSet<ViewCircle> Whole(IReadOnlyList<ViewLine> lines)
+    {
+        var whole = new HashSet<ViewCircle>();
+        foreach (var group in lines.Where(line => line.Circle is not null).GroupBy(line => line.Circle!))
+        {
+            var arcs = group.ToList();
+            if (arcs.Any(arc => arc.From == arc.To) || arcs.Any(arc => Reaches(arcs, arc.To, arc.From)))
+                whole.Add(group.Key);
+        }
+
+        return whole;
+    }
+
+    // True when a path of arcs, each from the end of the one before, goes from the point start to the point goal.
+    private static bool Reaches(List<ViewLine> arcs, (Rational X, Rational Y) start, (Rational X, Rational Y) goal)
+    {
+        var seen = new HashSet<(Rational X, Rational Y)> { start };
+        var next = new Queue<(Rational X, Rational Y)>([start]);
+        while (next.TryDequeue(out var at))
+        {
+            if (at == goal)
+                return true;
+            foreach (var arc in arcs)
+            {
+                if (arc.From == at && seen.Add(arc.To))
+                    next.Enqueue(arc.To);
+            }
+        }
+
+        return false;
     }
 
     // ADR-0165 item 3 and ADR-0169 item 3 (phase R30h, TASK-0411): the tag and the curve of a cylinder or a cone that a line shows

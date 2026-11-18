@@ -114,6 +114,10 @@ public sealed class NativeThreeDEngine : IThreeDEngine, IDisposable
     private long _changes;
     private IDisposable? _changesSubscription;
 
+    // Finding V196 of the codebase review of 2026-11-18 (TASK-0410): the count of the events that can change the lines of a
+    // flat view (ViewLines.ChangesLines), so a command of a sheet does not start a new read of the lines.
+    private long _lineChanges;
+
     // ADR-0127 items 1 and 2 (phase R18g, TASK-0354): the count of the log and the text of the step that Undo reverses, and
     // the named proposals of the last frame, for the text of an accept.
     private readonly StepTexts _steps = new();
@@ -160,7 +164,12 @@ public sealed class NativeThreeDEngine : IThreeDEngine, IDisposable
         var (width, height, rgba) = _ui.FontAtlas();
         _ui.SetFontTexture(_uiRenderer.CreateTexture(width, height, rgba));
         _actions = new BodyActions(_host.Session);
-        _changesSubscription = _host.Subscribe(_ => Interlocked.Increment(ref _changes));
+        _changesSubscription = _host.Subscribe(record =>
+        {
+            Interlocked.Increment(ref _changes);
+            if (ViewLines.ChangesLines(record.Kind))
+                Interlocked.Increment(ref _lineChanges);
+        });
         // ADR-0127 item 1: the log at the start and each later event, in one read of the session, so no event is lost and no
         // event counts two times (EngineHost.Subscribe). A document that the host opened holds the log of its file.
         _stepsSubscription = _host.Session.Read((document, _) =>
@@ -420,6 +429,9 @@ public sealed class NativeThreeDEngine : IThreeDEngine, IDisposable
         // mesh body, which no move takes (ADR-0083 item 4).
         if (_ui?.HomeShown == true || _renderer.LiveBodies.FirstOrDefault(live => live.Id == body)?.Kind == Engine.Core.Commands.ImportStlCommandHandler.MeshKind)
             return null;
+        // Finding V198 of the codebase review of 2026-11-18 (TASK-0410): no gizmo while the paper of the lines covers the body.
+        if (ViewLines.PaperShows(_ui?.LinesOn == true, Camera))
+            return null;
         return _gizmo.Layout(Camera, window.width, window.height, _renderer.Pivot(body));
     }
 
@@ -553,19 +565,22 @@ public sealed class NativeThreeDEngine : IThreeDEngine, IDisposable
                     _ui.ShowHome(_document.Recent(RecentCount), _document.HasFolder);
                     break;
                 // ADR-0167 items 2 and 5 (phase R30b, TASK-0407): a view to the first live sheet, or the pad of a new sheet; the
-                // pad gives the new sheet or the scale of each view.
-                case AddToSheetAction add when _sheetActions is not null:
+                // pad gives the new sheet or the scale of each view. Finding V196 of the codebase review of 2026-11-18
+                // (TASK-0410): "Add to sheet" and the new sheet of the pad go to the queue too. Finding V197 (TASK-0410): the box
+                // is that of the bodies that the sheet draws.
+                case AddToSheetAction add when _sheetActions is { } addToSheet:
                     _sheets?.Apply();
-                    if (_renderer?.Bounds is not { } bounds)
-                        _documentMessage = "A view of a sheet needs a body.";
+                    if (_renderer?.SheetBox is not { } bounds)
+                        _documentMessage = "A view of a sheet needs a body that is not a mesh.";
                     else if (_sheets?.Live.FirstOrDefault() is { } first)
-                        _documentMessage = _sheetActions.Add(first, add.Views, new SheetPlacement.Box(bounds.Min, bounds.Max));
+                        _sheetQueue.Send(() => addToSheet.Add(first, add.Views, bounds));
                     else
-                        _ui.OpenSheetPad(add.Views, new SheetPlacement.Box(bounds.Min, bounds.Max));
+                        _ui.OpenSheetPad(add.Views, bounds);
                     break;
-                case CreateSheetAction create when _sheetActions is not null && _renderer?.Bounds is { } box:
-                    _documentMessage = _sheetActions.Create($"Sheet {(_sheets?.Live.Count ?? 0) + 1}", create.Paper, create.Landscape,
-                        (create.ScaleNumerator, create.ScaleDenominator), create.Views, new SheetPlacement.Box(box.Min, box.Max));
+                case CreateSheetAction create when _sheetActions is { } createSheet && _renderer?.SheetBox is { } box:
+                    var sheetName = $"Sheet {(_sheets?.Live.Count ?? 0) + 1}";
+                    _sheetQueue.Send(() => createSheet.Create(sheetName, create.Paper, create.Landscape,
+                        (create.ScaleNumerator, create.ScaleDenominator), create.Views, box));
                     break;
                 // ADR-0168 items 2 to 5 (phase R30c, TASK-0408): the commands of the sheet page and of the pad of the scale go to
                 // the queue, which sends them on the thread pool (finding V196 of the codebase review of 2026-11-18).
@@ -600,7 +615,7 @@ public sealed class NativeThreeDEngine : IThreeDEngine, IDisposable
                         _documentMessage = ProjectFiles.Busy;
                     break;
                 case SheetAddAtAction addAt when _sheetActions is { } addActions:
-                    var addBox = _renderer?.Bounds is { } atBounds ? new SheetPlacement.Box(atBounds.Min, atBounds.Max) : null;
+                    var addBox = _renderer?.SheetBox;
                     _sheetQueue.Send(() => addActions.AddAt(addAt.Sheet, addAt.View, addAt.X, addAt.Y, addBox));
                     break;
                 case FrameAction:
@@ -1078,9 +1093,12 @@ public sealed class NativeThreeDEngine : IThreeDEngine, IDisposable
         if (_ui.LinesOn && ViewLines.FrameOf(Camera) is { } lineFrame)
         {
             var query = ViewLines.Query(lineFrame);
-            var (lines, pending) = _viewLines.Lines(version, lineFrame, () => Task.Run(async () =>
+            // Finding V196 (TASK-0410): a new read for a new version of the bodies only. Finding V201 (TASK-0410): the text of
+            // each body that the view skips.
+            var (lines, pending) = _viewLines.Lines(Interlocked.Read(ref _lineChanges), lineFrame, () => Task.Run(async () =>
                 (await _host.Session.Query<Engine.Core.Queries.ViewLinesInfo>(query).ConfigureAwait(false)).Result));
-            _ui.ShowLines(lines is null ? [] : ViewLines.Of(lines, Camera, window.width, window.height), pending);
+            _ui.ShowLines(lines is null ? [] : ViewLines.Of(lines, Camera, window.width, window.height), pending,
+                lines is null ? [] : ViewLines.Notes(lines, _renderer.LiveBodies));
         }
         else
             _ui.ShowLines(null);

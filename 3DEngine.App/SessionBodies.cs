@@ -382,6 +382,12 @@ internal sealed class SessionBodies : IDisposable
     // The box around each visible live body that has a mesh, or null when none has one.
     public ((double X, double Y, double Z) Min, (double X, double Y, double Z) Max)? Bounds => Union(hiddenToo: false);
 
+    // Finding V197 of the codebase review of 2026-11-18 (TASK-0410): the box of the bodies that a sheet draws, for the size and
+    // the scale of a new view (SheetPlacement.Drawn).
+    public SheetPlacement.Box? SheetBox
+        => SheetPlacement.Drawn(_live.Where(body => _boxes.ContainsKey(body.Id.ToString()))
+            .Select(body => (body, new SheetPlacement.Box(_boxes[body.Id.ToString()].Min, _boxes[body.Id.ToString()].Max))));
+
     // ADR-0056 item 3 (phase R13): the box around each live body that has a mesh, the visible ones only or each one, or
     // null when none has one.
     // Finding V81 of the codebase review of 2026-11-05 (TASK-0181): the overlay made the union of each box in each frame.

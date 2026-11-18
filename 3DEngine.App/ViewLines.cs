@@ -12,8 +12,35 @@ internal static class ViewLines
     // The count of the straight parts of a whole circle or ellipse. A circle of 200 pixels of radius is within 0.25 pixel.
     internal const int WholeCurveParts = 96;
 
-    // A line on the screen: its points in pixels of the window, in order, and true when it is visible.
-    public sealed record Stroke(IReadOnlyList<Vector2> Points, bool Visible);
+    // A line on the screen: its points in pixels of the window, in order, true when it is visible, and true for a centre line
+    // (finding E220 of the codebase review of 2026-11-18, TASK-0410).
+    public sealed record Stroke(IReadOnlyList<Vector2> Points, bool Visible, bool Centre = false);
+
+    // Finding V198 of the codebase review of 2026-11-18 (TASK-0410): the paper shows when the switch "Lines" is on in a flat
+    // view. The gizmo does not show then, because the paper covers the body and its handles.
+    public static bool PaperShows(bool linesOn, Camera camera)
+    {
+        ArgumentNullException.ThrowIfNull(camera);
+        return linesOn && FrameOf(camera) is not null;
+    }
+
+    // Finding V196 of the codebase review of 2026-11-18 (TASK-0410): the lines come from the bodies, so an event of a sheet does
+    // not start a new read. Each other event does. Until TASK-0410 each new view of a sheet started a new read.
+    public static bool ChangesLines(string kind)
+    {
+        ArgumentNullException.ThrowIfNull(kind);
+        return !kind.StartsWith("sheet.", StringComparison.Ordinal);
+    }
+
+    // Finding V201 of the codebase review of 2026-11-18 (TASK-0410): the text of each body that the view skips, with its name and
+    // the reason of the engine, as the sheet gives it. Until TASK-0410 such a body went under the paper with no text.
+    public static IReadOnlyList<string> Notes(ViewLinesInfo lines, IReadOnlyList<LiveBody> live)
+    {
+        ArgumentNullException.ThrowIfNull(lines);
+        ArgumentNullException.ThrowIfNull(live);
+        return [.. lines.Skipped.Select(skipped =>
+            $"{live.FirstOrDefault(body => body.Id == skipped.Body)?.Name ?? "A body"} gives no lines: {skipped.Reason}")];
+    }
 
     // ADR-0166 item 2: the exact frame of the flat view of the camera, nine whole numbers: the right, the up and the direction
     // toward the eye, from the axes of the camera. A flat view has the axes of the world, so each number is -1, 0 or 1. Null
@@ -70,7 +97,7 @@ internal static class ViewLines
             }
 
             if (points.Count >= 2)
-                strokes.Add(new Stroke(points, line.Visible));
+                strokes.Add(new Stroke(points, line.Visible, line.Kind == "centre"));
         }
 
         return strokes;
@@ -124,10 +151,19 @@ internal static class ViewLines
     // ADR-0166 item 3: the dashes of a hidden line: on pixels drawn and off pixels free, along the whole path, so a dash goes
     // on across a corner of the path.
     public static IReadOnlyList<(Vector2 A, Vector2 B)> Dashes(IReadOnlyList<Vector2> points, float on, float off)
+        => Dashes(points, [on, off]);
+
+    // The dashes of a pattern of lengths in pixels, drawn and free in turn from the first, along the whole path. A centre line
+    // has a long dash, a gap, a short dash and a gap (finding E220, TASK-0410).
+    public static IReadOnlyList<(Vector2 A, Vector2 B)> Dashes(IReadOnlyList<Vector2> points, IReadOnlyList<float> pattern)
     {
         ArgumentNullException.ThrowIfNull(points);
+        ArgumentNullException.ThrowIfNull(pattern);
+        if (pattern.Count == 0 || pattern.Count % 2 != 0 || pattern.Any(length => !(length > 0f)))
+            throw new ArgumentException("A pattern of dashes has pairs of a drawn and a free length, each greater than zero.", nameof(pattern));
         var dashes = new List<(Vector2 A, Vector2 B)>();
-        var (drawing, left) = (true, on);
+        var (part, left) = (0, pattern[0]);
+        var drawing = true;
         for (var i = 0; i + 1 < points.Count; i++)
         {
             var (a, b) = (points[i], points[i + 1]);
@@ -141,7 +177,10 @@ internal static class ViewLines
                 at += step;
                 left -= step;
                 if (left <= 0f)
-                    (drawing, left) = (!drawing, drawing ? off : on);
+                {
+                    part = (part + 1) % pattern.Count;
+                    (drawing, left) = (part % 2 == 0, pattern[part]);
+                }
             }
         }
 
@@ -150,7 +189,7 @@ internal static class ViewLines
 }
 
 // ADR-0166 item 2: the lines of the flat view, read off the thread of the frame. A read starts for a new frame or a new version
-// of the Document, one read at a time; until it ends, the window keeps the last lines. GetViewLines waits for the serial lock
+// of the bodies (ChangesLines; finding V196, TASK-0410), one read at a time; until it ends, the window keeps the last lines. GetViewLines waits for the serial lock
 // of the session, and a body with many faces takes long (R-0069), so the frame does not wait for it.
 internal sealed class ViewLinesCache
 {
