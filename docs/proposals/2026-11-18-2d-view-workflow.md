@@ -212,6 +212,8 @@ window, so the view is "this one".
 - **A. The app computes the place.** The first view goes at the centre of the free part of the paper, left of the title
   block. A projected view goes where the projection of the sheet puts it (first angle or third angle), with a gap of
   10 mm, scaled to the paper. A view that does not fit goes in the largest free part. The code uses + − × ÷ only.
+  *Note of 2026-11-18 (TASK-0408): the owner chose the free place nearest to the place of the projection, not the largest
+  free part, for a view that does not fit (ADR-0167 item 3, ADR-0168 item 7).*
 - B. The person taps the paper to place each view; the sheet page must be open.
 - C. The centre of the paper, and the person moves it.
 

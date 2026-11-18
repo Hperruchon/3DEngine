@@ -33,7 +33,16 @@ internal sealed unsafe partial class DesktopUi
 
     // Shows the home screen with the paths of the recent projects, or hides it with null. ADR-0102 item 1: a host with no
     // files (the phone) shows no "Open project..." and no recent rows.
-    public void ShowHome(IReadOnlyList<string>? recent, bool projects = true) => (_home, _homeProjects) = (recent, projects);
+    // ADR-0168 item 6 (TASK-0408): the home screen closes the sheet page and the pad of a sheet (finding V195).
+    public void ShowHome(IReadOnlyList<string>? recent, bool projects = true)
+    {
+        (_home, _homeProjects) = (recent, projects);
+        if (recent is not null)
+        {
+            ClosePage();
+            _sheetPad = null;
+        }
+    }
 
     // ADR-0102 item 5: shows or hides the question before a change of project.
     public void ShowQuestion(bool shown) => _question = shown;
