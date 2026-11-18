@@ -490,4 +490,21 @@ public sealed class DxfExportTests : IDisposable
         Assert.Contains(vertices, vertex => At(vertex).Y < 56.01);
         Assert.All(vertices, vertex => Assert.True(FromEllipse(ellipse, At(vertex)) < 1e-9));
     }
+
+    // ADR-0165 items 3 and 4 (phase R30g, TASK-0405): a centre line is a LINE on the layer CENTER, whose line type has the long
+    // dash and the dot of the SVG file, and a diameter is "%%c" and its value, the code of AutoCAD for the sign of a diameter.
+    [Fact]
+    public void A_Centre_Line_Is_On_Its_Layer_And_A_Diameter_Has_Its_Code()
+    {
+        var dimension = new SheetDimensionInfo(Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid(), "constraint", 120, 30, false, "diameter", 16);
+
+        var sections = Read(DxfExport.Text(Sheet([new SheetLine(Guid.NewGuid(), 15, 10, 15, 30, true, "centre")], [dimension])));
+
+        var centre = Assert.Single(sections["ENTITIES"], entity => entity.Type == "LINE" && entity.Text(8) == DxfExport.CentreLayer);
+        Assert.Equal((15.0, 10.0, 15.0, 30.0), (centre.Number(10), centre.Number(20), centre.Number(11), centre.Number(21)));
+        var type = Assert.Single(sections["TABLES"], entity => entity.Type == "LTYPE" && entity.Text(2) == "CENTER");
+        Assert.Equal(["7.625", "6", "-0.75", "0.125", "-0.75"], type.Pairs.Where(pair => pair.Code is 40 or 49).Select(pair => pair.Value));
+        Assert.Equal("CENTER", Assert.Single(sections["TABLES"], entity => entity.Type == "LAYER" && entity.Text(2) == DxfExport.CentreLayer).Text(6));
+        Assert.Contains(sections["ENTITIES"], entity => entity.Type == "TEXT" && entity.Text(1) == "%%c16");
+    }
 }

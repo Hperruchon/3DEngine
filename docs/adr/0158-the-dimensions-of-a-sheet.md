@@ -1,13 +1,13 @@
 ---
 id: 0158
 title: A dimension of a sheet shows a length or a radius of a sketch or the distance of an extrude, and a read gives its value from the design or "lost"
-status: Accepted
+status: Amended
 topic: Drawing
 date: 2026-11-16
 supersedes: []
 superseded-by: []
 amends: ['0153']
-amended-by: []
+amended-by: ['0165']
 affects:
   - Engine.Core/Commands/PlaceSheetDimensionCommand.cs
   - Engine.Core/Commands/PlaceSheetDimensionCommandHandler.cs
@@ -67,8 +67,10 @@ sheet.
    `"distance"`. The value is the first value of the constraint, or the distance in effect of the extrude, at the time of the
    read. A dimension whose source is not in the design is lost: `lost` is true, and the label and the value are null. "Lost"
    is never stored, so an undo that gives the source back gives the value back. A lost dimension gives no diagnostic code.
-   The read copies numbers and uses no arithmetic. The read gives no geometry of the dimension line: the export of P10a or
+   The read copies numbers, and doubles a radius into a diameter (ADR-0165 item 4). The read gives no geometry of the dimension line: the export of P10a or
    R22d adds the ends of the measured edge on the paper.
+   ADR-0165 item 4: a constraint `radius` on a whole circle of its sketch gives the label "diameter" and twice its value;
+   on an arc it stays "radius".
 5. **The codes (Q5 A).** `E-SHEET-DIMENSION-NOT-FOUND` is a dimension that is not on the sheet. `E-SHEET-DIMENSION-INVALID`
    is a kind of a source that is not one of the two, a constraint of another kind, a place that is not finite or not on the
    paper, or a second dimension of a source. `E-SHEET-SOURCE-NOT-FOUND` is a source that is not in the design.
@@ -89,3 +91,4 @@ keeps them apart.
 
 - 2026-11-16 · TASK-0395 · The record, from the plan of P10.3 and the answers of the owner of 2026-11-15 to D1 to D7.
 - 2026-11-16 · TASK-0395 · Shipped at v0.380.
+- 2026-11-18 · TASK-0405 · Amended by ADR-0165 item 4: a radius on a whole circle reads as a diameter (R30g).

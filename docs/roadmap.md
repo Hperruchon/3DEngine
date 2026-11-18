@@ -457,6 +457,8 @@ Therefore each approved objective must have a track here.
   and each name, and the analysis of a sketch of 600 lines keeps its time; R-0068 closes. v0.388, TASK-0400, ADR-0164.
 - R30a — A flat view of the window shows the lines of the sheet on a light paper, with the switch "Lines" and the key L,
   and Frame fills the free part. v0.389, TASK-0406, ADR-0166.
+- R30g — Each view of a sheet shows or hides its hidden lines and its centre lines, the read gives a cross on each whole
+  circle and the axis of each round side, and a whole circle reads as a diameter. v0.390, TASK-0405, ADR-0165.
 - Review — The codebase review of 2026-11-14 (c). v0.351, TASK-0366.
 - P0.143 — The low findings of the codebase review of 2026-11-11: a triangle of zero area adds no edge, and a mesh of
   more than 100 000 triangles finds its edges on the thread pool. v0.332, TASK-0345, ADR-0121.
@@ -794,7 +796,7 @@ The first objective. Each phase ends with something that a person can observe.
 | R30d | The button "Export" on the sheet page: PDF, SVG and DXF, with the save dialog of the desktop and the save or share of the phone (ADR-0162 item 9). After R30h. | 1 |
 | R30e | "Put on sheet" on a value chip of a flat view (ADR-0162 item 7). After R30h. | 1 |
 | R30f | The proposal of the agent on the sheet page: amber boxes and amber values, Accept and Reject on the arc (ADR-0162 item 8). After R30h. | 1–2 |
-| R30g | The flag of the hidden lines and the centre lines of each view, the centre lines and centre marks in GetSheet and the three files, and ⌀ for a whole circle; a contract change with its ADR (ADR-0162 items 11, 12, 14 and 17). After P0.162; it can run beside R30a to R30c. | 1–2 |
+| R30g | The flag of the hidden lines and the centre lines of each view, the centre lines and centre marks in GetSheet and the three files, and ⌀ for a whole circle; a contract change with its ADR (ADR-0162 items 11, 12, 14 and 17). After P0.162; it can run beside R30a to R30c. TASK-0405, ADR-0165. | 1–2 |
 | R30h | The section view of a sheet: the cut line, the cut plane and its letter, the hatch and the label "A–A", in GetSheet, the files and the sheet page; a contract change with its ADR (ADR-0162 items 13 and 17). After R30c and R30g. | 2–3 |
 | R30i | The title block of ISO 7200 by one command, the symbol of the projection and the centring marks; a contract change with its ADR (ADR-0162 items 15 and 17). After R30h. | 1 |
 

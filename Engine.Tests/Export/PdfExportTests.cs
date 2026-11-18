@@ -455,4 +455,18 @@ public sealed class PdfExportTests : IDisposable
         var exit = global::Engine.Cli.Cli.Run(args, stdout, new StringWriter());
         return (exit, stdout.ToString());
     }
+
+    // ADR-0165 items 3 and 4 (phase R30g, TASK-0405): a centre line is a thin path with the dashes of the SVG file, and a
+    // diameter has the sign of WinAnsiEncoding at byte 330 in octal, centred with its width of 778 thousandths.
+    [Fact]
+    public void A_Centre_Line_Has_Its_Dashes_And_A_Diameter_Its_Sign()
+    {
+        var dimension = new SheetDimensionInfo(Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid(), "constraint", 120, 30, false, "diameter", 16);
+
+        var content = Content(Sheet([new SheetLine(Guid.NewGuid(), 15, 10, 15, 30, true, "centre")], [dimension]));
+
+        Assert.Contains("0.25 w [6 0.75 0.125 0.75] 0 d\n15 10 m 15 30 l S\n0.5 w [] 0 d\n", content, StringComparison.Ordinal);
+        Assert.Equal(778 + 556 + 556, PdfExport.Width("\u00d816"));
+        Assert.Contains($"BT /F1 3.5 Tf {PdfExport.N(120 - (1890 * 3.5 / 2000))} 30 Td (\\33016) Tj ET\n", content, StringComparison.Ordinal);
+    }
 }
