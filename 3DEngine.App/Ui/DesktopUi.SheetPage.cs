@@ -24,6 +24,16 @@ internal sealed unsafe partial class DesktopUi
     public const string PlaceCancelLabel = "Cancel";
     public const string PageReading = "Reading the sheet…";
 
+    // ADR-0170 item 1 (phase R30d, TASK-0412): "Export" of the page, and the word of each format in the command line.
+    public const string ExportSheetLabel = "Export";
+
+    public static string ExportLabel(SheetFormat format) => $"Export {SheetExports.Label(format)}";
+
+    // True while the row of the formats shows under the header of the page.
+    private bool _exportOpen;
+
+    internal bool ExportOpen => _exportOpen;
+
     // The item of a control of the page, for ItemRectangle.
     public static string PageItem(string label) => $"Page:{label}";
 
@@ -61,7 +71,7 @@ internal sealed unsafe partial class DesktopUi
 
     internal void OpenPage() => _pageOpen = true;
 
-    private void ClosePage() => (_pageOpen, _pageView, _pagePlace, _pageDrag) = (false, null, null, null);
+    private void ClosePage() => (_pageOpen, _pageView, _pagePlace, _pageDrag, _exportOpen) = (false, null, null, null, false);
 
     // ADR-0168 item 1: the button "Sheet" beside "Views" while a live sheet exists; a tap opens or closes the page.
     private void SheetButton()
@@ -101,7 +111,10 @@ internal sealed unsafe partial class DesktopUi
             return;
         if (samples.Any(sample => sample is KeySample { Down: true, Key: InputKey.Escape }))
         {
-            if (_pagePlace is not null)
+            // ADR-0170 item 1 (TASK-0412): the row of the formats closes first.
+            if (_exportOpen)
+                _exportOpen = false;
+            else if (_pagePlace is not null)
                 _pagePlace = null;
             else if (_pageView is not null)
                 _pageView = null;
@@ -190,6 +203,39 @@ internal sealed unsafe partial class DesktopUi
 
         if (_page is not { } sheet)
             return;
+
+        // ADR-0170 item 1: "Export" opens a row of the formats, PDF first, in the place of the actions of a view and of the views
+        // to place; a format closes the row.
+        SameLineIfFits(ButtonWidth(ExportSheetLabel));
+        var exporting = _exportOpen;
+        if (exporting)
+            ImGui.PushStyleColor(ImGuiCol.Button, ImGui.ColorConvertU32ToFloat4(Theme.Accent) with { W = 0.3f });
+        if (ImGui.Button($"{ExportSheetLabel}##Page", height))
+            (_exportOpen, _pageView, _pagePlace) = (!_exportOpen, null, null);
+        if (exporting)
+            ImGui.PopStyleColor();
+        Item(PageItem(ExportSheetLabel));
+        if (_exportOpen)
+        {
+            var firstFormat = true;
+            foreach (var format in SheetExports.Formats)
+            {
+                var label = SheetExports.Label(format);
+                if (!firstFormat)
+                    SameLineIfFits(ButtonWidth(label));
+                firstFormat = false;
+                if (ImGui.Button($"{label}##Export", new Vector2(Math.Max(ButtonWidth(label), 72f), MinimumControlHeight)))
+                {
+                    _actions.Add(new SheetExportAction(sheet.SheetId, format));
+                    _exportOpen = false;
+                }
+
+                Item(PageItem(ExportLabel(format)));
+            }
+
+            return;
+        }
+
         if (_pageView is { } id && sheet.Views.FirstOrDefault(view => view.ViewId == id) is { } selected)
         {
             var first = true;
@@ -278,9 +324,9 @@ internal sealed unsafe partial class DesktopUi
                 _pageView = done.View;
             }
             else if (SheetPage.Hit(sheet, at) is { } view)
-                (_pageView, _pagePlace) = (_pageView == view ? null : view, null);
+                (_pageView, _pagePlace, _exportOpen) = (_pageView == view ? null : view, null, false);
             else if (at.X >= 0 && at.X <= sheet.Width && at.Y >= 0 && at.Y <= sheet.Height)
-                (_pageView, _pagePlace) = (null, at);
+                (_pageView, _pagePlace, _exportOpen) = (null, at, false);
             _pageDrag = null;
         }
 
