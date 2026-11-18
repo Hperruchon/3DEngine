@@ -129,30 +129,46 @@ public sealed class ResponsiveLayoutTests
         Assert.NotNull(ui.ItemRectangle(DesktopUi.OpenProjectLabel));
     }
 
-    // ADR-0172 item 2 (TASK-0418): on a landscape phone each key of an open pad shows inside the pad, with no scroll, because
-    // the keys go on lines of ten. A pad that scrolls is not a fault of the rule of ADR-0113 item 1, so this test holds the
-    // lines of ten. Until TASK-0418 the keys were 108 pixels wide, and three columns were outside the display.
+    // ADR-0172 item 2 (TASK-0418): each field and each key of an open pad shows inside the pad, with no scroll, on the phones,
+    // in the smallest window and in a short wide window, for a pad of one field and a pad of three fields ("New box"). A pad
+    // that scrolls is not a fault of the rule of ADR-0113 item 1, so this test holds the compact pad. Until TASK-0418 the keys
+    // were 108 pixels wide, three columns were outside a phone, and at 360 by 560 a pad of three fields scrolled its keys out.
     [Theory]
-    [InlineData(640, 360)]
-    [InlineData(844, 390)]
-    [InlineData(915, 412)]
-    public void Each_Key_Of_The_Pad_Shows_On_A_Landscape_Phone(int width, int height)
+    [InlineData(640, 360, 1)]
+    [InlineData(640, 360, 3)]
+    [InlineData(844, 390, 3)]
+    [InlineData(915, 412, 1)]
+    [InlineData(360, 560, 1)]
+    [InlineData(360, 560, 3)]
+    [InlineData(360, 640, 3)]
+    [InlineData(900, 560, 3)]
+    public void Each_Field_And_Key_Of_The_Pad_Shows_With_No_Scroll(int width, int height, int fields)
     {
         using var ui = new DesktopUi(string.Empty, Document.Millimetre);
         var display = new Vector2(width, height);
         for (var i = 0; i < 3; i++)
         {
-            if (i == 1)
+            if (i == 1 && fields == 1)
                 ui.OpenDistancePad(A, 10);
-            ui.Frame(1f / 60f, display, Vector2.One, [Plate, Rib], A, Shelf, ringCentre: new Vector2(width / 2f, height * 0.55f), ringBody: 120f);
+            if (i == 1 && fields == 3)
+                ui.OpenNew(DesktopUi.NewBoxLabel);
+            ui.Frame(1f / 60f, display, Vector2.One, [Plate, Rib], fields == 1 ? A : null, Shelf, ringCentre: new Vector2(width / 2f, height * 0.55f), ringBody: 120f);
         }
 
+        Assert.Equal(fields, ui.Pad?.Fields.Count);
         var pad = ui.PanelRectangles[^1];
+        foreach (var item in DesktopUi.PadRows.SelectMany(row => row).Concat(ui.Pad!.Fields.Select(field => field.Name)))
+        {
+            var box = ui.ItemRectangle(DesktopUi.PadItem(item)) ?? throw new InvalidOperationException($"{width}x{height}: the pad has no {item}.");
+            Assert.True(box.X >= pad.X - 0.5f && box.Y >= pad.Y - 0.5f && box.Z <= pad.Z + 0.5f && box.W <= pad.W + 0.5f,
+                $"{width}x{height}, {fields} fields: {item} at {box} is not inside the pad at {pad}.");
+        }
+
+        // The text of each key fits its key at the least scale of its text, with its inner margin, so "Delete" and "Cancel" show.
         foreach (var key in DesktopUi.PadRows.SelectMany(row => row))
         {
-            var box = ui.ItemRectangle(DesktopUi.PadItem(key)) ?? throw new InvalidOperationException($"{width}x{height}: the pad has no key {key}.");
-            Assert.True(box.X >= pad.X - 0.5f && box.Y >= pad.Y - 0.5f && box.Z <= pad.Z + 0.5f && box.W <= pad.W + 0.5f,
-                $"{width}x{height}: the key {key} at {box} is not inside the pad at {pad}.");
+            var box = ui.ItemRectangle(DesktopUi.PadItem(key))!.Value;
+            Assert.True(ui.PadKeyNeed(key) <= box.Z - box.X + 0.5f, $"{width}x{height}: the text {key} needs {ui.PadKeyNeed(key)} pixels in a key of {box.Z - box.X}.");
         }
     }
 

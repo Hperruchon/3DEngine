@@ -678,7 +678,7 @@ internal sealed unsafe partial class DesktopUi : IDisposable
             _imagesShown = _imagesAvailable && _imagesOpen && sketchPanel?.Active is null && _pad is null && !(page && _portrait);
             if (sketchPanel?.Active is null && !RowsShow(displaySize, selectedBody) && !(page && _portrait) && _pad is null && !_imagesShown)
                 Panel(bodies, selection, displaySize, document);
-            _padWide = PadIsWide(displaySize);
+            PlacePad(displaySize);
             FixedControls(displaySize, bodies, document, selectedBody);
             // ADR-0098 (TASK-0312): the command line.
             CommandLine(displaySize, bodies, selection);
