@@ -66,7 +66,7 @@ from 360 by 560.
 1. The rows of a body beside the ring (ADR-0172 item 1).
 2. The pad, the rows of a sketch and its ring, the history arc and the home screen (items 2, 3).
 3. The images as a fixed part of the layout (item 4).
-4. The minimum window of 360 by 560, the ten states of the test, and the test of the keys of a wide pad (item 5).
+4. The minimum window of 360 by 560, the ten states of the test, and the test of the fields and keys of a pad (item 5).
 
 ## Scope (out)
 
@@ -88,9 +88,11 @@ Status: Active
 ## Method
 
 Mechanical: the rules of the panel for the rows of a sketch and for the images, the height of the home screen.
-Judgement:  the pad in the place of the panel and of the rows, with keys on lines of ten on a low landscape display; the
-            images hidden during a sketch; the first tool of a sketch ring under the command line.
-Weakest:    the pictures of the review are mockups for the options; the real window was not run again after the fixes.
+Judgement:  the pad in the place of the panel and of the rows; a compact pad and a low pad that hides the anchors; the
+            images hidden during a sketch; the first tool of a sketch ring under the command line; no rule for a path
+            line on a narrow landscape display, because no size of the window or of a phone needs it.
+Weakest:    the test reads the width of each key and of its text at the least scale, not the drawn text, so the scale of
+            the text of a key has no injection; the real window showed it at 360 by 560 and at 900 by 560.
 
 ## Progress
 
@@ -98,3 +100,16 @@ Weakest:    the pictures of the review are mockups for the options; the real win
   owner; the owner answered A to each. The fixes of items 1 and 2 came first; a probe of a grid of sizes then gave no
   fault in landscape from a height of 400 in the four old states. The six new states had 367 faults at 17 sizes; after
   items 3 to 5, the probe gave none at 13 sizes, and the image tests passed (791).
+- 2026-11-18: 17 injections, each restored from its saved text. 12 failed a test. Two did not compile and got a second form,
+  which failed a test. Three passed, so their code had no case: the path line under the top bar on a narrow landscape
+  display (a window of at least 560 is wider than 560 in landscape), the width of the images beside the ring, and the five
+  lines of keys of a landscape pad. The first two left the code and ADR-0172; the third got its own test.
+- 2026-11-19: a second round of 12 injections. Each failed a test except three, whose code had no case at a size of the
+  test: the bottom of the images above a tool of the ring, the rows at most as wide as the display, and the fixed width of
+  the window of "Cut with". They left the code. The branch was rebased on `origin/main` at v0.399 (`8301412`).
+- 2026-11-19: the real window at 360 by 560 showed that a pad of three fields (New box) scrolled its keys out of view, and at
+  900 by 560 cut "Delete" and "Cancel". The test of the pad now has a pad of three fields, portrait sizes and the width
+  of the text of each key; it failed on that code. The compact pad, the low pad and the scale of the text of a key fixed
+  it. A third round of 6 injections: 5 failed the test; a gap of 12 pixels between keys passed, so the gap of 8 pixels left
+  the code. Pictures of the real window at 360 by 560, 900 by 560 and 1280 by 720 showed each key and its text, and the
+  log had no message of the validation layer.

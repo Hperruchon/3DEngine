@@ -255,7 +255,8 @@ internal sealed unsafe partial class DesktopUi
     // The pad of an entry of the list "New", for the list and for the command line (ADR-0098 item 3, TASK-0312). Phase K5e
     // (ADR-0089 item 5, TASK-0298): the cone, the sphere and the torus each have a pad; the defaults of the torus keep the
     // tube inside the ring.
-    private void OpenNew(string label)
+    // ADR-0172 item 2 (TASK-0418): internal, so a test opens a pad of three fields.
+    internal void OpenNew(string label)
     {
         switch (label)
         {

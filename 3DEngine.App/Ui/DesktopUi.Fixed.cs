@@ -324,8 +324,8 @@ internal sealed unsafe partial class DesktopUi
     private void FixedControls(Vector2 displaySize, IReadOnlyList<LiveBody> bodies, DocumentLine? document, LiveBody? body)
     {
         TopBar(displaySize, document, body);
-        // ADR-0172 item 2 (TASK-0418): a wide pad takes the row of the anchors and of the status line while it is open.
-        if (_padWide)
+        // ADR-0172 item 2 (TASK-0418): a low pad takes the row of the anchors and of the status line while it is open.
+        if (_padLow)
             return;
 
         // Undo and Redo at the bottom left (ADR-0031 item 11, amended by ADR-0080). Finding V118 of the codebase review of
