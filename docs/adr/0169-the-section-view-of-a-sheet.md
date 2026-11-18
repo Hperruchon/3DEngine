@@ -1,13 +1,13 @@
 ---
 id: 0169
 title: A section of a sheet is a view with a cut plane, a parent and a letter, and the read gives its hatch, its cut line and its label
-status: Accepted
+status: Amended
 topic: Contracts, drawing
 date: 2026-11-18
 supersedes: []
 superseded-by: []
 amends: ['0153', '0155', '0159', '0160', '0161', '0165']
-amended-by: []
+amended-by: ['0171']
 affects:
   - Engine.Contracts/Drawing/SheetRecord.cs
   - Engine.Core/Commands/AddSheetSectionCommand.cs
@@ -113,6 +113,7 @@ field with a default keeps each log valid.
    that is not a section, and its texts as the field `texts`.
 8. **Not in this record.** A cut line with steps, a half section, a detail view, a rib that is not hatched, and the action
    "Section" of the sheet page. A later record of R30h gives the action of the page.
+   ADR-0171 gives the action "Section" of the sheet page, and item 5 of it draws the section on the page as the files do.
 
 ## Consequences
 
@@ -137,3 +138,4 @@ SetSheetViewLines and RemoveSheetView apply to it.
 
 - 2026-11-18 · TASK-0411 · The record, for row R30h and ADR-0162 items 11, 13 and 17.
 - 2026-11-18 · TASK-0411 · Shipped at v0.394.
+- 2026-11-18 · TASK-0413 · Amended by ADR-0171: the action "Section" of the sheet page (item 8).

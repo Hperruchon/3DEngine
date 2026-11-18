@@ -62,11 +62,13 @@ public sealed class GetSheetQueryHandler : IQueryHandler
         foreach (var view in sheet.Views)
         {
             ct.ThrowIfCancellationRequested();
-            var (lines, skipped, texts) = SheetLayout.Place(document, sheet, view);
+            var (lines, skipped, texts, centre) = SheetLayout.Place(document, sheet, view);
             views.Add(new SheetViewInfo(view.Id, view.Direction, view.ScaleNumerator, view.ScaleDenominator, view.X, view.Y, lines, skipped, view.HiddenLines, view.CentreLines)
             {
                 Section = view.Section,
                 Texts = texts,
+                CentreU = centre.U,
+                CentreV = centre.V,
             });
         }
 

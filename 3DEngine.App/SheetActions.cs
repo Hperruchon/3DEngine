@@ -109,6 +109,18 @@ internal sealed class SheetActions(DocumentSession session)
         return Apply(View(sheet.Id, frame, scale, (x, y))) ?? $"Added the {Name(view)} view to {sheet.Name} at {SheetPlacement.Text(scale)}.";
     }
 
+    // ADR-0171 item 4 (TASK-0413): "Section" of the sheet page, one AddSheetSection with the first free letter.
+    public string Section(Guid sheet, Guid view, string look, (double X, double Y, double Z) point, double x, double y)
+    {
+        var result = session.Apply(new AddSheetSectionCommand
+        {
+            SheetId = sheet, ViewId = view, Look = look, PointX = point.X, PointY = point.Y, PointZ = point.Z, X = x, Y = y,
+        }).GetAwaiter().GetResult();
+        if (result.Status != CommandStatus.Applied)
+            return $"AddSheetSection: {result.Error?.Message}";
+        return result.Outputs.TryGet<string>("letter", out var letter) ? $"Added the section {letter}-{letter}." : "Added the section.";
+    }
+
     // The word of a flat view in a text, as "front".
     public static string Name(FlatView view) => view.ToString().ToLowerInvariant();
 

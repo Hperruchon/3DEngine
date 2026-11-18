@@ -160,7 +160,7 @@ names. Do not read all of them.
 | [0152](0152-the-arc-on-a-small-landscape-display.md) | On a small landscape display the arc of a proposal is right of the rows on a smaller ring, and each part of a proposal hides the tools under it | Accepted | Clients, rendering | 0134, 0139 | — |
 | [0153](0153-the-sheet-in-the-document.md) | A drawing sheet is one record of the Document, with its views and its dimensions, and small commands change it | Amended | Contracts, drawing | 0118 | 0155, 0158, 0165, 0169 |
 | [0154](0154-the-fixed-lengths-from-one-elimination.md) | The status and the fixed lengths of a sketch come from one elimination, and the product J·Jᵀ takes the columns with a value | Amended | Kernel | 0149 | 0156, 0164 |
-| [0155](0155-the-views-of-a-sheet.md) | A view of a sheet has an exact frame, a scale and a place on the paper, and GetSheet gives its lines on the paper | Amended | Drawing | 0153 | 0164, 0165, 0167, 0168, 0169 |
+| [0155](0155-the-views-of-a-sheet.md) | A view of a sheet has an exact frame, a scale and a place on the paper, and GetSheet gives its lines on the paper | Amended | Drawing | 0153 | 0164, 0165, 0167, 0168, 0169, 0171 |
 | [0156](0156-the-rank-of-a-sketch-at-each-size.md) | The rank of a sketch comes from the rows of its Jacobian at unit length, so the freedom and the fixed lengths do not depend on its size | Amended | Sketch | 0035, 0154 | 0164 |
 | [0157](0157-the-foundations-and-the-order-of-the-assembly-track.md) | The assembly track has shared foundations, the checks and the preview of a proposal come before the joints, and the model of a move waits for a measure | Amended | Assembly, agent | 0126 | 0162 |
 | [0158](0158-the-dimensions-of-a-sheet.md) | A dimension of a sheet shows a length or a radius of a sketch or the distance of an extrude, and a read gives its value from the design or "lost" | Amended | Drawing | 0153 | 0165 |
@@ -173,9 +173,10 @@ names. Do not read all of them.
 | [0165](0165-the-hidden-and-centre-lines-of-a-view.md) | Each view of a sheet has a flag for its hidden lines and one for its centre lines, the read gives the centre lines, and a whole circle reads as a diameter | Amended | Contracts, drawing | 0153, 0155, 0158, 0159, 0160, 0161 | 0169 |
 | [0166](0166-the-lines-of-the-sheet-in-a-flat-view.md) | A flat view of the window shows the lines of the sheet on a light paper, with the switch "Lines" and the key L, and Frame fills the free part | Accepted | Drawing, window | 0138, 0140 | — |
 | [0167](0167-add-a-view-to-a-sheet-from-the-window.md) | A person adds the flat view or the standard views to a sheet from the window, at the place of the projection and the scale that fits, and ScaleSheetView changes the scale | Amended | Drawing, window | 0138, 0155 | 0168 |
-| [0168](0168-the-sheet-page.md) | A sheet page replaces the scene with the paper of a sheet, where a tap on a view gives its actions, a drag keeps the alignment with one MoveSheetViews, and a tap on the paper places a view | Amended | Drawing, window | 0138, 0155, 0167 | 0170 |
-| [0169](0169-the-section-view-of-a-sheet.md) | A section of a sheet is a view with a cut plane, a parent and a letter, and the read gives its hatch, its cut line and its label | Accepted | Contracts, drawing | 0153, 0155, 0159, 0160, 0161, 0165 | — |
+| [0168](0168-the-sheet-page.md) | A sheet page replaces the scene with the paper of a sheet, where a tap on a view gives its actions, a drag keeps the alignment with one MoveSheetViews, and a tap on the paper places a view | Amended | Drawing, window | 0138, 0155, 0167 | 0170, 0171 |
+| [0169](0169-the-section-view-of-a-sheet.md) | A section of a sheet is a view with a cut plane, a parent and a letter, and the read gives its hatch, its cut line and its label | Amended | Contracts, drawing | 0153, 0155, 0159, 0160, 0161, 0165 | 0171 |
 | [0170](0170-export-a-sheet-from-the-window.md) | The sheet page and the command line export a sheet as PDF, SVG or DXF through the save dialog of the system, off the frame thread | Accepted | Drawing, window, export | 0168 | — |
+| [0171](0171-the-section-action-of-the-sheet-page.md) | On the sheet page a person cuts a view with "Section", a look and two taps, and the page draws the section as the files do | Accepted | Drawing, window | 0155, 0168, 0169 | — |
 
 ## Topics
 
