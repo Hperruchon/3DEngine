@@ -11833,7 +11833,7 @@ of the change of `Engine.Contracts`, and amends ADR-0153, ADR-0155, ADR-0159, AD
 **Proof.** Each new test names a type or a command that v0.393 does not have. A drawing of the plate with a hole, with Top at
 2 : 1 and the sections A-A and B-B through the axis of the hole, was rendered from the SVG file and read: the hatch stays in
 the cut faces, the gap of the hole is clear, and the arrows look along the direction of sight. Twenty-four injections each failed a named test, and each file came back byte for byte (SHA-256); the first run found that no test crossed a hole with a hatch line, so a test of a cut across the hole came in. A clean build
-gives 0 warnings, and the write-set check and `eng/repo-gates` pass. The run on the branch is in the progress of TASK-0411.
+gives 0 warnings, and the write-set check and `eng/repo-gates` pass. Run 44331913603 passed on the branch `r30h-section`.
 
 **What stays.** A hatch line ends on the chord of a facet and not on the arc. Each read of a section subtracts one box from
 each solid, and no measure of a heavy body exists. The label can lie on the title block when a person puts a section low on

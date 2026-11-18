@@ -136,3 +136,4 @@ SetSheetViewLines and RemoveSheetView apply to it.
 ## History
 
 - 2026-11-18 · TASK-0411 · The record, for row R30h and ADR-0162 items 11, 13 and 17.
+- 2026-11-18 · TASK-0411 · Shipped at v0.394.
