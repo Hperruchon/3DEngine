@@ -1,13 +1,13 @@
 ---
 id: 0168
 title: A sheet page replaces the scene with the paper of a sheet, where a tap on a view gives its actions, a drag keeps the alignment with one MoveSheetViews, and a tap on the paper places a view
-status: Accepted
+status: Amended
 topic: Drawing, window
 date: 2026-11-18
 supersedes: []
 superseded-by: []
 amends: ['0138', '0155', '0167']
-amended-by: []
+amended-by: ['0170']
 affects:
   - Engine.Core/Commands/MoveSheetViewsCommand.cs
   - Engine.Core/Commands/MoveSheetViewsCommandHandler.cs
@@ -105,3 +105,4 @@ offers each other sheet by name only. The texts of the title block need a paper 
 
 - 2026-11-18 · TASK-0408 · The page, MoveSheetViews, the drag, the tap on the paper and the keys (phase R30c).
 - 2026-11-18 · TASK-0408 · Shipped at v0.393.
+- 2026-11-18 · TASK-0412 · ADR-0170 item 1 amends items 1 and 6: the header has "Export", and Escape closes its row first.

@@ -12,6 +12,11 @@ internal enum DialogPurpose
     OpenProject = 1,
     SaveProject = 2,
     ExportStl = 3,
+
+    // ADR-0170 item 2 (phase R30d, TASK-0412): the export of a sheet in each format.
+    ExportPdf = 4,
+    ExportSvg = 5,
+    ExportDxf = 6,
 }
 
 // The dialogs of the system, apart from the window so that a test gives the results as samples.
