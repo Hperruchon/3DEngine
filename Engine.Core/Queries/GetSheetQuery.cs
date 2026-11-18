@@ -44,6 +44,13 @@ public sealed record SheetViewInfo(
     public SheetSection? Section { get; init; }
 
     public IReadOnlyList<SheetText> Texts { get; init; } = [];
+
+    // ADR-0171 item 1 (TASK-0413): the centre (cu, cv) of the box of the lines in the coordinates of the view, 0 and 0 for a view
+    // with no line. A place (x, y) on the paper is u = cu + (x - X) / f and v = cv + (y - Y) / f, with f the scale divided by
+    // the length of the right.
+    public double CentreU { get; init; }
+
+    public double CentreV { get; init; }
 }
 
 // ADR-0169 item 5 (phase R30h, TASK-0411): a text of a view on the paper: X is the middle of the text and Y its base line, in

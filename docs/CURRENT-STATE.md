@@ -11873,3 +11873,38 @@ frame thread.
 New tests: 10. The test list holds 2878 (1703 in `Engine.Tests`, 390 in `3DEngine.Tests`, 782 in `3DEngine.ImageTests`, 3
 in `3DEngine.VisionTests`). Open entries: 14 of 15. New diagnostic codes: 0. Since the review of v0.392, 3 product milestones
 and 3 entries followed it.
+
+## v0.396 — On the sheet page a person cuts a view with "Section", a look and two taps, and the page draws the section (R30h, TASK-0413)
+
+The second part of row R30h (ADR-0169 item 8). The owner ordered "then start the Section action on the sheet page", after
+"merge R30h when green" and "merge R30d after R30h". ADR-0171 records the decisions and amends ADR-0155, ADR-0168 and ADR-0169.
+
+**The change.**
+- GetSheet gives each view `CentreU` and `CentreV`, the centre of its box in the coordinates of the view, so a client turns a
+  place of the paper into a point of the design.
+- A selected view on the sheet page gets "Section". Its row shows a hint, the looks "Up", "Down", "Left" and "Right" (the
+  direction of the arrows, "Up" first) and "Cancel section". A line of the accent follows the pointer across the view and
+  snaps to the centre of a whole circle within 2 mm of paper; a tap on the view sets the cut, and a tap on the free paper
+  gives one AddSheetSection off the frame thread. Escape ends a section before it ends the selection, and no drag moves a
+  view while a section is open.
+- The page draws a hatch line and an arrow thin (an arrow with its filled head), a cut line as a centre line, a thick end
+  thick, and the texts of each view centred at their places.
+
+**Correction of the entry v0.395.** Its proof holds two words that the merge of R30d left in place of values: "run RUNID
+passed on it" is run 44335110377, and "from the API: FAILED" is "none" (the R30d session reported both; the close commit
+e20ef20 of its branch, which holds them, did not merge). The list of shipped rows in `docs/roadmap.md` had no line of R30h at v0.394; this entry adds it with the line of this part.
+
+**Proof.** Each new test names a member that v0.395 does not have. A run of the desktop with the plate with a hole opened the
+sheet page, selected the top view, pressed "Section", tapped 2 mm from the centre of the hole (the cut snapped to it) and
+tapped the free paper: the panel said "Added the section A-A.", and the page showed the section with its hatch, the axis of
+the hole and its label, and the top view showed the cut line with its arrows and letters. Fifteen injections each failed a named test, and each file came back byte for byte (SHA-256); the first run found two gaps, the look of the action and the slide of a view while a section is open, and the test closes both. A clean build gives 0
+warnings, the phone project builds, and the write-set check and `eng/repo-gates` pass. The run on the branch is in the progress
+of TASK-0413.
+
+**What stays.** The snap uses whole circles only. The place of a section is a tap; the page proposes no place of the
+projection. A cut line that exists does not move; a new section and Remove replace it.
+
+New tests: 5. The test list holds 2883 (1703 in `Engine.Tests`, 390 in `3DEngine.Tests`, 787 in `3DEngine.ImageTests`, 3
+in `3DEngine.VisionTests`). Open entries: 14 of 15. New diagnostic codes: 0. Since the review of v0.392, 4 product milestones
+(R30c, R30h, R30d and this part of R30h) and 4 entries followed it, so the next product milestone needs a codebase review
+first.

@@ -24,6 +24,16 @@ internal sealed unsafe partial class DesktopUi
     public const string PlaceCancelLabel = "Cancel";
     public const string PageReading = "Reading the sheet…";
 
+    // ADR-0171 items 2 to 4 (TASK-0413): "Section", its looks in their order, its "Cancel" and the two hints of its row.
+    public const string SectionLabel = "Section";
+    public static readonly IReadOnlyList<string> SectionLooks = ["Up", "Down", "Left", "Right"];
+    public const string SectionCancelLabel = "Cancel section";
+    public const string SectionCutHint = "Tap the view at the cut:";
+    public const string SectionPlaceHint = "Tap the paper for the section:";
+
+    // The item of a look of the section, for ItemRectangle.
+    public static string SectionLookItem(string look) => PageItem($"Look {look}");
+
     // ADR-0170 item 1 (phase R30d, TASK-0412): "Export" of the page, and the word of each format in the command line.
     public const string ExportSheetLabel = "Export";
 
@@ -50,6 +60,10 @@ internal sealed unsafe partial class DesktopUi
     private (Guid View, Vector2 From, bool Moving)? _pageDrag;
     private bool _pointerShift;
 
+    // ADR-0171 items 2 to 4: the open section: its view, its look in the word of the command, and the place of its cut across its
+    // line on the paper, or null before the tap on the view.
+    private (Guid View, string Look, double? Cut)? _pageSection;
+
     public bool PageOpen => _pageOpen && _home is null;
 
     // The sheet that the page shows: the sheet that the person chose, or the first live sheet.
@@ -61,6 +75,11 @@ internal sealed unsafe partial class DesktopUi
 
     internal bool KeepAligned => _keepAligned;
 
+    internal (Guid View, string Look, double? Cut)? PageSection => _pageSection;
+
+    // True while a drag moves a view, for a test.
+    internal bool PageDragging => _pageDrag is { Moving: true };
+
     // The paper of the last frame on the screen, for a test.
     internal SheetPage.Paper? PagePaper { get; private set; }
 
@@ -71,7 +90,7 @@ internal sealed unsafe partial class DesktopUi
 
     internal void OpenPage() => _pageOpen = true;
 
-    private void ClosePage() => (_pageOpen, _pageView, _pagePlace, _pageDrag, _exportOpen) = (false, null, null, null, false);
+    private void ClosePage() => (_pageOpen, _pageView, _pagePlace, _pageDrag, _exportOpen, _pageSection) = (false, null, null, null, false, null);
 
     // ADR-0168 item 1: the button "Sheet" beside "Views" while a live sheet exists; a tap opens or closes the page.
     private void SheetButton()
@@ -111,8 +130,10 @@ internal sealed unsafe partial class DesktopUi
             return;
         if (samples.Any(sample => sample is KeySample { Down: true, Key: InputKey.Escape }))
         {
-            // ADR-0170 item 1 (TASK-0412): the row of the formats closes first.
-            if (_exportOpen)
+            // ADR-0170 item 1 (TASK-0412): the row of the formats closes first. ADR-0171 item 2 (TASK-0413): then a section.
+            if (_pageSection is not null)
+                _pageSection = null;
+            else if (_exportOpen)
                 _exportOpen = false;
             else if (_pagePlace is not null)
                 _pagePlace = null;
@@ -236,6 +257,30 @@ internal sealed unsafe partial class DesktopUi
             return;
         }
 
+        // ADR-0171 items 2 to 4: the row of an open section: its hint, its looks and "Cancel section".
+        if (_pageSection is { } section && sheet.Views.Any(view => view.ViewId == section.View))
+        {
+            ImGui.TextUnformatted(section.Cut is null ? SectionCutHint : SectionPlaceHint);
+            foreach (var look in SectionLooks)
+            {
+                SameLineIfFits(ButtonWidth(look));
+                var chosen = look.ToLowerInvariant() == section.Look;
+                if (chosen)
+                    ImGui.PushStyleColor(ImGuiCol.Button, ImGui.ColorConvertU32ToFloat4(Theme.Accent) with { W = 0.3f });
+                if (ImGui.Button($"{look}##Section", height))
+                    _pageSection = section with { Look = look.ToLowerInvariant(), Cut = null };
+                if (chosen)
+                    ImGui.PopStyleColor();
+                Item(SectionLookItem(look));
+            }
+
+            SameLineIfFits(ButtonWidth(SectionCancelLabel));
+            if (ImGui.Button($"{SectionCancelLabel}##Section", height))
+                _pageSection = null;
+            Item(PageItem(SectionCancelLabel));
+            return;
+        }
+
         if (_pageView is { } id && sheet.Views.FirstOrDefault(view => view.ViewId == id) is { } selected)
         {
             var first = true;
@@ -253,6 +298,7 @@ internal sealed unsafe partial class DesktopUi
                 Action(GoToLabel, () => { _actions.Add(new FlatViewAction(flat)); _actions.Add(new FrameAction()); ClosePage(); });
             Action(ScaleViewLabel, () => OpenScalePad(sheet.SheetId, selected.ViewId, (selected.ScaleNumerator, selected.ScaleDenominator)));
             Action(RemoveViewLabel, () => { _actions.Add(new SheetRemoveAction(sheet.SheetId, selected.ViewId)); _pageView = null; });
+            Action(SectionLabel, () => _pageSection = (selected.ViewId, "up", null));
             var (hidden, centre) = (selected.HiddenLines, selected.CentreLines);
             SameLineIfFits(CheckboxWidth(HiddenLinesLabel));
             if (ImGui.Checkbox($"{HiddenLinesLabel}##Page", ref hidden))
@@ -300,8 +346,9 @@ internal sealed unsafe partial class DesktopUi
         ImGui.InvisibleButton("##Paper", new Vector2(Math.Max(1f, rect.Z - rect.X), Math.Max(1f, rect.W - rect.Y)));
         Item(PageItem("Paper"));
         var mouse = ImGui.GetIO().MousePos;
+        // ADR-0171 item 4 (TASK-0413): no drag while a section is open.
         if (ImGui.IsItemActivated())
-            _pageDrag = SheetPage.Hit(sheet, paper.Millimetres(mouse)) is { } hit ? (hit, mouse, false) : null;
+            _pageDrag = _pageSection is null && SheetPage.Hit(sheet, paper.Millimetres(mouse)) is { } hit ? (hit, mouse, false) : null;
         (double X, double Y, bool Aligned)? moving = null;
         if (_pageDrag is { } drag && ImGui.IsItemActive())
         {
@@ -313,7 +360,24 @@ internal sealed unsafe partial class DesktopUi
             }
         }
 
-        if (ImGui.IsItemDeactivated())
+        if (ImGui.IsItemDeactivated() && _pageSection is { } open && sheet.Views.FirstOrDefault(view => view.ViewId == open.View) is { } cutView)
+        {
+            // ADR-0171 items 3 and 4: a tap on the view sets the cut; with a cut, a tap on the free paper places the section.
+            var at = paper.Millimetres(mouse);
+            var under = SheetPage.Hit(sheet, at);
+            if (open.Cut is null && under == open.View)
+                _pageSection = open with { Cut = SheetPage.CutPlace(cutView, open.Look, at) };
+            else if (open.Cut is { } cut && under is null && at.X >= 0 && at.X <= sheet.Width && at.Y >= 0 && at.Y <= sheet.Height)
+            {
+                var vertical = open.Look is "left" or "right";
+                var point = SheetPage.DesignPoint(cutView, vertical ? (cut, cutView.Y) : (cutView.X, cut));
+                _actions.Add(new SheetSectionAction(sheet.SheetId, open.View, open.Look, point.X, point.Y, point.Z, at.X, at.Y));
+                (_pageSection, _pageView) = (null, null);
+            }
+
+            _pageDrag = null;
+        }
+        else if (ImGui.IsItemDeactivated())
         {
             var at = paper.Millimetres(mouse);
             if (_pageDrag is { Moving: true } done)
@@ -359,10 +423,21 @@ internal sealed unsafe partial class DesktopUi
                 var points = SheetPage.Path(line).Select(p => paper.Pixel(p.U + ox, p.V + oy)).ToList();
                 if (points.Count < 2)
                     continue;
-                if (line.Kind == "centre")
+                if (line.Kind is "centre" or "cut")
                 {
                     foreach (var (a, b) in ViewLines.Dashes(points, 12f, 4f))
                         list.AddLine(a, b, Theme.Ink, HiddenLineWidth);
+                }
+                else if (line.Kind is "hatch" or "arrow")
+                {
+                    // ADR-0171 item 5 (TASK-0413): a hatch line and an arrow are thin and continuous; an arrow has its filled head.
+                    var array = points.ToArray();
+                    list.AddPolyline(ref array[0], array.Length, Theme.Ink, ImDrawFlags.None, HiddenLineWidth);
+                    if (line.Kind == "arrow")
+                    {
+                        var head = SvgExport.Head(line);
+                        list.AddTriangleFilled(paper.Pixel(head[0].X + ox, head[0].Y + oy), paper.Pixel(head[1].X + ox, head[1].Y + oy), paper.Pixel(head[2].X + ox, head[2].Y + oy), Theme.Ink);
+                    }
                 }
                 else if (!line.Visible)
                 {
@@ -374,6 +449,24 @@ internal sealed unsafe partial class DesktopUi
                     var array = points.ToArray();
                     list.AddPolyline(ref array[0], array.Length, Theme.Ink, ImDrawFlags.None, VisibleLineWidth);
                 }
+            }
+
+            // ADR-0171 item 5: the letters of a cut line and the label of a section, centred at their places.
+            foreach (var text in view.Texts)
+            {
+                var size = Size(text.Size);
+                var width = ImGui.CalcTextSize(text.Text).X * size / ImGui.GetFontSize();
+                list.AddText(font, size, paper.Pixel(text.X + ox, text.Y + oy) - new Vector2(width / 2f, size), Theme.Ink, text.Text);
+            }
+
+            // ADR-0171 item 3: the cut of an open section across the box of its view, at the place of the pointer before the tap.
+            if (_pageSection is { } shown && shown.View == view.ViewId)
+            {
+                var (x0, y0, x1, y1) = SheetPage.Box(view);
+                var cut = shown.Cut ?? SheetPage.CutPlace(view, shown.Look, paper.Millimetres(mouse));
+                var vertical = shown.Look is "left" or "right";
+                var (from, to) = vertical ? (paper.Pixel(cut, y0 - 5), paper.Pixel(cut, y1 + 5)) : (paper.Pixel(x0 - 5, cut), paper.Pixel(x1 + 5, cut));
+                list.AddLine(from, to, Theme.Accent, 2f);
             }
 
             if (view.ViewId == _pageView || (_pageDrag is { Moving: true } held && held.View == view.ViewId))

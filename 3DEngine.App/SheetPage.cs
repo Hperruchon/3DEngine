@@ -24,6 +24,42 @@ internal static class SheetPage
         public Vector4 Rectangle => new(Left, Bottom - (float)(Height * Scale), Left + (float)(Width * Scale), Bottom);
     }
 
+    // ADR-0171 item 3 (TASK-0413): the distance in millimetres of the paper within which a cut snaps to the centre of a circle.
+    public const double SectionSnap = 2;
+
+    // ADR-0171 item 3: the place of a cut across its line on the paper: x for the looks "left" and "right", whose line is
+    // vertical, and y for "up" and "down"; the place snaps to the nearest centre of a whole circle of the view within
+    // SectionSnap.
+    public static double CutPlace(SheetViewInfo view, string look, (double X, double Y) at)
+    {
+        ArgumentNullException.ThrowIfNull(view);
+        var vertical = look is "left" or "right";
+        var place = vertical ? at.X : at.Y;
+        double? best = null;
+        foreach (var line in view.Lines)
+        {
+            if (line.Circle is not { } circle || line.FromX != line.ToX || line.FromY != line.ToY)
+                continue;
+            var centre = vertical ? circle.X : circle.Y;
+            if (Math.Abs(centre - place) <= SectionSnap && (best is null || Math.Abs(centre - place) < Math.Abs(best.Value - place)))
+                best = centre;
+        }
+
+        return best ?? place;
+    }
+
+    // ADR-0171 item 1: the point of the design on a place of the paper in a view: u = cu + (x - X) / f and v = cv + (y - Y) / f,
+    // with f the scale divided by the length L of the right, and the point (u Right + v Up) / L².
+    public static (double X, double Y, double Z) DesignPoint(SheetViewInfo view, (double X, double Y) at)
+    {
+        ArgumentNullException.ThrowIfNull(view);
+        var d = view.Direction;
+        var square = (d[0] * d[0]) + (d[1] * d[1]) + (d[2] * d[2]);
+        var f = (double)view.ScaleNumerator / view.ScaleDenominator / Math.Sqrt(square);
+        var (u, v) = (view.CentreU + ((at.X - view.X) / f), view.CentreV + ((at.Y - view.Y) / f));
+        return (((u * d[0]) + (v * d[3])) / square, ((u * d[1]) + (v * d[4])) / square, ((u * d[2]) + (v * d[5])) / square);
+    }
+
     // ADR-0168 item 1: the largest paper with its aspect inside the rectangle (left, top, right, bottom) less the gap, at its
     // centre.
     public static Paper Fit(double width, double height, Vector4 room)

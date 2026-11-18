@@ -7,7 +7,7 @@ date: 2026-11-18
 supersedes: []
 superseded-by: []
 amends: ['0138', '0155', '0167']
-amended-by: ['0170']
+amended-by: ['0170', '0171']
 affects:
   - Engine.Core/Commands/MoveSheetViewsCommand.cs
   - Engine.Core/Commands/MoveSheetViewsCommandHandler.cs
@@ -59,6 +59,7 @@ centre lines (ADR-0165), and asks for their control on the page if it fits.
    "Scale" (the pad of the scale of ADR-0167 item 5 for that view, which sends ScaleSheetView with the view), "Remove"
    (RemoveSheetView; Undo gives the view back), and the switches "Hidden lines" and "Centre lines" (SetSheetViewLines,
    ADR-0165).
+   ADR-0171 item 2: a selected view also gets "Section", which opens the row of a section.
 3. **The drag and MoveSheetViews (D13 A, amends ADR-0155 item 6).** The first view of the sheet is the base. With "Keep
    aligned" on and no Shift, a drag of the base moves it free and takes each view on a line of projection through it, a view
    on the vertical line of the base slides up and down only, and a view on its horizontal line slides left and right only.
@@ -106,3 +107,4 @@ offers each other sheet by name only. The texts of the title block need a paper 
 - 2026-11-18 · TASK-0408 · The page, MoveSheetViews, the drag, the tap on the paper and the keys (phase R30c).
 - 2026-11-18 · TASK-0408 · Shipped at v0.393.
 - 2026-11-18 · TASK-0412 · ADR-0170 item 1 amends items 1 and 6: the header has "Export", and Escape closes its row first.
+- 2026-11-18 · TASK-0413 · Amended by ADR-0171 item 2: "Section" of a selected view (R30h).

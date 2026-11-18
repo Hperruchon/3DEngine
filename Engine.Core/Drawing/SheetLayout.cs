@@ -57,7 +57,10 @@ internal static class SheetLayout
     //
     // ADR-0169 items 3 to 5 (phase R30h, TASK-0411): a section view cuts each solid and gives the hatch of its cut faces and its
     // label; a view that is the parent of a section gives the cut line, the arrows and the letters of that section.
-    public static (IReadOnlyList<SheetLine> Lines, IReadOnlyList<SheetSkippedBody> Skipped, IReadOnlyList<SheetText> Texts) Place(Document document, SheetRecord sheet, SheetView view)
+    //
+    // ADR-0171 item 1 (TASK-0413): the centre (cu, cv) of the box comes with the lines, so a client turns a place on the paper
+    // back into a point of the view.
+    public static (IReadOnlyList<SheetLine> Lines, IReadOnlyList<SheetSkippedBody> Skipped, IReadOnlyList<SheetText> Texts, (double U, double V) Centre) Place(Document document, SheetRecord sheet, SheetView view)
     {
         ArgumentNullException.ThrowIfNull(document);
         ArgumentNullException.ThrowIfNull(sheet);
@@ -191,7 +194,7 @@ internal static class SheetLayout
         if (view.Section is { } own)
             texts.Add(new SheetText((x0 + x1) / 2, y0 - LabelGap, $"{own.Letter}-{own.Letter}", TextSize));
 
-        return (placed, [.. skipped.Select(entry => new SheetSkippedBody(entry.Body, entry.Reason))], texts);
+        return (placed, [.. skipped.Select(entry => new SheetSkippedBody(entry.Body, entry.Reason))], texts, (cu, cv));
     }
 
     // ADR-0169 item 1: the exact point of the cut plane of a section.
