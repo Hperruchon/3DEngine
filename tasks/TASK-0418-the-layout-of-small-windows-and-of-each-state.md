@@ -1,7 +1,7 @@
 ---
 id: 0418
 title: The layout of small windows and of each state, down to 360 by 560
-status: Active
+status: Done
 phase: P0.169
 opened: 2026-11-18
 depends-on: [0404]
@@ -53,8 +53,8 @@ This task uses Simplified Technical English (ASD-STE100). See `CLAUDE.md`, secti
 
 On 2026-11-18 the owner asked a side session for a review of the responsive layout at each size, with pictures, a fix of
 the small windows that are almost square (ADR-0163 fact 1), and a responsive window of the images. The review found faults
-in the near-square windows and 367 faults in six states that no test held (ADR-0172, context). The owner answered the four
-questions of the review with A on 2026-11-18.
+in the near-square windows and 367 faults in six states that no test held (ADR-0172, context). The owner answered Q1 A and
+Q2 A on 2026-11-18; Q3 A and Q4 A follow from the choice of the left panel (ADR-0172, context).
 
 ## Goal
 
@@ -78,12 +78,12 @@ from 360 by 560.
 
 - [x] The two theories of `ResponsiveLayoutTests` pass in ten states, and an injection of each fix fails a test.
 - [x] The desktop window stops at 360 by 560.
-- [ ] A clean build (`--no-incremental`) gives zero errors and zero warnings, and the phone project builds.
-- [ ] `dotnet test`, the write-set check and `eng/repo-gates` pass, and continuous integration passes on the branch.
+- [x] A clean build (`--no-incremental`) gives zero errors and zero warnings, and the phone project builds.
+- [x] `dotnet test`, the write-set check and `eng/repo-gates` pass, and continuous integration passes on the branch.
 
 ## Outcome
 
-Status: Active
+Status: Done · commit (the merge of the branch responsive-small-windows) · v0.400
 
 ## Method
 
@@ -97,9 +97,11 @@ Weakest:    the test reads the width of each key and of its text at the least sc
 ## Progress
 
 - 2026-11-18: opened in the side session of the review. The review page, the pictures and the questions Q1 to Q4 went to the
-  owner; the owner answered A to each. The fixes of items 1 and 2 came first; a probe of a grid of sizes then gave no
-  fault in landscape from a height of 400 in the four old states. The six new states had 367 faults at 17 sizes; after
-  items 3 to 5, the probe gave none at 13 sizes, and the image tests passed (791).
+  owner; the owner answered Q1 A and Q2 A, and the choice of the left panel gave A for Q3 and Q4. The first fixes (the
+  rows beside the ring, "Save as..." on its own line) came first; a probe of a grid of sizes then gave no fault in
+  landscape from a height of 400 in the four old states. The six new states had 367 faults at 17 sizes; after the fixes
+  of the pad, the sketch, the history arc, the home screen and the images, the probe gave none at 13 sizes, and the image
+  tests passed (791).
 - 2026-11-18: 17 injections, each restored from its saved text. 12 failed a test. Two did not compile and got a second form,
   which failed a test. Three passed, so their code had no case: the path line under the top bar on a narrow landscape
   display (a window of at least 560 is wider than 560 in landscape), the width of the images beside the ring, and the five
@@ -113,3 +115,5 @@ Weakest:    the test reads the width of each key and of its text at the least sc
   it. A third round of 6 injections: 5 failed the test; a gap of 12 pixels between keys passed, so the gap of 8 pixels left
   the code. Pictures of the real window at 360 by 560, 900 by 560 and 1280 by 720 showed each key and its text, and the
   log had no message of the validation layer.
+- 2026-11-19: run 44423569915 passed on the branch on each of its seven jobs (`8dc1083`). A clean build gave 0 warnings,
+  the phone project built, and `dotnet test` passed 2902 tests. Closed at v0.400; the merge waits for the owner.
