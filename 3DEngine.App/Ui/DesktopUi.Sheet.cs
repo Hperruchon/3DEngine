@@ -27,14 +27,31 @@ internal sealed unsafe partial class DesktopUi
     // ADR-0167 item 2: the first live sheet, or null; the host gives it before each frame.
     private SheetRecord? _sheet;
 
-    public void ShowSheet(SheetRecord? sheet) => _sheet = sheet;
+    public void ShowSheet(SheetRecord? sheet) => (_sheet, _liveSheets) = (sheet, sheet is null ? [] : [sheet]);
+
+    // ADR-0168 item 1 (TASK-0408): each live sheet, for the choice of a sheet on the sheet page; the first one is the sheet of
+    // "Add to sheet".
+    private IReadOnlyList<SheetRecord> _liveSheets = [];
+
+    public void ShowSheets(IReadOnlyList<SheetRecord> sheets)
+    {
+        ArgumentNullException.ThrowIfNull(sheets);
+        (_sheet, _liveSheets) = (sheets.FirstOrDefault(), sheets);
+        if (_pageSheetId is { } chosen && sheets.All(sheet => sheet.Id != chosen))
+            _pageSheetId = null;
+    }
 
     // ADR-0167 item 5: the state of the pad of a sheet. Views is the list of the views of a new sheet, or empty for the scale
     // of each view of the sheet. Until a person chooses a scale, the scale follows the paper: the largest scale of ISO 5455 at
     // which the standard views fit (D6 A).
-    internal sealed class SheetPad(IReadOnlyList<FlatView> views, SheetPlacement.Box? box, (long Numerator, long Denominator) scale)
+    internal sealed class SheetPad(IReadOnlyList<FlatView> views, SheetPlacement.Box? box, (long Numerator, long Denominator) scale, Guid? sheet = null, Guid? view = null)
     {
         public IReadOnlyList<FlatView> Views { get; } = views;
+
+        // ADR-0168 item 2 (TASK-0408): the sheet and the one view of "Scale" on the sheet page, or null for each view of the first
+        // live sheet.
+        public Guid? Sheet { get; } = sheet;
+        public Guid? View { get; } = view;
         public bool NewSheet => Views.Count > 0;
         public string Paper { get; private set; } = "A3";
         public bool Landscape { get; private set; } = true;
@@ -86,6 +103,13 @@ internal sealed unsafe partial class DesktopUi
 
     public void CloseSheetPad() => _sheetPad = null;
 
+    // ADR-0168 item 2 (TASK-0408): the pad of the scale of one view, from "Scale" on the sheet page.
+    private void OpenScalePad(Guid sheet, Guid view, (long Numerator, long Denominator) scale)
+    {
+        ClosePad();
+        _sheetPad = new SheetPad([], null, scale, sheet, view);
+    }
+
     // ADR-0167 item 2: the row under the net: "Add to sheet", which adds the flat view of the camera and is dim in the 3D view,
     // and "Standard views". Each is two cells wide; a tap closes the net, as a tap on a view does.
     private void SheetRow(Vector2 cell)
@@ -116,7 +140,7 @@ internal sealed unsafe partial class DesktopUi
     {
         _actions.Add(pad.NewSheet
             ? new CreateSheetAction(pad.Paper, pad.Landscape, pad.Scale.Numerator, pad.Scale.Denominator, pad.Views)
-            : new ScaleSheetAction(pad.Scale.Numerator, pad.Scale.Denominator));
+            : new ScaleSheetAction(pad.Scale.Numerator, pad.Scale.Denominator, pad.Sheet, pad.View));
         _sheetPad = null;
     }
 
@@ -124,7 +148,9 @@ internal sealed unsafe partial class DesktopUi
     // field of the ratio does not take the keys.
     private void WatchSheetPadKeys(IReadOnlyList<ThreeDEngine.Core.Input.InputSample> samples)
     {
-        if (_sheetPad is not { } pad || _textActive)
+        // ADR-0168 item 6 (TASK-0408, finding V195 of the codebase review of 2026-11-18): the keys of the pad rest while the home
+        // screen shows.
+        if (_sheetPad is not { } pad || _textActive || _home is not null)
             return;
         foreach (var sample in samples)
         {
@@ -157,7 +183,7 @@ internal sealed unsafe partial class DesktopUi
         {
             ImGui.TextUnformatted(pad.NewSheet
                 ? $"A new sheet with the {string.Join(", the ", pad.Views.Select(SheetActions.Name))} view"
-                : $"The scale of each view of {_sheet?.Name}");
+                : pad.View is not null ? "The scale of the view" : $"The scale of each view of {_sheet?.Name}");
             var accent = ImGui.ColorConvertU32ToFloat4(Theme.Accent) with { W = 0.3f };
             void Choice(string label, bool chosen, Action press, string? id = null)
             {

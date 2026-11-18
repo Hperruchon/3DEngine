@@ -104,6 +104,8 @@ internal sealed unsafe partial class DesktopUi
         {
             ImGui.PushStyleVar(ImGuiStyleVar.FrameBorderSize, 0f);
             ViewsButton();
+            // ADR-0168 item 1 (TASK-0408): "Sheet" beside "Views" on a portrait display too.
+            SheetButton();
             ImGui.PopStyleVar();
             AddWindowRectangle();
         }

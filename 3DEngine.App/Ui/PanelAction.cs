@@ -108,7 +108,16 @@ internal sealed record CreateSheetAction(string Paper, bool Landscape, long Scal
     public override int GetHashCode() => HashCode.Combine(Paper, Landscape, ScaleNumerator, ScaleDenominator);
 }
 
-internal sealed record ScaleSheetAction(long ScaleNumerator, long ScaleDenominator) : PanelAction;
+internal sealed record ScaleSheetAction(long ScaleNumerator, long ScaleDenominator, Guid? Sheet = null, Guid? View = null) : PanelAction;
+
+// ADR-0168 (phase R30c, TASK-0408): the actions of the sheet page.
+internal sealed record SheetMoveAction(Guid Sheet, Guid View, double X, double Y, bool Aligned) : PanelAction;
+
+internal sealed record SheetRemoveAction(Guid Sheet, Guid View) : PanelAction;
+
+internal sealed record SheetLinesAction(Guid Sheet, Guid View, bool HiddenLines, bool CentreLines) : PanelAction;
+
+internal sealed record SheetAddAtAction(Guid Sheet, FlatView View, double X, double Y) : PanelAction;
 
 // ADR-0082 item 3 (TASK-0254): the new value of a constraint of the sketch of the selected extrude, from the pad of its chip
 // on an edge, with no active sketch.

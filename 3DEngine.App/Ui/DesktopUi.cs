@@ -431,7 +431,7 @@ internal sealed unsafe partial class DesktopUi : IDisposable
     public bool OverPanel(double x, double y)
         => _cutList is not null || _newList is not null
             || _panels.Concat(_fixed).Any(panel => x >= panel.X && x < panel.Z && y >= panel.Y && y < panel.W) || OverRing(x, y)
-            || OverValue(x, y) || OverRows(x, y) || OverHistory(x, y) || OverProposal(x, y);
+            || OverValue(x, y) || OverRows(x, y) || OverHistory(x, y) || OverProposal(x, y) || OverPage(x, y);
 
     // The font atlas as RGBA pixels, for the renderer to upload. It is built once.
     public (uint Width, uint Height, byte[] Rgba) FontAtlas() => _atlas;
@@ -473,8 +473,13 @@ internal sealed unsafe partial class DesktopUi : IDisposable
             WatchCommandKey(samples);
 
         // ADR-0127 item 4 (phase R18g, TASK-0354): F frames, while no field, no pad and no home screen takes the keys.
+        // ADR-0168 item 6 (phase R30c, TASK-0408, finding V199 of the codebase review of 2026-11-18): the pad of a sheet and the
+        // sheet page hold the keys of the frame in which they show, also the Escape that closes them, so it reaches no intent.
+        var holdKeys = _textActive || _pad is not null || _sheetPad is not null || PageOpen;
         WatchSheetPadKeys(samples);
-        if (_pad is null && _sheetPad is null && !_textActive && _home is null)
+        // ADR-0168 item 6: the keys of the sheet page; the keys of the views and F rest while it shows.
+        WatchPageKeys(samples);
+        if (_pad is null && _sheetPad is null && !_textActive && _home is null && !PageOpen)
         {
             WatchFrameKey(samples);
             // ADR-0138 (phase R21b, TASK-0370): the keys of the flat views, under the same guard. The review of the branch found
@@ -487,7 +492,7 @@ internal sealed unsafe partial class DesktopUi : IDisposable
         }
 
         // ADR-0032 item 6: while the pad is open, it takes each key and each text of the frame.
-        var (panel, intents) = _router.Route(samples, OverPanel, _textActive || _pad is not null);
+        var (panel, intents) = _router.Route(samples, OverPanel, holdKeys || _pad is not null);
         // Finding V130 of the codebase review of 2026-11-07 (b) (TASK-0271): the home screen takes the place of the document,
         // so no sample of the frame reaches the scene or the keys of the document behind it.
         if (_home is not null)
@@ -621,11 +626,16 @@ internal sealed unsafe partial class DesktopUi : IDisposable
             _dropFocus = false;
         }
 
+        // ADR-0168 item 1 (phase R30c, TASK-0408): the sheet page first, under each other window; it replaces the scene, so the
+        // marks of the scene do not show while it shows.
+        PageWindow(displaySize);
+        var page = PageOpen;
         // ADR-0166 items 2 and 3 (phase R30a, TASK-0406): the paper and the lines of a flat view, under each other mark.
-        Paper();
+        if (!page)
+            Paper();
         // ADR-0120 item 3 (phase R18f, TASK-0347): the plate of the active sketch under its lines. ADR-0166 item 3: with the
         // lines of a flat view, no outline of a sketch.
-        SketchesShown = sketches is not null && _viewLines is null;
+        SketchesShown = sketches is not null && _viewLines is null && !page;
         if (SketchesShown && sketches is not null)
         {
             Plate(sketches, sketchPanel?.Active);
@@ -639,7 +649,7 @@ internal sealed unsafe partial class DesktopUi : IDisposable
         background.ChannelsSplit(2);
         background.ChannelsSetCurrent(1);
         (_dimensionPlates, PlacedLabels) = ([], []);
-        if (face is not null)
+        if (face is not null && !page)
             FaceOutline(face);
         // ADR-0083 D6 (TASK-0259): the home screen takes the place of the panel and of the controls of a document.
         if (_home is { } recent)
@@ -658,7 +668,8 @@ internal sealed unsafe partial class DesktopUi : IDisposable
             // ADR-0097 item 1 (the redesign, slice n, TASK-0308): the rows of an active sketch take the place of the panel.
             // ADR-0099 item 1 (the redesign, slice p, TASK-0313): the rows of a selected body take its place too.
             var selectedBody = bodies.FirstOrDefault(body => body.Id == selection);
-            if (sketchPanel?.Active is null && !RowsShow(displaySize, selectedBody))
+            // ADR-0168 item 1 (TASK-0408): on a portrait display the sheet page takes the place of the panel too.
+            if (sketchPanel?.Active is null && !RowsShow(displaySize, selectedBody) && !(page && _portrait))
                 Panel(bodies, selection, displaySize, document);
             FixedControls(displaySize, bodies, document, selectedBody);
             // ADR-0098 (TASK-0312): the command line.
