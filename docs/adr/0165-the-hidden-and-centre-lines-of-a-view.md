@@ -1,13 +1,13 @@
 ---
 id: 0165
 title: Each view of a sheet has a flag for its hidden lines and one for its centre lines, the read gives the centre lines, and a whole circle reads as a diameter
-status: Accepted
+status: Amended
 topic: Contracts, drawing
 date: 2026-11-18
 supersedes: []
 superseded-by: []
 amends: ['0153', '0155', '0158', '0159', '0160', '0161']
-amended-by: []
+amended-by: ['0169']
 affects:
   - Engine.Contracts/Drawing/SheetRecord.cs
   - Engine.Core/Commands/SetSheetViewLinesCommand.cs
@@ -61,6 +61,8 @@ gives the same views with the default.
    0.25 mm, with a long dash of 6 mm, a gap of 0.75 mm, a dot of 0.125 mm and a gap of 0.75 mm (ISO 128, type 04), between
    the hidden lines and the visible lines; the DXF file puts them on a layer CENTER of the colour 8 with a line type CENTER
    (amends ADR-0159 item 3, ADR-0160 item 3 and ADR-0161 item 3).
+   ADR-0169 item 3: an edge between the side of a cylinder or a cone and a face of another tag along its axis, as the edge
+   of a cut face, also gives the axis.
 4. **The diameter (D17 A; amends ADR-0158 item 4).** A dimension whose source is a constraint `radius` on a whole circle of
    its sketch reads with the label "diameter" and twice the radius; on an arc it stays "radius" with the radius. The SVG file
    prints ⌀ and the value, the DXF file "%%c" and the value (the code of AutoCAD for the sign), and the PDF file Ø and the
@@ -81,3 +83,4 @@ centre lines; a pattern of holes gets one cross for each hole and no line betwee
 
 - 2026-11-18 · TASK-0405 · The record, for row R30g and ADR-0162 items 11, 12 and 14.
 - 2026-11-18 · TASK-0405 · Shipped at v0.390, after R30a took v0.389.
+- 2026-11-18 · TASK-0411 · Amended by ADR-0169 item 3: an edge along the axis of a side, as the edge of a cut face, gives the axis (R30h).

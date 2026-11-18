@@ -62,8 +62,12 @@ public sealed class GetSheetQueryHandler : IQueryHandler
         foreach (var view in sheet.Views)
         {
             ct.ThrowIfCancellationRequested();
-            var (lines, skipped) = SheetLayout.Place(document, view);
-            views.Add(new SheetViewInfo(view.Id, view.Direction, view.ScaleNumerator, view.ScaleDenominator, view.X, view.Y, lines, skipped, view.HiddenLines, view.CentreLines));
+            var (lines, skipped, texts) = SheetLayout.Place(document, sheet, view);
+            views.Add(new SheetViewInfo(view.Id, view.Direction, view.ScaleNumerator, view.ScaleDenominator, view.X, view.Y, lines, skipped, view.HiddenLines, view.CentreLines)
+            {
+                Section = view.Section,
+                Texts = texts,
+            });
         }
 
         // ADR-0158 item 4: the value of each dimension from the design now, in the order of the record. A dimension whose source
