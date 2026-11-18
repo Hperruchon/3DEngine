@@ -170,6 +170,12 @@ internal sealed unsafe partial class DesktopUi
         commands.Add((StandardViewsLabel, () => _actions.Add(new AddToSheetAction(SheetPlacement.Standard))));
         if (_sheet is { Views.Count: > 0 })
             commands.Add((ScaleSheetLabel, OpenScalePad));
+        // ADR-0170 item 1 (phase R30d, TASK-0412): "Export PDF", "Export SVG" and "Export DXF" of the sheet of the page.
+        if (PageSheetId is { } exported)
+        {
+            foreach (var format in SheetExports.Formats)
+                commands.Add((ExportLabel(format), () => _actions.Add(new SheetExportAction(exported, format))));
+        }
         return commands;
     }
 
