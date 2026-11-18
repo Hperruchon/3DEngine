@@ -44,7 +44,9 @@ This task uses Simplified Technical English (ASD-STE100). See `CLAUDE.md`, secti
 The codebase review of 2026-11-18 (`docs/reviews/2026-11-18-codebase-review.md`) gives the medium findings E218, V194, V195,
 V196, V197 and V198, and the low findings E219, E220, V199, V200 and V201. Section 7 of `docs/templates.md` puts them after the
 next product phase, R30c (TASK-0408). E220 and V200 are a decision that disagrees with the code; the answers Q1 and Q2 of the
-owner say which side changes.
+owner say which side changes. The owner answered on 2026-11-18 "1a 2a": Q1 A, GetViewLines gives the centre lines of
+ADR-0165 too, so a flat view shows what the sheet prints; Q2 A, the code keeps its place of a new view, and ADR-0167 item 3
+states it.
 
 ## Goal
 
@@ -54,13 +56,13 @@ Each of the eleven findings has a correction or a recorded answer, and a test th
 
 1. E218: a cross on each whole circle of the design whose arcs cover the turn.
 2. E219: the comment of the label of a dimension.
-3. E220: after Q1, the centre lines in GetViewLines, or the text of ADR-0166 item 1.
+3. E220 (Q1 A): the centre lines in GetViewLines, and the text of ADR-0166 item 1 that says so.
 4. V194: a new sheet checks each place of its group, and reports the views that went on and each one that does not fit.
 5. V195 and V199: the keys of the pad of a sheet rest while the home screen shows, and the pad holds its keys.
 6. V196: the commands of a sheet go off the frame thread, and a read of the lines starts again only when the bodies change.
 7. V197: the box of a new view is the box of the bodies that the sheet draws.
 8. V198: no gizmo, or a gizmo above the paper, while the paper shows.
-9. V200: after Q2, the code or the text of ADR-0167 item 3.
+9. V200 (Q2 A): the text of ADR-0167 item 3 states the place of the code.
 10. V201: the reason of each skipped body in a flat view with "Lines" on.
 
 ## Scope (out)

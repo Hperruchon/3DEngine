@@ -461,6 +461,7 @@ Therefore each approved objective must have a track here.
   circle and the axis of each round side, and a whole circle reads as a diameter. v0.390, TASK-0405, ADR-0165.
 - R30b — A person adds the flat view or the standard views to a sheet from the window, at the place of the projection
   and the scale that fits, and ScaleSheetView changes the scale. v0.391, TASK-0407, ADR-0167.
+- Review — The codebase review of 2026-11-18. v0.392, TASK-0409.
 - Review — The codebase review of 2026-11-14 (c). v0.351, TASK-0366.
 - P0.143 — The low findings of the codebase review of 2026-11-11: a triangle of zero area adds no edge, and a mesh of
   more than 100 000 triangles finds its edges on the thread pool. v0.332, TASK-0345, ADR-0121.

@@ -1,7 +1,7 @@
 ---
 id: 0409
 title: The codebase review of 2026-11-18 is a record
-status: Active
+status: Done
 phase: governance
 opened: 2026-11-18
 depends-on: [0407]
@@ -49,10 +49,12 @@ A review of the code at `1bdd376` (v0.391) is in `docs/reviews/`, and a task hol
 
 - [x] Each finding of the review has its place and its evidence, and the session read it at its line.
 - [x] The measures use the method of the last review, and the script gives the values of the last review at `059ec7d`.
-- [ ] `CodebaseReviewGateTests`, `dotnet test`, the write-set check and `eng/repo-gates` pass; continuous integration passes on
+- [x] `CodebaseReviewGateTests`, `dotnet test`, the write-set check and `eng/repo-gates` pass; continuous integration passes on
       the branch and on `main` after the merge.
 
 ## Outcome
+
+Status: Done · commit (the merge of the branch review-2026-11-18) · v0.392
 
 ## Method
 
@@ -65,3 +67,5 @@ Weakest:    V196 to V198 and V201 come from a reading of the lines; no agent tim
 - 2026-11-18: opened under the order of the owner "start the review", branch review-2026-11-18 from `main` at v0.391 (run
   44307338251 on `main` passed). Two agents examined the change from `059ec7d` to `1bdd376` in their own copies with probes,
   and removed them. The session read each finding at its line.
+- 2026-11-18: run 44310445035 passed on the branch. The owner answered "1a 2a" and "merge the review when green";
+  TASK-0410 records the answers. Closed at v0.392.
