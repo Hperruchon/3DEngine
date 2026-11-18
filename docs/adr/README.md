@@ -148,8 +148,8 @@ names. Do not read all of them.
 | [0140](0140-frame-in-the-free-part-of-the-scene.md) | Frame fits the bodies in the free part of the scene, and the centre of the picture moves there | Amended | Rendering, clients | 0023, 0137 | 0145 |
 | [0141](0141-the-scale-and-the-depth-of-a-flat-view.md) | A flat view has a scale of its own and a far plane behind the box, and the rows of a portrait proposal stay under the middle | Accepted | Rendering, clients | 0135, 0137 | — |
 | [0142](0142-the-edges-of-a-view-outside-the-kernel.md) | The visible and the hidden edges of a view are computed outside the owned kernel, from its faces and its edges | Amended | Kernel, drawing | — | 0143 |
-| [0143](0143-the-circles-of-a-view.md) | A view shows the circle of the design for a curved side, and an end seen from the side as one line | Amended | Kernel, drawing | 0142 | 0144, 0145, 0147 |
-| [0144](0144-the-ellipses-and-the-outline-of-a-view.md) | An end at a slant to the view is an ellipse, and the outline of a cylinder and a cone comes from its axis | Amended | Kernel, drawing | 0143 | 0145 |
+| [0143](0143-the-circles-of-a-view.md) | A view shows the circle of the design for a curved side, and an end seen from the side as one line | Amended | Kernel, drawing | 0142 | 0144, 0145, 0147, 0163 |
+| [0144](0144-the-ellipses-and-the-outline-of-a-view.md) | An end at a slant to the view is an ellipse, and the outline of a cylinder and a cone comes from its axis | Amended | Kernel, drawing | 0143 | 0145, 0163 |
 | [0145](0145-the-place-of-a-line-along-the-axis.md) | A line of a curved side keeps its place along the axis, an axis within 1e-9 of the view is along it, and Frame leaves a window at the right | Amended | Kernel, drawing, clients | 0140, 0143, 0144 | 0147 |
 | [0146](0146-a-value-shows-where-its-length-is-true.md) | In a flat view a value shows only where its length is true, and row R22 splits into four slices | Amended | Clients, drawing | 0082 | 0148, 0149 |
 | [0147](0147-an-end-within-1e-9-of-across-the-view.md) | An end within 1e-9 of across the view is one line on its diameter | Accepted | Kernel, drawing | 0143, 0145 | — |
@@ -159,15 +159,16 @@ names. Do not read all of them.
 | [0151](0151-a-size-on-the-line-of-a-shown-value.md) | A free size or a reference on the line of a value that the view shows does not show again | Accepted | Clients, drawing | 0148, 0149 | — |
 | [0152](0152-the-arc-on-a-small-landscape-display.md) | On a small landscape display the arc of a proposal is right of the rows on a smaller ring, and each part of a proposal hides the tools under it | Accepted | Clients, rendering | 0134, 0139 | — |
 | [0153](0153-the-sheet-in-the-document.md) | A drawing sheet is one record of the Document, with its views and its dimensions, and small commands change it | Amended | Contracts, drawing | 0118 | 0155, 0158 |
-| [0154](0154-the-fixed-lengths-from-one-elimination.md) | The status and the fixed lengths of a sketch come from one elimination, and the product J·Jᵀ takes the columns with a value | Amended | Kernel | 0149 | 0156 |
-| [0155](0155-the-views-of-a-sheet.md) | A view of a sheet has an exact frame, a scale and a place on the paper, and GetSheet gives its lines on the paper | Accepted | Drawing | 0153 | — |
-| [0156](0156-the-rank-of-a-sketch-at-each-size.md) | The rank of a sketch comes from the rows of its Jacobian at unit length, so the freedom and the fixed lengths do not depend on its size | Accepted | Sketch | 0035, 0154 | — |
+| [0154](0154-the-fixed-lengths-from-one-elimination.md) | The status and the fixed lengths of a sketch come from one elimination, and the product J·Jᵀ takes the columns with a value | Amended | Kernel | 0149 | 0156, 0163 |
+| [0155](0155-the-views-of-a-sheet.md) | A view of a sheet has an exact frame, a scale and a place on the paper, and GetSheet gives its lines on the paper | Amended | Drawing | 0153 | 0163 |
+| [0156](0156-the-rank-of-a-sketch-at-each-size.md) | The rank of a sketch comes from the rows of its Jacobian at unit length, so the freedom and the fixed lengths do not depend on its size | Amended | Sketch | 0035, 0154 | 0163 |
 | [0157](0157-the-foundations-and-the-order-of-the-assembly-track.md) | The assembly track has shared foundations, the checks and the preview of a proposal come before the joints, and the model of a move waits for a measure | Amended | Assembly, agent | 0126 | 0162 |
 | [0158](0158-the-dimensions-of-a-sheet.md) | A dimension of a sheet shows a length or a radius of a sketch or the distance of an extrude, and a read gives its value from the design or "lost" | Accepted | Drawing | 0153 | — |
-| [0159](0159-the-svg-export-of-a-sheet.md) | A sheet exports as one SVG file in millimetres of the paper, from the read GetSheet, with exact arcs and the value of each dimension | Accepted | Drawing, export | — | — |
-| [0160](0160-the-dxf-export-of-a-sheet.md) | A sheet exports as one DXF file of release 12, from the read GetSheet, with arcs as bulges and ellipses as arcs within 0.001 mm | Accepted | Drawing, export | — | — |
+| [0159](0159-the-svg-export-of-a-sheet.md) | A sheet exports as one SVG file in millimetres of the paper, from the read GetSheet, with exact arcs and the value of each dimension | Amended | Drawing, export | — | 0163 |
+| [0160](0160-the-dxf-export-of-a-sheet.md) | A sheet exports as one DXF file of release 12, from the read GetSheet, with arcs as bulges and ellipses as arcs within 0.001 mm | Amended | Drawing, export | — | 0163 |
 | [0161](0161-the-pdf-export-of-a-sheet.md) | A sheet exports as one PDF file of version 1.4, from the read GetSheet, with arcs as Bézier curves within 0.001 mm | Accepted | Drawing, export | — | — |
 | [0162](0162-the-workflow-of-the-2d-views.md) | A person sees and designs the 2D views of a part in the window and on a sheet page, with the section view, the centre lines and the title block of ISO 7200 | Accepted | Drawing, window | 0118, 0157 | — |
+| [0163](0163-the-findings-of-the-review-of-2026-11-17.md) | A view of a frame of any length gives the curves of the design, the files of a sheet guard each number and each name, and the analysis of a sketch keeps its time | Accepted | Drawing, sketch | 0143, 0144, 0154, 0155, 0156, 0159, 0160 | — |
 
 ## Topics
 

@@ -192,13 +192,24 @@ public static class DxfExport
 
         var a = Frame(p);
         var b = whole ? a : Frame(q);
-        var turn = (-a.Y, a.X);
-        var opposite = (-a.X, -a.Y);
-        var cross = Cross(a, b);
-        List<(double X, double Y)> stops = whole
-            ? [a, turn, opposite, (-turn.Item1, -turn.Item2), a]
-            : cross > 0 ? [a, b]
-            : [a, turn, opposite, b];
+
+        // ADR-0163 item 3 (TASK-0400, finding E216 of the codebase review of 2026-11-17): a stop at each quarter turn from a,
+        // up to the quarter that holds b, as in the PDF file. When no quarter holds b, the whole curve or an
+        // end in the direction of a, the fourth quarter ends at a, and the last point becomes the end of the line. Until
+        // TASK-0400 an end within the rounding of a gave a last part of a half turn, whose middle was the unit of (0, 0).
+        var stops = new List<(double X, double Y)> { a };
+        var current = a;
+        for (var quarter = 0; quarter < 4; quarter++)
+        {
+            if (!whole && Cross(current, b) > 0 && Dot(current, b) >= 0)
+            {
+                stops.Add(b);
+                break;
+            }
+
+            current = (-current.Y, current.X);
+            stops.Add(current);
+        }
 
         var vertices = new List<(double X, double Y, double Bulge)>();
         for (var i = 0; i + 1 < stops.Count; i++)
@@ -308,6 +319,9 @@ public static class DxfExport
     // not read an exponent reads the same number.
     public static string N(double value)
     {
+        // ADR-0163 item 2 (TASK-0400, finding E215 of the codebase review of 2026-11-17): SvgExport.N gives 0 for a number that
+        // is not finite, so no letter of "NaN" or "Infinity" reaches the search of an exponent. Until TASK-0400 the N of "NaN"
+        // and the I of "Infinity" looked like an exponent, and the writer threw.
         var text = SvgExport.N(value);
         var e = text.AsSpan().IndexOfAnyInRange('A', 'Z');
         if (e < 0)

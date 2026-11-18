@@ -48,7 +48,10 @@ internal static class SheetLayout
         var frame = Frame(view.Direction)
             ?? throw new InvalidOperationException($"The view '{view.Id}' has a direction that is not a valid frame (ADR-0155 item 1).");
         var (lines, skipped) = ViewEdges.Of(document, frame);
-        var factor = (double)view.ScaleNumerator / view.ScaleDenominator / Math.Sqrt(frame.Right.Dot(frame.Right).ToDouble());
+        // ADR-0163 item 1 (TASK-0400, finding E212 of the codebase review of 2026-11-17): the length of the frame comes from
+        // ViewFrame.Length, which never squares a double. Until TASK-0400 a frame of a length near 1e-200 gave the factor +∞
+        // and a read that JSON cannot write, and one near 1e200 gave 0 and a view of one point.
+        var factor = (double)view.ScaleNumerator / view.ScaleDenominator / frame.Length.Value;
 
         var (minU, minV, maxU, maxV) = (double.PositiveInfinity, double.PositiveInfinity, double.NegativeInfinity, double.NegativeInfinity);
         void Add(double u, double v)

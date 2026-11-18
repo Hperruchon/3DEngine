@@ -101,11 +101,38 @@ public static class SvgExport
     }
 
     // ADR-0159 item 6: a number as the shortest text that reads back as the same double, with the culture of no country. A
-    // negative zero is 0.
-    public static string N(double value) => value == 0 ? "0" : value.ToString("R", CultureInfo.InvariantCulture);
+    // negative zero is 0. ADR-0163 item 2 (TASK-0400, finding E215 of the codebase review of 2026-11-17): a number that is not
+    // finite is 0, as in the DXF and the PDF file.
+    public static string N(double value) => value == 0 || !double.IsFinite(value) ? "0" : value.ToString("R", CultureInfo.InvariantCulture);
 
+    // ADR-0163 item 4 (TASK-0400, finding E217 of the codebase review of 2026-11-17): a character that XML 1.0 does not permit
+    // is the replacement character U+FFFD: a character of control other than the tab, the line feed and the return, U+FFFE,
+    // U+FFFF, and a surrogate with no pair. The rules of a name accept U+FFFE and U+FFFF, so until TASK-0400 such a name gave
+    // a file that was not XML.
     private static string Escape(string text)
-        => text.Replace("&", "&amp;", StringComparison.Ordinal).Replace("<", "&lt;", StringComparison.Ordinal).Replace(">", "&gt;", StringComparison.Ordinal);
+    {
+        var s = new StringBuilder(text.Length);
+        for (var i = 0; i < text.Length; i++)
+        {
+            var ch = text[i];
+            if (char.IsHighSurrogate(ch) && i + 1 < text.Length && char.IsLowSurrogate(text[i + 1]))
+            {
+                s.Append(ch).Append(text[++i]);
+                continue;
+            }
+
+            var permitted = ch is '\t' or '\n' or '\r' || (ch >= ' ' && !char.IsSurrogate(ch) && ch != (char)0xFFFE && ch != (char)0xFFFF);
+            s.Append(!permitted ? ((char)0xFFFD).ToString() : ch switch
+            {
+                '&' => "&amp;",
+                '<' => "&lt;",
+                '>' => "&gt;",
+                _ => ch.ToString(),
+            });
+        }
+
+        return s.ToString();
+    }
 
     // The y axis of the paper goes up, and the y axis of SVG goes down.
     private readonly struct Svg(double height)
