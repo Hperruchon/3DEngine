@@ -97,6 +97,7 @@ public sealed class DocumentFileTests : IDisposable
         ["RemoveSheet"] = new RemoveSheetCommand { SheetId = Guid.NewGuid() },
         ["AddSheetView"] = new AddSheetViewCommand { SheetId = Guid.NewGuid(), RightX = 1, RightY = 0, RightZ = 0, UpX = 0, UpY = 0, UpZ = 1, EyeX = 0, EyeY = -1, EyeZ = 0.5, ScaleNumerator = 1, ScaleDenominator = 2, X = 100.5, Y = 80 },
         ["MoveSheetView"] = new MoveSheetViewCommand { SheetId = Guid.NewGuid(), ViewId = Guid.NewGuid(), X = 50, Y = 60.25 },
+        ["SetSheetViewLines"] = new SetSheetViewLinesCommand { SheetId = Guid.NewGuid(), ViewId = Guid.NewGuid(), HiddenLines = false, CentreLines = true },
         ["RemoveSheetView"] = new RemoveSheetViewCommand { SheetId = Guid.NewGuid(), ViewId = Guid.NewGuid() },
         ["PlaceSheetDimension"] = new PlaceSheetDimensionCommand { SheetId = Guid.NewGuid(), ViewId = Guid.NewGuid(), Source = Guid.NewGuid(), SourceKind = "distance", X = 120.5, Y = 33.25, DimensionId = Guid.NewGuid() },
         ["RemoveSheetDimension"] = new RemoveSheetDimensionCommand { SheetId = Guid.NewGuid(), DimensionId = Guid.NewGuid() },

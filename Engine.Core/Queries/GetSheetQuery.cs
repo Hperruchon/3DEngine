@@ -36,9 +36,11 @@ public sealed record SheetViewInfo(
     double X,
     double Y,
     IReadOnlyList<SheetLine> Lines,
-    IReadOnlyList<SheetSkippedBody> Skipped);
+    IReadOnlyList<SheetSkippedBody> Skipped,
+    bool HiddenLines = true,
+    bool CentreLines = true);
 
-// One line of a view on the paper. Kind is "edge" or "outline". A line with a circle or an ellipse is its
+// One line of a view on the paper. Kind is "edge" or "outline", or "centre" for a centre line (ADR-0165 item 3). A line with a circle or an ellipse is its
 // arc from the start to the end, counter-clockwise on the paper; a start equal to the end is the whole curve (ADR-0155 item 5).
 public sealed record SheetLine(Guid Body, double FromX, double FromY, double ToX, double ToY, bool Visible, string Kind)
 {

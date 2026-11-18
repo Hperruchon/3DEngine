@@ -36,7 +36,7 @@ public sealed class SheetDimensionTests : IDisposable
     private sealed record Scene(DocumentSession Session, InMemoryEventSink Events, Guid Sheet, Guid Front, Guid Top, Guid Sketch, Guid[] Lines, Guid Length, Guid Circle, Guid Radius);
 
     // A sheet with a Front view and a Top view, and a sketch with a closed rectangle, a constraint 'distance' of 10 on its first
-    // line, and a circle of radius 2 with a constraint 'radius'.
+    // line, and a circle of radius 2 with a constraint 'radius', which the read gives as a diameter of 4 (ADR-0165 item 4).
     private static async Task<Scene> NewScene(IGeometryBackend? backend = null)
     {
         var kit = EngineHosting.CreateDefault(backend ?? new InProcessMeshBackend());
@@ -130,14 +130,14 @@ public sealed class SheetDimensionTests : IDisposable
         var scene = await NewScene();
         await Applied(scene.Session, Place(scene.Sheet, scene.Front, scene.Length), "dimensionId");
         await Applied(scene.Session, Place(scene.Sheet, scene.Top, scene.Radius, x: 120, y: 60), "dimensionId");
-        Assert.Equal(["length 10", "radius 2"], (await Read(scene.Session, scene.Sheet)).Select(Text));
+        Assert.Equal(["length 10", "diameter 4"], (await Read(scene.Session, scene.Sheet)).Select(Text));
         var record = (await Sheet(scene.Session)).Dimensions.Select(Text).ToArray();
         var count = scene.Events.Snapshot().Count;
 
         await Applied(scene.Session, new SetSketchConstraintValueCommand { SketchId = scene.Sketch, ConstraintId = scene.Length, Value = 12.5 });
         await Applied(scene.Session, new SetSketchConstraintValueCommand { SketchId = scene.Sketch, ConstraintId = scene.Radius, Value = 3 });
 
-        Assert.Equal(["length 12.5", "radius 3"], (await Read(scene.Session, scene.Sheet)).Select(Text));
+        Assert.Equal(["length 12.5", "diameter 6"], (await Read(scene.Session, scene.Sheet)).Select(Text));
         Assert.Equal(record, (await Sheet(scene.Session)).Dimensions.Select(Text));
         Assert.DoesNotContain(scene.Events.Snapshot().Skip(count), recorded => recorded.Kind.StartsWith("sheet.", StringComparison.Ordinal));
     }
@@ -304,7 +304,7 @@ public sealed class SheetDimensionTests : IDisposable
         var after = (await Sheet(session)).Dimensions;
         Assert.Equal([$"{first} {scene.Top} {extra} constraint (50.5,40)", before[1]], after.Select(Text));
         Assert.Equal(second, after[1].Id);
-        Assert.Equal(["length 6", "radius 2"], (await Read(session, scene.Sheet)).Select(Text));
+        Assert.Equal(["length 6", "diameter 4"], (await Read(session, scene.Sheet)).Select(Text));
         await Applied(session, new UndoCommand());
         Assert.Equal(before, (await Sheet(session)).Dimensions.Select(Text));
     }
@@ -383,5 +383,25 @@ public sealed class SheetDimensionTests : IDisposable
         Assert.Equal(2, actual.Length);
         Assert.Equal(expected, actual);
         Assert.Equal(["length 5", "length 8"], read);
+    }
+
+    // ADR-0165 item 4 (phase R30g, TASK-0405): a radius on a whole circle of the sketch is a diameter, ⌀ of ISO 129-1, and a radius
+    // on an arc stays a radius. Until TASK-0405 the circle of radius 2 read "radius 2".
+    [Fact]
+    public async Task A_Radius_Of_A_Circle_Reads_As_A_Diameter_And_A_Radius_Of_An_Arc_As_A_Radius()
+    {
+        var scene = await NewScene();
+        var session = scene.Session;
+        var centre = await Applied(session, new AddSketchPointCommand { SketchId = scene.Sketch, X = 50, Y = 3 }, "pointId");
+        var start = await Applied(session, new AddSketchPointCommand { SketchId = scene.Sketch, X = 55, Y = 3 }, "pointId");
+        var end = await Applied(session, new AddSketchPointCommand { SketchId = scene.Sketch, X = 50, Y = 8 }, "pointId");
+        var arc = await Applied(session, new AddSketchArcCommand { SketchId = scene.Sketch, CenterPointId = centre, StartPointId = start, EndPointId = end }, "arcId");
+        var arcRadius = await Applied(session, new AddSketchConstraintCommand { SketchId = scene.Sketch, Kind = "radius", First = arc, Value = 5 }, "constraintId");
+        foreach (var source in new[] { scene.Radius, arcRadius })
+            await Applied(session, new PlaceSheetDimensionCommand { SheetId = scene.Sheet, ViewId = scene.Top, Source = source, SourceKind = "constraint", X = 80, Y = 40 + (5 * Array.IndexOf(new[] { scene.Radius, arcRadius }, source)) }, "dimensionId");
+
+        var read = await Read(session, scene.Sheet);
+
+        Assert.Equal(["diameter 4", "radius 5"], read.Select(Text));
     }
 }

@@ -211,9 +211,12 @@ public sealed class ViewEdgesTests
         foreach (var (view, visible) in read.Result.Views.Zip(new[] { visibleFromTop, visibleFromBottom }))
         {
             Assert.Empty(view.Skipped);
-            Assert.Equal(5, view.Lines.Count);
-            Assert.All(view.Lines.Where(line => line.Circle is null), line => Assert.True(line.Visible));
-            var circle = Assert.Single(view.Lines, line => line.Circle is not null);
+            // The two centre lines of the cross of the circle (ADR-0165 item 3, TASK-0405) come with the five lines.
+            var lines = view.Lines.Where(line => line.Kind != "centre").ToArray();
+            Assert.Equal(2, view.Lines.Count(line => line.Kind == "centre"));
+            Assert.Equal(5, lines.Length);
+            Assert.All(lines.Where(line => line.Circle is null), line => Assert.True(line.Visible));
+            var circle = Assert.Single(lines, line => line.Circle is not null);
             Assert.Equal(visible, circle.Visible);
             Assert.Equal(8, circle.Circle!.Radius);
             Assert.Equal((circle.FromX, circle.FromY), (circle.ToX, circle.ToY));
