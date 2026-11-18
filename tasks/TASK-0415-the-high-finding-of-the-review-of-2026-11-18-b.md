@@ -1,7 +1,7 @@
 ---
 id: 0415
 title: The high finding of the codebase review of 2026-11-18 (b)
-status: Active
+status: Done
 phase: P0.166
 opened: 2026-11-18
 depends-on: [0414]
@@ -59,7 +59,7 @@ A read without the dragged view ends the drag, and no frame of the sheet page th
 - [x] A test gives a read without the dragged view between two moves of a drag, and it fails on the code of v0.396.
 - [x] Each rule has an injection that a test catches.
 - [x] A clean build (`--no-incremental`) gives zero errors and zero warnings, and the phone project builds.
-- [ ] `dotnet test`, the write-set check and `eng/repo-gates` pass; continuous integration passes on the branch and on
+- [x] `dotnet test`, the write-set check and `eng/repo-gates` pass; continuous integration passes on the branch and on
       `main` after the merge.
 
 ## Notes for the implementer
@@ -69,7 +69,7 @@ V204 has the same cause; a step that clears each state of the page whose view is
 
 ## Outcome
 
-Status: Active
+Status: Done · commit (the merge of the branch p0166-drag-view) · v0.398
 
 ## Method
 
@@ -82,3 +82,5 @@ Weakest:    the test removes the view with a command of the engine; no run of th
 - 2026-11-18: opened under the order of the owner "then start TASK-0415", branch p0166-drag-view from the close of TASK-0414
   (`8c0ecb8`). The owner answered Q1 A; this commit records it. The review merged to `main` at `a5adcf6`. Ledger entry
   v0.398.
+- 2026-11-18: run 44390598558 passed on the branch on each job, and run 44389451949 passed on `main` after the merge of the
+  review. Closed at v0.398; the merge waits for the owner.
