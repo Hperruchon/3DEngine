@@ -7,7 +7,7 @@ date: 2026-11-14
 supersedes: []
 superseded-by: []
 amends: ['0023', '0137']
-amended-by: ['0145']
+amended-by: ['0145', '0165']
 affects:
   - 3DEngine.Core/Models/Camera.cs
   - 3DEngine.Core/Picking/Picker.cs
@@ -72,3 +72,5 @@ it.
 - 2026-11-14 · TASK-0372 · Shipped at v0.358.
 - 2026-11-14 · TASK-0379 · ADR-0145 item 3 amends item 3: a tall window at the right edge cuts the free part, as the panel
   at the left does.
+- 2026-11-18 · TASK-0405 · ADR-0165 item 4 amends item 2: in a flat view the box, as the view shows it, fills 0.9 of the
+  part on its tighter side.

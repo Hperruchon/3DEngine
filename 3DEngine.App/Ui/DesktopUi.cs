@@ -575,6 +575,9 @@ internal sealed unsafe partial class DesktopUi : IDisposable
         => (body.Name ?? $"{body.Kind}  {body.Id.ToString()[..8]}") + (body.Visible ? string.Empty : "  (hidden)")
         + (body.Fault is null ? string.Empty : "  (fault)");
 
+    // ADR-0165 item 3 (TASK-0405): true when this frame drew the sketches, for a test.
+    internal bool SketchesShown { get; private set; }
+
     public UiDrawData Frame(float deltaSeconds, Vector2 displaySize, Vector2 framebufferScale, IReadOnlyList<LiveBody> bodies, Guid? selection = null, DocumentLine? document = null, SketchOverlay.Strokes? sketches = null, SketchPanel? sketchPanel = null, ImagePanel? imagePanel = null, DimensionOverlay.Strokes? dimensions = null, string? size = null, FaceLine? face = null, Vector2? ringCentre = null, float ringBody = 0f, Vector4 safeInsets = default, IReadOnlyList<EdgeValues.Value>? values = null, IReadOnlyList<HistoryStep>? history = null, IReadOnlyList<ProposalCard>? proposals = null, IReadOnlyList<EdgeValues.Value>? sketchValues = null)
     {
         ArgumentNullException.ThrowIfNull(bodies);
@@ -617,8 +620,12 @@ internal sealed unsafe partial class DesktopUi : IDisposable
             _dropFocus = false;
         }
 
-        // ADR-0120 item 3 (phase R18f, TASK-0347): the plate of the active sketch under its lines.
-        if (sketches is not null)
+        // ADR-0165 items 2 and 3 (phase R30a, TASK-0405): the paper and the lines of a flat view, under each other mark.
+        Paper();
+        // ADR-0120 item 3 (phase R18f, TASK-0347): the plate of the active sketch under its lines. ADR-0165 item 3: with the
+        // lines of a flat view, no outline of a sketch.
+        SketchesShown = sketches is not null && _viewLines is null;
+        if (SketchesShown && sketches is not null)
         {
             Plate(sketches, sketchPanel?.Active);
             Sketches(sketches);

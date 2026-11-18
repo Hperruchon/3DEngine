@@ -1,13 +1,13 @@
 ---
 id: 0138
 title: A button "Views" opens a net of the six flat views and the 3D view, and the keys 1, 3, 7 and 0 give them
-status: Accepted
+status: Amended
 topic: Clients
 date: 2026-11-14
 supersedes: []
 superseded-by: []
 amends: ['0100', '0127', '0137']
-amended-by: []
+amended-by: ['0165']
 affects:
   - 3DEngine.App/Ui/DesktopUi.Views.cs
   - 3DEngine.App/Ui/DesktopUi.Fixed.cs
@@ -73,3 +73,5 @@ is closed.
 - 2026-11-14 · TASK-0370 · The record, from row R21b and ADR-0137 item 5, under the order of the owner of 2026-11-14.
 - 2026-11-14 · TASK-0370 · Shipped at v0.355.
 - 2026-11-14 · TASK-0370 · Before the merge: the top bar ends left of the button, and the keys rest after Control and K.
+- 2026-11-18 · TASK-0405 · ADR-0165 item 3 amends items 1 and 3: the net has the switch "Lines" at its lower right, and the
+  key L changes it.

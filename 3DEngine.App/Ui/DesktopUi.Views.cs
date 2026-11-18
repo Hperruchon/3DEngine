@@ -18,10 +18,37 @@ internal sealed unsafe partial class DesktopUi
     // The item of the cell of a view, or of "3D" with no view.
     public static string ViewItem(FlatView? view) => $"View:{view?.ToString() ?? "3D"}";
 
+    // ADR-0165 item 3 (phase R30a, TASK-0405): the switch "Lines" in the cell at the lower right of the net, and its item.
+    public const string LinesLabel = "Lines";
+    public const string LinesItem = "View:Lines";
+    internal const int LinesColumn = 3;
+    internal const int LinesRow = 2;
+
+    // ADR-0165 item 3: true while the switch "Lines" is on. It stays across the six flat views and the 3D view; the lines show
+    // in a flat view only.
+    private bool _lines;
+
+    public bool LinesOn => _lines;
+
+    // ADR-0165 item 2: the lines of the flat view in pixels of the window, and true while a read of new lines runs; null when the
+    // window draws no lines in this frame (the switch is off, or the view has perspective). The host gives them before each
+    // frame.
+    private IReadOnlyList<ViewLines.Stroke>? _viewLines;
+    private bool _linesPending;
+
+    public void ShowLines(IReadOnlyList<ViewLines.Stroke>? strokes, bool pending = false)
+        => (_viewLines, _linesPending) = (strokes, strokes is not null && pending);
+
+    // The paper of the lines in this frame, in pixels (left, top, right, bottom), for a test.
+    internal Vector4? PaperShown { get; private set; }
+
+    // The text over the paper while a read of new lines runs.
+    internal const string LinesReading = "Lines…";
+
     // The width of a cell: the widest word and the padding of a button, at most a quarter of the safe width, so the net fits a
     // phone; its height is that of a target of ADR-0027 item 6.
     private float ViewCellWidth(Vector2 displaySize)
-        => Math.Min(ViewNet.Max(cell => ImGui.CalcTextSize(cell.Label).X) + (2f * ImGui.GetStyle().FramePadding.X) + 8f,
+        => Math.Min(ViewNet.Select(cell => cell.Label).Append(LinesLabel).Max(label => ImGui.CalcTextSize(label).X) + (2f * ImGui.GetStyle().FramePadding.X) + 8f,
             (displaySize.X - 32f - _inset.X - _inset.Z - (3f * ViewGap)) / 4f);
 
     private const float ViewGap = 4f;
@@ -123,6 +150,24 @@ internal sealed unsafe partial class DesktopUi
                     ImGui.GetWindowDrawList().AddRect(new Vector2(box.X + 1f, box.Y + 1f), new Vector2(box.Z - 1f, box.W - 1f), ImGui.GetColorU32(current ? ImGuiCol.ButtonActive : ImGuiCol.Border), ImGui.GetStyle().FrameRounding, ImDrawFlags.None, Theme.OutlineWidth);
             }
 
+            // ADR-0165 item 3: the switch "Lines" has the colour of a tool in use while it is on. A tap changes it and closes the
+            // net, as a tap on a view does.
+            ImGui.SetCursorPos(new Vector2(LinesColumn * (cell.X + ViewGap), LinesRow * (cell.Y + ViewGap)));
+            var on = _lines;
+            if (on)
+                ImGui.PushStyleColor(ImGuiCol.Button, accent with { W = 0.3f });
+            if (ImGui.Button($"{LinesLabel}##View", cell))
+            {
+                _lines = !_lines;
+                _viewsOpen = false;
+            }
+
+            if (on)
+                ImGui.PopStyleColor();
+            Item(LinesItem);
+            if (_items.TryGetValue(LinesItem, out var switchBox))
+                ImGui.GetWindowDrawList().AddRect(new Vector2(switchBox.X + 1f, switchBox.Y + 1f), new Vector2(switchBox.Z - 1f, switchBox.W - 1f), ImGui.GetColorU32(on ? ImGuiCol.ButtonActive : ImGuiCol.Border), ImGui.GetStyle().FrameRounding, ImDrawFlags.None, Theme.OutlineWidth);
+
             ImGui.PopStyleVar();
 
             AddWindowRectangle();
@@ -143,11 +188,21 @@ internal sealed unsafe partial class DesktopUi
     internal (double X0, double Y0, double X1, double Y1) FreePart()
     {
         var (width, height) = (_frameDisplay.X, _frameDisplay.Y);
-        if (!(width > 0 && height > 0))
+        if (FreePixels(_panels.Concat(_fixed)) is not { } free)
             return (-1.0, -1.0, 1.0, 1.0);
+        return ((2.0 * free.X / width) - 1.0, 1.0 - (2.0 * free.W / height), (2.0 * free.Z / width) - 1.0, 1.0 - (2.0 * free.Y / height));
+    }
+
+    // ADR-0140 item 3: the free part in pixels (left, top, right, bottom) among the windows, or null for the whole picture.
+    // ADR-0165 item 3 (TASK-0405): the paper of the lines takes it from the windows of the last frame.
+    private Vector4? FreePixels(IEnumerable<Vector4> windows)
+    {
+        var (width, height) = (_frameDisplay.X, _frameDisplay.Y);
+        if (!(width > 0 && height > 0))
+            return null;
         var portrait = width < height;
         var (left, top, right, bottom) = (16f + _inset.X, 16f + _inset.Y, width - 16f - _inset.Z, height - 16f - _inset.W);
-        foreach (var box in _panels.Concat(_fixed).Concat(_rowsArea is { } rows ? [rows] : Array.Empty<Vector4>()))
+        foreach (var box in windows.Concat(_rowsArea is { } rows ? [rows] : Array.Empty<Vector4>()))
         {
             if (!portrait && box.X < width * 0.25f && box.Z < width * 0.6f && box.Y < height * 0.6f && box.W > height * 0.2f)
                 left = Math.Max(left, box.Z + 16f);
@@ -166,9 +221,52 @@ internal sealed unsafe partial class DesktopUi
         if (portrait && _rowsUnder && _rowsArea is { } under)
             bottom = Math.Min(bottom, under.Y - 8f);
         if (right - left < 100f || bottom - top < 100f)
-            return (-1.0, -1.0, 1.0, 1.0);
-        return ((2.0 * left / width) - 1.0, 1.0 - (2.0 * bottom / height), (2.0 * right / width) - 1.0, 1.0 - (2.0 * top / height));
+            return null;
+        return new Vector4(left, top, right, bottom);
     }
+
+    // ADR-0165 items 2 and 3: the paper and the lines of a flat view with the switch "Lines" on, first on the background list,
+    // under each other mark of the scene: a light paper on the free part of the scene of the last frame, the visible lines of 2
+    // pixels and the hidden lines of 1 pixel with dashes, in ink, cut at the paper, and "Lines…" while a read runs. The paper
+    // covers the shaded bodies, their edges and the images, so the view has no fill.
+    private void Paper()
+    {
+        PaperShown = null;
+        if (_viewLines is not { } strokes || _home is not null)
+            return;
+        var display = _frameDisplay;
+        var free = FreePixels(_lastPanels.Concat(_lastFixed)) ?? new Vector4(0f, 0f, display.X, display.Y);
+        PaperShown = free;
+        var list = ImGui.GetBackgroundDrawList();
+        var (low, high) = (new Vector2(free.X, free.Y), new Vector2(free.Z, free.W));
+        list.AddRectFilled(low, high, Theme.Paper, PaperRounding);
+        list.PushClipRect(low, high, true);
+        foreach (var stroke in strokes)
+        {
+            if (stroke.Visible)
+            {
+                var points = stroke.Points.ToArray();
+                list.AddPolyline(ref points[0], points.Length, Theme.Ink, ImDrawFlags.None, VisibleLineWidth);
+            }
+            else
+            {
+                foreach (var (a, b) in ViewLines.Dashes(stroke.Points, HiddenDashOn, HiddenDashOff))
+                    list.AddLine(a, b, Theme.Ink, HiddenLineWidth);
+            }
+        }
+
+        if (_linesPending)
+            list.AddText(low + new Vector2(12f, 8f), Theme.Ink, LinesReading);
+        list.PopClipRect();
+    }
+
+    // ADR-0165 item 3: the widths in pixels of a visible and of a hidden line, the dash of a hidden line, and the corner of the
+    // paper.
+    internal const float VisibleLineWidth = 2f;
+    internal const float HiddenLineWidth = 1f;
+    internal const float HiddenDashOn = 6f;
+    internal const float HiddenDashOff = 4f;
+    private const float PaperRounding = 6f;
 
     // The keys of the views: 1, 3 and 7 give Front, Right and Top, and with Control Back, Left and Bottom; 0 gives the 3D view.
     private void WatchViewKeys(IReadOnlyList<InputSample> samples)
@@ -178,6 +276,13 @@ internal sealed unsafe partial class DesktopUi
             if (sample is not KeySample { Down: true } key)
                 continue;
             var control = (key.Modifiers & KeyModifiers.Control) != 0;
+            // ADR-0165 item 3 (TASK-0405): L, with no Control, changes the switch "Lines", under the guard of the keys of the views.
+            if (key.Key == InputKey.L && !control)
+            {
+                _lines = !_lines;
+                continue;
+            }
+
             (bool Known, FlatView? View) chosen = key.Key switch
             {
                 InputKey.Digit1 => (true, control ? FlatView.Back : FlatView.Front),
