@@ -98,3 +98,4 @@ narrow, and so is the paper. Only the six flat views have lines; a view at a sla
 ## History
 
 - 2026-11-18 · TASK-0405 · The query, the switch, the paper and the frame of a flat view (phase R30a).
+- 2026-11-18 · TASK-0405 · Shipped at v0.389.
