@@ -7,7 +7,7 @@ date: 2026-11-16
 supersedes: []
 superseded-by: []
 amends: []
-amended-by: ['0164', '0165']
+amended-by: ['0164', '0165', '0169']
 affects:
   - Engine.Core/Export/SvgExport.cs
   - Engine.Core/Queries/GetSheetQueryHandler.cs
@@ -52,6 +52,8 @@ options below, each the smallest one that keeps the exact numbers. The owner can
    and the writer returns the list of such bodies.
    ADR-0165 item 3: a centre line is a thin line of 0.25 mm with a long dash of 6 mm, a gap of 0.75 mm, a dot of 0.125 mm
    and a gap of 0.75 mm (ISO 128, type 04), between the hidden and the visible lines.
+   ADR-0169 item 6: a cut line has the dashes of a centre line, a hatch line is thin and continuous, a thick end is thick,
+   an arrow is thin with a filled head, and the texts of a view are centred at their places.
 4. **The frame and the title block.** A frame 10 mm inside the edge of the paper, and a title block of 120 by 20 mm in the
    lower right corner of the frame, with the name of the sheet, the paper and its orientation, the projection, the scale
    and the unit. The scale is the scale of the views in lowest terms when they have one scale, or "as shown".
@@ -84,3 +86,4 @@ of the viewer. The read of a curved body takes seconds (R-0069), and the export 
 - 2026-11-16 · TASK-0396 · Shipped at v0.381.
 - 2026-11-18 · TASK-0400 · Amended by ADR-0164 items 2 and 4: a number that is not finite is 0, and a character that XML does not permit is U+FFFD (findings E215 and E217).
 - 2026-11-18 · TASK-0405 · Amended by ADR-0165 items 3 and 4: the centre lines and the sign of a diameter (R30g).
+- 2026-11-18 · TASK-0411 · Amended by ADR-0169 item 6: the hatch, the cut line, the arrows and the texts of a section (R30h).

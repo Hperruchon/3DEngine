@@ -7,7 +7,7 @@ date: 2026-11-15
 supersedes: []
 superseded-by: []
 amends: ['0153']
-amended-by: ['0164', '0165', '0167', '0168']
+amended-by: ['0164', '0165', '0167', '0168', '0169']
 affects:
   - Engine.Core/Commands/AddSheetViewCommand.cs
   - Engine.Core/Commands/AddSheetViewCommandHandler.cs
@@ -65,6 +65,8 @@ and gave the same answer in the side session that prepared the plans of P10.3 an
    times f. The numbers become doubles before the place, and the code uses + − × ÷ and sqrt only.
    ADR-0165 items 1 and 3: a view with `HiddenLines` false gives no hidden line, and a view with `CentreLines` true also
    gives its centre lines, of the kind "centre", 3 mm of paper past their ends; the box of the view leaves them out.
+   ADR-0169 items 3 to 5 and 7: a section view cuts each solid and gives the hatch of its cut faces and its label, and the
+   parent of a section gives its cut line, its arrows and its letters; each view gives its section and its texts.
 6. **The codes (Q5 A).** `E-SHEET-VIEW-NOT-FOUND` is a view that is not on the sheet. `E-SHEET-VIEW-INVALID` is a direction, a
    scale or a place of a view that is not valid. `E-SHEET-NOT-FOUND` is raised for a sheet that is not live by the three
    commands and by GetSheet, and `E-SHEET-ID-IN-USE` by AddSheetView, because a view takes the identifier of its command.
@@ -89,3 +91,4 @@ session for that time. The centre of a view moves when the part grows on one sid
 - 2026-11-18 · TASK-0405 · Amended by ADR-0165 items 1 and 3: the flags of a view and its centre lines in GetSheet (R30g).
 - 2026-11-18 · TASK-0407 · ADR-0167 item 1 amends item 6: ScaleSheetView is a fourth command of a view, with the same codes.
 - 2026-11-18 · TASK-0408 · ADR-0168 item 3 amends item 6: MoveSheetViews is a command of a view, with the same codes.
+- 2026-11-18 · TASK-0411 · Amended by ADR-0169 items 3 to 5 and 7: the cut, the hatch, the cut line and the texts in GetSheet (R30h).

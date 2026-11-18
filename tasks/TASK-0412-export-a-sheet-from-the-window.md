@@ -1,7 +1,7 @@
 ---
 id: 0412
 title: The sheet page and the command line export a sheet as PDF, SVG or DXF through the save dialog of the system
-status: Done
+status: Active
 phase: R30d
 opened: 2026-11-18
 depends-on: [0408]
@@ -71,7 +71,7 @@ system, on the desktop and on the phone.
 
 ## Outcome
 
-Status: Done · branch r30d-sheet-export · v0.394
+Status: Active
 
 ## Method
 
@@ -88,3 +88,6 @@ Weakest:    no test on a phone; a share sheet waits.
 - 2026-11-18: ten injections each failed a test, and each file came back byte for byte (SHA-256). A clean build gives 0
   warnings, the phone project builds, and each test project passes (2868 tests). Pushed as `r30d-sheet-export`.
 - 2026-11-18: run 44327710142 passed on the branch with its seven jobs. Closed at v0.394; the merge waits for the owner.
+- 2026-11-18: run 44329686249 of the close was red only because GitHub gave no runner of macOS. R30h merged first at v0.394,
+  so this branch merges `main` (conflicts in lists only: the ledger, the index of the ADRs and the governed-by of TASK-0410),
+  and R30d moves to v0.395.
