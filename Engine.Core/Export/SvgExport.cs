@@ -17,6 +17,10 @@ public static class SvgExport
     public const double Thin = 0.25;
     public const string Dashes = "3 0.75";
 
+    // ADR-0165 item 3 (phase R30g, TASK-0405): a centre line of ISO 128, type 04, thin: a long dash of 24 widths, a gap of 3, a
+    // dot of half a width, and a gap of 3.
+    public const string CentreDashes = "6 0.75 0.125 0.75";
+
     // ADR-0159 item 4: the frame is 10 mm inside the edge of the paper, and the title block is 120 by 20 mm in the lower right
     // corner of the frame.
     public const double Margin = 10;
@@ -64,7 +68,11 @@ public static class SvgExport
             w.Append($"<g id=\"view-{view.ViewId}\" fill=\"none\" stroke=\"black\">\n");
             foreach (var line in view.Lines.Where(line => !line.Visible))
                 w.Append($"<path stroke-width=\"{N(Thin)}\" stroke-dasharray=\"{Dashes}\" {svg.Path(line)}/>\n");
-            foreach (var line in view.Lines.Where(line => line.Visible))
+            // ADR-0165 item 3 (phase R30g, TASK-0405): the centre lines, thin with a long dash and a dot, between the hidden and
+            // the visible lines.
+            foreach (var line in view.Lines.Where(line => line.Kind == "centre"))
+                w.Append($"<path stroke-width=\"{N(Thin)}\" stroke-dasharray=\"{CentreDashes}\" {svg.Path(line)}/>\n");
+            foreach (var line in view.Lines.Where(line => line.Visible && line.Kind != "centre"))
                 w.Append($"<path stroke-width=\"{N(Thick)}\" {svg.Path(line)}/>\n");
             foreach (var skipped in view.Skipped)
                 w.Append($"<desc>The body {skipped.Body} gives no lines: {Escape(skipped.Reason)}</desc>\n");
@@ -80,9 +88,11 @@ public static class SvgExport
         return w.ToString();
     }
 
-    // ADR-0159 item 5: the text of a dimension. A radius has the prefix "R" (ISO 129-1); a lost dimension shows "lost".
-    public static string Value(SheetDimensionInfo dimension)
-        => dimension.Value is not { } value ? "lost" : (dimension.Label == "radius" ? "R" : "") + N(value);
+    // ADR-0159 item 5: the text of a dimension. A radius has the prefix "R" (ISO 129-1); a lost dimension shows "lost". ADR-0165
+    // item 4 (phase R30g, TASK-0405): a diameter has the sign of the diameter, \u2300 in SVG by default; the DXF and the PDF
+    // file give their own sign.
+    public static string Value(SheetDimensionInfo dimension, string diameter = "\u2300")
+        => dimension.Value is not { } value ? "lost" : (dimension.Label switch { "radius" => "R", "diameter" => diameter, _ => "" }) + N(value);
 
     // ADR-0159 item 4: the scale of the title block: the scale of each view when they have one scale, or "as shown". The DXF
     // file gives the same text (ADR-0160 item 5).

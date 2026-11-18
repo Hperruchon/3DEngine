@@ -81,7 +81,8 @@ public sealed class ViewLinesTests
     }
 
     // Item 1: the lines are those of GetSheet for a view of the same frame at 1 : 1, moved by one shift: the sheet puts the
-    // centre of the box of the lines at the place of the view.
+    // centre of the box of the lines at the place of the view. The centre lines of the sheet (ADR-0165 item 3, TASK-0405) are
+    // not lines of a flat view, so the test leaves them out.
     [NativeManifoldFact]
     public async Task The_Lines_Are_The_Lines_Of_The_Sheet_Moved_By_One_Shift()
     {
@@ -97,9 +98,10 @@ public sealed class ViewLinesTests
         var view = Assert.Single((await session.Query<SheetInfo>(new GetSheetQuery { SheetId = sheet })).Result!.Views);
         var lines = (await session.Query<ViewLinesInfo>(Query(Front))).Result!.Lines;
 
-        Assert.Equal(view.Lines.Count, lines.Count);
+        var edges = view.Lines.Where(line => line.Kind != "centre").ToList();
+        Assert.Equal(edges.Count, lines.Count);
         var (dx, dy) = (150.0 - 30.0, 100.0 - 5.0);
-        foreach (var (paper, line) in view.Lines.Zip(lines))
+        foreach (var (paper, line) in edges.Zip(lines))
         {
             Assert.Equal((paper.Body, paper.Visible, paper.Kind), (line.Body, line.Visible, line.Kind));
             Assert.Equal((paper.FromX, paper.FromY, paper.ToX, paper.ToY), (line.FromX + dx, line.FromY + dy, line.ToX + dx, line.ToY + dy));

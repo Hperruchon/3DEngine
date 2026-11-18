@@ -7,7 +7,7 @@ date: 2026-11-17
 supersedes: []
 superseded-by: []
 amends: []
-amended-by: ['0164']
+amended-by: ['0164', '0165']
 affects:
   - Engine.Core/Export/DxfExport.cs
   - Engine.Core/Export/SvgExport.cs
@@ -52,6 +52,8 @@ smallest one that keeps the numbers of the read. The owner can change each one.
    line type HIDDEN, of dashes of 3 mm and gaps of 0.75 mm (ISO 128-20, as in ADR-0159 item 3). Release 12 has no line
    width, so the layer gives the difference between a visible line and a hidden line. The hidden lines of a view come
    before its visible lines, and a comment of group 999 gives the identifier of each view.
+   ADR-0165 item 3: the layer CENTER, with the colour 8 and the line type CENTER of the dashes of the SVG file, holds the
+   centre lines.
 4. **The geometry.** A straight line is a LINE. A whole circle is a CIRCLE. An arc of a circle is a POLYLINE from its start to
    its end, whose vertex carries the bulge, the tangent of a quarter of the angle of the arc, positive counter-clockwise.
    With the half chord h and d = sqrt(r² − h²), the bulge is h / (r + d), so it needs no angle; an arc of a half turn or more
@@ -66,6 +68,7 @@ smallest one that keeps the numbers of the read. The owner can change each one.
 6. **The dimensions.** Each dimension is a TEXT of 3.5 mm on the layer TEXT, centred at its place on its base line, with the
    text of the SVG file: the value, "R" for a radius, or "lost" (ADR-0159 item 5). There is no dimension line and no arrow
    (R22d).
+   ADR-0165 item 4: a diameter has the prefix "%%c", the code of AutoCAD for the sign of a diameter.
 7. **The text and the numbers.** The file is ASCII, with one line feed after each line. A character outside printable ASCII
    is `\U+XXXX`, as AutoCAD reads it; a character of control is a space, and a pair of surrogates is "?". A number is the
    shortest text that reads back as the same double, with the culture of no country; a negative zero and a number that is not finite are
@@ -92,3 +95,4 @@ its own reader of the pairs.
 - 2026-11-17 · TASK-0398 · The record.
 - 2026-11-17 · TASK-0398 · Shipped at v0.383.
 - 2026-11-18 · TASK-0400 · Amended by ADR-0164 items 2 and 3: a number that is not finite is 0, and the chain of an ellipse has a stop at each quarter turn (findings E215 and E216).
+- 2026-11-18 · TASK-0405 · Amended by ADR-0165 items 3 and 4: the layer of the centre lines and the code of a diameter (R30g).
