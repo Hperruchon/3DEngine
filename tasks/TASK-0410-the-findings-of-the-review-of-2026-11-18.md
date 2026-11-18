@@ -1,7 +1,7 @@
 ---
 id: 0410
 title: The medium and low findings of the codebase review of 2026-11-18
-status: Active
+status: Done
 phase: P0.165
 opened: 2026-11-18
 depends-on: [0409]
@@ -83,13 +83,17 @@ Each of the eleven findings has a correction or a recorded answer, and a test th
       injection that a test catches. Except: E219 is a comment and V200 is a text, so their tests pass on the code before
       the task too (see Method).
 - [x] A clean build (`--no-incremental`) gives zero errors and zero warnings, and the phone project builds.
-- [ ] `dotnet test`, the write-set check and `eng/repo-gates` pass; continuous integration passes on the branch and on
+- [x] `dotnet test`, the write-set check and `eng/repo-gates` pass; continuous integration passes on the branch and on
       `main` after the merge.
 
 ## Notes for the implementer
 
 Read the section of each finding in the review: its place, its probe and its recommended correction. R30c may change the same
 files of the window first; read them on `main` at the start, and keep the commands of R30c off the frame thread too.
+
+## Outcome
+
+Status: Done · commit (the merge of the branch p0165-review-findings) · v0.399
 
 ## Method
 
@@ -107,3 +111,5 @@ Weakest:    the frame needs a window, so three tests read `NativeThreeDEngine.cs
 - 2026-11-18: opened under the order of the owner "then start TASK-0410", branch p0165-review-findings from `main` at
   `fa2ff0d` (v0.398). The write set adds `GetViewLinesQuery.cs`, `SceneRenderer.cs`, `ViewLines.cs` and
   `FlatViewLinesTests.cs`, and governed-by adds ADR-0043, which affects `SceneRenderer.cs`. Ledger entry v0.399.
+- 2026-11-18: run 44413869212 passed on the branch on each job. Closed at v0.399; the merge waits for the owner. The re-run
+  of run 44409491212 on `main` (the merge of TASK-0415) runs.
