@@ -104,3 +104,4 @@ offers each other sheet by name only. The texts of the title block need a paper 
 ## History
 
 - 2026-11-18 · TASK-0408 · The page, MoveSheetViews, the drag, the tap on the paper and the keys (phase R30c).
+- 2026-11-18 · TASK-0408 · Shipped at v0.393.

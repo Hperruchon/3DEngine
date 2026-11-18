@@ -462,6 +462,8 @@ Therefore each approved objective must have a track here.
 - R30b — A person adds the flat view or the standard views to a sheet from the window, at the place of the projection
   and the scale that fits, and ScaleSheetView changes the scale. v0.391, TASK-0407, ADR-0167.
 - Review — The codebase review of 2026-11-18. v0.392, TASK-0409.
+- R30c — A sheet page replaces the scene with the paper of a sheet, where a tap on a view gives its actions, a drag
+  keeps the alignment with one MoveSheetViews, and a tap on the paper places a view. v0.393, TASK-0408, ADR-0168.
 - Review — The codebase review of 2026-11-14 (c). v0.351, TASK-0366.
 - P0.143 — The low findings of the codebase review of 2026-11-11: a triangle of zero area adds no edge, and a mesh of
   more than 100 000 triangles finds its edges on the thread pool. v0.332, TASK-0345, ADR-0121.
@@ -796,7 +798,7 @@ The first objective. Each phase ends with something that a person can observe.
 | R29 | The drag of a face as a change of the value that owns the face: the distance of an extrude or the size of a primitive (ADR-0157 item 15). After P12. | to estimate |
 | R30a | The lines of the sheet in a flat view: a query of the lines of one frame from the code of GetSheet, read off the frame thread; a switch "Lines" (key L) with a light background, dashed hidden lines, no fill and no outline of a sketch; Frame fills the free part (ADR-0162 items 2 and 3). After P0.162. TASK-0406, ADR-0166. | 2 |
 | R30b | "Add to sheet" and "Standard views" in the net of the views and in the command line; the pad of the paper and the scale; the place of a new view from the projection; the command ScaleSheetView (ADR-0162 items 4 to 6). After R30a. TASK-0407, ADR-0167. | 2 |
-| R30c | The sheet page on the desktop and the phone: the paper, the frame, the title block, the views and the values from GetSheet; a tap on a view gives "Go to", "Scale" and "Remove"; a tap on the paper places a new view; a drag keeps the alignment and sends MoveSheetViews (ADR-0162 items 1, 5 and 10). After R30b. | 2–3 |
+| R30c | The sheet page on the desktop and the phone: the paper, the frame, the title block, the views and the values from GetSheet; a tap on a view gives "Go to", "Scale" and "Remove"; a tap on the paper places a new view; a drag keeps the alignment and sends MoveSheetViews (ADR-0162 items 1, 5 and 10). After R30b. TASK-0408, ADR-0168. | 2–3 |
 | R30d | The button "Export" on the sheet page: PDF, SVG and DXF, with the save dialog of the desktop and the save or share of the phone (ADR-0162 item 9). After R30h. | 1 |
 | R30e | "Put on sheet" on a value chip of a flat view (ADR-0162 item 7). After R30h. | 1 |
 | R30f | The proposal of the agent on the sheet page: amber boxes and amber values, Accept and Reject on the arc (ADR-0162 item 8). After R30h. | 1–2 |

@@ -1,7 +1,7 @@
 ---
 id: 0408
 title: A sheet page replaces the scene with the paper of a sheet, its views and its values, and MoveSheetViews keeps the alignment of a drag
-status: Active
+status: Done
 phase: R30c
 opened: 2026-11-18
 depends-on: [0407, 0409]
@@ -75,20 +75,20 @@ places its views, and sets their lines, with taps and drags.
 
 ## Acceptance criteria
 
-- [ ] MoveSheetViews moves a view, and with `aligned` each view on a line of projection through it, in one step of undo,
+- [x] MoveSheetViews moves a view, and with `aligned` each view on a line of projection through it, in one step of undo,
       and refuses each wrong input with the codes of a view.
-- [ ] The page shows the paper of the sheet in the free part, on the desktop and on a phone, and its controls are 44 pixels
+- [x] The page shows the paper of the sheet in the free part, on the desktop and on a phone, and its controls are 44 pixels
       high and inside the display.
-- [ ] A tap on a view gives "Go to", "Scale", "Remove" and the switches of its lines; a drag gives one MoveSheetViews with the
+- [x] A tap on a view gives "Go to", "Scale", "Remove" and the switches of its lines; a drag gives one MoveSheetViews with the
       alignment; a tap on the free paper places a view.
-- [ ] The commands of the page run off the frame thread, and the page and the pad of a sheet hold their keys.
-- [ ] A run of the desktop with the plate drags the views and shows the page at phone size.
-- [ ] A clean build (`--no-incremental`) gives zero errors and zero warnings, and the phone project builds.
-- [ ] `dotnet test`, the write-set check and `eng/repo-gates` pass, and continuous integration passes on the branch.
+- [x] The commands of the page run off the frame thread, and the page and the pad of a sheet hold their keys.
+- [x] A run of the desktop with the plate drags the views and shows the page at phone size.
+- [x] A clean build (`--no-incremental`) gives zero errors and zero warnings, and the phone project builds.
+- [x] `dotnet test`, the write-set check and `eng/repo-gates` pass, and continuous integration passes on the branch.
 
 ## Outcome
 
-Status: Active
+Status: Done · branch r30c-sheet-page · v0.393
 
 ## Method
 
@@ -110,3 +110,4 @@ Weakest:    the alignment rests on exact places; the texts of the title block ar
   that closes the page), so those tests now ask a second read while the first runs, block the work while Poll returns, and
   leave the home screen; then each injection failed a test, and each file came back byte for byte (SHA-256). A clean build
   gives 0 warnings, the phone project builds, and each test project passes (2858 tests). Pushed as `r30c-sheet-page`.
+- 2026-11-18: run 44317950501 passed on the branch with its seven jobs. Closed at v0.393; the merge waits for the owner.
