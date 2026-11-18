@@ -1,7 +1,7 @@
 ---
 id: 0405
 title: Each view of a sheet shows or hides its hidden lines and its centre lines, and a whole circle reads as a diameter
-status: Active
+status: Done
 phase: R30g
 opened: 2026-11-18
 depends-on: [0403]
@@ -106,3 +106,5 @@ Weakest:    a centre line of an arc, of a sphere from the side and between the h
 - 2026-11-18: with R30a merged, `ViewLinesTests.The_Lines_Are_The_Lines_Of_The_Sheet_Moved_By_One_Shift` compared the lines
   of a sheet view, now with the axis of a hole, with the lines of a flat view, which has no centre line. The test now leaves
   the centre lines of the sheet out; a flat view shows no centre line yet.
+- 2026-11-18: the merge of `main` set the task to Active, because it changed a test of R30a; this commit closes it again
+  at v0.390.
