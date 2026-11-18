@@ -1,7 +1,7 @@
 ---
 id: 0413
 title: On the sheet page a person cuts a view with "Section", a look and two taps, and the page draws the section
-status: Active
+status: Done
 phase: R30h
 opened: 2026-11-18
 depends-on: [0411, 0412]
@@ -60,16 +60,16 @@ page draws the hatch, the cut line, the arrows and the letters as the files do.
 
 ## Acceptance criteria
 
-- [ ] Each rule has a test, each new test fails on the code before the change, and each rule has an injection that a test
+- [x] Each rule has a test, each new test fails on the code before the change, and each rule has an injection that a test
       catches.
-- [ ] A run of the desktop with the plate makes a section on the page, and a picture shows it.
-- [ ] A clean build (`--no-incremental`) gives zero errors and zero warnings, and the phone project builds.
-- [ ] `dotnet test`, the write-set check and `eng/repo-gates` pass; continuous integration passes on the branch and on
+- [x] A run of the desktop with the plate makes a section on the page, and a picture shows it.
+- [x] A clean build (`--no-incremental`) gives zero errors and zero warnings, and the phone project builds.
+- [x] `dotnet test`, the write-set check and `eng/repo-gates` pass; continuous integration passes on the branch and on
       `main` after the merge.
 
 ## Outcome
 
-Status: Active
+Status: Done · commit (the merge of the branch r30h-section-page) · v0.396
 
 ## Method
 
@@ -83,3 +83,4 @@ Weakest:    the snap uses whole circles only.
 - 2026-11-18: a run of the desktop with the plate with a hole made the section A-A on the page (picture of the window), and the
   cut snapped to the centre of the hole. Fifteen injections each failed a named test after the test took the look "Down"
   and the property PageDragging. The ledger entry corrects two placeholders of v0.395 and adds the shipped line of R30h.
+- 2026-11-18: run 44339619025 passed on the branch. Closed at v0.396; the merge waits for the owner.
