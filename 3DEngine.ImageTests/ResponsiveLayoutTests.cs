@@ -34,11 +34,13 @@ public sealed class ResponsiveLayoutTests
     }
 
     // The sizes of ADR-0113 item 1: the phones in portrait and in landscape, a tablet in both, and two windows.
+    // ADR-0163 item 2 (TASK-0404): and the smallest window of the desktop.
     public static TheoryData<int, int> Sizes => new()
     {
         { 360, 640 }, { 360, 780 }, { 384, 824 }, { 390, 844 }, { 393, 873 }, { 412, 915 },
         { 640, 360 }, { 844, 390 }, { 915, 412 },
         { 768, 1024 }, { 1024, 768 }, { 1280, 720 }, { 1440, 900 },
+        { DesktopUi.MinimumWindowWidth, DesktopUi.MinimumWindowHeight },
     };
 
     [Theory]
@@ -49,6 +51,55 @@ public sealed class ResponsiveLayoutTests
         foreach (var state in Enum.GetValues<State>())
             faults.AddRange(Faults(width, height, state).Select(fault => $"{width}x{height} {state}: {fault}"));
         Assert.True(faults.Count == 0, string.Join(Environment.NewLine, faults));
+    }
+
+    // ADR-0163 item 4 (TASK-0404): a person resizes the window of the desktop to each size from its minimum. The rule of
+    // ADR-0113 item 1 holds at each step of 8 pixels on three lines of a resize: the smallest height from the smallest width
+    // to 2560, the smallest width up to a height of 1440, and the width of a maximized window of 1920 up to 1440.
+    [Fact]
+    public void Each_Size_Of_A_Resize_From_The_Minimum_Keeps_Each_Control_Free()
+    {
+        const int Step = 8;
+        int minimumWidth = DesktopUi.MinimumWindowWidth, minimumHeight = DesktopUi.MinimumWindowHeight;
+        var sizes = new List<(int Width, int Height)>();
+        for (var width = minimumWidth; width <= 2560; width += Step)
+            sizes.Add((width, minimumHeight));
+        for (var height = minimumHeight + Step; height <= 1440; height += Step)
+        {
+            sizes.Add((minimumWidth, height));
+            sizes.Add((1920, height));
+        }
+
+        var faults = new List<string>();
+        foreach (var (width, height) in sizes)
+        {
+            foreach (var state in Enum.GetValues<State>())
+                faults.AddRange(Faults(width, height, state).Take(1).Select(fault => $"{width}x{height} {state}: {fault}"));
+        }
+        Assert.True(faults.Count == 0, $"{faults.Count} faults:{Environment.NewLine}{string.Join(Environment.NewLine, faults.Take(20))}");
+    }
+
+    // ADR-0163 item 5 (TASK-0404): the window of the images starts at x 492 in a window of 1280 by 720. After a resize to
+    // 680 by 600 it is 16 pixels inside the right edge, and after a resize back it stays where the smaller window put it.
+    [Fact]
+    public void The_Images_Window_Moves_Inside_A_Smaller_Display()
+    {
+        using var ui = new DesktopUi(string.Empty, Document.Millimetre);
+        var images = new ImagePanel([], null, 0, null);
+        Vector4 Frames(float width, float height)
+        {
+            for (var i = 0; i < 3; i++)
+                ui.Frame(1f / 60f, new Vector2(width, height), Vector2.One, [Plate, Rib], imagePanel: images);
+            return ui.ImagesRectangle ?? throw new InvalidOperationException("The window of the images was not drawn.");
+        }
+
+        var large = Frames(1280, 720);
+        Assert.Equal(492f, large.X);
+        var small = Frames(680, 600);
+        Assert.Equal(680f - 16f, small.Z, 0.5f);
+        Assert.Equal(large.Y, small.Y);
+        Assert.Equal(large.Z - large.X, small.Z - small.X, 0.5f);
+        Assert.Equal(small.X, Frames(1280, 720).X);
     }
 
     // The faults of the layout at one size in one state, after three frames.
@@ -187,7 +238,11 @@ public sealed class ResponsiveLayoutTests
     private static bool Own(Vector4 box, Vector4 r) => r.X >= box.X - 0.5f && r.X < box.Z && r.Y >= box.Y - 0.5f && r.Y < box.W;
 
     // A control that its panel scrolls out of view: in the columns of the panel, and its top at or below the bottom of it.
-    private static bool Scrolled(Vector4 panel, Vector4 r) => r.X >= panel.X - 0.5f && r.X < panel.Z && r.Y >= panel.W - 0.5f;
+    // ADR-0163 item 4 (TASK-0404): or its top in the panel and its middle at or below the bottom, so the panel clips the
+    // lower half and a tap on its visible part reaches it. Until TASK-0404 such a row under Undo and Redo was a fault at
+    // each height where the bottom of the panel cut a row, for example 1280 by 380 and 1280 by 500.
+    private static bool Scrolled(Vector4 panel, Vector4 r) => r.X >= panel.X - 0.5f && r.X < panel.Z
+        && (r.Y >= panel.W - 0.5f || (r.Y >= panel.Y - 0.5f && (r.Y + r.W) / 2f >= panel.W - 0.5f));
 
     private static bool Overlap(Vector4 p, Vector4 q) => Math.Min(p.Z, q.Z) - Math.Max(p.X, q.X) > 1f && Math.Min(p.W, q.W) - Math.Max(p.Y, q.Y) > 1f;
 
