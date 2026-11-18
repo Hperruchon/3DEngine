@@ -92,6 +92,9 @@ public sealed class NativeThreeDEngine : IThreeDEngine, IDisposable
     // Document or a new selection.
     private readonly HistoryCache _history = new();
 
+    // ADR-0166 item 2 (phase R30a, TASK-0406): the lines of the flat view, read off the thread of the frame.
+    private readonly ViewLinesCache _viewLines = new();
+
     // ADR-0120 item 2 (phase R18f, TASK-0347): the bodies that the active sketch makes, read off the frame thread as the history.
     private readonly HistoryCache _makes = new();
 
@@ -971,6 +974,17 @@ public sealed class NativeThreeDEngine : IThreeDEngine, IDisposable
         // its own file; a host with no folder of documents says nothing of a save.
         // ADR-0138 (phase R21b, TASK-0370): the view of the camera, for the cell of the net that has the colour of a tool in use.
         _ui.ShowView(Camera.Flat);
+        // ADR-0166 items 2 and 3 (phase R30a, TASK-0406): with the switch "Lines" on in a flat view, the lines of its exact frame
+        // from GetViewLines, read on the thread pool; the frame does not wait, and keeps the last lines until the new ones come.
+        if (_ui.LinesOn && ViewLines.FrameOf(Camera) is { } lineFrame)
+        {
+            var query = ViewLines.Query(lineFrame);
+            var (lines, pending) = _viewLines.Lines(version, lineFrame, () => Task.Run(async () =>
+                (await _host.Session.Query<Engine.Core.Queries.ViewLinesInfo>(query).ConfigureAwait(false)).Result));
+            _ui.ShowLines(lines is null ? [] : ViewLines.Of(lines, Camera, window.width, window.height), pending);
+        }
+        else
+            _ui.ShowLines(null);
         _ui.ShowStatus(new SessionStatus(_steps.LogCount, _host.Listeners > 0, _steps.Undo, _projects is null ? null : _host.FileName is not null));
         _cards = proposals;
         var panel = _ui.Frame((float)_delta.TotalSeconds, display, scale, _renderer.LiveBodies, Selection, LineOf(_document, _host.FileName, _documentMessage, Path.GetDirectoryName(_host.Session.FilePath), _host.Session.Kind), sketches, sketchPanel, imagePanel, dimensions, size, faceLine, ringCentre, ringSize, Inset(_window.SafeInsets), values, history, proposals, sketchValues);

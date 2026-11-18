@@ -240,6 +240,21 @@ public unsafe class SdlInputTests
             sample => Assert.Equal((InputKey.F, KeyModifiers.None), (((KeySample)sample).Key, ((KeySample)sample).Modifiers)));
     }
 
+    // ADR-0166 item 3 (phase R30a, TASK-0406): L follows the letter of the layout too; the place of L with the letter m gives no
+    // sample.
+    [Fact]
+    public void L_Follows_The_Letter_And_Not_The_Place_Of_The_Key()
+    {
+        var input = new SdlInput();
+
+        input.Translate(Letter(SDL_Scancode.SDL_SCANCODE_SEMICOLON, SDLK_L), 800, 600);
+        input.Translate(Letter(SDL_Scancode.SDL_SCANCODE_L, SDLK_M), 800, 600);
+
+        Assert.Collection(
+            input.TakeFrame(),
+            sample => Assert.Equal((InputKey.L, KeyModifiers.None), (((KeySample)sample).Key, ((KeySample)sample).Modifiers)));
+    }
+
     // ADR-0138 (phase R21b, TASK-0370): the digits of the views follow the place of the key, on the top row and on the pad, so
     // an AZERTY keyboard gives them with no Shift; 2 gives no sample.
     [Fact]
