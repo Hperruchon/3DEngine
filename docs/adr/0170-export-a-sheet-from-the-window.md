@@ -74,3 +74,4 @@ owner.
 ## History
 
 - 2026-11-18 · TASK-0412 · The controls, the dialog and the file (phase R30d).
+- 2026-11-18 · TASK-0412 · Shipped at v0.394.
