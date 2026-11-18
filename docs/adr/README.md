@@ -143,9 +143,9 @@ names. Do not read all of them.
 | [0135](0135-the-arc-of-a-proposal-on-a-portrait-display.md) | On a portrait display the arc of a proposal is at the top, and a sheet of its lines is under it | Amended | Clients, rendering | 0092, 0111, 0131 | 0141 |
 | [0136](0136-the-arc-ends-before-the-tools-and-the-caption-wraps.md) | The arc of a proposal ends before each tool of the ring, and the whole caption under it wraps | Amended | Clients, rendering | 0092, 0133 | 0139 |
 | [0137](0137-the-flat-views-of-the-camera.md) | The camera has six flat views with no perspective, and the command line gives each one | Amended | Rendering, clients | 0023 | 0138, 0139, 0140, 0141 |
-| [0138](0138-the-controls-of-the-flat-views.md) | A button "Views" opens a net of the six flat views and the 3D view, and the keys 1, 3, 7 and 0 give them | Accepted | Clients | 0100, 0127, 0137 | — |
+| [0138](0138-the-controls-of-the-flat-views.md) | A button "Views" opens a net of the six flat views and the 3D view, and the keys 1, 3, 7 and 0 give them | Amended | Clients | 0100, 0127, 0137 | 0166 |
 | [0139](0139-a-sketch-leaves-a-flat-view-and-no-tool-hides-under-the-arc.md) | A sketch leaves a flat view, and a tool under an end of the arc of a proposal hides while the proposal waits | Amended | Clients, rendering | 0136, 0137 | 0152 |
-| [0140](0140-frame-in-the-free-part-of-the-scene.md) | Frame fits the bodies in the free part of the scene, and the centre of the picture moves there | Amended | Rendering, clients | 0023, 0137 | 0145 |
+| [0140](0140-frame-in-the-free-part-of-the-scene.md) | Frame fits the bodies in the free part of the scene, and the centre of the picture moves there | Amended | Rendering, clients | 0023, 0137 | 0145, 0166 |
 | [0141](0141-the-scale-and-the-depth-of-a-flat-view.md) | A flat view has a scale of its own and a far plane behind the box, and the rows of a portrait proposal stay under the middle | Accepted | Rendering, clients | 0135, 0137 | — |
 | [0142](0142-the-edges-of-a-view-outside-the-kernel.md) | The visible and the hidden edges of a view are computed outside the owned kernel, from its faces and its edges | Amended | Kernel, drawing | — | 0143 |
 | [0143](0143-the-circles-of-a-view.md) | A view shows the circle of the design for a curved side, and an end seen from the side as one line | Amended | Kernel, drawing | 0142 | 0144, 0145, 0147, 0164 |
@@ -170,6 +170,7 @@ names. Do not read all of them.
 | [0162](0162-the-workflow-of-the-2d-views.md) | A person sees and designs the 2D views of a part in the window and on a sheet page, with the section view, the centre lines and the title block of ISO 7200 | Accepted | Drawing, window | 0118, 0157 | — |
 | [0163](0163-the-desktop-window-resizes-and-maximizes.md) | The desktop window resizes and maximizes, down to 360 by 600, and the layout follows each step of a drag | Accepted | Clients, layout | 0113 | — |
 | [0164](0164-the-findings-of-the-review-of-2026-11-17.md) | A view of a frame of any length gives the curves of the design, the files of a sheet guard each number and each name, and the analysis of a sketch keeps its time | Accepted | Drawing, sketch | 0143, 0144, 0154, 0155, 0156, 0159, 0160 | — |
+| [0166](0166-the-lines-of-the-sheet-in-a-flat-view.md) | A flat view of the window shows the lines of the sheet on a light paper, with the switch "Lines" and the key L, and Frame fills the free part | Accepted | Drawing, window | 0138, 0140 | — |
 
 ## Topics
 
