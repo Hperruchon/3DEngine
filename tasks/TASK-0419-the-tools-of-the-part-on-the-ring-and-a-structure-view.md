@@ -1,7 +1,7 @@
 ---
 id: 0419
 title: The tools of the part on the ring, a file menu, and a structure view in the place of the panel
-status: Active
+status: Done
 phase: R31a
 opened: 2026-11-19
 depends-on: [0418]
@@ -86,14 +86,14 @@ away: on the ring of the part, in the file menu, in the net of the views or in t
 
 ## Acceptance criteria
 
-- [ ] `PartRingTests` holds items 1 to 5 of ADR-0174, and an injection of each fails a test.
-- [ ] The layout test of ADR-0172 item 5 passes in its states, with the open structure view and the open file menu.
-- [ ] A clean build (`--no-incremental`) gives zero errors and zero warnings, and the phone project builds.
-- [ ] `dotnet test`, the write-set check and `eng/repo-gates` pass, and continuous integration passes on the branch.
+- [x] `PartRingTests` holds items 1 to 5 of ADR-0174, and an injection of each fails a test.
+- [x] The layout test of ADR-0172 item 5 passes in its states, with the open structure view and the open file menu.
+- [x] A clean build (`--no-incremental`) gives zero errors and zero warnings, and the phone project builds.
+- [x] `dotnet test`, the write-set check and `eng/repo-gates` pass, and continuous integration passes on the branch.
 
 ## Outcome
 
-Status: Active
+Status: Done · commit (the merge of the branch left-panel) · v0.401
 
 ## Method
 
@@ -121,3 +121,5 @@ Weakest:    the host centre of the ring of the part has no test with a real came
   display the open net of the views covered the structure view (also before R31a). The menu has an opaque ground now, with
   a picture test; the open net takes the place of the structure view and of the ring of the part, and the layout test has
   a state for it.
+- 2026-11-20: run 44631948493 passed on the branch on each of its seven jobs (be9e222). A clean build gave 0 warnings, the
+  phone project built, and dotnet test passed 2916 tests. Closed at v0.401; the merge waits for the owner.
