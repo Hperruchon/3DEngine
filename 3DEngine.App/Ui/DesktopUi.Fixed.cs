@@ -132,11 +132,12 @@ internal sealed unsafe partial class DesktopUi
 
     // ADR-0100 item 1: the texts of the segments in the room. The file name is at most as wide as the rows (V115). A path that
     // is too wide gives "..." for each middle segment first, from the second one; then it cuts the file name, then the last
-    // segment, each to at least 48 pixels.
-    internal static IReadOnlyList<string> PathFit(IReadOnlyList<string> texts, float room)
+    // segment, each to at least 48 pixels. ADR-0174 item 4 (TASK-0419): the file name and the chevron of the file menu are at
+    // most as wide as the rows together, so the file name is cut at the rows less the chevron (fileMark).
+    internal static IReadOnlyList<string> PathFit(IReadOnlyList<string> texts, float room, float fileMark = 0f)
     {
         var fitted = texts.ToArray();
-        fitted[0] = Fit(fitted[0], RowsWidth);
+        fitted[0] = Fit(fitted[0], RowsWidth - fileMark);
         float Width() => fitted.Sum(text => ImGui.CalcTextSize(text).X) + (PathSeparator * (fitted.Length - 1));
         for (var i = 1; i < fitted.Length - 1 && Width() > room; i++)
             fitted[i] = "...";
@@ -156,7 +157,10 @@ internal sealed unsafe partial class DesktopUi
     {
         var segments = PathSegments(document, body);
         var focus = Focus is not null && body is not null;
-        var texts = PathFit([.. segments.Select(segment => segment.Text)], room - FocusRoom(body));
+        // ADR-0174 item 4 (phase R31a, TASK-0419): with no selected body, the file name is the last segment, and it opens the
+        // file menu; a chevron after it shows that.
+        var menu = body is null && document is { Files: true };
+        var texts = PathFit([.. segments.Select(segment => segment.Text)], room - FocusRoom(body) - (menu ? FileMark : 0f), menu ? FileMark : 0f);
         var colours = ImGui.GetStyle().Colors;
         var list = ImGui.GetWindowDrawList();
         var quiet = ImGui.GetColorU32(colours[(int)ImGuiCol.TextDisabled]);
@@ -188,6 +192,18 @@ internal sealed unsafe partial class DesktopUi
                     _actions.Add(new PathAction(level));
                 if (ImGui.IsItemHovered())
                     list.AddRectFilled(ImGui.GetItemRectMin() - new Vector2(4f, 0f), ImGui.GetItemRectMax() + new Vector2(4f, 0f), ImGui.GetColorU32(colours[(int)ImGuiCol.ButtonHovered]), 6f);
+            }
+            else if (menu && level == PathLevel.Document)
+            {
+                size.X += FileMark;
+                if (ImGui.InvisibleButton("##pathFile", size))
+                    _fileMenuOpen = !_fileMenuOpen;
+                var (low, high) = (ImGui.GetItemRectMin(), ImGui.GetItemRectMax());
+                if (ImGui.IsItemHovered() || _fileMenuOpen)
+                    list.AddRectFilled(low - new Vector2(4f, 0f), high + new Vector2(4f, 0f), ImGui.GetColorU32(colours[(int)(_fileMenuOpen ? ImGuiCol.ButtonActive : ImGuiCol.ButtonHovered)]), 6f);
+                var chevron = new Vector2(high.X - 7f, (low.Y + high.Y) / 2f);
+                list.AddLine(chevron + new Vector2(-5f, -2.5f), chevron + new Vector2(0f, 2.5f), quiet, 2f);
+                list.AddLine(chevron + new Vector2(0f, 2.5f), chevron + new Vector2(5f, -2.5f), quiet, 2f);
             }
             else
             {
@@ -223,6 +239,9 @@ internal sealed unsafe partial class DesktopUi
             _items[TitleFolderItem] = new Vector4(ImGui.GetItemRectMin().X, ImGui.GetItemRectMin().Y + pad, ImGui.GetItemRectMax().X, ImGui.GetItemRectMax().Y - pad);
         }
     }
+
+    // ADR-0174 item 4: the room of the chevron after the file name that opens the file menu.
+    private const float FileMark = 20f;
 
     // A text with no tap, in an item as high as a segment of the path.
     private static void Label(string text, bool quiet, float pad)

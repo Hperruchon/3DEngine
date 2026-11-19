@@ -432,8 +432,9 @@ internal sealed unsafe partial class DesktopUi : IDisposable
     // belongs to the panel, so a press outside the list goes to the library, which closes the list, and the tap does not
     // reach the scene, as a list of a desktop program does. Until TASK-0252 the press went to the scene, and the list
     // stayed open.
+    // Phase R31a (TASK-0419): the open file menu acts as an open list. Until TASK-0419 the list "New" did.
     public bool OverPanel(double x, double y)
-        => _cutList is not null || _newList is not null
+        => _cutList is not null || _fileMenuOpen
             || _panels.Concat(_fixed).Any(panel => x >= panel.X && x < panel.Z && y >= panel.Y && y < panel.W) || OverRing(x, y)
             || OverValue(x, y) || OverRows(x, y) || OverHistory(x, y) || OverProposal(x, y) || OverPage(x, y);
 
@@ -616,7 +617,7 @@ internal sealed unsafe partial class DesktopUi : IDisposable
         _fixed.Clear();
         _anchorsTop = float.MaxValue;
         _cutList = null;
-        _newList = null;
+        _menuTookRelease = false;
         _items.Clear();
         _shown.Clear();
         FollowSelection(bodies, selection, sketchPanel);
@@ -676,10 +677,18 @@ internal sealed unsafe partial class DesktopUi : IDisposable
             // TASK-0418: an open pad, and open images, take the place of the panel and of the rows.
             _imagesAvailable = imagePanel is not null;
             _imagesShown = _imagesAvailable && _imagesOpen && sketchPanel?.Active is null && _pad is null && !(page && _portrait);
-            if (sketchPanel?.Active is null && !RowsShow(displaySize, selectedBody) && !(page && _portrait) && _pad is null && !_imagesShown)
-                Panel(bodies, selection, displaySize, document);
+            // Phase R31a (TASK-0419): a selection, a sketch or a pad takes the ring of the part back to its first
+            // level.
+            if (selectedBody is not null || sketchPanel?.Active is not null || _pad is not null)
+                _partLevel = PartLevel.Tools;
+            // Phase R31a (TASK-0419): the open net of the views takes the place of the structure view, which it covered on a
+            // portrait display.
+            if (sketchPanel?.Active is null && !RowsShow(displaySize, selectedBody) && !(page && _portrait) && _pad is null && !_imagesShown && !_viewsOpen)
+                Panel(bodies, displaySize, document);
             PlacePad(displaySize);
             FixedControls(displaySize, bodies, document, selectedBody);
+            // Phase R31a (TASK-0419): the file menu under the file name of the path line.
+            FileMenu(document, selectedBody);
             // ADR-0098 (TASK-0312): the command line.
             CommandLine(displaySize, bodies, selection);
             // ADR-0138 (phase R21b, TASK-0370): the net of the flat views, under the command line, before the rows, the ring and
@@ -692,7 +701,7 @@ internal sealed unsafe partial class DesktopUi : IDisposable
             // ADR-0116 item 2 (phase R20a, TASK-0341): the ring and the history arc fade while the view turns, pans or zooms.
             var dimmed = DimRing();
             var faded = FadeForGesture();
-            Ring(displaySize, bodies.FirstOrDefault(body => body.Id == selection), ringCentre, ringBody);
+            Ring(displaySize, bodies, bodies.FirstOrDefault(body => body.Id == selection), ringCentre, ringBody);
             if (faded)
                 ImGui.PopStyleVar();
             if (dimmed)

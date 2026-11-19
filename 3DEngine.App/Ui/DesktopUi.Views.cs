@@ -176,6 +176,7 @@ internal sealed unsafe partial class DesktopUi
             Item(LinesItem);
             if (_items.TryGetValue(LinesItem, out var switchBox))
                 ImGui.GetWindowDrawList().AddRect(new Vector2(switchBox.X + 1f, switchBox.Y + 1f), new Vector2(switchBox.Z - 1f, switchBox.W - 1f), ImGui.GetColorU32(on ? ImGuiCol.ButtonActive : ImGuiCol.Border), ImGui.GetStyle().FrameRounding, ImDrawFlags.None, Theme.OutlineWidth);
+            DimensionSwitches(cell, accent);
             SheetRow(cell);
 
             ImGui.PopStyleVar();
@@ -186,6 +187,57 @@ internal sealed unsafe partial class DesktopUi
         ImGui.End();
         ImGui.PopStyleVar();
     }
+
+    // ADR-0174 item 5 (phase R31a, TASK-0419): "Dimensions" at the left of "Bottom" and "Hidden too" at its right, on the row of
+    // "Lines". Each has the colour of a tool in use while it is on, and "Hidden too" is disabled while "Dimensions" is off. A tap
+    // changes the switch and does not close the net. The text of a cell that is too wide gets smaller, to 0.6 of the font at
+    // least, with the narrow inner margin of a key of the pad: a cell of a phone of 360 pixels is 79 pixels wide, and "Dimensions"
+    // needs 0.64 there. Until TASK-0419 the panel held the two toggles (ADR-0056 item 2).
+    private void DimensionSwitches(Vector2 cell, Vector4 accent)
+    {
+        foreach (var (column, label) in new[] { (DimensionsColumn, DimensionsLabel), (HiddenTooColumn, HiddenTooLabel) })
+        {
+            ImGui.SetCursorPos(new Vector2(column * (cell.X + ViewGap), LinesRow * (cell.Y + ViewGap)));
+            var dimensions = label == DimensionsLabel;
+            var on = dimensions ? _dimensions : _hiddenToo;
+            ImGui.BeginDisabled(!dimensions && !_dimensions);
+            if (on)
+                ImGui.PushStyleColor(ImGuiCol.Button, accent with { W = 0.3f });
+            ImGui.PushStyleVar(ImGuiStyleVar.FramePadding, new Vector2(PadKeyMargin, ImGui.GetStyle().FramePadding.Y));
+            ImGui.SetWindowFontScale(Math.Clamp((cell.X - (2f * PadKeyMargin)) / Math.Max(ImGui.CalcTextSize(label).X, 1f), ViewSwitchLeastScale, 1f));
+            var pressed = ImGui.Button($"{label}##View", cell);
+            ImGui.SetWindowFontScale(1f);
+            ImGui.PopStyleVar();
+            if (pressed)
+            {
+                if (dimensions)
+                    _dimensions = !_dimensions;
+                else
+                    _hiddenToo = !_hiddenToo;
+            }
+
+            if (on)
+                ImGui.PopStyleColor();
+            ImGui.EndDisabled();
+            Item(label);
+            if (_items.TryGetValue(label, out var box))
+                ImGui.GetWindowDrawList().AddRect(new Vector2(box.X + 1f, box.Y + 1f), new Vector2(box.Z - 1f, box.W - 1f), ImGui.GetColorU32(on ? ImGuiCol.ButtonActive : ImGuiCol.Border), ImGui.GetStyle().FrameRounding, ImDrawFlags.None, Theme.OutlineWidth);
+        }
+    }
+
+    // ADR-0174 item 5: the width that the text of a switch needs in its cell at the least scale, with the padding, for a test.
+    internal float ViewCellNeed(string label)
+    {
+        ImGui.SetCurrentContext(_context);
+        return (ImGui.CalcTextSize(label).X * ViewSwitchLeastScale) + (2f * PadKeyMargin);
+    }
+
+    // ADR-0174 item 5: the least scale of the text of a switch.
+    internal const float ViewSwitchLeastScale = 0.6f;
+
+    // ADR-0174 item 5: the columns of the two switches on the row of "Lines".
+    internal const int DimensionsColumn = 0;
+    internal const int HiddenTooColumn = 2;
 
     // ADR-0140 item 2 (phase R21c, TASK-0372): the display of the last frame, for the free part of the scene.
     private Vector2 _frameDisplay;

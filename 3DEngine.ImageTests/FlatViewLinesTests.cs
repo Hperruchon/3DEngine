@@ -178,7 +178,8 @@ public sealed class FlatViewLinesTests
     }
 
     // Item 3: with lines, the paper lies on the free part of the scene of the last frame, right of the panel and above the
-    // anchors, and the outline of a sketch does not show; with no lines there is no paper and the sketch shows.
+    // anchors, and the outline of a sketch does not show; with no lines there is no paper and the sketch shows. ADR-0174 item 3
+    // (TASK-0419): the folded structure view is one row under the top bar, so the paper lies under it.
     [Fact]
     public void The_Paper_Lies_On_The_Free_Part_And_Hides_The_Sketch()
     {
@@ -199,7 +200,8 @@ public sealed class FlatViewLinesTests
         Assert.Equal((free.X1 + 1) / 2 * Width, paper.Z, 1);
         Assert.Equal((1 - free.Y1) / 2 * Height, paper.Y, 1);
         Assert.Equal((1 - free.Y0) / 2 * Height, paper.W, 1);
-        Assert.True(paper.X > Width / 4f && paper.W <= Height - 64f, $"The paper {paper} is not right of the panel and above the anchors.");
+        var folded = ui.PanelRectangles[0];
+        Assert.True(paper.Y >= folded.W && paper.W <= Height - 64f, $"The paper {paper} is not under the folded structure view {folded} and above the anchors.");
         Assert.False(ui.SketchesShown, "The outline of a sketch shows over the lines.");
 
         ui.ShowLines(null);
@@ -324,12 +326,15 @@ public sealed class FlatViewLinesTests
 
         // Each wall of the hole is dashed: along it, some pixels are dark and some are paper. A line of 1 pixel between two
         // pixels gives each of them about half of the ink, so a dark pixel is darker than the middle of the ink and the paper.
+        // A wall is vertical, so the darkest pixel is taken across it only: a block of 3 by 3 made each dash 2 pixels longer
+        // and each gap of 4 pixels 2 pixels shorter, and the count of the paper depended on the place of the dashes. ADR-0174
+        // (TASK-0419) gave the plate a larger frame, and that count fell to 32 of 168 at x = 12.
         foreach (var x in new[] { 12.0, 28.0 })
         {
             var (a, b) = (Pixel((x, 0, 0.5)), Pixel((x, 0, 9.5)));
             var samples = Enumerable.Range(0, (int)Vector2.Distance(a, b)).Select(i => Vector2.Lerp(a, b, i / Vector2.Distance(a, b))).ToList();
-            var ink = samples.Count(p => Darkest(lined, p) is var c && c.R + c.G + c.B < 550);
-            var paper = samples.Count(p => Near(Darkest(lined, p), Theme.Paper));
+            var ink = samples.Count(p => DarkestAcross(lined, p) is var c && c.R + c.G + c.B < 550);
+            var paper = samples.Count(p => Near(DarkestAcross(lined, p), Theme.Paper));
             Assert.True(ink > samples.Count / 4 && paper > samples.Count / 5, $"The picture {picture}: the wall at x = {x} has {ink} ink and {paper} paper of {samples.Count}.");
         }
 
@@ -343,6 +348,10 @@ public sealed class FlatViewLinesTests
         Assert.True(Enumerable.Range(1, 4).Any(i => Darkest(lined, Pixel((20, 0, -0.5 * i))) is var c && c.R + c.G + c.B < 550), $"The picture {picture}: the axis does not go past the bottom edge.");
 
         // The darkest pixel within one pixel across, so a line of 1 pixel between two pixels is found.
+        // The darkest of a pixel and its left and right neighbours.
+        (byte R, byte G, byte B) DarkestAcross(byte[] pixels, Vector2 p)
+            => new[] { -1, 0, 1 }.Select(dx => At(pixels, p + new Vector2(dx, 0))).MinBy(c => c.R + c.G + c.B);
+
         (byte R, byte G, byte B) Darkest(byte[] pixels, Vector2 p)
         {
             var best = At(pixels, p);

@@ -23,6 +23,14 @@ internal sealed unsafe partial class DesktopUi
     {
         SetDistanceLabel => "Distance",
         SketchOnFaceButtonLabel => "Sketch",
+        // ADR-0174 item 2 (phase R31a, TASK-0419): the second level of the ring of the part gives the kind or the plane only.
+        NewBoxLabel => "Box",
+        NewCylinderLabel => "Cylinder",
+        NewConeLabel => "Cone",
+        NewSphereLabel => "Sphere",
+        NewTorusLabel => "Torus",
+        SketchOnFaceLabel => "Face",
+        _ when NewSketchButtons.Any(button => button.Label == label) => label[^2..],
         _ => label,
     };
 
@@ -53,7 +61,7 @@ internal sealed unsafe partial class DesktopUi
 
     // The labels that RingIcon draws an icon for. A kind of a constraint has none, so it keeps the plate of a wide label.
     private static readonly HashSet<string> RingIconLabels =
-        [EditSketchLabel, RenameLabel, DimensionsLabel, NextPointLabel, ExtrudeLabel, MoveLabel, SetDistanceLabel, HideLabel, ShowLabel, SketchOnFaceButtonLabel, LineToolLabel, SelectToolLabel, CircleToolLabel, ArcToolLabel, ConstrainLabel, FinishLabel, BackLabel];
+        [EditSketchLabel, RenameLabel, DimensionsLabel, NextPointLabel, ExtrudeLabel, MoveLabel, SetDistanceLabel, HideLabel, ShowLabel, SketchOnFaceButtonLabel, LineToolLabel, SelectToolLabel, CircleToolLabel, ArcToolLabel, ConstrainLabel, FinishLabel, BackLabel, NewLabel, PartSketchLabel, BodiesLabel, PartImagesLabel];
 
     // The icon of a segment, drawn with the draw list at its centre: none for a label with no icon.
     private static bool RingIcon(ImDrawListPtr list, string label, Vector2 c, uint ink)
@@ -153,6 +161,25 @@ internal sealed unsafe partial class DesktopUi
                 list.AddLine(c + new Vector2(h, 0f), c - new Vector2(h, 0f), ink, w);
                 list.AddLine(c - new Vector2(h, 0f), c + new Vector2(-h * 0.3f, -h * 0.6f), ink, w);
                 list.AddLine(c - new Vector2(h, 0f), c + new Vector2(-h * 0.3f, h * 0.6f), ink, w);
+                return true;
+            // ADR-0174 item 1 (phase R31a, TASK-0419): the tools of the part: a plus, a pencil, three rows and a picture.
+            case NewLabel:
+                list.AddLine(c - new Vector2(h, 0f), c + new Vector2(h, 0f), ink, w);
+                list.AddLine(c - new Vector2(0f, h), c + new Vector2(0f, h), ink, w);
+                return true;
+            case PartSketchLabel:
+                list.AddLine(c + new Vector2(-h, h), c + new Vector2(h * 0.6f, -h * 0.6f), ink, w);
+                list.AddLine(c + new Vector2(h * 0.6f, -h * 0.6f), c + new Vector2(h, -h * 0.2f), ink, w);
+                list.AddLine(c + new Vector2(-h, h), c + new Vector2(-h * 0.6f, h * 0.2f), ink, w);
+                return true;
+            case BodiesLabel:
+                foreach (var y in new[] { -h * 0.7f, 0f, h * 0.7f })
+                    list.AddLine(c + new Vector2(-h, y), c + new Vector2(h, y), ink, w);
+                return true;
+            case PartImagesLabel:
+                list.AddRect(c - new Vector2(h, h * 0.8f), c + new Vector2(h, h * 0.8f), ink, 2f, ImDrawFlags.None, w);
+                list.AddLine(c + new Vector2(-h, h * 0.6f), c + new Vector2(-h * 0.2f, -h * 0.1f), ink, w);
+                list.AddLine(c + new Vector2(-h * 0.2f, -h * 0.1f), c + new Vector2(h, h * 0.6f), ink, w);
                 return true;
             default:
                 return false;

@@ -7,7 +7,7 @@ date: 2026-11-08
 supersedes: []
 superseded-by: []
 amends: ['0080']
-amended-by: ['0099', '0100', '0113', '0124', '0127']
+amended-by: ['0099', '0100', '0113', '0124', '0127', '0174']
 affects:
   - 3DEngine.App/Ui/DesktopUi.Fixed.cs
   - 3DEngine.App/Ui/DesktopUi.Panel.cs
@@ -54,7 +54,8 @@ The owner chose the slice and its merge after green CI; the recommendation answe
    saved" while it is in the folder of the unsaved documents; a host with no folder of documents gives the unit alone.
 2. **The panel with no chrome.** The panel has no title bar, no ground and no border. It stays under the top bar, 8 pixels
    below it; the person does not move it, fold it or size it. Its height is the height of its content in the last frame, up
-   to the room above the anchors, and it scrolls past that room. The room under it is the scene.
+   to the room above the anchors, and it scrolls past that room. The room under it is the scene. ADR-0174 item 3
+   (TASK-0419) makes the panel the structure view, with the ground of a window; until TASK-0419 it had no ground.
 3. **The status line (amends ADR-0080).** At the lower right, on the row of the anchors, in JetBrains Mono: the count of
    the live bodies, "all correct" or the count that failed, and the address of the surface.
    It starts at least 12 pixels right of the anchors (Undo, Redo, Frame and Home) with the text that fits there: the whole
@@ -96,3 +97,4 @@ ground of the theme. The person can no longer move the panel out of the way. The
   and the list of the hidden bodies that it opens.
 - 2026-11-12 · TASK-0354 · ADR-0127 amends items 1 and 3: "saved" or "not saved" in the top bar, and the log and the
   agent in the status line.
+- 2026-11-19 · TASK-0419 · ADR-0174 item 3 amends item 2: the panel is the structure view, with the ground of a window.
