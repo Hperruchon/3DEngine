@@ -20,26 +20,38 @@ public class DesktopUiTests
     // of the selected body on a portrait display.
     private static readonly Vector2 Display = new(720, 1280);
 
+    // ADR-0174 item 3 (TASK-0419): the filter of the structure view shows from eight bodies, so the list has six cones after
+    // the box and the solid.
     private static readonly LiveBody[] Bodies =
     [
         new(Guid.Parse("11111111-0000-0000-0000-000000000000"), "Box", null, true),
         new(Guid.Parse("22222222-0000-0000-0000-000000000000"), "Solid", null, true),
+        .. Enumerable.Range(1, DesktopUi.FilterFrom - 2).Select(i => new LiveBody(Guid.Parse($"cccccccc-0000-0000-0000-{i:D12}"), "Cone", null, true)),
     ];
 
     private static IReadOnlyList<InputSample> Step(DesktopUi ui, params InputSample[] frame) => StepWith(ui, null, frame);
 
     // One frame with this selection (ADR-0029 item 7).
     private static IReadOnlyList<InputSample> StepWith(DesktopUi ui, Guid? selection, params InputSample[] frame)
+        => StepOf(ui, Bodies, selection, frame);
+
+    private static IReadOnlyList<InputSample> StepOf(DesktopUi ui, IReadOnlyList<LiveBody> bodies, Guid? selection, params InputSample[] frame)
     {
         var intents = ui.Route(frame);
-        ui.Frame(1f / 60f, Display, Vector2.One, Bodies, selection, ringCentre: Display / 2f, ringBody: 120f);
+        ui.Frame(1f / 60f, Display, Vector2.One, bodies, selection, ringCentre: Display / 2f, ringBody: 120f);
         return intents;
     }
 
-    // Two frames, so that the panel has its layout and its rectangles.
+    // The bodies with the first one hidden, so the structure view gives "Show all" (ADR-0174 item 3).
+    private static LiveBody[] FirstHidden => [Bodies[0] with { Visible = false }, .. Bodies[1..]];
+
+    // Two frames, so that the panel has its layout and its rectangles. ADR-0174 item 3 (TASK-0419): with the structure view
+    // open, and a third frame for its height.
     private static DesktopUi Opened()
     {
         var ui = new DesktopUi("http://127.0.0.1:5180", Engine.Contracts.Document.Millimetre);
+        ui.OpenStructure();
+        Step(ui);
         Step(ui);
         Step(ui);
         return ui;
@@ -88,7 +100,7 @@ public class DesktopUiTests
     public void Typed_Text_Reaches_The_Filter_And_Filters_The_Bodies()
     {
         using var ui = Opened();
-        Assert.Equal(2, ui.ShownBodies.Count);
+        Assert.Equal(Bodies.Length, ui.ShownBodies.Count);
 
         Type(ui, "solid");
 
@@ -110,7 +122,7 @@ public class DesktopUiTests
         Tap(ui, kind, Centre(ui, DesktopUi.ClearLabel));
 
         Assert.Equal(string.Empty, ui.Filter);
-        Assert.Equal(2, ui.ShownBodies.Count);
+        Assert.Equal(Bodies.Length, ui.ShownBodies.Count);
     }
 
     [Theory]
@@ -237,9 +249,12 @@ public class DesktopUiTests
 
         Rename(ui, "Plate", selected);
         Tap(ui, DeviceKind.Mouse, Centre(ui, DesktopUi.RingItem(DesktopUi.HideLabel)), selected);
-        Step(ui);
-        Step(ui);
-        Tap(ui, DeviceKind.Mouse, Centre(ui, DesktopUi.ShowAllLabel));
+        // ADR-0174 item 3 (TASK-0419): "Show all" shows while a body is hidden.
+        for (var i = 0; i < 3; i++)
+            StepOf(ui, FirstHidden, null);
+        var showAll = Centre(ui, DesktopUi.ShowAllLabel);
+        StepOf(ui, FirstHidden, null, Pointer(DeviceKind.Mouse, showAll, PointerPhase.Down));
+        StepOf(ui, FirstHidden, null, Pointer(DeviceKind.Mouse, showAll, PointerPhase.Up));
 
         Assert.Equal(
             [new RenameBodyAction(selected, "Plate"), new SetVisibleAction(selected, false), new ShowAllAction()],
@@ -267,7 +282,9 @@ public class DesktopUiTests
     public void Each_Row_And_Each_Control_Of_The_Selection_Is_At_Least_44_Pixels_High()
     {
         using var ui = Opened();
-        foreach (var label in new[] { DesktopUi.RowText(Bodies[0]), DesktopUi.ShowAllLabel })
+        StepOf(ui, FirstHidden, null);
+        StepOf(ui, FirstHidden, null);
+        foreach (var label in new[] { DesktopUi.RowText(FirstHidden[0]), DesktopUi.ShowAllLabel })
         {
             var rectangle = ui.ItemRectangle(label) ?? throw new InvalidOperationException($"The panel has no control {label}.");
             Assert.True(rectangle.W - rectangle.Y >= DesktopUi.MinimumControlHeight, $"{label} is {rectangle.W - rectangle.Y} pixels high.");

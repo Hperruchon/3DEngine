@@ -69,7 +69,7 @@ names. Do not read all of them.
 | [0053](0053-desktop-sketch-on-a-face.md) | The desktop starts a sketch on a face, and draws a sketch on a datum of the Document | Amended | Desktop, sketch, feature graph | 0029, 0034, 0051 | 0059 |
 | [0054](0054-ordered-feature-list.md) | The ordered feature list, a fold of the log | Amended | Feature graph, runtime | 0039 | 0055 |
 | [0055](0055-regeneration.md) | The regeneration of the features after an edit | Amended | Feature graph, geometry, runtime | 0037, 0039, 0054 | 0059 |
-| [0056](0056-dimension-overlay.md) | The dimension overlay of the desktop | Amended | Desktop, renderer | — | 0125 |
+| [0056](0056-dimension-overlay.md) | The dimension overlay of the desktop | Amended | Desktop, renderer | — | 0125, 0174 |
 | [0057](0057-planar-subtract-in-the-owned-kernel.md) | The exact planar subtract of the owned kernel, with the provenance of each face | Amended | Kernel, geometry, determinism | — | 0058 |
 | [0058](0058-the-engine-reads-the-owned-kernel.md) | The engine reads the owned kernel for the faces of a body | Amended | Kernel, geometry, queries | 0057 | 0059, 0112 |
 | [0059](0059-references-by-the-identity-of-a-face.md) | The references by the identity of a face, and a datum on a face that a cut removed | Amended | Kernel, feature graph, sketch | 0051, 0053, 0055, 0058 | 0112 |
@@ -81,12 +81,12 @@ names. Do not read all of them.
 | [0073](0073-the-phone-cuts-and-keeps-its-document.md) | The person cuts a body in the panel, and the phone keeps its document through the background | Amended | Clients, platform | — | 0079 |
 | [0074](0074-the-probe-of-determinism-is-in-the-engine.md) | The probe of the determinism hash is a part of the engine, and the phone runs it | Accepted | Determinism, platform | — | — |
 | [0075](0075-a-second-tap-selects-the-face.md) | A second tap on the selected body selects the face under the point | Amended | Clients, selection | 0029 | 0077, 0100 |
-| [0076](0076-the-cylinder.md) | The cylinder is a primitive of plane facets | Accepted | Geometry, kernel | 0032 | — |
+| [0076](0076-the-cylinder.md) | The cylinder is a primitive of plane facets | Amended | Geometry, kernel | 0032 | 0174 |
 | [0077](0077-a-tap-near-an-edge-selects-the-edge.md) | An edge is named by its two faces, and a tap near an edge of the selected face selects it | Amended | Clients, selection, kernel | 0075 | 0100 |
 | [0078](0078-the-theme-of-the-redesign.md) | The desktop and the phone take the theme "Proposed (harmonized)" of the redesign | Amended | Clients, rendering | — | 0091, 0108 |
 | [0079](0079-the-activity-may-start-again.md) | The activity of the phone may start again in its process | Accepted | Clients, platform | 0073 | — |
 | [0080](0080-the-fixed-controls-of-the-redesign.md) | The title of the document, Undo, Redo and the status line are fixed controls of the redesign | Amended | Clients, rendering | 0030, 0031 | 0093 |
-| [0081](0081-the-tool-ring-of-the-redesign.md) | The tools of the selected body are the segments of a ring that follows it | Amended | Clients, rendering | — | 0084, 0086, 0095, 0101, 0108, 0113, 0116, 0119, 0132 |
+| [0081](0081-the-tool-ring-of-the-redesign.md) | The tools of the selected body are the segments of a ring that follows it | Amended | Clients, rendering | — | 0084, 0086, 0095, 0101, 0108, 0113, 0116, 0119, 0132, 0174 |
 | [0082](0082-the-values-on-the-edges-of-the-redesign.md) | A value that a command changes sits on the edge of the selected body that it measures | Amended | Clients, rendering | — | 0084, 0115, 0146 |
 | [0083](0083-the-mesh-body-and-the-stl-import.md) | An STL file opens as a mesh body of a new part, through one import command | Amended | Geometry, contract, clients | 0044, 0045, 0048 | 0102, 0127 |
 | [0084](0084-the-rows-of-the-selected-body.md) | The data of the selected body is in rows with no panel at the upper right | Amended | Clients, rendering | 0034, 0081, 0082 | 0098, 0099, 0117, 0131 |
@@ -98,16 +98,16 @@ names. Do not read all of them.
 | [0090](0090-the-answer-of-a-save-lists-its-warnings.md) | The HTTP answer of a save lists its warnings | Accepted | Surface, persistence | 0030 | — |
 | [0091](0091-the-fonts-of-the-redesign.md) | The interface draws with Instrument Sans, and a value on an edge with JetBrains Mono | Amended | Clients, rendering | 0027, 0078 | 0117 |
 | [0092](0092-an-agent-proposes-and-the-person-accepts.md) | An agent proposes commands, and the person accepts or rejects them | Amended | Surface, clients | — | 0107, 0108, 0110, 0111, 0113, 0130, 0133, 0134, 0135, 0136 |
-| [0093](0093-the-layout-of-the-mix-has-no-panel-chrome.md) | The layout of the mix has a top bar, a panel with no chrome and a status line at the lower right | Amended | Clients, rendering | 0080 | 0099, 0100, 0113, 0124, 0127 |
+| [0093](0093-the-layout-of-the-mix-has-no-panel-chrome.md) | The layout of the mix has a top bar, a panel with no chrome and a status line at the lower right | Amended | Clients, rendering | 0080 | 0099, 0100, 0113, 0124, 0127, 0174 |
 | [0094](0094-a-framed-part-fills-45-percent-of-the-picture.md) | A framed part fills 45 % of the half picture, as in the render of the mix | Accepted | Clients, rendering | 0025 | — |
 | [0095](0095-the-look-of-the-orbit-ring.md) | The ring has the look of the orbit of the render, with a guide, icons and a caption | Amended | Clients, rendering | 0081, 0086 | 0108 |
 | [0096](0096-the-camera-of-the-session-has-z-up.md) | The camera of the session has the z axis up, as the render of the mix draws a part | Accepted | Clients, rendering | 0023, 0034 | — |
 | [0097](0097-the-rows-of-a-sketch-take-the-place-of-the-panel.md) | The rows of an active sketch take the place of the panel, and its ring is on the right | Amended | Clients, sketch | 0034, 0086, 0087 | 0120, 0172 |
 | [0098](0098-the-command-line.md) | The command line at the upper right runs the commands of the state with Control and K | Amended | Clients, rendering | 0032, 0084 | 0099, 0101, 0108, 0113, 0119, 0120, 0127, 0128 |
 | [0099](0099-the-rows-of-a-selected-body-take-the-place-of-the-panel.md) | The rows of a selected body take the place of the panel at the upper left | Amended | Clients, rendering | 0084, 0093, 0098 | 0100, 0117, 0131, 0172 |
-| [0100](0100-a-path-line-from-the-document-to-the-selection.md) | A path line from the document to the selection, and the rows of the document | Amended | Clients, selection | 0075, 0077, 0093, 0099, 0102 | 0101, 0138 |
+| [0100](0100-a-path-line-from-the-document-to-the-selection.md) | A path line from the document to the selection, and the rows of the document | Amended | Clients, selection | 0075, 0077, 0093, 0099, 0102 | 0101, 0138, 0174 |
 | [0101](0101-a-focus-on-one-body.md) | A focus on one body is a state of the client that draws one body and writes nothing to the log | Accepted | Clients, selection | 0081, 0098, 0100 | — |
-| [0102](0102-a-project-in-any-folder.md) | The window opens and saves a project in any folder, through the dialogs of the system | Amended | Persistence, clients | 0030, 0083 | 0100, 0106 |
+| [0102](0102-a-project-in-any-folder.md) | The window opens and saves a project in any folder, through the dialogs of the system | Amended | Persistence, clients | 0030, 0083 | 0100, 0106, 0174 |
 | [0103](0103-the-vision-library-stays-in-the-spike-on-opencvsharp5.md) | The vision library stays in the spike, on OpenCvSharp5 | Accepted | Vision | 0042 | — |
 | [0104](0104-the-history-arc.md) | The history arc shows the steps that made the selected body | Amended | Clients, rendering | — | 0116, 0119, 0123, 0130, 0172 |
 | [0105](0105-the-values-on-the-edges-of-an-active-sketch.md) | The values of an active sketch show on its edges | Amended | Clients, rendering | — | 0115 |
@@ -177,7 +177,8 @@ names. Do not read all of them.
 | [0169](0169-the-section-view-of-a-sheet.md) | A section of a sheet is a view with a cut plane, a parent and a letter, and the read gives its hatch, its cut line and its label | Amended | Contracts, drawing | 0153, 0155, 0159, 0160, 0161, 0165 | 0171 |
 | [0170](0170-export-a-sheet-from-the-window.md) | The sheet page and the command line export a sheet as PDF, SVG or DXF through the save dialog of the system, off the frame thread | Accepted | Drawing, window, export | 0168 | — |
 | [0171](0171-the-section-action-of-the-sheet-page.md) | On the sheet page a person cuts a view with "Section", a look and two taps, and the page draws the section as the files do | Accepted | Drawing, window | 0155, 0168, 0169 | — |
-| [0172](0172-the-layout-of-small-windows-and-of-each-state.md) | The layout of small windows and of each state, down to 360 by 560 | Accepted | Clients, layout | 0097, 0099, 0104, 0113, 0163 | — |
+| [0172](0172-the-layout-of-small-windows-and-of-each-state.md) | The layout of small windows and of each state, down to 360 by 560 | Amended | Clients, layout | 0097, 0099, 0104, 0113, 0163 | 0174 |
+| [0174](0174-the-tools-of-the-part-on-the-ring-and-a-structure-view.md) | The tools of the part on the ring, a file menu, and a structure view in the place of the panel | Accepted | Clients, layout | 0056, 0076, 0081, 0093, 0100, 0102, 0172 | — |
 
 ## Topics
 

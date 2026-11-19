@@ -42,6 +42,7 @@ public sealed class NumericPadUiTests
         var ui = new DesktopUi("http://127.0.0.1:5180", unit);
         Step(ui, selection);
         Step(ui, selection);
+        Step(ui, selection);
         return ui;
     }
 
@@ -61,11 +62,12 @@ public sealed class NumericPadUiTests
         Step(ui, selection);
     }
 
-    // Phase K5b (ADR-0076 item 7, TASK-0244): a tap on the list "New", and then a tap on its entry.
+    // Phase K5b (ADR-0076 item 7, TASK-0244): a tap on the list "New", and then a tap on its entry. ADR-0174 item 2 (TASK-0419):
+    // a tap on "New" of the ring of the part, and then on the kind of its second level.
     private static void OpenFromNew(DesktopUi ui, DeviceKind kind, string entry, Guid? selection = null)
     {
-        Tap(ui, kind, DesktopUi.NewLabel, selection);
-        Tap(ui, kind, entry, selection);
+        Tap(ui, kind, DesktopUi.RingTextItem(DesktopUi.NewLabel), selection);
+        Tap(ui, kind, DesktopUi.RingTextItem(entry), selection);
     }
 
     private static DesktopUi WithNewBoxPad()
@@ -227,12 +229,15 @@ public sealed class NumericPadUiTests
         var sketch = new SketchInfo(id, Datums.XY.Id, null, [new SketchPoint(id, 0, 0)], [], [], [], [], true, 0);
         SketchPanel? panel = bySketch ? new SketchPanel([sketch], sketch, SketchToolKind.Line, true, [], null) : null;
         void Draw() => ui.Frame(1f / 60f, display, Vector2.One, [Body], null, null, null, panel);
+        // ADR-0174 item 1 (TASK-0419): the ring of the part takes its place from the third frame.
+        Draw();
+        Draw();
         Draw();
         if (bySketch)
             ui.OpenNextPointPad(chainOpen: true);
         else
         {
-            foreach (var item in new[] { DesktopUi.NewLabel, DesktopUi.NewBoxLabel })
+            foreach (var item in new[] { DesktopUi.RingTextItem(DesktopUi.NewLabel), DesktopUi.RingTextItem(DesktopUi.NewBoxLabel) })
             {
                 var at = ui.ItemRectangle(item) ?? throw new InvalidOperationException($"The panel has no {item}.");
                 var (x, y) = ((at.X + at.Z) / 2, (at.Y + at.W) / 2);
@@ -337,7 +342,8 @@ public sealed class NumericPadUiTests
 
         Draw();
         Draw();
-        foreach (var item in new[] { DesktopUi.NewLabel, DesktopUi.NewBoxLabel })
+        Draw();
+        foreach (var item in new[] { DesktopUi.RingTextItem(DesktopUi.NewLabel), DesktopUi.RingTextItem(DesktopUi.NewBoxLabel) })
         {
             var box = Centre(ui, item);
             Draw(new PointerSample(DeviceKind.Mouse, 1, 0, box.X, box.Y, 1, PointerButtons.Left, KeyModifiers.None, PointerPhase.Down, 0));
@@ -364,16 +370,16 @@ public sealed class NumericPadUiTests
     public void New_Cylinder_Opens_A_Pad_Of_Two_Values_And_An_Apply_Gives_Them(DeviceKind kind)
     {
         using var ui = Opened();
-        Tap(ui, kind, DesktopUi.NewLabel);
+        Tap(ui, kind, DesktopUi.RingTextItem(DesktopUi.NewLabel));
         foreach (var entry in new[] { DesktopUi.NewBoxLabel, DesktopUi.NewCylinderLabel })
         {
-            var rectangle = ui.ItemRectangle(entry) ?? throw new InvalidOperationException($"The list has no {entry}.");
+            var rectangle = ui.RingTarget(entry) ?? throw new InvalidOperationException($"The ring has no {entry}.");
             Assert.True(rectangle.W - rectangle.Y >= DesktopUi.MinimumControlHeight, $"{entry} is {rectangle.W - rectangle.Y} pixels high.");
 
-            // The open list is a rectangle of the panels, so a tap on it does not reach the scene.
+            // ADR-0174 item 2 (TASK-0419): the target of a kind on the ring takes the tap, so a tap on it does not reach the scene.
             Assert.True(ui.OverPanel((rectangle.X + rectangle.Z) / 2, (rectangle.Y + rectangle.W) / 2), $"{entry} is outside the panels.");
         }
-        Tap(ui, kind, DesktopUi.NewCylinderLabel);
+        Tap(ui, kind, DesktopUi.RingTextItem(DesktopUi.NewCylinderLabel));
         Assert.Equal(DesktopUi.NewCylinderLabel, ui.Pad?.Title);
         Step(ui, null);
 
@@ -402,12 +408,12 @@ public sealed class NumericPadUiTests
         foreach (var (entry, fields, action) in cases)
         {
             using var ui = Opened();
-            Tap(ui, kind, DesktopUi.NewLabel);
-            var rectangle = ui.ItemRectangle(entry) ?? throw new InvalidOperationException($"The list has no {entry}.");
+            Tap(ui, kind, DesktopUi.RingTextItem(DesktopUi.NewLabel));
+            var rectangle = ui.RingTarget(entry) ?? throw new InvalidOperationException($"The ring has no {entry}.");
             Assert.True(rectangle.W - rectangle.Y >= DesktopUi.MinimumControlHeight, $"{entry} is {rectangle.W - rectangle.Y} pixels high.");
             Assert.True(ui.OverPanel((rectangle.X + rectangle.Z) / 2, (rectangle.Y + rectangle.W) / 2), $"{entry} is outside the panels.");
 
-            Tap(ui, kind, entry);
+            Tap(ui, kind, DesktopUi.RingTextItem(entry));
             Assert.Equal(entry, ui.Pad?.Title);
             Assert.Equal(fields, ui.Pad!.Fields.Select(field => field.Name));
             Step(ui, null);

@@ -8,21 +8,21 @@ namespace ThreeDEngine.Desktop.Ui;
 // DesktopUi. Until TASK-0234 it was in DesktopUi.cs; no line changed in the split.
 internal sealed unsafe partial class DesktopUi
 {
-    private void Panel(IReadOnlyList<LiveBody> bodies, Guid? selection, Vector2 displaySize, DocumentLine? document)
+    // ADR-0174 item 3 (phase R31a, TASK-0419): the structure view, in the place of the panel on each display. Until TASK-0419
+    // the panel held the file, the list "New", "Sketch on", the toggles of the dimensions, the list of the bodies and "Show
+    // all"; the ring of the part, the file menu and the net of the views hold them now.
+    private void Panel(IReadOnlyList<LiveBody> bodies, Vector2 displaySize, DocumentLine? document)
     {
         // Finding V114 of the codebase review of 2026-11-06 (e) (TASK-0252): a constraint ends the height of the panel above
         // the anchors, and each frame keeps its place between the top of the safe area and the row of the anchors (see
-        // KeepAboveAnchors), so a drag of the panel or a smaller display does not cover Undo and Redo. Until TASK-0252 the
-        // place and the size took the first frame only, and a panel over the anchors took each tap on them. Finding V150 of
-        // the codebase review of 2026-11-08 (c) (TASK-0311): since TASK-0304 the person does not move the panel (NoMove, and
-        // the place of each frame); FocusClickTests holds that a drag at its top moves nothing.
+        // KeepAboveAnchors), so a drag of the panel or a smaller display does not cover Undo and Redo. Finding V150 of the
+        // codebase review of 2026-11-08 (c) (TASK-0311): the person does not move the panel (NoMove, and the place of each
+        // frame); FocusClickTests holds that a drag at its top moves nothing.
         // Finding V118 (TASK-0252): the panel starts inside the safe area of the display.
-        // ADR-0093 item 2 (the redesign, slice j, TASK-0304): the panel has no title bar, no ground and no border, and it stays
-        // under the top bar; the person does not move it or fold it. Until TASK-0304 it was a window with a title bar.
         ImGui.SetNextWindowPos(new Vector2(16f + _inset.X, PanelTop), ImGuiCond.Always);
-        // Finding V142 of the codebase review of 2026-11-08 (b) (TASK-0302): the panel is at most as wide as the display less its
-        // margins and the safe area, as the window of a sketch (T176). Until TASK-0302 it was 460 wide on a display of 390.
-        var width = Math.Min(PanelWidth, Math.Max(displaySize.X - 32f - _inset.X - _inset.Z, 160f));
+        // ADR-0174 item 3: the structure view is at most as wide as the rows of a body. Finding V142 of the codebase review of
+        // 2026-11-08 (b) (TASK-0302): and at most as wide as the display less its margins and the safe area.
+        var width = Math.Min(RowsWidth, Math.Max(displaySize.X - 32f - _inset.X - _inset.Z, 160f));
         // ADR-0113 item 4 (phase R19, TASK-0336): on a landscape display the panel ends 12 pixels left of the command line, so
         // that the two do not overlap on a narrow display. Until TASK-0336 they overlapped at 640 by 360.
         if (!_portrait)
@@ -34,117 +34,121 @@ internal sealed unsafe partial class DesktopUi
         if (_portrait && RingTop() is { } ringTop && ringTop - 8f - PanelTop >= PathHeight)
             room = Math.Min(room, ringTop - 8f - PanelTop);
         ImGui.SetNextWindowSizeConstraints(Vector2.Zero, new Vector2(width, room));
-        // ADR-0093 item 2: the panel is as high as its content in the last frame, so the room under it, with no ground, stays
-        // the scene. A window that sizes itself hides its items in its first frame, which a tap in that frame misses.
+        // ADR-0093 item 2: the panel is as high as its content in the last frame. A window that sizes itself hides its items in
+        // its first frame, which a tap in that frame misses.
         ImGui.SetNextWindowSize(new Vector2(width, Math.Min(_panelHeight ?? room, room)), ImGuiCond.Always);
         ImGui.PushStyleVar(ImGuiStyleVar.WindowBorderSize, 0f);
         var open = ImGui.Begin($"###{PanelName}", PanelFlags);
         ImGui.PopStyleVar();
-        // Finding V123 of the codebase review of 2026-11-07 (TASK-0264): Begin gives false for a collapsed panel, so the
-        // clamp ran only for an open panel, and a collapsed panel covered Undo. The clamp runs for each state now.
+        // Finding V123 of the codebase review of 2026-11-07 (TASK-0264): the clamp runs for each state of the window.
         KeepAboveAnchors(displaySize);
-        // ADR-0100 item 4 (phase R17a, TASK-0314): on a landscape display with no selected body, the rows of the document are
-        // first, in the place of the rows of a body, and the list of the bodies is in them. ADR-0131 item 1 (phase R18k,
-        // TASK-0360): the panel shows only with no selected body, so the orientation alone decides.
-        var documentRows = !_portrait;
         if (open)
-        {
-            if (documentRows)
-            {
-                DocumentRows(bodies, document);
-                ImGui.Separator();
-            }
-
-            if (document is not null)
-                File(document);
-
-            // Phase K5b (ADR-0076 item 7, TASK-0244): the list "New" takes the place of the button "New box" of ADR-0032
-            // item 4, because the line has no room for a second button and the panel has no room for a new line (finding
-            // V50). Each entry opens its pad.
-            ImGui.SetNextItemWidth(NewListWidth);
-            if (ImGui.BeginCombo(NewLabel, string.Empty))
-            {
-                foreach (var (text, label) in new[] { ("Box", NewBoxLabel), ("Cylinder", NewCylinderLabel), ("Cone", NewConeLabel), ("Sphere", NewSphereLabel), ("Torus", NewTorusLabel) })
-                {
-                    if (ImGui.Selectable($"{text}##{label}", false, ImGuiSelectableFlags.None, new Vector2(0f, MinimumControlHeight)))
-                        OpenNew(label);
-                    Item(label);
-                }
-
-                var (at, extent) = (ImGui.GetWindowPos(), ImGui.GetWindowSize());
-                _newList = new Vector4(at.X, at.Y, at.X + extent.X, at.Y + extent.Y);
-                ImGui.EndCombo();
-            }
-
-            Item(NewLabel);
-
-            // ADR-0034 item 6: a new sketch on each origin plane.
-            ImGui.AlignTextToFramePadding();
-            ImGui.TextUnformatted(SketchLineLabel);
-            foreach (var (label, datum) in NewSketchButtons)
-            {
-                SameLineIfFits(ButtonWidth(label[^2..]));
-                if (ImGui.Button($"{label[^2..]}##{label}"))
-                    _actions.Add(new NewSketchAction(datum));
-                Item(label);
-            }
-
-            SameLineIfFits(ButtonWidth("Face"));
-            if (ImGui.Button($"Face##{SketchOnFaceLabel}"))
-                _actions.Add(new SketchOnFaceAction());
-            Item(SketchOnFaceLabel);
-
-            // ADR-0056 item 2: the toggles of the dimension overlay, on a line of their own before the list of the bodies,
-            // so that a long list does not push them out of the panel.
-            ImGui.Checkbox(DimensionsLabel, ref _dimensions);
-            Item(DimensionsLabel);
-            SameLineIfFits(CheckboxWidth(HiddenTooLabel));
-            ImGui.BeginDisabled(!_dimensions);
-            ImGui.Checkbox(HiddenTooLabel, ref _hiddenToo);
-            ImGui.EndDisabled();
-            Item(HiddenTooLabel);
-
-            if (!documentRows)
-            {
-                ImGui.TextUnformatted(bodies.Count == 1 ? "1 live body" : $"{bodies.Count} live bodies");
-                FilterLine();
-                ImGui.Separator();
-                foreach (var body in bodies)
-                {
-                    var row = RowText(body);
-                    if (_filter.Length > 0 && !row.Contains(_filter, StringComparison.OrdinalIgnoreCase))
-                        continue;
-
-                    // The identifier after ## keeps two rows with one text apart.
-                    if (ImGui.Selectable($"{row}##{body.Id}", selection == body.Id, ImGuiSelectableFlags.None, new Vector2(0f, MinimumControlHeight)))
-                        _actions.Add(new SelectBodyAction(body.Id));
-                    Item(row);
-                    _shown.Add(row);
-                }
-
-                ImGui.Separator();
-            }
-
-            // ADR-0131 item 1 (phase R18k, TASK-0360): the panel shows only with no selected body, because the rows of a
-            // selected body show on each display. Until TASK-0360 the panel gave the controls of a selected body on a portrait
-            // display: the fault, the size, the face, the name field, Rename, Hide, Move, Set distance and the list of a cut.
-            // The rows and the tool ring hold them now, and the command line too on a landscape display.
-            if (ImGui.Button(ShowAllLabel))
-                _actions.Add(new ShowAllAction());
-            Item(ShowAllLabel);
-        }
+            StructureView(bodies, document);
 
         _panelHeight = ImGui.GetCursorPosY() + ImGui.GetStyle().WindowPadding.Y;
         var position = ImGui.GetWindowPos();
         var size = ImGui.GetWindowSize();
         _panels.Add(new Vector4(position.X, position.Y, position.X + size.X, position.Y + size.Y));
         ImGui.End();
+    }
 
-        // The review of Codex of v0.212, finding 1 (TASK-0232): an open list is a window of its own, and a tap on it must not
-        // reach the scene. It follows the panel, so that the panel stays the first rectangle. ADR-0131 item 1 (TASK-0360): the
-        // list of a cut is in the rows only, and CutRow adds it.
-        if (_newList is { } created)
-            _panels.Add(created);
+    // ADR-0174 item 3: true while the structure view is open; it starts folded.
+    private bool _structureOpen;
+
+    internal bool StructureOpen => _structureOpen;
+
+    // ADR-0174 item 3: open or fold the structure view, as a tap on its first row does; for a test too.
+    internal void OpenStructure(bool open = true) => _structureOpen = open;
+
+    // ADR-0174 item 3: the filter shows from this count of live bodies.
+    internal const int FilterFrom = 8;
+
+    // ADR-0174 item 3 (phase R31a, TASK-0419): the rows of the structure view, in the style of the rows of a selected body.
+    // The first row gives the kind on its first line, and the unit, the count and the state of the bodies on its
+    // second line (ADR-0100 item 4), with a mark at its right; a tap on it opens or folds the view. A message of the document
+    // follows it. Open, the view gives the filter from eight bodies, one row for each body that the filter keeps (its name at
+    // the left; "correct", or "failed" and the code of its fault in red, and "hidden" at the right), and "Show all" while a
+    // body is hidden. A tap on a body row selects the body. The key of a body row is its row text, so a test finds it by the
+    // same name as before R31a.
+    private void StructureView(IReadOnlyList<LiveBody> bodies, DocumentLine? document)
+    {
+        var colours = ImGui.GetStyle().Colors;
+        var text = ImGui.GetColorU32(colours[(int)ImGuiCol.Text]);
+        var quiet = ImGui.GetColorU32(colours[(int)ImGuiCol.TextDisabled]);
+        var line = ImGui.GetColorU32(colours[(int)ImGuiCol.Separator]);
+        var list = ImGui.GetWindowDrawList();
+        var lineHeight = ImGui.GetTextLineHeight();
+        var width = ImGui.GetContentRegionAvail().X;
+
+        if (ImGui.InvisibleButton("##structure", new Vector2(width, RowHeight)))
+            _structureOpen = !_structureOpen;
+        Item(DocumentRowItem);
+        var (min, max) = (ImGui.GetItemRectMin(), ImGui.GetItemRectMax());
+        if (ImGui.IsItemHovered())
+            list.AddRectFilled(min, max, ImGui.GetColorU32(colours[(int)ImGuiCol.ButtonHovered]), 4f);
+        var first = min.Y + ((RowHeight - (2f * lineHeight)) / 2f);
+        list.AddText(new Vector2(min.X, first), text, DocumentKind(document));
+        var x = min.X;
+        foreach (var (part, red) in DocumentState(bodies))
+        {
+            list.AddText(new Vector2(x, first + lineHeight), red ? FailedColour : quiet, part);
+            x += ImGui.CalcTextSize(part).X;
+        }
+
+        // The mark: a chevron down while folded, up while open.
+        var mark = new Vector2(max.X - 12f, (min.Y + max.Y) / 2f);
+        var turn = _structureOpen ? -1f : 1f;
+        list.AddLine(mark + new Vector2(-6f, -3f * turn), mark + new Vector2(0f, 3f * turn), text, 2f);
+        list.AddLine(mark + new Vector2(0f, 3f * turn), mark + new Vector2(6f, -3f * turn), text, 2f);
+        list.AddLine(new Vector2(min.X, max.Y), max, line, 1f);
+
+        // V99 (TASK-0232): a host with no files shows its message too.
+        if (document?.Message is { } message)
+        {
+            // ADR-0167 item 2 (TASK-0407): a message of a sheet is longer than a line, so the message wraps.
+            ImGui.PushTextWrapPos(0f);
+            ImGui.TextUnformatted(message);
+            ImGui.PopTextWrapPos();
+            Item(DocumentMessageLabel);
+        }
+
+        if (!_structureOpen)
+            return;
+
+        if (bodies.Count >= FilterFrom)
+            FilterLine();
+        var middle = (RowHeight - lineHeight) / 2f;
+        foreach (var body in bodies)
+        {
+            var row = RowText(body);
+            if (bodies.Count >= FilterFrom && _filter.Length > 0 && !row.Contains(_filter, StringComparison.OrdinalIgnoreCase))
+                continue;
+
+            if (ImGui.Selectable($"##document{body.Id}", false, ImGuiSelectableFlags.None, new Vector2(0f, RowHeight)))
+                _actions.Add(new SelectBodyAction(body.Id));
+            Item(row);
+            _shown.Add(row);
+            // A selectable is half the space between two items wider on each side than the column, so the texts start and end
+            // in the column, under the first row.
+            var inside = ImGui.GetStyle().ItemSpacing.X / 2f;
+            (min, max) = (ImGui.GetItemRectMin() + new Vector2(inside, 0f), ImGui.GetItemRectMax() - new Vector2(inside, 0f));
+            var state = body.Fault is { } fault ? $"failed {fault.Code}" : "correct";
+            var hidden = body.Visible ? string.Empty : " · hidden";
+            var stateWidth = ImGui.CalcTextSize(state + hidden).X;
+            list.AddText(new Vector2(min.X, min.Y + middle), body.Visible ? text : quiet, Fit(body.Name ?? $"{body.Kind}  {body.Id.ToString()[..8]}", Math.Max(max.X - min.X - stateWidth - 12f, 48f)));
+            list.AddText(new Vector2(max.X - stateWidth, min.Y + middle), body.Fault is null ? quiet : FailedColour, state);
+            if (hidden.Length > 0)
+                list.AddText(new Vector2(max.X - ImGui.CalcTextSize(hidden).X, min.Y + middle), quiet, hidden);
+            list.AddLine(new Vector2(min.X, max.Y), max, line, 1f);
+        }
+
+        // ADR-0174 item 3: "Show all" only while a body is hidden.
+        if (bodies.Any(body => !body.Visible))
+        {
+            if (ImGui.Button(ShowAllLabel))
+                _actions.Add(new ShowAllAction());
+            Item(ShowAllLabel);
+        }
     }
 
     // The filter of the list of the bodies and its button Clear.
@@ -179,80 +183,20 @@ internal sealed unsafe partial class DesktopUi
         return failed == 0 ? [($"{_unit} · {count} · all correct", false)] : [($"{_unit} · {count} · ", false), ($"{failed} failed", true)];
     }
 
-    // ADR-0100 item 4 (phase R17a, TASK-0314): the rows of the document, in the style of the rows of a selected body: the
-    // first row gives the kind on its first line, and the unit and the counts on its second line; then the filter; then one
-    // row for each body that the filter keeps, with its name at the left and its state at the right: "correct", or "failed"
-    // and the code of its fault in red, and "hidden". A tap on a body row selects the body. The key of a body row is its row
-    // text, as in the list of the panel, so a test finds it by the same name.
-    private void DocumentRows(IReadOnlyList<LiveBody> bodies, DocumentLine? document)
-    {
-        var colours = ImGui.GetStyle().Colors;
-        var text = ImGui.GetColorU32(colours[(int)ImGuiCol.Text]);
-        var quiet = ImGui.GetColorU32(colours[(int)ImGuiCol.TextDisabled]);
-        var line = ImGui.GetColorU32(colours[(int)ImGuiCol.Separator]);
-        var list = ImGui.GetWindowDrawList();
-        var lineHeight = ImGui.GetTextLineHeight();
-        var width = ImGui.GetContentRegionAvail().X;
-
-        ImGui.Dummy(new Vector2(width, RowHeight));
-        Item(DocumentRowItem);
-        var (min, max) = (ImGui.GetItemRectMin(), ImGui.GetItemRectMax());
-        var first = min.Y + ((RowHeight - (2f * lineHeight)) / 2f);
-        list.AddText(new Vector2(min.X, first), text, DocumentKind(document));
-        var x = min.X;
-        foreach (var (part, red) in DocumentState(bodies))
-        {
-            list.AddText(new Vector2(x, first + lineHeight), red ? FailedColour : quiet, part);
-            x += ImGui.CalcTextSize(part).X;
-        }
-
-        list.AddLine(new Vector2(min.X, max.Y), max, line, 1f);
-
-        FilterLine();
-        var middle = (RowHeight - lineHeight) / 2f;
-        foreach (var body in bodies)
-        {
-            var row = RowText(body);
-            if (_filter.Length > 0 && !row.Contains(_filter, StringComparison.OrdinalIgnoreCase))
-                continue;
-
-            if (ImGui.Selectable($"##document{body.Id}", false, ImGuiSelectableFlags.None, new Vector2(0f, RowHeight)))
-                _actions.Add(new SelectBodyAction(body.Id));
-            Item(row);
-            _shown.Add(row);
-            // A selectable is half the space between two items wider on each side than the column, so the texts start and end
-            // in the column, under the first row.
-            var inside = ImGui.GetStyle().ItemSpacing.X / 2f;
-            (min, max) = (ImGui.GetItemRectMin() + new Vector2(inside, 0f), ImGui.GetItemRectMax() - new Vector2(inside, 0f));
-            var state = body.Fault is { } fault ? $"failed {fault.Code}" : "correct";
-            var hidden = body.Visible ? string.Empty : " · hidden";
-            var stateWidth = ImGui.CalcTextSize(state + hidden).X;
-            list.AddText(new Vector2(min.X, min.Y + middle), body.Visible ? text : quiet, Fit(body.Name ?? $"{body.Kind}  {body.Id.ToString()[..8]}", Math.Max(max.X - min.X - stateWidth - 12f, 48f)));
-            list.AddText(new Vector2(max.X - stateWidth, min.Y + middle), body.Fault is null ? quiet : FailedColour, state);
-            if (hidden.Length > 0)
-                list.AddText(new Vector2(max.X - ImGui.CalcTextSize(hidden).X, min.Y + middle), quiet, hidden);
-            list.AddLine(new Vector2(min.X, max.Y), max, line, 1f);
-        }
-    }
-
     // The rectangle of the open list of a cut in this frame, or null.
     private Vector4? _cutList;
 
-    // The rectangle of the open list "New" in this frame, or null (TASK-0244).
-    private Vector4? _newList;
-
-    // The width of the box of the list "New", as the list of a cut.
-    private const float NewListWidth = 80f;
-
     // ADR-0093 item 2: the panel takes the height of its content, up to the room above the anchors, and scrolls past it.
-    // It has no title bar, no ground and no border, and the person does not move, fold or size it.
-    private const ImGuiWindowFlags PanelFlags = ImGuiWindowFlags.NoTitleBar | ImGuiWindowFlags.NoBackground | ImGuiWindowFlags.NoMove
+    // It has no title bar and no border, and the person does not move or size it. ADR-0174 item 3 (TASK-0419): it has the
+    // ground of a window, so its text does not draw over the part; until TASK-0419 it had no ground.
+    private const ImGuiWindowFlags PanelFlags = ImGuiWindowFlags.NoTitleBar | ImGuiWindowFlags.NoMove
         | ImGuiWindowFlags.NoResize | ImGuiWindowFlags.NoCollapse | ImGuiWindowFlags.NoSavedSettings;
 
     // ADR-0093 item 2: the height of the content of the panel in the last frame, or null before its first frame.
     private float? _panelHeight;
 
-    // The pad of an entry of the list "New", for the list and for the command line (ADR-0098 item 3, TASK-0312). Phase K5e
+    // The pad of an entry of "New", for the ring of the part and for the command line (ADR-0098 item 3, TASK-0312; ADR-0174
+    // item 2, TASK-0419). Phase K5e
     // (ADR-0089 item 5, TASK-0298): the cone, the sphere and the torus each have a pad; the defaults of the torus keep the
     // tube inside the ring.
     // ADR-0172 item 2 (TASK-0418): internal, so a test opens a pad of three fields.
@@ -283,7 +227,7 @@ internal sealed unsafe partial class DesktopUi
     // ADR-0113 item 3 (phase R19, TASK-0336): and under "AGENT IS WAITING" when it is a line of its own there.
     private float PanelTop => 16f + _inset.Y + TopBarHeight + 8f + (_portrait ? PathHeight + _waitingLine : 0f);
 
-    // The width of the panel on a display that is wide enough (V142, TASK-0302).
+    // The width of the open images on a display that is wide enough (V142, TASK-0302). Until TASK-0419 the panel had it too.
     private const float PanelWidth = 460f;
 
     // The width of a button with this label.
@@ -337,56 +281,4 @@ internal sealed unsafe partial class DesktopUi
         => document is { Files: true } files
             ? ["3DEngine", files.FileName ?? "unsaved", _unit]
             : ["3DEngine", _unit];
-
-    // ADR-0030 item 3: the name of the file, a name field, Save as and Open. ADR-0102 item 1 (phase P9g, TASK-0316): four
-    // buttons that each open a dialog of the system, on two lines: "Open project..." and "Save as...", then "Export STL..."
-    // and "Import STL...". Until TASK-0316 a field took a name in the document folder.
-    private void File(DocumentLine document)
-    {
-        // V99 (TASK-0232): a host with no files shows the message only.
-        if (!document.Files)
-        {
-            if (document.Message is { } only)
-            {
-                ImGui.TextUnformatted(only);
-                Item(DocumentMessageLabel);
-                ImGui.Separator();
-            }
-
-            return;
-        }
-
-        foreach (var (label, action, same) in new (string, PanelAction, bool)[]
-        {
-            (OpenProjectLabel, new OpenProjectAction(), false), (SaveAsLabel, new SaveAsAction(), true),
-            (ExportStlLabel, new ExportStlAction(), false), (ImportStlLabel, new ImportStlAction(), true),
-        })
-        {
-            if (same)
-                SameLineIfFits(ButtonWidth(label));
-            if (ImGui.Button(label))
-                _actions.Add(action);
-            Item(label);
-        }
-
-        // ADR-0172 item 4 (TASK-0418): the images, folded, are a button of the file group.
-        if (_imagesAvailable)
-        {
-            SameLineIfFits(ButtonWidth(OpenImagesLabel));
-            if (ImGui.Button(OpenImagesLabel))
-                _imagesOpen = true;
-            Item(OpenImagesLabel);
-        }
-
-        if (document.Message is { } message)
-        {
-            // ADR-0167 item 2 (TASK-0407): a message of a sheet is longer than a line of the panel, so the message wraps.
-            ImGui.PushTextWrapPos(0f);
-            ImGui.TextUnformatted(message);
-            ImGui.PopTextWrapPos();
-            Item(DocumentMessageLabel);
-        }
-
-        ImGui.Separator();
-    }
 }

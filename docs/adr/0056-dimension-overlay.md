@@ -7,7 +7,7 @@ date: 2026-11-04
 supersedes: []
 superseded-by: []
 amends: []
-amended-by: ['0125']
+amended-by: ['0125', '0174']
 affects:
   - 3DEngine.Core/Measuring/**
   - 3DEngine.App/DimensionOverlay.cs
@@ -47,7 +47,8 @@ On 2026-11-04 the owner answered four questions:
    `Engine.Contracts` does not change (ADR-0007, ADR-0009).
 2. **The toggles (Q4).** The panel has the checkbox "Dimensions", off at each start of the desktop, and the checkbox
    "Hidden too" after it, on a line of their own before the list of the bodies, so that a long list does not push them
-   out of the panel. Each one takes a tap and a click (objective 9). They are a state of the client.
+   out of the panel. Each one takes a tap and a click (objective 9). They are a state of the client. ADR-0174 item 5
+   (TASK-0419) moves the two toggles to the net of the views, on the row of "Lines"; until TASK-0419 they were in the panel.
 3. **The overall size (Q2).** The overall box is the union of the boxes of the visible live bodies. With "Hidden too",
    it is the union of the boxes of each live body that has a mesh. The box that the camera frames does not change: it
    holds the visible bodies only (ADR-0029 item 3).
@@ -94,3 +95,5 @@ On 2026-11-04 the owner answered four questions:
 - 2026-11-12 · TASK-0352 · ADR-0125 amends items 4, 5 and 6: the colour of the selection and a grey, the word of the
   box on each label, a plate outside the outline of the box, no plate under a control, and the thickness of a board
   only.
+- 2026-11-19 · TASK-0419 · ADR-0174 item 5 amends item 2: "Dimensions" and "Hidden too" are switches in the net of the
+  views.

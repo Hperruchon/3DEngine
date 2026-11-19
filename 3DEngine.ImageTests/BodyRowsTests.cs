@@ -82,7 +82,8 @@ public sealed class BodyRowsTests
         Frame(ui, null, Display);
         Frame(ui, null, Display);
         Assert.Null(ui.ItemRectangle(DesktopUi.RowsTitleItem));
-        Assert.NotNull(ui.ItemRectangle(DesktopUi.ShowAllLabel));
+        // ADR-0174 item 3 (TASK-0419): the panel is the structure view, whose first row shows.
+        Assert.NotNull(ui.ItemRectangle(DesktopUi.DocumentRowItem));
 
         var portrait = new Vector2(390, 844);
         Frame(ui, Extrude, portrait);

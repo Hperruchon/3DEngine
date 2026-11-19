@@ -172,6 +172,8 @@ public sealed class DocumentPathTests
     {
         using var ui = new DesktopUi("http://127.0.0.1:5180", Document.Millimetre);
         LiveBody[] bodies = [Plate, Broken];
+        // ADR-0174 item 3 (TASK-0419): the rows of the document are the structure view, which shows its body rows while it is open.
+        ui.OpenStructure();
         Step(ui, Landscape, bodies, null, Bracket);
         Step(ui, Landscape, bodies, null, Bracket);
 
@@ -186,8 +188,9 @@ public sealed class DocumentPathTests
         var rows = bodies.Select(body => Rectangle(ui, DesktopUi.RowText(body))).ToArray();
         Assert.All(rows, row => Assert.True(row.W - row.Y >= DesktopUi.RowHeight, $"The row at {row} is lower than a row."));
         Assert.True(rows[0].Y >= first.W && rows[1].Y >= rows[0].W, "The rows of the bodies are not under the first row, in the order of the bodies.");
-        Assert.True(Rectangle(ui, DesktopUi.FilterLabel).W <= rows[0].Y, "The filter is not above the rows of the bodies.");
-        Assert.True(Rectangle(ui, DesktopUi.OpenProjectLabel).Y >= rows[1].W, "The controls of the panel are not under the rows of the document.");
+        // ADR-0174 items 3 and 4: the filter shows from eight bodies, and the file controls are in the file menu.
+        Assert.Null(ui.ItemRectangle(DesktopUi.FilterLabel));
+        Assert.Null(ui.ItemRectangle(DesktopUi.OpenProjectLabel));
         Assert.Null(ui.ItemRectangle(DesktopUi.RowsTitleItem));
 
         Assert.Equal([new SelectBodyAction(B)], Tap(ui, Landscape, bodies, null, Bracket, null, DesktopUi.RowText(Broken)));
@@ -203,7 +206,9 @@ public sealed class DocumentPathTests
     public void The_Filter_Keeps_The_Rows_Of_The_Document_That_Hold_It()
     {
         using var ui = new DesktopUi("http://127.0.0.1:5180", Document.Millimetre);
-        LiveBody[] bodies = [Plate, Broken];
+        // ADR-0174 item 3 (TASK-0419): the filter shows in the open structure view from eight bodies.
+        LiveBody[] bodies = [Plate, Broken, .. Enumerable.Range(1, DesktopUi.FilterFrom - 2).Select(i => new LiveBody(Guid.Parse($"dddddddd-0000-0000-0000-{i:D12}"), "Box", $"Box {i}", true))];
+        ui.OpenStructure();
         Step(ui, Landscape, bodies, null, Bracket);
         Step(ui, Landscape, bodies, null, Bracket);
         Assert.Equal(bodies.Select(DesktopUi.RowText), ui.ShownBodies);
